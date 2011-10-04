@@ -13,5 +13,6 @@ else
 	cd valabind
 fi
 
+make clean
 make
 sudo make install

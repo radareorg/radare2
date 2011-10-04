@@ -6,6 +6,7 @@
 #include "r_io.h"
 #include "r_fs.h"
 #include "r_lib.h"
+#include "r_egg.h"
 #include "r_lang.h"
 #include "r_asm.h"
 #include "r_parse.h"
@@ -104,6 +105,7 @@ typedef struct r_core_t {
 	RSearch *search;
 	RSign *sign;
 	RFS *fs;
+	REgg *egg;
 	char *cmdqueue;
 	char *lastcmd;
 	int cmdrepeat;

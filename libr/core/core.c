@@ -308,6 +308,8 @@ R_API int r_core_init(RCore *core) {
 	//core->num->callback = &num_callback;
 	//core->num->userptr = core;
 	core->curasmstep = 0;
+	core->egg = r_egg_new ();
+	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
 	/* initialize libraries */
 	if (singleton) {
@@ -394,6 +396,7 @@ R_API int r_core_init(RCore *core) {
 
 R_API RCore *r_core_free(RCore *c) {
 	/* TODO: it leaks as shit */
+	r_egg_free (c->egg);
 	free (c);
 	return NULL;
 }

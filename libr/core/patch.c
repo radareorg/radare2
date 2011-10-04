@@ -2,8 +2,22 @@
 
 #include <r_core.h>
 
+#if 0
+Patch format
+============
+
+^# -> comments
+. -> execute command
+! -> execute command
+OFFSET { code block }
+OFFSET "string"
+OFFSET 01020304
+OFFSET : assembly
+
+#endif
+
 R_API int r_core_patch (RCore *core, const char *patch) {
-	char *p, *p2, *q, str[200];
+	char *p, *p2, *q, str[200], tmp[64];
 	ut64 noff;
 	FILE *fd = fopen (patch, "r");
 	if (fd==NULL) {
@@ -21,15 +35,15 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 		}
 		p = strchr (str+1, ' ');
 		if (p) {
-			*p=0;
+			*p = 0;
 			for (++p;*p==' ';p++);
 			switch (*p) {
 			case '{': {
-				FILE *fw = fopen ("out.rarc", "w");
-				char *off = strdup (str);
+				char *s, *off = strdup (str);
+				RBuffer *b = r_buf_new ();
+				
 				while (!feof (fd)) {
 					fgets (str, sizeof (str), fd);
-// TODO: replace ${..}
 					if (*str=='}')
 						break;
 					if ((q=strstr (str, "${"))) {
@@ -37,22 +51,28 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 						if (end) {
 							*q = *end = 0;
 							noff = r_num_math (core->num, q+2);
-							fwrite (str, strlen (str), 1, fw);
-							fprintf (fw, "0x%08llx", noff);
-							fwrite (end+1, strlen (end+1), 1, fw);
+							r_buf_append_bytes (b, (const ut8*)str, strlen (str));
+							snprintf (tmp, sizeof (tmp), "0x%08llx", noff);
+							r_buf_append_bytes (b, (const ut8*)tmp, strlen (tmp));
+							r_buf_append_bytes (b, (const ut8*)end+1, strlen (end+1));
 						}
-					} else fwrite (str, strlen (str), 1, fw);
+					} else r_buf_append_bytes (b, (const ut8*)str, strlen (str));
 				}
-				fclose (fw);
 
-				/* XXX: use API here */
-				r_sys_cmd ("rarc2 < out.rarc > out.rasm");
-				
+				s = r_buf_to_string (b);
+				r_egg_load (core->egg, s, 0);
+				free (s);
+			
+				r_egg_compile (core->egg);
+				r_egg_assemble (core->egg);
+
+				r_buf_free (b);
+				b = r_egg_get_bin (core->egg);
+
 				noff = r_num_math (core->num, off);
-				r_sys_cmdf ( "rasm2 -o 0x%llx -a x86.olly "
-					"-f out.rasm | tee out.hex", noff);
-				r_core_cmdf (core, "s %s", off);
-				r_core_cmd0 (core, "wF out.hex");
+				r_core_write_at (core, noff, b->buf, b->length);
+
+				r_buf_free (b);
 				free (off);
 				}
 				break;

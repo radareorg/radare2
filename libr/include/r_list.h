@@ -37,8 +37,10 @@ typedef struct r_oflist_t {
 #define r_list_head(x) x->head
 #define r_list_tail(x) x->tail
 #define r_list_unref(x) x
+
 #define r_list_iter_get(x) x->data; x=x->n
 #define r_list_iter_next(x) (x?1:0)
+
 #define r_list_iter_cur(x) x->p
 #define r_list_iter_unref(x) x
 #define r_list_iter_free(x) x
