@@ -7,7 +7,7 @@ ALL_TARGETS+=${TARGET_PTRACE}
 
 ${TARGET_PTRACE}: ${OBJ_PTRACE}
 	${CC} $(call libname,debug_native) ${CFLAGS} \
-		${LDFLAGS_LINKPATH}.. -L.. \
+		${LDFLAGS_LINKPATH}.. -L.. -lr_debug \
 		${LDFLAGS_LINKPATH}../../lib -L../../lib -lr_lib \
 		${LDFLAGS_LINKPATH}../../io -L../../io -lr_io \
 		${LDFLAGS_LINKPATH}../../bp -L../../bp -lr_bp \

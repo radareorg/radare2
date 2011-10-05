@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 */
+/* radare - LGPL - Copyright 2009-2011 */
 /* nibble<.ds@gmail.com> */
 
 #include <r_types.h>
@@ -33,7 +33,6 @@ R_API void r_core_asm_hit_free(void *_hit) {
 R_API char* r_core_asm_search(RCore *core, const char *input, ut64 from, ut64 to) {
 	RAsmCode *acode;
 	char *ret;
-
 	if (!(acode = r_asm_massemble (core->assembler, input)))
 		return NULL;
 	ret = strdup (acode->buf_hex);
@@ -177,9 +176,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 						hit->code = NULL;
 						r_list_append (hits, hit);
 					}
-				} else {
-					ni++;
-				}
+				} else ni++;
 			}
 		}
 	}

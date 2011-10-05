@@ -705,7 +705,10 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"drx	dr7	.32	28	0\n"
 #endif
 	);
-} else eprintf ("invalid bit size\n");
+} else {
+	eprintf ("invalid bit size\n");
+	return NULL;
+}
 #elif __x86_64__  && (__OpenBSD__ || __NetBSD__)
 	return strdup (
 	"=pc	rip\n"

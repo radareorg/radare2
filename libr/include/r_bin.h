@@ -37,6 +37,12 @@ enum {
 	R_BIN_NM_ANY=-1,
 };
 
+enum {
+	R_BIN_CLASS_PRIVATE,
+	R_BIN_CLASS_PUBLIC,
+	R_BIN_CLASS_FRIENDLY,
+	R_BIN_CLASS_PROTECTED,
+};
 
 // XXX: isnt this a copy of Obj ?
 typedef struct r_bin_arch_t {
@@ -53,6 +59,7 @@ typedef struct r_bin_arch_t {
 	RList* fields;
 	RList* libs;
 	RList* relocs;
+	RList* classes;
 	RBuffer *buf;
 	void *bin_obj;
 	struct r_bin_plugin_t *curplugin;
@@ -100,6 +107,7 @@ typedef struct r_bin_plugin_t {
 	RList* (*fields)(RBinArch *arch);
 	RList* (*libs)(RBinArch *arch);
 	RList* (*relocs)(RBinArch *arch);
+	RList* (*classes)(RBinArch *arch);
 	int (*demangle_type)(const char *str);
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
@@ -121,6 +129,14 @@ typedef struct r_bin_section_t {
 	ut64 offset;
 	ut64 srwx;
 } RBinSection;
+
+typedef struct r_bin_class_t {
+	char *name;
+	char *super;
+	RList *methods;
+	RList *fields;
+	int visibility;
+} RBinClass;
 
 #define RBinSectionName r_offsetof(RBinSection, name)
 #define RBinSectionOffset r_offsetof(RBinSection, offset)
@@ -197,6 +213,7 @@ typedef struct r_bin_write_t {
 	int (*rpath_del)(RBinArch *arch);
 } RBinWrite;
 
+/* totally unused */
 typedef struct r_bin_obj_t {
 	ut64 baddr;
 	RList/*<RBinSection>*/ *sections;
@@ -207,6 +224,7 @@ typedef struct r_bin_obj_t {
 	RList/*<??>*/ *libs;
 	RList/*<??>*/ *relocs;
 	RList/*<??>*/ *strings;
+	RList/*<RBinClass>*/ *classes;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 // TODO: deprecate r_bin_is_big_endian
@@ -244,6 +262,7 @@ R_API RBinInfo* r_bin_get_info(RBin *bin);
 R_API RList* r_bin_get_libs(RBin *bin);
 R_API RList* r_bin_get_relocs(RBin *bin);
 R_API RList* r_bin_get_sections(RBin *bin);
+R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin);
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va);
 R_API RList* r_bin_get_strings(RBin *bin);
 R_API RList* r_bin_get_symbols(RBin *bin);

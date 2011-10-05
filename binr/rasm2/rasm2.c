@@ -24,6 +24,7 @@ static int rasm_show_help() {
 	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|- [-f file ..]\n"
 		" -d           Disassemble from hexpair bytes\n"
 		" -f           Read data from file\n"
+		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
 		" -o [offset]  Offset where this opcode is suposed to be\n"
 		" -a [arch]    Set architecture plugin\n"
 		" -b [bits]    Set architecture bits\n"
@@ -123,7 +124,7 @@ static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 int main(int argc, char *argv[]) {
-	char *arch = NULL, *file = NULL;
+	char *arch = NULL, *file = NULL, *filters = NULL;
 	ut64 offset = 0x8048000;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
 	ut64 len = 0, idx = 0;
@@ -138,10 +139,13 @@ int main(int argc, char *argv[]) {
 		return rasm_show_help ();
 
 	r_asm_use (a, "x86"); // XXX: do not harcode default arch
-	while ((c = getopt (argc, argv, "Ceva:b:s:do:Bl:hLf:")) != -1) {
+	while ((c = getopt (argc, argv, "Ceva:b:s:do:Bl:hLf:F:")) != -1) {
 		switch (c) {
 		case 'f':
 			file = optarg;
+			break;
+		case 'F':
+			filters = optarg;
 			break;
 		case 'C':
 			coutput = R_TRUE;
@@ -196,6 +200,19 @@ int main(int argc, char *argv[]) {
 	}
 	if (!r_asm_set_bits (a, bits))
 		eprintf ("WARNING: cannot set asm backend to %d bits\n", bits);
+
+	if (filters) {
+		char *p = strchr (filters, ':');
+		if (p) {
+			*p = 0;
+			if (*filters) r_asm_filter_input (a, filters);
+			if (p[1]) r_asm_filter_output (a, p+1);
+			*p = ':';
+		} else {
+			if (dis) r_asm_filter_output (a, filters);
+			else r_asm_filter_input (a, filters);
+		}
+	}
 
 	if (file) {
 		char *content;

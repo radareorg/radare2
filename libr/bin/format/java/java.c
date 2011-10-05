@@ -375,13 +375,12 @@ char* r_bin_java_get_version(RBinJavaObj* bin) {
 
 ut64 r_bin_java_get_main(RBinJavaObj* bin) {
 	int i, j;
-eprintf ("GO GET MAIN\n");
 	for (i=0; i < bin->methods_count; i++) {
 		if (!strcmp(bin->methods[i].name, "main([Ljava/lang/String;)V"))
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
 					return (ut64)bin->methods[i].attributes->info.code.code_offset;
-eprintf ("METH : %s\n", bin->methods[i].name);
+//eprintf ("METH : %s\n", bin->methods[i].name);
 }
 	return 0;
 }

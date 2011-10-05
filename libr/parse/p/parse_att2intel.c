@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,28 +16,26 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *op;
 		char *str;
 	} ops[] = {
-		{ "cmp",  "cmp 1, 2"},
-		{ "test", "cmp 1, 2"},
-		{ "lea",  "1 = 2"},
-		{ "mov",  "1 = 2"},
-		{ "cmovl","ifnot zf,1 = 2"},
-		{ "xor",  "1 ^= 2"},
-		{ "and",  "1 &= 2"},
-		{ "or",   "1 |= 2"},
-		{ "add",  "1 += 2"},
-		{ "sub",  "1 -= 2"},
-		{ "mul",  "1 *= 2"},
-		{ "div",  "1 /= 2"},
-		{ "call", "call 1"},
-		{ "jmp",  "goto 1"},
-		{ "je",   "je 1"},
-		{ "push", "push 1"},
-		{ "pop",  "pop 1"},
+		{ "cmpl",  "cmp 2, 1"},
+		{ "testl", "test 2, 1"},
+		{ "leal",  "lea 2, 1"},
+		{ "movl",  "mov 2, 1"},
+		{ "xorl",  "xor 2, 1"},
+		{ "andl",  "and 2, 1"},
+		{ "orl",   "or 2, 1"},
+		{ "addl",  "add 2, 1"},
+		{ "incl",  "inc 1"},
+		{ "decl",  "dec 1"},
+		{ "subl",  "sub 2, 1"},
+		{ "mull",  "mul 2, 1"},
+		{ "divl",  "div 2, 1"},
+		{ "pushl", "push 1"},
+		{ "popl",  "pop 1"},
 		{ "ret",  "ret"},
 		{ NULL }
 	};
 
-	for(i=0; ops[i].op != NULL; i++) {
+	for (i=0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
 				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
@@ -67,7 +65,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return R_FALSE;
 }
 
-static int parse(struct r_parse_t *p, void *data, char *str) {
+static int parse(RParse *p, void *data, char *str) {
 	int i, len = strlen ((char*)data);
 	char w0[32];
 	char w1[32];
@@ -78,13 +76,50 @@ static int parse(struct r_parse_t *p, void *data, char *str) {
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
 		return R_FALSE;
-	memcpy (buf, (char*)data, len+1);
+	{/* strip whitechars from the beggining */	
+	char *o = r_str_trim_head (data);
+	memcpy (buf, o, strlen (o)+1);
+	}
+
+	ptr = strchr (buf, '#');
+	if (ptr) {
+		*ptr = 0;
+		r_str_chop (buf);
+	}
+	if (*buf == '.' || buf[strlen(buf)-1] == ':') {
+		free (buf);
+		strcpy (str, data);
+		return R_TRUE;
+	}
+	r_str_subchr (buf, '$', 0);
+	r_str_subchr (buf, '%', 0);
+	r_str_subchr (buf, '\t', ' ');
+	r_str_subchr (buf, '(', '[');
+	r_str_subchr (buf, ')', ']');
+	ptr = strchr (buf, '[');
+	if (ptr) {
+		int n;
+		char *num;
+		*ptr = 0;
+		num = r_str_lchr (buf, ' ');
+		if (!num)
+			num = r_str_lchr (buf, ',');
+		if (num) {
+			n = atoi (num+1);
+			*ptr = '[';
+			memmove (num+1, ptr, strlen (ptr)+1);
+			ptr = r_str_lchr (buf, ']');
+			if (n && ptr) {
+				char *rest = strdup (ptr+1);
+				if(n>0) sprintf (ptr, "+%d]%s", n, rest);
+				else sprintf (ptr, "%d]%s", n, rest);
+				free (rest);
+			}
+		} else *ptr = '[';
+	}
 
 	if (*buf) {
-		w0[0]='\0';
-		w1[0]='\0';
-		w2[0]='\0';
-		w3[0]='\0';
+		*w0 = *w1 = *w2 = *w3 = 0;
 		ptr = strchr (buf, ' ');
 		if (ptr == NULL)
 			ptr = strchr (buf, '\t');
@@ -94,7 +129,7 @@ static int parse(struct r_parse_t *p, void *data, char *str) {
 			strcpy (w0, buf);
 			strcpy (w1, ptr);
 
-			optr=ptr;
+			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
@@ -124,9 +159,9 @@ static int parse(struct r_parse_t *p, void *data, char *str) {
 	return R_TRUE;
 }
 
-static int assemble(struct r_parse_t *p, char *data, char *str) {
+static int assemble(RParse *p, char *data, char *str) {
 	char *ptr;
-	printf ("assembling '%s' to generate real asm code\n", str);
+	printf ("---> assembling '%s' to generate real asm code\n", str);
 	ptr = strchr (str, '=');
 	if (ptr) {
 		*ptr = '\0';
@@ -135,7 +170,7 @@ static int assemble(struct r_parse_t *p, char *data, char *str) {
 	return R_TRUE;
 }
 
-static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str, int len) {
+static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	RListIter *iter;
 	RFlagItem *flag;
 	char *ptr, *ptr2;
@@ -144,8 +179,8 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 	while ((ptr = strstr (ptr, "0x"))) {
 		for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
 		off = r_num_math (NULL, ptr);
-		if(!off){
-			ptr=ptr2;
+		if (!off) {
+			ptr = ptr2;
 			continue;
 		}
 		r_list_foreach (f->flags, iter, flag) {
@@ -161,7 +196,7 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 	return R_FALSE;
 }
 
-static int varsub(struct r_parse_t *p, struct r_anal_fcn_t *f, char *data, char *str, int len) {
+static int varsub(RParse *p, struct r_anal_fcn_t *f, char *data, char *str, int len) {
 	char *ptr, *ptr2;
 	int i;
 
@@ -176,9 +211,9 @@ static int varsub(struct r_parse_t *p, struct r_anal_fcn_t *f, char *data, char 
 	return R_TRUE;
 }
 
-struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
-	.name = "x86.pseudo",
-	.desc = "X86 pseudo syntax",
+struct r_parse_plugin_t r_parse_plugin_att2intel = {
+	.name = "att2intel",
+	.desc = "X86 att 2 intel plugin",
 	.init = NULL,
 	.fini = NULL,
 	.parse = &parse,
@@ -190,6 +225,6 @@ struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_x86_pseudo
+	.data = &r_parse_plugin_att2intel
 };
 #endif

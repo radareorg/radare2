@@ -7,6 +7,7 @@
 #include <r_bin.h> // only for binding, no hard dep required 
 #include <list.h>
 #include <r_util.h>
+#include <r_parse.h>
 
 #define R_ASM_BUFSIZE 1024
 
@@ -78,6 +79,8 @@ typedef struct r_asm_t {
 	struct r_asm_plugin_t *cur;
 	RList *plugins;
 	RBinBind binb;
+	RParse *ifilter;
+	RParse *ofilter;
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -116,6 +119,8 @@ R_API struct r_asm_code_t* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
 R_API struct r_asm_code_t* r_asm_massemble(RAsm *a, const char *buf);
 R_API struct r_asm_code_t* r_asm_assemble_file(RAsm *a, const char *file);
+R_API int r_asm_filter_input(RAsm *a, const char *f);
+R_API int r_asm_filter_output(RAsm *a, const char *f);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new();

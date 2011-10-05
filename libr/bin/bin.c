@@ -50,8 +50,21 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	}
 }
 
+static int is_data_section(RBinArch *a, RBinSection *s) {
+	// XXX: DIRTY HACK! should we check sections srwx to be READ ONLY and NONEXEC?
+	if (strstr (a->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
+		return 1;
+	if (strstr (a->info->bclass, "ELF") && strstr (s->name, "data")) // LINUX
+		return 1;
+	if (strstr (a->info->bclass, "PE"))
+		return 1;
+	return 0;
+}
+
 // TODO: check only in data section. filter chars only in -r mode
-static RList* get_strings(RBinArch *arch, int min) {
+static RList* get_strings(RBinArch *a, int min) {
+	RBinSection *section;
+	RListIter *iter;
 	RList *ret;
 	int count = 0;
 
@@ -61,31 +74,26 @@ static RList* get_strings(RBinArch *arch, int min) {
 	}
 	ret->free = free;
 	
-	if (arch->sections) {
-		RBinSection *section;
-		RListIter *iter;
-		r_list_foreach (arch->sections, iter, section) {
-			// XXX: DIRTY HACK! should we check sections srwx to be READ ONLY and NONEXEC?
-			if ((strstr (arch->info->bclass, "MACH0") && strstr (section->name, "_cstring")) || // OSX
-				(strstr (arch->info->bclass, "ELF") && strstr (section->name, "data")) || // LINUX
-				(strstr (arch->info->bclass, "PE"))) { // WIN
+	if (a->sections) {
+		r_list_foreach (a->sections, iter, section) {
+			if (is_data_section (a, section)) {
 				count ++;
-				get_strings_range (arch, ret, min, 
+				get_strings_range (a, ret, min, 
 					section->offset, section->offset+section->size, section->rva);
 			}
 		}	
 	}
 	if (count == 0)
-		get_strings_range (arch, ret, min, 0, arch->size, 0);
+		get_strings_range (a, ret, min, 0, a->size, 0);
 	return ret;
 }
 
 static int r_bin_init_items(RBin *bin, int dummy) {
 	int i;
 	struct list_head *pos;
-	RBinArch *arch = &bin->curarch;
+	RBinArch *a = &bin->curarch;
 
-	arch->curplugin = NULL;
+	a->curplugin = NULL;
 	list_for_each (pos, &bin->bins) {
 		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
 		if ((dummy && !strncmp (h->name, "any", 5)) || 
@@ -94,66 +102,57 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 			break;
 		}
 	}
-	if (!arch->curplugin || !arch->curplugin->load ||
-		!arch->curplugin->load (arch))
+	if (!a->curplugin || !a->curplugin->load || !a->curplugin->load (a))
 		return R_FALSE;
-	if (arch->curplugin->baddr)
-		arch->baddr = arch->curplugin->baddr (arch);
-	if (arch->curplugin->binsym)
+	if (a->curplugin->baddr)
+		a->baddr = a->curplugin->baddr (a);
+	if (a->curplugin->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
-			arch->binsym[i] = arch->curplugin->binsym (arch, i);
-	if (arch->curplugin->entries)
-		arch->entries = arch->curplugin->entries (arch);
-	if (arch->curplugin->fields)
-		arch->fields = arch->curplugin->fields (arch);
-	if (arch->curplugin->imports)
-		arch->imports = arch->curplugin->imports (arch);
-	if (arch->curplugin->info)
-		arch->info = arch->curplugin->info (arch);
-	if (arch->curplugin->libs)
-		arch->libs = arch->curplugin->libs (arch);
-	if (arch->curplugin->relocs)
-		arch->relocs = arch->curplugin->relocs (arch);
-	if (arch->curplugin->sections)
-		arch->sections = arch->curplugin->sections (arch);
-	if (arch->curplugin->strings)
-		arch->strings = arch->curplugin->strings (arch);
-	else arch->strings = get_strings (arch, 4);
-	if (arch->curplugin->symbols)
-		arch->symbols = arch->curplugin->symbols (arch);
+			a->binsym[i] = a->curplugin->binsym (a, i);
+	if (a->curplugin->entries)
+		a->entries = a->curplugin->entries (a);
+	if (a->curplugin->fields)
+		a->fields = a->curplugin->fields (a);
+	if (a->curplugin->imports)
+		a->imports = a->curplugin->imports (a);
+	if (a->curplugin->info)
+		a->info = a->curplugin->info (a);
+	if (a->curplugin->libs)
+		a->libs = a->curplugin->libs (a);
+	if (a->curplugin->relocs)
+		a->relocs = a->curplugin->relocs (a);
+	if (a->curplugin->sections)
+		a->sections = a->curplugin->sections (a);
+	if (a->curplugin->strings)
+		a->strings = a->curplugin->strings (a);
+	else a->strings = get_strings (a, 4);
+	if (a->curplugin->symbols)
+		a->symbols = a->curplugin->symbols (a);
+	if (a->curplugin->classes)
+		a->classes = a->curplugin->classes (a);
 	return R_TRUE;
 }
 
 /* TODO: Free plugins */
 static void r_bin_free_items(RBin *bin) {
 	int i;
-	RBinArch *arch = &bin->curarch;
+	RBinArch *a = &bin->curarch;
 	// XXX: drop all those silly conditionals! if it's null is not for freeing
-	if (arch->entries)
-		r_list_free (arch->entries);
-	if (arch->fields)
-		r_list_free (arch->fields);
-	if (arch->imports)
-		r_list_free (arch->imports);
-	if (arch->info)
-		free (arch->info);
-	if (arch->libs)
-		r_list_free (arch->libs);
-	if (arch->relocs)
-		r_list_free (arch->relocs);
-	if (arch->sections)
-		r_list_free (arch->sections);
-	if (arch->strings)
-		r_list_free (arch->strings);
-	if (arch->symbols)
-		r_list_free (arch->symbols);
-	if (arch->binsym)
+	if (a->entries) r_list_free (a->entries);
+	if (a->fields) r_list_free (a->fields);
+	if (a->imports) r_list_free (a->imports);
+	if (a->info) free (a->info);
+	if (a->libs) r_list_free (a->libs);
+	if (a->relocs) r_list_free (a->relocs);
+	if (a->sections) r_list_free (a->sections);
+	if (a->strings) r_list_free (a->strings);
+	if (a->symbols) r_list_free (a->symbols);
+	if (a->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
-			free (arch->binsym[i]);
-	if (arch->file)
-		free (arch->file);
-	if (arch->curplugin && arch->curplugin->destroy)
-		arch->curplugin->destroy (arch);
+			free (a->binsym[i]);
+	if (a->file) free (a->file);
+	if (a->curplugin && a->curplugin->destroy)
+		a->curplugin->destroy (a);
 }
 
 static void r_bin_init(RBin *bin) {
@@ -456,4 +455,8 @@ R_API RBinObj *r_bin_get_object(RBin *bin, int flags) {
 R_API void r_bin_object_free(RBinObj *obj) {
 	// XXX: leak
 	free (obj);
+}
+
+R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
+	return bin->curarch.classes;
 }

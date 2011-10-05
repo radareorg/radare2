@@ -34,6 +34,7 @@
 #define ACTION_RELOCS    0x02000
 #define ACTION_LISTARCHS 0x04000
 #define ACTION_CREATE    0x08000
+#define ACTION_CLASSES   0x10000
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -53,6 +54,7 @@ static int rabin_show_help() {
 		" -a [arch_bits]  set arch (x86_32, arm_32, x86_64)\n"
 		" -b [addr]       override baddr\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
+		" -C [fmt:C:D]    list classes\n"
 		" -p [patchfile]  patch file (see man rabin2)\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
@@ -265,6 +267,24 @@ static int rabin_show_imports() {
 	if (!at && !rad) eprintf ("\n%i imports\n", i);
 
 	return R_TRUE;
+}
+
+static void rabin_show_classes() {
+	RBinClass *c;
+	RListIter *iter;
+	RList *cs = r_bin_get_classes (bin);
+	r_list_foreach (cs, iter, c) {
+		if (rad) {
+			printf ("f class.%s\n", c->name);
+			if (c->super)
+				printf ("f super.%s.%s\n", c->name, c->super);
+		} else {
+			printf ("class = %s\n", c->name);
+			if (c->super)
+				printf ("  super = %s\n", c->super);
+		}
+		// TODO: show belonging methods and fields
+	}
 }
 
 static int rabin_show_symbols() {
@@ -673,7 +693,7 @@ int main(int argc, char **argv) {
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "Af:a:B:b:c:Mm:n:@:VisSzIHelRwO:o:p:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "Af:a:B:b:c:CMm:n:@:VisSzIHelRwO:o:p:rvLhx")) != -1) {
 		switch(c) {
 		case 'A':
 			action |= ACTION_LISTARCHS;
@@ -684,6 +704,9 @@ int main(int argc, char **argv) {
 		case 'c':
 			action = ACTION_CREATE;
 			create = strdup (optarg);
+			break;
+		case 'C':
+			action |= ACTION_CLASSES;
 			break;
 		case 'f':
 			if (optarg) arch_name = strdup (optarg);
@@ -840,6 +863,8 @@ int main(int argc, char **argv) {
 		rabin_show_main ();
 	if (action&ACTION_IMPORTS)
 		rabin_show_imports (at);
+	if (action&ACTION_CLASSES)
+		rabin_show_classes (at);
 	if (action&ACTION_SYMBOLS)
 		rabin_show_symbols (at);
 	if (action&ACTION_STRINGS)

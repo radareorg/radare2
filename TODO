@@ -6,7 +6,6 @@
 ------8<-------------------8<--------------------8<-----------------8<----------
 
 ====[[ 0.8.6 ]]====
-
 * implement 'ax' to get/set xrefs (better than afl <addr>)
 * add 'pdb' command, print disassembled basic block (like pdf, but for bb)
 * shell encoder - get x86-64 one from twitter
@@ -15,10 +14,6 @@
 * enhace r_egg.. not usable til 0.9
 
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
-
-* Add -f/-t in rahash2 to define ranges
-  - Add support for large files in rahash2
-  - Do not use slurp (must work for big files too!)
 
 ====[[ 0.9 ]]====
 

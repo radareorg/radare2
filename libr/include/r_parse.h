@@ -43,6 +43,7 @@ R_API int r_parse_varsub(RParse *p, RAnalFcn *f, char *data, char *str, int len)
 
 /* plugin pointers */
 extern struct r_parse_plugin_t r_parse_plugin_dummy;
+extern struct r_parse_plugin_t r_parse_plugin_att2intel;
 extern struct r_parse_plugin_t r_parse_plugin_x86_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mreplace;
 #endif

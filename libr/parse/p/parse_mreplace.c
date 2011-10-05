@@ -16,14 +16,11 @@ struct mreplace_t {
 	char *replace;
 };
 
-static int parse(struct r_parse_t *p, void *data, char *str)
-{
+static int parse(struct r_parse_t *p, void *data, char *str) {
 	struct mreplace_t *sdata = (struct mreplace_t*)data;
-	char *buf = NULL;
-	buf = treplace(sdata->data, sdata->search, sdata->replace);
-	memcpy(str, buf, R_PARSE_STRLEN);
-	if (buf != NULL)
-		free(buf);
+	char *buf = treplace (sdata->data, sdata->search, sdata->replace);
+	memcpy (str, buf, R_PARSE_STRLEN);
+	free (buf);
 	return R_TRUE;
 }
 
@@ -43,7 +40,6 @@ struct r_parse_plugin_t r_parse_plugin_mreplace = {
 	.desc = "mreplace parsing plugin (NOT SUPPORTED FOR THIS PLATFORM)",
 };
 #endif
-
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {

@@ -19,11 +19,9 @@ static int destroy(RBinArch *arch) {
 }
 
 static RList* entries(RBinArch *arch) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
-
-	if (!(ret = r_list_new ()))
-		return NULL;
+	RBinAddr *ptr;
+	RList *ret = r_list_new ();
+	if (!ret) return NULL;
 	ret->free = free;
 	if (!(ptr = R_NEW (RBinAddr)))
 		return ret;
@@ -35,6 +33,26 @@ static RList* entries(RBinArch *arch) {
 
 static ut64 baddr(RBinArch *arch) {
 	return 0;
+}
+
+static RList* classes(RBinArch *arch) {
+	char *p;
+	RBinClass *c;
+	RList *ret = r_list_new ();
+	if (!ret) return NULL;
+	
+	// TODO: add proper support for inner classes in Java
+	c = R_NEW0 (RBinClass);
+	c->visibility = R_BIN_CLASS_PUBLIC;
+	c->name = strdup (arch->file);
+	p = strchr (c->name, '.');
+	if (p) *p = 0;
+	p = r_str_lchr (c->name, '/');
+	if (p) strcpy (c->name, p+1);
+	c->super = strdup ("Object"); //XXX
+	r_list_append (ret, c);
+
+	return ret;
 }
 
 static RList* symbols(RBinArch *arch) {
@@ -209,6 +227,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
+	.classes = classes,
 	.demangle_type = retdemangle
 };
 

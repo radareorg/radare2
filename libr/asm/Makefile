@@ -1,5 +1,5 @@
 NAME=r_asm
-DEPS=r_lib r_util
+DEPS=r_lib r_util r_parse
 CFLAGS+=-DCORELIB -Iarch/include -Iarch
 
 include ../config.mk

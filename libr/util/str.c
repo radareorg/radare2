@@ -70,13 +70,18 @@ main () {
 #endif
 
 R_API void r_str_subchr (char *s, int a, int b) {
-	while (*s) {
-		if (*s==a) {
-			if (b) *s = b;
-			else memmove (s, s+1, strlen (s+1)+1);
+	char *o = s;
+	for (; *o; s++, o++) {
+		if (*o==a) {
+			if (b) {
+				*s = b;
+				continue;
+			}
+			o++;
 		}
-		s++;
+		*s = *o;
 	}
+	*s = 0;
 }
 
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
@@ -595,8 +600,9 @@ R_API int r_str_escape(char *buf) {
 }
 
 R_API void r_str_sanitize(char *c) {
-	for (;*c; c++) {
-		switch (*c) {
+	char *d = c;
+	for (; *d; c++, d++) {
+		switch (*d) {
 		case '~':
 		case '|':
 		case ';':
@@ -605,9 +611,10 @@ R_API void r_str_sanitize(char *c) {
 		case '&':
 		case '<':
 		case '>':
-			strcpy (c, c+1);
+			d++;
 			break;
 		}
+		*c = *d;
 	}
 }
 
@@ -633,7 +640,7 @@ R_API char *r_str_unscape(char *buf) {
 		} else break;
 	}
 	*ptr = 0;
-r_str_sanitize (ret);
+	r_str_sanitize (ret);
 	return ret;
 }
 

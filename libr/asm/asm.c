@@ -93,6 +93,8 @@ R_API RAsm *r_asm_new() {
 		a->bits = 32;
 		a->big_endian = 0;
 		a->pc = 0;
+		a->ifilter = NULL;
+		a->ofilter = NULL;
 		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->plugins = r_list_new ();
 		for (i=0; asm_static_plugins[i]; i++) {
@@ -102,6 +104,29 @@ R_API RAsm *r_asm_new() {
 		}
 	}
 	return a;
+}
+
+// TODO: spagueti
+R_API int r_asm_filter_input(RAsm *a, const char *f) {
+	if (!a->ifilter)
+		a->ifilter = r_parse_new ();
+	if (!r_parse_use (a->ifilter, f)) {
+		r_parse_free (a->ifilter);
+		a->ifilter = NULL;
+		return R_FALSE;
+	}
+	return R_TRUE;
+}
+
+R_API int r_asm_filter_output(RAsm *a, const char *f) {
+	if (!a->ofilter)
+		a->ofilter = r_parse_new ();
+	if (!r_parse_use (a->ofilter, f)) {
+		r_parse_free (a->ofilter);
+		a->ofilter = NULL;
+		return R_FALSE;
+	}
+	return R_TRUE;
 }
 
 R_API void r_asm_free(RAsm *a) {
@@ -191,9 +216,11 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
 	int ret = 0;
 	if (a->cur && a->cur->disassemble)
-		ret = a->cur->disassemble(a, op, buf, len);
+		ret = a->cur->disassemble (a, op, buf, len);
 	if (ret > 0) {
-		memcpy (op->buf, buf, ret);
+		if (a->ofilter)
+			r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
+		else memcpy (op->buf, buf, ret);
 		r_hex_bin2str (buf, ret, op->buf_hex);
 	}
 	return ret;
@@ -203,6 +230,9 @@ R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf) {
 	int ret = 0;
 	RAsmPlugin *h;
 	RListIter *iter;
+	char *b = strdup (buf);
+	if (a->ifilter)
+		r_parse_parse (a->ifilter, buf, b);
 	if (a->cur) {
 		if (!a->cur->assemble) {
 			/* find callback if no assembler support in current plugin */
@@ -210,17 +240,17 @@ R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf) {
 				if (h->arch && h->assemble
 				&& has_bits (h, a->bits)
 				&& !strcmp (a->cur->arch, h->arch)) {
-					ret = h->assemble (a, op, buf);
+					ret = h->assemble (a, op, b);
 					break;
 				}
 			}
-		} else ret = a->cur->assemble (a, op, buf);
+		} else ret = a->cur->assemble (a, op, b);
 	}
 	if (op && ret > 0) {
 		r_hex_bin2str (op->buf, ret, op->buf_hex);
 		op->inst_len = ret;
-		op->buf_hex[ret*2]=0;
-		strncpy (op->buf_asm, buf, R_ASM_BUFSIZE);
+		op->buf_hex[ret*2] = 0;
+		strncpy (op->buf_asm, b, R_ASM_BUFSIZE);
 	}
 	return ret;
 }
@@ -249,8 +279,10 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
 			eprintf ("disassemble error at offset %"PFMT64d"\n", idx);
 			return r_asm_code_free (acode);
 		}
+		if (a->ofilter)
+			r_parse_parse (a->ofilter, op.buf_asm, op.buf_asm);
 		slen += strlen (op.buf_asm) + 2;
-		if(!(acode->buf_asm = realloc (acode->buf_asm, slen)))
+		if (!(acode->buf_asm = realloc (acode->buf_asm, slen)))
 			return r_asm_code_free (acode);
 		strcat (acode->buf_asm, op.buf_asm);
 		strcat (acode->buf_asm, "\n");
@@ -268,6 +300,8 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
 		return NULL;
 	len = r_hex_str2bin (hexstr, buf);
 	ret = r_asm_mdisassemble (a, buf, len);
+	if (a->ofilter)
+		r_parse_parse (a->ofilter, ret->buf_asm, ret->buf_asm);
 	free (buf);
 	return ret;
 }
@@ -354,9 +388,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					a->syntax = R_ASM_SYNTAX_INTEL;
 				else if (!memcmp (ptr, ".att_syntax", 10)) 
 					a->syntax = R_ASM_SYNTAX_ATT;
-				else if (!memcmp (ptr, ".string ", 8))
-					ret = r_asm_pseudo_string (&op, ptr+8, 1);
-				else if (!memcmp (ptr, ".ascii ", 7))
+				else if (!memcmp (ptr, ".string", 7)) {
+					r_str_chop (ptr+7);
+					ret = r_asm_pseudo_string (&op, ptr+7, 1);
+				} else if (!memcmp (ptr, ".ascii ", 7))
 					ret = r_asm_pseudo_string (&op, ptr+7, 0);
 				else if (!memcmp (ptr, ".align", 7))
 					ret = r_asm_pseudo_align (&op, ptr+7);
@@ -368,6 +403,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					ret = r_asm_pseudo_fill (&op, ptr+6);
 				else if (!memcmp (ptr, ".hex ", 5))
 					ret = r_asm_pseudo_hex (&op, ptr+5);
+				else if (!memcmp (ptr, ".size", 5))
+					ret = R_TRUE; // do nothing, ignored
+				else if (!memcmp (ptr, ".section", 8))
+					ret = R_TRUE; // do nothing, ignored
 				else if (!memcmp (ptr, ".byte ", 6))
 					ret = r_asm_pseudo_byte (&op, ptr+6);
 				else if (!memcmp (ptr, ".glob", 5)) { // .global .globl
@@ -398,11 +437,21 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					return r_asm_code_free (acode);
 				}
 			} else { /* Instruction */
+				char *str = ptr_start;
+				ptr_start = r_str_chop (str);
+				if (a->ifilter)
+					r_parse_parse (a->ifilter, ptr_start, ptr_start);
 				if (acode->equs) {
-					char *str = r_asm_code_equ_replace (acode, strdup (ptr_start));
+					if (!*ptr_start)
+						continue;
+					str = r_asm_code_equ_replace (acode, strdup (ptr_start));
 					ret = r_asm_assemble (a, &op, str);
 					free (str);
-				} else ret = r_asm_assemble (a, &op, ptr_start);
+				} else {
+					if (!*ptr_start)
+						continue;
+					ret = r_asm_assemble (a, &op, ptr_start);
+				}
 			}
 			if (stage == 2) {
 				if (ret < 1) {
