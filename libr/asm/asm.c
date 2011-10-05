@@ -277,7 +277,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
 		ret = r_asm_disassemble (a, &op, buf+idx, len-idx);
 		if (ret<1) {
 			eprintf ("disassemble error at offset %"PFMT64d"\n", idx);
-			return r_asm_code_free (acode);
+			return acode;
 		}
 		if (a->ofilter)
 			r_parse_parse (a->ofilter, op.buf_asm, op.buf_asm);
