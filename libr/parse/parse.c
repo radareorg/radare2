@@ -88,7 +88,7 @@ R_API int r_parse_assemble(RParse *p, char *data, char *str) {
 	return ret;
 }
 
-R_API int r_parse_parse(RParse *p, void *data, char *str) {
+R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 	if (p->cur && p->cur->parse)
 		return p->cur->parse (p, data, str);
 	return R_FALSE;

@@ -10,7 +10,7 @@
 static int r_vala_file(RLang *lang, const char *file) {
 	void *lib;
 	char *p, name[512], buf[512];
-	const char *vapidir;
+	char *vapidir;
 
 	if (!strstr (file, ".vala"))
 		sprintf (name, "%s.vala", file);

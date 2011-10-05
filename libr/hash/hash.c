@@ -76,16 +76,16 @@ R_API int r_hash_size(int bit) {
 	if (bit & R_HASH_MD4) return R_HASH_SIZE_MD4;
 	if (bit & R_HASH_MD5) return R_HASH_SIZE_MD5;
 	if (bit & R_HASH_SHA1) return R_HASH_SIZE_SHA1;
-	if (bit & R_HASH_SHA256) return 0;
-	if (bit & R_HASH_SHA384) return 0;
-	if (bit & R_HASH_SHA512) return 0;
+	if (bit & R_HASH_SHA256) return R_HASH_SIZE_SHA256;
+	if (bit & R_HASH_SHA384) return R_HASH_SIZE_SHA384;
+	if (bit & R_HASH_SHA512) return R_HASH_SIZE_SHA512;
 	if (bit & R_HASH_PARITY) return 1;
-	if (bit & R_HASH_ENTROPY) return 0;
+	if (bit & R_HASH_ENTROPY) return 4; // special case
 	if (bit & R_HASH_XOR) return 1;
 	if (bit & R_HASH_XORPAIR) return 1;
 	if (bit & R_HASH_MOD255) return 1;
 	if (bit & R_HASH_PCPRINT) return 1;
-	return "";
+	return 0;
 }
 /* TODO: ignore case.. we have to use strcasestr */
 R_API ut64 r_hash_name_to_bits(const char *name) {

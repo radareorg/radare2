@@ -11,7 +11,7 @@ namespace Radare {
 		public bool use(string name);
 		public bool filter(RFlag flag, ref string data, ref string str, int len);
 		public bool assemble(ref string dst, ref string src);
-		public bool parse(void *dst, ref string src);
+		public bool parse(string dst, ref string src);
 /*
 
 		public void set_user_ptr(void *user);

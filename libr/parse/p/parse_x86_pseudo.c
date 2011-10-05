@@ -67,8 +67,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return R_FALSE;
 }
 
-static int parse(struct r_parse_t *p, void *data, char *str) {
-	int i, len = strlen ((char*)data);
+static int parse(RParse *p, const char *data, char *str) {
+	int i, len = strlen (data);
 	char w0[32];
 	char w1[32];
 	char w2[32];
@@ -78,7 +78,7 @@ static int parse(struct r_parse_t *p, void *data, char *str) {
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
 		return R_FALSE;
-	memcpy (buf, (char*)data, len+1);
+	memcpy (buf, data, len+1);
 
 	if (*buf) {
 		w0[0]='\0';
@@ -181,7 +181,7 @@ struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
 	.desc = "X86 pseudo syntax",
 	.init = NULL,
 	.fini = NULL,
-	.parse = &parse,
+	.parse = parse,
 	.assemble = &assemble,
 	.filter = &filter,
 	.varsub = &varsub,

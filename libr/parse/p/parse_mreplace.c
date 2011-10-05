@@ -16,7 +16,7 @@ struct mreplace_t {
 	char *replace;
 };
 
-static int parse(struct r_parse_t *p, void *data, char *str) {
+static int parse(RParse *p, const char *data, char *str) {
 	struct mreplace_t *sdata = (struct mreplace_t*)data;
 	char *buf = treplace (sdata->data, sdata->search, sdata->replace);
 	memcpy (str, buf, R_PARSE_STRLEN);
@@ -29,7 +29,7 @@ struct r_parse_plugin_t r_parse_plugin_mreplace = {
 	.desc = "mreplace parsing plugin",
 	.init = NULL,
 	.fini = NULL,
-	.parse = &parse,
+	.parse = parse,
 	.assemble = NULL,
 	.filter = NULL
 };

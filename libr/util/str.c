@@ -351,7 +351,7 @@ R_API char *r_str_chop(char *str) {
 	return str;
 }
 
-R_API char *r_str_trim_head(char *str) {
+R_API char *r_str_trim_head(const char *str) {
 	if (str)
 		while (*str && iswhitechar (*str)) 
 			str++;
