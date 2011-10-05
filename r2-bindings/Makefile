@@ -36,7 +36,7 @@ check-w32:
 w32:
 	cd python && ${MAKE} w32
 
-DSTNAME=radare2-swig-w32-$(VERSION)
+DSTNAME=radare2-bindings-w32-$(VERSION)
 DST=../$(DSTNAME)/Python27/Lib/r2
 
 w32dist:

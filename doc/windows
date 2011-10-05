@@ -51,6 +51,6 @@ Python bindings:
   wget http://www.python.org/ftp/python/2.7/python-2.7.msi
   msiexec /i python-2.7.msi
 
-  cd swig
+  cd r2-bindings
   make w32
   make w32dist

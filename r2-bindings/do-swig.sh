@@ -20,5 +20,6 @@ echo "Build ${MOD} `pkg-config --libs ${MOD}`"
 PYTHON_CONFIG=$(../python-config-wrapper -n)
 export PYTHON_CONFIG
 valabind-cc ${LNG} ${MOD} ${VALABINDFLAGS} \
+	-I../../libr/include \
 	-x --vapidir=../vapi ../vapi/${MOD} \
 	`pkg-config --cflags --libs ${MOD}`
