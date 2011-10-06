@@ -2,7 +2,7 @@ BIN=radare2
 BINDEPS=r_core r_parse r_search r_cons r_lib r_config r_diff
 BINDEPS+=r_bin r_debug r_anal r_reg r_bp r_io r_cmd r_fs r_db
 BINDEPS+=r_sign r_print r_lang r_asm r_syscall r_hash r_line
-BINDEPS+=r_magic r_socket r_flags r_util r_th
+BINDEPS+=r_magic r_socket r_flags r_util r_th r_egg
 
 include ../binr.mk
 
