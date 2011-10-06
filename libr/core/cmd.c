@@ -1577,7 +1577,7 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 	const char *fmt;
 	char *q, *p;
 	const char *str;
-	static RMagic *ck = NULL;
+	static RMagic *ck = NULL; // XXX: Use RCore->magic
 	static char *oldfile = NULL;
 
 	if (--depth<0)
@@ -3298,6 +3298,13 @@ static int cmd_search(void *data, const char *input) {
 		if (from == UT64_MAX)
 			from = core->offset;
 		to = r_config_get_i (core->config, "search.to");
+		if (to == UT64_MAX) {
+			if (core->io->va) {
+				/* TODO: section size? */
+			} else {
+				to = core->file->size;
+			}
+		}
 	}
 	core->search->align = r_config_get_i (core->config, "search.align");
 	searchflags = r_config_get_i (core->config, "search.flags");
@@ -4162,8 +4169,8 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 
 	stdout_fd = dup (1);
 	pipe (fds);
-	radare_cmd = r_str_trim_head (radare_cmd);
-	shell_cmd = r_str_trim_head (shell_cmd);
+	radare_cmd = (char*)r_str_trim_head (radare_cmd);
+	shell_cmd = (char*)r_str_trim_head (shell_cmd);
 	if (fork ()) {
 		dup2 (fds[1], 1);
 		close (fds[1]);

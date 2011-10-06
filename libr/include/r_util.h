@@ -305,7 +305,7 @@ R_API char *r_str_word_get_first(const char *string);
 R_API char *r_str_chop(char *str);
 R_API const char *r_str_chop_ro(const char *str);
 R_API char *r_str_trim(char *str);
-R_API char *r_str_trim_head(const char *str);
+R_API const char *r_str_trim_head(const char *str);
 R_API char *r_str_trim_tail(char *str);
 R_API char *r_str_trim_head_tail(char *str);
 R_API ut32 r_str_hash(const char *str);

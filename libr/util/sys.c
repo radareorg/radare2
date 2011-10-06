@@ -290,7 +290,7 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		close (sh_in[1]);
 		waitpid (pid, &status, 0);
 		if (status != 0) {
-			eprintf ("%s: command returned !0\n", __func__);
+			eprintf ("%s: command '%s' returned !0\n", __func__, cmd);
 			return (NULL);
 		}
 

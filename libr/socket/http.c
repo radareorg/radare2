@@ -2,32 +2,39 @@
 
 #include <r_socket.h>
 
-static char *r_socket_http_response (RSocket *s, int *code) {
-	char buf[32768];
+static char *r_socket_http_response (RSocket *s, int *code, int *rlen) {
 	char *p;
 	int i, len;
-
+	char *buf = malloc (32768); // XXX: use r_buffer here
 	/* Read Header */
 	i = 0;
 	do {
 		len = r_socket_gets (s, buf+i, sizeof (buf)-i);
 		i += len;
 		r_socket_gets (s, buf+i, 1);
-		buf[i++]='\n';
+		buf[i++] = '\n';
 	} while (len > 0);
+	buf[i] = 0;
 	/* Parse Code */
 	p = strchr (buf, ' ');
-	*code = (p)?atoi (p+1):-1;
+	if (code) *code = (p)? atoi (p+1):-1;
 	/* Parse Len */
 	p = strstr (buf, "Content-Length: ");
-	len = (p)?atoi (p+16):0;
-	/* Read Content */
-	len = r_socket_read_block (s, (unsigned char *)buf+i, len);
+	if (p) {
+		len = atoi (p+16);
+		if (len>0)
+			len = r_socket_read_block (s, (ut8*)buf+i, len);
+		else len = 0;
+	} else {
+		len = 32768-i;
+		len = r_socket_read (s, (ut8*)buf+i, len);
+	}
 	r_socket_close (s);
-	return strdup (buf);
+	if (rlen) *rlen = len+i;
+	return buf;
 }
 
-R_API char *r_socket_http_get (const char *url, int *code) {
+R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	RSocket *s;
 	int ssl = !memcmp (url, "https://", 8);
 	char *response, *host, *path, *port = "80";
@@ -68,12 +75,12 @@ R_API char *r_socket_http_get (const char *url, int *code) {
 			"Accept: */*\r\n"
 			"Host: %s\r\n"
 			"\r\n", path, host);
-	response = r_socket_http_response (s, code);
+	response = r_socket_http_response (s, code, rlen);
 	free (uri);
 	return response;
 }
 
-R_API char *r_socket_http_post (const char *url, const char *data, int *code) {
+R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen) {
 	RSocket *s;
 	int ssl = !memcmp (url, "https://", 8);
 	char *response, *host, *path, *port = "80";
@@ -117,7 +124,7 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code) {
 			"Content-Type: application/x-www-form-urlencoded\r\n"
 			"\r\n", path, host, strlen (data));
 	r_socket_write (s, (void *)data, strlen (data));
-	response = r_socket_http_response (s, code);
+	response = r_socket_http_response (s, code, rlen);
 	free (uri);
 	return response;
 }

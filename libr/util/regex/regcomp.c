@@ -203,6 +203,7 @@ R_API void r_regex_free(RRegex *preg) {
 	r_regex_fini (preg);
 	free (preg);
 }
+
 /*
  - regcomp - interface for parser and compilation
  */

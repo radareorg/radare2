@@ -351,7 +351,7 @@ R_API char *r_str_chop(char *str) {
 	return str;
 }
 
-R_API char *r_str_trim_head(const char *str) {
+R_API const char *r_str_trim_head(const char *str) {
 	if (str)
 		while (*str && iswhitechar (*str)) 
 			str++;
@@ -369,7 +369,7 @@ R_API char *r_str_trim_tail(char *str) {
 }
 
 R_API char *r_str_trim_head_tail(char *str) {
-	return r_str_trim_tail (r_str_trim_head (str));
+	return r_str_trim_tail ((char*)r_str_trim_head (str));
 }
 
 R_API char *r_str_trim(char *str) {

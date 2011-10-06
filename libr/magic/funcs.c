@@ -160,6 +160,7 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 	/* try compression stuff */
 	if ((ms->flags & R_MAGIC_NO_CHECK_COMPRESS) != 0 ||
 	    (m = file_zmagic(ms, fd, inname, buf, nb)) == 0) {
+#endif
 	    /* Check if we have a tar file */
 	    if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
 		(m = file_is_tar(ms, buf, nb)) == 0) {
@@ -178,19 +179,20 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 		    }
 		}
 	    }
+#if 0
 	}
 #endif
 	return m;
 }
 
 int file_reset(RMagic *ms) {
+	ms->o.buf = NULL;
+	ms->haderr = 0;
+	ms->error = -1;
 	if (ms->mlist == NULL) {
 		file_error (ms, 0, "no magic files loaded");
 		return -1;
 	}
-	ms->o.buf = NULL;
-	ms->haderr = 0;
-	ms->error = -1;
 	return 0;
 }
 
@@ -202,25 +204,31 @@ int file_reset(RMagic *ms) {
 	*(n)++ = (((ut32)*(o) >> 0) & 7) + '0', \
 	(o)++)
 
-const char * file_getbuffer(RMagic *ms) {
+const char *file_getbuffer(RMagic *ms) {
 	char *pbuf, *op, *np;
 	size_t psize, len;
 
 	if (ms->haderr)
 		return NULL;
 
+
 	if (ms->flags & R_MAGIC_RAW)
 		return ms->o.buf;
 
+	if (ms->o.buf == NULL) {
+		eprintf ("ms->o.buf = NULL\n");
+		return NULL;
+	}
+
 	/* * 4 is for octal representation, + 1 is for NUL */
-	len = strlen(ms->o.buf);
+	len = strlen (ms->o.buf);
 	if (len > (SIZE_MAX - 1) / 4) {
-		file_oomem(ms, len);
+		file_oomem (ms, len);
 		return NULL;
 	}
 	psize = len * 4 + 1;
-	if ((pbuf = realloc(ms->o.pbuf, psize)) == NULL) {
-		file_oomem(ms, psize);
+	if ((pbuf = realloc (ms->o.pbuf, psize)) == NULL) {
+		file_oomem (ms, psize);
 		return NULL;
 	}
 	ms->o.pbuf = pbuf;

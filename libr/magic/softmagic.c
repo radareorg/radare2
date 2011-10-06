@@ -270,7 +270,7 @@ static int check_fmt(RMagic *ms, struct r_magic *m) {
 		return -1;
 	} else {
 		rc = r_regex_exec (&rx, R_MAGIC_DESC, 0, 0, 0);
-		r_regex_free (&rx);
+		r_regex_fini (&rx);
 		return !rc;
 	}
 }

@@ -194,6 +194,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	int rv = -1;
 	int mapped;
 
+	ms->haderr = 0;
 	if (magicsize != FILE_MAGICSIZE) {
 		file_error(ms, 0, "magic element size %lu != %lu",
 		    (unsigned long)sizeof(*magic),
@@ -203,7 +204,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 
 	ms->file = fn; // fix use of ms->file before being initialized
 	if (action == FILE_COMPILE) {
-		rv = apprentice_load(ms, &magic, &nmagic, fn, action);
+		rv = apprentice_load (ms, &magic, &nmagic, fn, action);
 		if (rv != 0)
 			return -1;
 		rv = apprentice_compile(ms, &magic, &nmagic, fn);
@@ -211,10 +212,10 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 		return rv;
 	}
 
-	if ((rv = apprentice_map(ms, &magic, &nmagic, fn)) == -1) {
+	if ((rv = apprentice_map (ms, &magic, &nmagic, fn)) == -1) {
 		//if (ms->flags & R_MAGIC_CHECK)
 		//	file_magwarn(ms, "using regular magic file `%s'", fn);
-		rv = apprentice_load(ms, &magic, &nmagic, fn, action);
+		rv = apprentice_load (ms, &magic, &nmagic, fn, action);
 		if (rv != 0)
 			return -1;
 	}
@@ -222,7 +223,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	mapped = rv;
 	     
 	if (magic == NULL) {
-		file_delmagic(magic, mapped, nmagic);
+		file_delmagic (magic, mapped, nmagic);
 		return -1;
 	}
 
@@ -269,28 +270,28 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
 	int file_err, errs = -1;
 	struct mlist *mlist;
 
-	init_file_tables();
+	init_file_tables ();
 
 	if (fn == NULL)
-		fn = getenv("MAGIC");
+		fn = getenv ("MAGIC");
 	if (fn == NULL)
 		fn = MAGIC;
 
-	if ((mfn = strdup(fn)) == NULL) {
-		file_oomem(ms, strlen(fn));
+	if ((mfn = strdup (fn)) == NULL) {
+		file_oomem (ms, strlen (fn));
 		return NULL;
 	}
 	fn = mfn;
 
-	if ((mlist = malloc (sizeof(*mlist))) == NULL) {
+	if ((mlist = malloc (sizeof (*mlist))) == NULL) {
 		free (mfn);
-		file_oomem (ms, sizeof(*mlist));
+		file_oomem (ms, sizeof (*mlist));
 		return NULL;
 	}
 	mlist->next = mlist->prev = mlist;
 
 	while (fn) {
-		p = strchr(fn, PATHSEP);
+		p = strchr (fn, PATHSEP);
 		if (p) *p++ = '\0';
 		if (*fn == '\0') break;
 		file_err = apprentice_1 (ms, fn, action, mlist);
@@ -491,7 +492,7 @@ static void load_1(RMagic *ms, int action, const char *fn, int *errs, struct r_m
 		(*errs)++;
 	} else {
 		/* read and parse this file */
-		for (ms->line = 1; fgets (line, sizeof(line), f) != NULL; ms->line++) {
+		for (ms->line = 1; fgets (line, sizeof (line), f) != NULL; ms->line++) {
 			size_t len = strlen (line);
 			if (len == 0) /* null line, garbage, etc */
 				continue;
@@ -504,9 +505,9 @@ static void load_1(RMagic *ms, int action, const char *fn, int *errs, struct r_m
 			if (line[0] == '#')	/* comment, do not parse */
 				continue;
 			if (len > mime_marker_len &&
-			    memcmp(line, mime_marker, mime_marker_len) == 0) {
+			    memcmp (line, mime_marker, mime_marker_len) == 0) {
 				/* MIME type */
-				if (parse_mime(ms, marray, marraycount,
+				if (parse_mime (ms, marray, marraycount,
 					       line + mime_marker_len) != 0)
 					(*errs)++;
 				continue;
@@ -1802,7 +1803,7 @@ static char *mkdbname(const char *fn, int strip) {
 	}
 	fnlen = strlen (fn);
 	extlen = strlen (ext);
-	buf = malloc (fnlen + extlen);
+	buf = malloc (fnlen + extlen + 1);
 	memcpy (buf, fn, fnlen);
 	memcpy (buf+fnlen, ext, extlen);
 	buf[fnlen+extlen] = 0;
@@ -1881,9 +1882,7 @@ static ut64 swap8(ut64 sv) {
 /*
  * byteswap a single magic entry
  */
-static void
-bs1(struct r_magic *m)
-{
+static void bs1(struct r_magic *m) {
 	m->cont_level = swap2(m->cont_level);
 	m->offset = swap4((ut32)m->offset);
 	m->in_offset = swap4((ut32)m->in_offset);

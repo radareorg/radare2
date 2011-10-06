@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 #include "r_util.h"
 
-void test_flist () {
+int test_flist () {
 	int i;
 	void **it = r_flist_new (3);
 	char *pos = NULL;
@@ -22,6 +22,6 @@ void test_flist () {
 }
 
 int main() {
-	test_flist();
+	return test_flist();
 }
 

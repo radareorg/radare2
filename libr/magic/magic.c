@@ -137,16 +137,16 @@ static const char * file_or_fd(RMagic *ms, const char *inname, int fd) {
 		}
 		errno = 0;
 		if ((fd = open (inname, flags)) < 0) {
-			fprintf(stderr, "couldn't open file\n");
-			if (info_from_stat(ms, sb.st_mode) == -1)
+			eprintf ("couldn't open file\n");
+			if (info_from_stat (ms, sb.st_mode) == -1)
 				goto done;
 			rv = 0;
 			goto done;
 		}
 #ifdef O_NONBLOCK
-		if ((flags = fcntl(fd, F_GETFL)) != -1) {
+		if ((flags = fcntl (fd, F_GETFL)) != -1) {
 			flags &= ~O_NONBLOCK;
-			(void)fcntl(fd, F_SETFL, flags);
+			(void)fcntl (fd, F_SETFL, flags);
 		}
 #endif
 	}
@@ -172,7 +172,6 @@ static const char * file_or_fd(RMagic *ms, const char *inname, int fd) {
 			rv = 0;
 			goto done;
 		}
-
 	} else {
 #endif
 		if ((nbytes = read(fd, (char *)buf, HOWMANY)) == -1) {
@@ -183,31 +182,30 @@ static const char * file_or_fd(RMagic *ms, const char *inname, int fd) {
 	}
 #endif
 
-	(void)memset(buf + nbytes, 0, SLOP); /* NUL terminate */
-	if (file_buffer(ms, fd, inname, buf, (size_t)nbytes) == -1)
+	(void)memset (buf + nbytes, 0, SLOP); /* NUL terminate */
+	if (file_buffer (ms, fd, inname, buf, (size_t)nbytes) == -1)
 		goto done;
 	rv = 0;
 done:
-	free(buf);
+	free (buf);
 	close_and_restore (ms, inname, fd, &sb);
 	return rv == 0 ? file_getbuffer(ms) : NULL;
 }
 
 /* API */
 
+// TODO: reinitialize all the time
 R_API RMagic* r_magic_new(int flags) {
 	RMagic *ms = R_NEW0 (RMagic);
-	if (!ms)
-		return NULL;
+	if (!ms) return NULL;
 	r_magic_setflags (ms, flags);
 	ms->o.buf = ms->o.pbuf = NULL;
-	ms->c.li = malloc ((ms->c.len = 10) * sizeof(*ms->c.li));
+	ms->c.li = malloc ((ms->c.len = 10) * sizeof (*ms->c.li));
 	if (ms->c.li == NULL) {
 		free (ms);
 		return NULL;
 	}
-	ms->haderr = 0;
-	ms->error = -1;
+	file_reset (ms);
 	ms->mlist = NULL;
 	ms->file = "unknown";
 	ms->line = 0;
@@ -224,7 +222,7 @@ R_API void r_magic_free(RMagic *ms) {
 }
 
 R_API int r_magic_load(RMagic* ms, const char *magicfile) {
-	struct mlist *ml = file_apprentice(ms, magicfile, FILE_LOAD);
+	struct mlist *ml = file_apprentice (ms, magicfile, FILE_LOAD);
 	if (ml) {
 		free_mlist (ms->mlist);
 		ms->mlist = ml;
@@ -241,7 +239,7 @@ R_API int r_magic_compile(RMagic *ms, const char *magicfile) {
 
 R_API int r_magic_check(RMagic *ms, const char *magicfile) {
 	struct mlist *ml = file_apprentice(ms, magicfile, FILE_CHECK);
-	free_mlist(ml);
+	free_mlist (ml);
 	return ml ? 0 : -1;
 }
 

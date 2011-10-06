@@ -40,6 +40,7 @@ DSTNAME=radare2-bindings-w32-$(VERSION)
 DST=../$(DSTNAME)/Python27/Lib/r2
 
 w32dist:
+	rm -rf ${DST}/*
 	mkdir -p ${DST}
 	cp -f python/*.dll ${DST}
 	cp -f python/r_*.py ${DST}

@@ -65,5 +65,8 @@ R_API int r_socket_proc_write (RSocketProc *sp, void *buf, int len);
 R_API void r_socket_proc_printf (RSocketProc *sp, const char *fmt, ...);
 R_API int r_socket_proc_ready (RSocketProc *sp, int secs, int usecs);
 
+/* HTTP */
+R_API char *r_socket_http_get (const char *url, int *code, int *rlen);
+R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen);
 #endif
 #endif
