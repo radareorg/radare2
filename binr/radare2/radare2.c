@@ -15,9 +15,10 @@ static int threaded = 0;
 static struct r_core_t r;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dwnLqv] [-P patch] [-p prj] [-s addr] [-b bsz] [-e k=v] [file]\n");
+	printf ("Usage: radare2 [-dDwnLqv] [-P patch] [-p prj] [-s addr] [-b bsz] [-c cmd] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d           use 'file' as a program to debug\n"
+		" -D           enable debug mode (e cfg.debug=true)\n"
 		" -w           open file in write mode\n"
 		" -n           do not run ~/.radare2rc\n"
 		" -q           quite mode (no prompt)\n"
@@ -34,6 +35,7 @@ static int main_help(int line) {
 #endif
 		" -L           list supported IO plugins\n"
 		" -e k=v       evaluate config var\n"
+		" -c \"cmd..\"   execute radare command\n"
 		"Environment:\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" LIBR_PLUGINS path to plugins directory\n"
@@ -49,10 +51,9 @@ static int main_version() {
 
 static int list_io_plugins(RIO *io) {
 	struct list_head *pos;
-	printf ("IO plugins:\n");
 	list_for_each_prev(pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
-		printf("  %-10s %s\n", il->plugin->name, il->plugin->desc);
+		printf (" %-10s %s\n", il->plugin->name, il->plugin->desc);
 	}
 	return 0;
 }
@@ -87,6 +88,8 @@ int main(int argc, char **argv) {
 	RThreadLock *lock = NULL;
 	RThread *rabin_th = NULL;
 #endif
+	RListIter *iter;
+	char *cmdn;
 	RCoreFile *fh = NULL;
 	const char *patchfile = NULL;
 	//int threaded = R_FALSE;
@@ -100,6 +103,7 @@ int main(int argc, char **argv) {
 	char file[4096];
 	char *cmdfile = NULL;
 	int is_gdb = R_FALSE;
+	RList *cmds = r_list_new ();
 
 	if (r_sys_getenv ("R_DEBUG"))
 		r_sys_crash_handler ("gdb --pid %d");
@@ -108,7 +112,7 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:P:"
+	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:P:c:D"
 #if USE_THREADS
 "t"
 #endif
@@ -119,6 +123,9 @@ int main(int argc, char **argv) {
 			threaded = R_TRUE;
 			break;
 #endif
+		case 'D':
+			debug = 2;
+			break;
 		case 'q':
 			r_config_set (r.config, "scr.prompt", "false");
 			break;
@@ -127,6 +134,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'P':
 			patchfile = optarg;
+			break;
+		case 'c':
+			r_list_append (cmds, optarg);
 			break;
 		case 'i':
 			cmdfile = optarg;
@@ -175,45 +185,54 @@ int main(int argc, char **argv) {
 			eprintf ("No program given to -d\n");
 			return 1;
 		}
-		is_gdb = (!memcmp (argv[optind], "gdb://", 6));
-		if (is_gdb) *file = 0;
-		else memcpy (file, "dbg://", 7);
-		if (optind < argc) {
-			char *ptr = r_file_path (argv[optind]);
-			if (ptr) {
-				strcat (file, ptr);
-				free (ptr);
-				optind++;
+		if (debug == 2) {
+			// autodetect backend with -D
+			if (!strcmp (r_config_get (r.config, "asm.arch"), "bf")) {
+				r_config_set (r.config, "dbg.backend", "bf");
 			}
-		}
-		while (optind < argc) {
-			int largv = strlen (argv[optind]);
-			if (filelen+largv+1>=sizeof (file)) {
-				eprintf ("Too long arguments\n");
-				return 1;
+		} else {
+			is_gdb = (!memcmp (argv[optind], "gdb://", 6));
+			if (is_gdb) *file = 0;
+			else memcpy (file, "dbg://", 7);
+			if (optind < argc) {
+				char *ptr = r_file_path (argv[optind]);
+				if (ptr) {
+					strcat (file, ptr);
+					free (ptr);
+					optind++;
+				}
 			}
-			memcpy (file+filelen, argv[optind], largv);
-			filelen += largv;
-			if (filelen+6>=sizeof (file)) {
-				eprintf ("Too long arguments\n");
-				return 1;
-			}
-			memcpy (file+filelen, " ", 2);
-			filelen += 2;
-			if (++optind != argc) {
+			while (optind < argc) {
+				int largv = strlen (argv[optind]);
+				if (filelen+largv+1>=sizeof (file)) {
+					eprintf ("Too long arguments\n");
+					return 1;
+				}
+				memcpy (file+filelen, argv[optind], largv);
+				filelen += largv;
+				if (filelen+6>=sizeof (file)) {
+					eprintf ("Too long arguments\n");
+					return 1;
+				}
 				memcpy (file+filelen, " ", 2);
 				filelen += 2;
+				if (++optind != argc) {
+					memcpy (file+filelen, " ", 2);
+					filelen += 2;
+				}
+			}
+
+			fh = r_core_file_open (&r, file, perms, 0LL);
+			if (fh != NULL) {
+				//const char *arch = r_config_get (r.config, "asm.arch");
+				// TODO: move into if (debug) ..
+				if (is_gdb) r_debug_use (r.dbg, "gdb");
+				else r_debug_use (r.dbg, "native");
 			}
 		}
+	}
 
-		fh = r_core_file_open (&r, file, perms, 0LL);
-		if (fh != NULL) {
-			//const char *arch = r_config_get (r.config, "asm.arch");
-			// TODO: move into if (debug) ..
-			if (is_gdb) r_debug_use (r.dbg, "gdb");
-			else r_debug_use (r.dbg, "native");
-		}
-	} else {
+	if (!debug || debug==2) {
 		if (optind<argc) {
 			while (optind < argc)
 				fh = r_core_file_open (&r, argv[optind++], perms, 0);
@@ -226,6 +245,12 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
+
+	/* execute -c commands */
+	r_list_foreach (cmds, iter, cmdn) {
+		r_core_cmd0 (&r, cmdn);
+	}
+	r_list_free (cmds);
 
 	if (fh == NULL) {
 		if (perms & R_IO_WRITE)

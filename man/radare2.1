@@ -9,7 +9,8 @@
 .Op Fl s Ar addr
 .Op Fl b Ar bsize
 .Op Fl e Ar k=v
-.Op Fl dwnLV
+.Op Fl c Ar cmd
+.Op Fl dDwnLV
 .Ar file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -26,10 +27,14 @@ Start seeking at this address.
 Set block size
 .It Fl e Ar k=v
 Set configuration eval variable key=value. For example -e scr.color=false
+.It Fl c Ar cmd
+Execute the given command before giving prompt
 .It Fl f
 Blocksize = file size.
 .It Fl d
 Start in debugger mode.
+.It Fl D
+Enable debug mode. Set cfg.debug=true
 .It Fl w
 Open in write mode.
 .It Fl u

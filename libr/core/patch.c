@@ -96,4 +96,3 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 	fclose (fd);
 	return 0;
 }
-

@@ -7,6 +7,7 @@
 extern RDebugPlugin r_debug_plugin_native;
 extern RDebugPlugin r_debug_plugin_rap;
 extern RDebugPlugin r_debug_plugin_gdb;
+extern RDebugPlugin r_debug_plugin_bf;
 
 static RDebugPlugin *debug_static_plugins[] = 
 	{ R_DEBUG_STATIC_PLUGINS };
