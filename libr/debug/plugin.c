@@ -67,6 +67,7 @@ R_API int r_debug_plugin_list(RDebug *dbg) {
 }
 
 R_API int r_debug_plugin_add(RDebug *dbg, RDebugPlugin *foo) {
+	if (!foo->name) return R_FALSE;
 	list_add_tail (&(foo->list), &(dbg->plugins));
 	return R_TRUE;
 }

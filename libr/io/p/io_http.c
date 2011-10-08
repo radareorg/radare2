@@ -94,7 +94,7 @@ static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode
 
 struct r_io_plugin_t r_io_plugin_http = {
 	.name = "http",
-        .desc = "http get ( http://www.radare.org/ )",
+        .desc = "http get (http://radare.org/)",
         .open = __open,
         .close = __close,
 	.read = __read,

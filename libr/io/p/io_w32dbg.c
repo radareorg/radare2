@@ -125,8 +125,7 @@ struct r_io_plugin_t r_io_plugin_w32dbg = {
 };
 #else
 struct r_io_plugin_t r_io_plugin_w32dbg = {
-	.name = "w32dbg",
-        .desc = "w32dbg io (NOT SUPPORTED FOR THIS PLATFORM)",
+	.name = NULL
 };
 #endif
 

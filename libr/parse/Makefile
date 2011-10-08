@@ -10,12 +10,12 @@ STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
 OBJ=parse.o ${STATIC_OBJS}
 
 bins:
-	cd t && ${MAKE} all
+	@cd t && ${MAKE} all
 
 pre:
 	@if [ ! -e libr_parse.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 plugins:
-	cd p && ${MAKE} all
+	@cd p && ${MAKE} all
 
 include ../rules.mk

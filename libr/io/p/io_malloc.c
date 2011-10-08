@@ -84,7 +84,7 @@ static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode
 
 struct r_io_plugin_t r_io_plugin_malloc = {
 	.name = "malloc",
-        .desc = "memory allocation ( malloc://size-in-bytes )",
+        .desc = "memory allocation (malloc://1024)",
         .open = __open,
         .close = __close,
 	.read = __read,

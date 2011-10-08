@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 */
+/* radare - LGPL - Copyright 2009-2011 */
 /*   nibble<.ds@gmail.com> */
 
 #include <string.h>
@@ -10,14 +10,10 @@
 
 #include "x86/x86im/x86im.h"
 
-static const char *gpr8[] = {
-	"al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" };
-static const char *gpr8b[] = {
-	"spl", "bpl", "sil", "dil" };
-static const char *gpr16[] = {
-	"ax", "cx", "dx", "bx", "sp", "bp", "si", "di" };
-static const char *gpr32[] = {
-	"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
+static const char *gpr8[] = { "al", "cl", "dl", "bl", "ah", "ch", "dh", "bh" };
+static const char *gpr8b[] = { "spl", "bpl", "sil", "dil" };
+static const char *gpr16[] = { "ax", "cx", "dx", "bx", "sp", "bp", "si", "di" };
+static const char *gpr32[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi" };
 static const char *gpr64[] = {
 	"rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi",
 	"r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15" };

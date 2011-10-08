@@ -53,7 +53,7 @@ R_API void r_reg_free_internal(RReg *reg) {
 	int i;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		r_list_destroy (reg->regset[i].regs);
-		reg->regset[i].regs = NULL;
+		R_LIST_NEW (reg->regset[i].regs, r_reg_item_free);
 	}
 }
 
@@ -187,8 +187,10 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			else if (word>3) {
 				r_reg_set_word (item, word, buf);
 				if (item->name != NULL) {
-					r_list_append (reg->regset[item->type].regs, item);
-					item = r_reg_item_new ();
+					if (reg->regset[item->type].regs) {
+						r_list_append (reg->regset[item->type].regs, item);
+						item = r_reg_item_new ();
+					} else eprintf ("REGSET is null wtf\n");
 				}
 			}
 			chidx = word = 0;

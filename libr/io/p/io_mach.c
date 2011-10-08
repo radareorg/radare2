@@ -248,7 +248,7 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
 struct r_io_plugin_t r_io_plugin_mach = {
 	.name = "mach",
-        .desc = "mach debug io",
+        .desc = "mach debugger io plugin (mach://pid)",
         .open = __open,
         .close = __close,
 	.read = __read,

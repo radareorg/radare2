@@ -142,6 +142,8 @@ R_API int r_asm_add(RAsm *a, RAsmPlugin *foo) {
 	RListIter *iter;
 	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
+	if (!foo->name)
+		return R_FALSE;
 	if (foo->init)
 		foo->init (a->user);
 	r_list_foreach (a->plugins, iter, h)

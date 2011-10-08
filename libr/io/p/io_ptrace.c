@@ -179,8 +179,7 @@ struct r_io_plugin_t r_io_plugin_ptrace = {
 };
 #else
 struct r_io_plugin_t r_io_plugin_ptrace = {
-	.name = "ptrace",
-	.desc = "ptrace io (NOT SUPPORTED FOR THIS PLATFORM)",
+	.name = NULL
 };
 #endif
 
