@@ -4784,8 +4784,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		break;
 	case 'a':
 		r_debug_use (core->dbg, NULL);
-		r_debug_attach (core->dbg,
-			(int) r_num_math (core->num, input+2));
+		r_config_set (core->config, "dbg.backend", input+2);
+		r_debug_attach (core->dbg, (int) r_num_math (core->num, input+2));
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
 		break;
 	case 'f':

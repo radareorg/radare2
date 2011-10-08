@@ -18,7 +18,7 @@ static int main_help(int line) {
 	printf ("Usage: radare2 [-dDwnLqv] [-P patch] [-p prj] [-s addr] [-b bsz] [-c cmd] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d           use 'file' as a program to debug\n"
-		" -D           enable debug mode (e cfg.debug=true)\n"
+		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -w           open file in write mode\n"
 		" -n           do not run ~/.radare2rc\n"
 		" -q           quite mode (no prompt)\n"
@@ -102,6 +102,7 @@ int main(int argc, char **argv) {
 	ut64 seek = 0;
 	char file[4096];
 	char *cmdfile = NULL;
+	const char *debugbackend = "native";
 	int is_gdb = R_FALSE;
 	RList *cmds = r_list_new ();
 
@@ -112,7 +113,7 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:P:c:D"
+	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:P:c:D:"
 #if USE_THREADS
 "t"
 #endif
@@ -125,6 +126,7 @@ int main(int argc, char **argv) {
 #endif
 		case 'D':
 			debug = 2;
+			debugbackend = optarg;
 			break;
 		case 'q':
 			r_config_set (r.config, "scr.prompt", "false");
@@ -189,6 +191,7 @@ int main(int argc, char **argv) {
 			// autodetect backend with -D
 			if (!strcmp (r_config_get (r.config, "asm.arch"), "bf")) {
 				r_config_set (r.config, "dbg.backend", "bf");
+			} else {
 			}
 		} else {
 			is_gdb = (!memcmp (argv[optind], "gdb://", 6));
@@ -227,7 +230,7 @@ int main(int argc, char **argv) {
 				//const char *arch = r_config_get (r.config, "asm.arch");
 				// TODO: move into if (debug) ..
 				if (is_gdb) r_debug_use (r.dbg, "gdb");
-				else r_debug_use (r.dbg, "native");
+				else r_debug_use (r.dbg, debugbackend);
 			}
 		}
 	}
@@ -287,11 +290,15 @@ int main(int argc, char **argv) {
 	}
 
 	if (debug) {
-		int *p = r.file->fd->data;
-		int pid = *p; // 1st element in debugger's struct must be int
+		int pid, *p = r.file->fd->data;
+		if (!p) {
+			eprintf ("Invalid debug io\n");
+			return 1;
+		}
+		pid = *p; // 1st element in debugger's struct must be int
 		r_core_cmd (&r, "e io.ffio=true", 0);
 		if (is_gdb) r_core_cmd (&r, "dh gdb", 0);
-		else r_core_cmd (&r, "dh native", 0);
+		else r_core_cmdf (&r, "dh %s", debugbackend);
 		r_core_cmdf (&r, "dpa %d", pid);
 		r_core_cmdf (&r, "dp=%d", pid);
 		r_core_cmd (&r, ".dr*", 0);

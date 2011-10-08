@@ -2,6 +2,15 @@
 
 #include <r_asm.h>
 #include <r_debug.h>
+#include "bfvm.h"
+#include "bfvm.c"
+
+typedef struct {
+        int fd;
+        ut8 *buf;
+        ut32 size;
+        BfvmCPU *bfvm;
+} RIOBfdbg;
 
 struct bfvm_regs {
 	ut32 pc;
@@ -11,25 +20,43 @@ struct bfvm_regs {
 
 static struct bfvm_regs r;
 
+static int is_io_bf(RDebug *dbg) {
+	RIODesc *d = dbg->iob.io->fd;
+	if (d && d->plugin && d->plugin->name)
+		if (!strcmp ("bfdbg", d->plugin->name))
+			return R_TRUE;
+	return R_FALSE;
+}
+
 static int r_debug_bf_step(RDebug *dbg) {
-eprintf ("BF STEP\n");
-	r.pc++;
+	RIOBfdbg *o = dbg->iob.io->fd->data;
+	bfvm_step (o->bfvm, 0);
 	return R_TRUE;
 }
 
-
 static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
+	RIOBfdbg *o;
+	if (!is_io_bf (dbg))
+		return 0;
+	if (!dbg || !(dbg->iob.io) || !(dbg->iob.io->fd) || !(dbg->iob.io->fd->data))
+		return 0;
+	o = dbg->iob.io->fd->data;
+	r.pc = o->bfvm->eip;
+	r.bp = o->bfvm->ptr;
+	r.sp = o->bfvm->esp;
 	memcpy (buf, &r, sizeof (r));
 	//r_io_system (dbg->iob.io, "dr");
 	return sizeof (r);
 }
 
 static int r_debug_bf_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
+	memcpy (&r, buf, sizeof (r));
+	// TODO: set vm regs from internal struct
 	return R_FALSE; // XXX Error check	
 }
 
 static int r_debug_bf_continue(RDebug *dbg, int pid, int tid, int sig) {
-	r_io_system (dbg->iob.io, "dc");
+	// bfvm_continue (bfvm);
 	return R_TRUE;
 }
 
@@ -39,22 +66,11 @@ static int r_debug_bf_wait(RDebug *dbg, int pid) {
 }
 
 static int r_debug_bf_attach(RDebug *dbg, int pid) {
-// XXX TODO PID must be a socket here !!1
-	RIODesc *d = dbg->iob.io->fd;
-	if (d && d->plugin && d->plugin->name) {
-		if (!strcmp ("bf", d->plugin->name)) {
-			eprintf ("SUCCESS: bf attach with inferior bf rio worked\n");
-		} else {
-			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
-		}
-	}
-	return R_TRUE;
+	return is_io_bf (dbg);
 }
 
 static int r_debug_bf_detach(int pid) {
-// XXX TODO PID must be a socket here !!1
-//	close (pid);
-	//XXX Maybe we should continue here?
+	// reset vm?
 	return R_TRUE;
 }
 
@@ -69,7 +85,7 @@ static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	);
 }
 
-static int r_debug_bf_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
+static int r_debug_bf_breakpoint (void *user, int type, ut64 addr, int hw, int rwx) {
 	//r_io_system (dbg->iob.io, "db");
 	return R_FALSE;
 }
@@ -77,7 +93,7 @@ static int r_debug_bf_breakpoint (void *user, int type, ut64 addr, int hw, int r
 struct r_debug_plugin_t r_debug_plugin_bf = {
 	.name = "bf",
 	/* TODO: Add support for more architectures here */
-	.arch = 0xff,
+	.arch = R_ASM_ARCH_BF,
 	.bits = R_SYS_BITS_32,
 	.init = NULL,
 	.step = r_debug_bf_step,
@@ -90,7 +106,7 @@ struct r_debug_plugin_t r_debug_plugin_bf = {
 	.threads = NULL,
 	.kill = NULL,
 	.frames = NULL,
-	.map_get = NULL,
+	.map_get = NULL, // TODO ?
 	.breakpoint = &r_debug_bf_breakpoint,
 	.reg_read = &r_debug_bf_reg_read,
 	.reg_write = &r_debug_bf_reg_write,

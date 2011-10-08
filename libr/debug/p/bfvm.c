@@ -21,8 +21,9 @@
 
 #include "bfvm.h"
 
-ut8 bfvm_op(BfvmCPU *c) {
-	ut8 buf[4];
+static ut8 bfvm_op(BfvmCPU *c) {
+	ut8 buf[4] = {0};
+	if (c)
 	if (!c->iob.read_at (c->iob.io, c->eip, buf, 4))
 		return 0xff;
 	return buf[0];
@@ -45,13 +46,14 @@ int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	if (c->mem == NULL)
 		return 0;
 	c->base = BFVM_DATA_ADDR;
-	memset (c->mem,'\0',size);
+	memset (c->mem, '\0', size);
 
 	/* setup */
 	c->circular = circular;
 	c->eip = 0; // look forward nops
 	c->size = size;
 
+	// TODO: use RBuffer or so here.. this is spagueti
 	/* screen */
 	c->screen = BFVM_SCREEN_ADDR;
 	c->screen_size = BFVM_SCREEN_SIZE;
@@ -74,7 +76,7 @@ R_API BfvmCPU *bfvm_new(RIOBind *iob) {
 	return c;
 }
 
-BfvmCPU *bfvm_destroy(BfvmCPU *c) {
+R_API BfvmCPU *bfvm_free(BfvmCPU *c) {
 	free (c->mem);
 	c->mem = 0;
 	free (c->screen_buf);
@@ -83,7 +85,7 @@ BfvmCPU *bfvm_destroy(BfvmCPU *c) {
 	return NULL;
 }
 
-ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
+R_API ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
 	if (at >= c->base)
 		at-=c->base;
 
@@ -101,31 +103,31 @@ ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
 	return c->mem+at;
 }
 
-ut8 *bfvm_get_ptr(BfvmCPU *c) {
+R_API ut8 *bfvm_get_ptr(BfvmCPU *c) {
 	//return bfvm_cpu.mem;
 	return bfvm_get_ptr_at (c, c->ptr);
 }
 
-ut8 bfvm_get(BfvmCPU *c) {
+R_API ut8 bfvm_get(BfvmCPU *c) {
 	ut8 *ptr = bfvm_get_ptr (c);
 	if (ptr != NULL)
 		return ptr[0];
 	return 0;
 }
 
-void bfvm_inc(BfvmCPU *c) {
+R_API void bfvm_inc(BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr (c);
 	if (mem != NULL)
 		*mem++;
 }
 
-void bfvm_dec(BfvmCPU *c) {
+R_API void bfvm_dec(BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr (c);
 	if (mem != NULL)
 		*mem--;
 }
 
-int bfvm_reg_set(BfvmCPU *c, const char *str) {
+R_API int bfvm_reg_set(BfvmCPU *c, const char *str) {
 	char *ptr = strchr (str, ' ');
 	if (ptr == NULL)
 		return 0;
@@ -139,7 +141,7 @@ int bfvm_reg_set(BfvmCPU *c, const char *str) {
 }
 
 /* screen and input */
-void bfvm_peek(BfvmCPU *c) {
+R_API void bfvm_peek(BfvmCPU *c) {
 	int idx = c->input_idx;
 	ut8 *ptr = bfvm_get_ptr (c);
 
@@ -184,14 +186,12 @@ int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 
 #define T if (c->trace)
 /* debug */
-int bfvm_step(BfvmCPU *c, int over) {
-	ut8 *buf;
-	ut8 op = bfvm_op (c);
-	ut8 op2;
+R_API int bfvm_step(BfvmCPU *c, int over) {
+	ut8 *buf, op2, op = bfvm_op (c);
 
 	do {
-		T bfvm_trace_op(c, op);
-		switch(op) {
+		T bfvm_trace_op (c, op);
+		switch (op) {
 		case '\0':
 			/* trap */
 			return 1;
@@ -239,7 +239,7 @@ int bfvm_step(BfvmCPU *c, int over) {
 	return 0;
 }
 
-int bfvm_contsc(BfvmCPU *c) {
+R_API int bfvm_contsc(BfvmCPU *c) {
 	RCons *ci = r_cons_singleton ();
 	r_cons_break (NULL, 0);
 	while (!ci->breaked) {
@@ -263,7 +263,7 @@ int bfvm_contsc(BfvmCPU *c) {
 	return 0;
 }
 
-int bfvm_cont(BfvmCPU *c, ut64 until) {
+R_API int bfvm_cont(BfvmCPU *c, ut64 until) {
 	RCons *ci = r_cons_singleton ();
 	r_cons_break (NULL, 0);
 	while (!ci->breaked && c->eip != until) {
@@ -277,14 +277,14 @@ int bfvm_cont(BfvmCPU *c, ut64 until) {
 	return 0;
 }
 
-int bfvm_trace(BfvmCPU *c, ut64 until) {
+R_API int bfvm_trace(BfvmCPU *c, ut64 until) {
 	c->trace=1;
 	bfvm_cont (c, until);
 	c->trace=0;
 	return 0;
 }
 
-void bfvm_show_regs(BfvmCPU *c, int rad) {
+R_API void bfvm_show_regs(BfvmCPU *c, int rad) {
 	if (rad) {
 		eprintf ("fs regs\n");
 		eprintf ("f eip @ 0x%08llx\n", (ut64)c->eip);
@@ -300,7 +300,7 @@ void bfvm_show_regs(BfvmCPU *c, int rad) {
 	}
 }
 
-void bfvm_maps(BfvmCPU *c, int rad) {
+R_API void bfvm_maps(BfvmCPU *c, int rad) {
 	if (rad) {
 		eprintf ("fs sections\n");
 		eprintf ("e cmd.vprompt=px@screen\n");

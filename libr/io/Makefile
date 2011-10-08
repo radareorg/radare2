@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_io
-DEPS=r_lib r_util r_socket
+DEPS=r_lib r_util r_socket r_cons
 CFLAGS+=-Wall -DCORELIB
 # on solaris only
 ifeq (${OSTYPE},solaris)

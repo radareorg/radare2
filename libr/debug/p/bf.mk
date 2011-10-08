@@ -6,7 +6,7 @@ ifeq (${OSTYPE},solaris)
 LDFLAGS+=-lsocket
 endif
 
-OBJ_BF=debug_bf.o 
+OBJ_BF=debug_bf.o
 #libbfwbf/bfwbfper.o
 
 #libbfwbf/bfwbfper.o:
