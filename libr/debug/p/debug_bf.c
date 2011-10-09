@@ -36,11 +36,10 @@ static int is_io_bf(RDebug *dbg) {
 static int r_debug_bf_step_over(RDebug *dbg) {
 	RIOBfdbg *o = dbg->iob.io->fd->data;
 	int op, oop = 0;
-	while (1) {
+	for (;;) {
 		op = bfvm_op (o->bfvm);
 		if (oop != 0 && op != oop)
 			break;
-		eprintf ("STEP OVER %d %d\n", o->bfvm->eip, op);
 		if (bfvm_in_trap (o->bfvm))
 			break;
 		bfvm_step (o->bfvm, 0);
@@ -93,9 +92,7 @@ static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size)
 	o->bfvm->input_idx = r.inpi;
 	o->bfvm->base = r.mem;
 	o->bfvm->ptr = r.memi; // dup
-// TODO: do the rest
-	// TODO: set vm regs from internal struct
-	return R_FALSE; // XXX Error check	
+	return R_TRUE;
 }
 
 static int r_debug_bf_continue(RDebug *dbg, int pid, int tid, int sig) {
@@ -189,7 +186,7 @@ struct r_debug_plugin_t r_debug_plugin_bf = {
 	.reg_read = &r_debug_bf_reg_read,
 	.reg_write = &r_debug_bf_reg_write,
 	.reg_profile = (void *)r_debug_bf_reg_profile,
-	.breakpoint = r_debug_native_bp,
+//	.breakpoint = r_debug_native_bp,
 	//.ptr_write = &r_debug_bf_ptr_write,
 	//.ptr_read = &r_debug_bf_ptr_read,
 };

@@ -2,27 +2,21 @@ Brainfuck support for r2
 ========================
 
 Plugins for brainfuck:
-  - asm.bf - brainfuck disassembler
-  - debug.bf - debugger
+  - asm.bf - brainfuck assembler and disassembler
+  - debug.bf - debugger using bfvm
+  - anal.bf - code analysis for brainfuck
+  - bp.bf - breakpoints support (experimental)
 
-To debug your brainfuck program type:
-  e asm.arch=bf
-  e cfg.debug=true
-  dh bf
+To debug a brainfuck program:
 
-You can also call this from the shell:
-
-$ r2 -e asm.arch=bf -c "e cfg.debug=1;dh bf" /tmp/bf
-
-$ r2 -e asm.arch=bf -D helloworld.bf
+$ r2 -D bf bfdbg:///tmp/bf
 
 The debugger creates virtual sections for code, data, screen and input.
 
 TODO 
 ----
 - add support for comments, ignore invalid instructions as nops
-- implement brainfuck assembler
-- anal.bf - code analysis
+- enhace io and debugger plugins to generate sections and set arch opts
 
 Hello World
 ===========

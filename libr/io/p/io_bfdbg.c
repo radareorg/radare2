@@ -33,16 +33,40 @@ static inline int is_in_base(ut64 off, BfvmCPU *c) {
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOBfdbg *riom;
+	int sz;
 	if (fd == NULL || fd->data == NULL)
 		return -1;
 	riom = fd->data;
-	if (is_in_screen (io->off, riom->bfvm)) {
-		memcpy (RIOBFDBG_BUF (fd)+io->off, buf, count);
+	/* data base buffer */
+	if (is_in_base (io->off, riom->bfvm)) {
+		int n = io->off-riom->bfvm->base;
+		if (n>count)
+			count = n;
+		memcpy (riom->bfvm->mem+n, buf, count);
 		return count;
 	}
-	if (io->off+count >= RIOBFDBG_SZ (fd))
+	/* screen buffer */
+	if (is_in_screen (io->off, riom->bfvm)) {
+		int n = io->off-riom->bfvm->screen;
+		if (n>count)
+			count = riom->bfvm->screen_size-n;
+		memcpy (riom->bfvm->screen_buf+n, buf, count);
+		return count;
+	}
+	/* input buffer */
+	if (is_in_input (io->off, riom->bfvm)) {
+		int n = io->off-riom->bfvm->input;
+		if (n>count)
+			count = riom->bfvm->input_size-n;
+		memcpy (riom->bfvm->input_buf+n, buf, count);
+		return count;
+	}
+	/* read from file */
+	sz = RIOBFDBG_SZ (fd);
+	if (io->off+count >= sz)
+		count = sz-io->off;
+	if (io->off >= sz)
 		return -1;
-//eprintf ("WRITE %d\n", count);
 	memcpy (RIOBFDBG_BUF (fd)+io->off, buf, count);
 	return count;
 }
@@ -114,7 +138,7 @@ static int __plugin_open(RIO *io, const char *pathname) {
 }
 
 static inline int getmalfd (RIOBfdbg *mal) {
-	return 0xfffffff & (int)(size_t)mal->buf;
+	return 0xffff & (int)(size_t)mal->buf;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {

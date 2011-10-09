@@ -22,10 +22,10 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 
 	switch (*buf) {
 	case '[':
-		strcpy (op->buf_asm, "[ loop {");
+		strcpy (op->buf_asm, "[ do");
 		break;
 	case ']':
-		strcpy (op->buf_asm, "] }"); // TODO: detect clause and put label name
+		strcpy (op->buf_asm, "] loop"); // TODO: detect clause and put label name
 		break;
 	case '>':
 		if (i>1) strcpy (op->buf_asm, "> add ptr");
@@ -64,15 +64,64 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	return i;
 }
 
+static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	const char *arg = strchr (buf, ',');
+	const char *ref = strchr (buf, '[');
+	int n = 0;
+	if (!strncmp (buf, "nop", 3)) {
+		op->buf[0] = 0x90;
+		n++;
+	} else
+	if (!strncmp (buf, "inc", 3)) {
+		char ch = ref? '+': '>';
+		op->buf[0] = ch;
+		n = 1;
+	} else
+	if (!strncmp (buf, "dec", 3)) {
+		char ch = ref? '-': '<';
+		op->buf[0] = ch;
+		n = 1;
+	} else
+	if (!strncmp (buf, "sub", 3)) {
+		char ch = ref? '-': '<';
+		if (arg) {
+			n = atoi (arg+1);
+			memset (op->buf, ch, n);
+		} else {
+			op->buf[0] = '<';
+			n = 1;
+		}
+	} else
+	if (!strncmp (buf, "add", 3)) {
+		char ch = ref? '+': '>';
+		if (arg) {
+			n = atoi (arg+1);
+			memset (op->buf, ch, n);
+		} else {
+			op->buf[0] = '<';
+			n = 1;
+		}
+	} else
+	if (!strncmp (buf, "do", 2)) {
+		op->buf[0] = '[';
+		n = 1;
+	} else
+	if (!strncmp (buf, "loop", 4)) {
+		op->buf[0] = ']';
+		n = 1;
+	}
+	return n;
+}
+
 RAsmPlugin r_asm_plugin_bf = {
 	.name = "bf",
 	.arch = "bf",
-	.bits = 32, //(int[]){ 8, 16, 32, 0 }, // dummy
+	.bits = (int[]){32,0},
 	.desc = "Brainfuck disassembly plugin",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = &assemble 
 };
 
 #ifndef CORELIB

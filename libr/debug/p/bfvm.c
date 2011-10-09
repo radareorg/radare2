@@ -32,6 +32,7 @@ static ut8 bfvm_op(BfvmCPU *c) {
 int bfvm_in_trap(BfvmCPU *c) {
 	switch (bfvm_op (c)) {
 	case 0x00:
+	case 0xcc:
 	case 0xff:
 		return 1;
 	}
