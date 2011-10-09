@@ -27,6 +27,21 @@ libr:
 binr:
 	cd binr && ${MAKE} all
 
+R=$(shell hg tags|head -n2 | tail -n1|awk '{print $$2}' |cut -d : -f 1)
+T=$(shell hg tip|grep changeset:|cut -d : -f 2)
+.PHONY: chlog
+chlog:
+	@hg log -v -r tip:$R > chlog
+	@echo "-=== release ${VERSION} ===-"
+	@echo "hg tag -r $T ${VERSION}"
+	@printf "last commit:   "
+	@hg log -r tip | grep date: |cut -d : -f 2- |sed -e 's,^\ *,,g'
+	@printf "oldest commit: "
+	@hg log -r $R | grep date: |cut -d : -f 2- |sed -e 's,^\ *,,g'
+	@printf "Commits:  "
+	@grep changeset: chlog |wc -l
+	@grep -v : chlog | grep -v '^$$'
+
 w32:
 	make clean
 	# TODO: add support for debian

@@ -11,6 +11,9 @@ To debug a brainfuck program:
 
 $ r2 -D bf bfdbg:///tmp/bf
 
+> dc    # continue
+> x@scr # show screen buffer contents
+
 The debugger creates virtual sections for code, data, screen and input.
 
 TODO 

@@ -44,10 +44,10 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 		else strcpy (op->buf_asm, "- dec [ptr]");
 		break;
 	case ',':
-		strcpy (op->buf_asm, ", [ptr] = getch ()");
+		strcpy (op->buf_asm, ", peek [ptr]");
 		break;
 	case '.':
-		strcpy (op->buf_asm, ". print ([ptr])");
+		strcpy (op->buf_asm, ". poke [ptr]");
 		break;
 	case '\x00':
 		strcpy (op->buf_asm, "  trap");
@@ -65,12 +65,29 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	const char *arg = strchr (buf, ',');
-	const char *ref = strchr (buf, '[');
+	const char *ref, *arg;
 	int n = 0;
+	if (buf[0] && buf[1]==' ')
+		buf += 2;
+	arg = strchr (buf, ',');
+	ref = strchr (buf, '[');
+	if (!strncmp (buf, "trap", 4)) {
+		if (arg) {
+			n = atoi (arg+1);
+			memset (op->buf, 0xcc, n);
+		} else {
+			op->buf[0] = 0x90;
+			n = 1;
+		}
+	} else
 	if (!strncmp (buf, "nop", 3)) {
-		op->buf[0] = 0x90;
-		n++;
+		if (arg) {
+			n = atoi (arg+1);
+			memset (op->buf, 0x90, n);
+		} else {
+			op->buf[0] = 0x90;
+			n = 1;
+		}
 	} else
 	if (!strncmp (buf, "inc", 3)) {
 		char ch = ref? '+': '>';
@@ -109,6 +126,24 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (!strncmp (buf, "loop", 4)) {
 		op->buf[0] = ']';
 		n = 1;
+	} else
+	if (!strncmp (buf, "peek", 4)) {
+		if (arg) {
+			n = atoi (arg+1);
+			memset (op->buf, ',', n);
+		} else {
+			op->buf[0] = ',';
+			n = 1;
+		}
+	} else
+	if (!strncmp (buf, "poke", 4)) {
+		if (arg) {
+			n = atoi (arg+1);
+			memset (op->buf, '.', n);
+		} else {
+			op->buf[0] = '.';
+			n = 1;
+		}
 	}
 	return n;
 }
