@@ -28,8 +28,10 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count) {
 static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	if (fd == NULL || fd->data == NULL)
 		return -1;
-	if (io->off+count >= RIOMALLOC_SZ (fd))
+	if (io->off>= RIOMALLOC_SZ (fd))
 		return -1;
+	if (io->off+count >= RIOMALLOC_SZ (fd))
+		count = RIOMALLOC_SZ (fd) - io->off;
 	memcpy (buf, RIOMALLOC_BUF (fd)+io->off, count);
 	return count;
 }
@@ -57,25 +59,34 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __plugin_open(struct r_io_t *io, const char *pathname) {
-	return (!memcmp (pathname, "malloc://", 9));
+	return (
+		(!memcmp (pathname, "malloc://", 9)) ||
+		(!memcmp (pathname, "hex://", 6))
+	);
 }
 
 static inline int getmalfd (RIOMalloc *mal) {
-	return 0xfffffff & (int)(size_t)mal->buf;
+	return 0xfffff & (int)(size_t)mal->buf;
 }
 
 static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname)) {
 		RIOMalloc *mal = R_NEW (RIOMalloc);
 		mal->fd = getmalfd (mal);
-		mal->size = atoi (pathname+9);
-		if ((mal->size)>0) {
+		if (!memcmp (pathname, "hex://", 6)) {
+			mal->size = strlen (pathname);
 			mal->buf = malloc (mal->size);
-			if (mal->buf != NULL) {
+			memset (mal->buf, 0, mal->size);
+			mal->size = r_hex_str2bin (pathname+6, mal->buf);
+		} else {
+			mal->size = atoi (pathname+9);
+			if ((mal->size)>0) {
+				mal->buf = malloc (mal->size);
 				memset (mal->buf, '\0', mal->size);
-				return r_io_desc_new (&r_io_plugin_malloc, mal->fd, pathname, rw, mode, mal);
 			}
 		}
+		if (mal->buf != NULL)
+			return r_io_desc_new (&r_io_plugin_malloc, mal->fd, pathname, rw, mode, mal);
 		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9, mal->size);
 		free (mal);
 	}
@@ -84,7 +95,7 @@ static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode
 
 struct r_io_plugin_t r_io_plugin_malloc = {
 	.name = "malloc",
-        .desc = "memory allocation (malloc://1024)",
+        .desc = "memory allocation (malloc://1024 hex://10294505)",
         .open = __open,
         .close = __close,
 	.read = __read,

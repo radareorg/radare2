@@ -4617,7 +4617,7 @@ R_API int r_core_cmd_command(RCore *core, const char *command) {
 	return 0;
 }
 
-static void cmd_dm(RCore *core, const char *input) {
+static void cmd_debug_dm(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?':
 		r_cons_printf (
@@ -4670,13 +4670,16 @@ static void cmd_dm(RCore *core, const char *input) {
 		}
 		break;
 	case '*':
+		r_debug_map_sync (core->dbg); // update process memory maps
+		r_debug_map_list (core->dbg, core->offset, 1);
+		break;
 	case '-':
 	case ' ':
 		eprintf ("TODO\n");
 		break;
 	default:
 		r_debug_map_sync (core->dbg); // update process memory maps
-		r_debug_map_list (core->dbg, core->offset);
+		r_debug_map_list (core->dbg, core->offset, 0);
 		break;
 	}
 }
@@ -4748,11 +4751,9 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		/* XXX: but we want fine-grained access to process resources */
 		pid = atoi (input+2);
 		ptr = strchr (input, ' ');
-		if (ptr) sig = atoi (ptr+1);
-		else sig = 0;
+		sig = ptr? atoi (ptr+1): 0;
 		if (pid > 0) {
-			eprintf ("Sending signal '%d' to pid '%d'\n",
-				sig, pid);
+			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
 			r_debug_kill (core->dbg, R_FALSE, sig);
 		} else eprintf ("Invalid arguments\n");
 		break;
@@ -5065,7 +5066,7 @@ static int cmd_debug(void *data, const char *input) {
 		follow = r_config_get_i (core->config, "dbg.follow");
 		break;
 	case 'm':
-		cmd_dm (core, input+1);
+		cmd_debug_dm (core, input+1);
 		break;
 	case 'r':
 		cmd_reg (core, input+1);
@@ -5091,7 +5092,7 @@ static int cmd_debug(void *data, const char *input) {
 		" db[?]          breakpoints\n"
 		" dbt            display backtrace\n"
 		" dt[r] [tag]    display instruction traces (dtr=reset)\n"
-		" dm             show memory maps\n");
+		" dm[?*]         show memory maps\n");
 		break;
 	}
 	if (follow>0) {

@@ -254,7 +254,7 @@ R_API void r_debug_map_list_free(RList *maps);
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr);
 R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user);
 R_API void r_debug_map_free(RDebugMap *map);
-R_API void r_debug_map_list(RDebug *dbg, ut64 addr);
+R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad);
 
 /* descriptors */
 R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int off);

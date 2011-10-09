@@ -11,13 +11,14 @@
 * shell encoder - get x86-64 one from twitter
   - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
 * cleanup magic database.. too slow for search :(
+* use centralized pubsub or memcached to sync data
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
+* Implement differential distance signature search
 
 ====[[ 0.9 ]]====
 
 * Add support for classes (useful for c++, dex, objc, ...)
   - command to add new classes
-* Implement hex:// io :D like malloc but initialized.. use malloc here?
 
 OSX
 ===
@@ -28,10 +29,6 @@ Other stuff
 ===========
 * code analysis for msil
 * rax2 -k by default?
-* r_anal_find_fcn() is O(N). should be O(1)
-  - var r = RHashTable<RList>()
-    var l = r.add ("0x8048000-0x8049000", new RList ())
-    l.append (ReferenceTo (fcn)
 * Optimize /m
   - search only using given file, not loading default library
   - do not read each block byte per byte
@@ -41,7 +38,6 @@ Other stuff
 * Merge libr/db inside libr/util ?
 * Test r_search_delta()
 * Dupped javasm bin/asm -- must merge
-* Implement differential distance signature search
 
 * Rename r_hashtable -> r_ht
   - Make ht64.c include ht.c

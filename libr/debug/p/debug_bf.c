@@ -163,6 +163,22 @@ static int r_debug_native_bp(RDebug *dbg, int add, ut64 addr, int hw, int rwx) {
 	return R_FALSE;
 }
 
+static RList *r_debug_native_map_get(RDebug *dbg) {
+	RIOBfdbg *o = dbg->iob.io->fd->data;
+	BfvmCPU *c = o->bfvm;
+	RList *list = r_list_new ();
+	list->free = r_debug_map_free;
+	r_list_append (list, r_debug_map_new (
+		"code", 0, 4096, 6, 0));
+	r_list_append (list, r_debug_map_new (
+		"memory", c->base, c->base+c->size, 6, 0));
+	r_list_append (list, r_debug_map_new (
+		"screen", c->screen, c->screen+c->screen_size, 6, 0));
+	r_list_append (list, r_debug_map_new (
+		"input", c->input, c->input+c->input_size, 6, 0));
+	return list;
+}
+
 struct r_debug_plugin_t r_debug_plugin_bf = {
 	.name = "bf",
 	/* TODO: Add support for more architectures here */
@@ -185,7 +201,8 @@ struct r_debug_plugin_t r_debug_plugin_bf = {
 	.breakpoint = &r_debug_bf_breakpoint,
 	.reg_read = &r_debug_bf_reg_read,
 	.reg_write = &r_debug_bf_reg_write,
-	.reg_profile = (void *)r_debug_bf_reg_profile,
+	.reg_profile = r_debug_bf_reg_profile,
+	.map_get = r_debug_native_map_get,
 //	.breakpoint = r_debug_native_bp,
 	//.ptr_write = &r_debug_bf_ptr_write,
 	//.ptr_read = &r_debug_bf_ptr_read,

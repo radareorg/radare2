@@ -1588,7 +1588,6 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		eprintf ("r_debug_native_map_get: No selected pid (-1)\n");
 		return NULL;
 	}
-
 #if __KFBSD__
 	list = r_debug_native_sysctl_map (dbg);
 	if (list != NULL)
@@ -1629,7 +1628,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		if (!pos_c)
 			continue;
 
-		pos_c[-1] = (char)'0';
+		pos_c[-1] = (char)'0'; // xxx. this is wrong
 		pos_c[ 0] = (char)'x';
 		strncpy (region2, pos_c-1, sizeof (region2)-1);
 #endif // __KFBSD__
@@ -1640,7 +1639,7 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 			snprintf (path, sizeof (path), "unk%d", unk++);
 
 		perm = 0;
-		for(i = 0; perms[i] && i < 4; i++)
+		for (i = 0; perms[i] && i < 4; i++)
 			switch (perms[i]) {
 			case 'r': perm |= R_IO_READ; break;
 			case 'w': perm |= R_IO_WRITE; break;
@@ -2066,9 +2065,9 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.kill = &r_debug_native_kill,
 	.frames = &r_debug_native_frames, // rename to backtrace ?
 	.reg_profile = (void *)r_debug_native_reg_profile,
-	.reg_read = &r_debug_native_reg_read,
+	.reg_read = r_debug_native_reg_read,
 	.reg_write = (void *)&r_debug_native_reg_write,
-	.map_get = (void *)&r_debug_native_map_get,
+	.map_get = r_debug_native_map_get,
 	.breakpoint = r_debug_native_bp,
 };
 
