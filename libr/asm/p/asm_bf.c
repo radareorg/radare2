@@ -22,7 +22,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 
 	switch (*buf) {
 	case '[':
-		strcpy (op->buf_asm, "[ do");
+		strcpy (op->buf_asm, "[ while [ptr]");
 		break;
 	case ']':
 		strcpy (op->buf_asm, "] loop"); // TODO: detect clause and put label name
@@ -119,7 +119,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			n = 1;
 		}
 	} else
-	if (!strncmp (buf, "do", 2)) {
+	if (!strncmp (buf, "while", 5)) {
 		op->buf[0] = '[';
 		n = 1;
 	} else

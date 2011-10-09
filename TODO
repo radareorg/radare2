@@ -6,6 +6,7 @@
 ------8<-------------------8<--------------------8<-----------------8<----------
 
 ====[[ 0.8.6 ]]====
+* asm.pseudo for brainfuck
 * implement 'ax' to get/set xrefs (better than afl <addr>)
 * shell encoder - get x86-64 one from twitter
   - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
