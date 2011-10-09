@@ -14,7 +14,7 @@ static int r_debug_rap_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return 0;
 }
 
-static int r_debug_rap_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
+static int r_debug_rap_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
 	return R_FALSE; // XXX Error check	
 }
 

@@ -82,16 +82,30 @@ static int config_iocache_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_dbgbackend_callback(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	// XXX: remove this spagetti
+	if (!strcmp (node->value, "bf"))
+		r_config_set (core->config, "asm.arch", "bf");
+	r_debug_use (core->dbg, node->value);
+	return R_TRUE;
+}
+
 static int config_cfgdebug_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (core && core->io)
 		core->io->debug = node->i_value;
 	if (core->dbg && node->i_value) {
-		r_debug_use (core->dbg, r_config_get (core->config, "dbg.backend"));
-		if (core->file)
+		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
+		r_debug_use (core->dbg, dbgbackend);
+		if (!strcmp (dbgbackend, "bf"))
+			r_config_set (core->config, "asm.arch", "bf");
+		if (core->file) {
 			r_debug_select (core->dbg, core->file->fd->fd, core->file->fd->fd);
-	}
+		}
+	} else r_debug_use (core->dbg, NULL);
 	return R_TRUE;
 }
 
@@ -125,12 +139,10 @@ static int config_analsplit_callback(void *user, void *data) {
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (!r_syscall_setup (core->anal->syscall, 
+	int ret = r_syscall_setup (core->anal->syscall, 
 			r_config_get (core->config, "asm.arch"),
-			node->value,
-			core->anal->bits)) {
-		eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
-	}
+			node->value, core->anal->bits);
+	//if (!ret) eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;
 }
 
@@ -324,8 +336,8 @@ static int config_asmarch_callback(void *user, void *data) {
 			r_config_get (core->config, "asm.os"),
 			core->anal->bits))
 		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s'\n", node->value);
-	if (!strcmp (node->value, "bf"))
-		r_config_set (core->config, "dbg.backend", "bf");
+	//if (!strcmp (node->value, "bf"))
+	//	r_config_set (core->config, "dbg.backend", "bf");
 	return R_TRUE;
 }
 
@@ -430,7 +442,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);
 
 	r_config_set_i (cfg, "dbg.follow", 32);
-	r_config_set (cfg, "dbg.backend", "native");
+	r_config_set_cb (cfg, "dbg.backend", "native", &config_dbgbackend_callback);
 	r_config_set (cfg, "dbg.bep", "loader"); // loader, entry, constructor, main
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);

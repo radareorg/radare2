@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -42,36 +42,47 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 	if (io->off+count >= RIOBFDBG_SZ (fd))
 		return -1;
+//eprintf ("WRITE %d\n", count);
 	memcpy (RIOBFDBG_BUF (fd)+io->off, buf, count);
 	return count;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOBfdbg *riom;
-	int sz = RIOBFDBG_SZ (fd);
+	int sz;
 	if (fd == NULL || fd->data == NULL)
 		return -1;
 	riom = fd->data;
-	if (io->off >= sz)
-		return -1;
-	if (io->off+count >= sz)
-		count = sz-io->off;
 	/* data base buffer */
 	if (is_in_base (io->off, riom->bfvm)) {
-		memcpy (buf, riom->bfvm->mem, count);
+		int n = io->off-riom->bfvm->base;
+		if (n>count)
+			count = n;
+		memcpy (buf, riom->bfvm->mem+n, count);
 		return count;
 	}
 	/* screen buffer */
 	if (is_in_screen (io->off, riom->bfvm)) {
-		memcpy (buf, riom->bfvm->screen_buf, count);
+		int n = io->off-riom->bfvm->screen;
+		if (n>count)
+			count = riom->bfvm->screen_size-n;
+		memcpy (buf, riom->bfvm->screen_buf+n, count);
 		return count;
 	}
 	/* input buffer */
 	if (is_in_input (io->off, riom->bfvm)) {
-		memcpy (buf, riom->bfvm->input_buf, count);
+		int n = io->off-riom->bfvm->input;
+		if (n>count)
+			count = riom->bfvm->input_size-n;
+		memcpy (buf, riom->bfvm->input_buf+n, count);
 		return count;
 	}
 	/* read from file */
+	sz = RIOBFDBG_SZ (fd);
+	if (io->off+count >= sz)
+		count = sz-io->off;
+	if (io->off >= sz)
+		return -1;
 	memcpy (buf, RIOBFDBG_BUF (fd)+io->off, count);
 	return count;
 }
@@ -112,10 +123,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname)) {
 		RIOBind iob;
 		RIOBfdbg *mal = R_NEW (RIOBfdbg);
-r_io_bind (io, &iob);
+		r_io_bind (io, &iob);
 		mal->fd = getmalfd (mal);
 		mal->bfvm = bfvm_new (&iob);
-eprintf ("%p\n", mal->bfvm);
 		out = r_file_slurp (pathname+8, &rlen);
 		if (!out || rlen<1)
 			return NULL;

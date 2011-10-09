@@ -4760,13 +4760,19 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		eprintf ("TODO: debug_fork: %d\n", r_debug_fork (core->dbg));
 		break;
 	case 't':
-		if (input[2] == 'n') {
+		switch (input[2]) {
+		case 'n':
 			eprintf ("TODO: debug_clone: %d\n", r_debug_clone (core->dbg));
-		} else
-		if (input[2]=='=' || input[2]==' ')
+			break;
+		case '=':
+		case ' ':
 			r_debug_select (core->dbg, core->dbg->pid,
 				(int) r_num_math (core->num, input+3));
-		else r_debug_thread_list (core->dbg, core->dbg->pid);
+			break;
+		default:
+			r_debug_thread_list (core->dbg, core->dbg->pid);
+			break;
+		}
 		break;
 	case '?':
 		r_cons_printf ("Usage: dp[=][pid]\n"
@@ -4783,8 +4789,6 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			" dpk P S send signal S to P process id\n");
 		break;
 	case 'a':
-		r_debug_use (core->dbg, NULL);
-		r_config_set (core->config, "dbg.backend", input+2);
 		r_debug_attach (core->dbg, (int) r_num_math (core->num, input+2));
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
 		break;

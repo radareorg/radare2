@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake <youterm.com> - nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2011 pancake <youterm.com> - nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
@@ -12,7 +12,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	char *buf_cp, *b;
 	int i;
 
-	if ((b = buf_cp = malloc (len+1)) == NULL)
+	if (!(b = buf_cp = malloc (len+1)))
 		return 0;
 	memcpy (buf_cp, buf, len);
 	buf_cp[len] = 0;
@@ -28,12 +28,12 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 		strcpy (op->buf_asm, "] }"); // TODO: detect clause and put label name
 		break;
 	case '>':
-		if (i>1) strcpy (op->buf_asm, "> add [ptr]");
-		else strcpy (op->buf_asm, "> inc [ptr]");
+		if (i>1) strcpy (op->buf_asm, "> add ptr");
+		else strcpy (op->buf_asm, "> inc ptr");
 		break;
 	case '<':
-		if (i>1) strcpy (op->buf_asm, "< sub [ptr]");
-		else strcpy (op->buf_asm, "< dec [ptr]");
+		if (i>1) strcpy (op->buf_asm, "< sub ptr");
+		else strcpy (op->buf_asm, "< dec ptr");
 		break;
 	case '+':
 		if (i>1) strcpy (op->buf_asm, "+ add [ptr]");
@@ -67,7 +67,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 RAsmPlugin r_asm_plugin_bf = {
 	.name = "bf",
 	.arch = "bf",
-	.bits = (int[]){ 8, 16, 32, 0 }, // dummy
+	.bits = 32, //(int[]){ 8, 16, 32, 0 }, // dummy
 	.desc = "Brainfuck disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

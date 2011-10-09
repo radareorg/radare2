@@ -554,6 +554,7 @@ extern RAnalPlugin r_anal_plugin_mips;
 extern RAnalPlugin r_anal_plugin_dalvik;
 extern RAnalPlugin r_anal_plugin_sh;
 extern RAnalPlugin r_anal_plugin_sparc;
+extern RAnalPlugin r_anal_plugin_bf;
 
 #endif
 #endif

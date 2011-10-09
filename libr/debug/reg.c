@@ -11,7 +11,7 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 	if (write) {
 		if (dbg && dbg->h && dbg->h->reg_write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, type, &size);
-			if (!dbg->h->reg_write (dbg->pid, dbg->tid, type, buf, sizeof (buf)))
+			if (!dbg->h->reg_write (dbg, type, buf, sizeof (buf)))
 				eprintf ("r_debug_reg: error writing registers\n");
 		} else eprintf ("r_debug_reg: cannot set registers\n");
 	} else {

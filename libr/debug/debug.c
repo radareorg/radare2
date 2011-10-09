@@ -99,8 +99,8 @@ R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 			dbg->arch = arch;
 			return R_TRUE;
 		}
-		eprintf ("arch (%s, %d) not supported by debug backend\n",
-			r_sys_arch_str (arch), bits);
+		//eprintf ("arch (%s, %d) not supported by debug backend\n",
+		//	r_sys_arch_str (arch), bits);
 	}
 	return R_FALSE;
 }
@@ -272,6 +272,13 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	int ret = -1;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
+	if (dbg->h && dbg->h->step_over) {
+		if (steps<1) steps = 1;
+		while (steps--)
+			if (!dbg->h->step_over (dbg))
+				return R_FALSE;
+		return R_TRUE;
+	}
 	if (dbg->anal && dbg->reg) {
 		ut64 pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 		dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
@@ -376,6 +383,7 @@ R_API int r_debug_continue_syscall(struct r_debug_t *dbg, int sc) {
 				ret = dbg->h->contsc (dbg, dbg->pid, sc);
 				if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE)) {
 					eprintf ("--> eol\n");
+					sc = 0;
 					break;
 				}
 				reg = (int)r_debug_reg_get (dbg, "oeax"); // XXX

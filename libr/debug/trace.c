@@ -42,7 +42,7 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 				oldpc = addr;
 				return R_TRUE;
 			} else eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", addr);
-		} else eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", addr);
+		} //else eprintf ("trace_pc: cannot read memory at 0x%"PFMT64x"\n", addr);
 	} else eprintf ("trace_pc: cannot get program counter\n");
 	return R_FALSE;
 }

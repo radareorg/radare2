@@ -12,7 +12,7 @@
 #if DEBUGGER
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
-static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size);
+static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
 
 #define MAXBT 128
 
@@ -176,7 +176,7 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
         if (foo) regs.__eflags |= EFLAGS_TRAP_FLAG;
         else regs.__eflags &= ~EFLAGS_TRAP_FLAG;
 #endif
-	r_debug_native_reg_write (dbg->pid, dbg->tid, R_REG_TYPE_GPR, (const ut8*)&regs, sizeof (regs));
+	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (const ut8*)&regs, sizeof (regs));
 #endif
 }
 #endif // __APPLE__
@@ -1305,7 +1305,9 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 #endif
 }
 
-static int r_debug_native_reg_write(int pid, int tid, int type, const ut8* buf, int size) {
+static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
+	int pid = dbg->pid;
+	int tid = dbg->tid;
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __KFBSD__

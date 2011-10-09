@@ -189,10 +189,7 @@ int main(int argc, char **argv) {
 		}
 		if (debug == 2) {
 			// autodetect backend with -D
-			if (!strcmp (r_config_get (r.config, "asm.arch"), "bf")) {
-				r_config_set (r.config, "dbg.backend", "bf");
-			} else {
-			}
+			r_config_set (r.config, "dbg.backend", debugbackend);
 		} else {
 			is_gdb = (!memcmp (argv[optind], "gdb://", 6));
 			if (is_gdb) *file = 0;

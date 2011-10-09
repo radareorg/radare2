@@ -38,7 +38,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	return desc->num_registers*desc->reg_size;
 }
 
-static int r_debug_gdb_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
+static int r_debug_gdb_reg_write(RDebug *dbg, int pid, int tid, int type, const ut8 *buf, int size) {
 	gdbwrap_setreg_buffer (desc, buf, desc->reg_size*desc->num_registers);
 	gdbwrap_shipallreg (desc);
 	return R_TRUE; // XXX Error check	

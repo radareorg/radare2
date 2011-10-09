@@ -2,7 +2,6 @@
 
 #include <r_asm.h>
 #include <r_debug.h>
-#include "bfvm.h"
 #include "bfvm.c"
 
 typedef struct {
@@ -14,8 +13,14 @@ typedef struct {
 
 struct bfvm_regs {
 	ut32 pc;
-	ut32 bp;
+	ut32 ptr;
 	ut32 sp;
+	ut32 scr;
+	ut32 scri;
+	ut32 inp;
+	ut32 inpi;
+	ut32 mem;
+	ut32 memi;
 };
 
 static struct bfvm_regs r;
@@ -26,6 +31,22 @@ static int is_io_bf(RDebug *dbg) {
 		if (!strcmp ("bfdbg", d->plugin->name))
 			return R_TRUE;
 	return R_FALSE;
+}
+
+static int r_debug_bf_step_over(RDebug *dbg) {
+	RIOBfdbg *o = dbg->iob.io->fd->data;
+	int op, oop = 0;
+	while (1) {
+		op = bfvm_op (o->bfvm);
+		if (oop != 0 && op != oop)
+			break;
+		eprintf ("STEP OVER %d %d\n", o->bfvm->eip, op);
+		if (bfvm_in_trap (o->bfvm))
+			break;
+		bfvm_step (o->bfvm, 0);
+		oop = op;
+	}
+	return R_TRUE;
 }
 
 static int r_debug_bf_step(RDebug *dbg) {
@@ -42,21 +63,50 @@ static int r_debug_bf_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		return 0;
 	o = dbg->iob.io->fd->data;
 	r.pc = o->bfvm->eip;
-	r.bp = o->bfvm->ptr;
+	r.ptr = o->bfvm->ptr;
 	r.sp = o->bfvm->esp;
+	r.scr = o->bfvm->screen;
+	r.scri = o->bfvm->screen_idx;
+	r.inp = o->bfvm->input;
+	r.inpi = o->bfvm->input_idx;
+	r.mem = o->bfvm->base;
+	r.memi = o->bfvm->ptr;
 	memcpy (buf, &r, sizeof (r));
 	//r_io_system (dbg->iob.io, "dr");
 	return sizeof (r);
 }
 
-static int r_debug_bf_reg_write(int pid, int tid, int type, const ut8 *buf, int size) {
+static int r_debug_bf_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
+	RIOBfdbg *o;
+	if (!is_io_bf (dbg))
+		return 0;
+	if (!dbg || !(dbg->iob.io) || !(dbg->iob.io->fd) || !(dbg->iob.io->fd->data))
+		return 0;
+	o = dbg->iob.io->fd->data;
 	memcpy (&r, buf, sizeof (r));
+	o->bfvm->eip = r.pc;
+	o->bfvm->ptr = r.ptr; // dup
+	o->bfvm->esp = r.sp;
+	o->bfvm->screen = r.scr;
+	o->bfvm->screen_idx = r.scri;
+	o->bfvm->input = r.inp;
+	o->bfvm->input_idx = r.inpi;
+	o->bfvm->base = r.mem;
+	o->bfvm->ptr = r.memi; // dup
+// TODO: do the rest
 	// TODO: set vm regs from internal struct
 	return R_FALSE; // XXX Error check	
 }
 
 static int r_debug_bf_continue(RDebug *dbg, int pid, int tid, int sig) {
-	// bfvm_continue (bfvm);
+	RIOBfdbg *o = dbg->iob.io->fd->data;
+	bfvm_cont (o->bfvm, UT64_MAX);
+	return R_TRUE;
+}
+
+static int r_debug_bf_continue_syscall(RDebug *dbg, int pid, int num) {
+	RIOBfdbg *o = dbg->iob.io->fd->data;
+	bfvm_contsc (o->bfvm);
 	return R_TRUE;
 }
 
@@ -66,7 +116,16 @@ static int r_debug_bf_wait(RDebug *dbg, int pid) {
 }
 
 static int r_debug_bf_attach(RDebug *dbg, int pid) {
-	return is_io_bf (dbg);
+	if (!is_io_bf (dbg))
+		return R_FALSE;
+#if 0
+	RIOBfdbg *o;
+	o = dbg->iob.io->fd->data;
+eprintf ("base = %llx\n", o->bfvm->base);
+eprintf ("screen = %llx\n", o->bfvm->screen);
+eprintf ("input = %llx\n", o->bfvm->input);
+#endif
+	return R_TRUE;
 }
 
 static int r_debug_bf_detach(int pid) {
@@ -77,16 +136,33 @@ static int r_debug_bf_detach(int pid) {
 static char *r_debug_bf_reg_profile(RDebug *dbg) {
 	return strdup (
 	"=pc	pc\n"
-	"=sp	sp\n"
-	"=bp	bp\n"
+	"=sp	esp\n"
+	"=bp	ptr\n"
 	"gpr	pc	.32	0	0\n"
-	"gpr	bp	.32	4	0\n"
-	"gpr	sp	.32	8	0\n"
+	"gpr	ptr	.32	4	0\n"
+	"gpr	esp	.32	8	0\n"
+	"gpr	scr	.32	12	0\n"
+	"gpr	scri	.32	16	0\n"
+	"gpr	inp	.32	20	0\n"
+	"gpr	inpi	.32	24	0\n"
+	"gpr	mem	.32	28	0\n"
+	"gpr	memi	.32	32	0\n"
 	);
 }
 
 static int r_debug_bf_breakpoint (void *user, int type, ut64 addr, int hw, int rwx) {
 	//r_io_system (dbg->iob.io, "db");
+	return R_FALSE;
+}
+
+static int r_debug_bf_kill(RDebug *dbg, boolt thread, int sig) {
+	RIOBfdbg *o = dbg->iob.io->fd->data;
+	bfvm_reset (o->bfvm);
+	return R_TRUE;
+}
+
+static int r_debug_native_bp(RDebug *dbg, int add, ut64 addr, int hw, int rwx) {
+	eprintf ("TODO: breakpoints not implemented in brainfuck debugger. use dcu\n");
 	return R_FALSE;
 }
 
@@ -97,22 +173,25 @@ struct r_debug_plugin_t r_debug_plugin_bf = {
 	.bits = R_SYS_BITS_32,
 	.init = NULL,
 	.step = r_debug_bf_step,
+	.step_over = r_debug_bf_step_over,
 	.cont = r_debug_bf_continue,
+	.contsc = r_debug_bf_continue_syscall,
 	.attach = &r_debug_bf_attach,
 	.detach = &r_debug_bf_detach,
 	.wait = &r_debug_bf_wait,
 	.pids = NULL,
 	.tids = NULL,
 	.threads = NULL,
-	.kill = NULL,
+	.kill = r_debug_bf_kill,
 	.frames = NULL,
 	.map_get = NULL, // TODO ?
 	.breakpoint = &r_debug_bf_breakpoint,
 	.reg_read = &r_debug_bf_reg_read,
 	.reg_write = &r_debug_bf_reg_write,
 	.reg_profile = (void *)r_debug_bf_reg_profile,
-	//.bp_write = &r_debug_bf_bp_write,
-	//.bp_read = &r_debug_bf_bp_read,
+	.breakpoint = r_debug_native_bp,
+	//.ptr_write = &r_debug_bf_ptr_write,
+	//.ptr_read = &r_debug_bf_ptr_read,
 };
 
 #ifndef CORELIB

@@ -171,6 +171,7 @@ typedef struct r_debug_plugin_t {
 	RFList (*backtrace)(int count);
 	/* flow */
 	int (*step)(RDebug *dbg);
+	int (*step_over)(RDebug *dbg);
 	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
 	int (*wait)(RDebug *dbg, int pid);
 	int (*kill)(RDebug *dbg, boolt thread, int sig);
@@ -178,8 +179,8 @@ typedef struct r_debug_plugin_t {
 	RList* (*frames)(RDebug *dbg);
 	RBreakpointCallback breakpoint;
 // XXX: specify, pid, tid, or RDebug ?
-	int (*reg_read)(struct r_debug_t *dbg, int type, ut8 *buf, int size);
-	int (*reg_write)(int pid, int tid, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
+	int (*reg_read)(RDebug *dbg, int type, ut8 *buf, int size);
+	int (*reg_write)(RDebug *dbg, int type, const ut8 *buf, int size); //XXX struct r_regset_t regs);
 	char* (*reg_profile)(RDebug *dbg);
 	/* memory */
 	RList *(*map_get)(RDebug *dbg);

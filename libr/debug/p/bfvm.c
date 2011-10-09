@@ -22,9 +22,9 @@
 #include "bfvm.h"
 
 static ut8 bfvm_op(BfvmCPU *c) {
+	// XXX: this is slow :(
 	ut8 buf[4] = {0};
-	if (c)
-	if (!c->iob.read_at (c->iob.io, c->eip, buf, 4))
+	if (c && c->iob.read_at && !c->iob.read_at (c->iob.io, c->eip, buf, 4))
 		return 0xff;
 	return buf[0];
 }
@@ -38,6 +38,20 @@ int bfvm_in_trap(BfvmCPU *c) {
 	return 0;
 }
 
+R_API void bfvm_reset(BfvmCPU *c) {
+	memset (c->mem, '\0', c->size);
+	memset (c->input_buf, '\0', c->input_size);
+	memset (c->screen_buf, '\0', c->screen_size);
+	c->base = BFVM_DATA_ADDR;
+	c->input = BFVM_INPUT_ADDR;
+	c->input_idx = 0;
+	c->screen = BFVM_SCREEN_ADDR;
+	c->screen_idx = 0;
+	c->eip = 0; // TODO look forward nops
+	c->ptr = 0;
+	c->esp = c->base;
+}
+
 int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	memset (c, '\0', sizeof (BfvmCPU));
 
@@ -45,12 +59,10 @@ int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	c->mem = (ut8 *)malloc (size);
 	if (c->mem == NULL)
 		return 0;
-	c->base = BFVM_DATA_ADDR;
 	memset (c->mem, '\0', size);
 
 	/* setup */
 	c->circular = circular;
-	c->eip = 0; // look forward nops
 	c->size = size;
 
 	// TODO: use RBuffer or so here.. this is spagueti
@@ -61,17 +73,15 @@ int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	memset (c->screen_buf, '\0', c->screen_size);
 
 	/* input */
-	c->input = BFVM_INPUT_ADDR;
 	c->input_size = BFVM_INPUT_SIZE;
 	c->input_buf = (ut8*)malloc (c->input_size);
-	memset (c->input_buf, '\0', c->input_size);
-	c->esp = c->base;
+	bfvm_reset (c);
 	return 1;
 }
 
 R_API BfvmCPU *bfvm_new(RIOBind *iob) {
 	BfvmCPU *c = R_NEW0 (BfvmCPU);
-	bfvm_init (c, 4096, 0);
+	bfvm_init (c, 4096, 1);
 	memcpy (&c->iob, iob, sizeof (c->iob));
 	return c;
 }
@@ -86,19 +96,9 @@ R_API BfvmCPU *bfvm_free(BfvmCPU *c) {
 }
 
 R_API ut8 *bfvm_get_ptr_at(BfvmCPU *c, ut64 at) {
-	if (at >= c->base)
-		at-=c->base;
-
-	if (at<0) {
-		if (c->circular)
-			at = c->size-2;
-		else at=0;
-	} else
-	if (at >= c->size) {
-		if (c->circular)
-			at = 0;
-		else at = c->size-1;
-	}
+	if (at >= c->base) at -= c->base;
+	if (at<0) at = c->circular? c->size-2: 0;
+	else if (at >= c->size) at = c->circular? 0: c->size-1;
 	if (at<0) return c->mem;
 	return c->mem+at;
 }
@@ -110,21 +110,19 @@ R_API ut8 *bfvm_get_ptr(BfvmCPU *c) {
 
 R_API ut8 bfvm_get(BfvmCPU *c) {
 	ut8 *ptr = bfvm_get_ptr (c);
-	if (ptr != NULL)
-		return ptr[0];
-	return 0;
+	return ptr? *ptr: 0;
 }
 
 R_API void bfvm_inc(BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr (c);
 	if (mem != NULL)
-		*mem++;
+		mem[0]++;
 }
 
 R_API void bfvm_dec(BfvmCPU *c) {
 	ut8 *mem = bfvm_get_ptr (c);
 	if (mem != NULL)
-		*mem--;
+		mem[0]--;
 }
 
 R_API int bfvm_reg_set(BfvmCPU *c, const char *str) {
@@ -245,7 +243,7 @@ R_API int bfvm_contsc(BfvmCPU *c) {
 	while (!ci->breaked) {
 		bfvm_step (c, 0);
 		if (bfvm_in_trap (c)) {
-			eprintf("Trap instruction at 0x%08llx\n", c->eip);
+			eprintf ("Trap instruction at 0x%08llx\n", c->eip);
 			break;
 		}
 		switch (bfvm_op (c)) {
@@ -456,20 +454,18 @@ int bfdbg_system(const char *cmd)
 				break;
 			}
 		}
-	} else eprintf("Invalid debugger command. Try !help\n");
+	} else eprintf ("Invalid debugger command. Try !help\n");
 	return 0;
 }
 
-int bfdbg_close(int fd)
-{
+int bfdbg_close(int fd) {
 	if (fd == bfdbg_fd)
 		bfvm_destroy(&bfvm_cpu);
 	return close(fd);
 }
 
-ut64 bfdbg_lseek(int fildes, ut64 offset, int whence)
-{
-	switch(whence) {
+ut64 bfdbg_lseek(int fildes, ut64 offset, int whence) {
+	switch (whence) {
 	case SEEK_SET:
 		cur_seek = offset;
 		break;
@@ -483,19 +479,10 @@ ut64 bfdbg_lseek(int fildes, ut64 offset, int whence)
 		return cur_seek;
 #endif
 	}
-#if __WINDOWS__ 
-	return _lseek(fildes,(long)offset,whence);
-#else
-#if __linux__
-	return lseek64(fildes,(off_t)offset,whence);
-#else
-	return lseek(fildes,(off_t)offset,whence);
-#endif
-#endif
 }
 
 int bfdbg_plugin_init() {
-	return bfvm_init(0xFFFF, 1);
+	return bfvm_init (0xFFFF, 1);
 }
 
 #if  0
