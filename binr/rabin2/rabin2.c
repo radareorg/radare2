@@ -287,7 +287,7 @@ static void rabin_show_classes() {
 	}
 }
 
-static int rabin_show_symbols() {
+static int rabin_show_symbols(ut64 at) {
 	RList *symbols;
 	RListIter *iter;
 	RBinSymbol *symbol;
@@ -377,7 +377,7 @@ static int rabin_show_strings() {
 	return R_TRUE;
 }
 
-static int rabin_show_sections() {
+static int rabin_show_sections(ut64 at) {
 	RList *sections;
 	RListIter *iter;
 	RBinSection *section;
@@ -639,7 +639,7 @@ static int rabin_do_operation(const char *op) {
 	return R_TRUE;
 }
 
-static int rabin_show_srcline() {
+static int rabin_show_srcline(ut64 at) {
 	char *srcline;
 	if ((srcline = r_bin_meta_get_source_line (bin, at))) {
 		printf ("%s\n", srcline);
@@ -862,9 +862,9 @@ int main(int argc, char **argv) {
 	if (action&ACTION_MAIN)
 		rabin_show_main ();
 	if (action&ACTION_IMPORTS)
-		rabin_show_imports (at);
+		rabin_show_imports ();
 	if (action&ACTION_CLASSES)
-		rabin_show_classes (at);
+		rabin_show_classes ();
 	if (action&ACTION_SYMBOLS)
 		rabin_show_symbols (at);
 	if (action&ACTION_STRINGS)
@@ -874,11 +874,11 @@ int main(int argc, char **argv) {
 	if (action&ACTION_FIELDS)
 		rabin_show_fields();
 	if (action&ACTION_LIBS)
-		rabin_show_libs();
+		rabin_show_libs ();
 	if (action&ACTION_RELOCS)
-		rabin_show_relocs();
+		rabin_show_relocs ();
 	if (action&ACTION_SRCLINE)
-		rabin_show_srcline(at);
+		rabin_show_srcline (at);
 	if (action&ACTION_EXTRACT)
 		rabin_extract ((arch==NULL && arch_name==NULL && bits==0));
 	if (op != NULL && action&ACTION_OPERATION)

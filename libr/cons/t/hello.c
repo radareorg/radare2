@@ -21,7 +21,7 @@ int main() {
 		r_cons_fgets (buf, sizeof (buf), 0, NULL);
 		r_cons_printf ("%s\n", buf);
 		r_cons_flush ();
-		if (strstr (buf, "exit"));
+		if (strstr (buf, "exit"))
 			break;
 	}
 

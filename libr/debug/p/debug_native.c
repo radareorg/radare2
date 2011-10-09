@@ -1306,8 +1306,6 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 }
 
 static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size) {
-	int pid = dbg->pid;
-	int tid = dbg->tid;
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __KFBSD__
@@ -1319,7 +1317,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		int i;
 		ut32 *val = (ut32 *)buf;
 		for (i=0; i<7; i++) { // DR0-DR7
-			ptrace (PTRACE_POKEUSER, pid, r_offsetof (
+			ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
 				struct user, u_debugreg[i]), *(val+i));
 			//if (ret != 0)
 			//	return R_FALSE;
@@ -1334,7 +1332,9 @@ return R_FALSE;
 #endif
 	} else
 	if (type == R_REG_TYPE_GPR) {
+		int pid = dbg->pid;
 #if __WINDOWS__
+		int tid = dbg->tid;
 		CONTEXT ctx __attribute__((aligned (16)));
 		memcpy (&ctx, buf, sizeof (CONTEXT));
 		ctx.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
@@ -1899,13 +1899,12 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 
 static RList *r_debug_desc_native_list (int pid) {
 	RList *ret = NULL;
-	RDebugDesc *desc;
-	int perm, type;
 // TODO: windows
 #if __KFBSD__
-	int mib[4];
+	int perm, type, mib[4];
 	size_t len;
 	char *buf, *bp, *eb, *str, path[1024];
+	RDebugDesc *desc;
 	struct kinfo_file *kve;
 
 	len = 0;
@@ -1977,7 +1976,9 @@ static RList *r_debug_desc_native_list (int pid) {
 	}
 	free (buf);
 #elif __linux__
-	char path[1024], file[2048], buf[1024];
+	RDebugDesc *desc;
+	int type, perm;
+	char path[512], file[512], buf[512];
 	struct dirent *de;
 	DIR *dd;
 	struct stat st;

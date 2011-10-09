@@ -158,16 +158,11 @@ static int r_debug_bf_kill(RDebug *dbg, boolt thread, int sig) {
 	return R_TRUE;
 }
 
-static int r_debug_native_bp(RDebug *dbg, int add, ut64 addr, int hw, int rwx) {
-	eprintf ("TODO: breakpoints not implemented in brainfuck debugger. use dcu\n");
-	return R_FALSE;
-}
-
 static RList *r_debug_native_map_get(RDebug *dbg) {
 	RIOBfdbg *o = dbg->iob.io->fd->data;
 	BfvmCPU *c = o->bfvm;
 	RList *list = r_list_new ();
-	list->free = r_debug_map_free;
+	list->free = (RListFree)r_debug_map_free;
 	r_list_append (list, r_debug_map_new (
 		"code", 0, 4096, 6, 0));
 	r_list_append (list, r_debug_map_new (
@@ -197,7 +192,6 @@ struct r_debug_plugin_t r_debug_plugin_bf = {
 	.threads = NULL,
 	.kill = r_debug_bf_kill,
 	.frames = NULL,
-	.map_get = NULL, // TODO ?
 	.breakpoint = &r_debug_bf_breakpoint,
 	.reg_read = &r_debug_bf_reg_read,
 	.reg_write = &r_debug_bf_reg_write,

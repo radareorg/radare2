@@ -20,6 +20,7 @@
 #include <grub/err.h>
 #include <grub/misc.h>
 #include <stdarg.h>
+#include <stdlib.h>
 #include <grub/i18n.h>
 
 GRUB_EXPORT(grub_errno);
@@ -70,7 +71,7 @@ grub_fatal (const char *fmt, ...)
   grub_vprintf (_(fmt), ap);
   va_end (ap);
 
-  grub_abort ();
+  abort ();
 }
 
 void

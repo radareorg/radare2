@@ -28,6 +28,7 @@
 #include <grub/dl.h>
 #include <grub/types.h>
 #include <grub/hfs.h>
+#include <stdlib.h>
 
 #define	GRUB_HFS_SBLOCK		2
 #define GRUB_HFS_EMBED_HFSPLUS_SIG 0x482B
@@ -658,13 +659,24 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx, int thi
 			  void *closure)
 {
   int nodesize = type == 0 ? data->cat_size : data->ext_size;
-
+#if GCC
   union
   {
     struct grub_hfs_node node;
     char rawnode[nodesize];
     grub_uint16_t offsets[nodesize / 2];
   } node;
+#else
+  union
+  {
+    struct grub_hfs_node node;
+    char *rawnode;
+    grub_uint16_t *offsets; //[nodesize / 2];
+  } node;
+#endif
+
+node.rawnode = malloc (nodesize);
+node.offsets = malloc ((nodesize*sizeof(grub_uint16_t))/2);
 
   do
     {
@@ -685,8 +697,11 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx, int thi
 	return grub_errno;
 
       if (grub_disk_read (data->disk, blk, 0,
-			  sizeof (node), &node))
-	return grub_errno;
+			      sizeof (node), &node)) {
+	      free (node.rawnode);
+	      free (node.offsets);
+	      return grub_errno;
+      }
 
       /* Iterate over all records in this node.  */
       for (i = 0; i < grub_be_to_cpu16 (node.node.reccnt); i++)
@@ -709,12 +724,18 @@ grub_hfs_iterate_records (struct grub_hfs_data *data, int type, int idx, int thi
 	      - pnt->keylen - 1
 	    };
 
-	  if (node_hook (&node.node, &rec, closure))
+	  if (node_hook (&node.node, &rec, closure)) {
+		  free (node.rawnode);
+		  free (node.offsets);
 	    return 0;
+		}
 	}
 
       idx = grub_be_to_cpu32 (node.node.next);
     } while (idx && this);
+
+  free (node.rawnode);
+  free (node.offsets);
 
   return 0;
 }

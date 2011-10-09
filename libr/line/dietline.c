@@ -502,7 +502,7 @@ R_API char *r_line_readline() {
 						break;
 					if (strstr (I.history.data[i], I.buffer.data)) {
 						gcomp_line = I.history.data[i];
-						if (!gcomp_idx--);
+						if (!gcomp_idx--)
 							break;
 					}
 				}
