@@ -38,7 +38,7 @@ public class Radare.RDebug {
 	public bool map_dealloc (RDebug.Map map);
 	//public RList<RDebug.Map> map_list_new ();
 	//public void map_list_free (RList<RDebug.Map> maps);
-	public void map_list (uint64 addr);
+	public void map_list (uint64 addr, bool rad);
 	public RDebug.Map map_get(uint64 addr);
 	public bool map_sync ();
 

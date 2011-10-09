@@ -66,7 +66,7 @@ RAsmPlugin r_asm_plugin_x86_as = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = NULL,
-	.assemble = &assemble, 
+	.assemble = &assemble,
 };
 
 #ifndef CORELIB

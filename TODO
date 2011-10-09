@@ -5,6 +5,9 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
+* Add command to assemble opcodes and files without writing
+  - wan? wax? wafx?
+
 ====[[ 0.8.6 ]]====
 * asm.pseudo for brainfuck
 * implement 'ax' to get/set xrefs (better than afl <addr>)

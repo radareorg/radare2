@@ -3022,30 +3022,40 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'a':
-		if (input[1]==' ') {
+		if (input[1]==' '||input[1]=='*') {
+			const char *file = input[1]=='*'? input+2: input+1;
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
-			acode = r_asm_massemble (core->assembler, input+1);
+			acode = r_asm_massemble (core->assembler, file);
 			if (acode) {
-				if (r_config_get_i (core->config, "scr.prompt"))
-				eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
-				r_core_write_at (core, core->offset, acode->buf, acode->len);
-				WSEEK (core, acode->len);
+				if (input[1]=='*') {
+					r_cons_printf ("wx %s\n", acode->buf_hex);
+				} else {
+					if (r_config_get_i (core->config, "scr.prompt"))
+					eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+					r_core_write_at (core, core->offset, acode->buf, acode->len);
+					WSEEK (core, acode->len);
+					r_core_block_read (core, 0);
+				}
 				r_asm_code_free (acode);
-				r_core_block_read (core, 0);
 			}
 		} else
-		if (input[1]=='f' && input[2]==' ') {
+		if (input[1]=='f' && (input[2]==' '||input[2]=='*')) {
+			const char *file = input[2]=='*'? input+4: input+3;
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
-			acode = r_asm_assemble_file (core->assembler, input+3);
+			acode = r_asm_assemble_file (core->assembler, file);
 			if (acode) {
-				if (r_config_get_i (core->config, "scr.prompt"))
-				eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
-				r_core_write_at (core, core->offset, acode->buf, acode->len);
-				WSEEK (core, acode->len);
+				if (input[2]=='*') {
+					r_cons_printf ("wx %s\n", acode->buf_hex);
+				} else {
+					if (r_config_get_i (core->config, "scr.prompt"))
+					eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+					r_core_write_at (core, core->offset, acode->buf, acode->len);
+					WSEEK (core, acode->len);
+					r_core_block_read (core, 0);
+				}
 				r_asm_code_free (acode);
-				r_core_block_read (core, 0);
 			} else eprintf ("Cannot assemble file\n");
 		} else eprintf ("Wrong argument\n");
 		break;

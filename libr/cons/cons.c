@@ -124,8 +124,10 @@ R_API RCons *r_cons_new () {
 }
 
 R_API RCons *r_cons_free () {
-	if (I.buffer)
+	if (I.buffer) {
 		free (I.buffer);
+		I.buffer = NULL;
+	}
 	return NULL;
 }
 
