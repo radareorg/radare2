@@ -237,11 +237,7 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 						return -1;
 					return 1;
 				}
-				//(void)strlcpy(buf2, fn, sizeof buf2);  /* take dir part */
-				strncpy (buf2, fn, sizeof (buf2)-1);
-				buf2[tmp - fn + 1] = '\0';
-				//(void)strlcat(buf2, buf, sizeof buf2); /* plus (rel) link */
-				strncpy (buf2, buf, sizeof (buf2)-1);
+				snprintf (buf2, sizeof (buf2), "%s%s", fn, buf);
 				tmp = buf2;
 			}
 			if (stat (tmp, &tstatbuf) < 0)

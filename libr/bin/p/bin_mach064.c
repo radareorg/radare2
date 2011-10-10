@@ -166,13 +166,15 @@ D(0x80000003); // unknown subtype issue
 }
 
 static RBinAddr* binsym(RBinArch *arch, int sym) {
+	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr)))
+		addr = MACH0_(r_bin_mach0_get_main) (arch->bin_obj);
+		if (!addr || !(ret = R_NEW (RBinAddr)))
 			return NULL;
 		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = MACH0_(r_bin_mach0_get_main) (arch->bin_obj);
+		ret->offset = ret->rva = addr;
 		break;
 	}
 	return ret;

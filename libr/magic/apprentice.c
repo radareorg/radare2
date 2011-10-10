@@ -648,7 +648,7 @@ out:
  */
 ut64 file_signextend(RMagic *ms, struct r_magic *m, ut64 v) {
 	if (!(m->flag & UNSIGNED)) {
-		switch(m->type) {
+		switch (m->type) {
 		/*
 		 * Do not remove the casts below.  They are
 		 * vital.  When later compared with the data,

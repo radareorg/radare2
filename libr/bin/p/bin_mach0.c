@@ -128,21 +128,19 @@ static RList* imports(RBinArch *arch) {
 }
 
 static RList* libs(RBinArch *arch) {
-	RList *ret = NULL;
-	char *ptr = NULL;
-	struct r_bin_mach0_lib_t *libs = NULL;
 	int i;
-
-	if (!(ret = r_list_new ()))
-		return NULL;
+	char *ptr = NULL;
+	struct r_bin_mach0_lib_t *libs;
+	RList *ret = r_list_new ();
+	if (!ret) return NULL;
 	ret->free = free;
-	if (!(libs = MACH0_(r_bin_mach0_get_libs) (arch->bin_obj)))
-		return ret;
-	for (i = 0; !libs[i].last; i++) {
-		ptr = strdup (libs[i].name);
-		r_list_append (ret, ptr);
+	if ((libs = MACH0_(r_bin_mach0_get_libs) (arch->bin_obj))) {
+		for (i = 0; !libs[i].last; i++) {
+			ptr = strdup (libs[i].name);
+			r_list_append (ret, ptr);
+		}
+		free (libs);
 	}
-	free (libs);
 	return ret;
 }
 
@@ -359,13 +357,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 static RBinAddr* binsym(RBinArch *arch, int sym) {
+	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr)))
+		addr = MACH0_(r_bin_mach0_get_main) (arch->bin_obj);
+		if (!addr || !(ret = R_NEW (RBinAddr)))
 			return NULL;
 		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = MACH0_(r_bin_mach0_get_main) (arch->bin_obj);
+		ret->offset = ret->rva = addr;
 		break;
 	}
 	return ret;

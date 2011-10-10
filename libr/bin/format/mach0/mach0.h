@@ -85,7 +85,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	int size;
 	ut64 baddr;
 	ut64 entry;
-	int	endian;
+	int endian;
 	const char* file;
 	struct r_buf_t* b;
 };
