@@ -139,7 +139,7 @@ static int config_analsplit_callback(void *user, void *data) {
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	int ret = r_syscall_setup (core->anal->syscall, 
+	r_syscall_setup (core->anal->syscall, 
 			r_config_get (core->config, "asm.arch"),
 			node->value, core->anal->bits);
 	//if (!ret) eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);

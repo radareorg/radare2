@@ -5,8 +5,6 @@
 
 #if __WINDOWS__
 #include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/w32.h>
 
 typedef struct {
 	HANDLE hnd;
@@ -37,7 +35,7 @@ static int w32__close(RIODesc *fd) {
 
 // TODO: handle filesize and so on
 static ut64 w32__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
-	SetFilePointer(RIOW32_HANDLE (fd), offset, 0, !whence?FILE_BEGIN:whence==1?FILE_CURRENT:FILE_END)
+	SetFilePointer (RIOW32_HANDLE (fd), offset, 0, !whence?FILE_BEGIN:whence==1?FILE_CURRENT:FILE_END);
         return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
 }
 
@@ -46,14 +44,14 @@ static int w32__plugin_open(RIO *io, const char *pathname) {
 }
 
 static inline int getw32fd (RIOW32 *w32) {
-	return (int)(size_t)w32->fd;
+	return (int)(size_t)w32->hnd;
 }
 
 static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!memcmp (pathname, "w32://", 6)) {
 		RIOW32 *w32 = R_NEW (RIOW32);
-		const char *ptr = pathname+6;
-		w32->hnd = CreateFile (pathname,
+		const char *filename= pathname+6;
+		w32->hnd = CreateFile (filename,
 			GENERIC_READ | rw?GENERIC_WRITE:0,
 			FILE_SHARE_READ | rw?FILE_SHARE_WRITE:0,
 			NULL, OPEN_ALWAYS, 0, NULL);
