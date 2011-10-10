@@ -1592,13 +1592,15 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 		// TODO: Move RMagic into RCore
 		r_magic_free (ck);
 		ck = r_magic_new (0);
-		if ((file && *file) && (r_magic_load (ck, MAGICPATH) == -1))
-			eprintf ("failed r_magic_load ("MAGICPATH") %s\n", r_magic_error (ck));
 	}
-	if (file)
-	if (r_magic_load (ck, file) == -1) {
-		eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
-		return;
+	if (file) {
+		if (r_magic_load (ck, file) == -1) {
+			eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
+			return;
+		}
+	} else {
+		if (r_magic_load (ck, MAGICPATH) == -1)
+			eprintf ("failed r_magic_load ("MAGICPATH") %s\n", r_magic_error (ck));
 	}
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	str = r_magic_buffer (ck, core->block, core->blocksize);
@@ -2411,7 +2413,8 @@ static int cmd_anal(void *data, const char *input) {
 				ret = r_anal_op (core->anal, &op,
 					core->offset+idx, buf + idx, (len-idx));
 				if (ret<1) {
-					eprintf ("Oops at 0x%08"PFMT64x"\n", core->offset+idx);
+					eprintf ("Oops at 0x%08"PFMT64x" (%02x %02x %02x ...)\n",
+						core->offset+idx, buf[idx], buf[idx+1], buf[idx+2]);
 					break;
 				}
 				r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
@@ -3022,8 +3025,15 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'a':
-		if (input[1]==' '||input[1]=='*') {
-			const char *file = input[1]=='*'? input+2: input+1;
+		switch (input[1]) {
+		case 'o':
+			if (input[2] == ' ')
+				r_core_hack (core, input+3);
+			else r_core_hack_help (core);
+			break;
+		case ' ':
+		case '*':
+			{ const char *file = input[1]=='*'? input+2: input+1;
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, file);
@@ -3039,25 +3049,37 @@ static int cmd_write(void *data, const char *input) {
 				}
 				r_asm_code_free (acode);
 			}
-		} else
-		if (input[1]=='f' && (input[2]==' '||input[2]=='*')) {
-			const char *file = input[2]=='*'? input+4: input+3;
-			RAsmCode *acode;
-			r_asm_set_pc (core->assembler, core->offset);
-			acode = r_asm_assemble_file (core->assembler, file);
-			if (acode) {
-				if (input[2]=='*') {
-					r_cons_printf ("wx %s\n", acode->buf_hex);
-				} else {
-					if (r_config_get_i (core->config, "scr.prompt"))
-					eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
-					r_core_write_at (core, core->offset, acode->buf, acode->len);
-					WSEEK (core, acode->len);
-					r_core_block_read (core, 0);
-				}
-				r_asm_code_free (acode);
-			} else eprintf ("Cannot assemble file\n");
-		} else eprintf ("Wrong argument\n");
+			} break;
+		case 'f':
+			if ((input[2]==' '||input[2]=='*')) {
+				const char *file = input[2]=='*'? input+4: input+3;
+				RAsmCode *acode;
+				r_asm_set_pc (core->assembler, core->offset);
+				acode = r_asm_assemble_file (core->assembler, file);
+				if (acode) {
+					if (input[2]=='*') {
+						r_cons_printf ("wx %s\n", acode->buf_hex);
+					} else {
+						if (r_config_get_i (core->config, "scr.prompt"))
+						eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+						r_core_write_at (core, core->offset, acode->buf, acode->len);
+						WSEEK (core, acode->len);
+						r_core_block_read (core, 0);
+					}
+					r_asm_code_free (acode);
+				} else eprintf ("Cannot assemble file\n");
+			} else eprintf ("Wrong argument\n");
+			break;
+		default:
+			eprintf ("Usage: wa[of*] [arg]\n"
+				" wa nop           : write nopcode using asm.arch and asm.bits\n"
+				" wa* mov eax, 33  : show 'wx' op with hexpair bytes of sassembled opcode\n"
+				" \"wa nop;nop\"     : assemble more than one instruction (note the quotes)\n"
+				" waf foo.asm      : assemble file and write bytes\n"
+				" wao nop          : convert current opcode into nops\n"
+				" wao?             : show help for assembler operation on current opcode (aka hack)\n");
+			break;
+		}
 		break;
 	case 'b':
 		{

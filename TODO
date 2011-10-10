@@ -5,8 +5,7 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
-* Add command to assemble opcodes and files without writing
-  - wan? wax? wafx?
+* 'ao' must be for bytes count, not bytes
 
 ====[[ 0.8.6 ]]====
 * asm.pseudo for brainfuck

@@ -240,6 +240,9 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 
 R_API int r_core_patch (RCore *core, const char *patch);
 
+R_API void r_core_hack_help(RCore *core);
+R_API int r_core_hack(RCore *core, const char *op);
+
 #endif
 
 #endif

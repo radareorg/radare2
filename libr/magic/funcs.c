@@ -211,7 +211,6 @@ const char *file_getbuffer(RMagic *ms) {
 	if (ms->haderr)
 		return NULL;
 
-
 	if (ms->flags & R_MAGIC_RAW)
 		return ms->o.buf;
 
@@ -233,7 +232,8 @@ const char *file_getbuffer(RMagic *ms) {
 	}
 	ms->o.pbuf = pbuf;
 
-#if defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
+#if 1
+//defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
 	{
 		mbstate_t state;
 		wchar_t nextchar;

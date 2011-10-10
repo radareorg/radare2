@@ -5,9 +5,7 @@
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	char *str;
 	ut8 *buf;
-	int i,j;
-	int ret;
-	int len;
+	int i, j, ret, len;
 
 	// XXX we can work with config.block instead of dupping it
 	buf = (ut8 *)malloc (core->blocksize);
