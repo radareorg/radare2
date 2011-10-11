@@ -1651,7 +1651,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 
 	/* TODO: Change also blocksize for 'pd'.. */
-l = len;
+	l = len;
 	if (input[0] && input[1]) {
 		if (input[2]) {
 			l = (int) r_num_math (core->num, input+(input[1]==' '?2:3));
@@ -2312,6 +2312,32 @@ R_API int r_core_search_preludes(RCore *core) {
 	return ret;
 }
 
+static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len) {
+	int ret, idx;
+	RAnalOp op;
+
+	for (idx=ret=0; idx<len; idx+=ret) {
+		ret = r_anal_op (core->anal, &op,
+				core->offset+idx, buf + idx, (len-idx));
+		if (ret<1) {
+			eprintf ("Oops at 0x%08"PFMT64x" (%02x %02x %02x ...)\n",
+					core->offset+idx, buf[idx], buf[idx+1], buf[idx+2]);
+			break;
+		}
+		r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
+		r_cons_printf ("size: %d\n", op.length);
+		r_cons_printf ("type: %d\n", op.type); // TODO: string
+		r_cons_printf ("eob: %d\n", op.eob);
+		r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
+		r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
+		r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
+		r_cons_printf ("cond: %d\n", op.cond); // TODO: string
+		r_cons_printf ("family: %d\n", op.family);
+		r_cons_printf ("\n");
+		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
+	}
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
@@ -2329,6 +2355,24 @@ static int cmd_anal(void *data, const char *input) {
 	}
 
 	switch (input[0]) {
+	case 'b':
+		if (input[1]==' ') {
+			int len;
+			ut8 *buf = malloc (strlen (input));
+			len = r_hex_str2bin (input+2, buf);
+			if (len>0) {
+				r_core_anal_bytes (core, buf, len);
+			}
+			free (buf);
+		} else eprintf ("Usage: ab [hexpair-bytes]\n");
+		break;
+	case '8':
+		if (input[1]==' ') {
+			RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, input+2);
+			r_cons_puts (c->buf_asm);
+			r_asm_code_free (c);
+		} else eprintf ("Usage: a8 [hexpair-bytes]\n");
+		break;
 	case 'x':
 		switch (input[1]) {
 		case '\0':
@@ -2405,30 +2449,7 @@ static int cmd_anal(void *data, const char *input) {
 		if (input[1] == 'e') {
 			eprintf ("TODO: r_anal_op_execute\n");
 		} else {
-			int ret, idx;
-			ut8 *buf = core->block;
-			RAnalOp op;
-
-			for (idx=ret=0; idx<len; idx+=ret) {
-				ret = r_anal_op (core->anal, &op,
-					core->offset+idx, buf + idx, (len-idx));
-				if (ret<1) {
-					eprintf ("Oops at 0x%08"PFMT64x" (%02x %02x %02x ...)\n",
-						core->offset+idx, buf[idx], buf[idx+1], buf[idx+2]);
-					break;
-				}
-				r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
-				r_cons_printf ("size: %d\n", op.length);
-				r_cons_printf ("type: %d\n", op.type); // TODO: string
-				r_cons_printf ("eob: %d\n", op.eob);
-				r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
-				r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
-				r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
-				r_cons_printf ("cond: %d\n", op.cond); // TODO: string
-				r_cons_printf ("family: %d\n", op.family);
-				r_cons_printf ("\n");
-				//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
-			}
+			r_core_anal_bytes (core, core->block, len);
 		}
 		break;
 	case 'f':
@@ -2824,16 +2845,19 @@ static int cmd_anal(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: a[?obdfrgtv]\n"
-		" aa               ; Analyze all (fcns + bbs)\n"
-		" ap               ; Find and analyze function preludes\n"
-		" ad [from] [to]   ; Analyze data pointers to (from-to)\n"
-		" as [num]         ; Analyze syscall using dbg.reg\n"
+		" aa               ; analyze all (fcns + bbs)\n"
+		" a8 [hexpairs]    ; analyze bytes as disassemble\n"
+		" ab [hexpairs]    ; analyze bytes as opcodes\n"
+		" ad               ; analyze data trampoline (wip)\n"
+		" ap               ; find and analyze function preludes\n"
+		" ad [from] [to]   ; analyze data pointers to (from-to)\n"
+		" as [num]         ; analyze syscall using dbg.reg\n"
 		" ax[-cCd] [f] [t] ; manage code/call/data xrefs\n"
-		" ao[e?] [len]     ; Analyze Opcodes (or emulate it)\n"
-		" af[bcsl?+-*]     ; Analyze Functions\n"
-		" ar[?ld-*]        ; Manage refs/xrefs\n"
-		" ag[?acgdlf]      ; Output Graphviz code\n"
-		" at[trd+-*?] [.]  ; Analyze execution Traces\n"
+		" ao[e?] [len]     ; analyze Opcodes (or emulate it)\n"
+		" af[bcsl?+-*]     ; analyze Functions\n"
+		" ar[?ld-*]        ; manage refs/xrefs\n"
+		" ag[?acgdlf]      ; output Graphviz code\n"
+		" at[trd+-*?] [.]  ; analyze execution Traces\n"
 		"Examples:\n"
 		" f ts @ `S*~text:0[3]`; f t @ section..text\n"
 		" f ds @ `S*~data:0[3]`; f d @ section..data\n"
