@@ -19,9 +19,11 @@ REMOTEDIR=""
 TARGETS="
 	build
 	bindist
+	python
+	python-dist
 	mingw32
 	android-arm
 	android-x86
-	python-dist
 "
+
 # mingw64 maemo

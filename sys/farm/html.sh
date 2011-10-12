@@ -12,7 +12,7 @@ for a in log/*.log ; do
 	echo "<h1><a href=./>index</a></h1>" >> $b
 	echo "<h1>$a</h1>" >> $b
 	warnings=$(cat $a|grep warning: |wc -l)
-	errors=$(cat $a|grep error: |wc -l)
+	errors=$(cat $a|grep -e error: -e 'returned 1'|wc -l)
 	if [ -f $t ]; then
 		echo "<h2>time:</h2>" >> $b
 		echo "<pre>" >> $b
