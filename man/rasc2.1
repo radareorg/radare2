@@ -19,13 +19,13 @@
 .Sh DESCRIPTION
 rasc2 implements the most common practices to generate shellcodes with paddings with 0x41's ('A'), nops, breakpoints or enumerations (00 01 02 03 ..).
 .Pp
-rasc2 can serve a syscall proxy at a specified port with -l [port]
+rasc2 can serve a syscall proxy at a specified port with \-l [port]
 .Pp
-There's an hardcoded database of common used shellcodes that can be listed with -L. Use -i to specify which want you want to use.
+There's an hardcoded database of common used shellcodes that can be listed with \-L. Use \-i to specify which want you want to use.
 .Pp
-The output can be raw or in hexpairs (-x) or C array (-c).
+The output can be raw or in hexpairs (\-x) or C array (\-c).
 .Pp
-Use -X to inline execute the specified. (useful for testing)
+Use \-X to inline execute the specified. (useful for testing)
 .Pp
 To specify the 
 .Bl -tag -width Fl
@@ -34,7 +34,7 @@ Specify the number of 'A's, breakpoints, enumerations and nops to be prefixed to
 .It Fl a Ar addr@off
 Set the return address at a specified offset inside the resulting shellcode
 .It Fl s Ar 'hexpair'
-Set the shellcode in hexpair format. For example (-s '01 02 03')
+Set the shellcode in hexpair format. For example (\-s '01 02 03')
 .It Fl l Ar port
 Listen a syscall proxy server at a specified port.
 .It Fl L
@@ -51,7 +51,7 @@ Performs some tests on the current platform
 Show usage help message.
 .El
 .Sh ENVIRONMENT
-Some shellcodes can be modified using the environment variables CMD, HOST and PORT. See -L for more information.
+Some shellcodes can be modified using the environment variables CMD, HOST and PORT. See \-L for more information.
 .Sh SEE ALSO
 .Pp
 .Xr rahash2(1) ,

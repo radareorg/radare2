@@ -1616,7 +1616,7 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 			}
 		// TODO: This must be a callback .. move this into RSearch?
 		r_cons_printf ("0x%08"PFMT64x" %d %s\n", addr, magicdepth-depth, p);
-		// walking childs
+		// walking children
 		for (q=p; *q; q++) {
 			switch (*q) {
 			case ' ':
@@ -2629,7 +2629,7 @@ static int cmd_anal(void *data, const char *input) {
 		case '?':
 			r_cons_printf (
 			"Usage: ag[?f]\n"
-			" ag [addr]       ; Output graphviz code (bb at addr and childs)\n"
+			" ag [addr]       ; Output graphviz code (bb at addr and children)\n"
 			" aga [addr]      ; Idem, but only addresses\n"
 			" agc [addr]      ; Output graphviz call graph of function\n"
 			" agl [fcn name]  ; Output graphviz code using meta-data\n"
@@ -4833,7 +4833,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case '?':
 		r_cons_printf ("Usage: dp[=][pid]\n"
 			" dp      list current pid and childrens\n"
-			" dp 748  list childs of pid\n"
+			" dp 748  list children of pid\n"
 			" dp*     list all attachable pids\n"
 			" dpa 377 attach and select this pid\n"
 			" dp=748  select this pid\n"
@@ -4975,7 +4975,7 @@ static int cmd_debug(void *data, const char *input) {
 		case '?':
 			eprintf("Usage: dc[?]  -- continue execution\n"
 				" dc?              show this help\n"
-				" dc               continue execution of all childs\n"
+				" dc               continue execution of all children\n"
 				" dcf              continue until fork (TODO)\n"
 				" dca [sym] [sym]. continue at every hit on any given symbol\n"
 				" dct [len]        traptrace from curseek to len, no argument to list\n"

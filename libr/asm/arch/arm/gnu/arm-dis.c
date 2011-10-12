@@ -4176,5 +4176,5 @@ the -M switch:\n"));
 	     regnames[i].description);
 
   fprintf (stream, "  force-thumb              Assume all insns are Thumb insns\n");
-  fprintf (stream, "  no-force-thumb           Examine preceeding label to determine an insn's type\n\n");
+  fprintf (stream, "  no-force-thumb           Examine preceding label to determine an insn's type\n\n");
 }

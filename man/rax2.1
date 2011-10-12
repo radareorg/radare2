@@ -22,17 +22,17 @@ Show usage help message.
 .El
 .Sh USAGE
 .Pp
-With no arguments, rax reads values from stdin. You can pass one or more values as arguments, and swap endiannes of the output with the '-e' flag.
+With no arguments, rax reads values from stdin. You can pass one or more values as arguments, and swap endiannes of the output with the '\-e' flag.
 .Pp
-TODO: Using '-' as argument rax will read binary data from stdin and print out the hex pairs to stdout.
+TODO: Using '\-' as argument rax will read binary data from stdin and print out the hex pairs to stdout.
 .Pp
-  $ rax2 -33 -e -33
+  $ rax2 \-33 \-e \-33
   0xffffffdf
   0xdfffffff
 .Pp
 TODO: The '-s' flag converts radare into a hexpair-to-binary converter, so you can do 'unpack' hexpair encoded strings easily.
 .Pp
-  $ rax2 -s 41 42 43
+  $ rax2 \-s 41 42 43
   ABC
 .Pp
 It is very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.

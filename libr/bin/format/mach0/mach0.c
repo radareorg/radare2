@@ -311,7 +311,7 @@ static int MACH0_(r_bin_mach0_init)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 		return R_FALSE;
 	}
 	if (!MACH0_(r_bin_mach0_init_items)(bin))
-		eprintf ("Warning: Cannot initalize items\n");
+		eprintf ("Warning: Cannot initialize items\n");
 	return R_TRUE;
 }
 

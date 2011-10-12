@@ -237,7 +237,7 @@ static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin)
 		return R_FALSE;
 	}
 	if (!PE_(r_bin_pe_init_sections)(bin)) {
-		eprintf("Warning: Cannot initalize sections\n");
+		eprintf("Warning: Cannot initialize sections\n");
 		return R_FALSE;
 	}
 	PE_(r_bin_pe_init_imports)(bin);

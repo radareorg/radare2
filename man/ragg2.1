@@ -13,7 +13,7 @@
 .Op Fl o Ar file
 .Op Fl FOIsxXh
 .Sh DESCRIPTION
-ragg2 is a frontend for r_egg, it allows to compile programs into tiny binaries for x86-32/64 and arm.
+ragg2 is a frontend for r_egg, compile programs into tiny binaries for x86-32/64 and arm.
 .Pp
 This tool is experimental and it is a rewrite of the old rarc2 and rarc2-tool programs as a library and integrated with r_asm and r_bin.
 .Pp
@@ -51,13 +51,13 @@ execute (just-in-time)
   /* hello world in r_egg */
   write@syscall(4);
   exit@syscall(1);
-  
+.Pp  
   main@global(128) {
     .var0 = "hi!\n";
     write(1,.var0, 4);
     exit(0);
   }
-  $ ragg2 -O -F hi.r
+  $ ragg2 \-O \-F hi.r
   $ ./hi
   hi!
 .Pp
