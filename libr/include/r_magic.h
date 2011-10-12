@@ -7,6 +7,8 @@
 #define MAGIC "/etc/magic"
 #endif
 
+#define R_MAGIC_PATH PREFIX"/lib/radare2/"R2_VERSION"/magic"
+
 #ifdef __EMX__
 #define PATHSEP	';'
 #else

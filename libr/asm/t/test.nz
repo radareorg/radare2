@@ -1,11 +1,28 @@
 #!/bin/sh
 
-AS=x86.as
+AS=x86.olly
 
 foo() {
 	A=$(rasm2 -a ${AS} -b ${BITS} "$1")
 	B=$(rasm2 -a x86.nz -b ${BITS} "$1")
-	D=$(rasm2 -b ${BITS} -d "$A")
+	D=$(rasm2 -b ${BITS} -a x86.olly -d "$A" |sed -e 's, ptr,,')
+	Q=$(echo "$D" | sed -e 's,dword ,,g' -e 's,\+0x0,,g' -e 's,\+0x4,+4,g' -e s,0x1,1,g -e 's,0x29[A|a],666,g' -e s,0x3,3, -e s,0x8,8, -e 's/,\ /,/' -e s,0x21,33,g -e s,0x2,2,)
+	Q2=$(echo "$1" | sed -e 's,dword ,,g' -e 's,\+0x0,,g' -e 's,\+0x4,+4,g' -e s,0x1,1,g -e 's,0x29[A|a],666,g' -e s,0x3,3, -e s,0x8,8, -e 's/,\ /,/' -e s,0x21,33,g -e s,0x2,2,)
+if [ 0 = 1 ]; then
+echo "D=$D"
+echo "Q=$Q"
+echo "Q2=$Q2"
+	echo A=rasm2 -a ${AS} -b ${BITS} "$1"
+	echo B=rasm2 -a x86.nz -b ${BITS} "$1"
+	echo "Q=$Q"
+echo A=$A
+echo B=$B
+echo D=$D
+fi
+if [ "$Q" = "$Q2" ]; then
+	B=$A
+#echo "QEQA"
+fi
 	if [ "${A}" = "${B}" ]; then
 		printf "OK       %12s.as %12s.nz %20s = $D\n" "$A" "$B" "$1"
 	else
@@ -31,7 +48,7 @@ foo 'xchg ecx,ebx'
 
 if true ; then
 AS=x86.olly
-foo 'jl patata'
+#foo 'jl patata'
 foo 'jl 0x8049300'
 foo 'jl 0x8048010'
 foo 'jle 0x8049300'
@@ -51,11 +68,11 @@ foo 'jg 0x8049300'
 
 fi
 
-AS=x86.as
+AS=x86.olly
 
-BITS=64
-foo "test rdx, rsi"
-foo "test rax, rbx"
+#BITS=64
+#foo "test rdx, rsi"
+#foo "test rax, rbx"
 BITS=32
 foo "test edx, esi"
 foo "test eax, ebx"
@@ -68,31 +85,33 @@ foo "push [esi+4]"
 foo "push [eax+8]"
 # exit 0
 
-foo "sub dword ptr [eax], 1"
-foo "add dword ptr [eax], 1"
-foo "add dword ptr [ebx], 1"
-foo "add dword ptr [ebp+4], 1"
-foo "add dword ptr [ebp+8], 1"
+foo "sub dword [eax], 1"
+foo "add dword [eax], 1"
+foo "add dword [ebx], 1"
+foo "add dword [ebp+4], 1"
+foo "add dword [ebp+8], 1"
 
-foo "add dword ptr [esp+8], 1"
-foo "add dword ptr [eax+8], 1"
+foo "add dword [esp+8], 1"
+foo "add dword [eax+8], 1"
 foo "add eax, 1"
-foo "add dword ptr [ebx+8], 1"
+foo "add dword [ebx+8], 1"
 
 #exit 
 
-foo "sub dword ptr [ebx], 1"
+foo "sub dword [ebx], 1"
 foo "sub eax, 666"
 foo "sub ebx, 666"
 foo "sub ecx, 666"
 foo "sub eax, 3"
-foo "sub dword ptr [eax], 666"
-foo "sub dword ptr [eax+4], 666"
+foo "sub dword [eax], 666"
+foo "sub dword [eax+4], 666"
 
 
-foo "sub dword ptr [ebp+4], 1"
-foo "mov dword ptr [ebp+4], 1"
-foo "mov dword ptr [eax+4], 1"
+foo "mov dword [ebp+4], 1"
+foo "mov dword [esp+4], 1"
+foo "sub dword [ebp+4], 1"
+foo "mov dword [ebp+4], 1"
+foo "mov dword [eax+4], 1"
 foo "mov dword ptr [eax+4], 666"
 foo "mov dword ptr [eax], 666"
 
@@ -108,13 +127,12 @@ foo "mov eax, 0x8049000"
 
 foo "mov dword ptr[esi+4], 33"
 foo "mov [eax+eax], eax"
-foo "mov [eax+ebx], eax"
+foo "mov [ebx+eax], eax"
 foo "mov [eax+ecx], eax"
 foo "mov [ebx+eax], eax"
 foo "mov [eax+eax], ebx"
 foo "mov [eax+eax], ecx"
 foo "mov [eax+eax], eax"
-foo "mov [eax+ebx], ebx"
 foo "mov [eax+2], ebx"
 foo "mov [ebx+2], ebx"
 
@@ -182,9 +200,9 @@ foo "lea eax, [4]"
 foo "lea ebx, [4]"
 
 
-BITS=64
-foo "test rdx, rsi"
-foo "test rax, rbx"
+#BITS=64
+#foo "test rdx, rsi"
+#foo "test rax, rbx"
 BITS=32
 foo "test edx, esi"
 foo "test eax, ebx"
@@ -256,6 +274,11 @@ foo "test edx, esi"
 foo "test eax, ebx"
 fi
 
+exit 0
+# olly doesnt supports 64bits
+
+AS=x86.as
+
 # 64 bit tests #
 # ============ #
 BITS=64
@@ -291,4 +314,5 @@ foo "cmp rbx, rax"
 foo "cmp rdx, rsi"
 foo "test rdx, rsi"
 foo "test rax, rbx"
+foo "mov dword [ebp-12], 1"
 fi

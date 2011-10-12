@@ -7,7 +7,6 @@
 #include <stdarg.h>
 
 static int magicdepth = 99; //XXX: do not use global var here
-#define MAGICPATH PREFIX"/lib/radare2/"R2_VERSION"/magic"
 
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
@@ -1599,8 +1598,8 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 			return;
 		}
 	} else {
-		if (r_magic_load (ck, MAGICPATH) == -1)
-			eprintf ("failed r_magic_load ("MAGICPATH") %s\n", r_magic_error (ck));
+		if (r_magic_load (ck, R_MAGIC_PATH) == -1)
+			eprintf ("failed r_magic_load ("R_MAGIC_PATH") %s\n", r_magic_error (ck));
 	}
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	str = r_magic_buffer (ck, core->block, core->blocksize);
@@ -1837,7 +1836,7 @@ return 0;
 				"   foo@0x40   # use 'foo' magic file on address 0x40\n"
 				"   @0x40      # use current magic file on address 0x40\n"
 				"   \\n         # append newline\n"
-				" MAGICPATH = "MAGICPATH"\n"
+				" R_MAGIC_PATH = "R_MAGIC_PATH"\n"
 				);
 		} else r_core_magic (core, input+1, R_TRUE);
 		break;

@@ -335,7 +335,7 @@ static int config_asmarch_callback(void *user, void *data) {
 	if (!r_syscall_setup (core->anal->syscall, node->value,
 			r_config_get (core->config, "asm.os"),
 			core->anal->bits))
-		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s'\n", node->value);
+		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s/%s'\n", node->value, r_config_get (core->config, "asm.os"));
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
 	return R_TRUE;

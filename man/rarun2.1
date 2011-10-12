@@ -1,0 +1,71 @@
+.Dd Oct 11, 2011
+.Dt RARUN2 1
+.Os
+.Sh NAME
+.Nm rarun2
+.Nd radare2 utility to run programs in exotic environments
+.Sh SYNOPSIS
+.Nm rarun2
+.Op [script.rr2]
+.Sh DESCRIPTION
+This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overriden default filedescriptors.
+.Pp
+The program just accepts a single argument which is the filename of the configuration file to run the program.
+.Pp
+It is useful when you have to run a program using long arguments or pass long data to stdin or things like that usually required for exploiting crackmes :)
+.Sh DIRECTIVES
+.Pp
+The rr2 (rarun2) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
+.Bl -tag -width Fl
+.It Ar program
+path to program to be executed
+.It Ar stdout
+select file to replace stdout file descriptor
+.It Ar stdin
+select file to read data from stdin
+.It Ar input
+set string to be passed to the program via stdin
+.It Ar chdir
+change directory before executing the program
+.It Ar chroot
+run the program in chroot. requires some previous setup
+.It Ar preload
+preload a library (not supported on Windows, only linux,osx,bsd)
+.It Ar setuid
+set process uid
+.It Ar seteuid
+set effective process uid
+.It Ar setgid
+set process group id
+.It Ar setegid
+set effective process group id
+.It Ar setenv
+set value for given environment variable
+.It Ar arg[0-3]
+set value for argument N passed to the program
+.El
+.Sh EXAMPLE
+.Pp
+  $ cat foo.rr2
+  #!/usr/bin/rarun2
+  program=./pp400
+  arg0=10
+  stdin=foo.txt
+  chdir=/tmp
+  #chroot=.
+  ./foo.rr2
+.Pp
+.Sh SEE ALSO
+.Pp
+.Xr radare2(1) ,
+.Xr rahash2(1) ,
+.Xr rafind2(1) ,
+.Xr rabin2(1) ,
+.Xr ranal2(1) ,
+.Xr radiff2(1) ,
+.Xr ragg2(1) ,
+.Xr rasc2(1) ,
+.Xr rasm2(1) ,
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>

@@ -10,6 +10,10 @@ static int getnum(const char *s);
 static int isnum(const char *str);
 static ut8 getreg(const char *s);
 #if 0
+TODO
+	mov [esp+4], N
+	mov [esp+4], reg
+BLA:
 	Add support for AND, OR, ..
         0x100000ec5    1    4883e4f0         and rsp, 0xfffffffffffffff0
 #endif
@@ -73,6 +77,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	strncpy (op, str, sizeof (op)-1);
 	arg = strstr (op, "dword ptr");
 	if (arg) strcpy (arg, arg+strlen ("dword ptr"));
+	arg = strstr (op, "dword ");
+	if (arg) strcpy (arg, arg+strlen ("dword "));
 
 	if (!memcmp (op, "rep ", 4)) {
 		data[l++] = 0xf3;
@@ -105,8 +111,14 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				if (*arg == '[' || *arg2=='[') {
 					eprintf ("xchg with memory access not yet implemented\n");
 				} else {
-					data[l++] = 0x87;
-					data[l++] = 0xc0 | getreg (arg) | getreg (arg2)<<3;
+					int reg1 = getreg (arg);
+					int reg2 = getreg (arg2);
+					if (reg1 == reg2) {
+						data[l++] = 0x90;
+					} else {
+						data[l++] = 0x87;
+						data[l++] = 0xc0 | reg1 | reg2<<3;
+					}
 					return l;
 				}
 			} else {
@@ -471,6 +483,25 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				//if (!delta) delta = strchr (arg, '-'); // XXX: TODO: handle negative off
 				if (delta) {
 					*delta++ = 0;
+				} else {
+					delta = strchr (arg, '-');
+					if (delta) {
+						ut32 n = -getnum (delta+1);
+						ut8 *N = (ut8*)&n;
+						*delta++ = 0;
+						data[l++] = 0xc7;
+						data[l++] = 0x80 | getreg (arg);
+						data[l++] = N[0];
+						data[l++] = N[1];
+						data[l++] = N[2];
+						data[l++] = N[3];
+						n = getnum (arg2);
+						data[l++] = N[0];
+						data[l++] = N[1];
+						data[l++] = N[2];
+						data[l++] = N[3];
+						return l;
+					}
 				}
 				pfx = 0;
 			} else pfx = 0xc0;
@@ -510,6 +541,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l;
 				pfx = 0;
 			} //else pfx = 0xc0;
+
 			arg0 = getreg (arg); // hack to make is64 work
 			if (isnum (arg)) {
 				int num = getnum (arg);
@@ -543,9 +575,12 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				if (delta) {
 					int n = getnum (delta);
 					data[l++] = 0xc7;
-					if (n>127 || n<-127) {
+					if (1||n>127 || n<-127) { // XXX
+						int reg = getreg (arg);
 						ut8 *ptr = (ut8 *)&n;
-						data[l++] = 0x80 | getreg (arg);
+						data[l++] = 0x80 | reg;
+						if (reg == 4) // reg=ESP
+							data[l++] = ptr[0] | 0x20;
 						data[l++] = ptr[0];
 						data[l++] = ptr[1];
 						data[l++] = ptr[2];
@@ -561,7 +596,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 						if (r==4) { //ESP
 							data[l++] = 0x04;
 							data[l++] = 0x24;
-						} else if (r== 5) { // EBP
+						} else if (r==5) { // EBP
 							data[l++] = 0x75;
 							data[l++] = 0;
 						} else  data[l++] = r;

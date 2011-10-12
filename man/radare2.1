@@ -1,4 +1,4 @@
-.Dd Mar 11, 2010
+.Dd Oct 11, 2011
 .Dt RADARE2 1
 .Os
 .Sh NAME
@@ -6,11 +6,13 @@
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm radare2
-.Op Fl s Ar addr
 .Op Fl b Ar bsize
-.Op Fl e Ar k=v
 .Op Fl c Ar cmd
-.Op Fl dDwnLV
+.Op Fl e Ar k=v
+.Op Fl p Ar project
+.Op Fl P Ar patch
+.Op Fl s Ar addr
+.Op Fl dDwntLV
 .Ar file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -21,28 +23,32 @@ This manpage is not updated yet. Feel free to contribute.
 .Pp
 The options are:
 .Bl -tag -width Fl
-.It Fl s Ar addr
-Start seeking at this address.
 .It Fl b Ar bsize
 Set block size
-.It Fl e Ar k=v
-Set configuration eval variable key=value. For example -e scr.color=false
 .It Fl c Ar cmd
 Execute the given command before giving prompt
+.It Fl e Ar k=v
+Set configuration eval variable key=value. For example -e scr.color=false
+.It Fl s Ar addr
+Start seeking at this address
 .It Fl f
-Blocksize = file size.
+Blocksize = file size
 .It Fl d
-Start in debugger mode.
-.It Fl D
+Start in debugger mode
+.It Fl D Ar dbg.backend
 Enable debug mode. Set cfg.debug=true
 .It Fl w
-Open in write mode.
+Open in write mode
 .It Fl u
 Unknown file size. (Do not limit to file boundaries)
 .It Fl n
-Do not load ~/.radarerc or ./radarerc
+Do not load r_bin information and ~/.radare2rc
+.It Fl t
+Get binary information using a thread
+.It Fl l Ar plugfile
+Load given plugin file
 .It Fl L
-list supported IO plugins.
+List supported IO plugins.
 .It Fl V
 Show version information and exits.
 .It Fl h
@@ -68,8 +74,8 @@ path to the current working file
 .Xr ranal2(1) ,
 .Xr rasm2(1) ,
 .Xr rax2(1) ,
-.Xr rarc2(1) ,
-.Xr rarc2-tool(1) ,
+.Xr ragg2(1) ,
+.Xr rarun2(1) ,
 .Xr rasc2(1) ,
 .Sh AUTHORS
 .Pp

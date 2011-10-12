@@ -2,7 +2,12 @@ include ../config.mk
 SOEXT=gir
 include ../libs.mk
 
-all: ${LIBS}
+all:
+	# XXX sh mkgir.sh RUtil r_util
+	sh mkgir.sh RAsm r_asm
+	#sh mkgir.sh RCore r_core
+
+all2: ${LIBS}
 
 ${LIBS}:
 ifeq ($(HAVE_VALABIND)$(HAVE_GIRCOMPILER),11)
@@ -24,4 +29,4 @@ install:
 	gjs test.js
 
 clean:
-	@rm -f *.gir *.typelib
+	@rm -f *.gir *.typelib *.vapi *.vala *.tmp *.c *.h

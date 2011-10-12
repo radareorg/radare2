@@ -15,7 +15,9 @@ static int threaded = 0;
 static struct r_core_t r;
 
 static int main_help(int line) {
-	printf ("Usage: radare2 [-dDwnLqv] [-P patch] [-p prj] [-s addr] [-b bsz] [-c cmd] [-e k=v] [file]\n");
+	if (line<2)
+		printf ("Usage: radare2 [-dDwntLqv] [-P patch] [-p prj]"
+			" [-s addr] [-b bsz] [-c cmd] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -d           use 'file' as a program to debug\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
@@ -35,7 +37,14 @@ static int main_help(int line) {
 #endif
 		" -L           list supported IO plugins\n"
 		" -e k=v       evaluate config var\n"
-		" -c \"cmd..\"   execute radare command\n"
+		" -c 'cmd..'   execute radare command\n"
+		" -h           show this help\n"
+		" -H           show extended help (files and environment)\n");
+	if (line==2)
+		printf (
+		"Files:\n"
+		" RCFILE       ~/.radare2rc\n"
+		" MAGICPATH    "R_MAGIC_PATH"\n"
 		"Environment:\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" LIBR_PLUGINS path to plugins directory\n"
@@ -113,7 +122,7 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhe:ndqvs:p:b:Lui:l:P:c:D:"
+	while ((c = getopt (argc, argv, "wfhHe:ndqvs:p:b:Lui:l:P:c:D:"
 #if USE_THREADS
 "t"
 #endif
@@ -152,6 +161,8 @@ int main(int argc, char **argv) {
 		case 'e':
 			r_config_eval (r.config, optarg);
 			break;
+		case 'H':
+			return main_help (2);
 		case 'h':
 			return main_help (0);
 		case 'f':

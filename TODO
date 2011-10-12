@@ -5,9 +5,15 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
-* 'ao' must be for bytes count, not bytes
-
 ====[[ 0.8.6 ]]====
+* check bindings and apis
+
+====[[ 0.9 ]]====
+
+* Add support for 'expect' like foo in rarun2
+  - add support for exectimeout in rarun2
+* TODO: make elf/pe get_os() and others return const and not strdup
+* 'ao' must be for bytes count, not bytes
 * asm.pseudo for brainfuck
 * implement 'ax' to get/set xrefs (better than afl <addr>)
 * shell encoder - get x86-64 one from twitter
@@ -16,9 +22,6 @@
 * use centralized pubsub or memcached to sync data
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 * Implement differential distance signature search
-
-====[[ 0.9 ]]====
-
 * Add support for classes (useful for c++, dex, objc, ...)
   - command to add new classes
 
@@ -29,6 +32,7 @@ OSX
 
 Other stuff
 ===========
+* implement code analysis using udis86.. is this necessary.. x86im works fine?
 * code analysis for msil
 * rax2 -k by default?
 * Optimize /m
@@ -52,7 +56,6 @@ Other stuff
   - mach0 create for darwin-ppc
   - pe64
   - plan9 bins
-
 
 TODO
 ====
@@ -93,7 +96,6 @@ To wipe:
  - remove libr/vm and libr/db
  - imho we should not implement this:
    - Implement BLOCK in r_core_sysenv_begin|end ()
-
 
 pancake
 -------

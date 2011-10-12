@@ -27,7 +27,7 @@ static void parseline (char *b) {
 	char *e = strchr (b, '=');
 	if (!e) return;
 	if (*b=='#') return;
-	*e++=0;
+	*e++ = 0;
 	if (*e=='$') e = r_sys_getenv (e);
 	if (e == NULL) return;
 	if (!strcmp (b, "program")) _program = strdup (e);
@@ -117,8 +117,8 @@ static int runfile () {
 int main(int argc, char **argv) {
 	FILE *fd;
 	char *file, buf[1024];
-	if (argc==1) {
-		printf ("Usage: rarun2 script\n");
+	if (argc==1 || !strcmp (argv[1], "-h")) {
+		printf ("Usage: rarun2 [script.rr2]\n");
 		return 1;
 	}
 	file = argv[1];

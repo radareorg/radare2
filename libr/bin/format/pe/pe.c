@@ -408,8 +408,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	return imports;
 }
 
-struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin)
-{
+struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_lib_t *libs = NULL;
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
@@ -449,13 +448,12 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin)
 	return libs;
 }
 
-int PE_(r_bin_pe_get_image_size)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_get_image_size)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->optional_header.SizeOfImage;
 }
 
-char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+// TODO: make it const! like in elf
+char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin) {
 	char *machine;
 
 	switch (bin->nt_headers->file_header.Machine) {
@@ -546,12 +544,11 @@ char* PE_(r_bin_pe_get_machine)(struct PE_(r_bin_pe_obj_t)* bin)
 	default:
 		machine = strdup("unknown");
 	}
-
 	return machine;
 }
 
-char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+// TODO: make it const! like in elf
+char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin) {
 	char *os;
 
 	switch (bin->nt_headers->optional_header.Subsystem) {
@@ -561,29 +558,29 @@ char* PE_(r_bin_pe_get_os)(struct PE_(r_bin_pe_obj_t)* bin)
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_GUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CUI:
 	case PE_IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
-		os = strdup("windows");
+		os = strdup ("windows");
 		break;
 	case PE_IMAGE_SUBSYSTEM_POSIX_CUI:
-		os = strdup("posix");
+		os = strdup ("posix");
 		break;
 	case PE_IMAGE_SUBSYSTEM_EFI_APPLICATION:
 	case PE_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
 	case PE_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
 	case PE_IMAGE_SUBSYSTEM_EFI_ROM:
-		os = strdup("efi");
+		os = strdup ("efi");
 		break;
 	case PE_IMAGE_SUBSYSTEM_XBOX:
-		os = strdup("xbox");
+		os = strdup ("xbox");
 		break;
 	default:
-		os = strdup("unknown");
+		// XXX: this is unknown
+		os = strdup ("windows");
 	}
-
 	return os;
 }
 
-char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+// TODO: make it const
+char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin) {
 	char *class;
 
 	switch (bin->nt_headers->optional_header.Magic) {
@@ -599,8 +596,7 @@ char* PE_(r_bin_pe_get_class)(struct PE_(r_bin_pe_obj_t)* bin)
 	return class;
 }
 
-int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_get_bits)(struct PE_(r_bin_pe_obj_t)* bin) {
 	int bits;
 
 	switch (bin->nt_headers->optional_header.Magic) {
@@ -620,8 +616,7 @@ int PE_(r_bin_pe_get_section_alignment)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->optional_header.SectionAlignment;
 }
 
-struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_section_t *sections = NULL;
 	PE_(image_section_header) *shdr = bin->section_header;
 	int i, sections_count = bin->nt_headers->file_header.NumberOfSections;
@@ -644,8 +639,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 	return sections;
 }
 
-char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin) {
 	char *subsystem;
 
 	switch (bin->nt_headers->optional_header.Subsystem) {
@@ -685,60 +679,44 @@ char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin)
 	return subsystem;
 }
 
-int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_DLL;
 }
 
-int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_BYTES_REVERSED_HI;
 }
 
-int PE_(r_bin_pe_is_stripped_relocs)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_is_stripped_relocs)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_RELOCS_STRIPPED;
 }
 
-int PE_(r_bin_pe_is_stripped_line_nums)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_is_stripped_line_nums)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_LINE_NUMS_STRIPPED;
 }
 
-int PE_(r_bin_pe_is_stripped_local_syms)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_is_stripped_local_syms)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_LOCAL_SYMS_STRIPPED;
 }
 
-int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_DEBUG_STRIPPED;
 }
 
-void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin)
-{
-	if (!bin)
-		return NULL;
-	if (bin->dos_header)
-		free(bin->dos_header);
-	if (bin->nt_headers)
-		free(bin->nt_headers);
-	if (bin->section_header)
-		free(bin->section_header);
-	if (bin->export_directory)
-		free(bin->export_directory);
-	if (bin->import_directory)
-		free(bin->import_directory);
-	if (bin->delay_import_directory)
-		free(bin->delay_import_directory);
-	if (bin->b)
-		r_buf_free(bin->b);
-	free(bin);
+void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
+	if (!bin) return NULL;
+	free (bin->dos_header);
+	free (bin->nt_headers);
+	free (bin->section_header);
+	free (bin->export_directory);
+	free (bin->import_directory);
+	free (bin->delay_import_directory);
+	r_buf_free (bin->b);
+	free (bin);
 	return NULL;
 }
 
-struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file)
-{
+struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file) {
 	struct PE_(r_bin_pe_obj_t) *bin;
 	ut8 *buf;
 
@@ -757,8 +735,7 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file)
 	return bin;
 }
 
-struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf)
-{
+struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf) {
 	struct PE_(r_bin_pe_obj_t) *bin;
 
 	if (!(bin = malloc(sizeof(struct PE_(r_bin_pe_obj_t)))))

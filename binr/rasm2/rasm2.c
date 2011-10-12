@@ -16,8 +16,13 @@ static int coutput = R_FALSE;
 static void r_asm_list(RAsm *a) {
 	RAsmPlugin *h;
 	RListIter *iter;
-	r_list_foreach (a->plugins, iter, h)
-		printf ("asm %-10s\t %s\n", h->name, h->desc);
+	r_list_foreach (a->plugins, iter, h) {
+		const char *feat="---";
+		if (h->assemble && h->disassemble)  feat = "ad";
+		if (h->assemble && !h->disassemble) feat = "a_";
+		if (!h->assemble && h->disassemble) feat = "_d";
+		printf ("%s  %-8s  %s\n", feat, h->name, h->desc);
+	}
 }
 
 static int rasm_show_help() {

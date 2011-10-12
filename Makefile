@@ -55,6 +55,7 @@ w32dist:
 	for a in `find binr | grep -e exe$$`; do cp $$a w32dist ; done
 	rm w32dist/plugin.dll
 	mv w32dist radare2-w32-${VERSION}
+	rm -f radare2-w32-${VERSION}.zip 
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
 
 w32beta: w32dist
