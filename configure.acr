@@ -81,9 +81,6 @@ IFEQ LIBVERSION xxx ; {
 REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIB_TCC
 	DEBUGGER USERCC USEROSTYPE LIL_ENDIAN VERSION LIBVERSION ;
 
-(( deprecated:
- pkgcfg/r_th.pc
-))
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk
 	libr/include/r_userconf.h
@@ -113,5 +110,6 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_lib.pc
 	pkgcfg/r_parse.pc
 	pkgcfg/r_print.pc
+	pkgcfg/r_th.pc
 	pkgcfg/r_fs.pc
 ;
