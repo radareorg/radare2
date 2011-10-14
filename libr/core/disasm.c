@@ -15,10 +15,15 @@ static char *filter_refline(const char *str) {
 	return s;
 }
 
-static void printoffset(ut64 off, int show_color) {
-	if (show_color)
-		r_cons_printf (Color_GREEN"0x%08"PFMT64x"  "Color_RESET, off);
-	else r_cons_printf ("0x%08"PFMT64x"  ", off);
+static void printoffset(ut64 off, int show_color, int invert) {
+	if (show_color) {
+		if (invert)
+			r_cons_invert (R_TRUE, R_TRUE);
+		r_cons_printf (Color_GREEN"0x%08"PFMT64x""Color_RESET, off);
+		if (invert)
+			r_cons_printf (Color_RESET);
+		r_cons_puts ("  ");
+	} else r_cons_printf ("0x%08"PFMT64x"  ", off);
 }
 
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
@@ -126,6 +131,13 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			}
 #endif
 		}
+	} else {
+		/* highlight eip */
+		RFlagItem *item;
+		const char *pc = core->anal->reg->name[R_REG_NAME_PC];
+		item = r_flag_get (core->flags, pc);
+		if (item)
+			dest = item->offset;
 	}
 	if (show_lines) {
 		// TODO: make anal->reflines implicit
@@ -297,7 +309,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				if (show_lines && refline)
 					r_cons_strcat (refline);
 				if (show_offset)
-					printoffset (at, show_color);
+					printoffset (at, show_color, (at==dest));
 				if (show_functions)
 					r_cons_printf ("%s:\n%s", flag->name, f?"| ":"  ");
 				else r_cons_printf ("%s:\n", flag->name);
@@ -306,13 +318,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		if (show_lines && line) {
 			r_cons_strcat (line);
 		}
-		if (show_offset) {
-			if (show_color && (at == dest))
-				r_cons_invert (R_TRUE, R_TRUE);
-			printoffset (at, show_color);
-			if (show_color && (at == dest))
-				r_cons_printf (Color_RESET);
-		}
+		if (show_offset)
+			printoffset (at, show_color, (at==dest));
 		if (show_trace) {
 			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, at);
 			r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
