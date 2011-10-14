@@ -299,5 +299,6 @@ public class RAnal {
 		public bool cleanup (uint64 from, uint64 to);
 		public static unowned string type_to_string(RMeta.Type type);
 		public int list (RMeta.Type type);
+		public void diff_setup(bool doops, double thbb, double thfcn);
 	}
 }
