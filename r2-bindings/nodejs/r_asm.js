@@ -40,7 +40,7 @@ var r2 = {
 	RAsm : function() {
 		/* lifecycle */
 		var p = a.r_asm_new ();
-		this.destroy = function (x) {
+		this.delete = function (x) {
 			a.r_asm_free (p);
 		}
 

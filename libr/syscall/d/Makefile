@@ -39,13 +39,13 @@ ${SDB}:
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
-	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/syscall
-	cp -f *.sdb ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/syscall
+	mkdir -p ${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall
+	cp -f *.sdb ${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall
 
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
-	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/syscall
-	for a in *.sdb ; do ln -fs ${CWD}/$$a ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/syscall/$$a ; done
+	mkdir -p ${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall
+	for a in *.sdb ; do ln -fs ${CWD}/$$a ${DESTDIR}${LIBDIR}/radare2/${VERSION}/syscall/$$a ; done
 
 uninstall:
-	rm -rf ${PREFIX}/lib/radare2/syscall
+	rm -rf ${DESTDIR}${LIBDIR}/radare2/syscall

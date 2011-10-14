@@ -18,8 +18,8 @@ ${BIN}:
 	${CC} -I../include ${CFLAGS} ${SRC} file.c -o ${BIN}
 
 install-data: ${F_SDB}
-	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic
-	cp -f d/* ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic
+	mkdir -p ${DESTDIR}${LIBDIR}/radare2/${VERSION}/magic
+	cp -f d/* ${DESTDIR}${LIBDIR}/radare2/${VERSION}/magic
 
 CWD=$(shell pwd)
 symstall-data install-symlink-data: ${F_SDB}

@@ -100,8 +100,8 @@ install-doc-symlink:
 install: install-doc install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/syscall/d ; ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/magic ; ${MAKE} install-data PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/syscall/d ; ${MAKE} install PREFIX=${PREFIX} LIBDIR=${LIBDIR} DESTDIR=${DESTDIR}
+	cd libr/magic ; ${MAKE} install-data LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DESTDIR}/${LIBDIR}/pkgconfig
@@ -110,13 +110,13 @@ install-pkgconfig-symlink:
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/syscall/d ; ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/magic ; ${MAKE} install-symlink-data PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/syscall/d ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/magic ; ${MAKE} install-symlink-data LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/syscall/d && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/syscall/d && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR} LIBDIR=${LIBDIR}
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
 	@echo

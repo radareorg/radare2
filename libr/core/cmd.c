@@ -1456,9 +1456,23 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 #endif
 	case 'g':
-		{
+		{ // XXX: this is broken
 		RCore *core2;
-		char *file2 = (char*)r_str_chop_ro (input+1);
+		char *file2 = NULL;
+		eprintf ("TODO: 'cg' is experimental. See radiff2 -C\n");
+		if (input[1]=='o') {
+			file2 = (char*)r_str_chop_ro (input+2);
+			r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
+		} else 
+		if (input[1]==' ') {
+			file2 = (char*)r_str_chop_ro (input+2);
+			r_anal_diff_setup (core->anal, R_FALSE, -1, -1);
+		} else {
+			eprintf ("Usage: cg[o] [file]\n");
+			eprintf (" cg  - byte-per-byte code graph diff\n");
+			eprintf (" cgo - opcode-bytes code graph diff\n");
+			return R_FALSE;
+		}
 
 		if (!(core2 = r_core_new ())) {
 			eprintf ("Cannot init diff core\n");

@@ -7,8 +7,8 @@ function Assembler (arch, bits) {
 	o.use (arch);
 	o.set_bits (bits);
 
-	this.destroy = function () {
-		delete o;
+	this.delete = function () {
+		o.delete ();
 	}
 	this.assemble = function (x) {
 		var ac = o.massemble (x);
@@ -23,5 +23,6 @@ function Assembler (arch, bits) {
 var asm = new Assembler ("x86", 32);
 print (asm.assemble ("int 0x80;mov eax,33;ret"));
 print (asm.disassemble ("909090"));
+asm.delete ();
 
 process.exit (0);

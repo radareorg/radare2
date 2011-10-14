@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 - nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2010-2011 - nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -9,6 +9,7 @@ R_API RAnalDiff *r_anal_diff_new() {
 	if (diff) {
 		diff->type = R_ANAL_DIFF_TYPE_NULL;
 		diff->addr = -1;
+		diff->dist = 0;
 		diff->name = NULL;
 	}
 	return diff;
@@ -19,6 +20,13 @@ R_API void* r_anal_diff_free(RAnalDiff *diff) {
 		free (diff->name);
 	free (diff);
 	return NULL;
+}
+
+R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn) {
+	anal->diff_ops = doops;
+	if (thbb>=0)
+	anal->diff_thbb = (thbb>=0)? thbb: R_ANAL_THRESHOLDBB;
+	anal->diff_thfcn = (thfcn>=0)? thfcn: R_ANAL_THRESHOLDFCN;
 }
 
 R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
@@ -37,19 +45,22 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	}
 	if (anal->iob.read_at (anal->iob.io, bb->addr, buf, bb->size) == bb->size) {
 		memcpy (bb->fingerprint, buf, bb->size);
-		if (!(op = r_anal_op_new ())) {
-			free (bb->fingerprint);
-			free (buf);
-			return 0;
+		/* diff using only the opcode */
+		if (anal->diff_ops) {
+			if (!(op = r_anal_op_new ())) {
+				free (bb->fingerprint);
+				free (buf);
+				return 0;
+			}
+			while (idx < bb->size) {
+				if ((oplen = r_anal_op (anal, op, 0, buf+idx, bb->size-idx)) <1)
+					break;
+				if (op->nopcode != 0)
+					memset (bb->fingerprint+idx+op->nopcode, 0, oplen-op->nopcode);
+				idx += oplen;
+			}
+			free (op);
 		}
-		while (idx < bb->size) {
-			if ((oplen = r_anal_op (anal, op, 0, buf+idx, bb->size-idx)) == 0)
-				break;
-			if (op->nopcode != 0)
-				memset (bb->fingerprint+idx+op->nopcode, 0, oplen-op->nopcode);
-			idx += oplen;
-		}
-		free (op);
 	}
 	free (buf);
 	return bb->size;
@@ -101,7 +112,7 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2) {
 				eprintf ("BB: %llx - %llx => %lli - %lli => %f\n", bb->addr, bb2->addr,
 						bb->size, bb->size, t);
 #endif 
-				if (t > R_ANAL_THRESHOLDBB && t > ot) {
+				if (t > anal->diff_thbb && t > ot) {
 					ot = t;
 					mbb = bb;
 					mbb2 = bb2;
@@ -112,10 +123,8 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2) {
 		if (mbb != NULL && mbb2 != NULL) {
 			if (ot == 1)
 				mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
-			else {
-				mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+			else mbb->diff->type = mbb2->diff->type = \
 				fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
-			}
 			R_FREE (mbb->fingerprint);
 			R_FREE (mbb2->fingerprint);
 			mbb->diff->addr = mbb2->addr;
@@ -149,15 +158,14 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				continue;
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,
 					fcn2->fingerprint, fcn2->size, NULL, &t);
-#if 1
+#if 0
 			eprintf ("FCN NAME (NAME): %s - %s => %lli - %lli => %f\n", fcn->name, fcn2->name,
 					fcn->size, fcn2->size, t);
 #endif 
 			/* Set flag in matched functions */
-			if (t == 1)
-				fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
-			else
-				fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+			fcn->diff->type = fcn2->diff->type = (t==1)?
+				R_ANAL_DIFF_TYPE_MATCH: R_ANAL_DIFF_TYPE_UNMATCH;
+			fcn->diff->dist = fcn2->diff->dist = t;
 			R_FREE (fcn->fingerprint);
 			R_FREE (fcn2->fingerprint);
 			fcn->diff->addr = fcn2->addr;
@@ -192,15 +200,26 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				minsize = fcn->size;
 			}
 			if ((fcn2->type != R_ANAL_FCN_TYPE_FCN && fcn2->type != R_ANAL_FCN_TYPE_SYM) ||
-				fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL || (maxsize * R_ANAL_THRESHOLDFCN > minsize))
+				fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL || (maxsize * anal->diff_thfcn > minsize))
 				continue;
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn->size,
 					fcn2->fingerprint, fcn2->size, NULL, &t);
-#if 1
+			fcn->diff->dist = fcn2->diff->dist = t;
+#if 0
+			int i;
+			eprintf ("FP0 ");
+			for (i=0;i<fcn->size;i++)
+				eprintf ("%02x", fcn->fingerprint[i]);
+			eprintf ("\n");
+
+			eprintf ("FP1 ");
+			for (i=0;i<fcn2->size;i++)
+				eprintf ("%02x", fcn2->fingerprint[i]);
+			eprintf ("\n");
 			eprintf ("FCN: %s - %s => %lli - %lli => %f\n", fcn->name, fcn2->name,
 					fcn->size, fcn2->size, t);
 #endif 
-			if (t > R_ANAL_THRESHOLDFCN && t > ot) {
+			if (t > anal->diff_thfcn && t > ot) {
 				ot = t;
 				mfcn = fcn;
 				mfcn2 = fcn2;
@@ -212,10 +231,8 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 			eprintf ("Match => %s - %s\n", mfcn->name, mfcn2->name);
 #endif
 			/* Set flag in matched functions */
-			if (ot == 1)
-				mfcn->diff->type = mfcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
-			else
-				mfcn->diff->type = mfcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+			mfcn->diff->type = mfcn2->diff->type = (ot==1)?
+				R_ANAL_DIFF_TYPE_MATCH: R_ANAL_DIFF_TYPE_UNMATCH;
 			R_FREE (mfcn->fingerprint);
 			R_FREE (mfcn2->fingerprint);
 			mfcn->diff->addr = mfcn2->addr;
@@ -236,5 +253,5 @@ R_API int r_anal_diff_eval(RAnal *anal) {
 	/*TODO*/
 	if (anal && anal->cur && anal->cur->diff_eval)
 		return (anal->cur->diff_eval (anal));
-	return R_TRUE;
+	return R_TRUE; // XXX: shouldnt this be false?
 }

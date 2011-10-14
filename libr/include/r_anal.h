@@ -167,6 +167,9 @@ typedef struct r_anal_t {
 	RReg *reg;
 	RSyscall *syscall;
 	struct r_anal_op_t *queued;
+	int diff_ops;
+	double diff_thbb;
+	double diff_thfcn;
 	RIOBind iob;
 	struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
@@ -226,6 +229,7 @@ enum {
 typedef struct r_anal_diff_t {
 	int type;
 	ut64 addr;
+	double dist;
 	char *name;
 } RAnalDiff;
 
@@ -477,8 +481,10 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 
 #define R_ANAL_THRESHOLDFCN 0.7F
 #define R_ANAL_THRESHOLDBB 0.7F
+
 /* diff.c */
 R_API RAnalDiff *r_anal_diff_new();
+R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn);
 R_API void* r_anal_diff_free(RAnalDiff *diff);
 R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb);
 R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFcn *fcn);

@@ -26,6 +26,9 @@ R_API RAnal *r_anal_new() {
 	if (!anal)
 		return NULL;
 	memset (anal, 0, sizeof (RAnal));
+	anal->diff_ops = 0;
+	anal->diff_thbb = R_ANAL_THRESHOLDBB;
+	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
 	anal->queued = NULL;
 	anal->meta = r_meta_new ();
 	anal->syscall = r_syscall_new ();
