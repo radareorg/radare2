@@ -242,6 +242,7 @@ R_API int r_core_patch (RCore *core, const char *patch);
 
 R_API void r_core_hack_help(RCore *core);
 R_API int r_core_hack(RCore *core, const char *op);
+R_API void r_core_diff_show(RCore *c, RCore *c2);
 
 #endif
 

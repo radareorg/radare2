@@ -22,11 +22,18 @@ R_API void* r_anal_diff_free(RAnalDiff *diff) {
 	return NULL;
 }
 
+/* 0-1 */
 R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn) {
-	anal->diff_ops = doops;
-	if (thbb>=0)
+	if (doops>=0) anal->diff_ops = doops;
 	anal->diff_thbb = (thbb>=0)? thbb: R_ANAL_THRESHOLDBB;
 	anal->diff_thfcn = (thfcn>=0)? thfcn: R_ANAL_THRESHOLDFCN;
+}
+
+/* 0-100 */
+R_API void r_anal_diff_setup_i(RAnal *anal, int doops, int thbb, int thfcn) {
+	if (doops>=0) anal->diff_ops = doops;
+	anal->diff_thbb = (thbb>=0)? ((double)thbb)/100: R_ANAL_THRESHOLDBB;
+	anal->diff_thfcn = (thfcn>=0)? ((double)thfcn)/100: R_ANAL_THRESHOLDFCN;
 }
 
 R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {

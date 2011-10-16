@@ -36,11 +36,6 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 	return 1;
 }
 
-static void diffrow(ut64 addr, const char *name, ut64 addr2, const char *name2, const char *match, double dist) {
-	printf ("%30s  0x%"PFMT64x" |%8s  (%f)| 0x%"PFMT64x"  %s\n",
-		name, addr, match, dist, addr2, name2);
-}
-
 static RCore* opencore(const char *f) {
 	RCore *c = r_core_new ();
 	r_config_set_i (c->config, "io.va", useva);
@@ -56,40 +51,6 @@ static RCore* opencore(const char *f) {
 
 static void diff_graph(RCore *c, RCore *c2, const char *arg) {
 	r_core_cmdf (c, "agd %s", arg);
-}
-
-static void diff_bins(RCore *c, RCore *c2) {
-	const char *match;
-	RListIter *iter;
-	RAnalFcn *f;
-	RList *fcns = r_anal_get_fcns (c->anal);
-	r_list_foreach (fcns, iter, f) {
-		switch (f->type) {
-		case R_ANAL_FCN_TYPE_FCN:
-		case R_ANAL_FCN_TYPE_SYM:
-			switch (f->diff->type) {
-			case R_ANAL_DIFF_TYPE_MATCH:
-				match = "MATCH";
-				break;
-			case R_ANAL_DIFF_TYPE_UNMATCH:
-				match = "UNMATCH";
-				break;
-			default:
-				match = "NEW";
-			}
-			diffrow (f->addr, f->name, f->diff->addr, f->diff->name, match, f->diff->dist);
-			break;
-		}
-	}
-	fcns = r_anal_get_fcns (c2->anal);
-	r_list_foreach (fcns, iter, f) {
-		switch (f->type) {
-		case R_ANAL_FCN_TYPE_FCN:
-		case R_ANAL_FCN_TYPE_SYM:
-			if (f->diff->type == R_ANAL_DIFF_TYPE_NULL)
-				diffrow (f->addr, f->name, f->diff->addr, f->diff->name, "NEW", f->diff->dist);
-		}
-	}
 }
 
 static int show_help(int line) {
@@ -209,7 +170,7 @@ int main(int argc, char **argv) {
 		r_core_gdiff (c, c2);
 		if (mode == MODE_GRAPH)
 			diff_graph (c, c2, addr);
-		else diff_bins (c, c2);
+		else r_core_diff_show (c, c2);
 		return 0;
 	}
 

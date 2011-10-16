@@ -1457,9 +1457,9 @@ static int cmd_cmp(void *data, const char *input) {
 #endif
 	case 'g':
 		{ // XXX: this is broken
+			int diffops = 0;
 		RCore *core2;
 		char *file2 = NULL;
-		eprintf ("TODO: 'cg' is experimental. See radiff2 -C\n");
 		if (input[1]=='o') {
 			file2 = (char*)r_str_chop_ro (input+2);
 			r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
@@ -1485,8 +1485,15 @@ static int cmd_cmp(void *data, const char *input) {
 			r_core_free (core2);
 			return R_FALSE;
 		}
+		// TODO: must replicate on core1 too
+		r_config_set_i (core2->config, "io.va", R_TRUE);
+		r_config_set_i (core2->config, "anal.split", R_TRUE);
+                r_anal_diff_setup (core->anal, diffops, -1, -1);
+                r_anal_diff_setup (core2->anal, diffops, -1, -1);
+
 		r_core_bin_load (core2, file2);
 		r_core_gdiff (core, core2);
+		r_core_diff_show (core, core2);
 		r_core_free (core2);
 		}
 		break;
@@ -1501,7 +1508,7 @@ static int cmd_cmp(void *data, const char *input) {
 		" cx [hexpair]  Compare hexpair string\n"
 		" cX [addr]     Like 'cc' but using hexdiff output\n"
 		" cf [file]     Compare contents of file at current seek\n"
-		" cg [file]     Graphdiff current file and [file]\n");
+		" cg[o] [file]  Graphdiff current file and [file]\n");
 		break;
 	default:
 		eprintf ("Usage: c[?Ddxf] [argument]\n");

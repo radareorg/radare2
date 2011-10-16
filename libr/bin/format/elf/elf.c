@@ -210,9 +210,12 @@ static ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, 
 	int i;
 	if (!bin->shdr || !bin->strtab)
 		return -1;
-	for (i = 0; i < bin->ehdr.e_shnum; i++)
+	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		if (bin->shdr[i].sh_name > bin->shstrtab_section->sh_size)
+			continue;
 		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], section_name))
 			return (ut64)bin->shdr[i].sh_addr;
+	}
 	return -1;
 }
 
@@ -771,7 +774,9 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 		ret[i].size = bin->shdr[i].sh_size;
 		ret[i].align = bin->shdr[i].sh_addralign;
 		ret[i].flags = bin->shdr[i].sh_flags;
-		strncpy (ret[i].name, bin->shstrtab?
+		if (bin->shdr[i].sh_name > bin->shstrtab_section->sh_size)
+			strncpy (ret[i].name, "invalid", ELF_STRING_LENGTH);
+		else strncpy (ret[i].name, bin->shstrtab?
 			&bin->shstrtab[bin->shdr[i].sh_name]: "unknown", ELF_STRING_LENGTH);
 		ret[i].last = 0;
 	}

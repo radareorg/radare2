@@ -18,6 +18,8 @@ public class RAnal {
 	public bool set_big_endian (bool big);
 	//public bool set_pc (uint64 addr);
 	public RList<RAnal.Fcn> get_fcns();
+	public void diff_setup(bool doops, double thbb, double thfcn);
+	public void diff_setup_i(bool doops, int thbb, int thfcn);
 
 	[Compact]
 	[CCode (cname="RAnalValue")]
@@ -299,6 +301,5 @@ public class RAnal {
 		public bool cleanup (uint64 from, uint64 to);
 		public static unowned string type_to_string(RMeta.Type type);
 		public int list (RMeta.Type type);
-		public void diff_setup(bool doops, double thbb, double thfcn);
 	}
 }
