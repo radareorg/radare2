@@ -389,45 +389,66 @@ R_API int r_core_config_init(RCore *core) {
 
 	r_config_set (cfg, "dir.source", "");
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
+	r_config_desc (cfg, "dir.plugins", "Path to plugin files to be loaded at startup");
 	/* anal */
 	r_config_set (cfg, "anal.prelude", "");
+	r_config_desc (cfg, "anal.prelude", "Specify an hexpair to find preludes in code");
 	r_config_set_i (cfg, "anal.depth", 50); // XXX: warn if depth is > 50 .. can be problematic
+	r_config_desc (cfg, "anal.depth", "Max depth at code analysis");
 	r_config_set_i (cfg, "anal.ptrdepth", 3);
 	r_config_set_cb (cfg, "anal.split", "true", &config_analsplit_callback);
 	r_config_set_cb (cfg, "anal.plugin", R_SYS_ARCH, &config_analplugin_callback);
+	r_config_desc (cfg, "anal.plugin", "Specify the anal plugin to use");
 	/* asm */
 	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
+	r_config_desc (cfg, "asm.arch", "Set the arch to be usedd by asm");
 	// XXX: not portable
 	r_parse_use (core->parser, "x86.pseudo");
 	r_config_set_cb (cfg, "asm.parser", "x86.pseudo", &config_asmparser_callback);
 	r_config_set_i_cb (cfg, "asm.bits", 32, &config_asmbits_callback);
-	r_config_set (cfg, "asm.bytes", "true"); 
+	r_config_desc (cfg, "asm.bits", "Word size in bits at assembler");
+	r_config_set (cfg, "asm.bytes", "true");
 	r_config_desc (cfg, "asm.bytes", "Display the bytes of each instruction");
-	r_config_set (cfg, "asm.lbytes", "true"); 
+	r_config_set (cfg, "asm.lbytes", "true");
+	r_config_desc (cfg, "asm.lbytes", "Align disasm bytes to left");
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
+	r_config_desc (cfg, "asm.comments", "Show comments in disassembly view");
 	r_config_set (cfg, "asm.cmtright", "true");
-	r_config_desc (cfg, "asm.cmtright", "show comments at right of disassembly if they fit in screen");
+	r_config_desc (cfg, "asm.cmtright", "Show comments at right of disassembly if they fit in screen");
 	r_config_set (cfg, "asm.ucase", "false");
+	r_config_desc (cfg, "asm.ucase", "Use uppercase syntax at disassembly");
 	r_config_set (cfg, "asm.stackptr", "false");
+	r_config_desc (cfg, "asm.stackptr", "Show stack pointer at disassembly");
 	r_config_set (cfg, "asm.dwarf", "false");
+	r_config_desc (cfg, "asm.dwarf", "Show dwarf comment at disassembly");
 	r_config_set_i (cfg, "asm.nbytes", 8);
+	r_config_desc (cfg, "asm.nbytes", "Number of bytes for each opcode at disassembly");
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
+	r_config_desc (cfg, "asm.pseudo", "Enable pseudo syntax");
 	r_config_set (cfg, "asm.filter", "true");
+	r_config_desc (cfg, "asm.filter", "Show filtered flags at disassembly");
 	r_config_set (cfg, "asm.varsub", "true");
 	r_config_set (cfg, "asm.trace", "true");
-	r_config_set (cfg, "asm.decode", "false"); 
-	r_config_desc (cfg, "asm.decode", "Use code analysis as a disassembler"); 
-	r_config_set (cfg, "asm.offset", "true"); 
+	r_config_set (cfg, "asm.decode", "false");
+	r_config_desc (cfg, "asm.decode", "Use code analysis as a disassembler");
+	r_config_set (cfg, "asm.offset", "true");
+	r_config_desc (cfg, "asm.offset", "Show offsets at disassembly");
 	r_config_set (cfg, "asm.lines", "true");
+	r_config_desc (cfg, "asm.lines", "If enabled show ascci-art lines at disassembly");
 	r_config_set (cfg, "asm.linesout", "true");
+	r_config_desc (cfg, "asm.linesout", "If enabled show out of block lines");
 	r_config_set (cfg, "asm.linesstyle", "false");
+	r_config_desc (cfg, "asm.linesstyle", "If enabled iterate the jump list backwards");
 	r_config_set (cfg, "asm.lineswide", "false");
+	r_config_desc (cfg, "asm.lineswide", "If enabled put an space between lines");
 	r_config_set_i_cb (cfg, "asm.lineswidth", 10, &config_asmlineswidth_callback);
+	r_config_desc (cfg, "asm.lineswidth", "");
 	r_config_set (cfg, "asm.linescall", "false");
+	r_config_desc (cfg, "asm.linescall", "Enable call lines");
 	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
-	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_set_cb (cfg, "asm.syntax", "intel", &config_asmsyntax_callback);
+	r_config_desc (cfg, "asm.syntax", "Select assembly syntax");
 	r_config_set_cb (cfg, "asm.profile", "default", &config_asmprofile_callback);
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
@@ -436,81 +457,131 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_set_cb (cfg, "cfg.debug", "false", &config_cfgdebug_callback);
 	r_config_set_cb (cfg, "cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &config_cfgdatefmt_callback);
+	r_config_desc (cfg, "cfg.datefmt", "Date format (%d:%m:%Y %H:%M:%S %z)");
 	r_config_set (cfg, "cfg.fortunes", "true");
+	r_config_desc (cfg, "cfg.fortunes", "If enabled show tips at start");
 	r_config_set_i (cfg, "cfg.maxbsize", 524288);
+	r_config_desc (cfg, "cfg.maxbsize", "Max block size in print command");
 	r_config_set (cfg, "cfg.wseek", "false");
+	r_config_desc (cfg, "cfg.wseek", "Seek after write");
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);
+	r_config_desc (cfg, "cfg.hashlimit", "If the file its bigger than hashlimit don't calculate the hash");
 
 	r_config_set_i (cfg, "dbg.follow", 32);
+	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	r_config_set_cb (cfg, "dbg.backend", "native", &config_dbgbackend_callback);
+	r_config_desc (cfg, "dbg.backend", "Select the debugger backend");
 	r_config_set (cfg, "dbg.bep", "loader"); // loader, entry, constructor, main
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 	r_config_set_cb (cfg, "fs.view", "normal", &config_fsview_callback);
-	r_config_set (cfg, "bin.strings", "true"); 
+	r_config_desc (cfg, "fs.view", "Set visibility options for filesystems");
+	r_config_set (cfg, "bin.strings", "true");
 	p = r_sys_getenv ("EDITOR");
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
+	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	free (p);
 	r_config_set (cfg, "cmd.hit", "");
+	r_config_desc (cfg, "cmd.hit", "Command to execute on every search hit");
 	r_config_set (cfg, "cmd.open", "");
+	r_config_desc (cfg, "cmd.open", "Command executed when file its opened");
 	r_config_set_cb (cfg, "cmd.repeat", "true", &config_cmdrepeat_callback);
 	r_config_desc (cfg, "cmd.repeat", "Alias newline (empty command) as '..'");
 	r_config_set (cfg, "cmd.prompt", "");
+	r_config_desc (cfg, "cmd.prompt", "Prompt commands");
 	r_config_set (cfg, "cmd.cprompt", "");
+	r_config_desc (cfg, "cmd.cprompt", "Column visual prompt commands");
 	r_config_set (cfg, "cmd.vprompt", "");
+	r_config_desc (cfg, "cmd.vprompt", "Visual prompt commands");
 	r_config_set (cfg, "cmd.bp", "");
+	r_config_desc (cfg, "cmd.bp", "Command to executed every breakpoint hitted");
 	r_config_set_cb (cfg, "scr.interactive", "true", config_scrint_callback);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
+	r_config_desc (cfg, "scr.color", "Enable/Disable colors");
 	//r_config_set_cb (cfg, "scr.fkey", "function", &config_scrfkey_callback);
 	r_config_set_cb (cfg, "scr.fkey", "hit", &config_scrfkey_callback);
+	r_config_desc (cfg, "scr.fkey", "Select the seek mode in visual");
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
+	r_config_desc (cfg, "scr.cols", "Configure the number of columns to print");
 	r_config_set_i (cfg, "search.kwidx", 0);
+	r_config_desc (cfg, "search.kwidx", "Store last search index count");
 	r_config_set (cfg, "search.flags", "true");
 	r_config_desc (cfg, "search.flags", "If enabled all search results are flagged, else just printed r2 commands");
 	r_config_set_i (cfg, "search.count", 0);
+	r_config_desc (cfg, "search.count", "Start index number at search hits");
 	r_config_set (cfg, "search.prefix", "hit");
+	r_config_desc (cfg, "search.prefix", "Prefix name in search hits label");
 	r_config_set_i (cfg, "search.from", UT64_MAX);
+	r_config_desc (cfg, "search.from", "Search start address");
 	r_config_set_i (cfg, "search.to", UT64_MAX);
+	r_config_desc (cfg, "search.to", "Search end address");
 	r_config_set_i (cfg, "search.distance", 0); // TODO: use i_cb here and remove code in cmd.c
+	r_config_desc (cfg, "search.distance", "Search string distance");
 	r_config_set_i_cb (cfg, "search.align", 0, &config_searchalign_callback);
+	r_config_desc (cfg, "search.align", "Only catch aligned search hits");
 	r_config_set (cfg, "search.asmstr", "true");
+	r_config_desc (cfg, "search.asmstr", "Search string instead of assembly");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
+	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
 	r_config_set_cb (cfg, "io.ffio", "true", &config_ioffio_callback);
 	r_config_set_cb (cfg, "io.va", "true", &config_iova_callback);
+	r_config_desc (cfg, "io.va", "If enabled virtual address layout can be used");
 	r_config_set_cb (cfg, "io.cache", "false", &config_iocache_callback);
+	r_config_desc (cfg, "io.cache", "Enable cache for io changes");
 	r_config_set (cfg, "file.path", "");
+	r_config_desc (cfg, "file.path", "Path of current file");
 	r_config_set (cfg, "file.desc", "");
 	r_config_set (cfg, "file.project", "");
+	r_config_desc (cfg, "file.project", "Name of current project");
 	r_config_set (cfg, "file.md5", "");
+	r_config_desc (cfg, "file.md5", "md5 sum of current file");
 	r_config_set (cfg, "file.sha1", "");
+	r_config_desc (cfg, "file.sha1", "sha1 hash of current file");
 	r_config_set (cfg, "file.type", "");
+	r_config_desc (cfg, "file.type", "Type of current file");
 	r_config_set_i (cfg, "magic.depth", 100);
 	r_config_set (cfg, "rap.loop", "true");
 	/* fkeys */
-	r_config_set (cfg, "key.f1", ""); 
-	r_config_set (cfg, "key.f2", ""); 
-	r_config_set (cfg, "key.f3", ""); 
-	r_config_set (cfg, "key.f4", ""); 
-	r_config_set (cfg, "key.f5", ""); 
-	r_config_set (cfg, "key.f6", ""); 
-	r_config_set (cfg, "key.f7", ""); 
-	r_config_set (cfg, "key.f8", ""); 
-	r_config_set (cfg, "key.f9", ""); 
-	r_config_set (cfg, "key.f10", ""); 
-	r_config_set (cfg, "key.f11", ""); 
-	r_config_set (cfg, "key.f12", ""); 
+	r_config_set (cfg, "key.f1", "");
+	r_config_desc (cfg, "key.f1", "Commands executed when press F1 key in visual mode");
+	r_config_set (cfg, "key.f2", "");
+	r_config_desc (cfg, "key.f2", "Commands executed when press F2 key in visual mode");
+	r_config_set (cfg, "key.f3", "");
+	r_config_desc (cfg, "key.f3", "Commands executed when press F3 key in visual mode");
+	r_config_set (cfg, "key.f4", "");
+	r_config_desc (cfg, "key.f4", "Commands executed when press F4 key in visual mode");
+	r_config_set (cfg, "key.f5", "");
+	r_config_desc (cfg, "key.f5", "Commands executed when press F5 key in visual mode");
+	r_config_set (cfg, "key.f6", "");
+	r_config_desc (cfg, "key.f6", "Commands executed when press F6 key in visual mode");
+	r_config_set (cfg, "key.f7", "");
+	r_config_desc (cfg, "key.f7", "Commands executed when press F7 key in visual mode");
+	r_config_set (cfg, "key.f8", "");
+	r_config_desc (cfg, "key.f8", "Commands executed when press F8 key in visual mode");
+	r_config_set (cfg, "key.f9", "");
+	r_config_desc (cfg, "key.f9", "Commands executed when press F9 key in visual mode");
+	r_config_set (cfg, "key.f10", "");
+	r_config_desc (cfg, "key.f10", "Commands executed when press F10 key in visual mode");
+	r_config_set (cfg, "key.f11", "");
+	r_config_desc (cfg, "key.f11", "Commands executed when press F11 key in visual mode");
+	r_config_set (cfg, "key.f12", "");
+	r_config_desc (cfg, "key.f12", "Commands executed when press F12 key in visual mode");
 	/* zoom */
 	r_config_set_i (cfg, "zoom.maxsz", 512);
+	r_config_desc (cfg, "zoom.maxsz", "Zoom max size of block");
 	r_config_set_i (cfg, "zoom.from", 0);
+	r_config_desc (cfg, "zoom.from", "Zoom start address");
 	r_config_set_i (cfg, "zoom.to", 0);
+	r_config_desc (cfg, "zoom.to", "Zoom end address");
 	r_config_set_cb (cfg, "zoom.byte", "h", &config_zoombyte_callback);
+	r_config_desc (cfg, "zoom.byte", "Zoom specific callback to calculate each byte (See pZ? for help)");
 	/* TODO cmd */
 #if 0
 	config_set_i("asm.cmtmargin", 10); // show comments in disassembly
