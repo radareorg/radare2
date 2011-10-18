@@ -28,6 +28,10 @@
  * SUCH DAMAGE.
  */
 
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,9 +39,9 @@
 #include <sys/types.h>
 #include <sys/param.h>	/* for MAXPATHLEN */
 #include <sys/stat.h>
+#include <r_magic.h>
 
 #include "file.h"
-#include <r_magic.h>
 
 #ifdef QUICK
 #include <sys/mman.h>
@@ -274,3 +278,4 @@ R_API int r_magic_errno(RMagic *ms) {
 R_API void r_magic_setflags(RMagic *ms, int flags) {
 	ms->flags = flags;
 }
+#endif

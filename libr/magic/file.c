@@ -30,6 +30,10 @@
  * file - find type of a file or files - main program.
  */
 
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
+
 #include <sys/types.h>
 #include <sys/param.h>	/* for MAXPATHLEN */
 #include <sys/stat.h>
@@ -215,5 +219,6 @@ static void help(void) {
 #include "file_opts.h"
 #undef OPT
 #undef OPT_LONGONLY
-	exit(0);
+	exit (0);
 }
+#endif

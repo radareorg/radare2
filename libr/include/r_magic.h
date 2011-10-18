@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+
 #ifndef R_MAGIC_H
 #define R_MAGIC_H
 
@@ -8,6 +10,26 @@
 #endif
 
 #define R_MAGIC_PATH PREFIX"/lib/radare2/"R2_VERSION"/magic"
+
+#if USE_LIB_MAGIC
+
+#include <magic.h>
+
+#define RMagic struct magic_set
+
+#define r_magic_new() magic_open(0)
+#define r_magic_free(x) magic_close(x)
+#define r_magic_file(x,y) magic_file(x,y)
+#define r_magic_buffer(x,y,z) magic_buffer(x,y,z)
+#define r_magic_descriptor(x,y) magic_descriptor(x,y)
+#define r_magic_error(x) magic_error(x)
+#define r_magic_setflags(x,y) magic_setflags(x,y)
+#define r_magic_load(x,y) magic_setflags(x,y)
+#define r_magic_compile(x,y) magic_setflags(x,y)
+#define r_magic_check(x,y) magic_setflags(x,y)
+#define r_magic_errno(x) magic_setflags(x)
+
+#else
 
 #ifdef __EMX__
 #define PATHSEP	';'
@@ -285,5 +307,7 @@ R_API int r_magic_errno(RMagic*);
 #ifdef __cplusplus
 };
 #endif
+
+#endif // USE_LIB_MAGIC
 
 #endif /* _MAGIC_H */

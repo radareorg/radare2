@@ -25,6 +25,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
+
 #include "file.h"
 #include <stdarg.h>
 #include <stdlib.h>
@@ -297,3 +302,4 @@ int file_check_mem(RMagic *ms, unsigned int level) {
 	ms->c.li[level].last_cond = COND_NONE;
 	return 0;
 }
+#endif

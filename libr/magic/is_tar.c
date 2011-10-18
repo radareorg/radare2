@@ -37,6 +37,9 @@
  * Comments changed and some code/comments reformatted
  * for file command by Ian Darwin.
  */
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
 
 #include "file.h"
 #include <string.h>
@@ -128,3 +131,4 @@ int file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
 		return -1;
 	return 1;
 }
+#endif

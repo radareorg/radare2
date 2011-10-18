@@ -29,6 +29,9 @@
 /*
  * softmagic - interpret variable magic from MAGIC
  */
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
 
 #include "file.h"
 #include "r_regex.h"
@@ -70,7 +73,6 @@ int file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
 	for (ml = ms->mlist->next; ml != ms->mlist; ml = ml->next)
 		if ((rv = match(ms, ml->magic, ml->nmagic, buf, nbytes, mode)) != 0)
 			return rv;
-
 	return 0;
 }
 
@@ -109,7 +111,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 	int firstline = 1; /* a flag to print X\n  X\n- X */
 	int printed_something = 0;
 
-	if (file_check_mem(ms, cont_level) == -1)
+	if (file_check_mem (ms, cont_level) == -1)
 		return -1;
 
 	for (magindex = 0; magindex < nmagic; magindex++) {
@@ -165,8 +167,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 		if (file_check_mem(ms, ++cont_level) == -1)
 			return -1;
 
-		while (magic[magindex+1].cont_level != 0 &&
-		    ++magindex < nmagic) {
+		while (magic[magindex+1].cont_level != 0 && ++magindex < nmagic) {
 			m = &magic[magindex];
 			ms->line = m->lineno; /* for messages */
 
@@ -180,10 +181,8 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 				cont_level = m->cont_level;
 			}
 			ms->offset = m->offset;
-			if (m->flag & OFFADD) {
-				ms->offset +=
-				    ms->c.li[cont_level - 1].off;
-			}
+			if (m->flag & OFFADD)
+				ms->offset += ms->c.li[cont_level - 1].off;
 
 			if (m->cond == COND_ELSE || m->cond == COND_ELIF) {
 				if (ms->c.li[cont_level].last_match == 1)
@@ -1445,7 +1444,6 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 }
 
 static int print_sep(RMagic *ms, int firstline) {
-	if (firstline)
-		return 0;
-	return file_printf (ms, "\n- ");
+	return firstline? 0: file_printf (ms, "\n- ");
 }
+#endif

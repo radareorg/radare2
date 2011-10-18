@@ -30,6 +30,10 @@
  * fsmagic - magic based on filesystem info - directory, special files, etc.
  */
 
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
+
 #include <r_magic.h>
 #include "file.h"
 #include <string.h>
@@ -290,3 +294,4 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 	}
 	return 0;
 }
+#endif

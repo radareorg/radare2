@@ -36,6 +36,9 @@
  * Joerg Wunsch <joerg@freebsd.org> wrote the original support for 8-bit
  * international characters, now subsumed into this file.
  */
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
 
 #include "file.h"
 #include <stdio.h>
@@ -732,3 +735,4 @@ static void from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
 	for (i = 0; i < nbytes; i++)
 		out[i] = ebcdic_to_ascii[buf[i]];
 }
+#endif

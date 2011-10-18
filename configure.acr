@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.8.6
+VERSION 0.8.8
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -10,6 +10,15 @@ ARG_WITHOUT DEBUGGER debugger disable native debugger features ;
 USE_DL
 
 CHECK_ENDIAN
+CHKLIB magic
+ARG_WITH USE_MAGIC magic force to use system's magic ;
+IFAND HAVE_LIB_MAGIC USE_MAGIC {
+	USE_LIB_MAGIC = 1 ;
+}{
+	USE_LIB_MAGIC = 0 ;
+}
+
+
 CHKLIB ewf
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
 IFNOT HAVE_EWF { HAVE_LIB_EWF = 0 ; }
@@ -72,6 +81,7 @@ IFEQ USEROSTYPE auto ; {
 
 ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
 ARG_WITH WITHNONPIC nonpic build the library archives .a ;
+(( this hack is required for openbsd ports ))
 ARG_WITH LIBVERSION=xxx libversion specify different libversion ;
 
 IFEQ LIBVERSION xxx ; {
@@ -79,7 +89,7 @@ IFEQ LIBVERSION xxx ; {
 }
 
 REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL HAVE_LIB_TCC
-	DEBUGGER USERCC USEROSTYPE LIL_ENDIAN VERSION LIBVERSION ;
+	USE_LIB_MAGIC DEBUGGER USERCC USEROSTYPE LIL_ENDIAN VERSION LIBVERSION ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk

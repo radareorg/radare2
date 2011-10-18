@@ -29,6 +29,9 @@
 /*
  * apprentice - make one pass through /etc/magic, learning its secrets.
  */
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
 
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -197,7 +200,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	ms->haderr = 0;
 	if (magicsize != FILE_MAGICSIZE) {
 		file_error(ms, 0, "magic element size %lu != %lu",
-		    (unsigned long)sizeof(*magic),
+		    (unsigned long)(size_t)sizeof (*magic),
 		    (unsigned long)FILE_MAGICSIZE);
 		return -1;
 	}
@@ -207,8 +210,8 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 		rv = apprentice_load (ms, &magic, &nmagic, fn, action);
 		if (rv != 0)
 			return -1;
-		rv = apprentice_compile(ms, &magic, &nmagic, fn);
-		free(magic);
+		rv = apprentice_compile (ms, &magic, &nmagic, fn);
+		free (magic);
 		return rv;
 	}
 
@@ -227,7 +230,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 		return -1;
 	}
 
-	if ((ml = malloc (sizeof(*ml))) == NULL) {
+	if ((ml = malloc (sizeof (*ml))) == NULL) {
 		file_delmagic (magic, mapped, nmagic);
 		file_oomem (ms, sizeof(*ml));
 		return -1;
@@ -250,17 +253,17 @@ void file_delmagic(struct r_magic *p, int type, size_t entries) {
 #ifdef QUICK
 	case 2:
 		p--;
-		(void)munmap((void *)p, sizeof(*p) * (entries + 1));
+		(void)munmap ((void *)p, sizeof(*p) * (entries + 1));
 		break;
 #endif
 	case 1:
 		p--;
 		/*FALLTHROUGH*/
 	case 0:
-		free(p);
+		free (p);
 		break;
 	default:
-		abort();
+		abort ();
 	}
 }
 
@@ -305,7 +308,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
 		file_error (ms, 0, "could not find any magic files!");
 		return NULL;
 	}
-	free(mfn);
+	free (mfn);
 	return mlist;
 }
 
@@ -403,10 +406,7 @@ static size_t apprentice_r_magic_strength(const struct r_magic *m) {
 		abort();
 	}
 
-	if (val == 0)	/* ensure we only return 0 for FILE_DEFAULT */
-		val = 1;
-
-	return val;
+	return val? val: 1; /* ensure we only return 0 for FILE_DEFAULT */
 }
 
 /*  
@@ -415,8 +415,8 @@ static size_t apprentice_r_magic_strength(const struct r_magic *m) {
 static int apprentice_sort(const void *a, const void *b) {
 	const struct r_magic_entry *ma = a;
 	const struct r_magic_entry *mb = b;
-	size_t sa = apprentice_r_magic_strength(ma->mp);
-	size_t sb = apprentice_r_magic_strength(mb->mp);
+	size_t sa = apprentice_r_magic_strength (ma->mp);
+	size_t sb = apprentice_r_magic_strength (mb->mp);
 	if (sa == sb) return 0;
 	if (sa > sb) return -1;
 	return 1;
@@ -465,7 +465,7 @@ static void set_test_type(struct r_magic *mstart, struct r_magic *m) {
 	case FILE_REGEX:
 	case FILE_SEARCH:
 		/* binary test if pattern is not text */
-		if (file_looks_utf8((const ut8 *)m->value.s, m->vallen, NULL, NULL) == 0)
+		if (file_looks_utf8 ((const ut8 *)m->value.s, m->vallen, NULL, NULL) == 0)
 			mstart->flag |= BINTEST;
 		break;
 	case FILE_DEFAULT:
@@ -596,7 +596,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 		} while (++i < marraycount && marray[i].mp->cont_level != 0);
 	}
 
-	qsort(marray, marraycount, sizeof(*marray), apprentice_sort);
+	qsort (marray, marraycount, sizeof(*marray), apprentice_sort);
 
 	/*
 	 * Make sure that any level 0 "default" line is last (if one exists).
@@ -618,22 +618,22 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	for (i = 0; i < marraycount; i++)
 		mentrycount += marray[i].cont_count;
 
-	if ((*magicp = malloc(sizeof(**magicp) * mentrycount)) == NULL) {
-		file_oomem(ms, sizeof(**magicp) * mentrycount);
+	if ((*magicp = malloc (sizeof(**magicp) * mentrycount)) == NULL) {
+		file_oomem (ms, sizeof(**magicp) * mentrycount);
 		errs++;
 		goto out;
 	}
 
 	mentrycount = 0;
 	for (i = 0; i < marraycount; i++) {
-		(void)memcpy(*magicp + mentrycount, marray[i].mp,
-		    marray[i].cont_count * sizeof(**magicp));
+		(void)memcpy (*magicp + mentrycount, marray[i].mp,
+		    marray[i].cont_count * sizeof (**magicp));
 		mentrycount += marray[i].cont_count;
 	}
 out:
 	for (i = 0; i < marraycount; i++)
 		free(marray[i].mp);
-	free(marray);
+	free (marray);
 	if (errs) {
 		*magicp = NULL;
 		*nmagicp = 0;
@@ -849,9 +849,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	const char *l = line;
 	char *t;
 	int op;
-	ut32 cont_level;
-
-	cont_level = 0;
+	ut32 cont_level = 0;
 
 	while (*l == '>') {
 		++l;		/* step over */
@@ -1043,24 +1041,24 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 
 	m->mask_op = 0;
 	if (*l == '~') {
-		if (!IS_STRING(m->type))
+		if (!IS_STRING (m->type))
 			m->mask_op |= FILE_OPINVERSE;
 		else if (ms->flags & R_MAGIC_CHECK)
-			file_magwarn(ms, "'~' invalid for string types");
+			file_magwarn (ms, "'~' invalid for string types");
 		++l;
 	}
 	m->str_range = 0;
 	m->str_flags = 0;
 	m->num_mask = 0;
-	if ((op = get_op(*l)) != -1) {
-		if (!IS_STRING(m->type)) {
+	if ((op = get_op (*l)) != -1) {
+		if (!IS_STRING (m->type)) {
 			ut64 val;
 			++l;
 			m->mask_op |= op;
-			val = (ut64)strtoull(l, &t, 0);
+			val = (ut64)strtoull (l, &t, 0);
 			l = t;
-			m->num_mask = file_signextend(ms, m, val);
-			eatsize(&l);
+			m->num_mask = file_signextend (ms, m, val);
+			eatsize (&l);
 		}
 		else if (op == FILE_OPDIVIDE) {
 			int have_range = 0;
@@ -1105,8 +1103,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 					return -1;
 				}
 				/* allow multiple '/' for readability */
-				if (l[1] == '/' &&
-				    !isspace((ut8)l[2]))
+				if (l[1] == '/' && !isspace ((ut8)l[2]))
 					l++;
 			}
 			if (string_modifier_check(ms, m) == -1)
@@ -1895,3 +1892,4 @@ static void bs1(struct r_magic *m) {
 		m->num_mask = swap8(m->num_mask);
 	}
 }
+#endif

@@ -29,6 +29,9 @@
 /*
  * print.c - debugging printout routines
  */
+#include <r_userconf.h>
+
+#if !USE_LIB_MAGIC
 
 #include "file.h"
 #include <stdio.h>
@@ -225,3 +228,4 @@ const char * file_fmttime(ut32 v, int local) {
 	pp[strcspn (pp, "\n")] = '\0';
 	return pp;
 }
+#endif
