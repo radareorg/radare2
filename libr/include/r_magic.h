@@ -17,8 +17,8 @@
 
 #define RMagic struct magic_set
 
-#define r_magic_new() magic_open(0)
-#define r_magic_free(x) magic_close(x)
+#define r_magic_new(x) magic_open(x)
+#define r_magic_free(x) x?magic_close(x):x
 #define r_magic_file(x,y) magic_file(x,y)
 #define r_magic_buffer(x,y,z) magic_buffer(x,y,z)
 #define r_magic_descriptor(x,y) magic_descriptor(x,y)

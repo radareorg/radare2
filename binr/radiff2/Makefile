@@ -16,9 +16,9 @@ LDFLAGS+=../../libr/db/sdb/src/libsdb.a
 ifeq ($(HAVE_LIB_GMP),1)
 LDFLAGS+=-lgmp
 endif
-ifeq ($(HAVE_LIB_MAGIC),1)
-LDFLAGS+=-lmagic
 endif
+ifeq ($(USE_LIB_MAGIC),1)
+LDFLAGS+=-lmagic
 endif
 
 ifeq (${HAVE_LIB_SSL},1)

@@ -11,11 +11,13 @@ USE_DL
 
 CHECK_ENDIAN
 CHKLIB magic
-ARG_WITH USE_MAGIC magic force to use system's magic ;
+ARG_WITH USE_MAGIC sysmagic force to use system's magic ;
 IFAND HAVE_LIB_MAGIC USE_MAGIC {
 	USE_LIB_MAGIC = 1 ;
+	LIBMAGIC = -lmagic ;
 }{
 	USE_LIB_MAGIC = 0 ;
+	LIBMAGIC = -lr_magic ;
 }
 
 

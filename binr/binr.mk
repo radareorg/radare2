@@ -1,4 +1,5 @@
 include ../../libr/config.mk
+include ../../config-user.mk
 
 .PHONY: all clean
 
