@@ -485,6 +485,7 @@ R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 fro
 /* diff.c */
 R_API RAnalDiff *r_anal_diff_new();
 R_API void r_anal_diff_setup(RAnal *anal, int doops, double thbb, double thfcn);
+R_API void r_anal_diff_setup_i(RAnal *anal, int doops, int thbb, int thfcn);
 R_API void* r_anal_diff_free(RAnalDiff *diff);
 R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb);
 R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFcn *fcn);

@@ -36,12 +36,12 @@
 
 # Perl POD documents
 # From: Tom Hukins <tom@eborcom.com>
-0	search/1/B	\=pod\n		Perl POD document text
-0	search/1/B	\n\=pod\n	Perl POD document text
-0	search/1/B	\=head1\ 	Perl POD document text
-0	search/1/B	\n\=head1\ 	Perl POD document text
-0	search/1/B	\=head2\ 	Perl POD document text
-0	search/1/B	\n\=head2\ 	Perl POD document text
+0	search/1/b	\=pod\n		Perl POD document text
+0	search/1/b	\n\=pod\n	Perl POD document text
+0	search/1/b	\=head1\ 	Perl POD document text
+0	search/1/b	\n\=head1\ 	Perl POD document text
+0	search/1/b	\=head2\ 	Perl POD document text
+0	search/1/b	\n\=head2\ 	Perl POD document text
 
 # Perl Storable data files.
 0	string	perl-store	perl Storable (v0.6) data

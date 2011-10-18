@@ -7,10 +7,14 @@
 # .BAT files (Daniel Quinlan, quinlan@yggdrasil.com)
 # updated by Joerg Jenderek
 0	string	@			
->1	string/cB	\ echo\ off	MS-DOS batch file text
->1	string/cB	echo\ off	MS-DOS batch file text
->1	string/cB	rem\ 		MS-DOS batch file text
->1	string/cB	set\ 		MS-DOS batch file text
+#>1	string/cB	\ echo\ off	MS-DOS batch file text
+#>1	string/cB	echo\ off	MS-DOS batch file text
+#>1	string/cB	rem\ 		MS-DOS batch file text
+#>1	string/cB	set\ 		MS-DOS batch file text
+>1	string/cb	\ echo\ off	MS-DOS batch file text
+>1	string/cb	echo\ off	MS-DOS batch file text
+>1	string/cb	rem\ 		MS-DOS batch file text
+>1	string/cb	set\ 		MS-DOS batch file text
 
 
 # OS/2 batch files are REXX. the second regex is a bit generic, oh well

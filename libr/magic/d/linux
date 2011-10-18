@@ -85,7 +85,7 @@
 # Linux kernel boot images (i386 arch) (Wolfram Kleff)
 514	string		HdrS		Linux kernel
 >510	leshort		0xAA55		x86 boot executable
->>518	leshort		>=0x200
+>>518	leshort		>0x1ff
 >>529	byte		0		zImage,
 >>>529	byte		1		bzImage,
 >>>(526.s+0x200) string	>\0		version %s,

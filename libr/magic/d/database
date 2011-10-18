@@ -235,7 +235,7 @@
 0	string		PGDMP		PostgreSQL custom database dump
 >5	byte		x		- v%d
 >6	byte		x		\b.%d
->5	beshort		<=0x100		\b-0
+>5	beshort		<0x101		\b-0
 >5	beshort		>0x100
 >>7	byte		x		\b-%d
 

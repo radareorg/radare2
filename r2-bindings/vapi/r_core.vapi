@@ -13,6 +13,7 @@ public class RCore {
 	public RDebug dbg;
 	public RConfig config;
 	public RAsm assembler;
+	public RMagic magic;
 	public RAnal anal;
 	public RBin bin;
 	public RFS fs;
