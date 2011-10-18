@@ -7,5 +7,5 @@ Name: r_magic
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lmagic -lr_util
+Libs: -L${libdir} @LIBMAGIC@ -lr_util
 Cflags: -I${includedir}/libr

@@ -54,11 +54,7 @@ else
 $(LIBAR):
 endif
 
-ifeq ($(USE_LIB_MAGIC),1)
-MAGICSED=| sed -e 's,lr_magic,lmagic,g'
-else
-MAGICSED=
-endif
+MAGICSED=| sed -e 's,-lr_magic,@LIBMAGIC@,g'
 
 pkgcfg:
 	@echo Generating pkgconfig stub for ${NAME}
