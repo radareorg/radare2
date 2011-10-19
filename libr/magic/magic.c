@@ -30,7 +30,52 @@
 
 #include <r_userconf.h>
 
-#if !USE_LIB_MAGIC
+#if USE_LIB_MAGIC
+R_API RMagic* r_magic_new(int flags) {
+	return magic_open (flags);
+}
+
+R_API void r_magic_free(RMagic* m) {
+	if (m) magic_close (m);
+}
+
+R_API const char *r_magic_file(RMagic* m, const char * f) {
+	return magic_file (m, f);
+}
+
+R_API const char *r_magic_descriptor(RMagic* m, int fd) {
+	return magic_descriptor (m, fd);
+}
+
+R_API const char *r_magic_buffer(RMagic* m, const void *b, size_t s) {
+	return magic_buffer (m, b, s);
+}
+
+R_API const char *r_magic_error(RMagic* m) {
+	return magic_error (m);
+}
+
+R_API void r_magic_setflags(RMagic* m, int f) {
+	magic_setflags (m, f);
+}
+
+R_API int r_magic_load(RMagic* m, const char *f) {
+	magic_load (m, f);
+}
+
+R_API int r_magic_compile(RMagic* m, const char *x) {
+	return magic_compile (m, x);
+}
+
+R_API int r_magic_check(RMagic* m, const char *x) {
+	return magic_check (m, x);
+}
+
+R_API int r_magic_errno(RMagic* m) {
+	return magic_error (m);
+}
+
+#else
 
 #include <stdio.h>
 #include <stdlib.h>

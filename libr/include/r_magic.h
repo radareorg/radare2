@@ -26,9 +26,9 @@
 #define r_magic_error(x) magic_error(x)
 #define r_magic_setflags(x,y) magic_setflags(x,y)
 #define r_magic_load(x,y) magic_load(x,y)
-#define r_magic_compile(x,y) magic_setflags(x,y)
-#define r_magic_check(x,y) magic_setflags(x,y)
-#define r_magic_errno(x) magic_setflags(x)
+#define r_magic_compile(x,y) magic_compile(x,y)
+#define r_magic_check(x,y) magic_check(x,y)
+#define r_magic_errno(x) magic_errno(x)
 #endif
 
 #else
@@ -291,7 +291,7 @@ extern "C" {
 typedef struct r_magic_set RMagic;
 
 #ifdef R_API
-R_API RMagic* r_magic_new();
+R_API RMagic* r_magic_new(int flags);
 R_API void r_magic_free(RMagic*);
 
 R_API const char *r_magic_file(RMagic*, const char *);
