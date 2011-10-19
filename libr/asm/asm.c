@@ -263,14 +263,14 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
 	int ret, slen;
 	ut64 idx;
 
-	if (!(acode = r_asm_code_new()))
+	if (!(acode = r_asm_code_new ()))
 		return NULL;
 	if (!(acode->buf = malloc (1+len)))
 		return r_asm_code_free (acode);
 	memcpy (acode->buf, buf, len);
 	if (!(acode->buf_hex = malloc (2*len+1)))
 		return r_asm_code_free(acode);
-	r_hex_bin2str(buf, len, acode->buf_hex);
+	r_hex_bin2str (buf, len, acode->buf_hex);
 	if (!(acode->buf_asm = malloc (2)))
 		return r_asm_code_free (acode);
 	
@@ -301,7 +301,11 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
 	if (!(buf = malloc (1+strlen (hexstr))))
 		return NULL;
 	len = r_hex_str2bin (hexstr, buf);
-	ret = r_asm_mdisassemble (a, buf, len);
+	if (len == -1) {
+		free (buf);
+		return NULL;
+	}
+	ret = r_asm_mdisassemble (a, buf, (ut64)len);
 	if (a->ofilter)
 		r_parse_parse (a->ofilter, ret->buf_asm, ret->buf_asm);
 	free (buf);
