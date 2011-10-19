@@ -92,7 +92,7 @@ LIB=lib${NAME}
 LIBAR=${LIB}.${EXT_AR}
 LIBSO=${LIB}.${EXT_SO}
 ifeq (${OSTYPE},android)
-libname=-shared -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${EXT_SO}
+libname=-shared -o $1.${EXT_SO}
 else
 ifeq (${OSTYPE},windows)
 libname=-shared -o $1.${EXT_SO}

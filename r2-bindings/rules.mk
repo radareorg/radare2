@@ -31,7 +31,9 @@ else
 	fi ; \
 	[ $$? = 0 ] && \
 	  (cd .. && RELEASE=$(RELEASE) \
-		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; true
+		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; \
+		[ "${LANG}`uname`" = pythonDarwin ] && cp _${LIBPFX}$@ _`echo $@|sed -e s,.${SOEXT},.so,` ; \
+		true
 endif
 
 install:
@@ -49,6 +51,7 @@ else
 	"python") \
 		${CXX} -fPIC -shared $${LIB}_wrap.cxx `../python-config-wrapper --cflags --libs` \
 			`pkg-config --cflags --libs $${LIB}` ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
+		[ "`uname`" = Darwin ] && cp ${LIBPFX}$@ `echo $@|sed -e s,.${SOEXT},.so,` ; \
 		;; \
 	"lua") \
 		${CXX} -fPIC -shared $${LIB}_wrap.cxx -I/usr/include/lua5.1 ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
