@@ -157,7 +157,7 @@ typedef struct r_anal_t {
 	int bits;
 	int lineswidth; // wtf
 	int big_endian;
-	//int split; // XXX: deprecated, must remove
+	int split; // used only from core
 	void *user;
 	RList *fcns;
 	RListRange *fcnstore;
@@ -172,7 +172,7 @@ typedef struct r_anal_t {
 	double diff_thfcn;
 	RIOBind iob;
 	//struct r_anal_ctx_t *ctx;
-	RAnalPlugin *cur;
+	struct r_anal_plugin_t *cur;
 	struct list_head anals; // TODO: Reimplement with RList
 } RAnal;
 
