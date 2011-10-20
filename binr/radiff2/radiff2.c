@@ -57,15 +57,16 @@ static int show_help(int line) {
 	printf ("Usage: radiff2 [-cCdrspOv] [-g sym] [file] [file]\n");
 	if (!line) printf (
 //		"  -l        diff lines of text\n"
-		"  -c        count of changes\n"
-		"  -C        graphdiff code\n"
-		"  -O        code diffing with opcode bytes only\n"
-		"  -d        use delta diffing\n"
-		"  -g [sym]  graph diff of given symbol\n"
-		"  -r        output in radare commands\n"
-		"  -s        compute text distance\n"
-		"  -p        use physical addressing (io.va=0)\n"
-		"  -v        show version information\n");
+		"  -c         count of changes\n"
+		"  -C         graphdiff code\n"
+		"  -O         code diffing with opcode bytes only\n"
+		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
+		"  -d         use delta diffing\n"
+		"  -g [sym]   graph diff of given symbol\n"
+		"  -r         output in radare commands\n"
+		"  -s         compute text distance\n"
+		"  -p         use physical addressing (io.va=0)\n"
+		"  -v         show version information\n");
 	return 1;
 }
 
@@ -102,9 +103,10 @@ int main(int argc, char **argv) {
 	int o, sza, szb, rad = 0, delta = 0;
 	int showcount = 0, mode = MODE_DIFF;
 	int diffops = 0;
+	int threshold = -1;
 	double sim;
 
-	while ((o = getopt (argc, argv, "Cpg:Orhcdsvx")) != -1) {
+	while ((o = getopt (argc, argv, "Cpg:Orhcdsvxt:")) != -1) {
 		switch (o) {
 		case 'p':
 			useva = R_FALSE;
@@ -124,6 +126,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'O':
 			diffops = 1;
+			break;
+		case 't':
+			threshold = atoi (optarg);
 			break;
 		case 'd':
 			delta = 1;
@@ -165,8 +170,8 @@ int main(int argc, char **argv) {
 			eprintf ("Cannot open '%s'\n", file2);
 			return 1;
 		}
-		r_anal_diff_setup (c->anal, diffops, -1, -1);
-		r_anal_diff_setup (c2->anal, diffops, -1, -1);
+		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
+		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		r_core_gdiff (c, c2);
 		if (mode == MODE_GRAPH)
 			diff_graph (c, c2, addr);

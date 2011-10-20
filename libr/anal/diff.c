@@ -128,7 +128,7 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2) {
 			}
 		}
 		if (mbb != NULL && mbb2 != NULL) {
-			if (ot == 1)
+			if (ot == 1 || t > anal->diff_thfcn )
 				mbb->diff->type = mbb2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
 			else mbb->diff->type = mbb2->diff->type = \
 				fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
