@@ -282,6 +282,36 @@ ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	return 0;
 }
 
+ut64 Elf_(r_bin_elf_get_init_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+	ut8 buf[512];
+
+	if (r_buf_read_at (bin->b, entry+16, buf, sizeof (buf)) == -1) {
+		eprintf ("Error: read (entry)\n");
+		return 0;
+	}
+	if (buf[0] == 0x68) { // push // x86 only
+		memmove (buf, buf+1, 4);
+		return (ut64)((int)(buf[0]+(buf[1]<<8)+(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
+	}
+	return 0;
+}
+
+ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	ut64 entry = Elf_(r_bin_elf_get_entry_offset) (bin);
+	ut8 buf[512];
+
+	if (r_buf_read_at (bin->b, entry+11, buf, sizeof (buf)) == -1) {
+		eprintf ("Error: read (entry)\n");
+		return 0;
+	}
+	if (buf[0] == 0x68) { // push // x86/32 only
+		memmove (buf, buf+1, 4);
+		return (ut64)((int)(buf[0]+(buf[1]<<8)+(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
+	}
+	return 0;
+}
+
 ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->ehdr.e_entry < bin->baddr)
 		return bin->ehdr.e_entry;
@@ -358,6 +388,7 @@ char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 }
 
+// TODO: do not strdup here
 char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_machine) {
 	case EM_AVR:
