@@ -8,6 +8,11 @@
 
 static int magicdepth = 99; //XXX: do not use global var here
 
+static void static_debug_stop(void *u) {
+	RDebug *dbg = (RDebug *)u;
+	r_debug_stop (dbg);
+}
+
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
 	int j, ret = 0;
@@ -4992,6 +4997,8 @@ static int cmd_debug(void *data, const char *input) {
 		eprintf ("TODO: transplant process\n");
 		break;
 	case 'c':
+		// TODO: we must use this for step 'ds' too maybe...
+		r_cons_break (static_debug_stop, core->dbg);
 		switch (input[1]) {
 		case '?':
 			eprintf("Usage: dc[?]  -- continue execution\n"
@@ -5140,6 +5147,7 @@ static int cmd_debug(void *data, const char *input) {
 			checkbpcallback (core);
 		}
 		follow = r_config_get_i (core->config, "dbg.follow");
+		r_cons_break_end();
 		break;
 	case 'm':
 		cmd_debug_dm (core, input+1);

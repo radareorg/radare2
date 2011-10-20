@@ -3,7 +3,6 @@
 
 #include <r_io.h>
 #include <r_util.h>
-#include <r_cons.h>
 
 #define BFVM_SCREEN_ADDR 0x50000
 #define BFVM_SCREEN_SIZE 4096
@@ -19,6 +18,7 @@ typedef struct bfvm_cpu_t {
 	ut64 esp;
 	int ptr;
 	int trace;
+	int breaked;
 	ut64 base;
 	ut8 *mem;
 	ut32 size;

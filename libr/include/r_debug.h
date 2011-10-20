@@ -170,6 +170,7 @@ typedef struct r_debug_plugin_t {
 	RList *(*tids)(int pid);
 	RFList (*backtrace)(int count);
 	/* flow */
+	int (*stop)(RDebug *dbg);
 	int (*step)(RDebug *dbg);
 	int (*step_over)(RDebug *dbg);
 	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
@@ -276,6 +277,8 @@ R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
 R_API void r_debug_io_bind(RDebug *dbg, RIO *io);
 R_API ut64 r_debug_execute(struct r_debug_t *dbg, ut8 *buf, int len);
 R_API int r_debug_map_sync(RDebug *dbg);
+
+R_API int r_debug_stop(RDebug *dbg);
 
 /* backtrace */
 R_API RList *r_debug_frames (RDebug *dbg);

@@ -84,6 +84,13 @@ R_API int r_debug_attach(RDebug *dbg, int pid) {
 	return ret;
 }
 
+/* stop execution of child process */
+R_API int r_debug_stop(RDebug *dbg) {
+	if (dbg && dbg->h && dbg->h->stop)
+		return dbg->h->stop (dbg);
+	return R_FALSE;
+}
+
 R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 	if (dbg && dbg->h) {
 		if (arch & dbg->h->arch) {

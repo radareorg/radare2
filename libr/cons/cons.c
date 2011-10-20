@@ -60,6 +60,7 @@ R_API void r_cons_break(void (*cb)(void *u), void *user) {
 #if __UNIX__
 	signal (SIGINT, break_signal);
 #endif
+// TODO: add support for w32 ^C
 }
 
 R_API void r_cons_break_end() {

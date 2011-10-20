@@ -223,9 +223,8 @@ R_API int bfvm_step(BfvmCPU *c, int over) {
 }
 
 R_API int bfvm_contsc(BfvmCPU *c) {
-	RCons *ci = r_cons_singleton ();
-	r_cons_break (NULL, 0);
-	while (!ci->breaked) {
+	c->breaked = 0;
+	while (!c->breaked) {
 		bfvm_step (c, 0);
 		if (bfvm_in_trap (c)) {
 			eprintf ("Trap instruction at 0x%08llx\n", c->eip);
@@ -234,29 +233,26 @@ R_API int bfvm_contsc(BfvmCPU *c) {
 		switch (bfvm_op (c)) {
 		case ',':
 			eprintf("contsc: read from input trap\n");
-			ci->breaked = 1;
+			c->breaked = 1;
 			continue;
 		case '.':
 			eprintf ("contsc: print to screen trap\n");
-			ci->breaked = 1;
+			c->breaked = 1;
 			continue;
 		}
 	}
-	r_cons_break_end ();
 	return 0;
 }
 
 R_API int bfvm_cont(BfvmCPU *c, ut64 until) {
-	RCons *ci = r_cons_singleton ();
-	r_cons_break (NULL, 0);
-	while (!ci->breaked && c->eip != until) {
+	c->breaked = 0;
+	while (!c->breaked && c->eip != until) {
 		bfvm_step (c, 0);
 		if (bfvm_in_trap (c)) {
 			eprintf ("Trap instruction at 0x%08llx\n", c->eip);
 			break;
 		}
 	}
-	r_cons_break_end ();
 	return 0;
 }
 

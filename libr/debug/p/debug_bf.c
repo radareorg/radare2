@@ -175,6 +175,13 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 	return list;
 }
 
+static int r_debug_bf_stop(RDebug *dbg) {
+	RIOBfdbg *o = dbg->iob.io->fd->data;
+	BfvmCPU *c = o->bfvm;
+	c->breaked = R_TRUE;
+	return R_TRUE;
+}
+
 struct r_debug_plugin_t r_debug_plugin_bf = {
 	.name = "bf",
 	/* TODO: Add support for more architectures here */
@@ -189,6 +196,7 @@ struct r_debug_plugin_t r_debug_plugin_bf = {
 	.detach = &r_debug_bf_detach,
 	.wait = &r_debug_bf_wait,
 	.pids = NULL,
+	.stop = r_debug_bf_stop,
 	.tids = NULL,
 	.threads = NULL,
 	.kill = r_debug_bf_kill,
