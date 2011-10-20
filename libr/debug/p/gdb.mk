@@ -10,6 +10,8 @@ LDFLAGS+=-lsocket
 endif
 
 LDFLAGS+=-L../../util -lr_util
+LDFLAGS+=-L../../cons -lr_cons
+LDFLAGS+=-L../../parse -lr_parse
 LDFLAGS+=-L../../anal -lr_anal
 LDFLAGS+=-L../../reg -lr_reg
 LDFLAGS+=-L../../bp -lr_bp
