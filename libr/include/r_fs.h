@@ -109,7 +109,7 @@ R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);
 R_API void r_fs_partition_free (RFSPartition *p);
 R_API const char *r_fs_partition_type (const char *part, int type);
 R_API const char *r_fs_partition_type_get (int n);
-R_API int r_fs_partition_get_size ();
+R_API int r_fs_partition_get_size (); // WTF. wrong function name
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_ext2;

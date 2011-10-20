@@ -404,7 +404,7 @@ static int load_shellcode_from_file(char *str) {
 }
 
 int main(int argc, char **argv) {
-	int c, listen = 0;
+	int c; //, listen = 0;
 
 	if (argc<2)
 		return show_helpline ();
@@ -479,9 +479,11 @@ int main(int argc, char **argv) {
 			break;
 		case 'h':
 			return show_help ();
+/*
 		case 'l':
 			listen = atoi (optarg);
 			break;
+*/
 		case 'u':
 			printf ("TODO: UDP support\n");
 			break;

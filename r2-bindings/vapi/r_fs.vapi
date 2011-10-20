@@ -7,6 +7,7 @@ namespace Radare {
 	public class RFS {
 		public RFS();
 		public unowned RFSRoot? mount (string fstype, string path, uint64 delta);
+		public void view(int view);
 		public bool umount (string path);
 		public RList<RFSRoot> root (string path);
 		public RFSFile open (string path);
@@ -17,7 +18,9 @@ namespace Radare {
 		public RList<RFSPartition> partitions (string ptype, uint64 delta);
 		public RList<RFSRoot> roots;
 		public int dir_dump (string path, string name);
-		public RList<string> find (string name, string glob);
+		public RList<string> find_name (string name, string glob);
+		public RList<string> find_off (string name, uint64 off);
+		public bool prompt (string root);
 		public static unowned string partition_type (string part, int type);
 		public static unowned string partition_type_get (int n);
 	}

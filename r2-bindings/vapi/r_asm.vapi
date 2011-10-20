@@ -90,6 +90,9 @@ public class RAsm {
 	public Code? massemble(string buf);
 	public Code? assemble_file(string file);
 
+	public bool filter_input(string filter);
+	public bool filter_output(string filter);
+
 	/* TODO: not directy defined here */
 	public void free();
 }

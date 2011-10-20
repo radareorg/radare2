@@ -1,24 +1,32 @@
-.Dd Mar 12, 2010
+.Dd Oct 20, 2011
 .Dt RADIFF2 1
 .Os
 .Sh NAME
 .Nm radiff2
 .Nd unified binary diffing utility
 .Sh SYNOPSIS
-.Nm radiff
-.Op -scrdV
+.Nm radiff2
+.Op -stcrdVO
 .Op file1
 .Op file2
 .Sh DESCRIPTION
-radiff implements some binary diffing algorithms.
+radiff2 implements many binary diffing algorithms for data and code.
 .Pp
 .Bl -tag -width Fl
 .It Fl s
 Calculate text distance from two files.
 .It Fl c
 Count number of differences.
+.It Fl C
+Graphdiff code instead of data
+.It Fl t Ar 0-100
+Choose matching threshold for binary code diffing
+.It Fl O
+Do code diffing with all bytes instead of just the fixed opcode bytes
 .It Fl r
 Output in radare commands as a binary patch.
+.It Fl p
+Use physical addressing (io.va=0)
 .It Fl d
 Use delta diffing (slower).
 .It Fl V

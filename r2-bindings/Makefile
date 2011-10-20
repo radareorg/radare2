@@ -58,8 +58,8 @@ dist:
 # TODO: valadoc
 vdoc:
 	-rm -rf vdoc
-	cat vapi/*.vapi > libr.vapi
-	valadoc -o vdoc libr.vapi
+	cat vapi/r_*.vapi > libr.vapi
+	valadoc --package-version=${VERSION} --package-name=libr --driver 0.13.x -o vdoc libr.vapi
 	-rm -f libr.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
