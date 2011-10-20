@@ -97,10 +97,10 @@ static int r_line_hist_down() {
 }
 
 R_API int r_line_hist_list() {
-	int i;
+	int i = 0;
 	if (I.history.data != NULL)
-	for (i=0; i<I.history.size && I.history.data[i]; i++)
-		printf ("%.3d  %s\n", i, I.history.data[i]);
+		for (i=0; i<I.history.size && I.history.data[i]; i++)
+			printf ("%.3d  %s\n", i, I.history.data[i]);
 	return i;
 }
 

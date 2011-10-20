@@ -59,7 +59,7 @@ int r_db_table_key_i(struct r_db_table_t *table, int elem) {
 
 /* Get name of the N field in the table */
 const char *r_db_table_field_i(struct r_db_table_t *table, int elem) {
-	char *name;
+	char *name = NULL;
 	if (elem>=0 && table->nelems<elem)
 		name = r_str_word_get0(table->args, elem);
 	return name;

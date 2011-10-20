@@ -47,7 +47,7 @@ static void decode_unknown(struct state *s, struct directive *d) {
 
 static int decode_fixed(struct state *s, struct directive *d) {
 	*d->d_asm='\0';
-	switch (i2u16(&d->d_inst)) {
+	switch (i2u16 (&d->d_inst)) {
 	case INST_NOP:
 		if (s->s_prefix)
 			return 0;
@@ -408,9 +408,9 @@ static int decode_known(struct state *s, struct directive *d) {
 		fmtsz += 2;
 
 	// can be cleaned, no need to fmtsz
-	snprintf(fmt, sizeof(fmt), "%s0x%%.%dX", sign, fmtsz);
-	snprintf(tmp, sizeof(tmp), fmt, d->d_operand);
-	strcat(d->d_asm, tmp);
+	snprintf (fmt, sizeof (fmt), "%s0x%%.%dX", sign, fmtsz);
+	snprintf (tmp, sizeof (tmp), fmt, d->d_operand);
+	strcat (d->d_asm, tmp);
 
 	if (idx) {
 		char *r = in->in_mode == DATA_MODE_INDEXED_X ? "X" : "Y";

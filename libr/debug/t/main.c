@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 	RIODesc *fd;
 	int tid, pid;
 	struct r_io_t *io;
-	struct r_debug_t *dbg;
+	struct r_debug_t *dbg = NULL;
 
 	io = r_io_new ();
 	printf ("Supported IO pluggins:\n");

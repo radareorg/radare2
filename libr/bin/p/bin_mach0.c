@@ -201,9 +201,9 @@ typedef struct r_bin_create_t {
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	ut32 filesize, codeva, datava;
 	ut32 ncmds, cmdsize, magiclen;
-	ut32 p_codefsz, p_codeva, p_codesz, p_codepa;
-	ut32 p_datafsz, p_datava, p_datasz, p_datapa;
-	ut32 p_cmdsize, p_entry, p_tmp;
+	ut32 p_codefsz = 0, p_codeva = 0, p_codesz = 0, p_codepa = 0;
+	ut32 p_datafsz = 0, p_datava = 0, p_datasz = 0, p_datapa = 0;
+	ut32 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut32 baddr = 0x1000;
 	int is_arm = !strcmp (bin->curarch.info->arch, "arm");
 	RBuffer *buf = r_buf_new ();

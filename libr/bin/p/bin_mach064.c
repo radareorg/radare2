@@ -13,9 +13,9 @@ static int check(RBinArch *arch) {
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	ut64 filesize, codeva, datava;
 	ut32 ncmds, cmdsize, magiclen, headerlen;
-	ut64 p_codefsz, p_codeva, p_codesz, p_codepa;
-	ut64 p_datafsz, p_datava, p_datasz, p_datapa;
-	ut64 p_cmdsize, p_entry, p_tmp;
+	ut64 p_codefsz=0, p_codeva=0, p_codesz=0, p_codepa=0;
+	ut64 p_datafsz=0, p_datava=0, p_datasz=0, p_datapa=0;
+	ut64 p_cmdsize=0, p_entry=0, p_tmp=0;
 	ut64 baddr = 0x100001000;
 // TODO: baddr must be overriden with -b
 	RBuffer *buf = r_buf_new ();
@@ -32,7 +32,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	B ("\xcf\xfa\xed\xfe", 4); // header
 	D (7 | 0x01000000); // cpu type (x86) | ABI64
 	//D (3); // subtype (i386-all)
-D(0x80000003); // unknown subtype issue
+	D(0x80000003); // unknown subtype issue
 	D (2); // filetype (executable)
 
 	if (data && datalen>0) {

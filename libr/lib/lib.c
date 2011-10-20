@@ -188,7 +188,7 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	RListIter *iter;
 	RLibStruct *stru;
 	void *handler;
-	int ret;
+	int ret = R_FALSE;
 
 	/* ignored by filename */
 	if (!r_lib_dl_check_filename (file)) {

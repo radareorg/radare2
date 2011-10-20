@@ -311,9 +311,9 @@ static void
 p_ere(struct parse *p, int stop)	/* character this ERE should end at */
 {
 	char c;
-	sopno prevback;
-	sopno prevfwd;
-	sopno conc;
+	sopno prevback = 0;
+	sopno prevfwd = 0;
+	sopno conc = 0;
 	int first = 1;		/* is this the first alternative? */
 
 	for (;;) {
@@ -754,7 +754,7 @@ static void
 p_b_term(struct parse *p, cset *cs)
 {
 	char c;
-	char start, finish;
+	char start = 0, finish;
 	int i;
 
 	/* classify what we've got */
@@ -1462,8 +1462,8 @@ static void
 findmust(struct parse *p, struct re_guts *g)
 {
 	sop *scan;
-	sop *start;    /* start initialized in the default case, after that */
-	sop *newstart; /* newstart was initialized in the OCHAR case */
+	sop *start = NULL;    /* start initialized in the default case, after that */
+	sop *newstart;        /* newstart was initialized in the OCHAR case */
 	sopno newlen;
 	sop s;
 	char *cp;
@@ -1475,7 +1475,7 @@ findmust(struct parse *p, struct re_guts *g)
 
 	/* find the longest OCHAR sequence in strip */
 	newlen = 0;
-	scan = g->strip + 1;
+	start = scan = g->strip + 1;
 	do {
 		s = *scan++;
 		switch (OP(s)) {

@@ -134,8 +134,7 @@ static void signal_handler(int signum) {
 	cmd = malloc (len);
 	snprintf (cmd, len, crash_handler_cmd, getpid ());
 	r_sys_backtrace ();
-	system (cmd);
-	exit (1);
+	exit (system (cmd));
 }
 
 static int checkcmd(const char *c) {

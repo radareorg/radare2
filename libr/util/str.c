@@ -172,7 +172,7 @@ R_API const char *r_str_bool(int b) {
 
 R_API void r_str_case(char *str, int up) {
 	if (up) {
-		char oc;
+		char oc = 0;
 		for (; *str; oc = *str++)
 			*str = (*str=='x' && oc=='0') ? 'x': toupper (*str);
 	} else {

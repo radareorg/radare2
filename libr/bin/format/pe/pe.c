@@ -412,7 +412,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 	struct r_bin_pe_lib_t *libs = NULL;
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
-	int i, j;
+	int i, j = 0;
 	
 	if ((libs = malloc((import_dirs_count + delay_import_dirs_count + 2) * sizeof(struct r_bin_pe_string_t))) == NULL) {
 		perror("malloc (libs)");

@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
@@ -18,9 +19,7 @@ int main(int argc, char **argv) {
 	int c;
 	int action = 0;
 	int rad = 0;
-	RSign *sig;
-
-	sig = r_sign_new ();
+	RSign *sig = r_sign_new ();
 
 	while ((c=getopt (argc, argv, "o:hrs:iV")) !=-1) {
 		switch (c) {
@@ -46,6 +45,7 @@ int main(int argc, char **argv) {
 		return rasign_show_help ();
 
 	r_sign_list (sig, 0);
+	rad = rad; /* nop */
 
 	switch (action) {
 	case 's':

@@ -151,7 +151,7 @@ R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi) {
 
 R_API int r_syscall_get_num(RSyscall *ctx, const char *str) {
 	char *o;
-	int i;
+	int i = 0;
 	if (!ctx->syspair)
 		return 0;
 	o = r_pair_get (ctx->syspair, str);
