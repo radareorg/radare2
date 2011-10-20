@@ -24,5 +24,6 @@ TARGETS="
 	android-arm
 	android-x86
 "
+TARGETS=android-arm
 
 # mingw64 maemo

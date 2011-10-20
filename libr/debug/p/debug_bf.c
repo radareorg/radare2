@@ -2,6 +2,7 @@
 
 #include <r_asm.h>
 #include <r_debug.h>
+#define R_API static
 #include "bfvm.c"
 
 typedef struct {

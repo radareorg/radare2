@@ -31,6 +31,10 @@
 #include <r_userconf.h>
 
 #if USE_LIB_MAGIC
+#include <magic.h>
+#define RMagic void
+#define R_API
+
 R_API RMagic* r_magic_new(int flags) {
 	return magic_open (flags);
 }

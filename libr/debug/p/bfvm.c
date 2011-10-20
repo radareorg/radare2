@@ -13,7 +13,7 @@ static ut8 bfvm_op(BfvmCPU *c) {
 	return buf[0];
 }
 
-int bfvm_in_trap(BfvmCPU *c) {
+R_API int bfvm_in_trap(BfvmCPU *c) {
 	switch (bfvm_op (c)) {
 	case 0x00:
 	case 0xcc:
@@ -37,7 +37,7 @@ R_API void bfvm_reset(BfvmCPU *c) {
 	c->esp = c->base;
 }
 
-int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
+R_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	memset (c, '\0', sizeof (BfvmCPU));
 
 	/* data */
@@ -137,13 +137,13 @@ R_API void bfvm_peek(BfvmCPU *c) {
 	}
 }
 
-void bfvm_poke(BfvmCPU *c) {
+R_API void bfvm_poke(BfvmCPU *c) {
 	int idx = c->screen_idx;
 	c->screen_buf[idx] = bfvm_get (c);
 	c->screen_idx = idx+1;
 }
 
-int bfvm_trace_op(BfvmCPU *c, ut8 op) {
+R_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 	ut8 g;
 	switch (op) {
 	case '\0':
