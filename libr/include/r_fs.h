@@ -98,7 +98,7 @@ R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name);
 R_API RList *r_fs_find_name (RFS* fs, const char *name, const char *glob);
 R_API RList *r_fs_find_off (RFS* fs, const char *name, ut64 off);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
-R_API int r_fs_prompt (RFS *fs, char *root);
+R_API int r_fs_prompt (RFS *fs, const char *root);
 
 /* file.c */
 R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path);

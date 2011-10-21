@@ -483,7 +483,7 @@ R_API const char *r_fs_partition_type (const char *part, int type) {
 	}
 }
 
-R_API int r_fs_prompt (RFS *fs, char *root) {
+R_API int r_fs_prompt (RFS *fs, const char *root) {
 	char buf[1024];
 	char path[1024];
 	char str[2048];
@@ -493,13 +493,14 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 	RFSFile *file;
 
 	if (root && *root) {
-		r_str_chop_path (root);
-		list = r_fs_root (fs, root);
+		strncpy (buf, root, sizeof (buf)-1);
+		r_str_chop_path (buf);
+		list = r_fs_root (fs, buf);
 		if (r_list_empty (list)) {
 			printf ("Unknown root\n");
 			return R_FALSE;
 		}
-		strncpy (path, root, sizeof (path)-1);
+		strncpy (path, buf, sizeof (path)-1);
 	} else strcpy (path, "/");
 
 	for (;;) {
@@ -568,9 +569,9 @@ R_API int r_fs_prompt (RFS *fs, char *root) {
 				r_fs_close (fs, file);
 			} else eprintf ("Cannot open file\n");
 		} else if (!memcmp (buf, "mount", 5)) {
-			RFSRoot *root;
-			r_list_foreach (fs->roots, iter, root) {
-				eprintf ("%s %s\n", root->path, root->p->name);
+			RFSRoot *r;
+			r_list_foreach (fs->roots, iter, r) {
+				eprintf ("%s %s\n", r->path, r->p->name);
 			}
 		} else if (!memcmp (buf, "get ", 4)) {
 			input = buf+3;
