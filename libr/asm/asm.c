@@ -381,6 +381,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				if (stage != 2) {
 					*ptr = 0;
 					snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
+// TODO: warning when redefined
 					r_asm_code_set_equ (acode, ptr_start, food);
 				}
 				ptr_start = ptr + 1;

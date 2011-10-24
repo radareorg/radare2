@@ -213,8 +213,7 @@ static void emit_restore_stack (REgg *egg, int size) {
 }
 
 static void emit_get_while_end (REgg *egg, char *str, const char *ctxpush, const char *label) {
-	if (attsyntax) sprintf (str, "  push %s\n  jmp %s /* ---- */\n", ctxpush, label);
-	else sprintf (str, "  push %s\n  jmp %s\n", ctxpush, label);
+	sprintf (str, "  push %s\n  jmp %s\n", ctxpush, label);
 }
 
 static void emit_while_end (REgg *egg, const char *labelback) {
@@ -231,15 +230,8 @@ static void emit_while_end (REgg *egg, const char *labelback) {
 //	}
 }
 
+// XXX: this is wrong
 static void emit_get_var (REgg *egg, int type, char *out, int idx) {
-	// TODO: deprecate or gtfo
-	if (attsyntax) {
-		switch (type) {
-		case 0: sprintf (out, "%d(%%"R_BP")", -idx); break; /* variable */
-		case 1: sprintf (out, "%d(%%"R_SP")", idx); break; /* argument */
-		}
-		return;
-	}
 	switch (type) {
 	case 0:  /* variable */
 		if (idx>0) sprintf (out, "["R_BP"+%d]", idx);
@@ -252,6 +244,11 @@ idx = 8; // HACK to make arg0, arg4, ... work
 		if (idx>0) sprintf (out, "["R_SP"+%d]", idx);
 		else if (idx<0) sprintf (out, "["R_SP"%d]", idx);
 		else strcpy (out, "["R_SP"]");
+		break;
+	case 2:
+		if (idx>0) sprintf (out, "["R_BP"+%d]", idx);
+		else if (idx<0) sprintf (out, "["R_BP"%d]", idx);
+		else strcpy (out, "["R_BP"]");
 		break;
 	}
 }

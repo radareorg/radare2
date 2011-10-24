@@ -1,0 +1,3 @@
+program=/usr/bin/find
+arg0=/
+timeout=2

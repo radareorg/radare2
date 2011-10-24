@@ -54,7 +54,7 @@ static int rabin_show_help() {
 		" -a [arch_bits]  set arch (x86_32, arm_32, x86_64)\n"
 		" -b [addr]       override baddr\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
-		" -C [fmt:C:D]    list classes\n"
+		" -C              list classes\n"
 		" -p [patchfile]  patch file (see man rabin2)\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"

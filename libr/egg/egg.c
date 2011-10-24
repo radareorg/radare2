@@ -196,7 +196,7 @@ R_API int r_egg_compile(REgg *egg) {
 	const char *b = (const char *)egg->src->buf;
 	if (!b || !egg->emit)
 		return R_FALSE;
-	for (;*b;b++) {
+	for (; *b; b++) {
 		r_egg_lang_parsechar (egg, *b);
 		// XXX: some parse fail errors are false positives :(
 	}

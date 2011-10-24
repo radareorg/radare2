@@ -5,11 +5,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <r_util.h>
+#if __UNIX__
+#include <signal.h>
+#endif
 
-static char *_arg0 = NULL;
-static char *_arg1 = NULL;
-static char *_arg2 = NULL;
-static char *_arg3 = NULL;
+#define NARGS (sizeof (_args)/sizeof(*_args))
+static char *_args[512] = {NULL};
+
 static char *_program = NULL;
 static char *_stdin = NULL;
 static char *_stdout = NULL;
@@ -22,6 +24,7 @@ static char *_seteuid = NULL;
 static char *_setgid = NULL;
 static char *_setegid = NULL;
 static char *_input = NULL;
+static int _timeout = 0;
 
 static void parseline (char *b) {
 	char *e = strchr (b, '=');
@@ -30,7 +33,7 @@ static void parseline (char *b) {
 	*e++ = 0;
 	if (*e=='$') e = r_sys_getenv (e);
 	if (e == NULL) return;
-	if (!strcmp (b, "program")) _program = strdup (e);
+	if (!strcmp (b, "program")) _args[0] = _program = strdup (e);
 	else if (!strcmp (b, "stdout")) _stdout = strdup (e);
 	else if (!strcmp (b, "stdin")) _stdin = strdup (e);
 	else if (!strcmp (b, "input")) _input = strdup (e);
@@ -41,14 +44,16 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "seteuid")) _seteuid = strdup (e);
 	else if (!strcmp (b, "setgid")) _setgid = strdup (e);
 	else if (!strcmp (b, "setegid")) _setegid = strdup (e);
-	else if (!strcmp (b, "arg0")) _arg0 = strdup (e);
-	else if (!strcmp (b, "arg1")) _arg1 = strdup (e);
-	else if (!strcmp (b, "arg2")) _arg2 = strdup (e);
-	else if (!strcmp (b, "arg3")) _arg3 = strdup (e);
+	else if (!memcmp (b, "arg", 3)) {
+		int n = atoi (b+3);
+		if (n>=0 && n<NARGS) {
+			_args[n] = strdup (e);
+		} else fprintf (stderr, "Out of bounds args index: %d\n", n);
+	} else if (!strcmp (b, "timeout")) _timeout = atoi (e);
 	else if (!strcmp (b, "setenv")) {
 		char *v = strchr (e, '=');
 		if (v) {
-			*v++=0;
+			*v++ = 0;
 			r_sys_setenv (e, v);
 		}
 	}
@@ -67,7 +72,6 @@ static void parseinput (char *s) {
 #endif
 
 static int runfile () {
-	int ret;
 	if (!_program) {
 		printf ("No program rule defined\n");
 		return 1;
@@ -109,30 +113,65 @@ static int runfile () {
 		r_sys_setenv ("LD_PRELOAD", _preload);
 #endif
 	}
-	ret = execl (_program, _program, _arg0, NULL);
-	printf ("RETURN VALUE = %d\n", ret);
-	return 0;
+	if (_timeout) {
+#if __UNIX__
+		int mypid = getpid ();
+		if (!fork ()) {
+			sleep (_timeout);
+			if (!kill (mypid, 0))
+				fprintf (stderr, "\nInterrupted by timeout\n");
+			kill (mypid, SIGKILL);
+			exit (0);
+		}
+#else
+		eprintf ("timeout not supported for this platform\n");
+#endif
+	}
+	exit (execv (_program, _args));
 }
 
 int main(int argc, char **argv) {
+	int i;
 	FILE *fd;
 	char *file, buf[1024];
 	if (argc==1 || !strcmp (argv[1], "-h")) {
-		printf ("Usage: rarun2 [script.rr2]\n");
+		fprintf (stderr, "Usage: rarun2 [''|script.rr2] [options ...]\n"
+			"> options are file directives:\n");
+		printf (
+			"program=/bin/ls\n"
+			"arg1=/bin\n"
+			"# arg#=...\n"
+			"setenv=FOO=BAR\n"
+			"timeout=3\n"
+			"# stdout=foo.txt\n"
+			"# stdin=input.txt\n"
+			"# input=input.txt\n"
+			"# chdir=/\n"
+			"# chroot=/mnt/chroot\n"
+			"# preload=/lib/libfoo.so\n"
+			"# setuid=2000\n"
+			"# seteuid=2000\n"
+			"# setgid=2001\n"
+			"# setegid=2001\n");
 		return 1;
 	}
 	file = argv[1];
-	fd = fopen (file, "r");
-	if (!fd) {
-		fprintf (stderr, "Cannot open %s\n", file);
-		return 1;
+	if (*file) {
+		fd = fopen (file, "r");
+		if (!fd) {
+			fprintf (stderr, "Cannot open %s\n", file);
+			return 1;
+		}
+		for (;;) {
+			fgets (buf, sizeof (buf)-1, fd);
+			if (feof (fd)) break;
+			buf[strlen (buf)-1] = 0;
+			parseline (buf);
+		}
+		fclose (fd);
+	} else {
+		for (i=2; i<argc; i++)
+			parseline (argv[i]);
 	}
-	for (;;) {
-		fgets (buf, sizeof (buf)-1, fd);
-		if (feof (fd)) break;
-		buf[strlen (buf)-1] = 0;
-		parseline (buf);
-	}
-	fclose (fd);
 	return runfile ();
 }

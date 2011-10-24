@@ -24,13 +24,15 @@ static int jop (ut64 addr, ut8 *data, ut8 a, ut8 b, const char *arg) {
 	if (!isnum (arg))
 		return 0;
 	dst32 = num - addr;
-	d = num - addr;
+	d = num - addr; // obey sign
+#if 0
 	if (d>-127 && d<127) {
 		d-=2;
 		data[l++] = a;
 		data[l++] = (char)d;
 		return 2;
 	}
+#endif
 	data[l++] = 0x0f;
 	data[l++] = b;
 	dst32 -= 6;
@@ -133,10 +135,26 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				arg++;
 				pfx = 0;
 				if (delta) {
-					data[l++] = 0x83;
-					data[l++] = 0x40 | getreg (arg); // XXX: hardcoded
-					data[l++] = getnum (delta+1);
-					data[l++] = getnum (arg2);
+					int n = getnum (arg2);
+					int d = getnum (delta+1);
+					int r = getreg (arg);
+					if (d<127 && d>-127) {
+						data[l++] = 0x83;
+						data[l++] = 0x40 | getreg (arg); // XXX: hardcoded
+						data[l++] = getnum (delta+1);
+						data[l++] = getnum (arg2);
+					} else {
+						ut8 *ptr = (ut8 *)&d;
+						data[l++] = 0x83;
+						data[l++] = 0x80|r;
+
+						data[l++] = ptr[0];
+						data[l++] = ptr[1];
+						data[l++] = ptr[2];
+						data[l++] = ptr[3];
+						// XXX: for big numbere here
+						data[l++] = n;
+					}
 					return l;
 				}
 			} else pfx = 0xc0;
@@ -172,25 +190,34 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			int pfx;
 			if (*arg=='[') {
 				char *delta = strchr (arg+1, '+');
+				if (!delta) delta = strchr (arg+1,'-');
 				arg++;
 				parg0 = 1;
 				pfx = 0;
 				if (delta) {
 					int n = getnum (arg2);
-					if (n>127 || n<-127) {
-						ut8 *ptr = (ut8 *)&n;
+					int d = getnum (delta+1);
+					int r = getreg (arg);
+					if (d<127 && d>-127) {
+						data[l++] = 0x83;
+						data[l++] = 0x6d; // XXX hardcoded
+						data[l++] = d;
+						data[l++] = n;
+					} else {
+						ut8 *ptr = (ut8 *)&d;
 						data[l++] = 0x81;
-						data[l++] = 0x68; //pfx | getreg (arg);
-						data[l++] = getnum (delta+1); //0x04;
+						data[l++] = 0xa8|r;
+
 						data[l++] = ptr[0];
 						data[l++] = ptr[1];
 						data[l++] = ptr[2];
 						data[l++] = ptr[3];
-					} else {
-						data[l++] = 0x83;
-						data[l++] = 0x6d; // XXX hardcoded
-						data[l++] = getnum (delta+1);
-						data[l++] = getnum (arg2);
+
+						ptr = (ut8*)&n;
+						data[l++] = ptr[0];
+						data[l++] = ptr[1];
+						data[l++] = ptr[2];
+						data[l++] = ptr[3];
 					}
 					return l;
 				}
@@ -298,7 +325,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = '\xff';
 				data[l] = getreg (arg) | 0xd0;
 				if (data[l] == 0xff) {
-					eprintf ("Invalid argument for 'call' (%s)\n", arg);
+					//eprintf ("Invalid argument for 'call' (%s)\n", arg);
 					return 0;
 				}
 				l++;
@@ -327,14 +354,27 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			if (*arg=='[') {
 				arg++;
 				delta = strchr (arg, '+');
+				if (!delta) delta = strchr (arg,'-');
 				if (delta) {
 					int r = getreg (arg);
+					int d = getnum (delta+1);
+					if (*delta=='-') d = -d;
 					*delta++ = 0;
 					data[l++] = 0xff;
-					data[l++] = 0x70 | r;
-					if (r==4)
-						data[l++]=0x24; // wtf
-					data[l++] = getnum (delta);
+					if (d<127 && d>-127) {
+						data[l++] = 0x70 | r;
+						if (r==4)
+							data[l++]=0x24; // wtf
+						data[l++] = d;
+					} else {
+						data[l++] = 0xb0 | r;
+						addr = d;
+						ptr = (ut8 *)&addr;
+						data[l++] = ptr[0];
+						data[l++] = ptr[1];
+						data[l++] = ptr[2];
+						data[l++] = ptr[3];
+					}
 				} else {
 					int r = getreg (arg);
 					data[l++] = 0xff;
@@ -351,6 +391,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			dst = r_num_math (NULL, arg);
 			addr = dst;
 			ptr = (ut8 *)&addr;
+			if (!arg) {
+				eprintf ("Missing argument for push\n");
+				return 0;
+			}
 			if (!isnum (arg)) {
 				ut8 ch = getreg (arg) | 0x50;
 				if (ch == 0xff) {

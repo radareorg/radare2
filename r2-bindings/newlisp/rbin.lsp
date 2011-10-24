@@ -58,6 +58,7 @@
 			s (r_list_get_n sects idx)
 			name (get-string s)
 			size (get-long (+ s NSZ))
+; XXX for 64bits
 			vsize (get-long (+ s NSZ 8))
 			rva (get-long (+ s NSZ 16))
 			offset (get-long (+ s NSZ 24))

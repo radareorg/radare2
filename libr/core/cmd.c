@@ -2081,7 +2081,7 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'o':
 		{
-			char *file = PREFIX"/share/doc/radare2/fortunes";
+			char *file = R2_PREFIX"/share/doc/radare2/fortunes";
 			char *line = r_file_slurp_random_line (file);
 			if (line) {
 				r_cons_printf (" -- %s\n", line);

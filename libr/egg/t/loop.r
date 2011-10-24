@@ -23,6 +23,7 @@ exit@global() {
 	: mov eax, 1
 	: push eax
 	: int 0x80
+	: add esp, 4
 }
 
 main@global(128) {

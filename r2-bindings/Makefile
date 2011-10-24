@@ -121,15 +121,16 @@ install-python:
 	E=${SOEXT} ; \
 	[ `uname` = Darwin ] && E=so ; \
 	a=python${PYTHON_VERSION} ; \
-	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
-	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
-	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/ ; \
 	echo "Installing $$a/dist-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2" ; \
 	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
 	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/ ; \
 	touch ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/__init__.py ; \
 	fi
+
+#	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
+#	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
+#	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
+#	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/ ; \
 
 install-lua:
 	@if [ "`grep lua supported.langs`" ]; then \
