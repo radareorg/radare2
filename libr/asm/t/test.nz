@@ -36,6 +36,13 @@ if [ -n "$1" ]; then
 	exit 0
 fi
 
+
+# some may fail coz shorter length
+foo 'lea eax, [ebp+24]'
+foo 'lea eax, [ebx+24]'
+foo 'lea ebx, [eax+24]'
+foo 'lea ebx, [ebp+324]'
+
 AS=x86.olly
 foo 'xchg eax,eax'
 foo 'xchg eax,esp'

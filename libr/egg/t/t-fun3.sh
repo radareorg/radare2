@@ -9,7 +9,7 @@ write@syscall(4);
 
 main();
 
-fun@() {
+fun@(4) {
 	write (1, .arg0, .arg4);
 }
 main@global(128,128) {

@@ -1,8 +1,8 @@
 TESTS=exit1 hello loop loop2 fun fun2 fun3 fun4
-TESTS+=nest nest2 
+TESTS+=nest nest2 nest3
 
 #ARG PASSING ERR
-TESTS+=fun5
+TESTS+=fun5 fun6
 
 #INVALID SYNTAX
 #TESTS+=looptail

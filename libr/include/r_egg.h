@@ -6,7 +6,7 @@
 #include <r_syscall.h>
 
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
-#define R_EGG_INCDIR_PATH PREFIX"/lib/radare2/"R2_VERSION"/egg"
+#define R_EGG_INCDIR_PATH R2_PREFIX"/lib/radare2/"R2_VERSION"/egg"
 
 typedef struct r_egg_t {
 	RBuffer *src;

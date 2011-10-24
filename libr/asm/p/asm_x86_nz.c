@@ -352,7 +352,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			ut8 *ptr;
 
 			if (*arg=='[') {
-				arg++;
+				while (*arg=='[') arg++;
 				delta = strchr (arg, '+');
 				if (!delta) delta = strchr (arg,'-');
 				if (delta) {
@@ -469,8 +469,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 			data[l++] = 0x8d;
 			if (*arg2=='[') {
-				int r = getreg(arg);
-				int r2 = getreg(arg2+1);
+				int r = getreg (arg);
+				int r2 = getreg (arg2+1);
 				arg2++;
 				if (isnum (arg2)) {
 					ut64 n = getnum (arg2);
@@ -486,9 +486,16 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					char *p= strchr (arg2, '+');
 					if (!p) p = strchr (arg2, '-');
 					if (p) {
+						int n = getnum (p+1);
 						*p++ = 0;
-						int n = getnum (p);
+						ut8 *ptr = (ut8*)&n;
+						//data[l++]= 0x9d;
 						if (n>127 || n<-127) {
+							data[l++] = 0x80 | getreg (arg)<<3 | getreg (arg2);
+							data[l++] = ptr[0];
+							data[l++] = ptr[1];
+							data[l++] = ptr[2];
+							data[l++] = ptr[3];
 							// TODO
 						} else {
 							data[l++] = 0x40 | getreg (arg)<<3 | getreg (arg2);

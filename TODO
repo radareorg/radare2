@@ -7,6 +7,7 @@
 
 ====[[ 0.9 ]]====
 
+* rasm2 -D must show bytes  : opcode
 * rasm2 must support binary creation help message or so.. rabin2 integration must be easier
 * Add support for 'expect' like foo in rarun2
 * TODO: make elf/pe get_os() and others return const and not strdup

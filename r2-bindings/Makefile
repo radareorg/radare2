@@ -46,6 +46,8 @@ w32dist:
 	cp -f python/r_*.py ${DST}
 	cd .. ; zip -r $(DSTNAME).zip $(DSTNAME)
 
+.PHONY: w32dist dist w32 check check-w32 vdoc vdoc_pkg
+
 dist:
 	PKG=r2-bindings-${VERSION} ; \
 	FILES=`cd .. ; hg st -mac . | grep r2-bindings | grep -v '/\.' | sed -e "s,r2-bindings/,$${PKG}/," | cut -c 3-` ; \

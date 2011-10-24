@@ -9,13 +9,16 @@ write@syscall(4);
 
 main();
 
-fun2@(1) {
-	write (.arg0, .arg4, .arg8);
+fun2@(,8) {
+// XXX: we cant access args in naked functions
+//	write (.arg0, .arg4, .arg8);
+	write (1, "pop\n", 4);
 }
 
-fun@(1) {
+fun@(16) {
 	fun2 (1, .arg0, .arg4);
 }
+
 main@global(128,128) {
 	.var0 = 0;
 	while (.var0<2) {

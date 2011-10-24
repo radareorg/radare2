@@ -3,6 +3,10 @@
 namespace Radare {
 	[CCode (cname="R2_VERSION")]
 	const string R2_VERSION;
+	[CCode (cname="R2_PREFIX")]
+	const string R2_PREFIX;
+	[CCode (cname="R2_LIBDIR")]
+	const string R2_LIBDIR;
 #if 0
 	[Compact]
 	[CCode (cheader_filename="r_util.h", cprefix="r_hex_")]

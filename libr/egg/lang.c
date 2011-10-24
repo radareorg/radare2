@@ -74,7 +74,7 @@ static int slurpin = 0;
 static int slurp = 0;
 static int line = 1;
 static char elem[1024];
-int attsyntax = 0;
+static int attsyntax = 0;
 static int elem_n = 0;
 static int context = 0;
 static char *callname = NULL;
@@ -352,11 +352,12 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		}
 	} else if (*str=='"' || *str=='\'') {
 		int mustfilter = *str=='"';
-		if (!stackfixed)
-			eprintf ("WARNING: No room in the static stackframe!\n");
 		/* TODO: check for room in stackfixed area */
 		str++;
 		len = strlen (str)-1;
+		if (!stackfixed || stackfixed <len)
+			eprintf ("WARNING: No room in the static stackframe! (%d must be %d)\n",
+				stackfixed, len);
 		str[len]='\0';
 		snprintf (foo, sizeof (foo)-1, ".fix%d", nargs*16); /* XXX FIX DELTA !!!1 */
 		dstvar = strdup (skipspaces (foo));
@@ -435,6 +436,7 @@ static void rcc_fun(REgg *egg, const char *str) {
 				dstval = malloc (4096);
 				ndstval = 0;
 			} else {
+				// naked label
 				if (*ptr)
 					r_egg_printf (egg, "\n.%s %s\n", ptr, str);
 				r_egg_printf (egg, "%s:\n", str);
@@ -488,7 +490,6 @@ static void rcc_context(REgg *egg, int delta) {
 	REggEmit *emit = egg->emit;
 	char str[64];
 
-int c = context-1;
 	nestedi[context-1]++;
 	if (callname && context>0) {// && delta>0) {
 	//	set_nested (callname);
@@ -583,6 +584,7 @@ static int parsedatachar(REgg *egg, char c) {
 		/* capture value between parenthesis foo@data(NNN) { ... } */
 		if (c==')') {
 			stackframe = atoi (dstval);
+eprintf ("STACKTRAF %d\n", stackframe);
 			ndstval = 0;
 		} else dstval[ndstval++] = c;
 		return 0;
