@@ -327,15 +327,17 @@ static int config_asmlineswidth_callback(void *user, void *data) {
 static int config_asmarch_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
+	const char *asmos = r_config_get (core->config, "asm.os");
 	// TODO: control error and restore old value (return false?) show errormsg?
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
 	r_config_set (core->config, "anal.plugin", node->value);
 	if (!r_syscall_setup (core->anal->syscall, node->value,
-			r_config_get (core->config, "asm.os"),
-			core->anal->bits))
-		eprintf ("asm.arch: Cannot setup syscall os/arch for '%s/%s'\n", node->value, r_config_get (core->config, "asm.os"));
+			asmos, core->anal->bits)) {
+		eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
+	}
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
 	return R_TRUE;

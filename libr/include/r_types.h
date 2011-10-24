@@ -1,6 +1,37 @@
 #ifndef _INCLUDE_R_TYPES_H_
 #define _INCLUDE_R_TYPES_H_
 
+// TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
+/* operating system */
+#undef __BSD__
+#undef __KFBSD__
+#undef __UNIX__
+#undef __WINDOWS__
+
+#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
+#define __KFBSD__ 1
+#else
+#define __KFBSD__ 0
+#endif
+
+#if defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__)
+  #define __BSD__ 0
+  #define __UNIX__ 1
+#endif
+#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__)
+  #define __BSD__ 1
+  #define __UNIX__ 1
+#endif
+#if __WIN32__ || __CYGWIN__ || MINGW32
+  #define __addr_t_defined
+  #include <windows.h>
+  #include <winsock.h>
+  #undef USE_SOCKETS
+  #define __WINDOWS__ 1
+  #undef __UNIX__
+  #undef __BSD__
+#endif
+
 #include <r_userconf.h>
 #include <r_types_base.h>
 
@@ -71,37 +102,6 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #define BIT_SET(x,y) (x[y>>4] |= (1<<(y&0xf)))
 #define BIT_CHK(x,y) ((x[y>>4] & (1<<(y&0xf))))
-
-// TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
-/* operating system */
-#undef __BSD__
-#undef __KFBSD__
-#undef __UNIX__
-#undef __WINDOWS__
-
-#if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
-#define __KFBSD__ 1
-#else
-#define __KFBSD__ 0
-#endif
-
-#if defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__)
-  #define __BSD__ 0
-  #define __UNIX__ 1
-#endif
-#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__)
-  #define __BSD__ 1
-  #define __UNIX__ 1
-#endif
-#if __WIN32__ || __CYGWIN__ || MINGW32
-  #define __addr_t_defined
-  #include <windows.h>
-  #include <winsock.h>
-  #undef USE_SOCKETS
-  #define __WINDOWS__ 1
-  #undef __UNIX__
-  #undef __BSD__
-#endif
 
 #if __UNIX__
 #include <sys/types.h>

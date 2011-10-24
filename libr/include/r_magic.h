@@ -9,7 +9,7 @@
 #define MAGIC "/etc/magic"
 #endif
 
-#define R_MAGIC_PATH PREFIX"/lib/radare2/"R2_VERSION"/magic"
+#define R_MAGIC_PATH R2_LIBDIR"/radare2/"R2_VERSION"/magic"
 
 #if USE_LIB_MAGIC
 

@@ -5,16 +5,22 @@
 #undef LIL_ENDIAN
 #endif
 #define LIL_ENDIAN @LIL_ENDIAN@
+#define CPU_ENDIAN @BIG_ENDIAN@
 
 #define DEBUGGER @DEBUGGER@
+
+#if __WIN32__ || __CYGWIN__ || MINGW32
+#define R2_PREFIX "."
+#define R2_LIBDIR "./lib"
+#else
 #define R2_PREFIX "@PREFIX@"
 #define R2_LIBDIR "@LIBDIR@"
+#endif
 
 #define R2_VERSION "@VERSION@"
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@
 #define HAVE_LIB_SSL @HAVE_OPENSSL@
 
-#define CPU_ENDIAN @BIG_ENDIAN@
 
 #endif
