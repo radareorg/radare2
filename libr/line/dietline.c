@@ -395,8 +395,9 @@ R_API char *r_line_readline() {
 				switch(buf[1]) {
 				case 0x33: // supr
 					if (I.buffer.index<I.buffer.length)
-						strcpy (I.buffer.data+I.buffer.index,
-							I.buffer.data+I.buffer.index+1);
+						memmove (I.buffer.data+I.buffer.index,
+							I.buffer.data+I.buffer.index+1,
+							strlen (I.buffer.data+I.buffer.index+1)+1);
 					buf[1] = r_line_readchar ();
 					if (buf[1] == -1)
 						return NULL;

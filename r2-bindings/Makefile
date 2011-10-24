@@ -123,16 +123,17 @@ install-python:
 	E=${SOEXT} ; \
 	[ `uname` = Darwin ] && E=so ; \
 	a=python${PYTHON_VERSION} ; \
-	echo "Installing $$a/dist-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2" ; \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
-	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/ ; \
-	touch ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/__init__.py ; \
+	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
+	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
+	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
+	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/ ; \
 	fi
 
-#	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
-#	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
-#	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
-#	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/ ; \
+#	echo "Installing $$a/dist-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2" ; \
+#	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
+#	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/ ; \
+#	touch ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/__init__.py ; \
+
 
 install-lua:
 	@if [ "`grep lua supported.langs`" ]; then \
@@ -144,12 +145,14 @@ install-lua:
 	fi
 
 install-go:
+	@if [ "`grep go supported.langs`" ]; then \
 	@. ./go/goenv.sh ; \
 	if [ -n "$${GOROOT}" -a -n "$${GOOS}" -a -n "$${GOARCH}" ]; then \
 	echo "Installing r2 modules in $${GOROOT}/pkg/$${GOOS}_$${GOARCH}" ; \
 	cp -f go/*.a go/*.${SOEXT} $${GOROOT}/pkg/$${GOOS}_$${GOARCH} ; \
 	else \
 	echo "You have to set the following vars: GOROOT, GOOS and GOARCH" ; \
+	fi ; \
 	fi
 
 install-java:

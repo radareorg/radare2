@@ -64,8 +64,9 @@ install: install-includes install-pkgconfig
 	  b=`echo $$a|cut -d / -f 2`; \
 	  echo " ${LFX}/$$b.${LIBVERSION}"; \
 	  ${INSTALL_LIB} $$a ${LFX}/$$b.${LIBVERSION} ; \
-	  ( cd ${LFX} ; ln -fs $$b.${LIBVERSION} $$b.0 ; ln -fs $$b.0 $$b ); \
+	  ( cd ${LFX} ; ln -fs $$b.${LIBVERSION} $$b ) ; \
 	done
+	#Linux only? ( cd ${LFX} ; ln -fs $$b.${LIBVERSION} $$b.0 ; ln -fs $$b.0 $$b )
 	# object archives
 	@for a in `find * -type f | grep -e '\.a$$' | grep -v fs/p` ; do \
 	  echo " ${LFX}/$$a"; ${INSTALL_DATA} $$a ${LFX} ; done

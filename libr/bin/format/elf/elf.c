@@ -94,17 +94,20 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int sz;
 	if (!bin->shdr)
 		return R_FALSE;
 	bin->shstrtab_section =
 	bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
 	bin->shstrtab_size =
 	bin->strtab_size = bin->strtab_section->sh_size;
-	if ((bin->strtab = (char *)malloc (bin->strtab_section->sh_size)) == NULL) {
+	sz = sizeof (struct r_bin_elf_section_t) + bin->strtab_section->sh_size;
+	if ((bin->strtab = (char *)malloc (sz)) == NULL) {
 		perror ("malloc");
 		bin->shstrtab = NULL;
 		return R_FALSE;
 	}
+	memset (bin->strtab, 0, sz);
 	bin->shstrtab = bin->strtab;
 	if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)bin->strtab,
 				bin->strtab_section->sh_size) == -1) {
@@ -792,7 +795,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 
 struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_section_t *ret = NULL;
-	int i;
+	int i, nidx;
 	
 	if (!bin->shdr)
 		return NULL;
@@ -805,10 +808,13 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 		ret[i].size = bin->shdr[i].sh_size;
 		ret[i].align = bin->shdr[i].sh_addralign;
 		ret[i].flags = bin->shdr[i].sh_flags;
-		if (bin->shdr[i].sh_name > bin->shstrtab_section->sh_size)
-			strncpy (ret[i].name, "invalid", ELF_STRING_LENGTH);
+		//memset (ret[i].name, 0, sizeof (ret[i].name));
+		nidx = bin->shdr[i].sh_name;
+		if (nidx<0 || nidx>bin->shstrtab_section->sh_size)
+			strncpy (ret[i].name, "invalid", sizeof (ret[i].name)-4);
 		else strncpy (ret[i].name, bin->shstrtab?
-			&bin->shstrtab[bin->shdr[i].sh_name]: "unknown", ELF_STRING_LENGTH);
+			&bin->shstrtab[bin->shdr[i].sh_name]: "unknown", sizeof (ret[i].name)-4);
+		ret[i].name[sizeof (ret[i].name)-2] = 0;
 		ret[i].last = 0;
 	}
 	ret[i].last = 1;
