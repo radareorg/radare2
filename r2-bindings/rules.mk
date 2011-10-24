@@ -62,6 +62,8 @@ clean:
 	@rm -f *.${SOEXT} ; rm -rf *.dSYM
 endif
 
+mrproper: clean
+
 test:
 	-${LANG} test-r_bp.${LANG_EXT}
 	-${LANG} test-r_asm.${LANG_EXT}

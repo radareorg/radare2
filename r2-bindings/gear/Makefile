@@ -13,5 +13,5 @@ ifeq ($(HAVE_VALABIND),1)
 	valabind --module $${PKG} $${DEPS} --gear ../vapi/$${VAPI}
 endif
 
-clean:
+mrproper clean:
 	@rm -f *.gear

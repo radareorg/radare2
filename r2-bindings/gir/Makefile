@@ -28,5 +28,5 @@ install:
 	cp r_asm.gir /usr/share/gir-1.0/r_asm-1.0.gir
 	gjs test.js
 
-clean:
+mrproper clean:
 	@rm -f *.gir *.typelib *.vapi *.vala *.tmp *.c *.h

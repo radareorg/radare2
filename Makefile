@@ -132,6 +132,9 @@ beta: dist r2-bindings-dist
 	scp ../radare2-${VERSION}.tar.gz ${REMOTE}
 	scp r2-bindings-${VERSION}.tar.gz ${REMOTE}
 
+version:
+	@echo ${VERSION}
+
 r2-bindings-dist:
 	cd r2-bindings && ${MAKE} dist
 
@@ -155,4 +158,5 @@ shot:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg r2-bindings r2-bindings-dist libr binr install-man
+.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg
+.PHONY: r2-bindings r2-bindings-dist libr binr install-man version
