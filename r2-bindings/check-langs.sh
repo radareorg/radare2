@@ -3,7 +3,7 @@
 # pancake // radare.org - 2010-2011
 
 SUP_LANGS=""
-LANGS="python perl ruby lua go java guile"
+LANGS="python perl ruby lua go java guile php5"
 [ -z "${CC}" ] && CC=gcc
 [ -z "${CXX}" ] && CXX=g++
 
@@ -45,6 +45,10 @@ else
   echo " - gir: no"
   echo " - v8gear: no"
 fi
+
+for a in lua python php5 ; do
+	[ -f $a/r_core_wrap.cxx ] && SUP_LANGS="$a ${SUP_LANGS}"
+done
 
 for a in valac g++ ; do
   $a --help > /dev/null 2>&1

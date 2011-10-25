@@ -56,6 +56,9 @@ else
 	"lua") \
 		${CXX} -fPIC -shared $${LIB}_wrap.cxx -I/usr/include/lua5.1 ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
 		;; \
+	"php5")	\
+		${CXX} -fPIC -shared $${LIB}_wrap.cpp `php-config --cflags --libs` ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
+		;; \
 	esac ; fi ; true
 
 clean:

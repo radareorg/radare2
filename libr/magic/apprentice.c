@@ -1041,7 +1041,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 
 	m->mask_op = 0;
 	if (*l == '~') {
-		if (!IS_STRING (m->type))
+		if (!MAGIC_IS_STRING (m->type))
 			m->mask_op |= FILE_OPINVERSE;
 		else if (ms->flags & R_MAGIC_CHECK)
 			file_magwarn (ms, "'~' invalid for string types");
@@ -1051,7 +1051,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	m->str_flags = 0;
 	m->num_mask = 0;
 	if ((op = get_op (*l)) != -1) {
-		if (!IS_STRING (m->type)) {
+		if (!MAGIC_IS_STRING (m->type)) {
 			ut64 val;
 			++l;
 			m->mask_op |= op;
@@ -1884,7 +1884,7 @@ static void bs1(struct r_magic *m) {
 	m->offset = swap4((ut32)m->offset);
 	m->in_offset = swap4((ut32)m->in_offset);
 	m->lineno = swap4((ut32)m->lineno);
-	if (IS_STRING (m->type)) {
+	if (MAGIC_IS_STRING (m->type)) {
 		m->str_range = swap4(m->str_range);
 		m->str_flags = swap4(m->str_flags);
 	} else {

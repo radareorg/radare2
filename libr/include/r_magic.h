@@ -132,7 +132,7 @@ struct r_magic {
 #define				FILE_LEDOUBLE	38
 #define				FILE_NAMES_SIZE	39/* size of array to contain all names */
 
-#define IS_STRING(t) \
+#define MAGIC_IS_STRING(t) \
 	((t) == FILE_STRING || \
 	 (t) == FILE_PSTRING || \
 	 (t) == FILE_BESTRING16 || \

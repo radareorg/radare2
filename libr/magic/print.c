@@ -72,7 +72,7 @@ void file_mdump(struct r_magic *m) {
 	if (m->mask_op & FILE_OPINVERSE)
 		(void) fputc('~', stderr);
 
-	if (IS_STRING(m->type)) {
+	if (MAGIC_IS_STRING(m->type)) {
 		if (m->str_flags) {
 			(void) fputc('/', stderr);
 			if (m->str_flags & STRING_COMPACT_BLANK) 

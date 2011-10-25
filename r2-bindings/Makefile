@@ -114,26 +114,28 @@ test:
 	cd go && ${MAKE} test
 	cd java && ${MAKE} test
 
-PYTHON_VERSION?=`python --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2`
+PYTHON?=python
+PYTHON_VERSION?=`${PYTHON} --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2`
+PYTHON_PKGDIR=$(shell ${PYTHON} mp.py)
+PYTHON_INSTALL_DIR=${DESTDIR}/${PYTHON_PKGDIR}/r2
+
+.PHONY: purge purge-python
+
+purge: purge-python
+
+purge-python:
+	[ -n "${PYTHON_PKGDIR}" ]
+	rm -rf ${DESTDIR}/${LIBDIR}/python${PYTHON_VERSION}/*-packages/r2
+	rm -rf ${PYTHON_INSTALL_DIR}
 
 install-python:
-	@# py2.6 in debian uses dist-packages, but site-packages in arch and osx..
-	echo "Using python version: ${PYTHON_VERSION}"
-	@if [ "`grep python supported.langs`" ]; then \
-	E=${SOEXT} ; \
-	[ `uname` = Darwin ] && E=so ; \
-	a=python${PYTHON_VERSION} ; \
-	echo "Installing $$a/site-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2" ; \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2 ; \
-	touch ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/__init__.py ; \
-	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/site-packages/r2/ ; \
+	@if [ "`grep python supported.langs`" -a -n "${PYTHON_PKGDIR}" ]; then \
+	E=${SOEXT} ; [ `uname` = Darwin ] && E=so ; \
+	echo "Installing python${PYTHON_VERSION} r2 modules in ${PYTHON_INSTALL_DIR}/r2" ; \
+	mkdir -p ${PYTHON_INSTALL_DIR} ; \
+	: > ${PYTHON_INSTALL_DIR}/__init__.py ; \
+	cp -rf python/r_*.py python/*.$$E ${PYTHON_INSTALL_DIR} ; \
 	fi
-
-#	echo "Installing $$a/dist-packages r2 modules in ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2" ; \
-#	mkdir -p ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2 ; \
-#	cp -rf python/r_*.py python/*.$$E ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/ ; \
-#	touch ${DESTDIR}${PREFIX}/lib/$$a/dist-packages/r2/__init__.py ; \
-
 
 install-lua:
 	@if [ "`grep lua supported.langs`" ]; then \

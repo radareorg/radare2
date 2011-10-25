@@ -8,7 +8,7 @@
 LANGS=""
 help () {
   echo "Usage: ./configure-langs [options]"
-  echo "  --enable=python,perl"
+  echo "  --enable=python,perl,php5"
   echo "  --disable=java,ruby"
   echo "  --list"
   echo "Filter out supported.langs"
