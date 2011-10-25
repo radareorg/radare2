@@ -61,6 +61,7 @@ static RList* entries(RBinArch *arch) {
 static RList* sections(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
+	struct r_bin_elf_field_t *field = NULL;
 	struct r_bin_elf_section_t *section = NULL;
 	int i;
 
@@ -86,7 +87,10 @@ static RList* sections(RBinArch *arch) {
 			ptr->srwx |= 4;
 		r_list_append (ret, ptr);
 	}
-	free (section);
+	free (section); // TODO: use r_list_free here
+
+	// program headers is another section
+
 	if (r_list_empty (ret)) {
 		if (!(ptr = R_NEW (RBinSection)))
 			return ret;

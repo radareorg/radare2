@@ -214,10 +214,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				ret = r_core_seek (core, offset, 1);
 				memset (core->block, 0xff, core->blocksize);
 			}
-		} else {
-			ret = r_core_seek (core, core->file->size-core->blocksize, 1);
-		}
-		r_io_sundo_push (core->io);
+		} else ret = r_core_seek (core, core->file->size-core->blocksize, 1);
+		if (ret != -1)
+			r_io_sundo_push (core->io);
 }
 		break;
 	case 'h':
@@ -388,7 +387,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'y':
 		if (ocursor==-1) r_core_yank (core, core->offset+cursor, 1);
-		else r_core_yank (core, core->offset+((ocursor<cursor)?ocursor:cursor), R_ABS (cursor-ocursor)+1);
+		else r_core_yank (core, core->offset+((ocursor<cursor)?
+			ocursor:cursor), R_ABS (cursor-ocursor)+1);
 		break;
 	case 'Y':
 		if (!core->yank) {
@@ -403,7 +403,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (cur>=core->blocksize)
 				cur = core->print->cur-1;
 			if (ocursor==-1) sprintf (buf, "wos 01 @ $$+%i:1",cursor);
-			else sprintf (buf, "wos 01 @ $$+%i:%i", cursor<ocursor?cursor:ocursor, R_ABS (ocursor-cursor)+1);
+			else sprintf (buf, "wos 01 @ $$+%i:%i", cursor<ocursor?
+				cursor:ocursor, R_ABS (ocursor-cursor)+1);
 			r_core_cmd (core, buf, 0);
 		} else r_core_block_size (core, core->blocksize-1);
 		break;
@@ -413,7 +414,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (cur>=core->blocksize)
 				cur = core->print->cur-1;
 			if (ocursor==-1) sprintf (buf, "woa 01 @ $$+%i:1", cursor);
-			else sprintf (buf, "woa 01 @ $$+%i:%i", cursor<ocursor?cursor:ocursor, R_ABS (ocursor-cursor)+1);
+			else sprintf (buf, "woa 01 @ $$+%i:%i",
+				cursor<ocursor? cursor: ocursor, R_ABS (ocursor-cursor)+1);
 			r_core_cmd (core, buf, 0);
 		} else r_core_block_size (core, core->blocksize+1);
 		break;
@@ -570,8 +572,8 @@ R_API void r_core_visual_title (RCore *core, int color) {
 static void r_core_visual_refresh (RCore *core) {
 	const char *vi;
 	r_cons_get_size (NULL);
-	r_cons_clear00 ();
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
+	r_cons_clear00 ();
 
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);

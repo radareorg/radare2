@@ -87,7 +87,7 @@ static int rabin_show_entrypoints() {
 	RBinAddr *entry;
 	int i = 0;
 
-	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
+	ut64 baddr = gbaddr? gbaddr: r_bin_get_baddr (bin);
 
 	if ((entries = r_bin_get_entries (bin)) == NULL)
 		return R_FALSE;
@@ -348,7 +348,7 @@ static int rabin_show_strings() {
 	RBinString *string;
 	RBinSection *section;
 	int i = 0;
-	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
+	ut64 baddr = gbaddr? gbaddr: r_bin_get_baddr (bin);
 
 	if ((strings = r_bin_get_strings (bin)) == NULL)
 		return R_FALSE;
@@ -494,10 +494,11 @@ static int rabin_show_fields() {
 	RList *fields;
 	RListIter *iter;
 	RBinField *field;
-	ut64 baddr;
+	ut64 size, baddr;
 	int i = 0;
 
-	baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
+	baddr = gbaddr? gbaddr: r_bin_get_baddr (bin);
+	size = bin->curarch.size;
 
 	if ((fields = r_bin_get_fields (bin)) == NULL)
 		return R_FALSE;
@@ -517,7 +518,11 @@ static int rabin_show_fields() {
 		i++;
 	}
 
-	if (!rad) eprintf ("\n%i fields\n", i);
+	if (rad) {
+		/* add program header section */
+		printf ("S 0 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" ehdr rwx\n",
+			 baddr, size, size);
+	} else eprintf ("\n%i fields\n", i);
 
 	return R_TRUE;
 }

@@ -146,50 +146,60 @@ R_API int r_io_set_fdn(RIO *io, int fd) {
 	return R_FALSE;
 }
 
-R_API int r_io_read(RIO *io, ut8 *buf, int len) {
-	int ret;
-	if (io==NULL || io->fd == NULL)
-		return -1;
-	/* check section permissions */
-	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
-		return -1;
-
-	ret = -1;
-	if (io->plugin && io->plugin->read) {
-		if (io->plugin->read != NULL)
-			ret = io->plugin->read (io, io->fd, buf, len);
-		else eprintf ("IO plugin for fd=%d has no read()\n", io->fd->fd);
-	} else ret = read (io->fd->fd, buf, len);
-	if (ret>0 && ret<len)
-		memset (buf+ret, 0xff, len-ret);
-	if (io->cached) {
-		ret = r_io_cache_read (io, io->off, buf, len);
-		if (ret == len) {
-			return len;
-		}
-		if (ret > 0) {
-			len -= ret;
-			buf += ret;
-		}
-		// partial reads
-		if (ret == len)
-			return len;
-	}
-	// this must be before?? r_io_cache_read (io, io->off, buf, len);
-//	eprintf ("--RET-- %llx\n", r_io_seek (io, off, R_IO_SEEK_SET));
-
-	return ret;
+static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
+	if (io->plugin && io->plugin->read)
+		return io->plugin->read (io, io->fd, buf, len);
+	return read (io->fd->fd, buf, len);
 }
 
-R_API int r_io_read_at(struct r_io_t *io, ut64 addr, ut8 *buf, int len) {
+R_API int r_io_read(RIO *io, ut8 *buf, int len) {
+	if (io==NULL || io->fd == NULL)
+		return -1;
+	/* IGNORE check section permissions 
+	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
+		return -1;
+	 */
+	return r_io_read_at(io, io->off, buf, len);
+}
+
+R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
+#if 0
+	int ret;
 	if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX) {
 		memset (buf, 0xff, len);
 		return -1;
 	}
-	return r_io_read (io, buf, len);
+	ret = r_io_read_internal (io, buf, len);
+	if (ret<1)
+		memset (buf, 0xff, len);
+	return ret;
+#else
+	int ret, l, olen = len;
+	int w = 0;
+	while (len>0) {
+		ut64 last = r_io_section_next (io, addr);
+		l = (len > (last-addr))? (last-addr): len;
+		if (l<1) l = len;
+		// ignore seek errors
+//		eprintf ("0x%llx %llx\n", addr+w, 
+		r_io_seek (io, addr+w, R_IO_SEEK_SET);
+		ret = r_io_read_internal (io, buf+w, l);
+		if (ret <1) {
+			memset (buf+w, 0xff, l); // reading out of file
+			ret = 1;
+		} else
+		if (ret<l) {
+		//	eprintf ("FOUND EOF AT %llx\n", addr+ret);
+			l = ret;
+		}
+		w += l;
+		len -= l;
+	}
+	return olen;
+#endif
 }
 
-R_API ut64 r_io_read_i(struct r_io_t *io, ut64 addr, int sz, int endian) {
+R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 	ut64 ret = 0LL;
 	int err;
 	ut8 buf[8];
@@ -298,13 +308,19 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	if (io == NULL)
 		return ret;
 	// XXX: list_empty trick must be done in r_io_set_va();
-	offset = (!io->debug && io->va && !r_list_empty (io->sections))?
-		r_io_section_vaddr_to_offset (io, offset) : offset;
+	//eprintf ("-(seek)-> 0x%08llx\n", offset);
+	if (!io->debug && io->va && !r_list_empty (io->sections)) {
+		ut64 o = r_io_section_vaddr_to_offset (io, offset);
+		if (o != UT64_MAX)
+			offset = o;
+	//	eprintf ("-(vadd)-> 0x%08llx\n", offset);
+	}
 	// if resolution fails... just return as invalid address
 	if (offset==UT64_MAX)
 		return UT64_MAX;
 	// TODO: implement io->enforce_seek here!
 	if (io->fd != NULL) {
+		// lseek_internal
 		if (io->plugin && io->plugin->lseek)
 			ret = io->plugin->lseek (io, io->fd, offset, whence);
 		// XXX can be problematic on w32..so no 64 bit offset?

@@ -272,6 +272,7 @@ R_API int r_io_section_get_rwx(RIO *io, ut64 offset);
 R_API int r_io_section_overlaps(RIO *io, struct r_io_section_t *s);
 R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr);
 R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset);
+R_API ut64 r_io_section_next(RIO *io, ut64 o);
 
 /* undo api */
 // track seeks and writes

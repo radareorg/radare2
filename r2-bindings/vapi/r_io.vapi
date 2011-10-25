@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 namespace Radare {
 	[Compact]
@@ -124,6 +124,7 @@ namespace Radare {
 			int id;
 		}
 
+		public uint64 section_next(uint64 addr);
 		public void section_list(uint64 addr, bool rad);
 		public void section_list_visual(uint64 addr, uint64 len);
 		public Section section_get(uint64 addr);

@@ -83,7 +83,7 @@ static RList* get_strings(RBinArch *a, int min) {
 			}
 		}	
 	}
-	if (count == 0)
+	if (r_list_empty (a->sections)) //if (count == 0)
 		get_strings_range (a, ret, min, 0, a->size, 0);
 	return ret;
 }

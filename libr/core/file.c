@@ -77,6 +77,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 R_API int r_core_bin_load(RCore *r, const char *file) {
 	int va = r->io->va || r->io->debug;
 	char str[R_FLAG_NAME_SIZE];
+
 	RBinSection *section;
 	RBinSymbol *symbol;
 	RBinString *string;
@@ -90,6 +91,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	RList *list;
 	ut64 baddr;
 	int i = 0;
+	ut64 size;
 
 	if (file == NULL)
 		file = r->file->filename;
@@ -97,6 +99,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		return R_FALSE;
 	r->file->obj = obj = r_bin_get_object (r->bin, 0);
 	baddr = r_bin_get_baddr (r->bin);
+	size = r->bin->curarch.size;
 
 	// I -> Binary info
 	if ((info = r_bin_get_info (r->bin)) != NULL) {
@@ -230,6 +233,8 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 					va?baddr+section->rva:section->offset, str);
 		}
 	}
+	// H -> Header fields
+	r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr");
 
 	return R_TRUE;
 }

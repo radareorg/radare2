@@ -40,8 +40,9 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 	if (!update) {
 		if (name) strncpy (s->name, name, sizeof (s->name)-4);
 		else *s->name = '\0';
-		//r_list_append (io->sections, s);
-		r_list_add_sorted (io->sections, s, cmpaddr);
+		r_list_append (io->sections, s);
+		//r_list_prepend (io->sections, s);
+		//r_list_add_sorted (io->sections, s, cmpaddr);
 	} else {
 		// This is a bottleneck.. the sorting must be done at append time
 		r_list_sort (io->sections, cmpaddr);
@@ -71,7 +72,7 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 
 	if (io->va || io->debug)
 		offset = r_io_section_vaddr_to_offset (io, offset);
-	r_list_foreach_prev (io->sections, iter, s) {
+	r_list_foreach (io->sections, iter, s) {
 		if (rad) io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 			s->offset, s->vaddr, s->size, s->vsize, s->name, s->rwx);
 		else io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s\n",
@@ -101,14 +102,13 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 	mul = (max-min) / width;
 	if (min != -1 && mul != 0) {
 		i = 0;
-		r_list_foreach_prev (io->sections, iter, s) {
+		r_list_foreach (io->sections, iter, s) {
 			io->printf ("%02d%c 0x%08"PFMT64x" |",
 					i, (seek>=s->offset && seek<s->offset+s->size)?'*':' ', s->offset);
 			for (j=0; j<width; j++) {
 				if ((j*mul)+min >= s->offset && (j*mul)+min <=s->offset+s->size)
-					io->printf("#");
-				else
-					io->printf("-");
+					io->printf ("#");
+				else io->printf ("-");
 			}
 			io->printf ("| 0x%08"PFMT64x" %s %s\n", s->offset+s->size, 
 				r_str_rwx_i (s->rwx), s->name);
@@ -116,8 +116,11 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 		}
 		/* current seek */
 		if (i>0 && len != 0) {
+			if (seek == UT64_MAX)
+				seek = 0;
+			//len = 8096;//r_io_size (io);
 			io->printf ("=>  0x%08"PFMT64x" |", seek);
-			for(j=0;j<width;j++) {
+			for (j=0;j<width;j++) {
 				io->printf (
 					((j*mul)+min >= seek &&
 					 (j*mul)+min <= seek+len)
@@ -133,20 +136,22 @@ R_API RIOSection *r_io_section_get(RIO *io, ut64 offset) {
 	RIOSection *s;
 
 	r_list_foreach (io->sections, iter, s) {
-		if (offset >= s->offset && offset <= s->offset + s->size)
+		if (offset >= s->offset && offset <= s->offset + s->size) {
+			//eprintf ("SG: %llx %s\n", offset, s->name);
 			return s;
+		}
 	}
 	return NULL;
 }
 
 R_API ut64 r_io_section_get_offset(RIO *io, ut64 offset) {
 	RIOSection *s = r_io_section_get(io, offset);
-	return s?s->offset:-1;
+	return s? s->offset: -1;
 }
 
 R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 offset) {
 	RIOSection *s = r_io_section_get (io, offset);
-	return s?s->vaddr:-1;
+	return s? s->vaddr: -1;
 }
 
 // TODO: deprecate
@@ -161,7 +166,7 @@ R_API int r_io_section_overlaps(RIO *io, RIOSection *s) {
 	RListIter *iter;
 	RIOSection *s2;
 
-	r_list_foreach_prev (io->sections, iter, s2) {
+	r_list_foreach (io->sections, iter, s2) {
 		if (s != s2) {
 			if (s->offset >= s2->offset) {
 				if (s2->offset+s2->size < s->offset)
@@ -180,9 +185,11 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 	RListIter *iter;
 	RIOSection *s;
 
-	r_list_foreach_prev (io->sections, iter, s) {
-		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
+	r_list_foreach (io->sections, iter, s) {
+		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+	//		eprintf ("SG: %llx phys=%llx %s\n", vaddr, vaddr-s->vaddr+s->offset, s->name);
 			return (vaddr - s->vaddr + s->offset);
+		}
 	}
 	return -1;
 }
@@ -191,9 +198,30 @@ R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 	RListIter *iter;
 	RIOSection *s;
 
-	r_list_foreach_prev (io->sections, iter, s) {
+	r_list_foreach (io->sections, iter, s) {
 		if (offset >= s->offset && offset < s->offset + s->size)
 			return (s->vaddr + offset - s->offset);
 	}
 	return -1;
+}
+
+R_API ut64 r_io_section_next(RIO *io, ut64 o) {
+	RListIter *iter;
+	RIOSection *s;
+
+	r_list_foreach (io->sections, iter, s) {
+//eprintf (" o=%llx (%llx) (%llx)\n", o, s->offset, s->size);
+		if (o >= s->vaddr && o < (s->vaddr + s->size)) {
+			ut64 n = s->vaddr + s->size;
+			if (n>o)
+				o = n;
+#if 0
+			if (first) {
+				first = 0;
+goto restart;
+			} else o = s->vaddr;
+#endif
+		}
+	}
+	return o;
 }

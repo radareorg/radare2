@@ -980,7 +980,7 @@ static int cmd_seek(void *data, const char *input) {
 				off = r_debug_reg_get (core->dbg, input+2);
 				r_io_sundo_push (core->io);
 				r_core_seek (core, off, 1);
-			} else eprintf ("cfg.debug is false\n");
+			}// else eprintf ("cfg.debug is false\n");
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
 	if (*input) {
@@ -1265,6 +1265,25 @@ static int cmd_help(void *data, const char *input) {
 		}
 		}
 		break;
+	case 'p':
+		// physical address
+		{
+			ut64 o, n = r_num_math (core->num, input+2);
+			o = r_io_section_vaddr_to_offset (core->io, n);
+			r_cons_printf ("0x%08"PFMT64x"\n", o);
+		}
+		break;
+	case 'S':
+		// section name
+		{
+			RIOSection *s;
+			ut64 n = r_num_math (core->num, input+2);
+			n = r_io_section_vaddr_to_offset (core->io, n);
+			s = r_io_section_get (core->io, n);
+			if (s && s->name)
+				r_cons_printf ("%s\n", s->name);
+		}
+		break;
 	case 'i': // input num
 		{
 		char foo[1024];
@@ -1295,7 +1314,9 @@ static int cmd_help(void *data, const char *input) {
 			" ?r [from] [to]  ; generate random number between from-to\n"
 			" ?b [num]        ; show binary value of number\n"
 			" ?f [num] [str]  ; map each bit of the number as flag string index\n"
+			" ?p vaddr        ; give physical address for given vaddr\n"
 			" ?s from to step ; sequence of numbers from to by steps\n"
+			" ?S addr         ; return section name of given address\n"
 			" ?x num|0xnum|str; returns the hexpair of number or string\n"
 			" ?X num|expr     ; returns the hexadecimal value numeric expr\n"
 			" ?z str          ; returns the length of string (0 if null)\n"

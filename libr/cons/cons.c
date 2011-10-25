@@ -158,7 +158,7 @@ R_API void r_cons_gotoxy(int x, int y) {
                 hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
         SetConsoleCursorPosition (hStdout, coord);
 #else
-	r_cons_printf ("\x1b[%d;%dH\n", y, x);
+	r_cons_printf ("\x1b[%d;%dH", y, x);
 #endif
 }
 
@@ -375,7 +375,7 @@ R_API int r_cons_get_size(int *rows) {
 	struct winsize win;
 	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
 		I.columns = win.ws_col;
-		I.rows = win.ws_row;
+		I.rows = win.ws_row-1;
 	} else {
 		I.columns = 80;
 		I.rows = 23;
