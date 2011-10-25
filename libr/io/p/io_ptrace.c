@@ -34,9 +34,11 @@ static int __waitpid(int pid) {
 #if __OpenBSD__ || __KFBSD__
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, (pid_t)(x), (caddr_t)(y), 0)
 #define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, (pid_t)(x), (caddr_t)(y), (int)(size_t)(z))
+typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 #define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, x, y, z)
+typedef void* ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
 #endif
 
 static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
@@ -63,10 +65,11 @@ static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
-	ut32 *buf = (ut32*)pbuf;
-	ut32 words = sz / sizeof (ut32);
-	ut32 last = sz % sizeof (ut32);
-	ut32 x, lr, *at = (ut32*)(size_t)addr;
+	ptrace_word *buf = (ptrace_word*)pbuf;
+	ut32 words = sz / sizeof (ptrace_word);
+	ut32 last = sz % sizeof (ptrace_word);
+	ut32 x, *at = (ptrace_word*)(size_t)addr;
+	ptrace_word lr;
 	if (sz<1 || addr==UT64_MAX)
 		return -1;
 	for (x=0; x<words; x++)
@@ -167,7 +170,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
 struct r_io_plugin_t r_io_plugin_ptrace = {
         //void *plugin;
-	.name = "io_ptrace",
+	.name = "ptrace",
 	.desc = "ptrace io",
 	.open = __open,
 	.close = __close,

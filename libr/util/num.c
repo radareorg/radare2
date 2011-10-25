@@ -26,6 +26,7 @@ R_API void r_num_irand() {
 
 R_API int r_num_rand(int max) {
 	// TODO: add srand here for security and so on
+	if (max==0) max=1;
 	return rand()%max;
 }
 

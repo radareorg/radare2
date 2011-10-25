@@ -61,7 +61,7 @@ IRAPI ut64 gdbwrap_getreg(gdbwrap_t *desc, ut32 idx) {
 	if (idx >= desc->num_registers) {
 		fprintf (stderr, "Wrong register index %d\n",idx);
 	} else
-	switch (desc->reg_size ) {
+	switch (desc->reg_size) {
 	case 1: ret = *(desc->regs+idx);
 		break;
 	case 2: ret = *(ut16 *)(desc->regs+idx*2);
@@ -440,7 +440,7 @@ IRAPI u_char gdbwrap_lasterror(gdbwrap_t *desc) {
 }
 
 IRAPI Bool gdbwrap_is_active(gdbwrap_t *desc) {
-	return desc->is_active? TRUE: FALSE;
+	return (desc && desc->is_active) ? TRUE: FALSE;
 }
 
 /* If the last command is not supported, we return TRUE. */

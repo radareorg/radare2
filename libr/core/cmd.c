@@ -1127,6 +1127,26 @@ static int cmd_help(void *data, const char *input) {
 	char out[128];
 	ut64 n;
 	switch (input[0]) {
+	case 'r':
+		{ // TODO : Add support for 64bit random numbers
+		char *p;
+		ut64 b = 0;
+		ut32 r = UT32_MAX;
+		if (input[1])
+			strncpy (out, input+(input[1]==' '? 2: 1), sizeof (out)-1);
+		else *out = 0;
+		p = strchr (out+1, ' ');
+		if (p) {
+			*p = 0;
+			b = (ut32)r_num_math (core->num, out);
+			r = (ut32)r_num_math (core->num, p+1)-b;
+		} else r = (ut32)r_num_math (core->num, out);
+		if (r == 0)
+			r = UT32_MAX>>1;
+		core->num->value = (ut64) (b + r_num_rand (r));
+		r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+		}
+		break;
 	case 'b':
 		{
 		n = r_num_get (core->num, input+1);
@@ -1272,6 +1292,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?? [cmd]        ; ? == 0  run command when math matches\n"
 			" ?i prompt       ; prompt for number and store in $$?\n"
 			" ?e string       ; echo string\n"
+			" ?r [from] [to]  ; generate random number between from-to\n"
 			" ?b [num]        ; show binary value of number\n"
 			" ?f [num] [str]  ; map each bit of the number as flag string index\n"
 			" ?s from to step ; sequence of numbers from to by steps\n"
@@ -3256,7 +3277,7 @@ static int cmd_write(void *data, const char *input) {
 		} else r_cons_printf (
 			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
 			" w foobar     write string 'foobar'\n"
-			" wr 10        Write 10 random bytes\n"
+			" wr 10        write 10 random bytes\n"
 			" ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
 			" wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
 			" waf file     assemble file and write bytes\n"
@@ -3265,7 +3286,7 @@ static int cmd_write(void *data, const char *input) {
 			" wc[ir*?]     write cache commit/reset/list\n"
 			" wx 9090      write two intel nops\n"
 			" wv eip+34    write 32-64 bit value\n"
-			" wo? hex     write in block with operation. 'wo?' fmi\n"
+			" wo? hex      write in block with operation. 'wo?' fmi\n"
 			" wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
 			" wf file      write contents of file at current offset\n"
 			" wF file      write contents of hexpairs file here\n"

@@ -34,6 +34,8 @@ static int r_debug_gdb_step(RDebug *dbg) {
 
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	gdbwrap_readgenreg (desc);
+	if (!desc)
+		return R_FALSE;
 	gdbwrap_getreg_buffer (desc, buf, desc->reg_size*desc->num_registers);
 	return desc->num_registers*desc->reg_size;
 }
@@ -57,29 +59,29 @@ static int r_debug_gdb_wait(RDebug *dbg, int pid) {
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 // XXX TODO PID must be a socket here !!1
 	RIODesc *d = dbg->iob.io->fd;
-	if (d && d->plugin && d->plugin->name) {
+	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
 			support_sw_bp = UNKNOWN;
 			support_hw_bp = UNKNOWN;
-			desc = g->desc;
-			switch (dbg->arch){
-				 case R_SYS_ARCH_X86:
-					//TODO Support x86_64
-					//9 32bit regs for x86
-					desc->num_registers = 9;
-					desc->reg_size = 4;
-					break;
-				case R_SYS_ARCH_SH:
-					//28 32bit regs for sh4
-					desc->num_registers = 28;
-					desc->reg_size = 4;
-					break;
-				case R_SYS_ARCH_ARM:
-					//TODO Check ARM stubs and fill in
-					desc->num_registers = 25;
-					desc->reg_size = 4;
-					break;
+			if (( desc = g->desc ))
+			switch (dbg->arch) {
+			case R_SYS_ARCH_X86:
+				//TODO Support x86_64
+				//9 32bit regs for x86
+				desc->num_registers = 9;
+				desc->reg_size = 4;
+				break;
+			case R_SYS_ARCH_SH:
+				//28 32bit regs for sh4
+				desc->num_registers = 28;
+				desc->reg_size = 4;
+				break;
+			case R_SYS_ARCH_ARM:
+				//TODO Check ARM stubs and fill in
+				desc->num_registers = 25;
+				desc->reg_size = 4;
+				break;
 			}
 			//eprintf ("SUCCESS: gdb attach with inferior gdb rio worked\n");
 		} else {

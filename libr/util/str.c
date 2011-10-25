@@ -384,7 +384,6 @@ R_API char *r_str_trim(char *str) {
 	return str;
 }
 
-
 R_API void r_str_cpy(char *dst, const char *src) {
 	int i;
 	for (i=0; src[i]; i++)
