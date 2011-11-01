@@ -7,6 +7,10 @@
 
 ====[[ 0.9 ]]====
 
+* Tracing support for the debugger
+  - "e cmd.trace=dr=;.dr*;pd 2@eip"
+  - dca sym.main imp.printf
+  - dbc
 * rasm2 -D must show bytes  : opcode
 * rasm2 must support binary creation help message or so.. rabin2 integration must be easier
 * Add support for 'expect' like foo in rarun2
@@ -19,7 +23,6 @@
 * cleanup magic database.. too slow for search :(
 * use centralized pubsub or memcached to sync data
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
-* Implement differential distance signature search
 * Add support for classes (useful for c++, dex, objc, ...)
   - command to add new classes
 
@@ -72,9 +75,6 @@ TODO
   }
   r_list_commit (b);
 
-* Tracing support for the debugger
-  - "e cmd.trace=dr=;.dr*;pd 2@eip"
-  - dca sym.main imp.printf
 * If [0-9] keybindings in visual point to same address use same reference
 
 
