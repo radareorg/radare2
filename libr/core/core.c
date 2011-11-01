@@ -438,7 +438,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 			Color_YELLOW"[0x%08"PFMT64x"]> "Color_RESET, r->offset);
 #endif
 	else sprintf (prompt, "[0x%08"PFMT64x"]> ", r->offset);
-	r_line_singleton()->prompt = prompt;
+	r_line_set_prompt (prompt);
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) return R_CORE_CMD_EXIT;
 	if (ret == -1) return R_FALSE;

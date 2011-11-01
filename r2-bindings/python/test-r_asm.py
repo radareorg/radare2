@@ -1,6 +1,6 @@
 from r_asm import *
 
-def disasm(a, arch, op):
+def ass(a, arch, op):
 	print "---------------------------->8- - - - - -"
 	print "OPCODE: %s"%op
 	a.use (arch)
@@ -12,5 +12,5 @@ def disasm(a, arch, op):
 		print "HEX: %s"%code.buf_hex
 	
 a = RAsm()
-disasm (a, 'x86.olly', 'mov eax, 33')
-disasm (a, 'java', 'bipush 33')
+ass (a, 'x86.olly', 'mov eax, 33')
+ass (a, 'java', 'bipush 33')

@@ -4390,8 +4390,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		ptr[0] = '\0';
 		if (ptr[1]=='<') {
 			/* this is a bit mess */
-			const char *oprompt = r_line_singleton ()->prompt;
-			oprompt = ">";
+			//const char *oprompt = strdup (r_line_singleton ()->prompt);
+			//oprompt = ">";
 			for (str=ptr+2; str[0]==' '; str++);
 			eprintf ("==> Reading from stdin until '%s'\n", str);
 			free (core->oobi);
@@ -4413,7 +4413,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 					break;
 				strcat ((char *)core->oobi, buf);
 			}
-			r_line_singleton ()->prompt = oprompt;
+			//r_line_set_prompt (oprompt);
 		} else {
 			for (str=ptr+1; *str== ' ';str++);
 			eprintf ("SLURPING FILE '%s'\n", str);

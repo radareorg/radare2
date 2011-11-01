@@ -82,13 +82,13 @@ R_API int r_lang_setup(RLang *lang) {
 
 R_API void r_lang_plugin_free (RLang *lang, RLangPlugin *p) {
 	if (p && p->fini)
-		p->fini (lang->user);
+		p->fini (lang);
 }
 
 R_API int r_lang_add(RLang *lang, RLangPlugin *foo) {
 	if (foo && (!r_lang_get (lang, foo->name))) {
 		if (foo->init)
-			foo->init (lang->user);
+			foo->init (lang);
 		r_list_append (lang->langs, foo);
 	}
 	return R_TRUE;
@@ -108,9 +108,8 @@ R_API RLangPlugin *r_lang_get (RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
 	r_list_foreach (lang->langs, iter, h) {
-		if (!strcmp (h->name, name)) {
+		if (!strcmp (h->name, name))
 			return h;
-		}
 	}
 	return NULL;
 }
@@ -163,26 +162,56 @@ R_API int r_lang_prompt(RLang *lang) {
 		return R_FALSE;
 
 	if (lang->cur->prompt)
-		if (lang->cur->prompt(lang) == R_TRUE)
+		if (lang->cur->prompt (lang) == R_TRUE)
 			return R_TRUE;
+	/* init line */
+	RLine *line = r_line_singleton ();
+	RLineHistory hist = line->history;
+	RLineHistory histnull = {0};
+	RLineCompletion oc = line->completion;
+	RLineCompletion ocnull = {0};
+	char *prompt = strdup (line->prompt);  
+	line->completion = ocnull;
+	line->history = histnull;
+	/* foo */
 	for (;;) {
+	snprintf (buf, sizeof (buf)-1, "%s> ", lang->cur->name);
+	r_line_set_prompt (buf);
+#if 0
 		printf ("%s> ", lang->cur->name);
 		fflush (stdout);
 		fgets (buf, sizeof (buf)-1, stdin);
 		if (feof (stdin)) break;
-		buf[strlen (buf)-1]='\0';
+		if (*buf) buf[strlen (buf)-1]='\0';
+#endif
+		char *p = r_line_readline ();
+		if (!p) break;
+		r_line_hist_add (p);
+		strcpy (buf, p);
 		if (!strcmp (buf, "q"))
 			return R_TRUE;
 		if (!strcmp (buf, "?")) {
-			if (lang->cur) {
-				printf ("Help for %s scripting prompt:\n", lang->cur->name);
-				if (lang->cur->help)
-					printf ("%s", *lang->cur->help);
-			} else printf ("no selected r_lang plugin\n");
-			printf ("  ?    - show this help message\n"
+			RLangDef *def;
+			RListIter *iter;
+			eprintf("  ?    - show this help message\n"
 				"  q    - quit\n");
+			if (lang->cur) {
+				eprintf ("%s example:\n", lang->cur->name);
+				if (lang->cur->help)
+					eprintf ("%s", *lang->cur->help);
+			} else eprintf ("no selected r_lang plugin\n");
+			if (!r_list_empty (lang->defs))
+				eprintf ("variables:\n");
+			r_list_foreach (lang->defs, iter, def) {
+				eprintf ("  %s %s\n", def->type, def->name);
+			}
 		} else r_lang_run (lang, buf, strlen (buf));
 	}
+	// XXX: leaking history
+	r_line_set_prompt (prompt);
+	line->completion = oc;
+	line->history = hist;
+
 	clearerr (stdin);
 	printf ("\n");
 	return R_TRUE;

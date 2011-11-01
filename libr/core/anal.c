@@ -165,12 +165,11 @@ static int cmpaddr (void *_a, void *_b) {
 }
 
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
-	RAnalFcn *fcn, *fcni;
-	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
-	RAnalRef *ref;
-	ut8 *buf;
 	int buflen, fcnlen = 0;
+	RAnalFcn *fcn, *fcni;
+	RAnalRef *ref, *refi;
+	ut8 *buf;
 
 	if (depth < 0)
 		return R_FALSE;
@@ -289,10 +288,11 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
 			if (gv) r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-					"[label=\"%s\" color=\"%s\"];\n",
+					"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 				fcni->addr, fcnr->addr, flag?flag->name:"",
 				(fcnr->type==R_ANAL_REF_TYPE_CODE ||
-				 fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red");
+				 fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red",
+				flag?flag->name:"", fcnr->addr);
 			else r_cons_printf (" - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 		}
 	}

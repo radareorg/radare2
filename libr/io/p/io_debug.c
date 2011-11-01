@@ -164,26 +164,9 @@ err_fork:
 }
 #else
 
-#if 0
-static int __waitpid(int pid) {
-	int st = 0;
-	if (waitpid (pid, &st, 0) == -1)
-		return R_FALSE;
-	if (WIFEXITED (st)) {
-	//if ((WEXITSTATUS(wait_val)) != 0) {
-		perror ("==> Process has exited\n");
-		//debug_exit();
-		return -1;
-	}
-	return R_TRUE;
-}
-#endif
-
 static int fork_and_ptraceme(const char *cmd) {
 	char **argv;
-	int ret, status, pid = -1;
-
-	pid = vfork ();
+	int ret, status, pid = vfork ();
 	switch (pid) {
 	case -1:
 		perror ("fork_and_ptraceme");
@@ -236,7 +219,7 @@ static int __plugin_open(struct r_io_t *io, const char *file) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
-	char uri[1024];
+	char uri[128];
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {

@@ -16,15 +16,21 @@
 
 static char *r_line_nullstr = "";
 
-/* initialize history stuff */
-R_API int r_line_dietline_init() {
+static int inithist() {
 	ZERO_FILL (&I.history);
-	ZERO_FILL (&I.completion);
 	I.history.data = (char **)malloc ((I.history.size+1024)*sizeof(char *));
 	if (I.history.data==NULL)
 		return R_FALSE;
 	I.history.size = R_LINE_HISTSIZE;
 	memset (I.history.data, 0, I.history.size*sizeof(char *));
+	return R_TRUE;
+}
+
+/* initialize history stuff */
+R_API int r_line_dietline_init() {
+	ZERO_FILL (&I.completion);
+	if (!inithist ())
+		return R_FALSE;
 	I.echo = R_TRUE;
 	return R_TRUE;
 }
@@ -51,9 +57,11 @@ static int r_line_readchar() {
 			return 0; // read no char
 		if (ret == 0) // EOF
 			return -1;
+//eprintf ("(((%x)))\n", *buf);
 		// TODO: add support for other invalid chars
 		if (*buf==0xc2 || *buf==0xc3) {
 			read (0, buf+1, 1);
+//eprintf ("(((%x)))\n", buf[1]);
 			*buf = '\0';
 		}	
 	} while (*buf == '\0');
@@ -62,6 +70,8 @@ static int r_line_readchar() {
 }
 
 R_API int r_line_hist_add(const char *line) {
+	if (!I.history.data)
+		inithist ();
 	if (I.history.top>=I.history.size)
 		I.history.top = I.history.index = 0; // workaround
 	if (line && *line) { // && I.history.index < I.history.size) {
@@ -73,6 +83,8 @@ R_API int r_line_hist_add(const char *line) {
 }
 
 static int r_line_hist_up() {
+	if (!I.history.data)
+		inithist ();
 	if (I.history.index>0) {
 		strncpy (I.buffer.data, I.history.data[--I.history.index], R_LINE_BUFSIZE-1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
@@ -83,6 +95,8 @@ static int r_line_hist_up() {
 
 static int r_line_hist_down() {
 	I.buffer.index = 0;
+	if (!I.history.data)
+		inithist ();
 	if (I.history.index<I.history.size) {
 		if (I.history.data[I.history.index] == NULL) {
 			I.buffer.data[0]='\0';
@@ -98,6 +112,8 @@ static int r_line_hist_down() {
 
 R_API int r_line_hist_list() {
 	int i = 0;
+	if (!I.history.data)
+		inithist ();
 	if (I.history.data != NULL)
 		for (i=0; i<I.history.size && I.history.data[i]; i++)
 			printf ("%.3d  %s\n", i, I.history.data[i]);
@@ -144,7 +160,7 @@ R_API int r_line_hist_save(const char *file) {
 	char *path = r_str_home (file);
 	if (path != NULL) {
 		fd = fopen (path, "w");
-		if (fd != NULL) {
+		if (fd != NULL && I.history.data) {
 			for (i=0; i<I.history.index; i++) {
 				fputs (I.history.data[i], fd);
 				fputs ("\n", fd);
@@ -392,7 +408,7 @@ R_API char *r_line_readline() {
 			if (buf[1] == -1)
 				return NULL;
 			if (buf[0]==0x5b) {
-				switch(buf[1]) {
+				switch (buf[1]) {
 				case 0x33: // supr
 					if (I.buffer.index<I.buffer.length)
 						memmove (I.buffer.data+I.buffer.index,
@@ -414,15 +430,51 @@ R_API char *r_line_readline() {
 							gcomp_idx--;
 					} else r_line_hist_down ();
 					break;
-				case 0x43:
+				case 0x43: // end
 					I.buffer.index = I.buffer.index<I.buffer.length?
 						I.buffer.index+1: I.buffer.length;
 					break;
-				case 0x44:
-					I.buffer.index = I.buffer.index?I.buffer.index-1:0;
+				case 0x44: // begin
+					I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
 					break;
-				case 0x31:
+				case 0x31: // control + arrow
 					r_cons_readchar ();
+					r_cons_readchar ();
+					ch = r_cons_readchar ();
+					switch (ch) {
+					case 0x41:
+						//first
+						I.buffer.index = 0;
+						break;
+					case 0x44:
+						// previous word
+						for (i=I.buffer.index; i>0; i--) {
+							if (I.buffer.data[i] == ' ') {
+								I.buffer.index = i-1;
+								break;
+							}
+						}
+						if (I.buffer.data[i] != ' ')
+							I.buffer.index = 0;
+						break;
+					case 0x42:
+						//end
+						I.buffer.index = I.buffer.length;
+						break;
+					case 0x43:
+						// next word
+						for (i=I.buffer.index; i<I.buffer.length; i++) {
+							if (I.buffer.data[i] == ' ') {
+								I.buffer.index = i+1;
+								break;
+							}
+						}
+						if (I.buffer.data[i] != ' ')
+							I.buffer.index = I.buffer.length;
+						break;
+					}
+					r_cons_set_raw (1);
+					break;
 				case 0x48: // Start
 					I.buffer.index = 0;
 					break;
@@ -511,7 +563,7 @@ R_API char *r_line_readline() {
 			} else {
 				printf ("\r%s%s", I.prompt, I.buffer.data);
 				printf ("\r%s", I.prompt);
-				for (i=0;i<I.buffer.index;i++)
+				for (i=0; i<I.buffer.index; i++)
 					printf ("%c", I.buffer.data[i]);
 			}
 			fflush (stdout);

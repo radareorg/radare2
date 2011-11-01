@@ -27,9 +27,12 @@ namespace Radare {
 		public bool set_bits (int bits);
 		public bool set_big_endian (bool big);
 		//public bool set_pc (uint64 addr);
-		public RList<RAnal.Fcn> get_fcns();
 		public void diff_setup(bool doops, double thbb, double thfcn);
 		public void diff_setup_i(bool doops, int thbb, int thfcn);
+
+		public RList<RAnal.Fcn> get_fcns();
+		public Fcn get_fcn_at (uint64 addr);
+		public void trace_bb (uint64 addr);
 
 		[Compact]
 		[CCode (cname="RAnalValue")]

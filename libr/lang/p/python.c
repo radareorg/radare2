@@ -22,22 +22,22 @@ static int run(RLang *lang, const char *code, int len) {
 }
 
 static int slurp_python(const char *file) {
-	FILE *fd = fopen(file, "r");
+	FILE *fd = fopen (file, "r");
 	if (fd == NULL)
 		return R_FALSE;
-	PyRun_SimpleFile(fd, file);
-	fclose(fd);
+	PyRun_SimpleFile (fd, file);
+	fclose (fd);
 	return R_TRUE;
 }
 
 static int run_file(struct r_lang_t *lang, const char *file) {
-	return slurp_python(file);
+	return slurp_python (file);
 }
 
 /* init */
 typedef struct {
 	PyObject_HEAD
-		PyObject *first; /* first name */
+	PyObject *first; /* first name */
 	PyObject *last;  /* last name */
 	int number;
 } Radare;
@@ -46,48 +46,39 @@ typedef struct {
 static char *py_nullstr = "";
 
 static void Radare_dealloc(Radare* self) {
-	Py_XDECREF(self->first);
-	Py_XDECREF(self->last);
+	Py_XDECREF (self->first);
+	Py_XDECREF (self->last);
 	//self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject * Radare_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-	Radare *self;
-
-	self = (Radare *)type->tp_alloc(type, 0);
+	Radare *self = (Radare *)type->tp_alloc (type, 0);
 	if (self != NULL) {
-		self->first = PyString_FromString("");
+		self->first = PyString_FromString ("");
 		if (self->first == NULL) {
-			Py_DECREF(self);
+			Py_DECREF (self);
 			return NULL;
 		}
 
-		self->last = PyString_FromString("");
+		self->last = PyString_FromString ("");
 		if (self->last == NULL) {
-			Py_DECREF(self);
+			Py_DECREF (self);
 			return NULL;
 		}
-
 		self->number = 0;
 	}
 
 	return (PyObject *)self;
 }
 
-static PyObject * Radare_cmd(Radare* self, PyObject *args) {
+static PyObject *Radare_cmd(Radare* self, PyObject *args) {
 	PyObject *result;
 	char *str, *cmd = NULL;
 
-	if (!PyArg_ParseTuple(args, "s", &cmd))
+	if (!PyArg_ParseTuple (args, "s", &cmd))
 		return NULL;
-
 	str = r_core_cmd_str (core, cmd);
-	if (str == NULL)
-		str = py_nullstr;
-
-	result = PyString_FromString(str);
-
-	return result;
+	return PyString_FromString (str? str: py_nullstr);
 }
 
 static int Radare_init(Radare *self, PyObject *args, PyObject *kwds) {
@@ -95,22 +86,22 @@ static int Radare_init(Radare *self, PyObject *args, PyObject *kwds) {
 
 	static char *kwlist[] = {"first", "last", "number", NULL};
 
-	if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi",
+	if (!PyArg_ParseTupleAndKeywords (args, kwds, "|OOi",
 		kwlist, &first, &last, &self->number))
 		return -1;
 
 	if (first) {
 		tmp = self->first;
-		Py_INCREF(first);
+		Py_INCREF (first);
 		self->first = first;
-		Py_XDECREF(tmp);
+		Py_XDECREF (tmp);
 	}
 
 	if (last) {
 		tmp = self->last;
-		Py_INCREF(last);
+		Py_INCREF (last);
 		self->last = last;
-		Py_XDECREF(tmp);
+		Py_XDECREF (tmp);
 	}
 
 	return 0;
@@ -134,10 +125,10 @@ static PyMethodDef Radare_methods[] = {
 };
 
 static PyTypeObject RadareType = {
-	PyObject_HEAD_INIT(NULL)
+	PyObject_HEAD_INIT (NULL)
 	0,                         /*ob_size*/
 	"radare.RadareInternal",   /*tp_name*/
-	sizeof(Radare),            /*tp_basicsize*/
+	sizeof (Radare),           /*tp_basicsize*/
 	0,                         /*tp_itemsize*/
 	(destructor)Radare_dealloc,/*tp_dealloc*/
 	0,                         /*tp_print*/
@@ -179,8 +170,7 @@ static void init_radare_module(void) {
 	PyObject* m;
 	if (PyType_Ready (&RadareType) < 0)
 		return;
-	m = Py_InitModule3 ("r", Radare_methods, //module_methods,
-			"Example module that creates an extension type.");
+	m = Py_InitModule3 ("r", Radare_methods, "radare python extension");
 }
 #else
 
@@ -223,7 +213,9 @@ static int setup(RLang *lang) {
 	RListIter *iter;
 	RLangDef *def;
 	char cmd[128];
+	// Segfault if already initialized ?
 	PyRun_SimpleString ("from r2.r_core import RCore");
+	core = lang->user;
 	r_list_foreach (lang->defs, iter, def) {
 		if (!def->type || !def->name)
 			continue;
@@ -240,6 +232,10 @@ static int setup(RLang *lang) {
 
 static int init(RLang *lang) {
 	core = lang->user;
+	// DO NOT INITIALIZE MODULE IF ALREADY INITIALIZED
+	if (Py_IsInitialized ()) {
+		return 0;
+	}
 	Py_Initialize ();
 	init_radare_module ();
 	return R_TRUE;
@@ -250,9 +246,8 @@ static int fini(void *user) {
 }
 
 static const char *help =
-	"Python plugin usage:\n"
 	//" r = new RadareInternal()\n"
-	" bytes = r.cmd(\"p8 10\");\n";
+	"  print r.cmd(\"p8 10\");\n";
 
 struct r_lang_plugin_t r_lang_plugin_python = {
 	.name = "python",

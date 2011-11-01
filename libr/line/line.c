@@ -29,7 +29,13 @@ R_API void r_line_free () {
 
 // handle const or dynamic prompts?
 R_API void r_line_set_prompt (const char *prompt) {
-	I.prompt = prompt;
+	free (I.prompt);
+	I.prompt = strdup (prompt);
+}
+
+// handle const or dynamic prompts?
+R_API char *r_line_get_prompt () {
+	return strdup (I.prompt);
 }
 
 #include "dietline.c"
