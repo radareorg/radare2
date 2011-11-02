@@ -126,7 +126,8 @@ deinstall uninstall:
 	@echo
 
 purge:
-	rm -rf ${DESTDIR}/${LIBDIR}/libr_*
+	rm -f ${DESTDIR}/${BINDIR}/r*2
+	rm -f ${DESTDIR}/${LIBDIR}/libr_*
 	rm -rf ${DESTDIR}/${LIBDIR}/radare2
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
