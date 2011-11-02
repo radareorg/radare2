@@ -242,12 +242,16 @@ namespace Radare {
 			public string name;
 			public uint64 addr;
 			public uint64 size;
+			public int nargs;
+			public int ninstr;
+			public int stack;
+			public int calltype;
 			public Diff diff;
 			public FcnType type;
 			public RList<RAnal.Block> bbs;
 			public RList<RAnal.Var> vars;
-			public RList<uint64> refs;
-			public RList<uint64> xrefs;
+			public RList<RAnal.Ref> refs;
+			public RList<RAnal.Ref> xrefs;
 		}
 
 		[Compact]
@@ -272,6 +276,14 @@ namespace Radare {
 			public string name;
 			public string fmt;
 			public uint size;
+		}
+
+		[Compact]
+		[CCode (cname="RAnalRef", free_function="")]
+		public class Ref {
+			public int type;
+			public uint64 from;
+			public uint64 to;
 		}
 
 		[Compact]

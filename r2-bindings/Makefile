@@ -131,7 +131,7 @@ purge-python:
 install-python:
 	@if [ "`grep python supported.langs`" -a -n "${PYTHON_PKGDIR}" ]; then \
 	E=${SOEXT} ; [ `uname` = Darwin ] && E=so ; \
-	echo "Installing python${PYTHON_VERSION} r2 modules in ${PYTHON_INSTALL_DIR}/r2" ; \
+	echo "Installing python${PYTHON_VERSION} r2 modules in ${PYTHON_INSTALL_DIR}" ; \
 	mkdir -p ${PYTHON_INSTALL_DIR} ; \
 	: > ${PYTHON_INSTALL_DIR}/__init__.py ; \
 	cp -rf python/r_*.py python/*.$$E ${PYTHON_INSTALL_DIR} ; \
