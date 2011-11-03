@@ -1,12 +1,8 @@
-# TODO: use $VPATH here?
--include config.mk
--include ../config.mk
--include ../../config.mk
+LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+include $(LIBR)/config.mk
 
 #-------------------------------------#
 # Rules for libraries
-ifeq (${BINDEPS},)
-
 ifneq ($(NAME),)
 
 ALL?=
@@ -97,26 +93,16 @@ sloc:
 
 else
 
-# somewhere else?
-
-endif
-
-else
-
 #-------------------------------------#
-# Rules for test programs
+# Rules for programs (including test)
 
-# XXX can this be removed?
-#include ../../../config-user.mk
-#include ../../../mk/${COMPILER}.mk
-
-CFLAGS+=-I../../include -DVERSION=\"${VERSION}\"
+CFLAGS+=-I$(LIBR)/include -DVERSION=\"${VERSION}\"
 
 ifneq ($(BIN),)
 all: ${BIN}${EXT_EXE}
 
 ${BIN}${EXT_EXE}: ${OBJ}
-	${CC} ${OBJ} -L.. ${LDFLAGS} ${LIBS} -o ${BIN}${EXT_EXE}
+	${CC} $+ -L.. ${LDFLAGS} ${LDLIBS} -o ${BIN}${EXT_EXE}
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile
@@ -124,7 +110,7 @@ endif
 myclean:
 
 clean: myclean
-	-rm -f ${OBJ} ${BIN}
+	-rm -f ${OBJS} ${OBJ} ${BIN}
 
 mrproper: clean
 	-rm -f *.d

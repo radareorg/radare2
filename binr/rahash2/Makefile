@@ -3,9 +3,6 @@ BINDEPS=r_io r_hash r_util r_print r_socket r_asm r_cons r_anal r_lib r_syscall 
 
 include ../binr.mk
 
-ifeq ($(WITHNONPIC),1)
-LDFLAGS+=-lm
-endif
 ifeq ($(OSTYPE),android)
 LDFLAGS+=-lm
 endif

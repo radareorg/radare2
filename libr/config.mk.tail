@@ -1,42 +1,62 @@
 # config.mk.tail
 
-# libr/*
--include ../../config-user.mk
--include ../../global.mk
--include ../../mk/${COMPILER}.mk
+LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
-# libr/*/p
--include ../../../config-user.mk
--include ../../../global.mk
--include ../../../mk/${COMPILER}.mk
-
-# libr/fs/p/grub
--include ../../../../config-user.mk
--include ../../../../global.mk
--include ../../../../mk/${COMPILER}.mk
+include $(LIBR)/../config-user.mk
+include $(LIBR)/../global.mk
+include $(LIBR)/../mk/${COMPILER}.mk
 
 CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}
 
 ifeq ($(WITHPIC),1)
 LDFLAGS+=$(subst r_,-lr_,$(DEPS))
-LDFLAGS+=$(subst r_,-L../,$(DEPS))
+LDFLAGS+=$(subst r_,-L$(LIBR)/,$(DEPS))
 LDFLAGS+=$(subst r_,-lr_,$(BINDEPS))
-LDFLAGS+=$(subst r_,-L../../,$(BINDEPS))
+LDFLAGS+=$(subst r_,-L$(LIBR)/,$(BINDEPS))
 CFLAGS+=${PIC_CFLAGS}
 LDFLAGS+=${PIC_CFLAGS}
 else
-# TODO: is there somebody brave enought to replace this perl oneliner?
 ifneq ($(DEPS),)
-#LDFLAGS+=`echo "${DEPS} " | perl -ne 's,r_([^ ]*),../$$1/libr_$$1.a,g; print'`
-#OK#LDFLAGS+=`echo $DEPS | awk '{gsub(/r_([^ ]*)/,"../&/lib&.a");gsub(/\/r_/,"\/");print}'`
-LDFLAGS+=$(shell echo ${DEPS} | awk '{gsub(/r_([^ ]*)/,"../&/lib&.a");gsub(/\/r_/,"\/");print}')
+LDFLAGS+=$(shell echo ${DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
 endif
 ifneq ($(BINDEPS),)
-#LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then perl -ne 's,r_([^ ]*),../../libr/$$1/libr_$$1.a,g; print' ; else perl -ne 's,r_([^ ]*),../../$$1/libr_$$1.a,g; print' ; fi `
-#OK#LDFLAGS+=`echo "${BINDEPS} " | if [ -d ../../libr ]; then echo $BINDEPS | awk '{gsub(/r_([^ ]*)/,"../../libr/&/lib&.a");gsub(/\/r_/,"\/");print}' ; else awk '{gsub(/r_([^ ]*)/,"../../&/lib&.a");gsub(/\/r_/,"\/");print}'; fi`
-LDFLAGS+=$(shell echo "${BINDEPS} " | if [ -d ../../libr ]; then awk '{gsub(/r_([^ ]*)/,"../../libr/&/lib&.a");gsub(/\/r_/,"\/");print}' ; else awk '{gsub(/r_([^ ]*)/,"../../&/lib&.a");gsub(/\/r_/,"\/");print}'; fi)
+LDLIBS+=$(shell echo "${BINDEPS} " | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
 endif
+
+#link dependencies of individual r_ libs
+#TODO: move them inside libr/*/subdeps.mk
+ifneq (,$(findstring r_db,$(BINDEPS)))
+LDLIBS+=$(LIBR)/db/sdb/src/libsdb.a
+endif
+ifneq (,$(findstring r_fs,$(BINDEPS)))
+LDLIBS+=$(LIBR)/fs/p/grub/libgrubfs.a
+endif
+ifneq (,$(findstring r_hash,$(BINDEPS)))
+LDLIBS+=-lm
+endif
+ifneq (,$(findstring r_lib,$(BINDEPS)))
+LDLIBS+=${DL_LIBS}
+endif
+ifneq (,$(findstring r_socket,$(BINDEPS)))
+ifeq (${HAVE_LIB_SSL},1)
+LDLIBS+=${SSL_LDFLAGS}
+endif
+endif
+ifneq (,$(findstring r_th,$(BINDEPS)))
+LDLIBS+=${TH_LIBS}
+endif
+ifneq (,$(findstring r_util,$(BINDEPS)))
+ifeq (${HAVE_LIB_GMP},1)
+LDLIBS+=-lgmp
+endif
+endif
+ifneq (,$(findstring r_magic,$(BINDEPS)))
+ifeq (${USE_LIB_MAGIC},1)
+LDLIBS+=-lmagic
+endif
+endif
+
 endif
 
 # Compiler: see mk/gcc.mk
@@ -49,6 +69,13 @@ CFLAGS+=-g -Wall
 ifeq (${HAVE_LIB_GMP},1)
 CFLAGS+=-DHAVE_LIB_GMP=1
 BN_LIBS=-lgmp
+endif
+
+#both of these need ssl includes
+ifneq (,$(filter r_socket r_util,$(BINDEPS)))
+ifeq (${HAVE_LIB_SSL},1)
+CFLAGS+=${SSL_CFLAGS}
+endif
 endif
 
 # XXX do it in configure stage

@@ -1,4 +1,4 @@
 BIN=rsc2
-DEPS=
+BINDEPS=r_util
 
 include ../binr.mk

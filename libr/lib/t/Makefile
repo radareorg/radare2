@@ -1,13 +1,11 @@
-include ../../config.mk
+BINDEPS=r_lib r_util
 
 all: plugin.${EXT_SO} test-plugin${EXT_EXE}
-	@true
 
 plugin.${EXT_SO}:
 	${CC} ${CFLAGS} -shared -Wall -o plugin.${EXT_SO} ${LDFLAGS_LIB} plugin.c -I../../include
 
-test-plugin${EXT_EXE}:
-	${CC} ../*.o ${CFLAGS} -Wall -o test-plugin${EXT_EXE} test-plugin.c -L../../util/ -lr_util -I../../include ${DL_LIBS}
+include ../../rules.mk
 
 clean:
 	-rm -f plugin.${EXT_SO} test-plugin${EXT_EXE}

@@ -9,15 +9,9 @@ TESTS+=fun5 fun6
 
 include ../../config.mk
 
-BINDEPS=r_egg r_util r_asm r_syscall r_db
-
-CFLAGS+=-DVERSION=\"${VERSION}\"
-CFLAGS+=-g -I../../include
-
-all: test${EXT_EXE}
-
-test${EXT_EXE}: test.o
-	${CC} ${CFLAGS} test.o ${LDFLAGS} -o test${EXT_EXE}
+BINDEPS=r_egg r_asm r_parse r_syscall r_db r_util r_lib
+BIN=test
+OBJ=test.o
 
 .PHONY: t
 

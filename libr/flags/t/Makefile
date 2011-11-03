@@ -1,10 +1,4 @@
-include ../../config.mk
-
-all: test${EXT_EXE}
-
-test${EXT_EXE}:
-	rm -f ../flags.o
-	${CC} ${CFLAGS} -g -I ../../include test.c ../*.o -lr_util -L../../util -L../../cons -lr_cons -o test${EXT_EXE}
-
-clean:
-	rm -f test${EXT_EXE}
+BIN=test
+OBJ=test.o
+BINDEPS=r_flags r_cons r_util
+include ../../rules.mk
