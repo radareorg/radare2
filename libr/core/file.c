@@ -77,7 +77,6 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 R_API int r_core_bin_load(RCore *r, const char *file) {
 	int va = r->io->va || r->io->debug;
 	char str[R_FLAG_NAME_SIZE];
-
 	RBinSection *section;
 	RBinSymbol *symbol;
 	RBinString *string;

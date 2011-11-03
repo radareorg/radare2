@@ -11,6 +11,7 @@ static int show_help(int large)
 	" -d opcode search an opcode\n"
 	" -f 0x102  'from' address\n"
 	" -t 0x502  'to' address\n");
+	return 0;
 }
 
 int main(int argc, char **argv)

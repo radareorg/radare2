@@ -67,7 +67,7 @@ static int rabin_show_help() {
 		" -H              header fields\n"
 		" -l              linked libraries\n"
 		" -R              relocations\n"
-		" -O [str]        write/extract operations (str=help for help)\n"
+		" -O [str]        write/extract operations (-O help)\n"
 		" -o [str]        output file/folder for write operations (out by default)\n"
 		" -r              radare output\n"
 		" -v              use vaddr in radare output\n"
@@ -545,7 +545,7 @@ static int rabin_dump_symbols(int len) {
 			len = 32;
 		else len = olen;
 
-		if (!(buf = malloc (len)) || !(ret = malloc(len*2+1)))
+		if (!(buf = malloc (len)) || !(ret = malloc (len*2+1)))
 			return R_FALSE;
 		r_buf_read_at (bin->curarch.buf, symbol->offset, buf, len);
 		r_hex_bin2str (buf, len, ret);

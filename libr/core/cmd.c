@@ -1567,12 +1567,22 @@ static int cmd_cmp(void *data, const char *input) {
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *out, buf[1024];
+	// XXX: we must use internal rbin api here
 	switch (*input) {
+	case 'S':
+		if (core->file) {
+			// XXX: we must use internal rbin api here
+			snprintf (buf, sizeof (buf), "rabin2 -HS%s%s '%s'", input[1]=='*'? "r": "",
+				core->io->va? "v": "", core->file->filename);
+			out = r_sys_cmd_str (buf, NULL, 0);
+			if (out && *out)
+				r_cons_strcat (out);
+		}
+		break;
 	case 's':
 	case 'i':
 	case 'I':
 	case 'e':
-	case 'S':
 	case 'z':
 		if (core->file) {
 			snprintf (buf, sizeof (buf), "rabin2 -%c%s%s '%s'", *input,

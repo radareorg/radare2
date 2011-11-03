@@ -28,11 +28,11 @@ R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
 R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name) {
 	int update = 0;
 	RIOSection *s = r_io_section_get_name (io, name);
-	if (s == NULL)
+	if (s == NULL) {
 		s = R_NEW (RIOSection);
-	else update = 1;
+		s->id = io->next_section_id++;
+	} else update = 1;
 	s->offset = offset;
-	s->id = io->next_section_id++;
 	s->vaddr = vaddr;
 	s->size = size;
 	s->vsize = vsize;
@@ -43,10 +43,10 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 		r_list_append (io->sections, s);
 		//r_list_prepend (io->sections, s);
 		//r_list_add_sorted (io->sections, s, cmpaddr);
-	} else {
+	} //else {
 		// This is a bottleneck.. the sorting must be done at append time
-		r_list_sort (io->sections, cmpaddr);
-	}
+	//	r_list_sort (io->sections, cmpaddr);
+	//}
 }
 
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
