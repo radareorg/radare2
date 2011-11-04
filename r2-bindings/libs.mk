@@ -3,6 +3,9 @@ LIBS=r_core.${SOEXT}
 LIBS+=r_bin.${SOEXT}
 LIBS+=r_asm.${SOEXT}
 
+#LIBS=r_asm.${SOEXT}
+
+#LIBS=r_util.${SOEXT}
 #WIP=1
 #ifeq (${WIP},1)
 #LIBS=r_util.${SOEXT} r_bp.${SOEXT} r_asm.${SOEXT} r_diff.${SOEXT}

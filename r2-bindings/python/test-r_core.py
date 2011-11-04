@@ -1,6 +1,8 @@
 import sys
-from r2.r_core import *
-
+try:
+	from r_core import RCore
+except:
+	from r2.r_core import RCore
 
 core = RCore()
 core.file_open("/bin/ls", False, 0)

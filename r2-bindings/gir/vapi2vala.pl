@@ -2,6 +2,7 @@
 # vapi2vala -- pancake
 my $DEBUG = 0;
 while (<STDIN>) {
+	next if (/const/); # XXX: constant values are ignored
 	if (/\);/) {
 		local $ol=$l=$_;
 		$l=~s/public//;
@@ -27,7 +28,10 @@ print STDERR "--->  $t : $n\n" if ($DEBUG);
 		} else {
 			if ($t eq "string") {
 				$v="\"\"";
-			} elsif ($t eq "int") {
+			} elsif ($t eq "uint64") {
+				$t = "";
+				$v="0";
+			} elsif ($t eq "int" or $t eq "uint") {
 				$t = "";
 				$v="0";
 			} elsif ($t eq "bool") {

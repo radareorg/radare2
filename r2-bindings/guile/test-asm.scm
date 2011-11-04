@@ -1,7 +1,7 @@
 ; Test example in scheme and r_asm api
 ; pancake@nopcode.org // radare2 @ 2011
 
-(load-extension "./r_asm" "SWIG_init")
+(load-extension "/Users/pancake/prg/radare2/r2-bindings/guile/r_asm.dylib" "SWIG_init")
 (define asm (new-RAsm))
 
 (define op (new-RAsmAop))

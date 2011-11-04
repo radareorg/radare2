@@ -1,4 +1,7 @@
-from r_asm import *
+try:
+	from r_asm import *
+except:
+	from r2.r_asm import *
 
 def ass(a, arch, op):
 	print "---------------------------->8- - - - - -"

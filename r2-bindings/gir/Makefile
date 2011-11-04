@@ -2,12 +2,13 @@ include ../config.mk
 SOEXT=gir
 include ../libs.mk
 
-all:
-	# XXX sh mkgir.sh RUtil r_util
-	sh mkgir.sh RAsm r_asm
+all: ${LIBS}
+
+all2:
+	#sh mkgir.sh RUtil r_util
+	#sh mkgir.sh RAsm r_asm
 	#sh mkgir.sh RCore r_core
 
-all2: ${LIBS}
 
 ${LIBS}:
 ifeq ($(HAVE_VALABIND)$(HAVE_GIRCOMPILER),11)

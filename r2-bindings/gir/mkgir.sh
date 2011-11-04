@@ -15,7 +15,7 @@ deps() {
 cat ../vapi/$A.vapi | perl vapi2vala.pl > $A.vala
 
 HEADER="--use-header -H $A.h"
-echo "valac $(deps $A) --library=$A-1.0 --gir=$A-1.0.gir $A.vala"
+echo "valac --vapidir=../vapi $(deps $A) --library=$A-1.0 --gir=$A-1.0.gir $A.vala"
 valac ${HEADER} -C $(deps $A) --library=$N-1.0 --gir=$N-1.0.gir $A.vala
 
 mv $N-1.0.gir $N-1.0.tmp
