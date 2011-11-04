@@ -1,6 +1,7 @@
 /* Print SPARC instructions.
    Copyright 1989, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2002, 2003, 2004, 2005, 2007 Free Software Foundation, Inc.
+   2000, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2010
+   Free Software Foundation, Inc.
 
    This file is part of the GNU opcodes library.
 
@@ -19,17 +20,15 @@
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+#define xmalloc malloc
+
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 
 #include "sysdep.h"
 #include "opcode/sparc.h"
 #include "dis-asm.h"
 #include "libiberty.h"
 #include "opintl.h"
-
-#define xmalloc malloc
 
 /* Bitmask of v9 architectures.  */
 #define MASK_V9 ((1 << SPARC_OPCODE_ARCH_V9) \
@@ -111,7 +110,7 @@ static char *v9_hpriv_reg_names[] =
 static char *v9a_asr_reg_names[] =
 {
   "pcr", "pic", "dcr", "gsr", "set_softint", "clear_softint",
-  "softint", "tick_cmpr", "sys_tick", "sys_tick_cmpr"
+  "softint", "tick_cmpr", "stick", "stick_cmpr"
 };
 
 /* Macros used to extract instruction fields.  Not all fields have
@@ -551,15 +550,13 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 	      /* Can't do simple format if source and dest are different.  */
 	      continue;
 
-	  (*info->fprintf_func) (stream, "%s", opcode->name);
+	  (*info->fprintf_func) (stream, opcode->name);
 
 	  {
 	    const char *s;
 
-#if 0
 	    if (opcode->args[0] != ',')
 	      (*info->fprintf_func) (stream, " ");
-#endif
 
 	    for (s = opcode->args; *s != '\0'; ++s)
 	      {
@@ -605,7 +602,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    (*info->fprintf_func) (stream, "0");
 		    break;
 
- #define	reg(n)	(*info->fprintf_func) (stream, "%%%s", reg_names[n])
+#define	reg(n)	(*info->fprintf_func) (stream, "%%%s", reg_names[n])
 		  case '1':
 		  case 'r':
 		    reg (X_RS1 (insn));
@@ -1000,8 +997,8 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 
 	  if (opcode->flags & (F_UNBR|F_CONDBR|F_JSR))
 	    {
-		/* FIXME -- check is_annulled flag.  */
-	        if (is_annulled) { /* do nothing */ }
+	      /* FIXME -- check is_annulled flag.  */
+	      (void) is_annulled;
 	      if (opcode->flags & F_UNBR)
 		info->insn_type = dis_branch;
 	      if (opcode->flags & F_CONDBR)
