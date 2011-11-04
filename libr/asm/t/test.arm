@@ -1,0 +1,31 @@
+#!/bin/sh
+
+AS=arm
+
+foo() {
+	A=$(rasm2 -a arm -b ${BITS} "$1")
+	B=$(rasm2 -d -a arm -b ${BITS} "$A" | cut -d ';' -f 1 | sed -e 's,\ *$,,g')
+	if [ "${1}" = "${B}" ]; then
+		printf "OK       %s  %20s %20s\n" "$A" "$B" "$1"
+	else
+		printf "FAILED   %s  %20s %20s\n" "$A" "$B" "$1"
+	fi
+}
+
+if [ -n "$1" ]; then
+	foo "$1"
+	exit 0
+fi
+
+
+BITS=32
+# arm32
+foo 'add r2, r2, r1'
+foo 'mov r2, #33'
+foo 'sub r1, r3, r3'
+foo 'push {r1, r2}'
+foo 'bx r3'
+foo 'blx r4'
+
+# thumb
+BITS=16
