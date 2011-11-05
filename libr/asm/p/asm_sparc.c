@@ -8,8 +8,8 @@
 #include <r_util.h>
 #include <r_asm.h>
 #include "dis-asm.h"
+#include <mybfd.h>
 
-static int sparc_mode = 0;
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
 static unsigned char bytes[4];
@@ -56,7 +56,6 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len)
 
 	/* prepare disassembler */
 	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
-	sparc_mode = a->bits;
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &sparc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -65,6 +64,9 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len)
 	disasm_obj.endian = !a->big_endian;
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
+	disasm_obj.mach = ((a->bits == 64)
+			   ? bfd_mach_sparc_v9b
+			   : 0);
 
 	op->buf_asm[0]='\0';
 	op->inst_len = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
@@ -77,7 +79,7 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len)
 RAsmPlugin r_asm_plugin_sparc = {
 	.name = "sparc",
 	.arch = "sparc",
-	.bits = (int[]){ 32, 0 },
+	.bits = (int[]){ 32, 64 },
 	.desc = "SPARC disassembly plugin",
 	.init = NULL,
 	.fini = NULL,
