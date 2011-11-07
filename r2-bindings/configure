@@ -56,8 +56,8 @@ if [ -e "${VPATH}/config.guess" ]; then
 	sh ${VPATH}/config.guess
 	return
 fi
-CPU="`uname -m|sed -e 's, ,,g'`"
-OS="`uname -s|tr '[A-Z]' '[a-z]'`"
+CPU="`uname -m|sed -e 's, ,,g'|cut -d - -f 1`"
+OS="`uname -s|tr A-Z a-z`"
 GNU="`uname --help 2>&1 | grep gnu`"
 [ "${GNU}" ] && OS="${OS}-gnu"
 [ "${CPU}" = ppc ] && CPU="powerpc"
@@ -139,15 +139,12 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --enable-devel         Enable development mode (use valabind and swig) 
   --with-cc              Define C compiler to use (gcc by default)  (USERCC=gcc)
   --with-cxx             Define C++ compiler to use (g++ by default)  (USERCXX=g++)
-  --with-ostype          Choose OS type (gnulinux windows darwin)  (USEROSTYPE=auto)
-"
-printf "
-Some influential environment variables:
+  --with-ostype          Choose OS type (gnulinux windows darwin)  (USEROSTYPE=auto)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
@@ -156,10 +153,8 @@ Some influential environment variables:
               headers in a nonstandard directory <include dir>
   CPP         C preprocessor
   CXX         C++ compiler command
-  CXXFLAGS    C++ compiler flags
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CXXFLAGS    C++ compiler flags\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
