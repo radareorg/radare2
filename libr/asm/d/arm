@@ -1,0 +1,13 @@
+b=branches the program counter to dst (pc aka r15)
+bl=branches and link, similar to call in i386, set lr(r14) = pc, changes pc (r15) )
+bx=branches and exchanges cpu mode to 16 bits (thumb mode)
+bxj=branches and exchanges cpu mode to Jazzele (jumps to a bytecode vector)
+beq=branches if equal (see 'b')
+bne=branches if not equal (see 'b')
+cmp=compares two registers
+str=stores (TODO)
+ldr=load to register(TODO)
+ldf=armfpu: load float value pointed by reg+(offset): ldf f0, [r0,#off]
+stf=armfpu: store float value pointed by reg+(offset): ldf [r0,#off]
+flt=armfpu: convert int to float: flt 
+wfs=armfpu: write fp status register. wfs r0

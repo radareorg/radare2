@@ -1,0 +1,23 @@
+# PPC
+# r0 = call arg, return value
+# r1 = stack pointer
+# r2 = rtoc (register table of contents) (like a5 68k reg, not used, global to func (if i dont call a func))
+# r3-r10 - general purpose registers
+bgt=Branch if greater or equal (PPC: bgt CRn, addr, ARM: bgt addr)
+sc=Syscall - see svc for supervisor call on powerpc
+dbnz=Decrement counter and branch if not zero
+dbz=Decrement counter and branch if zero
+li=powerpc: load integer into register; li r3, 1
+mtctr=powerpc: preload count register (???)
+addic=powerpc: add integer to register with carry: addic r3, r3, 1
+lwz=load word and zero (32b); lwzu   r3,4(r4)      ; r4 = r4 + 4 ; r3 = *(r4)
+lhz=load half word and zero (16b)
+lbz=load byte and zero (8b)
+lbzu=powerpc: lbzu     r8,1(r4)     ;  r8 = *(++p2)
+cmpw=compare word; cmpw CR0, r0, r1 (signed)
+cmplw=compare logical word; cmplwi CR0, r0, 33(unsigned)
+cmplwi=compare logical word against int; cmplwi CR0, r0, 33(unsigned)
+bctr=Branch to counter register
+bcctr=Conditional branch to counter register
+svc=The svc instruction generates a supervisor call interrupt and places
+

@@ -7,6 +7,11 @@
 
 ====[[ 0.9 ]]====
 
+* Add flags to end of section? section_end..text ... 
+* Refactor get_sym() and so on...
+* Add libr/asm/d API support
+  - and a command.. dunny which one
+* Add rasc2 api
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"
   - dca sym.main imp.printf
