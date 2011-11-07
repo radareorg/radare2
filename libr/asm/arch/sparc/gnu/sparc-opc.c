@@ -1,6 +1,6 @@
 /* Table of opcodes for the sparc.
    Copyright 1989, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2002, 2004, 2005, 2007
+   2000, 2002, 2004, 2005, 2006, 2007, 2008
    Free Software Foundation, Inc.
 
    This file is part of the GNU opcodes library.
@@ -26,7 +26,6 @@
    slower, but would mess up some macros a bit.  xoxorich. */
 
 #include <stdio.h>
-#include <string.h>
 #include "sysdep.h"
 #include "opcode/sparc.h"
 
@@ -1864,7 +1863,7 @@ lookup_value (const arg *table, int value)
   return NULL;
 }
 
-/* Plugin ASI's.  */
+/* Handle ASI's.  */
 
 static arg asi_table[] =
 {
@@ -1900,9 +1899,134 @@ static arg asi_table[] =
   { 0x89, "#ASI_SECONDARY_LITTLE" },
   { 0x8a, "#ASI_PRIMARY_NOFAULT_LITTLE" },
   { 0x8b, "#ASI_SECONDARY_NOFAULT_LITTLE" },
-  /* These are UltraSPARC extensions.  */
-  /* FIXME: There are dozens of them.  Not sure we want them all.
-     Most are for kernel building but some are for vis type stuff.  */
+  /* These are UltraSPARC and Niagara extensions.  */
+  { 0x14, "#ASI_PHYS_USE_EC" },
+  { 0x15, "#ASI_PHYS_BYPASS_EC_E" },
+  { 0x16, "#ASI_BLK_AIUP_4V" },
+  { 0x17, "#ASI_BLK_AIUS_4V" },
+  { 0x1c, "#ASI_PHYS_USE_EC_L" },
+  { 0x1d, "#ASI_PHYS_BYPASS_EC_E_L" },
+  { 0x1e, "#ASI_BLK_AIUP_L_4V" },
+  { 0x1f, "#ASI_BLK_AIUS_L_4V" },
+  { 0x20, "#ASI_SCRATCHPAD" },
+  { 0x21, "#ASI_MMU" },
+  { 0x23, "#ASI_BLK_INIT_QUAD_LDD_AIUS" },
+  { 0x24, "#ASI_NUCLEUS_QUAD_LDD" },
+  { 0x25, "#ASI_QUEUE" },
+  { 0x26, "#ASI_QUAD_LDD_PHYS_4V" },
+  { 0x2c, "#ASI_NUCLEUS_QUAD_LDD_L" },
+  { 0x30, "#ASI_PCACHE_DATA_STATUS" },
+  { 0x31, "#ASI_PCACHE_DATA" },
+  { 0x32, "#ASI_PCACHE_TAG" },
+  { 0x33, "#ASI_PCACHE_SNOOP_TAG" },
+  { 0x34, "#ASI_QUAD_LDD_PHYS" },
+  { 0x38, "#ASI_WCACHE_VALID_BITS" },
+  { 0x39, "#ASI_WCACHE_DATA" },
+  { 0x3a, "#ASI_WCACHE_TAG" },
+  { 0x3b, "#ASI_WCACHE_SNOOP_TAG" },
+  { 0x3c, "#ASI_QUAD_LDD_PHYS_L" },
+  { 0x40, "#ASI_SRAM_FAST_INIT" },
+  { 0x41, "#ASI_CORE_AVAILABLE" },
+  { 0x41, "#ASI_CORE_ENABLE_STAT" },
+  { 0x41, "#ASI_CORE_ENABLE" },
+  { 0x41, "#ASI_XIR_STEERING" },
+  { 0x41, "#ASI_CORE_RUNNING_RW" },
+  { 0x41, "#ASI_CORE_RUNNING_W1S" },
+  { 0x41, "#ASI_CORE_RUNNING_W1C" },
+  { 0x41, "#ASI_CORE_RUNNING_STAT" },
+  { 0x41, "#ASI_CMT_ERROR_STEERING" },
+  { 0x41, "#ASI_DCACHE_INVALIDATE" },
+  { 0x41, "#ASI_DCACHE_UTAG" },
+  { 0x41, "#ASI_DCACHE_SNOOP_TAG" },
+  { 0x42, "#ASI_DCACHE_INVALIDATE" },
+  { 0x43, "#ASI_DCACHE_UTAG" },
+  { 0x44, "#ASI_DCACHE_SNOOP_TAG" },
+  { 0x45, "#ASI_LSU_CONTROL_REG" },
+  { 0x45, "#ASI_DCU_CONTROL_REG" },
+  { 0x46, "#ASI_DCACHE_DATA" },
+  { 0x47, "#ASI_DCACHE_TAG" },
+  { 0x48, "#ASI_INTR_DISPATCH_STAT" },
+  { 0x49, "#ASI_INTR_RECEIVE" },
+  { 0x4a, "#ASI_UPA_CONFIG" },
+  { 0x4a, "#ASI_JBUS_CONFIG" },
+  { 0x4a, "#ASI_SAFARI_CONFIG" },
+  { 0x4a, "#ASI_SAFARI_ADDRESS" },
+  { 0x4b, "#ASI_ESTATE_ERROR_EN" },
+  { 0x4c, "#ASI_AFSR" },
+  { 0x4d, "#ASI_AFAR" },
+  { 0x4e, "#ASI_EC_TAG_DATA" },
+  { 0x50, "#ASI_IMMU" },
+  { 0x51, "#ASI_IMMU_TSB_8KB_PTR" },
+  { 0x52, "#ASI_IMMU_TSB_16KB_PTR" },
+  { 0x54, "#ASI_ITLB_DATA_IN" },
+  { 0x55, "#ASI_ITLB_DATA_ACCESS" },
+  { 0x56, "#ASI_ITLB_TAG_READ" },
+  { 0x57, "#ASI_IMMU_DEMAP" },
+  { 0x58, "#ASI_DMMU" },
+  { 0x59, "#ASI_DMMU_TSB_8KB_PTR" },
+  { 0x5a, "#ASI_DMMU_TSB_64KB_PTR" },
+  { 0x5b, "#ASI_DMMU_TSB_DIRECT_PTR" },
+  { 0x5c, "#ASI_DTLB_DATA_IN" },
+  { 0x5d, "#ASI_DTLB_DATA_ACCESS" },
+  { 0x5e, "#ASI_DTLB_TAG_READ" },
+  { 0x5f, "#ASI_DMMU_DEMAP" },
+  { 0x60, "#ASI_IIU_INST_TRAP" },
+  { 0x63, "#ASI_INTR_ID" },
+  { 0x63, "#ASI_CORE_ID" },
+  { 0x63, "#ASI_CESR_ID" },
+  { 0x66, "#ASI_IC_INSTR" },
+  { 0x67, "#ASI_IC_TAG" },
+  { 0x68, "#ASI_IC_STAG" },
+  { 0x6e, "#ASI_IC_PRE_DECODE" },
+  { 0x6f, "#ASI_IC_NEXT_FIELD" },
+  { 0x6f, "#ASI_BRPRED_ARRAY" },
+  { 0x70, "#ASI_BLK_AIUP" },
+  { 0x71, "#ASI_BLK_AIUS" },
+  { 0x72, "#ASI_MCU_CTRL_REG" },
+  { 0x74, "#ASI_EC_DATA" },
+  { 0x75, "#ASI_EC_CTRL" },
+  { 0x76, "#ASI_EC_W" },
+  { 0x77, "#ASI_UDB_ERROR_W" },
+  { 0x77, "#ASI_UDB_CONTROL_W" },
+  { 0x77, "#ASI_INTR_W" },
+  { 0x77, "#ASI_INTR_DATAN_W" },
+  { 0x77, "#ASI_INTR_DISPATCH_W" },
+  { 0x78, "#ASI_BLK_AIUPL" },
+  { 0x79, "#ASI_BLK_AIUSL" },
+  { 0x7e, "#ASI_EC_R" },
+  { 0x7f, "#ASI_UDBH_ERROR_R" },
+  { 0x7f, "#ASI_UDBL_ERROR_R" },
+  { 0x7f, "#ASI_UDBH_CONTROL_R" },
+  { 0x7f, "#ASI_UDBL_CONTROL_R" },
+  { 0x7f, "#ASI_INTR_R" },
+  { 0x7f, "#ASI_INTR_DATAN_R" },
+  { 0xc0, "#ASI_PST8_P" },
+  { 0xc1, "#ASI_PST8_S" },
+  { 0xc2, "#ASI_PST16_P" },
+  { 0xc3, "#ASI_PST16_S" },
+  { 0xc4, "#ASI_PST32_P" },
+  { 0xc5, "#ASI_PST32_S" },
+  { 0xc8, "#ASI_PST8_PL" },
+  { 0xc9, "#ASI_PST8_SL" },
+  { 0xca, "#ASI_PST16_PL" },
+  { 0xcb, "#ASI_PST16_SL" },
+  { 0xcc, "#ASI_PST32_PL" },
+  { 0xcd, "#ASI_PST32_SL" },
+  { 0xd0, "#ASI_FL8_P" },
+  { 0xd1, "#ASI_FL8_S" },
+  { 0xd2, "#ASI_FL16_P" },
+  { 0xd3, "#ASI_FL16_S" },
+  { 0xd8, "#ASI_FL8_PL" },
+  { 0xd9, "#ASI_FL8_SL" },
+  { 0xda, "#ASI_FL16_PL" },
+  { 0xdb, "#ASI_FL16_SL" },
+  { 0xe0, "#ASI_BLK_COMMIT_P", },
+  { 0xe1, "#ASI_BLK_COMMIT_S", },
+  { 0xe2, "#ASI_BLK_INIT_QUAD_LDD_P" },
+  { 0xf0, "#ASI_BLK_P", },
+  { 0xf1, "#ASI_BLK_S", },
+  { 0xf8, "#ASI_BLK_PL", },
+  { 0xf9, "#ASI_BLK_SL", },
   { 0, 0 }
 };
 
@@ -1922,7 +2046,7 @@ sparc_decode_asi (int value)
   return lookup_value (asi_table, value);
 }
 
-/* Plugin membar masks.  */
+/* Handle membar masks.  */
 
 static arg membar_table[] =
 {
@@ -1952,7 +2076,7 @@ sparc_decode_membar (int value)
   return lookup_value (membar_table, value);
 }
 
-/* Plugin prefetch args.  */
+/* Handle prefetch args.  */
 
 static arg prefetch_table[] =
 {
@@ -1962,6 +2086,11 @@ static arg prefetch_table[] =
   { 3, "#one_write" },
   { 4, "#page" },
   { 16, "#invalidate" },
+  { 17, "#unified", },
+  { 20, "#n_reads_strong", },
+  { 21, "#one_read_strong", },
+  { 22, "#n_writes_strong", },
+  { 23, "#one_write_strong", },
   { 0, 0 }
 };
 
@@ -1981,7 +2110,7 @@ sparc_decode_prefetch (int value)
   return lookup_value (prefetch_table, value);
 }
 
-/* Plugin sparclet coprocessor registers.  */
+/* Handle sparclet coprocessor registers.  */
 
 static arg sparclet_cpreg_table[] =
 {

@@ -1,13 +1,13 @@
 /* Definitions for opcode table for the sparc.
    Copyright 1989, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 2000, 2002,
-   2003, 2005 Free Software Foundation, Inc.
+   2003, 2005, 2010 Free Software Foundation, Inc.
 
    This file is part of GAS, the GNU Assembler, GDB, the GNU debugger, and
    the GNU Binutils.
 
    GAS/GDB is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   the Free Software Foundation; either version 3, or (at your option)
    any later version.
 
    GAS/GDB is distributed in the hope that it will be useful,
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with GAS or GDB; see the file COPYING.	If not, write to
+   along with GAS or GDB; see the file COPYING3.  If not, write to
    the Free Software Foundation, 51 Franklin Street - Fifth Floor,
    Boston, MA 02110-1301, USA.  */
 

@@ -1045,8 +1045,11 @@ static RList *r_debug_native_pids(int pid) {
 			fd = open (cmdline, O_RDONLY);
 			if (fd == -1)
 				continue;
-			read (fd, cmdline, 1024);
-			cmdline[1023] = '\0';
+			if (read (fd, cmdline, sizeof (cmdline))==-1) {
+				close (fd);
+				continue;
+			}
+			cmdline[sizeof (cmdline)-1] = '\0';
 			ptr = strstr (cmdline, "PPid: ");
 			if (ptr) {
 				int ppid = atoi (ptr+6);
@@ -1309,7 +1312,8 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __KFBSD__
-		return (0 == ptrace (PT_SETDBREGS, pid, (caddr_t)buf, sizeof (struct dbreg)));
+		return (0 == ptrace (PT_SETDBREGS, dbg->pid,
+			(caddr_t)buf, sizeof (struct dbreg)));
 #elif __linux__
 // XXX: this android check is only for arm
 #ifndef __ANDROID__
@@ -1869,9 +1873,9 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 	case AF_LOCAL:
 		sun = (struct sockaddr_un *)ss;
 		if (strlen (sun->sun_path) == 0)
-			strlcpy(buffer, "-", buflen);
+			strlcpy (buffer, "-", buflen);
 		else
-			strlcpy(buffer, sun->sun_path, buflen);
+			strlcpy (buffer, sun->sun_path, buflen);
 		break;
 
 	case AF_INET:
@@ -1882,16 +1886,16 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 
 	case AF_INET6:
 		sin6 = (struct sockaddr_in6 *)ss;
-		if (inet_ntop(AF_INET6, &sin6->sin6_addr, buffer2,
-		    sizeof(buffer2)) != NULL)
-			snprintf(buffer, buflen, "%s.%d", buffer2,
-			    ntohs(sin6->sin6_port));
+		if (inet_ntop (AF_INET6, &sin6->sin6_addr, buffer2,
+		    sizeof (buffer2)) != NULL)
+			snprintf (buffer, buflen, "%s.%d", buffer2,
+			    ntohs (sin6->sin6_port));
 		else
-			strlcpy(buffer, "-", sizeof(buffer));
+			strlcpy (buffer, "-", sizeof(buffer));
 		break;
 
 	default:
-		strlcpy(buffer, "", buflen);
+		strlcpy (buffer, "", buflen);
 		break;
 	}
 }
