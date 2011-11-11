@@ -37,13 +37,20 @@ w32:
 	cd python && ${MAKE} w32
 
 DSTNAME=radare2-bindings-w32-$(VERSION)
-DST=../$(DSTNAME)/Python27/Lib/r2
+DST=../$(DSTNAME)/Python27/Lib/site-packages/r2
+SJLJ=/usr/i486-mingw32/bin/libgcc_s_sjlj-1.dll
+STDC=/usr/i486-mingw32/bin/libstdc++-6.dll
 
 w32dist:
-	rm -rf ${DST}/*
+	rm -rf ../${DSTNAME}
 	mkdir -p ${DST}
 	cp -f python/*.dll ${DST}
 	cp -f python/r_*.py ${DST}
+	:> ${DST}/__init__.py
+	cd ${DST} ; for a in *.dll ; do mv $$a `echo $$a | sed -e s,dll,pyd,g` ; done
+	# Copy missing libraries
+	-cp -f ${SJLJ} ${DST}
+	-cp -f ${STDC} ${DST}
 	cd .. ; zip -r $(DSTNAME).zip $(DSTNAME)
 
 .PHONY: w32dist dist w32 check check-w32 vdoc vdoc_pkg
