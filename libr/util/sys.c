@@ -208,7 +208,7 @@ R_API int r_sys_chdir(const char *s) {
 
 #if __UNIX__
 R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
-	char *output, buffer[1024];
+	char buffer[1024], *output = NULL;
 	char *inputptr = (char *)input;
 	int pid, bytes = 0, status;
 	int sh_in[2], sh_out[2], sh_err[2];
@@ -237,14 +237,13 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 		dup2 (sh_out[1], 1); close (sh_out[0]); close (sh_out[1]);
 		if (sterr) dup2 (sh_err[1], 2); else close (2);
 		close (sh_err[0]); close (sh_err[1]); 
-		execl ("/bin/sh", "sh", "-c", cmd, (char*)NULL);
-		exit (1);
+		exit (execl ("/bin/sh", "sh", "-c", cmd, (char*)NULL));
 	default:
-		output = calloc (1, 1024); // TODO: use malloc
+		output = strdup ("");
 		if (!output)
 			return NULL;
 		if (sterr) {
-			*sterr = calloc (1, 1024);
+			*sterr = strdup ("");
 			if (!*sterr) {
 				free (output);
 				return NULL;
@@ -293,9 +292,11 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 			return (NULL);
 		}
 
-		if (*output)
-			return output;
-		free (output);
+		if (output) {
+			if (*output)
+				return output;
+			free (output);
+		}
 	}
 	return NULL;
 }

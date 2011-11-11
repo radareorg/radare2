@@ -354,9 +354,9 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	p = hash;
 	for (i=0; i<R_HASH_SIZE_MD5; i++) {
 		sprintf (p, "%02x", md5[i]);
-		p+=2;
+		p += 2;
 	}
-	*p=0;
+	*p = 0;
 	r_config_set (r->config, "file.md5", hash);
 	r_hash_free (ctx);
 	ctx = r_hash_new (R_TRUE, R_HASH_SHA1);
@@ -369,5 +369,6 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	*p=0;
 	r_config_set (r->config, "file.sha1", hash);
 	r_hash_free (ctx);
+	free (buf);
 	return R_TRUE;
 }

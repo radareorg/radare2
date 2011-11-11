@@ -154,9 +154,10 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 
 	if (!str||!reg)
 		return R_FALSE;
-	// XXX double free // free (reg->reg_profile_str);
+	// XXX double free 
+	free (reg->reg_profile_str);
 	reg->reg_profile_str = strdup (str);
-	*buf = '\0';
+	memset (buf, 0, sizeof (buf));
 	/* format file is: 'type name size offset packedsize' */
 	r_reg_free_internal (reg);
 	item = r_reg_item_new ();
@@ -212,7 +213,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	r_reg_item_free (item);
 	r_reg_fit_arena (reg);
 
-	return *str?ret:R_TRUE;
+	return *str? ret: R_TRUE;
 }
 
 R_API int r_reg_set_profile(RReg *reg, const char *profile) {

@@ -223,7 +223,7 @@ static ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, 
 }
 
 static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
-	Elf_(Rel) *rel;
+	Elf_(Rel) *rel = NULL;
 	Elf_(Addr) plt_sym_addr;
 	ut64 got_addr, got_offset;
 	int i, j, k, tsize, len;
@@ -257,6 +257,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 					1);
 			if (len == -1) {
 				eprintf ("Error: read (rel)\n");
+				free (rel);
 				return -1;
 			}
 		}
@@ -267,11 +268,13 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 					eprintf ("Error: read (got)\n");
 					return -1;
 				}
+				free (rel);
 				return (ut64)(plt_sym_addr - 6);
 			}
 		}
 		break;
 	}
+	free (rel);
 	return -1;
 }
 
@@ -859,9 +862,9 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
 			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset, (ut8*)sym,
 #if R_BIN_ELF64
-					bin->endian?"I2cS2L":"i2cs2l",
+					bin->endian? "I2cS2L": "i2cs2l",
 #else
-					bin->endian?"3I2cS":"3i2cs",
+					bin->endian? "3I2cS": "3i2cs",
 #endif
 					nsym) == -1) {
 				eprintf ("Error: read (sym)\n");

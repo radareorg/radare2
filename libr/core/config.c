@@ -390,6 +390,7 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->printf = r_cons_printf;
 
 	r_config_set (cfg, "dir.source", "");
+	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
 	r_config_desc (cfg, "dir.plugins", "Path to plugin files to be loaded at startup");
 	/* anal */

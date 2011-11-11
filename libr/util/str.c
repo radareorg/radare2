@@ -507,6 +507,7 @@ R_API char *r_str_concatch(char *x, char y) {
 	return r_str_concat (x,b);
 }
 
+// XXX: wtf must deprecate
 R_API void *r_str_free(void *ptr) {
 	free (ptr);
 	return NULL;

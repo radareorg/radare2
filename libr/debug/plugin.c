@@ -43,8 +43,7 @@ R_API int r_debug_use(RDebug *dbg, const char *str) {
 		if (p == NULL) {
 			eprintf ("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->h->name);
 		} else {
-			free (dbg->reg->reg_profile_str);
-			dbg->reg->reg_profile_str = p;
+			r_reg_set_profile_string (dbg->reg, p);
 			if (dbg->anal)
 				dbg->anal->reg = dbg->reg;
 			if (dbg->h->init)

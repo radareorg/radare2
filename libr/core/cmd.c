@@ -1577,6 +1577,7 @@ static int cmd_info(void *data, const char *input) {
 			out = r_sys_cmd_str (buf, NULL, 0);
 			if (out && *out)
 				r_cons_strcat (out);
+			free (out);
 		}
 		break;
 	case 's':
@@ -1590,6 +1591,7 @@ static int cmd_info(void *data, const char *input) {
 			out = r_sys_cmd_str (buf, NULL, 0);
 			if (out && *out)
 				r_cons_strcat (out);
+			free (out);
 		}
 		break;
 	case 'a':
@@ -1676,8 +1678,9 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 			return;
 		}
 	} else {
-		if (r_magic_load (ck, R_MAGIC_PATH) == -1)
-			eprintf ("failed r_magic_load ("R_MAGIC_PATH") %s\n", r_magic_error (ck));
+		const char *magicpath = r_config_get (core->config, "dir.magic");
+		if (r_magic_load (ck, magicpath) == -1)
+			eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
 	}
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	str = r_magic_buffer (ck, core->block, core->blocksize);
@@ -1914,7 +1917,7 @@ return 0;
 				"   foo@0x40   # use 'foo' magic file on address 0x40\n"
 				"   @0x40      # use current magic file on address 0x40\n"
 				"   \\n         # append newline\n"
-				" R_MAGIC_PATH = "R_MAGIC_PATH"\n"
+				" e dir.magic  # defaults to "R_MAGIC_PATH"\n"
 				);
 		} else r_core_magic (core, input+1, R_TRUE);
 		break;
@@ -4746,7 +4749,7 @@ R_API int r_core_cmd_command(RCore *core, const char *command) {
 		}
 		rcmd += strlen (rcmd)+1;
 	}
-	r_str_free(buf);
+	free (buf);
 	return 0;
 }
 
@@ -5292,6 +5295,7 @@ R_API int r_core_cmd0(void *user, const char *cmd) {
 
 /* return: pointer to a buffer with the output of the command */
 R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
+	const char *static_str;
 	char *retstr = NULL;
 	r_cons_reset ();
 	if (r_core_cmd (core, cmd, 0) == -1) {
@@ -5299,7 +5303,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 		retstr = strdup ("");
 	} else {
 		r_cons_filter ();
-		const char *static_str = r_cons_get_buffer ();
+		static_str = r_cons_get_buffer ();
 		retstr = strdup (static_str? static_str: "");
 		r_cons_reset ();
 	}
