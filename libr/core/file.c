@@ -218,6 +218,9 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			snprintf (str, R_FLAG_NAME_SIZE, "section.%s", section->name);
 			r_flag_set (r->flags, str, va?baddr+section->rva:section->offset,
 					section->size, 0);
+			snprintf (str, R_FLAG_NAME_SIZE, "section_end.%s", section->name);
+			r_flag_set (r->flags, str, section->size+(va?baddr+section->rva:section->offset),
+					0, 0);
 			r_io_section_add (r->io, section->offset, baddr+section->rva,
 					section->size, section->vsize, section->srwx, section->name);
 			snprintf (str, R_FLAG_NAME_SIZE, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"

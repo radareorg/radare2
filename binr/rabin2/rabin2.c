@@ -411,6 +411,8 @@ static int rabin_show_sections(ut64 at) {
 					section->size, section->vsize, section->name, (int)section->srwx);
 				printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 					section->name, section->size, va?baddr+section->rva:section->offset);
+				printf ("f section_end.%s %"PFMT64d" 0x%08"PFMT64x"\n",
+					section->name, 0, section->size+(va?baddr+section->rva:section->offset));
 				printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 					"rwx=%c%c%c%c %s @ 0x%08"PFMT64x"\n",
 					i, baddr+section->rva, section->offset, section->size, section->vsize,

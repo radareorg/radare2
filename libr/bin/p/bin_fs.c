@@ -60,6 +60,10 @@ typedef struct r_bin_fs_type_t {
 
 static RBinFSType fstypes[2] = {
 	{ "hfsplus", 0x400, "H+", 2, 0, 0, 0x400 },
+	{ "fat", 0x36, "FAT12", 5, 0, 0, 0 },
+	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },
+	{ "ext2", 0x438, "\x53\xef", 2, 0, 0, 0 },
+	{ "btrfs", 0x10040, "_BHRfS_M", 8, 0, 0, 0x0 },
 	{ NULL }
 };
 
@@ -76,7 +80,7 @@ static const char *fsname(RBinArch *arch) {
 			len = R_MIN (f->bytelen, sizeof (buf));
 			r_buf_read_at (arch->buf, f->byteoff, buf, len);
 			for (j=0; j<f->bytelen; j++) {
-				if (buf[j] != f->byte) {	
+				if (buf[j] != f->byte) {
 					ret = R_FALSE;
 					break;
 				}
