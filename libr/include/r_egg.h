@@ -8,11 +8,22 @@
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
 #define R_EGG_INCDIR_PATH R2_PREFIX"/lib/radare2/"R2_VERSION"/egg"
 
+//TODO: add shellcode encoder
+// rename to REggShellcode
+typedef struct r_egg_plugin {
+	const char *name;
+	const char *desc;
+	const ut8 *bytes;
+	int length;
+	RBuffer* (*build) (void *egg);
+} REggPlugin;
+
 typedef struct r_egg_t {
 	RBuffer *src;
 	RBuffer *buf;
 	RBuffer *bin;
 	RList *list;
+	RList *shellcodes;
 	RAsm *rasm;
 	RSyscall *syscall;
 	struct r_egg_emit_t *emit;
@@ -90,7 +101,11 @@ R_API void r_egg_load(REgg *egg, const char *code, int format);
 R_API void r_egg_syscall(REgg *egg, const char *arg, ...);
 R_API void r_egg_alloc(REgg *egg, int n);
 R_API void r_egg_label(REgg *egg, const char *name);
-R_API void r_egg_raw(REgg *egg, const ut8 *b, int len);
+R_API int r_egg_raw(REgg *egg, const ut8 *b, int len);
+R_API void r_egg_shellcode(REgg *egg, const char *name);
+#define r_egg_get_shellcodes(x) x->shellcodes
+R_API void r_egg_option_set (REgg *egg, const char *k, const char *v);
+R_API const char *r_egg_option_get (REgg *egg, const char *k);
 R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v);
 R_API void r_egg_printf(REgg *egg, const char *fmt, ...);
 R_API int r_egg_compile(REgg *egg);

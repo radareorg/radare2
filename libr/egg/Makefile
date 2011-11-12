@@ -6,4 +6,6 @@ OBJ+=emit_arm.o
 OBJ+=emit_x64.o
 OBJ+=emit_trace.o
 
+OBJ+=p/x86_osx_binsh.o
+
 include ../rules.mk

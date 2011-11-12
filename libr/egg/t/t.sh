@@ -1,4 +1,7 @@
 # test suite tool for r_egg #
+DEBUG=
+#DEBUG=gdb --args
+#DEBUG=valgrind
 case "$1" in
 -h)
 	echo "Usage: $0 [-opt]"
@@ -32,7 +35,7 @@ case "$1" in
 	cp t fail-t-$0
 	;;
 *)
-	ragg2 -FO t.r
+	eval ${DEBUG} ragg2 -FO t.r
 	rarun2 '' program=./t timeout=1 > t.o 
 	if [ $? = "${EXIT}" -a "`cat t.o`" = "${OUTPUT}" ]; then
 		out=SUCCESS

@@ -83,21 +83,22 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 }
 
 R_API int r_egg_include(REgg *egg, const char *file, int format) {
-	char *foo = r_file_slurp (file, NULL);
+	int sz;
+	const ut8 *foo = (const ut8*)r_file_slurp (file, &sz);
 	if (!foo)
 		return 0;
+// XXX: format breaks compiler layers
 	switch (format) {
 	case 'r': // raw
-		// TODO: append ("\x102030202303203202", n);
-		// TODO: r_buf_append_bytes (egg->buf, (const ut8*)foo, strlen (foo));
+		r_egg_raw (egg, foo, sz);
 		break;
 	case 'a': // assembly
-		r_buf_append_bytes (egg->buf, (const ut8*)foo, strlen (foo));
+		r_buf_append_bytes (egg->buf, foo, sz);
 		break;
 	default:
-		r_buf_append_bytes (egg->src, (const ut8*)foo, strlen (foo));
+		r_buf_append_bytes (egg->src, foo, sz);
 	}
-	free (foo);
+	free ((void *)foo);
 	return 1;
 }
 
@@ -134,7 +135,14 @@ R_API void r_egg_math (REgg *egg) {//, char eq, const char *vs, char type, const
 	//e->mathop (egg, op, type, eq, p);
 }
 
-R_API void r_egg_raw(REgg *egg, const ut8 *b, int len) {
+R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
+	char *out;
+	int outlen = (len*2)+1;
+	out = malloc (outlen);
+	if (!out) return R_FALSE;
+	r_hex_bin2str (b, len, out);
+	r_buf_append_bytes (egg->buf, (const ut8*)out, outlen);
+	return R_TRUE;
 }
 
 // r_egg_block (egg, FRAME | IF | ELSE | ENDIF | FOR | WHILE, sz)
@@ -232,3 +240,34 @@ R_API int r_egg_run(REgg *egg) {
 	free (ptr);
 	return ret;
 }
+
+R_API void r_egg_option(REgg *egg, const char *k, const char *v) {
+	// set option for shellcode
+}
+
+// functions that manipulate the compile() buffer
+//-----------------------------------------------
+#if 0
+ - fill traps
+ - fill nops
+ - fill char
+ - fill sequence 01 02 03..
+ - fill printable seq
+
+- encoder
+#endif
+
+R_API void r_egg_option_set(REgg *egg, const char *key, const char *val) {
+	// TODO: use hashtable here k=v
+	// TOOD: use rconfig here?
+}
+
+R_API const char *r_egg_option_get(REgg *egg, const char *key) {
+	// TODO: use hashtable here k=v
+	return NULL;
+}
+
+R_API void r_egg_shellcode(REgg *egg, const char *name) {
+	// TODO embed in r_egg
+}
+
