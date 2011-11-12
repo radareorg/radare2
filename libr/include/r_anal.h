@@ -411,7 +411,7 @@ R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API RAnalFcn *r_anal_get_fcn_at(RAnal *anal, ut64 addr);
-R_API RList *r_anal_get_fcns(RAnal *anal);
+#define r_anal_get_fcns(x) x->fcns
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_new();

@@ -158,10 +158,6 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 	return ret;
 }
 
-R_API RList *r_anal_get_fcns(RAnal *anal) {
-	return anal->fcns;
-}
-
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
 	RAnalFcn *fcni;

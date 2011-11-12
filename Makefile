@@ -130,7 +130,20 @@ deinstall uninstall:
 	@echo
 
 purge:
-	rm -f ${DESTDIR}/${BINDIR}/r*2
+	rm -f ${DESTDIR}/${BINDIR}/r2
+	rm -f ${DESTDIR}/${BINDIR}/radare2
+	rm -f ${DESTDIR}/${BINDIR}/rabin2
+	rm -f ${DESTDIR}/${BINDIR}/rafind2
+	rm -f ${DESTDIR}/${BINDIR}/ranal2
+	rm -f ${DESTDIR}/${BINDIR}/rax2
+	rm -f ${DESTDIR}/${BINDIR}/rsc2
+	rm -f ${DESTDIR}/${BINDIR}/rasm2
+	rm -f ${DESTDIR}/${BINDIR}/rarc2
+	rm -f ${DESTDIR}/${BINDIR}/rahash2
+	rm -f ${DESTDIR}/${BINDIR}/ragg2
+	rm -f ${DESTDIR}/${BINDIR}/rarun2
+	rm -f ${DESTDIR}/${BINDIR}/rasc2
+	rm -f ${DESTDIR}/${BINDIR}/radiff2
 	rm -f ${DESTDIR}/${LIBDIR}/libr_*
 	rm -rf ${DESTDIR}/${LIBDIR}/radare2
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr

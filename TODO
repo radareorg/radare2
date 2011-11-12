@@ -7,7 +7,7 @@
 
 ====[[ 0.9 ]]====
 
-02:47 < Jo-Con-El> Escupe porquería como \323 \177 y tal mezclado con el magic.
+* fix r_magic: Escupe porquería como \323 \177 y tal mezclado con el magic.
 * Refactor get_sym() and so on...
 
 * Add rasc2 api inside r_egg
@@ -27,7 +27,6 @@
 * implement 'ax' to get/set xrefs (better than afl <addr>)
 * shell encoder - get x86-64 one from twitter
   - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
-* cleanup magic database.. too slow for search :(
 * use centralized pubsub or memcached to sync data
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 * Add support for classes (useful for c++, dex, objc, ...)

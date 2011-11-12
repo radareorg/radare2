@@ -46,7 +46,6 @@ static RList* sections(RBinArch *arch) {
 	RBinSection *ptr = NULL;
 	ut64 textsize, datasize, symssize, spszsize, pcszsize;
 	int big_endian = arch->info->big_endian;
-	int rva = baddr (arch);
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -165,8 +164,21 @@ static RBinInfo* info(RBinArch *arch) {
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
-	eprintf ("TODO: p9create\n");
-	return NULL;
+	RBuffer *buf = r_buf_new ();
+#define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
+#define D(x) r_buf_append_ut32(buf,x)
+	D (I_MAGIC); // i386 only atm
+	D (codelen);
+	D (datalen);
+	D (4096); // bss
+	D (0); // syms
+	D (8*4); // entry
+	D (4096); // spsz
+	D (4096); // pcsz
+	B (code, codelen);
+	if (datalen>0)
+		B (data, datalen);
+	return buf;
 }
 
 struct r_bin_plugin_t r_bin_plugin_p9 = {
