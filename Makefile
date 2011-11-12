@@ -56,6 +56,8 @@ w32dist:
 	rm w32dist/plugin.dll
 	mkdir -p w32dist/radare2/${VERSION}/syscall
 	cp -f libr/syscall/d/*.sdb w32dist/radare2/${VERSION}/syscall
+	mkdir -p w32dist/radare2/${VERSION}/opcodes
+	cp -f libr/asm/d/*.sdb w32dist/radare2/${VERSION}/opcodes
 	mkdir -p w32dist/share/doc/radare2
 	cp -f doc/fortunes w32dist/share/doc/radare2
 	mv w32dist radare2-w32-${VERSION}
@@ -104,6 +106,7 @@ install-doc-symlink:
 install: install-doc install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/asm/d ; ${MAKE} install PREFIX=${PREFIX} LIBDIR=${LIBDIR} DESTDIR=${DESTDIR}
 	cd libr/syscall/d ; ${MAKE} install PREFIX=${PREFIX} LIBDIR=${LIBDIR} DESTDIR=${DESTDIR}
 	cd libr/magic ; ${MAKE} install-data LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 
@@ -114,6 +117,7 @@ install-pkgconfig-symlink:
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd libr/asm/d ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd libr/syscall/d ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd libr/magic ; ${MAKE} install-symlink-data LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 

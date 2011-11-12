@@ -96,7 +96,7 @@ enum
     R_ANAL_COND_UNKNOWN = -3,
   };
 
-static const int
+static int
 icc_to_r_cond(const int cond)
 {
   /* we treat signed and unsigned the same here */
@@ -135,7 +135,7 @@ icc_to_r_cond(const int cond)
     }
 }
 
-static const int
+static int
 fcc_to_r_cond(const int cond)
 {
   switch(cond)
@@ -303,7 +303,7 @@ enum
     OP33_INV16 = 0x3f,
   };    
 
-static const st64
+static st64
 get_immed_sgnext(const ut64 insn, const ut8 nbit)
 {
   const ut64 mask = ~((1 << (nbit + 1)) - 1);
@@ -311,7 +311,7 @@ get_immed_sgnext(const ut64 insn, const ut8 nbit)
 		 | (((insn & (1 << nbit)) >> nbit) * mask));
 }
 
-static RAnalValue * const
+static RAnalValue *
 value_fill_addr_pc_disp(const ut64 addr, const st64 disp)
 {
   RAnalValue *val = r_anal_value_new();
@@ -319,7 +319,7 @@ value_fill_addr_pc_disp(const ut64 addr, const st64 disp)
   return val;
 }
 
-static RAnalValue * const
+static RAnalValue *
 value_fill_addr_reg_regdelta(RAnal const * const anal,
 			     const int ireg, const int iregdelta)
 {
@@ -329,7 +329,7 @@ value_fill_addr_reg_regdelta(RAnal const * const anal,
   return val;
 }
 
-static RAnalValue * const
+static RAnalValue *
 value_fill_addr_reg_disp(RAnal const * const anal,
 			     const int ireg, const st64 disp)
 {

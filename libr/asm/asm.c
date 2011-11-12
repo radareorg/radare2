@@ -55,13 +55,49 @@ static inline int r_asm_pseudo_hex(struct r_asm_op_t *op, char *input) {
 	return len;
 }
 
-// TODO: add .short, .word, .dword, ...
+static inline int r_asm_pseudo_intN(RAsm *a, struct r_asm_op_t *op, char *input, int n) {
+	const ut8 *p;
+	short s;
+	int i;
+	long int l;
+	ut64 s64 = r_num_math (NULL, input);
+	if (n!= 8 && s64>>(n*8)) {
+		eprintf ("int16 Out is out of range\n");
+		return 0;
+	}
+	if (n == 2) {
+		s = (short)s64;
+		p = (const ut8*)&s;
+	} else if (n == 4) {
+		i = (int)s64;
+		p = (const ut8*)&i;
+	} else if (n == 8) {
+		l = (long int)s64;
+		p = (const ut8*)&l;
+	}
+	r_mem_copyendian (op->buf, p, n, !a->big_endian);
+	r_hex_bin2str (op->buf, n, op->buf_hex);
+	return n;
+}
+
+static inline int r_asm_pseudo_int16(RAsm *a, struct r_asm_op_t *op, char *input) {
+	return r_asm_pseudo_intN (a, op, input, 2);
+}
+
+static inline int r_asm_pseudo_int32(RAsm *a, struct r_asm_op_t *op, char *input) {
+	return r_asm_pseudo_intN (a, op, input, 4);
+}
+
+static inline int r_asm_pseudo_int64(RAsm *a, struct r_asm_op_t *op, char *input) {
+	return r_asm_pseudo_intN (a, op, input, 8);
+}
+
 static inline int r_asm_pseudo_byte(struct r_asm_op_t *op, char *input) {
 	int i, len = 0;
 	r_str_subchr (input, ',', ' ');
 	len = r_str_word_count (input);
 	r_str_word_set0 (input);
-	for(i=0;i<len;i++) {
+	for (i=0; i<len; i++) {
 		char *word = r_str_word_get0 (input, i);
 		int num = (int)r_num_math (NULL, word);
 		op->buf[i] = num;
@@ -87,6 +123,7 @@ R_API RAsm *r_asm_new() {
 	RAsmPlugin *static_plugin;
 	RAsm *a = R_NEW (RAsm);
 	if (a) {
+		a->pair = NULL;
 		a->user = NULL;
 		a->cur = NULL;
 		a->binb.bin = NULL;
@@ -160,13 +197,23 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 
 // TODO: this can be optimized using r_str_hash()
 R_API int r_asm_use(RAsm *a, const char *name) {
+	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h)
 		if (!strcmp (h->name, name)) {
+			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
+				//const char *dop = r_config_get (core->config, "dir.opcodes");
+				// TODO: allow configurable path for sdb files
+				snprintf (file, sizeof (file), R_ASM_OPCODES_PATH"/%s.sdb", h->arch);
+				r_pair_free (a->pair);
+				a->pair = r_pair_new_from_file (file);
+			}
 			a->cur = h;
 			return R_TRUE;
 		}
+	r_pair_free (a->pair);
+	a->pair = NULL;
 	return R_FALSE;
 }
 
@@ -410,11 +457,17 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					ret = r_asm_pseudo_fill (&op, ptr+6);
 				else if (!memcmp (ptr, ".hex ", 5))
 					ret = r_asm_pseudo_hex (&op, ptr+5);
+				else if ((!memcmp (ptr, ".int16 ", 7)) || !memcmp (ptr, ".short ", 7))
+					ret = r_asm_pseudo_int16 (a, &op, ptr+7);
+				else if (!memcmp (ptr, ".int32 ", 7))
+					ret = r_asm_pseudo_int32 (a, &op, ptr+7);
+				else if (!memcmp (ptr, ".int64 ", 7))
+					ret = r_asm_pseudo_int64 (a, &op, ptr+7);
 				else if (!memcmp (ptr, ".size", 5))
 					ret = R_TRUE; // do nothing, ignored
 				else if (!memcmp (ptr, ".section", 8))
 					ret = R_TRUE; // do nothing, ignored
-				else if (!memcmp (ptr, ".byte ", 6))
+				else if ((!memcmp (ptr, ".byte ", 6)) || (!memcmp (ptr, ".int8 ", 6)))
 					ret = r_asm_pseudo_byte (&op, ptr+6);
 				else if (!memcmp (ptr, ".glob", 5)) { // .global .globl
 				//	eprintf (".global directive not yet implemented\n");
@@ -434,7 +487,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				} else if (!memcmp (ptr, ".data", 5)) {
 					acode->data_offset = a->pc;
 				} else {
-					eprintf ("Unknown keyword (%s)\n", ptr);
+					eprintf ("Unknown directive (%s)\n", ptr);
 					return r_asm_code_free (acode);
 				}
 				if (!ret)
@@ -497,4 +550,10 @@ R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
 	if (a && a->binb.bin && a->binb.get_offset)
 		return a->binb.get_offset (a->binb.bin, type, idx);
 	return -1;
+}
+
+R_API char *r_asm_describe(RAsm *a, const char* str) {
+	if (a->pair)
+		return r_pair_get (a->pair, str);
+	return NULL;
 }

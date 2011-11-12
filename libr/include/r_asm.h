@@ -9,6 +9,7 @@
 #include <r_util.h>
 #include <r_parse.h>
 
+#define R_ASM_OPCODES_PATH R2_LIBDIR"/radare2/"R2_VERSION"/opcodes"
 #define R_ASM_BUFSIZE 1024
 
 /* backward compatibility */
@@ -81,6 +82,7 @@ typedef struct r_asm_t {
 	RBinBind binb;
 	RParse *ifilter;
 	RParse *ofilter;
+	RPair *pair;
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -121,6 +123,7 @@ R_API struct r_asm_code_t* r_asm_massemble(RAsm *a, const char *buf);
 R_API struct r_asm_code_t* r_asm_assemble_file(RAsm *a, const char *file);
 R_API int r_asm_filter_input(RAsm *a, const char *f);
 R_API int r_asm_filter_output(RAsm *a, const char *f);
+R_API char *r_asm_describe(RAsm *a, const char* str);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new();

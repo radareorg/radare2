@@ -1,5 +1,5 @@
 NAME=r_asm
-DEPS=r_lib r_util r_parse
+DEPS=r_lib r_util r_parse r_db
 CFLAGS+=-DCORELIB -Iarch/include -Iarch
 
 include ../config.mk
@@ -19,6 +19,7 @@ re:
 	sudo ${MAKE} install
 
 plugins:
+	@cd d && ${MAKE}
 	@cd p && ${MAKE} all
 
 include ../rules.mk

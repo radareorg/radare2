@@ -391,6 +391,7 @@ R_API int r_core_config_init(RCore *core) {
 	char *p;
 	cfg->printf = r_cons_printf;
 
+	//r_config_set (cfg, "dir.opcodes", R_ASM_OPCODES_PATH);
 	r_config_set (cfg, "dir.source", "");
 	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");

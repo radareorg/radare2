@@ -1154,6 +1154,15 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("%s\n", out);
 		}
 		break;
+	case 'd':
+		if (input[1]==' '){
+			char *d = r_asm_describe (core->assembler, input+2);
+			if (d && *d) {
+				r_cons_printf ("%s\n", d);
+				free (d);
+			} else eprintf ("Unknown opcode\n");
+		} else eprintf ("Use: ?d [opcode]    to get the description of the opcode\n");
+		break;
 	case 'f':
 		if (input[1]==' ') {
 			char *q, *p = strdup (input+2);
@@ -1310,6 +1319,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?= eip-0x804800 ; same as above without user feedback\n"
 			" ?? [cmd]        ; ? == 0  run command when math matches\n"
 			" ?i prompt       ; prompt for number and store in $$?\n"
+			" ?d opcode       ; describe opcode for asm.arch\n"
 			" ?e string       ; echo string\n"
 			" ?r [from] [to]  ; generate random number between from-to\n"
 			" ?b [num]        ; show binary value of number\n"
@@ -2127,6 +2137,15 @@ static int cmd_flag(void *data, const char *input) {
 			else r_flag_unset (core->flags, input+1, NULL);
 		} else r_flag_unset_i (core->flags, off, NULL);
 		break;
+	case 'l':
+		if (input[1] == ' ') {
+			RFlagItem *item = r_flag_get_i (core->flags,
+				r_num_math (core->num, input+2));
+			if (item) {
+				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
+			}
+		} else eprintf ("Missing arguments\n");
+		break;
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));
 		break;
@@ -2135,7 +2154,7 @@ static int cmd_flag(void *data, const char *input) {
 		else r_flag_space_list (core->flags);
 		break;
 	case 'o':
-		{
+		{ // TODO: use file.fortunes
 			char *file = R2_PREFIX"/share/doc/radare2/fortunes";
 			char *line = r_file_slurp_random_line (file);
 			if (line) {
@@ -2158,9 +2177,8 @@ static int cmd_flag(void *data, const char *input) {
 				new = old;
 				item = r_flag_get_i (core->flags, core->offset);
 			}
-			if (item) {
-				r_flag_rename (core->flags, item, new);
-			} else eprintf ("Cannot find flag\n");
+			if (item) r_flag_rename (core->flags, item, new);
+			else eprintf ("Cannot find flag\n");
 		}
 		break;
 	case '*':
@@ -2178,7 +2196,7 @@ static int cmd_flag(void *data, const char *input) {
 	case '?':
 		r_cons_printf (
 		"Usage: f[?] [flagname]\n"
-		" f name 12 @ 33   ; set flag 'name' with size 12 at 33\n"
+		" f name 12 @ 33   ; set flag 'name' with length 12 at offset 33\n"
 		" f name 12 33     ; same as above\n"
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
 		" f-name           ; remove flag 'name'\n"
@@ -2190,7 +2208,9 @@ static int cmd_flag(void *data, const char *input) {
 		" fs functions     ; set flagspace\n"
 		" fs *             ; set no flagspace\n"
 		" fs               ; display flagspaces\n"
-		" fS[on]           ; sort flags by offset or name\n");
+		" fl [flagname]    ; show flag length (size)\n"
+		" fS[on]           ; sort flags by offset or name\n"
+		" fo               ; show fortunes\n");
 		break;
 	}
 	return 0;

@@ -379,7 +379,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			r_cons_printf ("*");
 		else r_cons_printf (" ");
 		if (show_bytes) {
-			char *str, pad[64];
+			char *str = NULL, pad[64];
 			char extra[64];
 			strcpy (extra, " ");
 			flag = NULL; // HACK
@@ -428,7 +428,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 					r_cons_printf (" %s %s %s"Color_RESET, pad, str, extra);
 				else r_cons_printf (" %s %s %s", pad, str, extra);
 			}
-			if (!show_color) free (str);
+			free (str);
 		}
 
 		if (show_color) {
