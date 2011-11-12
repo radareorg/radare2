@@ -233,7 +233,9 @@ R_API void r_core_sysenv_help();
 #define R_CORE_BIN_ACC_SYMBOLS	0x040
 #define R_CORE_BIN_ACC_SECTIONS	0x080
 #define R_CORE_BIN_ACC_FIELDS	0x100
-#define R_CORE_BIN_ACC_ALL		0x1FF
+#define R_CORE_BIN_ACC_LIBS		0x200
+#define R_CORE_BIN_ACC_CLASSES	0x400
+#define R_CORE_BIN_ACC_ALL		0xFFF
 
 typedef struct r_core_bin_filter_t {
 	ut64 offset;

@@ -125,43 +125,6 @@ static int rabin_extract(int all) {
 	return R_TRUE;
 }
 
-static int rabin_show_libs() {
-	RList *libs;
-	RListIter *iter;
-	char* lib;
-	int i = 0;
-
-	if ((libs = r_bin_get_libs (bin)) == NULL)
-		return R_FALSE;
-
-	eprintf ("[Linked libraries]\n");
-	r_list_foreach (libs, iter, lib) {
-		printf ("%s\n", lib);
-		i++;
-	}
-	if (!rad) eprintf ("\n%i libraries\n", i);
-	
-	return R_TRUE;
-}
-
-static void rabin_show_classes() {
-	RBinClass *c;
-	RListIter *iter;
-	RList *cs = r_bin_get_classes (bin);
-	r_list_foreach (cs, iter, c) {
-		if (rad) {
-			printf ("f class.%s\n", c->name);
-			if (c->super)
-				printf ("f super.%s.%s\n", c->name, c->super);
-		} else {
-			printf ("class = %s\n", c->name);
-			if (c->super)
-				printf ("  super = %s\n", c->super);
-		}
-		// TODO: show belonging methods and fields
-	}
-}
-
 static int rabin_dump_symbols(int len) {
 	RList *symbols;
 	RListIter *iter;
@@ -515,7 +478,8 @@ int main(int argc, char **argv) {
 		r_core_bin_info (&core, R_CORE_BIN_ACC_IMPORTS,
 				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
 	if (action&ACTION_CLASSES)
-		rabin_show_classes ();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_CLASSES,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_SYMBOLS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_SYMBOLS,
 				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
@@ -529,7 +493,8 @@ int main(int argc, char **argv) {
 		r_core_bin_info (&core, R_CORE_BIN_ACC_FIELDS,
 				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_LIBS)
-		rabin_show_libs ();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_LIBS,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_RELOCS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_RELOCS,
 				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);

@@ -157,7 +157,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 # if __arm__
 # define R_SYS_BASE ((ut64)0x4000)
 # else
-# define R_SYS_BASE ((u64)0x8048000)
+# define R_SYS_BASE ((ut64)0x8048000)
 # endif
 #endif
 

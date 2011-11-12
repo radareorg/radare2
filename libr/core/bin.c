@@ -477,6 +477,55 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 	return R_TRUE;
 }
 
+static int bin_classes (RCore *r, int mode) {
+	RList *cs;
+	RBinClass *c;
+	RListIter *iter;
+
+	if ((cs = r_bin_get_classes (r->bin)) == NULL)
+		return R_FALSE;
+
+	if ((mode & R_CORE_BIN_SET)) {
+		// Nothing to set.
+	} else {
+		r_list_foreach (cs, iter, c) {
+			if ((mode & R_CORE_BIN_RADARE)) {
+				r_cons_printf ("f class.%s\n", c->name);
+				if (c->super)
+					r_cons_printf ("f super.%s.%s\n", c->name, c->super);
+			} else {
+				r_cons_printf ("class = %s\n", c->name);
+				if (c->super)
+					r_cons_printf ("  super = %s\n", c->super);
+			}
+			// TODO: show belonging methods and fields
+		}
+	}
+	return R_TRUE;
+}
+
+static int bin_libs (RCore *r, int mode) {
+	RList *libs;
+	RListIter *iter;
+	char* lib;
+	int i = 0;
+
+	if ((libs = r_bin_get_libs (r->bin)) == NULL)
+		return R_FALSE;
+
+	if ((mode & R_CORE_BIN_SET)) {
+		// Nothing to set.
+	} else {
+		r_cons_printf ("[Linked libraries]\n");
+		r_list_foreach (libs, iter, lib) {
+			r_cons_printf ("%s\n", lib);
+			i++;
+		}
+		if (!(mode & R_CORE_BIN_RADARE)) r_cons_printf ("\n%i libraries\n", i);
+	}
+	return R_TRUE;
+}
+
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter) {
 	int ret = R_TRUE;
 	char *name = NULL;
@@ -507,6 +556,10 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 		ret |= bin_sections (core, mode, baddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_FIELDS))
 		ret |= bin_fields (core, mode, baddr, va);
+	if ((action & R_CORE_BIN_ACC_LIBS))
+		ret |= bin_libs (core, mode);
+	if ((action & R_CORE_BIN_ACC_CLASSES))
+		ret |= bin_classes (core, mode);
 
 	return ret;
 }
