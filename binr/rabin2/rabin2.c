@@ -10,12 +10,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 
-#include <r_types.h>
-#include <r_list.h>
-#include <r_lib.h>
-#include <r_bin.h>
-#include <r_flags.h>
-#include <r_util.h>
+#include <r_core.h>
 
 #define ACTION_UNK       0x00000
 #define ACTION_ENTRIES   0x00001
@@ -79,51 +74,6 @@ static int rabin_show_help() {
 		" -V              show version information\n"
 		" -h              this help\n");
 	return 1;
-}
-
-static int rabin_show_entrypoints() {
-	RList *entries;
-	RListIter *iter;
-	RBinAddr *entry;
-	int i = 0;
-
-	ut64 baddr = gbaddr? gbaddr: r_bin_get_baddr (bin);
-
-	if ((entries = r_bin_get_entries (bin)) == NULL)
-		return R_FALSE;
-
-	if (rad) printf ("fs symbols\n");
-	else eprintf ("[Entrypoints]\n");
-
-	r_list_foreach (entries, iter, entry) {
-		if (rad) {
-			printf ("f entry%i @ 0x%08"PFMT64x"\n", i, va?baddr+entry->rva:entry->offset);
-			printf ("s entry%i\n", i);
-		} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" baddr=0x%08"PFMT64x"\n",
-				baddr+entry->rva, entry->offset, baddr);
-		i++;
-	}
-
-	if (!rad) eprintf ("\n%i entrypoints\n", i);
-
-	return R_TRUE;
-}
-
-static int rabin_show_main() {
-	RBinAddr *binmain;
-	ut64 baddr = gbaddr? gbaddr: r_bin_get_baddr (bin);
-
-	if ((binmain = r_bin_get_sym (bin, R_BIN_SYM_MAIN)) == NULL)
-		return R_FALSE;
-	if (rad) {
-		printf ("fs symbols\n");
-		printf ("f main @ 0x%08"PFMT64x"\n", va? baddr+binmain->rva: binmain->offset);
-	} else {
-		eprintf ("[Main]\n");
-		printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x"\n",
-			baddr+binmain->rva, binmain->offset);
-	}
-	return R_TRUE;
 }
 
 static int rabin_extract(int all) {
@@ -194,81 +144,6 @@ static int rabin_show_libs() {
 	return R_TRUE;
 }
 
-static int rabin_show_relocs() {
-	RList *relocs;
-	RListIter *iter;
-	RBinReloc *reloc;
-	int i = 0;
-
-	ut64 baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
-
-	if ((relocs = r_bin_get_relocs (bin)) == NULL)
-		return R_FALSE;
-
-	if (rad) {
-		printf ("fs relocs\n");
-		r_list_foreach (relocs, iter, reloc) {
-			printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name, va?baddr+reloc->rva:reloc->offset);
-			i++;
-		}
-	} else {
-		eprintf ("[Relocations]\n");
-		r_list_foreach (relocs, iter, reloc) {
-			printf ("sym=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=0x%08x %s\n",
-				reloc->sym, baddr+reloc->rva, reloc->offset, reloc->type, reloc->name);
-			i++;
-		}
-		eprintf ("\n%i relocations\n", i);
-	}
-
-	return R_TRUE;
-}
-
-static int rabin_show_imports() {
-	RList *imports;
-	RListIter *iter;
-	RBinImport *import;
-	ut64 baddr;
-	int i = 0;
-
-	baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
-
-	if ((imports = r_bin_get_imports (bin)) == NULL)
-		return R_FALSE;
-
-	if (!at) {
-		if (rad) printf ("fs imports\n");
-		else eprintf ("[Imports]\n");
-	}
-
-	r_list_foreach (imports, iter, import) {
-		if (name && strcmp (import->name, name))
-			continue;
-		if (at) {
-			if (baddr+import->rva == at || import->offset == at)
-				printf ("%s\n", import->name);
-		} else {
-			if (rad) {
-				r_name_filter (import->name, sizeof (import->name));
-				if (import->size) 
-					printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
-							va?baddr+import->rva:import->offset, import->size, import->name);
-				printf ("f imp.%s @ 0x%08"PFMT64x"\n",
-						import->name, va?baddr+import->rva:import->offset);
-			} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-						   "hint=%03"PFMT64d" bind=%s type=%s name=%s\n",
-						   baddr+import->rva, import->offset,
-						   import->ordinal, import->hint,  import->bind,
-						   import->type, import->name);
-		}
-		i++;
-	}
-
-	if (!at && !rad) eprintf ("\n%i imports\n", i);
-
-	return R_TRUE;
-}
-
 static void rabin_show_classes() {
 	RBinClass *c;
 	RListIter *iter;
@@ -285,248 +160,6 @@ static void rabin_show_classes() {
 		}
 		// TODO: show belonging methods and fields
 	}
-}
-
-static int rabin_show_symbols(ut64 at) {
-	RList *symbols;
-	RListIter *iter;
-	RBinSymbol *symbol;
-	ut64 baddr;
-	int i = 0;
-
-	baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
-
-	if ((symbols = r_bin_get_symbols (bin)) == NULL)
-		return R_FALSE;
-
-	if (!at) {
-		if (rad) printf ("fs symbols\n");
-		else eprintf ("[Symbols]\n");
-	}
-
-	r_list_foreach (symbols, iter, symbol) {
-		if (name && strcmp (symbol->name, name))
-			continue;
-		if (at) {
-			if ((symbol->size != 0 &&
-				((baddr+symbol->rva <= at && baddr+symbol->rva+symbol->size > at) ||
-				(symbol->offset <= at && symbol->offset+symbol->size > at))) ||
-				baddr+symbol->rva == at || symbol->offset == at)
-				printf("%s\n", symbol->name);
-		} else {
-			if (rad) {
-				char *mn = r_bin_demangle (bin, symbol->name);
-				if (mn) {
-					printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n", symbol->offset, mn);
-					free (mn);
-				}
-				r_name_filter (symbol->name, sizeof (symbol->name));
-				if (!strncmp (symbol->type,"OBJECT", 6))
-					printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
-							symbol->size, va?baddr+symbol->rva:symbol->offset);
-				printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						symbol->name, symbol->size,
-						va?baddr+symbol->rva:symbol->offset);
-			} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-						   "forwarder=%s sz=%"PFMT64d" bind=%s type=%s name=%s\n",
-						   baddr+symbol->rva, symbol->offset,
-						   symbol->ordinal, symbol->forwarder,
-						   symbol->size, symbol->bind, symbol->type, 
-						   symbol->name);
-		}
-		i++;
-	}
-
-	if (!at && !rad) eprintf ("\n%i symbols\n", i);
-
-	return R_TRUE;
-}
-
-static int rabin_show_strings() {
-	RList *strings;
-	RListIter *iter;
-	RBinString *string;
-	RBinSection *section;
-	int i = 0;
-	ut64 baddr = gbaddr? gbaddr: r_bin_get_baddr (bin);
-
-	if ((strings = r_bin_get_strings (bin)) == NULL)
-		return R_FALSE;
-
-	if (rad) printf ("fs strings\n");
-	else eprintf ("[strings]\n");
-
-	r_list_foreach (strings, iter, string) {
-		section = r_bin_get_section_at (bin, string->offset, 0);
-		if (rad) {
-			r_name_filter (string->string, sizeof (string->string));
-			printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
-				"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-				string->string, string->size, va?baddr+string->rva:string->offset,
-				string->size, va?baddr+string->rva:string->offset);
-		} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-			"sz=%"PFMT64d" section=%s string=%s\n",
-			baddr+string->rva, string->offset,
-			string->ordinal, string->size,
-			section?section->name:"unknown", string->string);
-		i++;
-	}
-
-	if (!rad) eprintf ("\n%i strings\n", i);
-	
-	return R_TRUE;
-}
-
-static int rabin_show_sections(ut64 at) {
-	RList *sections;
-	RListIter *iter;
-	RBinSection *section;
-	ut64 baddr;
-	int i = 0;
-
-	baddr = gbaddr?gbaddr:r_bin_get_baddr (bin);
-
-	if ((sections = r_bin_get_sections (bin)) == NULL)
-		return R_FALSE;
-
-	if (!at) {
-		if (rad) printf ("fs sections\n");
-		else eprintf ("[Sections]\n");
-	}
-
-	r_list_foreach (sections, iter, section) {
-		if (name && strcmp (section->name, name))
-			continue;
-		r_name_filter (section->name, sizeof (section->name));
-		if (at) {
-			if ((section->size != 0 &&
-				((baddr+section->rva <= at && baddr+section->rva+section->size > at) ||
-				(section->offset <= at && section->offset+section->size > at))) ||
-				baddr+section->rva == at || section->offset == at)
-				printf ("%s\n", section->name);
-		} else {
-			if (rad) {
-				printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
-					section->offset, baddr+section->rva,
-					section->size, section->vsize, section->name, (int)section->srwx);
-				printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-					section->name, section->size, va?baddr+section->rva:section->offset);
-				printf ("f section_end.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-					section->name, 0, section->size+(va?baddr+section->rva:section->offset));
-				printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-					"rwx=%c%c%c%c %s @ 0x%08"PFMT64x"\n",
-					i, baddr+section->rva, section->offset, section->size, section->vsize,
-					R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
-					R_BIN_SCN_READABLE (section->srwx)?'r':'-',
-					R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
-					R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
-					section->name,va?baddr+section->rva:section->offset);
-			} else printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-				"perm=%c%c%c%c name=%s\n",
-				i, baddr+section->rva, section->offset, section->size, section->vsize,
-				R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
-				R_BIN_SCN_READABLE (section->srwx)?'r':'-',
-				R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
-				R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
-				section->name);
-		}
-		i++;
-	}
-
-	if (!at && !rad) eprintf ("\n%i sections\n", i);
-
-	return R_TRUE;
-}
-
-static int rabin_show_info() {
-	RBinInfo *info;
-
-	if ((info = r_bin_get_info (bin)) == NULL)
-		return R_FALSE;
-
-	if (rad) {
-		if (!strcmp (info->type, "fs")) {
-			printf ("e file.type=fs\n");
-			printf ("m %s /root 0\n", info->arch);
-		} else {
-			printf (
-			"e file.type=%s\n"
-			"e cfg.bigendian=%s\n"
-			"e asm.os=%s\n"
-			"e asm.arch=%s\n"
-			"e anal.plugin=%s\n"
-			"e asm.bits=%i\n"
-			"e asm.dwarf=%s\n",
-				info->rclass, info->big_endian?"true":"false", info->os,
-				info->arch, info->arch, info->bits,
-				R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
-		}
-	} else {
-		// if type is 'fs' show something different?
-		eprintf ("[File info]\n");
-		printf ("File=%s\n"
-				"Type=%s\n"
-				"Class=%s\n"
-				"Arch=%s %i\n"
-				"Machine=%s\n"
-				"OS=%s\n"
-				"Subsystem=%s\n"
-				"Big endian=%s\n"
-				"Stripped=%s\n"
-				"Static=%s\n"
-				"Line_nums=%s\n"
-				"Local_syms=%s\n"
-				"Relocs=%s\n"
-				"RPath=%s\n",
-				info->file, info->type, info->bclass,
-				info->arch, info->bits, info->machine, info->os, 
-				info->subsystem, info->big_endian?"True":"False",
-				R_BIN_DBG_STRIPPED (info->dbg_info)?"True":"False",
-				R_BIN_DBG_STATIC (info->dbg_info)?"True":"False",
-				R_BIN_DBG_LINENUMS (info->dbg_info)?"True":"False",
-				R_BIN_DBG_SYMS (info->dbg_info)?"True":"False",
-				R_BIN_DBG_RELOCS (info->dbg_info)?"True":"False",
-				info->rpath);
-	}
-	
-	return R_TRUE;
-}
-
-static int rabin_show_fields() {
-	RList *fields;
-	RListIter *iter;
-	RBinField *field;
-	ut64 size, baddr;
-	int i = 0;
-
-	baddr = gbaddr? gbaddr: r_bin_get_baddr (bin);
-	size = bin->curarch.size;
-
-	if ((fields = r_bin_get_fields (bin)) == NULL)
-		return R_FALSE;
-
-	if (rad) printf ("fs header\n");
-	else eprintf ("[Header fields]\n");
-
-	r_list_foreach (fields, iter, field) {
-		if (rad) {
-			r_name_filter (field->name, sizeof (field->name));
-			printf ("f header.%s @ 0x%08"PFMT64x"\n",
-					field->name, va?baddr+field->rva:field->offset);
-			printf ("[%02i] addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
-					i, baddr+field->rva, field->offset, field->name);
-		} else printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
-					   i, baddr+field->rva, field->offset, field->name);
-		i++;
-	}
-
-	if (rad) {
-		/* add program header section */
-		printf ("S 0 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" ehdr rwx\n",
-			 baddr, size, size);
-	} else eprintf ("\n%i fields\n", i);
-
-	return R_TRUE;
 }
 
 static int rabin_dump_symbols(int len) {
@@ -862,28 +495,43 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	RCore core;
+	core.bin = bin;
+	RCoreBinFilter filter;
+	filter.offset = at;
+	filter.name = name;
+
 	if (action&ACTION_SECTIONS)
-		rabin_show_sections (at);
+		r_core_bin_info (&core, R_CORE_BIN_ACC_SECTIONS,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
 	if (action&ACTION_ENTRIES)
-		rabin_show_entrypoints ();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_ENTRIES,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_MAIN)
-		rabin_show_main ();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_MAIN,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_IMPORTS)
-		rabin_show_imports ();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_IMPORTS,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
 	if (action&ACTION_CLASSES)
 		rabin_show_classes ();
 	if (action&ACTION_SYMBOLS)
-		rabin_show_symbols (at);
+		r_core_bin_info (&core, R_CORE_BIN_ACC_SYMBOLS,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
 	if (action&ACTION_STRINGS)
-		rabin_show_strings ();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_STRINGS,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_INFO)
-		rabin_show_info ();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_INFO,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_FIELDS)
-		rabin_show_fields();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_FIELDS,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_LIBS)
 		rabin_show_libs ();
 	if (action&ACTION_RELOCS)
-		rabin_show_relocs ();
+		r_core_bin_info (&core, R_CORE_BIN_ACC_RELOCS,
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline (at);
 	if (action&ACTION_EXTRACT)

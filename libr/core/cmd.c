@@ -1576,33 +1576,26 @@ static int cmd_cmp(void *data, const char *input) {
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	char *out, buf[1024];
-	// XXX: we must use internal rbin api here
+	int va = core->io->va || core->io->debug;
+	int mode = (input[1]=='*')?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT;
 	switch (*input) {
 	case 'S':
-		if (core->file) {
-			// XXX: we must use internal rbin api here
-			snprintf (buf, sizeof (buf), "rabin2 -HS%s%s '%s'", input[1]=='*'? "r": "",
-				core->io->va? "v": "", core->file->filename);
-			out = r_sys_cmd_str (buf, NULL, 0);
-			if (out && *out)
-				r_cons_strcat (out);
-			free (out);
-		}
+		r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS|R_CORE_BIN_ACC_FIELDS, mode, va, NULL);
 		break;
 	case 's':
+		r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, mode, va, NULL);
+		break;
 	case 'i':
+		r_core_bin_info (core, R_CORE_BIN_ACC_IMPORTS, mode, va, NULL);
+		break;
 	case 'I':
+		r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL);
+		break;
 	case 'e':
+		r_core_bin_info (core, R_CORE_BIN_ACC_ENTRIES, mode, va, NULL);
+		break;
 	case 'z':
-		if (core->file) {
-			snprintf (buf, sizeof (buf), "rabin2 -%c%s%s '%s'", *input,
-				input[1]=='*'? "r": "", core->io->va? "v": "", core->file->filename);
-			out = r_sys_cmd_str (buf, NULL, 0);
-			if (out && *out)
-				r_cons_strcat (out);
-			free (out);
-		}
+		r_core_bin_info (core, R_CORE_BIN_ACC_STRINGS, mode, va, NULL);
 		break;
 	case 'a':
 		if (input[1]=='*') {
