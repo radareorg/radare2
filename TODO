@@ -7,15 +7,17 @@
 
 ====[[ 0.9 ]]====
 
-* Add flags to end of section? section_end..text ... 
+02:47 < Jo-Con-El> Escupe porquería como \323 \177 y tal mezclado con el magic.
 * Refactor get_sym() and so on...
-* Add libr/asm/d API support
-  - and a command.. dunny which one
-* Add rasc2 api
+
+* Add rasc2 api inside r_egg
+
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"
   - dca sym.main imp.printf
   - dbc
+* Add !load in r2
+
 * rasm2 -D must show bytes  : opcode
 * rasm2 must support binary creation help message or so.. rabin2 integration must be easier
 * Add support for 'expect' like foo in rarun2

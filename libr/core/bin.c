@@ -1,3 +1,4 @@
+/* radare - LGPL - Copyright 2011 earada */
 #include <r_core.h>
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
@@ -16,7 +17,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			r_flag_space_set (r->flags, "strings");
 		r_list_foreach (list, iter, string) {
 			/* Jump the withespaces before the string */
-			for (i=0;*(string->string+i)==' ';i++);
+			for (i=0; *(string->string+i)==' '; i++);
 			r_meta_add (r->anal->meta, R_META_TYPE_STRING, va?baddr+string->rva:string->offset,
 					(va?baddr+string->rva:string->offset)+string->size, string->string+i);
 			r_name_filter (string->string, 128);
@@ -25,18 +26,18 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 					string->size, 0);
 		}
 	} else {
-		if (mode & R_CORE_BIN_RADARE) printf ("fs strings\n");
-		else eprintf ("[strings]\n");
+		if (mode & R_CORE_BIN_RADARE) r_cons_printf ("fs strings\n");
+		else r_cons_printf ("[strings]\n");
 
 		r_list_foreach (list, iter, string) {
 			section = r_bin_get_section_at (r->bin, string->offset, 0);
 			if ((mode & R_CORE_BIN_RADARE)) {
 				r_name_filter (string->string, sizeof (string->string));
-				printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
+				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
 						"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
 						string->string, string->size, va?baddr+string->rva:string->offset,
 						string->size, va?baddr+string->rva:string->offset);
-			} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
 					"sz=%"PFMT64d" section=%s string=%s\n",
 					baddr+string->rva, string->offset,
 					string->ordinal, string->size,
@@ -44,7 +45,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			i++;
 		}
 
-		if (!(mode & R_CORE_BIN_RADARE)) eprintf ("\n%i strings\n", i);
+		if (!(mode & R_CORE_BIN_RADARE)) r_cons_printf ("\n%i strings\n", i);
 	}
 	return R_TRUE;
 }
@@ -73,25 +74,25 @@ static int bin_info (RCore *r, int mode) {
 	} else {
 		if ((mode & R_CORE_BIN_RADARE)) {
 			if (!strcmp (info->type, "fs")) {
-				printf ("e file.type=fs\n");
-				printf ("m %s /root 0\n", info->arch);
+				r_cons_printf ("e file.type=fs\n");
+				r_cons_printf ("m %s /root 0\n", info->arch);
 			} else {
-				printf (
-						"e file.type=%s\n"
-						"e cfg.bigendian=%s\n"
-						"e asm.os=%s\n"
-						"e asm.arch=%s\n"
-						"e anal.plugin=%s\n"
-						"e asm.bits=%i\n"
-						"e asm.dwarf=%s\n",
-						info->rclass, info->big_endian?"true":"false", info->os,
-						info->arch, info->arch, info->bits,
-						R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+				r_cons_printf (
+					"e file.type=%s\n"
+					"e cfg.bigendian=%s\n"
+					"e asm.os=%s\n"
+					"e asm.arch=%s\n"
+					"e anal.plugin=%s\n"
+					"e asm.bits=%i\n"
+					"e asm.dwarf=%s\n",
+					info->rclass, info->big_endian?"true":"false", info->os,
+					info->arch, info->arch, info->bits,
+					R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
 			}
 		} else {
 			// if type is 'fs' show something different?
-			eprintf ("[File info]\n");
-			printf ("File=%s\n"
+			r_cons_printf ("[File info]\n");
+			r_cons_printf ("File=%s\n"
 					"Type=%s\n"
 					"Class=%s\n"
 					"Arch=%s %i\n"
@@ -131,11 +132,11 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 				r->blocksize, 0);
 	} else {
 		if ((mode & R_CORE_BIN_RADARE)) {
-			printf ("fs symbols\n");
-			printf ("f main @ 0x%08"PFMT64x"\n", va? baddr+binmain->rva: binmain->offset);
+			r_cons_printf ("fs symbols\n");
+			r_cons_printf ("f main @ 0x%08"PFMT64x"\n", va? baddr+binmain->rva: binmain->offset);
 		} else {
-			eprintf ("[Main]\n");
-			printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x"\n",
+			r_cons_printf ("[Main]\n");
+			r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x"\n",
 					baddr+binmain->rva, binmain->offset);
 		}
 	}
@@ -146,7 +147,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 	char str[R_FLAG_NAME_SIZE];
 	RList *entries;
 	RListIter *iter;
-	RBinAddr *entry;
+	RBinAddr *entry = NULL;
 	int i = 0;
 
 	if ((entries = r_bin_get_entries (r->bin)) == NULL)
@@ -162,19 +163,19 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 		if (entry)
 			r_core_seek (r, va? baddr+entry->rva: entry->offset, 0);
 	} else {
-		if ((mode & R_CORE_BIN_RADARE)) printf ("fs symbols\n");
-		else eprintf ("[Entrypoints]\n");
+		if ((mode & R_CORE_BIN_RADARE)) r_cons_printf ("fs symbols\n");
+		else r_cons_printf ("[Entrypoints]\n");
 
 		r_list_foreach (entries, iter, entry) {
 			if ((mode & R_CORE_BIN_RADARE)) {
-				printf ("f entry%i @ 0x%08"PFMT64x"\n", i, va?baddr+entry->rva:entry->offset);
-				printf ("s entry%i\n", i);
-			} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" baddr=0x%08"PFMT64x"\n",
+				r_cons_printf ("f entry%i @ 0x%08"PFMT64x"\n", i, va?baddr+entry->rva:entry->offset);
+				r_cons_printf ("s entry%i\n", i);
+			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" baddr=0x%08"PFMT64x"\n",
 					baddr+entry->rva, entry->offset, baddr);
 			i++;
 		}
 
-		if (!(mode & R_CORE_BIN_RADARE)) eprintf ("\n%i entrypoints\n", i);
+		if (!(mode & R_CORE_BIN_RADARE)) r_cons_printf ("\n%i entrypoints\n", i);
 	}
 	return R_TRUE;
 }
@@ -198,20 +199,20 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 		}
 	} else {
 		if ((mode & R_CORE_BIN_RADARE)) {
-			printf ("fs relocs\n");
+			r_cons_printf ("fs relocs\n");
 			r_list_foreach (relocs, iter, reloc) {
-				printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name,
+				r_cons_printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->name,
 						va?baddr+reloc->rva:reloc->offset);
 				i++;
 			}
 		} else {
-			eprintf ("[Relocations]\n");
+			r_cons_printf ("[Relocations]\n");
 			r_list_foreach (relocs, iter, reloc) {
-				printf ("sym=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=0x%08x %s\n",
-						reloc->sym, baddr+reloc->rva, reloc->offset, reloc->type, reloc->name);
+				r_cons_printf ("sym=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=0x%08x %s\n",
+					reloc->sym, baddr+reloc->rva, reloc->offset, reloc->type, reloc->name);
 				i++;
 			}
-			eprintf ("\n%i relocations\n", i);
+			r_cons_printf ("\n%i relocations\n", i);
 		}
 	}
 	return R_TRUE;
@@ -241,8 +242,8 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *n
 		}
 	} else {
 		if (!at) {
-			if ((mode & R_CORE_BIN_RADARE)) printf ("fs imports\n");
-			else eprintf ("[Imports]\n");
+			if ((mode & R_CORE_BIN_RADARE)) r_cons_printf ("fs imports\n");
+			else r_cons_printf ("[Imports]\n");
 		}
 
 		r_list_foreach (imports, iter, import) {
@@ -250,16 +251,16 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *n
 				continue;
 			if (at) {
 				if (baddr+import->rva == at || import->offset == at)
-					printf ("%s\n", import->name);
+					r_cons_printf ("%s\n", import->name);
 			} else {
 				if ((mode & R_CORE_BIN_RADARE)) {
 					r_name_filter (import->name, sizeof (import->name));
 					if (import->size)
-						printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
+						r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
 								va?baddr+import->rva:import->offset, import->size, import->name);
-					printf ("f imp.%s @ 0x%08"PFMT64x"\n",
+					r_cons_printf ("f imp.%s @ 0x%08"PFMT64x"\n",
 							import->name, va?baddr+import->rva:import->offset);
-				} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
 						"hint=%03"PFMT64d" bind=%s type=%s name=%s\n",
 						baddr+import->rva, import->offset,
 						import->ordinal, import->hint,  import->bind,
@@ -267,7 +268,7 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *n
 			}
 			i++;
 		}
-		if (!at && !(mode & R_CORE_BIN_RADARE)) eprintf ("\n%i imports\n", i);
+		if (!at && !(mode & R_CORE_BIN_RADARE)) r_cons_printf ("\n%i imports\n", i);
 	}
 	return R_TRUE;
 }
@@ -306,8 +307,8 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *n
 		}
 	} else {
 		if (!at) {
-			if ((mode & R_CORE_BIN_RADARE)) printf ("fs symbols\n");
-			else eprintf ("[Symbols]\n");
+			if ((mode & R_CORE_BIN_RADARE)) r_cons_printf ("fs symbols\n");
+			else r_cons_printf ("[Symbols]\n");
 		}
 
 		r_list_foreach (symbols, iter, symbol) {
@@ -318,22 +319,22 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *n
 					((baddr+symbol->rva <= at && baddr+symbol->rva+symbol->size > at) ||
 						 (symbol->offset <= at && symbol->offset+symbol->size > at))) ||
 							baddr+symbol->rva == at || symbol->offset == at)
-					printf("%s\n", symbol->name);
+					r_cons_printf ("%s\n", symbol->name);
 			} else {
 				if ((mode & R_CORE_BIN_RADARE)) {
 					char *mn = r_bin_demangle (r->bin, symbol->name);
 					if (mn) {
-						printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n", symbol->offset, mn);
+						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n", symbol->offset, mn);
 						free (mn);
 					}
 					r_name_filter (symbol->name, sizeof (symbol->name));
 					if (!strncmp (symbol->type,"OBJECT", 6))
-						printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
+						r_cons_printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
 								symbol->size, va?baddr+symbol->rva:symbol->offset);
-					printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
+					r_cons_printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size,
 							va?baddr+symbol->rva:symbol->offset);
-				} else printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
+				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
 						"forwarder=%s sz=%"PFMT64d" bind=%s type=%s name=%s\n",
 						baddr+symbol->rva, symbol->offset,
 						symbol->ordinal, symbol->forwarder,
@@ -342,7 +343,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *n
 			}
 			i++;
 		}
-		if (!at && !(mode & R_CORE_BIN_RADARE)) eprintf ("\n%i symbols\n", i);
+		if (!at && !(mode & R_CORE_BIN_RADARE)) r_cons_printf ("\n%i symbols\n", i);
 	}
 	return R_TRUE;
 }
@@ -380,10 +381,15 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *
 			r_meta_add (r->anal->meta, R_META_TYPE_COMMENT, va?baddr+section->rva:section->offset,
 					va?baddr+section->rva:section->offset, str);
 		}
+		// H -> Header fields
+		{
+			ut64 size = r_io_size (r->io);
+			r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr");
+		}
 	} else {
 		if (!at) {
-			if ((mode & R_CORE_BIN_RADARE)) printf ("fs sections\n");
-			else eprintf ("[Sections]\n");
+			if ((mode & R_CORE_BIN_RADARE)) r_cons_printf ("fs sections\n");
+			else r_cons_printf ("[Sections]\n");
 		}
 
 		r_list_foreach (sections, iter, section) {
@@ -395,17 +401,17 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *
 							((baddr+section->rva <= at && baddr+section->rva+section->size > at) ||
 							 (section->offset <= at && section->offset+section->size > at))) ||
 						baddr+section->rva == at || section->offset == at)
-					printf ("%s\n", section->name);
+					r_cons_printf ("%s\n", section->name);
 			} else {
 				if ((mode & R_CORE_BIN_RADARE)) {
-					printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
+					r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 							section->offset, baddr+section->rva,
 							section->size, section->vsize, section->name, (int)section->srwx);
-					printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
+					r_cons_printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							section->name, section->size, va?baddr+section->rva:section->offset);
-					printf ("f section_end.%s %"PFMT64d" 0x%08"PFMT64x"\n",
+					r_cons_printf ("f section_end.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							section->name, (ut64)0, section->size+(va?baddr+section->rva:section->offset));
-					printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+					r_cons_printf ("CC [%02i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 							"rwx=%c%c%c%c %s @ 0x%08"PFMT64x"\n",
 							i, baddr+section->rva, section->offset, section->size, section->vsize,
 							R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
@@ -413,7 +419,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *
 							R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
 							R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
 							section->name,va?baddr+section->rva:section->offset);
-				} else printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+				} else r_cons_printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"perm=%c%c%c%c name=%s\n",
 						i, baddr+section->rva, section->offset, section->size, section->vsize,
 						R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
@@ -425,7 +431,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *
 		i++;
 	}
 
-	if (!at && !(mode & R_CORE_BIN_RADARE)) eprintf ("\n%i sections\n", i);
+	if (!at && !(mode & R_CORE_BIN_RADARE)) r_cons_printf ("\n%i sections\n", i);
 	}
 
 	return R_TRUE;
@@ -447,26 +453,26 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 		//XXX: Need more flags??
 		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr");
 	} else {
-		if ((mode & R_CORE_BIN_RADARE)) printf ("fs header\n");
-		else eprintf ("[Header fields]\n");
+		if ((mode & R_CORE_BIN_RADARE)) r_cons_printf ("fs header\n");
+		else r_cons_printf ("[Header fields]\n");
 
 		r_list_foreach (fields, iter, field) {
 			if ((mode & R_CORE_BIN_RADARE)) {
 				r_name_filter (field->name, sizeof (field->name));
-				printf ("f header.%s @ 0x%08"PFMT64x"\n",
+				r_cons_printf ("f header.%s @ 0x%08"PFMT64x"\n",
 						field->name, va?baddr+field->rva:field->offset);
-				printf ("[%02i] addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
+				r_cons_printf ("[%02i] addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
 						i, baddr+field->rva, field->offset, field->name);
-			} else printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
+			} else r_cons_printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" name=%s\n",
 					i, baddr+field->rva, field->offset, field->name);
 			i++;
 		}
 
 		if ((mode & R_CORE_BIN_RADARE)) {
 			/* add program header section */
-			printf ("S 0 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" ehdr rwx\n",
+			r_cons_printf ("S 0 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" ehdr rwx\n",
 					baddr, size, size);
-		} else eprintf ("\n%i fields\n", i);
+		} else r_cons_printf ("\n%i fields\n", i);
 	}
 	return R_TRUE;
 }
@@ -480,9 +486,8 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 
 	if (filter && filter->offset)
 		at = filter->offset;
-	if (filter && filter->offset)
+	if (filter && filter->name)
 		name = filter->name;
-
 
 	if ((action & R_CORE_BIN_ACC_STRINGS))
 		ret |= bin_strings (core, mode, baddr, va);

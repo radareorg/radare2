@@ -157,7 +157,7 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 	RFlagItem *item;
 	RListIter *iter;
 
-	if (name[0] == '*') {
+	if (*name == '*') {
 		r_list_destroy (f->flags);
 	} else {
 		item = r_flag_get (f, name);

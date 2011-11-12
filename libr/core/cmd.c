@@ -986,6 +986,12 @@ static int cmd_seek(void *data, const char *input) {
 	if (*input) {
 		st32 delta = (input[1]==' ')? 2: 1;
 		off = r_num_math (core->num, input + delta);
+		if (isalpha (input[delta]) && off == 0) {
+			if (!r_flag_get (core->flags, input+delta)) {
+				eprintf ("Invalid address (%s)\n", input+delta);
+				return R_FALSE;
+			}
+		}
 		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
 			input++;
 		switch (*input) {
@@ -2632,8 +2638,9 @@ static int cmd_anal(void *data, const char *input) {
 			int cc;
 			if ((fcn = r_anal_get_fcn_at (core->anal, core->offset)) != NULL) {
 				cc = r_anal_fcn_cc (fcn);
-				r_cons_printf ("Cyclomatic Complexity at 0x%08"PFMT64x" = %i\n", core->offset, cc);
-			} else r_cons_printf ("Error: function not found\n");
+				r_cons_printf ("CyclomaticComplexity 0x%08"PFMT64x" = %i\n", 
+						fcn->addr, cc);
+			} else eprintf ("Error: function not found\n");
 			}
 			break;
 		case 'b':

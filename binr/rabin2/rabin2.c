@@ -501,6 +501,7 @@ int main(int argc, char **argv) {
 	filter.offset = at;
 	filter.name = name;
 
+	r_cons_new ();
 	if (action&ACTION_SECTIONS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_SECTIONS,
 				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
@@ -541,6 +542,7 @@ int main(int argc, char **argv) {
 
 	free (arch);
 	r_bin_free (bin);
+	r_cons_flush ();
 
 	return 0;
 }

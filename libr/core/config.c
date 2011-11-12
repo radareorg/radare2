@@ -337,8 +337,8 @@ static int config_asmarch_callback(void *user, void *data) {
 	r_config_set (core->config, "anal.plugin", node->value);
 	if (!r_syscall_setup (core->anal->syscall, node->value,
 			asmos, core->anal->bits)) {
-		eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
-			node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
+		//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+		//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");

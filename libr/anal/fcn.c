@@ -448,3 +448,14 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *sig) {
 	eprintf ("Function string parse fail\n");
 	return R_FALSE;
 }
+
+R_API RAnalFcn *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
+	RAnalFcn *fcni;
+	RListIter *iter;
+//eprintf ("DEPRECATED: get-at\n");
+	r_list_foreach (anal->fcns, iter, fcni)
+		//if (fcni->addr == addr)
+		if (addr >= fcni->addr && addr < (fcni->addr+fcni->size))
+			return fcni;
+	return NULL;
+}

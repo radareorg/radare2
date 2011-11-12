@@ -340,9 +340,13 @@ R_API ut64 r_io_size(RIO *io) {
 	ut64 size, here;
 	if (r_io_is_listener (io))
 		return UT64_MAX;
+// XXX. problematic when io.va = 1
+int iova = io->va;
+io->va = 0;
 	//r_io_set_fdn (io, fd);
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
+io->va = iova;
 	r_io_seek (io, here, R_IO_SEEK_SET);
 	return size;
 }

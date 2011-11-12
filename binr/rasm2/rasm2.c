@@ -30,7 +30,7 @@ static int rasm_show_help() {
 		" -d           Disassemble from hexpair bytes\n"
 		" -f           Read data from file\n"
 		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
-		" -o [offset]  Offset where this opcode is suposed to be\n"
+		" -o [offset]  Set start address for code (0x%08"PFMT64x")\n"
 		" -a [arch]    Set architecture plugin\n"
 		" -b [bits]    Set architecture bits\n"
 		" -s [syntax]  Select syntax (intel, att)\n"
@@ -41,7 +41,7 @@ static int rasm_show_help() {
 		" -e           Use big endian\n"
 		" -v           Show version information\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
-		" If the last argument is '-' reads from stdin\n");
+		" If the last argument is '-' reads from stdin\n", R_SYS_BASE);
 	return 0;
 }
 
@@ -74,7 +74,7 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 	if (!(acode = r_asm_mdisassemble (a, data, len)))
 		return 0;
 
-	printf ("%s\n", acode->buf_asm);
+	printf ("%s", acode->buf_asm);
 	ret = acode->len;
 	r_asm_code_free (acode);
 	return ret;
@@ -130,7 +130,7 @@ static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 int main(int argc, char *argv[]) {
 	char *arch = NULL, *file = NULL, *filters = NULL;
-	ut64 offset = 0x8048000;
+	ut64 offset = R_SYS_BASE;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
 	ut64 len = 0, idx = 0;
 
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 	if (argc<2)
 		return rasm_show_help ();
 
-	r_asm_use (a, "x86"); // XXX: do not harcode default arch
+	r_asm_use (a, R_SYS_ARCH);
 	while ((c = getopt (argc, argv, "Ceva:b:s:do:Bl:hLf:F:")) != -1) {
 		switch (c) {
 		case 'f':

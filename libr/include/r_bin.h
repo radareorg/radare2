@@ -292,6 +292,7 @@ extern RBinPlugin r_bin_plugin_any;
 extern RBinPlugin r_bin_plugin_fs;
 extern RBinPlugin r_bin_plugin_elf;
 extern RBinPlugin r_bin_plugin_elf64;
+extern RBinPlugin r_bin_plugin_p9;
 extern RBinPlugin r_bin_plugin_pe;
 extern RBinPlugin r_bin_plugin_pe64;
 extern RBinPlugin r_bin_plugin_mach0;
