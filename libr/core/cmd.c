@@ -591,10 +591,15 @@ static int cmd_mount(void *data, const char *_input) {
 				*ptr2 = 0;
 				off = r_num_math (core->num, ptr2+1);
 			}
-			//r_io_bind (core->io, &(core->fs->iob));
-			if (!r_fs_mount (core->fs, input, ptr, off))
+			if (!r_fs_mount (core->fs, ptr, input, off))
 				eprintf ("Cannot mount %s\n", input);
-		} else eprintf ("Usage: m ext2 /mnt");
+		} else {
+			if (!(ptr = r_fs_name (core->fs, core->offset)))
+				eprintf ("Unknown filesystem type\n");
+			else if (!r_fs_mount (core->fs, ptr, input, core->offset))
+				eprintf ("Cannot mount %s\n", input);
+			free (ptr);
+		}
 		break;
 	case '-':
 		r_fs_umount (core->fs, input+1);
@@ -734,7 +739,8 @@ static int cmd_mount(void *data, const char *_input) {
 		" m              ; list all mountpoints in human readable format\n"
 		" m*             ; same as above, but in r2 commands\n"
 		" ml             ; list filesystem plugins\n"
-		" m ext2 /mnt 0  ; mount ext2 fs at /mnt with delta 0 on IO\n"
+		" m /mnt         ; mount fs at /mnt with autodetect fs and current offset\n"
+		" m /mnt ext2 0  ; mount ext2 fs at /mnt with delta 0 on IO\n"
 		" m-/            ; umount given path (/)\n"
 		" my             ; yank contents of file into clipboard\n"
 		" mo /foo        ; get offset and size of given file\n"
@@ -1370,17 +1376,18 @@ static int cmd_help(void *data, const char *input) {
 		" d[hrscb]          ; debugger commands\n"
 		" e [a[=b]]         ; list/get/set config evaluable vars\n"
 		" f [name][sz][at]  ; set flag at current address\n"
-		" s [addr]          ; seek to address\n"
-		" S?[size] [vaddr]  ; IO section manipulation information\n"
 		" i [file]          ; get info about opened file\n"
+		" m[lyogfdps]       ; mountpoints commands\n"
 		" o [file] (addr)   ; open file at optional address\n"
 		" p?[len]           ; print current block with format and length\n"
 		" P[osi?]           ; project management utilities\n"
+		" r[+- ][len]       ; resize file\n"
+		" s [addr]          ; seek to address\n"
+		" S?[size] [vaddr]  ; IO section manipulation information\n"
 		" V[vcmds]          ; enter visual mode (vcmds=visualvisual  keystrokes)\n"
 		" w[mode] [arg]     ; multiple write operations\n"
 		" x [len]           ; alias for 'px' (print hexadecimal)\n"
 		" y [len] [off]     ; yank/paste bytes from/to memory\n"
-		" r[+- ][len]       ; resize file\n"
 		" ? [expr]          ; help or evaluate math expression\n"
 		" /[xmp/]           ; search for bytes, regexps, patterns, ..\n"
 		" ![cmd]            ; run given command as in system(3)\n"

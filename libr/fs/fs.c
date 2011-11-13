@@ -2,6 +2,7 @@
 
 #include <r_fs.h>
 #include "../config.h"
+#include "types.h"
 #include <errno.h>
 #include "p/grub/include/grub/msdos_partition.h"
 
@@ -481,6 +482,30 @@ R_API const char *r_fs_partition_type (const char *part, int type) {
 		default:
 			return NULL;
 	}
+}
+
+R_API const char *r_fs_name (RFS *fs, ut64 offset) {
+	ut8 buf[1024];
+	int i, j, len, ret = R_FALSE;
+
+	for (i=0; fstypes[i].name; i++) {
+		RFSType *f = &fstypes[i];
+		len = R_MIN (f->buflen, sizeof (buf));
+		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
+		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
+			ret = R_TRUE;
+			len = R_MIN (f->bytelen, sizeof (buf));
+			fs->iob.read_at (fs->iob.io, offset + f->byteoff, buf, len);
+			for (j=0; j<f->bytelen; j++) {
+				if (buf[j] != f->byte) {
+					ret = R_FALSE;
+					break;
+				}
+			}
+			if (ret) return strdup (f->name);
+		}
+	}
+	return NULL;
 }
 
 R_API int r_fs_prompt (RFS *fs, const char *root) {

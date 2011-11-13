@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "../../fs/types.h"
 
 static int check(RBinArch *arch);
 static const char *fsname(RBinArch *arch);
@@ -29,6 +30,7 @@ static RList *strings(RBinArch *arch) {
 }
 
 static RBinInfo* info(RBinArch *arch) {
+	char *p;
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW (RBinInfo)))
 		return NULL;
@@ -41,38 +43,21 @@ static RBinInfo* info(RBinArch *arch) {
 	strncpy (ret->os, "any", sizeof (ret->os)-1);
 	strncpy (ret->subsystem, "unknown", sizeof (ret->subsystem)-1);
 	strncpy (ret->machine, "any", sizeof (ret->machine)-1);
-	strncpy (ret->arch, fsname (arch), sizeof (ret->arch)-1);
+	p = fsname (arch);
+	strncpy (ret->arch, p, sizeof (ret->arch)-1);
+	free (p);
 	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	return ret;
 }
 
-typedef struct r_bin_fs_type_t {
-	const char *name;
-	int bufoff;
-	const char *buf;
-	int buflen;
-	int byteoff;
-	ut8 byte;
-	int bytelen;
-} RBinFSType;
-
-static RBinFSType fstypes[2] = {
-	{ "hfsplus", 0x400, "H+", 2, 0, 0, 0x400 },
-	{ "fat", 0x36, "FAT12", 5, 0, 0, 0 },
-	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },
-	{ "ext2", 0x438, "\x53\xef", 2, 0, 0, 0 },
-	{ "btrfs", 0x10040, "_BHRfS_M", 8, 0, 0, 0x0 },
-	{ NULL }
-};
-
 static const char *fsname(RBinArch *arch) {
 	ut8 buf[1024];
 	int i, j, len, ret = R_FALSE;
 
 	for (i=0; fstypes[i].name; i++) {
-		RBinFSType *f = &fstypes[i];
+		RFSType *f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf));
 		r_buf_read_at (arch->buf, f->bufoff, buf, len);
 		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
@@ -85,14 +70,20 @@ static const char *fsname(RBinArch *arch) {
 					break;
 				}
 			}
-			if (ret) return f->name;
+			if (ret) return strdup (f->name);
 		}
 	}
 	return NULL;
 }
 
 static int check(RBinArch *arch) {
-	return (fsname (arch))? R_TRUE: R_FALSE;
+	char *p;
+	int ret;
+
+	p = fsname (arch);
+	ret = (p)? R_TRUE: R_FALSE;
+	free (p);
+	return ret;
 }
 
 struct r_bin_plugin_t r_bin_plugin_fs = {

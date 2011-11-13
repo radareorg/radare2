@@ -62,7 +62,7 @@ static int bin_info (RCore *r, int mode) {
 		r_config_set (r->config, "cfg.bigendian", info->big_endian?"true":"false");
 		if (!strcmp (info->rclass, "fs")) {
 			r_config_set (r->config, "asm.arch", info->arch);
-			r_core_cmdf (r, "m %s /root 0", info->arch);
+			r_core_cmdf (r, "m /root %s 0", info->arch);
 		} else {
 			r_config_set (r->config, "asm.os", info->os);
 			r_config_set (r->config, "asm.arch", info->arch);
@@ -75,7 +75,7 @@ static int bin_info (RCore *r, int mode) {
 		if ((mode & R_CORE_BIN_RADARE)) {
 			if (!strcmp (info->type, "fs")) {
 				r_cons_printf ("e file.type=fs\n");
-				r_cons_printf ("m %s /root 0\n", info->arch);
+				r_cons_printf ("m /root %s 0\n", info->arch);
 			} else {
 				r_cons_printf (
 					"e file.type=%s\n"
