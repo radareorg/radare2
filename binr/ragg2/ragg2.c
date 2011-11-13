@@ -27,7 +27,8 @@ static void list (REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
 	r_list_foreach (egg->plugins, iter, p) {
-		printf ("%10s : sz=%d : %s\n", p->name, p->length, p->desc);
+		printf ("%10s : bits=%d : sz=%d : %s\n",
+			p->name, p->bits, p->length, p->desc);
 	}
 }
 
@@ -109,10 +110,7 @@ int main(int argc, char **argv) {
 			if (p) {
 				*p=0;
 				r_egg_option_set (egg, optarg, p+1);
-			} else {
-				eprintf ("Missing '='\nExample: ragg2 -c cmd=/bin/ls\n");
-				return 1;
-			}
+			} else r_egg_option_set (egg, optarg, "true");
 			}
 			break;
 		case 'F':

@@ -9,6 +9,7 @@ OBJ+=emit_x86.o
 OBJ+=emit_arm.o
 OBJ+=emit_x64.o
 OBJ+=emit_trace.o
+
 include ${STATIC_EGG_PLUGINS}
 OBJ+=$(subst ..,p/..,$(subst egg_,p/egg_,$(STATIC_OBJ)))
 

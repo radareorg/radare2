@@ -16,6 +16,7 @@ typedef struct r_egg_plugin {
 	const char *name;
 	const char *desc;
 	const ut8 *bytes;
+	int bits;
 	int length;
 	RBuffer* (*build) (void *egg);
 } REggPlugin;
@@ -110,7 +111,7 @@ R_API int r_egg_raw(REgg *egg, const ut8 *b, int len);
 R_API int r_egg_shellcode(REgg *egg, const char *name);
 #define r_egg_get_shellcodes(x) x->plugins
 R_API void r_egg_option_set (REgg *egg, const char *k, const char *v);
-R_API const char *r_egg_option_get (REgg *egg, const char *k);
+R_API char *r_egg_option_get (REgg *egg, const char *k);
 R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v);
 R_API void r_egg_printf(REgg *egg, const char *fmt, ...);
 R_API int r_egg_compile(REgg *egg);

@@ -303,7 +303,7 @@ R_API void r_egg_option_set(REgg *egg, const char *key, const char *val) {
 	return r_pair_set (egg->pair, key, val);
 }
 
-R_API const char *r_egg_option_get(REgg *egg, const char *key) {
+R_API char *r_egg_option_get(REgg *egg, const char *key) {
 	return r_pair_get (egg->pair, key);
 }
 

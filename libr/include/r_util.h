@@ -203,7 +203,7 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 #define R_BUF_CUR -1
 R_API RBuffer *r_buf_new();
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
-R_API int r_buf_set_bytes(RBuffer *b, ut8 *buf, int length);
+R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API int r_buf_append_nbytes(RBuffer *b, int length);
 R_API int r_buf_append_ut32(RBuffer *b, ut32 n);
