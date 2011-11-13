@@ -16,6 +16,9 @@ static int usage () {
 	" -L              list all plugins (shellcodes and encoders)\n"
 	" -i [plugin]     include shellcode plugin, uses options\n"
 	" -c [k=v]        set configuration options\n"
+	" -p [padding]    add padding after compilation (padding=n10s32)\n"
+	"                 ntas : begin nop, trap, 'a', sequence\n"
+	"                 NTAS : same as above, but at begining\n"
 	" -s              show assembler\n"
 	" -r              show raw bytes instead of hexpairs\n"
 	" -x              execute\n"
@@ -63,6 +66,7 @@ int openfile (const char *f, int x) {
 
 int main(int argc, char **argv) {
 	const char *file = NULL;
+	const char *padding = NULL;
 	const char *arch = "x86";
 	const char *os = R_EGG_OS_NAME;
 	char *format = "raw";
@@ -70,6 +74,7 @@ int main(int argc, char **argv) {
 	int show_hex = 1;
 	int show_asm = 0;
 	int show_raw = 0;
+	char *shellcode = NULL;
 	int bits = 32;
 	const char *ofile = NULL;
 	int ofileauto = 0;
@@ -77,7 +82,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:f:o:sxrk:FOI:Li:c:")) != -1) {
+        while ((c = getopt (argc, argv, "ha:b:f:o:sxrk:FOI:Li:c:p:")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -99,10 +104,10 @@ int main(int argc, char **argv) {
 			r_egg_lang_include_path (egg, optarg);
 			break;
 		case 'i':
-			if (!r_egg_shellcode (egg, optarg)) {
-				eprintf ("Unknown shellcode '%s'\n", optarg);
-				return 1;
-			}
+			shellcode = optarg;
+			break;
+		case 'p':
+			padding = optarg;
 			break;
 		case 'c':
 			{
@@ -149,11 +154,17 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc) {
-	//	eprintf ("No filename given\n");
-		//return usage ();
+	if (optind == argc && !shellcode) {
+		eprintf ("Missing argument\n");
+		return usage ();
 	} else file = argv[optind];
 
+	if (shellcode) {
+		if (!r_egg_shellcode (egg, shellcode)) {
+			eprintf ("Unknown shellcode '%s'\n", shellcode);
+			return 1;
+		}
+	}
 	/* create output file if needed */
 	if (ofileauto) {
 		int fd;
@@ -194,6 +205,8 @@ int main(int argc, char **argv) {
 		}
 	}
 	r_egg_compile (egg);
+	if (padding)
+		r_egg_padding (egg, padding);
 	//printf ("src (%s)\n", r_egg_get_source (egg));
 	if (show_asm)
 		printf ("%s\n", r_egg_get_assembly (egg));

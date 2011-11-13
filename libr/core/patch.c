@@ -13,12 +13,13 @@ OFFSET { code block }
 OFFSET "string"
 OFFSET 01020304
 OFFSET : assembly
++ {code}|"str"|0210|: asm
 
 #endif
 
 R_API int r_core_patch (RCore *core, const char *patch) {
 	char *p, *p2, *q, str[200], tmp[64];
-	ut64 noff;
+	ut64 noff = 0LL;
 	FILE *fd = fopen (patch, "r");
 	if (fd==NULL) {
 		eprintf ("Cannot open patch file\n");
@@ -36,7 +37,7 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 		p = strchr (str+1, ' ');
 		if (p) {
 			*p = 0;
-			for (++p;*p==' ';p++);
+			for (++p;*p==' ';p++); // XXX: skipsspaces here
 			switch (*p) {
 			case '{': {
 				char *s, *off = strdup (str);
@@ -69,9 +70,10 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 				r_buf_free (b);
 				b = r_egg_get_bin (core->egg);
 
-				noff = r_num_math (core->num, off);
+				if (strcmp (off, "+"))
+					noff = r_num_math (core->num, off);
 				r_core_write_at (core, noff, b->buf, b->length);
-
+				noff += b->length;
 				r_buf_free (b);
 				free (off);
 				}

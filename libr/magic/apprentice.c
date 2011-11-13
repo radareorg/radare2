@@ -618,7 +618,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	for (i = 0; i < marraycount; i++)
 		mentrycount += marray[i].cont_count;
 
-	if ((*magicp = malloc (sizeof(**magicp) * mentrycount)) == NULL) {
+	if ((*magicp = malloc (1+(sizeof(**magicp) * mentrycount))) == NULL) {
 		file_oomem (ms, sizeof(**magicp) * mentrycount);
 		errs++;
 		goto out;

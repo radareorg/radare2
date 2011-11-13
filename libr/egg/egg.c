@@ -284,6 +284,57 @@ R_API int r_egg_run(REgg *egg) {
 #define R_EGG_FILL_TYPE_SEQ
 #define R_EGG_FILL_TYPE_SEQ
 
+
+static inline char *eon(char *n) {
+	while (*n && (*n>='0' && *n<='9')) n++;
+	return n;
+}
+
+R_API int r_egg_padding (REgg *egg, const char *pad) {
+	int n;
+	ut8* xx, byte;
+	char *q, *p, *o = strdup (pad);
+	// parse pad string
+	for (p=o; *p; ) {
+		char t, f = *p++;
+		q = eon (p);
+		t = *q;
+		*q = 0;
+		n = atoi (p);
+		*q = t;
+		p = q;
+		if (n<1) {
+			eprintf ("Invalid padding length %d\n", n);
+			free (o);
+			return R_FALSE;
+		}
+		switch (f) {
+		case 's': case 'S': byte = 0; break;
+		case 'n': case 'N': byte = 0x90; break;
+		case 'a': case 'A': byte = 'A'; break;
+		case 't': case 'T': byte = 0xcc; break;
+		default:
+			eprintf ("Invalid padding format (%c)\n", *p);
+			free (o);
+			return R_FALSE;
+		}
+		
+		xx = malloc (n);
+		if (byte == 0) {
+			// TODO: add support for word-sized sequences
+			int i;
+			for (i=0; i<n; i++)
+				xx[i] = i;
+		} else memset (xx, byte, n);
+		if (f>='a' && f<='z')
+			r_buf_prepend_bytes (egg->bin, xx, n);
+		else r_buf_prepend_bytes (egg->bin, xx, n);
+		free (xx);
+	}
+	free (o);
+	return R_TRUE;
+}
+
 R_API void r_egg_fill(REgg *egg, int pos, int type, int argc, int length) {
 }
 

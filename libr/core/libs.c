@@ -112,7 +112,7 @@ static int __lib_egg_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	return R_TRUE;
 }
 
-static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+static int __lib_egg_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 R_API int r_core_loadlibs_init(struct r_core_t *core) {
 	/* initialize handlers */
