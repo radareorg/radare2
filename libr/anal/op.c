@@ -26,16 +26,21 @@ R_API RList *r_anal_op_list_new() {
 	return list;
 }
 
+R_API void r_anal_op_fini(RAnalOp *op) {
+	if (op->src[0]) r_anal_value_free (op->src[0]);
+	if (op->src[1]) r_anal_value_free (op->src[1]);
+	if (op->src[2]) r_anal_value_free (op->src[2]);
+	if (op->dst) r_anal_value_free (op->dst);
+	free (op->mnemonic);
+	op->mnemonic = NULL;
+	//op->src[0] = op->src[1] = op->src[2] = op->dst = NULL;
+	memset (op, 0, sizeof (RAnalOp));
+}
+
 R_API void r_anal_op_free(void *_op) {
-	if (_op) {
-		RAnalOp *op = _op;
-		r_anal_value_free (op->src[0]);
-		r_anal_value_free (op->src[1]);
-		r_anal_value_free (op->src[2]);
-		r_anal_value_free (op->dst);
-		free (op->mnemonic);
-		free (op);
-	}
+	if (!_op) return;
+	r_anal_op_fini (_op);
+	free (_op);
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {

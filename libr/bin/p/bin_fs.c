@@ -7,7 +7,30 @@
 #include "../../fs/types.h"
 
 static int check(RBinArch *arch);
-static const char *fsname(RBinArch *arch);
+
+static char *fsname(RBinArch *arch) {
+	ut8 buf[1024];
+	int i, j, len, ret = R_FALSE;
+
+	for (i=0; fstypes[i].name; i++) {
+		RFSType *f = &fstypes[i];
+		len = R_MIN (f->buflen, sizeof (buf));
+		r_buf_read_at (arch->buf, f->bufoff, buf, len);
+		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
+			ret = R_TRUE;
+			len = R_MIN (f->bytelen, sizeof (buf));
+			r_buf_read_at (arch->buf, f->byteoff, buf, len);
+			for (j=0; j<f->bytelen; j++) {
+				if (buf[j] != f->byte) {
+					ret = R_FALSE;
+					break;
+				}
+			}
+			if (ret) return strdup (f->name);
+		}
+	}
+	return NULL;
+}
 
 static int load(RBinArch *arch) {
 	if (check (arch))
@@ -52,29 +75,6 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static const char *fsname(RBinArch *arch) {
-	ut8 buf[1024];
-	int i, j, len, ret = R_FALSE;
-
-	for (i=0; fstypes[i].name; i++) {
-		RFSType *f = &fstypes[i];
-		len = R_MIN (f->buflen, sizeof (buf));
-		r_buf_read_at (arch->buf, f->bufoff, buf, len);
-		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
-			ret = R_TRUE;
-			len = R_MIN (f->bytelen, sizeof (buf));
-			r_buf_read_at (arch->buf, f->byteoff, buf, len);
-			for (j=0; j<f->bytelen; j++) {
-				if (buf[j] != f->byte) {
-					ret = R_FALSE;
-					break;
-				}
-			}
-			if (ret) return strdup (f->name);
-		}
-	}
-	return NULL;
-}
 
 static int check(RBinArch *arch) {
 	char *p;

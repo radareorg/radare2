@@ -4,9 +4,20 @@
 #include <r_anal.h>
 
 R_API RAnalCond *r_anal_cond_new() {
-	RAnalCond *cond = R_NEW (RAnalCond);
-	memset (cond, 0, sizeof (RAnalCond));
-	return cond;
+	return R_NEW0 (RAnalCond);
+}
+
+R_API void r_anal_cond_fini (RAnalCond *c) {
+	if (!c) return;
+	r_anal_value_free (c->arg[0]);
+	r_anal_value_free (c->arg[1]);
+	c->arg[0] = c->arg[1] = NULL;
+}
+
+R_API void r_anal_cond_free (RAnalCond *c) {
+	if (!c) return;
+	r_anal_cond_fini (c);
+	free (c);
 }
 
 // XXX?
@@ -30,33 +41,21 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 	if (cond->arg[1]) {
 		ut64 arg1 = r_anal_value_to_ut64 (anal, cond->arg[1]);
 		switch (cond->type) {
-		case R_ANAL_COND_EQ:
-			return arg0 == arg1;
-		case R_ANAL_COND_NE:
-			return arg0 != arg1;
-		case R_ANAL_COND_GE:
-			return arg0 >= arg1;
-		case R_ANAL_COND_GT:
-			return arg0 > arg1;
-		case R_ANAL_COND_LE:
-			return arg0 <= arg1;
-		case R_ANAL_COND_LT:
-			return arg0 < arg1;
+		case R_ANAL_COND_EQ: return arg0 == arg1;
+		case R_ANAL_COND_NE: return arg0 != arg1;
+		case R_ANAL_COND_GE: return arg0 >= arg1;
+		case R_ANAL_COND_GT: return arg0 > arg1;
+		case R_ANAL_COND_LE: return arg0 <= arg1;
+		case R_ANAL_COND_LT: return arg0 < arg1;
 		}
 	} else {
 		switch (cond->type) {
-		case R_ANAL_COND_EQ:
-			return !arg0;
-		case R_ANAL_COND_NE:
-			return arg0;
-		case R_ANAL_COND_GT:
-			return arg0>0;
-		case R_ANAL_COND_GE:
-			return arg0>=0;
-		case R_ANAL_COND_LT:
-			return arg0<0;
-		case R_ANAL_COND_LE:
-			return arg0<=0;
+		case R_ANAL_COND_EQ: return !arg0;
+		case R_ANAL_COND_NE: return arg0;
+		case R_ANAL_COND_GT: return arg0>0;
+		case R_ANAL_COND_GE: return arg0>=0;
+		case R_ANAL_COND_LT: return arg0<0;
+		case R_ANAL_COND_LE: return arg0<=0;
 		}
 	}
 	return R_FALSE;

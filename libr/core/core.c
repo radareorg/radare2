@@ -22,8 +22,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	*ok = 0;
 	if (str[0]=='$') {
 		*ok = 1;
-		r_anal_op (core->anal, &op, core->offset,
-			core->block, core->blocksize);
+		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize);
 		switch (str[1]) {
 		case '{':
 			{

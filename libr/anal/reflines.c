@@ -9,7 +9,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall)
 {
 	RAnalRefline *list2, *list = R_NEW (RAnalRefline);
-	RAnalOp op;
+	RAnalOp op = {0};
 	ut8 *ptr = buf;
 	ut8 *end = buf + len;
 	ut64 opc = addr;
@@ -17,7 +17,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 
 	INIT_LIST_HEAD (&(list->list));
 
-end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
+	end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
 	/* analyze code block */
 	while (ptr<end) {
 		if (nlines != -1 && --nlines == 0)
@@ -38,6 +38,7 @@ end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
 
 		addr += sz;
 		// This can segflauta if opcode length and buffer check fails
+		r_anal_op_fini (&op);
 		sz = r_anal_op (anal, &op, addr, ptr, (int)(end-ptr));
 		if (sz > 0) {
 			/* store data */
@@ -62,6 +63,7 @@ end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
 	__next:
 		ptr += sz;
 	}
+	r_anal_op_fini (&op);
 	return list;
 }
 

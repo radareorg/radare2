@@ -36,7 +36,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	char *line = NULL, *comment, *opstr, *osl = NULL; // old source line
 	char *refline = NULL;
 	RAsmOp asmop;
-	RAnalOp analop;
+	RAnalOp analop = {0};
 	RFlagItem *flag;
 	RMetaItem *mi;
 	ut64 dest = UT64_MAX;
@@ -76,7 +76,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int ocols = 0;
 	int lcols = 0;
 	
-
 	if (show_lines) ocols += 10;
 	if (show_offset) ocols += 14;
 	lcols = ocols+2;
@@ -205,9 +204,9 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		if (core->inc == 0)
 			core->inc = ret;
 
-		if (lastfail)
-			memset (&analop, 0, sizeof (analop));
-		else r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
+		r_anal_op_fini (&analop);
+		if (!lastfail)
+			r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
 		{
 			RAnalValue *src;
 			switch (analop.type) {
@@ -274,7 +273,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
 							fun?fun->name:"unk");
 				}
-				r_list_destroy (xrefs);
+				r_list_free (xrefs);
 			}
 		}
 		if (adistrick)

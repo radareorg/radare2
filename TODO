@@ -7,6 +7,10 @@
 
 ====[[ 0.9 ]]====
 
+* Optimizations:
+  - RAnalValue must be static, not ref
+  - save memory and accelerate code analysis
+
 * fix r_magic: Escupe porquería como \323 \177 y tal mezclado con el magic.
 * Refactor get_sym() and so on...
 

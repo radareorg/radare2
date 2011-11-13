@@ -108,7 +108,7 @@ static int __lib_egg_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	REggPlugin *hand = (REggPlugin*)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added (dis)assembly handler\n");
-	r_egg_add (core->bin, hand);
+	r_egg_add (core->egg, hand);
 	return R_TRUE;
 }
 

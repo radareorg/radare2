@@ -61,7 +61,6 @@ static RList* entries(RBinArch *arch) {
 static RList* sections(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	struct r_bin_elf_field_t *field = NULL;
 	struct r_bin_elf_section_t *section = NULL;
 	int i;
 

@@ -37,7 +37,7 @@ static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int op
 	if (cmdstr) {
 		if (!(str = malloc (strlen(cmdstr)*2)))
 			return NULL;
-		for(i=j=0; cmdstr[i]; i++,j++) {
+		for (i=j=0; cmdstr[i]; i++,j++) {
 			switch (cmdstr[i]) {
 			case 0x1b:
 				/* skip ansi chars */
@@ -102,7 +102,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFcn *fcn, int opts) {
 }
 
 R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
-	struct r_anal_bb_t *bb, *bbi;
+	struct r_anal_bb_t *bb = NULL, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
 	ut8 *buf;
@@ -112,9 +112,10 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
 	if (!(bb = r_anal_bb_new ()))
 		return R_FALSE;
 	if (split) ret = r_anal_fcn_split_bb (fcn, bb, at);
-	else r_list_foreach (fcn->bbs, iter, bbi)
+	else r_list_foreach (fcn->bbs, iter, bbi) {
 		if (at == bbi->addr)
 			ret = R_ANAL_RET_DUP;
+	}
 	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
 		r_anal_bb_free (bb);
 		return R_FALSE;
@@ -122,8 +123,10 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
 		if (!(buf = malloc (core->blocksize)))
 			return R_FALSE;
 		do {
-			if ((buflen = r_io_read_at (core->io, at+bblen, buf, core->blocksize)) != core->blocksize)
+			if ((buflen = r_io_read_at (core->io, at+bblen, buf, core->blocksize)) != core->blocksize) {
+				r_anal_bb_free (bb);
 				return R_FALSE;
+			}
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head); 
 			if (bblen == R_ANAL_RET_ERROR ||
 				(bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
@@ -468,7 +471,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	ut8 *buf = (ut8 *)malloc (core->blocksize);
 	int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
 	int ret, i, count = 0;
-	RAnalOp op;
+	RAnalOp op = {0};
 	ut64 at;
 	// TODO: get current section range here or gtfo
 	// ???
@@ -489,6 +492,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			if (ret != core->blocksize)
 				break;
 			for (i=0; i<core->blocksize-OPSZ; i++) {
+				r_anal_op_fini (&op);
 				if (!r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i))
 					continue;
 				if (op.type == R_ANAL_OP_TYPE_JMP || op.type == R_ANAL_OP_TYPE_CJMP ||
@@ -511,6 +515,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 			}
 		}
 	free (buf);
+	r_anal_op_fini (&op);
 	return count;
 }
 

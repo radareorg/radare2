@@ -484,7 +484,7 @@ R_API const char *r_fs_partition_type (const char *part, int type) {
 	}
 }
 
-R_API const char *r_fs_name (RFS *fs, ut64 offset) {
+R_API char *r_fs_name (RFS *fs, ut64 offset) {
 	ut8 buf[1024];
 	int i, j, len, ret = R_FALSE;
 

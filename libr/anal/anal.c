@@ -54,15 +54,13 @@ R_API RAnal *r_anal_new() {
 	return anal;
 }
 
-R_API RAnal *r_anal_free(RAnal *anal) {
-	if (anal) {
-		/* TODO: Free anals here */
-		r_listrange_free (anal->fcnstore);
-		r_list_free (anal->fcns);
-		r_list_free (anal->vartypes);
-	}
+R_API void r_anal_free(RAnal *anal) {
+	if (!anal) return;
+	/* TODO: Free anals here */
+	r_listrange_free (anal->fcnstore);
+	r_list_free (anal->fcns);
+	r_list_free (anal->vartypes);
 	free (anal);
-	return NULL;
 }
 
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {

@@ -20,23 +20,24 @@ R_API RAnalBlock *r_anal_bb_new() {
 	return bb;
 }
 
-R_API RList *r_anal_bb_list_new() {
-	RList *list = r_list_new ();
-	list->free = &r_anal_bb_free;
-	return list;
+R_API void r_anal_bb_free(RAnalBlock *bb) {
+	if (!bb) return;
+	r_anal_cond_free (bb->cond);
+	free (bb->fingerprint);
+	if (bb->ops)
+		r_list_free (bb->ops);
+	if (bb->diff)
+		r_anal_diff_free (bb->diff);
+	bb->ops = bb->diff = NULL;
+	bb->fingerprint = NULL;
+	bb->cond = NULL;
+	free (bb);
 }
 
-R_API void r_anal_bb_free(void *_bb) {
-	if (_bb) {
-		RAnalBlock *bb = _bb;
-		free (bb->cond);
-		free (bb->fingerprint);
-		if (bb->ops)
-			r_list_free (bb->ops);
-		if (bb->diff)
-			r_anal_diff_free (bb->diff);
-		free (bb);
-	}
+R_API RList *r_anal_bb_list_new() {
+	RList *list = r_list_new ();
+	list->free = (void*)r_anal_bb_free;
+	return list;
 }
 
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, int head) {

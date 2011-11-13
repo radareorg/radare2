@@ -182,7 +182,7 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 }
 
 R_API int r_core_hash_load(RCore *r, const char *file) {
-	const ut8 *buf = NULL;
+	ut8 *buf = NULL;
 	int i, buf_len = 0;
 	const ut8 *md5, *sha1;
 	char hash[128], *p;
@@ -192,7 +192,7 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	limit = r_config_get_i (r->config, "cfg.hashlimit");
 	if (r->file->size > limit)
 		return R_FALSE;
-	buf = (const ut8*)r_file_slurp (file, &buf_len);
+	buf = (ut8*)r_file_slurp (file, &buf_len);
 	if (buf==NULL)
 		return R_FALSE;
 	ctx = r_hash_new (R_TRUE, R_HASH_MD5);

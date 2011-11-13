@@ -73,7 +73,7 @@ R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFcn *fcn, ut64 at, ut64 addr, i
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	RAnalOp op;
+	RAnalOp op = {0};
 	char *varname;
 	int oplen, idx = 0;
 	if (fcn->addr == -1)
@@ -82,9 +82,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
 	while (idx < len) {
+		r_anal_op_fini (&op);
 		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) == 0) {
 			if (idx == 0) {
 				// eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			} else break;
 		}
@@ -127,13 +129,17 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 		case R_ANAL_OP_TYPE_CALL:
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					op.type == R_ANAL_OP_TYPE_CALL?
-					R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE))
+					R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE)) {
+				r_anal_op_fini (&op);
 				return R_ANAL_RET_ERROR;
+			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
+			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
 		}
 	}
+	r_anal_op_fini (&op);
 	return fcn->size;
 }
 
@@ -290,14 +296,16 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 				bb->type = bbi->type;
 				bbi->type = R_ANAL_BB_TYPE_BODY;
 			}
-			iter = r_list_iterator (bbi->ops);
-			while (r_list_iter_next (iter)) {
-				opi = r_list_iter_get (iter);
-				if (opi->addr >= addr) {
-					r_list_split (bbi->ops, opi);
-					bbi->ninstr--;
-					r_list_append (bb->ops, opi);
-					bb->ninstr++;
+			if (bbi->ops) {
+				iter = r_list_iterator (bbi->ops);
+				while (r_list_iter_next (iter)) {
+					opi = r_list_iter_get (iter);
+					if (opi->addr >= addr) {
+						r_list_split (bbi->ops, opi);
+						bbi->ninstr--;
+						r_list_append (bb->ops, opi);
+						bb->ninstr++;
+					}
 				}
 			}
 			return R_ANAL_RET_END;

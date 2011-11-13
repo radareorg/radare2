@@ -400,7 +400,7 @@ R_API RAnalFcn *r_listrange_find_root(RListRange* s, ut64 addr);
 /* --------- */ /* REFACTOR */ /* ---------- */
 /* anal.c */
 R_API RAnal *r_anal_new();
-R_API RAnal *r_anal_free(RAnal *r);
+R_API void r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API int r_anal_add(RAnal *anal, struct r_anal_plugin_t *foo);
 R_API int r_anal_list(RAnal *anal);
@@ -416,7 +416,7 @@ R_API RAnalFcn *r_anal_get_fcn_at(RAnal *anal, ut64 addr);
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_new();
 R_API RList *r_anal_bb_list_new();
-R_API void r_anal_bb_free(void *bb);
+R_API void r_anal_bb_free(RAnalBlock *bb);
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
 		ut64 addr, ut8 *buf, ut64 len, int head);
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
@@ -424,6 +424,7 @@ R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
 /* op.c */
 R_API RAnalOp *r_anal_op_new();
 R_API void r_anal_op_free(void *op);
+R_API void r_anal_op_fini(RAnalOp *op);
 R_API RList *r_anal_op_list_new();
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		const ut8 *data, int len);
@@ -509,7 +510,8 @@ R_API void r_anal_value_free(RAnalValue *value);
 
 R_API RAnalCond *r_anal_cond_new();
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op);
-#define r_anal_cond_free(x) free(x);
+R_API void r_anal_cond_fini (RAnalCond *c);
+R_API void r_anal_cond_free (RAnalCond *c);
 R_API char *r_anal_cond_to_string(RAnalCond *cond);
 R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
