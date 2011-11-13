@@ -60,6 +60,7 @@ enum {
 	R_LIB_TYPE_FASTCALL,/* fastcall */
 	R_LIB_TYPE_CRYPTO,  /* cryptography */
 	R_LIB_TYPE_CMD,     /* commands */
+	R_LIB_TYPE_EGG,     /* r_egg plugin */
 	R_LIB_TYPE_LAST
 };
 

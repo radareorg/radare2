@@ -10,3 +10,4 @@ main@global(128,128) {
 }
 EOF
 . ./t.sh
+

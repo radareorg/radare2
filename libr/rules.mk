@@ -74,7 +74,7 @@ deinstall uninstall:
 	cd .. && ${MAKE} uninstall
 
 clean: ${EXTRA_CLEAN}
-	-rm -f *.${EXT_EXE} *.${EXT_SO} *.${EXT_AR}
+	-rm -f *.${EXT_EXE} *.${EXT_SO} *.${EXT_AR} *.d
 	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.exe a.out
 	-@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
 	-@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi

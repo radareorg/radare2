@@ -7,5 +7,5 @@ Name: r_asm
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lr_asm -lr_lib -lr_util -lr_parse
+Libs: -L${libdir} -lr_asm -lr_lib -lr_util -lr_parse -lr_db
 Cflags: -I${includedir}/libr

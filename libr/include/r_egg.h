@@ -1,7 +1,9 @@
 #ifndef _INCLUDE_R_EGG_H_
 #define _INCLUDE_R_EGG_H_
 
+#include <r_db.h>
 #include <r_asm.h>
+#include <r_lib.h>
 #include <r_util.h>
 #include <r_syscall.h>
 
@@ -23,9 +25,11 @@ typedef struct r_egg_t {
 	RBuffer *buf;
 	RBuffer *bin;
 	RList *list;
-	RList *shellcodes;
+	//RList *shellcodes; // XXX is plugins nao?
 	RAsm *rasm;
 	RSyscall *syscall;
+	RPair *pair;
+	RList *plugins;
 	struct r_egg_emit_t *emit;
 	int endian;
 	int bits;
@@ -94,6 +98,7 @@ typedef struct r_egg_lang_t {
 R_API REgg *r_egg_new ();
 R_API char *r_egg_to_string (REgg *egg);
 R_API void r_egg_free (REgg *egg);
+R_API int r_egg_add (REgg *a, REggPlugin *foo);
 R_API void r_egg_reset (REgg *egg);
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os);
 R_API int r_egg_include(REgg *egg, const char *file, int format);
@@ -102,8 +107,8 @@ R_API void r_egg_syscall(REgg *egg, const char *arg, ...);
 R_API void r_egg_alloc(REgg *egg, int n);
 R_API void r_egg_label(REgg *egg, const char *name);
 R_API int r_egg_raw(REgg *egg, const ut8 *b, int len);
-R_API void r_egg_shellcode(REgg *egg, const char *name);
-#define r_egg_get_shellcodes(x) x->shellcodes
+R_API int r_egg_shellcode(REgg *egg, const char *name);
+#define r_egg_get_shellcodes(x) x->plugins
 R_API void r_egg_option_set (REgg *egg, const char *k, const char *v);
 R_API const char *r_egg_option_get (REgg *egg, const char *k);
 R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v);
@@ -116,11 +121,15 @@ R_API char *r_egg_get_source(REgg *egg);
 R_API RBuffer *r_egg_get_bin(REgg *egg);
 R_API char *r_egg_get_assembly(REgg *egg);
 R_API void r_egg_append(REgg *egg, const char *src);
+R_API int r_egg_run(REgg *egg);
 
 /* lang.c */
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta);
 R_API int r_egg_lang_parsechar(REgg *egg, char c);
 R_API void r_egg_lang_include_path (REgg *egg, const char *path);
 R_API void r_egg_lang_include_init (REgg *egg);
+
+/* plugin pointers */
+extern REggPlugin r_egg_plugin_x86_osx_binsh;
 #endif
 #endif

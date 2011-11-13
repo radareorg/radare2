@@ -10,6 +10,7 @@
 #include <r_parse.h>
 
 #define R_ASM_OPCODES_PATH R2_LIBDIR"/radare2/"R2_VERSION"/opcodes"
+// XXX too big!
 #define R_ASM_BUFSIZE 1024
 
 /* backward compatibility */
@@ -47,7 +48,7 @@ enum {
 };
 
 typedef struct r_asm_op_t {
-	int  inst_len;
+	int  inst_len; // rename to size or length
 	// But this is pretty slow..so maybe we should add some accessors
 	ut8  buf[R_ASM_BUFSIZE];
 	char buf_asm[R_ASM_BUFSIZE];

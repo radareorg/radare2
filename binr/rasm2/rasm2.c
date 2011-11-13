@@ -28,6 +28,7 @@ static void r_asm_list(RAsm *a) {
 static int rasm_show_help() {
 	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|- [-f file ..]\n"
 		" -d           Disassemble from hexpair bytes\n"
+		" -D           Disassemble showing hexpair and opcode\n"
 		" -f           Read data from file\n"
 		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
 		" -o [offset]  Set start address for code (0x%08"PFMT64x")\n"
@@ -45,7 +46,7 @@ static int rasm_show_help() {
 	return 0;
 }
 
-static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
+static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int hex) {
 	struct r_asm_code_t *acode;
 	ut8 *data;
 	char *ptr = buf;
@@ -70,13 +71,24 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin) {
 	if (!len || clen <= len)
 		len = clen;
 
-	r_asm_set_pc (a, offset);
-	if (!(acode = r_asm_mdisassemble (a, data, len)))
-		return 0;
-
-	printf ("%s", acode->buf_asm);
-	ret = acode->len;
-	r_asm_code_free (acode);
+	if (hex) {
+		ret = 0;
+		RAsmOp op;
+		r_asm_set_pc (a, offset);
+		while (r_asm_disassemble (a, &op, data+ret, len-ret) != -1) {
+			printf ("0x%08"PFMT64x"  %d %12s %s\n", 
+				a->pc, op.inst_len, op.buf_hex, op.buf_asm);
+			ret += op.inst_len;
+			r_asm_set_pc (a, offset+ret);
+		}
+	} else {
+		r_asm_set_pc (a, offset);
+		if (!(acode = r_asm_mdisassemble (a, data, len)))
+			return 0;
+		printf ("%s", acode->buf_asm);
+		ret = acode->len;
+		r_asm_code_free (acode);
+	}
 	return ret;
 }
 
@@ -144,8 +156,11 @@ int main(int argc, char *argv[]) {
 		return rasm_show_help ();
 
 	r_asm_use (a, R_SYS_ARCH);
-	while ((c = getopt (argc, argv, "Ceva:b:s:do:Bl:hLf:F:")) != -1) {
+	while ((c = getopt (argc, argv, "DCeva:b:s:do:Bl:hLf:F:")) != -1) {
 		switch (c) {
+		case 'D':
+			dis = 2;
+			break;
 		case 'f':
 			file = optarg;
 			break;
@@ -229,13 +244,14 @@ int main(int argc, char *argv[]) {
 				eprintf ("WARNING: Cannot slurp more from stdin\n");
 			if (ret>=0)
 				buf[ret] = '\0';
-			if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin);
+			if (dis)
+				ret = rasm_disasm (buf, offset, len, ascii, bin, dis-1);
 			else ret = rasm_asm (buf, offset, len, bin);
 		} else {
 			content = r_file_slurp (file, &length);
 			if (content) {
 				content[length] = '\0';
-				if (dis) ret = rasm_disasm (content, offset, len, ascii, bin);
+				if (dis) ret = rasm_disasm (content, offset, len, ascii, bin, dis-1);
 				else ret = rasm_asm (content, offset, len, bin);
 				free (content);
 			} else eprintf ("Cannot open file %s\n", file);
@@ -248,7 +264,7 @@ int main(int argc, char *argv[]) {
 				if ((!bin || !dis) && feof (stdin))
 					break;
 				if (!bin || !dis) buf[strlen (buf)-1]='\0';
-				if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin);
+				if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin, dis-1);
 				else ret = rasm_asm (buf, offset, len, bin);
 				idx += ret;
 				offset += ret;
@@ -261,7 +277,7 @@ int main(int argc, char *argv[]) {
 			}
 			return idx;
 		}
-		if (dis) ret = rasm_disasm (argv[optind], offset, len, ascii, bin);
+		if (dis) ret = rasm_disasm (argv[optind], offset, len, ascii, bin, dis-1);
 		else ret = rasm_asm (argv[optind], offset, len, bin);
 		if (!ret) eprintf ("invalid\n");
 		return ret;

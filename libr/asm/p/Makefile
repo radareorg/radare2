@@ -16,7 +16,6 @@ ARCHS+=msil.mk sh.mk
 include $(ARCHS)
 
 all: ${ALL_TARGETS}
-	@true
 
 a:
 	${CC} -DTEST asm_x86_nasm.c `pkg-config --libs --cflags r_asm` -o a${EXT_EXE}

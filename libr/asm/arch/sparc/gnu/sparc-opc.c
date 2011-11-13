@@ -26,6 +26,7 @@
    slower, but would mess up some macros a bit.  xoxorich. */
 
 #include <stdio.h>
+#include <string.h>
 #include "sysdep.h"
 #include "opcode/sparc.h"
 

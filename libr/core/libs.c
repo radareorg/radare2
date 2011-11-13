@@ -2,6 +2,7 @@
 
 #include "r_core.h"
 
+// XXX: spageti!
 /* io callback */
 static int __lib_io_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_io_plugin_t *hand = (struct r_io_plugin_t *)data;
@@ -102,6 +103,17 @@ static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 
 static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
+/* bin callback */
+static int __lib_egg_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
+	REggPlugin *hand = (REggPlugin*)data;
+	struct r_core_t *core = (struct r_core_t *)user;
+	//printf(" * Added (dis)assembly handler\n");
+	r_egg_add (core->bin, hand);
+	return R_TRUE;
+}
+
+static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
+
 R_API int r_core_loadlibs_init(struct r_core_t *core) {
 	/* initialize handlers */
 	r_lib_add_handler (core->lib, R_LIB_TYPE_IO, "io plugins",
@@ -122,6 +134,8 @@ R_API int r_core_loadlibs_init(struct r_core_t *core) {
 		&__lib_parse_cb, &__lib_parse_dt, core);
 	r_lib_add_handler (core->lib, R_LIB_TYPE_BIN, "bin plugins",
 		&__lib_bin_cb, &__lib_bin_dt, core);
+	r_lib_add_handler (core->lib, R_LIB_TYPE_EGG, "egg plugins",
+		&__lib_egg_cb, &__lib_egg_dt, core);
 	return R_TRUE;
 }
 
