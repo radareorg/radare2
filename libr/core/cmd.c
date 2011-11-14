@@ -2160,7 +2160,10 @@ static int cmd_egg(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	REgg *egg = core->egg;
 	char *oa, *p;
-	r_egg_setup (egg, r_config_get ("asm.arch"), core->assembler->bits, 0, r_config_get ("asm.os")); // XXX
+	r_egg_setup (egg,
+		r_config_get (core->config, "asm.arch"),
+		core->assembler->bits, 0,
+		r_config_get (core->config, "asm.os")); // XXX
 	switch (*input) {
 	case ' ':
 		r_egg_load (egg, input+2, 0);
