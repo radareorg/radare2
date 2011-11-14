@@ -256,14 +256,15 @@ int print_shellcode() {
 			printf("No shellcode defined\n");
 			return 1;
 		} else {
-			ut8 *ptr = malloc (4096);
+			ut8 *ptr, *p = malloc (4096<<1);
 			void (*cb)() = (void *)&shellcode;
+			ptr = R_MEM_ALIGN (p);
 			memcpy (ptr, shellcode, SCSIZE);
 			r_mem_protect (ptr, 4096, "rx");
 			r_mem_protect (ptr, 4096, "rwx"); // try, ignore if fail
 			cb = (void*)ptr;
 			cb ();
-			free (ptr);
+			free (p);
 		}
 		break;
 	case 4:

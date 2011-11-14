@@ -266,15 +266,16 @@ R_API void r_egg_append(REgg *egg, const char *src) {
 /* JIT : TODO: accept arguments here */
 R_API int r_egg_run(REgg *egg) {
 	int ret, (*cb)();
-	ut8 *ptr = malloc (4096);
+	ut8 *ptr, *p = malloc (4096<<1);
 	ut8* shellcode = egg->bin->buf;
+	ptr = R_MEM_ALIGN (p);
 	if (!ptr) return R_FALSE;
 	memcpy (ptr, shellcode, 4096);
 	r_mem_protect (ptr, 4096, "rx");
 	r_mem_protect (ptr, 4096, "rwx"); // try, ignore if fail
 	cb = (void*)ptr;
 	ret = cb ();
-	free (ptr);
+	free (p);
 	return ret;
 }
 
@@ -283,7 +284,6 @@ R_API int r_egg_run(REgg *egg) {
 #define R_EGG_FILL_TYPE_CHAR
 #define R_EGG_FILL_TYPE_SEQ
 #define R_EGG_FILL_TYPE_SEQ
-
 
 static inline char *eon(char *n) {
 	while (*n && (*n>='0' && *n<='9')) n++;

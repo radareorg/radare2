@@ -15,6 +15,7 @@ static int usage () {
 	" -I              add include path\n"
 	" -L              list all plugins (shellcodes and encoders)\n"
 	" -i [plugin]     include shellcode plugin, uses options\n"
+	" -B [hexpairs]   append some hexpair bytes\n"
 	" -c [k=v]        set configuration options\n"
 	" -p [padding]    add padding after compilation (padding=n10s32)\n"
 	"                 ntas : begin nop, trap, 'a', sequence\n"
@@ -30,8 +31,8 @@ static void list (REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
 	r_list_foreach (egg->plugins, iter, p) {
-		printf ("%10s : bits=%d : sz=%d : %s\n",
-			p->name, p->bits, p->length, p->desc);
+		printf ("%10s : sz=%d : %s\n",
+			p->name, p->length, p->desc);
 	}
 }
 
@@ -67,6 +68,7 @@ int openfile (const char *f, int x) {
 int main(int argc, char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
+	const char *bytes = NULL;
 	const char *arch = "x86";
 	const char *os = R_EGG_OS_NAME;
 	char *format = "raw";
@@ -82,7 +84,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:f:o:sxrk:FOI:Li:c:p:")) != -1) {
+        while ((c = getopt (argc, argv, "ha:b:f:o:sxrk:FOI:Li:c:p:B:")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -93,6 +95,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'b':
 			bits = atoi (optarg);
+			break;
+		case 'B':
+			bytes = optarg;
 			break;
 		case 'o':
 			ofile = optarg;
@@ -154,7 +159,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode) {
+	if (optind == argc && !shellcode && !bytes) {
 		eprintf ("Missing argument\n");
 		return usage ();
 	} else file = argv[optind];
@@ -164,6 +169,17 @@ int main(int argc, char **argv) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
 			return 1;
 		}
+	}
+	if (bytes) {
+		ut8 *b = malloc (strlen (bytes)+1);
+		int len = r_hex_str2bin (bytes, b);
+		if (len>0) {
+			if (!r_egg_raw (egg, b, len)) {
+				eprintf ("Unknown '%s'\n", shellcode);
+				return 1;
+			}
+		} else eprintf ("Invalid hexpair string for -B\n");
+		free (b);
 	}
 	/* create output file if needed */
 	if (ofileauto) {

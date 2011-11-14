@@ -99,6 +99,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_NEW_COPY(x,y) x=(y*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
+#define R_MEM_ALIGN(x) (void *)(((ut64)(size_t)x) & 0xfffffffffffff000LL);
 
 #define BIT_SET(x,y) (x[y>>4] |= (1<<(y&0xf)))
 #define BIT_CHK(x,y) ((x[y>>4] & (1<<(y&0xf))))
