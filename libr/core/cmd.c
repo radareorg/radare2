@@ -2106,6 +2106,141 @@ static int cmd_hexdump(void *data, const char *input) {
 	return cmd_print (data, input-1);
 }
 
+static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
+	if (input[1]!=' ') {
+		char *a = r_egg_option_get (egg, key);
+		if (a) {
+			r_cons_printf ("%s\n", a);
+			free (a);
+		}
+	} else r_egg_option_set (egg, key, input+2);
+}
+static int cmd_egg_compile(REgg *egg) {
+	int ret = R_FALSE;
+	RBuffer *b;
+	int i;
+	char *p = r_egg_option_get (egg, "egg.shellcode");
+	if (p && *p) {
+		if (!r_egg_shellcode (egg, p)) {
+			free (p);
+			return R_FALSE;
+		}
+		free (p);
+	}
+	r_egg_compile (egg);
+	if (!r_egg_assemble (egg)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+		return R_FALSE;
+	}
+	p = r_egg_option_get (egg, "egg.padding");
+	if (p && *p) {
+		r_egg_padding (egg, p);
+		free (p);
+	}
+	p = r_egg_option_get (egg, "egg.encoder");
+	if (p && *p) {
+		r_egg_encode (egg, p);
+		free (p);
+	}
+	if ((b = r_egg_get_bin (egg))) {
+		if (b->length>0) {
+			for (i=0; i<b->length; i++)
+				r_cons_printf ("%02x", b->buf[i]);
+			r_cons_printf ("\n");
+		} 
+		ret = R_TRUE;
+	} 
+	// we do not own this buffer!!
+	// r_buf_free (b);
+	r_egg_reset (egg);
+	return ret;
+}
+
+static int cmd_egg(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	REgg *egg = core->egg;
+	char *oa, *p;
+	r_egg_setup (egg, r_config_get ("asm.arch"), core->assembler->bits, 0, r_config_get ("asm.os")); // XXX
+	switch (*input) {
+	case ' ':
+		r_egg_load (egg, input+2, 0);
+		if (!cmd_egg_compile (egg))
+			eprintf ("Cannot compile '%s'\n", input+2);
+		break;
+	case '\0':
+		if (!cmd_egg_compile (egg))
+			eprintf ("Cannot compile\n");
+		break;
+	case 'p':
+		cmd_egg_option (egg, "egg.padding", input);
+		break;
+	case 'e':
+		cmd_egg_option (egg, "egg.encoder", input);
+		break;
+	case 'i':
+		cmd_egg_option (egg, "egg.shellcode", input);
+		break;
+	case 'l':
+		{
+			RListIter *iter;
+			REggPlugin *p;
+			r_list_foreach (egg->plugins, iter, p) {
+				printf ("%s  %6s : %s\n",
+				(p->type==R_EGG_PLUGIN_SHELLCODE)?
+					"shc":"enc", p->name, p->desc);
+			}
+		}
+		break;
+	case 'r':
+		cmd_egg_option (egg, "egg.padding", "");
+		cmd_egg_option (egg, "egg.shellcode", "");
+		cmd_egg_option (egg, "egg.encoder", "");
+		break;
+	case 'c':
+		// list, get, set egg options
+		switch (input[1]) {
+		case ' ':
+			oa = strdup (input+2);
+			p = strchr (oa, '=');
+			if (p) {
+				*p = 0;
+				r_egg_option_set (egg, oa, p+1);
+			} else {
+				char *o = r_egg_option_get (egg, oa);
+				if (o) {
+					r_cons_printf ("%s\n", o);
+					free (o);
+				}
+			}
+			break;
+		case '\0':
+			// list
+			r_pair_list (egg->pair,NULL);
+			eprintf ("list options\n");
+			break;
+		default:
+			eprintf ("Usage: gc [k=v]\n");
+			break;
+		}
+		break;
+	case '?':
+		eprintf ("Usage: g[wcilper] [arg]\n"
+			" g foo.r        : compile r_egg source file\n"
+			" gw             : compile and write\n"
+			" gc cmd=/bin/ls : set config option for shellcodes and encoders\n"
+			" gc             : list all config options\n"
+			" gl             : list plugins (shellcodes, encoders)\n"
+			" gi exec        : compile shellcode. like ragg2 -i\n"
+			" gp padding     : define padding for command\n"
+			" ge xor         : specify an encoder\n"
+			" gr             : reset r_egg\n"
+			"EVAL VARS: asm.arch, asm.bits, asm.os\n"
+		);
+		break;
+	}
+	return R_TRUE;
+}
+
 static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int len = strlen (input)+1;
@@ -3747,7 +3882,8 @@ static int cmd_search(void *data, const char *input) {
 			r_cons_break_end ();
 			free (buf);
 			if (searchflags && searchcount>0)
-				r_cons_printf ("%s%d_%d\n",
+				r_cons_printf ("%s%d_0 .. %s%d_%d\n",
+					searchprefix, core->search->n_kws-1,
 					searchprefix, core->search->n_kws-1, searchcount-1);
 		} else eprintf ("No keywords defined\n");
 	}
@@ -5377,6 +5513,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->cmd, "mount",    "mount filesystem", &cmd_mount);
 	r_cmd_add (core->cmd, "analysis", "analysis", &cmd_anal);
 	r_cmd_add (core->cmd, "flag",     "get/set flags", &cmd_flag);
+	r_cmd_add (core->cmd, "g",        "egg manipulation", &cmd_egg);
 	r_cmd_add (core->cmd, "debug",    "debugger operations", &cmd_debug);
 	r_cmd_add (core->cmd, "info",     "get file info", &cmd_info);
 	r_cmd_add (core->cmd, "cmp",      "compare memory", &cmd_cmp);

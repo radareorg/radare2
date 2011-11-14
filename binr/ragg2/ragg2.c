@@ -7,7 +7,7 @@ static int usage () {
 	eprintf ("ragg2 [options] [file|-]\n"
 	" -a [x86|arm]    select architecture\n"
 	" -b [32|64]      register size\n"
-	" -k [linux|osx]  operating system's kernel\n"
+	" -k [os]         operating system's kernel (linux,bsd,osx,w32)\n"
 	" -f [format]     output format (raw, pe, elf, mach0)\n"
 	" -F              output native format (osx=mach0, linux=elf, ..)\n"
 	" -o [file]       output file\n"
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *bytes = NULL;
-	const char *arch = "x86";
+	const char *arch = R_SYS_ARCH;
 	const char *os = R_EGG_OS_NAME;
 	char *format = "raw";
 	int show_execute = 0;
@@ -193,10 +193,9 @@ int main(int argc, char **argv) {
 		} else eprintf ("Invalid hexpair string for -B\n");
 		free (b);
 	}
-	if (encoder) {
+	if (encoder)
 		if (!r_egg_encode (egg, encoder))
 			eprintf ("Invalid encoder '%s'\n", encoder);
-	}
 	/* create output file if needed */
 	if (ofileauto) {
 		int fd;
@@ -250,7 +249,6 @@ int main(int argc, char **argv) {
 			eprintf ("r_egg_get_bin: invalid egg :(\n");
 			goto fail;
 		}
-
 		if (show_raw) {
 			write (1, b->buf, b->length);
 		} else
@@ -264,7 +262,7 @@ int main(int argc, char **argv) {
 					for (i=0; i<b->length; i++)
 						printf ("%02x", b->buf[i]);
 					printf ("\n");
-				}
+				} // else show_raw is_above()
 				break;
 			case 'p': // PE
 			case 'e': // ELF

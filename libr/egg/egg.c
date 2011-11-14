@@ -64,8 +64,10 @@ R_API void r_egg_reset (REgg *egg) {
 	r_egg_lang_include_init (egg);
 	r_buf_free (egg->src);
 	r_buf_free (egg->buf);
+	r_buf_free (egg->bin);
 	egg->src = r_buf_new ();
 	egg->buf = r_buf_new ();
+	egg->bin = r_buf_new ();
 }
 
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
