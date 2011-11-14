@@ -336,19 +336,8 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 }
 
 R_API void r_egg_fill(REgg *egg, int pos, int type, int argc, int length) {
+	// TODO
 }
-
-// functions that manipulate the compile() buffer
-//-----------------------------------------------
-#if 0
- - fill traps
- - fill nops
- - fill char
- - fill sequence 01 02 03..
- - fill printable seq
-
-- encoder
-#endif
 
 R_API void r_egg_option_set(REgg *egg, const char *key, const char *val) {
 	return r_pair_set (egg->pair, key, val);
@@ -363,10 +352,25 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 	RListIter *iter;
 	RBuffer *b;
 	r_list_foreach (egg->plugins, iter, p) {
-		if (!strcmp (name, p->name)) {
+		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
 			r_egg_raw (egg, b->buf, b->length);
 			r_buf_free (b);
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
+R_API int r_egg_encode(REgg *egg, const char *name) {
+	REggPlugin *p;
+	RListIter *iter;
+	RBuffer *b;
+	r_list_foreach (egg->plugins, iter, p) {
+		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
+			b = p->build (egg);
+			r_buf_free (egg->buf);
+			egg->buf = b;
 			return R_TRUE;
 		}
 	}

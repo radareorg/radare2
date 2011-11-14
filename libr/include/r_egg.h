@@ -10,14 +10,14 @@
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
 #define R_EGG_INCDIR_PATH R2_PREFIX"/lib/radare2/"R2_VERSION"/egg"
 
-//TODO: add shellcode encoder
 // rename to REggShellcode
+#define R_EGG_PLUGIN_SHELLCODE 0
+#define R_EGG_PLUGIN_ENCODER 1
 typedef struct r_egg_plugin {
 	const char *name;
 	const char *desc;
-	const ut8 *bytes;
 	int bits;
-	int length;
+	int type;
 	RBuffer* (*build) (void *egg);
 } REggPlugin;
 
@@ -108,6 +108,7 @@ R_API void r_egg_syscall(REgg *egg, const char *arg, ...);
 R_API void r_egg_alloc(REgg *egg, int n);
 R_API void r_egg_label(REgg *egg, const char *name);
 R_API int r_egg_raw(REgg *egg, const ut8 *b, int len);
+R_API int r_egg_encode(REgg *egg, const char *name);
 R_API int r_egg_shellcode(REgg *egg, const char *name);
 #define r_egg_get_shellcodes(x) x->plugins
 R_API void r_egg_option_set (REgg *egg, const char *k, const char *v);
@@ -132,6 +133,7 @@ R_API void r_egg_lang_include_path (REgg *egg, const char *path);
 R_API void r_egg_lang_include_init (REgg *egg);
 
 /* plugin pointers */
-extern REggPlugin r_egg_plugin_x86_osx_binsh;
+extern REggPlugin r_egg_plugin_xor;
+extern REggPlugin r_egg_plugin_exec;
 #endif
 #endif

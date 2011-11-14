@@ -14,7 +14,8 @@ static int usage () {
 	" -O              use default output file (filename without extension or a.out)\n"
 	" -I              add include path\n"
 	" -L              list all plugins (shellcodes and encoders)\n"
-	" -i [plugin]     include shellcode plugin, uses options\n"
+	" -i [shellcode]  include shellcode plugin, uses options. see -L\n"
+	" -e [encoder]    use specific encoder. see -L\n"
 	" -B [hexpairs]   append some hexpair bytes\n"
 	" -c [k=v]        set configuration options\n"
 	" -p [padding]    add padding after compilation (padding=n10s32)\n"
@@ -30,9 +31,15 @@ static int usage () {
 static void list (REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
+	printf ("shellcodes:\n");
 	r_list_foreach (egg->plugins, iter, p) {
-		printf ("%10s : sz=%d : %s\n",
-			p->name, p->length, p->desc);
+		if (p->type == R_EGG_PLUGIN_SHELLCODE)
+		printf ("%10s : %s\n", p->name, p->desc);
+	}
+	printf ("encoders:\n");
+	r_list_foreach (egg->plugins, iter, p) {
+		if (p->type == R_EGG_PLUGIN_ENCODER)
+		printf ("%10s : %s\n", p->name, p->desc);
 	}
 }
 
@@ -77,6 +84,7 @@ int main(int argc, char **argv) {
 	int show_asm = 0;
 	int show_raw = 0;
 	char *shellcode = NULL;
+	char *encoder = NULL;
 	int bits = 32;
 	const char *ofile = NULL;
 	int ofileauto = 0;
@@ -84,7 +92,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "ha:b:f:o:sxrk:FOI:Li:c:p:B:")) != -1) {
+        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:B:")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -92,6 +100,9 @@ int main(int argc, char **argv) {
 				show_asm = 1;
 				show_hex = 0;
 			}
+			break;
+		case 'e':
+			encoder = optarg;
 			break;
 		case 'b':
 			bits = atoi (optarg);
@@ -159,11 +170,12 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode && !bytes) {
+	if (optind == argc && !shellcode && !bytes && !encoder) {
 		eprintf ("Missing argument\n");
 		return usage ();
 	} else file = argv[optind];
 
+	r_egg_setup (egg, arch, bits, 0, os);
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
@@ -180,6 +192,10 @@ int main(int argc, char **argv) {
 			}
 		} else eprintf ("Invalid hexpair string for -B\n");
 		free (b);
+	}
+	if (encoder) {
+		if (!r_egg_encode (egg, encoder))
+			eprintf ("Invalid encoder '%s'\n", encoder);
 	}
 	/* create output file if needed */
 	if (ofileauto) {
@@ -204,7 +220,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	r_egg_setup (egg, arch, bits, 0, os);
 	if (file) {
 		if (!strcmp (file, "-")) {
 			char buf[1024];

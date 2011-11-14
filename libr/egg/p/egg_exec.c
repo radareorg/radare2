@@ -55,13 +55,15 @@ static RBuffer *build (REgg *egg) {
 		} else eprintf ("Unsupportted\n");
 		break;
 	default:
-		printf ("unsupported os\n");
+		printf ("unsupported os %x\n", egg->os);
 		break;
 	}
-	r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
-	if (shell && *shell) {
-		if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
-		else eprintf ("Cannot set shell\n");
+	if (sc) {
+		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
+		if (shell && *shell) {
+			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
+			else eprintf ("Cannot set shell\n");
+		}
 	}
 	free (suid);
 	free (shell);
@@ -69,18 +71,17 @@ static RBuffer *build (REgg *egg) {
 }
 
 //TODO: rename plugin to run
-REggPlugin r_egg_plugin_x86_osx_binsh = {
+REggPlugin r_egg_plugin_exec = {
 	.name = "exec",
+	.type = R_EGG_PLUGIN_SHELLCODE,
 	.bits = 32|64,
 	.desc = "execute cmd=/bin/sh suid=false",
-	.bytes = x86_osx_binsh,
-	.length = sizeof (x86_osx_binsh),
 	.build = (void *)build
 };
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
-	.data = &r_egg_plugin_x86_osx_binsh
+	.data = &r_egg_plugin_exec
 };
 #endif
