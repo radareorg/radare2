@@ -245,12 +245,12 @@ int sdb_dump_next (Sdb* s, char *key, char *value) {
 	if (klen >= SDB_KEYSIZE || dlen >= SDB_VALUESIZE)
 		return 0;
 	pos += 4;
-	if (key && getbytes (s->fd, key, klen)<1)
-		return 0;
-	if (value && getbytes (s->fd, value, dlen)<1)
-		return 0;
-	key[klen] = value[dlen] = 0;
-	return 1;
+	if (key && getbytes (s->fd, key, klen)>0)
+	if (value && getbytes (s->fd, value, dlen)>0) {
+		key[klen] = value[dlen] = 0;
+		return 1;
+	}
+	return 0;
 }
 
 // XXX: fix 64 bit issue

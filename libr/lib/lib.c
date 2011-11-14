@@ -155,10 +155,10 @@ R_API R_API int r_lib_close(RLib *lib, const char *file) {
 
 // XXX ugly hack ?
 static int samefile(const char *a, const char *b) {
-	char *sa = strdup(a);
-	char *sb = strdup(b);
+	char *sa = strdup (a);
+	char *sb = strdup (b);
 	char *ptr;
-	int ret, len;
+	int len, ret = R_FALSE;
 
 	if (sa != NULL && sb != NULL) {
 		do {

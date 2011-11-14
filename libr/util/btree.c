@@ -112,12 +112,12 @@ R_API struct btree_node *btree_hittest(struct btree_node *root, struct btree_nod
 }
 
 R_API int btree_optimize(struct btree_node **T, BTREE_CMP(cmp)) {
-	struct btree_node *NT, *node;
+	struct btree_node *node, *NT = NULL;
 	do {
 		node = btree_hittest(*T, NULL);
 		if (node) {
-			btree_add(&NT, node->data, cmp);
-			btree_del(*T, node->data, cmp, NULL);
+			btree_add (&NT, node->data, cmp);
+			btree_del (*T, node->data, cmp, NULL);
 		}
 	} while(node);
 	*T = NT; /* replace one tree with the other */

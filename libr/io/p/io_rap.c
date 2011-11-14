@@ -20,7 +20,7 @@ static int rap__write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count)
 	ut8 *tmp;
 	if (count>RMT_MAX)
 		count = RMT_MAX;
-	if ((tmp = (ut8 *)malloc (count+5))) {
+	if (!(tmp = (ut8 *)malloc (count+5))) {
 		eprintf ("rap__write: malloc failed\n");
 		return -1;
 	}

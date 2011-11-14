@@ -21,13 +21,15 @@ static void b64_encode(const ut8 in[3], ut8 out[4], int len) {
 }
 
 static int b64_decode(const ut8 in[4], ut8 out[3]) {
-	ut8 len = 3, i, v[4];
-	for (i=0;i<4;i++) {
+	ut8 len = 3, i, v[4] = {0};
+	for (i=0; i<4; i++) {
 		if (in[i]<43||in[i]>122)
 			return -1;
 		v[i] = cd64[in[i]-43];
-		if (v[i]!='$') v[i]-=62;
-		else { len = i-1; break; }
+		if (v[i]=='$') {
+			len = i-1;
+			break;
+		} else v[i]-=62;
 	}
 	out[0] = v[0] << 2 | v[1] >> 4;
 	out[1] = v[1] << 4 | v[2] >> 2;

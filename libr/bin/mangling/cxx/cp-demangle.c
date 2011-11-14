@@ -3572,7 +3572,7 @@ d_print_comp (struct d_print_info *dpi,
 	struct demangle_component *typed_name;
 	struct d_print_mod adpm[4];
 	unsigned int i;
-	struct d_print_template dpt;
+	struct d_print_template dpt = {0};
 
 	/* Pass the name down to the type so that it can be printed in
 	   the right place for the type.  We also have to pass down

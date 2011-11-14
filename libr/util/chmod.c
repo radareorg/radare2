@@ -132,21 +132,24 @@ static void recurse(const char *path, int rec, int (*fn)(const char *,int)) {
         struct stat st;
         DIR *dp;
 
-        if(lstat(path, &st) == -1 || !S_ISDIR(st.st_mode))
+        if (lstat (path, &st) == -1 || !S_ISDIR (st.st_mode))
                 return;
-        else if(!(dp = opendir(path)))
-                eprintf("opendir %s:", path);
-
+        else if (!(dp = opendir (path))) {
+                eprintf ("opendir %s:", path);
+		return;
+	}
         cwd = agetcwd();
-        if(chdir(path) == -1)
-                eprintf("chdir %s:", path);
-        while((d = readdir(dp)))
-                if(strcmp(d->d_name, ".") && strcmp(d->d_name, ".."))
-                        fn(d->d_name, 1);
+        if (chdir (path) == -1) {
+                eprintf ("chdir %s:", path);
+		return;
+	}
+        while ((d = readdir (dp)))
+                if (strcmp (d->d_name, ".") && strcmp (d->d_name, ".."))
+                        fn (d->d_name, 1);
 
-        closedir(dp);
-        if(chdir(cwd) == -1)
-                eprintf("chdir %s:", cwd);
-        free(cwd);
+        closedir (dp);
+        if (chdir (cwd) == -1)
+                eprintf ("chdir %s:", cwd);
+        free (cwd);
 }
 #endif

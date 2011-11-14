@@ -808,6 +808,7 @@ ulong Disassembleback(unsigned char *block,ulong base,ulong size,ulong ip,int n)
   ulong abuf[131],addr,back,cmdsize;
   unsigned char *pdata;
   t_disasm da;
+  abuf[0] = 0;
   if (block==NULL) return 0;           // Error, no code!
   if (n<0) n=0; else if (n>127) n=127; // Try to correct obvious errors
   if (ip>base+size) ip=base+size;

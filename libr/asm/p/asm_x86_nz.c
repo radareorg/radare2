@@ -275,6 +275,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		if (!strcmp (op, "cmp")) {
 			int arg0 = getreg (arg);
 			int arg1 = getreg (arg2);
+			if (arg2 == NULL) {
+				eprintf ("Invalid syntax\n");
+				return 0;
+			}
 			if (a->bits==64)
 				data[l++] = 0x48;
 			if (isnum (arg2)) { // reg, num

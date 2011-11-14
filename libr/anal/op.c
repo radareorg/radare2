@@ -92,8 +92,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 			if (div == 0) {
 				eprintf ("r_anal_op_execute: division by zero\n");
 				eprintf ("TODO: throw RAnalException\n");
-			}
-			r_anal_value_set_ut64 (anal, op->dst, 
+			} else r_anal_value_set_ut64 (anal, op->dst, 
 				r_anal_value_to_ut64 (anal, op->src[0])/div);
 			}
 			break;
@@ -115,7 +114,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 	}
 
 	if (anal->queued) {
-		if (op->delay>0) {
+		if (op && op->delay>0) {
 			eprintf ("Exception! two consecutive delayed instructions\n");
 			return R_FALSE;
 		}

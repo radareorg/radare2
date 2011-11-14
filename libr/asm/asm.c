@@ -74,7 +74,7 @@ static inline int r_asm_pseudo_intN(RAsm *a, struct r_asm_op_t *op, char *input,
 	} else if (n == 8) {
 		l = (long int)s64;
 		p = (const ut8*)&l;
-	}
+	} else }
 	r_mem_copyendian (op->buf, p, n, !a->big_endian);
 	r_hex_bin2str (op->buf, n, op->buf_hex);
 	return n;

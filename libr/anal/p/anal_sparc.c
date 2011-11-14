@@ -391,18 +391,18 @@ anal_jmpl(RAnal const * const anal, RAnalOp *op,
 static void
 anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr)
 {
-  st64 disp;
-  int r_cond;
+  st64 disp = 0;
+  int r_cond = 0;
   op->eob = R_TRUE;
 
   /* handle the conditions */
   if(X_OP2(insn) == OP2_Bicc || X_OP2(insn) == OP2_BPcc)
     {
-      r_cond = icc_to_r_cond(X_COND(insn));
+      r_cond = icc_to_r_cond (X_COND(insn));
     }
   else if(X_OP2(insn) == OP2_FBfcc || X_OP2(insn) == OP2_FBPfcc)
     {
-      r_cond = fcc_to_r_cond(X_COND(insn));
+      r_cond = fcc_to_r_cond (X_COND(insn));
     }
   else if(X_OP2(insn) == OP2_BPr)
     {
@@ -426,19 +426,19 @@ anal_branch(RAnalOp *op, const ut32 insn, const ut64 addr)
 
  
   /* handle displacement */
-  if(X_OP2(insn) == OP2_Bicc || X_OP2(insn) == OP2_FBfcc)
+  if (X_OP2 (insn) == OP2_Bicc || X_OP2 (insn) == OP2_FBfcc)
     {
       disp = get_immed_sgnext(insn, 21) * 4;
     }
-  else if(X_OP2(insn) == OP2_BPcc || X_OP2(insn) == OP2_FBPfcc)
+  else if (X_OP2(insn) == OP2_BPcc || X_OP2 (insn) == OP2_FBPfcc)
     {
-      disp = get_immed_sgnext(insn, 18) * 4;
+      disp = get_immed_sgnext (insn, 18) * 4;
     }
-  else if(X_OP2(insn) == OP2_BPr)
+  else if (X_OP2(insn) == OP2_BPr)
     {
-      disp = get_immed_sgnext(X_DISP16(insn), 15) * 4;
+      disp = get_immed_sgnext (X_DISP16 (insn), 15) * 4;
     }
-  op->dst = value_fill_addr_pc_disp(addr, disp);
+  op->dst = value_fill_addr_pc_disp (addr, disp);
   op->jump = addr + disp;
 }
 

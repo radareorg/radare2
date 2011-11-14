@@ -148,11 +148,13 @@ R_API char *r_file_slurp_random_line(const char *file) {
 	if (str) {
 		gettimeofday (&tv,NULL);
 		srand (getpid()+tv.tv_usec);
-		for(i=0; str[i]; i++)
+		for (i=0; str[i]; i++)
 			if (str[i]=='\n')
 				lines++;
+		if (lines<1)
+			return NULL;
 		lines = (rand()%lines);
-		for(i=0; str[i]&&lines; i++)
+		for (i=0; str[i] && lines; i++)
 			if (str[i]=='\n')
 				lines--;
 		ptr = str+i;

@@ -273,7 +273,6 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 // TODO: implement the r_diff_lines // we need to implement r_file_line_at (file, off);
 R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, int lb) {
 	RDiffOp dop;
-	char *rb;
 	struct line *al, *bl;
 	struct hunklist l = { NULL, NULL };
 	struct hunk *h;
@@ -324,15 +323,15 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 			for(i=0;i<len;i++)
 				printf ("%02x", bl[lb].l[i]);
 			printf (" @ 0x%"PFMT64x"\n", (ut64)offa);
-#endif
 			rb += 12 + len;
+#endif
 		}
 		la = h->a2;
 		lb = h->b2;
 	}
-	free(al);
-	free(bl);
-	free(l.base);
+	free (al);
+	free (bl);
+	free (l.base);
 
 	return hits;
 }

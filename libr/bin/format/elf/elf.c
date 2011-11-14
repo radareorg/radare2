@@ -659,7 +659,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 				eprintf ("Error: read (syms strtab)\n");
 				return NULL;
 			}
-			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) {
+			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) { // LEAKS
 				perror ("malloc (syms)");
 				return NULL;
 			}
@@ -710,6 +710,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			perror ("malloc (reloc)");
 			return NULL;
 		}
+		if (sym)
 		for (j =  0; j < nrel; j++) {
 			idx = ELF_R_SYM (rel[j].r_info);
 			if (idx < nsym) {

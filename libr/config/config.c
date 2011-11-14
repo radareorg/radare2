@@ -38,7 +38,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	case 2:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len))))
-				if (!strncmp (str, node->name, len))
+				if (!str || !strncmp (str, node->name, len))
 					cfg->printf ("%20s: %s\n", node->name,
 						node->desc?node->desc:"");
 		}
@@ -157,7 +157,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 			if (oi != UT64_MAX)
 				node->i_value = oi;
 			free (node->value);
-			node->value = strdup (ov);
+			node->value = strdup (ov? ov: "");
 			return NULL;
 		}
 	}
@@ -225,8 +225,8 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 		int ret = node->callback(cfg->user, node);
 		if (ret == R_FALSE) {
 			node->i_value = oi;
-			free(node->value);
-			node->value = strdup(ov);
+			free (node->value);
+			node->value = strdup (ov? ov: "");
 		}
 	}
 	free (ov);

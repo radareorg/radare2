@@ -687,7 +687,7 @@ int Assemble(char *cmd,ulong ip,t_asmmodel *model,int attempt,
   int rep,lock,segment,jmpsize,jmpmode,longjump;
   int hasrm,hassib,dispsize,immsize;
   int anydisp,anyimm,anyjmp;
-  long l,displacement,immediate,jmpoffset;
+  long l,displacement,immediate,jmpoffset = 0;
   char name[32],*nameend;
   char tcode[MAXCMDSIZE],tmask[MAXCMDSIZE];
   t_asmoperand aop[3],*op;             // Up to 3 operands allowed
@@ -1392,7 +1392,7 @@ retrylongjump:
     memcpy(tcode+i+1+hasrm+hassib+dispsize,&immediate,immsize);
     if (anyimm==0) memset(tmask+i+1+hasrm+hassib+dispsize,0xFF,immsize); };
   i=i+1+hasrm+hassib+dispsize+immsize;
-  jmpoffset=jmpoffset-(i+j+jmpsize);
+  jmpoffset -= (i+j+jmpsize);
   model->jmpsize=jmpsize;
   model->jmpoffset=jmpoffset;
   model->jmppos=i+j;

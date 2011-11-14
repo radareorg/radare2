@@ -41,7 +41,9 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	ut8 *buf;
 	int oplen, idx = 0;
 
-	if (anal && anal->cur && anal->cur->fingerprint_bb)
+	if (!anal)
+		return R_FALSE;
+	if (anal->cur && anal->cur->fingerprint_bb)
 		return (anal->cur->fingerprint_bb (anal, bb));
 
 	if (!(bb->fingerprint = malloc (1+bb->size)))
@@ -98,7 +100,8 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2) {
 	RListIter *iter, *iter2;
 	double t, ot;
 
-	if (anal && anal->cur && anal->cur->diff_bb)
+	if (!anal) return R_FALSE;
+	if (anal->cur && anal->cur->diff_bb)
 		return (anal->cur->diff_bb (anal, fcn, fcn2));
 
 	fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
@@ -148,7 +151,10 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	ut64 maxsize, minsize;
 	double t, ot;
 
-	if (anal && anal->cur && anal->cur->diff_fcn)
+	if (!anal)
+		return R_FALSE;
+
+	if (anal->cur && anal->cur->diff_fcn)
 		return (anal->cur->diff_fcn (anal, fcns, fcns2));
 
 	/* Compare functions with the same name */

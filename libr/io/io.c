@@ -80,28 +80,27 @@ R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mod
 	int fd = -2;
 	char *uri = strdup (file);
 	struct r_io_plugin_t *plugin;
-	if (io != NULL) {
-		for (;;) {
-			plugin = r_io_plugin_resolve (io, uri);
-			if (plugin && plugin->open) {
-				desc = plugin->open (io, uri, flags, mode);
-				if (io->redirect) {
-					free ((void *)uri);
-					uri = strdup (io->redirect);
-					r_io_redirect (io, NULL);
-					continue;
-				}
-				if (desc != NULL) {
-					r_io_desc_add (io, desc);
-					fd = desc->fd;
-					if (fd != -1)
-						r_io_plugin_open (io, fd, plugin);
-					if (desc != io->fd)
-						io->plugin = plugin;
-				}
+	if (!io) return NULL;
+	for (;;) {
+		plugin = r_io_plugin_resolve (io, uri);
+		if (plugin && plugin->open) {
+			desc = plugin->open (io, uri, flags, mode);
+			if (io->redirect) {
+				free ((void *)uri);
+				uri = strdup (io->redirect);
+				r_io_redirect (io, NULL);
+				continue;
 			}
-			break;
+			if (desc != NULL) {
+				r_io_desc_add (io, desc);
+				fd = desc->fd;
+				if (fd != -1)
+					r_io_plugin_open (io, fd, plugin);
+				if (desc != io->fd)
+					io->plugin = plugin;
+			}
 		}
+		break;
 	}
 	if (fd == -2) {
 #if __WINDOWS__

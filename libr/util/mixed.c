@@ -44,6 +44,8 @@ R_API int r_mixed_key(RMixed *m, int key, int size) {
 			m->keys[key]->size = size;
 		} else {
 			m->keys[key] = R_NEW (RMixedData);
+			if (!m->keys[key])
+				return R_FALSE;
 			m->keys[key]->size = size;
 			switch (size) {
 			case 1: case 2: case 4:
@@ -81,8 +83,10 @@ R_API RList *r_mixed_get (RMixed *m, int key, ut64 value) {
 
 R_API void *r_mixed_get0 (RMixed *m, int key, ut64 value) {
 	RList *list = r_mixed_get (m, key, value);
-	if (list && !r_list_empty (list))
-		return r_list_head (list)->data;
+	if (list && !r_list_empty (list)) {
+		RListIter *head = r_list_head (list);
+		if (head) return head->data;
+	}
 	return NULL;
 }
 

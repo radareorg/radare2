@@ -84,7 +84,7 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 
 	while (!feof (fd)) {
 		ut64 oa, ob; // offset
-		int ba, bb; // byte
+		int ba, bb = 0; // byte
 		char op; // operation
 
 		oa = ob = 0LL;
@@ -114,10 +114,10 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		sscanf (str, "%c", &op);
 
 		str = r_str_ichr (ptr+1, ' ');
-		if (str[0]!='0'||str[1]!='x') {
+		if (str[0]!='0' || str[1]!='x') {
 			ptr = strchr(str, ' ');
 			if (!ptr) continue;
-			*ptr='\0';
+			*ptr = '\0';
 			sscanf (str, "%02x", &bb);
 		}
 
@@ -132,8 +132,8 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 				ooa = oa;
 				oob = ob;
 			}
-			at[atl]=ba;
-			bt[btl]=bb;
+			at[atl] = ba;
+			bt[btl] = bb;
 			switch (op) {
 			case '|':
 				atl++;
