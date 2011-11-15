@@ -270,18 +270,7 @@ R_API void r_egg_append(REgg *egg, const char *src) {
 
 /* JIT : TODO: accept arguments here */
 R_API int r_egg_run(REgg *egg) {
-	int ret, (*cb)();
-	ut8 *ptr, *p = malloc (4096<<1);
-	ut8* shellcode = egg->bin->buf;
-	ptr = (ut8*)R_MEM_ALIGN (p);
-	if (!ptr) return R_FALSE;
-	memcpy (ptr, shellcode, 4096);
-	r_mem_protect (ptr, 4096, "rx");
-	r_mem_protect (ptr, 4096, "rwx"); // try, ignore if fail
-	cb = (void*)ptr;
-	ret = cb ();
-	free (p);
-	return ret;
+	return r_sys_run (egg->bin->buf, egg->bin->length);
 }
 
 #define R_EGG_FILL_TYPE_TRAP

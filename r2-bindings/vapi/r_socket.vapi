@@ -4,8 +4,7 @@
 
 [SimpleType]
 [CCode (cname="int", cheader_filename="r_socket.h", cprefix="r_socket_")]
-public struct Radare.RSocket : int
-{
+public struct Radare.RSocket {
 	[CCode (cname="r_socket_connect")]
 	public RSocket.connect(string host, int port);
 	[CCode (cname="r_socket_listen")]
@@ -27,5 +26,5 @@ public struct Radare.RSocket : int
 	public static int unix_listen(string file);
 
 	public static string http_get(string uri, out int code);
-	public static string http_post(string uri, string data, out int code);
+	public static string http_post(string uri, string data, out int code, out int rlen);
 }

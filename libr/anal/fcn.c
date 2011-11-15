@@ -78,7 +78,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 	int oplen, idx = 0;
 	if (fcn->addr == -1)
 		fcn->addr = addr;
-eprintf ("fcn anal\n");
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..

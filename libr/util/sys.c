@@ -49,10 +49,10 @@ R_API RList *r_sys_dir(const char *path) {
 R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 	char *ret, cmd[4096];
 	va_list ap;
-	va_start(ap, fmt);
+	va_start (ap, fmt);
 	vsnprintf (cmd, sizeof (cmd), fmt, ap);
 	ret = r_sys_cmd_str (cmd, NULL, NULL);
-	va_end(ap);
+	va_end (ap);
 	return ret;
 }
 
@@ -432,4 +432,18 @@ R_API const char *r_sys_arch_str(int arch) {
 	if (arch & R_SYS_ARCH_SH) return "sh";
 	if (arch & R_SYS_ARCH_AVR) return "avr";
 	return "none";
+}
+
+R_API int r_sys_run(const ut8 *buf, int len) {
+	int ret, (*cb)();
+	ut8 *ptr, *p = malloc ((4096+len)<<1);
+	ptr = (ut8*)R_MEM_ALIGN (p);
+	if (!ptr) return R_FALSE;
+	memcpy (ptr, buf, 4096);
+	r_mem_protect (ptr, 4096, "rx");
+	r_mem_protect (ptr, 4096, "rwx"); // try, ignore if fail
+	cb = (void*)ptr;
+	ret = cb ();
+	free (p);
+	return ret;
 }

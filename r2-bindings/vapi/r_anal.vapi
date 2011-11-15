@@ -197,7 +197,12 @@ namespace Radare {
 			public uint64 fail;
 			public BlockType type;
 			public BlockDiff diff;
-			public RList<RAnal.Op> ops;
+			public uint8* signature;
+			public int ninstr;
+			public bool traced;
+			public bool conditional;
+			public bool returnbb;
+			//public RList<RAnal.Op> ops;
 		}
 
 		public void bb (Block bb, uint64 addr, uint8 *buf, uint64 len, bool head);
