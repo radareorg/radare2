@@ -632,7 +632,6 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			break;
 		}
 	free (dyn);
-	free (ret);
 	return ret;
 }
 

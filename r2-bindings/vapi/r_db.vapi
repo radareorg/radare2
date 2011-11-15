@@ -20,7 +20,7 @@ namespace Radare {
 	//	public uint8 *pop();
 	}
 	[Compact]
-	[CCode (cheader_filename="r_pair.h", cname="struct r_pair_t", free_function="r_pair_free", cprefix="r_pair_")]
+	[CCode (cheader_filename="r_db.h", cname="struct r_pair_t", free_function="r_pair_free", cprefix="r_pair_")]
 	public class RPair {
 		/* lifecycle */
 		public RPair();
@@ -28,7 +28,7 @@ namespace Radare {
 		public void free();
 
 		/* storage */
-		public bool delete(string k);
+		public void delete(string k);
 		public string get(string k);
 		public void set (string k, string v);
 		//TODO public RList<RPairItem> list (string domain);

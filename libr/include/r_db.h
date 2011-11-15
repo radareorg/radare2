@@ -77,6 +77,7 @@ R_API RList *r_pair_list (RPair *p, const char *domain);
 R_API void r_pair_set_sync_dir (RPair *p, const char *dir);
 R_API void r_pair_load (RPair *p);
 R_API void r_pair_sync (RPair *p);
+R_API void r_pair_reset (RPair *p);
 /* */
 R_API struct r_db_t *r_db_new();
 R_API struct r_db_block_t *r_db_block_new();
