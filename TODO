@@ -10,19 +10,18 @@
 * Optimizations:
   - RAnalValue must be static, not ref
   - save memory and accelerate code analysis
+  - basicblock signatures must be just pointers to a big buf
 
 * fix r_magic: Escupe porquería como \323 \177 y tal mezclado con el magic.
 * Refactor get_sym() and so on...
-
-* Add rasc2 api inside r_egg
 
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"
   - dca sym.main imp.printf
   - dbc
 * Add !load in r2
-
-* rasm2 -D must show bytes  : opcode
+* Add support for classes (useful for c++, dex, objc, ...)
+  - command to add new classes
 * rasm2 must support binary creation help message or so.. rabin2 integration must be easier
 * Add support for 'expect' like foo in rarun2
 * TODO: make elf/pe get_os() and others return const and not strdup
@@ -31,10 +30,8 @@
 * implement 'ax' to get/set xrefs (better than afl <addr>)
 * shell encoder - get x86-64 one from twitter
   - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
-* use centralized pubsub or memcached to sync data
+* use centralized pubsub or memcached to sync data // redis?
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
-* Add support for classes (useful for c++, dex, objc, ...)
-  - command to add new classes
 
 OSX
 ===

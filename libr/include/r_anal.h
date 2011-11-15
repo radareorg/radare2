@@ -11,6 +11,15 @@
 #include <r_util.h>
 #include <r_syscall.h>
 
+// TODO: save memory2 : fingerprints must be pointers to a buffer
+// containing a dupped file in memory
+
+/* save memory:
+   bb_has_ops=1 -> 600M 
+   bb_has_ops=0 -> 350MB
+*/
+#define R_ANAL_BB_HAS_OPS 0
+
 // TODO: Remove this define? /cc @nibble_ds
 #define VERBOSE_ANAL if(0)
 
@@ -245,7 +254,9 @@ typedef struct r_anal_bb_t {
 	int traced;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
+#if R_ANAL_BB_HAS_OPS
 	RList *ops;
+#endif
 	RAnalCond *cond;
 } RAnalBlock;
 

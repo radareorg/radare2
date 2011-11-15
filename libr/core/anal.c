@@ -7,15 +7,21 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-static char *r_core_anal_graph_label(RCore *core, struct r_anal_bb_t *bb, int opts) {
-	RAnalOp *opi;
-	RListIter *iter;
+static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int i, j, line = 0, oline = 0, idx = 0;
+	ut64 at;
 
 	if (opts & R_CORE_ANAL_GRAPHLINES) {
+#if R_ANAL_BB_HA_OPS
+		RAnalOp *opi;
+		RListIter *iter;
 		r_list_foreach (bb->ops, iter, opi) {
 			r_bin_meta_get_line (core->bin, opi->addr, file, sizeof (file)-1, &line);
+#else
+		for (at=bb->addr; at<bb->addr+bb->size; at+=2) {
+			r_bin_meta_get_line (core->bin, at, file, sizeof (file)-1, &line);
+#endif
 			if (line != 0 && line != oline && strcmp (file, "??")) {
 				filestr = r_file_slurp_line (file, line, 0);
 				if (filestr) {
