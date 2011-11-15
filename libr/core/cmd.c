@@ -1376,6 +1376,7 @@ static int cmd_help(void *data, const char *input) {
 		" d[hrscb]          ; debugger commands\n"
 		" e [a[=b]]         ; list/get/set config evaluable vars\n"
 		" f [name][sz][at]  ; set flag at current address\n"
+		" g[wcilper] [arg]  ; go compile shellcodes with r_egg\n"
 		" i [file]          ; get info about opened file\n"
 		" m[lyogfdps]       ; mountpoints commands\n"
 		" o [file] (addr)   ; open file at optional address\n"

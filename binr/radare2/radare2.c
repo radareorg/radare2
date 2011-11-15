@@ -16,28 +16,30 @@ static struct r_core_t r;
 
 static int main_help(int line) {
 	if (line<2)
-		printf ("Usage: radare2 [-dDwntLqv] [-P patch] [-p prj]"
-			" [-s addr] [-b bsz] [-c cmd] [-e k=v] [file]\n");
+		printf ("Usage: radare2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits]"
+			"               [-s addr] [-B blocksize] [-c cmd] [-e k=v] [file]\n");
 	if (!line) printf (
+		" -a [arch]    set asm.arch eval var\n"
+		" -b [bits]    set asm.bits eval var\n"
+		" -B [size]    initial block size\n"
+		" -c 'cmd..'   execute radare command\n"
 		" -d           use 'file' as a program to debug\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
-		" -w           open file in write mode\n"
+		" -e k=v       evaluate config var\n"
+		" -f           block size = file size\n"
+		" -i [file]    run script file\n"
+		" -l [lib]     load plugin file\n"
+		" -L           list supported IO plugins\n"
 		" -n           do not run ~/.radare2rc\n"
 		" -q           quite mode (no prompt)\n"
-		" -f           block size = file size\n"
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
-		" -b [size]    initial block size\n"
-		" -i [file]    run script file\n"
-		" -v           show radare2 version\n"
-		" -l [lib]     load plugin file\n"
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
-		" -L           list supported IO plugins\n"
-		" -e k=v       evaluate config var\n"
-		" -c 'cmd..'   execute radare command\n"
+		" -v           show radare2 version\n"
+		" -w           open file in write mode\n"
 		" -h           show this help\n"
 		" -H           show extended help (files and environment)\n");
 	if (line==2)
@@ -112,6 +114,8 @@ int main(int argc, char **argv) {
 	char file[4096];
 	char *cmdfile = NULL;
 	const char *debugbackend = "native";
+	const char *asmarch = NULL;
+	const char *asmbits = NULL;
 	int is_gdb = R_FALSE;
 	RList *cmds = r_list_new ();
 
@@ -122,7 +126,7 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhHe:ndqvs:p:b:Lui:l:P:c:D:"
+	while ((c = getopt (argc, argv, "wfhHe:ndqvs:p:b:B:a:Lui:l:P:c:D:"
 #if USE_THREADS
 "t"
 #endif
@@ -176,7 +180,13 @@ int main(int argc, char **argv) {
 		case 'w':
 			perms = R_IO_READ | R_IO_WRITE;
 			break;
+		case 'a':
+			asmarch = optarg;
+			break;
 		case 'b':
+			asmbits = optarg;
+			break;
+		case 'B':
 			bsize = (ut32) r_num_math (r.num, optarg);
 			break;
 		case 's':
@@ -296,6 +306,8 @@ int main(int argc, char **argv) {
 			free (homerc);
 		}
 	}
+	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
+	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
 
 	if (debug) {
 		int pid, *p = r.file->fd->data;

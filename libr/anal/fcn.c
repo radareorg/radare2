@@ -78,6 +78,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 	int oplen, idx = 0;
 	if (fcn->addr == -1)
 		fcn->addr = addr;
+eprintf ("fcn anal\n");
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
@@ -208,7 +209,6 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 }
 
 R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
-	int root = type & R_ANAL_FCN_TYPE_ROOT;
 #if USE_NEW_FCN_STORE
 	// TODO: type is ignored here? wtf.. we need more work on fcnstore
 	if (root) return r_listrange_find_root (anal->fcnstore, addr);
@@ -216,15 +216,17 @@ R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 #else
 	RAnalFcn *fcn, *ret = NULL;
 	RListIter *iter;
+	if (type == R_ANAL_FCN_TYPE_ROOT) {
+		r_list_foreach (anal->fcns, iter, fcn) {
+			if (addr == fcn->addr)
+				return fcn;
+		}
+		return NULL;
+	}
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (type == R_ANAL_FCN_TYPE_NULL || (fcn->type & type)) {
-			if (root) {
-				if (addr == fcn->addr)
-					ret = fcn; 
-			} else {
-				if (addr == fcn->addr || (ret == NULL && (addr > fcn->addr && addr < fcn->addr+fcn->size)))
-					ret = fcn; 
-			}
+		if (!type || (fcn->type & type)) {
+			if (addr == fcn->addr || (ret == NULL && (addr > fcn->addr && addr < fcn->addr+fcn->size)))
+				ret = fcn; 
 		}
 	}
 	return ret;
@@ -272,7 +274,9 @@ R_API int r_anal_fcn_add_bb(RAnalFcn *fcn, ut64 addr, ut64 size, ut64 jump, ut64
 // TODO: rename fcn_bb_split()
 R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 	RAnalBlock *bbi;
+#if R_ANAL_BB_HAS_OPS
 	RAnalOp *opi;
+#endif
 	RListIter *iter;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
@@ -319,9 +323,11 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 // TODO: rename fcn_bb_overlap()
 R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
 	RAnalBlock *bbi;
+	RListIter *iter;
+#if R_ANAL_BB_HAS_OPS
 	RListIter nit; // hack to make r_list_unlink not fail that hard
 	RAnalOp *opi;
-	RListIter *iter;
+#endif
 
 	r_list_foreach (fcn->bbs, iter, bbi)
 		if (bb->addr+bb->size > bbi->addr && bb->addr+bb->size <= bbi->addr+bbi->size) {

@@ -6,7 +6,9 @@
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm radare2
-.Op Fl b Ar bsize
+.Op Fl a Ar arch
+.Op Fl b Ar bits
+.Op Fl B Ar blocksize
 .Op Fl c Ar cmd
 .Op Fl e Ar k=v
 .Op Fl p Ar project
@@ -23,7 +25,11 @@ This manpage is not updated yet. Feel free to contribute.
 .Pp
 The options are:
 .Bl -tag -width Fl
-.It Fl b Ar bsize
+.It Fl a Ar arch
+force asm.arch (x86, ppc, arm, mips, bf, java, ...)
+.It Fl b Ar bits
+force asm.bits (16, 32, 64)
+.It Fl B Ar bsize
 Set block size
 .It Fl c Ar cmd
 Execute the given command before giving prompt
