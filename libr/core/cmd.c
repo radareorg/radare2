@@ -607,7 +607,7 @@ static int cmd_mount(void *data, const char *_input) {
 	case '*':
 		eprintf ("List commands in radare format\n");
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf ("m %s 0x%"PFMT64x" %s\n", root->p->name, root->delta, root->path);
+			r_cons_printf ("m %s %s 0x%"PFMT64x"\n", root-> path, root->p->name, root->delta);
 		}
 		break;
 	case '\0':

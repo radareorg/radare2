@@ -16,7 +16,7 @@ R_API int r_io_undo_init(struct r_io_t *io) {
 	io->undo.limit = 0;
 	io->undo.s_enable = 0;
 	io->undo.w_enable = 0;
-	INIT_LIST_HEAD(&(io->undo.w_list));
+	io->undo.w_list = r_list_new ();
 	return R_TRUE;
 }
 
@@ -102,20 +102,22 @@ R_API void r_io_wundo_new(struct r_io_t *io, ut64 off, const ut8 *data, int len)
 	memcpy(uw->n, data, len);
 	uw->o = (ut8*) malloc(len);
 	r_io_read_at(io, off, uw->o, len);
-	list_add_tail(&(uw->list), &(io->undo.w_list));
+	r_list_append (io->undo.w_list, uw);
 }
 
 R_API void r_io_wundo_clear(struct r_io_t *io) {
 	// XXX memory leak
-	INIT_LIST_HEAD(&(io->undo.w_list));
+	io->undo.w_list = r_list_new ();
 }
 
 // rename to r_io_undo_length ?
 R_API int r_io_wundo_size(struct r_io_t *io) {
-	struct list_head *p;
+	RListIter *iter;
+	struct r_io_undo_w_t *uw;
 	int i = 0;
+
 	if (io->undo.w_init)
-		list_for_each_prev(p, &(io->undo.w_list))
+		r_list_foreach (io->undo.w_list, iter, uw)
 			i++;
 	return i;
 }
@@ -123,12 +125,12 @@ R_API int r_io_wundo_size(struct r_io_t *io) {
 // TODO: Deprecate or so? iterators must be language-wide, but helpers are useful
 R_API void r_io_wundo_list(struct r_io_t *io) {
 #define BW 8 /* byte wrap */
-	struct list_head *p;
+	RListIter *iter;
+	struct r_io_undo_w_t *u;
 	int i = 0, j, len;
 
 	if (io->undo.w_init)
-	list_for_each_prev(p, &(io->undo.w_list)) {
-		struct r_io_undo_w_t *u = list_entry(p, struct r_io_undo_w_t, list);
+		r_list_foreach (io->undo.w_list, iter, u) {
 		io->printf ("%02d %c %d %08"PFMT64x": ", i, u->set?'+':'-', u->len, u->off);
 		len = (u->len>BW)?BW:u->len;
 		for(j=0;j<len;j++) io->printf ("%02x ", u->o[j]);
@@ -156,10 +158,10 @@ R_API int r_io_wundo_apply(struct r_io_t *io, struct r_io_undo_w_t *u, int set) 
 }
 
 R_API void r_io_wundo_apply_all(struct r_io_t *io, int set) {
-	struct list_head *p;
+	RListIter *iter;
+	struct r_io_undo_w_t *u;
 
-	list_for_each_prev (p, &(io->undo.w_list)) {
-		struct r_io_undo_w_t *u = list_entry (p, struct r_io_undo_w_t, list);
+	r_list_foreach_prev (io->undo.w_list, iter, u) {
 		r_io_wundo_apply (io, u, set); //UNDO_WRITE_UNSET);
 		eprintf ("%s 0x%08"PFMT64x"\n", set?"redo":"undo", u->off);
 	}
@@ -168,13 +170,13 @@ R_API void r_io_wundo_apply_all(struct r_io_t *io, int set) {
 /* sets or unsets the writes done */
 /* if ( set == 0 ) unset(n) */
 R_API int r_io_wundo_set(struct r_io_t *io, int n, int set) {
+	RListIter *iter;
 	struct r_io_undo_w_t *u = NULL;
-	struct list_head *p;
+
 	int i = 0;
 	if (io->undo.w_init) {
-		list_for_each_prev(p, &(io->undo.w_list)) {
+		r_list_foreach_prev (io->undo.w_list, iter, u) {
 			if (i++ == n) {
-				u = list_entry(p, struct r_io_undo_w_t, list);
 				break;
 			}
 		}

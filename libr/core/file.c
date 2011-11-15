@@ -77,8 +77,11 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 R_API int r_core_bin_load(RCore *r, const char *file) {
 	int va = r->io->va || r->io->debug;
 
-	if (file == NULL)
+	if (file == NULL) {
+		if (r->file == NULL)
+			return R_FALSE;
 		file = r->file->filename;
+	}
 	if (!r_bin_load (r->bin, file, 0))
 		return R_FALSE;
 	r->file->obj = r_bin_get_object (r->bin, 0);

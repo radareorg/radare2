@@ -65,7 +65,7 @@ typedef struct r_io_undo_t {
 	int s_enable;
 	int w_enable;
 	/* write stuff */
-	struct list_head w_list;
+	RList *w_list;
 	int w_init;
 	/* seek stuff */
 	ut64 seek[R_IO_UNDOS];
@@ -80,7 +80,6 @@ typedef struct r_io_undo_w_t {
 	ut8 *o;   /* old data */
 	ut8 *n;   /* new data */
 	int len;  /* length */
-	struct list_head list;
 } RIOUndoWrite;
 
 typedef struct r_io_t {
