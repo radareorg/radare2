@@ -73,7 +73,9 @@ R_API void r_egg_reset (REgg *egg) {
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
 	egg->emit = NULL;
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
+	// TODO: setup egg->arch for all archs
 	if (!strcmp (arch, "x86")) {
+		egg->arch = R_SYS_ARCH_X86;
 		switch (bits) {
 		case 32:
 			r_syscall_setup (egg->syscall, arch, os, bits);
@@ -88,6 +90,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 		}
 	} else
 	if (!strcmp (arch, "arm")) {
+		egg->arch = R_SYS_ARCH_ARM;
 		switch (bits) {
 		case 16:
 		case 32:
@@ -270,7 +273,7 @@ R_API int r_egg_run(REgg *egg) {
 	int ret, (*cb)();
 	ut8 *ptr, *p = malloc (4096<<1);
 	ut8* shellcode = egg->bin->buf;
-	ptr = R_MEM_ALIGN (p);
+	ptr = (ut8*)R_MEM_ALIGN (p);
 	if (!ptr) return R_FALSE;
 	memcpy (ptr, shellcode, 4096);
 	r_mem_protect (ptr, 4096, "rx");

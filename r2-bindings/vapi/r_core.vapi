@@ -12,6 +12,7 @@ public class RCore {
 	public RCons cons;
 	public RDebug dbg;
 	public RConfig config;
+	public REgg egg;
 	public RAsm assembler;
 	public RMagic magic;
 	public RAnal anal;

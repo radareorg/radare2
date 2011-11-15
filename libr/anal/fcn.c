@@ -296,6 +296,7 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 				bb->type = bbi->type;
 				bbi->type = R_ANAL_BB_TYPE_BODY;
 			}
+#if R_ANAL_BB_HAS_OPS
 			if (bbi->ops) {
 				iter = r_list_iterator (bbi->ops);
 				while (r_list_iter_next (iter)) {
@@ -308,6 +309,7 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 					}
 				}
 			}
+#endif
 			return R_ANAL_RET_END;
 		}
 	}
@@ -331,6 +333,7 @@ R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
 				bb->type = R_ANAL_BB_TYPE_HEAD;
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 			} else bb->type = R_ANAL_BB_TYPE_BODY;
+#if R_ANAL_BB_HAS_OPS
 			r_list_foreach (bb->ops, iter, opi) {
 				if (opi->addr >= bbi->addr) {
 					nit.n = iter->n;
@@ -339,7 +342,8 @@ R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
 					iter = &nit;
 				}
 			}
-					//r_list_unlink (bb->ops, opi);
+#endif
+			//r_list_unlink (bb->ops, opi);
 			r_list_append (fcn->bbs, bb);
 			return R_ANAL_RET_END;
 		}

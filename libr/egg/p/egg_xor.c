@@ -13,7 +13,6 @@ static RBuffer *build (REgg *egg) {
 REggPlugin r_egg_plugin_xor = {
 	.name = "xor",
 	.type = R_EGG_PLUGIN_ENCODER,
-	.bits = 32,
 	.desc = "xor encoder for shellcode",
 	.build = (void *)build
 };

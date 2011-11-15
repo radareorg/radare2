@@ -165,7 +165,7 @@ R_API int r_db_delete(struct r_db_t *db, const void *ptr) {
 }
 
 static int r_db_iter_find_next(RDatabaseIter *it) {
-	
+	// TODO
 	return R_FALSE;
 }
 

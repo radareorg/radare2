@@ -16,7 +16,6 @@
 typedef struct r_egg_plugin {
 	const char *name;
 	const char *desc;
-	int bits;
 	int type;
 	RBuffer* (*build) (void *egg);
 } REggPlugin;
@@ -32,6 +31,7 @@ typedef struct r_egg_t {
 	RPair *pair;
 	RList *plugins;
 	struct r_egg_emit_t *emit;
+	int arch;
 	int endian;
 	int bits;
 	ut32 os;
