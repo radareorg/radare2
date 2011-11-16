@@ -151,7 +151,7 @@ R_API void r_mixed_change_begin(RMixed *m, void *p) {
 	for (i=0; i<RMIXED_MAXKEYS; i++)
 		if (m->keys[i]) {
 			m->state[i] = r_mixed_get_value (i, m->keys[i]->size, p);
-			eprintf ("store state %d (%llx)\n", i, m->state[i]);
+			eprintf ("store state %d (0x08"PFMT64x")\n", i, m->state[i]);
 		}
 }
 

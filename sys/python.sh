@@ -15,6 +15,7 @@ echo
 
 cd r2-bindings
 ./configure --prefix=/usr --enable-devel --enable=python
+sudo make install-vapi
 cd python
 make clean
 make
