@@ -84,7 +84,6 @@ TODO
 
 * If [0-9] keybindings in visual point to same address use same reference
 
-
  -- refactoring tasks
 * Make r_io happy with RList
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup

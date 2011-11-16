@@ -890,8 +890,68 @@ static int cmd_section(void *data, const char *input) {
 		" S?               ; show this help message\n"
 		" S*               ; list sections (in radare commands)\n"
 		" S=               ; list sections (in nice ascii-art bars)\n"
+		" Sd [file]        ; dump current section to a file (see dmd)\n"
+		" Sl [file]        ; load contents of file into current section (see dml)\n"
 		" S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
 		" S-[id|0xoff|*]   ; remove this section definition\n");
+		break;
+	case 'd':
+		{
+		char file[128];
+		ut64 o = core->offset;
+		RListIter *iter;
+		RIOSection *s;
+		if (core->io->va || core->io->debug)
+			o = r_io_section_vaddr_to_offset (core->io, o);
+		r_list_foreach (core->io->sections, iter, s) {
+			if (o>=s->offset && o<s->offset+s->size) {
+				ut8 *buf = malloc (s->size);
+				r_io_read_at (core->io, s->offset, buf, s->size);
+				if (input[1]==' ' && input[2]) {
+					strncpy (file, input+2, sizeof (file));
+				} else snprintf (file, sizeof (file), "0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+					s->vaddr, s->vaddr+s->size, r_str_rwx_i (s->rwx));
+				if (!r_file_dump (file, buf, s->size)) {
+					eprintf ("Cannot write '%s'\n", file);
+					free (buf);
+					return R_FALSE;
+				}
+				eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
+				free (buf);
+				return R_TRUE;
+			}
+		}
+		}
+		break;
+	case 'l':
+		{
+		ut64 o = core->offset;
+		RListIter *iter;
+		RIOSection *s;
+		if (input[1] != ' ') {
+			eprintf ("Usage: Sl [file]\n");
+			return R_FALSE;
+		}
+		if (core->io->va || core->io->debug)
+			o = r_io_section_vaddr_to_offset (core->io, o);
+		r_list_foreach (core->io->sections, iter, s) {
+			if (o>=s->offset && o<s->offset+s->size) {
+				int sz;
+				char *buf = r_file_slurp (input+2, &sz);
+#warning TODO: use mmap here. we need a portable implementation
+				if (!buf) {
+					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", s->size);
+					return R_FALSE;
+				}
+				r_io_write_at (core->io, s->vaddr, (const ut8*)buf, sz);
+				eprintf ("Loaded %d bytes into the map region at 0x%08"PFMT64x"\n", sz, s->vaddr);
+				free (buf);
+				return R_TRUE;
+			}
+		}
+		eprintf ("No debug region found here\n");
+		return R_FALSE;
+		}
 		break;
 	case '-':
 		if (input[1] == '*') {
@@ -4920,40 +4980,98 @@ R_API int r_core_cmd_command(RCore *core, const char *command) {
 	return 0;
 }
 
-static void cmd_debug_dm(RCore *core, const char *input) {
+static int cmd_debug_dm(RCore *core, const char *input) {
+	char file[128];
+	RListIter *iter;
+	RDebugMap *map;
+	ut64 addr = core->offset;
+
 	switch (input[0]) {
 	case '?':
 		r_cons_printf (
 		"Usage: dm [size]\n"
-		" dm         List memory maps of target process\n"
-		" dm*        Same as above but in radare commands\n"
-		" dm 4096    Allocate 4096 bytes in child process\n"
-		" dm-0x8048  Deallocate memory map of address 0x8048\n"
+		" dm            List memory maps of target process\n"
+		" dm*           Same as above but in radare commands\n"
+		" dm 4096       Allocate 4096 bytes in child process\n"
+		" dm-0x8048     Deallocate memory map of address 0x8048\n"
 		" dmi [addr|libname] [symname]   List symbols of target lib\n"
 		" dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
+		" dmd [file]    Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
+		" dml file      Load contents of file into the current map region (see Sl)\n"
 		//" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
-		"TODO: map files in process memory.\n");
+		"TODO: map files in process memory. (dmf file @ [addr])\n");
+		break;
+	case 'd':
+		r_debug_map_sync (core->dbg); // update process memory maps
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				ut8 *buf = malloc (map->size);
+#warning TODO: use mmap here. we need a portable implementation
+				if (!buf) {
+					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
+					return R_FALSE;
+				}
+				r_io_read_at (core->io, map->addr, buf, map->size);
+				if (input[1]==' ' && input[2]) {
+					strncpy (file, input+2, sizeof (file));
+				} else snprintf (file, sizeof (file), "0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
+					map->addr, map->addr_end, r_str_rwx_i (map->perm));
+				if (!r_file_dump (file, buf, map->size)) {
+					eprintf ("Cannot write '%s'\n", file);
+					free (buf);
+					return R_FALSE;
+				}
+				eprintf ("Dumped %d bytes into %s\n", (int)map->size, file);
+				free (buf);
+				return R_TRUE;
+			}
+		}
+		eprintf ("No debug region found here\n");
+		return R_FALSE;
+	case 'l':
+		if (input[1] != ' ') {
+			eprintf ("Usage: dml [file]\n");
+			return R_FALSE;
+		}
+		r_debug_map_sync (core->dbg); // update process memory maps
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				int sz;
+				char *buf = r_file_slurp (input+2, &sz);
+#warning TODO: use mmap here. we need a portable implementation
+				if (!buf) {
+					eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
+					return R_FALSE;
+				}
+				r_io_write_at (core->io, map->addr, (const ut8*)buf, sz);
+				eprintf ("Loaded %d bytes into the map region at 0x%08"PFMT64x"\n", sz, map->addr);
+				free (buf);
+				return R_TRUE;
+			}
+		}
+		eprintf ("No debug region found here\n");
+		return R_FALSE;
 		break;
 	case 'i':
 		{ // Move to a separate function
-		ut64 addr = 0LL;
 		char *libname = NULL, *symname = NULL;
 		char *ptr = strdup (r_str_trim_head ((char*)input+2));
 		char cmd[1024], *cmdret;
 		int i, len;
 
+		addr = 0LL;
 		i = r_str_word_set0 (ptr);
 		switch (i) {
-			case 2: // get symname
-				symname = r_str_word_get0 (ptr, 1);
-			case 1: // get addr|libname
-				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-				if (!addr) libname = r_str_word_get0 (ptr, 0);
+		case 2: // get symname
+			symname = r_str_word_get0 (ptr, 1);
+		case 1: // get addr|libname
+			addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+			if (!addr) libname = r_str_word_get0 (ptr, 0);
 		}
 		r_debug_map_sync (core->dbg); // update process memory maps
-		RListIter *iter = r_list_iterator (core->dbg->maps);
+		iter = r_list_iterator (core->dbg->maps);
 		while (r_list_iter_next (iter)) {
-			RDebugMap *map = r_list_iter_get (iter);
+			map = r_list_iter_get (iter);
 			if ((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
 				(libname != NULL && (strstr (map->name, libname)))) {
 				if (symname)
@@ -4985,6 +5103,7 @@ static void cmd_debug_dm(RCore *core, const char *input) {
 		r_debug_map_list (core->dbg, core->offset, 0);
 		break;
 	}
+	return R_TRUE;
 }
 
 static int step_until(RCore *core, ut64 addr) {
