@@ -75,7 +75,9 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 	if (ms->o.buf != NULL) {
 		int obuflen = strlen (ms->o.buf);
 		len = obuflen+buflen+1;
-		newstr = malloc (len);
+		newstr = malloc (len+1);
+		memset (newstr, 0, len+1); // XXX: unnecessary?
+		newstr[len] = 0;
 		memcpy (newstr, ms->o.buf, obuflen);
 		memcpy (newstr+obuflen, buf, buflen);
 		free (buf);

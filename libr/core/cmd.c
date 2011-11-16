@@ -4980,7 +4980,7 @@ R_API int r_core_cmd_command(RCore *core, const char *command) {
 	return 0;
 }
 
-static int cmd_debug_dm(RCore *core, const char *input) {
+static int cmd_debug_map(RCore *core, const char *input) {
 	char file[128];
 	RListIter *iter;
 	RDebugMap *map;
@@ -4994,10 +4994,10 @@ static int cmd_debug_dm(RCore *core, const char *input) {
 		" dm*           Same as above but in radare commands\n"
 		" dm 4096       Allocate 4096 bytes in child process\n"
 		" dm-0x8048     Deallocate memory map of address 0x8048\n"
-		" dmi [addr|libname] [symname]   List symbols of target lib\n"
-		" dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
 		" dmd [file]    Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
 		" dml file      Load contents of file into the current map region (see Sl)\n"
+		" dmi [addr|libname] [symname]   List symbols of target lib\n"
+		" dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
 		//" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
 		"TODO: map files in process memory. (dmf file @ [addr])\n");
 		break;
@@ -5044,7 +5044,11 @@ static int cmd_debug_dm(RCore *core, const char *input) {
 					return R_FALSE;
 				}
 				r_io_write_at (core->io, map->addr, (const ut8*)buf, sz);
-				eprintf ("Loaded %d bytes into the map region at 0x%08"PFMT64x"\n", sz, map->addr);
+				if (sz != map->size)
+					eprintf	("File size differs from region size (%d vs %d)\n",
+						sz, map->size);
+				eprintf ("Loaded %d bytes into the map region at 0x%08"PFMT64x"\n",
+					sz, map->addr);
 				free (buf);
 				return R_TRUE;
 			}
@@ -5491,7 +5495,7 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_break_end();
 		break;
 	case 'm':
-		cmd_debug_dm (core, input+1);
+		cmd_debug_map (core, input+1);
 		break;
 	case 'r':
 		cmd_reg (core, input+1);

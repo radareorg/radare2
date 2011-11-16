@@ -194,7 +194,7 @@ void file_magwarn(struct r_magic_set *ms, const char *f, ...) {
 	(void) fputc('\n', stderr);
 }
 
-const char * file_fmttime(ut32 v, int local) {
+const char *file_fmttime(ut32 v, int local) {
 	char *pp;
 	time_t t = (time_t)v;
 	struct tm *tm;

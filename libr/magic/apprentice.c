@@ -402,7 +402,7 @@ static size_t apprentice_r_magic_strength(const struct r_magic *m) {
 		break;
 
 	default:
-		(void)fprintf(stderr, "Bad relation %c\n", m->reln);
+		eprintf ("Bad relation %c\n", m->reln);
 		abort();
 	}
 
@@ -535,8 +535,8 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	ms->flags |= R_MAGIC_CHECK;	/* Enable checks for parsed files */
 
         maxmagic = MAXMAGIS;
-	if ((marray = calloc(maxmagic, sizeof(*marray))) == NULL) {
-		file_oomem(ms, maxmagic * sizeof(*marray));
+	if ((marray = calloc (maxmagic, sizeof(*marray))) == NULL) {
+		file_oomem (ms, maxmagic * sizeof(*marray));
 		return -1;
 	}
 	marraycount = 0;
@@ -546,16 +546,13 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 		eprintf ("%s\n", usg_hdr);
 
 	/* load directory or file */
-	if (stat (fn, &st) == 0 && S_ISDIR(st.st_mode)) {
-		dir = opendir(fn);
+	if (stat (fn, &st) == 0 && S_ISDIR (st.st_mode)) {
+		dir = opendir (fn);
 		if (dir) {
-			while ((d = readdir(dir))) {
-				snprintf(subfn, sizeof(subfn), "%s/%s",
-				    fn, d->d_name);
-				if (stat(subfn, &st) == 0 && S_ISREG(st.st_mode)) {
-					load_1(ms, action, subfn, &errs,
-					    &marray, &marraycount);
-				}
+			while ((d = readdir (dir))) {
+				snprintf (subfn, sizeof(subfn), "%s/%s", fn, d->d_name);
+				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode))
+					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
 			}
 			closedir (dir);
 		} else errs++;

@@ -173,7 +173,7 @@ static const char * file_or_fd(RMagic *ms, const char *inname, int fd) {
 	switch (file_fsmagic (ms, inname, &sb)) {
 	case -1: goto done;		/* error */
 	case 0:	break;			/* nothing found */
-	default: rv=0; goto done;	/* matched it and printed type */
+	default: rv = 0; goto done;	/* matched it and printed type */
 	}
 
 	if (inname == NULL) {

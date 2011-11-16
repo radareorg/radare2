@@ -1,6 +1,8 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
 
 #include <r_util.h>
+
+// XXX: This api is kinda ugly.. we need to redefine it
 
 static const char *logfile = "radare.log";
 

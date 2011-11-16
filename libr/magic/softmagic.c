@@ -225,7 +225,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 				if (need_separator
 				    && ((m->flag & NOSPACE) == 0)
 				    && *R_MAGIC_DESC) {
-					if (file_printf(ms, " ") == -1)
+					if (file_printf (ms, " ") == -1)
 						return -1;
 					need_separator = 0;
 				}
@@ -383,16 +383,16 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
   	case FILE_BESTRING16:
   	case FILE_LESTRING16:
 		if (m->reln == '=' || m->reln == '!') {
-			if (file_printf(ms, R_MAGIC_DESC, m->value.s) == -1)
+			if (file_printf (ms, R_MAGIC_DESC, m->value.s) == -1)
 				return -1;
 			t = ms->offset + m->vallen;
 		}
 		else {
 			if (*m->value.s == '\0')
-				p->s[strcspn(p->s, "\n")] = '\0';
-			if (file_printf(ms, R_MAGIC_DESC, p->s) == -1)
+				p->s[strcspn (p->s, "\n")] = '\0';
+			if (file_printf (ms, R_MAGIC_DESC, p->s) == -1)
 				return -1;
-			t = ms->offset + strlen(p->s);
+			t = ms->offset + strlen (p->s);
 			if (m->type == FILE_PSTRING)
 				t++;
 		}
