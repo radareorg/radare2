@@ -162,6 +162,12 @@ R_API void r_cons_gotoxy(int x, int y) {
 #endif
 }
 
+R_API void r_cons_clear_line() {
+	// TODO: use ansi here
+	// TODO: use console width to write N spaces
+	eprintf ("                                              \r");
+}
+
 R_API void r_cons_clear00() {
 	r_cons_clear ();
 	r_cons_gotoxy (0, 0);

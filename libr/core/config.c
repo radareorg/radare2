@@ -523,6 +523,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
 	r_config_desc (cfg, "scr.cols", "Configure the number of columns to print");
+	r_config_set (cfg, "search.in", "file");
+	r_config_desc (cfg, "search.in", "Specify search boundaries. (raw, file, section)");
 	r_config_set_i (cfg, "search.kwidx", 0);
 	r_config_desc (cfg, "search.kwidx", "Store last search index count");
 	r_config_set (cfg, "search.flags", "true");

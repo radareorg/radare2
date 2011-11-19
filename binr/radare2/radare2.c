@@ -300,7 +300,8 @@ int main(int argc, char **argv) {
 #if USE_THREADS
 		if (!rabin_th)	
 #endif
-			r_core_bin_load (&r, NULL);
+			if (!r_core_bin_load (&r, NULL))
+				r_config_set (r.config, "io.va", "false");
 		if (homerc) {
 			r_core_cmd_file (&r, homerc);
 			free (homerc);

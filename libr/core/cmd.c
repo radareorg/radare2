@@ -3609,7 +3609,7 @@ static int cmd_resize(void *data, const char *input) {
 
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
-static int searchcount = 0;
+static unsigned int searchcount = 0;
 static int searchflags = 0;
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
@@ -3637,7 +3637,16 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return R_TRUE;
 }
 
+static inline void print_search_progress(ut64 at, ut64 to, int n) {
+	static int c = 0;
+	if (++c%13)
+		return;
+	eprintf ("\r[  ]  0x%08"PFMT64x" < 0x%08"PFMT64x"  hits = %d                      \r%s",
+			at, to, n, (c%2)?"[ #]":"[# ]");
+}
+
 static int cmd_search(void *data, const char *input) {
+	const char *mode;
 	char *inp;
 	RCore *core = (RCore *)data;
 	ut64 at, from, to;
@@ -3650,24 +3659,60 @@ static int cmd_search(void *data, const char *input) {
 	ut32 n32;
 	ut8 *buf;
 
-	/* obey temporary seek if defined '/x 8080 @ addr:len' */
-	if (core->tmpseek) {
-		from = core->offset;
-		to = core->offset + core->blocksize;
-	} else {
-		// TODO: repeat last search doesnt works for /a
-		from = r_config_get_i (core->config, "search.from");
-		if (from == UT64_MAX)
+	mode = r_config_get (core->config, "search.in");
+	if (!strcmp (mode, "file")) {
+		if (core->io->va) {
+			RListIter *iter;
+			RIOSection *s;
 			from = core->offset;
-		to = r_config_get_i (core->config, "search.to");
-		if (to == UT64_MAX) {
-			if (core->io->va) {
-				/* TODO: section size? */
-			} else {
-				to = core->file->size;
+			to = from;
+			r_list_foreach (core->io->sections, iter, s) {
+				if ((s->vaddr+s->size) > to)
+					to = s->vaddr+s->size;
+			}
+		} else {
+			from = core->offset;
+			to = r_io_size (core->io);
+		}
+	} else
+	if (!strcmp (mode, "section")) {
+		if (core->io->va) {
+			RListIter *iter;
+			RIOSection *s;
+			from = core->offset;
+			to = from;
+			r_list_foreach (core->io->sections, iter, s) {
+				if (from >= s->vaddr && from < (s->vaddr+s->size)) {
+					to = s->vaddr+s->size;
+					break;
+				}
+			}
+		} else {
+			from = core->offset;
+			to = r_io_size (core->io);
+		}
+	} else {
+		//if (!strcmp (mode, "raw")) {
+		/* obey temporary seek if defined '/x 8080 @ addr:len' */
+		if (core->tmpseek) {
+			from = core->offset;
+			to = core->offset + core->blocksize;
+		} else {
+			// TODO: repeat last search doesnt works for /a
+			from = r_config_get_i (core->config, "search.from");
+			if (from == UT64_MAX)
+				from = core->offset;
+			to = r_config_get_i (core->config, "search.to");
+			if (to == UT64_MAX) {
+				if (core->io->va) {
+					/* TODO: section size? */
+				} else {
+					to = core->file->size;
+				}
 			}
 		}
 	}
+
 	core->search->align = r_config_get_i (core->config, "search.align");
 	searchflags = r_config_get_i (core->config, "search.flags");
 	//TODO: handle section ranges if from&&to==0
@@ -3778,7 +3823,7 @@ static int cmd_search(void *data, const char *input) {
 			for (i=1; inp[i]; i++)
 				inp[i] = tolower (inp[i]);
 		len = r_str_escape (inp);
-		eprintf ("Searching %d bytes: ", len);
+		eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", len, from, to);
 		for (i=0; i<len; i++) eprintf ("%02x ", inp[i]);
 		eprintf ("\n");
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
@@ -3917,8 +3962,11 @@ static int cmd_search(void *data, const char *input) {
 			r_cons_break (NULL, NULL);
 			// XXX required? imho nor_io_set_fd (core->io, core->file->fd);
 			for (at = from; at < to; at += core->blocksize) {
-				if (r_cons_singleton ()->breaked)
+				print_search_progress (at, to, searchcount);
+				if (r_cons_singleton ()->breaked) {
+					eprintf ("\n\n");
 					break;
+				}
 				ret = r_io_read_at (core->io, at, buf, core->blocksize);
 /*
 				if (ignorecase) {
@@ -3945,10 +3993,13 @@ static int cmd_search(void *data, const char *input) {
 			}
 			r_cons_break_end ();
 			free (buf);
-			if (searchflags && searchcount>0)
-				r_cons_printf ("%s%d_0 .. %s%d_%d\n",
+			r_cons_clear_line ();
+			if (searchflags && searchcount>0) {
+				r_cons_printf ("hits: %d  %s%d_0 .. %s%d_%d\n",
+					searchcount,
 					searchprefix, core->search->n_kws-1,
 					searchprefix, core->search->n_kws-1, searchcount-1);
+			} else r_cons_printf ("hits: 0\n");
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;
@@ -5045,7 +5096,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				}
 				r_io_write_at (core->io, map->addr, (const ut8*)buf, sz);
 				if (sz != map->size)
-					eprintf	("File size differs from region size (%d vs %d)\n",
+					eprintf	("File size differs from region size (%d vs %"PFMT64d")\n",
 						sz, map->size);
 				eprintf ("Loaded %d bytes into the map region at 0x%08"PFMT64x"\n",
 					sz, map->addr);
@@ -5055,7 +5106,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		}
 		eprintf ("No debug region found here\n");
 		return R_FALSE;
-		break;
 	case 'i':
 		{ // Move to a separate function
 		char *libname = NULL, *symname = NULL;

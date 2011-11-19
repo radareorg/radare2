@@ -12,7 +12,6 @@
   - save memory and accelerate code analysis
   - basicblock signatures must be just pointers to a big buf
 
-* fix r_magic: Do not show non-printable chars \323 \177 wtf
 * Refactor get_sym() and so on...
 
 * Tracing support for the debugger

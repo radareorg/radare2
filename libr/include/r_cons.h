@@ -178,6 +178,7 @@ R_API int r_cons_w32_print(ut8 *ptr);
 R_API void r_cons_reset();
 R_API void r_cons_clear();
 R_API void r_cons_clear00();
+R_API void r_cons_clear_line();
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API void r_cons_gotoxy(int x, int y);

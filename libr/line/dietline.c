@@ -331,7 +331,7 @@ R_API char *r_line_readline() {
 			break;
 		case 3: // ^C 
 			if (I.echo)
-				printf ("^C\n");
+				eprintf ("^C\n");
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
 			goto _end;

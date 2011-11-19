@@ -35,7 +35,7 @@ static RList* entries(RBinArch *arch) {
 	ret->free = free;
 	if ((ptr = R_NEW (RBinAddr))) {
 		ptr->offset = 8*4;
-		ptr->rva = 8*4 + baddr (arch);
+		ptr->rva = 8*4;// + baddr (arch);
 		r_list_append (ret, ptr);
 	}
 	return ret;
