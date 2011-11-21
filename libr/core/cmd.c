@@ -1104,7 +1104,7 @@ static int cmd_seek(void *data, const char *input) {
 			{
 			const char *pfx = r_config_get (core->config, "search.prefix");
 			int kwidx = (int)r_config_get_i (core->config, "search.kwidx")-1;
-			if (kwidx<0) kwidx=0;
+			if (kwidx<0) kwidx = 0;
 			//r_core_seek (core, off+1, 0);
 			eprintf ("s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0\n", input, pfx, kwidx, pfx, kwidx);
 			r_core_cmdf (core, "s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0", input, pfx, kwidx, pfx, kwidx);
@@ -1650,26 +1650,27 @@ static int cmd_cmp(void *data, const char *input) {
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	ut64 offset = r_bin_get_offset (core->bin);
 	int va = core->io->va || core->io->debug;
 	int mode = (input[1]=='*')?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT;
 	switch (*input) {
 	case 'S':
-		r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS|R_CORE_BIN_ACC_FIELDS, mode, va, NULL);
+		r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS|R_CORE_BIN_ACC_FIELDS, mode, va, NULL, offset);
 		break;
 	case 's':
-		r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, mode, va, NULL);
+		r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, mode, va, NULL, offset);
 		break;
 	case 'i':
-		r_core_bin_info (core, R_CORE_BIN_ACC_IMPORTS, mode, va, NULL);
+		r_core_bin_info (core, R_CORE_BIN_ACC_IMPORTS, mode, va, NULL, offset);
 		break;
 	case 'I':
-		r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL);
+		r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, offset);
 		break;
 	case 'e':
-		r_core_bin_info (core, R_CORE_BIN_ACC_ENTRIES, mode, va, NULL);
+		r_core_bin_info (core, R_CORE_BIN_ACC_ENTRIES, mode, va, NULL, offset);
 		break;
 	case 'z':
-		r_core_bin_info (core, R_CORE_BIN_ACC_STRINGS, mode, va, NULL);
+		r_core_bin_info (core, R_CORE_BIN_ACC_STRINGS, mode, va, NULL, offset);
 		break;
 	case 'a':
 		if (input[1]=='*') {
@@ -1960,7 +1961,8 @@ return 0;
 				if (bwdhits) {
 					r_list_foreach (bwdhits, iter, hit) {
 						r_core_read_at (core, hit->addr, block, core->blocksize);
-						core->num->value = r_core_print_disasm (core->print, core, hit->addr, block, core->blocksize, l);
+						core->num->value = r_core_print_disasm (core->print,
+							core, hit->addr, block, core->blocksize, l);
 						r_cons_printf ("------\n");
 					}
 					r_list_free (bwdhits);
@@ -3623,10 +3625,11 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	}
 */
 	searchcount++;
-	if (searchflags)
+	if (searchflags) {
+		r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
 		r_core_cmdf (core, "f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
 			kw->kwidx, kw->count, kw->keyword_length, addr);
-	else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
+	} else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
 			kw->kwidx, kw->count, kw->keyword_length, addr);
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
@@ -3995,11 +3998,11 @@ static int cmd_search(void *data, const char *input) {
 			free (buf);
 			r_cons_clear_line ();
 			if (searchflags && searchcount>0) {
-				r_cons_printf ("hits: %d  %s%d_0 .. %s%d_%d\n",
+				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
 					searchcount,
 					searchprefix, core->search->n_kws-1,
 					searchprefix, core->search->n_kws-1, searchcount-1);
-			} else r_cons_printf ("hits: 0\n");
+			} else eprintf ("hits: 0\n");
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;

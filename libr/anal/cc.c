@@ -71,7 +71,11 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 					strcat (str, ","); // XXX: do not use strcat
 			}
 			strcat (str, ")");
-		} else snprintf (str, sizeof (str), "syscall[0x%x][%d]=?", (int)cc->jump, eax);
+		} else {
+			int n = (int)cc->jump;
+			if (n == 3) return NULL; // XXX: hack for x86
+			snprintf (str, sizeof (str), "syscall[0x%x][%d]=?", n, eax);
+		}
 		}
 		break;
 	case R_ANAL_CC_TYPE_STDCALL: // CALL

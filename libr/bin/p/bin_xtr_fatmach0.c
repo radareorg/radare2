@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -39,15 +39,16 @@ static int load(RBin *bin) {
 }
 
 static int extract(RBin *bin, int idx) {
-	struct r_bin_fatmach0_arch_t *arch;
 	int narch;
-
-	arch = r_bin_fatmach0_extract ((struct r_bin_fatmach0_obj_t*)bin->bin_obj, idx, &narch);
+	struct r_bin_fatmach0_obj_t *fb = bin->bin_obj;
+	struct r_bin_fatmach0_arch_t *arch =
+		r_bin_fatmach0_extract (fb, idx, &narch);
 	if (!arch)
 		return 0;
 	bin->curarch.file = strdup (bin->file);
 	bin->curarch.buf = arch->b;
 	bin->curarch.size = arch->size;
+	bin->curarch.offset = arch->offset;
 	free (arch);
 	return narch;
 }

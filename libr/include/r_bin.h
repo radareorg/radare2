@@ -49,6 +49,7 @@ typedef struct r_bin_arch_t {
 	char *file;
 	int size;
 	ut64 baddr;
+	ut64 offset;
 	struct r_bin_addr_t *binsym[R_BIN_SYM_LAST];
 	struct r_bin_info_t *info;
 	RList* entries;
@@ -282,6 +283,7 @@ R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 
 /* bin_meta.c */
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
 R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr);
+R_API ut64 r_bin_get_offset (RBin *bin);
 /* bin_write.c */
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);

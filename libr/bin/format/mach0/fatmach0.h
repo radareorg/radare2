@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
 #include <r_types.h>
 #include "mach0_specs.h"
@@ -17,6 +17,7 @@ struct r_bin_fatmach0_obj_t {
 
 struct r_bin_fatmach0_arch_t {
 	int size;
+	int offset;
 	struct r_buf_t *b; 
 	int last;
 };

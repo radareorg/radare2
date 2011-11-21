@@ -7,6 +7,8 @@
 
 ====[[ 0.9 ]]====
 
+* list functions.
+* show analized functions in 'aa'
 * Optimizations:
   - RAnalValue must be static, not ref
   - save memory and accelerate code analysis

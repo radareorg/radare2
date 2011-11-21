@@ -538,7 +538,6 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 						refi->at, refi->addr);
 			else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n", 
 					refi->at, refi->addr, refi->type);
-
 		}
 	r_list_foreach (core->anal->refs, iter2, refi) {
 		if (rad) r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", 
@@ -546,7 +545,6 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 					refi->at, refi->addr);
 		else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n", 
 				refi->at, refi->addr, refi->type);
-
 	}
 	r_cons_flush ();
 	return R_TRUE;
@@ -560,30 +558,36 @@ R_API int r_core_anal_all(RCore *core) {
 	RBinAddr *entry;
 	RBinSymbol *symbol;
 	ut64 baddr;
+	ut64 offset;
 	int depth =r_config_get_i (core->config, "anal.depth"); 
 	int va = core->io->va || core->io->debug;
 
 	baddr = r_bin_get_baddr (core->bin);
+	offset = r_bin_get_offset (core->bin);
 	/* Analyze Functions */
 	/* Main */
 	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL)
-		r_core_anal_fcn (core, va?baddr+binmain->rva:binmain->offset, -1,
+		r_core_anal_fcn (core, offset + va?baddr+binmain->rva:binmain->offset, -1,
 				R_ANAL_REF_TYPE_NULL, depth);
 	/* Entries */
+	{
+	RFlagItem *item = r_flag_get (core->flags, "entry0");
+	if (item)
+		r_core_anal_fcn (core, item->offset, -1, R_ANAL_REF_TYPE_NULL, depth);
+	}
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
-			r_core_anal_fcn (core, va?baddr+entry->rva:entry->offset, -1,
+			r_core_anal_fcn (core, offset + va? baddr+entry->rva:entry->offset, -1,
 					R_ANAL_REF_TYPE_NULL, depth);
 	/* Symbols (Imports are already analized by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin)) != NULL)
 		r_list_foreach (list, iter, symbol)
 			if (!strncmp (symbol->type,"FUNC", 4))
-				r_core_anal_fcn (core, va?baddr+symbol->rva:symbol->offset, -1,
+				r_core_anal_fcn (core, offset + va?baddr+symbol->rva:symbol->offset, -1,
 						R_ANAL_REF_TYPE_NULL, depth);
 	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		if (!memcmp (fcni->name, "sym.", 4) || !memcmp (fcni->name, "main", 4))
 			fcni->type = R_ANAL_FCN_TYPE_SYM;
-
 	return R_TRUE;
 }

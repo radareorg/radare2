@@ -46,8 +46,9 @@ static char *name = NULL;
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
 		" -A              list archs\n"
-		" -a [arch_bits]  set arch (x86_32, arm_32, x86_64)\n"
-		" -b [addr]       override baddr\n"
+		" -a [arch]       set arch (x86, arm, .. accepts underscore for bits x86_32)\n"
+		" -b [bits]       set bits (32, 64 ...)\n"
+		" -B [addr]       override baddr\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -C              list classes\n"
 		" -p [patchfile]  patch file (see man rabin2)\n"
@@ -281,6 +282,7 @@ int main(int argc, char **argv) {
 	int action = ACTION_UNK;
 	const char *op = NULL;
 	char *arch = NULL, *arch_name = NULL;
+	ut64 offset;
 
 	bin = r_bin_new ();
 	l = r_lib_new ("radare_plugin");
@@ -314,7 +316,7 @@ int main(int argc, char **argv) {
 		case 'f':
 			if (optarg) arch_name = strdup (optarg);
 			break;
-		case 'B':
+		case 'b':
 			bits = r_num_math (NULL, optarg);
 			break;
 		case 'm':
@@ -375,7 +377,7 @@ int main(int argc, char **argv) {
 		case 'L':
 			r_bin_list (bin);
 			return 1;
-		case 'b':
+		case 'B':
 			gbaddr = r_num_math (NULL, optarg);
 			break;
 		case '@':
@@ -464,40 +466,41 @@ int main(int argc, char **argv) {
 	filter.offset = at;
 	filter.name = name;
 
-	r_cons_new ();
+	offset = r_bin_get_offset (bin);
+	r_cons_new ()->is_interactive = R_FALSE;
 	if (action&ACTION_SECTIONS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_SECTIONS,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter, 0);
 	if (action&ACTION_ENTRIES)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_ENTRIES,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL, offset);
 	if (action&ACTION_MAIN)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_MAIN,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL, offset);
 	if (action&ACTION_IMPORTS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_IMPORTS,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter, offset);
 	if (action&ACTION_CLASSES)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_CLASSES,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL, 0);
 	if (action&ACTION_SYMBOLS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_SYMBOLS,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, &filter, offset);
 	if (action&ACTION_STRINGS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_STRINGS,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL, 0);
 	if (action&ACTION_INFO)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_INFO,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL, 0);
 	if (action&ACTION_FIELDS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_FIELDS,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL, 0);
 	if (action&ACTION_LIBS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_LIBS,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL, 0);
 	if (action&ACTION_RELOCS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_RELOCS,
-				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL);
+				(rad)?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT, va, NULL, 0);
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline (at);
 	if (action&ACTION_EXTRACT)

@@ -14,21 +14,17 @@ R_API void r_io_desc_fini(RIO *io) {
 
 R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data) {
 	RIODesc *desc = R_NEW (RIODesc);
-	if (desc != NULL) {
-		desc->state = R_IO_DESC_TYPE_OPENED;
-		desc->name = strdup (name);
-		if (desc->name != NULL) {
-			desc->plugin = plugin;
-			desc->flags = flags;
-			if (fd == -1)
-				desc->fd = (int) ((size_t) desc) & 0xffffff;
-			else desc->fd = fd;
-			desc->data = data;
-		} else {
-			free (desc);
-			desc = NULL;
-		}
+	if (!desc) return NULL;
+	desc->state = R_IO_DESC_TYPE_OPENED;
+	desc->name = strdup (name);
+	if (desc->name == NULL) {
+		free (desc);
+		return NULL;
 	}
+	desc->plugin = plugin;
+	desc->flags = flags;
+	desc->fd = (fd == -1)? ((int) ((size_t) desc) & 0xffffff): fd;
+	desc->data = data;
 	return desc;
 }
 

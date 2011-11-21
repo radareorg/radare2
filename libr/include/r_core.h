@@ -242,7 +242,7 @@ typedef struct r_core_bin_filter_t {
 	char *name;
 } RCoreBinFilter;
 
-R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter);
+R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 offset);
 
 /* rtr */
 R_API void r_core_rtr_help(RCore *core);

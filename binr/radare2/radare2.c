@@ -200,6 +200,10 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	// DUP
+	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
+	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
+
 	if (debug) {
 		int filelen = 0;
 		r_config_set (r.config, "io.va", "false"); // implicit?

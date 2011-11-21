@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 nibble at develsec.org */
+/* radare - LGPL - Copyright 2010-2011 nibble at develsec.org */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -6,9 +6,7 @@
 #include "fatmach0.h"
 
 static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
-	int len;
-
-	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, "2I", 1);
+	int len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, "2I", 1);
 	if (len == -1) {
 		perror ("read (fat_header)");
 		return R_FALSE;
@@ -36,7 +34,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 
 	if (bin->hdr.nfat_arch < 0 || idx < 0 || idx > bin->hdr.nfat_arch)
 		return NULL;
-	*narch = bin->hdr.nfat_arch;
+	if (narch) *narch = bin->hdr.nfat_arch;
 	if (!(ret = malloc (sizeof (struct r_bin_fatmach0_arch_t)))) {
 		perror ("malloc (ret)");
 		return NULL;
@@ -69,6 +67,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 		return NULL;
 	}
 	free (buf);
+	ret->offset = bin->archs[idx].offset;
 	ret->size = bin->archs[idx].size;
 	return ret;
 }

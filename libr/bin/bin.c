@@ -174,6 +174,7 @@ static int r_bin_extract(RBin *bin, int idx) {
 	ut8 *buf;
 	if (bin->curxtr && bin->curxtr->extract)
 		return bin->curxtr->extract (bin, idx);
+	//free (bin->curarch.file);
 	bin->curarch.file = strdup (bin->file);
 	if (!(buf = (ut8*)r_file_slurp (bin->file, &bin->curarch.size))) 
 		return 0;
@@ -408,9 +409,9 @@ R_API void r_bin_list_archs(RBin *bin) {
 	int i;
 	for (i = 0; i < bin->narch; i++)
 		if (r_bin_select_idx (bin, i) && bin->curarch.info)
-			printf ("%03i %s %s_%i (%s)\n", i, bin->curarch.file,
-					bin->curarch.info->arch, bin->curarch.info->bits,
-					bin->curarch.info->machine);
+			printf ("%03i 0x%08"PFMT64x" %s_%i %s\n", i, 
+				bin->curarch.offset, bin->curarch.info->arch,
+				bin->curarch.info->bits, bin->curarch.info->machine);
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
@@ -459,4 +460,11 @@ R_API void r_bin_object_free(RBinObj *obj) {
 
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
 	return bin->curarch.classes;
+}
+
+R_API ut64 r_bin_get_offset (RBin *bin) {
+	ut64 offset = bin->curarch.offset;
+	if (offset>0x1000) // XXX HACK
+		offset -= 0x1000;
+	return offset;
 }

@@ -521,10 +521,12 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (show_functions) {
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
-				if (show_color)
-					r_cons_printf ("\n%s%s   "Color_TURQOISE"; %s"Color_RESET, pre, refline, ccstr);
-				else r_cons_printf ("\n%s%s    ; %s", pre, refline, ccstr);
-				free (ccstr);
+				if (ccstr) {
+					if (show_color)
+						r_cons_printf ("\n%s%s   "Color_TURQOISE"; %s"Color_RESET, pre, refline, ccstr);
+					else r_cons_printf ("\n%s%s    ; %s", pre, refline, ccstr);
+					free (ccstr);
+				}
 			}
 			r_anal_cc_reset (&cc);
 		}
