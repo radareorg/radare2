@@ -1898,6 +1898,39 @@ static int cmd_print(void *data, const char *input) {
 	case 'D':
 	case 'd':
 		switch (input[1]) {
+		case 'i': {// TODO
+			RAsmOp asmop;
+			int j, ret, err = 0;
+			const ut8 *buf = core->block;
+			if (l==0) l = len;
+			for (i=j=0; i<core->blocksize && j<len; i+=ret,j++ ) {
+				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
+				if (ret<1) {
+					ret = err = 1;
+					r_cons_printf ("0x%08"PFMT64x" ???\n", core->offset+i);
+				} else r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
+					core->offset+i, asmop.buf_hex, asmop.buf_asm);
+			}
+			return err;
+			}
+			break;
+		case 'a':
+			{
+				RAsmOp asmop;
+				int j, ret, err = 0;
+				const ut8 *buf = core->block;
+				if (l==0) l = len;
+				for (i=j=0; i<core->blocksize && j<len; i++,j++ ) {
+					ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
+					if (ret<1) {
+						ret = err = 1;
+						r_cons_printf ("???\n");
+					} else r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
+						core->offset+i, asmop.buf_hex, asmop.buf_asm);
+				}
+				return R_TRUE;
+			}
+			break;
 		case 'b': {
 			RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 			if (b) {
@@ -1941,9 +1974,10 @@ static int cmd_print(void *data, const char *input) {
 		case '?':
 			eprintf ("Usage: pd[f|i|l] [len] @ [addr]\n");
 			//TODO: eprintf ("  pdr  : disassemble resume\n");
+			eprintf ("  pda  : disassemble all possible opcodes (byte per byte)\n");
 			eprintf ("  pdb  : disassemble basic block\n");
 			eprintf ("  pdf  : disassemble function\n");
-			eprintf ("  pdi  : disassemble only instruction\n");
+			eprintf ("  pdi  : like 'pi', with offset and bytes\n");
 			eprintf ("  pdl  : show instruction sizes\n");
 return 0;
 			break;

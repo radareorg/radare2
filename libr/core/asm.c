@@ -104,6 +104,10 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					}
 					hit->addr = at+tidx;
 					hit->len = idx+len-tidx;
+					if (hit->len == -1) {
+						r_core_asm_hit_free (hit);
+						return hits;
+					}
 					hit->code = strdup (code);
 					r_list_append (hits, hit);
 					R_FREE (code);
