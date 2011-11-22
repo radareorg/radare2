@@ -117,6 +117,21 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	return NULL;
 }
 
+R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off) {
+	RFlagItem *item, *nice = NULL;
+	RListIter *iter;
+
+	r_list_foreach (f->flags, iter, item) {
+		if (item->offset > off) {
+			if (nice)  {
+				if (item->offset < nice->offset)
+					nice = item;
+			}else nice = item;
+		}
+	}
+	return nice;
+}
+
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RFlagItem *i;
 #if USE_BTREE

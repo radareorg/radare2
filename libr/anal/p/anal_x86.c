@@ -838,9 +838,11 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		if (X86IM_IO_IS_GPI_SUB (&io)) /* sub */
 			anal_sub (anal, op, io);
 		else
-		if (X86IM_IO_IS_GPI_INT (&io)) /* int */
+		if (X86IM_IO_IS_GPI_INT (&io)) { /* int */
 			anal_int (anal, op, io);
-		else
+			if (op->value == 3)
+				op->type = R_ANAL_OP_TYPE_TRAP;
+		} else
 		if (X86IM_IO_IS_GPI_MUL (&io)) { /* mul */
 			op->type = R_ANAL_OP_TYPE_MUL;
 			op->value = imm;

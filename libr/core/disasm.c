@@ -450,6 +450,9 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			case R_ANAL_OP_TYPE_SWI:
 				r_cons_printf (Color_MAGENTA);
 				break;
+			case R_ANAL_OP_TYPE_TRAP:
+				r_cons_printf (Color_BRED);
+				break;
 			case R_ANAL_OP_TYPE_RET:
 				r_cons_printf (Color_RED);
 				break;

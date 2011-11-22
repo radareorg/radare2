@@ -2395,10 +2395,27 @@ static int cmd_flag(void *data, const char *input) {
 		r_flag_list (core->flags, 0);
 		break;
 	case 'd':
-		if (input[1]==' ') {
-			RFlagItem *f = r_flag_get_i (core->flags, r_num_math (core->num, input+2));
-			if (f) r_cons_printf ("%s\n", f->name);
-		} else eprintf ("Usage: fd [off]\n");
+		{
+			ut64 addr = 0;
+			RFlagItem *f = NULL;
+			switch (input[1]) {
+			case '?':
+				eprintf ("Usage: fd [off]\n");
+				return R_FALSE;
+			case '\0':
+				addr = core->offset;
+				break;
+			default:
+				addr = r_num_math (core->num, input+2);
+				break;
+			}
+			f = r_flag_get_at (core->flags, addr);
+			if (f) {
+				if (f->offset != addr) {
+					r_cons_printf ("%s+%d\n", f->name, (int)(addr-f->offset));
+				} else r_cons_printf ("%s\n", f->name);
+			}
+		}
 		break;
 	case '?':
 		r_cons_printf (

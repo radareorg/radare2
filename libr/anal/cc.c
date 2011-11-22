@@ -73,7 +73,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 			strcat (str, ")");
 		} else {
 			int n = (int)cc->jump;
-			if (n == 3) return NULL; // XXX: hack for x86
+			//if (n == 3) return NULL; // XXX: hack for x86
 			snprintf (str, sizeof (str), "syscall[0x%x][%d]=?", n, eax);
 		}
 		}

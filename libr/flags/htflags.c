@@ -36,7 +36,6 @@ R_API RFlag * r_flag_free(RFlag *f) {
 	return NULL;
 }
 
-
 R_API void r_flag_list(RFlag *f, int rad) {
 	int fs = -1;
 	RListIter *iter;
@@ -279,13 +278,31 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p) {
 	return R_FALSE;
 }
 
+R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off) {
+	RFlagItem *item, *nice = NULL;
+	RListIter *iter;
+
+	r_list_foreach (f->flags, iter, item) {
+		if (item->offset == off)
+			return item;
+		if (off > item->offset) {
+			if (nice)  {
+				if (nice->offset < item->offset)
+					nice = item;
+			} else nice = item;
+		}
+	}
+	return nice;
+}
+
+
 #ifdef MYTEST
 int main () {
 	RFlagItem *i;
 	RFlag *f = r_flag_new ();
 	r_flag_set (f, "rip", 0xfff333999000LL, 1, 0);
 	r_flag_set (f, "rip", 0xfff333999002LL, 1, 0);
-r_flag_unset (f, "rip", NULL);
+	r_flag_unset (f, "rip", NULL);
 	r_flag_set (f, "rip", 3, 4, 0);
 	r_flag_set (f, "rip", 4, 4, 0);
 	r_flag_set (f, "corwp", 300, 4, 0);
