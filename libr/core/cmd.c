@@ -2861,8 +2861,20 @@ static int cmd_anal(void *data, const char *input) {
 			free (ptr);
 			}
 			break;
-		case 'l':
+		case 'i':
 			r_core_anal_fcn_list (core, input+2, 0);
+			break;
+		case 'l':
+			{
+				RAnalFcn *fcn;
+				RListIter *iter;
+
+				r_list_foreach (core->anal->fcns, iter, fcn) {
+					int bbs = r_list_length (fcn->bbs);
+					r_cons_printf ("0x%08"PFMT64x" %6"PFMT64d" %3d  %s\n",
+						fcn->addr, fcn->size, bbs, fcn->name);
+				}
+			}
 			break;
 		case '*':
 			r_core_anal_fcn_list (core, input+2, 1);
@@ -2960,7 +2972,8 @@ static int cmd_anal(void *data, const char *input) {
 			" af+ addr size name [type] [diff] ; Add function\n"
 			" afb fcnaddr addr size name [type] [diff] ; Add bb to function @ fcnaddr\n"
 			" af- [addr]                ; Clean all function analysis data (or function at addr)\n"
-			" afl [fcn name]            ; List functions\n"
+			" afl [fcn name]            ; List functions (addr, size, bbs, name)\n"
+			" afi [fcn name]            ; Show function(s) information (verbose afl)\n"
 			" afs [addr] [fcnsign]      ; Get/set function signature at current address\n"
 			" af[aAv][?] [arg]          ; Manipulate args, fastargs and variables in function\n"
 			" afc @ [addr]              ; Calculate the Cyclomatic Complexity (starting at addr)\n"
@@ -3711,6 +3724,7 @@ static int cmd_search(void *data, const char *input) {
 	int ignorecase = R_FALSE;
 	ut64 n64;
 	ut32 n32;
+	ut16 n16;
 	ut8 *buf;
 
 	mode = r_config_get (core->config, "search.in");
@@ -3790,11 +3804,24 @@ static int cmd_search(void *data, const char *input) {
 		inverse = R_TRUE;
 		goto reread;
 		break;
-	case 'a':
+	case 'r':
 		if (input[1]==' ')
 			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
 		else r_core_anal_search (core, from, to, core->offset);
 		break;
+	case 'a': {
+		char *kwd;
+		if (!(kwd = r_core_asm_search (core, input+2, from, to)))
+			return R_FALSE;
+		r_search_reset (core->search, R_SEARCH_KEYWORD);
+		r_search_set_distance (core->search, (int)
+				r_config_get_i (core->config, "search.distance"));
+		r_search_kw_add (core->search, 
+				r_search_keyword_new_hexmask (kwd, NULL));
+		r_search_begin (core->search);
+		free (kwd);
+		dosearch = R_TRUE;
+		} break;
 	case 'A':
 		dosearch = aes_search = R_TRUE;
 		break;
@@ -3825,25 +3852,32 @@ static int cmd_search(void *data, const char *input) {
 			} else eprintf ("Invalid pattern size (must be >0)\n");
 		}
 		break;
-	case 'q':
-		r_search_reset (core->search, R_SEARCH_KEYWORD);
-		r_search_set_distance (core->search, (int)
-			r_config_get_i (core->config, "search.distance"));
-		n64 = (ut32)r_num_math (core->num, input+1);
-// TODO: Add support for /v4 /v8 /v2
-		r_search_kw_add (core->search, 
-			r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
-		r_search_begin (core->search);
-		dosearch = R_TRUE;
-		break;
 	case 'v':
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		n32 = (ut32)r_num_math (core->num, input+1);
+		switch (input[1]) {
+		case '?':
+			eprintf ("Usage: /v[2|4|8] [value]\n");
+			return R_TRUE;
+		case '8':
+			n64 = r_num_math (core->num, input+2);
+			r_search_kw_add (core->search, 
+				r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
+			break;
+		case '2':
+			n16 = (ut16)r_num_math (core->num, input+2);
+			r_search_kw_add (core->search, 
+				r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
+			break;
+		default: // default size
+		case '4':
+			n32 = (ut32)r_num_math (core->num, input+1);
+			r_search_kw_add (core->search, 
+				r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
+			break;
+		}
 // TODO: Add support for /v4 /v8 /v2
-		r_search_kw_add (core->search, 
-			r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		break;
@@ -3930,35 +3964,19 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'c': /* search asm */
 		{
-		/* TODO: Move to a separate function */
-		int asmstr = r_config_get_i (core->config, "search.asmstr");
-		if (asmstr) {
-			RCoreAsmHit *hit;
-			RListIter *iter;
-			int count = 0;
-			RList *hits;
-			if ((hits = r_core_asm_strsearch (core, input+2, from, to))) {
-				r_list_foreach (hits, iter, hit) {
-					r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
-						searchprefix, count, hit->addr, hit->len, hit->code);
-					count++;
-				}
-				r_list_destroy (hits);
+		RCoreAsmHit *hit;
+		RListIter *iter;
+		int count = 0;
+		RList *hits;
+		if ((hits = r_core_asm_strsearch (core, input+2, from, to))) {
+			r_list_foreach (hits, iter, hit) {
+				r_cons_printf ("f %s_%i @ 0x%08"PFMT64x"   # %i: %s\n",
+					searchprefix, count, hit->addr, hit->len, hit->code);
+				count++;
 			}
-			dosearch = 0;
-		} else {
-			char *kwd;
-			if (!(kwd = r_core_asm_search (core, input+2, from, to)))
-				return R_FALSE;
-			r_search_reset (core->search, R_SEARCH_KEYWORD);
-			r_search_set_distance (core->search, (int)
-					r_config_get_i (core->config, "search.distance"));
-			r_search_kw_add (core->search, 
-					r_search_keyword_new_hexmask (kwd, NULL));
-			r_search_begin (core->search);
-			free (kwd);
-			dosearch = R_TRUE;
+			r_list_destroy (hits);
 		}
+		dosearch = 0;
 		}
 		break;
 	default:
@@ -3973,12 +3991,12 @@ static int cmd_search(void *data, const char *input) {
 		" /d 101112       ; search for a deltified sequence of bytes\n"
 		" /!x 00          ; inverse hexa search (find first byte != 0x00)\n"
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
+		" /a jmp eax      ; assemble opcode and search its bytes\n"
 		" /A              ; search for AES expanded keys\n"
-		" /a sym.printf   ; analyze code referencing an offset\n"
+		" /r sym.printf   ; analyze opcode reference an offset\n"
 		" /m magicfile    ; search for matching magic file (use blocksize)\n"
 		" /p patternsize  ; search for pattern of given size\n"
-		" /v num          ; look for a asm.bigendian 32bit value\n"
-		" /q num          ; look for a asm.bigendian 64bit value\n"
+		" /v[?248] num    ; look for a asm.bigendian 32bit value\n"
 		" //              ; repeat last search\n"
 		" ./ hello        ; search 'hello string' and import flags\n"
 		"Configuration:\n"

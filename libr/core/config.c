@@ -541,8 +541,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "search.distance", "Search string distance");
 	r_config_set_i_cb (cfg, "search.align", 0, &config_searchalign_callback);
 	r_config_desc (cfg, "search.align", "Only catch aligned search hits");
-	r_config_set (cfg, "search.asmstr", "true");
-	r_config_desc (cfg, "search.asmstr", "Search string instead of assembly");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
 	r_config_set_cb (cfg, "io.ffio", "true", &config_ioffio_callback);

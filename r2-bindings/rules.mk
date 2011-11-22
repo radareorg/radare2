@@ -31,7 +31,7 @@ else
 	fi ; \
 	[ $$? = 0 ] && \
 	  (cd .. && RELEASE=$(RELEASE) \
-		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) ; \
+		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) || exit 1 ; \
 		[ "${LANG}`uname`" = pythonDarwin ] && cp _${LIBPFX}$@ _`echo $@|sed -e s,.${SOEXT},.so,` ; \
 		true
 endif
