@@ -1,0 +1,29 @@
+# http://www.win.tue.nl/~aeb/partitions/partition_types-1.html
+0=empty
+1.fs=fat
+1=DOS 12-bit FAT
+2=XENIX root
+3=XENIX /usr
+4.fs=fat
+4=DOS 3.0+ 16-bit FAT (up to 32M)
+5.fs=fat
+5=DOS 3.0+ extended partition
+6.fs=fat
+6=DOS 3.0+ 16-bit FAT (over 32M)
+7.fs=ntfs
+7=Window NTFS / exFAT / QNX
+11.fs=fat
+11=WIN95 OSR2 FAT32
+12.fs=fat
+12=WIN95 OSR2 FAT32, LBA
+...
+130=Linux swap
+131.fs=ext2
+131=Linux native partition
+...
+166=OpenBSD
+167=NeXTStep
+168=Mac OS-X
+169=NetBSD
+171=Mac OS-X Boot partition
+175=Mac OS-X HFS

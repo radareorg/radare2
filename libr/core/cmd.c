@@ -617,7 +617,7 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case 'l': // list of plugins
 		r_list_foreach (core->fs->plugins, iter, plug) {
-			r_cons_printf ("%s\t%s\n", plug->name, plug->desc);
+			r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
 		}
 		break;
 	case 'd':

@@ -19,6 +19,7 @@ p/grub/libgrubfs.a:
 	cd p/grub && ${MAKE} libgrubfs.a
 
 pre: 
+	cd d && ${MAKE}
 #	@if [ ! -e libr_fs.${EXT_SO} ]; then if [ ! -e libr_fs.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi ; fi
 
 re:
