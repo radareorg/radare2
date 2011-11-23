@@ -277,10 +277,11 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 }
 
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
-	int showhdr = 0;
+	const char *font = r_config_get (core->config, "graph.font");
 	RListIter *iter, *iter2;
 	RAnalRef *fcnr;
 	RAnalFcn *fcni;
+	int showhdr = 0;
 
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (addr != 0 && addr != fcni->addr)
@@ -291,7 +292,7 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 				if (gv) r_cons_printf ("digraph code {\n"
 					"\tgraph [bgcolor=white];\n"
 					"\tnode [color=lightgray, style=filled shape=box"
-					" fontname=\"Courier\" fontsize=\"8\"];\n");
+					" fontname=\"%s\" fontsize=\"8\"];\n", font);
 				showhdr = 1;
 			}
 			// TODO: display only code or data refs?
@@ -424,6 +425,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	RAnalFcn *fcni;
 	RListIter *iter;
 	int reflines, bytes, dwarf;
+	const char *font = r_config_get (core->config, "graph.font");
 
 	if (r_list_empty (core->anal->fcns))
 		return R_FALSE;
@@ -437,7 +439,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_cons_printf ("digraph code {\n"
 		"\tgraph [bgcolor=white];\n"
 		"\tnode [color=lightgray, style=filled shape=box"
-		" fontname=\"Courier\" fontsize=\"8\"];\n");
+		" fontname=\"%s\" fontsize=\"8\"];\n", font);
 	r_cons_flush ();
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN) &&

@@ -233,6 +233,138 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	return R_TRUE;
 }
 
+R_API int r_core_visual_comments (RCore *core) {
+	char *str, cmd[1024], *p = NULL;
+	int mode = 0;
+	int delta = 7;
+	int i, ch, option = 0;
+	int format = 0;
+	ut64 from, size;
+	RListIter *iter;
+	RAnalFcn *fcn;
+	RMetaItem *d;
+
+	for (;;) {
+		r_cons_gotoxy (0, 0);
+		r_cons_clear ();
+
+		i = 0;
+		r_list_foreach (core->anal->meta->data, iter, d) {
+			str = r_str_unscape (d->str);
+			if (str) {
+				if (d->type=='s') /* Ignore strings, there are in trackflags */
+					continue;
+				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					r_str_sanitize (str);
+					if (option==i) {
+						mode = 0;
+						from = d->from;
+						size = d->size;
+						p = str;
+						r_cons_printf("  >  %s\n", str);
+					} else {
+						r_cons_printf("     %s\n", str);
+						free (str);
+					}
+				}
+				i++;
+			}
+		}
+		r_list_foreach (core->anal->fcns, iter, fcn) {
+			if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+				if (option==i) {
+					mode = 1;
+					from = fcn->addr;
+					size = fcn->size;
+				}
+				r_cons_printf("  %c  %s\n", (option==i)?'>':' ', fcn->name);
+			}
+			i++;
+		}
+
+		switch (format) {
+			case 0: sprintf (cmd, "px @ 0x%"PFMT64x":64", from); core->printidx = 0; break;
+			case 1: sprintf (cmd, "pd 12 @ 0x%"PFMT64x":64", from); core->printidx = 1; break;
+			case 2: sprintf (cmd, "ps @ 0x%"PFMT64x":64", from); core->printidx = 5; break;
+			default: format = 0; continue;
+		}
+		if (*cmd) r_core_cmd (core, cmd, 0);
+
+		r_cons_flush ();
+		ch = r_cons_readchar ();
+		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
+		switch (ch) {
+		case 'a':
+			//TODO
+			break;
+		case 'e':
+			//TODO
+			break;
+		case 'd':
+			if (mode == 0) {
+				if (p)
+					r_meta_del (core->anal->meta, R_META_TYPE_ANY, from, size, p);
+			} else {
+				r_anal_fcn_del (core->anal, from);
+			}
+			break;
+		case 'P':
+			if (--format<0)
+				format = MAX_FORMAT;
+			break;
+		case 'p':
+			format++;
+			break;
+		case 'J':
+			option += 10;
+			break;
+		case 'j':
+			option++;
+			break;
+		case 'k':
+			if (--option<0)
+				option = 0;
+			break;
+		case 'K':
+			option-=10;
+			if (option<0)
+				option = 0;
+			break;
+		case 'l':
+		case ' ':
+		case '\r':
+		case '\n':
+			sprintf (cmd, "s 0x%"PFMT64x, from);
+			r_core_cmd (core, cmd, 0);
+			if (p)
+				free (p);
+			return R_TRUE;
+		case 'q':
+			if (p)
+				free (p);
+			return R_TRUE;
+		case 'h':
+			r_cons_clear00 ();
+			r_cons_printf (
+			"\nVT: Visual Comments/Anal help:\n\n"
+			" q     - quit menu\n"
+			" j/k   - down/up keys\n"
+			" h/b   - go back\n"
+			" l/' ' - accept current selection\n"
+			" a/d/e - add/delete/edit comment/anal symbol\n"
+			" p/P   - rotate print format\n");
+			r_cons_flush ();
+			r_cons_any_key ();
+			break;
+		}
+		if (p) {
+			free (p);
+			p = NULL;
+		}
+	}
+	return R_TRUE;
+}
+
 static void config_visual_hit_i(RCore *core, const char *name, int delta) {
 	struct r_config_node_t *node;
 	node = r_config_node_get (core->config, name);

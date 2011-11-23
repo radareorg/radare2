@@ -220,9 +220,9 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd);
 R_API void r_core_sysenv_help();
 
 /* bin.c */
-#define R_CORE_BIN_SET		0x001
-#define R_CORE_BIN_PRINT	0x002
-#define R_CORE_BIN_RADARE	0x004
+#define R_CORE_BIN_PRINT	0x000
+#define R_CORE_BIN_RADARE	0x001
+#define R_CORE_BIN_SET		0x002
 
 #define R_CORE_BIN_ACC_STRINGS	0x001
 #define R_CORE_BIN_ACC_INFO		0x002
@@ -261,6 +261,7 @@ R_API void r_core_seek_next (RCore *core, const char *type);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_visual_define (RCore *core);
 R_API int r_core_visual_trackflags (RCore *core);
+R_API int r_core_visual_comments (RCore *core);
 R_API void r_core_visual_prompt (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);

@@ -186,6 +186,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 't':
 		r_core_visual_trackflags (core);
 		break;
+	case 'T':
+		r_core_visual_comments (core);
+		break;
 	case 'v':
 		r_core_visual_anal (core);
 		break;
@@ -514,6 +517,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" sS      - step / step over\n"
 		" e       - edit eval configuration variables\n"
 		" t       - track flags (browse symbols, functions..)\n"
+		" T       - browse anal info and comments\n"
 		" v       - visual code analysis menu\n"
 		" fF      - seek next/prev function/flag/hit (scr.fkey)\n"
 		" B       - toggle automatic block size\n"

@@ -493,7 +493,11 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "fs.view", "Set visibility options for filesystems");
 	r_config_set (cfg, "bin.strings", "true");
 	p = r_sys_getenv ("EDITOR");
+#if __WINDOWS__
+	r_config_set (cfg, "cfg.editor", p? p: "notepad");
+#else
 	r_config_set (cfg, "cfg.editor", p? p: "vi");
+#endif
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	free (p);
 	r_config_set (cfg, "cmd.hit", "");
@@ -510,6 +514,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.vprompt", "Visual prompt commands");
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_desc (cfg, "cmd.bp", "Command to executed every breakpoint hitted");
+	r_config_set (cfg, "graph.font", "Courier");
+	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
 	r_config_set_cb (cfg, "scr.interactive", "true", config_scrint_callback);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
