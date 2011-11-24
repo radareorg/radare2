@@ -1092,7 +1092,7 @@ static int cmd_seek(void *data, const char *input) {
 					r_core_block_read (core, 0);
 					break;
 				}
-				
+
 			} else eprintf ("Usage: sC comment grep\n");
 			break;
 		case ' ':
@@ -1594,7 +1594,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (input[1]=='o') {
 			file2 = (char*)r_str_chop_ro (input+2);
 			r_anal_diff_setup (core->anal, R_TRUE, -1, -1);
-		} else 
+		} else
 		if (input[1]==' ') {
 			file2 = (char*)r_str_chop_ro (input+2);
 			r_anal_diff_setup (core->anal, R_FALSE, -1, -1);
@@ -1691,7 +1691,7 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case '?':
 		r_cons_printf (
-		"Usage: i[aeiIsSz]*      ; get info from opened file (rabin2)\n"
+		"Usage: i[aeiIsSz]*      ; get info from opened file\n"
 		"NOTE: Append a '*' to get the output in radare commands\n"
 		" ia    ; show all info (imports, exports, sections..)\n"
 		" ii    ; imports\n"
@@ -2013,7 +2013,7 @@ return 0;
 			// TODO: add support for 2-4 byte length pascal strings
 			r_print_string (core->print, core->offset, core->block, mylen, 0, 1, 0); //, 78, 1);
 			core->num->value = mylen;
-		} else 
+		} else
 		if (input[1]==' ') {
 			len = r_num_math (core->num, input+2);
 			r_print_string (core->print, core->offset, core->block, len, 0, 0, 0); //, 78, 1);
@@ -2244,9 +2244,9 @@ static int cmd_egg_compile(REgg *egg) {
 			for (i=0; i<b->length; i++)
 				r_cons_printf ("%02x", b->buf[i]);
 			r_cons_printf ("\n");
-		} 
+		}
 		ret = R_TRUE;
-	} 
+	}
 	// we do not own this buffer!!
 	// r_buf_free (b);
 	r_egg_reset (egg);
@@ -2619,7 +2619,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	ut8 *b = (ut8 *)malloc (core->blocksize);
 // TODO: handle sections ?
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
-	r_search_kw_add (core->search, 
+	r_search_kw_add (core->search,
 		r_search_keyword_new (buf, blen, mask, mlen, NULL));
 	r_search_begin (core->search);
 	r_search_set_callback (core->search, &__prelude_cb_hit, core);
@@ -2824,7 +2824,7 @@ static int cmd_anal(void *data, const char *input) {
 			ut64 size = 0LL;
 			RAnalDiff *diff = NULL;
 			int type = R_ANAL_FCN_TYPE_FCN;
-			
+
 			if (n > 2) {
 				switch(n) {
 				case 5:
@@ -2909,7 +2909,7 @@ static int cmd_anal(void *data, const char *input) {
 			int cc;
 			if ((fcn = r_anal_get_fcn_at (core->anal, core->offset)) != NULL) {
 				cc = r_anal_fcn_cc (fcn);
-				r_cons_printf ("CyclomaticComplexity 0x%08"PFMT64x" = %i\n", 
+				r_cons_printf ("CyclomaticComplexity 0x%08"PFMT64x" = %i\n",
 						fcn->addr, cc);
 			} else eprintf ("Error: function not found\n");
 			}
@@ -3816,7 +3816,7 @@ static int cmd_search(void *data, const char *input) {
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search, 
+		r_search_kw_add (core->search,
 				r_search_keyword_new_hexmask (kwd, NULL));
 		r_search_begin (core->search);
 		free (kwd);
@@ -3862,18 +3862,18 @@ static int cmd_search(void *data, const char *input) {
 			return R_TRUE;
 		case '8':
 			n64 = r_num_math (core->num, input+2);
-			r_search_kw_add (core->search, 
+			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
 			break;
 		case '2':
 			n16 = (ut16)r_num_math (core->num, input+2);
-			r_search_kw_add (core->search, 
+			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
 			break;
 		default: // default size
 		case '4':
 			n32 = (ut32)r_num_math (core->num, input+1);
-			r_search_kw_add (core->search, 
+			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
 			break;
 		}
@@ -3893,7 +3893,7 @@ static int cmd_search(void *data, const char *input) {
 			r_search_reset (core->search, R_SEARCH_KEYWORD);
 			r_search_set_distance (core->search, (int)
 				r_config_get_i (core->config, "search.distance"));
-			r_search_kw_add (core->search, 
+			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)str, len*2, NULL, 0, NULL));
 			r_search_begin (core->search);
 			dosearch = R_TRUE;
@@ -3938,7 +3938,7 @@ static int cmd_search(void *data, const char *input) {
 		r_search_reset (core->search, R_SEARCH_REGEXP);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search, 
+		r_search_kw_add (core->search,
 			r_search_keyword_new_str (inp, opt, NULL, 0));
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
@@ -3948,7 +3948,7 @@ static int cmd_search(void *data, const char *input) {
 		break;
 	case 'd': /* search delta key */
 		r_search_reset (core->search, R_SEARCH_DELTAKEY);
-		r_search_kw_add (core->search, 
+		r_search_kw_add (core->search,
 			r_search_keyword_new_hexmask (input+2, NULL));
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
@@ -3957,7 +3957,7 @@ static int cmd_search(void *data, const char *input) {
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		r_search_kw_add (core->search, 
+		r_search_kw_add (core->search,
 			r_search_keyword_new_hexmask (input+2, NULL));
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
@@ -4395,7 +4395,6 @@ static int cmd_meta(void *data, const char *input) {
 				if (dirsrc && *dirsrc) {
 					f = r_str_concat (strdup (dirsrc), f);
 					line = r_file_slurp_line (f, num, 0);
-					
 				}
 				if (!line) {
 					eprintf ("Cannot slurp file\n");
@@ -4716,7 +4715,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	ptr = strrchr (cmd, ';');
 	if (ptr) {
 		*ptr = '\0';
-		if (r_core_cmd_subst (core, cmd) == -1) 
+		if (r_core_cmd_subst (core, cmd) == -1)
 			return -1;
 		cmd = ptr+1;
 		//r_cons_flush ();
@@ -5180,10 +5179,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		return R_FALSE;
 	case 'i':
 		{ // Move to a separate function
+		RCoreBinFilter filter;
 		char *libname = NULL, *symname = NULL;
 		char *ptr = strdup (r_str_trim_head ((char*)input+2));
-		char cmd[1024], *cmdret;
-		int i, len;
+		int i;
 
 		addr = 0LL;
 		i = r_str_word_set0 (ptr);
@@ -5200,16 +5199,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			map = r_list_iter_get (iter);
 			if ((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
 				(libname != NULL && (strstr (map->name, libname)))) {
-				if (symname)
-					snprintf (cmd, sizeof (cmd), "rabin2 -b 0x%08"PFMT64x" -s%svn %s %s",
-							map->addr, input[1]=='*'?"r":"", symname, map->name);
-				else
-					snprintf (cmd, sizeof (cmd), "rabin2 -b 0x%08"PFMT64x" -s%sv %s",
-							map->addr, input[1]=='*'?"r":"", map->name);
-				if ((cmdret = r_sys_cmd_str (cmd, 0, &len))) {
-					r_cons_printf (cmdret);
-					free (cmdret);
-				}
+				filter.offset = 0LL;
+				filter.name = symname;
+				r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'),
+						R_TRUE, &filter, 0);
 				break;
 			}
 		}
@@ -5252,7 +5245,6 @@ static int step_until(RCore *core, ut64 addr) {
 		// check breakpoint here
 	} while (off != addr);
 	return R_TRUE;
-	
 }
 
 static int step_line(RCore *core, int times) {
@@ -5501,7 +5493,7 @@ static int cmd_debug(void *data, const char *input) {
 			checkbpcallback (core);
 			break;
 		case 'k':
-			// select pid and r_debug_continue_kill (core->dbg, 
+			// select pid and r_debug_continue_kill (core->dbg,
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			ptr = strchr (input+3, ' ');
 			if (ptr) {
@@ -5535,7 +5527,7 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case 'u':
 			ptr = strchr (input+3, ' ');
-			if (ptr) { // TODO: put '\0' in *ptr to avoid 
+			if (ptr) { // TODO: put '\0' in *ptr to avoid
 				ut64 from, to, pc;
 				from = r_num_math (core->num, input+3);
 				to = r_num_math (core->num, ptr+1);
@@ -5780,7 +5772,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->cmd, "resize",   "change file size", &cmd_resize);
 	r_cmd_add (core->cmd, "Visual",   "enter visual mode", &cmd_visual);
 	r_cmd_add (core->cmd, "!",        "run system command", &cmd_system);
-	r_cmd_add (core->cmd, "=",        "io pipe", &cmd_rap); 
+	r_cmd_add (core->cmd, "=",        "io pipe", &cmd_rap);
 	r_cmd_add (core->cmd, "#",        "calculate hash", &cmd_hash);
 	r_cmd_add (core->cmd, "?",        "help message", &cmd_help);
 	r_cmd_add (core->cmd, ".",        "interpret", &cmd_interpret);
