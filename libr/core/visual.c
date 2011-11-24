@@ -186,6 +186,43 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 't':
 		r_core_visual_trackflags (core);
 		break;
+	case 'x':
+		{
+		int count = 0;
+		RList *xrefs;
+		RAnalRef *refi;
+		RListIter *iter;
+		RAnalFcn *fun;
+
+		if ((xrefs = r_anal_xref_get (core->anal, core->offset))) {
+			r_cons_printf ("XREFS:\n");
+			if (r_list_empty (xrefs)) {
+				r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
+				r_cons_any_key ();
+			} else {
+				r_list_foreach (xrefs, iter, refi) {
+					fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+					r_cons_printf ("\t[%i] %s XREF 0x%08"PFMT64x" (%s)\n", count,
+							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+							fun?fun->name:"unk");
+					if (++count > 9) break;
+				}
+			}
+		} else xrefs = NULL;
+		r_cons_flush ();
+		ch = r_cons_readchar ();
+		if (ch >= '0' && ch <= '9') {
+			refi = r_list_get_n (xrefs, ch-0x30);
+			if (refi) {
+				sprintf (buf, "s 0x%"PFMT64x, refi->addr);
+				r_core_cmd (core, buf, 0);
+			}
+		}
+		if (xrefs)
+			r_list_free (xrefs);
+		}
+		break;
 	case 'T':
 		r_core_visual_comments (core);
 		break;
@@ -490,9 +527,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (r_io_sundo_redo (core->io))
 			r_core_seek (core, core->io->off, 1);
 		break;
-	case 'x':
-		r_core_cmdf (core, "./a 0x%08llx @ entry0", core->offset);
-		break;
 	case 'z':
 		if (zoom && cursor) {
 			ut64 from = r_config_get_i (core->config, "zoom.from");
@@ -513,7 +547,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" cC      - toggle cursor and colors\n"
 		" gG      - go seek to begin and end of file (0-$s)\n"
 		" d[f?]   - define function, data, code, ..\n"
-		" x       - find xrefs for current offset\n"
+		" x       - show xrefs to seek between them\n"
 		" sS      - step / step over\n"
 		" e       - edit eval configuration variables\n"
 		" t       - track flags (browse symbols, functions..)\n"
