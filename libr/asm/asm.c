@@ -143,6 +143,14 @@ R_API RAsm *r_asm_new() {
 	return a;
 }
 
+R_API int r_asm_setup(RAsm *a, const char *arch, int bits, int big_endian) {
+	int ret = 0;
+	ret |= !r_asm_use (a, arch);
+	ret |= !r_asm_set_bits (a, bits);
+	ret |= !r_asm_set_big_endian (a, big_endian);
+	return ret;
+}
+
 // TODO: spagueti
 R_API int r_asm_filter_input(RAsm *a, const char *f) {
 	if (!a->ifilter)
