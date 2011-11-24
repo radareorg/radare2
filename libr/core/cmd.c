@@ -1907,7 +1907,7 @@ static int cmd_print(void *data, const char *input) {
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 				if (ret<1) {
 					ret = err = 1;
-					r_cons_printf ("0x%08"PFMT64x" ???\n", core->offset+i);
+					r_cons_printf ("0x%08"PFMT64x" %14s%02x  %s\n", core->offset+i, "", buf[i], "???");
 				} else r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
 					core->offset+i, asmop.buf_hex, asmop.buf_asm);
 			}

@@ -7,32 +7,34 @@
 
 ====[[ 0.9 ]]====
 
-* list functions.
+* Add !load in r2 (oo args)
+* implement 'ax' to get/set xrefs (better than afl <addr>) .. or afx?
+* shell encoder - get x86-64 one from twitter
+  - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
+  - shellforge.. and review current shellcodes :?
 * show analized functions in 'aa'
-* Optimizations:
-  - RAnalValue must be static, not ref
-  - save memory and accelerate code analysis
-  - basicblock signatures must be just pointers to a big buf
-
-* Refactor get_sym() and so on...
-
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"
   - dca sym.main imp.printf
   - dbc
-* Add !load in r2
+
 * Add support for classes (useful for c++, dex, objc, ...)
   - command to add new classes
 * rasm2 must support binary creation help message or so.. rabin2 integration must be easier
 * Add support for 'expect' like foo in rarun2
-* TODO: make elf/pe get_os() and others return const and not strdup
+  - make rarun live in a lib.. or at least be usable from r2
 * 'ao' must be for bytes count, not bytes
 * asm.pseudo for brainfuck
-* implement 'ax' to get/set xrefs (better than afl <addr>)
-* shell encoder - get x86-64 one from twitter
-  - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
-* use centralized pubsub or memcached to sync data // redis?
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
+
+
+===[[ 0.9.1 ]]===
+* Optimizations:
+  - Refactor get_sym() and so on...
+  - TODO: make elf/pe get_os() and others return const and not strdup
+  - RAnalValue must be static, not ref
+  - save memory and accelerate code analysis
+  - basicblock signatures must be just pointers to a big buf
 
 OSX
 ===
@@ -323,6 +325,7 @@ Refactoring
  
 Future
 ======
+* use centralized pubsub or memcached to sync data // redis?
 * r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
   - mmap if supported - add r_file_mmap ?  - read file in blocks instead of the whole file in a single syscall
 * Realign flags when using project in debug mode

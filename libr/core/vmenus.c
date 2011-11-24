@@ -234,11 +234,12 @@ R_API int r_core_visual_trackflags(RCore *core) {
 }
 
 R_API int r_core_visual_comments (RCore *core) {
-	char *str, cmd[1024], *p = NULL;
+	char *str, cmd[512], *p = NULL;
 	int mode = 0;
 	int delta = 7;
 	int i, ch, option = 0;
 	int format = 0;
+	int found = 0;
 	ut64 from, size;
 	RListIter *iter;
 	RAnalFcn *fcn;
@@ -247,8 +248,11 @@ R_API int r_core_visual_comments (RCore *core) {
 	for (;;) {
 		r_cons_gotoxy (0, 0);
 		r_cons_clear ();
+		r_cons_printf ("Comments:\n");
 
 		i = 0;
+		found = 0;
+		mode = 0;
 		r_list_foreach (core->anal->meta->data, iter, d) {
 			str = r_str_unscape (d->str);
 			if (str) {
@@ -258,6 +262,7 @@ R_API int r_core_visual_comments (RCore *core) {
 					r_str_sanitize (str);
 					if (option==i) {
 						mode = 0;
+						found = 1;
 						from = d->from;
 						size = d->size;
 						p = str;
@@ -269,6 +274,10 @@ R_API int r_core_visual_comments (RCore *core) {
 				}
 				i++;
 			}
+		}
+		if (!found) {
+			option--;
+			continue;
 		}
 		r_list_foreach (core->anal->fcns, iter, fcn) {
 			if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
@@ -343,6 +352,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			if (p)
 				free (p);
 			return R_TRUE;
+		case '?':
 		case 'h':
 			r_cons_clear00 ();
 			r_cons_printf (
