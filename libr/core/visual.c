@@ -415,9 +415,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'p':
 		core->printidx = (core->printidx+1)%NPF;
+		r_cons_clear00 ();
 		break;
 	case 'P':
 		core->printidx = (core->printidx-1)%NPF;
+		r_cons_clear00 ();
 		break;
 	case 'm':
 		r_core_visual_mark (core, r_cons_readchar ());
@@ -615,11 +617,15 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	if (color) r_cons_strcat (Color_RESET);
 }
 
+static int n = 0;
 static void r_core_visual_refresh (RCore *core) {
 	const char *vi;
 	r_cons_get_size (NULL);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
-	r_cons_clear00 ();
+
+	r_cons_gotoxy (0, 0);
+	r_cons_flush ();
+	//r_cons_clear00 ();
 
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);

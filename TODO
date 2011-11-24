@@ -6,7 +6,6 @@
 ------8<-------------------8<--------------------8<-----------------8<----------
 
 ====[[ 0.9 ]]====
-
 * Add !load in r2 (oo args)
 * implement 'ax' to get/set xrefs (better than afl <addr>) .. or afx?
 * shell encoder - get x86-64 one from twitter
@@ -18,17 +17,15 @@
   - dca sym.main imp.printf
   - dbc
 
-* Add support for classes (useful for c++, dex, objc, ...)
-  - command to add new classes
-* rasm2 must support binary creation help message or so.. rabin2 integration must be easier
-* Add support for 'expect' like foo in rarun2
-  - make rarun live in a lib.. or at least be usable from r2
+* rasm2 must support binary creation help message or so..
+  - rabin2 integration must be easier
 * 'ao' must be for bytes count, not bytes
-* asm.pseudo for brainfuck
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 
 
 ===[[ 0.9.1 ]]===
+* Add support for classes (useful for c++, dex, objc, ...)
+  - command to add new classes
 * Optimizations:
   - Refactor get_sym() and so on...
   - TODO: make elf/pe get_os() and others return const and not strdup
@@ -43,6 +40,7 @@ OSX
 
 Other stuff
 ===========
+* asm.pseudo for brainfuck
 * implement code analysis using udis86.. is this necessary.. x86im works fine?
 * code analysis for msil
 * rax2 -k by default?
@@ -325,6 +323,8 @@ Refactoring
  
 Future
 ======
+* Add support for 'expect' like foo in rarun2
+  - make rarun live in a lib.. or at least be usable from r2
 * use centralized pubsub or memcached to sync data // redis?
 * r_file_slurp should work fine for big files (not prio) r_file_slurp_buf?
   - mmap if supported - add r_file_mmap ?  - read file in blocks instead of the whole file in a single syscall
