@@ -460,6 +460,9 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	if (gbaddr != 0LL)
+		bin->curarch.baddr = gbaddr;
+
 	RCore core;
 	core.bin = bin;
 	RCoreBinFilter filter;

@@ -5183,6 +5183,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		char *libname = NULL, *symname = NULL;
 		char *ptr = strdup (r_str_trim_head ((char*)input+2));
 		int i;
+		ut64 baddr;
 
 		addr = 0LL;
 		i = r_str_word_set0 (ptr);
@@ -5201,8 +5202,11 @@ static int cmd_debug_map(RCore *core, const char *input) {
 				(libname != NULL && (strstr (map->name, libname)))) {
 				filter.offset = 0LL;
 				filter.name = symname;
+				baddr = core->bin->curarch.baddr;
+				core->bin->curarch.baddr = map->addr;
 				r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'),
 						R_TRUE, &filter, 0);
+				core->bin->curarch.baddr = baddr;
 				break;
 			}
 		}
