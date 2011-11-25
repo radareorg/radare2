@@ -27,6 +27,7 @@
 * Add support for classes (useful for c++, dex, objc, ...)
   - command to add new classes
 * Optimizations:
+  - cons_visual_write() should do a single write instead of one per line
   - Refactor get_sym() and so on...
   - TODO: make elf/pe get_os() and others return const and not strdup
   - RAnalValue must be static, not ref

@@ -74,7 +74,7 @@ R_API RList *r_list_clone (RList *list);
 R_API void *r_list_get_by_int(RList *list, int off, int n);
 R_API void *r_list_get_by_int64(RList *list, int off, ut64 n);
 R_API void *r_list_get_by_string(RList *list, int off, const char *str);
-R_API boolt r_list_contains (RList *list, void *p);
+R_API RListIter *r_list_contains (RList *list, void *p);
 
 /* rlistflist */
 // TODO: rename to init or so.. #define r_oflist_new() R_NEW(ROFList);memset

@@ -2028,6 +2028,39 @@ static RList *r_debug_desc_native_list (int pid) {
 	return ret;
 }
 
+#if __APPLE__
+vm_prot_t unix_prot_to_darwin(int prot) {
+        return ((prot&1<<4)?VM_PROT_READ:0 |
+                (prot&1<<2)?VM_PROT_WRITE:0 |
+                (prot&1<<1)?VM_PROT_EXECUTE:0);
+}
+#endif
+static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
+#if __WINDOWS__
+        DWORD old;
+	HANDLE hProcess = tid2handler (dbg->pid, dbg->tid);
+	// TODO: align pointers
+        return VirtualProtectEx (WIN32_PI (hProcess), (LPVOID)(UINT)addr, size, perms, &old);
+#elif __APPLE__
+	int ret;
+	// TODO: align pointers
+	ret = vm_protect (pid_to_task (dbg->tid),
+			(vm_address_t)addr,
+			(vm_size_t)size,
+			(boolean_t)0, /* maximum protection */
+			perms); //unix_prot_to_darwin (perms));
+	if (ret != KERN_SUCCESS) {
+		printf("vm_protect failed\n");
+		return R_TRUE;
+	}
+	return R_FALSE;
+#elif __linux__
+#warning mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
+#else
+#warning mprotect not implemented for this platform
+#endif
+}
+
 static int r_debug_desc_native_open (const char *path) {
 	return 0;
 }
@@ -2073,6 +2106,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.reg_read = r_debug_native_reg_read,
 	.reg_write = (void *)&r_debug_native_reg_write,
 	.map_get = r_debug_native_map_get,
+	.map_protect = r_debug_native_map_protect,
 	.breakpoint = r_debug_native_bp,
 };
 

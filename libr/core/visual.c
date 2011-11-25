@@ -403,6 +403,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				r_config_set_i (core->config, "scr.cols", scrcols+2);
 		}
 		break;
+	case 'I':
+		r_core_cmd (core, "dsp", 0);
+		r_core_cmd (core, ".dr*", 0);
+		//r_core_cmd(core, "s eip", 0);
+		break;
 	case 's':
 		r_core_cmd (core, "ds", 0);
 		r_core_cmd (core, ".dr*", 0);

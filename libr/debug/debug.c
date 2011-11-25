@@ -36,6 +36,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->anal = NULL;
 		dbg->pid = -1;
 		dbg->tid = -1;
+		dbg->graph = r_graph_new ();
 		dbg->swstep = 0;
 		dbg->newstate = 0;
 		dbg->reason = R_DBG_REASON_UNKNOWN;
@@ -61,6 +62,7 @@ R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg) {
 	//r_bp_free(&dbg->bp);
 	//r_reg_free(&dbg->reg);
 	//r_debug_plugin_free();
+	r_graph_free (dbg->graph);
 	free (dbg);
 	return NULL;
 }
@@ -257,8 +259,10 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 R_API int r_debug_step(RDebug *dbg, int steps) {
 	int i, ret = R_FALSE;
 	if (dbg && dbg->h && dbg->h->step) {
-		for (i=0;i<steps;i++) {
-			ret = (dbg->swstep)?r_debug_step_soft (dbg):r_debug_step_hard (dbg);
+		for (i=0; i<steps; i++) {
+			ret = (dbg->swstep)?
+				r_debug_step_soft (dbg):
+				r_debug_step_hard (dbg);
 			// TODO: create wrapper for dbg_wait
 			// TODO: check return value of wait and show error
 			if (ret)
@@ -451,4 +455,10 @@ R_API int r_debug_clone (RDebug *dbg) {
 
 R_API int r_debug_is_dead (RDebug *dbg) {
 	return (dbg->pid == -1);
+}
+
+R_API int r_debug_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
+	if (dbg && dbg->h && dbg->h->map_protect)
+		return dbg->h->map_protect (dbg, addr, size, perms);
+	return R_FALSE;
 }

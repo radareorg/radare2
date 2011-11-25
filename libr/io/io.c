@@ -175,6 +175,12 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 #else
 	int ret, l, olen = len;
 	int w = 0;
+	// HACK?: if io->va == 0 -> call seek+read without checking sections ?
+	if (!io->va) {
+		r_io_seek (io, addr+w, R_IO_SEEK_SET);
+		ret = r_io_read_internal (io, buf+w, l);
+		return ret;
+	}
 	while (len>0) {
 		ut64 last = r_io_section_next (io, addr);
 		l = (len > (last-addr))? (last-addr): len;

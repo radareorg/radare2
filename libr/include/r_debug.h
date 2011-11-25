@@ -137,6 +137,7 @@ typedef struct r_debug_t {
 	RIOBind iob;
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
+	RGraph *graph;
 	/* TODO
 	- list of processes and their threads
 	- list of mapped memory (from /proc/XX/maps)
@@ -187,6 +188,7 @@ typedef struct r_debug_plugin_t {
 	RList *(*map_get)(RDebug *dbg);
 	ut64 (*map_alloc)(RDebug *dbg, RDebugMap *map);
 	int (*map_dealloc)(RDebug *dbg, ut64 addr);
+	int (*map_protect)(RDebug *dbg, ut64 addr, int size, int perms);
 	int (*init)(RDebug *dbg);
 	RDebugDescPlugin desc;
 	// TODO: use RList here
@@ -284,6 +286,7 @@ R_API int r_debug_stop(RDebug *dbg);
 R_API RList *r_debug_frames (RDebug *dbg);
 
 R_API int r_debug_is_dead (RDebug *dbg);
+R_API int r_debug_map_protect (RDebug *dbg, ut64 addr, int size, int perms);
 /* args XXX: weird food */
 R_API ut64 r_debug_arg_get (RDebug *dbg, int fast, int num);
 R_API int r_debug_arg_set (RDebug *dbg, int fast, int num, ut64 value);

@@ -5116,12 +5116,34 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		" dm*           Same as above but in radare commands\n"
 		" dm 4096       Allocate 4096 bytes in child process\n"
 		" dm-0x8048     Deallocate memory map of address 0x8048\n"
+		" dmp A S rwx   Change page at A with size S protection permissions\n"
 		" dmd [file]    Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
 		" dml file      Load contents of file into the current map region (see Sl)\n"
 		" dmi [addr|libname] [symname]   List symbols of target lib\n"
 		" dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
 		//" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
 		"TODO: map files in process memory. (dmf file @ [addr])\n");
+		break;
+	case 'p':
+		if (input[1] == ' ') {
+			int perms;
+			char *p, *q;
+			ut64 size, addr;
+			p = strchr (input+2, ' ');
+			if (p) {
+				*p++ = 0;
+				q = strchr (p, ' ');
+				if (q) {
+					*q++ = 0;
+					addr = r_num_math (core->num, input+2);
+					size = r_num_math (core->num, p);
+					perms = r_str_rwx (q);
+					eprintf ("(%s)(%s)(%s)\n", input+2, p, q);
+					eprintf ("0x%08"PFMT64x" %d %o\n", addr, (int) size, perms);
+					r_debug_map_protect (core->dbg, addr, size, perms);
+				} else eprintf ("See dm?\n");
+			} else eprintf ("See dm?\n");
+		} else eprintf ("See dm?\n");
 		break;
 	case 'd':
 		r_debug_map_sync (core->dbg); // update process memory maps
@@ -5358,10 +5380,83 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_debug_backtrace (RCore *core, const char *input) {
+	RAnalOp analop;
+	ut64 addr, len = r_num_math (core->num, input);
+	if (len == 0) {
+		r_bp_traptrace_list (core->dbg->bp);
+	} else {
+		ut64 oaddr = 0LL;
+		eprintf ("Trap tracing 0x%08"PFMT64x"-0x%08"PFMT64x"\n", core->offset, core->offset+len);
+		r_reg_arena_swap (core->dbg->reg, R_TRUE);
+		r_bp_traptrace_reset (core->dbg->bp, R_TRUE);
+		r_bp_traptrace_add (core->dbg->bp, core->offset, core->offset+len);
+		r_bp_traptrace_enable (core->dbg->bp, R_TRUE);
+		do {
+			ut8 buf[32];
+			r_debug_continue (core->dbg);
+			if (checkbpcallback (core)) {
+				eprintf ("Interrupted by breakpoint\n");
+				break;
+			}
+			addr = r_debug_reg_get (core->dbg, "pc");
+			if (addr == 0LL) {
+				eprintf ("pc=0\n");
+				break;
+			}
+			if (addr == oaddr) {
+				eprintf ("pc=opc\n");
+				break;
+			}
+			oaddr = addr;
+			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
+			// XXX Do asm.arch should define the max size of opcode?
+			r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
+			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf));
+		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.length));
+		r_bp_traptrace_enable (core->dbg->bp, R_FALSE);
+	}
+}
+static void walk_children (RGraph *t, RGraphNode *tn, int level) {
+	int i;
+	RListIter *iter;
+	RGraphNode *n;
+	if (r_list_contains (t->path, tn)) {
+		// do not repeat pushed nodes
+		return;
+	}
+	for (i=0; i<level; i++) 
+		eprintf ("   ");
+	eprintf ("%d: 0x%08"PFMT64x" refs %d\n",
+			level, tn->addr, tn->refs);
+	r_list_foreach (tn->parents, iter, n) {
+		for (i=0; i<level; i++) 
+			eprintf ("   ");
+		eprintf ("   ^ 0x%08"PFMT64x"\n", n->addr);
+	}
+	r_list_push (t->path, tn);
+	r_list_foreach (tn->children, iter, n) {
+		walk_children (t, n, level+1);
+	}
+        //"0x0000ba60_0x0000ba60" -> "0x0000ba60_0x0000ba83" [color="blue"];
+	r_list_pop (t->path);
+} 
+
+static void dot_r_graph_traverse(RGraph *t) {
+	RListIter *iter;
+	RGraphNode *root;
+	RList *path = t->path;
+	t->path = r_list_new ();
+	r_list_foreach (t->roots, iter, root) {
+		walk_children (t, root, 0);
+	}
+	r_list_free (t->path);
+	t->path = path;
+}
+
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	struct r_anal_op_t analop;
-	int len, times, sig, follow=0;
+	int i, times, sig, follow=0;
 	ut64 addr;
 	char *ptr;
 
@@ -5372,11 +5467,86 @@ static int cmd_debug(void *data, const char *input) {
 			"\xcc\xc7\xc2\x10\x00\x00\x00\xcd\x80", 18);
 		break;
 	case 't':
-		// TODO: Add support to change the tag
-		if (input[1]=='r') {
+		switch (input[1]) {
+		case '?':
+			r_cons_printf ("Usage: dt[*] [tag]\n");
+			r_cons_printf ("  dtc  - trace call/ret\n");
+			r_cons_printf ("  dtg  - graph call/ret trace\n");
+			r_cons_printf ("  dtr  - reset traces (instruction//cals)\n");
+			break;
+		case 'c':
+{
+			int n = 0;
+			int t = core->dbg->trace->enabled;
+RGraphNode *gn;
+			core->dbg->trace->enabled = 0;
+			r_graph_plant (core->dbg->graph);
+			r_cons_break (static_debug_stop, core->dbg);
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
+			for (;;) {
+				ut8 buf[32];
+				ut64 addr;
+				RAnalOp aop;
+				if (r_cons_singleton ()->breaked)
+					break;
+				r_debug_step (core->dbg, 1);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+				addr = r_debug_reg_get (core->dbg, "pc");
+				r_io_read_at (core->io, addr, buf, sizeof (buf));
+				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+				eprintf (" %d %llx\r", n++, addr);
+				switch (aop.type) {
+				case R_ANAL_OP_TYPE_UCALL:
+					// store regs
+					// step into
+					// get pc
+					r_debug_step (core->dbg, 1);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+					addr = r_debug_reg_get (core->dbg, "pc");
+					eprintf ("0x%08llx ucall. computation may fail\n", aop.type);
+					r_graph_push (core->dbg->graph, addr, NULL);
+					break;
+				case R_ANAL_OP_TYPE_CALL:
+					r_graph_push (core->dbg->graph, addr, NULL);
+					break;
+				case R_ANAL_OP_TYPE_RET:
+					r_debug_step (core->dbg, 1);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+					addr = r_debug_reg_get (core->dbg, "pc");
+					// TODO: step into and check return address if correct
+					// if not correct we are hijacking the control flow (exploit!)
+					gn = r_graph_pop (core->dbg->graph);
+					if (addr != gn->addr) {
+						eprintf ("Oops. invalid return address 0x%08"PFMT64x
+							"\n0x%08"PFMT64x"\n", addr, gn->addr);
+					}
+					break;
+				}
+				if (checkbpcallback (core)) {
+					eprintf ("Interrupted by a breakpoint\n");
+					break;
+				}
+			}
+			r_graph_traverse (core->dbg->graph);
+			core->dbg->trace->enabled = t;
+			r_cons_break_end();
+			}
+			break;
+		case 'g':
+			dot_r_graph_traverse (core->dbg->graph);
+			break;
+		case 'r':
+			r_graph_reset (core->dbg->graph);
 			r_debug_trace_free (core->dbg);
 			core->dbg->trace = r_debug_trace_new ();
-		} else r_debug_trace_list (core->dbg, -1);
+			break;
+		case '\0':
+			r_debug_trace_list (core->dbg, -1);
+			break;
+		default:
+			eprintf ("Wrong arg. See dt?\n");
+			break;
+		}
 		break;
 	case 'd':
 		switch (input[1]) {
@@ -5422,6 +5592,7 @@ static int cmd_debug(void *data, const char *input) {
 				" ds       step one instruction\n"
 				" ds 4     step 4 instructions\n"
 				" dso 3    step over 3 instructions\n"
+				" dsp      step into program (skip libs)\n"
 				" dsu addr step until address\n"
 				" dsl      step one source line\n"
 				" dsl 40   step 40 source lines\n");
@@ -5429,6 +5600,30 @@ static int cmd_debug(void *data, const char *input) {
 		case 'u':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
 			step_until (core, r_num_math (core->num, input+2)); // XXX dupped by times
+			break;
+		case 'p':
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
+			for (i=0; i<times; i++) {
+				ut8 buf[64];
+				ut64 addr;
+				RAnalOp aop;
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+				addr = r_debug_reg_get (core->dbg, "pc");
+				r_io_read_at (core->io, addr, buf, sizeof (buf));
+				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+				if (aop.type == R_ANAL_OP_TYPE_CALL) {
+					RIOSection *s = r_io_section_get (core->io, aop.jump);
+					if (!s) {
+						r_debug_step_over (core->dbg, times);
+						continue;
+					}
+				}
+				r_debug_step (core->dbg, 1);
+				if (checkbpcallback (core)) {
+					eprintf ("Interrupted by a breakpoint\n");
+					break;
+				}
+			}
 			break;
 		case 'o':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);
@@ -5473,6 +5668,7 @@ static int cmd_debug(void *data, const char *input) {
 				" dcu [addr]       continue until address\n"
 				" dcu [addr] [end] continue until given address range\n"
 				" dco [num]        step over N instructions\n"
+				" dcp              continue until program code (mapped io section)\n"
 				" dcs [num]        continue until syscall\n"
 				" dcc              continue until call (use step into)\n"
 				" dcr              continue until ret (uses step over)\n"
@@ -5529,8 +5725,31 @@ static int cmd_debug(void *data, const char *input) {
 				checkbpcallback (core);
 			} else eprintf ("Usage: dcs [syscall-name-or-number]\n");
 			break;
+		case 'p':
+			{ // XXX: this is very slow
+				RIOSection *s;
+				ut64 pc;
+				int n = 0;
+				int t = core->dbg->trace->enabled;
+				core->dbg->trace->enabled = 0;
+				r_cons_break (static_debug_stop, core->dbg);
+				do {
+					r_debug_step (core->dbg, 1);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+					pc = r_debug_reg_get (core->dbg, "pc");
+					eprintf (" %d %llx\r", n++, pc);
+					s = r_io_section_get (core->io, pc);
+					if (r_cons_singleton ()->breaked)
+						break;
+				} while (!s);
+				eprintf ("\n");
+				core->dbg->trace->enabled = t;
+				r_cons_break_end();
+				return 1;
+			}
 		case 'u':
 			ptr = strchr (input+3, ' ');
+// TODO : handle ^C here
 			if (ptr) { // TODO: put '\0' in *ptr to avoid
 				ut64 from, to, pc;
 				from = r_num_math (core->num, input+3);
@@ -5568,40 +5787,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 't':
-			len = r_num_math (core->num, input+2);
-			if (len == 0) {
-				r_bp_traptrace_list (core->dbg->bp);
-			} else {
-				ut64 oaddr = 0LL;
-				eprintf ("Trap tracing 0x%08"PFMT64x"-0x%08"PFMT64x"\n", core->offset, core->offset+len);
-				r_reg_arena_swap (core->dbg->reg, R_TRUE);
-				r_bp_traptrace_reset (core->dbg->bp, R_TRUE);
-				r_bp_traptrace_add (core->dbg->bp, core->offset, core->offset+len);
-				r_bp_traptrace_enable (core->dbg->bp, R_TRUE);
-				do {
-					ut8 buf[32];
-					r_debug_continue (core->dbg);
-					if (checkbpcallback (core)) {
-						eprintf ("Interrupted by breakpoint\n");
-						break;
-					}
-					addr = r_debug_reg_get (core->dbg, "pc");
-					if (addr == 0LL) {
-						eprintf ("pc=0\n");
-						break;
-					}
-					if (addr == oaddr) {
-						eprintf ("pc=opc\n");
-						break;
-					}
-					oaddr = addr;
-					/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
-					// XXX Do asm.arch should define the max size of opcode?
-					r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
-					r_anal_op (core->anal, &analop, addr, buf, sizeof (buf));
-				} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.length));
-				r_bp_traptrace_enable (core->dbg->bp, R_FALSE);
-			}
+			cmd_debug_backtrace (core, input+2);
 			break;
 		default:
 			bypassbp (core);
@@ -5638,7 +5824,7 @@ static int cmd_debug(void *data, const char *input) {
 		" dr[?]          cpu registers, dr? for extended help\n"
 		" db[?]          breakpoints\n"
 		" dbt            display backtrace\n"
-		" dt[r] [tag]    display instruction traces (dtr=reset)\n"
+		" dt[?r] [tag]   display instruction traces (dtr=reset)\n"
 		" dm[?*]         show memory maps\n");
 		break;
 	}

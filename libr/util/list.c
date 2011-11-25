@@ -75,10 +75,9 @@ R_API boolt r_list_delete_data (RList *list, void *ptr) {
 
 R_API void r_list_delete (RList *list, RListIter *iter) {
 	r_list_split_iter (list, iter);
-	if (list->free && iter->data) {
+	if (list->free && iter->data)
 		list->free (iter->data);
-		iter->data = NULL;
-	}
+	iter->data = NULL;
 	free (iter);
 }
 
@@ -119,7 +118,7 @@ R_API RListIter *r_list_item_new (void *data) {
 
 R_API RListIter *r_list_append(RList *list, void *data) {
 	RListIter *new = NULL;
-	if (data) {
+	if (list && data) {
 		new = R_NEW (RListIter);
 		if (list->tail)
 			list->tail->n = new;
@@ -283,14 +282,14 @@ R_API void *r_list_get_by_string(RList *list, int off, const char *str) {
 	return NULL;
 }
 
-R_API boolt r_list_contains (RList *list, void *p) {
+R_API RListIter *r_list_contains (RList *list, void *p) {
 	void *q;
 	RListIter *iter;
 	r_list_foreach (list, iter, q) {
 		if (p == q)
-			return R_TRUE;
+			return iter;
 	}
-	return R_FALSE;
+	return NULL;
 }
 
 #if TEST
