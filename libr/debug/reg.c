@@ -56,7 +56,7 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		value = r_reg_get_value (dbg->reg, item);
 		diff = (ut64)r_reg_cmp (dbg->reg, item);
 		if (rad==1)
-			dbg->printf ("f %s @ 0x%"PFMT64x"\n", item->name, value);
+			dbg->printf ("f %s 1 0x%"PFMT64x"\n", item->name, value);
 		else if (rad==2) {
 			if (diff) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
 				dbg->printf ("\x1b[1;37m");

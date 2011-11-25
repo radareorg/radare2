@@ -6,6 +6,8 @@
 ------8<-------------------8<--------------------8<-----------------8<----------
 
 ====[[ 0.9 ]]====
+* r_cons_visual_write_tail() -> fill end of screen with spaces \o/
+* Add graph.nodecolor graph.bgcolor graph.edgecolor ??
 * Add !load in r2 (oo args)
 * implement 'ax' to get/set xrefs (better than afl <addr>) .. or afx?
 * shell encoder - get x86-64 one from twitter

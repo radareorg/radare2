@@ -292,7 +292,7 @@ R_API void r_cons_visual_write (char *buffer) {
 	const char *endptr;
 	char *nl, *ptr = buffer;
 
-	memset (white, ' ', sizeof (white));
+	memset (&white, ' ', sizeof (white));
 
 	while ((nl = strchr (ptr, '\n'))) {
 		int len = ((int)(size_t)(nl-ptr))+1;
@@ -314,8 +314,11 @@ R_API void r_cons_visual_write (char *buffer) {
 			if (lines>0) {
 				int w = cols-alen;
 				r_cons_write (ptr-1, len);
-				if (w>0)
+				if (w>0) { 
+					if (w>sizeof (white)-1)
+						w = sizeof (white)-1;
 					r_cons_write (white, w);
+				}
 			}
 		}
 		lines--;

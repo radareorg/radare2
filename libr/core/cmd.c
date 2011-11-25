@@ -331,7 +331,7 @@ static int cmd_rap(void *data, const char *input) {
 	return R_TRUE;
 }
 
-static void cmd_reg(RCore *core, const char *str) {
+static void cmd_debug_reg(RCore *core, const char *str) {
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
@@ -449,7 +449,7 @@ static void cmd_reg(RCore *core, const char *str) {
 		if (type != R_REG_TYPE_LAST) {
 			r_debug_reg_sync (core->dbg, type, R_FALSE);
 			r_debug_reg_list (core->dbg, type, size, str[0]=='*');
-		} else eprintf ("cmd_reg: Unknown type\n");
+		} else eprintf ("cmd_debug_reg: Unknown type\n");
 	}
 }
 
@@ -5417,41 +5417,22 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 		r_bp_traptrace_enable (core->dbg->bp, R_FALSE);
 	}
 }
-static void walk_children (RGraph *t, RGraphNode *tn, int level) {
-	int i;
-	RListIter *iter;
-	RGraphNode *n;
-	if (r_list_contains (t->path, tn)) {
-		// do not repeat pushed nodes
-		return;
-	}
-	for (i=0; i<level; i++) 
-		eprintf ("   ");
-	eprintf ("%d: 0x%08"PFMT64x" refs %d\n",
-			level, tn->addr, tn->refs);
-	r_list_foreach (tn->parents, iter, n) {
-		for (i=0; i<level; i++) 
-			eprintf ("   ");
-		eprintf ("   ^ 0x%08"PFMT64x"\n", n->addr);
-	}
-	r_list_push (t->path, tn);
-	r_list_foreach (tn->children, iter, n) {
-		walk_children (t, n, level+1);
-	}
-        //"0x0000ba60_0x0000ba60" -> "0x0000ba60_0x0000ba83" [color="blue"];
-	r_list_pop (t->path);
-} 
 
-static void dot_r_graph_traverse(RGraph *t) {
-	RListIter *iter;
-	RGraphNode *root;
-	RList *path = t->path;
-	t->path = r_list_new ();
-	r_list_foreach (t->roots, iter, root) {
-		walk_children (t, root, 0);
+static void dot_r_graph_traverse(RCore *core, RGraph *t) {
+	RGraphNode *n, *n2;
+	RListIter *iter, *iter2;
+	const char *gfont = r_config_get (core->config, "graph.font");
+	r_cons_printf ("digraph code {\n");
+	r_cons_printf ("graph [bgcolor=white];\n");
+	r_cons_printf ("   node [color=lightgray, style=filled shape=box fontname=\"%s\" fontsize=\"8\"];\n", gfont);
+	r_list_foreach (t->nodes, iter, n) {
+		r_cons_printf ("\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x"\" color=\"lightgray\" "
+			"label=\"0x%08"PFMT64x" (%d)\"]\n", n->addr, n->addr, n->addr, n->refs);
+		r_list_foreach (n->children, iter2, n2) {
+			r_cons_printf ("\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" [color=\"red\"];\n", n->addr, n2->addr);
+		}
 	}
-	r_list_free (t->path);
-	t->path = path;
+	r_cons_printf ("}\n");
 }
 
 static int cmd_debug(void *data, const char *input) {
@@ -5475,10 +5456,10 @@ static int cmd_debug(void *data, const char *input) {
 			r_cons_printf ("  dtr  - reset traces (instruction//cals)\n");
 			break;
 		case 'c':
-{
+			{
 			int n = 0;
 			int t = core->dbg->trace->enabled;
-RGraphNode *gn;
+			RGraphNode *gn;
 			core->dbg->trace->enabled = 0;
 			r_graph_plant (core->dbg->graph);
 			r_cons_break (static_debug_stop, core->dbg);
@@ -5503,23 +5484,29 @@ RGraphNode *gn;
 					r_debug_step (core->dbg, 1);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 					addr = r_debug_reg_get (core->dbg, "pc");
-					eprintf ("0x%08llx ucall. computation may fail\n", aop.type);
+					eprintf ("0x%08llx ucall. computation may fail\n", addr);
 					r_graph_push (core->dbg->graph, addr, NULL);
+// TODO: push pc+aop.length into the call path stack
 					break;
 				case R_ANAL_OP_TYPE_CALL:
 					r_graph_push (core->dbg->graph, addr, NULL);
 					break;
 				case R_ANAL_OP_TYPE_RET:
+#if 0
+// TODO: we must store ret value for each call in the graph path to do this check
 					r_debug_step (core->dbg, 1);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 					addr = r_debug_reg_get (core->dbg, "pc");
 					// TODO: step into and check return address if correct
 					// if not correct we are hijacking the control flow (exploit!)
+#endif
 					gn = r_graph_pop (core->dbg->graph);
+#if 0
 					if (addr != gn->addr) {
 						eprintf ("Oops. invalid return address 0x%08"PFMT64x
 							"\n0x%08"PFMT64x"\n", addr, gn->addr);
 					}
+#endif
 					break;
 				}
 				if (checkbpcallback (core)) {
@@ -5533,7 +5520,7 @@ RGraphNode *gn;
 			}
 			break;
 		case 'g':
-			dot_r_graph_traverse (core->dbg->graph);
+			dot_r_graph_traverse (core, core->dbg->graph);
 			break;
 		case 'r':
 			r_graph_reset (core->dbg->graph);
@@ -5802,7 +5789,7 @@ RGraphNode *gn;
 		cmd_debug_map (core, input+1);
 		break;
 	case 'r':
-		cmd_reg (core, input+1);
+		cmd_debug_reg (core, input+1);
 		//r_core_cmd (core, "|reg", 0);
 		break;
 	case 'p':
