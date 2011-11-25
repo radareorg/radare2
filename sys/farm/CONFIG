@@ -18,7 +18,7 @@ REMOTEDIR=""
 
 TARGETS="
 	build
-	bindist
+	dist-bin
 	python-dist
 	mingw32
 	android-arm

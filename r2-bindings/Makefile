@@ -194,7 +194,7 @@ install-perl:
 	fi
 
 install-vapi:
-	@${INSTALL_DIR} ${DESTDIR}${PREFIX}/share/vala/vapi
+	mkdir -p ${DESTDIR}${PREFIX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
 
 EXAMPLEDIR=${DESTDIR}${PREFIX}/share/radare2-swig
