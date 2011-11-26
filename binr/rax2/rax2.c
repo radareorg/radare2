@@ -6,7 +6,7 @@ static int flags = 0;
 
 static int format_output (char mode, ut64 n);
 static int help ();
-static int rax (char *str, int last);
+static int rax (char *str, int len, int last);
 static int use_stdin ();
 
 static int format_output (char mode, ut64 n) {
@@ -63,10 +63,12 @@ static int help () {
 	return R_TRUE;
 }
 
-static int rax (char *str, int last) {
+static int rax (char *str, int len, int last) {
 	float f;
 	char *p, *buf, out_mode = '0';
 	int i;
+	if (!len)
+		len = strlen (str);
 
 	if (*str=='-') {
 		switch (str[1]) {
@@ -116,9 +118,9 @@ static int rax (char *str, int last) {
 		free (buf);
 		return R_TRUE;
 	}
-	if (flags & 4) {
-		for (i=0; str[i]; i++)
-			printf ("%02x", str[i]);
+	if (flags & 4) { // -S
+		for (i=0; i<len; i++)
+			printf ("%02x", (ut8)str[i]);
 		printf ("\n");
 		return R_TRUE;
 	}
@@ -177,10 +179,13 @@ static int rax (char *str, int last) {
 static int use_stdin () {
 	char buf[4096]; // TODO: remove this limit
 	while (!feof (stdin)) {
-		fgets (buf, sizeof (buf), stdin);
+		int n = read (0, buf, sizeof (buf));
+		if (n<1) break;
+		buf[n] = 0;
+		//fgets (buf, sizeof (buf), stdin);
 		if (feof (stdin)) break;
 		buf[strlen (buf)-1] = '\0';
-		if (!rax (buf, 0)) break;
+		if (!rax (buf, n, 0)) break;
 	}
 	return 0;
 }
@@ -190,6 +195,6 @@ int main (int argc, char **argv) {
 	if (argc == 1)
 		return use_stdin ();
 	for (i=1; i<argc; i++)
-		rax (argv[i], (i+1)==argc);
+		rax (argv[i], 0, (i+1)==argc);
 	return 0;
 }

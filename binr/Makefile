@@ -17,6 +17,7 @@ install:
 	mkdir -p ${BFX}
 	pwd
 	for a in ${BINS} ; do ${INSTALL_PROGRAM} $$a/$$a ${BFX}/$$a ; done
+	${INSTALL_PROGRAM} ragg2/ragg2-cc ${BFX}/ragg2-cc
 	#cp -f rarc2/rarc2 rarc2/rarc2-tool ${BFX}
 	# shortcut
 	-cd ${BFX} && rm -f r2 ; ln -fs radare2 r2
@@ -34,7 +35,7 @@ symstall-rsc2:
 symstall install-symlink:
 	mkdir -p ${BFX}
 	for a in ${BINS} ; do ln -fs ${PWD}/$$a/$$a ${BFX}/$$a ; done
-	# ln -fs ${PWD}/rarc2/rarc2-tool ${BFX}/rarc2-tool
+	ln -fs ${PWD}/ragg2/ragg2-cc ${BFX}/ragg2-cc
 	-ln -fs ${PFX}/bin/radare2 ${BFX}/r2
 
 deinstall uninstall:

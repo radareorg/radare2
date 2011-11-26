@@ -141,6 +141,7 @@ purge:
 	rm -f ${DESTDIR}/${BINDIR}/rarc2
 	rm -f ${DESTDIR}/${BINDIR}/rahash2
 	rm -f ${DESTDIR}/${BINDIR}/ragg2
+	rm -f ${DESTDIR}/${BINDIR}/ragg2-cc
 	rm -f ${DESTDIR}/${BINDIR}/rarun2
 	rm -f ${DESTDIR}/${BINDIR}/rasc2
 	rm -f ${DESTDIR}/${BINDIR}/radiff2

@@ -1,0 +1,135 @@
+#!/bin/sh
+# ragg2-cc : a shellcode compiler -- pancake<nopcode.org> 2011
+#   - for bsd, linux and osx
+# TODO
+#  add support for x86-64 bits
+#  add support for arm
+#  add support for nested shellcodes
+
+B=0
+D=""
+O=""
+F=""
+ASM=0
+while : ; do
+	[ -z "$1" ] && break
+	F=$1
+	case "$F" in
+	-b)
+		B=1
+		;;
+	-d)
+		D=1
+		;;
+	-s)
+		ASM=1
+		;;
+	-o)
+		shift
+		O=$1
+		if [ -z "$O" ]; then
+			echo "Missing argument for -o"
+			exit 1
+		fi
+		;;
+	-h)
+		echo "Usage: ragg2-cc [-opt] [file.c]"
+		echo "  -s   generate assembly file"
+		echo "  -d   enable debug mode"
+		echo "  -b   show hexpair bytes"
+		exit 0
+		;;
+	-v)
+		echo "ragg2-cc 0.9"
+		exit 0
+		;;
+	esac
+	shift
+done
+if [ -z "$F" ]; then
+	echo "Missing argument"
+	exit 1
+fi
+[ -z "$O" ] && O=$F.bin
+
+if [ "`uname`" = Darwin ]; then
+	#CC=/opt/local/bin/i386-mingw32-gcc
+	#OBJCOPY=/opt/local/bin/i386-mingw32-objcopy
+	CC=gcc
+	CC=llvm-gcc # llvm generate smaller binaries
+	OBJCOPY=gobjcopy
+	CFLAGS="-arch i386 "
+	LDFLAGS="-arch i386 -shared -c"
+	ARCH=darwin_i386
+	SHDR="
+.text
+jmp _main"
+else
+	CC=gcc
+	OBJCOPY=objcopy
+	ARCH=linux_i386
+	CFLAGS="-fPIC -fPIE -pie"
+	SHDR="
+.section text
+.globl  main
+.type   main, @function
+jmp main
+"
+	#ARCH=linux_amd64
+fi
+OPT=-Os
+#CFLAGS="-shared -fPIC -fPIE -pie "
+#CFLAGS="${CFLAGS} -shared -fPIC -fPIE -pie "
+CFLAGS="${CFLAGS} -nostdinc -include /usr/include/sflib/${ARCH}/sflib.h"
+CFLAGS="${CFLAGS} -fomit-frame-pointer -finline-functions -fno-zero-initialized-in-bss"
+LDFLAGS="${LDFLAGS} -nostdlib"
+
+rmtemps() {
+	[ -z "$D" ] && rm -f $F.tmp $F.text $F.text $F.s $F.o
+}
+
+fail() {
+	rmtemps
+	exit 1
+}
+
+if [ "$D" ]; then
+	echo "==> Compile"
+	echo "${CC} ${CFLAGS} -o $F.tmp -S ${OPT} $F"
+fi
+rm -f $F.bin
+${CC} ${CFLAGS} -o $F.tmp -S ${OPT} $F || fail
+echo "${SHDR}" > $F.s
+cat $F.tmp \
+	| sed -e s,rdata,text, -e s,rodata,text, -e 's,__i686.get_pc_thunk.bx,__getesp__,g' \
+	| grep -v .cstring | grep -v size | grep -v ___main | grep -v section \
+	| grep -v __alloca | grep -v zero | grep -v cfi >> $F.s
+rm -f $F.tmp
+if [ $ASM = 1 ]; then
+	echo $F.s
+	exit 0
+fi
+
+if [ "$D" ]; then
+	echo "==> Assemble"
+	echo "${CC} -c ${LDFLAGS} -Os -o $F.o $F.s"
+fi
+${CC} ${LDFLAGS} ${OPT} -o $F.o $F.s || fail
+
+if [ "$D" ]; then
+	echo "==> Link"
+	echo "${OBJCOPY} -j .text -O binary $F.o $.text"
+fi
+${OBJCOPY} -j .text -O binary $F.o $F.text || fail
+
+[ $B = 1 ] && exec rax2 -S - < $F.text
+
+if [ "$D" ]; then
+#	hexdump -C $F.text
+	rax2 -S - < $F.text
+	ls -l $F.text
+fi
+ragg2 -C $F.text -F -o $O || fail
+echo $O
+rmtemps
+exit 0
