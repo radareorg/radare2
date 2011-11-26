@@ -18,6 +18,7 @@ static int usage () {
 	" -e [encoder]    use specific encoder. see -L\n"
 	" -B [hexpairs]   append some hexpair bytes\n"
 	" -c [k=v]        set configuration options\n"
+	" -C [file]       append contents of file\n"
 	" -p [padding]    add padding after compilation (padding=n10s32)\n"
 	"                 ntas : begin nop, trap, 'a', sequence\n"
 	"                 NTAS : same as above, but at begining\n"
@@ -76,6 +77,7 @@ int main(int argc, char **argv) {
 	const char *file = NULL;
 	const char *padding = NULL;
 	const char *bytes = NULL;
+	const char *contents = NULL;
 	const char *arch = R_SYS_ARCH;
 	const char *os = R_EGG_OS_NAME;
 	char *format = "raw";
@@ -92,7 +94,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:B:")) != -1) {
+        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:B:C:")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -109,6 +111,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'B':
 			bytes = optarg;
+			break;
+		case 'C':
+			contents = optarg;
 			break;
 		case 'o':
 			ofile = optarg;
@@ -170,7 +175,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode && !bytes && !encoder) {
+	if (optind == argc && !shellcode && !bytes && !contents && !encoder) {
 		eprintf ("Missing argument\n");
 		return usage ();
 	} else file = argv[optind];
@@ -181,6 +186,13 @@ int main(int argc, char **argv) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
 			return 1;
 		}
+	}
+	if (contents) {
+		int l;
+		char *buf = r_file_slurp (contents, &l);
+		if (buf && l>0) {
+			r_egg_raw (egg, buf, l);
+		} else eprintf ("Error loading '%s'\n", contents);
 	}
 	if (bytes) {
 		ut8 *b = malloc (strlen (bytes)+1);
