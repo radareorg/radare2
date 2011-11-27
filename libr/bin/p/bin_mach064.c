@@ -16,7 +16,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut64 p_codefsz=0, p_codeva=0, p_codesz=0, p_codepa=0;
 	ut64 p_datafsz=0, p_datava=0, p_datasz=0, p_datapa=0;
 	ut64 p_cmdsize=0, p_entry=0, p_tmp=0;
-	ut64 baddr = 0x100001000;
+	ut64 baddr = 0x100001000LL;
 // TODO: baddr must be overriden with -b
 	RBuffer *buf = r_buf_new ();
 

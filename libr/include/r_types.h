@@ -150,7 +150,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 # elif __x86_64__
 # define R_SYS_BASE ((ut64)0x100000000)
 # else
-# define R_SYS_BASE ((u64)0x1000)
+# define R_SYS_BASE ((ut64)0x1000)
 # endif
 #elif __WINDOWS__
 # define R_SYS_BASE ((ut64)0x01001000)

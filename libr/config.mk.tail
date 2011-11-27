@@ -100,7 +100,13 @@ CFLAGS+=-D__UNIX__=1
 EXT_AR=a
 EXT_SO=dylib
 EXT_EXE=
+ifeq ($(shell uname -p),arm)
+# iOS
+TH_LIBS=
+else
+# OSX
 TH_LIBS=-lpthread
+endif
 endif
 ifeq (${OSTYPE},android)
 CFLAGS+=-D__UNIX__=1

@@ -1096,7 +1096,7 @@ static RList *r_debug_native_threads(int pid) {
 	return w32_thread_list (pid, list);
 #elif __APPLE__
 #if __arm__                 
-	#define OSX_PC state.r15
+	#define OSX_PC state.pc
 #elif __POWERPC__
 	#define OSX_PC state.srr0
 #elif __x86_64__
