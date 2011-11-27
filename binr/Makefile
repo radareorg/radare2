@@ -17,7 +17,7 @@ install:
 	mkdir -p ${BFX}
 	pwd
 	for a in ${BINS} ; do ${INSTALL_PROGRAM} $$a/$$a ${BFX}/$$a ; done
-	${INSTALL_PROGRAM} ragg2/ragg2-cc ${BFX}/ragg2-cc
+	${INSTALL_SCRIPT} ragg2/ragg2-cc ${BFX}/ragg2-cc
 	#cp -f rarc2/rarc2 rarc2/rarc2-tool ${BFX}
 	# shortcut
 	-cd ${BFX} && rm -f r2 ; ln -fs radare2 r2
