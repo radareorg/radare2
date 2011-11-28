@@ -34,6 +34,7 @@ while : ; do
 		;;
 	-h)
 		echo "Usage: ragg2-cc [-opt] [file.c]"
+		echo "  -a   set arch (TODO)"
 		echo "  -s   generate assembly file"
 		echo "  -d   enable debug mode"
 		echo "  -b   show hexpair bytes"
@@ -52,6 +53,11 @@ if [ -z "$F" ]; then
 fi
 [ -z "$O" ] && O=$F.bin
 
+if [ ! -d /usr/include/sflib ]; then
+	echo "Cannot find sflib."
+	exit 1
+fi
+
 if [ "`uname`" = Darwin ]; then
 	#CC=/opt/local/bin/i386-mingw32-gcc
 	#OBJCOPY=/opt/local/bin/i386-mingw32-objcopy
@@ -67,15 +73,21 @@ jmp _main"
 else
 	CC=gcc
 	OBJCOPY=objcopy
-	ARCH=linux_i386
 	CFLAGS="-fPIC -fPIE -pie"
 	SHDR="
-.section text
+.section .text
 .globl  main
 .type   main, @function
 jmp main
 "
-	#ARCH=linux_amd64
+	case "`uname -m`" in
+	"x86_64")
+		ARCH=linux_amd64
+		;;
+	*) 
+		ARCH=linux_i386
+		;;
+	esac
 fi
 OPT=-Os
 #CFLAGS="-shared -fPIC -fPIE -pie "
@@ -131,5 +143,5 @@ if [ "$D" ]; then
 fi
 ragg2 -C $F.text -F -o $O || fail
 echo $O
-rmtemps
+#rmtemps
 exit 0
