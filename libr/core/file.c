@@ -82,29 +82,29 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			return R_FALSE;
 		file = r->file->filename;
 	}
-	if (!r_bin_load (r->bin, file, 0))
-		return R_FALSE;
-	if (r->bin->narch>1) {
-		int i;
-		eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
-			r->assembler->cur->arch, r->assembler->bits);
-		eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
-		for (i=0; i<r->bin->narch; i++) {
-			r_bin_select_idx (r->bin, i);
-			if (r->bin->curarch.info == NULL) {
-				eprintf ("No extract info found.\n");
-			} else {
-				eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n", 
-						r->bin->curarch.info->arch,
-						r->bin->curarch.info->bits,
-						r->bin->curarch.file,
-						r->bin->curarch.offset);
+	if (r_bin_load (r->bin, file, R_FALSE)) {
+		if (r->bin->narch>1) {
+			int i;
+			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
+					r->assembler->cur->arch, r->assembler->bits);
+			eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
+			for (i=0; i<r->bin->narch; i++) {
+				r_bin_select_idx (r->bin, i);
+				if (r->bin->curarch.info == NULL) {
+					eprintf ("No extract info found.\n");
+				} else {
+					eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n", 
+							r->bin->curarch.info->arch,
+							r->bin->curarch.info->bits,
+							r->bin->curarch.file,
+							r->bin->curarch.offset);
+				}
 			}
 		}
-	}
-	r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);//"x86_32");
+		r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);//"x86_32");
+	} else if (!r_bin_load (r->bin, file, R_TRUE))
+		return R_FALSE;
 	r->file->obj = r_bin_get_object (r->bin, 0);
-
 	{
 		ut64 offset = r_bin_get_offset (r->bin);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
