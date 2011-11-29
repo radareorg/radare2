@@ -453,7 +453,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			else sprintf (buf, "wos 01 @ $$+%i:%i", cursor<ocursor?
 				cursor:ocursor, R_ABS (ocursor-cursor)+1);
 			r_core_cmd (core, buf, 0);
-		} else r_core_block_size (core, core->blocksize-1);
+		} else {
+			r_core_block_size (core, core->blocksize-1);
+			r_cons_clear ();
+		}
 		break;
 	case '+':
 		if (core->print->cur_enabled) {
@@ -464,13 +467,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			else sprintf (buf, "woa 01 @ $$+%i:%i",
 				cursor<ocursor? cursor: ocursor, R_ABS (ocursor-cursor)+1);
 			r_core_cmd (core, buf, 0);
-		} else r_core_block_size (core, core->blocksize+1);
+		} else {
+			r_core_block_size (core, core->blocksize+1);
+			//r_cons_clear ();
+		}
 		break;
 	case '/':
 		r_core_block_size (core, core->blocksize-cols);
+		r_cons_clear ();
 		break;
 	case '*':
 		r_core_block_size (core, core->blocksize+cols);
+		//r_cons_clear ();
 		break;
 	case '>':
 		r_core_seek_align (core, core->blocksize, 1);
@@ -525,6 +533,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (autoblocksize)
 			obs = core->blocksize;
 		else r_core_block_size (core, obs);
+		r_cons_clear ();
 		break;
 	case 'u':
 		if (r_io_sundo (core->io))

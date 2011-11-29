@@ -163,9 +163,17 @@ R_API void r_cons_gotoxy(int x, int y) {
 }
 
 R_API void r_cons_clear_line() {
-	// TODO: use ansi here
-	// TODO: use console width to write N spaces
-	eprintf ("                                              \r");
+#if __WINDOWS__
+	const char white[1024];
+	memset (&white, ' ', sizeof (white));
+	if (I.columns<sizeof(white))
+		white[I.columns] = 0;
+	else white[sizeof (white)] = 0; // HACK
+	printf ("%s\r", white);
+#else
+	printf ("\x1b[0K\r");
+#endif
+	fflush (stdout);
 }
 
 R_API void r_cons_clear00() {
