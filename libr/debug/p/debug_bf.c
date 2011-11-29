@@ -2,6 +2,7 @@
 
 #include <r_asm.h>
 #include <r_debug.h>
+#undef R_API
 #define R_API static
 #include "bfvm.c"
 

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#undef R_API
 #define R_API static
 #include "../debug/p/bfvm.h"
 #include "../debug/p/bfvm.c"

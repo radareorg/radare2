@@ -8,15 +8,19 @@
 /* this is the base fd.. more than one is supported :) */
 static int backup_fd = -1;
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 R_API int r_cons_pipe_open(const char *file, int append) {
-	int fd = open (file, O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
+	int fd = open (file, O_BINARY | O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
 	if (fd==-1) {
 		eprintf ("Cannot open file '%s'\n", file);
 		return -1;
 	} else eprintf ("%s created\n", file);
-	if (backup_fd != -1) {
+
+	if (backup_fd != -1)
 		close (backup_fd);
-	}
 #if __WINDOWS__
 	backup_fd = 2002-(fd-2); // windows xp has 2048 as limit fd
 	if (_dup2 (1, backup_fd) == -1) {

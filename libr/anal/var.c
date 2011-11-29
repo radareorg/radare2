@@ -242,11 +242,11 @@ R_API void r_anal_var_list(RAnal *anal, RAnalFcn *fcn, ut64 addr, int delta) {
 	if (fcn && fcn->vars)
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-			eprintf ("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
+			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d array=%d\n",
 				v->addr, v->eaddr, r_anal_var_type_to_str(anal, v->type),
 				v->vartype, v->name, v->delta, v->array);
 			r_list_foreach (v->accesses, iter2, x) {
-				eprintf ("  0x%08llx %s\n", x->addr, x->set?"set":"get");
+				eprintf ("  0x%08"PFMT64x" %s\n", x->addr, x->set?"set":"get");
 			}
 		}
 	}

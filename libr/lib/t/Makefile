@@ -7,5 +7,5 @@ plugin.${EXT_SO}:
 
 include ../../rules.mk
 
-clean:
+clean::
 	-rm -f plugin.${EXT_SO} test-plugin${EXT_EXE}

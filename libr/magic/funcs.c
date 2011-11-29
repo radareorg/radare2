@@ -35,11 +35,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <wctype.h>
 #if defined(HAVE_WCHAR_H)
 #include <wchar.h>
-#endif
-#if defined(HAVE_WCTYPE_H)
-#include <wctype.h>
 #endif
 
 /*

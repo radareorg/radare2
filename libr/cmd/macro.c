@@ -141,21 +141,23 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 }
 
 R_API int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name) {
-	char *name = alloca (strlen(_name));
+	char *name = strdup (_name);
 	struct list_head *pos;
 	char *ptr = strchr (name, ')');
 	if (ptr) *ptr='\0';
-	list_for_each_prev(pos, &mac->macros) {
-		RCmdMacroItem *mac = list_entry(pos, RCmdMacroItem, list);
+	list_for_each_prev (pos, &mac->macros) {
+		RCmdMacroItem *mac = list_entry (pos, RCmdMacroItem, list);
 		if (!strcmp (mac->name, name)) {
+			list_del (&(mac->list));
+			eprintf ("Macro '%s' removed.\n", name);
 			free (mac->name);
 			free (mac->code);
-			list_del (&(mac->list));
 			free (mac);
-			eprintf ("Macro '%s' removed.\n", name);
+			free (name);
 			return R_TRUE;
 		}
 	}
+	free (name);
 	return R_FALSE;
 }
 

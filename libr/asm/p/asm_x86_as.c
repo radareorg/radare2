@@ -5,6 +5,10 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	int ifd, ofd;
@@ -29,7 +33,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (!r_sys_cmdf ("as %s -o %s", ipath, opath)) {
 		const ut8 *begin, *end;
 		close (ofd);
-		ofd = open (opath, O_RDONLY);
+		ofd = open (opath, O_BINARY|O_RDONLY);
 		len = read (ofd, op->buf, R_ASM_BUFSIZE);
 		begin = r_mem_mem (op->buf, len, (const ut8*)"BEGINMARK", 9);
 		end = r_mem_mem (op->buf, len, (const ut8*)"ENDMARK", 7);

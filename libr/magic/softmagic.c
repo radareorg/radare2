@@ -1387,53 +1387,50 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	switch (m->reln) {
 	case 'x':
 		if ((ms->flags & R_MAGIC_DEBUG) != 0)
-			(void) fprintf(stderr, "%llu == *any* = 1\n",
-			    (ut64)v);
+			(void) fprintf(stderr, "%"PFMT64u" == *any* = 1\n", (ut64)v);
 		matched = 1;
 		break;
 	case '!':
 		matched = v != l;
 		if ((ms->flags & R_MAGIC_DEBUG) != 0)
-			(void) fprintf(stderr, "%llu != %llu = %d\n",
-			    (ut64)v, (ut64)l,
-			    matched);
+			fprintf(stderr, "%"PFMT64u" != %"PFMT64u" = %d\n", (ut64)v, (ut64)l, matched);
 		break;
 	case '=':
 		matched = v == l;
 		if ((ms->flags & R_MAGIC_DEBUG) != 0)
-			eprintf ("%llu == %llu = %d\n", (ut64)v, (ut64)l, matched);
+			eprintf ("%"PFMT64u" == %"PFMT64u" = %d\n", (ut64)v, (ut64)l, matched);
 		break;
 	case '>':
 		if (m->flag & UNSIGNED) {
 			matched = v > l;
 			if ((ms->flags & R_MAGIC_DEBUG) != 0)
-				eprintf ("%llu > %llu = %d\n", (ut64)v, (ut64)l, matched);
+				eprintf ("%"PFMT64u" > %"PFMT64u" = %d\n", (ut64)v, (ut64)l, matched);
 		} else {
 			matched = (ut64) v > (ut64) l;
 			if ((ms->flags & R_MAGIC_DEBUG) != 0)
-				eprintf ("%lld > %lld = %d\n", (st64)v, (st64)l, matched);
+				eprintf ("%"PFMT64u" > %"PFMT64u" = %d\n", (st64)v, (st64)l, matched);
 		}
 		break;
 	case '<':
 		if (m->flag & UNSIGNED) {
 			matched = v < l;
 			if ((ms->flags & R_MAGIC_DEBUG) != 0)
-				eprintf ("%llu < %llu = %d\n", (ut64)v, (ut64)l, matched);
+				eprintf ("%"PFMT64u" < %"PFMT64u" = %d\n", (ut64)v, (ut64)l, matched);
 		} else {
 			matched = (ut64) v < (ut64) l;
 			if ((ms->flags & R_MAGIC_DEBUG) != 0)
-				eprintf ("%lld < %lld = %d\n", (st64)v, (st64)l, matched);
+				eprintf ("%"PFMT64d" < %"PFMT64d" = %d\n", (st64)v, (st64)l, matched);
 		}
 		break;
 	case '&':
 		matched = (v & l) == l;
 		if ((ms->flags & R_MAGIC_DEBUG) != 0)
-			eprintf("((%llx & %llx) == %llx) = %d\n", (ut64)v, (ut64)l, (ut64)l, matched);
+			eprintf("((%"PFMT64x" & %"PFMT64x") == %"PFMT64x") = %d\n", (ut64)v, (ut64)l, (ut64)l, matched);
 		break;
 	case '^':
 		matched = (v & l) != l;
 		if ((ms->flags & R_MAGIC_DEBUG) != 0)
-			eprintf ("((%llx & %llx) != %llx) = %d\n", (ut64)v, (ut64)l, (ut64)l, matched);
+			eprintf ("((%"PFMT64x" & %"PFMT64x") != %"PFMT64x") = %d\n", (ut64)v, (ut64)l, (ut64)l, matched);
 		break;
 	default:
 		matched = 0;

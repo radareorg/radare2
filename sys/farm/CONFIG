@@ -24,6 +24,7 @@ TARGETS="
 	android-arm
 	android-x86
 "
+#TARGETS=" build python-dist mingw32 "
 #TARGETS=android-arm
 
 # mingw64 maemo

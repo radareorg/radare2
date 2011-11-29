@@ -5,6 +5,10 @@
 #include <r_flags.h>
 #include <r_core.h>
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 static char *r_core_project_file(const char *file) {
 	char buf[128];
 	if (!strchr (file, '/')) {
@@ -73,7 +77,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 
 	prj = r_core_project_file (file);
 	r_core_project_init ();
-	fd = open (prj, O_RDWR|O_CREAT, 0644);
+	fd = open (prj, O_BINARY|O_RDWR|O_CREAT, 0644);
 	if (fd != -1) {
 		r_cons_singleton ()->fdout = fd;
 		r_cons_singleton ()->is_interactive = R_FALSE;

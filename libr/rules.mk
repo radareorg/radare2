@@ -73,7 +73,7 @@ install:
 deinstall uninstall:
 	cd .. && ${MAKE} uninstall
 
-clean: ${EXTRA_CLEAN}
+clean:: ${EXTRA_CLEAN}
 	-rm -f *.${EXT_EXE} *.${EXT_SO} *.${EXT_AR} *.d
 	-rm -f ${LIBSO} ${LIBAR} ${OBJ} ${BIN} *.exe a.out
 	-@if [ -e t/Makefile ]; then (cd t && ${MAKE} clean) ; fi
@@ -109,7 +109,7 @@ endif
 # TODO: move to config.mk ? it must be a precondition
 myclean:
 
-clean: myclean
+clean:: myclean
 	-rm -f ${OBJS} ${OBJ} ${BIN}
 
 mrproper: clean

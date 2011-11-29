@@ -6,6 +6,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "sdb.h"
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 // must be deprecated
 static ut32 eod, pos; // what about lseek?
@@ -17,7 +20,7 @@ Sdb* sdb_new (const char *dir, int lock) {
 	s = malloc (sizeof (Sdb));
 	if (dir && *dir) {
 		s->dir = strdup (dir);
-		s->fd = open (dir, O_RDONLY);
+		s->fd = open (dir, O_RDONLY|O_BINARY);
 	} else {
 		s->dir = NULL;
 		s->fd = -1;
@@ -166,7 +169,7 @@ int sdb_sync (Sdb* s) {
 	if (!f) return 0;
 	ftmp = malloc (strlen (f)+5);
 	sprintf (ftmp, "%s.tmp", f);
-	fd = open (ftmp, O_RDWR|O_CREAT|O_TRUNC, 0644);
+	fd = open (ftmp, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, 0644);
 	if (fd == -1) {
 		fprintf (stderr, "cannot create %s\n", ftmp);
 		return -1;

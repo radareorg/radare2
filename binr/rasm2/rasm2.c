@@ -48,7 +48,7 @@ static int rasm_show_help() {
 
 static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int hex) {
 	struct r_asm_code_t *acode;
-	ut8 *data;
+	ut8 *data = NULL;
 	char *ptr = buf;
 	int ret = 0;
 	ut64 word = 0, clen = 0; 
@@ -63,16 +63,15 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int
 		for (; *ptr; ptr++)
 			if (*ptr!=' ' && *ptr!='\n' && *ptr!='\r')
 				if (!(++word%2)) clen++;
-		data = alloca (clen);
+		data = malloc (clen);
 		if (r_hex_str2bin (buf, data)==-1)
-			return 0;
+			goto beach;
 	}
 
 	if (!len || clen <= len)
 		len = clen;
 
 	if (hex) {
-		ret = 0;
 		RAsmOp op;
 		r_asm_set_pc (a, offset);
 		while (r_asm_disassemble (a, &op, data+ret, len-ret) != -1) {
@@ -84,11 +83,13 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int
 	} else {
 		r_asm_set_pc (a, offset);
 		if (!(acode = r_asm_mdisassemble (a, data, len)))
-			return 0;
+			goto beach;
 		printf ("%s", acode->buf_asm);
 		ret = acode->len;
 		r_asm_code_free (acode);
 	}
+beach:
+	if (data && data != (ut8*)buf) free (data);
 	return ret;
 }
 

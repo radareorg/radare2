@@ -205,7 +205,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.trace", "false");
 		r_config_set (cfg, "asm.bytes", "false");
 		r_config_set (cfg, "asm.stackptr", "false");
-	} else if (!strcmp(profile, "graph")) {
+	} else if (!strcmp (profile, "graph")) {
 		asm_profile (cfg, "default");
 		r_config_set (cfg, "asm.section", "false");
 		r_config_set (cfg, "asm.bytes", "false");
@@ -215,11 +215,11 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.stackptr", "false");
 		if (r_config_get (cfg, "graph.offset"))
 			r_config_set (cfg, "asm.offset", "true");
-		else   r_config_set (cfg, "asm.offset", "false");
-	} else if (!strcmp(profile, "debug")) {
+		else r_config_set (cfg, "asm.offset", "false");
+	} else if (!strcmp (profile, "debug")) {
 		asm_profile (cfg, "default");
 		r_config_set (cfg, "asm.trace", "true");
-	} else if (!strcmp(profile, "full")) {
+	} else if (!strcmp (profile, "full")) {
 		asm_profile (cfg, "default");
 		r_config_set (cfg, "asm.bytes", "true");
 		r_config_set (cfg, "asm.lines", "true");
@@ -227,7 +227,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.lineswide", "true");
 		r_config_set (cfg, "asm.section", "true");
 		r_config_set (cfg, "asm.size", "true");
-	} else if (!strcmp(profile, "simple")) {
+	} else if (!strcmp (profile, "simple")) {
 		asm_profile (cfg, "default");
 		r_config_set (cfg, "asm.bytes", "false");
 		r_config_set (cfg, "asm.lines", "false");
@@ -400,7 +400,9 @@ R_API int r_core_config_init(RCore *core) {
 
 	//r_config_set (cfg, "dir.opcodes", R_ASM_OPCODES_PATH);
 	r_config_set (cfg, "dir.source", "");
+	r_config_desc (cfg, "dir.source", "Path to find source files");
 	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
+	r_config_desc (cfg, "dir.magic", "Path to r_magic files");
 	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
 	r_config_desc (cfg, "dir.plugins", "Path to plugin files to be loaded at startup");
 	/* anal */
@@ -422,6 +424,10 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "asm.bits", "Word size in bits at assembler");
 	r_config_set (cfg, "asm.bytes", "true");
 	r_config_desc (cfg, "asm.bytes", "Display the bytes of each instruction");
+	r_config_set (cfg, "asm.flags", "true");
+	r_config_desc (cfg, "asm.bytes", "Show flags in disassembly (pd)");
+	r_config_set (cfg, "asm.size", "false");
+	r_config_desc (cfg, "asm.size", "Show size of opcodes in disassembly (pd)");
 	r_config_set (cfg, "asm.lbytes", "true");
 	r_config_desc (cfg, "asm.lbytes", "Align disasm bytes to left");
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
@@ -460,15 +466,19 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.linescall", "false");
 	r_config_desc (cfg, "asm.linescall", "Enable call lines");
 	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
+	r_config_desc (cfg, "asm.os", "Select operating system (kernel) (linux, darwin, w32,..)");
 	r_config_set_cb (cfg, "asm.syntax", "intel", &config_asmsyntax_callback);
 	r_config_desc (cfg, "asm.syntax", "Select assembly syntax");
 	r_config_set_cb (cfg, "asm.profile", "default", &config_asmprofile_callback);
+	r_config_desc (cfg, "asm.profile", "configure disassembler (default, simple, gas, smart, debug, full)");
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
 #else
 	r_config_set_cb (cfg, "cfg.bigendian", "true", &config_bigendian_callback);
 #endif
+	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes\n");
 	r_config_set_cb (cfg, "cfg.debug", "false", &config_cfgdebug_callback);
+	r_config_desc (cfg, "cfg.debug", "set/unset the debugger mode");
 	r_config_set_cb (cfg, "cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &config_cfgdatefmt_callback);
 	r_config_desc (cfg, "cfg.datefmt", "Date format (%d:%m:%Y %H:%M:%S %z)");
 	r_config_set (cfg, "cfg.fortunes", "true");
@@ -487,6 +497,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "dbg.bep", "loader"); // loader, entry, constructor, main
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
+	r_config_desc (cfg, "dbg.swstep", "If enabled forces the use of software steps (code analysis+breakpoint)");
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 	r_config_set_cb (cfg, "fs.view", "normal", &config_fsview_callback);
@@ -518,6 +529,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
 	r_config_set_cb (cfg, "scr.interactive", "true", config_scrint_callback);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
+	r_config_desc (cfg, "scr.tee", "Pipe console output to file if not empty");
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
@@ -550,6 +562,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
 	r_config_set_cb (cfg, "io.ffio", "true", &config_ioffio_callback);
+	r_config_desc (cfg, "io.ffio", "fill invalid buffers with 0xff instead of returning error");
 	r_config_set_cb (cfg, "io.va", "true", &config_iova_callback);
 	r_config_desc (cfg, "io.va", "If enabled virtual address layout can be used");
 	r_config_set_cb (cfg, "io.cache", "false", &config_iocache_callback);
@@ -557,6 +570,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "file.path", "");
 	r_config_desc (cfg, "file.path", "Path of current file");
 	r_config_set (cfg, "file.desc", "");
+	r_config_desc (cfg, "file.desc", "User defined file description. Used by projects");
 	r_config_set (cfg, "file.project", "");
 	r_config_desc (cfg, "file.project", "Name of current project");
 	r_config_set (cfg, "file.md5", "");
@@ -566,6 +580,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "file.type", "");
 	r_config_desc (cfg, "file.type", "Type of current file");
 	r_config_set_i (cfg, "magic.depth", 100);
+	r_config_desc (cfg, "magic.depth", "Recursivity depth in magic description strings");
 	r_config_set (cfg, "rap.loop", "true");
 	/* fkeys */
 	r_config_set (cfg, "key.f1", "");
@@ -609,7 +624,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("asm.reladdr", "false"); // relative offset
 	config_set("asm.jmpflags", "false");
 
-	config_set("asm.flags", "true");
 	config_set("asm.flagsall", "true");
 	config_set("asm.functions", "true");
 	config_set("asm.lines", "true"); // show left ref lines
@@ -618,7 +632,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("asm.trace", "false"); // trace counter
 	config_set("asm.split", "true"); // split code blocks
 	config_set("asm.splitall", "false"); // split code blocks
-	config_set("asm.size", "false"); // opcode size
 	config_set("asm.xrefs", "xrefs");
 
 	// config_set("asm.follow", "");

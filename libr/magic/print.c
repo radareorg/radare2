@@ -96,10 +96,8 @@ void file_mdump(struct r_magic *m) {
 		else
 			(void) fputc('?', stderr);
 			
-		if (m->num_mask) {
-			(void) eprintf ("%.8llx",
-			    (unsigned long long)m->num_mask);
-		}
+		if (m->num_mask)
+			(void) eprintf ("%08"PFMT64x, (ut64)m->num_mask);
 	}
 	(void) eprintf (",%c", m->reln);
 
@@ -118,8 +116,7 @@ void file_mdump(struct r_magic *m) {
 		case FILE_BEQUAD:
 		case FILE_LEQUAD:
 		case FILE_QUAD:
-			(void) eprintf ("%lld",
-			    (unsigned long long)m->value.q);
+			(void) eprintf ("%"PFMT64d, (ut64)m->value.q);
 			break;
 		case FILE_PSTRING:
 		case FILE_STRING:
