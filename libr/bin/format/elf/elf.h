@@ -80,6 +80,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	struct r_buf_t* b;
 };
 
+char* Elf_(r_bin_elf_get_type)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin);

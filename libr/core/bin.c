@@ -77,15 +77,22 @@ static int bin_info (RCore *r, int mode) {
 				r_cons_printf ("e file.type=fs\n");
 				r_cons_printf ("m /root %s 0\n", info->arch);
 			} else {
+				// XXX: hack to disable io.va when loading an elf object
+				// XXX: this must be something generic for all filetypes
+				// XXX: needs new api in r_bin_has_va () or something..
+				int has_va = (!strcmp (info->rclass, "elf-object"))? 0: 1;
+				//if (!strcmp (info->type, "REL"))...relocatable object..
 				r_cons_printf (
 					"e file.type=%s\n"
+					"e io.va=%d\n"
 					"e cfg.bigendian=%s\n"
 					"e asm.os=%s\n"
 					"e asm.arch=%s\n"
 					"e anal.plugin=%s\n"
 					"e asm.bits=%i\n"
 					"e asm.dwarf=%s\n",
-					info->rclass, info->big_endian?"true":"false", info->os,
+					info->rclass, has_va,
+					info->big_endian?"true":"false", info->os,
 					info->arch, info->arch, info->bits,
 					R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
 			}
@@ -94,6 +101,7 @@ static int bin_info (RCore *r, int mode) {
 			r_cons_printf ("[File info]\n");
 			r_cons_printf ("File=%s\n"
 					"Type=%s\n"
+					"RootClass=%s\n"
 					"Class=%s\n"
 					"Arch=%s %i\n"
 					"Machine=%s\n"
@@ -106,14 +114,15 @@ static int bin_info (RCore *r, int mode) {
 					"Local_syms=%s\n"
 					"Relocs=%s\n"
 					"RPath=%s\n",
-					info->file, info->type, info->bclass,
+					info->file, info->type, info->rclass, info->bclass,
 					info->arch, info->bits, info->machine, info->os,
-					info->subsystem, info->big_endian?"True":"False",
-					R_BIN_DBG_STRIPPED (info->dbg_info)?"True":"False",
-					R_BIN_DBG_STATIC (info->dbg_info)?"True":"False",
-					R_BIN_DBG_LINENUMS (info->dbg_info)?"True":"False",
-					R_BIN_DBG_SYMS (info->dbg_info)?"True":"False",
-					R_BIN_DBG_RELOCS (info->dbg_info)?"True":"False",
+					info->subsystem, 
+					r_str_bool (info->big_endian), 
+					r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
+					r_str_bool (R_BIN_DBG_STATIC (info->dbg_info)),
+					r_str_bool (R_BIN_DBG_LINENUMS (info->dbg_info)),
+					r_str_bool (R_BIN_DBG_SYMS (info->dbg_info)),
+					r_str_bool (R_BIN_DBG_RELOCS (info->dbg_info)),
 					info->rpath);
 		}
 	}

@@ -105,13 +105,13 @@ R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mod
 	if (fd == -2) {
 #if __WINDOWS__
 		if (flags & R_IO_WRITE) {
-			fd = open (file, 1);
+			fd = open (file, O_BINARY | 1);
 			if (fd == -1)
-				creat (file, 0);
-			fd = open (file, 1);
-		} else fd = open (file, 0);
+				creat (file, O_BINARY);
+			fd = open (file, O_BINARY | 1);
+		} else fd = open (file, O_BINARY);
 #else
-		fd = open (file, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
+		fd = open (file, O_BINARY | (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
 #endif
 	}
 	if (fd >= 0) {
@@ -158,7 +158,7 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 		return -1;
 	 */
-	return r_io_read_at(io, io->off, buf, len);
+	return r_io_read_at (io, io->off, buf, len);
 }
 
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {

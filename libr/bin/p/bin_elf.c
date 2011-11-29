@@ -240,7 +240,9 @@ static RBinInfo* info(RBinArch *arch) {
 		return NULL;
 	strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	strncpy (ret->rclass, "elf", R_BIN_SIZEOF_STRINGS);
+	str = Elf_(r_bin_elf_get_type) (arch->bin_obj);
+	strncpy (ret->rclass, str, R_BIN_SIZEOF_STRINGS);
+	free (str);
 	ret->bits = Elf_(r_bin_elf_get_bits) (arch->bin_obj);
 	ret->big_endian=Elf_(r_bin_elf_is_big_endian) (arch->bin_obj);
 	ret->dbg_info = 0;

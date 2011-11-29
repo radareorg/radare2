@@ -45,8 +45,9 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int phdr_size, len;
-	if (bin->ehdr.e_phnum == 0)
+	if (bin->ehdr.e_phnum == 0) {
 		return R_FALSE;
+	}
 	if (bin->phdr) return R_TRUE;
 	phdr_size = bin->ehdr.e_phnum * sizeof (Elf_(Phdr));
 	if ((bin->phdr = (Elf_(Phdr) *)malloc (phdr_size)) == NULL) {
@@ -182,8 +183,9 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Warning: File is not ELF\n");
 		return R_FALSE;
 	}
-	if (!Elf_(r_bin_elf_init_phdr) (bin))
-		eprintf ("Warning: Cannot initialize program headers\n");
+	Elf_(r_bin_elf_init_phdr) (bin);
+	//if (!Elf_(r_bin_elf_init_phdr) (bin))
+		//eprintf ("Warning: Cannot initialize program headers\n");
 	if (!Elf_(r_bin_elf_init_shdr) (bin))
 		eprintf ("Warning: Cannot initialize section headers\n");
 	if (!Elf_(r_bin_elf_init_strtab) (bin))
@@ -390,6 +392,18 @@ char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case ELFDATA2MSB: return strdup ("2's complement, big endian");
 	default: return r_str_dup_printf ("<unknown: %x>", bin->ehdr.e_ident[EI_DATA]);
 	}
+}
+
+char* Elf_(r_bin_elf_get_type)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	ut32 e_type = (ut32)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
+	if (e_type == ET_REL)
+		return strdup ("elf-object");
+	return strdup ("elf");
+#if ANOTHERCHK
+	if (bin->ehdr.e_phnum == 0)
+		return strdup ("elf-object");
+	return strdup ("elf");
+#endif
 }
 
 // TODO: do not strdup here

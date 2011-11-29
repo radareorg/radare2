@@ -224,7 +224,7 @@ R_API boolt r_file_rm(const char *file) {
 R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 	RMmap *m = NULL;
 #if __WINDOWS__
-	int fd = open (file, 0);
+	int fd = open (file, O_BINARY);
 #else
 	int fd = open (file, rw? O_RDWR: O_RDONLY);
 #endif
@@ -308,7 +308,7 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	char *name = malloc (1024);
 #if __WINDOWS__
 	if (GetTempFileName (path, prefix, 0, name))
-		h = open (name, O_RDWR|O_EXCL);
+		h = open (name, O_RDWR|O_EXCL|O_BINARY);
 	else h = -1;
 #else
 	h = snprintf (name, 1024, "%s/%sXXXXXX", path, prefix);
