@@ -550,9 +550,11 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 		dir = opendir (fn);
 		if (dir) {
 			while ((d = readdir (dir))) {
-				snprintf (subfn, sizeof(subfn), "%s/%s", fn, d->d_name);
+				if (*d->d_name=='.') continue;
+				snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name);
 				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode))
 					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
+				else perror (subfn);
 			}
 			closedir (dir);
 		} else errs++;

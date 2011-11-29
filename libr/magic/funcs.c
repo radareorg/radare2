@@ -195,7 +195,7 @@ int file_reset(RMagic *ms) {
 	ms->haderr = 0;
 	ms->error = -1;
 	if (ms->mlist == NULL) {
-		file_error (ms, 0, "no magic files loaded");
+		file_error (ms, 0, "no magic files loaded! ");
 		return -1;
 	}
 	return 0;

@@ -7,7 +7,7 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	mkdir -p ${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic
-	cd default ; for a in * ; do ln -fs ${CWD}/default/d/$$a \
+	cd default ; for a in * ; do ln -fs ${CWD}/default/$$a \
 		${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/magic/$$a ; done
 
 .PHONY: install symstall

@@ -153,7 +153,7 @@ static void close_and_restore (const RMagic *ms, const char *name, int fd, const
 		close (fd);
 }
 
-static const char * file_or_fd(RMagic *ms, const char *inname, int fd) {
+static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 	int ispipe = 0, rv = -1;
 	unsigned char *buf;
 	struct stat sb;

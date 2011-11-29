@@ -94,18 +94,18 @@ int file_fsmagic(struct r_magic_set *ms, const char *fn, struct stat *sb) {
 	 */
 #ifdef	S_IFLNK
 	if ((ms->flags & R_MAGIC_SYMLINK) == 0)
-		ret = lstat(fn, sb);
+		ret = lstat (fn, sb);
 	else
 #endif
-	ret = stat(fn, sb);	/* don't merge into if; see "ret =" above */
+	ret = stat (fn, sb);	/* don't merge into if; see "ret =" above */
 
 	if (ret) {
 		if (ms->flags & R_MAGIC_ERROR) {
-			file_error(ms, errno, "cannot stat `%s'", fn);
+			file_error (ms, errno, "cannot stat `%s'", fn);
 			return -1;
 		}
-		if (file_printf(ms, "cannot open `%s' (%s)",
-		    fn, strerror(errno)) == -1)
+		if (file_printf (ms, "cannot open `%s' (%s)",
+		    fn, strerror (errno)) == -1)
 			return -1;
 		return 1;
 	}
