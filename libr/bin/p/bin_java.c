@@ -119,6 +119,7 @@ static RBinInfo* info(RBinArch *arch) {
 	version = r_bin_java_get_version (arch->bin_obj);
 	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS-1);
 	free (version);
+	ret->has_va = 0;
 	strncpy (ret->rclass, "class", R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->os, "any", R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->subsystem, "any", R_BIN_SIZEOF_STRINGS-1);

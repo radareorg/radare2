@@ -69,6 +69,7 @@ static RBinInfo* info(RBinArch *arch) {
 	p = fsname (arch);
 	strncpy (ret->arch, p, sizeof (ret->arch)-1);
 	free (p);
+	ret->has_va = 0;
 	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;

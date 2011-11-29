@@ -80,27 +80,26 @@ static int bin_info (RCore *r, int mode) {
 				// XXX: hack to disable io.va when loading an elf object
 				// XXX: this must be something generic for all filetypes
 				// XXX: needs new api in r_bin_has_va () or something..
-				int has_va = (!strcmp (info->rclass, "elf-object"))? 0: 1;
+				//int has_va = (!strcmp (info->rclass, "elf-object"))? 0: 1;
 				//if (!strcmp (info->type, "REL"))...relocatable object..
 				r_cons_printf (
 					"e file.type=%s\n"
-					"e io.va=%d\n"
 					"e cfg.bigendian=%s\n"
 					"e asm.os=%s\n"
 					"e asm.arch=%s\n"
 					"e anal.plugin=%s\n"
 					"e asm.bits=%i\n"
 					"e asm.dwarf=%s\n",
-					info->rclass, has_va,
-					info->big_endian?"true":"false", info->os,
+					info->rclass, r_str_bool (info->big_endian), info->os,
 					info->arch, info->arch, info->bits,
-					R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+					r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)));
 			}
 		} else {
 			// if type is 'fs' show something different?
 			r_cons_printf ("[File info]\n");
 			r_cons_printf ("File=%s\n"
 					"Type=%s\n"
+					"HasVA=%s\n"
 					"RootClass=%s\n"
 					"Class=%s\n"
 					"Arch=%s %i\n"
@@ -114,7 +113,8 @@ static int bin_info (RCore *r, int mode) {
 					"Local_syms=%s\n"
 					"Relocs=%s\n"
 					"RPath=%s\n",
-					info->file, info->type, info->rclass, info->bclass,
+					info->file, info->type, r_str_bool (info->has_va),
+					info->rclass, info->bclass,
 					info->arch, info->bits, info->machine, info->os,
 					info->subsystem, 
 					r_str_bool (info->big_endian), 

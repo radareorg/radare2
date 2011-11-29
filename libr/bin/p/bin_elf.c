@@ -240,11 +240,10 @@ static RBinInfo* info(RBinArch *arch) {
 		return NULL;
 	strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	str = Elf_(r_bin_elf_get_type) (arch->bin_obj);
-	strncpy (ret->rclass, str, R_BIN_SIZEOF_STRINGS);
-	free (str);
+	strncpy (ret->rclass, "elf", R_BIN_SIZEOF_STRINGS);
 	ret->bits = Elf_(r_bin_elf_get_bits) (arch->bin_obj);
-	ret->big_endian=Elf_(r_bin_elf_is_big_endian) (arch->bin_obj);
+	ret->big_endian = Elf_(r_bin_elf_is_big_endian) (arch->bin_obj);
+	ret->has_va = Elf_(r_bin_elf_has_va) (arch->bin_obj);
 	ret->dbg_info = 0;
 	if (!Elf_(r_bin_elf_get_stripped) (arch->bin_obj))
 		ret->dbg_info |= 0x04 | 0x08 | 0x10;
@@ -296,8 +295,8 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut32 baddr;
 	int is_arm = !strcmp (bin->curarch.info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
-	if (is_arm)
-		baddr = 0x40000;
+	// XXX: hardcoded
+	if (is_arm) baddr = 0x40000;
 	else baddr = 0x8048000;
 
 #define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)

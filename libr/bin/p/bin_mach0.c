@@ -157,7 +157,7 @@ static RBinInfo* info(RBinArch *arch) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	strncpy(ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
 	/* TODO get os*/
 	strncpy (ret->os, "darwin", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->subsystem, "darwin", R_BIN_SIZEOF_STRINGS);
@@ -177,6 +177,7 @@ static RBinInfo* info(RBinArch *arch) {
 	ret->big_endian = MACH0_(r_bin_mach0_is_big_endian) (arch->bin_obj);
 	/* TODO detailed debug info */
 	ret->dbg_info = 0;
+	ret->has_va = R_TRUE;
 	return ret;
 }
 

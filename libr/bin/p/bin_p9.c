@@ -154,6 +154,7 @@ static RBinInfo* info(RBinArch *arch) {
 	strncpy (ret->subsystem, "plan9", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
 	ret->bits = bits;
+	ret->has_va = 1;
 	ret->big_endian = big_endian;
 	ret->dbg_info = 0;
 	ret->dbg_info = 0;

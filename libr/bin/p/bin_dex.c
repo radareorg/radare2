@@ -35,6 +35,7 @@ static RBinInfo * info(RBinArch *arch) {
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "DEX CLASS", R_BIN_SIZEOF_STRINGS);
+	ret->has_va = R_FALSE;
 	version = r_bin_dex_get_version (arch->bin_obj);
 	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS);
 	free (version);

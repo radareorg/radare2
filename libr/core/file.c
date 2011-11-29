@@ -105,6 +105,9 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	} else if (!r_bin_load (r->bin, file, R_TRUE))
 		return R_FALSE;
 	r->file->obj = r_bin_get_object (r->bin, 0);
+	if (r->file->obj->info != NULL) {
+		r_config_set_i (r->config, "io.va", r->file->obj->info->has_va);
+	} else r_config_set_i (r->config, "io.va", 0);
 	{
 		ut64 offset = r_bin_get_offset (r->bin);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);

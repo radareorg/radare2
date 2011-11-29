@@ -394,16 +394,10 @@ char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 }
 
-char* Elf_(r_bin_elf_get_type)(struct Elf_(r_bin_elf_obj_t) *bin) {
+int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut32 e_type = (ut32)bin->ehdr.e_type; // cast to avoid warn in iphone-gcc, must be ut16
-	if (e_type == ET_REL)
-		return strdup ("elf-object");
-	return strdup ("elf");
-#if ANOTHERCHK
-	if (bin->ehdr.e_phnum == 0)
-		return strdup ("elf-object");
-	return strdup ("elf");
-#endif
+	//if (bin->ehdr.e_phnum == 0)
+	return (e_type == ET_REL)? 0: 1;
 }
 
 // TODO: do not strdup here

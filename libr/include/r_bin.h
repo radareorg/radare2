@@ -195,6 +195,7 @@ typedef struct r_bin_info_t {
 	char subsystem[R_BIN_SIZEOF_STRINGS];
 	char rpath[R_BIN_SIZEOF_STRINGS];
 	int bits;
+	int has_va;
 	int big_endian;
 	ut64 dbg_info;
 } RBinInfo;
