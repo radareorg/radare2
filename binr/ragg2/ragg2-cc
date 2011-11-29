@@ -2,11 +2,27 @@
 # ragg2-cc : a shellcode compiler -- pancake<nopcode.org> 2011
 #   - for bsd, linux and osx
 # TODO
-#  add support for x86-64 bits
+#  remove temporary files
 #  add support for arm
 #  add support for nested shellcodes
 
-B=0
+A=x86
+SFLIBPATH=`ragg2 -v | cut -d ' ' -f 3-`
+if [ ! -d "${SFLIBPATH}" ]; then
+	echo "Cannot find ${SFLIBPATH}"
+	exit 1
+fi
+case "`uname -m`" in
+"x86_64")
+	B=64
+	;;
+*)
+	B=32
+	;;
+esac
+K=""
+X=0
+C=""
 D=""
 O=""
 F=""
@@ -15,8 +31,26 @@ while : ; do
 	[ -z "$1" ] && break
 	F=$1
 	case "$F" in
+	-a)
+		shift
+		A=$1
+		[ -z "$A" ] && { echo "Missing argument for -a" ; exit 1; }
+		;;
 	-b)
-		B=1
+		shift
+		B=$1
+		[ -z "$B" ] && { echo "Missing argument for -b" ; exit 1; }
+		;;
+	-k)
+		shift
+		K=$1
+		[ -z "$K" ] && { echo "Missing argument for -k" ; exit 1; }
+		;;
+	-x)
+		X=1
+		;;
+	-c)
+		C=1
 		;;
 	-d)
 		D=1
@@ -33,15 +67,20 @@ while : ; do
 		fi
 		;;
 	-h)
-		echo "Usage: ragg2-cc [-opt] [file.c]"
-		echo "  -a   set arch (TODO)"
-		echo "  -s   generate assembly file"
-		echo "  -d   enable debug mode"
-		echo "  -b   show hexpair bytes"
+		echo "Usage: ragg2-cc [-dabksxv] [file.c]"
+		echo "  -d       enable debug mode"
+		echo "  -a x86   set arch (x86, arm)"
+		echo "  -b 32    bits (32, 64)"
+		echo "  -k linux set kernel (darwin, linux)"
+		echo "  -o file  set output file"
+		echo "  -s       generate assembly"
+		echo "  -c       generate compiled shellcode"
+		echo "  -x       show hexpair bytes"
+		echo "  -v       show version"
 		exit 0
 		;;
 	-v)
-		echo "ragg2-cc 0.9"
+		ragg2 -v | sed -e 's,2,2-cc,'
 		exit 0
 		;;
 	esac
@@ -51,12 +90,6 @@ if [ -z "$F" ]; then
 	echo "Missing argument"
 	exit 1
 fi
-[ -z "$O" ] && O=$F.bin
-
-if [ ! -d /usr/include/sflib ]; then
-	echo "Cannot find sflib."
-	exit 1
-fi
 
 if [ "`uname`" = Darwin ]; then
 	#CC=/opt/local/bin/i386-mingw32-gcc
@@ -64,9 +97,18 @@ if [ "`uname`" = Darwin ]; then
 	CC=gcc
 	CC=llvm-gcc # llvm generate smaller binaries
 	OBJCOPY=gobjcopy
-	CFLAGS="-arch i386 "
-	LDFLAGS="-arch i386 -shared -c"
-	ARCH=darwin_i386
+	case "$B" in
+	32)
+		CFLAGS="-arch i386 "
+		LDFLAGS="-arch i386 -shared -c"
+		ARCH=darwin-x86-32
+		;;
+	64)
+		CFLAGS="-arch x86_64"
+		LDFLAGS="-arch x86_64 -shared -c"
+		ARCH=darwin-x86-64
+		;;
+	esac
 	SHDR="
 .text
 jmp _main"
@@ -80,24 +122,29 @@ else
 .type   main, @function
 jmp main
 "
-	case "`uname -m`" in
-	"x86_64")
-		ARCH=linux_amd64
+	case "$B" in
+	64)
+		ARCH=linux-x86-64
 		;;
 	*) 
-		ARCH=linux_i386
+		ARCH=linux-x86-32
 		;;
 	esac
 fi
+
+[ "$A$K" ] && ARCH="$K-$A-$B"
+
 OPT=-Os
+
+#/usr/include/libr/sflib/
 #CFLAGS="-shared -fPIC -fPIE -pie "
 #CFLAGS="${CFLAGS} -shared -fPIC -fPIE -pie "
-CFLAGS="${CFLAGS} -nostdinc -include /usr/include/sflib/${ARCH}/sflib.h"
+CFLAGS="${CFLAGS} -nostdinc -include ${SFLIBPATH}/${ARCH}/sflib.h"
 CFLAGS="${CFLAGS} -fomit-frame-pointer -finline-functions -fno-zero-initialized-in-bss"
 LDFLAGS="${LDFLAGS} -nostdlib"
 
 rmtemps() {
-	[ -z "$D" ] && rm -f $F.tmp $F.text $F.text $F.s $F.o
+	[ -z "$D" ] && rm -f $F.tmp $F.text $F.s $F.o
 }
 
 fail() {
@@ -131,17 +178,29 @@ ${CC} ${LDFLAGS} ${OPT} -o $F.o $F.s || fail
 if [ "$D" ]; then
 	echo "==> Link"
 	echo "${OBJCOPY} -j .text -O binary $F.o $.text"
+	#echo "rabin2 -O d/S/${TEXT} $F.o | rax2 -s > $F.text"
 fi
 ${OBJCOPY} -j .text -O binary $F.o $F.text || fail
+#rabin2 -O d/S/${TEXT} $F.o | rax2 -s > $F.text
+if [ $C = 1 ]; then
+	if [ "$O" ]; then
+		mv $F.text $O
+	else
+		O="$F.text"
+	fi
+	echo $O
+	exit 0
+fi
 
-[ $B = 1 ] && exec rax2 -S - < $F.text
+[ $X = 1 ] && exec rax2 -S - < $F.text
 
 if [ "$D" ]; then
 #	hexdump -C $F.text
 	rax2 -S - < $F.text
 	ls -l $F.text
 fi
+[ -z "$O" ] && O=$F.bin
 ragg2 -C $F.text -F -o $O || fail
 echo $O
-#rmtemps
+rmtemps
 exit 0

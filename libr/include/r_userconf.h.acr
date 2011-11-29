@@ -12,9 +12,11 @@
 #if __WIN32__ || __CYGWIN__ || MINGW32
 #define R2_PREFIX "."
 #define R2_LIBDIR "./lib"
+#define R2_INCDIR "./include/libr"
 #else
 #define R2_PREFIX "@PREFIX@"
 #define R2_LIBDIR "@LIBDIR@"
+#define R2_INCDIR "@INCLUDEDIR@/libr"
 #endif
 
 #define R2_VERSION "@VERSION@"

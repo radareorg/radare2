@@ -59,6 +59,9 @@ w32dist:
 	mkdir -p w32dist/radare2/${VERSION}/opcodes
 	cp -f libr/asm/d/*.sdb w32dist/radare2/${VERSION}/opcodes
 	mkdir -p w32dist/share/doc/radare2
+	mkdir -p w32dist/include/libr
+	cp libr/include/*.h w32dist/include/libr
+	#mkdir -p w32dist/include/libr/sflib
 	cp -f doc/fortunes w32dist/share/doc/radare2
 	mv w32dist radare2-w32-${VERSION}
 	rm -f radare2-w32-${VERSION}.zip 
@@ -103,12 +106,13 @@ install-doc-symlink:
 	${INSTALL_DIR} ${PFX}/share/doc/radare2
 	cd doc ; for a in * ; do ln -fs ${PWD}/$$a ${PFX}/share/doc/radare2 ; done
 
+DATADIRS=libr/asm/d libr/syscall/d libr/magic/d binr/ragg2/d
 install: install-doc install-man
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/asm/d ; ${MAKE} install PREFIX=${PREFIX} LIBDIR=${LIBDIR} DESTDIR=${DESTDIR}
-	cd libr/syscall/d ; ${MAKE} install PREFIX=${PREFIX} LIBDIR=${LIBDIR} DESTDIR=${DESTDIR}
-	cd libr/magic ; ${MAKE} install-data LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	for a in ${DATADIRS} ; do \
+	(cd $$a ; ${MAKE} install LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
+	done
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DESTDIR}/${LIBDIR}/pkgconfig
@@ -117,9 +121,9 @@ install-pkgconfig-symlink:
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/asm/d ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/syscall/d ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	cd libr/magic ; ${MAKE} install-symlink-data LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	for a in ${DATADIRS} ; do \
+	(cd $$a ; echo $$a ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
+	done
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}

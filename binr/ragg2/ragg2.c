@@ -25,6 +25,7 @@ static int usage () {
 	" -s              show assembler\n"
 	" -r              show raw bytes instead of hexpairs\n"
 	" -x              execute\n"
+	" -v              show version\n"
 	" -h              show this help\n");
 	return 1;
 }
@@ -94,7 +95,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:B:C:")) != -1) {
+        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:B:C:v")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -172,6 +173,9 @@ int main(int argc, char **argv) {
 			return 0;
 		case 'h':
 			return usage ();
+		case 'v':
+			printf ("ragg2 "R2_VERSION" "R2_INCDIR"/sflib\n");
+			return 0;
 		}
 	}
 
@@ -191,7 +195,7 @@ int main(int argc, char **argv) {
 		int l;
 		char *buf = r_file_slurp (contents, &l);
 		if (buf && l>0) {
-			r_egg_raw (egg, buf, l);
+			r_egg_raw (egg, (const ut8*)buf, l);
 		} else eprintf ("Error loading '%s'\n", contents);
 	}
 	if (bytes) {

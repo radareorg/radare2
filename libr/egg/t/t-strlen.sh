@@ -5,7 +5,6 @@ loop
 loop"
 cat > t.r <<EOF
 exit@syscall(1);
-write@syscall(4);
 main();
 main@global(128,128) {
 	.var0 = 0;
