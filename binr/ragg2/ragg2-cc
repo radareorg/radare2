@@ -20,7 +20,29 @@ case "`uname -m`" in
 	B=32
 	;;
 esac
-K=""
+
+
+dohelp() {
+	echo "Usage: ragg2-cc [-dabkoscxv] [file.c]"
+	echo "  -d       enable debug mode"
+	echo "  -a x86   set arch (x86, arm)"
+	echo "  -b 32    bits (32, 64)"
+	echo "  -k linux set kernel (darwin, linux)"
+	echo "  -o file  set output file"
+	echo "  -s       generate assembly"
+	echo "  -c       generate compiled shellcode"
+	echo "  -x       show hexpair bytes"
+	echo "  -v       show version"
+}
+
+case "`uname`" in
+Darwin)
+	K=darwin
+	;;
+*)
+	K=linux
+	;;
+esac
 X=0
 C=""
 D=""
@@ -67,16 +89,7 @@ while : ; do
 		fi
 		;;
 	-h)
-		echo "Usage: ragg2-cc [-dabksxv] [file.c]"
-		echo "  -d       enable debug mode"
-		echo "  -a x86   set arch (x86, arm)"
-		echo "  -b 32    bits (32, 64)"
-		echo "  -k linux set kernel (darwin, linux)"
-		echo "  -o file  set output file"
-		echo "  -s       generate assembly"
-		echo "  -c       generate compiled shellcode"
-		echo "  -x       show hexpair bytes"
-		echo "  -v       show version"
+		dohelp
 		exit 0
 		;;
 	-v)
@@ -87,7 +100,7 @@ while : ; do
 	shift
 done
 if [ -z "$F" ]; then
-	echo "Missing argument"
+	dohelp
 	exit 1
 fi
 
@@ -143,6 +156,15 @@ CFLAGS="${CFLAGS} -nostdinc -include ${SFLIBPATH}/${ARCH}/sflib.h"
 CFLAGS="${CFLAGS} -fomit-frame-pointer -finline-functions -fno-zero-initialized-in-bss"
 LDFLAGS="${LDFLAGS} -nostdlib"
 
+case "$K" in
+darwin)
+	TEXT="__TEXT.__text"
+	;;
+*|linux)
+	TEXT=".text"
+	;;
+esac
+
 rmtemps() {
 	[ -z "$D" ] && rm -f $F.tmp $F.text $F.s $F.o
 }
@@ -177,22 +199,25 @@ ${CC} ${LDFLAGS} ${OPT} -o $F.o $F.s || fail
 
 if [ "$D" ]; then
 	echo "==> Link"
-	echo "${OBJCOPY} -j .text -O binary $F.o $.text"
-	#echo "rabin2 -O d/S/${TEXT} $F.o | rax2 -s > $F.text"
+	#echo "${OBJCOPY} -j .text -O binary $F.o $.text"
+	echo "rabin2 -O d/S/${TEXT} $F.o | rax2 -s > $F.text"
 fi
-${OBJCOPY} -j .text -O binary $F.o $F.text || fail
-#rabin2 -O d/S/${TEXT} $F.o | rax2 -s > $F.text
-if [ $C = 1 ]; then
+rabin2 -O d/S/${TEXT} $F.o | rax2 -s > $F.text
+if [ "`du $F.text|awk '{print $1}'`" = 0 ]; then
+	# use objcopy as falback for rabin2
+	${OBJCOPY} -j .text -O binary $F.o $F.text || fail
+fi
+if [ "$C" = 1 ]; then
 	if [ "$O" ]; then
 		mv $F.text $O
 	else
 		O="$F.text"
 	fi
-	echo $O
+	echo "$O"
 	exit 0
 fi
 
-[ $X = 1 ] && exec rax2 -S - < $F.text
+[ "$X" = 1 ] && exec rax2 -S - < $F.text
 
 if [ "$D" ]; then
 #	hexdump -C $F.text
