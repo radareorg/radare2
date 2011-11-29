@@ -111,7 +111,7 @@ R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mod
 			fd = open (file, O_BINARY | 1);
 		} else fd = open (file, O_BINARY);
 #else
-		fd = open (file, O_BINARY | (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
+		fd = open (file, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
 #endif
 	}
 	if (fd >= 0) {

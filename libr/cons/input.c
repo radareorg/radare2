@@ -124,7 +124,7 @@ R_API int r_cons_readchar() {
 #if __WINDOWS__
 	BOOL ret;
 	DWORD out;
-	LPDWORD mode;
+	DWORD mode;
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW

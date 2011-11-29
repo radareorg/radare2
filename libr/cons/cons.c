@@ -164,7 +164,7 @@ R_API void r_cons_gotoxy(int x, int y) {
 
 R_API void r_cons_clear_line() {
 #if __WINDOWS__
-	const char white[1024];
+	char white[1024];
 	memset (&white, ' ', sizeof (white));
 	if (I.columns<sizeof(white))
 		white[I.columns] = 0;
