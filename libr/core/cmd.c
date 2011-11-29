@@ -3979,6 +3979,35 @@ static int cmd_search(void *data, const char *input) {
 		dosearch = 0;
 		}
 		break;
+	case 'z': /* search asm */
+		{
+		char *p;
+		ut32 min, max;
+		if (!input[1]) {
+			eprintf ("Usage: /z min max\n");
+			break;
+		}
+		if ((p = strchr (input+2, ' '))) {
+			*p = 0;
+			max = r_num_math (core->num, p+1);
+		} else {
+			eprintf ("Usage: /z min max\n");
+			break;
+		}
+		min = r_num_math (core->num, input+2);
+		if (!r_search_set_string_limits (core->search, min, max)) {
+			eprintf ("Error: min must be lower than max\n");
+			break;
+		}
+		r_search_reset (core->search, R_SEARCH_STRING);
+		r_search_set_distance (core->search, (int)
+				r_config_get_i (core->config, "search.distance"));
+		r_search_kw_add (core->search,
+			r_search_keyword_new_hexmask ("00", NULL)); //XXX
+		r_search_begin (core->search);
+		dosearch = R_TRUE;
+		}
+		break;
 	default:
 		r_cons_printf (
 		"Usage: /[amx/] [arg]\n"
@@ -3996,6 +4025,7 @@ static int cmd_search(void *data, const char *input) {
 		" /r sym.printf   ; analyze opcode reference an offset\n"
 		" /m magicfile    ; search for matching magic file (use blocksize)\n"
 		" /p patternsize  ; search for pattern of given size\n"
+		" /z min max      ; search for strings of given size\n"
 		" /v[?248] num    ; look for a asm.bigendian 32bit value\n"
 		" //              ; repeat last search\n"
 		" ./ hello        ; search 'hello string' and import flags\n"

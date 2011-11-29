@@ -59,7 +59,10 @@ R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) 
 	int widechar = 0;
 	int matches = 0;
 	char str[4096];
+	RListIter *iter;
+	RSearchKeyword *kw;
 
+	r_list_foreach (s->kws, iter, kw) {
 	for (i=0; i<len; i++) {
 		char ch = buf[i];
 		if (IS_PRINTABLE(ch) || IS_WHITESPACE(ch) || is_encoded (enc, ch)) {
@@ -77,12 +80,13 @@ R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) 
 				str[matches] = '\0';
 				int len = strlen(str);
 				if (len>2) {
+					kw->count++;
 					if (widechar) {
 						ut64 off = (ut64)from+i-(len*2)+1;
-						printf("0x%08"PFMT64x" %3d W %s\n", off, len, str);
+						r_search_hit_new (s, kw, off);
 					} else {
 						ut64 off = (ut64)from+i-matches;
-						printf("0x%08"PFMT64x" %3d A %s\n", off, len, str);
+						r_search_hit_new (s, kw, off);
 					}
 				}
 				fflush(stdout);
@@ -90,6 +94,7 @@ R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) 
 			matches = 0;
 			widechar = 0;
 		}
+	}
 	}
 	return 0;
 }
