@@ -46,7 +46,7 @@ syms:
 main.c:
 
 ${BIN}: libsdb.a main.c
-	#${CC} ${CFLAGS} -o ${BIN} main.c libsdb.a
+	${CC} ${CFLAGS} -o ${BIN} main.c libsdb.a
 
 wcl:
 	wc -l `echo ${OBJ}|sed -e 's,\.o,.c,g'`
