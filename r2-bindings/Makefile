@@ -8,9 +8,32 @@ else
 TAR=tar -czvf
 endif
 
-LANGS=python perl ruby lua go java guile gear gir
-
 W32PY="${HOME}/.wine/drive_c/Python27/"
+INSTALL_TARGETS=install-vapi
+
+LANGS=
+# Experimental:
+# LANGS+=gear
+# LANGS+=gir
+ALANGS=gir gear python ruby perl lua go java guile php5
+.PHONY: ${ALANGS}
+
+define ADD_lang
+ifneq ($(shell grep $(1) supported.langs),)
+LANGS+=$(1)
+INSTALL_TARGETS+=install-$(1)
+$(1):
+	cd $(1) && ${MAKE}
+endif
+endef
+
+ifneq ($(shell grep python supported.langs),)
+INSTALL_EXAMPLE_TARGETS+=install-python-examples
+endif
+
+$(foreach p,${ALANGS},$(eval $(call ADD_lang,$(p))))
+
+.PHONY: ${INSTALL_TARGETS} ${INSTALL_EXAMPLE_TARGETS} ${LANG}
 
 ifeq ($(DEVEL_MODE),1)
 all: supported.langs ruby perl python lua go gear gir
@@ -77,40 +100,19 @@ vdoc_pkg:
 	valadoc -o vdoc vapi/*.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
-gear:
-	cd gear && ${MAKE}
-
 # TODO: unspaguetti this targets
-perl:
-	@-[ "`grep perl supported.langs`" ] && ( cd perl && ${MAKE} ) || true
-
+.PHONY: python2 python3
 python2:
 	@-[ "`grep python supported.langs`" ] && ( cd python && ${MAKE} PYTHON_CONFIG=${PYTHON2_CONFIG}) || true
 
 python3:
 	@-[ "`grep python supported.langs`" ] && ( cd python && ${MAKE} PYTHON_CONFIG=${PYTHON3_CONFIG}) || true
 
-python:
-	@-[ "`grep python supported.langs`" ] && ( cd python && ${MAKE} ) || true
+${LANG}::
+	cd $@ && ${MAKE}
 
-guile:
-	@-[ "`grep guile supported.langs`" ] && ( cd guile && ${MAKE} ) || true
-
-ruby:
-	@-[ "`grep ruby supported.langs`" ] && ( cd ruby && ${MAKE} ) || true
-
-lua:
-	@-[ "`grep lua supported.langs`" ] && ( cd lua && ${MAKE} ) || true
-
-go:
-	@-[ -x "${GOBIN}/5g" -o -x "${GOBIN}/6g" -o -x "${GOBIN}/8g" ] && \
-	[ "`grep go supported.langs`" ] && ( cd go && ${MAKE} ) || true
-
-java:
-	@-[ "`grep java supported.langs`" ] && ( cd java && ${MAKE} ) || true
-
-gir:
-	@-[ "`grep gir supported.langs`" ] && ( cd gir && ${MAKE} ) || true
+go::
+	[ -x "${GOBIN}/5g" -o -x "${GOBIN}/6g" -o -x "${GOBIN}/8g" ]
 
 test:
 	cd perl && ${MAKE} test
@@ -131,57 +133,45 @@ PYTHON_INSTALL_DIR=${DESTDIR}/${PYTHON_PKGDIR}/r2
 purge: purge-python
 
 purge-python:
-	[ -n "${PYTHON_PKGDIR}" ]
+	[ -n "${PYTHON_PKGDIR}" ] && \
 	rm -rf ${DESTDIR}/${LIBDIR}/python${PYTHON_VERSION}/*-packages/r2
 	rm -rf ${PYTHON_INSTALL_DIR}
 
 install-python:
-	@if [ "`grep python supported.langs`" -a -n "${PYTHON_PKGDIR}" ]; then \
 	E=${SOEXT} ; [ `uname` = Darwin ] && E=so ; \
 	echo "Installing python${PYTHON_VERSION} r2 modules in ${PYTHON_INSTALL_DIR}" ; \
 	mkdir -p ${PYTHON_INSTALL_DIR} ; \
 	: > ${PYTHON_INSTALL_DIR}/__init__.py ; \
-	cp -rf python/r_*.py python/*.$$E ${PYTHON_INSTALL_DIR} ; \
-	fi
+	cp -rf python/r_*.py python/*.$$E ${PYTHON_INSTALL_DIR}
 
 install-lua:
-	@if [ "`grep lua supported.langs`" ]; then \
 	for a in 5.1 ; do \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
-	echo "Installing lua$$a r2 modules..." ; \
-	cp -rf lua/*.${SOEXT} ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
-	done ; \
-	fi
+		mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
+		echo "Installing lua$$a r2 modules..." ; \
+		cp -rf lua/*.${SOEXT} ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
+	done
 
 install-go:
-	@if [ "`grep go supported.langs`" ]; then \
 	@. ./go/goenv.sh ; \
 	if [ -n "$${GOROOT}" -a -n "$${GOOS}" -a -n "$${GOARCH}" ]; then \
-	echo "Installing r2 modules in $${GOROOT}/pkg/$${GOOS}_$${GOARCH}" ; \
-	cp -f go/*.a go/*.${SOEXT} $${GOROOT}/pkg/$${GOOS}_$${GOARCH} ; \
+		echo "Installing r2 modules in $${GOROOT}/pkg/$${GOOS}_$${GOARCH}" ; \
+		cp -f go/*.a go/*.${SOEXT} $${GOROOT}/pkg/$${GOOS}_$${GOARCH} ; \
 	else \
-	echo "You have to set the following vars: GOROOT, GOOS and GOARCH" ; \
-	fi ; \
+		echo "You have to set the following vars: GOROOT, GOOS and GOARCH" ; \
 	fi
 
 install-java:
 	@echo "TODO: install-java"
 
 install-ruby:
-	@if [ "`grep ruby supported.langs`" ]; then \
 	for a in 1.8 1.9.1; do \
-	mkdir -p ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
-	echo "Installing ruby$$a r2 modules..." ; \
-	cp -rf ruby/* ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
-	done ; \
-	fi
-
-install-guile:
-	@echo TODO: install-guile
+		mkdir -p ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
+		echo "Installing ruby$$a r2 modules..." ; \
+		cp -rf ruby/* ${DESTDIR}${PREFIX}/lib/ruby/$$a/r2 ; \
+	done
 
 install-perl:
 	# hack for slpm
-	@-if [ "`grep perl supported.langs`" ]; then \
 	if [ -n "`echo ${PREFIX}${DESTDIR}|grep home`" ]; then \
 		target=${PREFIX}${DESTDIR}`perl -e 'for (@INC) { print "$$_\n" if /lib(64)?\/perl5/ && !/local/; }'|head -n 1` ; \
 	else \
@@ -190,28 +180,31 @@ install-perl:
 	mkdir -p $$target/r2 ; \
 	echo "Installing perl r2 modules..." ; \
 	cp -rf perl/*.so $$target/r2 ; \
-	cp -rf perl/*.pm $$target/r2 ; \
-	fi
+	cp -rf perl/*.pm $$target/r2
 
 install-vapi:
 	mkdir -p ${DESTDIR}${PREFIX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
 
+install-gir:
+	cd gir && ${MAKE}
+
+install-php5 install-guile:
+	@echo TODO install-$@
+
 EXAMPLEDIR=${DESTDIR}${PREFIX}/share/radare2-swig
-install-examples: install-examples-python
+
+install-examples: ${INSTALL_EXAMPLE_TARGETS}
 	mkdir -p ${EXAMPLEDIR}/vala
 	cp -rf vapi/t/*.vala vapi/t/*.gs ${EXAMPLEDIR}/vala
 
-install-examples-python:
-	if [ "`grep python supported.langs`" ]; then \
-		mkdir -p ${EXAMPLEDIR}/python ; \
-		cp -rf python/test-*.py ${EXAMPLEDIR}/python ; \
-	fi
+install-python-examples:
+	mkdir -p ${EXAMPLEDIR}/python
+	cp -rf python/test-*.py ${EXAMPLEDIR}/python
 
-install: install-python install-ruby install-perl install-lua install-go install-java install-vapi install-examples
+install: ${INSTALL_TARGETS}
 
-deinstall: uninstall
-uninstall:
+deinstall uninstall:
 	cd vapi/ ; for a in *.vapi *.deps ; do rm -f ${DESTDIR}${PREFIX}/share/vala/vapi/$$a ; done
 	rm -rf ${EXAMPLEDIR}
 
@@ -226,11 +219,13 @@ clean:
 	done
 
 mrproper:
-	for a in $(LANGS); do \
-		cd $$a ; ${MAKE} mrproper; cd .. ; \
-	done
+	for a in $(LANGS); do cd $$a ; ${MAKE} mrproper; cd .. ; done
 
 version:
 	@echo ${VERSION}
 
-.PHONY: $(LANGS) clean mrproper oldtest test all vdoc w32 w32dist check check-w32 deinstall uninstall install version
+.PHONY: $(LANGS) $(ALANGS) 
+.PHONY: clean mrproper all vdoc 
+.PHONY: oldtest test 
+.PHONY: w32 w32dist check check-w32 
+.PHONY: deinstall uninstall install version
