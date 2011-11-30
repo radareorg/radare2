@@ -3033,7 +3033,7 @@ static int cmd_anal(void *data, const char *input) {
 			eprintf ("Current Tag: %d\n", core->dbg->trace->tag);
 			break;
 		case 'a':
-			eprintf ("NOTE: Ensure given addresses are in 0x%%08llx format\n");
+			eprintf ("NOTE: Ensure given addresses are in 0x%%08"PFMT64x" format\n");
 			r_debug_trace_at (core->dbg, input+2);
 			break;
 		case 't':
@@ -3054,7 +3054,7 @@ static int cmd_anal(void *data, const char *input) {
 			if (ptr != NULL) {
 				RAnalOp *op = r_core_op_anal (core, addr);
 				if (op != NULL) {
-					//eprintf("at(0x%08llx)=%d (%s)\n", addr, atoi(ptr+1), ptr+1);
+					//eprintf("at(0x%08"PFMT64x")=%d (%s)\n", addr, atoi(ptr+1), ptr+1);
 					//trace_set_times(addr, atoi(ptr+1));
 					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->length);
 					tp->count = atoi (ptr+1);
@@ -4554,7 +4554,7 @@ static int cmd_meta(void *data, const char *input) {
 			r_list_foreach (core->anal->fcns, iter, f) {
 				for (i = 0; i < R_ANAL_VARSUBS; i++) {
 					if (f->varsubs[i].pat[0] != '\0')
-						r_cons_printf ("Cv 0x%08llx %s %s\n", f->addr, f->varsubs[i].pat, f->varsubs[i].sub);
+						r_cons_printf ("Cv 0x%08"PFMT64x" %s %s\n", f->addr, f->varsubs[i].pat, f->varsubs[i].sub);
 					else break;
 				}
 			}
@@ -5505,7 +5505,7 @@ static int cmd_debug(void *data, const char *input) {
 				addr = r_debug_reg_get (core->dbg, "pc");
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
 				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
-				eprintf (" %d %llx\r", n++, addr);
+				eprintf (" %d %"PFMT64x"\r", n++, addr);
 				switch (aop.type) {
 				case R_ANAL_OP_TYPE_UCALL:
 					// store regs
@@ -5514,7 +5514,7 @@ static int cmd_debug(void *data, const char *input) {
 					r_debug_step (core->dbg, 1);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 					addr = r_debug_reg_get (core->dbg, "pc");
-					eprintf ("0x%08llx ucall. computation may fail\n", addr);
+					eprintf ("0x%08"PFMT64x" ucall. computation may fail\n", addr);
 					r_graph_push (core->dbg->graph, addr, NULL);
 // TODO: push pc+aop.length into the call path stack
 					break;
@@ -5754,7 +5754,7 @@ static int cmd_debug(void *data, const char *input) {
 					r_debug_step (core->dbg, 1);
 					r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
 					pc = r_debug_reg_get (core->dbg, "pc");
-					eprintf (" %d %llx\r", n++, pc);
+					eprintf (" %d %"PFMT64x"\r", n++, pc);
 					s = r_io_section_get (core->io, pc);
 					if (r_cons_singleton ()->breaked)
 						break;
