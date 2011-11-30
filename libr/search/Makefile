@@ -1,5 +1,7 @@
 NAME=r_search
-OBJ=search.o bytepat.o strings.o aes-find.o regexp.o xrefs.o keyword.o
+OBJ=search.o bytepat.o strings.o aes-find.o
+OBJ+=regexp.o xrefs.o keyword.o
+# OBJ+=rsakey.o
 DEPS=r_util
 CFLAGS+=-g
 #OBJ+=binparse.o

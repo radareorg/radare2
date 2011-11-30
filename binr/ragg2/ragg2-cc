@@ -6,6 +6,19 @@
 #  add support for arm
 #  add support for nested shellcodes
 
+if [ -z "${CC}" ]; then
+	for a in clang llvm-gcc gcc ; do
+		$a --version >/dev/null 2>&1
+		if [ $? = 0 ]; then
+			CC="$a"
+			break
+		fi
+	done
+	if [ -z "${CC}" ]; then
+		echo "Cannot find CC" > /dev/stderr
+		exit 1
+	fi
+fi
 A=x86
 SFLIBPATH=`ragg2 -v | cut -d ' ' -f 3-`
 if [ ! -d "${SFLIBPATH}" ]; then
@@ -105,10 +118,6 @@ if [ -z "$F" ]; then
 fi
 
 if [ "`uname`" = Darwin ]; then
-	#CC=/opt/local/bin/i386-mingw32-gcc
-	#OBJCOPY=/opt/local/bin/i386-mingw32-objcopy
-	CC=gcc
-	CC=llvm-gcc # llvm generate smaller binaries
 	OBJCOPY=gobjcopy
 	case "$B" in
 	32)
@@ -126,7 +135,6 @@ if [ "`uname`" = Darwin ]; then
 .text
 jmp _main"
 else
-	CC=gcc
 	OBJCOPY=objcopy
 	CFLAGS="-fPIC -fPIE -pie"
 	SHDR="

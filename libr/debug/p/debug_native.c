@@ -2056,8 +2056,10 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 	return R_FALSE;
 #elif __linux__
 #warning mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
+	return R_FALSE;
 #else
 #warning mprotect not implemented for this platform
+	return R_FALSE;
 #endif
 }
 
