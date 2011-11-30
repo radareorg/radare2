@@ -50,6 +50,9 @@ R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length) {
 	return R_TRUE;
 }
 
+// TODO: R_API void r_buf_insert_bytes() // with shift
+// TODO: R_API void r_buf_write_bytes() // overwrite
+
 R_API char *r_buf_to_string(RBuffer *b) {
 	char *s;
 	if (!b) return strdup ("");

@@ -30,6 +30,7 @@ typedef struct r_egg_t {
 	RSyscall *syscall;
 	RPair *pair;
 	RList *plugins;
+	RList *patches; // <RBuffer>
 	struct r_egg_emit_t *emit;
 	int arch;
 	int endian;
@@ -125,6 +126,8 @@ R_API RBuffer *r_egg_get_bin(REgg *egg);
 R_API char *r_egg_get_assembly(REgg *egg);
 R_API void r_egg_append(REgg *egg, const char *src);
 R_API int r_egg_run(REgg *egg);
+R_API int r_egg_patch(REgg *egg, int off, const ut8 *b, int l);
+R_API void r_egg_finalize(REgg *egg);
 
 /* lang.c */
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta);

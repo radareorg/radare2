@@ -23,6 +23,8 @@ R_API REgg *r_egg_new () {
 	egg->bits = 0;
 	egg->endian = 0;
 	egg->pair = r_pair_new ();
+	egg->patches = r_list_new ();
+	egg->patches->free = (RListFree)r_buf_free;
 	egg->plugins = r_list_new ();
 	for (i=0; egg_static_plugins[i]; i++) {
 		REggPlugin *static_plugin = R_NEW (REggPlugin);
@@ -57,17 +59,20 @@ R_API void r_egg_free (REgg *egg) {
 	r_buf_free (egg->bin);
 	r_asm_free (egg->rasm);
 	r_syscall_free (egg->syscall);
+	r_list_free (egg->patches);
 	free (egg);
 }
 
 R_API void r_egg_reset (REgg *egg) {
 	r_egg_lang_include_init (egg);
+	// TODO: use r_list_purge instead of free/new here
 	r_buf_free (egg->src);
 	r_buf_free (egg->buf);
 	r_buf_free (egg->bin);
 	egg->src = r_buf_new ();
 	egg->buf = r_buf_new ();
 	egg->bin = r_buf_new ();
+	r_list_purge (egg->patches);
 }
 
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
@@ -314,6 +319,10 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 		}
 		
 		xx = malloc (n);
+		if (!xx) {
+			free (o);
+			return R_FALSE;
+		}
 		if (byte == 0) {
 			// TODO: add support for word-sized sequences
 			int i;
@@ -369,4 +378,28 @@ R_API int r_egg_encode(REgg *egg, const char *name) {
 		}
 	}
 	return R_FALSE;
+}
+
+R_API int r_egg_patch(REgg *egg, int off, const ut8 *buf, int len) {
+	RBuffer *b = r_buf_new ();
+	if (!b) return R_FALSE;
+	if (!r_buf_set_bytes (b, buf, len)) {
+		r_buf_free (b);
+		return R_FALSE;
+	}
+	b->cur = off;
+	r_list_append (egg->patches, b);
+	return R_TRUE;
+}
+
+R_API void r_egg_finalize(REgg *egg) {
+	RBuffer *b;
+	RListIter *iter;
+	r_list_foreach (egg->patches, iter, b) {
+		if (b->length+b->cur > egg->bin->length) {
+			eprintf ("Fuck this shit. Cant patch outside\n");
+		}
+		// TODO: use r_buf_insert or what
+		memcpy (egg->bin->buf + b->cur, b->buf, b->length);
+	}
 }

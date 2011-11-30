@@ -4,7 +4,7 @@
 #include <getopt.h>
 
 static int usage () {
-	eprintf ("ragg2 [options] [file|-]\n"
+	printf ("ragg2 [options] [file|-]\n"
 	" -a [x86|arm]    select architecture\n"
 	" -b [32|64]      register size\n"
 	" -k [os]         operating system's kernel (linux,bsd,osx,w32)\n"
@@ -19,6 +19,9 @@ static int usage () {
 	" -B [hexpairs]   append some hexpair bytes\n"
 	" -c [k=v]        set configuration options\n"
 	" -C [file]       append contents of file\n"
+	" -d [off:dword]  patch dword (4 bytes) at given offset\n"
+	" -D [off:qword]  patch qword (8 bytes) at given offset\n"
+	" -w [off:hex]    patch hexpairs at given offset\n"
 	" -p [padding]    add padding after compilation (padding=n10s32)\n"
 	"                 ntas : begin nop, trap, 'a', sequence\n"
 	"                 NTAS : same as above, but at begining\n"
@@ -95,7 +98,7 @@ int main(int argc, char **argv) {
 	int c, i;
 	REgg *egg = r_egg_new ();
 
-        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:B:C:v")) != -1) {
+        while ((c = getopt (argc, argv, "he:a:b:f:o:sxrk:FOI:Li:c:p:B:C:vd:D:w:")) != -1) {
                 switch (c) {
 		case 'a':
 			arch = optarg;
@@ -115,6 +118,43 @@ int main(int argc, char **argv) {
 			break;
 		case 'C':
 			contents = optarg;
+			break;
+		case 'w':
+			{
+				char *p = strchr (optarg, ':');
+				if (p) {
+					int len, off = r_num_math (NULL, optarg);
+					ut8 *b = malloc (strlen (optarg)+1);
+					len = r_hex_str2bin (p+1, b);
+					if (len>0) r_egg_patch (egg, off, (const ut8*)b, len);
+					else eprintf ("Invalid hexstr for -w\n");
+					free (b);
+				} else eprintf ("Missing colon in -w\n");
+			}
+			break;
+		case 'd':
+			{
+			ut32 off, n;
+			char *p = strchr (optarg, ':');
+			if (p) {
+				off = r_num_get (NULL, optarg);
+				n = r_num_get (NULL, p+1);
+				// TODO: honor endianness here
+				r_egg_patch (egg, off, (const ut8*)&n, 4);
+			} else eprintf ("Missing colon in -d\n");
+			}
+			break;
+		case 'D':
+			{
+			ut64 off, n;
+			char *p = strchr (optarg, ':');
+			if (p) {
+				off = r_num_get (NULL, optarg);
+				n = r_num_get (NULL, p+1);
+				// TODO: honor endianness here
+				r_egg_patch (egg, off, (const ut8*)&n, 8);
+			} else eprintf ("Missing colon in -d\n");
+			}
 			break;
 		case 'o':
 			ofile = optarg;
@@ -179,7 +219,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (optind == argc && !shellcode && !bytes && !contents && !encoder) {
+	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding) {
 		eprintf ("Missing argument\n");
 		return usage ();
 	} else file = argv[optind];
@@ -253,6 +293,7 @@ int main(int argc, char **argv) {
 	r_egg_compile (egg);
 	if (padding)
 		r_egg_padding (egg, padding);
+	r_egg_finalize (egg); // apply patches
 	//printf ("src (%s)\n", r_egg_get_source (egg));
 	if (show_asm)
 		printf ("%s\n", r_egg_get_assembly (egg));

@@ -56,6 +56,7 @@ R_API void r_list_delete (RList *list, RListIter *iter);
 R_API boolt r_list_delete_data (RList *list, void *ptr);
 R_API void r_list_iter_init (RListIter *iter, RList *list);
 R_API void r_list_destroy (RList *list);
+R_API void r_list_purge (RList *list);
 R_API void r_list_free (RList *list);
 R_API RListIter *r_list_item_new (void *data);
 R_API void r_list_unlink (RList *list, void *ptr);

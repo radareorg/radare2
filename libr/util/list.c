@@ -87,6 +87,24 @@ R_API RList *r_list_new() {
 	return list;
 }
 
+/* remove all elements of a list */
+R_API void r_list_purge (RList *list) {
+	RListIter *it;
+	if (list) {
+		it = list->head;
+		while (it) {
+			RListIter *next = it->n;
+			r_list_delete (list, it);
+			it = next;
+		//	free (it);
+		}
+		list->head = list->tail = NULL;
+	}
+	//free (list);
+}
+
+// same as purge.. but without a correct name.. need refactoring
+// TODO: rename to r_list_purge() or find a better name
 R_API void r_list_destroy (RList *list) {
 	RListIter *it;
 	if (list) {
