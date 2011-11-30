@@ -12,7 +12,7 @@ static int usage () {
 	" -F              output native format (osx=mach0, linux=elf, ..)\n"
 	" -o [file]       output file\n"
 	" -O              use default output file (filename without extension or a.out)\n"
-	" -I              add include path\n"
+	" -I [path]       add include path\n"
 	" -L              list all plugins (shellcodes and encoders)\n"
 	" -i [shellcode]  include shellcode plugin, uses options. see -L\n"
 	" -e [encoder]    use specific encoder. see -L\n"

@@ -38,7 +38,7 @@ static int rw = R_FALSE;
 static int va = R_FALSE;
 static ut64 gbaddr = 0LL;
 static char* file = NULL;
-static char* output = "out";
+static char* output = NULL;
 static char* create = NULL;
 static ut64 at = 0LL;
 static char *name = NULL;
@@ -172,8 +172,12 @@ static int rabin_dump_sections(char *scnname) {
 					!(ret = malloc (section->size*2+1)))
 				return R_FALSE;
 			r_buf_read_at (bin->curarch.buf, section->offset, buf, section->size);
-			r_hex_bin2str (buf, section->size, ret);
-			printf ("%s\n", ret);
+			if (output) {
+				r_file_dump (output, buf, section->size);
+			} else {
+				r_hex_bin2str (buf, section->size, ret);
+				printf ("%s\n", ret);
+			}
 			free (buf);
 			free (ret);
 			break;
@@ -202,7 +206,7 @@ static int rabin_do_operation(const char *op) {
 		ptr = ptr + 1;
 		if ((ptr2 = strchr (ptr, '/'))) {
 			ptr2[0] = '\0';
-			ptr2 = ptr2 + 1;
+			ptr2++;
 		}
 	}
 
@@ -213,7 +217,7 @@ static int rabin_do_operation(const char *op) {
 		switch (*ptr) {
 		case 's':
 			if (ptr2) {
-				if (!rabin_dump_symbols (r_num_math(NULL, ptr2)))
+				if (!rabin_dump_symbols (r_num_math (NULL, ptr2)))
 					return R_FALSE;
 			} else if (!rabin_dump_symbols (0))
 					return R_FALSE;
@@ -230,6 +234,7 @@ static int rabin_do_operation(const char *op) {
 		break;
 	case 'r':
 		r_bin_wr_scn_resize (bin, ptr, r_num_math (NULL, ptr2));
+		if (!output) output = "out";
 		r_bin_wr_output (bin, output);
 		break;
 	default:

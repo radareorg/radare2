@@ -7,7 +7,7 @@
 #  add support for nested shellcodes
 
 if [ -z "${CC}" ]; then
-	for a in clang llvm-gcc gcc ; do
+	for a in llvm-gcc clang gcc ; do
 		$a --version >/dev/null 2>&1
 		if [ $? = 0 ]; then
 			CC="$a"
@@ -208,9 +208,9 @@ ${CC} ${LDFLAGS} ${OPT} -o $F.o $F.s || fail
 if [ "$D" ]; then
 	echo "==> Link"
 	#echo "${OBJCOPY} -j .text -O binary $F.o $.text"
-	echo "rabin2 -O d/S/${TEXT} $F.o | rax2 -s > $F.text"
+	echo "rabin2 -o '$F.text' -O d/S/${TEXT} $F.o"
 fi
-rabin2 -O d/S/${TEXT} $F.o | rax2 -s > $F.text
+rabin2 -o "$F.text" -O d/S/${TEXT} $F.o
 if [ "`du $F.text|awk '{print $1}'`" = 0 ]; then
 	# use objcopy as falback for rabin2
 	${OBJCOPY} -j .text -O binary $F.o $F.text || fail

@@ -99,6 +99,7 @@ R_API int r_search_xrefs_update(void *s, ut64 from, const ut8 *buf, int len);
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr);
 R_API void r_search_set_distance(RSearch *s, int dist);
 R_API int r_search_strings(RSearch *s, ut32 min, ut32 max);
+R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max); // WTF dupped?
 //R_API int r_search_set_callback(RSearch *s, int (*callback)(struct r_search_kw_t *, void *, ut64), void *user);
 R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *user);
 R_API int r_search_begin(RSearch *s);
