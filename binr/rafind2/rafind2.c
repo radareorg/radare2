@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,7 +56,7 @@ static int show_help(char *argv0, int line) {
 	" -s [str]   search for zero-terminated strings (can be used multiple times)\n"
 	" -e [regex] search for regular expression string matches\n"
 	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
-	" -m [str]   set a mask\n"
+	" -m [str]   set a binary mask to be applied on keywords\n"
 	" -f [from]  start searching from address 'from'\n"
 	" -t [to]    stop search at address 'to'\n"
 	" -X         show hexdump of search results\n"
@@ -90,6 +90,9 @@ static int rafind_open(char *file) {
 	r_search_set_callback (rs, &hit, buffer);
 	if (to == -1)
 		to = r_io_size(io);
+	if (mode == R_SEARCH_STRING) {
+		eprintf ("TODO: searchin stringz\n");
+	}
 	if (mode == R_SEARCH_KEYWORD) {
 		list_for_each(pos, &(kws_head)) {
 			BoxedString *kw = list_entry(pos, BoxedString, list);

@@ -13,14 +13,6 @@
 
 #include <r_search.h>
 
-// XXX perror and exit are not portable
-#ifdef __FreeBSD__
-#include <err.h>
-#else
-#define err(x,y) { perror(y); exit(x); }
-#endif
-
-
 // Baby BER parser, just good enough for RSA keys.
 //
 // This is not robust to errors in the memory image, but if we added
@@ -106,7 +98,7 @@ ut8 *r_find_key_start(ut8 *map, int offset) {
 void r_find_keys(ut8 *image, int isize, ut8 *target, int target_size, boolt find_public) {
 	int i;
 	for (i = 0; i < isize - target_size; i++) {
-		if (memcmp(&image[i], target, target_size))
+		if (memcmp (&image[i], target, target_size))
 			continue;   
 
 		ut8 *key = r_find_key_start(image, i);
@@ -125,92 +117,37 @@ void r_find_keys(ut8 *image, int isize, ut8 *target, int target_size, boolt find
 	}
 }
 
-// Memory maps filename and return a pointer on success, setting len
-// to the length of the file (does not return on error)
-ut8 *r_map_file(char *filename, ut32 *len) {
-	int fd = open(filename, O_RDONLY);
-	if (fd < 0)
-		errx(1, "image open failed");
-
-	struct stat st;
-	if (fstat(fd, &st) != 0)
-		errx(1, "image fstat failed");
-
-	ut8 *map;
-	map = (ut8*)mmap(0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (map == MAP_FAILED)
-		errx(1, "image mmap failed");
-
-	*len = st.st_size;
-	return map;
-}
-
-// Returns a decoded byte from a file of hex values, ignoring whitespace
-int r_get_hex_byte(int fd) {
-	for (;;) {
-		char a[3];
-		if (read(fd, &a[0], 1) < 1)
-			break;
-		if ((a[0] >= '0' && a[0] <= '9') || (a[0] >= 'a' && a[0] <= 'f')) {
-			if (read(fd, &a[1], 1) < 1)
-				break;
-			a[2] = '\0';
-			return strtol(a,NULL,16);
-		}
-	}
-	return -1;
-}
-
-// Reads hexadecimal bytes from filename and returns a byte array
-// containing these values, setting len to the number of bytes (does not
-// return on error)
-ut8 *r_read_modulus(char *filename, ut32 *len) {
-	int fd = open(filename, O_RDONLY);
-	if (fd < 0)
-		err(1, "modulus open failed");
-
-	struct stat st;
-	if (fstat(fd, &st) != 0)
-		err(1, "modulus fstat failed");
-
-	ut8 *modulus = (ut8 *)malloc(st.st_size);
-	for (*len=0; ;*len++) {
-		int c = r_get_hex_byte(fd);
-		if (c == -1)
-			break;
-		modulus[*len] = c;
-	}
-
-	close(fd);
-	return modulus;
-}
-
-void r_usage() {
+#if TEST
+static void r_usage() {
 	fprintf(stderr, "USAGE: rsakeyfind MEMORY-IMAGE [MODULUS-FILE]\n"
 			"Locates BER-encoded RSA private keys in MEMORY-IMAGE.\n"
 			"If MODULUS-FILE is specified, it will locate private and public keys"
 			"matching the hex-encoded modulus read from this file.\n");
 }
 
-#if TEST
 int main(int argc, char *argv[]) {
-	ut32 ilen;
-	ut8 *image;
+	RMmap *img;
 	if (argc < 2 || argc > 3) {
 		r_usage();
 		exit(1);
 	}
-	image = r_map_file(argv[1], &ilen); 
+
+	img = r_file_mmap (argv[1], 0);
 	if (argc == 3) {
 		// method 1: searching for modulus
 		ut32 mlen;
-		ut8 *modulus = r_read_modulus(argv[2], &mlen);
-		r_find_keys(image, ilen, modulus, mlen, R_TRUE);
+		ut8 *modulus = r_file_slurp (argv[2], &mlen);
+		if (modulus)
+			r_find_keys (
+				img->buf, img->len,
+				modulus, mlen, R_TRUE);
 	} else {
 		// method 2: searching for versionmarker
 		ut8 versionmarker[4] = {0x02, 0x01, 0x00, 0x02};
-		r_find_keys(image, ilen, versionmarker, sizeof(versionmarker), R_FALSE);
+		r_find_keys (img->buf, img->len,
+			versionmarker, sizeof (versionmarker), R_FALSE);
 	}
+	r_file_mmap_free (img);
 	return 0;
 }
 #endif

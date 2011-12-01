@@ -26,6 +26,13 @@ R_API boolt r_file_exist(const char *str) {
 	return (S_ISREG (buf.st_mode))? R_TRUE: R_FALSE;
 }
 
+R_API int r_file_size(const char *str) {
+	struct stat buf;
+	if (stat (str, &buf)==-1)
+		return 0;
+	return buf.st_size;
+}
+
 R_API char *r_file_abspath(const char *file) {
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
