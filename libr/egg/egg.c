@@ -77,7 +77,9 @@ R_API void r_egg_reset (REgg *egg) {
 
 R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
 	egg->emit = NULL;
+
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
+//eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
 	// TODO: setup egg->arch for all archs
 	if (!strcmp (arch, "x86")) {
 		egg->arch = R_SYS_ARCH_X86;
@@ -303,7 +305,7 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 		*q = t;
 		p = q;
 		if (n<1) {
-			eprintf ("Invalid padding length %d\n", n);
+			eprintf ("Invalid padding length at %d\n", n);
 			free (o);
 			return R_FALSE;
 		}
@@ -357,6 +359,10 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
+			if (b == NULL) {
+				eprintf ("%s Encoder has failed\n", p->name);
+				return R_FALSE;
+			}
 			r_egg_raw (egg, b->buf, b->length);
 			r_buf_free (b);
 			return R_TRUE;
@@ -372,8 +378,8 @@ R_API int r_egg_encode(REgg *egg, const char *name) {
 	r_list_foreach (egg->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->name)) {
 			b = p->build (egg);
-			r_buf_free (egg->buf);
-			egg->buf = b;
+			r_buf_free (egg->bin);
+			egg->bin = b;
 			return R_TRUE;
 		}
 	}
@@ -399,7 +405,7 @@ R_API void r_egg_finalize(REgg *egg) {
 		if (b->length+b->cur > egg->bin->length) {
 			eprintf ("Fuck this shit. Cant patch outside\n");
 		}
-		// TODO: use r_buf_insert or what
+		// TODO: use r_buf_cpy_buf or what
 		memcpy (egg->bin->buf + b->cur, b->buf, b->length);
 	}
 }

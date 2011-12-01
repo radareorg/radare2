@@ -225,6 +225,22 @@ int main(int argc, char **argv) {
 	} else file = argv[optind];
 
 	r_egg_setup (egg, arch, bits, 0, os);
+	if (file) {
+		if (!strcmp (file, "-")) {
+			char buf[1024];
+			for (;;) {
+				fgets (buf, sizeof (buf)-1, stdin);
+				if (feof (stdin)) break;
+				r_egg_load (egg, buf, 0);
+			}
+		} else {
+			if (!r_egg_include (egg, file, 0)) {
+				eprintf ("Cannot open '%s'\n", file);
+				goto fail;
+			}
+		}
+	}
+	r_egg_compile (egg);
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
@@ -249,9 +265,6 @@ int main(int argc, char **argv) {
 		} else eprintf ("Invalid hexpair string for -B\n");
 		free (b);
 	}
-	if (encoder)
-		if (!r_egg_encode (egg, encoder))
-			eprintf ("Invalid encoder '%s'\n", encoder);
 	/* create output file if needed */
 	if (ofileauto) {
 		int fd;
@@ -275,25 +288,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if (file) {
-		if (!strcmp (file, "-")) {
-			char buf[1024];
-			for (;;) {
-				fgets (buf, sizeof (buf)-1, stdin);
-				if (feof (stdin)) break;
-				r_egg_load (egg, buf, 0);
-			}
-		} else {
-			if (!r_egg_include (egg, file, 0)) {
-				eprintf ("Cannot open '%s'\n", file);
-				goto fail;
-			}
-		}
-	}
-	r_egg_compile (egg);
-	if (padding)
-		r_egg_padding (egg, padding);
-	r_egg_finalize (egg); // apply patches
 	//printf ("src (%s)\n", r_egg_get_source (egg));
 	if (show_asm)
 		printf ("%s\n", r_egg_get_assembly (egg));
@@ -302,10 +296,17 @@ int main(int argc, char **argv) {
 			eprintf ("r_egg_assemble: invalid assembly\n");
 			goto fail;
 		}
+		if (encoder)
+			if (!r_egg_encode (egg, encoder))
+				eprintf ("Invalid encoder '%s'\n", encoder);
+		if (padding)
+			r_egg_padding (egg, padding);
+
 		if (!(b = r_egg_get_bin (egg))) {
 			eprintf ("r_egg_get_bin: invalid egg :(\n");
 			goto fail;
 		}
+		r_egg_finalize (egg); // apply patches
 		if (show_raw) {
 			write (1, b->buf, b->length);
 		} else

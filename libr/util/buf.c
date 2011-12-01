@@ -102,6 +102,14 @@ R_API int r_buf_append_ut64(RBuffer *b, ut64 n) {
 	return R_TRUE;
 }
 
+R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
+	if (!(b->buf = realloc (b->buf, b->length+a->length)))
+		return R_FALSE;
+	memcpy (b->buf+b->length, a->buf, a->length);
+	b->length += a->length;
+	return R_TRUE;
+}
+
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
 	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
@@ -177,6 +185,7 @@ R_API void r_buf_deinit(struct r_buf_t *b) {
 }
 
 R_API void r_buf_free(struct r_buf_t *b) {
+	if (!b) return;
 	r_buf_deinit (b);
 	free (b);
 }

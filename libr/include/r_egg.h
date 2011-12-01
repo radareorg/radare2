@@ -137,6 +137,7 @@ R_API void r_egg_lang_include_init (REgg *egg);
 
 /* plugin pointers */
 extern REggPlugin r_egg_plugin_xor;
+extern REggPlugin r_egg_plugin_shya;
 extern REggPlugin r_egg_plugin_exec;
 #endif
 #endif
