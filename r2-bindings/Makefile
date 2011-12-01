@@ -22,8 +22,6 @@ define ADD_lang
 ifneq ($(shell grep $(1) supported.langs),)
 LANGS+=$(1)
 INSTALL_TARGETS+=install-$(1)
-$(1):
-	cd $(1) && ${MAKE}
 endif
 endef
 
@@ -108,7 +106,7 @@ python2:
 python3:
 	@-[ "`grep python supported.langs`" ] && ( cd python && ${MAKE} PYTHON_CONFIG=${PYTHON3_CONFIG}) || true
 
-${LANG}::
+${ALANG}::
 	cd $@ && ${MAKE}
 
 go::
@@ -187,7 +185,7 @@ install-vapi:
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
 
 install-gir:
-	cd gir && ${MAKE}
+	cd gir && ${MAKE} install
 
 install-php5 install-guile:
 	@echo TODO install-$@

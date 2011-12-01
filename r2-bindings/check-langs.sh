@@ -27,9 +27,11 @@ fi
 echo "Checking valabind languages support..."
 valabind-cc --help > /dev/null 2>&1
 if [ $? = 0 ]; then
-  echo " - gir: yes"
-  echo " - v8gear: yes"
-  SUP_LANGS="gir gear ${SUP_LANGS}"
+  # GIR AND GEAR ARE EXPERIMENTAL #
+  #echo " - gir: yes"
+  #echo " - v8gear: yes"
+  #SUP_LANGS="gir gear ${SUP_LANGS}"
+  SUP_LANGS=""
   for a in ${LANGS}; do
     printf " - $a: "
     CC=${CC} CXX=${CXX} valabind-cc --test $a
