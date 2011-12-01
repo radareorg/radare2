@@ -23,7 +23,7 @@ static inline void r_cons_write (const char *buf, int len) {
 	r_cons_w32_print ((unsigned char *)buf);
 #else
 	if (write (I.fdout, buf, len) == -1) {
-		eprintf ("r_cons_write: write error\n");
+		//eprintf ("r_cons_write: write error\n");
 		//exit (1);
 	}
 #endif
