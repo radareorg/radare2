@@ -77,6 +77,8 @@ static RList* sections(RBinArch *arch) {
 		ptr->vsize = section[i].size;
 		ptr->offset = section[i].offset;
 		ptr->rva = section[i].rva;
+		// HACK
+		if (ptr->rva == 0) ptr->rva = section[i].offset;
 		ptr->srwx = 0;
 		if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
 			ptr->srwx |= 1;
