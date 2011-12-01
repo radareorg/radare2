@@ -79,6 +79,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 	r_core_project_init ();
 	fd = open (prj, O_BINARY|O_RDWR|O_CREAT, 0644);
 	if (fd != -1) {
+		int fdold = r_cons_singleton ()->fdout;
 		r_cons_singleton ()->fdout = fd;
 		r_cons_singleton ()->is_interactive = R_FALSE;
 		r_str_write (fd, "# r2 rdb project file\n");
@@ -108,7 +109,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_str_writef (fd, "s 0x%08"PFMT64x, core->offset);
 		r_cons_flush ();
 		close (fd);
-		r_cons_singleton ()->fdout = 1;
+		r_cons_singleton ()->fdout = fdold;
 		r_cons_singleton ()->is_interactive = R_TRUE;
 	} else {
 		eprintf ("Cannot open '%s' for writing\n", prj);

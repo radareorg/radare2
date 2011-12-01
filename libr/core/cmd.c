@@ -141,6 +141,7 @@ static int cmd_zign(void *data, const char *input) {
 	switch (*input) {
 	case 'g':
 		if (input[1]==' ' && input[2]) {
+			int fdold = r_cons_singleton ()->fdout;
 			ptr = strchr (input+2, ' ');
 			if (ptr) {
 				*ptr = '\0';
@@ -170,7 +171,7 @@ static int cmd_zign(void *data, const char *input) {
 			r_cons_strcat ("zp-\n");
 			if (ptr) {
 				r_cons_flush ();
-				r_cons_singleton ()->fdout = 1;
+				r_cons_singleton ()->fdout = fdold;
 				close (fd);
 			}
 		} else eprintf ("Usage: zg libc [libc.sig]\n");
