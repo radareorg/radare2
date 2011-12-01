@@ -101,17 +101,21 @@ static int rafind_open(char *file) {
 				r_search_keyword_new_str (kw->str, mask, NULL, 0));
 			free (kw);
 		}
+	} else if (mode == R_SEARCH_STRING) {
+		r_search_kw_add (rs,
+				r_search_keyword_new_hexmask ("00", NULL)); //XXX
 	}
+
 	curfile = file;
 	r_search_begin (rs);
 	r_io_seek (io, from, R_IO_SEEK_SET);
 	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
-	for(cur=from; !last && cur<to;cur+=bsize) {
+	for (cur = from; !last && cur < to; cur += bsize) {
 		if ((cur+bsize)>to) {
 			bsize = to-cur;
 			last=1;
 		}
-		ret = r_io_read (io, buffer, bsize);
+		ret = r_io_read_at (io, cur, buffer, bsize);
 		if (ret == 0) {
 			if (nonstop) continue;
 		//	fprintf(stderr, "Error reading at 0x%08"PFMT64x"\n", cur);
@@ -119,9 +123,15 @@ static int rafind_open(char *file) {
 		}
 		if (ret != bsize)
 			bsize = ret;
-		r_search_update_i (rs, cur, buffer, bsize);
+
+		if (r_search_update (rs, &cur, buffer, ret) == -1) {
+			eprintf ("search: update read error at 0x%08"PFMT64x"\n", cur);
+			break;
+		}
+
 	}
 	rs = r_search_free (rs);
+	free (buffer);
 	return 0;
 }
 
