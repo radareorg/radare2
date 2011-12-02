@@ -6,48 +6,78 @@
 .Nd Binary program info extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl @eoicsSlMrvxz
-.Op Fl h
+.Op Fl ACeisSMzIHlRrvLxVh
+.Op Fl a Ar arch
+.Op Fl b Ar bits
+.Op Fl B Ar addr
 .Op Fl c Ar fmt:C:[D]
+.Op Fl p Ar patchfile
 .Op Fl f Ar subbin
-.Op Fl L Ar library
-.Op Fl m Ar addr 
-.Op file
+.Op Fl O Ar str
+.Op Fl o Ar str
+.Op Fl m Ar addr
+.Op Fl @ Ar addr
+.Op Fl n Ar str
+.Ar file
 .Sh DESCRIPTION
 This program allows you to get information about ELF/PE/MZ and CLASS files in a simple way.
 .Bl -tag -width Fl
-.It Fl @
-Show information (symbol, section, import) of the given address
-.It Fl e
-Show entrypoints for disk and on-memory
-.It Fl M
-Show address of 'main' symbol
-.It Fl i
-Show imports (symbols imported from libraries
+.It Fl A
+List archs
+.It Fl a Ar arch
+Set arch (x86, arm, .. accepts underscore for bits x86_32)
+.It Fl b Ar bits
+Set bits (32, 64, ...)
+.It Fl B Ar addr
+Override baddr
 .It Fl c Ar [fmt:C[:D]]
 Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
-.It Fl s
-Show exported symbols
-.It Fl o
-Show other symbols (not import/export)
-.It Fl S
-Show sections
-.It Fl l
-List linked libraries to the binary
+.It Fl C
+List classes
+.It Fl p Ar patchfile
+Patch file (see man rabin2)
+.It Fl e
+Show entrypoints for disk and on-memory
 .It Fl f Ar subbin
 Select sub-binary architecture. Useful for fat-mach0 binaries
-.It Fl x
-Extract all sub binaries from a fat binary (f.ex: fatmach0)
-.It Fl L Ar library
-Show the base address of a library loaded in memory
-.It Fl m Ar addr
-Show source line reference from a given address (like add2line)
-.It Fl r
-Show output in radare format
+.It Fl i
+Show imports (symbols imported from libraries)
+.It Fl s
+Show exported symbols
+.It Fl S
+Show sections
+.It Fl M
+Show address of 'main' symbol
 .It Fl z
 Show strings inside .data section (like gnu strings does)
+.It Fl I
+Show binary info
+.It Fl I
+Show header fields
+.It Fl l
+List linked libraries to the binary
+.It Fl I
+Show realocations
+.It Fl O Ar str
+Write/extract operations (-O help)
+.It Fl o Ar str
+Output file/folder for write operations (out by default)
+.It Fl r
+Show output in radare format
 .It Fl v
 Display virtual addressing offsets
+.It Fl m Ar addr
+Show source line reference from a given address
+.It Fl L
+List supported bin plugins
+.It Fl @ Ar addr
+Show information (symbol, section, import) of the given address
+.It Fl n Ar str
+Show information (symbol, section, import) at string offset
+.It Fl x
+Extract all sub binaries from a fat binary (f.ex: fatmach0)
+.It Fl V
+Show version information
 .It Fl h
 Show usage help message.
 .El

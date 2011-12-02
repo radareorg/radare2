@@ -6,28 +6,44 @@
 .Nd radare2 patch assembler and disassembler
 .Sh SYNOPSIS
 .Nm rasm2
-.Op -dfBCLeV
-.Op -o offset
-.Op -a arch
-.Op -b bits
-.Op -s syntax
+.Op Fl dDfBCLev
+.Op Fl F Ar in:out
+.Op Fl o Ar offset
+.Op Fl a Ar arch
+.Op Fl b Ar bits
+.Op Fl s Ar syntax
+.Op Fl l Ar int
 .Op ARG
 .Sh DESCRIPTION
 TODO: This manpage is incomplete.
 .Pp
 .Bl -tag -width Fl
 .It Fl d
-Disassemble hexpairs. rasm2 \-d 9090
+Disassemble hexpair bytes. rasm2 \-d 9090
+.It Fl D
+Disassemble showing hexpair and opcode
 .It Fl f
 Read data from file instead of ARG.
+.It Fl F Ar in:out
+pecify input and/or output filters (att2intel, x86.pseudo, ...)
 .It Fl o Ar offset
 Offset of the opcode to assemble
+.It Fl a Ar arch
+Set architecture plugin
+.It Fl b Ar bits
+Set architecture bits
+.It Fl s Ar syntax
+Select syntax output (intel, att)
+.It Fl B
+Binary input/output (-l is mandatory for binary input)
+.It Fl l Ar int
+Input/Output length
+.It Fl C
+Output in C format
+.It Fl L
+List supported asm plugins
 .It Fl e
 Use big endian
-.It Fl b Ar bits
-Specify bit size of registers: 8, 16, 32, 64
-.It Fl a Ar arch
-Set a different architecture (x86, ppc, arm, java)
 .It Fl h
 .El
 Show usage help message.

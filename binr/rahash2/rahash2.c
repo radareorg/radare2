@@ -121,7 +121,7 @@ static int do_hash(const char *algo, RIO *io, int bsize, int rad) {
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-rV] [-b bsize] [-a algo] [-s str] [file] ...\n");
+	printf ("Usage: rahash2 [-rBv] [-b bsize] [-a algo] [-s str] [-f from] [-t to] [file] ...\n");
 	if (line) return 0;
 	printf (
 	" -a algo     comma separated list of algorithms (default is 'sha1')\n"
@@ -131,7 +131,7 @@ static int do_help(int line) {
 	" -f from     start hashing at given address\n"
 	" -t to       stop hashing at given address\n"
 	" -r          output radare commands\n"
-	" -V          show version information\n"
+	" -v          show version information\n"
 	"Supported algorithms: md4, md5, sha1, sha256, sha384, sha512, crc16,\n"
 	"    crc32, xor, xorpair, parity, mod255, hamdist, entropy, pcprint\n");
 	return 0;
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
 	int c, rad = 0, quit = 0, bsize = 0;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "rVa:s:b:Bhf:t:")) != -1) {
+	while ((c = getopt (argc, argv, "rva:s:b:Bhf:t:")) != -1) {
 		switch (c) {
 		case 'r':
 			rad = 1;
@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 		case 't':
 			to = r_num_math (NULL, optarg);
 			break;
-		case 'V':
+		case 'v':
 			printf ("rahash2 v"R2_VERSION"\n");
 			return 0;
 		case 'h':

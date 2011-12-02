@@ -6,11 +6,12 @@
 .Nd block based hashing utility
 .Sh SYNOPSIS
 .Nm hasher2
-.Op Fl h
-.Op Fl V
+.Op Fl hBrv
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
 .Op Fl s Ar string
+.Op Fl f Ar from
+.Op Fl t Ar to
 .Op [file] ...
 .Sh DESCRIPTION
 This program is part of the radare project.
@@ -25,12 +26,20 @@ This is the command used by the '#' command of radare.
 .Bl -tag -width Fl
 .It Fl a Ar algo
 Select an algorithm for the hashing. Valid values are md5, crc32 and sha1
-.It Fl s Ar string
-Hash this string instead of using the 'source' and 'hash-file' arguments.
 .It Fl b Ar block size
 Define the block size
-.It Fl V
-Verbose output.
+.It Fl B
+Show per-block hash
+.It Fl s Ar string
+Hash this string instead of using the 'source' and 'hash-file' arguments.
+.It Fl f Ar from
+Start hashing at given address
+.It Fl t Ar to
+Stop hashing at given address
+.It Fl r
+Show output in radare commands
+.It Fl v
+Show version information
 .It Fl h
 Show usage help message.
 .El

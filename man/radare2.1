@@ -11,10 +11,11 @@
 .Op Fl B Ar blocksize
 .Op Fl c Ar cmd
 .Op Fl e Ar k=v
+.Op Fl i Ar file
 .Op Fl p Ar project
 .Op Fl P Ar patch
 .Op Fl s Ar addr
-.Op Fl dDwntLV
+.Op Fl dDwntLqv
 .Ar file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -33,32 +34,40 @@ force asm.bits (16, 32, 64)
 Set block size
 .It Fl c Ar cmd
 Execute the given command before giving prompt
-.It Fl e Ar k=v
-Set configuration eval variable key=value. For example \-e scr.color=false
-.It Fl s Ar addr
-Start seeking at this address
-.It Fl f
-Blocksize = file size
 .It Fl d
 Start in debugger mode
 .It Fl D Ar dbg.backend
 Enable debug mode. Set cfg.debug=true
-.It Fl w
-Open in write mode
-.It Fl u
-Unknown file size. (Do not limit to file boundaries)
-.It Fl n
-Do not load r_bin information and ~/.radare2rc
-.It Fl t
-Get binary information using a thread
+.It Fl e Ar k=v
+Set configuration eval variable key=value. For example \-e scr.color=false
+.It Fl f
+Blocksize = file size
+.It Fl i Ar file
+Run script file
 .It Fl l Ar plugfile
 Load given plugin file
 .It Fl L
 List supported IO plugins.
-.It Fl V
+.It Fl n
+Do not load r_bin information and ~/.radare2rc
+.It Fl q
+Quiet mode (no prompt)
+.It Fl p Ar prj
+Set project file
+.It Fl P Ar file
+Apply rapatch file and quit
+.It Fl s Ar addr
+Start seeking at this address
+.It Fl t
+Get binary information using a thread
+.It Fl v
 Show version information and exits.
+.It Fl w
+Open in write mode
 .It Fl h
 Show help message
+.It Fl H
+Show files and environment help
 .El
 .Sh SHELL
 Type '?' for help.

@@ -6,12 +6,13 @@
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm rafind2
-.Op Fl Xnzh
+.Op Fl zXnrhv
+.Op Fl b Ar size
 .Op Fl f Ar from
 .Op Fl t Ar to
-.Op Fl s Ar str
+.Op Fl [m|s|e] Ar str
 .Op Fl x Ar hex
-.Op file
+.Ar file
 .Sh DESCRIPTION
 rafind2 is a program to find byte patterns into files
 .Pp
@@ -19,24 +20,30 @@ The options are:
 .Bl -tag -width Fl
 .It Fl z
 Search for zero-terminated strings
+.It Fl s Ar str
+Search for a specific string
+.It Fl e Ar regex
+Search for a regular expression string matches
+.It Fl x Ar hex
+Search for an hexpair string
+.It Fl m Ar mask
+Set binary mask to be applied
+.It Fl f Ar from
+Specify the source adddress
+.It Fl t Ar to
+Specify the target adddress
 .It Fl X
 Display hexdump of search results
 .It Fl n
 Do not stop the search when a read error occurs
 .It Fl r
 Show output in radare commands
-.It Fl b
+.It Fl b Ar size
 Define block size
-.It Fl s Ar str
-Search for a specific string
-.It Fl m Ar mask
-Set binary mask to be applied
-.It Fl x Ar hex
-Search for an hexpair string
-.It Fl f Ar from
-Specify the source adddress
-.It Fl t Ar to
-Specify the target adddress
+.It Fl h
+Show help message
+.It Fl v
+Print version and exit
 .El
 .Sh SEE ALSO
 .Pp

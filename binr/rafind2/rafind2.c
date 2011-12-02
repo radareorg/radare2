@@ -49,11 +49,11 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-Xnzh] [-f from] [-t to] [-[m|s|e] str] [-x hex] file ...\n", argv0);
+	printf ("Usage: %s [-Xnzhv] [-b size] [-f from] [-t to] [-[m|s|e] str] [-x hex] file ...\n", argv0);
 	if (line) return 0;
 	printf (
 	" -z         search for zero-terminated strings\n"
-	" -s [str]   search for zero-terminated strings (can be used multiple times)\n"
+	" -s [str]   search for a specific string (can be used multiple times)\n"
 	" -e [regex] search for regular expression string matches\n"
 	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
 	" -m [str]   set a binary mask to be applied on keywords\n"
@@ -62,9 +62,9 @@ static int show_help(char *argv0, int line) {
 	" -X         show hexdump of search results\n"
 	" -n         do not stop on read errors\n"
 	" -r         print using radare commands\n"
-	" -b         set block size\n"
+	" -b [size]  set block size\n"
 	" -h         show this help\n"
-	" -V         print version and exit\n"
+	" -v         print version and exit\n"
 	);
 	return 0;
 }
@@ -138,7 +138,7 @@ static int rafind_open(char *file) {
 int main(int argc, char **argv) {
 	int c;
 
-	while ((c = getopt(argc, argv, "e:b:m:s:x:Xzf:t:rnhV")) != -1) {
+	while ((c = getopt(argc, argv, "e:b:m:s:x:Xzf:t:rnhv")) != -1) {
 		BoxedString *kw = R_NEW (BoxedString);
 		INIT_LIST_HEAD (&(kw->list));
 
@@ -186,7 +186,7 @@ int main(int argc, char **argv) {
 		case 'X':
 			pr = r_print_new ();
 			break;
-		case 'V':
+		case 'v':
 			printf ("rafind2 v"R2_VERSION"\n");
 			return 0;
 		case 'h':
