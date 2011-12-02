@@ -4287,7 +4287,10 @@ static int cmd_hash(void *data, const char *input) {
 }
 
 static int cmd_visual(void *data, const char *input) {
-	return r_core_visual ((RCore *)data, input);
+	r_cons_show_cursor (R_FALSE);
+	int ret = r_core_visual ((RCore *)data, input);
+	r_cons_show_cursor (R_TRUE);
+	return ret;
 }
 
 static int cmd_system(void *data, const char *input) {

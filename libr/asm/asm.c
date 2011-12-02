@@ -279,7 +279,7 @@ R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64
 			r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
 		else memcpy (op->buf, buf, ret);
 		r_hex_bin2str (buf, ret, op->buf_hex);
-	}
+	} else ret = 0;
 	return ret;
 }
 

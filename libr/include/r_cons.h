@@ -182,6 +182,7 @@ R_API void r_cons_clear_line();
 R_API void r_cons_stdout_open(const char *file, int append);
 R_API int  r_cons_stdout_set_fd(int fd);
 R_API void r_cons_gotoxy(int x, int y);
+R_API void r_cons_show_cursor (int cursor);
 R_API void r_cons_set_raw(int b);
 
 /* output */

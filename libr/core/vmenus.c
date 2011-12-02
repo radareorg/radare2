@@ -120,19 +120,23 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'a':
 			switch (menu) {
 			case 0: // new flag space
+				r_cons_show_cursor (R_TRUE);
 				r_line_set_prompt ("add flagspace: ");
 				strcpy (cmd, "fs ");
 				if (r_cons_fgets (cmd+3, sizeof (cmd)-4, 0, NULL) > 0) {
 					r_core_cmd (core, cmd, 0);
 					r_cons_set_raw (1);
+					r_cons_show_cursor (R_FALSE);
 				}
 				break;
 			case 1: // new flag
+				r_cons_show_cursor (R_TRUE);
 				r_line_set_prompt ("add flag: ");
 				strcpy (cmd, "f ");
 				if (r_cons_fgets (cmd+2, sizeof (cmd)-3, 0, NULL) > 0) {
 					r_core_cmd (core, cmd, 0);
 					r_cons_set_raw (1);
+					r_cons_show_cursor (R_FALSE);
 				}
 				break;
 			}
@@ -163,6 +167,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'r':
 			if (menu == 1) {
 				int len;
+				r_cons_show_cursor (R_TRUE);
 				r_cons_set_raw (0);
 				// TODO: use r_flag_rename or wtf?..fr doesnt uses this..
 				snprintf (cmd, sizeof (cmd), "fr %s ", fs2);
@@ -173,6 +178,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					cmd[0]='\0';
 				r_core_cmd (core, cmd, 0);
 				r_cons_set_raw (1);
+				r_cons_show_cursor (R_FALSE);
 			}
 			break;
 		case 'P':
@@ -215,6 +221,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_any_key ();
 			break;
 		case ':':
+			r_cons_show_cursor (R_TRUE);
 			r_cons_set_raw (0);
 			cmd[0]='\0';
 			r_line_set_prompt (":> ");
@@ -223,6 +230,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			//line[strlen(line)-1]='\0';
 			r_core_cmd (core, cmd, 1);
 			r_cons_set_raw (1);
+			r_cons_show_cursor (R_FALSE);
 			if (cmd[0])
 				r_cons_any_key ();
 			//cons_gotoxy(0,0);
@@ -401,11 +409,13 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 		} else {
 			// FGETS AND SO
 			r_cons_printf ("New value (old=%s): \n", node->value);
+			r_cons_show_cursor (R_TRUE);
 			r_cons_flush ();
 			r_cons_set_raw (0);
 			r_line_set_prompt (":> ");
 			r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
 			r_cons_set_raw (1);
+			r_cons_show_cursor (R_FALSE);
 			node->value = r_str_dup (node->value, buf);
 		}
 	}
@@ -553,6 +563,7 @@ R_API void r_core_visual_config(RCore *core) {
 			r_cons_any_key ();
 			break;
 		case ':':
+			r_cons_show_cursor (R_TRUE);
 			r_cons_set_raw(0);
 /* WTF READLINE?? WE DONT USE THAT!! */
 #if HAVE_LIB_READLINE
@@ -572,6 +583,7 @@ R_API void r_core_visual_config(RCore *core) {
 			r_core_cmd (core, cmd, 1);
 #endif
 			r_cons_set_raw (1);
+			r_cons_show_cursor (R_FALSE);
 			if (cmd[0])
 				r_cons_any_key ();
 			//r_cons_gotoxy(0,0);
@@ -784,10 +796,12 @@ R_API void r_core_visual_mounts (RCore *core) {
 						file = r_fs_open (core->fs, path);
 						if (file) {
 							r_fs_read (core->fs, file, 0, file->size);
+							r_cons_show_cursor (R_TRUE);
 							r_cons_set_raw (0);
 							r_line_set_prompt ("Dump path (ej: /tmp/file): ");
 							r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
 							r_cons_set_raw (1);
+							r_cons_show_cursor (R_FALSE);
 							r_file_dump (buf, file->data, file->size);
 							r_fs_close (core->fs, file);
 							r_cons_printf ("Done\n");
@@ -816,10 +830,12 @@ R_API void r_core_visual_mounts (RCore *core) {
 				r_cons_any_key ();
 				break;
 			case ':':
+				r_cons_show_cursor (R_TRUE);
 				r_cons_set_raw (0);
 				r_line_set_prompt (":> ");
 				r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
 				r_cons_set_raw (1);
+				r_cons_show_cursor (R_FALSE);
 				r_core_cmd (core, buf, 1);
 				r_cons_any_key ();
 				break;
@@ -970,6 +986,7 @@ R_API void r_core_visual_anal(RCore *core) {
 			case 0:
 eprintf ("TODO: Add new function manually\n");
 /*
+				r_cons_show_cursor (R_TRUE);
 				r_cons_set_raw (R_FALSE);
 				r_line_set_prompt ("Address: ");
 				if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
@@ -988,6 +1005,7 @@ eprintf ("TODO: Add new function manually\n");
 				//XXX sprintf(cmd, "CF %lld @ 0x%08llx", size, addr);
 				// XXX r_core_cmd0(core, cmd);
 				r_cons_set_raw (R_TRUE);
+				r_cons_show_cursor (R_FALSE);
 */
 				break;
 			case 1:
@@ -995,6 +1013,7 @@ eprintf ("TODO: Add new function manually\n");
 			}
 			break;
 		case 'm':
+			r_cons_show_cursor (R_TRUE);
 			r_cons_set_raw (R_FALSE);
 			r_line_set_prompt ("New name: ");
 			if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
@@ -1002,6 +1021,7 @@ eprintf ("TODO: Add new function manually\n");
 			function_rename (core, addr, old);
 		
 			r_cons_set_raw (R_TRUE);
+			r_cons_show_cursor (R_FALSE);
 			break;
 		case 'd':
 			switch (level) {

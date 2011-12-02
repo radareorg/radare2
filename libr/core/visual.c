@@ -43,9 +43,11 @@ R_API void r_core_visual_prompt (RCore *core) {
 	char buf[1024];
 	ut64 oseek = core->offset;
 	r_line_set_prompt (":> ");
+	r_cons_show_cursor (R_TRUE);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	r_core_cmd (core, buf, 0);
 	r_cons_any_key ();
+	r_cons_show_cursor (R_FALSE);
 	if (curset) r_core_seek (core, oseek, 1);
 }
 
@@ -151,6 +153,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'a':
 		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
+		r_cons_show_cursor (R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (R_FALSE);
 		strcpy (buf, "wa ");
@@ -161,10 +164,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_cmd (core, buf, R_TRUE);
 			if (curset) r_core_seek (core, core->offset - cursor, 1);
 		}
+		r_cons_show_cursor (R_FALSE);
 		r_cons_set_raw (R_TRUE);
 		break;
 	case 'w':
 		r_cons_printf ("Enter hexpair string to write:\n");
+		r_cons_show_cursor (R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (0);
 		strcpy (buf, "wx ");
@@ -176,6 +181,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (curset) r_core_seek (core, core->offset - cursor, 1);
 		}
 		r_cons_set_raw (1);
+		r_cons_show_cursor (R_FALSE);
 		break;
 	case 'e':
 		r_core_visual_config (core);
@@ -503,6 +509,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
+		r_cons_show_cursor (R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (R_FALSE);
 		strcpy (buf, "CC ");
@@ -527,6 +534,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (curset) r_core_seek (core, orig, 1);
 		}
 		r_cons_set_raw (R_TRUE);
+		r_cons_show_cursor (R_FALSE);
 		break;
 	case 'B':
 		autoblocksize = !autoblocksize;

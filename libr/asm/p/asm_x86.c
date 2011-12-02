@@ -45,7 +45,6 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	static ud_t disasm_obj;
-
 	ud_init (&disasm_obj);
 	ud_set_syntax (&disasm_obj, 
 		a->syntax==R_ASM_SYNTAX_ATT?
@@ -56,9 +55,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	op->inst_len = ud_disassemble (&disasm_obj);
 	//op->inst_len = ud_insn_len (&disasm_obj);
 	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&disasm_obj));
-	if (!op->inst_len || !strcmp (op->buf_asm, "invalid"))
+	if (!op->inst_len || strstr (op->buf_asm, "invalid"))
 		op->inst_len = -1;
-
+	if (op->inst_len<1)
+		op->inst_len = -1;
 	return op->inst_len;
 }
 

@@ -56,6 +56,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 #warning asm.dwarf is now marked as experimental and disabled
 	int show_dwarf = 0; // r_config_get_i (core->config, "asm.dwarf");
 	int show_linescall = r_config_get_i (core->config, "asm.linescall");
+	int show_size = r_config_get_i (core->config, "asm.size");
 	int show_trace = r_config_get_i (core->config, "asm.trace");
 	int linesout = r_config_get_i (core->config, "asm.linesout");
 	int adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
@@ -190,8 +191,9 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		}
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
-		if (ret<1) {
+		if (ret<1) { // XXX: move to r_asm_disassemble ()
 			ret = 1;
+			asmop.inst_len = 1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
 			//	core->assembler->pc + ret);
 			lastfail = 1;
@@ -314,11 +316,12 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				else r_cons_printf ("%s:\n", flag->name);
 			}
 		}
-		if (show_lines && line) {
+		if (show_lines && line)
 			r_cons_strcat (line);
-		}
 		if (show_offset)
 			printoffset (at, show_color, (at==dest));
+		if (show_size)
+			r_cons_printf ("%d ", analop.length);
 		if (show_trace) {
 			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, at);
 			r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
@@ -517,7 +520,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			RAsmOp ao; /* disassemble for the vm .. */
 			int os = core->assembler->syntax;
 			r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-			ret = r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx);
+			r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx);
 			r_asm_set_syntax (core->assembler, os);
 		}
 

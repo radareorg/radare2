@@ -421,6 +421,15 @@ R_API int r_cons_get_size(int *rows) {
 	return I.columns;
 }
 
+R_API void r_cons_show_cursor (int cursor) {
+#if __WINDOWS__
+	// TODO
+#else
+	if (cursor) write (1, "\x1b[?25h", 6);
+	else write(1, "\x1b[?25l", 6);
+#endif
+}
+
 /**
  * void r_cons_set_raw( [0,1] )
  *
