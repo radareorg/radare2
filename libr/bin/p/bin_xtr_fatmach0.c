@@ -33,7 +33,7 @@ static int destroy(RBin *bin) {
 	return R_TRUE;
 }
 static int load(RBin *bin) {
-	if((bin->bin_obj = r_bin_fatmach0_new(bin->file)))
+	if ((bin->bin_obj = r_bin_fatmach0_new (bin->file)))
 		return R_TRUE;
 	return R_FALSE;
 }

@@ -198,7 +198,7 @@ static RBinInfo* info(RBinArch *arch) {
 	ret->bits = PE_(r_bin_pe_get_bits) (arch->bin_obj);
 	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->bin_obj);
 	ret->dbg_info = 0;
-	ret->has_va = 0;
+	ret->has_va = R_TRUE;
 	if (!PE_(r_bin_pe_is_stripped_debug) (arch->bin_obj))
 		ret->dbg_info |= 0x01;
 	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->bin_obj))

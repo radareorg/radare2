@@ -20,7 +20,7 @@ static void break_signal(int sig) {
 
 static inline void r_cons_write (const char *buf, int len) {
 #if __WINDOWS__
-	r_cons_w32_print ((unsigned char *)buf);
+	r_cons_w32_print ((unsigned char *)buf, 0);
 #else
 	if (write (I.fdout, buf, len) == -1) {
 		//eprintf ("r_cons_write: write error\n");
@@ -167,8 +167,8 @@ R_API void r_cons_clear_line() {
 	char white[1024];
 	memset (&white, ' ', sizeof (white));
 	if (I.columns<sizeof (white))
-		white[I.columns] = 0;
-	else white[sizeof (white)] = 0; // HACK
+		white[I.columns-1] = 0;
+	else white[sizeof (white)-1] = 0; // HACK
 	printf ("\r%s\r", white);
 #else
 	printf ("\x1b[0K\r");
@@ -284,7 +284,7 @@ R_API void r_cons_visual_flush() {
 		return;
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-	r_cons_w32_print ((ut8*)I.buffer);
+	r_cons_w32_print ((ut8*)I.buffer, 1);
 #else
 	r_cons_visual_write (I.buffer);
 #endif
@@ -404,7 +404,7 @@ R_API int r_cons_get_size(int *rows) {
 		I.rows = 23;
 	}
 #else
-	const char *str = r_sys_getenv ("COLUMNS");
+	char *str = r_sys_getenv ("COLUMNS");
 	if (str != NULL) {
 		I.columns = atoi (str);
 		I.rows = 23; // XXX. windows must get console size

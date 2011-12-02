@@ -2,9 +2,9 @@
 
 #include "r_core.h"
 
-#define NPF 6
+#define NPF 5
 static int blocksize = 0;
-static const char *printfmt[] = { "x", "pd", "f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pd", "p8", "pc", "ps" };
+static const char *printfmt[] = { "x", "pd", "f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pd", "p8", "pc", };
 static int autoblocksize = 1;
 static int obs = 0;
 
@@ -605,7 +605,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 // TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
 R_API void r_core_visual_title (RCore *core, int color) {
 	const char *filename;
-	char pos[512];
+	char pos[512], foo[512], bar[512];
 	/* automatic block size */
 	if (autoblocksize)
 	switch (core->printidx) {
@@ -628,17 +628,24 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		RFlagItem *f = r_flag_get_at (core->flags, core->offset);
 		if (f) {
 			if (f->offset == core->offset) snprintf (pos, sizeof (pos), "@ %s", f->name);
-			else snprintf (pos, sizeof (pos), "@ %s+%d ((%llx))", f->name, (int)(core->offset-f->offset), f->offset);
+			else snprintf (pos, sizeof (pos), "@ %s+%d (0x%"PFMT64x")", f->name, (int)(core->offset-f->offset), f->offset);
 		} else pos[0] = 0;
 	}
 
 	if (cursor<0) cursor = 0;
 	if (color) r_cons_strcat (Color_YELLOW);
-	if (curset) r_cons_printf ("[0x%08"PFMT64x" %d %s(%d:%d=%d)]> %s\n", core->offset,
-		core->blocksize, core->file->filename, cursor, ocursor,
-		ocursor==-1?1:R_ABS (cursor-ocursor)+1, printfmt[R_ABS (core->printidx%NPF)]);
-	else r_cons_printf ("[0x%08"PFMT64x" %d %s]> %s %s\n", core->offset, core->blocksize,
-		filename, printfmt[R_ABS (core->printidx%NPF)], pos);
+	strncpy (bar, printfmt[R_ABS (core->printidx%NPF)], sizeof (bar)-1);
+	bar[10] = '.'; // chop cmdfmt
+	bar[11] = '.'; // chop cmdfmt
+	bar[12] = 0; // chop cmdfmt
+	if (curset) 
+		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s(%d:%d=%d)]> %s\n", core->offset,
+				core->blocksize, core->file->filename, cursor, ocursor,
+				ocursor==-1?1:R_ABS (cursor-ocursor)+1, bar);
+	else
+		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s]> %s %s\n", core->offset, core->blocksize,
+		filename, bar, pos);
+	r_cons_printf (foo);
 	//r_cons_printf (" %d %d %d\n", core->printidx, core->cons->rows, core->blocksize);
 	if (color) r_cons_strcat (Color_RESET);
 }
@@ -662,7 +669,6 @@ static void r_core_visual_refresh (RCore *core) {
 		r_core_cmd (core, vi, 0);
 		r_cons_column (80);
 	}
-
 	if (zoom) r_core_cmd (core, "pZ", 0);
 	else r_core_cmd (core, printfmt[R_ABS (core->printidx%NPF)], 0);
 	blocksize = core->num->value? core->num->value : core->blocksize;

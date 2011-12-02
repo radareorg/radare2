@@ -1,20 +1,73 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_cons.h>
 
 #if __WINDOWS__
-R_API int r_cons_w32_print(ut8 *ptr) {
+R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
 	int esc = 0;
 	int bg = 0, fg = 1|2|4|8;
 	ut8 *str = ptr;
 	int len = 0;
 	int inv = 0;
+	int linelen = 0;
+	int lines, cols = r_cons_get_size(&lines);
 
 	if (ptr && hConsole)
 	for (; *ptr; ptr++) {
+		if (ptr[0] == 0xa) {
+			int ll = (size_t)(ptr-str);
+			lines--;
+			if (lines<0) 
+				return 0;
+			if (ll<1)
+				continue;
+			if (linelen+ll>cols) {
+				// chop line if too long
+				ll = (cols-linelen)-1;
+			}
+			write (1, str, ll);
+			linelen += ll;
+			esc = 0;
+			str = ptr+1;
+			if (empty) {
+				int wlen = cols-linelen;
+				char white[1024];
+				//wlen = 5;
+				if (wlen>0 && wlen<sizeof (white)) {
+					memset (white, ' ', sizeof (white));
+					write (1, white, wlen-1);
+				}
+			}
+			write (1, "\n\r", 2);
+			linelen = 0;
+			continue;
+		}
 		if (ptr[0] == 0x1b) {
-			write (1, str, ptr-str);
+			int ll = (size_t)(ptr-str);
+			if (str[0]=='\n') {
+				str++;
+				ll--;
+				if (empty) {
+					int wlen = cols-linelen-1;
+					char white[1024];
+					//wlen = 5;
+					if (wlen>0) {
+						memset (white, ' ', sizeof (white));
+						write (1, white, wlen);
+					}
+				}
+				write (1, "\n\r", 2);
+				linelen = 0;
+			}
+			if (linelen+ll>cols) {
+				// chop line if too long
+				ll = (cols-linelen)-1;
+			}
+			if (ll>0) {
+				write (1, str, ll);
+				linelen += ll;
+			}
 			esc = 1;
 			str = ptr + 1;
 			continue;
@@ -76,7 +129,7 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 			} else
 			if (ptr[0]=='3' && ptr[2]=='m') {
 				// http://www.betarun.com/Pages/ConsoleColor/
-				switch(ptr[1]) {
+				switch (ptr[1]) {
 				case '0': // BLACK
 					fg = 0;
 					break;
@@ -115,7 +168,7 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 			} else
 			if (ptr[0]=='4' && ptr[2]=='m') {
 				/* background color */
-				switch(ptr[1]) {
+				switch (ptr[1]) {
 				case '0': // BLACK
 					bg = 0;
 					break;
@@ -154,7 +207,25 @@ R_API int r_cons_w32_print(ut8 *ptr) {
 		} 
 		len++;
 	}
-	write (1, str, ptr-str);
+	/* the ending padding */{
+		int ll = (size_t)(ptr-str);
+		if (ll>0) {
+			write (1, str, ll);
+			linelen += ll;
+		}
+#if 0
+		{
+			int wlen = cols-linelen-2;
+			char white[1024];
+			//wlen = 5;
+			if (wlen>0) {
+				memset (white, ' ', sizeof (white));
+				write (1, white, wlen);
+			}
+		}
+#endif
+		//write (1, "\n", 1);
+	}
 	return len;
 }
 #endif

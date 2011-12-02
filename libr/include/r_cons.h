@@ -171,7 +171,7 @@ R_API int r_cons_pipe_open(const char *file, int append);
 R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__
-R_API int r_cons_w32_print(ut8 *ptr);
+R_API int r_cons_w32_print(ut8 *ptr, int empty);
 #endif
 
 /* control */
