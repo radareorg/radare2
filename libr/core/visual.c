@@ -47,6 +47,7 @@ R_API void r_core_visual_prompt (RCore *core) {
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	r_core_cmd (core, buf, 0);
 	r_cons_any_key ();
+	r_cons_clear00 ();
 	r_cons_show_cursor (R_FALSE);
 	if (curset) r_core_seek (core, oseek, 1);
 }
@@ -205,6 +206,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (r_list_empty (xrefs)) {
 				r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
 				r_cons_any_key ();
+				r_cons_clear00 ();
 			} else {
 				r_list_foreach (xrefs, iter, refi) {
 					fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
@@ -448,6 +450,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_cons_strcat ("Can't paste, clipboard is empty.\n");
 			r_cons_flush ();
 			r_cons_any_key ();
+			r_cons_clear00 ();
 		} else r_core_yank_paste (core, core->offset+cursor, 0);
 		break;
 	case '-':
@@ -590,6 +593,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" q       - back to radare shell\n");
 		r_cons_flush ();
 		r_cons_any_key ();
+		r_cons_clear00 ();
 		break;
 	case 'q':
 	case 'Q':
@@ -639,7 +643,6 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	if (color) r_cons_strcat (Color_RESET);
 }
 
-static int n = 0;
 static void r_core_visual_refresh (RCore *core) {
 	const char *vi;
 	r_cons_get_size (NULL);
@@ -683,6 +686,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			r_core_cmd (core, printfmt[R_ABS (core->printidx%NPF)], 0);
 			r_cons_visual_flush ();
 			r_cons_any_key ();
+			r_cons_clear00 ();
 			r_cons_set_cup (R_FALSE);
 			return 0;
 		}

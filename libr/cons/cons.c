@@ -294,7 +294,6 @@ R_API void r_cons_visual_flush() {
 
 R_API void r_cons_visual_write (char *buffer) {
 	const char white[1024];
-	const char *newline = "\n"Color_RESET;
 	int cols = I.columns;
 	int alen, lines = I.rows;
 	const char *endptr;
@@ -309,14 +308,13 @@ R_API void r_cons_visual_write (char *buffer) {
 		alen = r_str_ansi_len (ptr);
 		*nl = '\n';
 
-
 		if (alen>cols) {
 			endptr = r_str_ansi_chrn (ptr, cols);
 			endptr++;
 			len = (endptr-ptr);
 			if (lines>0) {
 				r_cons_write (ptr, len);
-				r_cons_write (newline, strlen (newline));
+				//r_cons_write (newline, strlen (newline));
 			}
 		} else {
 			if (lines>0) {
@@ -328,13 +326,13 @@ R_API void r_cons_visual_write (char *buffer) {
 					r_cons_write (white, w);
 				}
 			}
+			// TRICK to empty columns.. maybe buggy in w32
+			if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
+				lines = I.rows;
+				r_cons_write (ptr, len);
+			}
 		}
-		lines--;
-		// TRICK for columns.. maybe buggy in w32
-		if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
-			lines = I.rows;
-			r_cons_write (ptr, len);
-		}
+		lines--; // do not use last line
 		ptr = nl+1;
 	}
 }
