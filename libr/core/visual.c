@@ -427,11 +427,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		//r_core_cmd(core, "s eip", 0);
 		break;
 	case 'p':
-		core->printidx = (core->printidx+1)%NPF;
+		core->printidx = R_ABS ((core->printidx+1)%NPF);
 		r_cons_clear00 ();
 		break;
 	case 'P':
-		core->printidx = (core->printidx-1)%NPF;
+		if (core->printidx)
+			core->printidx--;
+		else core->printidx = NPF-1;
 		r_cons_clear00 ();
 		break;
 	case 'm':
@@ -643,8 +645,8 @@ R_API void r_core_visual_title (RCore *core, int color) {
 				core->blocksize, core->file->filename, cursor, ocursor,
 				ocursor==-1?1:R_ABS (cursor-ocursor)+1, bar);
 	else
-		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s]> %s %s\n", core->offset, core->blocksize,
-		filename, bar, pos);
+		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s]> %s %s\n",
+			core->offset, core->blocksize, filename, bar, pos);
 	r_cons_printf (foo);
 	//r_cons_printf (" %d %d %d\n", core->printidx, core->cons->rows, core->blocksize);
 	if (color) r_cons_strcat (Color_RESET);

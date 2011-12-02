@@ -454,7 +454,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 	return ret;
 }
 
-R_API int r_core_block_size(RCore *core, ut32 bsize) {
+R_API int r_core_block_size(RCore *core, int bsize) {
 	int ret = R_FALSE;
 	if (bsize == core->blocksize)
 		return R_FALSE;

@@ -148,7 +148,7 @@ R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_seek_next (RCore *core, const char *type);
 R_API int r_core_seek_align(struct r_core_t *core, ut64 align, int count);
 R_API int r_core_block_read(struct r_core_t *core, int next);
-R_API int r_core_block_size(struct r_core_t *core, ut32 bsize);
+R_API int r_core_block_size(struct r_core_t *core, int bsize);
 R_API int r_core_read_at(struct r_core_t *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_visual(struct r_core_t *core, const char *input);
 R_API int r_core_visual_cmd(struct r_core_t *core, int ch);
