@@ -42,7 +42,7 @@ static void decode_unknown(struct state *s, struct directive *d) {
 	printf("Opcode 0x%x reg %d mode %d operand 0x%x",
 	       in->in_opcode, in->in_reg, in->in_mode, in->in_operand);
 #endif
-	sprintf(d->d_asm, "DC\t0x%4x", i2u16(&d->d_inst));
+	sprintf(d->d_asm, "DC 0x%4x", i2u16(&d->d_inst));
 }
 
 static int decode_fixed(struct state *s, struct directive *d) {

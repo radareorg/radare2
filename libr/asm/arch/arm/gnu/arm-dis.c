@@ -330,15 +330,15 @@ static const struct opcode32 coprocessor_opcodes[] =
   {FPU_VFP_EXT_V1xD, 0x0ee60a10, 0x0fff0fff, "fmxr%c mvfr1, %12-15r"},
   {FPU_VFP_EXT_V1xD, 0x0ee70a10, 0x0fff0fff, "fmxr%c mvfr0, %12-15r"},
   {FPU_VFP_EXT_V1xD, 0x0ee80a10, 0x0fff0fff, "fmxr%c fpexc, %12-15r"},
-  {FPU_VFP_EXT_V1xD, 0x0ee90a10, 0x0fff0fff, "fmxr%c fpinst, %12-15r\t@ Impl def"},
-  {FPU_VFP_EXT_V1xD, 0x0eea0a10, 0x0fff0fff, "fmxr%c fpinst2, %12-15r\t@ Impl def"},
+  {FPU_VFP_EXT_V1xD, 0x0ee90a10, 0x0fff0fff, "fmxr%c fpinst, %12-15r ; @ Impl def"},
+  {FPU_VFP_EXT_V1xD, 0x0eea0a10, 0x0fff0fff, "fmxr%c fpinst2, %12-15r ; @ Impl def"},
   {FPU_VFP_EXT_V1xD, 0x0ef00a10, 0x0fff0fff, "fmrx%c %12-15r, fpsid"},
   {FPU_VFP_EXT_V1xD, 0x0ef10a10, 0x0fff0fff, "fmrx%c %12-15r, fpscr"},
   {FPU_VFP_EXT_V1xD, 0x0ef60a10, 0x0fff0fff, "fmrx%c %12-15r, mvfr1"},
   {FPU_VFP_EXT_V1xD, 0x0ef70a10, 0x0fff0fff, "fmrx%c %12-15r, mvfr0"},
   {FPU_VFP_EXT_V1xD, 0x0ef80a10, 0x0fff0fff, "fmrx%c %12-15r, fpexc"},
-  {FPU_VFP_EXT_V1xD, 0x0ef90a10, 0x0fff0fff, "fmrx%c %12-15r, fpinst\t@ Impl def"},
-  {FPU_VFP_EXT_V1xD, 0x0efa0a10, 0x0fff0fff, "fmrx%c %12-15r, fpinst2\t@ Impl def"},
+  {FPU_VFP_EXT_V1xD, 0x0ef90a10, 0x0fff0fff, "fmrx%c %12-15r, fpinst ; @ Impl def"},
+  {FPU_VFP_EXT_V1xD, 0x0efa0a10, 0x0fff0fff, "fmrx%c %12-15r, fpinst2 ; @ Impl def"},
   {FPU_VFP_EXT_V1, 0x0e000b10, 0x0ff00fff, "fmdlr%c %z2, %12-15r"},
   {FPU_VFP_EXT_V1, 0x0e100b10, 0x0ff00fff, "fmrdl%c %12-15r, %z2"},
   {FPU_VFP_EXT_V1, 0x0e200b10, 0x0ff00fff, "fmdhr%c %z2, %12-15r"},
@@ -832,7 +832,7 @@ static const struct opcode32 neon_opcodes[] =
 static const struct opcode32 arm_opcodes[] =
 {
   /* ARM instructions.  */
-  {ARM_EXT_V1, 0xe1a00000, 0xffffffff, "nop \t\t(mov r0,r0)"},
+  {ARM_EXT_V1, 0xe1a00000, 0xffffffff, "nop ; (mov r0,r0)"},
   {ARM_EXT_V4T | ARM_EXT_V5, 0x012FFF10, 0x0ffffff0, "bx%c %0-3r"},
   {ARM_EXT_V2, 0x00000090, 0x0fe000f0, "mul%20's%c %16-19r, %0-3r, %8-11r"},
   {ARM_EXT_V2, 0x00200090, 0x0fe000f0, "mla%20's%c %16-19r, %0-3r, %8-11r, %12-15r"},
@@ -1067,12 +1067,12 @@ static const struct opcode32 arm_opcodes[] =
   {ARM_EXT_V1, 0x01a00060, 0x0def0060, "ror%20's%c %12-15r, %q"},
   {ARM_EXT_V1, 0x01c00000, 0x0de00000, "bic%20's%c %12-15r, %16-19r, %o"},
   {ARM_EXT_V1, 0x01e00000, 0x0de00000, "mvn%20's%c %12-15r, %o"},
-  {ARM_EXT_V1, 0x052d0004, 0x0fff0fff, "push%c {%12-15r}\t\t; (str%c %12-15r, %a)"},
+  {ARM_EXT_V1, 0x052d0004, 0x0fff0fff, "push%c {%12-15r} ; (str%c %12-15r, %a)"},
   {ARM_EXT_V1, 0x04000000, 0x0e100000, "str%22'b%t%c %12-15r, %a"},
   {ARM_EXT_V1, 0x06000000, 0x0e100ff0, "str%22'b%t%c %12-15r, %a"},
   {ARM_EXT_V1, 0x04000000, 0x0c100010, "str%22'b%t%c %12-15r, %a"},
   {ARM_EXT_V1, 0x06000010, 0x0e000010, "undefined"},
-  {ARM_EXT_V1, 0x049d0004, 0x0fff0fff, "pop%c {%12-15r}\t\t; (ldr%c %12-15r, %a)"},
+  {ARM_EXT_V1, 0x049d0004, 0x0fff0fff, "pop%c {%12-15r} ; (ldr%c %12-15r, %a)"},
   {ARM_EXT_V1, 0x04100000, 0x0c100000, "ldr%22'b%t%c %12-15r, %a"},
   {ARM_EXT_V1, 0x092d0000, 0x0fff0000, "push%c %m"},
   {ARM_EXT_V1, 0x08800000, 0x0ff00000, "stm%c %16-19r%21'!, %m%22'^"},
@@ -1149,7 +1149,7 @@ static const struct opcode16 thumb_opcodes[] =
   /* This is BLX(2).  BLX(1) is a 32-bit instruction.  */
   {ARM_EXT_V5T, 0x4780, 0xff87, "blx%c %3-6r%x"},	/* note: 4 bit register number.  */
   /* ARM V4T ISA (Thumb v1).  */
-  {ARM_EXT_V4T, 0x46C0, 0xFFFF, "nop%c \t\t(mov r8, r8)"},
+  {ARM_EXT_V4T, 0x46C0, 0xFFFF, "nop%c ; (mov r8, r8)"},
   /* Format 4.  */
   {ARM_EXT_V4T, 0x4000, 0xFFC0, "and%C %0-2r, %3-5r"},
   {ARM_EXT_V4T, 0x4040, 0xFFC0, "eor%C %0-2r, %3-5r"},
@@ -1200,7 +1200,7 @@ static const struct opcode16 thumb_opcodes[] =
   {ARM_EXT_V4T, 0x3000, 0xF800, "add%C %8-10r, #%0-7d"},
   {ARM_EXT_V4T, 0x3800, 0xF800, "sub%C %8-10r, #%0-7d"},
   /* format 6 */
-  {ARM_EXT_V4T, 0x4800, 0xF800, "ldr%c %8-10r, [pc, #%0-7W]\t(%0-7a)"},  /* TODO: Disassemble PC relative "LDR rD,=<symbolic>" */
+  {ARM_EXT_V4T, 0x4800, 0xF800, "ldr%c %8-10r, [pc, #%0-7W] ; (%0-7a)"},  /* TODO: Disassemble PC relative "LDR rD,=<symbolic>" */
   /* format 9 */
   {ARM_EXT_V4T, 0x6000, 0xF800, "str%c %0-2r, [%3-5r, #%6-10W]"},
   {ARM_EXT_V4T, 0x6800, 0xF800, "ldr%c %0-2r, [%3-5r, #%6-10W]"},
@@ -1213,7 +1213,7 @@ static const struct opcode16 thumb_opcodes[] =
   {ARM_EXT_V4T, 0x9000, 0xF800, "str%c %8-10r, [sp, #%0-7W]"},
   {ARM_EXT_V4T, 0x9800, 0xF800, "ldr%c %8-10r, [sp, #%0-7W]"},
   /* format 12 */
-  {ARM_EXT_V4T, 0xA000, 0xF800, "add%c %8-10r, pc, #%0-7W\t(adr %8-10r, %0-7a)"},
+  {ARM_EXT_V4T, 0xA000, 0xF800, "add%c %8-10r, pc, #%0-7W ; (adr %8-10r, %0-7a)"},
   {ARM_EXT_V4T, 0xA800, 0xF800, "add%c %8-10r, sp, #%0-7W"},
   /* format 15 */
   {ARM_EXT_V4T, 0xC000, 0xF800, "stmia%c %8-10r!, %M"},

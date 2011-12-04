@@ -266,7 +266,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				if (r_buf_read_at (bin->b, rel[k].r_offset-got_addr+got_offset,
 							(ut8*)&plt_sym_addr, sizeof (Elf_(Addr))) == -1) {
 					eprintf ("Error: read (got)\n");
-					return -1;
+					return UT64_MAX;
 				}
 				free (rel);
 				return (ut64)(plt_sym_addr - 6);
@@ -275,7 +275,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		break;
 	}
 	free (rel);
-	return -1;
+	return UT64_MAX;
 }
 
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -311,7 +311,7 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		eprintf ("Error: read (entry)\n");
 		return 0;
 	}
-	if (buf[0] == 0x68) { // push // x86/32 only
+	if (*buf == 0x68) { // push // x86/32 only
 		memmove (buf, buf+1, 4);
 		return (ut64)((int)(buf[0]+(buf[1]<<8)+(buf[2]<<16)+(buf[3]<<24)))-bin->baddr;
 	}
@@ -319,6 +319,15 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	ut64 entry = (ut64) bin->ehdr.e_entry;
+	if (entry == 0LL) {
+		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
+		if (entry != UT64_MAX) return entry;
+		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".text");
+		if (entry != UT64_MAX) return entry;
+		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init");
+		if (entry != UT64_MAX) return entry;
+	}
 	if (bin->ehdr.e_entry < bin->baddr)
 		return bin->ehdr.e_entry;
 	return bin->ehdr.e_entry - bin->baddr; 
@@ -891,15 +900,22 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 					tsize = 16;
 				} else if (type == R_BIN_ELF_SYMBOLS && sym[k].st_shndx != STN_UNDEF &&
 						ELF_ST_TYPE(sym[k].st_info) != STT_SECTION && ELF_ST_TYPE(sym[k].st_info) != STT_FILE) {
-					toffset = (ut64)sym[k].st_value +
-						(ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
+					int idx = toffset = sym[k].st_shndx;
 					tsize = sym[k].st_size;
+					toffset = sym[k].st_value;
+					if (idx>=0 && idx < bin->ehdr.e_shnum) {
+						// TODO: check indexes not out of range
+						toffset += bin->shdr[idx].sh_offset;
+					} else {
+						//eprintf ("orphan symbol %d %d %s\n", idx, STN_UNDEF, &strtab[sym[k].st_name] );
+						continue;
+					}
 				} else continue;
 				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
 					perror ("realloc (symbols|imports)");
 					return NULL;
 				}
-				ret[ret_ctr].offset = (toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
+				ret[ret_ctr].offset = toffset; //(toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name > strtab_section->sh_size) {
 					perror ("index out of strtab range\n");
@@ -941,7 +957,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			}
 			if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL)
 				return NULL;
-			ret[ret_ctr].last = 1;
+			ret[ret_ctr].last = 1; // ugly dirty hack :D
 			break;
 		}
 	return ret;

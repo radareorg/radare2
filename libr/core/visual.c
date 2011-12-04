@@ -42,7 +42,11 @@ static void r_core_visual_mark(RCore *core, ut8 ch) {
 R_API void r_core_visual_prompt (RCore *core) {
 	char buf[1024];
 	ut64 oseek = core->offset;
+#if __UNIX__
+	r_line_set_prompt (Color_RESET":> ");
+#else
 	r_line_set_prompt (":> ");
+#endif
 	r_cons_show_cursor (R_TRUE);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	r_core_cmd (core, buf, 0);
