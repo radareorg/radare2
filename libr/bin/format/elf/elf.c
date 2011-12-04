@@ -904,6 +904,13 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 					int idx = sym[k].st_shndx;
 					tsize = sym[k].st_size;
 					toffset = (ut64)sym[k].st_value; //-sym_offset; // + (ELF_ST_TYPE(sym[k].st_info) == STT_FUNC?sym_offset:data_offset);
+				} else continue;
+				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
+					perror ("realloc (symbols|imports)");
+					return NULL;
+				}
+				{
+					int idx = sym[k].st_shndx;
 					if (idx>=0 && idx < bin->ehdr.e_shnum) {
 						if (bin->baddr && toffset>bin->baddr)
 							toffset -= bin->baddr;
@@ -913,10 +920,6 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 						//eprintf ("orphan symbol %d %d %s\n", idx, STN_UNDEF, &strtab[sym[k].st_name] );
 						continue;
 					}
-				} else continue;
-				if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL) {
-					perror ("realloc (symbols|imports)");
-					return NULL;
 				}
 				ret[ret_ctr].offset = toffset; //(toffset >= bin->baddr ? toffset -= bin->baddr : toffset);
 				ret[ret_ctr].size = tsize;
