@@ -129,8 +129,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 
 	// do we need hotkeys for data references? not only calls?
 	if (ch>='0'&&ch<='9') {
+		r_io_sundo_push (core->io, core->offset);
 		r_core_seek (core, core->asmqjmps[ch-'0'], 1);
-		r_io_sundo_push (core->io);
 	} else
 	switch (ch) {
 	case 'c':
@@ -249,7 +249,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_seek (core, offset, 1);
 		} else
 			r_core_cmd (core, "s 0", 0);
-		r_io_sundo_push (core->io);
+		r_io_sundo_push (core->io, core->offset);
 		break;
 	case 'G':
 {
@@ -268,7 +268,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			}
 		} else ret = r_core_seek (core, core->file->size-core->blocksize, 1);
 		if (ret != -1)
-			r_io_sundo_push (core->io);
+			r_io_sundo_push (core->io, core->offset);
 }
 		break;
 	case 'h':
@@ -497,12 +497,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '>':
 		r_core_seek_align (core, core->blocksize, 1);
-		r_io_sundo_push (core->io);
+		r_io_sundo_push (core->io, core->offset);
 		break;
 	case '<':
 		r_core_seek_align (core, core->blocksize, -1);
 		r_core_seek_align (core, core->blocksize, -1);
-		r_io_sundo_push (core->io);
+		r_io_sundo_push (core->io, core->offset);
 		break;
 	case '.':
 		r_core_cmd (core, "sr pc", 0); // XXX
@@ -553,8 +553,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_clear ();
 		break;
 	case 'u':
-		if (r_io_sundo (core->io))
-			r_core_seek (core, core->io->off, 1);
+		{
+		ut64 off = r_io_sundo (core->io);
+		if (off != UT64_MAX)
+			r_core_seek (core, off, 1);
+		else eprintf ("Cannot undo\n");
+		}
 		break;
 	case 'U':
 		if (r_io_sundo_redo (core->io))

@@ -1045,7 +1045,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			if (core->io->debug) {
 				off = r_debug_reg_get (core->dbg, input+2);
-				r_io_sundo_push (core->io);
+				r_io_sundo_push (core->io, core->offset);
 				r_core_seek (core, off, 1);
 			}// else eprintf ("cfg.debug is false\n");
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
@@ -1088,7 +1088,7 @@ static int cmd_seek(void *data, const char *input) {
 					break;
 				case 1:
 					r_cons_printf ("0x%08"PFMT64x"  %s\n", item->from, item->str);
-					r_io_sundo_push (core->io);
+					r_io_sundo_push (core->io, core->offset);
 					r_core_seek (core, off, 1);
 					r_core_block_read (core, 0);
 					break;
@@ -1097,7 +1097,7 @@ static int cmd_seek(void *data, const char *input) {
 			} else eprintf ("Usage: sC comment grep\n");
 			break;
 		case ' ':
-			r_io_sundo_push (core->io);
+			r_io_sundo_push (core->io, core->offset);
 			r_core_seek (core, off, 1);
 			r_core_block_read (core, 0);
 			break;
@@ -1117,7 +1117,7 @@ static int cmd_seek(void *data, const char *input) {
 		case '+':
 			if (input[1]!='\0') {
 				delta = (input[1]=='+')? core->blocksize: off;
-				r_io_sundo_push (core->io);
+				r_io_sundo_push (core->io, core->offset);
 				r_core_seek_delta (core, delta);
 			} else if (r_io_sundo_redo (core->io))
 				r_core_seek (core, core->io->off, 0);
@@ -1125,20 +1125,21 @@ static int cmd_seek(void *data, const char *input) {
 		case '-':
 			if (input[1]!='\0') {
 				if (input[1]=='-') delta = -core->blocksize; else delta = -off;
-				r_io_sundo_push (core->io);
+				r_io_sundo_push (core->io, core->offset);
 				r_core_seek_delta (core, delta);
 			} else {
-				if (r_io_sundo (core->io)) {
-					r_core_seek (core, core->io->off, 0);
+				off = r_io_sundo (core->io);
+				if (off != UT64_MAX) {
+					r_core_seek (core, off, 0);
 				} else eprintf ("Cannot undo\n");
 			}
 			break;
 		case 'f':
-			r_io_sundo_push (core->io);
+			r_io_sundo_push (core->io, core->offset);
 			r_core_seek_next (core, r_config_get (core->config, "scr.fkey"));
 			break;
 		case 'F':
-			r_io_sundo_push (core->io);
+			r_io_sundo_push (core->io, core->offset);
 			r_core_seek_previous (core, r_config_get (core->config, "scr.fkey"));
 			break;
 		case 'a':
@@ -1155,11 +1156,11 @@ static int cmd_seek(void *data, const char *input) {
 				r_cmd_call (core->cmd, cmd);
 				free (cmd);
 			}
-			r_io_sundo_push (core->io);
+			r_io_sundo_push (core->io, core->offset);
 			r_core_seek_align (core, off, 0);
 			break;
 		case 'b':
-			r_io_sundo_push (core->io);
+			r_io_sundo_push (core->io, core->offset);
 			r_core_anal_bb_seek (core, off);
 			break;
 		case 'n':
