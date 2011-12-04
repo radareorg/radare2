@@ -56,7 +56,7 @@ static int help () {
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
 		"  -s    hexstr -> bin     ;  rax2 -s 43 4a 50\n"
 		"  -S    bin -> hexstr     ;  rax2 -S C  J  P\n"
-		"  -V    version           ;  rax2 -V\n"
+		"  -v    version           ;  rax2 -V\n"
 		"  -x    hash string       ;  rax2 -x linux osx\n"
 		"  -k    keep base         ;  rax2 -k 33+3 -> 36\n"
 		"  -h    help              ;  rax2 -h\n");
@@ -90,7 +90,7 @@ static int rax (char *str, int len, int last) {
 		case 'k':
 			flags ^= 32;
 			break;
-		case 'V':
+		case 'v':
 			printf ("rax2 v"R2_VERSION"\n");
 			break;
 		case '\0':

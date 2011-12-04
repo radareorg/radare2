@@ -6,8 +6,7 @@
 .Nd radare base converter
 .Sh SYNOPSIS
 .Nm rax2
-.Op Fl V
-.Op Fl h
+.Op Fl ebsSvxkh
 .Op [value] ...
 .Sh DESCRIPTION
 This command is part of the radare project.
@@ -17,37 +16,58 @@ This command allows you to convert values between positive and negative integer,
 .Bl -tag -width Fl
 .It Fl e
 Swap endian.
+.It Fl b
+Convert from binary string to caracter (rax2 -b 01000101)
+.It Fl s
+Convert from hex string to caracter (rax2 -s 43 4a 50)
+.It Fl S
+Convert from hex string to caracter (rax2 -S C J P)
+.It Fl v
+Show program version
+.It Fl x
+Convert a string into a hash
+.It Fl k
+Keep de same base as the input data
 .It Fl h
-Show usage help message.
+Show usage help message
 .El
 .Sh USAGE
 .Pp
-With no arguments, rax reads values from stdin. You can pass one or more values as arguments, and swap endiannes of the output with the '\-e' flag.
+Available variable types are:
 .Pp
-TODO: Using '\-' as argument rax will read binary data from stdin and print out the hex pairs to stdout.
+  int   ->  hex    rax2 10
+  hex   ->  int    rax2 0xa
+  -int  ->  hex    rax2 -77
+  -hex  ->  int    rax2 0xffffffb3
+  int   ->  bin    rax2 b30
+  bin   ->  int    rax2 1010d
+  float ->  hex    rax2 3.33f
+  hex   ->  float  rax2 Fx40551ed8
+  oct   ->  hex    rax2 35o
+  hex   ->  oct    rax2 Ox12 (O is a letter)
+  bin   ->  hex    rax2 1100011b
+  hex   ->  bin    rax2 Bx63
 .Pp
-  $ rax2 \-33 \-e \-33
-  0xffffffdf
-  0xdfffffff
+With no arguments, rax2 reads values from stdin. You can pass one or more values
+as arguments.
 .Pp
-TODO: The '\-s' flag converts radare into a hexpair-to-binary converter, so you can do 'unpack' hexpair encoded strings easily.
+  $ rax2 33 0x41 0101b
+  0x21
+  65
+  0x5
+.Pp
+You can do 'unpack' hexpair encoded strings easily.
 .Pp
   $ rax2 \-s 41 42 43
   ABC
 .Pp
+And it supports some math operations.
+.Pp
+  $ rax2
+  0x5*101b+5
+  30
+.Pp
 It is very useful tool for scripting, so you can read floating point values, or get the integer offset of a jump or a stack delta when analyzing programs.
-.Pp
-Available variable types are:
-.Pp
-  integer          10
-  zeropadding     010
-  float           10f
-  hexadecimal    0x10
-  hex to float   Fx10
-  oct to hex      023 (or 23o)
-  hex to oct     Ox20 (note 'O' is not zero)
-  bin to hex    1101b
-  hex to bin     Bx63
 .Pp
 .Sh SEE ALSO
 .Pp
