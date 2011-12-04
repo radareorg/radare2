@@ -432,13 +432,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'p':
 		core->printidx = R_ABS ((core->printidx+1)%NPF);
-		r_cons_clear00 ();
 		break;
 	case 'P':
 		if (core->printidx)
 			core->printidx--;
 		else core->printidx = NPF-1;
-		r_cons_clear00 ();
 		break;
 	case 'm':
 		r_core_visual_mark (core, r_cons_readchar ());

@@ -308,7 +308,8 @@ R_API char *r_line_readline() {
 			return NULL; //I.buffer.data;
 		buf[0] = ch;
 		
-		r_cons_clear_line();
+		if (I.echo)
+			r_cons_clear_line();
 		columns = r_cons_get_size (NULL)-2;
 		if (columns<1)
 			columns = 40;
