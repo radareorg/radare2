@@ -19,8 +19,6 @@ The compiler used is the one configured by the CC environment. This has been tes
 Uses sflib (shellforge4) includes to get the syscall definitions.
 .Pp
 Only linux/darwin x86-32/64 is supported at the moment. Planned support for more architectures.
-.Pp
-
 .Sh OPTIONS
 .Pp
 .Bl -tag -width Fl
@@ -57,20 +55,20 @@ show hexpair bytes
   hi.c.bin
 .Pp
   # Linked into a tiny binary. This is 294 bytes
-  $ wc -c < hi.c.bin
+  $ wc \-c < hi.c.bin
      294
 .Pp
   $ ./hi.c.bin
   Hello World
 .Pp
   # The compiled shellcode has zeroes
-  $ ragg2-cc -x hi.c
+  $ ragg2-cc \-x hi.c
   e90000000083ec0ce800000000588d882a000000b804000000606a0651
   6a0150cd8083c41061b8010000006a0050cd8083c40883c40cc368656c
   6c6f0a00
 .Pp
   # Use a xor encoder with key 32 to bypass
-  $ ragg2 -e xor -c key=32 -B `ragg2-cc -x hi.c`
+  $ ragg2 \-e xor \-c key=32 \-B `ragg2-cc \-x hi.c`
   6a3e596a205be8ffffffffc15e4883c60d301e48ffc6e2f9c920202020
   a3cc2cc82020202078ada80a2020209824202020404a26714a2170eda0
   a3e4304198212020204a2070eda0a3e428a3e42ce348454c4c4f2a20

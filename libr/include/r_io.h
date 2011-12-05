@@ -279,9 +279,9 @@ R_API ut64 r_io_section_next(RIO *io, ut64 o);
 R_API int r_io_undo_init(RIO *io);
 R_API void r_io_undo_enable(RIO *io, int seek, int write);
 /* seek undo */
-R_API ut64 r_io_sundo(RIO *io);
+R_API ut64 r_io_sundo(RIO *io, ut64 offset);
 R_API ut64 r_io_sundo_last(RIO *io);
-R_API int r_io_sundo_redo(RIO *io);
+R_API ut64 r_io_sundo_redo(RIO *io);
 R_API void r_io_sundo_push(RIO *io, ut64 off);
 R_API void r_io_sundo_reset(RIO *io);
 R_API void r_io_sundo_list(RIO *io);

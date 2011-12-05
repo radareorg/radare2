@@ -552,15 +552,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'u':
 		{
-		ut64 off = r_io_sundo (core->io);
+		ut64 off = r_io_sundo (core->io, core->offset);
 		if (off != UT64_MAX)
 			r_core_seek (core, off, 1);
 		else eprintf ("Cannot undo\n");
 		}
 		break;
 	case 'U':
-		if (r_io_sundo_redo (core->io))
-			r_core_seek (core, core->io->off, 1);
+		{
+		ut64 off = r_io_sundo_redo (core->io);
+		if (off != UT64_MAX)
+			r_core_seek (core, off, 1);
+		}
 		break;
 	case 'z':
 		if (zoom && cursor) {

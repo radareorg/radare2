@@ -1,6 +1,6 @@
 DEBUG=no
 FILE=malloc://1024
-ARGS=""
+ARGS="-a x86 -b 32"
 CMDS='
 "wa nop;mov eax,33"
 e asm.profile=simple

@@ -1119,8 +1119,11 @@ static int cmd_seek(void *data, const char *input) {
 				delta = (input[1]=='+')? core->blocksize: off;
 				r_io_sundo_push (core->io, core->offset);
 				r_core_seek_delta (core, delta);
-			} else if (r_io_sundo_redo (core->io))
-				r_core_seek (core, core->io->off, 0);
+			} else {
+				off = r_io_sundo_redo (core->io);
+				if (off != UT64_MAX)
+					r_core_seek (core, off, 0);
+			}
 			break;
 		case '-':
 			if (input[1]!='\0') {
@@ -1128,7 +1131,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_io_sundo_push (core->io, core->offset);
 				r_core_seek_delta (core, delta);
 			} else {
-				off = r_io_sundo (core->io);
+				off = r_io_sundo (core->io, core->offset);
 				if (off != UT64_MAX) {
 					r_core_seek (core, off, 0);
 				} else eprintf ("Cannot undo\n");
