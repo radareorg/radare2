@@ -184,7 +184,10 @@ static int use_stdin () {
 		buf[n] = 0;
 		//fgets (buf, sizeof (buf), stdin);
 		if (feof (stdin)) break;
-		buf[strlen (buf)-1] = '\0';
+		if ((flags & 4) && strlen (buf) < sizeof (buf)) // -S
+			buf[strlen (buf)] = '\0';
+		else
+			buf[strlen (buf)-1] = '\0';
 		if (!rax (buf, n, 0)) break;
 	}
 	return 0;

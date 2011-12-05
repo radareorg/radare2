@@ -1722,7 +1722,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			r_cons_printf ("file\t%s\n", fn);
 			core->file->size = r_file_size (fn);
-			if (dbg) dbg = R_IO_WRITE|R_IO_EXEC;
+			if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 			r_cons_printf ("fd\t%d\n", core->file->fd->fd);
 			r_cons_printf ("size\t0x%x\n", core->file->size);
 			r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
@@ -4314,11 +4314,11 @@ static int cmd_system(void *data, const char *input) {
 }
 
 static int cmd_open(void *data, const char *input) {
+	ut64 addr;
+	int num = -1;
 	RCore *core = (RCore*)data;
 	RCoreFile *file;
-	ut64 addr;
-	char *ptr, *path;
-	int perm, num = -1;
+	char *ptr;
 
 	switch (*input) {
 	case '\0':
@@ -4348,17 +4348,7 @@ static int cmd_open(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 'o':
-		perm = core->file->rwx;
-		addr = 0; // XXX ? check file->map ?
-		path = strdup (core->file->uri);
-		if (r_config_get_i (core->config, "cfg.debug"))
-			r_debug_kill (core->dbg, R_FALSE, 9); // KILL
-		r_core_file_close (core, core->file);
-		file = r_core_file_open (core, path, perm, addr);
-		if (file) eprintf ("File %s reopened\n", path);
-		else eprintf ("Cannot reopen '%s'\n", path);
-		// TODO: in debugger must select new PID
-		free (path);
+		r_core_file_reopen (core, input+2);
 		break;
 	case '?':
 	default:
@@ -5841,12 +5831,16 @@ static int cmd_debug(void *data, const char *input) {
 			r_debug_use (core->dbg, input+2);
 		else r_debug_plugin_list (core->dbg);
 		break;
+	case 'o':
+		r_core_file_reopen (core, input[1]? input+2: NULL);
+		break;
 	default:
 		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"
 		" dh [handler]   list or set debugger handler\n"
 		" dH [handler]   transplant process to a new handler\n"
 		" dd             file descriptors (!fd in r1)\n"
 		" ds[ol] N       step, over, source line\n"
+		" do             open process (reload, alias for 'oo')\n"
 		" dp[=*?t][pid]  list, attach to process or thread id\n"
 		" dc[?]          continue execution. dc? for more\n"
 		" dr[?]          cpu registers, dr? for extended help\n"
