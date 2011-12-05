@@ -68,12 +68,14 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		free (ptr);
 		return NULL;
 	}
-	for (tokcount=0; ; tokcount++) {
+	tokens[0] = NULL;
+	for (tokcount=0; tokcount<1023; tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ",");
 		if (tok == NULL)
 			break;
 		tokens[tokcount] = r_str_trim_head_tail (tok);
 	}
+	tokens[tokcount] = NULL;
 	for (at = from, matchcount = 0; at < to; at += core->blocksize-OPSZ) {
 		if (r_cons_singleton ()->breaked)
 			break;

@@ -24,7 +24,7 @@ static int usage () {
 	" -w [off:hex]    patch hexpairs at given offset\n"
 	" -p [padding]    add padding after compilation (padding=n10s32)\n"
 	"                 ntas : begin nop, trap, 'a', sequence\n"
-	"                 NTAS : same as above, but at begining\n"
+	"                 NTAS : same as above, but at beginning\n"
 	" -s              show assembler\n"
 	" -r              show raw bytes instead of hexpairs\n"
 	" -x              execute\n"

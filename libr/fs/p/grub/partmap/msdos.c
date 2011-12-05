@@ -17,6 +17,7 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <r_types.h>
 #include <grub/partition.h>
 #include <grub/msdos_partition.h>
 #include <grub/disk.h>
@@ -91,10 +92,10 @@ pc_partition_map_iterate (grub_disk_t disk,
 
 			p.msdostype = e->type;
 			grub_dprintf ("partition",
-					"partition %d: flag 0x%x, type 0x%x, start 0x%llx, len 0x%llx\n",
+					"partition %d: flag 0x%x, type 0x%x, start 0x%"PFMT64x", len 0x%"PFMT64x"\n",
 					p.index, e->flag, e->type,
-					(unsigned long long) p.start,
-					(unsigned long long) p.len);
+					(ut64) p.start,
+					(ut64) p.len);
 
 			/* If this is a GPT partition, this MBR is just a dummy.  */
 			if (e->type == GRUB_PC_PARTITION_TYPE_GPT_DISK && p.index == 0)

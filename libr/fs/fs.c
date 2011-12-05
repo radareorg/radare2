@@ -112,7 +112,7 @@ R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 d
 		return NULL;
 	}
 	r_list_append (fs->roots, root);
-	eprintf ("Mounted %s on %s at 0x%llx\n", fstype, str, delta);
+	eprintf ("Mounted %s on %s at 0x%"PFMT64x"\n", fstype, str, delta);
 	free (str);
 	return root;
 }
@@ -584,9 +584,10 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
-			if (input[0] == '/')
-				strncpy (str, root, sizeof (str)-1);
-			else strncpy (str, path, sizeof (str)-1);
+			if (input[0] == '/') {
+				if (root) strncpy (str, root, sizeof (str)-1);
+				else str[0] = 0;
+			} else strncpy (str, path, sizeof (str)-1);
 			strcat (str, "/");
 			strcat (str, input);
 			file = r_fs_open (fs, str);
@@ -605,9 +606,11 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
-			if (input[0] == '/')
-				strncpy (str, root, sizeof (str)-1);
-			else strncpy (str, path, sizeof (str)-1);
+			if (input[0] == '/') {
+				if (root)
+					strncpy (str, root, sizeof (str)-1);
+				else str[0] = 0;
+			} else strncpy (str, path, sizeof (str)-1);
 			strcat (str, "/");
 			strcat (str, input);
 			file = r_fs_open (fs, str);

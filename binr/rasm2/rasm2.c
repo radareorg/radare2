@@ -54,6 +54,8 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int
 	ut64 word = 0, clen = 0; 
 
 	if (bin) {
+		if (len<0)
+			return R_FALSE;
 		clen = len; // XXX
 		data = (ut8*)buf;
 	} else if (ascii) {
@@ -63,7 +65,7 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int
 		for (; *ptr; ptr++)
 			if (*ptr!=' ' && *ptr!='\n' && *ptr!='\r')
 				if (!(++word%2)) clen++;
-		data = malloc (clen);
+		data = malloc (clen+1);
 		if (r_hex_str2bin (buf, data)==-1)
 			goto beach;
 	}

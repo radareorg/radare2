@@ -99,7 +99,7 @@ static int config_cfgdebug_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (core && core->io)
 		core->io->debug = node->i_value;
-	if (core->dbg && node->i_value) {
+	if (core && core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
 		r_debug_use (core->dbg, dbgbackend);
 		if (!strcmp (dbgbackend, "bf"))
@@ -374,6 +374,7 @@ static int config_asmbits_callback(void *user, void *data) {
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
 	const char *asmos = r_config_get (core->config, "asm.os");
 	const char *asmarch = r_config_get (core->config, "asm.arch");
+	if (core && core->anal)
 	if (!r_syscall_setup (core->anal->syscall, asmarch,
 			asmos, node->i_value)) {
 		//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",

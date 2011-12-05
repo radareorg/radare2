@@ -162,15 +162,15 @@ printf ("DIR(%s)\n", path);
 printf ("FILE(%s)\n", p);
 printf ("FILEN %d\n", n);
 #endif
- 			list = p? r_sys_dir (path):NULL;
+ 			list = p? r_sys_dir (path): NULL;
 			if (list) {
 				char buf[4096];
 				r_list_foreach (list, iter, str) {
 					if (*str == '.')
 						continue;
-					if (!*p || !memcmp (str, p, n)) {
+					if (!p || !*p || !memcmp (str, p, n)) {
 						snprintf (buf, sizeof (buf), "%s%s%s",
-							path, strlen(path)>1?"/":"", str);
+							path, strlen (path)>1?"/":"", str);
 						tmp_argv[i++] = strdup (buf);
 						if (i==TMP_ARGV_SZ)
 							break;
@@ -708,13 +708,13 @@ reaccept:
 				r_socket_read_block (c, (ut8*)&bufr, 4);
 				r_mem_copyendian ((ut8*)&i, (ut8 *)bufr, 4, !endian);
 				if (i>0 && i<RMT_MAX) {
-					if ((cmd=malloc(i))) {
+					if ((cmd=malloc (i))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
 						eprintf ("len: %d cmd: '%s'\n",
 							i, cmd); fflush(stdout);
 						cmd_output = r_core_cmd_str (core, cmd);
-						free(cmd);
+						free (cmd);
 					} else eprintf ("rap: cannot malloc\n");
 				} else eprintf ("rap: invalid length '%d'\n", i);
 				/* write */
@@ -724,14 +724,14 @@ reaccept:
 					cmd_output = strdup("");
 					cmd_len = 0; 
 				}
-				bufw = malloc(cmd_len + 5);
+				bufw = malloc (cmd_len + 5);
 				bufw[0] = RMT_CMD | RMT_REPLY;
-				r_mem_copyendian((ut8*)bufw+1, (ut8 *)&cmd_len, 4, !endian);
-				memcpy(bufw+5, cmd_output, cmd_len);
+				r_mem_copyendian ((ut8*)bufw+1, (ut8 *)&cmd_len, 4, !endian);
+				memcpy (bufw+5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);
 				r_socket_flush (c);
-				free(bufw);
-				free(cmd_output);
+				free (bufw);
+				free (cmd_output);
 				break;
 				}
 			case RMT_WRITE:
@@ -771,18 +771,19 @@ reaccept:
 			case RMT_SYSTEM:
 				// read
 				r_socket_read_block (c, buf, 4);
-				r_mem_copyendian((ut8*)&i, buf, 4, !endian);
+				r_mem_copyendian ((ut8*)&i, buf, 4, !endian);
 				if (i>0&&i<RMT_MAX) {
-					ptr = (ut8 *) malloc(i+6);
+					ptr = (ut8 *) malloc (i+6);
+					if (!ptr) return R_FALSE;
 					ptr[5]='!';
 					r_socket_read_block (c, ptr+6, i);
 					ptr[6+i]='\0';
 					//env_update();
 					//pipe_stdout_to_tmp_file((char*)&buf, (char*)ptr+5);
-					strcpy((char*)buf, "/tmp/.out");
+					strcpy ((char*)buf, "/tmp/.out");
 					pipefd = r_cons_pipe_open ((const char *)buf, 0);
 					//eprintf("SYSTEM(%s)\n", ptr+6);
-					system((const char*)ptr+6);
+					system ((const char*)ptr+6);
 					r_cons_pipe_close (pipefd);
 					{
 						FILE *fd = fopen((char*)buf, "r");
@@ -791,33 +792,36 @@ reaccept:
 							eprintf("Cannot open tmpfile\n");
 							i = -1;
 						} else {
-							fseek(fd, 0, SEEK_END);
-							i = ftell(fd);
-							fseek(fd, 0, SEEK_SET);
-							free(ptr);
-							ptr = (ut8 *) malloc(i+5);
-							fread(ptr+5, i, 1, fd);
+							fseek (fd, 0, SEEK_END);
+							i = ftell (fd);
+							fseek (fd, 0, SEEK_SET);
+							free (ptr);
+							ptr = (ut8 *) malloc (i+5);
+							fread (ptr+5, i, 1, fd);
 							ptr[i+5]='\0';
-							fclose(fd);
+							fclose (fd);
 						}
 					}
 					{
 					char *out = r_file_slurp ((char*)buf, &i);
-					free(ptr);
+					free (ptr);
 					//eprintf("PIPE(%s)\n", out);
-					ptr = (ut8 *) malloc(i+5);
+					ptr = (ut8 *) malloc (i+5);
 					if (ptr) {
 						memcpy (ptr+5, out, i);
-						free(out);
+						free (out);
 					}
 					}
 					//unlink((char*)buf);
 				}
 
+				if (!ptr) ptr = (ut8 *) malloc (5); // malloc for 5 byets? c'mon!
+				if (!ptr) return R_FALSE;
+				
 				// send
 				ptr[0] = (RMT_SYSTEM | RMT_REPLY);
 				r_mem_copyendian ((ut8*)ptr+1, (ut8*)&i, 4, !endian);
-				if (i<0)i=0;
+				if (i<0) i = 0;
 				r_socket_write (c, ptr, i+5);
 				r_socket_flush (c);
 				eprintf ("REPLY SENT (%d) (%s)\n", i, ptr+5);

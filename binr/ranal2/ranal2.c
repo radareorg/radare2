@@ -179,6 +179,11 @@ int main(int argc, char **argv) {
 			ptr += 1;
 		}
 		data = malloc (tlen);
+		if (!data) {
+			r_anal_free (anal);
+			r_anal_op_free (op);
+			return 1;
+		}
 		r_hex_str2bin ((char *)buf, data);
 		if (!len || len > tlen) len = tlen;
 		free (buf);

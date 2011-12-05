@@ -648,9 +648,9 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	bar[10] = '.'; // chop cmdfmt
 	bar[11] = '.'; // chop cmdfmt
 	bar[12] = 0; // chop cmdfmt
-	if (curset) 
+	if (curset)
 		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s(%d:%d=%d)]> %s\n", core->offset,
-				core->blocksize, core->file->filename, cursor, ocursor,
+				core->blocksize, filename, cursor, ocursor,
 				ocursor==-1?1:R_ABS (cursor-ocursor)+1, bar);
 	else
 		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s]> %s %s\n",

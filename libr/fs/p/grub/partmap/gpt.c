@@ -17,6 +17,7 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <r_types.h>
 #include <grub/disk.h>
 #include <grub/misc.h>
 #include <grub/mm.h>
@@ -91,9 +92,8 @@ gpt_partition_map_iterate (grub_disk_t disk,
 	  part.index = last_offset;
 	  part.partmap = &grub_gpt_partition_map;
 
-	  grub_dprintf ("gpt", "GPT entry %d: start=%lld, length=%lld\n", i,
-			(unsigned long long) part.start,
-			(unsigned long long) part.len);
+	  grub_dprintf ("gpt", "GPT entry %d: start=%"PFMT64d", length=%"PFMT64d"\n", i,
+			(ut64) part.start, (ut64) part.len);
 
 	  if (hook (disk, &part, closure))
 	    return grub_errno;

@@ -8,7 +8,7 @@ typedef struct r_fs_type_t {
 	int bytelen;
 } RFSType;
 
-RFSType fstypes[] = {
+static RFSType fstypes[] = {
 	{ "hfsplus", 0x400, "H+", 2, 0, 0, 0x400 },
 	{ "fat", 0x36, "FAT12", 5, 0, 0, 0 },
 	{ "fat", 0x52, "FAT32", 5, 0, 0, 0 },

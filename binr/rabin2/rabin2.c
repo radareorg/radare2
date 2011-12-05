@@ -429,6 +429,9 @@ int main(int argc, char **argv) {
 			*p2++ = 0;
 			data = malloc (strlen (p2));
 			datalen = r_hex_str2bin (p2, data);
+		} else {
+			data = NULL;
+			datalen = 0;
 		}
 		code = malloc (strlen (p));
 		codelen = r_hex_str2bin (p, code);

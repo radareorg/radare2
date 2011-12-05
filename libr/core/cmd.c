@@ -1795,7 +1795,7 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 				if (!memcmp (q+1, "0x", 2))
 					sscanf (q+3, "%"PFMT64x, &addr);
 				else sscanf (q+1, "%"PFMT64d, &addr);
-				if (!*fmt) fmt = file;
+				if (!fmt || !*fmt) fmt = file;
 				r_core_magic_at (core, fmt, addr, depth, 1);
 				*q = '@';
 			}
@@ -2352,10 +2352,8 @@ static int cmd_egg(void *data, const char *input) {
 
 static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int len = strlen (input)+1;
-	char *str = alloca (len);
+	char *str = strdup (input+1);
 	ut64 off = core->offset;
-	memcpy (str, input+1, len);
 
 	switch (*input) {
 	case '+':
@@ -2480,6 +2478,7 @@ static int cmd_flag(void *data, const char *input) {
 		" fo               ; show fortunes\n");
 		break;
 	}
+	free (str);
 	return 0;
 }
 
@@ -2539,20 +2538,19 @@ static void var_help() {
 static int var_cmd(RCore *core, const char *str) {
 	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset,
 			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-	char *p,*p2,*p3;
-	int type, delta, len = strlen(str)+1;
+	char *p, *p2, *p3, *ostr;
+	int type, delta;
 
-	p = alloca (len); // XXX: remove this alloca
-	memcpy (p, str, len);
-	str = p;
+	ostr = p = strdup (str);
+	str = (const char *)ostr;
 
 	switch (*str) {
 	case 'V': // show vars in human readable format
 		r_anal_var_list_show (core->anal, fcn, core->offset);
-		return 0;
+		break;
 	case '?':
 		var_help ();
-		return 0;
+		break;
 	case 'v': // frame variable
 	case 'a': // stack arg
 	case 'A': // fastcall arg
@@ -2590,7 +2588,7 @@ static int var_cmd(RCore *core, const char *str) {
 		p = strchr (str, ' ');
 		if (p==NULL) {
 			var_help();
-			return 0;
+			break;
 		}
 		p[0]='\0'; p++;
 		p2 = strchr (p, ' ');
@@ -2608,6 +2606,7 @@ static int var_cmd(RCore *core, const char *str) {
 		var_help ();
 		break;
 	}
+	free (ostr);
 	return 0;
 }
 #endif
@@ -3260,11 +3259,12 @@ static int cmd_write(void *data, const char *input) {
 	ut8 *buf;
 	const char *arg;
 	int wseek, i, size, len = strlen (input);
-	char *tmp, *str = alloca (len)+1;
+	char *tmp, *str, *ostr;
 	RCore *core = (RCore *)data;
 	#define WSEEK(x,y) if(wseek)r_core_seek_delta(x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
-	memcpy (str, input+1, len);
+	str = ostr = strdup (input+1);
+
 	switch (*input) {
 	case 'p':
 		if (input[1]==' ' && input[2]) {
@@ -3408,29 +3408,34 @@ static int cmd_write(void *data, const char *input) {
 		} else eprintf ("Cannot open file '%s'\n", arg);
 		break;
 	case 'w':
-		str = str+1;
+		str++;
 		len = (len-1)<<1;
-		tmp = alloca (len);
-		for (i=0; i<len; i++) {
-			if (i%2) tmp[i] = 0;
-			else tmp[i] = str[i>>1];
-		}
-		str = tmp;
-		r_io_set_fd (core->io, core->file->fd);
-		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
-		WSEEK (core, len);
-		r_core_block_read (core, 0);
+		if (len>0) tmp = malloc (len+1);
+		else tmp = NULL;
+		if (tmp) {
+			for (i=0; i<len; i++) {
+				if (i%2) tmp[i] = 0;
+				else tmp[i] = str[i>>1];
+			}
+			str = tmp;
+			r_io_set_fd (core->io, core->file->fd);
+			r_io_write_at (core->io, core->offset, (const ut8*)str, len);
+			WSEEK (core, len);
+			r_core_block_read (core, 0);
+			free (tmp);
+		} else eprintf ("Cannot malloc %d\n", len);
 		break;
 	case 'x':
 		{
 		int len = strlen (input);
-		ut8 *buf = alloca (len);
+		ut8 *buf = malloc (len+1);
 		len = r_hex_str2bin (input+1, buf);
 		if (len != -1) {
 			r_core_write_at (core, core->offset, buf, len);
 			WSEEK (core, len);
 			r_core_block_read (core, 0);
 		} else eprintf ("Error: invalid hexpair string\n");
+		free (buf);
 		}
 		break;
 	case 'a':
@@ -3493,18 +3498,16 @@ static int cmd_write(void *data, const char *input) {
 	case 'b':
 		{
 		int len = strlen (input);
-		ut8 *buf = alloca (len);
-		len = r_hex_str2bin (input+1, buf);
-		if (len > 0) {
-			r_mem_copyloop (core->block, buf, core->blocksize, len);
-			r_core_write_at (core, core->offset, core->block, core->blocksize);
-			WSEEK (core, core->blocksize);
-			r_core_block_read (core, 0);
-		} else {
-			eprintf ("Wrong argument\n");
-		}
-		break;
-
+		ut8 *buf = malloc (len+1);
+		if (buf) {
+			len = r_hex_str2bin (input+1, buf);
+			if (len > 0) {
+				r_mem_copyloop (core->block, buf, core->blocksize, len);
+				r_core_write_at (core, core->offset, core->block, core->blocksize);
+				WSEEK (core, core->blocksize);
+				r_core_block_read (core, 0);
+			} else eprintf ("Wrong argument\n");
+		} else eprintf ("Cannot malloc %d\n", len+1);
 		}
 		break;
 	case 'm':
@@ -3635,6 +3638,7 @@ static int cmd_write(void *data, const char *input) {
 			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"
 		break;
 	}
+	free (ostr);
 	return 0;
 }
 
@@ -4687,7 +4691,7 @@ static int cmd_macro(void *data, const char *input) {
 static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #if __UNIX__
 	int fds[2];
-	int stdout_fd, status;
+	int stdout_fd, status = 0;
 
 	stdout_fd = dup (1);
 	pipe (fds);
@@ -5312,12 +5316,14 @@ static int step_until(RCore *core, ut64 addr) {
 
 static int step_line(RCore *core, int times) {
 	char file[512], file2[512];
-	int find_meta, line, line2;
+	int find_meta, line = -1, line2 = -1;
 	ut64 off = r_debug_reg_get (core->dbg, "pc");
 	if (off == 0LL) {
 		eprintf ("Cannot 'drn pc'\n");
 		return R_FALSE;
 	}
+	file[0] = 0;
+	file2[0] = 0;
 	if (r_bin_meta_get_line (core->bin, off, file, sizeof (file), &line)) {
 		eprintf ("--> 0x%08"PFMT64x" %s : %d\n", off, file, line);
 		eprintf ("--> %s\n", r_file_slurp_line (file, line, 0));

@@ -48,9 +48,9 @@ static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
 	if (sz<1 || addr==UT64_MAX)
 		return -1;
 	for (x=0; x<words; x++)
-		buf[x] = debug_read_raw (pid, (void*)(at++));
+		buf[x] = (ut32)debug_read_raw (pid, (void*)(at++));
 	if (last) {
-		lr = debug_read_raw (pid, at);
+		lr = (ut32)debug_read_raw (pid, at);
 		memcpy (buf+x, &lr, last) ;
 	}
 	return sz; 

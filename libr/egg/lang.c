@@ -99,7 +99,10 @@ static char *find_include(const char *prefix, const char *file) {
 	else if (*prefix=='$') {
 		char *out = r_sys_getenv (prefix+1);
 		pfx = out? out: strdup ("");
-	} else pfx = strdup (prefix);
+	} else {
+		pfx = strdup (prefix);
+		if (!pfx) return NULL;
+	}
 
 	if (env) {
 		char *str, *ptr = strchr (env, ':');
