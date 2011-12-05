@@ -6,6 +6,7 @@ cd `dirname $PWD/$0` ; cd ..
 . ./sys/CONFIG
 cat sys/CONFIG
 
+export PYTHON
 export PYTHON_VERSION
 export PYTHON_CONFIG
 echo "Using PYTHON_VERSION ${PYTHON_VERSION}"
@@ -18,6 +19,6 @@ cd r2-bindings
 sudo make install-vapi
 cd python
 make clean
-make
+make PYTHON=${PYTHON}
 [ ! "$1" = --no-install ] && \
-	sudo make install PYTHON_VERSION=${PYTHON_VERSION}
+	sudo make install PYTHON=${PYTHON} PYTHON_VERSION=${PYTHON_VERSION}

@@ -35,7 +35,7 @@ namespace Radare {
 		public bool padding(string pad);
 		public bool compile();
 		public bool assemble();
-		public int patch (int off, const uint8* b, int l);
+		//public int patch (int off, const uint8 *b, int l);
 		public string get_source ();
 		public RBuffer get_bin();
 		public string get_assembly();
