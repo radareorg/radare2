@@ -1707,8 +1707,21 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	default:
 		if (core->file) {
+			const char *fn = NULL;
 			int dbg = r_config_get_i (core->config, "cfg.debug");
 			RBinInfo *info = r_bin_get_info (core->bin);
+			if (info) {
+				fn = info->file;
+				r_cons_printf ("type\t%s\n", info->type);
+				r_cons_printf ("os\t%s\n", info->os);
+				r_cons_printf ("arch\t%s\n", info->machine);
+				r_cons_printf ("bits\t%d\n", info->bits);
+				r_cons_printf ("endian\t%s\n", info->big_endian? "big": "little");
+			} else {
+				fn = core->file->filename;
+			}
+			r_cons_printf ("file\t%s\n", fn);
+			core->file->size = r_file_size (fn);
 			if (dbg) dbg = R_IO_WRITE|R_IO_EXEC;
 			r_cons_printf ("fd\t%d\n", core->file->fd->fd);
 			r_cons_printf ("size\t0x%x\n", core->file->size);
@@ -1719,14 +1732,6 @@ static int cmd_info(void *data, const char *input) {
 				r_cons_printf ("packet\t%s\n", core->bin->curxtr->name);
 			if (core->bin->curxtr)
 				r_cons_printf ("format\t%s\n", core->bin->curarch.curplugin->name);
-			if (info) {
-				r_cons_printf ("file\t%s\n", info->file);
-				r_cons_printf ("type\t%s\n", info->type);
-				r_cons_printf ("os\t%s\n", info->os);
-				r_cons_printf ("arch\t%s\n", info->machine);
-				r_cons_printf ("bits\t%d\n", info->bits);
-				r_cons_printf ("endian\t%s\n", info->big_endian?"big":"little");
-			}
 		} else eprintf ("No selected file\n");
 	}
 	return 0;
@@ -3642,6 +3647,7 @@ static int cmd_resize(void *data, const char *input) {
 			delta = (st64)r_num_math (NULL, input);
 			newsize = oldsize + delta;
 			break;
+		case '\0':
 		case '?':
 			r_cons_printf (
 					"Usage: r[+-][ size]\n"
@@ -4079,7 +4085,7 @@ static int cmd_search(void *data, const char *input) {
 						buf[i] = tolower (buf[i]);
 				}
 */
-				if (ret != core->blocksize)
+				if (ret <1)
 					break;
 				if (aes_search) {
 					int delta = r_search_aes_update (core->search, at, buf, ret);

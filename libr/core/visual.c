@@ -248,7 +248,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				offset = 0;
 			r_core_seek (core, offset, 1);
 		} else
-			r_core_cmd (core, "s 0", 0);
+			r_core_seek (core, 0, 1);
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case 'G':
@@ -279,7 +279,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				r_core_seek (core, core->offset-cols, 1);
 				cursor ++;
 			}
-		} else r_core_cmd (core, "s-1", 0);
+		} else r_core_seek (core, core->offset-1, 1);
 		break;
 	case 'H':
 		if (curset) {
@@ -290,7 +290,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				cursor += cols;
 				ocursor += cols;
 			}
-		} else r_core_cmd (core, "s-2", 0);
+		} else r_core_seek (core, core->offset-2, 1);
 		break;
 	case 'l':
 		if (curset) {
@@ -303,7 +303,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					cursor-=cols;
 				}
 			}
-		} else r_core_cmd (core, "s+1", 0);
+		} else r_core_seek (core, core->offset+1, 1);
 		break;
 	case 'L':
 		if (curset) {
@@ -317,7 +317,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					ocursor-=cols;
 				}
 			}
-		} else r_core_cmd (core, "s+2", 0);
+		} else r_core_seek (core, core->offset+2, 1);
 		break;
 	case 'j':
 		if (curset) {
