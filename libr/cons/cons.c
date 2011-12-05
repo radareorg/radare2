@@ -454,7 +454,7 @@ R_API void r_cons_set_cup(int enable) {
 }
 
 R_API void r_cons_column(int c) {
-	char *b = malloc (I.buffer_len);
+	char *b = malloc (I.buffer_len+1);
 	memcpy (b, I.buffer, I.buffer_len);
 	b[I.buffer_len] = 0;
 	r_cons_reset ();
