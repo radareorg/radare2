@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 #include <r_debug.h>
+#include <r_cons.h>
 #include <r_reg.h>
 
 R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
@@ -59,14 +60,15 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 			dbg->printf ("f %s 1 0x%"PFMT64x"\n", item->name, value);
 		else if (rad==2) {
 			if (diff) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
-				dbg->printf ("\x1b[1;37m");
+				dbg->printf (Color_BWHITE); //INVERT); //Color_BWHITE);
 			if (item->flags) {
 				char *str = r_reg_get_bvalue (dbg->reg, item);
 				dbg->printf ("%s = %s%s", item->name, str, ((n+1)%cols)?"   ":"\n");
 				free (str);
 			} else dbg->printf (fmt2, item->name, value, ((n+1)%cols)?"   ":"\n");
 			if (diff) // TODO: use inverse colors
-				dbg->printf ("\x1b[0m");
+				//dbg->printf (Color_INVERT_RESET); //Color_RESET);
+				dbg->printf (Color_RESET); //Color_RESET);
 		} else if (rad==3) {
 			if (diff) {
 				char woot[32];

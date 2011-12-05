@@ -583,13 +583,19 @@ R_API int r_core_anal_all(RCore *core) {
 					R_ANAL_REF_TYPE_NULL, depth);
 	/* Symbols (Imports are already analized by rabin2 on init) */
 	if ((list = r_bin_get_symbols (core->bin)) != NULL)
-		r_list_foreach (list, iter, symbol)
+		r_list_foreach (list, iter, symbol) {
+			if (core->cons->breaked)
+				break;
 			if (!strncmp (symbol->type,"FUNC", 4))
 				r_core_anal_fcn (core, offset + va?baddr+symbol->rva:symbol->offset, -1,
 						R_ANAL_REF_TYPE_NULL, depth);
+		}
 	/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
-	r_list_foreach (core->anal->fcns, iter, fcni)
+	r_list_foreach (core->anal->fcns, iter, fcni) {
+		if (core->cons->breaked)
+			break;
 		if (!memcmp (fcni->name, "sym.", 4) || !memcmp (fcni->name, "main", 4))
 			fcni->type = R_ANAL_FCN_TYPE_SYM;
+	}
 	return R_TRUE;
 }

@@ -3184,7 +3184,11 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'a':
+		r_cons_break (NULL, NULL);
 		r_core_anal_all (core);
+		if (core->cons->breaked)
+			eprintf ("Interrupted\n");
+		r_cons_break_end();
 		break;
 	case 'p':
 		r_core_search_preludes (core);

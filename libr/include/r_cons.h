@@ -99,6 +99,8 @@ typedef struct r_cons_t {
 
 #define R_CONS_KEY_ESC 0x1b
 
+#define Color_INVERT         "\x1b[7m"
+#define Color_INVERT_RESET   "\x1b[27m"
 /* plain colors */
 #define Color_BLACK    "\x1b[30m"
 #define Color_BGBLACK  "\x1b[40m"
