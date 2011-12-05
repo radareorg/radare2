@@ -1132,9 +1132,8 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_seek_delta (core, delta);
 			} else {
 				off = r_io_sundo (core->io, core->offset);
-				if (off != UT64_MAX) {
+				if (off != UT64_MAX)
 					r_core_seek (core, off, 0);
-				} else eprintf ("Cannot undo\n");
 			}
 			break;
 		case 'f':

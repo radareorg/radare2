@@ -467,8 +467,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				cursor:ocursor, R_ABS (ocursor-cursor)+1);
 			r_core_cmd (core, buf, 0);
 		} else {
-			r_core_block_size (core, core->blocksize-1);
-			r_cons_clear ();
+			if (!autoblocksize)
+				r_core_block_size (core, core->blocksize-1);
 		}
 		break;
 	case '+':
@@ -481,17 +481,17 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				cursor<ocursor? cursor: ocursor, R_ABS (ocursor-cursor)+1);
 			r_core_cmd (core, buf, 0);
 		} else {
-			r_core_block_size (core, core->blocksize+1);
-			//r_cons_clear ();
+			if (!autoblocksize)
+				r_core_block_size (core, core->blocksize+1);
 		}
 		break;
 	case '/':
-		r_core_block_size (core, core->blocksize-cols);
-		r_cons_clear ();
+		if (!autoblocksize)
+			r_core_block_size (core, core->blocksize-cols);
 		break;
 	case '*':
-		r_core_block_size (core, core->blocksize+cols);
-		//r_cons_clear ();
+		if (!autoblocksize)
+			r_core_block_size (core, core->blocksize+cols);
 		break;
 	case '>':
 		r_core_seek_align (core, core->blocksize, 1);
@@ -574,7 +574,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		zoom = !zoom;
 		break;
 	case '?':
-		r_cons_clear00 ();
 		r_cons_printf (
 		"\nVisual mode help:\n\n"
 		" >||<    - seek aligned to block size\n"

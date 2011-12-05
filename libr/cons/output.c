@@ -3,6 +3,51 @@
 #include <r_cons.h>
 
 #if __WINDOWS__
+static void fill_tail (int cols, int lines) {
+	if (0) {
+		char b[16];
+		sprintf(b, "EOF(%d)", lines);
+		write (1, b, strlen (b));
+	}
+	/* fill the rest of screen */
+	lines++; // hack
+	if (lines>0) {
+		char white[1024];
+		memset (white, ' ', sizeof (white));
+		if (cols>sizeof (white))
+			cols = sizeof (white);
+		lines--;
+		white[cols]='\n';
+		while (lines-->0)
+			write (1, white, cols);
+	}
+}
+
+static void w32_clear() {
+	static HANDLE hStdout = NULL;
+	static CONSOLE_SCREEN_BUFFER_INFO csbi;
+	const COORD startCoords = { 0, 0 };
+	DWORD dummy;
+	
+	if (!hStdout) {
+		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+		GetConsoleScreenBufferInfo (hStdout, &csbi);
+		//GetConsoleWindowInfo (hStdout, &csbi);
+	}
+	FillConsoleOutputCharacter (hStdout, ' ',
+		csbi.dwSize.X * csbi.dwSize.Y, startCoords, &dummy);
+}
+
+void w32_gotoxy(int x, int y) {
+        static HANDLE hStdout = NULL;
+        COORD coord;
+        coord.X = x;
+        coord.Y = y;
+        if (!hStdout)
+                hStdout = GetStdHandle (STD_OUTPUT_HANDLE);
+        SetConsoleCursorPosition (hStdout, coord);
+}
+
 R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
 	int esc = 0;
@@ -11,7 +56,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 	int len = 0;
 	int inv = 0;
 	int linelen = 0;
-	int lines, cols = r_cons_get_size(&lines);
+	int lines, cols = r_cons_get_size (&lines);
 
 	if (ptr && hConsole)
 	for (; *ptr; ptr++) {
@@ -19,12 +64,15 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 			int ll = (size_t)(ptr-str);
 			lines--;
 			if (lines<0) 
-				return 0;
+				break; //return 0;
 			if (ll<1)
 				continue;
-			if (linelen+ll>cols) {
-				// chop line if too long
-				ll = (cols-linelen)-1;
+			if (empty) {
+				/* only chop columns if necessary */
+				if (linelen+ll>cols) {
+					// chop line if too long
+					ll = (cols-linelen)-1;
+				}
 			}
 			write (1, str, ll);
 			linelen += ll;
@@ -58,6 +106,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 					}
 				}
 				write (1, "\n\r", 2);
+				//lines--;
 				linelen = 0;
 			}
 			if (linelen+ll>cols) {
@@ -85,20 +134,28 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 		} else 
 		if (esc == 2) {
 			if (ptr[0]=='2'&&ptr[1]=='J') {
-				r_cons_clear ();
+				//fill_tail(cols, lines);
+				w32_clear (); //r_cons_clear ();
 				esc = 0;
 				ptr = ptr + 1;
 				str = ptr + 1;
 				continue;
 			} else
 			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
-				r_cons_gotoxy (0, 0);
+				// \x1b[0;0H
+				/** clear screen if gotoxy **/
+				if (empty) {
+					// fill row here
+					fill_tail(cols, lines);
+				}
+				w32_gotoxy (0, 0);
+				lines = 0;
 				esc = 0;
-				ptr += 4;
+				ptr += 3;
 				str = ptr + 1;
 				continue;
 			} else
-			if (ptr[0]=='0'&&ptr[1]=='m') {
+			if (ptr[0]=='0'&&(ptr[1]=='m' || ptr [1]=='K')) {
 				SetConsoleTextAttribute (hConsole, 1|2|4|8);
 				fg = 1|2|4|8;
 				bg = 0;
@@ -207,24 +264,26 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 		} 
 		len++;
 	}
-	/* the ending padding */{
+	
+	/* the ending padding */ {
 		int ll = (size_t)(ptr-str);
 		if (ll>0) {
 			write (1, str, ll);
 			linelen += ll;
 		}
-#if 0
-		{
-			int wlen = cols-linelen-2;
-			char white[1024];
-			//wlen = 5;
-			if (wlen>0) {
-				memset (white, ' ', sizeof (white));
-				write (1, white, wlen);
-			}
+	}
+
+	if (empty) {
+		/* fill partial line */
+		int wlen = cols-linelen-1;
+		char white[1024];
+		//wlen = 5;
+		if (wlen>0) {
+			memset (white, ' ', sizeof (white));
+			write (1, white, wlen);
 		}
-#endif
-		//write (1, "\n", 1);
+		/* fill tail */
+		fill_tail(cols, lines);
 	}
 	return len;
 }

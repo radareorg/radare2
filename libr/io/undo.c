@@ -27,7 +27,7 @@ R_API void r_io_undo_enable(RIO *io, int s, int w) {
 
 R_API ut64 r_io_sundo_last(RIO *io) {
 	return (io->undo.idx>0)?
-		io->undo.seek[io->undo.idx-2] : io->off;
+		io->undo.seek[io->undo.idx-1] : io->off;
 }
 
 R_API ut64 r_io_sundo(RIO *io, ut64 offset) {
