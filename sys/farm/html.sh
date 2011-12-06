@@ -11,7 +11,12 @@ for a in log/*.log ; do
 	echo "<html><body style=background-color:black;color:white;font-family:Verdana>" > $b
 	echo "<h1><a href=./>index</a></h1>" >> $b
 	echo "<h1>$a</h1>" >> $b
+	allocas=$(cat $a|grep -e "alloca'" |wc -l)
+	formats=$(cat $a|grep -e "in format" -e "format'" |wc -l)
+	unused=$(cat $a|grep -e "not used" -e unused |wc -l)
+	casts=$(cat $a|grep incompatible |wc -l)
 	warnings=$(cat $a|grep warning: |wc -l)
+	undefineds=$(cat $a|grep undefined |wc -l)
 	errors=$(cat $a|grep -e error: -e 'returned 1'|wc -l)
 	if [ -f $t ]; then
 		echo "<h2>time:</h2>" >> $b
@@ -25,22 +30,48 @@ for a in log/*.log ; do
 		cat $c >> $b
 		echo "</pre>" >> $b
 	fi
-	echo "<h2>warnings: $warnings</h2>" >> $b
-	echo "<h2>errors: $errors</h2>" >> $b
-	echo "<h2>return: "`cat $r`"</h2>" >> $b
-	echo "<h2>warnings:</h2>" >> $b
 	echo "<pre>" >> $b
-	grep warning: $a | awk '{
-		gsub(/warning\: (.*)$/,"<b style=color:yellow>warning: &</b>");
+	echo "<h2>warnings: $warnings</h2>" >> $b
+	echo "read below" >> $b
+	echo "<h2>errors: $errors + $undefineds</h2>" >> $b
+	echo "read below" >> $b
+	echo "<h2>return: "`cat $r`"</h2>" >> $b
+	echo "<h2>casts: $casts</h2>" >> $b
+	grep -e "incompatible" $a | awk '{
+		gsub(/incompatible (.*)$/,"<b style=color:yellow>incompatible &</b>");
+		print}' >> $b
+	echo "<h2>formats: $formats</h2>" >> $b
+	grep -e "in format" -e "format'" $a | awk '{
+		gsub(/format(.*)$/,"<b style=color:yellow>format &</b>");
+		print}' >> $b
+	echo "<h2>allocas: $allocas</h2>" >> $b
+	grep "alloca'" $a | awk '{
+		gsub(/warning\: (.*)$/,"<b style=color:yellow>&</b>");
+		print}' >> $b
+	echo "<h2>undefined: $undefineds</h2>" >> $b
+	grep -C 2 undefined $a | awk '{
+		gsub(/undefined (.*)$/,"<b style=color:orange>&</b>");
 		print}' >> $b
 	echo "<h2>errors:</h2>" >> $b
-	grep error: $a | awk '{
-		gsub(/error\: (.*)$/,"<b style=color:red>error: &</b>");
+	grep -e Error -e error: $a | awk '{
+		gsub(/rror\: (.*)$/,"<b style=color:red>&</b>");
+		print}' >> $b
+	grep -C 2 'returned 1' $a | awk '{
+		gsub(/^---$/,"<br />");
+		gsub(/^(.*)$/,"<b style=color:red>&</b>");
+		print}' >> $b
+	echo "<h2>unused: $unused</h2>" >> $b
+	grep -e "not used" -e unused $a | awk '{
+		gsub(/warning\: (.*)$/,"<b style=color:yellow>&</b>");
+		print}' >> $b
+	echo "<h2>warnings:</h2>" >> $b
+	grep warning: $a | awk '{
+		gsub(/warning\: (.*)$/,"<b style=color:yellow>&</b>");
 		print}' >> $b
 	echo "<h2>build:</h2>" >> $b
 	cat $a | awk '{
 		gsub(/warning\: (.*)$/,"<b style=color:yellow>warning: &</b>");
-		gsub(/error\: (.*)$/,"<b style=color:red>error: &</b>");
+		gsub(/error\: (.*)$/,"<b style=color:red>&</b>");
 		print}' >> $b
 	echo "<pre></body></html>" >> $b
 done
