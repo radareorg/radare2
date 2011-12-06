@@ -3,14 +3,14 @@ OSX
 
 To compile for OSX run configure in this way:
 
-	$ ./configure --with-ostype=darwin
+	$ ./configure
 
 And then..
 
 	$ make
 	$ sudo make install
 
-To install r2-swig you will need to install r2, valac, valaswig
+To install r2-bindings you will need to install r2, valac, valabind and swig
 
 On OSX>=10.6 you need to sign the binary to debug
 
@@ -29,3 +29,7 @@ Right click on certificate -> Trust options -> Always trust
 
 $ cd binr/radare2
 $ make osxsign
+
+To create the package
+cd macports
+make

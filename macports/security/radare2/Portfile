@@ -3,7 +3,7 @@
 PortSystem          1.0
 
 name                radare2
-version             0.8.6
+version             0.9
 categories          security
 platforms           darwin
 license             LGPL
@@ -13,8 +13,7 @@ long_description    Opensource tools to disasm, debug, analyze and manipulate bi
 homepage            http://radare.org/y/
 master_sites        http://radare.org/get/
 
-checksums           md5     b467f2709e3d72148c154586cc3ae40d \
-                    sha1    65dbe2b74b712a6d4158eea479ccb5cc07ab04aa \
-                    rmd160  ed708d523a96f9eb60645aab976ef7a394ed529b
+checksums           md5     751f0dc71f82b7689f10365ee3a5842f \
+                    sha1    e77c85b001d9308f38a336b26544836fbe1d14dc
 
 configure.args      --mandir=${prefix}/share/man
