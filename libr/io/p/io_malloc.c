@@ -79,11 +79,11 @@ static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode
 			memset (mal->buf, 0, mal->size);
 			mal->size = r_hex_str2bin (pathname+6, mal->buf);
 		} else {
-			mal->size = atoi (pathname+9);
+			mal->size = r_num_math (NULL, pathname+9);
 			if ((mal->size)>0) {
 				mal->buf = malloc (mal->size);
 				memset (mal->buf, '\0', mal->size);
-			}
+			} else mal->buf = NULL;
 		}
 		if (mal->buf != NULL)
 			return r_io_desc_new (&r_io_plugin_malloc, mal->fd, pathname, rw, mode, mal);
