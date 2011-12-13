@@ -6,7 +6,6 @@
 #include <r_util.h>
 #include <r_types.h>
 #include <r_list.h>
-#include <list.h>
 
 #define R_BIN_SCN_EXECUTABLE(x) x & 0x1
 #define R_BIN_SCN_WRITABLE(x)   x & 0x2
@@ -73,8 +72,8 @@ typedef struct r_bin_t {
 	void *user;
 	void *bin_obj;
 	struct r_bin_xtr_plugin_t *curxtr;
-	struct list_head bins;
-	struct list_head binxtrs;
+	RList *plugins;
+	RList *binxtrs;
 } RBin;
 
 typedef struct r_bin_xtr_plugin_t {
@@ -86,7 +85,6 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*extract)(RBin *bin, int idx);
 	int (*load)(RBin *bin);
 	int (*destroy)(RBin *bin);
-	struct list_head list; // TODO deprecate!!!
 } RBinXtrPlugin;
 
 typedef struct r_bin_plugin_t {
@@ -114,7 +112,6 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinArch *arch, int type, int idx);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
-	struct list_head list; // TODO deprecate!!!
 } RBinPlugin;
 
 typedef struct r_bin_addr_t {

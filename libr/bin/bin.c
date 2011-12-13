@@ -91,15 +91,15 @@ static RList* get_strings(RBinArch *a, int min) {
 
 static int r_bin_init_items(RBin *bin, int dummy) {
 	int i;
-	struct list_head *pos;
+	RListIter *it;
+	RBinPlugin *plugin;
 	RBinArch *a = &bin->curarch;
 
 	a->curplugin = NULL;
-	list_for_each (pos, &bin->bins) {
-		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
-		if ((dummy && !strncmp (h->name, "any", 5)) || 
-			(!dummy && (h->check && h->check (&bin->curarch)))) {
-			bin->curarch.curplugin = h;
+	r_list_foreach(bin->plugins, it, plugin) {
+		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
+			(!dummy && (plugin->check && plugin->check (&bin->curarch)))) {
+			bin->curarch.curplugin = plugin;
 			break;
 		}
 	}
@@ -157,13 +157,13 @@ static void r_bin_free_items(RBin *bin) {
 }
 
 static void r_bin_init(RBin *bin) {
-	struct list_head *pos;
+	RListIter *it;
+	RBinXtrPlugin *xtr;
 
 	bin->curxtr = NULL;
-	list_for_each (pos, &bin->binxtrs) {
-		RBinXtrPlugin *h = list_entry (pos, RBinXtrPlugin, list);
-		if (h->check && h->check (bin)) {
-			bin->curxtr = h;
+	r_list_foreach(bin->binxtrs, it, xtr) {
+		if (xtr->check && xtr->check (bin)) {
+			bin->curxtr = xtr;
 			break;
 		}
 	}
@@ -189,29 +189,35 @@ static int r_bin_extract(RBin *bin, int idx) {
 }
 
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
-	struct list_head *pos;
+	RListIter *it;
+	RBinPlugin *plugin;
+
 	if (foo->init)
 		foo->init (bin->user);
-	list_for_each_prev (pos, &bin->bins) { // XXX: use r_list here
-		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
-		if (!strcmp (h->name, foo->name))
+
+	r_list_foreach(bin->plugins, it, plugin) {
+		if (!strcmp (plugin->name, foo->name))
 			return R_FALSE;
 	}
-	list_add_tail (&(foo->list), &(bin->bins));
+	r_list_append(bin->plugins, foo);
+
 	return R_TRUE;
 }
 
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
-	struct list_head *pos;
+	RListIter *it;
+	RBinXtrPlugin *xtr;
 
 	if (foo->init)
 		foo->init (bin->user);
-	list_for_each_prev (pos, &bin->binxtrs) {
-		RBinXtrPlugin *h = list_entry (pos, RBinXtrPlugin, list);
-		if (!strcmp (h->name, foo->name))
+
+	// avoid duplicates
+	r_list_foreach(bin->binxtrs, it, xtr) {
+		if (!strcmp (xtr->name, foo->name))
 			return R_FALSE;
 	}
-	list_add_tail (&(foo->list), &(bin->binxtrs));
+	r_list_append(bin->binxtrs, foo);
+
 	return R_TRUE;
 }
 
@@ -225,16 +231,18 @@ R_API void* r_bin_free(RBin *bin) {
 }
 
 R_API int r_bin_list(RBin *bin) {
-	struct list_head *pos;
+	RListIter *it;
+	RBinXtrPlugin *plugin;
+	RBinXtrPlugin *xtr;
 
-	list_for_each_prev(pos, &bin->bins) {
-		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
-		printf ("bin %-10s %s\n", h->name, h->desc);
+	r_list_foreach(bin->plugins, it, plugin) {
+		printf ("bin %-10s %s\n", plugin->name, plugin->desc);
 	}
-	list_for_each_prev(pos, &bin->binxtrs) {
-		RBinXtrPlugin *h = list_entry (pos, RBinXtrPlugin, list);
-		printf ("bin-xtr %-10s %s\n", h->name, h->desc);
+
+	r_list_foreach(bin->binxtrs, it, xtr) {
+		printf ("bin-xtr %-10s %s\n", xtr->name, xtr->desc);
 	}
+
 	return R_FALSE;
 }
 
@@ -344,13 +352,13 @@ R_API RBin* r_bin_new() {
 	RBin *bin = R_NEW (RBin);
 	if (bin) {
 		memset (bin, 0, sizeof (RBin));
-		INIT_LIST_HEAD (&bin->bins);
+		bin->plugins = r_list_new();
 		for (i=0; bin_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RBinPlugin);
 			memcpy (static_plugin, bin_static_plugins[i], sizeof (RBinPlugin));
 			r_bin_add (bin, static_plugin);
 		}
-		INIT_LIST_HEAD (&bin->binxtrs);
+		bin->binxtrs = r_list_new();
 		for (i=0; bin_xtr_static_plugins[i]; i++) {
 			static_xtr_plugin = R_NEW (RBinXtrPlugin);
 			memcpy (static_xtr_plugin, bin_xtr_static_plugins[i], sizeof (RBinXtrPlugin));
@@ -364,7 +372,8 @@ R_API RBin* r_bin_new() {
 /* arch and bits are implicit in the plugin name, do we really need
  * to overwrite bin->curarch.info? */
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
-	struct list_head *pos;
+	RListIter *it;
+	RBinPlugin *plugin;
 
 	if (!bin->curarch.info)
 		bin->curarch.info = R_NEW (RBinInfo);
@@ -372,14 +381,14 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 	strncpy (bin->curarch.info->arch, arch, R_BIN_SIZEOF_STRINGS);
 	bin->curarch.info->bits = bits;
 
-	list_for_each_prev(pos, &bin->bins) {
-		RBinPlugin *h = list_entry (pos, RBinPlugin, list);
-		if (!strcmp (name, h->name)) {
-			bin->curarch.curplugin = h;
+	r_list_foreach(bin->plugins, it, plugin) {
+		if (!strcmp (name, plugin->name)) {
+			bin->curarch.curplugin = plugin;
 // TODO: set bits and name
 			return R_TRUE;
 		}
 	}
+
 	return R_FALSE;
 }
 

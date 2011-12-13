@@ -175,7 +175,9 @@ R_API int r_asm_filter_output(RAsm *a, const char *f) {
 }
 
 R_API void r_asm_free(RAsm *a) {
-	// TODO: free plugins and so on
+	// TODO: any memory leak here?
+	r_pair_free (a->pair);
+	r_list_free (a->plugins);
 	free (a);
 }
 

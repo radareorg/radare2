@@ -30,7 +30,7 @@ R_API RPair *r_pair_new_from_file (const char *file) {
 R_API void r_pair_free (RPair *p) {
 	if (p==NULL) return;
 	r_hashtable_free (p->ht);
-	r_list_destroy (p->dbs);
+	r_list_free (p->dbs);
 	if (p->file) {
 		free (p->file);
 		sdb_free (p->sdb);
