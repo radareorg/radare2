@@ -1,5 +1,5 @@
 NAME=r_anal
-DEPS=r_util r_lib r_reg r_syscall r_diff
+DEPS=r_util r_lib r_reg r_syscall r_diff # r_core (commented as it would be recursive)
 CFLAGS+=-DCORELIB -Iarch
 
 include ../config.mk

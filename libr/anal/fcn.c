@@ -143,6 +143,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 	return fcn->size;
 }
 
+// TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFcn *fcn);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFcn *fcn) {
 #if USE_NEW_FCN_STORE
 	r_listrange_add (anal->fcnstore, fcn);

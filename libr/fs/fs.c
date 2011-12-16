@@ -17,6 +17,7 @@ R_API RFS *r_fs_new () {
 		fs->roots = r_list_new ();
 		fs->roots->free = (RListFree)r_fs_root_free;
 		fs->plugins = r_list_new ();
+		fs->plugins->free = free;
 		// XXX fs->roots->free = r_fs_plugin_free;
 		for (i=0; fs_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RFSPlugin);
@@ -38,6 +39,8 @@ R_API RFSPlugin *r_fs_plugin_get (RFS *fs, const char *name) {
 }
 
 R_API void r_fs_free (RFS* fs) {
+	if (!fs) return;
+	r_io_free(fs->iob.io);
 	r_list_free (fs->plugins);
 	r_list_free (fs->roots);
 	free (fs);

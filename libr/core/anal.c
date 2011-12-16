@@ -111,7 +111,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
 	struct r_anal_bb_t *bb = NULL, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
-	ut8 *buf;
+	ut8 *buf = NULL;
 	int ret = R_ANAL_RET_NEW, buflen, bblen = 0;
 	int split = core->anal->split;
 
@@ -123,21 +123,17 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
 			ret = R_ANAL_RET_DUP;
 	}
 	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
-		r_anal_bb_free (bb);
-		return R_FALSE;
+		goto error;
 	} else if (ret == R_ANAL_RET_NEW) { /* New bb */
 		if (!(buf = malloc (core->blocksize)))
-			return R_FALSE;
+			goto error;
 		do {
-			if ((buflen = r_io_read_at (core->io, at+bblen, buf, core->blocksize)) != core->blocksize) {
-				r_anal_bb_free (bb);
-				return R_FALSE;
-			}
+			if ((buflen = r_io_read_at (core->io, at+bblen, buf, core->blocksize)) != core->blocksize)
+				goto error;
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head); 
 			if (bblen == R_ANAL_RET_ERROR ||
 				(bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
-				r_anal_bb_free (bb);
-				return R_FALSE;
+				goto error;
 			} else if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
 				if (split)
 					ret = r_anal_fcn_overlap_bb (fcn, bb);
@@ -152,9 +148,16 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
 				}
 			}
 		} while (bblen != R_ANAL_RET_END);
-		free (buf);
 	}
+
+	free(buf);
 	return R_TRUE;
+
+error:
+	r_list_unlink(fcn->bbs, bb);
+	r_anal_bb_free(bb);
+	free(buf);
+	return R_FALSE;
 }
 
 R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
@@ -176,8 +179,8 @@ static int cmpaddr (void *_a, void *_b) {
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	RListIter *iter, *iter2;
 	int buflen, fcnlen = 0;
-	RAnalFcn *fcn, *fcni;
-	RAnalRef *ref, *refi;
+	RAnalFcn *fcn = NULL, *fcni;
+	RAnalRef *ref = NULL, *refi;
 	ut8 *buf;
 
 	if (depth < 0)
@@ -206,17 +209,16 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	}
 	if (!(buf = malloc (core->blocksize))) {
 		eprintf ("Error: malloc (buf)\n");
-		return R_FALSE;
+		goto error;
 	}
 
 	do {
 		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, core->blocksize)) != core->blocksize)
-			return R_FALSE;
+			goto error;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen, reftype); 
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
-			r_anal_fcn_free (fcn);
-			return R_FALSE;
+			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			RFlagItem *f = r_flag_get_i (core->flags, at);
 			if (f) { /* Check if it's already flagged */
@@ -237,7 +239,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			if (from != -1) {
 				if (!(ref = r_anal_ref_new ())) {
 					eprintf ("Error: new (xref)\n");
-					return R_FALSE;
+					goto error;
 				}
 				ref->addr = from;
 				ref->at = at;
@@ -249,11 +251,24 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			//r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi)
 				if (refi->addr != -1)
+					// TODO: fix memleak here, fcn not freed even though it is
+					// added in core->anal->fcns which is freed in r_anal_free()
 					r_core_anal_fcn (core, refi->addr, refi->at, refi->type, depth-1);
 		}
 	} while (fcnlen != R_ANAL_RET_END);
 	free (buf);
 	return R_TRUE;
+
+error:
+	free(buf);
+	// ugly hack to free fcn
+	if (fcn) {
+		// unlink from list to avoid double free later when we call r_anal_free()
+		r_list_unlink(core->anal->fcns, fcn);
+		if (core->anal->fcns->free == NULL)
+			r_anal_fcn_free (fcn);
+	}
+	return R_FALSE;
 }
 
 R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {

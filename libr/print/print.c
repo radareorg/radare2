@@ -27,6 +27,7 @@ R_API RPrint *r_print_new() {
 }
 
 R_API RPrint *r_print_free(RPrint *p) {
+	if (!p) return NULL;
 	if (p->zoom) {
 		free (p->zoom->buf);
 		free (p->zoom);

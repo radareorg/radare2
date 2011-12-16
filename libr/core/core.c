@@ -396,7 +396,25 @@ R_API int r_core_init(RCore *core) {
 }
 
 R_API RCore *r_core_free(RCore *c) {
+	if (!c) return NULL;
 	/* TODO: it leaks as shit */
+	r_io_free(c->io);
+	r_core_file_free(c->file);
+	r_list_free(c->files);
+	free(c->num);
+	r_lib_free(c->lib);
+	r_cmd_free(c->cmd);
+	r_anal_free(c->anal);
+	r_asm_free(c->assembler);
+	r_print_free(c->print);
+	r_bin_free(c->bin);
+	r_lang_free(c->lang);
+	r_debug_free(c->dbg);
+	r_flag_free(c->flags);
+	r_config_free(c->config);
+	r_search_free(c->search);
+	r_sign_free(c->sign);
+	r_fs_free(c->fs);
 	r_egg_free (c->egg);
 	free (c);
 	return NULL;

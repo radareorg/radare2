@@ -19,6 +19,8 @@ R_API RCmd *r_cmd_new () {
 }
 
 R_API RCmd *r_cmd_free(RCmd *cmd) {
+	if (!cmd) return NULL;
+	r_list_free(cmd->plist);
 	free (cmd);
 	return NULL;
 }

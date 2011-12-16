@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+// TODO: RRef - reference counting
 
 #include "r_util.h"
 
@@ -122,7 +123,6 @@ R_API void r_list_destroy (RList *list) {
 
 R_API void r_list_free (RList *list) {
 	if (list) {
-		list->free = NULL;
 		r_list_destroy (list);
 		free (list);
 	}

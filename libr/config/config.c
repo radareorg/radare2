@@ -297,7 +297,7 @@ R_API RConfig *r_config_new(void *user) {
 }
 
 R_API int r_config_free(RConfig *cfg) {
-	// XXX: memory leak ! r_list_destroy (cfg->nodes);
+	if (!cfg) return 0;
 	r_list_free (cfg->nodes);
 	r_hashtable_free (cfg->ht);
 	free (cfg);

@@ -114,6 +114,7 @@ R_API void r_sign_reset(RSign *sig) {
 }
 
 R_API RSign *r_sign_free(RSign *sig) {
+	if (!sig) return NULL;
 	r_list_free (sig->items);
 	free (sig);
 	return NULL;

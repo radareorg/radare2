@@ -53,7 +53,6 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		bb->addr = addr;
 	len -= 16; // XXX: hack to avoid segfault by x86im
 	while (idx < len) {
-		r_anal_op_free (op);
 		if (!(op = r_anal_op_new ())) {
 			eprintf ("Error: new (op)\n");
 			return R_ANAL_RET_ERROR;
@@ -77,6 +76,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			bb->type = R_ANAL_BB_TYPE_HEAD;
 		switch (op->type) {
 		case R_ANAL_OP_TYPE_CMP:
+			r_anal_cond_free(bb->cond);
 			bb->cond = r_anal_cond_new_from_op (op);
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
@@ -100,6 +100,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			bb->type |= R_ANAL_BB_TYPE_LAST;
 			goto beach;
 		}
+		r_anal_op_free (op);
 	}
 	return bb->size;
 beach:

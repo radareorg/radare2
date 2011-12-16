@@ -134,6 +134,7 @@ R_API RAsm *r_asm_new() {
 		a->ofilter = NULL;
 		a->syntax = R_ASM_SYNTAX_INTEL;
 		a->plugins = r_list_new ();
+		a->plugins->free = free;
 		for (i=0; asm_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RAsmPlugin);
 			memcpy (static_plugin, asm_static_plugins[i], sizeof (RAsmPlugin));
@@ -175,6 +176,7 @@ R_API int r_asm_filter_output(RAsm *a, const char *f) {
 }
 
 R_API void r_asm_free(RAsm *a) {
+	if (!a) return;
 	// TODO: any memory leak here?
 	r_pair_free (a->pair);
 	r_list_free (a->plugins);

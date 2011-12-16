@@ -22,6 +22,7 @@ R_API RAnalValue *r_anal_value_copy (RAnalValue *ov) {
 
 // TODO: move into .h as #define free
 R_API void r_anal_value_free(RAnalValue *value) {
+	/* TODO: free RRegItem objects? */
 	free (value);
 }
 

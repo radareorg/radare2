@@ -54,11 +54,15 @@ R_API char *r_egg_to_string (REgg *egg) {
 }
 
 R_API void r_egg_free (REgg *egg) {
+	if (!egg) return;
 	r_buf_free (egg->src);
 	r_buf_free (egg->buf);
 	r_buf_free (egg->bin);
+	r_list_free(egg->list);
 	r_asm_free (egg->rasm);
 	r_syscall_free (egg->syscall);
+	r_pair_free(egg->pair);
+	r_list_free (egg->plugins);
 	r_list_free (egg->patches);
 	free (egg);
 }

@@ -5,6 +5,7 @@
 // TODO: We need a standard struct named Surface1D {.addr, .size}, so we can
 // simplify all this by just passing the offset of the field of the given ptr
 // TODO: RListComparator does not supports *user
+// TODO: RRef - reference counting
 
 #define RANGEBITS 10
 // 1024
@@ -39,8 +40,9 @@ static inline ut64 r_listrange_next(ut64 addr) {
 }
 
 R_API void r_listrange_free(RListRange *s) {
+	if (!s) return;
 	r_hashtable64_free (s->h);
-	r_list_destroy (s->l);
+	r_list_free (s->l);
 	free (s);
 }
 

@@ -60,6 +60,7 @@ R_API int r_flag_sort(RFlag *f, int namesort) {
 }
 
 R_API RFlag * r_flag_free(RFlag *f) {
+	if (!f) return NULL;
 	r_list_free (f->flags);
 	free (f);
 	return NULL;

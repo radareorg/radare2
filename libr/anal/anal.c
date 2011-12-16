@@ -4,6 +4,7 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
+#include <r_io.h>
 #include "../config.h"
 
 static RAnalPlugin *anal_static_plugins[] = 
@@ -57,9 +58,16 @@ R_API RAnal *r_anal_new() {
 R_API void r_anal_free(RAnal *anal) {
 	if (!anal) return;
 	/* TODO: Free anals here */
-	r_listrange_free (anal->fcnstore);
+	anal->fcns->free = r_anal_fcn_free;
 	r_list_free (anal->fcns);
+	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
+	r_list_free (anal->refs);
 	r_list_free (anal->vartypes);
+	r_list_free (anal->meta->data);
+	r_reg_free(anal->reg);
+	r_syscall_free(anal->syscall);
+	r_anal_op_free(anal->queued);
+	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
 	free (anal);
 }
 

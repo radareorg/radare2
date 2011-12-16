@@ -29,10 +29,12 @@ R_API RSearch *r_search_new(int mode) {
 }
 
 R_API RSearch *r_search_free(RSearch *s) {
+	if (!s) return NULL;
 	// TODO: it leaks
 	r_mem_pool_free (s->pool);
-	r_list_destroy (s->hits);
-	r_list_destroy (s->kws);
+	r_list_free (s->hits);
+	r_list_free (s->kws);
+	r_io_free(s->iob.io);
 	free (s);
 	return NULL;
 }

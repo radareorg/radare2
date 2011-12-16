@@ -148,6 +148,7 @@ static void r_bin_free_items(RBin *bin) {
 	if (a->sections) r_list_free (a->sections);
 	if (a->strings) r_list_free (a->strings);
 	if (a->symbols) r_list_free (a->symbols);
+	if (a->classes) r_list_free (a->classes);
 	if (a->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
 			free (a->binsym[i]);
@@ -226,6 +227,9 @@ R_API void* r_bin_free(RBin *bin) {
 	r_bin_free_items (bin);
 	if (bin->curxtr && bin->curxtr->destroy)
 		bin->curxtr->destroy (bin);
+	r_list_free(bin->binxtrs);
+	r_list_free(bin->plugins);
+	free(bin->file);
 	free (bin);
 	return NULL;
 }
@@ -353,12 +357,14 @@ R_API RBin* r_bin_new() {
 	if (bin) {
 		memset (bin, 0, sizeof (RBin));
 		bin->plugins = r_list_new();
+		bin->plugins->free = free;
 		for (i=0; bin_static_plugins[i]; i++) {
 			static_plugin = R_NEW (RBinPlugin);
 			memcpy (static_plugin, bin_static_plugins[i], sizeof (RBinPlugin));
 			r_bin_add (bin, static_plugin);
 		}
 		bin->binxtrs = r_list_new();
+		bin->binxtrs->free = free;
 		for (i=0; bin_xtr_static_plugins[i]; i++) {
 			static_xtr_plugin = R_NEW (RBinXtrPlugin);
 			memcpy (static_xtr_plugin, bin_xtr_static_plugins[i], sizeof (RBinXtrPlugin));
@@ -384,7 +390,6 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 	r_list_foreach(bin->plugins, it, plugin) {
 		if (!strcmp (name, plugin->name)) {
 			bin->curarch.curplugin = plugin;
-// TODO: set bits and name
 			return R_TRUE;
 		}
 	}
