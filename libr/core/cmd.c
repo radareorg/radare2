@@ -1723,7 +1723,6 @@ static int cmd_info(void *data, const char *input) {
 				fn = core->file->filename;
 			}
 			r_cons_printf ("file\t%s\n", fn);
-			core->file->size = r_file_size (fn);
 			if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 			r_cons_printf ("fd\t%d\n", core->file->fd->fd);
 			r_cons_printf ("size\t0x%x\n", core->file->size);

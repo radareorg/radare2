@@ -164,6 +164,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh->fd = fd;
 	fh->map = NULL;
 	fh->uri = strdup (file);
+	fh->size = r_file_size (file);
+	if (!fh->size)
+		fh->size = r_io_size (r->io);
 	fh->filename = strdup (fh->uri);
 	p = strstr (fh->filename, "://");
 	if (p != NULL) {
