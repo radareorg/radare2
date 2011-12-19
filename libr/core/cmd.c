@@ -2351,7 +2351,7 @@ static int cmd_egg(void *data, const char *input) {
 
 static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	char *str = strdup (input+1);
+	char *str = strdup (input + (*input)? 1:0);
 	ut64 off = core->offset;
 
 	switch (*input) {
