@@ -135,20 +135,21 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 }
 
 /* TODO: Free plugins */
+#define RBINLISTFREE(x) if(x){r_list_free(x);x=NULL;}
 static void r_bin_free_items(RBin *bin) {
 	int i;
 	RBinArch *a = &bin->curarch;
 	// XXX: drop all those silly conditionals! if it's null is not for freeing
-	if (a->entries) r_list_free (a->entries);
-	if (a->fields) r_list_free (a->fields);
-	if (a->imports) r_list_free (a->imports);
+	RBINLISTFREE(a->entries);
+	RBINLISTFREE(a->fields);
+	RBINLISTFREE(a->imports);
+	RBINLISTFREE(a->libs);
+	RBINLISTFREE(a->relocs);
+	RBINLISTFREE(a->sections);
+	RBINLISTFREE(a->strings);
+	RBINLISTFREE(a->symbols);
+	RBINLISTFREE(a->classes);
 	if (a->info) free (a->info);
-	if (a->libs) r_list_free (a->libs);
-	if (a->relocs) r_list_free (a->relocs);
-	if (a->sections) r_list_free (a->sections);
-	if (a->strings) r_list_free (a->strings);
-	if (a->symbols) r_list_free (a->symbols);
-	if (a->classes) r_list_free (a->classes);
 	if (a->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
 			free (a->binsym[i]);

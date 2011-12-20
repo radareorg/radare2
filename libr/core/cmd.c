@@ -2351,9 +2351,11 @@ static int cmd_egg(void *data, const char *input) {
 
 static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	char *str = strdup (input + (*input)? 1:0);
+	char *str = NULL;
 	ut64 off = core->offset;
 
+	if (*input)
+		str = strdup (input+1);
 	switch (*input) {
 	case '+':
 		r_flag_set (core->flags, str, off, core->blocksize, 1);
@@ -2477,7 +2479,8 @@ static int cmd_flag(void *data, const char *input) {
 		" fo               ; show fortunes\n");
 		break;
 	}
-	free (str);
+	if (str)
+		free (str);
 	return 0;
 }
 
