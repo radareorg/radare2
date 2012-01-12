@@ -1271,7 +1271,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		n = (input+1 == 0) ? r_num_math (core->num, input+2) : 0;
+		n = (input+1 != 0) ? r_num_math (core->num, input+2) : 0;
 		r_cons_printf ("0x%"PFMT64x"\n", n);
 		break;
 	case '=':
