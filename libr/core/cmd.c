@@ -1271,8 +1271,8 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		n = r_num_math (core->num, input+2);
-		r_cons_printf ("0x%"PFMT64x"\n", n,n);
+		n = (input+1 == 0) ? r_num_math (core->num, input+2) : 0;
+		r_cons_printf ("0x%"PFMT64x"\n", n);
 		break;
 	case '=':
 		r_num_math (core->num, input+1);
@@ -2358,8 +2358,6 @@ static int cmd_flag(void *data, const char *input) {
 		str = strdup (input+1);
 	switch (*input) {
 	case '+':
-		r_flag_set (core->flags, str, off, core->blocksize, 1);
-		break;
 	case ' ': {
 		char *s = NULL, *s2 = NULL;
 		ut32 bsze = core->blocksize;
@@ -2374,9 +2372,7 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			bsze = r_num_math (core->num, s+1);
 		}
-		r_flag_set (core->flags, str, off, bsze, 0);
-		if (s) *s=' ';
-		if (s2) *s2=' ';
+		r_flag_set (core->flags, str, off, bsze, (*input=='+'));
 		}
 		break;
 	case '-':
@@ -3561,55 +3557,55 @@ static int cmd_write(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 'o':
-                switch (input[1]) {
-                case 'a':
-                case 's':
-                case 'A':
-                case 'x':
-                case 'r':
-                case 'l':
-                case 'm':
-                case 'd':
-                case 'o':
-                        if (input[2]!=' ') {
-                                r_cons_printf ("Usage: 'wo%c 00 11 22'\n", input[1]);
-                                return 0;
-                        }
-                case '2':
-                case '4':
-                        r_core_write_op (core, input+3, input[1]);
-			r_core_block_read (core, 0);
-                        break;
-		case 'n':
-                        r_core_write_op (core, "ff", 'x');
-			r_core_block_read (core, 0);
-                        break;
-                case '\0':
-                case '?':
-                default:
-                        r_cons_printf (
-                        "Usage: wo[asmdxoArl24] [hexpairs] @ addr[:bsize]\n"
-                        "Example:\n"
-			"  wox 0x90   ; xor cur block with 0x90\n"
-                        "  wox 90     ; xor cur block with 0x90\n"
-                        "  wox 0x0203 ; xor cur block with 0203\n"
-                        "  woa 02 03  ; add [0203][0203][...] to curblk\n"
-                        "Supported operations:\n"
-                        "  woa  +=  addition\n"
-                        "  wos  -=  substraction\n"
-                        "  wom  *=  multiply\n"
-                        "  wod  /=  divide\n"
-                        "  wox  ^=  xor\n"
-                        "  woo  |=  or\n"
-                        "  woA  &=  and\n"
-                        "  wor  >>= shift right\n"
-                        "  wol  <<= shift left\n"
-                        "  wo2  2=  2 byte endian swap\n"
-                        "  wo4  4=  4 byte endian swap\n"
-                        );
-                        break;
-                }
-                break;
+		switch (input[1]) {
+			case 'a':
+			case 's':
+			case 'A':
+			case 'x':
+			case 'r':
+			case 'l':
+			case 'm':
+			case 'd':
+			case 'o':
+				if (input[2]!=' ') {
+					r_cons_printf ("Usage: 'wo%c 00 11 22'\n", input[1]);
+					return 0;
+				}
+			case '2':
+			case '4':
+				r_core_write_op (core, input+3, input[1]);
+				r_core_block_read (core, 0);
+				break;
+			case 'n':
+				r_core_write_op (core, "ff", 'x');
+				r_core_block_read (core, 0);
+				break;
+			case '\0':
+			case '?':
+			default:
+				r_cons_printf (
+						"Usage: wo[asmdxoArl24] [hexpairs] @ addr[:bsize]\n"
+						"Example:\n"
+						"  wox 0x90   ; xor cur block with 0x90\n"
+						"  wox 90     ; xor cur block with 0x90\n"
+						"  wox 0x0203 ; xor cur block with 0203\n"
+						"  woa 02 03  ; add [0203][0203][...] to curblk\n"
+						"Supported operations:\n"
+						"  woa  +=  addition\n"
+						"  wos  -=  substraction\n"
+						"  wom  *=  multiply\n"
+						"  wod  /=  divide\n"
+						"  wox  ^=  xor\n"
+						"  woo  |=  or\n"
+						"  woA  &=  and\n"
+						"  wor  >>= shift right\n"
+						"  wol  <<= shift left\n"
+						"  wo2  2=  2 byte endian swap\n"
+						"  wo4  4=  4 byte endian swap\n"
+						);
+				break;
+		}
+		break;
 	default:
 	case '?':
 		if (core->oobi) {
