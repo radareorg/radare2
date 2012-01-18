@@ -187,6 +187,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		return R_FALSE;
 #warning This must be optimized to use the fcnstore api
 	r_list_foreach (core->anal->fcns, iter, fcni)
+		if (r_cons_singleton ()->breaked)
+			break;
 		if (at == fcni->addr) { /* Function already analyzed */
 			if (from != -1) {
 				r_list_foreach (fcni->xrefs, iter2, refi) /* If the xref is new, add it */
@@ -215,6 +217,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	do {
 		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, core->blocksize)) != core->blocksize)
 			goto error;
+		if (r_cons_singleton ()->breaked)
+			break;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen, reftype); 
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */

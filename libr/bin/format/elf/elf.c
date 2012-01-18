@@ -280,11 +280,16 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
-	if (!bin->phdr)
+	if (!bin->phdr) {
+		eprintf ("r_bin_elf: canot get_baddr() because no phdr found\n");
 		return 0;
+	}
+	/* hopefully.. the first PT_LOAD is base */
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
-		if (bin->phdr[i].p_type == PT_LOAD && bin->phdr[i].p_offset == 0)
-			return (ut64)bin->phdr[i].p_vaddr;
+		if (bin->phdr[i].p_type == PT_LOAD)
+			return (ut64)(bin->phdr[i].p_vaddr -
+				bin->phdr[i].p_offset);
+		//eprintf ("oh fuck .. cant find any valid ptload?\n");
 	return 0;
 }
 
@@ -293,7 +298,7 @@ ut64 Elf_(r_bin_elf_get_init_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut8 buf[512];
 
 	if (r_buf_read_at (bin->b, entry+16, buf, sizeof (buf)) == -1) {
-		eprintf ("Error: read (entry)\n");
+		eprintf ("Error: read (init_offset)\n");
 		return 0;
 	}
 	if (buf[0] == 0x68) { // push // x86 only
@@ -308,7 +313,7 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut8 buf[512];
 
 	if (r_buf_read_at (bin->b, entry+11, buf, sizeof (buf)) == -1) {
-		eprintf ("Error: read (entry)\n");
+		eprintf ("Error: read (get_fini)\n");
 		return 0;
 	}
 	if (*buf == 0x68) { // push // x86/32 only
@@ -338,7 +343,7 @@ ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	ut8 buf[512];
 
 	if (r_buf_read_at (bin->b, entry, buf, sizeof (buf)) == -1) {
-		eprintf ("Error: read (entry)\n");
+		eprintf ("Error: read (main)\n");
 		return 0;
 	}
 	// TODO: Use arch to identify arch before memcmp's
@@ -826,7 +831,7 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
 		ret[i].offset = bin->shdr[i].sh_offset;
 		ret[i].rva = bin->shdr[i].sh_addr > bin->baddr?
-			bin->shdr[i].sh_addr-bin->baddr:bin->shdr[i].sh_addr;
+			bin->shdr[i].sh_addr-bin->baddr: bin->shdr[i].sh_addr;
 		ret[i].size = bin->shdr[i].sh_size;
 		ret[i].align = bin->shdr[i].sh_addralign;
 		ret[i].flags = bin->shdr[i].sh_flags;

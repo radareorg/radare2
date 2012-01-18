@@ -66,7 +66,7 @@ typedef struct r_bin_arch_t {
 } RBinArch;
 
 typedef struct r_bin_t {
-	const char *file;
+	char *file;
 	RBinArch curarch;
 	int narch;
 	void *user;

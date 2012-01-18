@@ -230,7 +230,7 @@ R_API void* r_bin_free(RBin *bin) {
 		bin->curxtr->destroy (bin);
 	r_list_free(bin->binxtrs);
 	r_list_free(bin->plugins);
-	free(bin->file);
+	free (bin->file);
 	free (bin);
 	return NULL;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include "r_print.h"
 #include "r_util.h"
@@ -88,8 +88,8 @@ R_API int r_print_date_w32(struct r_print_t *p, const ut8 *buf, int len) {
 	int ret = 0;
 	char datestr[256];
 
-	if (p && p->datefmt && len >= sizeof(ut64)) {
-		r_mem_copyendian ((ut8*)&l, buf, sizeof(ut64), p->bigendian);
+	if (p && p->datefmt && len >= sizeof (ut64)) {
+		r_mem_copyendian ((ut8*)&l, buf, sizeof (ut64), p->bigendian);
 		l /= 10000000; // 100ns to s
 		l = (l > L ? l-L : 0); // isValidUnixTime?
 		t = (time_t) l; // TODO limit above!

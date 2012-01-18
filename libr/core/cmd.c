@@ -2116,15 +2116,17 @@ return 0;
 					r_print_date_dos (core->print, core->block+l, 4);
 				break;
 			case 'n':
+				core->print->bigendian = !core->print->bigendian;
 				for (l=0; l<len; l+=sizeof (ut64))
 					r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
+				core->print->bigendian = !core->print->bigendian;
 				break;
 		case '?':
 			r_cons_printf (
 			"Usage: pt[dn?]\n"
-			" pt      print unix time\n"
-			" ptd     print dos time\n"
-			" ptn     print ntfs time\n"
+			" pt      print unix time (32 bit cfg.bigendian)\n"
+			" ptd     print dos time (32 bit cfg.bigendian)\n"
+			" ptn     print ntfs time (64 bit !cfg.bigendian)\n"
 			" pt?     show help message\n");
 			break;
 		}
@@ -2718,6 +2720,8 @@ static int cmd_anal(void *data, const char *input) {
 		}
 	}
 
+	r_cons_break (NULL, NULL);
+
 	switch (input[0]) {
 	case 'b':
 		if (input[1]==' ') {
@@ -3248,6 +3252,9 @@ static int cmd_anal(void *data, const char *input) {
 	}
 	if (tbs != core->blocksize)
 		r_core_block_size (core, tbs);
+	if (core->cons->breaked)
+		eprintf ("Interrupted\n");
+	r_cons_break_end();
 	return 0;
 }
 
