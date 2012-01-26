@@ -17,6 +17,8 @@ static ut64 baddr(RBinArch *arch) {
 }
 
 static int check(RBinArch *arch) {
+	if (!arch->buf || !arch->buf->buf)
+		return R_FALSE;
 	if (!memcmp (arch->buf->buf, "dex\n035\0", 8))
 		return R_TRUE;
 	else if (!memcmp (arch->buf->buf, "dex\n009\0", 8)) // M3 (Nov-Dec 07)

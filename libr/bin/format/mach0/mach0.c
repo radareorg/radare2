@@ -36,7 +36,7 @@ static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 		bin->endian = LIL_ENDIAN;
 	else if (magic == FAT_CIGAM)
 		bin->endian = LIL_ENDIAN;
-	else return R_FALSE;
+	else return R_FALSE; // object files are magic == 0, but body is different :?
 #if R_BIN_MACH064
 	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, bin->endian?"8I":"8i", 1);
 #else

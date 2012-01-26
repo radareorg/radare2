@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
 		if (has_project)
 			r_config_set (r.config, "bin.strings", "false");
 		if (r_core_hash_load (&r, r.file->filename) == R_FALSE)
-			eprintf ("ERROR: Cannot generate hashes\n");
+			{} //eprintf ("WARNING: File hash not calculated\n");
 		nsha1 = r_config_get (r.config, "file.sha1");
 		npath = r_config_get (r.config, "file.path");
 		if (sha1 && *sha1 && strcmp (sha1, nsha1))

@@ -186,7 +186,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	if (depth < 0)
 		return R_FALSE;
 #warning This must be optimized to use the fcnstore api
-	r_list_foreach (core->anal->fcns, iter, fcni)
+	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (r_cons_singleton ()->breaked)
 			break;
 		if (at == fcni->addr) { /* Function already analyzed */
@@ -205,6 +205,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			}
 			return R_TRUE;
 		}
+	}
 	if (!(fcn = r_anal_fcn_new())) {
 		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;

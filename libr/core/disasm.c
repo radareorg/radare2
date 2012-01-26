@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
 #include "r_core.h"
 
 static char *filter_refline(const char *str) {
@@ -48,6 +48,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int acase = r_config_get_i (core->config, "asm.ucase");
+	int atabs = r_config_get_i (core->config, "asm.tabs");
 	int decode = r_config_get_i (core->config, "asm.decode");
 	int pseudo = r_config_get_i (core->config, "asm.pseudo");
 	int filter = r_config_get_i (core->config, "asm.filter");
@@ -203,6 +204,22 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		} else lastfail = 0;
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
+		if (atabs) {
+			int i = 0;
+			char *b = asmop.buf_asm;
+			for (;*b;b++,i++) {
+				if (*b==' ') {
+					//*b = '\t';
+					int n = (10-i);
+					char *t = strdup (b+1); //XXX slow!
+					if (n<1) n = 1;
+					memset (b, ' ', n);
+					b += n;
+					strcpy (b, t);
+					free (t);
+				}
+			}
+		}
 		if (core->inc == 0)
 			core->inc = ret;
 
@@ -459,9 +476,12 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			case R_ANAL_OP_TYPE_RET:
 				r_cons_printf (Color_RED);
 				break;
+			case R_ANAL_OP_TYPE_UPUSH:
+			case R_ANAL_OP_TYPE_PUSH:
 			case R_ANAL_OP_TYPE_LOAD:
 				r_cons_printf (Color_YELLOW);
 				break;
+			case R_ANAL_OP_TYPE_POP:
 			case R_ANAL_OP_TYPE_STORE:
 				r_cons_printf (Color_BYELLOW);
 				break;

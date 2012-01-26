@@ -47,14 +47,14 @@ R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b) {
 	return r_io_write_at(io, b->base, b->buf, b->length);
 }
 
-R_API struct r_io_t *r_io_free(struct r_io_t *io) {
+R_API RIO *r_io_free(RIO *io) {
 	if (!io) return NULL;
 	/* TODO: properly free inner nfo */
 	/* TODO: memory leaks */
-	r_io_desc_free(io->desc);
-	r_list_free(io->sections);
-	r_list_free(io->maps);
-	r_list_free(io->desc);
+	r_io_desc_free (io->desc);
+	r_list_free (io->sections);
+	r_list_free (io->maps);
+	r_list_free (io->desc);
 	free (io);
 	return NULL;
 }

@@ -443,6 +443,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.dwarf", "false");
 	r_config_desc (cfg, "asm.dwarf", "Show dwarf comment at disassembly");
 	r_config_set_i (cfg, "asm.nbytes", 8);
+	r_config_set (cfg, "asm.tabs", "false");
 	r_config_desc (cfg, "asm.nbytes", "Number of bytes for each opcode at disassembly");
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_desc (cfg, "asm.pseudo", "Enable pseudo syntax");

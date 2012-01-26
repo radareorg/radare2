@@ -308,7 +308,7 @@ print_insn_powerpc (bfd_vma memaddr,
 
       /* The instruction is valid.  */
       if (opcode->operands[0] != 0)
-	(*info->fprintf_func) (info->stream, "%-7s ", opcode->name);
+	(*info->fprintf_func) (info->stream, "%s ", opcode->name);
       else
 	(*info->fprintf_func) (info->stream, "%s", opcode->name);
 
@@ -343,7 +343,7 @@ print_insn_powerpc (bfd_vma memaddr,
 
 	  if (need_comma)
 	    {
-	      (*info->fprintf_func) (info->stream, ",");
+	      (*info->fprintf_func) (info->stream, ", ");
 	      need_comma = 0;
 	    }
 
@@ -414,7 +414,7 @@ print_insn_powerpc (bfd_vma memaddr,
     }
 
   /* We could not find a match.  */
-  (*info->fprintf_func) (info->stream, ".long 0x%lx", insn);
+  //(*info->fprintf_func) (info->stream, ".long 0x%lx", insn);
 
   return 4;
 }

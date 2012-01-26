@@ -21,7 +21,16 @@ R_API RBuffer *r_buf_new() {
 		b->length = 0;
 		b->cur = 0;
 		b->base = 0LL;
+		b->mmap = NULL;
 	}
+	return b;
+}
+
+R_API RBuffer *r_buf_mmap (const char *file, int rw) {
+	RBuffer *b = r_buf_new ();
+	b->mmap = r_file_mmap (file, rw);
+	b->buf = b->mmap->buf;
+	b->length = b->mmap->len;
 	return b;
 }
 
@@ -182,8 +191,13 @@ R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int
 	return r_buf_fcpy_at (b, addr, buf, fmt, n, R_TRUE);
 }
 
-R_API void r_buf_deinit(struct r_buf_t *b) {
-	free (b->buf);
+R_API void r_buf_deinit(RBuffer *b) {
+	if (b->mmap) {
+		r_file_mmap_free (b->mmap);
+		b->mmap = NULL;
+	} else {
+		free (b->buf);
+	}
 }
 
 R_API void r_buf_free(struct r_buf_t *b) {

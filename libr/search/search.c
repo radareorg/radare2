@@ -34,7 +34,7 @@ R_API RSearch *r_search_free(RSearch *s) {
 	r_mem_pool_free (s->pool);
 	r_list_free (s->hits);
 	r_list_free (s->kws);
-	r_io_free(s->iob.io);
+	//r_io_free(s->iob.io); this is suposed to be a weak reference
 	free (s);
 	return NULL;
 }

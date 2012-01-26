@@ -60,11 +60,23 @@ typedef struct r_mem_pool_factory_t {
 	RMemoryPool **pools;
 } RPoolFactory;
 
+typedef struct r_mmap_t {
+	ut8 *buf;
+	int len;
+	int fd;
+	int rw;
+#if __WINDOWS__
+	HANDLE fh;
+	HANDLE fm;
+#endif
+} RMmap;
+
 typedef struct r_buf_t {
 	ut8 *buf;
 	int length;
 	int cur;
 	ut64 base;
+	RMmap *mmap;
 } RBuffer;
 
 /* r_cache */
@@ -107,17 +119,6 @@ typedef struct r_range_t {
 	int changed;
 	RList *ranges;
 } RRange;
-
-typedef struct r_mmap_t {
-	ut8 *buf;
-	int len;
-	int fd;
-	int rw;
-#if __WINDOWS__
-	HANDLE fh;
-	HANDLE fm;
-#endif
-} RMmap;
 
 /* bitsize */
 enum {
@@ -234,6 +235,7 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 
 #define R_BUF_CUR -1
 R_API RBuffer *r_buf_new();
+R_API RBuffer *r_buf_mmap (const char *file, int rw);
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API int r_buf_append_buf(RBuffer *b, RBuffer *a);

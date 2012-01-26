@@ -83,7 +83,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	else op->inst_len = print_insn_little_powerpc((bfd_vma)Offset, &disasm_obj);
 
 	if (op->inst_len == -1)
-		strncpy(op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
 
 	return op->inst_len;
 }

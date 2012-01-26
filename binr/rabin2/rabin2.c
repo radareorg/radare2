@@ -91,14 +91,21 @@ static int rabin_extract(int all) {
 				path = strdup (bin->curarch.file);
 				if ((ptr = strrchr (path, '/'))) {
 					*ptr = '\0';
-					ptr = ptr+1;
-				}
-				else ptr = bin->curarch.file;
-				snprintf (outpath, sizeof (outpath), "%s/%s", output, path);
+					ptr++;
+				} else ptr = bin->curarch.file;
+/*
+				if (output)
+					snprintf (outpath, sizeof (outpath), "%s/%s", output, path);
+				else snprintf (outpath, sizeof (outpath), "./%s", path);
+*/
+				snprintf (outpath, sizeof (outpath), "%s.fat", ptr);
 				if (!r_sys_rmkdir (outpath)) {
 					eprintf ("Error creating dir structure\n");
 					return R_FALSE;
 				}
+				snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i",
+						outpath, ptr, bin->curarch.info->arch,
+						bin->curarch.info->bits);
 				snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i",
 						outpath, ptr, bin->curarch.info->arch,
 						bin->curarch.info->bits);
@@ -113,7 +120,7 @@ static int rabin_extract(int all) {
 			eprintf ("No extract info found.\n");
 		} else {
 			if ((ptr = strrchr (bin->curarch.file, '/')))
-				ptr = ptr+1;
+				ptr++;
 			else ptr = bin->curarch.file;
 			snprintf (outfile, sizeof (outfile), "%s.%s_%i", ptr,
 					bin->curarch.info->arch, bin->curarch.info->bits);
@@ -203,7 +210,7 @@ static int rabin_do_operation(const char *op) {
 
 	if ((ptr = strchr (arg, '/'))) {
 		ptr[0] = '\0';
-		ptr = ptr + 1;
+		ptr++;
 		if ((ptr2 = strchr (ptr, '/'))) {
 			ptr2[0] = '\0';
 			ptr2++;
@@ -244,7 +251,6 @@ static int rabin_do_operation(const char *op) {
 	}
 
 	free (arg);
-
 	return R_TRUE;
 }
 

@@ -45,9 +45,8 @@ static int Elf_(r_bin_elf_init_ehdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int phdr_size, len;
-	if (bin->ehdr.e_phnum == 0) {
+	if (bin->ehdr.e_phnum == 0)
 		return R_FALSE;
-	}
 	if (bin->phdr) return R_TRUE;
 	phdr_size = bin->ehdr.e_phnum * sizeof (Elf_(Phdr));
 	if ((bin->phdr = (Elf_(Phdr) *)malloc (phdr_size)) == NULL) {
@@ -56,9 +55,9 @@ static int Elf_(r_bin_elf_init_phdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	len = r_buf_fread_at (bin->b, bin->ehdr.e_phoff, (ut8*)bin->phdr,
 		#if R_BIN_ELF64
-		bin->endian?"2I6L":"2i6l",
+		bin->endian? "2I6L": "2i6l",
 		#else
-		bin->endian?"8I":"8i",
+		bin->endian? "8I": "8i",
 		#endif
 		bin->ehdr.e_phnum);
 	if (len == -1) {
@@ -97,6 +96,8 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (bin->strtab) return R_FALSE;
 	bin->shstrtab_section =
 	bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
+	if (bin->strtab_section == NULL)
+		return R_FALSE;
 	bin->shstrtab_size =
 	bin->strtab_size = bin->strtab_section->sh_size;
 	sz = sizeof (struct r_bin_elf_section_t) + bin->strtab_section->sh_size;
@@ -180,7 +181,7 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->strtab_size = 0;
 	bin->strtab_section = NULL;
 	if (!Elf_(r_bin_elf_init_ehdr) (bin)) {
-		eprintf ("Warning: File is not ELF\n");
+		//eprintf ("Warning: File is not ELF\n");
 		return R_FALSE;
 	}
 	Elf_(r_bin_elf_init_phdr) (bin);
@@ -829,6 +830,10 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 	if ((ret = malloc ((bin->ehdr.e_shnum + 1) * sizeof (struct r_bin_elf_section_t))) == NULL)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		if (bin->shdr == NULL) {
+			free (ret);
+			return NULL;
+		}
 		ret[i].offset = bin->shdr[i].sh_offset;
 		ret[i].rva = bin->shdr[i].sh_addr > bin->baddr?
 			bin->shdr[i].sh_addr-bin->baddr: bin->shdr[i].sh_addr;

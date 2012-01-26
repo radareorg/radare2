@@ -7,24 +7,28 @@
 #include "mach0/fatmach0.h"
 
 static int check(RBin *bin) {
-	ut8 *filebuf, buf[4];
+	ut8 *h, buf[4];
 	int off, filesize, ret = R_FALSE;
-
-	if ((filebuf = (ut8*)r_file_slurp (bin->file, &filesize))) {
-		if (!memcmp (filebuf, "\xca\xfe\xba\xbe", 4)) {
-			memcpy (&off, filebuf+4*sizeof(int), sizeof(int));
-			r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
-			if (off > 0 && off < filesize) {
-				memcpy (buf, filebuf+off, 4);
-				if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-					!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
-					!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-					!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-					ret = R_TRUE;
-			}
-		}
-		free (filebuf);
+	RMmap *m = r_file_mmap (bin->file, R_FALSE);
+	if (!m) return R_FALSE;
+	if (!m->buf) {
+		r_file_mmap_free (m);
+		return R_FALSE;
 	}
+	h = m->buf;
+	if (!memcmp (h, "\xca\xfe\xba\xbe", 4)) {
+		memcpy (&off, h+4*sizeof (int), sizeof (int));
+		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+		if (off > 0 && off < filesize) {
+			memcpy (buf, h+off, 4);
+			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
+				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
+				!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
+				!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+				ret = R_TRUE;
+		}
+	}
+	r_file_mmap_free (m);
 	return ret;
 }
 

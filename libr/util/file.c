@@ -134,6 +134,7 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 	FILE *fd = fopen (str, "rb");
 	if (fd == NULL)
 		return NULL;
+	// XXX handle out of bound reads (eof)
 	fseek (fd, off, SEEK_SET);
 	ret = (char *)malloc (sz+1);
 	if (ret != NULL) {
@@ -312,19 +313,18 @@ R_API char *r_file_temp (const char *prefix) {
 R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	int h;
 	char *path = r_file_tmpdir ();
-	char *name = malloc (1024);
+	char name[1024];
 #if __WINDOWS__
 	if (GetTempFileName (path, prefix, 0, name))
 		h = open (name, O_RDWR|O_EXCL|O_BINARY);
 	else h = -1;
 #else
-	h = snprintf (name, 1024, "%s/%sXXXXXX", path, prefix);
+	h = snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
 	if (h<1024)
 		h = mkstemp (name);
 	else h = -1;
 #endif
-	if (oname && h!=-1) *oname = name;
-	else free (name);
+	if (oname && h!=-1) *oname = strdup (name);
 	free (path);
 	return h;
 }

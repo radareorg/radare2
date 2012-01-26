@@ -22,6 +22,10 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 
 	if (to > arch->buf->length)
 		to = arch->buf->length;
+	if (to > 0xffffff) {
+		eprintf ("WARNING: bin_strings buffer is too big\n");
+		return;
+	}
 	for (i = from; i < to; i++) { 
 		if ((IS_PRINTABLE (arch->buf->buf[i])) && matches < R_BIN_SIZEOF_STRINGS-1) {
 			str[matches] = arch->buf->buf[i];
@@ -163,7 +167,7 @@ static void r_bin_init(RBin *bin) {
 	RBinXtrPlugin *xtr;
 
 	bin->curxtr = NULL;
-	r_list_foreach(bin->binxtrs, it, xtr) {
+	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (xtr->check && xtr->check (bin)) {
 			bin->curxtr = xtr;
 			break;
@@ -174,19 +178,20 @@ static void r_bin_init(RBin *bin) {
 }
 
 static int r_bin_extract(RBin *bin, int idx) {
-	ut8 *buf;
 	if (bin->curxtr && bin->curxtr->extract)
 		return bin->curxtr->extract (bin, idx);
 	//free (bin->curarch.file);
 	bin->curarch.file = strdup (bin->file);
+	//if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 0xfffff, &bin->curarch.size))) 
+	// TODO: use mmap here
+	bin->curarch.buf = r_buf_mmap (bin->file, 0);
+/*
 	if (!(buf = (ut8*)r_file_slurp (bin->file, &bin->curarch.size))) 
 		return 0;
 	bin->curarch.buf = r_buf_new ();
-	if (!r_buf_set_bytes (bin->curarch.buf, buf, bin->curarch.size)) {
-		free (buf);
-		return 0;
-	}
-	free (buf);
+	free (bin->curarch.buf->buf);
+	bin->curarch.buf->buf = buf;
+*/
 	return 1;
 }
 
