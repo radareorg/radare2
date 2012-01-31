@@ -16,8 +16,8 @@ static struct r_core_t r;
 
 static int main_help(int line) {
 	if (line<2)
-		printf ("radare2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"        [-s addr] [-B blocksize] [-c cmd] [-e k=v] [file]\n");
+		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
+			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] [file]\n");
 	if (!line) printf (
 		" -a [arch]    set asm.arch eval var\n"
 		" -b [bits]    set asm.bits eval var\n"

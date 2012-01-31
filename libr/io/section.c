@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> nibble <.ds@gmail.com> */
+/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> nibble <.ds@gmail.com> */
 
 #include "r_io.h"
 
@@ -32,6 +32,10 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 		s = R_NEW (RIOSection);
 		s->id = io->next_section_id++;
 	} else update = 1;
+	if (size>0xf00000) {
+		eprintf ("Invalid size for section at 0x%08"PFMT64x"\n", vaddr);
+		return;
+	}
 	s->offset = offset;
 	s->vaddr = vaddr;
 	s->size = size;
@@ -52,7 +56,6 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 R_API RIOSection *r_io_section_get_i(RIO *io, int idx) {
 	RListIter *iter;
 	RIOSection *s;
-
 	r_list_foreach (io->sections, iter, s) {
 		if (s->id == idx)
 			return s;
@@ -73,8 +76,8 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 	if (io->va || io->debug)
 		offset = r_io_section_vaddr_to_offset (io, offset);
 	r_list_foreach (io->sections, iter, s) {
-		if (rad) io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
-			s->offset, s->vaddr, s->size, s->vsize, s->name, s->rwx);
+		if (rad) io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
+			s->offset, s->vaddr, s->size, s->vsize, s->name, r_str_rwx_i (s->rwx));
 		else io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s\n",
 			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);

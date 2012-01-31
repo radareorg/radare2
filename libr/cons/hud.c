@@ -37,6 +37,7 @@ R_API char *r_cons_hud_string(const char *s) {
 				// XXX memleak
 				return NULL;
 			}
+			if (*os)
 			r_list_append (fl, strdup (os));
 			os = o+i+1;
 		}
@@ -79,7 +80,7 @@ R_API char *r_cons_hud(RList *list) {
 		r_cons_gotoxy (0, 0);
 		n = 0;
 		match = NULL;
-		r_cons_printf ("> (%s)\n", buf);
+		r_cons_printf ("> %s|\n", buf);
 		r_list_foreach (list, iter, pos) {
 			if (!buf[0] || strmatch (pos, buf)) {
 				char *x = strchr (pos, '\t');
@@ -98,6 +99,8 @@ R_API char *r_cons_hud(RList *list) {
 		switch (ch) {
 		case 10: // \n
 		case 13: // \r
+			if (!*buf)
+				return NULL;
 			if (n == 1) {
 				//eprintf ("%s\n", buf);
 				//i = buf[0] = 0;

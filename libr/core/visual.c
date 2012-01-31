@@ -18,29 +18,28 @@ static int zoom = 0;
 static int marks_init = 0;
 static ut64 marks[UT8_MAX+1];
 
-static void r_core_visual_hud(RCore *core) {
+static int r_core_visual_hud(RCore *core) {
 	char *res;
+	char *p = 0;
 	r_cons_show_cursor (R_TRUE);
 	char *homehud = r_str_home("/.radare2/hud");
 	if (homehud)
 		res = r_cons_hud_file (homehud);
 	// TODO: this file needs to be installed
-	if (!res) {
+	if (!res)
 		res = r_cons_hud_file (R2_LIBDIR"/radare2/"R2_VERSION"/hud/main");
-	}
 	r_cons_clear ();
 	if (res) {
-		char *p = strchr (res, '\t');
+		p = strchr (res, '\t');
 		core->printidx = 1;
 		r_cons_printf ("%s\n", res);
 		r_cons_flush ();
-		if (p) {
-			r_core_cmd0 (core, p+1);
-		}
+		if (p) r_core_cmd0 (core, p+1);
 		free (res);
 	}
 	r_cons_show_cursor (R_FALSE);
 	r_cons_flush ();
+	return (int)(size_t)p;
 }
 
 static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
@@ -540,7 +539,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_prompt (core);
 		break;
 	case '_':
-		r_core_visual_hud (core);
+		while (r_core_visual_hud (core));
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");

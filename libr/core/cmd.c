@@ -1409,6 +1409,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'i': // input num
 		{
+		r_cons_flush ();
 		char foo[1024];
 		for (input++; *input==' '; input++);
 		// TODO: use prompt input
