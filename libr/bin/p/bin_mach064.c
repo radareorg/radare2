@@ -4,6 +4,7 @@
 #include "bin_mach0.c"
 
 static int check(RBinArch *arch) {
+	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\xfe\xed\xfa\xcf", 4) ||
 		!memcmp (arch->buf->buf, "\xcf\xfa\xed\xfe", 4))
 		return R_TRUE;

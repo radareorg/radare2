@@ -821,3 +821,32 @@ R_API char *r_bprintf_get() {
 	return s;
 }
 #endif
+
+R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
+	int _b = 0;
+	ut8 *b = &_b;
+	const char *p, *lp = NULL;
+	const int bsz = sizeof (_b);
+	if (strlen (but) >= bsz) {
+		eprintf ("r_str_lastbut: but string too long\n");
+		return NULL;
+	}
+	for (p=s; *p; p++) {
+		char *isbut = but? strchr (but, *p): NULL;
+		//isbut = NULL;
+		if (isbut) {
+			int idx = (int)(size_t)(isbut-but);
+			if (R_BIT_CHK (b, idx)) {
+				_b = R_BIT_UNSET (b, idx);
+			} else {
+				_b = R_BIT_SET (b, idx);
+			}
+			continue;
+		}
+		if (*p == ch) {
+			if (!_b)
+				lp = p;
+		}
+	}
+	return lp;
+}

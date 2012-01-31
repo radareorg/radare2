@@ -1,0 +1,8 @@
+set breakpoint	db;?i new breakpoint address;db `?y`
+remove colors	e scr.color=0
+enable colors	e scr.color=1
+seek to entrypoint	s entry0
+seek to main	s main
+analyze all	aa
+analyze function	af
+analyze preludes	ap

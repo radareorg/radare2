@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 pancake <@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 pancake <@nopcode.org> */
 
 // XXX: forced free?? We need RFlist struct here
 #include <r_types.h>
@@ -24,6 +24,15 @@ R_API void **r_flist_new(int n) {
 	return it;
 }
 
+// XXX. this is wrong :?
+R_API void **r_flist_resize(void **it, int n) {
+	r_flist_rewind (it);
+	it--;
+	it = realloc (it, ((n+2) * sizeof (void*)));
+	*it = it;
+	return it+1;
+}
+
 R_API void **r_flist_prev(void **it) {
 	void **p = it--;
 	return (it==*it)?p:it;
@@ -37,7 +46,8 @@ R_API void r_flist_set(void **it, int idx, void *data) {
 R_API void r_flist_delete(void **it, int idx) {
 	r_flist_rewind (it);
 	free (it[idx]);
-	for(it += idx; *it; it++) *it = *(it+1);
+	it[idx] = NULL;
+	for (it += idx; *it; it++) *it = *(it+1);
 }
 
 #define r_flist_foreach(it, pos) \

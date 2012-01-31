@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -248,7 +248,7 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 #if __UNIX__
 		m->buf = mmap (NULL, m->len, rw?PROT_READ|PROT_WRITE:PROT_READ,
 				MAP_SHARED, fd, (off_t)0);
-		if (!m->buf) {
+		if (m->buf == MAP_FAILED) {
 			free (m);
 			m = NULL;
 		}

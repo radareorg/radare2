@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -305,6 +305,7 @@ R_API int r_core_init(RCore *core) {
 	core->reflines2 = NULL;
 	core->yank_len = 0;
 	core->yank_off = 0LL;
+	core->kv = r_pair_new ();
 	core->num = r_num_new (&num_callback, core);
 	//core->num->callback = &num_callback;
 	//core->num->userptr = core;
@@ -398,23 +399,24 @@ R_API int r_core_init(RCore *core) {
 R_API RCore *r_core_free(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
-	r_io_free(c->io);
-	r_core_file_free(c->file);
-	r_list_free(c->files);
-	free(c->num);
-	r_lib_free(c->lib);
-	r_cmd_free(c->cmd);
-	r_anal_free(c->anal);
-	r_asm_free(c->assembler);
-	r_print_free(c->print);
-	r_bin_free(c->bin);
-	r_lang_free(c->lang);
-	r_debug_free(c->dbg);
-	r_flag_free(c->flags);
-	r_config_free(c->config);
-	r_search_free(c->search);
-	r_sign_free(c->sign);
-	r_fs_free(c->fs);
+	r_io_free (c->io);
+	r_pair_free (c->kv);
+	r_core_file_free (c->file);
+	r_list_free (c->files);
+	free (c->num);
+	r_lib_free (c->lib);
+	r_cmd_free (c->cmd);
+	r_anal_free (c->anal);
+	r_asm_free (c->assembler);
+	r_print_free (c->print);
+	r_bin_free (c->bin);
+	r_lang_free (c->lang);
+	r_debug_free (c->dbg);
+	r_flag_free (c->flags);
+	r_config_free (c->config);
+	r_search_free (c->search);
+	r_sign_free (c->sign);
+	r_fs_free (c->fs);
 	r_egg_free (c->egg);
 	free (c);
 	return NULL;

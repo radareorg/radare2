@@ -280,6 +280,7 @@ static RList* fields(RBinArch *arch) {
 
 #if !R_BIN_ELF64
 static int check(RBinArch *arch) {
+	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46\x01", 5))
 		return R_TRUE;
 	return R_FALSE;

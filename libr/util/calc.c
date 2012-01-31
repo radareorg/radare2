@@ -1,0 +1,231 @@
+/* ported to C by pancake for r2 in 2012 */
+// TODO: support buffer instead of io
+/*
+   Reference Chapter 6:
+   "The C++ Programming Language", Special Edition.
+   Bjarne Stroustrup,Addison-Wesley Pub Co; 3 edition (February 15, 2000) 
+    ISBN: 0201700735 
+ */
+
+
+#include <ctype.h>
+#include <stdio.h>
+#include <unistd.h>
+
+/* TODO: move into libr/include */
+#define ut64 unsigned long long
+typedef struct {
+	double d;
+	ut64 n;
+} NumValue;
+
+typedef enum {
+	NAME, NUMBER, END, INC, DEC,
+	PLUS='+', MINUS='-', MUL='*', DIV='/',
+	PRINT=';', ASSIGN='=', LP='(', RP=')'
+} Token;
+
+
+/* accessors */
+static inline NumValue Nset(ut64 v) { NumValue n; n.d = (double)v; n.n = v; return n; }
+static inline NumValue Nsetf(double v) { NumValue n; n.d = v; n.n = (ut64)v; return n; }
+static inline NumValue Naddf(NumValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
+static inline NumValue Naddi(NumValue n, ut64 v) { n.d += (double)v; n.n += v; return n; }
+static inline NumValue Nsubi(NumValue n, ut64 v) { n.d -= (double)v; n.n -= v; return n; }
+static inline NumValue Nadd(NumValue n, NumValue v) { n.d += v.d; n.n += v.n; return n; }
+static inline NumValue Nsub(NumValue n, NumValue v) { n.d -= v.d; n.n -= v.n; return n; }
+static inline NumValue Nmul(NumValue n, NumValue v) { n.d *= v.d; n.n *= v.n; return n; }
+static inline NumValue Ndiv(NumValue n, NumValue v) { n.d /= v.d; n.n /= v.n; return n; }
+
+static NumValue expr(int);
+static NumValue term(int);
+static void error(const char *);
+static NumValue prim(int);
+static Token get_token();
+
+/* global shit */
+#define STRSZ 128
+static Token curr_tok = PRINT;
+static NumValue number_value = { 0 };
+static char string_value[STRSZ];
+static int errors = 0;
+static char oc = 0;
+
+static void error(const char *s) {
+	errors++;
+	fprintf (stderr, "error: %s\n", s);
+}
+
+static NumValue expr(int get) {
+	NumValue left = term (get);
+	for (;;) {
+		if (curr_tok == PLUS)
+			left = Nadd (left, term (1));
+		else
+		if (curr_tok == MINUS)
+			left = Nsub (left, term (1));
+		else return left;
+	}
+}
+
+static NumValue term(int get) {
+	NumValue left = prim (get);
+	for (;;) {
+		if (curr_tok == MUL) {
+			left = Nmul (left, prim (1));
+		} else
+		if (curr_tok == DIV) {
+			NumValue d = prim (1);
+			if (!d.d) {
+				error ("divide by 0");
+				return d;
+			}
+			left = Ndiv (left, d);
+		} else return left;
+	}
+}
+
+static NumValue prim(int get) {
+	NumValue v = {0};
+	if (get) get_token ();
+	switch (curr_tok) {
+	case NUMBER:
+		v = number_value;
+		get_token ();
+		return v;
+	case NAME:
+		fprintf (stderr, "error: unknown keyword (%s)\n", string_value);
+		//double& v = table[string_value];
+		get_token ();
+		if (curr_tok  == ASSIGN) 
+			v = expr (1);
+		if (curr_tok == INC) Naddi (v, 1);
+		if (curr_tok == DEC) Nsubi (v, 1);
+		return v;
+	case INC: return Naddi (prim (1), 1);
+	case DEC: return Naddi (prim (1), -1);
+	case MINUS: return Nsub (v, prim (1));
+	case LP:
+		v = expr (1);
+		if (curr_tok == RP)
+			get_token ();
+		else error (" ')' expected");
+	default:
+		error ("primary expected");
+	}
+	return v;
+}
+
+static void cin_putback (char c) {
+	oc = c;
+}
+
+static int cin_get(char *c) {
+	if (oc) {
+		*c = oc;
+		oc = 0;
+	} else {
+		if (read (0, c, 1) != 1)
+			return 0;
+	}
+	return 1;
+}
+
+static int cin_get_num(NumValue *n) {
+	double d;
+	char str[128];
+	int i = 0;
+	char c;
+	str[0] = 0;
+	while (cin_get (&c)) {
+		if (c!='.' && !isalnum (c)) {
+			cin_putback (c);
+			break;
+		}
+		if (i<STRSZ)
+			str[i++] = c;
+	}
+	str[i] = 0;
+	if (str[0]=='0' && str[1]=='x') {
+		ut64 x = 0;
+		if (sscanf (str+2, "%llx", &x)<1)
+			return 0;
+		*n = Nset (x);
+	}
+	if (sscanf (str, "%lf", &d)<1)
+		return 0;
+	*n = Nsetf (d);
+	return 1;
+}
+
+static Token get_token() {
+	char c, ch;
+
+	do { if (!cin_get (&ch)) return curr_tok = END;
+	} while (ch!='\n' && isspace (ch));
+
+	switch (ch) {
+	case 0: return curr_tok = END;
+	case ';':
+	case '\n':
+		return curr_tok = PRINT;
+	case '+':    // added for ++name and name++
+		if (cin_get (&c) && c == '+')
+			return curr_tok = INC;
+		cin_putback (c);
+		return curr_tok = (Token) ch;
+	case '-':
+		if (cin_get (&c) && c == '-')
+			return curr_tok = DEC;
+		cin_putback (c);
+		return curr_tok = (Token) ch;
+	case '*':
+	case '/':
+	case '(':
+	case ')':
+	case '=':
+		return curr_tok = (Token) ch;
+	case '0':case '1': case '2': case '3': case '4':
+	case '5': case '6': case '7': case '8': case '9':
+	case '.':
+		cin_putback (ch);
+		if (!cin_get_num (&number_value)) {
+			error ("invalid number conversion\n");
+			return 1;
+		}
+		return curr_tok = NUMBER;
+	default:
+		if (isalpha (ch)) {
+			int i = 0;
+			string_value[i++] = ch;
+			while (cin_get (&ch) && isalnum (ch)) {
+				if (i>=STRSZ) {
+					error ("string too long");
+					return 0;
+				}
+				string_value[i++] = ch;
+			}
+			string_value[i] = 0;
+			cin_putback (ch);
+			return curr_tok = NAME;
+		}
+		error ("bad token");
+		return curr_tok = PRINT;
+	}
+}
+
+#ifdef TEST
+int main(int argc, char* argv[]) {
+	NumValue n;
+	while (!feof (stdin)) {
+		get_token ();
+		if (curr_tok == END) break;
+		if (curr_tok == PRINT) continue;
+		n = expr (0);
+		if (n.d == ((double)(int)n.d))
+			printf ("%llx\n", n.n);
+		else printf ("%lf\n", n.d);
+	}
+	return errors;
+}
+#endif

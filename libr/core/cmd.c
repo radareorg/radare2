@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include "r_core.h"
 
@@ -1239,6 +1239,20 @@ static int cmd_help(void *data, const char *input) {
 			} else eprintf ("Unknown opcode\n");
 		} else eprintf ("Use: ?d [opcode]    to get the description of the opcode\n");
 		break;
+	case 'y':
+		for (input++; input[0]==' '; input++);
+		if (*input) {
+			free (core->yank);
+			core->yank = (ut8*)strdup (input);
+			core->yank_len = strlen ((const char*)core->yank);
+		} else {
+			r_cons_memcat ((const char *)core->yank, core->yank_len);
+			r_cons_newline ();
+		}
+		break;
+	case 'F':
+		r_cons_flush ();
+		break;
 	case 'f':
 		if (input[1]==' ') {
 			char *q, *p = strdup (input+2);
@@ -1300,7 +1314,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'V':
 		r_cons_printf ("r2-%s\n", R2_VERSION);
 		break;
-	case 'z':
+	case 'l':
 		for (input++; input[0]==' '; input++);
 		core->num->value = strlen (input);
 		break;
@@ -1369,12 +1383,41 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_printf ("%s\n", s->name);
 		}
 		break;
+	case 'I': // hud input
+		free (core->yank);
+		for (input++; *input==' '; input++);
+		core->yank = (ut8*)r_cons_hud_file (input);
+		core->yank_len = core->yank? strlen ((const char *)core->yank): 0;
+		break;
+	case 'k': // key=value utility
+		for (input++; *input==' '; input++);
+		{
+			char *p = strchr (input, '='); 
+			if (p) {
+				// set
+				*p = 0;
+				r_pair_set (core->kv, input, p+1);
+			} else {
+				// get
+				char *g = r_pair_get (core->kv, input);
+				if (g) {
+					r_cons_printf ("%s\n", g);
+					free (g);
+				}
+			}
+		}
+		break;
 	case 'i': // input num
 		{
 		char foo[1024];
 		for (input++; *input==' '; input++);
+		// TODO: use prompt input
 		eprintf ("%s: ", input);
 		fgets (foo, sizeof (foo)-1, stdin);
+		foo[strlen (foo)-1] = 0;
+		free (core->yank);
+		core->yank = (ut8 *)strdup (foo);
+		core->yank_len = strlen (foo);
 		core->num->value = r_num_math (core->num, foo);
 		}
 		break;
@@ -1398,6 +1441,8 @@ static int cmd_help(void *data, const char *input) {
 			" ?d opcode       ; describe opcode for asm.arch\n"
 			" ?e string       ; echo string\n"
 			" ?r [from] [to]  ; generate random number between from-to\n"
+			" ?y [str]        ; show contents of yank buffer, or set with string\n"
+			" ?k k[=v]        ; key-value temporal storage for the user\n"
 			" ?b [num]        ; show binary value of number\n"
 			" ?f [num] [str]  ; map each bit of the number as flag string index\n"
 			" ?p vaddr        ; give physical address for given vaddr\n"
@@ -1405,7 +1450,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?S addr         ; return section name of given address\n"
 			" ?x num|0xnum|str; returns the hexpair of number or string\n"
 			" ?X num|expr     ; returns the hexadecimal value numeric expr\n"
-			" ?z str          ; returns the length of string (0 if null)\n"
+			" ?l str          ; returns the length of string (0 if null)\n"
 			" ?t cmd          ; returns the time to run a command\n"
 			" ?! [cmd]        ; ? != 0\n"
 			" ?+ [cmd]        ; ? > 0\n"
@@ -1421,7 +1466,7 @@ static int cmd_help(void *data, const char *input) {
 			" $r  = opcode reference pointer\n"
 			" $l  = opcode length\n"
 			" $e  = 1 if end of block, else 0\n"
-			" ${eval} = get value of eval variable\n"
+			" ${eval} = get value of eval variable # TODO: use ?k too\n"
 			" $?  = last comparision value\n");
 			return 0;
 		} else
@@ -4729,6 +4774,8 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
 	int i, len = strlen (cmd), pipefd, ret;
+	const char *quotestr = "\"`";
+	quotestr = "`"; // tmp
 
 	cmd = r_str_trim_head_tail (cmd);
 
@@ -4751,14 +4798,17 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		return r_cmd_call (core->cmd, cmd);
 	}
 
+// TODO must honor " and `
 	/* comments */
 	if (*cmd!='#') {
-		ptr = strrchr (cmd, '#');
+		ptr = (char *)r_str_lastbut (cmd, '#', quotestr);
 		if (ptr) *ptr = '\0';
 	}
 
 	/* multiple commands */
-	ptr = strrchr (cmd, ';');
+// TODO: must honor " and ` boundaries
+	//ptr = strrchr (cmd, ';');
+	ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
 	if (ptr) {
 		*ptr = '\0';
 		if (r_core_cmd_subst (core, cmd) == -1)
@@ -4767,8 +4817,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		//r_cons_flush ();
 	}
 
+// TODO must honor " and `
 	/* pipe console to shell process */
-	ptr = strchr (cmd, '|');
+	//ptr = strchr (cmd, '|');
+	ptr = (char *)r_str_lastbut (cmd, '|', quotestr);
 	if (ptr) {
 		*ptr = '\0';
 		cmd = r_str_clean (cmd);
@@ -4777,8 +4829,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		return 0;
 	}
 
+// TODO must honor " and `
 	/* bool conditions */
-	ptr = strchr (cmd, '&');
+	ptr = (char *)r_str_lastbut (cmd, '&', quotestr);
+	//ptr = strchr (cmd, '&');
 	while (ptr && ptr[1]=='&') {
 		*ptr = '\0';
 		ret = r_cmd_call (core->cmd, cmd);
@@ -4793,6 +4847,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* Out Of Band Input */
 	free (core->oobi);
 	core->oobi = NULL;
+// XXX: must honor quotestr
 	ptr = strchr (cmd, '<');
 	if (ptr) {
 		ptr[0] = '\0';
@@ -4833,6 +4888,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 
+// TODO must honor " and `
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
 	if (ptr) {
@@ -4867,8 +4923,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 
+// TODO must honor " and `
 	/* grep the content */
-	ptr = strchr (cmd, '~');
+	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
+	//ptr = strchr (cmd, '~');
 	if (ptr) {
 		*ptr = '\0';
 		ptr++;
@@ -5090,7 +5148,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (rep<1) rep = 1;
 	if (rep>0) {
 		ret = R_TRUE;
-		while (*cmd>='0'&&*cmd<='9')
+		while (*cmd>='0' && *cmd<='9')
 			cmd++;
 		while (rep--) {
 			ret = r_core_cmd_subst (core, cmd);

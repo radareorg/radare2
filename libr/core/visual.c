@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include "r_core.h"
 
@@ -17,6 +17,31 @@ static int zoom = 0;
 
 static int marks_init = 0;
 static ut64 marks[UT8_MAX+1];
+
+static void r_core_visual_hud(RCore *core) {
+	char *res;
+	r_cons_show_cursor (R_TRUE);
+	char *homehud = r_str_home("/.radare2/hud");
+	if (homehud)
+		res = r_cons_hud_file (homehud);
+	// TODO: this file needs to be installed
+	if (!res) {
+		res = r_cons_hud_file (R2_LIBDIR"/radare2/"R2_VERSION"/hud/main");
+	}
+	r_cons_clear ();
+	if (res) {
+		char *p = strchr (res, '\t');
+		core->printidx = 1;
+		r_cons_printf ("%s\n", res);
+		r_cons_flush ();
+		if (p) {
+			r_core_cmd0 (core, p+1);
+		}
+		free (res);
+	}
+	r_cons_show_cursor (R_FALSE);
+	r_cons_flush ();
+}
 
 static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
 	if (!marks_init) {
@@ -514,6 +539,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case ':':
 		r_core_visual_prompt (core);
 		break;
+	case '_':
+		r_core_visual_hud (core);
+		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
 		r_cons_show_cursor (R_TRUE);
@@ -596,6 +624,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" yY      - copy and paste selection\n"
 		" mK/'K   - mark/go to Key (any key)\n"
 		" M       - show mount points\n"
+		" _       - enter hud mode\n"
 		" :cmd    - run radare command\n"
 		" ;[-]cmt - add/remove comment\n"
 		" .       - seek to program counter\n"

@@ -134,6 +134,7 @@ static RBinInfo* info(RBinArch *arch) {
 static int check(RBinArch *arch) {
 	int off, ret = R_FALSE;
 
+	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\xca\xfe\xba\xbe", 4)) {
 		ret = R_TRUE;
 		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));

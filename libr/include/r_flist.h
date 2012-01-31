@@ -11,6 +11,7 @@
 #define RFList void**
 
 #ifdef R_API
+R_API void **r_flist_resize(void **it, int n);
 #define r_flist_rewind(it) while(it!=*it) it--; it++;
 #define r_flist_next(it) *it!=0
 #define r_flist_get(it) *(it++)

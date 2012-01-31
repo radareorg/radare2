@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+
 #include "r_core.h"
 
 R_API int r_core_visual_trackflags(RCore *core) {

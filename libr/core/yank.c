@@ -1,6 +1,18 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include "r_core.h"
+
+R_API void r_core_yank_set (RCore *core, const char *str) {
+	free (core->yank);
+	if (str) {
+		core->yank = (ut8*)strdup (str);
+		core->yank_off = core->offset;
+		core->yank_len = strlen (str);
+	} else {
+		core->yank = NULL;
+		core->yank_len = 0;
+	}
+}
 
 R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	ut64 curseek = core->offset;

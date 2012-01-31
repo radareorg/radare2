@@ -116,6 +116,8 @@ install: install-doc install-man
 	for a in ${DATADIRS} ; do \
 	(cd $$a ; ${MAKE} install LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
+	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/hud
+	cp -f libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/hud/
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DESTDIR}/${LIBDIR}/pkgconfig
@@ -127,6 +129,8 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	for a in ${DATADIRS} ; do \
 	(cd $$a ; echo $$a ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
+	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud
+	ln -fs ${PWD}/libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud/main
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}

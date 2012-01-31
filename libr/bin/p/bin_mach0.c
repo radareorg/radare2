@@ -183,6 +183,7 @@ static RBinInfo* info(RBinArch *arch) {
 
 #if !R_BIN_MACH064
 static int check(RBinArch *arch) {
+	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
 		!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4))
 		return R_TRUE;
