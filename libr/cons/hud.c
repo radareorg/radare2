@@ -37,8 +37,8 @@ R_API char *r_cons_hud_string(const char *s) {
 				// XXX memleak
 				return NULL;
 			}
-			if (*os)
-			r_list_append (fl, strdup (os));
+			if (*os && *os != '#')
+				r_list_append (fl, strdup (os));
 			os = o+i+1;
 		}
 	}

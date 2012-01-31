@@ -1,16 +1,21 @@
-set breakpoint	db;?i new breakpoint address;db `?y`
-disable colors	e scr.color=0
-enable colors	e scr.color=1
-show bytes in disassembly	e asm.bytes=1
-hide bytes in disassembly	e asm.bytes=0
-write hexadecimal data in current offset	?i hexpairs;wx `?y`
-seek to entrypoint	s entry0
-seek to main	s main
 analyze all	aa
 analyze function	af
 analyze preludes	ap
-list symbols	is;?i
+continue process execution	dc;?i
+disable colors	e scr.color=0
+enable colors	e scr.color=1
+hide bytes in disassembly	e asm.bytes=0
 list imports 	ii;?i
 list sections	iS;?i
+list symbols	is;?i
 run command	?i cmd;`?y`;?i
+seek to entrypoint	s entry0
+seek to main	s main
+set breakpoint	db;?i new breakpoint address;db `?y`
+show backtrace	dbt;?i
+show bytes in disassembly	e asm.bytes=1
+show debugger register values	dr;?i
+show process memory maps	dm;?i
+step instruction	sr pc;pd 1;ds;?i
+write hexadecimal data in current offset	?i hexpairs;wx `?y`
 xor current block with hexpair key	?i hexpair key;wox `?y`
