@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2006-2012 pancake<nopcode.org> */
 
 #include <errno.h>
 #include <r_types.h>
@@ -308,20 +308,18 @@ R_API int r_socket_flush(RSocket *s) {
 /* returns -1 on error, 0 is false, 1 is true */
 R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 #if __UNIX__
-	int ret;
 	struct pollfd fds[1];
 	fds[0].fd = s->fd;
 	fds[0].events = POLLIN|POLLPRI;
 	fds[0].revents = POLLNVAL|POLLHUP|POLLERR;
-	ret = poll((struct pollfd *)&fds, 1, usecs);
-	return ret;
+	return poll((struct pollfd *)&fds, 1, usecs);
 #elif __WINDOWS__
 	fd_set rfds;
 	struct timeval tv;
 	if (s->fd==-1)
 		return -1;
-	FD_ZERO(&rfds);
-	FD_SET(s->fd, &rfds);
+	FD_ZERO (&rfds);
+	FD_SET (s->fd, &rfds);
 	tv.tv_sec = secs;
 	tv.tv_usec = usecs;
 	if (select (1, &rfds, NULL, NULL, &tv) == -1)

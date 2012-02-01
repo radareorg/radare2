@@ -3,9 +3,34 @@
 #include <r_cons.h>
 #include <string.h>
 
+#if 0 
+//__UNIX__
+#include <poll.h>
+static int is_fd_ready(int fd) {
+	fd_set rfds;
+	struct timeval tv;
+	if (fd==-1)
+		return 0;
+	FD_ZERO (&rfds);
+	FD_SET (fd, &rfds);
+	tv.tv_sec = 0;
+	tv.tv_usec = 1;
+	if (select (1, &rfds, NULL, NULL, &tv) == -1)
+		return 0;
+	return 1;
+	return !FD_ISSET (0, &rfds);
+}
+#endif
+
 R_API int r_cons_arrow_to_hjkl(int ch) {
 	if (ch==0x1b) {
+#if 0
+//__UNIX__
+		if (!is_fd_ready (0))
+			return 0;
+#endif
 		ch = r_cons_readchar ();
+		if (!ch) return 0;
 		switch (ch) {
 		case 0x1b:
 			ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
@@ -128,7 +153,7 @@ R_API int r_cons_readchar() {
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
-	ret = ReadConsole (h, buf,1, &out, NULL);
+	ret = ReadConsole (h, buf, 1, &out, NULL);
 	if (!ret)
 		return -1;
 	SetConsoleMode (h, mode);

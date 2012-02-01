@@ -116,8 +116,8 @@ install: install-doc install-man
 	for a in ${DATADIRS} ; do \
 	(cd $$a ; ${MAKE} install LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
-	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/hud
-	cp -f libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/hud/
+	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud
+	cp -f libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud/
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DESTDIR}/${LIBDIR}/pkgconfig

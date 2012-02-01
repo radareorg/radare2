@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 nibble<develsec.org> + pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 nibble<develsec.org>, pancake<nopcode.org> */
 
 #include <r_anal.h>
 
@@ -280,27 +280,31 @@ struct r_range_t *r_meta_ranges(RMeta *m)
 }
 #endif
 
-static void printmetaitem(RMeta *m, RMetaItem *d) {
+static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 	char *str = r_str_unscape (d->str);
 	if (str) {
 		if (d->type=='s' && !*str)
 			return;
 		r_str_sanitize (str);
-		m->printf ("%s %d %s @ 0x%08"PFMT64x"\n",
-			r_meta_type_to_string (d->type),
-			(int)(d->to-d->from), str, d->from);
+		if (rad) 
+			m->printf ("%s %d %s @ 0x%08"PFMT64x"\n",
+				r_meta_type_to_string (d->type),
+				(int)(d->to-d->from), str, d->from);
+		else
+			m->printf ("0x%08"PFMT64x" %s\n",
+				d->from, str);
 		free (str);
 	}
 }
 
 // TODO: Deprecate
-R_API int r_meta_list(RMeta *m, int type) {
+R_API int r_meta_list(RMeta *m, int type, int rad) {
 	int count = 0;
 	RListIter *iter;
 	RMetaItem *d;
 	r_list_foreach (m->data, iter, d) {
 		if (d->type == type || type == R_META_TYPE_ANY) {
-			printmetaitem (m, d);
+			printmetaitem (m, d, rad);
 			count++;
 		}
 	}

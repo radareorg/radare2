@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 // nibble<.ds@gmail.com> + pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 // nibble<.ds@gmail.com> + pancake<nopcode.org> */
 
 #ifndef _INCLUDE_R_ANAL_H_
 #define _INCLUDE_R_ANAL_H_
@@ -559,7 +559,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 size, const char *str);
 R_API struct r_meta_item_t *r_meta_find(RMeta *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
-R_API int r_meta_list(RMeta *m, int type);
+R_API int r_meta_list(RMeta *m, int type, int rad);
 R_API void r_meta_item_free(void *_item);
 R_API RMetaItem *r_meta_item_new(int type);
 

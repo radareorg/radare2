@@ -539,7 +539,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_visual_prompt (core);
 		break;
 	case '_':
-		while (r_core_visual_hud (core));
+		if (r_config_get_i (core->config, "hud.once"))
+			r_core_visual_hud (core);
+		else	while (r_core_visual_hud (core));
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
@@ -601,38 +603,40 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		zoom = !zoom;
 		break;
 	case '?':
+		r_cons_clear00 ();
 		r_cons_printf (
-		"\nVisual mode help:\n\n"
-		" >||<    - seek aligned to block size\n"
-		" hjkl    - move around\n"
-		" HJKL    - move around faster\n"
-		" pP      - rotate print modes\n"
-		" /*+-[]  - change block size, [] = resize scr.cols\n"
-		" cC      - toggle cursor and colors\n"
-		" gG      - go seek to begin and end of file (0-$s)\n"
-		" d[f?]   - define function, data, code, ..\n"
-		" x       - show xrefs to seek between them\n"
-		" sS      - step / step over\n"
-		" e       - edit eval configuration variables\n"
-		" t       - track flags (browse symbols, functions..)\n"
-		" T       - browse anal info and comments\n"
-		" v       - visual code analysis menu\n"
-		" fF      - seek next/prev function/flag/hit (scr.fkey)\n"
-		" B       - toggle automatic block size\n"
-		" uU      - undo/redo seek\n"
-		" yY      - copy and paste selection\n"
-		" mK/'K   - mark/go to Key (any key)\n"
-		" M       - show mount points\n"
-		" _       - enter hud mode\n"
-		" :cmd    - run radare command\n"
-		" ;[-]cmt - add/remove comment\n"
-		" .       - seek to program counter\n"
-		" z       - toggle zoom mode\n"
-		" q       - back to radare shell\n");
+		"Visual mode help:\n"
+		" >||<     seek aligned to block size\n"
+		" hjkl     move around\n"
+		" HJKL     move around faster\n"
+		" pP       rotate print modes\n"
+		" /*+-[]   change block size, [] = resize scr.cols\n"
+		" cC       toggle cursor and colors\n"
+		" gG       go seek to begin and end of file (0-$s)\n"
+		" d[f?]    define function, data, code, ..\n"
+		" x        show xrefs to seek between them\n"
+		" sS       step / step over\n"
+		" e        edit eval configuration variables\n"
+		" t        track flags (browse symbols, functions..)\n"
+		" T        browse anal info and comments\n"
+		" v        visual code analysis menu\n"
+		" fF       seek next/prev function/flag/hit (scr.fkey)\n"
+		" B        toggle automatic block size\n"
+		" uU       undo/redo seek\n"
+		" yY       copy and paste selection\n"
+		" mK/'K    mark/go to Key (any key)\n"
+		" M        show mount points\n"
+		" _        enter hud mode\n"
+		" :cmd     run radare command\n"
+		" ;[-]cmt  add/remove comment\n"
+		" .        seek to program counter\n"
+		" z        toggle zoom mode\n"
+		" q        back to radare shell\n");
 		r_cons_flush ();
 		r_cons_any_key ();
 		r_cons_clear00 ();
 		break;
+	case 0x1b:
 	case 'q':
 	case 'Q':
 		return R_FALSE;

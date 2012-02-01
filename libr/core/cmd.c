@@ -1408,18 +1408,33 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'i': // input num
-		{
-		r_cons_flush ();
-		char foo[1024];
-		for (input++; *input==' '; input++);
-		// TODO: use prompt input
-		eprintf ("%s: ", input);
-		fgets (foo, sizeof (foo)-1, stdin);
-		foo[strlen (foo)-1] = 0;
-		free (core->yank);
-		core->yank = (ut8 *)strdup (foo);
-		core->yank_len = strlen (foo);
-		core->num->value = r_num_math (core->num, foo);
+		if (input[1]=='m') {
+			r_cons_message (input+2);
+		} else
+		if (input[1]=='k') {
+			r_cons_any_key ();
+		} else
+		if (input[1]=='y') {
+			for (input+=2; *input==' '; input++);
+			core->num->value =
+			r_cons_yesno (1, "%s? (Y/n)", input);
+		} else
+		if (input[1]=='n') {
+			for (input+=2; *input==' '; input++);
+			core->num->value =
+			r_cons_yesno (0, "%s? (y/N)", input);
+		} else {
+			char foo[1024];
+			r_cons_flush ();
+			for (input++; *input==' '; input++);
+			// TODO: use prompt input
+			eprintf ("%s: ", input);
+			fgets (foo, sizeof (foo)-1, stdin);
+			foo[strlen (foo)-1] = 0;
+			free (core->yank);
+			core->yank = (ut8 *)strdup (foo);
+			core->yank_len = strlen (foo);
+			core->num->value = r_num_math (core->num, foo);
 		}
 		break;
 	case 't': {
@@ -1437,8 +1452,16 @@ static int cmd_help(void *data, const char *input) {
 			" ? eip-0x804800  ; show hex and dec result for this math expr\n"
 			" ?v eip-0x804800 ; show hex value of math expr\n"
 			" ?= eip-0x804800 ; same as above without user feedback\n"
-			" ?? [cmd]        ; ? == 0  run command when math matches\n"
-			" ?i prompt       ; prompt for number and store in $$?\n"
+			" ?? [cmd]        ; ? == 0 run command when math matches\n"
+			" ?i[ynmk] prompt ; prompt for number or Yes,No,Msg,Key and store in $$?\n"
+#if DONE 
+//BUT NOT DOCUMENTED AT ALL
+			" ?iy prompt      ; yesno input prompt\n"
+			" ?in prompt      ; yesno input prompt\n"
+			" ?im message     ; show message centered in screen\n"
+			" ?ik             ; press any key input dialog\n"
+#endif
+			" ?I hudfile      ; load hud menu with given file\n"
 			" ?d opcode       ; describe opcode for asm.arch\n"
 			" ?e string       ; echo string\n"
 			" ?r [from] [to]  ; generate random number between from-to\n"
@@ -1446,7 +1469,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?k k[=v]        ; key-value temporal storage for the user\n"
 			" ?b [num]        ; show binary value of number\n"
 			" ?f [num] [str]  ; map each bit of the number as flag string index\n"
-			" ?p vaddr        ; give physical address for given vaddr\n"
+			" ?p vaddr        ; get physical address for given vaddr\n"
 			" ?s from to step ; sequence of numbers from to by steps\n"
 			" ?S addr         ; return section name of given address\n"
 			" ?x num|0xnum|str; returns the hexpair of number or string\n"
@@ -4436,7 +4459,7 @@ static int cmd_meta(void *data, const char *input) {
 	char file[1024];
 	switch (*input) {
 	case '*':
-		r_meta_list (core->anal->meta, R_META_TYPE_ANY);
+		r_meta_list (core->anal->meta, R_META_TYPE_ANY, 1);
 		break;
 	case 't':
 		switch (input[1]) {
@@ -4544,8 +4567,10 @@ static int cmd_meta(void *data, const char *input) {
 			}
 			break;
 		case '\0':
+			r_meta_list (core->anal->meta, input[0], 0);
+			break;
 		case '*':
-			r_meta_list (core->anal->meta, input[0]);
+			r_meta_list (core->anal->meta, input[0], 1);
 			break;
 		case '!':
 			{

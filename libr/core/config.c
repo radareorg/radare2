@@ -504,6 +504,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 	r_config_set_cb (cfg, "fs.view", "normal", &config_fsview_callback);
 	r_config_desc (cfg, "fs.view", "Set visibility options for filesystems");
+	r_config_set (cfg, "hud.once", "false");
+	r_config_desc (cfg, "hud.once", "run");
 	r_config_set (cfg, "bin.strings", "true");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__

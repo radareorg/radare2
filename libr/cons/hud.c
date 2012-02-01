@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+
 #include <r_cons.h>
+#include <ctype.h>
 
 #if 0
 TODO?
@@ -68,9 +70,10 @@ static char *strmatch (char *pos, char *buf) {
 }
 
 R_API char *r_cons_hud(RList *list) {
-	int n, i = 0;
+	int n, j, i = 0;
 	int ch, nch;
-	char buf[128];
+	int choose = 0;
+	char *p, buf[128];
 	RListIter *iter;
 	char *match = NULL;
 	void *pos;
@@ -84,44 +87,89 @@ R_API char *r_cons_hud(RList *list) {
 		r_list_foreach (list, iter, pos) {
 			if (!buf[0] || strmatch (pos, buf)) {
 				char *x = strchr (pos, '\t');
-				if (x) *x = 0;
 				// remove \t.*
-				r_cons_printf (" - %s\n", pos);
-				if (x) *x = '\t';
-				if (n==0) match = pos;
+				if (!choose || n>=choose) {
+					if (x) *x = 0;
+					p = strdup (pos);
+					for (j=0; p[j]; j++) {
+						if (strchr (buf, p[j]))
+							p[j] = toupper (p[j]);
+					}
+					r_cons_printf (" - %s\n", p);
+					free (p);
+					if (x) *x = '\t';
+					if (n==0) match = pos;
+				}
 				n++;
 			}
 		}
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		nch = r_cons_arrow_to_hjkl (ch);
-//eprintf ("%d %d\n", ch, nch); sleep (1);
+//ceprintf ("%c %d\n", ch, nch); sleep (1);
+		if (nch == 'j' && ch != 'j') {
+			if (choose+1 < n)
+				choose++;
+		} else if (nch == 'k' && ch != 'k') {
+			if (choose>=0)
+				choose--;
+		} else
 		switch (ch) {
+		case 9: // \t
+			if (choose+1 < n)
+				choose++;
+			break;
 		case 10: // \n
 		case 13: // \r
+			choose = 0;
 			if (!*buf)
 				return NULL;
-			if (n == 1) {
+			if (n >= 1) {
 				//eprintf ("%s\n", buf);
 				//i = buf[0] = 0;
 				return strdup (match);
 			} // no match!
 			break;
 		case 23: // ^w
+			choose = 0;
 			i = buf[0] = 0;
 			break;
-		case 27: // ignore
-			break;
+		case 0x1b: // ESC
+			return NULL;
 		case 127: // bs
+			choose = 0;
 			if (i<1) return NULL;
 			buf[--i] = 0;
 			break;
 		default:
+			choose = 0;
 			buf[i++] = ch;
 			buf[i] = 0;
 			break;
 		}
 	}
+	return NULL;
+}
+
+R_API char *r_cons_hud_path(const char *path, int dir) {
+	// TODO
+	eprintf ("TODO\n");
+	return NULL;
+}
+
+// TODO: Add fmt support
+R_API char *r_cons_message(const char *msg) {
+	int cols, rows;
+	int len = strlen (msg);
+	cols = r_cons_get_size (&rows);
+
+	r_cons_clear();
+	r_cons_gotoxy ((cols-len)/2, rows/2); // XXX
+	/// TODO: add square, or talking clip here
+	r_cons_printf ("%s\n", msg);
+	r_cons_flush ();
+	r_cons_gotoxy (0, rows-2); // XXX
+	r_cons_any_key ();
 	return NULL;
 }
 

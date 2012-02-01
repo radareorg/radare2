@@ -227,6 +227,7 @@ R_API int r_cons_yesno(int def, const char *fmt, ...);
 R_API void r_cons_set_cup(int enable);
 R_API void r_cons_column(int c);
 R_API int r_cons_get_column();
+R_API char *r_cons_message(const char *msg);
 #endif
 
 #endif

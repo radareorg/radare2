@@ -414,7 +414,11 @@ R_API void r_cons_show_cursor (int cursor) {
  * If you doesn't use this order you'll probably loss your terminal properties.
  *
  */
+static int oldraw = -1;
 R_API void r_cons_set_raw(int is_raw) {
+	if (oldraw != -1)
+		if (is_raw == oldraw)
+			return;
 #if __UNIX__
 	if (is_raw) tcsetattr (0, TCSANOW, &I.term_raw);
 	else tcsetattr (0, TCSANOW, &I.term_buf);
@@ -425,6 +429,7 @@ R_API void r_cons_set_raw(int is_raw) {
 #warning No raw console supported for this platform
 #endif
 	fflush (stdout);
+	oldraw = is_raw;
 }
 
 R_API void r_cons_invert(int set, int color) {
