@@ -44,7 +44,7 @@ R_API char *r_cons_hud_string(const char *s) {
 			os = o+i+1;
 		}
 	}
-	ret = r_cons_hud (fl);
+	ret = r_cons_hud (fl, NULL);
 	r_list_free (fl);
 	return ret;
 }
@@ -69,7 +69,7 @@ static char *strmatch (char *pos, char *buf) {
 	return strcasestr (pos, os);
 }
 
-R_API char *r_cons_hud(RList *list) {
+R_API char *r_cons_hud(RList *list, const char *prompt) {
 	int ch, nch, first, n, j, i = 0;
 	int choose = 0;
 	char *p, buf[128];
@@ -83,6 +83,8 @@ R_API char *r_cons_hud(RList *list) {
 		r_cons_gotoxy (0, 0);
 		n = 0;
 		match = NULL;
+		if (prompt && *prompt)
+			r_cons_printf (">> %s\n", prompt);
 		r_cons_printf ("> %s|\n", buf);
 		r_list_foreach (list, iter, pos) {
 			if (!buf[0] || strmatch (pos, buf)) {
@@ -154,11 +156,33 @@ R_API char *r_cons_hud(RList *list) {
 }
 
 R_API char *r_cons_hud_path(const char *path, int dir) {
-	char *ret;
-	RList *files = r_sys_dir (path);
-	// TODO
-	ret = r_cons_hud (files);
-	return ret;
+	char *tmp = NULL, *ret = NULL;
+	RList *files;
+	while (*path==' ') path++;
+	if (!path || !*path)
+		tmp = strdup ("./");
+	else tmp = strdup (path);
+	files = r_sys_dir (tmp);
+	if (files) {
+		ret = r_cons_hud (files, tmp);
+		if (ret) {
+			tmp = r_str_concat (tmp, "/");
+			tmp = r_str_concat (tmp, ret);
+			ret = r_file_abspath (tmp);
+			free (tmp);
+			tmp = ret;
+			if (r_file_is_directory (tmp)) {
+				ret = r_cons_hud_path (tmp, dir);
+				free (tmp);
+				tmp = ret;
+			}
+		}
+	} else eprintf ("No files found\n");
+	if (!ret) {
+		free (tmp);
+		return NULL;
+	}
+	return tmp;
 }
 
 // TODO: Add fmt support
@@ -167,7 +191,7 @@ R_API char *r_cons_message(const char *msg) {
 	int len = strlen (msg);
 	cols = r_cons_get_size (&rows);
 
-	r_cons_clear();
+	r_cons_clear ();
 	r_cons_gotoxy ((cols-len)/2, rows/2); // XXX
 	/// TODO: add square, or talking clip here
 	r_cons_printf ("%s\n", msg);
@@ -186,7 +210,7 @@ main() {
 	r_flist_set (fl, 2, "funny to see you here");
 	
 	r_cons_new ();
-	res = r_cons_hud (fl);
+	res = r_cons_hud (fl, NULL);
 	r_cons_clear ();
 	if (res) {
 		r_cons_printf ("%s\n", res);

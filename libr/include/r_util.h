@@ -219,6 +219,7 @@ R_API void r_graph_push (RGraph *t, ut64 addr, void *data);
 R_API RGraphNode* r_graph_pop(RGraph *t);
 
 R_API int r_file_size(const char *str);
+R_API boolt r_file_is_directory(const char *str);
 R_API RMmap *r_file_mmap (const char *file, boolt rw);
 R_API void r_file_mmap_free (RMmap *m);
 

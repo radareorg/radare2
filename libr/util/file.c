@@ -19,6 +19,13 @@ R_API const char *r_file_basename (const char *path) {
 	return path;
 }
 
+R_API boolt r_file_is_directory(const char *str) {
+	struct stat buf;
+	if (stat (str, &buf)==-1)
+		return R_FALSE;
+	return ((S_IFDIR &buf.st_mode))? R_TRUE: R_FALSE;
+}
+
 R_API boolt r_file_exist(const char *str) {
 	struct stat buf;
 	if (stat (str, &buf)==-1)
@@ -44,6 +51,7 @@ R_API char *r_file_abspath(const char *file) {
 		ret = r_str_dup_printf ("%s/%s", cwd, file);
 #endif
 	free (cwd);
+// TODO: remove // and ./
 	return ret? ret: strdup (file);
 }
 

@@ -1312,7 +1312,7 @@ static int cmd_help(void *data, const char *input) {
 	case '$':
 		return cmd_help (data, " $?");
 	case 'V':
-		r_cons_printf ("r2-%s\n", R2_VERSION);
+		r_cons_printf ("%s\n", R2_VERSION);
 		break;
 	case 'l':
 		for (input++; input[0]==' '; input++);
@@ -1412,7 +1412,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_message (input+2);
 		} else
 		if (input[1]=='p') {
-			char *p = r_cons_hud_path (input+2);
+			char *p = r_cons_hud_path (input+2, 0);
 			core->yank = (ut8*)p;
 			core->yank_len = p? strlen (p): 0;
 			core->num->value = (p != NULL);
@@ -1457,6 +1457,7 @@ static int cmd_help(void *data, const char *input) {
 			"Usage: ?[?[?]] expression\n"
 			" ? eip-0x804800  ; show hex and dec result for this math expr\n"
 			" ?v eip-0x804800 ; show hex value of math expr\n"
+			" ?V              ; show library version of r_core\n"
 			" ?= eip-0x804800 ; same as above without user feedback\n"
 			" ?? [cmd]        ; ? == 0 run command when math matches\n"
 			" ?i[ynmkp] arg   ; prompt for number or Yes,No,Msg,Key,Path and store in $$?\n"
