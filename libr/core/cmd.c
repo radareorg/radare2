@@ -1411,6 +1411,12 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1]=='m') {
 			r_cons_message (input+2);
 		} else
+		if (input[1]=='p') {
+			char *p = r_cons_hud_path (input+2);
+			core->yank = (ut8*)p;
+			core->yank_len = p? strlen (p): 0;
+			core->num->value = (p != NULL);
+		} else
 		if (input[1]=='k') {
 			r_cons_any_key ();
 		} else
@@ -1453,7 +1459,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?v eip-0x804800 ; show hex value of math expr\n"
 			" ?= eip-0x804800 ; same as above without user feedback\n"
 			" ?? [cmd]        ; ? == 0 run command when math matches\n"
-			" ?i[ynmk] prompt ; prompt for number or Yes,No,Msg,Key and store in $$?\n"
+			" ?i[ynmkp] arg   ; prompt for number or Yes,No,Msg,Key,Path and store in $$?\n"
 #if DONE 
 //BUT NOT DOCUMENTED AT ALL
 			" ?iy prompt      ; yesno input prompt\n"

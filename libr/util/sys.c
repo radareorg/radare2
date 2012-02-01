@@ -30,8 +30,10 @@ R_API ut64 r_sys_now(void) {
 }
 
 R_API RList *r_sys_dir(const char *path) {
-	DIR *dir = opendir (path);
 	struct dirent *entry;
+	DIR *dir;
+	if (!path) return NULL;
+	dir = opendir (path);
 	if (dir) {
 		RList *list = r_list_new ();
 		if (list) {

@@ -788,6 +788,16 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->addr = addr;
 	op->jump = op->fail = -1;
 	op->ref = op->value = -1;
+#if 1
+	// HACK FOR SOME OPCODEZ
+	if (anal->bits==64 && data[0] == 0xff && data[1] == 0x25) { // jmp qword [rip+off]
+		ut64 off = data[2] | data[3]<<8 | data[4]<<16 | data[5]<<24;
+		op->type = R_ANAL_OP_TYPE_JMP; // XXX: must be UJMP
+		op->jump = addr + off; // XXX: this opcode is a ref, not a direct jmp
+		op->length = 6;	
+		return op->length;
+	}
+#endif
 
 	ret = -1;
 	if (anal->bits==64)

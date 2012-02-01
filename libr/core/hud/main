@@ -25,3 +25,5 @@ write hexadecimal data in current offset	?i hexpairs;wx `?y`
 xor current block with hexpair key	?i hexpair key;wox `?y`
 edit eval configuration	Veq
 calculator	?i enter math expression;? `?y`;?ik
+disassemble 1024 bytes and pipe to less(1)	b 1024;pd|less -R
+todo	?im NOT YET IMPLEMENTED

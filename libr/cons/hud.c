@@ -70,8 +70,7 @@ static char *strmatch (char *pos, char *buf) {
 }
 
 R_API char *r_cons_hud(RList *list) {
-	int n, j, i = 0;
-	int ch, nch;
+	int ch, nch, first, n, j, i = 0;
 	int choose = 0;
 	char *p, buf[128];
 	RListIter *iter;
@@ -80,6 +79,7 @@ R_API char *r_cons_hud(RList *list) {
 	buf[0] = 0;
 	r_cons_clear ();
 	for (;;) {
+		first = 1;
 		r_cons_gotoxy (0, 0);
 		n = 0;
 		match = NULL;
@@ -95,10 +95,11 @@ R_API char *r_cons_hud(RList *list) {
 						if (strchr (buf, p[j]))
 							p[j] = toupper (p[j]);
 					}
-					r_cons_printf (" - %s\n", p);
+					r_cons_printf (" %c %s\n", first?'-':' ', p);
 					free (p);
 					if (x) *x = '\t';
-					if (n==0) match = pos;
+					if (first) match = pos;
+					first = 0;
 				}
 				n++;
 			}
@@ -118,6 +119,7 @@ R_API char *r_cons_hud(RList *list) {
 		case 9: // \t
 			if (choose+1 < n)
 				choose++;
+			else choose = 0;
 			break;
 		case 10: // \n
 		case 13: // \r
@@ -152,9 +154,11 @@ R_API char *r_cons_hud(RList *list) {
 }
 
 R_API char *r_cons_hud_path(const char *path, int dir) {
+	char *ret;
+	RList *files = r_sys_dir (path);
 	// TODO
-	eprintf ("TODO\n");
-	return NULL;
+	ret = r_cons_hud (files);
+	return ret;
 }
 
 // TODO: Add fmt support
