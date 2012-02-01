@@ -4417,7 +4417,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case ' ':
 		ptr = strchr (input+1, ' ');
-		if (ptr) {
+		if (ptr && ptr[0]=='0' && ptr[1]=='x') { // hack to fix opening files with space in path
 			*ptr = '\0';
 			addr = r_num_math (core->num, ptr+1);
 		} else {

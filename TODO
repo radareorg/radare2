@@ -5,69 +5,35 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
-====[[ 0.9 ]]====
-* r_cons_visual_write_tail() -> fill end of screen with spaces \o/
-* Add graph.nodecolor graph.bgcolor graph.edgecolor ??
+====[[ 0.9.1 ]]====
+* If [0-9] keybindings in visual point to same address use same reference
+* Make r_io happy with RList
+* RBinCreate:
+  - mach0 create for darwin-ppc
+  - pe64
+  - plan9 bins
+* add support for sockets in rarun2
 * Add !load in r2 (oo args)
+* opening a file from inside r2 doesnt clears internal data (strings..)
+* 'ao' must be for opcodes, not bytes
+* backtrace for linux or osx at least
+* Add support for classes (useful for c++, dex, objc, ...)
+  - command to add new classes
+
 * implement 'ax' to get/set xrefs (better than afl <addr>) .. or afx?
 * shell encoder - get x86-64 one from twitter
   - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
   - shellforge.. and review current shellcodes :?
+* rasm2 must support binary creation help message or so..
+  - rabin2 integration must be easier
+* rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
+
+===[ 0.9.2 ]===
 * show analized functions in 'aa'
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"
   - dca sym.main imp.printf
   - dbc
-
-* rasm2 must support binary creation help message or so..
-  - rabin2 integration must be easier
-* 'ao' must be for bytes count, not bytes
-* rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
-
-
-===[[ 0.9.1 ]]===
-* Add support for classes (useful for c++, dex, objc, ...)
-  - command to add new classes
-* Optimizations:
-  - cons_visual_write() should do a single write instead of one per line
-  - Refactor get_sym() and so on...
-  - TODO: make elf/pe get_os() and others return const and not strdup
-  - RAnalValue must be static, not ref
-  - save memory and accelerate code analysis
-  - basicblock signatures must be just pointers to a big buf
-
-Other stuff
-===========
-* asm.pseudo for brainfuck
-* implement code analysis using udis86.. is this necessary.. x86im works fine?
-* code analysis for msil
-* rax2 -k by default?
-* Optimize /m
-  - search only using given file, not loading default library
-  - do not read each block byte per byte
-  - do not show repeated consecutive hits
-* Handle ^C in searches (at least)
-* Remove/deprecate libr/vm
-* Merge libr/db inside libr/util ?
-* Test r_search_delta()
-* Dupped javasm bin/asm -- must merge
-
-* Rename r_hashtable -> r_ht
-  - Make ht64.c include ht.c
-* Add 'S' subcommand to display section size and get by perms rwx
-* memset0 the op before calling the plugin analysis -- not really that's a performance cost..
-* Handle ^C as an alias for '.' command
-* search.kwidx must be search.lastidx or search.idx ?
-* add support for sockets in rarun2
-* RBinCreate:
-  - mach0 create for darwin-ppc
-  - pe64
-  - plan9 bins
-
-TODO
-====
-* Implement r_flag_unset_i () ftw
-* Honor string metadata for asmsteps ('jk' in visual)
 
 ** BUG **
   * fix for indirect list manipulations -- looks like a similar problem with r_cons recusivity
@@ -81,24 +47,11 @@ TODO
   }
   r_list_commit (b);
 
-* If [0-9] keybindings in visual point to same address use same reference
-
- -- refactoring tasks
-* Make r_io happy with RList
 * Add r_cons_prompt () ... calling set_prompt + fgets -- this api needs cleanup
   - set prompt, set line, fgets
   - strict width in visual
-* REFACTORING of disasm loop XDDDDD -1 (r2-0.9 plzz)
+* REFACTOR of disasm loop XDDDDD -1 (r2<1.0 plzz)
   - arch dependent anal code must be removed from disasm loop +1
-
-To wipe:
-========
- - Move manpages from man/ to binr/*/? (harder to maintain?)
- - Move the content of libr/*/TODO here
- - linestyle?? for disassembly lines
- - remove libr/vm and libr/db
- - imho we should not implement this:
-   - Implement BLOCK in r_core_sysenv_begin|end ()
 
 pancake
 -------
@@ -214,48 +167,6 @@ Assembler
   translate into c code and gets compiled. use rcc+rasm?
   it is like a extended regular expression engine
 
-BINARY INFORMATION
-==================
-* dwarf, pdb, def, lib
-  - from file, from section, ...
-  - load symbols from .lib or .def (find signatures)
-    .def -> .idt , .lib -> ar2idt
-* Useful information in the PDB format
-  - programming language used (dwarf only?)
-  - offset - file:line
-  - elements { position, type, name, length, offset, delta }
-  - types // using the r_anal vartype API (not yet implemented)
-  - position = { inlined, global, local } enum
-  - function = { visibility, position, type, calltype (cc), arglist, return }
-  - visibility = { local, exported, qualified }
-  Types {
-  	// element types
-  	array, bitfield, class, struct, union, enum, pointer
-  	procedure, function, arglist, vtshape, fieldlist
-  	
-  	// data types
-  	float, char, signed short, bool, address, ..
-  }
-  Type {
-  	char, short, ushort, long, ulong, 
-  }
-
-Things to improve in r2
-=======================
-* focus in single arch (rock allover) mips, ppc64 or arm?
-* Enhace code analysis
-  - calculate multiple execution paths to give branch prediction results
-    - get/set register status of the vm
-    - analyze from various parent functions and resolve ranged values
-    - a ranged value can be:
-      - ut64 from, to
-      - restrict : %2 (module)
-      - ...
-* Add support for aout binaries?
-* eprintf should be modified to log into a file
-  - eprintf_open() -- start log to file
-  - eprintf_close() -- stop log to file
-
 Debugger
 ========
 * stepover waits for one unknown event that cannot be stopped
@@ -285,6 +196,28 @@ pancake
        - function signature comparsion if they dont match
        r_anal_fcn_cmp (anal, f1, f2);
 
+                  ------8<------------8<------
+
+              ------8<-----[ extras ]-------8<------
+
+                  ------8<------------8<------
+
+Things to improve in r2
+=======================
+* focus in single arch (rock allover) mips, ppc64 or arm? imho iphone-arm
+* Enhace code analysis
+  - calculate multiple execution paths to give branch prediction results
+    - get/set register status of the vm
+    - analyze from various parent functions and resolve ranged values
+    - a ranged value can be:
+      - ut64 from, to
+      - restrict : %2 (module)
+      - ...
+* Add support for aout binaries?
+* eprintf should be modified to log into a file
+  - eprintf_open() -- start log to file
+  - eprintf_close() -- stop log to file
+
 Questions
 =========
 * Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
@@ -295,10 +228,12 @@ Questions
 * Add deltified offset in PC? +10, +30 ... asm.reladdr
 * regio not implemented // it is really necessary? imho no..
 * distribute 'spp' with 'rarc2' ? imho no
-
+* Add graph.nodecolor graph.bgcolor graph.edgecolor ??
 
 Refactoring
 ===========
+* Rename r_hashtable -> r_ht
+  - Make ht64.c include ht.c
 * Review the r_flags api
 * Add pipe_to_buffer..not only file descriptors
 * r_config set_int and so..simplify
@@ -318,9 +253,45 @@ Refactoring
   - useful in r_sys_mkdir ?
 * Finish and import the spp's getopt owns implementation in r_util (like in p9)
 
+To wipe:
+========
+ - Move manpages from man/ to binr/*/? (harder to maintain?)
+ - Move the content of libr/*/TODO here
+ - linestyle?? for disassembly lines
+ - remove libr/vm and libr/db
+ - imho we should not implement this:
+   - Implement BLOCK in r_core_sysenv_begin|end ()
+
+===[ Optimizations ]===
+* Performance
+  - cons_visual_write() should do a single write instead of one per line
+  - Refactor get_sym() and so on...
+  - TODO: make elf/pe get_os() and others return const and not strdup
+  - RAnalValue must be static, not ref
+  - save memory and accelerate code analysis
+  - basicblock signatures must be just pointers to a big buf
+* Optimize /m
+  - search only using given file, not loading default library
+  - do not read each block byte per byte
+  - do not show repeated consecutive hits
  
 Future
 ======
+* memset0 the op before calling the plugin analysis -- not really that's a performance cost..
+* Add 'S' subcommand to display section size and get by perms rwx
+* Implement r_flag_unset_i () ftw
+* Honor string metadata for asmsteps ('jk' in visual)
+* search.kwidx must be search.lastidx or search.idx ?
+* asm.pseudo for brainfuck
+* code analysis for msil
+* rax2 -k by default?
+* Handle ^C in searches (at least)
+* Remove/deprecate libr/vm
+* Merge libr/db inside libr/util ?
+* Test r_search_delta()
+* Dupped javasm bin/asm -- must merge
+* implement code analysis using udis86.. is this necessary.. x86im works fine?
+* r_cons_visual_write_tail() -> fill end of screen with spaces \o/
 * Add support for 'expect' like foo in rarun2
   - make rarun live in a lib.. or at least be usable from r2
 * use centralized pubsub or memcached to sync data // redis?
@@ -343,6 +314,31 @@ Future
 	 - the r_flag_get by string should have another construction with btree
 	   for the string of the name
 
+BINARY INFORMATION
+==================
+* dwarf, pdb, def, lib
+  - from file, from section, ...
+  - load symbols from .lib or .def (find signatures)
+    .def -> .idt , .lib -> ar2idt
+* Useful information in the PDB format
+  - programming language used (dwarf only?)
+  - offset - file:line
+  - elements { position, type, name, length, offset, delta }
+  - types // using the r_anal vartype API (not yet implemented)
+  - position = { inlined, global, local } enum
+  - function = { visibility, position, type, calltype (cc), arglist, return }
+  - visibility = { local, exported, qualified }
+  Types {
+  	// element types
+  	array, bitfield, class, struct, union, enum, pointer
+  	procedure, function, arglist, vtshape, fieldlist
+  	
+  	// data types
+  	float, char, signed short, bool, address, ..
+  }
+  Type {
+  	char, short, ushort, long, ulong, 
+  }
 
 .------------------------.
 |   ___       ___  ____  |
