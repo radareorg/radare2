@@ -3948,7 +3948,7 @@ static int cmd_search(void *data, const char *input) {
 					break;
 				r_core_magic_at (core, file, addr, 99, R_FALSE);
 			}
-			r_cons_break_end();
+			r_cons_break_end ();
 		} else eprintf ("Usage: /m [file]\n");
 		break;
 	case 'p':
@@ -4203,7 +4203,7 @@ static int cmd_search(void *data, const char *input) {
 			}
 			r_cons_break_end ();
 			free (buf);
-			r_cons_clear_line ();
+			//r_cons_clear_line ();
 			if (searchflags && searchcount>0) {
 				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
 					searchcount,

@@ -614,6 +614,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" cC       toggle cursor and colors\n"
 		" gG       go seek to begin and end of file (0-$s)\n"
 		" d[f?]    define function, data, code, ..\n"
+		" w        write hexpairs in curseek or cursor (same as :wx)\n"
 		" x        show xrefs to seek between them\n"
 		" sS       step / step over\n"
 		" e        edit eval configuration variables\n"
