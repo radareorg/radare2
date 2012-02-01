@@ -11,12 +11,7 @@
 # preinst, postinst, prerm, postrm - optional control shell scripts
 
 # These fields are used to build the control file.
-PACKAGE = radare2
-VERSION = 0.8.5
-ARCH = armel
-SECTION = user/shell
-PRIORITY = optional
-MAINTAINER = pancake <pancake@nopcode.org>
+include ./CONFIG
 # todo: For python2.4 it also needs python2.4-elementtree and python2.4-sqlite
 DEPENDS =
 # todo: Recommends
@@ -40,7 +35,7 @@ ${PACKAGE_DIR}/data: ${SOURCE_DIR}
 	sudo rm -rf data
 	mkdir -p $@
 	-cd .. ; fakeroot ${MAKE} install DESTDIR=$@ INSTALL_PROGRAM=cp
-	sudo /usr/sbin/chown -R 0:0 $@/*
+	sudo chown -R 0:0 $@/*
 	ls -al data/usr/bin/
 	mkdir -p control
 	printf "S 15 com.nokia.maemo H 40 " > control/digisums

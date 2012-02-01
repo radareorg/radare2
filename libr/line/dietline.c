@@ -217,7 +217,7 @@ R_API void r_line_autocomplete() {
 			// try to autocomplete argument
 			for (i=0; i<argc; i++) {
 				j = 0;
-				while (argv[i][j]==root[j]) j++;
+				while (argv[i][j]==root[j] && root[j] != '\0') j++;
 				free (root);
 				root = strdup (argv[i]);
 				if (j<strlen (root))

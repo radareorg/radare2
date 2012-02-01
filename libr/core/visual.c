@@ -670,13 +670,15 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		RFlagItem *f = r_flag_get_at (core->flags, core->offset);
 		if (f) {
 			if (f->offset == core->offset) snprintf (pos, sizeof (pos), "@ %s", f->name);
-			else snprintf (pos, sizeof (pos), "@ %s+%d (0x%"PFMT64x")", f->name, (int)(core->offset-f->offset), f->offset);
+			else snprintf (pos, sizeof (pos), "@ %s+%d (0x%"PFMT64x")",
+				f->name, (int)(core->offset-f->offset), f->offset);
 		} else pos[0] = 0;
 	}
 
 	if (cursor<0) cursor = 0;
 	if (color) r_cons_strcat (Color_YELLOW);
 	strncpy (bar, printfmt[R_ABS (core->printidx%NPF)], sizeof (bar)-1);
+	bar[sizeof (bar)-1] = 0; // '\0'-terminate bar
 	bar[10] = '.'; // chop cmdfmt
 	bar[11] = '.'; // chop cmdfmt
 	bar[12] = 0; // chop cmdfmt

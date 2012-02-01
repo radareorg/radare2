@@ -269,7 +269,7 @@ R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
 	RRegArena *src = r_list_head (reg->regset[item->type].pool)->data;
 	RRegArena *dst = r_list_head (reg->regset[item->type].pool)->n->data;
 	if (off+len>src->size) len = src->size-off;
-	if (off+len>dst->size) len = src->size-off;
+	if (off+len>dst->size) len = dst->size-off;
 	if (len>0)
 	if (memcmp (dst->bytes+off, src->bytes+off, len)) {
 		ut64 ret;

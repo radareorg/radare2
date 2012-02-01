@@ -2272,7 +2272,7 @@ return 0;
 		" ps [len]     print string\n"
 		" psp          print pascal string\n"
 		" pS [len]     print wide string\n"
-		" pt [len]     print diferent timestamps\n"
+		" pt [len]     print different timestamps\n"
 		" pr [len]     print N raw bytes\n"
 		" pu [len]     print N url encoded bytes\n"
 		" pU [len]     print N wide url encoded bytes\n"

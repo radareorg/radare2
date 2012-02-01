@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -14,6 +14,7 @@ R_API struct r_io_t *r_io_new() {
 	io->write_mask_fd = -1;
 	io->redirect = NULL;
 	io->printf = (void*) printf;
+	io->va = -1;
 	io->plugin = NULL;
 	io->raised = -1;
 	r_io_cache_init (io);
