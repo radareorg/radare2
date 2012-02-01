@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,7 +7,9 @@
 #include "../format/p9/p9bin.h"
 
 static int check(RBinArch *arch) {
-	return (r_bin_p9_get_arch(arch->buf->buf, NULL, NULL));
+	if (arch && arch->buf && arch->buf->buf)
+		return (r_bin_p9_get_arch (arch->buf->buf, NULL, NULL));
+	return R_FALSE;
 }
 
 static int load(RBinArch *arch) {

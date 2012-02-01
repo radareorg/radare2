@@ -3827,16 +3827,25 @@ static int cmd_search(void *data, const char *input) {
 	ut8 *buf;
 
 	mode = r_config_get (core->config, "search.in");
+	if (!strcmp (mode, "block")) {
+		from = core->offset;
+		to = core->offset + core->blocksize;
+	} else
 	if (!strcmp (mode, "file")) {
 		if (core->io->va) {
+			ut64 vaddr = 0LL;
 			RListIter *iter;
 			RIOSection *s;
 			from = core->offset;
 			to = from;
 			r_list_foreach (core->io->sections, iter, s) {
-				if ((s->vaddr+s->size) > to)
+				if ((s->vaddr+s->size) > to && from>=s->vaddr) {
+					vaddr = s->vaddr;
 					to = s->vaddr+s->size;
+				}
 			}
+			if (to == 0LL || to == UT64_MAX || to == UT32_MAX)
+				to = r_io_size (core->io);
 		} else {
 			from = core->offset;
 			to = r_io_size (core->io);
