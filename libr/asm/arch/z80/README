@@ -1,0 +1,18 @@
+assembler:
+
+    http://www.nongnu.org/z80asm
+
+    LICENSE: GPL
+
+        is this compatible with LGPL? :/
+
+
+disassembler:
+
+    http://www.sarnau.info/software:z80_disassembler_assembler
+
+    LICENSE:
+
+	I think this is not GPL compliant
+
+	This program is freeware. It is not allowed to be used as a base for a commercial product! 

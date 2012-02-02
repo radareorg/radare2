@@ -27,6 +27,7 @@
 #define R_ASM_ARCH_OBJD R_SYS_ARCH_OBJD
 #define R_ASM_ARCH_BF R_SYS_ARCH_BF
 #define R_ASM_ARCH_SH R_SYS_ARCH_SH
+#define R_ASM_ARCH_Z80 R_SYS_ARCH_Z80
 
 #define R_ASM_GET_OFFSET(x,y,z) \
 	(x && x->binb.bin && x->binb.get_offset)? \
@@ -157,6 +158,8 @@ extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_msil;
 extern RAsmPlugin r_asm_plugin_sh;
+extern RAsmPlugin r_asm_plugin_z80;
+extern RAsmPlugin r_asm_plugin_m68k;
 #endif
 
 #endif
