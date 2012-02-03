@@ -321,6 +321,7 @@ extern struct r_io_plugin_t r_io_plugin_http;
 extern struct r_io_plugin_t r_io_plugin_haret;
 extern struct r_io_plugin_t r_io_plugin_bfdbg;
 extern struct r_io_plugin_t r_io_plugin_w32;
+extern struct r_io_plugin_t r_io_plugin_ewf;
 #endif
 
 #if 0

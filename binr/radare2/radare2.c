@@ -30,7 +30,7 @@ static int main_help(int line) {
 		" -i [file]    run script file\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
-		" -n           do not run ~/.radare2rc\n"
+		" -n           disable analysis and user settings\n"
 		" -q           quite mode (no prompt)\n"
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
@@ -45,7 +45,7 @@ static int main_help(int line) {
 	if (line==2)
 		printf (
 		"Files:\n"
-		" RCFILE       ~/.radare2rc\n"
+		" RCFILE       ~/.radare2rc (user preferences, batch script)\n"
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		"Environment:\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"

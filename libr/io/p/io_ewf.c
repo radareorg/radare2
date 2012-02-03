@@ -2,10 +2,11 @@
 
 // XXX: not yet tested
 
-#include <r_userconf.h>
-#if HAVE_LIB_EWF
 #include "r_io.h"
 #include "r_lib.h"
+#include <r_userconf.h>
+
+#if HAVE_LIB_EWF
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <libewf.h>
@@ -175,4 +176,10 @@ struct r_lib_struct_t radare_plugin = {
 	.data = &r_io_plugin_ewf
 };
 #endif
+#else
+struct r_io_plugin_t r_io_plugin_ewf = {
+        .name = NULL,
+        .desc = NULL
+};
+
 #endif
