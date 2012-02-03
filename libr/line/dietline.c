@@ -132,25 +132,25 @@ R_API void r_line_hist_free() {
 	I.history.index = 0;
 }
 
-/* load history from file. if file == NULL load from ~/.<prg>.history or so */
+/* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
 R_API int r_line_hist_load(const char *file) {
 	char buf[R_LINE_BUFSIZE];
 	FILE *fd;
 
-	// TODO: use r_str_home()
-	// XXX dupped shitty code.. see hist_save ()
-	// XXX memory leak here
-	snprintf (buf, sizeof (buf)-1, "%s/%s", r_sys_getenv ("HOME"), file);
-	if (!(fd = fopen (buf, "r")))
+	char *path = r_str_home (file);
+	if (path == NULL)
 		return R_FALSE;
+	if (!(fd = fopen (path, "r"))) {
+		free (path);
+		return R_FALSE;
+	}
 
-	fgets (buf, sizeof (buf)-1, fd);
-	while (!feof (fd)) {
-		buf[strlen (buf)-1]='\0';
+	while (fgets(buf, sizeof(buf), fd) != NULL) {
 		r_line_hist_add (buf);
-		fgets (buf, sizeof (buf)-1, fd);
 	}
 	fclose (fd);
+
+	free (path);
 	return R_TRUE;
 }
 

@@ -30,7 +30,8 @@ static int main_help(int line) {
 		" -i [file]    run script file\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
-		" -n           disable analysis and user settings\n"
+		" -n           disable user settings\n"
+		" -N           disable analysis\n"
 		" -q           quite mode (no prompt)\n"
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
@@ -106,6 +107,7 @@ int main(int argc, char **argv) {
 	//int threaded = R_FALSE;
 	int has_project = R_FALSE;
  	int ret, c, perms = R_IO_READ;
+	int run_anal = 1;
 	int run_rc = 1;
 	int debug = 0;
 	int fullfile = 0;
@@ -174,6 +176,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'n':
 			run_rc = 0;
+			break;
+		case 'N':
+			run_anal = 0;
 			break;
 		case 'v':
 			return main_version ();
@@ -285,9 +290,9 @@ int main(int argc, char **argv) {
 	}
 	if (r.file == NULL) // no given file
 		return 1;
-	//if (!has_project && run_rc) {
+	//if (!has_project && run_anal) {
 #if USE_THREADS
-	if (run_rc) {
+	if (run_anal) {
 		if (threaded) {
 			rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
 					(debug||r.io->va)?"v":"", r.file->filename);
@@ -299,13 +304,15 @@ int main(int argc, char **argv) {
 #endif
 
 	has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
-	if (run_rc) {
-		char *homerc = r_str_home (".radare2rc");
+	if (run_anal) {
 #if USE_THREADS
 		if (!rabin_th)	
 #endif
 			if (!r_core_bin_load (&r, NULL))
 				r_config_set (r.config, "io.va", "false");
+	}
+	if (run_rc) {
+		char *homerc = r_str_home (".radare2rc");
 		if (homerc) {
 			r_core_cmd_file (&r, homerc);
 			free (homerc);

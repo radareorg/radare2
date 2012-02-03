@@ -56,7 +56,6 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	ut16 lol, ins;
 	struct directive d;
 	struct state s;
-	int rel = 0;
 
 	if (op == NULL)
 		return 2;
@@ -140,10 +139,7 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			case 3:
 				// BSR
 				op->type = R_ANAL_OP_TYPE_CALL;
-				if (in->in_mode == ADDR_MODE_RELATIVE)
-					rel = 1;
 				op->jump = label_off (&d);
-				rel = 0;
 				if (op->jump&1)
 					op->jump+=3;
 				op->fail = addr+2;
@@ -162,8 +158,6 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			op->type = R_ANAL_OP_TYPE_XOR;
 			break;
 		case 0xe:
-			if (in->in_mode == ADDR_MODE_RELATIVE)
-				rel = 1;
 			switch (in->in_reg) {
 			case 0: // BRA
 				op->type = R_ANAL_OP_TYPE_JMP;
@@ -208,7 +202,6 @@ static int csr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			case 2: // BCC
 			case 3: // BCS
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				rel = 0;
 				op->jump = label_off (&d);
 				if (op->jump&1)
 					op->jump+=3;

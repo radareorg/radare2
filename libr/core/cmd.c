@@ -1913,7 +1913,7 @@ static int cmd_print(void *data, const char *input) {
 		return R_FALSE;
 	}
 
-	if (input[1] == 'f') {
+	if (input[0] && input[1] == 'f') {
 		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) len = f->size;

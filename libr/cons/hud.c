@@ -50,11 +50,9 @@ R_API char *r_cons_hud_string(const char *s) {
 }
 
 static char *strmatch (char *pos, char *buf) {
-	int spaces = 0;
 	char *p, *os = buf;
 	for (p = buf; *p; p++) {
 		if (*p==' ') {
-			spaces = 1;
 			*p = 0;
 			if (!strcasestr (pos, os)) {
 //r_cons_printf ("FAIL ((%s), %s)\n", pos, os);

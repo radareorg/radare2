@@ -616,6 +616,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			line = refline = NULL;
 		}
 	}
+	r_anal_op_fini (&analop);
 	free (osl);
 	return idx-lastfail;
 }

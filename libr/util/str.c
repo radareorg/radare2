@@ -182,19 +182,24 @@ R_API void r_str_case(char *str, int up) {
 }
 
 R_API char *r_str_home(const char *str) {
-	int lhome, lstr;
+	size_t length;
 	char *dst;
 	char *home = r_sys_getenv (R_SYS_HOME);
 	if (home == NULL)
 		return NULL;
-	lhome = strlen (home);
-	lstr = strlen (str);
-	dst = (char *)malloc (lhome + lstr + 2);
-	memcpy (dst, home, lhome+1);
-	if (str && *str) {
-		memcpy (dst+lhome, R_SYS_DIR, strlen (R_SYS_DIR));
-		memcpy (dst+lhome+strlen (R_SYS_DIR), str, lstr+1);
+	length = strlen (home) + 1;
+	if (str) {
+		length += strlen (R_SYS_DIR) + strlen (str);
 	}
+	dst = (char *)malloc (length);
+	if (dst == NULL)
+		goto fail;
+	strcpy (dst, home);
+	if (str) {
+		strcat (dst, R_SYS_DIR);
+		strcat (dst, str);
+	}
+fail:
 	free (home);
 	return dst;
 }
@@ -384,6 +389,8 @@ R_API char *r_str_trim(char *str) {
 	return str;
 }
 
+/* strcpy() copies more than one byte at once which might cause problems when
+ * copying into the same buffer. TODO: memmove()? */
 R_API void r_str_cpy(char *dst, const char *src) {
 	int i;
 	for (i=0; src[i]; i++)
