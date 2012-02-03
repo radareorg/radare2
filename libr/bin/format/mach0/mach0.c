@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 nibble at develsec.org */
+/* radare - LGPL - Copyright 2010-2012 nibble at develsec.org, pancake at nopcode.org */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -674,43 +674,53 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		default:				return strdup ("Unknown i386 subtype");
 		}
 	case CPU_TYPE_X86_64:
-//bin->hdr.cpusubtype &= 0xff; // HACK to avoid 0x80000000
-// TODO: handle 0x80000000 type
-		switch (bin->hdr.cpusubtype) {
+		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_X86_64_ALL:	return strdup ("x86 64 all");
 		case CPU_SUBTYPE_X86_ARCH1:	return strdup ("x86 arch 1");
 		default:			return strdup ("Unknown x86 subtype");
 		}
 	case CPU_TYPE_MC88000:
-		switch (bin->hdr.cpusubtype) {
+		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_MC88000_ALL:	return strdup ("all");
 		case CPU_SUBTYPE_MC88100:	return strdup ("mc88100");
 		case CPU_SUBTYPE_MC88110:	return strdup ("mc88110");
 		default:			return strdup ("Unknown mc88000 subtype");
 		}
 	case CPU_TYPE_MC98000:
-		switch (bin->hdr.cpusubtype) {
+		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_MC98000_ALL:	return strdup ("all");
 		case CPU_SUBTYPE_MC98601:	return strdup ("mc98601");
 		default:			return strdup ("Unknown mc98000 subtype");
 		}
 	case CPU_TYPE_HPPA:
-		switch (bin->hdr.cpusubtype) {
+		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_HPPA_7100:	return strdup ("hppa7100");
 		case CPU_SUBTYPE_HPPA_7100LC:	return strdup ("hppa7100LC");
 		default:			return strdup ("Unknown hppa subtype");
 		}
 	case CPU_TYPE_ARM:
-		switch (bin->hdr.cpusubtype) {
-		default:			return strdup ("Unknown arm subtype");
+		switch (bin->hdr.cpusubtype & 0xff) {
+		case CPU_SUBTYPE_ARM_ALL:
+			return strdup ("all");
+		case CPU_SUBTYPE_ARM_V4T:
+			return strdup ("v4t");
+		case CPU_SUBTYPE_ARM_V6:
+			return strdup ("v6");
+		case CPU_SUBTYPE_ARM_V5TEJ:
+			return strdup ("v5tej");
+		case CPU_SUBTYPE_ARM_XSCALE:
+			return strdup ("xscale");
+		case CPU_SUBTYPE_ARM_V7:
+			return strdup ("v7");
+		default:return strdup ("unknown ARM subtype");
 		}
 	case CPU_TYPE_SPARC:
-		switch (bin->hdr.cpusubtype) {
-		case CPU_SUBTYPE_SPARC_ALL:		return strdup ("all");
-		default:				return strdup ("Unknown sparc subtype");
+		switch (bin->hdr.cpusubtype &0xff) {
+		case CPU_SUBTYPE_SPARC_ALL:	return strdup ("all");
+		default:			return strdup ("Unknown sparc subtype");
 		}
 	case CPU_TYPE_MIPS:
-		switch (bin->hdr.cpusubtype) {
+		switch (bin->hdr.cpusubtype &0xff) {
 		case CPU_SUBTYPE_MIPS_ALL:	return strdup ("all");
 		case CPU_SUBTYPE_MIPS_R2300:	return strdup ("r2300");
 		case CPU_SUBTYPE_MIPS_R2600:	return strdup ("r2600");
@@ -722,14 +732,14 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		default:			return strdup ("Unknown mips subtype");
 		}
 	case CPU_TYPE_I860:
-		switch (bin->hdr.cpusubtype) {
+		switch (bin->hdr.cpusubtype &0xff) {
 		case CPU_SUBTYPE_I860_ALL:	return strdup ("all");
 		case CPU_SUBTYPE_I860_860:	return strdup ("860");
 		default:			return strdup ("Unknown i860 subtype");
 		}
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
-		switch (bin->hdr.cpusubtype) {
+		switch (bin->hdr.cpusubtype &0xff) {
 		case CPU_SUBTYPE_POWERPC_ALL:	return strdup ("all");
 		case CPU_SUBTYPE_POWERPC_601:	return strdup ("601");
 		case CPU_SUBTYPE_POWERPC_602:	return strdup ("602");

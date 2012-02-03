@@ -444,14 +444,14 @@ R_API void r_core_prompt_loop(RCore *r) {
 
 R_API int r_core_prompt(RCore *r, int sync) {
 	int ret;
-	char line[1024];
+	char line[4096];
 	char prompt[32];
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 
 	if (cmdprompt && *cmdprompt)
 		r_core_cmd (r, cmdprompt, 0);
 
-	if (!r_line_singleton()->echo)
+	if (!r_line_singleton ()->echo)
 		*prompt = 0;
 #if __UNIX__
 	else if (r_config_get_i (r->config, "scr.color"))
@@ -464,7 +464,8 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	if (ret == -2) return R_CORE_CMD_EXIT;
 	if (ret == -1) return R_FALSE;
 	if (sync) return r_core_prompt_exec (r);
-	r->cmdqueue = line;
+	free (r->cmdqueue);
+	r->cmdqueue = strdup (line);
 	return R_TRUE;
 }
 
