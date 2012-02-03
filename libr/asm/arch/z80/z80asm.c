@@ -2799,7 +2799,7 @@ assemble (void)
   free (infile);
 }
 
-#if 0
+#ifdef MAIN_ASM
 int
 main (int argc, char **argv)
 {

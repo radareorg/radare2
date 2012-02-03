@@ -1777,7 +1777,7 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 // XXX: Do this work correctly?
 static RList *r_debug_native_frames(RDebug *dbg) {
 	int i;
-	ut8 buf[4];
+	ut8 buf[8];
 	ut64 ptr, ebp2;
 	ut64 _rip, _rsp, _rbp;
 	RList *list;
@@ -1790,11 +1790,11 @@ static RList *r_debug_native_frames(RDebug *dbg) {
 
 	list = r_list_new ();
 	list->free = free;
-	bio->read_at (bio->io, _rip, (ut8*)&buf, 4);
+	bio->read_at (bio->io, _rip, (ut8*)&buf, 8);
 	/* %rbp=old rbp, %rbp+4 points to ret */
 	/* Plugin before function prelude: push %rbp ; mov %rsp, %rbp */
 	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
-		if (bio->read_at (bio->io, _rsp, (ut8*)&ptr, 4) != 4) {
+		if (bio->read_at (bio->io, _rsp, (ut8*)&ptr, 8) != 8) {
 			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
 			return R_FALSE;
 		}

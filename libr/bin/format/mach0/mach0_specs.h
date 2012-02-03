@@ -248,6 +248,14 @@ struct mach_header_64 {
 #define CPU_SUBTYPE_VAX8800	((cpu_subtype_t) 11)
 #define CPU_SUBTYPE_UVAXIII	((cpu_subtype_t) 12)
 
+/* ARM subtypes */
+#define CPU_SUBTYPE_ARM_ALL             ((cpu_subtype_t) 0)
+#define CPU_SUBTYPE_ARM_V4T             ((cpu_subtype_t) 5)
+#define CPU_SUBTYPE_ARM_V6              ((cpu_subtype_t) 6)
+#define CPU_SUBTYPE_ARM_V5TEJ           ((cpu_subtype_t) 7)
+#define CPU_SUBTYPE_ARM_XSCALE          ((cpu_subtype_t) 8)
+#define CPU_SUBTYPE_ARM_V7              ((cpu_subtype_t) 9)
+
 /*
  * 680x0 subtypes
  *

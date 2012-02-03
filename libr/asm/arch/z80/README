@@ -1,3 +1,5 @@
+// comercial builds cannot support z80!
+
 assembler:
 
     http://www.nongnu.org/z80asm

@@ -89,7 +89,7 @@
                                         // Sprüngen im Debugger. Siehe auch oben.
  
 // Speicher für den Programmcode
-UBYTE       Opcodes[CODESIZE];
+static UBYTE       *Opcodes; //[CODESIZE];
  
 // Flag pro Speicherstelle, ob Opcode, Operand, Daten
 // Bit 4 = 1, d.h. hier wird per JR o.ä. hingesprungen.
@@ -370,8 +370,10 @@ void ParseOpcodes(ULONG adr) {
 }
  
 // Disassemblieren
-void Disassemble(UWORD adr,STR s)
+void Disassemble(const UBYTE *code, STR s)
 {
+Opcodes = code;
+UWORD adr = 0;
 UBYTE           a = Opcodes[adr];
 UBYTE           d = (a >> 3) & 7;
 UBYTE           e = a & 7;
@@ -933,6 +935,7 @@ CHAR            ireg[3];        // temp.Indexregister
     }
 }
  
+#if MAIN_DIS
 // Einlesen, Parsen, Disassemblieren und Ausgeben
 int main(void)
 {
@@ -1026,4 +1029,4 @@ CHAR    s[80];          // Ausgabestring
 	return 0;
 }
 
-
+#endif
