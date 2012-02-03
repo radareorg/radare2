@@ -1,8 +1,0 @@
-DEBUG=no
-FILE=malloc://1024
-ARGS=""
-CMDS='
-?v 0x10+0x30
-'
-EXPECT="0x40"
-. ../tests.sh

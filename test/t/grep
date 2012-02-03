@@ -1,9 +1,0 @@
-DEBUG=no
-FILE=malloc://1024
-ARGS=""
-CMDS='
-wx 10203040
-px~:1[1]
-'
-EXPECT="1020"
-. ../tests.sh

@@ -1,7 +1,0 @@
-r2 test suite
-=============
-small r2 scripts to ensure everything works.
-
-Test scripts are in t/
-
-Bugs are in b/
