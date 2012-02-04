@@ -312,23 +312,25 @@ R_API void r_cons_visual_write (char *buffer) {
 }
 
 R_API void r_cons_printf(const char *format, ...) {
-	int len;
+	size_t size, written;
 	va_list ap;
 
 	if (strchr (format, '%')) {
+		palloc (MOAR);
+		size = I.buffer_sz-I.buffer_len; /* remaining space in I.buffer */
+
 		va_start (ap, format);
-#if OLD
-	char buf[CONS_BUFSZ];
-		len = vsnprintf (buf, CONS_BUFSZ-1, format, ap);
-		if (len>0)
-			r_cons_memcat (buf, len);
-#else
-		palloc (MOAR); // use proper palloc here
-		len = vsnprintf (I.buffer+I.buffer_len, I.buffer_sz-I.buffer_len-1, format, ap);
-		if (len>0)
-			I.buffer_len += len;
-#endif
+		written = vsnprintf (I.buffer+I.buffer_len, size, format, ap);
 		va_end (ap);
+
+		if (written>=size) { /* not all bytes were written */
+			palloc (written);
+
+			va_start (ap, format);
+			written = vsnprintf (I.buffer+I.buffer_len, written, format, ap);
+			va_end (ap);
+		}
+		I.buffer_len += written;
 	} else r_cons_strcat (format);
 }
 

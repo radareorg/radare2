@@ -765,10 +765,13 @@ static int cmd_yank(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case ' ':
-		r_core_yank (core, core->offset, atoi(input+1));
+		r_core_yank (core, core->offset, r_num_math (core->num, input+1));
 		break;
 	case 'y':
-		r_core_yank_paste (core, r_num_math(core->num, input+2), 0);
+		r_core_yank_paste (core, r_num_math (core->num, input+2), 0);
+		break;
+	case 'x':
+		r_print_hexdump (core->print, 0LL, core->yank, core->yank_len, 16, 4);
 		break;
 	case 'p':
 		r_cons_memcat ((const char*)core->yank, core->yank_len);
@@ -776,9 +779,9 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	case 't':
 		{ /* hacky implementation */
-			char *arg = strdup(input+1);
-			cmd_yank_to(core, arg);
-			free(arg);
+			char *arg = strdup (input+1);
+			cmd_yank_to (core, arg);
+			free (arg);
 		}
 		break;
 	case '\0':
@@ -792,12 +795,13 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	default:
 		r_cons_printf (
-		"Usage: y[y] [len] [[@]addr]\n"
+		"Usage: y[ptxy] [len] [[@]addr]\n"
 		" y            ; show yank buffer information (srcoff len bytes)\n"
 		" y 16         ; copy 16 bytes into clipboard\n"
 		" y 16 0x200   ; copy 16 bytes into clipboard from 0x200\n"
 		" y 16 @ 0x200 ; copy 16 bytes into clipboard from 0x200\n"
 		" yp           ; print contents of clipboard\n"
+		" yx           ; print contents of clipboard in hexadecimal\n"
 		" yt 0x200     ; paste clipboard to 0x200\n"
 		" yy 0x3344    ; paste clipboard\n");
 		break;
@@ -1051,16 +1055,23 @@ static int cmd_seek(void *data, const char *input) {
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
 	if (*input) {
+		int sign = 1;
 		st32 delta = (input[1]==' ')? 2: 1;
 		off = r_num_math (core->num, input + delta);
+		if ((st64)off<0)off =-off; // hack to fix s-2;s -2
 		if (isalpha (input[delta]) && off == 0) {
 			if (!r_flag_get (core->flags, input+delta)) {
 				eprintf ("Invalid address (%s)\n", input+delta);
 				return R_FALSE;
 			}
 		}
-		if (input[0]==' ' && (input[1]=='+'||input[1]=='-'))
-			input++;
+		if (input[0]==' ') {
+			switch (input[1]) {
+			case '-': sign=-1;
+			case '+': input++; break;
+			}
+		}
+
 		switch (*input) {
 		case 'C':
 			if (input[1]==' ') {
@@ -1098,7 +1109,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case ' ':
 			r_io_sundo_push (core->io, core->offset);
-			r_core_seek (core, off, 1);
+			r_core_seek (core, off*sign, 1);
 			r_core_block_read (core, 0);
 			break;
 		case '/':
@@ -1364,14 +1375,15 @@ static int cmd_help(void *data, const char *input) {
 		}
 		}
 		break;
-	case 'p':
+	case 'p': {
 		// physical address
 		ut64 o, n = (input[0] && input[1])?
 			r_num_math (core->num, input+2): core->offset;
 		o = r_io_section_vaddr_to_offset (core->io, n);
 		r_cons_printf ("0x%08"PFMT64x"\n", o);
+		}
 		break;
-	case 'S':
+	case 'S': {
 		// section name
 		RIOSection *s;
 		ut64 n = (input[0] && input[1])?
@@ -1380,7 +1392,7 @@ static int cmd_help(void *data, const char *input) {
 		s = r_io_section_get (core->io, n);
 		if (s && s->name)
 			r_cons_printf ("%s\n", s->name);
-		break;
+		} break;
 	case 'I': // hud input
 		free (core->yank);
 		for (input++; *input==' '; input++);
