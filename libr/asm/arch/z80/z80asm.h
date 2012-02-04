@@ -164,6 +164,7 @@ struct reference
   char input[1];		/* variable size buffer containing formula */
 };
 
+#if 0
 /* global variables */
 /* mnemonics, used as argument to indx() in assemble */
 extern const char *mnemonics[];
@@ -229,6 +230,7 @@ extern struct stack stack[MAX_INCLUDE];	/* maximum level of includes */
 
 /* Produce output even with errors.  */
 extern int use_force;
+#endif
 
 /* print an error message, including current line and file */
 void printerr (int error, const char *fmt, ...);

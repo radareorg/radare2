@@ -831,7 +831,7 @@ R_API char *r_bprintf_get() {
 
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 	int _b = 0;
-	ut8 *b = &_b;
+	ut8 *b = (ut8*)&_b;
 	const char *p, *lp = NULL;
 	const int bsz = sizeof (_b);
 	if (strlen (but) >= bsz) {

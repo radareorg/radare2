@@ -120,8 +120,10 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+#if 0
 	op->jump = op->fail = -1;
 	op->ref = op->value = -1;
+#endif
 	if (anal->bits==16)
 		return op_thumb(anal, op, addr, data, len);
 	op->length = 4;

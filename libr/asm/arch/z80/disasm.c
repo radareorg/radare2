@@ -76,6 +76,7 @@
 #define WORD short
 #define UWORD unsigned short
 #define UBYTE unsigned char
+#define ut8 unsigned char
 #define STR char*
 #define BYTE char
 #define ULONG unsigned int
@@ -85,11 +86,10 @@
  
 #define CODESIZE        8192L           // 8K Programmcode
 #define FUTURA_189      1               // Sprungtabellen-Sprünge für Futura Aquariencomputer ROM V1.89
-#define DEBUGGER        0               // wenn 1, dann landet man bei berechneten
                                         // Sprüngen im Debugger. Siehe auch oben.
  
 // Speicher für den Programmcode
-static UBYTE       *Opcodes; //[CODESIZE];
+//static UBYTE       *Opcodes; //[CODESIZE];
  
 // Flag pro Speicherstelle, ob Opcode, Operand, Daten
 // Bit 4 = 1, d.h. hier wird per JR o.ä. hingesprungen.
@@ -99,12 +99,10 @@ enum {
     Data
 } DataType;
  
-UBYTE       OpcodesFlags[CODESIZE];
  
 // Länge eines Opcodes in Bytes ermitteln
-UBYTE       OpcodeLen(ULONG p)
-{
-UBYTE   len = 1;
+UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
+	UBYTE   len = 1;
  
     switch(Opcodes[p]) {// Opcode
     case 0x06:          // LD B,n
@@ -253,30 +251,18 @@ UBYTE   len = 1;
     return(len);
 }
  
-void ParseOpcodes(ULONG adr) {
-	WORD    i,len;
+ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
+	int i;
 	ULONG   next;
 	Boolean label = R_TRUE;
  
-    do {
-        if(label)                       // ein Label setzen?
-            OpcodesFlags[adr] |= 0x10;  // Label setzen
-        if((OpcodesFlags[adr] & 0x0F) == Opcode) break; // Schleife erkannt!
-        if((OpcodesFlags[adr] & 0x0F) == Operand) {
-            fprintf (stderr, "Illegaler Sprung?!?");
-            return;
-        }
-        len = OpcodeLen(adr);           // Länge vom Opcode ermitteln
-        for(i=0;i<len;i++)
-            OpcodesFlags[adr+i] = Operand;  // Opcode eintragen
-        OpcodesFlags[adr] = Opcode;     // Start des Opcodes markieren
-        if(label) {                     // ein Label setzen?
-            OpcodesFlags[adr] |= 0x10;  // Label setzen
-            label = R_FALSE;              // Label-Flag zurücksetzen
-        }
- 
+        i = OpcodeLen (adr, Opcodes);           // Länge vom Opcode ermitteln
+	if (len<i)
+		return 0; // not enought bytes
+	len = i;
         next = adr + len;               // Ptr auf den Folgeopcode
-        switch(Opcodes[adr]) {          // Opcode holen
+ 
+        switch (Opcodes[adr]) {
         case 0xCA:      // JP c,????
         case 0xC2:
         case 0xDA:
@@ -285,13 +271,13 @@ void ParseOpcodes(ULONG adr) {
         case 0xE2:
         case 0xFA:
         case 0xF2:
-                ParseOpcodes((Opcodes[adr+2]<<8) + Opcodes[adr+1]);
+                ParseOpcodes((Opcodes[adr+2]<<8) + Opcodes[adr+1], Opcodes, len);
                 break;
         case 0x28:      // JR c,??
         case 0x20:
         case 0x38:
         case 0x30:
-                ParseOpcodes(adr + 2 + (BYTE)Opcodes[adr+1]);
+                ParseOpcodes(adr + 2 + (BYTE)Opcodes[adr+1], Opcodes, len);
                 break;
         case 0xCC:      // CALL c,????
         case 0xC4:
@@ -301,7 +287,7 @@ void ParseOpcodes(ULONG adr) {
         case 0xE4:
         case 0xFC:
         case 0xF4:
-                ParseOpcodes((Opcodes[adr+2]<<8) + Opcodes[adr+1]);
+                ParseOpcodes ((Opcodes[adr+2]<<8) + Opcodes[adr+1], Opcodes, len);
                 break;
         case 0xC8:      // RET c
         case 0xC0:
@@ -320,10 +306,10 @@ void ParseOpcodes(ULONG adr) {
         case 0xEF:      // RST 28
         case 0xF7:      // RST 30
         case 0xFF:      // RST 38
-                ParseOpcodes(Opcodes[adr] & 0x38);
+                ParseOpcodes (Opcodes[adr] & 0x38, Opcodes, len);
                 break;
         case 0x10:      // DJNZ ??
-                ParseOpcodes(adr + 2 + (BYTE)Opcodes[adr+1]);
+                ParseOpcodes(adr + 2 + (BYTE)Opcodes[adr+1], Opcodes, len);
                 break;
         case 0xC3:      // JP ????
                 next = (Opcodes[adr+2]<<8) + Opcodes[adr+1];
@@ -334,605 +320,602 @@ void ParseOpcodes(ULONG adr) {
                 label = R_TRUE;
                 break;
         case 0xCD:      // CALL ????
-                ParseOpcodes((Opcodes[adr+2]<<8) + Opcodes[adr+1]);
+                ParseOpcodes ((Opcodes[adr+2]<<8) + Opcodes[adr+1], Opcodes, len);
                 break;
         case 0xC9:      // RET
-                return;
+                return 1;
         case 0xE9:
-#if DEBUGGER
-                DebugStr("\pJP (HL) gefunden"); // JP (HL)
-#endif
                 break;
         case 0xDD:
-#if DEBUGGER
                 if(Opcodes[adr+1] == 0xE9) {    // JP (IX)
-                    DebugStr("\pJP (IX) gefunden");
+                    printf ("\tJP (IX) gefunden");
                 }
-#endif
                 break;
         case 0xFD:
-#if DEBUGGER
-                if(Opcodes[adr+1] == 0xE9) {    // JP (IY)
-                    DebugStr("\pJP (IY) gefunden");
+                if (Opcodes[adr+1] == 0xE9) {    // JP (IY)
+                    printf ("\tJP (IY) gefunden");
                 }
-#endif
                 break;
         case 0xED:
-                if(Opcodes[adr+1] == 0x4D) {    // RTI
-                    return;
-                } else if(Opcodes[adr+1] == 0x45) { // RETN
-                    return;
-                }
+		if (Opcodes[adr+1] == 0x4D) {    // RTI
+			return 2;
+		} else if (Opcodes[adr+1] == 0x45) { // RETN
+			return 2;
+		}
                 break;
         }
-        adr = next;
-    } while(1);
+	return next;
 }
  
 // Disassemblieren
-void Disassemble(const UBYTE *code, STR s)
-{
-Opcodes = code;
-UWORD adr = 0;
-UBYTE           a = Opcodes[adr];
-UBYTE           d = (a >> 3) & 7;
-UBYTE           e = a & 7;
-static STR      reg[8] = {"B","C","D","E","H","L","(HL)","A"};
-static STR      dreg[4] = {"BC","DE","HL","SP"};
-static STR      cond[8] = {"NZ","Z","NC","C","PO","PE","P","M"};
-static STR      arith[8] = {"ADD\t\tA,","ADC\t\tA,","SUB\t\t","SBC\t\tA,","AND\t\t","XOR\t\t","OR\t\t","CP\t\t"};
-CHAR            stemp[80];      // temp.String für sprintf()
-CHAR            ireg[3];        // temp.Indexregister
+int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen) {
+	UBYTE           a = Opcodes[0];
+	UBYTE           d = (a >> 3) & 7;
+	UBYTE           e = a & 7;
+	static STR reg[8] = {"b","c","d","e","h","l","(hl)","a"};
+	static STR dreg[4] = {"bc","de","hl","sp"};
+	static STR cond[8] = {"nz","z","nc","c","po","pe","p","m"};
+	static STR arith[8] = {"add a,","adc a,","sub ","sbc a,","and ","xor ","or ","cp "};
+	char stemp[80];      // temp.String für sprintf()
+	char ireg[3];        // temp.Indexregister
+	int len = OpcodeLen (0, Opcodes);
  
-    switch(a & 0xC0) {
-    case 0x00:
-        switch(e) {
-        case 0x00:
-            switch(d) {
-            case 0x00:
-                strcpy(s,"NOP");
-                break;
-            case 0x01:
-                strcpy(s,"EX\t\tAF,AF'");
-                break;
-            case 0x02:
-                strcpy(s,"DJNZ\t");
-                sprintf(stemp,"%4.4Xh",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
-                break;
-            case 0x03:
-                strcpy(s,"JR\t\t");
-                sprintf(stemp,"%4.4Xh",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
-                break;
-            default:
-                strcpy(s,"JR\t\t");
-                strcat(s,cond[d & 3]);
-                strcat(s,",");
-                sprintf(stemp,"%4.4Xh",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
-                break;
-            }
-            break;
-        case 0x01:
-            if(a & 0x08) {
-                strcpy(s,"ADD\t\tHL,");
-                strcat(s,dreg[d >> 1]);
-            } else {
-                strcpy(s,"LD\t\t");
-                strcat(s,dreg[d >> 1]);
-                strcat(s,",");
-                sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-            }
-            break;
-        case 0x02:
-            switch(d) {
-            case 0x00:
-                strcpy(s,"LD\t\t(BC),A");
-                break;
-            case 0x01:
-                strcpy(s,"LD\tA,(BC)");
-                break;
-            case 0x02:
-                strcpy(s,"LD\t\t(DE),A");
-                break;
-            case 0x03:
-                strcpy(s,"LD\t\tA,(DE)");
-                break;
-            case 0x04:
-                strcpy(s,"LD\t\t(");
-                sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                strcat(s,"),HL");
-                break;
-            case 0x05:
-                strcpy(s,"LD\t\tHL,(");
-                sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                strcat(s,")");
-                break;
-            case 0x06:
-                strcpy(s,"LD\t\t(");
-                sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                strcat(s,"),A");
-                break;
-            case 0x07:
-                strcpy(s,"LD\t\tA,(");
-                sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                strcat(s,")");
-                break;
-            }
-            break;
-        case 0x03:
-            if(a & 0x08)
-                strcpy(s,"DEC\t\t");
-            else
-                strcpy(s,"INC\t\t");
-            strcat(s,dreg[d >> 1]);
-            break;
-        case 0x04:
-            strcpy(s,"INC\t\t");
-            strcat(s,reg[d]);
-            break;
-        case 0x05:
-            strcpy(s,"DEC\t\t");
-            strcat(s,reg[d]);
-            break;
-        case 0x06:              // LD   d,n
-            strcpy(s,"LD\t\t");
-            strcat(s,reg[d]);
-            strcat(s,",");
-            sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-            break;
-        case 0x07:
-            {
-            static STR str[8] = {"RLCA","RRCA","RLA","RRA","DAA","CPL","SCF","CCF"};
-            strcpy(s,str[d]);
-            }
-            break;
-        }
-        break;
-    case 0x40:                          // LD   d,s
-        if(d == e) {
-            strcpy(s,"HALT");
-        } else {
-            strcpy(s,"LD\t\t");
-            strcat(s,reg[d]);
-            strcat(s,",");
-            strcat(s,reg[e]);
-        }
-        break;
-    case 0x80:
-        strcpy(s,arith[d]);
-        strcat(s,reg[e]);
-        break;
-    case 0xC0:
-        switch(e) {
-        case 0x00:
-            strcpy(s,"RET\t\t");
-            strcat(s,cond[d]);
-            break;
-        case 0x01:
-            if(d & 1) {
-                switch(d >> 1) {
-                case 0x00:
-                    strcpy(s,"RET");
-                    break;
-                case 0x01:
-                    strcpy(s,"EXX");
-                    break;
-                case 0x02:
-                    strcpy(s,"JP\t\t(HL)");
-                    break;
-                case 0x03:
-                    strcpy(s,"LD\t\tSP,HL");
-                    break;
-                }
-            } else {
-                strcpy(s,"POP\t\t");
-                if((d >> 1)==3)
-                    strcat(s,"AF");
-                else
-                    strcat(s,dreg[d >> 1]);
-            }
-            break;
-        case 0x02:
-            strcpy(s,"JP\t\t");
-            strcat(s,cond[d]);
-            strcat(s,",");
-            sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-            break;
-        case 0x03:
-            switch(d) {
-            case 0x00:
-                strcpy(s,"JP\t\t");
-                sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                break;
-            case 0x01:                  // 0xCB
-                a = Opcodes[++adr];     // Erweiterungsopcode holen
-                d = (a >> 3) & 7;
-                e = a & 7;
-                stemp[1] = 0;           // temp.String = 1 Zeichen
-                switch(a & 0xC0) {
-                case 0x00:
-                    {
-                    static STR str[8] = {"RLC","RRC","RL","RR","SLA","SRA","???","SRL"};
-                    strcpy(s,str[d]);
-                    }
-                    strcat(s,"\t\t");
-                    strcat(s,reg[e]);
-                    break;
-                case 0x40:
-                    strcpy(s,"BIT\t\t");
-                    stemp[0] = d+'0';strcat(s,stemp);
-                    strcat(s,",");
-                    strcat(s,reg[e]);
-                    break;
-                case 0x80:
-                    strcpy(s,"RES\t\t");
-                    stemp[0] = d+'0';strcat(s,stemp);
-                    strcat(s,",");
-                    strcat(s,reg[e]);
-                    break;
-                case 0xC0:
-                    strcpy(s,"SET\t\t");
-                    stemp[0] = d+'0';strcat(s,stemp);
-                    strcat(s,",");
-                    strcat(s,reg[e]);
-                    break;
-                }
-                break;
-            case 0x02:
-                strcpy(s,"OUT\t\t(");
-                sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                strcat(s,"),A");
-                break;
-            case 0x03:
-                strcpy(s,"IN\t\tA,(");
-                sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                strcat(s,")");
-                break;
-            case 0x04:
-                strcpy(s,"EX\t\t(SP),HL");
-                break;
-            case 0x05:
-                strcpy(s,"EX\t\tDE,HL");
-                break;
-            case 0x06:
-                strcpy(s,"DI");
-                break;
-            case 0x07:
-                strcpy(s,"EI");
-                break;
-            }
-            break;
-        case 0x04:
-            strcpy(s,"CALL\t");
-            strcat(s,cond[d]);
-            strcat(s,",");
-            sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-            break;
-        case 0x05:
-            if(d & 1) {
-                switch(d >> 1) {
-                case 0x00:
-                    strcpy(s,"CALL\t");
-                    sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                    break;
-                case 0x02:              // 0xED
-                    a = Opcodes[++adr]; // Erweiterungsopcode holen
-                    d = (a >> 3) & 7;
-                    e = a & 7;
-                    switch(a & 0xC0) {
-                    case 0x40:
-                        switch(e) {
-                        case 0x00:
-                            strcpy(s,"IN\t\t");
-                            strcat(s,reg[d]);
-                            strcat(s,",(C)");
-                            break;
-                        case 0x01:
-                            strcpy(s,"OUT\t\t(C),");
-                            strcat(s,reg[d]);
-                            break;
-                        case 0x02:
-                            if(d & 1)
-                                strcpy(s,"ADC");
-                            else
-                                strcpy(s,"SBC");
-                            strcat(s,"\t\tHL,");
-                            strcat(s,dreg[d >> 1]);
-                            break;
-                        case 0x03:
-                            if(d & 1) {
-                                strcpy(s,"LD\t\t");
-                                strcat(s,dreg[d >> 1]);
-                                strcat(s,",(");
-                                sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                                strcat(s,")");
-                            } else {
-                                strcpy(s,"LD\t\t(");
-                                sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                                strcat(s,"),");
-                                strcat(s,dreg[d >> 1]);
-                            }
-                            break;
-                        case 0x04:
-                            {
-                            static STR str[8] = {"NEG","???","???","???","???","???","???","???"};
-                            strcpy(s,str[d]);
-                            }
-                            break;
-                        case 0x05:
-                            {
-                            static STR str[8] = {"RETN","RETI","???","???","???","???","???","???"};
-                            strcpy(s,str[d]);
-                            }
-                            break;
-                        case 0x06:
-                            strcpy(s,"IM\t\t");
-                            stemp[0] = d + '0' - 1; stemp[1] = 0;
-                            strcat(s,stemp);
-                            break;
-                        case 0x07:
-                            {
-                            static STR str[8] = {"LD\t\tI,A","???","LD\t\tA,I","???","RRD","RLD","???","???"};
-                            strcpy(s,str[d]);
-                            }
-                            break;
-                        }
-                        break;
-                    case 0x80:
-                        {
-                        static STR str[32] = {"LDI","CPI","INI","OUTI","???","???","???","???",
-                                              "LDD","CPD","IND","OUTD","???","???","???","???",
-                                              "LDIR","CPIR","INIR","OTIR","???","???","???","???",
-                                              "LDDR","CPDR","INDR","OTDR","???","???","???","???"};
-                        strcpy(s,str[a & 0x1F]);
-                        }
-                        break;
-                    }
-                    break;
-                default:                // 0x01 (0xDD) = IX, 0x03 (0xFD) = IY
-                    strcpy(ireg,(a & 0x20)?"IY":"IX");
-                    a = Opcodes[++adr]; // Erweiterungsopcode holen
-                    switch(a) {
-                    case 0x09:
-                        strcpy(s,"ADD\t\t");
-                        strcat(s,ireg);
-                        strcat(s,",BC");
-                        break;
-                    case 0x19:
-                        strcpy(s,"ADD\t\t");
-                        strcat(s,ireg);
-                        strcat(s,",DE");
-                        break;
-                    case 0x21:
-                        strcpy(s,"LD\t\t");
-                        strcat(s,ireg);
-                        strcat(s,",");
-                        sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                        break;
-                    case 0x22:
-                        strcpy(s,"LD\t\t(");
-                        sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                        strcat(s,"),");
-                        strcat(s,ireg);
-                        break;
-                    case 0x23:
-                        strcpy(s,"INC\t\t");
-                        strcat(s,ireg);
-                        break;
-                    case 0x29:
-                        strcpy(s,"ADD\t\t");
-                        strcat(s,ireg);
-                        strcat(s,",");
-                        strcat(s,ireg);
-                        break;
-                    case 0x2A:
-                        strcpy(s,"LD\t\t");
-                        strcat(s,ireg);
-                        strcat(s,",(");
-                        sprintf(stemp,"%4.4Xh",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0x2B:
-                        strcpy(s,"DEC\t\t");
-                        strcat(s,ireg);
-                        break;
-                    case 0x34:
-                        strcpy(s,"INC\t\t(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0x35:
-                        strcpy(s,"DEC\t\t(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0x36:
-                        strcpy(s,"LD\t\t(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,"),");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+2]);strcat(s,stemp);
-                        break;
-                    case 0x39:
-                        strcpy(s,"ADD\t\t");
-                        strcat(s,ireg);
-                        strcat(s,",SP");
-                        break;
-                    case 0x46:
-                    case 0x4E:
-                    case 0x56:
-                    case 0x5E:
-                    case 0x66:
-                    case 0x6E:
-                        strcpy(s,"LD\t\t");
-                        strcat(s,reg[(a>>3)&7]);
-                        strcat(s,",(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0x70:
-                    case 0x71:
-                    case 0x72:
-                    case 0x73:
-                    case 0x74:
-                    case 0x75:
-                    case 0x77:
-                        strcpy(s,"LD\t\t(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,"),");
-                        strcat(s,reg[a & 7]);
-                        break;
-                    case 0x7E:
-                        strcpy(s,"LD\t\tA,(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0x86:
-                        strcpy(s,"ADD\t\tA,(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0x8E:
-                        strcpy(s,"ADC\t\tA,(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0x96:
-                        strcpy(s,"SUB\t\t(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0x9E:
-                        strcpy(s,"SBC\t\tA,(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0xA6:
-                        strcpy(s,"AND\t\tA,(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0xAE:
-                        strcpy(s,"XOR\t\tA,(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0xB6:
-                        strcpy(s,"OR\t\tA,(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0xBE:
-                        strcpy(s,"CP\t\tA,(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    case 0xE1:
-                        strcpy(s,"POP\t\t");
-                        strcat(s,ireg);
-                        break;
-                    case 0xE3:
-                        strcpy(s,"EX\t\t(SP),");
-                        strcat(s,ireg);
-                        break;
-                    case 0xE5:
-                        strcpy(s,"PUSH\t");
-                        strcat(s,ireg);
-                        break;
-                    case 0xE9:
-                        strcpy(s,"JP\t\t(");
-                        strcat(s,ireg);
-                        strcat(s,")");
-                        break;
-                    case 0xF9:
-                        strcpy(s,"LD\t\tSP,");
-                        strcat(s,ireg);
-                        break;
-                    case 0xCB:
-                        a = Opcodes[adr+2]; // weiteren Unteropcode
-                        d = (a >> 3) & 7;
-                        stemp[1] = 0;
-                        switch(a & 0xC0) {
-                        case 0x00:
-                            {
-                            static STR str[8] = {"RLC","RRC","RL","RR","SLA","SRA","???","SRL"};
-                            strcpy(s,str[d]);
-                            }
-                            strcat(s,"\t\t");
-                            break;
-                        case 0x40:
-                            strcpy(s,"BIT\t\t");
-                            stemp[0] = d + '0';
-                            strcat(s,stemp);
-                            strcat(s,",");
-                            break;
-                        case 0x80:
-                            strcpy(s,"RES\t\t");
-                            stemp[0] = d + '0';
-                            strcat(s,stemp);
-                            strcat(s,",");
-                            break;
-                        case 0xC0:
-                            strcpy(s,"SET\t\t");
-                            stemp[0] = d + '0';
-                            strcat(s,stemp);
-                            strcat(s,",");
-                            break;
-                        }
-                        strcat(s,"(");
-                        strcat(s,ireg);
-                        strcat(s,"+");
-                        sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-                        strcat(s,")");
-                        break;
-                    }
-                    break;
-                }
-            } else {
-                strcpy(s,"PUSH\t");
-                if((d >> 1)==3)
-                    strcat(s,"AF");
-                else
-                    strcat(s,dreg[d >> 1]);
-            }
-            break;
-        case 0x06:
-            strcpy(s,arith[d]);
-            sprintf(stemp,"%2.2Xh",Opcodes[adr+1]);strcat(s,stemp);
-            break;
-        case 0x07:
-            strcpy(s,"RST\t\t");
-            sprintf(stemp,"%2.2Xh",a & 0x38);strcat(s,stemp);
-            break;
-        }
-        break;
-    }
+	switch(a & 0xC0) {
+	case 0x00:
+		switch(e) {
+		case 0x00:
+			switch(d) {
+			case 0x00:
+				strcpy (s,"nop");
+				break;
+			case 0x01:
+				strcpy (s,"ex af, af'");
+				break;
+			case 0x02:
+				strcpy (s,"djnz ");
+				sprintf (stemp,"0x%4.4X",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
+				break;
+			case 0x03:
+				strcpy(s,"jr ");
+				sprintf(stemp,"0x%4.4X",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
+				break;
+			default:
+				strcpy(s,"jr ");
+				strcat(s,cond[d & 3]);
+				strcat(s,", ");
+				sprintf(stemp,"0x%4.4X",adr+2+(BYTE)Opcodes[adr+1]);strcat(s,stemp);
+				break;
+			}
+			break;
+		case 0x01:
+			if (a & 0x08) {
+				strcpy(s,"add hl, ");
+				strcat(s,dreg[d >> 1]);
+			} else {
+				strcpy (s,"ld ");
+				strcat (s,dreg[d >> 1]);
+				strcat (s,", ");
+				sprintf (stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+			}
+			break;
+		case 0x02:
+			switch(d) {
+				case 0x00:
+					strcpy(s,"ld (bc), a");
+					break;
+				case 0x01:
+					strcpy(s,"ld a, (bc)");
+					break;
+				case 0x02:
+					strcpy(s,"ld (de), a");
+					break;
+				case 0x03:
+					strcpy(s,"ld a, (de)");
+					break;
+				case 0x04:
+					strcpy(s,"ld (");
+					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+					strcat(s,"), hl");
+					break;
+				case 0x05:
+					strcpy(s,"ld hl, (");
+					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+					strcat(s,")");
+					break;
+				case 0x06:
+					strcpy(s,"ld (");
+					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+					strcat(s,"), a");
+					break;
+				case 0x07:
+					strcpy(s,"ld a,(");
+					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+					strcat(s,")");
+					break;
+			}
+			break;
+		case 0x03:
+			if (a & 0x08)
+				strcpy (s,"dec ");
+			else
+				strcpy (s,"inc ");
+			strcat (s,dreg[d >> 1]);
+			break;
+		case 0x04:
+			strcpy (s,"inc ");
+			strcat (s,reg[d]);
+			break;
+		case 0x05:
+			strcpy (s, "dec ");
+			strcat (s, reg[d]);
+			break;
+		case 0x06:              // LD   d,n
+			strcpy(s,"ld ");
+			strcat(s,reg[d]);
+			strcat(s,", ");
+			sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+			break;
+		case 0x07:
+			{
+				static const STR str[8] = {"rlcs", "rrca", "rla", "rra", "daa", "cpl", "scf", "ccf"};
+				strcpy (s,str[d]);
+			}
+			break;
+		}
+		break;
+	case 0x40:                          // LD   d,s
+		if(d == e) {
+			strcpy(s,"halt");
+		} else {
+			strcpy(s,"ld ");
+			strcat(s,reg[d]);
+			strcat(s,", ");
+			strcat(s,reg[e]);
+		}
+		break;
+	case 0x80:
+		strcpy(s,arith[d]);
+		strcat(s,reg[e]);
+		break;
+	case 0xC0:
+		switch (e) {
+		case 0x00:
+			strcpy(s,"ret ");
+			strcat(s,cond[d]);
+			break;
+		case 0x01:
+			if(d & 1) {
+				switch(d >> 1) {
+					case 0x00:
+						strcpy(s,"ret");
+						break;
+					case 0x01:
+						strcpy(s,"exx");
+						break;
+					case 0x02:
+						strcpy(s,"jp (hl)");
+						break;
+					case 0x03:
+						strcpy(s,"ld sp,hl");
+						break;
+				}
+			} else {
+				strcpy(s,"pop ");
+				if((d >> 1)==3)
+					strcat(s,"af");
+				else
+					strcat(s,dreg[d >> 1]);
+			}
+			break;
+		case 0x02:
+			strcpy(s,"jp ");
+			strcat(s,cond[d]);
+			strcat(s,", ");
+			sprintf(stemp, "0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));
+			strcat(s,stemp);
+			break;
+		case 0x03:
+			switch(d) {
+				case 0x00:
+					strcpy (s, "jp ");
+					sprintf (stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+					break;
+				case 0x01:                  // 0xCB
+					a = Opcodes[++adr];     // Erweiterungsopcode holen
+					d = (a >> 3) & 7;
+					e = a & 7;
+					stemp[1] = 0;           // temp.String = 1 Zeichen
+					switch(a & 0xC0) {
+						case 0x00:
+							{
+								static STR str[8] = {"rlc","rrc","rl","rr","sla","sra","???","srl"};
+								strcpy(s,str[d]);
+							}
+							strcat(s," ");
+							strcat(s,reg[e]);
+							break;
+						case 0x40:
+							strcpy(s,"bit ");
+							stemp[0] = d+'0';strcat(s,stemp);
+							strcat(s,",");
+							strcat(s,reg[e]);
+							break;
+						case 0x80:
+							strcpy(s,"res ");
+							stemp[0] = d+'0';strcat(s,stemp);
+							strcat(s,",");
+							strcat(s,reg[e]);
+							break;
+						case 0xC0:
+							strcpy(s, "set ");
+							stemp[0] = d+'0';strcat(s,stemp);
+							strcat(s,",");
+							strcat(s,reg[e]);
+							break;
+					}
+					break;
+				case 0x02:
+					strcpy (s,"out (");
+					sprintf (stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+					strcat (s,"),A");
+					break;
+				case 0x03:
+					strcpy(s,"in a, (");
+					sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+					strcat(s,")");
+					break;
+				case 0x04:
+					strcpy(s,"ex (sp), hl");
+					break;
+				case 0x05:
+					strcpy(s,"ex de, hl");
+					break;
+				case 0x06:
+					strcpy(s,"di");
+					break;
+				case 0x07:
+					strcpy(s,"ei");
+					break;
+			}
+			break;
+		case 0x04:
+			strcpy(s,"call ");
+			strcat(s,cond[d]);
+			strcat(s,", ");
+			sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+			break;
+		case 0x05:
+			if(d & 1) {
+				switch(d >> 1) {
+					case 0x00:
+						strcpy(s,"call ");
+						sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+						break;
+					case 0x02:              // 0xED
+						a = Opcodes[++adr]; // Erweiterungsopcode holen
+						d = (a >> 3) & 7;
+						e = a & 7;
+						switch(a & 0xC0) {
+							case 0x40:
+							switch(e) {
+								case 0x00:
+									strcpy(s,"in ");
+									strcat(s,reg[d]);
+									strcat(s,", (c)");
+									break;
+								case 0x01:
+									strcpy(s,"out (c), ");
+									strcat(s,reg[d]);
+									break;
+								case 0x02:
+									if(d & 1)
+										strcpy(s,"adc");
+									else
+										strcpy(s,"sbc");
+									strcat(s," HL, ");
+									strcat(s,dreg[d >> 1]);
+									break;
+								case 0x03:
+									if(d & 1) {
+										strcpy(s,"ld ");
+										strcat(s,dreg[d >> 1]);
+										strcat(s,",(");
+										sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+										strcat(s,")");
+									} else {
+										strcpy(s,"ld (");
+										sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+										strcat(s,"),");
+										strcat(s,dreg[d >> 1]);
+									}
+									break;
+								case 0x04:
+									{
+										static STR str[8] = {"neg","???","???","???","???","???","???","???"};
+										strcpy(s,str[d]);
+									}
+									break;
+								case 0x05:
+									{
+										static STR str[8] = {"retn","reti","???","???","???","???","???","???"};
+										strcpy(s,str[d]);
+									}
+									break;
+								case 0x06:
+									strcpy(s,"IM ");
+									stemp[0] = d + '0' - 1; stemp[1] = 0;
+									strcat(s,stemp);
+									break;
+								case 0x07:
+									{
+										static STR str[8] = {"ld i, a","???","ld a, i","???","rrd","rld","???","???"};
+										strcpy(s,str[d]);
+									}
+									break;
+							}
+							break;
+						case 0x80:
+							{
+								static STR str[32] = {"LDI","CPI","INI","OUTI","???","???","???","???",
+									"ldd","CPD","IND","OUTD","???","???","???","???",
+									"ldir","cpir","INIR","OTIR","???","???","???","???",
+									"lddr","cpdr","INDR","OTDR","???","???","???","???"};
+								strcpy(s,str[a & 0x1F]);
+							}
+							break;
+						}
+						break;
+					default:                // 0x01 (0xDD) = IX, 0x03 (0xFD) = IY
+						strcpy (ireg,(a & 0x20)?"iy":"ix");
+						a = Opcodes[++adr]; // Erweiterungsopcode holen
+						switch(a) {
+							case 0x09:
+								strcpy(s,"add ");
+								strcat(s,ireg);
+								strcat(s,", bc");
+								break;
+							case 0x19:
+								strcpy(s,"add ");
+								strcat(s,ireg);
+								strcat(s,", de");
+								break;
+							case 0x21:
+								strcpy(s,"ld ");
+								strcat(s,ireg);
+								strcat(s,",");
+								sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+								break;
+							case 0x22:
+								strcpy(s,"ld (");
+								sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+								strcat(s,"), ");
+								strcat(s,ireg);
+								break;
+							case 0x23:
+								strcpy (s,"inc ");
+								strcat (s, ireg);
+								break;
+							case 0x29:
+								strcpy(s,"add ");
+								strcat(s,ireg);
+								strcat(s,",");
+								strcat(s,ireg);
+								break;
+							case 0x2A:
+								strcpy(s,"ld ");
+								strcat(s,ireg);
+								strcat(s,", (");
+								sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0x2B:
+								strcpy(s,"dec ");
+								strcat(s,ireg);
+								break;
+							case 0x34:
+								strcpy(s,"inc (");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0x35:
+								strcpy(s,"dec (");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0x36:
+								strcpy(s,"ld (");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,"),");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+2]);strcat(s,stemp);
+								break;
+							case 0x39:
+								strcpy(s,"add ");
+								strcat(s,ireg);
+								strcat(s,", sp");
+								break;
+							case 0x46:
+							case 0x4E:
+							case 0x56:
+							case 0x5E:
+							case 0x66:
+							case 0x6E:
+								strcpy(s,"ld ");
+								strcat(s,reg[(a>>3)&7]);
+								strcat(s,",(");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0x70:
+							case 0x71:
+							case 0x72:
+							case 0x73:
+							case 0x74:
+							case 0x75:
+							case 0x77:
+								strcpy(s,"ld (");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,"),");
+								strcat(s,reg[a & 7]);
+								break;
+							case 0x7E:
+								strcpy(s,"ld A,(");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0x86:
+								strcpy(s,"add A, (");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0x8E:
+								strcpy(s,"adc a,(");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0x96:
+								strcpy(s,"sub (");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0x9E:
+								strcpy(s,"sbc a, (");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0xA6:
+								strcpy(s,"and a,(");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0xAE:
+								strcpy(s,"xor a, (");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0xB6:
+								strcpy(s,"or a,(");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0xBE:
+								strcpy(s,"cp a,(");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+								strcat(s,")");
+								break;
+							case 0xE1:
+								strcpy(s,"pop ");
+								strcat(s,ireg);
+								break;
+							case 0xE3:
+								strcpy(s,"ex (sp), ");
+								strcat(s,ireg);
+								break;
+							case 0xE5:
+								strcpy(s,"push ");
+								strcat(s,ireg);
+								break;
+							case 0xE9:
+								strcpy(s,"jp (");
+								strcat(s,ireg);
+								strcat(s,")");
+								break;
+							case 0xF9:
+								strcpy(s,"ld sp, ");
+								strcat(s,ireg);
+								break;
+							case 0xCB:
+								a = Opcodes[adr+2]; // weiteren Unteropcode
+								d = (a >> 3) & 7;
+								stemp[1] = 0;
+								switch(a & 0xC0) {
+									case 0x00:
+										{
+											static STR str[8] = {"rlc", "rrc", "rl", "rr", "sla", "sra", "???", "srl" };
+											strcpy(s,str[d]);
+										}
+										strcat(s," ");
+										break;
+									case 0x40:
+										strcpy(s,"bit ");
+										stemp[0] = d + '0';
+										strcat(s,stemp);
+										strcat(s,",");
+										break;
+									case 0x80:
+										strcpy(s,"res ");
+										stemp[0] = d + '0';
+										strcat(s,stemp);
+										strcat(s,",");
+										break;
+									case 0xC0:
+										strcpy(s,"set ");
+										stemp[0] = d + '0';
+										strcat(s,stemp);
+										strcat(s,",");
+										break;
+								}
+								strcat(s,"(");
+								strcat(s,ireg);
+								strcat(s,"+");
+								sprintf(stemp, "0x%2.2X",Opcodes[adr+1]);
+								strcat(s,stemp);
+								strcat(s,")");
+								break;
+						}
+						break;
+				}
+			} else {
+				strcpy (s,"push ");
+				if((d >> 1)==3)
+					strcat (s,"af");
+				else
+					strcat (s,dreg[d >> 1]);
+			}
+			break;
+		case 0x06:
+			strcpy (s,arith[d]);
+			sprintf (stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+			break;
+		case 0x07:
+			strcpy (s, "rst ");
+			sprintf (stemp,"0x%2.2X",a & 0x38);strcat(s,stemp);
+			break;
+		}
+		break;
+	}
+	return len;
+}
+
+int z80dis (int addr, const unsigned char *buf, char *out, int len) {
+	return Disassemble (addr, buf, out, len);
 }
  
 #if MAIN_DIS
@@ -998,7 +981,7 @@ CHAR    s[80];          // Ausgabestring
         WORD    len,i;
  
         if((OpcodesFlags[adr] & 0x0F) == Data) {
-            fprintf(f,"L%4.4X:\tDEFB",(UWORD)adr);
+            fprintf(f,"L%4.4X: DEFB",(UWORD)adr);
             for(i=0;i<16;i++) {
                 if((OpcodesFlags[adr+i] & 0x0F) != Data) break;
                 fprintf(f,"%c%2.2Xh",(i)?',':' ',Opcodes[adr+i]);
@@ -1006,12 +989,12 @@ CHAR    s[80];          // Ausgabestring
             fprintf(f,"\n");
             adr += i;
         } else {
-            len = OpcodeLen(adr);           // Länge vom Opcode ermitteln
+            len = OpcodeLen(adr, Opcodes);           // Länge vom Opcode ermitteln
 #if 1
             if(OpcodesFlags[adr] & 0x10)
-                fprintf(f,"L%4.4X:\t",adr);
+                fprintf(f,"L%4.4X: ",adr);
             else
-                fprintf(f,"\t\t");
+                fprintf(f," ");
 #else
             fprintf(f,"%4.4X: ",(UWORD)adr);
             for(i=0;i<len;i++)

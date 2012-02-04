@@ -1,10 +1,13 @@
+#include <stdio.h>
 
-main() {
-	int i;
-	char buf[32], str[1024];
+int main() {
+	int i, len;
+	unsigned char buf[32];
+	char str[1024];
 	for (i=0; i<255; i++) {
 		buf[0] = i;
-		Disassemble (buf, str);
-		printf ("%s\n", str);
+		len = Disassemble (0, buf, str);
+		printf ("%d  %02x%02x%02x --> %s\n", len, buf[0], buf[1], buf[2], str);
 	}
+	return 0;
 }

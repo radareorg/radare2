@@ -2,6 +2,9 @@
 # Makefile helpers for mercurial
 
 hg-miss:
+	${MAKE} hg-miss2 | grep -v sys| grep -v git| grep -v maemo
+
+hg-miss2:
 	@-hg st . | grep -e vala$$ -e mk$$ | grep ^? | grep -v config-user | cut -c 2- || true
 	@-hg st . | grep -e \\.c$$ -e \\.h$$ | grep -v vapi | grep ^? | grep -v r_userconf | cut -c 2- || true
 	@-hg st . | grep -e \\.vapi$$ -e \\.acr$$ -e README$$ -e TODO$$ | grep ^? | cut -c 2- || true

@@ -5,11 +5,19 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	int len = 0;
-	eprintf ("TODO\n");
-	op->inst_len = len;
-	return len;
+#include "../arch/z80/z80.c"
+
+static int do_assemble(RAsm *a, RAsmOp *op, const char *buf) {
+	return op->inst_len = z80asm (obuf, op->buf);
+}
+
+static int do_disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
+	int dlen = z80dis (0, buf, op->buf_asm, len);
+	if (dlen>0) {
+		// printf ("LEN IS OK\n");
+	} else dlen = 0;
+	op->inst_len = dlen;
+	return op->inst_len;
 }
 
 RAsmPlugin r_asm_plugin_z80 = {
@@ -19,8 +27,8 @@ RAsmPlugin r_asm_plugin_z80 = {
 	.bits = (int[]){ 8, 0 },
 	.init = NULL,
 	.fini = NULL,
-	.disassemble = NULL,
-	.assemble = &assemble, 
+	.disassemble = do_disassemble,
+	.assemble = &do_assemble, 
 };
 
 #ifndef CORELIB
