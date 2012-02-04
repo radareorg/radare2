@@ -1285,7 +1285,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		n = (input+1 != 0) ? r_num_math (core->num, input+2) : 0;
+		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
 		r_cons_printf ("0x%"PFMT64x"\n", n);
 		break;
 	case '=':
@@ -1366,22 +1366,20 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'p':
 		// physical address
-		{
-			ut64 o, n = r_num_math (core->num, input+2);
-			o = r_io_section_vaddr_to_offset (core->io, n);
-			r_cons_printf ("0x%08"PFMT64x"\n", o);
-		}
+		ut64 o, n = (input[0] && input[1])?
+			r_num_math (core->num, input+2): core->offset;
+		o = r_io_section_vaddr_to_offset (core->io, n);
+		r_cons_printf ("0x%08"PFMT64x"\n", o);
 		break;
 	case 'S':
 		// section name
-		{
-			RIOSection *s;
-			ut64 n = r_num_math (core->num, input+2);
-			n = r_io_section_vaddr_to_offset (core->io, n);
-			s = r_io_section_get (core->io, n);
-			if (s && s->name)
-				r_cons_printf ("%s\n", s->name);
-		}
+		RIOSection *s;
+		ut64 n = (input[0] && input[1])?
+			r_num_math (core->num, input+2): core->offset;
+		n = r_io_section_vaddr_to_offset (core->io, n);
+		s = r_io_section_get (core->io, n);
+		if (s && s->name)
+			r_cons_printf ("%s\n", s->name);
 		break;
 	case 'I': // hud input
 		free (core->yank);
@@ -1391,7 +1389,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'k': // key=value utility
 		for (input++; *input==' '; input++);
-		{
+		if (*input) {
 			char *p = strchr (input, '='); 
 			if (p) {
 				// set

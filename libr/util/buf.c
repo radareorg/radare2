@@ -34,6 +34,7 @@ R_API RBuffer *r_buf_mmap (const char *file, int rw) {
 		b->length = b->mmap->len;
 	} else {
 		r_buf_free (b);
+		return NULL; /* we just freed b, don't return it */
 	}
 	return b;
 }

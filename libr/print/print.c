@@ -258,7 +258,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			} else
 			if (base==64) {
 				ut64 n;
-				memcpy (&n, buf+j, sizeof (n));
+				/* Prevent reading outside of buf. Necessary as inc is not
+				 * a multiple of 4 for base == 64. */
+				size_t l = sizeof (n);
+				if (j + l > len)
+					l = len - j;
+				memset (&n, 0, sizeof (n));
+				memcpy (&n, buf+j, l);
 				j+=4;
 				p->printf ("0x%016"PFMT64x" ", n);
 			} else {

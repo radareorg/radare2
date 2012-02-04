@@ -17,6 +17,7 @@ R_API struct r_io_t *r_io_new() {
 	io->va = -1;
 	io->plugin = NULL;
 	io->raised = -1;
+	io->off = 0;
 	r_io_cache_init (io);
 	r_io_map_init (io);
 	r_io_section_init (io);

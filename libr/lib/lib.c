@@ -105,7 +105,7 @@ R_API RLib *r_lib_new(const char *symname) {
 }
 
 R_API RLib *r_lib_free(RLib *lib) {
-	if (!lib) return;
+	if (!lib) return NULL;
 	/* TODO: iterate over libraries and free them all */
 	/* TODO: iterate over handlers and free them all */
 	r_lib_close (lib, NULL);

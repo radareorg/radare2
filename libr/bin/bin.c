@@ -264,6 +264,9 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy) {
 	bin->narch = r_bin_extract (bin, 0);
 	if (bin->narch == 0)
 		return R_FALSE;
+	/* FIXME: temporary hack to fix malloc:// */
+	if (bin->curarch.buf == NULL)
+		return R_FALSE;
 	return r_bin_init_items (bin, dummy);
 }
 

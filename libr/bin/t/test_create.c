@@ -19,4 +19,5 @@ int main () {
 	} else eprintf ("So fucking oops\n");
 	r_bin_free (bin);
 	r_buf_free (b);
+	return 0;
 }
