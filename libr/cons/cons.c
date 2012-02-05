@@ -119,6 +119,7 @@ R_API RCons *r_cons_new () {
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE))
 		eprintf ("r_cons: Cannot set control console handler\n");
 #endif
+	I.pager = NULL; /* no pager by default */
 	//r_cons_palette_init(NULL);
 	r_cons_reset ();
 	return &I;
@@ -223,7 +224,15 @@ R_API void r_cons_flush() {
 		return;
 	r_cons_filter ();
 	if (I.is_interactive) {
-		if (I.buffer_len > CONS_MAX_USER) {
+		/* Use a pager if the output doesn't fit on the terminal window. */
+		if (I.pager && *(I.pager)
+				&& I.buffer_len > 0
+				&& r_str_char_count (I.buffer, '\n') >= I.rows) {
+			I.buffer[I.buffer_len-1] = 0;
+			r_sys_cmd_str_full(I.pager, I.buffer, NULL, NULL, NULL);
+			r_cons_reset ();
+
+		} else if (I.buffer_len > CONS_MAX_USER) {
 			if (!r_cons_yesno ('n',"Do you want to print %d bytes? (y/N)",
 					I.buffer_len)) {
 				r_cons_reset ();

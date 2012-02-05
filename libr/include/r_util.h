@@ -423,7 +423,7 @@ R_API char *r_sys_getenv(const char *key);
 R_API int r_sys_setenv(const char *key, const char *value);
 R_API char *r_sys_getdir();
 R_API int r_sys_chdir(const char *s);
-R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr);
+R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr);
 #if __WINDOWS__
 R_API char *r_sys_cmd_str_w32(const char *cmd);
 #endif

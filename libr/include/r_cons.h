@@ -71,6 +71,9 @@ typedef struct r_cons_t {
 	LPDWORD term_raw, term_buf;
 #endif
 	RNum *num;
+	/* Pager (like more or less) to use if the output doesn't fit on the
+	 * current window. If NULL or "" no pager is used. */
+	char *pager;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */

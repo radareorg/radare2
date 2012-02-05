@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include <r_core.h>
 
@@ -393,6 +393,15 @@ static int config_color_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_pager_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+
+	/* Let cons know we have a new pager. */
+	core->cons->pager = node->value;
+	return R_TRUE;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	RConfig *cfg = cfg = core->config = r_config_new (core);
@@ -475,6 +484,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "asm.syntax", "Select assembly syntax");
 	r_config_set_cb (cfg, "asm.profile", "default", &config_asmprofile_callback);
 	r_config_desc (cfg, "asm.profile", "configure disassembler (default, simple, gas, smart, debug, full)");
+	/* misc */
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
 #else
@@ -493,7 +503,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.wseek", "Seek after write");
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);
 	r_config_desc (cfg, "cfg.hashlimit", "If the file its bigger than hashlimit don't calculate the hash");
-
+	/* debug */
 	r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	r_config_set_cb (cfg, "dbg.backend", "native", &config_dbgbackend_callback);
@@ -541,6 +551,8 @@ R_API int r_core_config_init(RCore *core) {
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
 	r_config_desc (cfg, "scr.color", "Enable/Disable colors");
+	r_config_set_cb (cfg, "scr.pager", "", &config_pager_callback);
+	r_config_desc (cfg, "scr.pager", "Select pager program (used if output doesn't fit on window)");
 	//r_config_set_cb (cfg, "scr.fkey", "function", &config_scrfkey_callback);
 	r_config_set_cb (cfg, "scr.fkey", "hit", &config_scrfkey_callback);
 	r_config_desc (cfg, "scr.fkey", "Select the seek mode in visual");

@@ -209,49 +209,51 @@ R_API int r_sys_chdir(const char *s) {
 }
 
 #if __UNIX__
-R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
-	char buffer[1024], *output = NULL;
+R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
+	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
 	int pid, bytes = 0, status;
 	int sh_in[2], sh_out[2], sh_err[2];
 
 	if (len) *len = 0;
 	if (pipe (sh_in)) 
-		return NULL;
-	if (pipe (sh_out)) {
-		close (sh_in[0]);
-		close (sh_in[1]);
-		return NULL;
+		return R_FALSE;
+	if (output) {
+		if (pipe (sh_out)) {
+			close (sh_in[0]);
+			close (sh_in[1]);
+			return R_FALSE;
+		}
 	}
 	if (pipe (sh_err)) {
 		close (sh_in[0]);
 		close (sh_in[1]);
 		close (sh_out[0]);
 		close (sh_out[1]);
-		return NULL;
+		return R_FALSE;
 	}
 
 	switch ((pid=fork ())) {
 	case -1:
-		return NULL;
+		return R_FALSE;
 	case 0:
 		dup2 (sh_in[0], 0); close (sh_in[0]); close (sh_in[1]);
-		dup2 (sh_out[1], 1); close (sh_out[0]); close (sh_out[1]);
+		if (output) { dup2 (sh_out[1], 1); close (sh_out[0]); close (sh_out[1]); }
 		if (sterr) dup2 (sh_err[1], 2); else close (2);
 		close (sh_err[0]); close (sh_err[1]); 
 		exit (execl ("/bin/sh", "sh", "-c", cmd, (char*)NULL));
 	default:
-		output = strdup ("");
-		if (!output)
-			return NULL;
+		outputptr = strdup ("");
+		if (!outputptr)
+			return R_FALSE;
 		if (sterr) {
 			*sterr = strdup ("");
 			if (!*sterr) {
-				free (output);
-				return NULL;
+				free (outputptr);
+				return R_FALSE;
 			}
 		}
-		close (sh_out[1]);
+		if (output) close (sh_out[1]);
 		close (sh_err[1]);
 		close (sh_in[0]);
 		if (!inputptr || !*inputptr)
@@ -263,7 +265,8 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 
 			FD_ZERO (&rfds);
 			FD_ZERO (&wfds);
-			FD_SET (sh_out[0], &rfds);
+			if (output)
+				FD_SET (sh_out[0], &rfds);
 			if (sterr) 
 				FD_SET (sh_err[0], &rfds);
 			if (inputptr && *inputptr)
@@ -272,46 +275,59 @@ R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, cha
 			nfd = select (sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
 			if (nfd < 0)
 				break;
-			if (FD_ISSET (sh_out[0], &rfds)) {
+			if (output && FD_ISSET (sh_out[0], &rfds)) {
 				if ((bytes = read (sh_out[0], buffer, sizeof (buffer)-1)) == 0) break;
 				if (len) *len += bytes;
-				output = r_str_concat (output, buffer);
+				outputptr = r_str_concat (outputptr, buffer);
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
 				if (read (sh_err[0], buffer, sizeof (buffer)-1) == 0) break;
 				*sterr = r_str_concat (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				bytes = write (sh_in[1], inputptr, strlen (inputptr));
 				inputptr += bytes;
-				if (!*inputptr) close (sh_in[1]);
+				if (!*inputptr) {
+					close (sh_in[1]);
+					/* If neither stdout nor stderr should be captured,
+					 * abort now - nothing more to do for select(). */
+					if (!output && !sterr) break;
+				}
 			}
 		}
-		close (sh_out[0]);
+		if (output)
+			close (sh_out[0]);
 		close (sh_err[0]);
 		close (sh_in[1]);
 		waitpid (pid, &status, 0);
 		if (status != 0) {
 			eprintf ("%s: command '%s' returned !0\n", __func__, cmd);
-			return (NULL);
+			return R_FALSE;
 		}
 
 		if (output) {
-			if (*output)
-				return output;
-			free (output);
+			*output = outputptr;
+		} else if (outputptr) {
+			free(outputptr);
 		}
+		return R_TRUE;
 	}
-	return NULL;
+	return R_FALSE;
 }
 #elif __WINDOWS__
-R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
+R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	// TODO: fully implement the rest
+	char *result;
 	if (len) *len = 0;
-	return r_sys_cmd_str_w32 (cmd);
+	result = r_sys_cmd_str_w32 (cmd);
+	if (output)
+		*output = result;
+	if (result)
+		return R_TRUE;
+	return R_FALSE;
 }
 #else
-R_API char *r_sys_cmd_str_full(const char *cmd, const char *input, int *len, char **sterr) {
+R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
 	eprintf ("r_sys_cmd_str: not yet implemented for this platform\n");
-	return NULL;
+	return R_FALSE;
 }
 #endif
 
@@ -352,7 +368,10 @@ R_API int r_sys_cmd (const char *str) {
 }
 
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len) {
-	return r_sys_cmd_str_full (cmd, input, len, NULL);
+	char *output;
+	if (r_sys_cmd_str_full (cmd, input, &output, len, NULL))
+		return output;
+	return NULL;
 }
 
 R_API int r_sys_rmkdir(const char *dir) {
