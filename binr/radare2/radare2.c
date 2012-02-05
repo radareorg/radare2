@@ -30,8 +30,8 @@ static int main_help(int line) {
 		" -i [file]    run script file\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
-		" -n           disable user settings\n"
-		" -N           disable analysis\n"
+		" -n           disable analysis\n"
+		" -N           disable user settings\n"
 		" -q           quite mode (no prompt)\n"
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
@@ -57,7 +57,7 @@ static int main_help(int line) {
 }
 
 static int main_version() {
-	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH"\n");
+	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH" build "R2_BIRTH"\n");
 	return 0;
 }
 
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhHe:ndqvs:p:b:B:a:Lui:l:P:c:D:"
+	while ((c = getopt (argc, argv, "wfhHe:nNdqvs:p:b:B:a:Lui:l:P:c:D:"
 #if USE_THREADS
 "t"
 #endif
@@ -175,10 +175,10 @@ int main(int argc, char **argv) {
 			fullfile = 1;
 			break;
 		case 'n':
-			run_rc = 0;
+			run_anal = 0;
 			break;
 		case 'N':
-			run_anal = 0;
+			run_rc = 0;
 			break;
 		case 'v':
 			return main_version ();
@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
 			lock = r_th_lock_new ();
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
 		} //else rabin_delegate (NULL);
-	} else eprintf ("Metadata loaded from 'file.project'\n");
+	} // else eprintf ("Metadata loaded from 'file.project'\n");
 #endif
 
 	has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));

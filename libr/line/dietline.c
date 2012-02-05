@@ -145,7 +145,8 @@ R_API int r_line_hist_load(const char *file) {
 		return R_FALSE;
 	}
 
-	while (fgets(buf, sizeof(buf), fd) != NULL) {
+	while (fgets (buf, sizeof (buf), fd) != NULL) {
+		buf[strlen (buf)-1] = 0;
 		r_line_hist_add (buf);
 	}
 	fclose (fd);

@@ -52,13 +52,14 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int idx, tidx, ret, len; 
 	int tokcount, matchcount;
 
+	if (!*input)
+		return NULL;
 	if (core->blocksize<=OPSZ) {
 		eprintf ("error: block size too small\n");
 		return NULL;
 	}
-	if (!(buf = (ut8 *)malloc (core->blocksize))){
+	if (!(buf = (ut8 *)malloc (core->blocksize)))
 		return NULL;
-	}
 	if (!(ptr = strdup (input))) {
 		free (buf);
 		return NULL;
@@ -85,6 +86,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		idx = 0, matchcount = 0;
 		while (idx<core->blocksize) {
 			r_asm_set_pc (core->assembler, at+idx);
+op.buf_asm[0] = 0;
+op.buf_hex[0] = 0;
 			if (!(len = r_asm_disassemble (core->assembler, &op, buf+idx, core->blocksize-idx))) {
 				if (matchcount != 0)
 					idx = tidx+1;
