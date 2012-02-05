@@ -2411,6 +2411,7 @@ void opcode_move16(dis_buffer_t *dbuf, u_short opc)
  */
 void addstr(dis_buffer_t *dbuf, const char *s)
 {
+  if (s)
   while ((*dbuf->casm++ = *s++))
     ;
   dbuf->casm--;
