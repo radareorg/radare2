@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -16,7 +16,7 @@ static int check(RBin *bin) {
 		return R_FALSE;
 	}
 	h = m->buf;
-	if (!memcmp (h, "\xca\xfe\xba\xbe", 4)) {
+	if (m->len>=0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
 		memcpy (&off, h+4*sizeof (int), sizeof (int));
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
 		if (off > 0 && off < filesize) {

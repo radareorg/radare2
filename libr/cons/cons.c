@@ -469,3 +469,14 @@ R_API void r_cons_column(int c) {
 	r_cons_strcat_justify (b, c, 0);
 	r_cons_gotoxy (0, 0);
 }
+
+static int lasti = 0; /* last interactive mode */
+
+R_API void r_cons_set_interactive(int x) {
+	lasti = r_cons_singleton ()->is_interactive;
+	r_cons_singleton ()->is_interactive = x;
+}
+
+R_API void r_cons_set_last_interactive() {
+	r_cons_singleton ()->is_interactive = lasti;
+}

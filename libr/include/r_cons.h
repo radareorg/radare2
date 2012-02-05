@@ -186,6 +186,8 @@ R_API int  r_cons_stdout_set_fd(int fd);
 R_API void r_cons_gotoxy(int x, int y);
 R_API void r_cons_show_cursor (int cursor);
 R_API void r_cons_set_raw(int b);
+R_API void r_cons_set_interactive(int b);
+R_API void r_cons_set_last_interactive();
 
 /* output */
 R_API void r_cons_printf(const char *format, ...);

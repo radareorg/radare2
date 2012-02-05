@@ -4909,12 +4909,17 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
 	if (ptr) {
+		/* r_cons_flush() handles interactive output (to the terminal)
+		 * differently (e.g. asking about too long output). This conflicts
+		 * with piping to a file. Disable it while piping. */
+		r_cons_set_interactive (R_FALSE);
 		*ptr = '\0';
 		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
 		pipefd = r_cons_pipe_open (str, ptr[1]=='>');
 		ret = r_core_cmd_subst (core, cmd);
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
+		r_cons_set_last_interactive ();
 		return ret;
 	}
 
