@@ -528,44 +528,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	}
 }
 
-/* TODO: this should be moved to the core->yank api */
-// TODO: arg must be const !!! use strdup here
-static int cmd_yank_to(RCore *core, char *arg) {
-	ut64 src = core->offset;
-	ut64 len = 0;
-	ut64 pos = -1;
-	char *str;
-	ut8 *buf;
-
-	while (*arg==' ')
-		arg = arg+1;
-	str = strchr (arg, ' ');
-	if (str) {
-		str[0]='\0';
-		len = r_num_math (core->num, arg);
-		pos = r_num_math (core->num, str+1);
-		str[0]=' ';
-	}
-	if ((str == NULL) || (pos == -1) || (len == 0)) {
-		eprintf ("Usage: yt [len] [dst-addr]\n");
-		return 1;
-	}
-#if 0
-	if (!config_get("file.write")) {
-		eprintf("You are not in read-write mode.\n");
-		return 1;
-	}
-#endif
-	buf = (ut8*)malloc (len);
-	r_core_read_at (core, src, buf, len);
-	r_core_write_at (core, pos, buf, len);
-	free (buf);
-
-	core->offset = src;
-	r_core_block_read (core, 0);
-	return 0;
-}
-
 static int cmd_mount(void *data, const char *_input) {
 	ut64 off = 0;
 	char *input, *oinput, *ptr, *ptr2;
@@ -780,7 +742,7 @@ static int cmd_yank(void *data, const char *input) {
 	case 't':
 		{ /* hacky implementation */
 			char *arg = strdup (input+1);
-			cmd_yank_to (core, arg);
+			r_core_yank_to (core, arg);
 			free (arg);
 		}
 		break;
@@ -1283,13 +1245,16 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case ' ':
 		{
-		ut32 n32;
+		ut32 n32, s, a;
 		float f;
 		n = r_num_math (core->num, input+1);
 		n32 = (ut32)n;
 		memcpy (&f, &n32, sizeof (f));
 		/* decimal, hexa, octal */
-		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" ", n, n, n);
+		a = n & 0xffff;
+		s = (n-a) >> 4;
+		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" %04X:%04X ",
+			n, n, n, s, a);
 		/* binary and floating point */
 		r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
 		r_cons_printf ("%s %f\n", out, f);

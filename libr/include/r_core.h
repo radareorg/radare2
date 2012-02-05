@@ -170,6 +170,7 @@ R_API int r_core_write_op(struct r_core_t *core, const char *arg, char op);
 R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len);
 R_API int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len);
 R_API void r_core_yank_set (RCore *core, const char *str);
+R_API int r_core_yank_to(RCore *core, char *arg);
 
 R_API int r_core_loadlibs(struct r_core_t *core);
 R_API int r_core_cmd_buffer(void *user, const char *buf);

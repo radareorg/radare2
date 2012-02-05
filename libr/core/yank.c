@@ -45,3 +45,39 @@ R_API int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len) {
 	r_core_write_at (core, addr, core->yank, len);
 	return R_TRUE;
 }
+
+// TODO: arg must be const !!! use strdup here
+R_API int r_core_yank_to(RCore *core, char *arg) {
+	ut64 src = core->offset;
+	ut64 len = 0;
+	ut64 pos = -1;
+	char *str;
+	ut8 *buf;
+
+	while (*arg==' ') arg++;
+	str = strchr (arg, ' ');
+	if (str) {
+		str[0]='\0';
+		len = r_num_math (core->num, arg);
+		pos = r_num_math (core->num, str+1);
+		str[0]=' ';
+	}
+	if ((str == NULL) || (pos == -1) || (len == 0)) {
+		eprintf ("Usage: yt [len] [dst-addr]\n");
+		return 1;
+	}
+#if 0
+	if (!config_get("file.write")) {
+		eprintf("You are not in read-write mode.\n");
+		return 1;
+	}
+#endif
+	buf = (ut8*)malloc (len);
+	r_core_read_at (core, src, buf, len);
+	r_core_write_at (core, pos, buf, len);
+	free (buf);
+
+	core->offset = src;
+	r_core_block_read (core, 0);
+	return 0;
+}

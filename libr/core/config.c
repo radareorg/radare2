@@ -455,6 +455,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "asm.decode", "Use code analysis as a disassembler");
 	r_config_set (cfg, "asm.offset", "true");
 	r_config_desc (cfg, "asm.offset", "Show offsets at disassembly");
+	r_config_set (cfg, "asm.offseg", "false");
+	r_config_desc (cfg, "asm.offseg", "Show offsets as in 16 bit segment addressing mode");
 	r_config_set (cfg, "asm.lines", "true");
 	r_config_desc (cfg, "asm.lines", "If enabled show ascci-art lines at disassembly");
 	r_config_set (cfg, "asm.linesout", "true");

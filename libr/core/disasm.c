@@ -15,11 +15,16 @@ static char *filter_refline(const char *str) {
 	return s;
 }
 
-static void printoffset(ut64 off, int show_color, int invert) {
+static void printoffset(ut64 off, int show_color, int invert, int opt) {
 	if (show_color) {
 		if (invert)
 			r_cons_invert (R_TRUE, R_TRUE);
-		r_cons_printf (Color_GREEN"0x%08"PFMT64x""Color_RESET, off);
+		if (opt) {
+			ut32 s,a;
+			a = off & 0xffff;
+			s = (off-a)>>4;
+			r_cons_printf (Color_GREEN"%04x:%04x"Color_RESET, s, a);
+		} else r_cons_printf (Color_GREEN"0x%08"PFMT64x""Color_RESET, off);
 		if (invert)
 			r_cons_printf (Color_RESET);
 		r_cons_puts ("  ");
@@ -62,6 +67,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int linesout = r_config_get_i (core->config, "asm.linesout");
 	int adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	int show_offset = r_config_get_i (core->config, "asm.offset");
+	int show_offseg = r_config_get_i (core->config, "asm.offseg");
 	int show_flags = r_config_get_i (core->config, "asm.flags");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int show_comments = r_config_get_i (core->config, "asm.comments");
@@ -327,7 +333,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				if (show_lines && refline)
 					r_cons_strcat (refline);
 				if (show_offset)
-					printoffset (at, show_color, (at==dest));
+					printoffset (at, show_color, (at==dest), show_offseg);
 				if (show_functions)
 					r_cons_printf ("%s:\n%s", flag->name, f?"| ":"  ");
 				else r_cons_printf ("%s:\n", flag->name);
@@ -336,7 +342,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		if (show_lines && line)
 			r_cons_strcat (line);
 		if (show_offset)
-			printoffset (at, show_color, (at==dest));
+			printoffset (at, show_color, (at==dest), show_offseg);
 		if (show_size)
 			r_cons_printf ("%d ", analop.length);
 		if (show_trace) {

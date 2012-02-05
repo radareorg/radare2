@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include "r_util.h"
 
@@ -60,6 +60,7 @@ R_API RNum *r_num_new(RNumCallback cb, void *ptr) {
 /* old get_offset */
 R_API ut64 r_num_get(RNum *num, const char *str) {
 	int i, j;
+	ut32 s, a;
 	char lch, len;
 	ut64 ret = 0LL;
 
@@ -75,6 +76,10 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (str[0]=='\'' && str[2]=='\'')
 		return (ut64)str[1];
 
+	if (sscanf (str, "%04x:%04x", &s, &a) == 2)
+		return (ut64) ((s<<16) +a);
+	if (sscanf (str, "0x%04x:0x%04x", &s, &a) == 2)
+		return (ut64) ((s<<16) +a);
 	if (str[0]=='0' && str[1]=='x') {
 		sscanf (str, "0x%"PFMT64x"", &ret);
 	} else {

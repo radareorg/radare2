@@ -53,10 +53,9 @@ R_API RIO *r_io_free(RIO *io) {
 	if (!io) return NULL;
 	/* TODO: properly free inner nfo */
 	/* TODO: memory leaks */
-	r_io_desc_free (io->desc);
 	r_list_free (io->sections);
 	r_list_free (io->maps);
-	r_list_free (io->desc);
+	r_io_desc_fini (io);
 	free (io);
 	return NULL;
 }
@@ -187,7 +186,11 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	// HACK?: if io->va == 0 -> call seek+read without checking sections ?
 	if (!io->va) {
 		r_io_seek (io, addr, R_IO_SEEK_SET);
-		return r_io_read_internal (io, buf, len);
+		ret = r_io_read_internal (io, buf, len);
+		if (io->cached) {
+			r_io_cache_read (io, addr, buf, len);
+		}
+		return ret;
 	}
 #endif
 	while (len>0) {
@@ -201,10 +204,12 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (ret <1) {
 			memset (buf+w, 0xff, l); // reading out of file
 			ret = 1;
-		} else
-		if (ret<l) {
+		} else if (ret<l) {
 		//	eprintf ("FOUND EOF AT %llx\n", addr+ret);
 			l = ret;
+		}
+		if (io->cached) {
+			r_io_cache_read (io, addr+w, buf+w, l);
 		}
 		w += l;
 		len -= l;
