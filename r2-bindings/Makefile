@@ -110,7 +110,7 @@ ${ALANG}::
 	cd $@ && ${MAKE}
 
 go::
-	[ -x "${GOBIN}/5g" -o -x "${GOBIN}/6g" -o -x "${GOBIN}/8g" ]
+	@-[ -x "${GOBIN}/5g" -o -x "${GOBIN}/6g" -o -x "${GOBIN}/8g" ]
 
 test:
 	cd perl && ${MAKE} test

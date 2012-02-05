@@ -340,10 +340,13 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	switch (str[0]) {
 	case '?':
 		if (str[1]) {
+			ut64 off;
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
-			r = r_reg_get (core->dbg->reg, str+1, R_REG_TYPE_GPR);
-			if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
-			else r_cons_printf ("0x%08"PFMT64x"\n", r_reg_get_value (core->dbg->reg, r));
+			off = r_debug_reg_get (core->dbg, str+1);
+	//		r = r_reg_get (core->dbg->reg, str+1, 0);
+	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
+			r_cons_printf ("0x%08"PFMT64x"\n", off); 
+			//r_reg_get_value (core->dbg->reg, r));
 		} else
 		eprintf ("Usage: dr[*] [type] [size] - get/set registers\n"
 			" dr?        display this help message\n"

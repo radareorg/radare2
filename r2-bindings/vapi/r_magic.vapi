@@ -7,7 +7,7 @@ namespace Radare {
 
 		public unowned string file(string f);
 		public unowned string descriptor(int d);
-		public unowned string buffer(void *buffer, size_t n);
+		public unowned string buffer(void *buffer, int n);
 
 		public int load(string file);
 		public int check(string file);

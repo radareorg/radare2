@@ -343,6 +343,6 @@ namespace Radare {
 		public RMeta.Item find(uint64 off, RMeta.Type type, RMeta.Where where);
 		public bool cleanup (uint64 from, uint64 to);
 		public static unowned string type_to_string(RMeta.Type type);
-		public int list (RMeta.Type type);
+		public int list(RMeta.Type type, uint64 rad);
 	}
 }
