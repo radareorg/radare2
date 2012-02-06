@@ -19,7 +19,7 @@ ARCH=$(shell uname -m)
 #CFLAGS+=-arch ${ARCH}
 #LDFLAGS+=-arch ${ARCH}
 LDFLAGS_LIB=-dynamiclib
-LDFLAGS_SONAME=-Wl,-install_name,
+LDFLAGS_SONAME=-Wl,-install_name,${LIBDIR}/
 else
 LDFLAGS_LIB=-shared
 #ifneq (${NAME},)
