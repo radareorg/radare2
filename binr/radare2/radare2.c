@@ -18,7 +18,7 @@ static int main_help(int line) {
 	if (line<2)
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
 			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] [file]\n");
-	if (!line) printf (
+	if (line != 1) printf (
 		" -a [arch]    set asm.arch eval var\n"
 		" -b [bits]    set asm.bits eval var\n"
 		" -B [size]    initial block size\n"
@@ -36,13 +36,13 @@ static int main_help(int line) {
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
+		" -m [addr]    map file at given address\n"
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
 		" -v           show radare2 version\n"
 		" -w           open file in write mode\n"
-		" -h           show this help\n"
-		" -H           show extended help (files and environment)\n");
+		" -h, -hh      show help message, -hh for long\n");
 	if (line==2)
 		printf (
 		"Files:\n"
@@ -109,6 +109,7 @@ int main(int argc, char **argv) {
  	int ret, c, perms = R_IO_READ;
 	int run_anal = 1;
 	int run_rc = 1;
+	int help = 0;
 	int debug = 0;
 	int fullfile = 0;
 	ut32 bsize = 0;
@@ -118,6 +119,7 @@ int main(int argc, char **argv) {
 	const char *debugbackend = "native";
 	const char *asmarch = NULL;
 	const char *asmbits = NULL;
+	ut64 mapaddr = 0LL;
 	int is_gdb = R_FALSE;
 	RList *cmds = r_list_new ();
 
@@ -128,7 +130,7 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhHe:nNdqvs:p:b:B:a:Lui:l:P:c:D:"
+	while ((c = getopt (argc, argv, "wfhm:e:nNdqvs:p:b:B:a:Lui:l:P:c:D:"
 #if USE_THREADS
 "t"
 #endif
@@ -142,6 +144,9 @@ int main(int argc, char **argv) {
 		case 'D':
 			debug = 2;
 			debugbackend = optarg;
+			break;
+		case 'm':
+			mapaddr = r_num_math (r.num, optarg);
 			break;
 		case 'q':
 			r_config_set (r.config, "scr.prompt", "false");
@@ -168,9 +173,11 @@ int main(int argc, char **argv) {
 			r_config_eval (r.config, optarg);
 			break;
 		case 'H':
-			return main_help (2);
+			help++;
+			break;
 		case 'h':
-			return main_help (0);
+			help++;
+			break;
 		case 'f':
 			fullfile = 1;
 			break;
@@ -204,6 +211,10 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
+	if (help>1)
+		return main_help (2);
+	else if (help)
+		return main_help (0);
 
 	// DUP
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
@@ -252,7 +263,7 @@ int main(int argc, char **argv) {
 				}
 			}
 
-			fh = r_core_file_open (&r, file, perms, 0LL);
+			fh = r_core_file_open (&r, file, perms, mapaddr);
 			if (fh != NULL) {
 				//const char *arch = r_config_get (r.config, "asm.arch");
 				// TODO: move into if (debug) ..
@@ -265,12 +276,12 @@ int main(int argc, char **argv) {
 	if (!debug || debug==2) {
 		if (optind<argc) {
 			while (optind < argc)
-				fh = r_core_file_open (&r, argv[optind++], perms, 0);
+				fh = r_core_file_open (&r, argv[optind++], perms, mapaddr);
 		} else {
 			const char *prj = r_config_get (r.config, "file.project");
 			if (prj && *prj) {
 				char *file = r_core_project_info (&r, prj);
-				if (file) fh = r_core_file_open (&r, file, perms, 0);
+				if (file) fh = r_core_file_open (&r, file, perms, mapaddr);
 				else eprintf ("No file\n");
 			}
 		}

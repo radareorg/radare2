@@ -185,7 +185,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 #if 1
 	// HACK?: if io->va == 0 -> call seek+read without checking sections ?
 	if (!io->va) {
-		r_io_seek (io, addr, R_IO_SEEK_SET);
+		r_io_map_select (io, addr);
+	//	r_io_seek (io, addr, R_IO_SEEK_SET);
 		ret = r_io_read_internal (io, buf, len);
 		if (io->cached) {
 			r_io_cache_read (io, addr, buf, len);
@@ -199,7 +200,8 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (l<1) l = len;
 		// ignore seek errors
 //		eprintf ("0x%llx %llx\n", addr+w, 
-		r_io_seek (io, addr+w, R_IO_SEEK_SET);
+		//r_io_seek (io, addr+w, R_IO_SEEK_SET);
+		r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
 		if (ret <1) {
 			memset (buf+w, 0xff, l); // reading out of file
@@ -282,8 +284,7 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 		buf = data;
 	}
 	
-
-	r_io_map_select(io,io->off);
+	r_io_map_select (io, io->off);
 
 	if (io->plugin) {
 		if (io->plugin->write)

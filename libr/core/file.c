@@ -152,7 +152,10 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	RCoreFile *fh;
 	const char *cp;
 	char *p;
-	RIODesc *fd = r_io_open (r->io, file, mode, 0644);
+	RIODesc *fd;
+	if (!strcmp (file, "-"))
+		file = "malloc://512";
+	fd = r_io_open (r->io, file, mode, 0644);
 	if (fd == NULL)
 		return NULL;
 	if (r_io_is_listener (r->io)) {
@@ -193,13 +196,12 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	if (!cf) return;
-
 	free (cf->uri);
 	cf->uri = NULL;
 	free (cf->filename);
 	cf->filename = NULL;
-	free(cf->map);
-	r_io_desc_free(cf->fd);
+	free (cf->map);
+	r_io_desc_free (cf->fd);
 	cf->fd = NULL;
 }
 

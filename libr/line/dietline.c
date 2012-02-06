@@ -411,7 +411,7 @@ R_API char *r_line_readline() {
 			buf[1] = r_line_readchar();
 			if (buf[1] == -1)
 				return NULL;
-			if (buf[0]==0x5b) {
+			if (buf[0]==0x5b) { // [
 				switch (buf[1]) {
 				case 0x33: // supr
 					if (I.buffer.index<I.buffer.length)
@@ -479,12 +479,14 @@ R_API char *r_line_readline() {
 					}
 					r_cons_set_raw (1);
 					break;
-				case 0x48: // Start
+				case 0x37: // HOME
+				case 0x48: // HOME
 					I.buffer.index = 0;
 					break;
 				case 0x34:
 					r_cons_readchar ();
-				case 0x46: // End
+				case 0x38: // END
+				case 0x46: // END
 					I.buffer.index = I.buffer.length;
 					break;
 				}
