@@ -32,7 +32,19 @@ R_API int r_io_map_del(struct r_io_t *io, int fd) {
 	return R_FALSE;
 }
 
-R_API RIOMap *r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size) {
+R_API int r_io_map_del_at(RIO *io, ut64 addr) {
+	RIOMap *map;
+	RListIter *iter;
+	r_list_foreach (io->maps, iter, map) {
+		if (map->from == addr) {
+			r_list_delete (io->maps, iter);
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
+R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size) {
 	RIOMap *im = R_NEW (RIOMap);
 	if (!im) return NULL;
 	im->fd = fd;
@@ -47,7 +59,7 @@ R_API RIOMap *r_io_map_add(struct r_io_t *io, int fd, int flags, ut64 delta, ut6
 R_API int r_io_map_select(RIO *io, ut64 off) {
 	//ut64 delta = 0;
 	ut64 fd = -1;//io->fd;
-st32 delta = 0;
+	st32 delta = 0;
 	RIOMap *im = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) { // _prev?

@@ -767,7 +767,7 @@ static int cmd_yank(void *data, const char *input) {
 		" y 16 @ 0x200 ; copy 16 bytes into clipboard from 0x200\n"
 		" yp           ; print contents of clipboard\n"
 		" yx           ; print contents of clipboard in hexadecimal\n"
-		" yt 0x200     ; paste clipboard to 0x200\n"
+		" yt 64 0x200  ; copy 64 bytes from current seek to 0x200\n"
 		" yy 0x3344    ; paste clipboard\n");
 		break;
 	}
@@ -4425,18 +4425,70 @@ static int cmd_open(void *data, const char *input) {
 			eprintf ("Unable to find filedescriptor %d\n", atoi (input+1));
 		r_core_block_read (core, 0);
 		break;
+	case 'm':
+		switch (input[1]) {
+		case '?':
+			r_cons_printf ("Usage: om[-] [arg]       file maps\n");
+			r_cons_printf ("om          list all defined IO maps\n");
+			r_cons_printf ("om-0x10000  remove the map at given address\n");
+			r_cons_printf ("om 0x10000  remove the map at given address\n");
+			break;
+		case ' ':
+			// i need to parse delta, offset, size
+			{
+			ut64 fd = 0LL;
+			ut64 addr = 0LL;
+			ut64 size = 0LL;
+			ut64 delta = 0LL;
+			char *s = strdup (input+2);
+			char *p = strchr (s, ' ');
+			if (p) {
+				char *q = strchr (p+1, ' ');
+				*p = 0;
+				fd = r_num_math (core->num, s);
+				if (q) {
+					char *r = strchr (q+1, ' ');
+					*q = 0;
+					addr = r_num_math (core->num, p+1);
+					if (r) {
+						*r = 0;
+						size = r_num_math (core->num, q+1);
+						delta = r_num_math (core->num, r+1);
+					} else size = r_num_math (core->num, q+1);
+					r_io_map_add (core->io, fd, 0, delta, addr, size);
+				} else eprintf ("Usage: om fd addr size [delta]\n");
+			} else eprintf ("Usage: om fd addr size [delta]\n");
+			free (s);
+			}
+			break;
+		case '-':
+			r_io_map_del_at (core->io, r_num_math (core->num, input+2));
+			break;
+		case '\0':
+			{
+			RIOMap *im = NULL;
+			RListIter *iter;
+			r_list_foreach (core->io->maps, iter, im) { // _prev?
+				r_cons_printf (
+					"%d 0x%08"PFMT64x" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 
+					im->fd, im->delta, im->from, im->to);
+			}
+			}
+		}
+		break;
 	case 'o':
 		r_core_file_reopen (core, input+2);
 		break;
 	case '?':
 	default:
 		eprintf ("Usage: o[o-] [file] ([offset])\n"
-		" o                   ; list opened files\n"
-		" oo                  ; reopen current file (kill+fork in debugger)\n"
-		" o /bin/ls           ; open /bin/ls file\n"
-		" o /bin/ls 0x8048000 ; map file\n"
-		" o 4                 ; priorize io on fd 4 (bring to front)\n"
-		" o-1                 ; close file index 1\n");
+		" o                     list opened files\n"
+		" oo                    reopen current file (kill+fork in debugger)\n"
+		" o /bin/ls             open /bin/ls file\n"
+		" o /bin/ls 0x8048000   map file\n"
+		" om                    list all maps\n"
+		" o 4                   priorize io on fd 4 (bring to front)\n"
+		" o-1                   close file index 1\n");
 		break;
 	}
 	return 0;

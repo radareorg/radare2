@@ -126,9 +126,12 @@ PYTHON_VERSION?=`${PYTHON} --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2`
 PYTHON_PKGDIR=$(shell ${PYTHON} mp.py)
 PYTHON_INSTALL_DIR=${DESTDIR}/${PYTHON_PKGDIR}/r2
 
-.PHONY: purge purge-python
+.PHONY: purge purge-python install-cxx
 
 purge: purge-python
+
+install-cxx:
+	@echo TODO: install-cxx
 
 purge-python:
 	[ -n "${PYTHON_PKGDIR}" ] && \

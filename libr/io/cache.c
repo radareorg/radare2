@@ -1,16 +1,23 @@
 /* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
 
-// TODO: USE RList here
-// r_io_cache_t has not been defined
 // TODO: implement a more inteligent way to store cached memory
 // TODO: define limit of max mem to cache
 
 #include "r_io.h"
 
+static void cache_free(RIOCache *cache) {
+	if (!cache)
+		return;
+	if (cache->data)
+		free (cache->data);
+	free (cache);
+}
+
 R_API void r_io_cache_init(RIO *io) {
+	io->cache = r_list_new ();
+	io->cache->free = (RListFree)cache_free;
 	io->cached = R_FALSE; // cache write ops
 	io->cached_read = R_FALSE; // cached read ops
-	INIT_LIST_HEAD (&io->cache);
 }
 
 R_API void r_io_cache_enable(RIO *io, int read, int write) {
@@ -19,11 +26,12 @@ R_API void r_io_cache_enable(RIO *io, int read, int write) {
 }
 
 R_API void r_io_cache_commit(RIO *io) {
-	struct list_head *pos, *n;
+	RListIter *iter;
+	RIOCache *c;
+
 	if (io->cached) {
 		io->cached = R_FALSE;
-		list_for_each_safe (pos, n, &io->cache) {
-			RIOCache *c = list_entry (pos, RIOCache, list);
+		r_list_foreach (io->cache, iter, c) {
 			if (!r_io_write_at (io, c->from, c->data, c->size))
 				eprintf ("Error writing change at 0x%08"PFMT64x"\n", c->from);
 		}
@@ -33,39 +41,30 @@ R_API void r_io_cache_commit(RIO *io) {
 }
 
 R_API void r_io_cache_reset(RIO *io, int set) {
-	struct list_head *pos, *n;
 	io->cached = set;
-	list_for_each_safe(pos, n, &io->cache) {
-		RIOCache *c = list_entry (pos, RIOCache, list);
-		free (c->data);
-		free (c);
-		list_del (pos);
-	}
-	// is this necessary at all?
-	INIT_LIST_HEAD (&io->cache); 
+	r_list_purge (io->cache);
 }
 
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
-	int ret = R_FALSE;
-	struct list_head *pos, *n;
-	if (from<to)
-	list_for_each_safe(pos, n, &io->cache) {
-		RIOCache *c = list_entry (pos, RIOCache, list);
+	RListIter *iter;
+	RIOCache *c;
+
+	if (from>=to) return R_FALSE;
+
+	r_list_foreach (io->cache, iter, c) {
 		if (c->from >= from && c->to <= to) {
-			/* REMOVE ITEM */
-			free (c->data);
-			free (c);
-			list_del (pos);
+			r_list_delete (io->cache, iter);
 		}
 	}
-	return ret;
+	return R_FALSE;
 }
 
 R_API int r_io_cache_list(RIO *io, int rad) {
 	int i, j = 0;
-	struct list_head *pos, *n;
-	list_for_each_safe (pos, n, &io->cache) {
-		RIOCache *c = list_entry (pos, RIOCache, list);
+	RListIter *iter;
+	RIOCache *c;
+
+	r_list_foreach (io->cache, iter, c) {
 		if (rad) {
 			io->printf ("wx ");
 			for (i=0; i<c->size; i++)
@@ -89,23 +88,23 @@ R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	ch->size = len;
 	ch->data = (ut8*)malloc (len);
 	memcpy (ch->data, buf, len);
-	list_add_tail (&(ch->list), &io->cache);
+
+	r_list_append (io->cache, ch);
 	return len;
 }
 
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int l, ret, da, db;
-	struct list_head *pos;
+	RListIter *iter;
+	RIOCache *c;
 
-	list_for_each (pos, &io->cache) {
-		RIOCache *c = list_entry (pos, RIOCache, list);
+	r_list_foreach (io->cache, iter, c) {
 		if (r_range_overlap (addr, addr+len, c->from, c->to, &ret)) {
 			if (ret>0) {
 				da = ret;
 				db = 0;
 				l = c->size;
-			} else
-			if (ret<0) {
+			} else if (ret<0) {
 				da = 0;
 				db = -ret;
 				l = c->size-db;

@@ -4,7 +4,6 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_socket.h>
-#include <list.h>
 
 #define R_IO_READ  4
 #define R_IO_WRITE 2
@@ -106,7 +105,7 @@ typedef struct r_io_t {
 	/* maps */
 	RList *maps; /*<RIOMap>*/
 	RList *desc;
-	struct list_head cache;
+	RList *cache;
 	//XXX: Need by rap
 	void *user;
 	int (*core_cmd_cb)(void *user, const char *str);
@@ -230,7 +229,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence);
 R_API int r_io_system(RIO *io,  const char *cmd);
 R_API int r_io_close(RIO *io, RIODesc *fd);
 R_API ut64 r_io_size(RIO *io); //, int fd);
-R_API int r_io_resize(struct r_io_t *io, ut64 newsize);
+R_API int r_io_resize(RIO *io, ut64 newsize);
 R_API int r_io_accept(RIO *io, int fd);
 R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 
@@ -250,6 +249,7 @@ R_API int r_io_bind(RIO *io, struct r_io_bind_t *bnd);
 /* io/map.c */
 R_API void r_io_map_init(RIO *io);
 R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 offset, ut64 size);
+R_API int r_io_map_del_at(struct r_io_t *io, ut64 addr);
 R_API int r_io_map_del(RIO *io, int fd);
 R_API int r_io_map(RIO *io, const char *file, ut64 offset);
 R_API int r_io_map_select(RIO *io, ut64 off);
