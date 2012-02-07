@@ -183,7 +183,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->stackop = R_ANAL_STACK_INCSTACK;
 		op->value = -b[0];
 	} else
-	if( (code[i] == 0x1eff2fe1) ||(code[i] == 0xe12fff1e)) { // bx lr
+	if ( (code[i] == 0x1eff2fe1) ||(code[i] == 0xe12fff1e)) { // bx lr
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->eob = 1;
 	} else
@@ -239,6 +239,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	}
 	return op->length;
 }
+
 static int set_reg_profile(RAnal *anal) {
 	/* XXX Dupped Profiles */
 	return r_reg_set_profile_string (anal->reg,

@@ -2,6 +2,7 @@
 
 /* TODO: write li->fds setter/getter helpers */
 // TODO: return true/false everywhere,, not -1 or 0
+// TODO: use RList here
 
 #include "r_io.h"
 #include "../config.h"

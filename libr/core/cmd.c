@@ -4404,7 +4404,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case ' ':
 		ptr = strchr (input+1, ' ');
-		if (ptr && ptr[0]=='0' && ptr[1]=='x') { // hack to fix opening files with space in path
+		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
 			*ptr = '\0';
 			addr = r_num_math (core->num, ptr+1);
 		} else {
@@ -4427,12 +4427,6 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'm':
 		switch (input[1]) {
-		case '?':
-			r_cons_printf ("Usage: om[-] [arg]       file maps\n");
-			r_cons_printf ("om          list all defined IO maps\n");
-			r_cons_printf ("om-0x10000  remove the map at given address\n");
-			r_cons_printf ("om 0x10000  remove the map at given address\n");
-			break;
 		case ' ':
 			// i need to parse delta, offset, size
 			{
@@ -4446,17 +4440,17 @@ static int cmd_open(void *data, const char *input) {
 				char *q = strchr (p+1, ' ');
 				*p = 0;
 				fd = r_num_math (core->num, s);
+				addr = r_num_math (core->num, p+1);
 				if (q) {
 					char *r = strchr (q+1, ' ');
 					*q = 0;
-					addr = r_num_math (core->num, p+1);
 					if (r) {
 						*r = 0;
 						size = r_num_math (core->num, q+1);
 						delta = r_num_math (core->num, r+1);
 					} else size = r_num_math (core->num, q+1);
-					r_io_map_add (core->io, fd, 0, delta, addr, size);
-				} else eprintf ("Usage: om fd addr size [delta]\n");
+				} else size = r_io_size (core->io);
+				r_io_map_add (core->io, fd, 0, delta, addr, size);
 			} else eprintf ("Usage: om fd addr size [delta]\n");
 			free (s);
 			}
@@ -4474,6 +4468,14 @@ static int cmd_open(void *data, const char *input) {
 					im->fd, im->delta, im->from, im->to);
 			}
 			}
+			break;
+		default:
+		case '?':
+			r_cons_printf ("Usage: om[-] [arg]       file maps\n");
+			r_cons_printf ("om                  list all defined IO maps\n");
+			r_cons_printf ("om-0x10000          remove the map at given address\n");
+			r_cons_printf ("om fd addr [size]   create new io map\n");
+			break;
 		}
 		break;
 	case 'o':
@@ -4484,11 +4486,11 @@ static int cmd_open(void *data, const char *input) {
 		eprintf ("Usage: o[o-] [file] ([offset])\n"
 		" o                     list opened files\n"
 		" oo                    reopen current file (kill+fork in debugger)\n"
+		" o 4                   priorize io on fd 4 (bring to front)\n"
+		" o-1                   close file index 1\n"
 		" o /bin/ls             open /bin/ls file\n"
 		" o /bin/ls 0x8048000   map file\n"
-		" om                    list all maps\n"
-		" o 4                   priorize io on fd 4 (bring to front)\n"
-		" o-1                   close file index 1\n");
+		" om[?]                 create, list, remove IO maps\n");
 		break;
 	}
 	return 0;

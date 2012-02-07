@@ -23,7 +23,11 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 	}
 	desc->plugin = plugin;
 	desc->flags = flags;
-	desc->fd = (fd == -1)? ((int) ((size_t) desc) & 0xffffff): fd;
+	if (fd == -1) {
+		ut8 *p = &desc->fd;
+		desc->fd = ((int) ((size_t) desc) & 0xffffff);
+		desc->fd = p[0]^p[1]^p[2]^p[3];
+	} else desc->fd = fd;
 	desc->data = data;
 	return desc;
 }

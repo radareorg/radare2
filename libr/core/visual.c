@@ -28,6 +28,8 @@ static int r_core_visual_hud(RCore *core) {
 	// TODO: this file needs to be installed
 	if (!res)
 		res = r_cons_hud_file (R2_LIBDIR"/radare2/"R2_VERSION"/hud/main");
+	if (!res)
+		r_cons_message ("Cannot find hud file");
 	r_cons_clear ();
 	if (res) {
 		p = strchr (res, '\t');

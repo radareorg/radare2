@@ -182,11 +182,12 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 #else
 	int ret, l, olen = len;
 	int w = 0;
+
 #if 1
 	// HACK?: if io->va == 0 -> call seek+read without checking sections ?
 	if (!io->va) {
-		r_io_map_select (io, addr);
 	//	r_io_seek (io, addr, R_IO_SEEK_SET);
+		r_io_map_select (io, addr);
 		ret = r_io_read_internal (io, buf, len);
 		if (io->cached) {
 			r_io_cache_read (io, addr, buf, len);
