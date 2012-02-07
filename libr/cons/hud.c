@@ -107,7 +107,6 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		nch = r_cons_arrow_to_hjkl (ch);
-//ceprintf ("%c %d\n", ch, nch); sleep (1);
 		if (nch == 'j' && ch != 'j') {
 			if (choose+1 < n)
 				choose++;
@@ -138,6 +137,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			break;
 		case 0x1b: // ESC
 			return NULL;
+		case 8: // bs
 		case 127: // bs
 			choose = 0;
 			if (i<1) return NULL;
