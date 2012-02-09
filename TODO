@@ -6,6 +6,7 @@
 ------8<-------------------8<--------------------8<-----------------8<----------
 
 ====[[ 0.9.1 ]]====
+
 * If [0-9] keybindings in visual point to same address use same reference
 * Make r_io happy with RList
 * RBinCreate:
@@ -107,6 +108,7 @@ earada
   - Add SSL support
   - http API in r_socket module
     - allow to get/post data/files with continue on plain/ssl
+* implement bitmask search
 * refactor rap and raps
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp

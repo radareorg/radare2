@@ -125,7 +125,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->ref = op->value = -1;
 #endif
 	if (anal->bits==16)
-		return op_thumb(anal, op, addr, data, len);
+		return op_thumb (anal, op, addr, data, len);
 	op->length = 4;
 #if 0
 	fprintf(stderr, "CODE %02x %02x %02x %02x\n",

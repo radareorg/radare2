@@ -4,7 +4,7 @@
 
 #define NPF 5
 static int blocksize = 0;
-static const char *printfmt[] = { "x", "pd", "f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pd", "p8", "pc", };
+static const char *printfmt[] = { "x", "pd", "f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pd", "pw", "pc", };
 static int autoblocksize = 1;
 static int obs = 0;
 
@@ -658,6 +658,17 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		{
 		int scrcols = r_config_get_i (core->config, "scr.cols");
 		r_core_block_size (core, core->cons->rows * scrcols);
+		}
+		break;
+	case 3: // XXX pw
+		{
+		int scrcols = r_config_get_i (core->config, "scr.cols");
+		r_core_block_size (core, core->cons->rows * scrcols);
+		}
+		break;
+	case 4: // XXX pc
+		{
+		r_core_block_size (core, core->cons->rows * 5);
 		}
 		break;
 	case 1: // pd

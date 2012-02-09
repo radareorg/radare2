@@ -63,7 +63,7 @@ R_API RIO *r_io_free(RIO *io) {
 /* used by uri handler plugins */
 R_API int r_io_redirect(struct r_io_t *io, const char *file) {
 	free (io->redirect);
-	io->redirect = file?strdup (file):NULL;
+	io->redirect = file? strdup (file): NULL;
 	return 0;
 }
 

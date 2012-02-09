@@ -70,7 +70,14 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 	// TODO: remove tmpfilez
 	if (strstr (cmd, "BLOCK")) {
 		// remove temporary BLOCK file
+		char *f = r_sys_getenv ("BLOCK");
+		if (f) {
+			r_file_rm (f);
+			r_sys_setenv ("BLOCK", NULL);
+		}
 	}
+	r_sys_setenv ("BYTES", NULL);
+	r_sys_setenv ("OFFSET", NULL);
 }
 
 R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
@@ -89,6 +96,17 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	ret = strdup (cmd);
 	if (strstr (cmd, "BLOCK")) {
 		// replace BLOCK in RET string
+		char *f = r_file_temp ("r2block");
+		if (f) {
+			if (r_file_dump (f, core->block, core->blocksize))
+				r_sys_setenv ("BLOCK", f);
+			free (f);
+		}
+	}
+	if (strstr (cmd, "BYTES")) {
+		char *s = r_hex_bin2strdup (core->block, core->blocksize);
+		r_sys_setenv ("BYTES", s);
+		free (s);
 	}
 	if (core->file->filename)
 		r_sys_setenv ("FILE", core->file->filename);
@@ -230,10 +248,10 @@ R_API int r_core_file_list(RCore *core) {
 	RListIter *iter;
 	r_list_foreach (core->files, iter, f) {
 		if (f->map)
-			eprintf ("%c %d %s 0x%"PFMT64x"\n",
-				core->io->raised == f->fd->fd?'*':' ',
+			r_cons_printf ("%c %d %s 0x%"PFMT64x"\n",
+				core->io->raised == f->fd->fd?'*':'-',
 				f->fd->fd, f->uri, f->map->from);
-		else eprintf ("  %d %s\n", f->fd->fd, f->uri);
+		else r_cons_printf ("- %d %s\n", f->fd->fd, f->uri);
 		count++;
 	}
 	return count;

@@ -123,7 +123,8 @@ static int cmd_project(void *data, const char *input) {
 		"Usage: P[?osi] [file]\n"
 		" Po [file]  open project\n"
 		" Ps [file]  save project\n"
-		" Pi [file]  info\n");
+		" Pi [file]  info\n"
+		"NOTE: project files are stored in ~/.radare2/rdb\n");
 		break;
 	}
 	free (str);
@@ -468,7 +469,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		RListIter *iter = r_list_iterator (list);
 		while (r_list_iter_next (iter)) {
 			RDebugFrame *frame = r_list_iter_get (iter);
-			r_cons_printf ("%d  0x%08"PFMT64x"  %d\n", i++, frame->addr, frame->size);
+			r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
+				i++, frame->addr, frame->size);
 		}
 		r_list_destroy (list);
 		}
@@ -573,12 +575,14 @@ static int cmd_mount(void *data, const char *_input) {
 	case '*':
 		eprintf ("List commands in radare format\n");
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf ("m %s %s 0x%"PFMT64x"\n", root-> path, root->p->name, root->delta);
+			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
+				root-> path, root->p->name, root->delta);
 		}
 		break;
 	case '\0':
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf ("%s\t0x%"PFMT64x"\t%s\n", root->p->name, root->delta, root->path);
+			r_cons_printf ("%s\t0x%"PFMT64x"\t%s\n",
+				root->p->name, root->delta, root->path);
 		}
 		break;
 	case 'l': // list of plugins
@@ -650,44 +654,44 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'f':
 		input++;
 		switch (*input) {
-			case '?':
-				r_cons_printf (
-				"Usage: mf[no] [...]\n"
-				" mfn /foo *.c       ; search files by name in /foo path\n"
-				" mfo /foo 0x5e91    ; search files by offset in /foo path\n"
-				);
-				break;
-			case 'n':
+		case '?':
+			r_cons_printf (
+			"Usage: mf[no] [...]\n"
+			" mfn /foo *.c       ; search files by name in /foo path\n"
+			" mfo /foo 0x5e91    ; search files by offset in /foo path\n"
+			);
+			break;
+		case 'n':
+			input++;
+			if (*input == ' ')
 				input++;
-				if (*input == ' ')
-					input++;
-				ptr = strchr (input, ' ');
-				if (ptr) {
-					*ptr++ = 0;
-					list = r_fs_find_name (core->fs, input, ptr);
-					r_list_foreach (list, iter, ptr) {
-						r_str_chop_path (ptr);
-						printf ("%s\n", ptr);
-					}
-					//XXX: r_list_destroy (list);
-				} else eprintf ("Unknown store path\n");
-				break;
-			case 'o':
+			ptr = strchr (input, ' ');
+			if (ptr) {
+				*ptr++ = 0;
+				list = r_fs_find_name (core->fs, input, ptr);
+				r_list_foreach (list, iter, ptr) {
+					r_str_chop_path (ptr);
+					printf ("%s\n", ptr);
+				}
+				//XXX: r_list_destroy (list);
+			} else eprintf ("Unknown store path\n");
+			break;
+		case 'o':
+			input++;
+			if (*input == ' ')
 				input++;
-				if (*input == ' ')
-					input++;
-				ptr = strchr (input, ' ');
-				if (ptr) {
-					*ptr++ = 0;
-					ut64 off = r_num_math (core->num, ptr);
-					list = r_fs_find_off (core->fs, input, off);
-					r_list_foreach (list, iter, ptr) {
-						r_str_chop_path (ptr);
-						printf ("%s\n", ptr);
-					}
-					//XXX: r_list_destroy (list);
-				} else eprintf ("Unknown store path\n");
-				break;
+			ptr = strchr (input, ' ');
+			if (ptr) {
+				*ptr++ = 0;
+				ut64 off = r_num_math (core->num, ptr);
+				list = r_fs_find_off (core->fs, input, off);
+				r_list_foreach (list, iter, ptr) {
+					r_str_chop_path (ptr);
+					printf ("%s\n", ptr);
+				}
+				//XXX: r_list_destroy (list);
+			} else eprintf ("Unknown store path\n");
+			break;
 		}
 		break;
 	case 's':
@@ -1507,7 +1511,7 @@ static int cmd_help(void *data, const char *input) {
 		" w[mode] [arg]     ; multiple write operations\n"
 		" x [len]           ; alias for 'px' (print hexadecimal)\n"
 		" y [len] [off]     ; yank/paste bytes from/to memory\n"
-		" ? [expr]          ; help or evaluate math expression\n"
+		" ?[??] [expr]      ; help or evaluate math expression\n"
 		" /[xmp/]           ; search for bytes, regexps, patterns, ..\n"
 		" ![cmd]            ; run given command as in system(3)\n"
 		" = [cmd]           ; run this command via rap://\n"
@@ -1516,7 +1520,6 @@ static int cmd_help(void *data, const char *input) {
 		" .[ file|!cmd|cmd|(macro)]  ; interpret as radare cmds\n"
 		" :                 ; list all command plugins\n"
 		" q [ret]           ; quit program with a return value\n"
-		"Use '?""?""?' evaluation, special vars and scripting facilities\n"
 		"Append '?' to any char command to get detailed help\n"
 		"Prefix with number to repeat command N times (f.ex: 3x)\n"
 		"Suffix '@ addr[:bsize]' for a temporary seek and/or bsize\n"
@@ -1561,7 +1564,7 @@ static int cmd_bsize(void *data, const char *input) {
 // move it out // r_diff maybe?
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	int i, eq = 0;
-	for (i=0;i<len;i++) {
+	for (i=0; i<len; i++) {
 		if (f[i]==d[i]) {
 			eq++;
 			continue;
@@ -2277,9 +2280,9 @@ static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	} else r_egg_option_set (egg, key, input+2);
 }
 static int cmd_egg_compile(REgg *egg) {
-	int ret = R_FALSE;
-	RBuffer *b;
 	int i;
+	RBuffer *b;
+	int ret = R_FALSE;
 	char *p = r_egg_option_get (egg, "egg.shellcode");
 	if (p && *p) {
 		if (!r_egg_shellcode (egg, p)) {
@@ -3550,7 +3553,7 @@ static int cmd_write(void *data, const char *input) {
 				" \"wa nop;nop\"     : assemble more than one instruction (note the quotes)\n"
 				" waf foo.asm      : assemble file and write bytes\n"
 				" wao nop          : convert current opcode into nops\n"
-				" wao?             : show help for assembler operation on current opcode (aka hack)\n");
+				" wao?             : show help for assembler operation on current opcode (hack)\n");
 			break;
 		}
 		break;
@@ -4043,8 +4046,19 @@ static int cmd_search(void *data, const char *input) {
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
+// TODO: add support for binmask here
+{
+	char *s, *p = strdup (input+2);
+	s = strchr (p, ' ');
+	if (s) {
+		*s++ = 0;
+		r_search_kw_add (core->search,
+			r_search_keyword_new_hex (p, s, NULL));
+	} else {
 		r_search_kw_add (core->search,
 			r_search_keyword_new_hexmask (input+2, NULL));
+	}
+}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		break;
@@ -4103,6 +4117,8 @@ static int cmd_search(void *data, const char *input) {
 		" /i foo          ; search for string 'foo' ignoring case\n"
 		" /e /E.F/i       ; match regular expression\n"
 		" /x ff0033       ; search for hex string\n"
+		" /x ff..33       ; search for hex string ignoring some nibbles\n"
+		" /x ff43 ffd0    ; search for hexpair with mask\n"
 		" /d 101112       ; search for a deltified sequence of bytes\n"
 		" /!x 00          ; inverse hexa search (find first byte != 0x00)\n"
 		" /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
@@ -4451,7 +4467,7 @@ static int cmd_open(void *data, const char *input) {
 					} else size = r_num_math (core->num, q+1);
 				} else size = r_io_size (core->io);
 				r_io_map_add (core->io, fd, 0, delta, addr, size);
-			} else eprintf ("Usage: om fd addr size [delta]\n");
+			} else eprintf ("Usage: om fd addr [size] [delta]\n");
 			free (s);
 			}
 			break;

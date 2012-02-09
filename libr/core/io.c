@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include "r_core.h"
 
@@ -106,7 +106,7 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 		if (addr >= core->offset && addr <= core->offset+core->blocksize)
 			r_core_block_read (core, 0);
 	}
-	return (ret==-1)?R_FALSE:R_TRUE;
+	return (ret==-1)? R_FALSE: R_TRUE;
 }
 
 R_API int r_core_block_read(RCore *core, int next) {

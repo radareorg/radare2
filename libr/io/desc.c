@@ -33,10 +33,13 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 }
 
 R_API void r_io_desc_free(RIODesc *desc) {
+	if (!desc) return;
 	if (desc->plugin && desc->plugin->close)
 		desc->plugin->close (desc);
-	free (desc->name);
-	free (desc);
+	if (desc->name) {
+		free (desc->name);
+		desc->name = NULL;
+	}
 }
 
 R_API void r_io_desc_add(RIO *io, RIODesc *desc) {
