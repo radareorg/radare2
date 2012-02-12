@@ -480,7 +480,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 	if (bsize == core->blocksize)
 		return R_FALSE;
 	if (bsize<1)
-		bsize = R_TRUE;
+		bsize = 1;
 	else if (bsize> R_CORE_BLOCKSIZE_MAX)
 		bsize = R_CORE_BLOCKSIZE_MAX;
 	else ret = R_TRUE;
@@ -562,7 +562,7 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 
 // TODO: move into core/io/rap? */
 R_API int r_core_serve(RCore *core, RIODesc *file) {
-	ut8 cmd, flg, *ptr, buf[1024];
+	ut8 cmd, flg, *ptr = NULL, buf[1024];
 	int i, j, pipefd;
 	ut64 x;
 	RSocket *c, *fd;

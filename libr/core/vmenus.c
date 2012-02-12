@@ -250,7 +250,7 @@ R_API int r_core_visual_comments (RCore *core) {
 	int i, ch, option = 0;
 	int format = 0;
 	int found = 0;
-	ut64 from, size;
+	ut64 from = 0, size = 0;
 	RListIter *iter;
 	RAnalFcn *fcn;
 	RMetaItem *d;

@@ -99,7 +99,7 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 	RIOCache *c;
 
 	r_list_foreach (io->cache, iter, c) {
-		if (r_range_overlap (addr, addr+len, c->from, c->to, &ret)) {
+		if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
 			if (ret>0) {
 				da = ret;
 				db = 0;

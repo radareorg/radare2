@@ -254,7 +254,6 @@ UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
 ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 	int i;
 	ULONG   next;
-	Boolean label = R_TRUE;
  
         i = OpcodeLen (adr, Opcodes);           // Länge vom Opcode ermitteln
 	if (len<i)
@@ -313,11 +312,9 @@ ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
                 break;
         case 0xC3:      // JP ????
                 next = (Opcodes[adr+2]<<8) + Opcodes[adr+1];
-                label = R_TRUE;
                 break;
         case 0x18:      // JR ??
                 next = adr + 2 + (BYTE)Opcodes[adr+1];
-                label = R_TRUE;
                 break;
         case 0xCD:      // CALL ????
                 ParseOpcodes ((Opcodes[adr+2]<<8) + Opcodes[adr+1], Opcodes, len);

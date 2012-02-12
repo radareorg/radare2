@@ -892,7 +892,7 @@ void opcode_0101(dis_buffer_t *dbuf, u_short opc)
  */
 void opcode_branch(dis_buffer_t *dbuf, u_short opc)
 {
-  int disp, sz;
+  int disp;
 
   if (IS_INST(BRA,opc))
       addstr(dbuf, "bra");      
@@ -907,20 +907,17 @@ void opcode_branch(dis_buffer_t *dbuf, u_short opc)
     /* 16-bit signed displacement */
     disp = read16(dbuf->val + 1);
     dbuf->used++;
-    sz = SIZE_WORD;
     addchar('w');
   } else if (disp == 0xff) {
     /* 32-bit signed displacement */
     disp = read32(dbuf->val + 1);
     dbuf->used += 2;
-    sz = SIZE_LONG;
     addchar('l');
   } else {
     /* 8-bit signed displacement in opcode. */
     /* Needs to be sign-extended... */
     if (ISBITSET(disp,7))
       disp -= 256;
-    sz = SIZE_BYTE;
     addchar('b');
   }
   addchar('\t');
@@ -3021,7 +3018,8 @@ void get_fpustdGEN(dis_buffer_t *dbuf, u_short ext, const char *name)
 void print_disp(dis_buffer_t *dbuf, int disp, int sz, int rel, int dd)
 {
   char *symname;
-  u_long nv,diff;
+  u_long nv = 0;
+  u_long diff;
 
   if (dbuf == NULL)
     return;

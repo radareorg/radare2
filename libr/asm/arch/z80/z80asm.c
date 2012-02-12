@@ -159,7 +159,7 @@ static void skipword (const char **pos, char delimiter) {
 
 /* find any of the list[] entries as the start of ptr and return index */
 static int indx (const char **ptr, const char **list, int error, const char **expr) {
-	int i, l;
+	int i;
 	*ptr = delspc (*ptr);
 	if (!**ptr) {
 		if (error) {
@@ -175,7 +175,6 @@ static int indx (const char **ptr, const char **list, int error, const char **ex
 		int had_expr = 0;
 		if (!list[i][0])
 			continue;
-		l = strlen (list[i]);
 		while (*check) {
 			if (*check == ' ') {
 				input = delspc (input);
@@ -901,7 +900,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	/* continue assembling until the last input file is done */
 	//for (file = 0; file < infilecount; ++file)
 	do {
-		int file_ended = 0;
 		int cmd, cont = 1;
 		if (havelist) {
 			if (buffer && buffer[0] != 0) {
@@ -1587,7 +1585,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      break;
 	    case END:
-	      file_ended = 1;
 	      break;
 	    case ORG:
 	      addr = rd_expr (&ptr, '\0', NULL, sp, 1) & 0xffff;

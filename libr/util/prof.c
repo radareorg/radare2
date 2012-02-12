@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include "r_util.h"
 
@@ -38,6 +38,7 @@ R_API double r_prof_end(struct r_prof_t *p) {
 	int sign;
 	gettimeofday (&end, NULL);
 	sign = timeval_subtract (&diff, begin, &end);
-	p->result = R_ABS (((double)(diff.tv_sec) + ((double)diff.tv_usec / 1000000.)));
-	return R_ABS(sign);
+	p->result = R_ABS (((double)(diff.tv_sec)
+		+ ((double)diff.tv_usec / 1000000.)));
+	return R_ABS (sign);
 }

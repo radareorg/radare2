@@ -1,4 +1,4 @@
-/* * Copyright (C) 2008-2011 - pancake <nopcode.org> */
+/* Copyright (C) 2008-2012 - pancake <nopcode.org> */
 
 #include <stdio.h>
 #include <string.h>
@@ -20,12 +20,12 @@ BLA:
 static int jop (ut64 addr, ut8 *data, ut8 a, ut8 b, const char *arg) {
 	ut32 dst32;
 	int l = 0;
-	int d, num = getnum (arg);
+	int num = getnum (arg);
 	if (!isnum (arg))
 		return 0;
 	dst32 = num - addr;
-	d = num - addr; // obey sign
 #if 0
+	d = num - addr; // obey sign
 	if (d>-127 && d<127) {
 		d-=2;
 		data[l++] = a;
@@ -577,7 +577,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 						if (r==4) { //ESP
 							data[l++] = getreg (arg)<<3 | r | 0x40;
 							data[l++] = 0x24;
-						} else if (r== 5) { // EBP
+						} else if (r==5) { // EBP
 							data[l++] = getreg (arg)<<3 | r | 0x40;
 							data[l++] = 0;
 						} else data[l++] = getreg (arg) | r | 0x40;
@@ -590,7 +590,18 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 						} else if (r== 5) { // EBP
 							data[l++] = getreg (arg)<<3 | r | 0x40;
 							data[l++] = 0;
-						} else data[l++] = getreg (arg)<<3 | r;
+						} else {
+							if (r == 0xff) {
+								ut32 n;
+								ut8 *N = (ut8*)&n;
+								data[l++] = getreg (arg)<<3|5;
+								n = getnum (arg2);
+								data[l++] = N[0];
+								data[l++] = N[1];
+								data[l++] = N[2];
+								data[l++] = N[3];
+							} else data[l++] = getreg (arg)<<3 | r;
+						}
 					}
 				}
 				return l;

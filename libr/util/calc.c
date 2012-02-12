@@ -22,9 +22,9 @@ typedef struct {
 typedef enum {
 	NAME, NUMBER, END, INC, DEC,
 	PLUS='+', MINUS='-', MUL='*', DIV='/',
+	//XOR='^', OR='|', AND='&',
 	PRINT=';', ASSIGN='=', LP='(', RP=')'
 } Token;
-
 
 /* accessors */
 static inline NumValue Nset(ut64 v) { NumValue n; n.d = (double)v; n.n = v; return n; }

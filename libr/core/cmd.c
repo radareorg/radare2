@@ -1188,15 +1188,19 @@ static int cmd_help(void *data, const char *input) {
 		char *p;
 		ut64 b = 0;
 		ut32 r = UT32_MAX;
-		if (input[1])
+		if (input[1]) {
 			strncpy (out, input+(input[1]==' '? 2: 1), sizeof (out)-1);
-		else *out = 0;
-		p = strchr (out+1, ' ');
-		if (p) {
-			*p = 0;
-			b = (ut32)r_num_math (core->num, out);
-			r = (ut32)r_num_math (core->num, p+1)-b;
-		} else r = (ut32)r_num_math (core->num, out);
+			p = strchr (out+1, ' ');
+			if (p) {
+				*p = 0;
+				b = (ut32)r_num_math (core->num, out);
+				r = (ut32)r_num_math (core->num, p+1)-b;
+			} else {
+				r = (ut32)r_num_math (core->num, out);
+			}
+		} else {
+			r = 0LL;
+		}
 		if (r == 0)
 			r = UT32_MAX>>1;
 		core->num->value = (ut64) (b + r_num_rand (r));
@@ -1248,7 +1252,7 @@ static int cmd_help(void *data, const char *input) {
 				r_cons_printf ("%s\n", out);
 			} else eprintf ("Usage: \"?b value bitstring\"\n");
 			free (p);
-		} else eprintf ("Whitespace expected after '?b'\n");
+		} else eprintf ("Whitespace expected after '?f'\n");
 		break;
 	case ' ':
 		{
@@ -1347,12 +1351,15 @@ static int cmd_help(void *data, const char *input) {
 		}
 		}
 		break;
-	case 'p': {
+	case 'p':
+		if (core->io->va) {
 		// physical address
 		ut64 o, n = (input[0] && input[1])?
 			r_num_math (core->num, input+2): core->offset;
 		o = r_io_section_vaddr_to_offset (core->io, n);
 		r_cons_printf ("0x%08"PFMT64x"\n", o);
+		} else {
+			eprintf ("Virtual addresses not enabled!\n");
 		}
 		break;
 	case 'S': {
@@ -3814,14 +3821,12 @@ static int cmd_search(void *data, const char *input) {
 	} else
 	if (!strcmp (mode, "file")) {
 		if (core->io->va) {
-			ut64 vaddr = 0LL;
 			RListIter *iter;
 			RIOSection *s;
 			from = core->offset;
 			to = from;
 			r_list_foreach (core->io->sections, iter, s) {
 				if ((s->vaddr+s->size) > to && from>=s->vaddr) {
-					vaddr = s->vaddr;
 					to = s->vaddr+s->size;
 				}
 			}
@@ -5010,7 +5015,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			for (i=0; str[i]; i++)
 				if (str[i]=='\n')
 					str[i]=' ';
-			cmd = r_str_concat (strdup (cmd), r_str_concat (str, ptr2+1));
+			str = r_str_concat (str, ptr2+1);
+			cmd = r_str_concat (strdup (cmd), str);
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);
 			free (str);
@@ -5660,7 +5666,7 @@ static int cmd_debug(void *data, const char *input) {
 			{
 			int n = 0;
 			int t = core->dbg->trace->enabled;
-			RGraphNode *gn;
+			/*RGraphNode *gn;*/
 			core->dbg->trace->enabled = 0;
 			r_graph_plant (core->dbg->graph);
 			r_cons_break (static_debug_stop, core->dbg);
@@ -5701,7 +5707,7 @@ static int cmd_debug(void *data, const char *input) {
 					// TODO: step into and check return address if correct
 					// if not correct we are hijacking the control flow (exploit!)
 #endif
-					gn = r_graph_pop (core->dbg->graph);
+					/*gn =*/ r_graph_pop (core->dbg->graph);
 #if 0
 					if (addr != gn->addr) {
 						eprintf ("Oops. invalid return address 0x%08"PFMT64x

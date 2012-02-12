@@ -49,7 +49,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	ut64 at, toff = core->offset;
 	ut8 *buf;
 	char *tok, *tokens[1024], *code = NULL, *ptr;
-	int idx, tidx, ret, len; 
+	int idx, tidx = 0, ret, len;
 	int tokcount, matchcount;
 
 	if (!*input)

@@ -19,7 +19,7 @@ static int marks_init = 0;
 static ut64 marks[UT8_MAX+1];
 
 static int r_core_visual_hud(RCore *core) {
-	char *res;
+	char *res = NULL;
 	char *p = 0;
 	r_cons_show_cursor (R_TRUE);
 	char *homehud = r_str_home("/.radare2/hud");

@@ -38,7 +38,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int counter = 0;
 	int middle = 0;
 	char str[128], strsub[128];
-	char *line = NULL, *comment, *opstr, *osl = NULL; // old source line
+	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
 	char *refline = NULL;
 	RAsmOp asmop;
 	RAnalOp analop = {0};

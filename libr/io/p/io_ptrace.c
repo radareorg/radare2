@@ -38,7 +38,7 @@ typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, i
 #else
 #define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
 #define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, x, y, z)
-typedef void* ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
+typedef long int ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
 #endif
 
 static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
@@ -68,7 +68,7 @@ static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
 	ptrace_word *buf = (ptrace_word*)pbuf;
 	ut32 words = sz / sizeof (ptrace_word);
 	ut32 last = sz % sizeof (ptrace_word);
-	ut32 x, *at = (ptrace_word*)(size_t)addr;
+	ut32 x, *at = (ut32 *)(size_t)addr;
 	ptrace_word lr;
 	if (sz<1 || addr==UT64_MAX)
 		return -1;

@@ -64,7 +64,7 @@ R_API void r_magic_setflags(RMagic* m, int f) {
 }
 
 R_API int r_magic_load(RMagic* m, const char *f) {
-	magic_load (m, f);
+	return magic_load (m, f);
 }
 
 R_API int r_magic_compile(RMagic* m, const char *x) {
@@ -76,7 +76,7 @@ R_API int r_magic_check(RMagic* m, const char *x) {
 }
 
 R_API int r_magic_errno(RMagic* m) {
-	return magic_error (m);
+	return magic_errno (m);
 }
 
 #else

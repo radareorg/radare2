@@ -115,7 +115,7 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 		filenames[0] = pathname + 6;
 		filenames[1] = NULL;
 	}
-	ewf_h = libewf_open (&filenames, 1, rw?
+	ewf_h = libewf_open ((char * const *)filenames, 1, rw?
 		LIBEWF_OPEN_READ_WRITE: LIBEWF_OPEN_READ);
 	if (ewf_h == NULL)
 		return NULL;
