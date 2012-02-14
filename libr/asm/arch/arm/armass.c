@@ -156,11 +156,10 @@ static ut32 getshift(const char *str) {
 	ut32 i=0, shift=0;
 	const char *shifts[] = {
 		"LSL", "LSR", "ASR", "ROR",
-		0,
-		"RRX" // alias for ROR #0
+		0, "RRX" // alias for ROR #0
 	};
 
-	strncpy (type, str, sizeof(type)-1);
+	strncpy (type, str, sizeof (type)-1);
 
 	// handle RRX alias case
 	if (!strcasecmp (type, shifts[5])) {
@@ -169,7 +168,7 @@ static ut32 getshift(const char *str) {
 	// all other shift types
 	else {
 		// split the string into type and arg
-		space = strchr(type, ' ');
+		space = strchr (type, ' ');
 		if (!space)
 			return 0;
 		*space = 0;
@@ -185,7 +184,7 @@ static ut32 getshift(const char *str) {
 			return 0;
 		shift = (i*2);
 
-		if ((i = getreg(arg)) != -1) {
+		if ((i = getreg (arg)) != -1) {
 			shift |= 1;
 			i = i<<4;
 		}
@@ -201,7 +200,7 @@ static ut32 getshift(const char *str) {
 
 	i += shift;
 	i = i << 4;
-	r_mem_copyendian(&shift, &i, sizeof(ut32), 0);
+	r_mem_copyendian ((ut8*)&shift, (const ut8*)&i, sizeof (ut32), 0);
 
 	return shift;
 }

@@ -227,7 +227,8 @@ static Token get_token() {
 {
 			int i = 0;
 			string_value[i++] = ch;
-			while (cin_get (&ch)) { // && ( isalnum (ch) || ch=='$')) {
+			//while (cin_get (&ch)) { // && ( isalnum (ch) || ch=='$')) {
+			while (cin_get (&ch) && ( isalnum (ch) || ch=='$')) {
 				if (i>=STRSZ) {
 					error ("string too long");
 					return 0;

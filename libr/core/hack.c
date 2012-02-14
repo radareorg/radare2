@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 // pancake<nopcode.org> */
 #include <r_core.h>
 
 R_API void r_core_hack_help(RCore *core) {
@@ -15,6 +15,8 @@ R_API void r_core_hack_help(RCore *core) {
 R_API int r_core_hack(RCore *core, const char *op) {
 	ut8 *b = core->block;
 	RAnalOp analop;
+	if (strstr (r_config_get (core->config, "asm.arch"), "x86"))
+		eprintf ("TODO: write hacks are only for x86\n");
 	if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize)) {
  		eprintf ("anal op fail\n");
 		return R_FALSE;
