@@ -12,7 +12,7 @@ typedef struct {
 	int o;
 	char op[128];
 	char opstr[128];
-	char *a[16];
+	char *a[16]; /* only 15 arguments can be used! */
 } ArmOpcode;
 
 typedef struct {
@@ -212,7 +212,7 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	strncpy (ao->op, str, sizeof (ao->op)-1);
 	strcpy (ao->opstr, str);
 	ao->a[0] = strchr (ao->op, ' ');
-	for (i=0; i<16; i++) {
+	for (i=0; i<15; i++) {
 		if (ao->a[i]) {
 			*ao->a[i] = 0;
 			ao->a[i+1] = strchr (++ao->a[i], ',');

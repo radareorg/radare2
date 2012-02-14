@@ -106,7 +106,7 @@ install-doc:
 
 install-doc-symlink:
 	${INSTALL_DIR} ${PFX}/share/doc/radare2
-	cd doc ; for a in * ; do ln -fs ${PWD}/$$a ${PFX}/share/doc/radare2 ; done
+	cd doc ; for a in * ; do ln -fs ${PWD}/doc/$$a ${PFX}/share/doc/radare2 ; done
 
 DATADIRS=libr/asm/d libr/syscall/d libr/magic/d
 #binr/ragg2/d

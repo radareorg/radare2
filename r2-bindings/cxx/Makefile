@@ -9,7 +9,7 @@ include ../rules.mk
 
 LIBS=r_lib.so
 #LIBS=r_search.so r_util.so
-LIBS=r_asm.so
+LIBS=r_core.so r_asm.so
 #LIBS=r_util.so
 
 mkcxx:

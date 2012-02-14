@@ -25,7 +25,7 @@ typedef enum {
 	NAME, NUMBER, END, INC, DEC,
 	PLUS='+', MINUS='-', MUL='*', DIV='/',
 	//XOR='^', OR='|', AND='&',
-	PRINT=';', ASSIGN='=', LP='(', RP=')'
+	PRINT=';', ASSIGN='=', LEFTP='(', RIGHTP=')'
 } Token;
 
 /* accessors */
@@ -112,9 +112,9 @@ static NumValue prim(int get) {
 	case INC: return Naddi (prim (1), 1);
 	case DEC: return Naddi (prim (1), -1);
 	case MINUS: return Nsub (v, prim (1));
-	case LP:
+	case LEFTP:
 		v = expr (1);
-		if (curr_tok == RP)
+		if (curr_tok == RIGHTP)
 			get_token ();
 		else error (" ')' expected");
 	default:

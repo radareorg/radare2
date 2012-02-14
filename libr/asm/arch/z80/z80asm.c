@@ -1095,7 +1095,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xED);
 	      wrtb (0x46 + 8 * --r);
 	      break;
-	    case IN:
+	    case _IN:
 	      if (!(r = rd_in (&ptr)))
 		break;
 	      if (r == A)
@@ -1308,7 +1308,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xED);
 	      wrtb (0xB3);
 	      break;
-	    case OUT:
+	    case _OUT:
 	      if (!(r = rd_nnc (&ptr)))
 		break;
 	      if (r == C)

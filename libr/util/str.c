@@ -857,3 +857,20 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 	}
 	return lp;
 }
+
+// TODO: if unix.. move to .h? static inline
+R_API const char *r_str_casestr(const char *a, const char *b) {
+#if __WINDOWS__
+	size_t hay_len = strlen(a);
+	size_t needle_len = strlen(b);
+	while (hay_len >= needle_len) {
+		if (strncasecmp(a, b, needle_len) == 0)
+			return (const char *) a;
+		a++;
+		hay_len--;
+	}
+	return NULL;
+#else
+	return strcasestr (a, b);
+#endif
+}

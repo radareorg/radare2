@@ -54,7 +54,7 @@ static char *strmatch (char *pos, char *buf) {
 	for (p = buf; *p; p++) {
 		if (*p==' ') {
 			*p = 0;
-			if (!strcasestr (pos, os)) {
+			if (!r_str_casestr (pos, os)) {
 //r_cons_printf ("FAIL ((%s), %s)\n", pos, os);
 				*p = ' ';
 				return NULL;
@@ -64,7 +64,7 @@ static char *strmatch (char *pos, char *buf) {
 			os = p+1;
 		}
 	}
-	return strcasestr (pos, os);
+	return (char *)r_str_casestr (pos, os);
 }
 
 R_API char *r_cons_hud(RList *list, const char *prompt) {
