@@ -83,9 +83,8 @@ R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFcn *fcn) {
 	if (anal && anal->cur && anal->cur->fingerprint_fcn)
 		return (anal->cur->fingerprint_fcn (anal, fcn));
 
-	iter = r_list_iterator (fcn->bbs), fcn->fingerprint = NULL;
-	while (r_list_iter_next (iter)) {
-		bb = r_list_iter_get (iter);
+	fcn->fingerprint = NULL;
+	r_list_foreach (fcn->bbs, iter, bb) {
 		len += bb->size;
 		fcn->fingerprint = realloc (fcn->fingerprint, len);
 		if (!fcn->fingerprint)
@@ -105,16 +104,12 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2) {
 		return (anal->cur->diff_bb (anal, fcn, fcn2));
 
 	fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
-	iter = r_list_iterator (fcn->bbs);
-	while (r_list_iter_next (iter)) {
-		bb = r_list_iter_get (iter);
+	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->diff->type != R_ANAL_DIFF_TYPE_NULL)
 			continue;
 		ot = 0;
 		mbb = mbb2 = NULL;
-		iter2 = r_list_iterator (fcn2->bbs);
-		while (r_list_iter_next (iter2)) {
-			bb2 = r_list_iter_get (iter2);
+		r_list_foreach (fcn2->bbs, iter2, bb2) {
 			if (bb2->diff->type == R_ANAL_DIFF_TYPE_NULL) {
 				r_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
 						bb2->fingerprint, bb2->size, NULL, &t);
@@ -158,14 +153,10 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 		return (anal->cur->diff_fcn (anal, fcns, fcns2));
 
 	/* Compare functions with the same name */
-	iter = r_list_iterator (fcns);
-	while (r_list_iter_next (iter)) {
-		fcn = r_list_iter_get (iter);
+	r_list_foreach (fcns, iter, fcn) {
 		if (fcn->type != R_ANAL_FCN_TYPE_SYM || fcn->name == NULL)
 			continue;
-		iter2 = r_list_iterator (fcns2);
-		while (r_list_iter_next (iter2)) {
-			fcn2 = r_list_iter_get (iter2);
+		r_list_foreach (fcns2, iter, fcn2) {
 			if (fcn2->type != R_ANAL_FCN_TYPE_SYM || fcn2->name == NULL ||
 				strcmp (fcn->name, fcn2->name))
 				continue;
@@ -194,17 +185,13 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 		}
 	}
 	/* Compare remaining functions */
-	iter = r_list_iterator (fcns);
-	while (r_list_iter_next (iter)) {
-		fcn = r_list_iter_get (iter);
+	r_list_foreach (fcns, iter, fcn) {
 		if ((fcn->type != R_ANAL_FCN_TYPE_FCN && fcn->type != R_ANAL_FCN_TYPE_SYM) ||
 			fcn->diff->type != R_ANAL_DIFF_TYPE_NULL)
 			continue;
 		ot = 0;
 		mfcn = mfcn2 = NULL;
-		iter2 = r_list_iterator (fcns2);
-		while (r_list_iter_next (iter2)) {
-			fcn2 = r_list_iter_get (iter2);
+		r_list_foreach (fcns2, iter2, fcn2) {
 			if (fcn->size > fcn2->size) {
 				maxsize = fcn->size;
 				minsize = fcn2->size;

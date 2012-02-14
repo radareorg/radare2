@@ -56,9 +56,9 @@ R_API void r_debug_trace_at(RDebug *dbg, const char *str) {
 R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 	/* TODO: handle opcode size .. warn when jumping in the middle of instructions */
 	int tag = dbg->trace->tag;
-	RListIter *iter = r_list_iterator (dbg->trace->traces);
-	while (r_list_iter_next (iter)) {
-		RDebugTracepoint *trace = (RDebugTracepoint *)r_list_iter_get (iter);
+	RListIter *iter;
+	RDebugTracepoint *trace;
+	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (tag != 0 && !(dbg->trace->tag & (1<<tag)))
 			continue;
 		if (trace->addr == addr)
@@ -69,9 +69,9 @@ R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 
 R_API void r_debug_trace_list (RDebug *dbg, int mode) {
 	int tag = dbg->trace->tag;
-	RListIter *iter = r_list_iterator (dbg->trace->traces);
-	while (r_list_iter_next (iter)) {
-		RDebugTracepoint *trace = r_list_iter_get (iter);
+	RListIter *iter;
+	RDebugTracepoint *trace;
+	r_list_foreach (dbg->trace->traces, iter, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			if (mode == 1)
 				dbg->printf ("at+ 0x%"PFMT64x" %d\n", trace->addr, trace->times);

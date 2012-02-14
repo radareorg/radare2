@@ -466,9 +466,9 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		{
 		int i = 0;
 		RList *list = r_debug_frames (core->dbg);
-		RListIter *iter = r_list_iterator (list);
-		while (r_list_iter_next (iter)) {
-			RDebugFrame *frame = r_list_iter_get (iter);
+		RListIter *iter;
+		RDebugFrame *frame;
+		r_list_foreach (list, iter, frame) {
 			r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
 				i++, frame->addr, frame->size);
 		}
@@ -5233,9 +5233,9 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	/* list r_cmd plugins */
 	if (!strcmp (cstr, ":")) {
-		RListIter *iter = r_list_iterator (core->cmd->plist);
-		while (r_list_iter_next (iter)) {
-			RCmdPlugin *cp = (RCmdPlugin*) r_list_iter_get (iter);
+		RListIter *iter;
+		RCmdPlugin *cp;
+		r_list_foreach (core->cmd->plist, iter, cp) {
 			r_cons_printf ("%s: %s\n", cp->name, cp->desc);
 		}
 		return 0;
@@ -5423,9 +5423,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			if (!addr) libname = r_str_word_get0 (ptr, 0);
 		}
 		r_debug_map_sync (core->dbg); // update process memory maps
-		iter = r_list_iterator (core->dbg->maps);
-		while (r_list_iter_next (iter)) {
-			map = r_list_iter_get (iter);
+		r_list_foreach (core->dbg->maps, iter, map) {
 			if ((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
 				(libname != NULL && (strstr (map->name, libname)))) {
 				filter.offset = 0LL;

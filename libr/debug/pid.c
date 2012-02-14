@@ -28,13 +28,12 @@ R_API RList *r_debug_pids(RDebug *dbg, int pid) {
 R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid) {
 	RList *list;
 	RListIter *iter;
+	RDebugPid *p;
 	if (dbg && dbg->h && dbg->h->pids) {
 		list = dbg->h->pids (pid);
 		if (list == NULL)
 			return R_FALSE;
-		iter = r_list_iterator (list);
-		while (r_list_iter_next (iter)) {
-			RDebugPid *p = r_list_iter_get (iter);
+		r_list_foreach (list, iter, p) {
 			eprintf (" %c %d %c %s\n", 
 				dbg->pid==p->pid?'*':'-',
 				p->pid, p->status, p->path);
@@ -47,13 +46,12 @@ R_API int r_debug_pid_list(struct r_debug_t *dbg, int pid) {
 R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid) {
 	RList *list;
 	RListIter *iter;
+	RDebugPid *p;
 	if (dbg && dbg->h && dbg->h->pids) {
 		list = dbg->h->threads (pid);
 		if (list == NULL)
 			return R_FALSE;
-		iter = r_list_iterator (list);
-		while (r_list_iter_next (iter)) {
-			RDebugPid *p = r_list_iter_get (iter);
+		r_list_foreach (list, iter, p) {
 			eprintf (" %c %d %c %s\n",
 				dbg->tid==p->pid?'*':'-',
 				p->pid, p->status, p->path);

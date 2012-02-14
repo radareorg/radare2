@@ -301,10 +301,9 @@ R_API int r_anal_fcn_split_bb(RAnalFcn *fcn, RAnalBlock *bb, ut64 addr) {
 			}
 #if R_ANAL_BB_HAS_OPS
 			if (bbi->ops) {
-				iter = r_list_iterator (bbi->ops);
-				while (r_list_iter_next (iter)) {
-					opi = r_list_iter_get (iter);
+				r_list_foreach (bbi->ops, iter, opi) {
 					if (opi->addr >= addr) {
+						/* Remove opi from bbi->ops without free()ing it. */
 						r_list_split (bbi->ops, opi);
 						bbi->ninstr--;
 						r_list_append (bb->ops, opi);

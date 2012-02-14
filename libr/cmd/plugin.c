@@ -34,10 +34,8 @@ R_API int r_cmd_plugin_init(struct r_cmd_t *cmd) {
 R_API int r_cmd_plugin_check(struct r_cmd_t *cmd, const char *a0) {
 	RListIter *iter;
 	RCmdPlugin *cp;
-	
-	iter = r_list_iterator (cmd->plist);
-	while (r_list_iter_next (iter)) {
-		cp = (RCmdPlugin*) r_list_iter_get (iter);
+
+	r_list_foreach (cmd->plist, iter, cp) {
 		if (cp->call (NULL, a0))
 			return R_TRUE;
 	}

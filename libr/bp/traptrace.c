@@ -109,14 +109,14 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 
 R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from) {
 	int ret = R_FALSE;
-	RListIter *iter = r_list_iterator (bp->traces);
-	while (r_list_iter_next (iter)) {
-		RBreakpointTrace *trace = r_list_iter_get (iter);
+	RListIter *iter, *iter_tmp;
+	RBreakpointTrace *trace;
+	r_list_foreach_safe (bp->traces, iter, iter_tmp, trace) {
 		if (from>=trace->addr && from<=trace->addr_end) {
 			bp->iob.write_at (bp->iob.io, trace->addr,
 				trace->buffer, trace->length);
 			r_bp_traptrace_free (trace);
-			r_list_delete (bp->traces, r_list_iter_cur (iter));
+			r_list_delete (bp->traces, iter);
 			ret = R_TRUE;
 		}
 	}

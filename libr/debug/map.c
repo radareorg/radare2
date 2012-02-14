@@ -4,31 +4,26 @@
 #include <r_list.h>
 
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
-	RListIter *iter = r_list_iterator (dbg->maps);
+	RListIter *iter;
+	RDebugMap *map;
 	if (rad) {
-		while (r_list_iter_next (iter)) {
-			RDebugMap *map = r_list_iter_get (iter);
+		r_list_foreach (dbg->maps, iter, map) {
 			dbg->printf ("f map.%s.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 				map->name, r_str_rwx_i (map->perm),
 				map->addr_end - map->addr, map->addr);
 		}
-		iter = r_list_iterator (dbg->maps_user);
-		while (r_list_iter_next (iter)) {
-			RDebugMap *map = r_list_iter_get (iter);
+		r_list_foreach (dbg->maps_user, iter, map) {
 			dbg->printf ("f map.%s.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 				map->name, r_str_rwx_i (map->perm),
 				map->addr_end - map->addr, map->addr);
 		}
 	} else {
-		while (r_list_iter_next (iter)) {
-			RDebugMap *map = r_list_iter_get (iter);
+		r_list_foreach (dbg->maps, iter, map) {
 			dbg->printf ("sys 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s\n",
 				map->addr, (addr>=map->addr && addr<=map->addr_end)?'*':'-',
 				map->addr_end, map->user?'u':'s', r_str_rwx_i (map->perm), map->name);
 		}
-		iter = r_list_iterator (dbg->maps_user);
-		while (r_list_iter_next (iter)) {
-			RDebugMap *map = r_list_iter_get (iter);
+		r_list_foreach (dbg->maps_user, iter, map) {
 			dbg->printf ("usr 0x%08"PFMT64x" - 0x%08"PFMT64x" %c %x %s\n",
 				map->addr, map->addr_end,
 				map->user?'u':'s',
@@ -93,10 +88,9 @@ R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 }
 
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr) {
-	RDebugMap *ret = NULL;
-	RListIter *iter = r_list_iterator (dbg->maps);
-	while (r_list_iter_next (iter)) {
-		RDebugMap *map = r_list_iter_get (iter);
+	RDebugMap *map, *ret = NULL;
+	RListIter *iter;
+	r_list_foreach (dbg->maps, iter, map) {
 		if (addr >= map->addr && addr <= map->addr_end) {
 			ret = map;
 			break;
@@ -117,11 +111,11 @@ R_API RList *r_debug_map_list_new() {
 	return list;
 }
 
-/* XXX Use r_list_destroy? */
+/* XXX Use r_list_destroy? FIXME: use correct maps->free function */
 R_API void r_debug_map_list_free(RList *maps) {
-	RListIter *iter = r_list_iterator (maps);
-	while (r_list_iter_next (iter)) {
-		RDebugMap *map = r_list_iter_get (iter);
+	RListIter *iter;
+	RDebugMap *map;
+	r_list_foreach (maps, iter, map) {
 		r_debug_map_free (map);
 	}
 	r_list_free (maps);

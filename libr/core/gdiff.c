@@ -17,19 +17,13 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	for (i = 0; i < 2; i++) {
 		r_core_anal_all (cores[i]);
 		/* Fingerprint fcn bbs */
-		iter = r_list_iterator (cores[i]->anal->fcns);
-		while (r_list_iter_next (iter)) {
-			fcn = r_list_iter_get (iter);
-			iter2 = r_list_iterator (fcn->bbs);
-			while (r_list_iter_next (iter2)) {
-				bb = r_list_iter_get (iter2);
+		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
+			r_list_foreach (fcn->bbs, iter2, bb) {
 				r_anal_diff_fingerprint_bb (cores[i]->anal, bb);
 			}
 		}
 		/* Fingerprint fcn */
-		iter = r_list_iterator (cores[i]->anal->fcns);
-		while (r_list_iter_next (iter)) {
-			fcn = r_list_iter_get (iter);
+		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
 			fcn->size = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
 		}
 	}

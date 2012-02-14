@@ -74,9 +74,7 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 		if (cmd->nullcallback != NULL)
 			ret = cmd->nullcallback (cmd->data);
 	} else {
-		iter = r_list_iterator (cmd->plist);
-		while (r_list_iter_next (iter)) {
-			cp = (RCmdPlugin*) r_list_iter_get (iter);
+		r_list_foreach (cmd->plist, iter, cp) {
 			if (cp->call (cmd->data, input))
 				return R_TRUE;
 		}
