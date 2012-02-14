@@ -8,6 +8,7 @@
  */
 
 
+#include <r_util.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -43,6 +44,8 @@ static void error(const char *);
 static NumValue prim(int);
 static Token get_token();
 
+static RNum *calc_num = NULL;
+
 /* global shit */
 #define STRSZ 128
 static Token curr_tok = PRINT;
@@ -53,7 +56,7 @@ static char oc = 0;
 
 static void error(const char *s) {
 	errors++;
-	fprintf (stderr, "error: %s\n", s);
+	//fprintf (stderr, "error: %s\n", s);
 }
 
 static NumValue expr(int get) {
@@ -94,8 +97,9 @@ static NumValue prim(int get) {
 		get_token ();
 		return v;
 	case NAME:
-		fprintf (stderr, "error: unknown keyword (%s)\n", string_value);
+		//fprintf (stderr, "error: unknown keyword (%s)\n", string_value);
 		//double& v = table[string_value];
+		v = Nset (r_num_get (calc_num, string_value));
 		get_token ();
 		if (curr_tok  == ASSIGN) 
 			v = expr (1);
@@ -120,13 +124,19 @@ static void cin_putback (char c) {
 	oc = c;
 }
 
+static int calc_i = 0;
+static const char *calc_buf = NULL;
+
 static int cin_get(char *c) {
 	if (oc) {
 		*c = oc;
 		oc = 0;
 	} else {
-		if (read (0, c, 1) != 1)
+		if (!calc_buf)
 			return 0;
+		*c = calc_buf[calc_i];
+		if (*c) calc_i++;
+		else return 0;
 	}
 	return 1;
 }
@@ -146,15 +156,26 @@ static int cin_get_num(NumValue *n) {
 			str[i++] = c;
 	}
 	str[i] = 0;
+	*n = Nset (r_num_get (calc_num, str));
+#if 0
+// XXX: use r_num_get here
 	if (str[0]=='0' && str[1]=='x') {
 		ut64 x = 0;
 		if (sscanf (str+2, "%llx", &x)<1)
 			return 0;
 		*n = Nset (x);
+	} else
+	if (strchr (str, '.')) {
+		if (sscanf (str, "%lf", &d)<1)
+			return 0;
+		*n = Nsetf (d);
+	} else {
+		ut64 u;
+		if (sscanf (str, "%"PFMT64d, &u)<1)
+			return 0;
+		*n = Nset (u);
 	}
-	if (sscanf (str, "%lf", &d)<1)
-		return 0;
-	*n = Nsetf (d);
+#endif
 	return 1;
 }
 
@@ -195,10 +216,11 @@ static Token get_token() {
 		}
 		return curr_tok = NUMBER;
 	default:
-		if (isalpha (ch)) {
+		//if (ch=='$' || isalpha (ch)) {
+{
 			int i = 0;
 			string_value[i++] = ch;
-			while (cin_get (&ch) && isalnum (ch)) {
+			while (cin_get (&ch)) { // && ( isalnum (ch) || ch=='$')) {
 				if (i>=STRSZ) {
 					error ("string too long");
 					return 0;
@@ -208,10 +230,16 @@ static Token get_token() {
 			string_value[i] = 0;
 			cin_putback (ch);
 			return curr_tok = NAME;
-		}
+}
+		//}
 		error ("bad token");
 		return curr_tok = PRINT;
 	}
+}
+
+void load_token(const char *s) {
+	calc_i = 0;
+	calc_buf = s;
 }
 
 #ifdef TEST
@@ -229,3 +257,20 @@ int main(int argc, char* argv[]) {
 	return errors;
 }
 #endif
+
+R_API ut64 r_num_calc (RNum *num, const char *str) {
+	NumValue n;
+	calc_num = num;
+	load_token (str);
+	get_token ();
+	n = expr (0);
+	//if (curr_tok == END) return 0LL; // XXX: Error
+	//if (curr_tok == PRINT) //return 0LL; // XXX: the fuck
+	//	n = expr (0);
+#if 0
+// TODO: add support for floating point valuez
+	if (n.d != ((double)(ut64)n.d))
+		eprintf ("floating value: %lf\n", n.d);
+#endif
+	return n.n;
+}

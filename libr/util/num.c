@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include "r_util.h"
+#define R_NUM_USE_CALC 1
+
 
 #define __htonq(x) (\
         (((x) & 0xff00000000000000LL) >> 56)  | \
@@ -138,6 +140,7 @@ R_API ut64 r_num_op(char op, ut64 a, ut64 b) {
 	return b;
 }
 
+#if !R_NUM_USE_CALC
 R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 	ut64 ret = 0LL;
 	char *p = s;
@@ -160,8 +163,16 @@ R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 
 	return r_num_op (op, ret, r_num_get (num, p));
 }
+#endif
+
+#if R_NUM_USE_CALC
+R_API ut64 r_num_calc (RNum *num, const char *str);
+#endif
 
 R_API ut64 r_num_math(RNum *num, const char *str) {
+#if R_NUM_USE_CALC
+	return r_num_calc (num, str);
+#else
 	ut64 ret = 0LL;
 	char op = '+';
 	int len;
@@ -214,6 +225,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 		num->value = ret;
 	free (os);
 	return ret;
+#endif
 }
 
 R_API int r_num_is_float(struct r_num_t *num, const char *str) {

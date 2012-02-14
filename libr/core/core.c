@@ -67,7 +67,7 @@ R_API RCore *r_core_new() {
 /*-----------------------------------*/
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
-	"?", 
+	"?", "?v",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "db-", "dp", "dr", "dcu",
 	"S", 
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
@@ -199,6 +199,7 @@ printf ("FILEN %d\n", n);
 		    (!memcmp (line->buffer.data, "f ", 2)) ||
 		    (!memcmp (line->buffer.data, "fr ", 3)) ||
 		    (!memcmp (line->buffer.data, "/a ", 3)) ||
+		    (!memcmp (line->buffer.data, "?v ", 3)) ||
 		    (!memcmp (line->buffer.data, "? ", 2))) {
 			int n, i = 0;
 			int sdelta = (line->buffer.data[1]==' ')?2:

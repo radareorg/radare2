@@ -1259,6 +1259,7 @@ static int cmd_help(void *data, const char *input) {
 		ut32 n32, s, a;
 		float f;
 		n = r_num_math (core->num, input+1);
+		core->num->value = n;
 		n32 = (ut32)n;
 		memcpy (&f, &n32, sizeof (f));
 		/* decimal, hexa, octal */
@@ -1274,6 +1275,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'v':
 		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
 		r_cons_printf ("0x%"PFMT64x"\n", n);
+		core->num->value = n;
 		break;
 	case '=':
 		r_num_math (core->num, input+1);
@@ -3793,7 +3795,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 static inline void print_search_progress(ut64 at, ut64 to, int n) {
 	static int c = 0;
-	if (++c%13)
+	if ((++c%23))
 		return;
 	eprintf ("\r[  ]  0x%08"PFMT64x" < 0x%08"PFMT64x"  hits = %d                      \r%s",
 			at, to, n, (c%2)?"[ #]":"[# ]");
