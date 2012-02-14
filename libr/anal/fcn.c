@@ -61,6 +61,7 @@ R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFcn *fcn, ut64 at, ut64 addr, i
 R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFcn *fcn, ut64 at, ut64 addr, int type) {
 	RAnalRef *ref;
 	RListIter *iter;
+	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (fcn->xrefs, iter, ref) {
 		if ((type != -1 || type == ref->type)  &&
 			(at == 0LL || at == ref->at) &&
@@ -195,12 +196,10 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 		if (f) r_listrange_del (anal->fcnstore, f);
 #else
 		RAnalFcn *fcni;
-		RListIter it, *iter;
-		r_list_foreach (anal->fcns, iter, fcni) {
+		RListIter *iter, *iter_tmp;
+		r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcni) {
 			if (addr >= fcni->addr && addr < fcni->addr+fcni->size) {
-				it.n = iter->n;
 				r_list_delete (anal->fcns, iter);
-				iter = &it;
 			}
 		}
 #endif
@@ -325,7 +324,7 @@ R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
 	RAnalBlock *bbi;
 	RListIter *iter;
 #if R_ANAL_BB_HAS_OPS
-	RListIter nit; // hack to make r_list_unlink not fail that hard
+	RListIter *iter_tmp;
 	RAnalOp *opi;
 #endif
 
@@ -340,12 +339,11 @@ R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb) {
 				bbi->type = bbi->type^R_ANAL_BB_TYPE_HEAD;
 			} else bb->type = R_ANAL_BB_TYPE_BODY;
 #if R_ANAL_BB_HAS_OPS
-			r_list_foreach (bb->ops, iter, opi) {
+			/* We can reuse iter because we return before the outer loop. */
+			r_list_foreach_safe (bb->ops, iter, iter_tmp, opi) {
 				if (opi->addr >= bbi->addr) {
-					nit.n = iter->n;
 			//		eprintf ("Must delete opi %p\n", iter);
 					r_list_delete (bb->ops, iter);
-					iter = &nit;
 				}
 			}
 #endif

@@ -260,6 +260,7 @@ R_API int r_core_file_list(RCore *core) {
 R_API int r_core_file_close_fd(RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
+	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (core->files, iter, file) {
 		if (file->fd->fd == fd) {
 			r_io_close (core->io, file->fd);

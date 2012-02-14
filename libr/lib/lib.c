@@ -142,6 +142,7 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 R_API R_API int r_lib_close(RLib *lib, const char *file) {
 	RLibPlugin *p;
 	RListIter *iter;
+	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (lib->plugins, iter, p) {
 		if ((file==NULL || (!strcmp(file, p->file))) && p->handler->destructor != NULL) {
 			int ret = p->handler->destructor (p, p->handler->user, p->data);
@@ -296,6 +297,7 @@ R_API int r_lib_del_handler(RLib *lib, int type) {
 	RLibHandler *h;
 	RListIter *iter;
 	// TODO: remove all handlers for that type? or only one?
+	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (lib->handlers, iter, h) {
 		if (type == h->type) {
 			r_list_delete (lib->handlers, iter);

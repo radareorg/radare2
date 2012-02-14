@@ -167,6 +167,7 @@ R_API struct r_bp_item_t *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int 
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
 	RListIter *iter;
 	RBreakpointItem *b;
+	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (bp->bps, iter, b) {
 		if (b->addr == addr) {
 			r_list_delete (bp->bps, iter);

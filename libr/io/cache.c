@@ -46,12 +46,12 @@ R_API void r_io_cache_reset(RIO *io, int set) {
 }
 
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
-	RListIter *iter;
+	RListIter *iter, *iter_tmp;
 	RIOCache *c;
 
 	if (from>=to) return R_FALSE;
 
-	r_list_foreach (io->cache, iter, c) {
+	r_list_foreach_safe (io->cache, iter, iter_tmp, c) {
 		if (c->from >= from && c->to <= to) {
 			r_list_delete (io->cache, iter);
 		}

@@ -49,17 +49,15 @@ R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
 
 R_API int r_anal_ref_del(RAnal *anal, ut64 at) {
 	RAnalRef *refi;
-	RListIter it, *iter;
+	RListIter *iter, *iter_tmp;
 	if (at == 0) {
 		r_list_free (anal->refs);
 		if (!(anal->refs = r_anal_ref_list_new ()))
 			return R_FALSE;
 	} else {
-		r_list_foreach (anal->refs, iter, refi) {
+		r_list_foreach_safe (anal->refs, iter, iter_tmp, refi) {
 			if (at == refi->at) {
-				it.n = iter->n;
-				r_list_delete (anal->refs, iter); //unlink (anal->refs, refi);
-				iter = &it;
+				r_list_delete (anal->refs, iter);
 			}
 		}
 	}

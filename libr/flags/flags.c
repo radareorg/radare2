@@ -154,6 +154,7 @@ R_API int r_flag_unset_i(RFlag *f, ut64 addr, RFlagItem *p) {
 	RFlagItem *item;
 	RListIter *iter;
 
+	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (f->flags, iter, item) {
 		if (item->offset == addr) {
 			r_list_delete (f->flags, iter);

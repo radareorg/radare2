@@ -171,6 +171,7 @@ R_API boolt r_mixed_change_end(RMixed *m, void *p) {
 					eprintf ("RMixed internal corruption?\n");
 					return R_FALSE;
 				}
+				/* No _safe loop necessary because we return immediately after the delete. */
 				r_list_foreach (list, iter, q) {
 					if (q == p) {
 						r_list_delete (list, iter);

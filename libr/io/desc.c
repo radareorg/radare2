@@ -49,6 +49,7 @@ R_API void r_io_desc_add(RIO *io, RIODesc *desc) {
 R_API int r_io_desc_del(struct r_io_t *io, int fd) {
 	RListIter *iter;
 	RIODesc *d;
+	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (io->desc, iter, d) {
 		if (d->fd == fd) {
 			r_list_delete (io->desc, iter);

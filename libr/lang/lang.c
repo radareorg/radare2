@@ -66,6 +66,7 @@ R_API void r_lang_undef(RLang *lang, const char *name) {
 	if (name != NULL && *name) {
 		RLangDef *def;
 		RListIter *iter;
+		/* No _safe loop necessary because we return immediately after the delete. */
 		r_list_foreach (lang->defs, iter, def) {
 			if (!strcmp (name, def->name)) {
 				r_list_delete (lang->defs, iter);

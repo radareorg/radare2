@@ -77,18 +77,16 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr) {
 
 R_API int r_meta_del(RMeta *m, int type, ut64 from, ut64 size, const char *str) {
 	int ret = 0;
-	RListIter it, *iter;
+	RListIter *iter, *iter_tmp;
 	RMetaItem *d;
 
-	r_list_foreach (m->data, iter, d) {
+	r_list_foreach_safe (m->data, iter, iter_tmp, d) {
 		if (d->type == type || type == R_META_TYPE_ANY) {
 			if (str != NULL && !strstr (d->str, str))
 				continue;
 			if (size==UT64_MAX || (from+size >= d->from && from <= d->to+size)) {
 				free (d->str);
-				it.n = iter->n;
 				r_list_delete (m->data, iter);
-				iter = &it;
 				ret++;
 			}
 		}
@@ -108,6 +106,7 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 		free (m2);
 		return R_TRUE;
 	}
+	/* No _safe loop necessary because we break immediately after the delete. */
 	r_list_foreach (m->data, iter, d) {
 		switch (d->type) {
 		case R_META_TYPE_CODE:
