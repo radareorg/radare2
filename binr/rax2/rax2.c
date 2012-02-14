@@ -2,16 +2,18 @@
 
 #include <r_util.h>
 
-static int flags = 0;
+static ut64 flags = 0;
 
-static int format_output (char mode, ut64 n);
+static RNum *num;
 static int help ();
 static int rax (char *str, int len, int last);
 static int use_stdin ();
 
-static int format_output (char mode, ut64 n) {
+static int format_output (char mode, const char *s) {
+	ut64 n;
 	char *str = (char*) &n;
 	char strbits[65];
+	n = r_num_math (num, s);
 
 	if (flags & 2)
 		r_mem_copyendian ((ut8*) str, (ut8*) str, 4, 0);
@@ -24,6 +26,9 @@ static int format_output (char mode, ut64 n) {
 		break;
 	case 'F':
 		printf ("%ff\n", (float)(ut32)n);
+		break;
+	case 'f':
+		printf ("%.01lf\n", num->fvalue);
 		break;
 	case 'B':
 		if (n) {
@@ -53,6 +58,7 @@ static int help () {
 		"  bin   ->  hex           ;  rax2 1100011b\n"
 		"  hex   ->  bin           ;  rax2 Bx63\n"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
+		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
 		"  -s    hexstr -> bin     ;  rax2 -s 43 4a 50\n"
 		"  -S    bin -> hexstr     ;  rax2 -S C  J  P\n"
@@ -89,6 +95,9 @@ static int rax (char *str, int len, int last) {
 			break;
 		case 'k':
 			flags ^= 32;
+			break;
+		case 'f':
+			flags ^= 64;
 			break;
 		case 'v':
 			printf ("rax2 v"R2_VERSION"\n");
@@ -140,6 +149,9 @@ static int rax (char *str, int len, int last) {
 	}
 
 #define KB (flags&32)
+	if (flags & 64) {
+		out_mode = 'f';
+	} else
 	if (KB)
 		out_mode = 'I';
 	if (str[0]=='0' && str[1]=='x') {
@@ -168,11 +180,11 @@ static int rax (char *str, int len, int last) {
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
-		format_output (out_mode, r_num_math (NULL, str));
+		format_output (out_mode, str); //r_num_math (NULL, str));
 		str = p+1;
 	}
 	if (*str)
-		format_output (out_mode, r_num_math (NULL, str));
+		format_output (out_mode, str); //r_num_math (NULL, str));
 	return R_TRUE;
 }
 
@@ -195,6 +207,7 @@ static int use_stdin () {
 
 int main (int argc, char **argv) {
 	int i;
+	num = r_num_new (NULL, NULL);
 	if (argc == 1)
 		return use_stdin ();
 	for (i=1; i<argc; i++)

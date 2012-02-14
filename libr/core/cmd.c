@@ -1259,7 +1259,6 @@ static int cmd_help(void *data, const char *input) {
 		ut32 n32, s, a;
 		float f;
 		n = r_num_math (core->num, input+1);
-		core->num->value = n;
 		n32 = (ut32)n;
 		memcpy (&f, &n32, sizeof (f));
 		/* decimal, hexa, octal */
@@ -1269,7 +1268,7 @@ static int cmd_help(void *data, const char *input) {
 			n, n, n, s, a);
 		/* binary and floating point */
 		r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
-		r_cons_printf ("%s %f\n", out, f);
+		r_cons_printf ("%s %.01lf %f\n", out, core->num->fvalue, f);
 		}
 		break;
 	case 'v':

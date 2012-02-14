@@ -103,6 +103,7 @@ typedef struct r_num_t {
 	ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
 //	RNumCallback callback;
 	ut64 value;
+	double fvalue;
 	void *userptr;
 } RNum;
 typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);

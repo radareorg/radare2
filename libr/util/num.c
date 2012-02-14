@@ -160,18 +160,22 @@ R_API static ut64 r_num_math_internal(RNum *num, char *s) {
 			break;
 		}
 	}
-
 	return r_num_op (op, ret, r_num_get (num, p));
 }
 #endif
 
 #if R_NUM_USE_CALC
-R_API ut64 r_num_calc (RNum *num, const char *str);
+R_API ut64 r_num_calc (RNum *num, const char *str, const char **err);
 #endif
 
 R_API ut64 r_num_math(RNum *num, const char *str) {
 #if R_NUM_USE_CALC
-	return r_num_calc (num, str);
+	ut64 ret;
+	const char *err = NULL;
+	ret = r_num_calc (num, str, &err);
+	if (err) eprintf ("r_num_calc error: %s\n", err);
+	else if (num) num->value = ret;
+	return ret;
 #else
 	ut64 ret = 0LL;
 	char op = '+';

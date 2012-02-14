@@ -1,5 +1,6 @@
 /* ported to C by pancake for r2 in 2012 */
-// TODO: support buffer instead of io
+// TODO: integrate floating point support
+// TODO: do not use global variables
 /*
    Reference Chapter 6:
    "The C++ Programming Language", Special Edition.
@@ -53,9 +54,11 @@ static NumValue number_value = { 0 };
 static char string_value[STRSZ];
 static int errors = 0;
 static char oc = 0;
+static const char *calc_err = NULL;
 
 static void error(const char *s) {
 	errors++;
+	calc_err = s;
 	//fprintf (stderr, "error: %s\n", s);
 }
 
@@ -157,6 +160,11 @@ static int cin_get_num(NumValue *n) {
 	}
 	str[i] = 0;
 	*n = Nset (r_num_get (calc_num, str));
+	if (*str>='0' && *str<='9' && strchr (str, '.')) {
+		if (sscanf (str, "%lf", &d)<1)
+			return 0;
+		*n = Nsetf (d);
+	}
 #if 0
 // XXX: use r_num_get here
 	if (str[0]=='0' && str[1]=='x') {
@@ -186,10 +194,9 @@ static Token get_token() {
 	} while (ch!='\n' && isspace (ch));
 
 	switch (ch) {
-	case 0: return curr_tok = END;
 	case ';':
 	case '\n':
-		return curr_tok = PRINT;
+	case 0: return curr_tok = END;
 	case '+':    // added for ++name and name++
 		if (cin_get (&c) && c == '+')
 			return curr_tok = INC;
@@ -211,7 +218,7 @@ static Token get_token() {
 	case '.':
 		cin_putback (ch);
 		if (!cin_get_num (&number_value)) {
-			error ("invalid number conversion\n");
+			error ("invalid number conversion");
 			return 1;
 		}
 		return curr_tok = NUMBER;
@@ -240,6 +247,7 @@ static Token get_token() {
 void load_token(const char *s) {
 	calc_i = 0;
 	calc_buf = s;
+	calc_err = NULL;
 }
 
 #ifdef TEST
@@ -258,19 +266,20 @@ int main(int argc, char* argv[]) {
 }
 #endif
 
-R_API ut64 r_num_calc (RNum *num, const char *str) {
+R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
 	NumValue n;
+	if (!*str)
+		return 0LL;
 	calc_num = num;
 	load_token (str);
 	get_token ();
 	n = expr (0);
+	if (err) *err = calc_err;
 	//if (curr_tok == END) return 0LL; // XXX: Error
 	//if (curr_tok == PRINT) //return 0LL; // XXX: the fuck
 	//	n = expr (0);
-#if 0
-// TODO: add support for floating point valuez
-	if (n.d != ((double)(ut64)n.d))
-		eprintf ("floating value: %lf\n", n.d);
-#endif
+	if (n.d != ((double)(ut64)n.d)) {
+		if (num) num->fvalue = n.d;
+	} else if (num) num->fvalue = (double)n.n;
 	return n.n;
 }
