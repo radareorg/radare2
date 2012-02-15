@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include <r_io.h>
 // TODO: to be deprecated.. this is slow and boring
@@ -24,7 +24,7 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 	desc->plugin = plugin;
 	desc->flags = flags;
 	if (fd == -1) {
-		ut8 *p = &desc->fd;
+		ut8 *p = (ut8 *)&(desc->fd);
 		desc->fd = ((int) ((size_t) desc) & 0xffffff);
 		desc->fd = p[0]^p[1]^p[2]^p[3];
 	} else desc->fd = fd;

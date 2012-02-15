@@ -21,7 +21,7 @@ static ut8 *bufnext = 0;
 static ut8 *bufmax;
 
 R_API int r_alloca_init() {
-	buf = (ut8 *)malloc(ALLOC_SIZE);
+	buf = (ut8 *)malloc (ALLOC_SIZE);
 	if (buf == NULL)
 		return R_FALSE;
 	bufptr[0] = buf;
@@ -44,13 +44,13 @@ R_API char *r_alloca_str(const char *str) {
 	ut8 *p;
 	if (str == NULL) {
 		len = 1;
-		p = r_alloca_bytes(1);
+		p = r_alloca_bytes (1);
 		if (p != NULL) *p='\0';
 	} else {
-		len = strlen(str)+1;
-		p = r_alloca_bytes(len);
+		len = strlen (str)+1;
+		p = r_alloca_bytes (len);
 		if (p != NULL)
-			memcpy(p, str, len);
+			memcpy (p, str, len);
 	}
 	return (char *)p;
 }

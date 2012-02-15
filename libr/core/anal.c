@@ -176,6 +176,7 @@ static int cmpaddr (void *_a, void *_b) {
 	return (a->addr > b->addr);
 }
 
+// XXX: This function takes sometimes forever
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	RListIter *iter, *iter2;
 	int buflen, fcnlen = 0;
@@ -206,7 +207,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			return R_TRUE;
 		}
 	}
-	if (!(fcn = r_anal_fcn_new())) {
+	if (!(fcn = r_anal_fcn_new ())) {
 		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;
 	}
@@ -230,9 +231,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				fcn->name = strdup (f->name);
 			} else {
 				fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
-						fcn->type == R_ANAL_FCN_TYPE_LOC?"loc":
-						fcn->type == R_ANAL_FCN_TYPE_SYM?"sym":
-						fcn->type == R_ANAL_FCN_TYPE_IMP?"imp":"fcn", at);
+						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
+						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
+						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
 				/* Add flag */
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
@@ -265,11 +266,11 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	return R_TRUE;
 
 error:
-	free(buf);
+	free (buf);
 	// ugly hack to free fcn
 	if (fcn) {
 		// unlink from list to avoid double free later when we call r_anal_free()
-		r_list_unlink(core->anal->fcns, fcn);
+		r_list_unlink (core->anal->fcns, fcn);
 		if (core->anal->fcns->free == NULL)
 			r_anal_fcn_free (fcn);
 	}

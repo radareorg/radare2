@@ -6,6 +6,9 @@
 
 //#define TIMES 299999
 #define TIMES 9999
+#if __WINDOWS__
+void * alloca(size_t size);
+#endif
 
 int afun(const char *str, int iters) {
 	int ret;

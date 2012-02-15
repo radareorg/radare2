@@ -623,7 +623,7 @@ reaccept:
 						r_core_bin_load (core, NULL);
 						file->map = r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, 0, file->size);
 						pipefd = core->file->fd->fd;
-						eprintf ("(flags: %hhd) len: %hhd filename: '%s'\n",
+						eprintf ("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					} else {
 						pipefd = -1;

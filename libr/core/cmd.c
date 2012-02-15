@@ -350,24 +350,23 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			//r_reg_get_value (core->dbg->reg, r));
 		} else
 		eprintf ("Usage: dr[*] [type] [size] - get/set registers\n"
+			" dr         show 'gpr' registers\n"
+			" dr all     show all registers\n"
+			" dr flg 1   show flag registers ('flg' is type, see drt)\n"
+			" dr 16      show 16 bit registers\n"
+			" dr 32      show 32 bit registers\n"
+			" dr eax=33  set register value. eax = 33\n"
 			" dr?        display this help message\n"
-			" dr         show registers in rows\n"
+			" drt        show all register types\n"
+			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
+			" dro        show previous (old) values of registers\n"
 			" dr=        show registers in columns\n"
 			" dr?eax     show value of eax register\n"
 			" .dr*       include common register values in flags\n"
 			" .dr-       unflag all registers\n"
 			" drp [file] load register metadata file\n"
 			" drp        display current register profile\n"
-			" drb [type] display hexdump of gpr arena (WIP)\n"
-			" dr         show 'gpr' registers\n"
-			" drt        show all register types\n"
-			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
-			" dro        show previous (old) values of registers\n"
-			" dr all     show all registers\n"
-			" dr flg 1   show flag registers ('flg' is type, see drt)\n"
-			" dr 16      show 16 bit registers\n"
-			" dr 32      show 32 bit registers\n"
-			" dr eax=33  set register value. eax = 33\n");
+			" drb [type] display hexdump of gpr arena (WIP)\n");
 		// TODO: 'drs' to swap register arenas and display old register valuez
 		break;
 	case 'b':
@@ -5246,6 +5245,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	r_str_cpy (cmd, cstr);
 	cmd = r_str_trim_head_tail (cmd);
 
+	/* ignore comments */
+	if (cmd[0] == '#')
+		goto out;
+
 	rep = atoi (cmd);
 	if (rep<1) rep = 1;
 	if (rep>0) {
@@ -5260,6 +5263,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	if (log) r_line_hist_add (cstr);
 
+out:
 	free (ocmd);
 	free (core->oobi);
 	core->oobi = NULL;

@@ -710,6 +710,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 static void r_core_visual_refresh (RCore *core) {
 	const char *vi;
+	if (!core) return;
 	r_cons_get_size (NULL);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
 
@@ -742,16 +743,18 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	core->visual = R_TRUE;
 	r_cons_singleton ()->data = core;
 	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
-	r_cons_set_cup (R_TRUE);
+//	r_cons_set_cup (R_TRUE);
 
 	while (*input) {
 		if (!r_core_visual_cmd (core, input[0])) {
+#if 0
 			r_cons_clear00 ();
 			r_core_cmd (core, printfmt[R_ABS (core->printidx%NPF)], 0);
 			r_cons_visual_flush ();
 			r_cons_any_key ();
 			r_cons_clear00 ();
 			r_cons_set_cup (R_FALSE);
+#endif
 			return 0;
 		}
 		input++;

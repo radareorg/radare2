@@ -29,7 +29,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		break;
 	case 0x60: {
 		int off = 0;
-		ut8 *boff = &off;
+		ut8 *boff = (ut8*)&off;
 		op->type = R_ANAL_OP_TYPE_CALL;
 		off = b[1] | (b[2]<<8) | (b[3]<<16);
 		if ((b[1]&0x80) == 0xf0) // negative offset

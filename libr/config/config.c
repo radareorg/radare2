@@ -131,9 +131,11 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 				node->i_value = 0;
 			} else {
 				node->value = strdup (value);
-				if (strchr(value, '/'))
-					node->i_value = r_num_get (NULL, value);
-				else node->i_value = r_num_math (NULL, value);
+				if (*value>='0' && *value<='9') {
+					if (strchr (value, '/'))
+						node->i_value = r_num_get (NULL, value);
+					else node->i_value = r_num_math (NULL, value);
+				} else node->i_value = 0;
 				node->flags |= CN_INT;
 			}
 		}
