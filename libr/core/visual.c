@@ -710,6 +710,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 static void r_core_visual_refresh (RCore *core) {
 	const char *vi;
+	if (!core) return;
 	r_cons_get_size (NULL);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
 

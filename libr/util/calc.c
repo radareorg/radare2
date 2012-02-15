@@ -224,17 +224,20 @@ static Token get_token() {
 		return curr_tok = NUMBER;
 	default:
 		//if (ch=='$' || isalpha (ch)) {
+#define isvalidchar(x) \
+	(isalnum(x) || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
+	|| x==' ' || x=='}' || x=='{' || x=='/' || (x>='0'&&x<='9'))
 {
 			int i = 0;
 			string_value[i++] = ch;
 			//while (cin_get (&ch)) { // && ( isalnum (ch) || ch=='$')) {
-			while (cin_get (&ch) && ( isalnum (ch) || ch=='$')) {
+			while (cin_get (&ch) && isvalidchar (ch)) {
 				if (i>=STRSZ) {
 					error ("string too long");
 					return 0;
 				}
 				string_value[i++] = ch;
-			}
+			} 
 			string_value[i] = 0;
 			cin_putback (ch);
 			return curr_tok = NAME;

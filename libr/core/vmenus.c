@@ -1205,8 +1205,10 @@ R_API void r_core_visual_define (RCore *core) {
 		r_anal_fcn_del (core->anal, off);
 		break;
 	case 'f':
+		r_cons_break(NULL,NULL);
 		r_core_anal_fcn (core, off, -1, R_ANAL_REF_TYPE_NULL,
 				r_config_get_i (core->config, "anal.depth"));
+		r_cons_break_end();
 		break;
 	case 'q':
 	default:

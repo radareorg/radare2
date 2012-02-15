@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 */
+/* radare - LGPL - Copyright 2010-2012 */
 /*   nibble<.ds@gmail.com> + pancake<nopcode.org> */
 
 #include <r_anal.h>
@@ -15,6 +15,7 @@ R_API RAnalFcn *r_anal_fcn_new() {
 	memset (fcn, 0, sizeof (RAnalFcn));
 	fcn->addr = -1;
 	fcn->stack = 0;
+	fcn->size = 0;
 	fcn->vars = r_anal_var_list_new ();
 	fcn->refs = r_anal_ref_list_new ();
 	fcn->xrefs = r_anal_ref_list_new ();
@@ -79,12 +80,18 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 	int oplen, idx = 0;
 	if (fcn->addr == -1)
 		fcn->addr = addr;
+	//fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
+
 	while (idx < len) {
 		r_anal_op_fini (&op);
-		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) == 0) {
+		if (buf[idx]==buf[idx+1]==buf[idx+2]==0xff) {
+			r_anal_op_fini (&op);
+			return R_ANAL_RET_ERROR;
+		}
+		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) < 1) {
 			if (idx == 0) {
 				// eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 				r_anal_op_fini (&op);
