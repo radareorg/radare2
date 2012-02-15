@@ -10,13 +10,15 @@
 #endif
 
 R_API int r_io_undo_init(RIO *io) {
+	/* seek undo */
+	r_io_sundo_reset (io);
+
+	/* write undo */
 	io->undo.w_init = 0;
 	io->undo.w_enable = 0;
-	io->undo.idx = 0;
-	io->undo.limit = 0;
-	io->undo.s_enable = 0;
 	io->undo.w_enable = 0;
 	io->undo.w_list = r_list_new ();
+
 	return R_TRUE;
 }
 
@@ -25,22 +27,23 @@ R_API void r_io_undo_enable(RIO *io, int s, int w) {
 	io->undo.w_enable = w;
 }
 
-R_API ut64 r_io_sundo_last(RIO *io) {
-	return (io->undo.idx>0)?
-		io->undo.seek[io->undo.idx-1] : io->off;
-}
+/* undo seekz */
 
 R_API ut64 r_io_sundo(RIO *io, ut64 offset) {
 	ut64 off;
-	if (io->undo.idx == io->undo.limit) {
-		r_io_sundo_push (io, offset);
-		io->undo.idx--;
-	}
-	io->undo.idx--;
-	if (io->undo.idx<0) {
-		io->undo.idx = 0;
+
+	if (!io->undo.s_enable || !io->undo.undos)
 		return UT64_MAX;
+
+	/* No redos yet, store the current seek so we can redo to it. */
+	if (!io->undo.redos) {
+		io->undo.seek[io->undo.idx] = offset;
 	}
+
+	io->undo.idx = (io->undo.idx - 1 + R_IO_UNDOS) % R_IO_UNDOS;
+	io->undo.undos--;
+	io->undo.redos++;
+
 	off = io->undo.seek[io->undo.idx];
 	io->off = r_io_section_vaddr_to_offset (io, off);
 	return off;
@@ -49,41 +52,67 @@ R_API ut64 r_io_sundo(RIO *io, ut64 offset) {
 R_API ut64 r_io_sundo_redo(RIO *io) {
 	ut64 off;
 
-	if (io->undo.idx<io->undo.limit) {
-		io->undo.idx += 1;
-		if (io->undo.idx<R_IO_UNDOS) {
-			off = io->off = io->undo.seek[io->undo.idx];
-			io->off = r_io_section_vaddr_to_offset (io, off);
-			return off;
-		}
-		io->undo.idx -= 1;
-	}
-	return UT64_MAX;
+	if (!io->undo.s_enable || !io->undo.redos)
+		return UT64_MAX;
+
+	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
+	io->undo.undos++;
+	io->undo.redos--;
+
+	off = io->undo.seek[io->undo.idx];
+	io->off = r_io_section_vaddr_to_offset (io, off);
+	return off;
 }
 
 R_API void r_io_sundo_push(RIO *io, ut64 off) {
 	if (!io->undo.s_enable)
 		return;
+
 	io->undo.seek[io->undo.idx] = off;
-	io->undo.idx++;
-	if (io->undo.idx==R_IO_UNDOS-1) {
-		io->undo.idx--;
-	}
-	io->undo.limit = io->undo.idx;
+	io->undo.idx = (io->undo.idx + 1) % R_IO_UNDOS;
+	/* Only R_IO_UNDOS - 1 undos can be used because r_io_sundo_undo () must
+	 * push the current position for redo as well, which takes one entry in
+	 * the table. */
+	if (io->undo.undos < R_IO_UNDOS - 1)
+		io->undo.undos++;
+	/* We only have linear undo/redo, no tree. So after this new possible
+	 * undo, all redos are lost. */
+	io->undo.redos = 0;
 }
 
 R_API void r_io_sundo_reset(RIO *io) {
 	io->undo.idx = 0;
+	io->undo.undos = 0;
+	io->undo.redos = 0;
 }
 
 R_API void r_io_sundo_list(RIO *io) {
-	int i;
-	if (io->undo.idx>0) {
-		io->printf ("f undo_idx @ %d\n", io->undo.idx);
-		for (i=io->undo.idx; i!=0; i--)
-			io->printf ("f undo_%d @ 0x%"PFMT64x"\n",
-				io->undo.idx-i, io->undo.seek[i-1]);
-	} else eprintf("-no seeks done-\n");
+	int idx, undos, redos, i, j, start, end;
+
+	if (!io->undo.s_enable)
+		return;
+	undos = io->undo.undos;
+	redos = io->undo.redos;
+	if (!undos && !redos) {
+		io->printf ("-no seeks done-\n");
+		return;
+	}
+
+	idx = io->undo.idx;
+	start = (idx - undos + R_IO_UNDOS) % R_IO_UNDOS;
+	end   = (idx + redos + 1) % R_IO_UNDOS;
+
+	j = 0;
+	for (i = start; i != end || j == 0; i = (i + 1) % R_IO_UNDOS) {
+		if (j < undos) {
+			io->printf ("f undo_%d @ 0x%"PFMT64x"\n", undos - j - 1, io->undo.seek[i]);
+		} else if (j == undos && j != 0 && redos != 0) {
+			io->printf ("# Current undo/redo position.\n");
+		} else if (j != undos) {
+			io->printf ("f redo_%d @ 0x%"PFMT64x"\n", j - undos - 1, io->undo.seek[i]);
+		}
+		j++;
+	}
 }
 
 /* undo writez */

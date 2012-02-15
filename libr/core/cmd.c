@@ -5245,6 +5245,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	r_str_cpy (cmd, cstr);
 	cmd = r_str_trim_head_tail (cmd);
 
+	/* ignore comments */
+	if (cmd[0] == '#')
+		goto out;
+
 	rep = atoi (cmd);
 	if (rep<1) rep = 1;
 	if (rep>0) {
@@ -5259,6 +5263,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	if (log) r_line_hist_add (cstr);
 
+out:
 	free (ocmd);
 	free (core->oobi);
 	core->oobi = NULL;

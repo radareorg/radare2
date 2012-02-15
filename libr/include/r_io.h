@@ -67,10 +67,11 @@ typedef struct r_io_undo_t {
 	RList *w_list;
 	int w_init;
 	/* seek stuff */
-	ut64 seek[R_IO_UNDOS];
-	int fd[R_IO_UNDOS]; // XXX: Must be RIODesc*
 	int idx;
-	int limit;
+	int undos; /* available undos */
+	int redos; /* available redos */
+	ut64 seek[R_IO_UNDOS];
+	/*int fd[R_IO_UNDOS]; // XXX: Must be RIODesc* */
 } RIOUndo;
 
 typedef struct r_io_undo_w_t {
@@ -280,7 +281,6 @@ R_API int r_io_undo_init(RIO *io);
 R_API void r_io_undo_enable(RIO *io, int seek, int write);
 /* seek undo */
 R_API ut64 r_io_sundo(RIO *io, ut64 offset);
-R_API ut64 r_io_sundo_last(RIO *io);
 R_API ut64 r_io_sundo_redo(RIO *io);
 R_API void r_io_sundo_push(RIO *io, ut64 off);
 R_API void r_io_sundo_reset(RIO *io);
