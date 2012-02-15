@@ -66,20 +66,14 @@ strupr (a)
   return ret;
 }
 
-char *
-strlwr (a)
-     char *a;
-{
-  char *ret = a;
-
-  while (*a != '\0')
-    {
-      if (isupper (*a))
-	*a = tolower (*a);
-      ++a;
-    }
-
-  return ret;
+char * strlwr (char *a) {
+	char *ret = a;
+	while (*a != '\0') {
+		if (isupper (*a))
+			*a = tolower (*a);
+		++a;
+	}
+	return ret;
 }
 
 

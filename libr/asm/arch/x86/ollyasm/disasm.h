@@ -155,8 +155,8 @@
 //XXX Fix 64b issues
 #define ulong unsigned int
 #define slong int
-#define LFMT "%X"
-#define LFMT08 "%08X"
+#define LFMT "%d"
+#define LFMT08 "0x%08X"
 //typedef unsigned char  uchar;          // Unsigned character (byte)
 //typedef unsigned short ushort;         // Unsigned short
 //typedef unsigned int   uint;           // Unsigned integer

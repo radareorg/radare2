@@ -117,8 +117,15 @@ static NumValue prim(int get) {
 		if (curr_tok == RIGHTP)
 			get_token ();
 		else error (" ')' expected");
-	default:
-		error ("primary expected");
+	case END:
+	case PLUS:
+	case MUL:
+	case DIV:
+	case PRINT:
+	case ASSIGN:
+	case RIGHTP:
+		return v;
+	//default: error ("primary expected");
 	}
 	return v;
 }
