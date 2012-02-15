@@ -142,6 +142,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 				return R_ANAL_RET_ERROR;
 			}
 			break;
+		case R_ANAL_OP_TYPE_TRAP:
+		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_END;
