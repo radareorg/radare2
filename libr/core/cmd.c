@@ -1482,12 +1482,12 @@ static int cmd_help(void *data, const char *input) {
 			" $o  = here (current io offset)\n"
 			" $s  = file size\n"
 			" $b  = block size\n"
-			" $j  = jump address\n"
-			" $f  = address of next opcode\n"
-			" $r  = opcode reference pointer\n"
+			" $j  = jump address (e.g. jmp 0x10, jz 0x10 => 0x10)\n"
+			" $f  = jump fail address (e.g. jz 0x10 => next instruction)\n"
+			" $r  = opcode memory reference (e.g. mov eax,[0x10] => 0x10)\n"
 			" $l  = opcode length\n"
 			" $e  = 1 if end of block, else 0\n"
-			" ${eval} = get value of eval variable # TODO: use ?k too\n"
+			" ${eval} = get value of eval config variable # TODO: use ?k too\n"
 			" $?  = last comparision value\n");
 			return 0;
 		} else
