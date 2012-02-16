@@ -233,17 +233,17 @@ extern int use_force;
 #endif
 
 /* print an error message, including current line and file */
-void printerr (int error, const char *fmt, ...);
+static void printerr (int error, const char *fmt, ...);
 
 /* skip over spaces in string */
-const char *delspc (const char *ptr);
+static const char *delspc (const char *ptr);
 
-int rd_expr (const char **p, char delimiter, int *valid, int level,
+static int rd_expr (const char **p, char delimiter, int *valid, int level,
 	     int print_errors);
-int rd_label (const char **p, int *exists, struct label **previous, int level,
+static int rd_label (const char **p, int *exists, struct label **previous, int level,
 	      int print_errors);
-int rd_character (const char **p, int *valid, int print_errors);
+static int rd_character (const char **p, int *valid, int print_errors);
 
-int compute_ref (struct reference *ref, int allow_invalid);
+static int compute_ref (struct reference *ref, int allow_invalid);
 
 #endif

@@ -101,7 +101,7 @@ enum {
  
  
 // Länge eines Opcodes in Bytes ermitteln
-UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
+static UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
 	UBYTE   len = 1;
  
     switch(Opcodes[p]) {// Opcode
@@ -251,7 +251,7 @@ UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
     return(len);
 }
  
-ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
+static ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 	int i;
 	ULONG   next;
  
@@ -345,7 +345,7 @@ ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 }
  
 // Disassemblieren
-int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen) {
+static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen) {
 	UBYTE           a = Opcodes[0];
 	UBYTE           d = (a >> 3) & 7;
 	UBYTE           e = a & 7;
@@ -911,7 +911,7 @@ int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen) {
 	return len;
 }
 
-int z80dis (int addr, const unsigned char *buf, char *out, int len) {
+static int z80dis (int addr, const unsigned char *buf, char *out, int len) {
 	return Disassemble (addr, buf, out, len);
 }
  

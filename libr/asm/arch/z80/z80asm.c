@@ -32,7 +32,7 @@ static int obuflen = 0;
 
 /* global variables */
 /* mnemonics, used as argument to indx() in assemble */
-const char *mnemonics[] = {
+static const char *mnemonics[] = {
 	"call", "cpdr", "cpir", "djnz", "halt", "indr", "inir", "lddr", "ldir",
 	"otdr", "otir", "outd", "outi", "push", "reti", "retn", "rlca", "rrca",
 	"defb", "defw", "defs", "defm",
@@ -47,17 +47,17 @@ const char *mnemonics[] = {
 };
 
 /* linked lists */
-struct reference *firstreference = NULL;
-struct label *firstlabel = NULL, *lastlabel = NULL;
-struct name *firstname = NULL;
-struct includedir *firstincludedir = NULL;
-struct macro *firstmacro = NULL;
+static struct reference *firstreference = NULL;
+static struct label *firstlabel = NULL, *lastlabel = NULL;
+static struct name *firstname = NULL;
+static struct includedir *firstincludedir = NULL;
+static struct macro *firstmacro = NULL;
 
 /* files */
-FILE *realoutputfile, *outfile, *reallistfile, *listfile, *labelfile;
-const char *realoutputfilename;
-const char *labelfilename;
-struct infile *infile;
+static FILE *realoutputfile, *outfile, *reallistfile, *listfile, *labelfile;
+static const char *realoutputfilename;
+static const char *labelfilename;
+static struct infile *infile;
 /* bools to see if files are opened */
 static int havelist = 0;
 
@@ -105,7 +105,7 @@ static struct stack stack[MAX_INCLUDE];	/* maximum level of includes */
 #include "expressions.c"
 
 /* print an error message, including current line and file */
-void printerr (int error, const char *fmt, ...) {
+static void printerr (int error, const char *fmt, ...) {
 	va_list l;
 	va_start (l, fmt);
 	if ((sp < 0) || (stack[sp].name == 0)) {
@@ -122,7 +122,7 @@ void printerr (int error, const char *fmt, ...) {
 }
 
 /* skip over spaces in string */
-const char * delspc (const char *ptr) {
+static const char * delspc (const char *ptr) {
 	while (*ptr && isspace (*ptr))
 		ptr++;
 	if (*ptr == ';')
@@ -309,7 +309,7 @@ static void wrtb (int b) {
 }
 #endif
 
-int compute_ref (struct reference *ref, int allow_invalid) {
+static int compute_ref (struct reference *ref, int allow_invalid) {
 	const char *ptr;
 	int valid = 0;
 	int backup_addr = addr;
@@ -1643,7 +1643,7 @@ return obuflen;
 }
 
 // XXX
-int z80asm (unsigned char *outbuf, const char *s) {
+static int z80asm (unsigned char *outbuf, const char *s) {
 	return assemble (s, outbuf);
 }
 

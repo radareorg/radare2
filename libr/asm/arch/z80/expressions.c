@@ -19,7 +19,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "z80asm.h"
+//#include "z80asm.h"
 
 /* reading expressions. The following operators are supported
  * in order of precedence, with function name:
@@ -98,7 +98,7 @@ rd_otherbasenumber (const char **p, int *valid, int print_errors)
   return rd_number (p, NULL, c - '0' + 1);
 }
 
-int
+static int
 rd_character (const char **p, int *valid, int print_errors)
 {
   int i;
@@ -238,7 +238,7 @@ check_label (struct label *labels, const char **p, struct label **ret,
   return 0;
 }
 
-int
+static int
 rd_label (const char **p, int *exists, struct label **previous, int level,
 	  int print_errors)
 {
@@ -740,7 +740,7 @@ do_rd_expr (const char **p, char delimiter, int *valid, int level, int *check,
   return result;
 }
 
-int
+static int
 rd_expr (const char **p, char delimiter, int *valid, int level,
 	 int print_errors)
 {
