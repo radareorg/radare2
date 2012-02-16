@@ -361,7 +361,7 @@ R_API int r_core_init(RCore *core) {
 	r_io_bind (core->io, &(core->print->iob));
 	r_io_bind (core->io, &(core->anal->iob));
 	r_io_bind (core->io, &(core->fs->iob));
-	//r_cmd_macro_init (&core->macro);
+
 	core->file = NULL;
 	core->files = r_list_new ();
 	core->files->free = (RListFree)r_core_file_free;

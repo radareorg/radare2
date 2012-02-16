@@ -127,11 +127,11 @@ int java_print_opcode(int idx, const ut8 *bytes, char *output) {
 	switch(java_ops[idx].size) {
 	case 1: sprintf(output, "%s", java_ops[idx].name);
 		break;
-	case 2: sprintf(output, "%s %d", java_ops[idx].name, bytes[0]);
+	case 2: sprintf(output, "%s %d", java_ops[idx].name, bytes[1]);
 		break;
 	case 3: sprintf(output, "%s 0x%x 0x%x", java_ops[idx].name, bytes[0], bytes[1]);
 		break;
-	case 5: sprintf(output, "%s %d", java_ops[idx].name, bytes[0]);
+	case 5: sprintf(output, "%s %d", java_ops[idx].name, bytes[1]);
 		break;
 	}
 
@@ -142,7 +142,7 @@ int java_disasm(const ut8 *bytes, char *output) {
 	int i;
 	for(i = 0;java_ops[i].name != NULL;i++)
 		if (bytes[0] == java_ops[i].byte)
-			return java_print_opcode(i, bytes, output);
+			return java_print_opcode (i, bytes, output);
 	return -1;
 }
 

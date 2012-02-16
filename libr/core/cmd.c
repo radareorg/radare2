@@ -4791,6 +4791,7 @@ static int cmd_macro(void *data, const char *input) {
 	case '-':
 		r_cmd_macro_rm (&core->cmd->macro, input+1);
 		break;
+	case '*':
 	case '\0':
 		r_cmd_macro_list (&core->cmd->macro);
 		break;
@@ -4802,7 +4803,7 @@ static int cmd_macro(void *data, const char *input) {
 		" (-foo)              ; remove a macro\n"
 		" .(foo)              ; to call it\n"
 		" ()                  ; break inside macro\n"
-		" (                   ; list all defined macros\n"
+		" (*                  ; list all defined macros\n"
 		"Argument support:\n"
 		" (foo x y\\n$1 @ $2)  ; define fun with args\n"
 		" .(foo 128 0x804800) ; call it with args\n"
@@ -6141,6 +6142,7 @@ static int r_core_cmd_nullcallback(void *data) {
 
 R_API void r_core_cmd_init(RCore *core) {
 	core->cmd = r_cmd_new ();
+	core->cmd->macro.printf = r_cons_printf;
 	core->cmd->macro.num = core->num;
 	core->cmd->macro.user = core;
 	core->cmd->macro.cmd = r_core_cmd0;

@@ -167,13 +167,13 @@ R_API void r_cmd_macro_list(RCmdMacro *mac) {
 	struct list_head *pos;
 	list_for_each_prev (pos, &mac->macros) {
 		RCmdMacroItem *m = list_entry (pos, RCmdMacroItem, list);
-		/* mac-> */ printf ("%d (%s %s, ", idx, m->name, m->args);
+		mac->printf ("%d (%s %s, ", idx, m->name, m->args);
 		for (j=0; m->code[j]; j++) {
 			if (m->code[j]=='\n')
-				/* mac-> */ printf (", ");
-			else /* mac->*/ printf ("%c", m->code[j]);
+				mac->printf (", ");
+			else mac->printf ("%c", m->code[j]);
 		}
-		/* mac->*/ printf (")\n");
+		mac->printf (")\n");
 		idx++;
 	}
 }
