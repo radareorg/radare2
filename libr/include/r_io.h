@@ -172,7 +172,6 @@ typedef struct r_io_cache_t {
 	ut64 to;
 	int size;
 	ut8 *data;
-	struct list_head list;
 } RIOCache;
 
 // XXX: HACK this must be io->desc_new() maybe?

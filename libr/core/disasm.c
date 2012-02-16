@@ -318,7 +318,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 					free (sign);
 					pre = "| ";
 					stackptr = 0;
-				} else if (f->addr+f->size-1 == at) {
+				} else if (f->addr+f->size-analop.length== at) {
 					r_cons_printf ("\\ ");
 				} else if (at > f->addr && at < f->addr+f->size-1) {
 					r_cons_printf ("| ");
@@ -482,8 +482,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			case R_ANAL_OP_TYPE_RET:
 				r_cons_printf (Color_RED);
 				break;
-			case R_ANAL_OP_TYPE_UPUSH:
 			case R_ANAL_OP_TYPE_PUSH:
+			case R_ANAL_OP_TYPE_UPUSH:
 			case R_ANAL_OP_TYPE_LOAD:
 				r_cons_printf (Color_YELLOW);
 				break;
@@ -576,6 +576,15 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 				core->asmqjmps[counter] = analop.jump;
 				r_cons_printf (" [%d]", counter);
 			} else r_cons_strcat (" [?]");
+			break;
+		}
+		switch (analop.type) {
+		case R_ANAL_OP_TYPE_PUSH:
+			if (analop.value) {
+				RFlagItem *flag = r_flag_get_i (core->flags, analop.value);
+				if (flag)
+					r_cons_printf (" ; %s", flag->name);
+			}
 			break;
 		}
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 */
+/* radare - LGPL - Copyright 2009-2012 */
 /*   nibble<.ds@gmail.com> */
 
 #include <string.h>
@@ -211,7 +211,7 @@ static void anal_ret(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 
 static void anal_hlt(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 	op->eob = R_TRUE;
-	op->type = R_ANAL_OP_TYPE_RET;
+	op->type = R_ANAL_OP_TYPE_TRAP; // not really..
 }
 
 static void anal_mov(RAnal *anal, RAnalOp *op, x86im_instr_object io) {

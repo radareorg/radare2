@@ -87,7 +87,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFcn *fcn, ut64 addr, ut8 *buf, ut64 len, 
 
 	while (idx < len) {
 		r_anal_op_fini (&op);
-		if (buf[idx]==buf[idx+1]==buf[idx+2]==0xff) {
+		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff) {
 			r_anal_op_fini (&op);
 			return R_ANAL_RET_ERROR;
 		}

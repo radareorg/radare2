@@ -9,10 +9,12 @@ R_API void r_io_section_init(RIO *io) {
 	io->sections = r_list_new ();
 }
 
+#if 0
 static int cmpaddr (void *_a, void *_b) {
 	RIOSection *a = _a, *b = _b;
 	return (a->vaddr > b->vaddr);
 }
+#endif
 
 R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
 	RListIter *iter;
