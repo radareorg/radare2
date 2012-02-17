@@ -1,6 +1,7 @@
 include config-user.mk
 include global.mk
 
+STRIP?=strip
 ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
 TAR=bsdtar czvf
 else
@@ -151,8 +152,8 @@ purge-dev:
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 	rm -f ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/-*
 	# XXX: this must be in purge-sym ?
-	for a in ${DESTDIR}/${BINDIR}/r*2 ; do strip -s $$a ; done
-	for a in ${DESTDIR}/${LIBDIR}/libr_*.so ; do strip -s $$a ; done
+	for a in ${DESTDIR}/${BINDIR}/r*2 ; do ${STRIP} -s $$a ; done
+	for a in ${DESTDIR}/${LIBDIR}/libr_*.so ; do ${STRIP} -s $$a ; done
 
 # TODO strip syms!
 

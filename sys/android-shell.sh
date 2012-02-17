@@ -20,7 +20,8 @@ if [ ! -d "${SDK}" ]; then
 fi
 if [ ! -d "${NDK}" ]; then
 	echo "Cannot find Android NDK ${NDK}"
-	echo "Edit ~/.r2androidrc"
+	echo "echo NDK=/path/to/ndk  > ~/.r2androidrc"
+	echo "echo SDK=/path/to/sdk >> ~/.r2androidrc"
 	exit 1
 fi
 

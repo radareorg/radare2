@@ -8,10 +8,12 @@ case "$1" in
 "arm")
 	NDK_ARCH=arm
 	STATIC_BUILD=0
+	STRIP=arm-eabi-strip
 	;;
 "x86")
 	NDK_ARCH=x86
 	STATIC_BUILD=0
+	STRIP=strip
 	;;
 arm-static|static-arm)
 	NDK_ARCH=arm
@@ -52,8 +54,8 @@ INSTALL_PROGRAM=`grep INSTALL_DATA config-user.mk|cut -d = -f 2`
 
 make install INSTALL_PROGRAM="${INSTALL_PROGRAM}" DESTDIR=$PWD/$D || exit 1
 
-make purge-dev DESTDIR=${PWD}/${D}
-make purge-doc DESTDIR=${PWD}/${D}
+make purge-dev DESTDIR=${PWD}/${D} STRIP="${STRIP}"
+make purge-doc DESTDIR=${PWD}/${D} STRIP="${STRIP}"
 
 # TODO: remove unused files like include files and so on
 cd $D
