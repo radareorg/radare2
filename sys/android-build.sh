@@ -1,5 +1,7 @@
 #!/bin/sh
 
+PREFIX="/data/data/org.radare.installer/radare2"
+
 cd `dirname $PWD/$0` ; cd ..
 
 case "$1" in
@@ -39,7 +41,7 @@ if [ $STATIC_BUILD = 1 ]; then
 	CFGFLAGS="--without-pic --with-nonpic"
 fi
 ./configure --with-compiler=android --with-ostype=android \
-	--without-ssl --prefix=/data/radare2 ${CFGFLAGS} || exit 1
+	--without-ssl --prefix=${PREFIX} ${CFGFLAGS} || exit 1
 make -j 4 || exit 1
 PKG=`./configure --version|head -n1 |cut -d ' ' -f 1`
 D=${PKG}-android-${NDK_ARCH}
@@ -49,6 +51,10 @@ mkdir -p $D
 INSTALL_PROGRAM=`grep INSTALL_DATA config-user.mk|cut -d = -f 2`
 
 make install INSTALL_PROGRAM="${INSTALL_PROGRAM}" DESTDIR=$PWD/$D || exit 1
+
+make purge-dev DESTDIR=${PWD}/${D}
+make purge-doc DESTDIR=${PWD}/${D}
+
 # TODO: remove unused files like include files and so on
 cd $D
 tar czvf ../$D.tar.gz *

@@ -4151,6 +4151,9 @@ static int cmd_search(void *data, const char *input) {
 		" e search.flags = true ; if enabled store flags on keyword hits\n");
 		break;
 	}
+	if (core->io->va) {
+		eprintf ("Search is broken in io.va. Please fix or e io.va=0\n");
+	}
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
 		if (!searchflags)
@@ -4182,6 +4185,7 @@ static int cmd_search(void *data, const char *input) {
 					break;
 				}
 				ret = r_io_read_at (core->io, at, buf, core->blocksize);
+				//ret = r_core_read_at (core, at, buf, core->blocksize); 
 /*
 				if (ignorecase) {
 					int i;

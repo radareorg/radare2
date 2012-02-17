@@ -140,7 +140,24 @@ deinstall uninstall:
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
 	@echo
 
-purge:
+purge-doc:
+	rm -rf ${DESTDIR}/${PREFIX}/share/doc/radare2
+	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
+	rm -f ${MDR}/man1/r2.1
+
+purge-dev:
+	rm -rf ${DESTDIR}/${LIBDIR}/libr_*.a
+	rm -rf ${DESTDIR}/${LIBDIR}/pkgconfig/r_*.pc
+	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
+	rm -f ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/-*
+	# XXX: this must be in purge-sym ?
+	for a in ${DESTDIR}/${BINDIR}/r*2 ; do strip -s $$a ; done
+	for a in ${DESTDIR}/${LIBDIR}/libr_*.so ; do strip -s $$a ; done
+
+# TODO strip syms!
+
+
+purge: purge-doc purge-dev
 	rm -f ${DESTDIR}/${BINDIR}/r2
 	rm -f ${DESTDIR}/${BINDIR}/radare2
 	rm -f ${DESTDIR}/${BINDIR}/rabin2
@@ -159,8 +176,6 @@ purge:
 	rm -f ${DESTDIR}/${LIBDIR}/libr_*
 	rm -rf ${DESTDIR}/${LIBDIR}/radare2
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
-	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
-	rm -f ${MDR}/man1/r2.1
 
 beta: dist r2-bindings-dist
 	scp ../radare2-${VERSION}.tar.gz ${REMOTE}
