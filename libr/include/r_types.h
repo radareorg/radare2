@@ -209,17 +209,17 @@ enum {
 };
 
 /* os */
-#if __APPLE__
+#if defined (__APPLE__)
 #define R_SYS_OS "darwin"
-#elif __linux__
+#elif defined (__linux__)
 #define R_SYS_OS "linux"
-#elif __WIN32__ || __CYGWIN__ || MINGW32
+#elif defined (__WIN32__) || defined (__CYGWIN__) || defined (MINGW32)
 #define R_SYS_OS "windows"
-#elif __NetBSD__ 
+#elif defined (__NetBSD__ )
 #define R_SYS_OS "netbsd"
-#elif __OpenBSD__
+#elif defined (__OpenBSD__)
 #define R_SYS_OS "openbsd"
-#elif __FreeBSD__ || __FreeBSD_kernel__
+#elif defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define R_SYS_OS "freebsd"
 #else
 #define R_SYS_OS "unknown"

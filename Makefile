@@ -1,4 +1,4 @@
-include config-user.mk
+-include config-user.mk
 include global.mk
 
 STRIP?=strip

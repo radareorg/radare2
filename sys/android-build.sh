@@ -1,6 +1,10 @@
 #!/bin/sh
 
 PREFIX="/data/data/org.radare.installer/radare2"
+if [ -z "${NDK}" ]; then
+	echo "use ./android-shell.sh"
+	exit 1
+fi
 
 cd `dirname $PWD/$0` ; cd ..
 
@@ -23,8 +27,12 @@ x86-static|static-x86)
 	NDK_ARCH=x86
 	STATIC_BUILD=1
 	;;
-"-h")
+""|"-h")
 	echo "Usage: android-build.sh [arm|x86][-static]"
+	exit 1
+	;;
+*)
+	echo "Unknown argument"
 	exit 1
 	;;
 esac
@@ -43,7 +51,7 @@ if [ $STATIC_BUILD = 1 ]; then
 	CFGFLAGS="--without-pic --with-nonpic"
 fi
 ./configure --with-compiler=android --with-ostype=android \
-	--without-ssl --prefix=${PREFIX} ${CFGFLAGS} || exit 1
+	--without-ewf --without-ssl --prefix=${PREFIX} ${CFGFLAGS} || exit 1
 make -j 4 || exit 1
 PKG=`./configure --version|head -n1 |cut -d ' ' -f 1`
 D=${PKG}-android-${NDK_ARCH}

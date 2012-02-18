@@ -21,7 +21,7 @@ ifneq ($(DEPS),)
 LDFLAGS+=$(shell echo ${DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
 endif
 ifneq ($(BINDEPS),)
-LDLIBS+=$(shell echo "${BINDEPS} " | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
+LDLIBS+=$(shell echo "${BINDEPS} " | sed -e 's:r_\([^ ]*\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
 endif
 
 #link dependencies of individual r_ libs

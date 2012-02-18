@@ -379,10 +379,10 @@ tmp=`pkg-config --libs libewf 2>/dev/null`
 if [ ! $? = 1 ]; then 
 echo yes; HAVE_PKGCFG_LIBEWF=1; 
 EWF_LDFLAGS=$tmp; fi; fi
-if [ "$HAVE_EWF" = "0" ]; then
-HAVE_LIB_EWF="0"; fi
 if [ "$HAVE_PKGCFG_LIBEWF" = "1" ]; then
 HAVE_LIB_EWF="1"; fi
+if [ "$HAVE_EWF" = "0" ]; then
+HAVE_LIB_EWF="0"; fi
 check_library HAVE_LIB_GMP gmp 0 
 if [ "$HAVE_GMP" = "0" ]; then
 HAVE_LIB_GMP="0"; fi

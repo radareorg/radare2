@@ -98,8 +98,12 @@ else
 
 CFLAGS+=-I$(LIBR)/include -DVERSION=\"${VERSION}\"
 
-ifneq ($(BIN),)
-all: ${BIN}${EXT_EXE}
+ifneq ($(BIN)$(BINS),)
+all: ${BIN}${EXT_EXE} ${BINS}
+
+${BINS}: 
+	echo ${LIBR}
+	${CC} ${CFLAGS} $@.c -L.. ${LDFLAGS} ${LDLIBS} -o $@${EXT_EXE}
 
 ${BIN}${EXT_EXE}: ${OBJ}
 	${CC} $+ -L.. ${LDFLAGS} ${LDLIBS} -o ${BIN}${EXT_EXE}
