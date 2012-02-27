@@ -115,6 +115,8 @@ R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
 	int ret = R_ANAL_RET_NEW, buflen, bblen = 0;
 	int split = core->anal->split;
 
+	if (--fcn->depth<=0)
+		return R_FALSE;
 	if (!(bb = r_anal_bb_new ()))
 		return R_FALSE;
 	if (split) ret = r_anal_fcn_split_bb (fcn, bb, at);
@@ -239,7 +241,12 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
 			}
 			/* TODO: Dupped analysis, needs more optimization */
+fcn->depth = 256;
 			r_core_anal_bb (core, fcn, fcn->addr, R_TRUE);
+// hack
+if (fcn->depth ==0) {
+	eprintf ("fun depth fail for 0x%08"PFMT64x"\n", fcn->addr);
+} else fcn->depth = 256-fcn->depth;
 			r_list_sort (fcn->bbs, &cmpaddr);
 			/* New function: Add initial xref */
 			if (from != -1) {
@@ -361,7 +368,6 @@ static void fcn_list_bbs(RAnalFcn *fcn) {
 		else r_cons_printf (" n");
 		r_cons_printf ("\n");
 	}
-	r_cons_flush ();
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
@@ -436,7 +442,6 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				fcn_list_bbs (fcni);
 			}
 		}
-	r_cons_flush ();
 	return R_TRUE;
 }
 

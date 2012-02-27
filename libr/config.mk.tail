@@ -6,7 +6,6 @@ include $(LIBR)/../config-user.mk
 include $(LIBR)/../global.mk
 include $(LIBR)/../mk/${COMPILER}.mk
 
-CFLAGS+=-DUSE_RIO=${USE_RIO}
 CFLAGS+=${CFLAGS_APPEND}
 
 ifeq ($(WITHPIC),1)

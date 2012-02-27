@@ -251,6 +251,7 @@ namespace Radare {
 			public int ninstr;
 			public int stack;
 			public int calltype;
+			public int depth;
 			public Diff diff;
 			public FcnType type;
 			public RList<RAnal.Block> bbs;

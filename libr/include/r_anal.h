@@ -315,6 +315,7 @@ typedef struct r_anal_fcn_t {
 	int stack;
 	int ninstr;
 	int nargs;
+	int depth;
 	RAnalVarSub varsubs[R_ANAL_VARSUBS];
 	ut8 *fingerprint;
 	RAnalDiff *diff;

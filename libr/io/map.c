@@ -64,7 +64,7 @@ R_API int r_io_map_select(RIO *io, ut64 off) {
 	RIOMap *im = NULL;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, im) { // _prev?
-		if (im && off >= im->from && off < im->to) {
+		if (off >= im->from && off < im->to) {
 			delta = off - im->from + im->delta;
 			fd = im->fd;
 			if (fd == io->raised)
@@ -76,7 +76,7 @@ R_API int r_io_map_select(RIO *io, ut64 off) {
 		//eprintf ("seek ret %d = %llx\n", delta, 
 		r_io_seek (io, delta, R_IO_SEEK_SET);
 		return R_TRUE;
-	}
+	} else r_io_seek (io, off, R_IO_SEEK_SET);
 	return R_FALSE;
 }
 

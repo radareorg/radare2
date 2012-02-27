@@ -1,5 +1,6 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
 
+// TODO: use RList !!
 #include <stdio.h>
 #include "r_cmd.h"
 #include "r_util.h"
@@ -194,7 +195,7 @@ R_API void r_cmd_macro_list(RCmdMacro *mac) {
 R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int nargs) {
 	int i, j;
 	char *pcmd, cmd[R_CMD_MAXLEN];
-	char *arg = args? strdup (args): strdup ("");
+	char *arg = args; //args? strdup (args): strdup ("");
 	*cmd = '\0';
 
 	for (i=j=0; ptr[j] && j<R_CMD_MAXLEN; i++,j++) {
@@ -205,7 +206,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 				if (word) {
 					wordlen = strlen (word);
 					if ((i+wordlen+1) >= sizeof (cmd)) {
-						free (arg);
+						//free (arg);
 						return -1;
 					}
 					memcpy (cmd+i, word, wordlen+1);
@@ -218,7 +219,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 				int offlen;
 				offlen = snprintf (off, sizeof (off), "%d", mac->counter);
 				if ((i+offlen+1) >= sizeof (cmd)) {
-					free (arg);
+					//free (arg);
 					return -1;
 				}
 				memcpy (cmd+i, off, offlen+1);
@@ -236,7 +237,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 	pcmd = cmd;
 	while (*pcmd==' '||*cmd=='\t')
 		pcmd++;
-	free (arg);
+	//free (arg);
 	return (*pcmd==')')? 0: mac->cmd (mac->user, pcmd);
 }
 
@@ -372,8 +373,10 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					continue;
 				}
 				/* Command execution */
-				if (*ptr)
+				if (*ptr) {
+
 					r_cmd_macro_cmd_args (mac, ptr, args, nargs);
+}
 				if (end) {
 					*end = '\n';
 					ptr = end + 1;

@@ -824,7 +824,6 @@ static int cmd_interpret(void *data, const char *input) {
 		r_core_cmd_command (core, input+1);
 		break;
 	case '(':
-		//eprintf ("macro call (%s)\n", input+1);
 		r_cmd_macro_call (&core->cmd->macro, input+1);
 		break;
 	case '?':
@@ -1957,14 +1956,30 @@ static int cmd_print(void *data, const char *input) {
 		RAsmOp asmop;
 		int j, ret, err = 0;
 		const ut8 *buf = core->block;
+		int tbs = 0;
+		int bs = core->blocksize;
+
+		if (input[1]=='f') {
+			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			if (f) {
+				len = bs = f->size;
+				tbs = core->blocksize;
+			}
+		}
+		if (bs>core->blocksize)
+			r_core_block_size (core, tbs);
+
 		if (l==0) l = len;
-		for (i=j=0; i<core->blocksize && j<len; i+=ret,j++ ) {
+		for (i=j=0; i<bs && j<len; i+=ret,j++ ) {
 			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 			if (ret<1) {
 				ret = err = 1;
 				r_cons_printf ("???\n");
 			} else r_cons_printf ("%s\n", asmop.buf_asm);
 		}
+	if (tbs)
+		r_core_block_size (core, tbs);
 		return err;
 		}
 	case 'D':
@@ -4291,6 +4306,7 @@ static int cmd_hash(void *data, const char *input) {
 	ut32 i, len = core->blocksize;
 	const char *ptr;
 
+	if (input[0]==' ') return 0;
 	if (input[0]=='!') {
 #if 0
 	TODO: Honor OOBI
@@ -4338,21 +4354,21 @@ static int cmd_hash(void *data, const char *input) {
 	if (!r_str_ccmp (input, "sha1", ' ')) {
 		RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA1);
 		const ut8 *c = r_hash_do_sha1 (ctx, core->block, len);
-		for (i=0; i<R_HASH_SIZE_SHA1;i++) r_cons_printf ("%02x", c[i]);
+		for (i=0; i<R_HASH_SIZE_SHA1; i++) r_cons_printf ("%02x", c[i]);
 		r_cons_newline ();
 		r_hash_free (ctx);
 	} else
 	if (!r_str_ccmp (input, "sha256", ' ')) {
 		RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA256);
 		const ut8 *c = r_hash_do_sha256 (ctx, core->block, len);
-		for (i=0; i<R_HASH_SIZE_SHA256;i++) r_cons_printf ("%02x", c[i]);
+		for (i=0; i<R_HASH_SIZE_SHA256; i++) r_cons_printf ("%02x", c[i]);
 		r_cons_newline ();
 		r_hash_free (ctx);
 	} else
 	if (!r_str_ccmp (input, "sha512", ' ')) {
 		RHash *ctx = r_hash_new (R_TRUE, R_HASH_SHA512);
 		const ut8 *c = r_hash_do_sha512 (ctx, core->block, len);
-		for (i=0; i<R_HASH_SIZE_SHA512;i++) r_cons_printf ("%02x", c[i]);
+		for (i=0; i<R_HASH_SIZE_SHA512; i++) r_cons_printf ("%02x", c[i]);
 		r_cons_newline ();
 		r_hash_free (ctx);
 	} else
@@ -4397,7 +4413,6 @@ static int cmd_hash(void *data, const char *input) {
 		"Comments:\n"
 		" # this is a comment  ; note the space after the sharp sign\n");
 	}
-
 	return 0;
 }
 
@@ -4876,7 +4891,28 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #endif
 }
 
+static int r_core_cmd_subst_i(RCore *core, char *cmd);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
+	int rep = atoi (cmd);
+	char *icmd = strdup (cmd);
+	cmd = r_str_trim_head_tail (icmd);
+	if (rep>0) {
+		while (*cmd>='0' && *cmd<='9')
+			cmd++;
+	} 
+	if (rep<1) rep = 1;
+	while (rep--) {
+		int ret = r_core_cmd_subst_i (core, cmd);
+		if (ret) {
+free (icmd);
+			return ret;
+		}
+	}
+free (icmd);
+	return 0;
+}
+
+static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
 	int i, len = strlen (cmd), pipefd, ret;
 	const char *quotestr = "\"`";
@@ -4900,7 +4936,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		cmd[len-1]='\0';
 		return r_cmd_call (core->cmd, cmd+1);
 	case '(':
-		return r_cmd_call (core->cmd, cmd);
+		if (cmd[1] != '*')
+			return r_cmd_call (core->cmd, cmd);
 	}
 
 // TODO must honor " and `
@@ -4913,13 +4950,19 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	/* multiple commands */
 // TODO: must honor " and ` boundaries
 	//ptr = strrchr (cmd, ';');
-	ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
-	if (ptr) {
-		*ptr = '\0';
-		if (r_core_cmd_subst (core, cmd) == -1)
-			return -1;
-		cmd = ptr+1;
-		//r_cons_flush ();
+	if (*cmd!='#') {
+		ptr = (char *)r_str_lastbut (cmd, ';', quotestr);
+		if (ptr) {
+			int ret ;
+			*ptr = '\0';
+			if (r_core_cmd_subst (core, cmd) == -1)
+				return -1;
+			cmd = ptr+1;
+			ret = r_core_cmd_subst (core, cmd);
+			*ptr = ';';
+			return ret;
+			//r_cons_flush ();
+		}
 	}
 
 // TODO must honor " and `
@@ -5253,12 +5296,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (ocmd == NULL)
 		return R_FALSE;
 	r_str_cpy (cmd, cstr);
-	cmd = r_str_trim_head_tail (cmd);
-
-	/* ignore comments */
-	if (cmd[0] == '#')
-		goto out;
-
+	// XXX: move into cmd_subst ?
+	//cmd = r_str_trim_head_tail (cmd);
+	ret = r_core_cmd_subst (core, cmd);
+#if 0
 	rep = atoi (cmd);
 	if (rep<1) rep = 1;
 	if (rep>0) {
@@ -5271,9 +5312,9 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 				break;
 		}
 	}
+#endif
 	if (log) r_line_hist_add (cstr);
 
-out:
 	free (ocmd);
 	free (core->oobi);
 	core->oobi = NULL;

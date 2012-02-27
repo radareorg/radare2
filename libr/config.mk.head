@@ -4,7 +4,6 @@ BSD=0
 SOLARIS=0
 WINDOWS=0
 OSX=0
-USE_RIO=1
 
 # static plugins
 STATIC_DEBUG=0

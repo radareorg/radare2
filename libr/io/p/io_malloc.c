@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -16,7 +16,7 @@ typedef struct {
 #define RIOMALLOC_SZ(x) (((RIOMalloc*)x->data)->size)
 #define RIOMALLOC_BUF(x) (((RIOMalloc*)x->data)->buf)
 
-static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count) {
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (fd == NULL || fd->data == NULL)
 		return -1;
 	if (io->off+count > RIOMALLOC_SZ (fd))
@@ -25,7 +25,8 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int count) {
 	return count;
 }
 
-static int __read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
+static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+	memset (buf, 0xff, count);
 	if (fd == NULL || fd->data == NULL)
 		return -1;
 	if (io->off>= RIOMALLOC_SZ (fd))
