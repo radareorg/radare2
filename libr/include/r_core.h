@@ -243,7 +243,7 @@ R_API void r_core_sysenv_help();
 
 typedef struct r_core_bin_filter_t {
 	ut64 offset;
-	char *name;
+	const char *name;
 } RCoreBinFilter;
 
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 offset);

@@ -340,7 +340,7 @@ R_API int r_str_ansi_filter(char *str, int len);
 R_API int r_str_word_count(const char *string);
 R_API int r_str_char_count(const char *string, char ch);
 R_API int r_str_word_set0(char *str);
-R_API char *r_str_word_get0(char *str, int idx);
+R_API const char *r_str_word_get0(const char *str, int idx);
 R_API char *r_str_word_get_first(const char *string);
 R_API char *r_str_chop(char *str);
 R_API const char *r_str_chop_ro(const char *str);

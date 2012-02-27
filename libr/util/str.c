@@ -254,9 +254,9 @@ R_API int r_str_word_set0(char *str) {
 	return i;
 }
 
-R_API char *r_str_word_get0(char *str, int idx) {
+R_API const char *r_str_word_get0(const char *str, int idx) {
 	int i;
-	char *ptr = str;
+	const char *ptr = str;
 	if (ptr == NULL)
 		return (char *)nullstr;
 	for (i=0;*ptr && i != idx;i++)

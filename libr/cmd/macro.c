@@ -195,14 +195,14 @@ R_API void r_cmd_macro_list(RCmdMacro *mac) {
 R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int nargs) {
 	int i, j;
 	char *pcmd, cmd[R_CMD_MAXLEN];
-	char *arg = args; //args? strdup (args): strdup ("");
+	const char *arg = args; //args? strdup (args): strdup ("");
 	*cmd = '\0';
 
 	for (i=j=0; ptr[j] && j<R_CMD_MAXLEN; i++,j++) {
 		if (ptr[j]=='$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
 				int wordlen;
-				char *word = r_str_word_get0 (arg, ptr[j+1]-'0');
+				const char *word = r_str_word_get0 (arg, ptr[j+1]-'0');
 				if (word) {
 					wordlen = strlen (word);
 					if ((i+wordlen+1) >= sizeof (cmd)) {

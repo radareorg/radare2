@@ -32,7 +32,7 @@ typedef struct r_cmd_macro_t {
 	ut64 _brk_value;
 	int brk;
 	int (*cmd)(void *user, const char *cmd);
-	int (*printf)(const char *str, ...);
+	PrintfCallback printf;
 	void *user;
 	RNum *num;
 	int labels_n;
