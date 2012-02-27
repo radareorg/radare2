@@ -427,15 +427,35 @@ static int cmd_anal(void *data, const char *input) {
 			free (ptr);
 			}
 			break;
+		case 'r':
+			{
+				RAnalFcn *fcn;
+				ut64 off = core->offset;
+				char *p, *name = strdup (input+3);
+				if ((p=strchr (name, ' '))) {
+					*p = 0;
+					off = r_num_math (core->num, p+1);
+				}
+				fcn = r_anal_fcn_find (core->anal, off,
+						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+				if (fcn) {
+					r_core_cmdf (core, "fr %s %s @ 0x%"PFMT64x, 
+						fcn->name, name, off);
+					free (fcn->name);
+					fcn->name = strdup (name);
+				} else eprintf ("Cannot find function at 0x%08llx\n", core->offset);
+			}
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: af[?+-l*]\n"
 			" af @ [addr]               ; Analyze functions (start at addr)\n"
 			" af+ addr size name [type] [diff] ; Add function\n"
-			" afb fcnaddr addr size name [type] [diff] ; Add bb to function @ fcnaddr\n"
 			" af- [addr]                ; Clean all function analysis data (or function at addr)\n"
+			" afb fcnaddr addr size name [type] [diff] ; Add bb to function @ fcnaddr\n"
 			" afl [fcn name]            ; List functions (addr, size, bbs, name)\n"
 			" afi [fcn name]            ; Show function(s) information (verbose afl)\n"
+			" afr name [addr]           ; Rename name for function at address (change flag too)\n"
 			" afs [addr] [fcnsign]      ; Get/set function signature at current address\n"
 			" af[aAv][?] [arg]          ; Manipulate args, fastargs and variables in function\n"
 			" afc @ [addr]              ; Calculate the Cyclomatic Complexity (starting at addr)\n"

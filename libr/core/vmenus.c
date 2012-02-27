@@ -183,6 +183,21 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				r_cons_show_cursor (R_FALSE);
 			}
 			break;
+		case 'R':
+			if (menu == 1) {
+				char line[1024];
+				r_cons_show_cursor (R_TRUE);
+				r_cons_set_raw (0);
+				eprintf ("Rename function '%s' as:\n", fs2);
+				r_line_set_prompt (":> ");
+				if (r_cons_fgets (line, sizeof (line), 0, NULL) <0)
+					cmd[0]='\0';
+				snprintf (cmd, sizeof (cmd), "afr %s %s", line, fs2);
+				r_core_cmd (core, cmd, 0);
+				r_cons_set_raw (1);
+				r_cons_show_cursor (R_FALSE);
+			}
+			break;
 		case 'P':
 			if (--format<0)
 				format = MAX_FORMAT;
@@ -215,7 +230,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			" a/d/e - add/delete/edit flag\n"
 			" +/-   - increase/decrease block size\n"
 			" o     - sort flags by offset\n"
-			" r     - rename flag\n"
+			" r/R   - rename flag / Rename function\n"
 			" n     - sort flags by name\n"
 			" p/P   - rotate print format\n"
 			" :     - enter command\n");
@@ -321,8 +336,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			break;
 		case 'd':
 			if (mode == 0) {
-				if (p)
-					r_meta_del (core->anal->meta, R_META_TYPE_ANY, from, size, p);
+				if (p) r_meta_del (core->anal->meta, R_META_TYPE_ANY, from, size, p);
 			} else {
 				r_anal_fcn_del (core->anal, from);
 			}
