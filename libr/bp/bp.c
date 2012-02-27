@@ -207,7 +207,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
-	eprintf ("Breakpoint list:\n");
+	//eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
 		bp->printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %d %c%c%c %s %s %s cmd=\"%s\"\n",
 			b->addr, b->addr+b->size, b->size,

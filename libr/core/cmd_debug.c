@@ -514,6 +514,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			RBreakpointItem *bpi = r_bp_get (core->dbg->bp, off);
 			if (bpi) {
 				char *arg = strchr (input+2, ' ');
+				if (arg)
+					arg = strchr (arg+1, ' ');
 				if (arg) {
 					free (bpi->data);
 					bpi->data = strdup (arg+1);

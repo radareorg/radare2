@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
 	int j, ret = 0;
@@ -459,3 +460,6 @@ return 0;
 	return 0;
 }
 
+static int cmd_hexdump(void *data, const char *input) {
+	return cmd_print (data, input-1);
+}
