@@ -266,7 +266,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				memset (&n, 0, sizeof (n));
 				memcpy (&n, buf+j, l);
 				j+=4;
-				p->printf ("0x%016"PFMT64x" ", n);
+				p->printf ("0x%08x %08x", n<<32, n&0xffffff);
 			} else {
 				r_print_byte (p, fmt, j, buf[j]);
 				if (j%2) p->printf (" ");
