@@ -11,6 +11,7 @@
 * Make r_io happy with RList
 * RBinCreate:
   - mach0 create for darwin-ppc
+  - mz
   - pe64
   - plan9 bins
 * add support for sockets in rarun2

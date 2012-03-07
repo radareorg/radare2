@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
 
 /* TODO: write li->fds setter/getter helpers */
 // TODO: return true/false everywhere,, not -1 or 0
@@ -9,10 +9,10 @@
 #include "list.h"
 #include <stdio.h>
 
-static struct r_io_plugin_t *io_static_plugins[] = 
+static RIOPlugin *io_static_plugins[] = 
 	{ R_IO_STATIC_PLUGINS };
 
-R_API int r_io_plugin_add(RIO *io, struct r_io_plugin_t *plugin) {
+R_API int r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
 	struct r_io_list_t *li;
 	if (!plugin || !plugin->name)
 		return R_FALSE;
@@ -39,7 +39,7 @@ R_API int r_io_plugin_init(RIO *io) {
 	return R_TRUE;
 }
 
-R_API struct r_io_plugin_t *r_io_plugin_resolve(RIO *io, const char *filename) {
+R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
@@ -55,13 +55,13 @@ R_API struct r_io_plugin_t *r_io_plugin_resolve(RIO *io, const char *filename) {
 
 /*
 DEPRECATED
-R_API struct r_io_plugin_t *r_io_plugin_resolve_fd(RIO *io, int fd) {
+R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd) {
 	int i;
 	return NULL;
 }
 */
 
-R_API int r_io_plugin_open(RIO *io, int fd, struct r_io_plugin_t *plugin) {
+R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin) {
 #if 0
 	int i=0;
 	struct list_head *pos;
@@ -82,7 +82,7 @@ R_API int r_io_plugin_open(RIO *io, int fd, struct r_io_plugin_t *plugin) {
 	return 0;
 }
 
-R_API int r_io_plugin_close(RIO *io, int fd, struct r_io_plugin_t *plugin) {
+R_API int r_io_plugin_close(RIO *io, int fd, RIOPlugin *plugin) {
 	return 0;
 }
 
