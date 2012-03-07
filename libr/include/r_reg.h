@@ -60,7 +60,7 @@ typedef struct r_reg_t {
 
 #ifdef R_API
 R_API const char *r_reg_get_type(int idx);
-R_API void *r_reg_free(RReg *reg);
+R_API void r_reg_free(RReg *reg);
 R_API RReg *r_reg_new();
 //R_API RReg *r_reg_new();
 R_API int r_reg_set_profile_string(RReg *reg, const char *profile);
