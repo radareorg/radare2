@@ -158,7 +158,7 @@ static int cin_get_num(NumValue *n) {
 	char c;
 	str[0] = 0;
 	while (cin_get (&c)) {
-		if (c!='.' && !isalnum (c)) {
+		if (c!=':' && c!='.' && !isalnum (c)) {
 			cin_putback (c);
 			break;
 		}
@@ -232,7 +232,7 @@ static Token get_token() {
 	default:
 		//if (ch=='$' || isalpha (ch)) {
 #define isvalidchar(x) \
-	(isalnum(x) || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
+	(isalnum(x) || x==':' || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
 	|| x==' ' || x=='}' || x=='{' || x=='/' || (x>='0'&&x<='9'))
 {
 			int i = 0;
