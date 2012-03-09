@@ -1,5 +1,6 @@
-/* radare - LGPL - Copyright 2007-2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
+#include <r_userconf.h>
 #include <r_util.h>
 
 static int rax(const char *str) {
@@ -33,7 +34,7 @@ int main(int argc, char **argv)
 			printf("Usage: rax2 [-hV] [expression]\n");
 			return 0;
 		case 'V':
-			printf("rax2 v"VERSION"\n");
+			printf("rax2 v"R2_VERSION"\n");
 			return 0;
 		}
 	}

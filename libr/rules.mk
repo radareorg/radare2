@@ -6,7 +6,7 @@ include $(LIBR)/config.mk
 ifneq ($(NAME),)
 
 ALL?=
-CFLAGS+=-I../include
+CFLAGS+=-I$(LIBR)/include
 
 all: $(PRE) $(ALL)
 	@$(MAKE) real_all
@@ -26,7 +26,7 @@ endif
 
 # -j trick
 waitfordeps:
-	@sh ../waitfordeps.sh ${DEPS}
+	@sh $(LIBR)/waitfordeps.sh ${DEPS}
 
 ifeq ($(WITHPIC),1)
 ${LIBSO}: $(EXTRA_TARGETS) waitfordeps ${OBJ}
@@ -36,7 +36,7 @@ ${LIBSO}: $(EXTRA_TARGETS) waitfordeps ${OBJ}
 	  if [ $$do = 1 ]; then \
 	    echo "${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK}" ; \
 	    ${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK}; \
-	    if [ -f "../stripsyms.sh" ]; then sh ../stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
+	    if [ -f "$(LIBR)/stripsyms.sh" ]; then sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
 	  break ; \
 	fi ; done
 else

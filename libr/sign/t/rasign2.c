@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
+
+#include "r_userconf.h"
 #include "r_sign.h"
 
 static int rasign_show_help() {
@@ -34,7 +36,7 @@ int main(int argc, char **argv) {
 			rad = 1;
 			break;
 		case 'V':
-			printf ("rasign2 v"VERSION"\n");
+			printf ("rasign2 v"R2_VERSION"\n");
 			return 0;
 		default:
 			return rasign_show_help ();
