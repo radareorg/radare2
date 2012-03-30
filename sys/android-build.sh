@@ -9,6 +9,12 @@ fi
 cd `dirname $PWD/$0` ; cd ..
 
 case "$1" in
+"mips")
+	NDK_ARCH=mips
+	STATIC_BUILD=0
+	STRIP=mips-linux-android-strip
+echo "FUN"
+	;;
 "arm")
 	NDK_ARCH=arm
 	STATIC_BUILD=0
@@ -27,8 +33,12 @@ x86-static|static-x86)
 	NDK_ARCH=x86
 	STATIC_BUILD=1
 	;;
+mips-static|static-mips)
+	NDK_ARCH=mips
+	STATIC_BUILD=1
+	;;
 ""|"-h")
-	echo "Usage: android-build.sh [arm|x86][-static]"
+	echo "Usage: android-build.sh [arm|x86|mips][-static]"
 	exit 1
 	;;
 *)
@@ -41,6 +51,7 @@ esac
 [ -z "${STATIC_BUILD}" ] && STATIC_BUILD=0
 export NDK_ARCH
 export STATIC_BUILD
+echo NDK_ARCH: ${NDK_ARCH}
 
 echo "Using NDK_ARCH: ${NDK_ARCH}"
 echo "Using STATIC_BUILD: ${STATIC_BUILD}"

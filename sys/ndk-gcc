@@ -3,6 +3,7 @@
 if [ -n "${NDK_ARCH}" ]; then
 	ARCH=${NDK_ARCH}
 else
+	ARCH=mips
 	ARCH=arm
 	ARCH=x86
 fi
@@ -14,13 +15,20 @@ PROGDIR=`cd $PROGDIR && pwd`
 
 OS=`uname | tr 'A-Z' 'a-z'`
 
-if [ "${ARCH}" = "arm" ]; then
-ANDROID_SDK_VERSION=8
-NDKPFX=${ARCH}-linux-androideabi
-else
-ANDROID_SDK_VERSION=9 #x86
-NDKPFX=i686-android-linux
-fi
+case "${ARCH}" in
+arm)
+	ANDROID_SDK_VERSION=8
+	NDKPFX=${ARCH}-linux-androideabi
+	;;
+mips)
+	ANDROID_SDK_VERSION=9 #mips
+	NDKPFX=mips-linux-android
+	;;
+x86)
+	ANDROID_SDK_VERSION=9 #x86
+	NDKPFX=i686-android-linux
+	;;
+esac
 
 PLATFORM=android-${ANDROID_SDK_VERSION}
 

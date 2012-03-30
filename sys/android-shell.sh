@@ -1,6 +1,8 @@
 #!/bin/sh
 # android shell
 
+LANG=C
+export LANG
 ROOT=`dirname $PWD/$0`
 OS=`uname|tr 'A-Z' 'a-z'`
 [ "${OS}" = darwin ] && OS=macosx
@@ -8,6 +10,7 @@ OS=`uname|tr 'A-Z' 'a-z'`
 # TODO: autodetect or gtfo
 if [ -f ~/.r2androidrc ]; then
 	. ~/.r2androidrc
+	echo "Using data from ~/.r2androidrc.."
 else
 	SDK=${HOME}/Downloads/android-sdk-${OS}
 	NDK=${HOME}/Downloads/android-ndk-r7b
@@ -25,20 +28,19 @@ if [ ! -d "${NDK}" ]; then
 	exit 1
 fi
 
+NDKPATH_MIPS=`echo ${NDK}/toolchains/mips-*/prebuilt/${OS}-x86/bin/`
 NDKPATH_ARM=`echo ${NDK}/toolchains/arm-*/prebuilt/${OS}-x86/bin/`
 NDKPATH_X86=`echo ${NDK}/toolchains/x86-*/prebuilt/${OS}-x86/bin/`
 
 # r7b
-NDKPATH_ARM=`echo ${NDK}/toolchains/arm-*/prebuilt/$(uname)-x86/bin/`
+NDKPATH_ARM=`echo ${NDK}/toolchains/arm-*/prebuilt/$(uname|tr A-Z a-z)-x86/bin/`
 #INCDIR=${NDK}/platforms/android-8/arch-arm/usr/include/
 #CFLAGS=-I${INCDIR}
 echo $NDKPATH_ARM
 
-PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:$PATH
+PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS}:$PATH
 export PATH
 export CFLAGS
-LANG=C
-export LANG
 export NDK
 cp ${ROOT}/ndk-gcc ${NDK}
 chmod +x ${NDK}/ndk-gcc
