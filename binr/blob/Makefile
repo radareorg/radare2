@@ -9,20 +9,60 @@ include ../../config-user.mk
 CFLAGS=-I ../../libr/include/
 CFLAGS+=-DLIBDIR="\"${LIBDIR}\""
 CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\"
+ifeq ($(STATIC_BUILD),1)
+LDFLAGS+=../../libr/th/libr_th.a
+LDFLAGS+=../../libr/io/libr_io.a
+LDFLAGS+=../../libr/socket/libr_socket.a
+LDFLAGS+=../../libr/asm/libr_asm.a
+LDFLAGS+=../../libr/db/libr_db.a
+LDFLAGS+=../../libr/parse/libr_parse.a
+LDFLAGS+=../../libr/lib/libr_lib.a
+LDFLAGS+=../../libr/egg/libr_egg.a
+LDFLAGS+=../../libr/core/libr_core.a
+LDFLAGS+=../../libr/anal/libr_anal.a
+LDFLAGS+=../../libr/cmd/libr_cmd.a
+LDFLAGS+=../../libr/fs/libr_fs.a
+LDFLAGS+=../../libr/sign/libr_sign.a
+LDFLAGS+=../../libr/magic/libr_magic.a
+LDFLAGS+=../../libr/line/libr_line.a
+LDFLAGS+=../../libr/cons/libr_cons.a
+LDFLAGS+=../../libr/diff/libr_diff.a
+LDFLAGS+=../../libr/syscall/libr_syscall.a
+LDFLAGS+=../../libr/flags/libr_flags.a
+LDFLAGS+=../../libr/print/libr_print.a
+LDFLAGS+=../../libr/reg/libr_reg.a
+LDFLAGS+=../../libr/debug/libr_debug.a
+LDFLAGS+=../../libr/search/libr_search.a
+LDFLAGS+=../../libr/config/libr_config.a
+LDFLAGS+=../../libr/lang/libr_lang.a
+LDFLAGS+=../../libr/bp/libr_bp.a
+LDFLAGS+=../../libr/hash/libr_hash.a
+LDFLAGS+=../../libr/bin/libr_bin.a
+LDFLAGS+=../../libr/util/libr_util.a
+# extra libs #
+LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
+LDFLAGS+=../../libr/db/sdb/src/libsdb.a
+LDFLAGS+=-lm
+else
 LDFLAGS+=-L../../libr/th -lr_th
 LDFLAGS+=-L../../libr/io -lr_io
+LDFLAGS+=-L../../libr/bp -lr_bp
 LDFLAGS+=-L../../libr/bin -lr_bin
-LDFLAGS+=-L../../libr/search -lr_search
+LDFLAGS+=-L../../libr/reg -lr_reg
 LDFLAGS+=-L../../libr/asm -lr_asm
+LDFLAGS+=-L../../libr/cmd -lr_cmd
 LDFLAGS+=-L../../libr/lib -lr_lib
 LDFLAGS+=-L../../libr/egg -lr_egg
 LDFLAGS+=-L../../libr/core -lr_core
+LDFLAGS+=-L../../libr/anal -lr_anal
 LDFLAGS+=-L../../libr/util -lr_util
 LDFLAGS+=-L../../libr/cons -lr_cons
 LDFLAGS+=-L../../libr/hash -lr_hash
 LDFLAGS+=-L../../libr/print -lr_print
 LDFLAGS+=-L../../libr/debug -lr_debug
+LDFLAGS+=-L../../libr/search -lr_search
 LDFLAGS+=-L../../libr/config -lr_config
+endif
 
 all: symlinks
 
@@ -49,4 +89,8 @@ build:
 	mv main.k main.c
 
 install:
-	cp ${BINS2} ${DESTDIR}/${PREFIX}/bin
+	mkdir -p ${DESTDIR}/${PREFIX}/bin
+	for a in ${BINS2} ; do \
+		rm -f ${DESTDIR}/${PREFIX}/bin/$$a ; \
+		cp -af $$a ${DESTDIR}/${PREFIX}/bin/$$a ; \
+	done

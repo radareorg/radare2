@@ -39,7 +39,7 @@ struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const cha
 
 /* Get offset of given named field inside the table */
 int r_db_table_key(struct r_db_table_t *table, const char *name) {
-	char *word;
+	const char *word;
 	int i;
 	for(i=0;i<table->nelems;i++) {
 		word = r_str_word_get0(table->args, i);
@@ -59,9 +59,9 @@ int r_db_table_key_i(struct r_db_table_t *table, int elem) {
 
 /* Get name of the N field in the table */
 const char *r_db_table_field_i(struct r_db_table_t *table, int elem) {
-	char *name = NULL;
+	const char *name = NULL;
 	if (elem>=0 && table->nelems<elem)
-		name = r_str_word_get0(table->args, elem);
+		name = r_str_word_get0 (table->args, elem);
 	return name;
 }
 

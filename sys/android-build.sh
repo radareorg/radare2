@@ -2,7 +2,7 @@
 
 PREFIX="/data/data/org.radare.installer/radare2"
 if [ -z "${NDK}" ]; then
-	echo "use ./android-shell.sh"
+	echo "use ./android-{arm|mips|x86}.sh"
 	exit 1
 fi
 
@@ -80,20 +80,25 @@ make install INSTALL_PROGRAM="${INSTALL_PROGRAM}" DESTDIR=$PWD/$D || exit 1
 
 make purge-dev DESTDIR=${PWD}/${D} STRIP="${STRIP}"
 make purge-doc DESTDIR=${PWD}/${D} STRIP="${STRIP}"
-chmod +x ${PWD}/${D}/bin/*
 rm -rf ${PWD}/${D}/share
 rm -rf ${PWD}/${D}/include
 rm -rf ${PWD}/${D}/lib/pkgconfig
 rm -rf ${PWD}/${D}/lib/libsdb.a
 
+echo rm -rf ${PWD}/${D}/${PREFIX}/bin/*
+rm -rf ${PWD}/${D}/${PREFIX}/bin/*
+
 # use busybox style symlinkz
-rm -rf ${PWD}/${D}/bin/*
+HERE=${PWD}
 cd binr/blob
-make
-make install PREFIX="${PREFIX}" DESTDIR="${PWD}/${D}"
+make STATIC_BUILD=1
+make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}"
 cd ../..
+
+chmod +x ${PWD}/${D}/${PREFIX}/bin/*
 
 # TODO: remove unused files like include files and so on
 cd $D
 tar czvf ../$D.tar.gz *
-echo "${D}.tar.gz"
+cd ..
+echo `pwd`"/${D}.tar.gz"
