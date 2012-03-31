@@ -80,10 +80,18 @@ make install INSTALL_PROGRAM="${INSTALL_PROGRAM}" DESTDIR=$PWD/$D || exit 1
 
 make purge-dev DESTDIR=${PWD}/${D} STRIP="${STRIP}"
 make purge-doc DESTDIR=${PWD}/${D} STRIP="${STRIP}"
+chmod +x ${PWD}/${D}/bin/*
 rm -rf ${PWD}/${D}/share
 rm -rf ${PWD}/${D}/include
 rm -rf ${PWD}/${D}/lib/pkgconfig
 rm -rf ${PWD}/${D}/lib/libsdb.a
+
+# use busybox style symlinkz
+rm -rf ${PWD}/${D}/bin/*
+cd binr/blob
+make
+make install PREFIX="${PREFIX}" DESTDIR="${PWD}/${D}"
+cd ../..
 
 # TODO: remove unused files like include files and so on
 cd $D

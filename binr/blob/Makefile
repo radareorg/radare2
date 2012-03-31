@@ -1,8 +1,14 @@
 PREFIX?=/usr
 DESTDIR?=/
+
 BINS=rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2
 BINS2=radare2 ${BINS}
-CFLAGS=-I ../../libr/include/ -DLIBDIR="\"/usr/lib/\"" -DR2_BIRTH="\"123\""
+
+include ../../config-user.mk
+
+CFLAGS=-I ../../libr/include/
+CFLAGS+=-DLIBDIR="\"${LIBDIR}\""
+CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\"
 LDFLAGS+=-L../../libr/th -lr_th
 LDFLAGS+=-L../../libr/io -lr_io
 LDFLAGS+=-L../../libr/bin -lr_bin
