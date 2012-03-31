@@ -5,7 +5,7 @@ LANG=C
 export LANG
 ROOT=`dirname $PWD/$0`
 OS=`uname|tr 'A-Z' 'a-z'`
-[ "${OS}" = darwin ] && OS=macosx
+[ "${OS}" = macosx ] && OS=darwin
 
 # TODO: autodetect or gtfo
 if [ -f ~/.r2androidrc ]; then
@@ -18,7 +18,9 @@ fi
 
 if [ ! -d "${SDK}" ]; then 
 	echo "Cannot find Android SDK ${SDK}"
-	echo "Edit ~/.r2androidrc"
+	echo "Edit ~/.r2androidrc with:"
+	echo 'SDK=~/Downloads/android-sdk-$(uname)'
+	echo 'NDK=~/Downloads/android-ndk-r7b'
 	exit 1
 fi
 if [ ! -d "${NDK}" ]; then

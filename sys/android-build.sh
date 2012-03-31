@@ -13,7 +13,6 @@ case "$1" in
 	NDK_ARCH=mips
 	STATIC_BUILD=0
 	STRIP=mips-linux-android-strip
-echo "FUN"
 	;;
 "arm")
 	NDK_ARCH=arm
@@ -35,7 +34,9 @@ x86-static|static-x86)
 	;;
 mips-static|static-mips)
 	NDK_ARCH=mips
+	# XXX: by default we should build all libs as .a but link binary dinamically
 	STATIC_BUILD=1
+	STRIP=mips-linux-android-strip
 	;;
 ""|"-h")
 	echo "Usage: android-build.sh [arm|x86|mips][-static]"
@@ -61,6 +62,10 @@ make mrproper
 if [ $STATIC_BUILD = 1 ]; then
 	CFGFLAGS="--without-pic --with-nonpic"
 fi
+# dup
+echo ./configure --with-compiler=android --with-ostype=android \
+	--without-ewf --without-ssl --prefix=${PREFIX} ${CFGFLAGS}
+
 ./configure --with-compiler=android --with-ostype=android \
 	--without-ewf --without-ssl --prefix=${PREFIX} ${CFGFLAGS} || exit 1
 make -j 4 || exit 1
@@ -75,6 +80,10 @@ make install INSTALL_PROGRAM="${INSTALL_PROGRAM}" DESTDIR=$PWD/$D || exit 1
 
 make purge-dev DESTDIR=${PWD}/${D} STRIP="${STRIP}"
 make purge-doc DESTDIR=${PWD}/${D} STRIP="${STRIP}"
+rm -rf ${PWD}/${D}/share
+rm -rf ${PWD}/${D}/include
+rm -rf ${PWD}/${D}/lib/pkgconfig
+rm -rf ${PWD}/${D}/lib/libsdb.a
 
 # TODO: remove unused files like include files and so on
 cd $D

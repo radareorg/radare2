@@ -14,6 +14,7 @@ PROGDIR=`dirname $0`
 PROGDIR=`cd $PROGDIR && pwd`
 
 OS=`uname | tr 'A-Z' 'a-z'`
+[ "${OS}" = macos ] && OS=darwin
 
 case "${ARCH}" in
 arm)

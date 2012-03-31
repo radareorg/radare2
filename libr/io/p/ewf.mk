@@ -4,8 +4,10 @@ STATIC_OBJ+=${OBJ_EWF}
 TARGET_EWF=io_ewf.${EXT_SO}
 ALL_TARGETS+=${TARGET_EWF}
 
+ifeq (${HAVE_LIB_EWF},1)
 CFLAGS+=${EWF_CFLAGS}
 LDFLAGS+=${EWF_LDFLAGS}
+endif
 #/opt/local/include
 
 ifeq (${WITHPIC},0)
