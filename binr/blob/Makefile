@@ -1,7 +1,7 @@
 PREFIX?=/usr
 DESTDIR?=/
 
-BINS=rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2
+BINS=rabin2 rarun2 rasm2 ragg2 rahash2 rax2 rafind2 radiff2
 BINS2=radare2 ${BINS}
 
 include ../../config-user.mk
@@ -55,6 +55,7 @@ LDFLAGS+=-L../../libr/lib -lr_lib
 LDFLAGS+=-L../../libr/egg -lr_egg
 LDFLAGS+=-L../../libr/core -lr_core
 LDFLAGS+=-L../../libr/anal -lr_anal
+LDFLAGS+=-L../../libr/diff -lr_diff
 LDFLAGS+=-L../../libr/util -lr_util
 LDFLAGS+=-L../../libr/cons -lr_cons
 LDFLAGS+=-L../../libr/hash -lr_hash
@@ -67,9 +68,15 @@ endif
 all: symlinks
 
 symlinks: build
-	for a in ${BINS} ; do \
+	for a in r2 ${BINS} ; do \
 		ln -fs radare2 $$a ; \
 	done
+
+clean:
+	mv main.c main.k
+	rm -f *.[ch]
+	mv main.k main.c
+	rm -f ${BINS2} r2
 
 build:
 	mv main.c main.k
@@ -90,7 +97,7 @@ build:
 
 install:
 	mkdir -p ${DESTDIR}/${PREFIX}/bin
-	for a in ${BINS2} ; do \
+	for a in r2 ${BINS2} ; do \
 		rm -f ${DESTDIR}/${PREFIX}/bin/$$a ; \
 		cp -af $$a ${DESTDIR}/${PREFIX}/bin/$$a ; \
 	done
