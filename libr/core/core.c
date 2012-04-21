@@ -482,9 +482,11 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		return R_FALSE;
 	if (bsize<1)
 		bsize = 1;
-	else if (bsize> R_CORE_BLOCKSIZE_MAX)
-		bsize = R_CORE_BLOCKSIZE_MAX;
-	else ret = R_TRUE;
+	else if (bsize>core->blocksize_max) {
+		eprintf ("blocksize is bigger than io.maxblk. dimmed to 0x%x\n",
+			core->blocksize_max);
+		bsize = core->blocksize_max;
+	} else ret = R_TRUE;
 	core->block = realloc (core->block, bsize+1);
 	if (core->block == NULL) {
 		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);

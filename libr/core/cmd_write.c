@@ -132,12 +132,20 @@ static int cmd_write(void *data, const char *input) {
 		r_core_block_read (core, 0);
 		break;
 	case 't':
-		/* TODO: support userdefined size? */
-		arg = (const char *)(input+((input[1]==' ')?2:1));
-		r_file_dump (arg, core->block, core->blocksize);
+		if (*str != ' ') {
+			eprintf ("Usage: wt file [off]\n");
+		} else {
+			tmp = strchr (str+1, ' ');
+			if (tmp) {
+				st64 sz = (st64) r_num_math (core->num, tmp+1);
+				*tmp = 0;
+				if (sz<1) eprintf ("Invalid length\n");
+				else r_core_dump (core, str+1, core->offset, (ut64)sz);
+			} else r_file_dump (str+1, core->block, core->blocksize);
+		}
 		break;
 	case 'T':
-		eprintf ("TODO\n");
+		eprintf ("TODO: wT // why?\n");
 		break;
 	case 'f':
 		arg = (const char *)(input+((input[1]==' ')?2:1));

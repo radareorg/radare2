@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #ifndef _INCLUDE_R_CORE_H_
 #define _INCLUDE_R_CORE_H_
@@ -28,7 +28,7 @@
 
 #define R_CORE_CMD_EXIT -2
 #define R_CORE_BLOCKSIZE 64
-#define R_CORE_BLOCKSIZE_MAX 0x40000 /* 4 MB */
+#define R_CORE_BLOCKSIZE_MAX 0x40000 /* 256KB */
 
 #define R_CORE_ANAL_GRAPHLINES 0x1
 #define R_CORE_ANAL_GRAPHBODY  0x2
@@ -75,6 +75,7 @@ typedef struct r_core_asmsteps_t {
 typedef struct r_core_t {
 	ut64 offset;
 	ut32 blocksize;
+	ut32 blocksize_max;
 	ut8 *block;
 	ut8 *oobi; /* out of band input ; used to get input from file or multiline */
 	int ffio;
@@ -274,6 +275,7 @@ R_API int r_core_patch (RCore *core, const char *patch);
 
 R_API void r_core_hack_help(RCore *core);
 R_API int r_core_hack(RCore *core, const char *op);
+R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size);
 R_API void r_core_diff_show(RCore *c, RCore *c2);
 
 #endif

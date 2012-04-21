@@ -65,7 +65,7 @@ static int cmd_print(void *data, const char *input) {
 		}// else l = 0;
 	} else l = len;
 
-	i = r_config_get_i (core->config, "cfg.maxbsize");
+	i = r_config_get_i (core->config, "io.maxblk");
 	if (i && l > i) {
 		eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
 				*input, input+2);

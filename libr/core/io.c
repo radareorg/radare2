@@ -2,6 +2,38 @@
 
 #include "r_core.h"
 
+R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size) {
+	ut64 i;
+	ut8 *buf;
+	int bs = core->blocksize;
+	FILE *fd;
+	truncate (file, 0);
+	fd = fopen (file, "wb");
+	if (!fd) {
+		eprintf ("Cannot open '%s' for writing\n", file);
+		return R_FALSE;
+	}
+	buf = malloc (bs);
+	r_cons_break (NULL, NULL);
+	for (i=0; i<size; ) {
+		if (r_cons_singleton ()->breaked)
+			break;
+		if ((i+bs)>size)
+			bs = size-i;
+		r_io_read_at (core->io, addr+i, buf, bs);
+		if (fwrite (buf, bs, 1, fd) <1) {
+			eprintf ("write error\n");
+			break;
+		}
+		i += bs;
+	}
+	eprintf ("dumped 0x%"PFMT64x" bytes\n", i);
+	r_cons_break_end ();
+	fclose (fd);
+	free (buf);
+	return R_TRUE;
+}
+
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	char *str;
 	ut8 *buf;

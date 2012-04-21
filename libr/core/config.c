@@ -32,6 +32,15 @@ static int config_searchalign_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_iomaxblk_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value>1) {
+		core->blocksize_max = node->i_value;
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
 static int config_ioffio_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -497,8 +506,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.datefmt", "Date format (%d:%m:%Y %H:%M:%S %z)");
 	r_config_set (cfg, "cfg.fortunes", "true");
 	r_config_desc (cfg, "cfg.fortunes", "If enabled show tips at start");
-	r_config_set_i (cfg, "cfg.maxbsize", 524288);
-	r_config_desc (cfg, "cfg.maxbsize", "Max block size in print command");
 	r_config_set (cfg, "cfg.wseek", "false");
 	r_config_desc (cfg, "cfg.wseek", "Seek after write");
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);
@@ -579,6 +586,14 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "search.align", "Only catch aligned search hits");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
+
+{
+	char buf[128];
+	sprintf (buf, "%d", R_CORE_BLOCKSIZE_MAX);
+	r_config_set_cb (cfg, "io.maxblk", buf, &config_iomaxblk_callback);
+	r_config_desc (cfg, "io.maxblk", "set max block size (soft limit)");
+}
+
 	r_config_set_cb (cfg, "io.ffio", "true", &config_ioffio_callback);
 	r_config_desc (cfg, "io.ffio", "fill invalid buffers with 0xff instead of returning error");
 	r_config_set_cb (cfg, "io.va", "true", &config_iova_callback);
