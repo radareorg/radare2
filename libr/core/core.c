@@ -293,6 +293,7 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->rtr_n = 0;
+	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->visual = R_FALSE;
 	core->ffio = 0;
 	core->oobi = NULL;
