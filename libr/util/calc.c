@@ -102,6 +102,7 @@ static NumValue prim(int get) {
 	case NAME:
 		//fprintf (stderr, "error: unknown keyword (%s)\n", string_value);
 		//double& v = table[string_value];
+		r_str_chop (string_value);
 		v = Nset (r_num_get (calc_num, string_value));
 		get_token ();
 		if (curr_tok  == ASSIGN) 

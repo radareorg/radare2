@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include <r_util.h>
 
@@ -57,11 +57,13 @@ static int help () {
 		"  hex   ->  oct           ;  rax2 Ox12 (O is a letter)\n"
 		"  bin   ->  hex           ;  rax2 1100011b\n"
 		"  hex   ->  bin           ;  rax2 Bx63\n"
+		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
+		"  hex   ->  raw           ;  rax2 -s 414141\n"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
-		"  -s    hexstr -> bin     ;  rax2 -s 43 4a 50\n"
-		"  -S    bin -> hexstr     ;  rax2 -S C  J  P\n"
+		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
+		"  -S    raw -> hexstr     ;  rax2 -S C  J  P\n"
 		"  -v    version           ;  rax2 -V\n"
 		"  -x    hash string       ;  rax2 -x linux osx\n"
 		"  -k    keep base         ;  rax2 -k 33+3 -> 36\n"
@@ -76,6 +78,8 @@ static int rax (char *str, int len, int last) {
 	if (!len)
 		len = strlen (str);
 
+	if ((flags & 4))
+		goto dotherax;
 	if (*str=='-') {
 		switch (str[1]) {
 		case 's':
@@ -118,6 +122,7 @@ static int rax (char *str, int len, int last) {
 	if (*str=='h' || *str=='?')
 		return help ();
 
+	dotherax:
 	if (flags & 1) {
 		ut64 n = ((strlen (str))>>1)+1;
 		buf = malloc (sizeof (char) * n);

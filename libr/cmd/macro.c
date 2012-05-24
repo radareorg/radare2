@@ -350,7 +350,8 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 			char *end = strchr (ptr, '\n');
 
 			if (m->nargs != 0 && nargs != m->nargs) {
-				eprintf ("Macro '%s' expects %d args, not %d\n", m->name, m->nargs, nargs);
+				eprintf ("Macro '%s' expects %d args, not %d\n",
+					m->name, m->nargs, nargs);
 				macro_level --;
 				free (str);
 				return R_FALSE;

@@ -373,6 +373,7 @@ int main(int argc, char **argv) {
 	if (fullfile) r_core_block_size (&r, r.file->size);
 	else if (bsize) r_core_block_size (&r, bsize);
 
+	if (r_config_get_i (r.config, "scr.prompt"))
 	if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
 		r_core_cmd (&r, "fo", 0);
 		r_cons_flush ();

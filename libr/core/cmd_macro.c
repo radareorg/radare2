@@ -1,8 +1,9 @@
 /* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+
 static int cmd_macro(void *data, const char *input) {
-	char *buf = NULL;
-	char *p, *ptr = (char *)input;
+	char *p, *buf = NULL;
 	RCore *core = (RCore*)data;
+
 	switch (*input) {
 	case ')':
 		r_cmd_macro_break (&core->cmd->macro, input+1);
@@ -18,7 +19,8 @@ static int cmd_macro(void *data, const char *input) {
 		eprintf (
 		"Usage: (foo\\n..cmds..\\n)\n"
 		" Record macros grouping commands\n"
-		" (foo args\\n ..)     ; define a macro\n"
+		" (foo args,..,..)   ; define a macro\n"
+		" (foo args,..,..)() ; define and call a macro\n"
 		" (-foo)              ; remove a macro\n"
 		" .(foo)              ; to call it\n"
 		" ()                  ; break inside macro\n"
@@ -31,30 +33,36 @@ static int cmd_macro(void *data, const char *input) {
 		" x @@ .(foo)         ; iterate over them\n"
 		);
 		break;
-	default:
-		if (input[strlen (input)-1] != ')') {
-			buf = malloc (4096); // XXX: possible heap overflow here
-			strcpy (buf, input);
-			do {
-				ptr = buf + strlen (buf);
-				strcpy (ptr, ",");
-				ptr++;
-				fgets (ptr, 1024, stdin); // XXX: possible overflow // TODO: use r_cons here
-				p = strchr (ptr, '#');
-				if (p) *p = 0;
-				else ptr[strlen (ptr)-1] = 0; // chop \n
-				if (feof (stdin))
-					break;
-			} while (ptr[strlen (ptr)-1] != ')');
-			ptr = buf;
-		} else {
-			buf = strdup (input);
-			buf[strlen (input)-1] = 0;
+	default: {
+		// XXX: stop at first ')'. if next is '(' and last
+		int lastiscp = input[strlen (input)-1] == ')';
+		int mustcall =0;
+		int i, j = 0;
+		buf = strdup (input);
+
+		for (i=0; buf[i]; i++) {
+			switch (buf[i]) {
+			case '(': j++; break;
+			case ')': j--; 
+				if (buf[i+1] =='(') {
+					buf[i+1] = 0;
+					mustcall = i+2;
+				} break;
+			}
 		}
+		buf[strlen(buf)-1]=0;
 		r_cmd_macro_add (&core->cmd->macro, buf);
+		if (mustcall) {
+			char *comma = strchr (buf, ',');
+			if (comma) {
+				*comma = ' ';
+				strcpy (comma+1, buf+mustcall);
+				//printf ("CALL (%s)\n", buf);
+				r_cmd_macro_call (&core->cmd->macro, buf);
+			} else eprintf ("Invalid syntax for macro\n");
+		}
 		free (buf);
-		break;
+		} break;
 	}
 	return 0;
 }
-

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -241,16 +241,34 @@ R_API int r_str_split(char *str, char ch) {
 }
 
 R_API int r_str_word_set0(char *str) {
+	int quote = 0;
 	int i;
 	char *p;
 	if (!*str)
 		return 0;
-	/* TODO: sync with r1 code */
-	for (i=1, p=str; *p; p++)
+	for (i=1, p=str; *p; p++) {
+		if (*p=='\"') {
+			if (quote) {
+				quote = 0;
+				*p='\0';
+				// FIX: i++;
+				continue;
+			} else {
+				quote = 1;
+				strcpy (p, p+1);
+			}
+		}
+		if (quote) continue;
 		if (*p==' ') {
+			char *q = p-1;
+			if (p>str && *q=='\\') {
+				strcpy (q,p);
+				continue;
+			}
 			i++;
 			*p='\0';
 		} // s/ /\0/g
+	}
 	return i;
 }
 
@@ -259,7 +277,7 @@ R_API const char *r_str_word_get0(const char *str, int idx) {
 	const char *ptr = str;
 	if (ptr == NULL)
 		return (char *)nullstr;
-	for (i=0;*ptr && i != idx;i++)
+	for (i=0; *ptr && i != idx; i++)
 		ptr = ptr + strlen(ptr) + 1;
 	return ptr;
 }
