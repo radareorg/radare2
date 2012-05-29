@@ -7,8 +7,9 @@
 
 ====[[ 0.9.1 ]]====
 
-
 BUGS:
+* s @ patata 
+  > Unknown flag patata
 * If [0-9] keybindings in visual point to same address use same reference
 * Make r_io happy with RList
 * RBinCreate:
