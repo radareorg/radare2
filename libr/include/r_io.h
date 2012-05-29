@@ -87,6 +87,7 @@ typedef struct r_io_t {
 	int enforce_rwx;
 	int enforce_seek;
 	int cached;
+	int bits;
 	int cached_read;
 	ut64 off;
 	int debug;

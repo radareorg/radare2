@@ -14,6 +14,7 @@ R_API struct r_io_t *r_io_new() {
 	io->write_mask_fd = -1;
 	io->redirect = NULL;
 	io->printf = (void*) printf;
+	io->bits = (sizeof(void*) == 8)? 64: 32;
 	io->va = -1;
 	io->plugin = NULL;
 	io->raised = -1;

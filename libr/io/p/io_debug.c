@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -85,7 +85,7 @@ err_enable:
         return err;
 }
 
-static int fork_and_ptraceme(const char *cmd) {
+static int fork_and_ptraceme(int bits, const char *cmd) {
 	PROCESS_INFORMATION pi;
         STARTUPINFO si = { sizeof (si) };
         DEBUG_EVENT de;
@@ -164,9 +164,9 @@ err_fork:
 }
 #else
 
-static int fork_and_ptraceme(const char *cmd) {
+static int fork_and_ptraceme(int bits, const char *cmd) {
 	char **argv;
-	int ret, status, pid = vfork ();
+	int ret, status, pid = fork ();
 	switch (pid) {
 	case -1:
 		perror ("fork_and_ptraceme");
@@ -188,7 +188,52 @@ static int fork_and_ptraceme(const char *cmd) {
 		// TODO: Add support to redirect filedescriptors
 		// TODO: Configure process environment
 		argv = r_str_argv (cmd, NULL);
+#if __APPLE__ 
+		#include <spawn.h>
+		{
+			posix_spawnattr_t attr = {0};
+			size_t copied = 1;
+			cpu_type_t cpu;
+			int ret;
+			pid_t p = -1;
+
+			posix_spawnattr_init (&attr);
+			posix_spawnattr_setflags (&attr, POSIX_SPAWN_SETEXEC);
+#if __i386__ || __x86_64__
+			cpu = CPU_TYPE_I386;
+			if (bits == 64) 
+				cpu |= CPU_ARCH_ABI64;
+#else
+			cpu = CPU_TYPE_ANY;
+#endif
+			posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
+
+			//ret = posix_spawnp (NULL, argv[0], NULL, &attr, argv, NULL);
+			ret = posix_spawnp (&p, argv[0], NULL, &attr, argv, NULL);
+			switch (ret) {
+			case 0:
+				eprintf ("Success\n");
+				break;
+			case 22:
+				eprintf ("Invalid argument\n");
+				break;
+			case 86:
+				eprintf ("Unsupported architecture\n");
+				break;
+			default:
+				eprintf ("posix_spawnp: unknown error %d\n", ret);
+				perror ("posix_spawnp");
+				break;
+			}
+/* only required if no SETEXEC called
+			if (p != -1)
+				wait (p);
+*/
+			exit (MAGIC_EXIT); /* error */
+		}
+#else
 		execvp (argv[0], argv);
+#endif
 		r_str_argv_free (argv);
 
 		perror ("fork_and_attach: execv");
@@ -212,7 +257,7 @@ static int fork_and_ptraceme(const char *cmd) {
 }
 #endif
 
-static int __plugin_open(struct r_io_t *io, const char *file) {
+static int __plugin_open(RIO *io, const char *file) {
 	if (!memcmp (file, "dbg://", 6) && file[6])
 		return R_TRUE;
 	return R_FALSE;
@@ -223,7 +268,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {
-			pid = fork_and_ptraceme (file+6);
+			pid = fork_and_ptraceme (io->bits, file+6);
 			if (pid==-1)
 				return NULL;
 #if __WINDOWS__

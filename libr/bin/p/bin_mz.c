@@ -177,9 +177,7 @@ static int check(RBinArch *arch) {
 	if (b[0]=='M' && b[1]=='Z' && arch->buf->length>0x3d) {
 		idx = (b[0x3c]|(b[0x3d]<<8));
 		if (arch->buf->length>idx)
-			if (!memcmp (b, "\x4d\x5a", 2) &&
-				!memcmp (b+idx, "\x50\x45", 2) && 
-				!memcmp (b+idx+0x18, "\x0b\x01", 2))
+			if (!memcmp (b+idx, "\x50\x45", 2))
 				ret = R_FALSE;
 	} else ret = R_FALSE;
 	return ret;
