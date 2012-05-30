@@ -1,6 +1,11 @@
 /* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
 
 static int preludecnt = 0;
+static int searchflags = 0;
+static const char *cmdhit = NULL;
+static const char *searchprefix = NULL;
+static unsigned int searchcount = 0;
+
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	int depth = r_config_get_i (core->config, "anal.depth");
@@ -66,10 +71,6 @@ R_API int r_core_search_preludes(RCore *core) {
 	} else eprintf ("ap: Unsupported asm.arch and asm.bits\n");
 	return ret;
 }
-static const char *cmdhit = NULL;
-static const char *searchprefix = NULL;
-static unsigned int searchcount = 0;
-static int searchflags = 0;
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
@@ -357,19 +358,20 @@ static int cmd_search(void *data, const char *input) {
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-// TODO: add support for binmask here
-{
-	char *s, *p = strdup (input+2);
-	s = strchr (p, ' ');
-	if (s) {
-		*s++ = 0;
-		r_search_kw_add (core->search,
-			r_search_keyword_new_hex (p, s, NULL));
-	} else {
-		r_search_kw_add (core->search,
-			r_search_keyword_new_hexmask (input+2, NULL));
-	}
-}
+		// TODO: add support for binmask here
+		{
+			char *s, *p = strdup (input+2);
+			s = strchr (p, ' ');
+			if (!s) s = strchr (p, ':');
+			if (s) {
+				*s++ = 0;
+				r_search_kw_add (core->search,
+						r_search_keyword_new_hex (p, s, NULL));
+			} else {
+				r_search_kw_add (core->search,
+						r_search_keyword_new_hexmask (input+2, NULL));
+			}
+		}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
 		break;

@@ -253,7 +253,9 @@ R_API int r_debug_step_hard(RDebug *dbg) {
 		return R_FALSE;
 	if (!dbg->h->step (dbg))
 		return R_FALSE;
-	return r_debug_wait (dbg);
+	r_debug_wait (dbg);
+	/* return value ignored? */
+	return R_TRUE;
 }
 
 // TODO: count number of steps done to check if no error??
@@ -301,7 +303,9 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			r_bp_add_sw (dbg->bp, bpaddr, 1, R_BP_PROT_EXEC);
 			ret = r_debug_continue (dbg);
 			r_bp_del (dbg->bp, bpaddr);
-		} else ret = r_debug_step (dbg, 1);
+		} else {
+			ret = r_debug_step (dbg, 1);
+		}
 	} else eprintf ("Undefined debugger backend\n");
 	return ret;
 }
@@ -342,26 +346,31 @@ R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
 	return R_FALSE;
 }
 
+/* optimization: avoid so many reads */
 R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
+	int (*step)(RDebug *d, int n);
 	int ret, n = 0;
+	ut64 pc = 0;
 	RAnalOp op;
 	ut8 buf[64];
-	ut64 pc = 0;
+
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
-	if (dbg->anal) {
-		do {
-			if (over) ret = r_debug_step_over (dbg, 1);
-			else ret = r_debug_step (dbg, 1);
-			if (!ret) {
+	if (dbg->anal && dbg->reg) {
+		const char *pcreg = dbg->reg->name[R_REG_NAME_PC];
+		step = over? r_debug_step_over: r_debug_step;
+		for (;;) {
+			pc = r_debug_reg_get (dbg, pcreg);
+			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
+			ret = r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
+			if (ret>0 && op.type&type)
+				break;
+			if (!step (dbg, 1)) {
 				eprintf ("r_debug_step: failed\n");
 				break;
 			}
-			pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-			dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-			r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 			n++;
-		} while (!(op.type&type));
+		}
 	} else eprintf ("Undefined pointer at dbg->anal\n");
 	return n;
 }

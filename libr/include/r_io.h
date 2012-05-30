@@ -101,6 +101,7 @@ typedef struct r_io_t {
 	int write_mask_len;
 	struct r_io_plugin_t *plugin;
 	struct r_io_undo_t undo;
+	//RList *iolist;
 	struct list_head io_list;
 	RList *sections;
 	int next_section_id;

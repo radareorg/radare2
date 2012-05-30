@@ -7,25 +7,33 @@
 
 ====[[ 0.9.1 ]]====
 
+MAXPRIO
+-------
+* add visual key to continue until cursor ('s' dcu config.seek+cursor)
+* continue until ret ('S'
+* implement bitmask search /x 414243:ff00ff
+* p7 : 7bit encoding (sms)
+  - variant for stego print? LSB, MSB, ...
+* Make r_io happy with RList
 * Embed Luvit?
+* add support for sockets in rarun2
 * valabind must support luvit and nodejs (-ffi)
+* check search multiple keywords and signatures
+* Fix iterators for r_macro (test only?)
+  - search for antidebug/disasm tricks opcodes
+    - allows to find interesting points to analyze
 
 BUGS:
 * If [0-9] keybindings in visual point to same address use same reference
-* Make r_io happy with RList
 * RBinCreate:
   - mach0 create for darwin-ppc
   - mz
   - pe64
   - plan9 bins
-* add support for sockets in rarun2
 * Add !load in r2 (oo args)
 * opening a file from inside r2 doesnt clears internal data (strings..)
 * 'ao' must be for opcodes, not bytes
 * backtrace for linux or osx at least
-* Add support for classes (useful for c++, dex, objc, ...)
-  - command to add new classes
-
 * implement 'ax' to get/set xrefs (better than afl <addr>) .. or afx?
 * shell encoder - get x86-64 one from twitter
   - http://funoverip.net/2011/09/simple-shellcode-obfuscation/
@@ -35,6 +43,8 @@ BUGS:
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 
 ===[ 0.9.2 ]===
+* Add support for classes (useful for c++, dex, objc, ...)
+  - command to add new classes
 * show analized functions in 'aa'
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"
@@ -47,7 +57,7 @@ BUGS:
   - this is..you CANT call r_core_cmd() while iterating flags unless you want to crash
   - we probably need to queue the deletions and use a commit-like methodology
   - this way we avoid duplications
-  RListBox *b = r_flag_get_list ();
+ RListBox *b = r_flag_get_list ();
   r_list_foreach (b, iter, item) {
     r_list_delete_iter_later (b, iter);
   }
@@ -58,13 +68,6 @@ BUGS:
   - strict width in visual
 * REFACTOR of disasm loop XDDDDD -1 (r2<1.0 plzz)
   - arch dependent anal code must be removed from disasm loop +1
-
-pancake
--------
-* check search multiple keywords and signatures
-* Fix iterators for r_macro (test only?)
-  - search for antidebug/disasm tricks opcodes
-    - allows to find interesting points to analyze
 
 nibble
 ------
@@ -106,14 +109,12 @@ nibble
 
 earada
 ------
-* p7 : 7bit encoding (sms)
 * Add print support for bitfields (pm b...)
 * Fix io_haret memory dump
 * r_socket (already done?)
   - Add SSL support
   - http API in r_socket module
     - allow to get/post data/files with continue on plain/ssl
-* implement bitmask search
 * refactor rap and raps
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp
@@ -156,8 +157,6 @@ Assembler
   - Add support for STATIC_PLUGINS in r_lang
   - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
     This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
-* p7 - print 7bit encoded strings (SMS)
-  - variant for stego print? LSB, MSB, ...
 * r_bin
   - Take into account LOAD info for bin allocation ??
 * r_anal

@@ -449,14 +449,28 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		//r_core_cmd(core, "s eip", 0);
 		break;
 	case 's':
-		r_core_cmd (core, "ds", 0);
-		r_core_cmd (core, ".dr*", 0);
-		//r_core_cmd(core, "s eip", 0);
+		if (curset) {
+			// dcu 0xaddr
+			char xxx[128];
+			snprintf (xxx, sizeof (xxx), "dcu 0x%08"PFMT64x, core->offset + cursor);
+			r_core_cmd (core, xxx, 0);
+			curset = 0;
+		} else {
+			r_core_cmd (core, "ds", 0);
+			r_core_cmd (core, ".dr*", 0);
+			//r_core_cmd(core, "s eip", 0);
+		}
 		break;
 	case 'S':
-		r_core_cmd (core, "dso", 0);
-		r_core_cmd (core, ".dr*", 0);
-		//r_core_cmd(core, "s eip", 0);
+		if (curset) {
+			// dcr
+			r_core_cmd (core, "dcr", 0);
+			curset = 0;
+		} else {
+			r_core_cmd (core, "dso", 0);
+			r_core_cmd (core, ".dr*", 0);
+			//r_core_cmd(core, "s eip", 0);
+		}
 		break;
 	case 'p':
 		core->printidx = R_ABS ((core->printidx+1)%NPF);
