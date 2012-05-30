@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
 
 /* TODO:
  * Use -v to show version information.. not -V .. like the rest of tools
@@ -373,8 +373,11 @@ int main(int argc, char **argv) {
 		case 'O':
 			op = optarg;
 			action |= ACTION_OPERATION;
-			if (optind==argc)
-				return rabin_do_operation (op);
+			if (optind==argc) {
+				eprintf ("Missing filename\n");
+				return 1;
+			}
+			//	return rabin_do_operation (op);
 			break;
 		case 'o':
 			output = optarg;
