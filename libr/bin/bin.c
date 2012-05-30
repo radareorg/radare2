@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org>, nibble<.ds@gmail.com> */
 
 /* TODO:
  * dlopen library and show address
@@ -29,6 +29,8 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	for (i = from; i < to; i++) { 
 		if ((IS_PRINTABLE (arch->buf->buf[i])) && matches < R_BIN_SIZEOF_STRINGS-1) {
 			str[matches] = arch->buf->buf[i];
+			if (arch->buf->buf[i+1]==0 && IS_PRINTABLE (arch->buf->buf[i+2]))
+				i++;
 			matches++;
 			continue;
 		}
@@ -61,7 +63,9 @@ static int is_data_section(RBinArch *a, RBinSection *s) {
 		return 1;
 	if (strstr (a->info->bclass, "ELF") && strstr (s->name, "data")) // LINUX
 		return 1;
-	if (strstr (a->info->bclass, "PE"))
+#define X 1
+#define ROW (4|2)
+	if (strstr (a->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) )
 		return 1;
 	return 0;
 }

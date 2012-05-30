@@ -196,7 +196,7 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *block = malloc (b->size+1);
 				if (block) {
 					r_core_read_at (core, b->addr, block, b->size);
-					core->num->value = r_core_print_disasm (core->print, core, b->addr, block, b->size, 9999);
+					core->num->value = r_core_print_disasm (core->print, core, b->addr, block, b->size, 9999, 0);
 					free (block);
 					return 0;
 				}
@@ -210,7 +210,7 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *block = malloc (f->size+1);
 				if (block) {
 					r_core_read_at (core, f->addr, block, f->size);
-					core->num->value = r_core_print_disasm (core->print, core, f->addr, block, f->size, 9999);
+					core->num->value = r_core_print_disasm (core->print, core, f->addr, block, f->size, 9999, 0);
 					free (block);
 					return 0;
 				}
@@ -255,7 +255,7 @@ return 0;
 					r_list_foreach (bwdhits, iter, hit) {
 						r_core_read_at (core, hit->addr, block, core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
-							core, hit->addr, block, core->blocksize, l);
+							core, hit->addr, block, core->blocksize, l, 1);
 						r_cons_printf ("------\n");
 					}
 					r_list_free (bwdhits);
@@ -263,7 +263,9 @@ return 0;
 				free (block);
 			}
 		} else {
-			core->num->value = r_core_print_disasm (core->print, core, core->offset, core->block, len, l);
+			core->num->value = r_core_print_disasm (
+				core->print, core, core->offset,
+				core->block, len, l, (*input=='d'));
 		}
 		break;
 	case 's':

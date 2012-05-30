@@ -31,7 +31,8 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 	} else r_cons_printf ("0x%08"PFMT64x"  ", off);
 }
 
-R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l) {
+// int l is for lines
+R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak) {
 	RAnalCC cc = {0};
 	RAnalFcn *f = NULL;
 	int ret, idx, i, j, k, lines, ostackptr = 0, stackptr = 0;
@@ -206,7 +207,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			lastfail = 1;
 			strcpy (asmop.buf_asm, "invalid");
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
-			//continue;
+			if (invbreak) break;
 		} else lastfail = 0;
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);

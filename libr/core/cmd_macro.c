@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
 
 static int cmd_macro(void *data, const char *input) {
-	char *p, *buf = NULL;
+	char *buf = NULL;
 	RCore *core = (RCore*)data;
 
 	switch (*input) {
@@ -35,7 +35,7 @@ static int cmd_macro(void *data, const char *input) {
 		break;
 	default: {
 		// XXX: stop at first ')'. if next is '(' and last
-		int lastiscp = input[strlen (input)-1] == ')';
+		//int lastiscp = input[strlen (input)-1] == ')';
 		int mustcall =0;
 		int i, j = 0;
 		buf = strdup (input);

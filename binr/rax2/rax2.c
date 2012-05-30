@@ -193,9 +193,11 @@ static int rax (char *str, int len, int last) {
 	return R_TRUE;
 }
 
+static char buf[254096]; // TODO: remove this limit
+
 static int use_stdin () {
-	char buf[4096]; // TODO: remove this limit
 	while (!feof (stdin)) {
+		//int n = fread (buf, 1, sizeof (buf)-1, stdin);
 		int n = read (0, buf, sizeof (buf));
 		if (n<1) break;
 		buf[n] = 0;
@@ -203,8 +205,7 @@ static int use_stdin () {
 		if (feof (stdin)) break;
 		if ((flags & 4) && strlen (buf) < sizeof (buf)) // -S
 			buf[strlen (buf)] = '\0';
-		else
-			buf[strlen (buf)-1] = '\0';
+		else buf[strlen (buf)-1] = '\0';
 		if (!rax (buf, n, 0)) break;
 	}
 	return 0;
