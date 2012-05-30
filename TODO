@@ -9,6 +9,7 @@
 
 MAXPRIO
 -------
+* rep+ret instruction (f3c3) should be identified as RET
 * add visual key to continue until cursor ('s' dcu config.seek+cursor)
 * continue until ret ('S'
 * implement bitmask search /x 414243:ff00ff

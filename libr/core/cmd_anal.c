@@ -161,6 +161,7 @@ static int cmd_anal(void *data, const char *input) {
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 
+#if 0
 	if (input[0] && input[1]) {
 		l = (int) r_num_get (core->num, input+2);
 		if (l>0) len = l;
@@ -169,6 +170,7 @@ static int cmd_anal(void *data, const char *input) {
 			len = l;
 		}
 	}
+#endif
 
 	r_cons_break (NULL, NULL);
 

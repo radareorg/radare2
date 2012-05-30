@@ -20,6 +20,7 @@ show bytes in disassembly	e asm.bytes=1
 show debugger register values	dr;?ik
 show process memory maps	dm;?ik
 step instruction	sr pc;pd 1;ds;?ik
+step over call	sr pc;pd 1;dso;?ik
 write string	?i string;w `?y`
 write hexadecimal data in current offset	?i hexpairs;wx `?y`
 xor current block with hexpair key	?i hexpair key;wox `?y`

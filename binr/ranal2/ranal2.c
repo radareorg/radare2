@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
 				if (0==(++word%2))tlen++;
 			ptr += 1;
 		}
-		data = malloc (tlen);
+		data = malloc (tlen+1);
 		if (!data) {
 			r_anal_free (anal);
 			r_anal_op_free (op);
