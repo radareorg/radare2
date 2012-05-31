@@ -160,12 +160,13 @@ char *treplace(char *data,char *search,char *replace){
 	line   = memReserve(INPUTLINE_BUFFER_REPLACE_SIZE);
 	
 	p=data;
-	while(sscanf(p,"%[^\n]",line->address)==1){
+	while (sscanf(p,"%[^\n]",line->address)==1){
 		if(p-data>strlen(data)) break;
 		newline=mreplace(line->address,search,replace);
 
 		memStrCat(result,newline);
-		if(*(p+strlen(line->address))) memStrCat(result,"\n");else break;
+		if (line->address && *(p+strlen(line->address))) memStrCat(result,"\n");
+		else break;
 
 		p+=strlen(line->address)+1;
 	}

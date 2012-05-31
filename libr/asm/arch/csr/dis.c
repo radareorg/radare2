@@ -365,13 +365,13 @@ static int decode_known(struct state *s, struct directive *d) {
 		reg = 1;
 	}
 
-	sprintf(d->d_asm, "%s ", op);
+	sprintf (d->d_asm, "%s ", op);
 	if (reg) {
 		char *r = regn;
 		if (!r) r = regname(in->in_reg);
-		if (!rti) {
-			strcat(d->d_asm, r);
-			strcat(d->d_asm, ", ");
+		if (r && !rti) {
+			strcat (d->d_asm, r);
+			strcat (d->d_asm, ", ");
 		}
 	}
 	if (ptr) {

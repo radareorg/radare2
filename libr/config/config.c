@@ -1,10 +1,14 @@
-/* radare - LGPL - Copyright 2006-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2006-2012 pancake<nopcode.org> */
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
 
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
-	RConfigNode *node = R_NEW (RConfigNode);
+	RConfigNode *node;
+	if (!name || !*name)
+		return NULL;
+	node = R_NEW (RConfigNode);
+	if (!node) return NULL;
 	node->name = strdup (name);
 	node->desc = NULL;
 	node->hash = r_str_hash (name);

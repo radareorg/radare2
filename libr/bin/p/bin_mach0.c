@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<@nopcode.org> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -86,7 +86,7 @@ static RList* symbols(RBinArch *arch) {
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
 		if (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)
-			strncat (ptr->type, "_LOCAL", R_BIN_SIZEOF_STRINGS);
+			strncat (ptr->type, "_LOCAL", sizeof (ptr->type)-strlen (ptr->type)-1);
 		ptr->rva = symbols[i].addr;
 		ptr->offset = symbols[i].offset;
 		ptr->size = symbols[i].size;

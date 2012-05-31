@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 pancake<@nopcode.org> */
 
 #include <r_egg.h>
 
@@ -96,7 +96,7 @@ static char *find_include(const char *prefix, const char *file) {
 	char *pfx, *ret, *env = r_sys_getenv (R_EGG_INCDIR_ENV);
 	//eprintf ("find_include (%s,%s)\n", prefix, file);
 	if (!prefix) prefix = "";
-	else if (*prefix=='$') {
+	if (*prefix=='$') {
 		char *out = r_sys_getenv (prefix+1);
 		pfx = out? out: strdup ("");
 	} else {
@@ -109,9 +109,8 @@ static char *find_include(const char *prefix, const char *file) {
 	//	eprintf ("MUST FIND IN PATH (%s)\n", env);
 		str = env;
 		while (str) {
-			if (ptr) {
+			if (ptr)
 				*ptr = 0;
-			}
 			ret = r_str_concatf (NULL, "%s/%s", pfx, file);
 			{
 				char *filepath = r_str_concatf (NULL, "%s/%s/%s", str, pfx, file);

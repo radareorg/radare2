@@ -70,7 +70,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 	tokens[0] = NULL;
-	for (tokcount=0; tokcount<1023; tokcount++) {
+	for (tokcount=0; tokcount<sizeof (tokens); tokcount++) {
 		tok = strtok (tokcount? NULL: ptr, ",");
 		if (tok == NULL)
 			break;
@@ -86,8 +86,8 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		idx = 0, matchcount = 0;
 		while (idx<core->blocksize) {
 			r_asm_set_pc (core->assembler, at+idx);
-op.buf_asm[0] = 0;
-op.buf_hex[0] = 0;
+			op.buf_asm[0] = 0;
+			op.buf_hex[0] = 0;
 			if (!(len = r_asm_disassemble (core->assembler, &op, buf+idx, core->blocksize-idx))) {
 				if (matchcount != 0)
 					idx = tidx+1;
@@ -95,7 +95,7 @@ op.buf_hex[0] = 0;
 				matchcount = 0;
 				continue;
 			}
-			if (strstr (op.buf_asm, tokens[matchcount])) {
+			if (tokens[matchcount] && strstr (op.buf_asm, tokens[matchcount])) {
 				code = r_str_concatf (code, "%s", op.buf_asm);
 				if (matchcount == tokcount-1) {
 					if (tokcount == 1)
@@ -127,9 +127,7 @@ op.buf_hex[0] = 0;
 					idx += len;
 				}
 			} else {
-				if (matchcount != 0)
-					idx = tidx+1;
-				else idx++;
+				idx = matchcount? tidx+1: idx+1;
 				R_FREE (code);
 				matchcount = 0;
 			}

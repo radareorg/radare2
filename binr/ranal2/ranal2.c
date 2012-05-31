@@ -169,13 +169,14 @@ int main(int argc, char **argv) {
 		if (!(buf = (ut8 *)strdup (argv[optind])))
 			return 1;
 	}
-	if (bin)
+	if (bin) {
 		data = (ut8*)buf;
-	else {
+	} else {
 		ptr = buf, word = tlen = 0;
 		while (ptr[0]) {
-			if (ptr[0]!= ' ' && ptr[0]!= '\n' && ptr[0]!= '\r')
-				if (0==(++word%2))tlen++;
+			int p = *ptr;
+			if (p!= ' ' && p!= '\n' && p!= '\r')
+				if (0==(++word%2)) tlen++;
 			ptr += 1;
 		}
 		data = malloc (tlen+1);

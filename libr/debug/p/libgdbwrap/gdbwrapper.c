@@ -302,19 +302,19 @@ static void gdbwrap_populate_reg(gdbwrap_t *desc, char *packet) {
 	{
 		nextupacket = gdbwrap_extract_from_packet(nextpacket, packetcolon, NULL,
 				GDBWRAP_SEP_COLON, sizeof(packetcolon));
-		ASSERT(nextupacket != NULL);
-		if (strlen(nextupacket) == 2) {
-			uint8_t regnumber = gdbwrap_atoh(nextupacket, strlen(nextupacket));
+		if (nextpacket == NULL) return;
+		if (strlen (nextupacket) == 2) {
 			ureg32  regvalue;
+			uint8_t regnumber = gdbwrap_atoh(nextupacket, strlen(nextupacket));
 
-			nextupacket = gdbwrap_extract_from_packet(nextpacket, packetcolon,
+			nextupacket = gdbwrap_extract_from_packet (nextpacket, packetcolon,
 					GDBWRAP_SEP_COLON, NULL,
-					sizeof(packetcolon));
-			ASSERT(nextupacket != NULL);
+					sizeof (packetcolon));
+			if (!nextupacket) break;
 			//TODO Size-dependent atoh
-			regvalue = gdbwrap_atoh(nextupacket, strlen(nextupacket));
-			regvalue = gdbwrap_little_endian(regvalue);
-			gdbwrap_setreg(desc,regnumber, regvalue);
+			regvalue = gdbwrap_atoh (nextupacket, strlen (nextupacket));
+			regvalue = gdbwrap_little_endian (regvalue);
+			gdbwrap_setreg (desc,regnumber, regvalue);
 			//*(ut32 *)(desc->regs + desc->reg_size*regnumber) =  regvalue;
 		}
 		/* We add 1 in order not to take the right limit. In the worst

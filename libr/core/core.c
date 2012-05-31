@@ -614,7 +614,7 @@ reaccept:
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
 				ptr = malloc (cmd);
-				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX) {
+				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX) 
 				if (ptr == NULL) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
@@ -851,6 +851,7 @@ reaccept:
 				r_socket_flush (c);
 				eprintf ("REPLY SENT (%d) (%s)\n", i, ptr+5);
 				free (ptr);
+				ptr = NULL;
 				break;
 			default:
 				eprintf ("unknown command 0x%02x\n", cmd);

@@ -2017,33 +2017,41 @@ static RList *r_debug_desc_native_list (int pid) {
 	}
 	free (buf);
 #elif __linux__
-	RDebugDesc *desc;
-	int type, perm;
 	char path[512], file[512], buf[512];
 	struct dirent *de;
-	DIR *dd;
+	RDebugDesc *desc;
+	int type, perm;
 	struct stat st;
+	DIR *dd;
 
 	snprintf (path, sizeof (path), "/proc/%i/fd/", pid);
-	dd = opendir(path);
-	if (dd==NULL) {
-		printf("Cannot open /proc\n");
+	if (!(dd = opendir (path))) {
+		eprintf ("Cannot open /proc\n");
 		return NULL;
 	}
 
-	ret = r_list_new ();
-	if (ret) {
+	if ((ret = r_list_new ())) {
 		ret->free = (RListFree) r_debug_desc_free;
-		while((de = (struct dirent *)readdir(dd))) {
+		while ((de = (struct dirent *)readdir(dd))) {
 			if (de->d_name[0]=='.')
 				continue;
-			strncpy (file, path, sizeof (file)-1);
-			strncat (file, de->d_name, sizeof (file)-1);
+
+			len = strlen (path);
+			len2 = strlen (de->d_name);
+			if (len+len2+1 >= sizeof (file)) {
+				r_list_free (ret);
+				closedir (dd);
+				eprintf ("Filename is too long");
+				return NULL;
+			}
+			memcpy (file, path, len);
+			memcpy (file+len, de->d_name, len2+1);
+
 			memset (buf, 0, sizeof (buf));
-			readlink(file, buf, sizeof (buf));
+			readlink (file, buf, sizeof (buf));
 			type = perm = 0;
-			if (stat(file, &st) != -1) {
-				type = st.st_mode & S_IFIFO  ? 'P':
+			if (stat (file, &st) != -1) {
+				type  = st.st_mode & S_IFIFO  ? 'P':
 					st.st_mode & S_IFSOCK ? 'S':
 					st.st_mode & S_IFCHR  ? 'C':'-';
 			}

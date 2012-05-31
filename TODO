@@ -10,14 +10,11 @@
 MAXPRIO
 -------
 * rep+ret instruction (f3c3) should be identified as RET
-* add visual key to continue until cursor ('s' dcu config.seek+cursor)
-* continue until ret ('S'
-* implement bitmask search /x 414243:ff00ff
 * p7 : 7bit encoding (sms)
   - variant for stego print? LSB, MSB, ...
 * Make r_io happy with RList
-* Embed Luvit?
 * add support for sockets in rarun2
+* if no debugger supported, say so... r_io must ?
 * valabind must support luvit and nodejs (-ffi)
 * check search multiple keywords and signatures
 * Fix iterators for r_macro (test only?)
@@ -44,6 +41,7 @@ BUGS:
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 
 ===[ 0.9.2 ]===
+* Embed Luvit?
 * Add support for classes (useful for c++, dex, objc, ...)
   - command to add new classes
 * show analized functions in 'aa'

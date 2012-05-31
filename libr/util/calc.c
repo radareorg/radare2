@@ -37,7 +37,11 @@ static inline NumValue Nsubi(NumValue n, ut64 v) { n.d -= (double)v; n.n -= v; r
 static inline NumValue Nadd(NumValue n, NumValue v) { n.d += v.d; n.n += v.n; return n; }
 static inline NumValue Nsub(NumValue n, NumValue v) { n.d -= v.d; n.n -= v.n; return n; }
 static inline NumValue Nmul(NumValue n, NumValue v) { n.d *= v.d; n.n *= v.n; return n; }
-static inline NumValue Ndiv(NumValue n, NumValue v) { n.d /= v.d; n.n /= v.n; return n; }
+static inline NumValue Ndiv(NumValue n, NumValue v) {
+	if (v.d) n.d /= v.d; else n.d = 0;
+	if (v.n) n.n /= v.n; else n.n = 0;
+	return n;
+}
 
 static NumValue expr(int);
 static NumValue term(int);

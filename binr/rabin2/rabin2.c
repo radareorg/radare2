@@ -318,6 +318,10 @@ int main(int argc, char **argv) {
 			if (optarg) arch = strdup (optarg);
 			break;
 		case 'c':
+			if (!optarg) {
+				eprintf ("Missing argument for -c");
+				return 1;
+			}
 			action = ACTION_CREATE;
 			create = strdup (optarg);
 			break;
