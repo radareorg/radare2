@@ -2021,6 +2021,7 @@ static RList *r_debug_desc_native_list (int pid) {
 	struct dirent *de;
 	RDebugDesc *desc;
 	int type, perm;
+	int len, len2;
 	struct stat st;
 	DIR *dd;
 
