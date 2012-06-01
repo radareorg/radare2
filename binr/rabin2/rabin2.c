@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
+#include <getopt.c>
 
 #include <r_core.h>
 

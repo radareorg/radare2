@@ -7,7 +7,7 @@ Install NDK in archlinux x86-64
 To build r2 for android you need to install the NDK:
 
   sys/android-shell.sh
-  ./configure --with-compiler=android --with-ostype=android --without-ssl --prefix=/data/radare2 --without-pic --with-nonpic
+  ./configure --with-compiler=android --with-ostype=android --without-ssl --prefix=/data/radare2 --without-pic --with-nonpic --without-gmp
   make -j 4
 
 To compile for android-x86

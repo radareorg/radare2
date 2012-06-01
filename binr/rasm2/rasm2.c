@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
-
+#include <getopt.c> /* getopt.h is not portable :D */
 #include <r_types.h>
 #include <r_asm.h>
 #include <r_util.h>

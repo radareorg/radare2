@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -9,7 +9,7 @@
 #define __UNIX__ 0
 #endif
 
-#if __UNIX__
+#if __UNIX__ && !defined (__QNX__)
 #include <sys/ipc.h>
 #include <sys/shm.h>
 

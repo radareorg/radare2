@@ -87,6 +87,13 @@ EXT_SO=dll
 EXT_EXE=.exe
 TH_LIBS=
 endif
+ifeq (${OSTYPE},qnx)
+CFLAGS+=-D__UNIX__=1
+EXT_AR=a
+EXT_SO=so
+EXT_EXE=
+TH_LIBS=
+endif
 ifeq (${OSTYPE},gnulinux)
 CFLAGS+=-D__UNIX__=1
 EXT_AR=a

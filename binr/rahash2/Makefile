@@ -6,3 +6,6 @@ include ../binr.mk
 ifeq ($(OSTYPE),android)
 LDFLAGS+=-lm
 endif
+ifeq ($(OSTYPE),qnx)
+LDFLAGS+=-lsocket
+endif

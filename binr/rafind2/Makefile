@@ -3,3 +3,7 @@ BINDEPS=r_search r_io r_print r_lib r_asm r_anal r_reg r_cons r_util r_syscall r
 BINDEPS+=r_socket r_db r_parse
 
 include ../binr.mk
+
+ifeq ($(OSTYPE),qnx)
+LDFLAGS+=-lsocket
+endif

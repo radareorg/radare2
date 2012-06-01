@@ -878,7 +878,7 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 
 // TODO: if unix.. move to .h? static inline
 R_API const char *r_str_casestr(const char *a, const char *b) {
-#if __WINDOWS__
+#if __WINDOWS__ || defined(__QNX__)
 	size_t hay_len = strlen(a);
 	size_t needle_len = strlen(b);
 	while (hay_len >= needle_len) {

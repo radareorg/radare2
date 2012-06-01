@@ -5,7 +5,7 @@
 #include <r_core.h>
 #include <r_io.h>
 #include <stdio.h>
-#include <getopt.h>
+#include <getopt.c>
 
 #if USE_THREADS
 #include <r_th.h>

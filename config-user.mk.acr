@@ -35,6 +35,9 @@ HOST_OS=@HOST_OS@
 ifneq ($(OSTYPE),darwin)
 DL_LIBS=@DL_LIBS@
 endif
+ifneq ($(OSTYPE),qnx)
+DL_LIBS=
+endif
 WITHPIC=@WITHPIC@
 WITHNONPIC=@WITHNONPIC@
 

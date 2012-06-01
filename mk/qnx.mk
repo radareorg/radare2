@@ -1,0 +1,17 @@
+CC=arm-unknown-nto-qnx6.5.0eabi-gcc
+RANLIB=arm-unknown-nto-qnx6.5.0eabi-ranlib
+ONELIB=0
+OSTYPE=qnx
+LINK=
+CC_AR=arm-unknown-nto-qnx6.5.0eabi-ar -r ${LIBAR}
+PICFLAGS=
+CFLAGS+=${PICFLAGS}
+CC_LIB=${CC} -shared -o
+CFLAGS_INCLUDE=-I
+LDFLAGS_LINK=-l
+LDFLAGS_LINKPATH=-L
+CFLAGS_OPT0=-O0
+CFLAGS_OPT1=-O1
+CFLAGS_OPT2=-O2
+CFLAGS_OPT3=-O3
+CFLAGS_DEBUG=-g

@@ -8,6 +8,7 @@
 
 // x86 32/64bit GPI|FPU|MMX|3DN|SSE|SSE2|SSE3
 
+# include <r_types.h>
 #if __WINDOWS__
 # include <windows.h>
 #elif __UNIX__

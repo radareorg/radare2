@@ -14,7 +14,7 @@
 #define __KFBSD__ 0
 #endif
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
@@ -209,7 +209,9 @@ enum {
 };
 
 /* os */
-#if defined (__APPLE__)
+#if defined (__QNX__)
+#define R_SYS_OS "qnx"
+#elif defined (__APPLE__)
 #define R_SYS_OS "darwin"
 #elif defined (__linux__)
 #define R_SYS_OS "linux"

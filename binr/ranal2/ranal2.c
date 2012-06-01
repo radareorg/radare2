@@ -2,7 +2,7 @@
 #include <r_anal.h>
 #include <r_lib.h>
 #include <r_util.h>
-#include <getopt.h>
+#include <getopt.c>
 
 /* anal callback */
 static int __lib_anal_cb(struct r_lib_plugin_t *pl, void *user, void *data) {

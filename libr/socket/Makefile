@@ -16,6 +16,9 @@ endif
 ifeq (${OSTYPE},solaris)
 LDFLAGS+=-lsocket
 endif
+ifeq (${OSTYPE},qnx)
+LDFLAGS+=-lsocket
+endif
 # windows
 ifeq (${OSTYPE},windows)
 LDFLAGS=-lwsock32

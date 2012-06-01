@@ -1490,11 +1490,11 @@ struct nlist {
 #ifndef __LP64__
 		char *n_name;	/* for use when in-core */
 #endif
-		int32_t n_strx;	/* index into the string table */
+		st32 n_strx;	/* index into the string table */
 	} n_un;
 	ut8 n_type;		/* type flag, see below */
 	ut8 n_sect;		/* section number or NO_SECT */
-	int16_t n_desc;		/* see <mach-o/stab.h> */
+	st16 n_desc;		/* see <mach-o/stab.h> */
 	ut32 n_value;	/* value of this symbol (or stab offset) */
 };
 

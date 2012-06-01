@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <getopt.h>
+//#include <getopt.h>
 #include <stdarg.h>
 #include "javasm.h"
 #if __UNIX__

@@ -9,3 +9,7 @@ include ../binr.mk
 ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm
 endif
+
+ifeq ($(OSTYPE),qnx)
+LDFLAGS+=-lsocket
+endif

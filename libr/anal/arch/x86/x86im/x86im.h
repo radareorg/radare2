@@ -10,13 +10,13 @@
 #define __X86IM_H__
 
 #if __UNIX__
-# define __stdcall
 # define WORD unsigned short
 # define DWORD unsigned int
 # define BOOL int
 # define TRUE 1
 # define FALSE 0
 #endif
+# define __stdcall
 # define __inout
 # define __in
 # define __out
