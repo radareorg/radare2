@@ -3,7 +3,7 @@
 // TODO: Use nested classes instead of this wide class layout
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_t", free_function="r_fs_free", cprefix="r_fs_")]
+	[CCode (cheader_filename="r_fs.h", cname="RFS", free_function="r_fs_free", cprefix="r_fs_")]
 	public class RFS {
 		public RFS();
 		public unowned RFSRoot? mount (string fstype, string path, uint64 delta);
@@ -26,7 +26,7 @@ namespace Radare {
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_file_t", free_function="r_fs_file_free", cprefix="r_fs_file_")]
+	[CCode (cheader_filename="r_fs.h", cname="RFSFile", free_function="r_fs_file_free", cprefix="r_fs_file_")]
 	public class RFSFile {
 		public string name;
 		public string path;
@@ -42,14 +42,14 @@ namespace Radare {
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_plugin_t", free_function="r_fs_plugin_free", cprefix="r_fs_plugin_", unref_function="", free_function="")]
+	[CCode (cheader_filename="r_fs.h", cname="RFSPlugin", free_function="r_fs_plugin_free", cprefix="r_fs_plugin_", unref_function="", free_function="")]
 	public class RFSPlugin {
 		public string name;
 		public string desc;
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_root_t", free_function="r_fs_root_free", cprefix="r_fs_root_")]
+	[CCode (cheader_filename="r_fs.h", cname="RFSRoot", free_function="r_fs_root_free", cprefix="r_fs_root_")]
 	public class RFSRoot {
 		public string path;
 		public uint64 delta;
@@ -58,7 +58,7 @@ namespace Radare {
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_fs.h", cname="struct r_fs_partition_t", free_function="r_fs_partition_free", cprefix="r_fs_partition_")]
+	[CCode (cheader_filename="r_fs.h", cname="RFSPartition", free_function="r_fs_partition_free", cprefix="r_fs_partition_")]
 	public class RFSPartition {
 		public int number;
 		public uint64 start;

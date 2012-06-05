@@ -483,3 +483,9 @@ R_API RAnalFcn *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
 			return fcni;
 	return NULL;
 }
+
+/* getters */
+R_API RList* r_anal_fcn_get_refs (RAnalFcn *anal) { return anal->refs; }
+R_API RList* r_anal_fcn_get_xrefs (RAnalFcn *anal) { return anal->xrefs; }
+R_API RList* r_anal_fcn_get_vars (RAnalFcn *anal) { return anal->vars; }
+R_API RList* r_anal_fcn_get_bbs (RAnalFcn *anal) { return anal->bbs; }

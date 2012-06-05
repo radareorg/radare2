@@ -3,14 +3,14 @@
 namespace Radare {
 	// HACK
 	[Compact]
-	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_struct_", cname="struct r_lib_struct_t", free_function="", destroy_function="")]
+	[CCode (cheader_filename="r_lib.h", cprefix="r_cmd_struct_", cname="RCmdStruct", free_function="", destroy_function="")]
 	public struct RCmdStruct {
 		public RLibType type;
 		public RCmdPlugin *data;
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_cmd.h", cprefix="r_cmd_macro_", cname="struct r_cmd_macro_t", free_function="")]
+	[CCode (cheader_filename="r_cmd.h", cprefix="r_cmd_macro_", cname="RCmdMacro", free_function="")]
 	public class RCmdMacro {
 		int counter;
 		uint64 *brk_value;

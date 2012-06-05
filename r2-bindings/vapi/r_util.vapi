@@ -155,7 +155,7 @@ public class RListIter<G> {
 }
 
 [Compact]
-[CCode (cheader_filename="r_util.h", cname="struct r_range_t", free_function="r_range_free", cprefix="r_range_")]
+[CCode (cheader_filename="r_util.h", cname="RRange", free_function="r_range_free", cprefix="r_range_")]
 public class Radare.RRange {
 	/* lifecycle */
 	public RRange();
@@ -176,7 +176,7 @@ public class Radare.RRange {
 	public RRange *inverse(uint64 fr, uint64 to, int flags);
 
 	[Compact]
-	[CCode (cname="struct r_range_item_t", cprefix="r_range_item_")]
+	[CCode (cname="RangeItem", cprefix="r_range_item_")]
 	public struct Item {
 		public uint64 fr;
 		public uint64 to;

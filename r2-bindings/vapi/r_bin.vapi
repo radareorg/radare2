@@ -2,7 +2,7 @@
 
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_bin.h,r_list.h,r_types_base.h", cname="struct r_bin_t", free_function="r_bin_free", cprefix="r_bin_")]
+	[CCode (cheader_filename="r_bin.h,r_list.h,r_types_base.h", cname="RBin", free_function="r_bin_free", cprefix="r_bin_")]
 	public class RBin {
 		[CCode (cprefix="R_BIN_SYM_")]
 		public enum Sym {

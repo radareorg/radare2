@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2010 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 pancake<@nopcode.org> */
 
 [Compact]
-[CCode (cheader_filename="r_print.h", cprefix="r_print_", cname="struct r_print_t", free_function="r_print_free")]
+[CCode (cheader_filename="r_print.h", cprefix="r_print_", cname="RPrint", free_function="r_print_free")]
 public class Radare.RPrint {
 	/* constructor */
 	public RPrint();

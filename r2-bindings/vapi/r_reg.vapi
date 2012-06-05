@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
 
 [Compact]
-[CCode (cheader_filename="r_reg.h,r_list.h,r_types_base.h", cname="struct r_reg_t", free_function="r_reg_free", cprefix="r_reg_")]
+[CCode (cheader_filename="r_reg.h,r_list.h,r_types_base.h", cname="RReg", free_function="r_reg_free", cprefix="r_reg_")]
 public class Radare.RReg {
 	[CCode (cprefix="R_REG_TYPE_", cname="int")]
 	public enum Type {
@@ -27,14 +27,14 @@ public class Radare.RReg {
 	}
 
 	[Compact]
-	[CCode (cname="struct r_reg_arena_t", destroy_function="", free_function="" )]
+	[CCode (cname="RRegArena", destroy_function="", free_function="" )]
 	public class Arena {
 		public uint8* bytes;
 		public int size;
 	}
 	
 	[Compact]
-	[CCode (cname="struct r_reg_set_t", destroy_function="", free_function="" )]
+	[CCode (cname="RRegSet", destroy_function="", free_function="" )]
 	public class Set {
 		public RReg.Arena arena;
 		//public RList<RReg.Arena*> arenas;

@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 [Compact]
-[CCode (cheader_filename="r_debug.h", cname="struct r_debug_t", free_function="r_debug_free", cprefix="r_debug_")]
+[CCode (cheader_filename="r_debug.h", cname="RDebug", free_function="r_debug_free", cprefix="r_debug_")]
 public class Radare.RDebug {
 	public RBreakpoint bp;
 	public RDebug(int hard);
@@ -158,7 +158,6 @@ public class Radare.RDebug {
 		int times;
 		uint64 stamp;
 	}
-
 
 	public int steps;
 	public int pid;

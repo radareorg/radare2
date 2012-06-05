@@ -178,3 +178,5 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 		}
 	}
 }
+
+R_API RList* r_anal_get_fcns (RAnal *anal) { return anal->fcns; }

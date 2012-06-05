@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 [CCode (cheader_filename="r_cons.h", cprefix="r_cons", lower_case_cprefix="r_cons_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_cons_t", free_function="", cprefix="r_cons_")]
+	[CCode (cname="RCons", free_function="", cprefix="r_cons_")]
 	/* XXX: LEAK */
 	public class RCons {
 //		public RCons ();

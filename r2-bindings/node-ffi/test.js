@@ -1,5 +1,5 @@
-const r2 = require ("r2/r_asm");
-const print = console.log;
+const r2 = require ("./r_asm");
+const p = console.log;
 
 /* using the api */
 function Assembler (arch, bits) {
@@ -21,8 +21,8 @@ function Assembler (arch, bits) {
 }
 
 var asm = new Assembler ("x86", 32);
-print (asm.assemble ("int 0x80;mov eax,33;ret"));
-print (asm.disassemble ("909090"));
+p (asm.assemble ("int 0x80;mov eax,33;ret"));
+p (asm.disassemble ("909090"));
 asm.delete ();
 
 process.exit (0);

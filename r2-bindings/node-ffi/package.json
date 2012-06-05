@@ -1,0 +1,14 @@
+{ "name": "radare2.js",
+  "version": "0.0.1",
+  "url": "http://www.radare.org",
+  "description": "automatic radare2 bindings for nodejs",
+  "dependencies": {
+    "node-ffi": "0.5"
+  },
+  "keywords": [
+    "reversing",
+    "disassembler",
+    "hexadecimal",
+    "editor"
+  ]
+}

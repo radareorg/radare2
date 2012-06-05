@@ -1,7 +1,7 @@
 [CCode (cheader_filename="r_config.h", cprefix="r_", lower_case_cprefix="r_")]
 namespace Radare {
 	[Compact]
-	[CCode (cprefix="r_config_", cname="struct r_config_t", free_function="r_config_free")]
+	[CCode (cprefix="r_config_", cname="RConfig", free_function="r_config_free")]
 	public class RConfig {
 		//TODO: public void setup_file(string file);
 		public bool lock;

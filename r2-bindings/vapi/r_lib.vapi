@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_", cname="struct r_lib_t", free_function="r_lib_free")]
+	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_", cname="RLib", free_function="r_lib_free")]
 	public class RLib {
 		public RLib (string symname);
 		public bool close(string file);
@@ -22,7 +22,7 @@ namespace Radare {
 		public Plugin get_handler(int type);
 		//public struct Struct { }
 		[Compact]
-		[CCode (cname="struct r_lib_handler_t*")]
+		[CCode (cname="RLibHandler")]
 		public struct Plugin {
 			int type;
 			string desc;
@@ -33,7 +33,7 @@ namespace Radare {
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_struct_", cname="struct r_lib_struct_t", free_function="r_lib_free")]
+	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_struct_", cname="RLib", free_function="r_lib_free")]
 	public struct RLibStruct {
 		public RLibType foo;
 		public void *data;

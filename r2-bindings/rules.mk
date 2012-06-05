@@ -14,7 +14,7 @@ w32:
 	${MAKE} CC=i486-mingw32-gcc CXX=i486-mingw32-g++ \
 
 ifeq ($(DEVEL_MODE),1)
-%.${SOEXT}:
+%.${SOEXT}: ../vapi/%.vapi
 ifeq (${LANG},cxx)
 	mod=`echo $@ | sed -e s,.${SOEXT},,` ; \
 	echo "MOD=$$mod" ; \
@@ -40,7 +40,15 @@ install:
 	cd .. ; ${MAKE} install-${LANG}
 
 clean:
+ifneq ($(SAVED),)
+	mkdir -p .skip
+	cp $(SAVED) .skip
+endif
 	rm -f *.${SOEXT} r_*
+ifneq ($(SAVED),)
+	cd .skip ; cp * ..
+	rm -rf .skip
+endif
 else
 %.${SOEXT}:
 	@VAPI=`echo $@|sed -e s,.${SOEXT},.vapi,` ; \

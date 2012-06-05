@@ -423,7 +423,6 @@ R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
 R_API RAnalFcn *r_anal_get_fcn_at(RAnal *anal, ut64 addr);
-#define r_anal_get_fcns(x) x->fcns
 
 /* bb.c */
 R_API RAnalBlock *r_anal_bb_new();
@@ -461,10 +460,18 @@ R_API int r_anal_fcn_overlap_bb(RAnalFcn *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFcn *fs, int num, int dir);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFcn* fs);
 R_API int r_anal_fcn_from_string(RAnal *a, RAnalFcn *f, const char *_str);
+
+#if 0
 #define r_anal_fcn_get_refs(x) x->refs
 #define r_anal_fcn_get_xrefs(x) x->xrefs
 #define r_anal_fcn_get_vars(x) x->vars
 #define r_anal_fcn_get_bbs(x) x->bbs
+#else
+R_API RList* r_anal_fcn_get_refs (RAnalFcn *anal);
+R_API RList* r_anal_fcn_get_xrefs (RAnalFcn *anal);
+R_API RList* r_anal_fcn_get_vars (RAnalFcn *anal);
+R_API RList* r_anal_fcn_get_bbs (RAnalFcn *anal);
+#endif
 
 /* ref.c */
 R_API RAnalRef *r_anal_ref_new();

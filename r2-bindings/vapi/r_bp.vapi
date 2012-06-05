@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
 
 [Compact]
-[CCode (cheader_filename="r_bp.h,r_types_base.h,r_list.h", cname="struct r_bp_t", free_function="r_bp_free", cprefix="r_bp_")]
+[CCode (cheader_filename="r_bp.h,r_types_base.h,r_list.h", cname="RBreakpoint", free_function="r_bp_free", cprefix="r_bp_")]
 public class Radare.RBreakpoint {
 	public RBreakpoint ();
 	public RList<RBreakpoint.Item> bps;

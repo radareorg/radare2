@@ -17,7 +17,7 @@ namespace Radare {
 		public bool prompt();
 
 		[Compact]
-		[CCode (cname="struct r_lang_plugin_t", destroy_function="", free_function="" )]
+		[CCode (cname="RLangPlugin", destroy_function="", free_function="" )]
 		public class Plugin {
 			public string name;
 			public string desc;

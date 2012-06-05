@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 pancake<@nopcode.org> */
 namespace Radare {
 	[Compact]
 	[CCode (cheader_filename="r_magic.h", cname="RMagic", free_function="r_magic_free", cprefix="r_magic_")]

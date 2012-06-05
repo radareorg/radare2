@@ -2,9 +2,9 @@
 
 
 [Compact]
-[CCode (cheader_filename="r_syscall.h", cname="struct r_syscall_t", free_function="r_syscall_free", cprefix="r_syscall_")]
+[CCode (cheader_filename="r_syscall.h", cname="RSyscall", free_function="r_syscall_free", cprefix="r_syscall_")]
 public class Radare.RSyscall {
-	[CCode (cname="struct r_syscall_item_t", free_function="", unref_function="")]
+	[CCode (cname="RSyscallItem", free_function="", unref_function="")]
 	public class Item {
 		string name;
 		int swi;

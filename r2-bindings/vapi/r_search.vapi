@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
-[CCode (cheader_filename="r_types_base.h,r_list.h,r_search.h", cname="struct r_search_t", free_function="r_search_free", unref_function="r_search_free", cprefix="r_search_")]
+[CCode (cheader_filename="r_types_base.h,r_list.h,r_search.h", cname="RSearch", free_function="r_search_free", unref_function="r_search_free", cprefix="r_search_")]
 public class Radare.RSearch {
 	[CCode (cname="RSearchCallback", has_target="false")]
 	public delegate int Callback(Keyword s, void *user, uint64 addr);
@@ -35,7 +35,7 @@ public class Radare.RSearch {
 	public RList<Keyword> kws;
 
 	[Compact]
-	[CCode (cname="struct r_search_keyword_t", free_function="free", cprefix="r_search_keyword_")]
+	[CCode (cname="RSearchKeyword", free_function="free", cprefix="r_search_keyword_")]
 	public class Keyword {
 		public string keyword;
 		public string binmask;
@@ -52,7 +52,7 @@ public class Radare.RSearch {
 	}
 
 	[Compact]
-	[CCode (cname="struct r_search_hit_t", free_function="free", cprefix="r_search_hit_")]
+	[CCode (cname="RSearchHit", free_function="free", cprefix="r_search_hit_")]
 	public class Hit {
 		public /*unowned*/ Keyword kw;
 		uint64 addr;
