@@ -93,7 +93,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int sz;
-	if (bin->strtab) return R_FALSE;
+	if (bin->strtab || !bin->shdr) return R_FALSE;
 	bin->shstrtab_section =
 	bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
 	if (bin->strtab_section == NULL)
