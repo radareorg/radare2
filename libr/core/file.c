@@ -129,7 +129,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	int va = r->io->va || r->io->debug;
 
 	if (file == NULL) {
-		if (r->file == NULL)
+		if (!r->file || !r->file->filename)
 			return R_FALSE;
 		file = r->file->filename;
 	}
@@ -141,15 +141,13 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
 			for (i=0; i<r->bin->narch; i++) {
 				r_bin_select_idx (r->bin, i);
-				if (r->bin->curarch.info == NULL) {
-					eprintf ("No extract info found.\n");
-				} else {
+				if (r->bin->curarch.info) {
 					eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n", 
 							r->bin->curarch.info->arch,
 							r->bin->curarch.info->bits,
 							r->bin->curarch.file,
 							r->bin->curarch.offset);
-				}
+				} else eprintf ("No extract info found.\n");
 			}
 		}
 		r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);//"x86_32");
@@ -203,13 +201,17 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	r_list_append (r->files, fh);
 
 //	r_core_bin_load (r, fh->filename);
-	r_core_block_read (r, 0);
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
 	r_config_set (r->config, "file.path", file);
 	r_config_set_i (r->config, "zoom.to", loadaddr+fh->size);
 	fh->map = r_io_map_add (r->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
+
+	//r_config_set_i (r->config, "io.va", 0);
+	r_core_block_read (r, 0);
+	//r_core_bin_load (r, NULL); // XXX: unnecessary call?
+	//r_core_block_read (r, 0);
 	return fh;
 }
 

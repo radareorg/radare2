@@ -150,8 +150,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf ("???\n");
 			} else r_cons_printf ("%s\n", asmop.buf_asm);
 		}
-	if (tbs)
-		r_core_block_size (core, tbs);
+		if (tbs) r_core_block_size (core, tbs);
 		return err;
 		}
 	case 'D':

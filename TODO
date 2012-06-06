@@ -9,17 +9,32 @@
 
 MAXPRIO
 -------
+* More userfriendly visual mode
+  - add <tab> for hex 
+  - W will write a string
+  - _ -> write string does not obeys the cursor
 * rep+ret instruction (f3c3) should be identified as RET
 * p7 : 7bit encoding (sms)
   - variant for stego print? LSB, MSB, ...
-* Make r_io happy with RList
+* Kill kernel's list.h
+	r_anal.h
+	r_asm.h
+	r_crypto.h
+	r_parse.h
+	r_reg.h
+	r_syscall.h
+	r_util.h
+* crackme mach0 happy with rbin
+* bin_load should not be necessary!
 * add support for sockets in rarun2
 * if no debugger supported, say so... r_io must ?
-* valabind must support luvit and nodejs (-ffi)
 * check search multiple keywords and signatures
 * Fix iterators for r_macro (test only?)
   - search for antidebug/disasm tricks opcodes
     - allows to find interesting points to analyze
+* get cparse ftw
+
+* use slices for r_list_iter primitives
 
 BUGS:
 * If [0-9] keybindings in visual point to same address use same reference

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include "r_cons.h"
 #include "r_util.h"

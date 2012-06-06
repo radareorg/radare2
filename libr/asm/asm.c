@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
 
 #include <stdio.h>
 
@@ -8,8 +8,7 @@
 #include <list.h>
 #include "../config.h"
 
-static RAsmPlugin *asm_static_plugins[] = 
-	{ R_ASM_STATIC_PLUGINS };
+static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static int r_asm_pseudo_align(struct r_asm_op_t *op, char *input) {
 	eprintf ("TODO: .align\n"); // Must add padding for labels and others.. but this is from RAsm, not RAsmOp
