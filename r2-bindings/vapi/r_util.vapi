@@ -176,8 +176,8 @@ public class Radare.RRange {
 	public RRange *inverse(uint64 fr, uint64 to, int flags);
 
 	[Compact]
-	[CCode (cname="RangeItem", cprefix="r_range_item_")]
-	public struct Item {
+	[CCode (cname="RRangeItem", cprefix="r_range_item_")]
+	public class Item {
 		public uint64 fr;
 		public uint64 to;
 		public uint8 *data;

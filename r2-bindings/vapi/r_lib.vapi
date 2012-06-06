@@ -23,7 +23,7 @@ namespace Radare {
 		//public struct Struct { }
 		[Compact]
 		[CCode (cname="RLibHandler")]
-		public struct Plugin {
+		public class Plugin {
 			int type;
 			string desc;
 			void* user;

@@ -3,7 +3,7 @@ namespace Radare {
 	[Compact]
 	[CCode (cprefix="r_config_", cname="RConfig", free_function="r_config_free")]
 	public class RConfig {
-		public RConfig ();
+		public RConfig (void* user);
 		//TODO: public void setup_file(string file);
 		public bool lock;
 		public int last_notfound;

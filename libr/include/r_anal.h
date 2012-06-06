@@ -471,6 +471,7 @@ R_API RList* r_anal_fcn_get_refs (RAnalFcn *anal);
 R_API RList* r_anal_fcn_get_xrefs (RAnalFcn *anal);
 R_API RList* r_anal_fcn_get_vars (RAnalFcn *anal);
 R_API RList* r_anal_fcn_get_bbs (RAnalFcn *anal);
+R_API RList* r_anal_get_fcns (RAnal *anal);
 #endif
 
 /* ref.c */
