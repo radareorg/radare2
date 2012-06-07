@@ -157,7 +157,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len) {
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
-	int l, len = core->blocksize;
+	int len = core->blocksize;
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 

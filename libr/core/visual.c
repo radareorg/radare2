@@ -161,12 +161,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_seek (core, core->asmqjmps[ch-'0'], 1);
 	} else
 	switch (ch) {
+	case 9:
+		core->print->col = core->print->col==1? 2: 1;
+		break;
 	case 'c':
 		// XXX dupped flag imho
 		curset ^= 1;
 		if (curset) flags|=R_PRINT_FLAGS_CURSOR; 
 		else flags &= ~(flags&R_PRINT_FLAGS_CURSOR);
 		r_print_set_flags (core->print, flags);
+		core->print->col = curset? 1: 0;
 		break;
 	case 'd':
 		r_core_visual_define (core);
@@ -200,14 +204,21 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_show_cursor (R_FALSE);
 		r_cons_set_raw (R_TRUE);
 		break;
-	case 'w':
-		r_cons_printf ("Enter hexpair string to write:\n");
+	case 'i':
 		r_cons_show_cursor (R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (0);
-		strcpy (buf, "wx ");
-		r_line_set_prompt ("hex: ");
-		if (r_cons_fgets (buf+3, 1000, 0, NULL) <0) buf[0]='\0';
+		if (core->print->col==2) {
+			strcpy (buf, "w ");
+			r_line_set_prompt ("insert string: ");
+			if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) <0)
+				buf[0]='\0';
+		} else {
+			strcpy (buf, "wx ");
+			r_line_set_prompt ("insert hex: ");
+			if (r_cons_fgets (buf+3, sizeof (buf)-4, 0, NULL) <0)
+				buf[0]='\0';
+		}
 		if (*buf) {
 			if (curset) r_core_seek (core, core->offset + cursor, 0);
 			r_core_cmd (core, buf, 1);

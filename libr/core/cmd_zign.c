@@ -153,4 +153,3 @@ static int cmd_zign(void *data, const char *input) {
 	}
 	return 0;
 }
-

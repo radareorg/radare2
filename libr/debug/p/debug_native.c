@@ -75,19 +75,84 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #define R_DEBUG_STATE_T ARM_THREAD_STATE
 #define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
 #else
+
+/* x86 32/64 */
 #include <mach/i386/thread_status.h>
 #include <sys/ucontext.h>
 #include <mach/i386/_structs.h>
 
+typedef union {
+	ut64 x64[21];
+	ut32 x32[16];
+} R_DEBUG_REG_T;
+
+#define R_DEBUG_STATE_T XXX
+//(dbg->bits==64)?x86_THREAD_STATE:_STRUCT_X86_THREAD_STATE32
+//#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
+#define R_DEBUG_STATE_SZ ((dbg->bits==R_SYS_BITS_64)?168:64)
+
+#define REG_PC ((dbg->bits==R_SYS_BITS_64)?16:10)
+#define REG_FL ((dbg->bits==R_SYS_BITS_64)?17:9)
+#define REG_SP (7)
+//(dbg->bits==64)?7:7
+
+#if OLDIESHIT
 #if __x86_64__
 #define R_DEBUG_STATE_T x86_THREAD_STATE
 #define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
 #define R_DEBUG_STATE_SZ x86_THREAD_STATE_COUNT
+#if 0
+ut64[21]
+        __uint64_t      rax;
+        __uint64_t      rbx;
+        __uint64_t      rcx;
+        __uint64_t      rdx;
+        __uint64_t      rdi;
+        __uint64_t      rsi;
+        __uint64_t      rbp;
+        __uint64_t      rsp;
+        __uint64_t      r8;
+        __uint64_t      r9;
+        __uint64_t      r10;
+        __uint64_t      r11;
+        __uint64_t      r12;
+        __uint64_t      r13;
+        __uint64_t      r14;
+        __uint64_t      r15;
+        __uint64_t      rip;
+        __uint64_t      rflags;
+        __uint64_t      cs;
+        __uint64_t      fs;
+        __uint64_t      gs;
+21*8
+#endif
 #else
 #define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE32
 #define R_DEBUG_STATE_T i386_THREAD_STATE
 #define R_DEBUG_STATE_SZ i386_THREAD_STATE_COUNT
+#if 0
+ut32[16]
+16*4
+    unsigned int        __eax;
+    unsigned int        __ebx;
+    unsigned int        __ecx;
+    unsigned int        __edx;
+    unsigned int        __edi;
+    unsigned int        __esi;
+    unsigned int        __ebp;
+    unsigned int        __esp;
+    unsigned int        __ss;
+    unsigned int        __eflags;
+    unsigned int        __eip;
+    unsigned int        __cs;
+    unsigned int        __ds;
+    unsigned int        __es;
+    unsigned int        __fs;
+    unsigned int        __gs;
 #endif
+#endif
+#endif
+// oldie
 #endif
 
 #elif __sun
@@ -98,7 +163,6 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #undef DEBUGGER
 #define DEBUGGER 0
 #warning No debugger support for SunOS yet
-
 
 #elif __linux__
 #include <sys/ptrace.h>
@@ -167,15 +231,15 @@ static inline void debug_arch_x86_trap_set(RDebug *dbg, int foo) {
 #if __i386__ || __x86_64__
         R_DEBUG_REG_T regs;
 	r_debug_native_reg_read (dbg, R_REG_TYPE_GPR, (ut8*)&regs, sizeof (regs));
-#if __x86_64__
-        eprintf ("trap flag: %lld\n", (regs.__rflags&0x100));
-        if (foo) regs.__rflags |= EFLAGS_TRAP_FLAG;
-        else regs.__rflags &= ~EFLAGS_TRAP_FLAG;
-#else
-        eprintf ("trap flag: %d\n", (regs.__eflags&0x100));
-        if (foo) regs.__eflags |= EFLAGS_TRAP_FLAG;
-        else regs.__eflags &= ~EFLAGS_TRAP_FLAG;
-#endif
+	if (dbg->bits == 64) {
+		eprintf ("trap flag: %lld\n", (regs.x64[REG_PC]&0x100));
+		if (foo) regs.x64[REG_FL] |= EFLAGS_TRAP_FLAG;
+		else regs.x64[REG_FL] &= ~EFLAGS_TRAP_FLAG;
+	} else {
+		eprintf ("trap flag: %d\n", (regs.x32[REG_PC]&0x100));
+		if (foo) regs.x32[REG_FL] |= EFLAGS_TRAP_FLAG;
+		else regs.x32[REG_FL] &= ~EFLAGS_TRAP_FLAG;
+	}
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (const ut8*)&regs, sizeof (regs));
 #endif
 }
@@ -1123,7 +1187,7 @@ static RList *r_debug_native_pids(int pid) {
 	return list;
 }
 
-static RList *r_debug_native_threads(int pid) {
+static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (list == NULL) {
 		eprintf ("No list?\n");
@@ -1138,8 +1202,12 @@ static RList *r_debug_native_threads(int pid) {
 	#define OSX_PC state.srr0
 #elif __x86_64__
 	#define OSX_PC state.__rip
+#undef OSX_PC
+#define OSX_PC state.x64[REG_PC]
 #else
 	#define OSX_PC state.__eip
+#undef OSX_PC
+#define OSX_PC state.x32[REG_PC]
 #endif
         int i, tid; //, err;
 	//unsigned int gp_count;
@@ -1271,8 +1339,21 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
         if (inferior_thread_count>0) {
                 /* TODO: allow to choose the thread */
 		gp_count = R_DEBUG_STATE_SZ;
-                if (thread_get_state (inferior_threads[tid], R_DEBUG_STATE_T,
-				(thread_state_t) regs, &gp_count) != KERN_SUCCESS) {
+
+// XXX: kinda spaguetti coz multi-arch
+#if __i386__ || __x86_64__
+		if (dbg->bits== R_SYS_BITS_64) {
+			ret = thread_get_state (inferior_threads[tid],
+				x86_THREAD_STATE, (thread_state_t) regs, &gp_count);
+		} else {
+			ret = thread_get_state (inferior_threads[tid],
+				i386_THREAD_STATE, (thread_state_t) regs, &gp_count);
+		}
+#else
+		ret = thread_get_state (inferior_threads[tid],
+			R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+#endif
+		if (ret != KERN_SUCCESS) {
                         eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
 				(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
                         perror ("thread_get_state");
@@ -1398,7 +1479,8 @@ return R_FALSE;
 		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
 		unsigned int gp_count = R_DEBUG_STATE_SZ;
 
-		ret = task_threads (pid_to_task (pid), &inferior_threads, &inferior_thread_count);
+		ret = task_threads (pid_to_task (pid),
+			&inferior_threads, &inferior_thread_count);
 		if (ret != KERN_SUCCESS) {
 			eprintf ("debug_getregs\n");
 			return R_FALSE;
@@ -1407,11 +1489,25 @@ return R_FALSE;
 		if (inferior_thread_count>0) {
 			/* TODO: allow to choose the thread */
 			gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T)/sizeof(size_t);
-			if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T,
-					(thread_state_t) regs, gp_count) != KERN_SUCCESS) {
-				eprintf ("debug_getregs: Failed to get thread %d %d.error (%x). (%s)\n",
+// XXX: kinda spaguetti coz multi-arch
+int tid = inferior_threads[0];
+#if __i386__ || __x86_64__
+		if (dbg->bits == R_SYS_BITS_64) {
+			ret = thread_set_state (inferior_threads[tid],
+				x86_THREAD_STATE, (thread_state_t) regs, &gp_count);
+		} else {
+			ret = thread_set_state (inferior_threads[tid],
+				i386_THREAD_STATE, (thread_state_t) regs, &gp_count);
+		}
+#else
+		ret = thread_set_state (inferior_threads[tid],
+			R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+#endif
+		//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
+		if (ret != KERN_SUCCESS) {
+				eprintf ("debug_getregs: Failed to set thread %d %d.error (%x). (%s)\n",
 					(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
-				perror ("thread_get_state");
+				perror ("thread_set_state");
 				return R_FALSE;
 			}
 		} else eprintf ("There are no threads!\n");

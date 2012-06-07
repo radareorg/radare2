@@ -362,4 +362,3 @@ quit:
     grub_free (ctx->comp.cbuf);
   return ret;
 }
-

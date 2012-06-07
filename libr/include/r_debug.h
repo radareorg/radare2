@@ -166,7 +166,7 @@ typedef struct r_debug_plugin_t {
 	int (*attach)(RDebug *dbg, int pid);
 	int (*detach)(int pid);
 	int (*select)(int pid, int tid);
-	RList *(*threads)(int pid);
+	RList *(*threads)(RDebug *dbg, int pid);
 	RList *(*pids)(int pid);
 	RList *(*tids)(int pid);
 	RFList (*backtrace)(int count);

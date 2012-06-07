@@ -7,15 +7,19 @@
 
 ====[[ 0.9.1 ]]====
 
-MAXPRIO
--------
-* More userfriendly visual mode
-  - add <tab> for hex 
-  - W will write a string
-  - _ -> write string does not obeys the cursor
+* Register diff colorization is broken
+* bar for cursor?
+* p= show entropy of current block
+  - show number of occurrences for each byte
+  - maybe in 'ad' command, analyze data
+* Implement s/x
+* sC not working
+* Implement debugger backtrace properly
+* _ -> write string does not obeys the cursor
 * rep+ret instruction (f3c3) should be identified as RET
 * p7 : 7bit encoding (sms)
   - variant for stego print? LSB, MSB, ...
+  - add base85 api
 * Kill kernel's list.h
 	r_anal.h
 	r_asm.h
@@ -25,7 +29,6 @@ MAXPRIO
 	r_syscall.h
 	r_util.h
 * crackme mach0 happy with rbin
-* bin_load should not be necessary!
 * add support for sockets in rarun2
 * if no debugger supported, say so... r_io must ?
 * check search multiple keywords and signatures
@@ -33,8 +36,17 @@ MAXPRIO
   - search for antidebug/disasm tricks opcodes
     - allows to find interesting points to analyze
 * get cparse ftw
-
+* fix nodejs iterators
 * use slices for r_list_iter primitives
+    ______
+00 |      |__
+01 |  _______|
+02 | |_
+03 |   |___
+04 |       |_____________
+05 |                     |_
+06 |                _______|
+07 |_______________|
 
 BUGS:
 * If [0-9] keybindings in visual point to same address use same reference

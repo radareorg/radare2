@@ -5,6 +5,8 @@
 
 // TODO: implement r_list_foreach_prev
 
+#ifndef _INCLUDE_R_LIST_HEAD_H_
+#define _INCLUDE_R_LIST_HEAD_H_
 typedef void (*RListFree)(void *ptr);
 
 typedef struct r_list_iter_t {
@@ -25,6 +27,7 @@ typedef struct r_oflist_t {
 	ROFList_Parent super; // super class
 	RFList *array; // statical readonly cache of linked list as a pointer array
 } ROFList;
+#endif
 
 #ifdef R_API
 #define R_LIST_NEW(x,y) x=r_list_new();x->free=(RListFree)y
@@ -48,6 +51,8 @@ typedef struct r_oflist_t {
 #define r_list_iter_unref(x) x
 #define r_list_iter_free(x) x
 R_API RList *r_list_new();
+R_API RListIter *r_list_iter_get_next(RListIter *list);
+R_API void *r_list_iter_get_data(RListIter *list);
 R_API RListIter *r_list_append(RList *list, void *data);
 R_API RListIter *r_list_prepend(RList *list, void *data);
 R_API int r_list_length(RList *list);

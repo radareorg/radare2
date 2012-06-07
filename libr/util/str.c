@@ -892,3 +892,7 @@ R_API const char *r_str_casestr(const char *a, const char *b) {
 	return strcasestr (a, b);
 #endif
 }
+
+R_API int r_str_write (int fd, const char *b) {
+	return write (fd, b, strlen (b));
+}

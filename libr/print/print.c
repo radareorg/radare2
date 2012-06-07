@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+
 #include "r_cons.h"
 #include "r_print.h"
 #include "r_util.h"
@@ -12,6 +13,7 @@ R_API RPrint *r_print_new() {
 		p->printf = printf;
 		p->interrupt = 0;
 		p->bigendian = 0;
+		p->col = 0;
 		p->width = 78;
 		p->cols = 16;
 		p->cur_enabled = R_FALSE;
@@ -75,8 +77,8 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		p->printf("%s0x%08"PFMT64x""Color_RESET"%c ",
 			r_cons_singleton ()->palette[PAL_ADDRESS], addr, ch);
 #endif
-		p->printf ("0x%08"PFMT64x"%c ", addr, ch);
-	} else r_cons_printf ("0x%08"PFMT64x"%c ", addr, ch);
+		p->printf ("0x%08"PFMT64x"%c", addr, ch);
+	} else r_cons_printf ("0x%08"PFMT64x"%c", addr, ch);
 }
 
 #define CURDBG 0
@@ -94,7 +96,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 		cur = ocur;
 	ocur++;
 #if CURDBG
-	sprintf(dst, "(%d/%d/%d/%d)", p->cur_enabled, cur, ocur, n);
+	sprintf (dst, "(%d/%d/%d/%d)", p->cur_enabled, cur, ocur, n);
 	d = dst+ strlen(dst);
 #else
 	d = dst;
@@ -106,7 +108,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	for (s=str, i=0 ; *s; s+=2, d+=2, i++) {
 		if (p->cur_enabled) {
 			if (i==ocur-n)
-				memcat (d, "\x1b[27m");
+				memcat (d, "\x1b[27;47;30m");
 			if (i>=cur-n && i<ocur-n)
 				memcat (d, "\x1b[7m");
 		}
@@ -115,7 +117,8 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 			else if (s[0]=='7' && s[1]=='f') { memcat (d, Color_YELLOW); }
 			else if (s[0]=='f' && s[1]=='f') { memcat (d, Color_RED); }
 			else {
-				sscanf (s, "%02x", &ch);
+				ch = r_hex_pair2bin(s);
+				//sscanf (s, "%02x", &ch); // XXX can be optimized
 				if (IS_PRINTABLE (ch))
 					memcat (d, Color_MAGENTA);
 			}
@@ -193,7 +196,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide
 static const char hex[16] = "0123456789ABCDEF";
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 	int i;
-	for (i=0;i<len;i++)
+	for (i=0; i<len; i++)
 		p->printf ("%02x ", buf[i]);
 }
 
@@ -226,7 +229,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		ut32 opad = (ut32)(addr >> 32);
 		p->printf ("   offset   ");
 		while (opad>0) {
-			p->printf (" ");
+			p->printf (p->col==1?"|":" ");
 			opad >>= 4;
 		}
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
@@ -234,19 +237,22 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		for (i=0; i<inc; i++) {
 			p->printf (pre);
 			p->printf (" %c", hex[(i+k)%16]);
-			if (i&1) p->printf (" ");
+			if (i&1)
+				p->printf (p->col!=1?" ":((i+1)<inc)?" ":"|");
 		}
-		p->printf (" ");
+		p->printf ((p->col==2)? "|": " ");
 		for (i=0; i<inc; i++)
 			p->printf ("%c", hex[(i+k)%16]);
-		p->printf ("\n");
+		p->printf (p->col==2?"|\n":"\n");
 	}
 
 	p->interrupt = 0;
 	for (i=0; !p->interrupt && i<len; i+=inc) {
 		r_print_addr (p, addr+(i*step));
+		p->printf ((p->col==1)? "|":" ");
 		for (j=i; j<i+inc; j++) {
 			if (j>=len) {
+				//p->printf (j%2?"   ":"  ");
 				p->printf (j%2?"   ":"  ");
 				continue;
 			}
@@ -269,15 +275,21 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				p->printf ("0x%08x %08x", n<<32, n&0xffffff);
 			} else {
 				r_print_byte (p, fmt, j, buf[j]);
-				if (j%2) p->printf (" ");
+				if (j%2) {
+					if (p->col==1) {
+						if (j+1<inc+i)
+							p->printf (" ");
+						else p->printf ("|");
+					} else p->printf (" ");
+				}
 			}
 		}
-		p->printf (" ");
+		p->printf ((p->col==2)? "|":" ");
 		for (j=i; j<i+inc; j++) {
 			if (j >= len) p->printf (" ");
 			else r_print_byte (p, "%c", j, buf[j]);
 		}
-		p->printf ("\n");
+		p->printf (p->col==2?"|\n":"\n");
 		//addr+=inc;
 	}
 }
@@ -431,3 +443,31 @@ void lsb_stego_process (FILE *fd, int length, bool forward, bool downward, int o
         }
 }
 #endif
+
+/// XXX: fix ascii art with different INCs
+R_API void r_print_fill(RPrint *p, ut8 *arr, int size) {
+	int i = 0, j;
+#define INC 5
+	p->printf ("         ");
+	if (arr[0]>1) for (i=0;i<arr[0]; i+=INC) p->printf ("_");
+	p->printf ("\n");
+	for (i=0; i<size; i++) {
+		ut8 next = i+1<size?arr[i+1]:0;
+		p->printf ("%02x %04x |", i, arr[i]);
+			int base = 0;
+			if (next<INC) base = 1;
+		if (next<arr[i]) {
+			//if (arr[i]>0 && i>0) p->printf ("  ");
+			if (arr[i]>INC)
+			for (j=0;j<next+base; j+=INC) p->printf (" ");
+			for (j=next+INC; j+base<arr[i]; j+=INC) p->printf ("_");
+		} else {
+			for (j=INC; j<arr[i]+base; j+=INC) p->printf (" ");
+		}
+		//for (j=1;j<arr[i]; j+=INC) p->printf (under);
+		p->printf ("|");
+		if (arr[i+1]>arr[i])
+			for (j=arr[i]+INC+base; j+base<next; j+=INC) p->printf ("_");
+		p->printf ("\n");
+	}
+}

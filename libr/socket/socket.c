@@ -126,6 +126,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	}
 	return R_TRUE;
 #elif __UNIX__
+	if (proto==0) proto= R_SOCKET_PROTO_TCP;
 	int gai;
 	struct addrinfo hints, *res, *rp;
 	signal (SIGPIPE, SIG_IGN);

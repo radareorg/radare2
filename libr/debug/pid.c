@@ -48,7 +48,7 @@ R_API int r_debug_thread_list(struct r_debug_t *dbg, int pid) {
 	RListIter *iter;
 	RDebugPid *p;
 	if (dbg && dbg->h && dbg->h->pids) {
-		list = dbg->h->threads (pid);
+		list = dbg->h->threads (dbg, pid);
 		if (list == NULL)
 			return R_FALSE;
 		r_list_foreach (list, iter, p) {

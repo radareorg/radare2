@@ -100,6 +100,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case '=':
+		r_print_fill (core->print, core->block, core->blocksize);
 		/* TODO: Reimplement using API */ {
 			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b 512 '%s'", core->file->filename);
 			if (out) {

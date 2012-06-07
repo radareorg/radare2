@@ -115,29 +115,33 @@ public class RFList<G> {
 	public unowned G @get();
 }
 
-//[Compact]
+[Compact]
 [CCode (cprefix="r_list_", cheader_filename="r_util.h", cname="RList")]
 public class RList<G> {
+	void *free; // XXX hack for valabind-node-ffi
 	public void append(owned G foo);
 	public void prepend(owned G foo);
 	public RListIter<G> iterator();
 	public RList();
 	public uint length();
-	public bool next();
+	//public bool next();
 	public unowned G @get();
 	public bool del_n(int n);
 	public bool get_top();
-	public void push(owned G foo);
+	//public void push(owned G foo);
 	public unowned G pop();
 }
 
 [Compact]
-[CCode (cprefix="r_list_iter_", cheader_filename="r_list.h", cname="struct r_list_iter_t")]
+[CCode (cprefix="r_list_iter_", cheader_filename="r_list.h", cname="RListIter")]
 public class RListIter<G> {
+	public RListIter();
         public RListIter<G> n;
         public RListIter<G> p;
         public G data;
 
+	public G get_data();
+	public RListIter<G> get_next();
 //	public G @free(G arg);
 /*
 	public bool next();

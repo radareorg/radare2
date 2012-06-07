@@ -37,7 +37,6 @@ static int b64_decode(const ut8 in[4], ut8 out[3]) {
 	return len;
 }
 
-
 R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len) {
 	int in, out, ret;
 	for (in=out=0; in<len-1; in+=4) {

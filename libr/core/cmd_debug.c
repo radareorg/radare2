@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+
 static void dot_r_graph_traverse(RCore *core, RGraph *t) {
 	RGraphNode *n, *n2;
 	RListIter *iter, *iter2;
