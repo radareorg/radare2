@@ -361,7 +361,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'j':
 		if (curset) {
 			if (core->printidx == 1 || core->printidx == 2)
-				cols = r_asm_disassemble (core->assembler, &op, core->block+cursor, 32);
+				cols = r_asm_disassemble (core->assembler,
+					&op, core->block+cursor, 32);
 			cursor += cols;
 			ocursor = -1;
 			{

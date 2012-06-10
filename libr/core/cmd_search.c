@@ -74,15 +74,12 @@ R_API int r_core_search_preludes(RCore *core) {
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
-/*
 	if (searchcount) {
 		if (!--searchcount) {
-			eprintf ("search.count reached\n");
+			eprintf ("\nsearch stop: search.count reached\n");
 			return R_FALSE;
 		}
 	}
-*/
-	searchcount++;
 	if (searchflags) {
 		r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
 		r_core_cmdf (core, "f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,

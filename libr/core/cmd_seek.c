@@ -77,9 +77,18 @@ static int cmd_seek(void *data, const char *input) {
 			const char *pfx = r_config_get (core->config, "search.prefix");
 			int kwidx = (int)r_config_get_i (core->config, "search.kwidx")-1;
 			if (kwidx<0) kwidx = 0;
-			//r_core_seek (core, off+1, 0);
-			eprintf ("s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0\n", input, pfx, kwidx, pfx, kwidx);
-			r_core_cmdf (core, "s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0", input, pfx, kwidx, pfx, kwidx);
+			switch (input[1]) {
+			case 'x':
+				//r_core_seek (core, off+1, 0);
+				eprintf ("s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0\n", input, pfx, kwidx, pfx, kwidx);
+				r_core_cmdf (core, "s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0", input, pfx, kwidx, pfx, kwidx);
+				break;
+			case ' ':
+				//r_core_seek (core, off+1, 0);
+				eprintf ("s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0\n", input, pfx, kwidx, pfx, kwidx);
+				r_core_cmdf (core, "s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0", input, pfx, kwidx, pfx, kwidx);
+				break;
+			}
 			}
 			break;
 		case '*':

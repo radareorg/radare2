@@ -38,15 +38,6 @@
 * get cparse ftw
 * fix nodejs iterators
 * use slices for r_list_iter primitives
-    ______
-00 |      |__
-01 |  _______|
-02 | |_
-03 |   |___
-04 |       |_____________
-05 |                     |_
-06 |                _______|
-07 |_______________|
 
 BUGS:
 * If [0-9] keybindings in visual point to same address use same reference
