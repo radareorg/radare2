@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -23,8 +23,9 @@ R_API int r_hex_pair2bin(const char *arg) {
 		if (!*ptr || *ptr==' ' || j==2)
 			break;
 		d = c;
-		if (r_hex_to_byte (&c, *ptr)) {
-			eprintf ("Invalid hexa string at char '%c'.\n", *ptr);
+		if (*ptr!='.' && r_hex_to_byte (&c, *ptr)) {
+			eprintf ("Invalid hexa string at char '%c' (%s).\n",
+				*ptr, arg);
 			return -1;
 		}
 		c |= d;

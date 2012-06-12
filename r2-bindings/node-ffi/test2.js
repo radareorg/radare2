@@ -1,8 +1,10 @@
 var r2 = require ("./r_core")
 
 var c = new r2.RCore ()
-var cons = new r2.RCons (c.cons)
-var config = r2.RConfig (c.config) // segfault
+console.log ("pre");
+var cons = new r2.RCons (c.get_cons())
+console.log ("pos");
+var config = r2.RConfig (c.get_config()) // segfault
 
 console.log ("rep");
 var ret = c.file_open ("test2.js", false, 0);

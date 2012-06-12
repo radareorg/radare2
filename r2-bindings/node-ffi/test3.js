@@ -15,10 +15,9 @@ console.log (sections);
 sections.foreach = function (x) {
 	var it = sections.iterator ();
 	var iter = new r2.RListIter (it);
-console.log (it, "iter", iter);
 	while (iter != null) {
 		var dat = iter.get_data();
-		var s = r2.RBinSection (dat);
+		var s = new r2.RBinSection (dat);
 		console.log ("-->", dat, s.name);
 		console.log ("-->", s);
 		iter = r2.RListIter (iter.get_next ()); //

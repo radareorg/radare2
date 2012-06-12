@@ -7,6 +7,8 @@ public class RCore {
 	public RFlag flags;
 	public RNum num;
 	/* lifecycle */
+	public RCons* get_cons ();
+	public RConfig* get_config ();
 	public RCore();
 	public RIO io;
 	public RCons cons;
