@@ -1,0 +1,25 @@
+
+Backtrace implementation for x86-64:
+
+(backtrace,
+aa
+f prev @ rsp
+f base@ rbp
+loop:
+f next @ `pq 1 @base~[1]`,
+f cont @ `pq 1 @base+8~[1]`,
+?= next
+??()
+?= next-0xffffffffffffffff
+??()
+?= cont-0xffffffffffffffff
+??()
+?e StackFrame at `?v next` with size `?vi base-prev`
+x base-prev@base+16
+?e Code: `?v cont`
+pdf @ cont
+f prev@base
+f base@next
+.loop:
+)
+.(backtrace)
