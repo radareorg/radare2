@@ -2,7 +2,11 @@ NAME=r_debug
 DEPS=r_reg r_anal r_bp r_util r_io r_parse r_cons
 CFLAGS+=-DCORELIB
 
-foo: pre libs tests plugins
+foo:
+	@${MAKE} pre
+	@${MAKE} libs
+	@${MAKE} tests
+	@${MAKE} plugins
 
 include ../config.mk
 include ${STATIC_DEBUG_PLUGINS}

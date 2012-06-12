@@ -7,6 +7,7 @@ include $(LIBR)/../global.mk
 include $(LIBR)/../mk/${COMPILER}.mk
 
 CFLAGS+=${CFLAGS_APPEND}
+CFLAGS+=${CPPFLAGS}
 
 ifeq ($(WITHPIC),1)
 LDFLAGS+=$(subst r_,-lr_,$(DEPS))

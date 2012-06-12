@@ -6,5 +6,5 @@ CFLAGS+=-DCORELIB
 
 ALL_TARGETS+=${TARGET_${NXOR}}
 
-${TARGET_XOR}: ${OBJ_XOR}
+${TARGET_XOR} ${TARGET_${NXOR}}: ${OBJ_XOR}
 	${CC} $(call libname,${NXOR}) ${LDFLAGS} ${CFLAGS} -o ${TARGET_${NXOR}} ${OBJ_XOR}
