@@ -7,6 +7,8 @@
 
 ====[[ 0.9.1 ]]====
 
+* Source debugging or gtfo
+* Fix ?-
 * Register diff colorization is broken
 * bar for cursor?
 * p= show entropy of current block

@@ -194,7 +194,9 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	default:
 		ptr = str = r_core_cmd_str (core, input);
+		r_cons_break (NULL, NULL);
 		for (;;) {
+			if (r_cons_singleton()->breaked) break;
 			eol = strchr (ptr, '\n');
 			if (eol) *eol = '\0';
 			if (*ptr)
@@ -202,6 +204,7 @@ static int cmd_interpret(void *data, const char *input) {
 			if (!eol) break;
 			ptr = eol+1;
 		}
+		r_cons_break_end ();
 		free (str);
 		break;
 	}
@@ -720,7 +723,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				core->cmd->macro.counter=0;
 				while (!feof (fd)) {
 					buf[0] = '\0';
-					if (fgets (buf, 1024, fd) == NULL)
+					if (fgets (buf, sizeof (buf), fd) == NULL)
 						break;
 					addr = r_num_math (core->num, buf);
 					eprintf ("0x%08"PFMT64x": %s\n", addr, cmd);

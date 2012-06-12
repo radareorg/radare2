@@ -96,7 +96,9 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'v':
 		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
-		r_cons_printf ("0x%"PFMT64x"\n", n);
+		if (input[1] == 'i' || input[1]=='d')
+			r_cons_printf ("%"PFMT64d"\n", n);
+		else r_cons_printf ("0x%"PFMT64x"\n", n);
 		core->num->value = n;
 		break;
 	case '=':
@@ -270,6 +272,7 @@ static int cmd_help(void *data, const char *input) {
 			"Usage: ?[?[?]] expression\n"
 			" ? eip-0x804800  ; show hex and dec result for this math expr\n"
 			" ?v eip-0x804800 ; show hex value of math expr\n"
+			" ?vi rsp-rbp     ; show decimal value of math expr\n"
 			" ?V              ; show library version of r_core\n"
 			" ?= eip-0x804800 ; same as above without user feedback\n"
 			" ?? [cmd]        ; ? == 0 run command when math matches\n"

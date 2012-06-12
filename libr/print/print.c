@@ -6,25 +6,24 @@
 
 R_API RPrint *r_print_new() {
 	RPrint *p = R_NEW (RPrint);
-	if (p) {
-		strcpy (p->datefmt, "%d:%m:%Y %H:%M:%S %z");
-		p->user = NULL;
-		r_io_bind_init (p->iob);
-		p->printf = printf;
-		p->interrupt = 0;
-		p->bigendian = 0;
-		p->col = 0;
-		p->width = 78;
-		p->cols = 16;
-		p->cur_enabled = R_FALSE;
-		p->cur = p->ocur = -1;
-		p->addrmod = 4;
-		p->flags = \
-			   R_PRINT_FLAGS_COLOR |
-			   R_PRINT_FLAGS_HEADER |
-			   R_PRINT_FLAGS_ADDRMOD;
-		p->zoom = R_NEW0 (RPrintZoom);
-	}
+	if (!p) return NULL;
+	strcpy (p->datefmt, "%d:%m:%Y %H:%M:%S %z");
+	p->user = NULL;
+	r_io_bind_init (p->iob);
+	p->printf = printf;
+	p->interrupt = 0;
+	p->bigendian = 0;
+	p->col = 0;
+	p->width = 78;
+	p->cols = 16;
+	p->cur_enabled = R_FALSE;
+	p->cur = p->ocur = -1;
+	p->addrmod = 4;
+	p->flags = \
+		   R_PRINT_FLAGS_COLOR |
+		   R_PRINT_FLAGS_HEADER |
+		   R_PRINT_FLAGS_ADDRMOD;
+	p->zoom = R_NEW0 (RPrintZoom);
 	return p;
 }
 
@@ -222,7 +221,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	inc = p->cols;
-	if (base==64) inc = p->cols/1.2;
+	//if (base==64) inc = p->cols/1.2;
 		
 	if (base<32)
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
@@ -248,8 +247,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 	p->interrupt = 0;
 	for (i=0; !p->interrupt && i<len; i+=inc) {
-		r_print_addr (p, addr+(i*step));
-		p->printf ((p->col==1)? "|":" ");
+		r_print_addr (p, addr+j); //(i*step));
+		p->printf ((p->col==1)? "|": " ");
 		for (j=i; j<i+inc; j++) {
 			if (j>=len) {
 				//p->printf (j%2?"   ":"  ");
@@ -260,19 +259,17 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				ut32 n;
 				memcpy (&n, buf+j, sizeof (n));
 				p->printf ("0x%08x ", n);
-				j+=3;
+				j += 3;
 			} else
 			if (base==64) {
-				ut64 n;
+				ut32 a, b;
 				/* Prevent reading outside of buf. Necessary as inc is not
 				 * a multiple of 4 for base == 64. */
-				size_t l = sizeof (n);
-				if (j + l > len)
-					l = len - j;
-				memset (&n, 0, sizeof (n));
-				memcpy (&n, buf+j, l);
-				j+=4;
-				p->printf ("0x%08x %08x", n<<32, n&0xffffff);
+				// size_t l = sizeof (n); if (j + l > len) l = len - j;
+				memcpy (&a, buf+j, 4);
+				memcpy (&b, buf+j+4, 4);
+				j += 7;
+				p->printf ("0x%08x%08x ", b, a); //n<<32, n&0xffffff);
 			} else {
 				r_print_byte (p, fmt, j, buf[j]);
 				if (j%2) {

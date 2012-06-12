@@ -2,6 +2,7 @@
 
 // TODO: use RList !!
 #include <stdio.h>
+#include <r_cons.h>
 #include "r_cmd.h"
 #include "r_util.h"
 
@@ -251,8 +252,9 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 			/* goto */
 			for (i=0;i<*labels_n;i++) {
 		//	eprintf("---| chk '%s'\n", labels[i].name);
-				if (!strcmp (ptr+1, labels[i].name))
+				if (!strcmp (ptr+1, labels[i].name)) {
 					return labels[i].ptr;
+			}
 			}
 			return NULL;
 		} else
@@ -260,7 +262,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 		if (ptr[0]=='?' && ptr[1]=='!' && ptr[2] != '?') {
 			if (mac->num && mac->num->value != 0) {
 				char *label = ptr + 3;
-				for(; *label==' '||*label=='.'; label++);
+				for (; *label==' '||*label=='.'; label++);
 		//		eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
 				for (i=0;i<*labels_n;i++) {
@@ -277,7 +279,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 				for (;label[0]==' '||label[0]=='.'; label++);
 		//		eprintf("===> GOTO %s\n", label);
 				/* goto label ptr+3 */
-				for (i=0;i<*labels_n;i++) {
+				for (i=0; i<*labels_n; i++) {
 					if (!strcmp (label, labels[i].name))
 						return labels[i].ptr;
 				}
@@ -306,6 +308,7 @@ R_API char *r_cmd_macro_label_process(RCmdMacro *mac, RCmdMacroLabel *labels, in
 
 /* TODO: add support for spaced arguments */
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
+	RCons *cons;
 	char *args;
 	int nargs = 0;
 	char *str, *ptr, *ptr2;
@@ -342,6 +345,8 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 		return 0;
 	}
 
+	cons = r_cons_singleton ();
+	r_cons_break (NULL, NULL);
 	list_for_each_prev (pos, &mac->macros) {
 		RCmdMacroItem *m = list_entry (pos, RCmdMacroItem, list);
 
@@ -359,7 +364,13 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 
 			mac->brk = 0;
 			do {
-				if (end) *end='\0';
+				if (end) *end = '\0';
+				if (cons->breaked) {
+					eprintf ("Interrupted at (%s)\n", ptr);
+					if (end) *end = '\n';
+					return R_FALSE;
+				}
+r_cons_flush ();
 
 				/* Label handling */
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);
@@ -367,17 +378,17 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					eprintf ("Oops. invalid label name\n");
 					break;
 				} else
-				if (ptr != ptr2 && end) {
-					*end='\n';
+				if (ptr != ptr2) { // && end) {
 					ptr = ptr2;
-					end = strchr(ptr, '\n');
+					if (end) *end ='\n';
+					end = strchr (ptr, '\n');
 					continue;
 				}
 				/* Command execution */
 				if (*ptr) {
 
 					r_cmd_macro_cmd_args (mac, ptr, args, nargs);
-}
+				}
 				if (end) {
 					*end = '\n';
 					ptr = end + 1;
