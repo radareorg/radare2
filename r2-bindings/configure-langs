@@ -2,7 +2,7 @@
 #
 # Script to choose which langs you want to build
 # author: pancake // nopcode
-# update: 2011-05-20
+# update: 2012-07-13
 #
 
 LANGS=""
@@ -22,7 +22,7 @@ enable() {
     echo "Cannot use --enable and --disable"
     exit 1
   fi
-  ENABLE="${1/:/ }"
+  ENABLE="`echo $1 | sed -e 's/:/ /g'`"
   DISABLE=""
 }
 
@@ -32,15 +32,15 @@ disable() {
     exit 1
   fi
   ENABLE=""
-  DISABLE="${1/:/ }"
+  DISABLE="echo $1 | sed -e 's/:/ /g'"
 }
 
 MODE=""
 DONOTHING=0
 while : ; do
   [ -z "$1" ] && break
-  k=${1%=*} # key
-  v=${1#*=} # value
+  k=$(echo $1 | cut -d = -f 1)
+  v=$(echo $1 | cut -d = -f 2)
   case "$k" in
   "--enable") enable "$v" ; ;;
   "--disable") disable "$v" ; ;;

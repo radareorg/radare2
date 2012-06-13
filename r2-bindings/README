@@ -30,7 +30,7 @@ rules used to generate all interactive html documentation found at:
 Dependencies
 ============
 
-To build r2-bindings from repositoryyou need the following programs installed:
+To build r2-bindings from repository you need the following programs installed:
 
   * swig: enables support for python, perl, lua, java and many other
   * vala: if you want to have Vala or Genie bindings

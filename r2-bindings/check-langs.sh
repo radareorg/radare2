@@ -7,10 +7,12 @@ LANGS="python perl ruby lua go java guile php5"
 [ -z "${CC}" ] && CC=gcc
 [ -z "${CXX}" ] && CXX=g++
 
+PYTHON_CONFIG=`./python-config-wrapper -n`
+export PYTHON_CONFIG
+
 if [ "$1" = "force-all" ]; then
   :> supported.langs
-  PYTHONCONFIG=`./python-config-wrapper -n`
-  if [ -n "${PYTHONCONFIG}" ]; then
+  if [ -n "${PYTHON_CONFIG}" ]; then
       echo "check-langs.sh: Detected python"
       echo python >> supported.langs
   fi
