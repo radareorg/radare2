@@ -9,7 +9,12 @@ TAR=tar -czvf
 endif
 
 W32PY="${HOME}/.wine/drive_c/Python27/"
+
+ifneq ($(shell grep valac supported.langs),)
 INSTALL_TARGETS=install-vapi
+else
+INSTALL_TARGETS=
+endif
 
 LANGS=
 # Experimental:
@@ -34,7 +39,7 @@ $(foreach p,${ALANGS},$(eval $(call ADD_lang,$(p))))
 .PHONY: ${INSTALL_TARGETS} ${INSTALL_EXAMPLE_TARGETS} ${LANG}
 
 ifeq ($(DEVEL_MODE),1)
-LANGS=$(shell cat supported.langs|sort|uniq)
+LANGS=$(shell cat supported.langs)
 all: supported.langs 
 	@for a in ${LANGS} ; do \
 		[ $$a = valac ] && continue; \
