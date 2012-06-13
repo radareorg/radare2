@@ -32,7 +32,7 @@ disable() {
     exit 1
   fi
   ENABLE=""
-  DISABLE="echo $1 | sed -e 's/:/ /g'"
+  DISABLE="`echo $1 | sed -e 's/:/ /g'`"
 }
 
 MODE=""
@@ -63,13 +63,15 @@ if [ -n "${DISABLE}" ]; then
 	rm -f .sl
 fi
 
+mv supported.langs .sl
+cat .sl | sort | uniq > supported.langs
+rm -f .sl
+
 echo "Supported langs:"
 cat supported.langs | sed -e 's,^, - ,'
 
 # check for python
 # check for perl
 :> langs.cfg
-
-echo "Supported langs: $(cat supported.langs)"
 
 exit 0

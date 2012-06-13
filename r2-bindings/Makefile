@@ -34,7 +34,12 @@ $(foreach p,${ALANGS},$(eval $(call ADD_lang,$(p))))
 .PHONY: ${INSTALL_TARGETS} ${INSTALL_EXAMPLE_TARGETS} ${LANG}
 
 ifeq ($(DEVEL_MODE),1)
-all: supported.langs ruby perl python lua go gear gir
+LANGS=$(shell cat supported.langs|sort|uniq)
+all: supported.langs 
+	@for a in ${LANGS} ; do \
+		[ $$a = valac ] && continue; \
+		(cd $$a && ${MAKE} ) ; done
+
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh
 else

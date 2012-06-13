@@ -54,16 +54,23 @@ for a in lua python php5 ; do
 	[ -f $a/r_core_wrap.cxx ] && SUP_LANGS="$a ${SUP_LANGS}"
 done
 
-for a in valac g++ ; do
-  $a --help > /dev/null 2>&1
+# check g++
+  ${CXX} --help >/dev/null 2>&1
   if [ $? = 0 ]; then
-    echo " - $a: yes"
-    SUP_LANGS="$a ${SUP_LANGS}"
+    echo " - cxx: yes ($CXX)"
+    SUP_LANGS="cxx ${SUP_LANGS}"
   else
-    echo " - $a: no"
+    echo " - cxx: no"
   fi
-done
 
+# check valac
+  valac --help > /dev/null 2>&1
+  if [ $? = 0 ]; then
+    echo " - valac: yes"
+    SUP_LANGS="valac ${SUP_LANGS}"
+  else
+    echo " - valac: no"
+  fi
 
 :> supported.langs
 for a in ${SUP_LANGS}; do
