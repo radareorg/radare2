@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from r_bp import *
+from r2.r_core import RBreakpoint
 
 a = RBreakpoint ()
 a.use ('x86')

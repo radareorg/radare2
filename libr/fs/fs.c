@@ -40,7 +40,7 @@ R_API RFSPlugin *r_fs_plugin_get (RFS *fs, const char *name) {
 
 R_API void r_fs_free (RFS* fs) {
 	if (!fs) return;
-	r_io_free(fs->iob.io);
+	//r_io_free (fs->iob.io);
 	r_list_free (fs->plugins);
 	r_list_free (fs->roots);
 	free (fs);

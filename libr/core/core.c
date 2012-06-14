@@ -404,9 +404,9 @@ R_API RCore *r_core_free(RCore *c) {
 	r_io_free (c->io);
 	r_pair_free (c->kv);
 	r_core_file_free (c->file);
+	c->file = NULL;
 	r_list_free (c->files);
 	free (c->num);
-	r_lib_free (c->lib);
 	r_cmd_free (c->cmd);
 	r_anal_free (c->anal);
 	r_asm_free (c->assembler);
@@ -414,12 +414,13 @@ R_API RCore *r_core_free(RCore *c) {
 	r_bin_free (c->bin);
 	r_lang_free (c->lang);
 	r_debug_free (c->dbg);
-	r_flag_free (c->flags);
 	r_config_free (c->config);
 	r_search_free (c->search);
 	r_sign_free (c->sign);
+	r_flag_free (c->flags);
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
+	r_lib_free (c->lib);
 	free (c);
 	return NULL;
 }

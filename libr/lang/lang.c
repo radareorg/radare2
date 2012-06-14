@@ -1,9 +1,16 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include <r_lang.h>
 #include <r_util.h>
 
 #include "p/vala.c" // hardcoded
+
+RLang *__lang = NULL;
+R_API void r_lang_plugin_free (RLangPlugin *p) {
+	if (p && p->fini)
+		p->fini (__lang);
+}
+
 
 R_API RLang *r_lang_new() {
 	RLang *lang = R_NEW (RLang);
@@ -20,6 +27,7 @@ R_API RLang *r_lang_new() {
 
 R_API void *r_lang_free(RLang *lang) {
 	if (!lang) return NULL;
+	__lang = NULL;
 	r_lang_undef (lang, NULL);
 	r_list_free (lang->langs);
 	r_list_free (lang->defs);
@@ -80,11 +88,6 @@ R_API int r_lang_setup(RLang *lang) {
 	if (lang->cur && lang->cur->setup)
 		return lang->cur->setup (lang);
 	return R_FALSE;
-}
-
-R_API void r_lang_plugin_free (RLang *lang, RLangPlugin *p) {
-	if (p && p->fini)
-		p->fini (lang);
 }
 
 R_API int r_lang_add(RLang *lang, RLangPlugin *foo) {

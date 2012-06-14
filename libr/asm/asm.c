@@ -97,7 +97,7 @@ static inline int r_asm_pseudo_byte(struct r_asm_op_t *op, char *input) {
 	len = r_str_word_count (input);
 	r_str_word_set0 (input);
 	for (i=0; i<len; i++) {
-		char *word = r_str_word_get0 (input, i);
+		const char *word = r_str_word_get0 (input, i);
 		int num = (int)r_num_math (NULL, word);
 		op->buf[i] = num;
 	}
@@ -121,24 +121,23 @@ R_API RAsm *r_asm_new() {
 	int i;
 	RAsmPlugin *static_plugin;
 	RAsm *a = R_NEW (RAsm);
-	if (a) {
-		a->pair = NULL;
-		a->user = NULL;
-		a->cur = NULL;
-		a->binb.bin = NULL;
-		a->bits = 32;
-		a->big_endian = 0;
-		a->pc = 0;
-		a->ifilter = NULL;
-		a->ofilter = NULL;
-		a->syntax = R_ASM_SYNTAX_INTEL;
-		a->plugins = r_list_new ();
-		a->plugins->free = free;
-		for (i=0; asm_static_plugins[i]; i++) {
-			static_plugin = R_NEW (RAsmPlugin);
-			memcpy (static_plugin, asm_static_plugins[i], sizeof (RAsmPlugin));
-			r_asm_add (a, static_plugin);
-		}
+	if (!a) return NULL;
+	a->pair = NULL;
+	a->user = NULL;
+	a->cur = NULL;
+	a->binb.bin = NULL;
+	a->bits = 32;
+	a->big_endian = 0;
+	a->pc = 0;
+	a->ifilter = NULL;
+	a->ofilter = NULL;
+	a->syntax = R_ASM_SYNTAX_INTEL;
+	a->plugins = r_list_new ();
+	a->plugins->free = free;
+	for (i=0; asm_static_plugins[i]; i++) {
+		static_plugin = R_NEW (RAsmPlugin);
+		memcpy (static_plugin, asm_static_plugins[i], sizeof (RAsmPlugin));
+		r_asm_add (a, static_plugin);
 	}
 	return a;
 }
@@ -178,7 +177,11 @@ R_API void r_asm_free(RAsm *a) {
 	if (!a) return;
 	// TODO: any memory leak here?
 	r_pair_free (a->pair);
+	a->pair = NULL;
+	// XXX: segfault, plugins cannot be freed
+	a->plugins->free = NULL;
 	r_list_free (a->plugins);
+	a->plugins = NULL;
 	free (a);
 }
 

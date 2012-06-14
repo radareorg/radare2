@@ -27,7 +27,7 @@ R_API RFlag * r_flag_free(RFlag *f) {
 		RList *list = r_hashtable64_lookup (f->ht_name, item->namehash);
 		r_list_free (list);
 		list = r_hashtable64_lookup (f->ht_off, item->offset);
-		r_list_free (list);
+		// XXX: segfault sometimes wtf -- r_list_free (list);
 	}
 	r_hashtable64_free (f->ht_off);
 	r_hashtable64_free (f->ht_name);

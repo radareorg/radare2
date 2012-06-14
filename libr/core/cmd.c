@@ -30,9 +30,10 @@ static void cmd_debug_reg(RCore *core, const char *str);
 
 // TODO: move somewhere else
 R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
-	ut8 buf[4096];
+	int delta;
+	ut8 buf[128];
 	static RBuffer *b = NULL; // XXX: never freed and non-thread safe. move to RCore
-	RAsmOp *op = R_NEW (RAsmOp);
+	RAsmOp *op;
 	if (b == NULL) {
 		b = r_buf_new ();
 		if (r_core_read_at (core, addr, buf, sizeof (buf))) {
@@ -40,14 +41,17 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 			r_buf_set_bytes (b, buf, sizeof (buf));
 		} else return NULL;
 	} else {
-		if (addr < b->base || addr > b->base+b->length-32) {
+		if ((addr < b->base) || addr > (b->base+b->length-32)) {
 			if (r_core_read_at (core, addr, buf, sizeof (buf))) {
 				b->base = addr;
 				r_buf_set_bytes (b, buf, sizeof (buf));
 			} else return NULL;
 		}
 	}
-	if (r_asm_disassemble (core->assembler, op, b->buf, b->length)<1) {
+	delta = addr - b->base;
+	op = R_NEW (RAsmOp);
+	r_asm_set_pc (core->assembler, addr);
+	if (r_asm_disassemble (core->assembler, op, b->buf+delta, b->length)<1) {
 		free (op);
 		return NULL;
 	}

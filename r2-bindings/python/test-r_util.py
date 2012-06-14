@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from r_util import *
+from r2.r_core import *
 
 b = RBuffer ()
 print dir(b)
