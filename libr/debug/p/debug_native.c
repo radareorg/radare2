@@ -1838,52 +1838,7 @@ static int r_debug_native_bp_read(int pid, ut64 addr, int hw, int rwx) {
 #endif
 
 /* TODO: Can I use this as in a coroutine? */
-static RList *r_debug_native_frames_x86_32(RDebug *dbg) {
-#if 0
-	int i;
-	ut8 buf[8];
-	RDebugFrame *frame;
-	ut32 ptr, ebp2;
-	ut32 _eip, _rsp, _rbp;
-	RList *list;
-	RReg *reg = dbg->reg;
-	RIOBind *bio = &dbg->iob;
-
-	_eip = r_reg_get_value (reg, r_reg_get (reg, "eip", R_REG_TYPE_GPR));
-	_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
-	_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
-
-	list = r_list_new ();
-	list->free = free;
-	bio->read_at (bio->io, _eip, (ut8*)&buf, 8);
-	/* %rbp=old rbp, %rbp+4 points to ret */
-	/* Plugin before function prelude: push %rbp ; mov %rsp, %rbp */
-	if (!memcmp (buf, "\x55\x89\xe5", 3) || !memcmp (buf, "\x89\xe5\x57", 3)) {
-		if (bio->read_at (bio->io, _rsp, (ut8*)&ptr, 8) != 8) {
-			eprintf ("read error at 0x%08"PFMT64x"\n", _rsp);
-			return R_FALSE;
-		}
-		RDebugFrame *frame = R_NEW (RDebugFrame);
-		frame->addr = ptr;
-		frame->size = 0; // TODO ?
-		r_list_append (list, frame);
-		_rbp = ptr;
-	}
-
-	for (i=1; i<MAXBT; i++) {
-		// TODO: make those two reads in a shot
-		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
-		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
-		if (!ptr || !_rbp)
-			break;
-		frame = R_NEW (RDebugFrame);
-		frame->addr = ptr;
-		frame->size = 0; // TODO ?
-		r_list_append (list, frame);
-		_rbp = ebp2;
-	}
-	return list;
-#else
+static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 	RRegItem *ri;
 	RReg *reg = dbg->reg;
 	ut32 i, _esp, esp, ebp2;
@@ -1892,13 +1847,19 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg) {
 	ut8 buf[4];
 
 	list->free = free;
-	ri = r_reg_get (reg, "ebp", R_REG_TYPE_GPR);
+	if (at == UT64_MAX) {
+		ri = r_reg_get (reg, "ebp", R_REG_TYPE_GPR);
+	} else {
+		ri = (ut32) at;
+	}
 	if (ri != NULL) {
 		_esp = r_reg_get_value (reg, ri);
 		// TODO: implement [stack] map uptrace method too
 		esp = _esp;
 		for (i=0; i<MAXBT; i++) {
 			bio->read_at (bio->io, esp, (void *)&ebp2, 4);
+			if (ebp2 == UT32_MAX)
+				break;
 			*buf = '\0';
 			bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
 
@@ -1913,10 +1874,10 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg) {
 		}
 	}
 	return list;
-#endif
 }
+
 // XXX: Do this work correctly?
-static RList *r_debug_native_frames_x86_64(RDebug *dbg) {
+static RList *r_debug_native_frames_x86_64(RDebug *dbg, ut64 at) {
 	int i;
 	ut8 buf[8];
 	RDebugFrame *frame;
@@ -1927,8 +1888,12 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg) {
 	RIOBind *bio = &dbg->iob;
 
 	_rip = r_reg_get_value (reg, r_reg_get (reg, "rip", R_REG_TYPE_GPR));
-	_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
-	_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+	if (at == UT64_MAX) {
+		_rsp = r_reg_get_value (reg, r_reg_get (reg, "rsp", R_REG_TYPE_GPR));
+		_rbp = r_reg_get_value (reg, r_reg_get (reg, "rbp", R_REG_TYPE_GPR));
+	} else {
+		_rsp = _rbp = at;
+	}
 
 	list = r_list_new ();
 	list->free = free;
@@ -1950,6 +1915,8 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg) {
 	for (i=1; i<MAXBT; i++) {
 		// TODO: make those two reads in a shot
 		bio->read_at (bio->io, _rbp, (ut8*)&ebp2, 8);
+		if (ebp2 == UT64_MAX)
+			break;
 		bio->read_at (bio->io, _rbp+8, (ut8*)&ptr, 8);
 		if (!ptr || !_rbp)
 			break;
@@ -1962,10 +1929,10 @@ static RList *r_debug_native_frames_x86_64(RDebug *dbg) {
 	return list;
 }
 
-static RList *r_debug_native_frames(RDebug *dbg) {
+static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 	if (dbg->bits == R_SYS_BITS_64)
-		return r_debug_native_frames_x86_64 (dbg);
-	return r_debug_native_frames_x86_32 (dbg);
+		return r_debug_native_frames_x86_64 (dbg, at);
+	return r_debug_native_frames_x86_32 (dbg, at);
 }
 
 // TODO: implement own-defined signals

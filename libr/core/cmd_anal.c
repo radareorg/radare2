@@ -470,6 +470,23 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'g':
 		switch (input[1]) {
+		case 't':
+			{ 
+			int n = 0;
+			RList *list = r_core_anal_graph_to (core,
+				r_num_math (core->num, input+2), n);
+			if (list) {
+				RListIter *iter, *iter2;
+				RList *list2;
+				RAnalBlock *bb;
+				r_list_foreach (list, iter, list2) {
+					r_list_foreach (list2, iter2, bb) {
+						r_cons_printf ("-> 0x%08"PFMT64x"\n", bb->addr);
+					}
+				}
+			}
+			}
+			break;
 		case 'c':
 			r_core_anal_refs (core, r_num_math (core->num, input+2), 1);
 			break;
@@ -489,8 +506,9 @@ static int cmd_anal(void *data, const char *input) {
 			" ag [addr]       ; Output graphviz code (bb at addr and children)\n"
 			" aga [addr]      ; Idem, but only addresses\n"
 			" agc [addr]      ; Output graphviz call graph of function\n"
-			" agl [fcn name]  ; Output graphviz code using meta-data\n"
 			" agd [fcn name]  ; Output graphviz code of diffed function\n"
+			" agl [fcn name]  ; Output graphviz code using meta-data\n"
+			" agt [addr]      ; find paths from current offset to given address\n"
 			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");
 			break;
 		default:
@@ -665,7 +683,10 @@ static int cmd_anal(void *data, const char *input) {
 		r_cons_break_end();
 		break;
 	case 'p':
-		r_core_search_preludes (core);
+		if (input[1]=='?') {
+			// TODO: accept parameters for ranges
+			r_cons_printf ("Usage: ap   ; find in memory for function preludes");
+		} else r_core_search_preludes (core);
 		break;
 	case 'd':
 		{

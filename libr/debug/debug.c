@@ -444,9 +444,9 @@ R_API int r_debug_kill(struct r_debug_t *dbg, boolt thread, int sig) {
 	return ret;
 }
 
-R_API RList *r_debug_frames (RDebug *dbg) {
+R_API RList *r_debug_frames (RDebug *dbg, ut64 at) {
 	if (dbg && dbg->h && dbg->h->frames)
-		return dbg->h->frames (dbg);
+		return dbg->h->frames (dbg, at);
 	return NULL;
 }
 

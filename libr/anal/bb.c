@@ -108,13 +108,18 @@ beach:
 	return R_ANAL_RET_END;
 }
 
+R_API inline int r_anal_bb_is_in_offset (RAnalBlock *bb, ut64 off) {
+	return (off >= bb->addr && off < bb->addr + bb->size);
+}
+
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	RListIter *iter, *iter2;
 	RAnalFcn *fcn;
 	RAnalBlock *bb;
 	r_list_foreach (anal->fcns, iter, fcn)
 		r_list_foreach (fcn->bbs, iter2, bb)
-			if (off >= bb->addr && off < bb->addr + bb->size)
+			if (r_anal_bb_is_in_offset (bb, off))
+			//if (off >= bb->addr && off < bb->addr + bb->size)
 				return bb;
 	return NULL;
 }

@@ -16,10 +16,12 @@ sections.foreach = function (x) {
 	var it = sections.iterator ();
 	var iter = new r2.RListIter (it);
 	while (iter != null) {
-		var dat = iter.get_data();
-		var s = new r2.RBinSection (dat);
-		console.log ("-->", dat, s.name);
+		var dat = iter.get_data ();
+		var s = r2.RBinSection (dat);
+		console.log (dat);
+		//console.log ("-->", dat, s.name);
 		console.log ("-->", s);
+console.log ("-_>");
 		iter = r2.RListIter (iter.get_next ()); //
 console.log ("next ", iter);
 		//iter = new r2.RListIter (iter.n); //get_next());

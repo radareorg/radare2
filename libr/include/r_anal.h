@@ -431,6 +431,7 @@ R_API void r_anal_bb_free(RAnalBlock *bb);
 R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb,
 		ut64 addr, ut8 *buf, ut64 len, int head);
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off);
+R_API int r_anal_bb_is_in_offset (RAnalBlock *bb, ut64 addr);
 
 /* op.c */
 R_API RAnalOp *r_anal_op_new();
@@ -443,6 +444,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
 /* fcn.c */
 R_API RAnalFcn *r_anal_fcn_new();
+R_API int r_anal_fcn_is_in_offset (RAnalFcn *fcn, ut64 addr);
 R_API RAnalFcn *r_anal_fcn_find(RAnal *anal, ut64 addr, int type);
 R_API RList *r_anal_fcn_list_new();
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFcn *fcn);

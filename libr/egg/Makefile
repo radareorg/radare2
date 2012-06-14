@@ -11,7 +11,7 @@ OBJ+=emit_x64.o
 OBJ+=emit_trace.o
 
 foo: ${LIBSO} ${LIBAR} 
-	cd p ; ${MAKE}
+	${MAKE}
 
 P=p/
 include ${STATIC_EGG_PLUGINS}

@@ -178,7 +178,7 @@ typedef struct r_debug_plugin_t {
 	int (*wait)(RDebug *dbg, int pid);
 	int (*kill)(RDebug *dbg, boolt thread, int sig);
 	int (*contsc)(RDebug *dbg, int pid, int sc);
-	RList* (*frames)(RDebug *dbg);
+	RList* (*frames)(RDebug *dbg, ut64 at);
 	RBreakpointCallback breakpoint;
 // XXX: specify, pid, tid, or RDebug ?
 	int (*reg_read)(RDebug *dbg, int type, ut8 *buf, int size);
@@ -283,7 +283,7 @@ R_API int r_debug_map_sync(RDebug *dbg);
 R_API int r_debug_stop(RDebug *dbg);
 
 /* backtrace */
-R_API RList *r_debug_frames (RDebug *dbg);
+R_API RList *r_debug_frames (RDebug *dbg, ut64 at);
 
 R_API int r_debug_is_dead (RDebug *dbg);
 R_API int r_debug_map_protect (RDebug *dbg, ut64 addr, int size, int perms);

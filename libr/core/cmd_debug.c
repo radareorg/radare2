@@ -339,6 +339,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	const char *name;
 	char *arg;
 	int size, i, type = R_REG_TYPE_GPR;
+	int bits = (core->dbg->bits == R_SYS_BITS_64)? 64: 32;
 	switch (str[0]) {
 	case '?':
 		if (str[1]) {
@@ -398,29 +399,26 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
 		break;
 	case 'd':
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 3); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3); // XXX detect which one is current usage
 		break;
 	case 'o':
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
-		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 0); // XXX detect which one is current usage
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0); // XXX detect which one is current usage
 		r_reg_arena_swap (core->dbg->reg, R_FALSE);
 		break;
 	case '=':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 2); // XXX detect which one is current usage
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 2);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 2); // XXX detect which one is current usage
 		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '*':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 1); // XXX detect which one is current usage
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 1);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 1); // XXX detect which one is current usage
 		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '\0':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 32, 0);
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, 0);
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0);
 		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case ' ':
@@ -494,9 +492,14 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 't':
 		{
 		int i = 0;
-		RList *list = r_debug_frames (core->dbg);
+		ut64 at = UT64_MAX;
+		RList *list;
 		RListIter *iter;
 		RDebugFrame *frame;
+
+		if (input[2]==' ' && input[3])
+			at = r_num_math (core->num, input+2);
+		list = r_debug_frames (core->dbg, at);
 		r_list_foreach (list, iter, frame) {
 			r_cons_printf ("%d  0x%08"PFMT64x"  %d\n",
 				i++, frame->addr, frame->size);
@@ -551,7 +554,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbd 0x8048000     ; disable breakpoint\n"
 		"dbh x86           ; set/list breakpoint plugin handlers\n"
 		"Unrelated:\n"
-		"dbt               ; debug backtrace\n");
+		"dbt [ebp]         ; debug backtrace\n");
 		break;
 	default:
 		{

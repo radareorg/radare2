@@ -3,7 +3,7 @@
 # pancake // radare.org - 2010-2011
 
 SUP_LANGS=""
-LANGS="python perl ruby lua go java guile php5"
+LANGS="python perl ruby lua go java guile php5 node-ffi"
 [ -z "${CC}" ] && CC=gcc
 [ -z "${CXX}" ] && CXX=g++
 

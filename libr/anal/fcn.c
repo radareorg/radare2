@@ -489,3 +489,7 @@ R_API RList* r_anal_fcn_get_refs (RAnalFcn *anal) { return anal->refs; }
 R_API RList* r_anal_fcn_get_xrefs (RAnalFcn *anal) { return anal->xrefs; }
 R_API RList* r_anal_fcn_get_vars (RAnalFcn *anal) { return anal->vars; }
 R_API RList* r_anal_fcn_get_bbs (RAnalFcn *anal) { return anal->bbs; }
+
+R_API int r_anal_fcn_is_in_offset (RAnalFcn *fcn, ut64 addr) {
+	return (addr >= fcn->addr &&  addr < (fcn->addr+fcn->size));
+}

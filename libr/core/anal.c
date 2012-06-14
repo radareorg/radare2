@@ -241,12 +241,12 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
 			}
 			/* TODO: Dupped analysis, needs more optimization */
-fcn->depth = 256;
+		fcn->depth = 256;
 			r_core_anal_bb (core, fcn, fcn->addr, R_TRUE);
 // hack
-if (fcn->depth ==0) {
-	eprintf ("fun depth fail for 0x%08"PFMT64x"\n", fcn->addr);
-} else fcn->depth = 256-fcn->depth;
+		if (fcn->depth == 0) {
+			eprintf ("fun depth fail for 0x%08"PFMT64x"\n", fcn->addr);
+		} else fcn->depth = 256-fcn->depth;
 			r_list_sort (fcn->bbs, &cmpaddr);
 			/* New function: Add initial xref */
 			if (from != -1) {
@@ -443,6 +443,75 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			}
 		}
 	return R_TRUE;
+}
+
+static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest);
+
+static RList *recurse_bb(RCore *core, ut64 addr, RAnalBlock *dest) {
+	RAnalBlock *bb;
+	RList *ret;
+	bb = r_anal_bb_from_offset (core->anal, addr);
+	if (bb == dest) {
+		eprintf ("path found!");
+		return NULL;
+	}
+	ret = recurse (core, bb, dest);
+	if (ret) return ret;
+	return NULL;
+}
+
+static void register_path (RList *l) {
+}
+
+static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
+	RList *ret;
+	RAnalBlock *bb;
+
+	ret = recurse_bb (core, from->jump, dest);
+	if (ret) register_path (ret);
+	ret = recurse_bb (core, from->fail, dest);
+	if (ret) register_path (ret);
+
+	/* same for all calls */
+	// TODO: RAnalBlock must contain a linked list of calls
+	return NULL;
+}
+
+R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
+	RAnalBlock *bb, *root, *dest;
+	RListIter *iter, *iter2;
+	RList *list2, *list = NULL;
+	RAnalFcn *fcn;
+
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		if (!r_anal_fcn_is_in_offset (fcn, core->offset))
+			continue;
+		r_list_foreach (fcn->bbs, iter2, bb) {
+			if (r_anal_bb_is_in_offset (bb, addr)) {
+				dest = bb;
+			}
+			if (r_anal_bb_is_in_offset (bb, core->offset)) {
+				root = bb;
+		//		list2 = r_core_anal_graph_
+				r_list_append (list, list2);
+			}
+		}
+	}
+	if (root && dest) {
+		if (dest == root) {
+			eprintf ("Source and destination are the same\n");
+			return NULL;
+		}
+		eprintf ("ROOT BB 0x%08"PFMT64x"\n", root->addr);
+		eprintf ("DEST BB 0x%08"PFMT64x"\n", dest->addr);
+		list = r_list_new ();
+		{
+			RList *ll = recurse (core, root, dest);
+			//r_list_append (list, ll);
+		}
+		printf ("=>  0x%08"PFMT64x"\n", root->jump);
+	} else eprintf ("Unable to find source or destination basic block\n");
+	return list;
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
