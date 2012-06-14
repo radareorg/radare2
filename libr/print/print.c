@@ -226,11 +226,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (base<32)
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		ut32 opad = (ut32)(addr >> 32);
-		p->printf ("   offset   ");
-		while (opad>0) {
+		p->printf ("   offset  ");
+		//while (opad>0) {
 			p->printf (p->col==1?"|":" ");
 			opad >>= 4;
-		}
+		//}
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 		/* extra padding for offsets > 8 digits */
 		for (i=0; i<inc; i++) {

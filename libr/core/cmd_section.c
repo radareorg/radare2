@@ -11,8 +11,28 @@ static int cmd_section(void *data, const char *input) {
 		" S=               ; list sections (in nice ascii-art bars)\n"
 		" Sd [file]        ; dump current section to a file (see dmd)\n"
 		" Sl [file]        ; load contents of file into current section (see dml)\n"
+		" Sr [name]        ; rename section on current seek\n"
 		" S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
 		" S-[id|0xoff|*]   ; remove this section definition\n");
+		break;
+	case 'r':
+		if (input[1]==' ') {
+			RIOSection *s;
+			int len = 0;
+			ut64 addr;
+			char *p;
+
+			p = strchr (input+2, ' ');
+			if (p) {
+				addr = r_num_math (core->num, p+1);
+				len = (int)(size_t)(p-input+2);
+			} else addr = core->offset;
+			s = r_io_section_get (core->io, addr);
+			if (s) {
+				if (!len) len = sizeof (s->name);
+				r_str_ncpy (s->name, input+2, len);
+			} else eprintf ("No section found in 0x%08"PFMT64x"\n", core->offset);
+		} else eprintf ("Usage: Sr [name] ([offset])\n");
 		break;
 	case 'd':
 		{

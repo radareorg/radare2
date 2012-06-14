@@ -146,6 +146,14 @@ static int visual_fkey(RCore *core, int ch) {
 	return ch;
 }
 
+void setcursor (RCore *core, int cur) {
+	curset = cur;
+	if (curset) flags|=R_PRINT_FLAGS_CURSOR; 
+	else flags &= ~(flags&R_PRINT_FLAGS_CURSOR);
+	r_print_set_flags (core->print, flags);
+	core->print->col = curset? 1: 0;
+}
+
 /* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
@@ -166,11 +174,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'c':
 		// XXX dupped flag imho
-		curset ^= 1;
-		if (curset) flags|=R_PRINT_FLAGS_CURSOR; 
-		else flags &= ~(flags&R_PRINT_FLAGS_CURSOR);
-		r_print_set_flags (core->print, flags);
-		core->print->col = curset? 1: 0;
+		setcursor (core, curset ^ 1);
+		
 		break;
 	case 'd':
 		r_core_visual_define (core);
@@ -670,6 +675,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 0x1b:
 	case 'q':
 	case 'Q':
+		setcursor (core, 0);
 		return R_FALSE;
 	}
 	return R_TRUE;

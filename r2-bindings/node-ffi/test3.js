@@ -6,9 +6,24 @@ b.load ("/bin/ls", false);
 var baddr = b.get_baddr ();
 console.log ("base address: ", baddr);
 
-var sections = new r2.RList (b.get_sections ());
-console.log (sections);
+var sections = b.get_sections ();
+console.log ("sections", sections);
 
+r2.a.r_bin_get_sections (b.o);
+
+var secs = (new r2.RList(sections));
+var iter = r2.RListIter (secs.iterator ());
+//var d = iter.get_data();
+//var n = iter.get_next ();
+var g = secs.get();
+console.log (g);
+//console.log (n);
+process.exit (0);
+if (sections) {
+	console.log ("___");
+}
+
+console.log ("length", secs.length ());
 var iter = new r2.RListIter (sections.iterator ());
 console.log (sections);
 

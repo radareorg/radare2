@@ -7,6 +7,8 @@
 
 ====[[ 0.9.1 ]]====
 
+// show hints for
+    0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             
 * Source debugging or gtfo
 * Fix ?-
 * Register diff colorization is broken

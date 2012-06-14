@@ -271,8 +271,11 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 						r_core_read_at (core, ptr, b, memref);
 						off = r_mem_get_num (b, memref, 1);
 						item = r_flag_get_i (core->flags, off);
-						r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
-								dst->reg->name, ptr, off, item?item->name: "");
+						{ char s[32];
+						r_str_ncpy (s, (const char *)b, sizeof (s));
+						r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
+								dst->reg->name, ptr, off, item?item->name: s);
+						}
 						//r_cons_printf ("; %s = 0x%"PFMT64x"\n",
 						//		dst->reg->name,
 						//		idx+addr+src->delta);

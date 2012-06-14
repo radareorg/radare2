@@ -160,7 +160,7 @@ typedef struct r_io_bind_t {
 
 /* sections */
 typedef struct r_io_section_t {
-	char name[256];
+	char name[64];
 	ut64 offset;
 	ut64 vaddr;
 	ut64 size;

@@ -448,6 +448,37 @@ static int cmd_anal(void *data, const char *input) {
 				} else eprintf ("Cannot find function at 0x%08llx\n", core->offset);
 			}
 			break;
+		case 'e':
+			{
+				RAnalFcn *fcn;
+				ut64 off = core->offset;
+				char *p, *name = strdup (input+3);
+				if ((p=strchr (name, ' '))) {
+					*p = 0;
+					off = r_num_math (core->num, p+1);
+				}
+				fcn = r_anal_fcn_find (core->anal, off,
+						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+				if (fcn) {
+					RAnalBlock *b;
+					RListIter *iter;
+					RAnalRef *r;
+					r_list_foreach (fcn->refs, iter, r) {
+						r_cons_printf ("0x%08"PFMT64x" -%c 0x%08"PFMT64x"\n", r->at, r->type, r->addr);
+					}
+					r_list_foreach (fcn->bbs, iter, b) {
+						int ok = 0;
+						if (b->type == R_ANAL_BB_TYPE_LAST) ok = 1;
+						if (b->type == R_ANAL_BB_TYPE_FOOT) ok = 1;
+						if (b->jump == UT64_MAX && b->fail == UT64_MAX) ok=1;
+						if (ok) {
+							r_cons_printf ("0x%08"PFMT64x" -r\n", b->addr);
+							// TODO: check if destination is outside the function boundaries
+						}
+					}
+				} else eprintf ("Cannot find function at 0x%08llx\n", core->offset);
+			}
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: af[?+-l*]\n"
