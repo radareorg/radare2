@@ -148,15 +148,15 @@ static void r_bin_free_items(RBin *bin) {
 	int i;
 	RBinArch *a = &bin->curarch;
 	// XXX: drop all those silly conditionals! if it's null is not for freeing
-	RBINLISTFREE(a->entries);
-	RBINLISTFREE(a->fields);
-	RBINLISTFREE(a->imports);
-	RBINLISTFREE(a->libs);
-	RBINLISTFREE(a->relocs);
-	RBINLISTFREE(a->sections);
-	RBINLISTFREE(a->strings);
-	RBINLISTFREE(a->symbols);
-	RBINLISTFREE(a->classes);
+	RBINLISTFREE (a->entries);
+	RBINLISTFREE (a->fields);
+	RBINLISTFREE (a->imports);
+	RBINLISTFREE (a->libs);
+	RBINLISTFREE (a->relocs);
+	RBINLISTFREE (a->sections);
+	RBINLISTFREE (a->strings);
+	RBINLISTFREE (a->symbols);
+	RBINLISTFREE (a->classes);
 	if (a->info) free (a->info);
 	if (a->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)

@@ -78,7 +78,8 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (str[0]=='\'' && str[2]=='\'')
 		return (ut64)str[1];
 
-	if (str[4] == ':') {
+	len = strlen (str);
+	if (len>3 && str[4] == ':') {
 		if (sscanf (str, "%04x", &s)==1) {
 			if (sscanf (str+5, "%04x", &a)==1) {
 				return (ut64) ((s<<16) | a);
@@ -90,7 +91,6 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (str[0]=='0' && str[1]=='x') {
 		sscanf (str, "0x%"PFMT64x"", &ret);
 	} else {
-		len = strlen (str);
 		lch = str[len>0?len-1:0];
 		if (*str=='0' && lch != 'b' && lch != 'h')
 			lch = 'o';
