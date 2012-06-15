@@ -7,7 +7,8 @@ LANGS="python perl ruby lua go java guile php5 node-ffi"
 [ -z "${CC}" ] && CC=gcc
 [ -z "${CXX}" ] && CXX=g++
 
-PYTHON_CONFIG=`./python-config-wrapper -n`
+R=`dirname $0`
+PYTHON_CONFIG=`$R/python-config-wrapper -n`
 export PYTHON_CONFIG
 
 if [ "$1" = "force-all" ]; then
