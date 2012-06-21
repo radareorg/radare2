@@ -241,7 +241,7 @@ R_API int r_asm_set_subarch(RAsm *a, const char *name) {
 static int has_bits(RAsmPlugin *h, int bits) {
 	int i;
 	if (h && h->bits)
-		for(i=0; h->bits[i]; i++)
+		for (i=0; h->bits[i]; i++)
 			if (bits == h->bits[i])
 				return R_TRUE;
 	return R_FALSE;
