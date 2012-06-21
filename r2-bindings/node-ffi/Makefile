@@ -4,11 +4,12 @@ LIBS_PFX=
 FORCE_SOEXT=1
 SAVED=test.js test2.js test3.js
 
+.PHONY: bar all
+bar: node_modules all
+
 include ../rules.mk
 
-
-# install deps
-deps:
+node_modules:
 	npm install
 
 npm:

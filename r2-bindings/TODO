@@ -1,2 +1,10 @@
-* proper integration for gjs and nodejs
 * make vapi for RRegex
+* fix c++ bindings like this:
+namespace Radere {
+	namespace Core {
+		class RAnalValue{
+		public:
+			RAnalValue *m_self; //No se pq li dius self, pot confondre amb el this ¿no?
+		};
+	}//ns Radare
+}//ns Core

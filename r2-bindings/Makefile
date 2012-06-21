@@ -225,8 +225,10 @@ oldtest:
 
 clean:
 	@for a in $(LANGS); do \
+		if [ -d $$a ]; then \
 		echo "Cleaning $$a " ; \
-		cd $$a ; ${MAKE} clean ; cd .. ; \
+		( cd $$a && ${MAKE} clean ) ; \
+		fi ; \
 	done
 
 mrproper:
