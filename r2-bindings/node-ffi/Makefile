@@ -6,6 +6,11 @@ SAVED=test.js test2.js test3.js
 
 include ../rules.mk
 
+
+# install deps
+deps:
+	npm install
+
 npm:
 	rm -rf node_modules/r2
 	mkdir -p node_modules/r2

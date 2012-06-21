@@ -3,7 +3,8 @@
   "url": "http://www.radare.org",
   "description": "radare2 valabind-ffi bindings for nodejs",
   "dependencies": {
-    "ffi": ">= 1.0.0"
+    "ffi": ">= 1.0.0",
+    "ref-struct": ">= 0.0.3"
   },
   "keywords": [
     "reversing",
