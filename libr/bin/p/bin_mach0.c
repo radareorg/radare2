@@ -158,7 +158,7 @@ static RBinInfo* info(RBinArch *arch) {
 		free (str);
 	}
 	strncpy (ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
-	/* TODO get os*/
+	/* TODO get os */
 	strncpy (ret->os, "darwin", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->subsystem, "darwin", R_BIN_SIZEOF_STRINGS);
 	if ((str = MACH0_(r_bin_mach0_get_cputype) (arch->bin_obj))) {
@@ -183,10 +183,11 @@ static RBinInfo* info(RBinArch *arch) {
 
 #if !R_BIN_MACH064
 static int check(RBinArch *arch) {
-	if (arch && arch->buf && arch->buf->buf)
-	if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
-		!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4))
-		return R_TRUE;
+	if (arch && arch->buf && arch->buf->buf) {
+		if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
+			!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4))
+			return R_TRUE;
+	}
 	return R_FALSE;
 }
 

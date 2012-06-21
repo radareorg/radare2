@@ -24,7 +24,8 @@ static int MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* 
 }
 
 static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
-	int magic, len;
+	ut32 magic;
+	int len;
 
 	if (r_buf_read_at (bin->b, 0, (ut8*)&magic, 4) == -1) {
 		eprintf ("Error: read (magic)\n");

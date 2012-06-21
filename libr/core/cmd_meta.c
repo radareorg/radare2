@@ -47,42 +47,59 @@ static int cmd_meta(void *data, const char *input) {
 		}
 		break;
 	case 'l':
-		{
-		int num;
-		char *f, *p, *line, buf[4096];
-		f = strdup (input +2);
-		p = strchr (f, ':');
-		if (p) {
-			*p=0;
-			num = atoi (p+1);
-			line = r_file_slurp_line (input+2, num, 0);
-			if (!line) {
-				const char *dirsrc = r_config_get (core->config, "dir.source");
-				if (dirsrc && *dirsrc) {
-					f = r_str_concat (strdup (dirsrc), f);
-					line = r_file_slurp_line (f, num, 0);
-				}
-				if (!line) {
-					eprintf ("Cannot slurp file\n");
-					return R_FALSE;
-				}
-			}
-			p = strchr (p+1, ' ');
-			if (p) {
-				snprintf (buf, sizeof (buf), "CC %s:%d %s @ %s",
-					f, num, line, p+1);
+		// XXX: this should be moved to CL?
+		if (input[2]=='a') {
+			ut64 offset;
+			input++;
+			if (input[1]=='?') {
+				eprintf ("Usage: cla [addr]\n");
 			} else {
-				snprintf (buf, sizeof (buf), "\"CC %s:%d %s\"",
-					f, num, line);
+				char *sl;
+				if (input[1]==' ') 
+					offset = r_num_math (core->num, input+2);
+				else offset = core->offset;
+				sl = r_bin_meta_get_source_line (core->bin, offset);
+				if (sl) {
+					r_cons_printf ("%s\n", sl);
+					free (sl);
+				}
 			}
-			r_core_cmd0 (core, buf);
-			free (line);
-			free (f);
-		}
+		} else {
+			int num;
+			char *f, *p, *line, buf[4096];
+			f = strdup (input +2);
+			p = strchr (f, ':');
+			if (p) {
+				*p=0;
+				num = atoi (p+1);
+				line = r_file_slurp_line (input+2, num, 0);
+				if (!line) {
+					const char *dirsrc = r_config_get (core->config, "dir.source");
+					if (dirsrc && *dirsrc) {
+						f = r_str_concat (strdup (dirsrc), f);
+						line = r_file_slurp_line (f, num, 0);
+					}
+					if (!line) {
+						eprintf ("Cannot slurp file\n");
+						return R_FALSE;
+					}
+				}
+				p = strchr (p+1, ' ');
+				if (p) {
+					snprintf (buf, sizeof (buf), "CC %s:%d %s @ %s",
+						f, num, line, p+1);
+				} else {
+					snprintf (buf, sizeof (buf), "\"CC %s:%d %s\"",
+						f, num, line);
+				}
+				r_core_cmd0 (core, buf);
+				free (line);
+				free (f);
+			}
 		}
 		break;
 	case 'L': // debug information of current offset
-		ret = r_bin_meta_get_line (core->bin, core->offset, file, 1023, &line);
+		ret = r_bin_meta_get_line (core->bin, core->offset, file, sizeof (file)-1, &line);
 		if (ret) {
 			r_cons_printf ("file %s\nline %d\n", file, line);
 			ret = (line<5)? 5-line: 5;

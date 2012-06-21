@@ -1,4 +1,3 @@
-
 /* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
 
 static int cmd_info(void *data, const char *input) {
@@ -46,13 +45,13 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf (
 		"Usage: i[aeiIsSz]*      ; get info from opened file\n"
 		"NOTE: Append a '*' to get the output in radare commands\n"
-		" ia    ; show all info (imports, exports, sections..)\n"
-		" ii    ; imports\n"
-		" iI    ; binary info\n"
-		" ie    ; entrypoint\n"
-		" is    ; symbols\n"
-		" iS    ; sections\n"
-		" iz    ; strings\n");
+		" ia        ; show all info (imports, exports, sections..)\n"
+		" ii        ; imports\n"
+		" iI        ; binary info\n"
+		" ie        ; entrypoint\n"
+		" is        ; symbols\n"
+		" iS        ; sections\n"
+		" iz        ; strings\n");
 		break;
 	case '*':
 		break;

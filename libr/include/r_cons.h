@@ -40,6 +40,8 @@ typedef struct r_cons_grep_t {
 	int tokenfrom;
 	int tokento;
 	int neg;
+	int begin;
+	int end;
 } RConsGrep;
 
 typedef void (*RConsEvent)(void *);

@@ -205,7 +205,7 @@ void ascii85_decode(FILE *fp, int delims, int ignore_garbage) {
 int main(int argc, char *argv[]) {
 	extern char *optarg;
 	extern int optind, optopt, opterr;
-	int opt, long_optind, decode = 0, ignore_garbage = 0, delims = 1, wrap = 76, y_abbr = 0;
+	int opt, long_optind, decode = 0, ignore_garbage = 0, delims = 0, wrap = 76, y_abbr = 0;
 	FILE *fp = stdin;
 	char *opts = "dinw:yh";
 	struct option long_opts[] = {

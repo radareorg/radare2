@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> nibble<develsec.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> nibble<develsec.org> */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -9,6 +9,9 @@ R_API void r_cons_grep(const char *str) {
 	char *ptr, *optr, *ptr2, *ptr3;
 	cons = r_cons_singleton ();
 	cons->grep.str = NULL;
+	cons->grep.neg = 0;
+	cons->grep.begin = 0;
+	cons->grep.end = 0;
 	cons->grep.nstrings = 0;
 	cons->grep.tokenfrom = 0;
 	cons->grep.tokento = ST32_MAX;
@@ -18,6 +21,10 @@ R_API void r_cons_grep(const char *str) {
 	if (str == NULL || !*str)
 		return;
 
+	if (*str == '^') { // neg
+		cons->grep.begin = 1;
+		str++;
+	}
 	if (*str == '!') { // neg
 		cons->grep.neg = 1;
 		str++;
@@ -28,6 +35,13 @@ R_API void r_cons_grep(const char *str) {
 	}
 
 	strncpy (buf, str, sizeof (buf)-1);
+	{
+		int len = strlen (buf)-1;
+		if (len>1 && buf[len]=='$' && buf[len-1]!='\\') {
+			cons->grep.end = 1;
+			buf[len] = 0;
+		}
+	}
 	ptr = buf;
 	ptr3 = strchr (ptr, '['); // column number
 	if (ptr3) {
@@ -131,11 +145,17 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	memcpy (in, buf, len);
 
 	if (cons->grep.nstrings>0) {
-		for (i=0; i<cons->grep.nstrings; i++)
-			if (strstr (in, cons->grep.strings[i])) {
-				hit = !cons->grep.neg;
-				break;
-			}
+		for (i=0; i<cons->grep.nstrings; i++) {
+			char *p = strstr (in, cons->grep.strings[i]);
+			if (!p) continue;
+			if (cons->grep.begin)
+				hit = (p == in)? 1: 0;
+			else hit = !cons->grep.neg;
+			// XXX: this can be optimized
+			if (cons->grep.end && (strlen (cons->grep.strings[i]) != strlen (p)))
+				hit = 0;
+			break;
+		}
 	} else hit = 1;
 
 	if (hit) {
