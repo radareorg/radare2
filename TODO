@@ -5,7 +5,13 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
+
 ====[[ 0.9.1 ]]====
+
+EVAL
+? [0] => doesnt works! do it like in r1
+? flag -flag2 => fails because of the ' ' before the minus sign
+  ? flag-flag2 works
 
 // show hints for
     0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             

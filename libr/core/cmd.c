@@ -216,9 +216,18 @@ static int cmd_interpret(void *data, const char *input) {
 }
 
 static int cmd_bsize(void *data, const char *input) {
+	ut64 n;
 	RFlagItem *flag;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
+	case '+':
+		n = r_num_math (core->num, input+1);
+		r_core_block_size (core, core->blocksize+n);
+		break;
+	case '-':
+		n = r_num_math (core->num, input+1);
+		r_core_block_size (core, core->blocksize-n);
+		break;
 	case 'f':
 		if (input[1]==' ') {
 			flag = r_flag_get (core->flags, input+2);
@@ -233,6 +242,8 @@ static int cmd_bsize(void *data, const char *input) {
 	case '?':
 		r_cons_printf ("Usage: b[f] [arg]\n"
 			" b        # display current block size\n"
+			" b+3      # increase blocksize by 3\n"
+			" b-16     # decrement blocksize by 3\n"
 			" b 33     # set block size to 33\n"
 			" b eip+4  # numeric argument can be an expression\n"
 			" bf foo   # set block size to flag size\n");
@@ -575,6 +586,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* sub commands */
 	ptr = strchr (cmd, '`');
 	if (ptr) {
+		int oneline = 1;
+		if (ptr[1]=='`') {
+			strcpy (ptr, ptr+1);
+			oneline = 0;
+		}
 		ptr2 = strchr (ptr+1, '`');
 		if (!ptr2) {
 			eprintf ("parse: Missing '´' in expression.\n");
@@ -583,9 +599,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			*ptr = '\0';
 			*ptr2 = '\0';
 			str = r_core_cmd_str (core, ptr+1);
-			for (i=0; str[i]; i++)
-				if (str[i]=='\n')
-					str[i]=' ';
+			if (oneline)
+				for (i=0; str[i]; i++)
+					if (str[i]=='\n')
+						str[i]=' ';
 			str = r_str_concat (str, ptr2+1);
 			cmd = r_str_concat (strdup (cmd), str);
 			ret = r_core_cmd_subst (core, cmd);

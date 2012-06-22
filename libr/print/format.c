@@ -12,7 +12,8 @@ static void print_format_help(RPrint *p) {
 	" e - temporally swap endian\n"
 	//" D - double (8 bytes)\n"
 	" f - float value\n"
-	" b - one byte \n"
+	" c - one char (signed byte)\n"
+	" b - one byte\n"
 	" B - show 10 first bytes of buffer\n" // B must be for binary ??
 	" i - %%i integer value (4 bytes)\n"
 	" w - word (16 bit hexa)\n"
@@ -179,6 +180,13 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 					buf[i], buf[i], IS_PRINTABLE (buf[i])?buf[i]:0);
 				i++;
 				break;
+			case 'c':
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				p->printf ("%d ; %d ; '%c' ", 
+					buf[i], (char)buf[i],
+					IS_PRINTABLE (buf[i])?buf[i]:0);
+				i++;
+				break;
 			case 'B':
 				memset (buffer, '\0', 255);
 				if (!p->iob.read_at) {
@@ -220,6 +228,7 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 					 addr = (*(buf+i))<<8 | (*(buf+i+1));
 				else     addr = (*(buf+i+1))<<8 | (*(buf+i));
 				p->printf ("0x%04x ", addr);
+				i+=2;
 				break;
 			case 'z': // zero terminated string
 				p->printf ("0x%08"PFMT64x" = ", seeki);
