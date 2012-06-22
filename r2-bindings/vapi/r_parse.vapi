@@ -3,7 +3,7 @@
 [CCode (cheader_filename="r_parse.h", cprefix="r_parse_", lower_case_cprefix="r_parse_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="struct r_parse_t", free_function="r_parse_free", cprefix="r_parse_")]
+	[CCode (cname="RParse", free_function="r_parse_free", cprefix="r_parse_")]
 	public class RParse {
 		public RParse();
 

@@ -1,33 +1,29 @@
-var r2 = require ("./r_core")
+var r2 = require ('./r_core');
 
-var c = new r2.RCore ()
-console.log ("pre");
-var cons = new r2.RCons (c.get_cons())
-console.log ("pos");
-var config = r2.RConfig (c.get_config()) // segfault
+var core = new r2.RCore(), cons = r2.RCons;
 
-console.log ("rep");
-var ret = c.file_open ("test2.js", false, 0);
-console.log ("win");
-if (ret.pointer.address != 0) {
-console.log ("won");
-	//c.bin_load ("test.js");
-	//	c.seek (0, true); c.block_read (0);
-	//c.cmd0 ("S 0x00000000 0x00000000 0x00013b30 0x00013b30 ehdr rwx");
-	c.cmd0 ("o");
-	c.cmd0 ("e io.va");
-	cons.flush ();
-console.log ("cans");
-console.log ("sections {");
-	c.cmd0 ("om");
-	c.cmd0 ("S");
-	cons.flush ();
-console.log ("}");
-c.block_read (0);
-	c.cmd0 ("pD 8");
-	c.cmd0 ("? 33+4");
-	c.cmd0 ("x@0");
-	cons.flush ();
-} else {
-	console.error ("oops: cannot open file");
-}
+var fileName = process.argv[2] || '/bin/true';
+var file = core.file_open(fileName, 0, 0);
+
+if(file._pointer.isNull())
+    console.error('Cannot open '+fileName), process.exit(1);
+
+//core.bin_load('test.js');
+//core.seek(0, true); core.block_read(0);
+//core.cmd0('S 0x00000000 0x00000000 0x00013b30 0x00013b30 ehdr rwx');
+
+core.cmd0('o');
+core.cmd0('e io.va');
+cons.flush();
+
+console.log('sections {');
+core.cmd0('om');
+core.cmd0('S');
+cons.flush();
+console.log('}');
+
+core.block_read(0);
+core.cmd0('pD 8');
+core.cmd0('? 33+4');
+core.cmd0('x@0');
+cons.flush();

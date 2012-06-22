@@ -107,13 +107,15 @@ namespace Radare {
 }
 
 /* Generic Iterator interfaced with r_flist */
-//[Compact] // XXX: Do not uncomment this...or generated vala code sucks and segfaults
+/* Commented, not used in the public API - eddyb
+ * //[Compact] // XXX: Do not uncomment this...or generated vala code sucks and segfaults
 [CCode (cprefix="r_flist_", cheader_filename="r_flist.h", cname="void*")]
 public class RFList<G> {
 	public RFList<G> iterator();
 	public bool next();
 	public unowned G @get();
 }
+*/
 
 [Compact]
 [CCode (cprefix="r_list_", cheader_filename="r_util.h", cname="RList")]
