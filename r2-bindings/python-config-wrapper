@@ -3,7 +3,6 @@
 # -- pancake
 
 PCS="${PYTHON_CONFIG}
-	python-config
 	python2-config
 	python25-config
 	python2.5-config
@@ -20,7 +19,8 @@ for a in ${PCS} ; do
 	$a --help >/dev/null 2>&1
 	if [ $? = 0 ]; then
 		PYCFG=$a
-		break
+		PY3=`$a --libs| grep python3`
+		[ -z "${PY3}" ] && break
 	fi
 done
 
