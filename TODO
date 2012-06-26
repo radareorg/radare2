@@ -24,6 +24,7 @@ EVAL
 * p= show entropy of current block
   - show number of occurrences for each byte
   - maybe in 'ad' command, analyze data
+* highlight search hits in hexdump
 * Implement s/x
 * sC not working
 * Implement debugger backtrace properly
@@ -32,14 +33,6 @@ EVAL
 * p7 : 7bit encoding (sms)
   - variant for stego print? LSB, MSB, ...
   - add base85 api
-* Kill kernel's list.h
-	r_anal.h
-	r_asm.h
-	r_crypto.h
-	r_parse.h
-	r_reg.h
-	r_syscall.h
-	r_util.h
 * crackme mach0 happy with rbin
 * add support for sockets in rarun2
 * if no debugger supported, say so... r_io must ?
@@ -48,7 +41,6 @@ EVAL
   - search for antidebug/disasm tricks opcodes
     - allows to find interesting points to analyze
 * get cparse ftw
-* fix nodejs iterators
 * use slices for r_list_iter primitives
 
 BUGS:

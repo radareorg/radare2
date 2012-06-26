@@ -775,8 +775,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	obs = core->blocksize;
 
 	core->visual = R_TRUE;
-	r_cons_singleton ()->data = core;
-	r_cons_singleton ()->event_resize = (RConsEvent)r_core_visual_refresh;
+	core->cons->data = core;
+	core->cons->event_resize = (RConsEvent)r_core_visual_refresh;
 	//r_cons_set_cup (R_TRUE);
 
 	while (*input) {

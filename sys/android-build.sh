@@ -50,6 +50,9 @@ esac
 
 [ -z "${NDK_ARCH}" ] && NDK_ARCH=arm
 [ -z "${STATIC_BUILD}" ] && STATIC_BUILD=0
+
+# ow yeah
+STATIC_BUILD=1
 export NDK_ARCH
 export STATIC_BUILD
 echo NDK_ARCH: ${NDK_ARCH}

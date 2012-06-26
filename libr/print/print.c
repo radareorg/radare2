@@ -83,7 +83,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 #define CURDBG 0
 // XXX: redesign ? :)
 R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
-	const char *s;
+	char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *)malloc ((strlen (str)+2)*32);
 	int ch, i;
 	/* XXX That's hacky as shit.. but partially works O:) */
@@ -107,20 +107,24 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	for (s=str, i=0 ; *s; s+=2, d+=2, i++) {
 		if (p->cur_enabled) {
 			if (i==ocur-n)
-				memcat (d, "\x1b[27;47;30m");
+				//memcat (d, "\x1b[27;47;30m");
+				//memcat (d, "\x1b[0m");//27;47;30m");
+				memcat (d, "\x1b[0m");
+				memcat (d, lastcol);
 			if (i>=cur-n && i<ocur-n)
 				memcat (d, "\x1b[7m");
 		}
 		if ((p->flags & R_PRINT_FLAGS_COLOR)) {
-			if (s[0]=='0' && s[1]=='0') { memcat (d, Color_GREEN); }
-			else if (s[0]=='7' && s[1]=='f') { memcat (d, Color_YELLOW); }
-			else if (s[0]=='f' && s[1]=='f') { memcat (d, Color_RED); }
+			if (s[0]=='0' && s[1]=='0') { lastcol = Color_GREEN; }
+			else if (s[0]=='7' && s[1]=='f') { lastcol = Color_YELLOW; }
+			else if (s[0]=='f' && s[1]=='f') { lastcol = Color_RED; }
 			else {
 				ch = r_hex_pair2bin(s);
 				//sscanf (s, "%02x", &ch); // XXX can be optimized
 				if (IS_PRINTABLE (ch))
-					memcat (d, Color_MAGENTA);
+					lastcol = Color_MAGENTA;
 			}
+			memcat (d, lastcol);
 		}
 		memcpy (d, s, 2);
 	}
