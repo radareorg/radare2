@@ -8,6 +8,8 @@
 
 ====[[ 0.9.1 ]]====
 
+* refactor vmenus.c -> refresh function must be redefined for each menu
+
 EVAL
 ? [0] => doesnt works! do it like in r1
 ? flag -flag2 => fails because of the ' ' before the minus sign

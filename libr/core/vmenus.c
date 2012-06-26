@@ -317,10 +317,10 @@ R_API int r_core_visual_comments (RCore *core) {
 		}
 
 		switch (format) {
-			case 0: sprintf (cmd, "px @ 0x%"PFMT64x":64", from); core->printidx = 0; break;
-			case 1: sprintf (cmd, "pd 12 @ 0x%"PFMT64x":64", from); core->printidx = 1; break;
-			case 2: sprintf (cmd, "ps @ 0x%"PFMT64x":64", from); core->printidx = 5; break;
-			default: format = 0; continue;
+		case 0: sprintf (cmd, "px @ 0x%"PFMT64x":64", from); core->printidx = 0; break;
+		case 1: sprintf (cmd, "pd 12 @ 0x%"PFMT64x":64", from); core->printidx = 1; break;
+		case 2: sprintf (cmd, "ps @ 0x%"PFMT64x":64", from); core->printidx = 5; break;
+		default: format = 0; continue;
 		}
 		if (*cmd) r_core_cmd (core, cmd, 0);
 
@@ -444,8 +444,7 @@ R_API void r_core_visual_config(RCore *core) {
 #define MAX_FORMAT 2
 	char *fs = NULL;
 	char *fs2 = NULL;
-	int option = 0;
-	int _option = 0;
+	int option, _option = 0;
 	int delta = 9;
 	int menu = 0;
 	int i,j, ch;
@@ -454,6 +453,7 @@ R_API void r_core_visual_config(RCore *core) {
 	char old[1024];
 	old[0]='\0';
 
+	option = 0;
 	for (;;) {
 		r_cons_gotoxy (0,0);
 		r_cons_clear ();
@@ -517,7 +517,7 @@ R_API void r_core_visual_config(RCore *core) {
 				r_cons_printf ("\n Selected: %s\n\n", fs2);
 		}
 
-		if (fs&&!memcmp (fs, "asm.", 4))
+		if (fs && !memcmp (fs, "asm.", 4))
 			r_core_cmd (core, "pd 5", 0);
 		r_cons_flush ();
 		ch = r_cons_readchar ();
@@ -935,19 +935,22 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	return addr;
 }
 
-/* Like emenu but for real */
-R_API void r_core_visual_anal(RCore *core) {
-	int option = 0;
-	int _option = 0;
-	int ch, level = 0;
-	char old[1024], *oprofile;
-	ut64 addr = core->offset;
-	old[0]='\0';
-	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+static int level = 0;
+static ut64 addr = 0;
+static int option = 0;
 
-	for (;;) {
-		r_cons_gotoxy (0,0);
-		r_cons_clear ();
+static void r_core_visual_anal_refresh (RCore *core) {
+	ut64 addr;
+	char old[1024];
+	old[0]='\0';
+	int cols = r_cons_get_size (NULL);
+	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL); // once
+	char *oprofile;
+
+	cols -= 50;
+	if (cols> 60) cols = 60;
+	r_cons_clear ();
+	if (cols>10) {
 		r_cons_printf ("Visual code analysis manipulation\n");
 
 		if (!level)
@@ -957,39 +960,57 @@ R_API void r_core_visual_anal(RCore *core) {
 		r_config_set (core->config, "asm.profile", "simple");
 		r_core_cmdf (core, "pd @ 0x%"PFMT64x":32", addr);
 		r_config_set (core->config, "asm.profile", oprofile);
+		free (oprofile);
 
-		r_cons_column (32);
-		switch (level) {
-		case 0:
-			r_cons_printf ("-[ functions ]---------------- \n"
-				"(a) add     (x)xrefs    (q)quit\n"
-				"(m) modify  (c)calls    (g)go\n"
-				"(d) delete  (v)variables\n");
-			addr = var_functions_show (core, option, 1);
-			break;
-		case 1:
-			r_cons_printf ("-[ variables ]---------------- 0x%08"PFMT64x"\n"
-				"(a) add     (x)xrefs     (q)quit\n"
-				"(m) modify  (c)calls     (g)go\n"
-				"(d) delete  (v)variables\n", addr);
-			var_index_show (core->anal, fcn, addr, option);
-			break;
-		case 2:
-			r_cons_printf ("-[ calls ]----------------------- 0x%08"PFMT64x" (TODO)\n", addr);
+		r_cons_column (cols); //32);
+	}
+	switch (level) {
+	case 0:
+		r_cons_printf ("-[ functions ]---------------- \n"
+			"(a) add     (x)xrefs    (q)quit  \n"
+			"(m) modify  (c)calls    (g)go    \n"
+			"(d) delete  (v)variables         \n");
+		addr = var_functions_show (core, option, 1);
+		break;
+	case 1:
+		r_cons_printf ("-[ variables ]---------------- 0x%08"PFMT64x"\n"
+			"(a) add     (x)xrefs     (q)quit \n"
+			"(m) modify  (c)calls     (g)go   \n"
+			"(d) delete  (v)variables         \n", addr);
+		var_index_show (core->anal, fcn, addr, option);
+		break;
+	case 2:
+		r_cons_printf ("-[ calls ]----------------------- 0x%08"PFMT64x" (TODO)\n", addr);
 #if 0
-			sprintf(old, "aCf@0x%08llx", addr);
-			cons_flush();
-			radare_cmd(old, 0);
+		sprintf(old, "aCf@0x%08llx", addr);
+		cons_flush();
+		radare_cmd(old, 0);
 #endif
-			break;
-		case 3:
-			r_cons_printf ("-[ xrefs ]----------------------- 0x%08"PFMT64x"\n", addr);
-			sprintf (old, "arl~0x%08"PFMT64x, addr);
-			r_core_cmd0 (core, old);
-			//cons_printf("\n");
-			break;
-		}
-		r_cons_flush ();
+		break;
+	case 3:
+		r_cons_printf ("-[ xrefs ]----------------------- 0x%08"PFMT64x"\n", addr);
+		sprintf (old, "arl~0x%08"PFMT64x, addr);
+		r_core_cmd0 (core, old);
+		//cons_printf("\n");
+		break;
+	}
+	r_cons_flush ();
+}
+
+/* Like emenu but for real */
+R_API void r_core_visual_anal(RCore *core) {
+	char old[218];
+	RConsEvent olde;
+	int _option = 0;
+	int ch; //, level = 0;
+
+	olde = core->cons->event_resize;
+	core->cons->event_resize = r_core_visual_anal_refresh;
+	level = 0;
+	addr = core->offset;
+
+	for (;;) {
+		r_core_visual_anal_refresh (core);
 // show indexable vars
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
@@ -1067,7 +1088,7 @@ eprintf ("TODO: Add new function manually\n");
 			break;
 		case 'g': // go!
 			r_core_seek (core, addr, SEEK_SET);
-			return;
+			goto beach;
 		case ' ':
 		case 'l':
 			level = 1;
@@ -1080,11 +1101,14 @@ eprintf ("TODO: Add new function manually\n");
 			break;
 		case 'q':
 			if (level==0)
-				return;
-			level = 0;
+				goto beach;
 			break;
 		}
 	}
+beach:
+	core->cons->event_resize = olde;
+	level = 0;
+	
 }
 #endif
 

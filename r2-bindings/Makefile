@@ -131,7 +131,7 @@ test:
 	cd go && ${MAKE} test
 	cd java && ${MAKE} test
 
-PYTHON?=python
+PYTHON?=`pwd`/python-wrapper
 PYTHON_VERSION?=`${PYTHON} --version 2>&1 | cut -d ' ' -f 2 | cut -d . -f 1,2`
 PYTHON_PKGDIR=$(shell ${PYTHON} mp.py)
 PYTHON_INSTALL_DIR=${DESTDIR}/${PYTHON_PKGDIR}/r2

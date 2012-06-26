@@ -146,6 +146,7 @@ R_API void r_cons_any_key() {
 
 R_API int r_cons_readchar() {
 	char buf[2];
+	buf[0] = -1;
 #if __WINDOWS__
 	BOOL ret;
 	DWORD out;
