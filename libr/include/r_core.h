@@ -142,6 +142,7 @@ R_API void r_core_cmd_repeat(RCore *core, int next);
 R_API char *r_core_editor (RCore *core, const char *str);
 // XXX void*?? must be RCore !
 R_API int r_core_cmdf(void *user, const char *fmt, ...);
+R_API int r_core_flush(void *user, const char *cmd);
 R_API int r_core_cmd0(void *user, const char *cmd);
 R_API void r_core_cmd_init(struct r_core_t *core);
 R_API char *r_core_cmd_str(struct r_core_t *core, const char *cmd);

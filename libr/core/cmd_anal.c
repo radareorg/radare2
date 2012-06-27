@@ -189,8 +189,10 @@ static int cmd_anal(void *data, const char *input) {
 	case '8':
 		if (input[1]==' ') {
 			RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, input+2);
-			r_cons_puts (c->buf_asm);
-			r_asm_code_free (c);
+			if (c) {
+				r_cons_puts (c->buf_asm);
+				r_asm_code_free (c);
+			} else eprintf ("Invalid hexstr\n");
 		} else eprintf ("Usage: a8 [hexpair-bytes]\n");
 		break;
 	case 'x':

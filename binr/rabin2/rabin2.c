@@ -30,6 +30,7 @@
 #define ACTION_LISTARCHS 0x04000
 #define ACTION_CREATE    0x08000
 #define ACTION_CLASSES   0x10000
+#define ACTION_DWARF     0x20000
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -254,6 +255,13 @@ static int rabin_do_operation(const char *op) {
 	return R_TRUE;
 }
 
+static int rabin_show_dwarf(RCore *core) {
+//TODO	RBinDwarfLine *lines =
+	r_bin_dwarf_parse_info (core->bin);
+	r_bin_dwarf_parse_line (core->bin);
+	return R_TRUE;
+}
+
 static int rabin_show_srcline(ut64 at) {
 	char *srcline;
 	if ((srcline = r_bin_meta_get_source_line (bin, at))) {
@@ -309,7 +317,7 @@ int main(int argc, char **argv) {
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "Af:a:B:b:c:CMm:n:@:VisSzIHelRwO:o:p:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "Af:a:B:b:c:CdMm:n:@:VisSzIHelRwO:o:p:rvLhx")) != -1) {
 		switch(c) {
 		case 'A':
 			action |= ACTION_LISTARCHS;
@@ -355,6 +363,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'H':
 			action |= ACTION_FIELDS;
+			break;
+		case 'd':
+			action |= ACTION_DWARF;
 			break;
 		case 'e':
 			action |= ACTION_ENTRIES;
@@ -514,6 +525,8 @@ int main(int argc, char **argv) {
 		r_core_bin_info (&core, R_CORE_BIN_ACC_LIBS, rad, va, NULL, 0);
 	if (action&ACTION_RELOCS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_RELOCS, rad, va, NULL, 0);
+	if (action&ACTION_DWARF)
+		rabin_show_dwarf (&core);
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline (at);
 	if (action&ACTION_EXTRACT)

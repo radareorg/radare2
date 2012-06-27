@@ -8,10 +8,16 @@
 
 ====[[ 0.9.1 ]]====
 
+Discuss
+Add $EDITOR alias for file open(read/write) -
+  pd > -
+  wf -
+  ...
+=======
+
 * refactor vmenus.c -> refresh function must be redefined for each menu
 
 EVAL
-? [0] => doesnt works! do it like in r1
 ? flag -flag2 => fails because of the ' ' before the minus sign
   ? flag-flag2 works
 

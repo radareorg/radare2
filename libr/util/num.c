@@ -79,13 +79,10 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		return (ut64)str[1];
 
 	len = strlen (str);
-	if (len>3 && str[4] == ':') {
-		if (sscanf (str, "%04x", &s)==1) {
-			if (sscanf (str+5, "%04x", &a)==1) {
+	if (len>3 && str[4] == ':')
+		if (sscanf (str, "%04x", &s)==1)
+			if (sscanf (str+5, "%04x", &a)==1)
 				return (ut64) ((s<<16) | a);
-			}
-		}
-	}
 	if (sscanf (str, "0x%04x:0x%04x", &s, &a) == 2)
 		return (ut64) ((s<<16) |a);
 	if (str[0]=='0' && str[1]=='x') {
@@ -108,9 +105,6 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 				else if (str[i]!='0') break;
 			}
 			break;
-		default:
-			sscanf (str, "%"PFMT64d"", &ret);
-			break;
 		case 'K': case 'k':
 			sscanf (str, "%"PFMT64d"", &ret);
 			ret *= 1024;
@@ -122,6 +116,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		case 'G': case 'g':
 			sscanf (str, "%"PFMT64d"", &ret);
 			ret *= 1024*1024*1024;
+			break;
+		default:
+			sscanf (str, "%"PFMT64d"", &ret);
 			break;
 		}
 	}

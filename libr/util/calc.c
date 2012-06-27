@@ -15,7 +15,10 @@
 #include <unistd.h>
 
 /* TODO: move into libr/include */
+#ifndef ut64
 #define ut64 unsigned long long
+#endif
+
 typedef struct {
 	double d;
 	ut64 n;
@@ -26,7 +29,7 @@ typedef enum {
 	PLUS='+', MINUS='-', MUL='*', DIV='/',
 	//XOR='^', OR='|', AND='&',
 	PRINT=';', ASSIGN='=', LEFTP='(', RIGHTP=')'
-} Token;
+} RNumToken;
 
 /* accessors */
 static inline NumValue Nset(ut64 v) { NumValue n; n.d = (double)v; n.n = v; return n; }
@@ -47,13 +50,12 @@ static NumValue expr(int);
 static NumValue term(int);
 static void error(const char *);
 static NumValue prim(int);
-static Token get_token();
-
+static RNumToken get_token();
 static RNum *calc_num = NULL;
 
 /* global shit */
 #define STRSZ 128
-static Token curr_tok = PRINT;
+static RNumToken curr_tok = PRINT;
 static NumValue number_value = { 0 };
 static char string_value[STRSZ];
 static int errors = 0;
@@ -142,6 +144,14 @@ static void cin_putback (char c) {
 static int calc_i = 0;
 static const char *calc_buf = NULL;
 
+R_API const char *r_num_calc_index (const char *p) {
+	if (p) {
+		calc_buf = p;
+		calc_i = 0;
+	}
+	return calc_buf +calc_i;
+}
+
 static int cin_get(char *c) {
 	if (oc) {
 		*c = oc;
@@ -199,32 +209,33 @@ static int cin_get_num(NumValue *n) {
 	return 1;
 }
 
-static Token get_token() {
+static RNumToken get_token() {
 	char c, ch;
 
 	do { if (!cin_get (&ch)) return curr_tok = END;
 	} while (ch!='\n' && isspace (ch));
 
 	switch (ch) {
+	case 0:
 	case ';':
 	case '\n':
-	case 0: return curr_tok = END;
+		return curr_tok = END;
 	case '+':    // added for ++name and name++
 		if (cin_get (&c) && c == '+')
 			return curr_tok = INC;
 		cin_putback (c);
-		return curr_tok = (Token) ch;
+		return curr_tok = (RNumToken) ch;
 	case '-':
 		if (cin_get (&c) && c == '-')
 			return curr_tok = DEC;
 		cin_putback (c);
-		return curr_tok = (Token) ch;
+		return curr_tok = (RNumToken) ch;
 	case '*':
 	case '/':
 	case '(':
 	case ')':
 	case '=':
-		return curr_tok = (Token) ch;
+		return curr_tok = (RNumToken) ch;
 	case '0':case '1': case '2': case '3': case '4':
 	case '5': case '6': case '7': case '8': case '9':
 	case '.':
@@ -235,23 +246,35 @@ static Token get_token() {
 		}
 		return curr_tok = NUMBER;
 	default:
-		//if (ch=='$' || isalpha (ch)) {
 #define isvalidchar(x) \
 	(isalnum(x) || x==':' || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
-	|| x==' ' || x=='}' || x=='{' || x=='/' || (x>='0'&&x<='9'))
+	|| x==' ' || x=='[' || x==']' || x=='}' || x=='{' || x=='/' || (x>='0'&&x<='9'))
 {
 			int i = 0;
 			string_value[i++] = ch;
-			//while (cin_get (&ch)) { // && ( isalnum (ch) || ch=='$')) {
-			while (cin_get (&ch) && isvalidchar (ch)) {
-				if (i>=STRSZ) {
-					error ("string too long");
-					return 0;
+			if (ch == '[') {
+eprintf ("laraalalala\n");
+				while (cin_get (&ch) && ch!=']') {
+					if (i>=STRSZ) {
+						error ("string too long");
+						return 0;
+					}
+					string_value[i++] = ch;
 				}
+eprintf ("BREAK (%c)\n", ch);
 				string_value[i++] = ch;
-			} 
+			} else {
+				while (cin_get (&ch) && isvalidchar (ch)) {
+					if (i>=STRSZ) {
+						error ("string too long");
+						return 0;
+					}
+					string_value[i++] = ch;
+				}
+			}
 			string_value[i] = 0;
 			cin_putback (ch);
+
 			return curr_tok = NAME;
 }
 		//}
@@ -260,27 +283,11 @@ static Token get_token() {
 	}
 }
 
-void load_token(const char *s) {
+static void load_token(const char *s) {
 	calc_i = 0;
 	calc_buf = s;
 	calc_err = NULL;
 }
-
-#ifdef TEST
-int main(int argc, char* argv[]) {
-	NumValue n;
-	while (!feof (stdin)) {
-		get_token ();
-		if (curr_tok == END) break;
-		if (curr_tok == PRINT) continue;
-		n = expr (0);
-		if (n.d == ((double)(int)n.d))
-			printf ("%llx\n", n.n);
-		else printf ("%lf\n", n.d);
-	}
-	return errors;
-}
-#endif
 
 R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
 	NumValue n;
@@ -299,3 +306,19 @@ R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
 	} else if (num) num->fvalue = (double)n.n;
 	return n.n;
 }
+
+#ifdef TEST
+int main(int argc, char* argv[]) {
+	NumValue n;
+	while (!feof (stdin)) {
+		get_token ();
+		if (curr_tok == END) break;
+		if (curr_tok == PRINT) continue;
+		n = expr (0);
+		if (n.d == ((double)(int)n.d))
+			printf ("%llx\n", n.n);
+		else printf ("%lf\n", n.d);
+	}
+	return errors;
+}
+#endif

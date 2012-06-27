@@ -329,6 +329,9 @@ static int cmd_eval(void *data, const char *input) {
 		r_core_config_init (core);
 		eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
+	case 'v':
+		eprintf ("Invalid command '%s'. Use 'e?'\n", input);
+		break;
 	case '*':
 		r_config_list (core->config, NULL, 1);
 		break;
@@ -927,6 +930,12 @@ R_API int r_core_cmdf(void *user, const char *fmt, ...) {
 
 R_API int r_core_cmd0(void *user, const char *cmd) {
 	return r_core_cmd ((RCore *)user, cmd, 0);
+}
+
+R_API int r_core_flush(void *user, const char *cmd) {
+	int ret = r_core_cmd ((RCore *)user, cmd, 0);
+	r_cons_flush ();
+	return ret;
 }
 
 /* return: pointer to a buffer with the output of the command */

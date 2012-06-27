@@ -235,6 +235,7 @@ R_API void r_file_mmap_free (RMmap *m);
 
 R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 R_API ut64 r_num_calc (RNum *num, const char *str, const char **err);
+R_API const char *r_num_calc_index (const char *p);
 
 #define R_BUF_CUR -1
 R_API RBuffer *r_buf_new();

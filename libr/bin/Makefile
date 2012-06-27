@@ -13,7 +13,7 @@ include ${STATIC_BIN_PLUGINS}
 include ${STATIC_BIN_XTR_PLUGINS}
 
 STATIC_OBJS=$(subst ..,p/..,$(subst bin_,p/bin_,$(STATIC_OBJ)))
-OBJ=bin.o bin_meta.o bin_write.o demangle.o ${STATIC_OBJS}
+OBJ=bin.o bin_meta.o bin_write.o demangle.o dwarf.o ${STATIC_OBJS}
 OBJ+=mangling/cxx/cp-demangle.o
 
 pre:

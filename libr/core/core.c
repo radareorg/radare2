@@ -20,6 +20,49 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RAnalOp op;
 	ut64 ret = 0;
 	*ok = 0;
+	if (str[0]=='[') {
+		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
+		const char *p = strchr (str+1, ':');
+		ut64 n;
+// TODO: honor endian
+		if (p) {
+			refsz = atoi (str+1);
+			str = p;
+		}
+// push state
+{
+const char *q = r_num_calc_index (NULL);
+		n = r_num_math (core->num, str+1);
+r_num_calc_index (q);
+}
+// pop state
+		
+		switch (refsz) {
+		case 8: {
+			ut64 num = 0;
+			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
+			return num;
+			}
+		case 4: {
+			ut32 num = 0;
+			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
+			return num;
+			}
+		case 2: {
+			ut16 num = 0;
+			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
+			return num;
+			}
+		case 1: {
+			ut8 num = 0;
+			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
+			return num;
+			}
+		default:
+			eprintf ("Invalid reference size: %d\n", refsz);
+			break;
+		}
+	} else
 	if (str[0]=='$') {
 		*ok = 1;
 		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize);
@@ -48,7 +91,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '$': return core->offset;
 		case 'o': return core->io->off;
 		}
-	}
+	} else
 	if (*str>'A') {
 		if ((flag = r_flag_get (core->flags, str))) {
 			ret = flag->offset;

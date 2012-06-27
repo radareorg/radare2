@@ -57,17 +57,16 @@ static int main_help(int line) {
 }
 
 static int main_version() {
-	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH" build "R2_BIRTH"\n");
+	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH"-%d build "R2_BIRTH"\n", R_SYS_BITS&8?64:32);
 	return 0;
 }
 
-static int list_io_plugins(RIO *io) {
+static void list_io_plugins(RIO *io) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
 		printf (" %-10s %s\n", il->plugin->name, il->plugin->desc);
 	}
-	return 0;
 }
 
 // Load the binary information from rabin2
@@ -211,10 +210,8 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 	}
-	if (help>1)
-		return main_help (2);
-	else if (help)
-		return main_help (0);
+	if (help>1) return main_help (2);
+	else if (help) return main_help (0);
 
 	// DUP
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
