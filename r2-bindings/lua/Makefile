@@ -10,4 +10,4 @@ tri:
 	gcc r_debug_wrap.c -shared -fPIC -I /usr/include/libr -I /usr/include/lua5.1/ -o _r_debug.so -lr_debug -lr_bp -lr_reg -lr_util
 
 bis:
-	valaswig-cc lua r_io -I../../libr/include r_io `pkg-config --libs r_io`
+	valaswig-cc -NRadare lua r_io -I../../libr/include r_io `pkg-config --libs r_io`
