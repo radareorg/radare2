@@ -19,7 +19,7 @@ It supports a large list of programming languages:
 
 And some other experimental bindings are for:
 
-  - V8Gear, GIR, C++
+  - GIR, C++
 
 This package also contains the vdoc/ subdirectory which contains the
 rules used to generate all interactive html documentation found at:
