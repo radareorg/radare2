@@ -104,92 +104,81 @@ namespace Radare {
 		//public bool memcpy(uint64 addr, uint8 *dst, uint8 *src, int len);
 		// ..
 	}
-}
-
-/* Generic Iterator interfaced with r_flist */
-/* Commented, not used in the public API - eddyb
- * //[Compact] // XXX: Do not uncomment this...or generated vala code sucks and segfaults
-[CCode (cprefix="r_flist_", cheader_filename="r_flist.h", cname="void*")]
-public class RFList<G> {
-	public RFList<G> iterator();
-	public bool next();
-	public unowned G @get();
-}
-*/
-
-[Compact]
-[CCode (cprefix="r_list_", cheader_filename="r_util.h", cname="RList")]
-public class RList<G> {
-	RListIter *head;
-	RListIter *tail;
-	void *free; // XXX hack for valabind-node-ffi
-	public void append(owned G foo);
-	public void prepend(owned G foo);
-	public RListIter<G> iterator();
-	public RList();
-	public uint length();
-	//public bool next();
-	public unowned G @get();
-	public bool del_n(int n);
-	public bool get_top();
-	//public void push(owned G foo);
-	public unowned G pop();
-}
-
-[Compact]
-[CCode (cprefix="r_list_iter_", cheader_filename="r_list.h", cname="RListIter")]
-public class RListIter<G> {
-	/* fields */
-        public G data;
-        public RListIter<G> n;
-        public RListIter<G> p;
-
-	/* methods */
-	public RListIter();
-	public G get_data();
-	public RListIter<G> get_next();
-//	public G @free(G arg);
-/*
-	public bool next();
-	public unowned G get();
-*/
-	[ReturnsModifiedPointer, CCode (cname = "_vala_r_list_iter_next")]
-	public bool next() {
-		return (bool)this.n;
-	}
-	[CCode (cname = "_vala_r_list_iter_get")]
-	public G get () {
-		return this.data;
-	}
-}
-
-[Compact]
-[CCode (cheader_filename="r_util.h", cname="RRange", free_function="r_range_free", cprefix="r_range_")]
-public class Radare.RRange {
-	/* lifecycle */
-	public RRange();
-	public RRange.from_string(string str);
-
-	public Item *item_get(uint64 addr);
-	public uint64 size();
-	public uint64 add_from_string(string str);
-	//public uint64 add_string(string str);
-	//public uint64 add(uint64 fr, uint64 to, int rw);
-//		public bool sub(uint64 fr, uint64 to);
-	//public bool merge(Range r);
-	public bool contains(uint64 addr);
-	public bool sort();
-	//public bool percent(); // XXX
-	public bool list(bool rad); // XXX
-	public bool get_n(int n, out uint64 fr, out uint64 to);
-	public RRange *inverse(uint64 fr, uint64 to, int flags);
 
 	[Compact]
-	[CCode (cname="RRangeItem", cprefix="r_range_item_")]
-	public class Item {
-		public uint64 fr;
-		public uint64 to;
-		public uint8 *data;
-		public int datalen;
+	[CCode (cprefix="r_list_", cheader_filename="r_util.h", cname="RList")]
+	public class RList<G> {
+		RListIter<G> *head;
+		RListIter<G> *tail;
+		public void append(owned G foo);
+		public void prepend(owned G foo);
+		public RListIter<G> iterator();
+		public RList();
+		public uint length();
+		//public bool next();
+		public unowned G @get();
+		public bool del_n(int n);
+		public bool get_top();
+		//public void push(owned G foo);
+		public unowned G pop();
+	}
+
+	[Compact]
+	[CCode (cprefix="r_list_iter_", cheader_filename="r_list.h", cname="RListIter")]
+	public class RListIter<G> {
+		/* fields */
+		public G data;
+		public RListIter<G> n;
+		public RListIter<G> p;
+
+		/* methods */
+		public RListIter();
+		public G get_data();
+		public RListIter<G> get_next();
+	//	public G @free(G arg);
+	/*
+		public bool next();
+		public unowned G get();
+	*/
+		[ReturnsModifiedPointer, CCode (cname = "_vala_r_list_iter_next")]
+		public bool next() {
+			return (bool)this.n;
+		}
+		[CCode (cname = "_vala_r_list_iter_get")]
+		public G get () {
+			return this.data;
+		}
+	}
+	
+	[Compact]
+	[CCode (cheader_filename="r_util.h", cname="RRange", free_function="r_range_free", cprefix="r_range_")]
+	public class RRange {
+		/* lifecycle */
+		public RRange();
+		public RRange.from_string(string str);
+
+		public Item *item_get(uint64 addr);
+		public uint64 size();
+		public uint64 add_from_string(string str);
+		//public uint64 add_string(string str);
+		//public uint64 add(uint64 fr, uint64 to, int rw);
+	//		public bool sub(uint64 fr, uint64 to);
+		//public bool merge(Range r);
+		public bool contains(uint64 addr);
+		public bool sort();
+		//public bool percent(); // XXX
+		public bool list(bool rad); // XXX
+		public bool get_n(int n, out uint64 fr, out uint64 to);
+		public RRange *inverse(uint64 fr, uint64 to, int flags);
+
+		[Compact]
+		[CCode (cname="RRangeItem", cprefix="r_range_item_")]
+		public class Item {
+			public uint64 fr;
+			public uint64 to;
+			public uint8 *data;
+			public int datalen;
+		}
 	}
 }
+

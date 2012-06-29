@@ -15,7 +15,7 @@ LIBS=r_core.so r_asm.so
 mkcxx:
 	for a in ${LIBS} ; do \
 		mod=`echo $$a|cut -d . -f 1` ; \
-		valabind --cxx -m $$mod --vapidir=../vapi $$mod && \
+		valabind --cxx -N Radare -m $$mod --vapidir=../vapi $$mod && \
 		${CXX} -shared -fPIC -o $$a $${mod}.cxx `pkg-config --cflags --libs $$mod` ; \
 	done
 

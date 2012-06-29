@@ -18,9 +18,8 @@ endif
 
 LANGS=
 # Experimental:
-# LANGS+=gear
 # LANGS+=gir
-ALANGS=gir gear python ruby perl lua go java guile php5
+ALANGS=gir python ruby perl lua go java guile php5
 .PHONY: ${ALANGS}
 
 define ADD_lang
@@ -49,7 +48,7 @@ supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh
 else
 # compile more
-all: supported.langs python lua gear gir
+all: supported.langs python lua gir
 supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh force-all
 endif

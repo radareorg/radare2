@@ -1,8 +1,8 @@
 var r2 = require ('./r_core');
 
-var core = new r2.RCore() , cons = r2.RCons //.singleton ();
+var core = new r2.RCore(), cons = r2.RCons;
 
-var fileName = process.argv[2] || '/bin/true';
+var fileName = process.argv[2] || '/bin/ls';
 var file = core.file_open(fileName, 0, 0);
 
 if(file._pointer.isNull())

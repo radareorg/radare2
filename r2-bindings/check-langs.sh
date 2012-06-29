@@ -30,10 +30,9 @@ fi
 echo "Checking valabind languages support..."
 valabind-cc --help > /dev/null 2>&1
 if [ $? = 0 ]; then
-  # GIR AND GEAR ARE EXPERIMENTAL #
+  # GIR IS EXPERIMENTAL #
   #echo " - gir: yes"
-  #echo " - v8gear: yes"
-  #SUP_LANGS="gir gear ${SUP_LANGS}"
+  #SUP_LANGS="gir ${SUP_LANGS}"
   SUP_LANGS=""
   for a in ${LANGS}; do
     printf " - $a: "
@@ -48,7 +47,6 @@ if [ $? = 0 ]; then
 else
   echo "WARNING: cannot find valabind"
   echo " - gir: no"
-  echo " - v8gear: no"
 fi
 
 for a in lua python php5 ; do

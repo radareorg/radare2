@@ -16,7 +16,7 @@ ifeq ($(HAVE_VALABIND)$(HAVE_GIRCOMPILER),11)
 	VAPI=`echo $@|sed -e s,.gir,.vapi,` ; \
 	DEPS="$$(cat ../vapi/$${PKG}.deps 2>/dev/null | awk '{print "--pkg "$$1}')" ; \
 	echo "valabind --module $${PKG} $$(echo $$DEPS) --gir ../vapi/$@" ; \
-	valabind --module $${PKG} $${DEPS} --gir ../vapi/$${VAPI} && \
+	valabind --gir -N Radare --module $${PKG} $${DEPS} ../vapi/$${VAPI} && \
 	g-ir-compiler $${PKG}.gir > $${PKG}.typelib
 endif
 

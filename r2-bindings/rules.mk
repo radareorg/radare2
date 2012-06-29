@@ -18,7 +18,7 @@ ifeq ($(DEVEL_MODE),1)
 ifeq (${LANG},cxx)
 	mod=`echo $@ | sed -e s,.${SOEXT},,` ; \
 	echo "MOD=$$mod" ; \
-	valabind --cxx -m $$mod --vapidir=../vapi $$mod && \
+	valabind --cxx -N Radare -m $$mod --vapidir=../vapi $$mod && \
 	${CXX} -shared -fPIC -o $@ $${mod}.cxx `pkg-config --cflags --libs $$mod`
 else
 	@-test ../vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
