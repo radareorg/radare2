@@ -1,38 +1,22 @@
-var r2 = require('./r_core')
+var r2 = require('./r_bin')
 
 var b = new r2.RBin()
-b.load('/bin/ls', false);
+b.load(process.argv[2] || '/bin/ls', false);
 
-var baddr = b.get_baddr();
-console.log('base address: ', baddr);
-
-var sections = b.get_sections();
-sections.forEach = function(x) {
-    var iter = sections.iterator();
-    while(!iter.isNull()) {
-        var dat = iter.get_data();
-        var s = new r2.types.RBinSection(dat.deref());
-        console.log(dat);
-        console.log('-->', s);
-        console.log('-_>');
-        iter = iter.get_next(); //
-        console.log('next ', iter);
-    }
-}
-
-var count = 4;
-sections.forEach(function(x) {
-    console.log('section', x);
+console.log('Base address:', b.get_baddr().toString(16));
+console.log('Sections:');
+b.get_sections().forEach(function(x) {
+    console.log('  %s: size=%d vsize=%d rva=%d offset=%s srwx=%s', x.name, x.size, x.vsize, x.rva, x.offset.toString(16), x.srwx.toString(16));
 });
-
-var iter = sections.iterator();
-while(iter != null) {
-    console.log('------>');
-    var dat = iter.get_data();
-    console.log('data', dat);
-    iter = iter.get_next();
-    if(count--<1) {
-        console.log('...');
-        break;
-    }
-}
+console.log('Symbols:');
+b.get_symbols().forEach(function(x) {
+    console.log('  %s: fw=%s bind=%s type=%s rva=%d offset=%s size=%d ordinal=%d', x.name, x.forwarder, x.bind, x.type, x.rva, x.offset.toString(16), x.size, x.ordinal);
+});
+console.log('Imports:');
+b.get_imports().forEach(function(x) {
+    console.log('  %s: bind=%s type=%s rva=%d offset=%s ordinal=%d hint=%d', x.name, x.bind, x.type, x.rva, x.offset.toString(16), x.ordinal, x.hint);
+});
+console.log('Strings:');
+b.get_strings().forEach(function(x) {
+    console.log('  %s rva=%d offset=%s ordinal=%d size=%d', JSON.stringify(x.string), x.rva, x.offset.toString(16), x.ordinal, x.size);
+});

@@ -147,9 +147,10 @@ public class Radare.RDebug {
 		int dup;
 		string addresses;
 	}
-
+	
+	[Compact]
 	[CCode (cname="RDebugTracepoint")]
-	public struct Tracepoint {
+	public class Tracepoint {
 		uint64 addr;
 		uint64 tags;
 		int tag;
