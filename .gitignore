@@ -1,0 +1,9 @@
+*.d
+*.o
+*.so
+*.pc
+*.sdb
+supported.*
+config.mk
+plugins.cfg
+langs.cfg
