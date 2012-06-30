@@ -5,6 +5,10 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
+* add pf to the manpage in r2
+* r2 -n VG fails
+* VB /* fails
+* remove my nick/mail from valabind version
 
 ====[[ 0.9.1 ]]====
 

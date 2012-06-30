@@ -1,4 +1,4 @@
-var r2 = require ('./r_core');
+var r2 = require ('../r_core');
 
 var core = new r2.RCore(), cons = r2.RCons;
 

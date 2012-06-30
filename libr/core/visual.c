@@ -4,7 +4,11 @@
 
 #define NPF 5
 static int blocksize = 0;
-static const char *printfmt[] = { "x", "pD", "f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pD", "pw", "pc", };
+static const char *printfmt[] = {
+	"x", "pD",
+	"f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pD",
+	"pw", "pc"
+};
 static int autoblocksize = 1;
 static int obs = 0;
 
@@ -291,8 +295,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (offset == -1)
 				offset = 0;
 			r_core_seek (core, offset, 1);
-		} else
-			r_core_seek (core, 0, 1);
+		} else r_core_seek (core, 0, 1);
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case 'G':
@@ -303,14 +306,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			//ut64 offset = r_io_section_get_vaddr (core->io,
 			//	core->file->size-core->blocksize);
 			if (offset == UT64_MAX) {
+				offset = core->file->size - core->blocksize;
 				ret = r_core_seek (core, offset, 1);
-				memset (core->block, 0xff, core->blocksize);
+			//	memset (core->block, 0xff, core->blocksize);
 			} else {
 				offset += core->file->size - core->blocksize;
 				ret = r_core_seek (core, offset, 1);
-				memset (core->block, 0xff, core->blocksize);
+			//	memset (core->block, 0xff, core->blocksize);
 			}
-		} else ret = r_core_seek (core, core->file->size-core->blocksize, 1);
+		} else {
+			ret = r_core_seek (core,
+				core->file->size-core->blocksize, 1);
+		}
 		if (ret != -1)
 			r_io_sundo_push (core->io, core->offset);
 }
@@ -565,10 +572,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_cmd (core, "sr pc", 0); // XXX
 		break;
 	case 'n':
-		r_core_seek (core, core->offset + (core->num->value/4), 1);
+		r_core_seek_delta (core, core->blocksize);
 		break;
 	case 'N':
-		r_core_seek (core, core->offset - (core->num->value/4), 1);
+		r_core_seek_delta (core, 0-(int)core->blocksize);
 		break;
 	case ':':
 		r_core_visual_prompt (core);
@@ -652,6 +659,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" w        write hexpairs in curseek or cursor (same as :wx)\n"
 		" x        show xrefs to seek between them\n"
 		" sS       step / step over\n"
+		" n/N      seek next/previous block\n"
 		" e        edit eval configuration variables\n"
 		" t        track flags (browse symbols, functions..)\n"
 		" T        browse anal info and comments\n"
@@ -748,9 +756,10 @@ static void r_core_visual_refresh (RCore *core) {
 	r_cons_get_size (NULL);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
 
-	r_cons_gotoxy (0, 0);
-	r_cons_flush ();
-	//r_cons_clear00 ();
+	if (autoblocksize) {
+		r_cons_gotoxy (0, 0);
+		r_cons_flush ();
+	} else r_cons_clear ();
 
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);

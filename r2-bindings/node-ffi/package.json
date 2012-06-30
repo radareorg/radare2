@@ -1,5 +1,5 @@
 { "name": "radare2.js",
-  "version": "0.0.2",
+  "version": "0.1.1",
   "url": "http://www.radare.org",
   "description": "radare2 valabind-ffi bindings for nodejs",
   "dependencies": {
@@ -7,6 +7,19 @@
     "ref": "*",
     "ref-struct": "*"
   },
+  "files": [
+    "Makefile",
+    "README.md",
+    "examples",
+    "examples/asm.js",
+    "examples/bin.js",
+    "examples/core.js",
+    "index.js",
+    "package.json",
+    "r_asm.js",
+    "r_bin.js",
+    "r_core.js"
+  ],
   "keywords": [
     "reversing",
     "disassembler",

@@ -1,4 +1,4 @@
-const r2 = require ('./r_asm');
+const r2 = require ('../r_asm');
 
 /* Using the RAsm API */
 function Assembler(arch, bits) {
