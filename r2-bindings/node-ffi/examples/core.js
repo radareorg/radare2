@@ -5,8 +5,8 @@ var core = new r2.RCore(), cons = r2.RCons;
 var fileName = process.argv[2] || '/bin/ls';
 var file = core.file_open(fileName, 0, 0);
 
-if(file._pointer.isNull())
-    console.error('Cannot open '+fileName), process.exit(1);
+if(file == null)
+	console.error('Cannot open '+fileName), process.exit(1);
 
 //core.bin_load('test.js');
 //core.seek(0, true); core.block_read(0);
