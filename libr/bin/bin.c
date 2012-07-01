@@ -27,10 +27,15 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 		return;
 	}
 	for (i = from; i < to; i++) { 
-		if ((IS_PRINTABLE (arch->buf->buf[i])) && matches < R_BIN_SIZEOF_STRINGS-1) {
+		if ((IS_PRINTABLE (arch->buf->buf[i])) && \
+				matches < R_BIN_SIZEOF_STRINGS-1) {
 			str[matches] = arch->buf->buf[i];
-			if (arch->buf->buf[i+1]==0 && IS_PRINTABLE (arch->buf->buf[i+2]))
-				i++;
+			/* add support for wide char strings */
+			if (arch->buf->buf[i+1]==0) {
+				if (IS_PRINTABLE (arch->buf->buf[i+2]))
+					if (arch->buf->buf[i+3]==0)
+						i++;
+			}
 			matches++;
 			continue;
 		}
@@ -49,7 +54,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 			// copying so many bytes here..
 			memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
 			ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
-			r_name_filter (ptr->string, R_BIN_SIZEOF_STRINGS-1);
+			//r_name_filter (ptr->string, R_BIN_SIZEOF_STRINGS-1);
 			r_list_append (list, ptr);
 			ctr++;
 		}
@@ -238,8 +243,8 @@ R_API void* r_bin_free(RBin *bin) {
 	r_bin_free_items (bin);
 	if (bin->curxtr && bin->curxtr->destroy)
 		bin->curxtr->destroy (bin);
-	r_list_free(bin->binxtrs);
-	r_list_free(bin->plugins);
+	r_list_free (bin->binxtrs);
+	r_list_free (bin->plugins);
 	free (bin->file);
 	free (bin);
 	return NULL;
@@ -484,7 +489,6 @@ R_API RBinObj *r_bin_get_object(RBin *bin, int flags) {
 }
 
 R_API void r_bin_object_free(RBinObj *obj) {
-	// XXX: leak
 	free (obj);
 }
 

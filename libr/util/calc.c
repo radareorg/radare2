@@ -253,7 +253,6 @@ static RNumToken get_token() {
 			int i = 0;
 			string_value[i++] = ch;
 			if (ch == '[') {
-eprintf ("laraalalala\n");
 				while (cin_get (&ch) && ch!=']') {
 					if (i>=STRSZ) {
 						error ("string too long");
@@ -261,7 +260,6 @@ eprintf ("laraalalala\n");
 					}
 					string_value[i++] = ch;
 				}
-eprintf ("BREAK (%c)\n", ch);
 				string_value[i++] = ch;
 			} else {
 				while (cin_get (&ch) && isvalidchar (ch)) {

@@ -83,7 +83,7 @@ execute (just-in-time)
   exit@syscall(1);
 .Pp  
   main@global(128) {
-    .var0 = "hi!\n";
+    .var0 = "hi!\\n";
     write(1,.var0, 4);
     exit(0);
   }

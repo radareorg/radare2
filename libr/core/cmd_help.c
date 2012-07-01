@@ -205,21 +205,47 @@ static int cmd_help(void *data, const char *input) {
 		core->yank_len = core->yank? strlen ((const char *)core->yank): 0;
 		break;
 	case 'k': // key=value utility
-		for (input++; *input==' '; input++);
-		if (*input) {
-			char *p = strchr (input, '='); 
+		switch (input[1]) {
+		case ' ':
+			{
+			char *p = strchr (input+1, '='); 
 			if (p) {
 				// set
 				*p = 0;
-				r_pair_set (core->kv, input, p+1);
+				r_pair_set (core->kv, input+2, p+1);
 			} else {
 				// get
-				char *g = r_pair_get (core->kv, input);
+				char *g = r_pair_get (core->kv, input+2);
 				if (g) {
 					r_cons_printf ("%s\n", g);
 					free (g);
 				}
 			}
+			}
+			break;
+		case 's':
+			r_pair_save (core->kv, input+3);
+			break;
+		case 'l':
+			r_pair_load (core->kv, input+3);
+			break;
+		case '\0':
+			{ RListIter *iter;
+			RPairItem *kv;
+			RList *list = r_pair_list (core->kv, NULL);
+			r_list_foreach (list, iter, kv) {
+				r_cons_printf ("%s=%s\n", kv->k, kv->v);
+			}
+			}
+			break;
+		case '?':
+			eprintf ("Usage: ?k [key[=value]]\n"
+				" ?k foo=bar   # set value\n"
+				" ?k foo       # show value\n"
+				" ?k           # list keys\n"
+				" ?kl ha.sdb   # load keyvalue from ha.sdb\n"
+				" ?ks ha.sdb   # save keyvalue to ha.sdb\n");
+			break;
 		}
 		break;
 	case 'i': // input num

@@ -379,26 +379,69 @@ static int cmd_visual(void *data, const char *input) {
 
 static int cmd_system(void *data, const char *input) {
 	int ret = 0;
-	if (*input!='?') {
+	switch (*input) {
+	case '!': {
+		int olen;
+		char *out = NULL;
+		char *cmd = r_core_sysenv_begin ((RCore*)data, input);
+		if (cmd) {
+			ret = r_sys_cmd_str_full (cmd+1, NULL, &out, &olen, NULL);
+			r_core_sysenv_end ((RCore*)data, input);
+			r_cons_memcat (out, olen);
+			free (out);
+			free (cmd);
+		} else eprintf ("Error setting up system environment\n");
+		}
+		break;
+	case '?':
+		r_core_sysenv_help ();
+		break;
+	default:
+		{
 		char *cmd = r_core_sysenv_begin ((RCore*)data, input);
 		if (cmd) {
 			ret = r_sys_cmd (cmd);
 			r_core_sysenv_end ((RCore*)data, input);
 			free (cmd);
 		} else eprintf ("Error setting up system environment\n");
-	} else r_core_sysenv_help ();
+		}
+		break;
+	}
 	return ret;
 }
 
 static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
+	char *_ptr;
 #if __UNIX__
 	int fds[2];
 	int stdout_fd, status = 0;
+#endif
+	if (*shell_cmd=='!') {
+		_ptr = (char *)r_str_lastbut (shell_cmd, '~', "\"");
+		//ptr = strchr (cmd, '~');
+		if (_ptr) {
+			*_ptr = '\0';
+			_ptr++;
+		}
+		int olen = 0, ret;
+		char *str, *out = NULL;
+		// TODO: implement foo
+		str = r_core_cmd_str (core, radare_cmd);
+		ret = r_sys_cmd_str_full (shell_cmd+1, str, &out, &olen, NULL);
+		r_cons_memcat (out, olen);
+		if (_ptr)
+			r_cons_grep (_ptr);
+		free (out);
+		return 0;
+	}
+
+#if __UNIX__
+	radare_cmd = (char*)r_str_trim_head (radare_cmd);
+	shell_cmd = (char*)r_str_trim_head (shell_cmd);
 
 	stdout_fd = dup (1);
 	pipe (fds);
-	radare_cmd = (char*)r_str_trim_head (radare_cmd);
-	shell_cmd = (char*)r_str_trim_head (shell_cmd);
+eprintf ("CMDPIPE (%s)\n", shell_cmd);
 	if (fork ()) {
 		dup2 (fds[1], 1);
 		close (fds[1]);
@@ -447,6 +490,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
 	int i, len = strlen (cmd), pipefd, ret;
+	const char *tick = NULL;
 	const char *quotestr = "\"`";
 	quotestr = "`"; // tmp
 
@@ -502,11 +546,16 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	//ptr = strchr (cmd, '|');
 	ptr = (char *)r_str_lastbut (cmd, '|', quotestr);
 	if (ptr) {
-		*ptr = '\0';
-		cmd = r_str_clean (cmd);
-		if (*cmd) r_core_cmd_pipe (core, cmd, ptr+1);
-		else r_io_system (core->io, ptr+1);
-		return 0;
+		char *ptr2 = strchr (cmd, '`');
+		if (!ptr2 || ptr2 && ptr2>ptr) {
+			if (!tick || (tick && tick > ptr)) {
+				*ptr = '\0';
+				cmd = r_str_clean (cmd);
+				if (*cmd) r_core_cmd_pipe (core, cmd, ptr+1);
+				else r_io_system (core->io, ptr+1);
+				return 0;
+			}
+		}
 	}
 
 // TODO must honor " and `

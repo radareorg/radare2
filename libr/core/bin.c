@@ -18,12 +18,14 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		r_list_foreach (list, iter, string) {
 			/* Jump the withespaces before the string */
 			for (i=0; *(string->string+i)==' '; i++);
-			r_meta_add (r->anal->meta, R_META_TYPE_STRING, va?baddr+string->rva:string->offset,
-					(va?baddr+string->rva:string->offset)+string->size, string->string+i);
+			r_meta_add (r->anal->meta, R_META_TYPE_STRING,
+				va?baddr+string->rva:string->offset,
+				(va?baddr+string->rva:string->offset)+string->size, string->string+i);
 			r_name_filter (string->string, 128);
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string);
-			r_flag_set (r->flags, str, va?baddr+string->rva:string->offset,
-					string->size, 0);
+			r_flag_set (r->flags, str,
+				va? baddr+string->rva:string->offset,
+				string->size, 0);
 		}
 	} else {
 		if (mode) r_cons_printf ("fs strings\n");

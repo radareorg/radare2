@@ -1,19 +1,53 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 pancake<nopcode.org> */
 
 #include <r_db.h>
 #include <r_util.h>
 #include "sdb/src/sdb.h"
 
-/*
-var p = new Pair ();
-p.set ("foo", "bar")
-var out = p.get ("foo")
-*/
+R_API void r_pair_set_file (RPair*p, const char *file) {
+	if (!file || !*file) return;
+	if (p->file) free (p->file);
+	p->file = strdup (file);
+	if (p->sdb) {
+		Sdb *sdb = p->sdb;
+		sdb->dir = p->file;
+	} else eprintf ("no sdb set\n");
+}
+
+R_API void r_pair_fini(RPair *p) {
+	r_hashtable_free (p->ht);
+	r_list_free (p->dbs);
+	if (p->file) {
+		free (p->file);
+		// memleak
+		//sdb_free (p->sdb);
+		p->sdb = NULL;
+	}
+	free (p->dir);
+}
+
+R_API int r_pair_save(RPair *p, const char *f) {
+	r_pair_set_file (p, f);
+	return r_pair_sync (p);
+}
+
+R_API int r_pair_load(RPair *p, const char *f) {
+	RPair *p2;
+	char *file = (f&&*f)? strdup (f): p->file? strdup (p->file): NULL;
+	r_pair_set_file (p, f);
+	r_pair_fini (p);
+	if (!file) return R_FALSE;
+	p2 = r_pair_new_from_file (file);
+	memcpy (p, p2, sizeof (RPair));
+	free (p2);
+	free (file);
+	return R_TRUE;
+}
 
 R_API RPair *r_pair_new () {
 	RPair *p = R_NEW0 (RPair);
 	p->file = NULL;
-	p->sdb = NULL;
+	p->sdb = sdb_new (NULL, 0);
 	p->ht = r_hashtable_new ();
 	p->dbs = r_list_new ();
 	p->dbs->free = (RListFree)sdb_free;
@@ -29,13 +63,7 @@ R_API RPair *r_pair_new_from_file (const char *file) {
 
 R_API void r_pair_free (RPair *p) {
 	if (p==NULL) return;
-	r_hashtable_free (p->ht);
-	r_list_free (p->dbs);
-	if (p->file) {
-		free (p->file);
-		sdb_free (p->sdb);
-	}
-	free (p->dir);
+	r_pair_fini (p);
 	free (p);
 }
 
@@ -100,9 +128,9 @@ R_API char *r_pair_get (RPair *p, const char *name) {
 }
 
 R_API void r_pair_set (RPair *p, const char *name, const char *value) {
-	Sdb *sdb;
+	char *dom, *key, *okey;
 	ut32 hdom;
-	char *dom, *key;
+	Sdb *sdb;
 
 	if (p->file) {
 		sdb_set (p->sdb, name, value);
@@ -111,26 +139,21 @@ R_API void r_pair_set (RPair *p, const char *name, const char *value) {
 	key = strdup (name);
 	dom = r_str_lchr (key, '.');
 	if (dom) {
-		char *okey = key;
+		okey = key;
 		*dom = 0;
 		key = dom+1;
 		dom = okey;
 	} else dom = "";
 	hdom = r_str_hash (dom);
 	sdb = r_hashtable_lookup (p->ht, hdom);
-	if (!sdb)
-		sdb = pair_sdb_new (p, dom, hdom);
+	if (!sdb) sdb = pair_sdb_new (p, dom, hdom);
 	sdb_set (sdb, key, value);
 }
 
 R_API RList *r_pair_list (RPair *p, const char *domain) {
 	Sdb *s;
-	if (p->file) {
-		s = p->sdb;
-	} else {
-		ut32 hdom = r_str_hash (domain);
-		s = r_hashtable_lookup (p->ht, hdom);
-	}
+	if (p->file) s = p->sdb;
+	else s = r_hashtable_lookup (p->ht, r_str_hash (domain));
 	if (s) {
 		RList *list = r_list_new ();
 		char key[SDB_KEYSIZE];
@@ -169,14 +192,12 @@ R_API void r_pair_reset (RPair *p) {
 		sdb_reset (s);
 }
 
-R_API void r_pair_sync (RPair *p) {
+R_API int r_pair_sync (RPair *p) {
 	Sdb *s;
 	char *old = NULL;
 	RListIter *iter;
-	if (p->file) {
-		sdb_sync (p->sdb);
-		return;
-	}
+	if (p->file)
+		return sdb_sync (p->sdb);
 	if (p->dir) {
 		old = r_sys_getdir ();
 		r_sys_rmkdir (p->dir);
@@ -189,6 +210,7 @@ R_API void r_pair_sync (RPair *p) {
 		r_sys_chdir (old);
 		free (old);
 	}
+	return R_TRUE;
 }
 
 R_API char* r_pair_serialize(RPair *p, const char *fmt, void *ptr) {

@@ -57,31 +57,32 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	default:
 		if (core->file) {
-			const char *fn = NULL;
-			int dbg = r_config_get_i (core->config, "cfg.debug");
-			RBinInfo *info = r_bin_get_info (core->bin);
-			if (info) {
-				fn = info->file;
-				r_cons_printf ("type\t%s\n", info->type);
-				r_cons_printf ("os\t%s\n", info->os);
-				r_cons_printf ("arch\t%s\n", info->machine);
-				r_cons_printf ("bits\t%d\n", info->bits);
-				r_cons_printf ("endian\t%s\n", info->big_endian? "big": "little");
-			} else {
-				fn = core->file->filename;
-			}
-			r_cons_printf ("file\t%s\n", fn);
-			if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
-			r_cons_printf ("fd\t%d\n", core->file->fd->fd);
-			r_cons_printf ("size\t0x%x\n", core->file->size);
-			r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
-			r_cons_printf ("block\t0x%x\n", core->blocksize);
-			r_cons_printf ("uri\t%s\n", core->file->uri);
-			if (core->bin->curxtr)
-				r_cons_printf ("packet\t%s\n", core->bin->curxtr->name);
-			if (core->bin->curxtr)
-				r_cons_printf ("format\t%s\n", core->bin->curarch.curplugin->name);
-		} else eprintf ("No selected file\n");
+			eprintf ("No selected file\n");
+			return R_FALSE;
+		} {
+		const char *fn = NULL;
+		int dbg = r_config_get_i (core->config, "cfg.debug");
+		RBinInfo *info = r_bin_get_info (core->bin);
+		if (info) {
+			fn = info->file;
+			r_cons_printf ("type\t%s\n", info->type);
+			r_cons_printf ("os\t%s\n", info->os);
+			r_cons_printf ("arch\t%s\n", info->machine);
+			r_cons_printf ("bits\t%d\n", info->bits);
+			r_cons_printf ("endian\t%s\n", info->big_endian? "big": "little");
+		} else fn = core->file->filename;
+		r_cons_printf ("file\t%s\n", fn);
+		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
+		r_cons_printf ("fd\t%d\n", core->file->fd->fd);
+		r_cons_printf ("size\t0x%x\n", core->file->size);
+		r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
+		r_cons_printf ("block\t0x%x\n", core->blocksize);
+		r_cons_printf ("uri\t%s\n", core->file->uri);
+		if (core->bin->curxtr)
+			r_cons_printf ("packet\t%s\n", core->bin->curxtr->name);
+		if (core->bin->curxtr)
+			r_cons_printf ("format\t%s\n", core->bin->curarch.curplugin->name);
+		}
 	}
 	return 0;
 }

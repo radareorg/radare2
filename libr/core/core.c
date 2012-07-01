@@ -350,7 +350,8 @@ R_API int r_core_init(RCore *core) {
 	core->reflines2 = NULL;
 	core->yank_len = 0;
 	core->yank_off = 0LL;
-	core->kv = r_pair_new ();
+	//core->kv = r_pair_new ();
+	core->kv = r_pair_new_from_file ("r2kv.sdb");
 	core->num = r_num_new (&num_callback, core);
 	//core->num->callback = &num_callback;
 	//core->num->userptr = core;

@@ -319,12 +319,8 @@ int main(int argc, char **argv) {
 
 	while ((c = getopt (argc, argv, "Af:a:B:b:c:CdMm:n:@:VisSzIHelRwO:o:p:rvLhx")) != -1) {
 		switch(c) {
-		case 'A':
-			action |= ACTION_LISTARCHS;
-			break;
-		case 'a':
-			if (optarg) arch = strdup (optarg);
-			break;
+		case 'A': action |= ACTION_LISTARCHS; break;
+		case 'a': if (optarg) arch = strdup (optarg); break;
 		case 'c':
 			if (!optarg) {
 				eprintf ("Missing argument for -c");
@@ -333,58 +329,26 @@ int main(int argc, char **argv) {
 			action = ACTION_CREATE;
 			create = strdup (optarg);
 			break;
-		case 'C':
-			action |= ACTION_CLASSES;
-			break;
-		case 'f':
-			if (optarg) arch_name = strdup (optarg);
-			break;
-		case 'b':
-			bits = r_num_math (NULL, optarg);
-			break;
+		case 'C': action |= ACTION_CLASSES; break;
+		case 'f': if (optarg) arch_name = strdup (optarg); break;
+		case 'b': bits = r_num_math (NULL, optarg); break;
 		case 'm':
 			at = r_num_math (NULL, optarg);
 			action |= ACTION_SRCLINE;
 			break;
-		case 'i':
-			action |= ACTION_IMPORTS;
-			break;
-		case 's':
-			action |= ACTION_SYMBOLS;
-			break;
-		case 'S':
-			action |= ACTION_SECTIONS;
-			break;
-		case 'z':
-			action |= ACTION_STRINGS;
-			break;
-		case 'I':
-			action |= ACTION_INFO;
-			break;
-		case 'H':
-			action |= ACTION_FIELDS;
-			break;
-		case 'd':
-			action |= ACTION_DWARF;
-			break;
-		case 'e':
-			action |= ACTION_ENTRIES;
-			break;
-		case 'M':
-			action |= ACTION_MAIN;
-			break;
-		case 'l':
-			action |= ACTION_LIBS;
-			break;
-		case 'R':
-			action |= ACTION_RELOCS;
-			break;
-		case 'x':
-			action |= ACTION_EXTRACT;
-			break;
-		case 'w':
-			rw = R_TRUE;
-			break;
+		case 'i': action |= ACTION_IMPORTS; break;
+		case 's': action |= ACTION_SYMBOLS; break;
+		case 'S': action |= ACTION_SECTIONS; break;
+		case 'z': action |= ACTION_STRINGS; break;
+		case 'I': action |= ACTION_INFO; break;
+		case 'H': action |= ACTION_FIELDS; break;
+		case 'd': action |= ACTION_DWARF; break;
+		case 'e': action |= ACTION_ENTRIES; break;
+		case 'M': action |= ACTION_MAIN; break;
+		case 'l': action |= ACTION_LIBS; break;
+		case 'R': action |= ACTION_RELOCS; break;
+		case 'x': action |= ACTION_EXTRACT; break;
+		case 'w': rw = R_TRUE; break;
 		case 'O':
 			op = optarg;
 			action |= ACTION_OPERATION;
@@ -394,30 +358,14 @@ int main(int argc, char **argv) {
 			}
 			//	return rabin_do_operation (op);
 			break;
-		case 'o':
-			output = optarg;
-			break;
-		case 'r':
-			rad = R_TRUE;
-			break;
-		case 'v':
-			va = R_TRUE;
-			break;
-		case 'L':
-			r_bin_list (bin);
-			return 1;
-		case 'B':
-			gbaddr = r_num_math (NULL, optarg);
-			break;
-		case '@':
-			at = r_num_math (NULL, optarg);
-			break;
-		case 'n':
-			name = optarg;
-			break;
-		case 'V':
-			printf ("rabin2 v"R2_VERSION"\n");
-			return 0;
+		case 'o': output = optarg; break;
+		case 'r': rad = R_TRUE; break;
+		case 'v': va = R_TRUE; break;
+		case 'L': r_bin_list (bin); return 1;
+		case 'B': gbaddr = r_num_math (NULL, optarg); break;
+		case '@': at = r_num_math (NULL, optarg); break;
+		case 'n': name = optarg; break;
+		case 'V': printf ("rabin2 v"R2_VERSION"\n"); return 0;
 		case 'h':
 		default:
 			action |= ACTION_HELP;
