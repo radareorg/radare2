@@ -1,7 +1,8 @@
 var r2 = require('../r_bin')
 
-var b = new r2.RBin()
-b.load(process.argv[2] || '/bin/ls', false);
+var b = new r2.RBin(), fileName = process.argv[2] || '/bin/ls';
+if(!b.load(fileName, false))
+	console.error('Cannot open '+fileName), process.exit(1);
 
 console.log('Base address:', b.get_baddr().toString(16));
 console.log('Sections:');
