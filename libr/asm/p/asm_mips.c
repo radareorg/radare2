@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -88,7 +88,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 RAsmPlugin r_asm_plugin_mips = {
 	.name = "mips",
 	.arch = "mips",
-	.bits = (int[]){ 32, 0 },
+	.bits = (int[]){ 64, 32, 0 },
 	.desc = "MIPS disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

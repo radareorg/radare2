@@ -50,7 +50,7 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 			if (!reg->regset[i].arena) {
 				arena = reg->regset[i].arena = R_NEW (RRegArena);
 				arena->size = len;
-				arena->bytes = malloc(len);
+				arena->bytes = malloc (len);
 			} else arena = reg->regset[i].arena;
 			if (arena->bytes == NULL)
 				return R_FALSE;
@@ -64,10 +64,12 @@ R_API int r_reg_set_bytes(RReg *reg, int type, const ut8* buf, int len) {
 	} else {
 		if (type>=0 && type<=R_REG_TYPE_LAST) {
 			regset = &reg->regset[type];
-			if (len<=regset->arena->size) {
-				memcpy (regset->arena->bytes, buf, len);
-				ret = R_TRUE;
-			}
+			if (len<1) return R_FALSE;
+			memcpy (regset->arena->bytes, buf, regset->arena->size);
+			if (len > regset->arena->size)
+				len = regset->arena->size;
+			memcpy (regset->arena->bytes, buf, len);
+			ret = R_TRUE;
 		}
 	}
 	return ret;

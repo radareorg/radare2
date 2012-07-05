@@ -127,6 +127,8 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case 'a':
 		r_debug_attach (core->dbg, (int) r_num_math (core->num, input+2));
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
+		r_config_set_i (core->config, "dbg.swstep",
+			(core->dbg->h && !core->dbg->h->canstep));
 		break;
 	case 'f':
 		r_debug_select (core->dbg, core->file->fd->fd, core->dbg->tid);
@@ -339,7 +341,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	const char *name;
 	char *arg;
 	int size, i, type = R_REG_TYPE_GPR;
-	int bits = (core->dbg->bits == R_SYS_BITS_64)? 64: 32;
+	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	switch (str[0]) {
 	case '?':
 		if (str[1]) {
@@ -419,7 +421,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '\0':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 0);
-		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case ' ':
 		arg = strchr (str+1, '=');
@@ -444,7 +446,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (arg && size==0) {
 				*arg='\0';
 				size = atoi (arg);
-			} else size = 32;
+			} else size = core->dbg->bits;
 			//eprintf ("ARG(%s)\n", str+1);
 			type = r_reg_type_by_name (str+1);
 		}

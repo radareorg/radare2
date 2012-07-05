@@ -161,6 +161,7 @@ typedef struct r_debug_plugin_t {
 	//const char **archs; // MUST BE DEPREACTED!!!!
 	ut32 bits;
 	ut64 arch;
+	int canstep;
 	/* life */
 	int (*startv)(int argc, char **argv);
 	int (*attach)(RDebug *dbg, int pid);

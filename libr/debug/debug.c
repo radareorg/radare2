@@ -106,6 +106,8 @@ R_API int r_debug_set_arch(RDebug *dbg, int arch, int bits) {
 				dbg->bits = R_SYS_BITS_64;
 				break;
 			}
+			if (!(dbg->h->bits & dbg->bits))
+				dbg->bits = dbg->h->bits;
 			dbg->arch = arch;
 			return R_TRUE;
 		}

@@ -547,7 +547,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	ptr = (char *)r_str_lastbut (cmd, '|', quotestr);
 	if (ptr) {
 		char *ptr2 = strchr (cmd, '`');
-		if (!ptr2 || ptr2 && ptr2>ptr) {
+		if (!ptr2 || (ptr2 && ptr2>ptr)) {
 			if (!tick || (tick && tick > ptr)) {
 				*ptr = '\0';
 				cmd = r_str_clean (cmd);
