@@ -1420,6 +1420,10 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
                 /* TODO: allow to choose the thread */
 		gp_count = R_DEBUG_STATE_SZ;
 
+if (tid <0 || tid>=inferior_thread_count) {
+	eprintf ("Tid out of range %d\n", inferior_thread_count);
+	return R_FALSE;
+}
 // XXX: kinda spaguetti coz multi-arch
 #if __i386__ || __x86_64__
 		if (dbg->bits== R_SYS_BITS_64) {
@@ -1571,32 +1575,32 @@ return R_FALSE;
 			return R_FALSE;
 		}
 
+		/* TODO: thread cannot be selected */
 		if (inferior_thread_count>0) {
-			/* TODO: allow to choose the thread */
-			gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T)/sizeof(size_t);
+			gp_count = ((dbg->bits == R_SYS_BITS_64))? 44:16;
 			// XXX: kinda spaguetti coz multi-arch
 			int tid = inferior_threads[0];
 #if __i386__ || __x86_64__
-		if (dbg->bits == R_SYS_BITS_64) {
-			ret = thread_set_state (inferior_threads[tid],
-				x86_THREAD_STATE, (thread_state_t) regs, &gp_count);
-		} else {
-			ret = thread_set_state (inferior_threads[tid],
-				i386_THREAD_STATE, (thread_state_t) regs, &gp_count);
-		}
-#else
-		ret = thread_set_state (inferior_threads[tid],
-			R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
-#endif
-		//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
-		if (ret != KERN_SUCCESS) {
-				eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
-					(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
-				perror ("thread_set_state");
-				return R_FALSE;
+			if (dbg->bits == R_SYS_BITS_64) {
+				ret = thread_set_state (tid, x86_THREAD_STATE,
+						(thread_state_t) regs, gp_count);
+			} else {
+				ret = thread_set_state (tid, i386_THREAD_STATE,
+						(thread_state_t) regs, gp_count);
 			}
-		} else eprintf ("There are no threads!\n");
-		return sizeof (R_DEBUG_REG_T);
+#else
+			ret = thread_set_state (inferior_threads[tid],
+					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+#endif
+//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
+if (ret != KERN_SUCCESS) {
+	eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
+			(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
+	perror ("thread_set_state");
+	return R_FALSE;
+}
+} else eprintf ("There are no threads!\n");
+return sizeof (R_DEBUG_REG_T);
 #else
 #warning r_debug_native_reg_write not implemented
 #endif
@@ -1932,31 +1936,25 @@ static RList *r_debug_native_frames_x86_32(RDebug *dbg, ut64 at) {
 	ut8 buf[4];
 
 	list->free = free;
-	if (at == UT64_MAX) {
-		ri = r_reg_get (reg, "ebp", R_REG_TYPE_GPR);
-	} else {
-		ri = (ut32) at;
-	}
-	if (ri != NULL) {
-		_esp = r_reg_get_value (reg, ri);
+	ri = (at==UT64_MAX)? r_reg_get (reg, "ebp", R_REG_TYPE_GPR): NULL;
+	_esp = (ut32) ((ri)? r_reg_get_value (reg, ri): at);
 		// TODO: implement [stack] map uptrace method too
-		esp = _esp;
-		for (i=0; i<MAXBT; i++) {
-			bio->read_at (bio->io, esp, (void *)&ebp2, 4);
-			if (ebp2 == UT32_MAX)
-				break;
-			*buf = '\0';
-			bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
+	esp = _esp;
+	for (i=0; i<MAXBT; i++) {
+		bio->read_at (bio->io, esp, (void *)&ebp2, 4);
+		if (ebp2 == UT32_MAX)
+			break;
+		*buf = '\0';
+		bio->read_at (bio->io, (ebp2-5)-(ebp2-5)%4, (void *)&buf, 4);
 
-			// TODO: arch_is_call() here and this fun will be portable
-			if (buf[(ebp2-5)%4]==0xe8) {
-				RDebugFrame *frame = R_NEW (RDebugFrame);
-				frame->addr = ebp2;
-				frame->size = esp-_esp;
-				r_list_append (list, frame);
-			}
-			esp += 4;
+		// TODO: arch_is_call() here and this fun will be portable
+		if (buf[(ebp2-5)%4]==0xe8) {
+			RDebugFrame *frame = R_NEW (RDebugFrame);
+			frame->addr = ebp2;
+			frame->size = esp-_esp;
+			r_list_append (list, frame);
 		}
+		esp += 4;
 	}
 	return list;
 }

@@ -18,26 +18,16 @@ static int format_output (char mode, const char *s) {
 	if (flags & 2)
 		r_mem_copyendian ((ut8*) str, (ut8*) str, 4, 0);
 	switch (mode) {
-	case 'I':
-		printf ("%"PFMT64d"\n", n);
-		break;
-	case '0':
-		printf ("0x%"PFMT64x"\n", n);
-		break;
-	case 'F':
-		printf ("%ff\n", (float)(ut32)n);
-		break;
-	case 'f':
-		printf ("%.01lf\n", num->fvalue);
-		break;
+	case 'I': printf ("%"PFMT64d"\n", n); break;
+	case '0': printf ("0x%"PFMT64x"\n", n); break;
+	case 'F': printf ("%ff\n", (float)(ut32)n); break;
+	case 'f': printf ("%.01lf\n", num->fvalue); break;
+	case 'O': printf ("%"PFMT64o"\n", n); break;
 	case 'B':
 		if (n) {
 			r_num_to_bits (strbits, n);
 			printf ("%sb\n", strbits);
 		} else printf ("0b\n");
-		break;
-	case 'O':
-		printf ("%"PFMT64o"\n", n);
 		break;
 	}
 	return R_TRUE;
@@ -60,6 +50,7 @@ static int help () {
 		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
 		"  hex   ->  raw           ;  rax2 -s 414141\n"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
+		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
 		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
@@ -73,7 +64,7 @@ static int help () {
 
 static int rax (char *str, int len, int last) {
 	float f;
-	char *p, *buf, out_mode = '0';
+	char *p, *buf, out_mode = (flags&128)?'I':'0';
 	int i;
 	if (!len)
 		len = strlen (str);
@@ -82,41 +73,21 @@ static int rax (char *str, int len, int last) {
 		goto dotherax;
 	if (*str=='-') {
 		switch (str[1]) {
-		case 's':
-			flags ^= 1;
-			break;
-		case 'e':
-			flags ^= 2;
-			break;
-		case 'S':
-			flags ^= 4;
-			break;
-		case 'b':
-			flags ^= 8;
-			break;
-		case 'x':
-			flags ^= 16;
-			break;
-		case 'k':
-			flags ^= 32;
-			break;
-		case 'f':
-			flags ^= 64;
-			break;
-		case 'v':
-			printf ("rax2 v"R2_VERSION"\n");
-			break;
-		case '\0':
-			return use_stdin ();
+		case 's': flags ^= 1; break;
+		case 'e': flags ^= 2; break;
+		case 'S': flags ^= 4; break;
+		case 'b': flags ^= 8; break;
+		case 'x': flags ^= 16; break;
+		case 'k': flags ^= 32; break;
+		case 'f': flags ^= 64; break;
+		case 'd': flags ^=128; break;
+		case 'v': printf ("rax2 v"R2_VERSION"\n"); break;
+		case '\0': return use_stdin ();
 		default:
-			if (str[1]>='0' && str[1]<='9') {
-				int n = atoi (str);
-				printf ("0x%x\n", n);
-				return R_TRUE;
-			} else {
-				printf ("Usage: rax2 [options] [expression]\n");
-				return help ();
-			}
+			if (str[1]>='0' && str[1]<='9')
+				return format_output (out_mode, str);
+			printf ("Usage: rax2 [options] [expression]\n");
+			return help ();
 		}
 		if (last)
 			return use_stdin ();

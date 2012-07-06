@@ -16,13 +16,14 @@ static int r_debug_recoil(RDebug *dbg) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);
 		eprintf ("[R2] Breakpoint recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
+		if (recoil<1) recoil = 1; // XXX Hack :D
 		if (recoil) {
 			dbg->reason = R_DBG_REASON_BP;
 			r_reg_set_value (dbg->reg, ri, addr-recoil);
 			r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_TRUE);
 			//eprintf ("[BP Hit] Setting pc to 0x%"PFMT64x"\n", (addr-recoil));
 			return R_TRUE;
-		}
+		} 
 	} else eprintf ("r_debug_recoil: Cannot get program counter\n");
 	return R_FALSE;
 }
@@ -238,17 +239,20 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	pc0 = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	dbg->iob.read_at (dbg->iob.io, pc0, buf, sizeof (buf));
 	ret = r_anal_op (dbg->anal, &op, pc0, buf, sizeof (buf));
-eprintf ("read from pc0 = 0x%llx\n", pc0);
+//eprintf ("read from pc0 = 0x%llx\n", pc0);
 	pc1 = pc0 + op.length;
-eprintf ("breakpoint at pc1 = 0x%llx\n", pc1);
+//eprintf ("oplen = %d\n", op.length);
+//eprintf ("breakpoint at pc1 = 0x%llx\n", pc1);
 	// XXX: Does not works for 'ret'
-	pc2 = op.jump?op.jump:0;
-eprintf ("breakpoint 2 at pc2 = 0x%llx\n", pc2);
+	pc2 = op.jump? op.jump: 0;
+//eprintf ("breakpoint 2 at pc2 = 0x%llx\n", pc2);
 
 	r_bp_add_sw (dbg->bp, pc1, 4, R_BP_PROT_EXEC);
-	if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);
+	//if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);
 	r_debug_continue (dbg);
-	r_debug_wait (dbg);
+eprintf ("wait\n");
+	//r_debug_wait (dbg);
+eprintf ("del\n");
 	r_bp_del (dbg->bp, pc1);
 	if (pc2) r_bp_del (dbg->bp, pc2);
 
