@@ -109,8 +109,14 @@ static int rax (char *str, int len, int last) {
 		case '\0':
 			return use_stdin ();
 		default:
-			printf ("Usage: rax2 [options] [expression]\n");
-			return help ();
+			if (str[1]>='0' && str[1]<='9') {
+				int n = atoi (str);
+				printf ("0x%x\n", n);
+				return R_TRUE;
+			} else {
+				printf ("Usage: rax2 [options] [expression]\n");
+				return help ();
+			}
 		}
 		if (last)
 			return use_stdin ();

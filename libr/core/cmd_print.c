@@ -50,6 +50,7 @@ static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int i, l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
+	ut8 *ptr = core->block;
 
 	/* TODO: Change also blocksize for 'pd'.. */
 	l = len;
@@ -100,7 +101,53 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case '=':
-		r_print_fill (core->print, core->block, core->blocksize);
+		switch (input[1]) {
+		case '?': // entropy
+			eprintf ("Usage: p=[bep?]\n");
+			eprintf (" p=   print bytes of current block in bars\n");
+			eprintf (" p=b  same as above\n");
+			eprintf (" p=e  same as above but with entropy\n");
+			eprintf (" p=p  print number of printable bytes for each filesize/blocksize\n");
+			break;
+		case 'e': // entropy
+			{
+			char *p;
+			int psz, i = 0;
+			int fsz = core->file?core->file->size:0;
+			psz = fsz/core->blocksize;
+			ptr = malloc (core->blocksize);
+			eprintf ("offset = num * %d\n", psz);
+			p = malloc (psz);
+			for (i=0; i<core->blocksize; i++) {
+				r_core_read_at (core, i*psz, p, psz);
+				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, psz));
+			}
+			free (p);
+			}
+			break;
+		case 'p': // printable chars
+			{
+			char *p;
+			int psz, i = 0, j, k;
+			int fsz = core->file?core->file->size:0;
+			psz = fsz/core->blocksize;
+			ptr = malloc (core->blocksize);
+			p = malloc (psz);
+			for (i=0; i<core->blocksize; i++) {
+				r_core_read_at (core, i*psz, p, psz);
+				for (j=k=0; j<psz; j++) {
+					if (IS_PRINTABLE (p[j]))
+						k++;
+				}
+				ptr[i] = k;
+			}
+			free (p);
+			}
+			break;
+		}
+		r_print_fill (core->print, ptr, core->blocksize);
+if (ptr != core->block)
+free (ptr);
 		/* TODO: Reimplement using API */ {
 			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b 512 '%s'", core->file->filename);
 			if (out) {

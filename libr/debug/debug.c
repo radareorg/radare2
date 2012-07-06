@@ -229,16 +229,21 @@ R_API int r_debug_wait(RDebug *dbg) {
 
 // XXX: very experimental
 R_API int r_debug_step_soft(RDebug *dbg) {
+	int ret;
 	ut8 buf[32];
 	RAnalOp op;
 	ut64 pc0, pc1, pc2;
 	if (r_debug_is_dead (dbg))
 		return R_FALSE;
 	pc0 = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	int ret = r_anal_op (dbg->anal, &op, pc0, buf, sizeof (buf));
+	dbg->iob.read_at (dbg->iob.io, pc0, buf, sizeof (buf));
+	ret = r_anal_op (dbg->anal, &op, pc0, buf, sizeof (buf));
+eprintf ("read from pc0 = 0x%llx\n", pc0);
 	pc1 = pc0 + op.length;
+eprintf ("breakpoint at pc1 = 0x%llx\n", pc1);
 	// XXX: Does not works for 'ret'
 	pc2 = op.jump?op.jump:0;
+eprintf ("breakpoint 2 at pc2 = 0x%llx\n", pc2);
 
 	r_bp_add_sw (dbg->bp, pc1, 4, R_BP_PROT_EXEC);
 	if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);

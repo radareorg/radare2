@@ -440,3 +440,11 @@ R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 	free (buf);
 	return R_TRUE;
 }
+
+R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
+	if (io->plugin && io->plugin->create)
+		return io->plugin->create (io, file, mode, type);
+	if (type == 'd'|| type ==1)
+		mkdir (file, mode);
+	else return creat (file, mode)? R_FALSE: R_TRUE;
+}

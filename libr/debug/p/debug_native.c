@@ -1574,8 +1574,8 @@ return R_FALSE;
 		if (inferior_thread_count>0) {
 			/* TODO: allow to choose the thread */
 			gp_count = R_DEBUG_STATE_SZ; //sizeof (R_DEBUG_REG_T)/sizeof(size_t);
-// XXX: kinda spaguetti coz multi-arch
-int tid = inferior_threads[0];
+			// XXX: kinda spaguetti coz multi-arch
+			int tid = inferior_threads[0];
 #if __i386__ || __x86_64__
 		if (dbg->bits == R_SYS_BITS_64) {
 			ret = thread_set_state (inferior_threads[tid],
@@ -1590,7 +1590,7 @@ int tid = inferior_threads[0];
 #endif
 		//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
 		if (ret != KERN_SUCCESS) {
-				eprintf ("debug_getregs: Failed to set thread %d %d.error (%x). (%s)\n",
+				eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
 					(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
 				perror ("thread_set_state");
 				return R_FALSE;

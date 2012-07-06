@@ -309,6 +309,14 @@ static int config_scrprompt_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_scrsparse_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = (RCore *) user;
+	if (node->i_value) core->print->flags |= R_PRINT_FLAGS_SPARSE;
+	else core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SPARSE));
+	return R_TRUE;
+}
+
 static int config_scrint_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton()->is_interactive = node->i_value;
@@ -550,6 +558,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.bp", "Command to executed every breakpoint hitted");
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
+	r_config_set_cb (cfg, "scr.sparse", "false", config_scrsparse_callback);
 	r_config_set_cb (cfg, "scr.interactive", "true", config_scrint_callback);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_desc (cfg, "scr.tee", "Pipe console output to file if not empty");

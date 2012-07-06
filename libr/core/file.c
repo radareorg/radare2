@@ -173,8 +173,14 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 		file = "malloc://512";
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open (r->io, file, mode, 0644);
-	if (fd == NULL)
-		return NULL;
+	if (fd == NULL) {
+		if (mode & 2) {
+			if (!r_io_create (r->io, file, 0644, 0))
+				return NULL;
+			if (!(fd = r_io_open (r->io, file, mode, 0644)))
+				return NULL;
+		} else return NULL;
+	}
 	if (r_io_is_listener (r->io)) {
 		r_core_serve (r, fd);
 		return NULL;

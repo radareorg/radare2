@@ -135,6 +135,7 @@ typedef struct r_io_plugin_t {
         int (*close)(RIODesc *desc);
         int (*resize)(RIO *io, RIODesc *fd, ut64 size);
         int (*accept)(RIO *io, RIODesc *desc, int fd);
+        int (*create)(RIO *io, const char *file, int mode, int type);
         int (*plugin_open)(RIO *io, const char *);
         //int (*plugin_fd)(RIO *, int);
 } RIOPlugin;
@@ -234,6 +235,7 @@ R_API ut64 r_io_size(RIO *io); //, int fd);
 R_API int r_io_resize(RIO *io, ut64 newsize);
 R_API int r_io_accept(RIO *io, int fd);
 R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
+R_API int r_io_create (RIO *io, const char *file, int mode, int type);
 
 /* io/cache.c */
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);

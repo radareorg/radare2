@@ -198,6 +198,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_seek_previous (core, r_config_get (core->config, "scr.fkey"));
 		break;
 	case 'a':
+		if (core->file && !(core->file->rwx & 2)) {
+			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+			r_cons_any_key ();
+			return R_TRUE;
+		}
 		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
 		r_cons_show_cursor (R_TRUE);
 		r_cons_flush ();
@@ -214,6 +219,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_set_raw (R_TRUE);
 		break;
 	case 'i':
+		if (core->file && !(core->file->rwx & 2)) {
+			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+			r_cons_any_key ();
+			return R_TRUE;
+		}
 		r_cons_show_cursor (R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (0);
@@ -656,7 +666,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" cC       toggle cursor and colors\n"
 		" gG       go seek to begin and end of file (0-$s)\n"
 		" d[f?]    define function, data, code, ..\n"
-		" w        write hexpairs in curseek or cursor (same as :wx)\n"
 		" x        show xrefs to seek between them\n"
 		" sS       step / step over\n"
 		" n/N      seek next/previous block\n"

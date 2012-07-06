@@ -56,7 +56,7 @@ static int cmd_info(void *data, const char *input) {
 	case '*':
 		break;
 	default:
-		if (core->file) {
+		if (!core->file) {
 			eprintf ("No selected file\n");
 			return R_FALSE;
 		} {

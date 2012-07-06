@@ -83,13 +83,14 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 #define CURDBG 0
 // XXX: redesign ? :)
 R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
-	char *s, *lastcol = Color_WHITE;
+	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *)malloc ((strlen (str)+2)*32);
-	int ch, i;
+	int colors = p->flags & R_PRINT_FLAGS_COLOR;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	/* TODO: Use r_print_set_cursor for win support */
 	int cur = R_MIN (p->cur, p->ocur);
 	int ocur = R_MAX (p->cur, p->ocur);
+	int ch, i;
 
 	if (p->cur_enabled && cur==-1)
 		cur = ocur;
@@ -114,10 +115,10 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 			if (i>=cur-n && i<ocur-n)
 				memcat (d, "\x1b[7m");
 		}
-		if ((p->flags & R_PRINT_FLAGS_COLOR)) {
-			if (s[0]=='0' && s[1]=='0') { lastcol = Color_GREEN; }
-			else if (s[0]=='7' && s[1]=='f') { lastcol = Color_YELLOW; }
-			else if (s[0]=='f' && s[1]=='f') { lastcol = Color_RED; }
+		if (colors) {
+			if (s[0]=='0' && s[1]=='0') lastcol = Color_GREEN;
+			else if (s[0]=='7' && s[1]=='f') lastcol = Color_YELLOW;
+			else if (s[0]=='f' && s[1]=='f') lastcol = Color_RED;
 			else {
 				ch = r_hex_pair2bin(s);
 				//sscanf (s, "%02x", &ch); // XXX can be optimized
@@ -128,7 +129,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 		}
 		memcpy (d, s, 2);
 	}
-	if ((p->flags & R_PRINT_FLAGS_COLOR) || p->cur_enabled)
+	if (colors || p->cur_enabled)
 		memcpy (d, Color_RESET, strlen (Color_RESET)+1);
 	else *d = 0;
 	return dst;
@@ -203,11 +204,26 @@ R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len) {
 		p->printf ("%02x ", buf[i]);
 }
 
+static int check_sparse (const ut8 *p, int len, int ch) {
+	int i;
+	ut8 q = *p;
+	if (ch && ch != q)
+		return 0;
+	for (i=1; i<len; i++)
+		if (p[i] != q)
+			return 0;
+	return 1;
+}
+
 // XXX: step is borken
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
 	int i, j, k, inc;
+	int sparse_char = 0;
+	int use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
 	const char *fmt = "%02x";
 	const char *pre = "";
+	int last_sparse = 0;
+
 	if (step<1) step = 1;
 
 	switch (base) {
@@ -230,7 +246,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (base<32)
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		ut32 opad = (ut32)(addr >> 32);
-		p->printf ("   offset  ");
+		//p->printf ("   offset  ");
+		p->printf ("-- offset -");
+		{
+			int i, delta;
+			char soff[32];
+			snprintf (soff, sizeof (soff), "0x%08"PFMT64x, addr);
+			delta = strlen (soff) - 10;
+			for (i=0; i<delta; i++)
+				p->printf (i+1==delta?" ":"-");
+		}
 		//while (opad>0) {
 			p->printf (p->col==1?"|":" ");
 			opad >>= 4;
@@ -251,12 +276,31 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 
 	p->interrupt = 0;
 	for (i=j=0; !p->interrupt && i<len; i+=inc) {
+		if (use_sparse) {
+			if (check_sparse (buf+i, inc, sparse_char)) {
+				if (i+inc>=len || check_sparse (buf+i+inc, inc, sparse_char)) {
+					if (i+inc+inc>=len || check_sparse (buf+i+inc+inc, inc, sparse_char)) {
+						sparse_char = buf[j];
+						last_sparse++;
+						if (last_sparse==2) {
+							p->printf (" ...\n");
+							continue;
+						}
+						if (last_sparse>2) continue;
+					}
+				}
+			} else last_sparse = 0;
+		}
 		r_print_addr (p, addr+j); //(i*step));
 		p->printf ((p->col==1)? "|": " ");
 		for (j=i; j<i+inc; j++) {
 			if (j>=len) {
 				//p->printf (j%2?"   ":"  ");
-				p->printf (j%2?"   ":"  ");
+				if (p->col==1) {
+					if (j+1>=inc+i)
+						p->printf (j%2?"  |":"| ");
+					else p->printf (j%2?"   ":"  ");
+				}  else p->printf (j%2?"   ":"  ");
 				continue;
 			}
 			if (base==32) {

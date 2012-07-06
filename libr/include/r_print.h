@@ -9,6 +9,7 @@
 #define R_PRINT_FLAGS_ADDRMOD 0x00000002
 #define R_PRINT_FLAGS_CURSOR  0x00000004
 #define R_PRINT_FLAGS_HEADER  0x00000008
+#define R_PRINT_FLAGS_SPARSE  0x00000010
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
