@@ -204,8 +204,7 @@ static int cmd_interpret(void *data, const char *input) {
 			eol = strchr (ptr, '\n');
 			if (eol) *eol = '\0';
 			if (*ptr)
-			if (!r_core_cmd0 (core, ptr))
-				break;
+			r_core_cmd0 (core, ptr);
 			if (!eol) break;
 			ptr = eol+1;
 		}

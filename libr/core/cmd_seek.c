@@ -21,7 +21,7 @@ static int cmd_seek(void *data, const char *input) {
 		if ((st64)off<0)off =-off; // hack to fix s-2;s -2
 		if (isalpha (input[delta]) && off == 0) {
 			if (delta==1 && !r_flag_get (core->flags, input+delta)) {
-				eprintf ("Invalid address (%s)\n", input+delta);
+				eprintf ("Cannot find address for '%s\n", input+delta);
 				return R_FALSE;
 			}
 		}
