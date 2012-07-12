@@ -14,7 +14,7 @@ R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v) {
 	return data;
 }
 
-R_API const ut8 *r_leb128 (ut8 *data, ut32 *v) {
+R_API const ut8 *r_leb128 (const ut8 *data, st32 *v) {
 	ut8 c;
 	st32 s, sum;
 	for (s = sum = 0; ; s+= 7) {

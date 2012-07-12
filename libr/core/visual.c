@@ -258,7 +258,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'x':
 		{
 		int count = 0;
-		RList *xrefs;
+		RList *xrefs = NULL;
 		RAnalRef *refi;
 		RListIter *iter;
 		RAnalFcn *fun;
@@ -748,7 +748,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	bar[11] = '.'; // chop cmdfmt
 	bar[12] = 0; // chop cmdfmt
 	if (curset)
-		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s(%d:%d=%d)]> %s\n", core->offset,
+		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s(0x%x:%d=%d)]> %s\n", core->offset,
 				core->blocksize, filename, cursor, ocursor,
 				ocursor==-1?1:R_ABS (cursor-ocursor)+1, bar);
 	else

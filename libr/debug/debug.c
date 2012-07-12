@@ -250,9 +250,9 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	r_bp_add_sw (dbg->bp, pc1, 4, R_BP_PROT_EXEC);
 	//if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);
 	r_debug_continue (dbg);
-eprintf ("wait\n");
+//eprintf ("wait\n");
 	//r_debug_wait (dbg);
-eprintf ("del\n");
+//eprintf ("del\n");
 	r_bp_del (dbg->bp, pc1);
 	if (pc2) r_bp_del (dbg->bp, pc2);
 

@@ -513,6 +513,10 @@ R_API void r_hashtable64_free(RHashTable64 *ht);
 R_API void *r_hashtable64_lookup(RHashTable64 *ht, ut64 hash);
 R_API boolt r_hashtable64_insert(RHashTable64 *ht, ut64 hash, void *data);
 R_API void r_hashtable64_remove(RHashTable64 *ht, ut64 hash);
+
+/* uleb */
+R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v);
+R_API const ut8 *r_leb128 (const ut8 *data, st32 *v);
 #endif
 
 #endif

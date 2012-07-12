@@ -112,15 +112,36 @@
 #define DW_TAG_template_alias           0x43  /* DWARF4 */
 
 typedef struct {
-	ut32 len;
+	ut32 total_length;
 	ut16 version;
 	ut32 plen;
-	ut8 minislen;
+	ut8 mininstlen;
 	ut8 is_stmt;
 	char line_base;
 	ut8 line_range;
 	ut8 opcode_base;
 	ut32 oplentable[12];
+	const char **incdirs;
+	const char *file[16];
+	//RBinDwarfInfoHeader
 } RBinDwarfInfoHeader;
+
+typedef struct {
+	ut64 address;
+	unsigned int file;
+	unsigned int line;
+	unsigned int column;
+	int is_stmt;
+	int basic_block;
+	int end_sequence;
+} RBinDwarfState;
+
+typedef struct {
+	ut64 address;
+	const char *file;
+	unsigned int line;
+	unsigned int column;
+} RBinDwarfRow;
+
 
 #endif

@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2012 pancake<nopcode.org> */
 
+#define D0 if(0)
+#define D1 if(1)
+
 #include <r_bin.h>
 #include <r_bin_dwarf.h>
 
@@ -11,11 +14,9 @@
 
 R_API int r_bin_dwarf_parse_line(RBin *a);
 
+// XXX wtf
 R_API int r_bin_dwarf_parse(RBin *bin, int type) {
-	//RBinSection *s = NULL;
-	ut8 *p;
-	// find debug_line section //
-	r_bin_dwarf_parse_line (p);
+	return r_bin_dwarf_parse_line (bin);
 }
 
 struct Line_Table_File_Entry_s {
@@ -25,15 +26,10 @@ struct Line_Table_File_Entry_s {
 	ut32 lte_length_of_file;
 };
 
-static const ut8 *r_bin_dwarf_info(const ut8 *buf, RBinDwarfInfoHeader *hdr) {
-	eprintf ("PARSE INFO!\n");
-	return buf;
-}
-
 R_API int r_bin_dwarf_parse_info_raw(const ut8 *obuf) {
-int i;
-	const char *buf = obuf;
-	ut32 len, version, addr_size, abbr_offset, nextcu;
+	int i;
+	const char *buf = (const char *)obuf;
+	ut32 len, version, addr_size, abbr_offset;
 
 	len = READ (buf, ut32);
 	version = READ (buf, ut16);
@@ -41,170 +37,206 @@ int i;
 	addr_size = READ (buf, ut8);
 	//nextcu = READ (buf, ut8);
 
-	eprintf ("Compile unit: 0x%x\n", len);
-	eprintf ("Version: %d\n", version);
-	eprintf ("abbr offset: 0x%x\n", abbr_offset);
-	eprintf ("addr size: 0x%x\n", addr_size);
-	//eprintf ("nextcu: 0x%x\n", nextcu);
+	D0 {
+		eprintf ("Compile unit: 0x%x\n", len);
+		eprintf ("Version: %d\n", version);
+		eprintf ("abbr offset: 0x%x\n", abbr_offset);
+		eprintf ("addr size: 0x%x\n", addr_size);
+		//eprintf ("nextcu: 0x%x\n", nextcu);
 
-for (i=0;i<256; i++) {
-	eprintf ("%02x ", buf[i]);
-}
-eprintf("\n");
+		for (i=0;i<256; i++) { eprintf ("%02x ", buf[i]); } eprintf("\n");
 
-eprintf ("Compile Unit: length = 0x000000f1  version = 0x0002\n");
-eprintf ("abbr_offset = 0x00000000  addr_size = 0x04  (next CU at 0x000000f5)\n");
-#if 0
-0x00004197 |f100 0000 0200 0000 0000 0401 0100 0000| ................               
-0x000041a7 |0125 0000 0030 0000 00fa 1d00 004d 1f00| .%...0.......M..               
-0x000041b7 |0000 0000 0002 015a 0000 0001 013d 0000| .......Z.....=..               
-0x000041c7 |00fa 1d00 001b 1e00 0000 0000 0003 0405| ................   
-#endif
-	eprintf ("PARSE INFO\n");
+		eprintf ("Compile Unit: length = 0x000000f1  version = 0x0002\n");
+		eprintf ("abbr_offset = 0x00000000  addr_size = 0x04  (next CU at 0x000000f5)\n");
+	}
+	return R_TRUE;
 }
 
 static const ut8 *r_bin_dwarf_parse_header (const ut8 *buf, RBinDwarfInfoHeader *hdr) {
 	int count, i;
-	hdr->len = READ (buf, ut32);
+	hdr->total_length = READ (buf, ut32);
 	hdr->version = READ (buf, ut16);
-	hdr->plen = READ (buf, ut32);
-	hdr->minislen = READ (buf, ut8);
+	hdr->plen = READ (buf, ut32); // end of payload is buf + plen
+	hdr->mininstlen = READ (buf, ut8);
 	hdr->is_stmt = READ (buf, ut8);
 	hdr->line_base = READ (buf, char);
 	hdr->line_range = READ (buf, ut8);
 	hdr->opcode_base = READ (buf, ut8);
 
-	printf ("DWARF LINE HEADER\n");
-	printf ("  payload length: %d\n", hdr->len);
-	printf ("  version: %d\n", hdr->version);
-	printf ("  plen: %d\n", hdr->plen);
-	printf ("  minislen: %d\n", hdr->minislen);
-	printf ("  is_stmt: %d\n", hdr->is_stmt);
-	printf ("  line_base: %d\n", hdr->line_base);
-	printf ("  line_range: %d\n", hdr->line_range);
-	printf ("  opcode_base: %d\n", hdr->opcode_base);
+	D0 {
+		eprintf ("DWARF LINE HEADER\n");
+		eprintf ("  payload length: %d\n", hdr->total_length);
+		eprintf ("  version: %d\n", hdr->version);
+		eprintf ("  plen: %d\n", hdr->plen);
+		eprintf ("  mininstlen: %d\n", hdr->mininstlen);
+		eprintf ("  is_stmt: %d\n", hdr->is_stmt);
+		eprintf ("  line_base: %d\n", hdr->line_base);
+		eprintf ("  line_range: %d\n", hdr->line_range);
+		eprintf ("  opcode_base: %d\n", hdr->opcode_base);
+	}
 
 	count = hdr->opcode_base - 1;
-	printf ("-opcode arguments:\n");
+	D0 eprintf ("-opcode arguments:\n");
+	/* parse opcode lengths table */
 	for (i = 0; i<count; i++) {
-		ut8 n = READ (buf, ut8);
-		printf (" op %d %d\n", i, n);
-		hdr->oplentable[i] = n;
+		hdr->oplentable[i] = READ (buf, ut8);
+		D0 eprintf (" op %d %d\n", i, hdr->oplentable[i]);
 	}
+	/* parse include dirs */
+	while (*buf++) {
+		int len = strlen ((const char*)buf);
+		if (!len) {
+			buf += 3;
+			break;
+		}
+		D0 eprintf ("INCLUDEDIR (%s)\n", buf);
+		buf += len+3;
+	}
+	/* parse filenames */
+#if 0
+	- null-terminated string
+		- uleb128 with directory index
+		- leb128 with last modification time
+		- uleb128 with length of file
+#endif
+	i = 0;
+	while (*buf) {
+		const char *filename = (const char *)buf;
+		ut32 didx, flen;
+		int tmod;
+		int len = strlen (filename);
+		if (!len) {
+			buf++;
+			break;
+		}
+		buf += len+1;
+		buf = r_uleb128 (buf, &didx);
+		buf = r_leb128 (buf, &tmod);
+		buf = r_uleb128 (buf, &flen);
+		D0 eprintf ("FILE (%s)\n", filename);
+		hdr->file[i++] = filename;
+		D0 eprintf ("| dir idx %d\n", didx);
+		D0 eprintf ("| lastmod %d\n", tmod);
+		D0 eprintf ("| filelen %d\n", flen);
+	}
+	hdr->file[i] = 0;
 	return buf;
 }
 
 R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf) {
 	RBinDwarfInfoHeader hdr;
-	const char *buf, *code;
-	int type, opi, i;
-	int opcount = 12; // TODO must autodetect if 9 or 12 coz versioning is crap
+	ut64 address = 0;
+	int line = 1;
+	const ut8 *buf_end, *buf, *code;
+	int type;
 	ut8 opcode;
+	const char *types[] = {
+		"dw_extended_opcode", "extended",
+		"discard", "standard", "special"
+	};
 
 	buf = r_bin_dwarf_parse_header (obuf, &hdr);
-	code = obuf+hdr.len;
+	code = obuf+hdr.total_length;
 
-	// parse filenames
-	while (*buf++ == 0) {
-		int len = strlen (buf);
-		if (!len) {
-			buf += 3;
-			break;
-		}
-		eprintf ("FILE (%s)\n", buf);
-		buf += len+3;
-	}
-#if 0
-	for (i=0;i<20;i++) {
-		printf ("%02x %c\n", buf[i], buf[i]);
-	}
-file_names[  1]    0 0x00000000 0x00000000 backtest.c
-0x0000002b: DW_LNE_set_address( 0x0000000100000cf0 )
-0x00000036: address += 0,  line += 6
-            0x0000000100000cf0      1      7      0 is_stmt
-#endif
-// parse opcodes
+	buf_end = obuf + hdr.total_length;
+	while (buf < buf_end) {
+		opcode = *buf++;
+		if (opcode == 0) {
+			type = 0; // extended!
+		} else
+		if (opcode < hdr.opcode_base) {
+			if (opcode == DW_EXTENDED_OPCODE)
+				type = LOP_EXTENDED;
+			else type = LOP_STANDARD;
+		} else type = LOP_SPECIAL;
 
-for (opi= 0; opi<8;opi++) {
-	opcode = *buf++;
-	if (opcode < hdr.opcode_base) {
-		if (opcode == DW_EXTENDED_OPCODE)
-			type = LOP_EXTENDED;
-		else if (opcount >= hdr.opcode_base)
-		//else if ((pf_std_op_count+1) >= base)
-			type = LOP_STANDARD;
-		else type = LOP_DISCARD;
-	} else type = LOP_SPECIAL;
-
-printf ("type %d opcode %d\n", type, opcode);
-	switch (type) {
-	case LOP_DISCARD:
-		{ int i;
-		ut32 n = 0;
-		int opcnt = hdr.oplentable[opcode];
-
-		for (i=0; i<opcnt; i++) {
-			buf = r_uleb128 (buf, &n);
-		}
-eprintf ("num %d\n", n);
-		}
-#if 0
-		switch (opcode) {
-		case DW_LNS_copy:
-			eprintf ("COPY\n");
-READ(buf, ut16);
-			break;
-		case DW_LNE_set_address:
-			{
-				ut32 addr = READ (buf, ut32);
-				eprintf ("set address 0x%08x\n", addr);
-				buf = code;
-				for (i=0;i<10;i++) {
-					printf ("%d %c\n", buf[i], buf[i]);
+		D0	printf ("------ 0x%x type %d (%s) opcode %d\n",
+				(int)(size_t)(buf-obuf-1), type, types[type], opcode);
+		switch (type) {
+		case DW_EXTENDED_OPCODE: // 0
+			{ // extended (type=2)
+			ut8 oplen = *buf++;
+			opcode = *buf++;
+			D0 eprintf ("Next opcode %d is extended of size %d\n", opcode, oplen);
+			switch (opcode) {
+			case DW_LNE_set_discriminator:
+			case DW_LNE_define_file:
+				eprintf ("extended opcode %d not supported\n", opcode);
+				break;
+			case DW_LNE_end_sequence:
+				eprintf ("end_sequence\n");
+				break;
+			case DW_LNE_set_address:
+				if (oplen == 9) {
+					address = READ (buf, ut64);
+				} else {
+					address = (ut32) READ (buf, ut32);
 				}
+				D0 eprintf ("set address\n");
+				printf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
+				break;
+			default:
+				eprintf ("Invalid extended opcode %d in dwarf's debug_line\n", opcode);
+				break;
+			}
+			} break;
+		case LOP_STANDARD: // 1?
+			switch (opcode) {
+			case DW_LNS_advance_pc:
+				{
+				int didx;
+				//buf = r_leb128 (buf, &didx);
+				didx = *buf++;
+				D0 eprintf ("advance pc %d\n", didx);
+				address += didx;
+				}
+				break;
+			default:
+				eprintf ("XXX : unimplemented\n");
+				break;
 			}
 			break;
-		default:
-			eprintf ("UNKNOWN %d\n", opcode);
-//buf = code;
+		case LOP_SPECIAL: // 4
+			{
+				/*
+				   int adjop = opcode - opcode_base
+				   int opadv = adjop / line_range
+				   new_address = address + mininstlen * (opidx + opadvance) % maxopsperinst
+				   new_opidx = (op_idx + opadv) % maopsperinst;
+				 */
+				int maxopsperinst = 1; //
+				int opidx = 0;
+				int adjop = opcode - hdr.opcode_base;
+				int opadv = adjop / hdr.line_range;
+				address += hdr.mininstlen * (opidx + opadv) % maxopsperinst;
+				int new_opidx = (opidx + opadv) % maxopsperinst;
+
+				int addr = (opcode / hdr.line_range) * hdr.mininstlen-1;
+				int delt = hdr.line_base + (adjop % hdr.line_range);
+
+				address += addr;
+				line += delt;
+				eprintf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
+				D0 {
+					eprintf ("LINE += %d  ADDR += %d\n", delt, addr);
+					D0	eprintf ("opcode=%d ADJOP %d opadv=%d opidx=%d\n",
+							opcode, adjop, opadv, new_opidx);
+				}
+			} 
+			break;
+		case LOP_DISCARD: // 2
+			eprintf ("DISCARD!\n");
+			break;
 		}
-#if 0
-		int i, opcnt = oplentable[opcode];
-			// discard operands
-		for (i=0; i<opcnt; i++) {
-			//decode_leb128_uword;
-		}
-#endif
-#endif
-		break;
-	case LOP_SPECIAL:
-eprintf ("special opcode\n");
-#if 0
-buf += 2;
-	for (i=0;i<20;i++) {
-		printf ("%02x %c\n", buf[i], buf[i]);
 	}
-		opcode = opcode - hdr.opcode_base;
-eprintf ("--> %d\n", opcode);
-{
-	// hardcoded set_lie
-	ut32 a = READ (buf, ut32);
-	ut32 l = READ (buf, ut32);
-	eprintf ("addr += %d  line += %d\n", a, l);
-}
-//		address = address+ mininslen * (opcode / line_range);
-//		line = line + line_base + opcode % line_range;
-//		bb = 0;
-#endif
-		break;
-	case LOP_STANDARD:
-eprintf ("standard opcode\n");
 #if 0
+	case LOP_STANDARD:
+		eprintf ("standard opcode\n");
 		switch (opcode) {
 		case DW_LNS_copy:
 			break;
 		case DW_LNS_advance_pc:
-			
+
 			break;
 		case DW_LNS_advance_line:
 			st32 *b = ptr; // little endian foo
@@ -243,33 +275,8 @@ eprintf ("standard opcode\n");
 			break;
 		}
 		break;
-#endif
-	case LOP_EXTENDED:
-		{
-			int inslen = READ (buf, int);
-			ut8 ext_opcode = *buf++;
-			printf ("ext op %d\n", ext_opcode);
-			switch (ext_opcode) {
-			case 1: // end seq
-				break;
-			case 2: // set addr
-				{ ut32 addr = READ (buf, ut32);
-				eprintf ("set address 0x%08x\n", addr);
-}
-				break;
-			case 3: // define file
-				break;
-			case 4: // set discriminator
-				break;
-			default:
-				eprintf ("Invalid extended opcode %d in dwarf's debug_line\n", ext_opcode);
-				break;
-			}
-		}
-		// TODO
-		break;
 	}
-}
+#endif
 	return R_TRUE;
 }
 
