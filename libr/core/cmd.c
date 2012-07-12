@@ -204,7 +204,8 @@ static int cmd_interpret(void *data, const char *input) {
 			eol = strchr (ptr, '\n');
 			if (eol) *eol = '\0';
 			if (*ptr)
-			r_core_cmd0 (core, ptr);
+			if (!r_core_cmd0 (core, ptr))
+				break;
 			if (!eol) break;
 			ptr = eol+1;
 		}
@@ -897,24 +898,27 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 
 R_API int r_core_cmd_file(RCore *core, const char *file) {
 	int ret = R_TRUE;
-	char *data, *odata = r_file_slurp (file, NULL);
-	if (odata != NULL) {
-		char *nl = strchr (odata, '\n');
-		if (nl) {
-			data = odata;
-			do {
-				*nl = '\0';
-				if (r_core_cmd (core, data, 0) == -1) {
-					eprintf ("r_core_cmd_file: Failed to run '%s'\n", data);
-					ret = R_FALSE;
-					break;
-				}
-				r_cons_flush ();
-				data = nl+1;
-			} while ((nl = strchr (data, '\n')));
-		}
-		free (odata);
-	} else ret = R_FALSE;
+	char *nl, *data, *odata = r_file_slurp (file, NULL);
+	if (!odata) return R_FALSE;
+	nl = strchr (odata, '\n');
+	if (nl) {
+		data = odata;
+		do {
+			*nl = '\0';
+			ret = r_core_cmd (core, data, 0);
+			if (ret == -1) {
+				eprintf ("r_core_cmd_file: Failed to run '%s'\n", data);
+				break;
+			}
+			r_cons_flush ();
+			if (!ret) {
+				eprintf ("'q': quit ignored\n");
+				break;
+			}
+			data = nl+1;
+		} while ((nl = strchr (data, '\n')));
+	}
+	free (odata);
 	return ret;
 }
 
@@ -973,7 +977,7 @@ R_API int r_core_cmd_buffer(void *user, const char *buf) {
 }
 
 R_API int r_core_cmdf(void *user, const char *fmt, ...) {
-	char string[1024];
+	char string[4096];
 	int ret;
 	va_list ap;
 	va_start (ap, fmt);

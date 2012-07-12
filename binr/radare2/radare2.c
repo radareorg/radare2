@@ -32,7 +32,7 @@ static int main_help(int line) {
 		" -L           list supported IO plugins\n"
 		" -n           disable analysis\n"
 		" -N           disable user settings\n"
-		" -q           quite mode (no prompt)\n"
+		" -q           quite mode (no prompt) and quit after -i\n"
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
@@ -103,9 +103,10 @@ int main(int argc, char **argv) {
 	char *cmdn;
 	RCoreFile *fh = NULL;
 	const char *patchfile = NULL;
+	const char *prj = NULL;
 	//int threaded = R_FALSE;
 	int has_project = R_FALSE;
- 	int ret, c, perms = R_IO_READ;
+ 	int ret, i, c, perms = R_IO_READ;
 	int run_anal = 1;
 	int run_rc = 1;
 	int help = 0;
@@ -114,14 +115,16 @@ int main(int argc, char **argv) {
 	ut32 bsize = 0;
 	ut64 seek = 0;
 	char file[4096];
-	char *cmdfile = NULL;
+	char *cmdfile[32];
 	const char *debugbackend = "native";
 	const char *asmarch = NULL;
 	const char *asmbits = NULL;
 	ut64 mapaddr = 0LL;
+	int quite = R_FALSE;
 	int is_gdb = R_FALSE;
 	RList *cmds = r_list_new ();
-
+	int cmdfilei = 0;
+	
 	if (r_sys_getenv ("R_DEBUG"))
 		r_sys_crash_handler ("gdb --pid %d");
 
@@ -144,70 +147,31 @@ int main(int argc, char **argv) {
 			debug = 2;
 			debugbackend = optarg;
 			break;
-		case 'm':
-			mapaddr = r_num_math (r.num, optarg);
-			break;
+		case 'm': mapaddr = r_num_math (r.num, optarg); break;
 		case 'q':
 			r_config_set (r.config, "scr.prompt", "false");
+			quite = R_TRUE;
 			break;
-		case 'p':
-			r_config_set (r.config, "file.project", optarg);
-			break;
-		case 'P':
-			patchfile = optarg;
-			break;
-		case 'c':
-			r_list_append (cmds, optarg);
-			break;
-		case 'i':
-			cmdfile = optarg;
-			break;
-		case 'l':
-			r_lib_open (r.lib, optarg);
-			break;
-		case 'd':
-			debug = 1;
-			break;
-		case 'e':
-			r_config_eval (r.config, optarg);
-			break;
+		case 'p': r_config_set (r.config, "file.project", optarg); break;
+		case 'P': patchfile = optarg; break;
+		case 'c': r_list_append (cmds, optarg); break;
+		case 'i': cmdfile[cmdfilei++] = optarg; break;
+		case 'l': r_lib_open (r.lib, optarg); break;
+		case 'd': debug = 1; break;
+		case 'e': r_config_eval (r.config, optarg); break;
 		case 'H':
-			help++;
-			break;
-		case 'h':
-			help++;
-			break;
-		case 'f':
-			fullfile = 1;
-			break;
-		case 'n':
-			run_anal = 0;
-			break;
-		case 'N':
-			run_rc = 0;
-			break;
-		case 'v':
-			return main_version ();
-		case 'w':
-			perms = R_IO_READ | R_IO_WRITE;
-			break;
-		case 'a':
-			asmarch = optarg;
-			break;
-		case 'b':
-			asmbits = optarg;
-			break;
-		case 'B':
-			bsize = (ut32) r_num_math (r.num, optarg);
-			break;
-		case 's':
-			seek = r_num_math (r.num, optarg);
-			break;
-		case 'L':
-			list_io_plugins (r.io);
-			return 0;
-		default:
-			return 1;
+		case 'h': help++; break;
+		case 'f': fullfile = 1; break;
+		case 'n': run_anal = 0; break;
+		case 'N': run_rc = 0; break;
+		case 'v': return main_version ();
+		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
+		case 'a': asmarch = optarg; break;
+		case 'b': asmbits = optarg; break;
+		case 'B': bsize = (ut32) r_num_math (r.num, optarg); break;
+		case 's': seek = r_num_math (r.num, optarg); break;
+		case 'L': list_io_plugins (r.io); return 0;
+		default: return 1;
 		}
 	}
 	if (help>1) return main_help (2);
@@ -272,8 +236,16 @@ int main(int argc, char **argv) {
 
 	if (!debug || debug==2) {
 		if (optind<argc) {
-			while (optind < argc)
-				fh = r_core_file_open (&r, argv[optind++], perms, mapaddr);
+			while (optind < argc) {
+				const char *file = argv[optind++];
+				fh = r_core_file_open (&r, file, perms, mapaddr);
+				if (perms & R_IO_WRITE) {
+					if (!fh) {
+						r_io_create (r.io, file, 0644, 0);
+						fh = r_core_file_open (&r, file, perms, mapaddr);
+					}
+				}
+			}
 		} else {
 			const char *prj = r_config_get (r.config, "file.project");
 			if (prj && *prj) {
@@ -285,11 +257,6 @@ int main(int argc, char **argv) {
 	}
 
 	/* execute -c commands */
-	r_list_foreach (cmds, iter, cmdn) {
-		r_core_cmd0 (&r, cmdn);
-	}
-	r_list_free (cmds);
-
 	if (fh == NULL) {
 		if (perms & R_IO_WRITE)
 			eprintf ("Cannot open file for writing.\n");
@@ -397,8 +364,20 @@ int main(int argc, char **argv) {
 		free (path);
 	}
 
-	if (cmdfile)
-		r_core_cmd_file (&r, cmdfile);
+	/* run -i and -c flags */
+	cmdfile[cmdfilei] = 0;
+	for (i=0; i<cmdfilei; i++) {
+		if (!r_core_cmd_file (&r, cmdfile[i]))
+			if (quite)
+				return 0;
+	}
+	r_list_foreach (cmds, iter, cmdn) {
+		r_core_cmd0 (&r, cmdn);
+		r_cons_flush ();
+	}
+	if ((cmdfile[0] || !r_list_empty (cmds)) && quite)
+		return 0;
+	r_list_free (cmds);
 
 	if (patchfile) {
 		r_core_patch (&r, patchfile);
@@ -430,7 +409,7 @@ int main(int argc, char **argv) {
 					r_debug_kill (r.dbg, R_FALSE, 9); // KILL
 			} else continue;
 		}
-		const char *prj = r_config_get (r.config, "file.project");
+		prj = r_config_get (r.config, "file.project");
 		if (prj && *prj && r_cons_yesno ('y', "Do you want to save the project? (Y/n)"))
 			r_core_project_save (&r, prj);
 		break;
