@@ -7,6 +7,11 @@
 
 
 ====[[ 0.9.1 ]]====
+* Source debugging or gtfo
+  - integration with rabin2 -d
+* sC not working
+* get cparse ftw
+* show analized functions in 'aa' -> discuss
 
 Discuss
 Add $EDITOR alias for file open(read/write) -
@@ -17,13 +22,8 @@ Add $EDITOR alias for file open(read/write) -
 
 * refactor vmenus.c -> refresh function must be redefined for each menu
 
-EVAL
-? flag -flag2 => fails because of the ' ' before the minus sign
-  ? flag-flag2 works
-
 // show hints for
     0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             
-* Source debugging or gtfo
 * Fix ?-
 * Register diff colorization is broken
 * bar for cursor?
@@ -31,8 +31,6 @@ EVAL
   - show number of occurrences for each byte
   - maybe in 'ad' command, analyze data
 * highlight search hits in hexdump
-* Implement s/x
-* sC not working
 * Implement debugger backtrace properly
 * _ -> write string does not obeys the cursor
 * rep+ret instruction (f3c3) should be identified as RET
@@ -46,7 +44,6 @@ EVAL
 * Fix iterators for r_macro (test only?)
   - search for antidebug/disasm tricks opcodes
     - allows to find interesting points to analyze
-* get cparse ftw
 * use slices for r_list_iter primitives
 
 BUGS:
@@ -69,10 +66,8 @@ BUGS:
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 
 ===[ 0.9.2 ]===
-* Embed Luvit?
 * Add support for classes (useful for c++, dex, objc, ...)
   - command to add new classes
-* show analized functions in 'aa'
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"
   - dca sym.main imp.printf
@@ -138,10 +133,6 @@ earada
 ------
 * Add print support for bitfields (pm b...)
 * Fix io_haret memory dump
-* r_socket (already done?)
-  - Add SSL support
-  - http API in r_socket module
-    - allow to get/post data/files with continue on plain/ssl
 * refactor rap and raps
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp

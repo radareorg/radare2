@@ -17,16 +17,15 @@ static int cmd_macro(void *data, const char *input) {
 		break;
 	case '?':
 		eprintf (
-		"Usage: (foo\\n..cmds..\\n)\n"
-		" Record macros grouping commands\n"
-		" (foo args,..,..)   ; define a macro\n"
-		" (foo args,..,..)() ; define and call a macro\n"
+		"Usage: (foo args,cmd1,cmd2,..)\n"
+		" (foo args,..,..)    ; define a macro\n"
+		" (foo args,..,..)()  ; define and call a macro\n"
 		" (-foo)              ; remove a macro\n"
 		" .(foo)              ; to call it\n"
 		" ()                  ; break inside macro\n"
 		" (*                  ; list all defined macros\n"
 		"Argument support:\n"
-		" (foo x y\\n$1 @ $2)  ; define fun with args\n"
+		" (foo x y\\n$0 @ $1)  ; define fun with args\n"
 		" .(foo 128 0x804800) ; call it with args\n"
 		"Iterations:\n"
 		" .(foo\\n() $@)       ; define iterator returning iter index\n"
@@ -53,11 +52,13 @@ static int cmd_macro(void *data, const char *input) {
 		buf[strlen(buf)-1]=0;
 		r_cmd_macro_add (&core->cmd->macro, buf);
 		if (mustcall) {
-			char *comma = strchr (buf, ',');
+			char *comma = strchr (buf, ' ');
+			if (!comma)
+				comma = strchr (buf, ',');
 			if (comma) {
 				*comma = ' ';
 				strcpy (comma+1, buf+mustcall);
-				//printf ("CALL (%s)\n", buf);
+				printf ("CALL (%s)\n", buf);
 				r_cmd_macro_call (&core->cmd->macro, buf);
 			} else eprintf ("Invalid syntax for macro\n");
 		}

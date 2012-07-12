@@ -464,10 +464,7 @@ static void register_path (RList *l) {
 }
 
 static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
-	RList *ret;
-	RAnalBlock *bb;
-
-	ret = recurse_bb (core, from->jump, dest);
+	RList *ret = recurse_bb (core, from->jump, dest);
 	if (ret) register_path (ret);
 	ret = recurse_bb (core, from->fail, dest);
 	if (ret) register_path (ret);
@@ -505,10 +502,10 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 		eprintf ("ROOT BB 0x%08"PFMT64x"\n", root->addr);
 		eprintf ("DEST BB 0x%08"PFMT64x"\n", dest->addr);
 		list = r_list_new ();
-		{
+		/* {
 			RList *ll = recurse (core, root, dest);
-			//r_list_append (list, ll);
-		}
+			r_list_append (list, ll);
+		} */
 		printf ("=>  0x%08"PFMT64x"\n", root->jump);
 	} else eprintf ("Unable to find source or destination basic block\n");
 	return list;

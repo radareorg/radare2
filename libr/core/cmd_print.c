@@ -111,7 +111,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'e': // entropy
 			{
-			char *p;
+			ut8 *p;
 			int psz, i = 0;
 			int fsz = core->file?core->file->size:0;
 			psz = fsz/core->blocksize;
@@ -127,7 +127,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'p': // printable chars
 			{
-			char *p;
+			ut8 *p;
 			int psz, i = 0, j, k;
 			int fsz = core->file?core->file->size:0;
 			psz = fsz/core->blocksize;

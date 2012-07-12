@@ -203,8 +203,9 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 		if (ptr[j]=='$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
 				int wordlen;
-				const char *word = r_str_word_get0 (arg, ptr[j+1]-'0');
-				if (word) {
+				int w = ptr[j+1]-'0';
+				const char *word = r_str_word_get0 (arg, w);
+				if (word && *word) {
 					wordlen = strlen (word);
 					if ((i+wordlen+1) >= sizeof (cmd)) {
 						//free (arg);
@@ -213,7 +214,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 					memcpy (cmd+i, word, wordlen+1);
 					i += wordlen-1;
 					j++;
-				}
+				} else eprintf ("Undefined argument %d\n", w);
 			} else
 			if (ptr[j+1]=='@') {
 				char off[32];

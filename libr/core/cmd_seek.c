@@ -167,6 +167,7 @@ static int cmd_seek(void *data, const char *input) {
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
 			" sf|sF      ; seek next/prev scr.fkey\n"
 			" s/ DATA    ; search for next occurrence of 'DATA'\n"
+			" s/x 9091   ; search for next occurrence of \\x90\\x91\n"
 			" sb         ; seek aligned to bb start\n"
 			" sn         ; seek to next opcode\n"
 			" sC str     ; seek to comment matching given string\n"

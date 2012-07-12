@@ -681,6 +681,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	core->tmpseek = ptr? R_TRUE: R_FALSE;
 	if (ptr) {
 		ut64 tmpoff, tmpbsz, addr;
+		const char *offstr;
 		char *ptr2 = strchr (ptr+1, ':');
 		*ptr = '\0';
 		cmd = r_str_clean (cmd);
@@ -691,13 +692,19 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			r_core_block_size (core, r_num_math (core->num, ptr2+1));
 		}
 
-		addr = r_num_math (core->num, ptr+1);
+		offstr = r_str_trim_head (ptr+1);
+
+		addr = r_num_math (core->num, offstr);
                 if (isalpha (ptr[1]) && addr== 0) {
                         if (!r_flag_get (core->flags, ptr+1)) {
                                 eprintf ("Invalid address (%s)\n", ptr+1);
                                 return R_FALSE;
                         }
-                }
+                } else {
+			char ch = *offstr;
+			if (ch=='-' || ch=='+')
+				addr = core->offset+addr;
+		}
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
 			ret = r_core_cmd_foreach (core, cmd, ptr+2);
