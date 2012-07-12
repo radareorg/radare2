@@ -476,7 +476,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.filter", "true");
 	r_config_desc (cfg, "asm.filter", "Show filtered flags at disassembly");
 	r_config_set (cfg, "asm.varsub", "true");
+	r_config_desc (cfg, "asm.varsub", "Substitute variables in disasm");
 	r_config_set (cfg, "asm.trace", "true");
+	r_config_desc (cfg, "asm.trace", "Show execution traces for each opcode");
 	r_config_set (cfg, "asm.decode", "false");
 	r_config_desc (cfg, "asm.decode", "Use code analysis as a disassembler");
 	r_config_set (cfg, "asm.offset", "true");
@@ -524,10 +526,13 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "dbg.backend", "native", &config_dbgbackend_callback);
 	r_config_desc (cfg, "dbg.backend", "Select the debugger backend");
 	r_config_set (cfg, "dbg.bep", "loader"); // loader, entry, constructor, main
+	r_config_desc (cfg, "cfg.bep", "break on entrypoint (loader, entry, constructor, main)");
 	r_config_set_cb (cfg, "dbg.stopthreads", "true", &config_stopthreads_callback);
+	r_config_desc (cfg, "dbg.stopthreads", "stop all threads when debugger breaks");
 	r_config_set_cb (cfg, "dbg.swstep", "false", &config_swstep_callback);
 	r_config_desc (cfg, "dbg.swstep", "If enabled forces the use of software steps (code analysis+breakpoint)");
 	r_config_set_cb (cfg, "dbg.trace", "true", &config_trace_callback);
+	r_config_desc (cfg, "dbg.trace", "enable debugger trace (see asm.trace)");
 	r_config_set_cb (cfg, "dbg.trace.tag", "0xff", &config_tracetag_callback);
 	r_config_set_cb (cfg, "fs.view", "normal", &config_fsview_callback);
 	r_config_desc (cfg, "fs.view", "Set visibility options for filesystems");
@@ -624,6 +629,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "magic.depth", 100);
 	r_config_desc (cfg, "magic.depth", "Recursivity depth in magic description strings");
 	r_config_set (cfg, "rap.loop", "true");
+	r_config_desc (cfg, "rap.loop", "run rap as a forever-listening daemon");
 	/* fkeys */
 	r_config_set (cfg, "key.f1", "");
 	r_config_desc (cfg, "key.f1", "Commands executed when press F1 key in visual mode");

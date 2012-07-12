@@ -441,7 +441,6 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 
 	stdout_fd = dup (1);
 	pipe (fds);
-eprintf ("CMDPIPE (%s)\n", shell_cmd);
 	if (fork ()) {
 		dup2 (fds[1], 1);
 		close (fds[1]);

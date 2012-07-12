@@ -20,7 +20,7 @@ static int cmd_seek(void *data, const char *input) {
 		off = r_num_math (core->num, input + delta);
 		if ((st64)off<0)off =-off; // hack to fix s-2;s -2
 		if (isalpha (input[delta]) && off == 0) {
-			if (!r_flag_get (core->flags, input+delta)) {
+			if (delta==1 && !r_flag_get (core->flags, input+delta)) {
 				eprintf ("Invalid address (%s)\n", input+delta);
 				return R_FALSE;
 			}
@@ -34,6 +34,9 @@ static int cmd_seek(void *data, const char *input) {
 
 		switch (*input) {
 		case 'C':
+			if (input[1]=='*') {
+				r_core_cmd0 (core, "C*~^CC");
+			} else 
 			if (input[1]==' ') {
 				int n = 0;
 				RListIter *iter;
@@ -59,13 +62,16 @@ static int cmd_seek(void *data, const char *input) {
 					break;
 				case 1:
 					r_cons_printf ("0x%08"PFMT64x"  %s\n", item->from, item->str);
+					off = item->from;
 					r_io_sundo_push (core->io, core->offset);
 					r_core_seek (core, off, 1);
 					r_core_block_read (core, 0);
 					break;
 				}
 
-			} else eprintf ("Usage: sC comment grep\n");
+			} else eprintf ("Usage: sC[?*] comment-grep\n"
+				"sC*        list all comments\n"
+				"sC const   seek to comment matching 'const'\n");
 			break;
 		case ' ':
 			r_io_sundo_push (core->io, core->offset);
