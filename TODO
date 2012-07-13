@@ -10,7 +10,6 @@
 * Colorize multiple ranges of chars in hexdump
 * Source debugging or gtfo
   - integration with rabin2 -d
-* sC not working
 * get cparse ftw
 * show analized functions in 'aa' -> discuss
 

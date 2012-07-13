@@ -206,6 +206,7 @@ R_API int r_socket_free (RSocket *s) {
 }
 
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
+	int optval = 1;
 	struct sockaddr_in sa;
 	struct linger linger = { 0 };
 
@@ -214,6 +215,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
 	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (const char *)&linger, sizeof (linger));
+	setsockopt(s->fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 	memset (&sa, 0, sizeof (sa));
 	sa.sin_family = AF_INET;
 	sa.sin_addr.s_addr = htonl (INADDR_ANY);

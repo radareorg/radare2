@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <r_util.h>
+#include <r_socket.h>
 #if __UNIX__
 #include <signal.h>
 #endif
@@ -24,6 +25,8 @@ static char *_seteuid = NULL;
 static char *_setgid = NULL;
 static char *_setegid = NULL;
 static char *_input = NULL;
+static char *_connect = NULL;
+static char *_listen = NULL;
 static int _timeout = 0;
 
 static void parseline (char *b) {
@@ -34,6 +37,8 @@ static void parseline (char *b) {
 	if (*e=='$') e = r_sys_getenv (e);
 	if (e == NULL) return;
 	if (!strcmp (b, "program")) _args[0] = _program = strdup (e);
+	else if (!strcmp (b, "connect")) _connect = strdup (e);
+	else if (!strcmp (b, "listen")) _listen = strdup (e);
 	else if (!strcmp (b, "stdout")) _stdout = strdup (e);
 	else if (!strcmp (b, "stdin")) _stdin = strdup (e);
 	else if (!strcmp (b, "input")) _input = strdup (e);
@@ -91,6 +96,45 @@ static int runfile () {
 		close (2);
 		dup2 (f, 2);
 	}
+
+	if (_connect) {
+		char *p = strchr (_connect, ':');
+		if (p) {
+			RSocket *fd = r_socket_new (0);
+			*p=0;
+			if (!r_socket_connect_tcp (fd, _connect, p+1)) {
+				eprintf ("Cannot connect\n");
+				return 1;
+			}
+			eprintf ("connected\n");
+			close (0);
+			close (1);
+			close (2);
+			dup2 (fd->fd, 0);
+			dup2 (fd->fd, 1);
+			dup2 (fd->fd, 2);
+		} else {
+			eprintf ("Invalid format for connect. missing ':'\n");
+			return 1;
+		}
+	}
+	if (_listen) {
+		RSocket *child, *fd = r_socket_new (0);
+		if (!r_socket_listen (fd, _listen, NULL)) {
+			eprintf ("Cannot listen\n");
+			return 1;
+		}
+		child = r_socket_accept (fd);
+		if (child) {
+			eprintf ("connected\n");
+			close (0);
+			close (1);
+			close (2);
+			dup2 (child->fd, 0);
+			dup2 (child->fd, 1);
+			dup2 (child->fd, 2);
+		}
+	}
 	if (_chgdir) chdir (_chgdir);
 	if (_chroot) chdir (_chroot);
 #if __UNIX__
@@ -143,6 +187,8 @@ int main(int argc, char **argv) {
 			"# arg#=...\n"
 			"setenv=FOO=BAR\n"
 			"timeout=3\n"
+			"# connect=localhost:8080\n"
+			"# listen=8080\n"
 			"# stdout=foo.txt\n"
 			"# stdin=input.txt\n"
 			"# input=input.txt\n"
