@@ -682,7 +682,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 }
 
 
-#define PIDX R_ABS(printidx%NPF)
+#define PIDX (R_ABS(core->printidx%NPF))
 R_API void r_core_visual_title (RCore *core, int color) {
 	const char *filename;
 	char pos[512], foo[512], bar[512];
