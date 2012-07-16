@@ -29,7 +29,6 @@ static int r_core_visual_hud(RCore *core) {
 	char *homehud = r_str_home("/.radare2/hud");
 	if (homehud)
 		res = r_cons_hud_file (homehud);
-	// TODO: this file needs to be installed
 	if (!res) {
 		const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
 		if (r_file_exist (f))
@@ -99,25 +98,20 @@ static int visual_fkey(RCore *core, int ch) {
 	case R_CONS_KEY_F2:
 		cmd = r_config_get (core->config, "key.f2");
 		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		// TODO: toggle breakpoint
 		break;
 	case R_CONS_KEY_F3:
 		cmd = r_config_get (core->config, "key.f3");
 		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		// TODO: F3
 		break;
 	case R_CONS_KEY_F4:
 		cmd = r_config_get (core->config, "key.f4");
 		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		// TODO: F4
 	case R_CONS_KEY_F5:
 		cmd = r_config_get (core->config, "key.f5");
 		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		// TODO: F5
 	case R_CONS_KEY_F6:
 		cmd = r_config_get (core->config, "key.f6");
 		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		// TODO: F6
 		break;
 	case R_CONS_KEY_F7:
 		cmd = r_config_get (core->config, "key.f7");
@@ -127,7 +121,6 @@ static int visual_fkey(RCore *core, int ch) {
 	case R_CONS_KEY_F8:
 		cmd = r_config_get (core->config, "key.f8");
 		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		// TODO: F8
 		break;
 	case R_CONS_KEY_F9:
 		cmd = r_config_get (core->config, "key.f9");
@@ -158,7 +151,6 @@ void setcursor (RCore *core, int cur) {
 	core->print->col = curset? 1: 0;
 }
 
-/* TODO: use r_cmd here in core->vcmd..optimize over 255 table */ 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	char buf[4096];
@@ -168,7 +160,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	if (ch<2) return 1;
 
 	// do we need hotkeys for data references? not only calls?
-	if (ch>='0'&&ch<='9') {
+	if (ch>='0'&& ch<='9') {
 		r_io_sundo_push (core->io, core->offset);
 		r_core_seek (core, core->asmqjmps[ch-'0'], 1);
 	} else
@@ -313,16 +305,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		int ret = 0;
 		if (core->io->va) {
 			ut64 offset = r_io_section_get_vaddr (core->io, 0);
-			//ut64 offset = r_io_section_get_vaddr (core->io,
-			//	core->file->size-core->blocksize);
 			if (offset == UT64_MAX) {
 				offset = core->file->size - core->blocksize;
 				ret = r_core_seek (core, offset, 1);
-			//	memset (core->block, 0xff, core->blocksize);
 			} else {
 				offset += core->file->size - core->blocksize;
 				ret = r_core_seek (core, offset, 1);
-			//	memset (core->block, 0xff, core->blocksize);
 			}
 		} else {
 			ret = r_core_seek (core,
@@ -423,7 +411,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'k':
 		if (curset) {
 			if (core->printidx == 1 || core->printidx == 2)
-				cols = 4; //r_asm_disassemble (core->assembler, &op, core->block, 32);
+				cols = 4;
 			cursor -= cols;
 			ocursor = -1;
 			if (cursor<0) {
@@ -473,14 +461,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case ']':
 		{
 			int scrcols = r_config_get_i (core->config, "scr.cols");
-			//if (scrcols<32)
-				r_config_set_i (core->config, "scr.cols", scrcols+2);
+			r_config_set_i (core->config, "scr.cols", scrcols+2);
 		}
 		break;
 	case 'I':
 		r_core_cmd (core, "dsp", 0);
 		r_core_cmd (core, ".dr*", 0);
-		//r_core_cmd(core, "s eip", 0);
 		break;
 	case 's':
 		if (curset) {
@@ -492,18 +478,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		} else {
 			r_core_cmd (core, "ds", 0);
 			r_core_cmd (core, ".dr*", 0);
-			//r_core_cmd(core, "s eip", 0);
 		}
 		break;
 	case 'S':
 		if (curset) {
-			// dcr
 			r_core_cmd (core, "dcr", 0);
 			curset = 0;
 		} else {
 			r_core_cmd (core, "dso", 0);
 			r_core_cmd (core, ".dr*", 0);
-			//r_core_cmd(core, "s eip", 0);
 		}
 		break;
 	case 'p':
@@ -579,7 +562,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case '.':
-		r_core_cmd (core, "sr pc", 0); // XXX
+		r_core_cmd (core, "sr pc", 0);
 		break;
 	case 'n':
 		r_core_seek_delta (core, core->blocksize);
@@ -698,7 +681,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	return R_TRUE;
 }
 
-// TODO: simplify R_ABS(printidx%NPF) into a macro, or just control negative values..
+
+#define PIDX R_ABS(printidx%NPF)
 R_API void r_core_visual_title (RCore *core, int color) {
 	const char *filename;
 	char pos[512], foo[512], bar[512];
@@ -718,9 +702,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		}
 		break;
 	case 4: // XXX pc
-		{
 		r_core_block_size (core, core->cons->rows * 5);
-		}
 		break;
 	case 1: // pd
 	case 2: // pd+dbg
@@ -742,7 +724,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 	if (cursor<0) cursor = 0;
 	if (color) r_cons_strcat (Color_YELLOW);
-	strncpy (bar, printfmt[R_ABS (core->printidx%NPF)], sizeof (bar)-1);
+	strncpy (bar, printfmt[PIDX], sizeof (bar)-1);
 	bar[sizeof (bar)-1] = 0; // '\0'-terminate bar
 	bar[10] = '.'; // chop cmdfmt
 	bar[11] = '.'; // chop cmdfmt
@@ -755,7 +737,6 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s]> %s %s\n",
 			core->offset, core->blocksize, filename, bar, pos);
 	r_cons_printf (foo);
-	//r_cons_printf (" %d %d %d\n", core->printidx, core->cons->rows, core->blocksize);
 	if (color) r_cons_strcat (Color_RESET);
 }
 
@@ -781,7 +762,7 @@ static void r_core_visual_refresh (RCore *core) {
 		r_cons_column (80);
 	}
 	if (zoom) r_core_cmd (core, "pZ", 0);
-	else r_core_cmd (core, printfmt[R_ABS (core->printidx%NPF)], 0);
+	else r_core_cmd (core, printfmt[PIDX], 0);
 	blocksize = core->num->value? core->num->value : core->blocksize;
 	r_cons_visual_flush ();
 }
@@ -798,17 +779,8 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	//r_cons_set_cup (R_TRUE);
 
 	while (*input) {
-		if (!r_core_visual_cmd (core, input[0])) {
-#if 0
-			r_cons_clear00 ();
-			r_core_cmd (core, printfmt[R_ABS (core->printidx%NPF)], 0);
-			r_cons_any_key ();
-			r_cons_clear00 ();
-			r_cons_set_cup (R_FALSE);
-			r_cons_visual_flush ();
-#endif
+		if (!r_core_visual_cmd (core, input[0]))
 			return 0;
-		}
 		input++;
 	}
 

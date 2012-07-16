@@ -25,7 +25,6 @@ Add $EDITOR alias for file open(read/write) -
 // show hints for
     0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             
 * Fix ?-
-* Register diff colorization is broken
 * bar for cursor?
 * p= show entropy of current block
   - show number of occurrences for each byte
@@ -41,9 +40,8 @@ Add $EDITOR alias for file open(read/write) -
 * add support for sockets in rarun2
 * if no debugger supported, say so... r_io must ?
 * check search multiple keywords and signatures
-* Fix iterators for r_macro (test only?)
-  - search for antidebug/disasm tricks opcodes
-    - allows to find interesting points to analyze
+* search for antidebug/disasm tricks opcodes
+  - allows to find interesting points to analyze
 * use slices for r_list_iter primitives
 
 BUGS:

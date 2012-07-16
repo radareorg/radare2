@@ -63,7 +63,6 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 }
 
 static int is_data_section(RBinArch *a, RBinSection *s) {
-	// XXX: DIRTY HACK! should we check sections srwx to be READ ONLY and NONEXEC?
 	if (strstr (a->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
 		return 1;
 	if (strstr (a->info->bclass, "ELF") && strstr (s->name, "data")) // LINUX
@@ -75,7 +74,6 @@ static int is_data_section(RBinArch *a, RBinSection *s) {
 	return 0;
 }
 
-// TODO: check only in data section. filter chars only in -r mode
 static RList* get_strings(RBinArch *a, int min) {
 	RBinSection *section;
 	RListIter *iter;
@@ -97,7 +95,7 @@ static RList* get_strings(RBinArch *a, int min) {
 			}
 		}	
 	}
-	if (r_list_empty (a->sections)) //if (count == 0)
+	if (r_list_empty (a->sections))
 		get_strings_range (a, ret, min, 0, a->size, 0);
 	return ret;
 }
@@ -147,12 +145,10 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	return R_TRUE;
 }
 
-/* TODO: Free plugins */
 #define RBINLISTFREE(x) if(x){r_list_free(x);x=NULL;}
 static void r_bin_free_items(RBin *bin) {
 	int i;
 	RBinArch *a = &bin->curarch;
-	// XXX: drop all those silly conditionals! if it's null is not for freeing
 	RBINLISTFREE (a->entries);
 	RBINLISTFREE (a->fields);
 	RBINLISTFREE (a->imports);
@@ -190,18 +186,8 @@ static void r_bin_init(RBin *bin) {
 static int r_bin_extract(RBin *bin, int idx) {
 	if (bin->curxtr && bin->curxtr->extract)
 		return bin->curxtr->extract (bin, idx);
-	//free (bin->curarch.file);
 	bin->curarch.file = strdup (bin->file);
-	//if (!(buf = (ut8*)r_file_slurp_range (bin->file, 0, 0xfffff, &bin->curarch.size))) 
-	// TODO: use mmap here
 	bin->curarch.buf = r_buf_mmap (bin->file, 0);
-/*
-	if (!(buf = (ut8*)r_file_slurp (bin->file, &bin->curarch.size))) 
-		return 0;
-	bin->curarch.buf = r_buf_new ();
-	free (bin->curarch.buf->buf);
-	bin->curarch.buf->buf = buf;
-*/
 	return 1;
 }
 
@@ -280,7 +266,6 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy) {
 	return r_bin_init_items (bin, dummy);
 }
 
-// remove this getters.. we have no threads or mutexes to protect here
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	return bin->curarch.baddr;
 }
@@ -355,7 +340,7 @@ R_API int r_bin_is_static (RBin *bin) {
 	return R_BIN_DBG_STATIC (bin->curarch.info->dbg_info);
 }
 
-/* XXX Implement in r_bin_meta and deprecate? */
+// TODO: Integrate with r_bin_dbg */
 R_API int r_bin_has_dbg_linenums (RBin *bin) {
 	return R_BIN_DBG_LINENUMS (bin->curarch.info->dbg_info);
 }
@@ -373,27 +358,27 @@ R_API RBin* r_bin_new() {
 	RBinPlugin *static_plugin;
 	RBinXtrPlugin *static_xtr_plugin;
 	RBin *bin = R_NEW (RBin);
-	if (bin) {
-		memset (bin, 0, sizeof (RBin));
-		bin->plugins = r_list_new();
-		bin->plugins->free = free;
-		for (i=0; bin_static_plugins[i]; i++) {
-			static_plugin = R_NEW (RBinPlugin);
-			memcpy (static_plugin, bin_static_plugins[i], sizeof (RBinPlugin));
-			r_bin_add (bin, static_plugin);
-		}
-		bin->binxtrs = r_list_new();
-		bin->binxtrs->free = free;
-		for (i=0; bin_xtr_static_plugins[i]; i++) {
-			static_xtr_plugin = R_NEW (RBinXtrPlugin);
-			memcpy (static_xtr_plugin, bin_xtr_static_plugins[i], sizeof (RBinXtrPlugin));
-			r_bin_xtr_add (bin, static_xtr_plugin);
-		}
+	if (!bin) return NULL;
+	memset (bin, 0, sizeof (RBin));
+	bin->plugins = r_list_new();
+	bin->plugins->free = free;
+	for (i=0; bin_static_plugins[i]; i++) {
+		static_plugin = R_NEW (RBinPlugin);
+		memcpy (static_plugin, bin_static_plugins[i],
+			sizeof (RBinPlugin));
+		r_bin_add (bin, static_plugin);
+	}
+	bin->binxtrs = r_list_new();
+	bin->binxtrs->free = free;
+	for (i=0; bin_xtr_static_plugins[i]; i++) {
+		static_xtr_plugin = R_NEW (RBinXtrPlugin);
+		memcpy (static_xtr_plugin, bin_xtr_static_plugins[i],
+			sizeof (RBinXtrPlugin));
+		r_bin_xtr_add (bin, static_xtr_plugin);
 	}
 	return bin;
 }
 
-// TODO: handle ARCH and BITS
 /* arch and bits are implicit in the plugin name, do we really need
  * to overwrite bin->curarch.info? */
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
@@ -417,7 +402,6 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 }
 
 // DUPDUPDUP
-
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	int i;
 	for (i=0; i<bin->narch; i++) {
@@ -476,15 +460,14 @@ R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 
 R_API RBinObj *r_bin_get_object(RBin *bin, int flags) {
 	int i;
 	RBinObj *obj = R_NEW (RBinObj);
-	if (obj) {
-		obj->symbols = r_bin_get_symbols (bin);
-		obj->imports = r_bin_get_imports (bin);
-		obj->entries = r_bin_get_entries (bin);
-		for (i=0; i<R_BIN_SYM_LAST; i++)
-			obj->binsym[i] = r_bin_get_sym (bin, i);
-		obj->baddr = r_bin_get_baddr (bin);
-		obj->info = r_bin_get_info (bin);
-	}
+	if (!obj) return NULL;
+	obj->symbols = r_bin_get_symbols (bin);
+	obj->imports = r_bin_get_imports (bin);
+	obj->entries = r_bin_get_entries (bin);
+	for (i=0; i<R_BIN_SYM_LAST; i++)
+		obj->binsym[i] = r_bin_get_sym (bin, i);
+	obj->baddr = r_bin_get_baddr (bin);
+	obj->info = r_bin_get_info (bin);
 	return obj;
 }
 

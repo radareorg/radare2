@@ -18,7 +18,6 @@ static char *r_core_project_file(const char *file) {
 	return strdup (file);
 }
 
-//TODO: Don't try mkdir rdb if mdkir .radare2 fails. (Maybe R_TRUFAE??)
 static int r_core_project_init() {
 	int ret;
 	char *str = r_str_home (".radare2");

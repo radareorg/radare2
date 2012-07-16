@@ -532,6 +532,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			} else eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", off);
 		}
 		break;
+	case 's':
+		{
+			ut64 addr = r_num_math (core->num, input+2);
+			RBreakpointItem *bp = r_bp_get (core->dbg->bp, addr);
+			if (bp) bp->enabled = !bp->enabled;
+			else {
+				if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+				else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+				if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+			}
+		}
+		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 0);
+		break;
 	case 'e':
 		r_bp_enable (core->dbg->bp, r_num_math (core->num, input+2), 1);
 		break;
@@ -551,6 +564,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"db sym.main       ; add breakpoint into sym.main\n"
 		"db 0x804800       ; add breakpoint\n"
 		"db -0x804800      ; remove breakpoint\n"
+		"dbs 0x8048000     ; toggle breakpoint on given address\n"
 		"dbe 0x8048000     ; enable breakpoint\n"
 		"dbc 0x8048000 cmd ; run command when breakpoint is hit\n"
 		"dbd 0x8048000     ; disable breakpoint\n"

@@ -633,7 +633,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* fkeys */
 	r_config_set (cfg, "key.f1", "");
 	r_config_desc (cfg, "key.f1", "Commands executed when press F1 key in visual mode");
-	r_config_set (cfg, "key.f2", "");
+	r_config_set (cfg, "key.f2", "dbs $$");
 	r_config_desc (cfg, "key.f2", "Commands executed when press F2 key in visual mode");
 	r_config_set (cfg, "key.f3", "");
 	r_config_desc (cfg, "key.f3", "Commands executed when press F3 key in visual mode");
@@ -643,11 +643,11 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "key.f5", "Commands executed when press F5 key in visual mode");
 	r_config_set (cfg, "key.f6", "");
 	r_config_desc (cfg, "key.f6", "Commands executed when press F6 key in visual mode");
-	r_config_set (cfg, "key.f7", "");
+	r_config_set (cfg, "key.f7", "ds");
 	r_config_desc (cfg, "key.f7", "Commands executed when press F7 key in visual mode");
-	r_config_set (cfg, "key.f8", "");
+	r_config_set (cfg, "key.f8", "dso");
 	r_config_desc (cfg, "key.f8", "Commands executed when press F8 key in visual mode");
-	r_config_set (cfg, "key.f9", "");
+	r_config_set (cfg, "key.f9", "dc");
 	r_config_desc (cfg, "key.f9", "Commands executed when press F9 key in visual mode");
 	r_config_set (cfg, "key.f10", "");
 	r_config_desc (cfg, "key.f10", "Commands executed when press F10 key in visual mode");
