@@ -2,7 +2,7 @@
 
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_db.h", cname="struct r_db_t", free_function="r_db_free", cprefix="r_db_")]
+	[CCode (cheader_filename="r_db.h", cname="RDatabase", free_function="r_db_free", cprefix="r_db_")]
 	public class RDatabase {
 		/* lifecycle */
 		public RDatabase();
@@ -20,7 +20,7 @@ namespace Radare {
 	//	public uint8 *pop();
 	}
 	[Compact]
-	[CCode (cheader_filename="r_db.h", cname="struct r_pair_t", free_function="r_pair_free", cprefix="r_pair_")]
+	[CCode (cheader_filename="r_db.h", cname="RPair", free_function="r_pair_free", cprefix="r_pair_")]
 	public class RPair {
 		/* lifecycle */
 		public RPair();

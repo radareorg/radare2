@@ -3,7 +3,7 @@
 [CCode (cheader_filename="r_egg.h", cprefix="r_egg_", lower_case_cprefix="r_egg_")]
 namespace Radare {
 	[Compact]
-	[CCode (cname="REggPlugin", free_function="r_egg_free", cprefix="r_egg_")]
+	[CCode (cname="REggPlugin", free_function="", cprefix="r_egg_")]
 	public class REggPlugin {
 		string name;
 		string desc;

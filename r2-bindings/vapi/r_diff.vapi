@@ -2,7 +2,7 @@
 
 namespace Radare {
 	[Compact]
-	[CCode (cheader_filename="r_diff.h", cname="struct r_diff_t", free_function="r_diff_free", cprefix="r_diff_")]
+	[CCode (cheader_filename="r_diff.h", cname="RDiff", free_function="r_diff_free", cprefix="r_diff_")]
 	public class RDiff {
 		public RDiff (uint64 off_a = 0LL, uint64 off_b = 0LL);
 		public int buffers (uint8* a, int la, uint8* b, int lb);
