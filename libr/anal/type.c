@@ -19,7 +19,7 @@ CFt exit void=int
 CFv [arraysize] [type] [name]
 CFa [arraysize] [type] [name]
 CFf 320 @ fun -> framesize for function
-CF 20 
+CF 20
 #endif
 
 // how to define a function pointer?

@@ -157,7 +157,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFcn *fcn, int delta, int type) 
     return NULL;
 }
 
-// XXX: rename function type? i think this is 'scope' 
+// XXX: rename function type? i think this is 'scope'
 R_API const char *r_anal_var_type_to_str (RAnal *anal, int type) {
 	if (type & R_ANAL_VAR_TYPE_GLOBAL)
 		return "global";
@@ -231,7 +231,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFcn *fcn, ut64 addr) {
 			/* TODO: detect pointer to strings and so on */
 			//if (string_flag_offset(NULL, buf, value, 0))
 			//	r_cons_printf(" ; %s\n", buf);
-			//else 
+			//else
 			eprintf ("\n"); //r_cons_newline();
 		}
 	}

@@ -162,7 +162,7 @@ R_API int r_meta_comment_check (RMeta *m, const char *s) {
 		if (d->type == R_META_TYPE_COMMENT && (!strcmp (s, d->str)))
 			return R_TRUE;
 	}
-	
+
 	return R_FALSE;
 }
 
@@ -285,7 +285,7 @@ static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 		if (d->type=='s' && !*str)
 			return;
 		r_str_sanitize (str);
-		if (rad) 
+		if (rad)
 			m->printf ("%s %d %s @ 0x%08"PFMT64x"\n",
 				r_meta_type_to_string (d->type),
 				(int)(d->to-d->from), str, d->from);

@@ -74,14 +74,14 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 			break;
 		case R_ANAL_OP_TYPE_ADD:
 			// dst = src[0] + src[1] + src[2]
-			r_anal_value_set_ut64 (anal, op->dst, 
+			r_anal_value_set_ut64 (anal, op->dst,
 				r_anal_value_to_ut64 (anal, op->src[0])+
 				r_anal_value_to_ut64 (anal, op->src[1])+
 				r_anal_value_to_ut64 (anal, op->src[2]));
 			break;
 		case R_ANAL_OP_TYPE_SUB:
 			// dst = src[0] + src[1] + src[2]
-			r_anal_value_set_ut64 (anal, op->dst, 
+			r_anal_value_set_ut64 (anal, op->dst,
 				r_anal_value_to_ut64 (anal, op->src[0])-
 				r_anal_value_to_ut64 (anal, op->src[1])-
 				r_anal_value_to_ut64 (anal, op->src[2]));
@@ -92,18 +92,18 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 			if (div == 0) {
 				eprintf ("r_anal_op_execute: division by zero\n");
 				eprintf ("TODO: throw RAnalException\n");
-			} else r_anal_value_set_ut64 (anal, op->dst, 
+			} else r_anal_value_set_ut64 (anal, op->dst,
 				r_anal_value_to_ut64 (anal, op->src[0])/div);
 			}
 			break;
 		case R_ANAL_OP_TYPE_MUL:
-			r_anal_value_set_ut64 (anal, op->dst, 
+			r_anal_value_set_ut64 (anal, op->dst,
 				r_anal_value_to_ut64 (anal, op->src[0])*
 				r_anal_value_to_ut64 (anal, op->src[1]));
 			break;
 		case R_ANAL_OP_TYPE_MOV:
 			// dst = src[0]
-			r_anal_value_set_ut64 (anal, op->dst, 
+			r_anal_value_set_ut64 (anal, op->dst,
 				r_anal_value_to_ut64 (anal, op->src[0]));
 			break;
 		case R_ANAL_OP_TYPE_NOP:

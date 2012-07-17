@@ -1,5 +1,5 @@
 PKGNAME radare2-bindings
-VERSION 0.9.1hg
+VERSION 0.9.1git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!

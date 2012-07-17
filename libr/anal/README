@@ -293,7 +293,7 @@ type = [ op | reg | mem | imm ]  ; 2 bits is enought
 size = 1, 2, 4, 8           ; byte level
 
 ADD reg, reg
-SUB reg, 
+SUB reg, reg
 JMP reg
 JMP imm
 JMP mem

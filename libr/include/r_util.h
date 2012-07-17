@@ -224,7 +224,7 @@ R_API boolt r_file_is_directory(const char *str);
 R_API RMmap *r_file_mmap (const char *file, boolt rw);
 R_API void r_file_mmap_free (RMmap *m);
 
-// TODO: find better names and write vapis 
+// TODO: find better names and write vapis
 #define ut8p_b(x) ((x)[0])
 #define ut8p_bw(x) ((x)[0]|((x)[1]<<8))
 #define ut8p_bd(x) ((x)[0]|((x)[1]<<8)|((x)[2]<<16)|((x)[3]<<24))

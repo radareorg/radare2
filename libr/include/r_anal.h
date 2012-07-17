@@ -15,7 +15,7 @@
 // containing a dupped file in memory
 
 /* save memory:
-   bb_has_ops=1 -> 600M 
+   bb_has_ops=1 -> 600M
    bb_has_ops=0 -> 350MB
 */
 #define R_ANAL_BB_HAS_OPS 0
@@ -94,8 +94,8 @@ enum {
 	R_ANAL_OP_TYPE_NOT   = 0x8000000,
 	R_ANAL_OP_TYPE_STORE = 0x10000000,  /* store from register to memory */
 	R_ANAL_OP_TYPE_LOAD  = 0x20000000,  /* load from memory to register */
-	R_ANAL_OP_TYPE_LEA   = 0x40000000, 
-	R_ANAL_OP_TYPE_LEAVE = 0x80000000, 
+	R_ANAL_OP_TYPE_LEA   = 0x40000000,
+	R_ANAL_OP_TYPE_LEAVE = 0x80000000,
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -287,7 +287,7 @@ typedef struct r_anal_cc_t {
 typedef struct r_anal_cc_type_t {
 	int rtl; // right-to-left? if false use left-to-right
 	int alignstack;
-	// 
+	//
 	//const char **reglist; //
 } RAnalCCType;
 
@@ -539,7 +539,7 @@ R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
-R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal, 
+R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
 	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
 R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
 	ut64 addr, int opts);
