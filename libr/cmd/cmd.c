@@ -69,7 +69,7 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 	int ret = -1;
 	RListIter *iter;
 	RCmdPlugin *cp;
-	
+
 	if (!input || !*input) {
 		if (cmd->nullcallback != NULL)
 			ret = cmd->nullcallback (cmd->data);

@@ -6,12 +6,21 @@ include ../config.mk
 
 LDFLAGS+=${BN_LIBS}
 
-foo: pre libr_anal.${EXT_SO} libr_anal.${EXT_AR} plugins
+foo: pre lemon cparse_pre libr_anal.${EXT_SO} libr_anal.${EXT_AR} plugins
 
 include ${STATIC_ANAL_PLUGINS}
 STATIC_OBJS=$(subst ../ar,p/../ar,$(subst anal_,p/anal_,$(STATIC_OBJ)))
 OBJLIBS=meta.o reflines.o ref.o op.o fcn.o bb.o var.o anal.o cond.o value.o cc.o diff.o type.o fcnstore.o
-OBJ=${STATIC_OBJS} ${OBJLIBS}
+CPARSE_OBJS=./cparse/cparse.o ./cparse/lex.yy.o ./cparse/tree.o
+OBJ=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
+
+lemon:
+	${CC} ./cparse/lemon.c -o lemon
+
+cparse_pre: lemon
+	./lemon ./cparse/cparse.y
+	flex ./cparse/cparse.l
+	${CC} ${CFLAGS} -c ./cparse/cparse.c
 
 pre:
 	@if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi

@@ -56,7 +56,7 @@ static int cmd_meta(void *data, const char *input) {
 				eprintf ("Usage: cla [addr]\n");
 			} else {
 				char *sl;
-				if (input[1]==' ') 
+				if (input[1]==' ')
 					offset = r_num_math (core->num, input+2);
 				else offset = core->offset;
 				sl = r_bin_meta_get_source_line (core->bin, offset);
