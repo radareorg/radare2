@@ -1,61 +1,78 @@
 /* radare - LGPL - Copyright 2010 -- pancake@nopcode.org */
-/* WORK IN PROGRESS */
-
-// cast can be done via string serialization
-// int -> char r_meta_type_
-// ..to_string (meta, type);
-// ..from_string()
-
-#if 0
-Ct char* 4 z
-Ct void 0
-Ct int 4 d
-Ct ut32 4 x
-Ct ut64 8 q
-CFt printf void=char*,...
-CFt puts int=char*
-CFt system int=char*
-CFt exit void=int
-CFv [arraysize] [type] [name]
-CFa [arraysize] [type] [name]
-CFf 320 @ fun -> framesize for function
-CF 20
-#endif
-
-// how to define a function pointer?
-// how to define a structure or complex types?
-// how to define arrays?
 
 #include <r_anal.h>
+#include "cparse/lexglb.h"
 
-typedef struct r_meta_type_t {
-	char name[32];
-	int sign; // already define by format?
-	int size;
-	int array; // real size = size * array
-	char format[16]; // print format
-} RMetaType;
+void *cdataParseAlloc(void *(*mallocProc)(size_t));
+void *cdataParseFree(void *p, void (*freeProc)(void *));
+extern FILE *yyin;
+typedef struct yy_buffer_state *YY_BUFFER_STATE;
+extern int yylex(void);
+extern YY_BUFFER_STATE yy_scan_string(const char*);
+extern void yy_delete_buffer(YY_BUFFER_STATE);
 
+/*
 typedef struct r_meta_function_t {
 	int stackframe;
 	RMetaType ret;
 	RMetaType *arg[16]; // Just references to already registered data types
 	// when we remove a type, we must ensure no function meta signature claims for it
 } RMetaFunction;
-
-#if 0
-Types must allow casting between them
-Types must support struct with inner types on it
-
-[0x08049850]> Cv?
-Usage: Cv [name] [size] [pm-format-string]
-  Cv int 4 d   ; define 'int' type
-  Cv- int      ; remove 'int' var type
-  Cv float 4 f
-#endif
-
+*/
+/*
 R_API RMetaType *r_meta_type_new() {
 	RMetaType *type = R_NEW (RMetaType);
 	//
 	return type;
+}
+*/
+
+R_API RAnalType *r_anal_type_new() {
+	RAnalType *t = R_NEW(RAnalType);
+	return NULL;
+}
+
+R_API void r_anal_type_del() {
+}
+
+R_API void r_anal_type_cleanup() {
+}
+
+R_API void r_anal_type_free(RAnalType *t) {
+	free(t);
+}
+
+R_API void r_anal_type_list() {
+}
+
+R_API RAnalType *r_anal_type_find(char *name) {
+
+}
+
+R_API char* r_anal_type_to_string(char* name) {
+
+}
+
+R_API RAnalType *r_anal_type_loadfile(char *path) {
+	FILE *cfile;
+	int n;
+	int yv;
+	char buf[4096];
+
+	void *pParser = cdataParseAlloc(malloc);
+	cfile = fopen(path, "ro");
+	while ((n = fread(buf, 1, sizeof(buf), cfile)) > 0) {
+		buf[n] = '\0';
+		yy_scan_string(buf);
+		while ((yv = yylex()) != 0) {
+			cdataParse(pParser, yv, yylval);
+		}
+	}
+	fclose(cfile);
+	cdataParse(pParser, 0, yylval);
+	cdataParseFree(pParser, free);
+}
+
+R_API RAnalType *r_anal_type_loadstring(char *buf) {
+	return NULL;
 }
