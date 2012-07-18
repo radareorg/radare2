@@ -443,7 +443,7 @@ static int cmd_anal(void *data, const char *input) {
 				fcn = r_anal_fcn_find (core->anal, off,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (fcn) {
-					r_core_cmdf (core, "fr %s %s @ 0x%"PFMT64x, 
+					r_core_cmdf (core, "fr %s %s @ 0x%"PFMT64x,
 						fcn->name, name, off);
 					free (fcn->name);
 					fcn->name = strdup (name);
@@ -504,7 +504,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'g':
 		switch (input[1]) {
 		case 't':
-			{ 
+			{
 			int n = 0;
 			RList *list = r_core_anal_graph_to (core,
 				r_num_math (core->num, input+2), n);

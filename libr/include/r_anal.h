@@ -37,6 +37,139 @@ typedef struct r_meta_t {
 	PrintfCallback printf;
 } RMeta;
 
+/* CPARSE stuff */
+
+enum {
+	R_ANAL_TYPE_VARIABLE = 1,
+	R_ANAL_TYPE_POINTER = 2,
+	R_ANAL_TYPE_ARRAY = 3,
+	R_ANAL_TYPE_STRUCT = 4,
+	R_ANAL_TYPE_UNION = 5,
+	R_ANAL_TYPE_FUNCTION = 6,
+};
+
+// [0:2] bits - place to store variable size
+#define R_ANAL_VAR_TYPE_SIZE_MASK = 0x4;
+
+enum {
+	R_ANAL_VAR_TYPE_BYTE = 1,
+	R_ANAL_VAR_TYPE_WORD = 2,
+	R_ANAL_VAR_TYPE_DWORD = 3,
+	R_ANAL_VAR_TYPE_QWORD = 4,
+	R_ANAL_VAR_TYPE_FLOAT = 5,
+	R_ANAL_VAR_TYPE_DOUBLE = 6,
+};
+
+// [3:4] bits - place to store sign of variable
+#define R_ANAL_VAR_TYPE_SIGN_MASK 0x18
+#define R_ANAL_VAR_TYPE_SIGN_SHIFT 3
+
+enum {
+	R_ANAL_VAR_TYPE_SIGNED = 1,
+	R_ANAL_VAR_TYPE_UNSIGNED = 2,
+};
+
+// [5:7] bits - place to store variable modifiers/parameters
+#define R_ANAL_VAR_TYPE_MODIFIER_MASK 0xe0
+#define R_ANAL_VAR_TYPE_MODIFIER_SHIFT 5
+
+enum {
+	R_ANAL_VAR_TYPE_REGISTER = 1,
+	R_ANAL_VAR_TYPE_CONST = 2,
+	R_ANAL_VAR_TYPE_STATIC = 3,
+	R_ANAL_VAR_TYPE_VOLATILE = 4,
+};
+
+/* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
+ *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
+ *			( RANAL_VAR_TYPE_CONST & RANAL_VAR_TYPE_MODIFIER_MASK)
+*/
+typedef struct r_anal_type_var_t {
+	char *name;
+	ut8 type; // contain (type || signedness || modifier)
+	ut8 size;
+	union {
+		ut8	 v8;
+		ut16 v16;
+		ut32 v32;
+		ut64 v64;
+	} value;
+} RAnalTypeVar;
+
+typedef struct r_anal_type_ptr_t {
+	char *name;
+	ut8 type; // contain (type || signedness || modifier)
+	ut8 size;
+	union {
+		ut8	 v8;
+		ut16 v16;
+		ut32 v32;
+		ut64 v64;
+	} value;
+} RAnalTypePtr;
+
+typedef struct r_anal_type_array_t {
+	char *name;
+	ut8 type; // contain (type || signedness || modifier)
+	ut8 size;
+	ut64 count;
+	union {
+		ut8	 *v8;
+		ut16 *v16;
+		ut32 *v32;
+		ut64 *v64;
+	} value;
+} RAnalTypeArray;
+
+typedef struct r_anal_type_struct_t RAnalTypeStruct;
+typedef struct r_anal_type_t RAnalType;
+
+struct r_anal_type_struct_t {
+	char *name;
+	ut8 type;
+	ut32 size;
+	void *parent;
+	RAnalType *items;
+};
+
+typedef struct r_anal_type_union_t {
+	char *name;
+	ut8 type;
+	ut32 size;
+	void *parent;
+	RAnalType *items;
+} RAnalTypeUnion;
+
+typedef struct r_anal_type_function_t {
+	char* name;
+	long size; // Size of function header?
+	int param_count; // Function arguments counter
+	/*item_list *rets; // Type of return value */
+	short rets;
+	short fmod; //  static, inline or volatile?
+	short call; // calling convention
+	char* attr; // __attribute__(()) list
+	RAnalType *args; // list of arguments
+} RAnalTypeFunction;
+
+struct r_anal_type_t {
+	char name[32];
+	ut32 size;
+	int type;
+	union {
+		RAnalTypeVar *v;
+		RAnalTypePtr *p;
+		RAnalTypeArray *a;
+		RAnalTypeStruct *s;
+		RAnalTypeUnion *u;
+		RAnalTypeFunction *f;
+	} custom;
+	RAnalType *next;
+	RAnalType *prev;
+	RAnalType *head;
+};
+
+
 enum {
 	R_META_WHERE_PREV = -1,
 	R_META_WHERE_HERE = 0,
