@@ -66,7 +66,7 @@ public class Radare.RDebug {
 	public bool reg_list(int type, int size, bool rad); // TODO must be depreacted
 	//public bool reg_set(string name, uint64 num);
 	//public uint64 reg_get(string name);
-	
+
 	public RList<RDebug.Pid> pids (int pid);
 	// must deprecate //
 	public int pid_list (int pid);
@@ -147,9 +147,9 @@ public class Radare.RDebug {
 		int dup;
 		string addresses;
 	}
-	
+
 	[Compact]
-	[CCode (cname="RDebugTracepoint")]
+	[CCode (cname="RDebugTracepoint", free_function="")]
 	public class Tracepoint {
 		uint64 addr;
 		uint64 tags;
@@ -165,7 +165,7 @@ public class Radare.RDebug {
 	public int tid;
 	public bool swstep;
 	public int newstate;
-	public RDebug.Trace trace;
+	public RDebug.Trace *trace;
 	public bool stop_all_threads;
 	public RReg reg;
 	public RAnal anal;

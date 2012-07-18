@@ -16,7 +16,6 @@ public class RCore {
 	public RConfig config;
 	public REgg egg;
 	public RAsm assembler;
-	public RMagic magic;
 	public RAnal anal;
 	public RBin bin;
 	public RFS fs;

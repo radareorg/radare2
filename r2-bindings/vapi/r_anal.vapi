@@ -90,7 +90,7 @@ namespace Radare {
 			BODY,
 			LAST,
 			FOOT,
-			SWITCH	
+			SWITCH
 		}
 
 		[CCode (cname="int", cprefix="R_ANAL_DIFF_TYPE_")]
@@ -196,12 +196,12 @@ namespace Radare {
 			public uint64 jump;
 			public uint64 fail;
 			public BlockType type;
-			public BlockDiff diff;
-			public uint8* signature;
 			public int ninstr;
-			public bool traced;
-			public bool conditional;
 			public bool returnbb;
+			public bool conditional;
+			public bool traced;
+			public uint8* fingerprint;
+			public Diff diff;
 			//public RList<RAnal.Op> ops;
 		}
 
@@ -292,8 +292,8 @@ namespace Radare {
 		[CCode (cname="RAnalRef", free_function="")]
 		public class Ref {
 			public int type;
-			public uint64 from;
-			public uint64 to;
+			public uint64 addr;
+			public uint64 at;
 		}
 
 		[Compact]

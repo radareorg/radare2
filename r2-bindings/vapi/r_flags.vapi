@@ -5,7 +5,7 @@ namespace Radare {
 	[Compact]
 	[CCode (cprefix="r_flag_item_", cname="RFlagItem", free_function="")]
 	public class RFlagItem {
-		public string name;
+		public char name[128]; // FIXME proper static strings w/o hardcoded size
 		public uint64 namehash;
 		public int space;
 		public uint64 size;

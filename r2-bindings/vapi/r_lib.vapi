@@ -19,8 +19,9 @@ namespace Radare {
 	// we need delegates here (function pointerz)
 	//	public bool add_handler(int type, string desc, /* */, void* user);
 		public bool del_handler(int type);
-		public Plugin get_handler(int type);
+		//public Plugin get_handler(int type);
 		//public struct Struct { }
+		/*
 		[Compact]
 		[CCode (cname="RLibHandler")]
 		public class Plugin {
@@ -29,7 +30,7 @@ namespace Radare {
 			void* user;
 			// constructor
 			// destructor
-		}
+		}*/
 	}
 
 	[Compact]
