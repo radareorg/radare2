@@ -18,6 +18,7 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_anal.c"
 #include "cmd_open.c"
 #include "cmd_meta.c"
+#include "cmd_type.c"
 #include "cmd_egg.c"
 #include "cmd_info.c"
 #include "cmd_macro.c"
@@ -1059,6 +1060,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->cmd, "info",     "get file info", &cmd_info);
 	r_cmd_add (core->cmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (core->cmd, "seek",     "seek to an offset", &cmd_seek);
+	r_cmd_add (core->cmd, "t",   "enter visual mode", &cmd_type);
 	r_cmd_add (core->cmd, "zign",     "zignatures", &cmd_zign);
 	r_cmd_add (core->cmd, "Section",  "setup section io information", &cmd_section);
 	r_cmd_add (core->cmd, "bsize",    "change block size", &cmd_bsize);

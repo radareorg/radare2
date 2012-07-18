@@ -84,16 +84,16 @@ variable(A) ::= modifier(E) signedness(D) type(C) name(B). {
 }
 variable(A) ::= modifier(E) shorttype(C) name(B). {
 	switch (C.dval) {
-		case UINT8_T:
+		case R_ANAL_UINT8_T:
 			A = new_variable_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
 			break;
-		case UINT16_T:
+		case R_ANAL_UINT16_T:
 			A = new_variable_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, E.dval);
 			break;
-		case UINT32_T:
+		case R_ANAL_UINT32_T:
 			A = new_variable_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, E.dval);
 			break;
-		case UINT64_T:
+		case R_ANAL_UINT64_T:
 			A = new_variable_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, E.dval);
 			break;
 		default:
@@ -105,16 +105,16 @@ pointer(A) ::= modifier(E) signedness(D) type(C) ASTERISK name(B). {
 }
 pointer(A) ::= modifier(E) shorttype(C) ASTERISK name(B). {
 	switch (C.dval) {
-		case UINT8_T:
+		case R_ANAL_UINT8_T:
 			A = new_pointer_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
 			break;
-		case UINT16_T:
+		case R_ANAL_UINT16_T:
 			A = new_pointer_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, E.dval);
 			break;
-		case UINT32_T:
+		case R_ANAL_UINT32_T:
 			A = new_pointer_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, E.dval);
 			break;
-		case UINT64_T:
+		case R_ANAL_UINT64_T:
 			A = new_pointer_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, E.dval);
 			break;
 		default:
@@ -126,16 +126,16 @@ array(A) ::= modifier(F) signedness(E) type(D) name(B) LBRACKET size(C) RBRACKET
 }
 array(A) ::= modifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
 	switch (D.dval) {
-		case UINT8_T:
+		case R_ANAL_UINT8_T:
 			A = new_array_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
 			break;
-		case UINT16_T:
+		case R_ANAL_UINT16_T:
 			A = new_array_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
 			break;
-		case UINT32_T:
+		case R_ANAL_UINT32_T:
 			A = new_array_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
 			break;
-		case UINT64_T:
+		case R_ANAL_UINT64_T:
 			A = new_array_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
 			break;
 		default:

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 -- pancake@nopcode.org */
+/* radare - LGPL - Copyright 2012 - Anton Kochkov */
 
 #include <r_anal.h>
 #include "cparse/lexglb.h"

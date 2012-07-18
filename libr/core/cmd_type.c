@@ -1,39 +1,40 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - Anton Kochkov */
+
 static int cmd_type(void *data, const char *input) {
+	RCore *core = (RCore*)data;
+#if USED
 	RAnalVarType *var;
 	RListIter *iter;
-	RCore *core = (RCore*)data;
 	int i, ret, line = 0;
 	ut64 addr_end = 0LL;
 	ut64 addr = core->offset;
 	char file[1024];
+#endif
 	switch (*input) {
 	case '*':
-		r_anal_type_list (core->anal->type, R_ANAL_TYPE_ANY, 1);
+// TODO		r_anal_type_list (core->anal->type, R_ANAL_TYPE_ANY, 1);
 		break;
 	case 'f':
 		switch (input[1]) {
-		/* Open $EDITOR and allo type type definition manually */
+		/* Open $EDITOR and allow type type definition manually */
 		// TODO: Show simple rules in ctype or simple template? */
 		case '!':
+			{
 			char *out, *ctype = "";
 			out = r_core_editor (core, ctype);
-			r_anal_type_loadstring(core->anal->type, out);
+			r_anal_type_loadstring (core->anal->type, out);
 			free (out);
 			free (ctype);
+			}
 			break;
 		case ' ':
 			{
-			int size;
-			const char *fmt = NULL;
 			const char *ptr, *filename = input + 2;
 			ptr = strchr (filename, ' ');
-			if (ptr) && (ptr[1] == NULL) {
+			if (ptr && !ptr[1]) {
 				r_anal_type_loadfile(core->anal->type, filename);
 				eprintf ("Usage: tf name\n");
-			}
-			else
-				eprintf ("Usage: tf[!] [name]\n");
+			} else eprintf ("Usage: tf[!] [name]\n");
 			}
 			break;
 		default:
@@ -43,32 +44,34 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 'h':
-		switch(input[1]) {
-			case ' ':
-				break;
-			/* Convert type into format string */
-			case '*':
-				break;
-			default:
-				eprintf("Usage: th[..]\n"
-					"th [path] [name] : show definition of type\n");
+		switch (input[1]) {
+		case ' ':
+			break;
+		/* Convert type into format string */
+		case '*':
+			break;
+		default:
+			eprintf ("Usage: th[..]\n"
+				"th [path] [name] : show definition of type\n");
 			break;
 		}
 		break;
 	case '-':
 		if (input[1]!='*') {
-			i = r_num_math (core->num, input + ((input[1] == ' ') ? 2 : 1));
-			r_anal_type_del (core->anal->type, R_ANAL_TYPE_ANY, core->offset, i, "");
-		} else
-			r_anal_type_cleanup (core->anal->type, 0LL, UT64_MAX);
+			ut64 n = r_num_math (core->num, input + ((input[1] == ' ') ? 2 : 1));
+			eprintf ("val 0x%"PFMT64x"\n", n);
+			//TODO r_anal_type_del (core->anal->type, R_ANAL_TYPE_ANY, core->offset, i, "");
+		} else r_anal_type_cleanup (core->anal->type, 0LL, UT64_MAX);
 		break;
 	case '\0':
 	case '!':
+		{
 		char *out, *ctype = "";
 		out = r_core_editor (core, ctype);
-		r_anal_type_loadstring(core->anal->type, out);
+		r_anal_type_loadstring (core->anal->type, out);
 		free (out);
 		free (ctype);
+		}
 		break;
 	case '?':
 		eprintf (
@@ -80,5 +83,3 @@ static int cmd_type(void *data, const char *input) {
 	}
 	return R_TRUE;
 }
-
-

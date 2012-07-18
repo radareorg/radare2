@@ -1,4 +1,7 @@
 include ../config.mk
+
+HOST_CC=gcc
+
 #CFLAGS+=-DOLDFMT=1
 OBJ=alloc.o cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o lock.o
 # This is hacky
@@ -46,7 +49,7 @@ syms:
 main.c:
 
 ${BIN}: libsdb.a main.c
-	gcc -DVERSION=\"${VERSION}\" -o ${BIN} *.c 
+	${HOST_CC} -DVERSION=\"${VERSION}\" -o ${BIN} *.c 
 	#${CC} ${CFLAGS} -o ${BIN} main.c libsdb.a
 
 wcl:

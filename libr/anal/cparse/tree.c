@@ -3,72 +3,69 @@
 #include <r_anal.h>
 #include "cdata.h"
 
-int new_tree() {
+static int new_tree() {
 	return 0;
 }
 
-int print_tree(RAnalType *t) {
-	RAnalType *p;
-	p = t;
-	if (p != NULL) {
-		while (p != NULL) {
-			switch (p->type) {
-				case R_ANAL_TYPE_VARIABLE:
-					printf("var %s\n", p->custom.v->name);
-					break;
-				case R_ANAL_TYPE_POINTER:
-					printf("ptr %s\n", p->custom.p->name);
-					break;
-				case R_ANAL_TYPE_ARRAY:
-					printf("arr %s[%ld]\n", p->custom.a->name, p->custom.a->count);
-					break;
-				case R_ANAL_TYPE_STRUCT:
-					printf("Entering struct %s...\n", p->custom.s->name);
-					print_tree(p->custom.s->items);
-					break;
-				case R_ANAL_TYPE_UNION:
-					printf("Entering union %s...\n", p->custom.u->name);
-					print_tree(p->custom.u->items);
-					break;
-				case R_ANAL_TYPE_FUNCTION:
-					printf("Entering function %s...\n", p->custom.f->name);
-					print_tree(p->custom.f->args);
-					break;
-				default:
-					printf("invalid item!\n");
-					break;
-			}
-			p = p->next;
-		}
-	} else {
-		printf("Empty tree!\n");
+static int print_tree(RAnalType *t) {
+	RAnalType *p = t;
+	if (!p) {
+		eprintf ("Empty tree!\n");
+		return R_FALSE;
 	}
-	return 0;
+	while (p) {
+		switch (p->type) {
+		case R_ANAL_TYPE_VARIABLE:
+			eprintf("var %s\n", p->custom.v->name);
+			break;
+		case R_ANAL_TYPE_POINTER:
+			eprintf("ptr %s\n", p->custom.p->name);
+			break;
+		case R_ANAL_TYPE_ARRAY:
+			eprintf("arr %s[%ld]\n", p->custom.a->name, p->custom.a->count);
+			break;
+		case R_ANAL_TYPE_STRUCT:
+			eprintf("Entering struct %s...\n", p->custom.s->name);
+			print_tree(p->custom.s->items);
+			break;
+		case R_ANAL_TYPE_UNION:
+			eprintf("Entering union %s...\n", p->custom.u->name);
+			print_tree(p->custom.u->items);
+			break;
+		case R_ANAL_TYPE_FUNCTION:
+			eprintf("Entering function %s...\n", p->custom.f->name);
+			print_tree(p->custom.f->args);
+			break;
+		default:
+			eprintf("invalid item!\n");
+			break;
+		}
+		p = p->next;
+	}
+	return R_TRUE;
 }
 
-RAnalType* new_variable_node(char* name, short type, short sign, short modifier)
-{
-	RAnalTypeVar *ivar = (RAnalTypeVar *)malloc(sizeof(RAnalTypeVar));
+RAnalType* new_variable_node(char* name, short type, short sign, short modifier) {
+	RAnalTypeVar *ivar = R_NEW (RAnalTypeVar);
 	RAnalType *tmp;
 	ivar->name = name;
 	ivar->type = (type & R_ANAL_VAR_TYPE_SIZE_MASK) |
 		((sign << R_ANAL_VAR_TYPE_SIGN_SHIFT) & R_ANAL_VAR_TYPE_SIGN_MASK) |
-		((modifier << R_ANAL_VAR_TYPE_MODIFIER_SHIFT) & R_ANAL_VAR_TYPE_MODIFIER);
-	tmp = (RAnalType *)malloc(sizeof(RAnalType));
+		((modifier << R_ANAL_VAR_TYPE_MODIFIER_SHIFT) & R_ANAL_VAR_TYPE_MODIFIER_MASK);
+	tmp = R_NEW (RAnalType);
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_VARIABLE;
 	tmp->custom.v = ivar;
 	return tmp;
 }
 
-RAnalType* new_pointer_node(char* name, short type, short sign, short modifier)
-{
-	RAnalTypePtr *iptr = (RAnalTypePtr *)malloc(sizeof(RAnalTypePtr));
+RAnalType* new_pointer_node(char* name, short type, short sign, short modifier) {
+	RAnalTypePtr *iptr = R_NEW (RAnalTypePtr);
 	RAnalType *tmp;
 	iptr->name = name;
 	iptr->type = (type & R_ANAL_VAR_TYPE_SIZE_MASK) |
 		((sign << R_ANAL_VAR_TYPE_SIGN_SHIFT) & R_ANAL_VAR_TYPE_SIGN_MASK) |
-		((modifier << R_ANAL_VAR_TYPE_MODIFIER_SHIFT) & R_ANAL_VAR_TYPE_MODIFIER);
+		((modifier << R_ANAL_VAR_TYPE_MODIFIER_SHIFT) & R_ANAL_VAR_TYPE_MODIFIER_MASK);
 	tmp = (RAnalType *)malloc(sizeof(RAnalType));
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_POINTER;
@@ -76,15 +73,14 @@ RAnalType* new_pointer_node(char* name, short type, short sign, short modifier)
 	return tmp;
 }
 
-RAnalType* new_array_node(char* name, short type, short sign, short modifier, long size)
-{
+RAnalType* new_array_node(char* name, short type, short sign, short modifier, long size) {
 	RAnalTypeArray *iarr = (RAnalTypeArray *)malloc(sizeof(RAnalTypeArray));
 	RAnalType *tmp;
 	iarr->name = name;
 	iarr->count = size;
 	iarr->type = (type & R_ANAL_VAR_TYPE_SIZE_MASK) |
 		((sign << R_ANAL_VAR_TYPE_SIGN_SHIFT) & R_ANAL_VAR_TYPE_SIGN_MASK) |
-		((modifier << R_ANAL_VAR_TYPE_MODIFIER_SHIFT) & R_ANAL_VAR_TYPE_MODIFIER);
+		((modifier << R_ANAL_VAR_TYPE_MODIFIER_SHIFT) & R_ANAL_VAR_TYPE_MODIFIER_MASK);
 	tmp = (RAnalType *)malloc(sizeof(RAnalType));
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_ARRAY;
@@ -92,10 +88,9 @@ RAnalType* new_array_node(char* name, short type, short sign, short modifier, lo
 	return tmp;
 }
 
-RAnalType* new_struct_node(char* name, RAnalType *defs)
-{
-	RAnalTypeStruct *istr = (RAnalTypeStruct *)malloc(sizeof(RAnalTypeStruct));
-	RAnalType *tmp = (RAnalType *)malloc(sizeof(RAnalType));
+RAnalType* new_struct_node(char* name, RAnalType *defs) {
+	RAnalTypeStruct *istr = R_NEW (RAnalTypeStruct);
+	RAnalType *tmp = R_NEW (RAnalType);
 	istr->name = name;
 	istr->items = defs;
 	tmp->next = NULL;
@@ -104,10 +99,9 @@ RAnalType* new_struct_node(char* name, RAnalType *defs)
 	return tmp;
 }
 
-RAnalType* new_union_node(char* name, RAnalType *defs)
-{
-	RAnalTypeUnion *iun = (RAnalTypeUnion *)malloc(sizeof(RAnalTypeUnion));
-	RAnalType *tmp = (RAnalType *)malloc(sizeof(RAnalType));
+RAnalType* new_union_node(char* name, RAnalType *defs) {
+	RAnalTypeUnion *iun = R_NEW (RAnalTypeUnion);
+	RAnalType *tmp = R_NEW (RAnalType);
 	iun->name = name;
 	iun->items = defs;
 	tmp->next = NULL;
@@ -118,10 +112,9 @@ RAnalType* new_union_node(char* name, RAnalType *defs)
 
 /* Function can return another function or have multiple returns */
 //item_list* new_function_node(char* name, item_list *rets, item_list *args)
-RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes)
-{
-	RAnalTypeFunction *ifnc = (RAnalTypeFunction *)malloc(sizeof(RAnalTypeFunction));
-	RAnalType *tmp = (RAnalType *)malloc(sizeof(RAnalType));
+RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes) {
+	RAnalTypeFunction *ifnc = R_NEW (RAnalTypeFunction);
+	RAnalType *tmp = R_NEW (RAnalType);
 	ifnc->name = name;
 	ifnc->rets = ret_type;
 	ifnc->fmod = fmodifier;
@@ -133,5 +126,3 @@ RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short 
 	tmp->custom.f = ifnc;
 	return tmp;
 }
-
-

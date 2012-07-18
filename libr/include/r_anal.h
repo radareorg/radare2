@@ -49,7 +49,7 @@ enum {
 };
 
 // [0:2] bits - place to store variable size
-#define R_ANAL_VAR_TYPE_SIZE_MASK = 0x4;
+#define R_ANAL_VAR_TYPE_SIZE_MASK 0x4
 
 enum {
 	R_ANAL_VAR_TYPE_BYTE = 1,
@@ -313,6 +313,7 @@ typedef struct r_anal_t {
 	double diff_thbb;
 	double diff_thfcn;
 	RIOBind iob;
+	RList *type;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
 	struct list_head anals; // TODO: Reimplement with RList
