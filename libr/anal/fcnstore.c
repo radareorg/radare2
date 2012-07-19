@@ -13,8 +13,8 @@
 #include <r_anal.h>
 
 static int cmpfun(void *a, void *b) {
-	RAnalFcn *fa = (RAnalFcn*)a;
-	RAnalFcn *fb = (RAnalFcn*)b;
+	RAnalFunction *fa = (RAnalFunction*)a;
+	RAnalFunction *fb = (RAnalFunction*)b;
 	// TODO: swap sort order here or wtf?
 	return (fb->addr - fa->addr);
 }
@@ -46,7 +46,7 @@ R_API void r_listrange_free(RListRange *s) {
 	free (s);
 }
 
-R_API void r_listrange_add(RListRange *s, RAnalFcn *f) {
+R_API void r_listrange_add(RListRange *s, RAnalFunction *f) {
 	ut64 addr;
 	RList *list;
 	ut64 from = f->addr;
@@ -68,7 +68,7 @@ R_API void r_listrange_add(RListRange *s, RAnalFcn *f) {
 	r_list_add_sorted (s->l, f, cmpfun);
 }
 
-R_API void r_listrange_del(RListRange *s, RAnalFcn *f) {
+R_API void r_listrange_del(RListRange *s, RAnalFunction *f) {
 	RList *list;
 	ut64 addr, from, to;
 	if (!f) return;
@@ -81,14 +81,14 @@ R_API void r_listrange_del(RListRange *s, RAnalFcn *f) {
 	r_list_delete_data (s->l, f);
 }
 
-R_API void r_listrange_resize(RListRange *s, RAnalFcn *f, int newsize) {
+R_API void r_listrange_resize(RListRange *s, RAnalFunction *f, int newsize) {
 	r_listrange_del (s, f);
 	f->size = newsize;
 	r_listrange_add (s, f);
 }
 
-R_API RAnalFcn *r_listrange_find_in_range(RListRange* s, ut64 addr) {
-	RAnalFcn *f;
+R_API RAnalFunction *r_listrange_find_in_range(RListRange* s, ut64 addr) {
+	RAnalFunction *f;
 	RListIter *iter;
 	RList *list = r_hashtable64_lookup (s->h, r_listrange_key (addr));
 	if (list)
@@ -99,8 +99,8 @@ R_API RAnalFcn *r_listrange_find_in_range(RListRange* s, ut64 addr) {
 	return NULL;
 }
 
-R_API RAnalFcn *r_listrange_find_root(RListRange* s, ut64 addr) {
-	RAnalFcn *f;
+R_API RAnalFunction *r_listrange_find_root(RListRange* s, ut64 addr) {
+	RAnalFunction *f;
 	RListIter *iter;
 	RList *list = r_hashtable64_lookup (s->h, r_listrange_key (addr));
 	if (list)

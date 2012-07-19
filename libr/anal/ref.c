@@ -65,7 +65,7 @@ R_API int r_anal_ref_del(RAnal *anal, ut64 at) {
 }
 
 R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	RAnalRef *refi, *ref;
 	RListIter *iter, *iter2;
 	RList *ret;

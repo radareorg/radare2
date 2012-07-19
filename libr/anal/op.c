@@ -129,7 +129,7 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 }
 
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
-	RAnalFcn *f;
+	RAnalFunction *f;
 	char ret[128];
 	char *cstr;
 	char *r0 = r_anal_value_to_string (op->dst);

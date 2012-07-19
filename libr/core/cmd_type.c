@@ -12,7 +12,7 @@ static int cmd_type(void *data, const char *input) {
 #endif
 	switch (*input) {
 	case '*':
-// TODO		r_anal_type_list (core->anal->type, R_ANAL_TYPE_ANY, 1);
+		r_anal_type_list (core->anal->types, R_ANAL_TYPE_ANY, 1);
 		break;
 	case 'f':
 		switch (input[1]) {
@@ -22,7 +22,7 @@ static int cmd_type(void *data, const char *input) {
 			{
 			char *out, *ctype = "";
 			out = r_core_editor (core, ctype);
-			r_anal_type_loadstring (core->anal->type, out);
+			r_anal_type_loadstring (core->anal->types, out);
 			free (out);
 			free (ctype);
 			}
@@ -32,7 +32,7 @@ static int cmd_type(void *data, const char *input) {
 			const char *ptr, *filename = input + 2;
 			ptr = strchr (filename, ' ');
 			if (ptr && !ptr[1]) {
-				r_anal_type_loadfile(core->anal->type, filename);
+				r_anal_type_loadfile(core->anal->types, filename);
 				eprintf ("Usage: tf name\n");
 			} else eprintf ("Usage: tf[!] [name]\n");
 			}
@@ -60,15 +60,15 @@ static int cmd_type(void *data, const char *input) {
 		if (input[1]!='*') {
 			ut64 n = r_num_math (core->num, input + ((input[1] == ' ') ? 2 : 1));
 			eprintf ("val 0x%"PFMT64x"\n", n);
-			//TODO r_anal_type_del (core->anal->type, R_ANAL_TYPE_ANY, core->offset, i, "");
-		} else r_anal_type_cleanup (core->anal->type, 0LL, UT64_MAX);
+			//TODO r_anal_type_del (core->anal->types, R_ANAL_TYPE_ANY, core->offset, i, "");
+		} else r_anal_type_cleanup (core->anal->types, 0LL, UT64_MAX);
 		break;
 	case '\0':
 	case '!':
 		{
 		char *out, *ctype = "";
 		out = r_core_editor (core, ctype);
-		r_anal_type_loadstring (core->anal->type, out);
+		r_anal_type_loadstring (core->anal->types, out);
 		free (out);
 		free (ctype);
 		}

@@ -29,7 +29,12 @@ R_API RMetaType *r_meta_type_new() {
 
 R_API RAnalType *r_anal_type_new() {
 	RAnalType *t = R_NEW(RAnalType);
-	return NULL;
+	return t;
+}
+
+R_API RAnalType *r_anal_type_list_new() {
+	RAnalType *t = R_NEW(RAnalType);
+	return t;
 }
 
 R_API void r_anal_type_del() {
@@ -42,15 +47,16 @@ R_API void r_anal_type_free(RAnalType *t) {
 	free(t);
 }
 
-R_API void r_anal_type_list() {
+R_API void r_anal_type_list(RAnalType *t, short category, short enabled) {
+	// List all types by category: var/struct/unions/pointers
 }
 
 R_API RAnalType *r_anal_type_find(char *name) {
 
 }
 
-R_API char* r_anal_type_to_string(char* name) {
-
+R_API char* r_anal_type_to_string(RAnalType *t) {
+	return "<none>";
 }
 
 R_API RAnalType *r_anal_type_loadfile(char *path) {

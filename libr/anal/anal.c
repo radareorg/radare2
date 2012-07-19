@@ -7,7 +7,7 @@
 #include <r_io.h>
 #include "../config.h"
 
-static RAnalPlugin *anal_static_plugins[] = 
+static RAnalPlugin *anal_static_plugins[] =
 	{ R_ANAL_STATIC_PLUGINS };
 
 static RAnalVarType anal_default_vartypes[] =
@@ -40,7 +40,7 @@ R_API RAnal *r_anal_new() {
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcnstore = r_listrange_new ();
 	anal->refs = r_anal_ref_list_new ();
-	anal->vartypes = r_anal_var_type_list_new ();
+	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
 	r_anal_set_big_endian (anal, R_FALSE);
 	INIT_LIST_HEAD (&anal->anals); // TODO: use RList here
