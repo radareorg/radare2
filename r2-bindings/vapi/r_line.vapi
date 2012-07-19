@@ -2,7 +2,7 @@
 
 namespace Radare {
 	[Compact]
-	[CCode (cname="RLine", cheader_filename="r_line.h", cprefix="r_line_")]
+	[CCode (cname="RLine", cheader_filename="r_line.h", cprefix="r_line_", free_function="")]
 	public class RLine {
 		//public RLine();
 		public static RLine singleton();

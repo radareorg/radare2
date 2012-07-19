@@ -911,8 +911,10 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 				break;
 			}
 			r_cons_flush ();
-			if (!ret) {
-				eprintf ("'q': quit ignored\n");
+			if (data[0]=='q') {
+				if (data[1]=='!')
+					ret = -1;
+				else eprintf ("'q': quit ignored. Use 'q!'\n");
 				break;
 			}
 			data = nl+1;
@@ -1060,7 +1062,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->cmd, "info",     "get file info", &cmd_info);
 	r_cmd_add (core->cmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (core->cmd, "seek",     "seek to an offset", &cmd_seek);
-	r_cmd_add (core->cmd, "t",   "enter visual mode", &cmd_type);
+	r_cmd_add (core->cmd, "t",   "type information (cparse)", &cmd_type);
 	r_cmd_add (core->cmd, "zign",     "zignatures", &cmd_zign);
 	r_cmd_add (core->cmd, "Section",  "setup section io information", &cmd_section);
 	r_cmd_add (core->cmd, "bsize",    "change block size", &cmd_bsize);

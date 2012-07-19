@@ -52,7 +52,7 @@ namespace Radare {
 		public static string abspath(string path);
 		public static bool exist (string file);
 		public static bool slurp_line (string file, int line, int ctx);
-		
+
 	}
 	[CCode (cheader_filename="r_util.h", lower_case_cprefix="r_log_")]
 	namespace RLog {
@@ -116,7 +116,6 @@ namespace Radare {
 		public RList();
 		public uint length();
 		//public bool next();
-		public unowned G @get();
 		public bool del_n(int n);
 		public bool get_top();
 		//public void push(owned G foo);
@@ -149,7 +148,7 @@ namespace Radare {
 			return this.data;
 		}
 	}
-	
+
 	[Compact]
 	[CCode (cheader_filename="r_util.h", cname="RRange", free_function="r_range_free", cprefix="r_range_")]
 	public class RRange {
@@ -172,7 +171,7 @@ namespace Radare {
 		public RRange *inverse(uint64 fr, uint64 to, int flags);
 
 		[Compact]
-		[CCode (cname="RRangeItem", cprefix="r_range_item_")]
+		[CCode (cname="RRangeItem", cprefix="r_range_item_", free_function="")]
 		public class Item {
 			public uint64 fr;
 			public uint64 to;
