@@ -39,6 +39,8 @@ typedef struct r_oflist_t {
 	if (list) for (it = list->head; it && (pos = it->data) && ((tmp = it->n) || 1); it = tmp)
 #define r_list_foreach_prev(list, it, pos) \
 	if (list) for (it = list->tail; it && (pos = it->data); it = it->p)
+#ifndef _R_LIST_C_
+#define r_list_push(x,y) r_list_append(x,y)
 #define r_list_iterator(x) (x)?(x)->head:NULL
 #define r_list_empty(x) (x==NULL || (x->head==NULL && x->tail==NULL))
 #define r_list_head(x) x->head
@@ -51,6 +53,7 @@ typedef struct r_oflist_t {
 #define r_list_iter_cur(x) x->p
 #define r_list_iter_unref(x) x
 #define r_list_iter_free(x) x
+#endif
 R_API RList *r_list_new();
 R_API RListIter *r_list_iter_get_next(RListIter *list);
 R_API void *r_list_iter_get_data(RListIter *list);
@@ -75,7 +78,6 @@ R_API void r_list_join (RList *list1, RList *list2);
 R_API void *r_list_get_n (RList *list, int n);
 R_API int r_list_del_n (RList *list, int n);
 R_API void *r_list_get_top (RList *list);
-#define r_list_push(x,y) r_list_append(x,y)
 R_API void *r_list_pop (RList *list);
 R_API void r_list_reverse (RList *list);
 R_API RList *r_list_clone (RList *list);

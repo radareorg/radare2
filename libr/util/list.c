@@ -3,15 +3,12 @@
 
 #include <stdio.h>
 
-#undef R_API
-#include <r_list.h>
-#undef _INCLUDE_R_LIST_H_
-#undef R_API
+#define _R_LIST_C_
+#include "r_util.h"
 
 inline RListIter *r_list_iter_new () {
 	return malloc (sizeof (RListIter));
 }
-
 
 RListIter *r_list_iter_get_next(RListIter *list) {
 	return list->n;
@@ -38,7 +35,6 @@ RListIter *r_list_get_next (RListIter *list) {
 	return list->n;
 }
 
-#include "r_util.h"
 
 R_API void r_list_init(RList *list) {
 	list->head = NULL;
