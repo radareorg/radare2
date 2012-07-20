@@ -179,9 +179,11 @@ R_API void r_asm_free(RAsm *a) {
 	r_pair_free (a->pair);
 	a->pair = NULL;
 	// XXX: segfault, plugins cannot be freed
-	a->plugins->free = NULL;
-	r_list_free (a->plugins);
-	a->plugins = NULL;
+	if (a->plugins) {
+		a->plugins->free = NULL;
+		r_list_free (a->plugins);
+		a->plugins = NULL;
+	}
 	free (a);
 }
 

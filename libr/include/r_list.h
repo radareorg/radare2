@@ -1,6 +1,7 @@
 #ifndef _INCLUDE_R_LIST_H_
 #define _INCLUDE_R_LIST_H_
 
+#include <r_types.h>
 #include <r_flist.h>
 
 // TODO: implement r_list_foreach_prev

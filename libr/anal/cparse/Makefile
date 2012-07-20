@@ -1,6 +1,6 @@
 include ../../config.mk
 
-CFLAGS=-I../../include
+CFLAGS+=-I../../include
 
 HOST_CC=gcc
 

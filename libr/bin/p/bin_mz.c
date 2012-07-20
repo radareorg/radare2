@@ -84,7 +84,6 @@ static RList* sections(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct EXE *exe = arch->buf->buf;
-	int i;
 	
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -136,10 +135,9 @@ static RList* libs(RBinArch *arch) {
 }
 
 static RBinInfo* info(RBinArch *arch) {
-	char *str;
+	struct EXE *exe = arch->buf->buf;
 	RBinInfo *ret = NULL;
 
-struct EXE *exe = arch->buf->buf;
 	// TODO: remove those strings
 	eprintf ("SS : %x\n", exe->ss);
 	eprintf ("SP : %x\n", exe->sp);

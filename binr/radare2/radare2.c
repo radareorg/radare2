@@ -367,9 +367,9 @@ int main(int argc, char **argv) {
 	/* run -i and -c flags */
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
-		if (!r_core_cmd_file (&r, cmdfile[i]))
-			if (quite)
-				return 0;
+		int ret = r_core_cmd_file (&r, cmdfile[i]);
+		if (ret==-1 || (ret==0 &&quite))
+			return 0;
 	}
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd0 (&r, cmdn);
