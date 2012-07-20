@@ -131,7 +131,6 @@ namespace Radare {
 		public RListIter<G> p;
 
 		/* methods */
-		public RListIter();
 		public G get_data();
 		public RListIter<G> get_next();
 	//	public G @free(G arg);

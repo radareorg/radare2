@@ -17,8 +17,8 @@ namespace Radare {
 		public bool set_delta(int delta);
 
 		[Compact]
-		[CCode (cname="RDiffPlugin", destroy_function="", free_function="" )]
-		public struct Plugin {
+		[CCode (cname="RDiffOp")]
+		public struct Op {
 			public uint64 a_off;
 			public uint8* a_buf;
 			public int a_len;

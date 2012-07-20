@@ -50,10 +50,10 @@ public class RAsm {
 	[CCode (cname="RAsmOp", destroy_function="", unref_function="")]
 	public struct Op {
 		public int inst_len;
-		public uint8 *buf;
-		public string buf_asm;
-		public string buf_hex;
-		public string buf_err;
+		public uint8 buf[1024]; // FIXME proper static buffers w/o hardcoded size
+		public char buf_asm[1024]; // FIXME proper static strings w/o hardcoded size
+		public char buf_hex[1024]; // FIXME proper static strings w/o hardcoded size
+		public char buf_err[1024]; // FIXME proper static strings w/o hardcoded size
 		// accessors for bindings
 		public string get_hex();
 		public string get_asm();

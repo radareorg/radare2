@@ -34,9 +34,9 @@ namespace Radare {
 	}
 
 	[Compact]
-	[CCode (cheader_filename="r_lib.h", cprefix="r_lib_struct_", cname="RLib", free_function="r_lib_free")]
+	[CCode (cheader_filename="r_lib.h", cname="RLibStruct")]
 	public struct RLibStruct {
-		public RLibType foo;
+		public RLibType type;
 		public void *data;
 	}
 
