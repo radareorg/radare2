@@ -81,36 +81,36 @@ enum {
 };
 
 #ifdef R_API
-R_API RFS *r_fs_new ();
-R_API void r_fs_view (RFS* fs, int view);
-R_API void r_fs_free (RFS* fs);
-R_API void r_fs_add (RFS *fs, RFSPlugin *p);
-R_API void r_fs_del (RFS *fs, RFSPlugin *p);
-R_API RFSRoot *r_fs_mount (RFS* fs, const char *fstype, const char *path, ut64 delta);
-R_API boolt r_fs_umount (RFS* fs, const char *path);
-R_API RList *r_fs_root (RFS *fs, const char *path);
-R_API RFSFile *r_fs_open (RFS* fs, const char *path);
-R_API void r_fs_close (RFS* fs, RFSFile *file);
-R_API int r_fs_read (RFS* fs, RFSFile *file, ut64 addr, int len);
+R_API RFS *r_fs_new();
+R_API void r_fs_view(RFS* fs, int view);
+R_API void r_fs_free(RFS* fs);
+R_API void r_fs_add(RFS *fs, RFSPlugin *p);
+R_API void r_fs_del(RFS *fs, RFSPlugin *p);
+R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
+R_API boolt r_fs_umount(RFS* fs, const char *path);
+R_API RList *r_fs_root(RFS *fs, const char *path);
+R_API RFSFile *r_fs_open(RFS* fs, const char *path);
+R_API void r_fs_close(RFS* fs, RFSFile *file);
+R_API int r_fs_read(RFS* fs, RFSFile *file, ut64 addr, int len);
 R_API RFSFile *r_fs_slurp(RFS* fs, const char *path);
 R_API RList *r_fs_dir(RFS* fs, const char *path);
-R_API int r_fs_dir_dump (RFS* fs, const char *path, const char *name);
-R_API RList *r_fs_find_name (RFS* fs, const char *name, const char *glob);
-R_API RList *r_fs_find_off (RFS* fs, const char *name, ut64 off);
+R_API int r_fs_dir_dump(RFS* fs, const char *path, const char *name);
+R_API RList *r_fs_find_name(RFS* fs, const char *name, const char *glob);
+R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
-R_API char *r_fs_name (RFS *fs, ut64 offset);
-R_API int r_fs_prompt (RFS *fs, const char *root);
+R_API char *r_fs_name(RFS *fs, ut64 offset);
+R_API int r_fs_prompt(RFS *fs, const char *root);
 
 /* file.c */
-R_API RFSFile *r_fs_file_new (RFSRoot *root, const char *path);
-R_API void r_fs_file_free (RFSFile *file);
-R_API RFSRoot *r_fs_root_new (const char *path, ut64 delta);
-R_API void r_fs_root_free (RFSRoot *root);
+R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);
+R_API void r_fs_file_free(RFSFile *file);
+R_API RFSRoot *r_fs_root_new(const char *path, ut64 delta);
+R_API void r_fs_root_free(RFSRoot *root);
 R_API RFSPartition *r_fs_partition_new(int num, ut64 start, ut64 length);
-R_API void r_fs_partition_free (RFSPartition *p);
-R_API const char *r_fs_partition_type (const char *part, int type);
-R_API const char *r_fs_partition_type_get (int n);
-R_API int r_fs_partition_get_size (); // WTF. wrong function name
+R_API void r_fs_partition_free(RFSPartition *p);
+R_API const char *r_fs_partition_type(const char *part, int type);
+R_API const char *r_fs_partition_type_get(int n);
+R_API int r_fs_partition_get_size(); // WTF. wrong function name
 
 /* plugins */
 extern RFSPlugin r_fs_plugin_ext2;

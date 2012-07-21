@@ -159,7 +159,18 @@ enum {
 	R_ANAL_CC_TYPE_MSFASTCALL, // microsoft fastcall
 	R_ANAL_CC_TYPE_BOFASTCALL, // borland fastcall
 	R_ANAL_CC_TYPE_WAFASTCALL, // wacom fastcall
-	R_ANAL_CC_TYPE_CLARION,
+	R_ANAL_CC_TYPE_CLARION, // TopSpeed/Clarion/JPI
+	/* Clation:
+	 *	first four integer parameters are passed in registers:
+	 *	eax, ebx, ecx, edx. Floating point parameters are passed
+	 *	on the floating point stack - registers
+	 *	st0, st1, st2, st3, st4, st5, st6. Structure parameters
+	 *	are always passed on the stack. Additional parameters
+	 *	are passed on the stack after registers are exhausted.
+	 *	Integer values are returned in eax, pointers in edx
+	 *	and floating point types in st0.
+	 */
+	R_ANAL_CC_TYPE_SAFECALL, // Delphi and Free Pascal on Windows
 	R_ANAL_CC_TYPE_SYSV,
 	R_ANAL_CC_TYPE_THISCALL,
 };
@@ -737,7 +748,7 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr);
 R_API int r_meta_set_string(RMeta *m, int type, ut64 addr, const char *s);
 R_API int r_meta_del(RMeta *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 size, const char *str);
-R_API struct r_meta_item_t *r_meta_find(RMeta *m, ut64 off, int type, int where);
+R_API RMetaItem *r_meta_find(RMeta *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RMeta *m, int type, int rad);
