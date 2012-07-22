@@ -39,7 +39,7 @@ R_API void r_anal_cc_reset (RAnalCC *cc) {
 //XXX: may overflow. this is vulnerable. needs fix
 R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	RSyscallItem *si;
-	RAnalFcn *fcn;
+	RAnalFunction *fcn;
 	char str[1024], buf[64];
 	int i, eax = 0; // eax = arg0
 

@@ -74,7 +74,7 @@ static int cmd_print(void *data, const char *input) {
 	}
 
 	if (input[0] && input[1] == 'f') {
-		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
+		RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) len = f->size;
 		else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
@@ -180,7 +180,7 @@ free (ptr);
 		int bs = core->blocksize;
 
 		if (input[1]=='f') {
-			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
+			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				len = bs = f->size;
@@ -251,7 +251,7 @@ free (ptr);
 			} break;
 			break;
 		case 'f': {
-			RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
+			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 			if (f) {
 				ut8 *block = malloc (f->size+1);

@@ -44,14 +44,36 @@ enum {
 	R_BIN_CLASS_PROTECTED,
 };
 
+typedef struct r_bin_addr_t {
+	ut64 rva;
+	ut64 offset;
+} RBinAddr;
+
+typedef struct r_bin_info_t {
+	char file[R_BIN_SIZEOF_STRINGS];
+	char type[R_BIN_SIZEOF_STRINGS];
+	char bclass[R_BIN_SIZEOF_STRINGS];
+	char rclass[R_BIN_SIZEOF_STRINGS];
+	char arch[R_BIN_SIZEOF_STRINGS];
+	char machine[R_BIN_SIZEOF_STRINGS];
+	char os[R_BIN_SIZEOF_STRINGS];
+	char subsystem[R_BIN_SIZEOF_STRINGS];
+	char rpath[R_BIN_SIZEOF_STRINGS];
+	int bits;
+	int has_va;
+	int big_endian;
+	ut64 dbg_info;
+} RBinInfo;
+
+
 // XXX: isnt this a copy of Obj ?
 typedef struct r_bin_arch_t {
 	char *file;
 	int size;
 	ut64 baddr;
 	ut64 offset;
-	struct r_bin_addr_t *binsym[R_BIN_SYM_LAST];
-	struct r_bin_info_t *info;
+	RBinAddr *binsym[R_BIN_SYM_LAST];
+	RBinInfo *info;
 	RList* entries;
 	RList* sections;
 	RList* symbols;
@@ -97,13 +119,13 @@ typedef struct r_bin_plugin_t {
 	int (*destroy)(RBinArch *arch);
 	int (*check)(RBinArch *arch);
 	ut64 (*baddr)(RBinArch *arch);
-	struct r_bin_addr_t* (*binsym)(RBinArch *arch, int num);
+	RBinAddr* (*binsym)(RBinArch *arch, int num);
 	RList* (*entries)(RBinArch *arch);
 	RList* (*sections)(RBinArch *arch);
 	RList* (*symbols)(RBinArch *arch);
 	RList* (*imports)(RBinArch *arch);
 	RList* (*strings)(RBinArch *arch);
-	struct r_bin_info_t* (*info)(RBinArch *arch);
+	RBinInfo* (*info)(RBinArch *arch);
 	RList* (*fields)(RBinArch *arch);
 	RList* (*libs)(RBinArch *arch);
 	RList* (*relocs)(RBinArch *arch);
@@ -114,11 +136,6 @@ typedef struct r_bin_plugin_t {
 	int (*get_offset)(RBinArch *arch, int type, int idx);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 } RBinPlugin;
-
-typedef struct r_bin_addr_t {
-	ut64 rva;
-	ut64 offset;
-} RBinAddr;
 
 typedef struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_STRINGS];
@@ -182,22 +199,6 @@ typedef struct r_bin_string_t {
 	ut64 size;
 } RBinString;
 
-typedef struct r_bin_info_t {
-	char file[R_BIN_SIZEOF_STRINGS];
-	char type[R_BIN_SIZEOF_STRINGS];
-	char bclass[R_BIN_SIZEOF_STRINGS];
-	char rclass[R_BIN_SIZEOF_STRINGS];
-	char arch[R_BIN_SIZEOF_STRINGS];
-	char machine[R_BIN_SIZEOF_STRINGS];
-	char os[R_BIN_SIZEOF_STRINGS];
-	char subsystem[R_BIN_SIZEOF_STRINGS];
-	char rpath[R_BIN_SIZEOF_STRINGS];
-	int bits;
-	int has_va;
-	int big_endian;
-	ut64 dbg_info;
-} RBinInfo;
-
 typedef struct r_bin_field_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	ut64 rva;
@@ -241,7 +242,7 @@ typedef struct r_bin_bind_t {
 
 
 #ifdef R_API
-R_API void r_bin_bind(RBin *b, struct r_bin_bind_t *bnd);
+R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 /* bin.c */
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);

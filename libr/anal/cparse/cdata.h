@@ -22,21 +22,12 @@ typedef struct Token Token;
 #define R_ANAL_UINT64_T			4
 
 #define NONE_SIGN				11
-#define NONE_MODIFIER			12
+#define NONE_QUALIFIER			12
 
 #define R_ANAL_VAR_STATIC		0
 #define R_ANAL_VAR_CONST		1
 #define R_ANAL_VAR_REGISTER		2
 #define R_ANAL_VAR_VOLATILE		3
-
-#define R_ANAL_FMODIFIER_NONE	0
-#define R_ANAL_FMODIFIER_STATIC	1
-#define R_ANAL_FMODIFIER_VOLATILE 2
-#define R_ANAL_FMODIFIER_INLINE 3
-
-#define R_ANAL_CALLCONV_NONE 0
-#define R_ANAL_CALLCONV_STDCALL 1
-#define R_ANAL_CALLCONV_CCALL 2
 
 RAnalType* new_variable_node(char* name, short type, short sign, short modifier);
 RAnalType* new_pointer_node(char* name, short type, short sign, short modifier);

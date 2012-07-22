@@ -14,10 +14,10 @@ static void var_help() {
 }
 
 static int var_cmd(RCore *core, const char *str) {
-	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset,
+	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset,
 			R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 	char *p, *p2, *p3, *ostr;
-	int type, delta;
+	int scope, delta;
 
 	ostr = p = strdup (str);
 	str = (const char *)ostr;
@@ -34,9 +34,9 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'A': // fastcall arg
 		// XXX nested dup
 		switch (*str) {
-		case 'v': type = R_ANAL_VAR_TYPE_LOCAL|R_ANAL_VAR_DIR_NONE; break;
-		case 'a': type = R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN; break;
-		case 'A': type = R_ANAL_VAR_TYPE_ARGREG|R_ANAL_VAR_DIR_IN; break;
+		case 'v': scope = R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE; break;
+		case 'a': scope = R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN; break;
+		case 'A': scope = R_ANAL_VAR_SCOPE_ARGREG|R_ANAL_VAR_DIR_IN; break;
 		default:
 			eprintf ("Unknown type\n");
 			return 0;
@@ -51,7 +51,7 @@ static int var_cmd(RCore *core, const char *str) {
 		case 'g':
 			if (str[2]!='\0') {
 				if (fcn != NULL) {
-					RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_TYPE_LOCAL);
+					RAnalVar *var = r_anal_var_get (core->anal, fcn, atoi (str+2), R_ANAL_VAR_SCOPE_LOCAL);
 					if (var != NULL)
 						return r_anal_var_access_add (core->anal, var, atoi (str+2), (str[1]=='g')?0:1);
 					eprintf ("Can not find variable in: '%s'\n", str);
@@ -68,6 +68,7 @@ static int var_cmd(RCore *core, const char *str) {
 			var_help();
 			break;
 		}
+		// TODO: Improve parsing error handling
 		p[0]='\0'; p++;
 		p2 = strchr (p, ' ');
 		if (p2) {
@@ -77,7 +78,9 @@ static int var_cmd(RCore *core, const char *str) {
 				p3[0]='\0';
 				p3=p3+1;
 			}
-			r_anal_var_add (core->anal, fcn, core->offset, delta, type, p, p2, p3?atoi(p3):0);
+			// p2 - name of variable
+			r_anal_var_add (core->anal, fcn, core->offset, delta, scope,
+				r_anal_str_to_type(core->anal, p), p2, p3?atoi(p3):0);
 		} else var_help ();
 		break;
 	default:
@@ -202,7 +205,7 @@ static int cmd_anal(void *data, const char *input) {
 			// list xrefs from current address
 			{
 				ut64 addr = input[1]?  r_num_math (core->num, input+1): core->offset;
-				RAnalFcn *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					RAnalRef *ref;
 					RListIter *iter;
@@ -218,7 +221,7 @@ static int cmd_anal(void *data, const char *input) {
 		case 'C': {
 				char *p;
 				ut64 a, b;
-				RAnalFcn *fcn;
+				RAnalFunction *fcn;
 				char *mi = strdup (input);
 				if (mi && mi[2]==' ' && (p=strchr (mi+3, ' '))) {
 					*p = 0;
@@ -235,7 +238,7 @@ static int cmd_anal(void *data, const char *input) {
 		case '-': {
 				char *p;
 				ut64 a, b;
-				RAnalFcn *fcn;
+				RAnalFunction *fcn;
 				char *mi = strdup (input);
 				if (mi && mi[2]==' ' && (p=strchr (mi+3, ' '))) {
 					*p = 0;
@@ -331,7 +334,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'l':
 			{
-				RAnalFcn *fcn;
+				RAnalFunction *fcn;
 				RListIter *iter;
 
 				r_list_foreach (core->anal->fcns, iter, fcn) {
@@ -346,7 +349,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 's': {
 			ut64 addr;
-			RAnalFcn *f;
+			RAnalFunction *f;
 			const char *arg = input+3;
 			if (input[2] && (addr = r_num_math (core->num, arg))) {
 				arg = strchr (arg, ' ');
@@ -354,7 +357,7 @@ static int cmd_anal(void *data, const char *input) {
 			} else addr = core->offset;
 			if ((f = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL))) {
 				if (arg && *arg) {
-					r_anal_fcn_from_string (core->anal, f, arg);
+					r_anal_str_to_fcn (core->anal, f, arg);
 				} else {
 					char *str = r_anal_fcn_to_string (core->anal, f);
 					r_cons_printf ("%s\n", str);
@@ -370,7 +373,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'c':
 			{
-			RAnalFcn *fcn;
+			RAnalFunction *fcn;
 			int cc;
 			if ((fcn = r_anal_get_fcn_at (core->anal, core->offset)) != NULL) {
 				cc = r_anal_fcn_cc (fcn);
@@ -388,7 +391,7 @@ static int cmd_anal(void *data, const char *input) {
 			ut64 jump = -1LL;
 			ut64 fail = -1LL;
 			int type = R_ANAL_BB_TYPE_NULL;
-			RAnalFcn *fcn = NULL;
+			RAnalFunction *fcn = NULL;
 			RAnalDiff *diff = NULL;
 
 			switch(r_str_word_set0 (ptr)) {
@@ -433,7 +436,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'r':
 			{
-				RAnalFcn *fcn;
+				RAnalFunction *fcn;
 				ut64 off = core->offset;
 				char *p, *name = strdup (input+3);
 				if ((p=strchr (name, ' '))) {
@@ -452,7 +455,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case 'e':
 			{
-				RAnalFcn *fcn;
+				RAnalFunction *fcn;
 				ut64 off = core->offset;
 				char *p, *name = strdup (input+3);
 				if ((p=strchr (name, ' '))) {

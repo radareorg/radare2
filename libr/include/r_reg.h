@@ -69,7 +69,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
 R_API int r_reg_set_name(RReg *reg, int role, const char *name);
 
-R_API struct r_reg_item_t *r_reg_get(RReg *reg, const char *name, int type);
+R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
 R_API RList *r_reg_get_list(RReg *reg, int type);
 
 /* XXX: dupped ?? */
@@ -77,13 +77,13 @@ R_API int r_reg_type_by_name(const char *str);
 R_API int r_reg_get_name_idx(const char *type);
 
 /* value */
-R_API ut64 r_reg_get_value(RReg *reg, struct r_reg_item_t *item);
-R_API int r_reg_set_value(RReg *reg, struct r_reg_item_t *item, ut64 value);
-R_API float r_reg_get_fvalue(RReg *reg, struct r_reg_item_t *item);
-R_API int r_reg_set_fvalue(RReg *reg, struct r_reg_item_t *item, float value);
-R_API ut64 r_reg_get_pvalue(RReg *reg, struct r_reg_item_t *item, int packidx);
+R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item);
+R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value);
+R_API float r_reg_get_fvalue(RReg *reg, RRegItem *item);
+R_API int r_reg_set_fvalue(RReg *reg, RRegItem *item, float value);
+R_API ut64 r_reg_get_pvalue(RReg *reg, RRegItem *item, int packidx);
 R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item);
-R_API int r_reg_set_pvalue(RReg *reg, struct r_reg_item_t *item, ut64 value, int packidx);
+R_API int r_reg_set_pvalue(RReg *reg, RRegItem *item, ut64 value, int packidx);
 
 /* byte arena */
 R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size);

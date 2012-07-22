@@ -92,7 +92,7 @@ static int visual_fkey(RCore *core, int ch) {
 	switch (ch) {
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd); 
+		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
 		ch = '?';
 		break;
 	case R_CONS_KEY_F2:
@@ -145,7 +145,7 @@ static int visual_fkey(RCore *core, int ch) {
 
 void setcursor (RCore *core, int cur) {
 	curset = cur;
-	if (curset) flags|=R_PRINT_FLAGS_CURSOR; 
+	if (curset) flags|=R_PRINT_FLAGS_CURSOR;
 	else flags &= ~(flags&R_PRINT_FLAGS_CURSOR);
 	r_print_set_flags (core->print, flags);
 	core->print->col = curset? 1: 0;
@@ -171,7 +171,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'c':
 		// XXX dupped flag imho
 		setcursor (core, curset ^ 1);
-		
 		break;
 	case 'd':
 		r_core_visual_define (core);
@@ -253,7 +252,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		RList *xrefs = NULL;
 		RAnalRef *refi;
 		RListIter *iter;
-		RAnalFcn *fun;
+		RAnalFunction *fun;
 
 		if ((xrefs = r_anal_xref_get (core->anal, core->offset))) {
 			r_cons_printf ("XREFS:\n");
@@ -793,7 +792,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	flags = R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
 	if (color) flags |= R_PRINT_FLAGS_COLOR;
 	do {
-		scrseek = r_num_math (core->num, 
+		scrseek = r_num_math (core->num,
 			r_config_get (core->config, "scr.seek"));
 		if (scrseek != 0LL)
 			r_core_seek (core, scrseek, 1);

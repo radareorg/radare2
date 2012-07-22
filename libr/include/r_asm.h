@@ -4,7 +4,7 @@
 #define _INCLUDE_R_ASM_H_
 
 #include <r_types.h>
-#include <r_bin.h> // only for binding, no hard dep required 
+#include <r_bin.h> // only for binding, no hard dep required
 #include <list.h>
 #include <r_util.h>
 #include <r_parse.h>
@@ -98,8 +98,8 @@ typedef struct r_asm_plugin_t {
 	int *bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*disassemble)(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len);
-	int (*assemble)(RAsm *a, struct r_asm_op_t *op, const char *buf);
+	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len);
+	int (*assemble)(RAsm *a, RAsmOp *op, const char *buf);
 	RAsmModifyCallback modify;
 	int (*set_subarch)(RAsm *a, const char *buf);
 } RAsmPlugin;
@@ -118,19 +118,19 @@ R_API int r_asm_set_bits(RAsm *a, int bits);
 R_API int r_asm_set_big_endian(RAsm *a, int boolean);
 R_API int r_asm_set_syntax(RAsm *a, int syntax);
 R_API int r_asm_set_pc(RAsm *a, ut64 pc);
-R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len);
-R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf);
-R_API struct r_asm_code_t* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len);
+R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len);
+R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf);
+R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len);
 R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr);
-R_API struct r_asm_code_t* r_asm_massemble(RAsm *a, const char *buf);
-R_API struct r_asm_code_t* r_asm_assemble_file(RAsm *a, const char *file);
+R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf);
+R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file);
 R_API int r_asm_filter_input(RAsm *a, const char *f);
 R_API int r_asm_filter_output(RAsm *a, const char *f);
 R_API char *r_asm_describe(RAsm *a, const char* str);
 
 /* code.c */
 R_API RAsmCode *r_asm_code_new();
-R_API void* r_asm_code_free(struct r_asm_code_t *acode);
+R_API void* r_asm_code_free(RAsmCode *acode);
 R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
 

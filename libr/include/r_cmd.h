@@ -74,27 +74,27 @@ typedef struct r_cmd_plugin_t {
 #ifdef R_API
 R_API RCmd *r_cmd_new();
 R_API RCmd *r_cmd_free(RCmd *cmd);
-R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data);
-R_API int r_cmd_add(struct r_cmd_t *cmd, const char *command, const char *desc, r_cmd_callback(callback));
-R_API int r_cmd_add_long(struct r_cmd_t *cmd, const char *longcmd, const char *shortcmd, const char *desc);
-R_API int r_cmd_del(struct r_cmd_t *cmd, const char *command);
-R_API int r_cmd_call(struct r_cmd_t *cmd, const char *command);
-R_API int r_cmd_call_long(struct r_cmd_t *cmd, const char *input);
-R_API char **r_cmd_args(struct r_cmd_t *cmd, int *argc);
+R_API int r_cmd_set_data(RCmd *cmd, void *data);
+R_API int r_cmd_add(RCmd *cmd, const char *command, const char *desc, r_cmd_callback(callback));
+R_API int r_cmd_add_long(RCmd *cmd, const char *longcmd, const char *shortcmd, const char *desc);
+R_API int r_cmd_del(RCmd *cmd, const char *command);
+R_API int r_cmd_call(RCmd *cmd, const char *command);
+R_API int r_cmd_call_long(RCmd *cmd, const char *input);
+R_API char **r_cmd_args(RCmd *cmd, int *argc);
 
-R_API int r_cmd_plugin_init(struct r_cmd_t *cmd);
-R_API int r_cmd_plugin_add(struct r_cmd_t *cmd, struct r_cmd_plugin_t *plugin);
-R_API int r_cmd_plugin_check(struct r_cmd_t *cmd, const char *a0);
+R_API int r_cmd_plugin_init(RCmd *cmd);
+R_API int r_cmd_plugin_add(RCmd *cmd, RCmdPlugin *plugin);
+R_API int r_cmd_plugin_check(RCmd *cmd, const char *a0);
 
 /* plugins */
 extern struct r_cmd_plugin_t r_cmd_plugin_dummy;
 
 /* r_cmd_macro */
-R_API void r_cmd_macro_init(struct r_cmd_macro_t *mac);
-R_API int r_cmd_macro_add(struct r_cmd_macro_t *mac, const char *name);
-R_API int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name);
-R_API void r_cmd_macro_list(struct r_cmd_macro_t *mac);
-R_API int r_cmd_macro_call(struct r_cmd_macro_t *mac, const char *name);
-R_API int r_cmd_macro_break(struct r_cmd_macro_t *mac, const char *value);
+R_API void r_cmd_macro_init(RCmdMacro *mac);
+R_API int r_cmd_macro_add(RCmdMacro *mac, const char *name);
+R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name);
+R_API void r_cmd_macro_list(RCmdMacro *mac);
+R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
+R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 #endif
 #endif

@@ -26,6 +26,8 @@
 "static"					{	return(STATIC); }
 "volatile"					{	return(VOLATILE); }
 "inline"					{	return(INLINE); }
+"naked"						{	return(NAKED); }
+"virtual"					{	return(VIRTUAL); }
 "struct"					{	return(STRUCT);	}
 "union"						{	return(UNION); }
 "function"					{	return(FUNCTION); }
@@ -41,7 +43,12 @@
 
 "__attribute__"				{	return(ATTRIBUTE); }
 "__stdcall"					{	return(STDCALL); }
-"__ccall"					{	return(CCALL); }
+"__cdecl"					{	return(CDECL); }
+"__fastcall"				{	return(FASTCALL); }
+"__pascal"					{	return(PASCALCALL); }
+"WINAPI"					{	return(WINAPI); }
+"thiscall"					{	return(THISCALL); }
+
 
 "{"							{	return(OBRACE); }
 "}"							{	return(EBRACE); }

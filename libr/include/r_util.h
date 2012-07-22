@@ -259,9 +259,9 @@ R_API void r_buf_free(RBuffer *b);
 R_API ut64 r_mem_get_num(ut8 *b, int size, int endian);
 
 /* MEMORY POOL */
-R_API RMemoryPool* r_mem_pool_deinit(struct r_mem_pool_t *pool);
+R_API RMemoryPool* r_mem_pool_deinit(RMemoryPool *pool);
 R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
-R_API RMemoryPool *r_mem_pool_free(struct r_mem_pool_t *pool);
+R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool);
 R_API void* r_mem_pool_alloc(RMemoryPool *pool);
 
 /* FACTORY POOL */
@@ -274,14 +274,14 @@ R_API void r_poolfactory_free(RPoolFactory *pf);
 
 R_API int r_mem_count(const ut8 **addr);
 R_API RCache* r_cache_new();
-R_API void r_cache_free(struct r_cache_t *c);
-R_API char *r_cache_get(struct r_cache_t *c, ut64 addr);
-R_API int r_cache_set(struct r_cache_t *c, ut64 addr, char *str);
-R_API int r_cache_validate(struct r_cache_t *c, ut64 from, ut64 to);
-R_API int r_cache_invalidate(struct r_cache_t *c, ut64 from, ut64 to);
+R_API void r_cache_free(RCache *c);
+R_API char *r_cache_get(RCache *c, ut64 addr);
+R_API int r_cache_set(RCache *c, ut64 addr, char *str);
+R_API int r_cache_validate(RCache *c, ut64 from, ut64 to);
+R_API int r_cache_invalidate(RCache *c, ut64 from, ut64 to);
 
-R_API void r_prof_start(struct r_prof_t *p);
-R_API double r_prof_end(struct r_prof_t *p);
+R_API void r_prof_start(RProfile *p);
+R_API double r_prof_end(RProfile *p);
 
 R_API int r_mem_protect(void *ptr, int size, const char *prot);
 R_API int r_mem_set_num (ut8 *dest, int dest_size, ut64 num, int endian);

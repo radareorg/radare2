@@ -124,7 +124,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	return R_TRUE;
 }
 
-static int assemble(struct r_parse_t *p, char *data, char *str) {
+static int assemble(RParse *p, char *data, char *str) {
 	char *ptr;
 	printf ("assembling '%s' to generate real asm code\n", str);
 	ptr = strchr (str, '=');
@@ -135,7 +135,7 @@ static int assemble(struct r_parse_t *p, char *data, char *str) {
 	return R_TRUE;
 }
 
-static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str, int len) {
+static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	RListIter *iter;
 	RFlagItem *flag;
 	char *ptr, *ptr2;
@@ -161,7 +161,7 @@ static int filter(struct r_parse_t *p, struct r_flag_t *f, char *data, char *str
 	return R_FALSE;
 }
 
-static int varsub(struct r_parse_t *p, struct r_anal_fcn_t *f, char *data, char *str, int len) {
+static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	char *ptr, *ptr2;
 	int i;
 

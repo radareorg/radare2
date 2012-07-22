@@ -7,6 +7,7 @@ static int new_tree() {
 	return 0;
 }
 
+#if 0
 static int print_tree(RAnalType *t) {
 	RAnalType *p = t;
 	if (!p) {
@@ -22,7 +23,7 @@ static int print_tree(RAnalType *t) {
 			eprintf("ptr %s\n", p->custom.p->name);
 			break;
 		case R_ANAL_TYPE_ARRAY:
-			eprintf("arr %s[%ld]\n", p->custom.a->name, p->custom.a->count);
+			eprintf("arr %s[%lld]\n", p->custom.a->name, p->custom.a->count);
 			break;
 		case R_ANAL_TYPE_STRUCT:
 			eprintf("Entering struct %s...\n", p->custom.s->name);
@@ -44,6 +45,7 @@ static int print_tree(RAnalType *t) {
 	}
 	return R_TRUE;
 }
+#endif
 
 RAnalType* new_variable_node(char* name, short type, short sign, short modifier) {
 	RAnalTypeVar *ivar = R_NEW (RAnalTypeVar);
@@ -113,7 +115,7 @@ RAnalType* new_union_node(char* name, RAnalType *defs) {
 /* Function can return another function or have multiple returns */
 //item_list* new_function_node(char* name, item_list *rets, item_list *args)
 RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes) {
-	RAnalTypeFunction *ifnc = R_NEW (RAnalTypeFunction);
+	RAnalFunction *ifnc = R_NEW (RAnalFunction);
 	RAnalType *tmp = R_NEW (RAnalType);
 	ifnc->name = name;
 	ifnc->rets = ret_type;

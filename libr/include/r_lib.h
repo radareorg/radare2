@@ -35,11 +35,11 @@ typedef struct r_lib_handler_t {
 	int type;
 	char desc[128];
 	void *user; /* user pointer */
-	int (*constructor)(struct r_lib_plugin_t *, void *user, void *data);
-	int (*destructor)(struct r_lib_plugin_t *, void *user, void *data);
+	int (*constructor)(RLibPlugin *, void *user, void *data);
+	int (*destructor)(RLibPlugin *, void *user, void *data);
 } RLibHandler;
 
-/* this structure should be pointed by the 'radare_plugin' symbol 
+/* this structure should be pointed by the 'radare_plugin' symbol
    found in the loaded .so */
 typedef struct r_lib_struct_t {
 	int type;
@@ -83,13 +83,16 @@ R_API int r_lib_dl_check_filename(const char *file);
 /* high level api */
 R_API RLib *r_lib_new(const char *symname);
 R_API RLib *r_lib_free(RLib *lib);
-R_API int r_lib_run_handler(RLib *lib, struct r_lib_plugin_t *plugin, struct r_lib_struct_t *symbol);
+R_API int r_lib_run_handler(RLib *lib, RLibPlugin *plugin, RLibStruct *symbol);
 R_API RLibHandler *r_lib_get_handler(RLib *lib, int type);
 R_API int r_lib_open(RLib *lib, const char *file);
 R_API int r_lib_opendir(RLib *lib, const char *path);
 R_API char *r_lib_path(const char *libname);
 R_API void r_lib_list(RLib *lib);
-R_API int r_lib_add_handler(RLib *lib, int type, const char *desc, int (*cb)(struct r_lib_plugin_t *,void *, void *), int (*dt)(struct r_lib_plugin_t *, void *, void *), void *user );
+R_API int r_lib_add_handler(RLib *lib, int type, const char *desc,
+	int (*cb)(RLibPlugin *, void *, void *),
+	int (*dt)(RLibPlugin *, void *, void *),
+	void *user );
 R_API int r_lib_del_handler(RLib *lib, int type);
 R_API int r_lib_close(RLib *lib, const char *file);
 #endif

@@ -28,7 +28,7 @@ typedef struct r_bp_plugin_t {
 	char *arch;
 	int type; // R_BP_TYPE_SW
 	int nbps;
-	struct r_bp_arch_t *bps;
+	RBreakpointArch *bps;
 } RBreakpointPlugin;
 
 // XXX: type is add() or del()
@@ -88,7 +88,7 @@ R_API RBreakpoint *r_bp_free(RBreakpoint *bp);
 
 R_API int r_bp_del(RBreakpoint *bp, ut64 addr);
 
-R_API int r_bp_plugin_add(RBreakpoint *bp, struct r_bp_plugin_t *foo);
+R_API int r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo);
 R_API int r_bp_use(RBreakpoint *bp, const char *name);
 R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name);
 R_API void r_bp_plugin_list(RBreakpoint *bp);
@@ -125,15 +125,15 @@ R_API RList *r_bp_traptrace_new();
 R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
 
 /* plugin pointers */
-extern struct r_bp_plugin_t r_bp_plugin_x86;
-extern struct r_bp_plugin_t r_bp_plugin_arm;
-extern struct r_bp_plugin_t r_bp_plugin_mips;
-extern struct r_bp_plugin_t r_bp_plugin_ppc;
-extern struct r_bp_plugin_t r_bp_plugin_sh;
-extern struct r_bp_plugin_t r_bp_plugin_bf;
+extern RBreakpointPlugin r_bp_plugin_x86;
+extern RBreakpointPlugin r_bp_plugin_arm;
+extern RBreakpointPlugin r_bp_plugin_mips;
+extern RBreakpointPlugin r_bp_plugin_ppc;
+extern RBreakpointPlugin r_bp_plugin_sh;
+extern RBreakpointPlugin r_bp_plugin_bf;
 #endif
 #if 0
-extern struct r_bp_plugin_t r_bp_plugin_sparc;
+extern RBreakpointPlugin r_bp_plugin_sparc;
 #endif
 
 #endif

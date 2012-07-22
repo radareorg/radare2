@@ -114,7 +114,7 @@ R_API inline int r_anal_bb_is_in_offset (RAnalBlock *bb, ut64 off) {
 
 R_API RAnalBlock *r_anal_bb_from_offset(RAnal *anal, ut64 off) {
 	RListIter *iter, *iter2;
-	RAnalFcn *fcn;
+	RAnalFunction *fcn;
 	RAnalBlock *bb;
 	r_list_foreach (anal->fcns, iter, fcn)
 		r_list_foreach (fcn->bbs, iter2, bb)

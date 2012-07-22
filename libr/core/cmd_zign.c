@@ -2,7 +2,7 @@
 
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	RListIter *iter;
 	RSignItem *item;
 	int i, fd = -1, len;

@@ -2,7 +2,6 @@
 
 // XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
-	RAnalVarType *var;
 	RListIter *iter;
 	RCore *core = (RCore*)data;
 	int i, ret, line = 0;
@@ -12,40 +11,6 @@ static int cmd_meta(void *data, const char *input) {
 	switch (*input) {
 	case '*':
 		r_meta_list (core->anal->meta, R_META_TYPE_ANY, 1);
-		break;
-	case 't':
-		switch (input[1]) {
-		case '-':
-			r_anal_var_type_del (core->anal, input+2);
-			break;
-		case ' ':
-			{
-			int size;
-			const char *fmt = NULL;
-			const char *ptr, *name = input+2;
-			ptr = strchr (name, ' ');
-			if (ptr) {
-				size = atoi (ptr+1);
-				ptr = strchr (ptr+2, ' ');
-				if (ptr)
-					fmt = ptr+1;
-			}
-			if (fmt==NULL)
-				eprintf ("Usage: Ct name size format\n");
-			else r_anal_var_type_add (core->anal, name, size, fmt);
-			}
-			break;
-		case '\0':
-			r_list_foreach (core->anal->vartypes, iter, var) {
-				r_cons_printf ("Ct %s %d %s\n", var->name, var->size, var->fmt);
-			}
-			break;
-		default:
-			eprintf ("Usage: Ct[..]\n"
-				" Ct-int       : remove 'int' type\n"
-				" Ct int 4 d   : define int type\n");
-			break;
-		}
 		break;
 	case 'l':
 		// XXX: this should be moved to CL?
@@ -190,7 +155,7 @@ static int cmd_meta(void *data, const char *input) {
 		switch (input[1]) {
 		case '-':
 			{
-			RAnalFcn *f;
+			RAnalFunction *f;
 			RListIter *iter;
 			ut64 offset;
 			if (input[2]==' ') {
@@ -205,7 +170,7 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		case '*':
 			{
-			RAnalFcn *f;
+			RAnalFunction *f;
 			RListIter *iter;
 			r_list_foreach (core->anal->fcns, iter, f) {
 				for (i = 0; i < R_ANAL_VARSUBS; i++) {
@@ -218,7 +183,7 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		default:
 			{
-			RAnalFcn *f;
+			RAnalFunction *f;
 			char *ptr = strdup (input+2);
 			const char *varsub = NULL;
 			const char *pattern = NULL;
@@ -267,9 +232,9 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case 'F':
 		{
-		RAnalFcn *f = r_anal_fcn_find (core->anal, core->offset,
+		RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-		if (f) r_anal_fcn_from_string (core->anal, f, input+2);
+		if (f) r_anal_str_to_fcn (core->anal, f, input+2);
 		else eprintf ("Cannot find function here\n");
 		}
 		break;

@@ -38,30 +38,36 @@ def(A) ::= pointer(B). { A = B; }
 def(A) ::= array(B). { A = B; }
 
 function(A) ::= FUNCTION type(B) name(C) LPARENT arglist(D) RPARENT. {
-	A = new_function_node(C.sval, B.dval, D, R_ANAL_FMODIFIER_NONE, R_ANAL_CALLCONV_NONE, NULL);
+	A = new_function_node(C.sval, B.dval, D, R_ANAL_FQUALIFIER_NONE, R_ANAL_CC_TYPE_NONE, NULL);
 }
-function(A) ::= FUNCTION fmodifier(B) type(C) name(D) LPARENT arglist(E) RPARENT. {
-	A = new_function_node(D.sval, C.dval, E, B.dval, R_ANAL_CALLCONV_NONE, NULL);
+function(A) ::= FUNCTION fqualifier(B) type(C) name(D) LPARENT arglist(E) RPARENT. {
+	A = new_function_node(D.sval, C.dval, E, B.dval, R_ANAL_CC_TYPE_NONE, NULL);
 }
 function(A) ::= FUNCTION callconvention(B) type(C) name(D) LPARENT arglist(E) RPARENT. {
-	A = new_function_node(D.sval, C.dval, E, R_ANAL_FMODIFIER_NONE, B.dval, NULL);
+	A = new_function_node(D.sval, C.dval, E, R_ANAL_FQUALIFIER_NONE, B.dval, NULL);
 }
-function(A) ::= FUNCTION callconvention(B) fmodifier(C) type(D) name(E) LPARENT arglist(F) RPARENT. {
+function(A) ::= FUNCTION callconvention(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT. {
 	A = new_function_node(E.sval, D.dval, F, C.dval, B.dval, NULL);
 }
-function(A) ::= FUNCTION attribute(B) fmodifier(C) type(D) name(E) LPARENT arglist(F) RPARENT. {
-	A = new_function_node(E.sval, D.dval, F, C.dval, R_ANAL_CALLCONV_NONE, B.sval);
+function(A) ::= FUNCTION attribute(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT. {
+	A = new_function_node(E.sval, D.dval, F, C.dval, R_ANAL_CC_TYPE_NONE, B.sval);
 }
-function(A) ::= FUNCTION attribute(B) callconvention(C) fmodifier(D) type(E) name(F) LPARENT arglist(G) RPARENT. {
+function(A) ::= FUNCTION attribute(B) callconvention(C) fqualifier(D) type(E) name(F) LPARENT arglist(G) RPARENT. {
 	A = new_function_node(F.sval, E.dval, G, D.dval, C.dval, B.sval);
 }
 
-fmodifier(A) ::= INLINE. { A.sval = "inline"; A.dval = R_ANAL_FMODIFIER_INLINE; }
-fmodifier(A) ::= VOLATILE. { A.sval = "volatile"; A.dval = R_ANAL_FMODIFIER_VOLATILE; }
-fmodifier(A) ::= STATIC. { A.sval = "static"; A.dval = R_ANAL_FMODIFIER_STATIC; }
+fqualifier(A) ::= INLINE. { A.sval = "inline"; A.dval = R_ANAL_FQUALIFIER_INLINE; }
+fqualifier(A) ::= VOLATILE. { A.sval = "volatile"; A.dval = R_ANAL_FQUALIFIER_VOLATILE; }
+fqualifier(A) ::= STATIC. { A.sval = "static"; A.dval = R_ANAL_FQUALIFIER_STATIC; }
+fqualifier(A) ::= NAKED. { A.sval = "naked"; A.dval = R_ANAL_FQUALIFIER_NAKED; }
+fqualifier(A) ::= VIRTUAL. { A.sval = "virtual"; A.dval = R_ANAL_FQUALIFIER_VIRTUAL; }
 
-callconvention(A) ::= STDCALL. { A.sval = "__stdcall"; A.dval = R_ANAL_CALLCONV_STDCALL; }
-callconvention(A) ::= CCALL. { A.sval = "__ccall"; A.dval = R_ANAL_CALLCONV_CCALL; }
+callconvention(A) ::= STDCALL. { A.sval = "__stdcall"; A.dval = R_ANAL_CC_TYPE_STDCALL; }
+callconvention(A) ::= CDECL. { A.sval = "__cdecl"; A.dval = R_ANAL_CC_TYPE_CDECL; }
+callconvention(A) ::= FASTCALL. { A.sval = "__fastcall"; A.dval = R_ANAL_CC_TYPE_FASTCALL; }
+callconvention(A) ::= PASCALCALL. { A.sval = "__pascal"; A.dval = R_ANAL_CC_TYPE_PASCAL; }
+callconvention(A) ::= WINAPI. { A.sval = "WINAPI"; A.dval = R_ANAL_CC_TYPE_WINAPI; }
+callconvention(A) ::= THISCALL. { A.sval = "__thiscall"; A.dval = R_ANAL_CC_TYPE_THISCALL; }
 
 attribute(A) ::= ATTRIBUTE LPARENT LPARENT name(B) RPARENT RPARENT. {
 	A.sval = B.sval; A.dval = 0;
@@ -79,10 +85,10 @@ struct(A) ::= STRUCT name(B) OBRACE deflist(C) EBRACE. {
 union(A) ::= UNION name(B) OBRACE deflist(C) EBRACE. {
 	A = new_union_node(B.sval, C);
 }
-variable(A) ::= modifier(E) signedness(D) type(C) name(B). {
+variable(A) ::= qualifier(E) signedness(D) type(C) name(B). {
 	A = new_variable_node(B.sval, C.dval, D.dval, E.dval);
 }
-variable(A) ::= modifier(E) shorttype(C) name(B). {
+variable(A) ::= qualifier(E) shorttype(C) name(B). {
 	switch (C.dval) {
 		case R_ANAL_UINT8_T:
 			A = new_variable_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
@@ -100,10 +106,10 @@ variable(A) ::= modifier(E) shorttype(C) name(B). {
 			break;
 	}
 }
-pointer(A) ::= modifier(E) signedness(D) type(C) ASTERISK name(B). {
+pointer(A) ::= qualifier(E) signedness(D) type(C) ASTERISK name(B). {
 	A = new_pointer_node(B.sval, C.dval, D.dval, E.dval);
 }
-pointer(A) ::= modifier(E) shorttype(C) ASTERISK name(B). {
+pointer(A) ::= qualifier(E) shorttype(C) ASTERISK name(B). {
 	switch (C.dval) {
 		case R_ANAL_UINT8_T:
 			A = new_pointer_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
@@ -121,10 +127,10 @@ pointer(A) ::= modifier(E) shorttype(C) ASTERISK name(B). {
 			break;
 	}
 }
-array(A) ::= modifier(F) signedness(E) type(D) name(B) LBRACKET size(C) RBRACKET. {
+array(A) ::= qualifier(F) signedness(E) type(D) name(B) LBRACKET size(C) RBRACKET. {
 	A = new_array_node(B.sval, D.dval, E.dval, F.dval, C.dval);
 }
-array(A) ::= modifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
+array(A) ::= qualifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
 	switch (D.dval) {
 		case R_ANAL_UINT8_T:
 			A = new_array_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
@@ -159,10 +165,10 @@ shorttype(A) ::= UINT64. { A.dval = R_ANAL_UINT64_T; }
 signedness(A) ::= . { A.sval = ""; A.dval = NONE_SIGN; }
 signedness(A) ::= SIGNED. { A.sval = "signed"; A.dval = R_ANAL_TYPE_SIGNED; }
 signedness(A) ::= UNSIGNED. { A.sval = "unsigned"; A.dval = R_ANAL_TYPE_UNSIGNED; }
-modifier(A) ::= . { A.sval = ""; A.dval = NONE_MODIFIER; }
-modifier(A) ::= STATIC. { A.sval = "static"; A.dval = R_ANAL_VAR_STATIC; }
-modifier(A) ::= CONST. {A.sval = "const"; A.dval = R_ANAL_VAR_CONST; }
-modifier(A) ::= REGISTER. { A.sval = "register"; A.dval = R_ANAL_VAR_REGISTER; }
-modifier(A) ::= VOLATILE. { A.sval = "volatile"; A.dval = R_ANAL_VAR_VOLATILE; }
+qualifier(A) ::= . { A.sval = ""; A.dval = NONE_QUALIFIER; }
+qualifier(A) ::= STATIC. { A.sval = "static"; A.dval = R_ANAL_VAR_STATIC; }
+qualifier(A) ::= CONST. {A.sval = "const"; A.dval = R_ANAL_VAR_CONST; }
+qualifier(A) ::= REGISTER. { A.sval = "register"; A.dval = R_ANAL_VAR_REGISTER; }
+qualifier(A) ::= VOLATILE. { A.sval = "volatile"; A.dval = R_ANAL_VAR_VOLATILE; }
 name(A) ::= IDENTIFIER(B). { A.sval = B.sval; }
 

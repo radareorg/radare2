@@ -196,7 +196,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	return R_FALSE;
 }
 
-static int varsub(RParse *p, struct r_anal_fcn_t *f, char *data, char *str, int len) {
+static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	char *ptr, *ptr2;
 	int i;
 
