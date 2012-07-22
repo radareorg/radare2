@@ -27,7 +27,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			i = j = 0;
 			r_list_foreach (core->flags->flags, iter, flag) {
 				/* filter per flag spaces */
-				if ((core->flags->space_idx != -1) && 
+				if ((core->flags->space_idx != -1) &&
 					(flag->space != core->flags->space_idx))
 					continue;
 				if (option==i) {
@@ -67,7 +67,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					if ((i >=option-delta) && ((i<option+delta)|| \
 							((option<delta)&&(i<(delta<<1))))) {
 						r_cons_printf(" %c %02d %c %s\n",
-							(option==i)?'>':' ', j, 
+							(option==i)?'>':' ', j,
 							(i==core->flags->space_idx)?'*':' ',
 							core->flags->spaces[i]);
 						j++;
@@ -80,7 +80,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					hit = 1;
 				}
 				r_cons_printf (" %c %02d %c %s\n",
-					(option==j)?'>':' ', j, 
+					(option==j)?'>':' ', j,
 					(i==core->flags->space_idx)?'*':' ',
 					"*");
 			}
@@ -267,7 +267,7 @@ R_API int r_core_visual_comments (RCore *core) {
 	int found = 0;
 	ut64 from = 0, size = 0;
 	RListIter *iter;
-	RAnalFcn *fcn;
+	RAnalFunction *fcn;
 	RMetaItem *d;
 
 	for (;;) {
@@ -860,7 +860,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 }
 
 #if 1
-static void var_index_show(RAnal *anal, RAnalFcn *fcn, ut64 addr, int idx) {
+static void var_index_show(RAnal *anal, RAnalFunction *fcn, ut64 addr, int idx) {
 	int i = 0;
 	RAnalVar *v;
 	RAnalVarAccess *x;
@@ -878,9 +878,14 @@ static void var_index_show(RAnal *anal, RAnalFcn *fcn, ut64 addr, int idx) {
 				}
 				if (idx == i) r_cons_printf (" * ");
 				else r_cons_printf ("   ");
-				r_cons_printf ("0x%08llx - 0x%08llx type=%s type=%s name=%s delta=%d array=%d\n",
-					v->addr, v->eaddr, r_anal_var_type_to_str (anal, v->type),
-					v->vartype, v->name, v->delta, v->array);
+				if (v->type->type == R_ANAL_TYPE_ARRAY)
+					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d array=%d\n",
+						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
+						r_anal_type_to_str(anal, v->type), v->name, v->delta, v->type->custom.a->count);
+				else
+					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d\n",
+						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
+						r_anal_type_to_str(anal, v->type), v->name, v->delta);
 				r_list_foreach (v->accesses, iter2, x) {
 					r_cons_printf ("  0x%08llx %s\n", x->addr, x->set?"set":"get");
 				}
@@ -893,7 +898,7 @@ static void var_index_show(RAnal *anal, RAnalFcn *fcn, ut64 addr, int idx) {
 // helper
 static void function_rename(RCore *core, ut64 addr, const char *name) {
 	RListIter *iter;
-	RAnalFcn *fcn;
+	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (fcn->addr == addr) {
@@ -913,7 +918,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 	int window = 15;
 	int wdelta = (idx>5)?idx-5:0;
 	RListIter *iter;
-	RAnalFcn *fcn;
+	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (i>=wdelta) {
@@ -925,7 +930,7 @@ static ut64 var_functions_show(RCore *core, int idx, int show) {
 			if (idx == i)
 				addr = fcn->addr;
 			if (show)
-				r_cons_printf ("%c%c 0x%08llx (%s)\n", 
+				r_cons_printf ("%c%c 0x%08llx (%s)\n",
 					(seek == fcn->addr)?'>':' ',
 					(idx==i)?'*':' ',
 					fcn->addr, fcn->name);
@@ -944,7 +949,7 @@ static void r_core_visual_anal_refresh (RCore *core) {
 	char old[1024];
 	old[0]='\0';
 	int cols = r_cons_get_size (NULL);
-	RAnalFcn *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL); // once
+	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL); // once
 	char *oprofile;
 
 	cols -= 50;
@@ -1056,7 +1061,7 @@ eprintf ("TODO: Add new function manually\n");
 			if (!r_cons_fgets (old, sizeof (old), 0, NULL)) break;
 			//old[strlen (old)-1] = 0;
 			function_rename (core, addr, old);
-		
+
 			r_cons_set_raw (R_TRUE);
 			r_cons_show_cursor (R_FALSE);
 			break;
@@ -1108,7 +1113,7 @@ eprintf ("TODO: Add new function manually\n");
 beach:
 	core->cons->event_resize = olde;
 	level = 0;
-	
+
 }
 #endif
 
@@ -1122,7 +1127,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		else eprintf ("Invalid opcode\n");
 	} else
 	if (strstr (type, "fun")) {
-		RAnalFcn *fcni;
+		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (fcni->addr < next && fcni->addr > core->offset)
 				next = fcni->addr;
@@ -1154,7 +1159,7 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 		eprintf ("TODO: r_core_seek_previous (opc)\n");
 	} else
 	if (strstr (type, "fun")) {
-		RAnalFcn *fcni;
+		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (fcni->addr > next && fcni->addr < core->offset)
 				next = fcni->addr;
@@ -1234,7 +1239,7 @@ R_API void r_core_visual_define (RCore *core) {
 	case 'd': // TODO: check
 		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+core->blocksize, "");
 		break;
-	case 'c': // TODO: check 
+	case 'c': // TODO: check
 		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+core->blocksize, "");
 		break;
 	case 'u':

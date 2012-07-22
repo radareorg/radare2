@@ -7,7 +7,7 @@
 #include <list.h>
 #include "../config.h"
 
-static RParsePlugin *parse_static_plugins[] = 
+static RParsePlugin *parse_static_plugins[] =
 	{ R_PARSE_STATIC_PLUGINS };
 
 R_API RParse *r_parse_new() {
@@ -94,13 +94,13 @@ R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 	return R_FALSE;
 }
 
-R_API int r_parse_filter(RParse *p, struct r_flag_t *f, char *data, char *str, int len) {
+R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	if (p->cur && p->cur->filter)
 		return p->cur->filter (p, f, data, str, len);
 	return R_FALSE;
 }
 
-R_API int r_parse_varsub(RParse *p, struct r_anal_fcn_t *f, char *data, char *str, int len) {
+R_API int r_parse_varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	if (p->cur && p->cur->varsub)
 		return p->cur->varsub (p, f, data, str, len);
 	return R_FALSE;

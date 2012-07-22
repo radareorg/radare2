@@ -32,37 +32,52 @@ R_API RAnalType *r_anal_type_new() {
 	return t;
 }
 
-R_API RAnalType *r_anal_type_list_new() {
-	RAnalType *t = R_NEW(RAnalType);
+R_API RList *r_anal_type_list_new() {
+	RList *t = R_NEW(RList);
 	return t;
 }
 
-R_API void r_anal_type_del() {
+// TODO: Insert type in types list
+R_API void r_anal_type_add(RList *l, RAnalType *t) {
 }
 
-R_API void r_anal_type_cleanup() {
+// TODO: Remove type from types list
+R_API void r_anal_type_del(RList *l, const char* name) {
 }
 
-R_API void r_anal_type_free(RAnalType *t) {
+R_API RAnalType *r_anal_type_free(RAnalType *t) {
 	free(t);
+	return t;
 }
 
-R_API void r_anal_type_list(RAnalType *t, short category, short enabled) {
+R_API void r_anal_type_list(RList *t, short category, short enabled) {
 	// List all types by category: var/struct/unions/pointers
 }
 
 R_API RAnalType *r_anal_type_find(char *name) {
-
+	return NULL;
 }
 
-R_API char* r_anal_type_to_string(RAnalType *t) {
+R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t) {
 	return "<none>";
 }
 
-R_API RAnalType *r_anal_type_loadfile(char *path) {
+R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
+	int yv;
+	void *pParser = cdataParseAlloc(malloc);
+	yy_scan_string(type);
+	while ((yv = yylex()) != 0) {
+		cdataParse(pParser, yv, yylval);
+	}
+	cdataParse(pParser, 0, yylval);
+	cdataParseFree(pParser, free);
+	return NULL;
+}
+
+R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	FILE *cfile;
 	int n;
-	int yv;
+	int yv, yylval;
 	char buf[4096];
 
 	void *pParser = cdataParseAlloc(malloc);
@@ -77,8 +92,5 @@ R_API RAnalType *r_anal_type_loadfile(char *path) {
 	fclose(cfile);
 	cdataParse(pParser, 0, yylval);
 	cdataParseFree(pParser, free);
-}
-
-R_API RAnalType *r_anal_type_loadstring(char *buf) {
 	return NULL;
 }

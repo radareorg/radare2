@@ -7,6 +7,7 @@ static int new_tree() {
 	return 0;
 }
 
+#if 0
 static int print_tree(RAnalType *t) {
 	RAnalType *p = t;
 	if (!p) {
@@ -44,6 +45,7 @@ static int print_tree(RAnalType *t) {
 	}
 	return R_TRUE;
 }
+#endif
 
 RAnalType* new_variable_node(char* name, short type, short sign, short modifier) {
 	RAnalTypeVar *ivar = R_NEW (RAnalTypeVar);

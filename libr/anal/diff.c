@@ -75,7 +75,7 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 	return bb->size;
 }
 
-R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFcn *fcn) {
+R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
 	int len = 0;
@@ -94,7 +94,7 @@ R_API int r_anal_diff_fingerprint_fcn(RAnal *anal, RAnalFcn *fcn) {
 	return len;
 }
 
-R_API int r_anal_diff_bb(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2) {
+R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 	RAnalBlock *bb, *bb2, *mbb, *mbb2;
 	RListIter *iter, *iter2;
 	double t, ot;
@@ -141,7 +141,7 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFcn *fcn, RAnalFcn *fcn2) {
 }
 
 R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
-	RAnalFcn *fcn, *fcn2, *mfcn, *mfcn2;
+	RAnalFunction *fcn, *fcn2, *mfcn, *mfcn2;
 	RListIter *iter, *iter2;
 	ut64 maxsize, minsize;
 	double t, ot;

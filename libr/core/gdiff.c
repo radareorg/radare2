@@ -9,7 +9,7 @@
 
 R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	RCore *cores[2] = {c, c2};
-	RAnalFcn *fcn;
+	RAnalFunction *fcn;
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
 	int i;
@@ -45,7 +45,7 @@ static void diffrow(ut64 addr, const char *name, ut64 addr2, const char *name2, 
 R_API void r_core_diff_show(RCore *c, RCore *c2) {
         const char *match;
         RListIter *iter;
-        RAnalFcn *f;
+        RAnalFunction *f;
         RList *fcns = r_anal_get_fcns (c->anal);
         r_list_foreach (fcns, iter, f) {
                 switch (f->type) {

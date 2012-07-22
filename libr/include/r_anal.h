@@ -46,6 +46,7 @@ enum {
 	R_ANAL_TYPE_STRUCT = 4,
 	R_ANAL_TYPE_UNION = 5,
 	R_ANAL_TYPE_FUNCTION = 6,
+	R_ANAL_TYPE_ANY = 7,
 };
 
 // [0:3] bits - place to store variable size
@@ -262,6 +263,7 @@ typedef struct r_anal_type_function_t {
 	/*item_list *rets; // Type of return value */
 	short rets;
 	short fmod; //  static, inline or volatile?
+	/* TODO: Change to RAnalCC ??? */
 	short call; // calling convention
 	char* attr; // __attribute__(()) list
 	ut64 addr;
@@ -369,13 +371,13 @@ enum {
 };
 
 enum {
-	R_ANAL_VAR_TYPE_NULL   = 0,
-	R_ANAL_VAR_TYPE_GLOBAL = 0x01,
-	R_ANAL_VAR_TYPE_LOCAL  = 0x02,
-	R_ANAL_VAR_TYPE_ARG    = 0x04,
-	R_ANAL_VAR_TYPE_ARGREG = 0x08,
-	R_ANAL_VAR_TYPE_RET    = 0x10,
-};
+	R_ANAL_VAR_SCOPE_NULL   = 0,
+	R_ANAL_VAR_SCOPE_GLOBAL = 0x01,
+	R_ANAL_VAR_SCOPE_LOCAL  = 0x02,
+	R_ANAL_VAR_SCOPE_ARG    = 0x04,
+	R_ANAL_VAR_SCOPE_ARGREG = 0x08,
+	R_ANAL_VAR_SCOPE_RET    = 0x10,
+} _RAnalVarScope;
 
 typedef enum {
 	R_ANAL_VAR_DIR_NONE = 0,
@@ -518,9 +520,7 @@ typedef struct r_anal_var_t {
 	ut64 addr;		// not used correctly?
 	ut64 eaddr;		// not used correctly?
 	int delta;		/* delta offset inside stack frame */
-	int props;		/* global, local... | in, out... */
-	//int array;		/* array size */
-	//char *vartype;	/* float, int... */
+	int scope;		/* global, local... | in, out... */
 	RAnalType *type;
 	/* probably dupped or so */
 	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
@@ -591,6 +591,17 @@ R_API void r_listrange_resize(RListRange *s, RAnalFunction *f, int newsize);
 R_API RAnalFunction *r_listrange_find_in_range(RListRange* s, ut64 addr);
 R_API RAnalFunction *r_listrange_find_root(RListRange* s, ut64 addr);
 /* --------- */ /* REFACTOR */ /* ---------- */
+/* type.c */
+R_API RAnalType *r_anal_type_new();
+R_API void r_anal_type_add(RList *l, RAnalType *t);
+R_API void r_anal_type_del(RList *l, const char *name);
+R_API RList *r_anal_type_list_new();
+R_API void r_anal_type_list(RList *l, short category, short enabled);
+R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
+R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t);
+R_API RAnalType *r_anal_type_free(RAnalType *t);
+R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
+
 /* anal.c */
 R_API RAnal *r_anal_new();
 R_API void r_anal_free(RAnal *r);
@@ -642,7 +653,7 @@ R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
 R_API int r_anal_fcn_overlap_bb(RAnalFunction *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs);
-R_API int r_anal_fcn_from_string(RAnal *a, RAnalFunction *f, const char *_str);
+R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 
 #if 0
 #define r_anal_fcn_get_refs(x) x->refs
@@ -667,22 +678,16 @@ R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr);
 
 /* var.c */
 R_API RAnalVar *r_anal_var_new();
-//R_API RAnalVarType *r_anal_var_type_new();
 R_API RAnalVarAccess *r_anal_var_access_new();
 R_API RList *r_anal_var_list_new();
-R_API RList *r_anal_var_type_list_new();
 R_API RList *r_anal_var_access_list_new();
 R_API void r_anal_var_free(void *var);
-R_API void r_anal_var_type_free(void *vartype);
 R_API void r_anal_var_access_free(void *access);
-R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const char *fmt);
-R_API int r_anal_var_type_del(RAnal *anal, const char *name);
-R_API RAnalType *r_anal_var_type_get(RAnal *anal, const char *name);
-R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int type,
-		const char *vartype, const char *name, int set);
-R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int type);
+R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope,
+		const RAnalType *type, const char *name, int set);
+R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
 R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int type);
-R_API const char *r_anal_var_type_to_str (RAnal *anal, int type);
+R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);

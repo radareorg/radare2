@@ -10,6 +10,7 @@
 static RAnalPlugin *anal_static_plugins[] =
 	{ R_ANAL_STATIC_PLUGINS };
 
+/*
 static RAnalVarType anal_default_vartypes[] =
 	{{ "char",  "c",  1 },
 	 { "byte",  "b",  1 },
@@ -19,6 +20,7 @@ static RAnalVarType anal_default_vartypes[] =
 	 { "dword", "x",  4 },
 	 { "float", "f",  4 },
 	 { NULL,    NULL, 0 }};
+*/
 
 R_API RAnal *r_anal_new() {
 	int i;
@@ -49,9 +51,11 @@ R_API RAnal *r_anal_new() {
 		memcpy (static_plugin, anal_static_plugins[i], sizeof (RAnalPlugin));
 		r_anal_add (anal, static_plugin);
 	}
+/*
 	for (i=0; anal_default_vartypes[i].name; i++)
 		r_anal_var_type_add (anal, anal_default_vartypes[i].name,
 				anal_default_vartypes[i].size, anal_default_vartypes[i].fmt);
+*/
 	return anal;
 }
 
@@ -62,7 +66,7 @@ R_API void r_anal_free(RAnal *anal) {
 	r_list_free (anal->fcns);
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
 	r_list_free (anal->refs);
-	r_list_free (anal->vartypes);
+	r_list_free (anal->types);
 	r_list_free (anal->meta->data);
 	r_reg_free(anal->reg);
 	r_syscall_free(anal->syscall);
@@ -166,7 +170,7 @@ R_API char *r_anal_strmask (RAnal *anal, const char *data) {
 
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	RAnalBlock *bbi;
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	RListIter *iter, *iter2;
 	VERBOSE_ANAL eprintf ("bbtraced\n"); // XXX Debug msg
 	r_list_foreach (anal->fcns, iter, fcni) {

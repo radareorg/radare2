@@ -69,7 +69,7 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	return str;
 }
 
-static void r_core_anal_graph_nodes(RCore *core, RAnalFcn *fcn, int opts) {
+static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 	char *str;
@@ -107,7 +107,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFcn *fcn, int opts) {
 	}
 }
 
-R_API int r_core_anal_bb(RCore *core, RAnalFcn *fcn, ut64 at, int head) {
+R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	struct r_anal_bb_t *bb = NULL, *bbi;
 	RListIter *iter;
 	ut64 jump, fail;
@@ -164,7 +164,7 @@ error:
 
 R_API int r_core_anal_bb_seek(RCore *core, ut64 addr) {
 	RAnalBlock *bbi;
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	RListIter *iter, *iter2;
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		r_list_foreach (fcni->bbs, iter2, bbi)
@@ -182,7 +182,7 @@ static int cmpaddr (void *_a, void *_b) {
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	RListIter *iter, *iter2;
 	int buflen, fcnlen = 0;
-	RAnalFcn *fcn = NULL, *fcni;
+	RAnalFunction *fcn = NULL, *fcni;
 	RAnalRef *ref = NULL, *refi;
 	ut8 *buf;
 
@@ -223,7 +223,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			goto error;
 		if (r_cons_singleton ()->breaked)
 			break;
-		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen, reftype); 
+		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen, reftype);
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
 			goto error;
@@ -285,7 +285,7 @@ error:
 }
 
 R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	RListIter *iter, *iter_tmp;
 
 	if (addr == 0) {
@@ -306,7 +306,7 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 	const char *font = r_config_get (core->config, "graph.font");
 	RListIter *iter, *iter2;
 	RAnalRef *fcnr;
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	int showhdr = 0;
 
 	r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -342,7 +342,7 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 		r_cons_printf ("}\n");
 }
 
-static void fcn_list_bbs(RAnalFcn *fcn) {
+static void fcn_list_bbs(RAnalFunction *fcn) {
 	RAnalBlock *bbi;
 	RListIter *iter;
 
@@ -371,7 +371,7 @@ static void fcn_list_bbs(RAnalFcn *fcn) {
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	struct r_anal_ref_t *refi;
 	struct r_anal_var_t *vari;
 	RListIter *iter, *iter2;
@@ -420,7 +420,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					r_cons_printf ("\n  vars:");
 					r_list_foreach (fcni->vars, iter2, vari)
 						r_cons_printf ("\n  %-10s delta=0x%02x type=%s", vari->name,
-							vari->delta, r_anal_var_type_to_str (core->anal, vari->type));
+							vari->delta, r_anal_type_to_str (core->anal, vari->type));
 					r_cons_printf ("\n  diff: type=%s",
 							fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
 							fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
@@ -478,7 +478,7 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 	RAnalBlock *bb, *root, *dest;
 	RListIter *iter, *iter2;
 	RList *list2, *list = NULL;
-	RAnalFcn *fcn;
+	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		if (!r_anal_fcn_is_in_offset (fcn, core->offset))
@@ -512,7 +512,7 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	RListIter *iter;
 	int reflines, bytes, dwarf;
 	const char *font = r_config_get (core->config, "graph.font");
@@ -618,24 +618,24 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 }
 
 R_API int r_core_anal_ref_list(RCore *core, int rad) {
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
 
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		r_list_foreach (fcni->refs, iter2, refi) {
 			if (rad)
-			r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", 
+			r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 						refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 						refi->at, refi->addr);
-			else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n", 
+			else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n",
 					refi->at, refi->addr, refi->type);
 		}
 	r_list_foreach (core->anal->refs, iter2, refi) {
-		if (rad) r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", 
+		if (rad) r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 					refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
 					refi->at, refi->addr);
-		else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n", 
+		else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n",
 				refi->at, refi->addr, refi->type);
 	}
 	r_cons_flush ();
@@ -645,13 +645,13 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 R_API int r_core_anal_all(RCore *core) {
 	RList *list;
 	RListIter *iter;
-	RAnalFcn *fcni;
+	RAnalFunction *fcni;
 	RBinAddr *binmain;
 	RBinAddr *entry;
 	RBinSymbol *symbol;
 	ut64 baddr;
 	ut64 offset;
-	int depth =r_config_get_i (core->config, "anal.depth"); 
+	int depth =r_config_get_i (core->config, "anal.depth");
 	int va = core->io->va || core->io->debug;
 
 	baddr = r_bin_get_baddr (core->bin);

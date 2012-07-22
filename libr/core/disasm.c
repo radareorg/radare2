@@ -34,7 +34,7 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak) {
 	RAnalCC cc = {0};
-	RAnalFcn *f = NULL;
+	RAnalFunction *f = NULL;
 	int ret, idx, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
@@ -84,7 +84,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int show_comment_right = 0;
 	int ocols = 0;
 	int lcols = 0;
-	
+
 	if (show_lines) ocols += 10;
 	if (show_offset) ocols += 14;
 	lcols = ocols+2;
@@ -112,7 +112,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 #if 0
 	/* find last function else stackptr=0 */
 	{
-		RAnalFcn *fcni;
+		RAnalFunction *fcni;
 		RListIter *iter;
 
 		r_list_foreach (core->anal.fcns, iter, fcni) {
@@ -290,7 +290,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			RListIter *iter;
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
-					RAnalFcn *fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+					RAnalFunction *fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
 					r_cons_printf ("%s%s", pre, refline);
 					if (show_color)
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
@@ -360,7 +360,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			ostackptr = stackptr;
 			stackptr += analop.stackptr;
 			/* XXX if we reset the stackptr 'ret 0x4' has not effect.
-			 * Use RAnalFcn->RAnalOp->stackptr? */
+			 * Use RAnalFunction->RAnalOp->stackptr? */
 			if (analop.type == R_ANAL_OP_TYPE_RET)
 				stackptr = 0;
 		}
@@ -510,7 +510,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			opstr = str;
 		} else opstr = asmop.buf_asm;
 		if (varsub) {
-			RAnalFcn *f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+			RAnalFunction *f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
 			if (f) {
 				r_parse_varsub (core->parser, f, opstr, strsub, sizeof (strsub));
 				if (decode) free (opstr);

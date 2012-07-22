@@ -15,15 +15,6 @@ R_API RAnalVar *r_anal_var_new() {
 	return var;
 }
 
-/*
-R_API RAnalVarType *r_anal_var_type_new() {
-	RAnalVarType *vartype = R_NEW (RAnalVarType);
-	if (vartype)
-		memset (vartype, 0, sizeof (RAnalVarType));
-	return vartype;
-}
-*/
-
 R_API RAnalVarAccess *r_anal_var_access_new() {
 	RAnalVarAccess *access = R_NEW (RAnalVarAccess);
 	if (access)
@@ -37,14 +28,6 @@ R_API RList *r_anal_var_list_new() {
 	return list;
 }
 
-/*
-R_API RList *r_anal_var_type_list_new() {
-	RList *list = r_list_new ();
-	list->free = &r_anal_var_type_free;
-	return list;
-}
-*/
-
 R_API RList *r_anal_var_access_list_new() {
 	RList *list = r_list_new ();
 	list->free = &r_anal_var_access_free;
@@ -55,62 +38,16 @@ R_API void r_anal_var_free(void *var) {
 	if (var) {
 		if (((RAnalVar*)var)->name)
 			free (((RAnalVar*)var)->name);
-		if (((RAnalVar*)var)->vartype)
-			free (((RAnalVar*)var)->vartype);
+		if (((RAnalVar*)var)->type)
+			free (((RAnalVar*)var)->type);
 		if (((RAnalVar*)var)->accesses)
 			r_list_free (((RAnalVar*)var)->accesses);
 		free (var);
 	}
 }
 
-/*
-R_API void r_anal_var_type_free(void *vartype) {
-	if (vartype) {
-		if (((RAnalVarType*)vartype)->name)
-			free (((RAnalVarType*)vartype)->name);
-		if (((RAnalVarType*)vartype)->fmt)
-			free (((RAnalVarType*)vartype)->fmt);
-	}
-	free (vartype);
-}
-*/
-
 R_API void r_anal_var_access_free(void *access) {
 	free (access);
-}
-
-R_API int r_anal_var_type_add(RAnal *anal, const char *name, int size, const char *fmt) {
-	RAnalVarType *t;
-	if (!(t = r_anal_var_type_new ()))
-		return R_FALSE;
-	if (name)
-		t->name = strdup (name);
-	if (fmt)
-		t->fmt = strdup (fmt);
-	t->size = size;
-	r_list_append (anal->vartypes, t);
-	return R_TRUE;
-}
-
-R_API int r_anal_var_type_del(RAnal *anal, const char *name) {
-	RAnalVarType *vti;
-	RListIter *iter;
-	/* No _safe loop necessary because we return immediately after the delete. */
-	r_list_foreach(anal->vartypes, iter, vti)
-		if (!strcmp (name, vti->name)) {
-			r_list_unlink (anal->vartypes, vti);
-			return R_TRUE;
-		}
-	return R_FALSE;
-}
-
-R_API RAnalType *r_anal_var_type_get(RAnal *anal, const char *name) {
-	RAnalType *vti;
-	RListIter *iter;
-	r_list_foreach (anal->vartypes, iter, vti)
-		if (!strcmp (name, vti->name))
-			return vti;
-	return NULL;
 }
 
 static int cmpdelta(RAnalVar *a, RAnalVar *b) {
@@ -118,7 +55,7 @@ static int cmpdelta(RAnalVar *a, RAnalVar *b) {
 }
 
 /* Add local variable for selected function */
-R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int type, const char *vartype, const char *name, int set) {
+R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope, const RAnalType *type, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
 	if (from != 0LL)
@@ -129,10 +66,10 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, 
 		return R_FALSE;
 	if (name)
 		var->name = strdup (name);
-	if (vartype)
-		var->vartype = strdup (vartype);
+	if (type)
+		var->type = type;
 	var->type = type;
-	if ((type & R_ANAL_VAR_TYPE_ARG) || (type & R_ANAL_VAR_TYPE_ARGREG))
+	if ((scope & R_ANAL_VAR_SCOPE_ARG) || (scope & R_ANAL_VAR_SCOPE_ARGREG))
 		fcn->nargs++;
 	var->delta = delta;
 	if (from != 0LL)
@@ -142,39 +79,39 @@ R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, 
 }
 
 /* Remove local variable from selected function */
-R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int type) {
+R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope) {
 	RAnalVar *vari;
 	RListIter *iter;
 	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach(fcn->vars, iter, vari)
-		if (vari->type == type && vari->delta == delta) {
+		if (vari->scope == scope && vari->delta == delta) {
 			r_list_unlink (fcn->vars, vari);
 			return R_TRUE;
 		}
 	return R_FALSE;
 }
 
-R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int type) {
+R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int scope) {
 	RAnalVar *vari;
 	RListIter *iter;
 
     r_list_foreach (fcn->vars, iter, vari)
-        if ((type==-1||vari->type == type) && vari->delta == delta)
+        if ((scope==-1||vari->scope == scope) && vari->delta == delta)
             return vari;
 
     return NULL;
 }
 
 R_API const char *r_anal_var_scope_to_str (RAnal *anal, int scope) {
-	if (type & R_ANAL_VAR_SCOPE_GLOBAL)
+	if (scope & R_ANAL_VAR_SCOPE_GLOBAL)
 		return "global";
-	else if (type & R_ANAL_SCOPE_TYPE_LOCAL)
+	else if (scope & R_ANAL_VAR_SCOPE_LOCAL)
 		return "local";
-	else if (type & R_ANAL_SCOPE_TYPE_ARG)
+	else if (scope & R_ANAL_VAR_SCOPE_ARG)
 		return "arg";
-	else if (type & R_ANAL_SCOPE_TYPE_ARGREG)
+	else if (scope & R_ANAL_VAR_SCOPE_ARGREG)
 		return "fastarg";
-	else if (type & R_ANAL_SCOPE_TYPE_RET)
+	else if (scope & R_ANAL_VAR_SCOPE_RET)
 		return "ret";
 	return "(?)";
 }
@@ -225,12 +162,14 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
 			//ut32 value = r_var_dbg_read(v->delta);
-			if (v->array>1)
+			if (v->type->type == R_ANAL_TYPE_ARRAY)
 				eprintf ("%s %s %s[%d] = ",
-					r_anal_var_type_to_str(anal, v->type), v->vartype,
-					v->name, v->array);
-			else eprintf ("%s %s %s = ", r_anal_var_type_to_str (anal, v->type),
-				v->vartype, v->name);
+					r_anal_var_scope_to_str(anal, v->scope),
+					r_anal_type_to_str(anal, v->type),
+					v->name, v->type->custom.a->count);
+			else
+				eprintf ("%s %s %s = ", r_anal_var_scope_to_str (anal, v->scope),
+					r_anal_type_to_str(anal, v->type), v->name);
 			// TODO: implement r_var_dbg_read using r_vm or r_num maybe?? sounds dupped
 			// XXX: not fully implemented
 			eprintf ("0x%"PFMT64x, 0LL);
@@ -252,9 +191,15 @@ R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta
 	if (fcn && fcn->vars)
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
-			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d array=%d\n",
-				v->addr, v->eaddr, r_anal_var_type_to_str(anal, v->type),
-				v->vartype, v->name, v->delta, v->array);
+			if (v->type->type == R_ANAL_TYPE_ARRAY)
+				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d array=%d\n",
+					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
+					r_anal_type_to_str(anal, v->type), v->name, v->delta, v->type->custom.a->count);
+			else
+				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d\n",
+					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
+					r_anal_type_to_str(anal, v->type), v->name, v->delta);
+
 			r_list_foreach (v->accesses, iter2, x) {
 				eprintf ("  0x%08"PFMT64x" %s\n", x->addr, x->set?"set":"get");
 			}

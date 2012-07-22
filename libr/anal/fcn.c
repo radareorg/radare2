@@ -24,8 +24,6 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	/* Function attributes: weak/noreturn/format/etc */
 	fcn->attr = NULL;
 	fcn->addr = -1;
-	fcn->stack = 0;
-	fcn->size = 0;
 	fcn->vars = r_anal_var_list_new ();
 	fcn->refs = r_anal_ref_list_new ();
 	fcn->xrefs = r_anal_ref_list_new ();
@@ -123,11 +121,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 			if (op.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", op.ref);
 				r_anal_var_add (anal, fcn, op.addr, op.ref,
-						R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
+						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
 				varname = r_str_dup_printf ("local_%x", -op.ref);
 				r_anal_var_add (anal, fcn, op.addr, -op.ref,
-						R_ANAL_VAR_TYPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
+						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
 			free (varname);
 			break;
@@ -135,11 +133,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 			if (op.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", op.ref);
 				r_anal_var_add (anal, fcn, op.addr, op.ref,
-						R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
+						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
 				varname = r_str_dup_printf ("local_%x", -op.ref);
 				r_anal_var_add (anal, fcn, op.addr, -op.ref,
-						R_ANAL_VAR_TYPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
+						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}
 			free (varname);
 			break;
@@ -406,36 +404,57 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 	RAnalVar *arg, *ret;
 	if (fs->type != R_ANAL_FCN_TYPE_FCN || fs->type != R_ANAL_FCN_TYPE_SYM)
 		return NULL;
-	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_TYPE_RET);
+	ret = r_anal_fcn_get_var (fs, 0, R_ANAL_VAR_SCOPE_RET);
 	sign = ret? r_str_newf ("%s %s (", ret->name, fs->name):
 		r_str_newf ("void %s (", fs->name);
 	/* FIXME: Use RAnalType instead */
 	for (i=0; ; i++) {
 		if (!(arg = r_anal_fcn_get_var (fs, i,
-				R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_TYPE_ARGREG)))
+				R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_SCOPE_ARGREG)))
 			break;
 		if (arg->type->type == R_ANAL_TYPE_ARRAY)
 			sign = r_str_concatf (sign, i?", %s %s:%02x[%d]":"%s %s:%02x[%d]",
-				arg->vartype, arg->name, arg->delta, arg->array);
+				arg->type, arg->name, arg->delta, arg->type->custom.a->count);
 		else sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
-				arg->vartype, arg->name, arg->delta);
+				arg->type, arg->name, arg->delta);
 	}
 	return (sign = r_str_concatf (sign, ");"));
 }
 
 // TODO: This function is not fully implemented
 /* set function signature from string */
-R_API int r_anal_fcn_from_string(RAnal *a, RAnalFunction *f, const char *sig) {
+R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	char *p, *q, *r, *str;
 	RAnalVar *var;
+	RAnalType *t;
 	int i, arg;
 
 	if (!a || !f || !sig) {
-		eprintf ("r_anal_fcn_from_string: No function received\n");
+		eprintf ("r_anal_str_to_fcn: No function received\n");
 		return R_FALSE;
 	}
+
+	/* Add 'function' keyword */
+	str = malloc(strlen(sig) + 10);
+	strcpy(str, "function ");
+	strcat(str, sig);
+
+	/* Send whole definition to cparse */
+	int yv, yylval;
+	void *pParser = cdataParseAlloc(malloc);
+	yy_scan_string(str);
+	while ((yv = yylex()) != 0) {
+		cdataParse(pParser, yv, yylval);
+	}
+	cdataParse(pParser, 0, yylval);
+	cdataParseFree(pParser, free);
+
+	/* TODO: Improve arguments parsing */
+
+/*
 	str = strdup (sig);
-	/* TODO : implement parser */
+
+	// TODO : implement parser
 	//r_list_destroy (fs->vars);
 	//set: fs->vars = r_list_new ();
 	//set: fs->name
@@ -448,15 +467,15 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFunction *f, const char *sig) {
 	*q = 0;
 	printf ("RET=(%s)\n", str);
 	printf ("NAME=(%s)\n", q+1);
-	/* set function name */
+	// set function name
 	free (f->name);
 	f->name = strdup (q+1);
-	/* set return value */
+	// set return value
 	// TODO: simplify this complex api usage
 	r_anal_var_add (a, f, 0LL, 0,
-			R_ANAL_VAR_TYPE_RET|R_ANAL_VAR_DIR_OUT, str, "ret", 1);
+			R_ANAL_VAR_SCOPE_RET|R_ANAL_VAR_DIR_OUT, t, "ret", 1);
 
-	/* parse arguments */
+	// parse arguments
 	for (i=arg=0,p++;;p=q+1,i++) {
 		q = strchr (p, ',');
 		if (!q) {
@@ -471,20 +490,22 @@ R_API int r_anal_fcn_from_string(RAnal *a, RAnalFunction *f, const char *sig) {
 		r = r_str_chop (r+1);
 		printf ("VAR %d=(%s)(%s)\n", arg, p, r);
 		// TODO : increment arg by var size
-		if ((var = r_anal_fcn_get_var (f, i, R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_TYPE_ARGREG))) {
-			free (var->name); var->name = strdup (r);
-			free (var->vartype); var->vartype = strdup (p);
-		} else r_anal_var_add (a, f, 0LL, arg, R_ANAL_VAR_TYPE_ARG|R_ANAL_VAR_DIR_IN, p, r, 0);
+		if ((var = r_anal_fcn_get_var (f, i, R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_SCOPE_ARGREG))) {
+			free (var->name); var->name = strdup(r);
+			// FIXME: add cparse function
+			free (var->type); var->type = r_anal_str_to_type(p);
+		} else r_anal_var_add (a, f, 0LL, arg, R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, p, r, 0);
 		arg++;
 	}
 	// r_anal_fcn_set_var (fs, 0, R_ANAL_VAR_DIR_OUT, );
 	free (str);
+*/
 	return R_TRUE;
 
-	parsefail:
-	free (str);
-	eprintf ("Function string parse fail\n");
-	return R_FALSE;
+	//parsefail:
+	//free (str);
+	//eprintf ("Function string parse fail\n");
+	//return R_FALSE;
 }
 
 R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr) {
