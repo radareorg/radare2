@@ -19,6 +19,9 @@ enum {
 
 #define R_SEARCH_DISTANCE_MAX 10
 
+#define R_SEARCH_KEYWORD_TYPE_BINARY 'i'
+#define R_SEARCH_KEYWORD_TYPE_STRING 's'
+
 typedef struct r_search_keyword_t {
 	char keyword[128];
 	char binmask[128];
@@ -32,7 +35,7 @@ typedef struct r_search_keyword_t {
 	int count;
 	int kwidx;
 	int icase; // ignore case
-	RList *list;
+	int type;
 } RSearchKeyword;
 
 typedef struct r_search_hit_t {

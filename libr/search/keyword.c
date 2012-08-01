@@ -9,6 +9,7 @@ R_API RSearchKeyword* r_search_keyword_new(const ut8 *kw, int kwlen, const ut8 *
 	if (bm == NULL)
 		bm = (const ut8*) "";
 	if ((k = R_NEW (RSearchKeyword))) {
+		k->type = R_SEARCH_KEYWORD_TYPE_BINARY;
 		k->icase = 0;
 		memcpy (k->keyword, kw, kwlen);
 		k->keyword_length = kwlen;
@@ -40,7 +41,10 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bmhex
 		}
 	}
 	ks = r_search_keyword_new ((ut8 *)kw, strlen (kw), bm, bmlen, data);
-	if (ks) ks->icase = icase;
+	if (ks) {
+		ks->icase = icase;
+		ks->type = R_SEARCH_KEYWORD_TYPE_STRING;
+	}
 	free (bm);
 	return ks;
 }

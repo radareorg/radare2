@@ -2,6 +2,7 @@
 
 static int preludecnt = 0;
 static int searchflags = 0;
+static int searchshow = 0;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
@@ -80,12 +81,51 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			return R_FALSE;
 		}
 	}
+	if (searchshow) {
+		int len, i;
+		ut8 buf[64];
+		char str[128], *p;
+		switch (kw->type) {
+		case R_SEARCH_KEYWORD_TYPE_STRING:
+			len = sizeof (str);
+			r_io_read_at (core->io, addr, str+1, len-2);
+			*str = '"';
+			r_str_filter_zeroline (str, len);
+			strcpy (str+strlen (str), "\"");
+			break;
+		default:
+			len = kw->keyword_length + 8; // 8 byte context
+			if (len>=sizeof (str)) len = sizeof (str)-1;
+			r_io_read_at (core->io, addr, buf, sizeof (buf));
+			for (i=0, p=str; i<len; i++) {
+				sprintf (p, "%02x", buf[i]);
+				p += 2;
+				if (i == kw->keyword_length)
+					*p++ = ' ';
+			}
+			*p = 0;
+			break;
+		}
+		r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
+			addr, searchprefix, kw->kwidx, kw->count, str);
+	} else {
+		if (searchflags) {
+			r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
+		} else {
+			r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
+				kw->kwidx, kw->count, kw->keyword_length, addr);
+		}
+	}
 	if (searchflags) {
-		r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
+		char flag[64];
+		snprintf (flag, sizeof (flag), "%s%d_%d", searchprefix, kw->kwidx, kw->count);
+		r_flag_set (core->flags, flag, addr, kw->keyword_length, 1);
+#if 0
+		// TODO: use r_flag_set ()
 		r_core_cmdf (core, "f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
 			kw->kwidx, kw->count, kw->keyword_length, addr);
-	} else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
-			kw->kwidx, kw->count, kw->keyword_length, addr);
+#endif
+	}
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
 		r_core_seek (core, addr, R_FALSE);
@@ -118,6 +158,7 @@ static int cmd_search(void *data, const char *input) {
 	ut16 n16;
 	ut8 *buf;
 
+	searchshow = r_config_get_i (core->config, "search.show");
 	mode = r_config_get (core->config, "search.in");
 	if (!strcmp (mode, "block")) {
 		from = core->offset;
@@ -319,6 +360,7 @@ static int cmd_search(void *data, const char *input) {
 		RSearchKeyword *skw;
 		skw = r_search_keyword_new ((const ut8*)inp, len, NULL, 0, NULL);
 		skw->icase = ignorecase;
+		skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
 		r_search_kw_add (core->search, skw);
 		}
 		r_search_begin (core->search);

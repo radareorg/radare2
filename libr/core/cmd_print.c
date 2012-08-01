@@ -73,7 +73,7 @@ static int cmd_print(void *data, const char *input) {
 		return R_FALSE;
 	}
 
-	if (input[0] && input[1] == 'f') {
+	if (input[0] && input[0]!='Z' && input[1] == 'f') {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) len = f->size;
@@ -431,7 +431,11 @@ return 0;
 			break;
 		}
 		break;
+	case 'z':
+		eprintf ("TODO:0.9.2: pz (ascii and zero-terminated string)\n");
+		break;
 	case 'Z':
+		// TODO:0.9.2 zoom.byte changes does not take any effect
 		if (input[1]=='?') {
 			r_cons_printf (
 			"Usage: pZ [len]\n"
@@ -460,7 +464,7 @@ return 0;
 			to = r_io_size (core->io);
 			from = r_config_get_i (core->config, "zoom.from");
 			to = r_config_get_i (core->config, "zoom.to");
-			if (input[1] != '\0' && input[1] != ' ') {
+			if (input[1] && input[1] != ' ') {
 				oldzoom = strdup (r_config_get (core->config, "zoom.byte"));
 				if (!r_config_set (core->config, "zoom.byte", input+1)) {
 					eprintf ("Invalid zoom.byte mode (%s)\n", input+1);
@@ -501,6 +505,7 @@ return 0;
 		" pu [len]     print N url encoded bytes\n"
 		" pU [len]     print N wide url encoded bytes\n"
 		" px [len]     hexdump of N bytes\n"
+		" pz [len]     print zero terminated ascii string\n"
 		" pZ [len]     print zoom view (see pZ? for help)\n");
 		break;
 	}

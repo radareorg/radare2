@@ -151,6 +151,40 @@ void setcursor (RCore *core, int cur) {
 	core->print->col = curset? 1: 0;
 }
 
+// TODO: integrate in '/' command with search.inblock ?
+static void visual_search (RCore *core) {
+	ut8 *p;
+	int len, d=cursor;
+	char str[128], buf[258];
+
+	r_line_set_prompt ("search byte/string in block: ");
+	r_cons_fgets (str, sizeof (str), 0, NULL);
+	len = r_hex_str2bin (str, buf);
+	if (*str=='"') {
+		char *e = strncpy (buf, str+1, sizeof (buf)-1);
+		if (e) { --e; if (*e=='"') *e=0; }
+		len = strlen (buf);
+	} else
+	if (len<1) {
+		strncpy (buf, str, sizeof (buf)-1);
+		len = strlen (str);
+	}
+	p = r_mem_mem (core->block+d, core->blocksize-d, buf, len);
+	if (p) {
+		cursor = (int)(size_t)(p-core->block);
+		if (len>1) {
+			ocursor = cursor+len-1;
+		} else ocursor = -1;
+		r_cons_show_cursor (R_TRUE);
+		eprintf ("FOUND IN %d\n", cursor);
+		r_cons_any_key ();
+	} else {
+		eprintf ("Cannot find bytes\n");
+		r_cons_any_key ();
+		r_cons_clear00 ();
+	}
+}
+
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	char buf[4096];
@@ -544,8 +578,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case '/':
-		if (!autoblocksize)
-			r_core_block_size (core, core->blocksize-cols);
+		if (curset) {
+			visual_search (core);
+		} else {
+			if (!autoblocksize)
+				r_core_block_size (core, core->blocksize-cols);
+		}
 		break;
 	case '*':
 		if (!autoblocksize)
@@ -662,6 +700,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" mK/'K    mark/go to Key (any key)\n"
 		" M        show mount points\n"
 		" _        enter hud mode\n"
+		" /        in cursor mode search in current block\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
 		" .        seek to program counter\n"

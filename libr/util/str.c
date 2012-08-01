@@ -724,6 +724,18 @@ R_API int r_str_ansi_filter(char *str, int len) {
 	return j;
 }
 
+R_API void r_str_filter_zeroline(char *str, int len) {
+	int i;
+	for (i=0; str[i] && i<len; i++) {
+		// TODO: honor newlines?
+		if (str[i]=='\n' || str[i]=='\r')
+			break;
+		if (!IS_PRINTABLE (str[i]))
+			break;
+	}
+	str[i] = 0;
+}
+
 R_API void r_str_filter(char *str, int len) {
 	int i;
 	for (i=0; i<len; i++)

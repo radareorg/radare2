@@ -22,6 +22,10 @@ plugins.cfg:
 gitpush:
 	sh mk/gitpush.sh
 
+.PHONY: todo
+todo:
+	grep -re TODO:0.9.2 libr binr
+
 libr:
 	cd libr && ${MAKE} all
 

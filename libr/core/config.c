@@ -584,6 +584,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "search.in", "Specify search boundaries (raw, block, file, section)");
 	r_config_set_i (cfg, "search.kwidx", 0);
 	r_config_desc (cfg, "search.kwidx", "Store last search index count");
+	r_config_set (cfg, "search.show", "true");
+	r_config_desc (cfg, "search.show", "Show search results while found (disable if lot of hits)");
 	r_config_set (cfg, "search.flags", "true");
 	r_config_desc (cfg, "search.flags", "If enabled all search results are flagged, else just printed r2 commands");
 	r_config_set_i (cfg, "search.count", 0);

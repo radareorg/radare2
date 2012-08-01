@@ -5,13 +5,30 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
+* add 'mov al, cl' for x86.nz
+* fix ragg2
 
 ====[[ 0.9.1 ]]====
+* Analysis
+  - assume there's a function at the end of each function
+* Allow to seek to branch N like in visual, but from cmdline
 * Colorize multiple ranges of chars in hexdump
+* List functions
+  - calculate and show ciclomatic complexity
+* Searching for asm opcodes does not increase the hit count?
+* insert assembly in visual should be more userfriendly (keep unwritten bytes)
+* Search in io.va=true must be fixed
+  - search.infile=true (ignore va and offset)
 * Source debugging or gtfo
   - integration with rabin2 -d
-* get cparse ftw
 * show analized functions in 'aa' -> discuss
+* show search hits.. if string, if hexdump...
+  if (search.view) {
+	if (is_string) pf z
+  }
+* timeout for code analysis (check timestamp)
+* io_next must work properly
+  - r_io must read in 512 or 4096 aligned blocks (get next section?)
 
 Discuss
 Add $EDITOR alias for file open(read/write) -
