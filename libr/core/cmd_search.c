@@ -3,6 +3,7 @@
 static int preludecnt = 0;
 static int searchflags = 0;
 static int searchshow = 0;
+static int searchhits = 0;
 static const char *cmdhit = NULL;
 static const char *searchprefix = NULL;
 static unsigned int searchcount = 0;
@@ -11,6 +12,7 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	int depth = r_config_get_i (core->config, "anal.depth");
 	//eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
+	searchhits = kw->count;
 	r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 	preludecnt++;
 	return R_TRUE;
@@ -75,6 +77,7 @@ R_API int r_core_search_preludes(RCore *core) {
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
+	searchhits = kw->count;
 	if (searchcount) {
 		if (!--searchcount) {
 			eprintf ("\nsearch stop: search.count reached\n");
@@ -109,12 +112,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		r_cons_printf ("0x%08"PFMT64x" %s%d_%d %s\n",
 			addr, searchprefix, kw->kwidx, kw->count, str);
 	} else {
-		if (searchflags) {
+		if (searchflags)
 			r_cons_printf ("%s%d_%d\n", searchprefix, kw->kwidx, kw->count);
-		} else {
-			r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
+		else r_cons_printf ("f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
 				kw->kwidx, kw->count, kw->keyword_length, addr);
-		}
 	}
 	if (searchflags) {
 		char flag[64];
@@ -493,9 +494,9 @@ static int cmd_search(void *data, const char *input) {
 		" e search.flags = true ; if enabled store flags on keyword hits\n");
 		break;
 	}
-	if (core->io->va) {
+	if (core->io->va)
 		eprintf ("Search is broken in io.va. Please fix or e io.va=0\n");
-	}
+	searchhits = 0;
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
 		if (!searchflags)
@@ -521,7 +522,7 @@ static int cmd_search(void *data, const char *input) {
 			r_cons_break (NULL, NULL);
 			// XXX required? imho nor_io_set_fd (core->io, core->file->fd);
 			for (at = from; at < to; at += core->blocksize) {
-				print_search_progress (at, to, searchcount);
+				print_search_progress (at, to, searchhits);
 				if (r_cons_singleton ()->breaked) {
 					eprintf ("\n\n");
 					break;
@@ -551,6 +552,7 @@ static int cmd_search(void *data, const char *input) {
 					break;
 				}
 			}
+			print_search_progress (at, to, searchhits);
 			r_cons_break_end ();
 			free (buf);
 			//r_cons_clear_line ();
