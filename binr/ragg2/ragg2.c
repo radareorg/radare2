@@ -137,8 +137,10 @@ int main(int argc, char **argv) {
 			ut32 off, n;
 			char *p = strchr (optarg, ':');
 			if (p) {
+				*p = 0;
 				off = r_num_get (NULL, optarg);
 				n = r_num_get (NULL, p+1);
+				*p = ':';
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 4);
 			} else eprintf ("Missing colon in -d\n");

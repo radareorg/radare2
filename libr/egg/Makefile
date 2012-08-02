@@ -11,12 +11,11 @@ OBJ+=emit_x64.o
 OBJ+=emit_trace.o
 
 foo: ${LIBSO} ${LIBAR} 
-	${MAKE}
+	${MAKE} all
 
 P=p/
 include ${STATIC_EGG_PLUGINS}
 OBJ+=$(subst ..,p/..,$(subst egg_,p/egg_,$(STATIC_OBJ)))
-
 
 #plugins plugins:
 # Do not build plugins. all are static @cd p && ${MAKE} all

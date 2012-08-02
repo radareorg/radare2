@@ -336,9 +336,12 @@ static int cmd_anal(void *data, const char *input) {
 			{
 				RAnalFunction *fcn;
 				RListIter *iter;
+				int bbs;
 
 				r_list_foreach (core->anal->fcns, iter, fcn) {
-					int bbs = r_list_length (fcn->bbs);
+					if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
+						continue;
+					bbs = r_list_length (fcn->bbs);
 					r_cons_printf ("0x%08"PFMT64x" %6"PFMT64d" %3d  %s\n",
 						fcn->addr, fcn->size, bbs, fcn->name);
 				}
@@ -441,16 +444,16 @@ static int cmd_anal(void *data, const char *input) {
 				char *p, *name = strdup (input+3);
 				if ((p=strchr (name, ' '))) {
 					*p = 0;
-					off = r_num_math (core->num, p+1);
+					off = r_num_math (core->num, name);
 				}
 				fcn = r_anal_fcn_find (core->anal, off,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (fcn) {
 					r_core_cmdf (core, "fr %s %s @ 0x%"PFMT64x,
-						fcn->name, name, off);
+						fcn->name, p+1, off);
 					free (fcn->name);
-					fcn->name = strdup (name);
-				} else eprintf ("Cannot find function at 0x%08llx\n", core->offset);
+					fcn->name = strdup (p+1);
+				} else eprintf ("Cannot find function '%s' at 0x%08llx\n", name, off);
 			}
 			break;
 		case 'e':
@@ -491,7 +494,7 @@ static int cmd_anal(void *data, const char *input) {
 			" af+ addr size name [type] [diff] ; Add function\n"
 			" af- [addr]                ; Clean all function analysis data (or function at addr)\n"
 			" afb fcnaddr addr size name [type] [diff] ; Add bb to function @ fcnaddr\n"
-			" afl [fcn name]            ; List functions (addr, size, bbs, name)\n"
+			" afl[*] [fcn name]         ; List functions (addr, size, bbs, name)\n"
 			" afi [fcn name]            ; Show function(s) information (verbose afl)\n"
 			" afr name [addr]           ; Rename name for function at address (change flag too)\n"
 			" afs [addr] [fcnsign]      ; Get/set function signature at current address\n"

@@ -45,6 +45,7 @@ public class Radare.RSearch {
 		public int binmask_length;
 		//public int idx;
 		public int count;
+		public int type;
 
 		public Keyword.str (string str, string bmask, string data, bool icase = false);
 		//public Keyword.hex (string str, string bmask, string data);

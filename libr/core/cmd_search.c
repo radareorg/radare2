@@ -103,7 +103,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			for (i=0, p=str; i<len; i++) {
 				sprintf (p, "%02x", buf[i]);
 				p += 2;
-				if (i == kw->keyword_length)
+				if (i == kw->keyword_length-1)
 					*p++ = ' ';
 			}
 			*p = 0;

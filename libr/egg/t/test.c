@@ -1,9 +1,10 @@
-/* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 pancake<@nopcode.org> */
+
 #include <r_egg.h>
 #include <getopt.h>
 
 static int usage () {
-	eprintf ("./test [-a x86|arm] [-b 32|64] foo.r\n");
+	eprintf ("./test [-a x86|arm] [-b 32|64] hi.r\n");
 	return 1;
 }
 

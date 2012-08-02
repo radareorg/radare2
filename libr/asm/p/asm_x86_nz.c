@@ -17,6 +17,7 @@ BLA:
 	Add support for AND, OR, ..
         0x100000ec5    1    4883e4f0         and rsp, 0xfffffffffffffff0
 #endif
+
 static int jop (ut64 addr, ut8 *data, ut8 a, ut8 b, const char *arg) {
 	ut32 dst32;
 	int l = 0;
@@ -38,6 +39,16 @@ static int jop (ut64 addr, ut8 *data, ut8 a, ut8 b, const char *arg) {
 	dst32 -= 6;
 	memcpy (data+l, &dst32, 4);
 	return 6;
+}
+
+static int bits8 (const char *p) {
+	const char *b8r[] = { "al", "cl", "dl", "bl", NULL };
+	int i;
+	if (strlen (p) == 2)
+		for (i=0; b8r[i]; i++)
+			if (!strcmp (b8r[i], p))
+				return i;
+	return -1;
 }
 
 static ut8 getreg(const char *str) {
@@ -86,6 +97,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		data[l++] = 0xf3;
 		memmove (op, op+4, strlen (op+4)+1);
 	}
+
+	if (!strcmp (str, "outsb")) { data[0] = 0x6e; return 1; }
+	if (!strcmp (str, "insb")) { data[0] = 0x6c; return 1; }
 
 	if (!strcmp (str, "call $$")) {
 		memcpy (data, "\xE8\xFF\xFF\xFF\xFF\xC1", 6);
@@ -518,18 +532,28 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			} else eprintf ("Invalid args for lea?\n");
 			return l;
 		} else if (!strcmp (op, "mov")) {
-			char *delta = NULL;
-			int pfx, arg0;
-			int argk = (*arg == '[');
 			ut64 dst;
-			ut32 addr;
 			ut8 *ptr;
-			dst = r_num_math (NULL, arg2);
+			ut32 addr;
 			addr = dst;
+			int pfx, arg0;
+			char *delta = NULL;
+			int argk = (*arg == '[');
+			dst = r_num_math (NULL, arg2);
 			ptr = (ut8 *)&addr;
+
 			if (!arg || !arg2) {
 				eprintf ("No args for mov?\n");
 				return 0;
+			}
+			{
+				int b0 = bits8 (arg);
+				int b1 = bits8 (arg2);
+				if (b0!=-1 && b1!=-1) {
+					data[0] = 0x8a;
+					data[1] = 0xc0 | (b0 <<3)| b1;
+					return 2;
+				}
 			}
 
 			if (argk) {
