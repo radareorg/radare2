@@ -7,7 +7,6 @@
 
 ====[[ 0.9.1 ]]====
 * Implement r_bin_size() - get estimated binary file size from headers
-* Implement grep+count (afl~fcn?)
 * Analysis
   - assume there's a function at the end of each function
 * Allow to seek to branch N like in visual, but from cmdline

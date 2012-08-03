@@ -4,9 +4,11 @@
 #include <r_util.h>
 
 R_API void r_cons_grep(const char *str) {
+	int len;
 	RCons *cons;
 	char buf[1024];
 	char *ptr, *optr, *ptr2, *ptr3;
+
 	cons = r_cons_singleton ();
 	cons->grep.str = NULL;
 	cons->grep.neg = 0;
@@ -33,19 +35,21 @@ R_API void r_cons_grep(const char *str) {
 		cons->grep.counter = 1;
 		str++;
 	}
+	len = strlen (str)-1;
+	if (str[len] == '?') {
+		cons->grep.counter = 1;
+		strncpy (buf, str, len);
+		len--;
+	} else strncpy (buf, str, sizeof (buf)-1);
 
-	strncpy (buf, str, sizeof (buf)-1);
-	{
-		int len = strlen (buf)-1;
-		if (len>1 && buf[len]=='$' && buf[len-1]!='\\') {
-			cons->grep.end = 1;
-			buf[len] = 0;
-		}
+	if (len>1 && buf[len]=='$' && buf[len-1]!='\\') {
+		cons->grep.end = 1;
+		buf[len] = 0;
 	}
 	ptr = buf;
 	ptr3 = strchr (ptr, '['); // column number
 	if (ptr3) {
-		ptr3[0]='\0';
+		ptr3[0] = '\0';
 		cons->grep.tokenfrom = r_num_get (cons->num, ptr3+1);
 		ptr3 = strchr (ptr3+1, '-');
 		if (ptr3) {
@@ -249,27 +253,28 @@ R_API int r_cons_html_print(const char *ptr) {
 			continue;
 		} else 
 		if (esc == 2) {
-			if (ptr[0]=='2'&&ptr[1]=='J') {
+			// TODO: use dword comparison here
+			if (ptr[0]=='2' && ptr[1]=='J') {
 				printf ("<hr />\n"); fflush(stdout);
 				ptr++;
 				esc = 0;
 				str = ptr;
 				continue;
 			} else
-			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
-				r_cons_gotoxy (0,0);
+			if (ptr[0]=='0' && ptr[1]==';' && ptr[2]=='0') {
+				r_cons_gotoxy (0, 0);
 				ptr += 4;
 				esc = 0;
 				str = ptr;
 				continue;
 			} else
-			if (ptr[0]=='0'&&ptr[1]=='m') {
-				str = (++ptr) +1;
+			if (ptr[0]=='0' && ptr[1]=='m') {
+				str = (++ptr) + 1;
 				esc = inv = 0;
 				continue;
 				// reset color
 			} else
-			if (ptr[0]=='7'&&ptr[1]=='m') {
+			if (ptr[0]=='7' && ptr[1]=='m') {
 				str = (++ptr) +1;
 				inv = 128;
 				esc = 0;
