@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2010 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -286,7 +286,9 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 		return NULL;
 	}
 	entry->rva = bin->nt_headers->optional_header.AddressOfEntryPoint;
-	entry->offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->nt_headers->optional_header.AddressOfEntryPoint);
+	if (entry->rva == 0) // in PE if EP = 0 then EP = baddr
+		entry->rva = bin->nt_headers->optional_header.ImageBase;
+	entry->offset = PE_(r_bin_pe_rva_to_offset)(bin, entry->rva);
 	return entry;
 }
 
@@ -365,7 +367,7 @@ int PE_(r_bin_pe_get_file_alignment)(struct PE_(r_bin_pe_obj_t)* bin)
 
 ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin)
 {
-	return(ut64)bin->nt_headers->optional_header.ImageBase;
+	return (ut64)bin->nt_headers->optional_header.ImageBase;
 }
 
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin)

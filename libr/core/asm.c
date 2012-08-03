@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 */
+/* radare - LGPL - Copyright 2009-2012 */
 /* nibble<.ds@gmail.com> */
 
 #include <r_types.h>
@@ -7,11 +7,10 @@
 
 R_API RCoreAsmHit *r_core_asm_hit_new() {
 	RCoreAsmHit *hit = R_NEW (RCoreAsmHit);
-	if (hit) {
-		hit->code = NULL;
-		hit->len = 0;
-		hit->addr = -1;
-	}
+	if (!hit) return NULL;
+	hit->code = NULL;
+	hit->len = 0;
+	hit->addr = -1;
 	return hit;
 }
 

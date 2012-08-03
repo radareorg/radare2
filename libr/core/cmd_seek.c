@@ -18,7 +18,7 @@ static int cmd_seek(void *data, const char *input) {
 		int sign = 1;
 		st32 delta = (input[1]==' ')? 2: 1;
 		off = r_num_math (core->num, input + delta);
-		if ((st64)off<0)off =-off; // hack to fix s-2;s -2
+		if ((st64)off<0) off = -off; // hack to fix s-2;s -2
 		if (isalpha (input[delta]) && off == 0) {
 			if (delta==1 && !r_flag_get (core->flags, input+delta)) {
 				eprintf ("Cannot find address for '%s'\n", input+delta);
@@ -148,6 +148,8 @@ static int cmd_seek(void *data, const char *input) {
 			r_core_seek_align (core, off, 0);
 			break;
 		case 'b':
+			if (off == 0)
+				off = core->offset;
 			r_io_sundo_push (core->io, core->offset);
 			r_core_anal_bb_seek (core, off);
 			break;
@@ -175,6 +177,7 @@ static int cmd_seek(void *data, const char *input) {
 			" s/ DATA    ; search for next occurrence of 'DATA'\n"
 			" s/x 9091   ; search for next occurrence of \\x90\\x91\n"
 			" sb         ; seek aligned to bb start\n"
+			//" sp [page]  ; seek page N (page = block)\n"
 			" sn         ; seek to next opcode\n"
 			" sC str     ; seek to comment matching given string\n"
 			" sr pc      ; seek to register\n");

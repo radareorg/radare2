@@ -98,8 +98,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		memmove (op, op+4, strlen (op+4)+1);
 	}
 
+	if (!strcmp (str, "outsd")) { data[0] = 0x6f; return 1; }
 	if (!strcmp (str, "outsb")) { data[0] = 0x6e; return 1; }
 	if (!strcmp (str, "insb")) { data[0] = 0x6c; return 1; }
+	if (!strcmp (str, "hlt")) { data[0] = 0xf4; return 1; }
 
 	if (!strcmp (str, "call $$")) {
 		memcpy (data, "\xE8\xFF\xFF\xFF\xFF\xC1", 6);
@@ -454,7 +456,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 			dst = r_num_math (NULL, arg);
 			if (dst == 0) {
-				data[l++] = getreg (arg) | 0x58;
+				ut8 r = getreg (arg);
+				if (r==(ut8)-1) return 0;
+				data[l++] = r | 0x58;
 				return l;
 			}
 			eprintf ("Invalid pop syntax\n");

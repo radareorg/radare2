@@ -6,13 +6,14 @@
 ------8<-------------------8<--------------------8<-----------------8<----------
 
 ====[[ 0.9.1 ]]====
+* Implement r_bin_size() - get estimated binary file size from headers
+* Implement grep+count (afl~fcn?)
 * Analysis
   - assume there's a function at the end of each function
 * Allow to seek to branch N like in visual, but from cmdline
 * Colorize multiple ranges of chars in hexdump
 * List functions
   - calculate and show ciclomatic complexity
-* Searching for asm opcodes does not increase the hit count?
 * insert assembly in visual should be more userfriendly (keep unwritten bytes)
 * Search in io.va=true must be fixed
   - search.infile=true (ignore va and offset)
