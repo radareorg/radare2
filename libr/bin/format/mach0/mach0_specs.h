@@ -24,11 +24,6 @@
 #define R_BIN_MACH0_SYMBOL_TYPE_EXT 0
 #define R_BIN_MACH0_SYMBOL_TYPE_LOCAL 1
 
-#if __WINDOWS__
-typedef int int32_t;
-typedef short int16_t;
-#endif
-
 typedef int	cpu_type_t;
 typedef int	cpu_subtype_t;
 typedef int	vm_prot_t;

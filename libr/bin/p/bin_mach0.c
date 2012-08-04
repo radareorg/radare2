@@ -31,8 +31,7 @@ static RList* entries(RBinArch *arch) {
 	ret->free = free;
 	if (!(entry = MACH0_(r_bin_mach0_get_entrypoint) (arch->bin_obj)))
 		return ret;
-	if ((ptr = R_NEW (RBinAddr))) {
-		memset (ptr, '\0', sizeof (RBinAddr));
+	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->offset = entry->offset;
 		ptr->rva = entry->addr;
 		r_list_append (ret, ptr);
@@ -146,11 +145,9 @@ static RList* libs(RBinArch *arch) {
 
 static RBinInfo* info(RBinArch *arch) {
 	char *str;
-	RBinInfo *ret = NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) return NULL;
 
-	if ((ret = R_NEW (RBinInfo)) == NULL)
-		return NULL;
-	memset (ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	if ((str = MACH0_(r_bin_mach0_get_class) (arch->bin_obj))) {
@@ -208,9 +205,9 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut32 p_datafsz = 0, p_datava = 0, p_datasz = 0, p_datapa = 0;
 	ut32 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut32 baddr = 0x1000;
-	int is_arm = !strcmp (bin->curarch.info->arch, "arm");
+	int is_arm = !strcmp (bin->cur.o->info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
-	if (bin->curarch.info->bits == 64) {
+	if (bin->cur.o->info->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");
 		return 0;
 	}
@@ -365,9 +362,8 @@ static RBinAddr* binsym(RBinArch *arch, int sym) {
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
 		addr = MACH0_(r_bin_mach0_get_main) (arch->bin_obj);
-		if (!addr || !(ret = R_NEW (RBinAddr)))
+		if (!addr || !(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		memset (ret, '\0', sizeof (RBinAddr));
 		ret->offset = ret->rva = addr;
 		break;
 	}

@@ -63,13 +63,14 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 }
 
 static int is_data_section(RBinArch *a, RBinSection *s) {
-	if (strstr (a->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
+	RBinObject *o = a->o;
+	if (strstr (o->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
 		return 1;
-	if (strstr (a->info->bclass, "ELF") && strstr (s->name, "data")) // LINUX
+	if (strstr (o->info->bclass, "ELF") && strstr (s->name, "data")) // LINUX
 		return 1;
 #define X 1
 #define ROW (4|2)
-	if (strstr (a->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) )
+	if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) )
 		return 1;
 	return 0;
 }
@@ -86,8 +87,8 @@ static RList* get_strings(RBinArch *a, int min) {
 	}
 	ret->free = free;
 	
-	if (a->sections) {
-		r_list_foreach (a->sections, iter, section) {
+	if (a->o->sections) {
+		r_list_foreach (a->o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				count ++;
 				get_strings_range (a, ret, min, 
@@ -95,7 +96,7 @@ static RList* get_strings(RBinArch *a, int min) {
 			}
 		}	
 	}
-	if (r_list_empty (a->sections))
+	if (r_list_empty (a->o->sections))
 		get_strings_range (a, ret, min, 0, a->size, 0);
 	return ret;
 }
@@ -103,66 +104,59 @@ static RList* get_strings(RBinArch *a, int min) {
 static int r_bin_init_items(RBin *bin, int dummy) {
 	int i;
 	RListIter *it;
-	RBinPlugin *plugin;
-	RBinArch *a = &bin->curarch;
+	RBinPlugin *plugin, *cp;
+	RBinArch *a = &bin->cur;
+	RBinObject *o = a->o;
 
 	a->curplugin = NULL;
-	r_list_foreach(bin->plugins, it, plugin) {
+	r_list_foreach (bin->plugins, it, plugin) {
 		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
-			(!dummy && (plugin->check && plugin->check (&bin->curarch)))) {
-			bin->curarch.curplugin = plugin;
+			(!dummy && (plugin->check && plugin->check (&bin->cur)))) {
+			bin->cur.curplugin = plugin;
 			break;
 		}
 	}
-	if (!a->curplugin || !a->curplugin->load || !a->curplugin->load (a))
+	cp = bin->cur.curplugin;
+	if (!cp || !cp->load || !cp->load (a))
 		return R_FALSE;
-	if (a->curplugin->baddr)
-		a->baddr = a->curplugin->baddr (a);
-	if (a->curplugin->binsym)
+	if (cp->baddr)
+		o->baddr = cp->baddr (a);
+	if (cp->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
-			a->binsym[i] = a->curplugin->binsym (a, i);
-	if (a->curplugin->entries)
-		a->entries = a->curplugin->entries (a);
-	if (a->curplugin->fields)
-		a->fields = a->curplugin->fields (a);
-	if (a->curplugin->imports)
-		a->imports = a->curplugin->imports (a);
-	if (a->curplugin->info)
-		a->info = a->curplugin->info (a);
-	if (a->curplugin->libs)
-		a->libs = a->curplugin->libs (a);
-	if (a->curplugin->relocs)
-		a->relocs = a->curplugin->relocs (a);
-	if (a->curplugin->sections)
-		a->sections = a->curplugin->sections (a);
-	if (a->curplugin->strings)
-		a->strings = a->curplugin->strings (a);
-	else a->strings = get_strings (a, 4);
-	if (a->curplugin->symbols)
-		a->symbols = a->curplugin->symbols (a);
-	if (a->curplugin->classes)
-		a->classes = a->curplugin->classes (a);
+			o->binsym[i] = cp->binsym (a, i);
+	if (cp->entries) o->entries = cp->entries (a);
+	if (cp->fields) o->fields = cp->fields (a);
+	if (cp->imports) o->imports = cp->imports (a);
+	if (cp->info) o->info = cp->info (a);
+	if (cp->libs) o->libs = cp->libs (a);
+	if (cp->relocs) o->relocs = cp->relocs (a);
+	if (cp->sections) o->sections = cp->sections (a);
+	if (cp->strings) o->strings = cp->strings (a);
+	else o->strings = get_strings (a, 4);
+	if (cp->symbols) o->symbols = cp->symbols (a);
+	if (cp->classes) o->classes = cp->classes (a);
 	return R_TRUE;
 }
 
 #define RBINLISTFREE(x) if(x){r_list_free(x);x=NULL;}
 static void r_bin_free_items(RBin *bin) {
 	int i;
-	RBinArch *a = &bin->curarch;
-	RBINLISTFREE (a->entries);
-	RBINLISTFREE (a->fields);
-	RBINLISTFREE (a->imports);
-	RBINLISTFREE (a->libs);
-	RBINLISTFREE (a->relocs);
-	RBINLISTFREE (a->sections);
-	RBINLISTFREE (a->strings);
-	RBINLISTFREE (a->symbols);
-	RBINLISTFREE (a->classes);
-	if (a->info) free (a->info);
-	if (a->binsym)
+	RBinArch *a = &bin->cur;
+	RBinObject *o = a->o;
+	RBINLISTFREE (o->entries);
+	RBINLISTFREE (o->fields);
+	RBINLISTFREE (o->imports);
+	RBINLISTFREE (o->libs);
+	RBINLISTFREE (o->relocs);
+	RBINLISTFREE (o->sections);
+	RBINLISTFREE (o->strings);
+	RBINLISTFREE (o->symbols);
+	RBINLISTFREE (o->classes);
+	free (o->info);
+	o->info = NULL;
+	if (o->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
-			free (a->binsym[i]);
-	if (a->file) free (a->file);
+			free (o->binsym[i]);
 	if (a->curplugin && a->curplugin->destroy)
 		a->curplugin->destroy (a);
 }
@@ -171,7 +165,13 @@ static void r_bin_init(RBin *bin) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
-	memset (&bin->curarch, 0, sizeof (bin->curarch));
+	if (!bin->cur.o->referenced) {
+		r_bin_free_items (bin);
+	}
+	free (bin->cur.file);
+	memset (&bin->cur, 0, sizeof (bin->cur));
+	bin->cur.o = R_NEW0 (RBinObject);
+	memset (bin->cur.o, 0, sizeof (RBinObject));
 	bin->curxtr = NULL;
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (xtr->check && xtr->check (bin)) {
@@ -186,8 +186,8 @@ static void r_bin_init(RBin *bin) {
 static int r_bin_extract(RBin *bin, int idx) {
 	if (bin->curxtr && bin->curxtr->extract)
 		return bin->curxtr->extract (bin, idx);
-	bin->curarch.file = strdup (bin->file);
-	bin->curarch.buf = r_buf_mmap (bin->file, 0);
+	bin->cur.file = strdup (bin->file);
+	bin->cur.buf = r_buf_mmap (bin->file, 0);
 	return 1;
 }
 
@@ -261,58 +261,60 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy) {
 	if (bin->narch == 0)
 		return R_FALSE;
 	/* FIXME: temporary hack to fix malloc:// */
-	if (bin->curarch.buf == NULL)
+	if (bin->cur.buf == NULL)
 		return R_FALSE;
 	return r_bin_init_items (bin, dummy);
 }
 
 R_API ut64 r_bin_get_baddr(RBin *bin) {
-	return bin->curarch.baddr;
+	return bin->cur.o->baddr;
 }
 
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym) {
 	if (sym<0 || sym>=R_BIN_SYM_LAST)
 		return NULL;
-	return bin->curarch.binsym[sym];
+	return bin->cur.o->binsym[sym];
 }
 
+// XXX: those accessors are redundant
 R_API RList* r_bin_get_entries(RBin *bin) {
-	return bin->curarch.entries;
+	return bin->cur.o->entries;
 }
 
 R_API RList* r_bin_get_fields(RBin *bin) {
-	return bin->curarch.fields;
+	return bin->cur.o->fields;
 }
 
 R_API RList* r_bin_get_imports(RBin *bin) {
-	return bin->curarch.imports;
+	return bin->cur.o->imports;
 }
 
 R_API RBinInfo* r_bin_get_info(RBin *bin) {
-	return bin->curarch.info;
+	return bin->cur.o->info;
 }
 
 R_API RList* r_bin_get_libs(RBin *bin) {
-	return bin->curarch.libs;
+	return bin->cur.o->libs;
 }
 
 R_API RList* r_bin_get_relocs(RBin *bin) {
-	return bin->curarch.relocs;
+	return bin->cur.o->relocs;
 }
 
 R_API RList* r_bin_get_sections(RBin *bin) {
-	return bin->curarch.sections;
+	return bin->cur.o->sections;
 }
 
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
+	RBinObject *o = bin->cur.o;
 	RBinSection *section;
 	RListIter *iter;
 	ut64 from, to;
 
-	if (bin->curarch.sections)
-	r_list_foreach (bin->curarch.sections, iter, section) {
-		from = va ? bin->curarch.baddr+section->rva : section->offset;
-		to = va ? bin->curarch.baddr+section->rva+section->vsize :
+	if (o->sections)
+	r_list_foreach (o->sections, iter, section) {
+		from = va ? o->baddr+section->rva : section->offset;
+		to = va ? o->baddr+section->rva+section->vsize :
 				  section->offset + section->size;
 		if (off >= from && off < to)
 			return section;
@@ -321,54 +323,54 @@ R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 }
 
 R_API RList* r_bin_get_strings(RBin *bin) {
-	return bin->curarch.strings;
+	return bin->cur.o->strings;
 }
 
 R_API RList* r_bin_get_symbols(RBin *bin) {
-	return bin->curarch.symbols;
+	return bin->cur.o->symbols;
 }
 
 R_API int r_bin_is_big_endian (RBin *bin) {
-	return bin->curarch.info->big_endian;
+	return bin->cur.o->info->big_endian;
 }
 
 R_API int r_bin_is_stripped (RBin *bin) {
-	return R_BIN_DBG_STRIPPED (bin->curarch.info->dbg_info);
+	return R_BIN_DBG_STRIPPED (bin->cur.o->info->dbg_info);
 }
 
 R_API int r_bin_is_static (RBin *bin) {
-	return R_BIN_DBG_STATIC (bin->curarch.info->dbg_info);
+	return R_BIN_DBG_STATIC (bin->cur.o->info->dbg_info);
 }
 
 // TODO: Integrate with r_bin_dbg */
 R_API int r_bin_has_dbg_linenums (RBin *bin) {
-	return R_BIN_DBG_LINENUMS (bin->curarch.info->dbg_info);
+	return R_BIN_DBG_LINENUMS (bin->cur.o->info->dbg_info);
 }
 
 R_API int r_bin_has_dbg_syms (RBin *bin) {
-	return R_BIN_DBG_SYMS (bin->curarch.info->dbg_info);
+	return R_BIN_DBG_SYMS (bin->cur.o->info->dbg_info);
 }
 
 R_API int r_bin_has_dbg_relocs (RBin *bin) {
-	return R_BIN_DBG_RELOCS (bin->curarch.info->dbg_info);
+	return R_BIN_DBG_RELOCS (bin->cur.o->info->dbg_info);
 }
 
 R_API RBin* r_bin_new() {
 	int i;
 	RBinPlugin *static_plugin;
 	RBinXtrPlugin *static_xtr_plugin;
-	RBin *bin = R_NEW (RBin);
+	RBin *bin = R_NEW0 (RBin);
 	if (!bin) return NULL;
-	memset (bin, 0, sizeof (RBin));
 	bin->plugins = r_list_new();
 	bin->plugins->free = free;
+	bin->cur.o = R_NEW0 (RBinObject);
 	for (i=0; bin_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RBinPlugin);
 		memcpy (static_plugin, bin_static_plugins[i],
 			sizeof (RBinPlugin));
 		r_bin_add (bin, static_plugin);
 	}
-	bin->binxtrs = r_list_new();
+	bin->binxtrs = r_list_new ();
 	bin->binxtrs->free = free;
 	for (i=0; bin_xtr_static_plugins[i]; i++) {
 		static_xtr_plugin = R_NEW (RBinXtrPlugin);
@@ -380,20 +382,19 @@ R_API RBin* r_bin_new() {
 }
 
 /* arch and bits are implicit in the plugin name, do we really need
- * to overwrite bin->curarch.info? */
+ * to overwrite bin->cur.info? */
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
+	RBinObject *o = bin->cur.o;
 	RListIter *it;
 	RBinPlugin *plugin;
 
-	if (!bin->curarch.info)
-		bin->curarch.info = R_NEW (RBinInfo);
-	memset (bin->curarch.info, 0, sizeof (RBinInfo));
-	strncpy (bin->curarch.info->arch, arch, R_BIN_SIZEOF_STRINGS);
-	bin->curarch.info->bits = bits;
+	if (!o->info) o->info = R_NEW0 (RBinInfo);
+	strncpy (o->info->arch, arch, R_BIN_SIZEOF_STRINGS);
+	o->info->bits = bits;
 
-	r_list_foreach(bin->plugins, it, plugin) {
+	r_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp (name, plugin->name)) {
-			bin->curarch.curplugin = plugin;
+			bin->cur.curplugin = plugin;
 			return R_TRUE;
 		}
 	}
@@ -404,12 +405,13 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 // DUPDUPDUP
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	int i;
+	RBinInfo *info = bin->cur.o->info;
 	for (i=0; i<bin->narch; i++) {
 		r_bin_select_idx (bin, i);
-		if (!bin->curarch.info || !bin->curarch.file ||
-			(arch && !strstr (bin->curarch.info->arch, arch)) ||
-			(bits && bits != bin->curarch.info->bits) ||
-			(name && !strstr (bin->curarch.file, name)))
+		if (!info || !bin->cur.file ||
+			(arch && !strstr (info->arch, arch)) ||
+			(bits && bits != info->bits) ||
+			(name && !strstr (info->file, name)))
 			continue;
 		return R_TRUE;
 	}
@@ -426,18 +428,24 @@ R_API int r_bin_select_idx(RBin *bin, int idx) {
 R_API void r_bin_list_archs(RBin *bin) {
 	int i;
 	for (i = 0; i < bin->narch; i++)
-		if (r_bin_select_idx (bin, i) && bin->curarch.info)
+		if (r_bin_select_idx (bin, i)) {
+			RBinInfo *info = bin->cur.o->info;
 			printf ("%03i 0x%08"PFMT64x" %s_%i %s\n", i, 
-				bin->curarch.offset, bin->curarch.info->arch,
-				bin->curarch.info->bits, bin->curarch.info->machine);
+				bin->cur.offset, info->arch,
+				info->bits, info->machine);
+		}
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 	bin->user = user;
 }
 
+R_API int r_bin_get_size(RBinObject *obj) {
+	return obj->size;
+}
+
 static int getoffset (RBin *bin, int type, int idx) {
-	RBinArch *a = &bin->curarch;
+	RBinArch *a = &bin->cur;
 	if (a && a->curplugin && a->curplugin->get_offset)
 		return a->curplugin->get_offset (a, type, idx);
 	return -1;
@@ -449,7 +457,7 @@ R_API void r_bin_bind (RBin *bin, RBinBind *b) {
 }
 
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
-	RBinArch *a = &bin->curarch;
+	RBinArch *a = &bin->cur;
 	if (codelen<0) codelen = 0;
 	if (datalen<0) datalen = 0;
 	if (a && a->curplugin && a->curplugin->create)
@@ -457,31 +465,22 @@ R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 
 	return NULL;
 }
 
-R_API RBinObj *r_bin_get_object(RBin *bin, int flags) {
-	int i;
-	RBinObj *obj = R_NEW (RBinObj);
-	if (!obj) return NULL;
-	obj->symbols = r_bin_get_symbols (bin);
-	obj->imports = r_bin_get_imports (bin);
-	obj->entries = r_bin_get_entries (bin);
-	for (i=0; i<R_BIN_SYM_LAST; i++)
-		obj->binsym[i] = r_bin_get_sym (bin, i);
-	obj->baddr = r_bin_get_baddr (bin);
-	obj->info = r_bin_get_info (bin);
-	return obj;
+R_API RBinObject *r_bin_get_object(RBin *bin, int flags) {
+	bin->cur.o->referenced = R_TRUE;
+	return bin->cur.o;
 }
 
-R_API void r_bin_object_free(RBinObj *obj) {
+R_API void r_bin_object_free(RBinObject *obj) {
 	free (obj);
 }
 
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
-	return bin->curarch.classes;
+	return bin->cur.o->classes;
 }
 
 R_API ut64 r_bin_get_offset (RBin *bin) {
-	ut64 offset = bin->curarch.offset;
-	if (offset>0x1000) // XXX HACK
+	ut64 offset = bin->cur.offset;
+	if (offset>0x1000) // XXX BROKEN HACK THAT MUST BE FIXED
 		offset -= 0x1000;
 	return offset;
 }

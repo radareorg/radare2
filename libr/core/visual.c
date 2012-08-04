@@ -153,13 +153,13 @@ void setcursor (RCore *core, int cur) {
 
 // TODO: integrate in '/' command with search.inblock ?
 static void visual_search (RCore *core) {
-	ut8 *p;
-	int len, d=cursor;
+	const ut8 *p;
+	int len, d = cursor;
 	char str[128], buf[258];
 
 	r_line_set_prompt ("search byte/string in block: ");
 	r_cons_fgets (str, sizeof (str), 0, NULL);
-	len = r_hex_str2bin (str, buf);
+	len = r_hex_str2bin (str, (ut8*)buf);
 	if (*str=='"') {
 		char *e = strncpy (buf, str+1, sizeof (buf)-1);
 		if (e) { --e; if (*e=='"') *e=0; }
@@ -169,7 +169,8 @@ static void visual_search (RCore *core) {
 		strncpy (buf, str, sizeof (buf)-1);
 		len = strlen (str);
 	}
-	p = r_mem_mem (core->block+d, core->blocksize-d, buf, len);
+	p = r_mem_mem (core->block+d, core->blocksize-d,
+		(const ut8*)buf, len);
 	if (p) {
 		cursor = (int)(size_t)(p-core->block);
 		if (len>1) {

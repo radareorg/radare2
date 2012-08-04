@@ -296,6 +296,7 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 }
 
 R_API void r_file_mmap_free (RMmap *m) {
+	if (!m) return;
 #if __UNIX__
 	munmap (m->buf, m->len);
 #elif __WINDOWS__

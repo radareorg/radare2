@@ -63,7 +63,7 @@ typedef struct r_core_file_t {
 	int rwx;
 	int dbg;
 	RIODesc *fd;
-	RBinObj *obj;
+	RBinObject *obj;
 } RCoreFile;
 
 #define R_CORE_ASMSTEPS 128

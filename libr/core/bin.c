@@ -167,8 +167,9 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_SET)) {
 		r_list_foreach (entries, iter, entry) {
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
-			r_flag_set (r->flags, str, va? baddr+entry->rva: entry->offset,
-					r->blocksize, 0);
+			r_flag_set (r->flags, str,
+				va? baddr+entry->rva: entry->offset,
+				r->blocksize, 0);
 		}
 		/* Seek to the last entry point */
 		if (entry)
@@ -229,7 +230,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	return R_TRUE;
 }
 
-static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *name) {
+static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
 	char str[R_FLAG_NAME_SIZE];
 	RList *imports;
 	RListIter *iter;
@@ -284,7 +285,7 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *n
 	return R_TRUE;
 }
 
-static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *name) {
+static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
 	char str[R_FLAG_NAME_SIZE];
 	RList *symbols;
 	RListIter *iter;
@@ -359,7 +360,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *n
 	return R_TRUE;
 }
 
-static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, char *name) {
+static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
 	char str[R_FLAG_NAME_SIZE];
 	RList *sections;
 	RListIter *iter;
@@ -452,10 +453,8 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 	RList *fields;
 	RListIter *iter;
 	RBinField *field;
-	ut64 size;
 	int i = 0;
-
-	size = r->bin->curarch.size;
+	ut64 size = r->bin->cur.size;
 
 	if ((fields = r_bin_get_fields (r->bin)) == NULL)
 		return R_FALSE;
@@ -539,10 +538,9 @@ static int bin_libs (RCore *r, int mode) {
 
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 offset) {
 	int ret = R_TRUE;
-	char *name = NULL;
+	const char *name = NULL;
 	ut64 at = 0;
 	ut64 baddr = r_bin_get_baddr (core->bin);// + offset;
-
 
 	if (filter && filter->offset)
 		at = filter->offset;
@@ -550,27 +548,27 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 		name = filter->name;
 
 	if ((action & R_CORE_BIN_ACC_STRINGS))
-		ret |= bin_strings (core, mode, baddr, va);
+		ret &= bin_strings (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_INFO))
-		ret |= bin_info (core, mode);
+		ret &= bin_info (core, mode);
 	if ((action & R_CORE_BIN_ACC_MAIN))
-		ret |= bin_main (core, mode, baddr, va);
+		ret &= bin_main (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_ENTRIES))
-		ret |= bin_entry (core, mode, baddr+offset, va);
+		ret &= bin_entry (core, mode, baddr+offset, va);
 	if ((action & R_CORE_BIN_ACC_RELOCS))
-		ret |= bin_relocs (core, mode, baddr, va);
+		ret &= bin_relocs (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_IMPORTS))
-		ret |= bin_imports (core, mode, baddr+offset, va, at, name);
+		ret &= bin_imports (core, mode, baddr+offset, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SYMBOLS))
-		ret |= bin_symbols (core, mode, baddr+offset, va, at, name);
+		ret &= bin_symbols (core, mode, baddr+offset, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SECTIONS))
-		ret |= bin_sections (core, mode, baddr, va, at, name);
+		ret &= bin_sections (core, mode, baddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_FIELDS))
-		ret |= bin_fields (core, mode, baddr, va);
+		ret &= bin_fields (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_LIBS))
-		ret |= bin_libs (core, mode);
+		ret &= bin_libs (core, mode);
 	if ((action & R_CORE_BIN_ACC_CLASSES))
-		ret |= bin_classes (core, mode);
+		ret &= bin_classes (core, mode);
 
 	return ret;
 }

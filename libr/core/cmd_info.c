@@ -81,7 +81,7 @@ static int cmd_info(void *data, const char *input) {
 		if (core->bin->curxtr)
 			r_cons_printf ("packet\t%s\n", core->bin->curxtr->name);
 		if (core->bin->curxtr)
-			r_cons_printf ("format\t%s\n", core->bin->curarch.curplugin->name);
+			r_cons_printf ("format\t%s\n", core->bin->cur.curplugin->name);
 		}
 	}
 	return 0;

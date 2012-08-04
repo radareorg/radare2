@@ -6,7 +6,10 @@
 ------8<-------------------8<--------------------8<-----------------8<----------
 
 ====[[ 0.9.1 ]]====
-* Implement r_bin_size() - get estimated binary file size from headers
+RBIN
+ - fix fatmach0 hack in r_bin_get_offset()
+   - the 0x1000 issue breaks for files like /usr/bin/true
+ - Implement r_bin_size() - get estimated binary file size from headers
 * Analysis
   - assume there's a function at the end of each function
 * Allow to seek to branch N like in visual, but from cmdline

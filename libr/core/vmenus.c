@@ -1010,7 +1010,8 @@ R_API void r_core_visual_anal(RCore *core) {
 	int ch; //, level = 0;
 
 	olde = core->cons->event_resize;
-	core->cons->event_resize = r_core_visual_anal_refresh;
+	core->cons->event_resize = (RConsEvent)
+		r_core_visual_anal_refresh;
 	level = 0;
 	addr = core->offset;
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -32,9 +32,9 @@ static int extract(RBin *bin, int idx) {
 	struct r_bin_dyldcache_lib_t *lib = r_bin_dyldcache_extract (
 		(struct r_bin_dyldcache_obj_t*)bin->bin_obj, idx, &nlib);
 	if (lib) {
-		bin->curarch.file = strdup (lib->path);
-		bin->curarch.buf = lib->b;
-		bin->curarch.size = lib->size;
+		bin->cur.file = strdup (lib->path);
+		bin->cur.buf = lib->b;
+		bin->cur.size = lib->size;
 		free (lib);
 	}
 	return nlib;

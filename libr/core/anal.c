@@ -554,7 +554,7 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 	}
 	if (depth < 1)
 		return R_FALSE;
-	if (core->bin->curarch.info->big_endian)
+	if (core->bin->cur.o->info->big_endian)
 		endian = !LIL_ENDIAN;
 	else endian = LIL_ENDIAN;
 	wordsize = (int)(core->anal->bits/8);

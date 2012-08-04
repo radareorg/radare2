@@ -64,7 +64,7 @@ static RList* entries(RBinArch *arch) {
 	ut64 off = 0LL;
 	RList* ret;
 	RBinAddr *ptr = NULL;
-	struct EXE *exe = arch->buf->buf;
+	struct EXE *exe = (struct EXE*) arch->buf->buf;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -83,7 +83,7 @@ static RList* entries(RBinArch *arch) {
 static RList* sections(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	struct EXE *exe = arch->buf->buf;
+	struct EXE *exe = (struct EXE*) arch->buf->buf;
 	
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -135,7 +135,7 @@ static RList* libs(RBinArch *arch) {
 }
 
 static RBinInfo* info(RBinArch *arch) {
-	struct EXE *exe = arch->buf->buf;
+	struct EXE *exe = (struct EXE*) arch->buf->buf;
 	RBinInfo *ret = NULL;
 
 	// TODO: remove those strings

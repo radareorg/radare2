@@ -8,13 +8,6 @@
 
 #define R_BIN_MACH0_STRING_LENGTH 256
 
-#if 0
-#define R_BIN_MACH0_SECT_IS_SHAREABLE(x)   x
-#define R_BIN_MACH0_SECT_IS_EXECUTABLE(x)  x
-#define R_BIN_MACH0_SECT_IS_READABLE(x)    x
-#define R_BIN_MACH0_SECT_IS_WRITABLE(x)    x
-#endif
-
 struct r_bin_mach0_section_t {
 	ut64 offset;
 	ut64 addr;

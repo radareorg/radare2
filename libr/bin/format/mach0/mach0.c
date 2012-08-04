@@ -38,11 +38,13 @@ static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	else if (magic == FAT_CIGAM)
 		bin->endian = LIL_ENDIAN;
 	else return R_FALSE; // object files are magic == 0, but body is different :?
+	len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, 
 #if R_BIN_MACH064
-	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, bin->endian?"8I":"8i", 1);
+		bin->endian?"8I":"8i", 1
 #else
-	len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, bin->endian?"7I":"7i", 1);
+		bin->endian?"7I":"7i", 1
 #endif
+	);
 	if (len == -1) {
 		eprintf ("Error: read (hdr)\n");
 		return R_FALSE;
@@ -52,7 +54,7 @@ static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 
 static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
 	int sect, len, seg = bin->nsegs - 1;
-	if (!(bin->segs = realloc(bin->segs, bin->nsegs * sizeof(struct MACH0_(segment_command))))) {
+	if (!(bin->segs = realloc (bin->segs, bin->nsegs * sizeof(struct MACH0_(segment_command))))) {
 		perror ("realloc (seg)");
 		return R_FALSE;
 	}
@@ -72,13 +74,14 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 			perror ("realloc (sects)");
 			return R_FALSE;
 		}
+		len = r_buf_fread_at (bin->b, off + sizeof (struct MACH0_(segment_command)),
+			(ut8*)&bin->sects[sect],
 #if R_BIN_MACH064
-		len = r_buf_fread_at (bin->b, off + sizeof(struct MACH0_(segment_command)),
-				(ut8*)&bin->sects[sect], bin->endian?"16c16c2L8I":"16c16c2l8i", bin->nsects - sect);
+			bin->endian?"16c16c2L8I":"16c16c2l8i", 
 #else
-		len = r_buf_fread_at (bin->b, off + sizeof(struct MACH0_(segment_command)),
-				(ut8*)&bin->sects[sect], bin->endian?"16c16c9I":"16c16c9i", bin->nsects - sect);
+			bin->endian?"16c16c9I":"16c16c9i", 
 #endif
+			bin->nsects - sect);
 		if (len == -1) {
 			eprintf ("Error: read (sects)\n");
 			return R_FALSE;
@@ -152,9 +155,9 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 			return R_FALSE;
 		}
 #if R_BIN_MACH064
-		len = r_buf_fread_at(bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"12IL":"12il", bin->nmodtab);
+		len = r_buf_fread_at (bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"12IL":"12il", bin->nmodtab);
 #else
-		len = r_buf_fread_at(bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"13I":"13i", bin->nmodtab);
+		len = r_buf_fread_at (bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"13I":"13i", bin->nmodtab);
 #endif
 		if (len == -1) {
 			eprintf ("Error: read (modtab)\n");
@@ -164,11 +167,11 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 	}
 	bin->nindirectsyms = bin->dysymtab.nindirectsyms;
 	if (bin->nindirectsyms > 0) {
-		if (!(bin->indirectsyms = malloc(bin->nindirectsyms * sizeof(ut32)))) {
+		if (!(bin->indirectsyms = malloc (bin->nindirectsyms * sizeof(ut32)))) {
 			perror ("malloc (indirectsyms)");
 			return R_FALSE;
 		}
-		len = r_buf_fread_at(bin->b, bin->dysymtab.indirectsymoff,
+		len = r_buf_fread_at (bin->b, bin->dysymtab.indirectsymoff,
 				(ut8*)bin->indirectsyms, bin->endian?"I":"i", bin->nindirectsyms);
 		if (len == -1) {
 			eprintf ("Error: read (indirect syms)\n");
@@ -181,9 +184,8 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 }
 
 static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
-	int len = -1;
-
-	len = r_buf_fread_at(bin->b, off, (ut8*)&bin->thread, bin->endian?"4I":"4i", 1);
+	int len = r_buf_fread_at (bin->b, off, (ut8*)&bin->thread,
+		bin->endian?"4I":"4i", 1);
 	if (len == -1) {
 		eprintf ("Error: read (thread)\n");
 		return R_FALSE;
@@ -343,7 +345,7 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file) {
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
 		return MACH0_(r_bin_mach0_free)(bin);
-	bin->b = r_buf_new();
+	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes(bin->b, buf, bin->size))
 		return MACH0_(r_bin_mach0_free)(bin);
 	free (buf);
@@ -360,6 +362,16 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new_buf)(struct r_buf_t *bu
 	if (!MACH0_(r_bin_mach0_init)(bin))
 		return MACH0_(r_bin_mach0_free)(bin);
 	return bin;
+}
+
+// prot: r = 1, w = 2, x = 4
+// perm: r = 4, w = 2, x = 1
+static int prot2perm (int x) {
+	int r = 0;
+	if (x&1) r |= 4;
+	if (x&2) r |= 2;
+	if (x&4) r |= 1;
+	return r;
 }
 
 struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
@@ -380,26 +392,19 @@ struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_b
 		strncpy (segname, bin->sects[i].segname, sizeof (segname)-1);
 		strncpy (sectname, bin->sects[i].sectname, sizeof (sectname)-1);
 		// hack to support multiple sections with same name
-		snprintf (segname, sizeof (segname), "%d", i);
+		snprintf (segname, sizeof (segname), "%d", i); // wtf
 		snprintf (sectname, sizeof (sectname), "%s", bin->sects[i].sectname);
-		//segname[16] = sectname[16] = '\0';
 		for (j=0; j<bin->nsegs; j++) {
-			if (!strcmp (bin->segs[j].segname, segname)) {
-				sections[i].srwx = bin->segs[j].initprot;
+			if (sections[i].addr >= bin->segs[j].vmaddr &&
+				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
+				sections[i].srwx = prot2perm (bin->segs[j].initprot);
 				break;
 			}
 		}
 		// XXX: if two sections have the same name are merged :O
 		// XXX: append section index in flag name maybe?
 		// XXX: do not load out of bound sections?
-#if 0
-		if ((sections[i].addr + sections[i].size) > bin->size) {
-			//sections[i].size = bin->size - sections[i].addr;
-			eprintf ("section dimmed .. (%s) to %llx\n", sectname, 
-			sections[i].addr, sections[i].size);
-		}
-#endif
-//eprintf ("SN (%s)\n", sectname);
+		// XXX: load segments instead of sections? what about PAGEZERO and ...
 		snprintf (sections[i].name, sizeof (sections[i].name), "%s.%s", segname, sectname);
 		sections[i].last = 0;
 	}

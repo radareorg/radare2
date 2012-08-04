@@ -226,7 +226,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				if (t == 1) break;
 			}
 		}
-		if (mfcn != NULL && mfcn2 != NULL) {
+		if (mfcn && mfcn2) {
 #if 0
 			eprintf ("Match => %s - %s\n", mfcn->name, mfcn2->name);
 #endif

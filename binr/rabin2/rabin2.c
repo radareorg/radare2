@@ -47,7 +47,7 @@ static char *name = NULL;
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
 		" -A              list archs\n"
-		" -a [arch]       set arch (x86, arm, .. accepts underscore for bits x86_32)\n"
+		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
 		" -b [bits]       set bits (32, 64 ...)\n"
 		" -B [addr]       override baddr\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
@@ -87,14 +87,14 @@ static int rabin_extract(int all) {
 	if (all) {
 		for (i=0; i<bin->narch; i++) {
 			r_bin_select_idx (bin, i);
-			if (bin->curarch.info == NULL) {
+			if (bin->cur.o->info == NULL) {
 				eprintf ("No extract info found.\n");
 			} else {
-				path = strdup (bin->curarch.file);
+				path = strdup (bin->cur.file);
 				if ((ptr = strrchr (path, '/'))) {
 					*ptr = '\0';
 					ptr++;
-				} else ptr = bin->curarch.file;
+				} else ptr = bin->cur.file;
 /*
 				if (output)
 					snprintf (outpath, sizeof (outpath), "%s/%s", output, path);
@@ -106,30 +106,30 @@ static int rabin_extract(int all) {
 					return R_FALSE;
 				}
 				snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i",
-						outpath, ptr, bin->curarch.info->arch,
-						bin->curarch.info->bits);
+						outpath, ptr, bin->cur.o->info->arch,
+						bin->cur.o->info->bits);
 				snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i",
-						outpath, ptr, bin->curarch.info->arch,
-						bin->curarch.info->bits);
-				if (!r_file_dump (outfile, bin->curarch.buf->buf, bin->curarch.size)) {
+						outpath, ptr, bin->cur.o->info->arch,
+						bin->cur.o->info->bits);
+				if (!r_file_dump (outfile, bin->cur.buf->buf, bin->cur.size)) {
 					eprintf ("Error extracting %s\n", outfile);
 					return R_FALSE;
-				} else printf ("%s created (%i)\n", outfile, bin->curarch.size);
+				} else printf ("%s created (%i)\n", outfile, bin->cur.size);
 			}
 		}
 	} else { /* XXX: Use 'output' for filename? */
-		if (bin->curarch.info == NULL) {
+		if (bin->cur.o->info == NULL) {
 			eprintf ("No extract info found.\n");
 		} else {
-			if ((ptr = strrchr (bin->curarch.file, '/')))
+			if ((ptr = strrchr (bin->cur.file, '/')))
 				ptr++;
-			else ptr = bin->curarch.file;
+			else ptr = bin->cur.file;
 			snprintf (outfile, sizeof (outfile), "%s.%s_%i", ptr,
-					bin->curarch.info->arch, bin->curarch.info->bits);
-			if (!r_file_dump (outfile, bin->curarch.buf->buf, bin->curarch.size)) {
+					bin->cur.o->info->arch, bin->cur.o->info->bits);
+			if (!r_file_dump (outfile, bin->cur.buf->buf, bin->cur.size)) {
 				eprintf ("Error extracting %s\n", outfile);
 				return R_FALSE;
-			} else printf ("%s created (%i)\n", outfile, bin->curarch.size);
+			} else printf ("%s created (%i)\n", outfile, bin->cur.size);
 		}
 	}
 	return R_TRUE;
@@ -155,7 +155,7 @@ static int rabin_dump_symbols(int len) {
 
 		if (!(buf = malloc (len)) || !(ret = malloc (len*2+1)))
 			return R_FALSE;
-		r_buf_read_at (bin->curarch.buf, symbol->offset, buf, len);
+		r_buf_read_at (bin->cur.buf, symbol->offset, buf, len);
 		r_hex_bin2str (buf, len, ret);
 		printf ("%s %s\n", symbol->name, ret);
 		free (buf);
@@ -180,7 +180,7 @@ static int rabin_dump_sections(char *scnname) {
 			if (!(buf = malloc (section->size)) ||
 					!(ret = malloc (section->size*2+1)))
 				return R_FALSE;
-			r_buf_read_at (bin->curarch.buf, section->offset, buf, section->size);
+			r_buf_read_at (bin->cur.buf, section->offset, buf, section->size);
 			if (output) {
 				r_file_dump (output, buf, section->size);
 			} else {
@@ -442,7 +442,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (gbaddr != 0LL)
-		bin->curarch.baddr = gbaddr;
+		bin->cur.o->baddr = gbaddr;
 
 	RCore core;
 	core.bin = bin;

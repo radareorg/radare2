@@ -307,13 +307,14 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if ((addr != -1 && (addr >= map->addr && addr < map->addr_end)) ||
 				(libname != NULL && (strstr (map->name, libname)))) {
+				RBinObject *o = core->bin->cur.o;
 				filter.offset = 0LL;
 				filter.name = (char *)symname;
-				baddr = core->bin->curarch.baddr;
-				core->bin->curarch.baddr = map->addr;
+				baddr = o->baddr;
+				o->baddr = map->addr;
 				r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'),
 						R_TRUE, &filter, 0);
-				core->bin->curarch.baddr = baddr;
+				o->baddr = baddr;
 				break;
 			}
 		}

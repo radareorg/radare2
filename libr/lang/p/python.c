@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 /* python extension for libr (radare2) */
 
 #include <r_lib.h>
@@ -72,7 +72,6 @@ static PyObject * Radare_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *Radare_cmd(Radare* self, PyObject *args) {
-	PyObject *result;
 	char *str, *cmd = NULL;
 
 	if (!PyArg_ParseTuple (args, "s", &cmd))

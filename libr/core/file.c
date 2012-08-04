@@ -136,17 +136,18 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	if (r_bin_load (r->bin, file, R_FALSE)) {
 		if (r->bin->narch>1) {
 			int i;
+			RBinObject *o = r->bin->cur.o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
 					r->assembler->cur->arch, r->assembler->bits);
 			eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
 			for (i=0; i<r->bin->narch; i++) {
 				r_bin_select_idx (r->bin, i);
-				if (r->bin->curarch.info) {
+				if (o->info) {
 					eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n", 
-							r->bin->curarch.info->arch,
-							r->bin->curarch.info->bits,
-							r->bin->curarch.file,
-							r->bin->curarch.offset);
+							o->info->arch,
+							o->info->bits,
+							r->bin->file,
+							r->bin->cur.offset);
 				} else eprintf ("No extract info found.\n");
 			}
 		}
@@ -223,12 +224,9 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	if (!cf) return;
-	free (cf->uri);
-	cf->uri = NULL;
-	free (cf->filename);
-	cf->filename = NULL;
-	free (cf->map);
-	cf->map = NULL;
+	R_FREE (cf->uri);
+	R_FREE (cf->filename);
+	R_FREE (cf->map);
 	r_io_desc_free (cf->fd);
 	cf->fd = NULL;
 }
@@ -270,7 +268,6 @@ R_API int r_core_file_list(RCore *core) {
 R_API int r_core_file_close_fd(RCore *core, int fd) {
 	RCoreFile *file;
 	RListIter *iter;
-	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (core->files, iter, file) {
 		if (file->fd->fd == fd) {
 			r_io_close (core->io, file->fd);
@@ -310,11 +307,11 @@ R_API int r_core_hash_load(RCore *r, const char *file) {
 	ctx = r_hash_new (R_TRUE, R_HASH_SHA1);
 	sha1 = r_hash_do_sha1 (ctx, buf, buf_len);
 	p = hash;
-	for (i=0; i<R_HASH_SIZE_SHA1;i++) {
+	for (i=0; i<R_HASH_SIZE_SHA1; i++) {
 		sprintf (p, "%02x", sha1[i]);
-		p+=2;
+		p += 2;
 	}
-	*p=0;
+	*p = 0;
 	r_config_set (r->config, "file.sha1", hash);
 	r_hash_free (ctx);
 	free (buf);

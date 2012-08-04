@@ -32,9 +32,10 @@ enum {
 
 // name mangling types
 enum {
-	R_BIN_NM_JAVA,
-	R_BIN_NM_CXX,
-	R_BIN_NM_ANY=-1,
+	R_BIN_NM_NONE = 0,
+	R_BIN_NM_JAVA = 1,
+	R_BIN_NM_CXX = 2,
+	R_BIN_NM_ANY = -1,
 };
 
 enum {
@@ -65,32 +66,21 @@ typedef struct r_bin_info_t {
 	ut64 dbg_info;
 } RBinInfo;
 
-
-// XXX: isnt this a copy of Obj ?
+// XXX: this is a copy of RBinObject
+// TODO: rename RBinArch to RBinFile
 typedef struct r_bin_arch_t {
+	RBuffer *buf;
 	char *file;
 	int size;
-	ut64 baddr;
 	ut64 offset;
-	RBinAddr *binsym[R_BIN_SYM_LAST];
-	RBinInfo *info;
-	RList* entries;
-	RList* sections;
-	RList* symbols;
-	RList* imports;
-	RList* strings;
-	RList* fields;
-	RList* libs;
-	RList* relocs;
-	RList* classes;
-	RBuffer *buf;
-	void *bin_obj;
+	struct r_bin_object_t *o;
+	void *bin_obj; // internal pointer used by formats
 	struct r_bin_plugin_t *curplugin;
 } RBinArch;
 
 typedef struct r_bin_t {
 	char *file;
-	RBinArch curarch;
+	RBinArch cur;
 	int narch;
 	void *user;
 	void *bin_obj;
@@ -214,9 +204,9 @@ typedef struct r_bin_write_t {
 	int (*rpath_del)(RBinArch *arch);
 } RBinWrite;
 
-/* totally unused */
-typedef struct r_bin_obj_t {
+typedef struct r_bin_object_t {
 	ut64 baddr;
+	int size;
 	RList/*<RBinSection>*/ *sections;
 	RList/*<RBinImport>*/ *imports;
 	RList/*<RBinSymbol>*/ *symbols;
@@ -228,10 +218,11 @@ typedef struct r_bin_obj_t {
 	RList/*<RBinClass>*/ *classes;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
+	int referenced;
 // TODO: deprecate r_bin_is_big_endian
 // TODO: r_bin_is_stripped .. wrapped inside rbinobj?
 // TODO: has_dbg_syms... maybe flags?
-} RBinObj;
+} RBinObject;
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
 
@@ -239,7 +230,6 @@ typedef struct r_bin_bind_t {
 	RBin *bin;
 	RBinGetOffset get_offset;
 } RBinBind;
-
 
 #ifdef R_API
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
@@ -249,7 +239,7 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, int dummy);
-R_API RBinObj *r_bin_get_object(RBin *bin, int flags);
+R_API RBinObject *r_bin_get_object(RBin *bin, int flags);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
 R_API char* r_bin_demangle(RBin *bin, const char *str);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -10,8 +10,7 @@ static int check(RBin *bin) {
 	ut8 *h, buf[4];
 	int off, filesize, ret = R_FALSE;
 	RMmap *m = r_file_mmap (bin->file, R_FALSE);
-	if (!m) return R_FALSE;
-	if (!m->buf) {
+	if (!m || !m->buf) {
 		r_file_mmap_free (m);
 		return R_FALSE;
 	}
@@ -36,6 +35,7 @@ static int destroy(RBin *bin) {
 	r_bin_fatmach0_free ((struct r_bin_fatmach0_obj_t*)bin->bin_obj);
 	return R_TRUE;
 }
+
 static int load(RBin *bin) {
 	if ((bin->bin_obj = r_bin_fatmach0_new (bin->file)))
 		return R_TRUE;
@@ -47,12 +47,11 @@ static int extract(RBin *bin, int idx) {
 	struct r_bin_fatmach0_obj_t *fb = bin->bin_obj;
 	struct r_bin_fatmach0_arch_t *arch =
 		r_bin_fatmach0_extract (fb, idx, &narch);
-	if (!arch)
-		return 0;
-	bin->curarch.file = strdup (bin->file);
-	bin->curarch.buf = arch->b;
-	bin->curarch.size = arch->size;
-	bin->curarch.offset = arch->offset;
+	if (!arch) return 0;
+	bin->cur.file = strdup (bin->file);
+	bin->cur.buf = arch->b;
+	bin->cur.size = arch->size;
+	bin->cur.offset = arch->offset;
 	free (arch);
 	return narch;
 }

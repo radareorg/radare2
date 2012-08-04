@@ -296,7 +296,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 baddr;
-	int is_arm = !strcmp (bin->curarch.info->arch, "arm");
+	int is_arm = !strcmp (bin->cur.o->info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
 	// XXX: hardcoded
 	if (is_arm) baddr = 0x40000;

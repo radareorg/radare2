@@ -203,7 +203,7 @@ static ut8 decode_parameter(char* param, int* extra_word_needed, ut16* extra_wor
 	return 0x1f;
 }
 
-int dcpu16_assemble (ut8* out, char* unoline) {
+int dcpu16_assemble (ut8* out, const char* unoline) {
 	ut16 wordA = 0, wordB = 0;
 	int basic_opcode = 0;
 	int non_basic_opcode = 0;

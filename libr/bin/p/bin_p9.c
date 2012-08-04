@@ -47,7 +47,7 @@ static RList* sections(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	ut64 textsize, datasize, symssize, spszsize, pcszsize;
-	int big_endian = arch->info->big_endian;
+	int big_endian = arch->o->info->big_endian;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
