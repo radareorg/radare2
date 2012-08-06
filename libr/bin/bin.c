@@ -127,7 +127,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	if (cp->entries) o->entries = cp->entries (a);
 	if (cp->fields) o->fields = cp->fields (a);
 	if (cp->imports) o->imports = cp->imports (a);
-	if (cp->info) o->info = cp->info (a);
+	o->info = cp->info? cp->info (a): NULL;
 	if (cp->libs) o->libs = cp->libs (a);
 	if (cp->relocs) o->relocs = cp->relocs (a);
 	if (cp->sections) o->sections = cp->sections (a);
@@ -405,9 +405,10 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 // DUPDUPDUP
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	int i;
-	RBinInfo *info = bin->cur.o->info;
+	RBinInfo *info;
 	for (i=0; i<bin->narch; i++) {
 		r_bin_select_idx (bin, i);
+		info = bin->cur.o->info;
 		if (!info || !bin->cur.file ||
 			(arch && !strstr (info->arch, arch)) ||
 			(bits && bits != info->bits) ||

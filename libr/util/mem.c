@@ -153,7 +153,7 @@ R_API void r_mem_copyendian (ut8 *dest, const ut8 *orig, int size, int endian) {
 	ut8 buffer[8];
         if (endian) {
 		if (dest != orig)
-			memcpy (dest, orig, size);
+			memmove (dest, orig, size);
         } else
 	switch (size) {
 	case 1:

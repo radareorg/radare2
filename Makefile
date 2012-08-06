@@ -151,34 +151,19 @@ purge-doc:
 	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
 	rm -f ${MDR}/man1/r2.1
 
+R2BINS=$(shell cd binr ; echo r*2)
 purge-dev:
 	rm -rf ${DESTDIR}/${LIBDIR}/libr_*.a
 	rm -rf ${DESTDIR}/${LIBDIR}/pkgconfig/r_*.pc
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 	rm -f ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/-*
 	# XXX: this must be in purge-sym ?
-	for a in ${DESTDIR}/${BINDIR}/r*2 ; do ${STRIP} -s $$a ; done
-	for a in ${DESTDIR}/${LIBDIR}/libr_*.so ; do ${STRIP} -s $$a ; done
-
-# TODO strip syms!
-
+	-for a in ${R2BINS} ; do ${STRIP} -s ${DESTDIR}/${BINDIR}/$$a 2> /dev/null ; done
+	-for a in ${DESTDIR}/${LIBDIR}/libr_*.so ; do ${STRIP} -s $$a ; done
 
 purge: purge-doc purge-dev
-	rm -f ${DESTDIR}/${BINDIR}/r2
-	rm -f ${DESTDIR}/${BINDIR}/radare2
-	rm -f ${DESTDIR}/${BINDIR}/rabin2
-	rm -f ${DESTDIR}/${BINDIR}/rafind2
-	rm -f ${DESTDIR}/${BINDIR}/ranal2
-	rm -f ${DESTDIR}/${BINDIR}/rax2
-	rm -f ${DESTDIR}/${BINDIR}/rsc2
-	rm -f ${DESTDIR}/${BINDIR}/rasm2
-	rm -f ${DESTDIR}/${BINDIR}/rarc2
-	rm -f ${DESTDIR}/${BINDIR}/rahash2
-	rm -f ${DESTDIR}/${BINDIR}/ragg2
+	for a in ${R2BINS} ; do rm -f ${DESTDIR}/${BINDIR}/$$a ; done
 	rm -f ${DESTDIR}/${BINDIR}/ragg2-cc
-	rm -f ${DESTDIR}/${BINDIR}/rarun2
-	rm -f ${DESTDIR}/${BINDIR}/rasc2
-	rm -f ${DESTDIR}/${BINDIR}/radiff2
 	rm -f ${DESTDIR}/${LIBDIR}/libr_*
 	rm -rf ${DESTDIR}/${LIBDIR}/radare2
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr

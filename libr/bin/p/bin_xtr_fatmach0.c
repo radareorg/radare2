@@ -8,7 +8,7 @@
 
 static int check(RBin *bin) {
 	ut8 *h, buf[4];
-	int off, filesize, ret = R_FALSE;
+	int off, ret = R_FALSE;
 	RMmap *m = r_file_mmap (bin->file, R_FALSE);
 	if (!m || !m->buf) {
 		r_file_mmap_free (m);
@@ -18,7 +18,7 @@ static int check(RBin *bin) {
 	if (m->len>=0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
 		memcpy (&off, h+4*sizeof (int), sizeof (int));
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
-		if (off > 0 && off < filesize) {
+		if (off > 0 && off < m->len) {
 			memcpy (buf, h+off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
