@@ -2,7 +2,7 @@ NAME=r_anal
 PRE=pre
 EXTRA_CLEAN=clean2
 DEPS=r_util r_db r_lib r_reg r_syscall r_diff # r_core (commented as it would be recursive)
-CFLAGS+=-DCORELIB -Iarch -I../../shrl
+CFLAGS+=-DCORELIB -Iarch -I../../shlr
 
 include ../config.mk
 

@@ -1,6 +1,6 @@
 NAME=r_asm
 DEPS=r_lib r_util r_parse r_db
-CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shrl
+CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shlr
 
 include ../config.mk
 
