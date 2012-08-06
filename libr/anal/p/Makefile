@@ -8,7 +8,7 @@ foo: all
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
-ARCHS=x86.mk x86_simple.mk ppc.mk arm.mk avr.mk csr.mk dalvik.mk sh.mk
+ARCHS=x86.mk x86_udis86.mk x86_simple.mk ppc.mk arm.mk avr.mk csr.mk dalvik.mk sh.mk
 include $(ARCHS)
 
 all: ${ALL_TARGETS}

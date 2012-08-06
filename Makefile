@@ -82,6 +82,7 @@ w32beta: w32dist
 clean:
 	cd libr && ${MAKE} clean
 	cd binr && ${MAKE} clean
+	cd shrl && ${MAKE} clean
 
 mrproper:
 	cd libr && ${MAKE} mrproper

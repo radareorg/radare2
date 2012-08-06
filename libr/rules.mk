@@ -29,13 +29,13 @@ waitfordeps:
 	@sh $(LIBR)/waitfordeps.sh ${DEPS}
 
 ifeq ($(WITHPIC),1)
-${LIBSO}: $(EXTRA_TARGETS) waitfordeps ${OBJ}
-	@for a in ${OBJ} ${SRC}; do \
+${LIBSO}: $(EXTRA_TARGETS) waitfordeps ${OBJ} ${SHARED_OBJ}
+	@for a in ${OBJ} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
 	  test $$a -nt ${LIBSO} && do=1 ; \
 	  if [ $$do = 1 ]; then \
-	    echo "${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK}" ; \
-	    ${CC_LIB} ${LIBNAME} ${OBJ} ${LDFLAGS} ${LINK}; \
+	    echo "${CC_LIB} ${LIBNAME} ${OBJ} ${SHARED_OBJ} ${LDFLAGS} ${LINK}" ; \
+	    ${CC_LIB} ${LIBNAME} ${OBJ} ${SHARED_OBJ} ${LDFLAGS} ${LINK}; \
 	    if [ -f "$(LIBR)/stripsyms.sh" ]; then sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
 	  break ; \
 	fi ; done
@@ -45,7 +45,7 @@ endif
 
 ifeq ($(WITHNONPIC),1)
 $(LIBAR): ${OBJ}
-	${CC_AR} ${OBJ}
+	${CC_AR} ${OBJ} ${SHARED_OBJ}
 else
 $(LIBAR):
 endif
@@ -105,7 +105,7 @@ ${BINS}:
 	echo ${LIBR}
 	${CC} ${CFLAGS} $@.c -L.. ${LDFLAGS} ${LDLIBS} -o $@${EXT_EXE}
 
-${BIN}${EXT_EXE}: ${OBJ}
+${BIN}${EXT_EXE}: ${OBJ} ${SHARED_OBJ}
 	${CC} $+ -L.. ${LDFLAGS} ${LDLIBS} -o ${BIN}${EXT_EXE}
 endif
 

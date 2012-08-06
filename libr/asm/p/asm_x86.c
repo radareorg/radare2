@@ -5,8 +5,8 @@
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
-#include "x86/udis86/types.h"
-#include "x86/udis86/extern.h"
+#include "udis86/types.h"
+#include "udis86/extern.h"
 
 // TODO : split into get/set... we need a way to create binary masks from asm buffers
 // -- move this shit into r_anal.. ??
