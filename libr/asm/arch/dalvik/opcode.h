@@ -284,7 +284,7 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"+execute-inline", 6, fmtoptinlineI},
 	{"+execute-inline/range", 6, fmtoptinlineIR},
 	{"+invoke-direct-empty", 6, fmtopvXtBBBB}, /* 0xf0 */
-	{"UNUSED", 0, fmt00},
+	{"return-void-barrier", 2, fmtop},
 	{"+iget-quick", 4, fmtoptopvAvBoCCCC},
 	{"+iget-wide-quick", 4, fmtoptopvAvBoCCCC},
 	{"+iget-object-quick", 4, fmtoptopvAvBoCCCC},
