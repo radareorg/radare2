@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2011-2012 earada */
+
 #include <r_core.h>
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {

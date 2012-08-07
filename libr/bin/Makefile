@@ -5,7 +5,6 @@ include ../config.mk
 
 foo: pre libr_bin.${EXT_SO} libr_bin.${EXT_AR} plugins
 
-# XXX
 CFLAGS+=-DCORELIB -Iformat -Imangling
 
 include ../config.mk

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -29,11 +29,9 @@ static int check(RBinArch *arch) {
 }
 
 static RBinInfo * info(RBinArch *arch) {
-	RBinInfo *ret = NULL;
 	char *version;
-
-	if (!(ret = R_NEW0 (RBinInfo)))
-		return NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "DEX CLASS", R_BIN_SIZEOF_STRINGS);
@@ -47,7 +45,7 @@ static RBinInfo * info(RBinArch *arch) {
 	strncpy (ret->machine, "Dalvik VM", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->arch, "dalvik", R_BIN_SIZEOF_STRINGS);
 	ret->bits = 32;
-	ret->big_endian= 0;
+	ret->big_endian = 0;
 	ret->dbg_info = 1 | 4 | 8; /* Stripped | LineNums | Syms */
 	return ret;
 }
@@ -68,7 +66,6 @@ static RList* strings (RBinArch *arch) {
 			break;
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
-		//	len = R_BIN_SIZEOF_STRINGS-1;
 		if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
 			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
 					(ut8*)&ptr->string, len);
@@ -194,26 +191,25 @@ static RList* classes (RBinArch *arch) {
 //TODO
 static int getoffset (RBinArch *arch, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = arch->bin_obj;
-
 	switch (type) {
-		case 'm': // methods
-			if (dex->header.method_size > idx)
-				return dex->header.method_offset+(sizeof (struct dex_method_t)*idx);
-			break;
-		case 'c': // class
-			break;
-		case 'f': // fields
-			if (dex->header.fields_size > idx)
-				return dex->header.fields_offset+(sizeof (struct dex_field_t)*idx);
-			break;
-		case 'o': // objects
-			break;
-		case 's': // strings
-			if (dex->header.strings_size > idx)
-				return dex->strings[idx];
-			break;
-		case 't': // things
-			break;
+	case 'm': // methods
+		if (dex->header.method_size > idx)
+			return dex->header.method_offset+(sizeof (struct dex_method_t)*idx);
+		break;
+	case 'c': // class
+		break;
+	case 'f': // fields
+		if (dex->header.fields_size > idx)
+			return dex->header.fields_offset+(sizeof (struct dex_field_t)*idx);
+		break;
+	case 'o': // objects
+		break;
+	case 's': // strings
+		if (dex->header.strings_size > idx)
+			return dex->strings[idx];
+		break;
+	case 't': // things
+		break;
 	}
 	return -1;
 }

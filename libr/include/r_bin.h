@@ -97,6 +97,7 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*check)(RBin *bin);
 	int (*extract)(RBin *bin, int idx);
 	int (*load)(RBin *bin);
+	int (*size)(RBin *bin);
 	int (*destroy)(RBin *bin);
 } RBinXtrPlugin;
 
@@ -106,6 +107,7 @@ typedef struct r_bin_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*load)(RBinArch *arch);
+	int (*size)(RBin *bin);
 	int (*destroy)(RBinArch *arch);
 	int (*check)(RBinArch *arch);
 	ut64 (*baddr)(RBinArch *arch);
@@ -219,10 +221,10 @@ typedef struct r_bin_object_t {
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	int referenced;
-// TODO: deprecate r_bin_is_big_endian
-// TODO: r_bin_is_stripped .. wrapped inside rbinobj?
-// TODO: has_dbg_syms... maybe flags?
 } RBinObject;
+
+// TODO: deprecate r_bin_is_big_endian
+// TODO: has_dbg_syms... maybe flags?
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
 

@@ -374,7 +374,7 @@ int main(int argc, char **argv) {
 	}
 
 	file = argv[optind];
-	if (action == ACTION_HELP || action == ACTION_UNK || file == NULL)
+	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL)
 		return rabin_show_help ();
 
 	if (arch) {

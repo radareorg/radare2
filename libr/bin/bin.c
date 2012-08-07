@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org>, nibble<.ds@gmail.com> */
 
-/* TODO:
- * dlopen library and show address
- */
+// TODO: dlopen library and show address
 
 #include <r_types.h>
 #include <r_util.h>
@@ -91,7 +89,7 @@ static RList* get_strings(RBinArch *a, int min) {
 		r_list_foreach (a->o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				count ++;
-				get_strings_range (a, ret, min, 
+				get_strings_range (a, ret, min,
 					section->offset, section->offset+section->size, section->rva);
 			}
 		}	
@@ -119,8 +117,9 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	cp = bin->cur.curplugin;
 	if (!cp || !cp->load || !cp->load (a))
 		return R_FALSE;
-	if (cp->baddr)
-		o->baddr = cp->baddr (a);
+	if (cp->baddr) o->baddr = cp->baddr (a);
+	// XXX: no way to get info from xtr pluginz?
+	if (cp->size) o->size = cp->size (a);
 	if (cp->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
 			o->binsym[i] = cp->binsym (a, i);
@@ -215,11 +214,11 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 		foo->init (bin->user);
 
 	// avoid duplicates
-	r_list_foreach(bin->binxtrs, it, xtr) {
+	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (!strcmp (xtr->name, foo->name))
 			return R_FALSE;
 	}
-	r_list_append(bin->binxtrs, foo);
+	r_list_append (bin->binxtrs, foo);
 
 	return R_TRUE;
 }
@@ -241,11 +240,11 @@ R_API int r_bin_list(RBin *bin) {
 	RBinXtrPlugin *plugin;
 	RBinXtrPlugin *xtr;
 
-	r_list_foreach(bin->plugins, it, plugin) {
+	r_list_foreach (bin->plugins, it, plugin) {
 		printf ("bin %-10s %s\n", plugin->name, plugin->desc);
 	}
 
-	r_list_foreach(bin->binxtrs, it, xtr) {
+	r_list_foreach (bin->binxtrs, it, xtr) {
 		printf ("bin-xtr %-10s %s\n", xtr->name, xtr->desc);
 	}
 

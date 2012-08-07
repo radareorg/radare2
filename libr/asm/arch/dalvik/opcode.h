@@ -1,38 +1,38 @@
-/* radare - LGPL - Copyright 2009-2010 */
+/* radare - LGPL - Copyright 2009-2012 - earada */
 
 enum fmt_inst {
-	fmt00 = 0,					// None
-	fmtop,						// op
-	fmtopvAvB,					// op vA, vB
-	fmtopvAcB,					// op vA, #+B
-	fmtopvAA,					// op vAA
-	fmtoppAA,					// op +AA
-	fmtopAAtBBBB,				// op AA, thing@BBBB
-	fmtoppAAAA,					// op +AAAA
-	fmtopvAAvBBBB,				// op vAA, vBBBB
-	fmtopvAApBBBB,				// op vAA, +BBBB
-	fmtopvAAcBBBB,				// op vAA, #+BBBB
-	fmtopvAAcBBBB0000,			// op vAA, #+BBBB00000[00000000]
-	fmtopvAAtBBBB,				// op vAA, thing@BBBB
-	fmtopvAAvBBvCC,				// op vAA, vBB, vCC
-	fmtopvAAvBBcCC,				// op vAA, vBB, #+CC
-	fmtopvAvBpCCCC,				// op vA, vB, +CCCC
-	fmtopvAvBcCCCC,				// op vA, vB, #+CCCC
-	fmtopvAvBtCCCC,				// op vA, vB, thing@CCCC
-	fmtoptopvAvBoCCCC,			// [opt] op vA, vB, field offset CCCC
-	fmtopvAAAAvBBBB,			// op vAAAA, vBBBB
-	fmtoppAAAAAAAA,				// op +AAAAAAAA
-	fmtopvAApBBBBBBBB,			// op vAA, +BBBBBBBB
-	fmtopvAAcBBBBBBBB,			// op vAA, #+BBBBBBBB
-	fmtopvAAtBBBBBBBB,			// op vAA, thing@BBBBBBBB
-	fmtopvXtBBBB,				// op {vC, vD, vE, vF, vG}, thing@BBBB (B: count, A: vG)
-	fmtoptinvokeVS,				// [opt] invoke-virtual+super
-	fmtoptinvokeI,				// [opt] invoke-interface
-	fmtopvCCCCmBBBB,			// op {vCCCC .. v(CCCC+AA-1)}, meth@BBBB
-	fmtoptinvokeVSR,			// [opt] invoke-virtual+super/range
-	fmtoptinvokeIR,				// [opt] invoke-interface/range
-	fmtoptinlineI,				// [opt] inline invoke
-	fmtoptinlineIR,				// [opt] inline invoke/range
+	fmt00 = 0,			// None
+	fmtop,				// op
+	fmtopvAvB,			// op vA, vB
+	fmtopvAcB,			// op vA, #+B
+	fmtopvAA,			// op vAA
+	fmtoppAA,			// op +AA
+	fmtopAAtBBBB,			// op AA, thing@BBBB
+	fmtoppAAAA,			// op +AAAA
+	fmtopvAAvBBBB,			// op vAA, vBBBB
+	fmtopvAApBBBB,			// op vAA, +BBBB
+	fmtopvAAcBBBB,			// op vAA, #+BBBB
+	fmtopvAAcBBBB0000,		// op vAA, #+BBBB00000[00000000]
+	fmtopvAAtBBBB,			// op vAA, thing@BBBB
+	fmtopvAAvBBvCC,			// op vAA, vBB, vCC
+	fmtopvAAvBBcCC,			// op vAA, vBB, #+CC
+	fmtopvAvBpCCCC,			// op vA, vB, +CCCC
+	fmtopvAvBcCCCC,			// op vA, vB, #+CCCC
+	fmtopvAvBtCCCC,			// op vA, vB, thing@CCCC
+	fmtoptopvAvBoCCCC,		// [opt] op vA, vB, field offset CCCC
+	fmtopvAAAAvBBBB,		// op vAAAA, vBBBB
+	fmtoppAAAAAAAA,			// op +AAAAAAAA
+	fmtopvAApBBBBBBBB,		// op vAA, +BBBBBBBB
+	fmtopvAAcBBBBBBBB,		// op vAA, #+BBBBBBBB
+	fmtopvAAtBBBBBBBB,		// op vAA, thing@BBBBBBBB
+	fmtopvXtBBBB,			// op {vC, vD, vE, vF, vG}, thing@BBBB (B: count, A: vG)
+	fmtoptinvokeVS,			// [opt] invoke-virtual+super
+	fmtoptinvokeI,			// [opt] invoke-interface
+	fmtopvCCCCmBBBB,		// op {vCCCC .. v(CCCC+AA-1)}, meth@BBBB
+	fmtoptinvokeVSR,		// [opt] invoke-virtual+super/range
+	fmtoptinvokeIR,			// [opt] invoke-interface/range
+	fmtoptinlineI,			// [opt] inline invoke
+	fmtoptinlineIR,			// [opt] inline invoke/range
 	fmtopvAAcBBBBBBBBBBBBBBBB,	// op vAA, #+BBBBBBBBBBBBBBBB
 };
 
@@ -283,8 +283,9 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"^throw-verification-error", 4, fmtopAAtBBBB},
 	{"+execute-inline", 6, fmtoptinlineI},
 	{"+execute-inline/range", 6, fmtoptinlineIR},
-	{"+invoke-direct-empty", 6, fmtopvXtBBBB}, /* 0xf0 */
-	{"UNUSED", 0, fmt00},
+	//{"+invoke-direct-empty", 6, fmtopvXtBBBB}, /* 0xf0 */ // invoke-object-init-range
+	{"+invoke-object-init-range", 6, fmtopvXtBBBB}, /* 0xf0 */ // invoke-object-init-range
+	{"return-void-barrier", 2, fmtop},
 	{"+iget-quick", 4, fmtoptopvAvBoCCCC},
 	{"+iget-wide-quick", 4, fmtoptopvAvBoCCCC},
 	{"+iget-object-quick", 4, fmtoptopvAvBoCCCC},

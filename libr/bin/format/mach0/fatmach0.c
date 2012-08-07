@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 nibble at develsec.org */
+/* radare - LGPL - Copyright 2010-2012 - nibble */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -6,7 +6,7 @@
 #include "fatmach0.h"
 
 static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
-	int len = r_buf_fread_at(bin->b, 0, (ut8*)&bin->hdr, "2I", 1);
+	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "2I", 1);
 	if (len == -1) {
 		perror ("read (fat_header)");
 		return R_FALSE;
@@ -35,7 +35,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 	if (bin->hdr.nfat_arch < 0 || idx < 0 || idx > bin->hdr.nfat_arch)
 		return NULL;
 	if (narch) *narch = bin->hdr.nfat_arch;
-	if (!(ret = malloc (sizeof (struct r_bin_fatmach0_arch_t)))) {
+	if (!(ret = R_NEW0 (struct r_bin_fatmach0_arch_t))) {
 		perror ("malloc (ret)");
 		return NULL;
 	}
@@ -73,31 +73,25 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 }
 
 void* r_bin_fatmach0_free(struct r_bin_fatmach0_obj_t* bin) {
-	if (!bin)
-		return NULL;
-	if (bin->archs)
-		free (bin->archs);
-	if (bin->b)
-		r_buf_free (bin->b);
-	free(bin);
+	if (!bin) return NULL;
+	if (bin->archs) free (bin->archs);
+	if (bin->b) r_buf_free (bin->b);
+	free (bin);
 	return NULL;
 }
 
 struct r_bin_fatmach0_obj_t* r_bin_fatmach0_new(const char* file) {
-	struct r_bin_fatmach0_obj_t *bin;
 	ut8 *buf;
-
-	if (!(bin = malloc (sizeof (struct r_bin_fatmach0_obj_t))))
-		return NULL;
-	memset (bin, 0, sizeof (struct r_bin_fatmach0_obj_t));
+	struct r_bin_fatmach0_obj_t *bin = R_NEW0 (struct r_bin_fatmach0_obj_t);
+	if (!bin) return NULL;
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) 
-		return r_bin_fatmach0_free(bin);
-	bin->b = r_buf_new();
-	if (!r_buf_set_bytes(bin->b, buf, bin->size))
-		return r_bin_fatmach0_free(bin);
+		return r_bin_fatmach0_free (bin);
+	bin->b = r_buf_new ();
+	if (!r_buf_set_bytes (bin->b, buf, bin->size))
+		return r_bin_fatmach0_free (bin);
 	free (buf);
-	if (!r_bin_fatmach0_init(bin))
-		return r_bin_fatmach0_free(bin);
+	if (!r_bin_fatmach0_init (bin))
+		return r_bin_fatmach0_free (bin);
 	return bin;
 }

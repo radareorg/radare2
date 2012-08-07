@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,7 +7,7 @@
 #include "elf/elf.h"
 
 static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = Elf_(r_bin_elf_new_buf) (arch->buf)))
+	if (!(arch->bin_obj = Elf_(r_bin_elf_new_buf) (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
