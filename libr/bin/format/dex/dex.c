@@ -62,8 +62,7 @@ int dex_read_uleb128 (const char *ptr) {
 
 #define LEB_MAX_SIZE 6
 int dex_uleb128_len (const char *ptr) {
-	int i, result = *(ptr++);
-	i=1;
+	int i=1, result = *(ptr++);
 
 	while (result > 0x7f && i <= LEB_MAX_SIZE) {
 		result = *(ptr++);

@@ -209,8 +209,8 @@ enum {
 #define R_ANAL_VARSUBS 32
 
 typedef struct r_anal_varsub_t {
-	char pat[1024];
-	char sub[1024];
+	char pat[128];
+	char sub[128];
 } RAnalVarSub;
 
 /*

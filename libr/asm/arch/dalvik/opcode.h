@@ -105,12 +105,12 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"if-gez", 4, fmtopvAApBBBB},
 	{"if-gtz", 4, fmtopvAApBBBB},
 	{"if-lez", 4, fmtopvAApBBBB},
-	{"UNUSED", 0, fmt00},
-	{"UNUSED", 0, fmt00},
-	{"UNUSED", 0, fmt00}, /* 0x40 */
-	{"UNUSED", 0, fmt00},
-	{"UNUSED", 0, fmt00},
-	{"UNUSED", 0, fmt00},
+	{"UNUSED", 2, fmt00},
+	{"UNUSED", 2, fmt00},
+	{"UNUSED", 2, fmt00}, /* 0x40 */
+	{"UNUSED", 2, fmt00},
+	{"UNUSED", 2, fmt00},
+	{"UNUSED", 2, fmt00},
 	{"aget", 4, fmtopvAAvBBvCC},
 	{"aget-wide", 4, fmtopvAAvBBvCC},
 	{"aget-object", 4, fmtopvAAvBBvCC},
@@ -158,14 +158,14 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"invoke-direct", 6, fmtopvXtBBBB}, /* 0x70 */
 	{"invoke-static", 6, fmtopvXtBBBB},
 	{"invoke-interface", 6, fmtopvXtBBBB}, //XXX: Maybe use opt invoke-interface ??
-	{"UNUSED", 0, fmt00},
+	{"UNUSED", 2, fmt00},
 	{"invoke-virtual/range", 6, fmtopvCCCCmBBBB},
 	{"invoke-super/range", 6, fmtopvCCCCmBBBB},
 	{"invoke-direct/range", 6, fmtopvCCCCmBBBB},
 	{"invoke-static/range", 6, fmtopvCCCCmBBBB},
 	{"invoke-interface/range", 6, fmtopvCCCCmBBBB},
-	{"UNUSED", 0, fmt00},
-	{"UNUSED", 0, fmt00},
+	{"UNUSED", 2, fmt00},
+	{"UNUSED", 2, fmt00},
 	{"neg-int", 2, fmtopvAvB},
 	{"not-int", 2, fmtopvAvB},
 	{"neg-long", 2, fmtopvAvB},
@@ -299,5 +299,5 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"+iput-object-volatile", 4, fmtopvAvBtCCCC},
 	{"+sget-object-volatile", 4, fmtopvAAtBBBB},
 	{"+sput-object-volatile", 4, fmtopvAAtBBBB},
-	{"UNUSED", 0, fmt00}
+	{"DEPRECATED", 2, fmtop}
 };
