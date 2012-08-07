@@ -149,6 +149,7 @@ extern RAsmPlugin r_asm_plugin_x86_olly;
 extern RAsmPlugin r_asm_plugin_x86_nasm;
 extern RAsmPlugin r_asm_plugin_arm;
 extern RAsmPlugin r_asm_plugin_armthumb;
+extern RAsmPlugin r_asm_plugin_arm_winedbg;
 extern RAsmPlugin r_asm_plugin_csr;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_ppc;
