@@ -14,7 +14,7 @@ namespace Radare {
 		}
 		public const string file;
 		public int narch;
-		public RBin.Arch curarch;
+		public RBin.Arch cur;
 
 		public RBin();
 

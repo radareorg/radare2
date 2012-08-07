@@ -119,7 +119,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 		return R_FALSE;
 	if (cp->baddr) o->baddr = cp->baddr (a);
 	// XXX: no way to get info from xtr pluginz?
-	if (cp->size) o->size = cp->size (a);
+	if (cp->size) o->size = cp->size (bin);
 	if (cp->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
 			o->binsym[i] = cp->binsym (a, i);
