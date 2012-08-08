@@ -6,8 +6,11 @@
 R_API void r_cons_grep(const char *str) {
 	int len;
 	RCons *cons;
-	char buf[1024];
+	char buf[4096];
 	char *ptr, *optr, *ptr2, *ptr3;
+
+	if (!str || !*str)
+		return;
 
 	cons = r_cons_singleton ();
 	cons->grep.str = NULL;
@@ -19,9 +22,6 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.tokento = ST32_MAX;
 	cons->grep.line = -1;
 	cons->grep.counter = cons->grep.neg = 0;
-
-	if (str == NULL || !*str)
-		return;
 
 	if (*str == '^') { // neg
 		cons->grep.begin = 1;
@@ -36,9 +36,10 @@ R_API void r_cons_grep(const char *str) {
 		str++;
 	}
 	len = strlen (str)-1;
-	if (str[len] == '?') {
+	if (len>0 && str[len] == '?') {
 		cons->grep.counter = 1;
-		strncpy (buf, str, len);
+		strncpy (buf, str, R_MIN (len, sizeof (buf)-1));
+		buf[len]=0;
 		len--;
 	} else strncpy (buf, str, sizeof (buf)-1);
 

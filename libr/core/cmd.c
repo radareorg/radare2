@@ -725,8 +725,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		return ret;
 	}
 
-	ret = r_cmd_call (core->cmd, r_str_trim_head (cmd));
-	return ret;
+	return cmd? r_cmd_call (core->cmd, r_str_trim_head (cmd)): R_FALSE;
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
