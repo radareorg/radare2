@@ -12,7 +12,7 @@
 static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
 	struct arm_insn *arminsn = arm_new();
 	arm_set_pc(arminsn, a->pc);
-	arm_set_thumb(arminsn, R_FALSE);
+	arm_set_thumb(arminsn, a->bits == 16);
 	arm_set_input_buffer(arminsn, buf);
 	op->inst_len = arm_disasm_one_insn(arminsn);
 	strncpy (op->buf_asm, arm_insn_asm(arminsn), R_ASM_BUFSIZE);
