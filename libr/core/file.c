@@ -157,6 +157,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		RListIter *iter;
 		r_list_foreach (r->io->maps, iter, im) {
 			im->delta = r->bin->cur.offset;
+			im->to = im->from + r->bin->cur.size;
 		}
 		}
 	} else if (!r_bin_load (r->bin, file, R_TRUE))

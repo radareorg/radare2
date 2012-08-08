@@ -112,3 +112,4 @@ Enable the PAGER with e scr.pager=less -R
 Use e asm.offset=true to show offsets as in the 16bit segment addressing mode
 The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22)*4'
 Use radare2! lemons included!
+Are you fucking coding me?
