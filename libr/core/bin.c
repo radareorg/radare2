@@ -541,7 +541,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	int ret = R_TRUE;
 	const char *name = NULL;
 	ut64 at = 0;
-	ut64 baddr = r_bin_get_baddr (core->bin);// + offset;
+	ut64 baddr = r_bin_get_baddr (core->bin);
 
 	if (filter && filter->offset)
 		at = filter->offset;
@@ -555,13 +555,13 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	if ((action & R_CORE_BIN_ACC_MAIN))
 		ret &= bin_main (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_ENTRIES))
-		ret &= bin_entry (core, mode, baddr+offset, va);
+		ret &= bin_entry (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_RELOCS))
 		ret &= bin_relocs (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_IMPORTS))
-		ret &= bin_imports (core, mode, baddr+offset, va, at, name);
+		ret &= bin_imports (core, mode, baddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SYMBOLS))
-		ret &= bin_symbols (core, mode, baddr+offset, va, at, name);
+		ret &= bin_symbols (core, mode, baddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SECTIONS))
 		ret &= bin_sections (core, mode, baddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_FIELDS))

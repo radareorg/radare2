@@ -479,8 +479,5 @@ R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
 }
 
 R_API ut64 r_bin_get_offset (RBin *bin) {
-	ut64 offset = bin->cur.offset;
-	if (offset>0x1000) // XXX BROKEN HACK THAT MUST BE FIXED
-		offset -= 0x1000;
-	return offset;
+	return bin->cur.offset;
 }

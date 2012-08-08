@@ -152,6 +152,13 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			}
 		}
 		r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);//"x86_32");
+		{
+		RIOMap *im;
+		RListIter *iter;
+		r_list_foreach (r->io->maps, iter, im) {
+			im->delta = r->bin->cur.offset;
+		}
+		}
 	} else if (!r_bin_load (r->bin, file, R_TRUE))
 		return R_FALSE;
 	r->file->obj = r_bin_get_object (r->bin, 0);
