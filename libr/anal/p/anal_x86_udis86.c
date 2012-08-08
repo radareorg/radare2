@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 */
-/*   nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - nibble */
 
 #include <r_lib.h>
 #include <r_types.h>
@@ -176,7 +175,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 struct r_anal_plugin_t r_anal_plugin_x86_udis86 = {
-	.name = "x86_udis86",
+	.name = "x86.udis86",
 	.desc = "X86 analysis plugin (udis86 backend)",
 	.arch = R_SYS_ARCH_X86,
 	.bits = 32|64,

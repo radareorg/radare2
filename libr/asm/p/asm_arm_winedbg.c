@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 nibble */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -22,7 +22,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 }
 
 RAsmPlugin r_asm_plugin_arm_winedbg = {
-	.name = "arm_winedbg",
+	.name = "arm.winedbg",
 	.arch = "arm",
 	.bits = (int[]){ 16, 32, 0 },
 	.desc = "ARM disassembly plugin (winedbg backend)",

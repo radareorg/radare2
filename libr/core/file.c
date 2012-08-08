@@ -162,6 +162,8 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		ut64 offset = r_bin_get_offset (r->bin);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
 	}
+	if (r_config_get_i (r->config, "file.analyze"))
+		r_core_cmd0 (r, "aa");
 	return R_TRUE;
 }
 

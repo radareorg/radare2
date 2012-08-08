@@ -134,7 +134,9 @@ static int config_analplugin_callback(void *user, void *data) {
 		r_anal_list (core->anal);
 		return R_FALSE;
 	} else if (!r_anal_use (core->anal, node->value)) {
-		eprintf ("Cannot use '%s' anal plugin.\n", node->value);
+		const char *aa = r_config_get (core->config, "asm.arch");
+		if (!aa || strcmp (aa, node->value))
+			eprintf ("anal.plugin: cannot find '%s'\n", node->value);
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -351,7 +353,13 @@ static int config_asmarch_callback(void *user, void *data) {
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
-	r_config_set (core->config, "anal.plugin", node->value);
+	if (!r_config_set (core->config, "anal.plugin", node->value)) {
+		char *p, *s = strdup (node->value);
+		p = strchr (s, '.');
+		if (p) *p = 0;
+		r_config_set (core->config, "anal.plugin", s);
+		free (s);
+	}
 	if (!r_syscall_setup (core->anal->syscall, node->value,
 			asmos, core->anal->bits)) {
 		//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
@@ -509,7 +517,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	r_config_set_cb (cfg, "cfg.bigendian", "true", &config_bigendian_callback);
 #endif
-	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes\n");
+	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes");
 	r_config_set_cb (cfg, "cfg.debug", "false", &config_cfgdebug_callback);
 	r_config_desc (cfg, "cfg.debug", "set/unset the debugger mode");
 	r_config_set_cb (cfg, "cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &config_cfgdatefmt_callback);
@@ -616,6 +624,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "io.va", "If enabled virtual address layout can be used");
 	r_config_set_cb (cfg, "io.cache", "false", &config_iocache_callback);
 	r_config_desc (cfg, "io.cache", "Enable cache for io changes");
+	r_config_set (cfg, "file.analyze", "false");
+	r_config_desc (cfg, "file.analyze", "Analyze file on load. Same as r2 -c aa ..");
 	r_config_set (cfg, "file.path", "");
 	r_config_desc (cfg, "file.path", "Path of current file");
 	r_config_set (cfg, "file.desc", "");
