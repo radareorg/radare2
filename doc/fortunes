@@ -9,7 +9,7 @@ Use the '[' and ']' keys in visual mode to adjust the screen width (scr.width)
 Choose your architecture by typing: 'e asm.arch=ppc' (or arm, java, m68k, intel, intel16 or intel64)
 Move between your search hits in visual mode using the 'f' and 'F' keys
 Save your projects with 'Ps <project-filename>' and restore then with 'Po <project-filename>'
-Everytime you run radare. It removes a random file :)
+Everytime you run radare, a random file is removed :)
 RADARE CUMS WITH ABSOLUTELY NO WARRANTY
 Enable asm.trace to see the tracing information inside the disassembly
 Change the registers of the child process in this way: '!set eax 0x333'
@@ -113,3 +113,4 @@ Use e asm.offset=true to show offsets as in the 16bit segment addressing mode
 The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22)*4'
 Use radare2! lemons included!
 Are you fucking coding me?
+rax2 -s 20e296b20ae296b220e296b20a

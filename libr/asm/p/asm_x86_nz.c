@@ -539,11 +539,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			ut64 dst;
 			ut8 *ptr;
 			ut32 addr;
-			addr = dst;
 			int pfx, arg0;
 			char *delta = NULL;
 			int argk = (*arg == '[');
-			dst = r_num_math (NULL, arg2);
+			addr = dst = r_num_math (NULL, arg2);
 			ptr = (ut8 *)&addr;
 
 			if (!arg || !arg2) {

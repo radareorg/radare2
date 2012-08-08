@@ -372,7 +372,7 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin)
 
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin)
 {
-	struct r_bin_pe_import_t *imports = NULL;
+	struct r_bin_pe_import_t *imps, *imports = NULL;
 	char dll_name[PE_NAME_LENGTH];
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
@@ -401,10 +401,12 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 			break;
 	}
 	if (nimp) {
-		if (!(imports = realloc (imports, (nimp+1) * sizeof(struct r_bin_pe_import_t)))) {
+		imps = realloc (imports, (nimp+1) * sizeof(struct r_bin_pe_import_t));
+		if (!imps) {
 			perror ("realloc (import)");
 			return NULL;
 		}
+		imports = imps;
 		imports[nimp].last = 1;
 	}
 	return imports;

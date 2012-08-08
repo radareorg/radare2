@@ -317,6 +317,7 @@ R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf) {
 		op->buf_hex[ret*2] = 0;
 		strncpy (op->buf_asm, b, R_ASM_BUFSIZE);
 	}
+	free (b);
 	return ret;
 }
 

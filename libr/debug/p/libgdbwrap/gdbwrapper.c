@@ -399,6 +399,7 @@ static char *gdbwrap_send_data(gdbwrap_t *desc, const char *query) {
 	if (gdbwrap_is_active (desc)) {
 		do {
 			mes  = gdbwrap_make_message (desc, query);
+			if (!mes) break;
 			rval = send (desc->fd, mes, strlen (mes), 0);
 		} while (gdbwrap_check_ack (desc) != TRUE);
 		if (rval == -1)

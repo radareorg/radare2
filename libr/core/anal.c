@@ -475,9 +475,9 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 }
 
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
-	RAnalBlock *bb, *root, *dest;
+	RAnalBlock *bb, *root = NULL, *dest = NULL;
 	RListIter *iter, *iter2;
-	RList *list2, *list = NULL;
+	RList *list2 = NULL, *list = NULL;
 	RAnalFunction *fcn;
 
 	r_list_foreach (core->anal->fcns, iter, fcn) {

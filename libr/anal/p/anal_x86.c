@@ -215,9 +215,8 @@ static void anal_hlt(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 }
 
 static void anal_mov(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
-	st64 imm, disp;
-	imm = r_hex_bin_truncate (io.imm, io.imm_size);
-	disp = r_hex_bin_truncate (io.disp, io.disp_size);
+	//st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	st64 disp = r_hex_bin_truncate (io.disp, io.disp_size);
 
 	op->type = R_ANAL_OP_TYPE_MOV;
 	switch (io.id) {
@@ -306,9 +305,8 @@ static void anal_mov(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 }
 
 static void anal_cmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
-	st64 imm, disp;
-	imm = r_hex_bin_truncate (io.imm, io.imm_size);
-	disp = r_hex_bin_truncate (io.disp, io.disp_size);
+	//st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	st64 disp = r_hex_bin_truncate (io.disp, io.disp_size);
 
 	op->type = R_ANAL_OP_TYPE_CMP;
 	switch (io.id) {
@@ -355,9 +353,8 @@ static void anal_cmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 }
 
 static void anal_test(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
-	st64 imm, disp;
-	imm = r_hex_bin_truncate (io.imm, io.imm_size);
-	disp = r_hex_bin_truncate (io.disp, io.disp_size);
+	//st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	st64 disp = r_hex_bin_truncate (io.disp, io.disp_size);
 
 	op->type = R_ANAL_OP_TYPE_CMP;
 	switch (io.id) {
@@ -395,9 +392,8 @@ static void anal_test(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 }
 
 static void anal_push(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
-	st64 imm, disp;
-	imm = r_hex_bin_truncate (io.imm, io.imm_size);
-	disp = r_hex_bin_truncate (io.disp, io.disp_size);
+	st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	st64 disp = r_hex_bin_truncate (io.disp, io.disp_size);
 
 	switch (io.id) {
 	case X86IM_IO_ID_PUSH_MM: /* push [0x0ff | reg1+reg2+0x0ff] */
@@ -446,9 +442,8 @@ static void anal_push(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 }
 
 static void anal_pop(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
-	st64 imm, disp;
-	imm = r_hex_bin_truncate (io.imm, io.imm_size);
-	disp = r_hex_bin_truncate (io.disp, io.disp_size);
+	//st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	st64 disp = r_hex_bin_truncate (io.disp, io.disp_size);
 
 	op->type = R_ANAL_OP_TYPE_POP;
 	switch (io.id) {
@@ -750,9 +745,8 @@ static void anal_xor(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 }
 
 static void anal_lea(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
-	st64 imm, disp;
-	imm = r_hex_bin_truncate (io.imm, io.imm_size);
-	disp = r_hex_bin_truncate (io.disp, io.disp_size);
+	//st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	//st64 disp = r_hex_bin_truncate (io.disp, io.disp_size);
 
 	op->type = R_ANAL_OP_TYPE_LEA;
 	/* lea reg, [0x0ff | reg1+reg2+0x0ff] */
@@ -776,7 +770,7 @@ static void anal_int(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 
 static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	x86im_instr_object io;
-	st64 imm, disp;
+	st64 imm;
 	char mnem[256];
 	int ret;
 
@@ -811,7 +805,7 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		x86im_fmt_format_name (&io, mnem);	
 		op->mnemonic = strdup (mnem);
 		imm = r_hex_bin_truncate (io.imm, io.imm_size);
-		disp = r_hex_bin_truncate (io.disp, io.disp_size);
+		//disp = r_hex_bin_truncate (io.disp, io.disp_size);
 		if (X86IM_IO_IS_GPI_JMP (&io)) /* jump */
 			anal_jmp (anal, op, io);
 		else

@@ -540,20 +540,15 @@ grub_strlen (const char *s)
 }
 
 static inline void
-grub_reverse (char *str)
-{
-  char *p = str + grub_strlen (str) - 1;
-
-  while (str < p)
-    {
-      char tmp;
-
-      tmp = *str;
-      *str = *p;
-      *p = tmp;
-      str++;
-      p--;
-    }
+grub_reverse (char *str) {
+	char tmp, *p = str + grub_strlen (str) - 1;
+	while (str < p) {
+		tmp = *str;
+		*str = *p;
+		*p = tmp;
+		str++;
+		p--;
+	}
 }
 
 /* Divide N by D, return the quotient, and store the remainder in *R.  */

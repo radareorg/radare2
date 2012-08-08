@@ -359,11 +359,13 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 }
 
 R_API ut64 r_io_size(RIO *io) {
+	int iova;
 	ut64 size, here;
+	if (!io) return 0LL;
+	iova = io->va;
 	if (r_io_is_listener (io))
 		return UT64_MAX;
 // XXX. problematic when io.va = 1
-int iova = io->va;
 io->va = 0;
 	//r_io_set_fdn (io, fd);
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
@@ -444,7 +446,7 @@ R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
 	if (io->plugin && io->plugin->create)
 		return io->plugin->create (io, file, mode, type);
-	if (type == 'd'|| type ==1)
-		mkdir (file, mode);
-	else return creat (file, mode)? R_FALSE: R_TRUE;
+	if (type == 'd'|| type == 1)
+		return mkdir (file, mode);
+	return creat (file, mode)? R_FALSE: R_TRUE;
 }

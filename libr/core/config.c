@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <r_core.h>
 
@@ -106,9 +106,10 @@ static int config_dbgbackend_callback(void *user, void *data) {
 static int config_cfgdebug_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (core && core->io)
+	if (!core) return R_FALSE;
+	if (core->io)
 		core->io->debug = node->i_value;
-	if (core && core->dbg && node->i_value) {
+	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
 		r_debug_use (core->dbg, dbgbackend);
 		if (!strcmp (dbgbackend, "bf"))
@@ -434,6 +435,7 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->printf = r_cons_printf;
 
 	//r_config_set (cfg, "dir.opcodes", R_ASM_OPCODES_PATH);
+	//r_config_set (cfg, "dir.tmp", "/tmp");
 	r_config_set (cfg, "dir.source", "");
 	r_config_desc (cfg, "dir.source", "Path to find source files");
 	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
@@ -708,7 +710,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("search.verbose", "true");
 
 	config_set("file.id", "false");
-	config_set("file.analyze", "false");
 	config_set("file.flag", "false");
 	config_set("file.trace", "trace.log");
 	config_set("file.project", "");
@@ -829,16 +830,6 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	config_set("dir.monitor", ptr);
 
-	/* dir.spcc */
-	ptr = getenv("SPCCPATH");
-	if (ptr == NULL) {
-		sprintf(buf, "%s/.radare/spcc/", getenv("HOME"));
-		ptr = buf;
-	}
-	config_set("dir.spcc", ptr);
-
-	snprintf(buf, 1023, "%s/.radare/rdb/", getenv("HOME"));
-	config_set("dir.project", buf); // ~/.radare/rdb/
 	config_set("dir.tmp", get_tmp_dir());
 	config_set_cb ("fs.view", "normal");
 	config_set("graph.color", "magic");

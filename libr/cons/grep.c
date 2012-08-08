@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> nibble<develsec.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util.h>
@@ -189,6 +189,8 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			outlen = outlen>0? outlen - 1: 0;
 			if (outlen>len) { // should never happen
 				eprintf ("r_cons_grep_line: wtf, how you reach this?\n");
+				free (in);
+				free (out);
 				return -1;
 			}
 			memcpy (buf, out, len);
