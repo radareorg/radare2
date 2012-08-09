@@ -3,8 +3,19 @@
 #include <r_cons.h>
 #include <r_util.h>
 
+R_API void r_cons_grep_help() {
+	eprintf (
+"Usage: [command]~[modifier][word,word]\n"
+"  modifiers\n"
+"   &  all words must match to grep the line\n"
+"   ^  words must be placed at the begining of line\n"
+"   !  negate grep\n"
+"   ?  count number of matching lines\n"
+	);
+}
+
 R_API void r_cons_grep(const char *str) {
-	int len;
+	int wlen, len;
 	RCons *cons;
 	char buf[4096];
 	char *ptr, *optr, *ptr2, *ptr3;
@@ -15,6 +26,7 @@ R_API void r_cons_grep(const char *str) {
 	cons = r_cons_singleton ();
 	cons->grep.str = NULL;
 	cons->grep.neg = 0;
+	cons->grep.amp = 0;
 	cons->grep.begin = 0;
 	cons->grep.end = 0;
 	cons->grep.nstrings = 0;
@@ -23,18 +35,21 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.line = -1;
 	cons->grep.counter = cons->grep.neg = 0;
 
-	if (*str == '^') { // neg
-		cons->grep.begin = 1;
-		str++;
-	}
-	if (*str == '!') { // neg
-		cons->grep.neg = 1;
-		str++;
-	}
-	if (*str == '?') { // counter
-		cons->grep.counter = 1;
-		str++;
-	}
+	while (*str) {
+		switch (*str) {
+		case '&': str++; cons->grep.amp = 1; break;
+		case '^': str++; cons->grep.begin = 1;  break;
+		case '!': str++; cons->grep.neg = 1; break;
+		case '?': str++; cons->grep.counter = 1;
+			if (*str=='?') {
+				r_cons_grep_help ();
+				str = "THIS\x01IS\x02A\x03HACK\x04:D";
+			}
+			break;
+		default: goto while_end;
+		}
+	} while_end:
+
 	len = strlen (str)-1;
 	if (len>0 && str[len] == '?') {
 		cons->grep.counter = 1;
@@ -77,9 +92,18 @@ R_API void r_cons_grep(const char *str) {
 			optr = ptr;
 			ptr = strchr (ptr, ','); // grep keywords
 			if (ptr) *ptr++ = '\0';
-			// TODO: check if keyword > 64
-			strncpy (cons->grep.strings[cons->grep.nstrings], optr, 63);
+			wlen = strlen (optr);	
+			if (wlen==0) continue;
+			if (wlen>=R_CONS_GREP_WORD_SIZE-1) {
+				eprintf ("grep string too long\n");
+				continue;
+			}
+			strncpy (cons->grep.strings[cons->grep.nstrings], optr, R_CONS_GREP_WORD_SIZE-1);
 			cons->grep.nstrings++;
+			if (cons->grep.nstrings>R_CONS_GREP_WORDS-1) {
+				eprintf ("too many grep strings\n");
+				break;
+			}
 		} while (ptr);
 	} else {
 		cons->grep.str = strdup (ptr);
@@ -150,17 +174,24 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	memcpy (in, buf, len);
 
 	if (cons->grep.nstrings>0) {
+		int ampfail = cons->grep.amp;
 		for (i=0; i<cons->grep.nstrings; i++) {
 			char *p = strstr (in, cons->grep.strings[i]);
-			if (!p) continue;
+			if (!p) {
+				ampfail = 0;
+				continue;
+			}
 			if (cons->grep.begin)
 				hit = (p == in)? 1: 0;
 			else hit = !cons->grep.neg;
-			// XXX: this can be optimized
+			// TODO: optimize this strlen
 			if (cons->grep.end && (strlen (cons->grep.strings[i]) != strlen (p)))
 				hit = 0;
-			break;
+			if (!cons->grep.amp)
+				break;
 		}
+		if (cons->grep.amp)
+			hit = ampfail;
 	} else hit = 1;
 
 	if (hit) {

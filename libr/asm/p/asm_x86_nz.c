@@ -353,7 +353,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					ut64 dst = r_num_math (NULL, arg+1);
 					ut32 addr = dst;
 					ut8 *ptr = (ut8 *)&addr;
-					int r = getreg (arg+1);
 					if (dst != 0) {
 						data[l++] = 0xff;
 						data[l++] = 0x15;
@@ -764,7 +763,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					ut64 dst = r_num_math (NULL, arg+1);
 					ut32 addr = dst;
 					ut8 *ptr = (ut8 *)&addr;
-					int r = getreg (arg+1);
 					if (dst != 0) {
 						data[l++] = 0xff;
 						data[l++] = 0x25;

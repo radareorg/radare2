@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -48,6 +48,9 @@ static int cmd_flag(void *data, const char *input) {
 	case 's':
 		if (input[1]==' ') r_flag_space_set (core->flags, input+2);
 		else r_flag_space_list (core->flags);
+		break;
+	case 'g':
+		eprintf ("radare2: fg: current: no such job :)\n");
 		break;
 	case 'o':
 		{ // TODO: use file.fortunes
