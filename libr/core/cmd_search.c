@@ -91,7 +91,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 			len = sizeof (str);
-			r_io_read_at (core->io, addr, str+1, len-2);
+			r_io_read_at (core->io, addr, (ut8*)str+1, len-2);
 			*str = '"';
 			r_str_filter_zeroline (str, len);
 			strcpy (str+strlen (str), "\"");
@@ -352,7 +352,7 @@ static int cmd_search(void *data, const char *input) {
 				inp[i] = tolower (inp[i]);
 		len = r_str_escape (inp);
 		eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", len, from, to);
-		for (i=0; i<len; i++) eprintf ("%02x ", inp[i]);
+		for (i=0; i<len; i++) eprintf ("%02x ", (ut8)inp[i]);
 		eprintf ("\n");
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)

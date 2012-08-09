@@ -425,11 +425,11 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 			*_ptr = '\0';
 			_ptr++;
 		}
-		int olen = 0, ret;
+		int olen = 0;
 		char *str, *out = NULL;
 		// TODO: implement foo
 		str = r_core_cmd_str (core, radare_cmd);
-		ret = r_sys_cmd_str_full (shell_cmd+1, str, &out, &olen, NULL);
+		r_sys_cmd_str_full (shell_cmd+1, str, &out, &olen, NULL);
 		r_cons_memcat (out, olen);
 		if (_ptr)
 			r_cons_grep (_ptr);
