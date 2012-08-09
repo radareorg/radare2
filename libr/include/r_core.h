@@ -174,7 +174,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op);
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
 R_API void r_core_yank_set (RCore *core, const char *str);
-R_API int r_core_yank_to(RCore *core, char *arg);
+R_API int r_core_yank_to(RCore *core, const char *arg);
 
 R_API int r_core_loadlibs(RCore *core);
 // FIXME: change (void *user) -> (RCore *core)

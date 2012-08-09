@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include "r_core.h"
 
@@ -46,15 +46,15 @@ R_API int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len) {
 	return R_TRUE;
 }
 
-// TODO: arg must be const !!! use strdup here
-R_API int r_core_yank_to(RCore *core, char *arg) {
+R_API int r_core_yank_to(RCore *core, const char *_arg) {
 	ut64 src = core->offset;
 	ut64 len = 0;
 	ut64 pos = -1;
-	char *str;
+	char *str, *arg;
 	ut8 *buf;
 
-	while (*arg==' ') arg++;
+	while (*_arg==' ') _arg++;
+	arg = strdup (_arg);
 	str = strchr (arg, ' ');
 	if (str) {
 		str[0]='\0';
@@ -64,6 +64,7 @@ R_API int r_core_yank_to(RCore *core, char *arg) {
 	}
 	if ((str == NULL) || (pos == -1) || (len == 0)) {
 		eprintf ("Usage: yt [len] [dst-addr]\n");
+		free (arg);
 		return 1;
 	}
 #if 0
@@ -79,5 +80,6 @@ R_API int r_core_yank_to(RCore *core, char *arg) {
 
 	core->offset = src;
 	r_core_block_read (core, 0);
+	free (arg);
 	return 0;
 }

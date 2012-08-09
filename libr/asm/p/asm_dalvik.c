@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 */
+/* radare - LGPL - Copyright 2009-2012 - earada, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -11,12 +11,18 @@
 
 static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int i = (int) buf[0];
-	int size = 0;
 	int vA, vB, vC;
 	char str[1024];
 	ut64 offset;
+	int size = dalvik_opcodes[i].len;
+	int payload = size & 1;
+	size -= payload;
+	if (payload) {
+		payload = 0; // XXX: calculate proper size of payload
+		//size += payload;
+	}
 
-	if (dalvik_opcodes[i].len <= len) {
+	if (size <= len) {
 		strcpy (op->buf_asm, dalvik_opcodes[i].name);
 		size = dalvik_opcodes[i].len;
 		switch (dalvik_opcodes[i].fmt) {
@@ -328,12 +334,13 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 			strcpy (op->buf_asm, "invalid ");
 			size = 2;
 		}
-		op->inst_len = size;
 	} else {
 		strcpy (op->buf_asm, "invalid ");
 		op->inst_len = len;
 		size = len;
 	}
+	size += payload; // XXX
+	op->inst_len = size;
 	return size;
 }
 

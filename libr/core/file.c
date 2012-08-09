@@ -180,8 +180,10 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	const char *cp;
 	char *p;
 	RIODesc *fd;
-	if (!strcmp (file, "-"))
+	if (!strcmp (file, "-")) {
 		file = "malloc://512";
+		mode = 4|2;
+	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open (r->io, file, mode, 0644);
 	if (fd == NULL) {

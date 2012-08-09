@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int preludecnt = 0;
 static int searchflags = 0;
@@ -121,11 +121,6 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		char flag[64];
 		snprintf (flag, sizeof (flag), "%s%d_%d", searchprefix, kw->kwidx, kw->count);
 		r_flag_set (core->flags, flag, addr, kw->keyword_length, 1);
-#if 0
-		// TODO: use r_flag_set ()
-		r_core_cmdf (core, "f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
-			kw->kwidx, kw->count, kw->keyword_length, addr);
-#endif
 	}
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
@@ -494,8 +489,6 @@ static int cmd_search(void *data, const char *input) {
 		" e search.flags = true ; if enabled store flags on keyword hits\n");
 		break;
 	}
-	if (core->io->va)
-		eprintf ("Searching with io.va enabled can be wrong.\n");
 	searchhits = 0;
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
@@ -566,4 +559,3 @@ static int cmd_search(void *data, const char *input) {
 	}
 	return R_TRUE;
 }
-
