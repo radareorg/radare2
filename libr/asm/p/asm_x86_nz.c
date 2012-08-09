@@ -16,8 +16,6 @@ TODO
 BLA:
 	Add support for AND, OR, ..
         0x100000ec5    1    4883e4f0         and rsp, 0xfffffffffffffff0
-64bit:
-	ff25ea122100    jmp qword [rip+0x2112ea]
 #endif
 
 static int jop (ut64 addr, ut8 *data, ut8 a, ut8 b, const char *arg) {

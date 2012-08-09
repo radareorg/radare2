@@ -15,8 +15,8 @@ echo "Using PYTHON_CONFIG ${PYTHON_CONFIG}"
 echo
 
 cd r2-bindings
-./configure --prefix=/usr --enable-devel --enable=python
-sudo make install-vapi
+./configure --prefix=/usr --enable-devel --enable=python || exit 1
+sudo make install-vapi || exit 1
 cd python
 make clean
 make PYTHON=${PYTHON}

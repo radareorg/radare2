@@ -7,9 +7,9 @@ mkdir -p _work
 cd _work
 if [ -d valabind ]; then
 	cd valabind
-	hg pull -u
+	git pull
 else
-	hg clone http://hg.youterm.com/valabind
+	git clone git://github.com/radare/valabind
 	cd valabind
 fi
 
