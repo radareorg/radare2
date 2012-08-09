@@ -53,15 +53,14 @@ static int r_line_readchar() {
 #else
 	do {
 		int ret = read (0, buf, 1);
-		if (ret == -1)
-			return 0; // read no char
-		if (ret == 0) // EOF
-			return -1;
-//eprintf ("(((%x)))\n", *buf);
+		if (ret == -1) return 0; // read no char
+		if (ret == 0) return -1; // eof
 		// TODO: add support for other invalid chars
+		if (*buf==0x1a) { // ^Z
+			kill (getpid (), SIGSTOP);
+		}
 		if (*buf==0xc2 || *buf==0xc3) {
 			read (0, buf+1, 1);
-//eprintf ("(((%x)))\n", buf[1]);
 			*buf = '\0';
 		}	
 	} while (*buf == '\0');
