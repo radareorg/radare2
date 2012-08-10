@@ -1,3 +1,5 @@
+include ../../config.mk
+
 BINDEPS=r_util
 
 BINS=test${EXT_EXE}

@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
-static int magicdepth = 99; //XXX: do not use global var here
 
+static int magicdepth = 99; //XXX: do not use global var here
 
 static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
 	const char *fmt;

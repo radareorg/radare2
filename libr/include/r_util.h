@@ -460,6 +460,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #if __WINDOWS__
 R_API char *r_sys_cmd_str_w32(const char *cmd);
 #endif
+R_API int r_sys_truncate(const char *file, int sz);
 R_API int r_sys_cmd(const char *cmd);
 R_API int r_sys_cmdf (const char *fmt, ...);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);

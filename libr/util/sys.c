@@ -29,6 +29,18 @@ R_API ut64 r_sys_now(void) {
 	return ret;
 }
 
+R_API int r_sys_truncate(const char *file, int sz) {
+#if __WINDOWS__
+	int fd = open (file, O_RDWR);
+	if (!fd) return R_FALSE;
+	ftruncate (fd, sz);
+	close (fd);
+	return R_TRUE;
+#else
+	return truncate (file, sz)? R_FALSE: R_TRUE;
+#endif
+}
+
 R_API RList *r_sys_dir(const char *path) {
 	struct dirent *entry;
 	DIR *dir;

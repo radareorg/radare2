@@ -1,5 +1,7 @@
 #!/bin/sh
 
+MAKE_JOBS=1
+
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
@@ -15,8 +17,7 @@ if [ $? = 0 ]; then
 fi
 
 # build
-if [ -f config-user.mk ]; then
-	${MAKE} mrproper > /dev/null 2>&1
-fi
-./configure --prefix=/usr && \
-${MAKE} -j 4
+${MAKE} mrproper > /dev/null 2>&1
+[ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed"
+./configure --prefix=/usr || exit 1
+exec ${MAKE} -j ${MAKE_JOBS}

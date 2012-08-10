@@ -1,3 +1,5 @@
+ifeq (${_INCLUDE_MK_GCC_},)
+_INCLUDE_MK_GCC_=1
 # osx port install mingw32-gcc
 CC=i386-mingw32-gcc
 RANLIB=i386-mingw32-ranlib
@@ -16,3 +18,4 @@ CFLAGS_OPT1=-O1
 CFLAGS_OPT2=-O2
 CFLAGS_OPT3=-O3
 CFLAGS_DEBUG=-g
+endif

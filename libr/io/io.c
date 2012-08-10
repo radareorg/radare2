@@ -447,6 +447,6 @@ R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
 	if (io->plugin && io->plugin->create)
 		return io->plugin->create (io, file, mode, type);
 	if (type == 'd'|| type == 1)
-		return mkdir (file, mode);
+		return r_sys_mkdir (file);
 	return creat (file, mode)? R_FALSE: R_TRUE;
 }

@@ -26,6 +26,9 @@ gitpush:
 todo:
 	grep -re TODO:0.9.2 libr binr
 
+farm:
+	./sys/farm/run.sh
+
 libr:
 	cd libr && ${MAKE} all
 
@@ -87,6 +90,7 @@ clean:
 mrproper:
 	cd libr && ${MAKE} mrproper
 	cd binr && ${MAKE} mrproper
+	cd shlr && ${MAKE} mrproper
 	rm -f config-user.mk plugins.cfg libr/config.h libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
 

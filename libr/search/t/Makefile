@@ -1,6 +1,6 @@
 BINDEPS=r_search r_util
 
-all: test${EXT_EXE} test-str${EXT_EXE} test-regexp${EXT_EXE}
+BINS=test${EXT_EXE} test-str${EXT_EXE} test-regexp${EXT_EXE}
 
 include ../../rules.mk
 

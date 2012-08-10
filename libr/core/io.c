@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include "r_core.h"
 
@@ -7,7 +7,7 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size) {
 	ut8 *buf;
 	int bs = core->blocksize;
 	FILE *fd;
-	truncate (file, 0);
+	r_sys_truncate (file, 0);
 	fd = fopen (file, "wb");
 	if (!fd) {
 		eprintf ("Cannot open '%s' for writing\n", file);

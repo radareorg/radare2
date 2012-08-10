@@ -17,7 +17,7 @@ all: libs
 
 libs:
 	@for lib in ${LIBLIST}; do \
-		cd $${lib} && ${MAKE} all || exit 1 ; cd .. ; done
+		cd $${lib} && ${MAKE} || exit 1 ; cd .. ; done
 	@echo Build done for: ${LIBLIST}
 
 pkgcfg:

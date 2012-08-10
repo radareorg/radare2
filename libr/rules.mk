@@ -12,7 +12,11 @@ all: $(PRE) $(ALL)
 	@$(MAKE) real_all
 
 real_all: ${EXTRA_TARGETS} ${LIBSO} ${LIBAR}
+ifeq (${OSTYPE},windows)
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
+else
+	@if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
+endif
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 	@true
 
@@ -103,10 +107,12 @@ all: ${BIN}${EXT_EXE} ${BINS}
 
 ${BINS}: 
 	echo ${LIBR}
-	${CC} ${CFLAGS} $@.c -L.. ${LDFLAGS} ${LDLIBS} -o $@${EXT_EXE}
+	${CC} ${CFLAGS} $@.c -L.. ${LDFLAGS} -o $@${EXT_EXE}
+#	${CC} ${CFLAGS} $@.c -L.. ${LDFLAGS} ${LDLIBS} -o $@${EXT_EXE}
 
 ${BIN}${EXT_EXE}: ${OBJ} ${SHARED_OBJ}
-	${CC} $+ -L.. ${LDFLAGS} ${LDLIBS} -o ${BIN}${EXT_EXE}
+	${CC} $+ -L.. -o ${BIN}${EXT_EXE} ${LDFLAGS}
+#	${CC} $+ -L.. -o ${BIN}${EXT_EXE} ${LDLIBS} ${LDFLAGS}
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile

@@ -1,4 +1,5 @@
 BINDEPS=r_lib r_util
+LDFLAGS=-L..
 
 include ../../config.mk
 

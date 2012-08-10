@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2012 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -8,14 +8,12 @@
 #include "../arch/z80/z80.c"
 
 static int do_assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	return op->inst_len = z80asm (obuf, op->buf);
+	return op->inst_len = z80asm (op->buf, buf);
 }
 
 static int do_disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
 	int dlen = z80dis (0, buf, op->buf_asm, len);
-	if (dlen>0) {
-		// printf ("LEN IS OK\n");
-	} else dlen = 0;
+	if (dlen<0) dlen = 0;
 	op->inst_len = dlen;
 	return op->inst_len;
 }
