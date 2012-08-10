@@ -1,5 +1,4 @@
 NAME=r_anal
-PRE=pre
 EXTRA_CLEAN=clean2
 DEPS=r_util r_db r_lib r_reg r_syscall r_diff # r_core (commented as it would be recursive)
 CFLAGS+=-DCORELIB -Iarch -I../../shlr
@@ -8,7 +7,8 @@ include ../config.mk
 
 LDFLAGS+=${BN_LIBS}
 
-foo: pre libr_anal.${EXT_SO} libr_anal.${EXT_AR} plugins
+foo:
+	for a in pre libr_anal.${EXT_SO} libr_anal.${EXT_AR} plugins ; do ${MAKE} $$a ; done
 
 include ${STATIC_ANAL_PLUGINS}
 STATIC_OBJS=$(subst ../ar,p/../ar,$(subst anal_,p/anal_,$(STATIC_OBJ)))

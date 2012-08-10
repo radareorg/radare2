@@ -213,4 +213,4 @@ test tests:
 include ${MKPLUGINS}
 
 .PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg
-.PHONY: r2-bindings r2-bindings-dist libr binr install-man version
+.PHONY: r2-bindings r2-bindings-dist libr binr install-man version w32dist

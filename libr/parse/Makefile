@@ -2,7 +2,8 @@ NAME=r_parse
 DEPS=r_lib r_flags r_util r_anal
 
 -include ../config.mk
-foo: pre libr_parse.${EXT_SO} libr_parse.${EXT_AR} plugins bins
+foo:
+	for a in pre libr_parse.${EXT_SO} libr_parse.${EXT_AR} plugins bins ; do ${MAKE} $$a ; done
 
 CFLAGS+=-DCORELIB
 -include ${STATIC_PARSE_PLUGINS}

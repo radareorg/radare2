@@ -4,7 +4,7 @@ cd `dirname $PWD/$0` ; cd ..
 #TODO: add support for ccache
 
 # XXX. fails with >1
-MAKE_JOBS=1
+MAKE_JOBS=8
 
 OLD_LDFLAGS="${LDFLAGS}"
 unset LDFLAGS

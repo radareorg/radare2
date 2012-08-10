@@ -8,10 +8,11 @@ ifneq ($(NAME),)
 ALL?=
 CFLAGS+=-I$(LIBR)/include
 
-all: $(PRE) $(ALL)
-	@$(MAKE) real_all
-
-real_all: ${EXTRA_TARGETS} ${LIBSO} ${LIBAR}
+all:
+	@printf "\x1b[32m[ ${NAME} ]\x1b[0m\n"
+	@[ -n "${EXTRA_TARGETS}" ] && ${MAKE} ${EXTRA_TARGETS} || true
+	${MAKE} ${LIBSO}
+	${MAKE} ${LIBAR}
 ifeq (${OSTYPE},windows)
 	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 else

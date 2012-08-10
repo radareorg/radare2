@@ -282,7 +282,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
 	if (!bin->phdr) {
-		eprintf ("r_bin_elf: canot get_baddr() because no phdr found\n");
+		//eprintf ("r_bin_elf: canot get_baddr() because no phdr found\n");
 		return 0;
 	}
 	/* hopefully.. the first PT_LOAD is base */

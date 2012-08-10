@@ -3,7 +3,8 @@ DEPS=r_lib r_util
 
 include ../config.mk
 
-foo: pre libr_bin.${EXT_SO} libr_bin.${EXT_AR} plugins
+foo:
+	for a in pre libr_bin.${EXT_SO} libr_bin.${EXT_AR} plugins ; do ${MAKE} $$a ; done
 
 CFLAGS+=-DCORELIB -Iformat -Imangling
 

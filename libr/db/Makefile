@@ -5,8 +5,10 @@ OBJ=db.o table.o pair.o
 
 PRE=sdb/src/libsdb.a
 EXTRA_CLEAN=sdbclean
+EXTRA_TARGETS+=${PRE}
 
 CFLAGS+=-Isdb/src
+
 include ../rules.mk
 
 # link against sdb
