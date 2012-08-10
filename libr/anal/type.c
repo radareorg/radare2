@@ -33,7 +33,7 @@ R_API RAnalType *r_anal_type_new() {
 }
 
 R_API RList *r_anal_type_list_new() {
-	RList *t = R_NEW(RList);
+	RList *t = r_list_new ();
 	return t;
 }
 
