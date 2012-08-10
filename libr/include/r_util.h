@@ -99,13 +99,40 @@ typedef struct r_prof_t {
 } RProfile;
 
 /* numbers */
+#define R_NUMCALC_STRSZ 128
+
+typedef struct {
+	double d;
+	ut64 n;
+} RNumCalcValue;
+
+typedef enum {
+	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
+	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/',
+	//RNCXOR='^', RNCOR='|', RNCAND='&',
+	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')'
+} RNumCalcToken;
+
+typedef struct r_num_calc_t {
+	RNumCalcToken curr_tok;
+	RNumCalcValue number_value;
+	char string_value[R_NUMCALC_STRSZ];
+	int errors;
+	char oc;
+	const char *calc_err;
+	int calc_i;
+	const char *calc_buf;
+} RNumCalc;
+
 typedef struct r_num_t {
 	ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
 //	RNumCallback callback;
 	ut64 value;
 	double fvalue;
 	void *userptr;
+	RNumCalc nc;
 } RNum;
+
 typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 
 typedef struct r_range_item_t {
@@ -235,7 +262,7 @@ R_API void r_file_mmap_free (RMmap *m);
 
 R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 R_API ut64 r_num_calc (RNum *num, const char *str, const char **err);
-R_API const char *r_num_calc_index (const char *p);
+R_API const char *r_num_calc_index (RNum *num, const char *p);
 
 #define R_BUF_CUR -1
 R_API RBuffer *r_buf_new();
