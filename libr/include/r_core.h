@@ -133,6 +133,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr);
 R_API int r_core_init(RCore *core);
 R_API RCore *r_core_new();
 R_API RCore *r_core_free(RCore *core);
+R_API RCore *r_core_fini(RCore *c);
 R_API int r_core_config_init(RCore *core);
 R_API int r_core_prompt(RCore *core, int sync);
 R_API int r_core_prompt_exec(RCore *core);

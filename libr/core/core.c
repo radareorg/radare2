@@ -442,7 +442,7 @@ R_API int r_core_init(RCore *core) {
 	return 0;
 }
 
-R_API RCore *r_core_free(RCore *c) {
+R_API RCore *r_core_fini(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
 	r_io_free (c->io);
@@ -465,6 +465,11 @@ R_API RCore *r_core_free(RCore *c) {
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);
+	return NULL;
+}
+
+R_API RCore *r_core_free(RCore *c) {
+	if (c) r_core_fini (c);
 	free (c);
 	return NULL;
 }

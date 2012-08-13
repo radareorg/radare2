@@ -391,7 +391,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 					R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
 					R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
 					section->name);
-			r_meta_add (r->anal->meta, R_META_TYPE_COMMENT, va?baddr+section->rva:section->offset,
+			r_meta_add (r->anal->meta, R_META_TYPE_COMMENT,
+					va?baddr+section->rva:section->offset,
 					va?baddr+section->rva:section->offset, str);
 		}
 		// H -> Header fields

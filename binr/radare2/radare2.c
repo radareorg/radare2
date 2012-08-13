@@ -421,5 +421,7 @@ int main(int argc, char **argv) {
 	/* capture return value */
 	ret = r.num->value;
 	r_core_file_close (&r, fh);
+	r_core_fini (&r);
+	r_cons_set_raw (0);
 	return ret;
 }
