@@ -4,7 +4,8 @@ CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shlr
 
 include ../config.mk
 
-foo: pre ${LIBSO} ${LIBAR} plugins
+foo:
+	@for a in pre ${LIBSO} ${LIBAR} plugins ; do ${MAKE} $$a ; done
 
 include ${STATIC_ASM_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst asm_,p/asm_,$(STATIC_OBJ)))

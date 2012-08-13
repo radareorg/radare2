@@ -10,8 +10,8 @@ OBJ+=emit_arm.o
 OBJ+=emit_x64.o
 OBJ+=emit_trace.o
 
-foo: ${LIBSO} ${LIBAR} 
-	${MAKE} all
+foo:
+	for a in ${LIBSO} ${LIBAR} all ; do ${MAKE} $$a ; done
 
 P=p/
 include ${STATIC_EGG_PLUGINS}

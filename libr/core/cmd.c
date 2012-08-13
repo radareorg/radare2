@@ -282,7 +282,7 @@ static int cmd_resize(void *data, const char *input) {
 					" r+num    insert num bytes, move following data up\n");
 			return R_TRUE;
 		default:
-			newsize = r_num_math (core->num, input+1);
+			newsize = r_num_math (core->num, input);
 	}
 
 	grow = (newsize > oldsize);

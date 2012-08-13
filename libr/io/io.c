@@ -144,11 +144,10 @@ R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
 R_API int r_io_set_fdn(RIO *io, int fd) {
 	if (fd != -1 && io->fd != NULL && fd != io->fd->fd) {
 		RIODesc *desc = r_io_desc_get (io, fd);
-		if (desc) {
-			io->fd = desc;
-			io->plugin = desc->plugin;
-			return R_TRUE;
-		}
+		if (!desc) return R_FALSE;
+		io->fd = desc;
+		io->plugin = desc->plugin;
+		return R_TRUE;
 	}
 	return R_FALSE;
 }

@@ -8,7 +8,8 @@ LDFLAGS+=p/grub/libgrubfs.a
 include ../config.mk
 
 EXTRA_TARGETS=plugins
-foo: pre plugins ${LIBSO} ${LIBAR}
+foo:
+	for a in pre plugins ${LIBSO} ${LIBAR} ; do ${MAKE} $$a ; done
 
 include ${STATIC_FS_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
