@@ -899,7 +899,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 R_API int r_core_cmd_file(RCore *core, const char *file) {
 	int ret = R_TRUE;
 	char *nl, *data, *odata = r_file_slurp (file, NULL);
-	if (!odata) return R_FALSE;
+	if (!odata) return -2;
 	nl = strchr (odata, '\n');
 	if (nl) {
 		data = odata;

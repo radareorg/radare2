@@ -368,7 +368,9 @@ int main(int argc, char **argv) {
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
 		int ret = r_core_cmd_file (&r, cmdfile[i]);
-		if (ret==-1 || (ret==0 &&quite))
+		if (ret ==-2)
+			eprintf ("Cannot open '%s'\n", cmdfile[i]);
+		if (ret<0 || (ret==0 && quite))
 			return 0;
 	}
 	r_list_foreach (cmds, iter, cmdn) {

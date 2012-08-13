@@ -366,7 +366,7 @@ static ut8 *M(const ut8 *b, int len) {
 }
 
 // TODO: add support for cursor
-R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8 *_b, int len) {
+R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8 *_b, int len, int scndcol) {
 	ut8 *a, *b;
 	char linediff, fmt[64];
 	// TODO: add non-colorized support
@@ -389,19 +389,21 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 			p->printf ("%s", C (a, b));
 			r_print_cursor (p, i+j, 0);
 		}
-		p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
-		for (j=0;j<16;j++) {
-			r_print_cursor (p, i+j, 1);
-			p->printf (B (b, a));
-			r_print_cursor (p, i+j, 0);
-		}
-		p->printf (" ");
-		for (j=0;j<16;j++) {
-			r_print_cursor (p, i+j, 1);
-			p->printf ("%s", C (b, a));
-			r_print_cursor (p, i+j, 0);
-		}
-		p->printf ("\n");
+		if (scndcol) {
+			p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
+			for (j=0;j<16;j++) {
+				r_print_cursor (p, i+j, 1);
+				p->printf (B (b, a));
+				r_print_cursor (p, i+j, 0);
+			}
+			p->printf (" ");
+			for (j=0;j<16;j++) {
+				r_print_cursor (p, i+j, 1);
+				p->printf ("%s", C (b, a));
+				r_print_cursor (p, i+j, 0);
+			}
+			p->printf ("\n");
+		} else p->printf (" %c\n", linediff);
 	}
 	free (a);
 	free (b);

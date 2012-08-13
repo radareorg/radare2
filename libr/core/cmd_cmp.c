@@ -86,7 +86,9 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 #endif
 	case 'c':
-		{ ut8 *b = malloc (core->blocksize);
+		{
+		int col = core->cons->columns>123;
+		ut8 *b = malloc (core->blocksize);
 		ut64 addr = r_num_math (core->num, input+2);
 		if (!b) return 0;
 		memset (b, 0xff, core->blocksize);
@@ -95,7 +97,7 @@ static int cmd_cmp(void *data, const char *input) {
 		r_io_seek (core->io, addr, R_IO_SEEK_SET);
 		r_io_read (core->io, b, core->blocksize);
 #endif
-		r_print_hexdiff (core->print, core->offset, core->block, addr, b, core->blocksize);
+		r_print_hexdiff (core->print, core->offset, core->block, addr, b, core->blocksize, col);
 		free (b);
 		}
 		break;
