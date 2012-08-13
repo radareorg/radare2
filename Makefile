@@ -35,21 +35,6 @@ libr:
 binr:
 	cd binr && ${MAKE} all
 
-R=$(shell hg tags|head -n2 | tail -n1|awk '{print $$2}' |cut -d : -f 1)
-T=$(shell hg tip|grep changeset:|cut -d : -f 2)
-.PHONY: chlog
-chlog:
-	@hg log -v -r tip:$R > chlog
-	@echo "-=== release ${VERSION} ===-"
-	@echo "hg tag -r $T ${VERSION}"
-	@printf "last commit:   "
-	@hg log -r tip | grep date: |cut -d : -f 2- |sed -e 's,^\ *,,g'
-	@printf "oldest commit: "
-	@hg log -r $R | grep date: |cut -d : -f 2- |sed -e 's,^\ *,,g'
-	@printf "Commits:  "
-	@grep changeset: chlog |wc -l
-	@grep -v : chlog | grep -v '^$$'
-
 w32:
 	make clean
 	# TODO: add support for debian
@@ -183,10 +168,11 @@ r2-bindings-dist:
 	cd r2-bindings && ${MAKE} dist
 
 dist:
+	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
 	VERSION=${VERSION} ; \
-	FILES=`hg manifest | grep -v r2-bindings | sed -e s,^,radare2-${VERSION}/,` ; \
+	FILES=`git ls-files | grep -v r2-bindings | sed -e s,^,radare2-${VERSION}/,` ; \
 	cd .. && mv radare2 radare2-${VERSION} && \
-	${TAR} radare2-${VERSION}.tar.gz $${FILES} ;\
+	${TAR} radare2-${VERSION}.tar.gz $${FILES} radare2-${VERSION}/ChangeLog ;\
 	mv radare2-${VERSION} radare2
 
 pub:
@@ -194,7 +180,7 @@ pub:
 
 shot:
 	DATE=`date '+%Y%m%d'` ; \
-	FILES=`hg manifest | sed -e s,^,radare2-${DATE}/,` ; \
+	FILES=`git ls-files | sed -e s,^,radare2-${DATE}/,` ; \
 	cd .. && mv radare2 radare2-$${DATE} && \
 	${TAR} radare2-$${DATE}.tar.gz $${FILES} ;\
 	mv radare2-$${DATE} radare2 && \

@@ -8,4 +8,9 @@ sloc:
 	done ; \
 	printf "$$total\tTOTAL\n"
 
-.PHONY: sloc
+locdiff:
+	@A=`git diff | grep -v +++ | grep ^+ |wc -l` ; \
+	B=`git diff | grep -v -- ---| grep ^- |wc -l` ; \
+	echo $$((A-B))
+
+.PHONY: sloc locdiff

@@ -12,7 +12,7 @@ EWF_LDFLAGS=@EWF_LDFLAGS@
 HAVE_LIB_GMP=@HAVE_LIB_GMP@
 LIL_ENDIAN=@LIL_ENDIAN@
 
-MKPLUGINS=mk/hg-utils.mk mk/stat.mk mk/sloc.mk
+MKPLUGINS=mk/stat.mk mk/sloc.mk
 
 COMPILER=@USERCC@
 STATIC_DEBUG=0

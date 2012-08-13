@@ -19,11 +19,6 @@
 * io_next must work properly
   - r_io must read in 512 or 4096 aligned blocks (get next section?)
 
-Discuss
-Add $EDITOR alias for file open(read/write) -
-  pd > -
-  wf -
-  ...
 =======
 
 * refactor vmenus.c -> refresh function must be redefined for each menu
