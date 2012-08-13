@@ -482,7 +482,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		colon = strchr (icmd, ';');
 		if (colon)
 			*colon = 0;
-	}
+	} else colon = NULL;
 	if (rep>0) {
 		while (*cmd>='0' && *cmd<='9')
 			cmd++;
@@ -635,17 +635,33 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
 	if (ptr) {
+		int use_editor = R_FALSE;
+		int ocolor = r_config_get_i (core->config, "scr.color");
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
 		r_cons_set_interactive (R_FALSE);
 		*ptr = '\0';
 		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
+		if (!strcmp (str, "-")) {
+			use_editor = R_TRUE;
+			str = r_file_temp ("dumpedit");
+			r_config_set (core->config, "scr.color", "false");
+		}
 		pipefd = r_cons_pipe_open (str, ptr[1]=='>');
 		ret = r_core_cmd_subst (core, cmd);
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
 		r_cons_set_last_interactive ();
+		if (use_editor) {
+			const char *editor = r_config_get (core->config, "cfg.editor");
+			if (editor && *editor) {
+				r_sys_cmdf ("%s '%s'", editor, str);
+			} else eprintf ("No cfg.editor configured\n");
+			r_config_set_i (core->config, "scr.color", ocolor);
+			r_file_rm (str);
+			free (str);
+		}
 		return ret;
 	}
 

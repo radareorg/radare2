@@ -4,7 +4,8 @@ DEPS+=r_util
 CFLAGS+=-DCORELIB
 include ../config.mk
 
-foo: libr_bp.${EXT_SO} libr_bp.${EXT_AR} plugins
+foo:
+	for a in libr_bp.${EXT_SO} libr_bp.${EXT_AR} plugins ; do ${MAKE} $$a ; done
 
 include ${STATIC_BP_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst bp_,p/bp_,$(STATIC_OBJ)))

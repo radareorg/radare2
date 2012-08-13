@@ -370,7 +370,7 @@ R_API RAsmCode* r_asm_mdisassemble_hexstr(RAsm *a, const char *hexstr) {
 		return NULL;
 	}
 	ret = r_asm_mdisassemble (a, buf, (ut64)len);
-	if (a->ofilter)
+	if (ret && a->ofilter)
 		r_parse_parse (a->ofilter, ret->buf_asm, ret->buf_asm);
 	free (buf);
 	return ret;

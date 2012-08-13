@@ -2224,6 +2224,7 @@ cplus_demangle_type (struct d_info *di)
         case 'n':
           /* decltype(nullptr) */
 	  ret = d_make_builtin_type (di, &cplus_demangle_builtin_types[32]);
+	if (ret)
 	  di->expansion += ret->u.s_builtin.type->len;
 	  break;
 

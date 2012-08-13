@@ -195,8 +195,8 @@ static char *get_end_frame_label(REgg *egg) {
 
 static void rcc_pusharg(REgg *egg, char *str) {
 	REggEmit *e = egg->emit;
-	char buf[64], *p;
-	p = r_egg_mkvar (egg, buf, str, 0);
+	char buf[64], *p = r_egg_mkvar (egg, buf, str, 0);
+	if (!p) return;
 	// TODO: free (ctxpush[context]);
 	ctxpush[context] = strdup (p); // INDEX IT WITH NARGS OR CONTEXT?!?
 	nargs++;

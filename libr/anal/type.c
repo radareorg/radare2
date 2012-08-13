@@ -77,7 +77,7 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	FILE *cfile;
 	int n;
-	int yv, yylval;
+	int yv, yylval = 0;
 	char buf[4096];
 
 	void *pParser = cdataParseAlloc(malloc);

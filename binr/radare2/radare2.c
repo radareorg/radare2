@@ -185,6 +185,7 @@ int main(int argc, char **argv) {
 		int filelen = 0;
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
+		perms = R_IO_READ | R_IO_WRITE;
 		if (optind>=argc) {
 			eprintf ("No program given to -d\n");
 			return 1;

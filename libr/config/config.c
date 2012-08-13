@@ -218,6 +218,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			if (i<1024) snprintf (buf, sizeof (buf), "%"PFMT64d"", i);
 			else snprintf (buf, sizeof (buf), "0x%08"PFMT64x"", i);
 			node = r_config_node_new (name, buf);
+			if (!node) return NULL;
 			node->flags = CN_RW | CN_OFFT;
 			node->i_value = i;
 			r_hashtable_insert (cfg->ht, node->hash, node);

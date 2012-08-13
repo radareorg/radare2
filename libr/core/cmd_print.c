@@ -454,7 +454,7 @@ return 0;
 		break;
 	case 'z':
 		{
-		char *p, *s = malloc (core->blocksize+1);
+		char *s = malloc (core->blocksize+1);
 		int i, j;
 		if (s) {
 			memset (s, 0, core->blocksize);

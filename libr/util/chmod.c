@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_util.h>
 #include <stdbool.h>
@@ -141,6 +141,7 @@ static void recurse(const char *path, int rec, int (*fn)(const char *,int)) {
         cwd = agetcwd();
         if (chdir (path) == -1) {
                 eprintf ("chdir %s:", path);
+		free (cwd);
 		return;
 	}
         while ((d = readdir (dp)))

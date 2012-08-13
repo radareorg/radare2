@@ -34,7 +34,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args) {
 	r_core_file_close_fd (core, newpid);
 	// TODO: in debugger must select new PID
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		newpid = core->file->fd->fd;
+		if (core->file && core->file->fd)
+			newpid = core->file->fd->fd;
 		r_debug_select (core->dbg, newpid, newpid);
 	}
 	free (path);

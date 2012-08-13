@@ -24,6 +24,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 		eprintf ("WARNING: bin_strings buffer is too big\n");
 		return;
 	}
+	if (arch->buf && arch->buf->buf)
 	for (i = from; i < to; i++) { 
 		if ((IS_PRINTABLE (arch->buf->buf[i])) && \
 				matches < R_BIN_SIZEOF_STRINGS-1) {

@@ -82,6 +82,7 @@ R_API void r_listrange_del(RListRange *s, RAnalFunction *f) {
 }
 
 R_API void r_listrange_resize(RListRange *s, RAnalFunction *f, int newsize) {
+	if (!f) return;
 	r_listrange_del (s, f);
 	f->size = newsize;
 	r_listrange_add (s, f);

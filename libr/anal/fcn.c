@@ -440,7 +440,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	strcat(str, sig);
 
 	/* Send whole definition to cparse */
-	int yv, yylval;
+	int yv, yylval = 0;
 	void *pParser = cdataParseAlloc(malloc);
 	yy_scan_string(str);
 	while ((yv = yylex()) != 0) {

@@ -945,7 +945,7 @@ static ut64 addr = 0;
 static int option = 0;
 
 static void r_core_visual_anal_refresh (RCore *core) {
-	ut64 addr;
+	ut64 addr = core->offset;
 	char old[1024];
 	old[0]='\0';
 	int cols = r_cons_get_size (NULL);

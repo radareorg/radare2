@@ -306,7 +306,7 @@ static void gdbwrap_populate_reg(gdbwrap_t *desc, char *packet) {
 	{
 		nextupacket = gdbwrap_extract_from_packet(nextpacket, packetcolon, NULL,
 				GDBWRAP_SEP_COLON, sizeof(packetcolon));
-		if (nextpacket == NULL) return;
+		if (nextpacket == NULL || !nextupacket) return;
 		if (strlen (nextupacket) == 2) {
 			ureg32  regvalue;
 			uint8_t regnumber = gdbwrap_atoh(nextupacket, strlen(nextupacket));

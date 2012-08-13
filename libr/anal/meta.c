@@ -101,6 +101,7 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 
 	if (from == 0LL && to == UT64_MAX) {
 		RMeta *m2 = r_meta_new ();
+		if (!m2) return R_FALSE;
 		r_list_free (m->data);
 		m->data = m2->data;
 		free (m2);
