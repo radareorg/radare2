@@ -49,3 +49,5 @@ USE_LIB_MAGIC=@USE_LIB_MAGIC@
 
 SSL_CFLAGS=@SSL_CFLAGS@
 SSL_LDFLAGS=@SSL_LDFLAGS@
+
+GIT_TIP=$(shell git log HEAD^..HEAD|head -n1|cut -d ' ' -f2)

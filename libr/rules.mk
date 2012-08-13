@@ -1,3 +1,5 @@
+ifeq ($(_INCLUDE_RULES_MK_),)
+_INCLUDE_RULES_MK_=1
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 include $(LIBR)/config.mk
 
@@ -136,3 +138,4 @@ endif
 #-------------------------------
 
 # TODO: deprecate RTDEBUG and R_DEBUG
+endif

@@ -170,7 +170,7 @@ r2-bindings-dist:
 dist:
 	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
 	VERSION=${VERSION} ; \
-	FILES=`git ls-files | grep -v r2-bindings | sed -e s,^,radare2-${VERSION}/,` ; \
+	FILES=`git ls-files | sed -e s,^,radare2-${VERSION}/,` ; \
 	cd .. && mv radare2 radare2-${VERSION} && \
 	${TAR} radare2-${VERSION}.tar.gz $${FILES} radare2-${VERSION}/ChangeLog ;\
 	mv radare2-${VERSION} radare2

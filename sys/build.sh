@@ -1,6 +1,6 @@
 #!/bin/sh
 
-MAKE_JOBS=1
+MAKE_JOBS=8
 
 MAKE=make
 gmake --help >/dev/null 2>&1

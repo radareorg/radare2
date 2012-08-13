@@ -276,6 +276,10 @@ error:
 	free (buf);
 	// ugly hack to free fcn
 	if (fcn) {
+		if (fcn->addr == UT64_MAX) {
+			r_anal_fcn_free (fcn);
+			return R_FALSE;
+		}
 		// TODO: mark this function as not properly analyzed
 		eprintf ("Analysis of function at 0x%08"PFMT64x" has failed\n", fcn->addr);
 		if (!fcn->name) {

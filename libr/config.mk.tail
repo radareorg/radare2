@@ -140,3 +140,6 @@ else
 libname=-shared -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${EXT_SO}.${LIBVERSION}
 endif
 endif
+
+# -- singleton
+endif
