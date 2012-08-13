@@ -46,6 +46,18 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 	}
 	return ret;
 }
+
+R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
+	long int delta = 0;
+	ut8 *b = malloc (core->blocksize);
+	ut64 addr = core->offset;
+	memset (b, 0xff, core->blocksize);
+	delta = addr - from;
+	r_core_read_at (core, to+delta, b, core->blocksize);
+	r_print_hexdiff (core->print, core->offset, core->block, to+delta, b, core->blocksize);
+	free (b);
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int i, l, len = core->blocksize;
@@ -358,7 +370,15 @@ return 0;
 		r_print_hexdump (core->print, core->offset, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
 		break;
 	case 'x':
-		r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+		{
+		ut64 from = r_config_get_i (core->config, "diff.from");
+		ut64 to = r_config_get_i (core->config, "diff.to");
+		if (from == to && from == 0) {
+			r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+		} else {
+			r_core_print_cmp (core, from, to);
+		}
+		}
 		break;
 	case '6':
 		{

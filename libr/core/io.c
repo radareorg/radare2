@@ -160,8 +160,16 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	int ret;
 	if (!core->io || !core->file || size<1)
 		return R_FALSE;
+#if 0
 	r_io_set_fd (core->io, core->file->fd); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
 	ret = r_io_read_at (core->io, addr, buf, size);
+	if (addr>=core->offset && addr<=core->offset+core->blocksize)
+		r_core_block_read (core, 0);
+#else
+	r_io_set_fd (core->io, core->file->fd); // XXX ignore ret? -- ultra slow method.. inverse resolution of io plugin brbrb
+	//ret = r_io_read_at (core->io, addr, buf, size);
+	r_io_seek (core->io, addr, R_IO_SEEK_SET);
+	ret = r_io_read (core->io, buf, size);
 	if (ret != size) {
 		if (ret<size && ret>0)
 			memset (buf+ret, 0xff, size-ret);
@@ -169,5 +177,6 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	}
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);
+#endif
 	return (ret!=UT64_MAX);
 }

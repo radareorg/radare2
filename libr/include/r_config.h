@@ -32,6 +32,7 @@ typedef struct r_config_t {
 	int last_notfound;
 	int n_nodes;
 	void *user;
+	RNum *num;
 	PrintfCallback printf;
 	RList *nodes;
 	RHashTable *ht;

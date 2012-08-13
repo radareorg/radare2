@@ -85,7 +85,7 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 	if (node) {
 		if (node->i_value != 0)
 			return node->i_value;
-		return (ut64)r_num_math (NULL, node->value);
+		return (ut64)r_num_math (cfg->num, node->value);
 	}
 	return (ut64)0LL;
 }
@@ -137,8 +137,8 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 				node->value = strdup (value);
 				if (*value>='0' && *value<='9') {
 					if (strchr (value, '/'))
-						node->i_value = r_num_get (NULL, value);
-					else node->i_value = r_num_math (NULL, value);
+						node->i_value = r_num_get (cfg->num, value);
+					else node->i_value = r_num_math (cfg->num, value);
 				} else node->i_value = 0;
 				node->flags |= CN_INT;
 			}
@@ -295,6 +295,7 @@ R_API RConfig *r_config_new(void *user) {
 		cfg->nodes = r_list_new ();
 		cfg->nodes->free = free;
 		cfg->user = user;
+		cfg->num = NULL;
 		cfg->n_nodes = 0;
 		cfg->lock = 0;
 		cfg->printf = (void *)printf;

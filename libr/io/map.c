@@ -59,6 +59,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 offset, 
 
 R_API int r_io_map_select(RIO *io, ut64 off) {
 	//ut64 delta = 0;
+	int done = 0;
 	ut64 fd = -1;//io->fd;
 	st32 delta = 0;
 	RIOMap *im = NULL;
@@ -67,16 +68,24 @@ R_API int r_io_map_select(RIO *io, ut64 off) {
 		if (off >= im->from && off < im->to) {
 			delta = off - im->from + im->delta;
 			fd = im->fd;
+			done = 1;
 			if (fd == io->raised)
 				break;
 		}
+	}
+	if (done == 0) {
+		//eprintf ("fail 0x%llx %d\n", off, delta);
+		r_io_set_fdn (io, fd);
+		r_io_seek (io, -1, R_IO_SEEK_SET);
+		return off;
 	}
 	if (fd != -1) {
 		r_io_set_fdn (io, fd);
 		//eprintf ("seek ret %d = %llx\n", delta, 
 		r_io_seek (io, delta, R_IO_SEEK_SET);
-		return R_TRUE;
-	} else r_io_seek (io, off, R_IO_SEEK_SET);
+		return 0;
+	}
+	r_io_seek (io, off, R_IO_SEEK_SET);
 	return R_FALSE;
 }
 

@@ -170,21 +170,10 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 }
 
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-#if 0
-	int ret;
-	if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX) {
-		memset (buf, 0xff, len);
-		return -1;
-	}
-	ret = r_io_read_internal (io, buf, len);
-	if (ret<1)
-		memset (buf, 0xff, len);
-	return ret;
-#else
 	int ret, l, olen = len;
 	int w = 0;
 
-#if 1
+#if 0
 	// HACK?: if io->va == 0 -> call seek+read without checking sections ?
 	if (!io->va) {
 	//	r_io_seek (io, addr, R_IO_SEEK_SET);
@@ -196,16 +185,22 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return ret;
 	}
 #endif
+// XXX: this is buggy!
 	while (len>0) {
+		int ms;
 		ut64 last = r_io_section_next (io, addr);
 		l = (len > (last-addr))? (last-addr): len;
 		if (l<1) l = len;
 		// ignore seek errors
 //		eprintf ("0x%llx %llx\n", addr+w, 
 		//r_io_seek (io, addr+w, R_IO_SEEK_SET);
-		r_io_map_select (io, addr+w);
+		if (r_io_seek (io, addr+w, R_IO_SEEK_SET)==UT64_MAX) {
+			memset (buf+w, 0xff, l);
+			return -1;
+		}
+		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
-		if (ret <1) {
+		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
 			ret = 1;
 		} else if (ret<l) {
@@ -215,11 +210,17 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, l);
 		}
+		// hide non-mapped files here
+		// do not allow reading on real addresses if mapped != 0
+		if (ms>0) {
+			//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
+			memset (buf+w, 0xff, l);
+			break;
+		}
 		w += l;
 		len -= l;
 	}
 	return olen;
-#endif
 }
 
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {

@@ -70,6 +70,13 @@ static void r_core_visual_mark(RCore *core, ut8 ch) {
 	marks[ch] = core->offset;
 }
 
+static void prompt_read (const char *p, char *buf, int buflen) {
+	r_line_set_prompt (p);
+	r_cons_show_cursor (R_TRUE);
+	r_cons_fgets (buf, buflen, 0, NULL);
+	r_cons_show_cursor (R_FALSE);
+}
+
 R_API void r_core_visual_prompt (RCore *core) {
 	char buf[1024];
 	ut64 oseek = core->offset;
@@ -143,12 +150,20 @@ static int visual_fkey(RCore *core, int ch) {
 	return ch;
 }
 
-void setcursor (RCore *core, int cur) {
+static void setcursor (RCore *core, int cur) {
 	curset = cur;
 	if (curset) flags|=R_PRINT_FLAGS_CURSOR;
 	else flags &= ~(flags&R_PRINT_FLAGS_CURSOR);
 	r_print_set_flags (core->print, flags);
 	core->print->col = curset? 1: 0;
+}
+
+static void setdiff (RCore *core) {
+	char from[64], to[64];
+	prompt_read ("diff from: ", from, sizeof (from));
+	r_config_set (core->config, "diff.from", from);
+	prompt_read ("diff to: ", to, sizeof (to));
+	r_config_set (core->config, "diff.to", to);
 }
 
 // TODO: integrate in '/' command with search.inblock ?
@@ -200,8 +215,19 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_seek (core, core->asmqjmps[ch-'0'], 1);
 	} else
 	switch (ch) {
-	case 9:
-		core->print->col = core->print->col==1? 2: 1;
+	case 9: // tab
+		{ // XXX: unify diff mode detection
+		ut64 f = r_config_get_i (core->config, "diff.from");
+		ut64 t = r_config_get_i (core->config, "diff.to");
+		if (f == t && f == 0) {
+			core->print->col = core->print->col==1? 2: 1;
+		} else {
+			ut64 delta = core->offset - f;
+			r_core_seek (core, t+delta, 1);
+			r_config_set_i (core->config, "diff.from", t);
+			r_config_set_i (core->config, "diff.to", f);
+		}
+		}
 		break;
 	case 'c':
 		// XXX dupped flag imho
@@ -209,6 +235,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'd':
 		r_core_visual_define (core);
+		break;
+	case 'D':
+		setdiff (core);
 		break;
 	case 'C':
 		color ^= 1;
@@ -687,6 +716,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" cC       toggle cursor and colors\n"
 		" gG       go seek to begin and end of file (0-$s)\n"
 		" d[f?]    define function, data, code, ..\n"
+		" D        enter visual diff mode (set diff.from/to)\n"
 		" x        show xrefs to seek between them\n"
 		" sS       step / step over\n"
 		" n/N      seek next/previous block\n"

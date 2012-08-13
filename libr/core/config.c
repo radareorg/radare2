@@ -60,6 +60,7 @@ static int config_iova_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
+		r_core_block_read (core, 0);
 		// reload symbol information
 		r_core_cmd0 (core, ".ia*");
 	}
@@ -433,6 +434,7 @@ R_API int r_core_config_init(RCore *core) {
 	RConfig *cfg = cfg = core->config = r_config_new (core);
 	char *p;
 	cfg->printf = r_cons_printf;
+	cfg->num = core->num;
 
 	//r_config_set (cfg, "dir.opcodes", R_ASM_OPCODES_PATH);
 	//r_config_set (cfg, "dir.tmp", "/tmp");
@@ -530,6 +532,11 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.wseek", "Seek after write");
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);
 	r_config_desc (cfg, "cfg.hashlimit", "If the file its bigger than hashlimit don't calculate the hash");
+	/* diff */
+	r_config_set_i (cfg, "diff.from", 0);
+	r_config_desc (cfg, "diff.from", "set source diffing address for px (uses cc command)");
+	r_config_set_i (cfg, "diff.to", 0);
+	r_config_desc (cfg, "diff.to", "set destination diffing address for px (uses cc command)");
 	/* debug */
 	r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
