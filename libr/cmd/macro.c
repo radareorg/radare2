@@ -85,7 +85,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		macro = (struct r_cmd_macro_item_t *)malloc (sizeof (struct r_cmd_macro_item_t));
 		macro->name = strdup (name);
 	}
-	
+
 	macro->codelen = (pbody)? strlen (pbody)+2 : 4096;
 	macro->code = (char *)malloc (macro->codelen);
 	*macro->code = '\0';
@@ -345,6 +345,8 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 		free (str);
 		return 0;
 	}
+	ptr = strchr (str, ',');
+	if (ptr) *ptr =0;
 
 	cons = r_cons_singleton ();
 	r_cons_break (NULL, NULL);
@@ -371,7 +373,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 					if (end) *end = '\n';
 					return R_FALSE;
 				}
-r_cons_flush ();
+				r_cons_flush ();
 
 				/* Label handling */
 				ptr2 = r_cmd_macro_label_process (mac, &(labels[0]), &labels_n, ptr);

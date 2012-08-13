@@ -214,7 +214,13 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		// do not allow reading on real addresses if mapped != 0
 		if (ms>0) {
 			//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
-			memset (buf+w, 0xff, l);
+			/* check if address is vaddred in sections */
+			ut64 o = r_io_section_offset_to_vaddr (io, addr);
+			if (o == UT64_MAX) {
+				ut64 o = r_io_section_vaddr_to_offset (io, addr);
+				if (o == UT64_MAX)
+					memset (buf+w, 0xff, l);
+			}
 			break;
 		}
 		w += l;

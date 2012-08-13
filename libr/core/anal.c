@@ -276,10 +276,25 @@ error:
 	free (buf);
 	// ugly hack to free fcn
 	if (fcn) {
+		// TODO: mark this function as not properly analyzed
+		eprintf ("Analysis of function at 0x%08"PFMT64x" has failed\n", fcn->addr);
+		if (!fcn->name) {
+			// XXX dupped code.
+			fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
+					fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
+					fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
+					fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
+			/* Add flag */
+			r_flag_space_set (core->flags, "functions");
+			r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
+		}
+		r_anal_fcn_insert (core->anal, fcn);
+#if 0
 		// unlink from list to avoid double free later when we call r_anal_free()
 		r_list_unlink (core->anal->fcns, fcn);
 		if (core->anal->fcns->free == NULL)
 			r_anal_fcn_free (fcn);
+#endif
 	}
 	return R_FALSE;
 }

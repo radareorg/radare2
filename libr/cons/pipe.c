@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
 #include <r_cons.h>
 #include <unistd.h>
@@ -17,7 +17,7 @@ R_API int r_cons_pipe_open(const char *file, int append) {
 	if (fd==-1) {
 		eprintf ("Cannot open file '%s'\n", file);
 		return -1;
-	} else eprintf ("%s created\n", file);
+	}// else eprintf ("%s created\n", file);
 
 	if (backup_fd != -1)
 		close (backup_fd);

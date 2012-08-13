@@ -453,7 +453,22 @@ return 0;
 		}
 		break;
 	case 'z':
-		eprintf ("TODO:0.9.2: pz (ascii and zero-terminated string)\n");
+		{
+		char *p, *s = malloc (core->blocksize+1);
+		int i, j;
+		if (s) {
+			memset (s, 0, core->blocksize);
+			// TODO: filter more chars?
+			for (i=j=0;i<core->blocksize; i++) {
+				char ch = (char)core->block[i];
+				if (!ch) break;
+				if (IS_PRINTABLE (ch))
+					s[j++] = ch;
+			}
+			r_cons_printf ("%s\n", s);
+			free (s);
+		}
+		}
 		break;
 	case 'Z':
 		// TODO:0.9.2 zoom.byte changes does not take any effect

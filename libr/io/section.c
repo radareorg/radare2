@@ -207,7 +207,7 @@ R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 		if (offset >= s->offset && offset < s->offset + s->size)
 			return (s->vaddr + offset - s->offset);
 	}
-	return -1;
+	return UT64_MAX;
 }
 
 R_API ut64 r_io_section_next(RIO *io, ut64 o) {

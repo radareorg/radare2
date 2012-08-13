@@ -456,7 +456,7 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	} else {
 		close (fds[1]);
 		dup2 (fds[0], 0);
-		dup2 (2, 1);
+		//dup2 (1, 2); // stderr goes to stdout
 		execl ("/bin/sh", "sh", "-c", shell_cmd, (char*)NULL);
 	}
 	return status;
@@ -470,8 +470,19 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 static int r_core_cmd_subst_i(RCore *core, char *cmd);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int rep = atoi (cmd);
-	char *icmd = strdup (cmd);
+	char *cmt, *colon, *icmd = strdup (cmd);
 	cmd = r_str_trim_head_tail (icmd);
+	if (!memcmp (cmd, "# ", 2))
+		return 0;
+	cmt = strchr (icmd+1, '#');
+	if (cmt && cmt[1]==' ') {
+		*cmt = 0;
+	}
+	if (*cmd != '"') {
+		colon = strchr (icmd, ';');
+		if (colon)
+			*colon = 0;
+	}
 	if (rep>0) {
 		while (*cmd>='0' && *cmd<='9')
 			cmd++;
@@ -484,6 +495,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			return ret;
 		}
 	}
+	if (colon)
+		r_core_cmd_subst (core, colon+1);
 	free (icmd);
 	return 0;
 }
@@ -521,7 +534,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* comments */
 	if (*cmd!='#') {
 		ptr = (char *)r_str_lastbut (cmd, '#', quotestr);
-		if (ptr) *ptr = '\0';
+		if (ptr && ptr[1]==' ') *ptr = '\0';
 	}
 
 	/* multiple commands */
