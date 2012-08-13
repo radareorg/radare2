@@ -386,7 +386,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 		p->printf (" ");
 		for (j=0;j<16;j++) {
 			r_print_cursor (p, i+j, 1);
-			p->printf (C (a, b));
+			p->printf ("%s", C (a, b));
 			r_print_cursor (p, i+j, 0);
 		}
 		p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
@@ -398,7 +398,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 		p->printf (" ");
 		for (j=0;j<16;j++) {
 			r_print_cursor (p, i+j, 1);
-			p->printf (C (b, a));
+			p->printf ("%s", C (b, a));
 			r_print_cursor (p, i+j, 0);
 		}
 		p->printf ("\n");
