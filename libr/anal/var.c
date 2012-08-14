@@ -55,7 +55,7 @@ static int cmpdelta(RAnalVar *a, RAnalVar *b) {
 }
 
 /* Add local variable for selected function */
-R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope, const RAnalType *type, const char *name, int set) {
+R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope, RAnalType *type, const char *name, int set) {
 	RAnalVar *var, *vari;
 	RListIter *iter;
 	if (from != 0LL)
@@ -164,9 +164,9 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 			//ut32 value = r_var_dbg_read(v->delta);
 			if (v->type->type == R_ANAL_TYPE_ARRAY)
 				eprintf ("%s %s %s[%d] = ",
-					r_anal_var_scope_to_str(anal, v->scope),
-					r_anal_type_to_str(anal, v->type),
-					v->name, v->type->custom.a->count);
+					r_anal_var_scope_to_str (anal, v->scope),
+					r_anal_type_to_str (anal, v->type),
+					v->name, (int)v->type->custom.a->count);
 			else
 				eprintf ("%s %s %s = ", r_anal_var_scope_to_str (anal, v->scope),
 					r_anal_type_to_str(anal, v->type), v->name);
@@ -194,7 +194,7 @@ R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta
 			if (v->type->type == R_ANAL_TYPE_ARRAY)
 				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d array=%d\n",
 					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
-					r_anal_type_to_str(anal, v->type), v->name, v->delta, v->type->custom.a->count);
+					r_anal_type_to_str(anal, v->type), v->name, v->delta, (int)v->type->custom.a->count);
 			else
 				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d\n",
 					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),

@@ -1,5 +1,6 @@
 ifeq ($(_INCLUDE_RULES_MK_),)
 _INCLUDE_RULES_MK_=1
+
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 include $(LIBR)/config.mk
 
@@ -10,18 +11,22 @@ ifneq ($(NAME),)
 ALL?=
 CFLAGS+=-I$(LIBR)/include
 
-all:
-	@printf "\x1b[32m[ ${NAME} ]\x1b[0m\n"
-	@[ -n "${EXTRA_TARGETS}" ] && ${MAKE} ${EXTRA_TARGETS} || true
-	${MAKE} ${LIBSO}
-	${MAKE} ${LIBAR}
 ifeq (${OSTYPE},windows)
-	@-if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
+IQ=-
 else
-	@if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
+IQ=
 endif
+
+all:
+	@echo "DIR ${NAME}"
+	${MAKE} ${EXTRA_TARGETS} ${LIBSO} ${LIBAR}
+ifeq ($(SILENT),)
+	@${IQ}if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
-	@true
+else
+	@${IQ}if [ -e t/Makefile ] ; then (echo "DIR ${NAME}/t"; cd t && ${MAKE} all) ; fi
+	@-if [ -e p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE} all) ; fi
+endif
 
 SRC=$(subst .o,.c,$(OBJ))
 
@@ -41,20 +46,27 @@ ${LIBSO}: $(EXTRA_TARGETS) waitfordeps ${OBJ} ${SHARED_OBJ}
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
 	  test $$a -nt ${LIBSO} && do=1 ; \
 	  if [ $$do = 1 ]; then \
+	    [ -n "${SILENT}" ] && \
+	    echo "LD $(LIBSO)" || \
 	    echo "${CC_LIB} ${LIBNAME} ${OBJ} ${SHARED_OBJ} ${LDFLAGS} ${LINK}" ; \
-	    ${CC_LIB} ${LIBNAME} ${OBJ} ${SHARED_OBJ} ${LDFLAGS} ${LINK}; \
-	    if [ -f "$(LIBR)/stripsyms.sh" ]; then sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; fi ; \
+	    ${CC_LIB} ${LIBNAME} ${OBJ} ${SHARED_OBJ} ${LDFLAGS} ${LINK} || exit 1; \
+	    [ -f "$(LIBR)/stripsyms.sh" ] && sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; \
 	  break ; \
 	fi ; done
 else
 ${LIBSO}:
+	@:
 endif
 
 ifeq ($(WITHNONPIC),1)
 $(LIBAR): ${OBJ}
+ifneq ($(SILENT),)
+	echo "CC_AR $(LIBAR)"
+endif
 	${CC_AR} ${OBJ} ${SHARED_OBJ}
 else
 $(LIBAR):
+	@:
 endif
 
 MAGICSED=| sed -e 's,-lr_magic,@LIBMAGIC@,g'
@@ -109,13 +121,16 @@ ifneq ($(BIN)$(BINS),)
 all: ${BIN}${EXT_EXE} ${BINS}
 
 ${BINS}: 
-	echo ${LIBR}
+ifneq ($(SILENT),)
+	@echo CC $@${EXT_EXE}
+endif
 	${CC} ${CFLAGS} $@.c -L.. ${LDFLAGS} -o $@${EXT_EXE}
-#	${CC} ${CFLAGS} $@.c -L.. ${LDFLAGS} ${LDLIBS} -o $@${EXT_EXE}
 
 ${BIN}${EXT_EXE}: ${OBJ} ${SHARED_OBJ}
+ifneq ($(SILENT),)
+	@echo LD $@${EXT_EXE}
+endif
 	${CC} $+ -L.. -o ${BIN}${EXT_EXE} ${LDFLAGS}
-#	${CC} $+ -L.. -o ${BIN}${EXT_EXE} ${LDLIBS} ${LDFLAGS}
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile
@@ -135,7 +150,4 @@ install:
 
 endif
 
-#-------------------------------
-
-# TODO: deprecate RTDEBUG and R_DEBUG
 endif

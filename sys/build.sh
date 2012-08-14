@@ -20,4 +20,4 @@ fi
 ${MAKE} mrproper > /dev/null 2>&1
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed"
 ./configure --prefix=/usr || exit 1
-exec ${MAKE} -j ${MAKE_JOBS}
+exec ${MAKE} -s -j ${MAKE_JOBS}

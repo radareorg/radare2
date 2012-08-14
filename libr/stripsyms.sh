@@ -12,7 +12,7 @@ fi
 
 nm --defined-only -B ${FILE} 2>/dev/null | grep -v ^${PFX}_ | awk '{print $3}' > ${LIST}
 #if [ -n "`cat /tmp/list`" ]; then
-echo "=> Stripping unnecessary symbols for ${FILE}..."
+echo "STRIP ${FILE}"
 objcopy --strip-symbols ${LIST} ${FILE} 2>/dev/null
 #TODO: Uncomment on release
 #strip -s ${FILE}

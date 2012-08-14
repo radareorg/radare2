@@ -1,3 +1,4 @@
+include ../../../global.mk
 F=
 F+= linux-x86-32
 F+= linux-x86-64
@@ -13,7 +14,7 @@ F+= openbsd-x86-64
 F+= windows-x86-32
 F+= windows-x86-64
 
-include ../../../config-user.mk
+include $(TOP)/config-user.mk
 
 F_SDB=$(addsuffix .sdb,$F)
 
@@ -27,14 +28,16 @@ compile: ${F_SDB}
 linux-x86-32.sdb: linux-x86-32
 
 %.sdb:%
-	@echo "  SDB $<"
-	@sh gen.sh < $< | ${SDB} $<.sdb =
+ifneq ($(SILENT),)
+	@echo "SDB $<"
+endif
+	${SHELL} gen.sh < $< | ${SDB} $<.sdb =
 
 clean:
 	rm -f *.sdb
 
 ${SDB}:
-	cd ../../db/sdb/src && ${MAKE}
+	cd $(LTOP)/db/sdb/src && ${MAKE}
 
 .PHONY: all clean install install-symlink symstall
 

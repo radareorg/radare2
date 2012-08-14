@@ -24,7 +24,7 @@
 
 /* hack */
 // must remove: equ, include, incbin, macro
-static void wrt_ref (int val, int type, int count);
+//static void wrt_ref (int val, int type, int count);
 static unsigned char *obuf;
 static int obuflen = 0;
 #define write_one_byte(x,y) obuf[obuflen++] = x
@@ -46,28 +46,13 @@ static const char *mnemonics[] = {
 	"seek", NULL
 };
 
-/* linked lists */
-static struct reference *firstreference = NULL;
-static struct label *firstlabel = NULL, *lastlabel = NULL;
-static struct name *firstname = NULL;
-static struct includedir *firstincludedir = NULL;
-static struct macro *firstmacro = NULL;
-
-/* files */
-static FILE *realoutputfile, *outfile, *reallistfile, *listfile, *labelfile;
-static const char *realoutputfilename;
-static const char *labelfilename;
-static struct infile *infile;
-/* bools to see if files are opened */
-static int havelist = 0;
-
 /* number of errors seen so far */
 static int errors = 0;
 
 /* current line, address and file */
 static int addr = 0, file;
 /* current number of characters in list file, for indentation */
-static int listdepth;
+//static int listdepth;
 
 /* use readbyte instead of (hl) if writebyte is true */
 static int writebyte;
@@ -221,7 +206,7 @@ static int readcommand (const char **p) {
 static void readlabel (const char **p, int store) {
 	const char *c, *d, *pos, *dummy;
 	int i, j;
-	struct label *buf, *previous, **thefirstlabel;
+	struct label *buf, *previous, **thefirstlabel = NULL;
 	for (d = *p; *d && *d != ';'; ++d);
 	for (c = *p; !strchr (" \r\n\t", *c) && c < d; ++c);
 	pos = strchr (*p, ':');
@@ -252,10 +237,7 @@ static void readlabel (const char **p, int store) {
 	buf->name[c - *p - 1] = 0;
 	*p = c;
 	buf->value = addr;
-	lastlabel = buf;
-	if (buf->name[0] == '.')
-		thefirstlabel = &stack[sp].labels;
-	else thefirstlabel = &firstlabel;
+	//lastlabel = buf;
 	if (previous)
 		buf->next = previous->next;
 	else buf->next = *thefirstlabel;
@@ -270,44 +252,6 @@ static void readlabel (const char **p, int store) {
 		buf->next->prev = buf;
 }
 
-static int new_reference (const char *data, int type, char delimiter,
-			   int ds_count);
-
-#if 0
-/* write one byte to the outfile, and add it to the list file as well */
-static void write_one_byte (int b, int list) {
-	b &= 0xff;
-	putc (b, outfile);
-	if (list && havelist) {
-		fprintf (listfile, " %02x", b);
-		listdepth += 3;
-	}
-	addr++;
-	addr &= 0xffff;
-}
-
-/* write byte to outfile and possibly some index things as well */
-static void wrtb (int b) {
-	if (indexed) {
-		write_one_byte (indexed, 1);
-		indexed = 0;
-	}
-	if (writebyte)
-		b ^= 0x40;
-	if (bitsetres && b != 0xCB) {
-		new_reference (bitsetres, TYPE_BSR, ',', b);
-		bitsetres = NULL;
-	} else write_one_byte (b, 1);
-	if (indexjmp) {
-		new_reference (indexjmp, TYPE_ABSB, ')', 1);
-		indexjmp = NULL;
-	}
-	if (writebyte) {
-		writebyte = 0;
-		new_reference (readbyte, TYPE_ABSB, mem_delimiter, 1);
-	}
-}
-#endif
 
 static int compute_ref (struct reference *ref, int allow_invalid) {
 	const char *ptr;
@@ -338,38 +282,6 @@ static int compute_ref (struct reference *ref, int allow_invalid) {
 	return ref->computed_value;
 }
 
-/* Create a new reference, to be resolved after assembling (so all labels are
- * known.) */
-static int new_reference (const char *p, int type, char delimiter, int ds_count) {
-	struct reference *tmp = NULL;
-	int valid, value;
-	const char *c;
-	c = p;
-	value = rd_expr (&c, delimiter, &valid, sp, 1);
-	if (!valid) {
-		fprintf (stderr, "invalid reference\n");
-		return 0;
-	}
-	if (type == TYPE_LABEL) {
-		lastlabel->ref = tmp;
-		lastlabel->valid = valid;
-		lastlabel->value = value;
-	} else wrt_ref (value, type, ds_count);
-	return 1;
-}
-
-/* write the last read word to file */
-static int write_word (void) {
-	return new_reference (readword, TYPE_ABSW, mem_delimiter, 1);
-}
-
-/* write the last read byte to file (relative) */
-static int write_rel (void) {
-	int ret = new_reference (readbyte, TYPE_RELB, mem_delimiter, (addr + 1) & 0xffff);
-	writebyte = 0;
-	return ret;
-}
-
 /* read a word from input and store it in readword. return 1 on success */
 static int rd_word (const char **p, char delimiter) {
 	*p = delspc (*p);
@@ -391,21 +303,6 @@ static int rd_byte (const char **p, char delimiter) {
 	mem_delimiter = delimiter;
 	skipword (p, delimiter);
 	return 1;
-}
-
-/* read an address from infile and put it in reference table.
- * so that it will be written here afterwards */
-static int rd_wrt_addr (const char **p, char delimiter) {
-	if (!rd_word (p, delimiter))
-		return 0;
-	return write_word ();
-}
-
-/* like rd_wrt_addr, but for a relative jump */
-static int rd_wrt_jr (const char **p, char delimiter) {
-	if (!rd_byte (p, delimiter))
-		return 0;
-	return write_rel ();
 }
 
 /* read (SP), DE, or AF */
@@ -547,23 +444,6 @@ static int rd_stack (const char **p) {
 	indexed = 0xDD + 0x20 * (i - 5);
 	return 3;
 }
-
-#if 0
-/* read a or hl(2) or i[xy](2) with variables set */
-static int
-rd_a_hlx (const char **p)
-{
-  int i;
-  const char *list[] = { "a", "hl", "ix", "iy", NULL };
-  i = indx (p, list, 1, NULL);
-  if (i < 2)
-    return i;
-  if (i == 2)
-    return 2;
-  indexed = 0xDD + 0x20 * (i - 3);
-  return 2;
-}
-#endif
 
 /* read b,c,d,e,h,l,(hl),a,(ix+nn),(iy+nn),nn 
  * but now with extra hl or i[xy](15) for add-instruction
@@ -836,58 +716,6 @@ static int rd_sp (const char **p) {
 	return 1;
 }
 
-/* write a reference after it has been computed */
-static void wrt_ref (int val, int type, int count) {
-	switch (type) {
-	case TYPE_RST:
-		if ((val & 0x38) != val) {
-			printerr (1, "incorrect RST value %d (0x%02x)\n", val, val);
-			return;
-		}
-		write_one_byte (val + 0xC7, 1);
-		return;
-	case TYPE_ABSW:
-		if (val < -0x8000 || val >= 0x10000)
-			printerr (0, "word value %d (0x%x) truncated\n", val, val);
-		write_one_byte (val & 0xff, 1);
-		write_one_byte ((val >> 8) & 0xff, 1);
-		return;
-	case TYPE_ABSB:
-		if (val < -0x80 || val >= 0x100)
-			printerr (0, "byte value %d (0x%x) truncated\n", val, val);
-		write_one_byte (val & 0xff, 1);
-		return;
-	case TYPE_DS:
-		if (val < -0x80 || val >= 0x100)
-			printerr (0, "byte value %d (0x%x) truncated\n", val, val);
-		if (havelist) {
-			fprintf (listfile, " 0x%02x...", val & 0xff);
-			listdepth += 6;
-		}
-		while (count--)
-			write_one_byte (val & 0xff, 0);
-		return;
-	case TYPE_BSR:
-		if (val & ~7) {
-			printerr (1, "incorrect BIT/SET/RES value %d\n", val);
-			return;
-		}
-		write_one_byte (0x08 * val + count, 1);
-		return;
-	case TYPE_RELB:
-		val -= count;
-		if (val & 0xff80 && ~val & 0xff80) {
-			printerr (1, "relative jump out of range (%d)\n", val);
-		}
-		write_one_byte (val & 0xff, 1);
-		return;
-	case TYPE_LABEL:
-		printerr (1, "bug in the assembler: trying to write label reference.  "
-				"Please report.\n");
-		return;
-	}
-}
-
 /* do the actual work */
 static int assemble (const char *str, unsigned char *_obuf) {
 	int ifcount = 0, noifcount = 0;
@@ -901,35 +729,18 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	//for (file = 0; file < infilecount; ++file)
 	do {
 		int cmd, cont = 1;
-		if (havelist) {
-			if (buffer && buffer[0] != 0) {
-				int i, tabs;
-				ptr = delspc (ptr);
-				if (*ptr != 0)
-					printerr (1, "junk at end of line: %s\n", ptr);
-				if (listdepth < 8)
-					tabs = 3;
-				else if (listdepth < 16)
-					tabs = 2;
-				else tabs = 1;
-				for (i = 0; i < tabs; ++i)
-					fputc ('\t', listfile);
-				fprintf (listfile, "%s\n", buffer);
-			}
-			listdepth = 4;
-		}
 // XXX: must free
 		  buffer = strdup (str);
 	  if (!cont)
 	    break;		/* break to next source file */
-	  if (havelist)
-	    fprintf (listfile, "%04x", addr);
+//	  if (havelist)
+//	    fprintf (listfile, "%04x", addr);
 	  for (bufptr = buffer; (bufptr = strchr (bufptr, '\n'));)
 	    *bufptr = ' ';
 	  for (bufptr = buffer; (bufptr = strchr (bufptr, '\r'));)
 	    *bufptr = ' ';
 	  ptr = buffer;
-	  lastlabel = NULL;
+	  //lastlabel = NULL;
 	  baseaddr = addr;
 	  ++stack[sp].line;
 	  ptr = delspc (ptr);
@@ -1010,8 +821,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  wrtb (0xC4 + 8 * --r);
 		  rd_comma (&ptr);
 		} else wrtb (0xCD);
-	      if (!rd_wrt_addr (&ptr, '\0'))
-			return 0;
 	      break;
 	    case CCF:
 	      wrtb (0x3F);
@@ -1057,7 +866,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      break;
 	    case DJNZ:
 	      wrtb (0x10);
-	      rd_wrt_jr (&ptr, '\0');
+	      //rd_wrt_jr (&ptr, '\0');
 	      break;
 	    case EI:
 	      wrtb (0xFB);
@@ -1100,7 +909,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		break;
 	      if (r == A)
 		{
-		  const char *tmp;
 		  if (!(r = rd_nnc (&ptr)))
 		    break;
 		  if (r == C)
@@ -1109,10 +917,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		      wrtb (0x40 + 8 * (A - 1));
 		      break;
 		    }
-		  tmp = readbyte;
 		  wrtb (0xDB);
-		  if (!new_reference (tmp, TYPE_ABSB, ')', 1))
-			return 0;
 		  break;
 		}
 	      if (!rd_c (&ptr))
@@ -1157,16 +962,12 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  wrtb (0xC2 + 8 * --r);
 		  rd_comma (&ptr);
 		} else wrtb (0xC3);
-	      if (!rd_wrt_addr (&ptr, '\0'))
-			return 0;
 	      break;
 	    case JR:
 	      r = rd_jr (&ptr);
 	      if (r)
 		rd_comma (&ptr);
 	      wrtb (0x18 + 8 * r);
-	      if (!rd_wrt_jr (&ptr, '\0'))
-			return 0;
 	      break;
 	    case LD:
 	      if (!(r = rd_ld (&ptr)))
@@ -1189,12 +990,10 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  if (r == ld_nnA || r == ld_nnHL)
 		    {
 		      wrtb (0x22 + 0x10 * (r == ld_nnA));
-		      write_word ();
 		      break;
 		    }
 		  wrtb (0xED);
 		  wrtb (0x43 + 0x10 * --r);
-		  write_word ();
 		  break;
 		case ldA:
 		  if (!(r = rd_lda (&ptr)))
@@ -1202,7 +1001,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  if (r == A_NN)
 		    {
 		      wrtb (0x3A);
-		      write_word ();
 		      break;
 		    }
 		  if (r == A_I || r == A_R)
@@ -1235,16 +1033,13 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		    {
 		      wrtb (0xED);
 		      wrtb (0x4B + 0x10 * (r == ldDE));
-		      write_word ();
 		      break;
 		    }
 		  wrtb (0x01 + (r == ldDE) * 0x10);
-		  write_word ();
 		  break;
 		case ldHL:
 		  r = rd_nn_nn (&ptr);
 		  wrtb (0x21 + (r == _NN) * 9);
-		  write_word ();
 		  break;
 		case ldI:
 		case ldR:
@@ -1263,12 +1058,10 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  if (r == SPNN)
 		    {
 		      wrtb (0x31);
-		      write_word ();
 		      break;
 		    }
 		  wrtb (0xED);
 		  wrtb (0x7B);
-		  write_word ();
 		  break;
 		}
 	      break;
@@ -1321,12 +1114,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      if (!rd_a (&ptr))
 		break;
-	      {
-		const char *tmp = readbyte;
 		wrtb (0xD3);
-		if (!new_reference (tmp, TYPE_ABSB, ')', 1))
-			return 0;
-	      }
 	      break;
 	    case OUTD:
 	      wrtb (0xED);
@@ -1416,8 +1204,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0x67);
 	      break;
 	    case RST:
-	      if (!new_reference (ptr, TYPE_RST, '\0', 1))
-			return 0;
 	      ptr = "";
 	      break;
 	    case SBC:
@@ -1503,11 +1289,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		    {
 		      /* Read string.  */
 		      int quote = *ptr;
-		      if (listfile)
-			{
-			  fprintf (listfile, " ..");
-			  listdepth += 3;
-			}
 		      ++ptr;
 		      while (*ptr != quote)
 			{
@@ -1523,8 +1304,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  else
 		    {
 		      /* Read expression.  */
-		      if (!new_reference (ptr, TYPE_ABSB, ',', 1))
-			return 0;
 		      skipword (&ptr, ',');
 		    }
 		  ptr = delspc (ptr);
@@ -1547,8 +1326,6 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      while (1)
 		{
-		  if (!new_reference (readword, TYPE_ABSW, ',', 1))
-			return 0;
 		  ptr = delspc (ptr);
 		  if (*ptr != ',')
 		    break;
@@ -1572,13 +1349,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  readbyte = 0;
 		  rd_byte (&ptr, '\0');
 		  writebyte = 0;
-		  if (!new_reference (readbyte, TYPE_DS, '\0', r))
-			return 0;
 		  break;
-		}
-	      if (havelist) {
-		  fprintf (listfile, " 00...");
-		  listdepth += 6;
 		}
 	      for (i = 0; i < r; i++) {
 		  write_one_byte (0, 0);
@@ -1620,30 +1391,18 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		printerr (1, "endm outside macro definition\n");
 	      break;
 	    case SEEK:
-	      {
-		unsigned int seekaddr = rd_expr (&ptr, '\0', NULL, sp, 1);
-		if (verbose >= 2)
-		  {
-		    fprintf (stderr, "%s%s:%d: ",
-			     stack[sp].dir ? stack[sp].dir->name : "",
-			     stack[sp].name, stack[sp].line);
-		    fprintf (stderr, "[Message] seeking to 0x%0X \n",
-			     seekaddr);
-		  }
-		fseek (outfile, seekaddr, SEEK_SET);
-		break;
-	      }
+	      fprintf (stderr, "seek error\n");
 	    default:
 	      printerr (1, "command or comment expected (was %s)\n", ptr);
 	      return 0;
 	    }
     } while (0);
-  free (infile);
+  //free (infile);
 return obuflen;
 }
 
 // XXX
-static int z80asm (unsigned char *outbuf, const char *s) {
+int z80asm (unsigned char *outbuf, const char *s) {
 	return assemble (s, outbuf);
 }
 

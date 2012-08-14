@@ -684,7 +684,7 @@ R_API RList *r_anal_var_access_list_new();
 R_API void r_anal_var_free(void *var);
 R_API void r_anal_var_access_free(void *access);
 R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope,
-		const RAnalType *type, const char *name, int set);
+		RAnalType *type, const char *name, int set);
 R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
 R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int type);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);

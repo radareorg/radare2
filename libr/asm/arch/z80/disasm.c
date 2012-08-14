@@ -251,7 +251,7 @@ static UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
     return(len);
 }
  
-static ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
+ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 	int i;
 	ULONG   next;
  

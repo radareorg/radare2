@@ -1,4 +1,5 @@
-include ../config.mk
+include ../../global.mk
+include $(LTOP)/config.mk
 
 NAME=r_magic
 DEPS=r_util
@@ -9,7 +10,7 @@ LDFLAGS+=-lmagic
 endif
 OBJ=apprentice.o ascmagic.o compress.o fsmagic.o funcs.o is_tar.o magic.o print.o softmagic.o
 
-include ../rules.mk
+include $(LTOP)/rules.mk
 
 libfile.a:
 	${CC} -c ${CFLAGS} ${SRC}

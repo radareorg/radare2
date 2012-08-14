@@ -21,7 +21,7 @@ LANGS+=lang_lua.${EXT_SO}
 endif
 
 all: ${LANGS}
-	@echo r_lang_plugins: ${LANGS}
+	@echo "LANG ${LANGS}"
 
 ifeq ($(OSTYPE),windows)
 lang_python.${EXT_SO}:
