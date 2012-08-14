@@ -323,14 +323,14 @@ R_API int r_bin_dwarf_parse_info(RBin *a) {
 
 R_API RList *r_bin_dwarf_parse_line(RBin *a) {
 	ut8 *buf;
-	int len, ret;
+	int len;
 	RBinSection *section = getsection (a, "debug_line");
 	if (section) {
 		RList *list = r_list_new ();
 		len = section->size;
 		buf = malloc (len);
 		r_buf_read_at (a->cur.buf, section->offset, buf, len);
-		ret = r_bin_dwarf_parse_line_raw (buf, list);
+		r_bin_dwarf_parse_line_raw (buf, list);
 		free (buf);
 		return list;
 	}

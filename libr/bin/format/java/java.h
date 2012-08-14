@@ -77,6 +77,12 @@ struct r_bin_java_fm_t {
 	struct r_bin_java_attr_t *attributes;
 };
 
+typedef struct r_bin_java_lines_t {
+	int count;
+	int *addr;
+	int *line;
+} RBinJavaLines;
+
 typedef struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
 	struct r_bin_java_classfile2_t cf2;
@@ -87,6 +93,7 @@ typedef struct r_bin_java_obj_t {
 	struct r_bin_java_fm_t *methods;
 	int size;
 	const char* file;
+	RBinJavaLines lines;
 	struct r_buf_t*b;
 	int midx;
 	int fsym;

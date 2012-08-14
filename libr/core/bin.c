@@ -137,8 +137,13 @@ static int bin_dwarf (RCore *core, int mode) {
         RListIter *iter;
         RList *list;
 
-        r_bin_dwarf_parse_info (core->bin);
-        list = r_bin_dwarf_parse_line (core->bin);
+	if (core->bin && core->bin->cur.curplugin && core->bin->cur.curplugin->lines) {
+		list = core->bin->cur.curplugin->lines (&core->bin->cur);
+	} else {
+		// USE DWARF HERE
+		r_bin_dwarf_parse_info (core->bin);
+		list = r_bin_dwarf_parse_line (core->bin);
+	}
 	if (!list) return R_FALSE;
         r_list_foreach (list, iter, row) {
 		if (mode) {

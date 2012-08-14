@@ -135,6 +135,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	else o->strings = get_strings (a, 4);
 	if (cp->symbols) o->symbols = cp->symbols (a);
 	if (cp->classes) o->classes = cp->classes (a);
+	if (cp->lines) o->lines = cp->lines (a);
 	return R_TRUE;
 }
 

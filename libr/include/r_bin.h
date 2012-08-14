@@ -114,6 +114,7 @@ typedef struct r_bin_plugin_t {
 	RBinAddr* (*binsym)(RBinArch *arch, int num);
 	RList* (*entries)(RBinArch *arch);
 	RList* (*sections)(RBinArch *arch);
+	RList* (*lines)(RBinArch *arch);
 	RList* (*symbols)(RBinArch *arch);
 	RList* (*imports)(RBinArch *arch);
 	RList* (*strings)(RBinArch *arch);
@@ -218,6 +219,7 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *relocs;
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
+	RList/*<RBinDwarfRow>*/ *lines;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	int referenced;
