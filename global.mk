@@ -1,6 +1,9 @@
 RELEASE=1
 DESTDIR=
 
+TOP:=$(dir $(lastword $(MAKEFILE_LIST)))
+LTOP:=$(TOP)/libr
+
 COMPILER?=gcc
 #COMPILER=maemo
 #COMPILER=mingw32-gcc
@@ -23,12 +26,5 @@ MDR=${DESTDIR}${MANDIR}
 
 LIBDIR=${PREFIX}/lib
 
--include config-user.mk
--include ../config-user.mk
--include ../../config-user.mk
--include ../../../config-user.mk
-
--include mk/${COMPILER}.mk
--include ../mk/${COMPILER}.mk
--include ../../mk/${COMPILER}.mk
--include ../../../mk/${COMPILER}.mk
+-include $(TOP)/config-user.mk
+-include $(TOP)/mk/${COMPILER}.mk

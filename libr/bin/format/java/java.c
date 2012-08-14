@@ -1,6 +1,6 @@
 // XXX this is dupped in r_asm and r_bin :O
 /*
- * Copyright (C) 2007-2011
+ * Copyright (C) 2007-2012
  *       pancake <youterm.com>, nibble <develsec.org>
  */
 
@@ -39,7 +39,7 @@ static struct r_bin_java_cp_item_t cp_null_item = {0}; // NOTE: must be initiali
 static unsigned short read_short(RBinJavaObj *bin) {
 	ut16 sh = 0;
 	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&sh, 2);
-	return R_BIN_JAVA_SWAPUSHORT(sh);
+	return R_BIN_JAVA_SWAPUSHORT (sh);
 }
 
 static struct r_bin_java_cp_item_t* get_cp(RBinJavaObj *bin, int i) {
@@ -63,7 +63,7 @@ static int attributes_walk(RBinJavaObj *bin, struct r_bin_java_attr_t *attr, int
 		name = get_cp (bin, attr->name_idx-1)->value;
 		// XXX: if name is null.. wat?
 		attr->name = strdup (name? name: "");
-		name = (get_cp(bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
+		name = (get_cp (bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
 		IFDBG printf("   %2d: Name Index: %d (%s)\n", j, attr->name_idx, name);
 		// TODO add comment with constant pool index
 		sz3 = R_BIN_JAVA_UINT (buf, 2);
@@ -202,7 +202,6 @@ static int javasm_init(RBinJavaObj *bin) {
 
 	IFDBG printf ("ConstantPoolCount %d\n", bin->cf.cp_count);
 	bin->cp_items = malloc (sizeof (struct r_bin_java_cp_item_t)*(bin->cf.cp_count+1));
-eprintf ("%d\n", bin->cf.cp_count);
 	for(i=0;i<bin->cf.cp_count;i++) {
 		struct constant_t *c;
 

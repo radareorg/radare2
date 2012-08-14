@@ -1,8 +1,10 @@
+include ../../global.mk
+
 NAME=r_asm
 DEPS=r_lib r_util r_parse r_db
 CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shlr
 
-include ../config.mk
+include $(TOP)/libr/config.mk
 
 foo:
 	@for a in pre ${LIBSO} ${LIBAR} plugins ; do ${MAKE} $$a ; done
@@ -23,4 +25,4 @@ plugins:
 	@cd d && ${MAKE}
 	@cd p && ${MAKE} all
 
-include ../rules.mk
+include $(TOP)/libr/rules.mk

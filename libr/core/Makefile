@@ -1,3 +1,5 @@
+include ../../global.mk
+
 NAME=r_core
 
 DEPS=r_config r_cons r_line r_io r_cmd r_util r_print r_flags r_asm r_lib
@@ -15,7 +17,7 @@ ifeq ($(shell uname),OpenBSD)
 LDFLAGS+=-lpthread
 endif
 
-include ../rules.mk
+include $(TOP)/libr/rules.mk
 
 cmd.o: cmd_hash.c cmd_debug.c cmd_zign.c cmd_section.c cmd_project.c \
 	cmd_open.c cmd_meta.c cmd_macro.c cmd_magic.c cmd_mount.c \
