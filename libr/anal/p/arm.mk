@@ -1,4 +1,4 @@
-OBJ_ARM=anal_arm.o
+OBJ_ARM=anal_arm.o $(TOP)/libr/asm/arch/arm/winedbg/be_arm.o
 
 STATIC_OBJ+=${OBJ_ARM}
 TARGET_ARM=anal_arm.${EXT_SO}
