@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 - earada */
+/* radare - LGPL - Copyright 2011-2012 - earada, pancake */
 
 #include <r_core.h>
 
@@ -160,7 +160,7 @@ static int bin_dwarf (RCore *core, int mode) {
 			r_cons_printf ("CC %s:%d  %s@0x%"PFMT64x"\n",
 				row->file, row->line, line?line:"", row->address);
 		} else {
-			r_cons_printf ("%s: %d\n", row->file, row->line);
+			r_cons_printf ("0x%08"PFMT64x"\t%s\t%d\n", row->address, row->file, row->line);
 		}
         }
         r_list_destroy (list);
