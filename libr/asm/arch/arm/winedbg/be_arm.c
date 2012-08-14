@@ -661,6 +661,23 @@ static ut32 thumb2_disasm_longmuldiv(struct arm_insn *arminsn, ut32 inst) {
 	return inst;
 }
 
+static ut32 thumb2_disasm_coprocmov1(struct arm_insn *arminsn, ut32 inst) {
+	ut16 opc1 = (inst >> 21) & 0x07;
+	ut16 opc2 = (inst >> 5) & 0x07;
+
+	if (opc2)
+		arminsn->str_asm = r_str_concatf(arminsn->str_asm,
+				"%s%s\tp%u, #%u, %s, cr%u, cr%u, #%u", (inst & 0x00100000)?"mrc":"mcr",
+				(inst & 0x10000000)?"2":"", get_nibble(inst, 2), opc1,
+				tbl_regs[get_nibble(inst, 3)], get_nibble(inst, 4), get_nibble(inst, 0), opc2);
+	else
+		arminsn->str_asm = r_str_concatf(arminsn->str_asm,
+				"%s%s\tp%u, #%u, %s, cr%u, cr%u", (inst & 0x00100000)?"mrc":"mcr",
+				(inst & 0x10000000)?"2":"", get_nibble(inst, 2), opc1,
+				tbl_regs[get_nibble(inst, 3)], get_nibble(inst, 4), get_nibble(inst, 0));
+	return 0;
+}
+
 struct inst_arm {
 	ut32 mask;
 	ut32 pattern;
@@ -724,6 +741,8 @@ static const struct inst_arm tbl_thumb32[] = {
 	{ 0xff8000c0, 0xfb000000, thumb2_disasm_mul },
 	{ 0xff8000f0, 0xfb800000, thumb2_disasm_longmuldiv },
 	{ 0xff8000f0, 0xfb8000f0, thumb2_disasm_longmuldiv },
+	{ 0xef100010, 0xee100010, thumb2_disasm_coprocmov1 },
+	{ 0xef100010, 0xee000010, thumb2_disasm_coprocmov1 },
 	{ 0x00000000, 0x00000000, NULL }
 };
 
