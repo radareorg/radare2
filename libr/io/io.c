@@ -211,7 +211,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		}
 		// hide non-mapped files here
 		// do not allow reading on real addresses if mapped != 0
-		if (ms>0) {
+		if (!io->debug && ms>0) {
 			//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
 			/* check if address is vaddred in sections */
 			ut64 o = r_io_section_offset_to_vaddr (io, addr);

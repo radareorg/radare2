@@ -539,6 +539,14 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_anal_graph (core, r_num_math (core->num, input+2),
 					R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 			break;
+		case 'v':
+			{
+				const char *cmd = r_config_get (core->config, "cmd.graph");
+				r_core_cmdf (core, "ag%s > a.dot", input+2);
+				r_core_cmdf (core, "%s", cmd);
+				r_file_rm ("a.dot");
+			}
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: ag[?f]\n"
@@ -548,7 +556,8 @@ static int cmd_anal(void *data, const char *input) {
 			" agd [fcn name]  ; Output graphviz code of diffed function\n"
 			" agl [fcn name]  ; Output graphviz code using meta-data\n"
 			" agt [addr]      ; find paths from current offset to given address\n"
-			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");
+			" agfl [fcn name] ; Output graphviz code of function using meta-data\n"
+			" agv[acdltfl] [a]; View function using graphviz\n");
 			break;
 		default:
 			r_core_anal_graph (core, r_num_math (core->num, input+1),

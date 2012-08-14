@@ -564,6 +564,17 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	free (p);
+	if (r_file_exist ("/usr/bin/xdot"))
+		r_config_set (cfg, "cmd.graph", "!xdot a.dot");
+	else
+	if (r_file_exist ("/usr/bin/open"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!open a.gif");
+	else
+	if (r_file_exist ("/usr/bin/gqview"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
+	else
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
+	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	r_config_set (cfg, "cmd.hit", "");
 	r_config_desc (cfg, "cmd.hit", "Command to execute on every search hit");
 	r_config_set (cfg, "cmd.open", "");

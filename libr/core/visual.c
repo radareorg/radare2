@@ -351,6 +351,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'T':
 		r_core_visual_comments (core);
 		break;
+	case 'V':
+		r_core_cmd0 (core, "agv $$");
+		break;
 	case 'v':
 		r_core_visual_anal (core);
 		break;
@@ -724,6 +727,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" t        track flags (browse symbols, functions..)\n"
 		" T        browse anal info and comments\n"
 		" v        visual code analysis menu\n"
+		" V        view graph using cmd.graph (agv?)\n"
 		" fF       seek next/prev function/flag/hit (scr.fkey)\n"
 		" B        toggle automatic block size\n"
 		" uU       undo/redo seek\n"
