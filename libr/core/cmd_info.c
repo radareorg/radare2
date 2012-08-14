@@ -12,6 +12,9 @@ static int cmd_info(void *data, const char *input) {
 	case 's':
 		r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, mode, va, NULL, offset);
 		break;
+	case 'd':
+		r_core_bin_info (core, R_CORE_BIN_ACC_DWARF, mode, va, NULL, offset);
+		break;
 	case 'i':
 		r_core_bin_info (core, R_CORE_BIN_ACC_IMPORTS, mode, va, NULL, offset);
 		break;

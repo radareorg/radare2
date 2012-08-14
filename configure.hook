@@ -8,7 +8,5 @@ case "$1" in
 	[ ! -e plugins.cfg ] && ./configure-plugins $@
 	[ -e r2-bindings/configure-langs ] && \
 		r2-bindings/configure-langs $@
-	TIP=`git log HEAD^..HEAD|head -n1|cut -d ' ' -f2`
-	echo
 	;;
 esac

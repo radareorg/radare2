@@ -143,5 +143,4 @@ typedef struct {
 	unsigned int column;
 } RBinDwarfRow;
 
-
 #endif

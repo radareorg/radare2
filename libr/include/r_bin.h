@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 nibble<.ds@gmail.com>, pancake <nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 nibble, pancake */
 
 #ifndef _INCLUDE_R_BIN_H_
 #define _INCLUDE_R_BIN_H_
@@ -281,7 +281,7 @@ R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
 R_API int r_bin_dwarf_parse_info(RBin *a);
-R_API int r_bin_dwarf_parse_line(RBin *a);
+R_API RList *r_bin_dwarf_parse_line(RBin *a);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;

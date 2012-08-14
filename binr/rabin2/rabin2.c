@@ -256,10 +256,32 @@ static int rabin_do_operation(const char *op) {
 	return R_TRUE;
 }
 
-static int rabin_show_dwarf(RCore *core) {
-//TODO	RBinDwarfLine *lines =
+static int rabin_show_dwarf(RCore *core, int rad) {
+	RBinDwarfRow *row;
+	RListIter *iter;
+	RList *list = r_list_new ();
+
 	r_bin_dwarf_parse_info (core->bin);
-	r_bin_dwarf_parse_line (core->bin);
+	list = r_bin_dwarf_parse_line (core->bin);
+	r_list_foreach (list, iter, row) {
+		if (rad) {
+			// TODO: use 'Cl' instead of CC
+			const char *path = row->file;
+			char *line = r_file_slurp_line (
+					path, row->line, 0);
+			if (line) {
+				r_str_filter (line, strlen (line));
+				r_str_replace (line, "@", ".", 1);
+				r_str_replace (line, "|", ".", 1);
+				r_str_replace (line, ";", ".", 1);
+			}
+			printf ("CC %s:%d  %s @ 0x%"PFMT64x"\n",
+					row->file, row->line,
+					line?line:"", row->address);
+		} else 
+			printf ("%s: %d\n", row->file, row->line);
+	}
+	r_list_destroy (list);
 	return R_TRUE;
 }
 
@@ -475,7 +497,7 @@ int main(int argc, char **argv) {
 	if (action&ACTION_RELOCS)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_RELOCS, rad, va, NULL, 0);
 	if (action&ACTION_DWARF)
-		rabin_show_dwarf (&core);
+		r_core_bin_info (&core, R_CORE_BIN_ACC_DWARF, rad, va, NULL, 0);
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline (at);
 	if (action&ACTION_EXTRACT)

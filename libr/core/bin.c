@@ -132,6 +132,41 @@ static int bin_info (RCore *r, int mode) {
 	return R_TRUE;
 }
 
+static int bin_dwarf (RCore *core, int mode) {
+        RBinDwarfRow *row;
+        RListIter *iter;
+        RList *list;
+
+        r_bin_dwarf_parse_info (core->bin);
+        list = r_bin_dwarf_parse_line (core->bin);
+	if (!list) return R_FALSE;
+        r_list_foreach (list, iter, row) {
+		if (mode) {
+			// TODO: use 'Cl' instead of CC
+			const char *path = row->file;
+			char *line = r_file_slurp_line (
+					path, row->line, 0);
+			if (line) {
+				r_str_filter (line, strlen (line));
+				r_str_replace (line, "@", ".", 1);
+				r_str_replace (line, "|", ".", 1);
+				r_str_replace (line, ";", ".", 1);
+			}
+			// TODO: implement internal : if ((mode & R_CORE_BIN_SET)) {
+			if ((mode & R_CORE_BIN_SET)) {
+				r_core_cmdf (core, "CC %s:%d  %s@0x%"PFMT64x"\n",
+						row->file, row->line, line?line:"", row->address);
+			} else
+			r_cons_printf ("CC %s:%d  %s@0x%"PFMT64x"\n",
+				row->file, row->line, line?line:"", row->address);
+		} else {
+			r_cons_printf ("%s: %d\n", row->file, row->line);
+		}
+        }
+        r_list_destroy (list);
+	return R_TRUE;
+}
+
 static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *binmain;
 
@@ -145,7 +180,8 @@ static int bin_main (RCore *r, int mode, ut64 baddr, int va) {
 	} else {
 		if (mode) {
 			r_cons_printf ("fs symbols\n");
-			r_cons_printf ("f main @ 0x%08"PFMT64x"\n", va? baddr+binmain->rva: binmain->offset);
+			r_cons_printf ("f main @ 0x%08"PFMT64x"\n",
+				va? baddr+binmain->rva: binmain->offset);
 		} else {
 			r_cons_printf ("[Main]\n");
 			r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x"\n",
@@ -181,7 +217,8 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 
 		r_list_foreach (entries, iter, entry) {
 			if (mode) {
-				r_cons_printf ("f entry%i @ 0x%08"PFMT64x"\n", i, va?baddr+entry->rva:entry->offset);
+				r_cons_printf ("f entry%i @ 0x%08"PFMT64x"\n",
+					i, va?baddr+entry->rva:entry->offset);
 				r_cons_printf ("s entry%i\n", i);
 			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" baddr=0x%08"PFMT64x"\n",
 					baddr+entry->rva, entry->offset, baddr);
@@ -555,6 +592,8 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 		ret &= bin_info (core, mode);
 	if ((action & R_CORE_BIN_ACC_MAIN))
 		ret &= bin_main (core, mode, baddr, va);
+	if ((action & R_CORE_BIN_ACC_DWARF))
+		ret &= bin_dwarf (core, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES))
 		ret &= bin_entry (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_RELOCS))

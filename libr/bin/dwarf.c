@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2012 - pancake */
 
 #define D0 if(0)
 #define D1 if(1)
@@ -12,11 +12,20 @@
 
 #define READ(x,y) *((y *)x); x += sizeof (y)
 
-R_API int r_bin_dwarf_parse_line(RBin *a);
+R_API RList *r_bin_dwarf_parse_line(RBin *a);
 
 // XXX wtf
-R_API int r_bin_dwarf_parse(RBin *bin, int type) {
+R_API RList *r_bin_dwarf_parse(RBin *bin, int type) {
 	return r_bin_dwarf_parse_line (bin);
+}
+
+R_API RBinDwarfRow *r_bin_dwarf_line_new (ut64 addr, const char *file, int line) {
+	RBinDwarfRow *bdl = R_NEW (RBinDwarfRow);
+	bdl->address = addr;
+	bdl->file = strdup (file); // use unique pointer
+	bdl->line = line;
+	bdl->column = 0;
+	return bdl;
 }
 
 struct Line_Table_File_Entry_s {
@@ -123,7 +132,7 @@ static const ut8 *r_bin_dwarf_parse_header (const ut8 *buf, RBinDwarfInfoHeader 
 	return buf;
 }
 
-R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf) {
+R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, RList *list) {
 	RBinDwarfInfoHeader hdr;
 	ut64 address = 0;
 	int line = 1;
@@ -173,7 +182,9 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf) {
 					address = (ut32) READ (buf, ut32);
 				}
 				D0 eprintf ("set address\n");
-				printf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
+				//eprintf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
+				if (list) r_list_append (list, r_bin_dwarf_line_new (
+					address, hdr.file[0], line));
 				break;
 			default:
 				eprintf ("Invalid extended opcode %d in dwarf's debug_line\n", opcode);
@@ -216,7 +227,9 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf) {
 
 				address += addr;
 				line += delt;
-				eprintf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
+				//eprintf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
+				if (list) r_list_append (list, r_bin_dwarf_line_new (
+					address, hdr.file[0], line));
 				D0 {
 					eprintf ("LINE += %d  ADDR += %d\n", delt, addr);
 					D0	eprintf ("opcode=%d ADJOP %d opadv=%d opidx=%d\n",
@@ -308,17 +321,18 @@ R_API int r_bin_dwarf_parse_info(RBin *a) {
 	return R_FALSE;
 }
 
-R_API int r_bin_dwarf_parse_line(RBin *a) {
+R_API RList *r_bin_dwarf_parse_line(RBin *a) {
 	ut8 *buf;
 	int len, ret;
 	RBinSection *section = getsection (a, "debug_line");
 	if (section) {
+		RList *list = r_list_new ();
 		len = section->size;
 		buf = malloc (len);
 		r_buf_read_at (a->cur.buf, section->offset, buf, len);
-		ret = r_bin_dwarf_parse_line_raw (buf);
+		ret = r_bin_dwarf_parse_line_raw (buf, list);
 		free (buf);
-		return ret;
+		return list;
 	}
-	return R_FALSE;
+	return NULL;
 }
