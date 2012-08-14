@@ -19,6 +19,7 @@ R_API RList *r_bin_dwarf_parse(RBin *bin, int type) {
 	return r_bin_dwarf_parse_line (bin);
 }
 
+#if 0
 R_API RBinDwarfRow *r_bin_dwarf_line_new (ut64 addr, const char *file, int line) {
 	RBinDwarfRow *bdl = R_NEW (RBinDwarfRow);
 	bdl->address = addr;
@@ -27,6 +28,7 @@ R_API RBinDwarfRow *r_bin_dwarf_line_new (ut64 addr, const char *file, int line)
 	bdl->column = 0;
 	return bdl;
 }
+#endif
 
 struct Line_Table_File_Entry_s {
 	ut8 *lte_filename;
@@ -183,8 +185,11 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, RList *list) {
 				}
 				D0 eprintf ("set address\n");
 				//eprintf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
-				if (list) r_list_append (list, r_bin_dwarf_line_new (
-					address, hdr.file[0], line));
+				if (list) {
+					RBinDwarfRow *row = R_NEW (RBinDwarfRow);
+					r_bin_dwarf_line_new (row, address, hdr.file[0], line);
+					r_list_append (list, row);
+				}
 				break;
 			default:
 				eprintf ("Invalid extended opcode %d in dwarf's debug_line\n", opcode);
@@ -228,8 +233,11 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, RList *list) {
 				address += addr;
 				line += delt;
 				//eprintf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
-				if (list) r_list_append (list, r_bin_dwarf_line_new (
-					address, hdr.file[0], line));
+				if (list) {
+					RBinDwarfRow *row = R_NEW (RBinDwarfRow);
+					r_bin_dwarf_line_new (row, address, hdr.file[0], line);
+					r_list_append (list, row);
+				}
 				D0 {
 					eprintf ("LINE += %d  ADDR += %d\n", delt, addr);
 					D0	eprintf ("opcode=%d ADJOP %d opadv=%d opidx=%d\n",

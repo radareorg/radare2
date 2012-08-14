@@ -179,8 +179,9 @@ static RList* lines(RBinArch *arch) {
 	RBinJavaObj *b = arch->bin_obj;
 	file = r_str_replace (file, ".class", ".java", 0);
 	for (i=0; i<b->lines.count; i++) {
-		r_list_append (list, r_bin_dwarf_line_new (
-			b->lines.addr[i], file, b->lines.line[i]));
+		RBinDwarfRow *row = R_NEW (RBinDwarfRow);
+		r_bin_dwarf_line_new (row, b->lines.addr[i], file, b->lines.line[i]);
+		r_list_append (list, row);
 	}
 	free (file);
 	return list;
