@@ -3,13 +3,9 @@ OBJ_GDB=io_gdb.o
 STATIC_OBJ+=${OBJ_GDB}
 TARGET_GDB=io_gdb.${EXT_SO}
 ALL_TARGETS+=${TARGET_GDB}
-# /p
-CFLAGS+=-I../debug/p/libgdbwrap/
-CFLAGS+=-I../debug/p/libgdbwrap/include
-# /
-CFLAGS+=-I../../debug/p/libgdbwrap/
-CFLAGS+=-I../../debug/p/libgdbwrap/include
-#GDBWRAPFILES=../../debug/p/libgdbwrap/gdbwrapper.c
+
+CFLAGS+=-I$(LTOP)/debug/p/libgdbwrap/
+CFLAGS+=-I$(LTOP)/debug/p/libgdbwrap/include
 
 # copypasted from socket/Makefile
 # on solaris only

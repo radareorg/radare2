@@ -4,7 +4,7 @@ NAME=r_bin
 DEPS=r_lib r_util
 
 foo:
-	for a in $(LIBSO) ${LIBAR} plugins ; do ${MAKE} $$a ; done
+	@for a in $(LIBSO) ${LIBAR} plugins ; do ${MAKE} $$a ; done
 
 CFLAGS+=-DCORELIB -Iformat -Imangling
 

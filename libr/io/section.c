@@ -192,6 +192,8 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 
 	r_list_foreach (io->sections, iter, s) {
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+			if (s->vaddr == 0) // hack
+				return vaddr;
 	//		eprintf ("SG: %llx phys=%llx %s\n", vaddr, vaddr-s->vaddr+s->offset, s->name);
 			return (vaddr - s->vaddr + s->offset);
 		}
@@ -200,12 +202,14 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 }
 
 R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
-	RListIter *iter;
 	RIOSection *s;
-
+	RListIter *iter;
 	r_list_foreach (io->sections, iter, s) {
-		if (offset >= s->offset && offset < s->offset + s->size)
+		if (offset >= s->offset && offset < s->offset + s->size) {
+			if (s->vaddr == 0) // hack
+				return offset;
 			return (s->vaddr + offset - s->offset);
+		}
 	}
 	return UT64_MAX;
 }

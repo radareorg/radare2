@@ -91,7 +91,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 			len = sizeof (str);
-			r_io_read_at (core->io, addr, (ut8*)str+1, len-2);
+			r_core_read_at (core, addr, (ut8*)str+1, len-2);
 			*str = '"';
 			r_str_filter_zeroline (str, len);
 			strcpy (str+strlen (str), "\"");
@@ -99,12 +99,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		default:
 			len = kw->keyword_length + 8; // 8 byte context
 			if (len>=sizeof (str)) len = sizeof (str)-1;
-			r_io_read_at (core->io, addr, buf, sizeof (buf));
+			r_core_read_at (core, addr, buf, sizeof (buf));
 			for (i=0, p=str; i<len; i++) {
 				sprintf (p, "%02x", buf[i]);
 				p += 2;
-				if (i == kw->keyword_length-1)
-					*p++ = ' ';
 			}
 			*p = 0;
 			break;
@@ -520,8 +518,8 @@ static int cmd_search(void *data, const char *input) {
 					eprintf ("\n\n");
 					break;
 				}
-				ret = r_io_read_at (core->io, at, buf, core->blocksize);
-				//ret = r_core_read_at (core, at, buf, core->blocksize); 
+				//ret = r_core_read_at (core, at, buf, core->blocksize);
+				ret = r_io_read_at (core->io, at, buf, core->blocksize); 
 /*
 				if (ignorecase) {
 					int i;

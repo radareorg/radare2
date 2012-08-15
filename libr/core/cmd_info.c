@@ -51,6 +51,7 @@ static int cmd_info(void *data, const char *input) {
 		" ia        ; show all info (imports, exports, sections..)\n"
 		" ii        ; imports\n"
 		" iI        ; binary info\n"
+		" id        ; debug information (source lines)\n"
 		" ie        ; entrypoint\n"
 		" is        ; symbols\n"
 		" iS        ; sections\n"
