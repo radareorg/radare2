@@ -208,7 +208,7 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, RList *list) {
 				}
 				break;
 			default:
-				eprintf ("XXX : unimplemented\n");
+				eprintf ("XXX : unimplemented dwarf opcode '%02x'\n", opcode);
 				break;
 			}
 			break;
@@ -233,7 +233,7 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, RList *list) {
 				address += addr;
 				line += delt;
 				//eprintf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
-				if (list) {
+				if (list && hdr.file[0]) {
 					RBinDwarfRow *row = R_NEW (RBinDwarfRow);
 					r_bin_dwarf_line_new (row, address, hdr.file[0], line);
 					r_list_append (list, row);
