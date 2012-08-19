@@ -9,6 +9,8 @@
 * Implement r_bin_size() - get estimated binary file size from headers
 * Integrate dwarf parser with disassembler and debugger
 * Show analized functions in 'aa' -> discuss
+* Step back .. log all state changes on every debugger stop
+* Event system . allow to send and read queues of messages.. thats pubsub!
 
 ====[[ 0.9.4 ]]====
 * Analysis: assume there's a function at the end of each function

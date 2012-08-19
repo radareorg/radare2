@@ -488,22 +488,34 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			cmd++;
 	} 
 	if (rep<1) rep = 1;
-	while (rep--) {
+	while (rep-- && *cmd) {
 		int ret = r_core_cmd_subst_i (core, cmd);
 		if (ret) {
 			free (icmd);
 			return ret;
 		}
 	}
-	if (colon)
-		r_core_cmd_subst (core, colon+1);
+	if (colon) {
+		for (++colon; *colon ==';'; colon++);
+		r_core_cmd_subst (core, colon);
+		//*colon = ';';
+	}
 	free (icmd);
 	return 0;
 }
 
+static char *find_eoq (char *p) {
+	for (;*p;p++) {
+		if (*p=='"') break;
+		if (*p=='\\' && p[1]=='"')
+			p++;
+	}
+	return p;
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
-	int i, len = strlen (cmd), pipefd, ret;
+	int i, ret, pipefd, len = strlen (cmd);
 	const char *tick = NULL;
 	const char *quotestr = "\"`";
 	quotestr = "`"; // tmp
@@ -519,12 +531,36 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		}
 		break;
 	case '"':
-		if (cmd[len-1] != '"') {
-			eprintf ("parse: Missing ending '\"'\n");
-			return -1;
+		for (cmd++; *cmd; ) {
+			ut64 oseek = UT64_MAX;
+			char *p = find_eoq (cmd);
+			if (p) {
+				*p = 0;
+				if (p[1]=='@' || p[2]=='@') {
+					char *q = strchr (p+1, '"');
+					if (q) *q = 0;
+					oseek = core->offset;
+					r_core_seek (core, r_num_math (
+						core->num, p+2), 1);
+					if (q) {
+						*p = '"';
+						p = q;
+					} else p = NULL;
+				}
+				r_cmd_call (core->cmd, cmd);
+				if (oseek != UT64_MAX) {
+					r_core_seek (core, oseek, 1);
+					oseek = UT64_MAX;
+				}
+				if (!p) break;
+				*p = '"';
+				cmd = p+1;
+			} else {
+				eprintf ("Missing \".");
+				return R_FALSE;
+			}
 		}
-		cmd[len-1]='\0';
-		return r_cmd_call (core->cmd, cmd+1);
+		return R_TRUE;
 	case '(':
 		if (cmd[1] != '*')
 			return r_cmd_call (core->cmd, cmd);
@@ -590,7 +626,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* Out Of Band Input */
 	free (core->oobi);
 	core->oobi = NULL;
-// XXX: must honor quotestr
+
 	ptr = strchr (cmd, '<');
 	if (ptr) {
 		ptr[0] = '\0';
@@ -602,7 +638,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			eprintf ("==> Reading from stdin until '%s'\n", str);
 			free (core->oobi);
 			core->oobi = malloc (1);
-			core->oobi[0] = '\0';
+			if (core->oobi)
+				core->oobi[0] = '\0';
 			core->oobi_len = 0;
 			for (;;) {
 				char buf[1024];
@@ -615,14 +652,17 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 				ret = strlen (buf);
 				core->oobi_len += ret;
 				core->oobi = realloc (core->oobi, core->oobi_len+1);
-				if (!strcmp (buf, str))
-					break;
-				strcat ((char *)core->oobi, buf);
+				if (core->oobi) {
+					if (!strcmp (buf, str))
+						break;
+					strcat ((char *)core->oobi, buf);
+				}
 			}
 			//r_line_set_prompt (oprompt);
 		} else {
 			for (str=ptr+1; *str== ' ';str++);
 			eprintf ("SLURPING FILE '%s'\n", str);
+			free (core->oobi);
 			core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
 			if (core->oobi == NULL)
 				eprintf ("Cannot open file\n");

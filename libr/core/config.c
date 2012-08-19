@@ -351,7 +351,6 @@ static int config_asmarch_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = r_config_get (core->config, "asm.os");
-	// TODO: control error and restore old value (return false?) show errormsg?
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
@@ -382,6 +381,7 @@ static int config_asmparser_callback(void *user, void *data) {
 }
 
 static int config_asmbits_callback(void *user, void *data) {
+	const char *asmos, *asmarch;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	int ret = r_asm_set_bits (core->assembler, node->i_value);
@@ -399,8 +399,9 @@ static int config_asmbits_callback(void *user, void *data) {
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
 	if (core->dbg  && core->anal && core->anal->cur)
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
-	const char *asmos = r_config_get (core->config, "asm.os");
-	const char *asmarch = r_config_get (core->config, "asm.arch");
+
+	asmos = r_config_get (core->config, "asm.os");
+	asmarch = r_config_get (core->config, "asm.arch");
 	if (core && core->anal)
 	if (!r_syscall_setup (core->anal->syscall, asmarch,
 			asmos, node->i_value)) {
@@ -431,13 +432,12 @@ static int config_pager_callback(void *user, void *data) {
 
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
+	int i;
+	char buf[128], *p;
 	RConfig *cfg = cfg = core->config = r_config_new (core);
-	char *p;
 	cfg->printf = r_cons_printf;
 	cfg->num = core->num;
 
-	//r_config_set (cfg, "dir.opcodes", R_ASM_OPCODES_PATH);
-	//r_config_set (cfg, "dir.tmp", "/tmp");
 	r_config_set (cfg, "dir.source", "");
 	r_config_desc (cfg, "dir.source", "Path to find source files");
 	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
@@ -631,12 +631,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
 
-{
-	char buf[128];
 	sprintf (buf, "%d", R_CORE_BLOCKSIZE_MAX);
 	r_config_set_cb (cfg, "io.maxblk", buf, &config_iomaxblk_callback);
 	r_config_desc (cfg, "io.maxblk", "set max block size (soft limit)");
-}
 
 	r_config_set_cb (cfg, "io.ffio", "true", &config_ioffio_callback);
 	r_config_desc (cfg, "io.ffio", "fill invalid buffers with 0xff instead of returning error");
@@ -663,30 +660,20 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "rap.loop", "true");
 	r_config_desc (cfg, "rap.loop", "run rap as a forever-listening daemon");
 	/* fkeys */
-	r_config_set (cfg, "key.f1", "");
-	r_config_desc (cfg, "key.f1", "Commands executed when press F1 key in visual mode");
-	r_config_set (cfg, "key.f2", "dbs $$");
-	r_config_desc (cfg, "key.f2", "Commands executed when press F2 key in visual mode");
-	r_config_set (cfg, "key.f3", "");
-	r_config_desc (cfg, "key.f3", "Commands executed when press F3 key in visual mode");
-	r_config_set (cfg, "key.f4", "");
-	r_config_desc (cfg, "key.f4", "Commands executed when press F4 key in visual mode");
-	r_config_set (cfg, "key.f5", "");
-	r_config_desc (cfg, "key.f5", "Commands executed when press F5 key in visual mode");
-	r_config_set (cfg, "key.f6", "");
-	r_config_desc (cfg, "key.f6", "Commands executed when press F6 key in visual mode");
-	r_config_set (cfg, "key.f7", "ds");
-	r_config_desc (cfg, "key.f7", "Commands executed when press F7 key in visual mode");
-	r_config_set (cfg, "key.f8", "dso");
-	r_config_desc (cfg, "key.f8", "Commands executed when press F8 key in visual mode");
-	r_config_set (cfg, "key.f9", "dc");
-	r_config_desc (cfg, "key.f9", "Commands executed when press F9 key in visual mode");
-	r_config_set (cfg, "key.f10", "");
-	r_config_desc (cfg, "key.f10", "Commands executed when press F10 key in visual mode");
-	r_config_set (cfg, "key.f11", "");
-	r_config_desc (cfg, "key.f11", "Commands executed when press F11 key in visual mode");
-	r_config_set (cfg, "key.f12", "");
-	r_config_desc (cfg, "key.f12", "Commands executed when press F12 key in visual mode");
+	for (i=1; i<13; i++) {
+		snprintf (buf, sizeof (buf), "key.f%d", i);
+		snprintf (buf+10, sizeof (buf)-10,
+			"Run this when F%d key is pressed in visual mode", i);
+		switch (i) {
+		case 2: p = "dbs $$"; break;
+		case 7: p = "ds"; break;
+		case 8: p = "dso"; break;
+		case 9: p = "dc"; break;
+		default: p = ""; break;
+		}
+		r_config_set (cfg, buf, p);
+		r_config_desc (cfg, buf, buf+10);
+	}
 	/* zoom */
 	r_config_set_i (cfg, "zoom.maxsz", 512);
 	r_config_desc (cfg, "zoom.maxsz", "Zoom max size of block");
@@ -698,21 +685,14 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "zoom.byte", "Zoom specific callback to calculate each byte (See pZ? for help)");
 	/* TODO cmd */
 #if 0
-	config_set_i("asm.cmtmargin", 10); // show comments in disassembly
-	config_set_i("asm.cmtlines", 0); // show comments in disassembly
 	config_set("asm.section", "true");
 	config_set("asm.reladdr", "false"); // relative offset
-	config_set("asm.jmpflags", "false");
-
-	config_set("asm.flagsall", "true");
 	config_set("asm.functions", "true");
-	config_set("asm.lines", "true"); // show left ref lines
 	config_set_i("asm.nlines", 6); // show left ref lines
 	config_set("asm.lineswide", "false"); // show left ref lines
 	config_set("asm.trace", "false"); // trace counter
 	config_set("asm.split", "true"); // split code blocks
 	config_set("asm.splitall", "false"); // split code blocks
-	config_set("asm.xrefs", "xrefs");
 
 	// config_set("asm.follow", "");
 	config_set("cmd.wp", "");
@@ -783,7 +763,6 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	config_set("cfg.addrmod", "4");
 #endif
-	config_set("cfg.rdbdir", "TODO");
 	config_set("cfg.datefmt", "%d:%m:%Y %H:%M:%S %z");
 	config_set_i("cfg.count", 0);
 	node = config_set_i("cfg.bsize", 512);
@@ -848,9 +827,6 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	config_set("dir.monitor", ptr);
 
-	config_set("dir.tmp", get_tmp_dir());
-	config_set_cb ("fs.view", "normal");
-	config_set("graph.color", "magic");
 	config_set("graph.split", "false"); // split blocks // SHOULD BE TRUE, but true algo is buggy
 	config_set("graph.jmpblocks", "true");
 	config_set("graph.refblocks", "false"); // must be circle nodes
@@ -860,14 +836,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("graph.offset", "true");
 	config_set("graph.render", "cairo");    // aalib/ncurses/text
 	config_set("graph.layout", "default");  // graphviz
-
-	config_set("scr.grephigh", "");
-	node = config_set("scr.buf", "false");
-	node->callback = &config_scrbuf_callback;
-	node = config_set_i("scr.width", config.width);
-	node->callback = &config_scrwidth;
-	node = config_set_i("scr.height", config.height);
-	node->callback = &config_scrheight;
 #endif
 	r_config_lock (cfg, R_TRUE);
 	return R_TRUE;

@@ -150,20 +150,21 @@ static int bin_dwarf (RCore *core, int mode) {
 			// TODO: use 'Cl' instead of CC
 			const char *path = row->file;
 			char *line = r_file_slurp_line (
-					path, row->line, 0);
+					path, row->line-1, 0);
+eprintf ("LINE =(%s)\n", path);
 			if (line) {
 				r_str_filter (line, strlen (line));
-				r_str_replace (line, "@", ".", 1);
-				r_str_replace (line, "|", ".", 1);
-				r_str_replace (line, ";", ".", 1);
+				line = r_str_replace (line, "\"", "\\\"", 1);
+				line = r_str_replace (line, "\\\\", "\\", 1);
 			}
 			// TODO: implement internal : if ((mode & R_CORE_BIN_SET)) {
 			if ((mode & R_CORE_BIN_SET)) {
-				r_core_cmdf (core, "CC %s:%d  %s@0x%"PFMT64x"\n",
+				r_core_cmdf (core, "\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
 						row->file, row->line, line?line:"", row->address);
 			} else
-			r_cons_printf ("CC %s:%d  %s@0x%"PFMT64x"\n",
+			r_cons_printf ("\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
 				row->file, row->line, line?line:"", row->address);
+			free (line);
 		} else {
 			r_cons_printf ("0x%08"PFMT64x"\t%s\t%d\n", row->address, row->file, row->line);
 		}

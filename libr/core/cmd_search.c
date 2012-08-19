@@ -548,11 +548,11 @@ static int cmd_search(void *data, const char *input) {
 			free (buf);
 			//r_cons_clear_line ();
 			if (searchflags && searchcount>0) {
-				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
+				eprintf (" hits: %d  %s%d_0 .. %s%d_%d\n",
 					searchhits,
 					searchprefix, core->search->n_kws-1,
 					searchprefix, core->search->n_kws-1, searchcount-1);
-			} else eprintf ("hits: %d\n", searchhits);
+			} else eprintf (" hits: %d\n", searchhits);
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;

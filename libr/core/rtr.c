@@ -200,7 +200,8 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 		if (rtr_host[rtr_n].fd)
 			snprintf (prompt, sizeof (prompt),
 				"fd:%d> ", rtr_host[rtr_n].fd->fd);
-		r_line_singleton ()->prompt = prompt;
+		free (r_line_singleton ()->prompt);
+		r_line_singleton ()->prompt = strdup (prompt);
 		if ((r_cons_fgets (buf, sizeof (buf), 0, NULL))) {
 			if (*buf == 'q')
 				break;

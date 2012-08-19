@@ -19,17 +19,6 @@ R_API RList *r_bin_dwarf_parse(RBin *bin, int type) {
 	return r_bin_dwarf_parse_line (bin);
 }
 
-#if 0
-R_API RBinDwarfRow *r_bin_dwarf_line_new (ut64 addr, const char *file, int line) {
-	RBinDwarfRow *bdl = R_NEW (RBinDwarfRow);
-	bdl->address = addr;
-	bdl->file = strdup (file); // use unique pointer
-	bdl->line = line;
-	bdl->column = 0;
-	return bdl;
-}
-#endif
-
 struct Line_Table_File_Entry_s {
 	ut8 *lte_filename;
 	ut32 lte_directory_index;
@@ -233,14 +222,14 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, RList *list) {
 				address += addr;
 				line += delt;
 				//eprintf ("0x%08"PFMT64x"\t%s:%d\n", address, hdr.file[0], line);
-				if (list && hdr.file[0]) {
+				if (list) {
 					RBinDwarfRow *row = R_NEW (RBinDwarfRow);
 					r_bin_dwarf_line_new (row, address, hdr.file[0], line);
 					r_list_append (list, row);
 				}
 				D0 {
 					eprintf ("LINE += %d  ADDR += %d\n", delt, addr);
-					D0	eprintf ("opcode=%d ADJOP %d opadv=%d opidx=%d\n",
+					D0 eprintf ("opcode=%d ADJOP %d opadv=%d opidx=%d\n",
 							opcode, adjop, opadv, new_opidx);
 				}
 			} 

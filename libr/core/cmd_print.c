@@ -68,8 +68,9 @@ static int cmd_print(void *data, const char *input) {
 	/* TODO: Change also blocksize for 'pd'.. */
 	l = len;
 	if (input[0] && input[1]) {
-		if (input[2]) {
-			l = (int) r_num_math (core->num, input+(input[1]==' '?2:3));
+		const char *p = strchr (input, ' ');
+		if (p) {
+			l = (int) r_num_math (core->num, p+1);
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'm') {
 				if (l>0) len = l;
@@ -388,12 +389,12 @@ return 0;
 		memset (buf, 0, malen);
 		switch (input[1]) {
 		case 'e':
-			r_base64_encode (buf, core->block, core->blocksize);
+			r_base64_encode (buf, core->block, len); //core->blocksize);
 			printf ("%s\n", buf);
 			break;
 		case 'd':
-			if (r_base64_decode (buf, core->block, core->blocksize))
-				printf ("%s\n", buf);
+			if (r_base64_decode (buf, core->block, len))
+				r_cons_printf ("%s\n", buf);
 			else eprintf ("r_base64_decode: invalid stream\n");
 			break;
 		default:
