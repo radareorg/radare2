@@ -13,7 +13,7 @@ cparse.o: lemon
 	${CC} ${CFLAGS} -c cparse.c
 
 lex.yy.o: cparse.o
-	flex cparse.l
+	${FLEX} cparse.l
 	${CC} ${CFLAGS} -c lex.yy.c
 
 lemon.o:
