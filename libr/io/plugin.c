@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 /* TODO: write li->fds setter/getter helpers */
 // TODO: return true/false everywhere,, not -1 or 0

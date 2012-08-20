@@ -208,7 +208,11 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		}
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, l);
-		}
+			/*
+			 * XXX: The 'else' below is fixing the io.cache
+			 * with resized files. That may be wrong
+			 */
+		} else
 		// hide non-mapped files here
 		// do not allow reading on real addresses if mapped != 0
 		if (!io->debug && ms>0) {

@@ -77,7 +77,6 @@ Bindiff two files with '$ bdiff /bin/true /bin/false'
 Execute commands on a temporally offset appending '@ offset' to your command
 Temporally drop the verbosity prefixing the commands with ':'
 Change the graph block definition with graph.callblocks, graph.jmpblocks, graph.flagblocks
-Filter the output of radare in realtime with a tab separated file pointed by scr.filter containing key\tvalue
 Use the '<' and '>' keys in visual cursor mode (V->c) to folder selected bytes
 Use scr.accel to browse the file faster!
 I love the smell of bugs in the morning.
