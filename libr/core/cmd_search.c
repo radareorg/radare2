@@ -353,9 +353,13 @@ static int cmd_search(void *data, const char *input) {
 		{
 		RSearchKeyword *skw;
 		skw = r_search_keyword_new ((const ut8*)inp, len, NULL, 0, NULL);
-		skw->icase = ignorecase;
-		skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
-		r_search_kw_add (core->search, skw);
+		if (skw) {
+			skw->icase = ignorecase;
+			skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
+			r_search_kw_add (core->search, skw);
+		} else {
+			eprintf ("Invalid keyword\n");
+		}
 		}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;

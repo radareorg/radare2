@@ -261,13 +261,10 @@ R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len) {
 
 /* --- keywords --- */
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
-	int ret = R_FALSE;
-	if (kw) {
-		r_list_append (s->kws, kw);
-		kw->kwidx = s->n_kws++;
-		ret = R_TRUE;
-	}
-	return ret;
+	if (!kw) return R_FALSE;
+	r_list_append (s->kws, kw);
+	kw->kwidx = s->n_kws++;
+	return R_TRUE;
 }
 
 R_API void r_search_kw_reset(RSearch *s) {

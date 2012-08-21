@@ -472,7 +472,6 @@ return 0;
 		}
 		break;
 	case 'Z':
-		// TODO:0.9.2 zoom.byte changes does not take any effect
 		if (input[1]=='?') {
 			r_cons_printf (
 			"Usage: pZ [len]\n"

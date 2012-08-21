@@ -461,6 +461,7 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 
 
 R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+	static int mode = -1;
 	ut8 *bufz, *bufz2;
 	int i, j = 0;
 	ut64 size = (to-from)/len;
@@ -469,11 +470,12 @@ R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from
 	if (maxlen<2) maxlen = 1024*1024;
 	if (size>maxlen) size = maxlen;
 	if (size<1) size = 1;
-	if (from == p->zoom->from && to == p->zoom->to && size==p->zoom->size) {
+	if (mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size==p->zoom->size) {
 		// get from cache
 		bufz = p->zoom->buf;
 		size = p->zoom->size;
 	} else {
+		mode = p->zoom->mode;
 		bufz = (ut8 *) malloc (len);
 		if (bufz == NULL) return;
 		bufz2 = (ut8 *) malloc (size);

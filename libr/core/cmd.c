@@ -533,7 +533,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	case '"':
 		for (cmd++; *cmd; ) {
 			ut64 oseek = UT64_MAX;
-			char *p = find_eoq (cmd);
+			char *line, *p = find_eoq (cmd);
 			if (p) {
 				*p = 0;
 				if (p[1]=='@' || p[2]=='@') {
@@ -547,7 +547,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 						p = q;
 					} else p = NULL;
 				}
-				r_cmd_call (core->cmd, cmd);
+				line = strdup (cmd);
+				line = r_str_replace (line, "\\\"", "\"", R_TRUE);
+				r_cmd_call (core->cmd, line);
+				free (line);
 				if (oseek != UT64_MAX) {
 					r_core_seek (core, oseek, 1);
 					oseek = UT64_MAX;
