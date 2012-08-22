@@ -18,8 +18,11 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int payload = size & 1;
 	size -= payload;
 	if (payload) {
-		payload = 0; // XXX: calculate proper size of payload
-		//size += payload;
+		int s1, s2;
+		// XXX: this is probably wrong. rtfm
+		s1 = (buf[size]<<8) + buf[size+1];
+		s2 = (buf[size+2]<<8) + buf[size+3];
+		payload = s1+s2;
 	}
 
 	if (size <= len) {
@@ -339,7 +342,10 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 		op->inst_len = len;
 		size = len;
 	}
+	op->payload = payload;
 	size += payload; // XXX
+	// align to 2
+	if (size &1) size--;
 	op->inst_len = size;
 	return size;
 }
@@ -349,6 +355,7 @@ static int dalvik_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int i;
 	char *p = strchr (buf,' ');
 	if (p) *p = 0;
+	// TODO: use a hashtable here
 	for (i=0; i<256; i++)
 		if (!strcmp (dalvik_opcodes[i].name, buf)) {
 			r_mem_copyendian (op->buf, (void*)&i, 4, a->big_endian);

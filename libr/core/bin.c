@@ -540,16 +540,17 @@ static int bin_classes (RCore *r, int mode) {
 	if ((cs = r_bin_get_classes (r->bin)) == NULL)
 		return R_FALSE;
 
+	// XXX: support for classes is broken and needs more love
 	if ((mode & R_CORE_BIN_SET)) {
 		// Nothing to set.
 	} else {
 		r_list_foreach (cs, iter, c) {
 			if (mode) {
-				r_cons_printf ("f class.%s\n", c->name);
+				r_cons_printf ("f class.%s @ %d\n", c->name, c->index);
 				if (c->super)
-					r_cons_printf ("f super.%s.%s\n", c->name, c->super);
+					r_cons_printf ("f super.%s.%s @ %d\n", c->name, c->super, c->index);
 			} else {
-				r_cons_printf ("class = %s\n", c->name);
+				r_cons_printf ("class %d = (%s)\n", c->index, c->name);
 				if (c->super)
 					r_cons_printf ("  super = %s\n", c->super);
 			}

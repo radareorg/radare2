@@ -9,6 +9,10 @@ static int cmd_info(void *data, const char *input) {
 	case 'S':
 		r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS|R_CORE_BIN_ACC_FIELDS, mode, va, NULL, offset);
 		break;
+	case 'c':
+	case 'C':
+		r_core_bin_info (core, R_CORE_BIN_ACC_CLASSES, mode, va, NULL, offset);
+		break;
 	case 's':
 		r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, mode, va, NULL, offset);
 		break;
@@ -49,6 +53,7 @@ static int cmd_info(void *data, const char *input) {
 		"Usage: i[aeiIsSz]*      ; get info from opened file\n"
 		"NOTE: Append a '*' to get the output in radare commands\n"
 		" ia        ; show all info (imports, exports, sections..)\n"
+		" ic        ; list classes\n"
 		" ii        ; imports\n"
 		" iI        ; binary info\n"
 		" id        ; debug information (source lines)\n"

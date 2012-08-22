@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
 #include "r_core.h"
 
 static char *filter_refline(const char *str) {
@@ -404,7 +404,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			continue;
 		}
 		/* show cursor */
-		if (core->print->cur_enabled && cursor >= idx && cursor < (idx+asmop.inst_len))
+		if (core->print->cur_enabled && cursor >= idx && cursor < (idx+r_asm_op_length (&asmop)))
 			r_cons_printf ("*");
 		else r_cons_printf (" ");
 		if (show_bytes) {
@@ -545,6 +545,9 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		if (middle != 0) {
 			ret -= middle;
 			r_cons_printf (" ;  *middle* %d", ret);
+		}
+		if (asmop.payload != 0) {
+			r_cons_printf ("\n; .. payload of %d bytes", asmop.payload);
 		}
 		if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 			RAsmOp ao; /* disassemble for the vm .. */

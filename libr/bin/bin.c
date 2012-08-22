@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org>, nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
 // TODO: dlopen library and show address
 
@@ -137,6 +137,12 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	if (cp->classes) o->classes = cp->classes (a);
 	if (cp->lines) o->lines = cp->lines (a);
 	return R_TRUE;
+}
+
+R_API void r_bin_class_free (RBinClass *c) {
+	free (c->name);
+	free (c->super);
+	free (c);
 }
 
 #define RBINLISTFREE(x) if(x){r_list_free(x);x=NULL;}

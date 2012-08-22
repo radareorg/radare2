@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 nibble */
 
 /* TODO:
  * Use -v to show version information.. not -V .. like the rest of tools

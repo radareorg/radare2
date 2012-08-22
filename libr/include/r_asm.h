@@ -49,7 +49,8 @@ enum {
 };
 
 typedef struct r_asm_op_t {
-	int  inst_len; // rename to size or length
+	int inst_len; // rename to size or length
+	int payload; // size of payload (opsize = (intstlen-payload))
 	// But this is pretty slow..so maybe we should add some accessors
 	ut8  buf[R_ASM_BUFSIZE];
 	char buf_asm[R_ASM_BUFSIZE];
@@ -58,8 +59,8 @@ typedef struct r_asm_op_t {
 } RAsmOp;
 
 typedef struct r_asm_code_t {
-	int  len;
-	ut8  *buf;
+	int len;
+	ut8 *buf;
 	char *buf_hex;
 	char *buf_asm;
 	RList *equs; // TODO: must be a hash
@@ -137,6 +138,7 @@ R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
 // accessors, to make bindings happy
 R_API char *r_asm_op_get_hex(RAsmOp *op);
 R_API char *r_asm_op_get_asm(RAsmOp *op);
+R_API int r_asm_op_get_size(RAsmOp *op);
 
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_bf;

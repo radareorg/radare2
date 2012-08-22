@@ -142,6 +142,7 @@ typedef struct r_bin_section_t {
 typedef struct r_bin_class_t {
 	char *name;
 	char *super;
+	int index;
 	RList *methods;
 	RList *fields;
 	int visibility;
@@ -238,6 +239,7 @@ typedef struct r_bin_bind_t {
 #ifdef R_API
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 /* bin.c */
+R_API void r_bin_class_free (RBinClass *c);
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);

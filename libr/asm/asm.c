@@ -10,13 +10,14 @@
 
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
-static int r_asm_pseudo_align(struct r_asm_op_t *op, char *input) {
+static int r_asm_pseudo_align(RAsmOp *op, char *input) {
 	eprintf ("TODO: .align\n"); // Must add padding for labels and others.. but this is from RAsm, not RAsmOp
 	return 0;
 }
 
-static int r_asm_pseudo_string(struct r_asm_op_t *op, char *input, int zero) {
-	int len = strlen(input)-1;
+static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
+	int len = strlen (input)-1;
+	if (len<1) return 0;
 	// TODO: if not starting with '"'.. give up
 	if (input[len]=='"')
 		input[len] = 0;
@@ -37,10 +38,11 @@ static inline int r_asm_pseudo_arch(RAsm *a, char *input) {
 }
 
 static inline int r_asm_pseudo_bits(RAsm *a, char *input) {
-	if (!(r_asm_set_bits (a, r_num_math (NULL, input))))
+	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
 		eprintf ("Error: Unsupported bits value\n");
-	else return 0;
-	return -1;
+		return -1;
+	}
+	return 0;
 }
 
 static inline int r_asm_pseudo_org(RAsm *a, char *input) {
@@ -48,19 +50,19 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 	return 0;
 }
 
-static inline int r_asm_pseudo_hex(struct r_asm_op_t *op, char *input) {
+static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
 	int len = r_hex_str2bin (input, op->buf);
 	strncpy (op->buf_hex, r_str_trim (input), R_ASM_BUFSIZE);
 	return len;
 }
 
-static inline int r_asm_pseudo_intN(RAsm *a, struct r_asm_op_t *op, char *input, int n) {
+static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	const ut8 *p;
 	short s;
 	int i;
 	long int l;
 	ut64 s64 = r_num_math (NULL, input);
-	if (n!= 8 && s64>>(n*8)) {
+	if (n!=8 && s64>>(n*8)) {
 		eprintf ("int16 Out is out of range\n");
 		return 0;
 	}
@@ -79,19 +81,19 @@ static inline int r_asm_pseudo_intN(RAsm *a, struct r_asm_op_t *op, char *input,
 	return n;
 }
 
-static inline int r_asm_pseudo_int16(RAsm *a, struct r_asm_op_t *op, char *input) {
+static inline int r_asm_pseudo_int16(RAsm *a, RAsmOp *op, char *input) {
 	return r_asm_pseudo_intN (a, op, input, 2);
 }
 
-static inline int r_asm_pseudo_int32(RAsm *a, struct r_asm_op_t *op, char *input) {
+static inline int r_asm_pseudo_int32(RAsm *a, RAsmOp *op, char *input) {
 	return r_asm_pseudo_intN (a, op, input, 4);
 }
 
-static inline int r_asm_pseudo_int64(RAsm *a, struct r_asm_op_t *op, char *input) {
+static inline int r_asm_pseudo_int64(RAsm *a, RAsmOp *op, char *input) {
 	return r_asm_pseudo_intN (a, op, input, 8);
 }
 
-static inline int r_asm_pseudo_byte(struct r_asm_op_t *op, char *input) {
+static inline int r_asm_pseudo_byte(RAsmOp *op, char *input) {
 	int i, len = 0;
 	r_str_subchr (input, ',', ' ');
 	len = r_str_word_count (input);
@@ -105,8 +107,8 @@ static inline int r_asm_pseudo_byte(struct r_asm_op_t *op, char *input) {
 	return len;
 }
 
-static inline int r_asm_pseudo_fill(struct r_asm_op_t *op, char *input) {
-	int i, repeat, size, value;
+static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
+	int i, repeat=0, size=0, value=0;
 	sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
 	size *= repeat;
 	if (size>0) {
@@ -278,7 +280,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return R_TRUE;
 }
 
-R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
+R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int ret = 0;
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble (a, op, buf, len);
@@ -291,13 +293,14 @@ R_API int r_asm_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64
 	return ret;
 }
 
-R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf) {
+R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
 	RAsmPlugin *h;
 	RListIter *iter;
 	char *b = strdup (buf);
 	if (a->ifilter)
 		r_parse_parse (a->ifilter, buf, b);
+	memset (op, 0, sizeof (RAsmOp));
 	if (a->cur) {
 		if (!a->cur->assemble) {
 			/* find callback if no assembler support in current plugin */
@@ -322,9 +325,9 @@ R_API int r_asm_assemble(RAsm *a, struct r_asm_op_t *op, const char *buf) {
 }
 
 R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
-	struct r_asm_op_t op;
 	RAsmCode *acode;
 	int ret, slen;
+	RAsmOp op;
 	ut64 idx;
 
 	if (!(acode = r_asm_code_new ()))
@@ -386,12 +389,12 @@ R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
 }
 
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
-	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
-		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
-	int labels = 0, stage, ret, idx, ctr, i, j;
-	struct r_asm_op_t op;
+	RAsmOp op;
 	ut64 off;
 	RAsmCode *acode = NULL;
+	int labels = 0, stage, ret, idx, ctr, i, j;
+	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
+		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
 
 	if (buf == NULL)
 		return NULL;
@@ -561,6 +564,10 @@ R_API char *r_asm_op_get_hex(RAsmOp *op) {
 
 R_API char *r_asm_op_get_asm(RAsmOp *op) {
 	return strdup (op->buf_asm);
+}
+
+R_API int r_asm_op_get_size(RAsmOp *op) {
+	return op->inst_len - op->payload;
 }
 
 R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
