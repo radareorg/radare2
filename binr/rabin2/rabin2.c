@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble */
+/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
 
 /* TODO:
  * Use -v to show version information.. not -V .. like the rest of tools
@@ -31,6 +31,7 @@
 #define ACTION_CREATE    0x08000
 #define ACTION_CLASSES   0x10000
 #define ACTION_DWARF     0x20000
+#define ACTION_SIZE      0x40000
 
 static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
@@ -60,7 +61,6 @@ static int rabin_show_help() {
 		" -s              symbols (exports)\n"
 		" -S              sections\n"
 		" -M              main (show address of main symbol)\n"
-		" -z              strings\n"
 		" -I              binary info\n"
 		" -H              header fields\n"
 		" -l              linked libraries\n"
@@ -74,6 +74,8 @@ static int rabin_show_help() {
 		" -@ [addr]       show section, symbol or import at addr\n"
 		" -n [str]        show section, symbol or import named str\n"
 		" -x              extract bins contained in file\n"
+		" -Z              size of binary\n"
+		" -z              strings\n"
 		" -V              show version information\n"
 		" -h              this help\n");
 	return 1;
@@ -256,35 +258,6 @@ static int rabin_do_operation(const char *op) {
 	return R_TRUE;
 }
 
-static int rabin_show_dwarf(RCore *core, int rad) {
-	RBinDwarfRow *row;
-	RListIter *iter;
-	RList *list = r_list_new ();
-
-	r_bin_dwarf_parse_info (core->bin);
-	list = r_bin_dwarf_parse_line (core->bin);
-	r_list_foreach (list, iter, row) {
-		if (rad) {
-			// TODO: use 'Cl' instead of CC
-			const char *path = row->file;
-			char *line = r_file_slurp_line (
-					path, row->line, 0);
-			if (line) {
-				r_str_filter (line, strlen (line));
-				r_str_replace (line, "@", ".", 1);
-				r_str_replace (line, "|", ".", 1);
-				r_str_replace (line, ";", ".", 1);
-			}
-			printf ("CC %s:%d  %s @ 0x%"PFMT64x"\n",
-					row->file, row->line,
-					line?line:"", row->address);
-		} else 
-			printf ("%s: %d\n", row->file, row->line);
-	}
-	r_list_destroy (list);
-	return R_TRUE;
-}
-
 static int rabin_show_srcline(ut64 at) {
 	char *srcline;
 	if ((srcline = r_bin_meta_get_source_line (bin, at))) {
@@ -340,7 +313,7 @@ int main(int argc, char **argv) {
 		r_lib_opendir (l, LIBDIR"/radare2/");
 	}
 
-	while ((c = getopt (argc, argv, "Af:a:B:b:c:CdMm:n:@:VisSzIHelRwO:o:p:rvLhx")) != -1) {
+	while ((c = getopt (argc, argv, "Af:a:B:b:c:CdMm:n:@:VisSIHelRwO:o:p:rvLhxzZ")) != -1) {
 		switch(c) {
 		case 'A': action |= ACTION_LISTARCHS; break;
 		case 'a': if (optarg) arch = strdup (optarg); break;
@@ -363,6 +336,7 @@ int main(int argc, char **argv) {
 		case 's': action |= ACTION_SYMBOLS; break;
 		case 'S': action |= ACTION_SECTIONS; break;
 		case 'z': action |= ACTION_STRINGS; break;
+		case 'Z': action |= ACTION_SIZE; break;
 		case 'I': action |= ACTION_INFO; break;
 		case 'H': action |= ACTION_FIELDS; break;
 		case 'd': action |= ACTION_DWARF; break;
@@ -498,6 +472,8 @@ int main(int argc, char **argv) {
 		r_core_bin_info (&core, R_CORE_BIN_ACC_RELOCS, rad, va, NULL, 0);
 	if (action&ACTION_DWARF)
 		r_core_bin_info (&core, R_CORE_BIN_ACC_DWARF, rad, va, NULL, 0);
+	if (action&ACTION_SIZE)
+		r_core_bin_info (&core, R_CORE_BIN_ACC_SIZE, rad, va, NULL, 0);
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline (at);
 	if (action&ACTION_EXTRACT)

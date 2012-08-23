@@ -120,7 +120,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 		return R_FALSE;
 	if (cp->baddr) o->baddr = cp->baddr (a);
 	// XXX: no way to get info from xtr pluginz?
-	if (cp->size) o->size = cp->size (bin);
+	if (cp->size) o->size = cp->size (a);
 	if (cp->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
 			o->binsym[i] = cp->binsym (a, i);
@@ -448,10 +448,6 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 	bin->user = user;
 }
 
-R_API int r_bin_get_size(RBinObject *obj) {
-	return obj->size;
-}
-
 static int getoffset (RBin *bin, int type, int idx) {
 	RBinArch *a = &bin->cur;
 	if (a && a->curplugin && a->curplugin->get_offset)
@@ -488,4 +484,8 @@ R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
 
 R_API ut64 r_bin_get_offset (RBin *bin) {
 	return bin->cur.offset;
+}
+
+R_API ut64 r_bin_get_size (RBin *bin) {
+	return bin->cur.o->size;
 }

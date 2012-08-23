@@ -548,4 +548,18 @@ R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v);
 R_API const ut8 *r_leb128 (const ut8 *data, st32 *v);
 #endif
 
+
+/* constr */
+typedef struct r_constr_t {
+	char *b;
+	int l;
+	int i;
+} RConstr;
+
+R_API RConstr* r_constr_new (int size);
+R_API void r_constr_free (RConstr *c);
+R_API const char *r_constr_get (RConstr *c, const char *str);
+R_API const char *r_constr_append (RConstr *c, const char *str);
+R_API const char *r_constr_add (RConstr *c, const char *str);
+
 #endif

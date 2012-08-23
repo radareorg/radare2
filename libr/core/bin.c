@@ -560,6 +560,20 @@ static int bin_classes (RCore *r, int mode) {
 	return R_TRUE;
 }
 
+static int bin_size (RCore *r, int mode) {
+	int size = r_bin_get_size (r->bin);
+	//if (mode & R_CORE_BIN_SET) 
+	if ((mode & R_CORE_BIN_SET)) {
+	} else {
+		if (mode) {
+			r_cons_printf ("f bin_size @ %d\n", size);
+		} else {
+			r_cons_printf ("%d\n", size);
+		}
+	}
+	return R_TRUE;
+}
+
 static int bin_libs (RCore *r, int mode) {
 	RList *libs;
 	RListIter *iter;
@@ -617,6 +631,8 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 		ret &= bin_libs (core, mode);
 	if ((action & R_CORE_BIN_ACC_CLASSES))
 		ret &= bin_classes (core, mode);
+	if ((action & R_CORE_BIN_ACC_SIZE))
+		ret &= bin_size (core, mode);
 
 	return ret;
 }

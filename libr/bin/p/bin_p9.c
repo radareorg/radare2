@@ -163,6 +163,20 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
+int size(RBinArch *arch) {
+	ut64 text, data, syms, spsz;
+	int big_endian;
+	if (!arch->o->info)
+		arch->o->info = info (arch);
+	big_endian = arch->o->info->big_endian;
+	// TODO: reuse section list
+	text = r_mem_get_num (arch->buf->buf+4, 4, big_endian);
+	data = r_mem_get_num (arch->buf->buf+8, 4, big_endian);
+	syms = r_mem_get_num (arch->buf->buf+16, 4, big_endian);
+	spsz = r_mem_get_num (arch->buf->buf+24, 4, big_endian);
+	return text+data+syms+spsz+(6*4);
+}
+
 #if !R_BIN_P9
 
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
@@ -190,6 +204,7 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
+	.size = &size,
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,

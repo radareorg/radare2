@@ -281,14 +281,15 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
-	int ret = 0;
+	int ret = op->payload = 0;
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble (a, op, buf, len);
 	if (ret > 0) {
+		int oplen = r_asm_op_get_size (op);
 		if (a->ofilter)
 			r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
-		else memcpy (op->buf, buf, ret);
-		r_hex_bin2str (buf, ret, op->buf_hex);
+		else memcpy (op->buf, buf, oplen);
+		r_hex_bin2str (buf, oplen, op->buf_hex);
 	} else ret = 0;
 	return ret;
 }

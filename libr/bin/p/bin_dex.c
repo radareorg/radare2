@@ -154,7 +154,7 @@ static RList* classes (RBinArch *arch) {
 
 	if (!(ret = r_list_new ()))
 		return NULL;
-	ret->free = r_bin_class_free;
+	ret->free = (RListFree)r_bin_class_free;
 	for (i = 0; i < bin->header.class_size; i++) {
 		r_buf_read_at (bin->b, (ut64) bin->header.class_offset
 				+ (sizeof (struct dex_class_t)*i), (ut8*)&entry,
@@ -171,7 +171,7 @@ static RList* classes (RBinArch *arch) {
 				(ut8*)name, len);
 		//snprintf (ptr->name, sizeof (ptr->name), "field.%s.%d", name, i);
 		class = R_NEW0 (RBinClass);
-		class->name = strdup (name[0]<0x41? name+1: name);
+		class->name = strdup (name[0]<0x41? name+1: name); // TODO: use RConstr here
 		class->index = entry.class_id;
 		r_list_append (ret, class);
 #if VERBOSE

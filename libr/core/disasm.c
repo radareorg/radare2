@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
+
 #include "r_core.h"
 
 static char *filter_refline(const char *str) {
@@ -35,6 +36,7 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak) {
 	RAnalCC cc = {0};
 	RAnalFunction *f = NULL;
+	ut8 *nbuf = NULL;
 	int ret, idx, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
@@ -109,6 +111,9 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, addr);
+
+	lines = 0;
+toro:
 #if 0
 	/* find last function else stackptr=0 */
 	{
@@ -155,7 +160,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		core->reflines2 = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
 
-	for (lines=i=idx=ret=0; idx < len && lines < l; idx+=ret,i++, lines++) {
+	for (i=idx=ret=0; idx < len && lines < l; idx+=ret,i++, lines++) {
+		int oplen = 1;
 		ut64 at = addr + idx;
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
@@ -201,14 +207,16 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) { // XXX: move to r_asm_disassemble ()
 			ret = 1;
-			asmop.inst_len = 1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
 			//	core->assembler->pc + ret);
 			lastfail = 1;
 			strcpy (asmop.buf_asm, "invalid");
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
-			if (invbreak) break;
-		} else lastfail = 0;
+			//if (invbreak) break;
+		} else {
+			lastfail = 0;
+			oplen = r_asm_op_get_size (&asmop);
+		}
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
 		if (atabs) {
@@ -276,9 +284,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 						r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
 								dst->reg->name, ptr, off, item?item->name: s);
 						}
-						//r_cons_printf ("; %s = 0x%"PFMT64x"\n",
-						//		dst->reg->name,
-						//		idx+addr+src->delta);
 					}
 				}
 			}
@@ -404,7 +409,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			continue;
 		}
 		/* show cursor */
-		if (core->print->cur_enabled && cursor >= idx && cursor < (idx+r_asm_op_length (&asmop)))
+		if (core->print->cur_enabled && cursor >= idx && cursor < (idx+oplen))
 			r_cons_printf ("*");
 		else r_cons_printf (" ");
 		if (show_bytes) {
@@ -639,6 +644,18 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 			free (line);
 			free (refline);
 			line = refline = NULL;
+		}
+
+	}
+	if (nbuf == buf)
+		free (buf);
+	if (idx>=len) {// && (invbreak && !lastfail)) {
+		if (invbreak && lines<l) {
+			buf = nbuf = malloc (len);
+			r_io_read_at (core->io, addr+idx, buf, len);
+			addr += idx;
+			//eprintf ("EOF %d %d\n", lines, l);
+			goto toro;
 		}
 	}
 	r_anal_op_fini (&analop);

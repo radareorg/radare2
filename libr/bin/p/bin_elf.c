@@ -377,6 +377,23 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
+static int size(RBinArch *arch) {
+	ut64 off = 0;
+	ut64 len = 0;
+	if (!arch->o->sections) {
+		RListIter *iter;
+		RBinSection *section;
+		arch->o->sections = sections (arch);
+		r_list_foreach (arch->o->sections, iter, section) {
+			if (section->offset > off) {
+				off = section->offset;
+				len = section->size;
+			}
+		}
+	}
+	return off+len;
+}
+
 struct r_bin_plugin_t r_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format r_bin plugin",
@@ -394,6 +411,7 @@ struct r_bin_plugin_t r_bin_plugin_elf = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
+	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
 	.meta = &r_bin_meta_elf,

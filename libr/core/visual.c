@@ -5,8 +5,8 @@
 #define NPF 5
 static int blocksize = 0;
 static const char *printfmt[] = {
-	"x", "pD",
-	"f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pD",
+	"x", "pd",
+	"f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pd",
 	"pw", "pc"
 };
 static int autoblocksize = 1;
@@ -754,7 +754,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	return R_TRUE;
 }
 
-
 #define PIDX (R_ABS(core->printidx%NPF))
 R_API void r_core_visual_title (RCore *core, int color) {
 	const char *filename;
@@ -779,7 +778,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		break;
 	case 1: // pd
 	case 2: // pd+dbg
-		r_core_block_size (core, core->cons->rows * 5); // this is hacky
+		r_core_block_size (core, core->cons->rows *4); // this is hacky
 		break;
 	}
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - nibble, pancake */
 // TODO: review the rest of strtab index out of range
 #include <stdio.h>
 #include <stdlib.h>
@@ -442,6 +442,7 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 }
 
+// TODO: do not strdup here
 char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_machine) {
 	case EM_NONE:        return strdup ("No machine");
@@ -1041,11 +1042,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 }
 
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf) {
-	struct Elf_(r_bin_elf_obj_t) *bin;
-// TODO: use R_NEW here
-	if (!(bin = malloc (sizeof (struct Elf_(r_bin_elf_obj_t)))))
-		return NULL;
-	memset (bin, 0, sizeof (struct Elf_(r_bin_elf_obj_t)));
+	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
 	bin->b = buf;
 	bin->size = buf->length;
 	if (!Elf_(r_bin_elf_init) (bin))

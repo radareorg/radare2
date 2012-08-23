@@ -538,7 +538,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "diff.to", 0);
 	r_config_desc (cfg, "diff.to", "set destination diffing address for px (uses cc command)");
 	/* debug */
-	r_config_set_i (cfg, "dbg.follow", 32);
+	if (core->cons->rows>30) // HACKY
+		r_config_set_i (cfg, "dbg.follow", 64);
+	else r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	r_config_set_cb (cfg, "dbg.backend", "native", &config_dbgbackend_callback);
 	r_config_desc (cfg, "dbg.backend", "Select the debugger backend");

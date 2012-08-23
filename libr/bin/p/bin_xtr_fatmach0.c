@@ -42,7 +42,8 @@ static int load(RBin *bin) {
 }
 
 static int size(RBin *bin) {
-	return 3;
+	// TODO
+	return 0;
 }
 
 static int extract(RBin *bin, int idx) {
