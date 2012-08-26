@@ -237,9 +237,11 @@ typedef struct r_bin_bind_t {
 } RBinBind;
 
 #ifdef R_API
+
+#define r_bin_class_free(x) { free(x->name);free(x->super);free (x); }
+
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 /* bin.c */
-R_API void r_bin_class_free (RBinClass *c);
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);

@@ -145,6 +145,10 @@ static RList* methods (RBinArch *arch) {
 	return ret;
 }
 
+static void __r_bin_class_free(RBinClass *p) {
+	r_bin_class_free (p);
+}
+
 static RList* classes (RBinArch *arch) {
 	RBinClass *class;
 	RList *ret = NULL;
@@ -154,7 +158,7 @@ static RList* classes (RBinArch *arch) {
 
 	if (!(ret = r_list_new ()))
 		return NULL;
-	ret->free = (RListFree)r_bin_class_free;
+	ret->free = (RListFree)__r_bin_class_free;
 	for (i = 0; i < bin->header.class_size; i++) {
 		r_buf_read_at (bin->b, (ut64) bin->header.class_offset
 				+ (sizeof (struct dex_class_t)*i), (ut8*)&entry,

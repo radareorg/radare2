@@ -139,12 +139,6 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	return R_TRUE;
 }
 
-R_API void r_bin_class_free (RBinClass *c) {
-	free (c->name);
-	free (c->super);
-	free (c);
-}
-
 #define RBINLISTFREE(x) if(x){r_list_free(x);x=NULL;}
 static void r_bin_free_items(RBin *bin) {
 	int i;
