@@ -4,6 +4,11 @@ _INCLUDE_RULES_MK_=1
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 include $(LIBR)/config.mk
 
+ifeq ($(USE_RPATH),1)
+LDFLAGS+=-Wl,-R${PREFIX}/lib
+endif
+
+
 #-------------------------------------#
 # Rules for libraries
 ifneq ($(NAME),)

@@ -40,8 +40,6 @@ Concrete TODO points
     lives at a specified offset. (is this already done?)
 
 * r_bin
-  - Implement more get_main() (NOOB)
-  - Add DEX file format support
   - Find why objdump can find stripped symbols with objcopy (see /TODO)
 
 * radare2

@@ -48,6 +48,8 @@ IFNULL SSL_LDFLAGS {
 	}
 }
 
+ARG_WITH USE_RPATH rpath use rpath to build ;
+
 ARG_WITH HAVE_LILEND little-endian force little endian ;
 IF HAVE_LILEND { LIL_ENDIAN = 1 ; }
 ARG_WITH HAVE_BIGEND big-endian force big endian ;

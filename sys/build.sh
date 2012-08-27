@@ -1,6 +1,10 @@
 #!/bin/sh
 
 MAKE_JOBS=8
+PREFIX=/usr
+
+[ ! "${PREFIX}" = /usr ] && \
+	CFGARG=--with-rpath
 
 MAKE=make
 gmake --help >/dev/null 2>&1
@@ -20,5 +24,5 @@ fi
 ${MAKE} mrproper > /dev/null 2>&1
 [ "`uname`" = Linux ] && export LDFLAGS="-Wl,--as-needed"
 rm -f plugins.cfg
-./configure --prefix=/usr || exit 1
+./configure ${CFGARG} --prefix=${PREFIX} || exit 1
 exec ${MAKE} -s -j ${MAKE_JOBS}
