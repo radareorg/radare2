@@ -36,5 +36,3 @@ RAnalType* new_struct_node(char* name, RAnalType *defs);
 RAnalType* new_union_node(char* name, RAnalType *defs);
 RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes);
 
-//int print_tree(RAnalType *tmp);
-

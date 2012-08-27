@@ -16,8 +16,8 @@ typedef struct r_list_iter_t {
 } RListIter;
 
 typedef struct r_list_t {
-	struct r_list_iter_t *head;
-	struct r_list_iter_t *tail;
+	RListIter *head;
+	RListIter *tail;
 	RListFree free;
 } RList;
 

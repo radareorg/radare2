@@ -3,12 +3,22 @@
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	RListIter *iter;
-	RAnalType *t;
+	RAnalType *t = NULL;
 	int i, ret, line = 0;
 	ut64 addr_end = 0LL;
 	ut64 addr = core->offset;
 	char file[1024];
-	switch (*input) {
+	switch (*inpt) {
+	// t [typename] - show given type in C syntax
+	case ' ':
+		const char* typename = input + 1;
+		t = r_anal_type_find(typename);
+		if (t == NULL)
+			eprintf("Type %s not found!\n", typename);
+		else
+			r_anal_type_to_str(t);
+		break;
+	// t* - list all types in 'pf' syntax
 	case '*':
 		r_anal_type_list (core->anal->types, R_ANAL_TYPE_ANY, 1);
 		break;
@@ -28,20 +38,56 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case ' ':
-			{
 			const char *ptr, *filename = input + 2;
 			ptr = strchr (filename, ' ');
 			if (ptr && !ptr[1]) {
 				r_anal_type_loadfile(core->anal, filename);
-				eprintf ("Usage: tf name\n");
-			} else eprintf ("Usage: tf[!] [name]\n");
-			}
+			} else
+				eprintf ("Usage: tf[!] [name]\n");
 			break;
 		default:
 			eprintf ("Usage: tf[..]\n"
 				" tf [path]    : load types from file\n");
 			break;
 		}
+		break;
+	// td - parse string with cparse engine and load types from it
+	case 'd':
+		switch (input[1]) {
+			case ' ':
+				const char *ptr, *string = input + 2;
+				ptr = strchr (string, ' ');
+				if (ptr && !ptr[1]) {
+					r_anal_str_to_type(core->anal, string);
+				} else
+					eprintf ("Usage: td [string]\n");
+				break;
+			default:
+				eprintf("Usage: td[...]\n"
+					" td [string]    : load types from string\n");
+				break;
+		}
+		break;
+	// tl - link a type to an address
+	case 'l':
+		const char *ptr, *typename = input + 2;
+		ut64 addr = 0;
+		ptr = strchr (input + 2, ' ');
+		if (ptr)
+			*ptr = '\0';
+			addr = r_num_math (core->num, ptr + 1);
+			//do linking
+		} else
+			eprintf("Usage: tl[...]\n"
+				" tl [typename] ([addr])@[addr|function]\n");
+		if (addr <= 0) {
+			eprintf("Wrong address to link!\n");
+		}
+		break;
+
+		break;
+	// tv - get/set type value linked to a given address
+	case 'v':
 		break;
 	case 'h':
 		switch (input[1]) {
@@ -71,7 +117,13 @@ static int cmd_type(void *data, const char *input) {
 					"t- name : delete type by its name\n");
 		}
 		break;
+	// t - list all types in C syntax
 	case '\0':
+		RListIter *k = core->anal->head;
+		while ((k != NULL) && (k != core->anal->tail) && (k->data != NULL)) {
+			r_anal_type_to_str(core->anal, tk;
+			k = k->n;
+		}
 	case '!':
 		{
 		char *out, *ctype = "";

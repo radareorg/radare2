@@ -15,6 +15,8 @@
 %token_type {Token}
 %default_type {Token}
 
+%extra_argument { RList *trees}
+
 %type source {RAnalType *}
 %type deflist {RAnalType *}
 %type def {RAnalType *}
@@ -27,9 +29,19 @@
 %type pointer {RAnalType *}
 %type array {RAnalType *}
 
-source(A) ::= deflist(B). { A = B; }
-deflist(A) ::= def(B) SEMICOLON deflist(C). { B->next = C; A = B; }
-deflist(A) ::= def(B) SEMICOLON. { A = B; }
+source(A) ::= deflist(B). {
+	A = B;
+	/* Add definitions to the list */
+}
+deflist(A) ::= def(B) SEMICOLON deflist(C). {
+	B->next = C;
+	A = B;
+	/* Add definitions to the list */
+}
+deflist(A) ::= def(B) SEMICOLON. {
+	A = B;
+	/* Add definition to the list */
+}
 def(A) ::= function(B). { A = B; }
 def(A) ::= struct(B). { A = B; }
 def(A) ::= union(B). { A = B; }

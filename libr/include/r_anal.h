@@ -296,6 +296,8 @@ struct r_anal_type_t {
 	RAnalType *next;
 	RAnalType *prev;
 	RAnalType *head;
+	// Parent filename
+	char* filename;
 };
 
 

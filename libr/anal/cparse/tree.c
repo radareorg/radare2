@@ -3,49 +3,13 @@
 #include <r_anal.h>
 #include "cdata.h"
 
+// FIXME: Temporary hack to use global variable
+// Need to remove that in next release
+RAnalType *tmp_tree = NULL;
+
 static int new_tree() {
 	return 0;
 }
-
-#if 0
-static int print_tree(RAnalType *t) {
-	RAnalType *p = t;
-	if (!p) {
-		eprintf ("Empty tree!\n");
-		return R_FALSE;
-	}
-	while (p) {
-		switch (p->type) {
-		case R_ANAL_TYPE_VARIABLE:
-			eprintf("var %s\n", p->custom.v->name);
-			break;
-		case R_ANAL_TYPE_POINTER:
-			eprintf("ptr %s\n", p->custom.p->name);
-			break;
-		case R_ANAL_TYPE_ARRAY:
-			eprintf("arr %s[%lld]\n", p->custom.a->name, p->custom.a->count);
-			break;
-		case R_ANAL_TYPE_STRUCT:
-			eprintf("Entering struct %s...\n", p->custom.s->name);
-			print_tree(p->custom.s->items);
-			break;
-		case R_ANAL_TYPE_UNION:
-			eprintf("Entering union %s...\n", p->custom.u->name);
-			print_tree(p->custom.u->items);
-			break;
-		case R_ANAL_TYPE_FUNCTION:
-			eprintf("Entering function %s...\n", p->custom.f->name);
-			print_tree(p->custom.f->args);
-			break;
-		default:
-			eprintf("invalid item!\n");
-			break;
-		}
-		p = p->next;
-	}
-	return R_TRUE;
-}
-#endif
 
 RAnalType* new_variable_node(char* name, short type, short sign, short modifier) {
 	RAnalTypeVar *ivar = R_NEW (RAnalTypeVar);
@@ -58,6 +22,10 @@ RAnalType* new_variable_node(char* name, short type, short sign, short modifier)
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_VARIABLE;
 	tmp->custom.v = ivar;
+	// FIXME: Temporary hack to use global variable
+	// Neet to remove that in next release
+	// and provide proper way to handle global tree
+	// outside from this file
 	return tmp;
 }
 
@@ -72,6 +40,11 @@ RAnalType* new_pointer_node(char* name, short type, short sign, short modifier) 
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_POINTER;
 	tmp->custom.p = iptr;
+	// FIXME: Temporary hack to use global variable
+	// Neet to remove that in next release
+	// and provide proper way to handle global tree
+	// outside from this file
+
 	return tmp;
 }
 
@@ -87,6 +60,11 @@ RAnalType* new_array_node(char* name, short type, short sign, short modifier, lo
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_ARRAY;
 	tmp->custom.a = iarr;
+	// FIXME: Temporary hack to use global variable
+	// Neet to remove that in next release
+	// and provide proper way to handle global tree
+	// outside from this file
+
 	return tmp;
 }
 
@@ -98,6 +76,11 @@ RAnalType* new_struct_node(char* name, RAnalType *defs) {
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_STRUCT;
 	tmp->custom.s = istr;
+	// FIXME: Temporary hack to use global variable
+	// Neet to remove that in next release
+	// and provide proper way to handle global tree
+	// outside from this file
+
 	return tmp;
 }
 
@@ -109,6 +92,11 @@ RAnalType* new_union_node(char* name, RAnalType *defs) {
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_UNION;
 	tmp->custom.u = iun;
+	// FIXME: Temporary hack to use global variable
+	// Neet to remove that in next release
+	// and provide proper way to handle global tree
+	// outside from this file
+
 	return tmp;
 }
 
@@ -126,5 +114,10 @@ RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short 
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_FUNCTION;
 	tmp->custom.f = ifnc;
+	// FIXME: Temporary hack to use global variable
+	// Neet to remove that in next release
+	// and provide proper way to handle global tree
+	// outside from this file
+
 	return tmp;
 }
