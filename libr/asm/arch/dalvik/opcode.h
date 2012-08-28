@@ -81,7 +81,7 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"new-array", 4, fmtopvAvBtCCCC},
 	{"filled-new-array", 6, fmtopvXtBBBB},
 	{"filled-new-array/range", 6, fmtopvCCCCmBBBB},
-	{"fill-array-data-payload", 7, fmtopvAApBBBBBBBB},
+	{"fill-array-data", 6, fmtopvAApBBBBBBBB},
 	{"throw", 2, fmtopvAA},
 	{"goto", 2, fmtoppAA},
 	{"goto/16", 4, fmtoppAAAA},
