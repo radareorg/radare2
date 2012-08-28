@@ -515,7 +515,7 @@ static char *find_eoq (char *p) {
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
-	int i, ret, pipefd, len = strlen (cmd);
+	int i, ret, pipefd;
 	const char *tick = NULL;
 	const char *quotestr = "\"`";
 	quotestr = "`"; // tmp

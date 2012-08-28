@@ -16,99 +16,90 @@ extern YY_BUFFER_STATE yy_scan_string(const char*);
 extern void yy_delete_buffer(YY_BUFFER_STATE);
 
 R_API RAnalType *r_anal_type_new() {
-	RAnalType *t = R_NEW(RAnalType);
-	return t;
+	return R_NEW0 (RAnalType);
 }
 
 R_API RList *r_anal_type_list_new() {
-	RList *t = r_list_new ();
-	return t;
+	return r_list_new ();
 }
 
-R_API void r_anal_type_add(RList *l, RAnalType *t) {
-	if ((l != NULL) && (l->head != NULL) && (l->tail != NULL)) {
-		RListIter *r = NULL;
-		r = r_list_append(l, (void *)t);
-	}
+R_API void r_anal_type_add(RAnal *a, RAnalType *t) {
+	if (t) r_list_append (a->types, (void *)t);
 }
 
-R_API void r_anal_type_del(RList *l, const char* name) {
-	RListIter *t = l->head;
-	RAnalType *m = NULL;
+R_API void r_anal_type_del(RAnal *a, const char* name) {
+	RListIter *t;
+	RAnalType *m;
 
-	while (t->n != l->tail) {
-		m = (RAnalType *)t->data;
-		if (!strncmp(name, m->name, strlen(name))) {
-			r_list_delete(l, t);
-		}
-		t = t->n;
+	r_list_foreach (a->types, t, m) {
+		if (!strcmp (name, m->name))
+			r_list_delete (a->types, t);
 	}
 }
 
 R_API RAnalType *r_anal_type_free(RAnalType *t) {
-	free(t);
-	return t;
+	free (t);
+	return NULL;
 }
 
-R_API void r_anal_type_list(RList *t, short category, short enabled) {
+R_API void r_anal_type_list(RAnal *a, short category, short enabled) {
 	// List all types by category: var/struct/unions/pointers
 }
 
-R_API RAnalType *r_anal_type_find(RList *l, const char *name) {
-	RListIter *t = l->head;
-	RAnalType *m = NULL;
-
-	while (t->n != l->tail) {
-		m = (RAnalType *)t->data;
-		if (!strncmp(name, m->name, strlen(name))) {
+R_API RAnalType *r_anal_type_find(RAnal *a, const char *name) {
+	RListIter *t;
+	RAnalType *m;
+	r_list_foreach (a->types, t, m) {
+		if (!strcmp (name, m->name))
 			return m;
-		}
-		t = t->n;
 	}
 	return NULL;
 }
 
-R_API char* r_anal_type_to_str(RList *l, RAnalType *t) {
+R_API const char* r_anal_type_to_str(RAnal *a, RAnalType *t) {
 	return "<none>";
 }
 
 // TODO: Add types to RList instead or RAnalType
-R_API RAnalType *r_anal_str_to_type(RList *l, const char* type) {
+R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 	int yv;
 	RAnalType *tTree = NULL;
 
-	void *pParser = cdataParseAlloc(malloc);
-	yy_scan_string(type);
-	while ((yv = yylex()) != 0) {
-		cdataParse(pParser, yv, yylval, tTree);
+	void *pParser = cdataParseAlloc (malloc);
+	yy_scan_string (type);
+	while ((yv = yylex ()) != 0) {
+		cdataParse (pParser, yv, yylval, tTree);
 	}
-	cdataParse(pParser, 0, yylval, tTree);
-	cdataParseFree(pParser, free);
+	cdataParse (pParser, 0, yylval, tTree);
+	cdataParseFree (pParser, free);
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;
 	return NULL;
 }
 
 // TODO: Add types to RList instead of RAnalType
-R_API RAnalType *r_anal_type_loadfile(RList *l, const char *path) {
+R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	FILE *cfile;
-	int n;
-	int yv, yylval = 0;
+	void *pParser;
 	char buf[4096];
+	int n, yv, yylval = 0;
 	RAnalType *tTree = NULL;
 
-	void *pParser = cdataParseAlloc(malloc);
-	cfile = fopen(path, "ro");
-	while ((n = fread(buf, 1, sizeof(buf), cfile)) > 0) {
+	cfile = fopen (path, "ro");
+	if (!cfile)
+		return NULL;
+	// TODO: use r_file_slurp ?
+	pParser = cdataParseAlloc (malloc);
+	while ((n = fread (buf, 1, sizeof (buf), cfile)) > 0) {
 		buf[n] = '\0';
-		yy_scan_string(buf);
-		while ((yv = yylex()) != 0) {
-			cdataParse(pParser, yv, yylval, tTree);
+		yy_scan_string (buf);
+		while ((yv = yylex ()) != 0) {
+			cdataParse (pParser, yv, yylval, tTree);
 		}
 	}
-	fclose(cfile);
-	cdataParse(pParser, 0, yylval, tTree);
-	cdataParseFree(pParser, free);
+	fclose (cfile);
+	cdataParse (pParser, 0, yylval, tTree);
+	cdataParseFree (pParser, free);
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;
 	// TODO: insert '.filename' field for all elements in this tree
