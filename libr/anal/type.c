@@ -32,7 +32,7 @@ R_API void r_anal_type_del(RList *l, const char* name) {
 	RListIter *t = l->head;
 	RAnalType *m = NULL;
 
-	while (t->n != t->tail) {
+	while (t->n != l->tail) {
 		m = (RAnalType *)t->data;
 		if (!strncmp(name, m->name, strlen(name))) {
 			r_list_delete(l, t);
@@ -50,12 +50,12 @@ R_API void r_anal_type_list(RList *t, short category, short enabled) {
 	// List all types by category: var/struct/unions/pointers
 }
 
-R_API RAnalType *r_anal_type_find(char *name) {
-	RListIter *t = core->anal->head;
+R_API RAnalType *r_anal_type_find(RList *l, const char *name) {
+	RListIter *t = l->head;
 	RAnalType *m = NULL;
 
-	while (t->n != core->anal->tail) {
-		m = (RAnalTYpe *)t->data;
+	while (t->n != l->tail) {
+		m = (RAnalType *)t->data;
 		if (!strncmp(name, m->name, strlen(name))) {
 			return m;
 		}
@@ -64,12 +64,12 @@ R_API RAnalType *r_anal_type_find(char *name) {
 	return NULL;
 }
 
-R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t) {
+R_API char* r_anal_type_to_str(RList *l, RAnalType *t) {
 	return "<none>";
 }
 
 // TODO: Add types to RList instead or RAnalType
-R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
+R_API RAnalType *r_anal_str_to_type(RList *l, const char* type) {
 	int yv;
 	RAnalType *tTree = NULL;
 
@@ -86,7 +86,7 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 }
 
 // TODO: Add types to RList instead of RAnalType
-R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
+R_API RAnalType *r_anal_type_loadfile(RList *l, const char *path) {
 	FILE *cfile;
 	int n;
 	int yv, yylval = 0;

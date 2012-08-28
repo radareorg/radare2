@@ -8,15 +8,17 @@ static int cmd_type(void *data, const char *input) {
 	ut64 addr_end = 0LL;
 	ut64 addr = core->offset;
 	char file[1024];
-	switch (*inpt) {
+	switch (input[0]) {
 	// t [typename] - show given type in C syntax
 	case ' ':
-		const char* typename = input + 1;
-		t = r_anal_type_find(typename);
+	{
+		const char *tname = input + 1;
+		t = r_anal_type_find(core->anal->types, tname);
 		if (t == NULL)
-			eprintf("Type %s not found!\n", typename);
+			eprintf("Type %s not found!\n", tname);
 		else
-			r_anal_type_to_str(t);
+			r_anal_type_to_str(core->anal->types, t);
+	}
 		break;
 	// t* - list all types in 'pf' syntax
 	case '*':
@@ -27,23 +29,25 @@ static int cmd_type(void *data, const char *input) {
 		/* Open $EDITOR and allow type type definition manually */
 		// TODO: Show simple rules in ctype or simple template? */
 		case '!':
-			{
+		{
 			char *out, *ctype = "";
 			out = r_core_editor (core, ctype);
-			t = r_anal_str_to_type (core->anal, out);
+			t = r_anal_str_to_type (core->anal->types, out);
 			if (t != NULL)
 				r_anal_type_add (core->anal->types, t);
 			free (out);
 			free (ctype);
-			}
+		}
 			break;
 		case ' ':
+		{
 			const char *ptr, *filename = input + 2;
 			ptr = strchr (filename, ' ');
 			if (ptr && !ptr[1]) {
-				r_anal_type_loadfile(core->anal, filename);
+				r_anal_type_loadfile(core->anal->types, filename);
 			} else
 				eprintf ("Usage: tf[!] [name]\n");
+		}
 			break;
 		default:
 			eprintf ("Usage: tf[..]\n"
@@ -55,12 +59,14 @@ static int cmd_type(void *data, const char *input) {
 	case 'd':
 		switch (input[1]) {
 			case ' ':
+			{
 				const char *ptr, *string = input + 2;
 				ptr = strchr (string, ' ');
 				if (ptr && !ptr[1]) {
-					r_anal_str_to_type(core->anal, string);
+					r_anal_str_to_type(core->anal->types, string);
 				} else
 					eprintf ("Usage: td [string]\n");
+			}
 				break;
 			default:
 				eprintf("Usage: td[...]\n"
@@ -70,10 +76,12 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// tl - link a type to an address
 	case 'l':
-		const char *ptr, *typename = input + 2;
+	{
+		char *ptr = NULL;
+		const char *typename = input + 2;
 		ut64 addr = 0;
 		ptr = strchr (input + 2, ' ');
-		if (ptr)
+		if (ptr) {
 			*ptr = '\0';
 			addr = r_num_math (core->num, ptr + 1);
 			//do linking
@@ -83,8 +91,7 @@ static int cmd_type(void *data, const char *input) {
 		if (addr <= 0) {
 			eprintf("Wrong address to link!\n");
 		}
-		break;
-
+	}
 		break;
 	// tv - get/set type value linked to a given address
 	case 'v':
@@ -119,16 +126,19 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// t - list all types in C syntax
 	case '\0':
-		RListIter *k = core->anal->head;
-		while ((k != NULL) && (k != core->anal->tail) && (k->data != NULL)) {
-			r_anal_type_to_str(core->anal, tk;
+	{
+		RListIter *k = core->anal->types->head;
+		while ((k != NULL) && (k != core->anal->types->tail) && (k->data != NULL)) {
+			r_anal_type_to_str(core->anal->types, (RAnalType *)k->data);
 			k = k->n;
 		}
+	}
+		break;
 	case '!':
 		{
 		char *out, *ctype = "";
 		out = r_core_editor (core, ctype);
-		t = r_anal_str_to_type(core->anal, out);
+		t = r_anal_str_to_type(core->anal->types, out);
 		if (t != NULL)
 			r_anal_type_add (core->anal->types, t);
 		free (out);

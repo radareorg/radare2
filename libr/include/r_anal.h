@@ -598,11 +598,12 @@ R_API RAnalType *r_anal_type_new();
 R_API void r_anal_type_add(RList *l, RAnalType *t);
 R_API void r_anal_type_del(RList *l, const char *name);
 R_API RList *r_anal_type_list_new();
+R_API RAnalType *r_anal_type_find(RList *l, const char* name);
 R_API void r_anal_type_list(RList *l, short category, short enabled);
-R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
-R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t);
+R_API RAnalType *r_anal_str_to_type(RList *l, const char* s);
+R_API char *r_anal_type_to_str(RList *l, RAnalType *t);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
-R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
+R_API RAnalType *r_anal_type_loadfile(RList *l, const char *path);
 
 /* anal.c */
 R_API RAnal *r_anal_new();

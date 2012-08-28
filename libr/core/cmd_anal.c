@@ -80,7 +80,7 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			// p2 - name of variable
 			r_anal_var_add (core->anal, fcn, core->offset, delta, scope,
-				r_anal_str_to_type(core->anal, p), p2, p3?atoi(p3):0);
+				r_anal_str_to_type(core->anal->types, p), p2, p3?atoi(p3):0);
 		} else var_help ();
 		break;
 	default:
