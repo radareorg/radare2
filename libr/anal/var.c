@@ -165,11 +165,11 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 			if (v->type->type == R_ANAL_TYPE_ARRAY)
 				eprintf ("%s %s %s[%d] = ",
 					r_anal_var_scope_to_str (anal, v->scope),
-					r_anal_type_to_str (anal, v->type),
+					r_anal_type_to_str (anal->types, v->type),
 					v->name, (int)v->type->custom.a->count);
 			else
 				eprintf ("%s %s %s = ", r_anal_var_scope_to_str (anal, v->scope),
-					r_anal_type_to_str(anal, v->type), v->name);
+					r_anal_type_to_str(anal->types, v->type), v->name);
 			// TODO: implement r_var_dbg_read using r_vm or r_num maybe?? sounds dupped
 			// XXX: not fully implemented
 			eprintf ("0x%"PFMT64x, 0LL);
@@ -194,11 +194,11 @@ R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta
 			if (v->type->type == R_ANAL_TYPE_ARRAY)
 				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d array=%d\n",
 					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
-					r_anal_type_to_str(anal, v->type), v->name, v->delta, (int)v->type->custom.a->count);
+					r_anal_type_to_str(anal->types, v->type), v->name, v->delta, (int)v->type->custom.a->count);
 			else
 				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d\n",
 					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
-					r_anal_type_to_str(anal, v->type), v->name, v->delta);
+					r_anal_type_to_str(anal->types, v->type), v->name, v->delta);
 
 			r_list_foreach (v->accesses, iter2, x) {
 				eprintf ("  0x%08"PFMT64x" %s\n", x->addr, x->set?"set":"get");

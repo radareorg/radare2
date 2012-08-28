@@ -34,5 +34,7 @@ RAnalType* new_pointer_node(char* name, short type, short sign, short modifier);
 RAnalType* new_array_node(char* name, short type, short sign, short modifier, long size);
 RAnalType* new_struct_node(char* name, RAnalType *defs);
 RAnalType* new_union_node(char* name, RAnalType *defs);
-RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes);
+RAnalType* new_alloca_node(long address, long size, RAnalType *defs);
+RAnalLocals* new_locals_node(RAnalType *defs);
+RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes, RAnalLocals *locals);
 

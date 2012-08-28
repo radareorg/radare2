@@ -3,6 +3,10 @@
 #include <r_anal.h>
 #include "cparse/lexglb.h"
 
+// TOTHINK: Right now we are loading types in RList
+// but may be better to add argument RAnal *a, to
+// do target-specific stuff (e.g. endianess, longiness, etc)
+
 void *cdataParseAlloc(void *(*mallocProc)(size_t));
 void *cdataParseFree(void *p, void (*freeProc)(void *));
 extern FILE *yyin;

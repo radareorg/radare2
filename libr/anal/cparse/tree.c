@@ -100,9 +100,28 @@ RAnalType* new_union_node(char* name, RAnalType *defs) {
 	return tmp;
 }
 
+RAnalType* new_alloca_node(long address, long size, RAnalType *defs) {
+	RAnalTypeAlloca *ia = R_NEW(RAnalTypeAlloca);
+	RAnalType *tmp = R_NEW(RAnalType);
+	ia->address = address;
+	ia->size = size;
+	ia->items = defs;
+	tmp->next = NULL;
+	tmp->type = R_ANAL_TYPE_ALLOCA;
+	tmp->custom.al = ia;
+	return tmp;
+}
+
+RAnalLocals* new_locals_node(RAnalType *defs) {
+	RAnalLocals *il = R_NEW (RAnalLocals);
+	il->items = defs;
+	return il;
+}
+
+
 /* Function can return another function or have multiple returns */
 //item_list* new_function_node(char* name, item_list *rets, item_list *args)
-RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes) {
+RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes, RAnalLocals *locals) {
 	RAnalFunction *ifnc = R_NEW (RAnalFunction);
 	RAnalType *tmp = R_NEW (RAnalType);
 	ifnc->name = name;
@@ -111,6 +130,7 @@ RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short 
 	ifnc->call = callconvention;
 	ifnc->attr = attributes;
 	ifnc->args = args;
+	ifnc->locs = locals;
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_FUNCTION;
 	tmp->custom.f = ifnc;

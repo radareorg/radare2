@@ -25,6 +25,8 @@
 %type argdef {RAnalType *}
 %type struct {RAnalType *}
 %type union {RAnalType *}
+%type alloca {RAnalType *}
+%type locals {RAnalLocals *}
 %type variable {RAnalType *}
 %type pointer {RAnalType *}
 %type array {RAnalType *}
@@ -45,27 +47,28 @@ deflist(A) ::= def(B) SEMICOLON. {
 def(A) ::= function(B). { A = B; }
 def(A) ::= struct(B). { A = B; }
 def(A) ::= union(B). { A = B; }
+def(A) ::= alloca(B). { A = B; }
 def(A) ::= variable(B). { A = B; }
 def(A) ::= pointer(B). { A = B; }
 def(A) ::= array(B). { A = B; }
 
-function(A) ::= FUNCTION type(B) name(C) LPARENT arglist(D) RPARENT. {
-	A = new_function_node(C.sval, B.dval, D, R_ANAL_FQUALIFIER_NONE, R_ANAL_CC_TYPE_NONE, NULL);
+function(A) ::= FUNCTION type(B) name(C) LPARENT arglist(D) RPARENT locals(E). {
+	A = new_function_node(C.sval, B.dval, D, R_ANAL_FQUALIFIER_NONE, R_ANAL_CC_TYPE_NONE, NULL, E);
 }
-function(A) ::= FUNCTION fqualifier(B) type(C) name(D) LPARENT arglist(E) RPARENT. {
-	A = new_function_node(D.sval, C.dval, E, B.dval, R_ANAL_CC_TYPE_NONE, NULL);
+function(A) ::= FUNCTION fqualifier(B) type(C) name(D) LPARENT arglist(E) RPARENT locals(F). {
+	A = new_function_node(D.sval, C.dval, E, B.dval, R_ANAL_CC_TYPE_NONE, NULL, F);
 }
-function(A) ::= FUNCTION callconvention(B) type(C) name(D) LPARENT arglist(E) RPARENT. {
-	A = new_function_node(D.sval, C.dval, E, R_ANAL_FQUALIFIER_NONE, B.dval, NULL);
+function(A) ::= FUNCTION callconvention(B) type(C) name(D) LPARENT arglist(E) RPARENT locals(F). {
+	A = new_function_node(D.sval, C.dval, E, R_ANAL_FQUALIFIER_NONE, B.dval, NULL, F);
 }
-function(A) ::= FUNCTION callconvention(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT. {
-	A = new_function_node(E.sval, D.dval, F, C.dval, B.dval, NULL);
+function(A) ::= FUNCTION callconvention(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT locals(G). {
+	A = new_function_node(E.sval, D.dval, F, C.dval, B.dval, NULL, G);
 }
-function(A) ::= FUNCTION attribute(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT. {
-	A = new_function_node(E.sval, D.dval, F, C.dval, R_ANAL_CC_TYPE_NONE, B.sval);
+function(A) ::= FUNCTION attribute(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT locals(G). {
+	A = new_function_node(E.sval, D.dval, F, C.dval, R_ANAL_CC_TYPE_NONE, B.sval, G);
 }
-function(A) ::= FUNCTION attribute(B) callconvention(C) fqualifier(D) type(E) name(F) LPARENT arglist(G) RPARENT. {
-	A = new_function_node(F.sval, E.dval, G, D.dval, C.dval, B.sval);
+function(A) ::= FUNCTION attribute(B) callconvention(C) fqualifier(D) type(E) name(F) LPARENT arglist(G) RPARENT locals(H). {
+	A = new_function_node(F.sval, E.dval, G, D.dval, C.dval, B.sval, H);
 }
 
 fqualifier(A) ::= INLINE. { A.sval = "inline"; A.dval = R_ANAL_FQUALIFIER_INLINE; }
@@ -91,11 +94,19 @@ argdef(A) ::= variable(B). { A = B; }
 argdef(A) ::= pointer(B). { A = B; }
 argdef(A) ::= array(B). { A = B; }
 
+locals ::= .
+locals(A) ::= OBRACE deflist (B) EBRACE. {
+	A = new_locals_node(B);
+}
+
 struct(A) ::= STRUCT name(B) OBRACE deflist(C) EBRACE. {
 	A = new_struct_node(B.sval, C);
 }
 union(A) ::= UNION name(B) OBRACE deflist(C) EBRACE. {
 	A = new_union_node(B.sval, C);
+}
+alloca(A) ::= ALLOCA AT address(B) LPARENT size(C) RPARENT OBRACE deflist(D) EBRACE. {
+	A = new_alloca_node(B.dval, C.dval, D);
 }
 variable(A) ::= qualifier(E) signedness(D) type(C) name(B). {
 	A = new_variable_node(B.sval, C.dval, D.dval, E.dval);
@@ -160,6 +171,7 @@ array(A) ::= qualifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
 			break;
 	}
 }
+address(A) ::= NUMBER(B). { A.dval = B.dval; }
 size(A) ::= NUMBER(B). { A.dval = B.dval; }
 type ::= .
 type(A) ::= CHAR. { A.sval = "char"; A.dval = R_ANAL_TYPE_CHAR; }

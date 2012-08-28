@@ -30,6 +30,7 @@
 "virtual"					{	return(VIRTUAL); }
 "struct"					{	return(STRUCT);	}
 "union"						{	return(UNION); }
+"alloca"					{	return(ALLOCA); }
 "function"					{	return(FUNCTION); }
 
 "u8"						{	return(UINT8); }
@@ -49,7 +50,7 @@
 "WINAPI"					{	return(WINAPI); }
 "thiscall"					{	return(THISCALL); }
 
-
+"@"							{	return(AT); }
 "{"							{	return(OBRACE); }
 "}"							{	return(EBRACE); }
 "["							{	return(LBRACKET); }

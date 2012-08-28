@@ -31,6 +31,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
 	fcn->args = NULL;
+	fcn->locs = NULL;
 	return fcn;
 }
 
@@ -49,6 +50,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->refs);
 	r_list_free (fcn->xrefs);
 	r_list_free (fcn->vars);
+	r_list_free (fcn->locs);
 	r_list_free (fcn->bbs);
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);

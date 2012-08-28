@@ -45,8 +45,9 @@ enum {
 	R_ANAL_TYPE_ARRAY = 3,
 	R_ANAL_TYPE_STRUCT = 4,
 	R_ANAL_TYPE_UNION = 5,
-	R_ANAL_TYPE_FUNCTION = 6,
-	R_ANAL_TYPE_ANY = 7,
+	R_ANAL_TYPE_ALLOCA = 6,
+	R_ANAL_TYPE_FUNCTION = 7,
+	R_ANAL_TYPE_ANY = 8,
 };
 
 // [0:3] bits - place to store variable size
@@ -140,6 +141,13 @@ typedef struct r_anal_type_union_t {
 	void *parent;
 	RAnalType *items;
 } RAnalTypeUnion;
+
+typedef struct r_anal_type_alloca_t {
+	long address;
+	long size;
+	void *parent;
+	RAnalType *items;
+} RAnalTypeAlloca;
 
 enum {
 	R_ANAL_FQUALIFIER_NONE = 0,
@@ -247,6 +255,10 @@ typedef struct r_anal_diff_t {
 	char *name;
 } RAnalDiff;
 
+typedef struct r_anal_locals_t {
+	RAnalType *items;
+} RAnalLocals;
+
 typedef struct r_anal_fcn_store_t {
 	RHashTable64 *h;
 	RList *l;
@@ -273,6 +285,7 @@ typedef struct r_anal_type_function_t {
 	int depth;
 	RAnalType *args; // list of arguments
 	RAnalVarSub varsubs[R_ANAL_VARSUBS];
+	RAnalLocals *locs; // list of local variables
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
 	RList *bbs;
@@ -291,6 +304,7 @@ struct r_anal_type_t {
 		RAnalTypeArray *a;
 		RAnalTypeStruct *s;
 		RAnalTypeUnion *u;
+		RAnalTypeAlloca *al;
 		RAnalFunction *f;
 	} custom;
 	RAnalType *next;
