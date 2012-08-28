@@ -158,19 +158,37 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	r_print_cursor (p, idx, 0);
 }
 
-R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len) {
+R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	int i, w = p->cols*0.7;
-	p->printf ("#define _BUFFER_SIZE %d\n", len);
-	p->printf ("unsigned char buffer[%d] = {", len);
-	p->interrupt = 0;
-	for (i=0; !p->interrupt && i<len; i++) {
-		if (!(i%w))
-			p->printf ("\n  ");
-		r_print_cursor (p, i, 1);
-		p->printf ("0x%02x, ", buf[i]);
-		r_print_cursor (p, i, 0);
+	switch (lang) {
+	case '?':
+		eprintf ("Valid print code formats are: C and Python\n");
+		break;
+	case 'P':
+	case 'p':
+		p->printf ("import struct\nbuf = struct.pack (\"%dB\", ", len);
+		for (i=0; !p->interrupt && i<len; i++) {
+			if (!(i%w))
+				p->printf ("\n");
+			r_print_cursor (p, i, 1);
+			p->printf ("0x%02x%c", buf[i], (i+1<len)?',':')');
+			r_print_cursor (p, i, 0);
+		}
+		p->printf ("\n");
+		break;
+	default:
+		p->printf ("#define _BUFFER_SIZE %d\n", len);
+		p->printf ("unsigned char buffer[%d] = {", len);
+		p->interrupt = 0;
+		for (i=0; !p->interrupt && i<len; i++) {
+			if (!(i%w))
+				p->printf ("\n  ");
+			r_print_cursor (p, i, 1);
+			p->printf ("0x%02x, ", buf[i]);
+			r_print_cursor (p, i, 0);
+		}
+		p->printf ("};\n");
 	}
-	p->printf ("};\n");
 }
 
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode) {

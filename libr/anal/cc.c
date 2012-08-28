@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 -- pancake@nopcode.org */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 
 // moved from core/cmd.c // the loop that does the funny trick ..
 #if 0

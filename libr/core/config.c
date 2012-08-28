@@ -438,6 +438,8 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->printf = r_cons_printf;
 	cfg->num = core->num;
 
+	r_config_set (cfg, "dir.types", "/usr/include");
+	r_config_desc (cfg, "dir.types", "Default path to look for cparse type files");
 	r_config_set (cfg, "dir.source", "");
 	r_config_desc (cfg, "dir.source", "Path to find source files");
 	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);

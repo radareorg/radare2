@@ -7,7 +7,7 @@
 }
 
 %syntax_error {
-	printf("Syntax error!\n");
+	eprintf ("Syntax error!\n");
 }
 
 %name cdataParse
@@ -15,7 +15,7 @@
 %token_type {Token}
 %default_type {Token}
 
-%extra_argument { RList *trees}
+%extra_argument { RList *trees }
 
 %type source {RAnalType *}
 %type deflist {RAnalType *}
@@ -98,7 +98,6 @@ locals ::= .
 locals(A) ::= OBRACE deflist (B) EBRACE. {
 	A = new_locals_node(B);
 }
-
 struct(A) ::= STRUCT name(B) OBRACE deflist(C) EBRACE. {
 	A = new_struct_node(B.sval, C);
 }
@@ -113,20 +112,20 @@ variable(A) ::= qualifier(E) signedness(D) type(C) name(B). {
 }
 variable(A) ::= qualifier(E) shorttype(C) name(B). {
 	switch (C.dval) {
-		case R_ANAL_UINT8_T:
-			A = new_variable_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
-			break;
-		case R_ANAL_UINT16_T:
-			A = new_variable_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, E.dval);
-			break;
-		case R_ANAL_UINT32_T:
-			A = new_variable_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, E.dval);
-			break;
-		case R_ANAL_UINT64_T:
-			A = new_variable_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, E.dval);
-			break;
-		default:
-			break;
+	case R_ANAL_UINT8_T:
+		A = new_variable_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
+		break;
+	case R_ANAL_UINT16_T:
+		A = new_variable_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, E.dval);
+		break;
+	case R_ANAL_UINT32_T:
+		A = new_variable_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, E.dval);
+		break;
+	case R_ANAL_UINT64_T:
+		A = new_variable_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, E.dval);
+		break;
+	default:
+		break;
 	}
 }
 pointer(A) ::= qualifier(E) signedness(D) type(C) ASTERISK name(B). {
@@ -134,20 +133,20 @@ pointer(A) ::= qualifier(E) signedness(D) type(C) ASTERISK name(B). {
 }
 pointer(A) ::= qualifier(E) shorttype(C) ASTERISK name(B). {
 	switch (C.dval) {
-		case R_ANAL_UINT8_T:
-			A = new_pointer_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
-			break;
-		case R_ANAL_UINT16_T:
-			A = new_pointer_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, E.dval);
-			break;
-		case R_ANAL_UINT32_T:
-			A = new_pointer_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, E.dval);
-			break;
-		case R_ANAL_UINT64_T:
-			A = new_pointer_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, E.dval);
-			break;
-		default:
-			break;
+	case R_ANAL_UINT8_T:
+		A = new_pointer_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
+		break;
+	case R_ANAL_UINT16_T:
+		A = new_pointer_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, E.dval);
+		break;
+	case R_ANAL_UINT32_T:
+		A = new_pointer_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, E.dval);
+		break;
+	case R_ANAL_UINT64_T:
+		A = new_pointer_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, E.dval);
+		break;
+	default:
+		break;
 	}
 }
 array(A) ::= qualifier(F) signedness(E) type(D) name(B) LBRACKET size(C) RBRACKET. {
@@ -155,20 +154,20 @@ array(A) ::= qualifier(F) signedness(E) type(D) name(B) LBRACKET size(C) RBRACKE
 }
 array(A) ::= qualifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
 	switch (D.dval) {
-		case R_ANAL_UINT8_T:
-			A = new_array_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
-			break;
-		case R_ANAL_UINT16_T:
-			A = new_array_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
-			break;
-		case R_ANAL_UINT32_T:
-			A = new_array_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
-			break;
-		case R_ANAL_UINT64_T:
-			A = new_array_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
-			break;
-		default:
-			break;
+	case R_ANAL_UINT8_T:
+		A = new_array_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		break;
+	case R_ANAL_UINT16_T:
+		A = new_array_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		break;
+	case R_ANAL_UINT32_T:
+		A = new_array_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		break;
+	case R_ANAL_UINT64_T:
+		A = new_array_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		break;
+	default:
+		break;
 	}
 }
 address(A) ::= NUMBER(B). { A.dval = B.dval; }
@@ -195,4 +194,3 @@ qualifier(A) ::= CONST. {A.sval = "const"; A.dval = R_ANAL_VAR_CONST; }
 qualifier(A) ::= REGISTER. { A.sval = "register"; A.dval = R_ANAL_VAR_REGISTER; }
 qualifier(A) ::= VOLATILE. { A.sval = "volatile"; A.dval = R_ANAL_VAR_VOLATILE; }
 name(A) ::= IDENTIFIER(B). { A.sval = B.sval; }
-

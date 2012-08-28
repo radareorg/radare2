@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
@@ -160,8 +160,8 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		r_print_fill (core->print, ptr, core->blocksize);
-if (ptr != core->block)
-free (ptr);
+		if (ptr != core->block)
+			free (ptr);
 		/* TODO: Reimplement using API */ {
 			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b 512 '%s'", core->file->filename);
 			if (out) {
@@ -299,7 +299,7 @@ free (ptr);
 			eprintf ("  pdf  : disassemble function\n");
 			eprintf ("  pdi  : like 'pi', with offset and bytes\n");
 			eprintf ("  pdl  : show instruction sizes\n");
-return 0;
+			return 0;
 			break;
 		}
 		//if (core->visual)
@@ -330,19 +330,29 @@ return 0;
 		}
 		break;
 	case 's':
-		if (input[1]=='p') {
+		switch (input[1]) {
+		case 'p':
+			{
 			int mylen = core->block[0];
 			// TODO: add support for 2-4 byte length pascal strings
-			r_print_string (core->print, core->offset, core->block, mylen, 0, 1, 0); //, 78, 1);
-			core->num->value = mylen;
-		} else
-		if (input[1]==' ') {
+			if (mylen < core->blocksize) {
+				r_print_string (core->print, core->offset,
+					core->block, mylen, 0, 1, 0);
+				core->num->value = mylen;
+			} else core->num->value = 0; // error
+			}
+			break;
+		case 'w':
+			r_print_string (core->print, core->offset, core->block, len, 1, 1, 0);
+			break;
+		case ' ':
 			len = r_num_math (core->num, input+2);
-			r_print_string (core->print, core->offset, core->block, len, 0, 0, 0); //, 78, 1);
-		} else r_print_string (core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
-		break;
-	case 'S':
-		r_print_string (core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
+			r_print_string (core->print, core->offset, core->block, len, 0, 0, 0);
+			break;
+		default:
+			r_print_string (core->print, core->offset, core->block, len, 0, 1, 0);
+			break;
+		}
 		break;
 	case 'm':
 		if (input[1]=='?') {
@@ -363,7 +373,7 @@ return 0;
 		r_print_string (core->print, core->offset, core->block, len, 1, 1, 1); //, 78, 1);
 		break;
 	case 'c':
-		r_print_code (core->print, core->offset, core->block, len); //, 78, 1);
+		r_print_code (core->print, core->offset, core->block, len, input[1]); //, 78, 1);
 		break;
 	case 'r':
 		r_print_raw (core->print, core->block, len);
@@ -530,12 +540,12 @@ return 0;
 		" pD [len]     disassemble N bytes\n"
 		" p[w|q] [len] word (32), qword (64) value dump\n"
 		" po [len]     octal dump of N bytes\n"
-		" pc [len]     output C format\n"
+		" pc[p] [len]  output C (or python) format\n"
 		" pf [fmt]     print formatted data\n"
 		" pm [magic]   print libmagic data (pm? for more information)\n"
 		" ps [len]     print string\n"
 		" psp          print pascal string\n"
-		" pS [len]     print wide string\n"
+		" psw [len]    print wide string\n"
 		" pt [len]     print different timestamps\n"
 		" pr [len]     print N raw bytes\n"
 		" pu [len]     print N url encoded bytes\n"

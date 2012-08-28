@@ -314,7 +314,6 @@ struct r_anal_type_t {
 	char* filename;
 };
 
-
 enum {
 	R_META_WHERE_PREV = -1,
 	R_META_WHERE_HERE = 0,

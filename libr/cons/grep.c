@@ -117,6 +117,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
+	if (!cons->buffer) {
+		cons->buffer_len = len+20;
+		cons->buffer = malloc (cons->buffer_len);
+		cons->buffer[0] = 0;
+	}
 	out = tbuf = calloc (1, len);
 	tline = malloc (len);
 	cons->lines = 0;
@@ -156,8 +161,9 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	free (tbuf);
 	free (tline);
 	if (cons->grep.counter) {
+		if (cons->buffer_len<10) cons->buffer_len = 10; // HACK
 		snprintf (cons->buffer, cons->buffer_len, "%d\n", cons->lines);
-		cons->buffer_len = strlen (cons->buffer);;
+		cons->buffer_len = strlen (cons->buffer);
 	}
 	return cons->lines;
 }

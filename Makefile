@@ -189,7 +189,7 @@ shot:
 # TODO: test/ must be removed
 .PHONY: test tests
 test tests:
-	if [ -d r2-regressions ]; then \
+	@if [ -d r2-regressions ]; then \
 		cd r2-regressions ; git pull ; \
 	else \
 		git clone git://github.com/vext01/r2-regressions.git ; \

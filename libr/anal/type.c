@@ -79,13 +79,11 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 
 // TODO: Add types to RList instead of RAnalType
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
-	FILE *cfile;
 	void *pParser;
 	char buf[4096];
 	int n, yv, yylval = 0;
 	RAnalType *tTree = NULL;
-
-	cfile = fopen (path, "ro");
+	FILE *cfile = fopen (path, "r");
 	if (!cfile)
 		return NULL;
 	// TODO: use r_file_slurp ?
@@ -99,6 +97,7 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	}
 	fclose (cfile);
 	cdataParse (pParser, 0, yylval, tTree);
+
 	cdataParseFree (pParser, free);
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;
