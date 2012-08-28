@@ -7,7 +7,7 @@
 #include <r_anal.h>
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len) {
-	unsigned long opcode;
+	unsigned int opcode;
 	char buf[10];
 	int reg; 
 	int oplen = (anal->bits==16)?2:4;
@@ -20,7 +20,6 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int le
 	op->length = oplen;
 
 	r_mem_copyendian ((ut8*)&opcode, bytes, 4, anal->big_endian);
-	op->type = R_ANAL_OP_TYPE_UNK;
 
 	switch (opcode & 0x3f) {
 	// J-Type
@@ -30,8 +29,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int le
 		//XXX TODO
 		//eprintf("UJUMP\n");
 		//op->type = R_ANAL_OP_TYPE_UJMP;
-		break;
-		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->type = R_ANAL_OP_TYPE_UJMP;
 		break;
 	// R-Type
 	case 1: // bltz
@@ -68,7 +66,10 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int le
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		break;
 	default:
-		switch(opcode) {
+		switch (opcode) {
+		case 0:
+			op->type = R_ANAL_OP_TYPE_NOP;
+			break;
 		case 32: // add
 		case 33: // addu
 			op->type = R_ANAL_OP_TYPE_ADD;
@@ -84,9 +85,6 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int le
 		case 0x0000000d: // case 26:
 		case 0x0d000000: // break
 			op->type = R_ANAL_OP_TYPE_TRAP; 
-			break;
-		case 0:
-			op->type = R_ANAL_OP_TYPE_NOP;
 			break;
 		default:
 			//switch((opcode<<24)&0xff) { //bytes[3]) { // TODO handle endian ?
