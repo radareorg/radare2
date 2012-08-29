@@ -39,6 +39,10 @@ typedef struct r_meta_t {
 
 /* CPARSE stuff */
 
+
+#define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
+#define R_ANAL_UNMASK_SIGN(x) (((x& R_ANAL_VAR_TYPE_SIGN_MASK)>> R_ANAL_VAR_TYPE_SIGN_SHIFT)==R_ANAL_TYPE_UNSIGNED)?0:1
+
 enum {
 	R_ANAL_TYPE_VARIABLE = 1,
 	R_ANAL_TYPE_POINTER = 2,
@@ -614,7 +618,7 @@ R_API RList *r_anal_type_list_new();
 R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
-R_API const char *r_anal_type_to_str(RAnal *a, RAnalType *t);
+R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 

@@ -72,6 +72,7 @@ RAnalType* new_struct_node(char* name, RAnalType *defs) {
 	RAnalType *tmp = R_NEW (RAnalType);
 	istr->name = name;
 	istr->items = defs;
+	tmp->name = istr->name;
 	tmp->next = NULL;
 	tmp->type = R_ANAL_TYPE_STRUCT;
 	tmp->custom.s = istr;

@@ -2,6 +2,7 @@
 
 #include <r_anal.h>
 #include "cparse/lexglb.h"
+#include "cparse/cdata.h"
 
 // TOTHINK: Right now we are loading types in RList
 // but may be better to add argument RAnal *a, to
@@ -16,7 +17,9 @@ extern YY_BUFFER_STATE yy_scan_string(const char*);
 extern void yy_delete_buffer(YY_BUFFER_STATE);
 
 R_API RAnalType *r_anal_type_new() {
-	return R_NEW0 (RAnalType);
+	RAnalType *type = R_NEW0 (RAnalType);
+	type->name = "<root>";
+	return type;
 }
 
 R_API RList *r_anal_type_list_new() {
@@ -56,14 +59,85 @@ R_API RAnalType *r_anal_type_find(RAnal *a, const char *name) {
 	return NULL;
 }
 
-R_API const char* r_anal_type_to_str(RAnal *a, RAnalType *t) {
-	return "<none>";
+static const char *analtype(ushort t) {
+	switch (t) {
+	// XXX: these types are in cparse/cdata.h
+	case R_ANAL_TYPE_VOID:
+		return "void";
+	case R_ANAL_TYPE_FLOAT:
+		return "float";
+	case R_ANAL_TYPE_DOUBLE:
+		return "double";
+	case R_ANAL_TYPE_LONGLONG:
+		return "long long";
+	case R_ANAL_TYPE_SHORT:
+		return "short";
+	case R_ANAL_TYPE_CHAR:
+		return "char";
+	case R_ANAL_TYPE_INT:
+		return "int";
+	}
+	return "<unknown>";
+}
+
+R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep) {
+	char *tmp, buf[1000];
+	if (!t) return NULL;
+	buf[0] = '\0';
+	switch (t->type) {
+	case R_ANAL_TYPE_FUNCTION:
+		tmp = r_anal_type_to_str (a, t->custom.f->args, ", ");
+		sprintf (buf, "function %s %s(%s);",
+			analtype (t->custom.f->rets), t->custom.f->name, tmp);
+		free (tmp);
+		break;
+	case R_ANAL_TYPE_STRUCT:
+		tmp = r_anal_type_to_str (a, t->custom.s->items, "; ");
+		// TODO: iterate over all elements in struct
+		sprintf (buf, "struct %s { %s };", t->custom.f->name, tmp);
+		free (tmp);
+		break;
+	case R_ANAL_TYPE_UNION:
+	case R_ANAL_TYPE_ARRAY:
+	case R_ANAL_TYPE_POINTER:
+	case R_ANAL_TYPE_VARIABLE:
+	{
+		int custom = t->custom.v->type;
+		int type = R_ANAL_UNMASK_TYPE (custom);
+		int sign = R_ANAL_UNMASK_SIGN (sign);
+		switch (type) {
+		case R_ANAL_VAR_TYPE_BYTE:
+			sprintf(buf, "%s %s", sign?"char":"ut8", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_WORD:
+			sprintf(buf, "%s %s", sign?"int":"unsigned int", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_DWORD:
+			sprintf(buf, "%s %s", sign?"int":"ut32", t->custom.v->name);
+			break;
+		}
+		while (t->next) {
+			char *p = r_anal_type_to_str (a, t->next, sep);
+			strcat (buf, sep);
+			strcat (buf, p);
+			free (p);
+			t = t->next;
+		}
+	}
+		break;
+	default:
+		break;
+	}
+	if (!*buf) strcpy (buf, "<oops>");
+	// XXX: control overflow in buf
+	return strdup (buf);
 }
 
 // TODO: Add types to RList instead or RAnalType
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
+	char *tmp;
 	int yv;
-	RAnalType *tTree = NULL;
+	RAnalType *tTree = R_NEW0 (RAnalType); //NULL;
 
 	void *pParser = cdataParseAlloc (malloc);
 	yy_scan_string (type);
@@ -74,6 +148,15 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 	cdataParseFree (pParser, free);
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;
+
+	while (tTree->next) {
+		RAnalType *t = tTree->next;
+		tmp = r_anal_type_to_str (a, t, "; ");
+		r_cons_printf ("-> (%s)\n", tmp);
+		free (tmp);
+		tTree = tTree->next;
+
+	}
 	return NULL;
 }
 
