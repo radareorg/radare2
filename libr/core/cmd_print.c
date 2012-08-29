@@ -223,7 +223,7 @@ static int cmd_print(void *data, const char *input) {
 			int j, ret, err = 0;
 			const ut8 *buf = core->block;
 			if (l==0) l = len;
-			for (i=j=0; i<core->blocksize && j<len; i+=ret,j++ ) {
+			for (i=j=0; i<core->blocksize && j<len && j<l; i+=ret,j++ ) {
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 				if (ret<1) {
 					ret = err = 1;
@@ -240,7 +240,7 @@ static int cmd_print(void *data, const char *input) {
 				int j, ret, err = 0;
 				const ut8 *buf = core->block;
 				if (l==0) l = len;
-				for (i=j=0; i<core->blocksize && j<len; i++,j++ ) {
+				for (i=j=0; i<core->blocksize && j<len && j<l; i++,j++ ) {
 					ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 					if (ret<1) {
 						ret = err = 1;

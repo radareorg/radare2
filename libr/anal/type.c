@@ -152,7 +152,7 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 	while (tTree->next) {
 		RAnalType *t = tTree->next;
 		tmp = r_anal_type_to_str (a, t, "; ");
-		r_cons_printf ("-> (%s)\n", tmp);
+		eprintf ("-> (%s)\n", tmp);
 		free (tmp);
 		tTree = tTree->next;
 
@@ -162,6 +162,7 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 
 // TODO: Add types to RList instead of RAnalType
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
+	char *tmp;
 	void *pParser;
 	char buf[4096];
 	int n, yv, yylval = 0;
@@ -185,5 +186,13 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;
 	// TODO: insert '.filename' field for all elements in this tree
+	while (tTree->next) {
+		RAnalType *t = tTree->next;
+		tmp = r_anal_type_to_str (a, t, "; ");
+		eprintf ("-> (%s)\n", tmp);
+		free (tmp);
+		tTree = tTree->next;
+
+	}
 	return tTree;
 }

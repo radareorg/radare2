@@ -11,7 +11,7 @@ static int cmd_type(void *data, const char *input) {
 		const char *tname = input + 1;
 		t = r_anal_type_find (core->anal, tname);
 		if (t == NULL) eprintf ("Type %s not found!\n", tname);
-		else r_anal_type_to_str (core->anal, t);
+		else r_anal_type_to_str (core->anal, t, "; ");
 	}
 		break;
 	// t* - list all types in 'pf' syntax
@@ -101,7 +101,7 @@ static int cmd_type(void *data, const char *input) {
 		RListIter *k;
 		RAnalType *t;
 		r_list_foreach (core->anal->types, k, t) {
-			const char *str = r_anal_type_to_str (core->anal, t);
+			const char *str = r_anal_type_to_str (core->anal, t, "; ");
 			r_cons_printf ("%s\n", str);
 		}
 	}
