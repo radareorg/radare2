@@ -114,16 +114,16 @@ variable(A) ::= qualifier(E) signedness(D) type(C) name(B). {
 variable(A) ::= qualifier(E) shorttype(C) name(B). {
 	switch (C.dval) {
 	case R_ANAL_UINT8_T:
-		A = new_variable_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, E.dval);
 		break;
 	case R_ANAL_UINT16_T:
-		A = new_variable_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, E.dval);
 		break;
 	case R_ANAL_UINT32_T:
-		A = new_variable_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, E.dval);
 		break;
 	case R_ANAL_UINT64_T:
-		A = new_variable_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, E.dval);
 		break;
 	default:
 		break;
@@ -135,16 +135,16 @@ pointer(A) ::= qualifier(E) signedness(D) type(C) ASTERISK name(B). {
 pointer(A) ::= qualifier(E) shorttype(C) ASTERISK name(B). {
 	switch (C.dval) {
 	case R_ANAL_UINT8_T:
-		A = new_pointer_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, E.dval);
 		break;
 	case R_ANAL_UINT16_T:
-		A = new_pointer_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, E.dval);
 		break;
 	case R_ANAL_UINT32_T:
-		A = new_pointer_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, E.dval);
 		break;
 	case R_ANAL_UINT64_T:
-		A = new_pointer_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, E.dval);
 		break;
 	default:
 		break;
@@ -156,16 +156,16 @@ array(A) ::= qualifier(F) signedness(E) type(D) name(B) LBRACKET size(C) RBRACKE
 array(A) ::= qualifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
 	switch (D.dval) {
 	case R_ANAL_UINT8_T:
-		A = new_array_node(B.sval, R_ANAL_TYPE_SHORT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
 		break;
 	case R_ANAL_UINT16_T:
-		A = new_array_node(B.sval, R_ANAL_TYPE_INT, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
 		break;
 	case R_ANAL_UINT32_T:
-		A = new_array_node(B.sval, R_ANAL_TYPE_LONG, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
 		break;
 	case R_ANAL_UINT64_T:
-		A = new_array_node(B.sval, R_ANAL_TYPE_LONGLONG, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
 		break;
 	default:
 		break;
@@ -174,14 +174,18 @@ array(A) ::= qualifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
 address(A) ::= NUMBER(B). { A.dval = B.dval; }
 size(A) ::= NUMBER(B). { A.dval = B.dval; }
 type ::= .
-type(A) ::= CHAR. { A.sval = "char"; A.dval = R_ANAL_TYPE_CHAR; }
-type(A) ::= SHORT. { A.sval = "short"; A.dval = R_ANAL_TYPE_SHORT; }
-type(A) ::= INTEGER. { A.sval = "int"; A.dval = R_ANAL_TYPE_INT; }
-type(A) ::= LONG. { A.sval = "long"; A.dval = R_ANAL_TYPE_LONG; }
-type(A) ::= LONG LONG. { A.sval = "long long"; A.dval = R_ANAL_TYPE_LONGLONG; }
-type(A) ::= FLOAT. { A.sval = "float"; A.dval = R_ANAL_TYPE_FLOAT; }
-type(A) ::= DOUBLE. { A.sval = "double"; A.dval = R_ANAL_TYPE_DOUBLE; }
-type(A) ::= VOID. { A.sval = "void"; A.dval = R_ANAL_TYPE_VOID; }
+type(A) ::= CHAR. { A.sval = "char"; A.dval = R_ANAL_VAR_TYPE_CHAR; }
+type(A) ::= BYTE. { A.sval = "byte"; A.dval = R_ANAL_VAR_TYPE_BYTE; }
+type(A) ::= WORD. { A.sval = "word"; A.dval = R_ANAL_VAR_TYPE_WORD; }
+type(A) ::= DWORD. { A.sval = "dword"; A.dval = R_ANAL_VAR_TYPE_DWORD; }
+type(A) ::= QWORD. { A.sval = "qword"; A.dval = R_ANAL_VAR_TYPE_QWORD; }
+type(A) ::= SHORT. { A.sval = "short"; A.dval = R_ANAL_VAR_TYPE_SHORT; }
+type(A) ::= INTEGER. { A.sval = "int"; A.dval = R_ANAL_VAR_TYPE_INT; }
+type(A) ::= LONG. { A.sval = "long"; A.dval = R_ANAL_VAR_TYPE_LONG; }
+type(A) ::= LONG LONG. { A.sval = "long long"; A.dval = R_ANAL_VAR_TYPE_LONGLONG; }
+type(A) ::= FLOAT. { A.sval = "float"; A.dval = R_ANAL_VAR_TYPE_FLOAT; }
+type(A) ::= DOUBLE. { A.sval = "double"; A.dval = R_ANAL_VAR_TYPE_DOUBLE; }
+type(A) ::= VOID. { A.sval = "void"; A.dval = R_ANAL_VAR_TYPE_VOID; }
 shorttype(A) ::= UINT8. { A.dval = R_ANAL_UINT8_T; }
 shorttype(A) ::= UINT16. { A.dval = R_ANAL_UINT16_T; }
 shorttype(A) ::= UINT32. { A.dval = R_ANAL_UINT32_T; }

@@ -13,7 +13,10 @@
 %%
 "void"						{	return(VOID); }
 "char"						{	return(CHAR); }
-"byte"						{	return(CHAR); }
+"byte"						{	return(BYTE); }
+"word"						{	return(WORD); }
+"dword"						{	return(DWORD); }
+"qword"						{	return(QWORD); }
 "int"						{	return(INTEGER); }
 "long"						{	return(LONG); }
 "short"						{	return(SHORT); }

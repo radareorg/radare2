@@ -441,15 +441,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	strcpy(str, "function ");
 	strcat(str, sig);
 
-	/* Send whole definition to cparse */
-	int yv, yylval = 0;
-	void *pParser = cdataParseAlloc(malloc);
-	yy_scan_string(str);
-	while ((yv = yylex()) != 0) {
-		cdataParse(pParser, yv, yylval);
-	}
-	cdataParse(pParser, 0, yylval);
-	cdataParseFree(pParser, free);
+	t = r_anal_str_to_type(a, str);
 
 	/* TODO: Improve arguments parsing */
 

@@ -5,14 +5,14 @@ struct Token {
 
 typedef struct Token Token;
 
-#define R_ANAL_TYPE_CHAR		0
-#define R_ANAL_TYPE_SHORT		1
-#define R_ANAL_TYPE_INT			2
-#define R_ANAL_TYPE_LONG		3
-#define R_ANAL_TYPE_LONGLONG	4
-#define R_ANAL_TYPE_FLOAT		5
-#define R_ANAL_TYPE_DOUBLE		6
-#define R_ANAL_TYPE_VOID		7
+//#define R_ANAL_TYPE_CHAR		0
+//#define R_ANAL_TYPE_SHORT		1
+//#define R_ANAL_TYPE_INT			2
+//#define R_ANAL_TYPE_LONG		3
+//#define R_ANAL_TYPE_LONGLONG	4
+//#define R_ANAL_TYPE_FLOAT		5
+//#define R_ANAL_TYPE_DOUBLE		6
+//#define R_ANAL_TYPE_VOID		7
 #define R_ANAL_TYPE_SIGNED		8
 #define R_ANAL_TYPE_UNSIGNED	9
 

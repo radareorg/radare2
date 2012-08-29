@@ -61,20 +61,29 @@ R_API RAnalType *r_anal_type_find(RAnal *a, const char *name) {
 
 static const char *analtype(ushort t) {
 	switch (t) {
-	// XXX: these types are in cparse/cdata.h
-	case R_ANAL_TYPE_VOID:
+	case R_ANAL_VAR_TYPE_VOID:
 		return "void";
-	case R_ANAL_TYPE_FLOAT:
+	case R_ANAL_VAR_TYPE_BYTE:
+		return "byte";
+	case R_ANAL_VAR_TYPE_WORD:
+		return "word";
+	case R_ANAL_VAR_TYPE_DWORD:
+		return "dword";
+	case R_ANAL_VAR_TYPE_QWORD:
+		return "qword";
+	case R_ANAL_VAR_TYPE_FLOAT:
 		return "float";
-	case R_ANAL_TYPE_DOUBLE:
+	case R_ANAL_VAR_TYPE_DOUBLE:
 		return "double";
-	case R_ANAL_TYPE_LONGLONG:
+	case R_ANAL_VAR_TYPE_LONGLONG:
 		return "long long";
-	case R_ANAL_TYPE_SHORT:
+	case R_ANAL_VAR_TYPE_LONG:
+		return "long";
+	case R_ANAL_VAR_TYPE_SHORT:
 		return "short";
-	case R_ANAL_TYPE_CHAR:
+	case R_ANAL_VAR_TYPE_CHAR:
 		return "char";
-	case R_ANAL_TYPE_INT:
+	case R_ANAL_VAR_TYPE_INT:
 		return "int";
 	}
 	return "<unknown>";
@@ -94,12 +103,62 @@ R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep) {
 	case R_ANAL_TYPE_STRUCT:
 		tmp = r_anal_type_to_str (a, t->custom.s->items, "; ");
 		// TODO: iterate over all elements in struct
-		sprintf (buf, "struct %s { %s };", t->custom.f->name, tmp);
+		sprintf (buf, "struct %s { %s };", t->custom.s->name, tmp);
 		free (tmp);
 		break;
 	case R_ANAL_TYPE_UNION:
+		tmp = r_anal_type_to_str (a, t->custom.u->items, "; ");
+		sprintf (buf, "union %s { %s };", t->custom.u->name, tmp);
 	case R_ANAL_TYPE_ARRAY:
 	case R_ANAL_TYPE_POINTER:
+	{
+		int custom = t->custom.p->type;
+		int type = R_ANAL_UNMASK_TYPE (custom);
+		int sign = R_ANAL_UNMASK_SIGN (sign);
+		switch (type) {
+		case R_ANAL_VAR_TYPE_BYTE:
+			sprintf(buf, "%s *%s", sign?"byte":"ut8", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_WORD:
+			sprintf(buf, "%s *%s", sign?"word":"ut16", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_DWORD:
+			sprintf(buf, "%s *%s", sign?"dword":"ut32", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_QWORD:
+			sprintf(buf, "%s *%s", sign?"qword":"ut64", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_CHAR:
+			sprintf(buf, "%s *%s", sign?"char":"unsigned char", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_SHORT:
+			sprintf(buf, "%s *%s", sign?"short":"unsigned short", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_INT:
+			sprintf(buf, "%s *%s", sign?"int":"unsigned int", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_LONG:
+			sprintf(buf, "%s *%s", sign?"long":"unsigned long", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_LONGLONG:
+			sprintf(buf, "%s *%s", sign?"long long":"unsigned long long", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_FLOAT:
+			sprintf(buf, "%s *%s", sign?"float":"unsigned float", t->custom.p->name);
+			break;
+		case R_ANAL_VAR_TYPE_DOUBLE:
+			sprintf(buf, "%s *%s", sign?"double":"unsigned double", t->custom.p->name);
+			break;
+		}
+		while (t->next) {
+			char *p = r_anal_type_to_str (a, t->next, sep);
+			strcat (buf, sep);
+			strcat (buf, p);
+			free (p);
+			t = t->next;
+		}
+	}
+
 	case R_ANAL_TYPE_VARIABLE:
 	{
 		int custom = t->custom.v->type;
@@ -107,13 +166,37 @@ R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep) {
 		int sign = R_ANAL_UNMASK_SIGN (sign);
 		switch (type) {
 		case R_ANAL_VAR_TYPE_BYTE:
-			sprintf(buf, "%s %s", sign?"char":"ut8", t->custom.v->name);
+			sprintf(buf, "%s %s", sign?"byte":"ut8", t->custom.v->name);
 			break;
 		case R_ANAL_VAR_TYPE_WORD:
-			sprintf(buf, "%s %s", sign?"int":"unsigned int", t->custom.v->name);
+			sprintf(buf, "%s %s", sign?"word":"ut16", t->custom.v->name);
 			break;
 		case R_ANAL_VAR_TYPE_DWORD:
-			sprintf(buf, "%s %s", sign?"int":"ut32", t->custom.v->name);
+			sprintf(buf, "%s %s", sign?"dword":"ut32", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_QWORD:
+			sprintf(buf, "%s %s", sign?"qword":"ut64", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_CHAR:
+			sprintf(buf, "%s %s", sign?"char":"unsigned char", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_SHORT:
+			sprintf(buf, "%s %s", sign?"short":"unsigned short", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_INT:
+			sprintf(buf, "%s %s", sign?"int":"unsigned int", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_LONG:
+			sprintf(buf, "%s %s", sign?"long":"unsigned long", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_LONGLONG:
+			sprintf(buf, "%s %s", sign?"long long":"unsigned long long", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_FLOAT:
+			sprintf(buf, "%s %s", sign?"float":"unsigned float", t->custom.v->name);
+			break;
+		case R_ANAL_VAR_TYPE_DOUBLE:
+			sprintf(buf, "%s %s", sign?"double":"unsigned double", t->custom.v->name);
 			break;
 		}
 		while (t->next) {
