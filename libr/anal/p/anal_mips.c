@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -47,7 +47,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int le
 		// calculate jump
 		break;
 	case 3: // jalr
-	//case 9: // jalr
+	case 9: // jalr
 		reg = opcode>>24;
 		if (reg<10) {
 			op->type = R_ANAL_OP_TYPE_UCALL;

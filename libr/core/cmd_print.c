@@ -251,6 +251,28 @@ static int cmd_print(void *data, const char *input) {
 				return R_TRUE;
 			}
 			break;
+		case 'r':
+			eprintf ("TODO: recursive disassembler based on code analysis\n");
+			{
+			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			if (f) {
+				RListIter *iter;
+				RAnalBlock *b;
+				// XXX: hack must be reviewed/fixed in code analysis
+				if (r_list_length (f->bbs) == 1) {
+					b = r_list_get_top (f->bbs);
+					if (b->size > f->size) b->size = f->size;
+				}
+				// TODO: sort by addr
+				r_list_foreach (f->bbs, iter, b) {
+					r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+					//eprintf ( "pD %"PFMT64d" @0x%"PFMT64x"\n", b->size, b->addr);
+				}
+			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			return R_TRUE;
+			}
+			break;
 		case 'b': {
 			RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 			if (b) {
@@ -292,13 +314,14 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case '?':
-			eprintf ("Usage: pd[f|i|l] [len] @ [addr]\n");
+			eprintf ("Usage: pd[f|i|l] [len] @ [addr]\n"
 			//TODO: eprintf ("  pdr  : disassemble resume\n");
-			eprintf ("  pda  : disassemble all possible opcodes (byte per byte)\n");
-			eprintf ("  pdb  : disassemble basic block\n");
-			eprintf ("  pdf  : disassemble function\n");
-			eprintf ("  pdi  : like 'pi', with offset and bytes\n");
-			eprintf ("  pdl  : show instruction sizes\n");
+			"  pda  : disassemble all possible opcodes (byte per byte)\n"
+			"  pdb  : disassemble basic block\n"
+			"  pdr  : recursive disassemble across the function graph\n"
+			"  pdf  : disassemble function\n"
+			"  pdi  : like 'pi', with offset and bytes\n"
+			"  pdl  : show instruction sizes\n");
 			return 0;
 			break;
 		}

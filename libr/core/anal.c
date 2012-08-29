@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 */
-/* pancake<nopcode.org> */
-/* nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
@@ -439,7 +437,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 					r_cons_printf ("\n  vars:");
 					r_list_foreach (fcni->vars, iter2, vari)
 						r_cons_printf ("\n  %-10s delta=0x%02x type=%s", vari->name,
-							vari->delta, r_anal_type_to_str (core->anal, vari->type));
+							vari->delta, r_anal_type_to_str (core->anal, vari->type, ";"));
 					r_cons_printf ("\n  diff: type=%s",
 							fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
 							fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");

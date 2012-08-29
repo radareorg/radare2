@@ -881,11 +881,12 @@ static void var_index_show(RAnal *anal, RAnalFunction *fcn, ut64 addr, int idx) 
 				if (v->type->type == R_ANAL_TYPE_ARRAY)
 					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d array=%d\n",
 						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
-						r_anal_type_to_str(anal, v->type), v->name, v->delta, v->type->custom.a->count);
+						r_anal_type_to_str (anal, v->type, ""),
+						v->name, v->delta, v->type->custom.a->count);
 				else
 					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d\n",
 						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
-						r_anal_type_to_str(anal, v->type), v->name, v->delta);
+						r_anal_type_to_str (anal, v->type, ""), v->name, v->delta);
 				r_list_foreach (v->accesses, iter2, x) {
 					r_cons_printf ("  0x%08llx %s\n", x->addr, x->set?"set":"get");
 				}
