@@ -93,6 +93,7 @@ static int cmd_print(void *data, const char *input) {
 		if (f) len = f->size;
 		else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 	}
+	ptr = core->block;
 	core->num->value = len;
 	switch (*input) {
 	case '%':
@@ -128,7 +129,7 @@ static int cmd_print(void *data, const char *input) {
 			ut8 *p;
 			int psz, i = 0;
 			int fsz = core->file?core->file->size:0;
-			psz = fsz/core->blocksize;
+			psz = fsz / core->blocksize;
 			ptr = malloc (core->blocksize);
 			eprintf ("offset = num * %d\n", psz);
 			p = malloc (psz);
@@ -160,14 +161,17 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		r_print_fill (core->print, ptr, core->blocksize);
-		if (ptr != core->block)
+		if (ptr != core->block) {
 			free (ptr);
-		/* TODO: Reimplement using API */ {
-			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b 512 '%s'", core->file->filename);
+#if 0
+			int bsize = 512;
+			/* TODO: Reimplement using API */
+			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b %d '%s'", bsize, core->file->filename);
 			if (out) {
 				r_cons_strcat (out);
 				free (out);
 			}
+#endif
 		}
 		break;
 	case 'b': {
@@ -267,6 +271,7 @@ static int cmd_print(void *data, const char *input) {
 				// TODO: sort by addr
 				r_list_foreach (f->bbs, iter, b) {
 					r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+					r_cons_printf ("--\n");
 					//eprintf ( "pD %"PFMT64d" @0x%"PFMT64x"\n", b->size, b->addr);
 				}
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
@@ -354,6 +359,31 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 's':
 		switch (input[1]) {
+		case '?':
+			r_cons_printf ("Usage: ps[zpw] [N]\n"
+				" ps  = print string\n"
+				" psz = print zero terminated string\n"
+				" psp = print pascal string\n"
+				" psw = print wide string\n");
+			break;
+		case 'z':
+			{
+				char *s = malloc (core->blocksize+1);
+				int i, j;
+				if (s) {
+					memset (s, 0, core->blocksize);
+					// TODO: filter more chars?
+					for (i=j=0;i<core->blocksize; i++) {
+						char ch = (char)core->block[i];
+						if (!ch) break;
+						if (IS_PRINTABLE (ch))
+							s[j++] = ch;
+					}
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
+			}
+			break;
 		case 'p':
 			{
 			int mylen = core->block[0];
@@ -487,24 +517,6 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'z':
-		{
-		char *s = malloc (core->blocksize+1);
-		int i, j;
-		if (s) {
-			memset (s, 0, core->blocksize);
-			// TODO: filter more chars?
-			for (i=j=0;i<core->blocksize; i++) {
-				char ch = (char)core->block[i];
-				if (!ch) break;
-				if (IS_PRINTABLE (ch))
-					s[j++] = ch;
-			}
-			r_cons_printf ("%s\n", s);
-			free (s);
-		}
-		}
-		break;
-	case 'Z':
 		if (input[1]=='?') {
 			r_cons_printf (
 			"Usage: pZ [len]\n"
@@ -569,13 +581,13 @@ static int cmd_print(void *data, const char *input) {
 		" ps [len]     print string\n"
 		" psp          print pascal string\n"
 		" psw [len]    print wide string\n"
+		" psz [len]    print zero terminated ascii string\n"
 		" pt [len]     print different timestamps\n"
 		" pr [len]     print N raw bytes\n"
 		" pu [len]     print N url encoded bytes\n"
 		" pU [len]     print N wide url encoded bytes\n"
 		" px [len]     hexdump of N bytes\n"
-		" pz [len]     print zero terminated ascii string\n"
-		" pZ [len]     print zoom view (see pZ? for help)\n");
+		" pz [len]     print zoom view (see pz? for help)\n");
 		break;
 	}
 	if (tbs != core->blocksize)

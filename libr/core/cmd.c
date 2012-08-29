@@ -418,6 +418,7 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	int fds[2];
 	int stdout_fd, status = 0;
 #endif
+
 	if (*shell_cmd=='!') {
 		_ptr = (char *)r_str_lastbut (shell_cmd, '~', "\"");
 		//ptr = strchr (cmd, '~');

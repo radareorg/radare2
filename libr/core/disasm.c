@@ -173,7 +173,7 @@ toro:
 		}
 		f = show_functions? r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL): NULL;
 
-	/* show comment at right? */
+		/* show comment at right? */
 		show_comment_right = 0;
 		if (show_comments) {
 			comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at);

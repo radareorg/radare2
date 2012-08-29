@@ -160,11 +160,11 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len) {
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
-	int len = core->blocksize;
+	int l, len = core->blocksize;
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 
-#if 0
+#if 1
 	if (input[0] && input[1]) {
 		l = (int) r_num_get (core->num, input+2);
 		if (l>0) len = l;
@@ -172,7 +172,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_block_size (core, l);
 			len = l;
 		}
-	}
+	} else len = l = core->blocksize;
 #endif
 
 	r_cons_break (NULL, NULL);

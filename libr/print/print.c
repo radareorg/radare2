@@ -580,14 +580,14 @@ void lsb_stego_process (FILE *fd, int length, bool forward, bool downward, int o
 #endif
 
 /// XXX: fix ascii art with different INCs
-R_API void r_print_fill(RPrint *p, ut8 *arr, int size) {
+R_API void r_print_fill(RPrint *p, const ut8 *arr, int size) {
 	int i = 0, j;
 #define INC 5
 	p->printf ("         ");
 	if (arr[0]>1) for (i=0;i<arr[0]; i+=INC) p->printf ("_");
 	p->printf ("\n");
 	for (i=0; i<size; i++) {
-		ut8 next = i+1<size?arr[i+1]:0;
+		ut8 next = (i+1<size)? arr[i+1]:0;
 		p->printf ("%02x %04x |", i, arr[i]);
 			int base = 0;
 			if (next<INC) base = 1;
