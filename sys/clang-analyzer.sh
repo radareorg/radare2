@@ -2,8 +2,8 @@
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
-scan-build echo >/dev/null 2>&1
-[ $? = 0 ] && MAKE=gmake
+scan-build echo >/dev/null
+[ $? = 0 ] || exit 1
 
 # find root
 cd `dirname $PWD/$0` ; cd ..

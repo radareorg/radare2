@@ -78,6 +78,7 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int
 		while (r_asm_disassemble (a, &op, data+ret, len-ret) != -1) {
 			printf ("0x%08"PFMT64x"  %d %12s %s\n", 
 				a->pc, op.inst_len, op.buf_hex, op.buf_asm);
+			if (ret<1) break;
 			ret += op.inst_len;
 			r_asm_set_pc (a, offset+ret);
 		}
@@ -271,7 +272,7 @@ int main(int argc, char *argv[]) {
 				else ret = rasm_asm (buf, offset, len, bin);
 				idx += ret;
 				offset += ret;
-				if (!ret) {
+				if (ret<1) {
 					eprintf ("invalid\n");
 					return 0;
 				}
@@ -282,7 +283,7 @@ int main(int argc, char *argv[]) {
 		}
 		if (dis) ret = rasm_disasm (argv[optind], offset, len, ascii, bin, dis-1);
 		else ret = rasm_asm (argv[optind], offset, len, bin);
-		if (!ret) eprintf ("invalid\n");
+		//if (!ret) eprintf ("invalid\n");
 		return ret;
 	}
 	return 0;

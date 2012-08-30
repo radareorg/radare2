@@ -531,7 +531,7 @@ set_default_mips_dis_options (struct disassemble_info *info)
   /* Defaults: mipsIII/r3000 (?!), (o)32-style ("oldabi") GPR names,
      and numeric FPR, CP0 register, and HWR names.  */
   mips_isa = ISA_MIPS3;
-  mips_processor =  CPU_LOONGSON_2F; // R3000
+  mips_processor = CPU_LOONGSON_2F; // R3000
   mips_gpr_names = mips_gpr_names_oldabi;
   mips_fpr_names = mips_fpr_names_numeric;
   mips_cp0_names = mips_cp0_names_numeric;
@@ -731,6 +731,8 @@ print_insn_args (const char *d,
       switch (*d)
 	{
 	case ',':
+	  (*info->fprintf_func) (info->stream, "%c ", *d);
+	  break;
 	case '(':
 	case ')':
 	case '[':
@@ -1697,13 +1699,13 @@ print_mips16_insn_arg (char type,
 	if (smask == 3)
 	  {
 	    (*info->fprintf_func) (info->stream, "%s??",
-				   need_comma ? "," : "");
+				   need_comma ? ", " : "");
 	    need_comma = 1;
 	  }
 	else if (smask > 0)
 	  {
 	    (*info->fprintf_func) (info->stream, "%s%s",
-				   need_comma ? "," : "",
+				   need_comma ? ", " : "",
 				   mips_gpr_names[16]);
 	    if (smask > 1)
 	      (*info->fprintf_func) (info->stream, "-%s",
@@ -1714,7 +1716,7 @@ print_mips16_insn_arg (char type,
 	if (l & 1)
 	  {
 	    (*info->fprintf_func) (info->stream, "%s%s",
-				   need_comma ? "," : "",
+				   need_comma ? ", " : "",
 				   mips_gpr_names[31]);
 	    need_comma = 1;
 	  }
@@ -1722,7 +1724,7 @@ print_mips16_insn_arg (char type,
 	if (amask == 5 || amask == 6)
 	  {
 	    (*info->fprintf_func) (info->stream, "%s$f0",
-				   need_comma ? "," : "");
+				   need_comma ? ", " : "");
 	    if (amask == 6)
 	      (*info->fprintf_func) (info->stream, "-$f1");
 	  }
@@ -1773,11 +1775,11 @@ print_mips16_insn_arg (char type,
         framesz = 128;
 
       (*info->fprintf_func) (info->stream, "%s%d", 
-                             need_comma ? "," : "",
+                             need_comma ? ", " : "",
                              framesz);
 
       if (l & 0x40)                   /* $ra */
-        (*info->fprintf_func) (info->stream, ",%s", mips_gpr_names[31]);
+        (*info->fprintf_func) (info->stream, ", %s", mips_gpr_names[31]);
 
       nsreg = (l >> 24) & 0x7;
       smask = 0;
@@ -1793,7 +1795,7 @@ print_mips16_insn_arg (char type,
         {
           if (smask & (1 << i))
             {
-              (*info->fprintf_func) (info->stream, ",%s",
+              (*info->fprintf_func) (info->stream, ", %s",
                                      mips_gpr_names[i == 8 ? 30 : (16 + i)]);
               /* Skip over string of set bits.  */
               for (j = i; smask & (2 << j); j++)
@@ -1807,9 +1809,9 @@ print_mips16_insn_arg (char type,
 
       /* Statics $ax - $a3.  */
       if (statics == 1)
-        (*info->fprintf_func) (info->stream, ",%s", mips_gpr_names[7]);
+        (*info->fprintf_func) (info->stream, ", %s", mips_gpr_names[7]);
       else if (statics > 0) 
-        (*info->fprintf_func) (info->stream, ",%s-%s", 
+        (*info->fprintf_func) (info->stream, ", %s-%s", 
                                mips_gpr_names[7 - statics + 1],
                                mips_gpr_names[7]);
       }
