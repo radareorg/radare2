@@ -1,5 +1,5 @@
 ifeq ($(_INCLUDE_RULES_MK_),)
-_INCLUDE_RULES_MK_=1
+_INCLUDE_RULES_MK_=
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 include $(LIBR)/config.mk
@@ -117,25 +117,31 @@ sloc:
 
 else
 
-#-------------------------------------#
-# Rules for programs (including test)
+#--------------------#
+# Rules for programs #
+#--------------------#
 
 CFLAGS+=-I$(LIBR)/include -DVERSION=\"${VERSION}\"
+ifneq ($(BINS),)
+
+endif
 
 ifneq ($(BIN)$(BINS),)
-all: ${BIN}${EXT_EXE} ${BINS}
+BEXE=$(BIN)$(EXT_EXE)
 
-${BINS}: 
-ifneq ($(SILENT),)
-	@echo CC $@${EXT_EXE}
-endif
-	${CC} ${CFLAGS} $@.c -L.. ${LDFLAGS} -o $@${EXT_EXE}
+all: ${BEXE} ${BINS}
 
-${BIN}${EXT_EXE}: ${OBJ} ${SHARED_OBJ}
+${BINS}: ${OBJS}
 ifneq ($(SILENT),)
-	@echo LD $@${EXT_EXE}
+	@echo CC $@
 endif
-	${CC} $+ -L.. -o ${BIN}${EXT_EXE} ${LDFLAGS}
+	${CC} ${CFLAGS} $@.c ${OBJS} -L.. ${LDFLAGS} -o $@
+
+${BEXE}: ${OBJ} ${SHARED_OBJ}
+ifneq ($(SILENT),)
+	@echo LD $@
+endif
+	${CC} $+ -L.. -o $@ ${LDFLAGS}
 endif
 
 # Dummy myclean rule that can be overriden by the t/ Makefile

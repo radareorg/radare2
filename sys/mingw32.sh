@@ -9,20 +9,22 @@ MAKE_JOBS=8
 OLD_LDFLAGS="${LDFLAGS}"
 unset LDFLAGS
 
+CFGFLAGS="--without-gmp --without-ewf --without-ssl --with-ostype=windows"
+
 if [ -x /usr/bin/pacman ]; then
 	make clean
-	./configure --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows --without-ssl && \
-	make -j ${MAKE_JOBS} && \
+	./configure ${CFGFLAGS} --with-compiler=i486-mingw32-gcc --host=i486-unknown-windows && \
+	make -s -j ${MAKE_JOBS} && \
 	make w32dist
 elif [ `uname` = Darwin ]; then
 	make clean
-	./configure --without-gmp --with-compiler=i386-mingw32-gcc --with-ostype=windows --host=i386-unknown-windows --without-ssl && \
-	make -j ${MAKE_JOBS} && \
+	./configure ${CFGFLAGS} --with-compiler=i386-mingw32-gcc --host=i386-unknown-windows && \
+	make -s -j ${MAKE_JOBS} && \
 	make w32dist
 elif [ -x /usr/bin/apt-get ]; then
 	make clean
-	./configure --without-gmp --with-compiler=i586-mingw32msvc-gcc  --with-ostype=windows --host=i586-unknown-windows && \
-	make -j ${MAKE_JOBS} && \
+	./configure ${CFGFLAGS} --with-compiler=i586-mingw32msvc-gcc --host=i586-unknown-windows && \
+	make -s -j ${MAKE_JOBS} && \
 	make w32dist
 else
 	echo "ubuntu/debian or archlinux required."

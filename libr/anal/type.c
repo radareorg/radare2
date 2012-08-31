@@ -59,7 +59,7 @@ R_API RAnalType *r_anal_type_find(RAnal *a, const char *name) {
 	return NULL;
 }
 
-static const char *analtype(ushort t) {
+static const char *analtype(ut16 t) {
 	switch (t) {
 	case R_ANAL_VAR_TYPE_VOID:
 		return "void";
