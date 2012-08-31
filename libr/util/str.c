@@ -69,12 +69,14 @@ main () {
 }
 #endif
 
-R_API void r_str_replace_char (char *s, int a, int b) {
+R_API int r_str_replace_char (char *s, int a, int b) {
+	int ret = 0;
 	char *o = s;
 	for (; *o; s++, o++) {
 		if (*o==a) {
 			if (b) {
 				*s = b;
+				ret++;
 				continue;
 			}
 			o++;
@@ -82,6 +84,7 @@ R_API void r_str_replace_char (char *s, int a, int b) {
 		*s = *o;
 	}
 	*s = 0;
+	return ret;
 }
 
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1

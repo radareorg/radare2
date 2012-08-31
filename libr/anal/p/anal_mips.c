@@ -120,6 +120,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	} else 
 	if ((optype & 0x3e) == 2) {
 #if 0
+		// J-TYPE
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
 		 \_op__/\______address____________________/
