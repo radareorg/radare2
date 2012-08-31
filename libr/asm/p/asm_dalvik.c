@@ -30,7 +30,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 				sprintf (op->buf_asm, "packed-switch-payload %d, %d",
 					array_size, first_key);
 				size = 8;
-				payload = 2* (4 + (array_size*2));
+				payload = 2 * (array_size*2);
 				len = 0;
 			}
 			break;
@@ -43,7 +43,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 				sprintf (op->buf_asm, "sparse-switch-payload %d",
 					array_size);
 				size = 4;
-				payload = 2* ((array_size*4)+2);
+				payload = 2 * (array_size*4);
 				len = 0;
 			}
 			break;
@@ -57,7 +57,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 				sprintf (op->buf_asm, "fill-array-data-payload %d, %d",
 					elem_width, array_size);
 				size = 8;
-				payload = 2* (((array_size * elem_width+1)/2)+4);
+				payload = 2 * ((array_size * elem_width+1)/2);
 				len = 0;
 			}
 			break;
@@ -150,12 +150,12 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 			break;
 		case fmtoppAA:
 			vA = (char) buf[1];
-			sprintf (str, " %i", vA);
+			sprintf (str, " %i", vA*2); // vA : word -> byte
 			strcat (op->buf_asm, str);
 			break;
 		case fmtoppAAAA:
 			vA = (short) (buf[3] <<8 | buf[2]);
-			sprintf (str, " %i", vA);
+			sprintf (str, " %i", vA*2); // vA: word -> byte
 			strcat (op->buf_asm, str);
 			break;
 		case fmtopvAApBBBB:
@@ -166,7 +166,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 			break;
 		case fmtoppAAAAAAAA:
 			vA = (int) (buf[2]|(buf[3]<<8)|(buf[4]<<16)|(buf[5]<<24));
-			sprintf (str, " %#08x", vA);
+			sprintf (str, " %#08x", vA*2); // vA: word -> byte
 			strcat (op->buf_asm, str);
 			break;
 		case fmtopvAvBpCCCC:
@@ -179,7 +179,8 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 		case fmtopvAApBBBBBBBB:
 			vA = (int) buf[1];
 			vB = (int) (buf[2]|(buf[3]<<8)|(buf[4]<<16)|(buf[5]<<24));
-			sprintf (str, " v%i,%s%i", vA, vB>0?" +":" ", vB);
+			sprintf (str, " v%i,%s%i ; 0x%08"PFMT64x,
+				vA, vB>0?" +":" ", vB*2, a->pc + (vB*2));
 			strcat (op->buf_asm, str);
 			break;
 		case fmtoptinlineI:
