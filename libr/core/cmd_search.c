@@ -59,13 +59,19 @@ R_API int r_core_search_preludes(RCore *core) {
 		ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 		free (kw);
 	} else
+	if (strstr (arch, "mips")) {
+		ret = r_core_search_prelude (core, from, to,
+			(const ut8 *)"\x27\xbd\x00", 3, NULL, 0);
+	} else
 	if (strstr (arch, "x86")) {
 		switch (bits) {
 		case 32:
-			ret = r_core_search_prelude (core, from, to, (const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
+			ret = r_core_search_prelude (core, from, to,
+				(const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
 			break;
 		case 64:
-			ret = r_core_search_prelude (core, from, to, (const ut8 *)"\x55\x48\x89\xe5", 3, NULL, 0);
+			ret = r_core_search_prelude (core, from, to,
+				(const ut8 *)"\x55\x48\x89\xe5", 3, NULL, 0);
 			//r_core_cmd0 (core, "./x 554989e5");
 			break;
 		default:

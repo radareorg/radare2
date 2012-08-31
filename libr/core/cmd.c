@@ -318,7 +318,7 @@ static int cmd_eval(void *data, const char *input) {
 			char *p;
 			const char *val = r_config_get (core->config, input+2);
 			p = r_core_editor (core, val);
-			r_str_subchr (p, '\n', ';');
+			r_str_replace_char (p, '\n', ';');
 			r_config_set (core->config, input+2, p);
 		} else eprintf ("Usage: ee varname\n");
 		break;

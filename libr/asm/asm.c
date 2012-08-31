@@ -95,7 +95,7 @@ static inline int r_asm_pseudo_int64(RAsm *a, RAsmOp *op, char *input) {
 
 static inline int r_asm_pseudo_byte(RAsmOp *op, char *input) {
 	int i, len = 0;
-	r_str_subchr (input, ',', ' ');
+	r_str_replace_char (input, ',', ' ');
 	len = r_str_word_count (input);
 	r_str_word_set0 (input);
 	for (i=0; i<len; i++) {

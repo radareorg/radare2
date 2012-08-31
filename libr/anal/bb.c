@@ -52,7 +52,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		bb->addr = addr;
 	len -= 16; // XXX: hack to avoid segfault by x86im
 	while (idx < len) {
-		if (!(op = r_anal_op_new ())) {
+		if (!(op = r_anal_op_new ())) { // TODO: too slow object construction
 			eprintf ("Error: new (op)\n");
 			return R_ANAL_RET_ERROR;
 		}

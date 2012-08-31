@@ -69,7 +69,7 @@ main () {
 }
 #endif
 
-R_API void r_str_subchr (char *s, int a, int b) {
+R_API void r_str_replace_char (char *s, int a, int b) {
 	char *o = s;
 	for (; *o; s++, o++) {
 		if (*o==a) {

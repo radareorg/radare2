@@ -92,6 +92,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #define BITS2BYTES(x) ((x/8)+((x%8)?1:0))
 #define ZERO_FILL(x) memset (x, 0, sizeof (x))
+#define R_NEWS0(x,y) (x*)memset (malloc(sizeof(x)*y), 0, sizeof(x)*y);
 #define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
 #define R_NEW(x) (x*)malloc(sizeof(x))
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))

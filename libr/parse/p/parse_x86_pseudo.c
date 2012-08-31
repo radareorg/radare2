@@ -101,6 +101,7 @@ static int parse(RParse *p, const char *data, char *str) {
 				for (++ptr; *ptr==' '; ptr++);
 				strcpy (w1, optr);
 				strcpy (w2, ptr);
+				optr=ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';

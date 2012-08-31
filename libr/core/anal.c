@@ -125,12 +125,21 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	if (ret == R_ANAL_RET_DUP) { /* Dupped bb */
 		goto error;
 	} else if (ret == R_ANAL_RET_NEW) { /* New bb */
+		// XXX: use static buffer size of 512 or so
 		if (!(buf = malloc (core->blocksize)))
 			goto error;
 		do {
-			if ((buflen = r_io_read_at (core->io, at+bblen, buf, core->blocksize)) != core->blocksize)
+#if 1
+			// check io error
+			if (r_io_read_at (core->io, at+bblen, buf, 4) != 4)
+	//core->blocksize)) != core->blocksize)
 				goto error;
+#endif
+			r_core_read_at (core, at+bblen, buf, core->blocksize);
+			buflen = core->blocksize;
+//eprintf ("Pre %llx %d\n", at, buflen);
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head); 
+//eprintf ("Pos %d\n", bblen);
 			if (bblen == R_ANAL_RET_ERROR ||
 				(bblen == R_ANAL_RET_END && bb->size < 1)) { /* Error analyzing bb */
 				goto error;
@@ -150,13 +159,13 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		} while (bblen != R_ANAL_RET_END);
 	}
 
-	free(buf);
+	free (buf);
 	return R_TRUE;
 
 error:
-	r_list_unlink(fcn->bbs, bb);
-	r_anal_bb_free(bb);
-	free(buf);
+	r_list_unlink (fcn->bbs, bb);
+	r_anal_bb_free (bb);
+	free (buf);
 	return R_FALSE;
 }
 
@@ -182,8 +191,15 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	int buflen, fcnlen = 0;
 	RAnalFunction *fcn = NULL, *fcni;
 	RAnalRef *ref = NULL, *refi;
+	ut64 *next = NULL;
+	int i, nexti = 0;
 	ut8 *buf;
+#define ANALBS 256
 
+	if (at>>63 == 1)
+		return R_FALSE;
+	if (at == UT64_MAX)
+		return R_FALSE;
 	if (depth < 0)
 		return R_FALSE;
 #warning This must be optimized to use the fcnstore api
@@ -211,14 +227,25 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;
 	}
-	if (!(buf = malloc (core->blocksize))) {
+	if (!(buf = malloc (ANALBS))) { //core->blocksize))) {
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
 	}
+#define MAXNEXT 1032 // TODO: make it relocatable
+	if (r_config_get_i (core->config, "anal.hasnext")) {
+		
+		next = R_NEWS0 (ut64, MAXNEXT);
+	}
 
+	//eprintf ("FUNC 0x%08"PFMT64x"\n", at+fcnlen);
 	do {
-		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, core->blocksize)) != core->blocksize)
+		// check io error
+		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, 4) != 4))
 			goto error;
+		// real read.
+		if (!r_core_read_at (core, at+fcnlen, buf, ANALBS))
+			goto error;
+		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen, reftype);
@@ -246,6 +273,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			eprintf ("fun depth fail for 0x%08"PFMT64x"\n", fcn->addr);
 		} else fcn->depth = 256-fcn->depth;
 			r_list_sort (fcn->bbs, &cmpaddr);
+
 			/* New function: Add initial xref */
 			if (from != -1) {
 				if (!(ref = r_anal_ref_new ())) {
@@ -259,6 +287,21 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			}
 			// XXX: this looks weird
 			r_anal_fcn_insert (core->anal, fcn);
+#if 1
+	if (next && nexti<MAXNEXT) {
+		int i;
+		ut64 addr = fcn->addr + fcn->size;
+		for (i=0;i<nexti;i++)
+			if (next[i] == addr)
+				break;
+		if (i==nexti) {
+			// TODO: ensure next address is function after padding (nop or trap or wat)
+			eprintf ("FUNC 0x%08"PFMT64x" > 0x%08"PFMT64x"\r",
+				fcn->addr, fcn->addr + fcn->size);
+			next[nexti++] = fcn->addr + fcn->size;
+		}
+	}
+#endif
 			//r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi)
 				if (refi->addr != -1)
@@ -268,18 +311,29 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		}
 	} while (fcnlen != R_ANAL_RET_END);
 	free (buf);
+
+	if (next) {
+		for (i=0; i<nexti; i++) {
+			if (!next[i]) continue;
+			r_core_anal_fcn (core, next[i], from, 0, depth-1);
+		}
+		free (next);
+	}
+
 	return R_TRUE;
 
 error:
 	free (buf);
 	// ugly hack to free fcn
 	if (fcn) {
-		if (fcn->addr == UT64_MAX) {
+		if (fcn->size == 0 || fcn->addr == UT64_MAX) {
 			r_anal_fcn_free (fcn);
 			return R_FALSE;
 		}
 		// TODO: mark this function as not properly analyzed
-		eprintf ("Analysis of function at 0x%08"PFMT64x" has failed\n", fcn->addr);
+		eprintf ("Analysis of function 0x%08"PFMT64x
+			" has failed at 0x%08"PFMT64x"\n",
+			fcn->addr, fcn->addr+fcn->size);
 		if (!fcn->name) {
 			// XXX dupped code.
 			fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
@@ -297,6 +351,15 @@ error:
 		if (core->anal->fcns->free == NULL)
 			r_anal_fcn_free (fcn);
 #endif
+	}
+	if (next) {
+		if (nexti<MAXNEXT)
+			next[nexti++] = fcn->addr + fcn->size;
+		for (i=0; i<nexti; i++) {
+			if (!next[i]) continue;
+			r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
+		}
+		free(next);
 	}
 	return R_FALSE;
 }
@@ -693,7 +756,7 @@ R_API int r_core_anal_all(RCore *core) {
 		r_list_foreach (list, iter, symbol) {
 			if (core->cons->breaked)
 				break;
-			if (!strncmp (symbol->type,"FUNC", 4))
+			if (!strncmp (symbol->type, "FUNC", 4))
 				r_core_anal_fcn (core, offset + va?baddr+symbol->rva:symbol->offset, -1,
 						R_ANAL_REF_TYPE_NULL, depth);
 		}

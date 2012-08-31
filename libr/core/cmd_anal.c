@@ -203,6 +203,8 @@ static int cmd_anal(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 
 #if 1
+	switch (input[0]) {
+case 'o':
 	if (input[0] && input[1]) {
 		l = (int) r_num_get (core->num, input+2);
 		if (l>0) len = l;
@@ -211,6 +213,7 @@ static int cmd_anal(void *data, const char *input) {
 			len = l;
 		}
 	} else len = l = core->blocksize;
+	}
 #endif
 
 	r_cons_break (NULL, NULL);

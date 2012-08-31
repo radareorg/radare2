@@ -9,7 +9,7 @@
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	unsigned int opcode;
 	char buf[10];
-	int reg, optype, oplen = (anal->bits==16)?2:4;
+	int family, reg, optype, oplen = (anal->bits==16)?2:4;
 
         if (op == NULL)
 		return oplen;
@@ -17,6 +17,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
         memset (op, 0, sizeof (RAnalOp));
         op->type = R_ANAL_OP_TYPE_UNK;
 	op->length = oplen;
+	op->delay = 4;
 
 	//r_mem_copyendian ((ut8*)&opcode, b, 4, !anal->big_endian);
 	memcpy (&opcode, b, 4);
@@ -74,6 +75,8 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			op->type = R_ANAL_OP_TYPE_SWI;
 			break;
 		case 13: // break
+			op->type = R_ANAL_OP_TYPE_TRAP;
+			break;
 		case 16: // mfhi
 		case 18: // mflo
 
@@ -85,14 +88,25 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 
 		case 26: // div
 		case 27: // divu
+			op->type = R_ANAL_OP_TYPE_DIV;
+			break;
 		case 32: // add
 		case 33: // addu
+			op->type = R_ANAL_OP_TYPE_ADD;
+			break;
 		case 34: // sub
 		case 35: // subu
+			op->type = R_ANAL_OP_TYPE_SUB;
+			break;
 		case 36: // and
-
+			op->type = R_ANAL_OP_TYPE_AND;
+			break;
 		case 37: // or
+			op->type = R_ANAL_OP_TYPE_OR;
+			break;
 		case 38: // xor
+			op->type = R_ANAL_OP_TYPE_XOR;
+			break;
 		case 39: // nor
 		case 42: // slt
 		case 43: // sltu
@@ -102,7 +116,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		//	eprintf ("%llx %d\n", addr, optype);
 			break;
 		}
-		optype = 'R';
+		family = 'R';
 	} else 
 	if ((optype & 0x3e) == 2) {
 #if 0
@@ -113,12 +127,18 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
                (b[0]>>2)  ((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3]
 #endif
 		int address = ((b[0]&3)<<24)+(b[1]<<16)+(b[2]<<8)+b[3];
-		optype = 'J';
 		switch (optype) {
 		case 2: // j
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = address;
+			break;
 		case 3: // jal
+			op->type = R_ANAL_OP_TYPE_CALL;
+			op->jump = address;
+			op->fail = addr+8;
 			break;
 		}
+		family = 'J';
 	} else 
 	if ((optype & 0x10) == 0x1c) {
 #if 0
@@ -139,7 +159,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		int fs = (b[2]>>3);
 		int fd = (b[2]&7)+(b[3]>>6);
 		int fun = (b[3]&63);
-		optype = 'C';
+		family = 'C';
 		switch (fun) {
 		case 0: // mtc1
 			break;
@@ -172,13 +192,12 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		switch (optype) {
 		case 1: if (rt) { /* bgez */ } else { /* bltz */ }
 		case 4: // beq
-		case 5: // bne
+		case 5: // bne // also bnez
 		case 6: // blez
 		case 7: // bgtz
 			// XXX: use imm here
-			op->type = R_ANAL_OP_TYPE_JMP;
-			//reg = (((opcode&0x00ff0000)>>16) + ((opcode&0xff000000)>>24));
-			op->jump = addr+(imm<<2)+4; //(reg<<2) + 4;
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->jump = addr+(imm<<2)+4;
 			op->fail = addr+8;
 			break;
 		case 8: // addi
@@ -201,7 +220,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		case 57: // swc1
 			break;
 		}
-		optype = 'I';
+		family = 'I';
 	}
 
 #if 0
@@ -311,98 +330,6 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		mul.s 	fd, fs, ft 	000010 	10000
 		sub.s 	fd, fs, ft 	000001 	10000 
 #endif
-
-//eprintf ("--> %x %02x %02x\n", opcode, opcode &0xff , opcode &0x3f);
-	switch (opcode & 0x3f) {
-	// J-Type
-	case 2: // j
-		// branch to register
-		//XXX TODO
-		op->type = R_ANAL_OP_TYPE_UJMP;
-		break;
-	// R-Type
-	case 1: // bltz
-		// 04100001        bltzal        zero,0x2aaa8cb4
-	case 4: // beq // bal
-	case 5: // bne
-	case 6: // blez
-	case 7: // bgtz
-	case 16: //beqz
-	case 20: //bnel
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		reg = (((opcode&0x00ff0000)>>16) + ((opcode&0xff000000)>>24));
-		op->jump = addr+(reg<<2) + 4;
-		op->fail = addr+8;
-		// calculate jump
-		break;
-	case 0x24: // jalx
-	case 0x34: // jalx
-		op->type = R_ANAL_OP_TYPE_UJMP;
-		break;
-	case 3: // jalr
-			op->type = R_ANAL_OP_TYPE_UCALL;
-			switch (opcode) {
-				case 0x03e00008:
-				case 0x0800e003: // jr ra
-					op->type = R_ANAL_OP_TYPE_RET;
-					break;
-			}
-			break;
-	case 9: // jalr
-		reg = opcode>>24;
-		if (reg<10) {
-			op->type = R_ANAL_OP_TYPE_UCALL;
-			snprintf (buf, sizeof (buf), "t%d", reg); // XXX must be rN...!regs* should be synced here
-			op->jump = 1234;//flag_get_addr(buf);
-			op->fail = addr+8;
-		}
-		break;
-	case 8: // jr
-		op->type = R_ANAL_OP_TYPE_RET;
-		break;
-	case 12:
-		op->type = R_ANAL_OP_TYPE_SWI;
-		break;
-	case 13:
-		op->type = R_ANAL_OP_TYPE_TRAP;
-		break;
-	default:
-		switch (opcode) {
-		case 0:
-			op->type = R_ANAL_OP_TYPE_NOP;
-			break;
-		case 32: // add
-		case 33: // addu
-			op->type = R_ANAL_OP_TYPE_ADD;
-			break;
-		case 34: // sub
-		case 35: // subu
-			op->type = R_ANAL_OP_TYPE_SUB;
-			break;
-		case 0x03e00008:
-		case 0x0800e003: // jr ra
-			op->type = R_ANAL_OP_TYPE_RET;
-			break;
-		case 0x0000000d: // case 26:
-		case 0x0d000000: // break
-			op->type = R_ANAL_OP_TYPE_TRAP; 
-			break;
-		default:
-			//switch((opcode<<24)&0xff) { //b[3]) { // TODO handle endian ?
-			switch ((b[3])) {
-			case 0xc:
-				op->type = R_ANAL_OP_TYPE_SWI;
-				break;
-			case 0x9:
-			case 0x8:
-				op->type = R_ANAL_OP_TYPE_UJMP;
-				break;
-			case 0x21:
-				op->type = R_ANAL_OP_TYPE_PUSH; // XXX move 
-				break;
-			}
-		}
-	}
 	return op->length;
 }
 

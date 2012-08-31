@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2012 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,22 +16,46 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *op;
 		char *str;
 	} ops[] = {
-		{ "cmpl",  "cmp 2, 1"},
-		{ "testl", "test 2, 1"},
-		{ "leal",  "lea 2, 1"},
-		{ "movl",  "mov 2, 1"},
-		{ "xorl",  "xor 2, 1"},
-		{ "andl",  "and 2, 1"},
-		{ "orl",   "or 2, 1"},
-		{ "addl",  "add 2, 1"},
-		{ "incl",  "inc 1"},
-		{ "decl",  "dec 1"},
-		{ "subl",  "sub 2, 1"},
-		{ "mull",  "mul 2, 1"},
-		{ "divl",  "div 2, 1"},
-		{ "pushl", "push 1"},
-		{ "popl",  "pop 1"},
-		{ "ret",  "ret"},
+		{ "li",   "1 = 2"},
+		{ "lui",  "1 = 2"},
+		{ "jr",   "ret 1"},
+		{ "bne",  "if (1 != 2) goto 3"},
+		{ "beq",  "if (1 == 2) goto 3"},
+		{ "beqz",  "if (!1) goto 2"},
+		{ "bnez",  "if (1) goto 2"},
+		{ "begz", "if (1 >= 0) goto 2"},
+		{ "begzal", "if (1 >= 0) call 2"},
+		{ "bgtz", "if (1 > 0) goto 2"},
+		{ "bltz", "if (1 < 0) goto 2"},
+		{ "bltzal", "if (1 < 0) call 2"},
+		{ "negu",  "1 = !2"},
+		{ "and",  "1 = 2 & 3"},
+		{ "andi",  "1 = 2 & 3"},
+		{ "ori",   "1 = 2 | 3"},
+		{ "subu",  "1 = 2 - 3"},
+		{ "xor",  "1 = 2 ^ 3"},
+		{ "xori",  "1 = 2 ^ 3"},
+		{ "addi",  "1 = 2 + 3"},
+		{ "addiu",  "1 = 2 + 3"},
+		{ "addu",  "1 = 2 + 3"},
+		//{ "jal",   "call 1"},
+		{ "bal",  "call 1"},
+		{ "jalr",  "call 1"},
+		{ "b",  "goto 1"},
+		{ "move",  "1 = 2"},
+		{ "sll",  "1 = 2 << 3"},
+		{ "sllv",  "1 = 2 << 3"},
+		{ "slr",  "1 = 2 >> 3"}, // logic
+		{ "sra",  "1 = 2 >> 3"}, // arithmetic
+		{ "slt",  "1 = (2 < 3)"},
+		{ "slti",  "1 = (2 < 3)"},
+		{ "sltiu",  "1 = (2 < 3)"},
+		{ "sltu",  "1 = unsigned (2 < 3)"},
+		{ "lb",  "1 = byte [3 + 2]"},
+		{ "lw",  "1 = [3 + 2]"},
+		{ "sb",  "byte [3 + 2] = 1"},
+		{ "lbu",  "1 = byte [3 + 2]"},
+		{ "sw",  "[3 + 2] = 1"},
 		{ NULL }
 	};
 
@@ -39,10 +63,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
 				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
-					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
+					if (ops[i].str[j]>='1' && ops[i].str[j]<='9') {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w != NULL) {
-							strcpy(newstr+k, w);
+							strcpy (newstr+k, w);
 							k += strlen(w)-1;
 						}
 					} else newstr[k] = ops[i].str[j];
@@ -58,7 +82,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		newstr[0] = '\0';
 		for (i=0; i<argc; i++) {
 			strcat (newstr, argv[i]);
-			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
+			strcat (newstr, (i == 0 || i== argc - 1)?" ":", ");
 		}
 	}
 
@@ -71,55 +95,28 @@ static int parse(RParse *p, const char *data, char *str) {
 	char w1[32];
 	char w2[32];
 	char w3[32];
+	char w4[32];
 	char *buf, *ptr, *optr;
 
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
 		return R_FALSE;
-	{/* strip whitechars from the beggining */	
-	char *o = (char *)r_str_trim_head (data);
-	memcpy (buf, o, strlen (o)+1);
-	}
+	memcpy (buf, data, len+1);
 
-	ptr = strchr (buf, '#');
-	if (ptr) {
-		*ptr = 0;
-		r_str_chop (buf);
-	}
-	if (*buf == '.' || buf[strlen(buf)-1] == ':') {
-		free (buf);
-		strcpy (str, data);
+	if (!strcmp (data, "jr ra")) {
+		strcpy (str, "ret");
 		return R_TRUE;
 	}
-	r_str_replace_char (buf, '$', 0);
-	r_str_replace_char (buf, '%', 0);
-	r_str_replace_char (buf, '\t', ' ');
-	r_str_replace_char (buf, '(', '[');
-	r_str_replace_char (buf, ')', ']');
-	ptr = strchr (buf, '[');
-	if (ptr) {
-		int n;
-		char *num;
-		*ptr = 0;
-		num = r_str_lchr (buf, ' ');
-		if (!num)
-			num = r_str_lchr (buf, ',');
-		if (num) {
-			n = atoi (num+1);
-			*ptr = '[';
-			memmove (num+1, ptr, strlen (ptr)+1);
-			ptr = r_str_lchr (buf, ']');
-			if (n && ptr) {
-				char *rest = strdup (ptr+1);
-				if(n>0) sprintf (ptr, "+%d]%s", n, rest);
-				else sprintf (ptr, "%d]%s", n, rest);
-				free (rest);
-			}
-		} else *ptr = '[';
-	}
+	r_str_replace_char (buf, '(', ',');
+	r_str_replace_char (buf, ')', ' ');
+	r_str_chop (buf);
 
 	if (*buf) {
-		*w0 = *w1 = *w2 = *w3 = 0;
+		w0[0]='\0';
+		w1[0]='\0';
+		w2[0]='\0';
+		w3[0]='\0';
+		w4[0]='\0';
 		ptr = strchr (buf, ' ');
 		if (ptr == NULL)
 			ptr = strchr (buf, '\t');
@@ -129,30 +126,66 @@ static int parse(RParse *p, const char *data, char *str) {
 			strcpy (w0, buf);
 			strcpy (w1, ptr);
 
-			optr = ptr;
+			optr=ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr==' '; ptr++);
 				strcpy (w1, optr);
 				strcpy (w2, ptr);
+				optr=ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
 					for (++ptr; *ptr==' '; ptr++);
 					strcpy (w2, optr);
 					strcpy (w3, ptr);
+					optr=ptr;
+// bonus
+					ptr = strchr (ptr, ',');
+					if (ptr) {
+						*ptr = '\0';
+						for (++ptr; *ptr==' '; ptr++);
+						strcpy (w3, optr);
+						strcpy (w4, ptr);
+					}
 				}
 			}
 		}
 		{
-			const char *wa[] = { w0, w1, w2, w3 };
+			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
 			for (i=0; i<4; i++) {
 				if (wa[i][0] != '\0')
 				nw++;
 			}
 			replace (nw, wa, str);
+{
+	char *p = strdup (str);
+	p = r_str_replace (p, "+ -", "- ", 0);
+#if EXPERIMENTAL_ZERO
+	p = r_str_replace (p, "zero", "0", 0);
+	if (!memcmp (p, "0 = ", 4)) *p = 0; // nop
+#endif
+	if (!strcmp (w1, w2)) {
+		char a[32], b[32];
+#define REPLACE(x,y) \
+		sprintf (a, x, w1, w1); \
+		sprintf (b, y, w1); \
+		p = r_str_replace (p, a, b, 0);
+
+// TODO: optimize
+		REPLACE ("%s = %s +", "%s +=");
+		REPLACE ("%s = %s -", "%s -=");
+		REPLACE ("%s = %s &", "%s &=");
+		REPLACE ("%s = %s |", "%s |=");
+		REPLACE ("%s = %s ^", "%s ^=");
+		REPLACE ("%s = %s >>", "%s >>=");
+		REPLACE ("%s = %s <<", "%s <<=");
+	}
+	strcpy (str, p);
+	free (p);
+}
 		}
 	}
 	free (buf);
@@ -161,7 +194,7 @@ static int parse(RParse *p, const char *data, char *str) {
 
 static int assemble(RParse *p, char *data, char *str) {
 	char *ptr;
-	printf ("---> assembling '%s' to generate real asm code\n", str);
+	printf ("assembling '%s' to generate real asm code\n", str);
 	ptr = strchr (str, '=');
 	if (ptr) {
 		*ptr = '\0';
@@ -211,12 +244,12 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	return R_TRUE;
 }
 
-struct r_parse_plugin_t r_parse_plugin_att2intel = {
-	.name = "att2intel",
-	.desc = "X86 att 2 intel plugin",
+struct r_parse_plugin_t r_parse_plugin_mips_pseudo = {
+	.name = "mips.pseudo",
+	.desc = "MIPS pseudo syntax",
 	.init = NULL,
 	.fini = NULL,
-	.parse = &parse,
+	.parse = parse,
 	.assemble = &assemble,
 	.filter = &filter,
 	.varsub = &varsub,
@@ -225,6 +258,6 @@ struct r_parse_plugin_t r_parse_plugin_att2intel = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
-	.data = &r_parse_plugin_att2intel
+	.data = &r_parse_plugin_mips_pseudo
 };
 #endif

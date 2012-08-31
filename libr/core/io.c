@@ -179,5 +179,5 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);
 #endif
-	return (ret!=UT64_MAX);
+	return (ret==size); //UT64_MAX);
 }

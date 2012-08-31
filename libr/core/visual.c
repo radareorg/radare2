@@ -778,7 +778,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		break;
 	case 1: // pd
 	case 2: // pd+dbg
-		r_core_block_size (core, core->cons->rows *4); // this is hacky
+		r_core_block_size (core, core->cons->rows *5); // this is hacky
 		break;
 	}
 

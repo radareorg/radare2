@@ -354,6 +354,12 @@ static int config_asmarch_callback(void *user, void *data) {
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+	{
+		char asmparser[32];
+		snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
+		
+		r_config_set (core->config, "asm.parser", asmparser);
+	}
 	if (!r_config_set (core->config, "anal.plugin", node->value)) {
 		char *p, *s = strdup (node->value);
 		p = strchr (s, '.');
@@ -375,9 +381,9 @@ static int config_asmparser_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	// XXX this is wrong? snprintf(buf, 127, "parse_%s", node->value),
-	r_parse_use (core->parser, node->value);
+	return r_parse_use (core->parser, node->value);
 	// TODO: control error and restore old value (return false?) show errormsg?
-	return R_TRUE;
+	//return R_TRUE;
 }
 
 static int config_asmbits_callback(void *user, void *data) {
@@ -449,6 +455,8 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	r_config_set (cfg, "anal.prelude", "");
 	r_config_desc (cfg, "anal.prelude", "Specify an hexpair to find preludes in code");
+	r_config_set (cfg, "anal.hasnext", "true");
+	r_config_desc (cfg, "anal.hasnext", "Continue analysis after each function");
 	r_config_set_i (cfg, "anal.depth", 50); // XXX: warn if depth is > 50 .. can be problematic
 	r_config_desc (cfg, "anal.depth", "Max depth at code analysis");
 	r_config_set_i (cfg, "anal.ptrdepth", 3);
