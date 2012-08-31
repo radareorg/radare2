@@ -136,6 +136,8 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 #endif
 			r_core_read_at (core, at+bblen, buf, core->blocksize);
+			if (!memcmp (buf, "\xff\xff\xff\xff", 4))
+				goto error;
 			buflen = core->blocksize;
 //eprintf ("Pre %llx %d\n", at, buflen);
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head); 
@@ -245,6 +247,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		// real read.
 		if (!r_core_read_at (core, at+fcnlen, buf, ANALBS))
 			goto error;
+		if (!memcmp (buf, "\xff\xff\xff\xff", 4))
+			goto error;
 		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -270,7 +274,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			r_core_anal_bb (core, fcn, fcn->addr, R_TRUE);
 // hack
 		if (fcn->depth == 0) {
-			eprintf ("fun depth fail for 0x%08"PFMT64x"\n", fcn->addr);
+			eprintf ("Analysis depth reached at 0x%08"PFMT64x"\n", fcn->addr);
 		} else fcn->depth = 256-fcn->depth;
 			r_list_sort (fcn->bbs, &cmpaddr);
 
