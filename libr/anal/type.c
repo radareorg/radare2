@@ -3,6 +3,7 @@
 #include <r_anal.h>
 #include "cparse/lexglb.h"
 #include "cparse/cdata.h"
+#include "cparse/pp.h"
 
 // TOTHINK: Right now we are loading types in RList
 // but may be better to add argument RAnal *a, to
@@ -59,7 +60,7 @@ R_API RAnalType *r_anal_type_find(RAnal *a, const char *name) {
 	return NULL;
 }
 
-static const char *analtype(ut16 t) {
+static const char *analtype(ushort t) {
 	switch (t) {
 	case R_ANAL_VAR_TYPE_VOID:
 		return "void";
@@ -221,9 +222,14 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 	char *tmp;
 	int yv;
 	RAnalType *tTree = R_NEW0 (RAnalType); //NULL;
+	char *tmp_type = NULL;
 
+	/* Preprocess buffer first */
+	tmp_type = cparsepp_buf (type);
+
+	/* Parse preprocessed buffer then */
 	void *pParser = cdataParseAlloc (malloc);
-	yy_scan_string (type);
+	yy_scan_string (tmp_type);
 	while ((yv = yylex ()) != 0) {
 		cdataParse (pParser, yv, yylval, tTree);
 	}
@@ -240,17 +246,23 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 		tTree = tTree->next;
 
 	}
-	return NULL;
+	return tTree;
 }
 
 // TODO: Add types to RList instead of RAnalType
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
-	char *tmp;
+	char *tmp, *tmp_path;
 	void *pParser;
 	char buf[4096];
 	int n, yv, yylval = 0;
 	RAnalType *tTree = NULL;
-	FILE *cfile = fopen (path, "r");
+
+	/* Preprocess file first */
+	r_file_mkstemp("r2pp", &tmp_path);
+	cparsepp_file (path, tmp_path);
+
+	/* Parse preprocessed file then */
+	FILE *cfile = fopen (tmp_path, "r");
 	if (!cfile)
 		return NULL;
 	// TODO: use r_file_slurp ?
@@ -266,6 +278,11 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	cdataParse (pParser, 0, yylval, tTree);
 
 	cdataParseFree (pParser, free);
+
+	/* Remove tmp file */
+	r_file_rm(tmp_path);
+	free(tmp_path);
+
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;
 	// TODO: insert '.filename' field for all elements in this tree
