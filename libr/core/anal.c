@@ -773,3 +773,28 @@ R_API int r_core_anal_all(RCore *core) {
 	}
 	return R_TRUE;
 }
+
+R_API void r_core_anal_setup_enviroment (RCore *core) {
+	char key[128], *str = NULL;
+	RListIter *iter;
+	RConfigNode *kv;
+	r_list_foreach (core->config->nodes, iter, kv) {
+		strcpy (key, kv->name); // XXX: overflow
+		r_str_case (key, 1);
+		r_str_replace_char (key, '.', '_');
+#define RANAL_PARSE_STRING_ONLY 1
+#if RANAL_PARSE_STRING_ONLY
+		r_anal_type_define (core->anal, key, kv->value);
+#else
+		if (kv->flags & CN_INT) {
+			r_anal_type_define_i (core->anal, key, kv->i_value);
+		} else if (kv->flags & CN_BOOL) {
+			r_anal_type_define (core->anal, key, kv->i_value? "": NULL);
+		} else {
+			r_anal_type_define (core->anal, key, kv->value);
+		}
+#endif
+	}
+	r_anal_type_header (core->anal, str);
+	free (str);
+}

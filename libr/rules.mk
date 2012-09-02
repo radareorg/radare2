@@ -8,7 +8,6 @@ ifeq ($(USE_RPATH),1)
 LDFLAGS+=-Wl,-R${PREFIX}/lib
 endif
 
-
 #-------------------------------------#
 # Rules for libraries
 ifneq ($(NAME),)
@@ -128,6 +127,9 @@ endif
 
 ifneq ($(BIN)$(BINS),)
 BEXE=$(BIN)$(EXT_EXE)
+X=$(subst r_,,$(BINDEPS))
+LDFLAGS+=$(addprefix -L$(TOP)/libr/,$(X))
+LDFLAGS+=$(addprefix -l,$(BINDEPS))
 
 all: ${BEXE} ${BINS}
 
@@ -135,7 +137,7 @@ ${BINS}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo CC $@
 endif
-	${CC} ${CFLAGS} $@.c ${OBJS} -L.. ${LDFLAGS} -o $@
+	${CC} ${CFLAGS} $@.c ${OBJS} ${LDFLAGS} -o $@
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
 ifneq ($(SILENT),)

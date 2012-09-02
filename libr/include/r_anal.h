@@ -627,6 +627,8 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
+R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value);
+R_API void r_anal_type_header (RAnal *anal, const char *hdr);
 
 /* anal.c */
 R_API RAnal *r_anal_new();

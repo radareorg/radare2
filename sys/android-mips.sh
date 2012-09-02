@@ -1,3 +1,5 @@
 #!/bin/sh
 cd `dirname $PWD/$0`
-./android-shell.sh ./android-build.sh mips-static
+# PIC required for mips
+export CFLAGS="-O3 -fPIC"
+./android-shell.sh mips ./android-build.sh mips-static

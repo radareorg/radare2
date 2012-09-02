@@ -9,7 +9,10 @@ include ../../config-user.mk
 CFLAGS=-I ../../libr/include/
 CFLAGS+=-DLIBDIR="\"${LIBDIR}\""
 CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\"
-ifeq ($(STATIC_BUILD),1)
+CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
+
+#ifeq ($(STATIC_BUILD),1)
+ifeq ($(WITHNONPIC),1)
 LDFLAGS+=../../libr/th/libr_th.a
 LDFLAGS+=../../libr/io/libr_io.a
 LDFLAGS+=../../libr/socket/libr_socket.a

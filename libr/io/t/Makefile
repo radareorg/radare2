@@ -6,5 +6,5 @@ all:
 EXTRA_CLEAN=myclean
 #include ../../rules.mk
 
-myclean:
+clean myclean:
 	rm -f cat read4 map *.o

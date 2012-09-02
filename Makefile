@@ -22,10 +22,6 @@ plugins.cfg:
 gitpush:
 	sh mk/gitpush.sh
 
-.PHONY: todo
-todo:
-	grep -re TODO:0.9.2 libr binr
-
 farm:
 	./sys/farm/run.sh
 
@@ -40,6 +36,14 @@ w32:
 	# TODO: add support for debian
 	./configure --without-ssl --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
 	make
+
+.PHONY: depgraph.png
+depgraph.png:
+	cd libr ; perl depgraph.pl | dot -Tpng -odepgraph.png
+
+android:
+	@if [ -z "$(NDK_ARCH)" ]; then echo "Set NDK_ARCH=[arm|mips|x86]" ; false; fi
+	sys/android-${NDK_ARCH}.sh
 
 w32dist:
 	rm -rf radare2-w32-${VERSION} w32dist

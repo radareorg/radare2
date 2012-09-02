@@ -2,10 +2,11 @@ include ../../global.mk
 
 NAME=r_anal
 EXTRA_CLEAN=clean2
-DEPS=r_util r_db r_lib r_reg r_syscall r_diff # r_core (commented as it would be recursive)
+DEPS=r_util r_db r_lib r_reg r_syscall r_diff
+# r_core (commented as it would be recursive)
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
-include $(TOP)/libr/config.mk
+include $(LTOP)/config.mk
 
 LDFLAGS+=${BN_LIBS}
 
@@ -21,8 +22,9 @@ CPARSE_OBJS=cparse/cparse.o cparse/lex.yy.o cparse/tree.o cparse/gen.o cparse/er
 OBJ=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
 
 pre:
+	@cd $(TOP)/shlr && ${MAKE}
 	@cd cparse && ${MAKE} all
-	@if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
+	#@if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 clean2:
 	@cd cparse && ${MAKE} clean
@@ -30,4 +32,4 @@ clean2:
 plugins:
 	@${MAKE} -C p all
 
-include $(TOP)/libr/rules.mk
+include $(LTOP)/rules.mk

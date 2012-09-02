@@ -2,6 +2,7 @@ NAME=r_parse
 DEPS=r_lib r_flags r_util r_anal
 
 -include ../config.mk
+
 foo:
 	for a in pre libr_parse.${EXT_SO} libr_parse.${EXT_AR} plugins bins ; do ${MAKE} $$a ; done
 
@@ -14,9 +15,14 @@ bins:
 	@cd t && ${MAKE} all
 
 pre:
-	@if [ ! -e libr_parse.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
+ifeq ($(WITHNONPIC),1)
+	if [ ! -e libr_parse.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi
+endif
+ifeq ($(WITHPIC),1)
+	if [ ! -e libr_parse.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
+endif
 
 plugins:
 	@cd p && ${MAKE} all
 
-include ../rules.mk
+include $(LTOP)/rules.mk

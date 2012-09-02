@@ -1,3 +1,4 @@
 #!/bin/sh
 cd `dirname $PWD/$0`
-./android-shell.sh ./android-build.sh arm-static
+export CFLAGS="-O3"
+./android-shell.sh arm ./android-build.sh arm-static

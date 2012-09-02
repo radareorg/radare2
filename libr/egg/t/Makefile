@@ -13,12 +13,13 @@ BINDEPS=r_egg r_asm r_parse r_syscall r_db r_util r_lib
 BIN=test
 OBJ=test.o
 
-.PHONY: t
+.PHONY: t tests myclean
+
+include ../../rules.mk
+include ../../db/r.mk
 
 t tests:
 	@for a in ${TESTS} ; do sh t-$$a.sh ; done
 
 myclean:
 	rm -f test${EXT_EXE} test.o
-
-include ../../rules.mk

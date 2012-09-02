@@ -60,7 +60,7 @@ R_API RAnalType *r_anal_type_find(RAnal *a, const char *name) {
 	return NULL;
 }
 
-static const char *analtype(ushort t) {
+static const char *analtype(ut16 t) {
 	switch (t) {
 	case R_ANAL_VAR_TYPE_VOID:
 		return "void";
@@ -295,4 +295,13 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 
 	}
 	return tTree;
+}
+
+/* if value is null, undefine, if value is "" , defined*/
+/* numeric values are parsed from strings */
+R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value) {
+	// TODO: store in RPair
+}
+
+R_API void r_anal_type_header (RAnal *anal, const char *hdr) {
 }
