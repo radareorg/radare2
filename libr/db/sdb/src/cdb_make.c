@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "alloc.h"
+#include "sdb.h"
 #include "cdb.h"
 #include "cdb_make.h"
 
@@ -59,7 +60,7 @@ int cdb_make_add(struct cdb_make *c,const char *key,unsigned int keylen,const ch
 	if (!cdb_make_addbegin (c, keylen, datalen)) return 0;
 	if (!buffer_putalign (&c->b, key, keylen)) return 0;
 	if (!buffer_putalign (&c->b, data, datalen)) return 0;
-	return cdb_make_addend (c, keylen, datalen, cdb_hash (key, keylen));
+	return cdb_make_addend (c, keylen, datalen, sdb_hash (key, keylen));
 }
 
 int cdb_make_finish(struct cdb_make *c) {

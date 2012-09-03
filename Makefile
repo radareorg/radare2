@@ -19,9 +19,6 @@ plugins.cfg:
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
 
-gitpush:
-	sh mk/gitpush.sh
-
 farm:
 	./sys/farm/run.sh
 
@@ -72,19 +69,13 @@ w32beta: w32dist
 	scp radare2-bindings-w32-${VERSION}.zip ${REMOTE}
 
 clean:
-	cd libr && ${MAKE} clean
-	cd binr && ${MAKE} clean
-	cd shlr && ${MAKE} clean
+	for a in libr binr shlr ; do (${MAKE} clean) ; done
 
 mrproper:
-	cd libr && ${MAKE} mrproper
-	cd binr && ${MAKE} mrproper
-	cd shlr && ${MAKE} mrproper
-	rm -f config-user.mk plugins.cfg libr/config.h libr/include/r_userconf.h libr/config.mk
+	for a in libr binr shlr ; do (${MAKE} mrproper) ; done
+	rm -f config-user.mk plugins.cfg libr/config.h
+	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
-
-mrpopper:
-	@echo 8====================D
 
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
@@ -118,18 +109,22 @@ install: install-doc install-man
 	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud
 	cp -f libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud/
 
+DLIBDIR=$(DESTDIR)/$(LIBDIR)
+
 install-pkgconfig-symlink:
-	@${INSTALL_DIR} ${DESTDIR}/${LIBDIR}/pkgconfig
-	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DESTDIR}/${LIBDIR}/pkgconfig/$$a ; done
+	@${INSTALL_DIR} ${DLIBDIR}/pkgconfig
+	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DLIBDIR}/pkgconfig/$$a ; done
 
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	for a in ${DATADIRS} ; do \
-	(cd $$a ; echo $$a ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
+	for a in ${DATADIRS} ; do (\
+		cd $$a ; \
+		echo $$a ; \
+		${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
-	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud
-	ln -fs ${PWD}/libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud/main
+	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
+	ln -fs ${PWD}/libr/core/hud/main ${DLIBDIR}/radare2/${VERSION}/hud/main
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
@@ -173,14 +168,11 @@ r2-bindings-dist:
 
 dist:
 	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
-	VERSION=${VERSION} ; \
+	DIR=`basename $$PWD` ; \
 	FILES=`git ls-files | sed -e s,^,radare2-${VERSION}/,` ; \
-	cd .. && mv radare2 radare2-${VERSION} && \
+	cd .. && mv $${DIR} radare2-${VERSION} && \
 	${TAR} radare2-${VERSION}.tar.gz $${FILES} radare2-${VERSION}/ChangeLog ;\
-	mv radare2-${VERSION} radare2
-
-pub:
-	scp ../radare2-${VERSION}.tar.gz radare.org:/srv/http/radareorg/get
+	mv radare2-${VERSION} $${DIR}
 
 shot:
 	DATE=`date '+%Y%m%d'` ; \
@@ -190,9 +182,7 @@ shot:
 	mv radare2-$${DATE} radare2 && \
 	scp radare2-$${DATE}.tar.gz radare.org:/srv/http/radareorg/get/shot
 
-# TODO: test/ must be removed
-.PHONY: test tests
-test tests:
+tests:
 	@if [ -d r2-regressions ]; then \
 		cd r2-regressions ; git pull ; \
 	else \
@@ -203,4 +193,4 @@ test tests:
 include ${MKPLUGINS}
 
 .PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg
-.PHONY: r2-bindings r2-bindings-dist libr binr install-man version w32dist
+.PHONY: r2-bindings r2-bindings-dist libr binr install-man version w32dist tests

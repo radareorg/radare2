@@ -9,11 +9,7 @@
 #define st16 short
 #define ut8 unsigned char
 #define st8 char
-typedef int boolt;
-/*
-#undef boolt
 #define boolt int
-*/
 
 #define R_FAIL -1
 #define R_FALSE 0
@@ -21,6 +17,12 @@ typedef int boolt;
 #define R_TRUFAE 2
 
 /* limits */
+#undef UT64_MAX
+#undef UT64_GT0
+#undef UT64_LT0
+#undef UT64_MIN
+#undef UT32_MAX
+#undef UT32_MIN
 #define UT64_MAX 0xFFFFFFFFFFFFFFFFULL
 #define UT64_GT0 0x8000000000000000ULL
 #define UT64_LT0 0x7FFFFFFFFFFFFFFFULL
@@ -33,10 +35,12 @@ typedef int boolt;
 #define UT32_LT0 0x7FFFFFFFU
 #define ST32_MAX 0x7FFFFFFF
 #define UT32_MAX 0xFFFFFFFFU
+#define UT32_MIN 0U
 #define UT16_GT0 0x8000U
 #define UT16_MAX 0xFFFFU
 #define UT8_GT0  0x80U
 #define UT8_MAX  0xFFU
+#define UT8_MIN  0x00U
 
 /* copied from bithacks.h */
 #define B_IS_SET(x, n)   (((x) & (1<<(n)))?1:0)

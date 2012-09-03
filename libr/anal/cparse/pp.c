@@ -144,7 +144,7 @@ static void seq(CparsePP *ppp)
 	if (endoflinep(ppp->cl))
 	    return;
 	input = nextchar(ppp->cl, input);
-    }
+   }
 
     cmd = skipwhite(ppp->cl, nextchar(ppp->cl, input));
     input = getpreprocessorcmd(ppp->cl, cmd, &id);

@@ -1,30 +1,42 @@
 include ../config.mk
-
-HOST_CC=gcc
-
+CFLAGS+= -g -ggdb
+LDFLAGS+= -g -ggdb
 #CFLAGS+=-DOLDFMT=1
 OBJ=alloc.o cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o lock.o
+OBJ+=json.o json/js0n.o json/json.o json/rangstr.o ns.o
 # This is hacky
-SOEXT=dylib
-#SOEXT=so
+OS=$(shell uname)
 ARCH=$(shell uname -m)
+ifeq (${OS},Darwin)
+SOEXT=dylib
+LDFLAGS+=-dynamic
+ ifeq (${ARCH},i386)
+   CC+=-arch i386 -arch x86_64
+ endif
+else
+SOEXT=so
+endif
 RANLIB?=ranlib
 EXEXT=
 
 BIN=sdb${EXEXT}
 
-.PHONY: all libsdb.${SOEXT} clean wcl syms
+.PHONY: all static shared clean wcl syms
 
-all: libsdb.a ${BIN}
+all: static shared ${BIN}
+
+shared: libsdb.${SOEXT}
+
+static: libsdb.a
 
 libsdb.a: ${OBJ}
 	@#ar qf libasb.a ${OBJ}
-	ar -r libsdb.a ${OBJ}
+	rm -f libsdb.a
+	${AR} -r libsdb.a ${OBJ}
 	${RANLIB} libsdb.a
 
-libsdb.${SOEXT}:
-	${CC} -o $@ $(subst .o,.c,${OBJ}) -fPIC -shared -arch ${ARCH}
-	sudo cp libsdb.${SOEXT} ${PREFIX}/lib
+libsdb.${SOEXT}: ${OBJ}
+	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $(subst .o,.c,${OBJ}) -fPIC -shared
 
 t:
 	rm -f foo
@@ -49,8 +61,8 @@ syms:
 main.c:
 
 ${BIN}: libsdb.a main.c
-	${HOST_CC} -DVERSION=\"${VERSION}\" -o ${BIN} *.c 
-	#${CC} ${CFLAGS} -o ${BIN} main.c libsdb.a
+	${CC} ${CFLAGS} -o ${BIN} main.c ${OBJ}
+	#libsdb.a
 
 wcl:
 	wc -l `echo ${OBJ}|sed -e 's,\.o,.c,g'`

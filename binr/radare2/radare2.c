@@ -2,6 +2,7 @@
 
 #define USE_THREADS 1
 
+#include <sdb.h>
 #include <r_core.h>
 #include <r_io.h>
 #include <stdio.h>
@@ -128,7 +129,7 @@ int main(int argc, char **argv) {
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	int cmdfilei = 0;
-	
+
 	if (r_sys_getenv ("R_DEBUG"))
 		r_sys_crash_handler ("gdb --pid %d");
 

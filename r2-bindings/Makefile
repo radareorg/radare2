@@ -87,12 +87,13 @@ w32dist:
 
 dist:
 	PKG=r2-bindings-${VERSION} ; \
-	FILES=`cd .. ; hg st -mac . | grep r2-bindings | grep -v '/\.' | sed -e "s,r2-bindings/,$${PKG}/," | cut -c 3-` ; \
+	DIR=`basename $$PWD` ; \
+	FILES=`git ls-files | sed -e s,^,r2-bindings-${VERSION}/,` ; \
 	CXXFILES=`cd .. ; find r2-bindings | grep -e cxx$$ -e py$$ | sed -e "s,r2-bindings/,$${PKG}/,"` ; \
-	cd .. && mv r2-bindings $${PKG} && \
+	cd .. && mv $${DIR} $${PKG} && \
 	echo $$FILES ; \
 	${TAR} $${PKG}.tar.gz $${FILES} $${CXXFILES} ; \
-	mv $${PKG} r2-bindings
+	mv $${PKG} $${DIR}
 
 # TODO: valadoc
 vdoc:

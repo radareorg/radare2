@@ -2,7 +2,7 @@
 #include "types.h"
 
 int sdb_nexists (Sdb *s, const char *key) {
-	char c, *o = sdb_get (s, key);
+	char c, *o = sdb_get (s, key, NULL);
 	if (!o) return 0;
 	c = *o;
 	free (o);
@@ -26,37 +26,43 @@ static void __ulltoa(ut64 n, char *s) {
 	__strrev (s, i);
 }
 
-ut64 sdb_getn(Sdb *s, const char *key) {
+ut64 sdb_getn(Sdb *s, const char *key, ut32 *cas) {
 	ut64 n;
-	char *p, *v = sdb_get (s, key);
+	char *p, *v = sdb_get (s, key, cas);
 	if (!v) return 0LL;
 	n = strtoull (v, &p, 10);
 	if (!p) return 0LL;
-	sdb_setn (s, key, n);
+	//XXX sdb_setn (s, key, n);
 	free (v);
 	return n;
 }
 
-void sdb_setn(Sdb *s, const char *key, ut64 v) {
+int sdb_setn(Sdb *s, const char *key, ut64 v, ut32 cas) {
 	char b[128];
 	__ulltoa (v, b);
-	sdb_set (s, key, b);
+	return sdb_set (s, key, b, cas);
 }
 
-ut64 sdb_inc(Sdb *s, const char *key, ut64 n2) {
-	ut64 n = sdb_getn (s, key);
+ut64 sdb_inc(Sdb *s, const char *key, ut64 n2, ut32 cas) {
+	ut32 c;
+	ut64 n = sdb_getn (s, key, &c);
+	if (cas && c != cas)
+		return 0LL;
 	if (-n2<n)
 		return 0LL;
-	sdb_setn (s, key, n+n2);
+	sdb_setn (s, key, n+n2, cas);
 	return n;
 }
 
-ut64 sdb_dec(Sdb *s, const char *key, ut64 n2) {
-	ut64 n = sdb_getn (s, key);
-	if (n2>n) {
-		sdb_setn (s, key, 0LL);
+ut64 sdb_dec(Sdb *s, const char *key, ut64 n2, ut32 cas) {
+	ut32 c;
+	ut64 n = sdb_getn (s, key, &c);
+	if (cas && c != cas)
 		return 0LL;
+	if (n2>n) {
+		sdb_set (s, key, "0", cas);
+		return 0LL; // XXX must be -1?
 	}
-	sdb_setn (s, key, n-n2);
+	sdb_setn (s, key, n-n2, cas);
 	return n;
 }

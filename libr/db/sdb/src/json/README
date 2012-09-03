@@ -1,0 +1,20 @@
+JSON support for sdb
+====================
+
+Use js0n: https://github.com/quartzjer/js0n
+
+git clone git://github.com/quartzjer/js0n.git
+
+----------
+
+user.pancake={"name":"Pancake","pass":"4e2e631e3671727c3f7d8d11fc4dcb0d"}
+user.blah={"name":"Bin Daboo","pass":"bd20ae2b25e8d4ff64e0720a5b4162d2"}
+user.boun={"name":"Bob Union","pass":"2f03be08fcddd9a889e8c9d8de933cea"}
+
+user.pancake?name
+user.pancake?pass
+
+user.pancake?name=My name
+
+user?name=Bob Union => user.boun
+user?name~B => user.boun
