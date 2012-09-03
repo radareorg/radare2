@@ -164,6 +164,7 @@ static int autocomplete(RLine *line) {
 		} else
 		if ((!memcmp (line->buffer.data, "o ", 2)) ||
 		     !memcmp (line->buffer.data, ". ", 2) ||
+		     !memcmp (line->buffer.data, "tf ", 3) ||
 		     !memcmp (line->buffer.data, "pm ", 3) ||
 		     !memcmp (line->buffer.data, "/m ", 3)) {
 			// XXX: SO MANY FUCKING MEMORY LEAKS

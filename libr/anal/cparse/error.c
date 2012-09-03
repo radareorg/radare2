@@ -20,12 +20,11 @@ struct errhandler {
 
 /* There is only one error handler for the program.
  */
-struct errhandler err;
+static struct errhandler err;
 
 /* Sets the name of the file to report errors for.
  */
-void seterrorfile(char const *file)
-{
+void seterrorfile(char const *file) {
     err.file = file;
     err.lineno = 0;
     err.type = errNone;
@@ -33,38 +32,33 @@ void seterrorfile(char const *file)
 
 /* Sets the file's current line number.
  */
-void seterrorline(unsigned long lineno)
-{
+void seterrorline(unsigned long lineno) {
     err.lineno = lineno;
 }
 
 /* Increments the current line number.
  */
-void nexterrorline(void)
-{
+void nexterrorline(void) {
     ++err.lineno;
 }
 
 /* Returns the current error count.
  */
-int geterrormark(void)
-{
+int geterrormark(void) {
     return err.count;
 }
 
 /* Returns true if new errors have been recorded since the last
  * retrieved count.
  */
-int errorsincemark(int mark)
-{
+int errorsincemark(int mark) {
     return err.count > mark;
 }
 
 /* Logs an error. The error is recorded in the error handler, and a
  * formatted message is displayed to the user.
  */
-void error(enum errortype type)
-{
+void error(enum errortype type) {
     err.type = type;
     if (type == errNone)
 	return;

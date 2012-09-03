@@ -45,9 +45,10 @@ void freeppproc(CparsePP *pp);
 void preprocess_file(CparsePP *pp, void *infile, void *outfile);
 
 /* Preprocess inbuf contents and return result */
-char* preprocess_buf(CparsePP *pp, char *inbuf);
+char* preprocess_buf(CparsePP *pp, const char *inbuf);
 
-void cparsepp_file (FILE *infile, FILE* outfile);
-char* cparsepp_buf (char* inbuf);
+void cparsepp_file_fd (FILE *infile, FILE* outfile);
+void cparsepp_file (const char *in, const char *out);
+char* cparsepp_buf (const char* inbuf);
 
 #endif

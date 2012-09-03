@@ -219,16 +219,17 @@ R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep) {
 
 // TODO: Add types to RList instead or RAnalType
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
-	char *tmp;
-	int yv;
 	RAnalType *tTree = R_NEW0 (RAnalType); //NULL;
 	char *tmp_type = NULL;
+	void *pParser;
+	char *tmp;
+	int yv;
 
 	/* Preprocess buffer first */
 	tmp_type = cparsepp_buf (type);
 
 	/* Parse preprocessed buffer then */
-	void *pParser = cdataParseAlloc (malloc);
+	pParser = cdataParseAlloc (malloc);
 	yy_scan_string (tmp_type);
 	while ((yv = yylex ()) != 0) {
 		cdataParse (pParser, yv, yylval, tTree);
@@ -244,27 +245,31 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 		eprintf ("-> (%s)\n", tmp);
 		free (tmp);
 		tTree = tTree->next;
-
 	}
 	return tTree;
 }
 
 // TODO: Add types to RList instead of RAnalType
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
-	char *tmp, *tmp_path;
-	void *pParser;
-	char buf[4096];
 	int n, yv, yylval = 0;
-	RAnalType *tTree = NULL;
+	RAnalType *tTree = R_NEW0 (RAnalType);
+	char *tmp, *tmp_path;
+	char buf[4096];
+	void *pParser;
+	FILE *cfile;
 
 	/* Preprocess file first */
-	r_file_mkstemp("r2pp", &tmp_path);
+	if (!r_file_mkstemp ("r2pp", &tmp_path)) {
+		eprintf ("Cannot create temporary file\n");
+		return NULL;
+	}
 	cparsepp_file (path, tmp_path);
 
 	/* Parse preprocessed file then */
-	FILE *cfile = fopen (tmp_path, "r");
-	if (!cfile)
+	if (!(cfile = fopen (tmp_path, "r"))) {
+		free (tmp_path);
 		return NULL;
+	}
 	// TODO: use r_file_slurp ?
 	pParser = cdataParseAlloc (malloc);
 	while ((n = fread (buf, 1, sizeof (buf), cfile)) > 0) {
@@ -274,14 +279,14 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 			cdataParse (pParser, yv, yylval, tTree);
 		}
 	}
-	fclose (cfile);
 	cdataParse (pParser, 0, yylval, tTree);
+	fclose (cfile);
 
 	cdataParseFree (pParser, free);
 
 	/* Remove tmp file */
-	r_file_rm(tmp_path);
-	free(tmp_path);
+	r_file_rm (tmp_path);
+	free (tmp_path);
 
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;

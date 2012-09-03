@@ -366,7 +366,7 @@ static int readline(CparsePP *ppp, FILE *infile)
  * preprocessor. The return value is zero if the file has reached the
  * end or if the file can't be read.
  */
-static int readline_buf(CparsePP *ppp, char *inbuf)
+static int readline_buf(CparsePP *ppp, const char *inbuf)
 {
     int size, i = 1;
     int prev, ch;
@@ -427,8 +427,7 @@ static int writeline(CparsePP *ppp, FILE *outfile)
  * assuming anything is left to be output. The return value is false
  * if an error occurs.
  */
-static int writeline_buf(CparsePP *ppp, char *outbuf)
-{
+static int writeline_buf(CparsePP *ppp, char *outbuf) {
     size_t size;
 
     if (!ppp->line)
@@ -436,16 +435,10 @@ static int writeline_buf(CparsePP *ppp, char *outbuf)
     if (!ppp->copy || ppp->absorb)
 		return 1;
 
-    size = strlen(ppp->line);
-    if (size) {
-		if (strncpy(outbuf, ppp->line, size) != 1) {
-			seterrorfile(NULL);
-			error(errFileIO);
-			return 0;
-		}
-    }
+    size = strlen (ppp->line);
+    if (size>0) strncpy (outbuf, ppp->line, size);
     if (ppp->endline)
-		strcat(outbuf, "\n");
+		strcat (outbuf, "\n");
     ppp->endline = FALSE;
     return 1;
 }
@@ -474,7 +467,7 @@ void preprocess_file(CparsePP *pp, void *infile, void *outfile)
     end_pp(pp);
 }
 
-char* preprocess_buf(CparsePP *pp, char *inbuf)
+char* preprocess_buf(CparsePP *pp, const char *inbuf)
 {
 	// TODO: implement more dynamic allocation
 	char* outbuf = malloc(4098);
@@ -489,8 +482,8 @@ char* preprocess_buf(CparsePP *pp, char *inbuf)
 }
 
 // TODO: Import enviroment variables?
-void cparsepp_file (FILE *infile, FILE *outfile)
-{
+// TODO: return error if failed
+void cparsepp_file_fd (FILE *infile, FILE *outfile) {
 	CparseSYM *defs = initsymset ();
 	CparseSYM *undefs = initsymset ();
 	CparsePP *pp = initppproc (defs, undefs);
@@ -500,9 +493,18 @@ void cparsepp_file (FILE *infile, FILE *outfile)
 	freesymset (undefs);
 }
 
+void cparsepp_file (const char *infile, const char *outfile) {
+	FILE *in = fopen (infile, "r");
+	FILE *out = fopen (outfile, "w");
+	if (in && out) {
+		cparsepp_file_fd (in, out);
+	}
+	fclose (in);
+	fclose (out);
+}
+
 // TODO: Import enviroment variables?
-char* cparsepp_buf (char *inbuf)
-{
+char* cparsepp_buf (const char *inbuf) {
 	char* outbuf = NULL;
 
 	CparseSYM *defs = initsymset ();

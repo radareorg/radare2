@@ -190,7 +190,7 @@ rm -f $F.bin
 ${CC} ${CFLAGS} -o $F.tmp -S ${OPT} $F || fail
 echo "${SHDR}" > $F.s
 cat $F.tmp \
-	| sed -e s,rdata,text, -e s,rodata,text, -e 's,__i686.get_pc_thunk.bx,__getesp__,g' \
+	| sed -e s,rdata,text, -e s,rodata,text, -e 's,get_pc_thunk.bx,__getesp__,g' \
 	| grep -v .cstring | grep -v size | grep -v ___main | grep -v section \
 	| grep -v __alloca | grep -v zero | grep -v cfi >> $F.s
 rm -f $F.tmp
