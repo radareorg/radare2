@@ -22,8 +22,8 @@ CPARSE_OBJS=cparse/cparse.o cparse/lex.yy.o cparse/tree.o cparse/gen.o cparse/er
 OBJ=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
 
 pre:
-	@cd $(TOP)/shlr && ${MAKE}
 	@cd cparse && ${MAKE} all
+	@cd $(TOP)/shlr && ${MAKE}
 
 #@if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
