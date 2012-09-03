@@ -219,7 +219,8 @@ R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep) {
 
 // TODO: Add types to RList instead or RAnalType
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
-	RAnalType *tTree = R_NEW0 (RAnalType); //NULL;
+	RAnalType *tTree = R_NEW0 (RAnalType);
+	RAnalType *t = NULL;
 	char *tmp_type = NULL;
 	void *pParser;
 	char *tmp;
@@ -232,19 +233,19 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 	pParser = cdataParseAlloc (malloc);
 	yy_scan_string (tmp_type);
 	while ((yv = yylex ()) != 0) {
-		cdataParse (pParser, yv, yylval, tTree);
+		cdataParse (pParser, yv, yylval, &tTree);
 	}
-	cdataParse (pParser, 0, yylval, tTree);
+	cdataParse (pParser, 0, yylval, &tTree);
 	cdataParseFree (pParser, free);
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;
 
-	while (tTree->next) {
-		RAnalType *t = tTree->next;
+	t = tTree;
+	while (t) {
 		tmp = r_anal_type_to_str (a, t, "; ");
 		eprintf ("-> (%s)\n", tmp);
 		free (tmp);
-		tTree = tTree->next;
+		t = t->next;
 	}
 	return tTree;
 }
@@ -253,6 +254,7 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	int n, yv, yylval = 0;
 	RAnalType *tTree = R_NEW0 (RAnalType);
+	RAnalType *t = NULL;
 	char *tmp, *tmp_path;
 	char buf[4096];
 	void *pParser;
@@ -276,10 +278,10 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 		buf[n] = '\0';
 		yy_scan_string (buf);
 		while ((yv = yylex ()) != 0) {
-			cdataParse (pParser, yv, yylval, tTree);
+			cdataParse (pParser, yv, yylval, &tTree);
 		}
 	}
-	cdataParse (pParser, 0, yylval, tTree);
+	cdataParse (pParser, 0, yylval, &tTree);
 	fclose (cfile);
 
 	cdataParseFree (pParser, free);
@@ -291,13 +293,12 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	// TODO: Parse whole tree and split top-level members
 	// and place them into RList;
 	// TODO: insert '.filename' field for all elements in this tree
-	while (tTree->next) {
-		RAnalType *t = tTree->next;
+	t = tTree;
+	while (t) {
 		tmp = r_anal_type_to_str (a, t, "; ");
 		eprintf ("-> (%s)\n", tmp);
 		free (tmp);
-		tTree = tTree->next;
-
+		t = t->next;
 	}
 	return tTree;
 }

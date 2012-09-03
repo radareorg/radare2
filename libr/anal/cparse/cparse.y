@@ -15,7 +15,7 @@
 %token_type {Token}
 %default_type {Token}
 
-%extra_argument { RAnalType *trees }
+%extra_argument { RAnalType **tTree }
 
 %type source {RAnalType *}
 %type deflist {RAnalType *}
@@ -34,7 +34,7 @@
 source(A) ::= deflist(B). {
 	A = B;
 	/* Add definitions to the list */
-	trees->next = A;
+	*tTree = A;
 }
 deflist(A) ::= def(B) SEMICOLON deflist(C). {
 	B->next = C;
