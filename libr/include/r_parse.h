@@ -46,6 +46,7 @@ extern struct r_parse_plugin_t r_parse_plugin_dummy;
 extern struct r_parse_plugin_t r_parse_plugin_att2intel;
 extern struct r_parse_plugin_t r_parse_plugin_x86_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mips_pseudo;
+extern struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mreplace;
 #endif
 

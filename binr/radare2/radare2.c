@@ -126,6 +126,7 @@ int main(int argc, char **argv) {
 	int quite = R_FALSE;
 	int is_gdb = R_FALSE;
 	RList *cmds = r_list_new ();
+	RList *evals = r_list_new ();
 	int cmdfilei = 0;
 	
 	if (r_sys_getenv ("R_DEBUG"))
@@ -161,7 +162,8 @@ int main(int argc, char **argv) {
 		case 'i': cmdfile[cmdfilei++] = optarg; break;
 		case 'l': r_lib_open (r.lib, optarg); break;
 		case 'd': debug = 1; break;
-		case 'e': r_config_eval (r.config, optarg); break;
+		case 'e': r_config_eval (r.config, cmdn); 
+			  r_list_append (evals, optarg); break;
 		case 'H':
 		case 'h': help++; break;
 		case 'f': fullfile = 1; break;
@@ -384,6 +386,12 @@ int main(int argc, char **argv) {
 	if ((cmdfile[0] || !r_list_empty (cmds)) && quite)
 		return 0;
 	r_list_free (cmds);
+
+	r_list_foreach (evals, iter, cmdn) {
+		r_config_eval (r.config, cmdn); 
+		r_cons_flush ();
+	}
+	r_list_free (evals);
 
 	if (patchfile) {
 		r_core_patch (&r, patchfile);

@@ -24,7 +24,8 @@ OBJ=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
 pre:
 	@cd $(TOP)/shlr && ${MAKE}
 	@cd cparse && ${MAKE} all
-	#@if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
+
+#@if [ ! -e libr_anal.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
 
 clean2:
 	@cd cparse && ${MAKE} clean
