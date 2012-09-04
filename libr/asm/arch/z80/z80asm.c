@@ -20,6 +20,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef R_API_I
+#define R_API_I
+#endif
 #include "z80asm.h"
 
 /* hack */
@@ -77,7 +80,7 @@ static int baseaddr;
 static char mem_delimiter;
 
 /* line currently being parsed */
-static char *buffer = NULL;
+static char *z80buffer = NULL;
 
 /* if a macro is currently being defined */
 static int define_macro = 0;
@@ -251,7 +254,6 @@ static void readlabel (const char **p, int store) {
 	if (buf->next)
 		buf->next->prev = buf;
 }
-
 
 static int compute_ref (struct reference *ref, int allow_invalid) {
 	const char *ptr;
@@ -730,16 +732,16 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	do {
 		int cmd, cont = 1;
 // XXX: must free
-		  buffer = strdup (str);
+		  z80buffer = strdup (str);
 	  if (!cont)
 	    break;		/* break to next source file */
 //	  if (havelist)
 //	    fprintf (listfile, "%04x", addr);
-	  for (bufptr = buffer; (bufptr = strchr (bufptr, '\n'));)
+	  for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\n'));)
 	    *bufptr = ' ';
-	  for (bufptr = buffer; (bufptr = strchr (bufptr, '\r'));)
+	  for (bufptr = z80buffer; (bufptr = strchr (bufptr, '\r'));)
 	    *bufptr = ' ';
-	  ptr = buffer;
+	  ptr = z80buffer;
 	  //lastlabel = NULL;
 	  baseaddr = addr;
 	  ++stack[sp].line;
@@ -763,7 +765,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	  switch (cmd)
 	    {
 	      int i, have_quote;
-	    case ADC:
+	    case _ADC:
 	      if (!(r = rd_a_hl (&ptr)))
 		break;
 	      if (r == HL)
@@ -778,7 +780,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		break;
 	      wrtb (0x88 + --r);
 	      break;
-	    case ADD:
+	    case _ADD:
 	      if (!(r = rd_r_add (&ptr)))
 		break;
 	      if (r == addHL)
@@ -802,12 +804,12 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0x80 + --r);	/* ADD r  */
 	      break;
-	    case AND:
+	    case _AND:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      wrtb (0xA0 + --r);
 	      break;
-	    case BIT:
+	    case _BIT:
 	      if (!rd_0_7 (&ptr))
 		break;
 	      rd_comma (&ptr);
@@ -816,43 +818,43 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xCB);
 	      wrtb (0x40 + (r - 1));
 	      break;
-	    case CALL:
+	    case _CALL:
 	      if ((r = rd_cc (&ptr))) {
 		  wrtb (0xC4 + 8 * --r);
 		  rd_comma (&ptr);
 		} else wrtb (0xCD);
 	      break;
-	    case CCF:
+	    case _CCF:
 	      wrtb (0x3F);
 	      break;
-	    case CP:
+	    case _CP:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      wrtb (0xB8 + --r);
 	      break;
-	    case CPD:
+	    case _CPD:
 	      wrtb (0xED);
 	      wrtb (0xA9);
 	      break;
-	    case CPDR:
+	    case _CPDR:
 	      wrtb (0xED);
 	      wrtb (0xB9);
 	      break;
-	    case CPI:
+	    case _CPI:
 	      wrtb (0xED);
 	      wrtb (0xA1);
 	      break;
-	    case CPIR:
+	    case _CPIR:
 	      wrtb (0xED);
 	      wrtb (0xB1);
 	      break;
-	    case CPL:
+	    case _CPL:
 	      wrtb (0x2F);
 	      break;
-	    case DAA:
+	    case _DAA:
 	      wrtb (0x27);
 	      break;
-	    case DEC:
+	    case _DEC:
 	      if (!(r = rd_r_rr (&ptr)))
 		break;
 	      if (r < 0) {
@@ -861,17 +863,17 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0x0B + 0x10 * --r);
 	      break;
-	    case DI:
+	    case _DI:
 	      wrtb (0xF3);
 	      break;
-	    case DJNZ:
+	    case _DJNZ:
 	      wrtb (0x10);
 	      //rd_wrt_jr (&ptr, '\0');
 	      break;
-	    case EI:
+	    case _EI:
 	      wrtb (0xFB);
 	      break;
-	    case EX:
+	    case _EX:
 	      if (!(r = rd_ex1 (&ptr)))
 		break;
 	      switch (r)
@@ -892,13 +894,13 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  wrtb (0xE3);
 		}
 	      break;
-	    case EXX:
+	    case _EXX:
 	      wrtb (0xD9);
 	      break;
-	    case HALT:
+	    case _HALT:
 	      wrtb (0x76);
 	      break;
-	    case IM:
+	    case _IM:
 	      if (!(r = rd_0_2 (&ptr)))
 		break;
 	      wrtb (0xED);
@@ -925,7 +927,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xED);
 	      wrtb (0x40 + 8 * --r);
 	      break;
-	    case INC:
+	    case _INC:
 	      if (!(r = rd_r_rr (&ptr)))
 		break;
 	      if (r < 0)
@@ -935,23 +937,23 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0x03 + 0x10 * --r);
 	      break;
-	    case IND:
+	    case _IND:
 	      wrtb (0xED);
 	      wrtb (0xAA);
 	      break;
-	    case INDR:
+	    case _INDR:
 	      wrtb (0xED);
 	      wrtb (0xBA);
 	      break;
-	    case INI:
+	    case _INI:
 	      wrtb (0xED);
 	      wrtb (0xA2);
 	      break;
-	    case INIR:
+	    case _INIR:
 	      wrtb (0xED);
 	      wrtb (0xB2);
 	      break;
-	    case JP:
+	    case _JP:
 	      r = rd_jp (&ptr);
 	      if (r < 0)
 		{
@@ -963,13 +965,13 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  rd_comma (&ptr);
 		} else wrtb (0xC3);
 	      break;
-	    case JR:
+	    case _JR:
 	      r = rd_jr (&ptr);
 	      if (r)
 		rd_comma (&ptr);
 	      wrtb (0x18 + 8 * r);
 	      break;
-	    case LD:
+	    case _LD:
 	      if (!(r = rd_ld (&ptr)))
 		break;
 	      switch (r)
@@ -1065,39 +1067,39 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  break;
 		}
 	      break;
-	    case LDD:
+	    case _LDD:
 	      wrtb (0xED);
 	      wrtb (0xA8);
 	      break;
-	    case LDDR:
+	    case _LDDR:
 	      wrtb (0xED);
 	      wrtb (0xB8);
 	      break;
-	    case LDI:
+	    case _LDI:
 	      wrtb (0xED);
 	      wrtb (0xA0);
 	      break;
-	    case LDIR:
+	    case _LDIR:
 	      wrtb (0xED);
 	      wrtb (0xB0);
 	      break;
-	    case NEG:
+	    case _NEG:
 	      wrtb (0xED);
 	      wrtb (0x44);
 	      break;
-	    case NOP:
+	    case _NOP:
 	      wrtb (0x00);
 	      break;
-	    case OR:
+	    case _OR:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      wrtb (0xB0 + --r);
 	      break;
-	    case OTDR:
+	    case _OTDR:
 	      wrtb (0xED);
 	      wrtb (0xBB);
 	      break;
-	    case OTIR:
+	    case _OTIR:
 	      wrtb (0xED);
 	      wrtb (0xB3);
 	      break;
@@ -1116,25 +1118,25 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		break;
 		wrtb (0xD3);
 	      break;
-	    case OUTD:
+	    case _OUTD:
 	      wrtb (0xED);
 	      wrtb (0xAB);
 	      break;
-	    case OUTI:
+	    case _OUTI:
 	      wrtb (0xED);
 	      wrtb (0xA3);
 	      break;
-	    case POP:
+	    case _POP:
 	      if (!(r = rd_stack (&ptr)))
 		break;
 	      wrtb (0xC1 + 0x10 * --r);
 	      break;
-	    case PUSH:
+	    case _PUSH:
 	      if (!(r = rd_stack (&ptr)))
 		break;
 	      wrtb (0xC5 + 0x10 * --r);
 	      break;
-	    case RES:
+	    case _RES:
 	      if (!rd_0_7 (&ptr))
 		break;
 	      rd_comma (&ptr);
@@ -1143,7 +1145,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xCB);
 	      wrtb (0x80 + --r);
 	      break;
-	    case RET:
+	    case _RET:
 	      if (!(r = rd_cc (&ptr)))
 		{
 		  wrtb (0xC9);
@@ -1151,62 +1153,62 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0xC0 + 8 * --r);
 	      break;
-	    case RETI:
+	    case _RETI:
 	      wrtb (0xED);
 	      wrtb (0x4D);
 	      break;
-	    case RETN:
+	    case _RETN:
 	      wrtb (0xED);
 	      wrtb (0x45);
 	      break;
-	    case RL:
+	    case _RL:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x10 + --r);
 	      break;
-	    case RLA:
+	    case _RLA:
 	      wrtb (0x17);
 	      break;
-	    case RLC:
+	    case _RLC:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x00 + --r);
 	      break;
-	    case RLCA:
+	    case _RLCA:
 	      wrtb (0x07);
 	      break;
-	    case RLD:
+	    case _RLD:
 	      wrtb (0xED);
 	      wrtb (0x6F);
 	      break;
-	    case RR:
+	    case _RR:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x18 + --r);
 	      break;
-	    case RRA:
+	    case _RRA:
 	      wrtb (0x1F);
 	      break;
-	    case RRC:
+	    case _RRC:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x08 + --r);
 	      break;
-	    case RRCA:
+	    case _RRCA:
 	      wrtb (0x0F);
 	      break;
-	    case RRD:
+	    case _RRD:
 	      wrtb (0xED);
 	      wrtb (0x67);
 	      break;
-	    case RST:
+	    case _RST:
 	      ptr = "";
 	      break;
-	    case SBC:
+	    case _SBC:
 	      if (!(r = rd_a_hl (&ptr)))
 		break;
 	      if (r == HL)
@@ -1221,10 +1223,10 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		break;
 	      wrtb (0x98 + --r);
 	      break;
-	    case SCF:
+	    case _SCF:
 	      wrtb (0x37);
 	      break;
-	    case SET:
+	    case _SET:
 	      if (!rd_0_7 (&ptr))
 		break;
 	      rd_comma (&ptr);
@@ -1233,31 +1235,31 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xCB);
 	      wrtb (0xC0 + --r);
 	      break;
-	    case SLA:
+	    case _SLA:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x20 + --r);
 	      break;
-	    case SLI:
+	    case _SLI:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x30 + --r);
 	      break;
-	    case SRA:
+	    case _SRA:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x28 + --r);
 	      break;
-	    case SRL:
+	    case _SRL:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x38 + --r);
 	      break;
-	    case SUB:
+	    case _SUB:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      if (has_argument (&ptr))	/* SUB A,r ?  */
@@ -1272,15 +1274,15 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0x90 + --r);
 	      break;
-	    case XOR:
+	    case _XOR:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      wrtb (0xA8 + --r);
 	      break;
-	    case DEFB:
-	    case DB:
-	    case DEFM:
-	    case DM:
+	    case _DEFB:
+	    case _DB:
+	    case _DEFM:
+	    case _DM:
 	      ptr = delspc (ptr);
 	      while (1)
 		{
@@ -1317,8 +1319,8 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  break;
 		}
 	      break;
-	    case DEFW:
-	    case DW:
+	    case _DEFW:
+	    case _DW:
 	      if (!(r = rd_word (&ptr, ',')))
 		{
 		  printerr (1, "No data for word definition\n");
@@ -1334,8 +1336,8 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		    printerr (1, "Missing expression in defw\n");
 		}
 	      break;
-	    case DEFS:
-	    case DS:
+	    case _DEFS:
+	    case _DS:
 	      r = rd_expr (&ptr, ',', NULL, sp, 1);
 	      if (r < 0)
 		{
@@ -1355,18 +1357,18 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  write_one_byte (0, 0);
 		}
 	      break;
-	    case END:
+	    case _END:
 	      break;
-	    case ORG:
+	    case _ORG:
 	      addr = rd_expr (&ptr, '\0', NULL, sp, 1) & 0xffff;
 	      break;
-	    case IF:
+	    case _IF:
 	      if (rd_expr (&ptr, '\0', NULL, sp, 1))
 		ifcount++;
 	      else
 		noifcount++;
 	      break;
-	    case ELSE:
+	    case _ELSE:
 	      if (ifcount == 0)
 		{
 		  printerr (1, "else without if\n");
@@ -1375,7 +1377,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      noifcount = 1;
 	      ifcount--;
 	      break;
-	    case ENDIF:
+	    case _ENDIF:
 	      if (noifcount == 0 && ifcount == 0)
 		{
 		  printerr (1, "endif without if\n");
@@ -1386,11 +1388,11 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      else
 		ifcount--;
 	      break;
-	    case ENDM:
+	    case _ENDM:
 	      if (stack[sp].file)
 		printerr (1, "endm outside macro definition\n");
 	      break;
-	    case SEEK:
+	    case _SEEK:
 	      fprintf (stderr, "seek error\n");
 	    default:
 	      printerr (1, "command or comment expected (was %s)\n", ptr);

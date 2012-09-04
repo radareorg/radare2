@@ -17,7 +17,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *str;
 	} ops[] = {
 		{ "li",   "1 = 2"},
-		{ "lui",  "1 = 2"},
+		{ "lui",  "1 |= 2:"}, // : = <<16
 		{ "jr",   "ret 1"},
 		{ "bne",  "if (1 != 2) goto 3"},
 		{ "beq",  "if (1 == 2) goto 3"},
@@ -184,6 +184,7 @@ static int parse(RParse *p, const char *data, char *str) {
 		REPLACE ("%s = %s >>", "%s >>=");
 		REPLACE ("%s = %s <<", "%s <<=");
 	}
+	p = r_str_replace (p, ":", "0000", 0);
 	strcpy (str, p);
 	free (p);
 }
