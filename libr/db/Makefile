@@ -20,7 +20,7 @@ sdbclean:
 sdb/src/libsdb.a:
 	#cd sdb/src ; ${MAKE} CFLAGS=-fPIC libsdb.a
 	cd sdb ; ${MAKE} src/sdb-version.h
-	cd sdb/src ; ${MAKE} \
+	cd sdb/src ; ${MAKE} ARCH=xxx \
 		RANLIB="${RANLIB}" \
 		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 

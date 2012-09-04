@@ -69,10 +69,10 @@ w32beta: w32dist
 	scp radare2-bindings-w32-${VERSION}.zip ${REMOTE}
 
 clean:
-	for a in libr binr shlr ; do (${MAKE} clean) ; done
+	for a in libr binr shlr ; do (cd $$a ; ${MAKE} clean) ; done
 
 mrproper:
-	for a in libr binr shlr ; do (${MAKE} mrproper) ; done
+	for a in libr binr shlr ; do ( cd $$a ; ${MAKE} mrproper) ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc

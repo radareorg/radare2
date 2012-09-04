@@ -37,7 +37,7 @@ clean:
 	rm -f *.sdb
 
 ${SDB}:
-	cd $(LTOP)/db/sdb/src && ${MAKE}
+	cd $(LTOP)/db/sdb/src && ${MAKE} ARCH=xxx
 
 .PHONY: all clean install install-symlink symstall
 
