@@ -93,13 +93,13 @@ static int cmd_open(void *data, const char *input) {
 	case '?':
 	default:
 		eprintf ("Usage: o[o-] [file] ([offset])\n"
-		" o                     list opened files\n"
-		" oo                    reopen current file (kill+fork in debugger)\n"
-		" o 4                   priorize io on fd 4 (bring to front)\n"
-		" o-1                   close file index 1\n"
-		" o /bin/ls             open /bin/ls file\n"
-		" o /bin/ls 0x8048000   map file\n"
-		" om[?]                 create, list, remove IO maps\n");
+		" o                  list opened files\n"
+		" oo                 reopen current file (kill+fork in debugger)\n"
+		" o 4                priorize io on fd 4 (bring to front)\n"
+		" o-1                close file index 1\n"
+		" o /bin/ls          open /bin/ls file\n"
+		" o /bin/ls 0x4000   map file at 0x4000\n"
+		" om[?]              create, list, remove IO maps\n");
 		break;
 	}
 	return 0;

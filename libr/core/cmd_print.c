@@ -256,7 +256,6 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'r':
-			eprintf ("TODO: recursive disassembler based on code analysis\n");
 			{
 			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
@@ -271,6 +270,10 @@ static int cmd_print(void *data, const char *input) {
 				// TODO: sort by addr
 				r_list_foreach (f->bbs, iter, b) {
 					r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+					if (b->jump != UT64_MAX)
+						r_cons_printf ("--> 0x%08"PFMT64x"\n", b->jump);
+					if (b->fail != UT64_MAX)
+						r_cons_printf ("--> 0x%08"PFMT64x"\n", b->fail);
 					r_cons_printf ("--\n");
 					//eprintf ( "pD %"PFMT64d" @0x%"PFMT64x"\n", b->size, b->addr);
 				}

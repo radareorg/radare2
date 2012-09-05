@@ -582,10 +582,25 @@ case 'o':
 			break;
 		case 'v':
 			{
+				int is_html = (r_config_get_i (core->config, "scr.html"));
 				const char *cmd = r_config_get (core->config, "cmd.graph");
-				r_core_cmdf (core, "ag%s > a.dot", input+2);
+				//char *tmp = r_file_temp ("/tmp/a.dot");
+				char *tmp = strdup ("a.dot"); // XXX
+
+				if (!is_html && strstr (cmd, "htmlgraph")) {
+					is_html = 2;
+					r_config_set (core->config, "scr.html", "true");
+				}
+				r_cons_flush ();
+				int fd = r_cons_pipe_open (tmp, 0);
+				r_core_cmdf (core, "ag%s", input+2);
+				if (is_html==2)
+					r_config_set (core->config, "scr.html", "false");
+				r_cons_flush ();
+				r_cons_pipe_close (fd);
+				r_sys_setenv ("DOTFILE", tmp);
 				r_core_cmdf (core, "%s", cmd);
-				r_file_rm ("a.dot");
+				free (tmp);
 			}
 			break;
 		case '?':

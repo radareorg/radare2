@@ -374,8 +374,9 @@ R_API void r_cons_strcat(const char *str) {
 }
 
 R_API void r_cons_newline() {
-	if (I.is_html) r_cons_strcat ("<br />\n");
-	else r_cons_strcat ("\n");
+	r_cons_strcat ("\n");
+	//if (I.is_html) r_cons_strcat ("<br />\n");
+	//else r_cons_strcat ("\n");
 }
 
 R_API int r_cons_get_size(int *rows) {

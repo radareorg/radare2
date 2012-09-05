@@ -6,6 +6,7 @@
 #include <r_core.h>
 
 static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
+        int is_html = r_cons_singleton ()->is_html;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int i, j, line = 0, oline = 0, idx = 0;
 	ut64 at;
@@ -49,13 +50,14 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 				j--;
 				break;
 			case '"':
-				str[j] = '\\';
-				str[++j] = '"';
-				break;
 			case '\n':
 			case '\r':
-				str[j] = '\\';
-				str[++j] = 'l';
+				if (is_html) {
+					str[j] = cmdstr[i];
+				}  else {
+					str[j] = '\\';
+					str[++j] = cmdstr[i]=='"'? '"': 'l';
+				}
 				break;
 			default:
 				str[j] = cmdstr[i];
@@ -68,19 +70,30 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 }
 
 static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
+        int is_html = r_cons_singleton ()->is_html;
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 	char *str;
+	int top = 0;
+	int left = 300;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		if (bbi->jump != -1) {
-			r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+			if (is_html) {
+				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+					"  <img class=\"connector-end\" src=\"arrow.gif\" /></div>\n",
+						bbi->addr, bbi->jump);
+			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 					"[color=\"%s\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->jump,
 					bbi->fail != -1 ? "green" : "blue");
 			r_cons_flush ();
 		}
 		if (bbi->fail != -1) {
-			r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
+			if (is_html) {
+				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
+					"  <img class=\"connector-end\" src=\"arrow.gif\" /></div>\n",
+						bbi->addr, bbi->fail);
+			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
 			r_cons_flush ();
 		}
@@ -93,6 +106,12 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red", str,
 					fcn->name, bbi->addr);
 			} else {
+				if (is_html) {
+					r_cons_printf ("<p class=\"block draggable\" style=\"top: %dpx; left: %dpx; width: 500px;\" id=\"_0x%08"PFMT64x"\">\n"
+						"%s</p>", top, left, bbi->addr, str);
+					left = left? 0: 600;
+					if (!left) top += 250;
+				} else
 				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" ["
 					"URL=\"%s/0x%08"PFMT64x"\" color=\"%s\", label=\"%s\"]\n",
 					fcn->addr, bbi->addr, 
@@ -387,6 +406,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 }
 
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
+        int is_html = r_cons_singleton ()->is_html;
 	const char *font = r_config_get (core->config, "graph.font");
 	RListIter *iter, *iter2;
 	RAnalRef *fcnr;
@@ -398,7 +418,7 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 			continue;
 		if (!gv) r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
 		r_list_foreach (fcni->refs, iter2, fcnr) {
-			if (!showhdr) {
+			if (!is_html && !showhdr) {
 				if (gv) r_cons_printf ("digraph code {\n"
 					"\tgraph [bgcolor=white];\n"
 					"\tnode [color=lightgray, style=filled shape=box"
@@ -596,10 +616,11 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 }
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
+	const char *font = r_config_get (core->config, "graph.font");
+        int is_html = r_cons_singleton ()->is_html;
+	int reflines, bytes, dwarf;
 	RAnalFunction *fcni;
 	RListIter *iter;
-	int reflines, bytes, dwarf;
-	const char *font = r_config_get (core->config, "graph.font");
 
 	if (r_list_empty (core->anal->fcns))
 		return R_FALSE;
@@ -610,6 +631,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
+	if (!is_html)
 	r_cons_printf ("digraph code {\n"
 		"\tgraph [bgcolor=white];\n"
 		"\tnode [color=lightgray, style=filled shape=box"
@@ -619,7 +641,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN) &&
 			(addr == 0 || addr == fcni->addr))
 			r_core_anal_graph_nodes (core, fcni, opts);
-	r_cons_printf ("}\n");
+	if (!is_html) r_cons_printf ("}\n");
 	r_cons_flush ();
 	r_config_set_i (core->config, "asm.lines", reflines);
 	r_config_set_i (core->config, "asm.bytes", bytes);

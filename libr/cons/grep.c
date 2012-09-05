@@ -269,7 +269,7 @@ R_API int r_cons_html_print(const char *ptr) {
 	if (!ptr)
 		return 0;
 	for (;ptr[0]; ptr = ptr + 1) {
-		if (ptr[0] == '\n') {
+		if (0 && ptr[0] == '\n') {
 			printf ("<br />");
 			fflush (stdout);
 		}

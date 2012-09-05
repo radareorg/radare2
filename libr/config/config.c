@@ -242,7 +242,9 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 
 R_API int r_config_eval(RConfig *cfg, const char *str) {
 	char *ptr, *a, *b, name[1024];
-	int len = strlen (str)+1;
+	int len;
+	if (!str || !cfg) return R_FALSE;
+	len = strlen (str)+1;
 	if (len >=sizeof (name))
 		return R_FALSE;
 	memcpy (name, str, len);

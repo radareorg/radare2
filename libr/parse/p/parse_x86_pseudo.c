@@ -69,10 +69,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 
 static int parse(RParse *p, const char *data, char *str) {
 	int i, len = strlen (data);
-	char w0[32];
-	char w1[32];
-	char w2[32];
-	char w3[32];
+	char w0[64];
+	char w1[64];
+	char w2[64];
+	char w3[64];
 	char *buf, *ptr, *optr;
 
 	// malloc can be slow here :?
