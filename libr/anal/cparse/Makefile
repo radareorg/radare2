@@ -30,4 +30,4 @@ exptree.o : exptree.c exptree.h gen.h error.h symset.h pplex.h
 pp.o      : pp.c pp.h gen.h error.h symset.h pplex.h exptree.h
 
 clean:
-	rm -f *.o lemon cparse.c cparse.out lex.yy.c
+	rm -f *.o lemon cparse.c cparse.h cparse.out lex.yy.c *.d
