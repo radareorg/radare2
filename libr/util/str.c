@@ -350,7 +350,7 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	char string[1024];
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, 1023, fmt, ap);
+	vsnprintf (string, sizeof (string), fmt, ap);
 	fmt = r_str_new (string);
 	va_end (ap);
 	return (char*)fmt;
@@ -922,4 +922,25 @@ R_API const char *r_str_casestr(const char *a, const char *b) {
 
 R_API int r_str_write (int fd, const char *b) {
 	return write (fd, b, strlen (b));
+}
+
+R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
+	const char *p = r;
+	for (; *r; r++) {
+		if (*r == ',') {
+			cb (u, atoi (p));
+			p = r+1;
+		}
+		if (*r == '-') {
+			if (p != r) {
+				int from = atoi (p);
+				int to = atoi (r+1);
+				for (; from<=to; from++)
+					cb (u, from);
+			} else fprintf (stderr, "Invalid range\n");
+			for (r++; *r && *r!=','&& *r!='-'; r++);
+			p = r;
+		}
+	}
+	if (*p) cb (u, atoi (p));
 }

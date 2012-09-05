@@ -45,6 +45,8 @@ typedef struct { } RSystem;
 typedef struct { } RLog;
 #define RStr char*
 
+typedef int (*RStrRangeCallback) (void *, int);
+
 typedef struct r_mem_pool_t {
 	ut8 **nodes;
 	int ncount;

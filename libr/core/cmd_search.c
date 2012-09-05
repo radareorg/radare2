@@ -144,15 +144,14 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 }
 
 static int cmd_search(void *data, const char *input) {
-	const char *mode;
-	char *inp;
-	RCore *core = (RCore *)data;
-	ut64 at, from, to;
-	//RIOSection *section;
 	int i, len, ret, dosearch = R_FALSE;
-	int inverse = R_FALSE;
+	RCore *core = (RCore *)data;
 	int aes_search = R_FALSE;
 	int ignorecase = R_FALSE;
+	int inverse = R_FALSE;
+	ut64 at, from, to;
+	const char *mode;
+	char *inp;
 	ut64 n64;
 	ut32 n32;
 	ut16 n16;
