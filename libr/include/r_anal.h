@@ -269,6 +269,13 @@ typedef struct r_anal_locals_t {
 	RAnalType *items;
 } RAnalLocals;
 
+typedef struct r_anal_fcn_attr_t RAnalFcnAttr;
+struct r_anal_fcn_attr_t {
+	char *key;
+	long value;
+	RAnalFcnAttr *next;
+};
+
 typedef struct r_anal_fcn_store_t {
 	RHashTable64 *h;
 	RList *l;

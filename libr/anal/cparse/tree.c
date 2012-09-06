@@ -116,11 +116,20 @@ RAnalLocals* new_locals_node(RAnalType *defs) {
 	return il;
 }
 
+RAnalFcnAttr* new_attribute(char* name, char* value) {
+	RAnalFcnAttr *tmp = R_NEW0 (RAnalFcnAttr);
+	/* TODO: add parsing of various attributes */
+	tmp->key = name;
+	tmp->value = atol(value);
+	tmp->next = NULL;
+	return tmp;
+}
+
 /* Function can return another function or have multiple returns */
 //item_list* new_function_node(char* name, item_list *rets, item_list *args)
 RAnalType* new_function_node(char* name, short ret_type, RAnalType *args,
 		short fmodifier, short callconvention, char* attributes,
-		RAnalLocals *locals, RAnalType* valaattr) {
+		RAnalLocals *locals, RAnalFcnAttr* valattr) {
 	RAnalFunction *ifnc = R_NEW (RAnalFunction);
 	RAnalType *tmp = R_NEW (RAnalType);
 	ifnc->name = name;

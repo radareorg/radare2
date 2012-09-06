@@ -21,6 +21,8 @@
 %type deflist {RAnalType *}
 %type def {RAnalType *}
 %type function {RAnalType *}
+%type attriblist {RAnalFcnAttr *}
+%type attrib {RAnalFcnAttr *}
 %type arglist {RAnalType *}
 %type argdef {RAnalType *}
 %type struct {RAnalType *}
@@ -53,33 +55,37 @@ def(A) ::= variable(B). { A = B; }
 def(A) ::= pointer(B). { A = B; }
 def(A) ::= array(B). { A = B; }
 
-function(A) ::= attrib(T) FUNCTION type(B) name(C) LPARENT arglist(D) RPARENT locals(E). {
+function(A) ::= attriblist(T) FUNCTION type(B) name(C) LPARENT arglist(D) RPARENT locals(E). {
 	A = new_function_node(C.sval, B.dval, D, R_ANAL_FQUALIFIER_NONE, R_ANAL_CC_TYPE_NONE, NULL, E, T);
 }
-function(A) ::= attrib(T) FUNCTION fqualifier(B) type(C) name(D) LPARENT arglist(E) RPARENT locals(F). {
+function(A) ::= attriblist(T) FUNCTION fqualifier(B) type(C) name(D) LPARENT arglist(E) RPARENT locals(F). {
 	A = new_function_node(D.sval, C.dval, E, B.dval, R_ANAL_CC_TYPE_NONE, NULL, F, T);
 }
-function(A) ::= attrib(T) FUNCTION callconvention(B) type(C) name(D) LPARENT arglist(E) RPARENT locals(F). {
+function(A) ::= attriblist(T) FUNCTION callconvention(B) type(C) name(D) LPARENT arglist(E) RPARENT locals(F). {
 	A = new_function_node(D.sval, C.dval, E, R_ANAL_FQUALIFIER_NONE, B.dval, NULL, F, T);
 }
-function(A) ::= attrib(T) FUNCTION callconvention(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT locals(G). {
+function(A) ::= attriblist(T) FUNCTION callconvention(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT locals(G). {
 	A = new_function_node(E.sval, D.dval, F, C.dval, B.dval, NULL, G, T);
 }
-function(A) ::= attrib(T) FUNCTION attribute(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT locals(G). {
+function(A) ::= attriblist(T) FUNCTION attribute(B) fqualifier(C) type(D) name(E) LPARENT arglist(F) RPARENT locals(G). {
 	A = new_function_node(E.sval, D.dval, F, C.dval, R_ANAL_CC_TYPE_NONE, B.sval, G, T);
 }
-function(A) ::= attrib(T) FUNCTION attribute(B) callconvention(C) fqualifier(D) type(E) name(F) LPARENT arglist(G) RPARENT locals(H). {
+function(A) ::= attriblist(T) FUNCTION attribute(B) callconvention(C) fqualifier(D) type(E) name(F) LPARENT arglist(G) RPARENT locals(H). {
 	A = new_function_node(F.sval, E.dval, G, D.dval, C.dval, B.sval, H, T);
 }
 
-attrib(A) ::=.
+attriblist ::=.
+attriblist(A) ::= attrib(B) attriblist(C). {
+	B->next = C;
+	A = B;
+}
 attrib(A) ::= LBRACKET name(B) RBRACKET. {
-	A.sval = B.sval; A.dval = 0;
+	A = new_attribute(B.sval, NULL);
 }
 attrib(A) ::= LBRACKET name(B) EQUATION attrval(C) RBRACKET. {
-	A.sval = B.sval; A.dval = C.dval;
+	A = new_attribute(B.sval, C.sval);
 }
-attrval(A) ::= NUMBER(B). { A.dval = B.dval; }
+attrval(A) ::= IDENTIFIER(B). { A.sval = B.sval; }
 
 fqualifier(A) ::= INLINE. { A.sval = "inline"; A.dval = R_ANAL_FQUALIFIER_INLINE; }
 fqualifier(A) ::= VOLATILE. { A.sval = "volatile"; A.dval = R_ANAL_FQUALIFIER_VOLATILE; }
