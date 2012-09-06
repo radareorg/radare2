@@ -9,11 +9,6 @@
 
 static RSocket *s = NULL;
 
-void killclients() {
-	r_socket_free (s);
-	s = NULL;
-}
-
 static void http_break (void *u) {
 	RCore *core = (RCore*)u;
 	const char *port = r_config_get (core->config, "http.port");
@@ -21,7 +16,7 @@ static void http_break (void *u) {
 	eprintf ("Shutting down http server...\n");
 	r_socket_connect (s, "localhost", port, R_SOCKET_PROTO_TCP);
 	r_socket_free (s);
-	killclients();
+	s = NULL;
 }
 
 #if 0
@@ -37,7 +32,6 @@ SECURITY
 R_API int r_core_rtr_http(RCore *core, int launch) {
 	int x = r_config_get_i (core->config, "scr.html");
 	int y = r_config_get_i (core->config, "scr.color");
-	const char *path_cmd = r_config_get (core->config, "http.cmd");
 	const char *port = r_config_get (core->config, "http.port");
 	s = r_socket_new (R_FALSE);
 	s->local = r_config_get_i (core->config, "http.local");
@@ -66,8 +60,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					r_str_unescape (out);
 					r_socket_http_response (rs, 200, out, 0);
 					free (out);
-				} else 
-				r_socket_http_response (rs, 200, "oops", 0);
+				} else r_socket_http_response (rs, 200, "oops", 0);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				char path[1024];

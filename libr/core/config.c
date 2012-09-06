@@ -611,7 +611,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	if (r_file_exists ("/system/bin/toolbox"))
 		r_config_set (cfg, "http.browser",
-			"am start -a android.intent.action.VIEW -d");
+			"LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d");
 	else if (r_file_exists ("/usr/bin/xdg-open"))
 		r_config_set (cfg, "http.browser", "xdg-open");
 	else if (r_file_exists ("/usr/bin/open"))
@@ -623,8 +623,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "http.root", "port to listen for http connections");
 	r_config_set (cfg, "http.root", WWWROOT);
 	r_config_desc (cfg, "http.root", "http root directory");
-	r_config_set (cfg, "http.cmd", "/cmd");
-	r_config_desc(cfg, "http.cmd", "uri to handle commands");
 
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");

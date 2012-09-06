@@ -15,7 +15,7 @@ static int backup_fd = -1;
 R_API int r_cons_pipe_open(const char *file, int append) {
 	int fd = open (file, O_BINARY | O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
 	if (fd==-1) {
-		eprintf ("Cannot open file '%s'\n", file);
+		eprintf ("r_cons_pipe_open: Cannot open file '%s'\n", file);
 		return -1;
 	}// else eprintf ("%s created\n", file);
 

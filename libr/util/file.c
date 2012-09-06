@@ -332,12 +332,10 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 		h = open (name, O_RDWR|O_EXCL|O_BINARY);
 	else h = -1;
 #else
-	h = snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
-	if (h<1024)
-		h = mkstemp (name);
-	else h = -1;
+	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
+	h = mkstemp (name)!=-1? R_TRUE: R_FALSE;
 #endif
-	if (oname && h!=-1) *oname = strdup (name);
+	if (oname) *oname = h? strdup (name): NULL;
 	free (path);
 	return h;
 }
@@ -346,10 +344,15 @@ R_API char *r_file_tmpdir() {
 #if __WINDOWS__
 	char *path = r_sys_getenv ("TEMP");
 	if (!path) path = strdup ("C:\\WINDOWS\\Temp\\");
+#elif __ANDROID__
+	path = strdup ("/data/local/tmp");
 #else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (!path) path = strdup ("/tmp");
 #endif
+	if (!r_file_exists (path)) {
+		eprintf ("Cannot find temporary directory '%s'\n", path);
+	}
 	return path;
 }
 
