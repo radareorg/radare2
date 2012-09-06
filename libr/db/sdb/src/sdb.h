@@ -104,6 +104,14 @@ int sdb_json_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas);
 char *sdb_json_indent(const char *s);
 char *sdb_json_unindent(const char *s);
 
+typedef struct {
+	char *buf;
+	int blen;
+	int len;
+} SdbJsonString;
+
+const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...);
+#define sdb_json_format_free(x) free ((x)->buf)
 
 // namespace
 Sdb *sdb_ns(Sdb *s, const char *name);

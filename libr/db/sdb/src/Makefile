@@ -21,13 +21,20 @@ EXEXT=
 
 BIN=sdb${EXEXT}
 
-.PHONY: all static shared clean wcl syms
+.PHONY: all static shared clean
 
-all: static shared ${BIN}
+all: ${BIN}
+	${MAKE} static
+	${MAKE} shared
 
-shared: libsdb.${SOEXT}
+sdb-version.h:
+	cd .. ; ${MAKE} src/sdb-version.h
 
-static: libsdb.a
+shared: sdb-version.h
+	${MAKE} libsdb.${SOEXT}
+
+static: sdb-version.h
+	${MAKE} libsdb.a
 
 libsdb.a: ${OBJ}
 	@#ar qf libasb.a ${OBJ}
@@ -52,20 +59,10 @@ test:
 	valgrind ./sdb foo a=3 b=4
 	valgrind ./sdb foo a=9 b=2
 
-syms:
-	otool -Vt sdb|grep callq |awk '{print $$3}'|grep -v 0x|sort|uniq > symbols-used
-	otool -Vt sdb| grep ^_ |sed -e s,:,,|sort|uniq > symbols-found
-	diff -ru symbols-found symbols-used | grep ^-
-	rm -f symbols-found symbols-used
-
 main.c:
 
-${BIN}: libsdb.a main.c
-	${CC} ${CFLAGS} -o ${BIN} main.c ${OBJ}
-	#libsdb.a
-
-wcl:
-	wc -l `echo ${OBJ}|sed -e 's,\.o,.c,g'`
+${BIN}: libsdb.a main.o
+	${CC} ${CFLAGS} -o ${BIN} main.o ${OBJ}
 
 clean:
 	rm -rf ${OBJ} libsdb.a a.out sdb sdb.dSYM *.sdb *.db *.${SOEXT}

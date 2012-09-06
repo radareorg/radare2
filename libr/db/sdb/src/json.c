@@ -1,5 +1,6 @@
 /* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
 
+#include <stdarg.h>
 #include "sdb.h"
 #include "json/json.h"
 
@@ -201,3 +202,89 @@ char *sdb_json_unindent(const char *s) {
 	*o = 0;
 	return O;
 }
+
+const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
+	va_list ap;
+	char *arg_s, *x, tmp[128];
+	float arg_f;
+	unsigned long long arg_l;
+	int i, arg_i;
+
+#define JSONSTR_ALLOCATE(y) \
+	if (s->len+y>s->blen) {\
+		s->blen *= 2;\
+		x = realloc (s->buf, s->blen);\
+		if (!x) return NULL;\
+		s->buf = x;\
+	}
+	if (!s->buf) {
+		s->blen = 1024;
+		s->buf = malloc (s->blen);
+		*s->buf = 0;
+	}
+	if (!fmt || !*fmt) return s->buf;
+	va_start (ap, fmt);
+	for (; *fmt; fmt++) {
+		if (*fmt == '%') {
+			fmt++;
+			switch (*fmt) {
+			case 'b':
+				JSONSTR_ALLOCATE (32);
+				arg_i = va_arg (ap, int);
+				arg_i = arg_i? 4: 5;
+				memcpy (s->buf+s->len, arg_i==4?"true":"false", 5);
+				s->len += arg_i;
+				break;
+			case 'f':
+				JSONSTR_ALLOCATE (32);
+				arg_f = va_arg (ap, int);
+				snprintf (tmp, sizeof (tmp), "%f", arg_f);
+				memcpy (s->buf+s->len, tmp, strlen (tmp));
+				s->len += strlen (tmp);
+				break;
+			case 'l':
+				JSONSTR_ALLOCATE (32);
+				arg_l = va_arg (ap, unsigned long long);
+				snprintf (tmp, sizeof (tmp), "0x%llx", arg_l);
+				memcpy (s->buf+s->len, tmp, strlen (tmp));
+				s->len += strlen (tmp);
+				break;
+			case 'd':
+			case 'i':
+				JSONSTR_ALLOCATE (32);
+				arg_i = va_arg (ap, int);
+				snprintf (tmp, sizeof (tmp), "%d", arg_i);
+				memcpy (s->buf+s->len, tmp, strlen (tmp));
+				s->len += strlen (tmp);
+				break;
+			case 's':
+				arg_s = va_arg (ap, char *);
+				JSONSTR_ALLOCATE (strlen (arg_s)+3);
+				s->buf[s->len++] = '"';
+				for (i=0; arg_s[i]; i++) {
+					if (arg_s[i]=='"')
+						s->buf[s->len++] = '\\';
+					s->buf[s->len++] = arg_s[i];
+				}
+				s->buf[s->len++] = '"';
+				break;
+			}
+		} else {
+			JSONSTR_ALLOCATE (10);
+			s->buf[s->len++] = *fmt;
+		}
+		s->buf[s->len] = 0;
+	}
+	va_end (ap);
+	return s->buf;
+}
+
+#if 0
+int main () {
+	SdbJsonString s = {0};
+	sdb_json_format (&s, "[{%s:%d},%b]", "Hello \"world\"", 1024, 3);
+	printf ("%s\n", sdb_json_format (&s, 0));
+	sdb_json_format_free (&s);
+	return 0;
+}
+#endif

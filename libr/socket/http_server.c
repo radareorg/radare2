@@ -61,7 +61,7 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 	if (len<1) len = strlen (out);
 	r_socket_printf (rs->s, "HTTP/1.1 %d %s\n"
 		"Content-Length: %d\n\n", code, strcode, len);
-	r_socket_write (rs->s, out, len);
+	r_socket_write (rs->s, (void*)out, len);
 }
 
 /* close client socket and free struct */
