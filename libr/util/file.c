@@ -26,7 +26,7 @@ R_API boolt r_file_is_directory(const char *str) {
 	return ((S_IFDIR &buf.st_mode))? R_TRUE: R_FALSE;
 }
 
-R_API boolt r_file_exist(const char *str) {
+R_API boolt r_file_exists(const char *str) {
 	struct stat buf;
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
@@ -67,7 +67,7 @@ R_API char *r_file_path(const char *bin) {
 			if (ptr) {
 				*ptr = '\0';
 				snprintf (file, sizeof (file), "%s/%s", str, bin);
-				if (r_file_exist (file)) {
+				if (r_file_exists (file)) {
 					free (path);
 					free (path_env);
 					return strdup (file);
@@ -86,7 +86,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	char *ret;
 	FILE *fd;
 	long sz;
-	if (!r_file_exist (str))
+	if (!r_file_exists (str))
 		return NULL;
 	fd = fopen (str, "rb");
 	if (fd == NULL)

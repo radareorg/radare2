@@ -31,7 +31,7 @@ static int r_core_visual_hud(RCore *core) {
 		res = r_cons_hud_file (homehud);
 	if (!res) {
 		const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
-		if (r_file_exist (f))
+		if (r_file_exists (f))
 			res = r_cons_hud_file (f);
 		else r_cons_message ("Cannot find hud file");
 	}

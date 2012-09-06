@@ -77,7 +77,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					rs->path = strdup ("/index.html");
 				}
 				snprintf (path, sizeof (path), "%s/%s", root, rs->path);
-				if (r_file_exist (path)) {
+				if (r_file_exists (path)) {
 					int sz = 0;
 					char *f = r_file_slurp (path, &sz);
 					if (f) {

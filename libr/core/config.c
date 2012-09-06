@@ -576,16 +576,16 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	free (p);
-	if (r_file_exist ("/usr/bin/htmlgraph.sh"))
+	if (r_file_exists ("/usr/bin/htmlgraph.sh"))
 		r_config_set (cfg, "cmd.graph", "!htmlgraph.sh a.dot");
 	else
-	if (r_file_exist ("/usr/bin/xdot"))
+	if (r_file_exists ("/usr/bin/xdot"))
 		r_config_set (cfg, "cmd.graph", "!xdot a.dot");
 	else
-	if (r_file_exist ("/usr/bin/open"))
+	if (r_file_exists ("/usr/bin/open"))
 		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!open a.gif");
 	else
-	if (r_file_exist ("/usr/bin/gqview"))
+	if (r_file_exists ("/usr/bin/gqview"))
 		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
 	else
 		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
@@ -609,12 +609,12 @@ R_API int r_core_config_init(RCore *core) {
 #if __WINDOWS__
 	r_config_set (cfg, "http.browser", "start");
 #else
-	if (r_file_exist ("/sbin/adbd"))
+	if (r_file_exists ("/sbin/adbd"))
 		r_config_set (cfg, "http.browser",
 			"am start -a android.intent.action.VIEW -d");
-	else if (r_file_exist ("/usr/bin/xdg-open"))
+	else if (r_file_exists ("/usr/bin/xdg-open"))
 		r_config_set (cfg, "http.browser", "xdg-open");
-	else if (r_file_exist ("/usr/bin/open"))
+	else if (r_file_exists ("/usr/bin/open"))
 		r_config_set (cfg, "http.browser", "open");
 	else r_config_set (cfg, "http.browser", "firefox");
 #endif

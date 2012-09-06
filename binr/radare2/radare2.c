@@ -77,7 +77,7 @@ static void list_io_plugins(RIO *io) {
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
 static int rabin_delegate(RThread *th) {
-	if (rabin_cmd && r_file_exist (r.file->filename)) {
+	if (rabin_cmd && r_file_exists (r.file->filename)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
 		ptr = cmd;
 		if (ptr)

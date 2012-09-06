@@ -115,7 +115,7 @@ static char *find_include(const char *prefix, const char *file) {
 			{
 				char *filepath = r_str_concatf (NULL, "%s/%s/%s", str, pfx, file);
 				// eprintf ("try (%s)\n", filepath);
-				if (r_file_exist (filepath)) {
+				if (r_file_exists (filepath)) {
 					free (env);
 					free (pfx);
 					return filepath;

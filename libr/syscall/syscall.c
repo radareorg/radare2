@@ -61,7 +61,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int b
 #define SYSCALLPATH R2_LIBDIR"/radare2/"R2_VERSION"/syscall"
 	snprintf (file, sizeof (file), "%s/%s-%s-%d.sdb", 
 		SYSCALLPATH, os, arch, bits);
-	if (!r_file_exist (file)) {
+	if (!r_file_exists (file)) {
 		//eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
 		return R_FALSE;
 	}
