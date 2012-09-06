@@ -62,6 +62,7 @@
 ")"							{	return(RPARENT); }
 ";"							{	return(SEMICOLON); }
 ","							{	return(COMMA); }
+"="							{	return(EQUATION); }
 
 [ \t\v\n\f]					{  }
 [a-zA-Z_][a-zA-Z0-9_]*		{
