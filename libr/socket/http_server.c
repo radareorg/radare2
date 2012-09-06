@@ -12,16 +12,21 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s) {
 		free (hr);
 		return NULL;
 	}
+	//r_socket_block_time (hr->s, 0, 3000);
 	for (;;) {
 		int xx = r_socket_gets (hr->s, buf, sizeof (buf));
 		int yy = r_socket_ready (hr->s, 0, 20);
-		//eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
+//		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
 		if (!yy || (!xx && !pxx))
 			break;
 		pxx = xx;
 		
 		if (first==0) {
 			first = 1;
+			if (strlen (buf)<3) {
+				r_socket_http_close (hr);
+				return NULL;
+			}
 			p = strchr (buf, ' ');
 			if (p) *p = 0;
 			hr->method = strdup (buf);
@@ -59,7 +64,7 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 		code==404?"NOT FOUND":
 		"UNKNOWN";
 	if (len<1) len = strlen (out);
-	r_socket_printf (rs->s, "HTTP/1.1 %d %s\n"
+	r_socket_printf (rs->s, "HTTP/1.0 %d %s\n"
 		"Content-Length: %d\n\n", code, strcode, len);
 	r_socket_write (rs->s, (void*)out, len);
 }

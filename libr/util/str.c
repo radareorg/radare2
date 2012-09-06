@@ -950,9 +950,11 @@ R_API void r_str_unescape (char *s) {
 	int n;
 	char *d;
 	for (d=s; *s; s++, d++) {
+#if 0
 		if (*s == '+') {
 			*d = ' ';
 		} else
+#endif
 		if (*s == '%') {
 			sscanf (s+1, "%02x", &n);
 			*d = n;

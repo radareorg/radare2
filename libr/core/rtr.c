@@ -20,7 +20,7 @@ static void http_break (void *u) {
 }
 
 #if 0
-SECURITY
+SECURITY IMPLICATIONS
 - no ssl
 - no auth
 - commands can be executed by anyone
@@ -32,6 +32,7 @@ SECURITY
 R_API int r_core_rtr_http(RCore *core, int launch) {
 	int x = r_config_get_i (core->config, "scr.html");
 	int y = r_config_get_i (core->config, "scr.color");
+	int z = r_config_get_i (core->config, "asm.bytes");
 	const char *port = r_config_get (core->config, "http.port");
 	s = r_socket_new (R_FALSE);
 	s->local = r_config_get_i (core->config, "http.local");
@@ -48,14 +49,21 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	}
 	r_config_set (core->config, "scr.html", "true");
 	r_config_set (core->config, "scr.color", "false");
+	r_config_set (core->config, "asm.bytes", "false");
 	r_cons_break (http_break, core);
+	eprintf ("Starting http server...\n");
+	eprintf ("http://localhost:%d/\n", atoi (port));
 	while (!r_cons_singleton ()->breaked) {
 		RSocketHTTPRequest *rs = r_socket_http_accept (s);
+		if (!rs) {
+			r_sys_usleep (200);
+			continue;
+		}
 		if (!strcmp (rs->method, "GET")) {
 			if (!memcmp (rs->path, "/cmd/", 5)) {
-				char *cmd = rs->path+5;
+				char *out, *cmd = rs->path+5;
 				r_str_unescape (cmd);
-				char *out = r_core_cmd_str_pipe (core, cmd);
+				out = r_core_cmd_str_pipe (core, cmd);
 				if (out) {
 					r_str_unescape (out);
 					r_socket_http_response (rs, 200, out, 0);
@@ -79,11 +87,9 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					} else r_socket_http_response (rs, 403, "Permission denied", 0);
 				} else {
 					// TODO: directory listing?
-					r_socket_http_response (rs, 404, "File not found", 0);
+					r_socket_http_response (rs, 404, "File not found\n", 0);
 				}
 			}
-			r_socket_http_response (rs, 200,
-	"<html><body><form method=post action=/><input name=a /><input type=button></form></body>", 0);
 		} else 
 		if (!strcmp (rs->method, "POST")) {
 			char *buf = malloc (rs->data_length+ 50);
@@ -101,6 +107,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	r_cons_break_end ();
 	r_config_set_i (core->config, "scr.html", x);
 	r_config_set_i (core->config, "scr.color", y);
+	r_config_set_i (core->config, "asm.bytes", z);
 	return 0;
 }
 

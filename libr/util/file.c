@@ -350,7 +350,7 @@ R_API char *r_file_tmpdir() {
 	char *path = r_sys_getenv ("TMPDIR");
 	if (!path) path = strdup ("/tmp");
 #endif
-	if (!r_file_exists (path)) {
+	if (!r_file_is_directory (path)) {
 		eprintf ("Cannot find temporary directory '%s'\n", path);
 	}
 	return path;

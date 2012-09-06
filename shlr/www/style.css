@@ -1,5 +1,8 @@
 body {
 	font-family: Verdana;
+	border:0px;
+	width:320px;
+	margin:0px;
 }
 
 p {
@@ -12,4 +15,79 @@ a {
 	color: blue;
 	text-decoration: underline;
 	cursor: pointer;
+}
+
+.header {
+	width:220px;
+	background-color:white;
+	border: 3px;
+	border-color: black;
+	text-align: center;
+	vertical-align: top;
+}
+
+.button {
+	border: 1px solid;
+	border-color: black;
+	margin-right: 2px;
+	width:32px;
+	background-color: #f0f0f0;
+	color: black;
+}
+
+input {
+/*	width:310px; */
+	width:190px; 
+	border: 1px solid black;
+	background-color: #a0cfe0;
+	color: black;
+}
+
+.popup_content {
+	font-size:12px;
+	border: 1px solid black;
+	margin-left:2px;
+	padding:10px;
+	width:270px;
+	height:232px;
+	text-align:left;
+	vertical-align:top;
+	overflow:auto;
+	background-color:#f0f0f0;
+}
+
+.console {
+	font-size:8px;
+	width:310px;
+	height:310px;
+	text-align:left;
+	overflow:auto;
+	background-color:#f0f0f0;
+}
+
+.popup {
+	position:absolute;
+	z-index: 5;
+	top: 10px;
+	left: 10px;
+	width:300px;
+	height:290px;
+	border: 1px solid black;
+	background-color: #a0cfe0;
+}
+
+.popup_background {
+	opacity:0.7;
+	filter:alpha(opacity=70);
+	position:absolute;
+	top: 0px;
+	left: 0px;
+	width:100%;
+	height:100%;
+	border: 0px;
+	background-color: #ffffff;
+	z-index: 3;
+}
+.popup_title {
+margin-left: 5px;
 }

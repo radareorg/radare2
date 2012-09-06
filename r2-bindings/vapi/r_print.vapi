@@ -27,7 +27,7 @@ public class Radare.RPrint {
 	public void raw(uint8 *buf, int len);
 	public void cursor(int cur, int set);
 	public void set_cursor(int curset, int ocursor, int cursor);
-	public void code(uint64 addr, uint8* buf, int len);
+	public void code(uint64 addr, uint8* buf, int len, char lang);
 	//public void string(uint64 addr, uint8* buf, int len);
 	public int date_dos(uint8* buf, int len);
 	public int date_w32(uint8* buf, int len);
