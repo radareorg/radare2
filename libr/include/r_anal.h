@@ -269,11 +269,11 @@ typedef struct r_anal_locals_t {
 	RAnalType *items;
 } RAnalLocals;
 
-typedef struct r_anal_fcn_attr_t RAnalFcnAttr;
-struct r_anal_fcn_attr_t {
+typedef struct r_anal_attr_t RAnalAttr;
+struct r_anal_attr_t {
 	char *key;
 	long value;
-	RAnalFcnAttr *next;
+	RAnalAttr *next;
 };
 
 typedef struct r_anal_fcn_store_t {

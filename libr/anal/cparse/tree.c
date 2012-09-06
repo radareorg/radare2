@@ -11,7 +11,7 @@ static int new_tree() {
 	return 0;
 }
 
-RAnalType* new_variable_node(char* name, short type, short sign, short modifier) {
+RAnalType* new_variable_node(char* name, short type, short sign, short modifier, RAnalAttr* valattr) {
 	RAnalTypeVar *ivar = R_NEW (RAnalTypeVar);
 	RAnalType *tmp;
 	ivar->name = name;
@@ -29,7 +29,7 @@ RAnalType* new_variable_node(char* name, short type, short sign, short modifier)
 	return tmp;
 }
 
-RAnalType* new_pointer_node(char* name, short type, short sign, short modifier) {
+RAnalType* new_pointer_node(char* name, short type, short sign, short modifier, RAnalAttr* valattr) {
 	RAnalTypePtr *iptr = R_NEW (RAnalTypePtr);
 	RAnalType *tmp;
 	iptr->name = name;
@@ -47,7 +47,7 @@ RAnalType* new_pointer_node(char* name, short type, short sign, short modifier) 
 	return tmp;
 }
 
-RAnalType* new_array_node(char* name, short type, short sign, short modifier, long size) {
+RAnalType* new_array_node(char* name, short type, short sign, short modifier, long size, RAnalAttr *valattr) {
 	RAnalTypeArray *iarr = R_NEW (RAnalTypeArray);
 	RAnalType *tmp;
 	iarr->name = name;
@@ -67,7 +67,7 @@ RAnalType* new_array_node(char* name, short type, short sign, short modifier, lo
 	return tmp;
 }
 
-RAnalType* new_struct_node(char* name, RAnalType *defs) {
+RAnalType* new_struct_node(char* name, RAnalType *defs, RAnalAttr *valattr) {
 	RAnalTypeStruct *istr = R_NEW (RAnalTypeStruct);
 	RAnalType *tmp = R_NEW (RAnalType);
 	istr->name = name;
@@ -83,7 +83,7 @@ RAnalType* new_struct_node(char* name, RAnalType *defs) {
 	return tmp;
 }
 
-RAnalType* new_union_node(char* name, RAnalType *defs) {
+RAnalType* new_union_node(char* name, RAnalType *defs, RAnalAttr *valattr) {
 	RAnalTypeUnion *iun = R_NEW (RAnalTypeUnion);
 	RAnalType *tmp = R_NEW (RAnalType);
 	iun->name = name;
@@ -110,17 +110,37 @@ RAnalType* new_alloca_node(long address, long size, RAnalType *defs) {
 	return tmp;
 }
 
-RAnalLocals* new_locals_node(RAnalType *defs) {
+RAnalLocals* new_locals_node(RAnalType *defs, RAnalAttr *valattr) {
 	RAnalLocals *il = R_NEW (RAnalLocals);
 	il->items = defs;
 	return il;
 }
 
-RAnalFcnAttr* new_attribute(char* name, char* value) {
-	RAnalFcnAttr *tmp = R_NEW0 (RAnalFcnAttr);
-	/* TODO: add parsing of various attributes */
+#define ENDIANESS_BIG 1234;
+#define ENDIANESS_SMALL 3412;
+
+RAnalAttr* new_attribute(char* name, char* value) {
+	RAnalAttr *tmp = R_NEW0 (RAnalAttr);
 	tmp->key = name;
-	tmp->value = atol(value);
+	/* TODO: add parsing of various attributes */
+	if ((!strncmp(name, "pack", 4)) |
+		(!strncmp(name, "align", 5))) {
+		tmp->value = atol(value);
+	} else if ((!strncmp(name, "noreturn", 8)) | (!strncmp(name, "null", 4))) {
+		tmp->value = 0;
+	} else if (!strncmp(name, "color", 5)) {
+		/* TODO: Implement colorizing attributes */
+	} else if (!strncmp(name, "format", 6)) {
+		/* TODO: Implement format attributes */
+	} else if (!strncmp(name, "cconv", 5)) {
+		/* TODO: Implement calling convention stuff */
+	} else if (!strncmp(name, "endian", 6)) {
+		if (!strncmp(value, "big", 3)) {
+			tmp->value = ENDIANESS_BIG;
+		} else {
+			tmp->value = ENDIANESS_SMALL;
+		}
+	}
 	tmp->next = NULL;
 	return tmp;
 }
@@ -129,7 +149,7 @@ RAnalFcnAttr* new_attribute(char* name, char* value) {
 //item_list* new_function_node(char* name, item_list *rets, item_list *args)
 RAnalType* new_function_node(char* name, short ret_type, RAnalType *args,
 		short fmodifier, short callconvention, char* attributes,
-		RAnalLocals *locals, RAnalFcnAttr* valattr) {
+		RAnalLocals *locals, RAnalAttr* valattr) {
 	RAnalFunction *ifnc = R_NEW (RAnalFunction);
 	RAnalType *tmp = R_NEW (RAnalType);
 	ifnc->name = name;

@@ -21,8 +21,8 @@
 %type deflist {RAnalType *}
 %type def {RAnalType *}
 %type function {RAnalType *}
-%type attriblist {RAnalFcnAttr *}
-%type attrib {RAnalFcnAttr *}
+%type attriblist {RAnalAttr *}
+%type attrib {RAnalAttr *}
 %type arglist {RAnalType *}
 %type argdef {RAnalType *}
 %type struct {RAnalType *}
@@ -55,6 +55,20 @@ def(A) ::= variable(B). { A = B; }
 def(A) ::= pointer(B). { A = B; }
 def(A) ::= array(B). { A = B; }
 
+attriblist ::=.
+attriblist(A) ::= attrib(B) attriblist(C). {
+	B->next = C;
+	A = B;
+}
+attrib(A) ::= LBRACKET name(B) RBRACKET. {
+	A = new_attribute(B.sval, NULL);
+}
+attrib(A) ::= LBRACKET name(B) EQUATION attrval(C) RBRACKET. {
+	A = new_attribute(B.sval, C.sval);
+}
+attrval(A) ::= IDENTIFIER(B). { A.sval = B.sval; }
+
+
 function(A) ::= attriblist(T) FUNCTION type(B) name(C) LPARENT arglist(D) RPARENT locals(E). {
 	A = new_function_node(C.sval, B.dval, D, R_ANAL_FQUALIFIER_NONE, R_ANAL_CC_TYPE_NONE, NULL, E, T);
 }
@@ -73,19 +87,6 @@ function(A) ::= attriblist(T) FUNCTION attribute(B) fqualifier(C) type(D) name(E
 function(A) ::= attriblist(T) FUNCTION attribute(B) callconvention(C) fqualifier(D) type(E) name(F) LPARENT arglist(G) RPARENT locals(H). {
 	A = new_function_node(F.sval, E.dval, G, D.dval, C.dval, B.sval, H, T);
 }
-
-attriblist ::=.
-attriblist(A) ::= attrib(B) attriblist(C). {
-	B->next = C;
-	A = B;
-}
-attrib(A) ::= LBRACKET name(B) RBRACKET. {
-	A = new_attribute(B.sval, NULL);
-}
-attrib(A) ::= LBRACKET name(B) EQUATION attrval(C) RBRACKET. {
-	A = new_attribute(B.sval, C.sval);
-}
-attrval(A) ::= IDENTIFIER(B). { A.sval = B.sval; }
 
 fqualifier(A) ::= INLINE. { A.sval = "inline"; A.dval = R_ANAL_FQUALIFIER_INLINE; }
 fqualifier(A) ::= VOLATILE. { A.sval = "volatile"; A.dval = R_ANAL_FQUALIFIER_VOLATILE; }
@@ -111,76 +112,76 @@ argdef(A) ::= pointer(B). { A = B; }
 argdef(A) ::= array(B). { A = B; }
 
 locals ::= .
-locals(A) ::= OBRACE deflist (B) EBRACE. {
-	A = new_locals_node(B);
+locals(A) ::= attriblist(T) OBRACE deflist (B) EBRACE. {
+	A = new_locals_node(B, T);
 }
-struct(A) ::= STRUCT name(B) OBRACE deflist(C) EBRACE. {
-	A = new_struct_node(B.sval, C);
+struct(A) ::= attriblist(T) STRUCT name(B) OBRACE deflist(C) EBRACE. {
+	A = new_struct_node(B.sval, C, T);
 }
-union(A) ::= UNION name(B) OBRACE deflist(C) EBRACE. {
-	A = new_union_node(B.sval, C);
+union(A) ::= attriblist(T) UNION name(B) OBRACE deflist(C) EBRACE. {
+	A = new_union_node(B.sval, C, T);
 }
 alloca(A) ::= ALLOCA AT address(B) LPARENT size(C) RPARENT OBRACE deflist(D) EBRACE. {
 	A = new_alloca_node(B.dval, C.dval, D);
 }
-variable(A) ::= qualifier(E) signedness(D) type(C) name(B). {
-	A = new_variable_node(B.sval, C.dval, D.dval, E.dval);
+variable(A) ::= attriblist(T) qualifier(E) signedness(D) type(C) name(B). {
+	A = new_variable_node(B.sval, C.dval, D.dval, E.dval, T);
 }
-variable(A) ::= qualifier(E) shorttype(C) name(B). {
+variable(A) ::= attriblist(T) qualifier(E) shorttype(C) name(B). {
 	switch (C.dval) {
 	case R_ANAL_UINT8_T:
-		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, E.dval, T);
 		break;
 	case R_ANAL_UINT16_T:
-		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, E.dval, T);
 		break;
 	case R_ANAL_UINT32_T:
-		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, E.dval, T);
 		break;
 	case R_ANAL_UINT64_T:
-		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_variable_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, E.dval, T);
 		break;
 	default:
 		break;
 	}
 }
-pointer(A) ::= qualifier(E) signedness(D) type(C) ASTERISK name(B). {
-	A = new_pointer_node(B.sval, C.dval, D.dval, E.dval);
+pointer(A) ::= attriblist(T) qualifier(E) signedness(D) type(C) ASTERISK name(B). {
+	A = new_pointer_node(B.sval, C.dval, D.dval, E.dval, T);
 }
-pointer(A) ::= qualifier(E) shorttype(C) ASTERISK name(B). {
+pointer(A) ::= attriblist(T) qualifier(E) shorttype(C) ASTERISK name(B). {
 	switch (C.dval) {
 	case R_ANAL_UINT8_T:
-		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, E.dval, T);
 		break;
 	case R_ANAL_UINT16_T:
-		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, E.dval, T);
 		break;
 	case R_ANAL_UINT32_T:
-		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, E.dval, T);
 		break;
 	case R_ANAL_UINT64_T:
-		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, E.dval);
+		A = new_pointer_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, E.dval, T);
 		break;
 	default:
 		break;
 	}
 }
-array(A) ::= qualifier(F) signedness(E) type(D) name(B) LBRACKET size(C) RBRACKET. {
-	A = new_array_node(B.sval, D.dval, E.dval, F.dval, C.dval);
+array(A) ::= attriblist(T) qualifier(F) signedness(E) type(D) name(B) LBRACKET size(C) RBRACKET. {
+	A = new_array_node(B.sval, D.dval, E.dval, F.dval, C.dval, T);
 }
-array(A) ::= qualifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
+array(A) ::= attriblist(T) qualifier(F) shorttype(D) name(B) LBRACKET size(C) RBRACKET. {
 	switch (D.dval) {
 	case R_ANAL_UINT8_T:
-		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_BYTE, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval, T);
 		break;
 	case R_ANAL_UINT16_T:
-		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_WORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval, T);
 		break;
 	case R_ANAL_UINT32_T:
-		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_DWORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval, T);
 		break;
 	case R_ANAL_UINT64_T:
-		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval);
+		A = new_array_node(B.sval, R_ANAL_VAR_TYPE_QWORD, R_ANAL_TYPE_UNSIGNED, F.dval, C.dval, T);
 		break;
 	default:
 		break;
