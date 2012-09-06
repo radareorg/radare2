@@ -380,6 +380,13 @@ int main(int argc, char **argv) {
 		if (ret<0 || (ret==0 && quite))
 			return 0;
 	}
+
+	r_list_foreach (evals, iter, cmdn) {
+		r_config_eval (r.config, cmdn); 
+		r_cons_flush ();
+	}
+	r_list_free (evals);
+
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd0 (&r, cmdn);
 		r_cons_flush ();
@@ -387,12 +394,6 @@ int main(int argc, char **argv) {
 	if ((cmdfile[0] || !r_list_empty (cmds)) && quite)
 		return 0;
 	r_list_free (cmds);
-
-	r_list_foreach (evals, iter, cmdn) {
-		r_config_eval (r.config, cmdn); 
-		r_cons_flush ();
-	}
-	r_list_free (evals);
 
 	if (patchfile) {
 		r_core_patch (&r, patchfile);

@@ -93,6 +93,10 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 		return NULL;
 	fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
+	if (sz <0) {
+		fclose (fd);
+		return NULL;
+	}
 	fseek (fd, 0, SEEK_SET);
 	ret = (char *)malloc (sz+1);
 	rsz = fread (ret, 1, sz, fd);

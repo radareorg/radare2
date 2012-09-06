@@ -944,3 +944,22 @@ R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
 	}
 	if (*p) cb (u, atoi (p));
 }
+
+// convert from html escaped sequence "foo%20bar" to "foo bar"
+R_API void r_str_unescape (char *s) {
+	int n;
+	char *d;
+	for (d=s; *s; s++, d++) {
+		if (*s == '+') {
+			*d = ' ';
+		} else
+		if (*s == '%') {
+			sscanf (s+1, "%02x", &n);
+			*d = n;
+			s+=2;
+		} else *d = *s;
+	}
+	*d = 0;
+}
+
+// TODO: implement r_str_escape

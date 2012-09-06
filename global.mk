@@ -45,6 +45,7 @@ PFX=${DESTDIR}${PREFIX}
 MDR=${DESTDIR}${MANDIR}
 
 LIBDIR=${PREFIX}/lib
+WWWROOT=${LIBDIR}/radare2/${VERSION}/www
 
 -include $(TOP)/config-user.mk
 -include $(TOP)/mk/${COMPILER}.mk

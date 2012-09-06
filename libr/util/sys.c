@@ -325,15 +325,12 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	return R_FALSE;
 }
 #elif __WINDOWS__
+// TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	// TODO: fully implement the rest
-	char *result;
+	char *result = r_sys_cmd_str_w32 (cmd);
 	if (len) *len = 0;
-	result = r_sys_cmd_str_w32 (cmd);
-	if (output)
-		*output = result;
-	if (result)
-		return R_TRUE;
+	if (output) *output = result;
+	if (result) return R_TRUE;
 	return R_FALSE;
 }
 #else

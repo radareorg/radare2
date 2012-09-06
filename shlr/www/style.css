@@ -1,0 +1,15 @@
+body {
+	font-family: Verdana;
+}
+
+p {
+	white-space: pre;
+	font-family: monospace;
+	display: block;
+}
+
+a {
+	color: blue;
+	text-decoration: underline;
+	cursor: pointer;
+}

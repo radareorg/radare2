@@ -147,6 +147,8 @@ R_API int r_core_flush(void *user, const char *cmd);
 R_API int r_core_cmd0(void *user, const char *cmd);
 R_API void r_core_cmd_init(RCore *core);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
+R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
+R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
 R_API int r_core_cmd_file(RCore *core, const char *file);
 R_API int r_core_cmd_command(RCore *core, const char *command);
 R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb);

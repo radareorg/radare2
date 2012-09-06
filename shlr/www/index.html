@@ -1,0 +1,74 @@
+<html>
+<head>
+	<title>r2w</title>
+	<link rel=Stylesheet href="style.css" type="text/css" />
+	<script src="script.js"></script>
+<script>
+function Ajax (method, uri, body, fn) {
+        var x = new XMLHttpRequest ();
+        x.open (method, uri, false);
+        x.onreadystatechange = function (y) {
+                if (fn) fn (x.responseText);
+        }
+        x.send (body);
+}
+
+function cmd(c) {
+	Ajax ('GET', "/cmd/"+c, '', function (x) {
+		document.getElementById('output').innerHTML = x;
+	});
+}
+
+function panel_functions_load() {
+	Ajax ('GET', "/cmd/afl", '', function (x) {
+		var arr = x.split ("\n");
+		x = ''
+		for (var i in arr) {
+			var line = arr[i].replace (/\s+/g,' ').split (' ');
+			var addr = line[0];
+			var name = line[3];
+			if (!addr) continue;
+			x += "<a onclick=\"cmd('pdr@"+addr+"')\">"+addr+"</a> "+name+"\n";
+		}
+		document.getElementById('panel').innerHTML = x;
+	});
+}
+
+function handleKeyPress(e, form) {
+	var key = e.keyCode || e.which;
+	if (key==13) {
+		var txt = document.getElementById('input').value;
+		Ajax ('GET', '/cmd/'+txt, '', function (x) {
+			document.getElementById('output').innerHTML = x;
+			document.getElementById('input').value = '';
+		});
+	}
+}
+</script>
+</head>
+<body>
+[r2w]
+<a href="javascript:cmd('aa;af');panel_functions_load()">analyze</a>
+<input onkeypress="handleKeyPress(event)" id="input">
+<hr size=1 width=100% />
+<table width=100%>
+<tr>
+<td height=100% width="100px" valign=top>
+<select onmouseover="panel_functions_load()">
+	<option>Functions</option>
+	<option>Symbols</option>
+	<option>Imports</option>
+	<option>Exports</option>
+</select>
+<p style='background-color:#c0c0c0; height:100%' id="panel">
+</p>
+</td>
+	<td valign=top>
+<p id="output"></p>
+<hr size=1 width=100% />
+</td>
+</tr>
+</table>
+</body>
+</html>
+

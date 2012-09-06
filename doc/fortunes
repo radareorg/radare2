@@ -1,5 +1,4 @@
 Do you want to perform more than one search at a time? '> /k0 keyword1', '> /k1 keyword2' and '> /r 0-1'
-Debugger commands are prefixed with '!' because they are accessed via the io plugin system() hook
 Isn't your disassembly pretty enought? Try changing values with 'e asm.'
 Did you setup your ~/.radarerc today?
 You can mark an offset in visual mode with the cursor and the ',' key. Later press '.' to go back
@@ -63,7 +62,6 @@ Enable full backtrace with dbg.fullbt
 Manually modify the DRX registers of the child process with '!dr' command
 What do you want to debug today?
 Sniff your favorite libusb-based application with LD_PRELOAD=/usr/lib/libusbsniff.so ./your-program
-Use '!rsc spcc' to parse structures in memory using C programs
 Find cp850 strings with 'e cfg.encoding=cp850' and '/s'
 Enhace your graphs by increasing the size of the block and graph.depth eval variable
 Control the height of the terminal on serial consoles with e scr.height

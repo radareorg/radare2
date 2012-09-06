@@ -347,6 +347,7 @@ R_API int r_name_filter(char *name, int len);
 R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);
 R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len);
 /* strings */
+R_API void r_str_unescape (char *s);
 R_API void r_str_filter_zeroline(char *str, int len);
 R_API int r_str_write (int fd, const char *b);
 R_API void r_str_ncpy(char *dst, const char *src, int n);

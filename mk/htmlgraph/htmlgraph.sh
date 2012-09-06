@@ -145,4 +145,10 @@ EOF
 
 cd /tmp
 cp -f $D/* .
-open $T
+if [ -e /usr/bin/open ]; then
+	open $T
+elif [ -e /usr/bin/xdg-open ]; then
+	xdg-open $T
+else
+	firefox $T
+fi

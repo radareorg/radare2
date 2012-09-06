@@ -63,29 +63,16 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
-	case '\0':
-		r_core_rtr_list (core);
-		break;
-	case '?':
-		r_core_rtr_help (core);
-		break;
-	case '+':
-		r_core_rtr_add (core, input+1);
-		break;
-	case '-':
-		r_core_rtr_remove (core, input+1);
-		break;
-	case '=':
-		r_core_rtr_session (core, input+1);
-		break;
-	case '<':
-		r_core_rtr_pushout (core, input+1);
-		break;
-	case '!':
-		r_io_system (core->io, input+1);
-		break;
-	default:
-		r_core_rtr_cmd (core, input);
+	case '\0': r_core_rtr_list (core); break;
+	case 'h': r_core_rtr_http (core, 0); break;
+	case 'H': r_core_rtr_http (core, 1); break;
+	case '?': r_core_rtr_help (core); break;
+	case '+': r_core_rtr_add (core, input+1); break;
+	case '-': r_core_rtr_remove (core, input+1); break;
+	case '=': r_core_rtr_session (core, input+1); break;
+	case '<': r_core_rtr_pushout (core, input+1); break;
+	case '!': r_io_system (core->io, input+1); break;
+	default: r_core_rtr_cmd (core, input);
 	}
 	return R_TRUE;
 }
@@ -412,13 +399,12 @@ static int cmd_system(void *data, const char *input) {
 	return ret;
 }
 
-static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
+R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_ptr;
 #if __UNIX__
 	int fds[2];
 	int stdout_fd, status = 0;
 #endif
-
 	if (*shell_cmd=='!') {
 		_ptr = (char *)r_str_lastbut (shell_cmd, '~', "\"");
 		//ptr = strchr (cmd, '~');
@@ -437,7 +423,6 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		free (out);
 		return 0;
 	}
-
 #if __UNIX__
 	radare_cmd = (char*)r_str_trim_head (radare_cmd);
 	shell_cmd = (char*)r_str_trim_head (shell_cmd);
@@ -1070,6 +1055,25 @@ R_API int r_core_flush(void *user, const char *cmd) {
 	int ret = r_core_cmd ((RCore *)user, cmd, 0);
 	r_cons_flush ();
 	return ret;
+}
+
+R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
+	const char *static_str;
+	char *s, *tmp, *retstr = NULL;
+	r_cons_reset ();
+	if (r_file_mkstemp ("cmd", &tmp)) {
+		char *_cmd = strdup (cmd);
+		int pipefd = r_cons_pipe_open (tmp, 0);
+		r_core_cmd_subst (core, _cmd);
+		r_cons_flush ();
+		r_cons_pipe_close (pipefd);
+		s = r_file_slurp (tmp, NULL);
+		r_file_rm (tmp);
+		free (tmp);
+		free (_cmd);
+		return s;
+	}
+	return NULL;
 }
 
 /* return: pointer to a buffer with the output of the command */

@@ -100,7 +100,7 @@ install-doc-symlink:
 
 DATADIRS=libr/asm/d libr/syscall/d libr/magic/d
 #binr/ragg2/d
-install: install-doc install-man
+install: install-doc install-man install-www
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	for a in ${DATADIRS} ; do \
@@ -109,13 +109,24 @@ install: install-doc install-man
 	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud
 	cp -f libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud/
 
+install-www:
+	rm -rf ${DESTDIR}/${WWWROOT}
+	mkdir -p ${DESTDIR}/${WWWROOT}
+	cp -rf shlr/www/* ${DESTDIR}/${WWWROOT}
+
+symstall-www:
+	rm -rf ${DESTDIR}/${WWWROOT}
+	mkdir -p ${DESTDIR}/${WWWROOT}
+	cd ${DESTDIR}/${WWWROOT} ; for a in ${PWD}/shlr/www/* ; do \
+		ln -fs $$a ${DLIBDIR}/radare2/${VERSION}/www ; done
+
 DLIBDIR=$(DESTDIR)/$(LIBDIR)
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DLIBDIR}/pkgconfig
 	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DLIBDIR}/pkgconfig/$$a ; done
 
-symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
+symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	for a in ${DATADIRS} ; do (\

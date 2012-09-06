@@ -604,6 +604,28 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.vprompt", "Visual prompt commands");
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_desc (cfg, "cmd.bp", "Command to executed every breakpoint hitted");
+	r_config_set (cfg, "http.local", "true");
+	r_config_desc (cfg, "http.local", "set to false to listen on 0.0.0.0");
+#if __WINDOWS__
+	r_config_set (cfg, "http.browser", "start");
+#else
+	if (r_file_exist ("/sbin/adbd"))
+		r_config_set (cfg, "http.browser",
+			"am start -a android.intent.action.VIEW -d");
+	else if (r_file_exist ("/usr/bin/xdg-open"))
+		r_config_set (cfg, "http.browser", "xdg-open");
+	else if (r_file_exist ("/usr/bin/open"))
+		r_config_set (cfg, "http.browser", "open");
+	else r_config_set (cfg, "http.browser", "firefox");
+#endif
+	r_config_desc (cfg, "http.browser", "command to open http urls");
+	r_config_set (cfg, "http.port", "9090");
+	r_config_desc (cfg, "http.root", "port to listen for http connections");
+	r_config_set (cfg, "http.root", WWWROOT);
+	r_config_desc (cfg, "http.root", "http root directory");
+	r_config_set (cfg, "http.cmd", "/cmd");
+	r_config_desc(cfg, "http.cmd", "uri to handle commands");
+
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
 	r_config_set_cb (cfg, "scr.sparse", "false", config_scrsparse_callback);

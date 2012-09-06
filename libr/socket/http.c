@@ -2,7 +2,7 @@
 
 #include <r_socket.h>
 
-static char *r_socket_http_response (RSocket *s, int *code, int *rlen) {
+static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	char *p;
 	int i, len;
 	char *buf = malloc (32768); // XXX: use r_buffer here
@@ -75,7 +75,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 			"Accept: */*\r\n"
 			"Host: %s\r\n"
 			"\r\n", path, host);
-	response = r_socket_http_response (s, code, rlen);
+	response = r_socket_http_answer (s, code, rlen);
 	free (uri);
 	return response;
 }
@@ -124,7 +124,7 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 			"Content-Type: application/x-www-form-urlencoded\r\n"
 			"\r\n", path, host, strlen (data));
 	r_socket_write (s, (void *)data, strlen (data));
-	response = r_socket_http_response (s, code, rlen);
+	response = r_socket_http_answer (s, code, rlen);
 	free (uri);
 	return response;
 }

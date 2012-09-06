@@ -27,4 +27,4 @@ endif
 include ../rules.mk
 
 test:
-	gcc -DMAIN -g -ggdb *.c -I ../include/ `pkg-config openssl --libs`
+	gcc -DMAIN -g -ggdb *.c -I ../include/ `pkg-config openssl --libs` -lr_util

@@ -37,17 +37,25 @@ static int cmd_flag(void *data, const char *input) {
 		if (input[1] == ' ') {
 			RFlagItem *item = r_flag_get_i (core->flags,
 				r_num_math (core->num, input+2));
-			if (item) {
+			if (item)
 				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
-			}
 		} else eprintf ("Missing arguments\n");
 		break;
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));
 		break;
 	case 's':
-		if (input[1]==' ') r_flag_space_set (core->flags, input+2);
-		else r_flag_space_list (core->flags);
+		if (input[1]==' ')
+			r_flag_space_set (core->flags, input+2);
+		else {
+			int i, j = 0;
+			for (i=0;i<R_FLAG_SPACES_MAX;i++) {
+				if (core->flags->spaces[i])
+					r_cons_printf ("%02d %c %s\n", j++,
+					(i==core->flags->space_idx)?'*':' ',
+					core->flags->spaces[i]);
+			}
+		}
 		break;
 	case 'g':
 		eprintf ("radare2: fg: current: no such job :)\n");
