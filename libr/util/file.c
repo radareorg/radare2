@@ -345,7 +345,7 @@ R_API char *r_file_tmpdir() {
 	char *path = r_sys_getenv ("TEMP");
 	if (!path) path = strdup ("C:\\WINDOWS\\Temp\\");
 #elif __ANDROID__
-	path = strdup ("/data/local/tmp");
+	char *path = strdup ("/data/local/tmp");
 #else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (!path) path = strdup ("/tmp");
