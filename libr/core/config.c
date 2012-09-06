@@ -609,7 +609,7 @@ R_API int r_core_config_init(RCore *core) {
 #if __WINDOWS__
 	r_config_set (cfg, "http.browser", "start");
 #else
-	if (r_file_exists ("/sbin/adbd"))
+	if (r_file_exists ("/system/bin/toolbox"))
 		r_config_set (cfg, "http.browser",
 			"am start -a android.intent.action.VIEW -d");
 	else if (r_file_exists ("/usr/bin/xdg-open"))
