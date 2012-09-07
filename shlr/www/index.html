@@ -79,15 +79,19 @@ function show_popup_commands () {
 function handleKeyPress(e, form) {
 	var key = e.keyCode || e.which;
 	if (key==13) {
-		var txt = document.getElementById('input').value;
-		if (txt.length == 0) {
-			show_popup_commands ();
-		} else Ajax ('GET', '/cmd/'+txt, '', function (x) {
-			document.getElementById('output').innerHTML = x;
-			document.getElementById('input').value = '';
-		});
+		input_activate ();
 	}
 }
+
+function input_activate () {
+	var txt = document.getElementById('input').value;
+	if (txt.length == 0) show_popup_commands (); else
+	Ajax ('GET', '/cmd/'+txt, '', function (x) {
+		document.getElementById('output').innerHTML = x;
+		document.getElementById('input').value = '';
+	});
+}
+
 function css(selector, property, value) {
 	for (var i=0; i<document.styleSheets.length;i++) {
 		try {
@@ -149,9 +153,16 @@ function popup_show (title, body) {
 	}
 }
 
+function init() {
+	var input = document.getElementById ('input');
+	input.addEventListener ("activate", function (x) {
+		input_activate();
+	}, false);
+}
+
 </script>
 </head>
-<body>
+<body onload="init()">
 <div class=popup_background id="popup_background"></div>
 <div class=popup id="popup">
 <table>

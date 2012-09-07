@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 pancake */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -83,7 +83,7 @@ R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const cha
 	return ret;
 }
 
-R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
+R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = NULL;
 	int fd = -2;
 	char *uri = strdup (file);
@@ -113,18 +113,19 @@ R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mod
 	if (fd == -2) {
 #if __WINDOWS__
 		if (flags & R_IO_WRITE) {
-			fd = open (file, O_BINARY | 1);
+			fd = open (uri, O_BINARY | 1);
 			if (fd == -1)
-				creat (file, O_BINARY);
-			fd = open (file, O_BINARY | 1);
-		} else fd = open (file, O_BINARY);
+				creat (uri, O_BINARY);
+			fd = open (uri, O_BINARY | 1);
+		} else fd = open (uri, O_BINARY);
 #else
-		fd = open (file, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
+		fd = open (uri, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
 #endif
 	}
 	if (fd >= 0) {
 		if (desc == NULL)
-			desc = r_io_desc_new (io->plugin, fd, file, flags, mode, NULL);
+			desc = r_io_desc_new (io->plugin,
+				fd, uri, flags, mode, NULL);
 		r_io_desc_add (io, desc);
 		r_io_set_fd (io, desc);
 	}

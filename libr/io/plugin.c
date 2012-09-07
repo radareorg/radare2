@@ -47,7 +47,7 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename) {
 			continue;
 		if (il->plugin->plugin_open == NULL)
 			continue;
-		if (il->plugin->plugin_open(io, filename))
+		if (il->plugin->plugin_open (io, filename))
 			return il->plugin;
 	}
 	return NULL;

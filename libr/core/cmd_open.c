@@ -90,10 +90,21 @@ static int cmd_open(void *data, const char *input) {
 	case 'o':
 		r_core_file_reopen (core, input+2);
 		break;
+	case 'c':
+		// memleak? lose all settings wtf
+		// if load fails does not fallbacks to previous file
+		r_core_fini (core);
+		r_core_init (core);
+		if (!r_core_file_open (core, input+2, R_IO_READ, 0))
+			eprintf ("Cannot open file\n");
+		if (!r_core_bin_load (core, NULL))
+			r_config_set (core->config, "io.va", "false");
+		break;
 	case '?':
 	default:
-		eprintf ("Usage: o[o-] [file] ([offset])\n"
+		eprintf ("Usage: o[com- ] [file] ([offset])\n"
 		" o                  list opened files\n"
+		" oc [ƒile]          open core file, like relaunching r2\n"
 		" oo                 reopen current file (kill+fork in debugger)\n"
 		" o 4                priorize io on fd 4 (bring to front)\n"
 		" o-1                close file index 1\n"

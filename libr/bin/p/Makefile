@@ -1,7 +1,7 @@
 include ../../config.mk
 
 CFLAGS=-I$(LTOP)/include -I$(LTOP)/bin/format/ -Wall -fPIC
-CFLAGS+=-L$(LTOP)/util -lr_util
+LDFLAGS+=-L$(LTOP)/util -lr_util
 
 foo: all
 

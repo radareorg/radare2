@@ -35,7 +35,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	int z = r_config_get_i (core->config, "asm.bytes");
 	const char *port = r_config_get (core->config, "http.port");
 	s = r_socket_new (R_FALSE);
-	s->local = r_config_get_i (core->config, "http.local");
+	s->local = !r_config_get_i (core->config, "http.public");
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Cannot listen on http.port\n");
 		return 1;

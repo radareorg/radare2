@@ -203,8 +203,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh = R_NEW (RCoreFile);
 	fh->fd = fd;
 	fh->map = NULL;
-	fh->uri = strdup (file);
-	fh->size = r_file_size (file);
+	fh->uri = strdup (fd->name);
+	fh->size = r_file_size (fh->uri);
 	if (!fh->size)
 		fh->size = r_io_size (r->io);
 	fh->filename = strdup (fh->uri);
