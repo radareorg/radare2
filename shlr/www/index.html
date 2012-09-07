@@ -106,28 +106,24 @@ function css(selector, property, value) {
 		}
 	}
 }
+
 window.onorientationchange = function() {
 	var header = document.getElementById ('header');
 	var orientation = window.orientation;
 	switch (orientation) {
-		case 0:
-			css('.header', 'width', '220px');
-			css('input', 'width', '320px');
-			css('.console', 'width', '320px');
-			document.body.setAttribute("class","portrait");
-			break; 
-		case 90:
-			css('.header', 'width', '480');
-			css('input', 'width', '460');
-			css('.console', 'width', '480');
-			document.body.setAttribute("class","landscape");
-			break;
-		case -90: 
-			css('.header', 'width', '480');
-			css('input', 'width', '460');
-			css('.console', 'width', '480');
-			document.body.setAttribute("class","landscape");
-			break;
+	case 0:
+		css ('.header', 'width', '220px');
+		css ('input', 'width', '190px');
+		css ('.console', 'width', '320px');
+		document.body.setAttribute ("class","portrait");
+		break; 
+	case -90: 
+	case 90:
+		css ('.header', 'width', '480');
+		css ('input', 'width', '360');
+		css ('.console', 'width', '470');
+		document.body.setAttribute("class","landscape");
+		break;
 	}
 }
 
@@ -198,37 +194,11 @@ Enjoy!
 <td>
 		<a href="javascript:show_popup_about ()"><img border=0 src="rlogo.png" /></a>
 </td>
-<td align="right">
-<!--
-</td>
-<td width="100%" style="text-align:right;vertical-align:middle">
-		<select onchange="about ();">
-			<option>actions</option>
-			<a href="javascript:cmd('aa;af');panel_functions_load()">analyze</a>
-			<option>analyze</option>
-			<option>analyze preludes</option>
-			<option>preferences</option>
-			<option>help</option>
-			<option>about</option>
-		</select>
-</td></tr></table>
--->
+	<td align="right">
 		<input onkeypress="handleKeyPress(event)" id="input">
 	</td>
 </tr>
 <tr>
-<!--
-<td height=100% width="100px" valign=top>
-<select onmouseover="panel_functions_load()">
-	<option>Functions</option>
-	<option>Symbols</option>
-	<option>Imports</option>
-	<option>Exports</option>
-</select>
-<p style='background-color:#c0c0c0; height:100%' id="panel">
-</p>
-</td>
--->
 	<td valign=top colspan=2>
 		<div class="console">
 		<p id="output"></p>

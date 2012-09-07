@@ -30,6 +30,7 @@ SECURITY IMPLICATIONS
 #endif
 
 R_API int r_core_rtr_http(RCore *core, int launch) {
+	RSocketHTTPRequest *rs;
 	int x = r_config_get_i (core->config, "scr.html");
 	int y = r_config_get_i (core->config, "scr.color");
 	int z = r_config_get_i (core->config, "asm.bytes");
@@ -50,11 +51,11 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	r_config_set (core->config, "scr.html", "true");
 	r_config_set (core->config, "scr.color", "false");
 	r_config_set (core->config, "asm.bytes", "false");
-	r_cons_break (http_break, core);
 	eprintf ("Starting http server...\n");
 	eprintf ("http://localhost:%d/\n", atoi (port));
 	while (!r_cons_singleton ()->breaked) {
-		RSocketHTTPRequest *rs = r_socket_http_accept (s);
+		r_cons_break (http_break, core);
+		rs = r_socket_http_accept (s);
 		if (!rs) {
 			r_sys_usleep (200);
 			continue;
@@ -298,7 +299,7 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
-		//for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
+		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
 	}
 
 	for (;;) {
