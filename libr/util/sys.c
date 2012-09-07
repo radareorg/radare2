@@ -387,6 +387,7 @@ R_API int r_sys_rmkdir(const char *dir) {
 	int ret = R_TRUE;
 	char *path = strdup (dir), *ptr = path;
 	// XXX: Wrong for w32 (/).. and no errno ?
+	if (*ptr=='/') ptr++;
 	while ((ptr = strchr (ptr, '/'))) {
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {

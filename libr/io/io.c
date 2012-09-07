@@ -174,6 +174,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret, l, olen = len;
 	int w = 0;
 
+	r_io_seek (io, addr, R_IO_SEEK_SET);
 #if 0
 	// HACK?: if io->va == 0 -> call seek+read without checking sections ?
 	if (!io->va) {

@@ -346,9 +346,17 @@ static int cmd_eval(void *data, const char *input) {
 			"  e-           ; reset config vars\n"
 			"  e*           ; dump config vars in r commands\n"
 			"  e!a          ; invert the boolean value of 'a' var\n"
+			"  er [key]     ; set config key as readonly. no way back\n"
 			"  e a          ; get value of var 'a'\n"
 			"  e a=b        ; set var 'a' the 'b' value\n");
 		}
+		break;
+	case 'r':
+		if (input[1]) {
+			const char *key = input+((input[1]==' ')?2:1);
+			if (!r_config_readonly (core->config, key))
+				eprintf ("Cannot find key '%s'\n", key);
+		} else eprintf ("Usage: er [key]\n");
 		break;
 	case ' ':
 		r_config_eval (core->config, input+1);

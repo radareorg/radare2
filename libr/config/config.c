@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2006-2012 - pancake */
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
@@ -117,7 +117,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 	// TODO: store old value somewhere..
 	if (node) {
 		if (node->flags & CN_RO) {
-			eprintf ("(read only)\n");
+			eprintf ("(error: '%s' config key is read only)\n", name);
 			return node;
 		}
 		oi = node->i_value;
@@ -289,6 +289,13 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 
 R_API void r_config_lock(RConfig *cfg, int l) {
 	cfg->lock = l;
+}
+
+R_API int r_config_readonly (RConfig *cfg, const char *key) {
+	RConfigNode *n = r_config_node_get (cfg, key);
+	if (!n) return R_FALSE;
+	n->flags |= CN_RO;
+	return R_TRUE;
 }
 
 R_API RConfig *r_config_new(void *user) {
