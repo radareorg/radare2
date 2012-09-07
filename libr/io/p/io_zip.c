@@ -15,7 +15,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file)) {
 		str = strdup (file+6);
 		p = (char *)r_str_casestr (str, "//");
-		if (p) {
+		if (p && p[2]) {
 			*p++ = 0;
 // TODO: escape quotes
 // TODO: add support for directories

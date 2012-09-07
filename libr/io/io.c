@@ -169,6 +169,7 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	return r_io_read_at (io, io->off, buf, len);
 }
 
+// XXX: this is buggy. must use seek+read
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret, l, olen = len;
 	int w = 0;

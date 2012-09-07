@@ -528,7 +528,9 @@ static int cmd_search(void *data, const char *input) {
 					break;
 				}
 				//ret = r_core_read_at (core, at, buf, core->blocksize);
-				ret = r_io_read_at (core->io, at, buf, core->blocksize); 
+			//	ret = r_io_read_at (core->io, at, buf, core->blocksize); 
+	r_io_seek (core->io, at, R_IO_SEEK_SET);
+	ret = r_io_read (core->io, buf, core->blocksize);
 /*
 				if (ignorecase) {
 					int i;

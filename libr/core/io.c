@@ -125,7 +125,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 			}
 		}
 	}
-	return (ret==-1)?R_FALSE:R_TRUE;
+	return (ret==-1)? R_FALSE: R_TRUE;
 }
 
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {

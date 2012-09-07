@@ -847,33 +847,6 @@ R_API void r_str_argv_free(char **argv) {
 	free (argv);
 }
 
-#if 0
-/* XXX this is necessary ??? */
-// TODO: make it dynamic
-static int bprintf_init = 0;
-static char bprintf_buf[4096];
-
-// XXX overflow
-R_API int r_bprintf(const char *fmt, ...) {
-	va_list ap;
-	if (bprintf_init==0)
-		*bprintf_buf = 0;
-	va_start(ap, fmt);
-	r_str_concatf(bprintf_buf, fmt, ap);
-	va_end(ap);
-	return strlen(bprintf_buf);
-}
-
-R_API char *r_bprintf_get() {
-	char *s;
-	if (bprintf_init==0)
-		*bprintf_buf = 0;
-	s = strdup(bprintf_buf);
-	bprintf_buf[0]='\0';
-	return s;
-}
-#endif
-
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 	int _b = 0;
 	ut8 *b = (ut8*)&_b;
@@ -946,6 +919,7 @@ R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
 }
 
 // convert from html escaped sequence "foo%20bar" to "foo bar"
+// TODO: find better name.. unencode? decode
 R_API void r_str_unescape (char *s) {
 	int n;
 	char *d;
@@ -963,5 +937,3 @@ R_API void r_str_unescape (char *s) {
 	}
 	*d = 0;
 }
-
-// TODO: implement r_str_escape

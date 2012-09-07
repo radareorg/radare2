@@ -1,10 +1,11 @@
 include ../../config.mk
 
-CFLAGS+=-I../../include -I../arch/ -I../arch/include -Wall -shared -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
+CFLAGS+=-I$(TOP)/shlr -I../../include -I../arch/ -I../arch/include
+CFLAGS+=-Wall -shared -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1
-CFLAGS+=-L../../util -lr_util -L../../lib
-LDFLAGS+=${LINK}
+LDFLAGS+=-L../../util -L../../lib
+LDFLAGS+=${LINK} -lr_util
 
 foo: all
 
