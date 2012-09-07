@@ -8,3 +8,5 @@ config.mk
 plugins.cfg
 langs.cfg
 .*.swp
+*.un~
+
