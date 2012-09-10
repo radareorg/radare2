@@ -5,8 +5,10 @@ OBJ=db.o table.o pair.o
 
 PRE=sdb/src/libsdb.a
 EXTRA_CLEAN=sdbclean
+EXTRA_TARGETS+=${PRE}
 
 CFLAGS+=-Isdb/src
+
 include ../rules.mk
 
 # link against sdb
@@ -17,17 +19,28 @@ sdbclean:
 
 sdb/src/libsdb.a:
 	#cd sdb/src ; ${MAKE} CFLAGS=-fPIC libsdb.a
-	cd sdb/src ; ${MAKE} \
+	cd sdb ; ${MAKE} src/sdb-version.h
+	cd sdb/src ; ${MAKE} ARCH=xxx \
 		RANLIB="${RANLIB}" \
 		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 
-.PHONY: sdb-sync
-SYNCFILES=sdb.hg/README sdb.hg/config.mk sdb.hg/src
-#TODO SYNCFILES=$(addprefix )
-sdb-sync:
-	rm -rf sdb sdb.hg
-	hg clone http://hg.youterm.com/sdb sdb.hg
+VC=git
+URL=git://github.com/radare/sdb
+
+F=README.md config.mk src Makefile
+SYNCFILES=$(addprefix sdb.${VC}/,${F})
+
+.PHONY: sdb-sync sync-sdb
+sdb-sync sync-sdb:
+	rm -rf sdb sdb.${VC}
+	${VC} clone ${URL} sdb.${VC}
 	mkdir sdb
 	cp -rf ${SYNCFILES} sdb
-	hg add sdb
-	rm -rf sdb.hg
+	rm -rf sdb.${VC}
+	rm -rf ../include/sdb
+	mkdir -p ../include/sdb
+	cd sdb ; ${MAKE} src/sdb-version.h
+	cp -f sdb/src/*.h ../include/sdb
+	echo '#include <sdb/sdb.h>' > ../include/sdb.h
+	git add ../include/sdb*
+	git add sdb

@@ -34,7 +34,8 @@ R_API int r_core_file_reopen(RCore *core, const char *args) {
 	r_core_file_close_fd (core, newpid);
 	// TODO: in debugger must select new PID
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		newpid = core->file->fd->fd;
+		if (core->file && core->file->fd)
+			newpid = core->file->fd->fd;
 		r_debug_select (core->dbg, newpid, newpid);
 	}
 	free (path);
@@ -128,7 +129,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 R_API int r_core_bin_load(RCore *r, const char *file) {
 	int va = r->io->va || r->io->debug;
 
-	if (file == NULL || !r->file) {
+	if (file == NULL || !r->file || !*file) {
 		if (!r->file || !r->file->filename)
 			return R_FALSE;
 		file = r->file->filename;
@@ -152,6 +153,14 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			}
 		}
 		r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);//"x86_32");
+		{
+		RIOMap *im;
+		RListIter *iter;
+		r_list_foreach (r->io->maps, iter, im) {
+			im->delta = r->bin->cur.offset;
+			im->to = im->from + r->bin->cur.size;
+		}
+		}
 	} else if (!r_bin_load (r->bin, file, R_TRUE))
 		return R_FALSE;
 	r->file->obj = r_bin_get_object (r->bin, 0);
@@ -162,6 +171,8 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		ut64 offset = r_bin_get_offset (r->bin);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
 	}
+	if (r_config_get_i (r->config, "file.analyze"))
+		r_core_cmd0 (r, "aa");
 	return R_TRUE;
 }
 
@@ -170,8 +181,10 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	const char *cp;
 	char *p;
 	RIODesc *fd;
-	if (!strcmp (file, "-"))
+	if (!strcmp (file, "-")) {
 		file = "malloc://512";
+		mode = 4|2;
+	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open (r->io, file, mode, 0644);
 	if (fd == NULL) {
@@ -190,8 +203,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh = R_NEW (RCoreFile);
 	fh->fd = fd;
 	fh->map = NULL;
-	fh->uri = strdup (file);
-	fh->size = r_file_size (file);
+	fh->uri = strdup (fd->name);
+	fh->size = r_file_size (fh->uri);
 	if (!fh->size)
 		fh->size = r_io_size (r->io);
 	fh->filename = strdup (fh->uri);

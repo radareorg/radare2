@@ -7,4 +7,4 @@ TARGET_ELF64=bin_elf64.${EXT_SO}
 ALL_TARGETS+=${TARGET_ELF64}
 
 ${TARGET_ELF64}: ${OBJ_ELF64}
-	${CC} $(call libname,bin_elf64) -shared ${CFLAGS} ${OBJ_ELF64}
+	${CC} $(call libname,bin_elf64) -shared ${CFLAGS} $(LDFLAGS) ${OBJ_ELF64}

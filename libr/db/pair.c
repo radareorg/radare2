@@ -81,7 +81,7 @@ R_API void r_pair_delete (RPair *p, const char *name) {
 	hdom = r_str_hash (dom);
 	sdb = r_hashtable_lookup (p->ht, hdom);
 	if (sdb)
-		sdb_delete (sdb, key);
+		sdb_delete (sdb, key, 0);
 }
 
 static Sdb *pair_sdb_new(RPair *p, const char *dom, ut32 hdom) {
@@ -108,7 +108,7 @@ R_API char *r_pair_get (RPair *p, const char *name) {
 	char *dom, *key, *okey;
 
 	if (p->file)
-		return sdb_get (p->sdb, name);
+		return sdb_get (p->sdb, name, NULL);
 
 	key = okey = strdup (name);
 	dom = r_str_lchr (okey, '.');
@@ -122,7 +122,7 @@ R_API char *r_pair_get (RPair *p, const char *name) {
 	sdb = r_hashtable_lookup (p->ht, hdom);
 	if (!sdb)
 		sdb = pair_sdb_new (p, dom, hdom);
-	dom = sdb_get (sdb, key);
+	dom = sdb_get (sdb, key, NULL);
 	free (okey);
 	return dom;
 }
@@ -133,7 +133,7 @@ R_API void r_pair_set (RPair *p, const char *name, const char *value) {
 	Sdb *sdb;
 
 	if (p->file) {
-		sdb_set (p->sdb, name, value);
+		sdb_set (p->sdb, name, value, 0);
 		return;
 	}
 	key = strdup (name);
@@ -147,7 +147,7 @@ R_API void r_pair_set (RPair *p, const char *name, const char *value) {
 	hdom = r_str_hash (dom);
 	sdb = r_hashtable_lookup (p->ht, hdom);
 	if (!sdb) sdb = pair_sdb_new (p, dom, hdom);
-	sdb_set (sdb, key, value);
+	sdb_set (sdb, key, value, 0);
 }
 
 R_API RList *r_pair_list (RPair *p, const char *domain) {
@@ -156,8 +156,8 @@ R_API RList *r_pair_list (RPair *p, const char *domain) {
 	else s = r_hashtable_lookup (p->ht, r_str_hash (domain));
 	if (s) {
 		RList *list = r_list_new ();
-		char key[SDB_KEYSIZE];
-		char val[SDB_VALUESIZE];
+		char key[SDB_KSZ];
+		char val[SDB_VSZ];
 		list->free = (RListFree)r_pair_item_free;
 		sdb_dump_begin (s);
 		while (sdb_dump_next (s, key, val))

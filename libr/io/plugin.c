@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 /* TODO: write li->fds setter/getter helpers */
 // TODO: return true/false everywhere,, not -1 or 0
@@ -47,7 +47,7 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename) {
 			continue;
 		if (il->plugin->plugin_open == NULL)
 			continue;
-		if (il->plugin->plugin_open(io, filename))
+		if (il->plugin->plugin_open (io, filename))
 			return il->plugin;
 	}
 	return NULL;

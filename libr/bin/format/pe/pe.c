@@ -372,7 +372,7 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin)
 
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin)
 {
-	struct r_bin_pe_import_t *imports = NULL;
+	struct r_bin_pe_import_t *imps, *imports = NULL;
 	char dll_name[PE_NAME_LENGTH];
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
@@ -393,18 +393,20 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *
 	for (i = 0; i < delay_import_dirs_count; i++) {
 		if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
 					(ut8*)dll_name, PE_NAME_LENGTH) == -1) {
-			eprintf("Error: read (magic)\n");
+			eprintf ("Error: read (magic)\n");
 			return NULL;
 		}
-		if(!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
+		if (!PE_(r_bin_pe_parse_imports)(bin, &imports, &nimp, dll_name,
 					bin->delay_import_directory[i].DelayImportNameTable, bin->delay_import_directory[i].DelayImportAddressTable))
 			break;
 	}
 	if (nimp) {
-		if (!(imports = realloc(imports, (nimp+1) * sizeof(struct r_bin_pe_import_t)))) {
-			perror("realloc (import)");
+		imps = realloc (imports, (nimp+1) * sizeof(struct r_bin_pe_import_t));
+		if (!imps) {
+			perror ("realloc (import)");
 			return NULL;
 		}
+		imports = imps;
 		imports[nimp].last = 1;
 	}
 	return imports;
@@ -719,17 +721,14 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file) {
-	struct PE_(r_bin_pe_obj_t) *bin;
 	ut8 *buf;
-
-	if (!(bin = malloc(sizeof(struct PE_(r_bin_pe_obj_t)))))
-		return NULL;
-	memset (bin, 0, sizeof (struct PE_(r_bin_pe_obj_t)));
+	struct PE_(r_bin_pe_obj_t) *bin = R_NEW0 (struct PE_(r_bin_pe_obj_t));
+	if (!bin) return NULL;
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp(file, &bin->size))) 
 		return PE_(r_bin_pe_free)(bin);
-	bin->b = r_buf_new();
-	if (!r_buf_set_bytes(bin->b, buf, bin->size))
+	bin->b = r_buf_new ();
+	if (!r_buf_set_bytes (bin->b, buf, bin->size))
 		return PE_(r_bin_pe_free)(bin);
 	free (buf);
 	if (!PE_(r_bin_pe_init)(bin))
@@ -738,11 +737,8 @@ struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new)(const char* file) {
 }
 
 struct PE_(r_bin_pe_obj_t)* PE_(r_bin_pe_new_buf)(struct r_buf_t *buf) {
-	struct PE_(r_bin_pe_obj_t) *bin;
-
-	if (!(bin = malloc(sizeof(struct PE_(r_bin_pe_obj_t)))))
-		return NULL;
-	memset (bin, 0, sizeof (struct PE_(r_bin_pe_obj_t)));
+	struct PE_(r_bin_pe_obj_t) *bin = R_NEW0 (struct PE_(r_bin_pe_obj_t));
+	if (!bin) return NULL;
 	bin->b = buf;
 	bin->size = buf->length;
 	if (!PE_(r_bin_pe_init)(bin))

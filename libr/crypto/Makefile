@@ -4,7 +4,8 @@ CFLAGS+=-DCORELIB
 
 include ../config.mk
 
-foo: pre libr_crypto.${EXT_SO} libr_crypto.${EXT_AR} plugins
+foo:
+	for a in pre libr_crypto.${EXT_SO} libr_crypto.${EXT_AR} plugins ; do ${MAKE} $$a ; done
 
 include ${STATIC_CRYPTO_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst crypto_,p/crypto_,$(STATIC_OBJ)))

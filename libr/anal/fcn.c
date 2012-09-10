@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 */
-/*   nibble<.ds@gmail.com> + pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -31,6 +30,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->fingerprint = NULL;
 	fcn->diff = r_anal_diff_new ();
 	fcn->args = NULL;
+	fcn->locs = NULL;
 	return fcn;
 }
 
@@ -49,6 +49,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->refs);
 	r_list_free (fcn->xrefs);
 	r_list_free (fcn->vars);
+	r_list_free (fcn->locs);
 	r_list_free (fcn->bbs);
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
@@ -58,13 +59,11 @@ R_API void r_anal_fcn_free(void *_fcn) {
 
 R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
 	RAnalRef *ref;
-	if (!fcn || !anal)
+	if (!fcn || !anal || !(ref = r_anal_ref_new ()))
 		return R_FALSE;
-	if (!(ref = r_anal_ref_new ()))
-		return R_FALSE;
-	ref->type = type;
 	ref->at = at;
 	ref->addr = addr;
+	ref->type = type;
 	// TODO: ensure we are not dupping xrefs
 	r_list_append (fcn->refs, ref);
 	return R_TRUE;
@@ -91,10 +90,10 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 	int oplen, idx = 0;
 	if (fcn->addr == -1)
 		fcn->addr = addr;
-	//fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
-	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
+	if (len>16)
+		len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
 
 	while (idx < len) {
 		r_anal_op_fini (&op);
@@ -104,7 +103,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		}
 		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) < 1) {
 			if (idx == 0) {
-				// eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+				VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			} else break;
@@ -117,6 +116,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		case R_ANAL_STACK_INCSTACK:
 			fcn->stack += op.value;
 			break;
+		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:
 			if (op.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", op.ref);
@@ -129,6 +129,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 			}
 			free (varname);
 			break;
+		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_GET:
 			if (op.ref > 0) {
 				varname = r_str_dup_printf ("arg_%x", op.ref);
@@ -145,6 +146,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
+#if 0
+		// do not add xrefs for cjmps?
+				r_anal_op_fini (&op);
+				break;
+#endif
 		case R_ANAL_OP_TYPE_CALL:
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					op.type == R_ANAL_OP_TYPE_CALL?
@@ -308,6 +314,7 @@ R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 			bb->jump = bbi->jump;
 			bb->fail = bbi->fail;
 			bb->conditional = bbi->conditional;
+
 			bbi->size = addr - bbi->addr;
 			bbi->jump = addr;
 			bbi->fail = -1;
@@ -439,15 +446,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	strcpy(str, "function ");
 	strcat(str, sig);
 
-	/* Send whole definition to cparse */
-	int yv, yylval;
-	void *pParser = cdataParseAlloc(malloc);
-	yy_scan_string(str);
-	while ((yv = yylex()) != 0) {
-		cdataParse(pParser, yv, yylval);
-	}
-	cdataParse(pParser, 0, yylval);
-	cdataParseFree(pParser, free);
+	t = r_anal_str_to_type(a, str);
 
 	/* TODO: Improve arguments parsing */
 

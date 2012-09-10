@@ -26,7 +26,7 @@ R_API boolt r_file_is_directory(const char *str) {
 	return ((S_IFDIR &buf.st_mode))? R_TRUE: R_FALSE;
 }
 
-R_API boolt r_file_exist(const char *str) {
+R_API boolt r_file_exists(const char *str) {
 	struct stat buf;
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
@@ -67,7 +67,7 @@ R_API char *r_file_path(const char *bin) {
 			if (ptr) {
 				*ptr = '\0';
 				snprintf (file, sizeof (file), "%s/%s", str, bin);
-				if (r_file_exist (file)) {
+				if (r_file_exists (file)) {
 					free (path);
 					free (path_env);
 					return strdup (file);
@@ -86,13 +86,17 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	char *ret;
 	FILE *fd;
 	long sz;
-	if (!r_file_exist (str))
+	if (!r_file_exists (str))
 		return NULL;
 	fd = fopen (str, "rb");
 	if (fd == NULL)
 		return NULL;
 	fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
+	if (sz <0) {
+		fclose (fd);
+		return NULL;
+	}
 	fseek (fd, 0, SEEK_SET);
 	ret = (char *)malloc (sz+1);
 	rsz = fread (ret, 1, sz, fd);
@@ -328,12 +332,10 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 		h = open (name, O_RDWR|O_EXCL|O_BINARY);
 	else h = -1;
 #else
-	h = snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
-	if (h<1024)
-		h = mkstemp (name);
-	else h = -1;
+	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
+	h = mkstemp (name)!=-1? R_TRUE: R_FALSE;
 #endif
-	if (oname && h!=-1) *oname = strdup (name);
+	if (oname) *oname = h? strdup (name): NULL;
 	free (path);
 	return h;
 }
@@ -342,10 +344,15 @@ R_API char *r_file_tmpdir() {
 #if __WINDOWS__
 	char *path = r_sys_getenv ("TEMP");
 	if (!path) path = strdup ("C:\\WINDOWS\\Temp\\");
+#elif __ANDROID__
+	char *path = strdup ("/data/data/org.radare.installer/radare2/tmp");
 #else
 	char *path = r_sys_getenv ("TMPDIR");
 	if (!path) path = strdup ("/tmp");
 #endif
+	if (!r_file_is_directory (path)) {
+		eprintf ("Cannot find temporary directory '%s'\n", path);
+	}
 	return path;
 }
 

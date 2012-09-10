@@ -325,6 +325,7 @@ extern RIOPlugin r_io_plugin_haret;
 extern RIOPlugin r_io_plugin_bfdbg;
 extern RIOPlugin r_io_plugin_w32;
 extern RIOPlugin r_io_plugin_ewf;
+extern RIOPlugin r_io_plugin_zip;
 #endif
 
 #if 0

@@ -4,7 +4,9 @@ cd `dirname $PWD/$0` ; cd ..
 . ./farm/CONFIG
 
 revision() {
-	echo `hg tip|head -n 1|cut -d : -f 2`
+	R=`hg tip 2>/dev/null|head -n 1|cut -d : -f 2`
+	[ -z "$R" ] && R=`git log|head -n1 |cut -d ' ' -f 2`
+	[ -n "$R" ] && echo $R
 }
 
 tstamp() {

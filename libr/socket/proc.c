@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2007-2012 - pancake */
+
 /* XXX : move to r_util??? rename method names.. to long? */
 /* proc IO is not related to socket io.. this is shitty!! */
 
@@ -44,11 +46,12 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[]) {
 		dup2 (sp->fd1[1], 1);
 		execv (argv[0], argv);
 		exit (1);
+		break;
 	case -1:
 		perror ("fork");
 		r_socket_proc_close (sp);
 		free (sp);
-		break;
+		return NULL;
 		//r_socket_block_time (sp, R_FALSE, 0);
 	}
 	return sp;

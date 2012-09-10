@@ -278,22 +278,22 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 	struct hunklist l = { NULL, NULL };
 	struct hunk *h;
 	int an, bn, offa, rlen, offb, len = 0;
-	int hits = 0;
+	int hits = -1;
 
 	an = splitlines ((const char *)sa, la, &al);
 	bn = splitlines ((const char*)sb, lb, &bl);
 	if (!al || !bl) {
 		eprintf ("bindiff_buffers: Out of memory.\n");
-		return -1;
+		goto beach;
 	}
 
 	l = diff (al, an, bl, bn);
 	if (!l.head) {
 		eprintf ("bindiff_buffers: Out of memory.\n");
-		return -1;
+		goto beach;
 	}
 
-	la = lb = 0;
+	hits = la = lb = 0;
 	for (h = l.base; h != l.head; h++) {
 		if (h->a1 != la || h->b1 != lb) {
 			len = bl[h->b1].l - bl[lb].l;
@@ -330,6 +330,7 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 		la = h->a2;
 		lb = h->b2;
 	}
+	beach:
 	free (al);
 	free (bl);
 	free (l.base);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 */
+/* radare - LGPL - Copyright 2010-2012 */
 /*   pancake<nopcode.org> */
 
 #include <r_anal.h>

@@ -1325,7 +1325,7 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	/* LOL! linux hides threads from /proc, but they are accessible!! HAHAHA */
 	//while ((de = readdir (dh))) {
 	snprintf (cmdline, sizeof (cmdline), "/proc/%d/task", pid);
-	if (r_file_exist (cmdline)) {
+	if (r_file_exists (cmdline)) {
 		struct dirent *de;
 		DIR *dh = opendir (cmdline);
 		while ((de = readdir (dh))) {

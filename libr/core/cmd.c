@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
 
 #include <r_core.h>
 #include <r_anal.h>
@@ -63,29 +63,16 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
-	case '\0':
-		r_core_rtr_list (core);
-		break;
-	case '?':
-		r_core_rtr_help (core);
-		break;
-	case '+':
-		r_core_rtr_add (core, input+1);
-		break;
-	case '-':
-		r_core_rtr_remove (core, input+1);
-		break;
-	case '=':
-		r_core_rtr_session (core, input+1);
-		break;
-	case '<':
-		r_core_rtr_pushout (core, input+1);
-		break;
-	case '!':
-		r_io_system (core->io, input+1);
-		break;
-	default:
-		r_core_rtr_cmd (core, input);
+	case '\0': r_core_rtr_list (core); break;
+	case 'h': r_core_rtr_http (core, 0); break;
+	case 'H': r_core_rtr_http (core, 1); break;
+	case '?': r_core_rtr_help (core); break;
+	case '+': r_core_rtr_add (core, input+1); break;
+	case '-': r_core_rtr_remove (core, input+1); break;
+	case '=': r_core_rtr_session (core, input+1); break;
+	case '<': r_core_rtr_pushout (core, input+1); break;
+	case '!': r_io_system (core->io, input+1); break;
+	default: r_core_rtr_cmd (core, input);
 	}
 	return R_TRUE;
 }
@@ -282,7 +269,7 @@ static int cmd_resize(void *data, const char *input) {
 					" r+num    insert num bytes, move following data up\n");
 			return R_TRUE;
 		default:
-			newsize = r_num_math (core->num, input+1);
+			newsize = r_num_math (core->num, input);
 	}
 
 	grow = (newsize > oldsize);
@@ -318,7 +305,7 @@ static int cmd_eval(void *data, const char *input) {
 			char *p;
 			const char *val = r_config_get (core->config, input+2);
 			p = r_core_editor (core, val);
-			r_str_subchr (p, '\n', ';');
+			r_str_replace_char (p, '\n', ';');
 			r_config_set (core->config, input+2, p);
 		} else eprintf ("Usage: ee varname\n");
 		break;
@@ -359,9 +346,17 @@ static int cmd_eval(void *data, const char *input) {
 			"  e-           ; reset config vars\n"
 			"  e*           ; dump config vars in r commands\n"
 			"  e!a          ; invert the boolean value of 'a' var\n"
+			"  er [key]     ; set config key as readonly. no way back\n"
 			"  e a          ; get value of var 'a'\n"
 			"  e a=b        ; set var 'a' the 'b' value\n");
 		}
+		break;
+	case 'r':
+		if (input[1]) {
+			const char *key = input+((input[1]==' ')?2:1);
+			if (!r_config_readonly (core->config, key))
+				eprintf ("Cannot find key '%s'\n", key);
+		} else eprintf ("Usage: er [key]\n");
 		break;
 	case ' ':
 		r_config_eval (core->config, input+1);
@@ -412,7 +407,7 @@ static int cmd_system(void *data, const char *input) {
 	return ret;
 }
 
-static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
+R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_ptr;
 #if __UNIX__
 	int fds[2];
@@ -425,18 +420,17 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 			*_ptr = '\0';
 			_ptr++;
 		}
-		int olen = 0, ret;
+		int olen = 0;
 		char *str, *out = NULL;
 		// TODO: implement foo
 		str = r_core_cmd_str (core, radare_cmd);
-		ret = r_sys_cmd_str_full (shell_cmd+1, str, &out, &olen, NULL);
+		r_sys_cmd_str_full (shell_cmd+1, str, &out, &olen, NULL);
 		r_cons_memcat (out, olen);
 		if (_ptr)
 			r_cons_grep (_ptr);
 		free (out);
 		return 0;
 	}
-
 #if __UNIX__
 	radare_cmd = (char*)r_str_trim_head (radare_cmd);
 	shell_cmd = (char*)r_str_trim_head (shell_cmd);
@@ -456,7 +450,7 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	} else {
 		close (fds[1]);
 		dup2 (fds[0], 0);
-		dup2 (2, 1);
+		//dup2 (1, 2); // stderr goes to stdout
 		execl ("/bin/sh", "sh", "-c", shell_cmd, (char*)NULL);
 	}
 	return status;
@@ -470,27 +464,52 @@ static int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 static int r_core_cmd_subst_i(RCore *core, char *cmd);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int rep = atoi (cmd);
-	char *icmd = strdup (cmd);
+	char *cmt, *colon, *icmd = strdup (cmd);
 	cmd = r_str_trim_head_tail (icmd);
+	if (!memcmp (cmd, "# ", 2))
+		return 0;
+	cmt = strchr (icmd+1, '#');
+	if (cmt && cmt[1]==' ') {
+		*cmt = 0;
+	}
+	if (*cmd != '"') {
+		colon = strchr (icmd, ';');
+		if (colon)
+			*colon = 0;
+	} else colon = NULL;
 	if (rep>0) {
 		while (*cmd>='0' && *cmd<='9')
 			cmd++;
 	} 
 	if (rep<1) rep = 1;
-	while (rep--) {
+	while (rep-- && *cmd) {
 		int ret = r_core_cmd_subst_i (core, cmd);
 		if (ret) {
 			free (icmd);
 			return ret;
 		}
 	}
+	if (colon) {
+		for (++colon; *colon ==';'; colon++);
+		r_core_cmd_subst (core, colon);
+		//*colon = ';';
+	}
 	free (icmd);
 	return 0;
 }
 
+static char *find_eoq (char *p) {
+	for (;*p;p++) {
+		if (*p=='"') break;
+		if (*p=='\\' && p[1]=='"')
+			p++;
+	}
+	return p;
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
-	int i, len = strlen (cmd), pipefd, ret;
+	int i, ret, pipefd;
 	const char *tick = NULL;
 	const char *quotestr = "\"`";
 	quotestr = "`"; // tmp
@@ -506,12 +525,39 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		}
 		break;
 	case '"':
-		if (cmd[len-1] != '"') {
-			eprintf ("parse: Missing ending '\"'\n");
-			return -1;
+		for (cmd++; *cmd; ) {
+			ut64 oseek = UT64_MAX;
+			char *line, *p = find_eoq (cmd);
+			if (p) {
+				*p = 0;
+				if (p[1]=='@' || p[2]=='@') {
+					char *q = strchr (p+1, '"');
+					if (q) *q = 0;
+					oseek = core->offset;
+					r_core_seek (core, r_num_math (
+						core->num, p+2), 1);
+					if (q) {
+						*p = '"';
+						p = q;
+					} else p = NULL;
+				}
+				line = strdup (cmd);
+				line = r_str_replace (line, "\\\"", "\"", R_TRUE);
+				r_cmd_call (core->cmd, line);
+				free (line);
+				if (oseek != UT64_MAX) {
+					r_core_seek (core, oseek, 1);
+					oseek = UT64_MAX;
+				}
+				if (!p) break;
+				*p = '"';
+				cmd = p+1;
+			} else {
+				eprintf ("Missing \".");
+				return R_FALSE;
+			}
 		}
-		cmd[len-1]='\0';
-		return r_cmd_call (core->cmd, cmd+1);
+		return R_TRUE;
 	case '(':
 		if (cmd[1] != '*')
 			return r_cmd_call (core->cmd, cmd);
@@ -521,7 +567,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* comments */
 	if (*cmd!='#') {
 		ptr = (char *)r_str_lastbut (cmd, '#', quotestr);
-		if (ptr) *ptr = '\0';
+		if (ptr && ptr[1]==' ') *ptr = '\0';
 	}
 
 	/* multiple commands */
@@ -577,7 +623,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* Out Of Band Input */
 	free (core->oobi);
 	core->oobi = NULL;
-// XXX: must honor quotestr
+
 	ptr = strchr (cmd, '<');
 	if (ptr) {
 		ptr[0] = '\0';
@@ -589,7 +635,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			eprintf ("==> Reading from stdin until '%s'\n", str);
 			free (core->oobi);
 			core->oobi = malloc (1);
-			core->oobi[0] = '\0';
+			if (core->oobi)
+				core->oobi[0] = '\0';
 			core->oobi_len = 0;
 			for (;;) {
 				char buf[1024];
@@ -602,14 +649,17 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 				ret = strlen (buf);
 				core->oobi_len += ret;
 				core->oobi = realloc (core->oobi, core->oobi_len+1);
-				if (!strcmp (buf, str))
-					break;
-				strcat ((char *)core->oobi, buf);
+				if (core->oobi) {
+					if (!strcmp (buf, str))
+						break;
+					strcat ((char *)core->oobi, buf);
+				}
 			}
 			//r_line_set_prompt (oprompt);
 		} else {
 			for (str=ptr+1; *str== ' ';str++);
 			eprintf ("SLURPING FILE '%s'\n", str);
+			free (core->oobi);
 			core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
 			if (core->oobi == NULL)
 				eprintf ("Cannot open file\n");
@@ -622,17 +672,33 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
 	if (ptr) {
+		int use_editor = R_FALSE;
+		int ocolor = r_config_get_i (core->config, "scr.color");
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
 		r_cons_set_interactive (R_FALSE);
 		*ptr = '\0';
 		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
+		if (!strcmp (str, "-")) {
+			use_editor = R_TRUE;
+			str = r_file_temp ("dumpedit");
+			r_config_set (core->config, "scr.color", "false");
+		}
 		pipefd = r_cons_pipe_open (str, ptr[1]=='>');
 		ret = r_core_cmd_subst (core, cmd);
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
 		r_cons_set_last_interactive ();
+		if (use_editor) {
+			const char *editor = r_config_get (core->config, "cfg.editor");
+			if (editor && *editor) {
+				r_sys_cmdf ("%s '%s'", editor, str);
+			} else eprintf ("No cfg.editor configured\n");
+			r_config_set_i (core->config, "scr.color", ocolor);
+			r_file_rm (str);
+			free (str);
+		}
 		return ret;
 	}
 
@@ -725,8 +791,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		return ret;
 	}
 
-	ret = r_cmd_call (core->cmd, r_str_trim_head (cmd));
-	return ret;
+	return cmd? r_cmd_call (core->cmd, r_str_trim_head (cmd)): R_FALSE;
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
@@ -900,7 +965,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 R_API int r_core_cmd_file(RCore *core, const char *file) {
 	int ret = R_TRUE;
 	char *nl, *data, *odata = r_file_slurp (file, NULL);
-	if (!odata) return R_FALSE;
+	if (!odata) return -2;
 	nl = strchr (odata, '\n');
 	if (nl) {
 		data = odata;
@@ -998,6 +1063,25 @@ R_API int r_core_flush(void *user, const char *cmd) {
 	int ret = r_core_cmd ((RCore *)user, cmd, 0);
 	r_cons_flush ();
 	return ret;
+}
+
+R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
+	const char *static_str;
+	char *s, *tmp, *retstr = NULL;
+	r_cons_reset ();
+	if (r_file_mkstemp ("cmd", &tmp)) {
+		char *_cmd = strdup (cmd);
+		int pipefd = r_cons_pipe_open (tmp, 0);
+		r_core_cmd_subst (core, _cmd);
+		r_cons_flush ();
+		r_cons_pipe_close (pipefd);
+		s = r_file_slurp (tmp, NULL);
+		r_file_rm (tmp);
+		free (tmp);
+		free (_cmd);
+		return s;
+	}
+	return NULL;
 }
 
 /* return: pointer to a buffer with the output of the command */

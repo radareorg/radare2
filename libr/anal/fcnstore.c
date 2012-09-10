@@ -26,6 +26,7 @@ R_API RListRange* r_listrange_new () {
 	return s;
 }
 
+// FIXME: Do not hardcode such things/values!!!
 static inline ut64 r_listrange_key(ut64 addr) {
 	const ut64 KXOR = 0x18abc3e127d549ac; // XXX wrong for mingw32
 	ut64 key = addr & 0xfffffffffffff400;
@@ -82,6 +83,7 @@ R_API void r_listrange_del(RListRange *s, RAnalFunction *f) {
 }
 
 R_API void r_listrange_resize(RListRange *s, RAnalFunction *f, int newsize) {
+	if (!f) return;
 	r_listrange_del (s, f);
 	f->size = newsize;
 	r_listrange_add (s, f);

@@ -1,6 +1,20 @@
 #!/bin/sh
 # android shell
 
+if [ -n "$1" ]; then
+	NDK_ARCH="$1"
+	shift
+fi
+case "${NDK_ARCH}" in
+arm|mips|x86)
+	export NDK_ARCH
+	;;
+*)
+	echo "Usage: $0 [arm|mips|x86]"
+	exit 1
+	;;
+esac
+
 LANG=C
 export LANG
 ROOT=`dirname $PWD/$0`
@@ -44,11 +58,17 @@ PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH
 export PATH
 export CFLAGS
 export NDK
+[ -z "${SHELL}" ] && SHELL=sh
+SHELL=sh
 cp ${ROOT}/ndk-gcc ${NDK}
 chmod +x ${NDK}/ndk-gcc
 CC=ndk-gcc
+PS1="[r2-android-${NDK_ARCH}]> "
 export CC
 export PS1
-sh $@
-#echo $SHELL
-#$SHELL
+A=$@
+if [ -n "$A" ]; then
+	${SHELL} -c "$A"
+else
+	${SHELL}
+fi

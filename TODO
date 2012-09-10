@@ -5,32 +5,25 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
-====[[ 0.9.1 ]]====
-RBIN
- - fix fatmach0 hack in r_bin_get_offset()
-   - the 0x1000 issue breaks for files like /usr/bin/true
- - Implement r_bin_size() - get estimated binary file size from headers
-* Analysis
-  - assume there's a function at the end of each function
+0.9.2
+- 'Vdu' onnly undefines a basic block. not the whole function!
+  - it does not unflags the address if loc. 
+- search for CALL instructions in text segment.
+  - analyze the destination address of each call destination
+
+====[[ 0.9.4 ]]====
+* Integrate dwarf parser with disassembler and debugger
+* Analysis: assume there's a function at the end of each function
+* Event system . allow to send and read queues of messages.. thats pubsub!
+* Step back .. log all state changes on every debugger stop
+* Show analized functions in 'aa' -> discuss
+* Timeout for code analysis (check timestamp)
 * Allow to seek to branch N like in visual, but from cmdline
 * Colorize multiple ranges of chars in hexdump
-* List functions
-  - calculate and show ciclomatic complexity
-* insert assembly in visual should be more userfriendly (keep unwritten bytes)
-* Search in io.va=true must be fixed
-  - search.infile=true (ignore va and offset)
-* Source debugging or gtfo
-  - integration with rabin2 -d
-* show analized functions in 'aa' -> discuss
-* timeout for code analysis (check timestamp)
+* Insert assembly in visual should be more userfriendly (keep unwritten bytes)
 * io_next must work properly
   - r_io must read in 512 or 4096 aligned blocks (get next section?)
 
-Discuss
-Add $EDITOR alias for file open(read/write) -
-  pd > -
-  wf -
-  ...
 =======
 
 * refactor vmenus.c -> refresh function must be redefined for each menu
@@ -50,7 +43,6 @@ Add $EDITOR alias for file open(read/write) -
   - variant for stego print? LSB, MSB, ...
   - add base85 api
 * crackme mach0 happy with rbin
-* add support for sockets in rarun2
 * if no debugger supported, say so... r_io must ?
 * check search multiple keywords and signatures
 * search for antidebug/disasm tricks opcodes
@@ -76,8 +68,7 @@ BUGS:
   - rabin2 integration must be easier
 * rabin2 -z /dev/sda1 TAKES TOO LONG. opening r2 /tmp/fs is SLOW as shit.
 
-===[ 0.9.2 ]===
-* Add support for classes (useful for c++, dex, objc, ...)
+* Add support for classes in c++, objc binaries
   - command to add new classes
 * Tracing support for the debugger
   - "e cmd.trace=dr=;.dr*;pd 2@eip"

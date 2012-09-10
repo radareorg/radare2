@@ -166,10 +166,9 @@ static PyTypeObject RadareType = {
 };
 
 static void init_radare_module(void) {
-	PyObject* m;
 	if (PyType_Ready (&RadareType) < 0)
 		return;
-	m = Py_InitModule3 ("r", Radare_methods, "radare python extension");
+	Py_InitModule3 ("r", Radare_methods, "radare python extension");
 }
 #else
 

@@ -15,6 +15,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	eprintf ("Compare %d/%d equal bytes\n", eq, len);
 	return len-eq;
 }
+
 static int cmd_cmp(void *data, const char *input) {
 	RCore *core = data;
 	FILE *fd;
@@ -84,6 +85,22 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		break;
 #endif
+	case 'c':
+		{
+		int col = core->cons->columns>123;
+		ut8 *b = malloc (core->blocksize);
+		ut64 addr = r_num_math (core->num, input+2);
+		if (!b) return 0;
+		memset (b, 0xff, core->blocksize);
+		r_core_read_at (core, addr, b, core->blocksize);
+#if 0
+		r_io_seek (core->io, addr, R_IO_SEEK_SET);
+		r_io_read (core->io, b, core->blocksize);
+#endif
+		r_print_hexdiff (core->print, core->offset, core->block, addr, b, core->blocksize, col);
+		free (b);
+		}
+		break;
 	case 'g':
 		{ // XXX: this is broken
 			int diffops = 0;
@@ -129,18 +146,19 @@ static int cmd_cmp(void *data, const char *input) {
 	case '?':
 		r_cons_strcat (
 		"Usage: c[?cdfx] [argument]\n"
-		" c  [string]   Compares a plain with escaped chars string\n"
+		" c  [string]    Compares a plain with escaped chars string\n"
+		" cc [at] [(at)] Compares in two hexdump columns of block size\n"
 		//" cc [offset]   Code bindiff current block against offset\n"
-		" cd [value]    Compare a doubleword from a math expression\n"
+		" cd [value]     Compare a doubleword from a math expression\n"
 		//" cD [file]     Like above, but using radiff -b\n");
-		" cq [value]    Compare a quadword from a math expression\n"
-		" cx [hexpair]  Compare hexpair string\n"
-		" cX [addr]     Like 'cc' but using hexdiff output\n"
-		" cf [file]     Compare contents of file at current seek\n"
-		" cg[o] [file]  Graphdiff current file and [file]\n");
+		" cq [value]     Compare a quadword from a math expression\n"
+		" cx [hexpair]   Compare hexpair string\n"
+		" cX [addr]      Like 'cc' but using hexdiff output\n"
+		" cf [file]      Compare contents of file at current seek\n"
+		" cg[o] [file]   Graphdiff current file and [file]\n");
 		break;
 	default:
-		eprintf ("Usage: c[?Ddxf] [argument]\n");
+		eprintf ("Usage: c[?cDdxf] [argument]\n");
 	}
 
 	return 0;

@@ -83,7 +83,7 @@ R_API char *r_lib_path(const char *libname) {
 		if (next) *next = 0;
 		snprintf (libpath, sizeof (libpath), "%s/%s%s", path0, libname, ext);
 		//eprintf ("--> %s\n", libpath);
-		if (r_file_exist (libpath)) {
+		if (r_file_exists (libpath)) {
 			free (env);
 			return strdup (libpath);
 		}

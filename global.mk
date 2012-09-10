@@ -1,5 +1,28 @@
+ifeq ($(_INCLUDE_GLOBAL_MK_),)
+_INCLUDE_GLOBAL_MK_=1
 RELEASE=1
 DESTDIR=
+
+TOP:=$(dir $(lastword $(MAKEFILE_LIST)))
+LTOP:=$(TOP)/libr
+
+ifeq ($(MAKEFLAGS),s)
+SILENT=1
+else
+SILENT=
+endif
+
+.c:
+ifneq ($(SILENT),)
+	@echo LD $<
+endif
+	$(CC) $(LDFLAGS) -c $(CFLAGS) -o $@ $<
+
+.c.o:
+ifneq ($(SILENT),)
+	@echo CC $<
+endif
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 COMPILER?=gcc
 #COMPILER=maemo
@@ -22,13 +45,8 @@ PFX=${DESTDIR}${PREFIX}
 MDR=${DESTDIR}${MANDIR}
 
 LIBDIR=${PREFIX}/lib
+WWWROOT=${LIBDIR}/radare2/${VERSION}/www
 
--include config-user.mk
--include ../config-user.mk
--include ../../config-user.mk
--include ../../../config-user.mk
-
--include mk/${COMPILER}.mk
--include ../mk/${COMPILER}.mk
--include ../../mk/${COMPILER}.mk
--include ../../../mk/${COMPILER}.mk
+-include $(TOP)/config-user.mk
+-include $(TOP)/mk/${COMPILER}.mk
+endif

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -83,7 +83,7 @@ R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const cha
 	return ret;
 }
 
-R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mode) {
+R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = NULL;
 	int fd = -2;
 	char *uri = strdup (file);
@@ -113,18 +113,19 @@ R_API RIODesc *r_io_open(struct r_io_t *io, const char *file, int flags, int mod
 	if (fd == -2) {
 #if __WINDOWS__
 		if (flags & R_IO_WRITE) {
-			fd = open (file, O_BINARY | 1);
+			fd = open (uri, O_BINARY | 1);
 			if (fd == -1)
-				creat (file, O_BINARY);
-			fd = open (file, O_BINARY | 1);
-		} else fd = open (file, O_BINARY);
+				creat (uri, O_BINARY);
+			fd = open (uri, O_BINARY | 1);
+		} else fd = open (uri, O_BINARY);
 #else
-		fd = open (file, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
+		fd = open (uri, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
 #endif
 	}
 	if (fd >= 0) {
 		if (desc == NULL)
-			desc = r_io_desc_new (io->plugin, fd, file, flags, mode, NULL);
+			desc = r_io_desc_new (io->plugin,
+				fd, uri, flags, mode, NULL);
 		r_io_desc_add (io, desc);
 		r_io_set_fd (io, desc);
 	}
@@ -144,11 +145,10 @@ R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
 R_API int r_io_set_fdn(RIO *io, int fd) {
 	if (fd != -1 && io->fd != NULL && fd != io->fd->fd) {
 		RIODesc *desc = r_io_desc_get (io, fd);
-		if (desc) {
-			io->fd = desc;
-			io->plugin = desc->plugin;
-			return R_TRUE;
-		}
+		if (!desc) return R_FALSE;
+		io->fd = desc;
+		io->plugin = desc->plugin;
+		return R_TRUE;
 	}
 	return R_FALSE;
 }
@@ -169,22 +169,13 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	return r_io_read_at (io, io->off, buf, len);
 }
 
+// XXX: this is buggy. must use seek+read
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-#if 0
-	int ret;
-	if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX) {
-		memset (buf, 0xff, len);
-		return -1;
-	}
-	ret = r_io_read_internal (io, buf, len);
-	if (ret<1)
-		memset (buf, 0xff, len);
-	return ret;
-#else
 	int ret, l, olen = len;
 	int w = 0;
 
-#if 1
+	r_io_seek (io, addr, R_IO_SEEK_SET);
+#if 0
 	// HACK?: if io->va == 0 -> call seek+read without checking sections ?
 	if (!io->va) {
 	//	r_io_seek (io, addr, R_IO_SEEK_SET);
@@ -196,16 +187,22 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return ret;
 	}
 #endif
+// XXX: this is buggy!
 	while (len>0) {
+		int ms;
 		ut64 last = r_io_section_next (io, addr);
 		l = (len > (last-addr))? (last-addr): len;
 		if (l<1) l = len;
 		// ignore seek errors
 //		eprintf ("0x%llx %llx\n", addr+w, 
 		//r_io_seek (io, addr+w, R_IO_SEEK_SET);
-		r_io_map_select (io, addr+w);
+		if (r_io_seek (io, addr+w, R_IO_SEEK_SET)==UT64_MAX) {
+			memset (buf+w, 0xff, l);
+			return -1;
+		}
+		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
-		if (ret <1) {
+		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
 			ret = 1;
 		} else if (ret<l) {
@@ -214,12 +211,28 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		}
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, l);
+			/*
+			 * XXX: The 'else' below is fixing the io.cache
+			 * with resized files. That may be wrong
+			 */
+		} else
+		// hide non-mapped files here
+		// do not allow reading on real addresses if mapped != 0
+		if (!io->debug && ms>0) {
+			//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
+			/* check if address is vaddred in sections */
+			ut64 o = r_io_section_offset_to_vaddr (io, addr);
+			if (o == UT64_MAX) {
+				ut64 o = r_io_section_vaddr_to_offset (io, addr);
+				if (o == UT64_MAX)
+					memset (buf+w, 0xff, l);
+			}
+			break;
 		}
 		w += l;
 		len -= l;
 	}
 	return olen;
-#endif
 }
 
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
@@ -359,11 +372,13 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 }
 
 R_API ut64 r_io_size(RIO *io) {
+	int iova;
 	ut64 size, here;
+	if (!io) return 0LL;
+	iova = io->va;
 	if (r_io_is_listener (io))
 		return UT64_MAX;
 // XXX. problematic when io.va = 1
-int iova = io->va;
 io->va = 0;
 	//r_io_set_fdn (io, fd);
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
@@ -444,7 +459,7 @@ R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move) {
 R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
 	if (io->plugin && io->plugin->create)
 		return io->plugin->create (io, file, mode, type);
-	if (type == 'd'|| type ==1)
-		mkdir (file, mode);
-	else return creat (file, mode)? R_FALSE: R_TRUE;
+	if (type == 'd'|| type == 1)
+		return r_sys_mkdir (file);
+	return creat (file, mode)? R_FALSE: R_TRUE;
 }

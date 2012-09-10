@@ -4,7 +4,7 @@ BINDEPS+=r_bin r_debug r_anal r_diff r_reg r_bp r_io r_cmd r_fs
 BINDEPS+=r_sign r_print r_lang r_asm r_syscall r_db r_hash r_line
 BINDEPS+=r_magic r_socket r_flags r_util r_th r_egg
 
-CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\"
+CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\" -DR2_GITTIP=\"$(GIT_TIP)\"
 
 include ../binr.mk
 

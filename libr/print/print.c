@@ -158,19 +158,37 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	r_print_cursor (p, idx, 0);
 }
 
-R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len) {
+R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	int i, w = p->cols*0.7;
-	p->printf ("#define _BUFFER_SIZE %d\n", len);
-	p->printf ("unsigned char buffer[%d] = {", len);
-	p->interrupt = 0;
-	for (i=0; !p->interrupt && i<len; i++) {
-		if (!(i%w))
-			p->printf ("\n  ");
-		r_print_cursor (p, i, 1);
-		p->printf ("0x%02x, ", buf[i]);
-		r_print_cursor (p, i, 0);
+	switch (lang) {
+	case '?':
+		eprintf ("Valid print code formats are: C and Python\n");
+		break;
+	case 'P':
+	case 'p':
+		p->printf ("import struct\nbuf = struct.pack (\"%dB\", ", len);
+		for (i=0; !p->interrupt && i<len; i++) {
+			if (!(i%w))
+				p->printf ("\n");
+			r_print_cursor (p, i, 1);
+			p->printf ("0x%02x%c", buf[i], (i+1<len)?',':')');
+			r_print_cursor (p, i, 0);
+		}
+		p->printf ("\n");
+		break;
+	default:
+		p->printf ("#define _BUFFER_SIZE %d\n", len);
+		p->printf ("unsigned char buffer[%d] = {", len);
+		p->interrupt = 0;
+		for (i=0; !p->interrupt && i<len; i++) {
+			if (!(i%w))
+				p->printf ("\n  ");
+			r_print_cursor (p, i, 1);
+			p->printf ("0x%02x, ", buf[i]);
+			r_print_cursor (p, i, 0);
+		}
+		p->printf ("};\n");
 	}
-	p->printf ("};\n");
 }
 
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode) {
@@ -339,6 +357,76 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 }
 
+static const char *getbytediff (char *fmt, ut8 a, ut8 b) {
+	if (a>b) sprintf (fmt, Color_GREEN"%02x"Color_RESET, a);
+	else if (b>a) sprintf (fmt, Color_RED"%02x"Color_RESET, a);
+	else sprintf (fmt, "%02x", a);
+	return fmt;
+}
+
+static const char *getchardiff (char *fmt, ut8 a, ut8 b) {
+	char ch = IS_PRINTABLE (a)? a: '.';
+	if (a>b) sprintf (fmt, Color_GREEN"%c"Color_RESET, ch);
+	else if (b>a) sprintf (fmt, Color_RED"%c"Color_RESET, ch);
+	else { fmt[0] = ch; fmt[1]=0; }
+	return fmt;
+}
+
+#define B(a,b) getbytediff(fmt, a[i+j], b[i+j])
+#define C(a,b) getchardiff(fmt, a[i+j], b[i+j])
+
+static ut8 *M(const ut8 *b, int len) {
+	ut8 *r = malloc (len+16);
+	if (!r) return NULL;
+	memset (r, 0xff, len+16);
+	memcpy (r, b, len);
+	return r;
+}
+
+// TODO: add support for cursor
+R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8 *_b, int len, int scndcol) {
+	ut8 *a, *b;
+	char linediff, fmt[64];
+	// TODO: add non-colorized support
+	int i, j;
+	a = M (_a, len);
+	if (!a) return;
+	b = M (_b, len);
+	if (!b) { free (a); return; }
+	for (i =0 ; i<len; i+=16) {
+		linediff = (memcmp (a+i, b+i, 16))?'!':'|';
+		p->printf ("0x%08"PFMT64x" ", aa+i);
+		for (j=0;j<16;j++) {
+			r_print_cursor (p, i+j, 1);
+			p->printf (B (a,b));
+			r_print_cursor (p, i+j, 0);
+		}
+		p->printf (" ");
+		for (j=0;j<16;j++) {
+			r_print_cursor (p, i+j, 1);
+			p->printf ("%s", C (a, b));
+			r_print_cursor (p, i+j, 0);
+		}
+		if (scndcol) {
+			p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
+			for (j=0;j<16;j++) {
+				r_print_cursor (p, i+j, 1);
+				p->printf (B (b, a));
+				r_print_cursor (p, i+j, 0);
+			}
+			p->printf (" ");
+			for (j=0;j<16;j++) {
+				r_print_cursor (p, i+j, 1);
+				p->printf ("%s", C (b, a));
+				r_print_cursor (p, i+j, 0);
+			}
+			p->printf ("\n");
+		} else p->printf (" %c\n", linediff);
+	}
+	free (a);
+	free (b);
+}
+
 R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt) {
 	int i;
 	if (p) {
@@ -391,6 +479,7 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
 
 
 R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
+	static int mode = -1;
 	ut8 *bufz, *bufz2;
 	int i, j = 0;
 	ut64 size = (to-from)/len;
@@ -399,11 +488,12 @@ R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from
 	if (maxlen<2) maxlen = 1024*1024;
 	if (size>maxlen) size = maxlen;
 	if (size<1) size = 1;
-	if (from == p->zoom->from && to == p->zoom->to && size==p->zoom->size) {
+	if (mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size==p->zoom->size) {
 		// get from cache
 		bufz = p->zoom->buf;
 		size = p->zoom->size;
 	} else {
+		mode = p->zoom->mode;
 		bufz = (ut8 *) malloc (len);
 		if (bufz == NULL) return;
 		bufz2 = (ut8 *) malloc (size);
@@ -490,14 +580,14 @@ void lsb_stego_process (FILE *fd, int length, bool forward, bool downward, int o
 #endif
 
 /// XXX: fix ascii art with different INCs
-R_API void r_print_fill(RPrint *p, ut8 *arr, int size) {
+R_API void r_print_fill(RPrint *p, const ut8 *arr, int size) {
 	int i = 0, j;
 #define INC 5
 	p->printf ("         ");
 	if (arr[0]>1) for (i=0;i<arr[0]; i+=INC) p->printf ("_");
 	p->printf ("\n");
 	for (i=0; i<size; i++) {
-		ut8 next = i+1<size?arr[i+1]:0;
+		ut8 next = (i+1<size)? arr[i+1]:0;
 		p->printf ("%02x %04x |", i, arr[i]);
 			int base = 0;
 			if (next<INC) base = 1;

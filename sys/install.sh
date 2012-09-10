@@ -14,4 +14,6 @@ elif [ -d .git ]; then
 	git pull
 fi
 
-./sys/build.sh && sudo ${MAKE} symstall
+[ "`id -u`" = 0 ] || SUDO=sudo
+
+./sys/build.sh && ${SUDO} ${MAKE} symstall

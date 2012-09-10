@@ -105,7 +105,7 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 			} else if (fOptions.options & FORMAT_OPTION_DATA_DEC) {
 				retVal = sprintf(strOperand, "%s%d", OPERAND_PREFIX_DATA_DEC, dInstruction.operands[operandNum]);
 			} else {
-				retVal = sprintf(strOperand, "%s%02X", OPERAND_PREFIX_DATA_HEX, dInstruction.operands[operandNum]);
+				retVal = sprintf(strOperand, "%s%02x", OPERAND_PREFIX_DATA_HEX, dInstruction.operands[operandNum]);
 			}
 			break;
 		case OPERAND_BIT:
@@ -138,13 +138,13 @@ static int formatDisassembledOperand(char *strOperand, int operandNum, const dis
 			retVal = sprintf(strOperand, "%s%0*X", OPERAND_PREFIX_ABSOLUTE_ADDRESS, fOptions.addressFieldWidth, AVR_Long_Address);
 			break;
 		case OPERAND_IO_REGISTER:
-			retVal = sprintf(strOperand, "%s%02X", OPERAND_PREFIX_IO_REGISTER, dInstruction.operands[operandNum]);
+			retVal = sprintf(strOperand, "%s%02x", OPERAND_PREFIX_IO_REGISTER, dInstruction.operands[operandNum]);
 			break;	
 		case OPERAND_WORD_DATA:
 			retVal = sprintf(strOperand, "%s%0*X", OPERAND_PREFIX_WORD_DATA, fOptions.addressFieldWidth, dInstruction.operands[operandNum]);
 			break;
 		case OPERAND_DES_ROUND:
-			retVal = sprintf(strOperand, "%s%02X", OPERAND_PREFIX_WORD_DATA, dInstruction.operands[operandNum]);
+			retVal = sprintf(strOperand, "%s%02x", OPERAND_PREFIX_WORD_DATA, dInstruction.operands[operandNum]);
 			break;
 
 		case OPERAND_YPQ:

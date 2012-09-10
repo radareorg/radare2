@@ -13,7 +13,10 @@
 %%
 "void"						{	return(VOID); }
 "char"						{	return(CHAR); }
-"byte"						{	return(CHAR); }
+"byte"						{	return(BYTE); }
+"word"						{	return(WORD); }
+"dword"						{	return(DWORD); }
+"qword"						{	return(QWORD); }
 "int"						{	return(INTEGER); }
 "long"						{	return(LONG); }
 "short"						{	return(SHORT); }
@@ -30,6 +33,7 @@
 "virtual"					{	return(VIRTUAL); }
 "struct"					{	return(STRUCT);	}
 "union"						{	return(UNION); }
+"alloca"					{	return(ALLOCA); }
 "function"					{	return(FUNCTION); }
 
 "u8"						{	return(UINT8); }
@@ -49,7 +53,7 @@
 "WINAPI"					{	return(WINAPI); }
 "thiscall"					{	return(THISCALL); }
 
-
+"@"							{	return(AT); }
 "{"							{	return(OBRACE); }
 "}"							{	return(EBRACE); }
 "["							{	return(LBRACKET); }
@@ -58,6 +62,7 @@
 ")"							{	return(RPARENT); }
 ";"							{	return(SEMICOLON); }
 ","							{	return(COMMA); }
+"="							{	return(EQUATION); }
 
 [ \t\v\n\f]					{  }
 [a-zA-Z_][a-zA-Z0-9_]*		{

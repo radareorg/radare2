@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
 #ifndef _INCLUDE_R_PARSE_H_
 #define _INCLUDE_R_PARSE_H_
@@ -45,6 +45,8 @@ R_API int r_parse_varsub(RParse *p, RAnalFunction *f, char *data, char *str, int
 extern struct r_parse_plugin_t r_parse_plugin_dummy;
 extern struct r_parse_plugin_t r_parse_plugin_att2intel;
 extern struct r_parse_plugin_t r_parse_plugin_x86_pseudo;
+extern struct r_parse_plugin_t r_parse_plugin_mips_pseudo;
+extern struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mreplace;
 #endif
 

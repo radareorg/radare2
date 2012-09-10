@@ -9,10 +9,12 @@ include ../../config-user.mk
 CFLAGS=-I ../../libr/include/
 CFLAGS+=-DLIBDIR="\"${LIBDIR}\""
 CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\"
-ifeq ($(STATIC_BUILD),1)
+CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
+
+#ifeq ($(STATIC_BUILD),1)
+ifeq ($(WITHNONPIC),1)
 LDFLAGS+=../../libr/th/libr_th.a
 LDFLAGS+=../../libr/io/libr_io.a
-LDFLAGS+=../../libr/socket/libr_socket.a
 LDFLAGS+=../../libr/asm/libr_asm.a
 LDFLAGS+=../../libr/db/libr_db.a
 LDFLAGS+=../../libr/parse/libr_parse.a
@@ -39,6 +41,7 @@ LDFLAGS+=../../libr/bp/libr_bp.a
 LDFLAGS+=../../libr/hash/libr_hash.a
 LDFLAGS+=../../libr/bin/libr_bin.a
 LDFLAGS+=../../libr/util/libr_util.a
+LDFLAGS+=../../libr/socket/libr_socket.a
 # extra libs #
 LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
 LDFLAGS+=../../libr/db/sdb/src/libsdb.a
@@ -47,6 +50,7 @@ else
 LDFLAGS+=-L../../libr/th -lr_th
 LDFLAGS+=-L../../libr/io -lr_io
 LDFLAGS+=-L../../libr/bp -lr_bp
+LDFLAGS+=-L../../libr/socket -lr_socket
 LDFLAGS+=-L../../libr/bin -lr_bin
 LDFLAGS+=-L../../libr/reg -lr_reg
 LDFLAGS+=-L../../libr/asm -lr_asm

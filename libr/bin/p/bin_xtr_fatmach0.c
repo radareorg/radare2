@@ -37,9 +37,13 @@ static int destroy(RBin *bin) {
 }
 
 static int load(RBin *bin) {
-	if ((bin->bin_obj = r_bin_fatmach0_new (bin->file)))
-		return R_TRUE;
-	return R_FALSE;
+	return (bin->bin_obj = r_bin_fatmach0_new (bin->file))?
+		R_TRUE: R_FALSE;
+}
+
+static int size(RBin *bin) {
+	// TODO
+	return 0;
 }
 
 static int extract(RBin *bin, int idx) {
@@ -63,6 +67,7 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 	.fini = NULL,
 	.check = &check,
 	.load = &load,
+	.size = &size,
 	.extract = &extract,
 	.destroy = &destroy,
 };

@@ -142,6 +142,8 @@ typedef struct {
 	unsigned int line;
 	unsigned int column;
 } RBinDwarfRow;
+#define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
 
+R_API int r_bin_dwarf_parse_info_raw(const ut8 *obuf);
 
 #endif

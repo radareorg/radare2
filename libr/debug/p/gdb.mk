@@ -9,13 +9,15 @@ ifeq (${OSTYPE},solaris)
 LDFLAGS+=-lsocket
 endif
 
-LDFLAGS+=-L../../util -lr_util
-LDFLAGS+=-L../../cons -lr_cons
-LDFLAGS+=-L../../parse -lr_parse
-LDFLAGS+=-L../../anal -lr_anal
-LDFLAGS+=-L../../reg -lr_reg
-LDFLAGS+=-L../../bp -lr_bp
-LDFLAGS+=-L../../io -lr_io
+-include ../../global.mk
+-include ../../../global.mk
+LDFLAGS+=-L$(LTOP)/util -lr_util
+LDFLAGS+=-L$(LTOP)/cons -lr_cons
+LDFLAGS+=-L$(LTOP)/parse -lr_parse
+LDFLAGS+=-L$(LTOP)/anal -lr_anal
+LDFLAGS+=-L$(LTOP)/reg -lr_reg
+LDFLAGS+=-L$(LTOP)/bp -lr_bp
+LDFLAGS+=-L$(LTOP)/io -lr_io
 
 OBJ_GDB=debug_gdb.o 
 #libgdbwrap/gdbwrapper.o

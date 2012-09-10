@@ -44,7 +44,7 @@ R_API void r_anal_op_free(void *_op) {
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	if (anal && op && anal->cur && anal->cur->op)
+	if (len>0 && anal && op && anal->cur && anal->cur->op)
 		return anal->cur->op (anal, op, addr, data, len);
 	return R_FALSE;
 }

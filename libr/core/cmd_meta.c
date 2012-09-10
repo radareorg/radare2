@@ -2,7 +2,6 @@
 
 // XXX this command is broken. output of _list is not compatible with input
 static int cmd_meta(void *data, const char *input) {
-	RListIter *iter;
 	RCore *core = (RCore*)data;
 	int i, ret, line = 0;
 	ut64 addr_end = 0LL;

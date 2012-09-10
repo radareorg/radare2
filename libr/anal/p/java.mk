@@ -1,5 +1,6 @@
 OBJ_JAVA=anal_java.o
-OBJ_JAVA+=../asm/arch/java/javasm/java_ops.o
+#OBJ_JAVA+=$(realpath $(LTOP)/asm/arch/java/javasm/java_ops.o)
+OBJ_JAVA+=../../asm/arch/java/javasm/java_ops.o
 
 STATIC_OBJ+=${OBJ_JAVA}
 TARGET_JAVA=anal_java.${EXT_SO}

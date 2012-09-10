@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 #include <r_cons.h>
 #include <ctype.h>
@@ -27,16 +27,15 @@ R_API char *r_cons_hud_file(const char *f) {
 
 R_API char *r_cons_hud_string(const char *s) {
 	int i;
-	char *ret, *o = strdup (s);
-	//RFList fl = r_flist_new (10);
+	char *os, *ret, *o = strdup (s);
 	RList *fl = r_list_new ();
 	fl->free = free;
-	char *os = o;
-	for (i=0; o[i]; i++) {
+	for (os=o, i=0; o[i]; i++) {
 		if (o[i]=='\n') {
 			o[i] = 0;
 			if (!fl) {
-				// XXX memleak
+				r_list_free (fl);
+				free (o);
 				return NULL;
 			}
 			if (*os && *os != '#')
@@ -45,6 +44,7 @@ R_API char *r_cons_hud_string(const char *s) {
 		}
 	}
 	ret = r_cons_hud (fl, NULL);
+	free (o);
 	r_list_free (fl);
 	return ret;
 }
@@ -123,8 +123,8 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		case 10: // \n
 		case 13: // \r
 			choose = 0;
-			if (!*buf)
-				return NULL;
+	//		if (!*buf)
+	//			return NULL;
 			if (n >= 1) {
 				//eprintf ("%s\n", buf);
 				//i = buf[0] = 0;

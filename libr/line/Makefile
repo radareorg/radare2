@@ -4,3 +4,5 @@ OBJ=line.o
 #LINK=-L../cons -lr_cons -Wl,-R../cons ../util/*.a
 
 include ../rules.mk
+
+line.o: dietline.c

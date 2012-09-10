@@ -91,11 +91,11 @@ static int parse(RParse *p, const char *data, char *str) {
 		strcpy (str, data);
 		return R_TRUE;
 	}
-	r_str_subchr (buf, '$', 0);
-	r_str_subchr (buf, '%', 0);
-	r_str_subchr (buf, '\t', ' ');
-	r_str_subchr (buf, '(', '[');
-	r_str_subchr (buf, ')', ']');
+	r_str_replace_char (buf, '$', 0);
+	r_str_replace_char (buf, '%', 0);
+	r_str_replace_char (buf, '\t', ' ');
+	r_str_replace_char (buf, '(', '[');
+	r_str_replace_char (buf, ')', ']');
 	ptr = strchr (buf, '[');
 	if (ptr) {
 		int n;

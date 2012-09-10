@@ -94,7 +94,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 				out[len++] = addrp[2];
 				out[len++] = addrp[3];
 				while (*ptr && *ptr!=' ' && *ptr!='\t')
-					ptr = ptr + 1;
+					ptr++;
 				j = 0;
 			}
 			continue;
@@ -106,6 +106,11 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		c |= d;
 		if (j++ == 0) c <<= 4;
 	}
+	// has nibbles. requires a mask
+	if (j) {
+		out[len] = c;
+		len = -len;
+	}
 
 	return (int)len;
 }
@@ -113,11 +118,15 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	ut8 *ptr;
 	int len, ilen = strlen (in)+1;
+	int has_nibble = 0;
 	memcpy (out, in, ilen);
 	for (ptr=out; *ptr; ptr++) if (*ptr=='.') *ptr = '0';
 	len = r_hex_str2bin ((char*)out, out);
+	if (len<0) { has_nibble = 1; len =-len; }
 	if (len != -1) {
 		memcpy (mask, in, ilen);
+		if (has_nibble)
+			memcpy (mask+ilen, "f0", 3);
 		for (ptr=mask; *ptr; ptr++) *ptr = (*ptr=='.')?'0':'f';
 		len = r_hex_str2bin ((char*)mask, mask);
 	}

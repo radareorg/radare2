@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,7 +7,7 @@
 #include "elf/elf.h"
 
 static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = Elf_(r_bin_elf_new_buf) (arch->buf)))
+	if (!(arch->bin_obj = Elf_(r_bin_elf_new_buf) (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
@@ -70,6 +70,7 @@ static RList* sections(RBinArch *arch) {
 	if (!(section = Elf_(r_bin_elf_get_sections) (arch->bin_obj)))
 		return ret;
 	for (i = 0; !section[i].last; i++) {
+		if (!section[i].size) continue;
 		if (!(ptr = R_NEW (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
@@ -91,8 +92,12 @@ static RList* sections(RBinArch *arch) {
 	free (section); // TODO: use r_list_free here
 
 	// program headers is another section
-
 	if (r_list_empty (ret)) {
+		if (!arch->size) {
+			struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
+			if (bin) arch->size = bin->size;
+			else arch->size = 0x9999; // XXX hack
+		}
 		if (!(ptr = R_NEW (RBinSection)))
 			return ret;
 		strncpy (ptr->name, "undefined", R_BIN_SIZEOF_STRINGS);
@@ -377,6 +382,23 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
+static int size(RBinArch *arch) {
+	ut64 off = 0;
+	ut64 len = 0;
+	if (!arch->o->sections) {
+		RListIter *iter;
+		RBinSection *section;
+		arch->o->sections = sections (arch);
+		r_list_foreach (arch->o->sections, iter, section) {
+			if (section->offset > off) {
+				off = section->offset;
+				len = section->size;
+			}
+		}
+	}
+	return off+len;
+}
+
 struct r_bin_plugin_t r_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format r_bin plugin",
@@ -394,6 +416,7 @@ struct r_bin_plugin_t r_bin_plugin_elf = {
 	.strings = NULL,
 	.info = &info,
 	.fields = &fields,
+	.size = &size,
 	.libs = &libs,
 	.relocs = &relocs,
 	.meta = &r_bin_meta_elf,

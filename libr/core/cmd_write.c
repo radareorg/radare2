@@ -126,8 +126,11 @@ static int cmd_write(void *data, const char *input) {
 	case ' ':
 		/* write string */
 		len = r_str_escape (str);
+		r_core_write_at (core, core->offset, (const ut8*)str, len);
+#if 0
 		r_io_set_fd (core->io, core->file->fd);
 		r_io_write_at (core->io, core->offset, (const ut8*)str, len);
+#endif
 		WSEEK (core, len);
 		r_core_block_read (core, 0);
 		break;

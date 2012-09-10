@@ -52,14 +52,15 @@ R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API void r_print_addr(RPrint *p, ut64 addr);
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step);
 R_API void r_print_hexpairs(RPrint *p, ut64 addr, const ut8 *buf, int len);
+R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
 R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt);
-R_API void r_print_fill(RPrint *p, ut8 *arr, int size);
+R_API void r_print_fill(RPrint *p, const ut8 *arr, int size);
 R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, const ut8* buf, int len);
 R_API void r_print_cursor(RPrint *p, int cur, int set);
 R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
-R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len);
+R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
 R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt);
 // XXX . change wide, zeroend, urlencode for option flags
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int wide, int zeroend, int urlencode);

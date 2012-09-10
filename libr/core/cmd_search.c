@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int preludecnt = 0;
 static int searchflags = 0;
@@ -59,13 +59,19 @@ R_API int r_core_search_preludes(RCore *core) {
 		ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 		free (kw);
 	} else
+	if (strstr (arch, "mips")) {
+		ret = r_core_search_prelude (core, from, to,
+			(const ut8 *)"\x27\xbd\x00", 3, NULL, 0);
+	} else
 	if (strstr (arch, "x86")) {
 		switch (bits) {
 		case 32:
-			ret = r_core_search_prelude (core, from, to, (const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
+			ret = r_core_search_prelude (core, from, to,
+				(const ut8 *)"\x55\x89\xe5", 3, NULL, 0);
 			break;
 		case 64:
-			ret = r_core_search_prelude (core, from, to, (const ut8 *)"\x55\x48\x89\xe5", 3, NULL, 0);
+			ret = r_core_search_prelude (core, from, to,
+				(const ut8 *)"\x55\x48\x89\xe5", 3, NULL, 0);
 			//r_core_cmd0 (core, "./x 554989e5");
 			break;
 		default:
@@ -91,7 +97,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		switch (kw->type) {
 		case R_SEARCH_KEYWORD_TYPE_STRING:
 			len = sizeof (str);
-			r_io_read_at (core->io, addr, str+1, len-2);
+			r_core_read_at (core, addr, (ut8*)str+1, len-2);
 			*str = '"';
 			r_str_filter_zeroline (str, len);
 			strcpy (str+strlen (str), "\"");
@@ -99,12 +105,10 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		default:
 			len = kw->keyword_length + 8; // 8 byte context
 			if (len>=sizeof (str)) len = sizeof (str)-1;
-			r_io_read_at (core->io, addr, buf, sizeof (buf));
+			r_core_read_at (core, addr, buf, sizeof (buf));
 			for (i=0, p=str; i<len; i++) {
 				sprintf (p, "%02x", buf[i]);
 				p += 2;
-				if (i == kw->keyword_length-1)
-					*p++ = ' ';
 			}
 			*p = 0;
 			break;
@@ -121,11 +125,6 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		char flag[64];
 		snprintf (flag, sizeof (flag), "%s%d_%d", searchprefix, kw->kwidx, kw->count);
 		r_flag_set (core->flags, flag, addr, kw->keyword_length, 1);
-#if 0
-		// TODO: use r_flag_set ()
-		r_core_cmdf (core, "f %s%d_%d %d 0x%08"PFMT64x"\n", searchprefix,
-			kw->kwidx, kw->count, kw->keyword_length, addr);
-#endif
 	}
 	if (!strnull (cmdhit)) {
 		ut64 here = core->offset;
@@ -145,15 +144,14 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 }
 
 static int cmd_search(void *data, const char *input) {
-	const char *mode;
-	char *inp;
-	RCore *core = (RCore *)data;
-	ut64 at, from, to;
-	//RIOSection *section;
 	int i, len, ret, dosearch = R_FALSE;
-	int inverse = R_FALSE;
+	RCore *core = (RCore *)data;
 	int aes_search = R_FALSE;
 	int ignorecase = R_FALSE;
+	int inverse = R_FALSE;
+	ut64 at, from, to;
+	const char *mode;
+	char *inp;
 	ut64 n64;
 	ut32 n32;
 	ut16 n16;
@@ -352,7 +350,7 @@ static int cmd_search(void *data, const char *input) {
 				inp[i] = tolower (inp[i]);
 		len = r_str_escape (inp);
 		eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", len, from, to);
-		for (i=0; i<len; i++) eprintf ("%02x ", inp[i]);
+		for (i=0; i<len; i++) eprintf ("%02x ", (ut8)inp[i]);
 		eprintf ("\n");
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
@@ -360,9 +358,13 @@ static int cmd_search(void *data, const char *input) {
 		{
 		RSearchKeyword *skw;
 		skw = r_search_keyword_new ((const ut8*)inp, len, NULL, 0, NULL);
-		skw->icase = ignorecase;
-		skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
-		r_search_kw_add (core->search, skw);
+		if (skw) {
+			skw->icase = ignorecase;
+			skw->type = R_SEARCH_KEYWORD_TYPE_STRING;
+			r_search_kw_add (core->search, skw);
+		} else {
+			eprintf ("Invalid keyword\n");
+		}
 		}
 		r_search_begin (core->search);
 		dosearch = R_TRUE;
@@ -494,8 +496,6 @@ static int cmd_search(void *data, const char *input) {
 		" e search.flags = true ; if enabled store flags on keyword hits\n");
 		break;
 	}
-	if (core->io->va)
-		eprintf ("Searching with io.va enabled can be wrong.\n");
 	searchhits = 0;
 	r_config_set_i (core->config, "search.kwidx", core->search->n_kws);
 	if (dosearch) {
@@ -527,8 +527,10 @@ static int cmd_search(void *data, const char *input) {
 					eprintf ("\n\n");
 					break;
 				}
-				ret = r_io_read_at (core->io, at, buf, core->blocksize);
-				//ret = r_core_read_at (core, at, buf, core->blocksize); 
+				//ret = r_core_read_at (core, at, buf, core->blocksize);
+			//	ret = r_io_read_at (core->io, at, buf, core->blocksize); 
+	r_io_seek (core->io, at, R_IO_SEEK_SET);
+	ret = r_io_read (core->io, buf, core->blocksize);
 /*
 				if (ignorecase) {
 					int i;
@@ -558,12 +560,11 @@ static int cmd_search(void *data, const char *input) {
 			//r_cons_clear_line ();
 			if (searchflags && searchcount>0) {
 				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
-					searchcount,
+					searchhits,
 					searchprefix, core->search->n_kws-1,
 					searchprefix, core->search->n_kws-1, searchcount-1);
-			} else eprintf ("hits: 0\n");
+			} else eprintf ("hits: %d\n", searchhits);
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;
 }
-

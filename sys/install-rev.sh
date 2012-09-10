@@ -11,7 +11,12 @@ gmake --help >/dev/null 2>&1
 
 # find root
 cd `dirname $PWD/$0` ; cd ..
-echo hg up -C -r "${REV}"
-hg up -C -r "${REV}"
+if [ -d .hg ]; then
+	echo hg up -C -r "${REV}"
+	hg up -C -r "${REV}"
+elif [ -d .git ]; then
+	echo git checkout "${REV}"
+	git checkout "${REV}"
+fi
 
 ./sys/build.sh && sudo ${MAKE} symstall

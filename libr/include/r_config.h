@@ -32,6 +32,7 @@ typedef struct r_config_t {
 	int last_notfound;
 	int n_nodes;
 	void *user;
+	RNum *num;
 	PrintfCallback printf;
 	RList *nodes;
 	RHashTable *ht;
@@ -54,6 +55,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad);
 R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name);
 R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API int r_config_swap(RConfig *cfg, const char *name);
+R_API int r_config_readonly (RConfig *cfg, const char *key);
 #endif
 
 #endif

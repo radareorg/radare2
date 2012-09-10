@@ -80,7 +80,7 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			// p2 - name of variable
 			r_anal_var_add (core->anal, fcn, core->offset, delta, scope,
-				r_anal_str_to_type(core->anal, p), p2, p3?atoi(p3):0);
+				r_anal_str_to_type (core->anal, p), p2, p3? atoi (p3): 0);
 		} else var_help ();
 		break;
 	default:
@@ -131,6 +131,44 @@ static void cmd_syscall_do(RCore *core, int num) {
 	r_cons_printf (")\n");
 }
 
+static const char *optypestr(int type) {
+	switch (type) {
+	case R_ANAL_OP_TYPE_NULL  : return "null";
+	case R_ANAL_OP_TYPE_JMP   : return "jmp";
+	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
+	case R_ANAL_OP_TYPE_CJMP  : return "cjmp";
+	case R_ANAL_OP_TYPE_CALL  : return "call";
+	case R_ANAL_OP_TYPE_UCALL : return "ucall";
+	case R_ANAL_OP_TYPE_REP   : return "rep";
+	case R_ANAL_OP_TYPE_RET   : return "ret";
+	case R_ANAL_OP_TYPE_ILL   : return "ill";
+	case R_ANAL_OP_TYPE_UNK   : return "unk";
+	case R_ANAL_OP_TYPE_NOP   : return "nop";
+	case R_ANAL_OP_TYPE_MOV   : return "mov";
+	case R_ANAL_OP_TYPE_TRAP  : return "trap";
+	case R_ANAL_OP_TYPE_SWI   : return "swi";
+	case R_ANAL_OP_TYPE_UPUSH : return "upush";
+	case R_ANAL_OP_TYPE_PUSH  : return "push";
+	case R_ANAL_OP_TYPE_POP   : return "pop";
+	case R_ANAL_OP_TYPE_CMP   : return "cmp";
+	case R_ANAL_OP_TYPE_ADD   : return "add";
+	case R_ANAL_OP_TYPE_SUB   : return "sub";
+	case R_ANAL_OP_TYPE_MUL   : return "mul";
+	case R_ANAL_OP_TYPE_DIV   : return "div";
+	case R_ANAL_OP_TYPE_SHR   : return "shr";
+	case R_ANAL_OP_TYPE_SHL   : return "shl";
+	case R_ANAL_OP_TYPE_OR    : return "or";
+	case R_ANAL_OP_TYPE_AND   : return "andr";
+	case R_ANAL_OP_TYPE_XOR   : return "xor";
+	case R_ANAL_OP_TYPE_NOT   : return "not";
+	case R_ANAL_OP_TYPE_STORE : return "store";
+	case R_ANAL_OP_TYPE_LOAD  : return "load";
+	case R_ANAL_OP_TYPE_LEA   : return "lea";
+	case R_ANAL_OP_TYPE_LEAVE : return "leave";
+	}
+	return "err";
+}
+
 static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len) {
 	int ret, idx;
 	RAnalOp op;
@@ -145,7 +183,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len) {
 		}
 		r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
 		r_cons_printf ("size: %d\n", op.length);
-		r_cons_printf ("type: %d\n", op.type); // TODO: string
+		r_cons_printf ("type: %d (%s)\n", op.type, optypestr (op.type)); // TODO: string
 		r_cons_printf ("eob: %d\n", op.eob);
 		r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
 		r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
@@ -160,11 +198,13 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len) {
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
-	int len = core->blocksize;
+	int l, len = core->blocksize;
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 
-#if 0
+#if 1
+	switch (input[0]) {
+case 'o':
 	if (input[0] && input[1]) {
 		l = (int) r_num_get (core->num, input+2);
 		if (l>0) len = l;
@@ -172,6 +212,7 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_block_size (core, l);
 			len = l;
 		}
+	} else len = l = core->blocksize;
 	}
 #endif
 
@@ -539,6 +580,29 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_anal_graph (core, r_num_math (core->num, input+2),
 					R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 			break;
+		case 'v':
+			{
+				int is_html = (r_config_get_i (core->config, "scr.html"));
+				const char *cmd = r_config_get (core->config, "cmd.graph");
+				//char *tmp = r_file_temp ("/tmp/a.dot");
+				char *tmp = strdup ("a.dot"); // XXX
+
+				if (!is_html && strstr (cmd, "htmlgraph")) {
+					is_html = 2;
+					r_config_set (core->config, "scr.html", "true");
+				}
+				r_cons_flush ();
+				int fd = r_cons_pipe_open (tmp, 0);
+				r_core_cmdf (core, "ag%s", input+2);
+				if (is_html==2)
+					r_config_set (core->config, "scr.html", "false");
+				r_cons_flush ();
+				r_cons_pipe_close (fd);
+				r_sys_setenv ("DOTFILE", tmp);
+				r_core_cmdf (core, "%s", cmd);
+				free (tmp);
+			}
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: ag[?f]\n"
@@ -548,7 +612,8 @@ static int cmd_anal(void *data, const char *input) {
 			" agd [fcn name]  ; Output graphviz code of diffed function\n"
 			" agl [fcn name]  ; Output graphviz code using meta-data\n"
 			" agt [addr]      ; find paths from current offset to given address\n"
-			" agfl [fcn name] ; Output graphviz code of function using meta-data\n");
+			" agfl [fcn name] ; Output graphviz code of function using meta-data\n"
+			" agv[acdltfl] [a]; View function using graphviz\n");
 			break;
 		default:
 			r_core_anal_graph (core, r_num_math (core->num, input+1),

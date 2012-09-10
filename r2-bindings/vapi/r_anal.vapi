@@ -11,8 +11,8 @@ namespace Radare {
 		public bool big_endian;
 		public bool split;
 		public void *user;
-		public RList<RAnal.Fcn> fcns;
-		public RList<RAnal.VarType> vartypes;
+		public RList<RAnal.Function> fcns;
+//		public RList<RAnal.VarType> vartypes;
 		public RMeta meta;
 		public RReg reg;
 		public RSyscall syscall;
@@ -30,8 +30,8 @@ namespace Radare {
 		public void diff_setup(bool doops, double thbb, double thfcn);
 		public void diff_setup_i(bool doops, int thbb, int thfcn);
 
-		public RList<RAnal.Fcn> get_fcns();
-		public Fcn get_fcn_at (uint64 addr);
+		public RList<RAnal.Function> get_fcns();
+		public Function get_fcn_at (uint64 addr);
 		public void trace_bb (uint64 addr);
 
 		[Compact]
@@ -75,7 +75,7 @@ namespace Radare {
 		}
 
 		[CCode (cname="int", cprefix="R_ANAL_FCN_TYPE_")]
-		public enum FcnType {
+		public enum FunctionType {
 			NULL,
 			FCN,
 			LOC,
@@ -242,24 +242,33 @@ namespace Radare {
 			public uint64 addr;
 		}
 
-		[CCode (cname="RAnalFcn", free_function="", ref_function="", unref_function="")]
-		public class Fcn {
+		[CCode (cname="RAnalFunction", free_function="", cprefix="r_anal_fcn_", ref_function="", unref_function="")]
+		public class Function {
 			public string name;
+			public string dsc;
+			public short type;
+			public short rets;
+			public short fmod;
+			public short call;
+			public string attr;
+
 			public uint64 addr;
-			public uint64 size;
-			public int nargs;
-			public int ninstr;
 			public int stack;
-			public int calltype;
+			public int ninstr;
+			public int nargs;
 			public int depth;
+			public Type args;
+			// MUST BE deprecated public VarSub varsubs[32];
+
 			public Diff diff;
-			public FcnType type;
+			public uint8* fingerprint;
+			//public FunctionType type;
 			public RList<RAnal.Block> bbs;
 			public RList<RAnal.Block> get_bbs();
 			public RList<RAnal.Var> vars;
 			public RList<RAnal.Var> get_vars();
-			public RList<RAnal.Ref> refs;
 			public RList<RAnal.Ref> get_refs();
+			public RList<RAnal.Ref> refs;
 			public RList<RAnal.Ref> xrefs;
 			public RList<RAnal.Ref> get_xrefs();
 		}
@@ -269,7 +278,7 @@ namespace Radare {
 		public class Var {
 			public string name;
 			public int delta;
-			public int type;
+			public Type type;
 			public RList<RAnal.VarAccess> accesses;
 		}
 
@@ -280,6 +289,24 @@ namespace Radare {
 			public bool @set;
 		}
 
+#if 0
+		[Compact]
+		[CCode (cname="RAnalVarSub")]
+		public struct VarSub {
+			public char pat[1024];
+			public char sub[1024];
+		}
+#endif
+
+		[Compact]
+		[CCode (cname="RAnalType")]
+		public class Type {
+			public string name;
+			public uint32 size;
+			public int type;
+			// TODO. add custom union type here
+		}
+/*
 		[Compact]
 		[CCode (cname="RAnalVarType")]
 		public class VarType {
@@ -287,6 +314,7 @@ namespace Radare {
 			public string fmt;
 			public uint size;
 		}
+*/
 
 		[Compact]
 		[CCode (cname="RAnalRef", free_function="")]

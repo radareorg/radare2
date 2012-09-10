@@ -31,9 +31,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 // push state
 {
-const char *q = r_num_calc_index (NULL);
+const char *q = r_num_calc_index (core->num, NULL);
 		n = r_num_math (core->num, str+1);
-r_num_calc_index (q);
+r_num_calc_index (core->num, q);
 }
 // pop state
 		
@@ -164,6 +164,7 @@ static int autocomplete(RLine *line) {
 		} else
 		if ((!memcmp (line->buffer.data, "o ", 2)) ||
 		     !memcmp (line->buffer.data, ". ", 2) ||
+		     !memcmp (line->buffer.data, "tf ", 3) ||
 		     !memcmp (line->buffer.data, "pm ", 3) ||
 		     !memcmp (line->buffer.data, "/m ", 3)) {
 			// XXX: SO MANY FUCKING MEMORY LEAKS
@@ -442,7 +443,7 @@ R_API int r_core_init(RCore *core) {
 	return 0;
 }
 
-R_API RCore *r_core_free(RCore *c) {
+R_API RCore *r_core_fini(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
 	r_io_free (c->io);
@@ -465,6 +466,11 @@ R_API RCore *r_core_free(RCore *c) {
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);
+	return NULL;
+}
+
+R_API RCore *r_core_free(RCore *c) {
+	if (c) r_core_fini (c);
 	free (c);
 	return NULL;
 }
@@ -529,8 +535,8 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 	if (bsize<1)
 		bsize = 1;
 	else if (bsize>core->blocksize_max) {
-		eprintf ("blocksize is bigger than io.maxblk. dimmed to 0x%x\n",
-			core->blocksize_max);
+		eprintf ("blocksize is bigger than io.maxblk. dimmed to 0x%x > 0x%x\n",
+			bsize, core->blocksize_max);
 		bsize = core->blocksize_max;
 	} else ret = R_TRUE;
 	core->block = realloc (core->block, bsize+1);

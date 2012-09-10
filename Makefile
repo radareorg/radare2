@@ -19,12 +19,8 @@ plugins.cfg:
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
 
-gitpush:
-	sh mk/gitpush.sh
-
-.PHONY: todo
-todo:
-	grep -re TODO:0.9.2 libr binr
+farm:
+	./sys/farm/run.sh
 
 libr:
 	cd libr && ${MAKE} all
@@ -32,26 +28,19 @@ libr:
 binr:
 	cd binr && ${MAKE} all
 
-R=$(shell hg tags|head -n2 | tail -n1|awk '{print $$2}' |cut -d : -f 1)
-T=$(shell hg tip|grep changeset:|cut -d : -f 2)
-.PHONY: chlog
-chlog:
-	@hg log -v -r tip:$R > chlog
-	@echo "-=== release ${VERSION} ===-"
-	@echo "hg tag -r $T ${VERSION}"
-	@printf "last commit:   "
-	@hg log -r tip | grep date: |cut -d : -f 2- |sed -e 's,^\ *,,g'
-	@printf "oldest commit: "
-	@hg log -r $R | grep date: |cut -d : -f 2- |sed -e 's,^\ *,,g'
-	@printf "Commits:  "
-	@grep changeset: chlog |wc -l
-	@grep -v : chlog | grep -v '^$$'
-
 w32:
 	make clean
 	# TODO: add support for debian
 	./configure --without-ssl --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
 	make
+
+.PHONY: depgraph.png
+depgraph.png:
+	cd libr ; perl depgraph.pl | dot -Tpng -odepgraph.png
+
+android:
+	@if [ -z "$(NDK_ARCH)" ]; then echo "Set NDK_ARCH=[arm|mips|x86]" ; false; fi
+	sys/android-${NDK_ARCH}.sh
 
 w32dist:
 	rm -rf radare2-w32-${VERSION} w32dist
@@ -80,18 +69,13 @@ w32beta: w32dist
 	scp radare2-bindings-w32-${VERSION}.zip ${REMOTE}
 
 clean:
-	cd libr && ${MAKE} clean
-	cd binr && ${MAKE} clean
-	cd shlr && ${MAKE} clean
+	for a in libr binr shlr ; do (cd $$a ; ${MAKE} clean) ; done
 
 mrproper:
-	cd libr && ${MAKE} mrproper
-	cd binr && ${MAKE} mrproper
-	rm -f config-user.mk plugins.cfg libr/config.h libr/include/r_userconf.h libr/config.mk
+	for a in libr binr shlr ; do ( cd $$a ; ${MAKE} mrproper) ; done
+	rm -f config-user.mk plugins.cfg libr/config.h
+	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
-
-mrpopper:
-	@echo 8====================D
 
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
@@ -116,7 +100,7 @@ install-doc-symlink:
 
 DATADIRS=libr/asm/d libr/syscall/d libr/magic/d
 #binr/ragg2/d
-install: install-doc install-man
+install: install-doc install-man install-www
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	for a in ${DATADIRS} ; do \
@@ -125,18 +109,33 @@ install: install-doc install-man
 	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud
 	cp -f libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud/
 
-install-pkgconfig-symlink:
-	@${INSTALL_DIR} ${DESTDIR}/${LIBDIR}/pkgconfig
-	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DESTDIR}/${LIBDIR}/pkgconfig/$$a ; done
+install-www:
+	rm -rf ${DESTDIR}/${WWWROOT}
+	mkdir -p ${DESTDIR}/${WWWROOT}
+	cp -rf shlr/www/* ${DESTDIR}/${WWWROOT}
 
-symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink
+symstall-www:
+	rm -rf ${DESTDIR}/${WWWROOT}
+	mkdir -p ${DESTDIR}/${WWWROOT}
+	cd ${DESTDIR}/${WWWROOT} ; for a in ${PWD}/shlr/www/* ; do \
+		ln -fs $$a ${DLIBDIR}/radare2/${VERSION}/www ; done
+
+DLIBDIR=$(DESTDIR)/$(LIBDIR)
+
+install-pkgconfig-symlink:
+	@${INSTALL_DIR} ${DLIBDIR}/pkgconfig
+	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DLIBDIR}/pkgconfig/$$a ; done
+
+symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
-	for a in ${DATADIRS} ; do \
-	(cd $$a ; echo $$a ; ${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
+	for a in ${DATADIRS} ; do (\
+		cd $$a ; \
+		echo $$a ; \
+		${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
-	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud
-	ln -fs ${PWD}/libr/core/hud/main ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud/main
+	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
+	ln -fs ${PWD}/libr/core/hud/main ${DLIBDIR}/radare2/${VERSION}/hud/main
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
@@ -179,27 +178,23 @@ r2-bindings-dist:
 	cd r2-bindings && ${MAKE} dist
 
 dist:
-	VERSION=${VERSION} ; \
-	FILES=`hg manifest | grep -v r2-bindings | sed -e s,^,radare2-${VERSION}/,` ; \
-	cd .. && mv radare2 radare2-${VERSION} && \
-	${TAR} radare2-${VERSION}.tar.gz $${FILES} ;\
-	mv radare2-${VERSION} radare2
-
-pub:
-	scp ../radare2-${VERSION}.tar.gz radare.org:/srv/http/radareorg/get
+	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
+	DIR=`basename $$PWD` ; \
+	FILES=`git ls-files | sed -e s,^,radare2-${VERSION}/,` ; \
+	cd .. && mv $${DIR} radare2-${VERSION} && \
+	${TAR} radare2-${VERSION}.tar.gz $${FILES} radare2-${VERSION}/ChangeLog ;\
+	mv radare2-${VERSION} $${DIR}
 
 shot:
 	DATE=`date '+%Y%m%d'` ; \
-	FILES=`hg manifest | sed -e s,^,radare2-${DATE}/,` ; \
+	FILES=`git ls-files | sed -e s,^,radare2-${DATE}/,` ; \
 	cd .. && mv radare2 radare2-$${DATE} && \
 	${TAR} radare2-$${DATE}.tar.gz $${FILES} ;\
 	mv radare2-$${DATE} radare2 && \
 	scp radare2-$${DATE}.tar.gz radare.org:/srv/http/radareorg/get/shot
 
-# TODO: test/ must be removed
-.PHONY: test tests
-test tests:
-	if [ -d r2-regressions ]; then \
+tests:
+	@if [ -d r2-regressions ]; then \
 		cd r2-regressions ; git pull ; \
 	else \
 		git clone git://github.com/vext01/r2-regressions.git ; \
@@ -209,4 +204,4 @@ test tests:
 include ${MKPLUGINS}
 
 .PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg
-.PHONY: r2-bindings r2-bindings-dist libr binr install-man version
+.PHONY: r2-bindings r2-bindings-dist libr binr install-man version w32dist tests

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 nibble<.ds@gmail.com>, pancake <nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 nibble, pancake */
 
 #ifndef _INCLUDE_R_BIN_H_
 #define _INCLUDE_R_BIN_H_
@@ -97,6 +97,7 @@ typedef struct r_bin_xtr_plugin_t {
 	int (*check)(RBin *bin);
 	int (*extract)(RBin *bin, int idx);
 	int (*load)(RBin *bin);
+	int (*size)(RBin *bin);
 	int (*destroy)(RBin *bin);
 } RBinXtrPlugin;
 
@@ -106,12 +107,14 @@ typedef struct r_bin_plugin_t {
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*load)(RBinArch *arch);
+	int (*size)(RBinArch *bin);
 	int (*destroy)(RBinArch *arch);
 	int (*check)(RBinArch *arch);
 	ut64 (*baddr)(RBinArch *arch);
 	RBinAddr* (*binsym)(RBinArch *arch, int num);
 	RList* (*entries)(RBinArch *arch);
 	RList* (*sections)(RBinArch *arch);
+	RList* (*lines)(RBinArch *arch);
 	RList* (*symbols)(RBinArch *arch);
 	RList* (*imports)(RBinArch *arch);
 	RList* (*strings)(RBinArch *arch);
@@ -139,6 +142,7 @@ typedef struct r_bin_section_t {
 typedef struct r_bin_class_t {
 	char *name;
 	char *super;
+	int index;
 	RList *methods;
 	RList *fields;
 	int visibility;
@@ -216,13 +220,14 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *relocs;
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
+	RList/*<RBinDwarfRow>*/ *lines;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	int referenced;
-// TODO: deprecate r_bin_is_big_endian
-// TODO: r_bin_is_stripped .. wrapped inside rbinobj?
-// TODO: has_dbg_syms... maybe flags?
 } RBinObject;
+
+// TODO: deprecate r_bin_is_big_endian
+// TODO: has_dbg_syms... maybe flags?
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
 
@@ -232,6 +237,9 @@ typedef struct r_bin_bind_t {
 } RBinBind;
 
 #ifdef R_API
+
+#define r_bin_class_free(x) { free(x->name);free(x->super);free (x); }
+
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 /* bin.c */
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
@@ -251,6 +259,7 @@ R_API RList* r_bin_get_fields(RBin *bin);
 R_API RList* r_bin_get_imports(RBin *bin);
 R_API RBinInfo* r_bin_get_info(RBin *bin);
 R_API RList* r_bin_get_libs(RBin *bin);
+R_API ut64 r_bin_get_size (RBin *bin);
 R_API RList* r_bin_get_relocs(RBin *bin);
 R_API RList* r_bin_get_sections(RBin *bin);
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin);
@@ -279,7 +288,7 @@ R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
 R_API int r_bin_dwarf_parse_info(RBin *a);
-R_API int r_bin_dwarf_parse_line(RBin *a);
+R_API RList *r_bin_dwarf_parse_line(RBin *a);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
@@ -295,6 +304,7 @@ extern RBinPlugin r_bin_plugin_mach064;
 extern RBinPlugin r_bin_plugin_java;
 extern RBinPlugin r_bin_plugin_dex;
 extern RBinPlugin r_bin_plugin_dummy;
+extern RBinXtrPlugin r_bin_xtr_plugin_zip;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 #endif

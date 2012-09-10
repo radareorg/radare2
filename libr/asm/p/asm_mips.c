@@ -85,6 +85,10 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	return op->inst_len;
 }
 
+static int assemble(RAsm *a, RAsmOp *op, const char *str) {
+	return mips_assemble (str, a->pc, op->buf);
+}
+
 RAsmPlugin r_asm_plugin_mips = {
 	.name = "mips",
 	.arch = "mips",
@@ -93,7 +97,7 @@ RAsmPlugin r_asm_plugin_mips = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL,
+	.assemble = &assemble,
 };
 
 #ifndef CORELIB

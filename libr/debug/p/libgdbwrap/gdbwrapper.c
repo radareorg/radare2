@@ -178,8 +178,12 @@ static char *gdbwrap_extract_from_packet(const char *strtoparse,
 	if (strsize > maxsize)
 		strsize = maxsize;
 
-	strncpy (strret, charbegin + strtorem, strsize);
+	//strncpy (strret, charbegin + strtorem, strsize);
+	{
+	char *p = charbegin+strtorem;
+	memmove (strret, p, R_MIN (strlen (p), strsize)+1);
 	strret[strsize] = GDBWRAP_NULL_CHAR;
+	}
 
 	return strret;
 }
@@ -302,7 +306,7 @@ static void gdbwrap_populate_reg(gdbwrap_t *desc, char *packet) {
 	{
 		nextupacket = gdbwrap_extract_from_packet(nextpacket, packetcolon, NULL,
 				GDBWRAP_SEP_COLON, sizeof(packetcolon));
-		if (nextpacket == NULL) return;
+		if (nextpacket == NULL || !nextupacket) return;
 		if (strlen (nextupacket) == 2) {
 			ureg32  regvalue;
 			uint8_t regnumber = gdbwrap_atoh(nextupacket, strlen(nextupacket));
@@ -392,13 +396,14 @@ static char *gdbwrap_get_packet(gdbwrap_t *desc) {
 
 static char *gdbwrap_send_data(gdbwrap_t *desc, const char *query) {
 	int rval = 0;
-	char *mes;
+	char *mes = NULL;
 	if (desc == NULL || query == NULL)
 		return NULL;
 
 	if (gdbwrap_is_active (desc)) {
 		do {
 			mes  = gdbwrap_make_message (desc, query);
+			if (!mes) break;
 			rval = send (desc->fd, mes, strlen (mes), 0);
 		} while (gdbwrap_check_ack (desc) != TRUE);
 		if (rval == -1)
@@ -487,14 +492,16 @@ IRAPI gdbwrap_t *gdbwrap_current_get(void) {
  */
 IRAPI gdbwrap_t *gdbwrap_init(int fd, ut32 num_regs, ut32 reg_size) {
 	gdbwrap_t *desc;
-	if (fd == -1)
+	if (fd == -1) {
+eprintf ("fd is minus wan\n");
 		return NULL;
+}
 	desc = malloc (sizeof (gdbwrap_t));
 	if (!desc) return NULL;
 	desc->reg_size = reg_size;
 	desc->num_registers = num_regs;
 	desc->regs = malloc(4*desc->reg_size*desc->num_registers);
-	if (desc->regs) {
+	if (!desc->regs) {
 		free (desc);
 		return NULL;
 	}
@@ -502,6 +509,7 @@ IRAPI gdbwrap_t *gdbwrap_init(int fd, ut32 num_regs, ut32 reg_size) {
 	desc->max_packet_size = 2500;
 	desc->packet = malloc((desc->max_packet_size + 1) * sizeof (char));
 	if (desc->packet == NULL) {
+eprintf ("cant apack\n");
 		free (desc->regs);
 		free (desc);
 		return NULL;

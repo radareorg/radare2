@@ -1,8 +1,6 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org>, nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
-/* TODO:
- * dlopen library and show address
- */
+// TODO: dlopen library and show address
 
 #include <r_types.h>
 #include <r_util.h>
@@ -26,6 +24,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 		eprintf ("WARNING: bin_strings buffer is too big\n");
 		return;
 	}
+	if (arch->buf && arch->buf->buf)
 	for (i = from; i < to; i++) { 
 		if ((IS_PRINTABLE (arch->buf->buf[i])) && \
 				matches < R_BIN_SIZEOF_STRINGS-1) {
@@ -91,7 +90,7 @@ static RList* get_strings(RBinArch *a, int min) {
 		r_list_foreach (a->o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				count ++;
-				get_strings_range (a, ret, min, 
+				get_strings_range (a, ret, min,
 					section->offset, section->offset+section->size, section->rva);
 			}
 		}	
@@ -119,8 +118,9 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	cp = bin->cur.curplugin;
 	if (!cp || !cp->load || !cp->load (a))
 		return R_FALSE;
-	if (cp->baddr)
-		o->baddr = cp->baddr (a);
+	if (cp->baddr) o->baddr = cp->baddr (a);
+	// XXX: no way to get info from xtr pluginz?
+	if (cp->size) o->size = cp->size (a);
 	if (cp->binsym)
 		for (i=0; i<R_BIN_SYM_LAST; i++)
 			o->binsym[i] = cp->binsym (a, i);
@@ -135,6 +135,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	else o->strings = get_strings (a, 4);
 	if (cp->symbols) o->symbols = cp->symbols (a);
 	if (cp->classes) o->classes = cp->classes (a);
+	if (cp->lines) o->lines = cp->lines (a);
 	return R_TRUE;
 }
 
@@ -215,11 +216,11 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 		foo->init (bin->user);
 
 	// avoid duplicates
-	r_list_foreach(bin->binxtrs, it, xtr) {
+	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (!strcmp (xtr->name, foo->name))
 			return R_FALSE;
 	}
-	r_list_append(bin->binxtrs, foo);
+	r_list_append (bin->binxtrs, foo);
 
 	return R_TRUE;
 }
@@ -241,11 +242,11 @@ R_API int r_bin_list(RBin *bin) {
 	RBinXtrPlugin *plugin;
 	RBinXtrPlugin *xtr;
 
-	r_list_foreach(bin->plugins, it, plugin) {
+	r_list_foreach (bin->plugins, it, plugin) {
 		printf ("bin %-10s %s\n", plugin->name, plugin->desc);
 	}
 
-	r_list_foreach(bin->binxtrs, it, xtr) {
+	r_list_foreach (bin->binxtrs, it, xtr) {
 		printf ("bin-xtr %-10s %s\n", xtr->name, xtr->desc);
 	}
 
@@ -441,10 +442,6 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user) {
 	bin->user = user;
 }
 
-R_API int r_bin_get_size(RBinObject *obj) {
-	return obj->size;
-}
-
 static int getoffset (RBin *bin, int type, int idx) {
 	RBinArch *a = &bin->cur;
 	if (a && a->curplugin && a->curplugin->get_offset)
@@ -480,8 +477,9 @@ R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
 }
 
 R_API ut64 r_bin_get_offset (RBin *bin) {
-	ut64 offset = bin->cur.offset;
-	if (offset>0x1000) // XXX BROKEN HACK THAT MUST BE FIXED
-		offset -= 0x1000;
-	return offset;
+	return bin->cur.offset;
+}
+
+R_API ut64 r_bin_get_size (RBin *bin) {
+	return bin->cur.o->size;
 }

@@ -1,2 +1,5 @@
-clean:
-	rm -f udis86/*.o udis86/*.d
+all:
+	cd udis86 ; ${MAKE}
+
+clean mrproper:
+	cd udis86 ; ${MAKE} clean

@@ -75,7 +75,7 @@ static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int
 	if (hex) {
 		RAsmOp op;
 		r_asm_set_pc (a, offset);
-		while (r_asm_disassemble (a, &op, data+ret, len-ret) != -1) {
+		while (len-ret > 0 && r_asm_disassemble (a, &op, data+ret, len-ret) != -1) {
 			printf ("0x%08"PFMT64x"  %d %12s %s\n", 
 				a->pc, op.inst_len, op.buf_hex, op.buf_asm);
 			ret += op.inst_len;
@@ -220,8 +220,9 @@ int main(int argc, char *argv[]) {
 		eprintf ("Error: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
-	if (!r_asm_set_bits (a, bits))
-		eprintf ("WARNING: cannot set asm backend to %d bits\n", bits);
+	r_asm_set_bits (a, bits);
+	//if (!r_asm_set_bits (a, bits))
+	//	eprintf ("WARNING: cannot set asm backend to %d bits\n", bits);
 
 	if (filters) {
 		char *p = strchr (filters, ':');

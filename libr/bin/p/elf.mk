@@ -7,4 +7,4 @@ TARGET_ELF=bin_elf.${EXT_SO}
 ALL_TARGETS+=${TARGET_ELF}
 
 ${TARGET_ELF}: ${OBJ_ELF}
-	${CC} $(call libname,bin_elf) ${CFLAGS} ${OBJ_ELF}
+	${CC} $(call libname,bin_elf) ${CFLAGS} $(LDFLAGS) ${OBJ_ELF}

@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #define USE_THREADS 1
 
+#include <sdb.h>
 #include <r_core.h>
 #include <r_io.h>
 #include <stdio.h>
@@ -57,7 +58,10 @@ static int main_help(int line) {
 }
 
 static int main_version() {
+	const char *gittip = R2_GITTIP;
 	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH"-%d build "R2_BIRTH"\n", R_SYS_BITS&8?64:32);
+	if (*gittip)
+		printf ("commit: %s\n", gittip);
 	return 0;
 }
 
@@ -73,7 +77,7 @@ static void list_io_plugins(RIO *io) {
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
 static int rabin_delegate(RThread *th) {
-	if (rabin_cmd && r_file_exist (r.file->filename)) {
+	if (rabin_cmd && r_file_exists (r.file->filename)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
 		ptr = cmd;
 		if (ptr)
@@ -123,8 +127,9 @@ int main(int argc, char **argv) {
 	int quite = R_FALSE;
 	int is_gdb = R_FALSE;
 	RList *cmds = r_list_new ();
+	RList *evals = r_list_new ();
 	int cmdfilei = 0;
-	
+
 	if (r_sys_getenv ("R_DEBUG"))
 		r_sys_crash_handler ("gdb --pid %d");
 
@@ -158,7 +163,8 @@ int main(int argc, char **argv) {
 		case 'i': cmdfile[cmdfilei++] = optarg; break;
 		case 'l': r_lib_open (r.lib, optarg); break;
 		case 'd': debug = 1; break;
-		case 'e': r_config_eval (r.config, optarg); break;
+		case 'e': r_config_eval (r.config, cmdn); 
+			  r_list_append (evals, optarg); break;
 		case 'H':
 		case 'h': help++; break;
 		case 'f': fullfile = 1; break;
@@ -185,6 +191,7 @@ int main(int argc, char **argv) {
 		int filelen = 0;
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
+		perms = R_IO_READ | R_IO_WRITE;
 		if (optind>=argc) {
 			eprintf ("No program given to -d\n");
 			return 1;
@@ -368,9 +375,18 @@ int main(int argc, char **argv) {
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
 		int ret = r_core_cmd_file (&r, cmdfile[i]);
-		if (ret==-1 || (ret==0 &&quite))
+		if (ret ==-2)
+			eprintf ("Cannot open '%s'\n", cmdfile[i]);
+		if (ret<0 || (ret==0 && quite))
 			return 0;
 	}
+
+	r_list_foreach (evals, iter, cmdn) {
+		r_config_eval (r.config, cmdn); 
+		r_cons_flush ();
+	}
+	r_list_free (evals);
+
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd0 (&r, cmdn);
 		r_cons_flush ();
@@ -419,5 +435,7 @@ int main(int argc, char **argv) {
 	/* capture return value */
 	ret = r.num->value;
 	r_core_file_close (&r, fh);
+	r_core_fini (&r);
+	r_cons_set_raw (0);
 	return ret;
 }

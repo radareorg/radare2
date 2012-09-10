@@ -13,7 +13,6 @@ static void *_r_th_launcher(void *_th) {
 #else
 	if (th->delay<0) r_th_lock_wait(th->lock);
 #endif
-
 	do {
 		r_th_lock_leave(th->lock);
 		th->running = R_TRUE;

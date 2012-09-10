@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -29,11 +29,9 @@ static int check(RBinArch *arch) {
 }
 
 static RBinInfo * info(RBinArch *arch) {
-	RBinInfo *ret = NULL;
 	char *version;
-
-	if (!(ret = R_NEW0 (RBinInfo)))
-		return NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "DEX CLASS", R_BIN_SIZEOF_STRINGS);
@@ -47,7 +45,7 @@ static RBinInfo * info(RBinArch *arch) {
 	strncpy (ret->machine, "Dalvik VM", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->arch, "dalvik", R_BIN_SIZEOF_STRINGS);
 	ret->bits = 32;
-	ret->big_endian= 0;
+	ret->big_endian = 0;
 	ret->dbg_info = 1 | 4 | 8; /* Stripped | LineNums | Syms */
 	return ret;
 }
@@ -68,7 +66,6 @@ static RList* strings (RBinArch *arch) {
 			break;
 		r_buf_read_at (bin->b, bin->strings[i], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
-		//	len = R_BIN_SIZEOF_STRINGS-1;
 		if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
 			r_buf_read_at (bin->b, bin->strings[i]+dex_uleb128_len (buf),
 					(ut8*)&ptr->string, len);
@@ -148,8 +145,12 @@ static RList* methods (RBinArch *arch) {
 	return ret;
 }
 
-//TODO
+static void __r_bin_class_free(RBinClass *p) {
+	r_bin_class_free (p);
+}
+
 static RList* classes (RBinArch *arch) {
+	RBinClass *class;
 	RList *ret = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
 	struct dex_class_t entry;
@@ -157,15 +158,12 @@ static RList* classes (RBinArch *arch) {
 
 	if (!(ret = r_list_new ()))
 		return NULL;
-	ret->free = free;
+	ret->free = (RListFree)__r_bin_class_free;
 	for (i = 0; i < bin->header.class_size; i++) {
 		r_buf_read_at (bin->b, (ut64) bin->header.class_offset
 				+ (sizeof (struct dex_class_t)*i), (ut8*)&entry,
 				sizeof (struct dex_class_t));
-	//	r_list_append
 		// TODO: implement sections.. each section specifies a class boundary
-#if 1
-		//eprintf ("ut32 class_id = %d;\n", entry.class_id);
 {
 		int len = 100;
 		char *name = malloc (len);
@@ -176,9 +174,12 @@ static RList* classes (RBinArch *arch) {
 		r_buf_read_at (bin->b, bin->strings[entry.source_file],
 				(ut8*)name, len);
 		//snprintf (ptr->name, sizeof (ptr->name), "field.%s.%d", name, i);
+		class = R_NEW0 (RBinClass);
+		class->name = strdup (name[0]<0x41? name+1: name); // TODO: use RConstr here
+		class->index = entry.class_id;
+		r_list_append (ret, class);
+#if VERBOSE
 		eprintf ("class.%s=%d\n", name[0]==12?name+1:name, entry.class_id);
-		free (name);
-}
 		eprintf ("# access_flags = %x;\n", entry.access_flags);
 		eprintf ("# super_class = %d;\n", entry.super_class);
 		eprintf ("# interfaces_offset = %08x;\n", entry.interfaces_offset);
@@ -187,33 +188,43 @@ static RList* classes (RBinArch *arch) {
 		eprintf ("# class_data_offset = %08x;\n", entry.class_data_offset);
 		eprintf ("# static_values_offset = %08x;\n\n", entry.static_values_offset);
 #endif
+		free (name);
+}
 	}
-	return 0; //FIXME: This must be main offset
+	return ret;
+}
+
+static RList* entries(RBinArch *arch) {
+	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	RList *ret = r_list_new ();
+	ptr->offset = ptr->rva = bin->header.method_offset;
+	r_list_append (ret, ptr);
+	return ret;
 }
 
 //TODO
 static int getoffset (RBinArch *arch, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = arch->bin_obj;
-
 	switch (type) {
-		case 'm': // methods
-			if (dex->header.method_size > idx)
-				return dex->header.method_offset+(sizeof (struct dex_method_t)*idx);
-			break;
-		case 'c': // class
-			break;
-		case 'f': // fields
-			if (dex->header.fields_size > idx)
-				return dex->header.fields_offset+(sizeof (struct dex_field_t)*idx);
-			break;
-		case 'o': // objects
-			break;
-		case 's': // strings
-			if (dex->header.strings_size > idx)
-				return dex->strings[idx];
-			break;
-		case 't': // things
-			break;
+	case 'm': // methods
+		if (dex->header.method_size > idx)
+			return dex->header.method_offset+(sizeof (struct dex_method_t)*idx);
+		break;
+	case 'c': // class
+		break;
+	case 'f': // fields
+		if (dex->header.fields_size > idx)
+			return dex->header.fields_offset+(sizeof (struct dex_field_t)*idx);
+		break;
+	case 'o': // objects
+		break;
+	case 's': // strings
+		if (dex->header.strings_size > idx)
+			return dex->strings[idx];
+		break;
+	case 't': // things
+		break;
 	}
 	return -1;
 }
@@ -276,7 +287,8 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.check = &check,
 	.baddr = &baddr,
 	.binsym = NULL,
-	.entries = classes,
+	.entries = entries,
+	.classes = classes,
 	.sections = sections,
 	.symbols = methods,
 	.imports = NULL,

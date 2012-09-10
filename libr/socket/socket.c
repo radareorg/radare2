@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2006-2012 - pancake */
 
 #include <errno.h>
 #include <r_types.h>
@@ -81,6 +81,10 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 R_API RSocket *r_socket_new (int is_ssl) {
 	RSocket *s = R_NEW (RSocket);
 	s->is_ssl = is_ssl;
+#if __UNIX_
+	signal (SIGPIPE, SIG_IGN);
+#endif
+	s->local = 0;
 #if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
@@ -218,7 +222,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	setsockopt(s->fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 	memset (&sa, 0, sizeof (sa));
 	sa.sin_family = AF_INET;
-	sa.sin_addr.s_addr = htonl (INADDR_ANY);
+	sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
 	sa.sin_port = htons (atoi (port));
 
 	if (bind (s->fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
@@ -452,8 +456,7 @@ R_API int r_socket_gets(RSocket *s, char *buf,  int size) {
 }
 
 R_API RSocket *r_socket_new_from_fd (int fd) {
-	RSocket *s = R_NEW (RSocket);
-	s->is_ssl = 0;
+	RSocket *s = R_NEW0 (RSocket);
 	s->fd = fd;
 	return s;
 }

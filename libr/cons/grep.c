@@ -1,17 +1,32 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> nibble<develsec.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util.h>
 
+R_API void r_cons_grep_help() {
+	eprintf (
+"Usage: [command]~[modifier][word,word]\n"
+"  modifiers\n"
+"   &  all words must match to grep the line\n"
+"   ^  words must be placed at the begining of line\n"
+"   !  negate grep\n"
+"   ?  count number of matching lines\n"
+	);
+}
+
 R_API void r_cons_grep(const char *str) {
-	int len;
+	int wlen, len;
 	RCons *cons;
-	char buf[1024];
+	char buf[4096];
 	char *ptr, *optr, *ptr2, *ptr3;
+
+	if (!str || !*str)
+		return;
 
 	cons = r_cons_singleton ();
 	cons->grep.str = NULL;
 	cons->grep.neg = 0;
+	cons->grep.amp = 0;
 	cons->grep.begin = 0;
 	cons->grep.end = 0;
 	cons->grep.nstrings = 0;
@@ -20,25 +35,26 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.line = -1;
 	cons->grep.counter = cons->grep.neg = 0;
 
-	if (str == NULL || !*str)
-		return;
+	while (*str) {
+		switch (*str) {
+		case '&': str++; cons->grep.amp = 1; break;
+		case '^': str++; cons->grep.begin = 1;  break;
+		case '!': str++; cons->grep.neg = 1; break;
+		case '?': str++; cons->grep.counter = 1;
+			if (*str=='?') {
+				r_cons_grep_help ();
+				str = "THIS\x01IS\x02A\x03HACK\x04:D";
+			}
+			break;
+		default: goto while_end;
+		}
+	} while_end:
 
-	if (*str == '^') { // neg
-		cons->grep.begin = 1;
-		str++;
-	}
-	if (*str == '!') { // neg
-		cons->grep.neg = 1;
-		str++;
-	}
-	if (*str == '?') { // counter
-		cons->grep.counter = 1;
-		str++;
-	}
 	len = strlen (str)-1;
-	if (str[len] == '?') {
+	if (len>0 && str[len] == '?') {
 		cons->grep.counter = 1;
-		strncpy (buf, str, len);
+		strncpy (buf, str, R_MIN (len, sizeof (buf)-1));
+		buf[len]=0;
 		len--;
 	} else strncpy (buf, str, sizeof (buf)-1);
 
@@ -76,9 +92,18 @@ R_API void r_cons_grep(const char *str) {
 			optr = ptr;
 			ptr = strchr (ptr, ','); // grep keywords
 			if (ptr) *ptr++ = '\0';
-			// TODO: check if keyword > 64
-			strncpy (cons->grep.strings[cons->grep.nstrings], optr, 63);
+			wlen = strlen (optr);	
+			if (wlen==0) continue;
+			if (wlen>=R_CONS_GREP_WORD_SIZE-1) {
+				eprintf ("grep string too long\n");
+				continue;
+			}
+			strncpy (cons->grep.strings[cons->grep.nstrings], optr, R_CONS_GREP_WORD_SIZE-1);
 			cons->grep.nstrings++;
+			if (cons->grep.nstrings>R_CONS_GREP_WORDS-1) {
+				eprintf ("too many grep strings\n");
+				break;
+			}
 		} while (ptr);
 	} else {
 		cons->grep.str = strdup (ptr);
@@ -92,6 +117,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
+	if (!cons->buffer) {
+		cons->buffer_len = len+20;
+		cons->buffer = malloc (cons->buffer_len);
+		cons->buffer[0] = 0;
+	}
 	out = tbuf = calloc (1, len);
 	tline = malloc (len);
 	cons->lines = 0;
@@ -131,8 +161,9 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	free (tbuf);
 	free (tline);
 	if (cons->grep.counter) {
+		if (cons->buffer_len<10) cons->buffer_len = 10; // HACK
 		snprintf (cons->buffer, cons->buffer_len, "%d\n", cons->lines);
-		cons->buffer_len = strlen (cons->buffer);;
+		cons->buffer_len = strlen (cons->buffer);
 	}
 	return cons->lines;
 }
@@ -149,17 +180,24 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	memcpy (in, buf, len);
 
 	if (cons->grep.nstrings>0) {
+		int ampfail = cons->grep.amp;
 		for (i=0; i<cons->grep.nstrings; i++) {
 			char *p = strstr (in, cons->grep.strings[i]);
-			if (!p) continue;
+			if (!p) {
+				ampfail = 0;
+				continue;
+			}
 			if (cons->grep.begin)
 				hit = (p == in)? 1: 0;
 			else hit = !cons->grep.neg;
-			// XXX: this can be optimized
+			// TODO: optimize this strlen
 			if (cons->grep.end && (strlen (cons->grep.strings[i]) != strlen (p)))
 				hit = 0;
-			break;
+			if (!cons->grep.amp)
+				break;
 		}
+		if (cons->grep.amp)
+			hit = ampfail;
 	} else hit = 1;
 
 	if (hit) {
@@ -188,6 +226,8 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			outlen = outlen>0? outlen - 1: 0;
 			if (outlen>len) { // should never happen
 				eprintf ("r_cons_grep_line: wtf, how you reach this?\n");
+				free (in);
+				free (out);
 				return -1;
 			}
 			memcpy (buf, out, len);
@@ -229,7 +269,7 @@ R_API int r_cons_html_print(const char *ptr) {
 	if (!ptr)
 		return 0;
 	for (;ptr[0]; ptr = ptr + 1) {
-		if (ptr[0] == '\n') {
+		if (0 && ptr[0] == '\n') {
 			printf ("<br />");
 			fflush (stdout);
 		}

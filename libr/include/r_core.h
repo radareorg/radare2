@@ -133,6 +133,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr);
 R_API int r_core_init(RCore *core);
 R_API RCore *r_core_new();
 R_API RCore *r_core_free(RCore *core);
+R_API RCore *r_core_fini(RCore *c);
 R_API int r_core_config_init(RCore *core);
 R_API int r_core_prompt(RCore *core, int sync);
 R_API int r_core_prompt_exec(RCore *core);
@@ -146,6 +147,8 @@ R_API int r_core_flush(void *user, const char *cmd);
 R_API int r_core_cmd0(void *user, const char *cmd);
 R_API void r_core_cmd_init(RCore *core);
 R_API char *r_core_cmd_str(RCore *core, const char *cmd);
+R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
+R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
 R_API int r_core_cmd_file(RCore *core, const char *file);
 R_API int r_core_cmd_command(RCore *core, const char *command);
 R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb);
@@ -174,7 +177,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op);
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
 R_API void r_core_yank_set (RCore *core, const char *str);
-R_API int r_core_yank_to(RCore *core, char *arg);
+R_API int r_core_yank_to(RCore *core, const char *arg);
 
 R_API int r_core_loadlibs(RCore *core);
 // FIXME: change (void *user) -> (RCore *core)
@@ -235,17 +238,19 @@ R_API void r_core_sysenv_help();
 #define R_CORE_BIN_SET		0x002
 
 #define R_CORE_BIN_ACC_STRINGS	0x001
-#define R_CORE_BIN_ACC_INFO		0x002
-#define R_CORE_BIN_ACC_MAIN		0x004
+#define R_CORE_BIN_ACC_INFO	0x002
+#define R_CORE_BIN_ACC_MAIN	0x004
 #define R_CORE_BIN_ACC_ENTRIES	0x008
 #define R_CORE_BIN_ACC_RELOCS	0x010
 #define R_CORE_BIN_ACC_IMPORTS	0x020
 #define R_CORE_BIN_ACC_SYMBOLS	0x040
 #define R_CORE_BIN_ACC_SECTIONS	0x080
 #define R_CORE_BIN_ACC_FIELDS	0x100
-#define R_CORE_BIN_ACC_LIBS		0x200
+#define R_CORE_BIN_ACC_LIBS	0x200
 #define R_CORE_BIN_ACC_CLASSES	0x400
-#define R_CORE_BIN_ACC_ALL		0xFFF
+#define R_CORE_BIN_ACC_DWARF	0x800
+#define R_CORE_BIN_ACC_SIZE     0x1000
+#define R_CORE_BIN_ACC_ALL	0xFFF
 
 typedef struct r_core_bin_filter_t {
 	ut64 offset;

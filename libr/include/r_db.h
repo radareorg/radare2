@@ -3,6 +3,7 @@
 
 #include "r_types.h"
 #include "r_util.h"
+#include "sdb.h"
 
 // TODO: add support for network. (udp). memcache, with hooks
 typedef struct r_pair_t {
@@ -61,7 +62,6 @@ while (r_db_iter_next(it)) {
 typedef struct r_pair_item_t {
 	char *k, *v;
 } RPairItem;
-
 
 #ifdef R_API
 R_API RPairItem *r_pair_item_new();

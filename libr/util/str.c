@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -69,12 +69,14 @@ main () {
 }
 #endif
 
-R_API void r_str_subchr (char *s, int a, int b) {
+R_API int r_str_replace_char (char *s, int a, int b) {
+	int ret = 0;
 	char *o = s;
 	for (; *o; s++, o++) {
 		if (*o==a) {
 			if (b) {
 				*s = b;
+				ret++;
 				continue;
 			}
 			o++;
@@ -82,6 +84,7 @@ R_API void r_str_subchr (char *s, int a, int b) {
 		*s = *o;
 	}
 	*s = 0;
+	return ret;
 }
 
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
@@ -347,7 +350,7 @@ R_API char *r_str_newf(const char *fmt, ...) {
 	char string[1024];
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, 1023, fmt, ap);
+	vsnprintf (string, sizeof (string), fmt, ap);
 	fmt = r_str_new (string);
 	va_end (ap);
 	return (char*)fmt;
@@ -546,28 +549,33 @@ R_API void *r_str_free(void *ptr) {
 }
 
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
-	int off;
+	int off, i;
 	int klen = strlen (key);
 	int vlen = strlen (val);
 	int slen = strlen (str);
-	char *old, *p = str;
-	for (;;) {
+	char *new, *old, *p = str;
+	for (i=0; i<slen; ) {
 		p = (char *)r_mem_mem (
-			(const ut8*)str, slen,
+			(const ut8*)str+i, slen-i,
 			(const ut8*)key, klen);
-		if (p) {
-			old = strdup (p+klen);
-			slen += (vlen-klen)+1;
-			off = (int)(size_t)(p-str);
-			str = realloc (str, slen);
-			p = str+off;
-			memcpy (p, val, vlen);
-			memcpy (p+vlen, old, strlen (old));
-			p[vlen] = 0;
-			free (old);
-			if (g) continue;
-			else break;
-		} else break;
+		if (!p) break; // || !p[klen]) break;
+		old = strdup (p+klen);
+		slen += (vlen-klen)+1;
+		off = (int)(size_t)(p-str);
+		new = realloc (str, slen);
+		if (!new) {
+			eprintf ("realloc fail\n");
+			free (str);
+			str = NULL;
+			break;
+		}
+		str = new;
+		p = str+off;
+		memcpy (p, val, vlen);
+		memcpy (p+vlen, old, strlen (old)+1);
+		i += off+vlen;
+		free (old);
+		if (!g) break;
 	}
 	return str;
 }
@@ -839,33 +847,6 @@ R_API void r_str_argv_free(char **argv) {
 	free (argv);
 }
 
-#if 0
-/* XXX this is necessary ??? */
-// TODO: make it dynamic
-static int bprintf_init = 0;
-static char bprintf_buf[4096];
-
-// XXX overflow
-R_API int r_bprintf(const char *fmt, ...) {
-	va_list ap;
-	if (bprintf_init==0)
-		*bprintf_buf = 0;
-	va_start(ap, fmt);
-	r_str_concatf(bprintf_buf, fmt, ap);
-	va_end(ap);
-	return strlen(bprintf_buf);
-}
-
-R_API char *r_bprintf_get() {
-	char *s;
-	if (bprintf_init==0)
-		*bprintf_buf = 0;
-	s = strdup(bprintf_buf);
-	bprintf_buf[0]='\0';
-	return s;
-}
-#endif
-
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 	int _b = 0;
 	ut8 *b = (ut8*)&_b;
@@ -914,4 +895,45 @@ R_API const char *r_str_casestr(const char *a, const char *b) {
 
 R_API int r_str_write (int fd, const char *b) {
 	return write (fd, b, strlen (b));
+}
+
+R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
+	const char *p = r;
+	for (; *r; r++) {
+		if (*r == ',') {
+			cb (u, atoi (p));
+			p = r+1;
+		}
+		if (*r == '-') {
+			if (p != r) {
+				int from = atoi (p);
+				int to = atoi (r+1);
+				for (; from<=to; from++)
+					cb (u, from);
+			} else fprintf (stderr, "Invalid range\n");
+			for (r++; *r && *r!=','&& *r!='-'; r++);
+			p = r;
+		}
+	}
+	if (*p) cb (u, atoi (p));
+}
+
+// convert from html escaped sequence "foo%20bar" to "foo bar"
+// TODO: find better name.. unencode? decode
+R_API void r_str_unescape (char *s) {
+	int n;
+	char *d;
+	for (d=s; *s; s++, d++) {
+#if 0
+		if (*s == '+') {
+			*d = ' ';
+		} else
+#endif
+		if (*s == '%') {
+			sscanf (s+1, "%02x", &n);
+			*d = n;
+			s+=2;
+		} else *d = *s;
+	}
+	*d = 0;
 }

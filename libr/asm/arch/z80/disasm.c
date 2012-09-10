@@ -72,6 +72,9 @@
 #include <stdio.h>
 #include <string.h>
 //#include <portab.h>
+#ifndef R_API_I
+#define R_API_I
+#endif
 #define CHAR char
 #define WORD short
 #define UWORD unsigned short
@@ -104,154 +107,157 @@ enum {
 static UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
 	UBYTE   len = 1;
  
-    switch(Opcodes[p]) {// Opcode
-    case 0x06:          // LD B,n
-    case 0x0E:          // LD C,n
-    case 0x10:          // DJNZ e
-    case 0x16:          // LD D,n
-    case 0x18:          // JR e
-    case 0x1E:          // LD E,n
-    case 0x20:          // JR NZ,e
-    case 0x26:          // LD H,n
-    case 0x28:          // JR Z,e
-    case 0x2E:          // LD L,n
-    case 0x30:          // JR NC,e
-    case 0x36:          // LD (HL),n
-    case 0x38:          // JR C,e
-    case 0x3E:          // LD A,n
-    case 0xC6:          // ADD A,n
-    case 0xCE:          // ADC A,n
-    case 0xD3:          // OUT (n),A
-    case 0xD6:          // SUB n
-    case 0xDB:          // IN A,(n)
-    case 0xDE:          // SBC A,n
-    case 0xE6:          // AND n
-    case 0xEE:          // XOR n
-    case 0xF6:          // OR n
-    case 0xFE:          // CP n
- 
-    case 0xCB:          // Shift-,Rotate-,Bit-Befehle
-                len = 2;
-                break;
-    case 0x01:          // LD BC,nn'
-    case 0x11:          // LD DE,nn'
-    case 0x21:          // LD HL,nn'
-    case 0x22:          // LD (nn'),HL
-    case 0x2A:          // LD HL,(nn')
-    case 0x31:          // LD SP,(nn')
-    case 0x32:          // LD (nn'),A
-    case 0x3A:          // LD A,(nn')
-    case 0xC2:          // JP NZ,nn'
-    case 0xC3:          // JP nn'
-    case 0xC4:          // CALL NZ,nn'
-    case 0xCA:          // JP Z,nn'
-    case 0xCC:          // CALL Z,nn'
-    case 0xCD:          // CALL nn'
-    case 0xD2:          // JP NC,nn'
-    case 0xD4:          // CALL NC,nn'
-    case 0xDA:          // JP C,nn'
-    case 0xDC:          // CALL C,nn'
-    case 0xE2:          // JP PO,nn'
-    case 0xE4:          // CALL PO,nn'
-    case 0xEA:          // JP PE,nn'
-    case 0xEC:          // CALL PE,nn'
-    case 0xF2:          // JP P,nn'
-    case 0xF4:          // CALL P,nn'
-    case 0xFA:          // JP M,nn'
-    case 0xFC:          // CALL M,nn'
-                len = 3;
-                break;
-    case 0xDD:  len = 2;
-                switch(Opcodes[p+1]) {// 2.Teil des Opcodes
-                case 0x34:          // INC (IX+d)
-                case 0x35:          // DEC (IX+d)
-                case 0x46:          // LD B,(IX+d)
-                case 0x4E:          // LD C,(IX+d)
-                case 0x56:          // LD D,(IX+d)
-                case 0x5E:          // LD E,(IX+d)
-                case 0x66:          // LD H,(IX+d)
-                case 0x6E:          // LD L,(IX+d)
-                case 0x70:          // LD (IX+d),B
-                case 0x71:          // LD (IX+d),C
-                case 0x72:          // LD (IX+d),D
-                case 0x73:          // LD (IX+d),E
-                case 0x74:          // LD (IX+d),H
-                case 0x75:          // LD (IX+d),L
-                case 0x77:          // LD (IX+d),A
-                case 0x7E:          // LD A,(IX+d)
-                case 0x86:          // ADD A,(IX+d)
-                case 0x8E:          // ADC A,(IX+d)
-                case 0x96:          // SUB A,(IX+d)
-                case 0x9E:          // SBC A,(IX+d)
-                case 0xA6:          // AND (IX+d)
-                case 0xAE:          // XOR (IX+d)
-                case 0xB6:          // OR (IX+d)
-                case 0xBE:          // CP (IX+d)
-                            len = 3;
-                            break;
-                case 0x21:          // LD IX,nn'
-                case 0x22:          // LD (nn'),IX
-                case 0x2A:          // LD IX,(nn')
-                case 0x36:          // LD (IX+d),n
-                case 0xCB:          // Rotation (IX+d)
-                            len = 4;
-                            break;
-                }
-                break;
-    case 0xED:  len = 2;
-                switch(Opcodes[p+1]) {// 2.Teil des Opcodes
-                case 0x43:          // LD (nn'),BC
-                case 0x4B:          // LD BC,(nn')
-                case 0x53:          // LD (nn'),DE
-                case 0x5B:          // LD DE,(nn')
-                case 0x73:          // LD (nn'),SP
-                case 0x7B:          // LD SP,(nn')
-                            len = 4;
-                            break;
-                }
-                break;
-    case 0xFD:  len = 2;
-                switch(Opcodes[p+1]) {// 2.Teil des Opcodes
-                case 0x34:          // INC (IY+d)
-                case 0x35:          // DEC (IY+d)
-                case 0x46:          // LD B,(IY+d)
-                case 0x4E:          // LD C,(IY+d)
-                case 0x56:          // LD D,(IY+d)
-                case 0x5E:          // LD E,(IY+d)
-                case 0x66:          // LD H,(IY+d)
-                case 0x6E:          // LD L,(IY+d)
-                case 0x70:          // LD (IY+d),B
-                case 0x71:          // LD (IY+d),C
-                case 0x72:          // LD (IY+d),D
-                case 0x73:          // LD (IY+d),E
-                case 0x74:          // LD (IY+d),H
-                case 0x75:          // LD (IY+d),L
-                case 0x77:          // LD (IY+d),A
-                case 0x7E:          // LD A,(IY+d)
-                case 0x86:          // ADD A,(IY+d)
-                case 0x8E:          // ADC A,(IY+d)
-                case 0x96:          // SUB A,(IY+d)
-                case 0x9E:          // SBC A,(IY+d)
-                case 0xA6:          // AND (IY+d)
-                case 0xAE:          // XOR (IY+d)
-                case 0xB6:          // OR (IY+d)
-                case 0xBE:          // CP (IY+d)
-                            len = 3;
-                            break;
-                case 0x21:          // LD IY,nn'
-                case 0x22:          // LD (nn'),IY
-                case 0x2A:          // LD IY,(nn')
-                case 0x36:          // LD (IY+d),n
-                case 0xCB:          // Rotation,Bitop (IY+d)
-                            len = 4;
-                            break;
-                }
-                break;
-    }
-    return(len);
+	switch (Opcodes[p]) {// Opcode
+	case 0x06:          // LD B,n
+	case 0x0E:          // LD C,n
+	case 0x10:          // DJNZ e
+	case 0x16:          // LD D,n
+	case 0x18:          // JR e
+	case 0x1E:          // LD E,n
+	case 0x20:          // JR NZ,e
+	case 0x26:          // LD H,n
+	case 0x28:          // JR Z,e
+	case 0x2E:          // LD L,n
+	case 0x30:          // JR NC,e
+	case 0x36:          // LD (HL),n
+	case 0x38:          // JR C,e
+	case 0x3E:          // LD A,n
+	case 0xC6:          // ADD A,n
+	case 0xCE:          // ADC A,n
+	case 0xD3:          // OUT (n),A
+	case 0xD6:          // SUB n
+	case 0xDB:          // IN A,(n)
+	case 0xDE:          // SBC A,n
+	case 0xE6:          // AND n
+	case 0xEE:          // XOR n
+	case 0xF6:          // OR n
+	case 0xFE:          // CP n
+
+	case 0xCB:          // Shift-,Rotate-,Bit-Befehle
+		len = 2;
+		break;
+	case 0x01:          // LD BC,nn'
+	case 0x11:          // LD DE,nn'
+	case 0x21:          // LD HL,nn'
+	case 0x22:          // LD (nn'),HL
+	case 0x2A:          // LD HL,(nn')
+	case 0x31:          // LD SP,(nn')
+	case 0x32:          // LD (nn'),A
+	case 0x3A:          // LD A,(nn')
+	case 0xC2:          // JP NZ,nn'
+	case 0xC3:          // JP nn'
+	case 0xC4:          // CALL NZ,nn'
+	case 0xCA:          // JP Z,nn'
+	case 0xCC:          // CALL Z,nn'
+	case 0xCD:          // CALL nn'
+	case 0xD2:          // JP NC,nn'
+	case 0xD4:          // CALL NC,nn'
+	case 0xDA:          // JP C,nn'
+	case 0xDC:          // CALL C,nn'
+	case 0xE2:          // JP PO,nn'
+	case 0xE4:          // CALL PO,nn'
+	case 0xEA:          // JP PE,nn'
+	case 0xEC:          // CALL PE,nn'
+	case 0xF2:          // JP P,nn'
+	case 0xF4:          // CALL P,nn'
+	case 0xFA:          // JP M,nn'
+	case 0xFC:          // CALL M,nn'
+		len = 3;
+		break;
+	case 0xDD:
+		len = 2;
+		switch (Opcodes[p+1]) {// 2.Teil des Opcodes
+		case 0x34:          // INC (IX+d)
+		case 0x35:          // DEC (IX+d)
+		case 0x46:          // LD B,(IX+d)
+		case 0x4E:          // LD C,(IX+d)
+		case 0x56:          // LD D,(IX+d)
+		case 0x5E:          // LD E,(IX+d)
+		case 0x66:          // LD H,(IX+d)
+		case 0x6E:          // LD L,(IX+d)
+		case 0x70:          // LD (IX+d),B
+		case 0x71:          // LD (IX+d),C
+		case 0x72:          // LD (IX+d),D
+		case 0x73:          // LD (IX+d),E
+		case 0x74:          // LD (IX+d),H
+		case 0x75:          // LD (IX+d),L
+		case 0x77:          // LD (IX+d),A
+		case 0x7E:          // LD A,(IX+d)
+		case 0x86:          // ADD A,(IX+d)
+		case 0x8E:          // ADC A,(IX+d)
+		case 0x96:          // SUB A,(IX+d)
+		case 0x9E:          // SBC A,(IX+d)
+		case 0xA6:          // AND (IX+d)
+		case 0xAE:          // XOR (IX+d)
+		case 0xB6:          // OR (IX+d)
+		case 0xBE:          // CP (IX+d)
+			len = 3;
+			break;
+		case 0x21:          // LD IX,nn'
+		case 0x22:          // LD (nn'),IX
+		case 0x2A:          // LD IX,(nn')
+		case 0x36:          // LD (IX+d),n
+		case 0xCB:          // Rotation (IX+d)
+			len = 4;
+			break;
+		}
+		break;
+	case 0xED:
+		len = 2;
+		switch (Opcodes[p+1]) {// 2.Teil des Opcodes
+		case 0x43:          // LD (nn'),BC
+		case 0x4B:          // LD BC,(nn')
+		case 0x53:          // LD (nn'),DE
+		case 0x5B:          // LD DE,(nn')
+		case 0x73:          // LD (nn'),SP
+		case 0x7B:          // LD SP,(nn')
+			len = 4;
+			break;
+		}
+		break;
+	case 0xFD:
+		len = 2;
+		switch (Opcodes[p+1]) {// 2.Teil des Opcodes
+		case 0x34:          // INC (IY+d)
+		case 0x35:          // DEC (IY+d)
+		case 0x46:          // LD B,(IY+d)
+		case 0x4E:          // LD C,(IY+d)
+		case 0x56:          // LD D,(IY+d)
+		case 0x5E:          // LD E,(IY+d)
+		case 0x66:          // LD H,(IY+d)
+		case 0x6E:          // LD L,(IY+d)
+		case 0x70:          // LD (IY+d),B
+		case 0x71:          // LD (IY+d),C
+		case 0x72:          // LD (IY+d),D
+		case 0x73:          // LD (IY+d),E
+		case 0x74:          // LD (IY+d),H
+		case 0x75:          // LD (IY+d),L
+		case 0x77:          // LD (IY+d),A
+		case 0x7E:          // LD A,(IY+d)
+		case 0x86:          // ADD A,(IY+d)
+		case 0x8E:          // ADC A,(IY+d)
+		case 0x96:          // SUB A,(IY+d)
+		case 0x9E:          // SBC A,(IY+d)
+		case 0xA6:          // AND (IY+d)
+		case 0xAE:          // XOR (IY+d)
+		case 0xB6:          // OR (IY+d)
+		case 0xBE:          // CP (IY+d)
+			len = 3;
+			break;
+		case 0x21:          // LD IY,nn'
+		case 0x22:          // LD (nn'),IY
+		case 0x2A:          // LD IY,(nn')
+		case 0x36:          // LD (IY+d),n
+		case 0xCB:          // Rotation,Bitop (IY+d)
+			len = 4;
+			break;
+		}
+		break;
+	}
+	return(len);
 }
  
-static ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
+R_API_I ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 	int i;
 	ULONG   next;
  
@@ -396,39 +402,39 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 			}
 			break;
 		case 0x02:
-			switch(d) {
-				case 0x00:
-					strcpy(s,"ld (bc), a");
-					break;
-				case 0x01:
-					strcpy(s,"ld a, (bc)");
-					break;
-				case 0x02:
-					strcpy(s,"ld (de), a");
-					break;
-				case 0x03:
-					strcpy(s,"ld a, (de)");
-					break;
-				case 0x04:
-					strcpy(s,"ld (");
-					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-					strcat(s,"), hl");
-					break;
-				case 0x05:
-					strcpy(s,"ld hl, (");
-					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-					strcat(s,")");
-					break;
-				case 0x06:
-					strcpy(s,"ld (");
-					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-					strcat(s,"), a");
-					break;
-				case 0x07:
-					strcpy(s,"ld a,(");
-					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-					strcat(s,")");
-					break;
+			switch (d) {
+			case 0x00:
+				strcpy(s,"ld (bc), a");
+				break;
+			case 0x01:
+				strcpy(s,"ld a, (bc)");
+				break;
+			case 0x02:
+				strcpy(s,"ld (de), a");
+				break;
+			case 0x03:
+				strcpy(s,"ld a, (de)");
+				break;
+			case 0x04:
+				strcpy(s,"ld (");
+				sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+				strcat(s,"), hl");
+				break;
+			case 0x05:
+				strcpy(s,"ld hl, (");
+				sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+				strcat(s,")");
+				break;
+			case 0x06:
+				strcpy(s,"ld (");
+				sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+				strcat(s,"), a");
+				break;
+			case 0x07:
+				strcpy(s,"ld a,(");
+				sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+				strcat(s,")");
+				break;
 			}
 			break;
 		case 0x03:
@@ -512,67 +518,67 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 			strcat(s,stemp);
 			break;
 		case 0x03:
-			switch(d) {
-				case 0x00:
-					strcpy (s, "jp ");
-					sprintf (stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-					break;
-				case 0x01:                  // 0xCB
-					a = Opcodes[++adr];     // Erweiterungsopcode holen
-					d = (a >> 3) & 7;
-					e = a & 7;
-					stemp[1] = 0;           // temp.String = 1 Zeichen
-					switch(a & 0xC0) {
-						case 0x00:
-							{
-								static STR str[8] = {"rlc","rrc","rl","rr","sla","sra","???","srl"};
-								strcpy(s,str[d]);
-							}
-							strcat(s," ");
-							strcat(s,reg[e]);
-							break;
-						case 0x40:
-							strcpy(s,"bit ");
-							stemp[0] = d+'0';strcat(s,stemp);
-							strcat(s,",");
-							strcat(s,reg[e]);
-							break;
-						case 0x80:
-							strcpy(s,"res ");
-							stemp[0] = d+'0';strcat(s,stemp);
-							strcat(s,",");
-							strcat(s,reg[e]);
-							break;
-						case 0xC0:
-							strcpy(s, "set ");
-							stemp[0] = d+'0';strcat(s,stemp);
-							strcat(s,",");
-							strcat(s,reg[e]);
-							break;
-					}
-					break;
-				case 0x02:
-					strcpy (s,"out (");
-					sprintf (stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-					strcat (s,"),A");
-					break;
-				case 0x03:
-					strcpy(s,"in a, (");
-					sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-					strcat(s,")");
-					break;
-				case 0x04:
-					strcpy(s,"ex (sp), hl");
-					break;
-				case 0x05:
-					strcpy(s,"ex de, hl");
-					break;
-				case 0x06:
-					strcpy(s,"di");
-					break;
-				case 0x07:
-					strcpy(s,"ei");
-					break;
+			switch (d) {
+			case 0x00:
+				strcpy (s, "jp ");
+				sprintf (stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+				break;
+			case 0x01:                  // 0xCB
+				a = Opcodes[++adr];     // Erweiterungsopcode holen
+				d = (a >> 3) & 7;
+				e = a & 7;
+				stemp[1] = 0;           // temp.String = 1 Zeichen
+				switch(a & 0xC0) {
+					case 0x00:
+						{
+							static STR str[8] = {"rlc","rrc","rl","rr","sla","sra","???","srl"};
+							strcpy(s,str[d]);
+						}
+						strcat(s," ");
+						strcat(s,reg[e]);
+						break;
+					case 0x40:
+						strcpy(s,"bit ");
+						stemp[0] = d+'0';strcat(s,stemp);
+						strcat(s,",");
+						strcat(s,reg[e]);
+						break;
+					case 0x80:
+						strcpy(s,"res ");
+						stemp[0] = d+'0';strcat(s,stemp);
+						strcat(s,",");
+						strcat(s,reg[e]);
+						break;
+					case 0xC0:
+						strcpy(s, "set ");
+						stemp[0] = d+'0';strcat(s,stemp);
+						strcat(s,",");
+						strcat(s,reg[e]);
+						break;
+				}
+				break;
+			case 0x02:
+				strcpy (s,"out (");
+				sprintf (stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+				strcat (s,"),A");
+				break;
+			case 0x03:
+				strcpy(s,"in a, (");
+				sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+				strcat(s,")");
+				break;
+			case 0x04:
+				strcpy(s,"ex (sp), hl");
+				break;
+			case 0x05:
+				strcpy(s,"ex de, hl");
+				break;
+			case 0x06:
+				strcpy(s,"di");
+				break;
+			case 0x07:
+				strcpy(s,"ei");
+				break;
 			}
 			break;
 		case 0x04:
@@ -582,328 +588,325 @@ static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen)
 			sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
 			break;
 		case 0x05:
-			if(d & 1) {
-				switch(d >> 1) {
-					case 0x00:
-						strcpy(s,"call ");
-						sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-						break;
-					case 0x02:              // 0xED
-						a = Opcodes[++adr]; // Erweiterungsopcode holen
-						d = (a >> 3) & 7;
-						e = a & 7;
-						switch(a & 0xC0) {
-							case 0x40:
-							switch(e) {
-								case 0x00:
-									strcpy(s,"in ");
-									strcat(s,reg[d]);
-									strcat(s,", (c)");
-									break;
-								case 0x01:
-									strcpy(s,"out (c), ");
-									strcat(s,reg[d]);
-									break;
-								case 0x02:
-									if(d & 1)
-										strcpy(s,"adc");
-									else
-										strcpy(s,"sbc");
-									strcat(s," HL, ");
+			if (d & 1) {
+				switch (d >> 1) {
+				case 0x00:
+					strcpy(s,"call ");
+					sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+					break;
+				case 0x02:              // 0xED
+					a = Opcodes[++adr]; // Erweiterungsopcode holen
+					d = (a >> 3) & 7;
+					e = a & 7;
+					switch(a & 0xC0) {
+						case 0x40:
+						switch(e) {
+							case 0x00:
+								strcpy(s,"in ");
+								strcat(s,reg[d]);
+								strcat(s,", (c)");
+								break;
+							case 0x01:
+								strcpy(s,"out (c), ");
+								strcat(s,reg[d]);
+								break;
+							case 0x02:
+								if(d & 1)
+									strcpy(s,"adc");
+								else
+									strcpy(s,"sbc");
+								strcat(s," HL, ");
+								strcat(s,dreg[d >> 1]);
+								break;
+							case 0x03:
+								if(d & 1) {
+									strcpy(s,"ld ");
 									strcat(s,dreg[d >> 1]);
-									break;
-								case 0x03:
-									if(d & 1) {
-										strcpy(s,"ld ");
-										strcat(s,dreg[d >> 1]);
-										strcat(s,",(");
-										sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-										strcat(s,")");
-									} else {
-										strcpy(s,"ld (");
-										sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-										strcat(s,"),");
-										strcat(s,dreg[d >> 1]);
-									}
-									break;
-								case 0x04:
-									{
-										static STR str[8] = {"neg","???","???","???","???","???","???","???"};
-										strcpy(s,str[d]);
-									}
-									break;
-								case 0x05:
-									{
-										static STR str[8] = {"retn","reti","???","???","???","???","???","???"};
-										strcpy(s,str[d]);
-									}
-									break;
-								case 0x06:
-									strcpy(s,"IM ");
-									stemp[0] = d + '0' - 1; stemp[1] = 0;
-									strcat(s,stemp);
-									break;
-								case 0x07:
-									{
-										static STR str[8] = {"ld i, a","???","ld a, i","???","rrd","rld","???","???"};
-										strcpy(s,str[d]);
-									}
-									break;
-							}
-							break;
-						case 0x80:
-							{
-								static STR str[32] = {"LDI","CPI","INI","OUTI","???","???","???","???",
-									"ldd","CPD","IND","OUTD","???","???","???","???",
-									"ldir","cpir","INIR","OTIR","???","???","???","???",
-									"lddr","cpdr","INDR","OTDR","???","???","???","???"};
-								strcpy(s,str[a & 0x1F]);
-							}
-							break;
-						}
-						break;
-					default:                // 0x01 (0xDD) = IX, 0x03 (0xFD) = IY
-						strcpy (ireg,(a & 0x20)?"iy":"ix");
-						a = Opcodes[++adr]; // Erweiterungsopcode holen
-						switch(a) {
-							case 0x09:
-								strcpy(s,"add ");
-								strcat(s,ireg);
-								strcat(s,", bc");
-								break;
-							case 0x19:
-								strcpy(s,"add ");
-								strcat(s,ireg);
-								strcat(s,", de");
-								break;
-							case 0x21:
-								strcpy(s,"ld ");
-								strcat(s,ireg);
-								strcat(s,",");
-								sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-								break;
-							case 0x22:
-								strcpy(s,"ld (");
-								sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-								strcat(s,"), ");
-								strcat(s,ireg);
-								break;
-							case 0x23:
-								strcpy (s,"inc ");
-								strcat (s, ireg);
-								break;
-							case 0x29:
-								strcpy(s,"add ");
-								strcat(s,ireg);
-								strcat(s,",");
-								strcat(s,ireg);
-								break;
-							case 0x2A:
-								strcpy(s,"ld ");
-								strcat(s,ireg);
-								strcat(s,", (");
-								sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0x2B:
-								strcpy(s,"dec ");
-								strcat(s,ireg);
-								break;
-							case 0x34:
-								strcpy(s,"inc (");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0x35:
-								strcpy(s,"dec (");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0x36:
-								strcpy(s,"ld (");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,"),");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+2]);strcat(s,stemp);
-								break;
-							case 0x39:
-								strcpy(s,"add ");
-								strcat(s,ireg);
-								strcat(s,", sp");
-								break;
-							case 0x46:
-							case 0x4E:
-							case 0x56:
-							case 0x5E:
-							case 0x66:
-							case 0x6E:
-								strcpy(s,"ld ");
-								strcat(s,reg[(a>>3)&7]);
-								strcat(s,",(");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0x70:
-							case 0x71:
-							case 0x72:
-							case 0x73:
-							case 0x74:
-							case 0x75:
-							case 0x77:
-								strcpy(s,"ld (");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,"),");
-								strcat(s,reg[a & 7]);
-								break;
-							case 0x7E:
-								strcpy(s,"ld A,(");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0x86:
-								strcpy(s,"add A, (");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0x8E:
-								strcpy(s,"adc a,(");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0x96:
-								strcpy(s,"sub (");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0x9E:
-								strcpy(s,"sbc a, (");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0xA6:
-								strcpy(s,"and a,(");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0xAE:
-								strcpy(s,"xor a, (");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0xB6:
-								strcpy(s,"or a,(");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0xBE:
-								strcpy(s,"cp a,(");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
-								strcat(s,")");
-								break;
-							case 0xE1:
-								strcpy(s,"pop ");
-								strcat(s,ireg);
-								break;
-							case 0xE3:
-								strcpy(s,"ex (sp), ");
-								strcat(s,ireg);
-								break;
-							case 0xE5:
-								strcpy(s,"push ");
-								strcat(s,ireg);
-								break;
-							case 0xE9:
-								strcpy(s,"jp (");
-								strcat(s,ireg);
-								strcat(s,")");
-								break;
-							case 0xF9:
-								strcpy(s,"ld sp, ");
-								strcat(s,ireg);
-								break;
-							case 0xCB:
-								a = Opcodes[adr+2]; // weiteren Unteropcode
-								d = (a >> 3) & 7;
-								stemp[1] = 0;
-								switch(a & 0xC0) {
-									case 0x00:
-										{
-											static STR str[8] = {"rlc", "rrc", "rl", "rr", "sla", "sra", "???", "srl" };
-											strcpy(s,str[d]);
-										}
-										strcat(s," ");
-										break;
-									case 0x40:
-										strcpy(s,"bit ");
-										stemp[0] = d + '0';
-										strcat(s,stemp);
-										strcat(s,",");
-										break;
-									case 0x80:
-										strcpy(s,"res ");
-										stemp[0] = d + '0';
-										strcat(s,stemp);
-										strcat(s,",");
-										break;
-									case 0xC0:
-										strcpy(s,"set ");
-										stemp[0] = d + '0';
-										strcat(s,stemp);
-										strcat(s,",");
-										break;
+									strcat(s,",(");
+									sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+									strcat(s,")");
+								} else {
+									strcpy(s,"ld (");
+									sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+									strcat(s,"),");
+									strcat(s,dreg[d >> 1]);
 								}
-								strcat(s,"(");
-								strcat(s,ireg);
-								strcat(s,"+");
-								sprintf(stemp, "0x%2.2X",Opcodes[adr+1]);
-								strcat(s,stemp);
-								strcat(s,")");
+								break;
+							case 0x04:
+								{
+									static STR str[8] = {"neg","???","???","???","???","???","???","???"};
+									strcpy(s,str[d]);
+								}
+								break;
+							case 0x05:
+								{
+									static STR str[8] = {"retn","reti","???","???","???","???","???","???"};
+									strcpy (s, str[d]);
+								}
+								break;
+							case 0x06:
+								strcpy (s,"im ");
+								stemp[0] = d + '0' - 1; stemp[1] = 0;
+								strcat (s, stemp);
+								break;
+							case 0x07:
+								{
+									static STR str[8] = {"ld i, a","???","ld a, i","???","rrd","rld","???","???"};
+									strcpy (s,str[d]);
+								}
 								break;
 						}
 						break;
+					case 0x80:
+						{
+							static STR str[32] = {"ldi","cpi","ini","outi","???","???","???","???",
+								"ldd","cpd","ind","outd","???","???","???","???",
+								"ldir","cpir","inir","otir","???","???","???","???",
+								"lddr","cpdr","indr","otdr","???","???","???","???"};
+							strcpy (s,str[a & 0x1F]);
+						}
+						break;
+					}
+					break;
+				default:                // 0x01 (0xDD) = IX, 0x03 (0xFD) = IY
+					strcpy (ireg,(a & 0x20)?"iy":"ix");
+					a = Opcodes[++adr]; // Erweiterungsopcode holen
+					switch(a) {
+						case 0x09:
+							strcpy(s,"add ");
+							strcat(s,ireg);
+							strcat(s,", bc");
+							break;
+						case 0x19:
+							strcpy(s,"add ");
+							strcat(s,ireg);
+							strcat(s,", de");
+							break;
+						case 0x21:
+							strcpy(s,"ld ");
+							strcat(s,ireg);
+							strcat(s,",");
+							sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+							break;
+						case 0x22:
+							strcpy(s,"ld (");
+							sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+							strcat(s,"), ");
+							strcat(s,ireg);
+							break;
+						case 0x23:
+							strcpy (s,"inc ");
+							strcat (s, ireg);
+							break;
+						case 0x29:
+							strcpy(s,"add ");
+							strcat(s,ireg);
+							strcat(s,",");
+							strcat(s,ireg);
+							break;
+						case 0x2A:
+							strcpy(s,"ld ");
+							strcat(s,ireg);
+							strcat(s,", (");
+							sprintf(stemp,"0x%4.4X",Opcodes[adr+1]+(Opcodes[adr+2]<<8));strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0x2B:
+							strcpy(s,"dec ");
+							strcat(s,ireg);
+							break;
+						case 0x34:
+							strcpy(s,"inc (");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0x35:
+							strcpy(s,"dec (");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0x36:
+							strcpy(s,"ld (");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,"),");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+2]);strcat(s,stemp);
+							break;
+						case 0x39:
+							strcpy(s,"add ");
+							strcat(s,ireg);
+							strcat(s,", sp");
+							break;
+						case 0x46:
+						case 0x4E:
+						case 0x56:
+						case 0x5E:
+						case 0x66:
+						case 0x6E:
+							strcpy(s,"ld ");
+							strcat(s,reg[(a>>3)&7]);
+							strcat(s,",(");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0x70:
+						case 0x71:
+						case 0x72:
+						case 0x73:
+						case 0x74:
+						case 0x75:
+						case 0x77:
+							strcpy(s,"ld (");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,"),");
+							strcat(s,reg[a & 7]);
+							break;
+						case 0x7E:
+							strcpy(s,"ld A,(");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0x86:
+							strcpy(s,"add A, (");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0x8E:
+							strcpy(s,"adc a,(");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0x96:
+							strcpy(s,"sub (");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0x9E:
+							strcpy(s,"sbc a, (");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0xA6:
+							strcpy(s,"and a,(");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0xAE:
+							strcpy(s,"xor a, (");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0xB6:
+							strcpy(s,"or a,(");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0xBE:
+							strcpy(s,"cp a,(");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+							strcat(s,")");
+							break;
+						case 0xE1:
+							strcpy(s,"pop ");
+							strcat(s,ireg);
+							break;
+						case 0xE3:
+							strcpy(s,"ex (sp), ");
+							strcat(s,ireg);
+							break;
+						case 0xE5:
+							strcpy(s,"push ");
+							strcat(s,ireg);
+							break;
+						case 0xE9:
+							strcpy(s,"jp (");
+							strcat(s,ireg);
+							strcat(s,")");
+							break;
+						case 0xF9:
+							strcpy(s,"ld sp, ");
+							strcat(s,ireg);
+							break;
+						case 0xCB:
+							a = Opcodes[adr+2]; // weiteren Unteropcode
+							d = (a >> 3) & 7;
+							stemp[1] = 0;
+							switch(a & 0xC0) {
+								case 0x00:
+									{
+										static STR str[8] = {"rlc", "rrc", "rl", "rr", "sla", "sra", "???", "srl" };
+										strcpy(s,str[d]);
+									}
+									strcat(s," ");
+									break;
+								case 0x40:
+									strcpy(s,"bit ");
+									stemp[0] = d + '0';
+									strcat(s,stemp);
+									strcat(s,",");
+									break;
+								case 0x80:
+									strcpy(s,"res ");
+									stemp[0] = d + '0';
+									strcat(s,stemp);
+									strcat(s,",");
+									break;
+								case 0xC0:
+									strcpy(s,"set ");
+									stemp[0] = d + '0';
+									strcat(s,stemp);
+									strcat(s,",");
+									break;
+							}
+							strcat(s,"(");
+							strcat(s,ireg);
+							strcat(s,"+");
+							sprintf(stemp, "0x%2.2X",Opcodes[adr+1]);
+							strcat(s,stemp);
+							strcat(s,")");
+							break;
+					}
+					break;
 				}
 			} else {
 				strcpy (s,"push ");
-				if((d >> 1)==3)
-					strcat (s,"af");
-				else
-					strcat (s,dreg[d >> 1]);
+				strcat (s, ((d >> 1)==3)? "af": dreg[d>>1]);
 			}
 			break;
 		case 0x06:
-			strcpy (s,arith[d]);
-			sprintf (stemp,"0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
+			strcpy (s, arith[d]);
+			sprintf (stemp, "0x%2.2X",Opcodes[adr+1]);strcat(s,stemp);
 			break;
 		case 0x07:
 			strcpy (s, "rst ");
-			sprintf (stemp,"0x%2.2X",a & 0x38);strcat(s,stemp);
+			sprintf (stemp, "0x%2.2X",a & 0x38);strcat(s,stemp);
 			break;
 		}
 		break;

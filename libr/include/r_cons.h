@@ -31,14 +31,18 @@
 #define CONS_PALETTE_SIZE 22
 #define CONS_COLORS_SIZE 21
 
+#define R_CONS_GREP_WORDS 10
+#define R_CONS_GREP_WORD_SIZE 64
+
 typedef struct r_cons_grep_t {
-	char strings[10][64];
+	char strings[R_CONS_GREP_WORDS][R_CONS_GREP_WORD_SIZE];
 	int nstrings;
 	char *str;
 	int counter;
 	int line;
 	int tokenfrom;
 	int tokento;
+	int amp;
 	int neg;
 	int begin;
 	int end;

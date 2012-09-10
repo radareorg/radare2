@@ -2,46 +2,70 @@
 
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-	RListIter *iter;
-	RAnalType *t;
-	int i, ret, line = 0;
-	ut64 addr_end = 0LL;
-	ut64 addr = core->offset;
-	char file[1024];
-	switch (*input) {
+	RAnalType *t = NULL;
+
+	switch (input[0]) {
+	// t [typename] - show given type in C syntax
+	case ' ':
+	{
+		const char *tname = input + 1;
+		t = r_anal_type_find (core->anal, tname);
+		if (t == NULL) eprintf ("Type %s not found!\n", tname);
+		else r_anal_type_to_str (core->anal, t, "; ");
+	}
+		break;
+	// t* - list all types in 'pf' syntax
 	case '*':
-		r_anal_type_list (core->anal->types, R_ANAL_TYPE_ANY, 1);
+		r_anal_type_list (core->anal, R_ANAL_TYPE_ANY, 1);
 		break;
 	case 'f':
-		switch (input[1]) {
-		/* Open $EDITOR and allow type type definition manually */
-		// TODO: Show simple rules in ctype or simple template? */
-		case '!':
-			{
-			char *out, *ctype = "";
-			out = r_core_editor (core, ctype);
-			t = r_anal_str_to_type (core->anal, out);
-			if (t != NULL)
-				r_anal_type_add (core->anal->types, t);
-			free (out);
-			free (ctype);
+		if (input[1] == ' ') {
+			const char *filename = input + 2;
+			if (!strcmp (filename, "-")) {
+				char *out, *ctype = "";
+				out = r_core_editor (core, ctype);
+				t = r_anal_str_to_type (core->anal, out);
+				if (t != NULL)
+					r_anal_type_add (core->anal, t);
+				free (out);
+				free (ctype);
+			} else {
+				r_anal_type_loadfile (core->anal, filename);
 			}
-			break;
-		case ' ':
-			{
-			const char *ptr, *filename = input + 2;
-			ptr = strchr (filename, ' ');
-			if (ptr && !ptr[1]) {
-				r_anal_type_loadfile(core->anal, filename);
-				eprintf ("Usage: tf name\n");
-			} else eprintf ("Usage: tf[!] [name]\n");
-			}
-			break;
-		default:
-			eprintf ("Usage: tf[..]\n"
-				" tf [path]    : load types from file\n");
-			break;
 		}
+		break;
+	// td - parse string with cparse engine and load types from it
+	case 'd':
+		if (input[1] == ' ') {
+			const char *string = input + 2;
+			r_anal_str_to_type (core->anal, string);
+		} else {
+			eprintf ("Usage: td[...]\n"
+				" td [string]    : load types from string\n");
+		}
+		break;
+	// tl - link a type to an address
+	case 'l':
+	{
+		char *ptr = NULL;
+		ut64 addr = core->offset;
+		ptr = strchr (input + 2, ' ');
+		if (ptr) {
+			*ptr = '\0';
+			addr = r_num_math (core->num, ptr + 1);
+			//do linking
+			// TODO
+			if (addr <= 0) {
+				eprintf("Wrong address to link!\n");
+			}
+			eprintf ("TODO: not implemented\n");
+		} else
+			eprintf("Usage: tl[...]\n"
+				" tl [typename] ([addr])@[addr|function]\n");
+	}
+		break;
+	// tv - get/set type value linked to a given address
+	case 'v':
 		break;
 	case 'h':
 		switch (input[1]) {
@@ -65,30 +89,34 @@ static int cmd_type(void *data, const char *input) {
 			const char *ntr, *name = input + 2;
 			ntr = strchr(name, ' ');
 			if (ntr && !ntr[1]) {
-				r_anal_type_del (core->anal->types, name);
+				r_anal_type_del (core->anal, name);
 			} else
 				eprintf ("Usage: t- name\n"
 					"t- name : delete type by its name\n");
 		}
 		break;
+	// t - list all types in C syntax
 	case '\0':
-	case '!':
-		{
-		char *out, *ctype = "";
-		out = r_core_editor (core, ctype);
-		t = r_anal_str_to_type(core->anal, out);
-		if (t != NULL)
-			r_anal_type_add (core->anal->types, t);
-		free (out);
-		free (ctype);
+	{
+		RListIter *k;
+		RAnalType *t;
+		r_list_foreach (core->anal->types, k, t) {
+			const char *str = r_anal_type_to_str (core->anal, t, "; ");
+			r_cons_printf ("%s\n", str);
 		}
+	}
 		break;
 	case '?':
 		eprintf (
 		"Usage: t[-LCvsdfm?] [...]\n"
+		" t                      # list all loaded types\n"
 		" t*                     # list types info in r2 commands\n"
 		" t- [name]              # delete type by its name. Use t-* to remove all types. Use t-! to open $EDITOR\n"
-		" tf [path]              # losd types from C header file. Use tf! to open $EDITOR\n");
+		" t [type]               # show given type in C syntax\n"
+		" tf [path]              # load types from C header file\n"
+		" tf -                   # open cfg.editor to load types\n"
+		" td int foo(int a);     # parse oneliner type definition\n"
+		" tl [type] [addr]       # link type to a given address\n");
 		break;
 	}
 	return R_TRUE;

@@ -261,8 +261,6 @@ rd_label (const char **p, int *exists, struct label **previous, int level,
     {
       /* not yet found */
       const char *old_p = *p;
-      if (!check_label (firstlabel, p, &l, **p != '.' ? previous : NULL, 1))
-	{
 	  /* label does not exist, or is invalid.  This is an error if there
 	   * is no existance check.  */
 	  if (!exists && print_errors)
@@ -271,7 +269,6 @@ rd_label (const char **p, int *exists, struct label **previous, int level,
 	  if (verbose >= 7)
 	    fprintf (stderr, "rd_label returns invalid value\n");
 	  return l != NULL;
-	}
     }
   if (exists)
     *exists = 1;

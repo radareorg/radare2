@@ -20,6 +20,7 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 	LIBMAGIC = -lr_magic ;
 }
 
+CHKPRG! FLEX flex
 
 CHKLIB ewf
 PKGCFG EWF_CFLAGS EWF_LDFLAGS libewf
@@ -46,6 +47,8 @@ IFNULL SSL_LDFLAGS {
 		SSL_LDFLAGS = -lssl ;
 	}
 }
+
+ARG_WITH USE_RPATH rpath use rpath to build ;
 
 ARG_WITH HAVE_LILEND little-endian force little endian ;
 IF HAVE_LILEND { LIL_ENDIAN = 1 ; }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -40,13 +40,16 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	p = strchr (port, '/');
 	if (p) *p=0;
 	_fd = r_socket_new (R_FALSE);
-	if (_fd) {
-		if (r_socket_connect_tcp (_fd, host, port)) {
-			riog = R_NEW (RIOGdb);
-			riog->fd = _fd;
-			riog->desc = gdbwrap_init (_fd->fd, NUM_REGS, 4);
-			return r_io_desc_new (&r_io_plugin_gdb, _fd->fd, file, rw, mode, riog);
+	if (_fd && r_socket_connect_tcp (_fd, host, port)) {
+		riog = R_NEW (RIOGdb);
+		riog->fd = _fd;
+		riog->desc = gdbwrap_init (_fd->fd, NUM_REGS, 4);
+		if (!riog->desc) {
+			r_socket_free (_fd);
+			free (riog);
+			return NULL;
 		}
+		return r_io_desc_new (&r_io_plugin_gdb, _fd->fd, file, rw, mode, riog);
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
 	return NULL;

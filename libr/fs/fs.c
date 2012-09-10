@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_fs.h>
 #include "../config.h"
@@ -286,7 +286,7 @@ static void r_fs_find_off_aux (RFS* fs, const char *name, ut64 offset, RList *li
 	RList *dirs;
 	RListIter *iter;
 	RFSFile *item, *file;
-	char *found;
+	char *found = NULL;
 
 	dirs = r_fs_dir (fs, name);
 	r_list_foreach (dirs, iter, item) {
@@ -294,8 +294,7 @@ static void r_fs_find_off_aux (RFS* fs, const char *name, ut64 offset, RList *li
 			continue;
 		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
 			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
-			if (!found)
-				break;
+			if (!found) break;
 			strcpy (found, name);
 			strcat (found, "/");
 			strcat (found, item->name);
@@ -303,8 +302,7 @@ static void r_fs_find_off_aux (RFS* fs, const char *name, ut64 offset, RList *li
 			free (found);
 		} else {
 			found = (char *) malloc (strlen (name) + strlen (item->name) + 2);
-			if (!found)
-				break;
+			if (!found) break;
 			strcpy (found, name);
 			strcat (found, "/");
 			strcat (found, item->name);

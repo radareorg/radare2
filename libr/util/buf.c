@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -28,6 +28,7 @@ R_API RBuffer *r_buf_new() {
 
 R_API RBuffer *r_buf_mmap (const char *file, int rw) {
 	RBuffer *b = r_buf_new ();
+	if (!b) return NULL;
 	b->mmap = r_file_mmap (file, rw);
 	if (b->mmap && b->mmap->len>0) {
 		b->buf = b->mmap->buf;

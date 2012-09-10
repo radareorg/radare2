@@ -35,7 +35,7 @@ static int run(void *user, const char *code, int len)
 
 static int slurp_ruby(const char *file)
 {
-	if (r_file_exist(file)) {
+	if (r_file_exists(file)) {
 		rb_load_file(file);
 		ruby_exec();
 		return R_TRUE;

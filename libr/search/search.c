@@ -1,13 +1,12 @@
-/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 pancake */
 
 #include <r_search.h>
 #include <r_list.h>
 #include <ctype.h>
 
 R_API RSearch *r_search_new(int mode) {
-	RSearch *s = R_NEW (RSearch);
+	RSearch *s = R_NEW0 (RSearch);
 	if (!s) return NULL;
-	memset (s,'\0', sizeof (RSearch));
 	if (!r_search_set_mode (s, mode)) {
 		eprintf ("Cannot init search for mode %d\n", mode);
 		return R_FALSE;
@@ -262,13 +261,10 @@ R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len) {
 
 /* --- keywords --- */
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
-	int ret = R_FALSE;
-	if (kw) {
-		r_list_append (s->kws, kw);
-		kw->kwidx = s->n_kws++;
-		ret = R_TRUE;
-	}
-	return ret;
+	if (!kw) return R_FALSE;
+	r_list_append (s->kws, kw);
+	kw->kwidx = s->n_kws++;
+	return R_TRUE;
 }
 
 R_API void r_search_kw_reset(RSearch *s) {

@@ -1,5 +1,5 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
-/* dietline is a lighweight and portable library similar to GNU readline */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_line.h>
 
@@ -53,15 +53,14 @@ static int r_line_readchar() {
 #else
 	do {
 		int ret = read (0, buf, 1);
-		if (ret == -1)
-			return 0; // read no char
-		if (ret == 0) // EOF
-			return -1;
-//eprintf ("(((%x)))\n", *buf);
+		if (ret == -1) return 0; // read no char
+		if (ret == 0) return -1; // eof
 		// TODO: add support for other invalid chars
+		if (*buf==0x1a) { // ^Z
+			kill (getpid (), SIGSTOP);
+		}
 		if (*buf==0xc2 || *buf==0xc3) {
 			read (0, buf+1, 1);
-//eprintf ("(((%x)))\n", buf[1]);
 			*buf = '\0';
 		}	
 	} while (*buf == '\0');
@@ -568,10 +567,18 @@ R_API char *r_line_readline() {
 				}
 				printf ("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
 			} else {
-				printf ("\r%s%s", I.prompt, I.buffer.data);
+				int chars = R_MAX (1, strlen (I.buffer.data)); // wtf?
+				int cols = R_MAX (1, columns - r_str_ansi_len (I.prompt)-2);
+				/* print line */
 				printf ("\r%s", I.prompt);
-				for (i=0; i<I.buffer.index; i++)
-					printf ("%c", I.buffer.data[i]);
+				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
+				/* place cursor */
+				printf ("\r%s", I.prompt);
+				if (I.buffer.index>cols) {
+					printf ("< ");
+					i = I.buffer.index-cols;
+				} else i=0;
+				fwrite (I.buffer.data+i, 1, I.buffer.index, stdout);
 			}
 			fflush (stdout);
 		}

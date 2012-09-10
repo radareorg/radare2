@@ -1,20 +1,10 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <stdio.h>
 #include <r_asm.h>
 
 R_API RAsmCode *r_asm_code_new() {
-	RAsmCode *acode = R_NEW (RAsmCode);
-	if (acode) {
-		acode->len = 0;
-		acode->equs = NULL;
-		acode->buf_asm = NULL;
-		acode->buf_hex = NULL;
-		acode->buf = NULL;
-		acode->code_offset = 0LL;
-		acode->data_offset = 0LL;
-	}
-	return acode;
+	return R_NEW0 (RAsmCode);
 }
 
 R_API void* r_asm_code_free(struct r_asm_code_t *acode) {

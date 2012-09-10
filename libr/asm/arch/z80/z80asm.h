@@ -45,13 +45,13 @@
 /* mnemonics. THESE MUST BE IN THE SAME ORDER AS const char *mnemonic[]! */
 enum mnemonic
 {
-  CALL, CPDR, CPIR, DJNZ, HALT, INDR, INIR, LDDR, LDIR, OTDR, OTIR, OUTD,
-  OUTI, PUSH, RETI, RETN, RLCA, RRCA, DEFB, DEFW, DEFS, DEFM,
-  ADC, ADD, AND, BIT, CCF, CPD, CPI, CPL, DAA, DEC, EQU, EXX, INC, IND, INI,
-  LDD, LDI, NEG, NOP, _OUT, POP, RES, RET, RLA, RLC, RLD, RRA, RRC, RRD, RST,
-  SBC, SCF, SET, SLA, SLL, SLI, SRA, SRL, SUB, XOR, ORG,
-  CP, DI, EI, EX, IM, _IN, JP, JR, LD, OR, RL, RR, DB, DW, DS, DM,
-  INCLUDE, INCBIN, IF, ELSE, ENDIF, END, MACRO, ENDM, SEEK
+  _CALL, _CPDR, _CPIR, _DJNZ, _HALT, _INDR, _INIR, _LDDR, _LDIR, _OTDR, _OTIR, _OUTD,
+  _OUTI, _PUSH, _RETI, _RETN, _RLCA, _RRCA, _DEFB, _DEFW, _DEFS, _DEFM,
+  _ADC, _ADD, _AND, _BIT, _CCF, _CPD, _CPI, _CPL, _DAA, _DEC, _EQU, _EXX, _INC, _IND, _INI,
+  _LDD, _LDI, _NEG, _NOP, _OUT, _POP, _RES, _RET, _RLA, _RLC, _RLD, _RRA, _RRC, _RRD, _RST,
+  _SBC, _SCF, _SET, _SLA, _SLL, _SLI, _SRA, _SRL, _SUB, _XOR, _ORG,
+  _CP, _DI, _EI, _EX, _IM, _IN, _JP, _JR, _LD, _OR, _RL, _RR, _DB, _DW, _DS, _DM,
+  _INCLUDE, _INCBIN, _IF, _ELSE, _ENDIF, _END, _MACRO, _ENDM, _SEEK
 };
 
 /* types of reference */
@@ -163,74 +163,6 @@ struct reference
   char *file;			/* filename (for error reporting) */
   char input[1];		/* variable size buffer containing formula */
 };
-
-#if 0
-/* global variables */
-/* mnemonics, used as argument to indx() in assemble */
-extern const char *mnemonics[];
-
-/* linked lists */
-extern struct reference *firstreference;
-extern struct label *firstlabel, *lastlabel;
-extern struct name *firstname;
-extern struct includedir *firstincludedir;
-extern struct macro *firstmacro;
-
-/* files */
-extern FILE *realoutputfile, *outfile, *reallistfile, *listfile, *labelfile;
-extern const char *realoutputfilename;
-extern const char *labelfilename;
-extern struct infile *infile;
-/* prefix for labels in labelfile */
-extern const char *labelprefix;
-/* bools to see if files are opened */
-extern int havelist, label;
-/* number of infiles in array */
-extern int infilecount;
-
-/* number of errors seen so far */
-extern int errors;
-
-/* current line, address and file */
-extern int addr, file;
-/* current number of characters in list file, for indentation */
-extern int listdepth;
-
-/* use readbyte instead of (hl) if writebyte is true */
-extern int writebyte;
-extern const char *readbyte;
-/* variables which are filled by rd_* functions and used later,
- * like readbyte */
-extern const char *readword, *indexjmp, *bitsetres;
-
-/* 0, 0xdd or 0xfd depening on which index prefix should be given */
-extern int indexed;
-
-/* increased for every -v option on the command line */
-extern int verbose;
-
-/* read commas after indx() if comma > 1. increase for every call */
-extern int comma;
-
-/* address at start of line (for references) */
-extern int baseaddr;
-
-/* set by readword and readbyte, used for new_reference */
-extern char mem_delimiter;
-
-/* line currently being parsed */
-extern char *buffer;
-
-/* if a macro is currently being defined */
-extern int define_macro;
-
-/* file (and macro) stack */
-extern int sp;
-extern struct stack stack[MAX_INCLUDE];	/* maximum level of includes */
-
-/* Produce output even with errors.  */
-extern int use_force;
-#endif
 
 /* print an error message, including current line and file */
 static void printerr (int error, const char *fmt, ...);

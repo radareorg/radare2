@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2006-2012 - pancake */
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
@@ -85,7 +85,7 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 	if (node) {
 		if (node->i_value != 0)
 			return node->i_value;
-		return (ut64)r_num_math (NULL, node->value);
+		return (ut64)r_num_math (cfg->num, node->value);
 	}
 	return (ut64)0LL;
 }
@@ -117,7 +117,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 	// TODO: store old value somewhere..
 	if (node) {
 		if (node->flags & CN_RO) {
-			eprintf ("(read only)\n");
+			eprintf ("(error: '%s' config key is read only)\n", name);
 			return node;
 		}
 		oi = node->i_value;
@@ -137,8 +137,8 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 				node->value = strdup (value);
 				if (*value>='0' && *value<='9') {
 					if (strchr (value, '/'))
-						node->i_value = r_num_get (NULL, value);
-					else node->i_value = r_num_math (NULL, value);
+						node->i_value = r_num_get (cfg->num, value);
+					else node->i_value = r_num_math (cfg->num, value);
 				} else node->i_value = 0;
 				node->flags |= CN_INT;
 			}
@@ -218,6 +218,7 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			if (i<1024) snprintf (buf, sizeof (buf), "%"PFMT64d"", i);
 			else snprintf (buf, sizeof (buf), "0x%08"PFMT64x"", i);
 			node = r_config_node_new (name, buf);
+			if (!node) return NULL;
 			node->flags = CN_RW | CN_OFFT;
 			node->i_value = i;
 			r_hashtable_insert (cfg->ht, node->hash, node);
@@ -241,7 +242,9 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 
 R_API int r_config_eval(RConfig *cfg, const char *str) {
 	char *ptr, *a, *b, name[1024];
-	int len = strlen (str)+1;
+	int len;
+	if (!str || !cfg) return R_FALSE;
+	len = strlen (str)+1;
 	if (len >=sizeof (name))
 		return R_FALSE;
 	memcpy (name, str, len);
@@ -288,6 +291,13 @@ R_API void r_config_lock(RConfig *cfg, int l) {
 	cfg->lock = l;
 }
 
+R_API int r_config_readonly (RConfig *cfg, const char *key) {
+	RConfigNode *n = r_config_node_get (cfg, key);
+	if (!n) return R_FALSE;
+	n->flags |= CN_RO;
+	return R_TRUE;
+}
+
 R_API RConfig *r_config_new(void *user) {
 	RConfig *cfg = R_NEW (RConfig);
 	if (cfg) {
@@ -295,6 +305,7 @@ R_API RConfig *r_config_new(void *user) {
 		cfg->nodes = r_list_new ();
 		cfg->nodes->free = free;
 		cfg->user = user;
+		cfg->num = NULL;
 		cfg->n_nodes = 0;
 		cfg->lock = 0;
 		cfg->printf = (void *)printf;

@@ -29,6 +29,18 @@ R_API ut64 r_sys_now(void) {
 	return ret;
 }
 
+R_API int r_sys_truncate(const char *file, int sz) {
+#if __WINDOWS__
+	int fd = open (file, O_RDWR);
+	if (!fd) return R_FALSE;
+	ftruncate (fd, sz);
+	close (fd);
+	return R_TRUE;
+#else
+	return truncate (file, sz)? R_FALSE: R_TRUE;
+#endif
+}
+
 R_API RList *r_sys_dir(const char *path) {
 	struct dirent *entry;
 	DIR *dir;
@@ -313,15 +325,12 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 	return R_FALSE;
 }
 #elif __WINDOWS__
+// TODO: fully implement the rest
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	// TODO: fully implement the rest
-	char *result;
+	char *result = r_sys_cmd_str_w32 (cmd);
 	if (len) *len = 0;
-	result = r_sys_cmd_str_w32 (cmd);
-	if (output)
-		*output = result;
-	if (result)
-		return R_TRUE;
+	if (output) *output = result;
+	if (result) return R_TRUE;
 	return R_FALSE;
 }
 #else
@@ -378,6 +387,7 @@ R_API int r_sys_rmkdir(const char *dir) {
 	int ret = R_TRUE;
 	char *path = strdup (dir), *ptr = path;
 	// XXX: Wrong for w32 (/).. and no errno ?
+	if (*ptr=='/') ptr++;
 	while ((ptr = strchr (ptr, '/'))) {
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {

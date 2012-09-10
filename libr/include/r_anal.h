@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // nibble<.ds@gmail.com> + pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - nibble, pancake, xvilka */
 
 #ifndef _INCLUDE_R_ANAL_H_
 #define _INCLUDE_R_ANAL_H_
@@ -39,26 +39,37 @@ typedef struct r_meta_t {
 
 /* CPARSE stuff */
 
+
+#define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
+#define R_ANAL_UNMASK_SIGN(x) (((x& R_ANAL_VAR_TYPE_SIGN_MASK)>> R_ANAL_VAR_TYPE_SIGN_SHIFT)==R_ANAL_TYPE_UNSIGNED)?0:1
+
 enum {
 	R_ANAL_TYPE_VARIABLE = 1,
 	R_ANAL_TYPE_POINTER = 2,
 	R_ANAL_TYPE_ARRAY = 3,
 	R_ANAL_TYPE_STRUCT = 4,
 	R_ANAL_TYPE_UNION = 5,
-	R_ANAL_TYPE_FUNCTION = 6,
-	R_ANAL_TYPE_ANY = 7,
+	R_ANAL_TYPE_ALLOCA = 6,
+	R_ANAL_TYPE_FUNCTION = 7,
+	R_ANAL_TYPE_ANY = 8,
 };
 
 // [0:3] bits - place to store variable size
 #define R_ANAL_VAR_TYPE_SIZE_MASK 0xF
 
 enum {
-	R_ANAL_VAR_TYPE_BYTE = 1,
-	R_ANAL_VAR_TYPE_WORD = 2,
-	R_ANAL_VAR_TYPE_DWORD = 3,
-	R_ANAL_VAR_TYPE_QWORD = 4,
-	R_ANAL_VAR_TYPE_FLOAT = 5,
-	R_ANAL_VAR_TYPE_DOUBLE = 6,
+	R_ANAL_VAR_TYPE_CHAR = 1,
+	R_ANAL_VAR_TYPE_BYTE = 2,
+	R_ANAL_VAR_TYPE_WORD = 3,
+	R_ANAL_VAR_TYPE_DWORD = 4,
+	R_ANAL_VAR_TYPE_QWORD = 5,
+	R_ANAL_VAR_TYPE_SHORT = 6,
+	R_ANAL_VAR_TYPE_INT = 7,
+	R_ANAL_VAR_TYPE_LONG = 8,
+	R_ANAL_VAR_TYPE_LONGLONG = 9,
+	R_ANAL_VAR_TYPE_FLOAT = 10,
+	R_ANAL_VAR_TYPE_DOUBLE = 11,
+	R_ANAL_VAR_TYPE_VOID = 12,
 };
 
 // [4:7] bits - place to store sign of variable
@@ -141,6 +152,13 @@ typedef struct r_anal_type_union_t {
 	RAnalType *items;
 } RAnalTypeUnion;
 
+typedef struct r_anal_type_alloca_t {
+	long address;
+	long size;
+	void *parent;
+	RAnalType *items;
+} RAnalTypeAlloca;
+
 enum {
 	R_ANAL_FQUALIFIER_NONE = 0,
 	R_ANAL_FQUALIFIER_STATIC = 1,
@@ -209,8 +227,8 @@ enum {
 #define R_ANAL_VARSUBS 32
 
 typedef struct r_anal_varsub_t {
-	char pat[1024];
-	char sub[1024];
+	char pat[128];
+	char sub[128];
 } RAnalVarSub;
 
 /*
@@ -247,6 +265,17 @@ typedef struct r_anal_diff_t {
 	char *name;
 } RAnalDiff;
 
+typedef struct r_anal_locals_t {
+	RAnalType *items;
+} RAnalLocals;
+
+typedef struct r_anal_attr_t RAnalAttr;
+struct r_anal_attr_t {
+	char *key;
+	long value;
+	RAnalAttr *next;
+};
+
 typedef struct r_anal_fcn_store_t {
 	RHashTable64 *h;
 	RList *l;
@@ -273,6 +302,7 @@ typedef struct r_anal_type_function_t {
 	int depth;
 	RAnalType *args; // list of arguments
 	RAnalVarSub varsubs[R_ANAL_VARSUBS];
+	RAnalLocals *locs; // list of local variables
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
 	RList *bbs;
@@ -291,13 +321,15 @@ struct r_anal_type_t {
 		RAnalTypeArray *a;
 		RAnalTypeStruct *s;
 		RAnalTypeUnion *u;
+		RAnalTypeAlloca *al;
 		RAnalFunction *f;
 	} custom;
 	RAnalType *next;
 	RAnalType *prev;
 	RAnalType *head;
+	// Parent filename
+	char* filename;
 };
-
 
 enum {
 	R_META_WHERE_PREV = -1,
@@ -593,14 +625,17 @@ R_API RAnalFunction *r_listrange_find_root(RListRange* s, ut64 addr);
 /* --------- */ /* REFACTOR */ /* ---------- */
 /* type.c */
 R_API RAnalType *r_anal_type_new();
-R_API void r_anal_type_add(RList *l, RAnalType *t);
-R_API void r_anal_type_del(RList *l, const char *name);
+R_API void r_anal_type_add(RAnal *l, RAnalType *t);
+R_API void r_anal_type_del(RAnal *l, const char *name);
 R_API RList *r_anal_type_list_new();
-R_API void r_anal_type_list(RList *l, short category, short enabled);
+R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
+R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
-R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t);
+R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
+R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value);
+R_API void r_anal_type_header (RAnal *anal, const char *hdr);
 
 /* anal.c */
 R_API RAnal *r_anal_new();
@@ -684,7 +719,7 @@ R_API RList *r_anal_var_access_list_new();
 R_API void r_anal_var_free(void *var);
 R_API void r_anal_var_access_free(void *access);
 R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope,
-		const RAnalType *type, const char *name, int set);
+		RAnalType *type, const char *name, int set);
 R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
 R_API RAnalVar *r_anal_var_get(RAnal *anal, RAnalFunction *fcn, int delta, int type);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);

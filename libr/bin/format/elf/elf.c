@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - nibble, pancake */
 // TODO: review the rest of strtab index out of range
 #include <stdio.h>
 #include <stdlib.h>
@@ -282,7 +282,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int i;
 	if (!bin->phdr) {
-		eprintf ("r_bin_elf: canot get_baddr() because no phdr found\n");
+		//eprintf ("r_bin_elf: canot get_baddr() because no phdr found\n");
 		return 0;
 	}
 	/* hopefully.. the first PT_LOAD is base */
@@ -442,6 +442,7 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 }
 
+// TODO: do not strdup here
 char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_machine) {
 	case EM_NONE:        return strdup ("No machine");
@@ -971,8 +972,14 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
-			if ((ret = realloc (ret, (ret_ctr + 1) * sizeof (struct r_bin_elf_symbol_t))) == NULL)
+			{
+			ut8 *p = realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
+			if (!p) {
+				free (ret);
 				return NULL;
+			}
+			ret = (struct r_bin_elf_symbol_t *) p;
+			}
 			ret[ret_ctr].last = 1; // ugly dirty hack :D
 			break;
 		}
@@ -1035,11 +1042,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 }
 
 struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new_buf)(struct r_buf_t *buf) {
-	struct Elf_(r_bin_elf_obj_t) *bin;
-// TODO: use R_NEW here
-	if (!(bin = malloc (sizeof (struct Elf_(r_bin_elf_obj_t)))))
-		return NULL;
-	memset (bin, 0, sizeof (struct Elf_(r_bin_elf_obj_t)));
+	struct Elf_(r_bin_elf_obj_t) *bin = R_NEW0 (struct Elf_(r_bin_elf_obj_t));
 	bin->b = buf;
 	bin->size = buf->length;
 	if (!Elf_(r_bin_elf_init) (bin))

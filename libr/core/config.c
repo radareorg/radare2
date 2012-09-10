@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <r_core.h>
 
@@ -60,6 +60,7 @@ static int config_iova_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (node->i_value != core->io->va) {
 		core->io->va = node->i_value;
+		r_core_block_read (core, 0);
 		// reload symbol information
 		r_core_cmd0 (core, ".ia*");
 	}
@@ -106,9 +107,10 @@ static int config_dbgbackend_callback(void *user, void *data) {
 static int config_cfgdebug_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
-	if (core && core->io)
+	if (!core) return R_FALSE;
+	if (core->io)
 		core->io->debug = node->i_value;
-	if (core && core->dbg && node->i_value) {
+	if (core->dbg && node->i_value) {
 		const char *dbgbackend = r_config_get (core->config, "dbg.backend");
 		r_debug_use (core->dbg, dbgbackend);
 		if (!strcmp (dbgbackend, "bf"))
@@ -134,7 +136,9 @@ static int config_analplugin_callback(void *user, void *data) {
 		r_anal_list (core->anal);
 		return R_FALSE;
 	} else if (!r_anal_use (core->anal, node->value)) {
-		eprintf ("Cannot use '%s' anal plugin.\n", node->value);
+		const char *aa = r_config_get (core->config, "asm.arch");
+		if (!aa || strcmp (aa, node->value))
+			eprintf ("anal.plugin: cannot find '%s'\n", node->value);
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -347,11 +351,22 @@ static int config_asmarch_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	const char *asmos = r_config_get (core->config, "asm.os");
-	// TODO: control error and restore old value (return false?) show errormsg?
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
-	r_config_set (core->config, "anal.plugin", node->value);
+	{
+		char asmparser[32];
+		snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
+		
+		r_config_set (core->config, "asm.parser", asmparser);
+	}
+	if (!r_config_set (core->config, "anal.plugin", node->value)) {
+		char *p, *s = strdup (node->value);
+		p = strchr (s, '.');
+		if (p) *p = 0;
+		r_config_set (core->config, "anal.plugin", s);
+		free (s);
+	}
 	if (!r_syscall_setup (core->anal->syscall, node->value,
 			asmos, core->anal->bits)) {
 		//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
@@ -366,12 +381,13 @@ static int config_asmparser_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	// XXX this is wrong? snprintf(buf, 127, "parse_%s", node->value),
-	r_parse_use (core->parser, node->value);
+	return r_parse_use (core->parser, node->value);
 	// TODO: control error and restore old value (return false?) show errormsg?
-	return R_TRUE;
+	//return R_TRUE;
 }
 
 static int config_asmbits_callback(void *user, void *data) {
+	const char *asmos, *asmarch;
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	int ret = r_asm_set_bits (core->assembler, node->i_value);
@@ -389,8 +405,9 @@ static int config_asmbits_callback(void *user, void *data) {
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
 	if (core->dbg  && core->anal && core->anal->cur)
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
-	const char *asmos = r_config_get (core->config, "asm.os");
-	const char *asmarch = r_config_get (core->config, "asm.arch");
+
+	asmos = r_config_get (core->config, "asm.os");
+	asmarch = r_config_get (core->config, "asm.arch");
 	if (core && core->anal)
 	if (!r_syscall_setup (core->anal->syscall, asmarch,
 			asmos, node->i_value)) {
@@ -421,11 +438,14 @@ static int config_pager_callback(void *user, void *data) {
 
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
+	int i;
+	char buf[128], *p;
 	RConfig *cfg = cfg = core->config = r_config_new (core);
-	char *p;
 	cfg->printf = r_cons_printf;
+	cfg->num = core->num;
 
-	//r_config_set (cfg, "dir.opcodes", R_ASM_OPCODES_PATH);
+	r_config_set (cfg, "dir.types", "/usr/include");
+	r_config_desc (cfg, "dir.types", "Default path to look for cparse type files");
 	r_config_set (cfg, "dir.source", "");
 	r_config_desc (cfg, "dir.source", "Path to find source files");
 	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
@@ -435,6 +455,8 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	r_config_set (cfg, "anal.prelude", "");
 	r_config_desc (cfg, "anal.prelude", "Specify an hexpair to find preludes in code");
+	r_config_set (cfg, "anal.hasnext", "true");
+	r_config_desc (cfg, "anal.hasnext", "Continue analysis after each function");
 	r_config_set_i (cfg, "anal.depth", 50); // XXX: warn if depth is > 50 .. can be problematic
 	r_config_desc (cfg, "anal.depth", "Max depth at code analysis");
 	r_config_set_i (cfg, "anal.ptrdepth", 3);
@@ -509,7 +531,7 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	r_config_set_cb (cfg, "cfg.bigendian", "true", &config_bigendian_callback);
 #endif
-	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes\n");
+	r_config_desc (cfg, "cfg.bigendian", "Use little (false) or big (true) endiannes");
 	r_config_set_cb (cfg, "cfg.debug", "false", &config_cfgdebug_callback);
 	r_config_desc (cfg, "cfg.debug", "set/unset the debugger mode");
 	r_config_set_cb (cfg, "cfg.datefmt", "%d:%m:%Y %H:%M:%S %z", &config_cfgdatefmt_callback);
@@ -520,8 +542,15 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.wseek", "Seek after write");
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);
 	r_config_desc (cfg, "cfg.hashlimit", "If the file its bigger than hashlimit don't calculate the hash");
+	/* diff */
+	r_config_set_i (cfg, "diff.from", 0);
+	r_config_desc (cfg, "diff.from", "set source diffing address for px (uses cc command)");
+	r_config_set_i (cfg, "diff.to", 0);
+	r_config_desc (cfg, "diff.to", "set destination diffing address for px (uses cc command)");
 	/* debug */
-	r_config_set_i (cfg, "dbg.follow", 32);
+	if (core->cons->rows>30) // HACKY
+		r_config_set_i (cfg, "dbg.follow", 64);
+	else r_config_set_i (cfg, "dbg.follow", 32);
 	r_config_desc (cfg, "dbg.follow", "Follow program counter when pc > core->offset + dbg.follow");
 	r_config_set_cb (cfg, "dbg.backend", "native", &config_dbgbackend_callback);
 	r_config_desc (cfg, "dbg.backend", "Select the debugger backend");
@@ -547,6 +576,20 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	free (p);
+	if (r_file_exists ("/usr/bin/htmlgraph.sh"))
+		r_config_set (cfg, "cmd.graph", "!htmlgraph.sh a.dot");
+	else
+	if (r_file_exists ("/usr/bin/xdot"))
+		r_config_set (cfg, "cmd.graph", "!xdot a.dot");
+	else
+	if (r_file_exists ("/usr/bin/open"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!open a.gif");
+	else
+	if (r_file_exists ("/usr/bin/gqview"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
+	else
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
+	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	r_config_set (cfg, "cmd.hit", "");
 	r_config_desc (cfg, "cmd.hit", "Command to execute on every search hit");
 	r_config_set (cfg, "cmd.open", "");
@@ -561,6 +604,26 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.vprompt", "Visual prompt commands");
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_desc (cfg, "cmd.bp", "Command to executed every breakpoint hitted");
+	r_config_set (cfg, "http.public", "false");
+	r_config_desc (cfg, "http.public", "set to true to listen on 0.0.0.0");
+#if __WINDOWS__
+	r_config_set (cfg, "http.browser", "start");
+#else
+	if (r_file_exists ("/system/bin/toolbox"))
+		r_config_set (cfg, "http.browser",
+			"LD_LIBRARY_PATH=/system/lib am start -a android.intent.action.VIEW -d");
+	else if (r_file_exists ("/usr/bin/xdg-open"))
+		r_config_set (cfg, "http.browser", "xdg-open");
+	else if (r_file_exists ("/usr/bin/open"))
+		r_config_set (cfg, "http.browser", "open");
+	else r_config_set (cfg, "http.browser", "firefox");
+#endif
+	r_config_desc (cfg, "http.browser", "command to open http urls");
+	r_config_set (cfg, "http.port", "9090");
+	r_config_desc (cfg, "http.root", "port to listen for http connections");
+	r_config_set (cfg, "http.root", WWWROOT);
+	r_config_desc (cfg, "http.root", "http root directory");
+
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
 	r_config_set_cb (cfg, "scr.sparse", "false", config_scrsparse_callback);
@@ -603,12 +666,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
 
-{
-	char buf[128];
 	sprintf (buf, "%d", R_CORE_BLOCKSIZE_MAX);
 	r_config_set_cb (cfg, "io.maxblk", buf, &config_iomaxblk_callback);
 	r_config_desc (cfg, "io.maxblk", "set max block size (soft limit)");
-}
 
 	r_config_set_cb (cfg, "io.ffio", "true", &config_ioffio_callback);
 	r_config_desc (cfg, "io.ffio", "fill invalid buffers with 0xff instead of returning error");
@@ -616,6 +676,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "io.va", "If enabled virtual address layout can be used");
 	r_config_set_cb (cfg, "io.cache", "false", &config_iocache_callback);
 	r_config_desc (cfg, "io.cache", "Enable cache for io changes");
+	r_config_set (cfg, "file.analyze", "false");
+	r_config_desc (cfg, "file.analyze", "Analyze file on load. Same as r2 -c aa ..");
 	r_config_set (cfg, "file.path", "");
 	r_config_desc (cfg, "file.path", "Path of current file");
 	r_config_set (cfg, "file.desc", "");
@@ -633,30 +695,20 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "rap.loop", "true");
 	r_config_desc (cfg, "rap.loop", "run rap as a forever-listening daemon");
 	/* fkeys */
-	r_config_set (cfg, "key.f1", "");
-	r_config_desc (cfg, "key.f1", "Commands executed when press F1 key in visual mode");
-	r_config_set (cfg, "key.f2", "dbs $$");
-	r_config_desc (cfg, "key.f2", "Commands executed when press F2 key in visual mode");
-	r_config_set (cfg, "key.f3", "");
-	r_config_desc (cfg, "key.f3", "Commands executed when press F3 key in visual mode");
-	r_config_set (cfg, "key.f4", "");
-	r_config_desc (cfg, "key.f4", "Commands executed when press F4 key in visual mode");
-	r_config_set (cfg, "key.f5", "");
-	r_config_desc (cfg, "key.f5", "Commands executed when press F5 key in visual mode");
-	r_config_set (cfg, "key.f6", "");
-	r_config_desc (cfg, "key.f6", "Commands executed when press F6 key in visual mode");
-	r_config_set (cfg, "key.f7", "ds");
-	r_config_desc (cfg, "key.f7", "Commands executed when press F7 key in visual mode");
-	r_config_set (cfg, "key.f8", "dso");
-	r_config_desc (cfg, "key.f8", "Commands executed when press F8 key in visual mode");
-	r_config_set (cfg, "key.f9", "dc");
-	r_config_desc (cfg, "key.f9", "Commands executed when press F9 key in visual mode");
-	r_config_set (cfg, "key.f10", "");
-	r_config_desc (cfg, "key.f10", "Commands executed when press F10 key in visual mode");
-	r_config_set (cfg, "key.f11", "");
-	r_config_desc (cfg, "key.f11", "Commands executed when press F11 key in visual mode");
-	r_config_set (cfg, "key.f12", "");
-	r_config_desc (cfg, "key.f12", "Commands executed when press F12 key in visual mode");
+	for (i=1; i<13; i++) {
+		snprintf (buf, sizeof (buf), "key.f%d", i);
+		snprintf (buf+10, sizeof (buf)-10,
+			"Run this when F%d key is pressed in visual mode", i);
+		switch (i) {
+		case 2: p = "dbs $$"; break;
+		case 7: p = "ds"; break;
+		case 8: p = "dso"; break;
+		case 9: p = "dc"; break;
+		default: p = ""; break;
+		}
+		r_config_set (cfg, buf, p);
+		r_config_desc (cfg, buf, buf+10);
+	}
 	/* zoom */
 	r_config_set_i (cfg, "zoom.maxsz", 512);
 	r_config_desc (cfg, "zoom.maxsz", "Zoom max size of block");
@@ -668,21 +720,14 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "zoom.byte", "Zoom specific callback to calculate each byte (See pZ? for help)");
 	/* TODO cmd */
 #if 0
-	config_set_i("asm.cmtmargin", 10); // show comments in disassembly
-	config_set_i("asm.cmtlines", 0); // show comments in disassembly
 	config_set("asm.section", "true");
 	config_set("asm.reladdr", "false"); // relative offset
-	config_set("asm.jmpflags", "false");
-
-	config_set("asm.flagsall", "true");
 	config_set("asm.functions", "true");
-	config_set("asm.lines", "true"); // show left ref lines
 	config_set_i("asm.nlines", 6); // show left ref lines
 	config_set("asm.lineswide", "false"); // show left ref lines
 	config_set("asm.trace", "false"); // trace counter
 	config_set("asm.split", "true"); // split code blocks
 	config_set("asm.splitall", "false"); // split code blocks
-	config_set("asm.xrefs", "xrefs");
 
 	// config_set("asm.follow", "");
 	config_set("cmd.wp", "");
@@ -698,7 +743,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("search.verbose", "true");
 
 	config_set("file.id", "false");
-	config_set("file.analyze", "false");
 	config_set("file.flag", "false");
 	config_set("file.trace", "trace.log");
 	config_set("file.project", "");
@@ -754,7 +798,6 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	config_set("cfg.addrmod", "4");
 #endif
-	config_set("cfg.rdbdir", "TODO");
 	config_set("cfg.datefmt", "%d:%m:%Y %H:%M:%S %z");
 	config_set_i("cfg.count", 0);
 	node = config_set_i("cfg.bsize", 512);
@@ -819,19 +862,6 @@ R_API int r_core_config_init(RCore *core) {
 	}
 	config_set("dir.monitor", ptr);
 
-	/* dir.spcc */
-	ptr = getenv("SPCCPATH");
-	if (ptr == NULL) {
-		sprintf(buf, "%s/.radare/spcc/", getenv("HOME"));
-		ptr = buf;
-	}
-	config_set("dir.spcc", ptr);
-
-	snprintf(buf, 1023, "%s/.radare/rdb/", getenv("HOME"));
-	config_set("dir.project", buf); // ~/.radare/rdb/
-	config_set("dir.tmp", get_tmp_dir());
-	config_set_cb ("fs.view", "normal");
-	config_set("graph.color", "magic");
 	config_set("graph.split", "false"); // split blocks // SHOULD BE TRUE, but true algo is buggy
 	config_set("graph.jmpblocks", "true");
 	config_set("graph.refblocks", "false"); // must be circle nodes
@@ -841,14 +871,6 @@ R_API int r_core_config_init(RCore *core) {
 	config_set("graph.offset", "true");
 	config_set("graph.render", "cairo");    // aalib/ncurses/text
 	config_set("graph.layout", "default");  // graphviz
-
-	config_set("scr.grephigh", "");
-	node = config_set("scr.buf", "false");
-	node->callback = &config_scrbuf_callback;
-	node = config_set_i("scr.width", config.width);
-	node->callback = &config_scrwidth;
-	node = config_set_i("scr.height", config.height);
-	node->callback = &config_scrheight;
 #endif
 	r_config_lock (cfg, R_TRUE);
 	return R_TRUE;

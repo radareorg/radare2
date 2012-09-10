@@ -1,7 +1,6 @@
-#BINDEPS=r_core
-#BIN=ragrep2
-#OBJ=ragrep2.o
+include ../../../global.mk
+
 .PHONY: all
 all:
 
-include ../../rules.mk
+include $(TOP)/libr/rules.mk

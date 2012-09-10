@@ -1,0 +1,241 @@
+<html>
+<head>
+	<title>r2w2</title>
+<!--
+	<meta content="yes" name="apple-mobile-web-app-capable" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+-->
+	<link rel=Stylesheet href="style.css" type="text/css" />
+<meta name="viewport" content="width=320px, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=false" />
+	<script src="script.js"></script>
+<script>
+function Ajax (method, uri, body, fn) {
+        var x = new XMLHttpRequest ();
+        x.open (method, uri, false);
+        x.onreadystatechange = function (y) {
+                if (fn) fn (x.responseText);
+        }
+        x.send (body);
+}
+
+function cmd(c, cb) {
+	Ajax ('GET', "/cmd/"+c, '', function (x) {
+		if (cb) cb (x);
+		else document.getElementById ('output').innerHTML = x;
+	});
+}
+
+function about() {
+	cmd ("?V", function (version) {
+		alert ("r2w v"+version);
+	});
+}
+
+function panel_functions_load() {
+	Ajax ('GET', "/cmd/afl", '', function (x) {
+		var arr = x.split ("\n");
+		x = ''
+		for (var i in arr) {
+			var line = arr[i].replace (/\s+/g,' ').split (' ');
+			var addr = line[0];
+			var name = line[3];
+			if (!addr) continue;
+			x += "<a onclick=\"cmd('pdr@"+addr+"')\">"+addr+"</a> "+name+"\n";
+		}
+		popup_show ("Functions", x);
+		document.getElementById('output').innerHTML = x;
+	});
+}
+
+var nl = "<br />";
+var nl2 = "<br /><br />";
+function show_popup_about () {
+	var txt =
+		"This is the r2w ui for radare2"+
+		"<br /><br />"+
+		"It runs on top of an embedded webserver in radare2. Here's some commands to try:"+nl2+
+		"<a href=\"javascript:cmd('!rax2 -s 20e296b20ae296b220e296b20a');popup_hide();\">triforce!</a>"+nl2+
+		"<a href=\"javascript:cmd('? '+prompt('expression'));popup_hide();\">calculator</a>"+nl2+
+		"<a href=\"javascript:cmd('s '+prompt('offset')+';pd');popup_hide();\">seek</a>"+nl2+
+		"<a href=\"javascript:cmd('b '+prompt('blocksize'));popup_hide();\">blocksize</a>"+nl2+
+		"<a href=\"javascript:panel_functions_load();popup_hide();\">list functions</a>"+nl2+
+		"<a href=\"javascript:cmd('pd');popup_hide();\">disassemble block</a>"+nl2+
+		"<a href=\"javascript:cmd('pdr');popup_hide();\">disassemble function</a>"+nl2+
+		"<a href=\"javascript:cmd('x');popup_hide();\">hexdump</a>"+nl2+
+		"<a href=\"javascript:cmd('af;aa;pd');popup_hide();\">analyze code</a>"+nl2+
+		"<a href=\"javascript:cmd('ap;pd');popup_hide();\">analyze preludes</a>"+nl2+
+		"";
+	popup_show ("Help", txt);
+}
+
+function show_popup_commands () {
+	var txt =
+		"<h3>Choose</h3>"+
+		"<a href=\"javascript:popup_hide();cmd('aa');\">full analyze</a><br />"+
+		"<a href=\"javascript:popup_hide();cmd('af');\">analyze function</a><br />"+
+		"<a href=\"javascript:popup_hide();cmd('afl');\">show functions</a><br />";
+	popup_show ("Commands", txt);
+}
+function handleKeyPress(e, form) {
+	var key = e.keyCode || e.which;
+	if (key==13) {
+		input_activate ();
+	}
+}
+
+function input_activate () {
+	var txt = document.getElementById('input').value;
+	if (txt.length == 0) show_popup_commands (); else
+	Ajax ('GET', '/cmd/'+txt, '', function (x) {
+		document.getElementById('output').innerHTML = x;
+		document.getElementById('input').value = '';
+	});
+}
+
+function css(selector, property, value) {
+	for (var i=0; i<document.styleSheets.length;i++) {
+		try {
+			document.styleSheets[i].insertRule (
+				selector+ ' {'+property+':'+value+'}',
+				document.styleSheets[i].cssRules.length);
+		} catch (err) {
+			try {
+				document.styleSheets[i].addRule(
+					selector, property+':'+value);
+			} catch(err) {}
+		}
+	}
+}
+window.onorientationchange = function() {
+	var header = document.getElementById ('header');
+	var orientation = window.orientation;
+	switch (orientation) {
+		case 0:
+			css('.header', 'width', '220px');
+			css('input', 'width', '320px');
+			css('.console', 'width', '320px');
+			document.body.setAttribute("class","portrait");
+			break; 
+		case 90:
+			css('.header', 'width', '480');
+			css('input', 'width', '460');
+			css('.console', 'width', '480');
+			document.body.setAttribute("class","landscape");
+			break;
+		case -90: 
+			css('.header', 'width', '480');
+			css('input', 'width', '460');
+			css('.console', 'width', '480');
+			document.body.setAttribute("class","landscape");
+			break;
+	}
+}
+
+function popup_hide () {
+	var p = document.getElementById ("popup");
+	var b = document.getElementById ("popup_background");
+	p.style.visibility="hidden";
+	b.style.visibility="hidden";
+}
+
+function popup_show (title, body) {
+	var p = document.getElementById ("popup");
+	var t = document.getElementById ("popup_title");
+	var c = document.getElementById ("popup_content");
+	var b = document.getElementById ("popup_background");
+	if (body) {
+		p.style.visibility="visible";
+		c.innerHTML = body;
+		b.style.visibility="visible";
+	}
+	if (title) {
+		t.innerHTML = title;
+	}
+}
+
+function init() {
+	var input = document.getElementById ('input');
+	input.addEventListener ("activate", function (x) {
+		input_activate();
+	}, false);
+}
+
+</script>
+</head>
+<body onload="init()">
+<div class=popup_background id="popup_background"></div>
+<div class=popup id="popup">
+<table>
+<tr>
+	<td style="text-align:left; width:100%">
+<div class=popup_title id="popup_title">
+Welcome to r2w2
+</div>
+</td><td style="text-align:right">
+	<input type="button" class="button" value="x" onclick="popup_hide()">
+	</td>
+</tr>
+<tr>
+	<td colspan=2>
+	<div class="popup_content" id="popup_content">
+This is the r2w2 ui. A rewrite in pure C/js of the original r2w written in python.
+<br /><br />
+This interface aims to run on every modern browser; from Android/iPhone/iPad to desktop browsers (Chromium, Firefox, ..)
+<br /><br />
+The UI is under heavy development. This is the first release and there will probably be lot of bugs and caveats. Feel free to report on <a href="http://github.com/radare/radare2">github</a> patches, ideas or bug reports.
+<br /><br />
+Enjoy!
+	</div>
+	</td>
+</tr>
+</table>
+</div>
+<table class=header>
+<tr>
+	<td style="text-align:left;width:100%;vertical-align:top">
+<table>
+<tr>
+<td>
+		<a href="javascript:show_popup_about ()"><img border=0 src="rlogo.png" /></a>
+</td>
+<td align="right">
+<!--
+</td>
+<td width="100%" style="text-align:right;vertical-align:middle">
+		<select onchange="about ();">
+			<option>actions</option>
+			<a href="javascript:cmd('aa;af');panel_functions_load()">analyze</a>
+			<option>analyze</option>
+			<option>analyze preludes</option>
+			<option>preferences</option>
+			<option>help</option>
+			<option>about</option>
+		</select>
+</td></tr></table>
+-->
+		<input onkeypress="handleKeyPress(event)" id="input">
+	</td>
+</tr>
+<tr>
+<!--
+<td height=100% width="100px" valign=top>
+<select onmouseover="panel_functions_load()">
+	<option>Functions</option>
+	<option>Symbols</option>
+	<option>Imports</option>
+	<option>Exports</option>
+</select>
+<p style='background-color:#c0c0c0; height:100%' id="panel">
+</p>
+</td>
+-->
+	<td valign=top colspan=2>
+		<div class="console">
+		<p id="output"></p>
+		</div>
+	</td>
+</tr>
+</table>
+</body>
+</html>
+

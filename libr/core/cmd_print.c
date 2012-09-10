@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
@@ -46,6 +46,19 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 	}
 	return ret;
 }
+
+R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
+	long int delta = 0;
+	int col = core->cons->columns>123;
+	ut8 *b = malloc (core->blocksize);
+	ut64 addr = core->offset;
+	memset (b, 0xff, core->blocksize);
+	delta = addr - from;
+	r_core_read_at (core, to+delta, b, core->blocksize);
+	r_print_hexdiff (core->print, core->offset, core->block, to+delta, b, core->blocksize, col);
+	free (b);
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int i, l, len = core->blocksize;
@@ -55,8 +68,9 @@ static int cmd_print(void *data, const char *input) {
 	/* TODO: Change also blocksize for 'pd'.. */
 	l = len;
 	if (input[0] && input[1]) {
-		if (input[2]) {
-			l = (int) r_num_math (core->num, input+(input[1]==' '?2:3));
+		const char *p = strchr (input, ' ');
+		if (p) {
+			l = (int) r_num_math (core->num, p+1);
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'm') {
 				if (l>0) len = l;
@@ -79,6 +93,7 @@ static int cmd_print(void *data, const char *input) {
 		if (f) len = f->size;
 		else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 	}
+	ptr = core->block;
 	core->num->value = len;
 	switch (*input) {
 	case '%':
@@ -114,7 +129,7 @@ static int cmd_print(void *data, const char *input) {
 			ut8 *p;
 			int psz, i = 0;
 			int fsz = core->file?core->file->size:0;
-			psz = fsz/core->blocksize;
+			psz = fsz / core->blocksize;
 			ptr = malloc (core->blocksize);
 			eprintf ("offset = num * %d\n", psz);
 			p = malloc (psz);
@@ -146,14 +161,17 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		r_print_fill (core->print, ptr, core->blocksize);
-if (ptr != core->block)
-free (ptr);
-		/* TODO: Reimplement using API */ {
-			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b 512 '%s'", core->file->filename);
+		if (ptr != core->block) {
+			free (ptr);
+#if 0
+			int bsize = 512;
+			/* TODO: Reimplement using API */
+			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b %d '%s'", bsize, core->file->filename);
 			if (out) {
 				r_cons_strcat (out);
 				free (out);
 			}
+#endif
 		}
 		break;
 	case 'b': {
@@ -209,7 +227,7 @@ free (ptr);
 			int j, ret, err = 0;
 			const ut8 *buf = core->block;
 			if (l==0) l = len;
-			for (i=j=0; i<core->blocksize && j<len; i+=ret,j++ ) {
+			for (i=j=0; i<core->blocksize && j<len && j<l; i+=ret,j++ ) {
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 				if (ret<1) {
 					ret = err = 1;
@@ -226,7 +244,7 @@ free (ptr);
 				int j, ret, err = 0;
 				const ut8 *buf = core->block;
 				if (l==0) l = len;
-				for (i=j=0; i<core->blocksize && j<len; i++,j++ ) {
+				for (i=j=0; i<core->blocksize && j<len && j<l; i++,j++ ) {
 					ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 					if (ret<1) {
 						ret = err = 1;
@@ -235,6 +253,32 @@ free (ptr);
 						core->offset+i, asmop.buf_hex, asmop.buf_asm);
 				}
 				return R_TRUE;
+			}
+			break;
+		case 'r':
+			{
+			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			if (f) {
+				RListIter *iter;
+				RAnalBlock *b;
+				// XXX: hack must be reviewed/fixed in code analysis
+				if (r_list_length (f->bbs) == 1) {
+					b = r_list_get_top (f->bbs);
+					if (b->size > f->size) b->size = f->size;
+				}
+				// TODO: sort by addr
+				r_list_foreach (f->bbs, iter, b) {
+					r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+					if (b->jump != UT64_MAX)
+						r_cons_printf ("--> 0x%08"PFMT64x"\n", b->jump);
+					if (b->fail != UT64_MAX)
+						r_cons_printf ("--> 0x%08"PFMT64x"\n", b->fail);
+					r_cons_printf ("--\n");
+					//eprintf ( "pD %"PFMT64d" @0x%"PFMT64x"\n", b->size, b->addr);
+				}
+			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			return R_TRUE;
 			}
 			break;
 		case 'b': {
@@ -278,14 +322,15 @@ free (ptr);
 			}
 			break;
 		case '?':
-			eprintf ("Usage: pd[f|i|l] [len] @ [addr]\n");
+			eprintf ("Usage: pd[f|i|l] [len] @ [addr]\n"
 			//TODO: eprintf ("  pdr  : disassemble resume\n");
-			eprintf ("  pda  : disassemble all possible opcodes (byte per byte)\n");
-			eprintf ("  pdb  : disassemble basic block\n");
-			eprintf ("  pdf  : disassemble function\n");
-			eprintf ("  pdi  : like 'pi', with offset and bytes\n");
-			eprintf ("  pdl  : show instruction sizes\n");
-return 0;
+			"  pda  : disassemble all possible opcodes (byte per byte)\n"
+			"  pdb  : disassemble basic block\n"
+			"  pdr  : recursive disassemble across the function graph\n"
+			"  pdf  : disassemble function\n"
+			"  pdi  : like 'pi', with offset and bytes\n"
+			"  pdl  : show instruction sizes\n");
+			return 0;
 			break;
 		}
 		//if (core->visual)
@@ -316,19 +361,54 @@ return 0;
 		}
 		break;
 	case 's':
-		if (input[1]=='p') {
+		switch (input[1]) {
+		case '?':
+			r_cons_printf ("Usage: ps[zpw] [N]\n"
+				" ps  = print string\n"
+				" psz = print zero terminated string\n"
+				" psp = print pascal string\n"
+				" psw = print wide string\n");
+			break;
+		case 'z':
+			{
+				char *s = malloc (core->blocksize+1);
+				int i, j;
+				if (s) {
+					memset (s, 0, core->blocksize);
+					// TODO: filter more chars?
+					for (i=j=0;i<core->blocksize; i++) {
+						char ch = (char)core->block[i];
+						if (!ch) break;
+						if (IS_PRINTABLE (ch))
+							s[j++] = ch;
+					}
+					r_cons_printf ("%s\n", s);
+					free (s);
+				}
+			}
+			break;
+		case 'p':
+			{
 			int mylen = core->block[0];
 			// TODO: add support for 2-4 byte length pascal strings
-			r_print_string (core->print, core->offset, core->block, mylen, 0, 1, 0); //, 78, 1);
-			core->num->value = mylen;
-		} else
-		if (input[1]==' ') {
+			if (mylen < core->blocksize) {
+				r_print_string (core->print, core->offset,
+					core->block, mylen, 0, 1, 0);
+				core->num->value = mylen;
+			} else core->num->value = 0; // error
+			}
+			break;
+		case 'w':
+			r_print_string (core->print, core->offset, core->block, len, 1, 1, 0);
+			break;
+		case ' ':
 			len = r_num_math (core->num, input+2);
-			r_print_string (core->print, core->offset, core->block, len, 0, 0, 0); //, 78, 1);
-		} else r_print_string (core->print, core->offset, core->block, len, 0, 1, 0); //, 78, 1);
-		break;
-	case 'S':
-		r_print_string (core->print, core->offset, core->block, len, 1, 1, 0); //, 78, 1);
+			r_print_string (core->print, core->offset, core->block, len, 0, 0, 0);
+			break;
+		default:
+			r_print_string (core->print, core->offset, core->block, len, 0, 1, 0);
+			break;
+		}
 		break;
 	case 'm':
 		if (input[1]=='?') {
@@ -349,7 +429,7 @@ return 0;
 		r_print_string (core->print, core->offset, core->block, len, 1, 1, 1); //, 78, 1);
 		break;
 	case 'c':
-		r_print_code (core->print, core->offset, core->block, len); //, 78, 1);
+		r_print_code (core->print, core->offset, core->block, len, input[1]); //, 78, 1);
 		break;
 	case 'r':
 		r_print_raw (core->print, core->block, len);
@@ -358,7 +438,15 @@ return 0;
 		r_print_hexdump (core->print, core->offset, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
 		break;
 	case 'x':
-		r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+		{
+		ut64 from = r_config_get_i (core->config, "diff.from");
+		ut64 to = r_config_get_i (core->config, "diff.to");
+		if (from == to && from == 0) {
+			r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+		} else {
+			r_core_print_cmp (core, from, to);
+		}
+		}
 		break;
 	case '6':
 		{
@@ -367,12 +455,12 @@ return 0;
 		memset (buf, 0, malen);
 		switch (input[1]) {
 		case 'e':
-			r_base64_encode (buf, core->block, core->blocksize);
+			r_base64_encode (buf, core->block, len); //core->blocksize);
 			printf ("%s\n", buf);
 			break;
 		case 'd':
-			if (r_base64_decode (buf, core->block, core->blocksize))
-				printf ("%s\n", buf);
+			if (r_base64_decode (buf, core->block, len))
+				r_cons_printf ("%s\n", buf);
 			else eprintf ("r_base64_decode: invalid stream\n");
 			break;
 		default:
@@ -432,10 +520,6 @@ return 0;
 		}
 		break;
 	case 'z':
-		eprintf ("TODO:0.9.2: pz (ascii and zero-terminated string)\n");
-		break;
-	case 'Z':
-		// TODO:0.9.2 zoom.byte changes does not take any effect
 		if (input[1]=='?') {
 			r_cons_printf (
 			"Usage: pZ [len]\n"
@@ -485,28 +569,26 @@ return 0;
 	default:
 		r_cons_printf (
 		"Usage: p[fmt] [len]\n"
-		" p=           show entropy bars of full file\n"
-		" p6[de] [len] base64 decode/encode\n"
-		" p8 [len]     8bit hexpair list of bytes\n"
-		" pb [len]     bitstream of N bytes\n"
-		" pi[f] [len]  show opcodes of N bytes\n"
-		" pd[lf] [l]   disassemble N opcodes (see pd?)\n"
-		" pD [len]     disassemble N bytes\n"
-		" p[w|q] [len] word (32), qword (64) value dump\n"
-		" po [len]     octal dump of N bytes\n"
-		" pc [len]     output C format\n"
-		" pf [fmt]     print formatted data\n"
-		" pm [magic]   print libmagic data (pm? for more information)\n"
-		" ps [len]     print string\n"
-		" psp          print pascal string\n"
-		" pS [len]     print wide string\n"
-		" pt [len]     print different timestamps\n"
-		" pr [len]     print N raw bytes\n"
-		" pu [len]     print N url encoded bytes\n"
-		" pU [len]     print N wide url encoded bytes\n"
-		" px [len]     hexdump of N bytes\n"
-		" pz [len]     print zero terminated ascii string\n"
-		" pZ [len]     print zoom view (see pZ? for help)\n");
+		" p=            show entropy bars of full file\n"
+		" p6[de] [len]  base64 decode/encode\n"
+		" p8 [len]      8bit hexpair list of bytes\n"
+		" pb [len]      bitstream of N bytes\n"
+		" pi[f] [len]   show opcodes of N bytes\n"
+		" pd[lf] [l]    disassemble N opcodes (see pd?)\n"
+		" pD [len]      disassemble N bytes\n"
+		" p[w|q] [len]  word (32), qword (64) value dump\n"
+		" po [len]      octal dump of N bytes\n"
+		" pc[p] [len]   output C (or python) format\n"
+		" pf [fmt]      print formatted data\n"
+		" pm [magic]    print libmagic data (pm? for more information)\n"
+		" ps [len]      print string\n"
+		" ps[pwz] [len] print pascal/wide/zero-terminated strings\n"
+		" pt [len]      print different timestamps\n"
+		" pr [len]      print N raw bytes\n"
+		" pu [len]      print N url encoded bytes\n"
+		" pU [len]      print N wide url encoded bytes\n"
+		" px [len]      hexdump of N bytes\n"
+		" pz [len]      print zoom view (see pz? for help)\n");
 		break;
 	}
 	if (tbs != core->blocksize)

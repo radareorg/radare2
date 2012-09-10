@@ -1,3 +1,5 @@
+ifeq (${_INCLUDE_MK_GCC_},)
+_INCLUDE_MK_GCC_=1
 CC?=gcc
 LINK=
 RANLIB=ranlib
@@ -29,3 +31,4 @@ LDFLAGS_SONAME=-Wl,-soname=
 endif
 
 CC_LIB=${CC} ${LDFLAGS_LIB} -o ${LIBSO}
+endif

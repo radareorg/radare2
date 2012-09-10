@@ -14,6 +14,7 @@
 typedef struct r_socket_t {
 	int fd;
 	int is_ssl;
+	int local; // TODO: merge ssl with local -> flags/options
 #if HAVE_LIB_SSL
 	SSL_CTX *ctx;
 	SSL *sfd;
@@ -68,5 +69,19 @@ R_API int r_socket_proc_ready (RSocketProc *sp, int secs, int usecs);
 /* HTTP */
 R_API char *r_socket_http_get (const char *url, int *code, int *rlen);
 R_API char *r_socket_http_post (const char *url, const char *data, int *code, int *rlen);
+
+typedef struct r_socket_http_request {
+	RSocket *s;
+	char *path;
+	char *host;
+	char *agent;
+	char *method;
+	ut8 *data;
+	int data_length;
+} RSocketHTTPRequest;
+
+R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s);
+R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int x);
+R_API void r_socket_http_close (RSocketHTTPRequest *rs);
 #endif
 #endif

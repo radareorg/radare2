@@ -11,18 +11,16 @@ PWD=`pwd`
 LIBLIST=util magic socket db cons line lib io lang flags bin hash config syscall
 LIBLIST+=cmd reg diff anal parse asm print search egg bp sign debug fs core th
 #DEPRECATED APIS : LIBLIST+=th crypto
-# sysproxy ... common wat du?
 
 all: libs
 
 libs:
 	@for lib in ${LIBLIST}; do \
-		cd $${lib} && ${MAKE} all || exit 1 ; cd .. ; done
+		cd $${lib} && ${MAKE} || exit 1 ; cd .. ; done
 	@echo Build done for: ${LIBLIST}
 
 pkgcfg:
 	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
-	# XXX
 	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBLIST}|sed -e 's, , r_,g'`"
 	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
 

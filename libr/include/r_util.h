@@ -45,6 +45,8 @@ typedef struct { } RSystem;
 typedef struct { } RLog;
 #define RStr char*
 
+typedef int (*RStrRangeCallback) (void *, int);
+
 typedef struct r_mem_pool_t {
 	ut8 **nodes;
 	int ncount;
@@ -99,13 +101,40 @@ typedef struct r_prof_t {
 } RProfile;
 
 /* numbers */
+#define R_NUMCALC_STRSZ 128
+
+typedef struct {
+	double d;
+	ut64 n;
+} RNumCalcValue;
+
+typedef enum {
+	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
+	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/',
+	//RNCXOR='^', RNCOR='|', RNCAND='&',
+	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')'
+} RNumCalcToken;
+
+typedef struct r_num_calc_t {
+	RNumCalcToken curr_tok;
+	RNumCalcValue number_value;
+	char string_value[R_NUMCALC_STRSZ];
+	int errors;
+	char oc;
+	const char *calc_err;
+	int calc_i;
+	const char *calc_buf;
+} RNumCalc;
+
 typedef struct r_num_t {
 	ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
 //	RNumCallback callback;
 	ut64 value;
 	double fvalue;
 	void *userptr;
+	RNumCalc nc;
 } RNum;
+
 typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
 
 typedef struct r_range_item_t {
@@ -235,7 +264,7 @@ R_API void r_file_mmap_free (RMmap *m);
 
 R_API RNum *r_num_new(RNumCallback cb, void *ptr);
 R_API ut64 r_num_calc (RNum *num, const char *str, const char **err);
-R_API const char *r_num_calc_index (const char *p);
+R_API const char *r_num_calc_index (RNum *num, const char *p);
 
 #define R_BUF_CUR -1
 R_API RBuffer *r_buf_new();
@@ -318,6 +347,7 @@ R_API int r_name_filter(char *name, int len);
 R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);
 R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len);
 /* strings */
+R_API void r_str_unescape (char *s);
 R_API void r_str_filter_zeroline(char *str, int len);
 R_API int r_str_write (int fd, const char *b);
 R_API void r_str_ncpy(char *dst, const char *src, int n);
@@ -329,7 +359,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g);
 R_API void r_str_cpy(char *dst, const char *src);
 R_API int r_str_bits (char *strout, const ut8 *buf, int len, const char *bitz);
 R_API int r_str_rwx(const char *str);
-R_API void r_str_subchr (char *s, int a, int b);
+R_API int r_str_replace_char (char *s, int a, int b);
 R_API const char *r_str_rwx_i(int rwx);
 R_API void r_str_writef(int fd, const char *fmt, ...);
 R_API char **r_str_argv(const char *str, int *_argc);
@@ -403,7 +433,7 @@ R_API char *r_file_slurp_random_line(const char *file);
 R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz);
 R_API boolt r_file_dump(const char *file, const ut8 *buf, int len);
 R_API boolt r_file_rm(const char *file);
-R_API boolt r_file_exist(const char *str);
+R_API boolt r_file_exists(const char *str);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
 R_API char *r_file_tmpdir();
@@ -433,6 +463,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 #if __WINDOWS__
 R_API char *r_sys_cmd_str_w32(const char *cmd);
 #endif
+R_API int r_sys_truncate(const char *file, int sz);
 R_API int r_sys_cmd(const char *cmd);
 R_API int r_sys_cmdf (const char *fmt, ...);
 R_API char *r_sys_cmd_str(const char *cmd, const char *input, int *len);
@@ -519,5 +550,19 @@ R_API void r_hashtable64_remove(RHashTable64 *ht, ut64 hash);
 R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v);
 R_API const ut8 *r_leb128 (const ut8 *data, st32 *v);
 #endif
+
+
+/* constr */
+typedef struct r_constr_t {
+	char *b;
+	int l;
+	int i;
+} RConstr;
+
+R_API RConstr* r_constr_new (int size);
+R_API void r_constr_free (RConstr *c);
+R_API const char *r_constr_get (RConstr *c, const char *str);
+R_API const char *r_constr_append (RConstr *c, const char *str);
+R_API const char *r_constr_add (RConstr *c, const char *str);
 
 #endif

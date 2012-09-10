@@ -1,6 +1,8 @@
 CFLAGS+=-I../../include -Wall -DWORDSIZE=64 ${PIC_CFLAGS} ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}.. -DCORELIB
 
 include ../../config.mk
+
+ifeq ($(WITHPIC),1)
 # on solaris only
 ifeq (${OSTYPE},solaris)
 CFLAGS+=-lsocket
@@ -34,3 +36,8 @@ mrproper: clean
 	-rm -f *.d
 
 .PHONY: all clean foo mrproper
+else
+clean all:
+
+.PHONY: all
+endif
