@@ -32,8 +32,8 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				d2 = strdup (d);
 				d2 = r_str_concat (d2, "/");
 				d2 = r_str_concat (d2, p+1);
-				snprintf (cmd, sizeof (cmd), "unzip -o -d '%s' '%s' '%s'",
-					d, str, p+1);
+				snprintf (cmd, sizeof (cmd), "unzip -o '%s' '%s' -d '%s'",
+					str, p+1, d);
 				if (system (cmd) == 0)
 					r_io_redirect (io, d2);
 				free (d2);
