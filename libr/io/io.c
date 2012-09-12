@@ -94,6 +94,7 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 		if (plugin && plugin->open) {
 			desc = plugin->open (io, uri, flags, mode);
 			if (io->redirect) {
+				// TODO: free desc if not null
 				free ((void *)uri);
 				uri = strdup (io->redirect);
 				r_io_redirect (io, NULL);

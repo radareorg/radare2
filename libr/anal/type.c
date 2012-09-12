@@ -217,6 +217,7 @@ R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep) {
 	return strdup (buf);
 }
 
+#if HAVE_CPARSE
 // TODO: Add types to RList instead or RAnalType
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
 	RAnalType *tTree = R_NEW0 (RAnalType);
@@ -302,6 +303,14 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	}
 	return tTree;
 }
+#else
+R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* type) {
+	return NULL;
+}
+R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
+	return NULL;
+}
+#endif
 
 /* if value is null, undefine, if value is "" , defined*/
 /* numeric values are parsed from strings */
