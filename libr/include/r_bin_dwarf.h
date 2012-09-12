@@ -122,9 +122,10 @@ typedef struct {
 	ut8 opcode_base;
 	ut32 oplentable[12];
 	const char **incdirs;
-	const char *file[16];
+	const char *file[128];
 	//RBinDwarfInfoHeader
 } RBinDwarfInfoHeader;
+#define R_BIN_DWARF_INFO_HEADER_FILE_LENGTH(x) (sizeof (x->file)/sizeof(*(x->file)))
 
 typedef struct {
 	ut64 address;

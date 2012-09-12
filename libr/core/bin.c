@@ -151,7 +151,6 @@ static int bin_dwarf (RCore *core, int mode) {
 			const char *path = row->file;
 			char *line = r_file_slurp_line (
 					path, row->line-1, 0);
-eprintf ("LINE =(%s)\n", path);
 			if (line) {
 				r_str_filter (line, strlen (line));
 				line = r_str_replace (line, "\"", "\\\"", 1);

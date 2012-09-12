@@ -53,7 +53,7 @@ R_API int r_bin_dwarf_parse_info_raw(const ut8 *obuf) {
 }
 
 static const ut8 *r_bin_dwarf_parse_header (const ut8 *buf, RBinDwarfInfoHeader *hdr) {
-	int count, i;
+	int count, i, imax, oops;
 	hdr->total_length = READ (buf, ut32);
 	hdr->version = READ (buf, ut16);
 	hdr->plen = READ (buf, ut32); // end of payload is buf + plen
@@ -99,7 +99,8 @@ static const ut8 *r_bin_dwarf_parse_header (const ut8 *buf, RBinDwarfInfoHeader 
 		- leb128 with last modification time
 		- uleb128 with length of file
 #endif
-	i = 0;
+	oops = i = 0;
+	imax = R_BIN_DWARF_INFO_HEADER_FILE_LENGTH(hdr);
 	while (*buf) {
 		const char *filename = (const char *)buf;
 		ut32 didx, flen;
@@ -114,16 +115,21 @@ static const ut8 *r_bin_dwarf_parse_header (const ut8 *buf, RBinDwarfInfoHeader 
 		buf = r_leb128 (buf, &tmod);
 		buf = r_uleb128 (buf, &flen);
 		D0 eprintf ("FILE (%s)\n", filename);
-		hdr->file[i++] = filename;
 		D0 eprintf ("| dir idx %d\n", didx);
 		D0 eprintf ("| lastmod %d\n", tmod);
 		D0 eprintf ("| filelen %d\n", flen);
+		if (i>=imax) {
+			// TODO remove any limit
+			if (!oops)
+				eprintf ("r_bin_dwarf: too many referenced files in dwarf header\n");
+			oops = 1;
+		} else hdr->file[i++] = filename;
 	}
 	hdr->file[i] = 0;
 	return buf;
 }
 
-R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, RList *list) {
+R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, int len, RList *list) {
 	RBinDwarfInfoHeader hdr;
 	ut64 address = 0;
 	int line = 1;
@@ -139,6 +145,8 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, RList *list) {
 	code = obuf+hdr.total_length;
 
 	buf_end = obuf + hdr.total_length;
+	// XXX
+	buf_end = obuf+len;
 	while (buf < buf_end) {
 		opcode = *buf++;
 		if (opcode == 0) {
@@ -327,7 +335,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a) {
 		len = section->size;
 		buf = malloc (len);
 		r_buf_read_at (a->cur.buf, section->offset, buf, len);
-		r_bin_dwarf_parse_line_raw (buf, list);
+		r_bin_dwarf_parse_line_raw (buf, len, list);
 		free (buf);
 		return list;
 	}
