@@ -33,7 +33,7 @@ namespace Radare {
 		public static int hash(string str);
 		public static int write(int fd, string str);
 		public static int rwx(string str);
-		public static void subchr(ref string str, int a, int b);
+		public static int replace_char (ref string str, int a, int b);
 		//public static string @bool(bool b);
 		public static int ansi_len(string str);
 		public static int ansi_filter(ref string str, int len);
@@ -50,7 +50,7 @@ namespace Radare {
 		public static int dump(string file, uint8 *buf, int len);
 		public static unowned string basename (string path);
 		public static string abspath(string path);
-		public static bool exist (string file);
+		public static bool exists (string file);
 		public static bool slurp_line (string file, int line, int ctx);
 
 	}

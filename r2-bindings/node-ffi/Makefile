@@ -1,4 +1,5 @@
 LANG=node-ffi
+MODVER=$(shell node -e 'console.log(JSON.parse(require("fs").readFileSync("package.json"))["version"])')
 LANG_EXT=js
 LIBS_PFX=
 FORCE_SOEXT=1
@@ -12,6 +13,10 @@ include ../rules.mk
 node_modules:
 	npm install
 
-npm: clean
+npm publish: clean
 	${MAKE}
 	npm publish
+
+unpublish: clean
+	${MAKE}
+	npm unpublish @${MODVER}

@@ -141,7 +141,7 @@ System types:
 EOF2
 
 printf "\nOptional Features:
-  --disable-devel        Enable development mode (use valabind and swig) 
+  --disable-devel        development mode (use valabind and swig) 
   --with-cc              Define C compiler to use (gcc by default)  (USERCC=gcc)
   --with-cxx             Define C++ compiler to use (g++ by default)  (USERCXX=g++)
   --with-ostype          Choose OS type (gnulinux windows darwin)  (USEROSTYPE=auto)\n"

@@ -55,6 +55,7 @@ typedef struct r_oflist_t {
 #define r_list_iter_free(x) x
 #endif
 R_API RList *r_list_new();
+//R_API void r_list_iter_free (RListIter *x);
 R_API RListIter *r_list_iter_get_next(RListIter *list);
 R_API void *r_list_iter_get_data(RListIter *list);
 R_API RListIter *r_list_append(RList *list, void *data);

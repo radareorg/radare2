@@ -65,6 +65,7 @@ namespace Radare {
 			LT
 		}
 
+/*
 		[CCode (cname="int", cprefix="R_ANAL_VAR_TYPE_")]
 		public enum VarClass {
 			NULL,
@@ -73,6 +74,7 @@ namespace Radare {
 			ARG,
 			ARGREG
 		}
+*/
 
 		[CCode (cname="int", cprefix="R_ANAL_FCN_TYPE_")]
 		public enum FunctionType {

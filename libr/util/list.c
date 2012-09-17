@@ -10,6 +10,10 @@ inline RListIter *r_list_iter_new () {
 	return malloc (sizeof (RListIter));
 }
 
+void r_list_iter_free (RListIter *list) {
+	/* do nothing? */
+}
+
 RListIter *r_list_iter_get_next(RListIter *list) {
 	return list->n;
 }
