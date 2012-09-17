@@ -17,7 +17,7 @@ control_c() {
   exit 1
 }
 trap control_c 2
-DEVEL_MODE=0
+DEVEL_MODE=1
 [ -z "${USERCC}" ] && USERCC="gcc"
 [ -z "${USERCXX}" ] && USERCXX="g++"
 [ -z "${USEROSTYPE}" ] && USEROSTYPE="auto"
@@ -141,7 +141,7 @@ System types:
 EOF2
 
 printf "\nOptional Features:
-  --enable-devel         Enable development mode (use valabind and swig) 
+  --disable-devel        Enable development mode (use valabind and swig) 
   --with-cc              Define C compiler to use (gcc by default)  (USERCC=gcc)
   --with-cxx             Define C++ compiler to use (g++ by default)  (USERCXX=g++)
   --with-ostype          Choose OS type (gnulinux windows darwin)  (USEROSTYPE=auto)\n"
@@ -198,7 +198,7 @@ echo "PKGNAME:   radare2-bindings"
 echo "VERSION:   0.9.1git"
 echo "LANGS:     c c++"
 echo "PKG-CONFIG:  r_core"
-echo "FLAGS:     --enable-devel --with-cc=gcc --with-cxx=g++ --with-ostype=auto"
+echo "FLAGS:     --disable-devel --with-cc=gcc --with-cxx=g++ --with-ostype=auto"
 	exit 0
 	;;
 "--cache-file") 
@@ -240,7 +240,7 @@ echo "FLAGS:     --enable-devel --with-cc=gcc --with-cxx=g++ --with-ostype=auto"
 "--mandir")
 	MANDIR="$value"; ;;
 
-"--enable-devel") DEVEL_MODE="1"; ;;
+"--disable-devel") DEVEL_MODE="0"; ;;
 --with-cc) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-cxx) if [ -z "${value}" ]; then USERCXX="g++"; else USERCXX="${value}" ; fi ;;
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
