@@ -347,7 +347,7 @@ static int cmd_print(void *data, const char *input) {
 					r_list_foreach (bwdhits, iter, hit) {
 						r_core_read_at (core, hit->addr, block, core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
-							core, hit->addr, block, core->blocksize, l, 1);
+							core, hit->addr, block, core->blocksize, l, 0);
 						r_cons_printf ("------\n");
 					}
 					r_list_free (bwdhits);
