@@ -4,20 +4,6 @@ LDFLAGS+= -g -ggdb
 #CFLAGS+=-DOLDFMT=1
 OBJ=alloc.o cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o lock.o
 OBJ+=json.o json/js0n.o json/json.o json/rangstr.o ns.o
-# This is hacky
-OS=$(shell uname)
-ARCH=$(shell uname -m)
-ifeq (${OS},Darwin)
-SOEXT=dylib
-LDFLAGS+=-dynamic
- ifeq (${ARCH},i386)
-   CC+=-arch i386 -arch x86_64
- endif
-else
-SOEXT=so
-endif
-RANLIB?=ranlib
-EXEXT=
 
 BIN=sdb${EXEXT}
 
@@ -52,7 +38,10 @@ t:
 	./sdb foo
 	./sdb foo a
 
-test:
+tdd test:
+	sh tdd.sh
+
+xxx:
 	rm -f foo
 	./sdb foo a=3
 	valgrind ./sdb foo a

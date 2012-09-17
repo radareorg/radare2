@@ -1,4 +1,5 @@
 include config.mk
+VALADIR=bindings/vala
 
 PWD=$(shell pwd)
 PFX=${DESTDIR}${PREFIX}
@@ -8,8 +9,8 @@ all: src/sdb-version.h
 	cd src && ${MAKE}
 	cd memcache && ${MAKE}
 ifneq (${HAVE_VALA},)
-	cd vala && ${MAKE}
-	cd vala/types && ${MAKE}
+	cd ${VALADIR} && ${MAKE}
+	cd ${VALADIR}/types && ${MAKE}
 endif
 
 src/sdb-version.h:
@@ -20,7 +21,7 @@ clean:
 	cd src && ${MAKE} clean
 	cd memcache && ${MAKE} clean
 	cd test && ${MAKE} clean
-	cd vala && ${MAKE} clean
+	cd ${VALADIR} && ${MAKE} clean
 
 dist:
 	rm -f sdb-${VERSION}.tar.gz
@@ -51,12 +52,12 @@ install: install-dirs
 	cp -f memcache/mcsdb.h ${PFX}/include/sdb
 	cp -f memcache/mcsdbd ${PFX}/bin
 	cp -f memcache/mcsdbc ${PFX}/bin
-	cp -f vala/sdb.pc ${PFX}/lib/pkgconfig
-	cp -f vala/mcsdb.pc ${PFX}/lib/pkgconfig
+	cp -f ${VALADIR}/sdb.pc ${PFX}/lib/pkgconfig
+	cp -f ${VALADIR}/mcsdb.pc ${PFX}/lib/pkgconfig
 ifneq (${HAVE_VALA},)
-	cp -f vala/sdb.vapi ${PFX}/share/vala/vapi
-	cp -f vala/mcsdb.vapi ${PFX}/share/vala/vapi
-	cd vala/types && ${MAKE} install PFX=${PFX}
+	cp -f ${VALADIR}/sdb.vapi ${PFX}/share/vala/vapi
+	cp -f ${VALADIR}/mcsdb.vapi ${PFX}/share/vala/vapi
+	cd ${VALADIR}/types && ${MAKE} install PFX=${PFX}
 endif
 
 deinstall uninstall:
@@ -71,7 +72,7 @@ deinstall uninstall:
 ifneq (${HAVE_VALA},)
 	rm -f ${PFX}/share/vala/vapi/sdb.vapi 
 	rm -f ${PFX}/share/vala/vapi/mcsdb.vapi 
-	cd vala/types && ${MAKE} uninstall PFX=${PFX}
+	cd ${VALADIR}/types && ${MAKE} uninstall PFX=${PFX}
 endif
 
 symstall: install-dirs
@@ -93,7 +94,7 @@ ifneq (${HAVE_VALA},)
 	ln -fs ${PWD}/vala/mcsdb.vapi ${PFX}/share/vala/vapi
 	ln -fs ${PWD}/vala/sdb.vapi ${PFX}/share/vala/vapi
 	ln -fs ${PWD}/vala/mcsdb.vapi ${PFX}/share/vala/vapi
-	cd vala/types && ${MAKE} symstall PFX=${PFX}
+	cd ${VALADIR}/types && ${MAKE} symstall PFX=${PFX}
 endif
 
-.PHONY: all vala clean dist install uninstall deinstall
+.PHONY: all ${VALADIR} clean dist install uninstall deinstall

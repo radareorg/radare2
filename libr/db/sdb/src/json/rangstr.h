@@ -22,5 +22,6 @@ Rangstr rangstr_news (const char *s, ut16 *res, int i);
 int rangstr_cmp (Rangstr *a, Rangstr *b);
 const char *rangstr_str (Rangstr* rs);
 int rangstr_length (Rangstr* rs);
+int rangstr_find (Rangstr* rs, char ch);
 
 #endif

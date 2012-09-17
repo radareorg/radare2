@@ -148,7 +148,7 @@ char *sdb_json_indent(const char *s) {
                 case ',':
                         *o++ = *s;
                         *o++ = '\n';
-                        INDENT(0);
+                        INDENT (0);
                         break;
                 case '{':
                 case '[':

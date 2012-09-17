@@ -62,64 +62,8 @@ static void createdb(const char *f) {
 	sdb_finish (s);
 }
 
-static void runline (Sdb *s, const char *cmd) {
-	ut64 n;
-	char *p, *eq;
-	switch (*cmd) {
-	case '+': // inc
-		if ((eq = strchr (cmd+1, '?'))) {
-			*eq = 0;
-			n = sdb_json_inc (s, cmd+1, eq+1, 1, 0);
-			save = 1;
-			printf ("%"ULLFMT"d\n", n);
-		} else {
-			n = sdb_inc (s, cmd+1, 1, 0);
-			save = 1;
-			printf ("%"ULLFMT"d\n", n);
-		}
-		break;
-	case '-': // dec
-		if ((eq = strchr (cmd+1, '?'))) {
-			*eq = 0;
-			n = sdb_json_dec (s, cmd+1, eq+1, 1, 0);
-			save = 1;
-			printf ("%"ULLFMT"d\n", n);
-		} else {
-			n = sdb_inc (s, cmd+1, -1, 0);
-			save = 1;
-			printf ("%"ULLFMT"d\n", n);
-		}
-		break;
-	default:
-		/* spaghetti */
-		if ((eq = strchr (cmd, '?'))) {
-			char *path = eq+1;
-			*eq = 0;
-			if ((eq = strchr (path+1, '='))) {
-				save = 1;
-				*eq = 0;
-				sdb_json_set (s, cmd, path, eq+1, 0);
-			} else
-			if ((p = sdb_json_get (s, cmd, path, 0))) {
-				printf ("%s\n", p);
-				free (p);
-			}
-		} else {
-			if ((eq = strchr (cmd, '='))) {
-				save = 1;
-				*eq = 0;
-				sdb_set (s, cmd, eq+1, 0);
-			} else
-			if ((p = sdb_get (s, cmd, 0))) {
-				printf ("%s\n", p);
-				free (p);
-			}
-		}
-	}
-}
-
 static void showusage(int o) {
-	printf ("usage: sdb [-v|-h] [file.db] [-=]|[key[=value] ..]\n");
+	printf ("usage: sdb [-v|-h] [file.db] [-=]|[-+][key[?path|=value] ..]\n");
 	exit (o);
 }
 
@@ -161,12 +105,13 @@ int main(int argc, char **argv) {
 				if (feof (stdin))
 					break;
 				line[strlen (line)-1] = 0;
-				runline (s, line);
+				save = sdb_query (s, line);
 			}
 	} else
-	if ((s = sdb_new (argv[1], 0)))
+	if ((s = sdb_new (argv[1], 0))) {
 		for (i=2; i<argc; i++)
-			runline (s, argv[i]);
+			save = sdb_query (s, argv[i]);
+	}
 	terminate (0);
 	return 0;
 }

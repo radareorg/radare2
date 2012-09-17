@@ -70,19 +70,21 @@ int json_walk (const char *s) {
 }
 
 Rangstr json_find (const char *s, Rangstr *rs) {
-	unsigned short resfix[512];
+#define RESFIXSZ 512
+	unsigned short resfix[RESFIXSZ];
 	unsigned short *res = NULL;
 	int i, j, n, len, ret;
 	Rangstr rs2;
 
 	if (!s) return rangstr_null ();
 	len = strlen (s);
-	if (len<512)
-		res = resfix;
-	else res = malloc (len);
+	res = (len<RESFIXSZ)? resfix: malloc (len);
 	ret = js0n ((unsigned char *)s, len, res);
-	if (ret>0) return rangstr_null ();
 #define PFREE(x) if (x&&x!=resfix) free (x)
+	if (ret>0) {
+		PFREE (res);
+		return rangstr_null ();
+	}
 	if (*s=='[') {
 		n = rangstr_int (rs);
 		n++;
@@ -108,15 +110,49 @@ beach:
 }
 
 Rangstr json_get (const char *js, const char *p) {
+	int x, rst, n = 0;
+	Rangstr rj2 = {0};
 	Rangstr rj = rangstr_new (js);
 	Rangstr rs = rangstr_new (p);
 	json_path_first (&rs);
-	//len = rs.t;
-	do { 
-		rj = json_find (rangstr_str (&rj), &rs);
-		//if (!rs.p || !rs.p[rs.t]) // HACK to fix path_next()
-		//	break;
-	} while (json_path_next (&rs));
+	do {
+		rst = rs.t;
+		rs.f++;
+		x = rangstr_find (&rs, '[');
+		rs.f--;
+		if (x != -1)
+			rs.t = x;
+#if 0
+printf ("x = %d f = %d t = %d\n", x, rs.f, rs.t);
+fprintf (stderr, "source (%s)\n", rangstr_dup (&rs));
+fprintf (stderr, "onjson (%s)\n", rangstr_dup (&rj));
+#endif
+		if (rst == rs.t && n && rj.p)  // last key
+			break;
+		if (!rj.p) break;
+		do {
+			rj2 = json_find (rangstr_str (&rj), &rs);
+//fprintf (stderr, "++ (%s)(%d vs %d)\n", rangstr_dup (&rs), x, rs.t);
+//if (rj.p[rj.f]=='[') { break; }
+//fprintf (stderr, "ee %c\n", rj.p[rj.f]);
+			if (!rj2.p) break;
+			rj = rj2;
+#if 0
+fprintf (stderr, "--  (%s)\n", rangstr_dup (&rj));
+#endif
+		} while (json_path_next (&rs));
+//if (!rj.p) return rj;
+#if 0
+printf ("x = %d\n", x); printf ("rsf = %d\n", rs.f);
+fprintf (stderr, "xxx (%s)\n", rangstr_dup (&rj));
+return rj;
+#endif
+		if ((rst == rs.t && n && rj.p))  // last key
+			break;
+		rs.t = rst;
+		rs.f = x;
+		n++;
+	} while (x != -1);
 	return rj;
 }
 

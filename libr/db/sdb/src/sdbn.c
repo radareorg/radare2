@@ -50,7 +50,8 @@ ut64 sdb_inc(Sdb *s, const char *key, ut64 n2, ut32 cas) {
 		return 0LL;
 	if (-n2<n)
 		return 0LL;
-	sdb_setn (s, key, n+n2, cas);
+	n += n2;
+	sdb_setn (s, key, n, cas);
 	return n;
 }
 
@@ -63,6 +64,7 @@ ut64 sdb_dec(Sdb *s, const char *key, ut64 n2, ut32 cas) {
 		sdb_set (s, key, "0", cas);
 		return 0LL; // XXX must be -1?
 	}
-	sdb_setn (s, key, n-n2, cas);
+	n -= n2;
+	sdb_setn (s, key, n, cas);
 	return n;
 }

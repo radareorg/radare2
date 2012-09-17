@@ -1,3 +1,4 @@
+include ../../config.mk
 CFLAGS+=-Wall -g -ggdb
 BIN=a.out
 OBJ=rangstr.o json.o js0n.o api.o main.o
@@ -10,6 +11,9 @@ ${BIN}: ${OBJ}
 
 clean:
 	rm -f ${OBJ} ${BIN}
+
+../libsdb.a:
+	cd .. ; ${MAKE} libsdb.a
 
 mrproper: clean
 	rm -rf js0n

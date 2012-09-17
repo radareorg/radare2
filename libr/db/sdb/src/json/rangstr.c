@@ -72,6 +72,12 @@ int rangstr_cmp (Rangstr *a, Rangstr *b) {
 	return memcmp (a->p+a->f, b->p+b->f, la);
 }
 
+int rangstr_find (Rangstr* a, char ch) {
+	int i = a->f;
+	while (a->p[i] && i<a->t && a->p[i] != ch) i++;
+	return a->p[i]? i: -1;
+}
+
 const char *rangstr_str (Rangstr* rs) {
 	return rs->p + rs->f;
 }

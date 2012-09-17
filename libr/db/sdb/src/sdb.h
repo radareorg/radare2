@@ -52,10 +52,12 @@ void sdb_free (Sdb* s);
 void sdb_file (Sdb* s, const char *dir);
 void sdb_reset (Sdb *s);
 
+int sdb_query (Sdb *s, const char *cmd);
 int sdb_exists (Sdb*, const char *key);
 int sdb_nexists (Sdb*, const char *key);
-int sdb_delete (Sdb*, const char *key, ut32 cas);
+int sdb_remove (Sdb*, const char *key, ut32 cas);
 char *sdb_get (Sdb*, const char *key, ut32 *cas);
+const char *sdb_getc (Sdb*, const char *key, ut32 *cas);
 int sdb_set (Sdb*, const char *key, const char *data, ut32 cas);
 int sdb_add (Sdb *s, const char *key, const char *val, ut32 cas);
 void sdb_list(Sdb*);
