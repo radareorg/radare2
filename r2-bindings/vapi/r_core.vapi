@@ -171,7 +171,5 @@ public uint64 inc;
 	public int seek_delta(int64 addr);
 
 	public bool bin_load(string? file);
-	public void bin_set(RBin b);
-
 }
 }

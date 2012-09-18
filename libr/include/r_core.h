@@ -222,7 +222,6 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak);
 
 R_API int r_core_bin_load(RCore *core, const char *file);
-R_API void r_core_bin_set(RCore *r, RBin *b);
 R_API int r_core_hash_load(RCore *core, const char *file);
 
 /* gdiff.c */
