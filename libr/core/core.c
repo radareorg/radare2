@@ -957,3 +957,4 @@ R_API char *r_core_editor (RCore *core, const char *str) {
 /* weak getters */
 R_API RCons *r_core_get_cons (RCore *core) { return core->cons; }
 R_API RConfig *r_core_get_config (RCore *core) { return core->config; }
+R_API RBin *r_core_get_bin (RCore *core) { return core->bin; }

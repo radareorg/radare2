@@ -151,9 +151,11 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 				node->flags|=CN_BOOL;
 				node->i_value = (!strcmp (value, "true"))? 1: 0;
 			}
-			r_hashtable_insert (cfg->ht, node->hash, node);
-			r_list_append (cfg->nodes, node);
-			cfg->n_nodes++;
+			if (cfg->ht) {
+				r_hashtable_insert (cfg->ht, node->hash, node);
+				r_list_append (cfg->nodes, node);
+				cfg->n_nodes++;
+			}
 		} else eprintf ("config is locked: cannot create '%s'\n", name);
 	}
 
@@ -221,9 +223,11 @@ R_API RConfigNode *r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 			if (!node) return NULL;
 			node->flags = CN_RW | CN_OFFT;
 			node->i_value = i;
-			r_hashtable_insert (cfg->ht, node->hash, node);
-			r_list_append (cfg->nodes, node);
-			cfg->n_nodes++;
+			if (cfg->ht) r_hashtable_insert (cfg->ht, node->hash, node);
+			if (cfg->nodes) {
+				r_list_append (cfg->nodes, node);
+				cfg->n_nodes++;
+			}
 		} else eprintf ("(locked: no new keys can be created (%s))\n", name);
 	}
 

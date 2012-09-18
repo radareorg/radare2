@@ -73,6 +73,8 @@ typedef struct r_core_asmsteps_t {
 } RCoreAsmsteps;
 
 typedef struct r_core_t {
+	RBin *bin;
+	RConfig *config;
 	ut64 offset;
 	ut32 blocksize;
 	ut32 blocksize_max;
@@ -95,17 +97,16 @@ typedef struct r_core_t {
 	RNum *num;
 	RLib *lib;
 	RCmd *cmd;
+
 	RAnal *anal;
 	RAsm *assembler;
 	RAnalRefline *reflines;
 	RAnalRefline *reflines2;
 	RParse *parser;
 	RPrint *print;
-	RBin *bin;
 	RLang *lang;
 	RDebug *dbg;
 	RFlag *flags;
-	RConfig *config;
 	RSearch *search;
 	RSign *sign;
 	RFS *fs;
@@ -128,6 +129,7 @@ typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 #ifdef R_API
 #define r_core_cast(x) (RCore*)(size_t)(x)
 R_API RCons *r_core_get_cons (RCore *core);
+R_API RBin *r_core_get_bin (RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);
 R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr);
 R_API int r_core_init(RCore *core);
@@ -220,6 +222,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak);
 
 R_API int r_core_bin_load(RCore *core, const char *file);
+R_API void r_core_bin_set(RCore *r, RBin *b);
 R_API int r_core_hash_load(RCore *core, const char *file);
 
 /* gdiff.c */

@@ -174,6 +174,17 @@ static int cmd_print(void *data, const char *input) {
 #endif
 		}
 		break;
+	case 'a':
+		{
+			RAsmCode *acode;
+			r_asm_set_pc (core->assembler, core->offset);
+			acode = r_asm_massemble (core->assembler, input+1);
+			if (acode && *acode->buf_hex) {
+				r_cons_printf ("%s\n", acode->buf_hex);
+				r_asm_code_free (acode);
+			}
+		}
+		break;
 	case 'b': {
 		const int size = len*8;
 		char *buf = malloc (size+1);
@@ -572,6 +583,7 @@ static int cmd_print(void *data, const char *input) {
 		" p=            show entropy bars of full file\n"
 		" p6[de] [len]  base64 decode/encode\n"
 		" p8 [len]      8bit hexpair list of bytes\n"
+		" pa [opcode]   assemble opcode\n"
 		" pb [len]      bitstream of N bytes\n"
 		" pi[f] [len]   show opcodes of N bytes\n"
 		" pd[lf] [l]    disassemble N opcodes (see pd?)\n"

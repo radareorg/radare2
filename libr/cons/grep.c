@@ -5,12 +5,16 @@
 
 R_API void r_cons_grep_help() {
 	eprintf (
-"Usage: [command]~[modifier][word,word]\n"
-"  modifiers\n"
+"Usage: [command]~[modifier][word,word][\[columne\][:line]\n"
+" modifiers\n"
 "   &  all words must match to grep the line\n"
 "   ^  words must be placed at the begining of line\n"
 "   !  negate grep\n"
 "   ?  count number of matching lines\n"
+" examples:\n"
+"   i~:0   # show fist line o 'i' output\n"
+"   pd~mov # disasm and grep for mov\n"
+"   pi~[0] # show only opcode\n"
 	);
 }
 
@@ -98,7 +102,8 @@ R_API void r_cons_grep(const char *str) {
 				eprintf ("grep string too long\n");
 				continue;
 			}
-			strncpy (cons->grep.strings[cons->grep.nstrings], optr, R_CONS_GREP_WORD_SIZE-1);
+			strncpy (cons->grep.strings[cons->grep.nstrings],
+				optr, R_CONS_GREP_WORD_SIZE-1);
 			cons->grep.nstrings++;
 			if (cons->grep.nstrings>R_CONS_GREP_WORDS-1) {
 				eprintf ("too many grep strings\n");

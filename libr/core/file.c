@@ -126,6 +126,11 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	return ret;
 }
 
+R_API void r_core_bin_set(RCore *r, RBin *b) {
+	// memleak? .. hacky api for nodejs
+	r->bin = b;
+}
+
 R_API int r_core_bin_load(RCore *r, const char *file) {
 	int va = r->io->va || r->io->debug;
 

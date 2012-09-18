@@ -4,28 +4,56 @@ namespace Radare {
 [Compact]
 [CCode (cheader_filename="r_flags.h,r_anal.h,r_core.h,r_bin.h,r_parse.h,r_lang.h,r_sign.h,r_reg.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
 public class RCore {
-	public RFlag flags;
+	public RBin bin;
+	public RConfig config;
+
+	public uint64 offset;
+	public uint32 blocksize;
+	public uint32 blocksize_max;
+	public uint8 *block;
+	public uint8 *oobi;
+	public int ffio;
+	public int oobi_len;
+	public uint8 *_yank;
+	public int _yank_len;
+	public int tmpseek;
+	public bool _visual;
+	public uint64 _yank_off;
+	public int interrupted;
+
+	public RCons cons;
+	public RPair pair;
+	public RIO io;
+	public RCore.File file;
+	public void* files; // XXX RList<???>
 	public RNum num;
+	public RLib lib;
+	public void* rcmd;
+	public RAnal anal;
+	public RAsm assembler;
+	public void *reflines;
+	public void *reflines2;
+	public RParse parser;
+	public RPrint print;
+	public RLang lang;
+
+	public RDebug dbg;
+	public RFlag flags;
+	public RSearch search;
+	public RSign sign;
+
+	public RFS fs;
+	public REgg egg;
+public string cmdqueue;
+public string lastcmd;
+public int cmdrepeat;
+public uint64 inc;
+// rtr_n ...
+	// TODO: public RVm vm;
 	/* lifecycle */
 	public RCons* get_cons ();
 	public RConfig* get_config ();
 	public RCore();
-	public RIO io;
-	public RCons cons;
-	public RDebug dbg;
-	public RConfig config;
-	public REgg egg;
-	public RAsm assembler;
-	public RAnal anal;
-	public RBin bin;
-	public RFS fs;
-	public RParse parser;
-	public RLang lang;
-	public RSearch search;
-	public RSign sign;
-	public RPrint print;
-	// TODO: public RVm vm;
-	public uint64 offset;
 
 	public static unowned RCore cast(uint64 ptr);
 	public bool loadlibs();
@@ -46,6 +74,7 @@ public class RCore {
 	public int cmd_file(string file);
 	public int cmd_command(string cmd);
 	public unowned string cmd_str(string cmd);
+	public unowned string cmd_str_pipe(string cmd);
 
 	public string op_str(uint64 addr);
 	public RAnal.Op op_anal(uint64 addr);
@@ -142,7 +171,7 @@ public class RCore {
 	public int seek_delta(int64 addr);
 
 	public bool bin_load(string? file);
+	public void bin_set(RBin b);
 
-	public RCore.File file;
 }
 }

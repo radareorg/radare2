@@ -166,10 +166,11 @@ static void r_bin_init(RBin *bin) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
-	if (!bin->cur.o->referenced) {
-		r_bin_free_items (bin);
+	if (bin->cur.o) {
+		if (!bin->cur.o->referenced)
+			r_bin_free_items (bin);
+		free (bin->cur.file);
 	}
-	free (bin->cur.file);
 	memset (&bin->cur, 0, sizeof (bin->cur));
 	bin->cur.o = R_NEW0 (RBinObject);
 	memset (bin->cur.o, 0, sizeof (RBinObject));
@@ -187,9 +188,11 @@ static void r_bin_init(RBin *bin) {
 static int r_bin_extract(RBin *bin, int idx) {
 	if (bin->curxtr && bin->curxtr->extract)
 		return bin->curxtr->extract (bin, idx);
+	if (!bin->file)
+		return R_FALSE;
 	bin->cur.file = strdup (bin->file);
 	bin->cur.buf = r_buf_mmap (bin->file, 0);
-	return 1;
+	return R_TRUE;
 }
 
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
