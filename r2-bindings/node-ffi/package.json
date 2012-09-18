@@ -1,5 +1,5 @@
 { "name": "radare2.js",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "url": "http://www.radare.org",
   "description": "radare2 valabind-ffi bindings for nodejs",
   "dependencies": {

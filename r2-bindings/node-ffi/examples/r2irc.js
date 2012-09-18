@@ -1,8 +1,10 @@
 /* TODO: use node-daemon and chroot */
 
 const nick = "r2bot";
-const channel = "#radare";
+const channel = "#radare"
 const msgtimeout = 1000;
+const host = "irc.freenode.net"
+const port = 6667;
 
 var r2 = require ('../r_core');
 
@@ -43,7 +45,7 @@ core.cmd0 ('? entry0')
 core.cmd0 ('pd @entry0')
 
 var IRC = require('irc.js');
-var irc = new IRC('irc.freenode.net', 6667);
+var irc = new IRC(host, port);
 irc.on ('raw', function (data) {
 		console.log (data);
 		});
@@ -63,10 +65,15 @@ if (typeof String.prototype.startsWith != 'function') {
 
 irc.on('privmsg', function(from, to, msg) {
 	console.log('<' + from + '> to ' + to + ': ' + msg);
+	if (to[0] != "#" && from == "pancake") {
+		if (msg.startsWith ("nick "))
+			irc.nick (msg.slice (5));
+		else irc.privmsg (channel, msg)
+	} else
 	switch (to) {
 	case  "#radare":
 	case  "#radarebot":
-		default:
+	default:
 		if (!msg.startsWith ("!")) return;
 		var o = "";
 		msg = msg.replace (/>/g, "");
