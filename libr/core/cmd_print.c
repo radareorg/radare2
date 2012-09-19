@@ -175,7 +175,15 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'a':
-		{
+		if (input[1]=='d') {
+			RAsmCode *c;
+			r_asm_set_pc (core->assembler, core->offset);
+			c = r_asm_mdisassemble_hexstr (core->assembler, input+2);
+			if (c) {
+				r_cons_puts (c->buf_asm);
+				r_asm_code_free (c);
+			} else eprintf ("Invalid hexstr\n");
+		} else {
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, input+1);

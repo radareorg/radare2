@@ -54,16 +54,17 @@ function show_popup_about () {
 		"This is the r2w ui for radare2"+
 		"<br /><br />"+
 		"It runs on top of an embedded webserver in radare2. Here's some commands to try:"+nl2+
+		"<a href=\"/graph/\">graph demo</a>"+nl2+
 		"<a href=\"javascript:cmd('!rax2 -s 20e296b20ae296b220e296b20a');popup_hide();\">triforce!</a>"+nl2+
 		"<a href=\"javascript:cmd('? '+prompt('expression'));popup_hide();\">calculator</a>"+nl2+
 		"<a href=\"javascript:cmd('s '+prompt('offset')+';pd');popup_hide();\">seek</a>"+nl2+
 		"<a href=\"javascript:cmd('b '+prompt('blocksize'));popup_hide();\">blocksize</a>"+nl2+
+		"<a href=\"javascript:cmd('af;aa;pd');popup_hide();\">analyze code</a>"+nl2+
+		"<a href=\"javascript:cmd('ap;pd');popup_hide();\">analyze preludes</a>"+nl2+
 		"<a href=\"javascript:panel_functions_load();popup_hide();\">list functions</a>"+nl2+
 		"<a href=\"javascript:cmd('pd');popup_hide();\">disassemble block</a>"+nl2+
 		"<a href=\"javascript:cmd('pdr');popup_hide();\">disassemble function</a>"+nl2+
 		"<a href=\"javascript:cmd('x');popup_hide();\">hexdump</a>"+nl2+
-		"<a href=\"javascript:cmd('af;aa;pd');popup_hide();\">analyze code</a>"+nl2+
-		"<a href=\"javascript:cmd('ap;pd');popup_hide();\">analyze preludes</a>"+nl2+
 		"";
 	popup_show ("Help", txt);
 }

@@ -74,10 +74,8 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 				const char *root = r_config_get (core->config, "http.root");
 				char path[1024];
 				// fix crosspath
-				if (!strcmp (rs->path, "/")) {
-					free (rs->path);
-					rs->path = strdup ("/index.html");
-				}
+				if (rs->path [strlen (rs->path)-1] == '/')
+					rs->path = r_str_concat (rs->path, "index.html");
 				snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 				if (r_file_exists (path)) {
 					int sz = 0;

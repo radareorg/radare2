@@ -113,6 +113,7 @@ namespace Radare {
 			public char machine[256]; // FIXME proper static strings w/o hardcoded size
 			public char os[256]; // FIXME proper static strings w/o hardcoded size
 			public char subsystem[256]; // FIXME proper static strings w/o hardcoded size
+			public char rpath[256]; // FIXME proper static strings w/o hardcoded size
 			public int bits;
 			public bool has_va;
 			public bool big_endian;

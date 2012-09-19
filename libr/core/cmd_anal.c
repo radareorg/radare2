@@ -219,25 +219,15 @@ case 'o':
 	r_cons_break (NULL, NULL);
 
 	switch (input[0]) {
-	case 'b':
+	case '8':
 		if (input[1]==' ') {
 			int len;
 			ut8 *buf = malloc (strlen (input));
 			len = r_hex_str2bin (input+2, buf);
-			if (len>0) {
+			if (len>0)
 				r_core_anal_bytes (core, buf, len);
-			}
 			free (buf);
 		} else eprintf ("Usage: ab [hexpair-bytes]\n");
-		break;
-	case '8':
-		if (input[1]==' ') {
-			RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, input+2);
-			if (c) {
-				r_cons_puts (c->buf_asm);
-				r_asm_code_free (c);
-			} else eprintf ("Invalid hexstr\n");
-		} else eprintf ("Usage: a8 [hexpair-bytes]\n");
 		break;
 	case 'x':
 		switch (input[1]) {
@@ -831,8 +821,7 @@ case 'o':
 		r_cons_printf (
 		"Usage: a[?obdfrgtv]\n"
 		" aa               ; analyze all (fcns + bbs)\n"
-		" a8 [hexpairs]    ; analyze bytes as disassemble\n"
-		" ab [hexpairs]    ; analyze bytes as opcodes\n"
+		" a8 [hexpairs]    ; analyze bytes\n" 
 		" ad               ; analyze data trampoline (wip)\n"
 		" ap               ; find and analyze function preludes\n"
 		" ad [from] [to]   ; analyze data pointers to (from-to)\n"

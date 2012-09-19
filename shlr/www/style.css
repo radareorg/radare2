@@ -49,19 +49,19 @@ input {
 	margin-left:2px;
 	padding:10px;
 	width:270px;
-	height:232px;
+	/* height:232px; */
 	text-align:left;
 	vertical-align:top;
-	overflow:auto;
+	/* overflow:auto; */
 	background-color:#f0f0f0;
 }
 
 .console {
 	font-size:8px;
 	width:310px;
-	height:310px;
+	height:100%;
 	text-align:left;
-	overflow:auto;
+	/* overflow:auto; */
 	background-color:#f0f0f0;
 }
 

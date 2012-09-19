@@ -652,9 +652,8 @@ toro:
 	if (idx>=len) {// && (invbreak && !lastfail)) {
 		if (invbreak && lines<l) {
 			buf = nbuf = malloc (len);
-			r_io_read_at (core->io, addr+idx, buf, len);
 			addr += idx;
-			//eprintf ("EOF %d %d\n", lines, l);
+			r_core_read_at (core, addr, buf, len);
 			goto toro;
 		}
 	}
