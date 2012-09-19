@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #ifndef _INCLUDE_R_CORE_H_
 #define _INCLUDE_R_CORE_H_
@@ -82,11 +82,11 @@ typedef struct r_core_t {
 	ut8 *oobi; /* out of band input ; used to get input from file or multiline */
 	int ffio;
 	int oobi_len;
-	ut8 *yank;
+	ut8 *yank_buf;
 	int yank_len;
-	int tmpseek;
-	boolt visual;
 	ut64 yank_off;
+	int tmpseek;
+	boolt vmode;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RCons *cons;
@@ -96,7 +96,7 @@ typedef struct r_core_t {
 	RList *files;
 	RNum *num;
 	RLib *lib;
-	RCmd *cmd;
+	RCmd *rcmd;
 
 	RAnal *anal;
 	RAsm *assembler;

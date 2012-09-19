@@ -88,10 +88,10 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank_paste (core, r_num_math (core->num, input+2), 0);
 		break;
 	case 'x':
-		r_print_hexdump (core->print, 0LL, core->yank, core->yank_len, 16, 4);
+		r_print_hexdump (core->print, 0LL, core->yank_buf, core->yank_len, 16, 4);
 		break;
 	case 'p':
-		r_cons_memcat ((const char*)core->yank, core->yank_len);
+		r_cons_memcat ((const char*)core->yank_buf, core->yank_len);
 		r_cons_newline ();
 		break;
 	case 't':
@@ -102,11 +102,11 @@ static int cmd_yank(void *data, const char *input) {
 		}
 		break;
 	case '\0':
-		if (core->yank) {
+		if (core->yank_buf) {
 			r_cons_printf ("0x%08"PFMT64x" %d ",
 				core->yank_off, core->yank_len);
 			for (i=0; i<core->yank_len; i++)
-				r_cons_printf ("%02x", core->yank[i]);
+				r_cons_printf ("%02x", core->yank_buf[i]);
 			r_cons_newline ();
 		} else eprintf ("No buffer yanked already\n");
 		break;
@@ -173,7 +173,7 @@ static int cmd_interpret(void *data, const char *input) {
 		r_core_cmd_command (core, input+1);
 		break;
 	case '(':
-		r_cmd_macro_call (&core->cmd->macro, input+1);
+		r_cmd_macro_call (&core->rcmd->macro, input+1);
 		break;
 	case '?':
 		r_cons_printf (
@@ -520,7 +520,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	switch (*cmd) {
 	case '.':
 		if (cmd[1] == '"') { /* interpret */
-			ret = r_cmd_call (core->cmd, cmd);
+			ret = r_cmd_call (core->rcmd, cmd);
 			return ret;
 		}
 		break;
@@ -543,7 +543,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 				}
 				line = strdup (cmd);
 				line = r_str_replace (line, "\\\"", "\"", R_TRUE);
-				r_cmd_call (core->cmd, line);
+				r_cmd_call (core->rcmd, line);
 				free (line);
 				if (oseek != UT64_MAX) {
 					r_core_seek (core, oseek, 1);
@@ -560,7 +560,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		return R_TRUE;
 	case '(':
 		if (cmd[1] != '*')
-			return r_cmd_call (core->cmd, cmd);
+			return r_cmd_call (core->rcmd, cmd);
 	}
 
 // TODO must honor " and `
@@ -611,7 +611,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	//ptr = strchr (cmd, '&');
 	while (ptr && ptr[1]=='&') {
 		*ptr = '\0';
-		ret = r_cmd_call (core->cmd, cmd);
+		ret = r_cmd_call (core->rcmd, cmd);
 		if (ret == -1) {
 			eprintf ("command error(%s)\n", cmd);
 			return ret;
@@ -779,7 +779,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		} else {
 			if (!ptr[1] || r_core_seek (core, addr, 1)) {
 				r_core_block_read (core, 0);
-				ret = r_cmd_call (core->cmd, r_str_trim_head (cmd));
+				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			} else ret = 0;
 		}
 		if (ptr2) {
@@ -791,7 +791,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		return ret;
 	}
 
-	return cmd? r_cmd_call (core->cmd, r_str_trim_head (cmd)): R_FALSE;
+	return cmd? r_cmd_call (core->rcmd, r_str_trim_head (cmd)): R_FALSE;
 }
 
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
@@ -846,14 +846,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			// XXX whats this 999 ?
 			i = 0;
 			r_cons_break (NULL, NULL);
-			for (core->cmd->macro.counter=0;i<999;core->cmd->macro.counter++) {
+			for (core->rcmd->macro.counter=0;i<999;core->rcmd->macro.counter++) {
 				if (r_cons_singleton ()->breaked)
 					break;
-				r_cmd_macro_call (&core->cmd->macro, each+2);
-				if (core->cmd->macro.brk_value == NULL)
+				r_cmd_macro_call (&core->rcmd->macro, each+2);
+				if (core->rcmd->macro.brk_value == NULL)
 					break;
 
-				addr = core->cmd->macro._brk_value;
+				addr = core->rcmd->macro._brk_value;
 				sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
 				eprintf ("0x%08"PFMT64x" (%s)\n", addr, cmd2);
 				r_core_seek (core, addr, 1);
@@ -866,7 +866,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			char cmd2[1024];
 			FILE *fd = fopen (each+1, "r");
 			if (fd) {
-				core->cmd->macro.counter=0;
+				core->rcmd->macro.counter=0;
 				while (!feof (fd)) {
 					buf[0] = '\0';
 					if (fgets (buf, sizeof (buf), fd) == NULL)
@@ -876,14 +876,14 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					sprintf (cmd2, "%s @ 0x%08"PFMT64x"", cmd, addr);
 					r_core_seek (core, addr, 1); // XXX
 					r_core_cmd (core, cmd2, 0);
-					core->cmd->macro.counter++;
+					core->rcmd->macro.counter++;
 				}
 				fclose (fd);
 			} else eprintf ("Cannot open file '%s' to read offsets\n", each+1);
 		}
 		break;
 	default:
-		core->cmd->macro.counter = 0;
+		core->rcmd->macro.counter = 0;
 		//while(str[i]) && !core->interrupted) {
 		// split by keywords
 		i = 0;
@@ -915,7 +915,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				}
 				r_cons_break (NULL, NULL);
 
-				core->cmd->macro.counter++ ;
+				core->rcmd->macro.counter++ ;
 				free (word);
 				word = NULL;
 			}
@@ -943,7 +943,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (!strcmp (cstr, ":")) {
 		RListIter *iter;
 		RCmdPlugin *cp;
-		r_list_foreach (core->cmd->plist, iter, cp) {
+		r_list_foreach (core->rcmd->plist, iter, cp) {
 			r_cons_printf ("%s: %s\n", cp->name, cp->desc);
 		}
 		return 0;
@@ -1131,41 +1131,41 @@ static int r_core_cmd_nullcallback(void *data) {
 }
 
 R_API void r_core_cmd_init(RCore *core) {
-	core->cmd = r_cmd_new ();
-	core->cmd->macro.printf = (PrintfCallback)r_cons_printf;
-	core->cmd->macro.num = core->num;
-	core->cmd->macro.user = core;
-	core->cmd->macro.cmd = r_core_cmd0;
-	core->cmd->nullcallback = r_core_cmd_nullcallback;
-	r_cmd_set_data (core->cmd, core);
-	r_cmd_add (core->cmd, "x",        "alias for px", &cmd_hexdump);
-	r_cmd_add (core->cmd, "mount",    "mount filesystem", &cmd_mount);
-	r_cmd_add (core->cmd, "analysis", "analysis", &cmd_anal);
-	r_cmd_add (core->cmd, "flag",     "get/set flags", &cmd_flag);
-	r_cmd_add (core->cmd, "g",        "egg manipulation", &cmd_egg);
-	r_cmd_add (core->cmd, "debug",    "debugger operations", &cmd_debug);
-	r_cmd_add (core->cmd, "info",     "get file info", &cmd_info);
-	r_cmd_add (core->cmd, "cmp",      "compare memory", &cmd_cmp);
-	r_cmd_add (core->cmd, "seek",     "seek to an offset", &cmd_seek);
-	r_cmd_add (core->cmd, "t",   "type information (cparse)", &cmd_type);
-	r_cmd_add (core->cmd, "zign",     "zignatures", &cmd_zign);
-	r_cmd_add (core->cmd, "Section",  "setup section io information", &cmd_section);
-	r_cmd_add (core->cmd, "bsize",    "change block size", &cmd_bsize);
-	r_cmd_add (core->cmd, "eval",     "evaluate configuration variable", &cmd_eval);
-	r_cmd_add (core->cmd, "print",    "print current block", &cmd_print);
-	r_cmd_add (core->cmd, "write",    "write bytes", &cmd_write);
-	r_cmd_add (core->cmd, "Code",     "code metadata", &cmd_meta);
-	r_cmd_add (core->cmd, "Project",  "project", &cmd_project);
-	r_cmd_add (core->cmd, "open",     "open or map file", &cmd_open);
-	r_cmd_add (core->cmd, "yank",     "yank bytes", &cmd_yank);
-	r_cmd_add (core->cmd, "resize",   "change file size", &cmd_resize);
-	r_cmd_add (core->cmd, "Visual",   "enter visual mode", &cmd_visual);
-	r_cmd_add (core->cmd, "!",        "run system command", &cmd_system);
-	r_cmd_add (core->cmd, "=",        "io pipe", &cmd_rap);
-	r_cmd_add (core->cmd, "#",        "calculate hash", &cmd_hash);
-	r_cmd_add (core->cmd, "?",        "help message", &cmd_help);
-	r_cmd_add (core->cmd, ".",        "interpret", &cmd_interpret);
-	r_cmd_add (core->cmd, "/",        "search kw, pattern aes", &cmd_search);
-	r_cmd_add (core->cmd, "(",        "macro", &cmd_macro);
-	r_cmd_add (core->cmd, "quit",     "exit program session", &cmd_quit);
+	core->rcmd = r_cmd_new ();
+	core->rcmd->macro.printf = (PrintfCallback)r_cons_printf;
+	core->rcmd->macro.num = core->num;
+	core->rcmd->macro.user = core;
+	core->rcmd->macro.cmd = r_core_cmd0;
+	core->rcmd->nullcallback = r_core_cmd_nullcallback;
+	r_cmd_set_data (core->rcmd, core);
+	r_cmd_add (core->rcmd, "x",        "alias for px", &cmd_hexdump);
+	r_cmd_add (core->rcmd, "mount",    "mount filesystem", &cmd_mount);
+	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);
+	r_cmd_add (core->rcmd, "flag",     "get/set flags", &cmd_flag);
+	r_cmd_add (core->rcmd, "g",        "egg manipulation", &cmd_egg);
+	r_cmd_add (core->rcmd, "debug",    "debugger operations", &cmd_debug);
+	r_cmd_add (core->rcmd, "info",     "get file info", &cmd_info);
+	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
+	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
+	r_cmd_add (core->rcmd, "t",   "type information (cparse)", &cmd_type);
+	r_cmd_add (core->rcmd, "zign",     "zignatures", &cmd_zign);
+	r_cmd_add (core->rcmd, "Section",  "setup section io information", &cmd_section);
+	r_cmd_add (core->rcmd, "bsize",    "change block size", &cmd_bsize);
+	r_cmd_add (core->rcmd, "eval",     "evaluate configuration variable", &cmd_eval);
+	r_cmd_add (core->rcmd, "print",    "print current block", &cmd_print);
+	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
+	r_cmd_add (core->rcmd, "Code",     "code metadata", &cmd_meta);
+	r_cmd_add (core->rcmd, "Project",  "project", &cmd_project);
+	r_cmd_add (core->rcmd, "open",     "open or map file", &cmd_open);
+	r_cmd_add (core->rcmd, "yank",     "yank bytes", &cmd_yank);
+	r_cmd_add (core->rcmd, "resize",   "change file size", &cmd_resize);
+	r_cmd_add (core->rcmd, "Visual",   "enter visual mode", &cmd_visual);
+	r_cmd_add (core->rcmd, "!",        "run system command", &cmd_system);
+	r_cmd_add (core->rcmd, "=",        "io pipe", &cmd_rap);
+	r_cmd_add (core->rcmd, "#",        "calculate hash", &cmd_hash);
+	r_cmd_add (core->rcmd, "?",        "help message", &cmd_help);
+	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
+	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
+	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
+	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
 }

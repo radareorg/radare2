@@ -141,7 +141,7 @@ static int cmd_seek(void *data, const char *input) {
 				}
 				cmd[0] = 's';
 				// perform real seek if provided
-				r_cmd_call (core->cmd, cmd);
+				r_cmd_call (core->rcmd, cmd);
 				free (cmd);
 			}
 			r_io_sundo_push (core->io, core->offset);

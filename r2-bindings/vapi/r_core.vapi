@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 namespace Radare {
 [Compact]
@@ -14,25 +14,25 @@ public class RCore {
 	public uint8 *oobi;
 	public int ffio;
 	public int oobi_len;
-	public uint8 *_yank;
-	public int _yank_len;
+	public uint8 *yank_buf;
+	public int yank_len;
+	public uint64 yank_off;
 	public int tmpseek;
-	public bool _visual;
-	public uint64 _yank_off;
+	public bool vmode;
 	public int interrupted;
 
 	public RCons cons;
-	public RPair pair;
+	public RPair kv;
 	public RIO io;
 	public RCore.File file;
-	public void* files; // XXX RList<???>
+	public RList<RCore.File> files;
 	public RNum num;
 	public RLib lib;
-	public void* rcmd;
+	public RCmd rcmd;
 	public RAnal anal;
 	public RAsm assembler;
-	public void *reflines;
-	public void *reflines2;
+	public RAnal.Refline reflines;
+	public RAnal.Refline reflines2;
 	public RParse parser;
 	public RPrint print;
 	public RLang lang;
@@ -44,10 +44,10 @@ public class RCore {
 
 	public RFS fs;
 	public REgg egg;
-public string cmdqueue;
-public string lastcmd;
-public int cmdrepeat;
-public uint64 inc;
+	public string cmdqueue;
+	public string lastcmd;
+	public int cmdrepeat;
+	public uint64 inc;
 // rtr_n ...
 	// TODO: public RVm vm;
 	/* lifecycle */

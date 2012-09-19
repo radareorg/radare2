@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
 
 namespace Radare {
+/*
 	// HACK
 	[Compact]
 	[CCode (cheader_filename="r_lib.h", cprefix="r_cmd_struct_", cname="RCmdStruct", free_function="", destroy_function="")]
@@ -24,8 +25,6 @@ namespace Radare {
 		public int @break (string val);
 	}
 
-	[CCode (has_target=false, cname="RCmdCallback")]
-	public delegate bool RCmdCallback (void *user, string cmd);
 
 	[CCode (cheader_filename="r_cmd.h", cname="RCmdPlugin", free_function="", destroy_function="")]
 	public struct RCmdPlugin {
@@ -33,9 +32,12 @@ namespace Radare {
 		string desc;
 		RCmdCallback call;
 	}
+*/
+	[CCode (has_target=false, cname="RCmdCallback")]
+	public delegate bool RCmdCallback (void *user, string cmd);
 
 	[Compact]
-	[CCode (cheader_filename="r_cmd.h", cprefix="r_cmd_", cname="struct r_cmd_t", free_function="r_cmd_free")]
+	[CCode (cheader_filename="r_cmd.h", cprefix="r_cmd_", cname="RCmd", free_function="r_cmd_free")]
 	public class RCmd {
 		public RCmd ();
 		public void set_data (void *data);

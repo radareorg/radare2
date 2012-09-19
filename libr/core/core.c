@@ -338,7 +338,7 @@ R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
-	core->visual = R_FALSE;
+	core->vmode = R_FALSE;
 	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;
@@ -346,9 +346,9 @@ R_API int r_core_init(RCore *core) {
 	core->lastcmd = NULL;
 	core->cmdqueue = NULL;
 	core->cmdrepeat = R_TRUE;
-	core->yank = NULL;
 	core->reflines = NULL;
 	core->reflines2 = NULL;
+	core->yank_buf = NULL;
 	core->yank_len = 0;
 	core->yank_off = 0LL;
 	//core->kv = r_pair_new ();
@@ -452,7 +452,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	c->file = NULL;
 	r_list_free (c->files);
 	free (c->num);
-	r_cmd_free (c->cmd);
+	r_cmd_free (c->rcmd);
 	r_anal_free (c->anal);
 	r_asm_free (c->assembler);
 	r_print_free (c->print);

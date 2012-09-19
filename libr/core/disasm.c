@@ -578,7 +578,7 @@ toro:
 			r_anal_cc_reset (&cc);
 		}
 
-		if (core->visual)
+		if (core->vmode)
 		switch (analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:

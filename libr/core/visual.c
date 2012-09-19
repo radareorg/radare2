@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include "r_core.h"
 
@@ -575,7 +575,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			ocursor:cursor), R_ABS (cursor-ocursor)+1);
 		break;
 	case 'Y':
-		if (!core->yank) {
+		if (!core->yank_buf) {
 			r_cons_strcat ("Can't paste, clipboard is empty.\n");
 			r_cons_flush ();
 			r_cons_any_key ();
@@ -845,7 +845,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	int ch;
 	obs = core->blocksize;
 
-	core->visual = R_TRUE;
+	core->vmode = R_TRUE;
 	core->cons->data = core;
 	core->cons->event_resize = (RConsEvent)r_core_visual_refresh;
 	//r_cons_set_cup (R_TRUE);
@@ -886,6 +886,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	r_cons_singleton ()->teefile = teefile;
 	r_cons_clear00 ();
 	r_cons_set_cup (R_FALSE);
-	core->visual = R_FALSE;
+	core->vmode = R_FALSE;
 	return 0;
 }

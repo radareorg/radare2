@@ -6,14 +6,14 @@ static int cmd_macro(void *data, const char *input) {
 
 	switch (*input) {
 	case ')':
-		r_cmd_macro_break (&core->cmd->macro, input+1);
+		r_cmd_macro_break (&core->rcmd->macro, input+1);
 		break;
 	case '-':
-		r_cmd_macro_rm (&core->cmd->macro, input+1);
+		r_cmd_macro_rm (&core->rcmd->macro, input+1);
 		break;
 	case '*':
 	case '\0':
-		r_cmd_macro_list (&core->cmd->macro);
+		r_cmd_macro_list (&core->rcmd->macro);
 		break;
 	case '?':
 		eprintf (
@@ -50,7 +50,7 @@ static int cmd_macro(void *data, const char *input) {
 			}
 		}
 		buf[strlen(buf)-1]=0;
-		r_cmd_macro_add (&core->cmd->macro, buf);
+		r_cmd_macro_add (&core->rcmd->macro, buf);
 		if (mustcall) {
 			char *comma = strchr (buf, ' ');
 			if (!comma)
@@ -58,7 +58,7 @@ static int cmd_macro(void *data, const char *input) {
 			if (comma) {
 				*comma = ' ';
 				strcpy (comma+1, buf+mustcall);
-				r_cmd_macro_call (&core->cmd->macro, buf);
+				r_cmd_macro_call (&core->rcmd->macro, buf);
 			} else eprintf ("Invalid syntax for macro\n");
 		}
 		free (buf);

@@ -49,11 +49,11 @@ static int cmd_help(void *data, const char *input) {
 	case 'y':
 		for (input++; input[0]==' '; input++);
 		if (*input) {
-			free (core->yank);
-			core->yank = (ut8*)strdup (input);
-			core->yank_len = strlen ((const char*)core->yank);
+			free (core->yank_buf);
+			core->yank_buf = (ut8*)strdup (input);
+			core->yank_len = strlen ((const char*)core->yank_buf);
 		} else {
-			r_cons_memcat ((const char *)core->yank, core->yank_len);
+			r_cons_memcat ((const char *)core->yank_buf, core->yank_len);
 			r_cons_newline ();
 		}
 		break;
@@ -199,10 +199,10 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%s\n", s->name);
 		} break;
 	case 'I': // hud input
-		free (core->yank);
+		free (core->yank_buf);
 		for (input++; *input==' '; input++);
-		core->yank = (ut8*)r_cons_hud_file (input);
-		core->yank_len = core->yank? strlen ((const char *)core->yank): 0;
+		core->yank_buf = (ut8*)r_cons_hud_file (input);
+		core->yank_len = core->yank_buf? strlen ((const char *)core->yank_buf): 0;
 		break;
 	case 'k': // key=value utility
 		switch (input[1]) {
@@ -254,7 +254,7 @@ static int cmd_help(void *data, const char *input) {
 		} else
 		if (input[1]=='p') {
 			char *p = r_cons_hud_path (input+2, 0);
-			core->yank = (ut8*)p;
+			core->yank_buf = (ut8*)p;
 			core->yank_len = p? strlen (p): 0;
 			core->num->value = (p != NULL);
 		} else
@@ -278,8 +278,8 @@ static int cmd_help(void *data, const char *input) {
 			eprintf ("%s: ", input);
 			fgets (foo, sizeof (foo)-1, stdin);
 			foo[strlen (foo)-1] = 0;
-			free (core->yank);
-			core->yank = (ut8 *)strdup (foo);
+			free (core->yank_buf);
+			core->yank_buf = (ut8 *)strdup (foo);
 			core->yank_len = strlen (foo);
 			core->num->value = r_num_math (core->num, foo);
 		}
