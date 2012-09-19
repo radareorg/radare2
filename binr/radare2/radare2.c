@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
 		case 'i': cmdfile[cmdfilei++] = optarg; break;
 		case 'l': r_lib_open (r.lib, optarg); break;
 		case 'd': debug = 1; break;
-		case 'e': r_config_eval (r.config, cmdn); 
+		case 'e': r_config_eval (r.config, optarg); 
 			  r_list_append (evals, optarg); break;
 		case 'H':
 		case 'h': help++; break;
