@@ -30,6 +30,15 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_help.c"
 #include "cmd_search.c"
 
+static int r_core_cmd_nullcallback(void *data) {
+	RCore *core = (RCore*) data;
+	if (core->cmdrepeat) {
+		r_core_cmd_repeat (core, 1);
+		return 1;
+	}
+	return 0;
+}
+
 // TODO: move somewhere else
 R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	int delta;
@@ -493,6 +502,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		for (++colon; *colon ==';'; colon++);
 		r_core_cmd_subst (core, colon);
 		//*colon = ';';
+	} else {
+		if (!*cmd)
+			r_core_cmd_nullcallback(core);
 	}
 	free (icmd);
 	return 0;
@@ -748,12 +760,55 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	core->tmpseek = ptr? R_TRUE: R_FALSE;
 	if (ptr) {
 		ut64 tmpoff, tmpbsz, addr;
+		ut8 *buf;
+		ut32 sz;
 		const char *offstr;
-		char *ptr2 = strchr (ptr+1, ':');
-		*ptr = '\0';
-		cmd = r_str_clean (cmd);
+		char *f, *ptr2 = strchr (ptr+1, ':');
+		int len;
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
+		*ptr = '\0';
+		for (ptr++;*ptr== ' ';ptr++); ptr--;
+		if (ptr[2]==':') {
+			switch (ptr[1]) {
+			case 'f':
+				f = r_file_slurp (ptr+3, &sz);
+				if (f) {
+					buf = malloc (sz);
+					if (buf) {
+						free (core->block);
+						core->block = buf;
+						core->blocksize = sz;
+						memcpy (core->block, f, sz);
+					} else eprintf ("Cannot alloc %d", sz);
+					free (f);
+				} else eprintf ("Cannot open '%s'\n", ptr+3);
+				break;
+			case '8':
+			case 'b':
+				buf = malloc (strlen (ptr+2));
+				if (!buf) {
+					eprintf ("cannot allocate\n");
+					return R_FALSE;
+				}
+				len = r_hex_str2bin (ptr+3, buf);
+				r_core_block_size (core, len);
+				memcpy (core->block, buf, len);
+				free (buf);
+				break;
+			case 's':
+				len = strlen (ptr+3);
+				r_core_block_size (core, len);
+				memcpy (core->block, ptr+3, len);
+				break;
+			}
+			ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+			*ptr = '@';
+			r_core_block_size (core, tmpbsz);
+			return ret;
+		}
+		for (ptr++;*ptr== ' ';ptr++); ptr--;
+		cmd = r_str_clean (cmd);
 		if (ptr2) {
 			*ptr2 = '\0';
 			r_core_block_size (core, r_num_math (core->num, ptr2+1));
@@ -1119,15 +1174,6 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 		r_core_cmd0 (core, core->lastcmd);
 		break;
 	}
-}
-
-static int r_core_cmd_nullcallback(void *data) {
-	RCore *core = (RCore*) data;
-	if (core->cmdrepeat) {
-		r_core_cmd_repeat (core, 1);
-		return 1;
-	}
-	return 0;
 }
 
 R_API void r_core_cmd_init(RCore *core) {

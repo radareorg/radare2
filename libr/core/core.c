@@ -529,26 +529,24 @@ R_API int r_core_prompt_exec(RCore *r) {
 }
 
 R_API int r_core_block_size(RCore *core, int bsize) {
+	const ut8 *bump;
 	int ret = R_FALSE;
 	if (bsize == core->blocksize)
 		return R_FALSE;
 	if (bsize<1)
 		bsize = 1;
 	else if (bsize>core->blocksize_max) {
-		eprintf ("blocksize is bigger than io.maxblk. dimmed to 0x%x > 0x%x\n",
+		eprintf ("bsize is bigger than io.maxblk. dimmed to 0x%x > 0x%x\n",
 			bsize, core->blocksize_max);
 		bsize = core->blocksize_max;
 	} else ret = R_TRUE;
-	core->block = realloc (core->block, bsize+1);
-	if (core->block == NULL) {
+	bump = realloc (core->block, bsize+1);
+	if (bump == NULL) {
 		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
-		core->block = malloc (R_CORE_BLOCKSIZE);
-		core->blocksize = R_CORE_BLOCKSIZE;
-		if (core->block == NULL) {
-			eprintf ("Panic in the heap!\n");
-			exit (1);
-		}
-	} else core->blocksize = bsize;
+		return R_FALSE;
+	}
+	core->block = bump;
+	core->blocksize = bsize;
 	memset (core->block, 0xff, core->blocksize);
 	r_core_block_read (core, 0);
 	return ret;
