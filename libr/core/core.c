@@ -119,6 +119,7 @@ static const char *radare_argv[] = {
 	"#!python", "#!perl", "#!vala",
 	"V",
 	"aa", "ab", "af", "ar", "ag", "at", "a?", 
+	"af", "afc", "afi", "afb", "afr", "afs", "af*", 
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!",
 	"i", "ii", "iI", "is", "iS", "iz",
@@ -230,6 +231,9 @@ printf ("FILEN %d\n", n);
 		} else
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
 		    (!memcmp (line->buffer.data, "ag ", 3)) ||
+		    (!memcmp (line->buffer.data, "afi ", 4)) ||
+		    (!memcmp (line->buffer.data, "afb ", 4)) ||
+		    (!memcmp (line->buffer.data, "afc ", 4)) ||
 		    (!memcmp (line->buffer.data, "aga ", 4)) ||
 		    (!memcmp (line->buffer.data, "agc ", 4)) ||
 		    (!memcmp (line->buffer.data, "agl ", 4)) ||
@@ -529,7 +533,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 }
 
 R_API int r_core_block_size(RCore *core, int bsize) {
-	const ut8 *bump;
+	ut8 *bump;
 	int ret = R_FALSE;
 	if (bsize == core->blocksize)
 		return R_FALSE;

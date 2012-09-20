@@ -33,7 +33,7 @@ static int main_help(int line) {
 		" -L           list supported IO plugins\n"
 		" -n           disable analysis\n"
 		" -N           disable user settings\n"
-		" -q           quite mode (no prompt) and quit after -i\n"
+		" -q           quiet mode (no prompt) and quit after -i\n"
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"

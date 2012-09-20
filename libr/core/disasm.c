@@ -204,7 +204,7 @@ toro:
 			}
 		}
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
-		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx+5);
 		if (ret<1) { // XXX: move to r_asm_disassemble ()
 			ret = 1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
@@ -410,8 +410,11 @@ toro:
 		}
 		/* show cursor */
 		if (core->print->cur_enabled && cursor >= idx && cursor < (idx+oplen))
-			r_cons_printf ("*");
-		else r_cons_printf (" ");
+			r_cons_printf ("* ");
+		else {
+			void *p = r_bp_get (core->dbg->bp, at);
+			r_cons_printf (p? "b ": "  ");
+		}
 		if (show_bytes) {
 			char *str = NULL, pad[64];
 			char extra[64];
@@ -558,7 +561,7 @@ toro:
 			RAsmOp ao; /* disassemble for the vm .. */
 			int os = core->assembler->syntax;
 			r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-			r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx);
+			r_asm_disassemble (core->assembler, &ao, buf+idx, len-idx+5);
 			r_asm_set_syntax (core->assembler, os);
 		}
 
