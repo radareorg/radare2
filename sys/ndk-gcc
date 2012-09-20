@@ -23,11 +23,19 @@ arm)
 	;;
 mips)
 	ANDROID_SDK_VERSION=9 #mips
-	NDKPFX=mipsel-linux-android
+	NDKPFX=mips-linux-android
+	${NDKPFX}-gcc 2>/dev/null
+	if [ $? -gt 1 ]; then
+		NDKPFX=mipsel-linux-android
+	fi
 	;;
 x86)
 	ANDROID_SDK_VERSION=9 #x86
 	NDKPFX=i686-android-linux
+	${NDKPFX}-gcc 2>/dev/null
+	if [ $? -gt 1 ]; then
+		NDKPFX=i686-linux-android
+	fi
 	;;
 esac
 
@@ -35,7 +43,8 @@ PLATFORM=android-${ANDROID_SDK_VERSION}
 
 PLATFORM_ROOT=${PROGDIR}/platforms/${PLATFORM}/arch-${ARCH}
 PLATFORM_PATH=${PLATFORM_ROOT}/usr
-NDK_BINS=`echo ${PROGDIR}/toolchains/${ARCH}-*/prebuilt/${OS}-x86/bin`
+TOOLCHAIN=`ls ${PROGDIR}/toolchains/ |grep "^${ARCH}" |sort |tail -n 1`
+NDK_BINS=${PROGDIR}/toolchains/${TOOLCHAIN}/prebuilt/${OS}-x86/bin
 CFLAGS="--sysroot=${PLATFORM_ROOT}"
 CFLAGS="${CFLAGS} -I${PLATFORM_PATH}/include"
 LDFLAGS=-L${PLATFORM_PATH}/lib
