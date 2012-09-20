@@ -23,7 +23,7 @@ arm)
 	;;
 mips)
 	ANDROID_SDK_VERSION=9 #mips
-	NDKPFX=mips-linux-android
+	NDKPFX=mipsel-linux-android
 	;;
 x86)
 	ANDROID_SDK_VERSION=9 #x86

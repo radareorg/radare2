@@ -44,7 +44,7 @@ if [ ! -d "${NDK}" ]; then
 	exit 1
 fi
 
-NDKPATH_MIPS=`echo ${NDK}/toolchains/mips-*/prebuilt/${OS}-x86/bin/`
+NDKPATH_MIPS=`echo ${NDK}/toolchains/mipsel-*/prebuilt/${OS}-x86/bin/`
 NDKPATH_ARM=`echo ${NDK}/toolchains/arm-*/prebuilt/${OS}-x86/bin/`
 NDKPATH_X86=`echo ${NDK}/toolchains/x86-*/prebuilt/${OS}-x86/bin/`
 
@@ -52,7 +52,7 @@ NDKPATH_X86=`echo ${NDK}/toolchains/x86-*/prebuilt/${OS}-x86/bin/`
 NDKPATH_ARM=`echo ${NDK}/toolchains/arm-*/prebuilt/$(uname|tr A-Z a-z)-x86/bin/`
 #INCDIR=${NDK}/platforms/android-8/arch-arm/usr/include/
 #CFLAGS=-I${INCDIR}
-echo $NDKPATH_ARM
+#echo $NDKPATH_ARM
 
 PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS}:$PATH
 export PATH
