@@ -717,7 +717,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "zoom.to", 0);
 	r_config_desc (cfg, "zoom.to", "Zoom end address");
 	r_config_set_cb (cfg, "zoom.byte", "h", &config_zoombyte_callback);
-	r_config_desc (cfg, "zoom.byte", "Zoom specific callback to calculate each byte (See pZ? for help)");
+	r_config_desc (cfg, "zoom.byte", "Zoom callback to calculate each byte (See pZ? for help)");
 	/* TODO cmd */
 #if 0
 	config_set("asm.section", "true");

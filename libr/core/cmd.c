@@ -32,11 +32,9 @@ static void cmd_debug_reg(RCore *core, const char *str);
 
 static int r_core_cmd_nullcallback(void *data) {
 	RCore *core = (RCore*) data;
-	if (core->cmdrepeat) {
-		r_core_cmd_repeat (core, 1);
-		return 1;
-	}
-	return 0;
+	if (!core->cmdrepeat) return 0;
+	r_core_cmd_repeat (core, 1);
+	return 1;
 }
 
 // TODO: move somewhere else
@@ -297,8 +295,9 @@ static int cmd_resize(void *data, const char *input) {
 	}
 
 	if (newsize < core->offset+core->blocksize ||
-			oldsize < core->offset+core->blocksize)
+			oldsize < core->offset+core->blocksize) {
 		r_core_block_read (core, 0);
+	}
 
 	return R_TRUE;
 }
@@ -801,12 +800,15 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 				r_core_block_size (core, len);
 				memcpy (core->block, ptr+3, len);
 				break;
+default:
+goto ignore;
 			}
 			ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			*ptr = '@';
 			r_core_block_size (core, tmpbsz);
 			return ret;
 		}
+ignore:
 		for (ptr++;*ptr== ' ';ptr++); ptr--;
 		cmd = r_str_clean (cmd);
 		if (ptr2) {

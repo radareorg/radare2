@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibbl */
 
 static int cmd_hash(void *data, const char *input) {
 	char *p, algo[32];
@@ -34,8 +34,10 @@ static int cmd_hash(void *data, const char *input) {
 
 	ptr = strchr (input, ' ');
 	sscanf (input, "%31s", algo);
-	if (ptr != NULL)
-		len = r_num_math (core->num, ptr+1);
+	if (ptr != NULL) {
+		int nlen = r_num_math (core->num, ptr+1);
+		if (nlen>0) len = nlen;
+	}
 	/* TODO: Simplify this spaguetti monster */
 	if (!r_str_ccmp (input, "md4", ' ')) {
 		RHash *ctx = r_hash_new (R_TRUE, R_HASH_MD4);

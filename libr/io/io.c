@@ -174,6 +174,7 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret, l, olen = len;
 	int w = 0;
+	int eof = 0;
 
 	r_io_seek (io, addr, R_IO_SEEK_SET);
 #if 0
@@ -189,6 +190,12 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	}
 #endif
 // XXX: this is buggy!
+	memset (buf, 0xff, len);
+#if 0
+	ret = r_io_read_internal (io, buf, len);
+	return len;
+#endif
+
 	while (len>0) {
 		int ms;
 		ut64 last = r_io_section_next (io, addr);
@@ -208,17 +215,18 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			ret = 1;
 		} else if (ret<l) {
 		//	eprintf ("FOUND EOF AT %llx\n", addr+ret);
+			eof = 1;
 			l = ret;
+		} else {
+			//eprintf ("L = %d\n", len-w);
+			eof = 1;
 		}
 		if (io->cached) {
-			r_io_cache_read (io, addr+w, buf+w, l);
-			/*
-			 * XXX: The 'else' below is fixing the io.cache
-			 * with resized files. That may be wrong
-			 */
+			r_io_cache_read (io, addr+w, buf+w, len-w);
 		} else
 		// hide non-mapped files here
 		// do not allow reading on real addresses if mapped != 0
+		if (r_list_length (io->maps) >1)
 		if (!io->debug && ms>0) {
 			//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
 			/* check if address is vaddred in sections */
@@ -230,8 +238,10 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			}
 			break;
 		}
+		////if (eof) break;
 		w += l;
 		len -= l;
+break;
 	}
 	return olen;
 }
@@ -249,14 +259,14 @@ R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 	return ret;
 }
 
-R_API int r_io_resize(struct r_io_t *io, ut64 newsize) {
+R_API int r_io_resize(RIO *io, ut64 newsize) {
 	if (io->plugin && io->plugin->resize)
 		return io->plugin->resize (io, io->fd, newsize);
 	else ftruncate (io->fd->fd, newsize);
 	return R_FALSE;
 }
 
-R_API int r_io_set_write_mask(struct r_io_t *io, const ut8 *buf, int len) {
+R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {
 	int ret = R_FALSE;
 	if (len) {
 		io->write_mask_fd = io->fd->fd;
@@ -310,7 +320,6 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 
 	if (ret == -1)
 		eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
-
 	if (data)
 		free (data);
 	return ret;
