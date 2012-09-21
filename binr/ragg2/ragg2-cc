@@ -166,7 +166,8 @@ LDFLAGS="${LDFLAGS} -nostdlib"
 
 case "$K" in
 darwin)
-	TEXT="__TEXT.__text"
+	#TEXT="__TEXT.__text"
+	TEXT="0.__text"
 	;;
 *|linux)
 	TEXT=".text"
