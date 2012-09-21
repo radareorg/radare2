@@ -81,7 +81,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		if (bbi->jump != -1) {
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
-					"  <img class=\"connector-end\" src=\"arrow.gif\" /></div>\n",
+					"  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
 						bbi->addr, bbi->jump);
 			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 					"[color=\"%s\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->jump,
@@ -91,7 +91,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		if (bbi->fail != -1) {
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
-					"  <img class=\"connector-end\" src=\"arrow.gif\" /></div>\n",
+					"  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
 						bbi->addr, bbi->fail);
 			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
@@ -108,7 +108,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			} else {
 				if (is_html) {
 					r_cons_printf ("<p class=\"block draggable\" style=\"top: %dpx; left: %dpx; width: 500px;\" id=\"_0x%08"PFMT64x"\">\n"
-						"%s</p>", top, left, bbi->addr, str);
+						"%s</p>\n", top, left, bbi->addr, str);
 					left = left? 0: 600;
 					if (!left) top += 250;
 				} else

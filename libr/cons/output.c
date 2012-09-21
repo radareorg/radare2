@@ -1,14 +1,9 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <r_cons.h>
 
 #if __WINDOWS__
 static void fill_tail (int cols, int lines) {
-	if (0) {
-		char b[16];
-		sprintf(b, "EOF(%d)", lines);
-		write (1, b, strlen (b));
-	}
 	/* fill the rest of screen */
 	lines++; // hack
 	if (lines>0) {

@@ -17,11 +17,28 @@ body {
 }
 </style>
 <script>
+
+function Ajax (method, uri, body, fn) {
+        var x = new XMLHttpRequest ();
+        x.open (method, uri, false);
+        x.onreadystatechange = function (y) {
+                if (fn) fn (x.responseText);
+        }
+        x.send (body);
+}
+
+function get_graph() {
+	Ajax ('GET', "/cmd/ag $$", '', function (x) {
+		document.getElementById ('mainCanvas').innerHTML = x;
+	});
+}
 	<!--
 		function onLoad() {
+			get_graph ();
 			setMenu();
 			resizeCanvas();
 			initPageObjects();
+
 		}
 		
 		/**
@@ -60,20 +77,16 @@ body {
 		/**
 		 * Strips the file extension and everything after from a url
 		 */
-		function stripExtension(url)
-		{
+		function stripExtension(url) {
 			var lastDotPos = url.lastIndexOf('.');
-			if(lastDotPos > 0)
-				return url.substring(0, lastDotPos - 1);
-			else
-				return url;
+			return (lastDotPos <= 0)? url:
+				url.substring(0, lastDotPos - 1);
 		}
 		
 		/**
 		 * this function opens a popup to show samples during explanations.
 		 */
-		function openSample(url)
-		{
+		function openSample(url) {
 			var popup = window.open(url, "sampleWindow", "width=400,height=300");
 			popup.focus();
 			return false;
@@ -104,79 +117,10 @@ body {
 -->
 			<td style="vertical-align: top; padding: 0px;">
 				<div id="mainCanvas" class="canvas" style="width: 100%; height: 400px;">
-<div class="connector _0x100001478 _0x10000149d">
-  <img class="connector-end" src="img/arrow.gif" /></div>
-<p class="block draggable" style="top: 0px; left: 10px; width: 500px;" id="_0x100001478">
-; [0] va=0x100001478 pa=0x00001478 sz=14575 vsz=14575 rwx=-r-x 0.__text
-/ function: section.0.__text (60)
-| 0x100001478  section.0.__text:
-| 0x100001478   push 0x0
-| 0x10000147a   mov rbp, rsp
-| 0x10000147d   and rsp, 0xfffffffffffffff0
-| 0x100001481   mov rdi, [rbp+0x8]
-| 0x100001485   lea rsi, [rbp+0x10]
-| 0x100001489   mov edx, edi
-| 0x10000148b   add edx, 0x1
-| 0x10000148e   shl edx, 0x3
-| 0x100001491   add rdx, rsi
-| 0x100001494   mov rcx, rdx
-| 0x100001497   jmp loc.10000149d
-</p><div class="connector _0x100001478 _0x10000149d">
-  <img class="connector-end" src="img/arrow.gif" /></div>
-<p class="block draggable" style="top: 0px; left: 10px; width: 500px;" id="_0x100001499">
-  ; CODE (JMP) XREF 0x1000014a1 (section.0.__text)
-/ loc: loc.100001499 (27)
-| 0x100001499  loc.100001499:
-| 0x100001499   add rcx, 0x8
-</p><div class="connector _0x100001478 _0x100001499">
-  <img class="connector-end" src="img/arrow.gif" /></div>
-<div class="connector _0x100001478 _0x1000014a3">
-  <img class="connector-end" src="img/arrow.gif" /></div>
-<p class="block draggable" style="top: 0px; left: 10px; width: 500px;" id="_0x10000149d">
-  ; CODE (JMP) XREF 0x100001497 (section.0.__text)
-/ loc: loc.10000149d (23)
-| 0x10000149d  loc.10000149d:
-| 0x10000149d   cmp qword [rcx], 0x0
-| 0x1000014a1   jnz loc.100001499
-</p><div class="connector _0x100001478 _0x100004eca">
-  <img class="connector-end" src="img/arrow.gif" /></div>
-<p class="block draggable" style="top: 0px; left: 10px; width: 500px;" id="_0x1000014a3">
-| 0x1000014a3   add rcx, 0x8
-| 0x1000014a7   call dword fcn.100002404
-|    ; fcn.100002404() (fcn.100002404+0)
-| 0x1000014ac   mov edi, eax
-| 0x1000014ae   call dword imp.__symbol_stub1_exit
-|    ; imp.__symbol_stub1_exit() (imp.__symbol_stub1_exit+0)
-\ 0x1000014b3   hlt
-  ; DATA XREF 0x1000014a1 (section.0.__text)
-  ; DATA XREF 0x100001497 (section.0.__text)
-/ function: fcn.1000014b4 (109)
-| 0x1000014b4  fcn.1000014b4:
-| 0x1000014b4   push rbp
-| 0x1000014b5   mov rbp, rsp
-| 0x1000014b8   lea rax, [rdi+0x68]
-| 0x1000014bc   lea rdi, [rsi+0x68]
-| 0x1000014c0   mov rsi, rax
-| 0x1000014c3   leave
-| 0x1000014c4   jmp dword imp.__symbol_stub1_strcoll
-</p>
-<p class="block draggable" style="top: 0px; left: 10px; width: 500px;" id="_0x100004eca">
-  ; CODE (JMP) XREF 0x1000014c4 (fcn.1000014b4)
-  ; CODE (JMP) XREF 0x1000014d6 (fcn.1000014b4)
-  ; CODE (JMP) XREF 0x10000150d (fcn.1000014b4)
-  ; CODE (JMP) XREF 0x100001754 (fcn.100001722)
-  ; CODE (JMP) XREF 0x10000170e (fcn.1000016dc)
-  ; CODE (JMP) XREF 0x1000016d2 (fcn.1000016a0)
-  ; CODE (JMP) XREF 0x10000168c (fcn.10000165a)
-  ; CODE (JMP) XREF 0x100001647 (fcn.10000161a)
-  ; CODE (JMP) XREF 0x100001607 (fcn.1000015da)
-  ; CODE (JMP) XREF 0x1000015c7 (fcn.10000159a)
-  ; CODE (JMP) XREF 0x100001590 (fcn.100001561)
-  ; CODE (JMP) XREF 0x10000154e (fcn.100001521)
-/ loc: imp.__symbol_stub1_strcoll (958)
-| 0x100004eca  imp.__symbol_stub1_strcoll:
-| 0x100004eca   jmp qword [rip+0x1340]
-</p>
+
+<!-- filled with ajax -->
+
+</div>
 			</td>
 			<td width="1" style="vertical-align: top;" class="menu">
 				<ul id="menu"> </ul>
