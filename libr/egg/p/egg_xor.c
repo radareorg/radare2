@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 /* based on @santitox patch */
 #include <r_egg.h>
 
@@ -8,6 +8,10 @@ static RBuffer *build (REgg *egg) {
 	int i;
 	char *key = r_egg_option_get (egg, "key");
 
+	if (!key || !*key) {
+		eprintf ("Invalid key (null)\n");
+		return R_FALSE;
+	}
 	nkey = r_num_math (NULL, key);
 	if (nkey == 0) {
 		eprintf ("Invalid key (%s)\n", key);
