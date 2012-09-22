@@ -567,7 +567,10 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "fs.view", "Set visibility options for filesystems");
 	r_config_set (cfg, "hud.once", "false");
 	r_config_desc (cfg, "hud.once", "run");
+	r_config_set (cfg, "bin.dwarf", "false");
+	r_config_desc (cfg, "bin.dwarf", "Load dwarf information on startup if available");
 	r_config_set (cfg, "bin.strings", "true");
+	r_config_desc (cfg, "bin.strings", "Load strings from rbin on startup");
 	p = r_sys_getenv ("EDITOR");
 #if __WINDOWS__
 	r_config_set (cfg, "cfg.editor", p? p: "notepad");

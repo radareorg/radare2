@@ -84,11 +84,12 @@ R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const cha
 }
 
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
+	struct r_io_plugin_t *plugin;
 	RIODesc *desc = NULL;
 	int fd = -2;
-	char *uri = strdup (file);
-	struct r_io_plugin_t *plugin;
+	char *uri;
 	if (!io) return NULL;
+	uri = strdup (file);
 	for (;;) {
 		plugin = r_io_plugin_resolve (io, uri);
 		if (plugin && plugin->open) {
@@ -434,7 +435,7 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 }
 
 R_API int r_io_accept(RIO *io, int fd) {
-	if (r_io_is_listener (io) && (io->plugin->accept))
+	if (r_io_is_listener (io) && io->plugin && io->plugin->accept)
 		return io->plugin->accept (io, io->fd, fd);
 	return R_FALSE;
 }

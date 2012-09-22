@@ -302,7 +302,7 @@ typedef struct r_anal_type_function_t {
 	int depth;
 	RAnalType *args; // list of arguments
 	RAnalVarSub varsubs[R_ANAL_VARSUBS];
-	RAnalLocals *locs; // list of local variables
+	RList *locs; // list of local variables
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
 	RList *bbs;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_egg.h>
 #include "../config.h"
@@ -338,7 +338,7 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 		} else memset (xx, byte, n);
 		if (f>='a' && f<='z')
 			r_buf_prepend_bytes (egg->bin, xx, n);
-		else r_buf_prepend_bytes (egg->bin, xx, n);
+		else r_buf_append_bytes (egg->bin, xx, n);
 		free (xx);
 	}
 	free (o);

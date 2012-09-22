@@ -130,7 +130,7 @@ R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
 	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
-	if (dst == NULL || addr > b->length)
+	if (len<1 || dst == NULL || addr > b->length)
 		return -1;
  	end = (int)(addr+len);
 	if (end > b->length)

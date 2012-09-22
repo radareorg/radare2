@@ -1,8 +1,9 @@
 /* radare - Copyright 2012 - pancake */
 
 #include <r_types.h>
+#include <r_util.h>
 
-static const char * const regs[32] = {
+static const char * const regs[33] = {
   "zero", "at",   "v0",   "v1",   "a0",   "a1",   "a2",   "a3",
   "a4",   "a5",   "a6",   "a7",   "t0",   "t1",   "t2",   "t3",
   "s0",   "s1",   "s2",   "s3",   "s4",   "s5",   "s6",   "s7",
@@ -16,7 +17,7 @@ static struct {
 	int args;
 	int n;
 } ops[] = {
-	{ "nop", 'N', 0, NULL },
+	{ "nop", 'N', 0, 0 },
 	{ "lui", 'I', 2, 15 },
 	{ "sw", 'I', 3, 43 },
 	{ "sh", 'I', 3, 41 },

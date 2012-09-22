@@ -860,7 +860,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	struct r_bin_elf_symbol_t *ret = NULL;
 	char *strtab;
 	ut64 sym_offset = 0, data_offset = 0, toffset;
-	int tsize, nsym, ret_ctr, i, j, k, len;
+	int shdr_size, tsize, nsym, ret_ctr, i, j, k, len;
 
 	if (!bin->shdr || bin->ehdr.e_shnum == 0)
 		return NULL;
@@ -871,14 +871,19 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 		if ((data_offset = Elf_(r_bin_elf_get_section_offset)(bin, ".rodata")) == -1)
 			data_offset = 0;
 	}
+	shdr_size = bin->ehdr.e_shnum * sizeof (Elf_(Shdr));
 	for (i = 0; i < bin->ehdr.e_shnum; i++)
 		if ((type == R_BIN_ELF_IMPORTS &&
 				bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
 			(type == R_BIN_ELF_SYMBOLS  &&
 			 	bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
+			if (bin->shdr[i].sh_link > shdr_size) {
+				/* oops. fix out of range pointers */
+				continue;
+			}
 			strtab_section = &bin->shdr[bin->shdr[i].sh_link];
 			if ((strtab = (char *)malloc (8+strtab_section->sh_size)) == NULL) {
-				perror ("malloc (syms strtab)");
+				eprintf ("malloc (syms strtab)");
 				return NULL;
 			}
 			if (r_buf_read_at (bin->b, strtab_section->sh_offset, (ut8*)strtab, strtab_section->sh_size) == -1) {
@@ -887,7 +892,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			}
 
 			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) {
-				perror ("malloc (syms)");
+				eprintf ("malloc (syms)");
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));

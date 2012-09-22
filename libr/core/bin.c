@@ -135,14 +135,16 @@ static int bin_info (RCore *r, int mode) {
 static int bin_dwarf (RCore *core, int mode) {
         RBinDwarfRow *row;
         RListIter *iter;
-        RList *list;
+        RList *list = NULL;
 
 	if (core->bin && core->bin->cur.curplugin && core->bin->cur.curplugin->lines) {
 		list = core->bin->cur.curplugin->lines (&core->bin->cur);
 	} else {
-		// USE DWARF HERE
-		r_bin_dwarf_parse_info (core->bin);
-		list = r_bin_dwarf_parse_line (core->bin);
+		// TODO: complete and speed-up support for dwarf
+		if (r_config_get_i (core->config, "bin.dwarf")) {
+			r_bin_dwarf_parse_info (core->bin);
+			list = r_bin_dwarf_parse_line (core->bin);
+		}
 	}
 	if (!list) return R_FALSE;
         r_list_foreach (list, iter, row) {

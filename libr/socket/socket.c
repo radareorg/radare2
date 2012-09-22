@@ -90,6 +90,7 @@ R_API RSocket *r_socket_new (int is_ssl) {
 		s->sfd = NULL;
 		s->ctx = NULL;
 		s->bio = NULL;
+		s->fd = -1;
 		if (!SSL_library_init ()) {
 			r_socket_free (s);
 			return NULL;
@@ -181,13 +182,15 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 
 R_API int r_socket_close (RSocket *s) {
 	int ret;
+	if (s->fd != -1) {
 #if __WINDOWS__
-	WSACleanup ();
-	ret = closesocket (s->fd);
+		WSACleanup ();
+		ret = closesocket (s->fd);
 #else
-	shutdown (s->fd, SHUT_RDWR);
-	ret = close (s->fd);
+		shutdown (s->fd, SHUT_RDWR);
+		ret = close (s->fd);
 #endif
+	}
 #if HAVE_LIB_SSL
 	if (s->is_ssl && s->sfd)
 		SSL_shutdown (s->sfd);
