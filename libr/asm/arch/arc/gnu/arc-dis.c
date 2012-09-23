@@ -540,7 +540,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
   int is_linked = 0;
   int offset = 0;
   int usesAuxReg = 0;
-  int flags;
+  int flags = 0;
   int ignoreFirstOpd;
   char formatString[60];
 

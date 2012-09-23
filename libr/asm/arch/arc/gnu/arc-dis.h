@@ -77,6 +77,7 @@ struct arcDisState
   unsigned char tcnt;
   unsigned char acnt;
 };
+int decodeInstr (bfd_vma address, disassemble_info * info);
 
 #define __TRANSLATION_REQUIRED(state) ((state).acnt != 0)
 

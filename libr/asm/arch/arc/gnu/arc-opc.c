@@ -21,6 +21,7 @@
 
 #include "sysdep.h"
 #include <stdio.h>
+#include <string.h>
 #include "ansidecl.h"
 //#include "bfd.h"
 #include "arc.h"

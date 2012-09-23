@@ -654,6 +654,7 @@ toro:
 		free (buf);
 	if (idx>=len) {// && (invbreak && !lastfail)) {
 		if (invbreak && lines<l) {
+			if (len<4) len = 4;
 			buf = nbuf = malloc (len);
 			addr += idx;
 			r_core_read_at (core, addr, buf, len);

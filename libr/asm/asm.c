@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2012 - nibble */
 
 #include <stdio.h>
-
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
@@ -286,6 +285,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 		ret = a->cur->disassemble (a, op, buf, len);
 	if (ret > 0) {
 		int oplen = r_asm_op_get_size (op);
+		if (oplen>len) oplen = len;
 		if (a->ofilter)
 			r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
 		else memcpy (op->buf, buf, oplen);
