@@ -179,6 +179,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif __arm__
 #define R_SYS_ARCH "arm"
 #define R_SYS_BITS R_SYS_BITS_32
+#elif __arc__
+#define R_SYS_ARCH "arc"
+#define R_SYS_BITS R_SYS_BITS_32
 #elif __sparc__
 #define R_SYS_ARCH "sparc"
 #define R_SYS_BITS R_SYS_BITS_32
@@ -206,7 +209,8 @@ enum {
 	R_SYS_ARCH_SH = 0x800,
 	R_SYS_ARCH_AVR = 0x1000,
 	R_SYS_ARCH_DALVIK = 0x2000,
-	R_SYS_ARCH_Z80 = 0x4000
+	R_SYS_ARCH_Z80 = 0x4000,
+	R_SYS_ARCH_ARC = 0x8000
 };
 
 /* os */

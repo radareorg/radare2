@@ -121,6 +121,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 }
 
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+	struct arm_insn *arminsn;
 	ut32 branch_dst_addr, i = 0;
 	ut32* code = (ut32 *)data;
 	const ut8 *b = (ut8 *)data;
@@ -128,7 +129,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	if (data == NULL)
 		return 0;
 	memset (op, '\0', sizeof (RAnalOp));
-	struct arm_insn *arminsn = arm_new();
+	arminsn = arm_new();
 	arm_set_thumb(arminsn, R_FALSE);
 	arm_set_input_buffer(arminsn, data);
 	arm_set_pc(arminsn, addr);

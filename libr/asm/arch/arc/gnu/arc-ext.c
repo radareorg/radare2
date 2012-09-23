@@ -48,6 +48,8 @@ arcExtMap_instName(int opcode, int minor, int *flags)
 	return 0;
     else
       opcode -= 0x10;
+    if (opcode<0 || opcode > NUM_EXT_INST)
+      return 0;
     if (!arc_extension_map.instructions[opcode])
       return 0;
     *flags = arc_extension_map.instructions[opcode]->flags;

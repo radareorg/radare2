@@ -418,10 +418,9 @@ int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin) {
 // TODO: do not strdup here
 char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_machine) {
-	case EM_AVR:
-		return strdup ("avr");
-	case EM_68K:
-		return strdup ("m68k");
+	case EM_ARC: return strdup ("arc");
+	case EM_AVR: return strdup ("avr");
+	case EM_68K: return strdup ("m68k");
 	case EM_MIPS:
 	case EM_MIPS_RS3_LE:
 	case EM_MIPS_X:
@@ -435,10 +434,8 @@ char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_PPC:
 	case EM_PPC64:
 		return strdup ("ppc");
-	case EM_SH:
-		return strdup ("sh");
-	default:
-		return strdup ("x86");
+	case EM_SH: return strdup ("sh");
+	default: return strdup ("x86");
 	}
 }
 
