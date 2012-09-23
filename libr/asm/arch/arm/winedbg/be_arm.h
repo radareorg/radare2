@@ -7,6 +7,8 @@ struct arm_insn {
 	int thumb;
 	char *str_asm;
 	char *str_hex;
+
+	ut64 jmp, fail;
 };
 
 int arm_disasm_one_insn(struct arm_insn *arminsn);

@@ -74,7 +74,10 @@ static ut32 arm_disasm_branch(struct arm_insn *arminsn, ut32 inst) {
 
 	if (offset & 0x02000000) offset |= 0xfc000000;
 	offset += 8;
-	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "b%s%s %"PFMT64x, link ? "l" : "", get_cond(inst), arminsn->pc+offset);
+	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "b%s%s 0x%"PFMT64x, link ? "l" : "", get_cond(inst), arminsn->pc+offset);
+
+	arminsn->jmp = arminsn->pc+offset;
+	arminsn->fail = arminsn->pc+4;
 	return 0;
 }
 
@@ -428,7 +431,10 @@ static ut16 thumb_disasm_blocktrans(struct arm_insn *arminsn, ut16 inst) {
 
 static ut16 thumb_disasm_condbranch(struct arm_insn *arminsn, ut16 inst) {
 	ut16 offset = inst & 0x00ff;
-	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "b%s %"PFMT64x, tbl_cond[(inst >> 8) & 0x0f], arminsn->pc+offset);
+	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "b%s 0x%"PFMT64x, tbl_cond[(inst >> 8) & 0x0f], arminsn->pc+offset);
+
+	arminsn->jmp = arminsn->pc+offset;
+	arminsn->fail = arminsn->pc+4;
 	return 0;
 }
 
@@ -437,7 +443,9 @@ static ut16 thumb_disasm_uncondbranch(struct arm_insn *arminsn, ut16 inst) {
 
 	if (offset & 0x0800) offset |= 0xf000;
 	offset += 4;
-	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "b %"PFMT64x, arminsn->pc+offset);
+	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "b 0x%"PFMT64x, arminsn->pc+offset);
+
+	arminsn->jmp = arminsn->pc+offset;
 	return 0;
 }
 
@@ -543,7 +551,9 @@ static ut16 thumb_disasm_movshift(struct arm_insn *arminsn, ut16 inst) {
 
 static ut32 thumb2_disasm_branchlinked(struct arm_insn *arminsn, ut32 inst) {
 	ut32 offset = (((inst & 0x07ff0000) >> 4) | ((inst & 0x000007ff) << 1)) + 4;
-	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "bl %"PFMT64x, arminsn->pc+offset);
+	arminsn->str_asm = r_str_concatf(arminsn->str_asm, "bl 0x%"PFMT64x, arminsn->pc+offset);
+
+	arminsn->jmp = arminsn->pc+offset;
 	return 0;
 }
 
@@ -792,6 +802,7 @@ int arm_disasm_one_insn(struct arm_insn *arminsn) {
 	int size;
 	int matched = 0;
 
+	arminsn->jmp = arminsn->fail = -1LL;
 	if (!arminsn->thumb) {
 		size = ARM_INSN_SIZE;
 		inst = db_get_inst(arminsn->buf, size);

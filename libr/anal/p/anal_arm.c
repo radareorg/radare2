@@ -52,8 +52,8 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	struct arm_insn *arminsn = arm_new();
 	arm_set_thumb(arminsn, R_TRUE);
 	arm_set_input_buffer(arminsn, data);
+	arm_set_pc(arminsn, addr);
 	op->length = arm_disasm_one_insn(arminsn);
-	arm_free(arminsn);
 
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
 
@@ -114,6 +114,9 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->value = (ut64)(ins>>8);
 	}
+	op->jump = arminsn->jmp;
+	op->fail = arminsn->fail;
+	arm_free(arminsn);
 	return op->length;
 }
 
@@ -125,6 +128,10 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	if (data == NULL)
 		return 0;
 	memset (op, '\0', sizeof (RAnalOp));
+	struct arm_insn *arminsn = arm_new();
+	arm_set_thumb(arminsn, R_FALSE);
+	arm_set_input_buffer(arminsn, data);
+	arm_set_pc(arminsn, addr);
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 #if 0
@@ -244,6 +251,9 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			op->eob = 1;
 		}
 	}
+	op->jump = arminsn->jmp;
+	op->fail = arminsn->fail;
+	arm_free(arminsn);
 	return op->length;
 }
 
