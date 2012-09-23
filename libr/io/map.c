@@ -78,7 +78,9 @@ R_API int r_io_map_select(RIO *io, ut64 off) {
 	}
 	if (fd != -1) {
 		r_io_set_fdn (io, fd);
-		r_io_seek (io, delta, R_IO_SEEK_SET);
+		if (io->debug) /* HACK */
+			r_io_seek (io, off, R_IO_SEEK_SET);
+		else r_io_seek (io, delta, R_IO_SEEK_SET);
 		return 0;
 	}
 	r_io_seek (io, off, R_IO_SEEK_SET);
