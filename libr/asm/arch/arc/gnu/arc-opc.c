@@ -22,8 +22,8 @@
 #include "sysdep.h"
 #include <stdio.h>
 #include "ansidecl.h"
-#include "bfd.h"
-#include "opcode/arc.h"
+//#include "bfd.h"
+#include "arc.h"
 #include "opintl.h"
 
 enum operand {OP_NONE,OP_REG,OP_SHIMM,OP_LIMM};
@@ -502,8 +502,10 @@ insert_flagfinish (arc_insn insn,
 {
   if (flag_p && !flagshimm_handled_p)
     {
-      if (shimm_p)
-	abort ();
+      if (shimm_p) {
+	fprintf (stderr, "abort\n");
+	return insn;
+      }
       flagshimm_handled_p = 1;
       insn |= (1 << operand->shift);
     }
@@ -1142,8 +1144,10 @@ extract_reg (arc_insn *insn,
 
       op_type = OP_REG;
 
-      if (reg == NULL)
-	abort ();
+      if (reg == NULL) {
+	fprintf (stderr, "abort\n");
+	return 0;
+      }
       if (opval != NULL)
 	*opval = reg;
       value = regno;
@@ -1569,6 +1573,7 @@ static int cpu_type;
 
 /* Translate a bfd_mach_arc_xxx value to a ARC_MACH_XXX value.  */
 
+#if 0
 int
 arc_get_opcode_mach (int bfd_mach, int big_p)
 {
@@ -1581,6 +1586,7 @@ arc_get_opcode_mach (int bfd_mach, int big_p)
   };
   return mach_type_map[bfd_mach - bfd_mach_arc_5] | (big_p ? ARC_MACH_BIG : 0);
 }
+#endif
 
 /* Initialize any tables that need it.
    Must be called once at start up (or when first needed).

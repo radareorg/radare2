@@ -22,7 +22,8 @@
 #include "sysdep.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include "bfd.h"
+#include <string.h>
+//#include "bfd.h"
 #include "arc-ext.h"
 #include "libiberty.h"
 
@@ -68,7 +69,7 @@ arcExtMap_coreRegName(int value)
 const char *
 arcExtMap_condCodeName(int value)
 {
-  if (value < 16)
+  if (value < 16 || value > NUM_EXT_COND)
     return 0;
   return arc_extension_map.condCodes[value-16];
 }
@@ -180,9 +181,9 @@ arcExtMap_add(void *base, unsigned long length)
 	  {
 	    char opcode = p[2];
 	    char minor  = p[3];
-	    char * insn_name = (char *) xmalloc(( (int)*p-5) * sizeof(char));
+	    char * insn_name = (char *) malloc(( (int)*p-5) * sizeof(char));
 	    struct ExtInstruction * insn =
-	      (struct ExtInstruction *) xmalloc(sizeof(struct ExtInstruction));
+	      (struct ExtInstruction *) malloc(sizeof(struct ExtInstruction));
 
 	    if (opcode==3)
 	      opcode = 0x1f - 0x10 + minor - 0x09 + 1;
@@ -197,7 +198,7 @@ arcExtMap_add(void *base, unsigned long length)
 
 	case EXT_CORE_REGISTER:
 	  {
-	    char * core_name = (char *) xmalloc(((int)*p-3) * sizeof(char));
+	    char * core_name = (char *) malloc(((int)*p-3) * sizeof(char));
 
 	    strcpy(core_name, (char *) (p+3));
 	    arc_extension_map.coreRegisters[p[2]-32] = core_name;
@@ -206,7 +207,7 @@ arcExtMap_add(void *base, unsigned long length)
 
 	case EXT_COND_CODE:
 	  {
-	    char * cc_name = (char *) xmalloc( ((int)*p-3) * sizeof(char));
+	    char * cc_name = (char *) malloc( ((int)*p-3) * sizeof(char));
 	    strcpy(cc_name, (char *) (p+3));
 	    arc_extension_map.condCodes[p[2]-16] = cc_name;
 	  }
@@ -217,7 +218,7 @@ arcExtMap_add(void *base, unsigned long length)
 	    /* trickier -- need to store linked list to these  */
 	    struct ExtAuxRegister *newAuxRegister =
 	      (struct ExtAuxRegister *)malloc(sizeof(struct ExtAuxRegister));
-	    char * aux_name = (char *) xmalloc ( ((int)*p-6) * sizeof(char));
+	    char * aux_name = (char *) malloc ( ((int)*p-6) * sizeof(char));
 
 	    strcpy (aux_name, (char *) (p+6));
 	    newAuxRegister->name = aux_name;
@@ -239,6 +240,7 @@ arcExtMap_add(void *base, unsigned long length)
 
 /* Load hw extension descibed in .extArcMap ELF section.  */
 
+#if 0
 void
 build_ARC_extmap (text_bfd)
   bfd *text_bfd;
@@ -260,3 +262,5 @@ build_ARC_extmap (text_bfd)
         free ((PTR) arcExtMap);
       }
 }
+
+#endif

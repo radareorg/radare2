@@ -56,7 +56,7 @@ extern const char *arcExtMap_coreRegName(int);
 extern const char *arcExtMap_auxRegName(long);
 extern const char *arcExtMap_condCodeName(int);
 extern const char *arcExtMap_instName(int, int, int*);
-extern void build_ARC_extmap(bfd *);
+//extern void build_ARC_extmap(bfd *);
 
 #define IGNORE_FIRST_OPD 1
 

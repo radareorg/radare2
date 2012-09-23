@@ -23,9 +23,9 @@
 #include "ansidecl.h"
 #include "libiberty.h"
 #include "dis-asm.h"
-#include "opcode/arc.h"
+#include "arc.h"
 #include "elf-bfd.h"
-#include "elf/arc.h"
+//#include "elf/arc.h"
 #include <string.h>
 #include "opintl.h"
 
@@ -1159,7 +1159,7 @@ _instName (void *_this ATTRIBUTE_UNUSED, int majop, int minop, int *flags)
 /* Decode an instruction returning the size of the instruction
    in bytes or zero if unrecognized.  */
 
-static int
+int
 decodeInstr (bfd_vma            address, /* Address of this instruction.  */
 	     disassemble_info * info)
 {
@@ -1200,10 +1200,12 @@ decodeInstr (bfd_vma            address, /* Address of this instruction.  */
   /* Disassemble.  */
   dsmOneArcInst (address, & s);
 
+#if 0
   /* Display the disassembly instruction.  */
   (*func) (stream, "%08lx ", s.words[0]);
   (*func) (stream, "    ");
-  (*func) (stream, "%-10s ", s.instrBuffer);
+#endif
+  (*func) (stream, "%s ", s.instrBuffer);
 
   if (__TRANSLATION_REQUIRED (s))
     {
@@ -1220,6 +1222,7 @@ decodeInstr (bfd_vma            address, /* Address of this instruction.  */
 
 /* Return the print_insn function to use.
    Side effect: load (possibly empty) extension section  */
+#if 0
 
 disassembler_ftype
 arc_get_disassembler (void *ptr)
@@ -1228,3 +1231,4 @@ arc_get_disassembler (void *ptr)
     build_ARC_extmap ((struct bfd *) ptr);
   return decodeInstr;
 }
+#endif

@@ -1,6 +1,7 @@
 OBJ_ARC=asm_arc.o
-OBJ_SPARC+=../arch/arc/gnu/arc-dis.o
-OBJ_SPARC+=../arch/arc/gnu/arc-opc.o
+OBJ_ARC+=../arch/arc/gnu/arc-dis.o
+OBJ_ARC+=../arch/arc/gnu/arc-ext.o
+OBJ_ARC+=../arch/arc/gnu/arc-opc.o
 
 SHARED2_ARC=$(addprefix ../,${SHARED_ARC})
 

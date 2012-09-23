@@ -67,7 +67,9 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len)
 	disasm_obj.mach = 0; //((a->bits == 64)
 
 	op->buf_asm[0]='\0';
-	op->inst_len = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
+	//op->inst_len = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
+	//op->inst_len = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
+	op->inst_len = decodeInstr ((bfd_vma)Offset, &disasm_obj);
 
 	if (op->inst_len == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
