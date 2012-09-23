@@ -41,8 +41,8 @@ R_API int r_io_plugin_init(RIO *io) {
 
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename) {
 	struct list_head *pos;
-	list_for_each_prev(pos, &io->io_list) {
-		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
+	list_for_each_prev (pos, &io->io_list) {
+		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
 		if (il->plugin == NULL)
 			continue;
 		if (il->plugin->plugin_open == NULL)

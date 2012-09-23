@@ -84,11 +84,12 @@ R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const cha
 }
 
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
-	struct r_io_plugin_t *plugin;
+	struct r_io_plugin_t *plugin = NULL;
 	RIODesc *desc = NULL;
 	int fd = -2;
 	char *uri;
 	if (!io) return NULL;
+	io->plugin = NULL;
 	uri = strdup (file);
 	for (;;) {
 		plugin = r_io_plugin_resolve (io, uri);

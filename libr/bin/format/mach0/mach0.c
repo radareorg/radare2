@@ -796,15 +796,16 @@ ut64 MACH0_(r_bin_mach0_get_main)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 		}
 	free (symbols);
 	if (!addr) {
-		ut8 b[64];
+		ut8 b[128];
 		ut64 entry = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
 		// XXX: X86 only and hacky!
-		if (r_buf_read_at (bin->b, entry, b, 64) == -1)
+		if (r_buf_read_at (bin->b, entry, b, sizeof (b)) == -1)
 			return 0;
 		for (i=0; i<64; i++) {
-			if (b[i] == 0xe8 && !b[i+2] && !b[i+3]) {
+			if (b[i] == 0xe8 && !b[i+3] && !b[i+4]) {
 				int delta = b[i+1] | (b[i+2]<<8) | (b[i+3]<<16) | (b[i+4]<<24);
 				return bin->entry + i + 5 + delta;
+
 			}
 		}
 	}

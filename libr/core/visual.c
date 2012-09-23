@@ -391,7 +391,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			cursor--;
 			ocursor=-1;
 			if (cursor<0) {
-				r_core_seek (core, core->offset-cols, 1);
+				r_core_seek_delta (core, -cols);
 				cursor ++;
 			}
 		} else r_core_seek_delta (core, -1);
