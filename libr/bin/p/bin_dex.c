@@ -171,6 +171,8 @@ static RList* classes (RBinArch *arch) {
 			eprintf ("error malloc string length %d\n", len);
 			break;
 		}
+		if (entry.source_file> bin->header.strings_size || entry.source_file<0)
+			continue;
 		r_buf_read_at (bin->b, bin->strings[entry.source_file],
 				(ut8*)name, len);
 		//snprintf (ptr->name, sizeof (ptr->name), "field.%s.%d", name, i);

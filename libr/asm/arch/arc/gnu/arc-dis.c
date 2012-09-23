@@ -1212,7 +1212,6 @@ decodeInstr (bfd_vma            address, /* Address of this instruction.  */
       bfd_vma addr = s.addresses[s.operandBuffer[1] - '0'];
 
       (*info->print_address_func) ((bfd_vma) addr, info);
-      (*func) (stream, "\n");
     }
   else
     (*func) (stream, "%s",s.operandBuffer);

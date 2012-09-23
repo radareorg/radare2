@@ -43,9 +43,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			if (system (cmd) != 0)
 				eprintf ("Use zip://<path-to-zip>//<path-inside-zip>\n");
 		}
+		eprintf ("Remove '%s' manually\n", d);
 		free (str);
 		free (d);
-		eprintf ("Remove '%s' manually\n", d);
 		return NULL;
 	}
 	r_io_redirect (io, NULL);
