@@ -8,7 +8,17 @@
 #include "udis86/types.h"
 #include "udis86/extern.h"
 
+static ut64 getval(int bits, ud_operand_t *op) {
+	switch (bits) {
+	case 8: return op->lval.sbyte;
+	case 16: return op->lval.uword;
+	case 32: return op->lval.udword;
+	case 64: return op->lval.uqword;
+	}
+	return 0LL;
+}
 static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+	int oplen;
 	struct ud u;
 	ud_init (&u);
 	ud_set_pc (&u, addr);
@@ -16,8 +26,33 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	ud_set_syntax (&u, NULL);
 	ud_set_input_buffer (&u, data, len);
 	ud_disassemble (&u);
-
-	return ud_insn_len (&u);
+	memset (op, '\0', sizeof (RAnalOp));
+	op->addr = addr;
+	op->jump = op->fail = -1;
+	op->ref = op->value = -1;
+	oplen = op->length = ud_insn_len (&u);
+	switch (u.mnemonic) {
+	case UD_Ijmp:
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = oplen + getval (anal->bits, &u.operand[0]);
+		break;
+	case UD_Icall:
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = oplen + getval (anal->bits, &u.operand[0]);
+		op->fail = addr+oplen;
+		break;
+	case UD_Iret:
+	case UD_Iretf:
+	case UD_Isysret:
+		op->type = R_ANAL_OP_TYPE_RET;
+		break;
+	case UD_Isyscall:
+		op->type = R_ANAL_OP_TYPE_SWI;
+		break;
+	default:
+		break;
+	}
+	return oplen;
 }
 
 static int set_reg_profile(RAnal *anal) {
@@ -178,7 +213,7 @@ struct r_anal_plugin_t r_anal_plugin_x86_udis86 = {
 	.name = "x86.udis86",
 	.desc = "X86 analysis plugin (udis86 backend)",
 	.arch = R_SYS_ARCH_X86,
-	.bits = 32|64,
+	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
 	.op = &x86_op,

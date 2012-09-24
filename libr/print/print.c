@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 - pancake */
 
 #include "r_cons.h"
 #include "r_print.h"
@@ -61,7 +61,7 @@ R_API void r_print_cursor(RPrint *p, int cur, int set) {
 		int from = p->ocur;
 		int to = p->cur;
 		r_num_minmax_swap_i (&from, &to);
-		if (cur>=from&&cur<=to)
+		if (cur>=from && cur<=to)
 			r_cons_invert (set, 1); //p->flags&R_PRINT_FLAGS_COLOR);
 	} else
 	if (cur==p->cur)
@@ -324,7 +324,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			if (base==32) {
 				ut32 n;
 				memcpy (&n, buf+j, sizeof (n));
+				r_print_cursor (p, j, 1);
 				p->printf ("0x%08x ", n);
+				r_print_cursor (p, j, 0);
 				j += 3;
 			} else
 			if (base==64) {
@@ -334,8 +336,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				// size_t l = sizeof (n); if (j + l > len) l = len - j;
 				memcpy (&a, buf+j, 4);
 				memcpy (&b, buf+j+4, 4);
-				j += 7;
+				r_print_cursor (p, j, 1);
 				p->printf ("0x%08x%08x ", b, a); //n<<32, n&0xffffff);
+				r_print_cursor (p, j, 0);
+				j += 7;
 			} else {
 				r_print_byte (p, fmt, j, buf[j]);
 				if (j%2) {
@@ -476,7 +480,6 @@ R_API void r_print_progressbar(RPrint *p, int pc, int _cols) {
         for (i=cols-(cols*pc/100);i;i--) p->printf ("-");
         p->printf ("]");
 }
-
 
 R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from, ut64 to, int len, int maxlen) {
 	static int mode = -1;

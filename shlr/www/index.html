@@ -6,7 +6,7 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
 -->
 	<link rel=Stylesheet href="style.css" type="text/css" />
-<meta name="viewport" content="width=320px, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=false" />
+	<meta name="viewport" content="width=340px, initial-scale=1" />
 	<script src="script.js"></script>
 <script>
 function Ajax (method, uri, body, fn) {
@@ -25,11 +25,7 @@ function cmd(c, cb) {
 	});
 }
 
-function about() {
-	cmd ("?V", function (version) {
-		alert ("r2w v"+version);
-	});
-}
+function about() { cmd ("?V", function (version) { alert ("r2w v"+version); }); }
 
 function panel_functions_load() {
 	Ajax ('GET', "/cmd/afl", '', function (x) {
@@ -160,8 +156,10 @@ function init() {
 </script>
 </head>
 <body onload="init()">
-<div class=popup_background id="popup_background"></div>
-<div class=popup id="popup">
+<div class=popup_background id="popup_background"
+style="visibility:hidden"> </div>
+<div class=popup id="popup" style="visibility:hidden">
+
 <table>
 <tr>
 	<td style="text-align:left; width:100%">

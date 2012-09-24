@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 */
-/*   nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - nibble */
 
 #include <string.h>
 
@@ -101,18 +100,21 @@ static RAnalValue *anal_fill_ai_mm(RAnal *anal, x86im_instr_object io) {
 	return ret;
 }
 
-static void anal_jmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
-	st64 imm, disp;
-	imm = r_hex_bin_truncate (io.imm, io.imm_size);
-	disp = r_hex_bin_truncate (io.disp, io.disp_size);
+static int anal_jmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
+	st64 imm = r_hex_bin_truncate (io.imm, io.imm_size);
+	st64 disp = r_hex_bin_truncate (io.disp, io.disp_size);
 
 	op->eob = R_TRUE;
 	switch (io.id) {
 	case X86IM_IO_ID_JMP_N_R_S: /* jmp short 0x0ff */ 
 	case X86IM_IO_ID_JMP_N_R:   /* jmp 0x0ff */
+		if (anal->bits == 16) {
+			io.len = 3;
+			imm = io.imm & 0xffff;
+		}
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->dst = anal_fill_r (anal, io, op->addr);
 		op->jump = op->addr + io.len + imm;
+		op->dst = anal_fill_r (anal, io, op->addr);
 		break;
 	case X86IM_IO_ID_JMP_N_AI_MM: /* jmp  [0x0ff | reg1+reg2+0x0ff] */
 	case X86IM_IO_ID_JMP_F_AI_MM: /* jmp dword far  [0x0ff | reg1+reg2+0x0ff] */
@@ -121,7 +123,6 @@ static void anal_jmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		/* TODO: Deprecate */
 		if (io.mem_base == 0)
 			op->ref = disp;
-
 		if (anal->iob.io != NULL) {
 			if (io.mem_base == X86IM_IO_ROP_ID_RIP) {
 				op->type = R_ANAL_OP_TYPE_JMP;
@@ -148,6 +149,7 @@ static void anal_jmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		op->ref = imm;
 		break;
 	}
+	return io.len;
 }
 
 static void anal_cjmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
@@ -826,7 +828,7 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		imm = r_hex_bin_truncate (io.imm, io.imm_size);
 		//disp = r_hex_bin_truncate (io.disp, io.disp_size);
 		if (X86IM_IO_IS_GPI_JMP (&io)) /* jump */
-			anal_jmp (anal, op, io);
+			io.len = anal_jmp (anal, op, io);
 		else
 		if (X86IM_IO_IS_GPI_JCC (&io)) /* conditional jump*/
 			anal_cjmp (anal, op, io);
@@ -911,6 +913,7 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 static int set_reg_profile(RAnal *anal) {
 	/* XXX Dupped Profiles */
+// TODO: add support for 16 bit
 	if (anal->bits == 32)
 #if __WINDOWS__
 		return r_reg_set_profile_string (anal->reg,
@@ -1067,7 +1070,7 @@ struct r_anal_plugin_t r_anal_plugin_x86 = {
 	.name = "x86",
 	.desc = "X86 analysis plugin (x86im backend)",
 	.arch = R_SYS_ARCH_X86,
-	.bits = 32|64,
+	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
 	.op = &x86_op,
