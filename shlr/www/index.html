@@ -21,7 +21,10 @@ function Ajax (method, uri, body, fn) {
 function cmd(c, cb) {
 	Ajax ('GET', "/cmd/"+c, '', function (x) {
 		if (cb) cb (x);
-		else document.getElementById ('output').innerHTML = x;
+		else {
+			x = filter_asm (x);
+			document.getElementById ('output').innerHTML = x;
+		}
 	});
 }
 
@@ -47,22 +50,16 @@ var nl = "<br />";
 var nl2 = "<br /><br />";
 function show_popup_about () {
 	var txt =
-		"This is the r2w ui for radare2"+
+		"Display"+
+		"<hr size=1/>"+
+		"<a href=\"javascript:setmode(9\" />"+
 		"<br /><br />"+
 		"It runs on top of an embedded webserver in radare2. Here's some commands to try:"+nl2+
+		"Display<br />"+
+		"<br /><br />"+
 		"<a href=\"/graph/\">graph demo</a>"+nl2+
-		"<a href=\"javascript:cmd('!rax2 -s 20e296b20ae296b220e296b20a');popup_hide();\">triforce!</a>"+nl2+
-		"<a href=\"javascript:cmd('? '+prompt('expression'));popup_hide();\">calculator</a>"+nl2+
-		"<a href=\"javascript:cmd('s '+prompt('offset')+';pd');popup_hide();\">seek</a>"+nl2+
-		"<a href=\"javascript:cmd('b '+prompt('blocksize'));popup_hide();\">blocksize</a>"+nl2+
-		"<a href=\"javascript:cmd('af;aa;pd');popup_hide();\">analyze code</a>"+nl2+
-		"<a href=\"javascript:cmd('ap;pd');popup_hide();\">analyze preludes</a>"+nl2+
-		"<a href=\"javascript:panel_functions_load();popup_hide();\">list functions</a>"+nl2+
-		"<a href=\"javascript:cmd('pd');popup_hide();\">disassemble block</a>"+nl2+
-		"<a href=\"javascript:cmd('pdr');popup_hide();\">disassemble function</a>"+nl2+
-		"<a href=\"javascript:cmd('x');popup_hide();\">hexdump</a>"+nl2+
 		"";
-	popup_show ("Help", txt);
+	popup_show ("Options", txt);
 }
 
 function show_popup_commands () {
@@ -80,10 +77,64 @@ function handleKeyPress(e, form) {
 	}
 }
 
+function seek(x) {
+	cmd ("s "+x, function (x) {
+		cmd ("pd");
+		window.scrollTo (0,0);
+	});
+}
+
+var curoff = 0;
+var lastoff = 0;
+var display = "pd";
+
+function less () {
+	cmd ("b", function (block) {
+		cmd ("s "+curoff+"-"+block+";"+display, function (x) {
+			x = filter_asm (x);
+			var body = document.getElementById('output').innerHTML;
+			document.getElementById('output').innerHTML = x + body;
+		});
+	});
+}
+function more () {
+	cmd ("?v $l @ "+lastoff, function (oplen) {
+		cmd (display+" @ "+lastoff+"+"+oplen, function (x) {
+			x = filter_asm (x);
+			document.getElementById('output').innerHTML += x;
+		});
+	});
+}
+
+function filter_asm(x) {
+	var lines = x.split (/\n/g);
+	cmd ("s", function (x) { curoff = x; });
+	for (var i=lines.length-1;i>0;i--)  {
+		var a = lines[i].match (/0x([a-fA-F0-9]*)/);
+		if (a && a.length>0) {
+			lastoff = a[0].replace (/:/g, "");
+			break;
+		}
+	}
+
+	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
+	x = x.replace (/fcn.(.*)/g, "<a href='javascript:seek(\"fcn.$1\")'>fcn.$1</a>");
+	x = x.replace (/loc.(.*)/g, "<a href='javascript:seek(\"loc.$1\")'>loc.$1</a>");
+	x = x.replace (/call/g, "<b style='color:green'>call</b>");
+	x = x.replace (/(jmp|jnz|jg|je|jl|jz)/g, "<b style='color:green'>$1</b>");
+	x = x.replace (/ret/g, "<b style='color:red'>ret</b>");
+	x = x.replace (/(push|pop)/g, "<b style='color:magenta'>$1</b>");
+	x = x.replace (/mov/g, "<b style='color:yellow'>mov</b>");
+	x = x.replace (/(test|cmp)/g, "<b style='color:green'>$1</b>");
+	x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
+	return x;
+}
+
 function input_activate () {
 	var txt = document.getElementById('input').value;
 	if (txt.length == 0) show_popup_commands (); else
 	Ajax ('GET', '/cmd/'+txt, '', function (x) {
+		x = filter_asm (x);
 		document.getElementById('output').innerHTML = x;
 		document.getElementById('input').value = '';
 	});
@@ -136,6 +187,7 @@ function popup_show (title, body) {
 	var t = document.getElementById ("popup_title");
 	var c = document.getElementById ("popup_content");
 	var b = document.getElementById ("popup_background");
+	window.scrollTo(0,0);
 	if (body) {
 		p.style.visibility="visible";
 		c.innerHTML = body;
@@ -144,6 +196,7 @@ function popup_show (title, body) {
 	if (title) {
 		t.innerHTML = title;
 	}
+	b.height =100;
 }
 
 function init() {
@@ -151,28 +204,29 @@ function init() {
 	input.addEventListener ("activate", function (x) {
 		input_activate();
 	}, false);
+	cmd (display);
 }
 
 </script>
 </head>
 <body onload="init()">
 <div class=popup_background id="popup_background"
-style="visibility:hidden"> </div>
-<div class=popup id="popup" style="visibility:hidden">
+style="visibility:hidden"></div>
 
-<table>
+<div id="popup" style="visibility:hidden">
+<table class=popup >
 <tr>
 	<td style="text-align:left; width:100%">
-<div class=popup_title id="popup_title">
-Welcome to r2w2
-</div>
+	<div class=popup_title id="popup_title">
+	Welcome to r2w2
+	</div>
 </td><td style="text-align:right">
 	<input type="button" class="button" value="x" onclick="popup_hide()">
 	</td>
 </tr>
 <tr>
-	<td colspan=2>
-	<div class="popup_content" id="popup_content">
+	<td colspan=2 valign="top" style="light">
+<div class="popup_content" id="popup_content">
 This is the r2w2 ui. A rewrite in pure C/js of the original r2w written in python.
 <br /><br />
 This interface aims to run on every modern browser; from Android/iPhone/iPad to desktop browsers (Chromium, Firefox, ..)
@@ -185,26 +239,24 @@ Enjoy!
 </tr>
 </table>
 </div>
+
+<div style="position:fixed; top:0px;left:0px;background-color:red;border:0px">
 <table class=header>
 <tr>
-	<td style="text-align:left;width:100%;vertical-align:top">
-<table>
-<tr>
-<td>
-		<a href="javascript:show_popup_about ()"><img border=0 src="rlogo.png" /></a>
-</td>
-	<td align="right">
-		<input onkeypress="handleKeyPress(event)" id="input">
-	</td>
-</tr>
-<tr>
-	<td valign=top colspan=2>
-		<div class="console">
-		<p id="output"></p>
-		</div>
-	</td>
-</tr>
+	<td style="text-align:left;vertical-align:top">
+	<a href="javascript:show_popup_about ()"><img border=0 src="rlogo2.png" /></a>
+</td> <td align="right" style="width:100%">
+	<input style="width:100%" onkeypress="handleKeyPress(event)" id="input">
+</td> </tr> 
 </table>
+
+</div>
+
+<div class="console" style="top:25px !important; position:absolute;z-index:-99">
+	<a href='javascript:less()'>... less</a>
+<p id="output"></p>
+	<a href='javascript:more()'>... more</a>
+</div>
 </body>
 </html>
 

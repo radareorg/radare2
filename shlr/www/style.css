@@ -1,4 +1,5 @@
 body {
+background-color: black;
 	font-family: Verdana;
 	border:0px;
 	width:320px;
@@ -18,9 +19,9 @@ a {
 }
 
 .header {
-	width:220px;
-	background-color:white;
-	border: 3px;
+	width:320px;
+	background-color:black;
+	border: 0px;
 	border-color: black;
 	text-align: center;
 	vertical-align: top;
@@ -39,7 +40,7 @@ input {
 /*	width:310px; */
 	width:190px; 
 	border: 1px solid black;
-	background-color: #a0cfe0;
+	background-color: #f0f0f0;
 	color: black;
 }
 
@@ -53,16 +54,19 @@ input {
 	text-align:left;
 	vertical-align:top;
 	/* overflow:auto; */
-	background-color:#f0f0f0;
+	color: white;
+	background-color:#000000;
 }
 
 .console {
-	font-size:8px;
+	font-size:12px;
 	width:310px;
 	height:100%;
 	text-align:left;
 	/* overflow:auto; */
-	background-color:#f0f0f0;
+	/* background-color:#f0f0f0; */
+	color:#ffffff;
+	background-color:#000000;
 }
 
 .popup {
@@ -76,19 +80,45 @@ input {
 	background-color: #a0cfe0;
 }
 
+a:link {
+	color: #3096cc;
+	text-decoration: none;
+	background-color: transparent;
+}
+a:visited {
+	color: #3096fc;
+	text-decoration : none;
+	background-color: transparent;
+}
+a:active {
+	color: #3096fc;
+	text-decoration : none;
+	background-color: transparent;
+}
+a:hover {
+	color: #3096fc;
+	text-decoration : underline;
+	background-color: transparent;
+}
+
+a {
+	background-color: #272727 !important;
+}
+
 .popup_background {
 	opacity:0.7;
 	filter:alpha(opacity=70);
-	position:absolute;
+	position:fixed;
 	top: 0px;
 	left: 0px;
 	width:100%;
-	height:100%;
+	min-height:100%;
 	border: 0px;
-	background-color: #ffffff;
+	background-color: #000000;
 	z-index: 3;
 }
 
 .popup_title {
 	margin-left: 5px;
+	font-size:14px;
 }
