@@ -1,5 +1,6 @@
 <html>
 <head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>r2w2</title>
 <!--
 	<meta content="yes" name="apple-mobile-web-app-capable" />
@@ -46,17 +47,39 @@ function panel_functions_load() {
 	});
 }
 
+function setmode (x) {
+	popup_hide();
+	display = x;
+	switch (x) {
+	case "pd": x = "b 512;"+x; break;
+	case "px": x = "b 4096;"+x; break;
+	}
+	cmd (x);
+}
+
 var nl = "<br />";
 var nl2 = "<br /><br />";
 function show_popup_about () {
 	var txt =
 		"Display"+
 		"<hr size=1/>"+
-		"<a href=\"javascript:setmode(9\" />"+
+		"<a href=\"javascript:setmode('pd')\" />pd</a>"+
+		"&nbsp;"+
+		"<a href=\"javascript:setmode('px')\" />px</a>"+
+		"&nbsp;"+
+		"<a href=\"javascript:setmode('pw')\" />pw</a>"+
 		"<br /><br />"+
-		"It runs on top of an embedded webserver in radare2. Here's some commands to try:"+nl2+
-		"Display<br />"+
-		"<br /><br />"+
+		"Listings"+
+		"<hr size=1/>"+
+		"<a href=\"javascript:setmode('i')\" />file info</a><br />"+
+		"<a href=\"javascript:setmode('is')\" />symbols</a><br />"+
+		"<a href=\"javascript:setmode('ii')\" />imports</a><br />"+
+		"<a href=\"javascript:setmode('afl')\" />functions</a><br />"+
+		"<a href=\"javascript:setmode('iz')\" />strings</a><br />"+
+		"<br />"+
+		"Actions"+
+		"<hr size=1/>"+
+		"<a href=\"javascript:setmode(\"strings\")\" />analyze function</a><br />"+
 		"<a href=\"/graph/\">graph demo</a>"+nl2+
 		"";
 	popup_show ("Options", txt);
@@ -93,12 +116,24 @@ function less () {
 		cmd ("s "+curoff+"-"+block+";"+display, function (x) {
 			x = filter_asm (x);
 			var body = document.getElementById('output').innerHTML;
-			document.getElementById('output').innerHTML = x + body;
+			document.getElementById ('output').innerHTML = x + body;
 		});
 	});
 }
+
+function hasmore(x) {
+	var a = document.getElementById ("more");
+	var b = document.getElementById ("less");
+	if (x) {
+		a.style.visibility=b.style.visibility="visible";
+	} else {
+		a.style.visibility=b.style.visibility="hidden";
+	}
+}
+
 function more () {
 	cmd ("?v $l @ "+lastoff, function (oplen) {
+		if (display == "px") oplen = 16;
 		cmd (display+" @ "+lastoff+"+"+oplen, function (x) {
 			x = filter_asm (x);
 			document.getElementById('output').innerHTML += x;
@@ -116,17 +151,46 @@ function filter_asm(x) {
 			break;
 		}
 	}
+	if (display == "afl") {
+		hasmore (false);
+		var z = "";
+		for (var i=0;i<lines.length;i++)  {
+			var row = lines[i].replace (/\ +/g," ").split (/ /g);
+			z += row[0]+ "  "+row[3]+"\n";
+		}
+		x = z;
+	} else
+	if (display[0] == "i") {
+		hasmore (false);
+		if (display[1]) {
+			var z = "";
+			for (var i=0;i<lines.length;i++)  {
+				var elems = lines[i].split (/ /g);
+				var name = "";
+				var addr = "";
+				for (var j=0;j<elems.length;j++)  {
+					var kv = elems[j].split (/=/);
+					if (kv[0] == "addr") addr = kv[1];
+					if (kv[0] == "name") name = kv[1];
+					if (kv[0] == "string") name = kv[1];
+				}
+				z += addr+ "  "+name+"\n";
+			}
+			x = z;
+		}
+	} else hasmore (true);
 
 	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
-	x = x.replace (/fcn.(.*)/g, "<a href='javascript:seek(\"fcn.$1\")'>fcn.$1</a>");
-	x = x.replace (/loc.(.*)/g, "<a href='javascript:seek(\"loc.$1\")'>loc.$1</a>");
-	x = x.replace (/call/g, "<b style='color:green'>call</b>");
-	x = x.replace (/(jmp|jnz|jg|je|jl|jz)/g, "<b style='color:green'>$1</b>");
-	x = x.replace (/ret/g, "<b style='color:red'>ret</b>");
-	x = x.replace (/(push|pop)/g, "<b style='color:magenta'>$1</b>");
-	x = x.replace (/mov/g, "<b style='color:yellow'>mov</b>");
-	x = x.replace (/(test|cmp)/g, "<b style='color:green'>$1</b>");
-	x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
+	if (display == "pd") {
+		x = x.replace (/(fcn|imp|loc).(.*)/g, "<a href='javascript:seek(\"$1.$2\")'>$1.$2</a>");
+		x = x.replace (/(bl|call)/g, "<b style='color:green'>call</b>");
+		x = x.replace (/(jmp|jnz|jg|je|jl|jz)/g, "<b style='color:green'>$1</b>");
+		x = x.replace (/ret/g, "<b style='color:red'>ret</b>");
+		x = x.replace (/(push|pop)/g, "<b style='color:magenta'>$1</b>");
+		x = x.replace (/mov/g, "<b style='color:yellow'>mov</b>");
+		x = x.replace (/(test|cmp)/g, "<b style='color:green'>$1</b>");
+		x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
+	}
 	return x;
 }
 
@@ -187,7 +251,6 @@ function popup_show (title, body) {
 	var t = document.getElementById ("popup_title");
 	var c = document.getElementById ("popup_content");
 	var b = document.getElementById ("popup_background");
-	window.scrollTo(0,0);
 	if (body) {
 		p.style.visibility="visible";
 		c.innerHTML = body;
@@ -253,9 +316,13 @@ Enjoy!
 </div>
 
 <div class="console" style="top:25px !important; position:absolute;z-index:-99">
+<div id="less">
 	<a href='javascript:less()'>... less</a>
+</div>
 <p id="output"></p>
+<div id="more">
 	<a href='javascript:more()'>... more</a>
+</div>
 </div>
 </body>
 </html>

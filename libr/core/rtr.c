@@ -34,6 +34,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	int x = r_config_get_i (core->config, "scr.html");
 	int y = r_config_get_i (core->config, "scr.color");
 	int z = r_config_get_i (core->config, "asm.bytes");
+	int u = r_config_get_i (core->config, "scr.interactive");
 	const char *port = r_config_get (core->config, "http.port");
 	s = r_socket_new (R_FALSE);
 	s->local = !r_config_get_i (core->config, "http.public");
@@ -51,6 +52,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	r_config_set (core->config, "scr.html", "true");
 	r_config_set (core->config, "scr.color", "false");
 	r_config_set (core->config, "asm.bytes", "false");
+	r_config_set (core->config, "scr.interactive", "false");
 	eprintf ("Starting http server...\n");
 	eprintf ("http://localhost:%d/\n", atoi (port));
 	while (!r_cons_singleton ()->breaked) {
@@ -107,6 +109,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	r_config_set_i (core->config, "scr.html", x);
 	r_config_set_i (core->config, "scr.color", y);
 	r_config_set_i (core->config, "asm.bytes", z);
+	r_config_set_i (core->config, "scr.interactive", u);
 	return 0;
 }
 

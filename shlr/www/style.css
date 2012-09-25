@@ -40,7 +40,7 @@ input {
 /*	width:310px; */
 	width:190px; 
 	border: 1px solid black;
-	background-color: #f0f0f0;
+	background-color: #d0d0d0;
 	color: black;
 }
 
@@ -70,14 +70,15 @@ input {
 }
 
 .popup {
-	position:absolute;
+	position:fixed;
 	z-index: 5;
 	top: 10px;
 	left: 10px;
 	width:300px;
 	height:290px;
 	border: 1px solid black;
-	background-color: #a0cfe0;
+	background-color: #505070;
+/* #a0cfe0; */
 }
 
 a:link {
