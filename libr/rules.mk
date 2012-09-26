@@ -44,8 +44,12 @@ endif
 waitfordeps:
 	@sh $(LIBR)/waitfordeps.sh ${DEPS}
 
+X=$(subst r_,,$(DEPS))
+LDFLAGS+=$(addprefix -L$(TOP)/libr/,$(X))
+LDFLAGS+=$(addprefix -l,$(DEPS))
 ifeq ($(WITHPIC),1)
 ${LIBSO}: $(EXTRA_TARGETS) waitfordeps ${OBJ} ${SHARED_OBJ}
+	echo LDFLAGS=$(LDFLAGS)
 	@for a in ${OBJ} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
 	  test $$a -nt ${LIBSO} && do=1 ; \

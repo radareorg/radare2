@@ -14,7 +14,7 @@ LDFLAGS+=-lsocket
 endif
 # windows
 ifeq (${OSTYPE},windows)
-LDFLAGS=-lwsock32
+LDFLAGS+=-lwsock32
 endif
 ifeq (${WITHPIC},0)
 LINKFLAGS=../../socket/libr_socket.a

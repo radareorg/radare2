@@ -1,7 +1,8 @@
-include ../config.mk
+include ../../global.mk
 
 NAME=r_io
 DEPS=r_lib r_util r_socket r_cons
+
 CFLAGS+=-Wall -DCORELIB
 # on solaris only
 ifeq (${OSTYPE},solaris)
@@ -19,12 +20,13 @@ LDFLAGS+=-lsocket
 endif
 # windows
 ifeq (${OSTYPE},windows)
-LDFLAGS=-lwsock32
+LDFLAGS+=-lwsock32
 endif
 
-
 STATIC_OBJS=
-include ../config.mk
+# include ../config.mk
+
+include $(TOP)/libr/rules.mk
 
 foo:
 	for a in pre libr_io.${EXT_SO} libr_io.${EXT_AR} tests plugins ; do ${MAKE} $$a ; done
@@ -43,4 +45,3 @@ tests:
 plugins:
 	cd p && ${MAKE} all
 
-include ../rules.mk
