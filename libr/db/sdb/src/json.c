@@ -4,7 +4,7 @@
 #include "sdb.h"
 #include "json/json.h"
 
-static int itoa(int value, char *string) {
+static int __itoa(int value, char *string) {
 	int i, sign, count;
 	char buf[64];
 	char *temp = buf;
@@ -64,8 +64,7 @@ int sdb_json_geti (Sdb *s, const char *k, const char *p) {
 
 int sdb_json_seti (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
 	char str[64];
-	str[0] = 0;
-	itoa (v, str);
+	__itoa (v, str);
 	return sdb_json_set (s, k, p, str, cas);
 }
 
