@@ -24,9 +24,7 @@ LDFLAGS+=-lwsock32
 endif
 
 STATIC_OBJS=
-# include ../config.mk
-
-include $(TOP)/libr/rules.mk
+include $(TOP)/libr/config.mk
 
 foo:
 	for a in pre libr_io.${EXT_SO} libr_io.${EXT_AR} tests plugins ; do ${MAKE} $$a ; done
@@ -45,3 +43,5 @@ tests:
 plugins:
 	cd p && ${MAKE} all
 
+
+include $(TOP)/libr/rules.mk

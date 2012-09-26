@@ -18,7 +18,7 @@ include $(TOP)/config-user.mk
 
 F_SDB=$(addsuffix .sdb,$F)
 
-SDB=../../db/sdb/sdb
+SDB=$(LTOP)/db/sdb/sdb
 
 all: ${SDB}
 	@${MAKE} compile
