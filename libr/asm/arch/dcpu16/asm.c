@@ -207,12 +207,14 @@ int dcpu16_assemble (ut8* out, const char* unoline) {
 	ut16 wordA = 0, wordB = 0;
 	int basic_opcode = 0;
 	int non_basic_opcode = 0;
-	char line[256];
+	char line[256], *param;
 	int off = 0;
 	// uberflow!
 	clean_line (line, unoline);
 	
 	if (!*line) return 0;
+	if (!strlen (line)<4) return 0;
+	param = line + 3; /* Cut off first 3 characters */
 	
 	/* Basic instructions */
 	// cmon! use an array
@@ -244,25 +246,24 @@ int dcpu16_assemble (ut8* out, const char* unoline) {
 	
 	/* Decode basic instructions */
 	if (basic_opcode != 0) {
-		char* parameters = line + 3; /* Cut off first 3 characters */
 		ut8 paramA = 0, paramB = 0;
 		
 		/* Find comma */
 		int cn = 0;
-		while (parameters[cn] != ','
-			&& parameters[cn] != '\n'
-			&& parameters[cn] != 0 && cn < 256)
+		while (param[cn] != ','
+			&& param[cn] != '\n'
+			&& param[cn] != 0 && cn < 256)
 			cn++;
 			
-		if (parameters[cn] == ',') {
+		if (param[cn] == ',') {
 			ut16 first_word;
 			int extraA = 0;
 			int extraB = 0;
 			char *pa, *pb;
 			/* Split parameter string to A and B */
-			parameters[cn] = 0;
-			pa = parameters;
-			pb = parameters + cn + 1;
+			param[cn] = 0;
+			pa = param;
+			pb = param + cn + 1;
 			
 			/* Increment address for the start word */
 			//current_address++;
@@ -311,7 +312,6 @@ int dcpu16_assemble (ut8* out, const char* unoline) {
 	
 	/* Non basic instructions */
 	if (non_basic_opcode == 0x1) { /* JSR */
-		char* param = line + 3; /* Cut off first 3 characters */
 		int extraX = 0;
 		ut16 first_word, wordX = 0;
 		ut8 p = decode_parameter (param, &extraX, &wordX);
@@ -319,7 +319,6 @@ int dcpu16_assemble (ut8* out, const char* unoline) {
 		first_word = ((p & 0x3F) << 10) \
 			| ((non_basic_opcode & 0x3F) << 4) \
 			| (basic_opcode & 0xF);
-
 #if NOTEND
 		memcpy (out, &first_word, 2);
 		if (extraX == 1) {

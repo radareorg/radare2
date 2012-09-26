@@ -35,23 +35,20 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size) {
 }
 
 R_API int r_core_write_op(RCore *core, const char *arg, char op) {
+	int i, j, len, ret = R_FALSE;
 	char *str;
 	ut8 *buf;
-	int i, j, ret, len;
 
 	// XXX we can work with config.block instead of dupping it
 	buf = (ut8 *)malloc (core->blocksize);
-	str = (char *)malloc (strlen(arg));
-	if (buf == NULL || str == NULL) {
-		free (buf);
-		free (str);
-		return R_FALSE;
-	}
+	str = (char *)malloc (strlen (arg));
+	if (buf == NULL || str == NULL)
+		goto beach;
 	memcpy (buf, core->block, core->blocksize);
 	len = r_hex_str2bin (arg, (ut8 *)str);
 	if (len==-1) {
 		eprintf ("Invalid hexpair string\n");
-		return R_FALSE;
+		goto beach;
 	}
 
 	if (op=='2' || op=='4') {
@@ -86,7 +83,9 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	}
 
 	ret = r_core_write_at (core, core->offset, buf, core->blocksize);
+beach:
 	free (buf);
+	free (str);
 	return ret;
 }
 

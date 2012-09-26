@@ -117,8 +117,7 @@ R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 		r_range_add (rgs, addr, addr+1, 1);
 	}
 	free (ostr);
-	// check r != NULL?
-	return rgs->changed;
+	return rgs? rgs->changed: 0;
 }
 
 #if 0

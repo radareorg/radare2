@@ -566,6 +566,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		if (!new) {
 			eprintf ("realloc fail\n");
 			free (str);
+			free (old);
 			str = NULL;
 			break;
 		}
@@ -791,9 +792,10 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 	int argc = 0;
 	int escape = 0;
 	int quote = 0;
-	char *optr, *ptr, *str = strdup (_str);
-	char **argv = (char **)malloc (MAXARG*sizeof(char*));
+	char **argv, *optr, *ptr, *str = strdup (_str);
 
+	if (!str) return NULL;
+	argv = (char **)malloc (MAXARG*sizeof(char*));
 	optr = ptr = (char *)r_str_chop_ro (str);
 	for (; *ptr && argc<MAXARG; ptr++) {
 		switch (*ptr) {

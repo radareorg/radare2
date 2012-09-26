@@ -110,6 +110,9 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					hit->len = idx+len-tidx;
 					if (hit->len == -1) {
 						r_core_asm_hit_free (hit);
+						free (buf);
+						free (ptr);
+						free (code);
 						return hits;
 					}
 					hit->code = strdup (code);

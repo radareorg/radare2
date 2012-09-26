@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2011 esteve<eslack.org> + pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2006-2012 - esteve, pancake */
 
 #include "r_search.h"
 

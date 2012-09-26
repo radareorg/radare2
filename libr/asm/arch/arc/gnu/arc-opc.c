@@ -1213,7 +1213,7 @@ extract_flag (arc_insn *insn,
   val = arc_opcode_lookup_suffix (operand, 1);
   if (opval != NULL && val != NULL)
     *opval = val;
-  return val->value;
+  return val? val->value: NULL;
 }
 
 /* Extract the condition code (if it exists).

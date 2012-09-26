@@ -181,7 +181,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 }
 
 R_API int r_socket_close (RSocket *s) {
-	int ret;
+	int ret = R_FALSE;
 	if (s->fd != -1) {
 #if __WINDOWS__
 		WSACleanup ();

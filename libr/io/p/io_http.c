@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -71,16 +71,14 @@ static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode
 	char *out;
 	int rlen, code;
 	if (__plugin_open (io, pathname)) {
-		RIOMalloc *mal = R_NEW (RIOMalloc);
-		mal->fd = getmalfd (mal);
+		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		out = r_socket_http_get (pathname, &code, &rlen);
-		if (!out || rlen<1) {
+		if (!out || rlen<1)
 			return NULL;
-		}
-		eprintf ("http code = %d\n", code);
 		mal->size = rlen;
 		mal->buf = malloc (mal->size+1);
 		if (mal->buf != NULL) {
+			mal->fd = getmalfd (mal);
 			memcpy (mal->buf, out, rlen);
 			free (out);
 			return r_io_desc_new (&r_io_plugin_http, mal->fd, pathname, rw, mode, mal);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake <youterm.com> - nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -17,7 +17,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	memcpy (buf_cp, buf, len);
 	buf_cp[len] = 0;
 
-	for (i=0; b[0] == b[1] && i<len; b++, i++);
+	for (i=0; b[0]&&b[1] && b[0] == b[1] && i<len; b++, i++);
 	b[1] = '\0';
 
 	switch (*buf) {

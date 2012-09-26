@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -469,7 +469,10 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	int ret, (*cb)();
 	ut8 *ptr, *p = malloc ((4096+len)<<1);
 	ptr = (ut8*)R_MEM_ALIGN (p);
-	if (!ptr) return R_FALSE;
+	if (!ptr) {
+		free (p);
+		return R_FALSE;
+	}
 	memcpy (ptr, buf, 4096);
 	r_mem_protect (ptr, 4096, "rx");
 	r_mem_protect (ptr, 4096, "rwx"); // try, ignore if fail

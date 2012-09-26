@@ -137,6 +137,7 @@ R_API RAsm *r_asm_new() {
 	a->plugins->free = free;
 	for (i=0; asm_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RAsmPlugin);
+		// memleak here
 		memcpy (static_plugin, asm_static_plugins[i], sizeof (RAsmPlugin));
 		r_asm_add (a, static_plugin);
 	}

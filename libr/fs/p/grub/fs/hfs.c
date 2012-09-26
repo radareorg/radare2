@@ -1035,7 +1035,7 @@ grub_hfs_dir (grub_device_t device, const char *path,
 {
   int inode;
   struct grub_hfs_data *data;
-  struct grub_hfs_filerec frec;
+  struct grub_hfs_filerec frec = {0};
   struct grub_hfs_dir_closure c;
 
   grub_dl_ref (my_mod);

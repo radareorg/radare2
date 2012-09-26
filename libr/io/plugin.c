@@ -33,6 +33,7 @@ R_API int r_io_plugin_init(RIO *io) {
 		if (!io_static_plugins[i]->name)
 			continue;
 		static_plugin = R_NEW (RIOPlugin);
+		// memory leak here: static_plugin never freed
 		memcpy (static_plugin, io_static_plugins[i], sizeof (RIOPlugin));
 		r_io_plugin_add (io, static_plugin);
 	}

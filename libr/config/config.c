@@ -92,7 +92,7 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 
 R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *value, RConfigCallback cb) {
 	RConfigNode *node = r_config_set (cfg, name, value);
-	if ((node->callback = cb))
+	if (node && (node->callback = cb))
 		if (!cb (cfg->user, node))
 			return NULL;
 	return node;
@@ -100,7 +100,7 @@ R_API RConfigNode *r_config_set_cb(RConfig *cfg, const char *name, const char *v
 
 R_API RConfigNode *r_config_set_i_cb(RConfig *cfg, const char *name, int ivalue, RConfigCallback cb) {
 	RConfigNode *node = r_config_set_i (cfg, name, ivalue);
-	if ((node->callback = cb))
+	if (node && (node->callback = cb))
 		if (!node->callback (cfg->user, node))
 			return NULL;
 	return node;
@@ -147,8 +147,8 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 		oi = UT64_MAX;
 		if (!cfg->lock) {
 			node = r_config_node_new (name, value);
-			if (value && (!strcmp (value, "true")||!strcmp (value, "false"))) {
-				node->flags|=CN_BOOL;
+			if (node && value && (!strcmp (value, "true")||!strcmp (value, "false"))) {
+				node->flags |= CN_BOOL;
 				node->i_value = (!strcmp (value, "true"))? 1: 0;
 			}
 			if (cfg->ht) {

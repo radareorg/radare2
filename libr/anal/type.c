@@ -164,7 +164,7 @@ R_API char* r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep) {
 	{
 		int custom = t->custom.v->type;
 		int type = R_ANAL_UNMASK_TYPE (custom);
-		int sign = R_ANAL_UNMASK_SIGN (sign);
+		int sign = R_ANAL_UNMASK_SIGN (custom);
 		switch (type) {
 		case R_ANAL_VAR_TYPE_BYTE:
 			sprintf(buf, "%s %s", sign?"byte":"ut8", t->custom.v->name);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 // TODO: use RList !!
 #include <stdio.h>
@@ -196,10 +196,9 @@ R_API void r_cmd_macro_list(RCmdMacro *mac) {
 R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args, int nargs) {
 	int i, j;
 	char *pcmd, cmd[R_CMD_MAXLEN];
-	const char *arg = args; //args? strdup (args): strdup ("");
-	*cmd = '\0';
+	const char *arg = args;
 
-	for (i=j=0; ptr[j] && j<R_CMD_MAXLEN; i++,j++) {
+	for (*cmd=i=j=0; ptr[j] && j<R_CMD_MAXLEN; i++,j++) {
 		if (ptr[j]=='$') {
 			if (ptr[j+1]>='0' && ptr[j+1]<='9') {
 				int wordlen;
@@ -207,10 +206,8 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 				const char *word = r_str_word_get0 (arg, w);
 				if (word && *word) {
 					wordlen = strlen (word);
-					if ((i+wordlen+1) >= sizeof (cmd)) {
-						//free (arg);
+					if ((i+wordlen+1) >= sizeof (cmd))
 						return -1;
-					}
 					memcpy (cmd+i, word, wordlen+1);
 					i += wordlen-1;
 					j++;
@@ -219,11 +216,10 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 			if (ptr[j+1]=='@') {
 				char off[32];
 				int offlen;
-				offlen = snprintf (off, sizeof (off), "%d", mac->counter);
-				if ((i+offlen+1) >= sizeof (cmd)) {
-					//free (arg);
+				offlen = snprintf (off, sizeof (off), "%d",
+					mac->counter);
+				if ((i+offlen+1) >= sizeof (cmd))
 					return -1;
-				}
 				memcpy (cmd+i, off, offlen+1);
 				i += offlen-1;
 				j++;
@@ -236,10 +232,7 @@ R_API int r_cmd_macro_cmd_args(RCmdMacro *mac, const char *ptr, const char *args
 			cmd[i+1] = '\0';
 		}
 	}
-	pcmd = cmd;
-	while (*pcmd==' '||*cmd=='\t')
-		pcmd++;
-	//free (arg);
+	for (pcmd = cmd; *pcmd && (*pcmd==' ' || *pcmd == '\t'); pcmd++);
 	return (*pcmd==')')? 0: mac->cmd (mac->user, pcmd);
 }
 

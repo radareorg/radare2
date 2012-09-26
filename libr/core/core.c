@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -932,12 +932,15 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 		}
 		for (ret=0; ret<len;) {
 			int done = cb (core, from, buf+ret, len-ret);
-			if (done<1) /* interrupted */
+			if (done<1) { /* interrupted */
+				free (buf);
 				return R_FALSE;
+			}
 			ret += done;
 		}
 		from += len;
 	}
+	free (buf);
 	return R_TRUE;
 }
 
