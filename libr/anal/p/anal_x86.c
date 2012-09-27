@@ -108,10 +108,6 @@ static int anal_jmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 	switch (io.id) {
 	case X86IM_IO_ID_JMP_N_R_S: /* jmp short 0x0ff */ 
 	case X86IM_IO_ID_JMP_N_R:   /* jmp 0x0ff */
-		if (anal->bits == 16) {
-			io.len = 3;
-			imm = io.imm & 0xffff;
-		}
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = op->addr + io.len + imm;
 		op->dst = anal_fill_r (anal, io, op->addr);
@@ -819,6 +815,22 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		ret = (x86im_dec (&io, X86IM_IO_MODE_64BIT, (ut8*)data));
 	if (ret != X86IM_STATUS_SUCCESS)
 		ret = (x86im_dec (&io, X86IM_IO_MODE_32BIT, (ut8*)data));
+	if (anal->bits==16) {
+		switch (io.id) {
+		case X86IM_IO_ID_JCC_S:
+		case X86IM_IO_ID_JCC_N:
+		case X86IM_IO_ID_JMP_F_AI_MM:
+		case X86IM_IO_ID_CALL_N_R:
+		case X86IM_IO_ID_CALL_F_AI_MM:
+		case X86IM_IO_ID_CALL_N_AI_MM:
+		case X86IM_IO_ID_JMP_N_R:
+		case X86IM_IO_ID_JMP_N_R_S:
+		case X86IM_IO_ID_CALL_F_A:
+			io.len = 3;
+			imm = io.imm & 0xffff;
+			break;
+		}
+	}
 	
 	if (ret == X86IM_STATUS_SUCCESS) {
 		if (io.len > len)
