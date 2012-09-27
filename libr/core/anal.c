@@ -113,7 +113,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					if (!left) top += 250;
 				} else
 				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" ["
-					"URL=\"%s/0x%08"PFMT64x"\" color=\"%s\", label=\"%s\"]\n",
+					"URL=\"%s/0x%08"PFMT64x"\", color=\"%s\", label=\"%s\"]\n",
 					fcn->addr, bbi->addr, 
 					fcn->name, bbi->addr,
 					bbi->traced?"yellow":"lightgray", str);

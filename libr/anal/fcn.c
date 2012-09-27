@@ -432,9 +432,7 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 /* set function signature from string */
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	char *p, *q, *r, *str;
-	RAnalVar *var;
 	RAnalType *t;
-	int i, arg;
 
 	if (!a || !f || !sig) {
 		eprintf ("r_anal_str_to_fcn: No function received\n");

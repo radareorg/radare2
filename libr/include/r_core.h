@@ -269,6 +269,7 @@ R_API void r_core_rtr_add(RCore *core, const char *input);
 R_API void r_core_rtr_remove(RCore *core, const char *input);
 R_API void r_core_rtr_session(RCore *core, const char *input);
 R_API void r_core_rtr_cmd(RCore *core, const char *input);
+R_API int r_core_rtr_http(RCore *core, int launch);
 
 R_API void r_core_visual_define (RCore *core);
 R_API void r_core_visual_config (RCore *core);

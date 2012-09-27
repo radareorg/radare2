@@ -444,7 +444,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			{
 				int offscreen = (core->cons->rows-3)*cols;
 				if (cursor>=offscreen) {
-					ut64 x = core->offset + cols;
+					//ut64 x = core->offset + cols;
 					r_core_seek (core, core->offset+cols, 1);
 					cursor-=cols;
 				}

@@ -130,6 +130,7 @@ endif
 
 ifneq ($(BIN)$(BINS),)
 BEXE=$(BIN)$(EXT_EXE)
+# XXX: this is dupped somewhere
 X=$(subst r_,,$(BINDEPS))
 LDFLAGS+=$(addprefix -L$(TOP)/libr/,$(X))
 LDFLAGS+=$(addprefix -l,$(BINDEPS))

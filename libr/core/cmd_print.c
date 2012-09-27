@@ -203,12 +203,6 @@ static int cmd_print(void *data, const char *input) {
 		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
 		}
 		break;
-	case 'w':
-		r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
-		break;
-	case 'q':
-		r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
-		break;
 	case 'i': {
 		RAsmOp asmop;
 		int j, ret, err = 0;
@@ -442,29 +436,35 @@ static int cmd_print(void *data, const char *input) {
 		} else r_core_magic (core, input+1, R_TRUE);
 		break;
 	case 'u':
-		r_print_string (core->print, core->offset, core->block, len, 0, 1, 1); //, 78, 1);
-		break;
-	case 'U':
-		r_print_string (core->print, core->offset, core->block, len, 1, 1, 1); //, 78, 1);
+		r_print_string (core->print, core->offset, core->block, len, (input[1]=='w'), 1, 1);
 		break;
 	case 'c':
-		r_print_code (core->print, core->offset, core->block, len, input[1]); //, 78, 1);
+		r_print_code (core->print, core->offset, core->block, len, input[1]);
 		break;
 	case 'r':
 		r_print_raw (core->print, core->block, len);
 		break;
-	case 'o':
-		r_print_hexdump (core->print, core->offset, core->block, len, 8, 1); //, 78, !(input[1]=='-'));
-		break;
 	case 'x':
-		{
-		ut64 from = r_config_get_i (core->config, "diff.from");
-		ut64 to = r_config_get_i (core->config, "diff.to");
-		if (from == to && from == 0) {
-			r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
-		} else {
-			r_core_print_cmp (core, from, to);
-		}
+		switch (input[1]) {
+		case 'o':
+			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
+			break;
+		case 'w':
+			r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
+			break;
+		case 'q':
+			r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
+			break;
+		default: {
+				 ut64 from = r_config_get_i (core->config, "diff.from");
+				 ut64 to = r_config_get_i (core->config, "diff.to");
+				 if (from == to && from == 0) {
+					 r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+				 } else {
+					 r_core_print_cmp (core, from, to);
+				 }
+			 }
+			break;
 		}
 		break;
 	case '6':
@@ -591,23 +591,19 @@ static int cmd_print(void *data, const char *input) {
 		" p=            show entropy bars of full file\n"
 		" p6[de] [len]  base64 decode/encode\n"
 		" p8 [len]      8bit hexpair list of bytes\n"
-		" pa [opcode]   assemble opcode\n"
+		" pa [opcode]   bytes of assembled opcode\n"
 		" pb [len]      bitstream of N bytes\n"
-		" pi[f] [len]   show opcodes of N bytes\n"
+		" pc[p] [len]   output C (or python) format\n"
 		" pd[lf] [l]    disassemble N opcodes (see pd?)\n"
 		" pD [len]      disassemble N bytes\n"
-		" p[w|q] [len]  word (32), qword (64) value dump\n"
-		" po [len]      octal dump of N bytes\n"
-		" pc[p] [len]   output C (or python) format\n"
 		" pf [fmt]      print formatted data\n"
+		" pi[f] [len]   print N instructions (f=function)\n"
 		" pm [magic]    print libmagic data (pm? for more information)\n"
-		" ps [len]      print string\n"
+		" pr [len]      print N raw bytes\n"
 		" ps[pwz] [len] print pascal/wide/zero-terminated strings\n"
 		" pt [len]      print different timestamps\n"
-		" pr [len]      print N raw bytes\n"
-		" pu [len]      print N url encoded bytes\n"
-		" pU [len]      print N wide url encoded bytes\n"
-		" px [len]      hexdump of N bytes\n"
+		" pu[w] [len]   print N url encoded bytes (w=wide)\n"
+		" px[owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
 		" pz [len]      print zoom view (see pz? for help)\n");
 		break;
 	}

@@ -170,7 +170,7 @@ R_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 #define T if (c->trace)
 /* debug */
 R_API int bfvm_step(BfvmCPU *c, int over) {
-	ut8 *buf, op2, op = bfvm_op (c);
+	ut8 op2, op = bfvm_op (c);
 
 	do {
 		T bfvm_trace_op (c, op);
@@ -179,7 +179,7 @@ R_API int bfvm_step(BfvmCPU *c, int over) {
 			/* trap */
 			return 1;
 		case '.':
-			buf = bfvm_get_ptr (c);
+			bfvm_get_ptr (c);
 			bfvm_poke (c);
 			break;
 		case ',':

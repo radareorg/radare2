@@ -10,10 +10,10 @@ CFLAGS+=${CFLAGS_APPEND}
 CFLAGS+=${CPPFLAGS}
 
 ifeq ($(WITHPIC),1)
-LDFLAGS+=$(subst r_,-lr_,$(DEPS))
 LDFLAGS+=$(subst r_,-L$(LIBR)/,$(DEPS))
-LDFLAGS+=$(subst r_,-lr_,$(BINDEPS))
+LDFLAGS+=$(subst r_,-lr_,$(DEPS))
 LDFLAGS+=$(subst r_,-L$(LIBR)/,$(BINDEPS))
+LDFLAGS+=$(subst r_,-lr_,$(BINDEPS))
 CFLAGS+=${PIC_CFLAGS}
 LDFLAGS+=${PIC_CFLAGS}
 else

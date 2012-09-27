@@ -5,7 +5,7 @@
 
 R_API void r_cons_grep_help() {
 	eprintf (
-"Usage: [command]~[modifier][word,word][\[columne\][:line]\n"
+"Usage: [command]~[modifier][word,word][[column][:line]\n"
 " modifiers\n"
 "   &  all words must match to grep the line\n"
 "   ^  words must be placed at the begining of line\n"

@@ -67,6 +67,7 @@ static ut8 getreg(const char *str) {
 }
 
 static int getnum(const char *s) {
+	if (!s) return 0;
 	if (*s=='$')
 		s++;
 	if (*s=='0' && s[1]=='x') {

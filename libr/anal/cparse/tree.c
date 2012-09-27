@@ -149,7 +149,7 @@ RAnalAttr* new_attribute(char* name, char* value) {
 //item_list* new_function_node(char* name, item_list *rets, item_list *args)
 RAnalType* new_function_node(char* name, short ret_type, RAnalType *args,
 		short fmodifier, short callconvention, char* attributes,
-		RAnalLocals *locals, RAnalAttr* valattr) {
+		RList *locals, RAnalAttr* valattr) {
 	RAnalFunction *ifnc = R_NEW (RAnalFunction);
 	RAnalType *tmp = R_NEW (RAnalType);
 	ifnc->name = name;

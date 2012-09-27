@@ -180,7 +180,7 @@ static char *gdbwrap_extract_from_packet(const char *strtoparse,
 
 	//strncpy (strret, charbegin + strtorem, strsize);
 	{
-	char *p = charbegin+strtorem;
+	const char *p = charbegin+strtorem;
 	memmove (strret, p, R_MIN (strlen (p), strsize)+1);
 	strret[strsize] = GDBWRAP_NULL_CHAR;
 	}

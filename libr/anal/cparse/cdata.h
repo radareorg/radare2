@@ -37,5 +37,5 @@ RAnalType* new_union_node(char* name, RAnalType *defs, RAnalAttr *valattr);
 RAnalType* new_alloca_node(long address, long size, RAnalType *defs);
 RAnalLocals* new_locals_node(RAnalType *defs, RAnalAttr *valattr);
 RAnalAttr* new_attribute(char* name, char* value);
-RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes, RAnalLocals *locals, RAnalAttr *valattr);
+RAnalType* new_function_node(char* name, short ret_type, RAnalType *args, short fmodifier, short callconvention, char* attributes, RList *locals, RAnalAttr *valattr);
 

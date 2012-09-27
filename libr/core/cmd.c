@@ -760,10 +760,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	if (ptr) {
 		ut64 tmpoff, tmpbsz, addr;
 		ut8 *buf;
-		ut32 sz;
 		const char *offstr;
 		char *f, *ptr2 = strchr (ptr+1, ':');
-		int len;
+		int sz, len;
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
 		*ptr = '\0';
@@ -1123,8 +1122,7 @@ R_API int r_core_flush(void *user, const char *cmd) {
 }
 
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
-	const char *static_str;
-	char *s, *tmp, *retstr = NULL;
+	char *s, *tmp;
 	r_cons_reset ();
 	if (r_file_mkstemp ("cmd", &tmp)) {
 		char *_cmd = strdup (cmd);
