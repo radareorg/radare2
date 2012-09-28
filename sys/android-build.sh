@@ -110,6 +110,10 @@ rm -f ${PWD}/${D}/${PREFIX}/lib/*.a
 rm -rf ${PWD}/${D}/${PREFIX}/include
 rm -rf ${PWD}/${D}/${PREFIX}/share
 rm -rf ${PWD}/${D}/${PREFIX}/doc
+eval `grep ^VERSION= ${PWD}/config-user.mk`
+WWWROOT="/data/data/org.radare.installer/radare2/lib/radare2/${VERSION}/www"
+ln -fs /data/data/org.radare.installer/radare2/${WWWROOT} \
+	/data/data/org.radare.installer/www
 cd $D
 tar czvf ../$D.tar.gz *
 cd ..

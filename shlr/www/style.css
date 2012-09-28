@@ -70,7 +70,7 @@ input {
 }
 
 .popup {
-	position:fixed;
+	position:absolute;
 	z-index: 5;
 	top: 10px;
 	left: 10px;
