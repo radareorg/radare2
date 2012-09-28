@@ -122,13 +122,13 @@ static int cmd_seek(void *data, const char *input) {
 					r_core_seek (core, off, 0);
 			}
 			break;
-		case 'f':
+		case 'n':
 			r_io_sundo_push (core->io, core->offset);
-			r_core_seek_next (core, r_config_get (core->config, "scr.fkey"));
+			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 			break;
-		case 'F':
+		case 'N':
 			r_io_sundo_push (core->io, core->offset);
-			r_core_seek_previous (core, r_config_get (core->config, "scr.fkey"));
+			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 			break;
 		case 'a':
 			off = core->blocksize;
@@ -153,7 +153,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_io_sundo_push (core->io, core->offset);
 			r_core_anal_bb_seek (core, off);
 			break;
-		case 'n':
+		case 'o':
 			{
 			RAnalOp op;
 			int ret = r_anal_op (core->anal, &op,
@@ -173,12 +173,12 @@ static int cmd_seek(void *data, const char *input) {
 			" s+ 512     ; seek 512 bytes forward\n"
 			" s- 512     ; seek 512 bytes backward\n"
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
-			" sf|sF      ; seek next/prev scr.fkey\n"
+			" sn|sN      ; seek next/prev scr.nkey\n"
 			" s/ DATA    ; search for next occurrence of 'DATA'\n"
 			" s/x 9091   ; search for next occurrence of \\x90\\x91\n"
 			" sb         ; seek aligned to bb start\n"
 			//" sp [page]  ; seek page N (page = block)\n"
-			" sn         ; seek to next opcode\n"
+			" so         ; seek to next opcode\n"
 			" sC str     ; seek to comment matching given string\n"
 			" sr pc      ; seek to register\n");
 			break;

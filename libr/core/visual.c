@@ -6,8 +6,8 @@
 static int blocksize = 0;
 static const char *printfmt[] = {
 	"x", "pd",
-	"f tmp;sr sp;pw 64;dr=;s-;s tmp;f-tmp;pd",
-	"pw", "pc"
+	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd",
+	"pxw", "pc"
 };
 static int autoblocksize = 1;
 static int obs = 0;
@@ -94,7 +94,7 @@ R_API void r_core_visual_prompt (RCore *core) {
 	if (curset) r_core_seek (core, oseek, 1);
 }
 
-static int visual_fkey(RCore *core, int ch) {
+static int visual_nkey(RCore *core, int ch) {
 	const char *cmd;
 	switch (ch) {
 	case R_CONS_KEY_F1:
@@ -206,7 +206,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	char buf[4096];
 	int i, cols = core->print->cols;
 	ch = r_cons_arrow_to_hjkl (ch);
-	ch = visual_fkey (core, ch);
+	ch = visual_nkey (core, ch);
 	if (ch<2) return 1;
 
 	// do we need hotkeys for data references? not only calls?
@@ -247,10 +247,25 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_print_set_flags (core->print, flags);
 		break;
 	case 'f':
-		r_core_seek_next (core, r_config_get (core->config, "scr.fkey"));
+		{
+		char name[256], *n;
+		r_line_set_prompt ("flag name: ");
+		if (r_cons_fgets (name, sizeof (name), 0, NULL) >=0 && *name) {
+			int range = curset? (R_ABS (cursor-ocursor)+1): 1;
+			if (range<1) range=1;
+			n = r_str_chop (name);
+			if (*n) r_flag_set (core->flags, n, core->offset + cursor, range, 1);
+		}
+		}
 		break;
 	case 'F':
-		r_core_seek_previous (core, r_config_get (core->config, "scr.fkey"));
+		r_flag_unset_i (core->flags, core->offset + cursor, NULL);
+		break;
+	case 'n':
+		r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
+		break;
+	case 'N':
+		r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 		break;
 	case 'a':
 		if (core->file && !(core->file->rwx & 2)) {
@@ -635,12 +650,10 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case '.':
 		r_core_cmd (core, "sr pc", 0);
 		break;
-	case 'n':
-		r_core_seek_delta (core, core->blocksize);
-		break;
-	case 'N':
-		r_core_seek_delta (core, 0-(int)core->blocksize);
-		break;
+#if 0
+	case 'n': r_core_seek_delta (core, core->blocksize); break;
+	case 'N': r_core_seek_delta (core, 0-(int)core->blocksize); break;
+#endif
 	case ':':
 		r_core_visual_prompt (core);
 		break;
@@ -678,6 +691,17 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_set_raw (R_TRUE);
 		r_cons_show_cursor (R_FALSE);
 		break;
+	case 'b':
+		{
+ 		ut64 addr = curset? core->offset + cursor : core->offset;
+		RBreakpointItem *bp = r_bp_get (core->dbg->bp, addr);
+		if (bp) {
+			r_bp_del (core->dbg->bp, addr);
+		} else {
+			r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+		}
+		}
+		break;
 	case 'B':
 		autoblocksize = !autoblocksize;
 		if (autoblocksize)
@@ -713,8 +737,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_printf (
 		"Visual mode help:\n"
 		" >||<     seek aligned to block size\n"
-		" hjkl     move around\n"
-		" HJKL     move around faster\n"
+		" hjkl     move around (or HJKL)\n"
 		" pP       rotate print modes\n"
 		" /*+-[]   change block size, [] = resize scr.cols\n"
 		" cC       toggle cursor and colors\n"
@@ -723,14 +746,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" D        enter visual diff mode (set diff.from/to)\n"
 		" x        show xrefs to seek between them\n"
 		" sS       step / step over\n"
-		" n/N      seek next/previous block\n"
+		//" n/N      seek next/previous block\n"
 		" e        edit eval configuration variables\n"
 		" t        track flags (browse symbols, functions..)\n"
 		" T        browse anal info and comments\n"
 		" v        visual code analysis menu\n"
 		" V        view graph using cmd.graph (agv?)\n"
-		" fF       seek next/prev function/flag/hit (scr.fkey)\n"
-		" B        toggle automatic block size\n"
+		" f/F      set/unset flag\n"
+		" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
+		" b/B      toggle breakpoint / automatic block size\n"
 		" uU       undo/redo seek\n"
 		" yY       copy and paste selection\n"
 		" mK/'K    mark/go to Key (any key)\n"
@@ -834,7 +858,7 @@ static void r_core_visual_refresh (RCore *core) {
 		r_core_cmd (core, vi, 0);
 		r_cons_column (80);
 	}
-	if (zoom) r_core_cmd (core, "pZ", 0);
+	if (zoom) r_core_cmd (core, "pz", 0);
 	else r_core_cmd (core, printfmt[PIDX], 0);
 	blocksize = core->num->value? core->num->value : core->blocksize;
 	r_cons_visual_flush ();

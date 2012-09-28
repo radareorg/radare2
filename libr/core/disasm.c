@@ -319,6 +319,9 @@ toro:
 				pre = "  ";
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
+					if (f->type == R_ANAL_FCN_TYPE_LOC) {
+						r_cons_printf ("|- %s (%d)\n| ", f->name, f->size);
+					} else
 					r_cons_printf ("/ %s: %s (%d)\n| ",
 						(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
 						(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
@@ -409,11 +412,11 @@ toro:
 			continue;
 		}
 		/* show cursor */
-		if (core->print->cur_enabled && cursor >= idx && cursor < (idx+oplen))
-			r_cons_printf ("* ");
-		else {
+		{
+			
+			int q = core->print->cur_enabled && cursor >= idx && cursor < (idx+oplen);
 			void *p = r_bp_get (core->dbg->bp, at);
-			r_cons_printf (p? "b ": "  ");
+			r_cons_printf (p&&q?"b*":p? "b ":q?"* ":"  ");
 		}
 		if (show_bytes) {
 			char *str = NULL, pad[64];

@@ -1,12 +1,13 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include "r_core.h"
+
+#define MAX_FORMAT 2
 
 R_API int r_core_visual_trackflags(RCore *core) {
 	char cmd[1024];
 	RListIter *iter;
 	RFlagItem *flag;
-#define MAX_FORMAT 2
 	int format = 0;
 	const char *fs = NULL;
 	char *fs2 = NULL;
@@ -338,6 +339,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			if (mode == 0) {
 				if (p) r_meta_del (core->anal->meta, R_META_TYPE_ANY, from, size, p);
 			} else {
+				r_anal_fcn_del_locs (core->anal, from);
 				r_anal_fcn_del (core->anal, from);
 			}
 			break;
@@ -441,7 +443,6 @@ R_API void r_core_visual_config(RCore *core) {
 	RListIter *iter;
 	RConfigNode *bt;
 	char cmd[1024];
-#define MAX_FORMAT 2
 	char *fs = NULL;
 	char *fs2 = NULL;
 	int option, _option = 0;
@@ -1203,8 +1204,7 @@ R_API void r_core_visual_define (RCore *core) {
 		" S  - set strings in current block\n"
 		" f  - analyze function\n"
 		" u  - undefine metadata here\n"
-		" q  - quit/cancel operation\n"
-		"TODO: add support for data, string, code ..\n");
+		" q  - quit/cancel operation\n");
 	r_cons_flush ();
 
 	// get ESC+char, return 'hjkl' char
@@ -1245,9 +1245,14 @@ R_API void r_core_visual_define (RCore *core) {
 		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+core->blocksize, "");
 		break;
 	case 'u':
-		r_meta_del (core->anal->meta, R_META_TYPE_ANY, off, 1, "");
 		r_flag_unset_i (core->flags, off, NULL);
-		r_anal_fcn_del (core->anal, off);
+		{
+			// rm bbs
+			RAnalFunction *f = r_anal_fcn_find (core->anal, off, 0);
+			r_anal_fcn_del_locs (core->anal, off);
+			if (f) r_meta_del (core->anal->meta, R_META_TYPE_ANY, off, f->size, "");
+			r_anal_fcn_del (core->anal, off);
+		}
 		break;
 	case 'f':
 		r_cons_break(NULL,NULL);

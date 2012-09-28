@@ -95,7 +95,7 @@ enum {
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
  *			( RANAL_VAR_TYPE_CONST & RANAL_VAR_TYPE_MODIFIER_MASK)
-*/
+ */
 typedef struct r_anal_type_var_t {
 	char *name;
 	ut16 type; // contain (type || signedness || modifier)
@@ -113,7 +113,7 @@ typedef struct r_anal_type_ptr_t {
 	ut16 type; // contain (type || signedness || modifier)
 	ut8 size;
 	union {
-		ut8	 v8;
+		ut8 v8;
 		ut16 v16;
 		ut32 v32;
 		ut64 v64;
@@ -287,7 +287,7 @@ typedef struct r_anal_fcn_store_t {
 typedef struct r_anal_type_function_t {
 	char* name;
 	char* dsc; // For producing nice listings
-	ut64 size; // Size of function
+	int size; // Size of function XXX. use int, or ut32. no need for ut64
 	short type;
 	/*item_list *rets; // Type of return value */
 	short rets;
@@ -681,6 +681,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr,
 R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size,
 		const char *name, int type, RAnalDiff *diff);
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
+R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, int type, RAnalDiff *diff);
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);

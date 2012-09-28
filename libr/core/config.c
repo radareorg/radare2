@@ -2,10 +2,10 @@
 
 #include <r_core.h>
 
-static int config_scrfkey_callback(void *user, void *data) {
+static int config_scrnkey_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (!strcmp (node->value, "help") || *node->value == '?') {
-		r_cons_printf ("scr.fkey = fun, hit, flag\n");
+		r_cons_printf ("scr.nkey = fun, hit, flag\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -81,7 +81,7 @@ static int config_zoombyte_callback(void *user, void *data) {
 		core->print->zoom->mode = *node->value;
 		break;
 	default:
-		eprintf ("Invalid zoom.byte value. See pZ? for help\n");
+		eprintf ("Invalid zoom.byte value. See pz? for help\n");
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -640,9 +640,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "scr.color", "Enable/Disable colors");
 	r_config_set_cb (cfg, "scr.pager", "", &config_pager_callback);
 	r_config_desc (cfg, "scr.pager", "Select pager program (used if output doesn't fit on window)");
-	//r_config_set_cb (cfg, "scr.fkey", "function", &config_scrfkey_callback);
-	r_config_set_cb (cfg, "scr.fkey", "hit", &config_scrfkey_callback);
-	r_config_desc (cfg, "scr.fkey", "Select the seek mode in visual");
+	//r_config_set_cb (cfg, "scr.nkey", "function", &config_scrnkey_callback);
+	r_config_set_cb (cfg, "scr.nkey", "hit", &config_scrnkey_callback);
+	r_config_desc (cfg, "scr.nkey", "Select the seek mode in visual");
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
 	r_config_desc (cfg, "scr.cols", "Configure the number of columns to print");
@@ -697,7 +697,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "magic.depth", "Recursivity depth in magic description strings");
 	r_config_set (cfg, "rap.loop", "true");
 	r_config_desc (cfg, "rap.loop", "run rap as a forever-listening daemon");
-	/* fkeys */
+	/* nkeys */
 	for (i=1; i<13; i++) {
 		snprintf (buf, sizeof (buf), "key.f%d", i);
 		snprintf (buf+10, sizeof (buf)-10,
@@ -720,7 +720,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i (cfg, "zoom.to", 0);
 	r_config_desc (cfg, "zoom.to", "Zoom end address");
 	r_config_set_cb (cfg, "zoom.byte", "h", &config_zoombyte_callback);
-	r_config_desc (cfg, "zoom.byte", "Zoom callback to calculate each byte (See pZ? for help)");
+	r_config_desc (cfg, "zoom.byte", "Zoom callback to calculate each byte (See pz? for help)");
 	/* TODO cmd */
 #if 0
 	config_set("asm.section", "true");

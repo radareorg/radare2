@@ -311,7 +311,11 @@ case 'o':
 	case 'f':
 		switch (input[1]) {
 		case '-':
-			r_anal_fcn_del (core->anal, r_num_math (core->num, input+2));
+			{
+			ut64 addr = r_num_math (core->num, input+2);
+			r_anal_fcn_del_locs (core->anal, addr);
+			r_anal_fcn_del (core->anal, addr);
+			}
 			break;
 		case '+':
 			{

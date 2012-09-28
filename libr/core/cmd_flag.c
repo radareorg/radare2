@@ -41,6 +41,34 @@ static int cmd_flag(void *data, const char *input) {
 				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
 		} else eprintf ("Missing arguments\n");
 		break;
+#if 0
+	case 'd':
+		if (input[1] == ' ') {
+			char cmd[128];
+			RFlagItem *item = r_flag_get_i (core->flags,
+				r_num_math (core->num, input+2));
+			if (item) {
+				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
+				snprintf (cmd, sizeof (cmd), "pD@%"PFMT64d":%"PFMT64d,
+					 item->offset, item->size);
+				r_core_cmd0 (core, cmd);
+			}
+		} else eprintf ("Missing arguments\n");
+		break;
+#endif
+	case 'x':
+		if (input[1] == ' ') {
+			char cmd[128];
+			RFlagItem *item = r_flag_get_i (core->flags,
+				r_num_math (core->num, input+2));
+			if (item) {
+				r_cons_printf ("0x%08"PFMT64x"\n", item->offset);
+				snprintf (cmd, sizeof (cmd), "px@%"PFMT64d":%"PFMT64d,
+					 item->offset, item->size);
+				r_core_cmd0 (core, cmd);
+			}
+		} else eprintf ("Missing arguments\n");
+		break;
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));
 		break;
@@ -134,6 +162,7 @@ static int cmd_flag(void *data, const char *input) {
 		" fs               ; display flagspaces\n"
 		" fl [flagname]    ; show flag length (size)\n"
 		" fS[on]           ; sort flags by offset or name\n"
+		" fx[d]            ; show hexdump (or disasm) of flag:flagsize\n"
 		" fo               ; show fortunes\n");
 		break;
 	}

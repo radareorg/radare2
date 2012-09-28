@@ -205,9 +205,9 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 }
 
 R_API int r_flag_unset_i(RFlag *f, ut64 off, RFlagItem *p) {
-	RFlagItem *item = r_flag_get_i (f, off);
-	eprintf ("TODO: r_flag_unset_i\n");
-	if (item) {
+	RFlagItem *flag = r_flag_get_i (f, off);
+	if (flag) {
+		r_flag_unset (f, flag->name, NULL); //, flag);
 		return R_TRUE;
 	}
 	return R_FALSE;

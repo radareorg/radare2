@@ -154,6 +154,11 @@ R_API int r_flag_unset_i(RFlag *f, ut64 addr, RFlagItem *p) {
 	RFlagItem *item;
 	RListIter *iter;
 
+#if USE_BTREE
+	/* XXX */
+	btree_del (f->tree, item, cmp, NULL);
+	btree_del (f->ntree, item, ncmp, NULL);
+#endif
 	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (f->flags, iter, item) {
 		if (item->offset == addr) {

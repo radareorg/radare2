@@ -541,7 +541,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'z':
 		if (input[1]=='?') {
 			r_cons_printf (
-			"Usage: pZ [len]\n"
+			"Usage: pz [len]\n"
 			" print N bytes where each byte represents a block of filesize/N\n"
 			"Configuration:\n"
 			" zoom.maxsz : max size of block\n"

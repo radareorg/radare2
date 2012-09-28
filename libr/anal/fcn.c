@@ -44,6 +44,7 @@ R_API RList *r_anal_fcn_list_new() {
 R_API void r_anal_fcn_free(void *_fcn) {
 	RAnalFunction *fcn = _fcn;
 	if (!_fcn) return;
+	fcn->size = 0;
 	free (fcn->name);
 	free (fcn->attr);
 	r_list_free (fcn->refs);
@@ -203,6 +204,25 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, in
 			fcn->diff->name = strdup (diff->name);
 	}
 	return append? r_anal_fcn_insert (anal, fcn): R_TRUE;
+}
+
+R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
+	RListIter *iter, *iter2;
+	RAnalFunction *fcn, *f = r_anal_fcn_find (anal, addr, R_ANAL_FCN_TYPE_ROOT);
+#if USE_NEW_FCN_STORE
+#warning TODO: r_anal_fcn_del_locs not implemented for newstore
+#endif
+	if (f) {
+		r_list_foreach_safe (anal->fcns, iter, iter2, fcn) {
+			if (fcn->type != R_ANAL_FCN_TYPE_LOC)
+				continue;
+			if (fcn->addr >= f->addr && fcn->addr < (f->addr+f->size)) {
+				r_list_delete (anal->fcns, iter);
+			}
+		}
+	}
+	r_anal_fcn_del (anal, addr);
+	return R_TRUE;
 }
 
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
