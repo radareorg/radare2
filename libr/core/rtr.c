@@ -35,6 +35,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	int y = r_config_get_i (core->config, "scr.color");
 	int z = r_config_get_i (core->config, "asm.bytes");
 	int u = r_config_get_i (core->config, "scr.interactive");
+	int v = r_config_get_i (core->config, "asm.cmtright");
 	const char *port = r_config_get (core->config, "http.port");
 	s = r_socket_new (R_FALSE);
 	s->local = !r_config_get_i (core->config, "http.public");
@@ -49,6 +50,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 			browser, atoi (port));
 		r_sys_cmd (cmd);
 	}
+	r_config_set (core->config, "asm.cmtright", "false");
 	r_config_set (core->config, "scr.html", "true");
 	r_config_set (core->config, "scr.color", "false");
 	r_config_set (core->config, "asm.bytes", "false");
@@ -91,6 +93,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					r_socket_http_response (rs, 404, "File not found\n", 0);
 				}
 			}
+#if 0
 		} else 
 		if (!strcmp (rs->method, "POST")) {
 			char *buf = malloc (rs->data_length+ 50);
@@ -99,6 +102,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 			strcat (buf, (char*)rs->data);
 			r_socket_http_response (rs, 200, buf, 0);
 			free (buf);
+#endif
 		} else {
 			r_socket_http_response (rs, 404, "Invalid protocol", 0);
 		}
@@ -110,6 +114,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	r_config_set_i (core->config, "scr.color", y);
 	r_config_set_i (core->config, "asm.bytes", z);
 	r_config_set_i (core->config, "scr.interactive", u);
+	r_config_set_i (core->config, "asm.cmtright", v);
 	return 0;
 }
 

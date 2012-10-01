@@ -1,9 +1,9 @@
 body {
-background-color: black;
+	background-color: black;
 	font-family: Verdana;
 	border:0px;
 	width:320px;
-	margin:0px;
+	margin:10px;
 }
 
 p {
@@ -78,7 +78,6 @@ input {
 	height:290px;
 	border: 1px solid black;
 	background-color: #505070;
-/* #a0cfe0; */
 }
 
 a:link {

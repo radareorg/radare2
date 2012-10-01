@@ -28,9 +28,11 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case '-':
 		if (input[1]) {
+			const char *flagname = input+1;
+			while (*flagname==' ') flagname++;
 			if (strchr (input+1, '*'))
-				r_flag_unset_glob (core->flags, input+1);
-			else r_flag_unset (core->flags, input+1, NULL);
+				r_flag_unset_glob (core->flags, flagname);
+			else r_flag_unset (core->flags, flagname, NULL);
 		} else r_flag_unset_i (core->flags, off, NULL);
 		break;
 	case 'l':

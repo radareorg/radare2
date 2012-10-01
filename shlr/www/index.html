@@ -47,6 +47,11 @@ function panel_functions_load() {
 	});
 }
 
+function runcmd(x) {
+	popup_hide ();
+	cmd (x, function() { cmd (display)});
+}
+
 function setmode (x) {
 	popup_hide();
 	display = x;
@@ -56,6 +61,12 @@ function setmode (x) {
 	case "px": x = "b 1024;"+x; break;
 	}
 	cmd (x);
+}
+
+function runprompt (t, c) {
+	popup_hide ();
+	var msg = prompt (t);
+	if (msg) cmd ('"'+c+msg+'"', function (x) {cmd (display);});
 }
 
 function toggle(x) {
@@ -94,19 +105,19 @@ function show_popup_about () {
 		"<hr size=1/>"+
 		"<a href=\"javascript:setmode('fs',1)\" />flagspaces</a><br />"+
 		"<a href=\"javascript:setmode('f',1)\" />flags</a><br />"+
-		"<a href=\"javascript:cmd('f ',1)\" />set flag</a><br />"+
-		"<a href=\"javascript:cmd('f-$$')\" />unset flag</a><br />"+
+		"<a href=\"javascript:runprompt('Flag','f ')\" />set flag</a><br />"+
+		"<a href=\"javascript:runprompt('Flag','f-')\" />unset flag</a><br />"+
 	"</td><td valign=top>"+
 		"Places"+
 		"<hr size=1/>"+
-		"<a href=\"javascript:popup_hide();seek('entry0')\" />entry0</a><br />"+
+		"<a href=\"javascript:popup_hide();seek('entry0')\" />entry0</a>&nbsp;"+
 		"<a href=\"javascript:popup_hide();seek('main')\" />main</a><br />"+
 		"<br />"+
 		"Settings"+
 		"<hr size=1/>"+
 		"<a href=\"javascript:toggle('asm.offset')\" />asm.offset</a><br />"+
+		"<a href=\"javascript:toggle('asm.lines')\" />asm.lines</a><br />"+
 		"<a href=\"javascript:toggle('asm.pseudo')\" />asm.pseudo</a><br />"+
-		"<a href=\"javascript:toggle('asm.cmtright')\" />asm.cmtright</a><br />"+
 		"<a href=\"javascript:toggle('asm.bytes')\" />asm.bytes</a><br />"+
 		"<a href=\"javascript:toggle('cfg.bigendian')\" />cfg.bigendian</a><br />"+
 /*
@@ -118,11 +129,11 @@ a
 		"<br />"+
 		"Actions"+
 		"<hr size=1/>"+
-		"<a href=\"javascript:setmode('CC ')\" />set comment</a><br />"+
-		"<a href=\"javascript:setmode('af')\" />analyze function</a><br />"+
-		"<a href=\"javascript:popup_hide();cmd('aa');\">full analyze</a><br />"+
-		"<a href=\"javascript:popup_hide();cmd('ap');\">analyze preludes</a><br />"+
-		"<a href=\"/graph/\">graph demo</a>"+nl2+
+		"<a href=\"javascript:runprompt('Comment','CC ')\" />set comment</a><br />"+
+		"<a href=\"javascript:runcmd('af')\" />analyze function</a><br />"+
+		"<a href=\"javascript:runcmd('aa');\">full analyze</a><br />"+
+		"<a href=\"javascript:runcmd('ap');\">analyze preludes</a><br />"+
+		"<a href=\"/graph/\">function graph</a>"+nl2+
 		"&nbsp;"+
 	"</td></tr></table>"+
 		"";
@@ -139,6 +150,7 @@ function handleKeyPress(e, form) {
 function seek(x,back) {
 	next_curoff = prev_curoff = x;
 	cmd ("s "+x, function (x) {
+		if (display[0]=='f') display="pd";
 		cmd (display);
 		window.scrollTo (0,0);
 	});
@@ -204,6 +216,22 @@ function filter_asm(x) {
 		}
 		x = z;
 	} else
+	if (display[0] == 'f') {
+		hasmore (false);
+		if (display[1] == 's') {
+			var z = "";
+			for (var i=0; i<lines.length; i++)  {
+				var row = lines[i].replace (/\ +/g," ").split (/ /g);
+				var mark = row[1]=='*'? '*': ' ';
+				var space = row[2]? row[2]: row[1];
+				if (!space) continue;
+				z += row[0]+ " "+mark+" <a href=\"javascript:runcmd('fs "+
+					space+"')\">"+space+"</a>\n";
+			}
+			x = z;
+		} else {
+		}
+	} else
 	if (display[0] == "i") {
 		hasmore (false);
 		if (display[1]) {
@@ -225,7 +253,7 @@ function filter_asm(x) {
 	} else hasmore (true);
 
 	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
-	if (display == "pd"||display=="pdf") {
+	if (display[0]=='p' && display[1]=='d') {
 		x = x.replace (/;(\s+)/g, ";");
 		x = x.replace (/;(.*)/g, "// <span style='color:yellow'>$1</span>");
 		x = x.replace (/(fcn|imp|loc).(.*)/g, "<a href='javascript:seek(\"$1.$2\")'>$1.$2</a>");
@@ -262,7 +290,7 @@ function input_activate () {
 }
 
 function css(selector, property, value) {
-	for (var i=0; i<document.styleSheets.length;i++) {
+	for (var i=0; i<document.styleSheets.length; i++) {
 		try {
 			document.styleSheets[i].insertRule (
 				selector+ ' {'+property+':'+value+'}',
@@ -276,6 +304,7 @@ function css(selector, property, value) {
 	}
 }
 
+/* probably unnecesary */
 window.onorientationchange = function() {
 	var header = document.getElementById ('header');
 	var orientation = window.orientation;
@@ -308,15 +337,17 @@ function popup_show (title, body) {
 	var t = document.getElementById ("popup_title");
 	var c = document.getElementById ("popup_content");
 	var b = document.getElementById ("popup_background");
-	if (body) {
-		p.style.visibility="visible";
-		c.innerHTML = body;
-		b.style.visibility="visible";
-	}
-	if (title) {
+	if (title)
 		t.innerHTML = title;
+	if (body) {
+		var top = document.body.scrollTop+10;
+		c.innerHTML = body;
+		p.style.visibility =
+		b.style.visibility = "visible";
+		//c.style.top = top; /* XXX doesnt works */
+		css ('.popup', 'top', top+"px"); //'220px');
 	}
-	b.height =100;
+	b.height = 100;
 }
 
 function init() {
@@ -330,11 +361,10 @@ function init() {
 </script>
 </head>
 <body onload="init()">
-<div class=popup_background id="popup_background"
-style="visibility:hidden"></div>
+<div class=popup_background id="popup_background" style="visibility:hidden"></div>
 
 <div id="popup" style="visibility:hidden">
-<table class=popup >
+<table class=popup>
 <tr>
 	<td style="text-align:left; width:100%">
 	<div class=popup_title id="popup_title"></div>

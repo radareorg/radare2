@@ -14,27 +14,20 @@ var nn6=document.getElementById&&!document.all;
  * visitor: the visitor implementation, it must be a class with a visit(element) method.
  * scanElementsOnly: a flag telling whether to scan html elements only or all html nodes.
  */
-function DocumentScanner(visitor, scanElementsOnly)
-{
+function DocumentScanner(visitor, scanElementsOnly) {
 	this.visitor = visitor;
 	this.scanElementsOnly = scanElementsOnly;
 
 	/**
 	 * Scans the element
 	 */
-	this.scan = function(element)
-	{
-		var i;
-		if(this.visitor.visit(element))
-		{
+	this.scan = function(element) {
+		if (this.visitor.visit(element)) {
 			// visit child elements
 			var children = element.childNodes;
-			for(i = 0; i < children.length; i++)
-			{
+			for(var i = 0; i < children.length; i++) {
 				if(!this.scanElementsOnly || children[i].nodeType == 1)
-				{
 					this.scan(children[i]);
-				}
 			}
 		}		
 	}	
@@ -73,26 +66,20 @@ var bounds = new Array(4);
 /**
  * this visitor is used to find blocks nested in the element being moved.
  */
-function BlocksToMoveVisitor()
-{
-	this.visit = function(element)
-	{
-		if(isBlock(element))
-		{
+function BlocksToMoveVisitor() {
+	this.visit = function(element) {
+		if (isBlock(element)) {
 			blocksToMove.push(findBlock(element.id));
 			return false;
 		}
-		else
-			return true;
+		return true;
 	}
 }
 
 var blocksToMoveScanner = new DocumentScanner(new BlocksToMoveVisitor(), true);
 
-function movemouse(e)
-{
-	if (isdrag)
-	{
+function movemouse(e) {
+	if (isdrag) {
 		var currentMouseX = nn6 ? e.clientX : event.clientX;
 		var currentMouseY = nn6 ? e.clientY : event.clientY;
 		var newElementX = elementStartX + currentMouseX - mouseStartX;
@@ -132,10 +119,9 @@ function movemouse(e)
  * (i.e.: the html element under mouse pointer), then setup the document's onmousemove function to
  * move the element around.
  */
-function startDrag(e) 
-{	
+function startDrag(e) {	
 	var eventSource = nn6 ? e.target : event.srcElement;
-	if(eventSource.tagName == 'HTML')
+	if (eventSource.tagName == 'HTML')
 		return;
 
 	while (eventSource != document.body && !hasClass(eventSource, "draggable"))
@@ -144,8 +130,7 @@ function startDrag(e)
 	}
 
 	// if a draggable element was found, calculate its actual position
-	if (hasClass(eventSource, "draggable"))
-	{
+	if (hasClass(eventSource, "draggable")) {
 		isdrag = true;
 		elementToMove = eventSource;
 
@@ -161,13 +146,9 @@ function startDrag(e)
 		mouseStartY = nn6 ? e.clientY : event.clientY;
 		
 		// calculate bounds as left, top, width, height of the parent element
-		if(getStyle(elementToMove.parentNode, "position") == 'absolute')
-		{
-			bounds[0] = 0;
-			bounds[1] = 0;
-		}
-		else
-		{
+		if(getStyle(elementToMove.parentNode, "position") == 'absolute') {
+			bounds[0] = bounds[1] = 0;
+		} else {
 			bounds[0] = calculateOffsetLeft(elementToMove.parentNode);
 			bounds[1] = calculateOffsetTop(elementToMove.parentNode);
 		}
@@ -187,10 +168,9 @@ function startDrag(e)
 	}
 }
 
-function stopDrag(e)
-{
-	isdrag=false; 
-	if(elementToMove)
+function stopDrag(e) {
+	isdrag = false; 
+	if (elementToMove)
 		elementToMove.style.zIndex=originalZIndex;
 	elementToMove = null;
 	document.onmousemove = null;
@@ -216,7 +196,6 @@ document.ontouchmove = function(x) {
 	isdrag = true;
 	movemouse (touch2move (x));
 	x.preventDefault();
-	//alert ("move: "+x);
 }
 document.ontouchend = stopDrag;
 
@@ -247,8 +226,7 @@ var inspectors = new Array();
  * The canvas class.
  * This class is built on a div html element.
  */
-function Canvas(htmlElement)
-{
+function Canvas(htmlElement) {
 	/*
 	 * initialization
 	 */
@@ -263,17 +241,14 @@ function Canvas(htmlElement)
 	this.height;
 
 	// create the inner div element
-	this.innerDiv = document.createElement("div");
+	this.innerDiv = document.createElement ("div");
 	
-	this.initCanvas = function()
-	{
+	this.initCanvas = function() {
 		// setup the inner div
 		var children = this.htmlElement.childNodes;
-		var i;
 		var el;
 		var n = children.length;
-		for(i = 0; i < n; i++)
-		{
+		for(var i = 0; i < n; i++) {
 			el = children[0];
 			this.htmlElement.removeChild(el);
 			this.innerDiv.appendChild(el);
@@ -764,7 +739,7 @@ function Connector(htmlElement, canvas)
 		this.destination = this.canvas.findBlock(splitted[2]);
 		if(!this.destination)
 		{
-			alert('cannot find destination block with id \'' + splitted[2] + '\'');
+			// alert('cannot find destination block with id \'' + splitted[2] + '\'');
 			return;
 		}
 		
@@ -828,29 +803,22 @@ function Connector(htmlElement, canvas)
 		this.htmlElement.parentNode.removeChild(this.htmlElement);
 	}
 	
-	this.getStartSegment = function()
-	{
+	this.getStartSegment = function() {
 		return this.firstSegment;
 	}
 	
-	this.getEndSegment = function()
-	{
+	this.getEndSegment = function() {
 		var s = this.firstSegment;
-		while(s.nextSegment)
+		while (s.nextSegment)
 			s = s.nextSegment;
 		return s;
 	}
 	
-	this.getMiddleSegment = function()
-	{
-		if(!this.strategy)
-			return null;
-		else
-			return this.strategy.getMiddleSegment();
+	this.getMiddleSegment = function() {
+		return this.strategy?  this.strategy.getMiddleSegment(): null;
 	}
 	
-	this.createSegment = function()
-	{
+	this.createSegment = function() {
 		var segment;
 		
 		// if the pool contains more objects, borrow the segment, create it otherwise
@@ -880,8 +848,7 @@ function Connector(htmlElement, canvas)
 	/**
 	 * Repaints the connector
 	 */
-	this.repaint = function()
-	{
+	this.repaint = function() {
 		// check strategies fitness and choose the best fitting one
 		var i;
 		var maxFitness = 0;
@@ -895,8 +862,7 @@ function Connector(htmlElement, canvas)
 			
 			fitness = 0;
 			s = strategies[i](this);
-			if(s.isApplicable())
-			{
+			if(s.isApplicable()) {
 				fitness++;
 				s.paint();
 				// check resulting orientation against the preferred orientations
@@ -906,8 +872,7 @@ function Connector(htmlElement, canvas)
 					fitness++;
 			}
 			
-			if(fitness > maxFitness)
-			{
+			if(fitness > maxFitness) {
 				this.strategy = s;
 				maxFitness = fitness;
 			}
@@ -926,10 +891,8 @@ function Connector(htmlElement, canvas)
 	/**
 	 * Hide all the segments and return them to pool
 	 */
-	this.clearSegments = function()
-	{
-		if(this.firstSegment)
-		{
+	this.clearSegments = function() {
+		if (this.firstSegment) {
 			this.firstSegment.cascadeHide();
 			this.firstSegment.append(this.segmentsPool);
 			this.segmentsPool = this.firstSegment;
@@ -937,21 +900,17 @@ function Connector(htmlElement, canvas)
 		}	
 	}
 		
-	this.onMove = function()
-	{
+	this.onMove = function() {
 		this.repaint();
-		
 		// notify listeners
-		var i;
-		for(i = 0; i < this.moveListeners.length; i++)
+		for (var i = 0; i < this.moveListeners.length; i++)
 			this.moveListeners[i].onMove();
 	}
 }
 
 var strategies = new Array();
 
-function ConnectorEnd(htmlElement, connector, side)
-{
+function ConnectorEnd(htmlElement, connector, side) {
 	this.side = side;
 	this.htmlElement = htmlElement;
 	this.connector = connector;
@@ -966,8 +925,7 @@ function ConnectorEnd(htmlElement, connector, side)
 	
 	this.orientation;
 	
-	this.repaint = function()
-	{
+	this.repaint = function() {
 		this.htmlElement.style.position = 'absolute';
 				
 		var left;
@@ -975,8 +933,7 @@ function ConnectorEnd(htmlElement, connector, side)
 		var segment;
 		var orientation;
 		
-		if(this.side == START)
-		{
+		if(this.side == START) {
 			segment = connector.getStartSegment();
 			left = segment.startX;
 			top = segment.startY;
@@ -986,31 +943,28 @@ function ConnectorEnd(htmlElement, connector, side)
 				orientation = (~orientation) & VERTICAL;
 			else
 				orientation = (~orientation) & HORIZONTAL;
-		}
-		else
-		{
+		} else {
 			segment = connector.getEndSegment();
 			left = segment.getEndX();
 			top = segment.getEndY();
 			orientation = segment.orientation;
 		}
 		
-		switch(orientation)
-		{
-			case LEFT:
-				top -= (this.htmlElement.offsetHeight - segment.thickness) / 2;
-				break;
-			case RIGHT:
-				left -= this.htmlElement.offsetWidth;
-				top -= (this.htmlElement.offsetHeight - segment.thickness) / 2;
-				break;
-			case DOWN:
-				top -= this.htmlElement.offsetHeight;
-				left -= (this.htmlElement.offsetWidth - segment.thickness) / 2;
-				break;
-			case UP:
-				left -= (this.htmlElement.offsetWidth - segment.thickness) / 2;
-				break;
+		switch(orientation) {
+		case LEFT:
+			top -= (this.htmlElement.offsetHeight - segment.thickness) / 2;
+			break;
+		case RIGHT:
+			left -= this.htmlElement.offsetWidth;
+			top -= (this.htmlElement.offsetHeight - segment.thickness) / 2;
+			break;
+		case DOWN:
+			top -= this.htmlElement.offsetHeight;
+			left -= (this.htmlElement.offsetWidth - segment.thickness) / 2;
+			break;
+		case UP:
+			left -= (this.htmlElement.offsetWidth - segment.thickness) / 2;
+			break;
 		}
 		
 		this.htmlElement.style.left = Math.ceil(left) + "px";
@@ -1231,23 +1185,17 @@ function initPageObjects()
  */
 
 
-function findCanvas(canvasId)
-{	
-	var i;
-	for(i = 0; i < canvases.length; i++)
+function findCanvas(canvasId) {	
+	for (var i = 0; i < canvases.length; i++)
 		if(canvases[i].id == canvasId)
 			return canvases[i];
 	return null;
 }
 
-function findBlock(blockId)
-{
-	var i;
-	for(i = 0; i < canvases.length; i++)
-	{
+function findBlock(blockId) {
+	for (var i = 0; i < canvases.length; i++) {
 		var block = canvases[i].findBlock(blockId);
-		if(block)
-			return block;
+		if (block) return block;
 	}
 	return null;
 }
@@ -1263,32 +1211,27 @@ function isBlock(htmlElement)
 /*
  * This function determines whether a html element is to be considered a block
  */
-function isCanvas(htmlElement)
-{
+function isCanvas(htmlElement) {
 	return hasClass(htmlElement, 'canvas');
 }
 
 /*
  * This function determines whether a html element is to be considered a connector
  */
-function isConnector(htmlElement)
-{
+function isConnector(htmlElement) {
 	return htmlElement.className && htmlElement.className.match(new RegExp('connector .*'));
 }
 
 /*
  * This function calculates the absolute 'top' value for a html node
  */
-function calculateOffsetTop(obj)
-{
+function calculateOffsetTop(obj) {
 	var curtop = 0;
-	if (obj.offsetParent)
-	{
+	if (obj.offsetParent) {
 		curtop = obj.offsetTop
 		while (obj = obj.offsetParent) 
 			curtop += obj.offsetTop
-	}
-	else if (obj.y)
+	} else if (obj.y)
 		curtop += obj.y;
 	return curtop;
 }
@@ -1299,39 +1242,31 @@ function calculateOffsetTop(obj)
 function calculateOffsetLeft(obj)
 {
 	var curleft = 0;
-	if (obj.offsetParent)
-	{
+	if (obj.offsetParent) {
 		curleft = obj.offsetLeft
 		while (obj = obj.offsetParent) 
-		{
 			curleft += obj.offsetLeft;
-		}
-	}
-	else if (obj.x)
+	} else if (obj.x)
 		curleft += obj.x;
 	return curleft;
 }
 
-function parseBorder(obj, side)
-{
+function parseBorder(obj, side) {
 	var sizeString = getStyle(obj, "border-" + side + "-width");
-	if(sizeString && sizeString != "")
-	{
+	if(sizeString && sizeString != "") {
 		if(sizeString.substring(sizeString.length - 2) == "px")
 			return parseInt(sizeString.substring(0, sizeString.length - 2));
 	}
 	return 0;
 }
 
-function hasClass(element, className)
-{
-	if(!element || !element.className)
+function hasClass(element, className) {
+	if (!element || !element.className)
 		return false;
 		
 	var classes = element.className.split(' ');
-	var i;
-	for(i = 0; i < classes.length; i++)
-		if(classes[i] == className)
+	for (var i = 0; i < classes.length; i++)
+		if (classes[i] == className)
 			return true;
 	return false;
 }
@@ -1339,21 +1274,17 @@ function hasClass(element, className)
 /**
  * This function retrieves the actual value of a style property even if it is set via css.
  */
-function getStyle(node, styleProp)
-{
+function getStyle(node, styleProp) {
 	// if not an element
 	if( node.nodeType != 1)
 		return;
 		
 	var value;
-	if (node.currentStyle)
-	{
+	if (node.currentStyle) {
 		// ie case
 		styleProp = replaceDashWithCamelNotation(styleProp);
 		value = node.currentStyle[styleProp];
-	}
-	else if (window.getComputedStyle)
-	{
+	} else if (window.getComputedStyle) {
 		// mozilla case
 		value = document.defaultView.getComputedStyle(node, null).getPropertyValue(styleProp);
 	}
@@ -1361,42 +1292,31 @@ function getStyle(node, styleProp)
 	return value;
 }
 
-function replaceDashWithCamelNotation(value)
-{
+function replaceDashWithCamelNotation(value) {
 	var pos = value.indexOf('-');
-	while(pos > 0 && value.length > pos + 1)
-	{
+	while(pos > 0 && value.length > pos + 1) {
 		value = value.substring(0, pos) + value.substring(pos + 1, pos + 2).toUpperCase() + value.substring(pos + 2);
 		pos = value.indexOf('-');
 	}
 	return value;
 }
-
-
 /*******************************
  * Connector paint strategies. *
  *******************************/
- 
+
 /**
  * Horizontal "S" routing strategy.
  */
-function HorizontalSStrategy(connector)
-{
+function HorizontalSStrategy(connector) {
 	this.connector = connector;
-	
 	this.startSegment;
 	this.middleSegment;
 	this.endSegment;
-	
 	this.strategyName = "horizontal_s";
-	
-	this.getMiddleSegment = function()
-	{
+	this.getMiddleSegment = function() {
 		return this.middleSegment;
 	}
-	
-	this.isApplicable = function()
-	{
+	this.isApplicable = function() {
 		var sourceLeft = this.connector.source.left();
 		var sourceWidth = this.connector.source.width();
 		var destinationLeft = this.connector.destination.left();
@@ -1643,42 +1563,31 @@ function VerticalLStrategy(connector)
 			return false;
 		if(destMiddle > st && destMiddle < st + sh)
 			return false;
-		return true;	
+		return true;
 	}
-	
 	/**
 	 * Chooses the longest segment as the "middle" segment.
 	 */
-	this.getMiddleSegment = function()
-	{
+	this.getMiddleSegment = function() {
 		if(this.startSegment.length > this.endSegment.length)
 			return this.startSegment;
-		else
-			return this.endSegment;
+		return this.endSegment;
 	}
-	
-	this.paint = function()
-	{
+	this.paint = function() {
 		this.startSegment = this.connector.createSegment();
 		this.endSegment = this.connector.createSegment();
-		
 		var destMiddleY = Math.floor(this.connector.destination.top() + this.connector.destination.height() / 2);
 		var dl = this.connector.destination.left();
 		var dw = this.connector.destination.width();
 		var st = this.connector.source.top();
 		var sh = this.connector.source.height();
-		
 		this.startSegment.startX = Math.floor(this.connector.source.left() + this.connector.source.width() / 2);
-		
 		// decide which side of the source block to connect to
-		if(Math.abs(destMiddleY - st) < Math.abs(destMiddleY - (st + sh)))
-		{
+		if(Math.abs(destMiddleY - st) < Math.abs(destMiddleY - (st + sh))) {
 			// use the upper face
 			this.startSegment.orientation = (destMiddleY < st) ? UP : DOWN;
 			this.startSegment.startY = st;
-		}
-		else
-		{
+		} else {
 			// use the lower face
 			this.startSegment.orientation = (destMiddleY > (st + sh)) ? DOWN : UP;
 			this.startSegment.startY = st + sh;
@@ -1795,22 +1704,20 @@ function VerticalCStrategy(connector, startOrientation)
 		if(startOrientation == DOWN)
 			endY += this.connector.destination.height();
 		var endX = Math.floor(this.connector.destination.left() + this.connector.destination.width() / 2);
-
 		this.startSegment.startX = startX;
 		this.startSegment.startY = startY;
 		this.startSegment.orientation = startOrientation;
 		this.startSegment.length = this.connector.minSegmentLength + Math.max(0, sign * (startY - endY));
-		
 		var hLength = endX - startX;
 		this.middleSegment.orientation = hLength > 0 ? RIGHT : LEFT;
 		this.middleSegment.length = Math.abs(hLength);
-		
 		this.endSegment.orientation = startOrientation == UP ? DOWN : UP;
 		this.endSegment.length = Math.max(0, sign * (endY - startY)) + this.connector.minSegmentLength;
 	}
 }
 
-
+strategies[0] = function(connector) {return new VerticalSStrategy(connector)};
+/*
 strategies[0] = function(connector) {return new HorizontalSStrategy(connector)};
 strategies[1] = function(connector) {return new VerticalSStrategy(connector)};
 strategies[2] = function(connector) {return new HorizontalLStrategy(connector)};
@@ -1819,3 +1726,4 @@ strategies[4] = function(connector) {return new HorizontalCStrategy(connector, L
 strategies[5] = function(connector) {return new HorizontalCStrategy(connector, RIGHT)};
 strategies[6] = function(connector) {return new VerticalCStrategy(connector, UP)};
 strategies[7] = function(connector) {return new VerticalCStrategy(connector, DOWN)};
+*/
