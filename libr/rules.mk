@@ -25,12 +25,13 @@ all:
 	@echo "DIR ${NAME}"
 	${MAKE} ${EXTRA_TARGETS} ${LIBSO} ${LIBAR}
 ifeq ($(SILENT),)
-	@${IQ}if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 else
-	@${IQ}if [ -e t/Makefile ] ; then (echo "DIR ${NAME}/t"; cd t && ${MAKE} all) ; fi
 	@-if [ -e p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE} all) ; fi
 endif
+
+#	@${IQ}if [ -e t/Makefile ] ; then (echo "DIR ${NAME}/t"; cd t && ${MAKE} all) ; fi
+#	@${IQ}if [ -e t/Makefile ]; then (cd t && ${MAKE} all) ; fi
 
 SRC=$(subst .o,.c,$(OBJ))
 
