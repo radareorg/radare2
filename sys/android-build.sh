@@ -1,5 +1,6 @@
 #!/bin/sh
 
+BUILD=1
 PREFIX="/data/data/org.radare.installer/radare2"
 if [ -z "${NDK}" ]; then
 	echo "use ./android-{arm|mips|x86}.sh"
@@ -62,6 +63,7 @@ echo NDK_ARCH: ${NDK_ARCH}
 echo "Using NDK_ARCH: ${NDK_ARCH}"
 echo "Using STATIC_BUILD: ${STATIC_BUILD}"
 
+if [ "${BUILD}" = 1 ]; then
 # start build
 sleep 2
 
@@ -76,6 +78,7 @@ echo ./configure --with-compiler=android --with-ostype=android \
 ./configure --with-compiler=android --with-ostype=android \
 	--without-ewf --without-ssl --prefix=${PREFIX} ${CFGFLAGS} || exit 1
 make -s -j 4 || exit 1
+fi
 rm -rf $D
 mkdir -p $D
 

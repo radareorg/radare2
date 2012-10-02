@@ -82,6 +82,9 @@ clean:
 	mv main.k main.c
 	rm -f ${BINS2} r2
 
+SOURCES= main.c rabin2.c radare2.c radiff2.c rafind2.c
+SOURCES+=rahash2.c rarun2.c rasm2.c rax2.c ragg2.c
+
 build:
 	mv main.c main.k
 	rm -f *.[ch]
@@ -94,7 +97,7 @@ build:
 		rm -f _$$a ; \
 	done
 	rm -f _*
-	${CC} -o radare2 *.c ${CFLAGS} ${LDFLAGS}
+	${CC} -o radare2 ${SOURCES} ${CFLAGS} ${LDFLAGS}
 	mv main.c main.k
 	rm -f *.[ch]
 	mv main.k main.c
