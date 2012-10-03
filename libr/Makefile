@@ -7,12 +7,12 @@ LFX=${DESTDIR}/${LIBDIR}
 IFX=${DESTDIR}/${INCLUDEDIR}
 PWD=$(shell pwd)
 
-LIBS0=util socket hash
-LIBS1=reg cons db magic lib diff bp search
+LIBS0=util socket hash th
+LIBS1=reg cons db magic lib diff bp search config
 LIBS2=syscall cmd lang io crypto flags bin
 LIBS3=fs anal
 LIBS4=parse sign
-LIBS5=asm
+LIBS5=asm debug
 LIBS6=print egg
 LIBS7=core
 
