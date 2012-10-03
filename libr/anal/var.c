@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 */
+/* radare - LGPL - Copyright 2010-2012 */
 /*   nibble<.ds@gmail.com> + pancake<nopcode.org> */
 
 #include <r_anal.h>
@@ -169,7 +169,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 					v->name, (int)v->type->custom.a->count);
 			else
 				eprintf ("%s %s %s = ", r_anal_var_scope_to_str (anal, v->scope),
-					r_anal_type_to_str (anal, v->type, ""), v->name, "");
+					r_anal_type_to_str (anal, v->type, ""), v->name);
 			// TODO: implement r_var_dbg_read using r_vm or r_num maybe?? sounds dupped
 			// XXX: not fully implemented
 			eprintf ("0x%"PFMT64x, 0LL);

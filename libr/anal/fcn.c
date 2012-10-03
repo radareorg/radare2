@@ -451,7 +451,7 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 // TODO: This function is not fully implemented
 /* set function signature from string */
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
-	char *p, *q, *r, *str;
+	char *str; //*p, *q, *r
 	RAnalType *t;
 
 	if (!a || !f || !sig) {

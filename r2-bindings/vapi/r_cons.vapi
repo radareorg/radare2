@@ -1,9 +1,7 @@
 /* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
 
-[CCode (cheader_filename="r_cons.h", cprefix="r_cons", lower_case_cprefix="r_cons_")]
 namespace Radare {
-	[Compact]
-	[CCode (cname="RCons", free_function="", cprefix="r_cons_")]
+	[CCode (cheader_filename="r_cons.h", cname="RCons", free_function="", cprefix="r_cons_")]
 	/* XXX: LEAK */
 	public class RCons {
 //		public RCons ();
@@ -71,5 +69,18 @@ namespace Radare {
 		//public static int grep_line (string str, int len);
 		//public static int grepbuf (string str, int len);
 		public static void invert (bool set, int color);
+	}
+	[Compact]
+	[CCode (cname="RLine", cheader_filename="r_line.h", cprefix="r_line_", free_function="")]
+	public class RLine {
+		//public RLine();
+		public static RLine singleton();
+		public static bool readline (); //int argc, char **argv);
+		public static void set_prompt (string promp);
+
+		public static bool hist_load (string file);
+		public static bool hist_add (string line);
+		public static bool hist_save (string file);
+		//public static bool hist_label (string file);
 	}
 }

@@ -1,3 +1,5 @@
+include ../config.mk
+
 NAME=r_vm
 DEPS=r_util
 

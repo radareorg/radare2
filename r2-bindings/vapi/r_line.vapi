@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
 
 namespace Radare {
-	[Compact]
 	[CCode (cname="RLine", cheader_filename="r_line.h", cprefix="r_line_", free_function="")]
 	public class RLine {
 		//public RLine();

@@ -1,8 +1,0 @@
-This directory contains the scripts used to ease updates,
-compilation, and dependency fixes required to maintain
-a system wide installation of radare2.
-
-./install.sh   : install r2 in /usr
-./update.sh    : update r2 installation (fail on abi changes)
-./python.sh    : install python bindings
-./uninstall.sh : deinstall r2

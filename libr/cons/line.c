@@ -1,6 +1,6 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 
-#include <r_line.h>
+#include <r_cons.h>
 
 static RLine r_line_instance;
 #define I r_line_instance

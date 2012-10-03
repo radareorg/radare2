@@ -1,8 +1,7 @@
 /* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
-#include <r_line.h>
-
+#include <r_cons.h>
 #include <string.h>
 #include <stdlib.h>
 

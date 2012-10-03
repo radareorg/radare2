@@ -26,7 +26,6 @@ LDFLAGS+=../../libr/cmd/libr_cmd.a
 LDFLAGS+=../../libr/fs/libr_fs.a
 LDFLAGS+=../../libr/sign/libr_sign.a
 LDFLAGS+=../../libr/magic/libr_magic.a
-LDFLAGS+=../../libr/line/libr_line.a
 LDFLAGS+=../../libr/cons/libr_cons.a
 LDFLAGS+=../../libr/diff/libr_diff.a
 LDFLAGS+=../../libr/syscall/libr_syscall.a

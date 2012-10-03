@@ -5,41 +5,38 @@ DEPS=r_util
 
 OBJS=db.o table.o pair.o
 
-PRE=sdb/src/libsdb.a
+SDBLIB=sdb/src/libsdb.a
 EXTRA_CLEAN=sdbclean
-EXTRA_TARGETS+=${PRE}
+EXTRA_TARGETS+=${SDBLIB}
 
 CFLAGS+=-Isdb/src
 
-VC=git
 URL=git://github.com/radare/sdb
 
 F=README.md config.mk src Makefile
-SYNCFILES=$(addprefix sdb.${VC}/,${F})
+SYNCFILES=$(addprefix sdb.vc/,${F})
 
 include ../rules.mk
 
 # link against sdb
-LINK+=${PRE}
+LINK+=${SDBLIB}
 
 sdbclean:
 	cd sdb/src ; ${MAKE} clean
 
-sdb/src/libsdb.a:
-	#cd sdb/src ; ${MAKE} CFLAGS=-fPIC libsdb.a
+$(SDBLIB):
 	cd sdb ; ${MAKE} src/sdb-version.h
 	cd sdb/src ; ${MAKE} ARCH=xxx \
 		RANLIB="${RANLIB}" \
 		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 
-.PHONY: sdb-sync sync-sdb
+.PHONY: sdb-sync sync-sdb sdbclean
 sdb-sync sync-sdb:
-	rm -rf sdb sdb.${VC}
-	${VC} clone ${URL} sdb.${VC}
-	mkdir sdb
+	rm -rf sdb sdb.vc
+	git clone ${URL} sdb.vc
+	mkdir -p sdb
 	cp -rf ${SYNCFILES} sdb
-	rm -rf sdb.${VC}
-	rm -rf ../include/sdb
+	rm -rf sdb.vc ../include/sdb
 	mkdir -p ../include/sdb
 	cd sdb ; ${MAKE} src/sdb-version.h
 	cp -f sdb/src/*.h ../include/sdb

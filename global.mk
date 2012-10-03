@@ -38,7 +38,7 @@ endif
 
 .c.o:
 ifneq ($(SILENT),)
-	@echo CC $<
+	@echo CC $(shell basename $<)
 endif
 	$(CC) -c $(CFLAGS) -o $@ $<
 

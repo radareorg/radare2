@@ -7,14 +7,31 @@ LFX=${DESTDIR}/${LIBDIR}
 IFX=${DESTDIR}/${INCLUDEDIR}
 PWD=$(shell pwd)
 
-LIBS=util magic socket db cons line lib io lang flags bin hash config syscall
-LIBS+=cmd reg diff anal parse asm print search egg bp sign debug fs th core
-#DEPRECATED APIS : LIBS+=th crypto
+LIBS0=util socket hash
+LIBS1=reg cons db magic lib diff bp search
+LIBS2=syscall cmd lang io crypto flags bin
+LIBS3=fs anal
+LIBS4=parse sign
+LIBS5=asm
+LIBS6=print egg
+LIBS7=core
+
+LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)
+.PHONY: $(LIBS)
 
 all:
-	@for lib in ${LIBS}; do \
-		cd $${lib} && ${MAKE} || exit 1 ; cd .. ; done
-	@echo Build done for: ${LIBS}
+	${MAKE} $(LIBS0)
+	${MAKE} $(LIBS1)
+	${MAKE} $(LIBS2)
+	${MAKE} $(LIBS3)
+	${MAKE} $(LIBS4)
+	${MAKE} $(LIBS5)
+	${MAKE} $(LIBS6)
+	${MAKE} $(LIBS7)
+
+$(LIBS):
+	@echo "DIR $@"
+	cd $@ ; ${MAKE}
 
 pkgcfg:
 	@for lib in ${LIBS}; do ( cd $${lib} && ${MAKE} pkgcfg ); done

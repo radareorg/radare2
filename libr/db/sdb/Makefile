@@ -19,8 +19,6 @@ src/sdb-version.h:
 clean:
 	rm -f src/sdb-version.h
 	cd src && ${MAKE} clean
-	cd memcache && ${MAKE} clean
-	cd test && ${MAKE} clean
 	cd ${VALADIR} && ${MAKE} clean
 
 dist:

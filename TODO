@@ -155,8 +155,34 @@ Assembler
   - So one can change from one arch to another with a pointer
   - Cool for defining ranges of memory
 
-0.8: focus on debugger and UI
-=============================
+
+* r_io
+  - We need a way to get the underlying file which responds
+    to the read call (this way we can know which library
+    lives at a specified offset. (is this already done?)
+
+* r_bin
+  - Find why objdump can find stripped symbols with objcopy (see /TODO)
+
+* radare2
+  - Use r_bin with r_io to get symbols
+    - The offset to read will define the module to analyze and retrieve syms
+  - Import msdn doc as comments
+
+* r_db
+  - Implement iterators r_db_next() and r_db_prev() (HIGH PRIO)
+  - Write test programs to ensure the data is stored correctly
+
+* r_search
+  - The pattern finding functions are not following the design
+    of the rest of the library, it needs a redesign and code cleanup
+    (see bytepat.c)
+  - Implement radare/src/xrefs.c into r_search
+  - Add support to change the case sensitive of searchs (ignore case)
+    - This must be keyword-based. Not globally
+  - Sync vapi (r_search_regexp not implemented)
+  - Enable/disable nested hits? (discuss+ implement in parent app?)
+    - Just skip bytes until end of keyword
 * Ranged/scrollable zoom mode
 * AES/RSA Key finding
   http://citp.princeton.edu/memory/code/ <- implement this stuff in r2

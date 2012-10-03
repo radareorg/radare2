@@ -5,7 +5,7 @@ include $(LTOP)/config.mk
 
 ALL?=
 CFLAGS+=-I$(LIBR)/include
-LDFLAGS+=$(addprefix -L$(LTOP)/,$(subst r_,,$(BINDEPS)))
+LDFLAGS+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LDFLAGS+=$(addprefix -l,$(BINDEPS))
 SRC=$(subst .o,.c,$(OBJ))
 MAGICSED=| sed -e 's,-lr_magic,@LIBMAGIC@,g'
@@ -17,23 +17,17 @@ ifeq ($(USE_RPATH),1)
 LDFLAGS+=-Wl,-R${PREFIX}/lib
 endif
 
-#---------------------#
-# Rules for libraries #
-#---------------------#
-
 ifeq (${OSTYPE},gnulinux)
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}.${LIBVERSION}
 else
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}
 endif
 
-all:
-	@echo "DIR ${NAME}"
-	${MAKE} ${EXTRA_TARGETS} ${LIBSO} ${LIBAR}
+all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 ifneq ($(SILENT),)
-	@-if [ -e p/Makefile ]; then (cd p && ${MAKE} all) ; fi
+	@-if [ -f p/Makefile ]; then (cd p && ${MAKE} all) ; fi
 else
-	@-if [ -e p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE} all) ; fi
+	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE} all) ; fi
 endif
 
 ifeq ($(WITHPIC),1)
@@ -50,8 +44,7 @@ ${LIBSO}: $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	  break ; \
 	fi ; done
 else
-${LIBSO}:
-	@:
+${LIBSO}: ;
 endif
 
 ifeq ($(WITHNONPIC),1)
@@ -61,8 +54,7 @@ ifneq ($(SILENT),)
 endif
 	${CC_AR} ${OBJS} ${SHARED_OBJ}
 else
-$(LIBAR):
-	@:
+$(LIBAR): ;
 endif
 
 pkgcfg:
@@ -91,6 +83,9 @@ mrproper: clean
 	-rm -f *.d
 	@true
 
-.PHONY: all install pkgcfg clean deinstall uninstall
+.PHONY: all install pkgcfg clean deinstall uninstall echodir
+
+# autodetect dependencies object
+-include $(OBJS:.o=.d)
 
 endif
