@@ -5,13 +5,12 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
-0.9.2
-- 'Vdu' only undefines a basic block. not the whole function!
-  - it does not unflags the address if loc. 
-- search for CALL instructions in text segment.
-  - analyze the destination address of each call destination
 
 ====[[ 0.9.4 ]]====
+* 'Vdu' only undefines a basic block. not the whole function!
+  - it does not unflags the address if loc. 
+* search for CALL instructions in text segment.
+  - analyze the destination address of each call destination
 * Integrate dwarf parser with disassembler and debugger
 * Analysis: assume there's a function at the end of each function
 * Event system . allow to send and read queues of messages.. thats pubsub!

@@ -4,17 +4,17 @@ NAME=r_syscall
 DEPS=r_util r_db
 
 OBJS=syscall.o ioports.o
-CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -Wall -g
+CFLAGS+=-DLIL_ENDIAN=1 -D__UNIX__ -Wall
 
 EXTRA_CLEAN=doclean
 EXTRA_TARGETS+=do
 
 include ../rules.mk
 
-.PHONY: do
+.PHONY: do doclean
 
 do:
-	@cd d ; ${MAKE}
+	${MAKE} -C d
 
 doclean:
-	@cd d ; ${MAKE} clean
+	${MAKE} -C d clean
