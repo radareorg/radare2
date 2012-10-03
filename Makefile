@@ -1,6 +1,10 @@
 -include config-user.mk
 include global.mk
 
+DLIBDIR=$(DESTDIR)/$(LIBDIR)
+R2BINS=$(shell cd binr ; echo r*2)
+DATADIRS=libr/asm/d libr/syscall/d libr/magic/d
+#binr/ragg2/d
 STRIP?=strip
 ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
 TAR=bsdtar czvf
@@ -8,7 +12,6 @@ else
 TAR=tar -czvf
 endif
 PWD=$(shell pwd)
-REMOTE=radare.org:/srv/http/radareorg/get/beta
 
 all: plugins.cfg
 	${MAKE} libr
@@ -19,20 +22,14 @@ plugins.cfg:
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
 
-farm:
-	./sys/farm/run.sh
-
-libr:
-	cd libr && ${MAKE} all
-
-binr:
-	cd binr && ${MAKE} all
+binr libr:
+	cd $@ && ${MAKE} all
 
 w32:
-	make clean
+	${MAKE} clean
 	# TODO: add support for debian
 	./configure --without-ssl --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
-	make
+	${MAKE}
 
 .PHONY: depgraph.png
 depgraph.png:
@@ -62,11 +59,6 @@ w32dist:
 	mv w32dist radare2-w32-${VERSION}
 	rm -f radare2-w32-${VERSION}.zip 
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
-
-w32beta: w32dist
-	scp radare2-w32-${VERSION}.zip ${REMOTE}
-	cd r2-bindings ; $(MAKE) w32dist
-	scp radare2-bindings-w32-${VERSION}.zip ${REMOTE}
 
 clean:
 	for a in libr binr shlr ; do (cd $$a ; ${MAKE} clean) ; done
@@ -98,8 +90,6 @@ install-doc-symlink:
 	${INSTALL_DIR} ${PFX}/share/doc/radare2
 	cd doc ; for a in * ; do ln -fs ${PWD}/doc/$$a ${PFX}/share/doc/radare2 ; done
 
-DATADIRS=libr/asm/d libr/syscall/d libr/magic/d
-#binr/ragg2/d
 install: install-doc install-man install-www
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
@@ -120,7 +110,6 @@ symstall-www:
 	cd ${DESTDIR}/${WWWROOT} ; for a in ${PWD}/shlr/www/* ; do \
 		ln -fs $$a ${DLIBDIR}/radare2/${VERSION}/www ; done
 
-DLIBDIR=$(DESTDIR)/$(LIBDIR)
 
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DLIBDIR}/pkgconfig
@@ -150,7 +139,6 @@ purge-doc:
 	cd man ; for a in *.1 ; do rm -f ${MDR}/man1/$$a ; done
 	rm -f ${MDR}/man1/r2.1
 
-R2BINS=$(shell cd binr ; echo r*2)
 purge-dev:
 	rm -rf ${DESTDIR}/${LIBDIR}/libr_*.a
 	rm -rf ${DESTDIR}/${LIBDIR}/pkgconfig/r_*.pc
@@ -166,16 +154,6 @@ purge: purge-doc purge-dev
 	rm -f ${DESTDIR}/${LIBDIR}/libr_*
 	rm -rf ${DESTDIR}/${LIBDIR}/radare2
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
-
-beta: dist r2-bindings-dist
-	scp ../radare2-${VERSION}.tar.gz ${REMOTE}
-	scp r2-bindings-${VERSION}.tar.gz ${REMOTE}
-
-version:
-	@echo ${VERSION}
-
-r2-bindings-dist:
-	cd r2-bindings && ${MAKE} dist
 
 dist:
 	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
@@ -195,7 +173,7 @@ shot:
 
 tests:
 	@if [ -d r2-regressions ]; then \
-		cd r2-regressions ; git pull ; \
+		cd r2-regressions ; git clean -xdf ; git pull ; \
 	else \
 		git clone git://github.com/vext01/r2-regressions.git ; \
 	fi
@@ -204,4 +182,4 @@ tests:
 include ${MKPLUGINS}
 
 .PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg
-.PHONY: r2-bindings r2-bindings-dist libr binr install-man version w32dist tests
+.PHONY: r2-bindings r2-bindings-dist libr binr install-man w32dist tests

@@ -1,13 +1,21 @@
+include ../config.mk
+
 NAME=r_db
 DEPS=r_util
 
-OBJ=db.o table.o pair.o
+OBJS=db.o table.o pair.o
 
 PRE=sdb/src/libsdb.a
 EXTRA_CLEAN=sdbclean
 EXTRA_TARGETS+=${PRE}
 
 CFLAGS+=-Isdb/src
+
+VC=git
+URL=git://github.com/radare/sdb
+
+F=README.md config.mk src Makefile
+SYNCFILES=$(addprefix sdb.${VC}/,${F})
 
 include ../rules.mk
 
@@ -23,12 +31,6 @@ sdb/src/libsdb.a:
 	cd sdb/src ; ${MAKE} ARCH=xxx \
 		RANLIB="${RANLIB}" \
 		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
-
-VC=git
-URL=git://github.com/radare/sdb
-
-F=README.md config.mk src Makefile
-SYNCFILES=$(addprefix sdb.${VC}/,${F})
 
 .PHONY: sdb-sync sync-sdb
 sdb-sync sync-sdb:

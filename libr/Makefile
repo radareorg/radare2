@@ -5,24 +5,21 @@ PREFIX?=${PWD}/../prefix
 PFX=${DESTDIR}/${PREFIX}
 LFX=${DESTDIR}/${LIBDIR}
 IFX=${DESTDIR}/${INCLUDEDIR}
-PWD=`pwd`
+PWD=$(shell pwd)
 
-# Libraries
-LIBLIST=util magic socket db cons line lib io lang flags bin hash config syscall
-LIBLIST+=cmd reg diff anal parse asm print search egg bp sign debug fs core th
-#DEPRECATED APIS : LIBLIST+=th crypto
+LIBS=util magic socket db cons line lib io lang flags bin hash config syscall
+LIBS+=cmd reg diff anal parse asm print search egg bp sign debug fs th core
+#DEPRECATED APIS : LIBS+=th crypto
 
-all: libs
-
-libs:
-	@for lib in ${LIBLIST}; do \
+all:
+	@for lib in ${LIBS}; do \
 		cd $${lib} && ${MAKE} || exit 1 ; cd .. ; done
-	@echo Build done for: ${LIBLIST}
+	@echo Build done for: ${LIBS}
 
 pkgcfg:
-	@for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
-	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBLIST}|sed -e 's, , r_,g'`"
-	# TODO: Magically generate libr.pc.acr here using LIBLIST and so :)
+	@for lib in ${LIBS}; do ( cd $${lib} && ${MAKE} pkgcfg ); done
+	cd asm && ${MAKE} pkgcfg NAME=libr DEPS="r_`echo ${LIBS}|sed -e 's, , r_,g'`"
+	# TODO: Magically generate libr.pc.acr here using LIBS and so :)
 
 install-pkgconfig:
 	${INSTALL_DIR} ${LFX}/pkgconfig
@@ -39,18 +36,15 @@ install-includes:
 		done ; \
 	done)
 
-install-symlink:
-	mkdir -p ${PFX}/bin
-	mkdir -p ${IFX}
-	mkdir -p ${LFX}/pkgconfig
-	mkdir -p ${LFX}/radare2/${VERSION}
+symstall install-symlink:
+	mkdir -p ${PFX}/bin ${IFX} ${LFX}/pkgconfig ${LFX}/radare2/${VERSION}
 	rm -rf ${IFX}/libr && ln -fs ${PWD}/include ${IFX}/libr
 	cd ../pkgcfg && for a in *.pc ; do \
 		if [ -e ${PWD}/../pkgcfg/$${a} ] ; then \
 			ln -fs ${PWD}/../pkgcfg/$${a} ${LFX}/pkgconfig/$${a} ; \
 		fi ; \
 	done
-	for a in ${LIBLIST} ; do \
+	for a in ${LIBS} ; do \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${LFX}/libr_$${a}.${EXT_SO} ; \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_SO} ${LFX}/libr_$${a}.${EXT_SO}.${LIBVERSION} ; \
 		ln -fs ${PWD}/$${a}/libr_$${a}.${EXT_AR} ${LFX}/libr_$${a}.${EXT_AR} ; \
@@ -71,7 +65,6 @@ install: install-includes install-pkgconfig
 	  ${INSTALL_LIB} $$a ${LFX}/$$b.${LIBVERSION} ; \
 	  ( cd ${LFX} ; ln -fs $$b.${LIBVERSION} $$b ) ; \
 	done
-	#Linux only? ( cd ${LFX} ; ln -fs $$b.${LIBVERSION} $$b.0 ; ln -fs $$b.0 $$b )
 	# object archives
 	@for a in `find * -type f | grep -e '\.a$$' | grep -v fs/p` ; do \
 	  echo " ${LFX}/$$a"; ${INSTALL_DATA} $$a ${LFX} ; done
@@ -111,7 +104,7 @@ deinstall uninstall:
 	rm -f ${LFX}/pkgconfig/r_*.pc
 	# test programs
 	rm -rf ${PFX}/bin/libr-test
-	# TODO: use for a in LIBLIST (like in binr/Makefile)
+	# TODO: use for a in LIBS (like in binr/Makefile)
 	rm -rf ${IFX}/libr
 	rm -rf ${LFX}/libr_*.so.${LIBVERSION}
 	rm -rf ${LFX}/libr_*.so.0
@@ -125,12 +118,10 @@ deinstall uninstall:
 	@echo libr aka radare2 has been uninstalled from PREFIX=${PFX}
 
 clean:
-	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} clean ); done
+	for lib in ${LIBS}; do ( cd $${lib} && ${MAKE} clean ); done
 
 mrproper:
-	for lib in ${LIBLIST}; do ( cd $${lib} && ${MAKE} mrproper ); done
+	for lib in ${LIBS}; do ( cd $${lib} && ${MAKE} mrproper ); done
 
-sloc:
-	${MAKE} -C .. sloc SLOCDIR=libr
-
-.PHONY: sloc mrproper clean all pkgcfg install deinstall uninstall libr install-symlink
+.PHONY: sloc mrproper clean pkgcfg install deinstall uninstall libr
+.PHONY: install-includes install-pkgconfig install-symlink all

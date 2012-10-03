@@ -22,7 +22,7 @@ ifeq ($(HAVE_CPARSE),1)
 CPARSE_OBJS=cparse/cparse.o cparse/lex.yy.o cparse/tree.o cparse/gen.o cparse/error.o cparse/symset.o cparse/pplex.o cparse/exptree.o cparse/pp.o
 endif
 
-OBJ=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
+OBJS=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
 
 pre:
 	@cd cparse && ${MAKE} all

@@ -9,7 +9,7 @@ foo:
 
 include ${STATIC_CRYPTO_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst crypto_,p/crypto_,$(STATIC_OBJ)))
-OBJ=${STATIC_OBJS} crypto.o
+OBJS=${STATIC_OBJS} crypto.o
 
 pre:
 	@if [ ! -e libr_crypto.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi

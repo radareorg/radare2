@@ -1,8 +1,7 @@
-NAME=r_diff
-OBJ=diff.o bdiff.o
-DEPS=r_util 
+include ../config.mk
 
-#EXTRA_TARGETS=linediff
-#EXTRA_CLEAN=clean_me
+NAME=r_diff
+DEPS=r_util 
+OBJS=diff.o bdiff.o
 
 include ../rules.mk

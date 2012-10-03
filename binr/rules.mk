@@ -1,0 +1,51 @@
+BINR_PROGRAM=1
+include ../../libr/config.mk
+
+#.PHONY: all clean
+
+CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
+
+OBJ+=${BIN}.o
+BEXE=${BIN}${EXT_EXE}
+
+ifeq ($(WITHNONPIC),1)
+LDFLAGS+=../../libr/db/sdb/src/libsdb.a
+LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
+LDFLAGS+=-lm
+endif
+
+#--------------------#
+# Rules for programs #
+#--------------------#
+
+ifneq ($(BIN)$(BINS),)
+
+all: ${BEXE} ${BINS}
+
+${BINS}: ${OBJS}
+ifneq ($(SILENT),)
+	@echo CC $@
+endif
+	${CC} ${CFLAGS} $@.c ${OBJS} ${LDFLAGS} -o $@
+
+${BEXE}: ${OBJ} ${SHARED_OBJ}
+ifneq ($(SILENT),)
+	@echo LD $@
+endif
+	${CC} $+ -L.. -o $@ ${LDFLAGS}
+endif
+
+# Dummy myclean rule that can be overriden by the t/ Makefile
+# TODO: move to config.mk ? it must be a precondition
+myclean:
+
+clean:: myclean
+	-rm -f ${OBJS} ${OBJ} ${BIN}
+
+mrproper: clean
+	-rm -f *.d
+
+install:
+	cd ../.. && ${MAKE} install
+
+.PHONY: all clean myclean mrproper install

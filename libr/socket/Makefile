@@ -2,7 +2,7 @@ include ../config.mk
 
 NAME=r_socket
 #DEPS=r_util
-OBJ=socket.o proc.o http.o http_server.o
+OBJS=socket.o proc.o http.o http_server.o
 ifeq (${HAVE_LIB_SSL},1)
 CFLAGS+=${SSL_CFLAGS}
 LDFLAGS+=${SSL_LDFLAGS}

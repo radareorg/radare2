@@ -1,5 +1,7 @@
+include ../config.mk
+
 NAME=r_lang
-OBJ=lang.o
+OBJS=lang.o
 DEPS=r_util r_lib r_line
 
 include ../rules.mk

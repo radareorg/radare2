@@ -64,6 +64,7 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 		code==404?"NOT FOUND":
 		"UNKNOWN";
 	if (len<1) len = strlen (out);
+	if (!headers) headers = "";
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\n%s"
 		"Content-Length: %d\n\n", code, strcode, headers, len);
 	r_socket_write (rs->s, (void*)out, len);

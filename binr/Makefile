@@ -1,5 +1,5 @@
-include ../config-user.mk
-PWD=$(shell pwd)
+include ../global.mk
+BTOP=$(shell pwd)
 
 .PHONY: all clean install install-symlink deinstall uninstall mrproper
 
@@ -30,17 +30,16 @@ install-rsc2:
 symstall-rsc2:
 	mkdir -p ${LFX}/radare2/bin
 	chmod +x rsc2/scripts/*
-	cd rsc2/scripts ; for a in * ; do ln -fs ${PWD}/rsc2/scripts/$$a ${LFX}/radare2/bin/$$a ; done
+	cd rsc2/scripts ; for a in * ; do ln -fs ${BTOP}/rsc2/scripts/$$a ${LFX}/radare2/bin/$$a ; done
 
 symstall install-symlink:
 	mkdir -p ${BFX}
-	for a in ${BINS} ; do ln -fs ${PWD}/$$a/$$a ${BFX}/$$a ; done
-	ln -fs ${PWD}/ragg2/ragg2-cc ${BFX}/ragg2-cc
+	for a in ${BINS} ; do ln -fs ${BTOP}/$$a/$$a ${BFX}/$$a ; done
+	ln -fs ${BTOP}/ragg2/ragg2-cc ${BFX}/ragg2-cc
 	-ln -fs ${PFX}/bin/radare2 ${BFX}/r2
 
 deinstall uninstall:
 	for a in ${BINS} ; do rm -f ${BFX}/$$a ; done
-	#rm -f ${BFX}/rarc2-tool
 	-rm -f ${BFX}/r2
 
 clean:

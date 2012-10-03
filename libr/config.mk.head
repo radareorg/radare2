@@ -7,8 +7,3 @@ BSD=0
 SOLARIS=0
 WINDOWS=0
 OSX=0
-
-# static plugins
-STATIC_DEBUG=0
-RUNTIME_DEBUG=1
-

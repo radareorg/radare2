@@ -13,8 +13,8 @@ include ${STATIC_BIN_PLUGINS}
 include ${STATIC_BIN_XTR_PLUGINS}
 
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
-OBJ=bin.o bin_meta.o bin_write.o demangle.o dwarf.o ${STATIC_OBJS}
-OBJ+=mangling/cxx/cp-demangle.o
+OBJS=bin.o bin_meta.o bin_write.o demangle.o dwarf.o
+OBJS+=mangling/cxx/cp-demangle.o ${STATIC_OBJS}
 
 plugins:
 	cd p && ${MAKE} all

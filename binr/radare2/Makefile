@@ -6,7 +6,7 @@ BINDEPS+=r_magic r_socket r_flags r_util r_th r_egg
 
 CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\" -DR2_GITTIP=\"$(GIT_TIP)\"
 
-include ../binr.mk
+include ../rules.mk
 
 sign:
 	ldid -Sradare2.xml radare2

@@ -1,8 +1,10 @@
+include ../config.mk
+
 NAME=r_th
 DEPS=
 
 LDFLAGS=${TH_LIBS}
 
-OBJ=th.o lock.o
+OBJS=th.o lock.o
 
 include ../rules.mk

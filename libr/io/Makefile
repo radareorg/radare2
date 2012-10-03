@@ -31,7 +31,7 @@ foo:
 
 include ${STATIC_IO_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
-OBJ=${STATIC_OBJS} io.o plugin.o map.o section.o desc.o cache.o undo.o
+OBJS=${STATIC_OBJS} io.o plugin.o map.o section.o desc.o cache.o undo.o
 
 pre:
 	${MAKE} libr_io.${EXT_SO}

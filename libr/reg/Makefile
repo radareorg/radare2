@@ -1,5 +1,7 @@
+include ../config.mk
+
 NAME=r_reg
 DEPS=r_util
-OBJ=reg.o arena.o value.o
+OBJS=reg.o arena.o value.o
 
 include ../rules.mk

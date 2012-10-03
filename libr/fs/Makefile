@@ -13,7 +13,7 @@ foo:
 
 include ${STATIC_FS_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
-OBJ=${STATIC_OBJS} fs.o file.o 
+OBJS=${STATIC_OBJS} fs.o file.o 
 #p/grub/main.o
 
 p/grub/libgrubfs.a:
