@@ -58,14 +58,14 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s) {
 	return hr;
 }
 
-R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int len) {
+R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
 	const char *strcode = \
 		code==200?"OK":
 		code==404?"NOT FOUND":
 		"UNKNOWN";
 	if (len<1) len = strlen (out);
-	r_socket_printf (rs->s, "HTTP/1.0 %d %s\n"
-		"Content-Length: %d\n\n", code, strcode, len);
+	r_socket_printf (rs->s, "HTTP/1.0 %d %s\n%s"
+		"Content-Length: %d\n\n", code, strcode, headers, len);
 	r_socket_write (rs->s, (void*)out, len);
 }
 

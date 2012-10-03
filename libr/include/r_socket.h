@@ -81,7 +81,7 @@ typedef struct r_socket_http_request {
 } RSocketHTTPRequest;
 
 R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s);
-R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int x);
+R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int x, const char *headers);
 R_API void r_socket_http_close (RSocketHTTPRequest *rs);
 #endif
 #endif

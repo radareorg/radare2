@@ -13,8 +13,11 @@
 function Ajax (method, uri, body, fn) {
         var x = new XMLHttpRequest ();
         x.open (method, uri, false);
+	x.setRequestHeader ('Accept', 'text/plain');
         x.onreadystatechange = function (y) {
-                if (fn) fn (x.responseText);
+		if (x.status == 200) {
+			if (fn) fn (x.responseText);
+		} else alert ("ajax "+x.status)
         }
         x.send (body);
 }
@@ -400,13 +403,14 @@ Enjoy!
 
 </div>
 
-<div class="console" style="top:25px !important; position:absolute;z-index:-99">
+<div class="console" style="top:32px !important; position:absolute;z-index:-99">
 <div id="less">
 	<a href='javascript:less()'>... prev</a>
 </div>
 <p id="output"></p>
 <div id="more">
 	<a href='javascript:more()'>... next</a>
+<br /><br /><br />
 </div>
 </div>
 </body>

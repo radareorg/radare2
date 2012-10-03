@@ -71,9 +71,9 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 				out = r_core_cmd_str_pipe (core, cmd);
 				if (out) {
 					r_str_unescape (out);
-					r_socket_http_response (rs, 200, out, 0);
+					r_socket_http_response (rs, 200, out, 0, "Content-Type: text/plain\n");
 					free (out);
-				} else r_socket_http_response (rs, 200, "oops", 0);
+				} else r_socket_http_response (rs, 200, "oops", 0, NULL);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				char path[1024];
@@ -85,12 +85,12 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					int sz = 0;
 					char *f = r_file_slurp (path, &sz);
 					if (f) {
-						r_socket_http_response (rs, 200, f, sz);
+						r_socket_http_response (rs, 200, f, sz, NULL);
 						free (f);
-					} else r_socket_http_response (rs, 403, "Permission denied", 0);
+					} else r_socket_http_response (rs, 403, "Permission denied", 0, NULL);
 				} else {
 					// TODO: directory listing?
-					r_socket_http_response (rs, 404, "File not found\n", 0);
+					r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
 				}
 			}
 #if 0
@@ -100,11 +100,11 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 			strcpy (buf, "<html><body><h2>XSS test</h2>\n");
 			r_str_unescape ((char *)rs->data);
 			strcat (buf, (char*)rs->data);
-			r_socket_http_response (rs, 200, buf, 0);
+			r_socket_http_response (rs, 200, buf, 0, NULL);
 			free (buf);
 #endif
 		} else {
-			r_socket_http_response (rs, 404, "Invalid protocol", 0);
+			r_socket_http_response (rs, 404, "Invalid protocol", 0, NULL);
 		}
 		r_socket_http_close (rs);
 	}
