@@ -5,15 +5,21 @@
 
 ------8<-------------------8<--------------------8<-----------------8<----------
 
+deprecate big num stuff
+Big number support
+==================
+* big-ssl.c big-gmp.c ...
+* implement GMP in util/big.c
+  - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
+
 
 ====[[ 0.9.4 ]]====
-* 'Vdu' only undefines a basic block. not the whole function!
-  - it does not unflags the address if loc. 
+tothink:
+* Event system . allow to send and read queues of messages.. thats pubsub!
 * search for CALL instructions in text segment.
   - analyze the destination address of each call destination
-* Integrate dwarf parser with disassembler and debugger
 * Analysis: assume there's a function at the end of each function
-* Event system . allow to send and read queues of messages.. thats pubsub!
+* Integrate dwarf parser with disassembler and debugger
 * Step back .. log all state changes on every debugger stop
 * Show analized functions in 'aa' -> discuss
 * Timeout for code analysis (check timestamp)
@@ -22,9 +28,6 @@
 * Insert assembly in visual should be more userfriendly (keep unwritten bytes)
 * io_next must work properly
   - r_io must read in 512 or 4096 aligned blocks (get next section?)
-
-=======
-
 * refactor vmenus.c -> refresh function must be redefined for each menu
 
 // show hints for
@@ -143,18 +146,12 @@ earada
 * Implement search and replace /s
   - insert or append? (see r1 cfg vars)
 
-Big number support
-==================
-* big-ssl.c big-gmp.c ...
-* implement GMP in util/big.c
-  - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
 Assembler
 ---------
 * Embed bits/arch/endian in a separated structure
   - So one can change from one arch to another with a pointer
   - Cool for defining ranges of memory
-
 
 * r_io
   - We need a way to get the underlying file which responds
