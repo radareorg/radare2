@@ -71,8 +71,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			case 'a': buf[i] += str[j]; break;
 			case 's': buf[i] -= str[j]; break;
 			case 'm': buf[i] *= str[j]; break;
-			case 'd': if (str[j]) buf[i] /= str[j];
-				else buf[i] = 0; break;
+			case 'd': buf[i] = (str[j])? buf[i] / str[j]: 0 break;
 			case 'r': buf[i] >>= str[j]; break;
 			case 'l': buf[i] <<= str[j]; break;
 			case 'o': buf[i] |= str[j]; break;
@@ -97,13 +96,13 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	//r_io_set_fd (core->io, core->file->fd);
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	if (ret == UT64_MAX) {
-//eprintf ("RET =%d %llx\n", ret, addr);
-/*
-	XXX handle read errors correctly
-		if (core->ffio) {
-			core->offset = addr;
-		} else return R_FALSE;
-*/
+		//eprintf ("RET =%d %llx\n", ret, addr);
+		/*
+		   XXX handle read errors correctly
+		   if (core->ffio) {
+		   core->offset = addr;
+		   } else return R_FALSE;
+		 */
 		//core->offset = addr;
 		if (!core->io->va)
 			return R_FALSE;
@@ -171,9 +170,8 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	ret = r_io_read (core->io, buf, size);
 	if (ret != size) {
-		if (ret<size && ret>0)
-			memset (buf+ret, 0xff, size-ret);
-		else	memset (buf, 0xff, size);
+		if (ret>=size || ret<0) ret = 0;
+		memset (buf+ret, 0xff, size-ret);
 	}
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);

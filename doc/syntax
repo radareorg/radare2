@@ -35,7 +35,4 @@ coding style guidelines ;) Here'r some rules:
   the algorithm, only external-copy-pasted-not-going-to-be-maintained code
   can be accepted in this way (gnu code, external disassemblers, etc..)
 
-
-VIM syntax configuration:
--------------------------
-TODO:
+* See doc/vim for vimrc
