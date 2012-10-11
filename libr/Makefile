@@ -52,6 +52,10 @@ install-includes:
 			${INSTALL_DATA} $$b ${IFX}/libr/sflib/$$b ; \
 		done ; \
 	done)
+	${INSTALL_DIR} ${IFX}/libr/sdb
+	(cd include/sdb && for a in * ; do \
+		${INSTALL_DATA} $$a ${IFX}/libr/sdb/$$a ; \
+	done)
 
 symstall install-symlink:
 	mkdir -p ${PFX}/bin ${IFX} ${LFX}/pkgconfig ${LFX}/radare2/${VERSION}
