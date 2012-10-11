@@ -73,7 +73,7 @@ pkgcfg:
 	@echo 'Cflags: -I$${includedir}/libr' >> ../../pkgcfg/${NAME}.pc.acr
 
 clean:: ${EXTRA_CLEAN}
-	-rm -f *.${EXT_EXE} *.${EXT_SO} *.${EXT_AR} *.d
+	-rm -f *.${EXT_EXE} *.${EXT_SO} *.${EXT_AR} *.d */*.d */*/*.d */*/*/*.d
 	-rm -f ${LIBSO} ${LIBAR} ${OBJS} ${BIN} *.exe a.out
 	-@if [ -e p/Makefile ]; then (cd p && ${MAKE} clean) ; fi
 	@true
