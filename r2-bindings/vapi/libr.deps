@@ -2,7 +2,6 @@ r_asm
 r_bin
 r_config
 r_core
-r_line
 r_cons
 r_io
 r_bp
