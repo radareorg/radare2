@@ -318,7 +318,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					if (j+1>=inc+i)
 						p->printf (j%2?"  |":"| ");
 					else p->printf (j%2?"   ":"  ");
-				}  else p->printf (j%2?"   ":"  ");
+				} else p->printf (j%2?"   ":"  ");
 				continue;
 			}
 			if (base==32) {

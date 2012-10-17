@@ -922,7 +922,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 					perror ("realloc (symbols|imports)");
 					return NULL;
 				}
-				{
+				if (bin->baddr) {
 					int idx = sym[k].st_shndx;
 					if (idx>=0 && idx < bin->ehdr.e_shnum) {
 						if (bin->baddr && toffset>bin->baddr)

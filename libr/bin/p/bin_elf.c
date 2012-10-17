@@ -95,8 +95,7 @@ static RList* sections(RBinArch *arch) {
 	if (r_list_empty (ret)) {
 		if (!arch->size) {
 			struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
-			if (bin) arch->size = bin->size;
-			else arch->size = 0x9999; // XXX hack
+			arch->size = bin? bin->size: 0x9999;
 		}
 		if (!(ptr = R_NEW (RBinSection)))
 			return ret;

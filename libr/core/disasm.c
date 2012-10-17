@@ -391,10 +391,13 @@ toro:
 			continue;
 		case R_META_TYPE_DATA:
 			{
-			int delta = at-mi->from;
+				int hexlen = len - idx;
+				int delta = at-mi->from;
+				if (mi->size<hexlen)
+					hexlen = mi->size;
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 				r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
-				r_print_hexdump (core->print, at, buf+idx, mi->size-delta, 16, 1);
+				r_print_hexdump (core->print, at, buf+idx, hexlen, 16, 1); //mi->size-delta, 16, 1);
 			core->inc = 16;
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
 				ret = (int)mi->size; //-delta;
