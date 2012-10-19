@@ -37,6 +37,10 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	int u = r_config_get_i (core->config, "scr.interactive");
 	int v = r_config_get_i (core->config, "asm.cmtright");
 	const char *port = r_config_get (core->config, "http.port");
+	if (r_sandbox_enable (0)) {
+		eprintf ("sandbox: connect disabled\n");
+		return 1;
+	}
 	s = r_socket_new (R_FALSE);
 	s->local = !r_config_get_i (core->config, "http.public");
 	if (!r_socket_listen (s, port, NULL)) {
@@ -226,6 +230,10 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	}
 	switch (proto) {
 	case RTR_PROT_RAP:
+		if (r_sandbox_enable (0)) {
+			eprintf ("sandbox: connect disabled\n");
+			return;
+		}
 		if (!r_socket_connect_tcp (fd, host, port)) { //TODO: Use rap.ssl
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
@@ -248,6 +256,10 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		eprintf ("ok\n");
 		break;
 	case RTR_PROT_TCP:
+		if (r_sandbox_enable (0)) {
+			eprintf ("sandbox: connect disabled\n");
+			return;
+		}
 		if (!r_socket_connect_tcp (fd, host, port)) { //TODO: Use rap.ssl
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
@@ -255,6 +267,10 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		eprintf ("Connected to: %s at port %s\n", host, port);
 		break;
 	case RTR_PROT_UDP:
+		if (r_sandbox_enable (0)) {
+			eprintf ("sandbox: connect disabled\n");
+			return;
+		}
 		if (!r_socket_connect_udp(fd, host, port)) { //TODO: Use rap.ssl
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 -- pancake */
 
 #include <r_util.h>
 
@@ -7,7 +7,7 @@
 static const char *logfile = "radare.log";
 
 R_API void r_log_file(const char *str) {
-	FILE *fd = fopen (logfile, "a+");
+	FILE *fd = r_sandbox_fopen (logfile, "a+");
 	if (fd) {
 		fputs (str, fd);
 		fclose (fd);

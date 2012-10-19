@@ -20,8 +20,7 @@ typedef unsigned char uchar;
 
 #include "crypto_aes_algo.h"
 
-static const uchar Rcon[30] =
-{
+static const uchar Rcon[30] = {
 	0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 
 	0x40, 0x80, 0x1b, 0x36, 0x6c, 0xc0, 
 	0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 
@@ -329,7 +328,7 @@ void certify () {
 
 void decrypt (char *mykey, char *name) {
 	unsigned expkey[2][Nr + 1][Nb];
-	FILE *fd = fopen (name, "rb");
+	FILE *fd = r_sandbox_fopen (name, "rb");
 	int ch, idx = 0;
 
 	strncpy (key, mykey, sizeof (key)-1);
@@ -351,7 +350,7 @@ void decrypt (char *mykey, char *name) {
 void encrypt (char *mykey, char *name)
 {
 	unsigned expkey[2][Nr + 1][Nb];
-	FILE *fd = fopen (name, "rb");
+	FILE *fd = r_sandbox_fopen (name, "rb");
 	int ch, idx = 0;
 
 	strncpy (key, mykey, sizeof (key)-1);

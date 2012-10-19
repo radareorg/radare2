@@ -134,23 +134,20 @@ R_API void r_line_hist_free() {
 
 /* load history from file. TODO: if file == NULL load from ~/.<prg>.history or so */
 R_API int r_line_hist_load(const char *file) {
-	char buf[R_LINE_BUFSIZE];
 	FILE *fd;
-
-	char *path = r_str_home (file);
+	char buf[R_LINE_BUFSIZE],
+		*path = r_str_home (file);
 	if (path == NULL)
 		return R_FALSE;
 	if (!(fd = fopen (path, "r"))) {
 		free (path);
 		return R_FALSE;
 	}
-
 	while (fgets (buf, sizeof (buf), fd) != NULL) {
 		buf[strlen (buf)-1] = 0;
 		r_line_hist_add (buf);
 	}
 	fclose (fd);
-
 	free (path);
 	return R_TRUE;
 }

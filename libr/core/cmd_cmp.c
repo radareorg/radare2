@@ -50,7 +50,7 @@ static int cmd_cmp(void *data, const char *input) {
 			eprintf ("Please. use 'cf [file]'\n");
 			return 0;
 		}
-		fd = fopen (input+2, "rb");
+		fd = r_sandbox_fopen (input+2, "rb");
 		if (fd == NULL) {
 			eprintf ("Cannot open file '%s'\n", input+2);
 			return 0;

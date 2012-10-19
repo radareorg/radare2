@@ -285,6 +285,7 @@ read_block (struct grub_ntfs_rlst *ctx, char *buf, int num)
   return 0;
 }
 
+#if 0
 static grub_err_t
 ntfscomp (struct grub_ntfs_attr *at, char *dest, grub_uint32_t ofs,
 	  grub_uint32_t len, struct grub_ntfs_rlst *ctx, grub_uint32_t vcn)
@@ -362,3 +363,4 @@ quit:
     grub_free (ctx->comp.cbuf);
   return ret;
 }
+#endif

@@ -241,12 +241,12 @@ R_API void r_cons_flush() {
 		}
 	}
 	if (tee&&*tee) {
-		FILE *d = fopen (tee, "a+");
+		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d != NULL) {
 			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d))
 				eprintf ("r_cons_flush: fwrite: error (%s)\n", tee);
 			fclose (d);
-		}
+		} else eprintf ("Cannot write on '%s'\n", tee);
 	}
 	// is_html must be a filter, not a write endpoint
 	if (I.is_html) r_cons_html_print (I.buffer);

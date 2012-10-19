@@ -459,7 +459,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		close (fds[1]);
 		dup2 (fds[0], 0);
 		//dup2 (1, 2); // stderr goes to stdout
-		execl ("/bin/sh", "sh", "-c", shell_cmd, (char*)NULL);
+		r_sandbox_system (shell_cmd, 0);
 	}
 	return status;
 #else
@@ -920,7 +920,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		} else {
 			char buf[1024];
 			char cmd2[1024];
-			FILE *fd = fopen (each+1, "r");
+			FILE *fd = r_sandbox_fopen (each+1, "r");
 			if (fd) {
 				core->rcmd->macro.counter=0;
 				while (!feof (fd)) {

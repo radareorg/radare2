@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 pancake<nopcode.org> */
 
 // TODO: implement the rap API in r_socket ?
 #include "r_io.h"
@@ -146,6 +146,10 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		*file = 0;
 		file++;
 	}
+	if (r_sandbox_enable (0)) {
+		eprintf ("sandbox: Cannot use network\n");
+		return NULL;
+	}
 	if (listenmode) {
 		if (p<=0) {
 			eprintf ("rap: cannot listen here. Try rap://:9999\n");
@@ -169,7 +173,8 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		}
 // TODO: listen mode is broken.. here must go the root loop!!
 #warning TODO: implement rap:/:9999 listen mode
-		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
+		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
+			pathname, rw, mode, rior);
 	}
 	if ((rap_fd = r_socket_new (is_ssl)) == NULL) {
 		eprintf ("Cannot create new socket\n");
@@ -177,6 +182,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 	}
 	if (r_socket_connect_tcp (rap_fd, ptr, port) == R_FALSE) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
+		r_socket_free (rap_fd);
 		return NULL;
 	}
 	eprintf ("Connected to: %s at port %s\n", ptr, port);
@@ -195,6 +201,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		eprintf ("waiting... ");
 		r_socket_read_block (rap_fd, (ut8*)buf, 5);
 		if (buf[0] != (char)(RMT_OPEN|RMT_REPLY)) {
+			r_socket_free (rap_fd);
 			free (rior);
 			return NULL;
 		}
@@ -211,7 +218,11 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			r_socket_read (rap_fd, (ut8 *)&buf, 4);
 			r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
 		}
-	} else return NULL;
+	} else {
+		r_socket_free (rap_fd);
+		return NULL;
+	}
+	r_socket_free (rap_fd);
 	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
 }
 

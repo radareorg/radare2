@@ -864,7 +864,7 @@ reaccept:
 					system ((const char*)ptr+6);
 					r_cons_pipe_close (pipefd);
 					{
-						FILE *fd = fopen((char*)buf, "r");
+						FILE *fd = r_sandbox_fopen((char*)buf, "r");
 						 i = 0;
 						if (fd == NULL) {
 							eprintf("Cannot open tmpfile\n");

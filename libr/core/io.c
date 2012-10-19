@@ -8,7 +8,7 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size) {
 	int bs = core->blocksize;
 	FILE *fd;
 	r_sys_truncate (file, 0);
-	fd = fopen (file, "wb");
+	fd = r_sandbox_fopen (file, "wb");
 	if (!fd) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;

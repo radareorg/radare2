@@ -269,7 +269,7 @@ R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path) {
 	cparsepp_file (path, tmp_path);
 
 	/* Parse preprocessed file then */
-	if (!(cfile = fopen (tmp_path, "r"))) {
+	if (!(cfile = r_sandbox_fopen (tmp_path, "r"))) {
 		free (tmp_path);
 		return NULL;
 	}

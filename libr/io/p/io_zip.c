@@ -4,6 +4,12 @@
 #include <r_lib.h>
 #include <r_util.h>
 
+// TODO: escape quotes?
+// TODO: add support for directories
+static inline int chkfn (const char *p) {
+	return !!!(strchr (p, '\''));
+}
+
 static int __plugin_open(RIO *io, const char *file) {
 	if (!memcmp (file, "zip://", 6) && file[6])
 		return R_TRUE;
@@ -26,21 +32,21 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		p = (char *)r_str_casestr (str, "//");
 		if (p && p[2]) {
 			*p++ = 0;
-// TODO: escape quotes
-// TODO: add support for directories
 			if (r_sys_rmkdir (d)) {
 				d2 = strdup (d);
 				d2 = r_str_concat (d2, "/");
 				d2 = r_str_concat (d2, p+1);
 				snprintf (cmd, sizeof (cmd), "unzip -o '%s' '%s' -d '%s'",
 					str, p+1, d);
-				if (system (cmd) == 0)
-					r_io_redirect (io, d2);
+				if (chkfn (str) && chkfn (p+1) && chkfn (d)) 
+					if (system (cmd) == 0)
+						r_io_redirect (io, d2);
 				free (d2);
 			} else eprintf ("Cannot create temporary directory\n");
 		} else {
+			// XXX ugly as hell
 			snprintf (cmd, sizeof (cmd), "unzip -l '%s' |grep -e '[0-9][0-9]-[0-9][0-9]'| awk '{print $4}'", str);
-			if (system (cmd) != 0)
+			if (chkfn (str) && system (cmd) != 0)
 				eprintf ("Use zip://<path-to-zip>//<path-inside-zip>\n");
 		}
 		eprintf ("Remove '%s' manually\n", d);

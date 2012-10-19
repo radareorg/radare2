@@ -8,7 +8,7 @@ CFLAGS+=-DHAVE_CONFIG_H
 ifeq (${USE_LIB_MAGIC},1)
 LDFLAGS+=-lmagic
 endif
-OBJS=apprentice.o ascmagic.o compress.o fsmagic.o funcs.o is_tar.o magic.o print.o softmagic.o
+OBJS=apprentice.o ascmagic.o fsmagic.o funcs.o is_tar.o magic.o print.o softmagic.o
 
 include $(LTOP)/rules.mk
 

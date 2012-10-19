@@ -541,7 +541,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 		if (!strcmp (buf, "q") || !strcmp (buf, "exit"))
 			return R_TRUE;
 		if (buf[0]=='!') {
-			system (buf+1);
+			r_sandbox_system (buf+1, 1);
 		} else
 		if (!memcmp (buf, "ls", 2)) {
 			if (buf[2]==' ') {

@@ -458,7 +458,7 @@ R_API int r_vm_eval(RVm *vm, const char *str) {
 
 R_API int r_vm_eval_file(struct r_vm_t *vm, const char *str) {
 	char buf[1024];
-	FILE *fd = fopen(str, "r");
+	FILE *fd = r_sandbox_fopen(str, "r");
 	if (fd) {
 		while (!feof(fd)) {
 			*buf='\0';

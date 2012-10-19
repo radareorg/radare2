@@ -65,13 +65,13 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	return 0;
 }
 
+// XXX: temporary files are 
 R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
-	char *ptr, *str, buf[64];
-	FILE *fd;
-	char oop = 0;
+	char *ptr, *str, buf[64], oop = 0;
 	int ret, atl, btl, hit;
 	ut8 at[128], bt[128];
 	ut64 ooa, oob;
+	FILE *fd;
 
 	hit = atl = btl = 0;
 	ooa = oob = 0LL;
@@ -173,10 +173,10 @@ R_API int r_diff_buffers_radiff(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 		atl = btl = 0;
 		hit = 0;
 	}
-	fclose(fd);
-	unlink(".a");
-	unlink(".b");
-	unlink(".d");
+	fclose (fd);
+	unlink (".a");
+	unlink (".b");
+	unlink (".d");
 	return 0;
 }
 

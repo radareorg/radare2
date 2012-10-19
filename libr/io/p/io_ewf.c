@@ -86,7 +86,7 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 	int i;
 
 	if (!memcmp (pathname, "els://", 6)) {
-		FILE *fd = fopen (pathname+6, "r");
+		FILE *fd = r_sandbox_fopen (pathname+6, "r");
 		ut64 len;
 		char *buf;
 

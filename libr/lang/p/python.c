@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 /* python extension for libr (radare2) */
 
 #include <r_lib.h>
@@ -22,7 +22,7 @@ static int run(RLang *lang, const char *code, int len) {
 }
 
 static int slurp_python(const char *file) {
-	FILE *fd = fopen (file, "r");
+	FILE *fd = r_sandbox_fopen (file, "r");
 	if (fd == NULL)
 		return R_FALSE;
 	PyRun_SimpleFile (fd, file);

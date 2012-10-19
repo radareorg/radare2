@@ -346,7 +346,9 @@ R_API int r_name_filter(char *name, int len);
 
 R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);
 R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len);
+
 /* strings */
+#define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API void r_str_unescape (char *s);
 R_API void r_str_filter_zeroline(char *str, int len);
 R_API int r_str_write (int fd, const char *b);
@@ -564,5 +566,13 @@ R_API void r_constr_free (RConstr *c);
 R_API const char *r_constr_get (RConstr *c, const char *str);
 R_API const char *r_constr_append (RConstr *c, const char *str);
 R_API const char *r_constr_add (RConstr *c, const char *str);
+
+/* sandbox */
+R_API int r_sandbox_enable (int e);
+R_API int r_sandbox_system (const char *x, int fork);
+R_API int r_sandbox_open (const char *path, int mode, int perm);
+R_API FILE *r_sandbox_fopen (const char *path, const char *mode);
+R_API int r_sandbox_chdir (const char *path);
+R_API int r_sandbox_check_path (const char *path);
 
 #endif

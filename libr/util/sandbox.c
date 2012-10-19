@@ -1,0 +1,63 @@
+/* radare - LGPL - Copyright 2012 - pancake */
+
+#include <r_util.h>
+
+static int enabled = 0;
+
+R_API int r_sandbox_check_path (const char *path) {
+	char ch;
+	/* XXX: the sandbox can be bypassed if a directory is symlink */
+	if (strstr (path, "../")) return 0;
+	if (*path == '/') return 0;
+#if __UNIX__
+	if (readlink (path, &ch, 1) != -1) return 0;
+#endif
+	return R_TRUE;
+}
+
+R_API int r_sandbox_enable (int e) {
+	if (enabled) return R_TRUE;
+	return (enabled = !!e);
+}
+
+R_API int r_sandbox_system (const char *x, int n) {
+	if (!enabled) {
+		if (n) return system (x);
+		return execl ("/bin/sh", "sh", "-c", x, (const char*)NULL);
+	}
+	eprintf ("sandbox: system call disabled\n");
+	return -1;
+}
+
+R_API int r_sandbox_open (const char *path, int mode, int perm) {
+	if (enabled) {
+		// cannot create
+		if (perm & O_CREAT)
+			return -1;
+		if (!r_sandbox_check_path (path))
+			return -1;
+	}
+	return open (path, mode, perm);
+}
+
+R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
+	if (enabled) {
+		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+'))
+			return NULL;
+		if (!r_sandbox_check_path (path))
+			return NULL;
+	}
+	return fopen (path, mode);
+}
+
+R_API int r_sandbox_chdir (const char *path) {
+	if (enabled) {
+		// TODO: check path
+		if (strstr (path, "../"))
+			return -1;
+		if (*path == '/')
+			return -1;
+		return -1;
+	}
+	return chdir (path);
+}

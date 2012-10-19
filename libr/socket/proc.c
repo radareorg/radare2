@@ -22,16 +22,16 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[]) {
 #endif
 
 	if (pipe (sp->fd0)==-1) {
-		perror("pipe");
-		free(sp);
+		perror ("pipe");
+		free (sp);
 		return NULL;
 	}
 	fcntl (sp->fd0[0], flags);
 	fcntl (sp->fd0[1], flags);
 
 	if (pipe (sp->fd1)==-1) {
-		perror("pipe");
-		free(sp);
+		perror ("pipe");
+		free (sp);
 		return NULL;
 	}
 	fcntl (sp->fd1[0], flags);

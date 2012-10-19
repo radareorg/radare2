@@ -2,6 +2,11 @@
 
 #include <r_core.h>
 
+static int config_cfgsandbox_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	return r_sandbox_enable (node->i_value);
+}
+
 static int config_scrnkey_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (!strcmp (node->value, "help") || *node->value == '?') {
@@ -538,6 +543,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.datefmt", "Date format (%d:%m:%Y %H:%M:%S %z)");
 	r_config_set (cfg, "cfg.fortunes", "true");
 	r_config_desc (cfg, "cfg.fortunes", "If enabled show tips at start");
+	r_config_set_cb (cfg, "cfg.sandbox", "false", &config_cfgsandbox_callback);
+	r_config_desc (cfg, "cfg.sandbox", "sandbox mode disables systems and open on upper directories");
 	r_config_set (cfg, "cfg.wseek", "false");
 	r_config_desc (cfg, "cfg.wseek", "Seek after write");
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);

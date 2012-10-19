@@ -11,6 +11,7 @@
 
 #include "dis-asm.h"
 #include "opcode/mips.h"
+int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
 static int mips_mode = 0;
 static unsigned long Offset = 0;

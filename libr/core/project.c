@@ -47,7 +47,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 	char buf[256], *file = NULL;
 	char *prj = r_core_project_file (prjfile);
 	FILE *fd;
-	if (prj && (fd = fopen (prj, "r"))) {
+	if (prj && (fd = r_sandbox_fopen (prj, "r"))) {
 		for (;;) {
 			fgets (buf, sizeof (buf), fd);
 			if (feof (fd))
@@ -76,7 +76,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 
 	prj = r_core_project_file (file);
 	r_core_project_init ();
-	fd = open (prj, O_BINARY|O_RDWR|O_CREAT, 0644);
+	fd = r_sandbox_open (prj, O_BINARY|O_RDWR|O_CREAT, 0644);
 	if (fd != -1) {
 		int fdold = r_cons_singleton ()->fdout;
 		r_cons_singleton ()->fdout = fd;

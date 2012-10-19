@@ -39,6 +39,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	port++;
 	p = strchr (port, '/');
 	if (p) *p=0;
+
+	if (r_sandbox_enable (0)) {
+		eprintf ("sandbox: Cannot use network\n");
+		return NULL;
+	}
 	_fd = r_socket_new (R_FALSE);
 	if (_fd && r_socket_connect_tcp (_fd, host, port)) {
 		riog = R_NEW (RIOGdb);

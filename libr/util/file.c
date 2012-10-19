@@ -88,7 +88,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	long sz;
 	if (!r_file_exists (str))
 		return NULL;
-	fd = fopen (str, "rb");
+	fd = r_sandbox_fopen (str, "rb");
 	if (fd == NULL)
 		return NULL;
 	fseek (fd, 0, SEEK_END);
@@ -113,7 +113,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	ut8 *ret;
 	long sz;
 	int c, bytes = 0;
-	FILE *fd = fopen (str, "r");
+	FILE *fd = r_sandbox_fopen (str, "r");
 	if (fd == NULL)
 		return NULL;
 	fseek (fd, 0, SEEK_END);
@@ -143,7 +143,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 
 R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 	char *ret;
-	FILE *fd = fopen (str, "rb");
+	FILE *fd = r_sandbox_fopen (str, "rb");
 	if (fd == NULL)
 		return NULL;
 	// XXX handle out of bound reads (eof)
@@ -219,7 +219,7 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 
 R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 	int ret;
-	FILE *fd = fopen(file, "wb");
+	FILE *fd = r_sandbox_fopen(file, "wb");
 	if (fd == NULL) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
@@ -243,9 +243,9 @@ R_API boolt r_file_rm(const char *file) {
 R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 	RMmap *m = NULL;
 #if __WINDOWS__
-	int fd = open (file, O_BINARY);
+	int fd = r_sandbox_open (file, O_BINARY, 0644);
 #else
-	int fd = open (file, rw? O_RDWR: O_RDONLY);
+	int fd = r_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
 #endif
 	if (fd != -1) {
 		m = R_NEW (RMmap);
@@ -328,7 +328,7 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	char name[1024];
 #if __WINDOWS__
 	if (GetTempFileName (path, prefix, 0, name))
-		h = open (name, O_RDWR|O_EXCL|O_BINARY);
+		h = r_sandbox_open (name, O_RDWR|O_EXCL|O_BINARY, 0644);
 	else h = -1;
 #else
 	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);

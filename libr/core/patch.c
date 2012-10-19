@@ -20,7 +20,7 @@ OFFSET : assembly
 R_API int r_core_patch (RCore *core, const char *patch) {
 	char *p, *p2, *q, str[200], tmp[64];
 	ut64 noff = 0LL;
-	FILE *fd = fopen (patch, "r");
+	FILE *fd = r_sandbox_fopen (patch, "r");
 	if (fd==NULL) {
 		eprintf ("Cannot open patch file\n");
 		return 1;

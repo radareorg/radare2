@@ -78,7 +78,7 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int b
 R_API int r_syscall_setup_file(RSyscall *ctx, const char *path) {
 	if (ctx->fd)
 		fclose (ctx->fd);
-	ctx->fd = fopen (path, "r");
+	ctx->fd = r_sandbox_fopen (path, "r");
 	if (ctx->fd == NULL)
 		return 1;
 	/* TODO: load info from file */

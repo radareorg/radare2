@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_fs.h>
 #include <dirent.h>
@@ -9,7 +9,7 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	RFSFile *file = r_fs_file_new (root, path);
 	file->ptr = NULL;
 	file->p = root->p;
-	fd = fopen (path, "r");
+	fd = r_sandbox_fopen (path, "r");
 	if (fd) {
 		fseek (fd, 0, SEEK_END);
 		file->size = ftell (fd);

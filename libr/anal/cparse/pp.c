@@ -494,11 +494,10 @@ void cparsepp_file_fd (FILE *infile, FILE *outfile) {
 }
 
 void cparsepp_file (const char *infile, const char *outfile) {
-	FILE *in = fopen (infile, "r");
-	FILE *out = fopen (outfile, "w");
-	if (in && out) {
+	FILE *in = r_sandbox_fopen (infile, "r");
+	FILE *out = r_sandbox_fopen (outfile, "w");
+	if (in && out)
 		cparsepp_file_fd (in, out);
-	}
 	fclose (in);
 	fclose (out);
 }

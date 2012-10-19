@@ -116,13 +116,13 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	if (fd == -2) {
 #if __WINDOWS__
 		if (flags & R_IO_WRITE) {
-			fd = open (uri, O_BINARY | 1);
+			fd = r_sandbox_open (uri, O_BINARY | 1, 0);
 			if (fd == -1)
 				creat (uri, O_BINARY);
-			fd = open (uri, O_BINARY | 1);
-		} else fd = open (uri, O_BINARY);
+			fd = r_sandbox_open (uri, O_BINARY | 1, 0);
+		} else fd = r_sandbox_open (uri, O_BINARY);
 #else
-		fd = open (uri, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
+		fd = r_sandbox_open (uri, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
 #endif
 	}
 	if (fd >= 0) {
