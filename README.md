@@ -1,7 +1,7 @@
 <pre>
     ____  ___  ___  ___ ____  ___    ____
    |  _ \/   \|   \/   \  _ \/ _ \  |__  \
-   |    <  V  | |  ) V  |   <   _/   / __/ 
+   |    (  V  | |  ) V  |   (   _/   / __/ 
    |__\__|_|__|___/__|__|_\__|___|  |____|
 
                 www.radare.org
@@ -25,11 +25,11 @@ code, debugging programs, attaching to remove gdb servers, ..
 
 radare2 is portable.
 
-Supported architectures: x86, arm, mips, ppc, java, dalvik, arc, avr, bf, csr, dcpu16, m68k, msil, sh, sparc
+Architectures: x86, arm, mips, ppc, java, dalvik, arc, avr, bf, csr, dcpu16, m68k, msil, sh, sparc
 
-Supported file formats: dex, elf, elf64, filesystem, java, fatmach0, mach0, mach0-64, MZ, PE, PE+, plan9, dyldcache
+File Formats: dex, elf, elf64, filesystem, java, fatmach0, mach0, mach0-64, MZ, PE, PE+, plan9, dyldcache
 
-Operating systems: Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32, w64, Solaris.
+Operating Systems: Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32, w64, Solaris.
 
 Bindings: Vala/Genie, Python, NodeJS, LUA, Go, Perl, Guile, php5, newlisp, Ruby, Java
 
