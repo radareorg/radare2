@@ -12,8 +12,12 @@ R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	char *path;
 	ut64 addr = 0; // XXX ? check file->map ?
-	RCoreFile *file;
+	RCoreFile *file, *ofile = core->file;
 	int newpid, ret = R_FALSE;
+	if (r_sandbox_enable (0)) {
+		eprintf ("Cannot reopen in sandbox\n");
+		return R_FALSE;
+	}
 	if (!core->file) {
 		eprintf ("No file opened to reopen\n");
 		return R_FALSE;
@@ -34,6 +38,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 		core->file = file;
 	} else {
 		eprintf ("Oops. Cannot reopen file.\n");
+		core->file = ofile; // XXX: not necessary?
 	}
 	// TODO: in debugger must select new PID
 	if (r_config_get_i (core->config, "cfg.debug")) {

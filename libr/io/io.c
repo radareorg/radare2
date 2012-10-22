@@ -118,11 +118,12 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 		if (flags & R_IO_WRITE) {
 			fd = r_sandbox_open (uri, O_BINARY | 1, 0);
 			if (fd == -1)
-				creat (uri, O_BINARY);
+				r_sandbox_creat (uri, O_BINARY);
 			fd = r_sandbox_open (uri, O_BINARY | 1, 0);
 		} else fd = r_sandbox_open (uri, O_BINARY);
 #else
-		fd = r_sandbox_open (uri, (flags&R_IO_WRITE)?O_RDWR:O_RDONLY, mode);
+		fd = r_sandbox_open (uri, (flags&R_IO_WRITE)?
+			O_RDWR:O_RDONLY, mode);
 #endif
 	}
 	if (fd >= 0) {
@@ -473,5 +474,5 @@ R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
 		return io->plugin->create (io, file, mode, type);
 	if (type == 'd'|| type == 1)
 		return r_sys_mkdir (file);
-	return creat (file, mode)? R_FALSE: R_TRUE;
+	return r_sandbox_creat (file, mode)? R_FALSE: R_TRUE;
 }

@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2012 - pancake */
 
 #include <r_util.h>
+#include <signal.h>
 
 static int enabled = 0;
 
@@ -29,11 +30,22 @@ R_API int r_sandbox_system (const char *x, int n) {
 	return -1;
 }
 
+R_API int r_sandbox_creat (const char *path, int mode) {
+	if (enabled) {
+		// cannot create
+		if (mode & O_CREAT) return -1;
+		if (mode & O_RDWR) return -1;
+		if (!r_sandbox_check_path (path))
+			return -1;
+	}
+	return creat (path, mode);
+}
+
 R_API int r_sandbox_open (const char *path, int mode, int perm) {
 	if (enabled) {
 		// cannot create
-		if (perm & O_CREAT)
-			return -1;
+		if (mode & O_CREAT) return -1;
+		if (mode & O_RDWR) return -1;
 		if (!r_sandbox_check_path (path))
 			return -1;
 	}
@@ -60,4 +72,10 @@ R_API int r_sandbox_chdir (const char *path) {
 		return -1;
 	}
 	return chdir (path);
+}
+
+R_API int r_sandbox_kill(int pid, int sig) {
+	if (enabled) // XXX: fine-tune. maybe we want to enable kill for child?
+		return -1;
+	return kill (pid, sig);
 }
