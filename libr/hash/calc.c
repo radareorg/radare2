@@ -38,6 +38,16 @@ R_API int r_hash_calculate(struct r_hash_t *ctx, int algobit, const ut8 *buf, ut
 		r_hash_do_sha512 (ctx, buf, len);
 		return R_HASH_SIZE_SHA512;
 	}
+	if (algobit & R_HASH_CRC16) {
+		ut16 res = r_hash_crc16 (0, buf, len);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC16);
+		return R_HASH_SIZE_CRC16;
+	}
+	if (algobit & R_HASH_CRC32) {
+		ut32 res = r_hash_crc32 (buf, len);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
+		return R_HASH_SIZE_CRC32;
+	}
 	if (algobit & R_HASH_PCPRINT) {
 		*ctx->digest = r_hash_pcprint (buf, len);
 		return 1;

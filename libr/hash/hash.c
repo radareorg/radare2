@@ -63,6 +63,8 @@ R_API const char *r_hash_name(int bit) {
 	if (bit & R_HASH_SHA256) return "sha256";
 	if (bit & R_HASH_SHA384) return "sha384";
 	if (bit & R_HASH_SHA512) return "sha512";
+	if (bit & R_HASH_CRC16) return "crc16";
+	if (bit & R_HASH_CRC32) return "crc32";
 	if (bit & R_HASH_PARITY) return "parity";
 	if (bit & R_HASH_ENTROPY) return "entropy";
 	if (bit & R_HASH_XOR) return "xor";
@@ -79,6 +81,8 @@ R_API int r_hash_size(int bit) {
 	if (bit & R_HASH_SHA256) return R_HASH_SIZE_SHA256;
 	if (bit & R_HASH_SHA384) return R_HASH_SIZE_SHA384;
 	if (bit & R_HASH_SHA512) return R_HASH_SIZE_SHA512;
+	if (bit & R_HASH_CRC16) return R_HASH_SIZE_CRC16;
+	if (bit & R_HASH_CRC32) return R_HASH_SIZE_CRC32;
 	if (bit & R_HASH_PARITY) return 1;
 	if (bit & R_HASH_ENTROPY) return 4; // special case
 	if (bit & R_HASH_XOR) return 1;
