@@ -14,6 +14,23 @@ static int core_cmd_callback (void *user, const char *cmd) {
 	return r_core_cmd0 (core, cmd);
 }
 
+static ut64 getref (RCore *core, int n, char t, int type) {
+	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+	if (fcn) {
+		RList *list = t=='r'? fcn->refs: fcn->xrefs;
+		RListIter *iter;
+		RAnalRef *r;
+		int i=0;
+		r_list_foreach (list, iter, r) {
+			if (r->type == type) {
+				if (i == n)
+					return r->addr;
+				i++;
+			}
+		}
+	}
+	return UT64_MAX;
+}
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RFlagItem *flag;
@@ -24,13 +41,13 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
 		const char *p = strchr (str+1, ':');
 		ut64 n;
-// TODO: honor endian
+		// TODO: honor endian
 		if (p) {
 			refsz = atoi (str+1);
 			str = p;
 		}
-// push state
-{
+		// push state
+		{
 const char *q = r_num_calc_index (core->num, NULL);
 		n = r_num_math (core->num, str+1);
 r_num_calc_index (core->num, q);
@@ -90,6 +107,22 @@ r_num_calc_index (core->num, q);
 		case '?': return core->num->value;
 		case '$': return core->offset;
 		case 'o': return core->io->off;
+		case 'C': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CALL);
+		case 'J': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CODE);
+		case 'D': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_DATA);
+		case 'X': return getref (core, atoi (str+2), 'x', R_ANAL_REF_TYPE_CALL);
+		case 'I':
+			  {
+				  RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+				  if (fcn) return fcn->ninstr;
+				  return 0;
+			  }
+		case 'F':
+			  {
+				  RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+				  if (fcn) return fcn->size;
+				  return 0;
+			  }
 		}
 	} else
 	if (*str>'A') {

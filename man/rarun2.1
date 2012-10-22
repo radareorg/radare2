@@ -1,4 +1,4 @@
-.Dd Oct 11, 2011
+.Dd Oct 17, 2012
 .Dt RARUN2 1
 .Os
 .Sh NAME
@@ -44,7 +44,8 @@ set value for given environment variable
 .It Ar arg[0-3]
 set value for argument N passed to the program
 .El
-.Sh EXAMPLE
+.Sh EXAMPLES
+Sample rarun2 script
 .Pp
   $ cat foo.rr2
   #!/usr/bin/rarun2
@@ -55,13 +56,17 @@ set value for argument N passed to the program
   #chroot=.
   ./foo.rr2
 .Pp
+Connecting a program to a socket
+.Pp
+  $ nc -l 9999
+  $ rarun2 program=/bin/ls connect=localhost:9999
+.Pp
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1) ,
 .Xr rahash2(1) ,
 .Xr rafind2(1) ,
 .Xr rabin2(1) ,
-.Xr ranal2(1) ,
 .Xr radiff2(1) ,
 .Xr ragg2(1) ,
 .Xr rasm2(1) ,

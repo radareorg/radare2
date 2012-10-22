@@ -1,4 +1,5 @@
-/* radare2 - Copyleft 2011 - pancake<nopcode.org> */
+/* radare2 - Copyleft 2011-2012 - pancake */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -177,10 +178,9 @@ static int runfile () {
 int main(int argc, char **argv) {
 	int i;
 	FILE *fd;
-	char *file, buf[1024];
+	char *file, buf[4096];
 	if (argc==1 || !strcmp (argv[1], "-h")) {
-		fprintf (stderr, "Usage: rarun2 [''|script.rr2] [options ...]\n"
-			"> options are file directives:\n");
+		fprintf (stderr, "Usage: rarun2 [-v] [script.rr2] [directive ..]\n");
 		printf (
 			"program=/bin/ls\n"
 			"arg1=/bin\n"
@@ -201,8 +201,12 @@ int main(int argc, char **argv) {
 			"# setegid=2001\n");
 		return 1;
 	}
+	if (!strcmp (argv[1], "-v")) {
+		printf ("rarun2 "R2_VERSION"\n");
+		return 0;
+	}
 	file = argv[1];
-	if (*file) {
+	if (*file && !strchr (file, '=')) {
 		fd = fopen (file, "r");
 		if (!fd) {
 			fprintf (stderr, "Cannot open %s\n", file);
@@ -216,7 +220,7 @@ int main(int argc, char **argv) {
 		}
 		fclose (fd);
 	} else {
-		for (i=2; i<argc; i++)
+		for (i=*file?1:2; i<argc; i++)
 			parseline (argv[i]);
 	}
 	return runfile ();

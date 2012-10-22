@@ -207,19 +207,15 @@ static int cmd_print(void *data, const char *input) {
 		RAsmOp asmop;
 		int j, ret, err = 0;
 		const ut8 *buf = core->block;
-		int tbs = 0;
 		int bs = core->blocksize;
 
 		if (input[1]=='f') {
 			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-			if (f) {
-				len = bs = f->size;
-				tbs = core->blocksize;
-			}
+			if (f) len = bs = f->size;
 		}
-		if (bs>core->blocksize)
-			r_core_block_size (core, tbs);
+		if (len>core->blocksize)
+			r_core_block_size (core, len);
 
 		if (l==0) l = len;
 		for (i=j=0; i<bs && j<len; i+=ret,j++ ) {
@@ -229,9 +225,8 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf ("???\n");
 			} else r_cons_printf ("%s\n", asmop.buf_asm);
 		}
-		if (tbs) r_core_block_size (core, tbs);
-		return err;
 		}
+		break;
 	case 'D':
 	case 'd':
 		switch (input[1]) {
@@ -240,7 +235,7 @@ static int cmd_print(void *data, const char *input) {
 			int j, ret, err = 0;
 			const ut8 *buf = core->block;
 			if (l==0) l = len;
-			for (i=j=0; i<core->blocksize && j<len && j<l; i+=ret,j++ ) {
+			for (i=j=0; j<len && j<l; i+=ret,j++ ) {
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 				if (ret<1) {
 					ret = err = 1;
@@ -597,7 +592,7 @@ static int cmd_print(void *data, const char *input) {
 		" pd[lf] [l]    disassemble N opcodes (see pd?)\n"
 		" pD [len]      disassemble N bytes\n"
 		" pf [fmt]      print formatted data\n"
-		" pi[f] [len]   print N instructions (f=function)\n"
+		" pi[f] [len]   print N instructions (f=function) (see pdi)\n"
 		" pm [magic]    print libmagic data (pm? for more information)\n"
 		" pr [len]      print N raw bytes\n"
 		" ps[pwz] [len] print pascal/wide/zero-terminated strings\n"

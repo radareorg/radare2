@@ -55,10 +55,11 @@ core.cmd0 ('? entry0')
 core.cmd0 ('pd @entry0')
 
 /* initialize irc connection */
+core.config.set ("cfg.sandbox", "true");
 
 print (Chi, "[=>] Connecting to irc ",Cend)
-print (Chi, "     HOST: ", host,":",port,Cend)
-print (Chi, "     NICK: ",nick," ",channel, Cend);
+print (Chi, "     HOST: ", host, ":", port, Cend)
+print (Chi, "     NICK: ", nick, " ", channel, Cend);
 var IRC = require ('irc.js');
 irc = new IRC (host, port);
 

@@ -1,4 +1,4 @@
-.Dd Mar 11, 2010
+.Dd Mar 11, 2012
 .Dt RABIN2 1
 .Os
 .Sh NAME
@@ -81,13 +81,29 @@ Show version information
 .It Fl h
 Show usage help message.
 .El
+.Sh EXAMPLES
+.Pp
+List symbols of a program
+.Pp
+  $ rabin2 -s a.out
+.Pp
+Get offset of symbol
+.Pp
+  $ rabin2 -n _main a.out
+.Pp
+Get entrypoint
+.Pp
+  $ rabin2 -e a.out
+.Pp
+Load symbols and imports from radare
+.Pp
+  .!rabin2 -rsi a.out
 .Sh SEE ALSO
 .Pp
 .Xr rahash2(1) ,
 .Xr rafind2(1) ,
 .Xr radare2(1) ,
 .Xr radiff2(1) ,
-.Xr ranal2(1) ,
 .Xr rasm2(1) ,
 .Xr rax2(1) ,
 .Xr rsc2(1) ,

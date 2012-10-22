@@ -25,12 +25,12 @@ static void r_asm_list(RAsm *a) {
 }
 
 static int rasm_show_help() {
-	printf ("rasm2 [-e] [-o offset] [-a arch] [-s syntax] -d \"opcode\"|\"hexpairs\"|- [-f file ..]\n"
+	printf ("rasm2 [-de] [-o offset] [-a arch] [-s syntax] [-f file ..] \"code\"|hex|-\n"
 		" -d           Disassemble from hexpair bytes\n"
 		" -D           Disassemble showing hexpair and opcode\n"
 		" -f           Read data from file\n"
 		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
-		" -o [offset]  Set start address for code (0x%08"PFMT64x")\n"
+		" -o [offset]  Set start address for code (default 0)\n"
 		" -a [arch]    Set assemble/disassemble plugin\n"
 		" -b [bits]    Set cpu register size in bits (16, 32, 64)\n"
 		" -s [syntax]  Select syntax (intel, att)\n"
@@ -41,7 +41,7 @@ static int rasm_show_help() {
 		" -e           Use big endian\n"
 		" -v           Show version information\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
-		" If the last argument is '-' reads from stdin\n", R_SYS_BASE);
+		" If the last argument is '-' reads from stdin\n");
 	return 0;
 }
 
@@ -144,7 +144,7 @@ static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_
 
 int main(int argc, char *argv[]) {
 	char *arch = NULL, *file = NULL, *filters = NULL;
-	ut64 offset = R_SYS_BASE;
+	ut64 offset = 0;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
 	ut64 len = 0, idx = 0;
 
