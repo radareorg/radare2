@@ -8,6 +8,7 @@
 #define R_IO_READ  4
 #define R_IO_WRITE 2
 #define R_IO_EXEC  1
+#define R_IO_RW R_IO_READ | R_IO_WRITE
 
 #define R_IO_SEEK_SET 0
 #define R_IO_SEEK_CUR 1

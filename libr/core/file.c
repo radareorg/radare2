@@ -9,35 +9,39 @@ R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 }
 
 // TODO: add support for args
-R_API int r_core_file_reopen(RCore *core, const char *args) {
+R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	char *path;
+	ut64 addr = 0; // XXX ? check file->map ?
 	RCoreFile *file;
-	int ret = R_FALSE;
-	int newpid, perm;
+	int newpid, ret = R_FALSE;
 	if (!core->file) {
 		eprintf ("No file opened to reopen\n");
 		return R_FALSE;
 	}
 	newpid = core->file->fd->fd;
-	perm = core->file->rwx;
-	ut64 addr = 0; // XXX ? check file->map ?
+	if (!perm) perm = core->file->rwx;
 	path = strdup (core->file->uri);
 	if (r_config_get_i (core->config, "cfg.debug"))
 		r_debug_kill (core->dbg, R_FALSE, 9); // KILL
-	r_core_file_close (core, core->file);
 	file = r_core_file_open (core, path, perm, addr);
 	if (file) {
-		eprintf ("File %s reopened\n", path);
+		eprintf ("File %s reopened in %s mode\n", path,
+			perm&R_IO_WRITE?"read-write": "read-only");
 		ret = R_TRUE;
+		// close old file
+		//r_core_file_close (core, core->file);
+		r_core_file_close_fd (core, newpid);
+		core->file = file;
+	} else {
+		eprintf ("Oops. Cannot reopen file.\n");
 	}
-	// close old file
-	r_core_file_close_fd (core, newpid);
 	// TODO: in debugger must select new PID
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		if (core->file && core->file->fd)
 			newpid = core->file->fd->fd;
 		r_debug_select (core->dbg, newpid, newpid);
 	}
+	r_core_block_read (core, 0);
 	free (path);
 	return ret;
 }
@@ -270,9 +274,10 @@ R_API int r_core_file_list(RCore *core) {
 	RListIter *iter;
 	r_list_foreach (core->files, iter, f) {
 		if (f->map)
-			r_cons_printf ("%c %d %s 0x%"PFMT64x"\n",
+			r_cons_printf ("%c %d %s @ 0x%"PFMT64x" ; %s\n",
 				core->io->raised == f->fd->fd?'*':'-',
-				f->fd->fd, f->uri, f->map->from);
+				f->fd->fd, f->uri, f->map->from,
+				f->fd->flags & R_IO_WRITE? "rw": "r");
 		else r_cons_printf ("- %d %s\n", f->fd->fd, f->uri);
 		count++;
 	}

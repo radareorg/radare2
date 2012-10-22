@@ -7,7 +7,7 @@
 // TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
 //  --- check for EXEC perms in section (use cached read to accelerate)
 
-R_API struct r_io_t *r_io_new() {
+R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;
 	io->fd = NULL;
@@ -317,8 +317,9 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 		if (io->plugin->write)
 			ret = io->plugin->write (io, io->fd, buf, len);
 		else eprintf ("r_io_write: io handler with no write callback\n");
-	} else ret = write (io->fd->fd, buf, len);
-
+	} else {
+		ret = write (io->fd->fd, buf, len);
+	}
 	if (ret == -1)
 		eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
 	if (data)

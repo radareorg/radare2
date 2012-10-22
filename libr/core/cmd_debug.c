@@ -950,7 +950,7 @@ static int cmd_debug(void *data, const char *input) {
 		else r_debug_plugin_list (core->dbg);
 		break;
 	case 'o':
-		r_core_file_reopen (core, input[1]? input+2: NULL);
+		r_core_file_reopen (core, input[1]? input+2: NULL, 0);
 		break;
 	default:
 		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"

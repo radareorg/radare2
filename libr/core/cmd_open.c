@@ -1,16 +1,20 @@
 /* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
 
 static int cmd_open(void *data, const char *input) {
-	ut64 addr;
-	int num = -1;
 	RCore *core = (RCore*)data;
+	int perms = R_IO_READ;
 	RCoreFile *file;
+	int num = -1;
+	ut64 addr;
 	char *ptr;
 
 	switch (*input) {
 	case '\0':
 		r_core_file_list (core);
 		break;
+	case '+':
+		perms = R_IO_READ|R_IO_WRITE;
+		input++;
 	case ' ':
 		ptr = strchr (input+1, ' ');
 		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
@@ -21,7 +25,7 @@ static int cmd_open(void *data, const char *input) {
 			addr = 0LL;
 		}
 		if (num<=0) {
-			file = r_core_file_open (core, input+1, R_IO_READ, addr);
+			file = r_core_file_open (core, input+1, perms, addr);
 			if (file) {
 				//eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
 				//	input+1, addr, file->size);
@@ -88,7 +92,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		break;
 	case 'o':
-		r_core_file_reopen (core, input+2);
+		r_core_file_reopen (core, input+2, (input[1]=='+')?R_IO_READ|R_IO_WRITE:0);
 		break;
 	case 'c':
 		// memleak? lose all settings wtf
@@ -106,9 +110,11 @@ static int cmd_open(void *data, const char *input) {
 		" o                  list opened files\n"
 		" oc [ƒile]          open core file, like relaunching r2\n"
 		" oo                 reopen current file (kill+fork in debugger)\n"
+		" oo+                reopen current file in read-write\n"
 		" o 4                priorize io on fd 4 (bring to front)\n"
 		" o-1                close file index 1\n"
-		" o /bin/ls          open /bin/ls file\n"
+		" o /bin/ls          open /bin/ls file in read-only\n"
+		" o+/bin/ls          open /bin/ls file in read-write mode\n"
 		" o /bin/ls 0x4000   map file at 0x4000\n"
 		" om[?]              create, list, remove IO maps\n");
 		break;
