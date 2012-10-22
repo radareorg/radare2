@@ -3,9 +3,9 @@
   "url": "http://www.radare.org",
   "description": "radare2 valabind-ffi bindings for nodejs",
   "dependencies": {
-    "ffi": "*",
-    "ref": "*",
-    "ref-struct": "*"
+    "ffi": "1.1.0",
+    "ref": "0.1.2",
+    "ref-struct": "0.0.3"
   },
   "files": [
     "Makefile",
