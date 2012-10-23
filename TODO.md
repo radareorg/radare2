@@ -1,26 +1,20 @@
+<pre>
    ____  ___  ___  ___ ____  ___  _____   ____
   |  _ \/   \|   \/   \  _ \/ _ \ \__  \ /    \
-  |    <  V  . |  . V  .   <   _/ .-' _/|  ()  |
-  |__\__|_|__|___/__|__|_\__\___/ |____(_)____/
+  |    (  V  \ |  ) V  \   (  __/ .-` _/|  ()  |
+  |__\__|_|__|___/__|__|_\__\___\ |____(_)____/
 
-------8<-------------------8<--------------------8<-----------------8<----------
+</pre>
 
-deprecate big num stuff
-Big number support
-==================
-* big-ssl.c big-gmp.c ...
-* implement GMP in util/big.c
-  - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
-
-
-====[[ 0.9.4 ]]====
+0.9.4
+=====
 * rap:/ doesnt works at all
 * implement =. command to get data from a socket
 tothink:
 * Event system . allow to send and read queues of messages.. thats pubsub!
 * search for CALL instructions in text segment.
   - analyze the destination address of each call destination
-* Analysis: assume there's a function at the end of each function
+* Analysis: assume there is a function at the end of each function
 * Integrate dwarf parser with disassembler and debugger
 * Step back .. log all state changes on every debugger stop
 * Show analized functions in 'aa' -> discuss
@@ -28,8 +22,6 @@ tothink:
 * Allow to seek to branch N like in visual, but from cmdline
 * Colorize multiple ranges of chars in hexdump
 * Insert assembly in visual should be more userfriendly (keep unwritten bytes)
-* io_next must work properly
-  - r_io must read in 512 or 4096 aligned blocks (get next section?)
 * refactor vmenus.c -> refresh function must be redefined for each menu
 
 // show hints for
@@ -53,7 +45,8 @@ tothink:
   - allows to find interesting points to analyze
 * use slices for r_list_iter primitives
 
-BUGS:
+BUGS
+----
 * If [0-9] keybindings in visual point to same address use same reference
 * RBinCreate:
   - mach0 create for darwin-ppc
@@ -148,7 +141,6 @@ earada
 * Implement search and replace /s
   - insert or append? (see r1 cfg vars)
 
-
 Assembler
 ---------
 * Embed bits/arch/endian in a separated structure
@@ -160,19 +152,19 @@ Assembler
     to the read call (this way we can know which library
     lives at a specified offset. (is this already done?)
 
-* r_bin
-  - Find why objdump can find stripped symbols with objcopy (see /TODO)
-
 * radare2
   - Use r_bin with r_io to get symbols
     - The offset to read will define the module to analyze and retrieve syms
   - Import msdn doc as comments
 
-* r_db
+RDB
+---
   - Implement iterators r_db_next() and r_db_prev() (HIGH PRIO)
   - Write test programs to ensure the data is stored correctly
 
-* r_search
+RSearch
+-------
+* Test r_search_delta()
   - The pattern finding functions are not following the design
     of the rest of the library, it needs a redesign and code cleanup
     (see bytepat.c)
@@ -182,29 +174,26 @@ Assembler
   - Sync vapi (r_search_regexp not implemented)
   - Enable/disable nested hits? (discuss+ implement in parent app?)
     - Just skip bytes until end of keyword
-* Ranged/scrollable zoom mode
 * AES/RSA Key finding
   http://citp.princeton.edu/memory/code/ <- implement this stuff in r2
-* Reimplement or fix the delta diffing in C - first we need to do it for ired..
+
+
+Binaries
+--------
+* DEX parsing fail (invalid offset of symbols)
 * add support for .a files (r_fs supports cpio and ar archives...)
+
+# Random
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?
-* code injection facilities? (wtf? insert, execute, restore)
-* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
-* Record trace of register status for each function when running
-  - r_reg_arena_copy();
-* Create radare2-testsuite project
-  - tests for ired, rax2, radare2, rabin2 ...
-* Is RCore->block and blocksize a RBuf ? refactor!11
+* Reimplement or fix the delta diffing in C - first we need to do it for ired..
+* Ranged/scrollable zoom mode
+
 * Add support for STATIC_PLUGINS in r_lang
   - r_lang_define is implemented in lang.c, but requires the collaboration
     of the plugins to properly setup the environment for the script execution.
   - Add support for STATIC_PLUGINS in r_lang
   - dlerror(/usr/lib/radare2/lang_perl.so): libperl.so: cannot open shared object file: No such file or directory
     This issue is fixed by setting LD_LIBRARY_PATH...looks like dlopen ignores rpath
-* r_bin
-  - Take into account LOAD info for bin allocation ??
-* r_anal
-  - split r_anal API functions (too much args) _new, _add...
 * gdiff
   - graph based fingerprints? (cyclomatic complexity...)
 * rcore
@@ -217,9 +206,16 @@ Assembler
   translate into c code and gets compiled. use rcc+rasm?
   it is like a extended regular expression engine
 
+
 Debugger
-========
+--------
+* Skip instruction
+* Step until end of frame (stack pointer restored) (store sp, check if nsp>sp)
 * stepover waits for one unknown event that cannot be stopped
+* code injection facilities? (wtf? insert, execute, restore)
+* Trace contents of buffers: filter search results..?  cc 8080 @@ hit* .. check for values that has changed.
+* Record trace of register status for each function when running
+  - r_reg_arena_copy();
 * Implement list threads on ALL supported platforms (win,lin,osx)
 * All threads must be stopped when a breakpoint is handled..
 * Add support for windbg+virtualkd
@@ -246,30 +242,20 @@ pancake
        - function signature comparsion if they dont match
        r_anal_fcn_cmp (anal, f1, f2);
 
-                  ------8<------------8<------
+Analysis
+--------
+* split r_anal API functions (too much args) _new, _add...
+* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
 
-              ------8<-----[ extras ]-------8<------
-
-                  ------8<------------8<------
-
-Things to improve in r2
-=======================
-* focus in single arch (rock allover) mips, ppc64 or arm? imho iphone-arm
-* Enhace code analysis
-  - calculate multiple execution paths to give branch prediction results
-    - get/set register status of the vm
-    - analyze from various parent functions and resolve ranged values
-    - a ranged value can be:
-      - ut64 from, to
-      - restrict : %2 (module)
-      - ...
+To think
+--------
+* Ranged value:
+  - ut64 from, to
+  - restrict : %2 (module)
 * Add support for aout binaries?
 * eprintf should be modified to log into a file
   - eprintf_open() -- start log to file
   - eprintf_close() -- stop log to file
-
-Questions
-=========
 * Only use uppercase KMG for Kilo,Mega,Giga in r_num? - 'g' is for double
 * radare2.c:217 . find name for maxfilesize to hash
 * r_list_foreach_prev is buggy, review and remove..
@@ -281,8 +267,11 @@ Questions
 * Add graph.nodecolor graph.bgcolor graph.edgecolor ??
 
 Refactoring
-===========
+-----------
+* move r_th into r_util
+* Merge javasm code (asm, bin -> shlr)
 * Rename r_hashtable -> r_ht
+* Remove/deprecate libr/vm
   - Make ht64.c include ht.c
 * Review the r_flags api
 * Add pipe_to_buffer..not only file descriptors
@@ -290,29 +279,30 @@ Refactoring
   - find/use more common cases for char* or &int maps
     - automatic callbacks for most common usecases
 * Merge r_socket inside r_util ?
+* Is RCore->block and blocksize a RBuf ? refactor!11
 * Discuss missing r_core_sysenv_update in core/file.c:33
 * Add RLog API.. pipeable to disk and stderr..also hookable ..cool for ui (partially done)
-* Move disasm loop into r_print (r_print should depend on r_asm)
-  - thats hard :)
+* Redesign core/disasm.c to provide a pluggable api
 * Move 'r_syscall_t' stuff into r_debug (sync r_core)
 * Implement r_bind api to link multiple pointers
   core->asm = r_bind_set (core->asm->bind, r_asm_new ());
 * Find a better name for r_buf_fread (really?)
-* Review r_io and r_reg API
-* semi-ok state (R_TRUFAE), implement r_errno and r_errstr in r_util?
-  - useful in r_sys_mkdir ?
-* Finish and import the spp's getopt owns implementation in r_util (like in p9)
 
-To wipe:
-========
+To wipe
+-------
  - Move manpages from man/ to binr/*/? (harder to maintain?)
  - Move the content of libr/*/TODO here
  - linestyle?? for disassembly lines
  - remove libr/vm and libr/db
  - imho we should not implement this:
    - Implement BLOCK in r_core_sysenv_begin|end ()
+ * Deprecate CiU (remove) those APIs and dependencies!
+ - big-ssl.c big-gmp.c ...
+ - implement GMP in util/big.c
+  - http://etutorials.org/Programming/secure+programming/Chapter+7.+Public+Key+Cryptography/7.5+Generating+a+Prime+Number+Testing+for+Primality/
 
-===[ Optimizations ]===
+Optimizations
+-------------
 * Performance
   - cons_visual_write() should do a single write instead of one per line
   - Refactor get_sym() and so on...
@@ -326,8 +316,8 @@ To wipe:
   - do not show repeated consecutive hits
  
 Future
-======
-* memset0 the op before calling the plugin analysis -- not really that's a performance cost..
+------
+* memset0 the op before calling the plugin analysis -- not really that is a performance cost..
 * Add 'S' subcommand to display section size and get by perms rwx
 * Implement r_flag_unset_i () ftw
 * Honor string metadata for asmsteps ('jk' in visual)
@@ -335,11 +325,7 @@ Future
 * asm.pseudo for brainfuck
 * code analysis for msil
 * rax2 -k by default?
-* Handle ^C in searches (at least)
-* Remove/deprecate libr/vm
 * Merge libr/db inside libr/util ?
-* Test r_search_delta()
-* Dupped javasm bin/asm -- must merge
 * implement code analysis using udis86.. is this necessary.. x86im works fine?
 * r_cons_visual_write_tail() -> fill end of screen with spaces \o/
 * Add support for 'expect' like foo in rarun2
@@ -349,10 +335,7 @@ Future
   - mmap if supported - add r_file_mmap ?  - read file in blocks instead of the whole file in a single syscall
 * Realign flags when using project in debug mode
 * FileDescriptors: dd -- copy from !fd in r1
-* Initial analysis looking for xrefs to strings and so? ax? ./a@@entry0 - Launched at startup
-* install.sh (to track installed files ..)
 * acr -ldl check must be fixed for kfreebsd
-* Add support for float/double in r_num :?
 * metaflags? support to define relations between flags
     (flag hirearchies)
 	r_flagtree
@@ -364,8 +347,7 @@ Future
 	 - the r_flag_get by string should have another construction with btree
 	   for the string of the name
 
-BINARY INFORMATION
-==================
+# Debug information in binaries
 * dwarf, pdb, def, lib
   - from file, from section, ...
   - load symbols from .lib or .def (find signatures)
@@ -390,10 +372,12 @@ BINARY INFORMATION
   	char, short, ushort, long, ulong, 
   }
 
+<pre>
 .------------------------.
 |   ___       ___  ____  |
 |  | - ) _ _ | _ |/  _/  |    please!
 |  | - \| | |\_  |\_  \  |___.  report! :)
-|  |___/'___'|___'|___/   ___/
+|  |___/\___/|___/|___/   ___/
 |                        |
-`------------------------'
+`------------------------`
+</pre>
