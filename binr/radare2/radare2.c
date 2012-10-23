@@ -290,8 +290,17 @@ int main(int argc, char **argv) {
 #if USE_THREADS
 		if (!rabin_th)	
 #endif
-			if (!r_core_bin_load (&r, NULL))
+		{
+			const char *filepath = NULL;
+			if (debug) {
+				// XXX: this is incorrect for PIE binaries
+				filepath = strstr (file, "://");
+				if (filepath) filepath += 3;
+				else filepath = file;
+			}
+			if (!r_core_bin_load (&r, filepath))
 				r_config_set (r.config, "io.va", "false");
+		}
 	}
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
@@ -310,7 +319,7 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 		pid = *p; // 1st element in debugger's struct must be int
-		r_core_cmd (&r, "e io.ffio=true", 0);
+		r_config_set (r.config, "io.ffio", "true");
 		if (is_gdb) r_core_cmd (&r, "dh gdb", 0);
 		else r_core_cmdf (&r, "dh %s", debugbackend);
 		r_core_cmdf (&r, "dpa %d", pid);

@@ -6,7 +6,7 @@
 .Nd Binary program info extractor
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl ACeisSMzIHlRrvLxVh
+.Op Fl ACeisSMzIHlRrLxvVh
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -52,11 +52,11 @@ Show address of 'main' symbol
 Show strings inside .data section (like gnu strings does)
 .It Fl I
 Show binary info
-.It Fl I
+.It Fl H
 Show header fields
 .It Fl l
 List linked libraries to the binary
-.It Fl I
+.It Fl R
 Show realocations
 .It Fl O Ar str
 Write/extract operations (\-O help)
@@ -97,7 +97,7 @@ Get entrypoint
 .Pp
 Load symbols and imports from radare
 .Pp
-  .!rabin2 -rsi a.out
+  .!rabin2 -vrsi a.out
 .Sh SEE ALSO
 .Pp
 .Xr rahash2(1) ,

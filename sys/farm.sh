@@ -5,7 +5,8 @@
 [ -z "${MAKE}" ] && MAKE=make
 [ -z "${NAME}" ] && NAME=radare2
 [ -z "${DIR}" ] && DIR=radare2.build
-[ -z "${URL}" ] && URL=http://radare.org/hg/${NAME}
+[ -z "${URL}" ] && URL=http://github.com/radare/${NAME}
+PYTHON=python2
 WD=${PWD}/${DIR}
 NOW=$(date +%Y%m%d-%H%M%S)
 if [ -z "$1" ]; then
@@ -47,22 +48,15 @@ logcmd() {
 	eval "( $@ ; logchk $? ) ${DOLOG}"
 }
 
-registerpurge() {
-	if [ -z "`grep purge ~/.hgrc 2>/dev/null`" ]; then
-		echo '[extensions]' >> ~/.hgrc
-		echo 'purge=' >> ~/.hgrc
-	fi
-}
-
-r2deinstall() {
+r2uninstall() {
 	cd radare2
-	make deinstall DESTDIR=${DESTDIR}
+	make uninstall DESTDIR=${DESTDIR}
 }
 
 installdeps() {
-	VALA=vala-0.10.1
+	VALA=vala-0.18.0
 
-	echo "I am going to install ${VALA} and valaswig..."
+	echo "I am going to install ${VALA} and valabind..."
 	sleep 2
 
 	wget -c http://download.gnome.org/sources/vala/0.9/${VALA}.tar.bz2
@@ -80,14 +74,14 @@ installdeps() {
 		echo "Cannot find 'swig'. apt-get install swig or get it from svn"
 		echo "svn co https://swig.svn.sourceforge.net/svnroot/swig/trunk swig"
 	else
-		if [ -d valaswig ]; then
-			cd valaswig
-			registerpurge
-			hg purge --all
-			hg pull -u
+		if [ -d valabind ]; then
+			cd valabind
+			git reset --hard
+			git clean -xdf
+			git pull
 		else
-			hg clone http://hg.youterm.com/valaswig
-			cd valaswig
+			git clone http://github.com/radare/valabind
+			cd valabind
 		fi
 		chmod +x configure
 		./configure --prefix=/usr
@@ -97,14 +91,14 @@ installdeps() {
 	fi
 }
 
-deinstalldeps() {
+uninstalldeps() {
 	VALA=`cat ${WD}/version.vala`
 	cd ${VALA}
-	${MAKE} deinstall DESTDIR=${DESTDIR}
+	${MAKE} uninstall DESTDIR=${DESTDIR}
 	cd ..
 	rm -rf ${VALA} ${VALA}.tar.bz2
-	cd valaswig
-	${MAKE} deinstall DESTDIR=${DESTDIR}
+	cd valabind
+	${MAKE} uninstall DESTDIR=${DESTDIR}
 }
 
 mkdir -p ${DIR}
@@ -126,7 +120,7 @@ case "$1" in
 		exit 1
 	fi
 	DESTDIR="$2"
-	r2deinstall
+	r2uninstall
 	exit 0
 	;;
 "-d")
@@ -144,7 +138,7 @@ case "$1" in
 		exit 1
 	fi
 	DESTDIR="$2"
-	deinstalldeps
+	uninstalldeps
 	exit 0
 	;;
 "-c")
@@ -156,22 +150,22 @@ case "$1" in
 	cat<<EOF
 Usage: build.sh [logfile|-option]
   -i [destdir]    install r2
-  -I [destdir]    deinstall r2
+  -I [destdir]    uninstall r2
   -c              clean build directory
   -d [destdir]    compile and install dependencies
-  -D [destdir]    deinstall dependencies
+  -D [destdir]    uninstall dependencies
   -h              show this help
 Dependencies:
   vala        http://live.gnome.org/Vala
   swig        http://www.swig.org/
-  valaswig    http://hg.youterm.com/valaswig
+  valabind    http://github.com/radare/valabind
 Examples:
-  sh build.sh              do the build and generate log
-  sudo sh build.sh -i /    install system-wide (/+/usr)
-  sudo sh build.sh -I      deinstall
-  sudo sh build.sh -d /    install dependencies system-wide
-  sh build.sh -d ~/prefix  install dependencies in home
-  sudo sh build.sh -c      clean build directory
+  sys/farm.sh              do the build and generate log
+  sudo sys/farm.sh -i /    install system-wide (/+/usr)
+  sudo sys/farm.sh -I      uninstall
+  sudo sys/farm.sh -d /    install dependencies system-wide
+  sys/farm.sh -d ~/prefix  install dependencies in home
+  sudo sys/farm.sh -c      clean build directory
   rm -rf radare2.build     remove build directory
 EOF
 	exit 0
@@ -186,19 +180,10 @@ date >> ${LOGFILE}
 uname -a >> ${LOGFILE}
 cat /proc/cpuinfo >> ${LOGFILE}
 
-type hg > /dev/null 2>&1
+type git > /dev/null 2>&1
 if [ ! $? = 0 ]; then
 	cat <<EOF
-Cannot find 'hg'. Please install mercurial:
- # easy_install mercurial
-or
- $ apt-get install mercurial
-or
- $ wget http://mercurial.selenic.com/downloads
- $ tar xzvf mercurial-*.tar.gz
- $ cd mercurial-*
- $ python setup.py build
- $ sudo python setup.py install
+Cannot find 'git'.
 EOF
 	exit 1
 fi
@@ -208,15 +193,15 @@ log "[==] Working directory: $WD/$DIR"
 if [ -d "${NAME}" ]; then
 	log "[==] Cleaning up old build directory..."
 	cd ${NAME}
-	registerpurge
-	hg purge --all
+	git clean -xdf
+	git reset --hard
 
 	log "[==] Updating repository to HEAD..."
 	logcmd hg revert -a
 	logcmd hg pull -u
 else
 	log "[==] Checking out from ${URL}..."
-	hg clone ${URL} 2>&1 | tee -a ${LOGFILE}
+	git clone ${URL} 2>&1 | tee -a ${LOGFILE}
 	cd ${NAME}
 fi
 
@@ -263,21 +248,21 @@ fi
 log "[==] Installing in ${PREFIX}"
 logcmd time ${MAKE} install DESTDIR="${DESTDIR}"
 
-log "[==] Configuring valaswig bindings..."
+log "[==] Configuring valabind bindings..."
 cd swig
 logcmd time ./configure --prefix=${PREFIX}
 
 log "[==] Compiling swig/..."
 logcmd time ${MAKE} ${MAKEFLAGS}
 
-log "[==] Installing valaswig bindings..."
+log "[==] Installing valabind bindings..."
 logcmd time ${MAKE} install DESTDIR=${DESTDIR}
 
 log "[==] Testing bindings.."
 export PYTHONPATH=${DESTDIR}/${PREFIX}/lib/python2.5/site-packages/
-logcmd python -c "'from r2.r_util import *;b=RBuffer()'"
-logcmd python -c "'from r2.r_asm import *;a=RAsm()'"
-logcmd python -c "'from r2.r_core import *;c=RCore()'"
+logcmd ${PYTHON} -c "'from r2.r_util import *;b=RBuffer()'"
+logcmd ${PYTHON} -c "'from r2.r_asm import *;a=RAsm()'"
+logcmd ${PYTHON} -c "'from r2.r_core import *;c=RCore()'"
 # TODO. add more tests here
 
 # back to root dir

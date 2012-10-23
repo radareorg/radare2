@@ -49,6 +49,13 @@ the following command:
 
     $ sys/install.sh
 
+# Uninstall
+
+In case of poluted filesystem you can uninstall current version or remove all previous installations:
+
+    $ make uninstall
+    $ make purge
+
 # Bindings
 
 All language bindings are under the r2-bindings directory.

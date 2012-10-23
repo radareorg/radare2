@@ -20,9 +20,9 @@ PACKAGE_DIR=${PWD}
 SOURCE_DIR = .
 ICON_SOURCE =
 #ICON_SOURCE =${SOURCE_DIR}/maemo_deb/exaile26.png
-PRG=../../build/default/
-PRG=../../
-SPRG=../../
+PRG=../../../build/default/
+PRG=../../../
+SPRG=../../../
 
 all:
 	sudo rm -rf control data

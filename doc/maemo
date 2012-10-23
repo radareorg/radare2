@@ -13,7 +13,8 @@
 
 * Compile
 
-  ./configure --without-ssl --prefix=/usr --with-little-endian
+  ./configure --without-ssl --prefix=/usr --with-little-endian \
+      --with-compiler=mad --with-ostype=gnulinux
   make
 
 * Create the package
