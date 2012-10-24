@@ -58,10 +58,10 @@ static int main_help(int line) {
 }
 
 static int main_version() {
-	const char *gittip = R2_GITTIP;
-	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"R_SYS_ARCH"-%d build "R2_BIRTH"\n", R_SYS_BITS&8?64:32);
-	if (*gittip)
-		printf ("commit: %s\n", gittip);
+	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"
+		R_SYS_ARCH"-%d build "R2_BIRTH"\n", R_SYS_BITS&8?64:32);
+	if (*R2_GITTIP)
+		printf ("commit: %s\n", R2_GITTIP);
 	return 0;
 }
 

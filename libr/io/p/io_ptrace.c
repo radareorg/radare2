@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 #include <r_userconf.h>
-
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
@@ -127,7 +126,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 		if (ret != -1) {
 			RIOPtrace *riop = R_NEW (RIOPtrace);
 			riop->pid = riop->tid = pid;
-			return r_io_desc_new (&r_io_plugin_ptrace, -1, file, R_TRUE, 0, riop);
+			return r_io_desc_new (&r_io_plugin_ptrace, pid, file, R_TRUE, mode, riop);
 		}
 	}
 	return NULL;

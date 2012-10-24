@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <r_userconf.h>
 
@@ -8,8 +8,6 @@
 
 #if __APPLE__
 
-//#define USE_PTRACE 0
-// EXPERIMENTAL
 #define EXCEPTION_PORT 0
 
 #include <sys/ptrace.h>
@@ -209,7 +207,7 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	riom = R_NEW (RIOMach);
 	riom->pid = pid;
 	riom->task = task;
-	return r_io_desc_new (&r_io_plugin_mach, riom->pid, file, rw, mode, riom);
+	return r_io_desc_new (&r_io_plugin_mach, riom->pid, file, 1, mode, riom);
 }
 
 static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
