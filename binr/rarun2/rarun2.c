@@ -103,7 +103,7 @@ static int runfile () {
 		if (p) {
 			RSocket *fd = r_socket_new (0);
 			*p=0;
-			if (!r_socket_connect_tcp (fd, _connect, p+1)) {
+			if (!r_socket_connect_tcp (fd, _connect, p+1, 30)) {
 				eprintf ("Cannot connect\n");
 				return 1;
 			}

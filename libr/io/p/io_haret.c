@@ -91,7 +91,7 @@ static RIODesc *haret__open(struct r_io_t *io, const char *pathname, int rw, int
 			eprintf ("Cannot create new socket\n");
 			return NULL;
 		}
-		if (!r_socket_connect_tcp (s, ptr, port)) {
+		if (!r_socket_connect_tcp (s, ptr, port, 30)) {
 			eprintf ("Cannot connect to '%s' (%s)\n", ptr, port);
 			return NULL;
 		} else eprintf ("Connected to: %s at port %s\n", ptr, port);

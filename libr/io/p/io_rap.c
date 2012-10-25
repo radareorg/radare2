@@ -176,7 +176,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		eprintf ("Cannot create new socket\n");
 		return NULL;
 	}
-	if (r_socket_connect_tcp (rap_fd, ptr, port) == R_FALSE) {
+	if (r_socket_connect_tcp (rap_fd, ptr, port, 30) == R_FALSE) {
 		eprintf ("Cannot connect to '%s' (%d)\n", ptr, p);
 		r_socket_free (rap_fd);
 		return NULL;
@@ -208,14 +208,14 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		r_socket_read (rap_fd, (ut8 *)&buf, 4);
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
 		while (i>0) {
-			n = r_socket_read (rap_fd, (ut8 *)&buf, i);
+			int n = r_socket_read (rap_fd, (ut8 *)&buf, i);
 			if (n<1) break;
 			buf[i] = 0;
 			io->core_cmd_cb (io->user, buf);
 			n = r_socket_read (rap_fd, (ut8 *)&buf, 4);
 			if (n<1) break;
 			r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
-			i -= data; 
+			i -= n; 
 		}
 	} else {
 		r_socket_free (rap_fd);
