@@ -207,17 +207,30 @@ static int cmd_print(void *data, const char *input) {
 		RAsmOp asmop;
 		int j, ret, err = 0;
 		const ut8 *buf = core->block;
-		int bs = len;
+		int bs = core->blocksize;
+		RAnalOp analop = {0};
+		int decode = r_config_get_i (core->config, "asm.decode");
+
 		if (len>core->blocksize)
 			r_core_block_size (core, len);
-
 		if (l==0) l = len;
-		for (i=j=0; i<bs && j<len; i+=ret,j++ ) {
+		for (i=j=0; i<bs && j<len; i+=ret,j++) {
+			r_asm_set_pc (core->assembler, core->offset+i);
 			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
+			//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 			if (ret<1) {
 				ret = err = 1;
 				r_cons_printf ("???\n");
-			} else r_cons_printf ("%s\n", asmop.buf_asm);
+			} else {
+				if (decode) {
+					char *tmpopstr, *opstr;
+					r_anal_op (core->anal, &analop, core->offset+i, buf+i, core->blocksize-i);
+					tmpopstr = r_anal_op_to_string (core->anal, &analop);
+					opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
+					r_cons_printf ("%s\n", opstr);
+					free (opstr);
+				} else r_cons_printf ("%s\n", asmop.buf_asm);
+			}
 		}
 		}
 		break;
@@ -225,17 +238,36 @@ static int cmd_print(void *data, const char *input) {
 	case 'd':
 		switch (input[1]) {
 		case 'i': {// TODO
+			int show_offset = r_config_get_i (core->config, "asm.offset");
+			int show_bytes = r_config_get_i (core->config, "asm.bytes");
+			int decode = r_config_get_i (core->config, "asm.decode");
 			RAsmOp asmop;
 			int j, ret, err = 0;
 			const ut8 *buf = core->block;
 			if (l==0) l = len;
-			for (i=j=0; j<len && j<l; i+=ret,j++ ) {
+			for (i=j=0; j<len && j<l; i+=ret,j++) {
+				r_asm_set_pc (core->assembler, core->offset+i);
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
+				if (show_offset)
+					r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 				if (ret<1) {
 					ret = err = 1;
-					r_cons_printf ("0x%08"PFMT64x" %14s%02x  %s\n", core->offset+i, "", buf[i], "???");
-				} else r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
-					core->offset+i, asmop.buf_hex, asmop.buf_asm);
+					if (show_bytes)
+						r_cons_printf ("%14s%02x  ", "", buf[i]);
+					r_cons_printf ("%s\n", "???");
+				} else {
+					if (show_bytes)
+						r_cons_printf ("%16s  ", asmop.buf_hex);
+					if (decode) {
+						RAnalOp analop = {0};
+						char *tmpopstr, *opstr;
+						r_anal_op (core->anal, &analop, core->offset+i, buf+i, core->blocksize-i);
+						tmpopstr = r_anal_op_to_string (core->anal, &analop);
+						opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
+						r_cons_printf ("%s\n", opstr);
+						free (opstr);
+					} else r_cons_printf ("%s\n", asmop.buf_asm);
+				}
 			}
 			return err;
 			}
