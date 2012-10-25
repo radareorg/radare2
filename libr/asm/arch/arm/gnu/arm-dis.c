@@ -4099,7 +4099,7 @@ is_thumb = (info->bytes_per_line == 2)?1:0;
       info->bytes_per_chunk = 2;
       size = 2;
 
-      status = info->read_memory_func (pc, (bfd_byte *)b, 2, info);
+      status = info->read_memory_func (pc, (bfd_byte *)b, 4, info);
       if (little)
 	given = (b[0]) | (b[1] << 8);
       else
@@ -4113,11 +4113,11 @@ is_thumb = (info->bytes_per_line == 2)?1:0;
 	      || (given & 0xF800) == 0xF000
 	      || (given & 0xF800) == 0xE800)
 	    {
-	      status = info->read_memory_func (pc + 2, (bfd_byte *)b, 2, info);
+	      //status = info->read_memory_func (pc + 2, (bfd_byte *)b, 2, info);
 	      if (little)
-		given = (b[0]) | (b[1] << 8) | (given << 16);
+		given = (b[2]) | (b[3] << 8) | (given << 16);
 	      else
-		given = (b[1]) | (b[0] << 8) | (given << 16);
+		given = (b[3]) | (b[2] << 8) | (given << 16);
 
 	      printer = print_insn_thumb32;
 	      size = 4;
