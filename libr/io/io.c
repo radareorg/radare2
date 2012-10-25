@@ -177,36 +177,18 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret, l, olen = len;
 	int w = 0;
-	int eof = 0;
 
 	r_io_seek (io, addr, R_IO_SEEK_SET);
-#if 0
-	// HACK?: if io->va == 0 -> call seek+read without checking sections ?
-	if (!io->va) {
-	//	r_io_seek (io, addr, R_IO_SEEK_SET);
-		r_io_map_select (io, addr);
-		ret = r_io_read_internal (io, buf, len);
-		if (io->cached) {
-			r_io_cache_read (io, addr, buf, len);
-		}
-		return ret;
-	}
-#endif
-// XXX: this is buggy!
+	// XXX: this is buggy!
 	memset (buf, 0xff, len);
-#if 0
-	ret = r_io_read_internal (io, buf, len);
-	return len;
-#endif
-
 	while (len>0) {
 		int ms;
 		ut64 last = r_io_section_next (io, addr);
+		ut64 last2 = r_io_map_next (io, addr);
+		if (last == addr) last = last2;
+		else if (last2<last) last = last2;
 		l = (len > (last-addr))? (last-addr): len;
 		if (l<1) l = len;
-		// ignore seek errors
-//		eprintf ("0x%llx %llx\n", addr+w, 
-		//r_io_seek (io, addr+w, R_IO_SEEK_SET);
 		if (r_io_seek (io, addr+w, R_IO_SEEK_SET)==UT64_MAX) {
 			memset (buf+w, 0xff, l);
 			return -1;
@@ -217,33 +199,25 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			memset (buf+w, 0xff, l); // reading out of file
 			ret = 1;
 		} else if (ret<l) {
-		//	eprintf ("FOUND EOF AT %llx\n", addr+ret);
-			eof = 1;
 			l = ret;
-		} else {
-			//eprintf ("L = %d\n", len-w);
-			eof = 1;
 		}
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, len-w);
-		} else
-		// hide non-mapped files here
-		// do not allow reading on real addresses if mapped != 0
-		if (r_list_length (io->maps) >1)
-		if (!io->debug && ms>0) {
-			//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
-			/* check if address is vaddred in sections */
-			ut64 o = r_io_section_offset_to_vaddr (io, addr);
-			if (o == UT64_MAX) {
-				ut64 o = r_io_section_vaddr_to_offset (io, addr);
-				if (o == UT64_MAX)
-					memset (buf+w, 0xff, l);
+		} else if (r_list_length (io->maps) >1) {
+			if (!io->debug && ms>0) {
+				//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
+				/* check if address is vaddred in sections */
+				ut64 o = r_io_section_offset_to_vaddr (io, addr);
+				if (o == UT64_MAX) {
+					ut64 o = r_io_section_vaddr_to_offset (io, addr);
+					if (o == UT64_MAX)
+						memset (buf+w, 0xff, l);
+				}
+				break;
 			}
-			break;
 		}
 		w += l;
 		len -= l;
-break;
 	}
 	return olen;
 }
@@ -388,15 +362,13 @@ R_API ut64 r_io_size(RIO *io) {
 	int iova;
 	ut64 size, here;
 	if (!io) return 0LL;
-	iova = io->va;
 	if (r_io_is_listener (io))
 		return UT64_MAX;
-// XXX. problematic when io.va = 1
-io->va = 0;
-	//r_io_set_fdn (io, fd);
+	iova = io->va;
+	io->va = 0;
 	here = r_io_seek (io, 0, R_IO_SEEK_CUR);
 	size = r_io_seek (io, 0, R_IO_SEEK_END);
-io->va = iova;
+	io->va = iova;
 	r_io_seek (io, here, R_IO_SEEK_SET);
 	return size;
 }
@@ -432,7 +404,6 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->init = R_TRUE;
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
-	//bnd->fd = io->fd;// do we need to store ptr to fd??
 	return R_TRUE;
 }
 

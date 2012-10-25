@@ -71,7 +71,8 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 				io->printf ("%02x", c->data[i]);
 			io->printf (" @ 0x%08"PFMT64x"\n", c->from);
 		} else {
-			io->printf ("idx=%d addr=0x%08"PFMT64x" size=%d ", j, c->from, c->size);
+			io->printf ("idx=%d addr=0x%08"PFMT64x" size=%d ",
+				j, c->from, c->size);
 			for (i=0; i<c->size; i++)
 				io->printf ("%02x", c->data[i]);
 			io->printf ("\n");
@@ -115,6 +116,7 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			}
 			if (l>len)
 				l = len;
+			if (l<1) l = 1; // XXX: fail
 			memcpy (buf+da, c->data+db, l);
 		}
 	}

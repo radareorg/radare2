@@ -377,8 +377,9 @@ case 'o':
 					if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
 						continue;
 					bbs = r_list_length (fcn->bbs);
-					r_cons_printf ("0x%08"PFMT64x" %6"PFMT64d" %3d  %s\n",
-						fcn->addr, fcn->size, bbs, fcn->name);
+					r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %3d  %s\n",
+						(ut64)fcn->addr, (ut64)fcn->size,
+						(int)bbs, fcn->name? fcn->name: "");
 				}
 			}
 			break;

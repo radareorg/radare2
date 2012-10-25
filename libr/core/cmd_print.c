@@ -207,13 +207,7 @@ static int cmd_print(void *data, const char *input) {
 		RAsmOp asmop;
 		int j, ret, err = 0;
 		const ut8 *buf = core->block;
-		int bs = core->blocksize;
-
-		if (input[1]=='f') {
-			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
-					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-			if (f) len = bs = f->size;
-		}
+		int bs = len;
 		if (len>core->blocksize)
 			r_core_block_size (core, len);
 
@@ -441,14 +435,38 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'x':
 		switch (input[1]) {
+		case '?':
+			eprintf ("Usage: px[owqWQ][f]\n"
+				" px     show hexdump\n"
+				" pxf    show hexdump of current function\n"
+				" pxo    show octal dump\n"
+				" pxw    show hexadeciaml words dump (32bit)\n"
+				" pxW    same as above, but one per line\n"
+				" pxq    show hexadeciaml quad-words dump (64bit)\n"
+				" pxQ    same as above, but one per line\n"
+				);
+			break;
 		case 'o':
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
 			break;
 		case 'w':
 			r_print_hexdump (core->print, core->offset, core->block, len, 32, 4);
 			break;
+		case 'W':
+			for (i=0; i<len; i+=4) {
+				ut32 *p = core->block+i;
+				r_cons_printf ("0x%08"PFMT64x" 0x%08x\n", core->offset+i, *p);
+			}
+			break;
 		case 'q':
 			r_print_hexdump (core->print, core->offset, core->block, len, 64, 8);
+			break;
+		case 'Q':
+			for (i=0; i<len; i+=8) {
+				ut64 *p = core->block+i;
+				r_cons_printf ("0x%08"PFMT64x" 0x%016"PFMT64x"\n",
+					core->offset+i, *p);
+			}
 			break;
 		default: {
 				 ut64 from = r_config_get_i (core->config, "diff.from");
@@ -470,7 +488,7 @@ static int cmd_print(void *data, const char *input) {
 		switch (input[1]) {
 		case 'e':
 			r_base64_encode (buf, core->block, len); //core->blocksize);
-			printf ("%s\n", buf);
+			r_cons_printf ("%s\n", buf);
 			break;
 		case 'd':
 			if (r_base64_decode (buf, core->block, len))
@@ -508,21 +526,21 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 't':
 		switch (input[1]) {
-			case ' ':
-			case '\0':
-				for (l=0; l<len; l+=sizeof (time_t))
-					r_print_date_unix (core->print, core->block+l, sizeof (time_t));
-				break;
-			case 'd':
-				for (l=0; l<len; l+=4)
-					r_print_date_dos (core->print, core->block+l, 4);
-				break;
-			case 'n':
-				core->print->bigendian = !core->print->bigendian;
-				for (l=0; l<len; l+=sizeof (ut64))
-					r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
-				core->print->bigendian = !core->print->bigendian;
-				break;
+		case ' ':
+		case '\0':
+			for (l=0; l<len; l+=sizeof (time_t))
+				r_print_date_unix (core->print, core->block+l, sizeof (time_t));
+			break;
+		case 'd':
+			for (l=0; l<len; l+=4)
+				r_print_date_dos (core->print, core->block+l, 4);
+			break;
+		case 'n':
+			core->print->bigendian = !core->print->bigendian;
+			for (l=0; l<len; l+=sizeof (ut64))
+				r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
+			core->print->bigendian = !core->print->bigendian;
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: pt[dn?]\n"
@@ -596,7 +614,7 @@ static int cmd_print(void *data, const char *input) {
 		" pm [magic]    print libmagic data (pm? for more information)\n"
 		" pr [len]      print N raw bytes\n"
 		" ps[pwz] [len] print pascal/wide/zero-terminated strings\n"
-		" pt [len]      print different timestamps\n"
+		" pt[dn?] [len] print different timestamps\n"
 		" pu[w] [len]   print N url encoded bytes (w=wide)\n"
 		" px[owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
 		" pz [len]      print zoom view (see pz? for help)\n");

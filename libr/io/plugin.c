@@ -54,14 +54,6 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename) {
 	return NULL;
 }
 
-/*
-DEPRECATED
-R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd) {
-	int i;
-	return NULL;
-}
-*/
-
 R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin) {
 #if 0
 	int i=0;
@@ -80,11 +72,11 @@ R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin) {
 	}
 	return -1;
 #endif
-	return 0;
+	return R_FALSE;
 }
 
 R_API int r_io_plugin_close(RIO *io, int fd, RIOPlugin *plugin) {
-	return 0;
+	return R_FALSE;
 }
 
 // TODO: must return an r_iter ator

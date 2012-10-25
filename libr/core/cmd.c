@@ -728,7 +728,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		} else {
 			*ptr = '\0';
 			*ptr2 = '\0';
-			str = r_core_cmd_str (core, ptr+1);
+			if (ptr[1] == '!') {
+				str = r_core_cmd_str_pipe (core, ptr+1);
+			} else 
+				str = r_core_cmd_str (core, ptr+1);
 			if (oneline)
 				for (i=0; str[i]; i++)
 					if (str[i]=='\n')
