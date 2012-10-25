@@ -40,6 +40,25 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'm':
 		switch (input[1]) {
+		case 'r':
+			{
+			RIOMap *map;
+			ut64 cur, new;
+			const char *p = strchr (input+3, ' ');
+			if (p) {
+				cur = r_num_math (core->num, input+3);
+				new = r_num_math (core->num, p+1);
+				map = atoi (input+3)>0?
+					r_io_map_resolve (core->io, cur):
+					r_io_map_get (core->io, cur);
+				if (map) {
+					ut64 diff = map->to - map->from;
+					map->from = new;
+					map->to = new+diff;
+				} else eprintf ("Cannot find any map here\n");
+			} else eprintf ("Usage: omr [oldbase] [newbase]\n");
+			}
+			break;
 		case ' ':
 			// i need to parse delta, offset, size
 			{
@@ -69,7 +88,13 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '-':
-			r_io_map_del_at (core->io, r_num_math (core->num, input+2));
+			if (atoi (input+3)>0) {
+				r_io_map_del(core->io,
+					r_num_math (core->num, input+2));
+			} else {
+				r_io_map_del_at (core->io,
+					r_num_math (core->num, input+2));
+			}
 			break;
 		case '\0':
 			{
@@ -77,19 +102,21 @@ static int cmd_open(void *data, const char *input) {
 			RListIter *iter;
 			r_list_foreach (core->io->maps, iter, im) { // _prev?
 				r_cons_printf (
-					"%d 0x%08"PFMT64x" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 
+					"%d +0x%08"PFMT64x" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 
 					im->fd, im->delta, im->from, im->to);
 			}
 			}
 			break;
 		default:
 		case '?':
-			r_cons_printf ("Usage: om[-] [arg]       file maps\n");
+			r_cons_printf ("Usage: om[-] [arg]  # map opened files\n");
 			r_cons_printf ("om                  list all defined IO maps\n");
 			r_cons_printf ("om-0x10000          remove the map at given address\n");
 			r_cons_printf ("om fd addr [size]   create new io map\n");
+			r_cons_printf ("omr fd|0xADDR ADDR  relocate current map\n");
 			break;
 		}
+		r_core_block_read (core, 0);
 		break;
 	case 'o':
 		r_core_file_reopen (core, input+2, (input[1]=='+')?R_IO_READ|R_IO_WRITE:0);

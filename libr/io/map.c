@@ -6,11 +6,21 @@
 #include <r_io.h>
 #include <r_list.h>
 
-R_API void r_io_map_init(struct r_io_t *io) {
+R_API void r_io_map_init(RIO *io) {
 	io->maps = r_list_new ();
 }
 
-R_API RIOMap *r_io_map_resolve(struct r_io_t *io, int fd) {
+R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
+	RIOMap *map;
+	RListIter *iter;
+	r_list_foreach (io->maps, iter, map) {
+		if (map->from == addr)
+			return map;
+	}
+	return NULL;
+}
+
+R_API RIOMap *r_io_map_resolve(RIO *io, int fd) {
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
@@ -20,7 +30,7 @@ R_API RIOMap *r_io_map_resolve(struct r_io_t *io, int fd) {
 	return NULL;
 }
 
-R_API int r_io_map_del(struct r_io_t *io, int fd) {
+R_API int r_io_map_del(RIO *io, int fd) {
 	RIOMap *map;
 	RListIter *iter;
 	r_list_foreach (io->maps, iter, map) {
