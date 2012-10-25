@@ -10,11 +10,17 @@
 static RSocket *s = NULL;
 
 static void http_break (void *u) {
+	RSocket* sock;
+	const char *port;
+	const int timeout = 1; // 1 second
 	RCore *core = (RCore*)u;
-	const char *port = r_config_get (core->config, "http.port");
-	RSocket* s = r_socket_new (0);
-	eprintf ("Shutting down http server...\n");
-	r_socket_connect (s, "localhost", port, R_SOCKET_PROTO_TCP);
+	if (((size_t)u)>0xff) {
+		port = r_config_get (core->config, "http.port"); 
+		sock = r_socket_new (0);
+		eprintf ("Shutting down http server...\n");
+		if (r_socket_connect (sock, "localhost", port, R_SOCKET_PROTO_TCP, timeout))
+			r_socket_free (sock);
+	}
 	r_socket_free (s);
 	s = NULL;
 }
@@ -65,6 +71,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 		r_cons_break (http_break, core);
 		rs = r_socket_http_accept (s);
 		if (!rs) {
+			if (!s) break;
 			r_sys_usleep (200);
 			continue;
 		}
@@ -234,7 +241,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			eprintf ("sandbox: connect disabled\n");
 			return;
 		}
-		if (!r_socket_connect_tcp (fd, host, port)) { //TODO: Use rap.ssl
+		if (!r_socket_connect_tcp (fd, host, port, 10)) { //TODO: Use rap.ssl
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
@@ -260,7 +267,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			eprintf ("sandbox: connect disabled\n");
 			return;
 		}
-		if (!r_socket_connect_tcp (fd, host, port)) { //TODO: Use rap.ssl
+		if (!r_socket_connect_tcp (fd, host, port, 10)) { //TODO: Use rap.ssl
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
@@ -271,7 +278,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			eprintf ("sandbox: connect disabled\n");
 			return;
 		}
-		if (!r_socket_connect_udp(fd, host, port)) { //TODO: Use rap.ssl
+		if (!r_socket_connect_udp (fd, host, port, 30)) { //TODO: Use rap.ssl
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}

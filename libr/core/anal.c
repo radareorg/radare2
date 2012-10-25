@@ -217,11 +217,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	ut8 *buf;
 #define ANALBS 256
 
-	if (at>>63 == 1)
-		return R_FALSE;
-	if (at == UT64_MAX)
-		return R_FALSE;
-	if (depth < 0)
+	if (at>>63 == 1 || at == UT64_MAX || depth < 0)
 		return R_FALSE;
 #warning This must be optimized to use the fcnstore api
 	r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -486,8 +482,6 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			 || fcni->addr == addr
 			 || !strcmp (fcni->name, input+1)) {
 			if (!rad) {
-				int nrefs = r_list_length (fcni->refs);
-				int nxrefs = r_list_length (fcni->xrefs);
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcni->addr, fcni->name, fcni->size);
 				r_cons_printf ("\n type: %s",

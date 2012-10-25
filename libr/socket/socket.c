@@ -101,7 +101,7 @@ R_API RSocket *r_socket_new (int is_ssl) {
 	return s;
 }
 
-R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto) {
+R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto, int timeout) {
 #if __WINDOWS__
 	struct sockaddr_in sa;
 	struct hostent *he;
@@ -124,7 +124,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
 	sa.sin_port = htons (atoi (port));
-
+#warning TODO: implement connect timeout on w32
 	if (connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
 		close (s->fd);
 		return R_FALSE;
@@ -132,7 +132,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	return R_TRUE;
 #elif __UNIX__
 	if (proto==0) proto= R_SOCKET_PROTO_TCP;
-	int gai;
+	int gai, ret;
 	struct addrinfo hints, *res, *rp;
 	signal (SIGPIPE, SIG_IGN);
 	if (proto == R_SOCKET_PROTO_UNIX) {
@@ -140,7 +140,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			return R_FALSE;
 	} else {
 		memset (&hints, 0, sizeof (struct addrinfo));
-		hints.ai_family = AF_UNSPEC;		/* Allow IPv4 or IPv6 */
+		hints.ai_family = AF_UNSPEC; /* Allow IPv4 or IPv6 */
 		hints.ai_protocol = proto;
 		gai = getaddrinfo (host, port, &hints, &res);
 		if (gai != 0) {
@@ -151,15 +151,37 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			s->fd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s->fd == -1)
 				continue;
-			if (connect (s->fd, rp->ai_addr, rp->ai_addrlen) != -1)
+			if (timeout>0)
+				fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
+			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
+			if (timeout<1 && ret != -1)
 				break;
+			if (timeout>0) {
+				struct timeval tv;
+				fd_set fdset;
+				FD_ZERO (&fdset);
+				FD_SET (s->fd, &fdset);
+				tv.tv_sec = timeout;
+				tv.tv_usec = 0;
+				if (select (s->fd + 1, NULL, &fdset, NULL, &tv) == 1) {
+					int so_error;
+					socklen_t len = sizeof so_error;
+					ret = getsockopt (s->fd, SOL_SOCKET, SO_ERROR, &so_error, &len);
+					fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
+				} else {
+					close (s->fd);
+					return R_FALSE;
+				}
+			}
+			//rp = NULL;
 			close (s->fd);
+			s->fd = -1;
 		}
+		freeaddrinfo (res);
 		if (rp == NULL) {
 			eprintf ("Could not connect\n");
 			return R_FALSE;
 		}
-		freeaddrinfo (res);
 	}
 #endif
 #if HAVE_LIB_SSL
@@ -182,6 +204,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 
 R_API int r_socket_close (RSocket *s) {
 	int ret = R_FALSE;
+	if (!s) return R_FALSE;
 	if (s->fd != -1) {
 #if __WINDOWS__
 		WSACleanup ();
@@ -261,7 +284,10 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 }
 
 R_API RSocket *r_socket_accept(RSocket *s) {
-	RSocket *sock = R_NEW (RSocket);
+	RSocket *sock;
+	if (!s) return NULL;
+	sock = R_NEW (RSocket);
+	if (!sock) return NULL;
 	sock->is_ssl = s->is_ssl;
 	sock->fd = accept (s->fd, NULL, NULL);
 	if (sock->fd == -1) {

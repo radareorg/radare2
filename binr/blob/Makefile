@@ -13,7 +13,6 @@ CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
 
 #ifeq ($(STATIC_BUILD),1)
 ifeq ($(WITHNONPIC),1)
-LDFLAGS+=../../libr/th/libr_th.a
 LDFLAGS+=../../libr/io/libr_io.a
 LDFLAGS+=../../libr/asm/libr_asm.a
 LDFLAGS+=../../libr/db/libr_db.a
@@ -46,7 +45,6 @@ LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
 LDFLAGS+=../../libr/db/sdb/src/libsdb.a
 LDFLAGS+=-lm
 else
-LDFLAGS+=-L../../libr/th -lr_th
 LDFLAGS+=-L../../libr/io -lr_io
 LDFLAGS+=-L../../libr/bp -lr_bp
 LDFLAGS+=-L../../libr/socket -lr_socket

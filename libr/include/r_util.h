@@ -7,6 +7,7 @@
 #include <r_list.h> // radare linked list
 #include <r_flist.h> // radare fixed pointer array iterators
 #include <list.h> // kernel linked list
+#include <r_th.h>
 /* profiling */
 #include <sys/time.h>
 #ifdef HAVE_LIB_GMP

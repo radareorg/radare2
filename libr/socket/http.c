@@ -63,8 +63,8 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 		free (uri);
 		return NULL;
 	}
-	if (!r_socket_connect_tcp (s, host, port)) {
-		printf ("Cannot connect to %s:%s\n", host, port);
+	if (!r_socket_connect_tcp (s, host, port, 0)) {
+		eprintf ("Cannot connect to %s:%s\n", host, port);
 		free (uri);
 		return NULL;
 	}
@@ -109,8 +109,8 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 		free (uri);
 		return NULL;
 	}
-	if (!r_socket_connect_tcp (s, host, port)) {
-		printf ("Cannot connect to %s:%s\n", host, port);
+	if (!r_socket_connect_tcp (s, host, port, 0)) {
+		eprintf ("Cannot connect to %s:%s\n", host, port);
 		free (uri);
 		return NULL;
 	}

@@ -95,6 +95,8 @@ function show_popup_about () {
 		"<a href=\"javascript:setmode('px')\" />px</a>"+
 		"&nbsp;"+
 		"<a href=\"javascript:setmode('pxw')\" />pxw</a>"+
+		"&nbsp;"+
+		"<a href=\"javascript:setmode('afi $$;pdf');\">afi</a>"+
 		"<br /><br />"+
 		"Listings"+
 		"<hr size=1/>"+
@@ -133,6 +135,7 @@ a
 		"Actions"+
 		"<hr size=1/>"+
 		"<a href=\"javascript:runprompt('Comment','CC ')\" />set comment</a><br />"+
+		"<a href=\"javascript:runprompt('Rename function','afr ')\" />rename function</a><br />"+
 		"<a href=\"javascript:runcmd('af')\" />analyze function</a><br />"+
 		"<a href=\"javascript:runcmd('aa');\">full analyze</a><br />"+
 		"<a href=\"javascript:runcmd('ap');\">analyze preludes</a><br />"+
@@ -256,7 +259,12 @@ function filter_asm(x) {
 	} else hasmore (true);
 
 	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
-	if (display[0]=='p' && display[1]=='d') {
+	function haveDisasm(x) {
+		if (x[0]=='p' && x[1]=='d') return true;
+		if (x.indexOf (";pd") != -1) return true;
+		return false;
+	}
+	if (haveDisasm (display)) {
 		x = x.replace (/;(\s+)/g, ";");
 		x = x.replace (/;(.*)/g, "// <span style='color:yellow'>$1</span>");
 		x = x.replace (/(fcn|imp|loc).(.*)/g, "<a href='javascript:seek(\"$1.$2\")'>$1.$2</a>");

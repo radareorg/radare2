@@ -29,9 +29,9 @@ typedef struct r_socket_t {
 #ifdef R_API
 R_API RSocket *r_socket_new_from_fd (int fd);
 R_API RSocket *r_socket_new (int is_ssl);
-R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto);
-#define r_socket_connect_tcp(a,b,c) r_socket_connect(a,b,c,R_SOCKET_PROTO_TCP)
-#define r_socket_connect_udp(a,b,c) r_socket_connect(a,b,c,R_SOCKET_PROTO_UDP)
+R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int proto, int timeout);
+#define r_socket_connect_tcp(a,b,c,d) r_socket_connect(a,b,c,R_SOCKET_PROTO_TCP,d)
+#define r_socket_connect_udp(a,b,c,d) r_socket_connect(a,b,c,R_SOCKET_PROTO_UDP,d)
 #if __UNIX__
 #define r_socket_connect_unix(a,b) r_socket_connect(a,b,NULL,R_SOCKET_PROTO_UNIX)
 R_API int r_socket_unix_listen (RSocket *s, const char *file);

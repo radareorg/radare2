@@ -8,7 +8,6 @@
 #include <sys/types.h>
 
 // XXX: if in listener mode we need to use fd or fdlistener to listen or accept
-// go fruit yourself
 #define ENDIAN (0)
 #define RIORAP_FD(x) ((x->data)?(((RIORap*)(x->data))->client):NULL)
 #define RIORAP_IS_LISTEN(x) (((RIORap*)(x->data))->listener)
@@ -61,7 +60,6 @@ static int rap__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 	r_mem_copyendian (tmp+1, (ut8*)&count, 4, ENDIAN);
 	r_socket_write (s, tmp, 5);
 	r_socket_flush (s);
-
 	// recv
 	ret = r_socket_read (s, tmp, 5);
 	if (ret != 5 || tmp[0] != (RMT_READ|RMT_REPLY)) {
@@ -134,7 +132,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 	if (!rap__plugin_open (io, pathname))
 		return NULL;
 	is_ssl = (!memcmp (pathname, "raps://", 7));
-	ptr = pathname + ((is_ssl)?7:6);
+	ptr = pathname + (is_ssl? 7: 6);
 	if (!(port = strchr (ptr, ':'))) {
 		eprintf ("rap: wrong uri\n");
 		return NULL;
@@ -171,8 +169,6 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			if (!r_socket_listen (rior->fd, port, NULL))
 				return NULL;
 		}
-// TODO: listen mode is broken.. here must go the root loop!!
-#warning TODO: implement rap:/:9999 listen mode
 		return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
 			pathname, rw, mode, rior);
 	}
@@ -212,11 +208,14 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		r_socket_read (rap_fd, (ut8 *)&buf, 4);
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
 		while (i>0) {
-			r_socket_read (rap_fd, (ut8 *)&buf, i);
-			buf[i]=0;
+			n = r_socket_read (rap_fd, (ut8 *)&buf, i);
+			if (n<1) break;
+			buf[i] = 0;
 			io->core_cmd_cb (io->user, buf);
-			r_socket_read (rap_fd, (ut8 *)&buf, 4);
+			n = r_socket_read (rap_fd, (ut8 *)&buf, 4);
+			if (n<1) break;
 			r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
+			i -= data; 
 		}
 	} else {
 		r_socket_free (rap_fd);

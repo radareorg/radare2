@@ -479,16 +479,16 @@ case 'o':
 				ut64 off = core->offset;
 				char *p, *name = strdup (input+3);
 				if ((p=strchr (name, ' '))) {
-					*p = 0;
-					off = r_num_math (core->num, name);
+					*p++ = 0;
+					off = r_num_math (core->num, p);
 				}
 				fcn = r_anal_fcn_find (core->anal, off,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (fcn) {
 					r_core_cmdf (core, "fr %s %s @ 0x%"PFMT64x,
-						fcn->name, p+1, off);
+						fcn->name, name, off);
 					free (fcn->name);
-					fcn->name = strdup (p+1);
+					fcn->name = strdup (name);
 				} else eprintf ("Cannot find function '%s' at 0x%08llx\n", name, off);
 			}
 			break;
