@@ -3,7 +3,9 @@
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
+	RIOMap *map = NULL;
 	RCoreFile *file;
+	RListIter *iter;
 	int num = -1;
 	ut64 addr;
 	char *ptr;
@@ -42,7 +44,6 @@ static int cmd_open(void *data, const char *input) {
 		switch (input[1]) {
 		case 'r':
 			{
-			RIOMap *map;
 			ut64 cur, new;
 			const char *p = strchr (input+3, ' ');
 			if (p) {
@@ -56,7 +57,17 @@ static int cmd_open(void *data, const char *input) {
 					map->from = new;
 					map->to = new+diff;
 				} else eprintf ("Cannot find any map here\n");
-			} else eprintf ("Usage: omr [oldbase] [newbase]\n");
+			} else {
+				cur = core->offset;
+				new = r_num_math (core->num, input+3);
+				map = r_io_map_resolve (core->io, core->file->fd->fd);
+				if (map) {
+					ut64 diff = map->to - map->from;
+					map->from = new;
+					map->to = new+diff;
+				} else eprintf ("Cannot find any map here\n");
+				
+			}
 			}
 			break;
 		case ' ':
@@ -97,14 +108,10 @@ static int cmd_open(void *data, const char *input) {
 			}
 			break;
 		case '\0':
-			{
-			RIOMap *im = NULL;
-			RListIter *iter;
-			r_list_foreach (core->io->maps, iter, im) { // _prev?
+			r_list_foreach (core->io->maps, iter, map) { // _prev?
 				r_cons_printf (
-					"%d +0x%08"PFMT64x" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 
-					im->fd, im->delta, im->from, im->to);
-			}
+					"%d +0x%"PFMT64x" 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 
+					(int)map->fd, (ut64)map->delta, (ut64)map->from, (ut64)map->to);
 			}
 			break;
 		default:

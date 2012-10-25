@@ -347,6 +347,13 @@ Future
 	 - the r_flag_get by string should have another construction with btree
 	   for the string of the name
 
+Threads
+=======
+* implement non-threaded thread api (dummy one, when no support)
+* test w32 port
+* Implement a pure clone(2) backend
+* Added a threading pool super-api
+
 # Debug information in binaries
 * dwarf, pdb, def, lib
   - from file, from section, ...

@@ -430,7 +430,6 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			*arg = 0;
 			r = r_reg_get (core->dbg->reg, str+1, R_REG_TYPE_GPR);
 			if (r) {
-				//eprintf ("SET(%s)(%s)\n", str, arg+1);
 				r_cons_printf ("0x%08"PFMT64x" ->", str,
 					r_reg_get_value (core->dbg->reg, r));
 				r_reg_set_value (core->dbg->reg, r,
@@ -448,10 +447,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				*arg='\0';
 				size = atoi (arg);
 			} else size = core->dbg->bits;
-			//eprintf ("ARG(%s)\n", str+1);
 			type = r_reg_type_by_name (str+1);
 		}
-		//printf("type = %d\nsize = %d\n", type, size);
 		if (type != R_REG_TYPE_LAST) {
 			r_debug_reg_sync (core->dbg, type, R_FALSE);
 			r_debug_reg_list (core->dbg, type, size, str[0]=='*');
@@ -727,6 +724,7 @@ static int cmd_debug(void *data, const char *input) {
 			r_cons_printf ("Usage: ds[ol] [count]\n"
 				" ds       step one instruction\n"
 				" ds 4     step 4 instructions\n"
+				" dss 3    skip 3 step instructions\n"
 				" dso 3    step over 3 instructions\n"
 				" dsp      step into program (skip libs)\n"
 				" dsu addr step until address\n"
@@ -759,6 +757,25 @@ static int cmd_debug(void *data, const char *input) {
 					eprintf ("Interrupted by a breakpoint\n");
 					break;
 				}
+			}
+			break;
+		case 's':
+			{
+				ut64 addr = r_debug_reg_get (core->dbg, "pc");
+			r_reg_arena_swap (core->dbg->reg, R_TRUE);
+			for (i=0; i<times; i++) {
+				ut8 buf[64];
+				RAnalOp aop;
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+				r_io_read_at (core->io, addr, buf, sizeof (buf));
+				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
+					eprintf ("Dont know how to skip this instruction\n");
+					break;
+				}
+				addr += aop.length;
+			}
+				r_debug_reg_set (core->dbg, "pc", addr);
 			}
 			break;
 		case 'o':

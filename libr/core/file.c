@@ -162,13 +162,16 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 			}
 		}
 		r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);//"x86_32");
+
 		{
 		RIOMap *im;
 		RListIter *iter;
 		/* Fix for fat bins */
 		r_list_foreach (r->io->maps, iter, im) {
-			im->delta = r->bin->cur.offset;
-			im->to = im->from + r->bin->cur.size;
+			if (r->bin->cur.size > 0) {
+				im->delta = r->bin->cur.offset;
+				im->to = im->from + r->bin->cur.size;
+			}
 		}
 		}
 	} else if (!r_bin_load (r->bin, file, R_TRUE))
