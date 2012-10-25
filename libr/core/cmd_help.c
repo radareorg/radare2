@@ -334,6 +334,8 @@ static int cmd_help(void *data, const char *input) {
 			" $o  = here (current io offset)\n"
 			" $s  = file size\n"
 			" $b  = block size\n"
+			" $S  = section offset\n"
+			" $SS = section size\n"
 			" $j  = jump address (e.g. jmp 0x10, jz 0x10 => 0x10)\n"
 			" $f  = jump fail address (e.g. jz 0x10 => next instruction)\n"
 			" $I  = number of instructions of current function\n"

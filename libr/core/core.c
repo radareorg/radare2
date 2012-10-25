@@ -104,6 +104,10 @@ r_num_calc_index (core->num, q);
 		case 'l': return op.length;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
+		case 'S': {
+			RIOSection *s = r_io_section_get (core->io, core->offset);
+			return s? (str[2]=='S'?s->size: s->offset): 0;
+			}
 		case '?': return core->num->value;
 		case '$': return core->offset;
 		case 'o': return core->io->off;

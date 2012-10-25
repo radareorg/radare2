@@ -1198,6 +1198,7 @@ R_API void r_core_visual_define (RCore *core) {
 		plen -= core->print->cur;
 	}
 	r_cons_printf ("Define current block as:\n"
+		" r  - rename function\n"
 		" d  - set as data\n"
 		" c  - set as code\n"
 		" s  - set string\n"
@@ -1211,6 +1212,9 @@ R_API void r_core_visual_define (RCore *core) {
 	ch = r_cons_arrow_to_hjkl (r_cons_readchar ());
 
 	switch (ch) {
+	case 'r':
+		r_core_cmd0 (core, "?i new function name;afr `?y`");
+		break;
 	case 'S':
 		do {
 			char *name;

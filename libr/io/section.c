@@ -138,21 +138,23 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 	}
 }
 
-R_API RIOSection *r_io_section_get(RIO *io, ut64 offset) {
+R_API RIOSection *r_io_section_get(RIO *io, ut64 addr) {
 	RListIter *iter;
 	RIOSection *s;
 
+	addr = r_io_section_vaddr_to_offset(io, addr);
 	r_list_foreach (io->sections, iter, s) {
-		if (offset >= s->offset && offset <= s->offset + s->size) {
-			//eprintf ("SG: %llx %s\n", offset, s->name);
+		//eprintf ("CACA %llx\n", s->offset);
+		if (addr >= s->offset && addr <= s->offset + s->size) {
+			eprintf ("SG: %llx %s\n", addr, s->name);
 			return s;
 		}
 	}
 	return NULL;
 }
 
-R_API ut64 r_io_section_get_offset(RIO *io, ut64 offset) {
-	RIOSection *s = r_io_section_get(io, offset);
+R_API ut64 r_io_section_get_offset(RIO *io, ut64 addr) {
+	RIOSection *s = r_io_section_get(io, addr);
 	return s? s->offset: -1;
 }
 

@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake<nopcode.org> */
+
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {

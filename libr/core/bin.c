@@ -407,6 +407,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 
 static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
 	char str[R_FLAG_NAME_SIZE];
+	ut64 secbase = 0LL;
 	RList *sections;
 	RListIter *iter;
 	RBinSection *section;
@@ -418,6 +419,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	if ((mode & R_CORE_BIN_SET)) {
 		r_flag_space_set (r->flags, "sections");
 		r_list_foreach (sections, iter, section) {
+			if (!secbase || (section->rva && section->rva <secbase))
+				secbase = section->rva;
 			r_name_filter (section->name, 128);
 			snprintf (str, R_FLAG_NAME_SIZE, "section.%s", section->name);
 			r_flag_set (r->flags, str, va?baddr+section->rva:section->offset,
@@ -442,7 +445,11 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 		// H -> Header fields
 		{
 			ut64 size = r_io_size (r->io);
-			r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr");
+			if (size == 0)
+				size = r->file->size;
+			secbase >>= 16;
+			secbase <<= 16;
+			r_io_section_add (r->io, 0, secbase, size, size, 7, "ehdr");
 		}
 	} else {
 		if (!at) {

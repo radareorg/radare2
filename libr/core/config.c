@@ -487,7 +487,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.middle", "false"); // jump in the middle because of antidisasm tricks
 	r_config_set (cfg, "asm.comments", "true");
 	r_config_desc (cfg, "asm.comments", "Show comments in disassembly view");
-	r_config_set (cfg, "asm.cmtright", "true");
+	r_config_set (cfg, "asm.cmtright", "false");
 	r_config_desc (cfg, "asm.cmtright", "Show comments at right of disassembly if they fit in screen");
 	r_config_set (cfg, "asm.ucase", "false");
 	r_config_desc (cfg, "asm.ucase", "Use uppercase syntax at disassembly");

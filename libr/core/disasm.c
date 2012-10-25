@@ -172,6 +172,28 @@ toro:
 			refline = strdup ("");
 		}
 		f = show_functions? r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL): NULL;
+		// Show xrefs
+		if (show_xrefs) {
+			RList *xrefs;
+			RAnalRef *refi;
+			RListIter *iter;
+			if ((xrefs = r_anal_xref_get (core->anal, at))) {
+				r_list_foreach (xrefs, iter, refi) {
+					RAnalFunction *fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+					r_cons_printf ("%s%s", pre, refline);
+					if (show_color)
+					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
+							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+							fun?fun->name:"unk");
+					else r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
+							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+							fun?fun->name:"unk");
+				}
+				r_list_free (xrefs);
+			}
+		}
 
 		/* show comment at right? */
 		show_comment_right = 0;
@@ -195,6 +217,7 @@ toro:
 					int mycols = lcols;
 					if (mycols + linelen + 10 > core->cons->columns)
 						mycols = 0;
+					mycols/=2;
 					if (show_color) r_cons_strcat (Color_TURQOISE);
 					r_cons_strcat_justify (comment, mycols, ';');
 					if (show_color) r_cons_strcat (Color_RESET);
@@ -286,28 +309,6 @@ toro:
 						}
 					}
 				}
-			}
-		}
-		// Show xrefs
-		if (show_xrefs) {
-			RList *xrefs;
-			RAnalRef *refi;
-			RListIter *iter;
-			if ((xrefs = r_anal_xref_get (core->anal, at))) {
-				r_list_foreach (xrefs, iter, refi) {
-					RAnalFunction *fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
-					r_cons_printf ("%s%s", pre, refline);
-					if (show_color)
-					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
-							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							fun?fun->name:"unk");
-					else r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
-							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							fun?fun->name:"unk");
-				}
-				r_list_free (xrefs);
 			}
 		}
 		if (adistrick)

@@ -485,6 +485,8 @@ case 'o':
 				fcn = r_anal_fcn_find (core->anal, off,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (fcn) {
+					eprintf ("fr %s %s @ 0x%"PFMT64x,
+						fcn->name, name, off);
 					r_core_cmdf (core, "fr %s %s @ 0x%"PFMT64x,
 						fcn->name, name, off);
 					free (fcn->name);
