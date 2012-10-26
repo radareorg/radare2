@@ -142,7 +142,7 @@ R_API RIOSection *r_io_section_get(RIO *io, ut64 addr) {
 	RListIter *iter;
 	RIOSection *s;
 
-	addr = r_io_section_vaddr_to_offset(io, addr);
+	//addr = r_io_section_vaddr_to_offset(io, addr);
 	r_list_foreach (io->sections, iter, s) {
 		//eprintf ("CACA %llx\n", s->offset);
 		if (addr >= s->offset && addr <= s->offset + s->size) {

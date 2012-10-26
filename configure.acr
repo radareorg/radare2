@@ -40,7 +40,16 @@ IFNOT HAVE_GMP { HAVE_LIB_GMP = 0 ; }
 
 CHKLIB ssl
 PKGCFG SSL_CFLAGS SSL_LDFLAGS openssl
-ARG_WITHOUT HAVE_OPENSSL ssl disable openssl dependency ;
+IFNOTNULL SSL_CFLAGS {
+	HAVE_OPENSSL = 1 ;
+}
+(( ARG_WITHOUT HAVE_OPENSSL ssl disable openssl dependency ; ))
+ARG_WITH WANT_OPENSSL openssl build with openssl if possible ;
+IFAND WANT_OPENSSL HAVE_OPENSSL {
+	HAVE_OPENSSL = 1 ;
+}{
+	HAVE_OPENSSL = 0 ;
+}
 IFNULL SSL_LDFLAGS { 
 	IFNOT HAVE_LIB_SSL {
 		HAVE_OPENSSL = 0 ;

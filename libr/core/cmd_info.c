@@ -6,6 +6,11 @@ static int cmd_info(void *data, const char *input) {
 	int va = core->io->va || core->io->debug;
 	int mode = (input[1]=='*')?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT;
 	switch (*input) {
+	case 'o':
+		if (input[1]==' ')
+			r_core_bin_load (core, input+1);
+		else r_core_bin_load (core, core->file->filename);
+		break;
 	case 'S':
 		r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS|R_CORE_BIN_ACC_FIELDS, mode, va, NULL, offset);
 		break;
@@ -52,6 +57,7 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf (
 		"Usage: i[aeiIsSz]*      ; get info from opened file\n"
 		"NOTE: Append a '*' to get the output in radare commands\n"
+		" io [file] ; load info from given file (or last opened)\n"
 		" ia        ; show all info (imports, exports, sections..)\n"
 		" ic        ; list classes\n"
 		" ii        ; imports\n"
