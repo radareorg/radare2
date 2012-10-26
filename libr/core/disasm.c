@@ -21,7 +21,7 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 		if (invert)
 			r_cons_invert (R_TRUE, R_TRUE);
 		if (opt) {
-			ut32 s,a;
+			ut32 s, a;
 			a = off & 0xffff;
 			s = (off-a)>>4;
 			r_cons_printf (Color_GREEN"%04x:%04x"Color_RESET, s, a);
@@ -80,10 +80,11 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
 	int show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
 	int lbytes = r_config_get_i (core->config, "asm.lbytes");
+	int show_comment_right = 0;
+	const char *pre = "  ";
+	char *ocomment = NULL;
 	int linesopts = 0;
 	int lastfail = 0;
-	const char *pre = "  ";
-	int show_comment_right = 0;
 	int ocols = 0;
 	int lcols = 0;
 
@@ -198,7 +199,12 @@ toro:
 		/* show comment at right? */
 		show_comment_right = 0;
 		if (show_comments) {
+			RFlagItem *item = r_flag_get_i (core->flags, at);
 			comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, at);
+			if (!comment && item && item->comment) {
+				ocomment = item->comment;
+				comment = strdup (item->comment);
+			}
 			if (comment) {
 				int linelen, maxclen = strlen (comment)+5;
 				linelen = maxclen;
@@ -219,10 +225,22 @@ toro:
 						mycols = 0;
 					mycols/=2;
 					if (show_color) r_cons_strcat (Color_TURQOISE);
+					if (*comment != ';') r_cons_strcat ("  ;  ");
 					r_cons_strcat_justify (comment, mycols, ';');
 					if (show_color) r_cons_strcat (Color_RESET);
+					if (!strchr (comment, '\n')) r_cons_newline ();
 					free (comment);
 					comment = NULL;
+
+					/* flag one */
+					if (item && item->comment && ocomment != item->comment) {
+						if (show_color) r_cons_strcat (Color_TURQOISE);
+						r_cons_newline ();
+						r_cons_strcat ("  ;  ");
+						r_cons_strcat_justify (item->comment, mycols, ';');
+						r_cons_newline ();
+						if (show_color) r_cons_strcat (Color_RESET);
+					}
 				}
 			}
 		}

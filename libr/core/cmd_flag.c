@@ -90,6 +90,29 @@ static int cmd_flag(void *data, const char *input) {
 	case 'g':
 		eprintf ("radare2: fg: current: no such job :)\n");
 		break;
+	case 'c':
+		eprintf ("TODO: fc\n");
+		break;
+	case 'C':
+		if (input[1]==' ') {
+			RFlagItem *item;
+			char *q, *p = strdup (input+2);
+			q = strchr (p, ' ');
+			if (q) {
+				*q = 0;
+				item = r_flag_get (core->flags, p);
+				if (item) {
+					r_flag_item_set_comment (item, q+1);
+				} else eprintf ("Cannot find flag with name '%s'\n", p);
+			} else {
+				item = r_flag_get_i (core->flags, r_num_math (core->num, p));
+				if (item && item->comment) {
+					r_cons_printf ("%s\n", item->comment);
+				} else eprintf ("Cannot find item\n");
+			}
+			free (p);
+		} else eprintf ("Usage: fC [name] [comment]\n");
+		break;
 	case 'o':
 		{ // TODO: use file.fortunes
 			char *file = R2_PREFIX"/share/doc/radare2/fortunes";
@@ -152,12 +175,15 @@ static int cmd_flag(void *data, const char *input) {
 		"Usage: f[?] [flagname]\n"
 		" f name 12 @ 33   ; set flag 'name' with length 12 at offset 33\n"
 		" f name 12 33     ; same as above\n"
+		" f name 12 33 cmt ; same as above + set flag comment\n"
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
 		" f-name           ; remove flag 'name'\n"
 		" f-@addr          ; remove flag at address expression\n"
 		" fd addr          ; return flag+delta\n"
 		" f                ; list flags\n"
 		" f*               ; list flags in r commands\n"
+		" fc [name] [cmt]  ; set flag command\n"
+		" fC [name] [cmt]  ; set flag comment\n"
 		" fr [old] [new]   ; rename flag\n"
 		" fs functions     ; set flagspace\n"
 		" fs *             ; set no flagspace\n"

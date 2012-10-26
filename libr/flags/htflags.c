@@ -10,7 +10,7 @@ R_API RFlag * r_flag_new() {
 	RFlag *f = R_NEW (RFlag);
 	if (!f) return NULL;
 	f->flags = r_list_new ();
-	f->flags->free = free;
+	f->flags->free = (RListFree) r_flag_item_free;
 	f->space_idx = -1;
 	f->space_idx2 = -1;
 	f->ht_name = r_hashtable64_new ();
@@ -20,7 +20,14 @@ R_API RFlag * r_flag_new() {
 	return f;
 }
 
-R_API RFlag * r_flag_free(RFlag *f) {
+R_API void r_flag_item_free (RFlagItem *item) {
+	free (item->cmd);
+	free (item->comment);
+	item->cmd = item->comment = NULL;
+	free (item);
+}
+
+R_API RFlag *r_flag_free(RFlag *f) {
 	RFlagItem *item;
 	RListIter *iter;
 	r_list_foreach (f->flags, iter, item) {
@@ -49,8 +56,9 @@ R_API void r_flag_list(RFlag *f, int rad) {
 				fs = flag->space;
 				r_cons_printf ("fs %s\n", r_flag_space_get_i (f, fs));
 			}
-			r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"\n",
-				flag->name, flag->size, flag->offset);
+			r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x" %s\n",
+				flag->name, flag->size, flag->offset,
+				flag->comment? flag->comment:"");
 		} else r_cons_printf("0x%08"PFMT64x" %"PFMT64d" %s\n",
 				flag->offset, flag->size, flag->name);
 	}
@@ -170,6 +178,11 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 		}
 	}
 	return R_FALSE;
+}
+
+R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
+	free (item->comment);
+	item->comment = strdup (comment);
 }
 
 R_API void r_flag_item_set_name(RFlagItem *item, const char *name) {
