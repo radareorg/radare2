@@ -102,7 +102,7 @@ a:hover {
 }
 
 a {
-	background-color: #272727 !important;
+	background-color: #171717 !important;
 }
 
 .popup_background {
@@ -121,4 +121,34 @@ a {
 .popup_title {
 	margin-left: 5px;
 	font-size:14px;
+}
+
+.menubar {
+	position:fixed;
+	top:4px;
+	left:340px;
+	color: white;
+	font-size: 14px;
+	background-color:black;
+}
+
+.editor {
+	position:fixed;
+	height:100%;
+	top: 28px;
+	width:16px;
+	right:0px;
+	color: white;
+	font-size: 14px;
+}
+
+.editor_textarea {
+	opacity:0.5;
+	visibility: hidden;
+	filter:alpha(opacity=70);
+	background-color:yellow;
+	width:95%;
+	height:100%;
+	font-family: Courier;
+	color: black;
 }

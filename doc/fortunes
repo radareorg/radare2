@@ -114,3 +114,4 @@ rax2 -s 20e296b20ae296b220e296b20a
 Connection lost with the license server, your r2 session will terminate soon.
 I swear i didn't knew she had only 8bits!
 Set e bin.dwarf=true to load dwarf information at startup
+Rename a function using the 'afr newname @ offset' command

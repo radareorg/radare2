@@ -49,6 +49,7 @@ function panel_functions_load() {
 		document.getElementById('output').innerHTML = x;
 	});
 }
+var debug_mode = false;
 
 function runcmd(x) {
 	popup_hide ();
@@ -63,6 +64,9 @@ function setmode (x) {
 	case "pd": x = "b 256;"+x; break;
 	case "px": x = "b 1024;"+x; break;
 	}
+	if (debug_mode)
+		x = ".dr*;dr=;"+x;
+	display=x
 	cmd (x);
 }
 
@@ -170,12 +174,16 @@ var backward = false;
 var display = "pd";
 
 function less () {
+	var oldoff = document.body.scrollHeight;
 	backward = true;
 	cmd ("b", function (block) {
 		cmd ("s "+prev_curoff+"-"+block+";"+display, function (x) {
 			x = filter_asm (x);
 			var body = document.getElementById ('output').innerHTML;
 			document.getElementById ('output').innerHTML = x + body;
+			var newoff = document.body.scrollHeight;
+			var d= newoff-oldoff;
+			document.body.scrollTop =d;
 		});
 	});
 }
@@ -269,10 +277,11 @@ function filter_asm(x) {
 		x = x.replace (/;(.*)/g, "// <span style='color:yellow'>$1</span>");
 		x = x.replace (/(fcn|imp|loc).(.*)/g, "<a href='javascript:seek(\"$1.$2\")'>$1.$2</a>");
 		x = x.replace (/(bl|call)/g, "<b style='color:green'>call</b>");
-		x = x.replace (/(jmp|jnz|jg|je|jl|jz)/g, "<b style='color:green'>$1</b>");
-		x = x.replace (/ret/g, "<b style='color:red'>ret</b>");
+		x = x.replace (/(jmp|jnz|jg|je|jl|jz|jb|ja|jne)/g, "<b style='color:green'>$1</b>");
+		x = x.replace (/(leave|ret)/g, "<b style='color:red'>$1</b>");
+		x = x.replace (/(add|sub|mul|div|shl|shr|and|not|xor|inc|dec|sar|sal)/g, "<b style='color:orange'>$1</b>");
 		x = x.replace (/(push|pop)/g, "<b style='color:magenta'>$1</b>");
-		x = x.replace (/mov/g, "<b style='color:yellow'>mov</b>");
+		x = x.replace (/(mov|lea)/g, "<b style='color:yellow'>$1</b>");
 		x = x.replace (/(test|cmp)/g, "<b style='color:green'>$1</b>");
 		x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
 	}
@@ -361,19 +370,93 @@ function popup_show (title, body) {
 	b.height = 100;
 }
 
+function menubar_display() {
+/*
+	var m = document.getElementById('menubar');
+	var w = window.innerWidth;
+	if (w<800) {
+		m.style.top = 26;
+		m.style.left = 12;
+	}
+*/
+}
+
+function toggle_editor() {
+	var x = document.getElementById('x');
+	var e = document.getElementById('editor');
+	var et = document.getElementById('editor_textarea');
+	var em = document.getElementById('editor_menu');
+	if (et.style.visibility=="hidden") {
+		e.style.width = 300;
+		et.style.visibility="visible";
+		em.style.visibility="visible";
+		x.innerHTML = "x";
+	} else {
+		e.style.width = 16;
+		et.style.visibility="hidden";
+		em.style.visibility="hidden";
+		x.innerHTML = "&lt;";
+	}
+	
+}
+
 function init() {
 	var input = document.getElementById ('input');
 	input.addEventListener ("activate", function (x) {
 		input_activate();
 	}, false);
 	cmd (display);
+	menubar_display ();
+
+	r2.config_get ("cfg.debug", function(x) {
+		debug_mode = true;
+	});
+}
+
+var r2 = {
+	'analyze': function () { runcmd ('af'); },
+	'entry': function () { runcmd ('s entry0'); },
+	'step': function () { runcmd ('ds;.dr*'); },
+	'hexdump': function () { setmode ("px"); },
+	'disasm': function () { setmode ('pd'); },
+	'incode': function (x) { setmode ('pc'+x); },
+	'entry': function () { runcmd ('s entry0'); },
+	'config_get': function (x,y) { cmd ('e '+x, y); },
+	'config_set': function (x) { runcmd ('s entry0'); }
 }
 
 </script>
 </head>
-<body onload="init()">
+<body id="body" onload="init()">
 <div class=popup_background id="popup_background" style="visibility:hidden"></div>
-
+<div id="menubar" class="menubar">
+<a href="javascript:r2.hexdump()">x</a>
+<a href="javascript:r2.disasm()">pd</a>
+<a href="javascript:r2.incode()">pc</a>
+|
+<a href="javascript:r2.entry()">entry</a>
+<a href="javascript:r2.analyze()">analyze</a>
+|
+<a href="javascript:r2.break()">break</a>
+<a href="javascript:r2.step()">step</a>
+<a href="">continue</a>
+</div>
+<div>
+</div>
+<div id="editor" class="editor">
+<table>
+<tr><td>
+<a title="toggle notepad" id="x" href="javascript:toggle_editor ()">&lt;</a>
+</td><td>
+<div id="editor_menu">
+<a title="execute selected text" href="javascript:alert('TODO')">run</a>
+<a title="assemble selected text" href="javascript:alert('TODO')">asm</a>
+<a title="disassemble selected text" href="javascript:alert('TODO')">dis</a>
+</div>
+</td></tr></table>
+<textarea id="editor_textarea" class="editor_textarea" style="visibility:hidden">
+</textarea>
+</div>
 <div id="popup" style="visibility:hidden">
 <table class=popup>
 <tr>
@@ -399,7 +482,7 @@ Enjoy!
 </table>
 </div>
 
-<div style="position:fixed; top:0px;left:0px;background-color:red;border:0px">
+<div style="position:fixed; top:0px;left:0px;background-color:black;border:0px">
 <table class=header>
 <tr>
 	<td style="text-align:left;vertical-align:top">
@@ -411,7 +494,7 @@ Enjoy!
 
 </div>
 
-<div class="console" style="top:32px !important; position:absolute;z-index:-99">
+<div onresize="menubar_display()" id="console" class="console" style="top:45px !important; position:absolute;z-index:-99">
 <div id="less">
 	<a href='javascript:less()'>... prev</a>
 </div>
