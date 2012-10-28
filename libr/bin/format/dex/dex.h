@@ -2,6 +2,7 @@
 
 #define R_BIN_DEX_MAXSTR 256
 
+#pragma pack(1)
 struct dex_header_t {
 	ut8 magic[8];
 	ut32 checksum;
@@ -28,24 +29,35 @@ struct dex_header_t {
 	ut32 data_offset;
 };
 
+#pragma pack(1)
 struct dex_proto_t {
 	ut32 shorty_id;
 	ut32 return_type_id;
 	ut32 params_id;
 };
 
+#pragma pack(1)
 struct dex_field_t {
 	ut8 class_id;
 	ut8 type_id;
 	ut32 name_id;
 };
 
+#if 0
 struct dex_method_t {
 	ut8 class_id;
 	ut8 proto_id;
 	ut32 name_id;
 };
+#endif
+#pragma pack(1)
+struct dex_method_t {
+        ut16 class_id;
+        ut16 proto_id;
+        ut32 name_id;
+};
 
+#pragma pack(1)
 struct dex_class_t {
 	ut32 class_id;
 	ut32 access_flags;

@@ -79,6 +79,28 @@ static RList* strings (RBinArch *arch) {
 	return ret;
 }
 
+static ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *size) {
+	ut32 mapsz, off = 0L;
+	ut8 *buf, *map_end, *map;
+	*size = 0;
+	map = buf = malloc (bin->header.data_size);
+	r_buf_read_at (bin->b, bin->header.data_offset, buf, bin->header.data_size);
+	for (map_end = map+bin->header.data_size; map<map_end;) {
+		int num = map[0] + (map[1]<<8);
+		int ninsn = map[12] + (map[13]<<8);
+		map += 16; // skip header
+		mapsz = ninsn%2? (ninsn+1)*2: ninsn*2;
+		if (n == num) {
+			*size = mapsz;
+			off = bin->header.data_offset + (size_t)(map - buf);
+			break;
+		}
+		map += mapsz;
+	}
+	free (buf);
+	return off;
+}
+
 static RList* methods (RBinArch *arch) {
 	RList *ret = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
@@ -105,14 +127,12 @@ static RList* methods (RBinArch *arch) {
 		snprintf (ptr->name, sizeof (ptr->name), "method.%d.%s", 
 				bin->methods[i].class_id, name);
 		free (name);
-
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-		ptr->rva = ptr->offset = bin->header.method_offset +
-			(sizeof (struct dex_method_t) * i);
-		ptr->size = sizeof (struct dex_method_t);
 		ptr->ordinal = i+1;
+		ptr->rva = ptr->offset = getmethodoffset (bin,
+			(int)ptr->ordinal, (ut32*)&ptr->size);
+		strncpy (ptr->type, ptr->rva? "FUNC":"IMPORT", R_BIN_SIZEOF_STRINGS);
 		r_list_append (ret, ptr);
 	}
 	j = i;

@@ -874,7 +874,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		r_cons_printf (
 		"Foreach '@@' iterator command:\n"
 		" This command is used to repeat a command over a list of offsets.\n"
-		" x @@ sym.           Run 'x' over all flags matching 'sym.'\n"
+		" x @@ sym.*          Run 'x' over all flags matching 'sym.' in current flagspace\n"
 		" x @@.file           \"\" over the offsets specified in the file (one offset per line)\n"
 		" x @@=off1 off2 ..   Manual list of offsets\n"
 		" x @@=`pdf~call[0]`  Run 'x' at every call offset of the current function\n");
