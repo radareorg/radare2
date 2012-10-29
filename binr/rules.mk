@@ -1,9 +1,11 @@
 BINR_PROGRAM=1
 include ../../libr/config.mk
 
-#.PHONY: all clean
-
 CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
+
+ifeq ($(USE_RPATH),1)
+LDFLAGS+=-Wl,-R${PREFIX}/lib
+endif
 
 OBJ+=${BIN}.o
 BEXE=${BIN}${EXT_EXE}
