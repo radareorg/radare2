@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2012 - pancake<nopcode.org> */
 
+// This file is based on the Z80 analyser and modified for
+// the Intel 8080 disassembler by Alexander Demin, 2012.
+
 #include <string.h>>
 #include <r_types.h>
 #include <r_lib.h>
