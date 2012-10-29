@@ -28,6 +28,7 @@
 #define R_ASM_ARCH_BF R_SYS_ARCH_BF
 #define R_ASM_ARCH_SH R_SYS_ARCH_SH
 #define R_ASM_ARCH_Z80 R_SYS_ARCH_Z80
+#define R_ASM_ARCH_I8080 R_SYS_ARCH_I8080
 #define R_ASM_ARCH_ARC R_SYS_ARCH_ARC
 
 #define R_ASM_GET_OFFSET(x,y,z) \
@@ -163,6 +164,7 @@ extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_msil;
 extern RAsmPlugin r_asm_plugin_sh;
 extern RAsmPlugin r_asm_plugin_z80;
+extern RAsmPlugin r_asm_plugin_i8080;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_arc;
 extern RAsmPlugin r_asm_plugin_dcpu16;
