@@ -85,13 +85,15 @@ static int cmd_alias(void *data, const char *input) {
 	p = strchr (buf, '=');
 	q = strchr (buf, ' ');
 	if (p) {
-		*p = 0;
-		if (!q || (q && q>p))
-			r_cmd_alias_set (core->rcmd, buf, p+1);
+		*p++ = 0;
+		if (!q || (q && q>p)) {
+			if (*p) r_cmd_alias_set (core->rcmd, buf, p);
+			else r_cmd_alias_del (core->rcmd, buf);
+		}
 	} else 
-	if (!*buf) {
+	if (!buf[1]) {
 		int i, count;
-		const char **keys = r_cmd_alias_keys (core->rcmd, &count);
+		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i=0; i<count; i++)
 			r_cons_printf ("%s\n", keys[i]);
 	} else {
@@ -101,6 +103,10 @@ static int cmd_alias(void *data, const char *input) {
 		if (v) {
 			if (q) {
 				char *out, *args = q+1;
+				if (strchr (q+1, '?')) {
+					r_cons_printf ("%s\n", v);
+					return 1;
+				}
 				out = malloc (strlen (v) + strlen (args) + 2);
 				if (out) {
 					strcpy (out, v);
@@ -717,7 +723,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			}
 			//r_line_set_prompt (oprompt);
 		} else {
-			for (str=ptr+1; *str== ' ';str++);
+			for (str=ptr+1; *str== ' '; str++);
+			if (!*str) goto next;
 			eprintf ("Slurping file '%s'\n", str);
 			free (core->oobi);
 			core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
@@ -727,6 +734,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 				return r_core_cmd_buffer (core, (const char *)core->oobi);
 		}
 	}
+next:
 
 // TODO must honor " and `
 	/* pipe console to file */
@@ -740,6 +748,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		r_cons_set_interactive (R_FALSE);
 		*ptr = '\0';
 		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
+		if (!*str) goto next2;
 		if (!strcmp (str, "-")) {
 			use_editor = R_TRUE;
 			str = r_file_temp ("dumpedit");
@@ -761,6 +770,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		}
 		return ret;
 	}
+next2:
 
 	/* sub commands */
 	ptr = strchr (cmd, '`');
@@ -922,7 +932,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	case '?':
 		r_cons_printf (
 		"Foreach '@@' iterator command:\n"
-		" This command is used to repeat a command over a list of offsets.\n"
+		" Repeat a command over a list of offsets.\n"
 		" x @@ sym.*          Run 'x' over all flags matching 'sym.' in current flagspace\n"
 		" x @@.file           \"\" over the offsets specified in the file (one offset per line)\n"
 		" x @@=off1 off2 ..   Manual list of offsets\n"

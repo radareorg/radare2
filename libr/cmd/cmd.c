@@ -50,6 +50,22 @@ R_API void r_cmd_alias_free (RCmd *cmd) {
 	cmd->aliases.values = NULL;
 }
 
+R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
+	int i; // find
+	for (i=0; i<cmd->aliases.count; i++) {
+		if (!strcmp (k, cmd->aliases.keys[i])) {
+			free (cmd->aliases.values[i]);
+			cmd->aliases.count--;
+			if (cmd->aliases.count>0) {
+				cmd->aliases.values[i] = cmd->aliases.values[0];
+				cmd->aliases.values += sizeof (void*);
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
 R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v) {
 	int i; // find
 	for (i=0; i<cmd->aliases.count; i++) {
