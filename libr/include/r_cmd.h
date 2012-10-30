@@ -23,7 +23,6 @@ typedef struct r_cmd_macro_item_t {
 	char *code;
 	int codelen;
 	int nargs;
-	struct list_head list;
 } RCmdMacroItem;
 
 typedef struct r_cmd_macro_t {
@@ -37,7 +36,7 @@ typedef struct r_cmd_macro_t {
 	RNum *num;
 	int labels_n;
 	RCmdMacroLabel labels[MACRO_LABELS];
-	struct list_head macros;
+	RList *macros;
 } RCmdMacro;
 
 typedef int (*RCmdCallback)(void *user, const char *cmd);
@@ -53,16 +52,22 @@ typedef struct r_cmd_long_item_t {
 	int cmd_len;
 	char cmd_short[32]; /* short command */
 	char desc[128];
-	struct list_head list;
 } RCmdLongItem;
+
+typedef struct r_cmd_alias_t {
+	int count;
+	char **keys;
+	char **values;
+} RCmdAlias;
 
 typedef struct r_cmd_t {
 	void *data;
 	r_cmd_nullcallback (nullcallback);
-	struct list_head lcmds;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;
+	RList *lcmds;
 	RList *plist;
+	RCmdAlias aliases;
 } RCmd;
 
 typedef struct r_cmd_plugin_t {
@@ -96,5 +101,11 @@ R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name);
 R_API void r_cmd_macro_list(RCmdMacro *mac);
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
+
+R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz);
+R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v);
+R_API char *r_cmd_alias_get (RCmd *cmd, const char *k);
+R_API void r_cmd_alias_free (RCmd *cmd);
+
 #endif
 #endif

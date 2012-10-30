@@ -1,18 +1,9 @@
 /* radare - LGPL - Copyright 2008-2012 - pancake */
 
-// TODO: use RList !!
 #include <stdio.h>
 #include <r_cons.h>
-#include "r_cmd.h"
-#include "r_util.h"
-
-#if 0
-static ut64 _macro_break_value = 0;
-ut64 *macro_break_value = NULL;
-static int macro_break;
-int macro_counter = 0;
-static struct list_head macros;
-#endif
+#include <r_cmd.h>
+#include <r_util.h>
 
 R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->counter = 0;
@@ -22,13 +13,14 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 	mac->num = NULL;
 	mac->user = NULL;
 	mac->cmd = NULL;
-	INIT_LIST_HEAD (&mac->macros);
+	mac->macros = r_list_new ();
 }
 
 // XXX add support single line function definitions
 // XXX add support for single name multiple nargs macros
 R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
-	struct list_head *pos;
+	RListIter *iter;
+	RCmdMacroItem *m;
 	struct r_cmd_macro_item_t *macro;
 	char buf[R_CMD_MAXLEN];
 	char *bufp;
@@ -68,8 +60,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		*ptr='\0';
 		args = ptr +1;
 	}
-	list_for_each_prev (pos, &mac->macros) {
-		RCmdMacroItem *m = list_entry (pos, struct r_cmd_macro_item_t, list);
+	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (name, m->name)) {
 			macro = m;
 	//		free (macro->name);
@@ -137,24 +128,24 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		}
 	}
 	if (macro_update == 0)
-		list_add_tail (&(macro->list), &(mac->macros));
+		r_list_append (mac->macros, macro);
 	free (name);
 	return 0;
 }
 
-R_API int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name) {
+R_API int r_cmd_macro_rm(RCmdMacro *mac, const char *_name) {
+	RListIter *iter;
+	RCmdMacroItem *m;
 	char *name = strdup (_name);
-	struct list_head *pos;
 	char *ptr = strchr (name, ')');
 	if (ptr) *ptr='\0';
-	list_for_each_prev (pos, &mac->macros) {
-		RCmdMacroItem *mac = list_entry (pos, RCmdMacroItem, list);
-		if (!strcmp (mac->name, name)) {
-			list_del (&(mac->list));
+	r_list_foreach (mac->macros, iter, m) {
+		if (!strcmp (m->name, name)) {
+			r_list_delete (mac->macros, iter);
 			eprintf ("Macro '%s' removed.\n", name);
-			free (mac->name);
-			free (mac->code);
-			free (mac);
+			free (m->name);
+			free (m->code);
+			free (m);
 			free (name);
 			return R_TRUE;
 		}
@@ -165,10 +156,10 @@ R_API int r_cmd_macro_rm(struct r_cmd_macro_t *mac, const char *_name) {
 
 // TODO: use mac->printf which is r_cons_printf at the end
 R_API void r_cmd_macro_list(RCmdMacro *mac) {
+	RCmdMacroItem *m;
 	int j, idx = 0;
-	struct list_head *pos;
-	list_for_each_prev (pos, &mac->macros) {
-		RCmdMacroItem *m = list_entry (pos, RCmdMacroItem, list);
+	RListIter *iter;
+	r_list_foreach (mac->macros, iter, m) {
 		mac->printf ("%d (%s %s, ", idx, m->name, m->args);
 		for (j=0; m->code[j]; j++) {
 			if (m->code[j]=='\n')
@@ -306,8 +297,9 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 	char *args;
 	int nargs = 0;
 	char *str, *ptr, *ptr2;
-	struct list_head *pos;
+	RListIter *iter;
 	static int macro_level = 0;
+	RCmdMacroItem *m;
 	/* labels */
 	int labels_n = 0;
 	struct r_cmd_macro_label_t labels[MACRO_LABELS];
@@ -343,8 +335,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 
 	cons = r_cons_singleton ();
 	r_cons_break (NULL, NULL);
-	list_for_each_prev (pos, &mac->macros) {
-		RCmdMacroItem *m = list_entry (pos, RCmdMacroItem, list);
+	r_list_foreach (mac->macros, iter, m) {
 
 		if (!strcmp (str, m->name)) {
 			char *ptr = m->code;

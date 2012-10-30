@@ -67,6 +67,56 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	return op;
 }
 
+static int cmd_alias(void *data, const char *input) {
+	int i;
+	char *p, *q, *buf;
+	RCore *core = (RCore *)data;
+	if (*input=='?') {
+		r_cons_printf ("Usage: -alias[=cmd] [args...]\n"
+			" -analyze=af;pdf # create command -analyze to show function\n"
+			" -analyze        # execute the previously defined alias\n");
+		return 0;
+	}
+	i = strlen (input);
+	buf = malloc (i+2);
+	if (!buf) return 0;
+	*buf = '-'; // prefix aliases with a dash
+	memcpy (buf+1, input, i+1);
+	p = strchr (buf, '=');
+	q = strchr (buf, ' ');
+	if (p) {
+		*p = 0;
+		if (!q || (q && q>p))
+			r_cmd_alias_set (core->rcmd, buf, p+1);
+	} else 
+	if (!*buf) {
+		int i, count;
+		const char **keys = r_cmd_alias_keys (core->rcmd, &count);
+		for (i=0; i<count; i++)
+			r_cons_printf ("%s\n", keys[i]);
+	} else {
+		const char *v;
+		if (q) *q = 0;
+		v = r_cmd_alias_get (core->rcmd, buf);
+		if (v) {
+			if (q) {
+				char *out, *args = q+1;
+				out = malloc (strlen (v) + strlen (args) + 2);
+				if (out) {
+					strcpy (out, v);
+					strcat (out, " ");
+					strcat (out, args);
+					r_core_cmd0 (core, out);
+					free (out);
+				} else eprintf ("Cannot malloc\n");
+			} else {
+				r_core_cmd0 (core, v);
+			}
+		} else eprintf ("unknown key '%s'\n", buf);
+	}
+	return 1;
+}
+
 static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
@@ -510,7 +560,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 }
 
 static char *find_eoq (char *p) {
-	for (;*p;p++) {
+	for (; *p; p++) {
 		if (*p=='"') break;
 		if (*p=='\\' && p[1]=='"')
 			p++;
@@ -522,8 +572,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	char *ptr, *ptr2, *str;
 	int i, ret, pipefd;
 	const char *tick = NULL;
-	const char *quotestr = "\"`";
-	quotestr = "`"; // tmp
+	const char *quotestr = "`";
 
 	cmd = r_str_trim_head_tail (cmd);
 
@@ -669,7 +718,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			//r_line_set_prompt (oprompt);
 		} else {
 			for (str=ptr+1; *str== ' ';str++);
-			eprintf ("SLURPING FILE '%s'\n", str);
+			eprintf ("Slurping file '%s'\n", str);
 			free (core->oobi);
 			core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
 			if (core->oobi == NULL)
@@ -703,9 +752,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		r_cons_set_last_interactive ();
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
-			if (editor && *editor) {
+			if (editor && *editor)
 				r_sys_cmdf ("%s '%s'", editor, str);
-			} else eprintf ("No cfg.editor configured\n");
+			else eprintf ("No cfg.editor configured\n");
 			r_config_set_i (core->config, "scr.color", ocolor);
 			r_file_rm (str);
 			free (str);
@@ -1213,6 +1262,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "=",        "io pipe", &cmd_rap);
 	r_cmd_add (core->rcmd, "#",        "calculate hash", &cmd_hash);
 	r_cmd_add (core->rcmd, "?",        "help message", &cmd_help);
+	r_cmd_add (core->rcmd, "-",        "alias", &cmd_alias);
 	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);

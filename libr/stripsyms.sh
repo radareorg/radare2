@@ -1,4 +1,7 @@
 #!/bin/sh
+
+[ -n "${NOSTRIP}" ] && exit 0
+
 [ -z "$2" ] && exit 0
 FILE=$1
 PFX=$2

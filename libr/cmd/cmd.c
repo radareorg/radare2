@@ -1,31 +1,85 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <r_cmd.h>
 #include <r_util.h>
+
+R_API void r_cmd_alias_init(RCmd *cmd) {
+	cmd->aliases.count = 0;
+	cmd->aliases.keys = NULL;
+	cmd->aliases.values = NULL;
+}
 
 R_API RCmd *r_cmd_new () {
 	int i;
 	RCmd *cmd = R_NEW (RCmd);
 	if (cmd) {
-		INIT_LIST_HEAD (&cmd->lcmds);
+		cmd->lcmds = r_list_new ();
 		for (i=0;i<255;i++)
 			cmd->cmds[i] = NULL;
-		cmd->nullcallback =
-		cmd->data = NULL;
+		cmd->nullcallback = cmd->data = NULL;
 	}
 	r_cmd_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
+	r_cmd_alias_init (cmd);
 	return cmd;
 }
 
 R_API RCmd *r_cmd_free(RCmd *cmd) {
 	if (!cmd) return NULL;
-	r_list_free(cmd->plist);
+	r_cmd_alias_free (cmd);
+	r_list_free (cmd->plist);
 	free (cmd);
 	return NULL;
 }
 
-R_API int r_cmd_set_data(struct r_cmd_t *cmd, void *data) {
+R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz) {
+	if (sz) *sz = cmd->aliases.count;
+	return cmd->aliases.keys;
+}
+
+R_API void r_cmd_alias_free (RCmd *cmd) {
+	int i; // find
+	for (i=0; i<cmd->aliases.count; i++) {
+		free (cmd->aliases.keys[i]);
+		free (cmd->aliases.values[i]);
+	}
+	cmd->aliases.count = 0;
+	free (cmd->aliases.keys);
+	free (cmd->aliases.values);
+	cmd->aliases.keys = NULL;
+	cmd->aliases.values = NULL;
+}
+
+R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v) {
+	int i; // find
+	for (i=0; i<cmd->aliases.count; i++) {
+		if (!strcmp (k, cmd->aliases.keys[i])) {
+			free (cmd->aliases.values[i]);
+			cmd->aliases.values[i] = strdup (v);
+			return 1;
+		}
+	}
+	// new
+	i = cmd->aliases.count++;
+	cmd->aliases.keys = realloc (cmd->aliases.keys,
+		sizeof (char**)*cmd->aliases.count);
+	cmd->aliases.values = realloc (cmd->aliases.values,
+		sizeof (char**)*cmd->aliases.count);
+	cmd->aliases.keys[i] = strdup (k);
+	cmd->aliases.values[i] = strdup (v);
+	return 0;
+}
+
+R_API char *r_cmd_alias_get (RCmd *cmd, const char *k) {
+	int i; // find
+	for (i=0; i<cmd->aliases.count; i++) {
+		if (!strcmp (k, cmd->aliases.keys[i]))
+			return cmd->aliases.values[i];
+	}
+	return NULL;
+}
+
+R_API int r_cmd_set_data(RCmd *cmd, void *data) {
 	cmd->data = data;
 	return 1;
 }
@@ -38,7 +92,7 @@ R_API int r_cmd_add_long(RCmd *cmd, const char *lcmd, const char *scmd, const ch
 	strncpy (item->cmd_short, scmd, sizeof (item->cmd_short)-1);
 	item->cmd_len = strlen (lcmd);
 	strncpy (item->desc, desc, sizeof (item->desc)-1);
-	list_add (&(item->list), &(cmd->lcmds));
+	r_list_append (cmd->lcmds, item);
 	return R_TRUE;
 }
 
@@ -57,14 +111,14 @@ R_API int r_cmd_add(RCmd *c, const char *cmd, const char *desc, r_cmd_callback(c
 	return R_TRUE;
 }
 
-R_API int r_cmd_del(struct r_cmd_t *cmd, const char *command) {
+R_API int r_cmd_del(RCmd *cmd, const char *command) {
 	int idx = (ut8)command[0];
 	free(cmd->cmds[idx]);
 	cmd->cmds[idx] = NULL;
 	return 0;
 }
 
-R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
+R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	struct r_cmd_item_t *c;
 	int ret = -1;
 	RListIter *iter;
@@ -86,16 +140,17 @@ R_API int r_cmd_call(struct r_cmd_t *cmd, const char *input) {
 	return ret;
 }
 
-R_API int r_cmd_call_long(struct r_cmd_t *cmd, const char *input) {
+R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
 	char *inp;
-	struct list_head *pos;
+	RListIter *iter;
+	RCmdLongItem *c;
 	int ret, inplen = strlen (input)+1;
 
-	list_for_each_prev (pos, &cmd->lcmds) {
-		RCmdLongItem *c = list_entry (pos, struct r_cmd_long_item_t, list);
+	r_list_foreach (cmd->lcmds, iter, c) {
 		if (inplen>=c->cmd_len && !r_str_cmp (input, c->cmd, c->cmd_len)) {
 			int lcmd = strlen (c->cmd_short);
 			int linp = strlen (input+c->cmd_len);
+			/// SLOW malloc on most situations. use stack
 			inp = malloc (lcmd+linp+2); // TODO: use static buffer with R_CMD_MAXLEN
 			if (inp == NULL)
 				return -1;
@@ -108,14 +163,3 @@ R_API int r_cmd_call_long(struct r_cmd_t *cmd, const char *input) {
 	}
 	return -1;
 }
-
-#if 0
-// XXX: make it work :P
-static char *argv[]= { "foo", "bar", "cow", "muu" };
-char **r_cmd_args(struct r_cmd_t *cmd, int *argc)
-{
-	*argc = 4;
-	//argv = argv_test;
-	return argv;
-}
-#endif

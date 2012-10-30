@@ -150,7 +150,7 @@ R_API RCore *r_core_new() {
 static const char *radare_argv[] = {
 	"?", "?v",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "db-", "dp", "dr", "dcu",
-	"S", 
+	"S",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
 	"!", "!!", 
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5", 
@@ -301,6 +301,25 @@ printf ("FILEN %d\n", n);
 			tmp_argv[i] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else
+		if (!memcmp (line->buffer.data, "-", 1)) {
+			int count;
+			char **keys = r_cmd_alias_keys(core->rcmd, &count);
+			char *data = line->buffer.data;
+			if (keys) {
+				int i, j;
+				for (i=j=0; i<count; i++) {
+					if (!memcmp (keys[i], data, line->buffer.index)) {
+						tmp_argv[j++] = keys[i];
+					}
+				}
+				tmp_argv[j] = NULL;
+				line->completion.argc = j;
+				line->completion.argv = tmp_argv;
+			} else {
+				line->completion.argc = 0;
+				line->completion.argv = NULL;
+			}
 		} else
 		if (!memcmp (line->buffer.data, "e ", 2)) {
 			RConfigNode *bt;

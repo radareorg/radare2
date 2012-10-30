@@ -3,6 +3,12 @@ _INCLUDE_RULES_MK_=
 
 include $(LTOP)/config.mk
 
+ifeq ($(DEBUG),1)
+export NOSTRIP=1
+CFLAGS+=-g
+LDFLAGS+=-g -ggdb
+endif
+
 ALL?=
 CFLAGS+=-I$(LIBR)/include
 LDFLAGS+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
