@@ -368,20 +368,7 @@ case 'o':
 			r_core_anal_fcn_list (core, input+2, 0);
 			break;
 		case 'l':
-			{
-				RAnalFunction *fcn;
-				RListIter *iter;
-				int bbs;
-
-				r_list_foreach (core->anal->fcns, iter, fcn) {
-					if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
-						continue;
-					bbs = r_list_length (fcn->bbs);
-					r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %3d  %s\n",
-						(ut64)fcn->addr, (ut64)fcn->size,
-						(int)bbs, fcn->name? fcn->name: "");
-				}
-			}
+			r_core_anal_fcn_list (core, input, 2);
 			break;
 		case '*':
 			r_core_anal_fcn_list (core, input+2, 1);
@@ -741,7 +728,7 @@ case 'o':
 			r_cons_printf (
 			"Usage: ar[?d-l*]\n"
 			" ar addr [at]   ; Add code ref\n"
-			" ard addr [at]  ; Add dara ref\n"
+			" ard addr [at]  ; Add data ref\n"
 			" ar- [at]       ; Clean all refs (or refs from addr)\n"
 			" arl            ; List refs\n"
 			" ar*            ; Output radare commands\n");

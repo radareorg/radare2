@@ -212,21 +212,19 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 #if USE_NEW_FCN_STORE
 #warning TODO: r_anal_fcn_del_locs not implemented for newstore
 #endif
-	if (f) {
-		r_list_foreach_safe (anal->fcns, iter, iter2, fcn) {
-			if (fcn->type != R_ANAL_FCN_TYPE_LOC)
-				continue;
-			if (fcn->addr >= f->addr && fcn->addr < (f->addr+f->size)) {
-				r_list_delete (anal->fcns, iter);
-			}
-		}
+	if (!f) return R_FALSE;
+	r_list_foreach_safe (anal->fcns, iter, iter2, fcn) {
+		if (fcn->type != R_ANAL_FCN_TYPE_LOC)
+			continue;
+		if (fcn->addr >= f->addr && fcn->addr < (f->addr+f->size))
+			r_list_delete (anal->fcns, iter);
 	}
 	r_anal_fcn_del (anal, addr);
 	return R_TRUE;
 }
 
 R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
-	if (addr == 0) {
+	if (addr == UT64_MAX) {
 #if USE_NEW_FCN_STORE
 		r_listrange_free (anal->fcnstore);
 		anal->fcnstore = r_listrange_new ();

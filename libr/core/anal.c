@@ -150,7 +150,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		do {
 #if 1
 			// check io error
-			if (r_io_read_at (core->io, at+bblen, buf, 4) != 4)
+			if (r_io_read_at (core->io, at+bblen, buf, 4) != 4) // ETOOSLOW
 	//core->blocksize)) != core->blocksize)
 				goto error;
 #endif
@@ -249,10 +249,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		goto error;
 	}
 #define MAXNEXT 1032 // TODO: make it relocatable
-	if (r_config_get_i (core->config, "anal.hasnext")) {
-		
+	if (r_config_get_i (core->config, "anal.hasnext"))
 		next = R_NEWS0 (ut64, MAXNEXT);
-	}
 
 	//eprintf ("FUNC 0x%08"PFMT64x"\n", at+fcnlen);
 	do {
@@ -274,7 +272,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			RFlagItem *f = r_flag_get_i (core->flags, at);
 			if (f) { /* Check if it's already flagged */
-				fcn->name = strdup (f->name);
+				fcn->name = strdup (f->name); // memleak here?
 			} else {
 				fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
 						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
@@ -307,19 +305,19 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			// XXX: this looks weird
 			r_anal_fcn_insert (core->anal, fcn);
 #if 1
-	if (next && nexti<MAXNEXT) {
-		int i;
-		ut64 addr = fcn->addr + fcn->size;
-		for (i=0;i<nexti;i++)
-			if (next[i] == addr)
-				break;
-		if (i==nexti) {
-			// TODO: ensure next address is function after padding (nop or trap or wat)
-			eprintf ("FUNC 0x%08"PFMT64x" > 0x%08"PFMT64x"\r",
-				fcn->addr, fcn->addr + fcn->size);
-			next[nexti++] = fcn->addr + fcn->size;
-		}
-	}
+			if (next && nexti<MAXNEXT) {
+				int i;
+				ut64 addr = fcn->addr + fcn->size;
+				for (i=0;i<nexti;i++)
+					if (next[i] == addr)
+						break;
+				if (i==nexti) {
+					// TODO: ensure next address is function after padding (nop or trap or wat)
+					eprintf ("FUNC 0x%08"PFMT64x" > 0x%08"PFMT64x"\r",
+							fcn->addr, fcn->addr + fcn->size);
+					next[nexti++] = fcn->addr + fcn->size;
+				}
+			}
 #endif
 			//r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi)
@@ -350,9 +348,11 @@ error:
 			return R_FALSE;
 		}
 		// TODO: mark this function as not properly analyzed
+#if 0
 		eprintf ("Analysis of function 0x%08"PFMT64x
 			" has failed at 0x%08"PFMT64x"\n",
 			fcn->addr, fcn->addr+fcn->size);
+#endif
 		if (!fcn->name) {
 			// XXX dupped code.
 			fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
@@ -471,75 +471,89 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
-	RAnalFunction *fcni;
-	struct r_anal_ref_t *refi;
-	struct r_anal_var_t *vari;
+	RAnalFunction *fcn;
+	RAnalRef *refi;
+	RAnalVar *vari;
 	RListIter *iter, *iter2;
 	ut64 addr = r_num_math (core->num, input+1);
 
-	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (((input == NULL || *input == '\0') && fcni->type!=R_ANAL_FCN_TYPE_LOC)
-			 || fcni->addr == addr
-			 || !strcmp (fcni->name, input+1)) {
+	if (rad==2) {
+		RListIter *iter;
+		int bbs;
+
+		r_list_foreach (core->anal->fcns, iter, fcn) {
+			if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
+				continue;
+			bbs = r_list_length (fcn->bbs);
+			r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %3d  %s\n",
+				(ut64)fcn->addr, (ut64)fcn->size,
+				(int)bbs, fcn->name? fcn->name: "");
+		}
+		return R_TRUE;
+	}
+	r_list_foreach (core->anal->fcns, iter, fcn)
+		if (((input == NULL || *input == '\0') && fcn->type!=R_ANAL_FCN_TYPE_LOC)
+			 || fcn->addr == addr
+			 || !strcmp (fcn->name, input+1)) {
 			if (!rad) {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
-						fcni->addr, fcni->name, fcni->size);
+						fcn->addr, fcn->name, fcn->size);
 				r_cons_printf ("\n type: %s",
-						fcni->type==R_ANAL_FCN_TYPE_SYM?"sym":
-						fcni->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
-				if (fcni->type==R_ANAL_FCN_TYPE_FCN || fcni->type==R_ANAL_FCN_TYPE_SYM)
+						fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":
+						fcn->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");
+				if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM)
 					r_cons_printf (" [%s]",
-							fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
-							fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
+							fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"MATCH":
+							fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 
 				r_cons_printf ("\n call-refs: ");
-				r_list_foreach (fcni->refs, iter2, refi)
+				r_list_foreach (fcn->refs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_CODE ||
 						refi->type == R_ANAL_REF_TYPE_CALL)
 						r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
 								refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
 
 				r_cons_printf ("\n data-refs: ");
-				r_list_foreach (fcni->refs, iter2, refi)
+				r_list_foreach (fcn->refs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_DATA)
 						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
 				r_cons_printf ("\n code-xrefs: ");
-				r_list_foreach (fcni->xrefs, iter2, refi)
+				r_list_foreach (fcn->xrefs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_CODE ||
 						refi->type == R_ANAL_REF_TYPE_CALL)
 						r_cons_printf ("0x%08"PFMT64x" %c ", refi->addr,
 								refi->type==R_ANAL_REF_TYPE_CALL?'C':'J');
 
 				r_cons_printf ("\n data-xrefs: ");
-				r_list_foreach (fcni->xrefs, iter2, refi)
+				r_list_foreach (fcn->xrefs, iter2, refi)
 					if (refi->type == R_ANAL_REF_TYPE_DATA)
 						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
-				if (fcni->type==R_ANAL_FCN_TYPE_FCN || fcni->type==R_ANAL_FCN_TYPE_SYM) {
+				if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM) {
 					r_cons_printf ("\n vars: %d");
-					r_list_foreach (fcni->vars, iter2, vari)
+					r_list_foreach (fcn->vars, iter2, vari)
 						r_cons_printf ("\n  %s %s @ 0x%02x", r_anal_type_to_str (
 							core->anal, vari->type, ";"), vari->name, vari->delta);
 					r_cons_printf ("\n diff: type: %s",
-							fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
-							fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
-					if (fcni->diff->addr != -1)
-						r_cons_printf (" addr: 0x%"PFMT64x, fcni->diff->addr);
-					if (fcni->diff->name != NULL)
+							fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
+							fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
+					if (fcn->diff->addr != -1)
+						r_cons_printf (" addr: 0x%"PFMT64x, fcn->diff->addr);
+					if (fcn->diff->name != NULL)
 						r_cons_printf (" function: %s",
-							fcni->diff->name);
+							fcn->diff->name);
 				}
 				r_cons_newline ();
 			} else {
 				r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s %c %c\n",
-						fcni->addr, fcni->size, fcni->name,
-						fcni->type==R_ANAL_FCN_TYPE_LOC?'l':
-						fcni->type==R_ANAL_FCN_TYPE_SYM?'s':
-						fcni->type==R_ANAL_FCN_TYPE_IMP?'i':'f',
-						fcni->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':
-						fcni->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
-				fcn_list_bbs (fcni);
+						fcn->addr, fcn->size, fcn->name,
+						fcn->type==R_ANAL_FCN_TYPE_LOC?'l':
+						fcn->type==R_ANAL_FCN_TYPE_SYM?'s':
+						fcn->type==R_ANAL_FCN_TYPE_IMP?'i':'f',
+						fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?'m':
+						fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
+				fcn_list_bbs (fcn);
 			}
 		}
 	return R_TRUE;

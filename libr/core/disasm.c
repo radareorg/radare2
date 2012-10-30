@@ -306,6 +306,8 @@ toro:
 				}
 				}
 				break;
+#if 1
+// TODO: get from meta anal?
 			case R_ANAL_OP_TYPE_LEA:
 				src = analop.src[0];
 				if (src && src->reg && core->anal->reg && core->anal->reg->name) {
@@ -327,6 +329,7 @@ toro:
 						}
 					}
 				}
+#endif
 			}
 		}
 		if (adistrick)
