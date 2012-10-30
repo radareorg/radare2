@@ -55,10 +55,21 @@ R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
 	for (i=0; i<cmd->aliases.count; i++) {
 		if (!strcmp (k, cmd->aliases.keys[i])) {
 			free (cmd->aliases.values[i]);
+			cmd->aliases.values[i] = NULL;
 			cmd->aliases.count--;
 			if (cmd->aliases.count>0) {
-				cmd->aliases.values[i] = cmd->aliases.values[0];
-				cmd->aliases.values += sizeof (void*);
+				if (i>0) {
+					free (cmd->aliases.keys[i]);
+					cmd->aliases.keys[i] = cmd->aliases.keys[0];
+					free (cmd->aliases.values[i]);
+					cmd->aliases.values[i] = cmd->aliases.values[0];
+				}
+				memcpy (cmd->aliases.values,
+					cmd->aliases.values+1,
+					cmd->aliases.count*sizeof (void*));
+				memcpy (cmd->aliases.keys,
+					cmd->aliases.keys+1,
+					cmd->aliases.count*sizeof (void*));
 			}
 			return 1;
 		}

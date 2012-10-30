@@ -74,7 +74,10 @@ static int cmd_alias(void *data, const char *input) {
 	if (*input=='?') {
 		r_cons_printf ("Usage: -alias[=cmd] [args...]\n"
 			" -analyze=af;pdf # create command -analyze to show function\n"
-			" -analyze        # execute the previously defined alias\n");
+			" -analyze=       # undefine alias\n"
+			" -analyze        # execute the previously defined alias\n"
+			" -analyze ?      # show commands aliased by 'analyze'\n"
+			" -               # list all defined aliases\n");
 		return 0;
 	}
 	i = strlen (input);
