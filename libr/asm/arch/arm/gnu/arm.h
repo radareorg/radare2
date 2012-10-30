@@ -285,3 +285,8 @@ typedef struct
   } while (0)
 
 #define ARM_FEATURE(core, coproc) {(core), (coproc)}
+
+#define CONST_STRNEQ(STR1,STR2) (strncmp ((STR1), (STR2), sizeof (STR2) - 1) == 0)
+#define ISASCII(x) ((x)>10&&(x)<127)
+#define ISSPACE(c) (ISASCII (c) && c==' ')
+#define abort(x) //

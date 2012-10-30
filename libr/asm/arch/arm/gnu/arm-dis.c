@@ -28,6 +28,8 @@
 #include "./arm.h"
 #include "./elfarm.h"
 #include "opintl.h"
+#include <string.h>
+
 //#include "safe-ctype.h"
 //#include "floatformat.h"
 
@@ -2909,14 +2911,14 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                                 valbytes[2] = (value >> 16) & 0xff;
                                 valbytes[3] = (value >> 24) & 0xff;
                                 
+				func (stream, "XXX: TODO floatformat_to_double\n");
 #if XXX
                                 floatformat_to_double 
                                   (& floatformat_ieee_single_little, valbytes,
                                   & fvalue);
-#endif
-                                                                
                                 func (stream, " XXX #%.7g\t; 0x%.8lx", fvalue,
                                       value);
+#endif
                               }
                             else
                               func (stream, "#%ld\t; 0x%.8lx",
