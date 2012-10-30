@@ -66,7 +66,10 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	memset (&disasm_obj,'\0', sizeof(struct disassemble_info));
 	arm_mode = a->bits;
 	//disasm_obj.arch = ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
-	disasm_obj.arch = 1; //ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
+	/* TODO: set arch */
+	disasm_obj.arch =0xffffffff;
+	disasm_obj.mach =0xffffffff;
+
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &arm_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -79,7 +82,12 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 	disasm_obj.bytes_per_line = (a->bits/8);
 
 	op->buf_asm[0]='\0';
-	op->inst_len = print_insn_arm ((bfd_vma)Offset, &disasm_obj);
+	if (disasm_obj.endian)
+		op->inst_len = print_insn_little_arm (
+			(bfd_vma)Offset, &disasm_obj);
+	else
+		op->inst_len = print_insn_big_arm (
+			(bfd_vma)Offset, &disasm_obj);
 	if (op->inst_len == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
 	return op->inst_len; //(a->bits/8); //op->inst_len;
