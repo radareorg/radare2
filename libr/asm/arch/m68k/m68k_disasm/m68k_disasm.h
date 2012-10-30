@@ -485,10 +485,10 @@ typedef struct dis_buffer dis_buffer_t;
 
 /* common Unix typedefs used in m68k_disasm.c */
 #if !defined(_SYS_TYPES_H)
-typedef unsigned char u_char;
-typedef unsigned short u_short;
-typedef unsigned int u_int;
-typedef unsigned long u_long;
+#define u_char unsigned char
+#define u_short unsigned short
+#define u_int unsigned int
+#define u_long unsigned long
 #endif
 typedef unsigned long vm68k_offset_t;
 typedef unsigned long db_expr_t; /*@@@*/

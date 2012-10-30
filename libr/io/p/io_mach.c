@@ -6,7 +6,7 @@
 #include <r_lib.h>
 #include <r_cons.h>
 
-#if __APPLE__
+#if __APPLE__ && DEBUGGER
 
 #define EXCEPTION_PORT 0
 

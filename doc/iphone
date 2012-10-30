@@ -15,19 +15,16 @@ Setup SDK
   apt-get install com.bigboss.20toolchain
   cp libSystem.dylib /usr/lib
   cd /usr/lib ; ln -sf  libSystem.dylib libm.dylib
-  apt-get install make vim gawk
+  apt-get install make vim gawk git
 
 4) /var/include/sys/stat.h is broken.
   Solution: add 'int foo[3];' after 'st_rdev' at line 178
-
-5) install mercurial
-   easy_install mercurial
 
 Compilation
 ===========
   export CC=gcc
   export CFLAGS=-I/var/include
-  ./configure --without-debugger --prefix=/private/var/radare2
+  ./configure --disable-debugger --prefix=/private/var/radare2 --with-rpath
   make
   make symstall
 
@@ -36,3 +33,4 @@ Usage
   export R2DIR=/private/var/radare2
   export PATH=${R2DIR}/bin:$PATH
   export DYLD_LIBRARY_PATH=${R2DIR}/lib
+  r2 ...
