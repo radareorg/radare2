@@ -98,13 +98,14 @@ eprintf ("+ PERMS (%x) %llx\n", basic64->protection, addr);
 /* get page perms */
 
         // XXX SHOULD RESTORE PERMS LATER!!!
-        if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE) != KERN_SUCCESS)
-		if (vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS)
+        if (vm_protect (task, addr, len, 0, VM_PROT_COPY | VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE) != KERN_SUCCESS)
+		if (mach_vm_protect (task, addr, len, 0, VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS)
 			if (vm_protect (task, addr, len, 0, VM_PROT_WRITE) != KERN_SUCCESS)
 				eprintf ("cant change page perms to rw at 0x%"PFMT64x" with len= %d\n", addr, len);
         if (vm_write (task, (vm_address_t)addr,
                 	(vm_offset_t)buff, (mach_msg_type_number_t)len) != KERN_SUCCESS)
                 eprintf ("cant write on memory\n");
+	//if (vm_read_overwrite(task, addr, 4, buff, &sz)) { eprintf ("cannot overwrite\n"); }
 
 #if 0
 eprintf ("addrbase: %x\n", addrbase);

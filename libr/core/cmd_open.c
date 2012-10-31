@@ -144,7 +144,7 @@ static int cmd_open(void *data, const char *input) {
 	default:
 		eprintf ("Usage: o[com- ] [file] ([offset])\n"
 		" o                  list opened files\n"
-		" oc [ƒile]          open core file, like relaunching r2\n"
+		" oc [file]          open core file, like relaunching r2\n"
 		" oo                 reopen current file (kill+fork in debugger)\n"
 		" oo+                reopen current file in read-write\n"
 		" o 4                priorize io on fd 4 (bring to front)\n"

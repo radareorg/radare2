@@ -150,8 +150,7 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "
-Optional Features:
+printf "\nOptional Features:
   --enable-cparse        build with cparse support 
   --disable-debugger     disable native debugger features 
   --with-sysmagic        force to use system's magic 
@@ -165,10 +164,8 @@ Optional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)
   --without-pic          do not build libr as a program independent location 
   --with-nonpic          build the library archives .a 
-  --with-libversion      specify different libversion  (LIBVERSION=xxx)
-"
-printf "
-Some influential environment variables:
+  --with-libversion      specify different libversion  (LIBVERSION=xxx)\n"
+printf "\nSome influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -176,10 +173,8 @@ Some influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor
-"
-printf "
-Report bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor\n"
+printf "\nReport bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -395,9 +390,7 @@ HAVE_FLEX=1
 else
 	HAVE_FLEX=0
 	FLEX=flex
-echo no
-	echo "error: This program is required." >&2
-	exit 1 ; fi
+echo no ; fi
 check_library HAVE_LIB_EWF ewf 0 
 printf 'checking pkg-config flags for libewf... '
 tmp=`pkg-config --cflags libewf 2>/dev/null`

@@ -49,9 +49,15 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	ud_set_syntax (&disasm_obj, 
 		a->syntax==R_ASM_SYNTAX_ATT?
 			UD_SYN_ATT: UD_SYN_INTEL);
-	ud_set_mode (&disasm_obj, a->bits);
-	ud_set_pc (&disasm_obj, a->pc);
 	ud_set_input_buffer (&disasm_obj, buf, len);
+	ud_set_pc (&disasm_obj, a->pc);
+	ud_set_mode (&disasm_obj, a->bits);
+
+/*
+disasm_obj.inp_fill = 10;
+disasm_obj.inp_curr = 0;
+disasm_obj.inp_end = 128; //256;
+*/
 	op->inst_len = ud_disassemble (&disasm_obj);
 	//op->inst_len = ud_insn_len (&disasm_obj);
 	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&disasm_obj));

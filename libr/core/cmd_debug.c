@@ -110,20 +110,6 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case '?':
-		r_cons_printf ("Usage: dp[=][pid]\n"
-			" dp      list current pid and childrens\n"
-			" dp 748  list children of pid\n"
-			" dp*     list all attachable pids\n"
-			" dpa 377 attach and select this pid\n"
-			" dp=748  select this pid\n"
-			" dpn     Create new process (fork)\n"
-			" dpnt    Create new thread (clone)\n"
-			" dpt     List threads of current pid\n"
-			" dpt 74  List threads of given process\n"
-			" dpt=64  Attach to thread\n"
-			" dpk P S send signal S to P process id\n");
-		break;
 	case 'a':
 		r_debug_attach (core->dbg, (int) r_num_math (core->num, input+2));
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
@@ -143,6 +129,20 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case ' ':
 		r_debug_pid_list (core->dbg,
 			(int) r_num_math (core->num, input+2));
+		break;
+	case '?':
+		r_cons_printf ("Usage: dp[=][pid]\n"
+			" dp      list current pid and childrens\n"
+			" dp 748  list children of pid\n"
+			" dp*     list all attachable pids\n"
+			" dpa 377 attach and select this pid\n"
+			" dp=748  select this pid\n"
+			" dpn     Create new process (fork)\n"
+			" dpnt    Create new thread (clone)\n"
+			" dpt     List threads of current pid\n"
+			" dpt 74  List threads of given process\n"
+			" dpt=64  Attach to thread\n"
+			" dpk P S send signal S to P process id\n");
 		break;
 	default:
 		eprintf ("selected: %d %d\n", core->dbg->pid, core->dbg->tid);

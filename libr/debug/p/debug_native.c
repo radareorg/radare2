@@ -260,6 +260,14 @@ static int r_debug_native_step(RDebug *dbg) {
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
+#if __arm__
+	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0); //SIGINT);
+	if (ret != 0) {
+		perror ("ptrace-step");
+		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
+		ret = R_FALSE; /* do not wait for events */
+	} else ret = R_TRUE;
+#else
 	#if 0 && __arm__
 	if (!dbg->swstep)
 		eprintf ("XXX hardware stepping is not supported in arm. set e dbg.swstep=true\n");
@@ -274,6 +282,7 @@ static int r_debug_native_step(RDebug *dbg) {
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 		ret = R_FALSE; /* do not wait for events */
 	} else ret = R_TRUE;
+#endif
 #elif __BSD__ 
 	ret = ptrace (PT_STEP, pid, (caddr_t)1, 0);
 	if (ret != 0) {
@@ -354,9 +363,36 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 	return 0;
 #elif __APPLE__
-	ut64 rip = r_debug_reg_get (dbg, "pc");
-	ptrace (PT_CONTINUE, pid, (void*)(size_t)rip, 0); // 0 = send no signal TODO !! implement somewhere else
+#if __arm__
+	int i, ret, status;
+	thread_array_t inferior_threads = NULL;
+	unsigned int inferior_thread_count = 0;
+
+// XXX: detach is noncontrollable continue
+        ptrace(PT_DETACH, pid, 0, 0);
+#if 0
+	ptrace (PT_THUPDATE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
+	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
+	task_resume (pid_to_task (pid));
+	ret = waitpid (pid, &status, 0);
+#endif
+/*
+        ptrace(PT_ATTACHEXC, pid, 0, 0);
+
+        if (task_threads (pid_to_task (pid), &inferior_threads,
+			&inferior_thread_count) != KERN_SUCCESS) {
+                eprintf ("Failed to get list of task's threads.\n");
+		return 0;
+        }
+        for (i = 0; i < inferior_thread_count; i++)
+		thread_resume (inferior_threads[i]);
+*/
+	return 1;
+#else
+	//ut64 rip = r_debug_reg_get (dbg, "pc");
+	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
         return 0;
+#endif
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "pc");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data);
@@ -1277,7 +1313,7 @@ static RList *r_debug_native_threads(RDebug *dbg, int pid) {
 	return w32_thread_list (pid, list);
 #elif __APPLE__
 #if __arm__                 
-	#define OSX_PC state.pc
+	#define OSX_PC state.__pc
 #elif __POWERPC__
 	#define OSX_PC state.srr0
 #elif __x86_64__
@@ -2285,12 +2321,12 @@ static int r_debug_native_map_protect (RDebug *dbg, ut64 addr, int size, int per
 			(vm_address_t)addr,
 			(vm_size_t)size,
 			(boolean_t)0, /* maximum protection */
-			perms); //unix_prot_to_darwin (perms));
+			VM_PROT_COPY|perms); //unix_prot_to_darwin (perms));
 	if (ret != KERN_SUCCESS) {
 		printf("vm_protect failed\n");
-		return R_TRUE;
+		return R_FALSE;
 	}
-	return R_FALSE;
+	return R_TRUE;
 #elif __linux__
 #warning mprotect not implemented for this Linux.. contribs are welcome. use r_egg here?
 	return R_FALSE;

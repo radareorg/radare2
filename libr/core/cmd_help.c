@@ -18,12 +18,8 @@ static int cmd_help(void *data, const char *input) {
 				*p = 0;
 				b = (ut32)r_num_math (core->num, out);
 				r = (ut32)r_num_math (core->num, p+1)-b;
-			} else {
-				r = (ut32)r_num_math (core->num, out);
-			}
-		} else {
-			r = 0LL;
-		}
+			} else r = (ut32)r_num_math (core->num, out);
+		} else r = 0LL;
 		if (r == 0)
 			r = UT32_MAX>>1;
 		core->num->value = (ut64) (b + r_num_rand (r));

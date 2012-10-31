@@ -856,7 +856,7 @@ next2:
 				}
 				len = r_hex_str2bin (ptr+3, buf);
 				r_core_block_size (core, len);
-				memcpy (core->block, buf, len);
+				memcpy (core->block, buf, core->blocksize);
 				free (buf);
 				break;
 			case 's':
@@ -864,8 +864,8 @@ next2:
 				r_core_block_size (core, len);
 				memcpy (core->block, ptr+3, len);
 				break;
-default:
-goto ignore;
+			default:
+				goto ignore;
 			}
 			ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			*ptr = '@';
