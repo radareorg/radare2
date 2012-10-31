@@ -129,11 +129,6 @@ function show_popup_about () {
 		"<a href=\"javascript:toggle('asm.pseudo')\" />asm.pseudo</a><br />"+
 		"<a href=\"javascript:toggle('asm.bytes')\" />asm.bytes</a><br />"+
 		"<a href=\"javascript:toggle('cfg.bigendian')\" />cfg.bigendian</a><br />"+
-/*
-asm.arch
-asm.bits
-a
-*/
 		"&nbsp;"+
 		"<br />"+
 		"Actions"+
@@ -266,7 +261,6 @@ function filter_asm(x) {
 		}
 	} else hasmore (true);
 
-	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
 	function haveDisasm(x) {
 		if (x[0]=='p' && x[1]=='d') return true;
 		if (x.indexOf (";pd") != -1) return true;
@@ -275,16 +269,17 @@ function filter_asm(x) {
 	if (haveDisasm (display)) {
 		x = x.replace (/;(\s+)/g, ";");
 		x = x.replace (/;(.*)/g, "// <span style='color:yellow'>$1</span>");
-		x = x.replace (/(fcn|imp|loc).(.*)/g, "<a href='javascript:seek(\"$1.$2\")'>$1.$2</a>");
 		x = x.replace (/(bl|call)/g, "<b style='color:green'>call</b>");
-		x = x.replace (/(jmp|jnz|jg|je|jl|jz|jb|ja|jne)/g, "<b style='color:green'>$1</b>");
+		x = x.replace (/(jmp|bne|beq|jnz|jg|je|jl|jz|jb|ja|jne)/g, "<b style='color:green'>$1</b>");
 		x = x.replace (/(leave|ret)/g, "<b style='color:red'>$1</b>");
 		x = x.replace (/(add|sub|mul|div|shl|shr|and|not|xor|inc|dec|sar|sal)/g, "<b style='color:orange'>$1</b>");
 		x = x.replace (/(push|pop)/g, "<b style='color:magenta'>$1</b>");
 		x = x.replace (/(mov|lea)/g, "<b style='color:yellow'>$1</b>");
 		x = x.replace (/(test|cmp)/g, "<b style='color:green'>$1</b>");
 		x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
+		x = x.replace (/(sym|fcn|imp|loc).(.*)/g, "<a href='javascript:seek(\"$1.$2\")'>$1.$2</a>");
 	}
+	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
 	if (backward) {
 		prev_curoff = curoff;
 		prev_lastoff = lastoff;
@@ -361,11 +356,13 @@ function popup_show (title, body) {
 		t.innerHTML = title;
 	if (body) {
 		var top = document.body.scrollTop+10;
+		var left = document.body.scrollLeft+10;
 		c.innerHTML = body;
 		p.style.visibility =
 		b.style.visibility = "visible";
 		//c.style.top = top; /* XXX doesnt works */
 		css ('.popup', 'top', top+"px"); //'220px');
+		css ('.popup', 'left', left+"px"); //'220px');
 	}
 	b.height = 100;
 }
@@ -388,16 +385,39 @@ function toggle_editor() {
 	var em = document.getElementById('editor_menu');
 	if (et.style.visibility=="hidden") {
 		e.style.width = 300;
-		et.style.visibility="visible";
-		em.style.visibility="visible";
+		et.style.visibility=em.style.visibility="visible";
 		x.innerHTML = "x";
 	} else {
 		e.style.width = 16;
-		et.style.visibility="hidden";
-		em.style.visibility="hidden";
+		et.style.visibility=em.style.visibility="hidden";
 		x.innerHTML = "&lt;";
 	}
 	
+}
+
+function notepad_run() {
+	var t = document.getElementById ('editor_textarea').value;
+	cmd (t.replace (/\n/g, ';'), function (out) {
+		document.getElementById ('editor_textarea').value = out;
+	});
+}
+
+function notepad_assemble () {
+	var t = document.getElementById ('editor_textarea').value;
+	cmd ("\"pa "+t.replace (/\n/g, ';')+"\"", function (out) {
+		document.getElementById ('editor_textarea').value = out;
+	});
+}
+
+function notepad_disassemble () {
+	var t = document.getElementById ('editor_textarea').value;
+	cmd ("pi@b:"+t.replace (/\n/g, ''), function (out) {
+		document.getElementById ('editor_textarea').value = out;
+	});
+}
+
+function notepad_clear() {
+	document.getElementById ('editor_textarea').value = '';
 }
 
 function init() {
@@ -424,7 +444,6 @@ var r2 = {
 	'config_get': function (x,y) { cmd ('e '+x, y); },
 	'config_set': function (x) { runcmd ('s entry0'); }
 }
-
 </script>
 </head>
 <body id="body" onload="init()">
@@ -435,7 +454,7 @@ var r2 = {
 <a href="javascript:r2.incode()">pc</a>
 |
 <a href="javascript:r2.entry()">entry</a>
-<a href="javascript:r2.analyze()">analyze</a>
+<a href="javascript:r2.analyze()">a</a>
 |
 <a href="javascript:r2.break()">break</a>
 <a href="javascript:r2.step()">step</a>
@@ -449,9 +468,10 @@ var r2 = {
 <a title="toggle notepad" id="x" href="javascript:toggle_editor ()">&lt;</a>
 </td><td>
 <div id="editor_menu">
-<a title="execute selected text" href="javascript:alert('TODO')">run</a>
-<a title="assemble selected text" href="javascript:alert('TODO')">asm</a>
-<a title="disassemble selected text" href="javascript:alert('TODO')">dis</a>
+<a title="execute selected text" href="javascript:notepad_run()">run</a>
+<a title="assemble selected text" href="javascript:notepad_assemble()">asm</a>
+<a title="disassemble selected text" href="javascript:notepad_disassemble()">dis</a>
+<a title="disassemble selected text" href="javascript:notepad_clear()">clr</a>
 </div>
 </td></tr></table>
 <textarea id="editor_textarea" class="editor_textarea" style="visibility:hidden">
@@ -468,42 +488,27 @@ var r2 = {
 </tr>
 <tr>
 	<td colspan=2 valign="top" style="light">
-<div class="popup_content" id="popup_content">
-This is the r2w2 ui. A rewrite in pure C/js of the original r2w written in python.
-<br /><br />
-This interface aims to run on every modern browser; from Android/iPhone/iPad to desktop browsers (Chromium, Firefox, ..)
-<br /><br />
-The UI is under heavy development. This is the first release and there will probably be lot of bugs and caveats. Feel free to report on <a href="http://github.com/radare/radare2">github</a> patches, ideas or bug reports.
-<br /><br />
-Enjoy!
-	</div>
+		<div class="popup_content" id="popup_content"> </div>
 	</td>
 </tr>
 </table>
 </div>
 
 <div style="position:fixed; top:0px;left:0px;background-color:black;border:0px">
-<table class=header>
-<tr>
-	<td style="text-align:left;vertical-align:top">
-	<a href="javascript:show_popup_about ()"><img border=0 src="rlogo2.png" /></a>
-</td> <td align="right" style="width:100%">
-	<input style="width:100%" onkeypress="handleKeyPress(event)" id="input">
-</td> </tr> 
-</table>
-
+	<table class=header>
+	<tr><td style="text-align:left;vertical-align:top">
+		<a href="javascript:show_popup_about ()"><img border=0 src="rlogo2.png" /></a>
+	</td><td align="right" style="width:100%">
+		<input style="width:100%" onkeypress="handleKeyPress(event)" id="input">
+	</td></tr> 
+	</table>
 </div>
 
 <div onresize="menubar_display()" id="console" class="console" style="top:45px !important; position:absolute;z-index:-99">
-<div id="less">
-	<a href='javascript:less()'>... prev</a>
-</div>
+<div id="less" class="scroller" onclick="less()"> &nbsp;&nbsp;^^^ </div>
 <p id="output"></p>
-<div id="more">
-	<a href='javascript:more()'>... next</a>
-<br /><br /><br />
-</div>
+<div id="more" class="scroller" onclick="more()"> &nbsp;&nbsp;vvv </div>
+<br /> <br /> 
 </div>
 </body>
 </html>
-

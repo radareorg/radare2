@@ -282,11 +282,11 @@ f OMAP3430_reg_CONTROL_PROT_ERR_STATUS 4 @OMAP3430_SCM_BASE+0x2E4 Protection Err
 f OMAP3430_reg_CONTROL_PROT_ERR_STATUS_DEBUG 4 @OMAP3430_SCM_BASE+0x2E8 Protection Error Status Debug Register
 f OMAP3430_reg_CONTROL_STATUS 4 @OMAP3430_SCM_BASE+0x2F0 Control Module Status register: latches system information at reset time
 f OMAP3430_reg_CONTROL_GENERAL_PURPOSE_STATUS 4 @OMAP3430_SCM_BASE+0x2F4
-f OMAP3430_reg_CONTROL_RPUB_KEY_H_0 4 @OMAP3430_SCM_BASE+0x300 Root public key hash; B-field
-f OMAP3430_reg_CONTROL_RPUB_KEY_H_1 4 @OMAP3430_SCM_BASE+0x304 Root public key hash; B-field
-f OMAP3430_reg_CONTROL_RPUB_KEY_H_2 4 @OMAP3430_SCM_BASE+0x308 Root public key hash; B-field
-f OMAP3430_reg_CONTROL_RPUB_KEY_H_3 4 @OMAP3430_SCM_BASE+0x30C Root public key hash; B-field
-f OMAP3430_reg_CONTROL_RPUB_KEY_H_4 4 @OMAP3430_SCM_BASE+0x310 Root public key hash; B-field
+f OMAP3430_reg_CONTROL_RPUB_KEY_H_0 4 @OMAP3430_SCM_BASE+0x300 Root public key hash: B-field
+f OMAP3430_reg_CONTROL_RPUB_KEY_H_1 4 @OMAP3430_SCM_BASE+0x304 Root public key hash: B-field
+f OMAP3430_reg_CONTROL_RPUB_KEY_H_2 4 @OMAP3430_SCM_BASE+0x308 Root public key hash: B-field
+f OMAP3430_reg_CONTROL_RPUB_KEY_H_3 4 @OMAP3430_SCM_BASE+0x30C Root public key hash: B-field
+f OMAP3430_reg_CONTROL_RPUB_KEY_H_4 4 @OMAP3430_SCM_BASE+0x310 Root public key hash: B-field
 f OMAP3430_reg_CONTROL_USB_CONF_0 4 @OMAP3430_SCM_BASE+0x370 USB Fuse conf [31:0], USB Product ID [31:16], Vendor ID [15:0]
 f OMAP3430_reg_CONTROL_USB_CONF_1 4 @OMAP3430_SCM_BASE+0x374 USB Fuse conf 1, SEQ_DISADAPTCLK[1], USB PHY detection mode [0]
 f OMAP3430_reg_CONTROL_FUSE_OPP1_VDD1 4 @OMAP3430_SCM_BASE+0x380 Standard Fuse OPP1 VDD1
@@ -541,7 +541,7 @@ f OMAP3430_reg_PRM_CLKSETUP 4 @OMAP3430_PRM_BASE+0x1298 This register allows set
 f OMAP3430_reg_PRM_POLCTRL 4 @OMAP3430_PRM_BASE+0x129C This register allows setting the polarity of device outputs control signals
 f OMAP3430_reg_PRM_VOLTSETUP2 4 @OMAP3430_PRM_BASE+0x12A0 This register allows setting the overall setup time of VDD1 and VDD2 regulators. This register is used when exiting OFF mode and when the Power IC manages the sequencing of the voltages regulation steps
 
-// Here is an Secret Register Array. All information about them not available in public domain
+# Here is an Secret Register Array. All information about them not available in public domain
 
 f OMAP3430_reg_RM_RSTST_NEON 4 @OMAP3430_PRM_BASE+0x1358 This register logs the different reset sources of the NEON domain. Each bit is set upon release of the domain reset signal. Must be cleared by software
 f OMAP3430_reg_PM_WKDEP_NEON 4 @OMAP3430_PRM_BASE+0x13C8 This register allows enabling or disabling the wake-up of the NEON domain upon another domain

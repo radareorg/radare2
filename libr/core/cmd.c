@@ -1086,7 +1086,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 R_API int r_core_cmd_file(RCore *core, const char *file) {
 	int ret = R_TRUE;
 	char *nl, *data, *odata = r_file_slurp (file, NULL);
-	if (!odata) return -2;
+	if (!odata) return R_FALSE;
 	nl = strchr (odata, '\n');
 	if (nl) {
 		data = odata;
@@ -1108,7 +1108,7 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 		} while ((nl = strchr (data, '\n')));
 	}
 	free (odata);
-	return ret;
+	return R_TRUE;
 }
 
 R_API int r_core_cmd_command(RCore *core, const char *command) {

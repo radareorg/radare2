@@ -140,7 +140,7 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	double d;
-	char str[128];
+	char str[R_NUMCALC_STRSZ];
 	int i = 0;
 	char c;
 	str[0] = 0;

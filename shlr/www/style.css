@@ -143,12 +143,16 @@ a {
 }
 
 .editor_textarea {
-	opacity:0.5;
 	visibility: hidden;
-	filter:alpha(opacity=70);
-	background-color:yellow;
+	background-color:#303030;
 	width:95%;
 	height:100%;
 	font-family: Courier;
-	color: black;
+	color: white;
+}
+
+.scroller {
+	width:100%;
+	background-color:#404080;
+	cursor: pointer;
 }
