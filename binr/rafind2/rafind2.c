@@ -38,7 +38,6 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	if (rad) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
-		if (!kw->count) printf ("; %s\n", kw->keyword);
 		printf ("%s: %03d @ 0x%"PFMT64x"\n", curfile, kw->count, addr);
 		if (pr) {
 			r_print_hexdump (pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);

@@ -152,10 +152,13 @@ static int cmd_search(void *data, const char *input) {
 	ut64 at, from, to;
 	const char *mode;
 	char *inp;
-	ut64 n64;
+	ut64 n64, __from, __to;
 	ut32 n32;
 	ut16 n16;
 	ut8 *buf;
+
+	__from = r_config_get_i (core->config, "search.from");
+	__to = r_config_get_i (core->config, "search.to");
 
 	searchshow = r_config_get_i (core->config, "search.show");
 	mode = r_config_get (core->config, "search.in");
@@ -177,8 +180,9 @@ static int cmd_search(void *data, const char *input) {
 			if (to == 0LL || to == UT64_MAX || to == UT32_MAX)
 				to = r_io_size (core->io);
 		} else {
+			RIOMap *map = r_io_map_get (core->io, core->offset);
 			from = core->offset;
-			to = r_io_size (core->io);
+			to = r_io_size (core->io) + (map? map->to:0);
 		}
 	} else
 	if (!strcmp (mode, "section")) {
@@ -217,6 +221,13 @@ static int cmd_search(void *data, const char *input) {
 				}
 			}
 		}
+	}
+
+	if (__from != UT64_MAX) from = __from;
+	if (__to != UT64_MAX) to = __to;
+	if (__to < __from) {
+		eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
+		return R_FALSE;
 	}
 
 	core->search->align = r_config_get_i (core->config, "search.align");
