@@ -2,10 +2,13 @@
 
 # Configuration
 BEGIN {
-	cpu="arm";
+	file=""
+	arch="arm"
 	bits=32
 	offset=0
+	iova=1
 }
+
 # API
 function sys(cmd) {
 	res = ""
@@ -16,23 +19,23 @@ function sys(cmd) {
 	return res
 }
 
-function dis(x) { return sys("rasm2 -o "offset" -b "bits" -a "cpu" -d '"x"'"); }
-function asm(x) { return sys("rasm2 -o "offset" -b "bits" -a "cpu" '"x"'"); }
-function symbols(x) { return sys("rabin2 -vs '"x"'"); }
-function entry(x) { return sys("rabin2 -ve '"x"'"); }
-#TODO: function write(data,off) { return sys("rabin2 -ve '"x"'"); }
-
-function hexfind(file, x) {
-	return sys("rafind2 -x '"x"' '"file"'|cut -d @ -f 2")
+function chop(x) {
+	gsub(/\n/,"",x);
+	return x
 }
 
-# Your program here
-BEGIN {
-	cpu="x86"
-	op=dis("90903939");
-	print("Commandline disassembler")
-	split (hexfind("/bin/ls", "90"), results, / /)
-	for (a in results) {
-		print("--- "a)
-	}
-}
+function round(a) {a=(a < int(a)+0.5) ? int(a) : int(a+1)}
+function ceil(a) {a=(a == int(a)) ? a : int(a)+1}
+function dis(x) { return sys("rasm2 -o "offset" -b "bits" -a "arch" -d '"x"'"); }
+function asm(x) { return sys("rasm2 -o "offset" -b "bits" -a "arch" '"x"'"); }
+function symbols() { return sys("rabin2 -vqs '"file"'"); }
+function entries() { return sys("rabin2 -vqe '"file"'"); }
+function imports() { return sys("rabin2 -vqi '"file"'"); }
+function strings() { return sys("rabin2 -vqz '"file"'"); }
+function sections() { return sys("rabin2 -vqS '"file"'"); }
+function num(x) { return 0+x }
+function read(off,num) { return sys("r2 -qc 'p8 "num"@"off"' '"file"'") }
+function write(off,x) { return sys("r2 -wqc 'wx "x"@"off"' '"file"'") }
+function prompt(x,y) {printf(x);getline y; return chop(y); }
+function search_hex(x) { return sys("rafind2 -x '"x"' '"file"'") }
+function search_str(x) { return sys("rafind2 -s '"x"' '"file"'") }

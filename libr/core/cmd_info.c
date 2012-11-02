@@ -5,6 +5,7 @@ static int cmd_info(void *data, const char *input) {
 	ut64 offset = r_bin_get_offset (core->bin);
 	int va = core->io->va || core->io->debug;
 	int mode = (input[1]=='*')?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT;
+	if (input[1]=='j') mode = R_CORE_BIN_JSON;
 	switch (*input) {
 	case 'o':
 		if (input[1]==' ')
@@ -99,5 +100,7 @@ static int cmd_info(void *data, const char *input) {
 			r_cons_printf ("format\t%s\n", core->bin->cur.curplugin->name);
 		}
 	}
+	if (mode == R_CORE_BIN_JSON)
+		r_cons_newline ();
 	return 0;
 }

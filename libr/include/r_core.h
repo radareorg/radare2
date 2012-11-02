@@ -237,6 +237,8 @@ R_API void r_core_sysenv_help();
 #define R_CORE_BIN_PRINT	0x000
 #define R_CORE_BIN_RADARE	0x001
 #define R_CORE_BIN_SET		0x002
+#define R_CORE_BIN_SIMPLE	0x004
+#define R_CORE_BIN_JSON         0x008
 
 #define R_CORE_BIN_ACC_STRINGS	0x001
 #define R_CORE_BIN_ACC_INFO	0x002

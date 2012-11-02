@@ -1,0 +1,8 @@
+#!/usr/bin/awk -f r2.awk -f
+BEGIN {
+	file="/bin/ls"
+	arch="x86"
+	offset=chop(entries())
+	print("entrypoint: "offset)
+	print(dis(read(e,"64")))
+}

@@ -1,11 +1,5 @@
 /* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
 
-/* TODO:
- * Use -v to show version information.. not -V .. like the rest of tools
- *  --- needs sync with callers and so on..
- * -L [lib]  dlopen library and show addr
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.c>
@@ -33,17 +27,17 @@
 #define ACTION_DWARF     0x20000
 #define ACTION_SIZE      0x40000
 
-static struct r_lib_t *l;
 static struct r_bin_t *bin = NULL;
-static int rad = R_FALSE;
-static int rw = R_FALSE;
-static int va = R_FALSE;
-static ut64 gbaddr = 0LL;
-static char* file = NULL;
 static char* output = NULL;
 static char* create = NULL;
-static ut64 at = 0LL;
+static int rad = R_FALSE;
+static ut64 gbaddr = 0LL;
+static char* file = NULL;
 static char *name = NULL;
+static int rw = R_FALSE;
+static int va = R_FALSE;
+static ut64 at = 0LL;
+static RLib *l;
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
@@ -58,6 +52,7 @@ static int rabin_show_help() {
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
 		" -i              imports (symbols imported from libraries)\n"
+		" -j              output in json\n"
 		" -s              symbols (exports)\n"
 		" -S              sections\n"
 		" -M              main (show address of main symbol)\n"
@@ -73,6 +68,7 @@ static int rabin_show_help() {
 		" -L              list supported bin plugins\n"
 		" -@ [addr]       show section, symbol or import at addr\n"
 		" -n [str]        show section, symbol or import named str\n"
+		" -q              be quite, just show fewer data\n"
 		" -x              extract bins contained in file\n"
 		" -Z              size of binary\n"
 		" -z              strings\n"
@@ -163,7 +159,6 @@ static int rabin_dump_symbols(int len) {
 		free (buf);
 		free (ret);
 	}
-
 	return R_TRUE;
 }
 
@@ -292,12 +287,20 @@ static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 	return R_TRUE;
 }
 
+static int rabin_show_version () {
+	printf ("rabin2 v"R2_VERSION"\n");
+	return 0;
+}
+
 int main(int argc, char **argv) {
-	int c, bits = 0;
-	int action = ACTION_UNK;
-	const char *op = NULL;
+	char *homeplugindir = r_str_home (".radare/plugins");
 	char *arch = NULL, *arch_name = NULL;
+	int actions_done=0, actions = 0, action = ACTION_UNK;
+	RCoreBinFilter filter;
+	const char *op = NULL;
+	int c, bits = 0;
 	ut64 offset;
+	RCore core;
 
 	bin = r_bin_new ();
 	l = r_lib_new ("radare_plugin");
@@ -306,49 +309,50 @@ int main(int argc, char **argv) {
 	r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
 					   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 
-	{ /* load plugins everywhere */
-		char *homeplugindir = r_str_home (".radare/plugins");
-		r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
-		r_lib_opendir (l, homeplugindir);
-		r_lib_opendir (l, LIBDIR"/radare2/");
-	}
+	 /* load plugins everywhere */
+	r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
+	r_lib_opendir (l, homeplugindir);
+	r_lib_opendir (l, LIBDIR"/radare2/");
 
-	while ((c = getopt (argc, argv, "Af:a:B:b:c:CdMm:n:@:VisSIHelRwO:o:p:rvLhxzZ")) != -1) {
-		switch(c) {
-		case 'A': action |= ACTION_LISTARCHS; break;
+#define set_action(x) actions++; action |=x
+	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:@:VisSIHelRwO:o:p:rvLhxzZ")) != -1) {
+		switch (c) {
+		case 'q': rad = R_CORE_BIN_SIMPLE; break;
+		case 'j': rad = R_CORE_BIN_JSON; break;
+		case 'A': set_action(ACTION_LISTARCHS); break;
 		case 'a': if (optarg) arch = strdup (optarg); break;
 		case 'c':
 			if (!optarg) {
 				eprintf ("Missing argument for -c");
 				return 1;
 			}
-			action = ACTION_CREATE;
+			set_action (ACTION_CREATE);
 			create = strdup (optarg);
 			break;
-		case 'C': action |= ACTION_CLASSES; break;
+		case 'C': set_action (ACTION_CLASSES); break;
 		case 'f': if (optarg) arch_name = strdup (optarg); break;
 		case 'b': bits = r_num_math (NULL, optarg); break;
 		case 'm':
 			at = r_num_math (NULL, optarg);
-			action |= ACTION_SRCLINE;
+			set_action (ACTION_SRCLINE);
 			break;
-		case 'i': action |= ACTION_IMPORTS; break;
-		case 's': action |= ACTION_SYMBOLS; break;
-		case 'S': action |= ACTION_SECTIONS; break;
-		case 'z': action |= ACTION_STRINGS; break;
-		case 'Z': action |= ACTION_SIZE; break;
-		case 'I': action |= ACTION_INFO; break;
-		case 'H': action |= ACTION_FIELDS; break;
-		case 'd': action |= ACTION_DWARF; break;
-		case 'e': action |= ACTION_ENTRIES; break;
-		case 'M': action |= ACTION_MAIN; break;
-		case 'l': action |= ACTION_LIBS; break;
-		case 'R': action |= ACTION_RELOCS; break;
-		case 'x': action |= ACTION_EXTRACT; break;
+		case 'i': set_action (ACTION_IMPORTS); break;
+		case 's': set_action(ACTION_SYMBOLS); break;
+		case 'S': set_action(ACTION_SECTIONS); break;
+		case 'z': set_action(ACTION_STRINGS); break;
+		case 'Z': set_action(ACTION_SIZE); break;
+		case 'I': set_action(ACTION_INFO); break;
+		case 'H': set_action(ACTION_FIELDS); break;
+		case 'd': set_action(ACTION_DWARF); break;
+		case 'e': set_action(ACTION_ENTRIES); break;
+		case 'M': set_action(ACTION_MAIN); break;
+		case 'l': set_action(ACTION_LIBS); break;
+		case 'R': set_action(ACTION_RELOCS); break;
+		case 'x': set_action(ACTION_EXTRACT); break;
 		case 'w': rw = R_TRUE; break;
 		case 'O':
 			op = optarg;
-			action |= ACTION_OPERATION;
+			set_action (ACTION_OPERATION);
 			if (optind==argc) {
 				eprintf ("Missing filename\n");
 				return 1;
@@ -362,7 +366,7 @@ int main(int argc, char **argv) {
 		case 'B': gbaddr = r_num_math (NULL, optarg); break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
-		case 'V': printf ("rabin2 v"R2_VERSION"\n"); return 0;
+		case 'V': return rabin_show_version();
 		case 'h':
 		default:
 			action |= ACTION_HELP;
@@ -370,8 +374,10 @@ int main(int argc, char **argv) {
 	}
 
 	file = argv[optind];
-	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL)
+	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL) {
+		if (va) return rabin_show_version ();
 		return rabin_show_help ();
+	}
 
 	if (arch) {
 		char *ptr;
@@ -428,59 +434,69 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	// XXX: TODO move this to libr/core/bin.c
 	if (action & ACTION_LISTARCHS || ((arch || bits || arch_name) &&
 		!r_bin_select (bin, arch, bits, arch_name))) {
-		r_bin_list_archs (bin);
+		if (rad == R_CORE_BIN_JSON) {
+			int i;
+			printf ("[");
+			for (i = 0; i < bin->narch; i++) {
+				if (r_bin_select_idx (bin, i)) {
+					RBinInfo *info = bin->cur.o->info;
+					printf ("%s{\"arch\":\"%s\",\"bits\":%d,"
+						"\"offset\":%"PFMT64d",\"machine\":\"%s\"}",
+						i?",":"",info->arch, info->bits,
+						bin->cur.offset, info->machine);
+				}
+			}
+			printf ("]");
+		} else r_bin_list_archs (bin);
 		free (arch);
 		free (arch_name);
-		r_bin_free (bin);
-		return 1;
 	}
 
 	if (gbaddr != 0LL)
 		bin->cur.o->baddr = gbaddr;
 
-	RCore core;
 	core.bin = bin;
-	RCoreBinFilter filter;
 	filter.offset = at;
 	filter.name = name;
 
 	offset = r_bin_get_offset (bin);
 	r_cons_new ()->is_interactive = R_FALSE;
-	if (action&ACTION_SECTIONS)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_SECTIONS, rad, va, &filter, 0);
-	if (action&ACTION_ENTRIES)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_ENTRIES, rad, va, NULL, offset);
-	if (action&ACTION_MAIN)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_MAIN, rad, va, NULL, offset);
-	if (action&ACTION_IMPORTS)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_IMPORTS, rad, va, &filter, offset);
-	if (action&ACTION_CLASSES)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_CLASSES, rad, va, NULL, 0);
-	if (action&ACTION_SYMBOLS)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_SYMBOLS, rad, va, &filter, offset);
-	if (action&ACTION_STRINGS)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_STRINGS, rad, va, NULL, 0);
-	if (action&ACTION_INFO)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_INFO, rad, va, NULL, 0);
-	if (action&ACTION_FIELDS)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_FIELDS, rad, va, NULL, 0);
-	if (action&ACTION_LIBS)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_LIBS, rad, va, NULL, 0);
-	if (action&ACTION_RELOCS)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_RELOCS, rad, va, NULL, 0);
-	if (action&ACTION_DWARF)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_DWARF, rad, va, NULL, 0);
-	if (action&ACTION_SIZE)
-		r_core_bin_info (&core, R_CORE_BIN_ACC_SIZE, rad, va, NULL, 0);
+
+#define isradjson rad==R_CORE_BIN_JSON&&actions>1
+#define run_action(n,x,y) {\
+	if (action&x) {\
+		if (isradjson) r_cons_printf ("\"%s\":",n);\
+		r_core_bin_info (&core, y, rad, va, &filter, 0);\
+		actions_done++;\
+		if (isradjson) r_cons_printf (actions==actions_done? "":",");\
+	}\
+}
+
+	if (isradjson) r_cons_printf ("{");
+	run_action ("sections", ACTION_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
+	run_action ("entries", ACTION_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
+	run_action ("main", ACTION_MAIN, R_CORE_BIN_ACC_MAIN);
+	run_action ("imports", ACTION_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
+	run_action ("classes", ACTION_CLASSES, R_CORE_BIN_ACC_CLASSES);
+	run_action ("symbols", ACTION_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
+	run_action ("strings", ACTION_STRINGS, R_CORE_BIN_ACC_STRINGS);
+	run_action ("info", ACTION_INFO, R_CORE_BIN_ACC_INFO);
+	run_action ("fields", ACTION_FIELDS, R_CORE_BIN_ACC_FIELDS);
+	run_action ("libs", ACTION_LIBS, R_CORE_BIN_ACC_LIBS);
+	run_action ("relocs", ACTION_RELOCS, R_CORE_BIN_ACC_RELOCS);
+	run_action ("dwarf", ACTION_DWARF, R_CORE_BIN_ACC_DWARF);
+	run_action ("size", ACTION_SIZE, R_CORE_BIN_ACC_SIZE);
 	if (action&ACTION_SRCLINE)
 		rabin_show_srcline (at);
 	if (action&ACTION_EXTRACT)
 		rabin_extract ((arch==NULL && arch_name==NULL && bits==0));
 	if (op != NULL && action&ACTION_OPERATION)
 		rabin_do_operation (op);
-
+	if (isradjson)
+		printf ("}");
 	free (arch);
 	r_bin_free (bin);
 	r_cons_flush ();

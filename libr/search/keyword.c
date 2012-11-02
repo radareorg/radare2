@@ -30,6 +30,7 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kw, const char *bmhex
 	RSearchKeyword *ks = NULL;
 	int bmlen = 0;
 	ut8 *bm = NULL;
+	if (!kw) return NULL;
 	if (bmhex != NULL) {
 		bm = malloc (strlen (bmhex));
 		if (bm != NULL) {

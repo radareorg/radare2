@@ -26,19 +26,14 @@ static char *curfile = NULL;
 static ut64 bsize = 4096;
 static int hexstr = 0;
 static struct r_print_t *pr = NULL;
-static LIST_HEAD(kws_head);
-
-typedef struct {
-	char *str;
-	struct list_head list;
-} BoxedString;
+static RList *keywords;
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	int delta = addr-cur;
 	if (rad) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
-		printf ("%s: %03d @ 0x%"PFMT64x"\n", curfile, kw->count, addr);
+		printf ("0x%"PFMT64x"\n", addr);
 		if (pr) {
 			r_print_hexdump (pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);
 			r_cons_flush ();
@@ -69,8 +64,9 @@ static int show_help(char *argv0, int line) {
 }
 
 static int rafind_open(char *file) {
+	const char *kw;
+	RListIter *iter;
 	int ret, last = 0;
-	struct list_head *pos;
 
 	io = r_io_new ();
 	fd = r_io_open (io, file, R_IO_READ, 0);
@@ -93,12 +89,10 @@ static int rafind_open(char *file) {
 		eprintf ("TODO: searchin stringz\n");
 	}
 	if (mode == R_SEARCH_KEYWORD) {
-		list_for_each(pos, &(kws_head)) {
-			BoxedString *kw = list_entry(pos, BoxedString, list);
+		r_list_foreach (keywords, iter, kw) {
 			r_search_kw_add (rs, (hexstr)?
-				r_search_keyword_new_hex (kw->str, mask, NULL) :
-				r_search_keyword_new_str (kw->str, mask, NULL, 0));
-			free (kw);
+				r_search_keyword_new_hex (kw, mask, NULL) :
+				r_search_keyword_new_str (kw, mask, NULL, 0));
 		}
 	} else if (mode == R_SEARCH_STRING) {
 		r_search_kw_add (rs,
@@ -137,10 +131,8 @@ static int rafind_open(char *file) {
 int main(int argc, char **argv) {
 	int c;
 
+	keywords = r_list_new ();
 	while ((c = getopt(argc, argv, "e:b:m:s:x:Xzf:t:rnhv")) != -1) {
-		BoxedString *kw = R_NEW (BoxedString);
-		INIT_LIST_HEAD (&(kw->list));
-
 		switch (c) {
 		case 'r':
 			rad = 1;
@@ -151,14 +143,12 @@ int main(int argc, char **argv) {
 		case 'e':
 			mode = R_SEARCH_REGEXP;
 			hexstr = 0;
-			kw->str = optarg;
-			list_add (&(kw->list), &(kws_head));
+			r_list_append (keywords, optarg);
 			break;
 		case 's':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 0;
-			kw->str = optarg;
-			list_add (&(kw->list), &(kws_head));
+			r_list_append (keywords, optarg);
 			break;
 		case 'b':
 			bsize = r_num_math (NULL, optarg);
@@ -169,8 +159,7 @@ int main(int argc, char **argv) {
 		case 'x':
 			mode = R_SEARCH_KEYWORD;
 			hexstr = 1;
-			kw->str = optarg;
-			list_add (&(kw->list), &(kws_head));
+			r_list_append (keywords, optarg);
 			break;
 		case 'm':
 			// XXX should be from hexbin

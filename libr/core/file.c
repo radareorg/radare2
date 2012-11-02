@@ -144,7 +144,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		file = r->file->filename;
 	}
 	if (r_bin_load (r->bin, file, R_FALSE)) {
-		if (r->bin->narch>1) {
+		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
 			int i;
 			RBinObject *o = r->bin->cur.o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",

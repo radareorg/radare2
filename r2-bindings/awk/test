@@ -1,0 +1,19 @@
+#!/usr/bin/awk -f r2.awk -f
+BEGIN {
+	arch="x86"
+	file="/bin/ls"
+	if(ARGV[1]=="help") {
+		print("Help message")
+		exit(0);
+	}
+
+	code=dis(read("entry0", 8))
+	print ("code: ",code)
+
+	prompt("Search string: ",name);
+	count=split (search_str(name),results,/\n/)
+	print "Count: "count
+	for(n=1; n<count; n++) {
+		print(n"--- "results[n])
+	}
+}
