@@ -57,6 +57,7 @@ static int config_bigendian_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->assembler->big_endian = node->i_value;
+	core->anal->big_endian = node->i_value;
 	return R_TRUE;
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 */
+/* radare - LGPL - Copyright 2007-2012 */
 /*   pancake<nopcode.org> */
 
 #include <string.h>
@@ -102,6 +102,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
+		op->eob = 1;
         } else if ( (ins & _(B1111,B1111,0,0)) == _(B0100,B0111,0,0) ) {
 		// BLX
 		op->type = R_ANAL_OP_TYPE_UJMP;
@@ -121,6 +122,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 }
 
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+unsigned char ndata[4];
 	struct arm_insn *arminsn;
 	ut32 branch_dst_addr, i = 0;
 	ut32* code = (ut32 *)data;
@@ -130,11 +132,19 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		return 0;
 	memset (op, '\0', sizeof (RAnalOp));
 	arminsn = arm_new();
-	arm_set_thumb(arminsn, R_FALSE);
-	arm_set_input_buffer(arminsn, data);
-	arm_set_pc(arminsn, addr);
+	arm_set_thumb (arminsn, R_FALSE);
+	arm_set_input_buffer (arminsn, data);
+	arm_set_pc (arminsn, addr);
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+
+	if (anal->big_endian) {
+		b = data = ndata;
+		ndata[0]=data[3];
+		ndata[1]=data[2];
+		ndata[2]=data[1];
+		ndata[3]=data[0];
+	}
 #if 0
 	op->jump = op->fail = -1;
 	op->ref = op->value = -1;
@@ -147,19 +157,29 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		codeA[0], codeA[1], codeA[2], codeA[3]);
 #endif
     	// 0x000037b8  00:0000   0             800000ef  svc 0x00000080
+	if (b[2] ==0xa0 && b[3]==0xe1) {
+		int n = (b[0]<<16) + b[1];
+		op->type = R_ANAL_OP_TYPE_MOV;
+		switch (n) {
+		case 0:
+		case 0x0110: case 0x0220: case 0x0330: case 0x0440:
+		case 0x0550: case 0x0660: case 0x0770: case 0x0880:
+		case 0x0990: case 0x0aa0: case 0x0bb0: case 0x0cc0:
+			op->type = R_ANAL_OP_TYPE_NOP;
+			break;
+		}
+	} else
 	if (b[3]==0xef) {
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->value = (b[0] | (b[1]<<8) | (b[2]<<2));
 	} else
 	if (b[3]==0xe5) {
 		if (b[2]==0x9f) {
-			/* STORE */
+			/* LDR/STR */
 			op->type = R_ANAL_OP_TYPE_STORE;
 			op->stackop = R_ANAL_STACK_SET;
 
-//printf ("FUCKING PT Rpc AT 0x%08llx + %d\n", addr, b[0]);
-			//op->ref = 4+addr+b[0]+(b[1]&4<<8);
-			op->ref = 8+addr+b[0]+((b[1]&0xf)<<8);
+			op->ref = 12+addr+b[0]+((b[1]&0xf)<<8);
 			op->refptr = R_TRUE;
 		} else
 		if ((b[1]&0xf0) == 0xf0) {
@@ -223,7 +243,8 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	}
 
 	if (IS_EXITPOINT (code[i])) {
-		branch_dst_addr = disarm_branch_offset (addr, code[i]&0x00FFFFFF);
+		b=data;
+		branch_dst_addr = disarm_branch_offset (addr, b[0] | (b[1]<<8) | (b[2]<<16)); //code[i]&0x00FFFFFF);
 		op->ref = 0;
 		if (IS_BRANCHL (code[i])) {
 			if (IS_BRANCH (code[i])) {
@@ -238,7 +259,9 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		} else if (IS_BRANCH (code[i])) {
 			if (IS_CONDAL (code[i])) {
 				op->type = R_ANAL_OP_TYPE_JMP;
+		//op->type = R_ANAL_OP_TYPE_NOP;
 				op->jump = branch_dst_addr;
+				op->fail = UT64_MAX;
 				op->eob = 1;
 			} else {
 				op->type = R_ANAL_OP_TYPE_CJMP;
@@ -252,8 +275,8 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			op->eob = 1;
 		}
 	}
-	op->jump = arminsn->jmp;
-	op->fail = arminsn->fail;
+	//op->jump = arminsn->jmp;
+	//op->fail = arminsn->fail;
 	arm_free(arminsn);
 	return op->length;
 }
@@ -263,6 +286,7 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg,
 			"=pc	r15\n"
 			"=sp	r14\n" // XXX
+			"=bp	r14\n" // XXX
 			"=a0	r0\n"
 			"=a1	r1\n"
 			"=a2	r2\n"

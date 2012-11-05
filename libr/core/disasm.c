@@ -343,11 +343,15 @@ toro:
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
 						r_cons_printf ("|- %s (%d)\n| ", f->name, f->size);
-					} else
-					r_cons_printf ("/ %s: %s (%d)\n| ",
-						(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
-						(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
-						f->name, f->size);
+					} else {
+						const char *fmt = show_color? 
+							"/ "Color_MAGENTA"%s: "Color_YELLOW"%s"Color_RESET" (%d)\n| ":
+							"/ %s: %s (%d)\n| ";
+						r_cons_printf (fmt, 
+							(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
+							(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
+							f->name, f->size);
+					}
 					if (sign) r_cons_printf ("// %s\n", sign);
 					free (sign);
 					pre = "| ";
@@ -367,7 +371,9 @@ toro:
 				if (show_lines && refline)
 					r_cons_strcat (refline);
 				if (show_offset)
-					printoffset (at, show_color, (at==dest), show_offseg);
+			//		printoffset (at, show_color, (at==dest), show_offseg);
+//r_cons_printf ("__________ ");
+r_cons_printf ("; -------- ");
 				if (show_functions)
 					r_cons_printf ("%s:\n%s", flag->name, f?"| ":"  ");
 				else r_cons_printf ("%s:\n", flag->name);
@@ -402,7 +408,10 @@ toro:
 			// TODO: filter string (r_str_unscape)
 			{
 			char *out = r_str_unscape (mi->str);
-			r_cons_printf ("string (%"PFMT64d"): \"%s\"\n", mi->size, out);
+if (show_color)
+			r_cons_printf ("    .string "Color_YELLOW"\"%s\""Color_RESET" ; len=%"PFMT64d"\n", out, mi->size);
+else
+			r_cons_printf ("    .string \"%s\" ; len=%"PFMT64d"\n", out, mi->size);
 			free (out);
 			}
 			ret = (int)mi->size;
@@ -642,17 +651,19 @@ toro:
 						R_META_TYPE_ANY, R_META_WHERE_HERE);
 					if (mi2) {
 						char *str = r_str_unscape (mi2->str);
-						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d") \"%s\" ", analop.ref, mi2->size, str);
+						r_cons_printf (" \"%s\" @ 0x%08"PFMT64x":%"PFMT64d,
+								str, analop.ref, mi2->size);
 						free (str);
 					} else r_cons_printf ("; => 0x%08x ", word);
 				} else {
 					if (mi2->type == R_META_TYPE_STRING) {
 						char *str = r_str_unscape (mi2->str);
-						r_cons_printf (" (at=0x%08x) (len=%"PFMT64d") \"%s\" ", word, mi2->size, str);
+						r_cons_printf (" (at=0x%08x) (len=%"PFMT64d
+							") \"%s\" ", word, mi2->size, str);
 						free (str);
 					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
 				}
-			}
+			} else r_cons_printf (" ; => 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
 		}
 		if (show_comments && show_comment_right && comment) {
 			int c = r_cons_get_column ();
