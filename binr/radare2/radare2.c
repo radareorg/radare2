@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 	const char *asmarch = NULL;
 	const char *asmbits = NULL;
 	ut64 mapaddr = 0LL;
-	int quite = R_FALSE;
+	int quiet = R_FALSE;
 	int is_gdb = R_FALSE;
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
 		case 'm': mapaddr = r_num_math (r.num, optarg); break;
 		case 'q':
 			r_config_set (r.config, "scr.prompt", "false");
-			quite = R_TRUE;
+			quiet = R_TRUE;
 			break;
 		case 'p': r_config_set (r.config, "file.project", optarg); break;
 		case 'P': patchfile = optarg; break;
@@ -312,6 +312,9 @@ int main(int argc, char **argv) {
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
 
+	debug = r.file && r.file->fd && r.file->fd->plugin && \
+		r.file->fd->plugin->debug != NULL;
+	r_config_set_i (r.config, "cfg.debug", debug);
 	if (debug) {
 		int pid, *p = r.file->fd->data;
 		if (!p) {
@@ -393,7 +396,7 @@ int main(int argc, char **argv) {
 		int ret = r_core_cmd_file (&r, cmdfile[i]);
 		if (ret ==-2)
 			eprintf ("Cannot open '%s'\n", cmdfile[i]);
-		if (ret<0 || (ret==0 && quite))
+		if (ret<0 || (ret==0 && quiet))
 			return 0;
 	}
 
@@ -402,7 +405,7 @@ int main(int argc, char **argv) {
 		r_core_cmd0 (&r, cmdn);
 		r_cons_flush ();
 	}
-	if ((cmdfile[0] || !r_list_empty (cmds)) && quite)
+	if ((cmdfile[0] || !r_list_empty (cmds)) && quiet)
 		return 0;
 	r_list_free (cmds);
 /////

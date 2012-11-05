@@ -300,7 +300,7 @@ struct r_io_plugin_t r_io_plugin_debug = {
         .plugin_open = __plugin_open,
 	.lseek = NULL,
 	.system = NULL,
-	.debug = (void *)1,
+	.debug = (void *)(size_t)1,
         //void *widget;
 /*
         struct debug_t *debug;

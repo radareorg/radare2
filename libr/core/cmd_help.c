@@ -330,6 +330,7 @@ static int cmd_help(void *data, const char *input) {
 			" $o  = here (current disk io offset)\n"
 			" $s  = file size\n"
 			" $b  = block size\n"
+			" $w  = get word size, 4 if asm.bits=32, 8 if 64, ...\n"
 			" $S  = section offset\n"
 			" $SS = section size\n"
 			" $j  = jump address (e.g. jmp 0x10, jz 0x10 => 0x10)\n"

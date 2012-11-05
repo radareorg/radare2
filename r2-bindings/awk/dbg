@@ -1,0 +1,40 @@
+#!/usr/bin/awk -f r2.awk -f
+
+function getreg(x) {
+	ret=r2cmd(o,"?v $"x);
+	if(ret==0) {
+		print("Cannot debug program")
+		exit(1)
+	}
+	return num(ret)
+}
+function step(count) {
+	r2cmd(o,"ds "count)
+	r2cmd(o,".dr*")
+}
+
+BEGIN {
+	target="/bin/ls"
+	file="dbg://"target
+	if ((o=r2open())==0) {
+		print("Cannot open program for debugging")
+		exit(1)
+	}
+
+	pc=getreg("pc")
+	sp=getreg("sp")
+	bp=getreg("bp")
+
+	print("PC="pc)
+	print("SP="sp)
+	print("BP="bp)
+	print(r2cmd(o,"dr="))
+	print(r2cmd(o,"pdi 5@$pc"))
+
+	step(4)
+
+	print("Analyzing code...")
+	r2cmd(o,"af")
+	print(r2cmd(o,"pdf"))
+	r2close(o)
+}

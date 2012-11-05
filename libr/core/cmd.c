@@ -136,6 +136,7 @@ static int cmd_rap(void *data, const char *input) {
 	case '+': r_core_rtr_add (core, input+1); break;
 	case '-': r_core_rtr_remove (core, input+1); break;
 	case '=': r_core_rtr_session (core, input+1); break;
+	//case ':': r_core_rtr_cmds (core, input+1); break;
 	case '<': r_core_rtr_pushout (core, input+1); break;
 	case '!': r_io_system (core->io, input+1); break;
 	default: r_core_rtr_cmd (core, input);
@@ -227,6 +228,29 @@ static int cmd_interpret(void *data, const char *input) {
 	case '\0':
 		r_core_cmd_repeat (core, 0);
 		break;
+	case ':':
+		if ((ptr = strchr (input+1, ' '))) {
+			char *rbuf, *port, *host;
+			char *cmd = ptr+1;
+			/* .:port cmd */
+			/* .:host:port cmd */
+			*ptr = 0;
+			eol = strchr (input+1, ':');
+			if (eol) {
+				*eol = 0;
+				host = input+1;
+				port = eol+1;
+			} else {
+				host = "localhost";
+				port = input+((input[1]==':')?2:1);
+			}
+			rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
+			if (rbuf) {
+				r_cons_printf ("%s", rbuf);
+				free (rbuf);
+			}
+		} else r_core_rtr_cmds (core, input+1);
+		break;
 	case '.': // same as \n
 		r_core_cmd_repeat (core, 1);
 		break;
@@ -246,6 +270,7 @@ static int cmd_interpret(void *data, const char *input) {
 		"Usage: . [file] | [!command] | [(macro)]\n"
 		" .                 ; repeat last command backward\n"
 		" ..                ; repeat last command forward (same as \\n)\n"
+		" .:8080            ; listen for commands on given tcp port\n"
 		" . foo.rs          ; interpret r script\n"
 		" .!rabin -ri $FILE ; interpret output of command\n"
 		" .(foo 1 2 3)      ; run macro 'foo' with args 1, 2, 3\n"

@@ -19,7 +19,7 @@ endif
 LANGS=
 # Experimental:
 # LANGS+=gir
-ALANGS=gir python ruby perl lua go java guile php5
+ALANGS=awk gir python ruby perl lua go java guile php5
 .PHONY: ${ALANGS}
 
 define ADD_lang
@@ -196,6 +196,11 @@ install-perl:
 install-vapi:
 	mkdir -p ${DESTDIR}${PREFIX}/share/vala/vapi
 	${INSTALL_DATA} vapi/*.vapi vapi/*.deps ${DESTDIR}${PREFIX}/share/vala/vapi
+
+AWKDIR=${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/awk
+install-awk:
+	mkdir -p ${AWKDIR}
+	cp -f awk/* ${AWKDIR}/
 
 install-gir:
 	cd gir && ${MAKE} install

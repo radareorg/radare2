@@ -8,6 +8,7 @@
 #define rtr_host core->rtr_host
 
 static RSocket *s = NULL;
+static const char *listenport = NULL;
 
 static void http_break (void *u) {
 	RSocket* sock;
@@ -15,11 +16,10 @@ static void http_break (void *u) {
 	const int timeout = 1; // 1 second
 	RCore *core = (RCore*)u;
 	if (((size_t)u)>0xff) {
-		port = r_config_get (core->config, "http.port"); 
+		port = listenport? listenport: r_config_get (core->config, "http.port");
 		sock = r_socket_new (0);
-		eprintf ("Shutting down http server...\n");
-		if (r_socket_connect (sock, "localhost", port, R_SOCKET_PROTO_TCP, timeout))
-			r_socket_free (sock);
+		r_socket_connect (sock, "localhost", port, R_SOCKET_PROTO_TCP, timeout);
+		r_socket_free (sock);
 	}
 	r_socket_free (s);
 	s = NULL;
@@ -132,6 +132,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 R_API void r_core_rtr_help(RCore *core) {
 	r_cons_printf (
 	" =                  ; list all open connections\n"
+	//" =:port [cmd]       ; same as .: but allow to send command if cmd\n"
 	" =<[fd] cmd         ; send output of local command to remote fd\n"
 	" =[fd] cmd          ; exec cmd at remote 'fd' (last open is default one)\n"
 	" =! cmd             ; run command via r_io_system\n"
@@ -290,7 +291,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		if (!rtr_host[i].fd) {
 			rtr_host[i].proto = proto;
 			memcpy (rtr_host[i].host, host, 512);
-			rtr_host[i].port = atoi(port);
+			rtr_host[i].port = atoi (port);
 			memcpy (rtr_host[i].file, file, 1024);
 			rtr_host[i].fd = fd;
 			rtr_n = i;
@@ -402,4 +403,70 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	r_socket_read (rtr_host[rtr_n].fd, (ut8*)cmd_output, cmd_len);
 	r_cons_printf ("%s\n", cmd_output);
 	free ((void *)cmd_output);
+}
+
+// TODO: support len for binary data?
+R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *port, const char *cmd) {
+	int retries = 6;
+	unsigned char buf[1024];
+	char *rbuf = NULL;
+	const int timeout = 0;
+	RSocket *s = r_socket_new (0);
+	for (;retries>0; usleep (10*1000)) {
+		if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, timeout))
+			break;
+		retries--;
+	}
+	if (retries>0) {
+		rbuf = strdup ("");
+		r_socket_write (s, (void*)cmd, strlen (cmd));
+		//r_socket_write (s, "px\n", 3);
+		for (;;) {
+			int ret = r_socket_read (s, buf, sizeof (buf));
+			if (ret<1) break;
+			buf[ret] = 0;
+			rbuf = r_str_concat (rbuf, (const char *)buf);
+		}
+	} else {
+		eprintf ("Cannot connect\n");
+	}
+	r_socket_free (s);
+	return rbuf;
+}
+
+R_API int r_core_rtr_cmds (RCore *core, const char *port) {
+	int i, ret;
+	char *str;
+	unsigned char buf[4096];
+	RSocket *ch, *s = r_socket_new (0);
+	if (!r_socket_listen (s, port, NULL)) {
+		eprintf ("Error listening on port %s\n", port);
+		return R_FALSE;
+	}
+	
+	eprintf ("Listening for commands on port %s\n", port);
+	listenport = port;
+	for (;;) {
+		r_cons_break (http_break, core);
+		ch = r_socket_accept (s);
+		if (r_cons_singleton()->breaked) break;
+		buf[0] = 0;
+		ret = r_socket_read (ch, buf, sizeof (buf));
+		if (ret>0) {
+			buf[ret] = 0;
+			for (i=0;buf[i];i++)
+				if (buf[i] == '\n')
+					buf[i] = buf[i+1]? ';':'\0';
+			eprintf ("(%s)\n", buf);
+			if (!r_config_get_i (core->config, "scr.prompt") \
+					&& !strcmp ((char*)buf, "q!"))
+				return 0; // XXX memleak
+			str = r_core_cmd_str (core, (const char *)buf);
+			r_socket_write (ch, str, strlen (str));
+		}
+		free (str);
+		r_socket_close (ch);
+		r_cons_break_end ();
+	}
+	return 0;
 }

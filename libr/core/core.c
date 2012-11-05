@@ -83,6 +83,21 @@ r_num_calc_index (core->num, q);
 	if (str[0]=='$') {
 		*ok = 1;
 		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize);
+		/* debug */ // XXX spaguetti!
+		if (!strcmp (str+1, "pc")) {
+			return r_debug_reg_get (core->dbg, "pc");
+		} else if (!strcmp (str+1, "sp")) {
+			return r_debug_reg_get (core->dbg, "sp");
+		} else if (!strcmp (str+1, "bp")) {
+			return r_debug_reg_get (core->dbg, "bp");
+		} else if (!strcmp (str+1, "a0")) {
+			return r_debug_reg_get (core->dbg, "a0");
+		} else if (!strcmp (str+1, "a1")) {
+			return r_debug_reg_get (core->dbg, "a1");
+		} else if (!strcmp (str+1, "a2")) {
+			return r_debug_reg_get (core->dbg, "a2");
+		}
+		/* other */
 		switch (str[1]) {
 		case '{':
 			{
@@ -104,6 +119,10 @@ r_num_calc_index (core->num, q);
 		case 'l': return op.length;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
+		case 'w': {
+			int bits = r_config_get_i (core->config, "asm.bits");
+			return bits/8;
+			} break;
 		case 'S': {
 			RIOSection *s = r_io_section_get (core->io, 
 				r_io_section_vaddr_to_offset (core->io, core->offset));

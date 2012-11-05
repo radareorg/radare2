@@ -144,7 +144,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 		hints.ai_protocol = proto;
 		gai = getaddrinfo (host, port, &hints, &res);
 		if (gai != 0) {
-			eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
+			//eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
 			return R_FALSE;
 		}
 		for (rp = res; rp != NULL; rp = rp->ai_next) {
@@ -179,7 +179,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 		}
 		freeaddrinfo (res);
 		if (rp == NULL) {
-			eprintf ("Could not connect\n");
+			//eprintf ("Could not connect\n");
 			return R_FALSE;
 		}
 	}
@@ -249,7 +249,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	memset (&sa, 0, sizeof (sa));
 	sa.sin_family = AF_INET;
 	sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
-	sa.sin_port = htons (atoi (port));
+	sa.sin_port = htons (atoi (port)); // WTF we should honor etc/services
 
 	if (bind (s->fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
 		close (s->fd);
@@ -432,6 +432,7 @@ R_API void r_socket_printf(RSocket *s, const char *fmt, ...) {
 }
 
 R_API int r_socket_read(RSocket *s, unsigned char *buf, int len) {
+	if (!s) return -1;
 #if HAVE_LIB_SSL
 	if (s->is_ssl)
 		if (s->bio)

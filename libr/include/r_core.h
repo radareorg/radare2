@@ -263,6 +263,8 @@ typedef struct r_core_bin_filter_t {
 R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFilter *filter, ut64 offset);
 
 /* rtr */
+R_API int r_core_rtr_cmds (RCore *core, const char *port);
+R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *port, const char *cmd);
 R_API void r_core_rtr_help(RCore *core);
 R_API void r_core_rtr_pushout(RCore *core, const char *input);
 R_API void r_core_rtr_list(RCore *core);

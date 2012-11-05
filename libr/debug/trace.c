@@ -35,6 +35,7 @@ R_API int r_debug_trace_pc (RDebug *dbg) {
 	r_debug_reg_sync (dbg, R_REG_TYPE_GPR, R_FALSE);
 	if ((ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1))) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
+		if (addr)
 		if (dbg->iob.read_at (dbg->iob.io, addr, buf, sizeof (buf))>0) {
 			if (r_anal_op (dbg->anal, &op, addr, buf, sizeof (buf))>0) {
 				if (oldpc!=0LL)

@@ -74,6 +74,7 @@ symstall install-symlink:
 				ln -fs ${PWD}/$${b} ${LFX}/radare2/${VERSION}/ ; \
 			fi ; \
 		done ; \
+		ln -fs ${LFX}/radare2/${VERSION} ${LFX}/radare2/last ; \
 	done
 
 install: install-includes install-pkgconfig
@@ -96,6 +97,7 @@ install: install-includes install-pkgconfig
 	${INSTALL_DATA} $$a ${LFX}/radare2/${VERSION} ; done
 	@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
 	${INSTALL_DATA} lang/p/radare.* ${LFX}/radare2/${VERSION}
+	ln -fs ${LFX}/radare2/${VERSION} ${LFX}/radare2/last
 
 deinstall uninstall:
 	# libraries

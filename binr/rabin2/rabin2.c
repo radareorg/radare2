@@ -68,7 +68,7 @@ static int rabin_show_help() {
 		" -L              list supported bin plugins\n"
 		" -@ [addr]       show section, symbol or import at addr\n"
 		" -n [str]        show section, symbol or import named str\n"
-		" -q              be quite, just show fewer data\n"
+		" -q              be quiet, just show fewer data\n"
 		" -x              extract bins contained in file\n"
 		" -Z              size of binary\n"
 		" -z              strings\n"

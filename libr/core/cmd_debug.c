@@ -111,7 +111,11 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		}
 		break;
 	case 'a':
-		r_debug_attach (core->dbg, (int) r_num_math (core->num, input+2));
+		if (input[2]) {
+			r_debug_attach (core->dbg, (int) r_num_math (core->num, input+2));
+		} else {
+			r_debug_attach (core->dbg, core->file->fd->fd);
+		}
 		r_debug_select (core->dbg, core->dbg->pid, core->dbg->tid);
 		r_config_set_i (core->config, "dbg.swstep",
 			(core->dbg->h && !core->dbg->h->canstep));

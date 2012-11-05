@@ -178,6 +178,7 @@ struct r_io_plugin_t r_io_plugin_ptrace = {
 	.lseek = __lseek,
 	.system = __system,
 	.write = __write,
+	.debug = (void*)(size_t)1
 };
 #else
 struct r_io_plugin_t r_io_plugin_ptrace = {
