@@ -12,10 +12,10 @@ BEGIN {
 }
 
 # API
-function sys(cmd) {
+function sys(_cmd) {
 	_res = ""
 	_n=0
-	while((cmd|getline _line)>0) {
+	while((_cmd|getline _line)>0) {
 		_n++
  		_res=_res""_line"\n"
 	}
@@ -23,9 +23,9 @@ function sys(cmd) {
 	return _res
 }
 
-function chop(x) {
-	gsub(/\n/,"",x);
-	return x
+function chop(_x) {
+	gsub(/\n/,"",_x);
+	return _x
 }
 
 function round(a) {a=(a < int(a)+0.5) ? int(a) : int(a+1)}

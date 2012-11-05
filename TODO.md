@@ -9,7 +9,6 @@
 0.9.4
 =====
 * rap:/ doesnt works at all
-* implement =. command to get data from a socket
 tothink:
 * Event system . allow to send and read queues of messages.. thats pubsub!
 * search for CALL instructions in text segment.
