@@ -1,4 +1,5 @@
 -include config.mk
+PREFIX?=/usr
 PYTHON2_CONFIG=python2.7-config
 PYTHON3_CONFIG=python3.2-config
 
@@ -10,7 +11,7 @@ endif
 
 W32PY="${HOME}/.wine/drive_c/Python27/"
 
-ifneq ($(shell grep valac supported.langs),)
+ifneq ($(shell grep valac supported.langs 2>/dev/null),)
 INSTALL_TARGETS=install-vapi
 else
 INSTALL_TARGETS=
@@ -23,13 +24,13 @@ ALANGS=awk gir python ruby perl lua go java guile php5
 .PHONY: ${ALANGS}
 
 define ADD_lang
-ifneq ($(shell grep $(1) supported.langs),)
+ifneq ($(shell grep $(1) supported.langs 2>/dev/null),)
 LANGS+=$(1)
 INSTALL_TARGETS+=install-$(1)
 endif
 endef
 
-ifneq ($(shell grep python supported.langs),)
+ifneq ($(shell grep python supported.langs 2>/dev/null),)
 INSTALL_EXAMPLE_TARGETS+=install-python-examples
 endif
 
@@ -38,7 +39,7 @@ $(foreach p,${ALANGS},$(eval $(call ADD_lang,$(p))))
 .PHONY: ${INSTALL_TARGETS} ${INSTALL_EXAMPLE_TARGETS} ${LANG}
 
 ifeq ($(DEVEL_MODE),1)
-LANGS=$(shell cat supported.langs)
+LANGS=$(shell cat supported.langs 2>/dev/null)
 all: supported.langs 
 	@for a in ${LANGS} ; do \
 		[ $$a = valac ] && continue; \
@@ -200,6 +201,7 @@ install-vapi:
 AWKDIR=${DESTDIR}${PREFIX}/lib/radare2/${VERSION}/awk
 install-awk:
 	mkdir -p ${AWKDIR}
+	sed -e 's,@AWKDIR@,${AWKDIR},g' < awk/r2awk > ${DESTDIR}${PREFIX}/bin/r2awk
 	cp -f awk/* ${AWKDIR}/
 
 install-gir:

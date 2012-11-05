@@ -1,4 +1,4 @@
-#!/usr/bin/awk -f r2.awk -f
+#!/usr/bin/r2awk
 BEGIN {
 	arch="x86"
 	file="/bin/ls"
@@ -10,10 +10,10 @@ BEGIN {
 	code=dis(read("entry0", 8))
 	print ("code: ",code)
 
-	prompt("Search string: ",name);
+	name=prompt("Search string: ");
 	count=split (search_str(name),results,/\n/)
-	print "Count: "count
+	print("Count: "count)
 	for(n=1; n<count; n++) {
-		print(n"--- "results[n])
+		print(n"--- "results[n]"  :  "string(results[n]))
 	}
 }

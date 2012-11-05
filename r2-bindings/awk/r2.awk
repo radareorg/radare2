@@ -13,14 +13,14 @@ BEGIN {
 
 # API
 function sys(cmd) {
-	res = ""
-	n=0
-	while((cmd|getline line)>0) {
-		n++
- 		res=res""line"\n"
+	_res = ""
+	_n=0
+	while((cmd|getline _line)>0) {
+		_n++
+ 		_res=_res""_line"\n"
 	}
-	if(n==0) return 0
-	return res
+	if(_n==0) return 0
+	return _res
 }
 
 function chop(x) {
@@ -41,7 +41,8 @@ function num(x) { return 0+x }
 function cmd(c) { return sys("r2 -qc '"cmd"' '"file"'") }
 function read(off,num) { return sys("r2 -qc 'p8 "num"@"off"' '"file"'") }
 function write(off,x) { return sys("r2 -wqc 'wx "x"@"off"' '"file"'") }
-function prompt(x,y) {printf(x);getline y; return chop(y); }
+function string(off) { return chop(sys("r2 -qc 'psz@"off"' '"file"'")) }
+function prompt(x) {printf(x);getline y; return chop(y); }
 function search_hex(x) { return sys("rafind2 -x '"x"' '"file"'") }
 function search_str(x) { return sys("rafind2 -s '"x"' '"file"'") }
 
