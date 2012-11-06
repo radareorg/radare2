@@ -50,25 +50,6 @@ R_API void r_str_chop_path (char *s) {
 	else *dst = 0;
 }
 
-#if 0
-// TEST CASE FOR r_str_chop_path
-main () {
-	char buf[1024];
-	strcpy (buf, "/foo/boo/");
-	r_str_chop_path (buf);
-	printf ("%d %s\n", strcmp ("/foo/boo", buf), buf);
-	strcpy (buf, "/foo/boo");
-	r_str_chop_path (buf);
-	printf ("%d %s\n", strcmp ("/foo/boo", buf), buf);
-	strcpy (buf, "/foo");
-	r_str_chop_path (buf);
-	printf ("%d %s\n", strcmp ("/foo", buf), buf);
-	strcpy (buf, "/");
-	r_str_chop_path (buf);
-	printf ("%d %s\n", strcmp ("/", buf), buf);
-}
-#endif
-
 R_API int r_str_replace_char (char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
@@ -603,7 +584,6 @@ R_API int r_str_escape(char *buf) {
 	int i;
 
 	for (i=0; buf[i]; i++) {
-		// only parse scaped characters //
 		if (buf[i]!='\\')
 			continue;
 		if (buf[i+1]=='e') {
@@ -634,10 +614,7 @@ R_API int r_str_escape(char *buf) {
 			return 0;
 		}
 	}
-
-	//char *p = buf; while(*p) { eprintf("%d %c\n", *p, *p); p++; }
-	//eprintf("OLEN=%d (%s)\n", strlen(buf), buf);
-	return i; //strlen (buf);
+	return i;
 }
 
 R_API void r_str_sanitize(char *c) {
@@ -719,11 +696,9 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 }
 
 R_API int r_str_ansi_filter(char *str, int len) {
-	char *tmp;
 	int i, j;
-
-	if (!(tmp = malloc (len)))
-		return -1;
+	char *tmp = malloc (len);
+	if (!tmp) return -1;
 	memcpy (tmp, str, len);
 	for (i=j=0; i<len; i++)
 		if (i+1<len && tmp[i] == 0x1b && tmp[i+1] == '[')
@@ -736,7 +711,6 @@ R_API int r_str_ansi_filter(char *str, int len) {
 R_API void r_str_filter_zeroline(char *str, int len) {
 	int i;
 	for (i=0; str[i] && i<len; i++) {
-		// TODO: honor newlines?
 		if (str[i]=='\n' || str[i]=='\r')
 			break;
 		if (!IS_PRINTABLE (str[i]))

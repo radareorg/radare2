@@ -572,6 +572,8 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (rep>0) {
 		while (*cmd>='0' && *cmd<='9')
 			cmd++;
+		// cannot repeat null cmd
+		if (!*cmd) return 0;
 	} 
 	if (rep<1) rep = 1;
 	while (rep-- && *cmd) {
@@ -582,7 +584,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 	if (colon) {
-		for (++colon; *colon ==';'; colon++);
+		for (++colon; *colon==';'; colon++);
 		r_core_cmd_subst (core, colon);
 		//*colon = ';';
 	} else {

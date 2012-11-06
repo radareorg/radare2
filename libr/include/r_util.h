@@ -577,4 +577,20 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode);
 R_API int r_sandbox_chdir (const char *path);
 R_API int r_sandbox_check_path (const char *path);
 
+/* strpool */
+#define R_STRPOOL_INC 1024
+
+typedef struct {
+	char *str;
+	int len;
+	int size;
+} RStrpool;
+
+R_API RStrpool* r_strpool_new (int sz);
+R_API char *r_strpool_alloc (RStrpool *p, int l);
+R_API int r_strpool_append(RStrpool *p, const char *s);
+R_API void r_strpool_free (RStrpool *p);
+R_API int r_strpool_fit(RStrpool *p);
+R_API char *r_strpool_get(RStrpool *p, int index);
+
 #endif
