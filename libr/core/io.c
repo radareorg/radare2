@@ -71,6 +71,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			case 'a': buf[i] += str[j]; break;
 			case 's': buf[i] -= str[j]; break;
 			case 'm': buf[i] *= str[j]; break;
+			case 'w': buf[i] = str[j]; break;
 			case 'd': buf[i] = (str[j])? buf[i] / str[j]: 0; break;
 			case 'r': buf[i] >>= str[j]; break;
 			case 'l': buf[i] <<= str[j]; break;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
@@ -332,6 +332,7 @@ static int cmd_write(void *data, const char *input) {
 			case 'm':
 			case 'd':
 			case 'o':
+			case 'w':
 				if (input[2]!=' ') {
 					r_cons_printf ("Usage: 'wo%c 00 11 22'\n", input[1]);
 					return 0;
@@ -356,6 +357,7 @@ static int cmd_write(void *data, const char *input) {
 						"  wox 0x0203 ; xor cur block with 0203\n"
 						"  woa 02 03  ; add [0203][0203][...] to curblk\n"
 						"Supported operations:\n"
+						"  wow  ==  write looped value\n"
 						"  woa  +=  addition\n"
 						"  wos  -=  substraction\n"
 						"  wom  *=  multiply\n"

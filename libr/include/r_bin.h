@@ -60,6 +60,7 @@ typedef struct r_bin_info_t {
 	char os[R_BIN_SIZEOF_STRINGS];
 	char subsystem[R_BIN_SIZEOF_STRINGS];
 	char rpath[R_BIN_SIZEOF_STRINGS];
+	const char *lang;
 	int bits;
 	int has_va;
 	int big_endian;
@@ -250,10 +251,14 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy);
 R_API RBinObject *r_bin_get_object(RBin *bin, int flags);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
+
 R_API char* r_bin_demangle(RBin *bin, const char *str);
 R_API int r_bin_demangle_type (const char *str);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(const char *str);
+R_API char *r_bin_demangle_objc(RBinObject *a, const char *sym);
+R_API int r_bin_lang_objc(RBinObject *a);
+
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);
 R_API RList* r_bin_get_imports(RBin *bin);

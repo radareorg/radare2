@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_bin.h>
 #include <cxx/demangle.h>
@@ -8,6 +8,7 @@ R_API char *r_bin_demangle_java(const char *str) {
 	RBuffer *buf;
 	const char *w = NULL;
 	int n = 0;
+	char *ret;
 	const char *ptr;
 	int is_array = 0;
 	int is_ret = 0;
@@ -66,11 +67,9 @@ R_API char *r_bin_demangle_java(const char *str) {
 		w = NULL;
 		str++;
 	}
-	{
-		char *ret = r_buf_to_string (buf);
-		r_buf_free (buf);
-		return ret;
-	}
+	ret = r_buf_to_string (buf);
+	r_buf_free (buf);
+	return ret;
 }
 
 R_API char *r_bin_demangle_cxx(const char *str) {
@@ -78,6 +77,111 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 	int flags = DMGL_PARAMS | DMGL_ANSI | DMGL_VERBOSE; // | DMGL_RET_POSTFIX | DMGL_TYPES;
 	out = cplus_demangle_v3 (str, flags);
 	return out;
+}
+
+R_API char *r_bin_demangle_objc(RBinObject *o, const char *sym) {
+	char *ret = NULL;
+	char *clas = NULL;
+	char *name = NULL;
+	char *args = NULL;
+	int i, nargs = 0;
+	const char *type = NULL;
+	/* classes */
+	if (!strncmp (sym, "_OBJC_Class_", 12)) {
+		ret = malloc (10+strlen (sym));
+		sprintf (ret, "class %s", sym+12);
+		if (o) {
+			RBinClass *c = R_NEW0 (RBinClass);
+			c->name = strdup (sym+12);
+			r_list_append (o->classes, c);
+		}
+		return ret;
+	} else
+	if (!strncmp (sym, "_OBJC_CLASS_$_", 14)) {
+		ret = malloc (10+strlen (sym));
+		sprintf (ret, "class %s", sym+14);
+		if (o) {
+			RBinClass *c = R_NEW0 (RBinClass);
+			c->name = strdup (sym+14);
+			r_list_append (o->classes, c);
+		}
+		return ret;
+	} else
+	/* fields */
+	if (!strncmp (sym, "_OBJC_IVAR_$_", 13)) {
+		char *p;
+		clas = strdup (sym+13);
+		p = strchr (clas, '.');
+		type = "field";
+		if (p) {
+			*p = 0;
+			name = p+1;
+		} else name = NULL;
+	} else
+	/* methods */
+	if (sym[1] == '[') { // apple style
+		if (sym[0] == '+') type = "static";
+		else if (sym[0] == '-') type = "public";
+		if (type) {
+			clas = strdup (sym+2);
+			name = strchr (clas, ' ');
+			if (name) *name++ = 0;
+			for (i=0;name[i];i++) {
+				if (name[i]==']') {
+					name[i] = 0;
+				} else
+				if (name[i]==':') {
+					nargs++;
+					name[i] = 0;
+				}
+			}
+		}
+	} else
+	if (sym[0]=='_' && sym[2]=='_') { // gnu style
+		clas = strdup (sym+3);
+		args = strstr (clas, "__");
+		if (!args) {
+			free (clas);
+			return NULL;
+		}
+		*args = 0;
+		name = strdup (args+2);
+		args = NULL;
+		for (i=0; name[i]; i++) {
+			if (name[i]=='_') {
+				name[i] = 0;
+				nargs++;
+			}
+		}
+		if (sym[1] == 'i') { // instance method
+			type = "public";
+		} else if (sym[1] == 'c') { // static method
+			type = "static";
+		}
+	}
+	if (type) {
+		if (!strcmp (type, "field")) {
+			ret = malloc (strlen (type)+strlen (name)+32);
+			sprintf (ret, "field int %s::%s", clas, name);
+		} else {
+			if (nargs) {
+				const char *arg = "int";
+				args = malloc (((strlen (arg)+4) * nargs)+1);
+				args[0] = 0;
+				for(i=0;i<nargs; i++) {
+					strcat (args, arg);
+					if (i+1<nargs)
+						strcat (args, ", ");
+				}
+			} else args = strdup ("");
+			ret = malloc (strlen (type)+strlen (name)+
+				strlen(clas)+strlen(args)+15);
+			sprintf (ret, "%s int %s::%s(%s)", type, clas, name, args);
+		}
+	}
+	free (clas);
+	free (args);
+	return ret;
 }
 
 R_API int r_bin_demangle_type (const char *str) {

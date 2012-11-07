@@ -6,6 +6,7 @@ static int cmd_info(void *data, const char *input) {
 	int va = core->io->va || core->io->debug;
 	int mode = (input[1]=='*')?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT;
 	if (input[1]=='j') mode = R_CORE_BIN_JSON;
+	if (input[1]=='q') mode = R_CORE_BIN_SIMPLE;
 	switch (*input) {
 	case 'o':
 		if (input[1]==' ')
@@ -56,8 +57,12 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case '?':
 		r_cons_printf (
-		"Usage: i[aeiIsSz]*      ; get info from opened file\n"
-		"NOTE: Append a '*' to get the output in radare commands\n"
+		"Usage: i[aeciIsosSz][jq*]      ; get info from opened file\n"
+		"Output mode:\n"
+		" '*'   output in radare commands\n"
+		" 'j'   output in json\n"
+		" 'q'   simple quiet output\n"
+		"Actions:\n"
 		" io [file] ; load info from given file (or last opened)\n"
 		" ia        ; show all info (imports, exports, sections..)\n"
 		" ic        ; list classes\n"

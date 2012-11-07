@@ -113,6 +113,7 @@ static RBinInfo* info(RBinArch *arch) {
 	if (!(ret = R_NEW (RBinInfo)))
 		return NULL;
 	memset (ret, '\0', sizeof (RBinInfo));
+	ret->lang = "java";
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS-1);
 	strncpy (ret->type, "JAVA CLASS", R_BIN_SIZEOF_STRINGS-1);

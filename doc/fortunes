@@ -104,7 +104,7 @@ Excellent; we can attack in any direction!
 Better than an eel in the ass
 radare build farm beats the facebook one
 Thank you for using radare. Have a nice night!
-your r2 was built 20h ago. TOO OLD
+Your r2 was built 20h ago. TOO OLD
 Enable the PAGER with e scr.pager=less -R
 Use e asm.offset=true to show offsets as in the 16bit segment addressing mode
 The '?' command can be used to evaluate math expressions. Like this: '? (0x34+22)*4'
@@ -115,3 +115,9 @@ Connection lost with the license server, your r2 session will terminate soon.
 I swear i didn't knew she had only 8bits!
 Set e bin.dwarf=true to load dwarf information at startup
 Rename a function using the 'afr newname @ offset' command
+You can redefine descriptive commands in the hud file and using the V_ command
+Use -j in rabin2 to get the information of the binary in JSON format
+this is amazing..
+use rarun2 to launch your programs with a predefined environment
+You are probably using an old version of r2, go checkout the git!
+Run your own r2 scripts in awk using the r2awk program

@@ -75,29 +75,37 @@ static int is_data_section(RBinArch *a, RBinSection *s) {
 }
 
 static RList* get_strings(RBinArch *a, int min) {
-	RBinSection *section;
-	RListIter *iter;
-	RList *ret;
 	int count = 0;
-
-	if (!(ret = r_list_new ())) {
+	RListIter *iter;
+	RBinSection *section;
+	RList *ret = r_list_new ();
+	if (!ret) {
 		eprintf ("Error allocating array\n");
 		return NULL;
 	}
 	ret->free = free;
-	
 	if (a->o->sections) {
 		r_list_foreach (a->o->sections, iter, section) {
 			if (is_data_section (a, section)) {
-				count ++;
+				count++;
 				get_strings_range (a, ret, min,
-					section->offset, section->offset+section->size, section->rva);
+					section->offset,
+					section->offset+section->size,
+					section->rva);
 			}
 		}	
 	}
 	if (r_list_empty (a->o->sections))
 		get_strings_range (a, ret, min, 0, a->size, 0);
 	return ret;
+}
+
+// public api?
+static void load_languages(RBin *bin) {
+	/* load objc information if available */
+	if (r_bin_lang_objc (bin->cur.o))
+		eprintf ("ObjectiveC information loaded\n");
+	/* TODO : do the same for dex, java and c++ name demangling? */
 }
 
 static int r_bin_init_items(RBin *bin, int dummy) {
@@ -136,6 +144,9 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	if (cp->symbols) o->symbols = cp->symbols (a);
 	if (cp->classes) o->classes = cp->classes (a);
 	if (cp->lines) o->lines = cp->lines (a);
+
+	load_languages (bin);
+
 	return R_TRUE;
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - nibble */
 
 #define R_BIN_ELF64 1
 #include "bin_elf.c"

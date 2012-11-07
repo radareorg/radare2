@@ -297,6 +297,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_show_cursor (R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (0);
+		if (core->print->cur_enabled) {
+			strcpy (buf, "wow ");
+			r_line_set_prompt ("insert string: ");
+			if (r_cons_fgets (buf+4, sizeof (buf)-3, 0, NULL) <0)
+				buf[0]='\0';
+		} else
 		if (core->print->col==2) {
 			strcpy (buf, "w ");
 			r_line_set_prompt ("insert string: ");
@@ -309,9 +315,20 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				buf[0]='\0';
 		}
 		if (*buf) {
-			if (curset) r_core_seek (core, core->offset + cursor, 0);
-			r_core_cmd (core, buf, 1);
-			if (curset) r_core_seek (core, core->offset - cursor, 1);
+			if (core->print->cur_enabled) {
+				char *p = strdup (buf);
+				int cur = core->print->cur;
+				if (cur>=core->blocksize)
+					cur = core->print->cur-1;
+				sprintf (buf, "%s @ $$+%i:%i", p, cursor<ocursor?
+					cursor:ocursor, R_ABS (ocursor-cursor)+1);
+				r_core_cmd (core, buf, 0);
+				free (p);
+			} else {
+				if (curset) r_core_seek (core, core->offset + cursor, 0);
+				r_core_cmd (core, buf, 1);
+				if (curset) r_core_seek (core, core->offset - cursor, 1);
+			}
 		}
 		r_cons_set_raw (1);
 		r_cons_show_cursor (R_FALSE);
@@ -747,11 +764,13 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" x        show xrefs to seek between them\n"
 		" sS       step / step over\n"
 		//" n/N      seek next/previous block\n"
+		" i/a      insert hex (i) or assemble code (a)\n"
 		" e        edit eval configuration variables\n"
 		" t        track flags (browse symbols, functions..)\n"
 		" T        browse anal info and comments\n"
 		" v        visual code analysis menu\n"
 		" V        view graph using cmd.graph (agv?)\n"
+		" M        walk the mounted filesystems\n"
 		" f/F      set/unset flag\n"
 		" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
 		" b/B      toggle breakpoint / automatic block size\n"
@@ -759,7 +778,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" yY       copy and paste selection\n"
 		" mK/'K    mark/go to Key (any key)\n"
 		" M        show mount points\n"
-		" _        enter hud mode\n"
+		" _        enter the hud\n"
 		" /        in cursor mode search in current block\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"

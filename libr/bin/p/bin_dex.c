@@ -44,6 +44,7 @@ static RBinInfo * info(RBinArch *arch) {
 	strncpy (ret->subsystem, "any", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->machine, "Dalvik VM", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->arch, "dalvik", R_BIN_SIZEOF_STRINGS);
+	ret->lang = "java";
 	ret->bits = 32;
 	ret->big_endian = 0;
 	ret->dbg_info = 1 | 4 | 8; /* Stripped | LineNums | Syms */

@@ -86,6 +86,7 @@ static int bin_info (RCore *r, int mode) {
 			"\"machine\":\"%s\","
 			"\"arch\":\"%s\","
 			"\"os\":\"%s\","
+			"\"lang\":\"%s\","
 			"\"va\":%s,"
 			"\"bits\":%d,"
 			"\"stripped\":%s,"
@@ -99,6 +100,7 @@ static int bin_info (RCore *r, int mode) {
 			info->machine,
 			info->arch,
 			info->os,
+			info->lang?info->lang:"",
 			info->has_va? "true": "false",
 			info->bits,
 			r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
@@ -159,6 +161,7 @@ static int bin_info (RCore *r, int mode) {
 					"HasVA=%s\n"
 					"RootClass=%s\n"
 					"Class=%s\n"
+					"Language=%s\n"
 					"Arch=%s %i\n"
 					"Machine=%s\n"
 					"OS=%s\n"
@@ -171,9 +174,9 @@ static int bin_info (RCore *r, int mode) {
 					"Relocs=%s\n"
 					"RPath=%s\n",
 					info->file, info->type, r_str_bool (info->has_va),
-					info->rclass, info->bclass,
+					info->rclass, info->bclass, info->lang?info->lang:"unknown",
 					info->arch, info->bits, info->machine, info->os,
-					info->subsystem, 
+					info->subsystem,
 					r_str_bool (info->big_endian), 
 					r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
 					r_str_bool (R_BIN_DBG_STATIC (info->dbg_info)),
@@ -540,6 +543,15 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 				baddr+section->rva);
 		}
 		r_cons_printf ("]");
+	} else
+	if ((mode & R_CORE_BIN_SIMPLE)) {
+		r_list_foreach (sections, iter, section) {
+			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s\n",
+				baddr+section->rva,
+				baddr+section->rva+section->size,
+				r_str_rwx_i (section->srwx),
+				section->name);
+		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		r_flag_space_set (r->flags, "sections");

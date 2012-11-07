@@ -164,18 +164,15 @@ static RList* libs(RBinArch *arch) {
 
 static RBinInfo* info(RBinArch *arch) {
 	char *str;
-	RBinInfo *ret = NULL;
-
-	if((ret = R_NEW (RBinInfo)) == NULL)
-		return NULL;
-	memset(ret, '\0', sizeof (RBinInfo));
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	if (!ret) return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	if ((str = PE_(r_bin_pe_get_class) (arch->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	strncpy(ret->rclass, "pe", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->rclass, "pe", R_BIN_SIZEOF_STRINGS);
 	if ((str = PE_(r_bin_pe_get_os) (arch->bin_obj))) {
 		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
 		free (str);

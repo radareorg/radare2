@@ -148,6 +148,7 @@ static RBinInfo* info(RBinArch *arch) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 
+	ret->lang = "c";
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	if ((str = MACH0_(r_bin_mach0_get_class) (arch->bin_obj))) {

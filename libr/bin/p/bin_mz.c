@@ -146,9 +146,8 @@ static RBinInfo* info(RBinArch *arch) {
 	eprintf ("NRELOCS: %x\n", exe->num_relocs);
 	eprintf ("RELOC  : %x\n", exe->reloc_table_offset);
 	eprintf ("CHKSUM : %x\n", exe->checksum);
-	if ((ret = R_NEW (RBinInfo)) == NULL)
+	if ((ret = R_NEW0 (RBinInfo)) == NULL)
 		return NULL;
-	memset(ret, '\0', sizeof (RBinInfo));
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->bclass, "NONE", R_BIN_SIZEOF_STRINGS);
