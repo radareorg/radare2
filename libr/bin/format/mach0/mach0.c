@@ -766,6 +766,10 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 	}
 }
 
+int MACH0_(r_bin_mach0_is_pie)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	return (bin->hdr.filetype == MH_EXECUTE && bin->hdr.flags & MH_PIE);
+}
+
 char* MACH0_(r_bin_mach0_get_filetype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	switch (bin->hdr.filetype) {
 	case MH_OBJECT:		return strdup ("Relocatable object");

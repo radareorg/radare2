@@ -599,7 +599,13 @@ R_API int r_core_config_init(RCore *core) {
 	if (r_file_exists ("/usr/bin/gqview"))
 		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
 	else
-		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!gqview a.gif");
+	if (r_file_exists ("/usr/bin/eog"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!eog a.gif");
+	else
+	if (r_file_exists ("/usr/bin/xdg-open"))
+		r_config_set (cfg, "cmd.graph", "!dot -Tgif -oa.gif a.dot;!xdg-open a.gif");
+	else
+		r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	r_config_set (cfg, "cmd.hit", "");
 	r_config_desc (cfg, "cmd.hit", "Command to execute on every search hit");

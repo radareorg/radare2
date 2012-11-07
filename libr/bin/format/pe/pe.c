@@ -171,8 +171,10 @@ static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
-	PE_(image_data_directory) *data_dir_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
-	PE_(image_data_directory) *data_dir_delay_import = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
+	PE_(image_data_directory) *data_dir_import = \
+		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
+	PE_(image_data_directory) *data_dir_delay_import = \
+		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
 	PE_DWord import_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_import->VirtualAddress);
 	PE_DWord delay_import_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_delay_import->VirtualAddress);
 	int import_dir_size = data_dir_import->Size;
@@ -195,7 +197,8 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			perror("malloc (delay import directory)");
 			return R_FALSE;
 		}
-		if (r_buf_read_at(bin->b, delay_import_dir_offset, (ut8*)bin->delay_import_directory, delay_import_dir_size) == -1) {
+		if (r_buf_read_at(bin->b, delay_import_dir_offset,
+				(ut8*)bin->delay_import_directory, delay_import_dir_size) == -1) {
 			eprintf("Error: read (delay import directory)\n");
 			return R_FALSE;
 		}
@@ -205,7 +208,8 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin)
 {
-	PE_(image_data_directory) *data_dir_export = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
+	PE_(image_data_directory) *data_dir_export = \
+		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	PE_DWord export_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_export->VirtualAddress);
 
 	if (export_dir_offset == 0)
@@ -222,8 +226,7 @@ static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin)
 	return R_TRUE;
 }
 
-static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->dos_header = NULL;
 	bin->nt_headers = NULL;
 	bin->section_header = NULL;
@@ -231,7 +234,6 @@ static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin)
 	bin->import_directory = NULL;
 	bin->delay_import_directory = NULL;
 	bin->endian = 0; /* TODO: get endian */
-
 	if (!PE_(r_bin_pe_init_hdr)(bin)) {
 		eprintf("Warning: File is not PE\n");
 		return R_FALSE;
@@ -245,10 +247,8 @@ static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin)
 	return R_TRUE;
 }
 
-char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin) {
 	char *arch;
-
 	switch (bin->nt_headers->file_header.Machine) {
 	case PE_IMAGE_FILE_MACHINE_ALPHA:
 	case PE_IMAGE_FILE_MACHINE_ALPHA64:
@@ -277,8 +277,7 @@ char* PE_(r_bin_pe_get_arch)(struct PE_(r_bin_pe_obj_t)* bin)
 	return arch;
 }
 
-struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_addr_t *entry = NULL;
 
 	if ((entry = malloc(sizeof(struct r_bin_pe_addr_t))) == NULL) {
@@ -292,15 +291,15 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	return entry;
 }
 
-struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin)
-{
+struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_export_t *exports = NULL;
 	PE_VWord functions_offset, names_offset, ordinals_offset, function_rva, name_rva, name_offset;
 	PE_Word function_ordinal;
 	char function_name[PE_NAME_LENGTH], forwarder_name[PE_NAME_LENGTH];
 	char dll_name[PE_NAME_LENGTH], export_name[PE_NAME_LENGTH];
 	int i;
-	PE_(image_data_directory) *data_dir_export = &bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
+	PE_(image_data_directory) *data_dir_export = \
+		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	PE_VWord export_dir_rva = data_dir_export->VirtualAddress;
 	int export_dir_size = data_dir_export->Size;
 
@@ -317,16 +316,16 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	names_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfNames);
 	ordinals_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfOrdinals);
 	for (i = 0; i < bin->export_directory->NumberOfNames; i++) {
-		if (r_buf_read_at(bin->b, functions_offset + i * sizeof(PE_VWord), (ut8*)&function_rva, sizeof(PE_VWord)) == -1) {
-			eprintf("Error: read (function rva)\n");
+		if (r_buf_read_at (bin->b, functions_offset + i * sizeof(PE_VWord), (ut8*)&function_rva, sizeof(PE_VWord)) == -1) {
+			eprintf ("Error: read (function rva)\n");
 			return NULL;
 		}
 		if (r_buf_read_at(bin->b, ordinals_offset + i * sizeof(PE_Word), (ut8*)&function_ordinal, sizeof(PE_Word)) == -1) {
-			eprintf("Error: read (function ordinal)\n");
+			eprintf ("Error: read (function ordinal)\n");
 			return NULL;
 		}
 		if (r_buf_read_at(bin->b, names_offset + i * sizeof(PE_VWord), (ut8*)&name_rva, sizeof(PE_VWord)) == -1) {
-			eprintf("Error: read (name rva)\n");
+			eprintf ("Error: read (name rva)\n");
 			return NULL;
 		}
 		name_offset = PE_(r_bin_pe_rva_to_offset)(bin, name_rva);
@@ -685,6 +684,15 @@ char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin) {
 
 int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return bin->nt_headers->file_header.Characteristics & PE_IMAGE_FILE_DLL;
+}
+
+int PE_(r_bin_pe_is_pie)(struct PE_(r_bin_pe_obj_t)* bin) {
+	return bin->nt_headers->optional_header.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
+#if 0
+	BOOL aslr = inh->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
+//TODO : implement dep?
+	BOOL dep = inh->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_NX_COMPAT;
+#endif
 }
 
 int PE_(r_bin_pe_is_big_endian)(struct PE_(r_bin_pe_obj_t)* bin) {

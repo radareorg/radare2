@@ -8,9 +8,9 @@ function Ajax (method, uri, body, fn) {
 }
 
 function r_core_cmd_str (x, cb) {
-  Ajax ("POST", "?setComment="+hwid, cmt, function (x) {
-                        alert (x);
-                        /* force refresh */
-                        location.reload (true);
-                });
+	Ajax ("POST", "?setComment="+hwid, cmt, function (x) {
+		alert (x);
+		/* force refresh */
+		location.reload (true);
+	});
 }

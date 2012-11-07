@@ -63,6 +63,7 @@ typedef struct r_bin_info_t {
 	const char *lang;
 	int bits;
 	int has_va;
+	int has_pi; // pic/pie
 	int big_endian;
 	ut64 dbg_info;
 } RBinInfo;

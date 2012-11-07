@@ -176,6 +176,7 @@ static RBinInfo* info(RBinArch *arch) {
 	/* TODO detailed debug info */
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;
+	ret->has_pi = MACH0_(r_bin_mach0_is_pie) (arch->bin_obj);
 	return ret;
 }
 

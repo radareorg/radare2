@@ -214,9 +214,8 @@ static RBinInfo* info(RBinArch *arch) {
 	RBinInfo *ret = NULL;
 	char *str;
 
-	if(!(ret = R_NEW (RBinInfo)))
+	if(!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	memset (ret, '\0', sizeof (RBinInfo));
 	ret->lang = "C";
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	if ((str = Elf_(r_bin_elf_get_rpath)(arch->bin_obj))) {
@@ -226,6 +225,7 @@ static RBinInfo* info(RBinArch *arch) {
 	if ((str = Elf_(r_bin_elf_get_file_type) (arch->bin_obj)) == NULL)
 		return NULL;
 	strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
+	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
 	free (str);
 	if ((str = Elf_(r_bin_elf_get_elf_class) (arch->bin_obj)) == NULL)
 		return NULL;

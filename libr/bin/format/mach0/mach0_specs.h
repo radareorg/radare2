@@ -170,6 +170,7 @@ struct mach_header_64 {
 					   in the task will be given stack
 					   execution privilege.  Only used in
 					   MH_EXECUTE filetypes. */
+#define MH_PIE 0x200000
 
 /*
  * Capability bits used in the definition of cpu_type.

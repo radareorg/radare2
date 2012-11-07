@@ -87,6 +87,7 @@ static int bin_info (RCore *r, int mode) {
 			"\"arch\":\"%s\","
 			"\"os\":\"%s\","
 			"\"lang\":\"%s\","
+			"\"pic\":%s,"
 			"\"va\":%s,"
 			"\"bits\":%d,"
 			"\"stripped\":%s,"
@@ -101,6 +102,7 @@ static int bin_info (RCore *r, int mode) {
 			info->arch,
 			info->os,
 			info->lang?info->lang:"",
+			info->has_pi? "true": "false",
 			info->has_va? "true": "false",
 			info->bits,
 			r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
@@ -158,6 +160,7 @@ static int bin_info (RCore *r, int mode) {
 			r_cons_printf ("[File info]\n");
 			r_cons_printf ("File=%s\n"
 					"Type=%s\n"
+					"PositionIndependent=%s\n"
 					"HasVA=%s\n"
 					"RootClass=%s\n"
 					"Class=%s\n"
@@ -173,7 +176,9 @@ static int bin_info (RCore *r, int mode) {
 					"Local_syms=%s\n"
 					"Relocs=%s\n"
 					"RPath=%s\n",
-					info->file, info->type, r_str_bool (info->has_va),
+					info->file, info->type,
+					r_str_bool (info->has_pi),
+					r_str_bool (info->has_va),
 					info->rclass, info->bclass, info->lang?info->lang:"unknown",
 					info->arch, info->bits, info->machine, info->os,
 					info->subsystem,
