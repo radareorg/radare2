@@ -55,6 +55,17 @@ R_API char *r_strpool_get(RStrpool *p, int index) {
 	return p->str+index;
 }
 
+R_API char *r_strpool_next(RStrpool *p, int index) {
+	char *ptr = r_strpool_get (p, index);
+	if (ptr) {
+		char *q = ptr + strlen (ptr)+1;
+		if (q>=(p->str+p->len))
+			return NULL;
+		ptr = q;
+	}
+	return ptr;
+}
+
 #if TEST
 int main() {
 	RStrpool *p = r_strpool_new (1024);

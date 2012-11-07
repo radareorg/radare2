@@ -79,7 +79,7 @@ R_API char *r_bin_demangle_cxx(const char *str) {
 	return out;
 }
 
-R_API char *r_bin_demangle_objc(RBinObject *o, const char *sym) {
+R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 	char *ret = NULL;
 	char *clas = NULL;
 	char *name = NULL;
@@ -90,21 +90,13 @@ R_API char *r_bin_demangle_objc(RBinObject *o, const char *sym) {
 	if (!strncmp (sym, "_OBJC_Class_", 12)) {
 		ret = malloc (10+strlen (sym));
 		sprintf (ret, "class %s", sym+12);
-		if (o) {
-			RBinClass *c = R_NEW0 (RBinClass);
-			c->name = strdup (sym+12);
-			r_list_append (o->classes, c);
-		}
+		if (bin) r_bin_class_new (bin, sym+12, NULL, R_BIN_CLASS_PUBLIC);
 		return ret;
 	} else
 	if (!strncmp (sym, "_OBJC_CLASS_$_", 14)) {
 		ret = malloc (10+strlen (sym));
 		sprintf (ret, "class %s", sym+14);
-		if (o) {
-			RBinClass *c = R_NEW0 (RBinClass);
-			c->name = strdup (sym+14);
-			r_list_append (o->classes, c);
-		}
+		if (bin) r_bin_class_new (bin, sym+14, NULL, R_BIN_CLASS_PUBLIC);
 		return ret;
 	} else
 	/* fields */
@@ -117,6 +109,7 @@ R_API char *r_bin_demangle_objc(RBinObject *o, const char *sym) {
 			*p = 0;
 			name = p+1;
 		} else name = NULL;
+		if (bin) r_bin_class_add_field (bin, clas, name);
 	} else
 	/* methods */
 	if (sym[1] == '[') { // apple style
@@ -177,6 +170,9 @@ R_API char *r_bin_demangle_objc(RBinObject *o, const char *sym) {
 			ret = malloc (strlen (type)+strlen (name)+
 				strlen(clas)+strlen(args)+15);
 			sprintf (ret, "%s int %s::%s(%s)", type, clas, name, args);
+			if (bin) {
+				r_bin_class_add_method (bin, clas, name, nargs);
+			}
 		}
 	}
 	free (clas);

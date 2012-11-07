@@ -103,7 +103,7 @@ static RList* get_strings(RBinArch *a, int min) {
 // public api?
 static void load_languages(RBin *bin) {
 	/* load objc information if available */
-	if (r_bin_lang_objc (bin->cur.o))
+	if (r_bin_lang_objc (bin)) //->cur.o))
 		eprintf ("ObjectiveC information loaded\n");
 	/* TODO : do the same for dex, java and c++ name demangling? */
 }
@@ -488,6 +488,60 @@ R_API void r_bin_object_free(RBinObject *obj) {
 
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin) {
 	return bin->cur.o->classes;
+}
+
+R_API RBinClass *r_bin_class_new (RBin *bin, const char *name, const char *super, int view) {
+	RList *list = bin->cur.o->classes;
+	RBinClass *c;
+	if (!name) return NULL;
+	c = r_bin_class_get (bin, name);
+	if (c) {
+		if (super) {
+			free (c->super);
+			c->super = strdup (super);
+		}
+		return c;
+	}
+	c = R_NEW0 (RBinClass);
+	if (!c) return NULL;
+	c->name = strdup (name);
+	c->super = super? strdup (super): NULL;
+	c->index = r_list_length (list);
+	c->methods = r_list_new ();
+	c->fields = r_list_new ();
+	c->visibility = view;
+	if (!list)
+		list = bin->cur.o->classes = r_list_new ();
+	r_list_append (list, c);
+	return c;
+}
+
+R_API RBinClass *r_bin_class_get (RBin *bin, const char *name) {
+	RList *list = bin->cur.o->classes;
+	RListIter *iter;
+	RBinClass *c;
+	r_list_foreach (list, iter, c) {
+		if (!strcmp (c->name, name))
+			return c;
+	}
+	return NULL;
+}
+
+R_API int r_bin_class_add_method (RBin *bin, const char *classname, const char *name, int nargs) {
+	RBinClass *c = r_bin_class_get (bin, classname);
+	name = strdup (name); // XXX
+	if (c) {
+		r_list_append (c->methods, (void*)name);
+		return R_TRUE;
+	} else {
+		c = r_bin_class_new (bin, classname, NULL, 0);
+		r_list_append (c->methods, (void*)name);
+	}
+	return R_FALSE;
+}
+
+R_API void r_bin_class_add_field (RBin *bin, const char *classname, const char *name) {
+	eprintf ("TODO add field: %s \n", name);
 }
 
 R_API ut64 r_bin_get_offset (RBin *bin) {

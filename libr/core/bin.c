@@ -326,6 +326,12 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			r_flag_set (r->flags, str, va?baddr+reloc->rva:reloc->offset,
 					r->blocksize, 0);
 		}
+	} else
+	if ((mode & R_CORE_BIN_SIMPLE)) {
+		r_list_foreach (relocs, iter, reloc) {
+			r_cons_printf ("0x%08"PFMT64x"  %s\n", 
+				va?baddr+reloc->rva:reloc->offset, reloc->name);
+		}
 	} else {
 		if (mode) {
 			r_cons_printf ("fs relocs\n");
@@ -677,9 +683,10 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 }
 
 static int bin_classes (RCore *r, int mode) {
-	RListIter *iter;
+	RListIter *iter, *iter2;
 	RBinClass *c;
 	RList *cs = r_bin_get_classes (r->bin);
+	const char *methname;
 	if (!cs) return R_FALSE;
 
 	// XXX: support for classes is broken and needs more love
@@ -695,7 +702,13 @@ static int bin_classes (RCore *r, int mode) {
 		}
 		r_cons_printf ("]");
 	} else
-	if ((mode & R_CORE_BIN_SET)) {
+	if (mode & R_CORE_BIN_SIMPLE) {
+		r_list_foreach (cs, iter, c) {
+			r_cons_printf ("0x%08"PFMT64x"  %s  %s\n",
+				c->index, c->name, c->super?c->super:"");
+		}
+	} else
+	if (mode & R_CORE_BIN_SET) {
 		// Nothing to set.
 	} else {
 		r_list_foreach (cs, iter, c) {
@@ -703,10 +716,16 @@ static int bin_classes (RCore *r, int mode) {
 				r_cons_printf ("f class.%s @ %d\n", c->name, c->index);
 				if (c->super)
 					r_cons_printf ("f super.%s.%s @ %d\n", c->name, c->super, c->index);
+				r_list_foreach (c->methods, iter2, methname) {
+					r_cons_printf ("f method.%s.%s\n", c->name, methname);
+				}
 			} else {
 				r_cons_printf ("class %d = (%s)\n", c->index, c->name);
 				if (c->super)
 					r_cons_printf ("  super = %s\n", c->super);
+				r_list_foreach (c->methods, iter2, methname) {
+					r_cons_printf ("  method %s\n", methname);
+				}
 			}
 			// TODO: show belonging methods and fields
 		}

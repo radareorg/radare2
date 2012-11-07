@@ -144,8 +144,8 @@ typedef struct r_bin_class_t {
 	char *name;
 	char *super;
 	int index;
-	RList *methods;
-	RList *fields;
+	RList *methods; // <RBinSymbol>
+	RList *fields; // <RBinField>
 	int visibility;
 } RBinClass;
 
@@ -160,6 +160,7 @@ typedef struct r_bin_symbol_t {
 	char forwarder[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
+	const char *classname;
 	ut64 rva;
 	ut64 offset;
 	ut64 size;
@@ -256,8 +257,8 @@ R_API char* r_bin_demangle(RBin *bin, const char *str);
 R_API int r_bin_demangle_type (const char *str);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(const char *str);
-R_API char *r_bin_demangle_objc(RBinObject *a, const char *sym);
-R_API int r_bin_lang_objc(RBinObject *a);
+R_API char *r_bin_demangle_objc(RBin *bin, const char *sym);
+R_API int r_bin_lang_objc(RBin *a);
 
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);
@@ -268,6 +269,12 @@ R_API ut64 r_bin_get_size (RBin *bin);
 R_API RList* r_bin_get_relocs(RBin *bin);
 R_API RList* r_bin_get_sections(RBin *bin);
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin);
+
+R_API RBinClass *r_bin_class_get (RBin *bin, const char *name);
+R_API RBinClass *r_bin_class_new (RBin *bin, const char *name, const char *super, int view);
+R_API int r_bin_class_add_method (RBin *bin, const char *classname, const char *name, int nargs);
+R_API void r_bin_class_add_field (RBin *bin, const char *classname, const char *name);
+
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va);
 R_API RList* r_bin_get_strings(RBin *bin);
 R_API RList* r_bin_get_symbols(RBin *bin);
