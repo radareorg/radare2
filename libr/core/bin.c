@@ -459,7 +459,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 		r_list_foreach (symbols, iter, symbol) {
 			char *name = strdup (symbol->name);
 			r_name_filter (name, 80);
-			r_cons_printf ("%"PFMT64d" %"PFMT64d" %s\n",
+			r_cons_printf ("0x%"PFMT64x" %"PFMT64d" %s\n",
 				baddr+symbol->rva, symbol->size, name);
 			free (name);
 		}
@@ -725,7 +725,7 @@ static int bin_classes (RCore *r, int mode) {
 					r_cons_printf ("f method.%s.%s\n", c->name, methname);
 				}
 			} else {
-				r_cons_printf ("class %d = (%s)\n", c->index, c->name);
+				r_cons_printf ("class %d = %s\n", c->index, c->name);
 				if (c->super)
 					r_cons_printf ("  super = %s\n", c->super);
 				r_list_foreach (c->methods, iter2, methname) {

@@ -48,7 +48,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RFlagItem *flag;
 	RMetaItem *mi;
 	ut64 dest = UT64_MAX;
-
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
@@ -703,4 +702,41 @@ else
 	r_anal_op_fini (&analop);
 	free (osl);
 	return idx-lastfail;
+}
+
+#if 0
+TODO:
+ - comments
+ - functions
+ - ...
+#endif
+R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
+	RAsmOp asmop;
+	RAnalOp analop;
+	int i, oplen, ret;
+	r_cons_printf ("[");
+	for (i=0; i<len;) {
+		ut64 at = addr +i;
+		r_asm_set_pc (core->assembler, at);
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i+5);
+		r_anal_op (core->anal, &analop, at, buf+i, len-i+5);
+
+		oplen = r_asm_op_get_size (&asmop);
+		r_cons_printf ("%s{", i>0? ",": "");
+		r_cons_printf ("\"offset\":%"PFMT64d, at);
+		r_cons_printf (",\"size\":\"%d\"", oplen);
+		r_cons_printf (",\"opcode\":\"%s\"", asmop.buf_asm);
+		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
+		//r_cons_printf (",\"family\":\"%s\"", asmop.family);
+		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (analop.type));
+		if (analop.jump != UT64_MAX) {
+			r_cons_printf (",\"next\":%"PFMT64d, analop.jump);
+			if (analop.fail != UT64_MAX)
+				r_cons_printf (",\"fail\":%"PFMT64d, analop.fail);
+		}
+		r_cons_printf ("}");
+		i += oplen;
+	}
+	r_cons_printf ("]");
+	return R_TRUE;
 }

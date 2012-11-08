@@ -302,6 +302,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *b = strdup (buf);
 	if (a->ifilter)
 		r_parse_parse (a->ifilter, buf, b);
+	r_str_case (b, 0); // to-lower
 	memset (op, 0, sizeof (RAsmOp));
 	if (a->cur) {
 		if (!a->cur->assemble) {

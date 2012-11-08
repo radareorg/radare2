@@ -128,6 +128,44 @@ R_API int r_anal_op_execute (RAnal *anal, RAnalOp *op) {
 	return R_TRUE;
 }
 
+R_API char *r_anal_optype_to_string(int t) {
+	switch (t) {
+	case R_ANAL_OP_TYPE_NULL  : return "null";
+	case R_ANAL_OP_TYPE_JMP   : return "jmp";
+	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
+	case R_ANAL_OP_TYPE_CJMP  : return "cjmp";
+	case R_ANAL_OP_TYPE_CALL  : return "call";
+	case R_ANAL_OP_TYPE_UCALL : return "ucall";
+	case R_ANAL_OP_TYPE_REP   : return "rep";
+	case R_ANAL_OP_TYPE_RET   : return "ret";
+	case R_ANAL_OP_TYPE_ILL   : return "ill";
+	case R_ANAL_OP_TYPE_UNK   : return "unk";
+	case R_ANAL_OP_TYPE_NOP   : return "nop";
+	case R_ANAL_OP_TYPE_MOV   : return "mov";
+	case R_ANAL_OP_TYPE_TRAP  : return "trap";
+	case R_ANAL_OP_TYPE_SWI   : return "swi";
+	case R_ANAL_OP_TYPE_UPUSH : return "upush";
+	case R_ANAL_OP_TYPE_PUSH  : return "push";
+	case R_ANAL_OP_TYPE_POP   : return "pop";
+	case R_ANAL_OP_TYPE_CMP   : return "cmp";
+	case R_ANAL_OP_TYPE_ADD   : return "add";
+	case R_ANAL_OP_TYPE_SUB   : return "sub";
+	case R_ANAL_OP_TYPE_MUL   : return "mul";
+	case R_ANAL_OP_TYPE_DIV   : return "div";
+	case R_ANAL_OP_TYPE_SHR   : return "shr";
+	case R_ANAL_OP_TYPE_SHL   : return "shl";
+	case R_ANAL_OP_TYPE_OR    : return "or";
+	case R_ANAL_OP_TYPE_AND   : return "and";
+	case R_ANAL_OP_TYPE_XOR   : return "xor";
+	case R_ANAL_OP_TYPE_NOT   : return "not";
+	case R_ANAL_OP_TYPE_STORE : return "store";
+	case R_ANAL_OP_TYPE_LOAD  : return "load";
+	case R_ANAL_OP_TYPE_LEA   : return "lea";
+	case R_ANAL_OP_TYPE_LEAVE : return "leave";
+	}
+	return "undefined";
+}
+
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalFunction *f;
 	char ret[128];

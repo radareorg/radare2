@@ -355,10 +355,15 @@ static int cmd_print(void *data, const char *input) {
 			return 0;
 			}
 			break;
+		case 'j':
+			r_core_print_disasm_json (core, core->offset,
+				core->block, core->blocksize);
+			return 0;
 		case '?':
 			eprintf ("Usage: pd[f|i|l] [len] @ [addr]\n"
 			//TODO: eprintf ("  pdr  : disassemble resume\n");
 			"  pda  : disassemble all possible opcodes (byte per byte)\n"
+			"  pdj  : disassemble to json\n"
 			"  pdb  : disassemble basic block\n"
 			"  pdr  : recursive disassemble across the function graph\n"
 			"  pdf  : disassemble function\n"

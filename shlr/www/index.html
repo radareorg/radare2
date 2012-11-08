@@ -32,6 +32,11 @@ function cmd(c, cb) {
 	});
 }
 
+function hi(reg) {
+alert ("penis");
+	css ('a.rcx', 'background-color', 'yellow');
+}
+
 function about() { cmd ("?V", function (version) { alert ("r2w v"+version); }); }
 
 function panel_functions_load() {
@@ -61,13 +66,14 @@ function setmode (x) {
 	display = x;
 	if (backward) display = "pd";
 	switch (x) {
-	case "pd": x = "b 256;"+x; break;
-	case "px": x = "b 1024;"+x; break;
+	case "pd": x = "b 128;"+x; break;
+	case "px": x = "b 512;"+x; break;
 	}
-	if (debug_mode)
+	if (debug_mode && x=='pd')
 		x = ".dr*;dr=;"+x;
-	display=x
+	display = x
 	cmd (x);
+	window.scrollTo (0,0);
 }
 
 function runprompt (t, c) {
@@ -105,10 +111,10 @@ function show_popup_about () {
 		"Listings"+
 		"<hr size=1/>"+
 		"<a href=\"javascript:setmode('i',1)\" />file info</a><br />"+
-		"<a href=\"javascript:setmode('is',1)\" />symbols</a><br />"+
-		"<a href=\"javascript:setmode('ii',1)\" />imports</a><br />"+
+		"<a href=\"javascript:setmode('isq',1)\" />symbols</a><br />"+
+		"<a href=\"javascript:setmode('iiq',1)\" />imports</a><br />"+
 		"<a href=\"javascript:setmode('afl',1)\" />functions</a><br />"+
-		"<a href=\"javascript:setmode('iz',1)\" />strings</a><br />"+
+		"<a href=\"javascript:setmode('izq',1)\" />strings</a><br />"+
 		"<br />"+
 		"Flags"+
 		"<hr size=1/>"+
@@ -119,10 +125,10 @@ function show_popup_about () {
 	"</td><td valign=top>"+
 		"Places"+
 		"<hr size=1/>"+
-		"<a href=\"javascript:popup_hide();seek('entry0')\" />entry0</a>&nbsp;"+
-		"<a href=\"javascript:popup_hide();seek('main')\" />main</a><br />"+
+		"<a href=\"javascript:popup_hide();setmode('pd');seek('entry0')\" />entry0</a>&nbsp;"+
+		"<a href=\"javascript:popup_hide();setmode('pd');seek('main')\" />main</a><br />"+
 		"<br />"+
-		"Settings"+
+		"Toggles"+
 		"<hr size=1/>"+
 		"<a href=\"javascript:toggle('asm.offset')\" />asm.offset</a><br />"+
 		"<a href=\"javascript:toggle('asm.lines')\" />asm.lines</a><br />"+
@@ -152,8 +158,32 @@ function handleKeyPress(e, form) {
 	}
 }
 
+var seekindex = 0;
+var seekhistory = [];
+
+function seek_undo() {
+	seekindex--;
+	seekhistory[seekhistory.length-1] = x;
+}
+
+function seek_redo() {
+	seekindex++;
+	if (seekindex>=seekhistory.length) {
+		seekindex--;
+		return;
+	}
+	seek (seekhistory[seekindex]);
+}
+
+function seek_do(x) {
+	seekindex++;
+	seekhistory[seekhistory.length] = x;
+}
 function seek(x,back) {
+	seek_do (x)
 	next_curoff = prev_curoff = x;
+	if (display[0] != 'p')
+		setmode('pd');
 	cmd ("s "+x, function (x) {
 		if (display[0]=='f') display="pd";
 		cmd (display);
@@ -267,19 +297,21 @@ function filter_asm(x) {
 		return false;
 	}
 	if (haveDisasm (display)) {
+		x = x.replace (/function:/g,"<span style=color:red>function:</span>");
 		x = x.replace (/;(\s+)/g, ";");
 		x = x.replace (/;(.*)/g, "// <span style='color:yellow'>$1</span>");
 		x = x.replace (/(bl|call)/g, "<b style='color:green'>call</b>");
-		x = x.replace (/(jmp|bne|beq|jnz|jg|je|jl|jz|jb|ja|jne)/g, "<b style='color:green'>$1</b>");
-		x = x.replace (/(leave|ret)/g, "<b style='color:red'>$1</b>");
+		x = x.replace (/(jmp|bne|beq|jnz|jae|jge|jbe|jg|je|jl|jz|jb|ja|jne)/g, "<b style='color:green'>$1</b>");
+		x = x.replace (/(dword|qword|word|byte|movzx|movsxd|cmovz|mov\ |lea\ )/g, "<b style='color:yellow'>$1</b>");
+		x = x.replace (/(hlt|leave|retn|ret)/g, "<b style='color:red'>$1</b>");
 		x = x.replace (/(add|sub|mul|div|shl|shr|and|not|xor|inc|dec|sar|sal)/g, "<b style='color:orange'>$1</b>");
 		x = x.replace (/(push|pop)/g, "<b style='color:magenta'>$1</b>");
-		x = x.replace (/(mov|lea)/g, "<b style='color:yellow'>$1</b>");
 		x = x.replace (/(test|cmp)/g, "<b style='color:green'>$1</b>");
 		x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
 		x = x.replace (/(sym|fcn|imp|loc).(.*)/g, "<a href='javascript:seek(\"$1.$2\")'>$1.$2</a>");
 	}
 	x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:seek(\"0x$1\")'>0x$1</a>");
+// registers
 	if (backward) {
 		prev_curoff = curoff;
 		prev_lastoff = lastoff;
@@ -383,16 +415,15 @@ function toggle_editor() {
 	var e = document.getElementById('editor');
 	var et = document.getElementById('editor_textarea');
 	var em = document.getElementById('editor_menu');
-	if (et.style.visibility=="hidden") {
+	if (et.style.visibility == "hidden") {
 		e.style.width = 300;
-		et.style.visibility=em.style.visibility="visible";
-		x.innerHTML = "x";
+		et.style.visibility = em.style.visibility="visible";
+		x.innerHTML = "&gt;";
 	} else {
-		e.style.width = 16;
-		et.style.visibility=em.style.visibility="hidden";
+		et.style.visibility = em.style.visibility="hidden";
+		e.style.visibility = em.style.visibility="hidden";
 		x.innerHTML = "&lt;";
 	}
-	
 }
 
 function notepad_run() {
@@ -407,6 +438,26 @@ function notepad_assemble () {
 	cmd ("\"pa "+t.replace (/\n/g, ';')+"\"", function (out) {
 		document.getElementById ('editor_textarea').value = out;
 	});
+}
+
+var console2_toggle_var = false;
+function console2_toggle () {
+	var m = document.getElementById('menubar');
+	var c = document.getElementById('console');
+	var c2 = document.getElementById('console2');
+	var b2 = document.getElementById('console2_body');
+	console2_toggle_var = !console2_toggle_var;
+	if (console2_toggle_var) {
+		b2.style.visibility="visible";
+		m.style.visibility="visible";
+		c.style.left = 400;
+		c2.style.width = 400;
+	} else {
+		b2.style.visibility="hidden";
+		m.style.visibility="hidden";
+		c.style.left = 20;
+		c2.style.width = 20;
+	}
 }
 
 function notepad_disassemble () {
@@ -437,41 +488,30 @@ var r2 = {
 	'analyze': function () { runcmd ('af'); },
 	'entry': function () { runcmd ('s entry0'); },
 	'step': function () { runcmd ('ds;.dr*'); },
+	'continue': function () { runcmd ('dc;.dr*'); },
+	'step_over': function () { runcmd ('dso;.dr*'); },
 	'hexdump': function () { setmode ("px"); },
 	'disasm': function () { setmode ('pd'); },
 	'incode': function (x) { setmode ('pc'+x); },
-	'entry': function () { runcmd ('s entry0'); },
+	'main': function () { runcmd ('s main'); },
 	'config_get': function (x,y) { cmd ('e '+x, y); },
 	'config_set': function (x) { runcmd ('s entry0'); }
 }
 </script>
 </head>
 <body id="body" onload="init()">
+
+
 <div class=popup_background id="popup_background" style="visibility:hidden"></div>
-<div id="menubar" class="menubar">
-<a href="javascript:r2.hexdump()">x</a>
-<a href="javascript:r2.disasm()">pd</a>
-<a href="javascript:r2.incode()">pc</a>
-|
-<a href="javascript:r2.entry()">entry</a>
-<a href="javascript:r2.analyze()">a</a>
-|
-<a href="javascript:r2.break()">break</a>
-<a href="javascript:r2.step()">step</a>
-<a href="">continue</a>
-</div>
-<div>
-</div>
-<div id="editor" class="editor">
-<table>
+
+<div id="editor" class="editor" style="visibility:hidden">
+<table style="background-color:black">
 <tr><td>
-<a title="toggle notepad" id="x" href="javascript:toggle_editor ()">&lt;</a>
-</td><td>
 <div id="editor_menu">
 <a title="execute selected text" href="javascript:notepad_run()">run</a>
 <a title="assemble selected text" href="javascript:notepad_assemble()">asm</a>
 <a title="disassemble selected text" href="javascript:notepad_disassemble()">dis</a>
-<a title="disassemble selected text" href="javascript:notepad_clear()">clr</a>
+<a title="clear textarea" href="javascript:notepad_clear()">clr</a>
 </div>
 </td></tr></table>
 <textarea id="editor_textarea" class="editor_textarea" style="visibility:hidden">
@@ -493,7 +533,12 @@ var r2 = {
 </tr>
 </table>
 </div>
+<div style="position:fixed; top:0px;left:0px;width:100%;height:28px;background-color:black;border:0px;color:black;z-index:0"> .  </div>
 
+<div>
+<a href="javascript:seek_undo()">&lt;</a>
+<a href="javascript:seek_redo()">&gt;</a>
+</div>
 <div style="position:fixed; top:0px;left:0px;background-color:black;border:0px">
 	<table class=header>
 	<tr><td style="text-align:left;vertical-align:top">
@@ -503,11 +548,46 @@ var r2 = {
 	</td></tr> 
 	</table>
 </div>
+<div id="console2" class="console2">
+<table style="height:100%">
+<tr><td valign="top">
+	&nbsp;<a href="javascript:console2_toggle()">]</a>
+<br />
+	&nbsp;<a href="javascript:toggle_editor()">[</a>
+</td><td width="100%" valign="top">
+<div id="menubar" style="visibility:hidden;color:white;">
+cmds:
+<a href="javascript:r2.hexdump()">x</a>
+<a href="javascript:r2.disasm()">pd</a>
+<a href="javascript:r2.incode()">pc</a>
+|
+<a href="javascript:r2.entry()">entry</a>
+<a href="javascript:r2.main()">main</a>
+<a href="javascript:r2.analyze()">a</a>
+|
+<a href="javascript:r2.break()">db</a>
+<a href="javascript:r2.step()">ds</a>
+<a href="javascript:r2.step_over()">dso</a>
+<a href="javascript:r2.continue()">dc</a>
+</div>
+	<textarea class="editor_textarea" id="console2_body" style="visibility:hidden">
+patata barata
+	</textarea>
+</td></tr>
+</table>
+</div>
 
 <div onresize="menubar_display()" id="console" class="console" style="top:45px !important; position:absolute;z-index:-99">
-<div id="less" class="scroller" onclick="less()"> &nbsp;&nbsp;^^^ </div>
+
+<div id="less" class="scroller" onclick="less()"> &nbsp;&nbsp;^^^
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; ^^^
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; ^^^
+ </div>
 <p id="output"></p>
-<div id="more" class="scroller" onclick="more()"> &nbsp;&nbsp;vvv </div>
+<div id="more" class="scroller" onclick="more()"> &nbsp;&nbsp;vvv 
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; vvv
+&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; vvv
+</div>
 <br /> <br /> 
 </div>
 </body>

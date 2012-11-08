@@ -1,5 +1,5 @@
 body {
-	background-color: black;
+	background-color: #252525;
 	font-family: Verdana;
 	border:0px;
 	height: 0px;
@@ -20,7 +20,6 @@ a {
 
 .header {
 	width:320px;
-	background-color:black;
 	border: 0px;
 	border-color: black;
 	text-align: center;
@@ -32,16 +31,27 @@ a {
 	border-color: black;
 	margin-right: 2px;
 	width:32px;
-	background-color: #f0f0f0;
+	background-color: #a0a0a0;
 	color: black;
+	z-index: 10px;
+}
+
+.button:hover {
+	background-color: #c0c0c0 !important;
+	color: #202020 !important;
 }
 
 input {
 /*	width:310px; */
 	width:190px; 
 	border: 1px solid black;
-	background-color: #d0d0d0;
-	color: black;
+	background-color: #707070;
+	color: #202020;
+}
+
+input:focus {
+	background-color:white !important;
+	color:black;
 }
 
 .popup_content {
@@ -58,15 +68,30 @@ input {
 	background-color:#000000;
 }
 
+.console2 {
+	font-size:12px;
+	width:20px;
+	height:100%;
+	text-align:left;
+color:white;
+position:fixed;
+top:24;
+left:0px;
+background-color:black;
+	/* overflow:auto; */
+	/* background-color:#f0f0f0; */
+	color: white;
+}
+
 .console {
 	font-size:12px;
 	width:310px;
 	height:100%;
 	text-align:left;
+	left:20px;
 	/* overflow:auto; */
 	/* background-color:#f0f0f0; */
-	color:#ffffff;
-	background-color:#000000;
+	color: white;
 }
 
 .popup {
@@ -115,7 +140,7 @@ a {
 	min-height:100%;
 	border: 0px;
 	background-color: #000000;
-	z-index: 3;
+	z-index: -30;
 }
 
 .popup_title {
@@ -134,25 +159,60 @@ a {
 
 .editor {
 	position:fixed;
-	height:100%;
-	top: 28px;
+	top: 22px;
 	width:16px;
+	height:100%;
 	right:0px;
 	color: white;
 	font-size: 14px;
+	background-color:black;
+}
+
+a.rcx {
+	background-color:red !important;
+}
+
+a.rcx:hover {
+	color:white !important;
+	background-color:yellow ;
 }
 
 .editor_textarea {
 	visibility: hidden;
-	background-color:#303030;
+	background-color:#101010;
+	border-width:1px !important;
+	border-color:#a0a0a0 !important;
 	width:95%;
-	height:100%;
+	height:90%;
 	font-family: Courier;
+	font-size:14px;
+margin-left:10px;
 	color: white;
 }
 
 .scroller {
 	width:100%;
-	background-color:#404080;
+	background-color:#302050;
+	color: #a0a0c0;
 	cursor: pointer;
+	border-color:black;
+	border-width:3px !important;
+}
+
+.scroller:hover {
+	width:100%;
+	background-color:#404070;
+	color: #808080;
+	cursor: pointer;
+}
+
+.minibutton {
+	background-color: #808080 !important;
+	color: black !important;
+	height:22px !important;
+}
+
+.minibutton:hover {
+	background-color: #c0c0c0 !important;
+	color: #202020 !important;
 }

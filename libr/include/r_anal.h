@@ -632,6 +632,7 @@ R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep);
+R_API char *r_anal_optype_to_string(int t);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value);

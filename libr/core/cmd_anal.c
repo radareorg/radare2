@@ -308,6 +308,9 @@ case 'o':
 			r_core_anal_bytes (core, core->block, len);
 		}
 		break;
+	case 'F':
+		r_core_anal_fcn (core, core->offset, -1, R_ANAL_REF_TYPE_NULL, 1);
+		break;
 	case 'f':
 		switch (input[1]) {
 		case '-':
@@ -823,6 +826,7 @@ case 'o':
 		" ax[-cCd] [f] [t] ; manage code/call/data xrefs\n"
 		" ao[e?] [len]     ; analyze Opcodes (or emulate it)\n"
 		" af[bcsl?+-*]     ; analyze Functions\n"
+		" aF               ; same as above, but using graph.depth=1\n"
 		" ar[?ld-*]        ; manage refs/xrefs\n"
 		" ag[?acgdlf]      ; output Graphviz code\n"
 		" at[trd+-*?] [.]  ; analyze execution Traces\n"
