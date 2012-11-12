@@ -7,7 +7,11 @@ R_API int r_bin_lang_objc(RBin *bin) {
 	RBinSymbol *sym;
 	int hasobjc = R_FALSE;
 	char *dsym;
-	const char *ft = bin->cur.o->info->rclass;
+	const char *ft;
+
+	if (!bin || !bin->cur.o || !bin->cur.o->info)
+		return 0;
+	ft = bin->cur.o->info->rclass;
 
 	if (!ft || (!strstr (ft, "mach") && !strstr (ft, "elf")))
 		return 0;

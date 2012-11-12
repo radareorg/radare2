@@ -13,8 +13,9 @@
 
 typedef struct r_parse_t {
 	void *user;
+	int flagspace;
 	struct r_parse_plugin_t *cur;
-	struct list_head parsers;
+	RList *parsers;
 } RParse;
 
 typedef struct r_parse_plugin_t {

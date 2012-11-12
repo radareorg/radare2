@@ -545,18 +545,32 @@ else
 			char *tmpopstr = r_anal_op_to_string (core->anal, &analop);
 			// TODO: Use data from code analysis..not raw analop here
 			// if we want to get more information
-			opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
+			opstr = tmpopstr? tmpopstr: strdup (asmop.buf_asm);
 		} else if (pseudo) {
 			r_parse_parse (core->parser, asmop.buf_asm, str);
 			opstr = str;
 		} else if (filter) {
-			r_parse_filter (core->parser, core->flags, asmop.buf_asm, str, sizeof (str));
+			int ofs = core->parser->flagspace;
+			switch (analop.type) {
+			case R_ANAL_OP_TYPE_IO:
+				core->parser->flagspace = r_flag_space_get (
+					core->flags, "ports");
+				break;
+			default:
+				core->parser->flagspace = -1;
+				break;
+			}
+			r_parse_filter (core->parser, core->flags,
+				asmop.buf_asm, str, sizeof (str));
+			core->parser->flagspace = ofs;
 			opstr = str;
 		} else opstr = asmop.buf_asm;
 		if (varsub) {
-			RAnalFunction *f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+			RAnalFunction *f = r_anal_fcn_find (core->anal,
+				at, R_ANAL_FCN_TYPE_NULL);
 			if (f) {
-				r_parse_varsub (core->parser, f, opstr, strsub, sizeof (strsub));
+				r_parse_varsub (core->parser, f,
+					opstr, strsub, sizeof (strsub));
 				if (decode) free (opstr);
 				opstr = strsub;
 			}
@@ -575,7 +589,8 @@ else
 					while (len--)
 						r_cons_strcat (" ");
 					if (show_color)
-						r_cons_printf (Color_TURQOISE"  ; %s"Color_RESET"%s", sl, pre);
+						r_cons_printf (Color_TURQOISE
+						"  ; %s"Color_RESET"%s", sl, pre);
 					else r_cons_printf ("  ; %s\n%s", sl, pre);
 					free (osl);
 					osl = sl;
@@ -590,9 +605,8 @@ else
 			ret -= middle;
 			r_cons_printf (" ;  *middle* %d", ret);
 		}
-		if (asmop.payload != 0) {
+		if (asmop.payload != 0)
 			r_cons_printf ("\n; .. payload of %d bytes", asmop.payload);
-		}
 		if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 			RAsmOp ao; /* disassemble for the vm .. */
 			int os = core->assembler->syntax;

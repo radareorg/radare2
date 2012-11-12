@@ -357,6 +357,7 @@ enum {
 	R_ANAL_OP_FAMILY_LAST
 };
 
+// XXX: this definition is plain wrong. use enum or empower bits
 enum {
 	R_ANAL_OP_TYPE_NULL  = 0x0,
 	R_ANAL_OP_TYPE_JMP   = 0x1,  /* mandatory jump */
@@ -378,6 +379,7 @@ enum {
 	R_ANAL_OP_TYPE_CMP   = 0x10000,  /* copmpare something */
 	R_ANAL_OP_TYPE_ADD   = 0x20000,
 	R_ANAL_OP_TYPE_SUB   = 0x40000,
+	R_ANAL_OP_TYPE_IO    = 0x80000,
 	R_ANAL_OP_TYPE_MUL   = 0x100000,
 	R_ANAL_OP_TYPE_DIV   = 0x200000,
 	R_ANAL_OP_TYPE_SHR   = 0x400000,

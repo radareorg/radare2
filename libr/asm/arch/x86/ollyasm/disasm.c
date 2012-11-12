@@ -640,7 +640,7 @@ static void DecodeRJ(ulong offsize,ulong nextip) {
     else
       i=0;
     if (symbolic==0 || i==0)
-      nresult+=sprintf(da->result+nresult,"0x"LFMT08,addr);
+      nresult+=sprintf(da->result+nresult,LFMT08,addr);
     else
       nresult+=sprintf(da->result+nresult,"%.*s",TEXTLEN-nresult-25,s);
     if (symbolic==0 && i!=0 && da->comment[0]=='\0')

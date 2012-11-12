@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - pancake */
 
 #include <r_flags.h>
 
-R_API int r_flag_space_get(struct r_flag_t *f, const char *name) {
+R_API int r_flag_space_get(RFlag *f, const char *name) {
 	int i;
-	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
+	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i] != NULL)
 			if (!strcmp (name, f->spaces[i]))
 				return i;

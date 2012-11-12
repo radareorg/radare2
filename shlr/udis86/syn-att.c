@@ -115,10 +115,10 @@ gen_operand(struct ud* u, struct ud_operand* op)
 				mkasm(u, "0x" FMT64 "x", u->pc + op->lval.sbyte); 
 				break;
 			case 16:
-				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ) & 0xffff );
+				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword )); // & 0xffff );
 				break;
 			case 32:
-				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ) & 0xfffffffful );
+				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword )); // & 0xfffffffful );
 				break;
 			default:break;
 		}

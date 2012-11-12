@@ -190,10 +190,18 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'x':
 		{
-		int len = strlen (input);
+		int b, len = strlen (input);
 		ut8 *buf = malloc (len+1);
 		len = r_hex_str2bin (input+1, buf);
-		if (len != -1) {
+		if (len != 0) {
+			int last_is_nibble;
+			if (len<0) {
+				last_is_nibble = R_TRUE;
+				len = -len+1;
+			} else last_is_nibble = R_FALSE;
+			b = core->block[len]&0xf;
+			b |= (buf[len]&0xf0);
+			buf[len] = b;
 			r_core_write_at (core, core->offset, buf, len);
 			WSEEK (core, len);
 			r_core_block_read (core, 0);

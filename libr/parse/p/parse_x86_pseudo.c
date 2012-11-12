@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble */
+/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +16,8 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *op;
 		char *str;
 	} ops[] = {
+		{ "in",   "1 = io[2]"},
+		{ "out",  "io[1] = 2"},
 		{ "cmp",  "cmp 1, 2"},
 		{ "test", "cmp 1, 2"},
 		{ "lea",  "1 = 2"},
@@ -63,16 +65,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 			strcat (newstr, (i == 0 || i== argc - 1)?" ":",");
 		}
 	}
-
 	return R_FALSE;
 }
 
 static int parse(RParse *p, const char *data, char *str) {
+	char w0[64], w1[64], w2[64], w3[64];
 	int i, len = strlen (data);
-	char w0[64];
-	char w1[64];
-	char w2[64];
-	char w3[64];
 	char *buf, *ptr, *optr;
 
 	// malloc can be slow here :?
@@ -81,10 +79,7 @@ static int parse(RParse *p, const char *data, char *str) {
 	memcpy (buf, data, len+1);
 
 	if (*buf) {
-		w0[0]='\0';
-		w1[0]='\0';
-		w2[0]='\0';
-		w3[0]='\0';
+		*w0 = *w1 = *w2 = *w3 = '\0';
 		ptr = strchr (buf, ' ');
 		if (ptr == NULL)
 			ptr = strchr (buf, '\t');
@@ -94,14 +89,14 @@ static int parse(RParse *p, const char *data, char *str) {
 			strcpy (w0, buf);
 			strcpy (w1, ptr);
 
-			optr=ptr;
+			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
 				for (++ptr; *ptr==' '; ptr++);
 				strcpy (w1, optr);
 				strcpy (w2, ptr);
-				optr=ptr;
+				optr = ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
@@ -137,22 +132,26 @@ static int assemble(RParse *p, char *data, char *str) {
 }
 
 static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
+	char *ptr = data, *ptr2;
 	RListIter *iter;
 	RFlagItem *flag;
-	char *ptr, *ptr2;
 	ut64 off;
-	ptr = data;
+
 	while ((ptr = strstr (ptr, "0x"))) {
 		for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
 		off = r_num_math (NULL, ptr);
 		if(!off){
-			ptr=ptr2;
+			ptr = ptr2;
 			continue;
 		}
+		// XXX. tooslow
 		r_list_foreach (f->flags, iter, flag) {
 			if (flag->offset == off && strchr (flag->name, '.')) {
+				if (p->flagspace && !(p->flagspace & flag->space))
+					continue;
 				*ptr = 0;
-				snprintf (str, len, "%s%s%s", data, flag->name, ptr2!=ptr? ptr2: "");
+				snprintf (str, len, "%s%s%s", data, flag->name,
+					ptr2!=ptr? ptr2: "");
 				return R_TRUE;
 			}
 		}
@@ -163,16 +162,17 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 }
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
-	char *ptr, *ptr2;
 	int i;
-
+	char *ptr, *ptr2;
 	strncpy (str, data, len);
 	for (i = 0; i < R_ANAL_VARSUBS; i++)
-		if (f->varsubs[i].pat[0] != '\0' && f->varsubs[i].sub[0] != '\0' &&
+		if (f->varsubs[i].pat[0] != '\0' && \
+			f->varsubs[i].sub[0] != '\0' && \
 			(ptr = strstr (data, f->varsubs[i].pat))) {
 				*ptr = '\0';
 				ptr2 = ptr + strlen (f->varsubs[i].pat);
-				snprintf (str, len, "%s%s%s", data, f->varsubs[i].sub, ptr2);
+				snprintf (str, len, "%s%s%s", data,
+					f->varsubs[i].sub, ptr2);
 		}
 	return R_TRUE;
 }

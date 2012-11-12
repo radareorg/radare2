@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com>, pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
 
 #include <stdio.h>
 
@@ -16,44 +16,34 @@ R_API RParse *r_parse_new() {
 	RParse *p = R_NEW (RParse);
 	if (!p) return NULL;
 	p->user = NULL;
-	INIT_LIST_HEAD (&p->parsers);
-	for (i=0; parse_static_plugins[i];i++) {
+	p->parsers = r_list_new ();
+	p->parsers->free = NULL; // memleak
+	p->flagspace = 0;
+	for (i=0; parse_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RParsePlugin);
-		memcpy (static_plugin, parse_static_plugins[i], sizeof (RParsePlugin));
+		memcpy (static_plugin, parse_static_plugins[i],
+			sizeof (RParsePlugin));
 		r_parse_add (p, static_plugin);
 	}
 	return p;
 }
 
 R_API void r_parse_free(RParse *p) {
+	r_list_free (p->parsers);
 	free (p);
-}
-
-R_API void r_parse_set_user_ptr(RParse *p, void *user) {
-	p->user = user;
 }
 
 R_API int r_parse_add(RParse *p, RParsePlugin *foo) {
 	if (foo->init)
 		foo->init (p->user);
-	list_add_tail (&(foo->list), &(p->parsers));
+	r_list_append (p->parsers, foo);
 	return R_TRUE;
 }
 
-// DEPRECATE. only for debug
-R_API int r_parse_list(RParse *p) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &p->parsers) {
-		RParsePlugin *h = list_entry (pos, RParsePlugin, list);
-		printf ("parse %10s %s\n", h->name, h->desc);
-	}
-	return R_FALSE;
-}
-
 R_API int r_parse_use(RParse *p, const char *name) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &p->parsers) {
-		RParsePlugin *h = list_entry (pos, RParsePlugin, list);
+	RListIter *iter;
+	RParsePlugin *h;
+	r_list_foreach (p->parsers, iter, h) {
 		if (!strcmp (h->name, name)) {
 			p->cur = h;
 			return R_TRUE;
@@ -63,8 +53,8 @@ R_API int r_parse_use(RParse *p, const char *name) {
 }
 
 R_API int r_parse_assemble(RParse *p, char *data, char *str) {
-	int ret = R_FALSE;
 	char *in = strdup (str);
+	int ret = R_FALSE;
 	char *s, *o;
 
 	data[0]='\0';
@@ -105,3 +95,23 @@ R_API int r_parse_varsub(RParse *p, RAnalFunction *f, char *data, char *str, int
 		return p->cur->varsub (p, f, data, str, len);
 	return R_FALSE;
 }
+
+/* setters */
+R_API void r_parse_set_user_ptr(RParse *p, void *user) {
+	p->user = user;
+}
+
+R_API void r_parse_set_flagspace(RParse *p, int fs) {
+	p->flagspace = fs;
+}
+
+/* TODO: DEPRECATE */
+R_API int r_parse_list(RParse *p) {
+	RListIter *iter;
+	RParsePlugin *h;
+	r_list_foreach (p->parsers, iter, h) {
+		printf ("parse %10s %s\n", h->name, h->desc);
+	}
+	return R_FALSE;
+}
+

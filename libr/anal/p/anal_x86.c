@@ -831,6 +831,18 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		}
 	}
+	switch (io.id) {
+	case X86IM_IO_ID_OUT_IM:
+	case X86IM_IO_ID_OUT_RG:
+	case X86IM_IO_ID_OUTSX:
+		op->type = R_ANAL_OP_TYPE_IO;
+		break;
+	case X86IM_IO_ID_IN_IM:
+	case X86IM_IO_ID_IN_RG:
+	case X86IM_IO_ID_INSX:
+		op->type = R_ANAL_OP_TYPE_IO;
+		break;
+	}
 	
 	if (ret == X86IM_STATUS_SUCCESS) {
 		if (io.len > len)

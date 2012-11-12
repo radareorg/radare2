@@ -111,7 +111,6 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		out[len] = c;
 		len = -len;
 	}
-
 	return (int)len;
 }
 
