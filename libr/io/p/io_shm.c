@@ -4,7 +4,7 @@
 #include "r_lib.h"
 #include <sys/types.h>
 
-#ifdef __ANDROID__
+#if __ANDROID__ || EMSCRIPTEN
 #undef __UNIX__
 #define __UNIX__ 0
 #endif

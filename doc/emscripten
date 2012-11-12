@@ -1,0 +1,10 @@
+Building for the browser
+========================
+
+$ git clone git://github.com/kripken/emscripten.git
+$ export PATH=/path/to/emscripten:$PATH
+$ ./configure --without-ewf --without-gmp --with-nonpic --without-pic
+$ emmake make
+
+cd binr/radare2
+ emcc ../../libr/*/*.o radare2.c -I ../../libr/include/ -DR2_BIRTH=\"pop\" -DR2_GITTIP=\"123\" ../../libr/db/sdb/src/*.o

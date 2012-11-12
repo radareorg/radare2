@@ -103,7 +103,9 @@ R_API RCons *r_cons_new () {
 	I.buffer_len = 0;
 	r_cons_get_size (NULL);
 	I.num = NULL;
-#if __UNIX__
+#if EMSCRIPTEN
+	/* do nothing here :? */
+#elif __UNIX__
 	tcgetattr (0, &I.term_buf);
 	memcpy (&I.term_raw, &I.term_buf, sizeof (I.term_raw));
 	I.term_raw.c_iflag &= ~(BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
@@ -431,7 +433,9 @@ R_API void r_cons_set_raw(int is_raw) {
 	if (oldraw != -1)
 		if (is_raw == oldraw)
 			return;
-#if __UNIX__
+#if EMSCRIPTEN
+	/* do nothing here */
+#elif __UNIX__
 	if (is_raw) tcsetattr (0, TCSANOW, &I.term_raw);
 	else tcsetattr (0, TCSANOW, &I.term_buf);
 #elif __WINDOWS__

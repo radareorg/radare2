@@ -12,6 +12,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#if EMSCRIPTEN
+/* no network */
+R_API RSocket *r_socket_new (int is_ssl) { return NULL; }
+#else
 #if __UNIX__
 #include <sys/un.h>
 #include <netinet/in.h>
@@ -490,3 +494,4 @@ R_API RSocket *r_socket_new_from_fd (int fd) {
 	s->fd = fd;
 	return s;
 }
+#endif

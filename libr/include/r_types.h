@@ -14,7 +14,7 @@
 #define __KFBSD__ 0
 #endif
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
+#if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif

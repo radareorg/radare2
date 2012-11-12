@@ -39,46 +39,13 @@
 # define EXPORT_FUNC(x)	x
 # define EXPORT_VAR(x)	x
 #endif /* ! GRUB_SYMBOL_GENERATOR */
-#ifdef ASM_FILE
 
-#ifdef APPLE_CC
 
-#define GRUB_EXPORT_START	.section modattr,modattr,regular
+#define GRUB_EXPORT_START
 
-#elif defined(__MINGW32__) || defined(__CYGWIN__)
-
-#define GRUB_EXPORT_START	.section modattr
-
-#else
-
-#define GRUB_EXPORT_START	.section "modattr"
-
-#endif
-
+#define GRUB_MODATTR(name, value)
 #define GRUB_EXPORT(name)	.ascii "export:",#name,"\0"
 #define GRUB_EXPORT_END		.text
-
-#else
-
-#ifdef APPLE_CC
-
-#define GRUB_MODATTR(name, value)	\
-  __asm (".section modattr,modattr\n.asciz \"" name ":" value "\"\n.text")
-
-#elif defined(__MINGW32__) || defined(__CYGWIN__)
-
-#define GRUB_MODATTR(name, value)	\
-  __asm (".section modattr\n.asciz \"" name ":" value "\"\n.text")
-
-#else
-
-#define GRUB_MODATTR(name, value)	\
-  __asm (".section \"modattr\"\n.asciz \"" name ":" value "\"\n.text")
-
-#endif
-
-#define GRUB_EXPORT(value)	GRUB_MODATTR("export", #value)
-
-#endif
+#define GRUB_EXPORT(value)	
 
 #endif /* ! GRUB_SYMBOL_HEADER */

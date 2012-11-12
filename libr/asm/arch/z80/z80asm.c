@@ -765,7 +765,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	  switch (cmd)
 	    {
 	      int i, have_quote;
-	    case _ADC:
+	    case Z80_ADC:
 	      if (!(r = rd_a_hl (&ptr)))
 		break;
 	      if (r == HL)
@@ -780,7 +780,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		break;
 	      wrtb (0x88 + --r);
 	      break;
-	    case _ADD:
+	    case Z80_ADD:
 	      if (!(r = rd_r_add (&ptr)))
 		break;
 	      if (r == addHL)
@@ -804,12 +804,12 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0x80 + --r);	/* ADD r  */
 	      break;
-	    case _AND:
+	    case Z80_AND:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      wrtb (0xA0 + --r);
 	      break;
-	    case _BIT:
+	    case Z80_BIT:
 	      if (!rd_0_7 (&ptr))
 		break;
 	      rd_comma (&ptr);
@@ -818,43 +818,43 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xCB);
 	      wrtb (0x40 + (r - 1));
 	      break;
-	    case _CALL:
+	    case Z80_CALL:
 	      if ((r = rd_cc (&ptr))) {
 		  wrtb (0xC4 + 8 * --r);
 		  rd_comma (&ptr);
 		} else wrtb (0xCD);
 	      break;
-	    case _CCF:
+	    case Z80_CCF:
 	      wrtb (0x3F);
 	      break;
-	    case _CP:
+	    case Z80_CP:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      wrtb (0xB8 + --r);
 	      break;
-	    case _CPD:
+	    case Z80_CPD:
 	      wrtb (0xED);
 	      wrtb (0xA9);
 	      break;
-	    case _CPDR:
+	    case Z80_CPDR:
 	      wrtb (0xED);
 	      wrtb (0xB9);
 	      break;
-	    case _CPI:
+	    case Z80_CPI:
 	      wrtb (0xED);
 	      wrtb (0xA1);
 	      break;
-	    case _CPIR:
+	    case Z80_CPIR:
 	      wrtb (0xED);
 	      wrtb (0xB1);
 	      break;
-	    case _CPL:
+	    case Z80_CPL:
 	      wrtb (0x2F);
 	      break;
-	    case _DAA:
+	    case Z80_DAA:
 	      wrtb (0x27);
 	      break;
-	    case _DEC:
+	    case Z80_DEC:
 	      if (!(r = rd_r_rr (&ptr)))
 		break;
 	      if (r < 0) {
@@ -863,17 +863,17 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0x0B + 0x10 * --r);
 	      break;
-	    case _DI:
+	    case Z80_DI:
 	      wrtb (0xF3);
 	      break;
-	    case _DJNZ:
+	    case Z80_DJNZ:
 	      wrtb (0x10);
 	      //rd_wrt_jr (&ptr, '\0');
 	      break;
-	    case _EI:
+	    case Z80_EI:
 	      wrtb (0xFB);
 	      break;
-	    case _EX:
+	    case Z80_EX:
 	      if (!(r = rd_ex1 (&ptr)))
 		break;
 	      switch (r)
@@ -894,19 +894,19 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  wrtb (0xE3);
 		}
 	      break;
-	    case _EXX:
+	    case Z80_EXX:
 	      wrtb (0xD9);
 	      break;
-	    case _HALT:
+	    case Z80_HALT:
 	      wrtb (0x76);
 	      break;
-	    case _IM:
+	    case Z80_IM:
 	      if (!(r = rd_0_2 (&ptr)))
 		break;
 	      wrtb (0xED);
 	      wrtb (0x46 + 8 * --r);
 	      break;
-	    case _IN:
+	    case Z80_IN:
 	      if (!(r = rd_in (&ptr)))
 		break;
 	      if (r == A)
@@ -927,7 +927,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xED);
 	      wrtb (0x40 + 8 * --r);
 	      break;
-	    case _INC:
+	    case Z80_INC:
 	      if (!(r = rd_r_rr (&ptr)))
 		break;
 	      if (r < 0)
@@ -937,23 +937,23 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0x03 + 0x10 * --r);
 	      break;
-	    case _IND:
+	    case Z80_IND:
 	      wrtb (0xED);
 	      wrtb (0xAA);
 	      break;
-	    case _INDR:
+	    case Z80_INDR:
 	      wrtb (0xED);
 	      wrtb (0xBA);
 	      break;
-	    case _INI:
+	    case Z80_INI:
 	      wrtb (0xED);
 	      wrtb (0xA2);
 	      break;
-	    case _INIR:
+	    case Z80_INIR:
 	      wrtb (0xED);
 	      wrtb (0xB2);
 	      break;
-	    case _JP:
+	    case Z80_JP:
 	      r = rd_jp (&ptr);
 	      if (r < 0)
 		{
@@ -965,13 +965,13 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  rd_comma (&ptr);
 		} else wrtb (0xC3);
 	      break;
-	    case _JR:
+	    case Z80_JR:
 	      r = rd_jr (&ptr);
 	      if (r)
 		rd_comma (&ptr);
 	      wrtb (0x18 + 8 * r);
 	      break;
-	    case _LD:
+	    case Z80_LD:
 	      if (!(r = rd_ld (&ptr)))
 		break;
 	      switch (r)
@@ -1067,43 +1067,43 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  break;
 		}
 	      break;
-	    case _LDD:
+	    case Z80_LDD:
 	      wrtb (0xED);
 	      wrtb (0xA8);
 	      break;
-	    case _LDDR:
+	    case Z80_LDDR:
 	      wrtb (0xED);
 	      wrtb (0xB8);
 	      break;
-	    case _LDI:
+	    case Z80_LDI:
 	      wrtb (0xED);
 	      wrtb (0xA0);
 	      break;
-	    case _LDIR:
+	    case Z80_LDIR:
 	      wrtb (0xED);
 	      wrtb (0xB0);
 	      break;
-	    case _NEG:
+	    case Z80_NEG:
 	      wrtb (0xED);
 	      wrtb (0x44);
 	      break;
-	    case _NOP:
+	    case Z80_NOP:
 	      wrtb (0x00);
 	      break;
-	    case _OR:
+	    case Z80_OR:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      wrtb (0xB0 + --r);
 	      break;
-	    case _OTDR:
+	    case Z80_OTDR:
 	      wrtb (0xED);
 	      wrtb (0xBB);
 	      break;
-	    case _OTIR:
+	    case Z80_OTIR:
 	      wrtb (0xED);
 	      wrtb (0xB3);
 	      break;
-	    case _OUT:
+	    case Z80_OUT:
 	      if (!(r = rd_nnc (&ptr)))
 		break;
 	      if (r == C)
@@ -1118,25 +1118,25 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		break;
 		wrtb (0xD3);
 	      break;
-	    case _OUTD:
+	    case Z80_OUTD:
 	      wrtb (0xED);
 	      wrtb (0xAB);
 	      break;
-	    case _OUTI:
+	    case Z80_OUTI:
 	      wrtb (0xED);
 	      wrtb (0xA3);
 	      break;
-	    case _POP:
+	    case Z80_POP:
 	      if (!(r = rd_stack (&ptr)))
 		break;
 	      wrtb (0xC1 + 0x10 * --r);
 	      break;
-	    case _PUSH:
+	    case Z80_PUSH:
 	      if (!(r = rd_stack (&ptr)))
 		break;
 	      wrtb (0xC5 + 0x10 * --r);
 	      break;
-	    case _RES:
+	    case Z80_RES:
 	      if (!rd_0_7 (&ptr))
 		break;
 	      rd_comma (&ptr);
@@ -1145,7 +1145,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xCB);
 	      wrtb (0x80 + --r);
 	      break;
-	    case _RET:
+	    case Z80_RET:
 	      if (!(r = rd_cc (&ptr)))
 		{
 		  wrtb (0xC9);
@@ -1153,62 +1153,62 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0xC0 + 8 * --r);
 	      break;
-	    case _RETI:
+	    case Z80_RETI:
 	      wrtb (0xED);
 	      wrtb (0x4D);
 	      break;
-	    case _RETN:
+	    case Z80_RETN:
 	      wrtb (0xED);
 	      wrtb (0x45);
 	      break;
-	    case _RL:
+	    case Z80_RL:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x10 + --r);
 	      break;
-	    case _RLA:
+	    case Z80_RLA:
 	      wrtb (0x17);
 	      break;
-	    case _RLC:
+	    case Z80_RLC:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x00 + --r);
 	      break;
-	    case _RLCA:
+	    case Z80_RLCA:
 	      wrtb (0x07);
 	      break;
-	    case _RLD:
+	    case Z80_RLD:
 	      wrtb (0xED);
 	      wrtb (0x6F);
 	      break;
-	    case _RR:
+	    case Z80_RR:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x18 + --r);
 	      break;
-	    case _RRA:
+	    case Z80_RRA:
 	      wrtb (0x1F);
 	      break;
-	    case _RRC:
+	    case Z80_RRC:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x08 + --r);
 	      break;
-	    case _RRCA:
+	    case Z80_RRCA:
 	      wrtb (0x0F);
 	      break;
-	    case _RRD:
+	    case Z80_RRD:
 	      wrtb (0xED);
 	      wrtb (0x67);
 	      break;
-	    case _RST:
+	    case Z80_RST:
 	      ptr = "";
 	      break;
-	    case _SBC:
+	    case Z80_SBC:
 	      if (!(r = rd_a_hl (&ptr)))
 		break;
 	      if (r == HL)
@@ -1223,10 +1223,10 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		break;
 	      wrtb (0x98 + --r);
 	      break;
-	    case _SCF:
+	    case Z80_SCF:
 	      wrtb (0x37);
 	      break;
-	    case _SET:
+	    case Z80_SET:
 	      if (!rd_0_7 (&ptr))
 		break;
 	      rd_comma (&ptr);
@@ -1235,31 +1235,31 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      wrtb (0xCB);
 	      wrtb (0xC0 + --r);
 	      break;
-	    case _SLA:
+	    case Z80_SLA:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x20 + --r);
 	      break;
-	    case _SLI:
+	    case Z80_SLI:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x30 + --r);
 	      break;
-	    case _SRA:
+	    case Z80_SRA:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x28 + --r);
 	      break;
-	    case _SRL:
+	    case Z80_SRL:
 	      if (!(r = rd_r_ (&ptr)))
 		break;
 	      wrtb (0xCB);
 	      wrtb (0x38 + --r);
 	      break;
-	    case _SUB:
+	    case Z80_SUB:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      if (has_argument (&ptr))	/* SUB A,r ?  */
@@ -1274,15 +1274,15 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		}
 	      wrtb (0x90 + --r);
 	      break;
-	    case _XOR:
+	    case Z80_XOR:
 	      if (!(r = rd_r (&ptr)))
 		break;
 	      wrtb (0xA8 + --r);
 	      break;
-	    case _DEFB:
-	    case _DB:
-	    case _DEFM:
-	    case _DM:
+	    case Z80_DEFB:
+	    case Z80_DB:
+	    case Z80_DEFM:
+	    case Z80_DM:
 	      ptr = delspc (ptr);
 	      while (1)
 		{
@@ -1319,8 +1319,8 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  break;
 		}
 	      break;
-	    case _DEFW:
-	    case _DW:
+	    case Z80_DEFW:
+	    case Z80_DW:
 	      if (!(r = rd_word (&ptr, ',')))
 		{
 		  printerr (1, "No data for word definition\n");
@@ -1336,8 +1336,8 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		    printerr (1, "Missing expression in defw\n");
 		}
 	      break;
-	    case _DEFS:
-	    case _DS:
+	    case Z80_DEFS:
+	    case Z80_DS:
 	      r = rd_expr (&ptr, ',', NULL, sp, 1);
 	      if (r < 0)
 		{
@@ -1357,18 +1357,18 @@ static int assemble (const char *str, unsigned char *_obuf) {
 		  write_one_byte (0, 0);
 		}
 	      break;
-	    case _END:
+	    case Z80_END:
 	      break;
-	    case _ORG:
+	    case Z80_ORG:
 	      addr = rd_expr (&ptr, '\0', NULL, sp, 1) & 0xffff;
 	      break;
-	    case _IF:
+	    case Z80_IF:
 	      if (rd_expr (&ptr, '\0', NULL, sp, 1))
 		ifcount++;
 	      else
 		noifcount++;
 	      break;
-	    case _ELSE:
+	    case Z80_ELSE:
 	      if (ifcount == 0)
 		{
 		  printerr (1, "else without if\n");
@@ -1377,7 +1377,7 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      noifcount = 1;
 	      ifcount--;
 	      break;
-	    case _ENDIF:
+	    case Z80_ENDIF:
 	      if (noifcount == 0 && ifcount == 0)
 		{
 		  printerr (1, "endif without if\n");
@@ -1388,11 +1388,11 @@ static int assemble (const char *str, unsigned char *_obuf) {
 	      else
 		ifcount--;
 	      break;
-	    case _ENDM:
+	    case Z80_ENDM:
 	      if (stack[sp].file)
 		printerr (1, "endm outside macro definition\n");
 	      break;
-	    case _SEEK:
+	    case Z80_SEEK:
 	      fprintf (stderr, "seek error\n");
 	    default:
 	      printerr (1, "command or comment expected (was %s)\n", ptr);

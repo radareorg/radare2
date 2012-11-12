@@ -25,7 +25,7 @@ static: sdb-version.h
 libsdb.a: ${OBJ}
 	@#ar qf libasb.a ${OBJ}
 	rm -f libsdb.a
-	${AR} -r libsdb.a ${OBJ}
+	${AR} r libsdb.a ${OBJ}
 	${RANLIB} libsdb.a
 
 libsdb.${SOEXT}: ${OBJ}
