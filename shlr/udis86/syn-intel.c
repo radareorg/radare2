@@ -135,7 +135,6 @@ static void gen_operand(struct ud* u, struct ud_operand* op, int syn_cast)
     }
 
 
-	/* Fix bug with 32 bits operand + 64 bits pc */
 	case UD_OP_JIMM:
 		if (syn_cast) opr_cast(u, op);
 		switch (op->size) {
@@ -143,12 +142,10 @@ static void gen_operand(struct ud* u, struct ud_operand* op, int syn_cast)
 				mkasm(u, "0x" FMT64 "x", u->pc + op->lval.sbyte); 
 				break;
 			case 16:
-				//mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ) & 0xffff );
-				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ));
+				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ) & 0xffff );
 				break;
 			case 32:
-				//mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ) & 0xfffffffful );
-				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ));
+				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ) & 0xfffffffful );
 				break;
 			default:break;
 		}
@@ -225,12 +222,8 @@ extern void ud_translate_intel(struct ud* u)
 	mkasm(u, "repne ");
 
   /* print the instruction mnemonic */
+  mkasm(u, "%s ", ud_lookup_mnemonic(u->mnemonic));
 
-  if (u->operand[0].type == UD_NONE) {
-    mkasm(u, "%s", ud_lookup_mnemonic(u->mnemonic));
-  } else {
-    mkasm(u, "%s ", ud_lookup_mnemonic(u->mnemonic));
-  }
   /* operand 1 */
   if (u->operand[0].type != UD_NONE) {
     int cast = 0;

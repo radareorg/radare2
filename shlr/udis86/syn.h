@@ -1,6 +1,6 @@
 /* udis86 - libudis86/syn.h
  *
- * Copyright (c) 2002-2009 Vivek Thampi
+ * Copyright (c) 2002-2009
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -22,13 +22,6 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-/* -----------------------------------------------------------------------------
- * syn.h
- *
- * Copyright (c) 2006, Vivek Mohan <vivek@sig9.com>
- * All rights reserved. See LICENSE
- * -----------------------------------------------------------------------------
  */
 #ifndef UD_SYN_H
 #define UD_SYN_H

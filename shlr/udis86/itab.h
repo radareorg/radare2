@@ -10,11 +10,10 @@ enum ud_table_type {
     UD_TAB__OPC_VENDOR,
     UD_TAB__OPC_OSIZE,
     UD_TAB__OPC_MODE,
-    UD_TAB__OPC_3BYTE,
     UD_TAB__OPC_3DNOW,
     UD_TAB__OPC_REG,
     UD_TAB__OPC_ASIZE,
-    UD_TAB__OPC_2BYTE
+    UD_TAB__OPC_SSE
 };
 
 /* ud_mnemonic -- mnemonic constants */
@@ -34,8 +33,6 @@ enum ud_mnemonic_code {
     UD_Iaddps,
     UD_Iaddsd,
     UD_Iaddss,
-    UD_Iaddsubpd,
-    UD_Iaddsubps,
     UD_Iand,
     UD_Iandpd,
     UD_Iandps,
@@ -224,11 +221,7 @@ enum ud_mnemonic_code {
     UD_Ifpxtract,
     UD_Ifyl2x,
     UD_Ifyl2xp1,
-    UD_Ihaddpd,
-    UD_Ihaddps,
     UD_Ihlt,
-    UD_Ihsubpd,
-    UD_Ihsubps,
     UD_Iidiv,
     UD_Iin,
     UD_Iimul,
@@ -310,10 +303,6 @@ enum ud_mnemonic_code {
     UD_Imovapd,
     UD_Imovaps,
     UD_Imovd,
-    UD_Imovddup,
-    UD_Imovdqa,
-    UD_Imovdqu,
-    UD_Imovdq2q,
     UD_Imovhpd,
     UD_Imovhps,
     UD_Imovlhps,
@@ -328,13 +317,10 @@ enum ud_mnemonic_code {
     UD_Imovntps,
     UD_Imovntq,
     UD_Imovq,
-    UD_Imovq2dq,
     UD_Imovsb,
     UD_Imovsw,
     UD_Imovsd,
     UD_Imovsq,
-    UD_Imovsldup,
-    UD_Imovshdup,
     UD_Imovss,
     UD_Imovsx,
     UD_Imovupd,
@@ -363,7 +349,6 @@ enum ud_mnemonic_code {
     UD_Ipaddb,
     UD_Ipaddw,
     UD_Ipaddd,
-    UD_Ipaddq,
     UD_Ipaddsb,
     UD_Ipaddsw,
     UD_Ipaddusb,
@@ -392,7 +377,6 @@ enum ud_mnemonic_code {
     UD_Ipmulhuw,
     UD_Ipmulhw,
     UD_Ipmullw,
-    UD_Ipmuludq,
     UD_Ipop,
     UD_Ipopa,
     UD_Ipopad,
@@ -406,11 +390,7 @@ enum ud_mnemonic_code {
     UD_Iprefetcht1,
     UD_Iprefetcht2,
     UD_Ipsadbw,
-    UD_Ipshufd,
-    UD_Ipshufhw,
-    UD_Ipshuflw,
     UD_Ipshufw,
-    UD_Ipslldq,
     UD_Ipsllw,
     UD_Ipslld,
     UD_Ipsllq,
@@ -419,11 +399,9 @@ enum ud_mnemonic_code {
     UD_Ipsrlw,
     UD_Ipsrld,
     UD_Ipsrlq,
-    UD_Ipsrldq,
     UD_Ipsubb,
     UD_Ipsubw,
     UD_Ipsubd,
-    UD_Ipsubq,
     UD_Ipsubsb,
     UD_Ipsubsw,
     UD_Ipsubusb,
@@ -431,11 +409,9 @@ enum ud_mnemonic_code {
     UD_Ipunpckhbw,
     UD_Ipunpckhwd,
     UD_Ipunpckhdq,
-    UD_Ipunpckhqdq,
     UD_Ipunpcklbw,
     UD_Ipunpcklwd,
     UD_Ipunpckldq,
-    UD_Ipunpcklqdq,
     UD_Ipi2fw,
     UD_Ipi2fd,
     UD_Ipf2iw,
@@ -451,7 +427,7 @@ enum ud_mnemonic_code {
     UD_Ipfcmpgt,
     UD_Ipfmax,
     UD_Ipfrcpit1,
-    UD_Ipfrspit1,
+    UD_Ipfrsqit1,
     UD_Ipfsubr,
     UD_Ipfacc,
     UD_Ipfcmpeq,
@@ -584,7 +560,69 @@ enum ud_mnemonic_code {
     UD_Ixcryptofb,
     UD_Ixsha1,
     UD_Ixsha256,
-    UD_Ixstore
+    UD_Ixstore,
+    UD_Imovdqa,
+    UD_Imovdq2q,
+    UD_Imovdqu,
+    UD_Imovq2dq,
+    UD_Ipaddq,
+    UD_Ipsubq,
+    UD_Ipmuludq,
+    UD_Ipshufhw,
+    UD_Ipshuflw,
+    UD_Ipshufd,
+    UD_Ipslldq,
+    UD_Ipsrldq,
+    UD_Ipunpckhqdq,
+    UD_Ipunpcklqdq,
+    UD_Iaddsubpd,
+    UD_Iaddsubps,
+    UD_Ihaddpd,
+    UD_Ihaddps,
+    UD_Ihsubpd,
+    UD_Ihsubps,
+    UD_Imovddup,
+    UD_Imovshdup,
+    UD_Imovsldup,
+    UD_Ipabsb,
+    UD_Ipabsw,
+    UD_Ipabsd,
+    UD_Ipsignb,
+    UD_Iphaddw,
+    UD_Iphaddd,
+    UD_Iphaddsw,
+    UD_Ipmaddubsw,
+    UD_Iphsubw,
+    UD_Iphsubd,
+    UD_Iphsubsw,
+    UD_Ipsignd,
+    UD_Ipsignw,
+    UD_Ipmulhrsw,
+    UD_Ipalignr,
+    UD_Ipblendvb,
+    UD_Ipmuldq,
+    UD_Ipminsb,
+    UD_Ipminsd,
+    UD_Ipminuw,
+    UD_Ipminud,
+    UD_Ipmaxsb,
+    UD_Ipmaxsd,
+    UD_Ipmaxud,
+    UD_Ipmulld,
+    UD_Iphminposuw,
+    UD_Iroundps,
+    UD_Iroundpd,
+    UD_Iroundss,
+    UD_Iroundsd,
+    UD_Iblendpd,
+    UD_Ipblendw,
+    UD_Iblendps,
+    UD_Iblendvpd,
+    UD_Iblendvps,
+    UD_Idpps,
+    UD_Idppd,
+    UD_Impsadbw,
+    UD_Iextractps
 } UD_ATTR_PACKED;
 
 
@@ -633,9 +671,9 @@ enum ud_mnemonic_code {
 #define O_Gd      { OP_G,        SZ_D     }
 #define O_Gq      { OP_G,        SZ_Q     }
 #define O_Gv      { OP_G,        SZ_V     }
-#define O_Gvw     { OP_G,        SZ_MDQ   }
 #define O_Gw      { OP_G,        SZ_W     }
 #define O_Gx      { OP_G,        SZ_MDQ   }
+#define O_Gy      { OP_G,        SZ_MDQ   }
 #define O_Gz      { OP_G,        SZ_Z     }
 #define O_I1      { OP_I1,       SZ_NA    }
 #define O_I3      { OP_I3,       SZ_NA    }
@@ -651,6 +689,7 @@ enum ud_mnemonic_code {
 #define O_Mb      { OP_M,        SZ_B     }
 #define O_MbRv    { OP_MR,       SZ_BV    }
 #define O_Md      { OP_M,        SZ_D     }
+#define O_MdRy    { OP_MR,       SZ_DY    }
 #define O_Mo      { OP_M,        SZ_O     }
 #define O_Mq      { OP_M,        SZ_Q     }
 #define O_Ms      { OP_M,        SZ_W     }
@@ -680,6 +719,8 @@ enum ud_mnemonic_code {
 #define O_V       { OP_V,        SZ_O     }
 #define O_VR      { OP_VR,       SZ_O     }
 #define O_W       { OP_W,        SZ_O     }
+#define O_Wsd     { OP_W,        SZ_O     }
+#define O_Wss     { OP_W,        SZ_O     }
 #define O_eAX     { OP_eAX,      SZ_NA    }
 #define O_eBP     { OP_eBP,      SZ_NA    }
 #define O_eBX     { OP_eBX,      SZ_NA    }
@@ -709,5 +750,5 @@ enum ud_mnemonic_code {
 
 
 extern const char * ud_mnemonics_str[];
-
+#define GROUP(n) (0x8000 | (n))
 #endif /* UD_ITAB_H */

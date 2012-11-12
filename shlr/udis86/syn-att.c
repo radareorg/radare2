@@ -102,25 +102,23 @@ gen_operand(struct ud* u, struct ud_operand* op)
                 /* push sign-extends to operand size */
                 sext_size = u->opr_mode; 
         }
-	if (sext_size < 64)
-		sext_mask = (1ull << sext_size) - 1;
-	mkasm (u, "$0x" FMT64 "x", imm & sext_mask); // ok
-	break;
+        if ( sext_size < 64 )
+            sext_mask = ( 1ull << sext_size ) - 1;
+        mkasm( u, "0x" FMT64 "x", imm & sext_mask ); 
+
+		break;
     }
 
-	/* Fix bug with 32 bits operand + 64 bits pc */
 	case UD_OP_JIMM:
 		switch (op->size) {
 			case  8:
 				mkasm(u, "0x" FMT64 "x", u->pc + op->lval.sbyte); 
 				break;
 			case 16:
-				//mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ) & 0xffff );
-				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ));
+				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sword ) & 0xffff );
 				break;
 			case 32:
-				//mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ) & 0xfffffffful );
-				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ));
+				mkasm(u, "0x" FMT64 "x", ( u->pc + op->lval.sdword ) & 0xfffffffful );
 				break;
 			default:break;
 		}
