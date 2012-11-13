@@ -40,6 +40,21 @@ static int step_until(RCore *core, ut64 addr) {
 	return R_TRUE;
 }
 
+/* until end of frame */
+static int step_until_eof(RCore *core) {
+	ut64 off, now = r_debug_reg_get (core->dbg, "sp");
+	do {
+		r_debug_step (core->dbg, 1);
+		if (checkbpcallback (core)) {
+			eprintf ("Interrupted by a breakpoint\n");
+			break;
+		}
+		off = r_debug_reg_get (core->dbg, "sp");
+		// check breakpoint here
+	} while (off <= now);
+	return R_TRUE;
+}
+
 static int step_line(RCore *core, int times) {
 	char file[512], file2[512];
 	int find_meta, line = -1, line2 = -1;
@@ -732,8 +747,12 @@ static int cmd_debug(void *data, const char *input) {
 				" dso 3    step over 3 instructions\n"
 				" dsp      step into program (skip libs)\n"
 				" dsu addr step until address\n"
+				" dsf      step until end of frame\n"
 				" dsl      step one source line\n"
 				" dsl 40   step 40 source lines\n");
+			break;
+		case 'f':
+			step_until_eof(core);
 			break;
 		case 'u':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);

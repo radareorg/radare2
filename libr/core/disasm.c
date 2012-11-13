@@ -254,10 +254,11 @@ toro:
 			lastfail = 1;
 			strcpy (asmop.buf_asm, "invalid");
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
-			r_cons_printf ("%d %d\n", lines, l);
 			// HACK protection against 'invalid' false positives
+			tries++;
+			if (tries>5) break;
 			if ((lines+10)<l) {// &&  (idx+5)<len) {
-				tries++;
+lines++;
 				goto retry;
 			} else {
 				break;
@@ -736,14 +737,13 @@ else
 		buf = nbuf = malloc (len);
 		if (tries>1) {
 			addr += 1;
-			if (r_core_read_at (core, addr, buf, len) != len)
-				goto retryback;
-			goto toro;
+			if (r_core_read_at (core, addr, buf, len) == len)
+				goto toro;
 		}
 		if (invbreak && lines<l) {
 			addr += idx;
 			if (r_core_read_at (core, addr, buf, len) != len) {
-				tries = -1;
+				//tries = -1;
 			}
 			goto toro;
 		}
