@@ -45,6 +45,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	char *refline = NULL;
 	RAsmOp asmop;
 	RAnalOp analop = {0};
+	int tries = 0;
 	RFlagItem *flag;
 	RMetaItem *mi;
 	ut64 dest = UT64_MAX;
@@ -245,7 +246,7 @@ toro:
 			}
 		}
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
-		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx+5);
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) { // XXX: move to r_asm_disassemble ()
 			ret = 1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
@@ -253,6 +254,16 @@ toro:
 			lastfail = 1;
 			strcpy (asmop.buf_asm, "invalid");
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
+			r_cons_printf ("%d %d\n", lines, l);
+			// HACK protection against 'invalid' false positives
+			if ((lines+10)<l) {// &&  (idx+5)<len) {
+				tries++;
+				goto retry;
+			} else {
+				break;
+			}
+			retryback:
+			ret = 1; // dummy
 			//if (invbreak) break;
 		} else {
 			lastfail = 0;
@@ -585,7 +596,7 @@ else
 				r_parse_varsub (core->parser, f,
 					opstr, strsub, sizeof (strsub));
 				free (opstr);
-				opstr = strsub;
+				opstr = strdup (strsub);
 			}
 		}
 		r_cons_strcat (opstr);
@@ -715,14 +726,25 @@ else
 		}
 
 	}
-	if (nbuf == buf)
+	if (nbuf == buf) {
 		free (buf);
+		buf = NULL;
+	}
 	if (idx>=len) {// && (invbreak && !lastfail)) {
+	retry:
+		if (len<4) len = 4;
+		buf = nbuf = malloc (len);
+		if (tries>1) {
+			addr += 1;
+			if (r_core_read_at (core, addr, buf, len) != len)
+				goto retryback;
+			goto toro;
+		}
 		if (invbreak && lines<l) {
-			if (len<4) len = 4;
-			buf = nbuf = malloc (len);
 			addr += idx;
-			r_core_read_at (core, addr, buf, len);
+			if (r_core_read_at (core, addr, buf, len) != len) {
+				tries = -1;
+			}
 			goto toro;
 		}
 	}

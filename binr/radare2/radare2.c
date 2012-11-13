@@ -154,6 +154,7 @@ int main(int argc, char **argv) {
 			break;
 		case 'm': mapaddr = r_num_math (r.num, optarg); break;
 		case 'q':
+			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
 			quiet = R_TRUE;
 			break;
