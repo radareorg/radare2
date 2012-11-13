@@ -30,6 +30,7 @@ typedef struct r_flag_item_t {
 } RFlagItem;
 
 typedef struct r_flag_t {
+	st64 base;
 	int space_idx;
 	int space_idx2;
 	const char *spaces[R_FLAG_SPACES_MAX];
@@ -54,7 +55,7 @@ R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p);
 R_API int r_flag_unset_i(RFlag *f, ut64 addr, RFlagItem *p);
 R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup);
 R_API int r_flag_sort(RFlag *f, int namesort);
-R_API void r_flag_item_set_name(RFlagItem *item, const char *name);
+R_API int r_flag_item_set_name(RFlagItem *item, const char *name);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);

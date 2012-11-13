@@ -736,7 +736,8 @@ R_API int r_str_glob (const char *str, const char *glob) {
 		if (glob[1] == '\0')
 			return R_TRUE;
 		if (glob[glen-1] == '*') {
-			return r_mem_mem ((const ut8*)str, slen, (const ut8*)glob+1, glen-2) != 0;
+			return r_mem_mem ((const ut8*)str, slen,
+				(const ut8*)glob+1, glen-2) != 0;
 		}
 		if (slen<glen-2)
 			return R_FALSE;
@@ -751,10 +752,10 @@ R_API int r_str_glob (const char *str, const char *glob) {
 			char *p = strchr (glob, '*');
 			if (p) {
 				int a = (int)(size_t)(p-glob);
-				return ((!memcmp (str, glob, a)) && ( !memcmp (str+slen-a, glob+a+1, glen-a-1)))? 1: 0;
-			} else {
-				return !strcmp (str, glob);
+				return ((!memcmp (str, glob, a)) && \
+					(!memcmp (str+slen-a, glob+a+1, glen-a-1)))? 1: 0;
 			}
+			return !strcmp (str, glob);
 		}
 	}
 	return R_FALSE; // statement never reached

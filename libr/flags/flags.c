@@ -1,3 +1,5 @@
+#if 0
+// DEPRECATE
 /* radare - LGPL - Copyright 2007-2012 pancake */
 
 #include <r_flags.h>
@@ -287,3 +289,4 @@ R_API void r_flag_item_set_name(RFlagItem *item, const char *name) {
 	item->name[R_FLAG_NAME_SIZE-1]='\0';
 	item->namehash = r_str_hash64 (item->name);
 }
+#endif

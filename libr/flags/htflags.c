@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 - pancake */
 
 #include <r_flags.h>
 #include <r_util.h>
@@ -9,6 +9,7 @@ R_API RFlag * r_flag_new() {
 	int i;
 	RFlag *f = R_NEW (RFlag);
 	if (!f) return NULL;
+	f->base = 0;
 	f->flags = r_list_new ();
 	f->flags->free = (RListFree) r_flag_item_free;
 	f->space_idx = -1;
@@ -100,7 +101,7 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 		r_list_append (f->flags, item);
 
 		r_flag_item_set_name (item, name);
-		item->offset = off;
+		item->offset = off + f->base;
 		item->size = size;
 
 		list = r_hashtable64_lookup (f->ht_name, item->namehash);
@@ -159,7 +160,7 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 			r_list_append (f->flags, item);
 
 			r_flag_item_set_name (item, name);
-			item->offset = off;
+			item->offset = off + f->base;
 			item->size = size;
 
 			list = r_hashtable64_lookup (f->ht_name, item->namehash);
@@ -185,19 +186,28 @@ R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment) {
 	item->comment = strdup (comment);
 }
 
-R_API void r_flag_item_set_name(RFlagItem *item, const char *name) {
+R_API int r_flag_item_set_name(RFlagItem *item, const char *name) {
 	int len;
+	if (!item || !r_name_check (name))
+		return R_FALSE;
 	strncpy (item->name, name, R_FLAG_NAME_SIZE);
 	len = R_MIN (R_FLAG_NAME_SIZE, strlen (r_str_chop (item->name)) + 1);
 	memmove (item->name, r_str_chop (item->name), len);
 	r_name_filter (item->name, 0);
 	item->name[R_FLAG_NAME_SIZE-1]='\0';
 	item->namehash = r_str_hash64 (item->name);
+	return R_TRUE;
 }
 
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
-	ut64 hash = r_str_hash64 (item->name);
-	RList *list = r_hashtable64_lookup (f->ht_name, hash);
+	ut64 hash;
+	RList *list;
+	if (!f || !item || !name || !*name) {
+		eprintf ("r_flag_rename: contract fail\n");
+		return R_FALSE;
+	}
+	hash = r_str_hash64 (item->name);
+	list = r_hashtable64_lookup (f->ht_name, hash);
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
 		if (r_list_empty (list)) {
@@ -205,16 +215,18 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 			r_hashtable64_remove (f->ht_name, hash);
 		}
 		r_list_delete_data (list, item);
-		r_flag_item_set_name (item, name);
+		if (!r_flag_item_set_name (item, name)) {
+			r_list_append (list, item);
+			return R_FALSE;
+		}
 		list = r_hashtable64_lookup (f->ht_name, item->namehash);
 		if (!list) {
 			list = r_list_new ();
 			r_hashtable64_insert (f->ht_name, item->namehash, list);
 		}
 		r_list_append (list, item);
-		return R_TRUE;
 	}
-	return R_FALSE;
+	return R_TRUE;
 }
 
 R_API int r_flag_unset_i(RFlag *f, ut64 off, RFlagItem *p) {
@@ -310,7 +322,6 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off) {
 	}
 	return nice;
 }
-
 
 #ifdef MYTEST
 int main () {
