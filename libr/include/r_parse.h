@@ -14,6 +14,7 @@
 typedef struct r_parse_t {
 	void *user;
 	int flagspace;
+	int notin_flagspace;
 	struct r_parse_plugin_t *cur;
 	RList *parsers;
 } RParse;

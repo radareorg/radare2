@@ -140,15 +140,21 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	while ((ptr = strstr (ptr, "0x"))) {
 		for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
 		off = r_num_math (NULL, ptr);
-		if(!off){
+		if (!off) {
 			ptr = ptr2;
 			continue;
 		}
 		// XXX. tooslow
 		r_list_foreach (f->flags, iter, flag) {
 			if (flag->offset == off && strchr (flag->name, '.')) {
-				if (p->flagspace && !(p->flagspace & flag->space))
+				if (p->notin_flagspace != -1) {
+					if (p->flagspace == flag->space)
+						continue;
+				} else
+				if (p->flagspace != -1 && \
+					(p->flagspace != flag->space)) {
 					continue;
+				}
 				*ptr = 0;
 				snprintf (str, len, "%s%s%s", data, flag->name,
 					ptr2!=ptr? ptr2: "");

@@ -78,6 +78,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int show_functions = r_config_get_i (core->config, "asm.functions");
 	int cursor, nb, nbytes = r_config_get_i (core->config, "asm.nbytes");
 	int show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
+	int flagspace_ports = r_flag_space_get (core->flags, "ports");
 	int lbytes = r_config_get_i (core->config, "asm.lbytes");
 	int show_comment_right = 0;
 	const char *pre = "  ";
@@ -541,43 +542,55 @@ else
 				break;
 			}
 		}
+		opstr = NULL;
 		if (decode) {
 			char *tmpopstr = r_anal_op_to_string (core->anal, &analop);
 			// TODO: Use data from code analysis..not raw analop here
 			// if we want to get more information
 			opstr = tmpopstr? tmpopstr: strdup (asmop.buf_asm);
-		} else if (pseudo) {
-			r_parse_parse (core->parser, asmop.buf_asm, str);
-			opstr = str;
-		} else if (filter) {
+		}
+		if (filter) {
 			int ofs = core->parser->flagspace;
-			switch (analop.type) {
-			case R_ANAL_OP_TYPE_IO:
-				core->parser->flagspace = r_flag_space_get (
-					core->flags, "ports");
-				break;
-			default:
-				core->parser->flagspace = -1;
-				break;
+			int fs = flagspace_ports;
+			if (analop.type == R_ANAL_OP_TYPE_IO) {
+				core->parser->notin_flagspace = -1;
+				core->parser->flagspace = fs;
+			} else {
+				if (fs != -1) {
+					core->parser->notin_flagspace = fs;
+					core->parser->flagspace = fs;
+				} else {
+					core->parser->notin_flagspace = -1;
+					core->parser->flagspace = -1;
+				}
 			}
 			r_parse_filter (core->parser, core->flags,
-				asmop.buf_asm, str, sizeof (str));
+				opstr? opstr: asmop.buf_asm, str, sizeof (str));
 			core->parser->flagspace = ofs;
-			opstr = str;
-		} else opstr = asmop.buf_asm;
+			free (opstr);
+			opstr = strdup (str);
+			core->parser->flagspace = ofs; // ???
+		} else 
+		if (!opstr) opstr = strdup (asmop.buf_asm);
+		if (pseudo) {
+			r_parse_parse (core->parser, opstr?
+				opstr:asmop.buf_asm, str);
+			free (opstr);
+			opstr = strdup (str);
+		}
 		if (varsub) {
 			RAnalFunction *f = r_anal_fcn_find (core->anal,
 				at, R_ANAL_FCN_TYPE_NULL);
 			if (f) {
 				r_parse_varsub (core->parser, f,
 					opstr, strsub, sizeof (strsub));
-				if (decode) free (opstr);
+				free (opstr);
 				opstr = strsub;
 			}
 		}
 		r_cons_strcat (opstr);
-		if (decode && !varsub)
-			free (opstr);
+		free (opstr);
+		opstr = NULL;
 		if (show_color)
 			r_cons_strcat (Color_RESET);
 		if (show_dwarf) {

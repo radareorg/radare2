@@ -18,7 +18,8 @@ R_API RParse *r_parse_new() {
 	p->user = NULL;
 	p->parsers = r_list_new ();
 	p->parsers->free = NULL; // memleak
-	p->flagspace = 0;
+	p->notin_flagspace = -1;
+	p->flagspace = -1;
 	for (i=0; parse_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RParsePlugin);
 		memcpy (static_plugin, parse_static_plugins[i],
