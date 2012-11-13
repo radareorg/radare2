@@ -503,8 +503,13 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_ptr;
 #if __UNIX__
 	int fds[2];
-	int stdout_fd, status = 0;
+	int stdout_fd, status = -1;
 #endif
+	int ret = -1, pipecolor = -1;
+	if (!r_config_get_i (core->config, "scr.pipecolor")) {
+		pipecolor = r_config_get_i (core->config, "scr.color");
+		r_config_set_i (core->config, "scr.color", 0);
+	}
 	if (*shell_cmd=='!') {
 		_ptr = (char *)r_str_lastbut (shell_cmd, '~', "\"");
 		//ptr = strchr (cmd, '~');
@@ -521,7 +526,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		if (_ptr)
 			r_cons_grep (_ptr);
 		free (out);
-		return 0;
+		ret = 0;
 	}
 #if __UNIX__
 	radare_cmd = (char*)r_str_trim_head (radare_cmd);
@@ -536,7 +541,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		r_core_cmd (core, radare_cmd, 0);
 		r_cons_flush ();
 		close (1);
-		wait (&status);
+		wait (&ret);
 		dup2 (stdout_fd, 1);
 		close (stdout_fd);
 	} else {
@@ -545,12 +550,13 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 		//dup2 (1, 2); // stderr goes to stdout
 		r_sandbox_system (shell_cmd, 0);
 	}
-	return status;
 #else
 #warning r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM
 	eprintf ("r_core_cmd_pipe: unimplemented for this platform\n");
-	return -1;
 #endif
+	if (pipecolor != -1)
+		r_config_set_i (core->config, "scr.color", pipecolor);
+	return ret;
 }
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd);
@@ -770,25 +776,33 @@ next:
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
 	if (ptr) {
+		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
 		int use_editor = R_FALSE;
+		int scrint = r_cons_singleton()->is_interactive;
 		int ocolor = r_config_get_i (core->config, "scr.color");
+		*ptr = '\0';
+		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
+		if (!*str) goto next2;
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
 		r_cons_set_interactive (R_FALSE);
-		*ptr = '\0';
-		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));
-		if (!*str) goto next2;
 		if (!strcmp (str, "-")) {
 			use_editor = R_TRUE;
 			str = r_file_temp ("dumpedit");
 			r_config_set (core->config, "scr.color", "false");
 		}
 		pipefd = r_cons_pipe_open (str, ptr[1]=='>');
+		if (!pipecolor)
+			r_config_set_i (core->config, "scr.color", 0);
+
 		ret = r_core_cmd_subst (core, cmd);
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
 		r_cons_set_last_interactive ();
+		if (!pipecolor) {
+			r_config_set_i (core->config, "scr.color", ocolor);
+		}
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
 			if (editor && *editor)

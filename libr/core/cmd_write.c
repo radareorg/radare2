@@ -365,7 +365,7 @@ static int cmd_write(void *data, const char *input) {
 						"  wox 0x0203 ; xor cur block with 0203\n"
 						"  woa 02 03  ; add [0203][0203][...] to curblk\n"
 						"Supported operations:\n"
-						"  wow  ==  write looped value\n"
+						"  wow  ==  write looped value (alias for 'wb')\n"
 						"  woa  +=  addition\n"
 						"  wos  -=  substraction\n"
 						"  wom  *=  multiply\n"

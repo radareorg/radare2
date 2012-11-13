@@ -648,6 +648,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_desc (cfg, "scr.tee", "Pipe console output to file if not empty");
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
+	r_config_set (cfg, "scr.pipecolor", "false");
+	r_config_desc (cfg, "scr.pipecolor", "enable colors when using pipes if true");
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
