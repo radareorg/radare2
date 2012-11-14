@@ -1,8 +1,7 @@
 #include <r_types.h>
 
-
-#define USHORT(x,y) (unsigned short)(x[y+1]|(x[y]<<8))
-#define UINT(x,y) (unsigned int) ((x[y]<<24)|(x[y+1]<<16)|(x[y+2]<<8)|x[y+3])
+#define USHORT(x,y) (unsigned short)((0xff&x[y+1]|((x[y]&0xff)<<8)) & 0xffff)
+#define UINT(x,y) (unsigned int)(((x[y]&0xff)<<24)|((x[y+1]&0xff)<<16)|((x[y+2]&0xff)<<8)|(x[y+3]&0xff))
 
 struct classfile {
 	unsigned char cafebabe[4];
@@ -34,8 +33,8 @@ extern struct java_op java_ops[];
 //extern struct cp_item *cp_items;
 //extern struct cp_item cp_null_item; // NOTE: must be initialized for safe use
 
-int java_print_opcode(int idx, const ut8 *bytes, char *output);
-int java_disasm(const ut8 *bytes, char *output);
+int java_print_opcode(int idx, const ut8 *bytes, char *output, int len);
+int java_disasm(const ut8 *bytes, char *output, int len);
 int java_assemble(unsigned char *bytes, const char *string);
 unsigned short read_short(FILE *fd);
 void javasm_init();

@@ -76,7 +76,7 @@ static struct cp_item * get_cp(int i) {
 	return &cp_items[i];
 }
 
-static int java_resolve(int idx, char *str) {
+static int java_resolve(int idx, char *str, int len) {
 	if (str == NULL)
 		return 0;
 
@@ -91,58 +91,60 @@ static int java_resolve(int idx, char *str) {
 			char *class_str = get_cp(USHORT(get_cp(class)->bytes,0)-1)->value;
 			char *namet_str = get_cp(USHORT(get_cp(class)->bytes,2)-1)->value;
 			//char *namet_str = get_cp(namet)->value;
-			sprintf (str, "%s %s", class_str, namet_str);
+			// TODO forever progress //
+			snprintf (str, len, "%s %s", class_str, namet_str);
 		} else
 		if (!strcmp (cp_items[idx].name, "String")) {
-			sprintf(str, "\"%s\"", get_cp(USHORT(get_cp(idx)->bytes,0)-1)->value);
+			snprintf (str, len, "\"%s\"",
+				get_cp(USHORT(get_cp(idx)->bytes,0)-1)->value);
 		} else
 		if (!strcmp(cp_items[idx].name, "Utf8")) {
-			sprintf (str, "\"%s\"", get_cp(idx)->value);
-		} else sprintf (str, "0x%04x", USHORT(get_cp(idx)->bytes,0));
+			snprintf (str, len, "\"%s\"", get_cp(idx)->value);
+		} else snprintf (str, len, "0x%04x", USHORT(get_cp(idx)->bytes,0));
 	} else strcpy (str, "(null)");
 	return 0;
 }
 
-int java_print_opcode(int idx, const ut8 *bytes, char *output) {
+int java_print_opcode(int idx, const ut8 *bytes, char *output, int len) {
 	char arg[1024];
 
 	switch(java_ops[idx].byte) {
 	case 0x12:
 	case 0x13:
 	case 0x14:
-		java_resolve(bytes[1]-1, arg);
-		sprintf(output, "%s %s", java_ops[idx].name, arg);
+		java_resolve(bytes[1]-1, arg, sizeof (arg));
+		snprintf(output, len, "%s %s", java_ops[idx].name, arg);
 		return java_ops[idx].size;
 	case 0xb2: // getstatic
 	case 0xb6: // invokevirtual
 	case 0xb7: // invokespecial
 	case 0xb8: // invokestatic
 	case 0xb9: // invokeinterface
-		java_resolve((int)USHORT(bytes,1)-1, arg);
-		sprintf(output, "%s %s", java_ops[idx].name, arg);
+		java_resolve((int)USHORT(bytes,1)-1, arg, sizeof (arg));
+		snprintf(output, len, "%s %s", java_ops[idx].name, arg);
 		return java_ops[idx].size;
 	}
 
 	/* process arguments */
-	switch(java_ops[idx].size) {
-	case 1: sprintf(output, "%s", java_ops[idx].name);
+	switch (java_ops[idx].size) {
+	case 1: snprintf(output, len, "%s", java_ops[idx].name);
 		break;
-	case 2: sprintf(output, "%s %d", java_ops[idx].name, bytes[1]);
+	case 2: snprintf(output, len, "%s %d", java_ops[idx].name, bytes[1]);
 		break;
-	case 3: sprintf(output, "%s 0x%x 0x%x", java_ops[idx].name, bytes[0], bytes[1]);
+	case 3: snprintf(output, len, "%s 0x%x 0x%x", java_ops[idx].name, bytes[0], bytes[1]);
 		break;
-	case 5: sprintf(output, "%s %d", java_ops[idx].name, bytes[1]);
+	case 5: snprintf(output, len, "%s %d", java_ops[idx].name, bytes[1]);
 		break;
 	}
 
 	return java_ops[idx].size;
 }
 
-int java_disasm(const ut8 *bytes, char *output) {
+int java_disasm(const ut8 *bytes, char *output, int len) {
 	int i;
 	for(i = 0;java_ops[i].name != NULL;i++)
 		if (bytes[0] == java_ops[i].byte)
-			return java_print_opcode (i, bytes, output);
+			return java_print_opcode (i, bytes, output, len);
 	return -1;
 }
 
@@ -282,7 +284,7 @@ int java_classdump(const char *file, int verbose) {
 	struct classfile2 cf2;
 	unsigned short sz, sz2;
 	int this_class;
-	char buf[0x9999];
+	char *buf = NULL;
 	int i,j;
 	FILE *fd = fopen(file, "rb");
 
@@ -299,7 +301,8 @@ int java_classdump(const char *file, int verbose) {
 	}
 
 	/* show class version information */
-	V printf("Version: 0x%02x%02x 0x%02x%02x\n", cf.major[1],cf.major[0], cf.minor[1],cf.minor[0]);
+	V printf("Version: 0x%02x%02x 0x%02x%02x\n",
+		cf.major[1],cf.major[0], cf.minor[1],cf.minor[0]);
 
 	cf.cp_count = r_ntohs(cf.cp_count);
 	if (cf.major[0]==cf.major[1] && cf.major[0]==0) {
@@ -309,10 +312,12 @@ int java_classdump(const char *file, int verbose) {
 	
 	cf.cp_count--;
 	V printf ("ConstantPoolCount %d\n", cf.cp_count);
+buf = malloc (0x20000);
 	cp_items = malloc (sizeof (struct cp_item)*(cf.cp_count+1));
 	for (i=0;i<cf.cp_count;i++) {
 		struct constant_t *c;
 		fread (buf, 1, 1, fd);
+if (!buf[0])break;
 		c = NULL;
 		for (j=0; constants[j].name; j++) {
 			if (constants[j].tag == buf[0])  {
@@ -321,13 +326,13 @@ int java_classdump(const char *file, int verbose) {
 			}
 		}
 		if (c == NULL) {
-			eprintf ("Invalid tag '%d'\n", buf[0]);
+			eprintf ("--- Invalid tag '%d'\n", buf[0]);
 			return 0;
 		}
 		V printf(" %3d %s: ", i+1, c->name);
 
 		/* store constant pool item */
-		strcpy( cp_items[i].name, c->name);
+		strcpy (cp_items[i].name, c->name);
 		cp_items[i].tag = c->tag;
 		cp_items[i].value = NULL; // no string by default
 		cp_items[i].off = ftell(fd)-1;
@@ -337,6 +342,7 @@ int java_classdump(const char *file, int verbose) {
 		case 1: // utf 8 string
 			fread (buf, 2, 1, fd);
 			sz = USHORT (buf,0);
+printf ("SZ =%d\n", sz);
 			//cp_items[i].len = sz;
 			fread(buf, sz, 1, fd);
 			buf[sz] = '\0';
@@ -425,6 +431,7 @@ int java_classdump(const char *file, int verbose) {
 		}
 	}
 
+free (buf);
 	fclose(fd);
 
 	return 0;

@@ -16,7 +16,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 		lastfile = core->file->filename;
 		java_classdump (lastfile, 0);
 	} else javasm_init ();
-	return op->inst_len = java_disasm (buf, op->buf_asm);
+	return op->inst_len = java_disasm (buf, op->buf_asm, sizeof (op->buf_asm));
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {

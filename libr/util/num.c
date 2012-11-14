@@ -89,9 +89,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	if (len>3 && str[4] == ':')
 		if (sscanf (str, "%04x", &s)==1)
 			if (sscanf (str+5, "%04x", &a)==1)
-				return (ut64) ((s<<8) + a);
+				return (ut64) ((s<<4) + a);
 	if (sscanf (str, "0x%04x:0x%04x", &s, &a) == 2)
-		return (ut64) ((s<<8) + a);
+		return (ut64) ((s<<4) + a);
 	if (str[0]=='0' && str[1]=='x') {
 		sscanf (str, "0x%"PFMT64x"", &ret);
 	} else {

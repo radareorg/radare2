@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 - pancake */
 /* graph with stack facilities implementation */
 
 #include <r_util.h>
