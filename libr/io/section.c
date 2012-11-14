@@ -80,9 +80,13 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 	if (io->va || io->debug)
 		offset = r_io_section_vaddr_to_offset (io, offset);
 	r_list_foreach (io->sections, iter, s) {
-		if (rad) io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
-			s->offset, s->vaddr, s->size, s->vsize, s->name, r_str_rwx_i (s->rwx));
-		else io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s\n",
+		if (rad) {
+			char *n = strdup (s->name);
+			r_name_filter (n, strlen (n));
+			io->printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n", n, s->size, s->vaddr);
+			io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
+				s->offset, s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->rwx));
+		} else io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s\n",
 			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 		i++;

@@ -832,7 +832,8 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	{ /* get flag with delta */
 		RFlagItem *f = r_flag_get_at (core->flags, core->offset);
 		if (f) {
-			if (f->offset == core->offset) snprintf (pos, sizeof (pos), "@ %s", f->name);
+			if (f->offset == core->offset)
+				snprintf (pos, sizeof (pos), "@ %s", f->name);
 			else snprintf (pos, sizeof (pos), "@ %s+%d (0x%"PFMT64x")",
 				f->name, (int)(core->offset-f->offset), f->offset);
 		} else pos[0] = 0;
@@ -857,30 +858,39 @@ R_API void r_core_visual_title (RCore *core, int color) {
 }
 
 static void r_core_visual_refresh (RCore *core) {
+	RCons *cons;
 	const char *vi;
 	if (!core) return;
 	r_cons_get_size (NULL);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
+	cons = r_cons_singleton ();
+	cons->blankline = R_TRUE;
 
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
 		r_cons_flush ();
 	} else r_cons_clear ();
 
-	vi = r_config_get (core->config, "cmd.vprompt");
-	if (vi) r_core_cmd (core, vi, 0);
-	r_core_visual_title (core, color);
+	r_cons_print_clear ();
 
 	vi = r_config_get (core->config, "cmd.cprompt");
 	if (vi && *vi) {
-		r_cons_printf ("\n[cmd.cprompt] %s\n", vi);
+		cons->blankline = R_FALSE;
+		r_cons_printf ("[cmd.cprompt=%s]\n", vi);
 		r_core_cmd (core, vi, 0);
-		r_cons_column (80);
+		r_cons_column (r_config_get_i (core->config, "scr.colpos"));
 	}
+	r_core_visual_title (core, color);
+	r_cons_flush ();
+	vi = r_config_get (core->config, "cmd.vprompt");
+	if (vi) r_core_cmd (core, vi, 0);
+
 	if (zoom) r_core_cmd (core, "pz", 0);
 	else r_core_cmd (core, printfmt[PIDX], 0);
 	blocksize = core->num->value? core->num->value : core->blocksize;
+
 	r_cons_visual_flush ();
+	cons->blankline = R_TRUE;
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {

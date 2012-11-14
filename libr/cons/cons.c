@@ -90,6 +90,7 @@ static void resize (int sig) {
 
 R_API RCons *r_cons_new () {
 	I.event_interrupt = NULL;
+	I.blankline = R_TRUE;
 	I.event_resize = NULL;
 	I.data = NULL;
 	I.is_interactive = R_TRUE;
@@ -166,6 +167,10 @@ R_API void r_cons_gotoxy(int x, int y) {
 #endif
 #endif
 	r_cons_printf ("\x1b[%d;%dH", y, x);
+}
+
+R_API void r_cons_print_clear() {
+	r_cons_memcat ("\x1b[2J", 4);
 }
 
 R_API void r_cons_clear_line() {
@@ -298,7 +303,7 @@ R_API void r_cons_visual_write (char *buffer) {
 				int w = cols-alen;
 				if (ptr>buffer) r_cons_write (ptr-1, len);
 				else r_cons_write (ptr, len-1);
-				if (w>0) { 
+				if (I.blankline && w>0) { 
 					if (w>sizeof (white)-1)
 						w = sizeof (white)-1;
 					r_cons_write (white, w);

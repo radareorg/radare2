@@ -80,6 +80,7 @@ typedef struct r_cons_t {
 	/* Pager (like more or less) to use if the output doesn't fit on the
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
+	int blankline;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -188,6 +189,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty);
 
 /* control */
 R_API void r_cons_reset();
+R_API void r_cons_print_clear();
 R_API void r_cons_clear();
 R_API void r_cons_clear00();
 R_API void r_cons_clear_line();

@@ -330,6 +330,7 @@ R_API ut64 r_num_get(RNum *num, const char *str);
 R_API int r_num_to_bits(char *out, ut64 num);
 R_API int r_num_rand(int max);
 R_API void r_num_irand();
+R_API ut16 r_num_ntohs (ut16 foo);
 
 /* TODO ..use as uppercase maybe? they are macros! */
 #define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))

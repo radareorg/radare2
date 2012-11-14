@@ -648,6 +648,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_desc (cfg, "scr.tee", "Pipe console output to file if not empty");
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
+	r_config_set (cfg, "scr.segoff", "false");
+	r_config_desc (cfg, "scr.segoff", "show segmented address in prompt (x86-16)");
 	r_config_set (cfg, "scr.pipecolor", "false");
 	r_config_desc (cfg, "scr.pipecolor", "enable colors when using pipes if true");
 	r_config_set_cb (cfg, "scr.color",
@@ -660,8 +662,12 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.nkey", "hit", &config_scrnkey_callback);
 	r_config_desc (cfg, "scr.nkey", "Select the seek mode in visual");
 	r_config_set (cfg, "scr.seek", "");
+	r_config_set_i(cfg, "scr.colpos", 80);
+	r_config_desc (cfg, "scr.colpos", "Column position of cmd.cprompt in visual");
 	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
 	r_config_desc (cfg, "scr.cols", "Configure the number of columns to print");
+	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
+	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
 	r_config_set (cfg, "search.in", "file");
 	r_config_desc (cfg, "search.in", "Specify search boundaries (raw, block, file, section)");
 	r_config_set_i (cfg, "search.kwidx", 0);
@@ -682,8 +688,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "search.distance", "Search string distance");
 	r_config_set_i_cb (cfg, "search.align", 0, &config_searchalign_callback);
 	r_config_desc (cfg, "search.align", "Only catch aligned search hits");
-	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
-	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
 
 	sprintf (buf, "%d", R_CORE_BLOCKSIZE_MAX);
 	r_config_set_cb (cfg, "io.maxblk", buf, &config_iomaxblk_callback);
