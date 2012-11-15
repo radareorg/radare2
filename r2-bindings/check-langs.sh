@@ -1,9 +1,9 @@
 #!/bin/sh
 # Check bindings supported by valabind
-# pancake // radare.org - 2010-2011
+# pancake // radare.org - 2010-2012
 
 SUP_LANGS=""
-LANGS="python perl ruby lua go java guile php5 node-ffi"
+LANGS="python perl ruby lua go java guile php5 node-ffi ctypes"
 [ -z "${CC}" ] && CC=gcc
 [ -z "${CXX}" ] && CXX=g++
 
