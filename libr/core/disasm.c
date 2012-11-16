@@ -34,21 +34,24 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak) {
-	RAnalCC cc = {0};
+	int ret, idx = 0, i, j, k, lines, ostackptr = 0, stackptr = 0;
+	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
+	int continueoninvbreak = (len == l) && invbreak;
+	char str[128], strsub[128];
 	RAnalFunction *f = NULL;
+	char *refline = NULL;
+	RAnalCC cc = {0};
 	ut8 *nbuf = NULL;
-	int ret, idx, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	int counter = 0;
 	int middle = 0;
-	char str[128], strsub[128];
-	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
-	char *refline = NULL;
+	ut64 dest = UT64_MAX;
 	RAsmOp asmop;
 	RAnalOp analop = {0};
-	int tries = 0;
 	RFlagItem *flag;
 	RMetaItem *mi;
-	ut64 dest = UT64_MAX;
+	int tries = 3;
+
+//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
@@ -70,7 +73,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int linesout = r_config_get_i (core->config, "asm.linesout");
 	int adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	int show_offset = r_config_get_i (core->config, "asm.offset");
-	int show_offseg = r_config_get_i (core->config, "asm.offseg");
+	int show_offseg = r_config_get_i (core->config, "asm.segoff");
 	int show_flags = r_config_get_i (core->config, "asm.flags");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int show_comments = r_config_get_i (core->config, "asm.comments");
@@ -89,7 +92,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int ocols = 0;
 	int lcols = 0;
 
-	if (show_lines) ocols += 10;
+	if (show_lines) ocols += 10; // XXX
 	if (show_offset) ocols += 14;
 	lcols = ocols+2;
 	if (show_bytes) ocols += 20;
@@ -110,12 +113,12 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		linesopts |= R_ANAL_REFLINE_TYPE_STYLE;
 	if (r_config_get_i (core->config, "asm.lineswide"))
 		linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
-
-	// uhm... is this necesary? imho can be removed
-	r_asm_set_pc (core->assembler, addr);
-
 	lines = 0;
+
 toro:
+	// uhm... is this necesary? imho can be removed
+	r_asm_set_pc (core->assembler, addr+idx);
+
 #if 0
 	/* find last function else stackptr=0 */
 	{
@@ -158,22 +161,26 @@ toro:
 		// TODO: make anal->reflines implicit
 		free (core->reflines); // TODO: leak
 		free (core->reflines2); // TODO: leak
-		core->reflines = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, show_linescall);
-		core->reflines2 = r_anal_reflines_get (core->anal, addr, buf, len, -1, linesout, 1);
+		core->reflines = r_anal_reflines_get (core->anal,
+			addr, buf, len, -1, linesout, show_linescall);
+		core->reflines2 = r_anal_reflines_get (core->anal,
+			addr, buf, len, -1, linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
 
-	for (i=idx=ret=0; idx < len && lines < l; idx+=ret,i++, lines++) {
-		int oplen = 1;
+	int oplen = 1;
+	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
-			line = r_anal_reflines_str (core->anal, core->reflines, at, linesopts);
+			line = r_anal_reflines_str (core->anal,
+				core->reflines, at, linesopts);
 			refline = filter_refline (line);
 		} else {
 			line = NULL;
 			refline = strdup ("");
 		}
-		f = show_functions? r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL): NULL;
+		f = show_functions? r_anal_fcn_find (core->anal, at,
+			R_ANAL_FCN_TYPE_NULL): NULL;
 		// Show xrefs
 		if (show_xrefs) {
 			RList *xrefs;
@@ -181,17 +188,19 @@ toro:
 			RListIter *iter;
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
-					RAnalFunction *fun = r_anal_fcn_find (core->anal, refi->addr, R_ANAL_FCN_TYPE_NULL);
+					RAnalFunction *fun = r_anal_fcn_find (
+						core->anal, refi->addr,
+						R_ANAL_FCN_TYPE_NULL);
 					r_cons_printf ("%s%s", pre, refline);
 					if (show_color)
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
-							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							fun?fun->name:"unk");
+						refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+						refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+						fun?fun->name:"unk");
 					else r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
-							refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-							refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-							fun?fun->name:"unk");
+						refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+						refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+						fun?fun->name:"unk");
 				}
 				r_list_free (xrefs);
 			}
@@ -248,24 +257,20 @@ toro:
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) { // XXX: move to r_asm_disassemble ()
-			ret = 1;
-			//eprintf ("** invalid opcode at 0x%08"PFMT64x" **\n",
-			//	core->assembler->pc + ret);
+			oplen = ret = 1;
+			//eprintf ("** invalid opcode at 0x%08"PFMT64x" %d %d**\n",
+			//	core->assembler->pc + ret, l, len);
+			if (tries>0) { //1||l < len) {
+				addr = core->assembler->pc;
+				tries--;
+				//eprintf ("-- %d %d\n", len, r_core_read_at (core, addr, buf, len));
+				//eprintf ("REtry 0x%llx -- %x %x\n", addr, buf[0], buf[1]);
+				idx = 0;
+				goto retry;
+			}
 			lastfail = 1;
 			strcpy (asmop.buf_asm, "invalid");
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
-			// HACK protection against 'invalid' false positives
-			tries++;
-			if (tries>5) break;
-			if ((lines+10)<l) {// &&  (idx+5)<len) {
-lines++;
-				goto retry;
-			} else {
-				break;
-			}
-			retryback:
-			ret = 1; // dummy
-			//if (invbreak) break;
 		} else {
 			lastfail = 0;
 			oplen = r_asm_op_get_size (&asmop);
@@ -288,8 +293,9 @@ lines++;
 				}
 			}
 		}
+		// TODO: store previous oplen in core->dec
 		if (core->inc == 0)
-			core->inc = ret;
+			core->inc = oplen;
 
 		r_anal_op_fini (&analop);
 		if (!lastfail)
@@ -378,14 +384,11 @@ lines++;
 		}
 		if (show_flags) {
 			flag = r_flag_get_i (core->flags, at);
-			//if (flag && !show_bytes) {
 			if (flag) {
 				if (show_lines && refline)
 					r_cons_strcat (refline);
 				if (show_offset)
-			//		printoffset (at, show_color, (at==dest), show_offseg);
-//r_cons_printf ("__________ ");
-r_cons_printf ("; -------- ");
+				r_cons_printf ("; -------- ");
 				if (show_functions)
 					r_cons_printf ("%s:\n%s", flag->name, f?"| ":"  ");
 				else r_cons_printf ("%s:\n", flag->name);
@@ -440,7 +443,7 @@ else
 					hexlen = mi->size;
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 				r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
-				r_print_hexdump (core->print, at, buf+idx, hexlen, 16, 1); //mi->size-delta, 16, 1);
+				r_print_hexdump (core->print, at, buf+idx, hexlen, 16, 1);
 			core->inc = 16;
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
 				ret = (int)mi->size; //-delta;
@@ -459,7 +462,6 @@ else
 		}
 		/* show cursor */
 		{
-			
 			int q = core->print->cur_enabled && cursor >= idx && cursor < (idx+oplen);
 			void *p = r_bp_get (core->dbg->bp, at);
 			r_cons_printf (p&&q?"b*":p? "b ":q?"* ":"  ");
@@ -505,15 +507,9 @@ else
 					pad[j] = ' ';
 				pad[j] = '\0';
 			}
-			if (0) { // if (flag)
-				if (show_color)
-					r_cons_printf (Color_BWHITE"*[ %s%s]  "Color_RESET, pad, str);
-				else r_cons_printf ("*[ %s%s]  ", pad, str);
-			} else {
-				if (show_color)
-					r_cons_printf (" %s %s %s"Color_RESET, pad, str, extra);
-				else r_cons_printf (" %s %s %s", pad, str, extra);
-			}
+			if (show_color)
+				r_cons_printf (" %s %s %s"Color_RESET, pad, str, extra);
+			else r_cons_printf (" %s %s %s", pad, str, extra);
 			free (str);
 		}
 
@@ -672,8 +668,7 @@ else
 		case R_ANAL_OP_TYPE_PUSH:
 			if (analop.value) {
 				RFlagItem *flag = r_flag_get_i (core->flags, analop.value);
-				if (flag)
-					r_cons_printf (" ; %s", flag->name);
+				if (flag) r_cons_printf (" ; %s", flag->name);
 			}
 			break;
 		}
@@ -725,40 +720,40 @@ else
 			free (refline);
 			line = refline = NULL;
 		}
-
 	}
 	if (nbuf == buf) {
 		free (buf);
 		buf = NULL;
 	}
+#if 1
 	if (idx>=len) {// && (invbreak && !lastfail)) {
 	retry:
 		if (len<4) len = 4;
 		buf = nbuf = malloc (len);
-		if (tries>1) {
-			addr += 1;
-			if (r_core_read_at (core, addr, buf, len) == len)
+		if (tries>0) {
+			addr += idx;
+			if (r_core_read_at (core, addr, buf, len) ) {
+				idx = 0;
 				goto toro;
+			}
 		}
 		if (invbreak && lines<l) {
+//eprintf ("RETR %d\n", );
 			addr += idx;
 			if (r_core_read_at (core, addr, buf, len) != len) {
 				//tries = -1;
 			}
 			goto toro;
 		}
+		if (continueoninvbreak)
+			goto toro;
 	}
+#endif
 	r_anal_op_fini (&analop);
 	free (osl);
 	return idx-lastfail;
 }
 
-#if 0
-TODO:
- - comments
- - functions
- - ...
-#endif
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	RAsmOp asmop;
 	RAnalOp analop;

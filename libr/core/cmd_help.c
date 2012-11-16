@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int cmd_help(void *data, const char *input) {
-	int i;
 	RCore *core = (RCore *)data;
 	char out[128];
 	ut64 n;
+	int i;
+
 	switch (input[0]) {
 	case 'r':
 		{ // TODO : Add support for 64bit random numbers
@@ -82,8 +83,8 @@ static int cmd_help(void *data, const char *input) {
 		memcpy (&f, &n32, sizeof (f));
 		/* decimal, hexa, octal */
 		a = n & 0xffff;
-		s = (n&0xffff0000) >> 8;
-		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" %04X:%04X ",
+		s = n>>16<<12;
+		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" %04x:%04x ",
 			n, n, n, s, a);
 		/* binary and floating point */
 		r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);

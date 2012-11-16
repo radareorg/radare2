@@ -48,7 +48,6 @@ static int rabin_show_help() {
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -C              list classes\n"
 		" -d              show debug/dwarf information\n"
-		" -p [patchfile]  patch file (see man rabin2)\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
 		" -i              imports (symbols imported from libraries)\n"
@@ -315,7 +314,7 @@ int main(int argc, char **argv) {
 	r_lib_opendir (l, LIBDIR"/radare2/");
 
 #define set_action(x) actions++; action |=x
-	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:@:VisSIHelRwO:o:p:rvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:@:VisSIHelRwO:o:rvLhxzZ")) != -1) {
 		switch (c) {
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;

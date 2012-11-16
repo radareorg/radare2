@@ -11,7 +11,6 @@
 .Op Fl b Ar bits
 .Op Fl B Ar addr
 .Op Fl c Ar fmt:C:[D]
-.Op Fl p Ar patchfile
 .Op Fl f Ar subbin
 .Op Fl O Ar str
 .Op Fl o Ar str
@@ -34,8 +33,6 @@ Override baddr
 Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
 .It Fl C
 List classes
-.It Fl p Ar patchfile
-Patch file (see man rabin2)
 .It Fl e
 Show entrypoints for disk and on-memory
 .It Fl f Ar subbin

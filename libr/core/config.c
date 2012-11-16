@@ -511,8 +511,12 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "asm.decode", "Use code analysis as a disassembler");
 	r_config_set (cfg, "asm.offset", "true");
 	r_config_desc (cfg, "asm.offset", "Show offsets at disassembly");
+#if 0
 	r_config_set (cfg, "asm.offseg", "false");
 	r_config_desc (cfg, "asm.offseg", "Show offsets as in 16 bit segment addressing mode");
+#endif
+	r_config_set (cfg, "asm.segoff", "false");
+	r_config_desc (cfg, "asm.segoff", "show segmented address in prompt (x86-16)");
 	r_config_set (cfg, "asm.lines", "true");
 	r_config_desc (cfg, "asm.lines", "If enabled show ascci-art lines at disassembly");
 	r_config_set (cfg, "asm.linesout", "true");
@@ -648,8 +652,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_desc (cfg, "scr.tee", "Pipe console output to file if not empty");
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
-	r_config_set (cfg, "scr.segoff", "false");
-	r_config_desc (cfg, "scr.segoff", "show segmented address in prompt (x86-16)");
 	r_config_set (cfg, "scr.pipecolor", "false");
 	r_config_desc (cfg, "scr.pipecolor", "enable colors when using pipes if true");
 	r_config_set_cb (cfg, "scr.color",

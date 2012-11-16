@@ -1,6 +1,4 @@
-/* radare - LGPL - Copyright 2010 */
-/*   nibble<.ds@gmail.com> */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>

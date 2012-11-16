@@ -491,6 +491,19 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
 	va_end (ap);
 }
 
+R_API char *r_str_prefix(char *ptr, const char *string) {
+	int slen, plen;
+	if (ptr == NULL)
+		return strdup (string);
+	plen = strlen (ptr);
+	slen = strlen (string);
+	ptr = realloc (ptr, slen + plen + 1);
+	if (ptr == NULL)
+		return NULL;
+	memmove (ptr+slen, ptr, plen+1);
+	memmove (ptr, string, slen);
+	return ptr;
+}
 /*
  * first argument must be allocated
  * return: the pointer ptr resized to string size.

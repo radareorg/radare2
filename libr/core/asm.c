@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 */
-/* nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - nibble */
 
 #include <r_types.h>
 #include <r_core.h>

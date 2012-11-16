@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2012 - nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -6,8 +6,8 @@
 #include <r_asm.h>
 
 #include <java/javasm/javasm.h>
-
 #include <r_core.h>
+
 static const char *lastfile = NULL;
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	// XXX: crossmodule dependency

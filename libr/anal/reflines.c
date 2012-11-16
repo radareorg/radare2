@@ -70,12 +70,12 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 /* umf..this should probably be outside this file */
 R_API char* r_anal_reflines_str(RAnal *anal, RAnalRefline *list, ut64 addr, int opts) {
-	RAnalRefline *ref;
-	struct list_head *pos;
-	int dir = 0;
-	char ch = ' ', *str = NULL;
 	int linestyle = opts & R_ANAL_REFLINE_TYPE_STYLE;
 	int wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
+	char ch = ' ', *str = NULL;
+	struct list_head *pos;
+	RAnalRefline *ref;
+	int dir = 0;
 
 	if (!list)
 		return NULL;
@@ -115,6 +115,12 @@ R_API char* r_anal_reflines_str(RAnal *anal, RAnalRefline *list, ut64 addr, int 
 		if (len>anal->lineswidth)
 			r_str_cpy (str, str+len-anal->lineswidth);
 	}
+{
+	int l = anal->lineswidth-strlen (str);
+	while (l-->0) {
+		str = r_str_prefix (str, " ");
+	}
+}
 	return str;
 }
 

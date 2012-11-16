@@ -124,6 +124,7 @@ R_API RAsm *r_asm_new() {
 	RAsm *a = R_NEW (RAsm);
 	if (!a) return NULL;
 	a->pair = NULL;
+	a->num = NULL;
 	a->user = NULL;
 	a->cur = NULL;
 	a->binb.bin = NULL;

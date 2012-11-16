@@ -470,6 +470,7 @@ R_API int r_core_init(RCore *core) {
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->meta->printf = (void *) r_cons_printf;
 	core->assembler = r_asm_new ();
+	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->parser = r_parse_new ();
 	r_parse_set_user_ptr (core->parser, core);
@@ -587,10 +588,10 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	if (!r_line_singleton ()->echo)
 		*prompt = 0;
 	// TODO: also in visual prompt and disasm/hexdump ?
-	if (r_config_get_i (r->config, "scr.segoff")) {
+	if (r_config_get_i (r->config, "asm.segoff")) {
 #if __UNIX__
 		ut32 a, b;
-		a = ((r->offset >>16)<<8);
+		a = ((r->offset >>16)<<12);
 		b = (r->offset & 0xffff);
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),

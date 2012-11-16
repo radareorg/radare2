@@ -6,8 +6,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-static int getnum(const char *s);
-static int isnum(const char *str);
+static int getnum(RAsm *a, const char *s);
+static int isnum(RAsm *a, const char *str);
 static ut8 getreg(const char *s);
 #if 0
 TODO
@@ -18,11 +18,19 @@ BLA:
         0x100000ec5    1    4883e4f0         and rsp, 0xfffffffffffffff0
 #endif
 
-static int jop (ut64 addr, ut8 *data, ut8 a, ut8 b, const char *arg) {
+static int getnum(RAsm *a, const char *s) {
+	if (!s) return 0;
+	if (*s=='$')
+		s++;
+	return r_num_get (a->num, s);
+}
+
+static int jop (RAsm *a, ut8 *data, ut8 x, ut8 b, const char *arg) {
 	ut32 dst32;
 	int l = 0;
-	int num = getnum (arg);
-	if (!isnum (arg))
+	ut64 addr = a->pc;
+	int num = getnum (a, arg);
+	if (!isnum (a, arg))
 		return 0;
 	dst32 = num - addr;
 #if 0
@@ -66,19 +74,9 @@ static ut8 getreg(const char *str) {
 	return 0xff;
 }
 
-static int getnum(const char *s) {
-	if (!s) return 0;
-	if (*s=='$')
-		s++;
-	if (*s=='0' && s[1]=='x') {
-		int n;
-		sscanf (s+2, "%x", &n);
-		return n;
-	}
-	return atoi (s);
-}
-
-static int isnum(const char *str) {
+static int isnum(RAsm *a, const char *str) {
+	if (r_num_get (a->num, str) != 0)
+		return 1;
 	return str && (*str == '-' || (*str >= '0' && *str <= '9'));
 }
 
@@ -152,14 +150,14 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				arg++;
 				pfx = 0;
 				if (delta) {
-					int n = getnum (arg2);
-					int d = getnum (delta+1);
+					int n = getnum (a, arg2);
+					int d = getnum (a, delta+1);
 					int r = getreg (arg);
 					if (d<127 && d>-127) {
 						data[l++] = 0x83;
 						data[l++] = 0x40 | getreg (arg); // XXX: hardcoded
-						data[l++] = getnum (delta+1);
-						data[l++] = getnum (arg2);
+						data[l++] = getnum (a, delta+1);
+						data[l++] = getnum (a, arg2);
 					} else {
 						ut8 *ptr = (ut8 *)&d;
 						data[l++] = 0x83;
@@ -181,8 +179,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 			if (a->bits == 64)
 				data[l++] = 0x48;
-			if (isnum (arg2)) {
-				int num = getnum (arg2);
+			if (isnum (a, arg2)) {
+				int num = getnum (a, arg2);
 				if (num>127 || num<-127) {
 					ut8 *ptr = (ut8 *)&num;
 					data[l++] = 0x81;
@@ -212,8 +210,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				parg0 = 1;
 				pfx = 0;
 				if (delta) {
-					int n = getnum (arg2);
-					int d = getnum (delta+1);
+					int n = getnum (a, arg2);
+					int d = getnum (a, delta+1);
 					int r = getreg (arg);
 					if (d<127 && d>-127) {
 						data[l++] = 0x83;
@@ -245,8 +243,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 			if (a->bits == 64)
 				data[l++] = 0x48;
-			if (isnum (arg2)) {
-				int num = getnum (arg2);
+			if (isnum (a, arg2)) {
+				int num = getnum (a, arg2);
 				if (num>127 || num<-127) {
 					ut8 *ptr = (ut8*) &num;
 					if (parg0) {
@@ -281,7 +279,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					} else {
 						data[l++] = 0xe8 | getreg (arg);
 					}
-					data[l++] = getnum (arg2);
+					data[l++] = getnum (a, arg2);
 				}
 			} else {
 				data[l++] = 0x29;
@@ -298,7 +296,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 			if (a->bits==64)
 				data[l++] = 0x48;
-			if (isnum (arg2)) { // reg, num
+			if (isnum (a, arg2)) { // reg, num
 				int n = atoi (arg2);
 				if (n>127 || n<-127) {
 					ut8 *ptr = (ut8 *)&n;
@@ -332,9 +330,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			return l;
 		} else
 		if (!strcmp (op, "int")) {
-			int a = (int)r_num_get (NULL, arg);
+			int b = (int)getnum (a, arg);
 			data[l++] = 0xcd;
-			data[l++] = (ut8)a;
+			data[l++] = (ut8)b;
 			return l;
 		} else
 		if (!strcmp (op, "call")) {
@@ -407,7 +405,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				if (!delta) delta = strchr (arg,'-');
 				if (delta) {
 					int r = getreg (arg);
-					int d = getnum (delta+1);
+					int d = getnum (a, delta+1);
 					if (*delta=='-') d = -d;
 					*delta++ = 0;
 					data[l++] = 0xff;
@@ -445,7 +443,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				eprintf ("Missing argument for push\n");
 				return 0;
 			}
-			if (!isnum (arg)) {
+			if (!isnum (a, arg)) {
 				ut8 ch = getreg (arg) | 0x50;
 				if (ch == 0xff) {
 					eprintf ("Invalid register name (%s)\n", arg);
@@ -470,7 +468,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					*delta++ = 0;
 					data[l++] = 0x8f;
 					data[l++] = 0x40 | getreg (arg);
-					data[l++] = delta? getnum (delta): 0;
+					data[l++] = delta? getnum (a, delta): 0;
 				} else {
 					int r = getreg (arg);
 					data[l++] = 0x8f;
@@ -506,9 +504,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = arg0 | (getreg(arg2)<<3) | pfx;
 			} else {
 				data[l++] = 0x31;
-				if (isnum (arg2)) {
+				if (isnum (a, arg2)) {
 					data[l++] = arg0 | 0xf0;
-					data[l++] = getnum (arg2);
+					data[l++] = getnum (a, arg2);
 				} else {
 					data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
 				}
@@ -524,8 +522,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				int r = getreg (arg);
 				int r2 = getreg (arg2+1);
 				arg2++;
-				if (isnum (arg2)) {
-					ut64 n = getnum (arg2);
+				if (isnum (a, arg2)) {
+					ut64 n = getnum (a, arg2);
 					ut32 n32 = (ut32)n;
 					ut8 *ptr;
 					data[l++] = 0x05 | getreg (arg)<<3;
@@ -538,7 +536,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					char *p= strchr (arg2, '+');
 					if (!p) p = strchr (arg2, '-');
 					if (p) {
-						int n = getnum (p+1);
+						int n = getnum (a, p+1);
 						*p++ = 0;
 						ut8 *ptr = (ut8*)&n;
 						//data[l++]= 0x9d;
@@ -598,7 +596,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				} else {
 					delta = strchr (arg, '-');
 					if (delta) {
-						ut32 n = -getnum (delta+1);
+						ut32 n = -getnum (a, delta+1);
 						ut8 *N = (ut8*)&n;
 						*delta++ = 0;
 						data[l++] = 0xc7;
@@ -607,7 +605,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 						data[l++] = N[1];
 						data[l++] = N[2];
 						data[l++] = N[3];
-						n = getnum (arg2);
+						n = getnum (a, arg2);
 						data[l++] = N[0];
 						data[l++] = N[1];
 						data[l++] = N[2];
@@ -652,7 +650,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 								ut32 n;
 								ut8 *N = (ut8*)&n;
 								data[l++] = getreg (arg)<<3|5;
-								n = getnum (arg2);
+								n = getnum (a, arg2);
 								data[l++] = N[0];
 								data[l++] = N[1];
 								data[l++] = N[2];
@@ -666,8 +664,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			} //else pfx = 0xc0;
 
 			arg0 = getreg (arg); // hack to make is64 work
-			if (isnum (arg)) {
-				int num = getnum (arg);
+			if (isnum (a, arg)) {
+				int num = getnum (a, arg);
 				ut8 *ptr = (ut8 *)&num;
 				data[l++] = 0x89;
 				data[l++] = (getreg (arg2)<<3) |5;
@@ -678,7 +676,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l;
 			}
 			if (a->bits==64) {
-				if (isnum (arg2)) {
+				if (isnum (a, arg2)) {
 					data[l++] = 0x48;
 					data[l++] = 0xc7;
 					data[l++] = arg0 | pfx;
@@ -694,9 +692,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l;
 			}
 
-			if (isnum (arg2)) {
+			if (isnum (a, arg2)) {
 				if (delta) {
-					int n = getnum (delta);
+					int n = getnum (a, delta);
 					data[l++] = 0xc7;
 					if (1||n>127 || n<-127) { // XXX
 						int reg = getreg (arg);
@@ -710,7 +708,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 						data[l++] = ptr[3];
 					} else {
 						data[l++] = 0x40 | getreg (arg);
-						data[l++] = getnum (delta); //getreg (arg2);
+						data[l++] = getnum (a, delta); //getreg (arg2);
 					}
 				} else {
 					if (argk) {
@@ -735,9 +733,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			} else {
 				data[l++] = 0x89;
 				if (delta) {
-					if (isnum (delta)){
+					if (isnum (a, delta)){
 						data[l++] = 0x40 | getreg (arg) | getreg (arg2)<<3;
-						data[l++] = getnum (delta);
+						data[l++] = getnum (a, delta);
 					} else {
 						data[l++] = getreg (arg2)<<3 | 0x4;
 						data[l++] = (getreg (delta)<<3 ) | getreg (arg);
@@ -750,7 +748,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		} else if (!strcmp (op, "jmp")) {
 			if (arg[0] == '[' && arg[strlen (arg)-1] == ']') {
 				if (!memcmp (arg+1, "rip", 3)) {
-					ut64 dst = r_num_math (NULL, arg+4);
+					ut64 dst = getnum (a, arg+4);
 					ut32 addr = dst;
 					ut8 *ptr = (ut8 *)&addr;
 					data[l++] = 0xff;
@@ -761,7 +759,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					data[l++] = ptr[3];
 					return l;
 				} else {
-					ut64 dst = r_num_math (NULL, arg+1);
+					ut64 dst = getnum (a, arg+1);
 					ut32 addr = dst;
 					ut8 *ptr = (ut8 *)&addr;
 					if (dst != 0) {
@@ -776,7 +774,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					return -1;
 				}
 			} else {
-				ut64 dst = r_num_get (NULL, arg) - offset;
+				ut64 dst = getnum (a, arg) - offset;
 				ut32 addr = dst;
 				ut8 *ptr = (ut8 *)&addr;
 
@@ -836,28 +834,28 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		} else
 // SPAGUETTI
 		if (!strcmp (op, "jle")) {
-			return jop (a->pc, data, 0x7e, 0x8e, arg);
+			return jop (a, data, 0x7e, 0x8e, arg);
 		} else
 		if (!strcmp (op, "jl")) {
-			return jop (a->pc, data, 0x7c, 0x8c, arg);
+			return jop (a, data, 0x7c, 0x8c, arg);
 		} else
 		if (!strcmp (op, "jg")) {
-			return jop (a->pc, data, 0x7f, 0x8f, arg);
+			return jop (a, data, 0x7f, 0x8f, arg);
 		} else
 		if (!strcmp (op, "jge")) {
-			return jop (a->pc, data, 0x7d, 0x8d, arg);
+			return jop (a, data, 0x7d, 0x8d, arg);
 		} else
 		if (!strcmp (op, "ja")) {
-			return jop (a->pc, data, 0x77, 0x87, arg);
+			return jop (a, data, 0x77, 0x87, arg);
 		} else
 		if (!strcmp (op, "jb")) {
-			return jop (a->pc, data, 0x72, 0x82, arg);
+			return jop (a, data, 0x72, 0x82, arg);
 		} else
 		if (!strcmp (op, "jnz") || !strcmp (op, "jne")) {
-			return jop (a->pc, data, 0x75, 0x85, arg);
+			return jop (a, data, 0x75, 0x85, arg);
 		} else
 		if (!strcmp (op, "jz") || !strcmp (op, "je")) {
-			return jop (a->pc, data, 0x74, 0x84, arg);
+			return jop (a, data, 0x74, 0x84, arg);
 		}
 	} else {
 		if (!strcmp (op, "leave")) {
