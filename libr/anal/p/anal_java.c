@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2010 */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 - pancake */
 
 #include <string.h>
 
@@ -8,7 +7,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#include "../../asm/arch/java/javasm/javasm.h"
+#include "../../../shlr/java/code.h"
 
 /* code analysis functions */
 

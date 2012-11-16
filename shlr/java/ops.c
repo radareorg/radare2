@@ -1,5 +1,7 @@
+/* radare - LGPL - Copyright 2007-2012 - pancake */
+
 #include <stdio.h>
-#include "javasm.h"
+#include "code.h"
 
 struct java_op java_ops[] = {
 	{ "aconst_null"     , 0x01 , 1 } , 

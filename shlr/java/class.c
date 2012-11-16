@@ -1,25 +1,15 @@
-// XXX this is dupped in r_asm and r_bin :O
-/*
- * Copyright (C) 2007-2012
- *       pancake <youterm.com>, nibble <develsec.org>
- */
+/* radare - LGPL - Copyright 2007-2012 - pancake */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//#include <getopt.h>
 #include <stdarg.h>
 #include <unistd.h>
-#include "java.h"
+#include "class.h"
 #include <r_types.h>
 #include <r_util.h>
 
-//#define IFDBG if(1)
-static struct constant_t {
-	char *name;
-	int tag;
-	int len;
-} constants[] = {
+static RBinJavaConstant r_bin_java_constants[] = {
 	{ "Class", 7, 2 }, // 2 name_idx
 	{ "FieldRef", 9, 4 }, // 2 class idx, 2 name/type_idx
 	{ "MethodRef", 10, 4 }, // 2 class idx, 2 name/type_idx
@@ -34,9 +24,10 @@ static struct constant_t {
 	{ NULL, 0, 0 }
 };
 
-static struct r_bin_java_cp_item_t cp_null_item = {0}; // NOTE: must be initialized for safe use
+// NOTE: must be initialized for safe use
+static struct r_bin_java_cp_item_t cp_null_item = {0};
 
-static unsigned short read_short(RBinJavaObj *bin) {
+static ut16 read_short(RBinJavaObj *bin) {
 	ut16 sh = 0;
 	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&sh, 2);
 	return R_BIN_JAVA_SWAPUSHORT (sh);
@@ -197,15 +188,15 @@ eprintf ("local.%d.%d.name=%s\n", bin->midx, i, name);
 }
 
 static int javasm_init(RBinJavaObj *bin) {
-	unsigned short sz, sz2;
-	char buf[0x4096];
-	int i, j;
+	RBinJavaConstant *c;
+	int i, j, bufsz;
+	ut16 sz, sz2;
+	char *buf;
 
 	/* Initialize structs */
-	bin->cp_items = NULL;
 	bin->fields = NULL;
 	bin->methods = NULL;
-
+	bin->cp_items = NULL;
 	bin->lines.count = 0;
 
 	/* Initialize cp_null_item */
@@ -214,7 +205,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	cp_null_item.value = strdup ("(null)");
 
 	/* start parsing */
-	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf, 10); //sizeof(struct r_bin_java_classfile_t), 1, bin->fd);
+	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf, 10);
 	if (memcmp (bin->cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
 		eprintf ("javasm_init: Invalid header (%02x %02x %02x %02x)\n",
 				bin->cf.cafebabe[0], bin->cf.cafebabe[1],
@@ -224,27 +215,26 @@ static int javasm_init(RBinJavaObj *bin) {
 
 	bin->cf.cp_count = R_BIN_JAVA_SWAPUSHORT (bin->cf.cp_count);
 	if (bin->cf.major[0]==bin->cf.major[1] && bin->cf.major[0]==0) {
-		fprintf (stderr, "This is not a Java CLASS. It looks like a MACH0 header\n");
+		eprintf ("Java CLASS with MACH0 header?\n");
 		return R_FALSE;
 	}
 	bin->cf.cp_count--;
 
 	IFDBG printf ("ConstantPoolCount %d\n", bin->cf.cp_count);
-	bin->cp_items = malloc (sizeof (struct r_bin_java_cp_item_t)*(bin->cf.cp_count+1));
-	for (i=0;i<bin->cf.cp_count;i++) {
-		struct constant_t *c;
-
+	bin->cp_items = malloc (sizeof (RBinJavaCpItem)*(bin->cf.cp_count+1));
+	bufsz = 1024;
+	buf = malloc (bufsz);
+	for (i=0; i<bin->cf.cp_count; i++) {
 		r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 1);
-
 		c = NULL;
-		for (j=0; constants[j].name; j++) {
-			if (constants[j].tag == buf[0])  {
-				c = &constants[j];
+		for (j=0; r_bin_java_constants[j].name; j++) {
+			if (r_bin_java_constants[j].tag == buf[0])  {
+				c = &r_bin_java_constants[j];
 				break;
 			}
 		}
 		if (c == NULL) {
-			fprintf (stderr, "Invalid tag '%d' at offset 0x%08"PFMT64x"\n",
+			eprintf ("Invalid tag '%d' at offset 0x%08"PFMT64x"\n",
 				*buf, (ut64)bin->b->cur);
 			return R_FALSE;
 		}
@@ -264,13 +254,16 @@ static int javasm_init(RBinJavaObj *bin) {
 			sz = R_BIN_JAVA_USHORT (buf, 0);
 			bin->cp_items[i].length = sz;
 			bin->cp_items[i].off += 3;
-			if (sz<sizeof (buf)) {
-				r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, sz);
-				buf[sz] = '\0';
-			} else {
-				eprintf ("Invalid utf8 length %d\n", sz);
-				buf[0] = 0;
+			if (sz>=bufsz) {
+				free (buf);
+				buf = malloc (sz);
+				if (!buf) {
+					eprintf ("ETOOBIGSTR\n");
+					break;
+				}
 			}
+			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, sz);
+			buf[sz] = '\0';
 			break;
 		default:
 			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, c->len);
@@ -308,6 +301,8 @@ static int javasm_init(RBinJavaObj *bin) {
 			printf ("%d\n", R_BIN_JAVA_UINT (buf, 40));
 		}
 	}
+	free (buf);
+	buf = NULL;
 
 	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf2, sizeof(struct r_bin_java_classfile2_t));
 	IFDBG printf ("Access flags: 0x%04x\n", bin->cf2.access_flags);
@@ -320,12 +315,14 @@ static int javasm_init(RBinJavaObj *bin) {
 	/* TODO: intefaces*/
 	IFDBG printf("Interfaces count: %d\n", sz);
 	if (sz>0) {
-		r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, sz*2);
-		sz = read_short(bin);
+		bufsz = sz*2;
+		buf = malloc (bufsz+8);
+		r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, bufsz);
+		sz = read_short (bin);
 		for (i=0;i<sz;i++) {
 			fprintf (stderr, "Interfaces: TODO\n");
 		}
-	}
+	} else buf = malloc (128);
 
 	sz = read_short (bin);
 	bin->fields_count = sz;
@@ -333,8 +330,8 @@ static int javasm_init(RBinJavaObj *bin) {
 	if (sz>0) {
 		bin->fields = malloc (1+sz * sizeof(struct r_bin_java_fm_t));
 		for (i=0; i<sz; i++) {
-			r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 8);
-			bin->fields[i].flags = R_BIN_JAVA_USHORT(buf, 0);
+			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 8);
+			bin->fields[i].flags = R_BIN_JAVA_USHORT (buf, 0);
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->fields[i].flags);
 			bin->fields[i].name_idx = R_BIN_JAVA_USHORT(buf, 2);
 			bin->fields[i].name = r_str_dup (NULL, (get_cp (bin, R_BIN_JAVA_USHORT(buf,2)-1))->value);
@@ -353,13 +350,13 @@ static int javasm_init(RBinJavaObj *bin) {
 		}
 	}
 
-	sz = read_short(bin);
+	sz = read_short (bin);
 	bin->methods_count = sz;
-	IFDBG printf("Methods count: %d\n", sz);
+	IFDBG eprintf ("Methods count: %d\n", sz);
 	if (sz>0) {
 		bin->methods = malloc(sz * sizeof(struct r_bin_java_fm_t));
 		for (i=0; i<sz; i++) {
-			r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, 8);
+			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 8);
 
 			bin->methods[i].flags = R_BIN_JAVA_USHORT(buf, 0);
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->methods[i].flags);
@@ -391,32 +388,31 @@ bin->midx = i;
 			}
 		}
 	}
-	
+	free (buf);
 	return R_TRUE;
 }
 
-char* r_bin_java_get_version(RBinJavaObj* bin) {
-	return r_str_dup_printf("0x%02x%02x 0x%02x%02x",
+R_API char* r_bin_java_get_version(RBinJavaObj* bin) {
+	return r_str_dup_printf ("0x%02x%02x 0x%02x%02x",
 			bin->cf.major[1],bin->cf.major[0],
 			bin->cf.minor[1],bin->cf.minor[0]);
 }
 
-ut64 r_bin_java_get_main(RBinJavaObj* bin) {
+R_API ut64 r_bin_java_get_main(RBinJavaObj* bin) {
 	int i, j;
 	for (i=0; i < bin->methods_count; i++) {
 		if (!strcmp(bin->methods[i].name, "main([Ljava/lang/String;)V"))
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
 					return (ut64)bin->methods[i].attributes->info.code.code_offset;
-//eprintf ("METH : %s\n", bin->methods[i].name);
-}
+	}
 	return 0;
 }
 
-ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin) {
+R_API ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin) {
 	int i, j;
 	for (i=0; i < bin->methods_count; i++)
-		if (!strcmp(bin->methods[i].name, "<init>()V"))
+		if (!strcmp (bin->methods[i].name, "<init>()V"))
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
 					return (ut64)bin->methods[i].attributes->info.code.code_offset;
@@ -427,7 +423,8 @@ struct r_bin_java_sym_t* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	struct r_bin_java_sym_t *symbols;
 	int ns, i, j, ctr = 0;
 
-	if ((symbols = malloc ((bin->methods_count + 1) * sizeof(struct r_bin_java_sym_t))) == NULL)
+	if (!(symbols = malloc ((bin->methods_count + 1) * \
+			sizeof (struct r_bin_java_sym_t))))
 		return NULL;
 	bin->fsym = 0;
 	bin->fsymsz = 0;
@@ -456,9 +453,10 @@ struct r_bin_java_str_t* r_bin_java_get_strings(RBinJavaObj* bin) {
 	struct r_bin_java_str_t *strings = NULL;
 	int i, ctr = 0;
 
-	for(i=0;i<bin->cf.cp_count;i++) 
+	for (i=0; i<bin->cf.cp_count; i++) {
 		if (bin->cp_items[i].tag == 1) {
-			if ((strings = realloc(strings, (ctr + 1) * sizeof(struct r_bin_java_str_t))) == NULL)
+			if ((strings = realloc(strings, (ctr + 1) * \
+				sizeof (RBinJavaString))) == NULL)
 				return NULL;
 			strings[ctr].offset = (ut64)bin->cp_items[i].off;
 			strings[ctr].ordinal = (ut64)bin->cp_items[i].ord;
@@ -467,15 +465,17 @@ struct r_bin_java_str_t* r_bin_java_get_strings(RBinJavaObj* bin) {
 			strings[ctr].last = 0;
 			ctr++;
 		}
+	}
 	if (ctr) {
-		if ((strings = realloc(strings, (ctr + 1) * sizeof(struct r_bin_java_str_t))) == NULL)
+		if (!(strings = realloc (strings, (ctr + 1) * 
+				sizeof (RBinJavaString))))
 			return NULL;
 		strings[ctr].last = 1;
 	}
 	return strings;
 }
 
-void* r_bin_java_free(RBinJavaObj* bin) {
+R_API void* r_bin_java_free(RBinJavaObj* bin) {
 	if (!bin) return NULL;
 	if (bin->cp_items) free (bin->cp_items);
 	if (bin->fields) free (bin->fields);
@@ -485,7 +485,7 @@ void* r_bin_java_free(RBinJavaObj* bin) {
 	return NULL;
 }
 
-RBinJavaObj* r_bin_java_new(const char* file) {
+R_API RBinJavaObj* r_bin_java_new(const char* file) {
 	ut8 *buf;
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	bin->file = file;
@@ -500,13 +500,12 @@ RBinJavaObj* r_bin_java_new(const char* file) {
 	return bin;
 }
 
-RBinJavaObj* r_bin_java_new_buf(RBuffer *buf) {
+R_API RBinJavaObj* r_bin_java_new_buf(RBuffer *buf) {
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	if (!bin) return NULL;
 	bin->b = buf;
 	bin->size = buf->length;
-	// seek backward
-	buf->cur = 0;
+	buf->cur = 0; // rewind
 	if (!javasm_init (bin))
 		return r_bin_java_free (bin);
 	return bin;

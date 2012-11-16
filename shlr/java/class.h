@@ -1,7 +1,9 @@
 #include <r_types.h>
 
-#define R_BIN_JAVA_MAXSTR 256
+#define USHORT(x,y) (unsigned short)(x[y+1]|(x[y]<<8))
+#define UINT(x,y) (unsigned int) ((x[y]<<24)|(x[y+1]<<16)|(x[y+2]<<8)|x[y+3])
 
+#define R_BIN_JAVA_MAXSTR 256
 
 #define R_BIN_JAVA_USHORT(x,y) (unsigned short)((0xff&x[y+1]|((x[y]&0xff)<<8)) & 0xffff)
 #define R_BIN_JAVA_UINT(x,y) (unsigned int)(((x[y]&0xff)<<24)|((x[y+1]&0xff)<<16)|((x[y+2]&0xff)<<8)|(x[y+3]&0xff))
@@ -14,20 +16,20 @@ enum {
 	R_BIN_JAVA_TYPE_CONST
 };
 
-struct r_bin_java_classfile_t {
+typedef struct r_bin_java_classfile_t {
 	ut8 cafebabe[4];
 	ut8 minor[2];
 	ut8 major[2];
 	unsigned short cp_count;
-};
+} RBinJavaClass;
 
-struct r_bin_java_classfile2_t {
+typedef struct r_bin_java_classfile2_t {
 	unsigned short access_flags;
 	unsigned short this_class;
 	unsigned short super_class;
-};
+} RBinJavaClass2;
 
-struct r_bin_java_cp_item_t {
+typedef struct r_bin_java_cp_item_t {
 	int tag;
 	char name[32];
 	char *value;
@@ -35,8 +37,13 @@ struct r_bin_java_cp_item_t {
 	unsigned short length;
 	unsigned short ord;
 	unsigned short off;
-};
+} RBinJavaCpItem;
 
+typedef struct r_bin_java_constant_t {
+	char *name;
+	int tag;
+	int len;
+} RBinJavaConstant;
 struct r_bin_java_attr_code_t {
 	unsigned short max_stack;
 	unsigned short max_locals;
@@ -101,20 +108,20 @@ typedef struct r_bin_java_obj_t {
 	int fsymsz;
 } RBinJavaObj;
 
-struct r_bin_java_sym_t {
+typedef struct r_bin_java_sym_t {
 	char name[R_BIN_JAVA_MAXSTR];
 	ut64 offset; // XXX: ut64 is too much
 	ut64 size;
 	int last;
-};
+} RBinJavaSymbol;
 
-struct r_bin_java_str_t {
+typedef struct r_bin_java_str_t {
 	char str[R_BIN_JAVA_MAXSTR];
 	ut64 offset;
 	ut64 ordinal;
 	ut64 size;
 	int last;
-};
+} RBinJavaString;
 
 char* r_bin_java_get_version(struct r_bin_java_obj_t* bin);
 ut64 r_bin_java_get_entrypoint(struct r_bin_java_obj_t* bin);
