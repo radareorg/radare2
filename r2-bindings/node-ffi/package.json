@@ -1,11 +1,12 @@
-{ "name": "radare2.js",
+{
+  "name": "radare2.js",
   "version": "0.1.3",
   "url": "http://www.radare.org",
   "description": "radare2 valabind-ffi bindings for nodejs",
   "dependencies": {
-    "ffi": "1.1.0",
-    "ref": "0.1.2",
-    "ref-struct": "0.0.3"
+    "ref-struct": "0.0.4",
+    "ref": "~0.1.3",
+    "ffi": "~1.2.0"
   },
   "files": [
     "Makefile",
