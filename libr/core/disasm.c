@@ -423,13 +423,13 @@ toro:
 			// TODO: filter string (r_str_unscape)
 			{
 			char *out = r_str_unscape (mi->str);
-if (show_color)
-			r_cons_printf ("    .string "Color_YELLOW"\"%s\""Color_RESET" ; len=%"PFMT64d"\n", out, mi->size);
-else
-			r_cons_printf ("    .string \"%s\" ; len=%"PFMT64d"\n", out, mi->size);
+			if (show_color)
+				r_cons_printf ("    .string "Color_YELLOW"\"%s\""Color_RESET" ; len=%"PFMT64d"\n", out, mi->size);
+			else
+				r_cons_printf ("    .string \"%s\" ; len=%"PFMT64d"\n", out, mi->size);
 			free (out);
 			}
-			ret = (int)mi->size;
+			oplen = ret = (int)mi->size;
 		i += mi->size-1;
 			free (line);
 			free (refline);
@@ -446,7 +446,7 @@ else
 				r_print_hexdump (core->print, at, buf+idx, hexlen, 16, 1);
 			core->inc = 16;
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
-				ret = (int)mi->size; //-delta;
+				oplen = ret = (int)mi->size; //-delta;
 				free (line);
 				free (refline);
 				line = refline = NULL;
@@ -454,7 +454,7 @@ else
 			continue;
 		case R_META_TYPE_FORMAT:
 			r_print_format (core->print, at, buf+idx, len-idx, mi->str);
-			ret = (int)mi->size;
+			oplen = ret = (int)mi->size;
 			free (line);
 			free (refline);
 			line = refline = NULL;
