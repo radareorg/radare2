@@ -939,7 +939,6 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->length = io.len;
 		op->nopcode = io.opcode_count;
 	}
-eprintf ("LEN = %d   %d \n", op->length, dislen (data, len));
 	return op->length;
 }
 
