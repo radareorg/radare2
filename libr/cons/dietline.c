@@ -74,6 +74,9 @@ R_API int r_line_hist_add(const char *line) {
 		inithist ();
 	if (I.history.top>=I.history.size)
 		I.history.top = I.history.index = 0; // workaround
+	/* ignore dup */
+	if (I.history.index>0 && !strcmp (line, I.history.data[I.history.index-1]))
+		return R_FALSE;
 	if (line && *line) { // && I.history.index < I.history.size) {
 		I.history.data[I.history.top++] = strdup (line);
 		I.history.index = I.history.top;
@@ -98,12 +101,12 @@ static int r_line_hist_down() {
 	if (!I.history.data)
 		inithist ();
 	if (I.history.index<I.history.size) {
-		if (I.history.data[I.history.index] == NULL) {
+		if (I.history.data[I.history.index+1] == NULL) {
 			I.buffer.data[0]='\0';
 			I.buffer.index = I.buffer.length = 0;
 			return 0;
 		}
-		strncpy (I.buffer.data, I.history.data[I.history.index++], R_LINE_BUFSIZE-1);
+		strncpy (I.buffer.data, I.history.data[++I.history.index], R_LINE_BUFSIZE-1);
 		I.buffer.index = I.buffer.length = strlen (I.buffer.data);
 		return R_TRUE;
 	}

@@ -87,6 +87,7 @@ R_API void r_core_visual_prompt (RCore *core) {
 #endif
 	r_cons_show_cursor (R_TRUE);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
+	r_line_hist_add (buf);
 	r_core_cmd (core, buf, 0);
 	r_cons_any_key ();
 	r_cons_clear00 ();
