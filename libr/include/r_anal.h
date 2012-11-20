@@ -39,7 +39,6 @@ typedef struct r_meta_t {
 
 /* CPARSE stuff */
 
-
 #define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
 #define R_ANAL_UNMASK_SIGN(x) (((x& R_ANAL_VAR_TYPE_SIGN_MASK)>> R_ANAL_VAR_TYPE_SIGN_SHIFT)==R_ANAL_TYPE_UNSIGNED)?0:1
 
@@ -70,6 +69,17 @@ enum {
 	R_ANAL_VAR_TYPE_FLOAT = 10,
 	R_ANAL_VAR_TYPE_DOUBLE = 11,
 	R_ANAL_VAR_TYPE_VOID = 12,
+};
+
+enum {
+	R_ANAL_DATA_TYPE_NULL = 0,
+	R_ANAL_DATA_TYPE_STRING = 1,
+	R_ANAL_DATA_TYPE_WIDE_STRING = 2,
+	R_ANAL_DATA_TYPE_POINTER = 3,
+	R_ANAL_DATA_TYPE_NUMBER = 4,
+	R_ANAL_DATA_TYPE_INVALID = 5,
+	R_ANAL_DATA_TYPE_BIN = 6,
+	R_ANAL_DATA_TYPE_UNKNOWN = 7,
 };
 
 // [4:7] bits - place to store sign of variable
@@ -693,6 +703,7 @@ R_API int r_anal_fcn_overlap_bb(RAnalFunction *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
+R_API int r_anal_fcn_count (RAnal *a, ut64 from, ut64 to);
 
 #if 0
 #define r_anal_fcn_get_refs(x) x->refs
@@ -784,6 +795,9 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc);
 R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op);
 //R_API int r_anal_cc_register (RAnal *anal, RAnalCC *cc);
 //R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc);
+
+R_API int r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size);
+R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int len);
 
 R_API RMeta *r_meta_new();
 R_API void r_meta_free(RMeta *m);

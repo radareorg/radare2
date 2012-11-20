@@ -334,13 +334,13 @@ toro:
 					if (dst && dst->reg && !strcmp (src->reg->name, pc)) {
 						int memref = core->assembler->bits/8;
 						RFlagItem *item;
-						ut8 b[8];
+						ut8 b[64];
 						ut64 ptr = idx+addr+src->delta+analop.length;
 						ut64 off = 0LL;
-						r_core_read_at (core, ptr, b, memref);
+						r_core_read_at (core, ptr, b, sizeof (b)); //memref);
 						off = r_mem_get_num (b, memref, 1);
 						item = r_flag_get_i (core->flags, off);
-						{ char s[32];
+						{ char s[64];
 						r_str_ncpy (s, (const char *)b, sizeof (s));
 						r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
 								dst->reg->name, ptr, off, item?item->name: s);

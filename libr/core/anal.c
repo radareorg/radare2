@@ -46,7 +46,8 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 			switch (cmdstr[i]) {
 			case 0x1b:
 				/* skip ansi chars */
-				for (i++; cmdstr[i] && cmdstr[i]!='m' && cmdstr[i]!='H' && cmdstr[i]!='J'; i++);
+				for (i++; cmdstr[i] && cmdstr[i]!='m' && \
+					cmdstr[i]!='H' && cmdstr[i]!='J'; i++);
 				j--;
 				break;
 			case '"':
@@ -182,7 +183,6 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 
 	free (buf);
 	return R_TRUE;
-
 error:
 	r_list_unlink (fcn->bbs, bb);
 	r_anal_bb_free (bb);
@@ -235,7 +235,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				ref->addr = from;
 				ref->at = at;
 				ref->type = reftype;
-				r_list_append (fcni->xrefs, ref);
+				if (reftype == 'd') // XXX HACK TO AVOID INVALID REFS
+					r_list_append (fcni->xrefs, ref);
 			}
 			return R_TRUE;
 		}
@@ -471,9 +472,9 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
-	RAnalFunction *fcn;
 	RAnalRef *refi;
 	RAnalVar *vari;
+	RAnalFunction *fcn;
 	RListIter *iter, *iter2;
 	ut64 addr = r_num_math (core->num, input+1);
 
@@ -493,8 +494,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	}
 	r_list_foreach (core->anal->fcns, iter, fcn)
 		if (((input == NULL || *input == '\0') && fcn->type!=R_ANAL_FCN_TYPE_LOC)
-			 || fcn->addr == addr
-			 || !strcmp (fcn->name, input+1)) {
+			 || fcn->addr == addr || !strcmp (fcn->name, input+1)) {
 			if (!rad) {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, fcn->name, fcn->size);
@@ -829,4 +829,44 @@ R_API void r_core_anal_setup_enviroment (RCore *core) {
 	}
 	r_anal_type_header (core->anal, str);
 	free (str);
+}
+
+R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
+	ut64 dstaddr = 0LL;
+	ut8 *buf = core->block;
+	int len = core->blocksize;
+	int word = core->assembler->bits /8;
+	int endi = core->anal->big_endian;
+        int i, j, type;
+
+	if (addr != core->offset) {
+		buf = malloc (len);
+		memset (buf, 0xff, len);
+		int r = r_io_read_at (core->io, addr, buf, len);
+		//int r = r_core_read_at (core, addr, buf, len);
+		// TODO: handle error here
+	}
+
+	for (i = j = 0; i<len && j<count; j++ ) {
+		int type = r_anal_data (core->anal, addr+i,
+			buf+i, len-i);
+		switch (type) {
+		case R_ANAL_DATA_TYPE_POINTER:
+			eprintf ("--> ");
+			dstaddr = r_mem_get_num (buf+i, word, !endi);
+			if (depth>0)
+				r_core_anal_data (core,
+					dstaddr, 1, depth-1);
+			i += word;
+			break;
+		case R_ANAL_DATA_TYPE_STRING:
+			i += strlen ((const char*)buf+i)+1;
+			break;
+		default:
+			i += word;
+		}
+        }
+	if (addr != core->offset)
+		free (buf);
+	return R_TRUE;
 }

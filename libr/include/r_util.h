@@ -286,7 +286,7 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
 R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API void r_buf_free(RBuffer *b);
 
-R_API ut64 r_mem_get_num(ut8 *b, int size, int endian);
+R_API ut64 r_mem_get_num(const ut8 *b, int size, int endian);
 
 /* MEMORY POOL */
 R_API RMemoryPool* r_mem_pool_deinit(RMemoryPool *pool);

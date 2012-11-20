@@ -92,6 +92,40 @@ static int var_cmd(RCore *core, const char *str) {
 }
 #endif
 
+static void cmd_anal_trampoline (RCore *core, const char *input) {
+	int i, bits = r_config_get_i (core->config, "asm.bits");
+	char *p, *inp = strdup (input);
+	p = strchr (inp, ' ');
+	if (p) *p=0;
+	ut64 a = r_num_math (core->num, inp);
+	ut64 b = p?r_num_math (core->num, p+1):0;
+	free (inp);
+	switch (bits) {
+		case 32:
+			for (i=0; i<core->blocksize; i+=4) {
+				ut32 n;
+				memcpy (&n, core->block+i, sizeof(ut32));
+				if (n>=a && n<=b) {
+					r_cons_printf ("f trampoline.%x @ 0x%"PFMT64x"\n", n, core->offset+i);
+					r_cons_printf ("Cd 4 @ 0x%"PFMT64x":4\n", core->offset+i);
+					// TODO: add data xrefs
+				}
+			}
+			break;
+		case 64:
+			for (i=0; i<core->blocksize; i+=8) {
+				ut32 n;
+				memcpy (&n, core->block+i, sizeof(ut32));
+				if (n>=a && n<=b) {
+					r_cons_printf ("f trampoline.%"PFMT64x" @ 0x%"PFMT64x"\n", n, core->offset+i);
+					r_cons_printf ("Cd 8 @ 0x%"PFMT64x":8\n", core->offset+i);
+					// TODO: add data xrefs
+				}
+			}
+			break;
+	}
+}
+
 static void cmd_syscall_do(RCore *core, int num) {
 	int i;
 	char str[64];
@@ -215,7 +249,6 @@ case 'o':
 	} else len = l = core->blocksize;
 	}
 #endif
-
 	r_cons_break (NULL, NULL);
 
 	switch (input[0]) {
@@ -780,38 +813,43 @@ case 'o':
 		} else r_core_search_preludes (core);
 		break;
 	case 'd':
-		{
-			int i, bits = r_config_get_i (core->config, "asm.bits");
-			char *p, *inp = strdup (input+2);
-			p = strchr (inp, ' ');
-			if (p) *p=0;
-			ut64 a = r_num_math (core->num, inp);
-			ut64 b = p?r_num_math (core->num, p+1):0;
-			free (inp);
-			switch (bits) {
-			case 32:
-				for (i=0; i<core->blocksize; i+=4) {
-					ut32 n;
-					memcpy (&n, core->block+i, sizeof(ut32));
-					if (n>=a && n<=b) {
-						r_cons_printf ("f trampoline.%x @ 0x%"PFMT64x"\n", n, core->offset+i);
-						r_cons_printf ("Cd 4 @ 0x%"PFMT64x":4\n", core->offset+i);
-						// TODO: add data xrefs
-					}
-				}
-				break;
-			case 64:
-				for (i=0; i<core->blocksize; i+=8) {
-					ut32 n;
-					memcpy (&n, core->block+i, sizeof(ut32));
-					if (n>=a && n<=b) {
-						r_cons_printf ("f trampoline.%"PFMT64x" @ 0x%"PFMT64x"\n", n, core->offset+i);
-						r_cons_printf ("Cd 8 @ 0x%"PFMT64x":8\n", core->offset+i);
-						// TODO: add data xrefs
-					}
-				}
-				break;
+		switch (input[1]) {
+		case 't':
+			cmd_anal_trampoline (core, input+2);
+			break;
+		case ' ':
+			{
+				const int default_depth = 1;
+				const char *p;
+				int a, b;
+				a = r_num_math (core->num, input+2);
+				p = strchr (input+2, ' ');
+				b = p? r_num_math (core->num, p+1): default_depth;
+				if (a<1) a = 1;
+				if (b<1) b = 1;
+				r_core_anal_data (core, core->offset, a, b);
 			}
+			break;
+		case 'k':
+			{ 
+				const char *r = r_anal_data_kind (core->anal,
+				core->offset, core->block, core->blocksize);
+				r_cons_printf ("%s\n", r);
+			}
+			break;
+		case '\0':
+			{
+				int word = core->assembler->bits / 8;
+				r_core_anal_data (core, core->offset,
+						core->blocksize/word, 1);
+			}
+			break;
+		default:
+			eprintf ("Usage: ad[kt] [...]\n");
+			eprintf ("  ad [N] [D]   analyze N data words at D depth\n");
+			eprintf ("  adt          analyze data trampolines (wip)\n");
+			eprintf ("  adk          analyze kind of data (code, text, data, invalid, ...)\n");
+			break;
 		}
 		break;
 	default:

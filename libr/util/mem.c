@@ -108,7 +108,7 @@ src |__________|_________|
 	r_mem_copybits (dst, src, nbits);
 }
 
-R_API ut64 r_mem_get_num(ut8 *b, int size, int endian) {
+R_API ut64 r_mem_get_num(const ut8 *b, int size, int endian) {
         ut16 n16;
         ut32 n32;
         ut64 n64;

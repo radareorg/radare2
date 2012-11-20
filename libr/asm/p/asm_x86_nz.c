@@ -62,6 +62,7 @@ static int bits8 (const char *p) {
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
+	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh" };
 	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
 	if (!str)
 		return 0xff;
@@ -70,6 +71,9 @@ static ut8 getreg(const char *str) {
 			return i;
 	for (i=0; regs64[i]; i++)
 		if (!memcmp (regs64[i], str, strlen (regs64[i])))
+			return i;
+	for (i=0; regs16[i]; i++)
+		if (!memcmp (regs16[i], str, strlen (regs16[i])))
 			return i;
 	return 0xff;
 }
@@ -721,8 +725,18 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 							data[l++] = 0x75;
 							data[l++] = 0;
 						} else  data[l++] = r;
+#define is16reg(x) (x[1]=='l'||x[1]=='h')
 					} else {
-						data[l++] = 0xb8 | getreg (arg);
+						if (is16reg (arg)) {
+							int op = 0xc0;
+							if (arg[1]=='h') op |= 4;
+							data[l++] = 0xc6;
+							data[l++] = op | (getreg (arg)>>1);
+							data[l++] = atoi (arg2);
+							return l;
+						} else {
+							data[l++] = 0xb8 | getreg (arg);
+						}
 					}
 				}
 				data[l++] = ptr[0];

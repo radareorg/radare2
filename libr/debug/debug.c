@@ -193,6 +193,8 @@ R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (pid != dbg->pid || tid != dbg->tid)
 		eprintf ("r_debug_select: %d %d\n", pid, tid);
 	dbg->pid = pid;
+	if (tid == -1)
+		tid = dbg->pid;
 	dbg->tid = tid;
 	return R_TRUE;
 }

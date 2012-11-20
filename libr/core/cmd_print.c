@@ -61,12 +61,12 @@ R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	int i, l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
 	ut8 *ptr = core->block;
+	int i, l, len;
 
 	/* TODO: Change also blocksize for 'pd'.. */
-	l = len;
+	l = len = core->blocksize;
 	if (input[0] && input[1]) {
 		const char *p = strchr (input, ' ');
 		if (p) {
@@ -97,6 +97,8 @@ static int cmd_print(void *data, const char *input) {
 	core->num->value = len;
 	switch (*input) {
 	case '%':
+		// TODO: use RAnal_navbar
+		// TODO: if p%j -> show json!
 		{
 			ut64 off = core->io->off;
 			ut64 s = core->file?core->file->size:0;

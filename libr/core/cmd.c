@@ -222,7 +222,8 @@ static int cmd_quit(void *data, const char *input) {
 }
 
 static int cmd_interpret(void *data, const char *input) {
-	char *str, *ptr, *eol;
+	const char *host, *port, *cmd;
+	char *str, *ptr, *eol, *rbuf;
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '\0':
@@ -230,10 +231,9 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case ':':
 		if ((ptr = strchr (input+1, ' '))) {
-			char *rbuf, *port, *host;
-			char *cmd = ptr+1;
 			/* .:port cmd */
 			/* .:host:port cmd */
+			cmd = ptr+1;
 			*ptr = 0;
 			eol = strchr (input+1, ':');
 			if (eol) {
@@ -354,17 +354,16 @@ static int cmd_resize(void *data, const char *input) {
 		case '\0':
 		case '?':
 			r_cons_printf (
-					"Usage: r[+-][ size]\n"
-					" r size   expand or truncate file to given size\n"
-					" r-num    remove num bytes, move following data down\n"
-					" r+num    insert num bytes, move following data up\n");
+				"Usage: r[+-][ size]\n"
+				" r size   expand or truncate file to given size\n"
+				" r-num    remove num bytes, move following data down\n"
+				" r+num    insert num bytes, move following data up\n");
 			return R_TRUE;
 		default:
 			newsize = r_num_math (core->num, input);
 	}
 
 	grow = (newsize > oldsize);
-
 	if (grow) {
 		r_io_resize (core->io, newsize);
 		core->file->size = newsize;
@@ -503,7 +502,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	char *_ptr;
 #if __UNIX__
 	int fds[2];
-	int stdout_fd, status = -1;
+	int stdout_fd;
 #endif
 	int ret = -1, pipecolor = -1;
 	if (!r_config_get_i (core->config, "scr.pipecolor")) {
@@ -778,7 +777,7 @@ next:
 	if (ptr) {
 		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
 		int use_editor = R_FALSE;
-		int scrint = r_cons_singleton()->is_interactive;
+		//int scrint = r_cons_singleton()->is_interactive;
 		int ocolor = r_config_get_i (core->config, "scr.color");
 		*ptr = '\0';
 		str = r_str_trim_head_tail (ptr+1+(ptr[1]=='>'));

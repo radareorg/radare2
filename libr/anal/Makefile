@@ -21,10 +21,13 @@ libr_anal.${EXT_SO} libr_anal.${EXT_AR}: pre
 
 include ${STATIC_ANAL_PLUGINS}
 STATIC_OBJS=$(addprefix $(LTOP)/anal/p/,$(STATIC_OBJ))
-OBJLIBS=meta.o reflines.o ref.o op.o fcn.o bb.o var.o anal.o cond.o value.o cc.o diff.o type.o fcnstore.o
+OBJLIBS=meta.o reflines.o ref.o op.o fcn.o bb.o var.o anal.o
+OBJLIBS+=cond.o value.o cc.o diff.o type.o fcnstore.o data.o
 
 ifeq ($(HAVE_CPARSE),1)
-CPARSE_OBJS=cparse/cparse.o cparse/lex.yy.o cparse/tree.o cparse/gen.o cparse/error.o cparse/symset.o cparse/pplex.o cparse/exptree.o cparse/pp.o
+CPARSE_OBJS=cparse/cparse.o cparse/lex.yy.o cparse/tree.o
+CPARSE_OBJS+=cparse/gen.o cparse/error.o cparse/symset.o
+CPARSE_OBJS+=cparse/pplex.o cparse/exptree.o cparse/pp.o
 endif
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}

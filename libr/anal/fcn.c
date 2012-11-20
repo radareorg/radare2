@@ -543,3 +543,13 @@ R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal) { return anal->bbs; }
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr) {
 	return (addr >= fcn->addr &&  addr < (fcn->addr+fcn->size));
 }
+
+R_API int r_anal_fcn_count (RAnal *anal, ut64 from, ut64 to) {
+	int n = 0;
+	RAnalFunction *fcni;
+	RListIter *iter;
+	r_list_foreach (anal->fcns, iter, fcni)
+		if (fcni->addr >= from && fcni->addr < to)
+			return n++;
+	return n;
+}

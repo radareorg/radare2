@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 nibble<develsec.org>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2012 - nibble, pancake */
 
 #include <r_anal.h>
 
@@ -309,4 +309,29 @@ R_API int r_meta_list(RMeta *m, int type, int rad) {
 		}
 	}
 	return count;
+}
+
+R_API char *r_anal_meta_bar (RAnal *anal, ut64 from, ut64 to, int blocks) {
+	int i, blocksize;
+	char *res;
+	ut64 f, t;
+
+	if (blocks<1 || from > to)
+		return NULL;
+	if (from == to && from == 0) {
+		// autodetect min and max here
+	//	from = 
+	}
+	blocksize = (to-from)/blocks;
+	res = malloc (blocks*4); //blocksize*5);// use realloc here
+	for (i=0; i< blocks; i++) {
+		f = from + (blocksize*i);
+		t = f+blocksize;
+		{
+			int n = r_anal_fcn_count (anal, f, t);
+			if (n>0) res[i++] = 'f';
+		}
+		res[i++] = ',';
+	}
+	return res;
 }

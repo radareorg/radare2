@@ -194,6 +194,7 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
 /* anal.c */
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref);
+R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth);
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv);
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head);
 R_API int r_core_anal_bb_seek(RCore *core, ut64 addr);
