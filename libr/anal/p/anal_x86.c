@@ -145,6 +145,8 @@ static int anal_jmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		op->ref = imm;
 		break;
 	}
+	if (anal->bits==16)
+		op->jump--;
 	return io.len;
 }
 
@@ -160,6 +162,8 @@ static void anal_cjmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		op->dst = anal_fill_r (anal, io, op->addr);
 		op->fail = op->addr + io.len;
 		op->jump = op->addr + io.len + imm;
+		if (anal->bits==16)
+			op->jump--;
 		break;
 	}
 }
@@ -341,9 +345,8 @@ static void anal_cmp(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		op->src[0] = anal_fill_ai_mm (anal, io);
 		op->src[1] = anal_fill_ai_rg (anal, io, 0);
 		/* TODO: Deprecate */
-		if (io.mem_base == 0) { /* cmp [0x0ff], reg */
+		if (io.mem_base == 0) /* cmp [0x0ff], reg */
 			op->ref = disp;
-		}
 		break;
 	case X86IM_IO_ID_CMP_R1_R2: /* cmp reg2, reg1 */
 	case X86IM_IO_ID_CMP_R2_R1:
@@ -810,6 +813,10 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->jump = op->fail = -1;
 	op->ref = op->value = -1;
 
+	if (!memcmp ("\xf3\xc3", data, 2)) {
+		op->type = R_ANAL_OP_TYPE_RET;
+		return op->length = 2;
+	}
 	ret = -1;
 	if (anal->bits==64)
 		ret = (x86im_dec (&io, X86IM_IO_MODE_64BIT, (ut8*)data));
@@ -932,6 +939,7 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->length = io.len;
 		op->nopcode = io.opcode_count;
 	}
+eprintf ("LEN = %d   %d \n", op->length, dislen (data, len));
 	return op->length;
 }
 

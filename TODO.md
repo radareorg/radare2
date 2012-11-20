@@ -33,7 +33,6 @@ tothink:
 * highlight search hits in hexdump
 * Implement debugger backtrace properly
 * _ -> write string does not obeys the cursor
-* rep+ret instruction (f3c3) should be identified as RET
 * p7 : 7bit encoding (sms)
   - variant for stego print? LSB, MSB, ...
   - add base85 api
@@ -135,8 +134,6 @@ earada
 * remove all uses of alloca() // mingw and grep reports them all :)
 * typedef all function pointers, like in r_bp
 * Implement /. to search using a file .. isnt zignatures about this?
-* Implement /p to search for patterns
-  - implement it in r_core ?? or add r_io_bind support
 * Implement search and replace /s
   - insert or append? (see r1 cfg vars)
 
@@ -179,8 +176,8 @@ RSearch
 
 Binaries
 --------
-* DEX parsing fail (invalid offset of symbols)
 * add support for .a files (r_fs supports cpio and ar archives...)
+* add support for .rar files
 
 # Random
 * Implement rap:// upload/download protocol commands (maybe just system() with rsc2+wget?

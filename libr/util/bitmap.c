@@ -1,64 +1,61 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
+#include <r_util.h>
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <assert.h>
+#define BITMAP_TEST 0
 
-#define BITMAP_TEST 1
-
-#define BITMAP_32_WORD 1
-
-typedef struct Bitmap Bitmap;
-#if BITMAP_32_WORD
+#if R_SYS_BITS == 4
 #define BITWORD_BITS_SHIFT 5
-typedef uint32_t Bitword;
+#define RBitword ut32
 #else
 #define BITWORD_BITS_SHIFT 6
-typedef uint64_t Bitword;
+#define RBitword ut64
 #endif
-#define BITWORD_BITS (sizeof(Bitword) * 8)
+
+#define BITWORD_BITS (sizeof(RBitword) * 8)
 #define BITWORD_BITS_MASK (BITWORD_BITS - 1)
 #define BITWORD_MULT(bit)  ((bit + (BITWORD_BITS_MASK)) & ~(BITWORD_BITS_MASK))
-#define BITWORD_TEST(bword, bit) ((bword >> bit) & 1)
+#define BITWORD_TEST(x, y) ((x>> y) & 1)
 
 #define BITMAP_WORD_COUNT(bit) (BITWORD_MULT(bit) >> BITWORD_BITS_SHIFT)
 
+typedef struct r_bitmap_t {
+	int length;
+	RBitword *bitmap;
+} RBitmap;
 
-struct Bitmap {
-	size_t  length;
-	Bitword *bitmap;
-};
-
-extern Bitmap *bitmap_new(size_t len) {
-	Bitmap *bitmap = malloc(sizeof(Bitmap));
-	bitmap->length = len;
-	bitmap->bitmap = calloc(BITMAP_WORD_COUNT(len),sizeof(Bitword));
-	return bitmap;
+extern RBitmap *r_bitmap_new(size_t len) {
+	RBitmap *b = R_NEW (RBitmap);
+	b->length = len;
+	b->bitmap = calloc (BITMAP_WORD_COUNT (len), sizeof (RBitword));
+	return b;
 }
 
-extern void bitmap_free(Bitmap *bitmap) {
-	free(bitmap->bitmap);
-	free(bitmap);
+extern void r_bitmap_free(RBitmap *b) {
+	free (b->bitmap);
+	free (b);
 }
 
-extern void bitmap_set(Bitmap *bitmap, size_t bit) {
-	assert(bit < bitmap->length);
-	bitmap->bitmap[(bit >> BITWORD_BITS_SHIFT)] |= ((Bitword)1 << (bit & BITWORD_BITS_MASK));
+extern void bitmap_set(RBitmap *b, size_t bit) {
+	if (bit<b->length)
+		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] |= \
+			((RBitword)1 << (bit & BITWORD_BITS_MASK));
 }
 
-extern void bitmap_unset(Bitmap *bitmap, size_t bit) {
-	assert(bit < bitmap->length);
-	bitmap->bitmap[(bit >> BITWORD_BITS_SHIFT)] &= ~((Bitword)1 << (bit & BITWORD_BITS_MASK));
+extern void r_bitmap_unset(RBitmap *b, size_t bit) {
+	if (bit < b->length)
+		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] &= \
+			~((RBitword)1 << (bit & BITWORD_BITS_MASK));
 }
 
-extern bool bitmap_test(Bitmap *bitmap, size_t bit) {
-	assert(bit < bitmap->length);
-	Bitword bword = bitmap->bitmap[(bit >> BITWORD_BITS_SHIFT)];
-	return BITWORD_TEST(bword, (bit & BITWORD_BITS_MASK));
+extern int r_bitmap_test(RBitmap *b, size_t bit) {
+	if (bit < b->length) {
+		RBitword bword = b->bitmap[ (bit >> BITWORD_BITS_SHIFT)];
+		return BITWORD_TEST (bword, (bit & BITWORD_BITS_MASK));
+	}
+	return -1;
 }
 
-#ifdef BITMAP_TEST
+#if BITMAP_TEST
 #include <stdio.h>
 
 #define MAX_VALUE (2343 + 1)
