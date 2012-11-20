@@ -42,86 +42,125 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 static int is_bin(const ut8 *buf) {
 	// TODO: add more
 	if((!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
-	|| (!memcmp (buf, "\x7FELF", 4))
+	|| (!memcmp (buf, "\x7f""ELF", 4))
 	|| (!memcmp (buf, "MZ", 2)))
 		return 1;
 	return 0;
 }
 
-// TODO : is_flag, is comment?
+// TODO : add is_flag, is comment?
 
-typedef struct r_anal_data_t {
-	int type;
-	ut64 ptr;
-	char *str;
-} RAnalData;
+// XXX: optimize by removing all strlens here
+R_API char *r_anal_data_to_string (RAnalData *d) {
+	int i;
+	char *line = malloc (128);
+	sprintf (line, "0x%08"PFMT64x"  ", d->addr);
+	for (i=0;i<d->len; i++)
+		sprintf (line+strlen (line), "%02x", d->buf[i]);
+	strcat (line, "  ");
+	switch (d->type) {
+	case R_ANAL_DATA_TYPE_STRING:
+		// XXX: overflow
+		sprintf (line+strlen (line), "string \"%s\"", d->str);
+		break;
+	case R_ANAL_DATA_TYPE_WIDE_STRING:
+		strcat (line, "wide string");
+		break;
+	case R_ANAL_DATA_TYPE_NUMBER:
+		strcat (line, "number ");
+		sprintf (line+strlen (line), " 0x%"PFMT64x, d->ptr);
+		break;
+	case R_ANAL_DATA_TYPE_POINTER:
+		strcat (line, "pointer ");
+		sprintf (line+strlen (line), " 0x%08"PFMT64x, d->ptr);
+		break;
+	case R_ANAL_DATA_TYPE_INVALID:
+		strcat (line, "invalid");
+		break;
+	case R_ANAL_DATA_TYPE_HEADER:
+		strcat (line, "header");
+		break;
+	case R_ANAL_DATA_TYPE_UNKNOWN:
+		strcat (line, "unknown");
+		break;
+	}
+	return line;
+}
 
-R_API int r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) {
+R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int wide) {
+	RAnalData *ad = R_NEW0 (RAnalData);
+	ad->addr = addr;
+	ad->type = wide? R_ANAL_DATA_TYPE_WIDE_STRING: R_ANAL_DATA_TYPE_STRING;
+	if (wide) {
+		/* TODO: add support for wide strings */
+		eprintf ("r_anal_data_new_string: wide string not supported yet\n");
+	} else {
+		ad->str = strdup (p);
+		ad->len = strlen (p); 
+	}
+	ad->ptr = 0L; 
+	return ad;
+}
+
+R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
+	RAnalData *ad = R_NEW0 (RAnalData);
+	if (buf) memcpy (ad->buf, buf, 8);
+	else memset (ad->buf, 0, 8);
+	ad->addr = addr;
+	ad->type = type;
+	ad->str = NULL;
+	ad->len = len;
+	ad->ptr = n;
+	return ad;
+}
+
+R_API void r_anal_data_free (RAnalData *d) {
+	free (d->str);
+	free (d);
+}
+
+R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 	ut64 dst;
-	int n, i;
+	int n;
 	int bits = anal->bits;
 	int endi = !anal->big_endian;
 	int word = bits/8;
 
-	eprintf ("0x%08"PFMT64x"  ", addr);
-	for (i=0;i<word; i++)
-		eprintf ("%02x ", buf[i]);
-	eprintf (" ");
-	if (is_null (buf, word)) {
-		eprintf ("null\n");
-		return R_ANAL_DATA_TYPE_NULL;
-	}
-	if (is_invalid (buf, word)) {
-		eprintf ("invalid (-1)\n");
-		return R_ANAL_DATA_TYPE_INVALID;
-	}
-	if (is_bin (buf)) {
-		eprintf ("bin\n");
-		return R_ANAL_DATA_TYPE_BIN;
-	}
-	n = is_number (buf, endi, word);
-	if (n) {
-		eprintf ("0x%x\n", n);
-		return R_ANAL_DATA_TYPE_NUMBER;
-	}
+	if (is_null (buf, word))
+		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NULL, 0, buf, word);
+	if (is_invalid (buf, word))
+		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID, -1, buf, word);
+	if (is_bin (buf))
+		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1, buf, word);
 	dst = is_pointer (&anal->iob, buf, endi, word);
-	if (dst) {
-		eprintf ("ptr 0x%08"PFMT64x"\n", dst);
-		return R_ANAL_DATA_TYPE_POINTER;
-	}
+	if (dst) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_POINTER, dst, buf, word);
+	n = is_number (buf, endi, word);
+	if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER, n, buf, word);
 	switch (is_string (buf, size)) {
-	case 1:
-		eprintf (" '%s'\n", buf);
-		return R_ANAL_DATA_TYPE_STRING;
-	case 2:
-		eprintf ("\"%s\"\n", buf); // XXX
-		return R_ANAL_DATA_TYPE_WIDE_STRING;
+	case 1: return r_anal_data_new_string (addr, (const char *)buf, R_ANAL_DATA_TYPE_STRING);
+	case 2: return r_anal_data_new_string (addr, (const char *)buf, R_ANAL_DATA_TYPE_WIDE_STRING);
 	}
-	eprintf ("unknown\n");
-	return R_ANAL_DATA_TYPE_UNKNOWN;
-	// TODO detect TLV of 1 and 4 bytes
-}
-
-R_API int r_anal_data_type(RAnal *anal, const ut8 *buf, int len) {
-	int i;
-	for (i=0; i<len; i++) {
-	}
-// IS CODE, STACK OR DATA
-	return 0;
+	return r_anal_data_new (addr, R_ANAL_DATA_TYPE_UNKNOWN, dst, buf, word);
 }
 
 R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int len) {
 	int inv = 0;
 	int unk = 0;
 	int str = 0;
+	int num = 0;
 	int i, j;
+	RAnalData *data;
 	int word = anal->bits /8;
 	for (i = j = 0; i<len ; j++ ) {
-		int type = r_anal_data (anal, addr+i,
+		data = r_anal_data (anal, addr+i,
 			buf+i, len-i);
-		switch (type) {
+		switch (data->type) {
 		case R_ANAL_DATA_TYPE_INVALID:
 			inv++;
+			i += word;
+			break;
+		case R_ANAL_DATA_TYPE_NUMBER:
+			if (data->ptr> 1000) num++;
 			i += word;
 			break;
 		case R_ANAL_DATA_TYPE_UNKNOWN:
@@ -135,9 +174,11 @@ R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int 
 		default:
 			i += word;
 		}
+		r_anal_data_free (data);
         }
 	if ((inv*100/j)>60) return "invalid";
 	if ((unk*100/j)>60) return "code";
+	if ((num*100/j)>60) return "code";
 	if ((str*100/j)>40) return "text";
 	return "data";
 }

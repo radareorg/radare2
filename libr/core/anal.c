@@ -848,11 +848,16 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	}
 
 	for (i = j = 0; i<len && j<count; j++ ) {
-		int type = r_anal_data (core->anal, addr+i,
+		char *str;
+
+		RAnalData *d = r_anal_data (core->anal, addr+i,
 			buf+i, len-i);
-		switch (type) {
+		str = r_anal_data_to_string (d);
+		r_cons_printf ("%s\n", str);
+	
+		switch (d->type) {
 		case R_ANAL_DATA_TYPE_POINTER:
-			eprintf ("--> ");
+			r_cons_printf ("--> ");
 			dstaddr = r_mem_get_num (buf+i, word, !endi);
 			if (depth>0)
 				r_core_anal_data (core,
@@ -865,6 +870,8 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 		default:
 			i += word;
 		}
+		free (str);
+		r_anal_data_free (d);
         }
 	if (addr != core->offset)
 		free (buf);

@@ -78,7 +78,7 @@ enum {
 	R_ANAL_DATA_TYPE_POINTER = 3,
 	R_ANAL_DATA_TYPE_NUMBER = 4,
 	R_ANAL_DATA_TYPE_INVALID = 5,
-	R_ANAL_DATA_TYPE_BIN = 6,
+	R_ANAL_DATA_TYPE_HEADER = 6,
 	R_ANAL_DATA_TYPE_UNKNOWN = 7,
 };
 
@@ -136,7 +136,7 @@ typedef struct r_anal_type_array_t {
 	ut8 size;
 	ut64 count;
 	union {
-		ut8	 *v8;
+		ut8 *v8;
 		ut16 *v16;
 		ut32 *v32;
 		ut64 *v64;
@@ -796,8 +796,21 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op);
 //R_API int r_anal_cc_register (RAnal *anal, RAnalCC *cc);
 //R_API int r_anal_cc_unregister (RAnal *anal, RAnalCC *cc);
 
-R_API int r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size);
+typedef struct r_anal_data_t {
+	ut64 addr;
+	int type;
+	ut64 ptr;
+	char *str;
+	int len;
+	ut8 buf[8];
+} RAnalData;
+
+R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size);
 R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int len);
+R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int wide);
+R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len);
+R_API void r_anal_data_free (RAnalData *d);
+R_API char *r_anal_data_to_string (RAnalData *d);
 
 R_API RMeta *r_meta_new();
 R_API void r_meta_free(RMeta *m);
