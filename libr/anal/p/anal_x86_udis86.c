@@ -8,16 +8,18 @@
 #include "udis86/types.h"
 #include "udis86/extern.h"
 
-static ut64 getval(int bits, ud_operand_t *op) {
+static st64 getval(ud_operand_t *op) {
+	int bits = op->size;
 	switch (bits) {
-	case 8: return op->lval.sbyte;
-	case 16: return op->lval.uword;
+	case 8: return (char)op->lval.sbyte;
+	case 16: return (short) op->lval.uword;
 	case 32: return op->lval.udword;
 	case 64: return op->lval.uqword;
 	}
 	return 0LL;
 }
-static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+
+int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int oplen;
 	struct ud u;
 	ud_init (&u);
@@ -34,11 +36,31 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	switch (u.mnemonic) {
 	case UD_Ijmp:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = oplen + getval (anal->bits, &u.operand[0]);
+		op->jump = addr + oplen + getval (&u.operand[0]);
+		break;
+	case UD_Ijz:
+	case UD_Ijnz:
+	case UD_Ijb:
+	case UD_Ijbe:
+	case UD_Ija:
+	case UD_Ijs:
+	case UD_Ijns:
+	case UD_Ijo:
+	case UD_Ijno:
+	case UD_Ijp:
+	case UD_Ijnp:
+	case UD_Ijl:
+	case UD_Ijge:
+	case UD_Ijle:
+	case UD_Ijg:
+	case UD_Ijcxz:
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + oplen + getval (&u.operand[0]);
+		op->fail = addr+oplen;
 		break;
 	case UD_Icall:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = oplen + getval (anal->bits, &u.operand[0]);
+		op->jump = oplen + getval (&u.operand[0]);
 		op->fail = addr+oplen;
 		break;
 	case UD_Iret:
@@ -216,7 +238,7 @@ struct r_anal_plugin_t r_anal_plugin_x86_udis86 = {
 	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
-	.op = &x86_op,
+	.op = &x86_udis86_op,
 	.set_reg_profile = &set_reg_profile,
 	.fingerprint_bb = NULL,
 	.fingerprint_fcn = NULL,

@@ -798,6 +798,7 @@ static void anal_int(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 	}
 }
 
+extern int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len);
 static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	x86im_instr_object io;
 	st64 imm;
@@ -806,6 +807,10 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 	if (data == NULL)
 		return 0;
+
+	if (anal->bits == 16) {
+		return x86_udis86_op (anal, op, addr, data, len);
+	}
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;

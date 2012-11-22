@@ -162,7 +162,16 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	int i, w = p->cols*0.7;
 	switch (lang) {
 	case '?':
-		eprintf ("Valid print code formats are: C and Python\n");
+		eprintf ("Valid print code formats are: JSON, C and Python (pcj, pc, pcp) \n");
+		break;
+	case 'j':
+		p->printf ("[");
+		for (i=0; !p->interrupt && i<len; i++) {
+			r_print_cursor (p, i, 1);
+			p->printf ("0x%02x%s", buf[i], (i+1<len)?",":"");
+			r_print_cursor (p, i, 0);
+		}
+		p->printf ("]\n");
 		break;
 	case 'P':
 	case 'p':
