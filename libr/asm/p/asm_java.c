@@ -11,9 +11,9 @@
 static const char *lastfile = NULL;
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	// XXX: crossmodule dependency
-	RCore *core = (RCore*)a->user;
 // TODO: get class info from rbin if loaded
 #if 0
+	RCore *core = (RCore*)a->user;
 	if (core && core->file && lastfile != core->file->filename) {
 		lastfile = core->file->filename;
 		java_classdump (lastfile, 0);
