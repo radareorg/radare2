@@ -166,7 +166,7 @@ int main(int argc, char **argv) {
 #if DEBUGGER
 		case 'd': debug = 1; break;
 #else
-		case 'd': eprintf ("Sorry. No compiler backend available.\n"); break;
+		case 'd': eprintf ("Sorry. No compiler backend available.\n"); return 1;
 #endif
 		case 'e': r_config_eval (r.config, optarg); 
 			  r_list_append (evals, optarg); break;

@@ -168,7 +168,7 @@ static int cmd_flag(void *data, const char *input) {
 		} else eprintf ("Usage: fC [name] [comment]\n");
 		break;
 	case 'o':
-		{ // TODO: use file.fortunes
+		{ // TODO: use file.fortunes // can be dangerous in sandbox mode
 			char *file = R2_PREFIX"/share/doc/radare2/fortunes";
 			char *line = r_file_slurp_random_line (file);
 			if (line) {

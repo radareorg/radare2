@@ -1228,6 +1228,8 @@ R_API int r_core_flush(void *user, const char *cmd) {
 
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	char *s, *tmp;
+	if (r_sandbox_enable (0))
+		return r_core_cmd_str (core, cmd);
 	r_cons_reset ();
 	if (r_file_mkstemp ("cmd", &tmp)) {
 		char *_cmd = strdup (cmd);

@@ -246,6 +246,9 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'i': // input num
+		if (!r_config_get_i (core->config, "scr.interactive")) {
+			eprintf ("Not running in interactive mode\n");
+		} else
 		if (input[1]=='m') {
 			r_cons_message (input+2);
 		} else

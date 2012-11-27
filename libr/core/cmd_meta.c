@@ -126,7 +126,8 @@ static int cmd_meta(void *data, const char *input) {
 				if (p) {
 					*p = '\0';
 					strncpy (name, p+1, sizeof (name)-1);
-				} else switch (type) {
+				} else
+				switch (type) {
 				case 's':
 					// TODO: filter \n and so on :)
 					strncpy (name, t, sizeof (name)-1);
@@ -135,7 +136,11 @@ static int cmd_meta(void *data, const char *input) {
 				default: {
 					RFlagItem *fi = r_flag_get_i (core->flags, addr);
 					if (fi) strncpy (name, fi->name, sizeof (name)-1);
-					else sprintf (name, "ptr_%08"PFMT64x"", addr);
+					//else sprintf (name, "ptr_%08"PFMT64x"", addr);
+					else {
+						eprintf ("Invalid arguments\n");
+						return 1;
+					}
 					}
 				}
 				n = atoi (input+1);
@@ -145,7 +150,9 @@ static int cmd_meta(void *data, const char *input) {
 			}
 			if (!n) n++;
 			addr_end = addr + n;
-			r_meta_add (core->anal->meta, type, addr, addr_end, name);
+eprintf ("ADDR = %llx\n", addr);
+			if (!r_meta_add (core->anal->meta, type, addr, addr_end, name))
+eprintf ("LALALA (%s)\n", name);
 			free (t);
 			}
 		}

@@ -27,3 +27,7 @@ core.cmd0('pD 8');
 core.cmd0('? 33+4');
 core.cmd0('x@0');
 cons.flush();
+
+var msg = "pd 3";
+var o = core.cmd_str(msg);
+console.log (o)

@@ -129,6 +129,7 @@ R_API int r_buf_append_buf(RBuffer *b, RBuffer *a) {
 
 static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, int write) {
 	int end;
+	if (!b) return 0;
 	addr = (addr==R_BUF_CUR)? b->cur: addr-b->base;
 	if (len<1 || dst == NULL || addr > b->length)
 		return -1;
@@ -182,6 +183,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 }
 
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
+	if (!b) return 0;
 	return r_buf_cpy (b, addr, buf, b->buf, len, R_FALSE);
 }
 
@@ -190,6 +192,7 @@ R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 }
 
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
+	if (!b) return 0;
 	return r_buf_cpy (b, addr, b->buf, buf, len, R_TRUE);
 }
 

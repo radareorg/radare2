@@ -194,11 +194,7 @@ static int cmd_write(void *data, const char *input) {
 		ut8 *buf = malloc (len+1);
 		len = r_hex_str2bin (input+1, buf);
 		if (len != 0) {
-			int last_is_nibble;
-			if (len<0) {
-				last_is_nibble = R_TRUE;
-				len = -len+1;
-			} else last_is_nibble = R_FALSE;
+			if (len<0) len = -len+1;
 			b = core->block[len]&0xf;
 			b |= (buf[len]&0xf0);
 			buf[len] = b;
