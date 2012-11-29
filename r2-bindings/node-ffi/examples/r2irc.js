@@ -125,10 +125,10 @@ function goirc() {
 		default:
 			if (!msg.startsWith ("!")) return;
 			var o = "";
-			msg = msg.replace (/>/g, "");
-			msg = msg.replace (/|/g, "");
-			msg = msg.replace (/!/g, "");
-			msg = msg.replace (/`/g, "");
+			//msg = msg.replace (/>/g, "");
+			//msg = msg.replace (/|/g, "");
+			//msg = msg.replace (/!/g, "");
+			//msg = msg.replace (/`/g, "");
 			msg = msg.replace (/\t/g, "   ");
 			var cmds = msg.split (";");
 			for (var i in cmds) {

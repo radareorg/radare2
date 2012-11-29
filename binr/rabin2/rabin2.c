@@ -86,33 +86,30 @@ static int rabin_extract(int all) {
 			r_bin_select_idx (bin, i);
 			if (bin->cur.o->info == NULL) {
 				eprintf ("No extract info found.\n");
-			} else {
-				path = strdup (bin->cur.file);
-				if ((ptr = strrchr (path, '/'))) {
-					*ptr = '\0';
-					ptr++;
-				} else ptr = bin->cur.file;
-/*
-				if (output)
-					snprintf (outpath, sizeof (outpath), "%s/%s", output, path);
-				else snprintf (outpath, sizeof (outpath), "./%s", path);
-*/
-				snprintf (outpath, sizeof (outpath), "%s.fat", ptr);
-				if (!r_sys_rmkdir (outpath)) {
-					eprintf ("Error creating dir structure\n");
-					return R_FALSE;
-				}
-				snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i",
-						outpath, ptr, bin->cur.o->info->arch,
-						bin->cur.o->info->bits);
-				snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i",
-						outpath, ptr, bin->cur.o->info->arch,
-						bin->cur.o->info->bits);
-				if (!r_file_dump (outfile, bin->cur.buf->buf, bin->cur.size)) {
-					eprintf ("Error extracting %s\n", outfile);
-					return R_FALSE;
-				} else printf ("%s created (%i)\n", outfile, bin->cur.size);
+				continue;
 			}
+			path = strdup (bin->cur.file);
+			if ((ptr = strrchr (path, '/'))) {
+				*ptr = '\0';
+				ptr++;
+			} else ptr = bin->cur.file;
+/*
+			if (output)
+				snprintf (outpath, sizeof (outpath), "%s/%s", output, path);
+			else snprintf (outpath, sizeof (outpath), "./%s", path);
+*/
+			snprintf (outpath, sizeof (outpath), "%s.fat", ptr);
+			if (!r_sys_rmkdir (outpath)) {
+				eprintf ("Error creating dir structure\n");
+				return R_FALSE;
+			}
+			snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i.%d",
+					outpath, ptr, bin->cur.o->info->arch,
+					bin->cur.o->info->bits, i);
+			if (!r_file_dump (outfile, bin->cur.buf->buf, bin->cur.size)) {
+				eprintf ("Error extracting %s\n", outfile);
+				return R_FALSE;
+			} else printf ("%s created (%i)\n", outfile, bin->cur.size);
 		}
 	} else { /* XXX: Use 'output' for filename? */
 		if (bin->cur.o->info == NULL) {

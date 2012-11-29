@@ -82,8 +82,8 @@ static int cmd_help(void *data, const char *input) {
 		n32 = (ut32)n;
 		memcpy (&f, &n32, sizeof (f));
 		/* decimal, hexa, octal */
-		a = n & 0xffff;
 		s = n>>16<<12;
+		a = n & 0x0fff;
 		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" %04x:%04x ",
 			n, n, n, s, a);
 		/* binary and floating point */

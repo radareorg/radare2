@@ -23,31 +23,37 @@ typedef struct r_bitmap_t {
 	RBitword *bitmap;
 } RBitmap;
 
-extern RBitmap *r_bitmap_new(size_t len) {
+R_API RBitmap *r_bitmap_new(size_t len) {
 	RBitmap *b = R_NEW (RBitmap);
 	b->length = len;
 	b->bitmap = calloc (BITMAP_WORD_COUNT (len), sizeof (RBitword));
 	return b;
 }
 
-extern void r_bitmap_free(RBitmap *b) {
+R_API void r_bitmap_set_bytes(RBitmap *b, const ut8 *buf, int len) {
+	if (b->length < len)
+		len = b->length;
+	memcpy (b->bitmap, buf, len);
+}
+
+R_API void r_bitmap_free(RBitmap *b) {
 	free (b->bitmap);
 	free (b);
 }
 
-extern void bitmap_set(RBitmap *b, size_t bit) {
+R_API void bitmap_set(RBitmap *b, size_t bit) {
 	if (bit<b->length)
 		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] |= \
 			((RBitword)1 << (bit & BITWORD_BITS_MASK));
 }
 
-extern void r_bitmap_unset(RBitmap *b, size_t bit) {
+R_API void r_bitmap_unset(RBitmap *b, size_t bit) {
 	if (bit < b->length)
 		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] &= \
 			~((RBitword)1 << (bit & BITWORD_BITS_MASK));
 }
 
-extern int r_bitmap_test(RBitmap *b, size_t bit) {
+R_API int r_bitmap_test(RBitmap *b, size_t bit) {
 	if (bit < b->length) {
 		RBitword bword = b->bitmap[ (bit >> BITWORD_BITS_SHIFT)];
 		return BITWORD_TEST (bword, (bit & BITWORD_BITS_MASK));
