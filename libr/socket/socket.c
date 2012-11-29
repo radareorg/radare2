@@ -262,7 +262,7 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 #if __UNIX_
 	signal (SIGPIPE, SIG_IGN);
 #endif
-	if (listen (s->fd, 1) < 0) {
+	if (listen (s->fd, 32) < 0) {
 		close (s->fd);
 		return R_FALSE;
 	}
