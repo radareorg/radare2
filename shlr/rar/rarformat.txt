@@ -1,0 +1,266 @@
+// URL: http://acritum.com/winrar/rar-format
+
+RAR version 3.93 – Technical information
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+THE ARCHIVE FORMAT DESCRIBED BELOW IS ONLY VALID FOR VERSIONS SINCE 1.50
+
+==========================================================================
+RAR archive file format
+==========================================================================
+
+Archive file consists of variable length blocks. The order of these
+blocks may vary, but the first block must be a marker block followed by
+an archive header block.
+
+Each block begins with the following fields:
+
+HEAD_CRC       2 bytes     CRC of total block or block part
+HEAD_TYPE      1 byte      Block type
+HEAD_FLAGS     2 bytes     Block flags
+HEAD_SIZE      2 bytes     Block size
+ADD_SIZE       4 bytes     Optional field – added block size
+
+Field ADD_SIZE present only if (HEAD_FLAGS & 0×8000) != 0
+
+Total block size is HEAD_SIZE if (HEAD_FLAGS & 0×8000) == 0
+and HEAD_SIZE+ADD_SIZE if the field ADD_SIZE is present – when
+(HEAD_FLAGS & 0×8000) != 0.
+
+In each block the followings bits in HEAD_FLAGS have the same meaning:
+
+0×4000 – if set, older RAR versions will ignore the block
+and remove it when the archive is updated.
+if clear, the block is copied to the new archive
+file when the archive is updated;
+
+0×8000 – if set, ADD_SIZE field is present and the full block
+size is HEAD_SIZE+ADD_SIZE.
+
+Declared block types:
+
+HEAD_TYPE=0×72          marker block
+HEAD_TYPE=0×73          archive header
+HEAD_TYPE=0×74          file header
+HEAD_TYPE=0×75          old style comment header
+HEAD_TYPE=0×76          old style authenticity information
+HEAD_TYPE=0×77          old style subblock
+HEAD_TYPE=0×78          old style recovery record
+HEAD_TYPE=0×79          old style authenticity information
+HEAD_TYPE=0x7a          subblock
+
+Comment block is actually used only within other blocks and doesn’t
+exist separately.
+
+Archive processing is made in the following manner:
+
+1. Read and check marker block
+2. Read archive header
+3. Read or skip HEAD_SIZE-sizeof(MAIN_HEAD) bytes
+4. If end of archive encountered then terminate archive processing,
+else read 7 bytes into fields HEAD_CRC, HEAD_TYPE, HEAD_FLAGS,
+HEAD_SIZE.
+5. Check HEAD_TYPE.
+if HEAD_TYPE==0×74
+read file header ( first 7 bytes already read )
+read or skip HEAD_SIZE-sizeof(FILE_HEAD) bytes
+if (HEAD_FLAGS & 0×100)
+read or skip HIGH_PACK_SIZE*0×100000000+PACK_SIZE bytes
+else
+read or skip PACK_SIZE bytes
+else
+read corresponding HEAD_TYPE block:
+read HEAD_SIZE-7 bytes
+if (HEAD_FLAGS & 0×8000)
+read ADD_SIZE bytes
+6. go to 4.
+
+==========================================================================
+Block Formats
+==========================================================================
+
+Marker block ( MARK_HEAD )
+
+HEAD_CRC        Always 0×6152
+2 bytes
+
+HEAD_TYPE       Header type: 0×72
+1 byte
+
+HEAD_FLAGS      Always 0x1a21
+2 bytes
+
+HEAD_SIZE       Block size = 0×0007
+2 bytes
+
+The marker block is actually considered as a fixed byte
+sequence: 0×52 0×61 0×72 0×21 0x1a 0×07 0×00
+
+Archive header ( MAIN_HEAD )
+
+HEAD_CRC        CRC of fields HEAD_TYPE to RESERVED2
+2 bytes
+
+HEAD_TYPE       Header type: 0×73
+1 byte
+
+HEAD_FLAGS      Bit flags:
+2 bytes
+0×0001  – Volume attribute (archive volume)
+0×0002  – Archive comment present
+RAR 3.x uses the separate comment block
+and does not set this flag.
+
+0×0004  – Archive lock attribute
+0×0008  – Solid attribute (solid archive)
+0×0010  – New volume naming scheme (‘volname.partN.rar’)
+0×0020  – Authenticity information present
+RAR 3.x does not set this flag.
+
+0×0040  – Recovery record present
+0×0080  – Block headers are encrypted
+0×0100  – First volume (set only by RAR 3.0 and later)
+
+other bits in HEAD_FLAGS are reserved for
+internal use
+
+HEAD_SIZE       Archive header total size including archive comments
+2 bytes
+
+RESERVED1       Reserved
+2 bytes
+
+RESERVED2       Reserved
+4 bytes
+
+File header (File in archive)
+
+HEAD_CRC        CRC of fields from HEAD_TYPE to FILEATTR
+2 bytes         and file name
+
+HEAD_TYPE       Header type: 0×74
+1 byte
+
+HEAD_FLAGS      Bit flags:
+2 bytes
+0×01 – file continued from previous volume
+0×02 – file continued in next volume
+0×04 – file encrypted with password
+
+0×08 – file comment present
+RAR 3.x uses the separate comment block
+and does not set this flag.
+
+0×10 – information from previous files is used (solid flag)
+(for RAR 2.0 and later)
+
+bits 7 6 5 (for RAR 2.0 and later)
+
+0 0 0    – dictionary size   64 KB
+0 0 1    – dictionary size  128 KB
+0 1 0    – dictionary size  256 KB
+0 1 1    – dictionary size  512 KB
+1 0 0    – dictionary size 1024 KB
+1 0 1    – dictionary size 2048 KB
+1 1 0    – dictionary size 4096 KB
+1 1 1    – file is directory
+
+0×100 – HIGH_PACK_SIZE and HIGH_UNP_SIZE fields
+are present. These fields are used to archive
+only very large files (larger than 2Gb),
+for smaller files these fields are absent.
+
+0×200 – FILE_NAME contains both usual and encoded
+Unicode name separated by zero. In this case
+NAME_SIZE field is equal to the length
+of usual name plus encoded Unicode name plus 1.
+
+If this flag is present, but FILE_NAME does not
+contain zero bytes, it means that file name
+is encoded using UTF-8.
+
+0×400 – the header contains additional 8 bytes
+after the file name, which are required to
+increase encryption security (so called ‘salt’).
+
+0×800 – Version flag. It is an old file version,
+a version number is appended to file name as ‘;n’.
+
+0×1000 – Extended time field present.
+
+0×8000 – this bit always is set, so the complete
+block size is HEAD_SIZE + PACK_SIZE
+(and plus HIGH_PACK_SIZE, if bit 0×100 is set)
+
+HEAD_SIZE       File header full size including file name and comments
+2 bytes
+
+PACK_SIZE       Compressed file size
+4 bytes
+
+UNP_SIZE        Uncompressed file size
+4 bytes
+
+HOST_OS         Operating system used for archiving
+1 byte                 0 – MS DOS
+1 – OS/2
+2 – Win32
+3 – Unix
+4 – Mac OS
+5 – BeOS
+
+FILE_CRC        File CRC
+4 bytes
+
+FTIME           Date and time in standard MS DOS format
+4 bytes
+
+UNP_VER         RAR version needed to extract file
+1 byte
+Version number is encoded as
+10 * Major version + minor version.
+
+METHOD          Packing method
+1 byte
+0×30 – storing
+0×31 – fastest compression
+0×32 – fast compression
+0×33 – normal compression
+0×34 – good compression
+0×35 – best compression
+
+NAME_SIZE       File name size
+2 bytes
+
+ATTR            File attributes
+4 bytes
+
+HIGH_PACK_SIZE  High 4 bytes of 64 bit value of compressed file size.
+4 bytes         Optional value, presents only if bit 0×100 in HEAD_FLAGS
+is set.
+
+HIGH_UNP_SIZE   High 4 bytes of 64 bit value of uncompressed file size.
+4 bytes         Optional value, presents only if bit 0×100 in HEAD_FLAGS
+is set.
+
+FILE_NAME       File name – string of NAME_SIZE bytes size
+
+SALT            present if (HEAD_FLAGS & 0×400) != 0
+8 bytes
+
+EXT_TIME        present if (HEAD_FLAGS & 0×1000) != 0
+variable size
+
+other new fields may appear here.
+
+==========================================================================
+Application notes
+==========================================================================
+
+1. To process an SFX archive you need to skip the SFX module searching
+for the marker block in the archive. There is no marker block sequence (0×52
+0×61 0×72 0×21 0x1a 0×07 0×00) in the SFX module itself.
+
+2. The CRC is calculated using the standard polynomial 0xEDB88320. In
+case the size of the CRC is less than 4 bytes, only the low order bytes
+are used.

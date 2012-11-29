@@ -1,0 +1,45 @@
+Each block:
+
+HEAD_CRC       2 bytes     CRC of total block or block part
+HEAD_TYPE      1 byte      Block type
+HEAD_FLAGS     2 bytes     Block flags
+HEAD_SIZE      2 bytes     Block size
+ADD_SIZE       4 bytes     Optional field – added block size
+
+Field ADD_SIZE present only if (HEAD_FLAGS & 0×8000) != 0
+
+Blocksize:
+
+if (HEAD_FLAGS & 0×8000) == 0  && HEAD_SIZE+ADD_SIZE 
+	if the field ADD_SIZE is present – when
+(HEAD_FLAGS & 0×8000) != 0.
+
+Types of blocks
+
+HEAD_TYPE=0×72          marker block # first block
+	The marker block is actually considered as a fixed byte
+	sequence: 0×52 0×61 0×72 0×21 0x1a 0×07 0×00
+HEAD_TYPE=0×73          archive header
+	
+HEAD_TYPE=0×74          file header
+HEAD_TYPE=0×75          old style comment header
+HEAD_TYPE=0×76          old style authenticity information
+HEAD_TYPE=0×77          old style subblock
+HEAD_TYPE=0×78          old style recovery record
+HEAD_TYPE=0×79          old style authenticity information
+HEAD_TYPE=0x7a          subblock
+
+
+
+HEAD_FLAGS:
+0×0001  – Volume attribute (archive volume)
+0×0002  – Has comment (v3 uses the separate comment block and does not use this)
+0×0004  – Archive lock attribute
+0×0008  – Solid attribute (solid archive)
+0×0010  – New volume naming scheme (‘volname.partN.rar’)
+0×0020  – Authenticity information present RAR 3.x does not set this flag.
+0×0040  – Recovery record present
+0×0080  – Block headers are encrypted
+0×0100  – First volume (set only by RAR 3.0 and later)
+0×4000 – if set, older RAR versions will ignore the block
+0x8000 - if set, ADD_SIZE is present and bs = HEAD_SIZE + ADD_SIZE
