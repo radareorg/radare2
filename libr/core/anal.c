@@ -837,12 +837,12 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	int len = core->blocksize;
 	int word = core->assembler->bits /8;
 	int endi = core->anal->big_endian;
-        int i, j, type;
+        int i, j;
 
 	if (addr != core->offset) {
 		buf = malloc (len);
 		memset (buf, 0xff, len);
-		int r = r_io_read_at (core->io, addr, buf, len);
+		//int r = r_io_read_at (core->io, addr, buf, len);
 		//int r = r_core_read_at (core, addr, buf, len);
 		// TODO: handle error here
 	}

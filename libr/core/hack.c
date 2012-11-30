@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 #include <r_core.h>
 
 R_API void r_core_hack_help(RCore *core) {

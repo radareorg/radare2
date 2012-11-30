@@ -340,9 +340,7 @@ R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
 	// if resolution fails... just return as invalid address
 	if (offset==UT64_MAX)
 		return UT64_MAX;
-	// TODO: implement io->enforce_seek here!
 	if (io->fd != NULL) {
-		// lseek_internal
 		if (io->plugin && io->plugin->lseek)
 			ret = io->plugin->lseek (io, io->fd, offset, whence);
 		// XXX can be problematic on w32..so no 64 bit offset?

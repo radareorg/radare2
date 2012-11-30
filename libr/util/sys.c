@@ -429,6 +429,7 @@ R_API void r_sys_perror(const char *fun) {
 #endif
 }
 
+// TODO: use array :P
 R_API int r_sys_arch_id(const char *arch) {
 	if (!strcmp (arch, "x86")) return R_SYS_ARCH_X86;
 	if (!strcmp (arch, "arm")) return R_SYS_ARCH_ARM;
@@ -443,6 +444,11 @@ R_API int r_sys_arch_id(const char *arch) {
 	if (!strcmp (arch, "bf")) return R_SYS_ARCH_BF;
 	if (!strcmp (arch, "sh")) return R_SYS_ARCH_SH;
 	if (!strcmp (arch, "avr")) return R_SYS_ARCH_AVR;
+	if (!strcmp (arch, "dalvik")) return R_SYS_ARCH_DALVIK;
+	if (!strcmp (arch, "z80")) return R_SYS_ARCH_Z80;
+	if (!strcmp (arch, "arc")) return R_SYS_ARCH_ARC;
+	if (!strcmp (arch, "i8080")) return R_SYS_ARCH_I8080;
+	if (!strcmp (arch, "rar")) return R_SYS_ARCH_RAR;
 	return 0;
 }
 
@@ -460,6 +466,11 @@ R_API const char *r_sys_arch_str(int arch) {
 	if (arch & R_SYS_ARCH_BF) return "bf";
 	if (arch & R_SYS_ARCH_SH) return "sh";
 	if (arch & R_SYS_ARCH_AVR) return "avr";
+	if (arch & R_SYS_ARCH_DALVIK) return "dalvik";
+	if (arch & R_SYS_ARCH_Z80) return "z80";
+	if (arch & R_SYS_ARCH_ARC) return "arc";
+	if (arch & R_SYS_ARCH_I8080) return "i8080";
+	if (arch & R_SYS_ARCH_RAR) return "rar";
 	return "none";
 }
 

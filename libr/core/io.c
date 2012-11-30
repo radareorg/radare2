@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare2 - LGPL - Copyright 2009-2012 - pancake */
 
 #include "r_core.h"
 
@@ -90,12 +90,15 @@ beach:
 }
 
 R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
+	RIOSection *newsection;
 	ut64 old = core->offset;
 	ut64 ret;
 
 	/* XXX unnecesary call */
 	//r_io_set_fd (core->io, core->file->fd);
+	core->io->section = core->section; // HACK
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
+	newsection = core->io->section;
 	if (ret == UT64_MAX) {
 		//eprintf ("RET =%d %llx\n", ret, addr);
 		/*
@@ -123,6 +126,15 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 				//eprintf ("Cannot read block at 0x%08"PFMT64x"\n", addr);
 			}
 		}
+	}
+	if (core->section != newsection) {//&& core->io->section->arch) {
+		int bits;// = core->io->section->bits;
+		const char *arch = r_io_section_get_archbits (core->io, core->offset, &bits);
+		if (arch && bits ) {
+			r_config_set (core->config, "asm.arch", arch);
+			r_config_set_i (core->config, "asm.bits", bits);
+		}
+		core->section = core->io->section;
 	}
 	return (ret==-1)? R_FALSE: R_TRUE;
 }

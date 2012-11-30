@@ -162,7 +162,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-int size(RBinArch *arch) {
+static int size(RBinArch *arch) {
 	ut64 text, data, syms, spsz;
 	int big_endian;
 	if (!arch->o->info)

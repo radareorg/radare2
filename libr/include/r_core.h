@@ -107,6 +107,7 @@ typedef struct r_core_t {
 	RDebug *dbg;
 	RFlag *flags;
 	RSearch *search;
+	RIOSection *section;
 	RSign *sign;
 	RFS *fs;
 	REgg *egg;

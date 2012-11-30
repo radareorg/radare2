@@ -1,29 +1,62 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '?':
 		r_cons_printf (
-		" S                ; list sections\n"
-		" S.               ; show current section name\n"
-		" S?               ; show this help message\n"
-		" S*               ; list sections (in radare commands)\n"
-		" S=               ; list sections (in nice ascii-art bars)\n"
-		" Sd [file]        ; dump current section to a file (see dmd)\n"
-		" Sl [file]        ; load contents of file into current section (see dml)\n"
-		" Sr [name]        ; rename section on current seek\n"
+		" S               ; list sections\n"
+		" S.              ; show current section name\n"
+		" S?              ; show this help message\n"
+		" S*              ; list sections (in radare commands)\n"
+		" S=              ; list sections (in nice ascii-art bars)\n"
+		" Sa[-] [arch] [bits] ; Specify arch and bits for given section\n"
+		" Sd [file]       ; dump current section to a file (see dmd)\n"
+		" Sl [file]       ; load contents of file into current section (see dml)\n"
+		" Sr [name]       ; rename section on current seek\n"
 		" S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
-		" S-[id|0xoff|*]   ; remove this section definition\n");
+		" S-[id|0xoff|*]  ; remove this section definition\n");
+		break;
+	case 'a':
+		switch (input[1]) {
+		case '\0':
+			{
+			int b = 0;
+			const char *n = r_io_section_get_archbits (core->io,
+				core->offset, &b);
+			if (n) r_cons_printf ("%s %d\n", n, b);
+			}
+			break;
+		case '-':
+			r_io_section_set_archbits (core->io, core->offset, NULL, 0);
+			break;
+		case '?':
+		default:
+			eprintf ("Usage: Sa[-][arch] [bits] [[off]]\n");
+			break;
+		case ' ':
+			{
+			char *p, *str = strdup (input+2); // SKIPSPACES HERE
+			p = strchr (str, ' ');
+			if (p) {
+				*p++ = 0;
+				if (r_io_section_set_archbits (core->io,
+						core->offset, str, atoi (p)))
+					r_core_seek (core, core->offset, 0);
+				else eprintf  ("Cannot set arch/bits at 0x%08"PFMT64x"\n",
+						core->offset);
+			} else eprintf ("Missing argument\n");
+			free (str);
+			}
+			break;
+		}
 		break;
 	case 'r':
 		if (input[1]==' ') {
 			RIOSection *s;
 			int len = 0;
 			ut64 addr;
-			char *p;
-
-			p = strchr (input+2, ' ');
+			char *p = strchr (input+2, ' ');
 			if (p) {
 				addr = r_num_math (core->num, p+1);
 				len = (int)(size_t)(p-input+2);

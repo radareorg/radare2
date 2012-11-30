@@ -168,6 +168,7 @@ extern RAsmPlugin r_asm_plugin_z80;
 extern RAsmPlugin r_asm_plugin_i8080;
 extern RAsmPlugin r_asm_plugin_m68k;
 extern RAsmPlugin r_asm_plugin_arc;
+extern RAsmPlugin r_asm_plugin_rar;
 extern RAsmPlugin r_asm_plugin_dcpu16;
 #endif
 

@@ -419,6 +419,7 @@ R_API int r_core_init(RCore *core) {
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->vmode = R_FALSE;
+	core->section = NULL;
 	core->ffio = 0;
 	core->oobi = NULL;
 	core->oobi_len = 0;

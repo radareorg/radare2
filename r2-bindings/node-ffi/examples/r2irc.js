@@ -125,6 +125,7 @@ function goirc() {
 		default:
 			if (!msg.startsWith ("!")) return;
 			var o = "";
+			msg = msg.substring(1);
 			//msg = msg.replace (/>/g, "");
 			//msg = msg.replace (/|/g, "");
 			//msg = msg.replace (/!/g, "");
