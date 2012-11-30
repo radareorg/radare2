@@ -96,26 +96,31 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == 'i' || input[1]=='d')
 			r_cons_printf ("%"PFMT64d"\n", n);
 		else r_cons_printf ("0x%"PFMT64x"\n", n);
-		core->num->value = n;
+		core->num->value = n; // redundant
 		break;
-	case '=':
-		r_num_math (core->num, input+1);
+	case '=': // set num->value
+		if (input[1]) {
+			r_num_math (core->num, input+1);
+		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '+':
+//eprintf ("NUMVAL %llx\n", core->num->value);
 		if (input[1]) {
-			if (core->num->value & UT64_GT0)
-				r_core_cmd (core, input+1, 0);
+			st64 n = (st64)core->num->value;
+			if (n>0) r_core_cmd (core, input+1, 0);
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '-':
+//eprintf ("NUMVAL %llx\n", core->num->value);
 		if (input[1]) {
-			if (core->num->value & UT64_LT0)
-				r_core_cmd (core, input+1, 0);
+			st64 n = (st64)core->num->value;
+			if (n<0) r_core_cmd (core, input+1, 0);
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '!': // ??
+//eprintf ("NUMVAL %llx\n", core->num->value);
 		if (input[1]) {
-			if (core->num->value != UT64_MIN)
+			if (!core->num->value)
 				r_core_cmd (core, input+1, 0);
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
@@ -294,6 +299,11 @@ static int cmd_help(void *data, const char *input) {
 		} break;
 	case '?': // ???
 		if (input[1]=='?') {
+			if (input[2]) {
+				if (core->num->value)
+					r_core_cmd (core, input+1, 0);
+				break;	
+			}
 			r_cons_printf (
 			"Usage: ?[?[?]] expression\n"
 			" ? eip-0x804800  ; show hex and dec result for this math expr\n"

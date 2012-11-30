@@ -83,7 +83,7 @@ R_API int r_config_swap(RConfig *cfg, const char *name) {
 R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
-		if (node->i_value != 0)
+		if (node->i_value != 0 || !strcmp (node->value, "false"))
 			return node->i_value;
 		return (ut64)r_num_math (cfg->num, node->value);
 	}

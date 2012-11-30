@@ -1,10 +1,18 @@
-<pre>
    ____  ___  ___  ___ ____  ___  _____   ____
   |  _ \/   \|   \/   \  _ \/ _ \ \__  \ /    \
   |    (  V  \ |  ) V  \   (  __/ .-` _/|  ()  |
   |__\__|_|__|___/__|__|_\__\___\ |____(_)____/
 
-</pre>
+
+
+Broken stuff to fixe before release
+===================================
+- conditionals doesnt work
+
+- java
+- dalvik
+- dwarf
+- rar asm/dis
 
 0.9.4
 =====
