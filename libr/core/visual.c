@@ -880,9 +880,11 @@ static void r_core_visual_refresh (RCore *core) {
 		r_cons_printf ("[cmd.cprompt=%s]\n", vi);
 		r_core_cmd (core, vi, 0);
 		r_cons_column (r_config_get_i (core->config, "scr.colpos"));
+		r_core_visual_title (core, color);
+		r_cons_flush ();
+	} else {
+		r_core_visual_title (core, color);
 	}
-	r_core_visual_title (core, color);
-	r_cons_flush ();
 	vi = r_config_get (core->config, "cmd.vprompt");
 	if (vi) r_core_cmd (core, vi, 0);
 
@@ -890,6 +892,7 @@ static void r_core_visual_refresh (RCore *core) {
 	else r_core_cmd (core, printfmt[PIDX], 0);
 	blocksize = core->num->value? core->num->value : core->blocksize;
 
+	/* this is why there's flickering */
 	r_cons_visual_flush ();
 	cons->blankline = R_TRUE;
 }

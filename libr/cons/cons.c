@@ -170,7 +170,9 @@ R_API void r_cons_gotoxy(int x, int y) {
 }
 
 R_API void r_cons_print_clear() {
-	r_cons_memcat ("\x1b[2J", 4);
+	// xlr8!
+	r_cons_write ("\x1b[0;0H", 6);
+	//r_cons_memcat ("\x1b[2J", 4);
 }
 
 R_API void r_cons_clear_line() {
