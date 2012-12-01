@@ -109,7 +109,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 						free (f);
 					} else r_socket_http_response (rs, 403, "Permission denied", 0, NULL);
 				} else {
-eprintf ("File not found\n");
+					eprintf ("File '%s' not found\n", path);
 					// TODO: directory listing?
 					r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
 				}

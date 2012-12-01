@@ -14,8 +14,35 @@
  <link rel="stylesheet" href="./lungo.theme.default.css" /> 
    <!-- iPhone -->
     <link href="icon.png" sizes="57x57" rel="apple-touch-icon">
-<script src="window.js">
+<script src="window.js"> </script>
+<script>
+function Ajax (method, uri, body, fn) {
+        var x = new XMLHttpRequest ();
+        x.open (method, uri, false);
+	x.setRequestHeader ('Accept', 'text/plain');
+        x.onreadystatechange = function (y) {
+		if (x.status == 200) {
+			if (fn) fn (x.responseText);
+		} else alert ("ajax "+x.status)
+        }
+        x.send (body);
+}
+function cmd(c, cb) {
+	Ajax ('GET', "/cmd/"+c, '', function (x) {
+		if (cb) return cb (x);
+		x = filter_asm (x);
+		document.getElementById ('output').innerHTML = x;
+	});
+}
 
+function consoleExec() {
+	var str = document.getElementById ('consoleEntry');
+	if (str) str = str.value;
+	cmd (str, function (res) {
+		document.getElementById ('consoleBody').innerHTML = res;
+		document.getElementById ('consoleEntry').value = "";
+	});
+}
 </script>
 </head>
 <body class="app">
@@ -129,7 +156,7 @@
         </li>
       </ul>
 <!-- BUG: ff and chrome fail when left:60% -> scroll is wrong. use hardcoded pixels -->
-  <div id="exampleB" style="position:fixed!important;top:50px;left:400;width:250px;height:450px;background-color:#e0e0e0;border: 1px solid black;z-index:99">
+  <div id="exampleB" style="position:fixed!important;top:50px;left:400;width:250px;height:350px;background-color:#e0e0e0;border: 1px solid black;z-index:99">
     <div id="exampleBHandle" style="height:20px;left:0px;top:0px;cursor:move;width:248px;background-color:#20a0e0;font-weight:bold;color:white;border:1px solid black">&nbsp;Registers</div>
 <div style="margin:5px">
 <br /><br />
@@ -187,6 +214,24 @@ initialize();
 </script>
 <!--   -->
     </article>
+
+<article id="console" class="list" data-title="">
+<table style="width:100%;height:90%;margin:5px">
+<tr style="height:34px"><td>
+<form action="javascript:consoleExec()">
+<input autocapitalize="off" style="height:32px;width:99%" type="text" placeholder="radare2 command" id="consoleEntry"></input>
+</form>
+</td> </tr>
+<tr style="width:100%;height:100%"><td>
+<div style="overflow:scroll;background-color:#202020;width:100%;height:100%">
+<pre id="consoleBody" style="color:white;margin:0px;">
+...
+</pre>
+</div>
+</td></tr>
+</table>
+</article>
+
 <article id="hex" class="list scroll" data-title="">
 <pre style="margin:10px">
 -- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -320,17 +365,15 @@ initialize();
 0x100001c68  ffff 4889 8560 ffff ff49 8b45 0848 3b85  ..H..`...I.E.H;.
 </pre>
 </article>
-<article id="settings" class="indented" data-title="">
-<p style="left-margin:14px;top-margin:14px;">
-<p style="font-size:18px">Settings</p>
+<article id="settings" class="scroll indented" data-title="">
+<p style="left-margin:14px;top-margin:14px;overflow:hide">
 
 <form>
+<p style="font-size:28px;font-weight:bold">CPU</p>
 <br />
-<table width="300">
-<tr>
-<td style="font-size:14">arch</td>
-<td>
-  <label class="select">
+<table width="300"> <tr>
+<td style="font-size:18px">arch</td>
+<td> <label class="select">
                 <select class="custom">
                     <option value="x86">x86</option>
                     <option value="ppc">ppc</option>
@@ -339,7 +382,50 @@ initialize();
                 </select>
             </label>
 </td></tr>
+<tr> <td style="font-size:18px">bits</td>
+<td> <label class="select">
+                <select class="custom">
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                    <option value="32">32</option>
+                    <option value="64">64</option>
+                </select>
+            </label>
+</td></tr>
+<tr> <td style="font-size:18px">endian</td>
+<td> <label class="select">
+                <select class="custom">
+                    <option value="0">little</option>
+                    <option value="1">big</option>
+                </select>
+            </label>
+</td></tr>
 </table>
+<p style="font-size:28px;font-weight:bold">Disassembly</p>
+<br />
+<table width="300"> 
+<tr><td style="font-size:18px">show bytes</td>
+<td> <input type="range" min="0" max="1" class="checkbox left" value="0">
+</td></tr>
+<tr><td style="font-size:18px">show offset</td>
+<td> <input type="range" min="0" max="1" class="checkbox left active" value="1">
+</td></tr>
+<tr><td style="font-size:18px">show lines</td>
+<td> <input type="range" min="0" max="1" class="checkbox left" value="0">
+</td></tr>
+</table>
+<br />
+<p style="font-size:28px;font-weight:bold">About</p>
+<br />
+<p style="font-size:18px">
+author: <a target=_blank href="http://twitter.com/trufae">pancake</a><br />
+<br />
+version: 0.9.3git<br />
+<br />
+website: <a target=_blank href="http://www.radare.org/">www.radare.org</a><br />
+</p>
+<br />
+
 <div class="one row">
 <input type="range" min="0" max="1" class="checkbox left" value="0">
 <input type="range" min="0" max="1" class="checkbox right active" value="1">
@@ -369,7 +455,7 @@ initialize();
 </section>
 
   <aside id="features" class="left">
-    <header data-title="Options"></header>
+    <header data-title="Menu"></header>
     <article class="list">
         <ul>
             <li class=current> 
@@ -382,6 +468,18 @@ initialize();
 		<a href="#hex" data-router="article" data-icon="pencil">
 	           <strong>Hexdump</strong>
                    <small>Dump data in hexadecimal</small>
+               </a>
+           </li>
+            <li>
+		<a href="#console" data-router="article" data-icon="message">
+	           <strong>Console</strong>
+                   <small>Open radare console prompt</small>
+               </a>
+           </li>
+            <li >
+		<a href="#graph" data-router="article" data-icon="picture">
+	           <strong>Graph</strong>
+                   <small>View code in graph form</small>
                </a>
            </li>
             <li>
@@ -419,6 +517,12 @@ initialize();
 		<a href="#imports" data-router="article" data-icon="menu">
 	           <strong>Imports</strong>
                    <small>Symbols imported by the binary</small>
+               </a>
+           </li>
+            <li>
+		<a href="#comments" data-router="article" data-icon="menu">
+	           <strong>Comments</strong>
+                   <small>User defined comment editor</small>
                </a>
            </li>
             <li>
