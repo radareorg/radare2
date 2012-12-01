@@ -7,8 +7,6 @@
 
 Broken stuff to fixe before release
 ===================================
-- conditionals doesnt work
-
 - java
 - dalvik
 - dwarf

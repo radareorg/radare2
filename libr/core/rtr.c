@@ -89,8 +89,17 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 				const char *root = r_config_get (core->config, "http.root");
 				char path[1024];
 				// fix crosspath
-				if (rs->path [strlen (rs->path)-1] == '/')
+				if (rs->path [strlen (rs->path)-1] == '/') {
 					rs->path = r_str_concat (rs->path, "index.html");
+				} else {
+					snprintf (path, sizeof (path), "%s/%s", root, rs->path);
+					if (r_file_is_directory (path)) {
+						snprintf (path, sizeof (path), "Location: %s/\n", rs->path);
+						r_socket_http_response (rs, 302, NULL, 0, path);
+						r_socket_http_close (rs);
+						continue;
+					}
+				}
 				snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 				if (r_file_exists (path)) {
 					int sz = 0;
@@ -100,6 +109,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 						free (f);
 					} else r_socket_http_response (rs, 403, "Permission denied", 0, NULL);
 				} else {
+eprintf ("File not found\n");
 					// TODO: directory listing?
 					r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
 				}

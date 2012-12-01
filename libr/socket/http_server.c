@@ -60,14 +60,16 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s) {
 
 R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int len, const char *headers) {
 	const char *strcode = \
-		code==200?"OK":
-		code==404?"NOT FOUND":
+		code==200?"ok":
+		code==301?"moved permanently":
+		code==302?"Found":
+		code==404?"not found":
 		"UNKNOWN";
-	if (len<1) len = strlen (out);
+	if (len<1) len = out? strlen (out): 0;
 	if (!headers) headers = "";
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\n%s"
 		"Content-Length: %d\n\n", code, strcode, headers, len);
-	r_socket_write (rs->s, (void*)out, len);
+	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
 }
 
 /* close client socket and free struct */
