@@ -81,6 +81,10 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 			r_sys_usleep (200);
 			continue;
 		}
+		if (!rs->method || !rs->path) {
+			r_socket_http_close (rs);
+			continue;
+		}
 		if (!strcmp (rs->method, "GET")) {
 			if (!memcmp (rs->path, "/cmd/", 5)) {
 				char *out, *cmd = rs->path+5;
