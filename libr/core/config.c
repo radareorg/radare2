@@ -625,6 +625,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.vprompt", "Visual prompt commands");
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_desc (cfg, "cmd.bp", "Command to executed every breakpoint hitted");
+	r_config_set (cfg, "http.sandbox", "false");
+	r_config_set_i (cfg, "http.timeout", 3);
 	r_config_set (cfg, "http.public", "false");
 	r_config_desc (cfg, "http.public", "set to true to listen on 0.0.0.0");
 #if __WINDOWS__

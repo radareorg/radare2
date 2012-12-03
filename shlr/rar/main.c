@@ -1,6 +1,4 @@
-#include "cpu.c"
-#include "asm.c"
-#include "dis.c"
+#include "main.c"
 
 int main(int argc, char **argv) {
 	int i, bits;

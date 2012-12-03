@@ -86,6 +86,11 @@ static int cmd_help(void *data, const char *input) {
 		a = n & 0x0fff;
 		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" %04x:%04x ",
 			n, n, n, s, a);
+		if (n>>32) {
+			r_cons_printf ("%"PFMT64d" ", (st64)n);
+		} else {
+			r_cons_printf ("%d ", (st32)n);
+		}
 		/* binary and floating point */
 		r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
 		r_cons_printf ("%s %.01lf %f\n", out, core->num->fvalue, f);
@@ -93,9 +98,20 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'v':
 		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
-		if (input[1] == 'i' || input[1]=='d')
+		switch (input[1]) {
+		case 'i':
+			if (n>>32) {
+				r_cons_printf ("%"PFMT64d"\n", (st64)n);
+			} else {
+				r_cons_printf ("%d\n", (st32)n);
+			}
+			break;
+		case 'd':
 			r_cons_printf ("%"PFMT64d"\n", n);
-		else r_cons_printf ("0x%"PFMT64x"\n", n);
+			break;
+		default:
+			r_cons_printf ("0x%"PFMT64x"\n", n);
+		}
 		core->num->value = n; // redundant
 		break;
 	case '=': // set num->value

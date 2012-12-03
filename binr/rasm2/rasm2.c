@@ -45,12 +45,14 @@ static int rasm_show_help() {
 	return 0;
 }
 
-static int rasm_disasm(char *buf, ut64 offset, ut64 len, int ascii, int bin, int hex) {
-	struct r_asm_code_t *acode;
+static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int bin, int hex) {
+	RAsmCode *acode;
 	ut8 *data = NULL;
 	char *ptr = buf;
 	int ret = 0;
 	ut64 word = 0, clen = 0; 
+	if (bits == 1)
+		len /= 8;
 
 	if (bin) {
 		if (len<0)
@@ -109,29 +111,33 @@ static void print_buf(char *str) {
 	} else printf ("%s\n", str);
 }
 
-static int rasm_asm(char *buf, ut64 offset, ut64 len, int bin) {
+static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
 	struct r_asm_code_t *acode;
 	struct r_asm_op_t op;
-	int ret, idx, i;
+	int ret, i,j ;
 
 	r_asm_set_pc (a, offset);
 	if (!(acode = r_asm_massemble (a, buf)))
 		return 0;
-	if (bin)
-		for (i = 0; i < acode->len; i++)
-			printf ("%c", acode->buf[i]);
-	else print_buf (acode->buf_hex);
-	for (ret = 0, idx = acode->len; idx < len; idx+=ret) {
-		if (!(ret = r_asm_assemble (a, &op, "nop")))
-			return 0;
-		if (bin)
-			for (i = 0; i < ret; i++)
-				printf ("%c", op.buf[i]);
-		else print_buf (op.buf_hex);
+	if (acode->len) {
+		if (bin) {
+			write (1, acode->buf, acode->len);
+		} else {
+			int b = acode->len;
+			if (bits==1) {
+				int bytes = (b/8)+1;
+				for (i=0; i<bytes; i++) {
+					for (j=0; j<8 && b--; j++) {
+						printf ("%c", (acode->buf[i] & (1<<j))?'1':'0');
+					}
+				}
+				printf ("\n");
+			} else print_buf (acode->buf_hex);
+		}
+		if (!bin && len>0) printf ("\n");
 	}
-	if (!bin && len && idx == len) printf ("\n");
 	r_asm_code_free (acode);
-	return idx;
+	return acode->len>0;
 }
 
 /* asm callback */
@@ -248,14 +254,16 @@ int main(int argc, char *argv[]) {
 			if (ret>=0)
 				buf[ret] = '\0';
 			if (dis)
-				ret = rasm_disasm (buf, offset, len, ascii, bin, dis-1);
-			else ret = rasm_asm (buf, offset, len, bin);
+				ret = rasm_disasm (buf, offset, len,
+					a->bits, ascii, bin, dis-1);
+			else ret = rasm_asm (buf, offset, len, a->bits, bin);
 		} else {
 			content = r_file_slurp (file, &length);
 			if (content) {
 				content[length] = '\0';
-				if (dis) ret = rasm_disasm (content, offset, len, ascii, bin, dis-1);
-				else ret = rasm_asm (content, offset, len, bin);
+				if (dis) ret = rasm_disasm (content, offset,
+					len, a->bits, ascii, bin, dis-1);
+				else ret = rasm_asm (content, offset, len, a->bits, bin);
 				free (content);
 			} else eprintf ("Cannot open file %s\n", file);
 		}
@@ -267,8 +275,9 @@ int main(int argc, char *argv[]) {
 				if ((!bin || !dis) && feof (stdin))
 					break;
 				if (!bin || !dis) buf[strlen (buf)-1]='\0';
-				if (dis) ret = rasm_disasm (buf, offset, len, ascii, bin, dis-1);
-				else ret = rasm_asm (buf, offset, len, bin);
+				if (dis) ret = rasm_disasm (buf, offset,
+					len, a->bits, ascii, bin, dis-1);
+				else ret = rasm_asm (buf, offset, len, a->bits, bin);
 				idx += ret;
 				offset += ret;
 				if (!ret) {
@@ -280,10 +289,11 @@ int main(int argc, char *argv[]) {
 			}
 			return idx;
 		}
-		if (dis) ret = rasm_disasm (argv[optind], offset, len, ascii, bin, dis-1);
-		else ret = rasm_asm (argv[optind], offset, len, bin);
+		if (dis) ret = rasm_disasm (argv[optind], offset, len,
+			a->bits, ascii, bin, dis-1);
+		else ret = rasm_asm (argv[optind], offset, len, a->bits, bin);
 		if (!ret) eprintf ("invalid\n");
-		return ret;
+		return !ret;
 	}
 	return 0;
 }

@@ -37,6 +37,8 @@ SECURITY IMPLICATIONS
 
 R_API int r_core_rtr_http(RCore *core, int launch) {
 	RSocketHTTPRequest *rs;
+	int oldsandbox = -1;
+	int timeout = r_config_get_i (core->config, "http.timeout");
 	int x = r_config_get_i (core->config, "scr.html");
 	int y = r_config_get_i (core->config, "scr.color");
 	int z = r_config_get_i (core->config, "asm.bytes");
@@ -65,11 +67,15 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	r_config_set (core->config, "scr.color", "false");
 	r_config_set (core->config, "asm.bytes", "false");
 	r_config_set (core->config, "scr.interactive", "false");
+	if (r_config_get_i (core->config, "http.sandbox")) {
+		oldsandbox = r_config_get_i (core->config, "cfg.sandbox");
+		r_config_set (core->config, "cfg.sandbox", "true");
+	}
 	eprintf ("Starting http server...\n");
 	eprintf ("http://localhost:%d/\n", atoi (port));
 	while (!r_cons_singleton ()->breaked) {
 		r_cons_break (http_break, core);
-		rs = r_socket_http_accept (s);
+		rs = r_socket_http_accept (s, timeout);
 		if (!rs) {
 			if (!s) break;
 			r_sys_usleep (200);
@@ -84,7 +90,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					r_str_unescape (out);
 					r_socket_http_response (rs, 200, out, 0, "Content-Type: text/plain\n");
 					free (out);
-				} else r_socket_http_response (rs, 200, "oops", 0, NULL);
+				} else r_socket_http_response (rs, 200, "", 0, NULL);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				char path[1024];
@@ -107,7 +113,10 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					if (f) {
 						r_socket_http_response (rs, 200, f, sz, NULL);
 						free (f);
-					} else r_socket_http_response (rs, 403, "Permission denied", 0, NULL);
+					} else {
+						r_socket_http_response (rs, 403, "Permission denied", 0, NULL);
+						eprintf ("http: Cannot open '%s'\n", path);
+					}
 				} else {
 					eprintf ("File '%s' not found\n", path);
 					// TODO: directory listing?
@@ -136,6 +145,8 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	r_config_set_i (core->config, "asm.bytes", z);
 	r_config_set_i (core->config, "scr.interactive", u);
 	r_config_set_i (core->config, "asm.cmtright", v);
+	if (oldsandbox != -1)
+		r_config_set_i (core->config, "cfg.sandbox", oldsandbox);
 	return 0;
 }
 
@@ -445,9 +456,10 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 }
 
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
-	int i, ret;
 	char *str;
+	int i, ret;
 	unsigned char buf[4096];
+
 	RSocket *ch, *s = r_socket_new (0);
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Error listening on port %s\n", port);
@@ -464,7 +476,7 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		ret = r_socket_read (ch, buf, sizeof (buf));
 		if (ret>0) {
 			buf[ret] = 0;
-			for (i=0;buf[i];i++)
+			for (i=0; buf[i]; i++)
 				if (buf[i] == '\n')
 					buf[i] = buf[i+1]? ';':'\0';
 			eprintf ("(%s)\n", buf);

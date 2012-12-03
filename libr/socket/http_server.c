@@ -2,7 +2,7 @@
 
 #include <r_socket.h>
 
-R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s) {
+R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 	int content_length = 0;
 	int pxx = 1, first = 0;
 	char buf[1024], *p, *q;
@@ -12,8 +12,10 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s) {
 		free (hr);
 		return NULL;
 	}
-	//r_socket_block_time (hr->s, 0, 3000);
+	eprintf ("timeout = %d\n", timeout);
+	r_socket_block_time (hr->s, 1, timeout);
 	for (;;) {
+eprintf ("--\n");
 		int xx = r_socket_gets (hr->s, buf, sizeof (buf));
 		int yy = r_socket_ready (hr->s, 0, 20);
 //		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);

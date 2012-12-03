@@ -33,7 +33,7 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 }
 
 // int l is for lines
-R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak) {
+R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
 	int ret, idx = 0, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
 	int continueoninvbreak = (len == l) && invbreak;
@@ -49,6 +49,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RAnalOp analop = {0};
 	RFlagItem *flag;
 	RMetaItem *mi;
+	int oplen = 0;
 	int tries = 3;
 
 //r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
@@ -167,9 +168,13 @@ toro:
 			addr, buf, len, -1, linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
 
-	int oplen = 1;
+	oplen = 1;
 	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
+		if (cbytes) {
+			if (idx>=l)
+				break;
+		}
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
 			line = r_anal_reflines_str (core->anal,
@@ -260,7 +265,7 @@ toro:
 			oplen = ret = 1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" %d %d**\n",
 			//	core->assembler->pc + ret, l, len);
-			if (tries>0) { //1||l < len) {
+			if (!cbytes && tries>0) { //1||l < len) {
 				addr = core->assembler->pc;
 				tries--;
 				//eprintf ("-- %d %d\n", len, r_core_read_at (core, addr, buf, len));
@@ -726,7 +731,7 @@ toro:
 		buf = NULL;
 	}
 #if 1
-	if (idx>=len) {// && (invbreak && !lastfail)) {
+	if (!cbytes && idx>=len) {// && (invbreak && !lastfail)) {
 	retry:
 		if (len<4) len = 4;
 		buf = nbuf = malloc (len);

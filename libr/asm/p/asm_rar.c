@@ -7,6 +7,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_asm.h>
+#include "../../shlr/rar/all.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	// TODO: support bitsize opcodes
@@ -14,14 +15,15 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 }
 
 // XXX: This is wrong, some opcodes are 32bit in thumb mode
-static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	return 0;
+static int assemble(RAsm *a, RAsmOp *op, const char *str) {
+	Bitbuf b = {.out = op->buf, .bits = 0};
+	return op->inst_len = rarvm_assemble (&b, str);
 }
 
 RAsmPlugin r_asm_plugin_rar = {
 	.name = "rar",
 	.arch = "rar",
-	.bits = (int[]){ 32, 0 },
+	.bits = (int[]){ 1, 0 },
 	.desc = "RAR VM disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

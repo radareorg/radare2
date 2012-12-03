@@ -90,8 +90,9 @@ static int cmd_print(void *data, const char *input) {
 	if (input[0] && input[0]!='Z' && input[1] == 'f') {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-		if (f) len = f->size;
-		else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+		if (f) {
+			len = f->size;
+		} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 	}
 	ptr = core->block;
 	core->num->value = len;
@@ -243,9 +244,9 @@ static int cmd_print(void *data, const char *input) {
 			int show_offset = r_config_get_i (core->config, "asm.offset");
 			int show_bytes = r_config_get_i (core->config, "asm.bytes");
 			int decode = r_config_get_i (core->config, "asm.decode");
-			RAsmOp asmop;
-			int j, ret, err = 0;
 			const ut8 *buf = core->block;
+			int j, ret, err = 0;
+			RAsmOp asmop;
 			if (l==0) l = len;
 			for (i=j=0; j<len && j<l; i+=ret,j++) {
 				r_asm_set_pc (core->assembler, core->offset+i);
@@ -323,7 +324,7 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *block = malloc (b->size+1);
 				if (block) {
 					r_core_read_at (core, b->addr, block, b->size);
-					core->num->value = r_core_print_disasm (core->print, core, b->addr, block, b->size, 9999, 0);
+					core->num->value = r_core_print_disasm (core->print, core, b->addr, block, b->size, 9999, 0, 1);
 					free (block);
 					return 0;
 				}
@@ -337,7 +338,7 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *block = malloc (f->size+1);
 				if (block) {
 					r_core_read_at (core, f->addr, block, f->size);
-					core->num->value = r_core_print_disasm (core->print, core, f->addr, block, f->size, 9999, 0);
+					core->num->value = r_core_print_disasm (core->print, core, f->addr, block, f->size, 9999, 0, 1);
 					free (block);
 					return 0;
 				}
@@ -388,7 +389,7 @@ static int cmd_print(void *data, const char *input) {
 					r_list_foreach (bwdhits, iter, hit) {
 						r_core_read_at (core, hit->addr, block, core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
-							core, hit->addr, block, core->blocksize, l, 0);
+							core, hit->addr, block, core->blocksize, l, 0, 1);
 						r_cons_printf ("------\n");
 					}
 					r_list_free (bwdhits);
@@ -398,7 +399,7 @@ static int cmd_print(void *data, const char *input) {
 		} else {
 			core->num->value = r_core_print_disasm (
 				core->print, core, core->offset,
-				core->block, len, l, (*input=='d'));
+				core->block, len, l, 0, (*input=='D'));
 		}
 		break;
 	case 's':

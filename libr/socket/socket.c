@@ -156,7 +156,8 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			if (s->fd == -1)
 				continue;
 			if (timeout>0)
-				fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
+				r_socket_block_time (s, 1, timeout);
+				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
 			if (timeout<1 && ret != -1)
 				break;
@@ -171,7 +172,8 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 					int so_error;
 					socklen_t len = sizeof so_error;
 					ret = getsockopt (s->fd, SOL_SOCKET, SO_ERROR, &so_error, &len);
-					fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
+			//		fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
+r_socket_block_time (s, 0, 0);
 				} else {
 					close (s->fd);
 					return R_FALSE;
@@ -320,16 +322,25 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 }
 
 R_API int r_socket_block_time (RSocket *s, int block, int sec) {
-	struct timeval sv;
+	if (!s) return R_FALSE;
 #if __UNIX__
-	fcntl (s->fd, F_SETFL, O_NONBLOCK, !block);
+	{
+	int flags = fcntl (s->fd, F_GETFL, 0);
+	if (block) {
+		fcntl (s->fd, F_SETFL, flags & ~O_NONBLOCK);
+	} else {
+		fcntl (s->fd, F_SETFL, flags | O_NONBLOCK);
+	}
+	}
 #elif __WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
 	if (sec > 0) {
-		sv.tv_sec = sec;
-		sv.tv_usec = 0;
-		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&sv, sizeof (sv)) < 0)
+		struct timeval tv;
+		tv.tv_sec = sec;
+		tv.tv_usec = 0;
+		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO,
+				(char *)&tv, sizeof (tv)) < 0)
 			return R_FALSE;
 	}
 	return R_TRUE;

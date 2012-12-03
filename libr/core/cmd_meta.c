@@ -150,9 +150,7 @@ static int cmd_meta(void *data, const char *input) {
 			}
 			if (!n) n++;
 			addr_end = addr + n;
-eprintf ("ADDR = %llx\n", addr);
 			if (!r_meta_add (core->anal->meta, type, addr, addr_end, name))
-eprintf ("LALALA (%s)\n", name);
 			free (t);
 			}
 		}
