@@ -22,6 +22,7 @@ else
 endif
 endif
 
+CFLAGS+=-DWWWROOT=\"${WWWROOT}\"
 LDFLAGS+=${BN_LIBS}
 LDFLAGS=${TH_LIBS}
 

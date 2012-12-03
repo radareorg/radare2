@@ -3,7 +3,7 @@
 #include <r_socket.h>
 
 R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
-	int content_length = 0;
+	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;
 	char buf[1024], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
@@ -12,12 +12,12 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 		free (hr);
 		return NULL;
 	}
-	eprintf ("timeout = %d\n", timeout);
-	r_socket_block_time (hr->s, 1, timeout);
+	if (timeout>0)
+		r_socket_block_time (hr->s, 1, timeout);
 	for (;;) {
-eprintf ("--\n");
-		int xx = r_socket_gets (hr->s, buf, sizeof (buf));
-		int yy = r_socket_ready (hr->s, 0, 20);
+		memset (buf, sizeof (buf), 0);
+		xx = r_socket_gets (hr->s, buf, sizeof (buf));
+		yy = r_socket_ready (hr->s, 0, 20);
 //		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
 		if (!yy || (!xx && !pxx))
 			break;
@@ -56,7 +56,6 @@ eprintf ("--\n");
 		r_socket_read_block (hr->s, hr->data, hr->data_length);
 		hr->data[content_length] = 0;
 	}
-	
 	return hr;
 }
 
@@ -94,6 +93,7 @@ int main() {
 	}
 	for (;;) {
 		RSocketHTTPRequest *rs = r_socket_http_accept (s);
+		if (!rs) continue;
 		if (!strcmp (rs->method, "GET")) {
 			r_socket_http_response (rs, 200,
 	"<html><body><form method=post action=/><input name=a /><input type=button></form></body>");
