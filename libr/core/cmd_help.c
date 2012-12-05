@@ -420,7 +420,7 @@ static int cmd_help(void *data, const char *input) {
 		"Suffix '@f:/bin/ls' to set temporary block from file\n"
 		"Suffix '@s:hello' to set temporary block from given string\n"
 		"Suffix '@b:909192' to set temporary block from hex pairs\n"
-		"Suffix '@ addr[:bsize]' for a temporary seek and/or bsize\n"
+		"Suffix '@ addr[!bsize]' for a temporary seek and/or bsize\n"
 		"Suffix '@@ glob1 glob2i ..' space separated glob greps for flags to seek\n"
 		"Suffix '~string:linenumber[column]' to filter output\n"
 		);

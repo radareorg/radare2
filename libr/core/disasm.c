@@ -265,7 +265,10 @@ toro:
 			oplen = ret = 1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" %d %d**\n",
 			//	core->assembler->pc + ret, l, len);
+#if 1
+//eprintf ("~~~~~~LEN~~~~ %d %d %d\n", l, len, lines);
 			if (!cbytes && tries>0) { //1||l < len) {
+//eprintf ("~~~~~~~~~~~~~ %d %d\n", idx, core->blocksize);
 				addr = core->assembler->pc;
 				tries--;
 				//eprintf ("-- %d %d\n", len, r_core_read_at (core, addr, buf, len));
@@ -273,6 +276,7 @@ toro:
 				idx = 0;
 				goto retry;
 			}
+#endif
 			lastfail = 1;
 			strcpy (asmop.buf_asm, "invalid");
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
@@ -742,7 +746,8 @@ toro:
 				goto toro;
 			}
 		}
-		if (invbreak && lines<l) {
+		//if (invbreak && lines<l) {
+		if (lines<l) {
 //eprintf ("RETR %d\n", );
 			addr += idx;
 			if (r_core_read_at (core, addr, buf, len) != len) {

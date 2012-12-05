@@ -866,10 +866,11 @@ next2:
 		ut64 tmpoff, tmpbsz, addr;
 		ut8 *buf;
 		const char *offstr;
-		char *f, *ptr2 = strchr (ptr+1, ':');
+		char *f, *ptr2 = strchr (ptr+1, '!');
 		int sz, len;
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
+
 		*ptr = '\0';
 		for (ptr++;*ptr== ' ';ptr++); ptr--;
 		if (ptr[2]==':') {
@@ -916,8 +917,16 @@ ignore:
 		for (ptr++;*ptr== ' ';ptr++); ptr--;
 		cmd = r_str_clean (cmd);
 		if (ptr2) {
-			*ptr2 = '\0';
-			r_core_block_size (core, r_num_math (core->num, ptr2+1));
+			if (strlen (ptr+1)==13 && strlen (ptr2+1)==6 && \
+				!memcmp (ptr+1,"0x", 2) && !memcmp (ptr2+1, "0x", 2)) {
+				/* 0xXXXX:0xYYYY */
+			} else
+			if (strlen (ptr+1)==9 && strlen (ptr2+1)==4) {
+				/* XXXX:YYYY */
+			} else {
+				*ptr2 = '\0';
+				r_core_block_size (core, r_num_math (core->num, ptr2+1));
+			}
 		}
 
 		offstr = r_str_trim_head (ptr+1);
@@ -944,7 +953,7 @@ ignore:
 			} else ret = 0;
 		}
 		if (ptr2) {
-			*ptr2 = ':';
+			*ptr2 = '!';
 			r_core_block_size (core, tmpbsz);
 		}
 		r_core_seek (core, tmpoff, 1);

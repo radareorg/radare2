@@ -99,6 +99,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	core->io->section = core->section; // HACK
 	ret = r_io_seek (core->io, addr, R_IO_SEEK_SET);
 	newsection = core->io->section;
+
 	if (ret == UT64_MAX) {
 		//eprintf ("RET =%d %llx\n", ret, addr);
 		/*
@@ -128,9 +129,9 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 		}
 	}
 	if (core->section != newsection) {//&& core->io->section->arch) {
-		int bits;// = core->io->section->bits;
+		int bits = 0;// = core->io->section->bits;
 		const char *arch = r_io_section_get_archbits (core->io, core->offset, &bits);
-		if (arch && bits ) {
+		if (arch && bits) {
 			r_config_set (core->config, "asm.arch", arch);
 			r_config_set_i (core->config, "asm.bits", bits);
 		}

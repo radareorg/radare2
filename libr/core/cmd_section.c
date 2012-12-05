@@ -41,9 +41,10 @@ static int cmd_section(void *data, const char *input) {
 			if (p) {
 				*p++ = 0;
 				if (r_io_section_set_archbits (core->io,
-						core->offset, str, atoi (p)))
+						core->offset, str, atoi (p))) {
+					core->section = NULL;
 					r_core_seek (core, core->offset, 0);
-				else eprintf  ("Cannot set arch/bits at 0x%08"PFMT64x"\n",
+				} else eprintf ("Cannot set arch/bits at 0x%08"PFMT64x"\n",
 						core->offset);
 			} else eprintf ("Missing argument\n");
 			free (str);

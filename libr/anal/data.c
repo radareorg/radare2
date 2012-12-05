@@ -87,11 +87,11 @@ R_API char *r_anal_data_to_string (RAnalData *d) {
 	return line;
 }
 
-R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int wide) {
+R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int type) {
 	RAnalData *ad = R_NEW0 (RAnalData);
 	ad->addr = addr;
-	ad->type = wide? R_ANAL_DATA_TYPE_WIDE_STRING: R_ANAL_DATA_TYPE_STRING;
-	if (wide) {
+	ad->type = type;
+	if (type) {
 		/* TODO: add support for wide strings */
 		eprintf ("r_anal_data_new_string: wide string not supported yet\n");
 	} else {

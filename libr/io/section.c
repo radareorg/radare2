@@ -156,6 +156,17 @@ R_API RIOSection *r_io_section_vget(RIO *io, ut64 addr) {
 	return NULL;
 }
 
+R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr) {
+	RListIter *iter;
+	RIOSection *s;
+	r_list_foreach (io->sections, iter, s) {
+		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+			return s;
+		}
+	}
+	return NULL;
+}
+
 R_API RIOSection *r_io_section_get(RIO *io, ut64 addr) {
 	RListIter *iter;
 	RIOSection *s;
@@ -213,7 +224,6 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
 			if (s->vaddr == 0) // hack
 				return vaddr;
-	//		eprintf ("SG: %llx phys=%llx %s\n", vaddr, vaddr-s->vaddr+s->offset, s->name);
 			return (vaddr - s->vaddr + s->offset);
 		}
 	}
@@ -256,8 +266,7 @@ goto restart;
 }
 
 R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bits) {
-	//RIOSection *s = r_io_section_vget (io, addr);
-	RIOSection *s = r_io_section_get (io, r_io_section_vaddr_to_offset (io, addr));
+	RIOSection *s = r_io_section_getv (io, addr);
 	if (!s) return R_FALSE;
 	if (arch) {
 		s->arch = r_sys_arch_id (arch);
@@ -270,7 +279,7 @@ R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bi
 }
 
 R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits) {
-	RIOSection *s = r_io_section_get (io, r_io_section_vaddr_to_offset (io, addr));
+	RIOSection *s = r_io_section_getv (io, addr);
 	if (!s || !s->bits || !s->arch) return NULL;
 	if (bits) *bits = s->bits;
 	return r_sys_arch_str (s->arch);
