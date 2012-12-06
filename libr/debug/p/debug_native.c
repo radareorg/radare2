@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 pancake */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -169,6 +169,20 @@ ut32[16]
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <limits.h>
+
+struct user_regs_struct_x86_64 {
+  ut64 r15; ut64 r14; ut64 r13; ut64 r12; ut64 rbp; ut64 rbx; ut64 r11;
+  ut64 r10; ut64 r9; ut64 r8; ut64 rax; ut64 rcx; ut64 rdx; ut64 rsi;
+  ut64 rdi; ut64 orig_rax; ut64 rip; ut64 cs; ut64 eflags; ut64 rsp;
+  ut64 ss; ut64 fs_base; ut64 gs_base; ut64 ds; ut64 es; ut64 fs; ut64 gs;
+};
+
+struct user_regs_struct_x86_32 {
+  ut32 ebx; ut32 ecx; ut32 edx; ut32 esi; ut32 edi; ut32 ebp; ut32 eax;
+  ut32 xds; ut32 xes; ut32 xfs; ut32 xgs; ut32 orig_eax; ut32 eip;
+  ut32 xcs; ut32 eflags; ut32 esp; ut32 xss;
+};
+
 #ifdef __ANDROID__
 // #if __arm__
 # define R_DEBUG_REG_T struct pt_regs
@@ -1456,10 +1470,10 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
                 /* TODO: allow to choose the thread */
 		gp_count = R_DEBUG_STATE_SZ;
 
-if (tid <0 || tid>=inferior_thread_count) {
-	eprintf ("Tid out of range %d\n", inferior_thread_count);
-	return R_FALSE;
-}
+		if (tid <0 || tid>=inferior_thread_count) {
+			eprintf ("Tid out of range %d\n", inferior_thread_count);
+			return R_FALSE;
+		}
 // XXX: kinda spaguetti coz multi-arch
 #if __i386__ || __x86_64__
 		if (dbg->bits== R_SYS_BITS_64) {
@@ -1529,7 +1543,27 @@ if (tid <0 || tid>=inferior_thread_count) {
 		ret = ptrace (PTRACE_GETREGS, pid, &regs, NULL);
 #else
 		/* linux/arm/x86/x64 */
-		ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
+		if (dbg->bits & R_SYS_BITS_32) {
+// XXX. this is wrong
+#if 0
+			struct user_regs_struct_x86_64 r64;
+			ret = ptrace (PTRACE_GETREGS, pid, NULL, &r64);
+eprintf (" EIP : 0x%x\n", r32.eip);
+eprintf (" ESP : 0x%x\n", r32.esp);
+#endif
+
+#if 0
+int i=0;
+unsigned char *p = &r64;;
+for(i=0;i< sizeof (r64); i++) {
+printf ("%02x ", p[i]);
+}
+printf ("\n");
+#endif
+			ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
+		} else {
+			ret = ptrace (PTRACE_GETREGS, pid, NULL, &regs);
+		}
 #endif
 		if (ret != 0)
 			return R_FALSE;
@@ -1568,7 +1602,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		}
 		}
 #else
-return R_FALSE;
+		return R_FALSE;
 #endif
 #else
 		eprintf ("TODO: add support for write DRX registers\n");
@@ -1629,14 +1663,14 @@ return R_FALSE;
 					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
 #endif
 //if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
-if (ret != KERN_SUCCESS) {
-	eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
-			(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
-	perror ("thread_set_state");
-	return R_FALSE;
-}
-} else eprintf ("There are no threads!\n");
-return sizeof (R_DEBUG_REG_T);
+		if (ret != KERN_SUCCESS) {
+			eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
+					(int)pid, pid_to_task (pid), (int)ret, MACH_ERROR_STRING (ret));
+			perror ("thread_set_state");
+			return R_FALSE;
+		}
+		} else eprintf ("There are no threads!\n");
+		return sizeof (R_DEBUG_REG_T);
 #else
 #warning r_debug_native_reg_write not implemented
 #endif

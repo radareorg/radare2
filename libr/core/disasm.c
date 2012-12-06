@@ -115,7 +115,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	if (r_config_get_i (core->config, "asm.lineswide"))
 		linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	lines = 0;
-
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, addr+idx);
@@ -196,7 +195,8 @@ toro:
 					RAnalFunction *fun = r_anal_fcn_find (
 						core->anal, refi->addr,
 						R_ANAL_FCN_TYPE_NULL);
-					r_cons_printf ("%s%s", pre, refline);
+					r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
+						&&f->addr==at)?' ':'|',refline);
 					if (show_color)
 					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 						refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
@@ -365,7 +365,9 @@ toro:
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		if (show_functions) {
 			if (f) {
+//eprintf ("fun    0x%llx 0x%llx\n", at, f->addr+f->size-analop.length);
 				pre = "  ";
+
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
@@ -383,13 +385,17 @@ toro:
 					free (sign);
 					pre = "| ";
 					stackptr = 0;
-				} else if (f->addr+f->size-analop.length== at) {
+				} else if (f->addr+f->size-analop.length == at) {
 					r_cons_printf ("\\ ");
 				} else if (at > f->addr && at < f->addr+f->size-1) {
 					r_cons_printf ("| ");
 					pre = "| ";
-				} else f = NULL;
-			} else r_cons_printf ("  ");
+				} else {
+					f = NULL;
+				}
+				if (at == f->addr+f->size-analop.length) // HACK
+					pre = "\\ ";
+			} else pre = "  "; //r_cons_printf ("  ");
 		}
 		if (show_flags) {
 			flag = r_flag_get_i (core->flags, at);
@@ -399,7 +405,7 @@ toro:
 				if (show_offset)
 				r_cons_printf ("; -------- ");
 				if (show_functions)
-					r_cons_printf ("%s:\n%s", flag->name, f?"| ":"  ");
+					r_cons_printf ("%s:\n%s", flag->name, f?pre:"");
 				else r_cons_printf ("%s:\n", flag->name);
 			}
 		}

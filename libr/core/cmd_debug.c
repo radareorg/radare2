@@ -105,7 +105,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		if (pid > 0) {
 			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
 			r_debug_kill (core->dbg, R_FALSE, sig);
-		} else eprintf ("Invalid arguments\n");
+		} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
 		break;
 	case 'n':
 		eprintf ("TODO: debug_fork: %d\n", r_debug_fork (core->dbg));

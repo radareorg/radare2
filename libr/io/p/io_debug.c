@@ -215,7 +215,7 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 				eprintf ("Success\n");
 				break;
 			case 22:
-				eprintf ("Invalid argument\n");
+				eprintf ("posix_spawnp: Invalid argument\n");
 				break;
 			case 86:
 				eprintf ("Unsupported architecture\n");
@@ -268,6 +268,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {
+			// TODO: get bits from ELF?
 			pid = fork_and_ptraceme (io->bits, file+6);
 			if (pid==-1)
 				return NULL;

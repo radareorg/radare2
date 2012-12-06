@@ -1,17 +1,7 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include "r_db.h"
 #include "r_util.h"
-/*
-struct r_db_table_t *table = \
-  r_db_table_new("cities", "ziu", "name people postal");
-*/
-
-#if 0
-/* r_fmt ??? */
-int sizes[256];
-sizes['i'] = 4;
-#endif
 
 struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const char *fields) {
 	int i;
@@ -20,7 +10,7 @@ struct r_db_table_t *r_db_table_new(const char *name, const char *fmt, const cha
 	table->args = strdup (fields);
 	table->nelems = r_str_word_set0 (table->args);
 	if (table->nelems != strlen (fmt)) {
-		fprintf(stderr, "Invalid arguments\n");
+		eprintf ("r_db_table_new: Invalid arguments\n");
 		/* XXX: refactor */
 		free (table->args);
 		free (table);

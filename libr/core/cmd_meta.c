@@ -122,6 +122,7 @@ static int cmd_meta(void *data, const char *input) {
 			int n = 0, type = input[0];
 			t = strdup (input+2);
 			if (atoi (t)>0) {
+				RFlagItem *fi;
 				p = strchr (t, ' ');
 				if (p) {
 					*p = '\0';
@@ -133,14 +134,14 @@ static int cmd_meta(void *data, const char *input) {
 					strncpy (name, t, sizeof (name)-1);
 					r_core_read_at (core, addr, (ut8*)name, sizeof (name));
 					break;
-				default: {
-					RFlagItem *fi = r_flag_get_i (core->flags, addr);
-					if (fi) strncpy (name, fi->name, sizeof (name)-1);
+				default:
+					fi = r_flag_get_i (core->flags, addr);
+					if (fi) {
+						strncpy (name, fi->name, sizeof (name)-1);
 					//else sprintf (name, "ptr_%08"PFMT64x"", addr);
-					else {
-						eprintf ("Invalid arguments\n");
-						return 1;
-					}
+					//} else {
+					//	eprintf ("meta: Invalid arguments (%s)\n", input);
+					//	return 1;
 					}
 				}
 				n = atoi (input+1);
