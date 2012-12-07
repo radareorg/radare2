@@ -122,7 +122,16 @@ typedef struct r_core_t {
 	ut64 asmqjmps[10];
 	// visual
 	int printidx;
+	RList *watchers;
 } RCore;
+
+typedef struct r_core_cmpwatch_t {
+	ut64 addr;
+	int size;
+	char cmd[32];
+	ut8 *odata;
+	ut8 *ndata;
+} RCoreCmpWatcher;
 
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 
@@ -296,6 +305,15 @@ R_API void r_core_hack_help(RCore *core);
 R_API int r_core_hack(RCore *core, const char *op);
 R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size);
 R_API void r_core_diff_show(RCore *core, RCore *core2);
+
+
+/* watchers */
+R_API int r_core_cmpwatch_free (RCoreCmpWatcher *w);
+R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd);
+R_API int r_core_cmpwatch_del (RCore *core, ut64 addr);
+R_API int r_core_cmpwatch_update (RCore *core, ut64 addr);
+R_API int r_core_cmpwatch_show (RCore *core, ut64 addr, int mode);
+R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr);
 
 #endif
 

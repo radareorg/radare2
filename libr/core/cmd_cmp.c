@@ -1,5 +1,108 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
-// move it out // r_diff maybe?
+/* radare - LGPL - Copyright 2009-2012 - pancake */
+
+R_API int r_core_cmpwatch_free (RCoreCmpWatcher *w) {
+	free (w->ndata);
+	free (w->odata);
+	free (w);
+}
+
+R_API RCoreCmpWatcher* r_core_cmpwatch_get(RCore *core, ut64 addr) {
+	RListIter *iter;
+	RCoreCmpWatcher *w;
+	r_list_foreach (core->watchers, iter, w) {
+		if (addr == w->addr)
+			return w;
+	}
+	return NULL;
+}
+
+R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd) {
+	RCoreCmpWatcher *cmpw;
+	if (size<1) return R_FALSE;
+	cmpw = r_core_cmpwatch_get (core, addr);
+	if (!cmpw) {
+		cmpw = R_NEW (RCoreCmpWatcher);
+		cmpw->addr = addr;
+	}
+	cmpw->size = size;
+	strncpy (cmpw->cmd, cmd, sizeof (cmpw->cmd));
+	cmpw->odata = NULL;
+	cmpw->ndata = malloc (size);
+	r_io_read_at (core->io, addr, cmpw->ndata, size);
+	r_list_append (core->watchers, cmpw);
+	return R_TRUE;
+}
+
+R_API int r_core_cmpwatch_del (RCore *core, ut64 addr) {
+	int ret = R_FALSE;
+	RCoreCmpWatcher *w;
+	RListIter *iter, *iter2;
+	r_list_foreach_safe (core->watchers, iter, iter2, w) {
+		if (w->addr == addr || addr == UT64_MAX) {
+			r_list_del (w);
+			ret = R_TRUE;
+		}
+	}
+	return ret;
+}
+
+R_API int r_core_cmpwatch_show (RCore *core, ut64 addr, int mode) {
+	char cmd[128];
+	RListIter *iter;
+	RCoreCmpWatcher *w;
+	r_list_foreach (core->watchers, iter, w) {
+		int is_diff = w->odata? memcmp (w->odata, w->ndata, w->size): 0;
+		switch (mode) {
+		case '*':
+			r_cons_printf ("cw 0x%08"PFMT64x" %d %s%s\n",
+				w->addr, w->size, w->cmd, is_diff? " # differs":"");
+			break;
+		case 'd': // diff
+			if (is_diff)
+				r_cons_printf ("0x%08"PFMT64x" has changed\n", w->addr);
+		case 'o': // old contents
+			// use tmpblocksize
+		default:
+			r_cons_printf ("0x%08"PFMT64x"%s\n", w->addr, is_diff? " modified":"");
+			snprintf (cmd, sizeof (cmd), "%s@%"PFMT64d"!%d",
+				w->cmd, w->addr, w->size);
+			r_core_cmd0 (core, cmd);
+			break;
+		}
+	}
+	return R_FALSE;
+}
+
+R_API int r_core_cmpwatch_update (RCore *core, ut64 addr) {
+	RCoreCmpWatcher *w;
+	RListIter *iter;
+	r_list_foreach (core->watchers, iter, w) {
+		free (w->odata);
+		w->odata = w->ndata;
+		w->ndata = malloc (w->size);
+		r_io_read_at (core->io, w->addr, w->ndata, w->size);
+	}
+	return !r_list_empty (core->watchers);
+}
+
+R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr) {
+	RCoreCmpWatcher *w;
+	int ret = R_FALSE;
+	RListIter *iter;
+	r_list_foreach (core->watchers, iter, w) {
+		if (w->addr == addr || addr == UT64_MAX) {
+			if (w->odata) {
+				free (w->ndata);
+				w->ndata = w->odata;
+				w->odata = NULL;
+				ret = R_TRUE;
+			}
+		}
+	}
+	return ret;
+}
+/** **/
+
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	int i, eq = 0;
 	for (i=0; i<len; i++) {
@@ -16,6 +119,56 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	return len-eq;
 }
 
+static void cmd_cmp_watcher (RCore *core, const char *input) {
+	char *p, *q, *r = NULL;
+	int size = 0;
+	ut64 addr = 0;
+	switch (*input) {
+	case ' ':
+		p = strdup (input+1);
+		q = strchr (p, ' ');
+		if (q) {
+			*q++ = 0;
+			addr = r_num_math (core->num, p);
+			r = strchr (q, ' ');
+			if (r) {
+				*r++ = 0;
+				size = atoi (q);
+			}
+			r_core_cmpwatch_add (core, addr, size, r);
+			//eprintf ("ADD (%llx) %d (%s)\n", addr, size, r);
+		} else eprintf ("Missing parameters\n");
+		free (p);
+		break;
+	case 'r':
+		addr = input[1]? r_num_math (core->num, input+1): UT64_MAX;
+		r_core_cmpwatch_revert (core, addr);
+		break;
+	case 'u':
+		addr = input[1]? r_num_math (core->num, input+1): UT64_MAX;
+		r_core_cmpwatch_update (core, addr);
+		break;
+	case '*':
+		r_core_cmpwatch_show (core, UT64_MAX, '*');
+		break;
+	case '\0':
+		r_core_cmpwatch_show (core, UT64_MAX, 0);
+		break;
+	case '?':
+		r_cons_printf (
+			"Usage: cw[?] [...]\n"
+			"  cw              list all compare watchers\n"
+			"  cw*             list compare watchers in r2 cmds\n"
+			"  cw addr         list all compare watchers\n"
+			"  cw addr sz cmd  add a memory watcher\n"
+			//"  cws [addr]      show watchers\n"
+			"  cwu [addr]      update watchers\n"
+			"  cwr [addr]      reset/revert watchers\n"
+			);
+		break;
+	}
+}
+
 static int cmd_cmp(void *data, const char *input) {
 	RCore *core = data;
 	FILE *fd;
@@ -25,6 +178,9 @@ static int cmd_cmp(void *data, const char *input) {
 	ut64 v64;
 
 	switch (*input) {
+	case 'w':
+		cmd_cmp_watcher (core, input+1);
+		break;
 	case ' ':
 		radare_compare (core, core->block, (ut8*)input+1, strlen (input+1)+1);
 		break;
@@ -155,12 +311,12 @@ static int cmd_cmp(void *data, const char *input) {
 		" cx [hexpair]   Compare hexpair string\n"
 		" cX [addr]      Like 'cc' but using hexdiff output\n"
 		" cf [file]      Compare contents of file at current seek\n"
-		" cg[o] [file]   Graphdiff current file and [file]\n");
+		" cg[o] [file]   Graphdiff current file and [file]\n"
+		" cw[us?] [...]  Compare memory watchers\n");
 		break;
 	default:
-		eprintf ("Usage: c[?cDdxf] [argument]\n");
+		eprintf ("Usage: c[?cDdxfw] [argument]\n");
 	}
-
 	return 0;
 }
 

@@ -418,6 +418,8 @@ R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
+	core->watchers = r_list_new ();
+	core->watchers->free = r_core_cmpwatch_free;
 	core->vmode = R_FALSE;
 	core->section = NULL;
 	core->ffio = 0;
@@ -533,6 +535,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_core_file_free (c->file);
 	c->file = NULL;
 	r_list_free (c->files);
+	r_list_free (c->watchers);
 	free (c->num);
 	r_cmd_free (c->rcmd);
 	r_anal_free (c->anal);
