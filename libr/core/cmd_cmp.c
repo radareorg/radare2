@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2012 - pancake */
 
-R_API int r_core_cmpwatch_free (RCoreCmpWatcher *w) {
+R_API void r_core_cmpwatch_free (RCoreCmpWatcher *w) {
 	free (w->ndata);
 	free (w->odata);
 	free (w);
@@ -39,7 +39,7 @@ R_API int r_core_cmpwatch_del (RCore *core, ut64 addr) {
 	RListIter *iter, *iter2;
 	r_list_foreach_safe (core->watchers, iter, iter2, w) {
 		if (w->addr == addr || addr == UT64_MAX) {
-			r_list_del (w);
+			r_list_delete (core->watchers, iter);
 			ret = R_TRUE;
 		}
 	}

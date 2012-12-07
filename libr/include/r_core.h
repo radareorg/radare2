@@ -308,7 +308,8 @@ R_API void r_core_diff_show(RCore *core, RCore *core2);
 
 
 /* watchers */
-R_API int r_core_cmpwatch_free (RCoreCmpWatcher *w);
+R_API void r_core_cmpwatch_free (RCoreCmpWatcher *w);
+R_API RCoreCmpWatcher *r_core_cmpwatch_get (RCore *core, ut64 addr);
 R_API int r_core_cmpwatch_add (RCore *core, ut64 addr, int size, const char *cmd);
 R_API int r_core_cmpwatch_del (RCore *core, ut64 addr);
 R_API int r_core_cmpwatch_update (RCore *core, ut64 addr);

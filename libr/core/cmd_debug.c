@@ -996,7 +996,7 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_break (static_debug_stop, core->dbg);
 		for (;!r_cons_singleton ()->breaked;) {
 			int pid = atoi (input+1);
-			int opid = core->dbg->pid = pid;
+			//int opid = core->dbg->pid = pid;
 			int res = r_debug_kill (core->dbg, pid, 0, 0);
 			if (!res) break;
 			r_sys_usleep (200);
