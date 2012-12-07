@@ -26,7 +26,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	if (!perm) perm = core->file->rwx;
 	path = strdup (core->file->uri);
 	if (r_config_get_i (core->config, "cfg.debug"))
-		r_debug_kill (core->dbg, R_FALSE, 9); // KILL
+		r_debug_kill (core->dbg, 0, R_FALSE, 9); // KILL
 	file = r_core_file_open (core, path, perm, addr);
 	if (file) {
 		eprintf ("File %s reopened in %s mode\n", path,

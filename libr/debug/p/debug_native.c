@@ -8,6 +8,9 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#if __UNIX__
+#include <errno.h>
+#endif
 
 #if DEBUGGER
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
@@ -2089,7 +2092,7 @@ static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 }
 
 // TODO: implement own-defined signals
-static int r_debug_native_kill(RDebug *dbg, boolt thread, int sig) {
+static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 #if __WINDOWS__
 	// TODO: implement thread support signaling here
 	eprintf ("TODO: r_debug_native_kill\n");
@@ -2107,20 +2110,23 @@ static int r_debug_native_kill(RDebug *dbg, boolt thread, int sig) {
 	return R_FALSE;
 #else
 	int ret = R_FALSE;
-	if (thread) {
 #if 0
+	if (thread) {
 // XXX this is linux>2.5 specific..ugly
 		if (dbg->tid>0 && (ret = tgkill (dbg->pid, dbg->tid, sig))) {
 			if (ret != -1)
 				ret = R_TRUE;
 		}
-#endif
 	} else {
-		if (dbg->pid>0 && (ret = kill (dbg->pid, sig))) {
-			if (ret != -1)
-				ret = R_TRUE;
-		}
-	}
+#endif
+		if (pid==0) pid = dbg->pid;
+		if ((kill (pid, sig) != -1))
+			ret = R_TRUE;
+		if (errno == 1) // EPERM
+			ret = -R_TRUE;
+#if 0
+//	}
+#endif
 	return ret;
 #endif
 }

@@ -104,7 +104,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		sig = ptr? atoi (ptr+1): 0;
 		if (pid > 0) {
 			eprintf ("Sending signal '%d' to pid '%d'\n", sig, pid);
-			r_debug_kill (core->dbg, R_FALSE, sig);
+			r_debug_kill (core->dbg, 0, R_FALSE, sig);
 		} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
 		break;
 	case 'n':
@@ -992,6 +992,17 @@ static int cmd_debug(void *data, const char *input) {
 	case 'o':
 		r_core_file_reopen (core, input[1]? input+2: NULL, 0);
 		break;
+	case 'w':
+		r_cons_break (static_debug_stop, core->dbg);
+		for (;!r_cons_singleton ()->breaked;) {
+			int pid = atoi (input+1);
+			int opid = core->dbg->pid = pid;
+			int res = r_debug_kill (core->dbg, pid, 0, 0);
+			if (!res) break;
+			r_sys_usleep (200);
+		}
+			r_cons_break_end();
+		break;
 	default:
 		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"
 		" dh [handler]   list or set debugger handler\n"
@@ -1005,7 +1016,8 @@ static int cmd_debug(void *data, const char *input) {
 		" db[?]          breakpoints\n"
 		" dbt            display backtrace\n"
 		" dt[?r] [tag]   display instruction traces (dtr=reset)\n"
-		" dm[?*]         show memory maps\n");
+		" dm[?*]         show memory maps\n"
+		" dw [pid]       block prompt until pid dies\n");
 		break;
 	}
 	if (follow>0) {

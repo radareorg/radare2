@@ -52,7 +52,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	ud_set_input_buffer (&disasm_obj, buf, len);
 	ud_set_pc (&disasm_obj, a->pc);
 	ud_set_mode (&disasm_obj, a->bits);
-
 /*
 disasm_obj.inp_fill = 10;
 disasm_obj.inp_curr = 0;

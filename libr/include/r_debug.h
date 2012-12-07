@@ -177,7 +177,7 @@ typedef struct r_debug_plugin_t {
 	int (*step_over)(RDebug *dbg);
 	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
 	int (*wait)(RDebug *dbg, int pid);
-	int (*kill)(RDebug *dbg, boolt thread, int sig);
+	int (*kill)(RDebug *dbg, int pid, int tid, int sig);
 	int (*contsc)(RDebug *dbg, int pid, int sc);
 	RList* (*frames)(RDebug *dbg, ut64 at);
 	RBreakpointCallback breakpoint;
@@ -233,7 +233,7 @@ R_API RDebug *r_debug_new(int hard);
 R_API RDebug *r_debug_free(RDebug *dbg);
 
 /* send signals */
-R_API int r_debug_kill(RDebug *dbg, boolt thread, int sig);
+R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig);
 // XXX: must be uint64 action
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
 R_API int r_debug_step(RDebug *dbg, int steps);

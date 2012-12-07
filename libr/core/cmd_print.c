@@ -217,9 +217,10 @@ static int cmd_print(void *data, const char *input) {
 		if (len>core->blocksize)
 			r_core_block_size (core, len);
 		if (l==0) l = len;
-		for (i=j=0; i<bs && j<len; i+=ret,j++) {
+		for (i=j=0; i<bs && i<len && j<len; i+=ret, j++) {
 			r_asm_set_pc (core->assembler, core->offset+i);
-			ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
+			ret = r_asm_disassemble (core->assembler,
+				&asmop, buf+i, core->blocksize-i);
 			//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 			if (ret<1) {
 				ret = err = 1;
@@ -227,7 +228,8 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				if (decode) {
 					char *tmpopstr, *opstr;
-					r_anal_op (core->anal, &analop, core->offset+i, buf+i, core->blocksize-i);
+					r_anal_op (core->anal, &analop, core->offset+i,
+						buf+i, core->blocksize-i);
 					tmpopstr = r_anal_op_to_string (core->anal, &analop);
 					opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
 					r_cons_printf ("%s\n", opstr);
@@ -324,7 +326,9 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *block = malloc (b->size+1);
 				if (block) {
 					r_core_read_at (core, b->addr, block, b->size);
-					core->num->value = r_core_print_disasm (core->print, core, b->addr, block, b->size, 9999, 0, 1);
+					core->num->value = r_core_print_disasm (
+						core->print, core, b->addr, block,
+						b->size, 9999, 0, 2);
 					free (block);
 					return 0;
 				}
@@ -338,7 +342,9 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *block = malloc (f->size+1);
 				if (block) {
 					r_core_read_at (core, f->addr, block, f->size);
-					core->num->value = r_core_print_disasm (core->print, core, f->addr, block, f->size, 9999, 0, 1);
+					core->num->value = r_core_print_disasm (
+						core->print, core, f->addr, block,
+						f->size, 9999, 0, 2);
 					free (block);
 					return 0;
 				}
