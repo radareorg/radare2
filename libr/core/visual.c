@@ -321,7 +321,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				int cur = core->print->cur;
 				if (cur>=core->blocksize)
 					cur = core->print->cur-1;
-				sprintf (buf, "%s @ $$+%i:%i", p, cursor<ocursor?
+				sprintf (buf, "%s @ $$+%i!%i", p, cursor<ocursor?
 					cursor:ocursor, R_ABS (ocursor-cursor)+1);
 				r_core_cmd (core, buf, 0);
 				free (p);
@@ -621,8 +621,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			int cur = core->print->cur;
 			if (cur>=core->blocksize)
 				cur = core->print->cur-1;
-			if (ocursor==-1) sprintf (buf, "wos 01 @ $$+%i:1",cursor);
-			else sprintf (buf, "wos 01 @ $$+%i:%i", cursor<ocursor?
+			if (ocursor==-1) sprintf (buf, "wos 01 @ $$+%i!1",cursor);
+			else sprintf (buf, "wos 01 @ $$+%i!%i", cursor<ocursor?
 				cursor:ocursor, R_ABS (ocursor-cursor)+1);
 			r_core_cmd (core, buf, 0);
 		} else {
@@ -635,8 +635,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			int cur = core->print->cur;
 			if (cur>=core->blocksize)
 				cur = core->print->cur-1;
-			if (ocursor==-1) sprintf (buf, "woa 01 @ $$+%i:1", cursor);
-			else sprintf (buf, "woa 01 @ $$+%i:%i",
+			if (ocursor==-1) sprintf (buf, "woa 01 @ $$+%i!1", cursor);
+			else sprintf (buf, "woa 01 @ $$+%i!%i",
 				cursor<ocursor? cursor: ocursor, R_ABS (ocursor-cursor)+1);
 			r_core_cmd (core, buf, 0);
 		} else {
@@ -874,6 +874,8 @@ static void r_core_visual_refresh (RCore *core) {
 
 	r_cons_print_clear ();
 
+	vi = r_config_get (core->config, "cmd.vprompt");
+	if (vi) r_core_cmd (core, vi, 0);
 	vi = r_config_get (core->config, "cmd.cprompt");
 	if (vi && *vi) {
 		cons->blankline = R_FALSE;
@@ -885,8 +887,6 @@ static void r_core_visual_refresh (RCore *core) {
 	} else {
 		r_core_visual_title (core, color);
 	}
-	vi = r_config_get (core->config, "cmd.vprompt");
-	if (vi) r_core_cmd (core, vi, 0);
 
 	if (zoom) r_core_cmd (core, "pz", 0);
 	else r_core_cmd (core, printfmt[PIDX], 0);

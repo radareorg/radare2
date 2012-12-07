@@ -412,6 +412,8 @@ enum {
 	R_ANAL_COND_GT,
 	R_ANAL_COND_LE,
 	R_ANAL_COND_LT,
+	R_ANAL_COND_AL,
+	R_ANAL_COND_NV,
 };
 
 enum {

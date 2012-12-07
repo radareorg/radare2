@@ -689,10 +689,22 @@ toro:
 		}
 
 		if (analop.refptr) {
-			ut32 word = 0;
-			int ret = r_io_read_at (core->io, analop.ref, (void *)&word, sizeof (word));
-			if (ret == sizeof (word)) {
-				RMetaItem *mi2 = r_meta_find (core->anal->meta, (ut64)word,
+			ut64 word8 = 0;
+			ut32 word4 = 0;
+			int ret;
+			if (core->assembler->bits==64) {
+				ret = r_io_read_at (core->io, analop.ref,
+					(void *)&word8, sizeof (word8))
+					== sizeof (word8);
+			} else {
+				ret = r_io_read_at (core->io, analop.ref,
+					(void *)&word4, sizeof (word4))
+					== sizeof (word4);
+				word8 = word4;
+			}
+			
+			if (ret) {
+				RMetaItem *mi2 = r_meta_find (core->anal->meta, word8,
 					R_META_TYPE_ANY, R_META_WHERE_HERE);
 				if (!mi2) {
 					mi2 = r_meta_find (core->anal->meta, (ut64)analop.ref,
@@ -702,16 +714,21 @@ toro:
 						r_cons_printf (" \"%s\" @ 0x%08"PFMT64x":%"PFMT64d,
 								str, analop.ref, mi2->size);
 						free (str);
-					} else r_cons_printf ("; => 0x%08x ", word);
+					} else r_cons_printf (" ; 0x%08x [0x%"PFMT64x"]",
+							word8, analop.ref);
 				} else {
 					if (mi2->type == R_META_TYPE_STRING) {
 						char *str = r_str_unscape (mi2->str);
-						r_cons_printf (" (at=0x%08x) (len=%"PFMT64d
-							") \"%s\" ", word, mi2->size, str);
+						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d
+							") \"%s\" ", word8, mi2->size, str);
 						free (str);
 					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
 				}
-			} else r_cons_printf (" ; => 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
+			} else r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
+		} else {
+			if (analop.ref != UT64_MAX && analop.ref) {
+				r_cons_printf (" ; 0x%08"PFMT64x" ", analop.ref);
+			}
 		}
 		if (show_comments && show_comment_right && comment) {
 			int c = r_cons_get_column ();

@@ -19,29 +19,14 @@ static const char *gpr64[] = {
 static const char unkreg[] = "";
 
 static const char* anal_reg(ut32 rop) {
-	const char **table = NULL, *ret = NULL;
-
-	if (X86IM_IO_ROP_IS_GPR8 (rop))
-		table = gpr8;
-	else
-	if (X86IM_IO_ROP_IS_GPR8B (rop))
-		table = gpr8b;
-	else
-	if (X86IM_IO_ROP_IS_GPR16 (rop))
-		table = gpr16;
-	else
-	if (X86IM_IO_ROP_IS_GPR32 (rop))
-		table = gpr32;
-	else
-	if (X86IM_IO_ROP_IS_GPR64 (rop))
-		table = gpr64;
-	else
-	if (rop == X86IM_IO_ROP_ID_RIP)
-		return "rip";
-	if (table)
-		ret = table[X86IM_IO_ROP_GET_ID (rop)];
-	else ret = unkreg;
-	return ret;
+	const char **table = NULL;
+	if (X86IM_IO_ROP_IS_GPR8 (rop))  table = gpr8;  else
+	if (X86IM_IO_ROP_IS_GPR8B (rop)) table = gpr8b; else
+	if (X86IM_IO_ROP_IS_GPR16 (rop)) table = gpr16; else
+	if (X86IM_IO_ROP_IS_GPR32 (rop)) table = gpr32; else
+	if (X86IM_IO_ROP_IS_GPR64 (rop)) table = gpr64; else
+	if (rop == X86IM_IO_ROP_ID_RIP) return "rip";
+	return table? table[X86IM_IO_ROP_GET_ID (rop)]: unkreg;
 }
 
 /* 0x0ff */
@@ -808,10 +793,6 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	if (data == NULL)
 		return 0;
 
-	if (anal->bits == 16) {
-		return x86_udis86_op (anal, op, addr, data, len);
-	}
-
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->addr = addr;
@@ -841,6 +822,8 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			io.len = 3;
 			imm = io.imm & 0xffff;
 			break;
+		default:
+			return x86_udis86_op (anal, op, addr, data, len);
 		}
 	}
 	switch (io.id) {

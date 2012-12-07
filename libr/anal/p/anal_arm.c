@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 */
-/*   pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -20,27 +19,14 @@ static unsigned int disarm_branch_offset (unsigned int pc, unsigned int insoff) 
 	return add + pc + 8;
 }
 
-#define IS_BRANCH(x) \
-	((x&ARM_BRANCH_I_MASK) == ARM_BRANCH_I)
-
-#define IS_BRANCHL(x) \
-	(IS_BRANCH(x) && (x&ARM_BRANCH_LINK) == ARM_BRANCH_LINK)
-
-#define IS_RETURN(x) \
-	((x&(ARM_DTM_I_MASK|ARM_DTM_LOAD|(1<<15))) == (ARM_DTM_I|ARM_DTM_LOAD|(1<<15)))
-
+#define IS_BRANCH(x)  ((x&ARM_BRANCH_I_MASK) == ARM_BRANCH_I)
+#define IS_BRANCHL(x) (IS_BRANCH(x) && (x&ARM_BRANCH_LINK) == ARM_BRANCH_LINK)
+#define IS_RETURN(x)  ((x&(ARM_DTM_I_MASK|ARM_DTM_LOAD|(1<<15))) == (ARM_DTM_I|ARM_DTM_LOAD|(1<<15)))
 //if ( (inst & ( ARM_DTX_I_MASK | ARM_DTX_LOAD  | ( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ) )
-#define IS_UNKJMP(x) \
-	(( (( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ))
-
-#define IS_LOAD(x) \
-	((x&ARM_DTX_LOAD) == (ARM_DTX_LOAD))
-
-#define IS_CONDAL(x) \
-	((x&ARM_COND_MASK)==ARM_COND_AL)
-
-#define IS_EXITPOINT(x) \
-	(IS_BRANCH (x) || IS_RETURN (x) || IS_UNKJMP (x))
+#define IS_UNKJMP(x)  (( (( ARM_DTX_RD_MASK ) ) ) == ( ARM_DTX_LOAD | ARM_DTX_I | ( ARM_PC << 12 ) ))
+#define IS_LOAD(x)    ((x&ARM_DTX_LOAD) == (ARM_DTX_LOAD))
+#define IS_CONDAL(x)  ((x&ARM_COND_MASK)==ARM_COND_AL)
+#define IS_EXITPOINT(x) (IS_BRANCH (x) || IS_RETURN (x) || IS_UNKJMP (x))
 
 #define API static
 
@@ -77,7 +63,6 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			return op->length;
 		}
 	}
-
 	if (ins == 0xbf) {
 		// TODO: add support for more NOP instructions
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -121,12 +106,42 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	return op->length;
 }
 
+#if 0
+	"eq", "ne", "cs", "cc", "mi", "pl", "vs", "vc",
+	"hi", "ls", "ge", "lt", "gt", "le", "al", "nv",
+#endif
+static int iconds[] = {
+	R_ANAL_COND_EQ,
+	R_ANAL_COND_NE,
+	0, // cs
+	0, // cc
+	0, // mi
+	0, // pl
+	0, // vs
+	0, // vc
+
+	0, // hi
+	0, // ls
+	R_ANAL_COND_GE,
+	R_ANAL_COND_LT,
+	R_ANAL_COND_GT,
+	R_ANAL_COND_LE,
+	R_ANAL_COND_AL,
+	R_ANAL_COND_NV,
+};
+
+static int op_cond (const ut8 *data) {
+	ut8 b = data[3] >>4;
+	if (b==0xf) return 0;
+	return iconds[b];
+}
+
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-unsigned char ndata[4];
-	struct arm_insn *arminsn;
+	const ut8 *b = (ut8 *)data;
+	ut8 ndata[4];
 	ut32 branch_dst_addr, i = 0;
 	ut32* code = (ut32 *)data;
-	const ut8 *b = (ut8 *)data;
+	struct arm_insn *arminsn;
 
 	if (data == NULL)
 		return 0;
@@ -156,8 +171,29 @@ unsigned char ndata[4];
 	fprintf(stderr, "CODE %02x %02x %02x %02x\n",
 		codeA[0], codeA[1], codeA[2], codeA[3]);
 #endif
+	op->cond = op_cond (data);
+	if (b[2]==0x8f && b[3]==0xe2) {
+		op->type = R_ANAL_OP_TYPE_ADD;
+		op->ref = addr+b[0]+((b[1]&0xf)<<8);
+	} else
+	if (b[2]>=0x9c && b[2]<= 0x9f) { // load instruction
+		char ch = b[3]&0xf;
+		switch (ch) {
+			case 5:
+				if ((b[3]&0xf) == 5) {
+					op->ref = 12+addr+b[0]+((b[1]&0xf)<<8);
+					op->refptr = R_TRUE;
+				}
+			case 4:
+			case 6:
+			case 7:
+			case 8:
+			case 9:
+				op->type = R_ANAL_OP_TYPE_LOAD;
+		}
+	} else
     	// 0x000037b8  00:0000   0             800000ef  svc 0x00000080
-	if (b[2] ==0xa0 && b[3]==0xe1) {
+	if (b[2]==0xa0 && b[3]==0xe1) {
 		int n = (b[0]<<16) + b[1];
 		op->type = R_ANAL_OP_TYPE_MOV;
 		switch (n) {
@@ -173,15 +209,14 @@ unsigned char ndata[4];
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->value = (b[0] | (b[1]<<8) | (b[2]<<2));
 	} else
-	if (b[3]==0xe5) {
-		if (b[2]==0x9f) {
-			/* LDR/STR */
-			op->type = R_ANAL_OP_TYPE_STORE;
-			op->stackop = R_ANAL_STACK_SET;
-
-			op->ref = 12+addr+b[0]+((b[1]&0xf)<<8);
-			op->refptr = R_TRUE;
-		} else
+#if 0
+          0x00000000      a4a09fa4         ldrge sl, [pc], 0xa4
+          0x00000000      a4a09fa5         ldrge sl, [pc, 0xa4]
+          0x00000000      a4a09fa6         ldrge sl, [pc], r4, lsr 1
+          0x00000000      a4a09fa7         ldrge sl, [pc, r4, lsr 1]
+          0x00000000      a4a09fe8         ldm pc, {r2, r5, r7, sp, pc}; <UNPREDICT
+#endif
+	if ((b[3]&0xf)==5) { // [reg,0xa4]
 		if ((b[1]&0xf0) == 0xf0) {
 			//ldr pc, [pc, #1] ; 
 			op->type = R_ANAL_OP_TYPE_UJMP;
