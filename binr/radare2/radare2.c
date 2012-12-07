@@ -442,7 +442,7 @@ int main(int argc, char **argv) {
 		if (debug) {
 			if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 				if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))
-					r_debug_kill (r.dbg, R_FALSE, 9); // KILL
+					r_debug_kill (r.dbg, 0, R_FALSE, 9); // KILL
 			} else continue;
 		}
 		prj = r_config_get (r.config, "file.project");
