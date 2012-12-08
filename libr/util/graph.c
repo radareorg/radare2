@@ -3,6 +3,20 @@
 
 #include <r_util.h>
 
+#if 0
+RGraph *r_anal_getgraph(RAnal *anal, ut64 addr) {
+        RGraph *g;
+        RFunction *f = r_anal_fcn_get (anal, addr);
+        if (!f) return NULL;
+        g = r_graph_new ();
+        // walk basic blocks, and create nodes and edges
+}
+
+// r_anal_graph_to_kv()
+node.0x804840={"name":"patata",size:123,"code":"jlasdfjlksf"}
+node.0x804840.to=[0x804805,0x804805,0x0485085,0x90850]
+#endif
+
 R_API RGraphNode *r_graph_node_new (ut64 addr, void *data) {
 	RGraphNode *p = R_NEW0 (RGraphNode);
 	p->parents = r_list_new ();

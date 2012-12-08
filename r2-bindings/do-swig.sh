@@ -18,7 +18,7 @@ cd ${LNG}
 echo "Build ${MOD} `pkg-config --libs ${MOD}`"
 
 case "${LNG}" in
-*node*)
+*node*|ctypes)
 	VBMODE=''
 	;;
 *)

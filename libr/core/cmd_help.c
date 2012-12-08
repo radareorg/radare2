@@ -195,6 +195,16 @@ static int cmd_help(void *data, const char *input) {
 		}
 		}
 		break;
+	case 'P':
+		if (core->io->va) {
+			ut64 o, n = (input[0] && input[1])?
+				r_num_math (core->num, input+2): core->offset;
+			o = r_io_section_offset_to_vaddr (core->io, n);
+			r_cons_printf ("0x%08"PFMT64x"\n", o);
+		} else {
+			eprintf ("io.va is false\n");
+		}
+		break;
 	case 'p':
 		if (core->io->va) {
 		// physical address
@@ -345,6 +355,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?b [num]        ; show binary value of number\n"
 			" ?f [num] [str]  ; map each bit of the number as flag string index\n"
 			" ?p vaddr        ; get physical address for given vaddr\n"
+			" ?P paddr        ; get virtual address for given physical one\n"
 			" ?s from to step ; sequence of numbers from to by steps\n"
 			" ?S addr         ; return section name of given address\n"
 			" ?x num|0xnum|str; returns the hexpair of number or string\n"

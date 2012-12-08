@@ -42,6 +42,8 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 	RAnalFunction *fcn;
 	char str[1024], buf[64];
 	int i, eax = 0; // eax = arg0
+	int str_len = 0;
+	int buf_len = 0;
 
 	str[0] = 0;
 	switch (cc->type) {
@@ -86,12 +88,25 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 		else if (cc->jump != -1LL)
 			snprintf (str, sizeof (str), "0x%08"PFMT64x"(", cc->jump);
 		else strncpy (str, "unk(", sizeof (str)-1);
+		str_len = strlen (str);
 		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?cc->nargs:fcn->nargs);
+		if (cc->nargs>8) {
+			//eprintf ("too many arguments for stdcall. chop to 8\n");
+			cc->nargs = 8;
+		}
+		// TODO: optimize string concat
 		for (i=0; i<cc->nargs; i++) {
 			if (cc->args[cc->nargs-i] != -1LL)
-				 snprintf (buf, sizeof (buf), "0x%"PFMT64x, cc->args[cc->nargs-i]);
+				 snprintf (buf, sizeof (buf),
+					"0x%"PFMT64x, cc->args[cc->nargs-i]);
 			else strncpy (buf, "unk", sizeof (buf)-1);
+			buf_len = strlen (buf);
+			if ((buf_len+str_len+5)>=sizeof (str)) {
+				strcat (str, "...");
+				break;
+			}
 			strcat (str, buf);
+			str_len += buf_len;
 			if (i<cc->nargs-1) strcat (str, ", ");
 		}
 		strcat (str, ")");
