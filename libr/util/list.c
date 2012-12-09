@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2012 - pancake */
 // TODO: RRef - reference counting
 
 #include <stdio.h>
@@ -123,6 +123,12 @@ R_API RList *r_list_new() {
 	RList *list = R_NEW (RList);
 	r_list_init (list);
 	return list;
+}
+
+R_API RList *r_list_newf(RListFree *f) {
+	RList *l = r_list_new ();
+	if (l) l->free = f;
+	return l;
 }
 
 /* remove all elements of a list */

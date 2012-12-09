@@ -86,6 +86,7 @@ typedef struct r_bin_t {
 	int narch;
 	void *user;
 	void *bin_obj;
+	int minstrlen;
 	struct r_bin_xtr_plugin_t *curxtr;
 	RList *plugins;
 	RList *binxtrs;
@@ -130,6 +131,7 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinArch *arch, int type, int idx);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
+	int minstrlen;
 } RBinPlugin;
 
 typedef struct r_bin_section_t {

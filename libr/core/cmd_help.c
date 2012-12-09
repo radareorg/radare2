@@ -354,7 +354,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?k k[=v]        ; key-value temporal storage for the user\n"
 			" ?b [num]        ; show binary value of number\n"
 			" ?f [num] [str]  ; map each bit of the number as flag string index\n"
-			" ?p vaddr        ; get physical address for given vaddr\n"
+			" ?p vaddr        ; get physical address for given virtual address\n"
 			" ?P paddr        ; get virtual address for given physical one\n"
 			" ?s from to step ; sequence of numbers from to by steps\n"
 			" ?S addr         ; return section name of given address\n"

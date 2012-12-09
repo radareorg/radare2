@@ -24,6 +24,8 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 		eprintf ("WARNING: bin_strings buffer is too big\n");
 		return;
 	}
+	if (to == 0)
+		to = arch->buf->length;
 	if (arch->buf && arch->buf->buf)
 	for (i = from; i < to; i++) { 
 		if ((IS_PRINTABLE (arch->buf->buf[i])) && \
@@ -109,12 +111,11 @@ static void load_languages(RBin *bin) {
 }
 
 static int r_bin_init_items(RBin *bin, int dummy) {
-	int i;
+	int i, minlen = bin->minstrlen;
 	RListIter *it;
 	RBinPlugin *plugin, *cp;
 	RBinArch *a = &bin->cur;
 	RBinObject *o = a->o;
-
 	a->curplugin = NULL;
 	r_list_foreach (bin->plugins, it, plugin) {
 		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
@@ -124,8 +125,18 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 		}
 	}
 	cp = bin->cur.curplugin;
-	if (!cp || !cp->load || !cp->load (a))
+	if (minlen<0) {
+		if (cp && cp->minstrlen) 
+			minlen = cp->minstrlen;
+		else minlen = -minlen;
+	}
+	if (!cp || !cp->load || !cp->load (a)) {
+		r_buf_free (a->buf);
+		a->buf = r_buf_mmap (bin->cur.file, 0);
+		a->size = a->buf->length;
+		o->strings = get_strings (a, minlen);
 		return R_FALSE;
+	}
 	if (cp->baddr) o->baddr = cp->baddr (a);
 	// XXX: no way to get info from xtr pluginz?
 	if (cp->size) o->size = cp->size (a);
@@ -140,11 +151,10 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	if (cp->relocs) o->relocs = cp->relocs (a);
 	if (cp->sections) o->sections = cp->sections (a);
 	if (cp->strings) o->strings = cp->strings (a);
-	else o->strings = get_strings (a, 4);
+	else o->strings = get_strings (a, minlen);
 	if (cp->symbols) o->symbols = cp->symbols (a);
 	if (cp->classes) o->classes = cp->classes (a);
 	if (cp->lines) o->lines = cp->lines (a);
-
 	load_languages (bin);
 
 	return R_TRUE;
@@ -378,6 +388,7 @@ R_API RBin* r_bin_new() {
 	if (!bin) return NULL;
 	bin->plugins = r_list_new();
 	bin->plugins->free = free;
+	bin->minstrlen = -2;
 	bin->cur.o = R_NEW0 (RBinObject);
 	for (i=0; bin_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RBinPlugin);
@@ -413,7 +424,6 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 			return R_TRUE;
 		}
 	}
-
 	return R_FALSE;
 }
 

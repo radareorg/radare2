@@ -31,7 +31,7 @@ typedef struct r_oflist_t {
 #endif
 
 #ifdef R_API
-#define R_LIST_NEW(x,y) x=r_list_new();x->free=(RListFree)y
+//#define R_LIST_NEW(x,y) x=r_list_new();x->free=(RListFree)y
 #define r_list_foreach(list, it, pos) \
 	if (list) for (it = list->head; it && (pos = it->data); it = it->n)
 /* Safe when calling r_list_delete() while iterating over the list. */
@@ -55,6 +55,7 @@ typedef struct r_oflist_t {
 #define r_list_iter_free(x) x
 #endif
 R_API RList *r_list_new();
+R_API RList *r_list_newf(RListFree *f);
 //R_API void r_list_iter_free (RListIter *x);
 R_API RListIter *r_list_iter_get_next(RListIter *list);
 R_API void *r_list_iter_get_data(RListIter *list);

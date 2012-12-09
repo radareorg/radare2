@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 -- pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -76,7 +76,6 @@ static RBinInfo* info(RBinArch *arch) {
 	ret->dbg_info = 0;
 	return ret;
 }
-
 
 static int check(RBinArch *arch) {
 	char *p;

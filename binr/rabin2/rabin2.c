@@ -41,6 +41,7 @@ static RLib *l;
 
 static int rabin_show_help() {
 	printf ("rabin2 [options] [file]\n"
+		" -@ [addr]       show section, symbol or import at addr\n"
 		" -A              list archs\n"
 		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
 		" -b [bits]       set bits (32, 64 ...)\n"
@@ -50,29 +51,30 @@ static int rabin_show_help() {
 		" -d              show debug/dwarf information\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
+		" -h              this help\n"
+		" -H              header fields\n"
 		" -i              imports (symbols imported from libraries)\n"
+		" -I              binary info\n"
 		" -j              output in json\n"
+		" -l              linked libraries\n"
+		" -L              list supported bin plugins\n"
+		" -m [addr]       show source line at addr\n"
+		" -M              main (show address of main symbol)\n"
+		" -n [str]        show section, symbol or import named str\n"
+		" -N [minlen]     force minimum number of chars per string (see -z)\n"
+		" -o [str]        output file/folder for write operations (out by default)\n"
+		" -O [str]        write/extract operations (-O help)\n"
+		" -q              be quiet, just show fewer data\n"
+		" -r              radare output\n"
+		" -R              relocations\n"
 		" -s              symbols (exports)\n"
 		" -S              sections\n"
-		" -M              main (show address of main symbol)\n"
-		" -I              binary info\n"
-		" -H              header fields\n"
-		" -l              linked libraries\n"
-		" -R              relocations\n"
-		" -O [str]        write/extract operations (-O help)\n"
-		" -o [str]        output file/folder for write operations (out by default)\n"
-		" -r              radare output\n"
 		" -v              use vaddr in radare output\n"
-		" -m [addr]       show source line at addr\n"
-		" -L              list supported bin plugins\n"
-		" -@ [addr]       show section, symbol or import at addr\n"
-		" -n [str]        show section, symbol or import named str\n"
-		" -q              be quiet, just show fewer data\n"
+		" -V              show version information\n"
 		" -x              extract bins contained in file\n"
 		" -Z              size of binary\n"
 		" -z              strings\n"
-		" -V              show version information\n"
-		" -h              this help\n");
+		);
 	return 1;
 }
 
@@ -311,7 +313,7 @@ int main(int argc, char **argv) {
 	r_lib_opendir (l, LIBDIR"/radare2/");
 
 #define set_action(x) actions++; action |=x
-	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:@:VisSIHelRwO:o:rvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:N:@:VisSIHelRwO:o:rvLhxzZ")) != -1) {
 		switch (c) {
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
@@ -362,6 +364,7 @@ int main(int argc, char **argv) {
 		case 'B': gbaddr = r_num_math (NULL, optarg); break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
+		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
 		case 'V': return rabin_show_version();
 		case 'h':
 		default:
