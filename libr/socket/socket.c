@@ -216,15 +216,29 @@ R_API int r_socket_close (RSocket *s) {
 		WSACleanup ();
 		ret = closesocket (s->fd);
 #else
-		shutdown (s->fd, SHUT_RDWR);
+		//shutdown (s->fd, SHUT_RDWR);
 		ret = close (s->fd);
 #endif
 	}
 #if HAVE_LIB_SSL
-	if (s->is_ssl && s->sfd)
-		SSL_shutdown (s->sfd);
+	if (s->is_ssl && s->sfd) {
+		SSL_free (s->sfd);
+		s->sfd = NULL;
+	}
 #endif
 	return ret;
+}
+
+R_API int r_socket_close_later (RSocket *s) {
+#if __UNIX__
+	if (!fork ()) {
+		sleep (3);
+		r_socket_close (s);
+		exit (0);
+	}
+#else
+	r_socket_close (s);
+#endif
 }
 
 R_API int r_socket_free (RSocket *s) {
@@ -373,7 +387,7 @@ R_API int r_socket_ready(RSocket *s, int secs, int usecs) {
 	FD_SET (s->fd, &rfds);
 	tv.tv_sec = secs;
 	tv.tv_usec = usecs;
-	if (select (1, &rfds, NULL, NULL, &tv) == -1)
+	if (select (s->fd+1, &rfds, NULL, NULL, &tv) == -1)
 		return -1;
 	return FD_ISSET (0, &rfds);
 #else
@@ -408,17 +422,19 @@ R_API char *r_socket_to_string(RSocket *s) {
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
 	for (;;) {
+		int b = 65536; // Use MTU 1500?
+		if (b>len) b = len;
 #if HAVE_LIB_SSL
 		if (s->is_ssl)
 			if (s->bio)
-				ret = BIO_write (s->bio, buf+delta, len);
+				ret = BIO_write (s->bio, buf+delta, b);
 			else
-				ret = SSL_write (s->sfd, buf+delta, len);
+				ret = SSL_write (s->sfd, buf+delta, b);
 		else
 #endif
-			ret = send (s->fd, buf+delta, len, 0);
-		if (ret == 0)
-			return -1;
+			ret = send (s->fd, buf+delta, len, MSG_NOSIGNAL);
+		//if (ret == 0) return -1;
+		if (!ret) continue;
 		if (ret == len)
 			return len;
 		if (ret<0)

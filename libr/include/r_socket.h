@@ -37,6 +37,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 R_API int r_socket_unix_listen (RSocket *s, const char *file);
 #endif
 R_API int r_socket_close (RSocket *s);
+R_API int r_socket_close_later (RSocket *s);
 R_API int r_socket_free (RSocket *s);
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile);
 R_API RSocket *r_socket_accept (RSocket *s);
@@ -83,5 +84,6 @@ typedef struct r_socket_http_request {
 R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout);
 R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int x, const char *headers);
 R_API void r_socket_http_close (RSocketHTTPRequest *rs);
+R_API void r_socket_http_close_later (RSocketHTTPRequest *rs);
 #endif
 #endif

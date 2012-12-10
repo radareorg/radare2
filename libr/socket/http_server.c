@@ -69,8 +69,20 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 	if (len<1) len = out? strlen (out): 0;
 	if (!headers) headers = "";
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\n%s"
-		"Content-Length: %d\n\n", code, strcode, headers, len);
+		"Connection: close\nContent-Length: %d\n\n", code, strcode, headers, len);
 	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
+}
+
+R_API void r_socket_http_close_later (RSocketHTTPRequest *rs) {
+#if __UNIX__
+	if (!fork ()) {
+		sleep (3);
+		r_socket_http_close (rs);
+		exit (0);
+	}
+#else
+	r_socket_http_close (rs);
+#endif
 }
 
 /* close client socket and free struct */
@@ -92,7 +104,7 @@ int main() {
 		return 1;
 	}
 	for (;;) {
-		RSocketHTTPRequest *rs = r_socket_http_accept (s);
+		RSocketHTTPRequest *rs = r_socket_http_accept (s, 0);
 		if (!rs) continue;
 		if (!strcmp (rs->method, "GET")) {
 			r_socket_http_response (rs, 200,

@@ -477,7 +477,7 @@ else
 	}
 	if (showhdr && fmt==1)
 		r_cons_printf ("}\n");
-	if (fmt==2) r_cons_printf ("]");
+	if (fmt==2) r_cons_printf ("]\n");
 }
 
 static void fcn_list_bbs(RAnalFunction *fcn) {
