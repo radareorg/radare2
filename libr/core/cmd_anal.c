@@ -588,7 +588,7 @@ case 'o':
 			}
 			break;
 		case 'c':
-			r_core_anal_refs (core, r_num_math (core->num, input+2), 1);
+			r_core_anal_refs (core, r_num_math (core->num, input+2), input[2]=='j'? 2: 1);
 			break;
 		case 'l':
 			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_GRAPHLINES);

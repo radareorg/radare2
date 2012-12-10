@@ -402,21 +402,47 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
+#define FMT_NO 0
+#define FMT_GV 1
+#define FMT_JS 2
+R_API void r_core_anal_refs(RCore *core, ut64 addr, int fmt) {
+	const int hideempty = 1;
+	const int usenames = 1;
         int is_html = r_cons_singleton ()->is_html;
 	const char *font = r_config_get (core->config, "graph.font");
 	RListIter *iter, *iter2;
 	RAnalRef *fcnr;
 	RAnalFunction *fcni;
 	int showhdr = 0;
+	int first, first2;
 
+	if (fmt==2) r_cons_printf ("[");
+	first= 0;
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (addr != 0 && addr != fcni->addr)
 			continue;
-		if (!gv) r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
+		if (fmt==0) {
+			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
+		} else if (fmt==2) {
+			//r_cons_printf ("{\"name\":\"%s\", \"size\":%d,\"imports\":[", fcni->name, fcni->size);
+			if (hideempty && r_list_length (fcni->refs)==0)
+				continue;
+if (usenames)
+			r_cons_printf ("%s{\"name\":\"%s\", \"size\":%d,\"imports\":[",
+				first?",":"",fcni->name, fcni->size);
+else
+			r_cons_printf ("%s{\"name\":\"0x%08"PFMT64x"\", \"size\":%d,\"imports\":[",
+				first?",":"",fcni->addr, fcni->size);
+			first = 1;
+		}
+		first2 = 0;
 		r_list_foreach (fcni->refs, iter2, fcnr) {
+			RAnalFunction *fr = r_anal_get_fcn_at (core->anal, fcnr->addr);
+			if (!fr)
+				eprintf ("Invalid reference from 0x%08"PFMT64x
+					" to 0x%08"PFMT64x"\n", fcni->addr, fcnr->addr);
 			if (!is_html && !showhdr) {
-				if (gv) r_cons_printf ("digraph code {\n"
+				if (fmt==1) r_cons_printf ("digraph code {\n"
 					"\tgraph [bgcolor=white];\n"
 					"\tnode [color=lightgray, style=filled shape=box"
 					" fontname=\"%s\" fontsize=\"8\"];\n", font);
@@ -424,23 +450,34 @@ R_API void r_core_anal_refs(RCore *core, ut64 addr, int gv) {
 			}
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
-			if (gv) {
+			if (fmt==1) {
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 					"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 					fcni->addr, fcnr->addr, flag?flag->name:"",
 					(fcnr->type==R_ANAL_REF_TYPE_CODE ||
 					 fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red",
-					flag?flag->name:"", fcnr->addr);
+					flag? flag->name: "", fcnr->addr);
 				r_cons_printf ("\t\"0x%08"PFMT64x"\" "
 					"[label=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
 					fcnr->addr, flag?flag->name:"",
-					flag?flag->name:"", fcnr->addr);
-			}
-			else r_cons_printf (" - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
+					flag? flag->name: "", fcnr->addr);
+			} else if (fmt==2) {
+				if (fr) {
+					if (!hideempty || (hideempty && r_list_length (fr->refs)>0)) {
+if (usenames)
+						r_cons_printf ("%s\"%s\"", first2?",":"", fr->name);
+else
+						r_cons_printf ("%s\"0x%08"PFMT64x"\"", first2?",":"", fr->addr);
+						first2 = 1;
+					}
+				}
+			} else r_cons_printf (" - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 		}
+		if (fmt==2) r_cons_printf ("]}");
 	}
-	if (showhdr && gv)
+	if (showhdr && fmt==1)
 		r_cons_printf ("}\n");
+	if (fmt==2) r_cons_printf ("]");
 }
 
 static void fcn_list_bbs(RAnalFunction *fcn) {

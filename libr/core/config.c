@@ -550,6 +550,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.fortunes", "If enabled show tips at start");
 	r_config_set_cb (cfg, "cfg.sandbox", "false", &config_cfgsandbox_callback);
 	r_config_desc (cfg, "cfg.sandbox", "sandbox mode disables systems and open on upper directories");
+	r_config_set_i (cfg, "cfg.minstr", 0);
+	r_config_desc (cfg, "cfg.minstr", "Minimum string length for r_bin");
 	r_config_set (cfg, "cfg.wseek", "false");
 	r_config_desc (cfg, "cfg.wseek", "Seek after write");
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);

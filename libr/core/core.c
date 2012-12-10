@@ -31,6 +31,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	}
 	return UT64_MAX;
 }
+
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RFlagItem *flag;
@@ -39,7 +40,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	*ok = 0;
 	if (str[0]=='[') {
 		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
-		const char *p = strchr (str+1, ':');
+		const char *p = strchr (str+5, ':');
 		ut64 n;
 		// TODO: honor endian
 		if (p) {
@@ -48,12 +49,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// push state
 		{
-const char *q = r_num_calc_index (core->num, NULL);
-		n = r_num_math (core->num, str+1);
-r_num_calc_index (core->num, q);
-}
-// pop state
-		
+			const char *q = r_num_calc_index (core->num, NULL);
+			n = r_num_math (core->num, str+1);
+			r_num_calc_index (core->num, q);
+		}
+		// pop state
 		switch (refsz) {
 		case 8: {
 			ut64 num = 0;
@@ -259,11 +259,6 @@ static int autocomplete(RLine *line) {
 				free (path);
 				path = o;
 			}
-#if 0
-printf ("DIR(%s)\n", path);
-printf ("FILE(%s)\n", p);
-printf ("FILEN %d\n", n);
-#endif
  			list = p? r_sys_dir (path): NULL;
 			if (list) {
 				char buf[4096];
@@ -291,7 +286,7 @@ printf ("FILEN %d\n", n);
 		    (!memcmp (line->buffer.data, "afi ", 4)) ||
 		    (!memcmp (line->buffer.data, "afb ", 4)) ||
 		    (!memcmp (line->buffer.data, "afc ", 4)) ||
-		    (!memcmp (line->buffer.data, "aga ", 4)) ||
+		    (!memcmp (line->buffer.data, "aga ", 5)) ||
 		    (!memcmp (line->buffer.data, "agc ", 4)) ||
 		    (!memcmp (line->buffer.data, "agl ", 4)) ||
 		    (!memcmp (line->buffer.data, "agd ", 4)) ||
@@ -419,7 +414,7 @@ R_API int r_core_init(RCore *core) {
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->watchers = r_list_new ();
-	core->watchers->free = r_core_cmpwatch_free;
+	core->watchers->free = (RListFree)r_core_cmpwatch_free;
 	core->vmode = R_FALSE;
 	core->section = NULL;
 	core->ffio = 0;
@@ -509,7 +504,14 @@ R_API int r_core_init(RCore *core) {
 	core->dbg->bp->printf = r_cons_printf;
 	r_debug_io_bind (core->dbg, core->io);
 	r_core_config_init (core);
-	// XXX fix path here
+	{
+		int minstr = r_config_get_i (core->config, "cfg.minstr");
+		if (minstr) {
+			core->bin->minstrlen = minstr;
+		} else {
+			r_config_set_i (core->config, "cfg.minstr", core->bin->minstrlen);
+		}
+	}
 
 	/* load plugins */
 	r_core_loadlibs (core);
