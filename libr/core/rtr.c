@@ -475,22 +475,24 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	for (;;) {
 		r_cons_break (http_break, core);
 		ch = r_socket_accept (s);
-		if (r_cons_singleton()->breaked) break;
 		buf[0] = 0;
 		ret = r_socket_read (ch, buf, sizeof (buf));
 		if (ret>0) {
 			buf[ret] = 0;
 			for (i=0; buf[i]; i++)
 				if (buf[i] == '\n')
-					buf[i] = buf[i+1]? ';':'\0';
-			eprintf ("(%s)\n", buf);
+					buf[i] = buf[i+1]? ';': '\0';
 			if (!r_config_get_i (core->config, "scr.prompt") \
 					&& !strcmp ((char*)buf, "q!"))
-				return 0; // XXX memleak
+				break;
 			str = r_core_cmd_str (core, (const char *)buf);
+			if (str &&*str)  {
 			r_socket_write (ch, str, strlen (str));
+			} else 
+			r_socket_write (ch, "\n", 1);
+			free (str);
 		}
-		free (str);
+		if (r_cons_singleton()->breaked) break;
 		r_socket_close (ch);
 		r_cons_break_end ();
 	}
