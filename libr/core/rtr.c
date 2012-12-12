@@ -140,7 +140,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 		} else {
 			r_socket_http_response (rs, 404, "Invalid protocol", 0, NULL);
 		}
-		r_socket_http_close_later (rs);
+		r_socket_http_close (rs);
 	}
 	r_socket_free (s);
 	r_cons_break_end ();

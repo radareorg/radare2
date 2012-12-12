@@ -28,8 +28,11 @@ static struct cp_item * get_cp(int i) {
 static int java_resolve(int idx, char *str) {
 	if (str == NULL)
 		return 0;
-
-	str[0]='\0';
+	sprintf (str, "(%d)", idx);
+// eprintf ("
+	if (cf.cp_count<1) {
+		/* load constant pool here */
+	}
 	if (idx<0||idx>cf.cp_count)
 		return 1;
 	if (cp_items) {

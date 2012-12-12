@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_socket.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <stdio.h>
@@ -216,7 +217,7 @@ R_API int r_socket_close (RSocket *s) {
 		WSACleanup ();
 		ret = closesocket (s->fd);
 #else
-		//shutdown (s->fd, SHUT_RDWR);
+		shutdown (s->fd, SHUT_RDWR);
 		ret = close (s->fd);
 #endif
 	}
@@ -236,9 +237,11 @@ R_API int r_socket_close_later (RSocket *s) {
 		r_socket_close (s);
 		exit (0);
 	}
+	return 0;
 #else
-	r_socket_close (s);
+	return r_socket_close (s);
 #endif
+	return R_TRUE;
 }
 
 R_API int r_socket_free (RSocket *s) {
@@ -265,7 +268,11 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
 	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (const char *)&linger, sizeof (linger));
-	setsockopt(s->fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+	{ // fix close after write bug //
+	int x = 1500;
+	setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (const char *)&x, sizeof (int));
+	}
+	setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
 	memset (&sa, 0, sizeof (sa));
 	sa.sin_family = AF_INET;
 	sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
@@ -308,13 +315,13 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	if (!s) return NULL;
 	sock = R_NEW (RSocket);
 	if (!sock) return NULL;
-	sock->is_ssl = s->is_ssl;
 	sock->fd = accept (s->fd, NULL, NULL);
 	if (sock->fd == -1) {
 		free (sock);
 		return NULL;
 	}
 #if HAVE_LIB_SSL
+	sock->is_ssl = s->is_ssl;
 	if (sock->is_ssl) {
 		sock->sfd = NULL;
 		sock->ctx = NULL;
@@ -331,6 +338,8 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 		BIO_set_ssl (sbio, sock->sfd, BIO_CLOSE);
 		BIO_push (sock->bio, sbio);
 	}
+#else
+	sock->is_ssl = 0;
 #endif
 	return sock;
 }
@@ -421,8 +430,11 @@ R_API char *r_socket_to_string(RSocket *s) {
 /* Read/Write functions */
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
+#if __UNIX__
+	signal (SIGPIPE, SIG_IGN);
+#endif
 	for (;;) {
-		int b = 65536; // Use MTU 1500?
+		int b = len ; //65536; // Use MTU 1500?
 		if (b>len) b = len;
 #if HAVE_LIB_SSL
 		if (s->is_ssl)
@@ -432,7 +444,7 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 				ret = SSL_write (s->sfd, buf+delta, b);
 		else
 #endif
-			ret = send (s->fd, buf+delta, len, MSG_NOSIGNAL);
+			ret = send (s->fd, buf+delta, len, 0);
 		//if (ret == 0) return -1;
 		if (!ret) continue;
 		if (ret == len)
