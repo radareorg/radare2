@@ -44,28 +44,19 @@ SOURCE REPOSITORY
 -----------------
 The source of radare can be found in two mercurial repositories.
 
-   hg clone http://radare.org/hg/radare2
-
-or in the mirror (not always in sync)
-
-   hg clone http://hg.youterm.com/radare2
+   git clone git://github.com/radare/radare2
 
 To get an up to date copy of the repository you should perform the
 following steps:
 
-   hg pull -u
+   git pull
 
 If you have conflicts in your local copy it's because you have modified
 files which are conflicting with the incomming patchsets. To get a clean
 source directory type the following command:
 
-   hg revert -a ; hg up
-
-There's also an hg extension that comes by default and must be enabled
-in .hgrc which is called 'purge' and works pretty better than the above
-solution:
-
-   hg purge
+   git clean -xdf
+   git reset --hard
 
 COMPILATION
 -----------
@@ -116,21 +107,12 @@ people may help in order to find a solution.
 
 CONTRIBUTING WITH PATCHES
 -------------------------
-All the development happens in the mercurial repository. It is
-good that all patches can be applied against the hg tip (last
-commit in head repository).
+All the development happens in the git repository. It is
+good that all patches can be applied against the git HEAD.
 
 I can get patches in unidiff format like this:
 
-  hg diff > p
-
-If you are going to do a set of patches that may conflict with
-tip it is recommended to create a branch from tip, do your
-work and then export all those patchsets like this:
-
-  hg export -o patch.hg tip
-
-TODO: explain binary patchsets and how to dump a full branch
+  git diff > p
 
 HOW TO RELEASE 
 --------------
