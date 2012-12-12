@@ -230,20 +230,6 @@ R_API int r_socket_close (RSocket *s) {
 	return ret;
 }
 
-R_API int r_socket_close_later (RSocket *s) {
-#if __UNIX__
-	if (!fork ()) {
-		sleep (3);
-		r_socket_close (s);
-		exit (0);
-	}
-	return 0;
-#else
-	return r_socket_close (s);
-#endif
-	return R_TRUE;
-}
-
 R_API int r_socket_free (RSocket *s) {
 	int res = r_socket_close (s);
 #if HAVE_LIB_SSL

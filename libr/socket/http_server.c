@@ -73,18 +73,6 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
 }
 
-R_API void r_socket_http_close_later (RSocketHTTPRequest *rs) {
-#if __UNIX__
-	if (!fork ()) {
-		sleep (3);
-		r_socket_http_close (rs);
-		exit (0);
-	}
-#else
-	r_socket_http_close (rs);
-#endif
-}
-
 /* close client socket and free struct */
 R_API void r_socket_http_close (RSocketHTTPRequest *rs) {
 	r_socket_free (rs->s);
