@@ -536,6 +536,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "asm.profile", "default", &config_asmprofile_callback);
 	r_config_desc (cfg, "asm.profile", "configure disassembler (default, simple, gas, smart, debug, full)");
 	/* bin */
+	r_config_set (cfg, "bin.strings", "true");
+	r_config_desc (cfg, "bin.strings", "Load strings or not\n");
 	r_config_set_i (cfg, "bin.minstr", 0);
 	r_config_desc (cfg, "bin.minstr", "Minimum string length for r_bin");
 	r_config_set (cfg, "bin.rawstr", "false");

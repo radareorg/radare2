@@ -11,9 +11,12 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	char str[R_FLAG_NAME_SIZE];
 
 	/* bin str limits */
+	int hasstr= r_config_get_i (r->config, "bin.strings");
 	int rawstr = r_config_get_i (r->config, "bin.rawstr");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
-	if (!rawstr || (rawstr && !r->bin->cur.curplugin))
+	if (!hasstr) return 0;
+	if (!r->bin->cur.curplugin) return 0;
+	if (!rawstr && !r->bin->cur.curplugin->info)
 		return 0;
 	if (minstr>0) {
 		r->bin->minstrlen = minstr;
@@ -21,10 +24,9 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		r_config_set_i (r->config, "bin.minstr",
 			r->bin->minstrlen);
 	}
-	if (minstr==0) return -1;
+	if (r->bin->minstrlen==0) return -1;
 
 	/* code */
-
 	if ((list = r_bin_get_strings (r->bin)) == NULL)
 		return R_FALSE;
 
@@ -33,7 +35,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		r_list_foreach (list, iter, string) {
 			char *p, *str = strdup (string->string);
 			//r_name_filter (str, 128);
-			for(p=str;*p;p++) if(*p=='"')*p='\'';
+			for (p=str;*p;p++) if(*p=='"')*p='\'';
 			r_cons_printf ("%s{\"offset\":%"PFMT64d",\"length\":%d,\"string\":\"%s\"}", 
 				iter->p?",":"", va? string->rva:string->offset,
 				string->size, str);
