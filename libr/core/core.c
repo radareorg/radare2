@@ -504,14 +504,6 @@ R_API int r_core_init(RCore *core) {
 	core->dbg->bp->printf = r_cons_printf;
 	r_debug_io_bind (core->dbg, core->io);
 	r_core_config_init (core);
-	{
-		int minstr = r_config_get_i (core->config, "cfg.minstr");
-		if (minstr) {
-			core->bin->minstrlen = minstr;
-		} else {
-			r_config_set_i (core->config, "cfg.minstr", core->bin->minstrlen);
-		}
-	}
 
 	/* load plugins */
 	r_core_loadlibs (core);

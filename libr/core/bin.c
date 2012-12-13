@@ -10,6 +10,21 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	RBinSection *section;
 	char str[R_FLAG_NAME_SIZE];
 
+	/* bin str limits */
+	int rawstr = r_config_get_i (r->config, "bin.rawstr");
+	int minstr = r_config_get_i (r->config, "bin.minstr");
+	if (!rawstr || (rawstr && !r->bin->cur.curplugin))
+		return 0;
+	if (minstr>0) {
+		r->bin->minstrlen = minstr;
+	} else {
+		r_config_set_i (r->config, "bin.minstr",
+			r->bin->minstrlen);
+	}
+	if (minstr==0) return -1;
+
+	/* code */
+
 	if ((list = r_bin_get_strings (r->bin)) == NULL)
 		return R_FALSE;
 

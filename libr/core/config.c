@@ -535,6 +535,11 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "asm.syntax", "Select assembly syntax");
 	r_config_set_cb (cfg, "asm.profile", "default", &config_asmprofile_callback);
 	r_config_desc (cfg, "asm.profile", "configure disassembler (default, simple, gas, smart, debug, full)");
+	/* bin */
+	r_config_set_i (cfg, "bin.minstr", 0);
+	r_config_desc (cfg, "bin.minstr", "Minimum string length for r_bin");
+	r_config_set (cfg, "bin.rawstr", "false");
+	r_config_desc (cfg, "bin.rawstr", "Load strings from raw binaries");
 	/* misc */
 #if LIL_ENDIAN
 	r_config_set_cb (cfg, "cfg.bigendian", "false", &config_bigendian_callback);
@@ -550,8 +555,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cfg.fortunes", "If enabled show tips at start");
 	r_config_set_cb (cfg, "cfg.sandbox", "false", &config_cfgsandbox_callback);
 	r_config_desc (cfg, "cfg.sandbox", "sandbox mode disables systems and open on upper directories");
-	r_config_set_i (cfg, "cfg.minstr", 0);
-	r_config_desc (cfg, "cfg.minstr", "Minimum string length for r_bin");
 	r_config_set (cfg, "cfg.wseek", "false");
 	r_config_desc (cfg, "cfg.wseek", "Seek after write");
 	r_config_set_i (cfg, "cfg.hashlimit", SLURP_LIMIT);

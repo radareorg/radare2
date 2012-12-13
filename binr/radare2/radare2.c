@@ -290,6 +290,11 @@ int main(int argc, char **argv) {
 	} // else eprintf ("Metadata loaded from 'file.project'\n");
 #endif
 
+	r_list_foreach (evals, iter, cmdn) {
+		r_config_eval (r.config, cmdn); 
+		r_cons_flush ();
+	}
+
 	has_project = r_core_project_open (&r, r_config_get (r.config, "file.project"));
 	if (run_anal) {
 #if USE_THREADS
@@ -388,13 +393,14 @@ int main(int argc, char **argv) {
 		free (path);
 	}
 
-/////
+#if 1
 	r_list_foreach (evals, iter, cmdn) {
 		r_config_eval (r.config, cmdn); 
 		r_cons_flush ();
 	}
 	r_list_free (evals);
-/////
+#endif
+
 	/* run -i and -c flags */
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
