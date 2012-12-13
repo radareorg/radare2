@@ -125,7 +125,7 @@ R_API RList *r_list_new() {
 	return list;
 }
 
-R_API RList *r_list_newf(RListFree *f) {
+R_API RList *r_list_newf(RListFree f) {
 	RList *l = r_list_new ();
 	if (l) l->free = f;
 	return l;

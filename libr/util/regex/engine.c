@@ -362,9 +362,8 @@ dissect(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 			/* did innards match? */
 			if (slow(m, sp, rest, ssub, esub) != NULL) {
 				dp = dissect(m, sp, rest, ssub, esub);
-				assert(dp == rest);
-			} else		/* no */
-				assert(sp == rest);
+				if (dp != rest) return NULL;
+			} else if (sp != rest) return NULL;
 			sp = rest;
 			break;
 		case OPLUS_:

@@ -561,25 +561,3 @@ static void own(struct state *s)
 	output(s, "\n\tENDMOD\n");
 }
 #endif
-
-static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
-	struct state *s = get_state();
-	struct directive *d;
-	memset(s, 0, sizeof(*s));
-	s->s_buf = buf;
-	s->s_off = seek;
-	s->s_out = NULL;
-	d = next_inst(s);
-	if (d != NULL) {
-		csr_decode(s, d);
-		strcpy(str, d->d_asm);
-		free(d);
-	} else *str = '\0';
-#if 0
-	if (s->s_ff_quirk) {
-		sprintf(d->d_asm, "DC\t0x%x", i2u16(&d->d_inst));
-		s->s_ff_quirk = 0;
-	}
-#endif
-	return 0;
-}

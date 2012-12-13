@@ -2,6 +2,7 @@
 /* radare - LGPL - Copyright 2007-2012 - pancake */
 
 #include <r_types.h>
+#include <r_util.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -97,13 +98,6 @@ R_API int r_java_disasm(const ut8 *bytes, char *output, int len) {
 	return -1;
 }
 
-static void check_eof(FILE *fd) {
-	if (feof (fd)) {
-		fprintf(stderr, "Unexpected eof\n");
-		exit(0);
-	}
-}
-
 R_API int r_java_assemble(ut8 *bytes, const char *string) {
 	char name[128];
 	int a,b,c,d;
@@ -142,6 +136,7 @@ unsigned short read_short(FILE *fd) {
 	return r_num_ntohs (sh);
 }
 
+#if 0
 static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 	char *name, buf[99999];
 	int sz, k, j=0;
@@ -223,7 +218,14 @@ static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 	return 0;
 }
 
-#if 0
+
+static void check_eof(FILE *fd) {
+	if (feof (fd)) {
+		fprintf(stderr, "Unexpected eof\n");
+		// XXX cannot exit on a library!!
+		exit(0);
+	}
+}
 int java_classdump(const char *file, int verbose) {
 	RBinJavaClass2 cf2;
 	unsigned short sz, sz2;
