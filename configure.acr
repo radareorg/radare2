@@ -33,10 +33,13 @@ IF HAVE_PKGCFG_LIBEWF {
 }
 IFNOT HAVE_EWF { HAVE_LIB_EWF = 0 ; }
 
-(( TODO must deprecate ))
+(( TODO must deprecate 
 CHKLIB gmp
 ARG_WITHOUT HAVE_GMP gmp disable GMP dependency ;
 IFNOT HAVE_GMP { HAVE_LIB_GMP = 0 ; }
+))
+HAVE_LIB_GMP = 0 ;
+HAVE_GMP = 0 ;
 
 CHKLIB ssl
 PKGCFG SSL_CFLAGS SSL_LDFLAGS openssl
