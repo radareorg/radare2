@@ -11,7 +11,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	char str[R_FLAG_NAME_SIZE];
 
 	/* bin str limits */
-	int hasstr= r_config_get_i (r->config, "bin.strings");
+	int hasstr = r_config_get_i (r->config, "bin.strings");
 	int rawstr = r_config_get_i (r->config, "bin.rawstr");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	if (!hasstr) return 0;
@@ -52,7 +52,9 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_SET)) {
 		if (r_config_get_i (r->config, "bin.strings"))
 			r_flag_space_set (r->flags, "strings");
+		r_cons_break (NULL, NULL);
 		r_list_foreach (list, iter, string) {
+			if (r_cons_singleton()->breaked) break;
 			/* Jump the withespaces before the string */
 			for (i=0; *(string->string+i)==' '; i++);
 			r_meta_add (r->anal->meta, R_META_TYPE_STRING,
@@ -64,6 +66,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				va? baddr+string->rva:string->offset,
 				string->size, 0);
 		}
+		r_cons_break_end ();
 	} else {
 		if (mode) r_cons_printf ("fs strings\n");
 		else r_cons_printf ("[strings]\n");
@@ -147,7 +150,8 @@ static int bin_info (RCore *r, int mode) {
 			r_config_set (r->config, "anal.plugin", info->arch);
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
-			r_config_set (r->config, "asm.dwarf", R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
+			r_config_set (r->config, "asm.dwarf",
+				R_BIN_DBG_STRIPPED (info->dbg_info)?"false":"true");
 		}
 	} else {
 		if (mode) {
@@ -226,7 +230,9 @@ static int bin_dwarf (RCore *core, int mode) {
 		}
 	}
 	if (!list) return R_FALSE;
+	r_cons_break (NULL, NULL);
         r_list_foreach (list, iter, row) {
+		if (r_cons_singleton()->breaked) break;
 		if (mode) {
 			// TODO: use 'Cl' instead of CC
 			const char *path = row->file;
@@ -249,6 +255,7 @@ static int bin_dwarf (RCore *core, int mode) {
 			r_cons_printf ("0x%08"PFMT64x"\t%s\t%d\n", row->address, row->file, row->line);
 		}
         }
+	r_cons_break_end ();
         r_list_destroy (list);
 	return R_TRUE;
 }

@@ -634,6 +634,10 @@ R_API void r_str_sanitize(char *c) {
 	char *d = c;
 	for (; *d; c++, d++) {
 		switch (*d) {
+		case '`':
+		case '$':
+		case '{':
+		case '}':
 		case '~':
 		case '|':
 		case ';':
@@ -643,7 +647,8 @@ R_API void r_str_sanitize(char *c) {
 		case '<':
 		case '>':
 			d++;
-			break;
+			*c = '_';
+			continue;
 		}
 		*c = *d;
 	}

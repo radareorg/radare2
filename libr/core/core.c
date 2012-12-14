@@ -82,23 +82,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	} else
 	if (str[0]=='$') {
 		*ok = 1;
-		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize);
-		/* debug */ // XXX spaguetti!
-		if (!strcmp (str+1, "pc")) {
-			return r_debug_reg_get (core->dbg, "pc");
-		} else if (!strcmp (str+1, "sp")) {
-			return r_debug_reg_get (core->dbg, "sp");
-		} else if (!strcmp (str+1, "bp")) {
-			return r_debug_reg_get (core->dbg, "bp");
-		} else if (!strcmp (str+1, "a0")) {
-			return r_debug_reg_get (core->dbg, "a0");
-		} else if (!strcmp (str+1, "a1")) {
-			return r_debug_reg_get (core->dbg, "a1");
-		} else if (!strcmp (str+1, "a2")) {
-			return r_debug_reg_get (core->dbg, "a2");
-		}
-		/* other */
+		// TODO: group analop-dependant vars after a char, so i can filter
+		r_anal_op (core->anal, &op, core->offset,
+			core->block, core->blocksize);
 		switch (str[1]) {
+		case '.': // can use pc, sp, a0, a1, ...
+			return r_debug_reg_get (core->dbg, str+2);
 		case '{':
 			{
 				char *ptr, *bptr = strdup (str+2);
