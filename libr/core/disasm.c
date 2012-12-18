@@ -393,7 +393,7 @@ toro:
 				} else {
 					f = NULL;
 				}
-				if (at == f->addr+f->size-analop.length) // HACK
+				if (f && at == f->addr+f->size-analop.length) // HACK
 					pre = "\\ ";
 			} else pre = "  "; //r_cons_printf ("  ");
 		}
