@@ -519,6 +519,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "asm.segoff", "show segmented address in prompt (x86-16)");
 	r_config_set (cfg, "asm.lines", "true");
 	r_config_desc (cfg, "asm.lines", "If enabled show ascci-art lines at disassembly");
+	r_config_set (cfg, "asm.linesright", "false");
+	r_config_desc (cfg, "asm.linesright", "If enabled show lines before opcode instead of offset");
 	r_config_set (cfg, "asm.linesout", "true");
 	r_config_desc (cfg, "asm.linesout", "If enabled show out of block lines");
 	r_config_set (cfg, "asm.linesstyle", "false");

@@ -11,6 +11,7 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	// TODO: support bitsize opcodes
+	// rarvm_disassemble (&b, str);
 	return 0;
 }
 

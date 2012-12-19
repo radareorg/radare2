@@ -66,6 +66,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int filter = r_config_get_i (core->config, "asm.filter");
 	int varsub = r_config_get_i (core->config, "asm.varsub");
 	int show_lines = r_config_get_i (core->config, "asm.lines");
+	int linesright = r_config_get_i (core->config, "asm.linesright");
 #warning asm.dwarf is now marked as experimental and disabled
 	int show_dwarf = 0; // r_config_get_i (core->config, "asm.dwarf");
 	int show_linescall = r_config_get_i (core->config, "asm.linescall");
@@ -409,8 +410,7 @@ toro:
 				else r_cons_printf ("%s:\n", flag->name);
 			}
 		}
-		if (show_lines && line)
-			r_cons_strcat (line);
+		if (!linesright && show_lines && line) r_cons_strcat (line);
 		if (show_offset)
 			printoffset (at, show_color, (at==dest), show_offseg);
 		if (show_size)
@@ -528,6 +528,7 @@ toro:
 			free (str);
 		}
 
+		if (linesright && show_lines && line) r_cons_strcat (line);
 		if (show_color) {
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_NOP:
