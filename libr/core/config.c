@@ -346,6 +346,15 @@ static int config_swstep_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_segoff_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value)
+		core->print->flags |= R_PRINT_FLAGS_SEGOFF;
+	else core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SEGOFF));
+	return R_TRUE;
+}
+
 static int config_asmlineswidth_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -515,7 +524,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set (cfg, "asm.offseg", "false");
 	r_config_desc (cfg, "asm.offseg", "Show offsets as in 16 bit segment addressing mode");
 #endif
-	r_config_set (cfg, "asm.segoff", "false");
+	r_config_set_cb (cfg, "asm.segoff", "false", &config_segoff_callback);
 	r_config_desc (cfg, "asm.segoff", "show segmented address in prompt (x86-16)");
 	r_config_set (cfg, "asm.lines", "true");
 	r_config_desc (cfg, "asm.lines", "If enabled show ascci-art lines at disassembly");

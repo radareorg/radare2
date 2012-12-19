@@ -71,6 +71,12 @@ R_API void r_print_cursor(RPrint *p, int cur, int set) {
 R_API void r_print_addr(RPrint *p, ut64 addr) {
 	int mod = p->flags & R_PRINT_FLAGS_ADDRMOD;
 	char ch = (p->addrmod&&mod)?((addr%p->addrmod)?' ':','):' ';
+	if (p->flags & R_PRINT_FLAGS_SEGOFF) {
+		ut32 s, a;
+		a = addr & 0xffff;
+		s = (addr-a)>>4;
+		p->printf ("%04x:%04x", s, a);
+	} else
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
 #if 0
 		p->printf("%s0x%08"PFMT64x""Color_RESET"%c ",
@@ -175,7 +181,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		p->printf ("[");
 		for (i=0; !p->interrupt && i<len; i++) {
 			r_print_cursor (p, i, 1);
-			p->printf ("0x%02x%s", buf[i], (i+1<len)?",":"");
+			p->printf ("%d%s", buf[i], (i+1<len)?",":"");
 			r_print_cursor (p, i, 0);
 		}
 		p->printf ("]\n");
@@ -282,10 +288,17 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		ut32 opad = (ut32)(addr >> 32);
 		//p->printf ("   offset  ");
 		p->printf ("-- offset -");
-		{
+		{ // XXX: use r_print_addr
 			int i, delta;
 			char soff[32];
-			snprintf (soff, sizeof (soff), "0x%08"PFMT64x, addr);
+			if (p->flags & R_PRINT_FLAGS_SEGOFF) {
+				ut32 s, a;
+				a = addr & 0xffff;
+				s = (addr-a)>>4;
+				snprintf (soff, sizeof (soff), "%04x:%04x", s, a);
+			} else {
+				snprintf (soff, sizeof (soff), "0x%08"PFMT64x, addr);
+			}
 			delta = strlen (soff) - 10;
 			for (i=0; i<delta; i++)
 				p->printf (i+1==delta?" ":"-");
