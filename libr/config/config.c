@@ -12,9 +12,9 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 	node->name = strdup (name);
 	node->desc = NULL;
 	node->hash = r_str_hash (name);
-	node->value = strdup (value?value:"");
+	node->value = strdup (value? value: "");
 	node->flags = CN_RW | CN_STR;
-	node->i_value = 0;
+	node->i_value = r_num_get (NULL, value);;
 	node->callback = NULL;
 	return node;
 }

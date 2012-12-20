@@ -583,7 +583,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 				}
 				r_cons_newline ();
 			} else {
-				r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" %s %c %c\n",
+				r_cons_printf ("af+ 0x%08"PFMT64x" %d %s %c %c\n",
 						fcn->addr, fcn->size, fcn->name,
 						fcn->type==R_ANAL_FCN_TYPE_LOC?'l':
 						fcn->type==R_ANAL_FCN_TYPE_SYM?'s':

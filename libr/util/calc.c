@@ -119,8 +119,10 @@ R_API const char *r_num_calc_index (RNum *num, const char *p) {
 		return NULL;
 	if (p) {
 		num->nc.calc_buf = p;
+		num->nc.calc_len = strlen (p);
 		num->nc.calc_i = 0;
 	}
+	//if (num->nc.calc_i>num->nc.calc_len) return NULL;
 	return num->nc.calc_buf + num->nc.calc_i;
 }
 
@@ -131,6 +133,7 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 	} else {
 		if (!nc->calc_buf)
 			return 0;
+		//if (nc->calc_i>nc->calc_len) return 0;
 		*c = nc->calc_buf[nc->calc_i];
 		if (*c) nc->calc_i++;
 		else return 0;
@@ -255,6 +258,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 
 static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 	nc->calc_i = 0;
+	nc->calc_len = 0;
 	nc->calc_buf = s;
 	nc->calc_err = NULL;
 }
@@ -262,7 +266,7 @@ static void load_token(RNum *num, RNumCalc *nc, const char *s) {
 R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
 	RNumCalcValue n;
 	RNumCalc *nc, nc_local;
-	if (!*str)
+	if (!str || !*str)
 		return 0LL;
 
 	if (num == NULL)
@@ -277,6 +281,7 @@ R_API ut64 r_num_calc (RNum *num, const char *str, const char **err) {
 	nc->oc = 0;
 	nc->calc_err = NULL;
 	nc->calc_i = 0;
+	nc->calc_len = 0;
 	nc->calc_buf = NULL;
 
 	load_token (num, nc, str);

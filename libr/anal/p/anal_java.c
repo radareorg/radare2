@@ -54,7 +54,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	case 0xa7: // goto
 	case 0xc8: // goto_w
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = 0; // TODO
+		op->jump = addr + (int)(short)(USHORT (data, 1));
 		op->eob  = 1;
 		break;
 	case 0xa5: // acmpeq
@@ -74,14 +74,14 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	case 0xc7: // ifnonnull
 	case 0xc6: // ifnull
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = 0x0; // TODO
+		op->jump = addr + (int)(short)(USHORT (data, 1));
 		op->fail = addr + sz;
 		op->eob = 1;
 		break;
 	case 0xa8: // jsr
 	case 0xc9: // jsr_w
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = 0x0; // TODO
+		op->jump = addr + (int)(short)(USHORT (data, 1));
 		op->fail = addr + sz;
 		op->eob = 1;
 		break;

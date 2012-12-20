@@ -177,6 +177,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	ut64 ret;
 	const char *err = NULL;
 	if (!str) return 0LL;
+	//if (!str || !*str) return 0LL;
 	ret = r_num_calc (num, str, &err);
 	if (err) eprintf ("r_num_calc error: (%s) in (%s)\n", err, str);
 	else if (num) num->value = ret;

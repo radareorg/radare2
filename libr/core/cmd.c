@@ -563,9 +563,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int rep = atoi (cmd);
 	char *cmt, *colon, *icmd = strdup (cmd);
 	cmd = r_str_trim_head_tail (icmd);
-	if (!memcmp (cmd, "# ", 2))
+	if (*cmd && cmd[1] && !memcmp (cmd, "# ", 2))
 		return 0;
-	cmt = strchr (icmd+1, '#');
+	cmt = *icmd ? strchr (icmd+1, '#'): NULL;
 	if (cmt && cmt[1]==' ') {
 		*cmt = 0;
 	}

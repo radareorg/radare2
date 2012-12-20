@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 nibble, pancake */
+/* radare - LGPL - Copyright 2008-2012 - nibble, pancake */
 
 #ifndef _INCLUDE_R_BIN_H_
 #define _INCLUDE_R_BIN_H_
@@ -235,18 +235,20 @@ typedef struct r_bin_object_t {
 // TODO: has_dbg_syms... maybe flags?
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
+typedef const char *(*RBinGetName)(RBin *bin, int off);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
 	RBinGetOffset get_offset;
+	RBinGetName get_name;
 } RBinBind;
 
 #ifdef R_API
 
 #define r_bin_class_free(x) { free(x->name);free(x->super);free (x); }
 
-R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 /* bin.c */
+R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);

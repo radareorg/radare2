@@ -40,11 +40,8 @@ static int config_searchalign_callback(void *user, void *data) {
 static int config_iomaxblk_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	if (node->i_value>1) {
-		core->blocksize_max = node->i_value;
-		return R_TRUE;
-	}
-	return R_FALSE;
+	core->blocksize_max = node->i_value;
+	return R_TRUE;
 }
 static int config_ioffio_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
@@ -122,7 +119,8 @@ static int config_cfgdebug_callback(void *user, void *data) {
 		if (!strcmp (dbgbackend, "bf"))
 			r_config_set (core->config, "asm.arch", "bf");
 		if (core->file) {
-			r_debug_select (core->dbg, core->file->fd->fd, core->file->fd->fd);
+			r_debug_select (core->dbg, core->file->fd->fd,
+				core->file->fd->fd);
 		}
 	} else r_debug_use (core->dbg, NULL);
 	return R_TRUE;

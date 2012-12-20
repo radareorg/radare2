@@ -5,11 +5,19 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-#include "../../shlr/java/code.h"
+#include "../../shlr/java/class.h"
+//#include "../../shlr/java/code.h"
 #include <r_core.h>
 
 static const char *lastfile = NULL;
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+	void *cp;
+	RBinJavaObj *obj = NULL;
+	RBin *b = a->binb.bin;
+	if (!strcmp (b->cur.curplugin->name, "java")) { // XXX slow
+		obj = b->cur.bin_obj; //o; 
+		if (obj) r_java_setcp (obj->cp_items, obj->cf.cp_count);
+	}
 	// XXX: crossmodule dependency
 // TODO: get class info from rbin if loaded
 #if 0
@@ -19,7 +27,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 		java_classdump (lastfile, 0);
 	} else javasm_init ();
 #endif
-	return op->inst_len = r_java_disasm (buf, op->buf_asm, sizeof (op->buf_asm));
+	return op->inst_len = r_java_disasm (a->pc, buf,
+		op->buf_asm, sizeof (op->buf_asm));
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {

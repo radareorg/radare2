@@ -239,8 +239,9 @@ toro:
 					int mycols = lcols;
 					if (mycols + linelen + 10 > core->cons->columns)
 						mycols = 0;
-					mycols/=2;
+					mycols /= 2;
 					if (show_color) r_cons_strcat (Color_TURQOISE);
+// XXX: always prefix with ; the comments
 					if (*comment != ';') r_cons_strcat ("  ;  ");
 					r_cons_strcat_justify (comment, mycols, ';');
 					if (show_color) r_cons_strcat (Color_RESET);
@@ -656,12 +657,13 @@ toro:
 			if (show_functions) {
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
 				if (ccstr) {
-					RFlagItem *f = r_flag_get_at (core->flags, cc.jump);
+					RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
 					if (show_color)
 						r_cons_printf ("\n%s%s   "Color_TURQOISE"; %s (%s+%d)"Color_RESET,
-							pre, refline, ccstr, f? f->name: "", f? cc.jump-f->offset: 0);
-					else r_cons_printf ("\n%s%s    ; %s (%s+%d)", pre, refline, ccstr,
-						f?f->name:"", f? cc.jump-f->offset: 0);
+							f?pre:"", refline, ccstr, flag? flag->name: "", f? cc.jump-flag->offset: 0);
+					else r_cons_printf ("\n%s%s    ; %s (%s+%d)",
+						pre, refline, ccstr,
+						flag?flag->name:"", flag? cc.jump-flag->offset: 0);
 					free (ccstr);
 				}
 			}

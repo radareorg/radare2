@@ -6,7 +6,7 @@
 
 #define R_BIN_JAVA_MAXSTR 256
 
-#define R_BIN_JAVA_USHORT(x,y) ((unsigned short)((0xff&x[y+1]|((x[y]&0xff)<<8)) & 0xffff))
+#define R_BIN_JAVA_USHORT(x,y) ((unsigned short)(((0xff&x[y+1])|((x[y]&0xff)<<8)) & 0xffff))
 #define R_BIN_JAVA_UINT(x,y) ((unsigned int)(((x[y]&0xff)<<24)|((x[y+1]&0xff)<<16)|((x[y+2]&0xff)<<8)|(x[y+3]&0xff)))
 #define R_BIN_JAVA_SWAPUSHORT(x) ((unsigned short)((x<<8)|((x>>8)&0x00FF)))
 
@@ -45,6 +45,7 @@ typedef struct r_bin_java_constant_t {
 	int tag;
 	int len;
 } RBinJavaConstant;
+
 struct r_bin_java_attr_code_t {
 	unsigned short max_stack;
 	unsigned short max_locals;

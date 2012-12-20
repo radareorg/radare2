@@ -618,7 +618,7 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 		return R_FALSE;
 	if (bsize<1)
 		bsize = 1;
-	else if (bsize>core->blocksize_max) {
+	else if (core->blocksize_max && bsize>core->blocksize_max) {
 		eprintf ("bsize is bigger than io.maxblk. dimmed to 0x%x > 0x%x\n",
 			bsize, core->blocksize_max);
 		bsize = core->blocksize_max;

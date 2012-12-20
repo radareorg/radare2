@@ -80,10 +80,14 @@ static int cmd_print(void *data, const char *input) {
 		}// else l = 0;
 	} else l = len;
 
-	i = r_config_get_i (core->config, "io.maxblk");
+	{
+		ut64 n = r_config_get_i (core->config, "io.maxblk");
+		i = (int)n;
+		if (i != n) i = 0;
+	}
 	if (i && l > i) {
-		eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
-				*input, input+2);
+		eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ %s' instead?\n",
+				i, l, *input, input+2);
 		return R_FALSE;
 	}
 

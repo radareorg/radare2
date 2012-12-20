@@ -42,7 +42,7 @@ static void addrow (RBinJavaObj *bin, int addr, int line) {
 	bin->lines.line[n] = line;
 }
 
-static struct r_bin_java_cp_item_t* get_cp(RBinJavaObj *bin, int i) {
+static struct r_bin_java_cp_item_t* get_CP(RBinJavaObj *bin, int i) {
 	return (i<0||i>bin->cf.cp_count)? &cp_null_item: &bin->cp_items[i];
 }
 
@@ -58,15 +58,15 @@ static int attributes_walk(RBinJavaObj *bin, struct r_bin_java_attr_t *attr, int
 			eprintf ("Cannot read 6 bytes in class file\n");
 			return R_FALSE;
 		}
-		attr->name_idx = R_BIN_JAVA_USHORT(buf,0);
-		name = get_cp (bin, attr->name_idx-1)->value;
+		attr->name_idx = R_BIN_JAVA_USHORT (buf,0);
+		name = get_CP (bin, attr->name_idx-1)->value;
 		if (!name) {
 			eprintf ("Attribute name is null\n");
 			return R_FALSE;
 		}
 		// XXX: if name is null.. wat?
 		attr->name = strdup (name? name: "");
-		name = (get_cp (bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
+		name = (get_CP (bin, attr->name_idx-1))->value;//cp_items[R_BIN_JAVA_USHORT(buf,0)-1].value;
 		IFDBG printf("   %2d: Name Index: %d (%s)\n", j, attr->name_idx, name);
 		// TODO add comment with constant pool index
 		sz3 = R_BIN_JAVA_UINT (buf, 2);
@@ -162,8 +162,8 @@ static int attributes_walk(RBinJavaObj *bin, struct r_bin_java_attr_t *attr, int
 					int index = index = read_short (bin);
 
 #if 0
-					const char *name = get_cp (bin, name_idx-1)->value;
-					const char *desc = get_cp (bin, desc_idx-1)->value;
+					const char *name = get_CP (bin, name_idx-1)->value;
+					const char *desc = get_CP (bin, desc_idx-1)->value;
 eprintf ("local.%d.%d.type=%s\n", bin->midx, i, desc);
 eprintf ("local.%d.%d.name=%s\n", bin->midx, i, name);
 #endif
@@ -222,6 +222,7 @@ static int javasm_init(RBinJavaObj *bin) {
 
 	IFDBG printf ("ConstantPoolCount %d\n", bin->cf.cp_count);
 	bin->cp_items = malloc (sizeof (RBinJavaCpItem)*(bin->cf.cp_count+1));
+//eprintf ("CP = %d = %p\n", bin->cf.cp_count, bin->cp_items);
 	bufsz = 1024;
 	buf = malloc (bufsz);
 	for (i=0; i<bin->cf.cp_count; i++) {
@@ -241,7 +242,8 @@ static int javasm_init(RBinJavaObj *bin) {
 		IFDBG printf (" %3d %s: ", i+1, c->name);
 
 		/* store constant pool item */
-		strncpy (bin->cp_items[i].name, c->name, sizeof (bin->cp_items[i].name)-1);
+		strncpy (bin->cp_items[i].name, c->name,
+			sizeof (bin->cp_items[i].name)-1);
 		bin->cp_items[i].ord = i+1;
 		bin->cp_items[i].tag = c->tag;
 		bin->cp_items[i].value = NULL; // no string by default
@@ -304,7 +306,8 @@ static int javasm_init(RBinJavaObj *bin) {
 	free (buf);
 	buf = NULL;
 
-	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf2, sizeof(struct r_bin_java_classfile2_t));
+	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf2,
+		sizeof(struct r_bin_java_classfile2_t));
 	IFDBG printf ("Access flags: 0x%04x\n", bin->cf2.access_flags);
 	bin->cf2.this_class = R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class);
 	IFDBG printf ("This class: %d\n", bin->cf2.this_class);
@@ -317,7 +320,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	if (sz>0) {
 		bufsz = sz*2;
 		buf = malloc (bufsz+8);
-		r_buf_read_at(bin->b, R_BUF_CUR, (ut8*)buf, bufsz);
+		r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, bufsz);
 		sz = read_short (bin);
 		for (i=0;i<sz;i++) {
 			fprintf (stderr, "Interfaces: TODO\n");
@@ -334,7 +337,7 @@ static int javasm_init(RBinJavaObj *bin) {
 			bin->fields[i].flags = R_BIN_JAVA_USHORT (buf, 0);
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->fields[i].flags);
 			bin->fields[i].name_idx = R_BIN_JAVA_USHORT(buf, 2);
-			bin->fields[i].name = r_str_dup (NULL, (get_cp (bin, R_BIN_JAVA_USHORT(buf,2)-1))->value);
+			bin->fields[i].name = r_str_dup (NULL, (get_CP (bin, R_BIN_JAVA_USHORT(buf,2)-1))->value);
 			IFDBG printf("    Name Index: %d (%s)\n", bin->fields[i].name_idx, bin->fields[i].name);
 			bin->fields[i].descriptor_idx = R_BIN_JAVA_USHORT(buf, 4);
 			bin->fields[i].descriptor = NULL;
@@ -344,7 +347,7 @@ static int javasm_init(RBinJavaObj *bin) {
 			IFDBG printf("    field Attributes Count: %d\n", sz2);
 			if (sz2 > 0) {
 				bin->fields[i].attributes = malloc(1+sz2 * sizeof(struct r_bin_java_attr_t));
-				for(j=0;j<sz2;j++)
+				for (j=0;j<sz2;j++)
 					attributes_walk(bin, &bin->fields[i].attributes[j], sz2, 1);
 			}
 		}
@@ -362,18 +365,18 @@ static int javasm_init(RBinJavaObj *bin) {
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->methods[i].flags);
 			bin->methods[i].name_idx = R_BIN_JAVA_USHORT(buf, 2);
 #if OLD
-			bin->methods[i].name = r_str_dup (NULL, (get_cp(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value);
+			bin->methods[i].name = r_str_dup (NULL, (get_CP(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value);
 #else
 			bin->methods[i].name = malloc (1024);
 // XXX: can null ptr here
 			snprintf (bin->methods[i].name, 1023, "%s%s",
-				(get_cp (bin, R_BIN_JAVA_USHORT (buf, 2)-1))->value,
-				(get_cp (bin, R_BIN_JAVA_USHORT (buf, 2)))->value);
+				(get_CP (bin, R_BIN_JAVA_USHORT (buf, 2)-1))->value,
+				(get_CP (bin, R_BIN_JAVA_USHORT (buf, 2)))->value);
 #endif
 bin->midx = i;
 			IFDBG printf("    Name Index: %d (%s)\n", bin->methods[i].name_idx, bin->methods[i].name);
 			bin->methods[i].descriptor_idx = R_BIN_JAVA_USHORT (buf, 4);
-			bin->methods[i].descriptor = r_str_dup (NULL, (get_cp(bin, R_BIN_JAVA_USHORT(buf, 4)-1))->value);
+			bin->methods[i].descriptor = r_str_dup (NULL, (get_CP(bin, R_BIN_JAVA_USHORT(buf, 4)-1))->value);
 			IFDBG printf("    Descriptor Index: %d (%s)\n", bin->methods[i].descriptor_idx, bin->methods[i].descriptor);
 
 			sz2 = R_BIN_JAVA_USHORT(buf, 6);
@@ -383,7 +386,7 @@ bin->midx = i;
 				bin->methods[i].attributes = malloc (1+sz2 * sizeof (struct r_bin_java_attr_t));
 				for (j=0; j<sz2; j++) {
 					if (!attributes_walk (bin, &bin->methods[i].attributes[j], sz2, 0))
-						return R_FALSE;
+						return R_TRUE; // can be false :?
 				}
 			}
 		}
@@ -478,9 +481,13 @@ struct r_bin_java_str_t* r_bin_java_get_strings(RBinJavaObj* bin) {
 R_API void* r_bin_java_free(RBinJavaObj* bin) {
 	if (!bin) return NULL;
 	if (bin->cp_items) free (bin->cp_items);
+	bin->cp_items = NULL;
 	if (bin->fields) free (bin->fields);
+	bin->fields = NULL;
 	if (bin->methods) free (bin->methods);
+	bin->methods = NULL;
 	if (bin->b) r_buf_free (bin->b);
+	bin->b = NULL;
 	free (bin);
 	return NULL;
 }

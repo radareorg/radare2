@@ -11,16 +11,22 @@
 
 #define V if(verbose)
 
-static struct cp_item *cp_items = NULL;
-static struct cp_item cp_null_item = {
+static RBinJavaCpItem *cp_items = NULL;
+static RBinJavaCpItem cp_null_item = {
 	.tag = -1,
-	.name = "(NULL)",
-	.value = "(NULL)" // must be strduped
+	.name = "(?)",
+	.value = "(?)" // must be strduped
 };
 
 static RBinJavaClass cf;
 
-static struct cp_item * get_cp(int i) {
+R_API void r_java_setcp(void *cp, int n) {
+	// eprintf ("SET CP (%p) %d\n", cp, n);
+	cp_items = cp;
+	cf.cp_count = n;
+}
+
+static RBinJavaCpItem* get_cp(int i) {
 	if (i<0||i>cf.cp_count)
 		return &cp_null_item;
 	return &cp_items[i];
@@ -37,26 +43,33 @@ static int java_resolve(int idx, char *str) {
 	if (idx<0||idx>cf.cp_count)
 		return 1;
 	if (cp_items) {
+		if (!cp_items[idx].name) {  
+			sprintf (str, "0x%04x", USHORT (get_cp (idx)->bytes, 0));
+			return 0;
+		}
 		if ((!strcmp (cp_items[idx].name, "MethodRef"))
 		|| (!strcmp (cp_items[idx].name, "FieldRef"))) {
-			int class = USHORT (get_cp(idx)->bytes,0);
+			int class_idx = USHORT (get_cp (idx)->bytes, 0);
+			int namet_idx = USHORT (get_cp (idx)->bytes, 2);
 			//int namet = USHORT(get_cp(idx)->bytes,2);
-			char *class_str = get_cp(USHORT(get_cp(class)->bytes,0)-1)->value;
-			char *namet_str = get_cp(USHORT(get_cp(class)->bytes,2)-1)->value;
+			char *class_str = get_cp (class_idx)->name;
+			char *namet_str = get_cp (namet_idx)->name;
 			//char *namet_str = get_cp(namet)->value;
+//eprintf ("-----> %d %s\n", class_idx, class_str);
+// XXX: uberflaw?
 			sprintf (str, "%s %s", class_str, namet_str);
 		} else
 		if (!strcmp (cp_items[idx].name, "String")) {
-			sprintf(str, "\"%s\"", get_cp(USHORT(get_cp(idx)->bytes,0)-1)->value);
+			sprintf (str, "\"%s\"", get_cp (USHORT (get_cp (idx)->bytes,0)-1)->value);
 		} else
-		if (!strcmp(cp_items[idx].name, "Utf8")) {
-			sprintf (str, "\"%s\"", get_cp(idx)->value);
-		} else sprintf (str, "0x%04x", USHORT(get_cp(idx)->bytes,0));
+		if (!strcmp (cp_items[idx].name, "Utf8")) {
+			sprintf (str, "\"%s\"", get_cp (idx)->value);
+		} else sprintf (str, "0x%04x", USHORT (get_cp (idx)->bytes,0));
 	} else strcpy (str, "(null)");
 	return 0;
 }
 
-int java_print_opcode(int idx, const ut8 *bytes, char *output) {
+int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char arg[1024];
 
 	switch (java_ops[idx].byte) {
@@ -64,37 +77,57 @@ int java_print_opcode(int idx, const ut8 *bytes, char *output) {
 	case 0x13:
 	case 0x14:
 		java_resolve (bytes[1]-1, arg);
-		sprintf (output, "%s %s", java_ops[idx].name, arg);
+		snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+		return java_ops[idx].size;
+	case 0x99: // ifeq
+	case 0x9a: // ifne
+	case 0x9b: // iflt
+	case 0x9c: // ifge
+	case 0x9d: // ifgt
+	case 0x9e: // ifle
+	case 0x9f: // if_icmpeq
+	case 0xa0: // if_icmpne
+	case 0xa1: // if_icmplt
+	case 0xa2: // if_icmpge
+	case 0xa3: // if_icmpgt
+	case 0xa4: // if_icmple
+	case 0xa5: // if_acmpne
+	case 0xa6: // if_acmpne
+	case 0xa7: // goto
+	case 0xa8: // jsr
+		snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
+			addr+(int)(short)USHORT (bytes, 1));
 		return java_ops[idx].size;
 	case 0xb2: // getstatic
 	case 0xb6: // invokevirtual
 	case 0xb7: // invokespecial
 	case 0xb8: // invokestatic
 	case 0xb9: // invokeinterface
-		java_resolve ((int)USHORT (bytes,1)-1, arg);
-		sprintf (output, "%s %s", java_ops[idx].name, arg);
+		java_resolve ((int)USHORT (bytes, 1)-1, arg);
+		snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
 		return java_ops[idx].size;
 	}
 
 	/* process arguments */
 	switch (java_ops[idx].size) {
-	case 1: sprintf (output, "%s", java_ops[idx].name);
+	case 1: snprintf (output, outlen, "%s", java_ops[idx].name);
 		break;
-	case 2: sprintf (output, "%s %d", java_ops[idx].name, bytes[1]);
+	case 2: snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
 		break;
-	case 3: sprintf (output, "%s 0x%x 0x%x", java_ops[idx].name, bytes[0], bytes[1]);
+	case 3: snprintf (output, outlen, "%s 0x%x 0x%x", java_ops[idx].name, bytes[0], bytes[1]);
 		break;
-	case 5: sprintf (output, "%s %d", java_ops[idx].name, bytes[1]);
+	case 5: snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
 		break;
 	}
 	return java_ops[idx].size;
 }
 
-R_API int r_java_disasm(const ut8 *bytes, char *output, int len) {
+R_API int r_java_disasm(ut64 addr, const ut8 *bytes, char *output, int outlen) {
 	int i;
-	for(i = 0;java_ops[i].name != NULL;i++)
+	// TODO: replace loop for direct array index
+	for (i = 0; java_ops[i].name != NULL; i++)
 		if (bytes[0] == java_ops[i].byte)
-			return java_print_opcode (i, bytes, output);
+			return java_print_opcode (addr, i, bytes, output, outlen);
 	return -1;
 }
 
@@ -104,7 +137,7 @@ R_API int r_java_assemble(ut8 *bytes, const char *string) {
 	int i;
 
 	sscanf (string, "%s %d %d %d %d", name, &a, &b, &c, &d);
-	for (i = 0;java_ops[i].name != NULL;i++)
+	for (i = 0; java_ops[i].name != NULL; i++)
 		if (!strcmp (name, java_ops[i].name)) {
 			bytes[0] = java_ops[i].byte;
 			switch (java_ops[i].size) {
@@ -121,22 +154,13 @@ R_API int r_java_assemble(ut8 *bytes, const char *string) {
 	return 0;
 }
 
-#define resolve(dst,from,field,value) {\
-	int i;\
-	for(i=0;from[i].field;i++) {\
-		if (from[i].field == value) \
-			dst = &from[i];\
-			break;\
-	}\
-}
-
+#if 0
 unsigned short read_short(FILE *fd) {
 	unsigned short sh = 0;
 	fread (&sh, 2, 1, fd);
 	return r_num_ntohs (sh);
 }
 
-#if 0
 static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 	char *name, buf[99999];
 	int sz, k, j=0;
@@ -218,7 +242,6 @@ static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 	return 0;
 }
 
-
 static void check_eof(FILE *fd) {
 	if (feof (fd)) {
 		fprintf(stderr, "Unexpected eof\n");
@@ -226,6 +249,7 @@ static void check_eof(FILE *fd) {
 		exit(0);
 	}
 }
+
 int java_classdump(const char *file, int verbose) {
 	RBinJavaClass2 cf2;
 	unsigned short sz, sz2;
@@ -237,14 +261,13 @@ int java_classdump(const char *file, int verbose) {
 	if (fd == NULL)
 		return -1;
 
-	javasm_init();
-
 	/* start parsing */
 	fread (&cf, 10, 1, fd); //sizeof(struct classfile), 1, fd);
 	if (memcmp (cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
-		fprintf(stderr, "java_classdump: Invalid header\n");
+		eprintf ("java_classdump: Invalid header\n");
 		return -1;
 	}
+	javasm_init ();
 
 	/* show class version information */
 	V printf ("Version: 0x%02x%02x 0x%02x%02x\n",
@@ -252,7 +275,7 @@ int java_classdump(const char *file, int verbose) {
 
 	cf.cp_count = r_num_ntohs(cf.cp_count);
 	if (cf.major[0]==cf.major[1] && cf.major[0]==0) {
-		fprintf(stderr, "Oops. this is a Mach-O\n");
+		eprintf ("Oops. this is a Mach-O\n");
 		return 0;
 	}
 	
@@ -273,10 +296,10 @@ int java_classdump(const char *file, int verbose) {
 			eprintf ("Invalid tag '%d'\n", buf[0]);
 			return 0;
 		}
-		V printf(" %3d %s: ", i+1, c->name);
+		V eprintf (" %3d %s: ", i+1, c->name);
 
 		/* store constant pool item */
-		strcpy( cp_items[i].name, c->name);
+		strcpy (cp_items[i].name, c->name);
 		cp_items[i].tag = c->tag;
 		cp_items[i].value = NULL; // no string by default
 		cp_items[i].off = ftell(fd)-1;

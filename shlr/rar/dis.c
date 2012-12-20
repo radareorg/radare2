@@ -1,4 +1,3 @@
-
 /* disassemble */
 
 static int disassemble_arg(Bitbuf *b, int n) {
@@ -9,13 +8,13 @@ static int disassemble_arg(Bitbuf *b, int n) {
 	// #   0, 2; 3,3; imm,32
 	// r   1, 1; 3
 	int ret = bitget (b, n);
-//eprintf ("arg %d\n", n);
+	// eprintf ("arg %d\n", n);
 	res ++;
 	if (ret ==-1) {
 		eprintf ("IO ERROR\n");
 		return 0;
 	}
-	//printf ("RET [%d] = %d (of %d)\n", n, ret, b->bits);
+	// printf ("RET [%d] = %d (of %d)\n", n, ret, b->bits);
 	if (ret==1) {
 		/* opnum >7 && <0x27 */
 		int num = bitnum (b, n+res, 3);
@@ -54,14 +53,14 @@ int rarvm_disassemble(Bitbuf *b, char *str) {
 	*str = 0;
 	if (bitget (b, n++)) {
 		int opnum = bitnum (b, n, 5)+8;
-		int flags = opcodes[opnum].flags;
+		//int flags = opcodes[opnum].flags;
 		const char *opstr = opcode_str (opnum);
 		n += 5;
-printf ("PATRANYA %d\n", opnum);
+		// printf ("opnum %d\n", opnum);
 		if (opstr) {
 			printf ("%s", opstr);
 		} else return 0;
-// XXX DUP
+		// XXX DUP
 		if (opcodes[opnum].flags & 1) {
 			printf (" ");
 			n += disassemble_arg (b, n);
@@ -95,4 +94,3 @@ printf ("PATRANYA %d\n", opnum);
 	}
 	return n;
 }
-

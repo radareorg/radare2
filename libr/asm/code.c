@@ -46,10 +46,9 @@ R_API int r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str) {
 	RAsmEqu *equ;
 	RListIter *iter;
-	if (code->equs) {
+	if (code->equs)
 		r_list_foreach (code->equs, iter, equ) {
 			str = r_str_replace (str, equ->key, equ->value, R_TRUE);
 		}
-	}
 	return str;
 }

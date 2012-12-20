@@ -10,9 +10,9 @@
 #define eprintf(x,y...) fprintf(stderr,x,##y)
 #define SKIPSPACES(x) if (x) while (*x==' '||*x=='\t') x++
 static const char *skipspaces(const char *x) { SKIPSPACES(x); return x; }
-static const char *regs = "r0\x00r1\x00r2\x00r3\x00r4\x00r5\x00r6\x00r7";
-static const char *getregi(int n) { return (n>=0&&n<=7)? regs+(3*n): "r?"; }
-static const int getreg(const char *s) {
+//static const char *regs = "r0\x00r1\x00r2\x00r3\x00r4\x00r5\x00r6\x00r7";
+//static const char *getregi(int n) { return (n>=0&&n<=7)? regs+(3*n): "r?"; }
+static int getreg(const char *s) {
 	if (s[0]=='r' && s[2]=='\0') {
 		int n = s[1]-'0';
 		if (n<8) return n;
@@ -26,9 +26,7 @@ typedef struct {
 	unsigned char *out;
 } Bitbuf;
 
-static void clrbit(Bitbuf *bb) {
-	memset (bb->out, 0, 1+(bb->bits/8));
-}
+//static void clrbit(Bitbuf *bb) { memset (bb->out, 0, 1+(bb->bits/8)); }
 
 static int bitget(Bitbuf *bb, int bit) {
 	if (bit>=bb->bits) return -1;

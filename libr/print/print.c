@@ -514,7 +514,8 @@ R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from
 	static int mode = -1;
 	ut8 *bufz, *bufz2;
 	int i, j = 0;
-	ut64 size = (to-from)/len;
+	ut64 size = (to-from);
+	size = len? size/len: 0;
 
 	bufz = bufz2 = NULL;
 	if (maxlen<2) maxlen = 1024*1024;

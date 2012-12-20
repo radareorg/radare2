@@ -219,16 +219,13 @@ static int r_bin_extract(RBin *bin, int idx) {
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
 	RBinPlugin *plugin;
-
 	if (foo->init)
 		foo->init (bin->user);
-
 	r_list_foreach(bin->plugins, it, plugin) {
 		if (!strcmp (plugin->name, foo->name))
 			return R_FALSE;
 	}
 	r_list_append(bin->plugins, foo);
-
 	return R_TRUE;
 }
 
@@ -265,15 +262,12 @@ R_API int r_bin_list(RBin *bin) {
 	RListIter *it;
 	RBinXtrPlugin *plugin;
 	RBinXtrPlugin *xtr;
-
 	r_list_foreach (bin->plugins, it, plugin) {
 		printf ("bin %-10s %s\n", plugin->name, plugin->desc);
 	}
-
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		printf ("bin-xtr %-10s %s\n", xtr->name, xtr->desc);
 	}
-
 	return R_FALSE;
 }
 
@@ -473,9 +467,15 @@ static int getoffset (RBin *bin, int type, int idx) {
 	return -1;
 }
 
+static const char *getname (RBin *bin, int off) {
+	// walk symbols, find index, return name, ignore offset wtf
+	return NULL;
+}
+
 R_API void r_bin_bind (RBin *bin, RBinBind *b) {
 	b->bin = bin;
 	b->get_offset = getoffset;
+	b->get_name = getname;
 }
 
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {

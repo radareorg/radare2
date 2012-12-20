@@ -125,6 +125,7 @@ typedef struct r_num_calc_t {
 	const char *calc_err;
 	int calc_i;
 	const char *calc_buf;
+	int calc_len;
 } RNumCalc;
 
 typedef struct r_num_t {

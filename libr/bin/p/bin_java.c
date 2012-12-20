@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 */
-/* authors: pancake, nibble */
+/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -8,9 +7,7 @@
 #include "../../shlr/java/class.h"
 
 static int load(RBinArch *arch) {
-	if (!(arch->bin_obj = r_bin_java_new_buf (arch->buf)))
-		return R_FALSE;
-	return R_TRUE;
+	return ((arch->bin_obj = r_bin_java_new_buf (arch->buf)))? 1: 0;
 }
 
 static int destroy(RBinArch *arch) {
@@ -75,7 +72,7 @@ static RList* symbols(RBinArch *arch) {
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
 		ptr->rva = ptr->offset = s[i].offset;
 		ptr->size = s[i].size;
-		ptr->ordinal = 0;
+		ptr->ordinal = i;
 		r_list_append (ret, ptr);
 	}
 	free (s);

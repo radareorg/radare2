@@ -113,8 +113,7 @@ static void print_buf(char *str) {
 
 static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
 	struct r_asm_code_t *acode;
-	struct r_asm_op_t op;
-	int ret, i,j ;
+	int i, j;
 
 	r_asm_set_pc (a, offset);
 	if (!(acode = r_asm_massemble (a, buf)))
