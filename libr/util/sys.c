@@ -31,7 +31,7 @@ R_API ut64 r_sys_now(void) {
 
 R_API int r_sys_truncate(const char *file, int sz) {
 #if __WINDOWS__
-	int fd = r_sandbox_open (file, O_RDWR);
+	int fd = r_sandbox_open (file, O_RDWR, 0644);
 	if (!fd) return R_FALSE;
 	ftruncate (fd, sz);
 	close (fd);
