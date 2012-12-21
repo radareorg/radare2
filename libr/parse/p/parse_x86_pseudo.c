@@ -9,7 +9,10 @@
 #include <r_flags.h>
 #include <r_anal.h>
 #include <r_parse.h>
-
+// 16 bit examples
+//    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
+//    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
+//    0x0001f56a      ea7ed73cd3       jmp word 0xd33c:0xd77e [6]
 static int replace(int argc, const char *argv[], char *newstr) {
 	int i,j,k;
 	struct {
@@ -39,10 +42,10 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ NULL }
 	};
 
-	for(i=0; ops[i].op != NULL; i++) {
+	for (i=0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
-				for (j=k=0;ops[i].str[j]!='\0';j++,k++) {
+				for (j=k=0; ops[i].str[j]!='\0'; j++, k++) {
 					if (ops[i].str[j]>='0' && ops[i].str[j]<='9') {
 						const char *w = argv[ ops[i].str[j]-'0' ];
 						if (w != NULL) {
@@ -131,22 +134,49 @@ static int assemble(RParse *p, char *data, char *str) {
 	return R_TRUE;
 }
 
+static inline int ishexch (char c) {
+	if (c>=0 && c<=9) return 1;
+	if (c>='a' && c<='f') return 1;
+	if (c>='A' && c<='F') return 1;
+	return 0;
+}
+
+static inline int issegoff (const char *w) {
+	if (!ishexch (w[0])) return 0;
+	if (!ishexch (w[1])) return 0;
+	if (!ishexch (w[2])) return 0;
+	if (!ishexch (w[3])) return 0;
+	// : 
+	if (!ishexch (w[5])) return 0;
+	if (!ishexch (w[6])) return 0;
+	if (!ishexch (w[7])) return 0;
+	if (!ishexch (w[8])) return 0;
+	return 1;
+}
+
+#define isx86separator(x) ( \
+	(x)==' '||(x)=='\t'||(x)=='\n'|| (x)=='\r'||(x)==' '|| \
+	(x)==','||(x)==';'||(x)=='['||(x)==']'|| \
+	(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
+
 static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	char *ptr = data, *ptr2;
 	RListIter *iter;
 	RFlagItem *flag;
 	ut64 off;
 
+	ptr2 = NULL;
 	while ((ptr = strstr (ptr, "0x"))) {
-		for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
+		for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
 		off = r_num_math (NULL, ptr);
 		if (!off) {
 			ptr = ptr2;
 			continue;
 		}
-		// XXX. tooslow
-		r_list_foreach (f->flags, iter, flag) {
-			if (flag->offset == off && strchr (flag->name, '.')) {
+		flag = r_flag_get_i (f, off);
+		if (flag && strchr (flag->name, '.')) {
+		// XXX. tooslow but correct
+		//r_list_foreach (f->flags, iter, flag) { if (flag->offset == off && strchr (flag->name, '.')) {
 				if (p->notin_flagspace != -1) {
 					if (p->flagspace == flag->space)
 						continue;
@@ -160,7 +190,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 					ptr2!=ptr? ptr2: "");
 				return R_TRUE;
 			}
-		}
+		//}
 		ptr = ptr2;
 	}
 	strncpy (str, data, len);
