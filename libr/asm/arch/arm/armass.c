@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2012 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -208,8 +208,10 @@ static ut32 getshift(const char *str) {
 static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	int i;
 	memset (ao, 0, sizeof (ArmOpcode));
+	if (strlen (str)+1>=sizeof (ao->op))
+		return 0;
 	strncpy (ao->op, str, sizeof (ao->op)-1);
-	strcpy (ao->opstr, str);
+	strcpy (ao->opstr, ao->op);
 	ao->a[0] = strchr (ao->op, ' ');
 	for (i=0; i<15; i++) {
 		if (ao->a[i]) {

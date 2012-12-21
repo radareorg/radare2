@@ -95,7 +95,7 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 
 // XXX: This is wrong, some opcodes are 32bit in thumb mode
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	int opcode = armass_assemble(buf, a->pc, (a->bits==16)?1:0);
+	int opcode = armass_assemble (buf, a->pc, (a->bits==16)?1:0);
 	if (opcode==-1)
 		return -1;
 	if (a->bits==32)
