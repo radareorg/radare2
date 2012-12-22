@@ -266,3 +266,7 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 	return size;
 }
 
+R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {
+	if (sectorsize<1) sectorsize = 512;
+	return cylinder * head * sector * sectorsize;
+}

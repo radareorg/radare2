@@ -459,8 +459,12 @@ static int cmd_eval(void *data, const char *input) {
 }
 
 static int cmd_visual(void *data, const char *input) {
+	RCore *core = (RCore*) data;
+	int ret;
+	if (!r_config_get_i (core->config, "scr.interactive"))
+		return R_FALSE;
 	r_cons_show_cursor (R_FALSE);
-	int ret = r_core_visual ((RCore *)data, input);
+	ret = r_core_visual ((RCore *)data, input);
 	r_cons_show_cursor (R_TRUE);
 	return ret;
 }

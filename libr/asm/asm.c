@@ -539,7 +539,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			}
 			if (stage == 2) {
 				if (ret < 1) {
-					printf ("Cannot assemble '%s'\n", ptr_start);
+					//eprintf ("Cannot assemble '%s'\n", ptr_start);
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;

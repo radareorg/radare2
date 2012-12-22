@@ -268,6 +268,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'N':
 		r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 		break;
+	case 'A':
+		r_core_visual_asm (core);
+		break;
 	case 'a':
 		if (core->file && !(core->file->rwx & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");

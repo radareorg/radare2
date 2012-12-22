@@ -259,9 +259,11 @@ R_API void r_line_autocomplete() {
 	fflush (stdout);
 }
 
-/* main readline function */
-//R_API char *r_line_readline(const char *prompt, RLineCallba 
 R_API char *r_line_readline() {
+	return r_line_readline_cb (NULL, NULL);
+}
+
+R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int columns = r_cons_get_size (NULL)-2;
 	const char *gcomp_line = "";
 	static int gcomp_idx = 0;
@@ -304,6 +306,8 @@ R_API char *r_line_readline() {
 		}
 #endif
 		I.buffer.data[I.buffer.length]='\0';
+		if (cb) cb (user, I.buffer.data);
+
 		ch = r_line_readchar ();
 		if (ch == -1)
 			return NULL; //I.buffer.data;
