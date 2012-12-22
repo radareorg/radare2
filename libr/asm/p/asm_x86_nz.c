@@ -456,6 +456,14 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = ch;
 				return l;
 			}
+			{
+				int n = addr;
+				if (n>-127 && n<=127) {
+					data[l++] = 0x6a;
+					data[l++] = addr;
+					return 2;
+				}
+			}
 			data[l++] = 0x68;
 			data[l++] = ptr[0];
 			data[l++] = ptr[1];

@@ -306,7 +306,10 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		}
 #endif
 		I.buffer.data[I.buffer.length]='\0';
-		if (cb) cb (user, I.buffer.data);
+		if (cb && !cb (user, I.buffer.data)) {
+			I.buffer.data[0] = 0;
+			I.buffer.length = 0;
+		}
 
 		ch = r_line_readchar ();
 		if (ch == -1)

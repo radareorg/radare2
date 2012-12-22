@@ -173,7 +173,7 @@ static int cmd_help(void *data, const char *input) {
 		return 0;
 	case '$':
 		r_cons_printf (
-		"$variables:\n"
+		"RNum $variables usable in math expressions:\n"
 		" $$  = here (current virtual seek)\n"
 		" $o  = here (current disk io offset)\n"
 		" $s  = file size\n"
@@ -193,7 +193,8 @@ static int cmd_help(void *data, const char *input) {
 		" $l  = opcode length\n"
 		" $e  = 1 if end of block, else 0\n"
 		" ${eval} = get value of eval config variable # TODO: use ?k too\n"
-		" $?  = last comparision value\n");
+		" $?  = last comparision value\n"
+		);
 		return R_TRUE;
 	case 'V':
 		r_cons_printf ("%s\n", R2_VERSION);
@@ -203,11 +204,9 @@ static int cmd_help(void *data, const char *input) {
 		core->num->value = strlen (input);
 		break;
 	case 'X':
-		{
-			for (input++; input[0]==' '; input++);
-			ut64 n = r_num_math (core->num, input);
-			r_cons_printf ("%"PFMT64x"\n", n);
-		}
+		for (input++; input[0]==' '; input++);
+		n = r_num_math (core->num, input);
+		r_cons_printf ("%"PFMT64x"\n", n);
 		break;
 	case 'x':
 		for (input++; input[0]==' '; input++);
@@ -466,4 +465,3 @@ static int cmd_help(void *data, const char *input) {
 	}
 	return 0;
 }
-

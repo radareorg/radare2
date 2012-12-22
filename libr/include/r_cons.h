@@ -294,7 +294,7 @@ R_API void r_line_free();
 R_API char *r_line_get_prompt ();
 R_API void r_line_set_prompt(const char *prompt);
 
-typedef void (RLineReadCallback) (void *user, const char *line);
+typedef int (RLineReadCallback) (void *user, const char *line);
 R_API char *r_line_readline();
 R_API char *r_line_readline_cb(RLineReadCallback cb, void *user);
 
