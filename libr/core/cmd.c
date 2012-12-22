@@ -862,9 +862,11 @@ next2:
 	r_cons_grep (ptr);
 
 	/* seek commands */
-	if (*cmd!='(' && *cmd!='"')
+	if (*cmd!='(' && *cmd!='"') {
 		ptr = strchr (cmd, '@');
-	else ptr = NULL;
+		if (ptr == cmd+1 && *cmd=='?')
+			ptr = NULL;
+	} else ptr = NULL;
 	core->tmpseek = ptr? R_TRUE: R_FALSE;
 	if (ptr) {
 		ut64 tmpoff, tmpbsz, addr;

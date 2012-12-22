@@ -39,7 +39,6 @@ R_API void r_core_visual_asm(RCore *core) {
 	r_io_read_at (core->io, core->offset, cva.buf, sizeof (cva.buf));
 	cva.blocklen = r_hex_bin2str (cva.buf, sizeof (cva.buf), cva.blockbuf);
 
-	readline_callback (&cva, "");
 	r_line_readline_cb (readline_callback, &cva);
 
 	if (cva.acode && cva.acode->len>0)

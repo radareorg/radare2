@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int cmd_macro(void *data, const char *input) {
 	char *buf = NULL;

@@ -156,17 +156,20 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 
 R_API void r_core_rtr_help(RCore *core) {
 	r_cons_printf (
-	" =                  ; list all open connections\n"
-	//" =:port [cmd]       ; same as .: but allow to send command if cmd\n"
-	" =<[fd] cmd         ; send output of local command to remote fd\n"
-	" =[fd] cmd          ; exec cmd at remote 'fd' (last open is default one)\n"
-	" =! cmd             ; run command via r_io_system\n"
-	" =+ [proto://]host  ; add host (default=rap://, tcp://, udp://)\n"
-	" =-[fd]             ; remove all hosts or host 'fd'\n"
-	" ==[fd]             ; open remote session with host 'fd', 'q' to quit\n"
+	"remote commands:\n"
+	" =:host:port cmd     run 'cmd' command on remote server.\n"
+	"rap commands:\n"
+	" =                   list all open connections\n"
+	//" =:port [cmd]      ; same as .: but allow to send command if cmd\n"
+	" =<[fd] cmd          send output of local command to remote fd\n"
+	" =[fd] cmd           exec cmd at remote 'fd' (last open is default one)\n"
+	" =! cmd              run command via r_io_system\n"
+	" =+ [proto://]host   add host (default=rap://, tcp://, udp://)\n"
+	" =-[fd]              remove all hosts or host 'fd'\n"
+	" ==[fd]              open remote session with host 'fd', 'q' to quit\n"
 	"http server:\n"
-	" =h                 ; listen for http connections\n"
-	" =H                 ; launch browser and listen for http\n");
+	" =h                  listen for http connections (r2 -qc=H /bin/ls)\n"
+	" =H                  launch browser and listen for http\n");
 }
 
 R_API void r_core_rtr_pushout(RCore *core, const char *input) {
@@ -240,7 +243,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		proto = RTR_PROT_RAP;
 		host = input;
 	}
-	while (*host&&iswhitechar(*host))
+	while (*host && iswhitechar (*host))
 		host++;
 
 	if (!(ptr = strchr (host, ':'))) {
@@ -460,13 +463,20 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 }
 
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
-	char *str;
-	int i, ret;
 	unsigned char buf[4096];
+	RSocket *ch, *s;
+	int i, ret;
+	char *str;
 
-	RSocket *ch, *s = r_socket_new (0);
+	if (!port || port[0]=='?') {
+		r_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
+		return R_FALSE;
+	}
+
+	s = r_socket_new (0);
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Error listening on port %s\n", port);
+		r_socket_free (s);
 		return R_FALSE;
 	}
 	
