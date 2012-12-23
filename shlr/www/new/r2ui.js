@@ -229,8 +229,31 @@ function seek(x,back) {
 r2ui.seek = seek;
 
 r2ui.initDisasm = function () {
-	r2.cmd ("pd 512", function (x) {
+	r2.cmd ("pd 128", function (x) {
 		x = filter_asm (x);
 		document.getElementById ("disasmBody").innerHTML = x;
+	});
+}
+
+r2ui.assembleOpcode = function () {
+	var str = document.getElementById ("assembleOpcode").value;
+	r2.cmd ("\"pa "+str+"\"", function (x) {
+		document.getElementById ("assembleBytes").value = x;
+	});
+}
+
+r2ui.assembleBytes = function () {
+	var hex = document.getElementById ("assembleBytes").value;
+	r2.cmd ("pi 1@b:"+hex, function (x) {
+		document.getElementById ("assembleOpcode").value = x;
+	});
+}
+
+r2ui.assembleWrite = function () {
+	var hex = document.getElementById ("assembleBytes").value;
+	var off = document.getElementById ("assembleOffset").value;
+	r2.cmd ("s "+off+";wx "+hex, function (x) {
+		Lungo.Notification.error('Oops', 'Cannot write bytes', 'file is read-only', 2);
+		//document.getElementById ("assembleOpcode").value = x;
 	});
 }

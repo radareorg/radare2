@@ -9,7 +9,7 @@ function Ajax (method, uri, body, fn) {
         x.onreadystatechange = function (y) {
 		if (x.status == 200) {
 			if (fn) fn (x.responseText);
-		} else alert ("ajax "+x.status)
+		} else console.error ("ajax "+x.status)
         }
         x.send (body);
 }
@@ -110,12 +110,14 @@ r2.get_logger = function (obj) {
 				obj.interval.stop ();
 			return;
 		}
-		obj.interval = setInterval (function () {
+		function to() {
 			obj.refresh (function () {
 				//obj.clear ();
 			});
+			setTimeout (to, n*1000);
 			return true;
-		}, n*1000);
+		}
+		obj.interval = setTimeout (to, n*1000);
 	}
 	obj.on = function (ev, cb) {
 		obj.events[ev] = cb;

@@ -51,5 +51,61 @@ Lungo.init ({
 	]
 });
 </script>
+<!-- windows -->
+
+  <div id="exampleB" style="position:fixed!important;top:200px;right:10;width:250px;height:350px;background-color:#e0e0e0;border: 1px solid black;z-index:99">
+    <div id="exampleBHandle" style="height:20px;left:0px;top:0px;cursor:move;width:248px;background-color:#20a0e0;font-weight:bold;color:white;border:1px solid black">&nbsp;Registers</div>
+<div style="margin:5px">
+<br /><br />
+<pre>
+eax = 0x33441100
+ebx = 0x00000000
+ecx = 0x00000005
+edx = 0x08049204
+
+esp = 0x0bff428a
+ebp = 0x0bff428a
+eip = 0x08048520
+
+</pre>
+<div class="two columns left" style="width:100px">
+<a href="#" class="button big theme" data-label="" data-icon="right">Step</a>
+</div>
+	<div class="two columns right" style="width:120px">
+	<a href="#" class="button big red" data-label="" data-icon="plus">Continue</a>
+	</div>
+  </div>
+</div>
+
+<script type="text/javascript">
+var exampA = null;
+var exampB = null;
+function initialize()
+{
+  exampA = new dragObject("exampleB", null, new Position(1000,0), new Position(1000,200), null, null, exampleAEnd, false);
+  exampB = new dragObject("exampleB", "exampleBHandle");
+}
+function buttonClicked()
+{
+  var button = document.getElementById('dragButton');
+  if(exampA.IsListening())
+  {
+    exampA.StopListening(true);
+    exampB.StopListening(true);
+    button.value = "Resume Listening";
+  }
+  else
+  {
+    exampA.StartListening();
+    exampB.StartListening();
+    button.value = "Stop Listening";
+  }
+}
+function exampleAEnd()
+{
+//  alert("Drag Ended.");
+}
+initialize();
+</script>
 </body>
 </html>
