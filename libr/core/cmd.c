@@ -69,7 +69,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 
 static int cmd_log(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	char *input2 = input + (*input? (*input==' '? 2: 1): 0);
+	const char *input2 = input + (*input? (*input==' '? 2: 1): 0);
 	char *arg = strchr (input2, ' ');
 	int n = atoi (input2);
 	int n2 = arg? atoi (arg+1): 0;

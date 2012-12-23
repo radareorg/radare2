@@ -1,12 +1,81 @@
 /* radare - LGPL - Copyright 2009-2012 - pancake */
 
+static void r_core_file_info (RCore *core, int mode) {
+	const char *fn = NULL;
+	int dbg = r_config_get_i (core->config, "cfg.debug");
+	RBinInfo *info = r_bin_get_info (core->bin);
+	if (mode == R_CORE_BIN_JSON)
+		r_cons_printf ("{");
+	if (info) {
+		fn = info->file;
+		switch (mode) {
+		case R_CORE_BIN_JSON:
+		r_cons_printf ("\"type\":\"%s\","
+			"\"os\":\"%s\","
+			"\"arch\":\"%s\","
+			"\"bits\":%d,"
+			"\"endian\":\"%s\","
+			, info->type
+			, info->os
+			, info->machine
+			, info->bits
+			, info->big_endian? "big": "little");
+			break;
+		default:
+		r_cons_printf ("type\t%s\n"
+			"os\t%s\n"
+			"arch\t%s\n"
+			"bits\t%d\n"
+			"endian\t%s\n"
+			, info->type
+			, info->os
+			, info->machine
+			, info->bits
+			, info->big_endian? "big": "little");
+			break;
+		}
+	} else fn = core->file->filename;
+	if (mode == R_CORE_BIN_JSON) {
+		r_cons_printf ("\"file\":\"%s\"", fn);
+		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
+		r_cons_printf (",\"fd\":%d", core->file->fd->fd);
+		r_cons_printf (",\"size\":%d", core->file->size);
+		r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (core->file->rwx | dbg));
+		r_cons_printf (",\"block\":%d", core->blocksize);
+		r_cons_printf (",\"uri\":\"%s\"", core->file->uri);
+		if (core->bin->curxtr)
+			r_cons_printf (",\"packet\":\"%s\"", core->bin->curxtr->name);
+		if (core->bin->curxtr)
+			r_cons_printf (",\"format\":\"%s\"", core->bin->cur.curplugin->name);
+		r_cons_printf ("}");
+	} else {
+		r_cons_printf ("file\t%s\n", fn);
+		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
+		r_cons_printf ("fd\t%d\n", core->file->fd->fd);
+		r_cons_printf ("size\t0x%x\n", core->file->size);
+		r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
+		r_cons_printf ("block\t0x%x\n", core->blocksize);
+		r_cons_printf ("uri\t%s\n", core->file->uri);
+		if (core->bin->curxtr)
+			r_cons_printf ("packet\t%s\n", core->bin->curxtr->name);
+		if (core->bin->curxtr)
+			r_cons_printf ("format\t%s\n", core->bin->cur.curplugin->name);
+	}
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 offset = r_bin_get_offset (core->bin);
 	int va = core->io->va || core->io->debug;
-	int mode = (input[1]=='*')?R_CORE_BIN_RADARE:R_CORE_BIN_PRINT;
-	if (input[1]=='j') mode = R_CORE_BIN_JSON;
-	if (input[1]=='q') mode = R_CORE_BIN_SIMPLE;
+	int mode = 0;
+	if (input[0]) {
+		switch (input[1]) {
+		case '*': mode = R_CORE_BIN_RADARE; break;
+		case 'j': mode = R_CORE_BIN_JSON; break;
+		case 'q': mode = R_CORE_BIN_SIMPLE; break;
+		}
+	}
+
 	switch (*input) {
 	case 'o':
 		if (input[1]==' ')
@@ -75,37 +144,21 @@ static int cmd_info(void *data, const char *input) {
 		" iz        ; strings\n");
 		break;
 	case '*':
-		break;
+	case 'j':
+		if (*input== '*') mode = R_CORE_BIN_RADARE;
+		else if (*input=='j') mode = R_CORE_BIN_JSON;
 	default:
 		if (!core->file) {
 			eprintf ("No selected file\n");
 			return R_FALSE;
-		} {
-		const char *fn = NULL;
-		int dbg = r_config_get_i (core->config, "cfg.debug");
-		RBinInfo *info = r_bin_get_info (core->bin);
-		if (info) {
-			fn = info->file;
-			r_cons_printf ("type\t%s\n", info->type);
-			r_cons_printf ("os\t%s\n", info->os);
-			r_cons_printf ("arch\t%s\n", info->machine);
-			r_cons_printf ("bits\t%d\n", info->bits);
-			r_cons_printf ("endian\t%s\n", info->big_endian? "big": "little");
-		} else fn = core->file->filename;
-		r_cons_printf ("file\t%s\n", fn);
-		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
-		r_cons_printf ("fd\t%d\n", core->file->fd->fd);
-		r_cons_printf ("size\t0x%x\n", core->file->size);
-		r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
-		r_cons_printf ("block\t0x%x\n", core->blocksize);
-		r_cons_printf ("uri\t%s\n", core->file->uri);
-		if (core->bin->curxtr)
-			r_cons_printf ("packet\t%s\n", core->bin->curxtr->name);
-		if (core->bin->curxtr)
-			r_cons_printf ("format\t%s\n", core->bin->cur.curplugin->name);
 		}
+		if (mode == R_CORE_BIN_JSON)
+			r_cons_printf ("{\"bin\":");
+		r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, offset);
+		r_cons_printf (",\"core\":");
+		r_core_file_info (core, mode);
+		if (mode == R_CORE_BIN_JSON)
+			r_cons_printf ("}\n");
 	}
-	if (mode == R_CORE_BIN_JSON)
-		r_cons_newline ();
 	return 0;
 }
