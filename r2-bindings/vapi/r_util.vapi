@@ -98,6 +98,9 @@ namespace Radare {
 	public class RBuffer {
 		public RBuffer();
 		public uint8 *buf;
+		public int length;
+		public int cur;
+		public uint64 base;
 		public int read_at(uint64 addr, uint8 *buf, int len);
 		public int write_at(uint64 addr, uint8 *buf, int len);
 		public bool set_bytes(uint8 *buf, int len);
