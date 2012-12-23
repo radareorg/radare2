@@ -1,0 +1,27 @@
+<html>
+<head>
+<title>r2 log chat</title>
+<script src="js/r2.js"></script>
+<script>
+var logger = null;
+function init () {
+	logger = r2.getLogger ().on ("message", function (msg) {
+		var out = document.getElementById ('out');
+		out.innerHTML += "<br />"+msg.text;
+	});
+	// logger.send ("hello world");
+	logger.autorefresh (3);
+
+}
+function sendmsg() {
+	var msg = document.getElementById ("input").value;
+	if (logger) logger.send (msg);
+}
+</script>
+</head>
+<body onload="init()">
+<input id="input" >
+<input type="button" value="send" onclick="sendmsg()">
+<div id="out" style="background-color:#d0d0d0; height:150px;overflow:scroll"> </div>
+</body>
+</html>

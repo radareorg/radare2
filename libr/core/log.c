@@ -12,7 +12,7 @@ R_API int r_core_log_list(RCore *core, int n, int nth, char fmt) {
 	for (i=idx=0; str && *str; i++, id++) {
 		if ((n&&n<=id)||!n) {
 			switch (fmt) {
-			case 'j':r_cons_printf ("%s{%d,\"%s\"}",
+			case 'j':r_cons_printf ("%s[%d,\"%s\"]",
 				printed?",":"",id, str); break;
 			case '*':r_cons_printf ("\"l %s\"\n", str); break;
 			default: r_cons_printf ("%d %s\n", id, str); break;
@@ -57,8 +57,11 @@ R_API void r_core_log_del(RCore *core, int n) {
 		core->log->first = core->log->last;
 		r_strpool_empty (core->log->sp);
 	} else {
+		int idx;
 		char *s;
-		int idx = n-core->log->first;
+		if (n > core->log->last)
+			n = core->log->last;
+		idx = n-core->log->first;
 		if (idx<0) return;
 		core->log->first += idx+1;
 		s = r_strpool_get_i (core->log->sp, idx);

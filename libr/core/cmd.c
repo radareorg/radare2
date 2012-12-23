@@ -74,12 +74,16 @@ static int cmd_log(void *data, const char *input) {
 	int n = atoi (input2);
 	int n2 = arg? atoi (arg+1): 0;
 	switch (*input) {
+	case 'l':
+		r_cons_printf ("%d\n", core->log->last-1);
+		break;
 	case '-':
 		r_core_log_del (core, n);
 		break;
 	case '?':
 		r_cons_printf ("Usage: l[-][ num|msg]\n"
 			"  l new comment 0x80480\n"
+			"  ll      get last log message id\n"
 			"  l-      delete all logs\n"
 			"  l-123   delete logs before 123\n"
 			"  l 123   list log from 123 \n"
