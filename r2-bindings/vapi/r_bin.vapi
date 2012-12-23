@@ -12,9 +12,9 @@ namespace Radare {
 			FINI,
 			LAST
 		}
-		public const string file;
-		public int narch;
+		public /*const NOTE it was causing problems*/string file;
 		public RBin.Arch cur;
+		public int narch;
 
 		public RBin();
 
