@@ -4,15 +4,12 @@
             <a href="#features" data-router="aside" data-icon="menu"></a>
         </nav>
 </header>
-<article id="settings-main" class="active list scroll" style="background-color:white">
-<form>
-<br />
+<article id="settings-main" class="active list scroll" style="background-color:white;">
+<form style="margin:10px">
 <br />
 <p style="font-size:28px;font-weight:bold">CPU</p>
 <br />
-<ul>
-<li>
-<table width="300"> <tr>
+<table width="300" style="left-margin:5px"> <tr>
 <td style="font-size:18px">arch</td>
 <td> <label class="select">
                 <select class="custom">
@@ -42,6 +39,7 @@
             </label>
 </td></tr>
 </table>
+<br />
 <p style="font-size:28px;font-weight:bold">Disassembly</p>
 <br />
 <table width="300"> 
@@ -59,17 +57,20 @@
 <p style="font-size:28px;font-weight:bold">About</p>
 <br />
 <p style="font-size:18px">
-author: <a target=_blank href="http://twitter.com/trufae">pancake</a><br />
+author: <a target="_blank" href="http://twitter.com/trufae">pancake</a><br />
 <br />
 version: 0.9.3git<br />
 <br />
-website: <a target=_blank href="http://www.radare.org/">www.radare.org</a><br />
+website: <a target="_blank" href="http://www.radare.org/">www.radare.org</a><br />
 </p>
-<br />
 
+<!--
+<br />
 <div class="one row">
 <input type="range" min="0" max="1" class="checkbox left" value="0">
+</input>
 <input type="range" min="0" max="1" class="checkbox right active" value="1">
+</input>
 </div>
             <div id="progress-normal" data-progress="25%"></div>
 
@@ -79,6 +80,7 @@ website: <a target=_blank href="http://www.radare.org/">www.radare.org</a><br />
 <div class="four columns right">
 <a href="#" class="button big red" data-label="Cancel" data-icon="close"></a>
 </div>
+-->
 
 </form>
 </article>

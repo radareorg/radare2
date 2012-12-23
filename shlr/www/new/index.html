@@ -1,54 +1,22 @@
 <html>
-<head>
+  <head>
     <meta charset="utf-8"></meta>
-<title>r2wui</title>
+    <title>r2wui</title>
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="format-detection" content="telephone=no">
- <link rel="stylesheet" href="./style.css" />
- <link rel="stylesheet" href="./app.css" />
- <link rel="stylesheet" href="./lungo.css" /> 
- <link rel="stylesheet" href="./lungo.icon.css" /> 
- <link rel="stylesheet" href="./lungo.icon.brand.css" /> 
- <link rel="stylesheet" href="./lungo.theme.default.css" /> 
-   <!-- iPhone -->
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./app.css" />
+    <link rel="stylesheet" href="./lungo.css" /> 
+    <link rel="stylesheet" href="./lungo.icon.css" /> 
+    <link rel="stylesheet" href="./lungo.icon.brand.css" /> 
+    <link rel="stylesheet" href="./lungo.theme.default.css" /> 
+    <!-- iPhone -->
     <link href="icon.png" sizes="57x57" rel="apple-touch-icon">
-<script src="r2.js"> </script>
-<script src="window.js"> </script>
-<script>
-function Ajax (method, uri, body, fn) {
-        var x = new XMLHttpRequest ();
-        x.open (method, uri, false);
-	x.setRequestHeader ('Accept', 'text/plain');
-        x.onreadystatechange = function (y) {
-		if (x.status == 200) {
-			if (fn) fn (x.responseText);
-		} else alert ("ajax "+x.status)
-        }
-        x.send (body);
-}
-function cmd(c, cb) {
-	Ajax ('GET', "/cmd/"+c, '', function (x) {
-		if (cb) return cb (x);
-		x = filter_asm (x);
-//		document.getElementById ('output').innerHTML = x;
-	});
-}
-
-function consoleExec() {
-	var str = document.getElementById ('consoleEntry');
-	if (str) str = str.value;
-	cmd (str, function (res) {
-		document.getElementById ('consoleBody').innerHTML = res;
-		document.getElementById ('consoleEntry').value = "";
-	});
-}
-
-function init() {
-	// initialize r2 stuff
-}
-</script>
+    <script src="r2.js"> </script>
+    <script src="r2ui.js"> </script>
+    <script src="window.js"> </script>
 </head>
 <body class="app" onload="init()">
   <section id="main" data-transition="slide">
@@ -63,34 +31,12 @@ function init() {
                 </div>
             </div>
     </header>
-<article id="settings" data-transition="slide" class="list scroll">
-<ul>
-<li>jiji</li>
-<li>jiji</li>
-<li>jiji</li>
-</ul>
-<div style="background-color: red">
-JAJAJAJ
-<br /><br />
-This is settings!!1
-mayhaeeem
-</div>
-
-<input type="checkbox"> 
-</input>
-<select>
-<option>foo</option>
-<option>bar</option>
-<option>cow</option>
-</select>
-</article>
-    <article id="disasm" class="list scroll" style="overflow:hidden">
-<ul>
- <li class="active">
-  <a href="#main-article" data-router="article" data-title="Lungo Framework">
-   disasm </a>
- </li>
-</ul>
+<article id="settings" data-transition="slide" class="active list scroll">
+<br  />
+<br  />
+<center>
+<h1><b> OLA K ASE </b></h1>
+</center>
 </article>
 
 <script src="./quo.js"></script>
@@ -100,8 +46,7 @@ Lungo.init ({
 	name: 'r2wui',
 	version: 0.1,
 	resources: [
-		'app/aside.html',
-		'app/disasm.html'
+		'app/aside.html'
 	]
 });
 </script>
