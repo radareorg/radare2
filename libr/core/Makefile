@@ -7,7 +7,7 @@ DEPS+=r_debug r_hash r_bin r_lang r_io r_anal r_parse r_print r_bp r_egg
 DEPS+=r_reg r_search r_syscall r_sign r_diff r_socket r_fs r_magic r_db
 
 OBJS=core.o cmd.o file.o config.o visual.o io.o yank.o libs.o hack.o vasm.o
-OBJS+=anal.o project.o gdiff.o asm.o rtr.o vmenus.o disasm.o patch.o bin.o
+OBJS+=anal.o project.o gdiff.o asm.o rtr.o vmenus.o disasm.o patch.o bin.o log.o
 
 CFLAGS+=-DLIBDIR=\"${LIBDIR}\"
 CFLAGS+=-DPREFIX=\"${PREFIX}\"

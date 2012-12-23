@@ -242,7 +242,7 @@ toro:
 					mycols /= 2;
 					if (show_color) r_cons_strcat (Color_TURQOISE);
 // XXX: always prefix with ; the comments
-					if (*comment != ';') r_cons_strcat ("  ;  ");
+				//	if (*comment != ';') r_cons_strcat ("  ;  ");
 					r_cons_strcat_justify (comment, mycols, ';');
 					if (show_color) r_cons_strcat (Color_RESET);
 					if (!strchr (comment, '\n')) r_cons_newline ();

@@ -161,7 +161,7 @@ static inline int issegoff (const char *w) {
 
 static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	char *ptr = data, *ptr2;
-	RListIter *iter;
+	//RListIter *iter;
 	RFlagItem *flag;
 	ut64 off;
 

@@ -53,7 +53,7 @@ R_API void r_reg_free_internal(RReg *reg) {
 	int i;
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		r_list_destroy (reg->regset[i].regs);
-		reg->regset[i].regs = r_list_newf (r_reg_item_free);
+		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
 }
 
@@ -81,8 +81,8 @@ R_API RReg *r_reg_new() {
 		arena = r_reg_arena_new (0);
 		if (!arena) return NULL;
 		reg->regset[i].arena = arena;
-		reg->regset[i].pool = r_list_newf (r_reg_arena_free);
-		reg->regset[i].regs = r_list_newf (r_reg_item_free);
+		reg->regset[i].pool = r_list_newf ((RListFree)r_reg_arena_free);
+		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
 		r_list_append (reg->regset[i].pool, reg->regset[i].arena);
 	}
 	return reg;

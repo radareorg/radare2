@@ -404,6 +404,7 @@ R_API int r_core_init(RCore *core) {
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->watchers = r_list_new ();
 	core->watchers->free = (RListFree)r_core_cmpwatch_free;
+	core->log = r_core_log_new ();
 	core->vmode = R_FALSE;
 	core->section = NULL;
 	core->ffio = 0;

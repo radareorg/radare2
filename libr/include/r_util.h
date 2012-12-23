@@ -596,5 +596,10 @@ R_API int r_strpool_append(RStrpool *p, const char *s);
 R_API void r_strpool_free (RStrpool *p);
 R_API int r_strpool_fit(RStrpool *p);
 R_API char *r_strpool_get(RStrpool *p, int index);
+R_API char *r_strpool_get_i(RStrpool *p, int index);
+R_API int r_strpool_get_index(RStrpool *p, const char *s);
+R_API char *r_strpool_next(RStrpool *p, int index);
+R_API char *r_strpool_slice (RStrpool *p, int index);
+R_API char *r_strpool_empty (RStrpool *p);
 
 #endif

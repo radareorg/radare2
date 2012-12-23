@@ -51,7 +51,12 @@ typedef struct r_core_rtr_host_t {
 	char file[1024];
 	RSocket *fd;
 } RCoreRtrHost;
-/* rtr */
+
+typedef struct r_core_log_t {
+	int first;
+	int last;
+	RStrpool *sp;
+} RCoreLog;
 
 typedef struct r_core_file_t {
 	char *uri;
@@ -111,6 +116,7 @@ typedef struct r_core_t {
 	RSign *sign;
 	RFS *fs;
 	REgg *egg;
+	RCoreLog *log;
 	char *cmdqueue;
 	char *lastcmd;
 	int cmdrepeat;
@@ -316,6 +322,14 @@ R_API int r_core_cmpwatch_del (RCore *core, ut64 addr);
 R_API int r_core_cmpwatch_update (RCore *core, ut64 addr);
 R_API int r_core_cmpwatch_show (RCore *core, ut64 addr, int mode);
 R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr);
+
+/* logs */
+R_API void r_core_log_free(RCoreLog *log);
+R_API void r_core_log_init (RCoreLog *log);
+R_API RCoreLog *r_core_log_new ();
+R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
+R_API void r_core_log_add(RCore *core, const char *msg);
+R_API void r_core_log_del(RCore *core, int n);
 
 #endif
 

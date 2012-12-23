@@ -67,23 +67,59 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	return op;
 }
 
+static int cmd_log(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	char *input2 = input + (*input? (*input==' '? 2: 1): 0);
+	char *arg = strchr (input2, ' ');
+	int n = atoi (input2);
+	int n2 = arg? atoi (arg+1): 0;
+	switch (*input) {
+	case '-':
+		r_core_log_del (core, n);
+		break;
+	case '?':
+		r_cons_printf ("Usage: l[-][ num|msg]\n"
+			"  l new comment 0x80480\n"
+			"  l-      delete all logs\n"
+			"  l-123   delete logs before 123\n"
+			"  l 123   list log from 123 \n"
+			"  l       list all log messages\n"
+			"  l 10 3  list 3 log messages starting from 10\n"
+			"  lj      list in json format\n"
+			"  l*      list in radare commands\n"
+		);
+		break;
+	case ' ':
+		if (!n) {
+			r_core_log_add (core, input+1);
+			break;
+		}
+	case 'j':
+	case '*':
+	case '\0':
+		r_core_log_list (core, n, n2, *input);
+		break;
+	}
+	return 0;
+}
+
 static int cmd_alias(void *data, const char *input) {
 	int i;
 	char *p, *q, *buf;
 	RCore *core = (RCore *)data;
 	if (*input=='?') {
 		r_cons_printf ("Usage: -alias[=cmd] [args...]\n"
-			" -analyze=af;pdf # create command -analyze to show function\n"
-			" -analyze=       # undefine alias\n"
-			" -analyze        # execute the previously defined alias\n"
-			" -analyze ?      # show commands aliased by 'analyze'\n"
-			" -               # list all defined aliases\n");
+			" $analyze=af;pdf # create command -analyze to show function\n"
+			" $analyze=       # undefine alias\n"
+			" $analyze        # execute the previously defined alias\n"
+			" $analyze ?      # show commands aliased by 'analyze'\n"
+			" $               # list all defined aliases\n");
 		return 0;
 	}
 	i = strlen (input);
 	buf = malloc (i+2);
 	if (!buf) return 0;
-	*buf = '-'; // prefix aliases with a dash
+	*buf = '$'; // prefix aliases with a dash
 	memcpy (buf+1, input, i+1);
 	p = strchr (buf, '=');
 	q = strchr (buf, ' ');
@@ -111,7 +147,7 @@ static int cmd_alias(void *data, const char *input) {
 					return 1;
 				}
 				out = malloc (strlen (v) + strlen (args) + 2);
-				if (out) {
+				if (out) { //XXX slow
 					strcpy (out, v);
 					strcat (out, " ");
 					strcat (out, args);
@@ -573,11 +609,17 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (cmt && cmt[1]==' ') {
 		*cmt = 0;
 	}
-	if (*cmd != '"') {
-		colon = strchr (icmd, ';');
-		if (colon)
-			*colon = 0;
-	} else colon = NULL;
+	if (*cmd == ';') {
+		r_meta_add (core->anal->meta, 'C', core->offset, core->offset+1, cmd+1);
+		colon = NULL;
+		return R_TRUE;
+	} else {
+		if (*cmd != '"') {
+			colon = strchr (icmd, ';');
+			if (colon)
+				*colon = 0;
+		} else colon = NULL;
+	}
 	if (rep>0) {
 		while (*cmd>='0' && *cmd<='9')
 			cmd++;
@@ -1315,7 +1357,8 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "info",     "get file info", &cmd_info);
 	r_cmd_add (core->rcmd, "cmp",      "compare memory", &cmd_cmp);
 	r_cmd_add (core->rcmd, "seek",     "seek to an offset", &cmd_seek);
-	r_cmd_add (core->rcmd, "t",   "type information (cparse)", &cmd_type);
+	r_cmd_add (core->rcmd, "log",      "log utility", &cmd_log);
+	r_cmd_add (core->rcmd, "t",        "type information (cparse)", &cmd_type);
 	r_cmd_add (core->rcmd, "zign",     "zignatures", &cmd_zign);
 	r_cmd_add (core->rcmd, "Section",  "setup section io information", &cmd_section);
 	r_cmd_add (core->rcmd, "bsize",    "change block size", &cmd_bsize);
@@ -1332,7 +1375,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "=",        "io pipe", &cmd_rap);
 	r_cmd_add (core->rcmd, "#",        "calculate hash", &cmd_hash);
 	r_cmd_add (core->rcmd, "?",        "help message", &cmd_help);
-	r_cmd_add (core->rcmd, "-",        "alias", &cmd_alias);
+	r_cmd_add (core->rcmd, "$",        "alias", &cmd_alias);
 	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
