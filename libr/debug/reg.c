@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 #include <r_debug.h>
 #include <r_cons.h>
@@ -50,6 +50,9 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		fmt2 = "%4s 0x%08"PFMT64x"%s";
 		cols = 4;
 	}
+	if (rad=='j') {
+		dbg->printf ("{");
+	}
 	if (head)
 	r_list_foreach (head, iter, item) {
 		ut64 value;
@@ -59,9 +62,15 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 			continue;
 		value = r_reg_get_value (dbg->reg, item);
 		diff = (ut64)r_reg_cmp (dbg->reg, item);
-		if (rad==1)
+		switch (rad) {
+		case 'j':
+			dbg->printf ("%s\"%s\":%"PFMT64d,
+				n?",":"",item->name, value);
+			break;
+		case '*':
 			dbg->printf ("f %s 1 0x%"PFMT64x"\n", item->name, value);
-		else if (rad==2) {
+			break;
+		case 2:
 			if (diff) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
 				dbg->printf (Color_BWHITE); //INVERT); //Color_BWHITE);
 			if (item->flags) {
@@ -72,16 +81,22 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 			if (diff) // TODO: use inverse colors
 				//dbg->printf (Color_INVERT_RESET); //Color_RESET);
 				dbg->printf (Color_RESET); //Color_RESET);
-		} else if (rad==3) {
+			break;
+		case 3:
 			if (diff) {
 				char woot[32];
 				snprintf (woot, sizeof (woot), " was 0x%08"PFMT64x"\n", diff);
 				dbg->printf (fmt, item->name, value, woot);
 			}
-		} else dbg->printf (fmt, item->name, value, "\n");
+			break;
+		default:
+			dbg->printf (fmt, item->name, value, "\n");
+			break;
+		}
 		n++;
 	}
-	if (n>0 && rad==2 && ((n%cols)))
+	if (rad=='j') dbg->printf ("}\n");
+	else if (n>0 && rad==2 && ((n%cols)))
 		dbg->printf ("\n");
 	return n;
 }

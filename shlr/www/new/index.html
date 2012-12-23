@@ -14,6 +14,7 @@
  <link rel="stylesheet" href="./lungo.theme.default.css" /> 
    <!-- iPhone -->
     <link href="icon.png" sizes="57x57" rel="apple-touch-icon">
+<script src="r2.js"> </script>
 <script src="window.js"> </script>
 <script>
 function Ajax (method, uri, body, fn) {
@@ -43,585 +44,66 @@ function consoleExec() {
 		document.getElementById ('consoleEntry').value = "";
 	});
 }
+
+function init() {
+	// initialize r2 stuff
+}
 </script>
 </head>
-<body class="app">
+<body class="app" onload="init()">
   <section id="main" data-transition="slide">
     <header class="">
       <nav class="left box">
-       <a href="#features" data-router="aside" data-icon="menu"></a>
+        <a href="#features" data-router="aside" data-icon="menu"></a>
       </nav>
             <div class="left">
                 <div class="centered title with-subtitle">
                     r2wui
-                    <small class="subtitle">radare2 web frontend</small>
+                    <font style="font-size:10px">radare2 web frontend</font>
                 </div>
             </div>
     </header>
-    <article id="disasm" class="list scroll">
-<div style="position:absolute;background.color:red;z-index:10">
-<pre>
-.-
-|
-|
-|
-|
-|
-|
-|
-|
-|
-|
-`-
-
-
-.-
-|
-|
-|
-|
-|
-|
-|
-|
-`-
-.-
-|
-|
-`-
-</pre>
-</div>
-      <ul style="margin-left:20px">
-<li style="background-color:#c0c0c0">
-<table><tr><td>
-	<strong>Function</strong>
-</td><td style="padding-left:10px">
-	<a href="see_fun">entry0</a>
-</td></tr>
-</table>
-</li>
-<li>
-<table><tr><td>
-	<a href="">0x8048000</a>
-</td><td class=code>
-	push 0x0
-</td></tr>
-</table>
-</li>
-<li class=code>mov rbp, rsp</li>
-<li class=code>and rsp, 0xfffffffffffffff0</li>
-<li class=code>mov rdi, [rbp+0x8]</li>
-<li class=comment>; This is a comment test
-; multiline 2
-</li>
-<li class=code>lea rsi, [rbp+0x10]</li>
-<li class=code>mov edx, edi</li>
-<li class=code>add edx, 0x1</li>
-<li class=code>shl edx, 0x3</li>
-<li class=code>add rdx, rsi</li>
-<li class=code>mov rcx, rdx</li>
-<li class=code>jmp 0x10000149d</li>
-<li class=code>add rcx, 0x8</li>
-<li class=code>cmp qword [rcx], 0x0</li>
-<li class=code>jnz 0x100001499</li>
-<li class=code>add rcx, 0x8</li>
-<li class=code>call dword 0x100002404</li>
-<li class=code>mov edi, eax</li>
-<li class=code>call dword 0x100004dce</li>
-<li class=code>hlt</li>
-<li class=code>push rbp</li>
-<li class=code>mov rbp, rsp</li>
-<li class=code>and rsp, 0xfffffffffffffff0</li>
-<li class=code>mov rdi, [rbp+0x8]</li>
-<li class=comment>; This is a comment test
-; multiline 2
-</li>
-<li class=code>lea rsi, [rbp+0x10]</li>
-<li class=code>mov edx, edi</li>
-<li class=code>add edx, 0x1</li>
-<li class=code>shl edx, 0x3</li>
-<li class=code>add rdx, rsi</li>
-<li class=code>mov rcx, rdx</li>
-<li class=code>jmp 0x10000149d</li>
-<li class=code>add rcx, 0x8</li>
-<li class=code>cmp qword [rcx], 0x0</li>
-<li class=code>jnz 0x100001499</li>
-<li class=code>add rcx, 0x8</li>
-<li class=code>call dword 0x100002404</li>
-<li class=code>mov edi, eax</li>
-<li class=code>call dword 0x100004dce</li>
-<li class=code>hlt</li>
-<li class=code>push rbp</li>
-<li class=code>mov rbp, rsp</li>
-        </li>
-      </ul>
-<!-- BUG: ff and chrome fail when left:60% -> scroll is wrong. use hardcoded pixels -->
-  <div id="exampleB" style="position:fixed!important;top:50px;left:400;width:250px;height:350px;background-color:#e0e0e0;border: 1px solid black;z-index:99">
-    <div id="exampleBHandle" style="height:20px;left:0px;top:0px;cursor:move;width:248px;background-color:#20a0e0;font-weight:bold;color:white;border:1px solid black">&nbsp;Registers</div>
-<div style="margin:5px">
+<article id="settings" data-transition="slide" class="list scroll">
+<ul>
+<li>jiji</li>
+<li>jiji</li>
+<li>jiji</li>
+</ul>
+<div style="background-color: red">
+JAJAJAJ
 <br /><br />
-<pre>
-eax = 0x33441100
-ebx = 0x00000000
-ecx = 0x00000005
-edx = 0x08049204
-
-esp = 0x0bff428a
-ebp = 0x0bff428a
-eip = 0x08048520
-
-</pre>
-<div class="two columns left" style="width:100px">
-<a href="#" class="button big theme" data-label="" data-icon="right">Step</a>
-</div>
-<div class="two columns right" style="width:120px">
-<a href="#" class="button big red" data-label="" data-icon="plus">Continue</a>
-</div>
-  </div>
-
-
+This is settings!!1
+mayhaeeem
 </div>
 
-<script type="text/javascript">
-var exampA = null;
-var exampB = null;
-function initialize()
-{
-  exampA = new dragObject("exampleB", null, new Position(300,0), new Position(570,200), null, null, exampleAEnd, false);
-  exampB = new dragObject("exampleB", "exampleBHandle");
-}
-function buttonClicked()
-{
-  var button = document.getElementById('dragButton');
-  if(exampA.IsListening())
-  {
-    exampA.StopListening(true);
-    exampB.StopListening(true);
-    button.value = "Resume Listening";
-  }
-  else
-  {
-    exampA.StartListening();
-    exampB.StartListening();
-    button.value = "Stop Listening";
-  }
-}
-function exampleAEnd()
-{
-//  alert("Drag Ended.");
-}
-initialize();
-</script>
-<!--   -->
-    </article>
-
-<article id="console" class="list scroll" data-title="">
-<table style="width:100%;height:90%;margin:5px">
-<tr style="height:34px"><td>
-<form action="javascript:consoleExec()">
-<input autocapitalize="off" style="height:32px;width:99%" type="text" placeholder="" id="consoleEntry"></input>
-</form>
-</td> </tr>
-<tr style="width:100%;height:100%"><td>
-<div style="background-color:#202020;width:100%;height:100%">
-<pre id="consoleBody" style="color:white;margin:0px;">
-</pre>
-</div>
-</td></tr>
-</table>
+<input type="checkbox"> 
+</input>
+<select>
+<option>foo</option>
+<option>bar</option>
+<option>cow</option>
+</select>
 </article>
-
-<article id="info" class="list scroll" data-title="">
-<pre id=infodiv style="margin:10px"> </pre>
-<script> cmd ('i', function (x) { document.getElementById ('infodiv').innerHTML = x; }); </script>
+    <article id="disasm" class="list scroll" style="overflow:hidden">
+<ul>
+ <li class="active">
+  <a href="#main-article" data-router="article" data-title="Lungo Framework">
+   disasm </a>
+ </li>
+</ul>
 </article>
-
-<article id="symbols" class="list scroll" data-title="">
-<pre id=symbolsdiv style="margin:10px"> </pre>
-<script> cmd ('is', function (x) { document.getElementById ('symbolsdiv').innerHTML = x; }); </script>
-</article>
-
-<article id="imports" class="list scroll" data-title="">
-<pre id=importsdiv style="margin:10px"> </pre>
-<script> cmd ('ii', function (x) { document.getElementById ('importsdiv').innerHTML = x; }); </script>
-</article>
-
-<article id="functions" class="list scroll" data-title="">
-<pre id=functionsdiv style="margin:10px"> </pre>
-<script> cmd ('afl', function (x) { document.getElementById ('functionsdiv').innerHTML = x; }); </script>
-</article>
-
-<article id="sections" class="list scroll" data-title="">
-<pre id=sectionsdiv style="margin:10px"> </pre>
-<script> cmd ('iS', function (x) { document.getElementById ('sectionsdiv').innerHTML = x; }); </script>
-</article>
-
-<article id="strings" class="list scroll" data-title="">
-<pre id=stringsdiv style="margin:10px"> </pre>
-<script> cmd ('iz', function (x) { document.getElementById ('stringsdiv').innerHTML = x; }); </script>
-</article>
-
-<article id="comments" class="list scroll" data-title="">
-<pre id=commentsdiv style="margin:10px"> </pre>
-<script> cmd ('CC', function (x) { document.getElementById ('commentsdiv').innerHTML = x; }); </script>
-</article>
-
-<article id="hex" class="list scroll" data-title="">
-<pre style="margin:10px">
--- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-0x100001478  6a00 4889 e548 83e4 f048 8b7d 0848 8d75  j.H..H...H.}.H.u
-0x100001488  1089 fa83 c201 c1e2 0348 01f2 4889 d1eb  .........H..H...
-0x100001498  0448 83c1 0848 8339 0075 f648 83c1 08e8  .H...H.9.u.H....
-0x1000014a8  580f 0000 89c7 e81b 3900 00f4 5548 89e5  X.......9...UH..
-0x1000014b8  488d 4768 488d 7e68 4889 c6c9 e901 3a00  H.GhH.~hH.....:.
-0x1000014c8  0055 4889 e548 83c6 6848 83c7 68c9 e9ef  .UH..H..hH..h...
-0x1000014d8  3900 0055 4889 e553 4889 f148 8b56 6048  9..UH..SH..H.V`H
-0x1000014e8  8b47 6048 8b58 3048 395a 307f 1d7c 2248  .G`H.X0H9Z0..|"H
-0x1000014f8  8b58 3848 395a 387f 117c 1648 8d77 6848  .X8H9Z8..|.H.whH
-0x100001508  8d79 685b c9e9 b839 0000 b8ff ffff ffeb  .yh[...9........
-0x100001518  05b8 0100 0000 5bc9 c355 4889 e548 8b56  ......[..UH..H.V
-0x100001528  6048 8b47 6048 8b48 5048 394a 507f 1c7c  `H.G`H.HPH9JP..|
-0x100001538  2148 8b48 5848 394a 587f 107c 1548 83c6  !H.HXH9JX..|.H..
-0x100001548  6848 83c7 68c9 e977 3900 00b8 0100 0000  hH..h..w9.......
-0x100001558  eb05 b8ff ffff ffc9 c355 4889 e553 488b  .........UH..SH.
-0x100001568  5660 488b 4760 b901 0000 0048 8b58 6048  V`H.G`.....H.X`H
-0x100001578  395a 607f 187d 07b9 ffff ffff eb0f 4883  9Z`..}........H.
-0x100001588  c668 4883 c768 5bc9 e935 3900 0089 c85b  .hH..h[..59....[
-0x100001598  c9c3 5548 89e5 488b 5660 488b 4760 488b  ..UH..H.V`H.G`H.
-0x1000015a8  4840 4839 4a40 7f1c 7c21 488b 4848 4839  H@H9J@..|!H.HHH9
-0x1000015b8  4a48 7f10 7c15 4883 c668 4883 c768 c9e9  JH..|.H..hH..h..
-0x1000015c8  fe38 0000 b801 0000 00eb 05b8 ffff ffff  .8..............
-0x1000015d8  c9c3 5548 89e5 488b 5660 488b 4760 488b  ..UH..H.V`H.G`H.
-0x1000015e8  4820 4839 4a20 7f1c 7c21 488b 4828 4839  H H9J ..|!H.H(H9
-0x1000015f8  4a28 7f10 7c15 4883 c668 4883 c768 c9e9  J(..|.H..hH..h..
-0x100001608  be38 0000 b801 0000 00eb 05b8 ffff ffff  .8..............
-0x100001618  c9c3 5548 89e5 488b 5660 488b 4760 488b  ..UH..H.V`H.G`H.
-0x100001628  4830 4839 4a30 7f1c 7c21 488b 4838 4839  H0H9J0..|!H.H8H9
-0x100001638  4a38 7f10 7c15 4883 c668 4883 c768 c9e9  J8..|.H..hH..h..
-0x100001648  7e38 0000 b801 0000 00eb 05b8 ffff ffff  ~8..............
-0x100001658  c9c3 5548 89e5 5348 89f1 488b 5660 488b  ..UH..SH..H.V`H.
-0x100001668  4760 488b 5850 4839 5a50 7f1d 7c22 488b  G`H.XPH9ZP..|"H.
-0x100001678  5858 4839 5a58 7f11 7c16 488d 7768 488d  XXH9ZX..|.H.whH.
-0x100001688  7968 5bc9 e939 3800 00b8 ffff ffff eb05  yh[..98.........
-0x100001698  b801 0000 005b c9c3 5548 89e5 5348 89f1  .....[..UH..SH..
-0x1000016a8  488b 5660 488b 4760 beff ffff ff48 8b58  H.V`H.G`.....H.X
-0x1000016b8  6048 395a 607f 187d 07be 0100 0000 eb0f  `H9Z`..}........
-0x1000016c8  488d 7768 488d 7968 5bc9 e9f3 3700 0089  H.whH.yh[...7...
-0x1000016d8  f05b c9c3 5548 89e5 5348 89f1 488b 5660  .[..UH..SH..H.V`
-0x1000016e8  488b 4760 488b 5840 4839 5a40 7f1d 7c22  H.G`H.X@H9Z@..|"
-0x1000016f8  488b 5848 4839 5a48 7f11 7c16 488d 7768  H.XHH9ZH..|.H.wh
-0x100001708  488d 7968 5bc9 e9b7 3700 00b8 ffff ffff  H.yh[...7.......
-0x100001718  eb05 b801 0000 005b c9c3 5548 89e5 5348  .......[..UH..SH
-0x100001728  89f1 488b 5660 488b 4760 488b 5820 4839  ..H.V`H.G`H.X H9
-0x100001738  5a20 7f1d 7c22 488b 5828 4839 5a28 7f11  Z ..|"H.X(H9Z(..
-0x100001748  7c16 488d 7768 488d 7968 5bc9 e971 3700  |.H.whH.yh[..q7.
-0x100001758  00b8 ffff ffff eb05 b801 0000 005b c9c3  .............[..
-0x100001768  5548 89e5 488b 3f0f b74f 5866 83f9 0774  UH..H.?..OXf...t
-0x100001778  5b48 8b36 440f b746 5866 4183 f807 744c  [H.6D..FXfA...tL
-0x100001788  0fb7 d141 0fb7 c083 fa0a 7405 83f8 0a75  ...A......t....u
-0x100001798  06c9 e92a fdff ff39 c274 2666 837f 5600  ...*...9.t&f..V.
-0x1000017a8  751f 8b05 044e 0000 85c0 7515 b801 0000  u....N....u.....
-0x1000017b8  0066 ffc9 7418 b8ff ffff ff66 41ff c874  .f..t......fA..t
-0x1000017c8  0d4c 8b1d d84d 0000 c941 ffe3 31c0 c9c3  .L...M...A..1...
-0x1000017d8  5548 89e5 4157 4156 4155 4154 5348 81ec  UH..AWAVAUATSH..
-0x1000017e8  5801 0000 4889 bdc8 feff ff48 89b5 c0fe  X...H......H....
-0x1000017f8  ffff 488b 050f 4800 0048 8b10 4889 55c8  ..H...H..H..H.U.
-0x100001808  31d2 4885 f60f 841a 0900 0048 8d05 ba4e  1.H........H...N
-0x100001818  0000 8b00 85c0 7526 488d 05b1 4e00 008b  ......u&H...N...
-0x100001828  0085 c075 1948 8d05 c44e 0000 8b00 85c0  ...u.H...N......
-0x100001838  0f95 c00f b6c0 8985 e4fe ffff eb0a c785  ................
-0x100001848  e4fe ffff 0100 0000 488d 3de1 3900 00e8  ........H.=.9...
-0x100001858  ba35 0000 4889 c348 c785 68ff ffff 0000  .5..H..H..h.....
-0x100001868  0000 c785 7cff ffff 0000 0000 c785 78ff  ....|.........x.
-0x100001878  ffff 0000 0000 c785 74ff ffff 0000 0000  ........t.......
-0x100001888  48c7 8550 ffff ff00 0000 0048 c785 58ff  H..P.......H..X.
-0x100001898  ffff 0000 0000 48c7 8540 ffff ff00 0000  ......H..@......
-0x1000018a8  0048 c785 60ff ffff 0000 0000 48c7 8548  .H..`.......H..H
-0x1000018b8  ffff ff00 0000 0048 85c0 0f84 5b02 0000  .......H....[...
-0x1000018c8  8038 000f 8452 0200 0048 89c7 e80f 3600  .8...R...H....6.
-0x1000018d8  0048 8d7c 0002 e887 3500 0048 89c7 4885  .H.|....5..H..H.
-0x1000018e8  c075 0f48 8d35 d63b 0000 40b7 01e9 1105  .u.H.5.;..@.....
-0x1000018f8  0000 0fb6 033c 3a75 0f66 c707 303a c647  .....<:u.f..0:.G
-0x100001908  0200 488d 5702 eb0a 8807 488d 5701 c647  ..H.W.....H.W..G
-0x100001918  0100 488d 4b02 eb26 8079 fe3a 7514 3c3a  ..H.K..&.y.:u.<:
-0x100001928  7510 c602 300f b641 ff88 4201 4883 c202  u...0..A..B.H...
-0x100001938  eb05 8802 48ff c2c6 4201 0048 ffc1 0fb6  ....H...B..H....
-0x100001948  41ff 84c0 75d2 807a ff3a 7505 66c7 0230  A...u..z.:u.f..0
-0x100001958  0048 8d8d 60ff ffff 488d 9540 ffff ff48  .H..`...H..@...H
-0x100001968  8d85 48ff ffff 4889 4424 2048 8d85 58ff  ..H...H.D$ H..X.
-0x100001978  ffff 4889 4424 1848 8d85 68ff ffff 4889  ..H.D$.H..h...H.
-0x100001988  4424 1048 8d85 7cff ffff 4889 4424 0848  D$.H..|...H.D$.H
-0x100001998  8d85 78ff ffff 4889 0424 4c8d 8d74 ffff  ..x...H..$L..t..
-0x1000019a8  ff4c 8d85 50ff ffff 488d 3591 3800 0031  .L..P...H.5.8..1
-0x1000019b8  c0e8 0035 0000 488d 0d1b 4d00 00c7 0101  ...5..H...M.....
-0x1000019c8  0000 0083 f808 0f87 ab00 0000 89c0 488d  ..............H.
-0x1000019d8  150b 0000 0048 6304 8248 01d0 ffe0 6690  .....Hc..H....f.
-0x1000019e8  2400 0000 2f00 0000 3a00 0000 4500 0000  $.../...:...E...
-0x1000019f8  4f00 0000 5900 0000 6300 0000 6e00 0000  O...Y...c...n...
-0x100001a08  7900 0000 48c7 8540 ffff ff00 0000 0048  y...H..@.......H
-0x100001a18  c785 60ff ffff 0000 0000 48c7 8550 ffff  ..`.......H..P..
-0x100001a28  ff00 0000 00c7 8574 ffff ff00 0000 00c7  .......t........
-0x100001a38  8578 ffff ff00 0000 00c7 857c ffff ff00  .x.........|....
-0x100001a48  0000 0048 c785 68ff ffff 0000 0000 48c7  ...H..h.......H.
-0x100001a58  8558 ffff ff00 0000 0048 c785 48ff ffff  .X.......H..H...
-0x100001a68  0000 0000 488d 0551 4c00 008b 0085 c075  ....H..QL......u
-0x100001a78  06c7 0100 0000 0048 8b8d 40ff ffff 31d2  .......H..@...1.
-0x100001a88  b801 0000 00eb 0a48 8d04 8048 01c0 48ff  .......H...H..H.
-0x100001a98  c248 39ca 75f1 48ff c848 8985 40ff ffff  .H9.u.H..H..@...
-0x100001aa8  488b 8d60 ffff ff31 d2b8 0100 0000 eb0a  H..`...1........
-0x100001ab8  488d 0480 4801 c048 ffc2 4839 ca75 f148  H...H..H..H9.u.H
-0x100001ac8  ffc8 4889 8560 ffff ff48 8b8d 50ff ffff  ..H..`...H..P...
-0x100001ad8  31d2 b801 0000 00eb 0a48 8d04 8048 01c0  1........H...H..
-0x100001ae8  48ff c248 39ca 75f1 48ff c848 8985 50ff  H..H9.u.H..H..P.
-0x100001af8  ffff 488b 8d68 ffff ff31 d2b8 0100 0000  ..H..h...1......
-0x100001b08  eb0a 488d 0480 4801 c048 ffc2 4839 ca75  ..H...H..H..H9.u
-0x100001b18  f148 ffc8 4889 8568 ffff ff48 8b9d c0fe  .H..H..h...H....
-0x100001b28  ffff 48c7 85d0 feff ff00 0000 00c7 85dc  ..H.............
-0x100001b38  feff ff00 0000 00c7 85e0 feff ff00 0000  ................
-0x100001b48  0048 c785 f8fe ffff 0000 0000 488d 45a0  .H..........H.E.
-0x100001b58  4889 85b8 feff ff48 8d55 b048 8995 b0fe  H......H.U.H....
-0x100001b68  ffff 0fb7 4358 6683 f807 7406 6683 f80a  ....CXf...t.f...
-0x100001b78  7534 8b7b 38e8 5a33 0000 488d 7368 4889  u4.{8.Z3..H.shH.
-0x100001b88  c248 8d3d ec36 0000 31c0 e887 3300 0048  .H.=.6..1...3..H
-0x100001b98  c743 1801 0000 00c7 052f 4a00 0001 0000  .C......./J.....
-0x100001ba8  00e9 2f03 0000 4883 bdc8 feff ff00 7511  ../...H.......u.
-0x100001bb8  66ff c875 2b44 8b3d f049 0000 4585 ffeb  f..u+D.=.I..E...
-0x100001bc8  1080 7b68 2e75 1944 8b35 e249 0000 4585  ..{h.u.D.5.I..E.
-0x100001bd8  f675 0d48 c743 1801 0000 00e9 f502 0000  .u.H.C..........
-0x100001be8  0fb7 4342 483b 8558 ffff ff48 0f46 8558  ..CBH;.X...H.F.X
-0x100001bf8  ffff ff48 8985 58ff ffff 488d 05df 4a00  ...H..X...H...J.
-0x100001c08  0044 8b28 4585 ed75 0f48 8d05 d44a 0000  .D.(E..u.H...J..
-0x100001c18  448b 2045 85e4 7423 0fb7 7342 488d 7b68  D. E..t#..sBH.{h
-0x100001c28  e8d7 2b00 0048 3b85 58ff ffff 480f 4685  ..+..H;.X...H.F.
-0x100001c38  58ff ffff 4889 8558 ffff ff44 8b9d e4fe  X...H..X...D....
-0x100001c48  ffff 4585 db0f 8484 0200 004c 8b6b 6049  ..E........L.k`I
-0x100001c58  8b45 6848 3b85 60ff ffff 480f 4685 60ff  .EhH;.`...H.F.`.
-0x100001c68  ffff 4889 8560 ffff ff49 8b45 0848 3b85  ..H..`...I.E.H;.
-</pre>
-</article>
-<article id="settings" class="scroll indented" data-title="">
-<p style="left-margin:14px;top-margin:14px;overflow:hide">
-
-<form>
-<p style="font-size:28px;font-weight:bold">CPU</p>
-<br />
-<table width="300"> <tr>
-<td style="font-size:18px">arch</td>
-<td> <label class="select">
-                <select class="custom">
-                    <option value="x86">x86</option>
-                    <option value="ppc">ppc</option>
-                    <option value="arm">arm</option>
-                    <option value="mips">mips</option>
-                </select>
-            </label>
-</td></tr>
-<tr> <td style="font-size:18px">bits</td>
-<td> <label class="select">
-                <select class="custom">
-                    <option value="8">8</option>
-                    <option value="16">16</option>
-                    <option value="32">32</option>
-                    <option value="64">64</option>
-                </select>
-            </label>
-</td></tr>
-<tr> <td style="font-size:18px">endian</td>
-<td> <label class="select">
-                <select class="custom">
-                    <option value="0">little</option>
-                    <option value="1">big</option>
-                </select>
-            </label>
-</td></tr>
-</table>
-<p style="font-size:28px;font-weight:bold">Disassembly</p>
-<br />
-<table width="300"> 
-<tr><td style="font-size:18px">show bytes</td>
-<td> <input type="range" min="0" max="1" class="checkbox left" value="0"></input>
-</td></tr>
-<tr><td style="font-size:18px">show offset</td>
-<td> <input type="range" min="0" max="1" class="checkbox left active" value="1"></input>
-</td></tr>
-<tr><td style="font-size:18px">show lines</td>
-<td> <input type="range" min="0" max="1" class="checkbox left" value="0"></input>
-</td></tr>
-</table>
-<br />
-<p style="font-size:28px;font-weight:bold">About</p>
-<br />
-<p style="font-size:18px">
-author: <a target=_blank href="http://twitter.com/trufae">pancake</a><br />
-<br />
-version: 0.9.3git<br />
-<br />
-website: <a target=_blank href="http://www.radare.org/">www.radare.org</a><br />
-</p>
-<br />
-
-<div class="one row">
-<input type="range" min="0" max="1" class="checkbox left" value="0">
-<input type="range" min="0" max="1" class="checkbox right active" value="1">
-</div>
-            <div id="progress-normal" data-progress="25%"></div>
-
-<div class="four columns left">
-<a href="#" class="button big theme" data-label="Accept" data-icon="check"></a>
-</div>
-<div class="four columns right">
-<a href="#" class="button big red" data-label="Cancel" data-icon="close"></a>
-</div>
-
-</form>
-</p>
-</article>
-    <footer class="toolbar">
-       <nav>
-           <a href="#" data-icon="left"></a>
-           <a href="#" data-icon="right"></a>
-           <a href="#" data-icon="chat">Comments&nbsp;&nbsp;</a>
-           <a href="#" data-icon="book">Bookmarks&nbsp;&nbsp;</a>
-           <a href="#" data-icon="user">Symbols&nbsp;&nbsp;</a>
-           <a href="#" data-icon="map">Sections</a>
-       </nav>
-    </footer>
-</section>
-
-  <aside id="features" class="left">
-    <header data-title="Menu"></header>
-    <article class="list">
-        <ul>
-            <li class=current> 
-		<a href="#disasm" data-router="article" data-icon="user">
-	           <strong>Disassembly</strong>
-                   <small>Disassemble code</small>
-               </a>
-           </li>
-            <li>
-		<a href="#hex" data-router="article" data-icon="pencil">
-	           <strong>Hexdump</strong>
-                   <small>Dump data in hexadecimal</small>
-               </a>
-           </li>
-            <li>
-		<a href="#console" data-router="article" data-icon="message">
-	           <strong>Console</strong>
-                   <small>Open radare console prompt</small>
-               </a>
-           </li>
-            <li >
-		<a href="#graph" data-router="article" data-icon="picture">
-	           <strong>Graph</strong>
-                   <small>View code in graph form</small>
-               </a>
-           </li>
-            <li>
-		<a href="#search" data-router="article" data-icon="search">
-	           <strong>Search</strong>
-                   <small>Search bytes or strings</small>
-               </a>
-           </li>
-            <li>
-		<a href="#debug" data-router="article" data-icon="right">
-	           <strong>Debug</strong>
-                   <small>Dump data in hexadecimal</small>
-               </a>
-           </li>
-            <li>
-		<a href="#fs" data-router="article" data-icon="user">
-	           <strong>Filesystems</strong>
-                   <small>Walk the filesystems</small>
-               </a>
-           </li>
-            <li> <a href="#"> <hr size=1px width=100% style="color:white;" /> </a> </li>
-            <li>
-		<a href="#info" data-router="article" data-icon="info">
-	           <strong>Information</strong>
-                   <small>Show header and file information</small>
-               </a>
-           </li>
-            <li>
-		<a href="#symbols" data-router="article" data-icon="menu">
-	           <strong>Symbols</strong>
-                   <small>Exported symbols of the binary</small>
-               </a>
-           </li>
-            <li>
-		<a href="#imports" data-router="article" data-icon="menu">
-	           <strong>Imports</strong>
-                   <small>Symbols imported by the binary</small>
-               </a>
-           </li>
-            <li>
-		<a href="#comments" data-router="article" data-icon="menu">
-	           <strong>Comments</strong>
-                   <small>User defined comment editor</small>
-               </a>
-           </li>
-            <li>
-		<a href="#functions" data-router="article" data-icon="menu">
-	           <strong>Functions</strong>
-                   <small>Symbols imported by the binary</small>
-               </a>
-           </li>
-            <li>
-		<a href="#sections" data-router="article" data-icon="menu">
-	           <strong>Sections</strong>
-                   <small>Symbols imported by the binary</small>
-               </a>
-           </li>
-            <li>
-		<a href="#strings" data-router="article" data-icon="menu">
-	           <strong>Strings</strong>
-                   <small>Symbols imported by the binary</small>
-               </a>
-           </li>
-            <li> <a href="#"> <hr size=1px width=100% style="color:white;" /> </a> </li>
-            <li>
-		<a href="#settings" data-router="article" data-icon="settings">
-	           <strong>Settings</strong>
-                   <small>Change configuration options</small>
-               </a>
-           </li>
-        </ul>
-    </article>
-  </aside>
 
 <script src="./quo.js"></script>
 <script src="./lungo.js"></script>
 <script>
-//sugars: ['map','pull'],
 Lungo.init ({
 	name: 'r2wui',
 	version: 0.1,
-	sugars: ['map'],
 	resources: [
-		'app/disasm.html',
-		'app/settings.html',
+		'app/aside.html',
+		'app/disasm.html'
 	]
 });
-
-
-//Lungo.Router.aside("", left_menu);
-Lungo.Router.article("test","list-indented");
-var afterNotification = function(){
-    //Do something
-};
-
-/**
-Lungo.Notification.show("Success", "Successful operation",
-	"check", true, 1, afterNotification);
-*/
-
-
-/*
-	resources: {
-		sections: ['app/foo.html'],
-		asides: ['app/features.html' ],
-		templates: ['app/list.html' ],
-	}
-*/
 </script>
 </body>
 </html>

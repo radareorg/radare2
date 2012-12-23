@@ -1,4 +1,10 @@
-    <article id="disasm" class="list scroll">
+<section id="disasm" class="list scroll" style="overflow:hidden">
+<header data-title="Disassembly">
+       <nav class="box">
+            <a href="#features" data-router="aside" data-icon="menu"></a>
+        </nav>
+</header>
+    <article id="disasm-main" class="active list scroll" style="background-color:white">
 <div style="position:absolute;background.color:red;z-index:10">
 <pre>
 .-
@@ -36,41 +42,40 @@
 <table><tr><td>
 	<strong>Function</strong>
 </td><td style="padding-left:10px">
-	<a href="see_fun">entry0</a>
+	<a href="#see_fun">entry0</a>
 </td></tr>
 </table>
 </li>
 <li>
 <table><tr><td>
 	<a href="">0x8048000</a>
-</td><td class=code>
+</td><td class="code">
 	push 0x0
 </td></tr>
 </table>
 </li>
-<li class=code>mov rbp, rsp</li>
-<li class=code>and rsp, 0xfffffffffffffff0</li>
-<li class=code>mov rdi, [rbp+0x8]</li>
-<li class=comment>; This is a comment test
+<li class="code">mov rbp, rsp</li>
+<li class="code">and rsp, 0xfffffffffffffff0</li>
+<li class="code">mov rdi, [rbp+0x8]</li>
+<li class="comment">; This is a comment test
 ; multiline 2
 </li>
-<li class=code>lea rsi, [rbp+0x10]</li>
-<li class=code>mov edx, edi</li>
-<li class=code>add edx, 0x1</li>
-<li class=code>shl edx, 0x3</li>
-<li class=code>add rdx, rsi</li>
-<li class=code>mov rcx, rdx</li>
-<li class=code>jmp 0x10000149d</li>
-<li class=code>add rcx, 0x8</li>
-<li class=code>cmp qword [rcx], 0x0</li>
-<li class=code>jnz 0x100001499</li>
-<li class=code>add rcx, 0x8</li>
-<li class=code>call dword 0x100002404</li>
-<li class=code>mov edi, eax</li>
-<li class=code>call dword 0x100004dce</li>
-<li class=code>hlt</li>
-<li class=code>push rbp</li>
-<li class=code>mov rbp, rsp</li>
-        </li>
+<li class="code">lea rsi, [rbp+0x10]</li>
+<li class="code">mov edx, edi</li>
+<li class="code">add edx, 0x1</li>
+<li class="code">shl edx, 0x3</li>
+<li class="code">add rdx, rsi</li>
+<li class="code">mov rcx, rdx</li>
+<li class="code">jmp 0x10000149d</li>
+<li class="code">add rcx, 0x8</li>
+<li class="code">cmp qword [rcx], 0x0</li>
+<li class="code">jnz 0x100001499</li>
+<li class="code">add rcx, 0x8</li>
+<li class="code">call dword 0x100002404</li>
+<li class="code">mov edi, eax</li>
+<li class="code">call dword 0x100004dce</li>
+<li class="code">hlt</li>
+<li class="code">push rbp</li>
+<li class="code">mov rbp, rsp</li>
       </ul>
-    </article>
+</article>

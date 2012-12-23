@@ -20,6 +20,15 @@ r2.cmd = function (c, cb) {
 	});
 }
 
+r2.alive = function (cb) {
+	r2.cmd ("b", function (o) {
+		var ret = false;
+		if (o && o.length () > 0)
+			ret = true;
+		if (cb) cb (o);
+	});
+}
+
 r2.getLogger = function (obj) {
 	if (typeof (obj) != "object")
 		obj = {};

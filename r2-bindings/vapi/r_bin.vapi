@@ -50,9 +50,33 @@ namespace Radare {
 
 		[CCode (cname="RBinArch", free_function="", ref_function="", unref_function="")]
 		public struct Arch {
+			RBuffer buf;
 			public unowned string file;
 			public int size;
-			public RBuffer buf;
+			public uint64 offset;
+			public RBin.Object o;
+			public void *bin_obj;
+			public void *curplugin; // TODO: implement RBinPlugin
+		}
+		[CCode (cname="RBinObject", free_function="", ref_function="", unref_function="")]
+		public class Object {
+			public uint64 baddr;
+			public int size;
+			public RList<RBin.Section> sections;
+			public RList<RBin.Import> imports;
+			public RList<RBin.Symbol> symbols;
+			//public RList<RBin.Symbol> entries;
+			public void *entries;
+			public RList<RBin.Field> fields;
+			public RList<RBin.Symbol> libs;
+			public RList<RBin.Reloc> relocs;
+			public RList<RBin.String> strings;
+			public void *classes;
+			public void *lines;
+			//public RList<RBin.Class> classes;
+			//public RList<RBin.DwarfRow> lines;
+			public RBin.Info info;
+			public RBin.Addr binsym[4]; //
 		}
 
 		[CCode (cname="RBinAddr", free_function="", ref_function="", unref_function="")]
