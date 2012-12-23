@@ -1,7 +1,7 @@
 .code {
 	padding-left:10px;
 	font-family:monospace;
-	font-size:14px;
+	font-size:10px;
 }
 
 .comment {
@@ -9,6 +9,6 @@ background-color:#c0c0ff !important;
 	color:blue;
 	padding-left:10px;
 	font-family:monospace;
-	font-size:14px;
+	font-size:10px;
 	white-space: pre-wrap;
 }

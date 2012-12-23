@@ -45,3 +45,21 @@
     height: 100%;
     margin-right: 4px;
 }
+
+/* **** */
+.scroller {
+	width:100%;
+	background-color:#302050;
+	height:32px !important;
+	color: #a0a0c0;
+	cursor: pointer;
+	border-color:yellow;
+	border-width:3px !important;
+}
+
+.scroller:hover {
+	width:100%;
+	background-color:#503070;
+	color: #808080;
+	cursor: pointer;
+}

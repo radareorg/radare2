@@ -14,6 +14,44 @@ function Ajax (method, uri, body, fn) {
         x.send (body);
 }
 
+r2.get_opcodes = function (off, n, cb) {
+	r2.cmd ("pdj @"+off+"!"+n, function (json) {
+		var o = JSON.parse (json);
+		cb (o);
+	});
+}
+
+r2.get_bytes = function (off, n, cb) {
+	r2.cmd ("pcj @"+off+"!"+n, function (json) {
+		var o = JSON.parse (json);
+		cb (o);
+	});
+}
+
+r2.get_info = function (cb) {
+	r2.cmd ("ij", function (json) {
+		cb (JSON.parse (json));
+	});
+}
+r2.bin_imports = function (cb) {
+	r2.cmd ("iij", function (json) {
+		cb (JSON.parse (json));
+	});
+}
+
+r2.bin_symbols = function (cb) {
+	r2.cmd ("isj", function (json) {
+		cb (JSON.parse (json));
+	});
+}
+
+r2.bin_sections = function (cb) {
+	r2.cmd ("iSj", function (json) {
+		var o = JSON.parse (json);
+		cb (o);
+	});
+}
+
 r2.cmd = function (c, cb) {
 	Ajax ('GET', r2.root+"/cmd/"+c, '', function (x) {
 		if (cb) cb (x);
@@ -29,7 +67,7 @@ r2.alive = function (cb) {
 	});
 }
 
-r2.getLogger = function (obj) {
+r2.get_logger = function (obj) {
 	if (typeof (obj) != "object")
 		obj = {};
 	obj.last = 0;

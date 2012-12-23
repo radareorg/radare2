@@ -5,7 +5,7 @@
 <script>
 var logger = null;
 function init () {
-	logger = r2.getLogger ().on ("message", function (msg) {
+	logger = r2.get_logger ().on ("message", function (msg) {
 		var out = document.getElementById ('out');
 		out.innerHTML += "<br />"+msg.text;
 	});
