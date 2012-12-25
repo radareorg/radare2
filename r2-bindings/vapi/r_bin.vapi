@@ -88,11 +88,11 @@ namespace Radare {
 		[CCode (cname="RBinSection", free_function="", ref_function="", unref_function="")]
 		public class Section {
 			public char name[256]; // FIXME proper static strings w/o hardcoded size
-			public int32 size;
-			public int32 vsize;
+			public uint64 size;
+			public uint64 vsize;
 			public uint64 rva;
 			public uint64 offset;
-			public int32 srwx;
+			public uint64 srwx;
 		}
 
 		[CCode (cname="RBinSymbol", free_function="", ref_function="", unref_function="")]
