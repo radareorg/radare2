@@ -73,7 +73,8 @@ static int rabin_show_help() {
 		" -V              show version information\n"
 		" -x              extract bins contained in file\n"
 		" -Z              size of binary\n"
-		" -z              strings\n"
+		" -z              strings (from data section)\n"
+		" -zz             strings (from raw bins [e bin.rawstr=1])\n"
 		);
 	return 1;
 }
@@ -300,7 +301,8 @@ int main(int argc, char **argv) {
 	ut64 offset;
 	RCore core;
 
-	bin = r_bin_new ();
+	r_core_init (&core);
+	bin = core.bin; //r_bin_new ();
 	l = r_lib_new ("radare_plugin");
 	r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 					   &__lib_bin_cb, &__lib_bin_dt, NULL);
@@ -312,6 +314,7 @@ int main(int argc, char **argv) {
 	r_lib_opendir (l, homeplugindir);
 	r_lib_opendir (l, LIBDIR"/radare2/");
 
+#define is_active(x) (action&x)
 #define set_action(x) actions++; action |=x
 	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:N:@:VisSIHelRwO:o:rvLhxzZ")) != -1) {
 		switch (c) {
@@ -337,7 +340,11 @@ int main(int argc, char **argv) {
 		case 'i': set_action (ACTION_IMPORTS); break;
 		case 's': set_action(ACTION_SYMBOLS); break;
 		case 'S': set_action(ACTION_SECTIONS); break;
-		case 'z': set_action(ACTION_STRINGS); break;
+		case 'z': 
+			if (is_active (ACTION_STRINGS))
+				r_config_set_i (core.config, "bin.rawstr", 1);
+			set_action(ACTION_STRINGS); 
+			break;
 		case 'Z': set_action(ACTION_SIZE); break;
 		case 'I': set_action(ACTION_INFO); break;
 		case 'H': set_action(ACTION_FIELDS); break;
@@ -497,7 +504,8 @@ int main(int argc, char **argv) {
 	if (isradjson)
 		printf ("}");
 	free (arch);
-	r_bin_free (bin);
+	//r_bin_free (bin);
+	r_core_fini (&core);
 	r_cons_flush ();
 
 	return 0;
