@@ -149,6 +149,16 @@ if [ -e /usr/bin/open ]; then
 	open $T
 elif [ -e /usr/bin/xdg-open ]; then
 	xdg-open $T
-else
+elif [ -n "${BROWSER+x}" ]; then
+	$BROWSER $T
+elif [ `which firefox > /dev/null` -eq 0 ]; then
 	firefox $T
+elif [ `which chromium > /dev/null` -eq 0 ]; then
+	chromiun $T
+elif [ `which opera > /dev/null` -eq 0 ]; then
+	opera $T
+elif [ `which elinks > /dev/null` -eq 0 ]; then
+	elinks $T
+else
+	echo "\$BROWSER not set and no JS enabled browsers found."
 fi
