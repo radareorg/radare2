@@ -143,12 +143,15 @@ cat <<EOF >> $T
 </html>
 EOF
 
+cp -f $D/* /tmp
 cd /tmp
-cp -f $D/* .
+
 if [ -e /usr/bin/open ]; then
 	open $T
 elif [ -e /usr/bin/xdg-open ]; then
 	xdg-open $T
+elif [ -n "${BROWSER+x}" ]; then
+	$BROWSER $T
 else
-	firefox $T
+	echo "Could not find any installed browsers. Aborting."
 fi
