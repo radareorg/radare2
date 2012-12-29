@@ -151,14 +151,14 @@ elif [ -e /usr/bin/xdg-open ]; then
 	xdg-open $T
 elif [ -n "${BROWSER+x}" ]; then
 	$BROWSER $T
-elif [ `which firefox > /dev/null` -eq 0 ]; then
-	firefox $T
-elif [ `which chromium > /dev/null` -eq 0 ]; then
-	chromiun $T
-elif [ `which opera > /dev/null` -eq 0 ]; then
-	opera $T
-elif [ `which elinks > /dev/null` -eq 0 ]; then
-	elinks $T
-else
-	echo "\$BROWSER not set and no JS enabled browsers found."
+elif
+	for i in "firefox" "chromium" "chrome" "opera" "surf" "epiphany"; do
+		which $i > /dev/null
+		if [ $i -eq 0 ]; then
+			$i $T
+			break;
+		else
+			echo "\$BROWSER not set and no JS enabled browsers found."
+		fi
+	done
 fi
