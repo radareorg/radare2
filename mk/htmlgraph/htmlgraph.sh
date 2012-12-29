@@ -154,7 +154,7 @@ elif [ -n "${BROWSER+x}" ]; then
 elif
 	for i in "firefox" "chromium" "chrome" "opera" "surf" "epiphany"; do
 		which $i > /dev/null
-		if [ $i -eq 0 ]; then
+		if [ $? -eq 0 ]; then
 			$i $T
 			break;
 		else
