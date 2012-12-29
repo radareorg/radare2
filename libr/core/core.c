@@ -217,7 +217,7 @@ static int autocomplete(RLine *line) {
 			// XXX: SO MANY FUCKING MEMORY LEAKS
 			char *str, *p, *path;
 			RList *list;
-			int n, i = 0;
+			int n = 0, i = 0;
 			int sdelta = (line->buffer.data[1]==' ')?2:3;
 			if (!line->buffer.data[sdelta]) {
 				path = r_sys_getdir ();
