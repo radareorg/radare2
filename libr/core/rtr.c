@@ -157,6 +157,7 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 R_API void r_core_rtr_help(RCore *core) {
 	r_cons_printf (
 	"remote commands:\n"
+	" =:port              listen on given port using rap protocol (o rap://9999)\n"
 	" =:host:port cmd     run 'cmd' command on remote server.\n"
 	"rap commands:\n"
 	" =                   list all open connections\n"
@@ -384,6 +385,10 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 	const char *cmd = NULL, *cmd_output = NULL;
 	int i, cmd_len, fd = atoi (input);
 
+	if (*input==':' && !strchr (input+1, ':')) {
+		r_core_cmdf (core, "o rap://%s", input);
+		return;
+	}
 	if (fd != 0) {
 		if (rtr_host[rtr_n].fd)
 			for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd

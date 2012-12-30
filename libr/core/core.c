@@ -699,14 +699,22 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 	return op;
 }
 
+static void rap_break (void *u) {
+	RIORap *rior = (RIORap*) u;
+	if (u) {
+		r_socket_free (rior->fd);
+		rior->fd = NULL;
+	}
+}
+
 // TODO: move into core/io/rap? */
 R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut8 cmd, flg, *ptr = NULL, buf[1024];
-	int i, j, pipefd;
+	int i, pipefd;
 	ut64 x;
 	RSocket *c, *fd;
 	RIORap *rior;
-	RListIter *iter;
+	//int j; RListIter *iter;
 
 	rior = (RIORap *)file->data;
 	if (rior == NULL|| rior->fd == NULL) {
@@ -719,20 +727,24 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 			r_config_get (core->config, "rap.loop"));
 #if __UNIX__
 	// XXX: ugly workaround
-	signal (SIGINT, SIG_DFL);
-	signal (SIGPIPE, SIG_DFL);
+	//signal (SIGINT, exit);
+	//signal (SIGPIPE, SIG_DFL);
 #endif
 reaccept:
 	core->io->plugin = NULL;
-	while ((c = r_socket_accept (fd))) {
+	r_cons_break (rap_break, rior);
+	while (!core->cons->breaked) {
+		c = r_socket_accept (fd);
+		if (!c) break;
+		if (core->cons->breaked)
+			return -1;
 		if (c == NULL) {
 			eprintf ("rap: cannot accept\n");
 			r_socket_close (c);
 			return -1;
 		}
-
 		eprintf ("rap: client connected\n");
-		for (;;) {
+		for (;!core->cons->breaked;) {
 			if (!r_socket_read (c, &cmd, 1)) {
 				eprintf ("rap: connection closed\n");
 				if (r_config_get_i (core->config, "rap.loop")) {
@@ -774,6 +786,7 @@ reaccept:
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 
+#if 0
 				/* Write meta info */
 				RMetaItem *d;
 				r_list_foreach (core->anal->meta->data, iter, d) {
@@ -791,6 +804,7 @@ reaccept:
 					r_socket_write (c, buf, i);
 					r_socket_flush (c);
 				}
+#endif
 #if 0
 				RIOSection *s;
 				r_list_foreach_prev (core->io->sections, iter, s) {
@@ -804,6 +818,7 @@ reaccept:
 					r_socket_flush (c);
 				}
 #endif
+#if 0
 				int fs = -1;
 				RFlagItem *flag;
 				r_list_foreach_prev (core->flags->flags, iter, flag) {
@@ -835,6 +850,7 @@ reaccept:
 				i = 0;
 				r_socket_write (c, (ut8 *)&i, 4);
 				r_socket_flush (c);
+#endif
 				free (ptr);
 				break;
 			case RMT_READ:
@@ -994,6 +1010,7 @@ reaccept:
 				return -1;
 			}
 		}
+		r_cons_break_end ();
 		eprintf ("client: disconnected\n");
 	}
 	return -1;

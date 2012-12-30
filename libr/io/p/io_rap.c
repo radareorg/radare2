@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2012 - pancake */
 
 // TODO: implement the rap API in r_socket ?
 #include "r_io.h"
@@ -222,7 +222,8 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		return NULL;
 	}
 	r_socket_free (rap_fd);
-	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd, pathname, rw, mode, rior);
+	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
+		pathname, rw, mode, rior);
 }
 
 static int rap__listener(RIODesc *fd) {

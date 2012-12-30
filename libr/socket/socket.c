@@ -301,6 +301,7 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	if (!s) return NULL;
 	sock = R_NEW (RSocket);
 	if (!sock) return NULL;
+	//signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, NULL, NULL);
 	if (sock->fd == -1) {
 		free (sock);
@@ -432,7 +433,7 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 #endif
 			ret = send (s->fd, buf+delta, len, 0);
 		//if (ret == 0) return -1;
-		if (!ret) continue;
+		if (!ret) break; //continue;
 		if (ret == len)
 			return len;
 		if (ret<0)
@@ -481,7 +482,7 @@ R_API int r_socket_read_block(RSocket *s, unsigned char *buf, int len) {
 	int r, ret = 0;
 	for (ret=0;ret<len;) {
 		r = r_socket_read (s, buf+ret, len-ret);
-		if (r==-1)
+		if (r<1) //==-1)
 			break;
 		ret += r;
 	}
