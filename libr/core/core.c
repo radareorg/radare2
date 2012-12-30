@@ -167,7 +167,7 @@ static const char *radare_argv[] = {
 	"aa", "ab", "af", "ar", "ag", "at", "a?", 
 	"af", "afc", "afi", "afb", "afr", "afs", "af*", 
 	"aga", "agc", "agd", "agl", "agfl",
-	"e", "e-", "e*", "e!",
+	"e", "e-", "e*", "e!", "e?",
 	"i", "ii", "iI", "is", "iS", "iz",
 	"q", 
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
@@ -324,12 +324,14 @@ static int autocomplete(RLine *line) {
 				line->completion.argv = NULL;
 			}
 		} else
-		if (!memcmp (line->buffer.data, "e ", 2)) {
+		if ( (!memcmp (line->buffer.data, "e ", 2))
+		   ||(!memcmp (line->buffer.data, "e? ", 3))) {
+			int m = (line->buffer.data[1] == '?')? 3: 2;
+			int i = 0, n = strlen (line->buffer.data+m);
 			RConfigNode *bt;
 			RListIter *iter;
-			int i = 0, n = strlen (line->buffer.data+2);
 			r_list_foreach (core->config->nodes, iter, bt) {
-				if (!memcmp (bt->name, line->buffer.data+2, n)) {
+				if (!memcmp (bt->name, line->buffer.data+m, n)) {
 					tmp_argv[i++] = bt->name;
 					if (i==TMP_ARGV_SZ)
 						break;

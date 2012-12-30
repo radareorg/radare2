@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2012 - pancake */
 
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -15,13 +15,15 @@ static int cmd_seek(void *data, const char *input) {
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
 	if (*input) {
+		char *inputnum = strchr (input+1, ' ');
 		int sign = 1;
-		st32 delta = (input[1]==' ')? 2: 1;
-		off = r_num_math (core->num, input + delta);
+		if (inputnum) inputnum++;
+		else inputnum = input+1;
+		off = r_num_math (core->num, inputnum);
 		if ((st64)off<0) off = -off; // hack to fix s-2;s -2
-		if (isalpha (input[delta]) && off == 0) {
-			if (delta==1 && !r_flag_get (core->flags, input+delta)) {
-				eprintf ("Cannot find address for '%s'\n", input+delta);
+		if (input[0]!='/' && inputnum && isalpha (inputnum[0]) && off == 0) {
+			if (!r_flag_get (core->flags, inputnum)) {
+				eprintf ("Cannot find address for '%s'\n", inputnum);
 				return R_FALSE;
 			}
 		}
@@ -81,18 +83,19 @@ static int cmd_seek(void *data, const char *input) {
 		case '/':
 			{
 			const char *pfx = r_config_get (core->config, "search.prefix");
-			int kwidx = (int)r_config_get_i (core->config, "search.kwidx")-1;
+//kwidx cfg var is ignored
+			int kwidx = core->search->n_kws; //(int)r_config_get_i (core->config, "search.kwidx")-1;
 			if (kwidx<0) kwidx = 0;
 			switch (input[1]) {
-			case 'x':
-				//r_core_seek (core, off+1, 0);
-				eprintf ("s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0\n", input, pfx, kwidx, pfx, kwidx);
-				r_core_cmdf (core, "s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0", input, pfx, kwidx, pfx, kwidx);
-				break;
 			case ' ':
-				//r_core_seek (core, off+1, 0);
-				eprintf ("s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0\n", input, pfx, kwidx, pfx, kwidx);
-				r_core_cmdf (core, "s+1;.%s ; ? %s%d_0 ; ?! s %s%d_0", input, pfx, kwidx, pfx, kwidx);
+			case 'x':
+				r_config_set_i (core->config, "search.count", 1);
+				r_core_cmdf (core, "s+1; p8 ; .%s;s-1;s %s%d_0;f-%s%d_0",
+					input, pfx, kwidx, pfx, kwidx, pfx, kwidx);
+				r_config_set_i (core->config, "search.count", 0);
+				break;
+			default:
+				eprintf ("unknown search method\n");
 				break;
 			}
 			}
@@ -102,7 +105,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case '+':
 			if (input[1]!='\0') {
-				delta = (input[1]=='+')? core->blocksize: off;
+				int delta = (input[1]=='+')? core->blocksize: off;
 				r_io_sundo_push (core->io, core->offset);
 				r_core_seek_delta (core, delta);
 			} else {
@@ -113,7 +116,7 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case '-':
 			if (input[1]!='\0') {
-				if (input[1]=='-') delta = -core->blocksize; else delta = -off;
+				int delta = (input[1]=='-') ? -core->blocksize: -off;
 				r_io_sundo_push (core->io, core->offset);
 				r_core_seek_delta (core, delta);
 			} else {

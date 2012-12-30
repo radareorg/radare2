@@ -86,7 +86,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	searchhits = kw->count+1;
 	if (searchcount) {
 		if (!--searchcount) {
-			eprintf ("\nsearch stop: search.count reached\n");
+			//eprintf ("\nsearch stop: search.count reached\n");
 			return R_FALSE;
 		}
 	}
@@ -135,9 +135,9 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return R_TRUE;
 }
 
+static int c = 0;
 static inline void print_search_progress(ut64 at, ut64 to, int n) {
-	static int c = 0;
-	if ((++c%23))
+	if ((++c%64))
 		return;
 	eprintf ("\r[  ]  0x%08"PFMT64x" < 0x%08"PFMT64x"  hits = %d                      \r%s",
 			at, to, n, (c%2)?"[ #]":"[# ]");
@@ -157,6 +157,7 @@ static int cmd_search(void *data, const char *input) {
 	ut16 n16;
 	ut8 *buf;
 
+c = 0;
 	__from = r_config_get_i (core->config, "search.from");
 	__to = r_config_get_i (core->config, "search.to");
 
@@ -540,8 +541,8 @@ static int cmd_search(void *data, const char *input) {
 				}
 				//ret = r_core_read_at (core, at, buf, core->blocksize);
 			//	ret = r_io_read_at (core->io, at, buf, core->blocksize); 
-	r_io_seek (core->io, at, R_IO_SEEK_SET);
-	ret = r_io_read (core->io, buf, core->blocksize);
+				r_io_seek (core->io, at, R_IO_SEEK_SET);
+				ret = r_io_read (core->io, buf, core->blocksize);
 /*
 				if (ignorecase) {
 					int i;
@@ -561,7 +562,7 @@ static int cmd_search(void *data, const char *input) {
 					}
 				} else
 				if (r_search_update (core->search, &at, buf, ret) == -1) {
-					eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
+					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
 			}
@@ -574,7 +575,7 @@ static int cmd_search(void *data, const char *input) {
 					searchhits,
 					searchprefix, core->search->n_kws-1,
 					searchprefix, core->search->n_kws-1, searchcount-1);
-			} else eprintf ("hits: %d\n", searchhits);
+			} else eprintf ("hits: %d\n", searchhits>0?searchhits-1:0);
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;

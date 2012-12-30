@@ -434,10 +434,13 @@ static int cmd_eval(void *data, const char *input) {
 	case 'e':
 		if (input[1]==' ') {
 			char *p;
-			const char *val = r_config_get (core->config, input+2);
+			const char *val;
+			char *input2 = strchr (input+2, ' ');
+			if (input2) input2++; else input2 = input+2;
+			val = r_config_get (core->config, input2);
 			p = r_core_editor (core, val);
 			r_str_replace_char (p, '\n', ';');
-			r_config_set (core->config, input+2, p);
+			r_config_set (core->config, input2, p);
 		} else eprintf ("Usage: ee varname\n");
 		break;
 	case '!':
@@ -462,7 +465,10 @@ static int cmd_eval(void *data, const char *input) {
 			break;
 		default:
 			if (input[2]) {
-				const char *desc = r_config_desc (core->config, input+1, NULL);
+				char *input2 = strchr (input+2, ' ');
+				if (input2) input2++; else input2 = input+2;
+				const char *desc = r_config_desc (
+					core->config, input2, NULL);
 				if (desc) r_cons_strcat (desc);
 				r_cons_newline ();
 			}
