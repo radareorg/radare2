@@ -1,4 +1,4 @@
 #!/bin/sh
 killall r2
-r2 -c=h /bin/ls &
 openurl http://localhost:9090
+r2 -qc=h /bin/ls

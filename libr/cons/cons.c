@@ -242,7 +242,7 @@ R_API void r_cons_flush() {
 			r_cons_reset ();
 
 		} else if (I.buffer_len > CONS_MAX_USER) {
-			if (!r_cons_yesno ('n',"Do you want to print %d bytes? (y/N)",
+			if (!r_cons_yesno ('n',"Do you want to print %d chars? (y/N)",
 					I.buffer_len)) {
 				r_cons_reset ();
 				return;
