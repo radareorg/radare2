@@ -160,8 +160,13 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 				r_socket_block_time (s, 1, timeout);
 				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
-			if (timeout<1 && ret != -1)
-				break;
+			if (timeout<1) {
+				if (ret == -1) {
+					close (s->fd);
+					return R_FALSE;
+				}
+				return R_TRUE;
+			}
 			if (timeout>0) {
 				struct timeval tv;
 				fd_set fdset;
@@ -172,21 +177,24 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 				if (select (s->fd + 1, NULL, &fdset, NULL, &tv) == 1) {
 					int so_error;
 					socklen_t len = sizeof so_error;
-					ret = getsockopt (s->fd, SOL_SOCKET, SO_ERROR, &so_error, &len);
+					ret = getsockopt (s->fd, SOL_SOCKET,
+						SO_ERROR, &so_error, &len);
 			//		fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
-r_socket_block_time (s, 0, 0);
+//					r_socket_block_time (s, 0, 0);
+					freeaddrinfo (res);
+					return R_TRUE;
 				} else {
+					freeaddrinfo (res);
 					close (s->fd);
 					return R_FALSE;
 				}
 			}
-			//rp = NULL;
 			close (s->fd);
 			s->fd = -1;
 		}
 		freeaddrinfo (res);
 		if (rp == NULL) {
-			//eprintf ("Could not connect\n");
+			eprintf ("Could not resolve address\n");
 			return R_FALSE;
 		}
 	}
@@ -336,11 +344,9 @@ R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 #if __UNIX__
 	{
 	int flags = fcntl (s->fd, F_GETFL, 0);
-	if (block) {
-		fcntl (s->fd, F_SETFL, flags & ~O_NONBLOCK);
-	} else {
-		fcntl (s->fd, F_SETFL, flags | O_NONBLOCK);
-	}
+	fcntl (s->fd, F_SETFL, block?
+			(flags & ~O_NONBLOCK):
+			(flags | O_NONBLOCK));
 	}
 #elif __WINDOWS__
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);

@@ -155,7 +155,8 @@ static int cmd_info(void *data, const char *input) {
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("{\"bin\":");
 		r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, offset);
-		r_cons_printf (",\"core\":");
+		if (mode == R_CORE_BIN_JSON)
+			r_cons_printf (",\"core\":");
 		r_core_file_info (core, mode);
 		if (mode == R_CORE_BIN_JSON)
 			r_cons_printf ("}\n");

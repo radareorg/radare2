@@ -195,8 +195,10 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		r_socket_flush (rap_fd);
 		// read
 		eprintf ("waiting... ");
+buf[0] = 0;
 		r_socket_read_block (rap_fd, (ut8*)buf, 5);
 		if (buf[0] != (char)(RMT_OPEN|RMT_REPLY)) {
+			eprintf ("rap: Expecting OPEN|REPLY packet. got %02x\n", buf[0]);
 			r_socket_free (rap_fd);
 			free (rior);
 			return NULL;
@@ -204,6 +206,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, ENDIAN);
 		if (i>0) eprintf ("ok\n");
 
+#if 0
 		/* Read meta info */
 		r_socket_read (rap_fd, (ut8 *)&buf, 4);
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
@@ -217,11 +220,12 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 			r_mem_copyendian ((ut8 *)&i, (ut8*)buf, 4, ENDIAN);
 			i -= n; 
 		}
+#endif
 	} else {
 		r_socket_free (rap_fd);
 		return NULL;
 	}
-	r_socket_free (rap_fd);
+	//r_socket_free (rap_fd);
 	return r_io_desc_new (&r_io_plugin_rap, rior->fd->fd,
 		pathname, rw, mode, rior);
 }

@@ -63,7 +63,7 @@ static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
 static void r_core_visual_mark(RCore *core, ut8 ch) {
 	if (!marks_init) {
 		int i;
-		for (i=0;i<UT8_MAX;i++)
+		for (i=0; i<UT8_MAX; i++)
 			marks[i] = 0;
 		marks_init = 1;
 	}
