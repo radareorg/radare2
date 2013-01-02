@@ -251,6 +251,7 @@ R_API void r_graph_push (RGraph *t, ut64 addr, void *data);
 R_API RGraphNode* r_graph_pop(RGraph *t);
 
 R_API int r_file_size(const char *str);
+R_API char *r_file_root(const char *root, const char *path);
 R_API boolt r_file_is_directory(const char *str);
 R_API RMmap *r_file_mmap (const char *file, boolt rw);
 R_API void r_file_mmap_free (RMmap *m);
@@ -408,6 +409,7 @@ R_API void r_str_filter(char *str, int len);
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
 R_API int r_str_escape(char *buf);
+R_API char *r_str_unscape(char *buf);
 R_API void r_str_uri_decode(char *buf);
 R_API char *r_str_uri_encode (const char *buf);
 R_API char *r_str_home(const char *str);

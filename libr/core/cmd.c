@@ -435,7 +435,7 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1]==' ') {
 			char *p;
 			const char *val;
-			char *input2 = strchr (input+2, ' ');
+			const char *input2 = strchr (input+2, ' ');
 			if (input2) input2++; else input2 = input+2;
 			val = r_config_get (core->config, input2);
 			p = r_core_editor (core, val);
@@ -465,7 +465,7 @@ static int cmd_eval(void *data, const char *input) {
 			break;
 		default:
 			if (input[2]) {
-				char *input2 = strchr (input+2, ' ');
+				const char *input2 = strchr (input+2, ' ');
 				if (input2) input2++; else input2 = input+2;
 				const char *desc = r_config_desc (
 					core->config, input2, NULL);

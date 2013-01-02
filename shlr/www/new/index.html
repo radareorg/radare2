@@ -53,7 +53,7 @@ Lungo.init ({
 </script>
 <!-- windows -->
 
-  <div id="exampleB" style="position:fixed!important;top:200px;right:10;width:250px;height:350px;background-color:#e0e0e0;border: 1px solid black;z-index:99">
+  <div id="exampleB" style="position:fixed!important;top:200px;left:10;width:250px;height:350px;background-color:#e0e0e0;border: 1px solid black;z-index:99">
     <div id="exampleBHandle" style="height:20px;left:0px;top:0px;cursor:move;width:248px;background-color:#20a0e0;font-weight:bold;color:white;border:1px solid black">&nbsp;Registers</div>
 <div style="margin:5px">
 <br /><br />
@@ -80,32 +80,34 @@ eip = 0x08048520
 <script type="text/javascript">
 var exampA = null;
 var exampB = null;
-function initialize()
-{
-  exampA = new dragObject("exampleB", null, new Position(1000,0), new Position(1000,200), null, null, exampleAEnd, false);
-  exampB = new dragObject("exampleB", "exampleBHandle");
+function initialize() {
+	exampA = new dragObject("exampleB", null,
+		new Position(0,0), new Position(0,0),
+		null, null, exampleAEnd, false);
+	exampA.StartListening();
+	exampB = new dragObject("exampleB", "exampleBHandle");
+	exampB.StartListening();
 }
-function buttonClicked()
-{
-  var button = document.getElementById('dragButton');
-  if(exampA.IsListening())
-  {
-    exampA.StopListening(true);
-    exampB.StopListening(true);
-    button.value = "Resume Listening";
-  }
-  else
-  {
-    exampA.StartListening();
-    exampB.StartListening();
-    button.value = "Stop Listening";
-  }
+
+/*
+function buttonClicked() {
+	var button = document.getElementById('dragButton');
+	if(exampA.IsListening()) {
+		exampA.StopListening(true);
+		exampB.StopListening(true);
+		button.value = "Resume Listening";
+	} else {
+		exampA.StartListening();
+		exampB.StartListening();
+		button.value = "Stop Listening";
+	}
 }
-function exampleAEnd()
-{
+*/
+
+function exampleAEnd() {
 //  alert("Drag Ended.");
 }
-initialize();
+initialize ();
 </script>
 </body>
 </html>

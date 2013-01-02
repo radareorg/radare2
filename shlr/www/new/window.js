@@ -245,7 +245,7 @@ function dragObject(element, attachElement, lowerBound, upperBound, startCallbac
 	{
 		if(!listening || disposed) return;
 		unhookEvent(attachElement, "mousedown", dragStart);
-		unhookEvent(attachElement, "touchend", dragStart);
+		unhookEvent(attachElement, "touchend", dragTouchStart);
 		listening = false;
 
 		if(stopCurrentDragging && dragging)

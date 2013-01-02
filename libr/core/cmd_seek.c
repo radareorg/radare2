@@ -15,10 +15,9 @@ static int cmd_seek(void *data, const char *input) {
 		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
 	} else
 	if (*input) {
-		char *inputnum = strchr (input+1, ' ');
+		const char *inputnum = strchr (input+1, ' ');
 		int sign = 1;
-		if (inputnum) inputnum++;
-		else inputnum = input+1;
+		inputnum = inputnum? inputnum+1: input+1;
 		off = r_num_math (core->num, inputnum);
 		if ((st64)off<0) off = -off; // hack to fix s-2;s -2
 		if (input[0]!='/' && inputnum && isalpha (inputnum[0]) && off == 0) {

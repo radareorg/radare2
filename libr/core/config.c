@@ -452,7 +452,7 @@ static int config_pager_callback(void *user, void *data) {
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
-	char buf[128], *p;
+	char buf[128], *p, *tmpdir;
 	RConfig *cfg = cfg = core->config = r_config_new (core);
 	cfg->printf = r_cons_printf;
 	cfg->num = core->num;
@@ -662,6 +662,12 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "http.root", "port to listen for http connections");
 	r_config_set (cfg, "http.root", WWWROOT);
 	r_config_desc (cfg, "http.root", "http root directory");
+	r_config_set (cfg, "http.upload", "false");
+	r_config_desc (cfg, "http.upload", "enable file uploads");
+	tmpdir = r_file_tmpdir ();
+	r_config_set (cfg, "http.uproot", tmpdir);
+	free (tmpdir);
+	r_config_desc (cfg, "http.uproot", "path to store uploaded files");
 
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");

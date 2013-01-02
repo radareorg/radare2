@@ -128,21 +128,34 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
 				}
 			}
-#if 1
 		} else 
 		if (!strcmp (rs->method, "POST")) {
+			const ut8 *ret;
 			int retlen;
-			char *ret , *buf = malloc (rs->data_length+50);
-			r_str_uri_decode ((char *)rs->data);
-			ret = r_socket_http_handle_upload (rs->data, rs->data_length, &retlen);
-			sprintf (buf, "<html><body><h2>upload %d</h2>\n", retlen);
+			char buf[128];
+			if (r_config_get_i (core->config, "http.upload")) {
+			ret = r_socket_http_handle_upload (
+				rs->data, rs->data_length, &retlen);
+			if (ret) {
+				char *filename = r_file_root (
+					r_config_get (core->config, "http.uproot"),
+					rs->path + 4);
+				eprintf ("UPLOADED '%s'\n", filename);
+				r_file_dump (filename, ret, retlen);
+				free (filename);
+				free (ret);
+			} else {
+				r_str_uri_decode ((char *)rs->data);
+			}
+			snprintf (buf, sizeof (buf),
+				"<html><body><h2>uploaded %d bytes. Thanks</h2>\n", retlen);
+				r_socket_http_response (rs, 200, buf, 0, NULL);
+			} else {
+				r_socket_http_response (rs, 403, "403 Forbidden\n", 0, NULL);
+			}
 #if 0
 			strcat (buf, (char*)rs->data);
-#else
 			strcat (buf, ret);
-#endif
-			r_socket_http_response (rs, 200, buf, 0, NULL);
-			free (buf);
 #endif
 		} else {
 			r_socket_http_response (rs, 404, "Invalid protocol", 0, NULL);

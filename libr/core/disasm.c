@@ -432,17 +432,18 @@ toro:
 				stackptr = 0;
 		}
 		// TODO: implement ranged meta find (if not at the begging of function..
-		mi = r_meta_find (core->anal->meta, at, R_META_TYPE_ANY, R_META_WHERE_HERE);
+		mi = r_meta_find (core->anal->meta, at, R_META_TYPE_ANY,
+			R_META_WHERE_HERE);
 		if (mi)
 		switch (mi->type) {
 		case R_META_TYPE_STRING:
-			// TODO: filter string (r_str_unscape)
 			{
 			char *out = r_str_unscape (mi->str);
 			if (show_color)
-				r_cons_printf ("    .string "Color_YELLOW"\"%s\""Color_RESET" ; len=%"PFMT64d"\n", out, mi->size);
-			else
-				r_cons_printf ("    .string \"%s\" ; len=%"PFMT64d"\n", out, mi->size);
+				r_cons_printf ("    .string "Color_YELLOW"\"%s\""
+					Color_RESET" ; len=%"PFMT64d"\n", out, mi->size);
+			else r_cons_printf ("    .string \"%s\" ; len=%"PFMT64d
+					"\n", out, mi->size);
 			free (out);
 			}
 			oplen = ret = (int)mi->size;

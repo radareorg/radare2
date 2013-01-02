@@ -28,7 +28,7 @@ R_API boolt r_file_is_directory(const char *str) {
 
 R_API boolt r_file_exists(const char *str) {
 	struct stat buf;
-	if (stat (str, &buf)==-1)
+	if (str && *str && stat (str, &buf)==-1)
 		return R_FALSE;
 	return (S_ISREG (buf.st_mode))? R_TRUE: R_FALSE;
 }
@@ -215,6 +215,14 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 		free (str);
 	}
 	return ptr;
+}
+
+R_API char *r_file_root(const char *root, const char *path) {
+	char *ret, *s = r_str_replace (strdup (path), "..", "", 1);
+	ret = r_str_concat (strdup (root), "/");
+	ret = r_str_concat (ret, s);
+	free (s);
+	return ret;
 }
 
 R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {

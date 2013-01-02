@@ -73,19 +73,22 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
 }
 
-R_API char *r_socket_http_handle_upload(const char *str, int len, int *retlen) {
+R_API char *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 	if (retlen)
 		*retlen = 0;
-	if (!strncmp (str, "------------------------------", 30)) {
+	if (!strncmp ((const char *)str, "------------------------------", 10)) {
 		int datalen;
 		char *ret;
-		const char *data, *token = str+30, *end = strchr (token, '\n'); // crap \r
-		data = strstr (end, "Content-Type: application/octet-stream");
+		const char *data, *token = (const char *)str+10;
+		const char *end = strchr (token, '\n');
+		data = strstr (end, "Content-Disposition: form-data; ");
 		if (data) {
-			data = data+38;
+			data = strchr (data, '\n');
+			if (data) data = strchr (data+1, '\n');
+		}
+		if (data) {
 			while (*data==10 || *data==13) data++;
-			// chop end //
-			end = str+len-20;
+			end = (const char *)str+len-40;
 			while (*end=='-') end--;
 			if (*end==10 || *end==13) end--;
 			datalen = (size_t)(end-data);

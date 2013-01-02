@@ -128,6 +128,7 @@ R_API int r_sys_usleep(int usecs) {
 
 R_API int r_sys_setenv(const char *key, const char *value) {
 #if __UNIX__
+	if (!key) return 0;
 	if (value == NULL) {
 		unsetenv (key);
 		return 0;
