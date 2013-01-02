@@ -53,7 +53,7 @@ r2.bin_sections = function (cb) {
 }
 
 r2.cmd = function (c, cb) {
-	Ajax ('GET', r2.root+"/cmd/"+c, '', function (x) {
+	Ajax ('GET', r2.root+"/cmd/"+encodeURI (c), '', function (x) {
 		if (cb) cb (x);
 	});
 }

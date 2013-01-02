@@ -88,12 +88,13 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 		if (!strcmp (rs->method, "GET")) {
 			if (!memcmp (rs->path, "/cmd/", 5)) {
 				char *out, *cmd = rs->path+5;
-				r_str_unescape (cmd);
+				r_str_uri_decode (cmd);
 				out = r_core_cmd_str_pipe (core, cmd);
 				if (out) {
-					r_str_unescape (out);
+					char *res = r_str_uri_encode (out);
 					r_socket_http_response (rs, 200, out, 0, "Content-Type: text/plain\n");
 					free (out);
+					free (res);
 				} else r_socket_http_response (rs, 200, "", 0, NULL);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
@@ -127,13 +128,19 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
 				}
 			}
-#if 0
+#if 1
 		} else 
 		if (!strcmp (rs->method, "POST")) {
-			char *buf = malloc (rs->data_length+ 50);
-			strcpy (buf, "<html><body><h2>XSS test</h2>\n");
-			r_str_unescape ((char *)rs->data);
+			int retlen;
+			char *ret , *buf = malloc (rs->data_length+50);
+			r_str_uri_decode ((char *)rs->data);
+			ret = r_socket_http_handle_upload (rs->data, rs->data_length, &retlen);
+			sprintf (buf, "<html><body><h2>upload %d</h2>\n", retlen);
+#if 0
 			strcat (buf, (char*)rs->data);
+#else
+			strcat (buf, ret);
+#endif
 			r_socket_http_response (rs, 200, buf, 0, NULL);
 			free (buf);
 #endif

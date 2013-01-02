@@ -37,8 +37,7 @@ static int __lib_dbg_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 static int __lib_dbg_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 /* breakpoint callback */
-static int __lib_bp_cb(struct r_lib_plugin_t *pl, void *user, void *data)
-{
+static int __lib_bp_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 	struct r_bp_plugin_t *hand = (struct r_bp_plugin_t *)data;
 	struct r_core_t *core = (struct r_core_t *)user;
 	//printf(" * Added bpger handler\n");

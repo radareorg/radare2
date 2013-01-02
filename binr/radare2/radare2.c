@@ -289,6 +289,8 @@ int main(int argc, char **argv) {
 		} //else rabin_delegate (NULL);
 	} // else eprintf ("Metadata loaded from 'file.project'\n");
 #endif
+	if (mapaddr)
+		r_core_seek (&r, mapaddr, 1);
 
 	r_list_foreach (evals, iter, cmdn) {
 		r_config_eval (r.config, cmdn); 

@@ -38,13 +38,13 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 				hr->path = strdup (p+1);
 			}
 		} else {
-			if (!hr->agent && !memcmp (buf, "User-Agent: ", 12)) {
+			if (!hr->agent && !strncmp (buf, "User-Agent: ", 12)) {
 				hr->agent = strdup (buf+12);
 			} else
-			if (!hr->host && !memcmp (buf, "Host: ", 6)) {
+			if (!hr->host && !strncmp (buf, "Host: ", 6)) {
 				hr->host = strdup (buf+6);
 			} else
-			if (!memcmp (buf, "Content-Length: ", 16)) {
+			if (!strncmp (buf, "Content-Length: ", 16)) {
 				content_length = atoi (buf+16);
 			}
 		}
@@ -71,6 +71,34 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\n%s"
 		"Connection: close\nContent-Length: %d\n\n", code, strcode, headers, len);
 	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
+}
+
+R_API char *r_socket_http_handle_upload(const char *str, int len, int *retlen) {
+	if (retlen)
+		*retlen = 0;
+	if (!strncmp (str, "------------------------------", 30)) {
+		int datalen;
+		char *ret;
+		const char *data, *token = str+30, *end = strchr (token, '\n'); // crap \r
+		data = strstr (end, "Content-Type: application/octet-stream");
+		if (data) {
+			data = data+38;
+			while (*data==10 || *data==13) data++;
+			// chop end //
+			end = str+len-20;
+			while (*end=='-') end--;
+			if (*end==10 || *end==13) end--;
+			datalen = (size_t)(end-data);
+			ret = malloc (datalen+1);
+			if (!ret) return NULL;
+			memcpy (ret, data, datalen);
+			ret[datalen] = 0;
+			if (retlen)
+				*retlen = datalen;
+			return ret;
+		}
+	}
+	return NULL;
 }
 
 /* close client socket and free struct */

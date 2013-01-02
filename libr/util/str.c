@@ -317,7 +317,7 @@ R_API int r_str_nstr(char *from, char *to, int size) {
 }
 
 R_API const char *r_str_chop_ro(const char *str) {
-	if (str)
+	if (!str) return NULL;
 	while (*str && iswhitechar (*str))
 		str++;
 	return str;
@@ -660,7 +660,7 @@ R_API char *r_str_unscape(char *buf) {
 	ptr = ret = malloc (1+len*2);
 	if (ptr == NULL)
 		return NULL;
-	for (;*buf;buf++,ptr++) {
+	for (; *buf; buf++, ptr++) {
 		if (*buf=='\n') {
 			*ptr = '\\';
 			ptr++;
@@ -915,7 +915,7 @@ R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
 
 // convert from html escaped sequence "foo%20bar" to "foo bar"
 // TODO: find better name.. unencode? decode
-R_API void r_str_unescape (char *s) {
+R_API void r_str_uri_decode (char *s) {
 	int n;
 	char *d;
 	for (d=s; *s; s++, d++) {
@@ -931,4 +931,22 @@ R_API void r_str_unescape (char *s) {
 		} else *d = *s;
 	}
 	*d = 0;
+}
+
+R_API char *r_str_uri_encode (const char *s) {
+	char ch[4], *o, *d = malloc (strlen (s)*4);
+	for (o=d; *s; s++, d++) {
+		if((*s>='0' && *s<='9') 
+		|| (*s>='a' && *s<='z')
+		|| (*s>='A' && *s<='Z')) {
+			*d++ = *s;
+		} else {
+			*d++ = '%';
+			sprintf (ch, "%02x", *s);
+			*d++ = ch[0];
+			*d++ = ch[1];
+		}
+	}
+	*d = 0;
+	return realloc (o, strlen (d)+1); // FIT
 }
