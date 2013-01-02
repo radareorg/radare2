@@ -71,8 +71,15 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 	return ret;
 }
 
+#ifdef __MAC_10_7
+#define APPLE_WITH_BACKTRACE 1
+#endif
+#ifdef __IPHONE_4_0
+#define APPLE_WITH_BACKTRACE 1
+#endif
+
 R_API void r_sys_backtrace(void) {
-#if __linux__ && __GNU_LIBRARY__
+#if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE)
         void *array[10];
         size_t i, size = backtrace (array, 10);
         char **strings = backtrace_symbols (array, size);
