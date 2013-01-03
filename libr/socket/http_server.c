@@ -73,7 +73,7 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
 }
 
-R_API char *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
+R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 	if (retlen)
 		*retlen = 0;
 	if (!strncmp ((const char *)str, "------------------------------", 10)) {
@@ -98,7 +98,7 @@ R_API char *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
 			ret[datalen] = 0;
 			if (retlen)
 				*retlen = datalen;
-			return ret;
+			return (ut8*)ret;
 		}
 	}
 	return NULL;

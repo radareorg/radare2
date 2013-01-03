@@ -160,9 +160,8 @@ R_API RIOSection *r_io_section_getv(RIO *io, ut64 vaddr) {
 	RListIter *iter;
 	RIOSection *s;
 	r_list_foreach (io->sections, iter, s) {
-		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize)
 			return s;
-		}
 	}
 	return NULL;
 }

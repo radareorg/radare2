@@ -10,6 +10,7 @@
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;
+	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
 	io->fd = NULL;
 	io->write_mask_fd = -1;
 	io->redirect = NULL;
@@ -123,7 +124,7 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 		} else fd = r_sandbox_open (uri, O_BINARY);
 #else
 		fd = r_sandbox_open (uri, (flags&R_IO_WRITE)?
-			O_RDWR:O_RDONLY, mode);
+			O_RDWR: O_RDONLY, mode);
 #endif
 	}
 	if (fd >= 0) {
@@ -178,7 +179,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret, l, olen = len;
 	int w = 0;
 
-	r_io_seek (io, addr, R_IO_SEEK_SET);
+	//r_io_seek (io, addr, R_IO_SEEK_SET);
 	// XXX: this is buggy!
 	memset (buf, 0xff, len);
 	while (len>0) {
@@ -193,6 +194,14 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			memset (buf+w, 0xff, l);
 			return -1;
 		}
+		if (!io->zeromap)
+			if (!r_io_map_get (io, addr+w)) {
+				if (r_io_section_getv (io, addr+w)) {
+					memset (buf+w, 0xff, l);
+					return -1;
+				}
+			}
+		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
 		if (ret<1) {

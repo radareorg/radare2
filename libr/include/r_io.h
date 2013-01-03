@@ -124,6 +124,7 @@ typedef struct r_io_t {
 	RList *maps; /*<RIOMap>*/
 	RList *desc;
 	RList *cache;
+	int zeromap;
 	//XXX: Need by rap
 	void *user;
 	int (*core_cmd_cb)(void *user, const char *str);

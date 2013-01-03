@@ -86,13 +86,24 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 			continue;
 		}
 		if (!strcmp (rs->method, "GET")) {
+			if (!memcmp (rs->path, "/up/", 5)) {
+				if (r_config_get_i (core->config, "http.upget")) {
+// TODO: implement upget
+					r_socket_http_response (rs, 200,
+						"TODO\n", 0, NULL);
+				} else {
+					r_socket_http_response (rs, 403,
+						"Permission denied\n", 0, NULL);
+				}
+			} else
 			if (!memcmp (rs->path, "/cmd/", 5)) {
 				char *out, *cmd = rs->path+5;
 				r_str_uri_decode (cmd);
 				out = r_core_cmd_str_pipe (core, cmd);
 				if (out) {
 					char *res = r_str_uri_encode (out);
-					r_socket_http_response (rs, 200, out, 0, "Content-Type: text/plain\n");
+					r_socket_http_response (rs, 200, out, 0,
+						"Content-Type: text/plain\n");
 					free (out);
 					free (res);
 				} else r_socket_http_response (rs, 200, "", 0, NULL);
@@ -101,12 +112,15 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 				char path[1024];
 				// fix crosspath
 				if (rs->path [strlen (rs->path)-1] == '/') {
-					rs->path = r_str_concat (rs->path, "index.html");
+					rs->path = r_str_concat (rs->path,
+						"index.html");
 				} else {
 					snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 					if (r_file_is_directory (path)) {
-						snprintf (path, sizeof (path), "Location: %s/\n", rs->path);
-						r_socket_http_response (rs, 302, NULL, 0, path);
+						snprintf (path, sizeof (path),
+							"Location: %s/\n", rs->path);
+						r_socket_http_response (rs, 302,
+							NULL, 0, path);
 						r_socket_http_close (rs);
 						continue;
 					}
@@ -130,33 +144,32 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 			}
 		} else 
 		if (!strcmp (rs->method, "POST")) {
-			const ut8 *ret;
+			ut8 *ret;
 			int retlen;
 			char buf[128];
 			if (r_config_get_i (core->config, "http.upload")) {
-			ret = r_socket_http_handle_upload (
-				rs->data, rs->data_length, &retlen);
-			if (ret) {
-				char *filename = r_file_root (
-					r_config_get (core->config, "http.uproot"),
-					rs->path + 4);
-				eprintf ("UPLOADED '%s'\n", filename);
-				r_file_dump (filename, ret, retlen);
-				free (filename);
-				free (ret);
-			} else {
-				r_str_uri_decode ((char *)rs->data);
-			}
-			snprintf (buf, sizeof (buf),
-				"<html><body><h2>uploaded %d bytes. Thanks</h2>\n", retlen);
-				r_socket_http_response (rs, 200, buf, 0, NULL);
+				ret = r_socket_http_handle_upload (
+					rs->data, rs->data_length, &retlen);
+				if (ret) {
+					ut64 size = r_config_get_i (core->config, "http.maxsize");
+					if (size && retlen > size) {
+						r_socket_http_response (rs, 403, "403 File too big\n", 0, NULL);
+					} else {
+						char *filename = r_file_root (
+							r_config_get (core->config, "http.uproot"),
+							rs->path + 4);
+						eprintf ("UPLOADED '%s'\n", filename);
+						r_file_dump (filename, ret, retlen);
+						free (filename);
+						snprintf (buf, sizeof (buf),
+							"<html><body><h2>uploaded %d bytes. Thanks</h2>\n", retlen);
+							r_socket_http_response (rs, 200, buf, 0, NULL);
+					}
+					free (ret);
+				}
 			} else {
 				r_socket_http_response (rs, 403, "403 Forbidden\n", 0, NULL);
 			}
-#if 0
-			strcat (buf, (char*)rs->data);
-			strcat (buf, ret);
-#endif
 		} else {
 			r_socket_http_response (rs, 404, "Invalid protocol", 0, NULL);
 		}
@@ -378,7 +391,8 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS; rtr_n++);
+		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd \
+			&& rtr_n < RTR_MAX_HOSTS; rtr_n++);
 	}
 
 	for (;;) {

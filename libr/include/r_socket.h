@@ -83,6 +83,6 @@ typedef struct r_socket_http_request {
 R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout);
 R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char *out, int x, const char *headers);
 R_API void r_socket_http_close (RSocketHTTPRequest *rs);
-R_API char *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);
+R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);
 #endif
 #endif

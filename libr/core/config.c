@@ -43,6 +43,14 @@ static int config_iomaxblk_callback(void *user, void *data) {
 	core->blocksize_max = node->i_value;
 	return R_TRUE;
 }
+
+static int config_iozeromap_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->io->zeromap = node->i_value;
+	return R_TRUE;
+}
+
 static int config_ioffio_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -641,10 +649,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.vprompt", "Visual prompt commands");
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_desc (cfg, "cmd.bp", "Command to executed every breakpoint hitted");
-	r_config_set (cfg, "http.sandbox", "false");
-	r_config_set_i (cfg, "http.timeout", 3);
-	r_config_set (cfg, "http.public", "false");
-	r_config_desc (cfg, "http.public", "set to true to listen on 0.0.0.0");
 #if __WINDOWS__
 	r_config_set (cfg, "http.browser", "start");
 #else
@@ -658,12 +662,22 @@ R_API int r_core_config_init(RCore *core) {
 	else r_config_set (cfg, "http.browser", "firefox");
 #endif
 	r_config_desc (cfg, "http.browser", "command to open http urls");
+	r_config_set (cfg, "http.sandbox", "false");
+	r_config_set_i (cfg, "http.timeout", 3);
+	r_config_desc (cfg, "http.timeout", "disconnect clients after N seconds if no data sent");
+	r_config_set (cfg, "http.public", "false");
+	r_config_desc (cfg, "http.public", "set to true to listen on 0.0.0.0");
 	r_config_set (cfg, "http.port", "9090");
 	r_config_desc (cfg, "http.root", "port to listen for http connections");
 	r_config_set (cfg, "http.root", WWWROOT);
 	r_config_desc (cfg, "http.root", "http root directory");
+
 	r_config_set (cfg, "http.upload", "false");
-	r_config_desc (cfg, "http.upload", "enable file uploads");
+	r_config_desc (cfg, "http.upload", "enable file POST uploads in /up/<filename>");
+	r_config_set_i (cfg, "http.maxsize", 0);
+	r_config_desc (cfg, "http.maxsize", "define maximum file size to upload");
+	r_config_set (cfg, "http.upget", "false");
+	r_config_desc (cfg, "http.upget", "/up/ can be GET, not only POST");
 	tmpdir = r_file_tmpdir ();
 	r_config_set (cfg, "http.uproot", tmpdir);
 	free (tmpdir);
@@ -716,6 +730,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "search.align", "Only catch aligned search hits");
 
 	sprintf (buf, "%d", R_CORE_BLOCKSIZE_MAX);
+	r_config_set_cb (cfg, "io.zeromap", buf, &config_iozeromap_callback);
+	r_config_desc (cfg, "io.zeromap", "double map the last opened file to address zero");
 	r_config_set_cb (cfg, "io.maxblk", buf, &config_iomaxblk_callback);
 	r_config_desc (cfg, "io.maxblk", "set max block size (soft limit)");
 
