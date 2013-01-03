@@ -114,11 +114,13 @@ static void print_buf(char *str) {
 static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
 	struct r_asm_code_t *acode;
 	int i, j;
+	int ret = 0;
 
 	r_asm_set_pc (a, offset);
 	if (!(acode = r_asm_massemble (a, buf)))
 		return 0;
 	if (acode->len) {
+		ret = acode->len;
 		if (bin) {
 			write (1, acode->buf, acode->len);
 		} else {
@@ -136,7 +138,7 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
 		if (!bin && len>0) printf ("\n");
 	}
 	r_asm_code_free (acode);
-	return acode->len>0;
+	return ret > 0;
 }
 
 /* asm callback */
