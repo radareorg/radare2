@@ -9,7 +9,7 @@ CFLAGS+=-Wall
 #CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0
 
-HAVE_VALA=$(shell valac --version)
+HAVE_VALA=$(shell valac --version 2>/dev/null)
 # This is hacky
 OS=$(shell uname)
 ARCH=$(shell uname -m)

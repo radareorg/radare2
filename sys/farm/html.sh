@@ -1,23 +1,23 @@
 #!/bin/sh
-cd `dirname $PWD/$0` 
-./bins.sh
+cd `dirname $PWD/$0` || exit
+test -f ./bins.sh && ./bins.sh
 
 # gen htmls
 for a in log/*.log ; do
-	b=$(echo $a|sed -e 's,.log$,.html,')
-	r=$(echo $a|sed -e 's,.log$,.ret,')
-	t=$(echo $a|sed -e 's,.log$,.time,')
-	c=$(echo $a|sed -e 's,.log$,.cpu,')
+	b=$(sed -e 's,.log$,.html,' $a)
+	r=$(sed -e 's,.log$,.ret,'  $a)
+	t=$(sed -e 's,.log$,.time,' $a)
+	c=$(sed -e 's,.log$,.cpu,'  $a)
 	echo "<html><body style=background-color:black;color:white;font-family:Verdana>" > $b
 	echo "<h1><a href=./>index</a></h1>" >> $b
 	echo "<h1>$a</h1>" >> $b
-	allocas=$(cat $a|grep -e "alloca'" |wc -l)
-	formats=$(cat $a|grep -e "in format" -e "format'" |wc -l)
-	unused=$(cat $a|grep -e "not used" -e unused |wc -l)
-	casts=$(cat $a|grep incompatible |wc -l)
-	warnings=$(cat $a|grep warning: |wc -l)
-	undefineds=$(cat $a|grep undefined |wc -l)
-	errors=$(cat $a|grep -e error: -e 'returned 1'|wc -l)
+	allocas=$(grep -ce "alloca'" $a)
+	formats=$(grep -c -e "in format" -e "format'" $a)
+	unused=$(grep -c -e "not used" -e unused $a)
+	casts=$(grep -ce incompatible $a)
+	warnings=$(grep "warning:" $a)
+	undefineds=$(grep undefined $a)
+	errors=$(grep -c -e error: -e 'returned 1' $a)
 	if [ -f $t ]; then
 		echo "<h2>time:</h2>" >> $b
 		echo "<pre>" >> $b
@@ -69,10 +69,10 @@ for a in log/*.log ; do
 		gsub(/warning\: (.*)$/,"<b style=color:yellow>&</b>");
 		print}' >> $b
 	echo "<h2>build:</h2>" >> $b
-	cat $a | awk '{
+	awk '{
 		gsub(/warning\: (.*)$/,"<b style=color:yellow>warning: &</b>");
 		gsub(/error\: (.*)$/,"<b style=color:red>&</b>");
-		print}' >> $b
+		print}' $a >> $b
 	echo "<pre></body></html>" >> $b
 done
 
@@ -97,10 +97,10 @@ for a in `ls -rt log/*.log | tac`; do
 	f=$(echo $a | sed -e 's,log/,,' -e s,.log,,)
 	l=log/$f.log
 	ft=log/$f.time
-	n=$(echo $f|sed -e 's,-, ,g')
-	t=$(cat $ft |grep real|awk '{print $2}')
-	warnings=$(cat $l|grep warning: |wc -l)
-	errors=$(cat $l|grep error: |wc -l)
+	n=$(sed -e 's,-, ,g' $f)
+	t=$(awk '/real/{print $2}' $ft)
+	warnings=$(grep -c "warning:" $l)
+	errors=$(grep -c "error:" $l)
 	echo "<h3><a href=$f.html>$n</a> (<font color=yellow>w:</font>$warnings <font color=red>e:</font>$errors $t)</h3>" >> log/index.html
 done
 

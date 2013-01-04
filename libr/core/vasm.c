@@ -12,7 +12,8 @@ typedef struct {
 	int blocklen;
 } RCoreVisualAsm;
 
-static int readline_callback(RCoreVisualAsm *a, const char *str) {
+static int readline_callback(void *_a, const char *str) {
+	RCoreVisualAsm *a = _a;
 	int xlen;
 	r_cons_clear00 ();
 	r_cons_printf ("Write your favourite %s-%d opcode...\n\n",
