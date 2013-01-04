@@ -484,6 +484,16 @@ static int cmd_print(void *data, const char *input) {
 		r_print_raw (core->print, core->block, len);
 		break;
 	case 'x':
+		{
+		int show_offset = r_config_get_i (core->config, "asm.offset");
+		if (show_offset) {
+			core->print->flags |= R_PRINT_FLAGS_HEADER;
+			core->print->flags |= R_PRINT_FLAGS_OFFSET;
+		} else {
+			core->print->flags &= ~R_PRINT_FLAGS_OFFSET;
+			core->print->flags &= ~R_PRINT_FLAGS_HEADER;
+		}
+		}
 		switch (input[1]) {
 		case '?':
 			eprintf ("Usage: px[owqWQ][f]\n"
@@ -522,7 +532,8 @@ static int cmd_print(void *data, const char *input) {
 				 ut64 from = r_config_get_i (core->config, "diff.from");
 				 ut64 to = r_config_get_i (core->config, "diff.to");
 				 if (from == to && from == 0) {
-					 r_print_hexdump (core->print, core->offset, core->block, len, 16, 1); //, 78, !(input[1]=='-'));
+					 r_print_hexdump (core->print, core->offset,
+						core->block, len, 16, 1);
 				 } else {
 					 r_core_print_cmp (core, from, to);
 				 }

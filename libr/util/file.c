@@ -219,6 +219,10 @@ R_API char *r_file_slurp_line(const char *file, int line, int context) {
 
 R_API char *r_file_root(const char *root, const char *path) {
 	char *ret, *s = r_str_replace (strdup (path), "..", "", 1);
+	// XXX ugly hack
+	while (strstr (s, "..")) s = r_str_replace (s, "..", "", 1);
+	while (strstr (s, "./")) s = r_str_replace (s, "./", "", 1);
+	while (strstr (s, "//")) s = r_str_replace (s, "//", "", 1);
 	ret = r_str_concat (strdup (root), "/");
 	ret = r_str_concat (ret, s);
 	free (s);

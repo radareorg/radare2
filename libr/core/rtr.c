@@ -86,18 +86,48 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 			continue;
 		}
 		if (!strcmp (rs->method, "GET")) {
-			if (!memcmp (rs->path, "/up/", 5)) {
+			if (!memcmp (rs->path, "/up", 3)) {
 				if (r_config_get_i (core->config, "http.upget")) {
-// TODO: implement upget
-					r_socket_http_response (rs, 200,
-						"TODO\n", 0, NULL);
+					const char *uproot = r_config_get (core->config, "http.uproot");
+					if (!rs->path[3] || (rs->path[3]=='/'&&!rs->path[4])) {
+						char *ptr = strdup ("<html><body>\n");
+						const char *file;
+						RListIter *iter;
+						// list files
+						RList *files = r_sys_dir (uproot);
+						eprintf ("Listing directory %s\n", uproot);
+						r_list_foreach (files, iter, file) {
+							if (file[0] == '.') continue;
+							ptr = r_str_concatf (ptr, "<a href=\"/up/%s\">%s</a><br />\n",
+								file, file);
+						}
+						r_list_free (files);
+						ptr = r_str_concat (ptr, "<html><body>\n");
+						r_socket_http_response (rs, 200, ptr, 0, NULL);
+					} else {
+						char *path = r_file_root (uproot, rs->path + 4);
+						if (r_file_exists (path)) {
+							int sz = 0;
+							char *f = r_file_slurp (path, &sz);
+							if (f) {
+								r_socket_http_response (rs, 200, f, sz, NULL);
+								free (f);
+							} else {
+								r_socket_http_response (rs, 403, "Permission denied", 0, NULL);
+								eprintf ("http: Cannot open '%s'\n", path);
+							}
+						} else {
+							eprintf ("File '%s' not found\n", path);
+							r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
+						}
+						free (path);
+					}
 				} else {
 					r_socket_http_response (rs, 403,
-						"Permission denied\n", 0, NULL);
+							"Permission denied\n", 0, NULL);
 				}
-			} else
-			if (!memcmp (rs->path, "/cmd/", 5)) {
-				char *out, *cmd = rs->path+5;
+			} else if (!memcmp (rs->path, "/cmd/", 5)) {
+					char *out, *cmd = rs->path+5;
 				r_str_uri_decode (cmd);
 				out = r_core_cmd_str_pipe (core, cmd);
 				if (out) {
@@ -109,23 +139,25 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 				} else r_socket_http_response (rs, 200, "", 0, NULL);
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
-				char path[1024];
-				// fix crosspath
+				char *path;
+				path = r_file_root (root, rs->path);
+
 				if (rs->path [strlen (rs->path)-1] == '/') {
-					rs->path = r_str_concat (rs->path,
-						"index.html");
+					path = r_str_concat (path, "index.html");
+					//rs->path = r_str_concat (rs->path, "index.html");
 				} else {
-					snprintf (path, sizeof (path), "%s/%s", root, rs->path);
+					//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 					if (r_file_is_directory (path)) {
-						snprintf (path, sizeof (path),
+						char res[128];
+						snprintf (res, sizeof (res),
 							"Location: %s/\n", rs->path);
 						r_socket_http_response (rs, 302,
-							NULL, 0, path);
+							NULL, 0, res);
 						r_socket_http_close (rs);
+						free (path);
 						continue;
 					}
 				}
-				snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 				if (r_file_exists (path)) {
 					int sz = 0;
 					char *f = r_file_slurp (path, &sz);
@@ -138,9 +170,9 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					}
 				} else {
 					eprintf ("File '%s' not found\n", path);
-					// TODO: directory listing?
 					r_socket_http_response (rs, 404, "File not found\n", 0, NULL);
 				}
+				free (path);
 			}
 		} else 
 		if (!strcmp (rs->method, "POST")) {

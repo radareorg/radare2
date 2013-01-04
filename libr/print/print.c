@@ -338,7 +338,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				}
 			} else last_sparse = 0;
 		}
-		r_print_addr (p, addr+j); //(i*step));
+		if (p->flags & R_PRINT_FLAGS_OFFSET)
+			r_print_addr (p, addr+j);
 		p->printf ((p->col==1)? "|": " ");
 		for (j=i; j<i+inc; j++) {
 			if (j>=len) {
