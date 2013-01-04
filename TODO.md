@@ -14,7 +14,6 @@ Broken stuff to fixe before release
 
 0.9.4
 =====
-* Event system . allow to send and read queues of messages.. thats pubsub!
 * search for CALL instructions in text segment.
   - analyze the destination address of each call destination
 * Analysis: assume there is a function at the end of each function
@@ -22,21 +21,18 @@ Broken stuff to fixe before release
 * Step back .. log all state changes on every debugger stop
 * Show analized functions in 'aa' -> discuss
 * Timeout for code analysis (check timestamp)
+  - add analysis points continuation, so 'aa' can be used progressively
 * Allow to seek to branch N like in visual, but from cmdline
 * Colorize multiple ranges of chars in hexdump
-* Insert assembly in visual should be more userfriendly (keep unwritten bytes)
 * refactor vmenus.c -> refresh function must be redefined for each menu
-
 // show hints for
     0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             
-* Fix ?-
 * bar for cursor?
 * p= show entropy of current block
   - show number of occurrences for each byte
   - maybe in 'ad' command, analyze data
 * highlight search hits in hexdump
 * Implement debugger backtrace properly
-* _ -> write string does not obeys the cursor
 * p7 : 7bit encoding (sms)
   - variant for stego print? LSB, MSB, ...
   - add base85 api
@@ -55,7 +51,7 @@ BUGS
   - mz
   - pe64
   - plan9 bins
-* Add !load in r2 (oo args)
+* Implement support for args in 'oo' (like in r1s !load debugger..)
 * opening a file from inside r2 doesnt clears internal data (strings..)
 * 'ao' must be for opcodes, not bytes
 * backtrace for linux or osx at least

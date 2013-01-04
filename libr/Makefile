@@ -87,7 +87,7 @@ symstall install-symlink:
 				ln -fs ${PWD}/$${b} ${LFX}/radare2/${VERSION}/ ; \
 			fi ; \
 		done ; \
-		ln -fs ${LFX}/radare2/${VERSION} ${LFX}/radare2/last ; \
+		( cd ${LFX}/radare2 ; ln -fs ${VERSION} last ) ; \
 	done
 
 install: install-includes install-pkgconfig
