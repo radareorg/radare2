@@ -28,6 +28,19 @@ all:
 	${MAKE} $(LIBS5)
 	${MAKE} $(LIBS6)
 	${MAKE} $(LIBS7)
+ifeq (${WITHNONPIC},1)
+	${MAKE} libr.a
+endif
+
+# looks hacky :D
+libr.a: $(shell ls */libr_*.a)
+	rm -f libr.a
+	echo CREATE libr.a > libr.m
+	for a in */libr_*.a ; do echo ADDLIB $$a >> libr.m ; done
+	echo SAVE >> libr.m
+	# ar -M is a gnu-ism .. try to find a proper portable way to do that
+	ar -M < libr.m
+	rm -f libr.m
 
 $(LIBS):
 	@echo "DIR $@"

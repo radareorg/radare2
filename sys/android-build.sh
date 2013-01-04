@@ -72,11 +72,12 @@ if [ $STATIC_BUILD = 1 ]; then
 	CFGFLAGS="--without-pic --with-nonpic"
 fi
 # dup
-echo ./configure --with-compiler=android --with-ostype=android \
-	--without-ewf --without-ssl --prefix=${PREFIX} ${CFGFLAGS}
+echo ./configure --with-compiler=android \
+	--with-ostype=android --without-ewf \
+	--prefix=${PREFIX} ${CFGFLAGS}
 
 ./configure --with-compiler=android --with-ostype=android \
-	--without-ewf --without-ssl --prefix=${PREFIX} ${CFGFLAGS} || exit 1
+	--without-ewf --prefix=${PREFIX} ${CFGFLAGS} || exit 1
 make -s -j 4 || exit 1
 fi
 rm -rf $D

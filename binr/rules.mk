@@ -11,6 +11,7 @@ OBJ+=${BIN}.o
 BEXE=${BIN}${EXT_EXE}
 
 ifeq ($(WITHNONPIC),1)
+LDFLAGS+=../../libr/libr.a
 LDFLAGS+=../../libr/db/sdb/src/libsdb.a
 LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
 LDFLAGS+=-lm

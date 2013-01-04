@@ -44,9 +44,9 @@ if [ ! -d "${NDK}" ]; then
 	exit 1
 fi
 
-TOOLCHAIN_MIPS=`ls ${NDK}/toolchains/ |grep "^mips" |sort |tail -n 1`
-TOOLCHAIN_ARM=`ls ${NDK}/toolchains/ |grep "^arm" |sort |tail -n 1`
-TOOLCHAIN_X86=`ls ${NDK}/toolchains/ |grep "^x86" |sort |tail -n 1`
+TOOLCHAIN_MIPS=`ls ${NDK}/toolchains/ |grep "^mips" |sort |head -n 1`
+TOOLCHAIN_ARM=`ls ${NDK}/toolchains/ |grep "^arm" |sort |head -n 1`
+TOOLCHAIN_X86=`ls ${NDK}/toolchains/ |grep "^x86" |sort |head -n 1`
 
 NDKPATH_MIPS=${NDK}/toolchains/${TOOLCHAIN_MIPS}/prebuilt/${OS}-x86/bin/
 NDKPATH_ARM=${NDK}/toolchains/${TOOLCHAIN_ARM}/prebuilt/${OS}-x86/bin/

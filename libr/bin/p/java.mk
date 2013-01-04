@@ -6,6 +6,9 @@ SHARED_JAVA+=../../shlr/java/ops.o
 SHARED2_JAVA=$(addprefix ../,${SHARED_JAVA})
 
 STATIC_OBJ+=${OBJ_JAVA}
+ifeq ($(WITHNONPIC),1)
+STATIC_OBJ+=${SHARED2_JAVA}
+endif
 SHARED_OBJ+=${SHARED_JAVA}
 TARGET_JAVA=bin_java.${EXT_SO}
 

@@ -120,7 +120,7 @@ static void arg(char* s, int const cmd, struct arg_t const* arg, int val) {
   }
 }
 
-int i8080_disasm(unsigned char const* const code, char* text, int text_sz) {
+static int i8080_disasm(unsigned char const* const code, char* text, int text_sz) {
   int const cmd = code[0];
   int const p = code[1] | (code[2] << 8);
 
