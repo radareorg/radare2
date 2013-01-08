@@ -12,7 +12,7 @@ namespace Radare {
 			FINI,
 			LAST
 		}
-		public /*const NOTE it was causing problems*/string file;
+		public unowned string file;
 		public RBin.Arch cur;
 		public int narch;
 
@@ -101,10 +101,11 @@ namespace Radare {
 			public char forwarder[256]; // FIXME proper static strings w/o hardcoded size
 			public char bind[256]; // FIXME proper static strings w/o hardcoded size
 			public char type[256]; // FIXME proper static strings w/o hardcoded size
+			public unowned string classname;
 			public uint64 rva;
 			public uint64 offset;
-			public uint32 size;
-			public uint32 ordinal;
+			public uint64 size;
+			public uint64 ordinal;
 		}
 
 		[CCode (cname="RBinImport", free_function="", ref_function="", unref_function="")]
@@ -114,8 +115,9 @@ namespace Radare {
 			public char type[256]; // FIXME proper static strings w/o hardcoded size
 			public uint64 rva;
 			public uint64 offset;
-			public uint32 ordinal;
-			public uint32 hint;
+			public uint64 size;
+			public uint64 ordinal;
+			public uint64 hint;
 		}
 
 		[CCode (cname="RBinReloc", free_function="", ref_function="", unref_function="")]
@@ -138,10 +140,12 @@ namespace Radare {
 			public char os[256]; // FIXME proper static strings w/o hardcoded size
 			public char subsystem[256]; // FIXME proper static strings w/o hardcoded size
 			public char rpath[256]; // FIXME proper static strings w/o hardcoded size
+			public unowned string lang;
 			public int bits;
 			public bool has_va;
+			public bool has_pi;
 			public bool big_endian;
-			public uint32 dbg_info;
+			public uint64 dbg_info;
 		}
 
 		[CCode (cname="RBinString", free_function="", ref_function="", unref_function="")]
