@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static void dot_r_graph_traverse(RCore *core, RGraph *t) {
 	RGraphNode *n, *n2;
@@ -434,9 +434,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case '*':
-		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 1); // XXX detect which one is current usage
-		} //else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE))
+			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, '*');
 		break;
 	case 'j':
 	case '\0':

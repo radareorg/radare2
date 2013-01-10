@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_debug.h>
 #include <r_cons.h>
@@ -50,9 +50,8 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 		fmt2 = "%4s 0x%08"PFMT64x"%s";
 		cols = 4;
 	}
-	if (rad=='j') {
+	if (rad=='j')
 		dbg->printf ("{");
-	}
 	if (head)
 	r_list_foreach (head, iter, item) {
 		ut64 value;
@@ -67,9 +66,11 @@ R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
 			dbg->printf ("%s\"%s\":%"PFMT64d,
 				n?",":"",item->name, value);
 			break;
+		case 1:
 		case '*':
 			dbg->printf ("f %s 1 0x%"PFMT64x"\n", item->name, value);
 			break;
+		case 'd':
 		case 2:
 			if (diff) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
 				dbg->printf (Color_BWHITE); //INVERT); //Color_BWHITE);
