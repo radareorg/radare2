@@ -145,12 +145,8 @@ EOF
 
 cp -f $D/* /tmp
 cd /tmp
-if [ -e /usr/bin/open ]; then
-	open $T
-elif [ -e /usr/bin/xdg-open ]; then
-	xdg-open $T
-elif [ -n "${BROWSER+x}" ]; then
-	$BROWSER $T
-else
-	echo "Could not find browser. Aborting!"
-fi
+
+for a in open xdg-open ${BROWSER} ; do
+	type $a >/dev/null 2>&1 && exec $a $T && break
+done
+echo "Could not find browser. Aborting!"
