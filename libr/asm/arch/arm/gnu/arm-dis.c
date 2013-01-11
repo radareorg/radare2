@@ -2906,7 +2906,7 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                             if (isfloat)
                               {
                                 unsigned char valbytes[4];
-                                double fvalue;
+                                //double fvalue;
                                 
                                 /* Do this a byte at a time so we don't have to
                                    worry about the host's endianness.  */
@@ -4821,9 +4821,10 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
       info->disassembler_options = NULL;
     }
 
-if(info->bytes_per_line==2)  {
+  if (info->bytes_per_line==2)  {
     is_thumb = TRUE;
-} else is_thumb = FALSE;
+  } else is_thumb = FALSE;
+
   /* PR 10288: Control which instructions will be disassembled.  */
   if (info->private_data == NULL)
     {
@@ -4989,7 +4990,7 @@ if(info->bytes_per_line==2)  {
 
       private_data->last_mapping_sym = last_sym;
       private_data->last_type = type;
-      is_thumb = (private_data->last_type == MAP_THUMB);
+      //is_thumb = (private_data->last_type == MAP_THUMB);
       is_data = (private_data->last_type == MAP_DATA);
 
       /* Look a little bit ahead to see if we should print out
@@ -5105,6 +5106,7 @@ if(info->bytes_per_line==2)  {
       printer = print_insn_thumb16;
       info->bytes_per_chunk = 2;
       size = 2;
+printf ("THUMB MODE \n");
 
       status = info->read_memory_func (pc, (bfd_byte *) b, 2, info);
       if (!little_code)
@@ -5118,7 +5120,7 @@ status = 0;
 
 	  /* These bit patterns signal a four-byte Thumb
 	     instruction.  */
-	  if (1||(given & 0xF800) == 0xF800
+	  if ((given & 0xF800) == 0xF800
 	      || (given & 0xF800) == 0xF000
 	      || (given & 0xF800) == 0xE800)
 	    {
