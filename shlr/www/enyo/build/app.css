@@ -1,0 +1,1161 @@
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/onyx/css/onyx.css */
+
+/* WARNING: This is a generated file for backward-compatibility.  Most      */
+/* usrs should instead modify LESS files.  If you choose to edit this CSS   */
+/* directly rather than LESS files, you should make sure less.xx.yy.min.js  */
+/* is commented out in your debug.html, and run deploy.sh/bat using the     */
+/* '-c' flag to disable LESS compilation.  This will force the loader and   */
+/* minifier to fall back to using CSS files in place of the same-name       */
+/* LESS file.                                                               */
+
+/* Onyx default parameters defined here */
+/* Fonts */
+/* ---------------------------------------*/
+/* Text Colors */
+/* ---------------------------------------*/
+/* Background Colors */
+/* ---------------------------------------*/
+/* Border Radius */
+/* ---------------------------------------*/
+/* Padding */
+/* ---------------------------------------*/
+/* Icon Sizes */
+/* ---------------------------------------*/
+/* Disabled Opacity */
+/* ---------------------------------------*/
+/* Gradient Overlays */
+/* ---------------------------------------*/
+/* Images */
+/* ---------------------------------------*/
+/* Onyx rules defined here */
+/* onyx-classes.less - combined CSS (less) files for all released Onyx controls 
+   into single onyx.less file to avoid IE bug that allows
+   a maximum of 31 style sheets to be loaded before silently failing */
+.onyx {
+  color: #333333;
+  font-family: 'Helvetica Neue', 'Nimbus Sans L', Arial, sans-serif;
+  font-size: 20px;
+  cursor: default;
+  background-color: #eaeaea;
+  /* remove automatic tap highlight color */
+
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+/* prevent IE from inheriting line-height for these elements */
+.onyx button,
+.onyx label,
+.onyx input {
+  line-height: normal;
+}
+.onyx-selected {
+  background-color: #c4e3fe;
+}
+/* LESS pre-calculations */
+/* Individual Widget CSS */
+/* Icon.css */
+.onyx-icon,
+.onyx-icon-toggle {
+  width: 32px;
+  height: 32px;
+  background-repeat: no-repeat;
+  display: inline-block;
+  vertical-align: middle;
+}
+.onyx-icon.onyx-icon-button.active,
+.onyx-icon.onyx-icon-button:active:hover,
+.onyx-icon-toggle.active {
+  background-position: 0 -32px;
+}
+.onyx-icon.disabled {
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+}
+.onyx-icon.disabled:active:hover {
+  background-position: 0 0px;
+}
+/* Button.css */
+.onyx-button {
+  outline: 0;
+  color: #292929;
+  font-size: 16px;
+  text-align: center;
+  white-space: nowrap;
+  margin: 0;
+  padding: 6px 18px;
+  overflow: hidden;
+  border-radius: 3px;
+  /* for IE8 */
+
+  border: 1px solid #707070;
+  border: 1px solid rgba(15, 15, 15, 0.2);
+  /*
+		The border and the gradient interact in a strange way that
+		causes the bottom-border (top if the gradient is aligned top)
+		to be lighter than other borders.
+		We can fix it by using the darker bottom border below, but
+		then there are a few rogue pixels that end up very dark.
+	*/
+
+  /* border-bottom: 1px solid rgba(15, 15, 15, 0.5); */
+
+  box-shadow: inset 0px 1px 0px rgba(255, 255, 255, 0.2);
+  background: #e1e1e1 url(images/gradient.png) repeat-x bottom;
+  background-size: contain;
+  /**/
+
+  text-overflow: ellipsis;
+  /* the following cause arcane problems on IE */
+
+  /*
+	min-width: 14px;
+	min-height: 20px;
+	*/
+
+}
+/*
+	IE8 can't handle these selectors in tandem:
+	.onyx-button.active, .onyx-button:active:not([disabled]) {
+
+	the effect is as if .onyx-button.active doesn't exist
+*/
+.onyx-button.active {
+  background-image: url(images/gradient-invert.png);
+  background-position: top;
+  border-top: 1px solid rgba(15, 15, 15, 0.6);
+  box-shadow: inset 0px 1px 0px rgba(0, 0, 0, 0.1);
+}
+.onyx-button:active:hover:not([disabled]) {
+  background-image: url(images/gradient-invert.png);
+  background-position: top;
+  border-top: 1px solid rgba(15, 15, 15, 0.6);
+  box-shadow: inset 0px 1px 0px rgba(0, 0, 0, 0.1);
+}
+.onyx-button[disabled] {
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+}
+.onyx-button > img {
+  padding: 0px 3px;
+}
+/* Remove the focused inner-border style in Firefox (Windows) */
+.onyx-button::-moz-focus-inner {
+  border: 0;
+}
+/* Checkbox.css */
+.onyx-checkbox {
+  cursor: pointer;
+  height: 32px;
+  width: 32px;
+  background: url(images/checkbox.png) no-repeat;
+  /* reset for ? */
+
+  margin: 0px;
+  /* these entries cause toggle-button and checkbox to line up properly*/
+
+  display: inline-block;
+  vertical-align: middle;
+}
+.onyx-checkbox[checked] {
+  background-position: 0px -32px;
+}
+.onyx-checkbox[disabled] {
+  opacity: 0.4;
+}
+/* Grabber.css */
+.onyx-grabber {
+  background: url(images/grabbutton.png) no-repeat center;
+  width: 23px;
+  height: 27px;
+}
+/* Popup.css */
+.onyx-popup {
+  font-size: 16px;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 6px;
+  color: #ffffff;
+  background: #4c4c4c url(images/gradient.png) repeat-x 0 bottom;
+}
+.onyx-popup-decorator {
+  position: relative;
+}
+/* Groupbox.css */
+.onyx-groupbox > * {
+  display: block;
+  /*box-shadow: inset 0px 1px 1px rgba(255,255,255,0.5);*/
+
+  border-color: #aaaaaa;
+  border-style: solid;
+  border-width: 0 1px 1px 1px;
+  /*padding: 10px;*/
+
+  /* reset styles that make 'item' look bad if they happen to be there */
+
+  border-radius: 0;
+  margin: 0;
+  font-size: 16px;
+}
+.onyx-groupbox > *:first-child {
+  border-top-color: #aaaaaa;
+  border-width: 1px;
+  border-radius: 4px 4px 0 0;
+}
+.onyx-groupbox > *:last-child {
+  border-radius: 0 0 4px 4px;
+}
+.onyx-groupbox > *:first-child:last-child {
+  border-radius: 4px;
+}
+.onyx-groupbox-header {
+  padding: 2px 10px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  /**/
+
+  background-color: #4c4c4c;
+  border: none;
+  background: #4c4c4c url(images/gradient.png) repeat-x 0 10px;
+}
+.onyx-groupbox .onyx-input-decorator {
+  display: block;
+}
+.onyx-groupbox > .onyx-input-decorator {
+  border-color: #aaaaaa;
+  border-width: 0 1px 1px 1px;
+  border-radius: 0;
+}
+.onyx-groupbox > .onyx-input-decorator:first-child {
+  border-width: 1px;
+  border-radius: 4px 4px 0 0;
+}
+.onyx-groupbox > .onyx-input-decorator:last-child {
+  border-radius: 0 0 4px 4px;
+}
+.onyx-groupbox > .onyx-input-decorator:first-child:last-child {
+  border-radius: 4px;
+}
+/* Input.css */
+.onyx-input-decorator {
+  padding: 6px 8px 10px 8px;
+  border-radius: 3px;
+  border: 1px solid;
+  border-color: rgba(0, 0, 0, 0.1);
+  margin: 0;
+}
+.onyx-input-decorator.onyx-focused {
+  box-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.3);
+  border-color: rgba(0, 0, 0, 0.3);
+  background-color: #ffffff;
+}
+.onyx-input-decorator.onyx-disabled {
+  /* FIXME: needed to color a disabled input placeholder. */
+
+  /*-webkit-text-fill-color: #888;*/
+
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+}
+.onyx-input-decorator > input {
+  /* reset */
+
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background-color: transparent;
+  font-size: 16px;
+  box-shadow: none;
+  /* FIXME: hack for styling reset on Android */
+
+  /* -webkit-appearance: caret;*/
+
+}
+.onyx-input-decorator.onyx-focused > input {
+  cursor: text;
+}
+.onyx-input-decorator.onyx-disabled > input {
+  cursor: default;
+}
+/* Menu.css */
+.onyx-menu,
+.onyx.onyx-menu {
+  min-width: 160px;
+  top: 100%;
+  left: 0;
+  margin-top: 2px;
+  padding: 3px 0;
+  border-radius: 3px;
+}
+.onyx-menu.onyx-menu-up {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 2px;
+}
+.onyx-toolbar .onyx-menu {
+  margin-top: 11px;
+  border-radius: 0 0 3px 3px;
+}
+.onyx-toolbar .onyx-menu.onyx-menu-up {
+  margin-top: 0;
+  margin-bottom: 10px;
+  border-radius: 3px 3px 0 0;
+}
+.onyx-menu-item {
+  display: block;
+  padding: 10px;
+}
+.onyx-menu-item:hover {
+  background: #284152;
+}
+.onyx-menu-divider,
+.onyx-menu-divider:hover {
+  margin: 6px 0;
+  padding: 0;
+  border-bottom: 1px solid #aaa;
+}
+.onyx-menu-label {
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: -moz-none;
+  user-select: none;
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+}
+.onyx-menu-label:hover {
+  background: none;
+}
+/* customize a toolbar to support menus */
+.onyx-menu-toolbar,
+.onyx-toolbar.onyx-menu-toolbar {
+  position: relative;
+  z-index: 10;
+  overflow: visible;
+}
+/* Picker.css */
+.onyx-picker-decorator .onyx-button {
+  padding: 10px 18px;
+}
+.onyx-picker {
+  top: 0;
+  margin-top: -3px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  color: black;
+  background: #e1e1e1;
+}
+.onyx-picker.onyx-menu-up {
+  top: auto;
+  bottom: 0;
+  margin-top: 3px;
+  margin-bottom: -3px;
+}
+.onyx-picker .onyx-menu-item {
+  text-align: center;
+}
+.onyx-picker .onyx-menu-item:hover {
+  background-color: transparent;
+}
+.onyx-picker .onyx-menu-item.selected,
+.onyx-picker .onyx-menu-item.active,
+.onyx-picker .onyx-menu-item:active:hover {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #cde7fe;
+  box-shadow: inset 0px 0px 3px rgba(0, 0, 0, 0.2);
+}
+.onyx-picker .onyx-menu-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+.onyx-picker:not(.onyx-flyweight-picker) .onyx-menu-item:first-child,
+.onyx-flyweight-picker :first-child > .onyx-menu-item {
+  border-top: none;
+}
+.onyx-picker:not(.onyx-flyweight-picker) .onyx-menu-item:last-child,
+.onyx-flyweight-picker :last-child > .onyx-menu-item {
+  border-bottom: none;
+}
+/* TextArea.css */
+.onyx-input-decorator > textarea {
+  /* reset */
+
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background-color: transparent;
+  font-size: 16px;
+  box-shadow: none;
+  /* Remove scrollbars and resize handle */
+
+  resize: none;
+  overflow: auto;
+  /* FIXME: hack for styling reset on Android */
+
+  /* -webkit-appearance: caret;*/
+
+}
+.onyx-input-decorator.onyx-focused > textarea {
+  cursor: text;
+}
+.onyx-input-decorator.onyx-disabled > textarea {
+  cursor: default;
+}
+.onyx-textarea {
+  /* need >=50px for scrollbar to be usable on mac */
+
+  min-height: 50px;
+}
+/* RichText.css */
+.onyx-input-decorator > .onyx-richtext {
+  /* reset */
+
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background-color: transparent;
+  font-size: 16px;
+  min-height: 20px;
+  min-width: 100px;
+  box-shadow: none;
+  /* FIXME: hack for styling reset on Android */
+
+  /* -webkit-appearance: caret;*/
+
+}
+.onyx-input-decorator.onyx-focused > .onyx-richtext {
+  cursor: text;
+}
+.onyx-input-decorator.onyx-disabled > .onyx-richtext {
+  cursor: default;
+}
+/* RadioButton.css */
+.onyx-radiobutton {
+  padding: 8px 12px;
+  margin: 0;
+  outline: 0;
+  font-size: 16px;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  /**/
+
+  background: #e7e7e7 url(images/gradient.png) repeat-x bottom;
+  /* IE8 */
+
+  border: 1px solid #333333;
+  border: 1px solid rgba(15, 15, 15, 0.2);
+  /* turn off right-border in a way IE8 ignores, because IE8 does not support :last-child */
+
+  border-right-color: rgba(0, 0, 0, 0);
+  box-shadow: inset 1px 1px 0px rgba(255, 255, 255, 0.2);
+}
+.onyx-radiobutton:first-child {
+  border-radius: 3px 0 0 3px;
+}
+.onyx-radiobutton:last-child {
+  border-radius: 0px 3px 3px 0px;
+  /* IE8 */
+
+  border-right: 1px solid #333333;
+  border-right: 1px solid rgba(15, 15, 15, 0.2);
+}
+.onyx-radiobutton.active {
+  color: #ffffff;
+  background: #0091f2 url(images/gradient-invert.png) repeat-x top;
+  border-top: 1px solid rgba(15, 15, 15, 0.6);
+  box-shadow: inset 1px 2px 2px rgba(0, 0, 0, 0.2);
+}
+/* Scrim.css */
+.onyx-scrim {
+  z-index: 1;
+  /*
+		note: by using pointer-events we allow tapping on scrim
+		while it is fading out; however, this requires any showing classes
+		to set pointer events to auto or scrim will not function as expected.
+	*/
+
+  pointer-events: none;
+}
+.onyx-scrim.onyx-scrim-translucent {
+  pointer-events: auto;
+  background-color: #000000;
+  opacity: 0.65;
+  filter: alpha(opacity=65);
+}
+.onyx-scrim.onyx-scrim-transparent {
+  pointer-events: auto;
+  background: transparent;
+}
+/* TabButton.css */
+.onyx-radiobutton.onyx-tabbutton {
+  padding: 8px 34px;
+  font-size: 20px;
+  border-radius: 0px;
+}
+/* ToggleButton.css */
+.onyx-toggle-button {
+  display: inline-block;
+  height: 32px;
+  line-height: 32px;
+  min-width: 64px;
+  vertical-align: middle;
+  text-align: center;
+  /* */
+
+  border-radius: 3px;
+  box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.4);
+  background: #8bba3d url(images/gradient-invert.png) repeat-x bottom;
+  background-size: auto 100%;
+  /* label */
+
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.onyx-toggle-button.off {
+  background-color: #b1b1b1 !important;
+}
+.onyx-toggle-button-knob {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  margin: 1px;
+  border-radius: 3px;
+  background: #f6f6f6 url(images/gradient.png) repeat-x;
+  background-size: auto 100%;
+}
+.onyx-toggle-button .onyx-toggle-button-knob {
+  box-shadow: -1px 0px 4px rgba(0, 0, 0, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  float: right;
+}
+.onyx-toggle-button.off .onyx-toggle-button-knob {
+  box-shadow: 1px 0px 4px rgba(0, 0, 0, 0.35), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  float: left;
+}
+.onyx-toggle-button.disabled,
+.onyx-icon-button.disabled {
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+}
+.onyx-toggle-content {
+  min-width: 32px;
+  padding: 0 6px;
+}
+.onyx-toggle-content.empty {
+  padding: 0;
+}
+.onyx-toggle-content.off {
+  float: right;
+}
+.onyx-toggle-content.on {
+  float: left;
+}
+/* Toolbar.css */
+.onyx-toolbar {
+  /*
+		line-height is unreliable for centering, instead
+		use vertical-align: middle to align
+		elements along a common centerline and use
+		padding to fill out the space.
+	*/
+
+  padding: 9px 8px 10px 8px;
+  border: 1px solid #3A3A3A;
+  background: #4c4c4c url(images/gradient.png) repeat-x 0 bottom;
+  background-size: contain;
+  color: #ffffff;
+  /**/
+
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 20px;
+}
+.onyx-toolbar-inline > *,
+.enyo-fittable-columns-layout.onyx-toolbar-inline > * {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 4px 6px 5px;
+  box-sizing: border-box;
+}
+.onyx-toolbar .onyx-icon-button {
+  margin: 3px 2px 1px;
+}
+.onyx-toolbar .onyx-button {
+  color: #f2f2f2;
+  background-color: #555656;
+  border-color: rgba(15, 15, 15, 0.5);
+  margin-top: 0;
+  margin-bottom: 0;
+  height: 36px;
+}
+.onyx-toolbar .onyx-input-decorator {
+  margin: 1px 3px;
+  box-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0px 6px 5px 6px;
+}
+.onyx-toolbar .onyx-input-decorator.onyx-focused {
+  box-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.3);
+  background-color: #ffffff;
+}
+.onyx-toolbar .onyx-input-decorator .onyx-input {
+  color: #e5e5e5;
+  font-size: 14px;
+}
+.onyx-toolbar .onyx-input-decorator .onyx-input:focus {
+  color: #000000;
+}
+.onyx-toolbar .onyx-input-decorator .onyx-input:focus::-webkit-input-placeholder {
+  color: #dddddd;
+}
+/* Tooltip.css */.onyx-tooltip {
+  z-index: 20;
+  left: 0;
+  padding: 4px 6px;
+  margin-top: 4px;
+  margin-left: -6px;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  background: #216593 url(images/gradient.png) repeat-x 0 bottom;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+/*move the tooltip over to the right when displaying the right arrow so it aligns better with the decorator*/
+.onyx-tooltip.right-arrow {
+  left: 30px;
+}
+/*prep the left & right arrows using before & after - left arrow uses before & right arrow uses after*/
+.onyx-tooltip::before {
+  content: '';
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  position: absolute;
+  top: -6px;
+  left: 16px;
+}
+.onyx-tooltip::after {
+  content: '';
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  position: absolute;
+  top: -6px;
+  margin-left: -12px;
+}
+/*The following 3 rules handle the left & right arrows when the tooltip is displayed below the activator*/
+.onyx-tooltip.below {
+  top: 100%;
+}
+.onyx-tooltip.below.right-arrow::after {
+  border-bottom: 6px solid #1D587F;
+  top: -6px;
+}
+.onyx-tooltip.below.left-arrow::before {
+  border-bottom: 6px solid #1D587F;
+  top: -6px;
+}
+/*The following 3 rules handle the left & right arrows when the tooltip is displayed above the activator*/
+.onyx-tooltip.above {
+  top: -100%;
+}
+.onyx-tooltip.above.right-arrow::after {
+  content: '';
+  border-top: 6px solid #1D587F;
+  top: 100%;
+}
+.onyx-tooltip.above.left-arrow::before {
+  content: '';
+  border-top: 6px solid #1D587F;
+  top: 100%;
+}
+/* ProgressBar.css */
+.onyx-progress-bar {
+  margin: 8px;
+  height: 8px;
+  border: 1px solid rgba(15, 15, 15, 0.2);
+  border-radius: 3px;
+  background: #b8b8b8 url(images/gradient-invert.png) repeat-x;
+  background-size: auto 100%;
+}
+.onyx-progress-bar-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: #58abef url(images/gradient.png) repeat-x;
+  background-size: auto 100%;
+}
+.onyx-progress-bar-bar.striped {
+  background-image: -webkit-gradient(linear, 0 100%, 100% 0, color-stop(0.25, rgba(255, 255, 255, 0.15)), color-stop(0.25, transparent), color-stop(0.5, transparent), color-stop(0.5, rgba(255, 255, 255, 0.15)), color-stop(0.75, rgba(255, 255, 255, 0.15)), color-stop(0.75, transparent), to(transparent));
+  background-image: -webkit-linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-image: -moz-linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-image: -ms-linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-image: -o-linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-image: linear-gradient(-45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-size: 40px 40px;
+}
+.onyx-progress-bar-bar.striped.animated {
+  -webkit-animation: progress-bar-stripes 2s linear infinite;
+  -moz-animation: progress-bar-stripes 2s linear infinite;
+  -o-animation: progress-bar-stripes 2s linear infinite;
+  animation: progress-bar-stripes 2s linear infinite;
+}
+@-webkit-keyframes progress-bar-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 40px 0;
+  }
+}
+@-moz-keyframes progress-bar-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 40px 0;
+  }
+}
+@-o-keyframes progress-bar-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 40px 0;
+  }
+}
+@keyframes progress-bar-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 40px 0;
+  }
+}
+/* ProgressButton.css */
+.onyx-progress-button {
+  position: relative;
+  height: 36px;
+  line-height: 36px;
+  color: #f1f1f1;
+  font-size: 16px;
+  text-overflow: ellipsis;
+}
+.onyx-progress-button-bar {
+  height: 36px;
+}
+.onyx-progress-button-icon {
+  display: inline-block;
+  position: absolute;
+  top: 2px;
+  right: 0;
+}
+.onyx-progress-button-client {
+  display: inline-block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 36px;
+  margin-left: 8px;
+}
+.onyx-progress-button-client > * {
+  display: inline-block;
+}
+/* Slider.css */
+.onyx-slider {
+  position: relative;
+  margin: 8px 20px;
+}
+.onyx-slider-taparea {
+  position: absolute;
+  top: -11px;
+  height: 28px;
+  width: 100%;
+}
+.onyx-slider-knob {
+  position: relative;
+  height: 40px;
+  width: 40px;
+  background: url(images/slider-handle.png) left top no-repeat;
+  margin: -23px -20px;
+}
+.onyx-slider-knob.active,
+.onyx-slider-knob:active:hover {
+  background-position: 0 -40px;
+}
+/* RangeSlider.css */
+.onyx-range-slider-knob {
+  top: -17px;
+}
+.onyx-range-slider-label {
+  position: relative;
+  top: -18px;
+  text-align: center;
+  white-space: nowrap;
+}
+/* Item.css */
+.onyx-item {
+  padding: 14px;
+}
+.onyx-highlight,
+.onyx-highlight.onyx-swipeable-item-content {
+  background-color: #dedfdf;
+}
+.enyo-selected,
+.enyo-selected.onyx-swipeable-item-content {
+  background-color: #c4e3fe;
+}
+.onyx-item.onyx-swipeable-item {
+  overflow: hidden;
+  padding: 0;
+}
+.onyx-swipeable-item-content {
+  background-color: #eaeaea;
+  box-sizing: border-box;
+  padding: 18px 6px;
+  min-height: 40px;
+}
+/* Spinner.css */
+.onyx-spinner {
+  width: 59px;
+  height: 58px;
+  display: inline-block;
+  background: url(images/spinner-dark.gif) no-repeat 0 0;
+}
+.onyx-spinner.onyx-light {
+  background: url(images/spinner-light.gif) no-repeat 0 0;
+}
+/* MoreToolbar.css */
+.onyx-more-toolbar {
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+.onyx-more-toolbar.active {
+  z-index: 11;
+}
+.onyx-more-menu {
+  left: auto;
+  right: 0px;
+  min-width: 0;
+}
+.onyx-more-toolbar .onyx-more-menu > * {
+  float: right;
+  clear: both;
+  margin: 5px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+.onyx-more-button {
+  background-image: url(/lib/onyx/images/more.png);
+  width: 32px;
+  height: 32px;
+}
+/* DatePicker.css */
+.onyx-datepicker-month {
+  min-width: 75px;
+}
+.onyx-datepicker-day {
+  min-width: 60px;
+}
+.onyx-datepicker-year {
+  min-width: 70px;
+}
+/* TimePicker.css */
+.onyx-timepicker-hour {
+  min-width: 60px;
+}
+.onyx-timepicker-minute {
+  min-width: 60px;
+}
+.onyx-timepicker-ampm {
+  min-width: 60px;
+}
+/* ButtonColors.css */
+.onyx-button.onyx-blue {
+  background-color: #35A8EE;
+  color: #F2F2F2;
+}
+.onyx-button.onyx-affirmative {
+  background-color: #91BA07;
+  color: #F2F2F2;
+}
+.onyx-button.onyx-negative {
+  background-color: #C51616;
+  color: #F2F2F2;
+}
+.onyx-button.onyx-dark {
+  background-color: #555656;
+  color: #F2F2F2;
+}
+.onyx-button.onyx-light {
+  background-color: #cacaca;
+  color: #2F2F2F;
+}
+/* some default colors */
+.onyx-dark {
+  background-color: #555656;
+}
+.onyx-light {
+  background-color: #cacaca;
+}
+.onyx-green {
+  background-color: #91BA07;
+}
+.onyx-red {
+  background-color: #C51616;
+}
+.onyx-blue {
+  background-color: #35A8EE;
+}
+
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/fittable/source/FittableLayout.css */
+
+.enyo-fittable-rows-layout {
+	position: relative;
+}
+
+.enyo-fittable-rows-layout > * {
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	/* float when not stretched */
+	float: left;
+	clear: both;
+}
+
+/* non-floating when stretched */
+.enyo-fittable-rows-layout.enyo-stretch > * {
+	float: none;
+	clear: none;
+}
+
+/* setting to enforce margin collapsing */
+/* NOTE: rows cannot have margin left/right */
+.enyo-fittable-rows-layout.enyo-stretch.enyo-margin-expand > * {
+	float: left;
+	clear: both;
+	width: 100%;
+	/* note: harsh resets */
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
+.enyo-fittable-columns-layout {
+	position: relative;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.enyo-fittable-columns-layout.enyo-center {
+	text-align: center;
+}
+
+.enyo-fittable-columns-layout > * {
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	vertical-align: top;
+	display: inline-block;
+	white-space: normal;
+}
+
+.enyo-fittable-columns-layout.enyo-tool-decorator > * {
+	vertical-align: middle;
+}
+
+/* repair clobbered white-space setting for pre, code */
+.enyo-fittable-columns-layout > pre, .enyo-fittable-columns-layout > code {
+	white-space: pre;
+}
+
+.enyo-fittable-columns-layout > .enyo-fittable-columns-layout, .enyo-fittable-columns-layout > .onyx-toolbar-inline {
+	white-space: nowrap;
+}
+
+/* NOTE: columns cannot have margin top/bottom */
+.enyo-fittable-columns-layout.enyo-stretch > * {
+	height: 100%;
+	/* note: harsh resets */
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/List.css */
+
+.enyo-list {
+	position: relative;
+}
+
+.enyo-list-port {
+	overflow: hidden;
+	position: relative;
+	height: 1000000px;
+}
+
+.enyo-list-page {
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/PulldownList.css */
+
+.enyo-list-pulldown {
+	position: absolute;
+	bottom: 100%;
+	left: 0;
+	right: 0;
+}
+
+.enyo-puller {
+	position: relative;
+	height: 50px;
+	font-size: 22px;
+	color: #444;
+	padding: 20px 0 0px 34px;
+}
+
+.enyo-puller-text {
+	position: absolute;
+	left: 80px;
+	top: 22px;
+}
+
+.enyo-puller-arrow {
+	position: relative;
+	background: #444;
+	width: 7px;
+	height: 28px;
+	transition: transform 0.3s;
+	-webkit-transition: -webkit-transform 0.3s;
+	-moz-transition: -moz-transform 0.3s;
+	-o-transition: -o-transform 0.3s;
+	-ms-transition: -ms-transform 0.3s;
+}
+
+.enyo-puller-arrow:after {
+	content: " ";
+	height: 0;
+	width: 0;
+	position: absolute;
+	border: 10px solid transparent;
+	border-bottom-color: #444;
+	bottom: 100%;
+	left: 50%;
+	margin-left: -10px;
+}
+
+.enyo-puller-arrow-up {
+	transform: rotate(0deg);
+	-webkit-transform: rotate(0deg);
+	-moz-transform: rotate(0deg);
+	-o-transform: rotate(0deg);
+	-ms-transform: rotate(0deg);
+}
+
+.enyo-puller-arrow-down {
+	transform: rotate(180deg);
+	-webkit-transform: rotate(180deg);
+	-moz-transform: rotate(180deg);
+	-o-transform: rotate(180deg);
+	-ms-transform: rotate(180deg);
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/panels/source/arrangers/Arranger.css */
+
+.enyo-arranger {
+	position: relative;
+	overflow: hidden;
+}
+
+.enyo-arranger.enyo-fit {
+	position: absolute;
+}
+
+.enyo-arranger > * {
+	position: absolute;
+	left: 0;
+	top: 0;
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+}
+
+.enyo-arranger-fit > * {
+	/*
+	override any width/height set on panels
+	*/
+	width: 100% !important;
+	height: 100% !important;
+	min-width: 0 !important;
+	max-width: auto !important;
+	min-height: 0 !important;
+	max-height: auto !important;
+}
+
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/panels/source/Panels.css */
+
+.enyo-panels {
+}
+
+.enyo-panels-fit-narrow {
+}
+
+@media all and (max-width: 800px) {
+	.enyo-panels-fit-narrow > * {
+		min-width: 100%;
+		max-width: 100%;
+	}
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/tree/source/Node.css */
+
+.enyo-node {
+	cursor: default;
+	padding: 4px;
+}
+
+.enyo-node img {
+	vertical-align: middle;
+	padding-right: 6px;
+}
+
+.enyo-node-box {
+	overflow: hidden;
+}
+
+.enyo-node-client {
+	position: relative;
+}
+
+.enyo-animate .enyo-node-box, .enyo-animate .enyo-node-client {
+	transition-property: height, top;
+	transition-duration: 0.2s, 0.2s;
+	-moz-transition-property: height, top;
+	-moz-transition-duration: 0.2s, 0.2s;
+	-o-transition-property: height, top;
+	-o-transition-duration: 0.2s, 0.2s;
+	-webkit-transition-property: height, top;
+	-webkit-transition-duration: 0.2s, 0.2s;
+}
+
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/imageview/source/ImageViewPin.css */
+
+
+.pinDebug {
+	background:yellow;
+	border:1px solid yellow;
+}

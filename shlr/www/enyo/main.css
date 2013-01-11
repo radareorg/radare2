@@ -1,0 +1,30 @@
+.app-panels > * {
+    width: 320px;
+      background-color: #EAEAEA;
+      box-shadow: -4px -4px 4px rgba(0,0,0,0.3);
+}
+
+.menu-button {
+  clear:none;
+  float:left;
+  margin:10px !important;
+  width:150px;
+}
+
+.rowline {
+	width:200px
+}
+
+@media all and (max-width: 600px) {
+    .app-panels > * {
+        min-width: 100%;
+        max-width: 100%;
+    }
+}
+
+.onyx-sample-tools {
+	padding-bottom:10px;
+}
+.onyx-sample-tools > * {
+	margin: 3px;
+}
