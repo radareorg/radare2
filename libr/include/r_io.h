@@ -128,6 +128,8 @@ typedef struct r_io_t {
 	//XXX: Need by rap
 	void *user;
 	int (*core_cmd_cb)(void *user, const char *str);
+	RCache *buffer;
+	int buffer_enabled;
 } RIO;
 
 //struct r_io_plugin_fd_t {
@@ -227,6 +229,7 @@ R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, i
 R_API int r_io_redirect(RIO *io, const char *file);
 R_API int r_io_set_fd(RIO *io, RIODesc *fd);
 R_API int r_io_set_fdn(RIO *io, int fd);
+R_API const ut8* r_io_get_raw (RIO *io, ut64 addr, int *len);
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len);
 R_API int r_io_read(RIO *io, ut8 *buf, int len);
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len);
@@ -320,6 +323,12 @@ R_API void r_io_desc_add(RIO *io, RIODesc *desc); //int fd, const char *file, in
 R_API int r_io_desc_del(RIO *io, int fd);
 R_API RIODesc *r_io_desc_get(RIO *io, int fd);
 //R_API int r_io_desc_generate(RIO *io);
+
+/* buffer.c */
+R_API void r_io_buffer_close(RIO* io);
+R_API int r_io_buffer_load(RIO* io, ut64 addr, int len);
+R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len);
+R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len);
 
 /* plugins */
 extern RIOPlugin r_io_plugin_procpid;

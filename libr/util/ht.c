@@ -43,10 +43,24 @@
  * p and p-2 are both prime.  These tables are sized to have an extra 10%
  * free to avoid exponential performance degradation as the hash table fills
  */
+#if HT64
+#define utH ut64
+#define ht_(name) r_hashtable64_##name 
+#define RHT RHashTable64
+#define RHTE RHashTable64Entry
+#else
+#define utH ut32
+#define ht_(name) r_hashtable_##name 
+#define RHT RHashTable
+#define RHTE RHashTableEntry
+#endif
 
-static const ut32 deleted_data;
+//static const utH deleted_data;
+// HACK :D .. but.. use magic instead?
+#define deleted_data hash_sizes
 
 static const struct {
+// XXX: this can be ut32 ...
    ut32 max_entries, size, rehash;
 } hash_sizes[] = {
     { 2,		5,		3	  },
@@ -92,13 +106,13 @@ static const struct {
  * Returns NULL if no entry is found.  Note that the data pointer may be
  * modified by the user.
  */
-static RHashTableEntry* r_hashtable_search(RHashTable *ht, ut32 hash) {
-	ut32 double_hash, hash_address;
+static RHTE* ht_(search)(RHT *ht, utH hash) {
+	utH double_hash, hash_address;
 	if (ht == NULL)
 		return NULL;
 	hash_address = hash % ht->size;
 	do {
-		RHashTableEntry *entry = ht->table + hash_address;
+		RHTE *entry = ht->table + hash_address;
 		if (entry_is_free (entry))
 			return NULL;
 		if (entry_is_present (entry) && entry->hash == hash)
@@ -111,9 +125,9 @@ static RHashTableEntry* r_hashtable_search(RHashTable *ht, ut32 hash) {
 	return NULL;
 }
 
-static void r_hashtable_rehash(RHashTable *ht, int new_size_index) {
-	RHashTable old_ht = *ht;
-	RHashTableEntry *e;
+static void ht_(rehash)(RHT *ht, int new_size_index) {
+	RHT old_ht = *ht;
+	RHTE *e;
 	if (new_size_index >= ARRAY_SIZE (hash_sizes))
 		return;
 	// XXX: This code is redupped! fuck't
@@ -128,13 +142,13 @@ static void r_hashtable_rehash(RHashTable *ht, int new_size_index) {
 	ht->deleted_entries = 0;
 	for (e = old_ht.table; e != old_ht.table + old_ht.size; e++) {
 		if (entry_is_present (e))
-			r_hashtable_insert (ht, e->hash, e->data);
+			ht_(insert) (ht, e->hash, e->data);
 	}
 	free (old_ht.table);
 }
 
-R_API RHashTable* r_hashtable_new(void) {
-	RHashTable *ht = R_NEW (RHashTable);
+R_API RHT* ht_(new)(void) {
+	RHT *ht = R_NEW (RHT);
 	if (!ht) return NULL;
 	// TODO: use slices here
 	ht->size = hash_sizes[0].size;
@@ -151,12 +165,12 @@ R_API RHashTable* r_hashtable_new(void) {
 	return ht;
 }
 
-R_API void r_hashtable_free(RHashTable *ht) {
+R_API void ht_(free)(RHT *ht) {
 	if (ht) free (ht->table), free (ht);
 }
 
-R_API void *r_hashtable_lookup(RHashTable *ht, ut32 hash) {
-	RHashTableEntry *entry = r_hashtable_search (ht, hash);
+R_API void *ht_(lookup)(RHT *ht, utH hash) {
+	RHTE *entry = ht_(search) (ht, hash);
 	return entry? entry->data : NULL;
 }
 
@@ -166,18 +180,18 @@ R_API void *r_hashtable_lookup(RHashTable *ht, ut32 hash) {
  * Note that insertion may rearrange the table on a resize or rehash,
  * so previously found hash_entries are no longer valid after this function.
  */
-R_API boolt r_hashtable_insert(RHashTable *ht, ut32 hash, void *data) {
-	ut32 hash_address;
+R_API boolt ht_(insert) (RHT *ht, utH hash, void *data) {
+	utH hash_address;
 
 	if (ht->entries >= ht->max_entries)
-		r_hashtable_rehash (ht, ht->size_index + 1);
+		ht_(rehash) (ht, ht->size_index + 1);
 	else if (ht->deleted_entries + ht->entries >= ht->max_entries)
-		r_hashtable_rehash (ht, ht->size_index);
+		ht_(rehash) (ht, ht->size_index);
 
 	hash_address = hash % ht->size;
 	do {
-		RHashTableEntry *entry = ht->table + hash_address;
-		ut32 double_hash;
+		RHTE *entry = ht->table + hash_address;
+		utH double_hash;
 
 		if (!entry_is_present (entry)) {
 			if (entry_is_deleted (entry))
@@ -187,7 +201,6 @@ R_API boolt r_hashtable_insert(RHashTable *ht, ut32 hash, void *data) {
 			ht->entries++;
 			return R_TRUE;
 		}
-
 		double_hash = hash % ht->rehash;
 		if (double_hash == 0)
 			double_hash = 1;
@@ -200,8 +213,8 @@ R_API boolt r_hashtable_insert(RHashTable *ht, ut32 hash, void *data) {
 	return R_FALSE;
 }
 
-R_API void r_hashtable_remove(RHashTable *ht, ut32 hash) {
-	RHashTableEntry *entry = r_hashtable_search (ht, hash);
+R_API void ht_(remove) (RHT *ht, utH hash) {
+	RHTE *entry = ht_(search) (ht, hash);
 	if (entry) {
 		entry->data = (void *) &deleted_data;
 		ht->entries--;
@@ -213,25 +226,24 @@ R_API void r_hashtable_remove(RHashTable *ht, ut32 hash) {
 int main () {
 	const char *str;
 	int ret;
-	RHashTable *ht = r_hashtable_new ();
+	RHT *ht = ht_(new) ();
 #define HASH 268453705
 
-	ret = r_hashtable_insert (ht, HASH, "patata");
+	ret = ht_(insert) (ht, HASH, "patata");
 	if (!ret)
 		printf ("Cannot reinsert !!1\n");
 
-	str = r_hashtable_lookup (ht, HASH);
+	str = ht_(lookup) (ht, HASH);
 	if (str) printf ("String is (%s)\n", str);
 	else printf ("Cannot find string\n");
 
-	r_hashtable_remove (ht, HASH);
+	ht_(remove) (ht, HASH);
 
-	str = r_hashtable_lookup (ht, HASH);
+	str = ht_(lookup) (ht, HASH);
 	if (str) printf ("String is (%s)\n", str);
 	else printf("Cannot find string which is ok :)\n");
 
-	r_hashtable_search (ht, HASH);
-
-	r_hashtable_free (ht);
+	ht_(search) (ht, HASH);
+	ht_(free) (ht);
 }
 #endif

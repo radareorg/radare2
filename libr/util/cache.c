@@ -1,61 +1,74 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2013 - pancake */
 
-// TODO: Use r_list instead of list.h
 #include <r_util.h>
+// TODO: optimize reallocs.. store RBuffer info.. wait. extend r_buf_ for that?
 
-R_API struct r_cache_t *r_cache_new() {
-	RCache *a = R_NEW (RCache);
-	if (a) INIT_LIST_HEAD (&a->items);
-	return a;
+R_API RCache *r_cache_new() {
+	RCache *c = R_NEW (RCache);
+	c->buf = NULL;
+	c->base = 0;
+	c->len = 0;
+	return c;
 }
 
-R_API void r_cache_free(struct r_cache_t *a) {
-	free(a);
+R_API void r_cache_free(RCache *c) {
+	free (c->buf);
+	free (c);
 }
 
-R_API char *r_cache_get(struct r_cache_t *c, ut64 addr) {
-	struct list_head *pos;
-	list_for_each_prev (pos, &c->items) {
-		struct r_cache_item_t *h = list_entry (pos, struct r_cache_item_t, list);
-		if (h->addr == addr)
-			return h->str;
+R_API const ut8* r_cache_get(RCache *c, ut64 addr, int *len) {
+	if (!c->buf)
+		return NULL;
+	if (len) *len = c->base - addr;
+	if (addr<c->base)
+		return NULL;
+	if (addr>(c->base+c->len))
+		return NULL;
+	if (len) *len = c->len - (addr-c->base);
+//eprintf ("4 - %d\n", (addr-c->base));
+	return c->buf + (addr-c->base);
+}
+
+R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
+	if (c->buf == NULL) {
+		c->buf = malloc (len);
+		if (!c->buf) return 0;
+		memcpy (c->buf, buf, len);
+		c->base = addr;
+		c->len = len;
+	} else
+	if (addr < c->base) {
+		ut8 *b;
+		int baselen = (c->base - addr);
+		int newlen = baselen + (len > (c->len+newlen))? len: c->base;
+		// XXX expensive heap usage. must simplify
+		b = malloc (newlen);
+		if (!b) return 0;
+		memset (b, 0xff, newlen);
+		memcpy (b+baselen, c->buf, c->len);
+		memcpy (b, buf, len);
+		free (c->buf);
+		c->buf = b;
+		c->base = addr;
+		c->len = newlen;
+	} else if ((addr+len)>(c->base+c->len)) {
+		ut8 *b;
+		int baselen = (addr - c->base);
+		int newlen = baselen + len;
+		b = realloc (c->buf, newlen);
+		if (!b) return 0;
+		memcpy (b+baselen, buf, len);
+		c->buf = b;
+		c->len = newlen;
+	} else {
+		memcpy (c->buf, buf, len);
 	}
-	return NULL;
+	return c->len;
 }
 
-R_API int r_cache_set(struct r_cache_t *c, ut64 addr, char *str) {
-	struct r_cache_item_t *a = R_NEW (struct r_cache_item_t);
-	a->addr = addr;
-	a->str = strdup (str);
-	list_add_tail (&(a->list), &(c->items));
-	return R_TRUE;
-}
-
-R_API int r_cache_validate(struct r_cache_t *c, ut64 start, ut64 end) {
-	int ret = R_FALSE;
-	struct list_head *pos, *n;
-
-	list_for_each_safe (pos, n, &c->items) {
-		struct r_cache_item_t *h = (struct r_cache_item_t *)list_entry (pos, struct r_cache_item_t, list);
-		if (h->addr <start || h->addr > end) {
-			free (h->str);
-			list_del (&h->list);
-			ret = R_TRUE;
-		}
-	}
-	return ret;
-}
-
-R_API int r_cache_invalidate(struct r_cache_t *c, ut64 start, ut64 end) {
-	int ret = R_FALSE;
-	struct list_head *pos, *n;
-	list_for_each_safe (pos, n, &c->items) {
-		struct r_cache_item_t *h = list_entry (pos, struct r_cache_item_t, list);
-		if (h->addr >=start && h->addr <= end) {
-			free (h->str);
-			list_del (&h->list);
-			ret = R_TRUE;
-		}
-	}
-	return ret;
+R_API void r_cache_flush (RCache *c) {
+	c->base = 0;
+	c->len = 0;
+	free (c->buf);
+	c->buf = NULL;
 }

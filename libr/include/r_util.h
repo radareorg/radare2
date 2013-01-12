@@ -83,17 +83,11 @@ typedef struct r_buf_t {
 } RBuffer;
 
 /* r_cache */
-// TOTHINK: move into a separated library?
-typedef struct r_cache_item_t {
-	ut64 addr;
-	char *str;
-	struct list_head list;
-} RCacheItem;
 
 typedef struct r_cache_t {
-	ut64 start;
-	ut64 end;
-	struct list_head items;
+	ut64 base;
+	ut8 *buf;
+	ut64 len;
 } RCache;
 
 typedef struct r_prof_t {
@@ -159,7 +153,6 @@ enum {
 	R_SYS_BITS_32 = 4,
 	R_SYS_BITS_64 = 8,
 };
-
 
 /** hashtable **/
 typedef struct r_hashtable_entry_t {
@@ -308,10 +301,9 @@ R_API void r_poolfactory_free(RPoolFactory *pf);
 R_API int r_mem_count(const ut8 **addr);
 R_API RCache* r_cache_new();
 R_API void r_cache_free(RCache *c);
-R_API char *r_cache_get(RCache *c, ut64 addr);
-R_API int r_cache_set(RCache *c, ut64 addr, char *str);
-R_API int r_cache_validate(RCache *c, ut64 from, ut64 to);
-R_API int r_cache_invalidate(RCache *c, ut64 from, ut64 to);
+R_API const ut8* r_cache_get(RCache *c, ut64 addr, int *len);
+R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len);
+R_API void r_cache_flush (RCache *c);
 
 R_API void r_prof_start(RProfile *p);
 R_API double r_prof_end(RProfile *p);

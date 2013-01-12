@@ -15,7 +15,7 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size) {
 	}
 	buf = malloc (bs);
 	r_cons_break (NULL, NULL);
-	for (i=0; i<size; ) {
+	for (i=0; i<size; i+=bs) {
 		if (r_cons_singleton ()->breaked)
 			break;
 		if ((i+bs)>size)
@@ -25,7 +25,6 @@ R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size) {
 			eprintf ("write error\n");
 			break;
 		}
-		i += bs;
 	}
 	eprintf ("dumped 0x%"PFMT64x" bytes\n", i);
 	r_cons_break_end ();

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 - pancake */
+/* radare - LGPL - Copyright 2008-2013 - pancake */
 
 #include "r_io.h"
 #include "r_util.h"
@@ -10,6 +10,8 @@
 R_API RIO *r_io_new() {
 	RIO *io = R_NEW (RIO);
 	if (!io) return NULL;
+	io->buffer = r_cache_new (); // TODO: use RBuffer here
+	io->buffer_enabled = 0;
 	io->zeromap = R_FALSE; // if true, then 0 is mapped with contents of file
 	io->fd = NULL;
 	io->write_mask_fd = -1;
@@ -57,6 +59,7 @@ R_API RIO *r_io_free(RIO *io) {
 	/* TODO: memory leaks */
 	r_list_free (io->sections);
 	r_list_free (io->maps);
+	r_cache_free (io->buffer);
 	r_io_desc_fini (io);
 	free (io);
 	return NULL;
@@ -159,6 +162,8 @@ R_API int r_io_set_fdn(RIO *io, int fd) {
 }
 
 static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
+	if (io->buffer_enabled)
+		return r_io_buffer_read (io, io->off, buf, len);
 	if (io->plugin && io->plugin->read)
 		return io->plugin->read (io, io->fd, buf, len);
 	return read (io->fd->fd, buf, len);
@@ -173,15 +178,19 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	 */
 	return r_io_read_at (io, io->off, buf, len);
 }
-
 // XXX: this is buggy. must use seek+read
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret, l, olen = len;
 	int w = 0;
 
+	io->off = addr; // HACK
 	//r_io_seek (io, addr, R_IO_SEEK_SET);
 	// XXX: this is buggy!
 	memset (buf, 0xff, len);
+
+	if (io->buffer_enabled) {
+		return r_io_buffer_read (io, addr, buf, len);
+	}
 	while (len>0) {
 		int ms;
 		ut64 last = r_io_section_next (io, addr);
@@ -311,15 +320,19 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 	return ret;
 }
 
-R_API int r_io_write_at(struct r_io_t *io, ut64 addr, const ut8 *buf, int len) {
+R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	if (r_io_seek (io, addr, R_IO_SEEK_SET)<0)
 		return -1;
 	return r_io_write (io, buf, len);
 }
 
-R_API ut64 r_io_seek(struct r_io_t *io, ut64 offset, int whence) {
+R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	int posix_whence = SEEK_SET;
 	ut64 ret = UT64_MAX;
+	if (io->buffer_enabled) {
+		io->off = offset;
+		return offset;
+	}
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		posix_whence = SEEK_SET;
@@ -388,7 +401,7 @@ R_API int r_io_system(RIO *io, const char *cmd) {
 }
 
 // TODO: remove int fd here???
-R_API int r_io_close(struct r_io_t *io, RIODesc *fd) {
+R_API int r_io_close(RIO *io, RIODesc *fd) {
 	if (io == NULL || fd == NULL)
 		return -1;
 	int nfd = fd->fd;

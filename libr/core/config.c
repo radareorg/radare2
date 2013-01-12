@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_core.h>
 
@@ -41,6 +41,22 @@ static int config_iomaxblk_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->blocksize_max = node->i_value;
+	return R_TRUE;
+}
+
+static int config_iobuffer_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (node->i_value) {
+		ut64 from, to;
+		from = r_config_get_i (core->config, "io.buffer.from");
+		to = r_config_get_i (core->config, "io.buffer.to");
+		if (from>=to) {
+			eprintf ("ERROR: io.buffer.from >= io.buffer.to"
+				" (0x%"PFMT64x" >= 0x%"PFMT64x")\n", from, to);
+		} else r_io_buffer_load (core->io, from, (int)(to-from));
+	} else r_io_buffer_close (core->io);
+	r_core_block_read (core, 0);
 	return R_TRUE;
 }
 
@@ -729,7 +745,12 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_i_cb (cfg, "search.align", 0, &config_searchalign_callback);
 	r_config_desc (cfg, "search.align", "Only catch aligned search hits");
 
-	sprintf (buf, "%d", R_CORE_BLOCKSIZE_MAX);
+	r_config_set_cb (cfg, "io.buffer", "false", &config_iobuffer_callback);
+	r_config_desc (cfg, "io.buffer", "load and use buffer cache if enabled");
+	r_config_set_i (cfg, "io.buffer.from", 0);
+	r_config_desc (cfg, "io.buffer.from", "lower address of buffered cache");
+	r_config_set_i (cfg, "io.buffer.to", 0);
+	r_config_desc (cfg, "io.buffer.to", "higher address of buffered cache");
 	r_config_set_cb (cfg, "io.zeromap", buf, &config_iozeromap_callback);
 	r_config_desc (cfg, "io.zeromap", "double map the last opened file to address zero");
 	r_config_set_cb (cfg, "io.maxblk", buf, &config_iomaxblk_callback);
