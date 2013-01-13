@@ -209,7 +209,7 @@ static void arm_opcode_parse(ArmOpcode *ao, const char *str) {
 	int i;
 	memset (ao, 0, sizeof (ArmOpcode));
 	if (strlen (str)+1>=sizeof (ao->op))
-		return 0;
+		return;
 	strncpy (ao->op, str, sizeof (ao->op)-1);
 	strcpy (ao->opstr, ao->op);
 	ao->a[0] = strchr (ao->op, ' ');

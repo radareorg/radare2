@@ -256,8 +256,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	//eprintf ("FUNC 0x%08"PFMT64x"\n", at+fcnlen);
 	do {
 		// check io error
-		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, 4) != 4))
+		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, 4) != 4)) {
 			goto error;
+		}
 		// real read.
 		if (!r_core_read_at (core, at+fcnlen, buf, ANALBS))
 			goto error;

@@ -203,13 +203,16 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 			memset (buf+w, 0xff, l);
 			return -1;
 		}
-		if (!io->zeromap)
+#if 0
+		if (io->zeromap)
 			if (!r_io_map_get (io, addr+w)) {
-				if (r_io_section_getv (io, addr+w)) {
+				if (addr==0||r_io_section_getv (io, addr+w)) {
 					memset (buf+w, 0xff, l);
+eprintf ("RETRERET\n");
 					return -1;
 				}
 			}
+#endif
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);

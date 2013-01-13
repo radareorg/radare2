@@ -49,13 +49,55 @@ enyo.kind({
 });
 
 enyo.kind({
+  name: "Disassembler",
+  kind: "Scroller",
+  tag: "div",
+  style:"margin-left:16px",
+  data: [ "pop eax", "push ecx", "jmp 0x80040", "call 0x80404", "xor eax, eax", "int 0x80" ],
+  components: [
+    {tag: "h2",content: "TODO : Disasm"},
+// 3
+    {kind: "List", name:"list", style:"height:100%", realtimeFit:false, onSetupItem: "setupItem", components: [
+      {kind: "List", name: "list", style:"height:400px", realtimeFit:false, onSetupItem: "setupItem", components: [
+        {kind: "onyx.Item", layoutKind: "HFlexLayout", style:"padding:0px", components: [
+          {name:"separator", tag: "hr", style:"height:1px;visibility:hidden"},
+          {kind: "onyx.Button", name: "button", style: "width:100%", fit:true, active: true, ontap: "rowTap"}
+        ]}
+      ]}
+    ]}
+  ],
+  setupItem: function (inSender, inIndex) {
+      var item = this.data[inIndex.index];
+      if (item.separator) {
+        this.$.separator.setStyle("visibility:visible;border:0;background-color:#404040");
+      } else {
+        this.$.separator.setStyle("visibility:hidden");
+      }
+      this.$.button.setContent (item.name);
+      return true;
+  }
+});
+enyo.kind({
+  name: "Console",
+  kind: "Scroller",
+  tag: "div",
+  style:"margin-left:16px",
+  components: [
+    {tag: "h2",content: "TODO"},
+                                        {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
+                                                {kind: "onyx.Input", value: 0, onchange: "gotoPanel"}
+                                        ]},
+  ]
+});
+
+enyo.kind({
   name: "Preferences",
   classes: "panels-sample-sliding-content",
   kind: "Scroller",
   tag: "div",
   style:"margin-left:16px",
   components: [
-    {kind: "FittableRows", fit: false, classes: "fittable-sample-box fittable-sample-mtb fittable-sample-o", components: [
+    {kind: "FittableRows", fit: false, components: [
       {tag: "h2", content: "CPU" }
       ,{kind: "onyx.InputDecorator", components: [
          {tag: "p", content: "Arch", classes:"rowline"},
@@ -126,6 +168,11 @@ enyo.kind({
   tag: "div",
   classes: "enyo-fit",
   style: "background-color: #c0c0c0",
+  data: null,
+  refresh: function () {
+    this.$.list.setCount (this.data.length);
+    this.$.list.refresh ();
+  },
   buttonClicked: function (x) {
     alert ("let's play!");
   },
@@ -160,10 +207,10 @@ enyo.kind({
                 ]},
                 {kind: "Panels", name:"samplePanels", fit:true, draggable: false,
 				realtimeFit: true, classes: "panels-sample-panels enyo-border-box", components: [
-                        {name:"page0", content:0, style:"background:red;"},
-                        {name:"page1", content:1, style:"background:orange;"},
-                        {name:"page2", content:2, style:"background:yellow;"},
-                        {name:"page3", content:3, style:"background:green;"},
+                        {kind:"Disassembler", name: "pageDisassembler"},
+                        {kind:"Assembler", name:"pageAssembler"},
+                        {kind:"Hexdump", name: "pageHexdump"},
+                        {kind:"Console", name: "pageConsole"},
                         {kind:"Preferences", name:"pagePreferences"},
                         {kind:"About", name: "pageAbout"},
                 ]}
@@ -172,7 +219,7 @@ enyo.kind({
       this.inherited(arguments);
       // this.$.samplePanels.setArrangerKind ("CardArranger");
       // if (enyo.Panels.isScreenNarrow()) {
-      this.$.samplePanels.setIndex(1);
+      this.$.samplePanels.setIndex(0);
     },
     rendered: function() {
       this.inherited(arguments);
@@ -180,12 +227,18 @@ enyo.kind({
     openPage: function(idx) {
       var str, sp = this.$.samplePanels;
       eval ("var x = this.$.page"+idx);
+  
+// TODO. simplify
       switch (idx) {
+	case "Disassembler": idx = 1; break;
+	case "Assembler": idx = 2; break;
+	case "Hexdump": idx = 3; break;
+	case "Console": idx = 4; break;
 	case "Settings": idx = 4; break;
 	case "About": idx = 5; break;
       }
       //x.setContent (str);
-      sp.setIndex (idx);
+      sp.setIndex (idx-2);
     },
     gotoPanel: function() {
       this.openPage (this.$.input.getValue());
@@ -246,26 +299,16 @@ enyo.kind({
   style: "width: 220px;height:100%",
   components: [
     {tag: "h2", content: "crackme01", style: "margin-left:12px; margin-top:0px;margin-bottom:50px;height:10px;width:190px,overflow:hidden" },
-    //{kind: "List", name:"list", style:"height:100%", realtimeFit:false, onSetupItem: "setupItem", components: [
      {kind: "Group", onActivate:"buttonActivated", classes: "enyo-border-box group", defaultKind: "onyx.Button", highlander: true, components: [
-       {content: "Disassembler", active: true, classes: "onyx-dark menu-button" },
-       {content: "Assembler", classes: "onyx-dark menu-button" },
-       {content: "Hexdump", classes: "onyx-dark menu-button" },
-       {content: "Console", classes: "onyx-dark menu-button" },
-       {content: "Settings", classes: "onyx-dark menu-button", ontap:"openAbout", name: "Settings" },
-       {content: "About", classes: "onyx-dark menu-button" , ontap: "openAbout", name:"About"},
+       {content: "Disassembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Disassembler", active: true},
+       {content: "Assembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Assembler" },
+       {content: "Hexdump", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Hexdump" },
+       {content: "Console", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Console" },
+       {content: "Settings", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Settings" },
+       {content: "About", classes: "onyx-dark menu-button" , ontap: "openPanel", name:"About"},
      ]}
-
-/*
-    {kind: "List", name: "list", style:"height:400px", realtimeFit:false, onSetupItem: "setupItem", components: [
-      {kind: "onyx.Item", layoutKind: "HFlexLayout", style:"padding:0px", components: [
-        {name:"separator", tag: "hr", style:"height:1px;visibility:hidden"},
-        {kind: "onyx.Button", name: "button", style: "width:100%", fit:true, active: true, ontap: "rowTap"}
-      ]}
-    ]}
-*/
   ],
-  openAbout: function (x) {
+  openPanel: function (x) {
     if (enyo.Panels.isScreenNarrow())
       this.ra.setIndex (1);
     if (this.openCallback)
@@ -293,16 +336,6 @@ enyo.kind({
     this.$.list.refresh ();
 */
   },
-  setupItem: function (inSender, inIndex) {
-      var item = this.data[inIndex.index];
-      if (item.separator) {
-        this.$.separator.setStyle("visibility:visible;border:0;background-color:#404040");
-      } else {
-        this.$.separator.setStyle("visibility:hidden");
-      }
-      this.$.button.setContent (item.name);
-      return true;
-  }
 });
 
 enyo.kind ({
@@ -327,14 +360,16 @@ enyo.kind ({
         mp.openPage (idx);
       };
       this.$.lp.ra = this;
-      this.$.lp.data = [
-        { name: "Disassembly" },
+      var data = [
+        { name: "Disassembler", active: true },
         { name: "Assembler" },
         { name: "Hexdump" },
         { name: "Console" },
         { name: "Settings", separator: true },
         { name: "About" }
       ];
+      this.$.lp.data = data;
+      this.$.mp.data = data;
       this.$.lp.refresh ();
   }
 });

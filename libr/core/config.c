@@ -751,6 +751,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "io.buffer.from", "lower address of buffered cache");
 	r_config_set_i (cfg, "io.buffer.to", 0);
 	r_config_desc (cfg, "io.buffer.to", "higher address of buffered cache");
+	sprintf (buf, "0");
 	r_config_set_cb (cfg, "io.zeromap", buf, &config_iozeromap_callback);
 	r_config_desc (cfg, "io.zeromap", "double map the last opened file to address zero");
 	r_config_set_cb (cfg, "io.maxblk", buf, &config_iomaxblk_callback);

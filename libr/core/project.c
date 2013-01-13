@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 - pancake */
+/* radare - LGPL - Copyright 2010-2013 - pancake */
 
 #include <r_types.h>
 #include <r_list.h>
