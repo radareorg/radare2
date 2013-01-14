@@ -49,118 +49,6 @@ enyo.kind({
 });
 
 enyo.kind({
-  name: "Disassembler",
-  kind: "Scroller",
-  tag: "div",
-  style:"margin-left:16px",
-  data: [ "pop eax", "push ecx", "jmp 0x80040", "call 0x80404", "xor eax, eax", "int 0x80" ],
-  components: [
-    {tag: "h2",content: "TODO : Disasm"},
-// 3
-    {kind: "List", name:"list", style:"height:100%", realtimeFit:false, onSetupItem: "setupItem", components: [
-      {kind: "List", name: "list", style:"height:400px", realtimeFit:false, onSetupItem: "setupItem", components: [
-        {kind: "onyx.Item", layoutKind: "HFlexLayout", style:"padding:0px", components: [
-          {name:"separator", tag: "hr", style:"height:1px;visibility:hidden"},
-          {kind: "onyx.Button", name: "button", style: "width:100%", fit:true, active: true, ontap: "rowTap"}
-        ]}
-      ]}
-    ]}
-  ],
-  setupItem: function (inSender, inIndex) {
-      var item = this.data[inIndex.index];
-      if (item.separator) {
-        this.$.separator.setStyle("visibility:visible;border:0;background-color:#404040");
-      } else {
-        this.$.separator.setStyle("visibility:hidden");
-      }
-      this.$.button.setContent (item.name);
-      return true;
-  }
-});
-enyo.kind({
-  name: "Console",
-  kind: "Scroller",
-  tag: "div",
-  style:"margin-left:16px",
-  components: [
-    {tag: "h2",content: "TODO"},
-                                        {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
-                                                {kind: "onyx.Input", value: 0, onchange: "gotoPanel"}
-                                        ]},
-  ]
-});
-
-enyo.kind({
-  name: "Preferences",
-  classes: "panels-sample-sliding-content",
-  kind: "Scroller",
-  tag: "div",
-  style:"margin-left:16px",
-  components: [
-    {kind: "FittableRows", fit: false, components: [
-      {tag: "h2", content: "CPU" }
-      ,{kind: "onyx.InputDecorator", components: [
-         {tag: "p", content: "Arch", classes:"rowline"},
-         {kind: "onyx.PickerDecorator", components: [
-           {},
-           {kind: "onyx.Picker", components: [
-             {content: "x86", active: true},
-             {content: "arm"},
-             {content: "ppc"},
-             {content: "bf"}
-           ]}
-         ]}
-      ]}
-      ,{kind: "onyx.InputDecorator", components: [
-         {tag: "p", content: "Bits", classes:"rowline"},
-         {kind: "onyx.PickerDecorator", components: [
-           {},
-           {kind: "onyx.Picker", components: [
-             {content: "8"},
-             {content: "16"},
-             {content: "32", active: true},
-             {content: "64"}
-           ]}
-         ]}
-      ]}
-      ,{kind: "onyx.InputDecorator", components: [
-         {tag: "p", content: "Endian", classes:"rowline"},
-         {kind: "onyx.PickerDecorator", components: [
-           {},
-           {kind: "onyx.Picker", components: [
-             {content: "little", active: true},
-             {content: "big"},
-           ]}
-         ]}
-      ]}
-      ,{tag: "h2", content: "Disassembly" },
-      {kind: "onyx.InputDecorator", components: [
-        {tag: "p", content: "Show bytes", classes:"rowline", ontap: "nextPanel"},
-        {kind: "onyx.ToggleButton", name: "toggle_bytes "},
-      ]}
-      ,{kind: "onyx.InputDecorator",components: [
-        {tag: "p", content: "Show offsets", classes:"rowline", ontap: "nextPanel"},
-        {kind: "onyx.ToggleButton", name: "toggle_offset" },
-      ]}
-      ,{kind: "onyx.InputDecorator",components: [
-        {tag: "p", content: "Show lines", classes:"rowline", ontap: "nextPanel"},
-        {kind: "onyx.ToggleButton", name: "toggle_lines" },
-      ]}
-      ,{kind: "onyx.InputDecorator",components: [
-        {tag: "p", content: "Pseudo", classes:"rowline", ontap: "nextPanel"},
-        {kind: "onyx.ToggleButton", name: "toggle_pseudo" },
-      ]}
-    ]}
-    ,{tag: "h2", content: "Save changes?" }
-    ,{tag: "div",style:"margin-left:50px", components: [
-      {kind: "onyx.Button", style: "position:relative;left:0px", content: "Reset"},
-      {kind: "onyx.Button", style: "position:relative;left:50px", content: "Save", classes: "onyx-affirmative"}
-    ]}
-    ,{tag: "div", style: "height:64px"}
-  ]
-});
-
-enyo.kind({
   name: "MainPanel",
   classes: "onyx",
   //kind: enyo.Control,
@@ -180,24 +68,24 @@ enyo.kind({
     alert ("nothing to see here! move along.");
   },
   components: [
-                {kind: "FittableColumns", noStretch: true, classes: "onyx-toolbar onyx-toolbar-inline", components: [
-                        {kind: "Scroller", thumb: false, fit: true, touch: false, vertical: "hidden", style: "margin: 0;", components: [
-                                {classes: "onyx-toolbar-inline", style: "white-space: nowrap;", components: [
-                                    {kind: "onyx.PickerDecorator", components: [
-                                          {kind: "onyx.Button", content: "Actions"},
-                                          {kind: "onyx.Picker", components: [
-                                            {content: "Analyze"},
-                                            {content: "Rename"},
-                                            {content: "Comment"},
-                                            {content: "Flag"}
-                                          ]}
-                                        ]},
-                                        {kind: "onyx.Button", content: "<", ontap: "prevPanel"},
-                                        {kind: "onyx.Button", content: ">", ontap: "nextPanel"},
-                                        {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
-                                                {kind: "onyx.Input", value: 0, onchange: "gotoPanel"}
-                                        ]},
-                                        {kind: "onyx.Button", content: "Go", ontap: "gotoPanel"},
+    {kind: "FittableColumns", noStretch: true, classes: "onyx-toolbar onyx-toolbar-inline", components: [
+      {kind: "Scroller", thumb: false, fit: true, touch: false, vertical: "hidden", style: "margin: 0;", components: [
+        {classes: "onyx-toolbar-inline", style: "white-space: nowrap;", components: [
+          {kind: "onyx.PickerDecorator", components: [
+            {kind: "onyx.Button", content: "Actions"},
+            {kind: "onyx.Picker", components: [
+              {content: "Analyze"},
+              {content: "Rename"},
+              {content: "Comment"},
+              {content: "Flag"}
+            ]}
+          ]},
+          {kind: "onyx.Button", content: "<", ontap: "prevPanel"},
+          {kind: "onyx.Button", content: ">", ontap: "nextPanel"},
+          {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
+            {kind: "onyx.Input", value: 0, onchange: "gotoPanel"}
+          ]},
+          {kind: "onyx.Button", content: "Go", ontap: "gotoPanel"},
 /*
                                         {kind: "onyx.Button", content: "Add", ontap: "addPanel"},
                                         {kind: "onyx.Button", content: "Delete", ontap: "deletePanel"}
@@ -217,7 +105,7 @@ enyo.kind({
     ],
     create: function() {
       this.inherited(arguments);
-      // this.$.samplePanels.setArrangerKind ("CardArranger");
+       //this.$.samplePanels.setArrangerKind ("CardArranger");
       // if (enyo.Panels.isScreenNarrow()) {
       this.$.samplePanels.setIndex(0);
     },
@@ -227,18 +115,17 @@ enyo.kind({
     openPage: function(idx) {
       var str, sp = this.$.samplePanels;
       eval ("var x = this.$.page"+idx);
-  
 // TODO. simplify
       switch (idx) {
-	case "Disassembler": idx = 1; break;
-	case "Assembler": idx = 2; break;
-	case "Hexdump": idx = 3; break;
-	case "Console": idx = 4; break;
+	case "Disassembler": idx = 0; break;
+	case "Assembler": idx = 1; break;
+	case "Hexdump": idx = 2; break;
+	case "Console": idx = 3; break;
 	case "Settings": idx = 4; break;
 	case "About": idx = 5; break;
       }
       //x.setContent (str);
-      sp.setIndex (idx-2);
+      sp.setIndex (idx);
     },
     gotoPanel: function() {
       this.openPage (this.$.input.getValue());
@@ -263,11 +150,6 @@ var i = 3;
     }
 });
 
-/*
-    { tag: "h2", content: "Menu", style: "margin-left:12px" },
-    { layoutKind: "FittableRowsLayout", components: [
-      { kind: "onyx.Toolbar", title:"jaja", components: [
-*/
 enyo.kind({
   name: "RightPanel",
   classes: "onyx onyx-toolbar",

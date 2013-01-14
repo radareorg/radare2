@@ -6,6 +6,9 @@ function Ajax (method, uri, body, fn) {
         var x = new XMLHttpRequest ();
         x.open (method, uri, false);
 	x.setRequestHeader ('Accept', 'text/plain');
+	x.setRequestHeader ('Accept', 'text/html');
+	x.setRequestHeader ("Content-Type",
+		"application/x-ww-form-urlencoded; charset=UTF-8");
         x.onreadystatechange = function (y) {
 		if (x.status == 200) {
 			if (fn) fn (x.responseText);

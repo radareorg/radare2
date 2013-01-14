@@ -50,7 +50,7 @@ R_API void r_str_chop_path (char *s) {
 	else *dst = 0;
 }
 
-R_API int r_str_replace_char (char *s, int a, int b) {
+R_API int r_str_replace_char_once (char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
 	for (; *o; s++, o++) {
@@ -59,6 +59,25 @@ R_API int r_str_replace_char (char *s, int a, int b) {
 				*s = b;
 				ret++;
 				continue;
+			}
+			o++;
+		}
+		*s = *o;
+	}
+	*s = 0;
+	return ret;
+}
+
+// Spagetti.. must unify and support 'g', 'i' ...
+R_API int r_str_replace_char (char *s, int a, int b) {
+	int ret = 0;
+	char *o = s;
+	for (; *o; s++, o++) {
+		if (*o==a) {
+			if (b) {
+				*s = b;
+				ret++;
+				break;
 			}
 			o++;
 		}

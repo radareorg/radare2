@@ -399,7 +399,6 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	int labels = 0, stage, ret, idx, ctr, i, j;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
-
 	if (buf == NULL)
 		return NULL;
 	if (!(acode = r_asm_code_new ()))
@@ -407,7 +406,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	if (!(acode->buf_asm = malloc (strlen (buf)+16)))
 		return r_asm_code_free (acode);
 	strncpy (acode->buf_asm, buf, sizeof (acode->buf_asm)-1);
-	if (!(acode->buf_hex = malloc (64)))
+	if (!(acode->buf_hex = malloc (64))) // WTF unefficient
 		return r_asm_code_free (acode);
 	*acode->buf_hex = 0;
 	if (!(acode->buf = malloc (64)))
