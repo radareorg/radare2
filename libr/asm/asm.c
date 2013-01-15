@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -412,6 +412,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	if (!(acode->buf = malloc (64)))
 		return r_asm_code_free (acode);
 	lbuf = strdup (buf);
+
+	/* accept ';' as comments when input is multiline */
+	if (strchr (lbuf, '\n'))
+		r_str_replace_char (lbuf, ';', '#');
 
 	if (strchr (lbuf, ':'))
 		labels = 1;

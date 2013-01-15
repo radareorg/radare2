@@ -33,3 +33,9 @@
   color: black;
   editable: false;
 }
+
+.r2ui-input {
+  background-color: #606060;
+  width: 90%;
+  display: inline-block;
+}

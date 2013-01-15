@@ -2,6 +2,30 @@ var r2 = {};
 
 r2.root = ""; // prefix path
 
+Array.prototype.push = function (x) {
+  this[this.length] = x;
+}
+
+Array.prototype.pop = function () {
+  var x = this[this.length-1];
+  delete this[this.length-1];
+  return x;
+}
+
+/* helpers */
+function dump(obj) {
+  var x = "";
+  for (var a in obj) x += a+"\n";
+  alert (x);
+}
+
+function objtostr(obj) {
+  var str = "";
+  for (var a in obj)
+    str += a+": "+obj[a] + ",\n";
+  return str;
+}
+
 function Ajax (method, uri, body, fn) {
         var x = new XMLHttpRequest ();
         x.open (method, uri, false);
