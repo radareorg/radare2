@@ -41,6 +41,34 @@ function Ajax (method, uri, body, fn) {
         x.send (body);
 }
 
+r2.assemble = function (offset, opcode, fn) {
+  var off = offset? "@"+offset:'';
+  r2.cmd ('"pa '+opcode+'"'+off, fn);
+} 
+
+r2.disassemble = function (offset, bytes, fn) {
+  var off = offset? "@"+offset:'';
+  var str = 'pi 1@b:'+bytes+off;
+  r2.cmd (str, fn);
+} 
+
+r2.config_set = function (fn) {
+	// TODO
+}
+
+r2.config_get = function (fn) {
+	// TODO
+}
+
+r2.set_flag_space = function (ns, fn) {
+	// TODO
+	r2.cmd ("fs ", fn);
+}
+
+r2.get_flags = function (fn) {
+  r2.cmd ("fj", fn);
+} 
+
 r2.get_opcodes = function (off, n, cb) {
 	r2.cmd ("pdj @"+off+"!"+n, function (json) {
 		var o = JSON.parse (json);

@@ -4,12 +4,29 @@ namespace Radare {
 [Compact]
 [CCode (cheader_filename="r_flags.h,r_anal.h,r_core.h,r_bin.h,r_parse.h,r_lang.h,r_sign.h,r_reg.h,r_list.h,r_types_base.h", cname="RCore", free_function="r_core_free", cprefix="r_core_")]
 public class RCore {
+	/**
+	 * RBin instance
+	 */
 	public RBin bin;
+	/**
+	 * RConfig instance
+	 */
 	public RConfig config;
-
+	/**
+	 * Current working offset
+	 */
 	public uint64 offset;
+	/**
+	 * Size of the working block
+	 */
 	public uint32 blocksize;
+	/**
+	 * Limit maximum size for the working block
+	 */
 	public uint32 blocksize_max;
+	/**
+	 * Pointer to the first byte of the working block
+	 */
 	public uint8 *block;
 	public uint8 *oobi;
 	public int ffio;
@@ -21,11 +38,29 @@ public class RCore {
 	public bool vmode;
 	public int interrupted;
 
+	/**
+	 * RCons instance
+	 */
 	public RCons cons;
+	/**
+	 * KeyValue database instance
+	 */
 	public RPair kv;
+	/**
+	 * RIO instance
+	 */
 	public RIO io;
+	/**
+	 * Current working file
+	 */
 	public RCore.File file;
+	/**
+	 * List containing all the opened files
+	 */
 	public RList<RCore.File> files;
+	/**
+	 * RNum instance with hooks to resolve flags and registers
+	 */
 	public RNum num;
 	public RLib lib;
 	public RCmd rcmd;
@@ -70,8 +105,10 @@ public class RCore {
 	// XXX. must be const in .h public int cmd_foreach(string cmd, string each);
 	/**
 	 * Execute every line of the given file as radare commands
+	 *
+	 * @return true if file exists and has been executed
 	 */
-	public int cmd_file(string file);
+	public bool cmd_file(string file);
 	public int cmd_command(string cmd);
 	public unowned string cmd_str(string cmd);
 	public unowned string cmd_str_pipe(string cmd);

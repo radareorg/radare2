@@ -8,7 +8,7 @@ enyo.kind ({
   data: null,
   refresh: function () {
     this.$.list.setCount (this.data.length);
-    this.$.list.refresh ();
+    this.$.list.refresh (); // necessary?? // inherit??
   },
   buttonClicked: function (x) {
     alert ("let's play!");
@@ -20,21 +20,40 @@ enyo.kind ({
     {kind: "FittableColumns", noStretch: true, classes: "onyx-toolbar onyx-toolbar-inline", components: [
       {kind: "Scroller", thumb: false, fit: true, touch: false, vertical: "hidden", style: "margin: 0;", components: [
         {classes: "onyx-toolbar-inline", style: "white-space: nowrap;", components: [
-          {kind: "onyx.PickerDecorator", components: [
-            {kind: "onyx.Button", content: "Actions"},
-            {kind: "onyx.Picker", components: [
-              {content: "Analyze"},
-              {content: "Rename"},
-              {content: "Comment"},
-              {content: "Flag"}
-            ]}
-          ]},
+          {kind: "onyx.Button", content: "=", ontap: "openSidebar"},
           {kind: "onyx.Button", content: "<", ontap: "prevSeek"},
           {kind: "onyx.Button", content: ">", ontap: "nextSeek"},
           {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
             {kind: "onyx.Input", value: 'entry0', onchange: "gotoSeek"}
           ]},
           {kind: "onyx.Button", content: "Go", ontap: "gotoSeek"},
+          {kind: "onyx.PickerDecorator", components: [
+            {kind: "onyx.Button", content: "Actions"},
+            {kind: "onyx.Picker", components: [
+              {content: "Analyze"},
+              {content: "Rename"},
+              {content: "Comment"},
+              {content: "Flag"},
+              {content: "Copy"},
+              {content: "Paste"}
+            ]}
+          ]},
+          {kind: "onyx.PickerDecorator", components: [
+            {kind: "onyx.Button", content: "Convert"},
+            {kind: "onyx.Picker", components: [
+              {content: "Data"},
+              {content: "Code"},
+              {content: "String"},
+            ]}
+          ]},
+          {kind: "onyx.PickerDecorator", components: [
+            {kind: "onyx.Button", content: "Write"},
+            {kind: "onyx.Picker", components: [
+              {content: "File"},
+              {content: "Hexpair"},
+              {content: "String"},
+            ]}
+          ]},
 /*
           {kind: "onyx.Button", content: "Add", ontap: "addPanel"},
           {kind: "onyx.Button", content: "Delete", ontap: "deletePanel"}
@@ -56,7 +75,11 @@ enyo.kind ({
     this.inherited(arguments);
        //this.$.samplePanels.setArrangerKind ("CardArranger");
       // if (enyo.Panels.isScreenNarrow()) {
-      this.$.samplePanels.setIndex(0);
+    this.$.samplePanels.setIndex(0);
+  },
+  ra: null,
+  openSidebar: function() {
+    this.ra.setIndex (this.ra.index? 0:1);
   },
   rendered: function() {
       this.inherited(arguments);
@@ -92,7 +115,7 @@ enyo.kind ({
       var sp = this.$.samplePanels;
       //this.openPage (this.$.input.getValue());
       //sp.components[3].setContent ("JAJAJ");
-this.$.page3.setContent ("PUTA");
+this.$.page3.setContent ("content-a");
 alert (sp.components[3].content);
       sp.components[3].content = "JAJAJ";
 sp.reflow();

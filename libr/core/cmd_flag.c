@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -198,10 +198,9 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case '*':
-		r_flag_list (core->flags, 1);
-		break;
 	case '\0':
-		r_flag_list (core->flags, 0);
+	case 'j':
+		r_flag_list (core->flags, *input);
 		break;
 	case 'd':
 		{
@@ -231,6 +230,7 @@ static int cmd_flag(void *data, const char *input) {
 		"Usage: f[?] [flagname]\n"
 		" f                ; list flags\n"
 		" f*               ; list flags in r commands\n"
+		" fj               ; list flags in JSON format\n"
 		" fs               ; display flagspaces\n"
 		" fs *             ; set all flagspace\n"
 		" fs sections      ; set flagspace (f will only list flags from selected ones)\n"

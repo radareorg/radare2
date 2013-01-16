@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
 
 #include <r_flags.h>
 #include <r_util.h>
@@ -49,6 +49,22 @@ R_API void r_flag_list(RFlag *f, int rad) {
 	RListIter *iter;
 	RFlagItem *flag;
 
+	if (rad=='j') {
+		int first = 1;
+		r_cons_printf ("[");
+		r_list_foreach_prev (f->flags, iter, flag) {
+			if ((f->space_idx != -1) && (flag->space != f->space_idx))
+				continue;
+			r_cons_printf ("%s{\"name\":\"%s\",\"size\":\"%"PFMT64d"\",\"offset\":%"PFMT64d,
+				first?"":",", flag->name, flag->size, flag->offset);
+			if (flag->comment)
+				r_cons_printf (",\"comment\":\"}");
+			else r_cons_printf ("}");
+			first = 0;
+		}
+		r_cons_printf ("]\n");
+		return;
+	}
 	r_list_foreach_prev (f->flags, iter, flag) {
 		if ((f->space_idx != -1) && (flag->space != f->space_idx))
 			continue;

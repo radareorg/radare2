@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include <r_core.h>
 #include <r_anal.h>
@@ -157,7 +157,7 @@ static int cmd_alias(void *data, const char *input) {
 					strcat (out, args);
 					r_core_cmd0 (core, out);
 					free (out);
-				} else eprintf ("Cannot malloc\n");
+				} else eprintf ("cannot malloc\n");
 			} else {
 				r_core_cmd0 (core, v);
 			}
@@ -296,7 +296,7 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case ' ':
 		if (!r_core_cmd_file (core, input+1))
-			eprintf ("Cannot interpret file.\n");
+			eprintf ("cannot interpret file.\n");
 		break;
 	case '!':
 		/* from command */
@@ -353,7 +353,7 @@ static int cmd_bsize(void *data, const char *input) {
 			flag = r_flag_get (core->flags, input+2);
 			if (flag)
 				r_core_block_size (core, flag->size);
-			else eprintf ("bf: Cannot find flag named '%s'\n", input+2);
+			else eprintf ("bf: cannot find flag named '%s'\n", input+2);
 		} else eprintf ("Usage: bf [flagname]\n");
 		break;
 	case '\0':
@@ -492,7 +492,7 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1]) {
 			const char *key = input+((input[1]==' ')?2:1);
 			if (!r_config_readonly (core->config, key))
-				eprintf ("Cannot find key '%s'\n", key);
+				eprintf ("cannot find key '%s'\n", key);
 		} else eprintf ("Usage: er [key]\n");
 		break;
 	case ' ':
@@ -670,6 +670,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	int i, ret, pipefd;
 	const char *tick = NULL;
 	const char *quotestr = "`";
+	char *arroba = NULL;
+	int usemyblock = 0;
 
 	cmd = r_str_trim_head_tail (cmd);
 
@@ -820,7 +822,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			free (core->oobi);
 			core->oobi = (ut8*)r_file_slurp (str, &core->oobi_len);
 			if (core->oobi == NULL)
-				eprintf ("Cannot open file\n");
+				eprintf ("cannot open file\n");
 			else if (ptr == cmd)
 				return r_core_cmd_buffer (core, (const char *)core->oobi);
 		}
@@ -902,8 +904,8 @@ next2:
 			return ret;
 		}
 	}
+	// TODO must honor " and `
 
-// TODO must honor " and `
 	/* grep the content */
 	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
 	//ptr = strchr (cmd, '~');
@@ -913,7 +915,7 @@ next2:
 	}
 	r_cons_grep (ptr);
 
-	/* seek commands */
+	/* temporary seek commands */
 	if (*cmd!='(' && *cmd!='"') {
 		ptr = strchr (cmd, '@');
 		if (ptr == cmd+1 && *cmd=='?')
@@ -929,9 +931,14 @@ next2:
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
 
-		*ptr = '\0';
-		for (ptr++;*ptr== ' ';ptr++); ptr--;
+		*ptr = '\0'; for (ptr++; *ptr== ' '; ptr++); ptr--;
+
+		arroba = strchr (ptr+2, '@');
+repeat_arroba:
+		if (arroba)
+			*arroba = 0;
 		if (ptr[2]==':') {
+			usemyblock = 1;
 			switch (ptr[1]) {
 			case 'f':
 				f = r_file_slurp (ptr+3, &sz);
@@ -942,9 +949,9 @@ next2:
 						core->block = buf;
 						core->blocksize = sz;
 						memcpy (core->block, f, sz);
-					} else eprintf ("Cannot alloc %d", sz);
+					} else eprintf ("cannot alloc %d", sz);
 					free (f);
-				} else eprintf ("Cannot open '%s'\n", ptr+3);
+				} else eprintf ("cannot open '%s'\n", ptr+3);
 				break;
 			case '8':
 			case 'b':
@@ -966,10 +973,8 @@ next2:
 			default:
 				goto ignore;
 			}
-			ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 			*ptr = '@';
-			r_core_block_size (core, tmpbsz);
-			return ret;
+			goto next_arroba; //ignore; //return ret;
 		}
 ignore:
 		for (ptr++;*ptr== ' ';ptr++); ptr--;
@@ -1000,15 +1005,26 @@ ignore:
 			if (ch=='-' || ch=='+')
 				addr = core->offset+addr;
 		}
+next_arroba:
+		if (arroba) {
+			ptr = arroba; //-3;
+			arroba = NULL;
+			goto repeat_arroba;
+		}
 		if (ptr[1]=='@') {
 			// TODO: remove temporally seek (should be done by cmd_foreach)
 			ret = r_core_cmd_foreach (core, cmd, ptr+2);
 			//ret = -1; /* do not run out-of-foreach cmd */
 		} else {
-			if (!ptr[1] || r_core_seek (core, addr, 1)) {
-				r_core_block_read (core, 0);
+			if (usemyblock) {
+				core->offset = addr;
 				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
-			} else ret = 0;
+			} else {
+				if (!ptr[1] || r_core_seek (core, addr, 1)) {
+					r_core_block_read (core, 0);
+					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+				} else ret = 0;
+			}
 		}
 		if (ptr2) {
 			*ptr2 = '!';
@@ -1107,7 +1123,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					core->rcmd->macro.counter++;
 				}
 				fclose (fd);
-			} else eprintf ("Cannot open file '%s' to read offsets\n", each+1);
+			} else eprintf ("cannot open file '%s' to read offsets\n", each+1);
 		}
 		break;
 	default:

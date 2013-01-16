@@ -19,6 +19,7 @@ enyo.kind ({
       this.$.lp.openCallback = function (idx) {
         mp.openPage (idx);
       };
+      this.$.mp.ra = this;
       this.$.lp.ra = this;
       var data = [
         { name: "Disassembler", active: true },

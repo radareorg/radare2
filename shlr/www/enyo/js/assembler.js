@@ -10,15 +10,15 @@ enyo.kind({
       {kind: "FittableRows", fit: true, components: [
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
           {tag: "p", content: "opcode", style:"margin-right:20px"},
-          {kind: "Input", value: '', onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "opcode"},
+          {kind: "Input", value: '', style:"width:90%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "opcode"},
         ]},
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
           {tag: "p", content: "bytes", style:"margin-right:20px"},
-          {kind: "Input", value: '', onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "bytes"},
+          {kind: "Input", value: '', style:"width:90%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "bytes"},
         ]},
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
           {tag: "p", content: "offset", style:"margin-right:20px"},
-          {kind: "Input", value: 'entry0', onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "offset"},
+          {kind: "Input", value: 'entry0', style:"width:90%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "offset"},
         ]}
       ]}
     ]}
@@ -30,13 +30,14 @@ enyo.kind({
       switch (inSender.name) {
       case 'opcode':
         var hex = this.$.bytes;
-	r2.cmd ('"pa :'+arg+'"', function (x) {
-          hex.setValue (x); // ? s/\n/;/g
+        r2.assemble (off, arg, function (bytes) {
+          hex.setValue (bytes); // ? s/\n/;/g
         });
         break;
       case 'bytes':
         var op = this.$.opcode;
-	r2.cmd ("pi 1@b:"+arg, function (x) {
+	//r2.cmd ("pi 1@b:"+arg, function (x) {
+        r2.disassemble (off, arg, function (x) {
           op.setValue (x); // ? s/\n/;/g
         });
         break;

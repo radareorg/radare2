@@ -101,6 +101,8 @@ vdoc:
 	-rm -rf vdoc
 	cat vapi/r_*.vapi > libr.vapi
 	valadoc --package-version=${VERSION} --package-name=libr -o vdoc libr.vapi
+	sed -e 's,font-family:.*,font-family:monospace;,' vdoc/style.css > vdoc/.style.css
+	mv vdoc/.style.css vdoc/style.css
 	-rm -f libr.vapi
 	# rsync -avz vdoc/* pancake@radare.org:/srv/http/radareorg/vdoc/
 
