@@ -2,12 +2,12 @@ enyo.kind({
   name: "Console",
   kind: "Scroller",
   tag: "div",
-  style:"margin-left:16px",
+  style:"margin-left:8px",
   components: [
     {tag: "form", attributes: {action:"javascript:#"}, components: [
       {kind: "FittableRows", fit: true, classes: "fittable-sample-shadow", components: [
-        {kind: "onyx.InputDecorator", style: "width: 90%;display:inline-block", components: [
-          {kind: "Input", style:"width:100%", value: '', onkeydown: "runCommand", attributes: {autocapitalize:"off"}, name: "input"},
+        {kind: "onyx.InputDecorator", style: "margin-top:8px;background-color:#404040;width: 90%;display:inline-block", components: [
+          {kind: "Input", style:"width:100%;color:white", value: '', onkeydown: "runCommand", attributes: {autocapitalize:"off"}, name: "input"},
         ]},
         {tag: "pre", classes:"r2ui-terminal", style:"width:90%;", fit: true, allowHtml: true, name:"output"}
       ]}

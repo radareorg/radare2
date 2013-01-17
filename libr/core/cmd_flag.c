@@ -113,11 +113,13 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 's':
 		switch (input[1]) {
+		case 'j':
+		case '\0':
+		case '*':
+			r_flag_space_list (core->flags, input[1]);
+			break;
 		case ' ':
 			r_flag_space_set (core->flags, input+2);
-			break;
-		case '*':
-			r_flag_space_set (core->flags, "*");
 			break;
 		case 'm':
 			{ RFlagItem *f;

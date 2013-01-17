@@ -35,7 +35,8 @@
 }
 
 .r2ui-input {
-  background-color: #606060;
+  margin-top:8px;
+  background-color: #909090;
   width: 90%;
   display: inline-block;
 }

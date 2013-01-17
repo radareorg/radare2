@@ -6,10 +6,12 @@ enyo.kind ({
   classes: "enyo-fit",
   style: "background-color: #c0c0c0",
   data: null,
+/*
   refresh: function () {
     this.$.list.setCount (this.data.length);
     this.$.list.refresh (); // necessary?? // inherit??
   },
+*/
   buttonClicked: function (x) {
     alert ("let's play!");
   },
@@ -20,13 +22,14 @@ enyo.kind ({
     {kind: "FittableColumns", noStretch: true, classes: "onyx-toolbar onyx-toolbar-inline", components: [
       {kind: "Scroller", thumb: false, fit: true, touch: false, vertical: "hidden", style: "margin: 0;", components: [
         {classes: "onyx-toolbar-inline", style: "white-space: nowrap;", components: [
-          {kind: "onyx.Button", content: "=", ontap: "openSidebar"},
+          {kind: "onyx.Button", content: "[", ontap: "openSidebar", style: "padding:8px"},
+          {kind: "onyx.Button", content: "]", ontap: "openSidebar2", style: "padding:8px"},
           {kind: "onyx.Button", content: "<", ontap: "prevSeek"},
           {kind: "onyx.Button", content: ">", ontap: "nextSeek"},
           {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
             {kind: "onyx.Input", value: 'entry0', onchange: "gotoSeek"}
           ]},
-          {kind: "onyx.Button", content: "Go", ontap: "gotoSeek"},
+          //{kind: "onyx.Button", content: "Go", ontap: "gotoSeek"},
           {kind: "onyx.PickerDecorator", components: [
             {kind: "onyx.Button", content: "Actions"},
             {kind: "onyx.Picker", components: [
@@ -66,6 +69,7 @@ enyo.kind ({
       {kind:"Disassembler", name: "pageDisassembler"},
       {kind:"Assembler", name:"pageAssembler"},
       {kind:"Hexdump", name: "pageHexdump"},
+      {kind:"Search", name: "pageSearch"},
       {kind:"Console", name: "pageConsole"},
       {kind:"Preferences", name:"pagePreferences"},
       {kind:"About", name: "pageAbout"},
@@ -81,6 +85,9 @@ enyo.kind ({
   openSidebar: function() {
     this.ra.setIndex (this.ra.index? 0:1);
   },
+  openSidebar2: function() {
+    this.ra.setIndex (2); //(this.ra.index<2)? 2:1);
+  },
   rendered: function() {
       this.inherited(arguments);
   },
@@ -92,9 +99,10 @@ enyo.kind ({
 	case "Disassembler": idx = 0; break;
 	case "Assembler": idx = 1; break;
 	case "Hexdump": idx = 2; break;
-	case "Console": idx = 3; break;
-	case "Settings": idx = 4; break;
-	case "About": idx = 5; break;
+	case "Search": idx = 3; break;
+	case "Console": idx = 4; break;
+	case "Settings": idx = 5; break;
+	case "About": idx = 6; break;
       }
       //x.setContent (str);
       sp.setIndex (idx);

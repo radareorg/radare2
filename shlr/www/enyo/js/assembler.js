@@ -1,24 +1,20 @@
 enyo.kind({
   name: "Assembler",
-  kind: "Scroller",
-  style: "background-color:#303030",
+//  kind: "Scroller",
   components: [
-    {tag: "center", components: [
-      {tag: "h1", style: "color:#f0f0f0", content: "Assembler"},
-    ]},
-    {tag: "form", style:"margin-left:10px", attributes: {action:"javascript:#"}, components: [
+    {tag: "form", style:"margin-top:8px;margin-left:8px", attributes: {action:"javascript:#"}, components: [
       {kind: "FittableRows", fit: true, components: [
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
-          {tag: "p", content: "opcode", style:"margin-right:20px"},
-          {kind: "Input", value: '', style:"width:90%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "opcode"},
+          {tag: "font", content: "opcode", style:"font-weight:bold;margin-right:20px"},
+          {kind: "Input", value: '', style:"width:89%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "opcode"},
         ]},
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
-          {tag: "p", content: "bytes", style:"margin-right:20px"},
-          {kind: "Input", value: '', style:"width:90%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "bytes"},
+          {tag: "font", content: "bytes", style:"margin-right:20px;font-weight:bold"},
+          {kind: "Input", value: '', style:"width:120px", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "bytes"},
         ]},
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
-          {tag: "p", content: "offset", style:"margin-right:20px"},
-          {kind: "Input", value: 'entry0', style:"width:90%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "offset"},
+          {tag: "font", content: "offset", style:"margin-right:20px;font-weight:bold"},
+          {kind: "Input", value: 'entry0', style:"width:120px", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "offset"},
         ]}
       ]}
     ]}

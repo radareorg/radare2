@@ -3,7 +3,10 @@ enyo.kind ({
   classes: "onyx onyx-toolbar",
   kind: "Control",
   style: "width:25px",
+  ra: null,
   components: [
+{kind: "FittableColumns", components: [
+    {kind: "onyx.Button", content: "[", ontap: "closeSidebar", style: "padding:8px;margin-right:8px"},
     {kind: "onyx.MenuDecorator", onSelect: "itemSelected", components: [
       {content: "List elements"},
       {kind: "onyx.Menu", components: [
@@ -25,6 +28,7 @@ enyo.kind ({
         {tag: "h3", style:"background-color:red",name: "msg", fit:true, active: true, ontap: "rowTap"}
       ]}
     ]}
+]}
   ],
   rowTap: function () {
     /* do something here */
@@ -32,6 +36,7 @@ enyo.kind ({
   create: function() {
     this.inherited (arguments);
     this.$.list.setCount (3);
+    this.$.list.refresh();
   },
   data: [],
   setupItem: function (inSender, inIndex) {
@@ -48,8 +53,12 @@ enyo.kind ({
         // trycatch here or wtf
         self.data = JSON.parse (flags);
         self.$.list.setCount (self.data.length);
+        self.$.list.refresh();
       });
       break;
     }
+  },
+  closeSidebar: function() {
+    this.ra.setIndex (1);
   }
 });

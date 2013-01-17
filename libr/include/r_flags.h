@@ -66,7 +66,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off);
 R_API int r_flag_space_get(RFlag *f, const char *name);
 R_API const char *r_flag_space_get_i(RFlag *f, int idx);
 R_API void r_flag_space_set(RFlag *f, const char *name);
-R_API void r_flag_space_list(RFlag *f);
+R_API int r_flag_space_list(RFlag *f, int mode);
 #endif
 
 #endif

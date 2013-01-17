@@ -7,20 +7,14 @@ enyo.kind ({
   components: [ 
     { name: "lp", kind: "LeftPanel" },
     { name: "mp", kind: "MainPanel" },
-    { name: "rp", kind: "RightPanel" }
+    { name: "rp", kind: "RightPanel" },
+    { kind: enyo.Signals, onkeypress: "handleKeyPress" }
   ],
   setPanel0: function () {
     this.$.RadareApp.setIndex (1);
   },
   create: function() {
       this.inherited (arguments);
-      var mp = this.$.mp;
-      var ra = this.$.RadareApp;
-      this.$.lp.openCallback = function (idx) {
-        mp.openPage (idx);
-      };
-      this.$.mp.ra = this;
-      this.$.lp.ra = this;
       var data = [
         { name: "Disassembler", active: true },
         { name: "Assembler" },
@@ -31,7 +25,44 @@ enyo.kind ({
       ];
       this.$.lp.data = data;
       this.$.mp.data = data;
+      this.$.mp.ra = 
+      this.$.lp.ra =
+      this.$.rp.ra = this;
+      var mp = this.$.mp;
+      this.$.lp.openCallback = function (idx) {
+        mp.openPage (idx);
+      };
       this.$.lp.refresh ();
+  },
+  handleKeyPress: function(inSender, inEvent) {
+    for (var key in Config.keys) {
+      if (key.substring (0, 2) == "C-") {
+        if (inEvent.ctrlKey) {
+          var k = key.substring (2).charCodeAt (0);
+          if (inEvent.charCode == k) {
+            var cmd = Config.keys[key];
+            eval (cmd+";");
+          }
+        }
+      } else {
+        var k = key.substring (2).charCodeAt (0);
+        if (inEvent.charCode == k) {
+          var cmd = Config.keys[key];
+          eval (cmd+";");
+        }
+      }
+    }
+    //dump (inEvent);
+//alert (inEvent.ctrlKey);
+    // Use inEvent.charCode to detect spacebar
+/*
+    if (inEvent.charCode === 32) {
+      this.$.myContent.setContent("I thought");
+    } else {
+      var key = String.fromCharCode(inEvent.charCode).toUpperCase();
+      this.$.myContent.setContent("Last key pressed: " + key);
+    }
+*/
   }
 });
 

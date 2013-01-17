@@ -10,6 +10,7 @@ enyo.kind ({
        {content: "Disassembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Disassembler", active: true},
        {content: "Assembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Assembler" },
        {content: "Hexdump", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Hexdump" },
+       {content: "Search", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Search" },
        {content: "Console", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Console" },
        {content: "Settings", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Settings" },
        {content: "About", classes: "onyx-dark menu-button" , ontap: "openPanel", name:"About"},

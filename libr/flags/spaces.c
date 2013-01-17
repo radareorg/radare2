@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2008-2012 - pancake */
+/* radare - LGPL - Copyright 2008-2013 - pancake */
 
 #include <r_flags.h>
+#include <r_cons.h>
 
 R_API int r_flag_space_get(RFlag *f, const char *name) {
 	int i;
@@ -54,11 +55,29 @@ R_API void r_flag_space_set(RFlag *f, const char *name) {
 	}
 }
 
-R_API void r_flag_space_list(RFlag *f) {
-	int i,j = 0;
-	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
-		if (f->spaces[i])
-			printf ("%02d %c %s\n", j++,
-			(i==f->space_idx)?'*':' ', f->spaces[i]);
+R_API int r_flag_space_list(RFlag *f, int mode) {
+	int i, j = 0;
+	if (mode == 'j')
+		r_cons_printf ("[");
+	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+		if (!f->spaces[i]) continue;
+		if (mode=='j') {
+			r_cons_printf ("%s{\"name\":\"%s\"%s}",
+					j? ",":"", f->spaces[i],
+					(i==f->space_idx)?
+					",\"selected\":true":"");
+		} else if (mode=='*') {
+			r_cons_printf ("fs %02d %c %s\n", j++,
+					(i==f->space_idx)?'*':' ',
+					f->spaces[i]);
+		} else {
+			r_cons_printf ("%02d %c %s\n", j++,
+					(i==f->space_idx)?'*':' ',
+					f->spaces[i]);
+		}
+		j++;
 	}
+	if (mode == 'j')
+		r_cons_printf ("]\n");
+	return j;
 }
