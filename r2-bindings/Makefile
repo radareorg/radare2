@@ -152,6 +152,7 @@ purge-python:
 	rm -rf ${PYTHON_INSTALL_DIR}
 
 install-python:
+	[ -e python/_r_core.${SOEXT} ] && true
 	E=${SOEXT} ; [ `uname` = Darwin ] && E=so ; \
 	echo "Installing python${PYTHON_VERSION} r2 modules in ${PYTHON_INSTALL_DIR}" ; \
 	mkdir -p ${PYTHON_INSTALL_DIR} ; \

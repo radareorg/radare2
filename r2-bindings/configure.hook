@@ -5,5 +5,9 @@ case "$1" in
 	;;
 *)
 #[ ! -f supported.langs ] && 
+	printf "==> Using valabind "
+	valabind --version
+	printf "==> Using swig "
+	swig -version | grep Version |cut -d ' ' -f3
 	./configure-langs $@
 esac

@@ -55,9 +55,33 @@ namespace Radare {
 			public int size;
 			public uint64 offset;
 			public RBin.Object o;
-			public void *bin_obj;
-			public void *curplugin; // TODO: implement RBinPlugin
+			/** string?? this is hack coz swig dislikes void* */
+			public weak string bin_obj;
+			public Plugin curplugin;
 		}
+
+		[CCode (cname="RBinPlugin", free_function="", ref_function="", unref_function="")]
+		public class Plugin {
+		}
+
+		[CCode (cname="RBinDwarfRow", free_function="", ref_function="", unref_function="")]
+		public class DwarfRow {
+			public uint64 address;
+			public string file;
+			public int line;
+			public int column;
+		}
+
+		[CCode (cname="RBinClass", free_function="", ref_function="", unref_function="")]
+		public class Class {
+			public string name;
+			public string super;
+			public int index;
+			public RList<Symbol> methods;
+			public RList<Field> fields;
+			public bool visibility;
+		}
+
 		[CCode (cname="RBinObject", free_function="", ref_function="", unref_function="")]
 		public class Object {
 			public uint64 baddr;
@@ -66,15 +90,13 @@ namespace Radare {
 			public RList<RBin.Import> imports;
 			public RList<RBin.Symbol> symbols;
 			//public RList<RBin.Symbol> entries;
-			public void *entries;
+			public RList<RBin.Addr> entries;
 			public RList<RBin.Field> fields;
 			public RList<RBin.Symbol> libs;
 			public RList<RBin.Reloc> relocs;
 			public RList<RBin.String> strings;
-			public void *classes;
-			public void *lines;
-			//public RList<RBin.Class> classes;
-			//public RList<RBin.DwarfRow> lines;
+			public RList<RBin.Class> classes;
+			public RList<RBin.DwarfRow> lines;
 			public RBin.Info info;
 			public RBin.Addr binsym[4]; //
 		}

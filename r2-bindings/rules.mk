@@ -31,9 +31,10 @@ else
 	fi ; \
 	[ $$? = 0 ] && \
 	  (cd .. && RELEASE=$(RELEASE) \
-		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) || exit 1 ; \
+		sh do-swig.sh ${LANG} `echo $@ | sed -e s,.${SOEXT},,`) || exit 0 ; \
 		[ "${LANG}`uname`" = pythonDarwin ] && cp _${LIBPFX}$@ _`echo $@|sed -e s,.${SOEXT},.so,` ; \
 		true
+	@echo ... $@
 endif
 
 install:
