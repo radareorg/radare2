@@ -59,7 +59,6 @@ LDFLAGS+=-L../../libr/diff -lr_diff
 LDFLAGS+=-L../../libr/util -lr_util
 LDFLAGS+=-L../../libr/cons -lr_cons
 LDFLAGS+=-L../../libr/hash -lr_hash
-LDFLAGS+=-L../../libr/print -lr_print
 LDFLAGS+=-L../../libr/debug -lr_debug
 LDFLAGS+=-L../../libr/search -lr_search
 LDFLAGS+=-L../../libr/config -lr_config
