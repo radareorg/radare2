@@ -1,9 +1,48 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_list.h>
 #include <r_flags.h>
 #include <r_core.h>
+
+R_API void r_core_anal_hint_list (RAnal *a, int mode) {
+	int count = 0;
+	RAnalHint *hint;
+	RListIter *iter;
+	if (mode == 'j') r_cons_printf ("[");
+	// TODO: support ranged hints!
+	r_list_foreach (a->hints, iter, hint) {
+		switch (mode) {
+		case '*':
+			if (hint->arch) r_cons_printf ("aha %s @ 0x%"PFMT64x"\n", hint->arch, hint->from);
+			if (hint->bits) r_cons_printf ("ahb %d @ 0x%"PFMT64x"\n", hint->bits, hint->from);
+			if (hint->length) r_cons_printf ("ahl %d @ 0x%"PFMT64x"\n", hint->length, hint->from);
+			if (hint->opcode) r_cons_printf ("aho %s @ 0x%"PFMT64x"\n", hint->opcode, hint->from);
+			if (hint->analstr) r_cons_printf ("ahA %s @ 0x%"PFMT64x"\n", hint->analstr, hint->from);
+			break;
+		case 'j':
+			r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d, 
+				count>0?",":"", hint->from, hint->to);
+			if (hint->arch) r_cons_printf (",\"arch\":\"%s\"", hint->arch); // XXX: arch must not contain strange chars
+			if (hint->bits) r_cons_printf (",\"bits\":%d", hint->bits);
+			if (hint->length) r_cons_printf (",\"length\":%d", hint->length);
+			if (hint->opcode) r_cons_printf (",\"opcode\":\"%s\"", hint->opcode);
+			if (hint->analstr) r_cons_printf (",\"analstr\":\"%s\"", hint->analstr);
+			r_cons_printf ("}");
+			break;
+		default:
+			r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->from, hint->to);
+			if (hint->arch) r_cons_printf (" arch='%s'", hint->arch);
+			if (hint->bits) r_cons_printf (" bits=%d", hint->bits);
+			if (hint->length) r_cons_printf (" length=%d", hint->length);
+			if (hint->opcode) r_cons_printf (" opcode='%s'", hint->opcode);
+			if (hint->analstr) r_cons_printf (" analstr='%s'", hint->analstr);
+			r_cons_printf ("\n");
+		}
+		count++;
+	}
+	if (mode == 'j') r_cons_printf ("]\n");
+}
 
 static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
         int is_html = r_cons_singleton ()->is_html;

@@ -402,6 +402,11 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
+	core->print = r_print_new ();
+	core->print->user = core;
+	core->print->offname = r_core_print_offname;
+	core->print->printf = (void *)r_cons_printf;
+	core->print->write = (void *)r_cons_memcat;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->watchers = r_list_new ();
@@ -449,11 +454,6 @@ R_API int r_core_init(RCore *core) {
 		/* XXX memory leak */
 		return R_FALSE;
 	}
-	core->print = r_print_new ();
-	core->print->user = core;
-	core->print->offname = r_core_print_offname;
-	core->print->printf = (void *)r_cons_printf;
-	core->print->write = (void *)r_cons_memcat;
 	core->lang = r_lang_new ();
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);

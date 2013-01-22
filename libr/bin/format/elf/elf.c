@@ -556,9 +556,12 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 static inline int needle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
-	if (bin->shstrtab)
-		return r_mem_mem ((const ut8*)bin->shstrtab, bin->shstrtab_size,
+	if (bin->shstrtab) {
+		int len = bin->shstrtab_size;
+		if (len > 4096) len = 4096; // avoid slow loading .. can be buggy?
+		return r_mem_mem ((const ut8*)bin->shstrtab, len,
 				(const ut8*)s, strlen (s)) != NULL;
+	}
 	return 0;
 }
 

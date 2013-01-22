@@ -342,30 +342,30 @@ toro:
 		r_anal_op_fini (&analop);
 		if (!lastfail)
 			r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
-if (hint && hint->length)
-analop.length = hint->length;
+		if (hint && hint->length)
+			analop.length = hint->length;
 		{
 			RAnalValue *src;
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_MOV:
 				src = analop.src[0];
 				if (src && src->memref>0 && src->reg) {
-				if (core->anal->reg && core->anal->reg->name) {
-					const char *pc = core->anal->reg->name[R_REG_NAME_PC];
-					RAnalValue *dst = analop.dst;
-					if (dst && dst->reg && dst->reg->name)
-					if (!strcmp (src->reg->name, pc)) {
-						RFlagItem *item;
-						ut8 b[8];
-						ut64 ptr = idx+addr+src->delta+analop.length;
-						ut64 off = 0LL;
-						r_core_read_at (core, ptr, b, src->memref);
-						off = r_mem_get_num (b, src->memref, 1);
-						item = r_flag_get_i (core->flags, off);
-						r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
-								dst->reg->name, ptr, off, item?item->name: "");
+					if (core->anal->reg && core->anal->reg->name) {
+						const char *pc = core->anal->reg->name[R_REG_NAME_PC];
+						RAnalValue *dst = analop.dst;
+						if (dst && dst->reg && dst->reg->name)
+						if (!strcmp (src->reg->name, pc)) {
+							RFlagItem *item;
+							ut8 b[8];
+							ut64 ptr = idx+addr+src->delta+analop.length;
+							ut64 off = 0LL;
+							r_core_read_at (core, ptr, b, src->memref);
+							off = r_mem_get_num (b, src->memref, 1);
+							item = r_flag_get_i (core->flags, off);
+							r_cons_printf ("; MOV %s = [0x%"PFMT64x"] = 0x%"PFMT64x" %s\n",
+									dst->reg->name, ptr, off, item?item->name: "");
+						}
 					}
-				}
 				}
 				break;
 #if 1
@@ -836,6 +836,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	RAnalOp analop;
 	int i, oplen, ret;
 	r_cons_printf ("[");
+	// TODO: add support for anal hints
 	for (i=0; i<len;) {
 		ut64 at = addr +i;
 		r_asm_set_pc (core->assembler, at);
@@ -867,4 +868,38 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	}
 	r_cons_printf ("]");
 	return R_TRUE;
+}
+
+R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
+	RAsmOp asmop;
+	int i, j, ret, err = 0;
+	const ut8 *buf = core->block;
+	int bs = core->blocksize;
+	RAnalOp analop = {0};
+	int decode = r_config_get_i (core->config, "asm.decode");
+
+// TODO: add support for anal hints
+	if (len>core->blocksize)
+		r_core_block_size (core, len);
+	if (l==0) l = len;
+	for (i=j=0; i<bs && i<len && j<len; i+=ret, j++) {
+		r_asm_set_pc (core->assembler, core->offset+i);
+		ret = r_asm_disassemble (core->assembler,
+			&asmop, buf+i, core->blocksize-i);
+		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		if (ret<1) {
+			ret = err = 1;
+			r_cons_printf ("???\n");
+		} else {
+			if (decode) {
+				char *tmpopstr, *opstr;
+				r_anal_op (core->anal, &analop, core->offset+i,
+					buf+i, core->blocksize-i);
+				tmpopstr = r_anal_op_to_string (core->anal, &analop);
+				opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
+				r_cons_printf ("%s\n", opstr);
+				free (opstr);
+			} else r_cons_printf ("%s\n", asmop.buf_asm);
+		}
+	}
 }

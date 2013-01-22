@@ -238,15 +238,15 @@ static int cmd_anal(void *data, const char *input) {
 
 #if 1
 	switch (input[0]) {
-case 'o':
-	if (input[0] && input[1]) {
-		l = (int) r_num_get (core->num, input+2);
-		if (l>0) len = l;
-		if (l>tbs) {
-			r_core_block_size (core, l);
-			len = l;
-		}
-	} else len = l = core->blocksize;
+	case 'o':
+		if (input[0] && input[1]) {
+			l = (int) r_num_get (core->num, input+2);
+			if (l>0) len = l;
+			if (l>tbs) {
+				r_core_block_size (core, l);
+				len = l;
+			}
+		} else len = l = core->blocksize;
 	}
 #endif
 	r_cons_break (NULL, NULL);
@@ -861,7 +861,10 @@ case 'o':
 			} else
 			r_cons_printf (
 				"Usage: ah[lba-]\n"
+				" ah?           # show this help\n"
 				" ah? offset    # show hint of given offset\n"
+				" ah            # list hints in human-readable format\n"
+				" ah* offset    # list hints in radare commands format\n"
 				" aha ppc 51    # set arch for a range of N bytes\n"
 				" ahb 16 @ $$   # force 16bit for current instruction\n"
 				" ahl 4 32      # set opcode size=4 for range of 32 bytes\n"
@@ -916,8 +919,9 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 			break;
 #endif
 		case '*':
+		case 'j':
 		case '\0':
-			r_anal_hint_list (core->anal, input[1]);
+			r_core_anal_hint_list (core->anal, input[1]);
 			break;
 		case '-':
 			if (input[2]) {

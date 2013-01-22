@@ -6,6 +6,8 @@ static void r_core_file_info (RCore *core, int mode) {
 	RBinInfo *info = r_bin_get_info (core->bin);
 	if (mode == R_CORE_BIN_JSON)
 		r_cons_printf ("{");
+	if (mode == R_CORE_BIN_RADARE)
+		return;
 	if (info) {
 		fn = info->file;
 		switch (mode) {

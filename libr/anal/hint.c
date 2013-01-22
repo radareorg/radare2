@@ -13,26 +13,6 @@ R_API void r_anal_hint_del (RAnal *a, ut64 addr) {
 	if (hint) r_list_delete_data (a->hints, hint);
 }
 
-R_API void r_anal_hint_list (RAnal *a, int mode) {
-	RAnalHint *hint;
-	RListIter *iter;
-	// TODO: move into r_Core, show rad output mode too
-	r_list_foreach (a->hints, iter, hint) {
-		eprintf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->from, hint->to);
-		if (hint->arch)
-			eprintf (" arch='%s'", hint->arch);
-		if (hint->bits)
-			eprintf (" bits=%d", hint->bits);
-		if (hint->length)
-			eprintf (" length=%d", hint->length);
-		if (hint->opcode)
-			eprintf (" opcode='%s'", hint->opcode);
-		if (hint->analstr)
-			eprintf (" analstr='%s'", hint->analstr);
-		eprintf ("\n");
-	}
-}
-
 R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, int size, const char *arch) {
 	RAnalHint *hint = r_anal_hint_add (a, addr, size);
 	free (hint->arch);

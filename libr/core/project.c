@@ -104,6 +104,8 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_cons_flush ();
 		r_core_cmd (core, "af*", 0);
 		r_cons_flush ();
+		r_core_cmd (core, "ah*", 0);
+		r_cons_flush ();
 		r_str_write (fd, "# seek\n");
 		r_str_writef (fd, "s 0x%08"PFMT64x, core->offset);
 		r_cons_flush ();

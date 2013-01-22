@@ -210,38 +210,8 @@ static int cmd_print(void *data, const char *input) {
 		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
 		}
 		break;
-	case 'i': {
-		RAsmOp asmop;
-		int j, ret, err = 0;
-		const ut8 *buf = core->block;
-		int bs = core->blocksize;
-		RAnalOp analop = {0};
-		int decode = r_config_get_i (core->config, "asm.decode");
-
-		if (len>core->blocksize)
-			r_core_block_size (core, len);
-		if (l==0) l = len;
-		for (i=j=0; i<bs && i<len && j<len; i+=ret, j++) {
-			r_asm_set_pc (core->assembler, core->offset+i);
-			ret = r_asm_disassemble (core->assembler,
-				&asmop, buf+i, core->blocksize-i);
-			//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-			if (ret<1) {
-				ret = err = 1;
-				r_cons_printf ("???\n");
-			} else {
-				if (decode) {
-					char *tmpopstr, *opstr;
-					r_anal_op (core->anal, &analop, core->offset+i,
-						buf+i, core->blocksize-i);
-					tmpopstr = r_anal_op_to_string (core->anal, &analop);
-					opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
-					r_cons_printf ("%s\n", opstr);
-					free (opstr);
-				} else r_cons_printf ("%s\n", asmop.buf_asm);
-			}
-		}
-		}
+	case 'i': 
+		r_core_print_disasm_instructions (core, len, l);
 		break;
 	case 'D':
 	case 'd':
@@ -576,7 +546,7 @@ static int cmd_print(void *data, const char *input) {
 					int idx = ((int)(size_t)i)-1;
 					const char *key = r_strpool_get (sht->sp, idx);
 					const char *val = r_strht_get (core->print->formats, key);
-					r_cons_printf ("%s    %s\n", key, val);
+					r_cons_printf ("pf$%s %s\n", key, val);
 				}
 			} else
 			if (input[2]=='-') {
