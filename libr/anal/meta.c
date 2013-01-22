@@ -194,6 +194,8 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 		eprintf ("r_meta_add: Unsupported type '%c'\n", type);
 		return R_FALSE;
 	}
+	if (mi->type == R_META_TYPE_FORMAT)
+		mi->size = r_print_format_length (mi->str);
 	return R_TRUE;
 }
 
@@ -313,7 +315,7 @@ R_API int r_meta_list(RMeta *m, int type, int rad) {
 }
 
 R_API char *r_anal_meta_bar (RAnal *anal, ut64 from, ut64 to, int blocks) {
-	int i, blocksize;
+	int i, n, blocksize;
 	char *res;
 	ut64 f, t;
 
@@ -328,10 +330,8 @@ R_API char *r_anal_meta_bar (RAnal *anal, ut64 from, ut64 to, int blocks) {
 	for (i=0; i< blocks; i++) {
 		f = from + (blocksize*i);
 		t = f+blocksize;
-		{
-			int n = r_anal_fcn_count (anal, f, t);
-			if (n>0) res[i++] = 'f';
-		}
+		n = r_anal_fcn_count (anal, f, t);
+		if (n>0) res[i++] = 'f';
 		res[i++] = ',';
 	}
 	return res;

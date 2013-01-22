@@ -1,8 +1,25 @@
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
 
 #include "r_cons.h"
 #include "r_print.h"
 #include "r_util.h"
+
+static int nullprinter(const char* a, ...) { return 0; }
+
+R_API int r_print_mute(RPrint *p, int x) {
+	if (x) {
+		if (p->printf == &nullprinter)
+			return 0;
+		p->oprintf = p->printf;
+		p->printf = nullprinter;
+		return 1;
+	}
+	if (p->printf == nullprinter) {
+		p->printf = p->oprintf;
+		return 1;
+	}
+	return 0;
+}
 
 R_API RPrint *r_print_new() {
 	RPrint *p = R_NEW (RPrint);
@@ -11,6 +28,7 @@ R_API RPrint *r_print_new() {
 	p->user = NULL;
 	r_io_bind_init (p->iob);
 	p->printf = printf;
+	p->oprintf = nullprinter;
 	p->interrupt = 0;
 	p->bigendian = 0;
 	p->col = 0;
@@ -18,6 +36,7 @@ R_API RPrint *r_print_new() {
 	p->cols = 16;
 	p->cur_enabled = R_FALSE;
 	p->cur = p->ocur = -1;
+	p->formats = r_strht_new ();
 	p->addrmod = 4;
 	p->flags = \
 		   R_PRINT_FLAGS_COLOR |
@@ -29,6 +48,8 @@ R_API RPrint *r_print_new() {
 
 R_API RPrint *r_print_free(RPrint *p) {
 	if (!p) return NULL;
+	r_strht_free (p->formats);
+	p->formats = NULL;
 	if (p->zoom) {
 		free (p->zoom->buf);
 		free (p->zoom);
@@ -62,10 +83,10 @@ R_API void r_print_cursor(RPrint *p, int cur, int set) {
 		int to = p->cur;
 		r_num_minmax_swap_i (&from, &to);
 		if (cur>=from && cur<=to)
-			r_cons_invert (set, 1); //p->flags&R_PRINT_FLAGS_COLOR);
+			p->printf ("%s", R_CONS_INVERT (set, 1)); //r_cons_invert (set, 1); //p->flags&R_PRINT_FLAGS_COLOR);
 	} else
 	if (cur==p->cur)
-		r_cons_invert (set, 1); //p->flags & R_PRINT_FLAGS_COLOR);
+		p->printf ("%s", R_CONS_INVERT (set, 1)); //r_cons_invert (set, 1); //p->flags&R_PRINT_FLAGS_COLOR);
 }
 
 R_API void r_print_addr(RPrint *p, ut64 addr) {
@@ -83,7 +104,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 			r_cons_singleton ()->palette[PAL_ADDRESS], addr, ch);
 #endif
 		p->printf ("0x%08"PFMT64x"%c", addr, ch);
-	} else r_cons_printf ("0x%08"PFMT64x"%c", addr, ch);
+	} else p->printf ("0x%08"PFMT64x"%c", addr, ch);
 }
 
 #define CURDBG 0
@@ -475,8 +496,7 @@ R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt) {
 }
 
 R_API void r_print_raw(RPrint *p, const ut8* buf, int len) {
-	// TODO independize from cons
-	r_cons_memcat ((char *)buf, len);
+	p->write (buf, len);
 }
 
 R_API void r_print_c(RPrint *p, const ut8 *str, int len) {

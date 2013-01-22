@@ -13,7 +13,8 @@ LIBS2=syscall cmd lang io crypto flags bin
 LIBS3=fs anal
 LIBS4=parse sign
 LIBS5=asm debug
-LIBS6=print egg
+LIBS6=egg
+#LIBS6+=print
 LIBS7=core
 
 LIBS=$(LIBS0) $(LIBS1) $(LIBS2) $(LIBS3) $(LIBS4) $(LIBS5) $(LIBS6) $(LIBS7)

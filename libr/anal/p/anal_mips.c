@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 - pancake */
+/* radare - LGPL - Copyright 2010-2013 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -8,8 +8,8 @@
 
 static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	unsigned int opcode;
-	char buf[10];
-	int family, reg, optype, oplen = (anal->bits==16)?2:4;
+	// UNUSED char buf[10]; int reg;
+	int family, optype, oplen = (anal->bits==16)?2:4;
 
         if (op == NULL)
 		return oplen;

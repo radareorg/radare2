@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble, pancake, xvilka */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake, xvilka */
 
 #ifndef _INCLUDE_R_ANAL_H_
 #define _INCLUDE_R_ANAL_H_
@@ -492,7 +492,18 @@ typedef struct r_anal_t {
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
 	struct list_head anals; // TODO: Reimplement with RList
+	RList *hints; // XXX use better data structure here (slist?)
 } RAnal;
+
+typedef struct r_anal_hint_t {
+	ut64 from;
+	ut64 to;
+	char *arch;
+	char *opcode;
+	char *analstr;
+	int length;
+	int bits;
+} RAnalHint;
 
 // mul*value+regbase+regidx+delta
 typedef struct r_anal_value_t {
@@ -830,6 +841,19 @@ R_API RMetaItem *r_meta_item_new(int type);
 
 R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type);
 R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type);
+
+/* hints */
+R_API void r_anal_hint_list (RAnal *anal, int mode);
+R_API void r_anal_hint_del (RAnal *anal, ut64 addr);
+R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from, int size);
+R_API RAnalHint *r_anal_hint_add (RAnal *a, ut64 from, int size);
+R_API void r_anal_hint_free (RAnalHint *h);
+R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
+R_API void r_anal_hint_set_bits (RAnal *a, ut64 addr, int size, int bits);
+R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, int size, const char *arch);
+R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int size, int length);
+R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, int size, const char *str);
+R_API void r_anal_hint_set_analstr (RAnal *a, ut64 addr, int size, const char *str);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -453,6 +453,7 @@ R_API int r_core_init(RCore *core) {
 	core->print->user = core;
 	core->print->offname = r_core_print_offname;
 	core->print->printf = (void *)r_cons_printf;
+	core->print->write = (void *)r_cons_memcat;
 	core->lang = r_lang_new ();
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);

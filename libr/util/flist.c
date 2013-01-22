@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 pancake <@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2013 - pancake */
 
 int r_flist_iterator(void **x) {
 	return *x!=0;
@@ -23,7 +23,6 @@ void** r_flist_get(void **x) {
 #define r_flist_iterator(x) x
 #define r_flist_unref(x) x
 #endif
-
 
 R_API void **r_flist_new(int n) {
 	void **it;

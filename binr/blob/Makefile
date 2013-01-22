@@ -29,7 +29,6 @@ LDFLAGS+=../../libr/cons/libr_cons.a
 LDFLAGS+=../../libr/diff/libr_diff.a
 LDFLAGS+=../../libr/syscall/libr_syscall.a
 LDFLAGS+=../../libr/flags/libr_flags.a
-LDFLAGS+=../../libr/print/libr_print.a
 LDFLAGS+=../../libr/reg/libr_reg.a
 LDFLAGS+=../../libr/debug/libr_debug.a
 LDFLAGS+=../../libr/search/libr_search.a

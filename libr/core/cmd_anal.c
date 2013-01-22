@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #if 1
 /* TODO: Move into cmd_anal() */
@@ -845,29 +845,105 @@ case 'o':
 			}
 			break;
 		default:
-			eprintf ("Usage: ad[kt] [...]\n");
-			eprintf ("  ad [N] [D]   analyze N data words at D depth\n");
-			eprintf ("  adt          analyze data trampolines (wip)\n");
-			eprintf ("  adk          analyze kind of data (code, text, data, invalid, ...)\n");
+			eprintf ("Usage: ad[kt] [...]\n"
+			"  ad [N] [D]  analyze N data words at D depth\n"
+			"  adt         analyze data trampolines (wip)\n"
+			"  adk         analyze data kind (code, text, data, invalid, ...)\n");
+			break;
+		}
+		break;
+	case 'h':
+		switch (input[1]) {
+		case '?':
+			if (input[2]) {
+				//ut64 addr = r_num_math (core->num, input+2);
+				eprintf ("TODO: show hint\n");
+			} else
+			r_cons_printf (
+				"Usage: ah[lba-]\n"
+				" ah? offset    # show hint of given offset\n"
+				" aha ppc 51    # set arch for a range of N bytes\n"
+				" ahb 16 @ $$   # force 16bit for current instruction\n"
+				" ahl 4 32      # set opcode size=4 for range of 32 bytes\n"
+				" aho foo a0,33 # replace opcode string\n"
+				" ahA eax+=3    # set vm analysis string\n"
+			);
+			break;
+#if 0
+in core/disasm we call
+R_API int r_core_hint(RCore *core, ut64 addr) {
+  static int hint_bits = 0;
+  RAnalHint *hint = r_anal_hint_get (core->anal, addr);
+  if (hint->bits) {
+   if (!hint_bits)
+     hint_bits = core->assembler->bits;
+   r_config_set_i (core->config, "asm.bits", hint->bits);
+  } else if (hint_bits) {
+   r_config_set_i (core->config, "asm.bits", hint_bits);
+   hint_bits = 0;
+  } 
+  if (hint->arch)
+   r_config_set (core->config, "asm.arch", hint->arch);
+  if (hint->length)
+   force_instruction_length = hint->length;
+  r_anal_hint_free (hint);
+#endif
+		case 'a': // set arch
+			r_anal_hint_set_arch (core->anal, core->offset,
+				1, input+2);
+			break;
+		case 'b': // set bits
+			r_anal_hint_set_bits (core->anal, core->offset,
+				1, atoi (input+2));
+			//r_anal_hint_bits (op, 1);
+			break;
+		case 'l': // set size (opcode length)
+			r_anal_hint_set_length (core->anal, core->offset,
+				1, atoi (input+2));
+			break;
+		case 'o': // set opcode string
+			r_anal_hint_set_opcode (core->anal, core->offset,
+				1, input+2);
+			break;
+		case 'A': // set analysis string
+			r_anal_hint_set_analstr (core->anal, core->offset,
+				1, input+2);
+			break;
+#if TODO
+		case 'e': // set endian
+			r_anal_hint_set_opcode (core->anal, core->offset,
+				1, atoi (input+2));
+			break;
+#endif
+		case '*':
+		case '\0':
+			r_anal_hint_list (core->anal, input[1]);
+			break;
+		case '-':
+			if (input[2]) {
+				r_anal_hint_del (core->anal,
+					r_num_math (core->num, input+2));
+			} else r_anal_hint_clear (core->anal);
 			break;
 		}
 		break;
 	default:
 		r_cons_printf (
-		"Usage: a[?obdfrgtv]\n"
-		" aa               ; analyze all (fcns + bbs)\n"
+		"Usage: a[?adfFghoprsx]\n"
 		" a8 [hexpairs]    ; analyze bytes\n" 
+		" aa               ; analyze all (fcns + bbs)\n"
 		" ad               ; analyze data trampoline (wip)\n"
-		" ap               ; find and analyze function preludes\n"
 		" ad [from] [to]   ; analyze data pointers to (from-to)\n"
-		" as [num]         ; analyze syscall using dbg.reg\n"
-		" ax[-cCd] [f] [t] ; manage code/call/data xrefs\n"
-		" ao[e?] [len]     ; analyze Opcodes (or emulate it)\n"
 		" af[bcsl?+-*]     ; analyze Functions\n"
 		" aF               ; same as above, but using graph.depth=1\n"
-		" ar[?ld-*]        ; manage refs/xrefs\n"
 		" ag[?acgdlf]      ; output Graphviz code\n"
+		" ah[?lba-]        ; analysis hints (force opcode size, ...)\n"
+		" ao[e?] [len]     ; analyze Opcodes (or emulate it)\n"
+		" ap               ; find and analyze function preludes\n"
+		" ar[?ld-*]        ; manage refs/xrefs\n"
+		" as [num]         ; analyze syscall using dbg.reg\n"
 		" at[trd+-*?] [.]  ; analyze execution Traces\n"
+		" ax[-cCd] [f] [t] ; manage code/call/data xrefs\n"
 		"Examples:\n"
 		" f ts @ `S*~text:0[3]`; f t @ section..text\n"
 		" f ds @ `S*~data:0[3]`; f d @ section..data\n"

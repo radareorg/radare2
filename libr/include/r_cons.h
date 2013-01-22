@@ -237,6 +237,7 @@ R_API void r_cons_grep(const char *str);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
 R_API int r_cons_grepbuf(char *buf, int len);
 
+R_API void r_cons_color (int fg, int r, int g, int b);
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
 R_API void r_cons_set_cup(int enable);
@@ -244,7 +245,6 @@ R_API void r_cons_column(int c);
 R_API int r_cons_get_column();
 R_API char *r_cons_message(const char *msg);
 #endif
-
 
 /* r_line */
 #define R_LINE_BUFSIZE 4096
@@ -304,7 +304,8 @@ R_API int r_line_hist_save(const char *file);
 R_API int r_line_hist_label(const char *label, void (*cb)(const char*));
 R_API void r_line_label_show();
 
-#endif
+#define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
 
+#endif
 
 #endif

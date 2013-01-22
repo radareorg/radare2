@@ -14,7 +14,7 @@ Broken stuff to fixe before release
 
 0.9.4
 =====
-* @b: @f: doesnt support temporary seek address?? support multiple @?
+* cmp rip+xx -> not resolved wtf
 * search for CALL instructions in text segment.
   - analyze the destination address of each call destination
 * Analysis: assume there is a function at the end of each function

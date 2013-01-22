@@ -28,7 +28,9 @@ typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
 	char datefmt[32];
+	int (*write)(const unsigned char *buf, int len);
 	int (*printf)(const char *str, ...);
+	int (*oprintf)(const char *str, ...);
 	/* TODO: add printf callback */
 	int interrupt;
 	int bigendian;
@@ -43,12 +45,14 @@ typedef struct r_print_t {
 	int col;
 	RPrintZoom *zoom;
 	RPrintNameCallback offname;
+	RStrHT *formats;
 } RPrint;
 
 #ifdef R_API
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
 R_API RPrint *r_print_new();
 R_API RPrint *r_print_free(RPrint *p);
+R_API int r_print_mute(RPrint *p, int x);
 R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API void r_print_addr(RPrint *p, ut64 addr);
@@ -64,7 +68,8 @@ R_API void r_print_cursor(RPrint *p, int cur, int set);
 R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
 R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
-R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt);
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt);
+R_API int r_print_format_length (const char *fmt);
 // XXX . change wide, zeroend, urlencode for option flags
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int wide, int zeroend, int urlencode);
 R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len);

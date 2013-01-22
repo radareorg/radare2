@@ -29,6 +29,22 @@ static inline void r_cons_write (const char *buf, int len) {
 #endif
 }
 
+R_API void r_cons_color (int fg, int r, int g, int b) {
+	int k;
+	r = R_DIM (r, 0, 255);
+	g = R_DIM (g, 0, 255);
+	b = R_DIM (b, 0, 255);
+	if (r == g && g == b) { // b&w
+		k = 232 + (int)(((r+g+b)/3)/10.3);
+	} else {
+		r = (int)(r/42.6);
+		g = (int)(g/42.6);
+		b = (int)(b/42.6);
+		k = 16 + (r*36) + (g*6) + b;
+	}
+	r_cons_printf ("\x1b[%d;5;%dm", fg? 48: 38, k);
+}
+
 R_API void r_cons_strcat_justify (const char *str, int j, char c) {
 	int i, o, len;
 	for (o=i=len=0; str[i]; i++, len++) {
@@ -456,8 +472,7 @@ R_API void r_cons_set_raw(int is_raw) {
 }
 
 R_API void r_cons_invert(int set, int color) {
-	if (color) r_cons_strcat (set?  Color_INVERT: Color_INVERT_RESET);
-	else r_cons_strcat (set? "[": "]");
+	r_cons_strcat (R_CONS_INVERT (set, color));
 }
 
 /*

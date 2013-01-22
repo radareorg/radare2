@@ -154,36 +154,7 @@ enum {
 	R_SYS_BITS_64 = 8,
 };
 
-/** hashtable **/
-typedef struct r_hashtable_entry_t {
-	ut32 hash;
-	void *data;
-} RHashTableEntry;
-
-typedef struct r_hashtable_t {
-	RHashTableEntry *table;
-	ut32 size;
-	ut32 rehash;
-	ut32 max_entries;
-	ut32 size_index;
-	ut32 entries;
-	ut32 deleted_entries;
-} RHashTable;
-
-typedef struct r_hashtable64_entry_t {
-	ut64 hash;
-	void *data;
-} RHashTable64Entry;
-
-typedef struct r_hashtable64_t {
-	RHashTable64Entry *table;
-	ut64 size;
-	ut64 rehash;
-	ut64 max_entries;
-	ut64 size_index;
-	ut64 entries;
-	ut64 deleted_entries;
-} RHashTable64;
+#include "ht.h"
 
 /* r_mixed */
 
@@ -536,23 +507,10 @@ R_API int r_big_divisible_ut(RNumBig *n, ut32 v);
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
 #endif
 
-R_API RHashTable* r_hashtable_new(void);
-R_API void r_hashtable_free(RHashTable *ht);
-R_API void *r_hashtable_lookup(RHashTable *ht, ut32 hash);
-R_API boolt r_hashtable_insert(RHashTable *ht, ut32 hash, void *data);
-R_API void r_hashtable_remove(RHashTable *ht, ut32 hash);
-
-R_API RHashTable64* r_hashtable64_new(void);
-R_API void r_hashtable64_free(RHashTable64 *ht);
-R_API void *r_hashtable64_lookup(RHashTable64 *ht, ut64 hash);
-R_API boolt r_hashtable64_insert(RHashTable64 *ht, ut64 hash, void *data);
-R_API void r_hashtable64_remove(RHashTable64 *ht, ut64 hash);
-
 /* uleb */
 R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v);
 R_API const ut8 *r_leb128 (const ut8 *data, st32 *v);
 #endif
-
 
 /* constr */
 typedef struct r_constr_t {
@@ -596,5 +554,18 @@ R_API int r_strpool_get_index(RStrpool *p, const char *s);
 R_API char *r_strpool_next(RStrpool *p, int index);
 R_API char *r_strpool_slice (RStrpool *p, int index);
 R_API char *r_strpool_empty (RStrpool *p);
+
+typedef struct r_strht_t {
+	RStrpool *sp;
+	RHashTable *ht;
+	RList *ls;
+} RStrHT;
+
+R_API RStrHT *r_strht_new();
+R_API void r_strht_free(RStrHT *s);
+R_API const char *r_strht_get(RStrHT *s, const char *key);
+R_API int r_strht_set(RStrHT *s, const char *key, const char *val);
+R_API void r_strht_clear(RStrHT *s);
+R_API void r_strht_del(RStrHT *s, const char *key);
 
 #endif

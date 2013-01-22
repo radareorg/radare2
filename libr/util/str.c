@@ -972,3 +972,119 @@ R_API char *r_str_uri_encode (const char *s) {
 	*d = 0;
 	return realloc (o, strlen (d)+1); // FIT
 }
+
+// TODO: merge print inside rutil
+/* hack from print */
+R_API int r_print_format_length (const char *fmt) {
+	int nargs, i, j, idx, times, otimes, endian;
+	char *args, *bracket, tmp, last = 0;
+	const char *arg = fmt;
+	const char *argend = arg+strlen (fmt);
+	char namefmt[8];
+	int viewflags = 0;
+	nargs = endian = i = j = 0;
+
+	while (*arg && iswhitechar (*arg)) arg++;
+	/* get times */
+	otimes = times = atoi (arg);
+	if (times > 0)
+		while ((*arg>='0'&&*arg<='9')) arg++;
+	bracket = strchr (arg,'{');
+	if (bracket) {
+		char *end = strchr (arg,'}');
+		if (end == NULL) {
+			eprintf ("No end bracket. Try pm {ecx}b @ esi\n");
+			return 0;
+		}
+		*end='\0';
+		times = r_num_math (NULL, bracket+1);
+		arg = end + 1;
+	}
+
+	if (*arg=='\0')
+		return 0;
+
+	/* get args */
+	args = strchr (arg, ' ');
+	if (args) {
+		int l=0, maxl = 0;
+		argend = args;
+		args = strdup (args+1);
+		nargs = r_str_word_set0 (args+1);
+		if (nargs == 0)
+			R_FREE (args);
+		for (i=0; i<nargs; i++) {
+			int len = strlen (r_str_word_get0 (args+1, i));
+			if (len>maxl) maxl = len;
+		}
+		l++;
+		snprintf (namefmt, sizeof (namefmt), "%%%ds : ", maxl);
+	}
+
+	/* go format */
+	i = 0;
+	if (!times) otimes = times = 1;
+	for (; times; times--) { // repeat N times
+		const char * orig = arg;
+		idx = 0;
+		arg = orig;
+		for (idx=0; arg<argend && *arg; idx++, arg++) {
+			tmp = *arg;
+		feed_me_again:
+			if (tmp == 0 && last != '*')
+				break;
+			/* skip chars */
+			switch (tmp) {
+			case '*':
+				if (i<=0) break;
+				tmp = last;
+				arg--;
+				idx--;
+				goto feed_me_again;
+			case '+':
+				idx--;
+				viewflags = !viewflags;
+				continue;
+			case 'e': // tmp swap endian
+				idx--;
+				endian ^= 1;
+				continue;
+			case '.': // skip char
+				i++;
+				idx--;
+				continue;
+			case 'p':
+				tmp = (sizeof (void*)==8)? 'q': 'x';
+				break;
+			case '?': // help
+				idx--;
+				return 0;
+			}
+			switch (tmp) {
+			case 'e': i += 8; break;
+			case 'q': i += 8; break;
+			case 'b': i++; break;
+			case 'c': i++; break;
+			case 'B': i += 4; break;
+			case 'i': i += 4; break;
+			case 'd': i += 4; break;
+			case 'x': i += 4; break;
+			case 'w':
+			case '1': i+=2; break;
+			case 'z': // XXX unsupported
+			case 'Z': // zero terminated wide string
+				break;
+			case 's': i += 4; break; // S for 8?
+			case 'S': i += 8; break; // S for 8?
+			default:
+				/* ignore unknown chars */
+				break;
+			}
+			last = tmp;
+		}
+		arg = orig;
+		idx = 0;
+	}
+//	free((void *)&args);
+	return i;
+}

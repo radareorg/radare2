@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
@@ -557,7 +557,7 @@ static int cmd_print(void *data, const char *input) {
 			else eprintf ("r_base64_decode: invalid stream\n");
 			break;
 		default:
-			eprintf ("Usage: p6[ed] [len]  ; base 64 encode/decode\n");
+			eprintf ("Usage: p6[ed] [len]     base 64 encode/decode\n");
 			break;
 		}
 		free (buf);
@@ -567,7 +567,40 @@ static int cmd_print(void *data, const char *input) {
 		r_print_bytes (core->print, core->block, len, "%02x");
 		break;
 	case 'f':
-		r_print_format (core->print, core->offset, core->block, len, input+1);
+		if (input[1]=='$') {
+			if (input[2]=='\0') {
+				RListIter *iter;
+				RStrHT *sht = core->print->formats;
+				int *i;
+				r_list_foreach (sht->ls, iter, i) {
+					int idx = ((int)(size_t)i)-1;
+					const char *key = r_strpool_get (sht->sp, idx);
+					const char *val = r_strht_get (core->print->formats, key);
+					r_cons_printf ("%s    %s\n", key, val);
+				}
+			} else
+			if (input[2]=='-') {
+				if (input[3]) r_strht_del (core->print->formats, input+3);
+				else r_strht_clear (core->print->formats);
+			} else {
+				char *name = strdup (input+2);
+				char *space = strchr (name, ' ');
+				if (space) {
+					*space++ = 0;
+					//printf ("SET (%s)(%s)\n", name, space);
+					r_strht_set (core->print->formats, name, space);
+					return 0;
+				} else {
+					const char *fmt = r_strht_get (core->print->formats, name);
+					if (fmt) {
+						//printf ("GET (%s) = %s\n", name, fmt);
+						r_print_format (core->print, core->offset,
+							core->block, len, fmt);
+					} else eprintf ("Unknown format (%s)\n", name);
+				}
+				free (name);
+			}
+		} else r_print_format (core->print, core->offset, core->block, len, input+1);
 		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
@@ -662,20 +695,20 @@ static int cmd_print(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: p[fmt] [len]\n"
-		" p=            show entropy bars of full file\n"
-		" p6[de] [len]  base64 decode/encode\n"
-		" p8 [len]      8bit hexpair list of bytes\n"
-		" pa [opcode]   bytes of assembled opcode\n"
-		" pb [len]      bitstream of N bytes\n"
-		" pc[p] [len]   output C (or python) format\n"
-		" pd[lf] [l]    disassemble N opcodes (see pd?)\n"
-		" pD [len]      disassemble N bytes\n"
-		" pf [fmt]      print formatted data\n"
-		" pi[f] [len]   print N instructions (f=function) (see pdi)\n"
-		" pm [magic]    print libmagic data (pm? for more information)\n"
-		" pr [len]      print N raw bytes\n"
-		" ps[pwz] [len] print pascal/wide/zero-terminated strings\n"
-		" pt[dn?] [len] print different timestamps\n"
+		" p=              show entropy bars of full file\n"
+		" p6[de] [len]    base64 decode/encode\n"
+		" p8 [len]        8bit hexpair list of bytes\n"
+		" pa [opcode]     bytes of assembled opcode\n"
+		" pb [len]        bitstream of N bytes\n"
+		" pc[p] [len]     output C (or python) format\n"
+		" pd[lf] [l]      disassemble N opcodes (see pd?)\n"
+		" pD [len]        disassemble N bytes\n"
+		" pf[$nam] [fmt]  print formatted data (pf$name, pf$name $<expression>) \n"
+		" pi[f] [len]     print N instructions (f=function) (see pdi)\n"
+		" pm [magic]      print libmagic data (pm? for more information)\n"
+		" pr [len]        print N raw bytes\n"
+		" ps[pwz] [len]   print pascal/wide/zero-terminated strings\n"
+		" pt[dn?] [len]   print different timestamps\n"
 		" pu[w] [len]   print N url encoded bytes (w=wide)\n"
 		" px[owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
 		" pz [len]      print zoom view (see pz? for help)\n");

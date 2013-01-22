@@ -102,7 +102,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
 	}
-	b = R_NEW (struct r_bp_item_t);
+	b = R_NEW (RBreakpointItem);
 	b->pids[0] = 0; /* for any pid */
 	b->addr = addr;
 	b->data = NULL;

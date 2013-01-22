@@ -304,26 +304,59 @@ static int cmd_write(void *data, const char *input) {
 		}
 		break;
 	case 'v':
-		off = r_num_math (core->num, input+1);
-		r_io_set_fd (core->io, core->file->fd);
-		r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
-		if (off&UT64_32U) {
-			/* 8 byte addr */
+		{
+			int type = 0;
+			ut8 addr1;
+			ut16 addr2;
+			ut32 addr4, addr4_;
 			ut64 addr8;
-			memcpy((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
-		//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
-			r_io_write(core->io, (const ut8 *)&addr8, 8);
-			WSEEK (core, 8);
-		} else {
-			/* 4 byte addr */
-			ut32 addr4, addr4_ = (ut32)off;
-			//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
-			//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
-			memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
-			r_io_write (core->io, (const ut8 *)&addr4, 4);
-			WSEEK (core, 4);
+
+			switch (input[1]) {
+			case '?':
+				r_cons_printf ("Usage: wv[size] [value]    # write value of given size\n"
+					"  wv1 234      # write one byte with this value\n"
+					"  wv 0x834002  # write dword with this value\n"
+					"Supported sizes are: 1, 2, 4, 8\n");
+				return 0;
+			case '1': type = 1; break;
+			case '2': type = 2; break;
+			case '4': type = 4; break;
+			case '8': type = 8; break;
+			}
+			off = r_num_math (core->num, input+2);
+			r_io_set_fd (core->io, core->file->fd);
+			r_io_seek (core->io, core->offset, R_IO_SEEK_SET);
+			if (type == 0)
+				type = (off&UT64_32U)? 8: 4;
+			switch (type) {
+			case 1:
+				addr1 = (ut8)off;
+				r_io_write (core->io, (const ut8 *)&addr1, 1);
+				WSEEK (core, 1);
+				break;
+			case 2:
+				addr2 = (ut16)off;
+				r_io_write (core->io, (const ut8 *)&addr2, 2);
+				WSEEK (core, 2);
+				break;
+			case 4:
+				addr4_ = (ut32)off;
+				//drop_endian((ut8*)&addr4_, (ut8*)&addr4, 4); /* addr4_ = addr4 */
+				//endian_memcpy((ut8*)&addr4, (ut8*)&addr4_, 4); /* addr4 = addr4_ */
+				memcpy ((ut8*)&addr4, (ut8*)&addr4_, 4); // XXX needs endian here too
+				r_io_write (core->io, (const ut8 *)&addr4, 4);
+				WSEEK (core, 4);
+				break;
+			case 8:
+				/* 8 byte addr */
+				memcpy ((ut8*)&addr8, (ut8*)&off, 8); // XXX needs endian here
+			//	endian_memcpy((ut8*)&addr8, (ut8*)&off, 8);
+				r_io_write (core->io, (const ut8 *)&addr8, 8);
+				WSEEK (core, 8);
+				break;
+			}
+			r_core_block_read (core, 0);
 		}
-		r_core_block_read (core, 0);
 		break;
 	case 'o':
 		switch (input[1]) {

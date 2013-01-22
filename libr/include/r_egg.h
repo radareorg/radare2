@@ -13,7 +13,8 @@
 // rename to REggShellcode
 #define R_EGG_PLUGIN_SHELLCODE 0
 #define R_EGG_PLUGIN_ENCODER 1
-typedef struct r_egg_plugin {
+
+typedef struct r_egg_plugin_t {
 	const char *name;
 	const char *desc;
 	int type;

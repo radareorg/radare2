@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include "r_core.h"
 
@@ -34,6 +34,11 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
+	/* hints */
+	RAnalHint *hint = NULL;
+	char *hint_arch = NULL;
+	int hint_bits = 0;
+	/* other */
 	int ret, idx = 0, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
 	int continueoninvbreak = (len == l) && invbreak;
@@ -119,7 +124,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, addr+idx);
-
 #if 0
 	/* find last function else stackptr=0 */
 	{
@@ -171,9 +175,34 @@ toro:
 	oplen = 1;
 	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
-		if (cbytes) {
-			if (idx>=l)
-				break;
+		if (hint) {
+			r_anal_hint_free (hint);
+			hint = NULL;
+		}
+		hint = r_anal_hint_get (core->anal, at);
+		if (cbytes && idx>=l)
+			break;
+		if (hint_arch) {
+			r_config_set (core->config, "asm.arch", hint_arch);
+			hint_arch = NULL;
+		}
+		if (hint_bits) {
+			r_config_set_i (core->config, "asm.bits", hint_bits);
+			hint_bits = 0;
+		}
+		if (hint) {
+			/* arch */
+			if (hint->arch) {
+				if (!hint_arch) hint_arch = strdup (
+					r_config_get (core->config, "asm.arch"));
+				r_config_set (core->config, "asm.arch", hint->arch);
+			}
+			/* bits */
+			if (hint->bits) {
+				if (!hint_bits) hint_bits =
+					r_config_get_i (core->config, "asm.bits");
+				r_config_set_i (core->config, "asm.bits", hint->bits);
+			}
 		}
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
@@ -284,7 +313,9 @@ toro:
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
 		} else {
 			lastfail = 0;
-			oplen = r_asm_op_get_size (&asmop);
+			if (hint && hint->length)
+				oplen = hint->length;
+			else oplen = r_asm_op_get_size (&asmop);
 		}
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
@@ -311,6 +342,8 @@ toro:
 		r_anal_op_fini (&analop);
 		if (!lastfail)
 			r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
+if (hint && hint->length)
+analop.length = hint->length;
 		{
 			RAnalValue *src;
 			switch (analop.type) {
@@ -470,7 +503,9 @@ toro:
 			}
 			continue;
 		case R_META_TYPE_FORMAT:
+			r_cons_printf ("format %s {\n", mi->str);
 			r_print_format (core->print, at, buf+idx, len-idx, mi->str);
+			r_cons_printf ("} %d\n", mi->size);
 			oplen = ret = (int)mi->size;
 			free (line);
 			free (refline);
@@ -574,6 +609,10 @@ toro:
 			// TODO: Use data from code analysis..not raw analop here
 			// if we want to get more information
 			opstr = tmpopstr? tmpopstr: strdup (asmop.buf_asm);
+		}
+		if (hint && hint->opcode) {
+			free (opstr);
+			opstr = strdup (hint->opcode);
 		}
 		if (filter) {
 			int ofs = core->parser->flagspace;
@@ -787,6 +826,7 @@ toro:
 	}
 #endif
 	r_anal_op_fini (&analop);
+	if (hint) r_anal_hint_free (hint);
 	free (osl);
 	return idx-lastfail;
 }

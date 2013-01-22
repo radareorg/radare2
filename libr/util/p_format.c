@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
 
 #include "r_cons.h"
 #include "r_util.h"
@@ -6,9 +6,14 @@
 
 static void print_format_help(RPrint *p) {
 	p->printf (
-	"Usage: pf [times][format] [arg0 arg1]\n"
-	"Example: pf 10xiz pointer length string\n"
-	"Example: pf {array_size}b @ array_base\n"
+	"Usage: pf[$key[ val]]|[times][format] [arg0 arg1]\n"
+	"Examples:\n"
+	"   pf 10xiz pointer length string\n"
+	"   pf {array_size}b @ array_base\n"
+	"   pf$          # list all formats\n"
+	"   pf$obj xxdz prev next size name\n"
+	"   pf$obj       # run stored format\n"
+	"Format chars:\n"
 	" e - temporally swap endian\n"
 	//" D - double (8 bytes)\n"
 	" f - float value\n"
@@ -23,7 +28,8 @@ static void print_format_help(RPrint *p) {
 	" x - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
 	" z - \\0 terminated string\n"
 	" Z - \\0 terminated wide string\n"
-	" s - pointer to string\n"
+	" s - 32bit pointer to string\n"
+	" S - 64bit pointer to string\n"
 	" t - unix timestamp string\n"
 	" * - next char is pointer\n"
 	" + - toggle show flags for each offset\n"
@@ -31,7 +37,7 @@ static void print_format_help(RPrint *p) {
 }
 
 /* TODO: needs refactoring */
-R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt) {
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt) {
 	ut8 buffer[256];
 	int nargs, i, j, idx, times, otimes, endian;
 	char *args, *bracket, tmp, last = 0;
@@ -52,7 +58,7 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 		char *end = strchr (arg,'}');
 		if (end == NULL) {
 			eprintf ("No end bracket. Try pm {ecx}b @ esi\n");
-			return;
+			return 0;
 		}
 		*end='\0';
 		times = r_num_math (NULL, bracket+1);
@@ -61,7 +67,7 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 
 	if (*arg=='\0') {
 		print_format_help (p);
-		return;
+		return 0;
 	}
 	/* get args */
 	args = strchr (arg, ' ');
@@ -98,7 +104,7 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 			if (endian)
 				 addr64 = (ut64)(*(buf+i))<<56 | (ut64)(*(buf+i+1))<<48 | (ut64)*(buf+i+2)<<40 | (ut64)(*(buf+i+3))<<32
 				 	| (*(buf+i+4))<<24 | (*(buf+i+5))<<16 | *(buf+i+6)<<8 | *(buf+i+7);
-			 else addr64 = ((ut64)(*(buf+i+7)))<<56 | (ut64)(*(buf+i+6))<<48 | (ut64)(*(buf+i+5))<<40 | (ut64)(*(buf+i+4))<<32
+			else addr64 = ((ut64)(*(buf+i+7)))<<56 | (ut64)(*(buf+i+6))<<48 | (ut64)(*(buf+i+5))<<40 | (ut64)(*(buf+i+4))<<32
 				 	| (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
 			tmp = *arg;
 		feed_me_again:
@@ -251,14 +257,31 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 				p->printf ("0x%08"PFMT64x" = ", seeki);
 				memset (buffer, '\0', 255);
 				if (p->iob.read_at) {
-					p->iob.read_at (p->iob.io, (ut64)addr, buffer, 248);
+					p->iob.read_at (p->iob.io, (ut64)addr,
+						buffer, sizeof (buffer)-8);
 				} else {
 					printf ("(cannot read memory)\n");
 					break;
 				}
-				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ", seeki, addr);
+				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ",
+					seeki, addr);
 				p->printf ("%s ", buffer);
 				i += 4;
+				break;
+			case 'S':
+				p->printf ("0x%08"PFMT64x" = ", seeki);
+				memset (buffer, '\0', 255);
+				if (p->iob.read_at) {
+					p->iob.read_at (p->iob.io, addr64,
+						buffer, sizeof (buffer)-8);
+				} else {
+					printf ("(cannot read memory)\n");
+					break;
+				}
+				p->printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" ",
+					seeki, addr);
+				p->printf ("%s ", buffer);
+				i += 8;
 				break;
 			default:
 				/* ignore unknown chars */
@@ -279,4 +302,5 @@ R_API void r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const c
 		idx = 0;
 	}
 //	free((void *)&args);
+	return i;
 }
