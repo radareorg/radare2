@@ -79,5 +79,9 @@ R_API int r_sandbox_chdir (const char *path) {
 R_API int r_sandbox_kill(int pid, int sig) {
 	if (enabled) // XXX: fine-tune. maybe we want to enable kill for child?
 		return -1;
+#if __UNIX__
 	return kill (pid, sig);
+#else
+	return -1;
+#endif
 }

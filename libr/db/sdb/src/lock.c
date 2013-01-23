@@ -31,8 +31,9 @@ int sdb_lock(const char *s) {
 
 void sdb_lock_wait(const char *s) {
 	// TODO use flock() here
-	while (!sdb_lock (s))
-		usleep (100); // hack
+	while (!sdb_lock (s)) {
+//		Sleep (100); // W32
+	}
 }
 
 void sdb_unlock(const char *s) {

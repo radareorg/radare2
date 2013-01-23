@@ -511,7 +511,7 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 	char *rbuf = NULL;
 	const int timeout = 0;
 	RSocket *s = r_socket_new (0);
-	for (;retries>0; usleep (10*1000)) {
+	for (;retries>0; r_sys_usleep (10*1000)) {
 		if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, timeout))
 			break;
 		retries--;

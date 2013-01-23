@@ -10,16 +10,6 @@ var prev_lastoff = 0;
 
 r2.root = ""; // prefix path
 
-Array.prototype.push = function (x) {
-  this[this.length] = x;
-}
-
-Array.prototype.pop = function () {
-  var x = this[this.length-1];
-  delete this[this.length-1];
-  return x;
-}
-
 /* helpers */
 function dump(obj) {
   var x = "";
@@ -82,22 +72,19 @@ r2.set_flag_space = function (ns, fn) {
 
 r2.get_flags = function (fn) {
   r2.cmd ("fj", function (x) {
-    if (x) x = JSON.parse (x);
-    fn (x);
+    fn (x? JSON.parse (x): []);
   });
 } 
 
 r2.get_opcodes = function (off, n, cb) {
   r2.cmd ("pdj @"+off+"!"+n, function (json) {
-    var o = JSON.parse (json);
-    cb (o);
+    cb (JSON.parse (o));
   });
 }
 
 r2.get_bytes = function (off, n, cb) {
   r2.cmd ("pcj @"+off+"!"+n, function (json) {
-    var o = JSON.parse (json);
-    cb (o);
+    cb (JSON.parse (json));
   });
 }
 
@@ -120,8 +107,7 @@ r2.bin_symbols = function (cb) {
 
 r2.bin_sections = function (cb) {
   r2.cmd ("iSj", function (json) {
-    var o = JSON.parse (json);
-    cb (o);
+    cb (JSON.parse (json));
   });
 }
 
@@ -151,8 +137,7 @@ r2.get_logger = function (obj) {
   });
   obj.load = function (cb) {
     r2.cmd ("lj "+(obj.last+1), function (ret) {
-      var json = JSON.parse (ret);
-      if (cb) cb (json);
+      if (cb) cb (JSON.parse (ret));
     });
   }
   obj.clear = function (cb) {

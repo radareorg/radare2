@@ -124,7 +124,7 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 			if (fd == -1)
 				r_sandbox_creat (uri, O_BINARY);
 			fd = r_sandbox_open (uri, O_BINARY | 1, 0);
-		} else fd = r_sandbox_open (uri, O_BINARY);
+		} else fd = r_sandbox_open (uri, O_BINARY, 0);
 #else
 		fd = r_sandbox_open (uri, (flags&R_IO_WRITE)?
 			O_RDWR: O_RDONLY, mode);

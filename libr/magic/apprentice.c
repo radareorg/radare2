@@ -37,6 +37,7 @@
 #include <sys/param.h>
 #include <assert.h>
 #include <ctype.h>
+#include <dirent.h>
 #if __UNIX__
 #define QUICK 1
 #include <sys/mman.h>

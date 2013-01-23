@@ -180,8 +180,10 @@ static const char *radare_argv[] = {
 	"/", "//", "/a", "/c", "/m", "/x", "/v",
 	"y", "yy", "y?",
 	"wx", "ww", "wf", "w?",
-	"p6d", "p6e", "p8", "pb", "pc", "pd", "pD", "px", "pX", "po",
-	"pm", "pr", "pt", "ps", "pz", "pu", "pU", "p?",
+	"p6d", "p6e", "p8", "pb", "pc",
+	"pd", "pda", "pdj", "pdb", "pdr", "pdf", "pdi", "pdl",
+	"pD", "px", "pX", "po",
+	"pm", "pr", "pt", "ptd", "ptn", "pt?", "ps", "pz", "pu", "pU", "p?",
 	NULL
 };
 
@@ -580,24 +582,26 @@ R_API int r_core_prompt(RCore *r, int sync) {
 		*prompt = 0;
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
-#if __UNIX__
 		ut32 a, b;
 		a = ((r->offset >>16)<<12);
 		b = (r->offset & 0xffff);
+#if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
 				Color_YELLOW"[%04x:%04x]> "
 				Color_RESET, a, b);
+		else
 #endif
-		else sprintf (prompt, "[%04x:%04x]> ", a, b);
+		sprintf (prompt, "[%04x:%04x]> ", a, b);
 	} else {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
 				Color_YELLOW"[0x%08"PFMT64x"]> "
 				Color_RESET, r->offset);
+		else
 #endif
-		else sprintf (prompt, "[0x%08"PFMT64x"]> ", r->offset);
+		sprintf (prompt, "[0x%08"PFMT64x"]> ", r->offset);
 	}
 	r_line_set_prompt (prompt);
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);

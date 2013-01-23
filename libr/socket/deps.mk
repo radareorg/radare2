@@ -16,7 +16,7 @@ LDFLAGS+=-lsocket
 endif
 # windows
 ifeq (${OSTYPE},windows)
-LDFLAGS=-lwsock32
+LDFLAGS+=-lwsock32
 #LDFLAGS+=-lws2_32
 endif
 

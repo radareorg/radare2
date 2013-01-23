@@ -4,7 +4,6 @@
 #include <r_types.h>
 #include <r_socket.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <stdio.h>

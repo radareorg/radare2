@@ -14,6 +14,7 @@
 # include <signal.h>
 #elif __WINDOWS__
 # include <io.h>
+# include <winbase.h>
 #endif
 
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
