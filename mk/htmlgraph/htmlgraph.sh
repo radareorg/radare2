@@ -143,12 +143,10 @@ cat <<EOF >> $T
 </html>
 EOF
 
+cp -f $D/* /tmp
 cd /tmp
-cp -f $D/* .
-if [ -e /usr/bin/open ]; then
-	open $T
-elif [ -e /usr/bin/xdg-open ]; then
-	xdg-open $T
-else
-	firefox $T
-fi
+
+for a in open xdg-open ${BROWSER} ; do
+	type $a >/dev/null 2>&1 && exec $a $T && break
+done
+echo "Could not find browser. Aborting!"
