@@ -123,3 +123,6 @@ You are probably using an old version of r2, go checkout the git!
 Run your own r2 scripts in awk using the r2awk program
 I love gradients
 Use -e bin.strings=false to disable search for strings when loading the binary
+wait a moment..
+Don't do this.
+No such file or directory.

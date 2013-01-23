@@ -78,7 +78,7 @@ r2.get_flags = function (fn) {
 
 r2.get_opcodes = function (off, n, cb) {
   r2.cmd ("pdj @"+off+"!"+n, function (json) {
-    cb (JSON.parse (o));
+    cb (JSON.parse (json));
   });
 }
 

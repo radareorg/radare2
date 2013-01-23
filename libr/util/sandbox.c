@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2013 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -51,6 +51,9 @@ R_API int r_sandbox_open (const char *path, int mode, int perm) {
 		if (!r_sandbox_check_path (path))
 			return -1;
 	}
+#if __WINDOWS__
+	perm = 0;
+#endif
 	return open (path, mode, perm);
 }
 

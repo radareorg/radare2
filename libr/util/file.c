@@ -48,7 +48,7 @@ R_API char *r_file_abspath(const char *file) {
 		ret = r_str_dup_printf ("%s/%s", cwd, file);
 #elif __WINDOWS__
 	if (cwd && !strchr (file, ':'))
-		ret = r_str_dup_printf ("%s/%s", cwd, file);
+		ret = r_str_dup_printf ("%s\\%s", cwd, file);
 #endif
 	free (cwd);
 // TODO: remove // and ./
@@ -277,8 +277,10 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 		}
 #elif __WINDOWS__
 		close (fd);
-		m->fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m->fh == NULL) {
+		m->fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
+			FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+		if (m->fh == INVALID_HANDLE_FILE) {
+			r_sys_perror ("CreateFile");
 			free (m);
 			return NULL;
 		}
@@ -290,7 +292,8 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 			return NULL;
 		}
 		if (m->fm != INVALID_HANDLE_VALUE) {
-			m->buf = MapViewOfFile (m->fm, rw?FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ, 0, 0, 0);
+			m->buf = MapViewOfFile (m->fm, rw?
+				FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ, 0, 0, 0);
 		} else {
 			CloseHandle (m->fh);
 			free (m);

@@ -40,6 +40,17 @@ R_API RBuffer *r_buf_mmap (const char *file, int rw) {
 	return b;
 }
 
+R_API RBuffer *r_buf_file (const char *file) {
+	RBuffer *b = r_buf_new ();
+	if (!b) return NULL;
+	b->buf = (ut8*)r_file_slurp (file, &b->length);
+	if (!b->buf) {
+		r_buf_free (b);
+		return NULL; /* we just freed b, don't return it */
+	}
+	return b;
+}
+
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 	// TODO: implement r_buf_set_bits
 	// TODO: get the implementation from reg/value.c ?
