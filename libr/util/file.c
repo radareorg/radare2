@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -279,7 +279,7 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 		close (fd);
 		m->fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
 			FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
-		if (m->fh == INVALID_HANDLE_FILE) {
+		if (m->fh == INVALID_HANDLE_VALUE) {
 			r_sys_perror ("CreateFile");
 			free (m);
 			return NULL;
