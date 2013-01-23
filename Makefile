@@ -63,7 +63,7 @@ w32dist:
 clean:
 	for a in libr binr shlr ; do (cd $$a ; ${MAKE} clean) ; done
 
-mrproper:
+distclean mrproper:
 	for a in libr binr shlr ; do ( cd $$a ; ${MAKE} mrproper) ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk
@@ -181,5 +181,5 @@ tests:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean mrproper install symstall uninstall deinstall dist shot pkgcfg
+.PHONY: all clean distclean mrproper install symstall uninstall deinstall dist shot pkgcfg
 .PHONY: r2-bindings r2-bindings-dist libr binr install-man w32dist tests

@@ -864,6 +864,8 @@ static int cmd_anal(void *data, const char *input) {
 				" ah?           # show this help\n"
 				" ah? offset    # show hint of given offset\n"
 				" ah            # list hints in human-readable format\n"
+				" ah-           # remove all hints\n"
+				" ah- offset    # remove hints at given offset\n"
 				" ah* offset    # list hints in radare commands format\n"
 				" aha ppc 51    # set arch for a range of N bytes\n"
 				" ahb 16 @ $$   # force 16bit for current instruction\n"

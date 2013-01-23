@@ -143,6 +143,5 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_bp.pc
 	pkgcfg/r_lib.pc
 	pkgcfg/r_parse.pc
-	pkgcfg/r_print.pc
 	pkgcfg/r_fs.pc
 ;

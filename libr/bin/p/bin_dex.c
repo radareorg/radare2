@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 pancake */
+/* radare - LGPL - Copyright 2011-2013 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -113,11 +113,14 @@ static RList* methods (RBinArch *arch) {
 		return NULL;
 	ret->free = free;
 	for (i = 0; i<bin->header.method_size; i++) {
+		int idx = bin->methods[i].name_id;
 		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
-		r_buf_read_at (bin->b, bin->strings[bin->methods[i].name_id], (ut8*)&buf, 6);
+		if (idx >= bin->header.strings_size) // workaround
+			continue;
+		r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
-
+		if (len<1) continue;
 		name = malloc (len);
 		if (!name) {
 			eprintf ("error malloc string length %d\n", len);
@@ -138,9 +141,12 @@ static RList* methods (RBinArch *arch) {
 	}
 	j = i;
 	for (i = 0; i<bin->header.fields_size; i++) {
+		int idx = bin->fields[i].name_id;
 		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
-		r_buf_read_at (bin->b, bin->strings[bin->fields[i].name_id], (ut8*)&buf, 6);
+		if (idx >= bin->header.strings_size) // workaround
+			continue;
+		r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 6);
 
 		len = dex_read_uleb128 (buf);
 		name = malloc (len);
