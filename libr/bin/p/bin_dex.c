@@ -19,12 +19,16 @@ static ut64 baddr(RBinArch *arch) {
 static int check(RBinArch *arch) {
 	if (!arch->buf || !arch->buf->buf)
 		return R_FALSE;
-	if (!memcmp (arch->buf->buf, "dex\n035\0", 8))
-		return R_TRUE;
+	if (!memcmp (arch->buf->buf, "dex\n035\0", 8)) // Non-extended opcode dex file
+	        return R_TRUE;
+	else if (!memcmp (arch->buf->buf, "dex\n036\0", 8)) // Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
+	        return R_TRUE;
 	else if (!memcmp (arch->buf->buf, "dex\n009\0", 8)) // M3 (Nov-Dec 07)
-		return R_TRUE;
-	else if (!memcmp (arch->buf->buf, "dex\n009\0", 8)) // M5 (Feb-Mar 08)
-		return R_TRUE;
+	        return R_TRUE;
+        else if (!memcmp (arch->buf->buf, "dex\n009\0", 8)) // M5 (Feb-Mar 08)
+	        return R_TRUE;
+	else if (!memcmp (arch->buf->buf, "dex\n", 4)) // Default fall through, should still be a dex file
+                return R_TRUE;
 	return R_FALSE;
 }
 
