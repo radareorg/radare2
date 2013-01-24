@@ -170,8 +170,10 @@ static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '\0': r_core_rtr_list (core); break;
-	case 'h': r_core_rtr_http (core, 0); break;
-	case 'H': r_core_rtr_http (core, 1); break;
+	case 'h': r_core_rtr_http (core, 0, NULL); break;
+	case 'H': 
+		  while (input[1]==' ') input++;
+		  r_core_rtr_http (core, 1, input+1); break;
 	case '?': r_core_rtr_help (core); break;
 	case '+': r_core_rtr_add (core, input+1); break;
 	case '-': r_core_rtr_remove (core, input+1); break;

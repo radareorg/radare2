@@ -1,4 +1,4 @@
-enyo.kind({
+enyo.kind ({
   name: "Preferences",
   classes: "panels-sample-sliding-content",
   kind: "Scroller",
@@ -12,10 +12,24 @@ enyo.kind({
          {kind: "onyx.PickerDecorator", components: [
            {},
            {kind: "onyx.Picker", components: [
-             {content: "x86", active: true},
+/* TODO: construct from code */
+             {content: "arc"},
              {content: "arm"},
+             {content: "avr"},
              {content: "ppc"},
-             {content: "bf"}
+             {content: "bf"},
+             {content: "dalvik"},
+             {content: "dcpu16"},
+             {content: "i8080"},
+             {content: "java"},
+             {content: "m68k"},
+             {content: "mips"},
+             {content: "msil"},
+             {content: "rar"},
+             {content: "sh"},
+             {content: "sparc"},
+             {content: "x86", active: true},
+             {content: "z80"},
            ]}
          ]}
       ]}
@@ -67,4 +81,3 @@ enyo.kind({
     ,{tag: "div", style: "height:64px"}
   ]
 });
-

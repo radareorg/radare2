@@ -35,7 +35,7 @@ SECURITY IMPLICATIONS
 - follow symlinks
 #endif
 
-R_API int r_core_rtr_http(RCore *core, int launch) {
+R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	RSocketHTTPRequest *rs;
 	int oldsandbox = -1;
 	int timeout = r_config_get_i (core->config, "http.timeout");
@@ -58,8 +58,8 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 	if (launch) {
 		char cmd[128];
 		const char *browser = r_config_get (core->config, "http.browser");
-		snprintf (cmd, sizeof (cmd), "%s http://localhost:%d/",
-			browser, atoi (port));
+		snprintf (cmd, sizeof (cmd)-1, "%s http://localhost:%d/%s",
+			browser, atoi (port), path?path:"");
 		r_sys_cmd (cmd);
 	}
 	r_config_set (core->config, "asm.cmtright", "false");
@@ -162,7 +162,11 @@ R_API int r_core_rtr_http(RCore *core, int launch) {
 					int sz = 0;
 					char *f = r_file_slurp (path, &sz);
 					if (f) {
-						r_socket_http_response (rs, 200, f, sz, NULL);
+						const char *contenttype = NULL;
+						if (strstr (path, ".js")) contenttype = "Content-Type: application/javascript\n";
+						if (strstr (path, ".css")) contenttype = "Content-Type: text/css\n";
+						if (strstr (path, ".html")) contenttype = "Content-Type: text/html\n";
+						r_socket_http_response (rs, 200, f, sz, contenttype);
 						free (f);
 					} else {
 						r_socket_http_response (rs, 403, "Permission denied", 0, NULL);

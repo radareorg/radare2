@@ -32,6 +32,7 @@
 #define R_CORE_ANAL_GRAPHLINES 0x1
 #define R_CORE_ANAL_GRAPHBODY  0x2
 #define R_CORE_ANAL_GRAPHDIFF  0x4
+#define R_CORE_ANAL_JSON       0x8
 
 /* rtr */
 #define RTR_PROT_RAP 0
@@ -293,7 +294,7 @@ R_API void r_core_rtr_add(RCore *core, const char *input);
 R_API void r_core_rtr_remove(RCore *core, const char *input);
 R_API void r_core_rtr_session(RCore *core, const char *input);
 R_API void r_core_rtr_cmd(RCore *core, const char *input);
-R_API int r_core_rtr_http(RCore *core, int launch);
+R_API int r_core_rtr_http(RCore *core, int launch, const char *path);
 
 R_API void r_core_visual_define (RCore *core);
 R_API void r_core_visual_config (RCore *core);

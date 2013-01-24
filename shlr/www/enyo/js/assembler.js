@@ -1,5 +1,6 @@
-enyo.kind({
+enyo.kind ({
   name: "Assembler",
+  kind: "Scroller",
 //  kind: "Scroller",
   components: [
     {tag: "form", style:"margin-top:8px;margin-left:8px", attributes: {action:"javascript:#"}, components: [
@@ -14,12 +15,12 @@ enyo.kind({
         ]},
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
           {tag: "font", content: "offset", style:"margin-right:20px;font-weight:bold"},
-          {kind: "Input", value: 'entry0', style:"width:120px", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "offset"},
+          {kind: "Input", value: 'entry0', style:"width:120px", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "offset"}
         ]}
       ]}
     ]}
   ],
-  assembleOpcode: function(inSender, inEvent) {
+  assembleOpcode: function (inSender, inEvent) {
     if (inEvent.keyCode === 13) {
       var arg = inSender.getValue ();
       var off = this.$.offset.getValue ();

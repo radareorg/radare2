@@ -108,7 +108,8 @@ function movemouse(e) {
 		
 		var i;
 		for(i = 0; i < blocksToMove.length; i++) {
-			blocksToMove[i].onMove();
+			if (blocksToMove[i])
+				blocksToMove[i].onMove();
 		}
 		return false;
 	}
@@ -614,22 +615,17 @@ function Segment(id, parentElement)
 	 * If another segment is already appended to this, cascades the operation so
 	 * the given next segment will be appended to the tail of the segments chain.
 	 */
-	this.append = function(nextSegment)
-	{
+	this.append = function(nextSegment) {
 		if(!nextSegment)
 			return;
-		if(!this.nextSegment)
-		{
+		if(!this.nextSegment) {
 			this.nextSegment = nextSegment;
 			this.nextSegment.startX = this.getEndX();
 			this.nextSegment.startY = this.getEndY();
-		}
-		else
-			this.nextSegment.append(nextSegment);
+		} else this.nextSegment.append(nextSegment);
 	}
 	
-	this.detach = function()
-	{
+	this.detach = function() {
 		var s = this.nextSegment;
 		this.nextSegment = null;
 		return s;
@@ -638,8 +634,7 @@ function Segment(id, parentElement)
 	/**
 	 * hides this segment and all the following
 	 */
-	this.cascadeHide = function()
-	{
+	this.cascadeHide = function() {
 		this.visible = false;
 		if(this.nextSegment)
 			this.nextSegment.cascadeHide();
@@ -822,13 +817,10 @@ function Connector(htmlElement, canvas)
 		var segment;
 		
 		// if the pool contains more objects, borrow the segment, create it otherwise
-		if(this.segmentsPool)
-		{
+		if(this.segmentsPool) {
 			segment = this.segmentsPool;
 			this.segmentsPool = this.segmentsPool.detach();
-		}
-		else
-		{		
+		} else {		
 			segment = new Segment(this.id + "_" + (this.segmentsNumber + 1), this.canvas.htmlElement);
 			segment.htmlElement.className = this.connectorClass;
 			if(!getStyle(segment.htmlElement, 'background-color'))

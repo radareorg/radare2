@@ -19,7 +19,10 @@ enyo.kind ({
         { name: "Disassembler", active: true },
         { name: "Assembler" },
         { name: "Hexdump" },
+        { name: "Search" },
         { name: "Console" },
+        { name: "Logs" },
+        { name: "Script" },
         { name: "Settings", separator: true },
         { name: "About" }
       ];

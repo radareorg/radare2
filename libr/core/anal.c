@@ -46,6 +46,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 
 static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
         int is_html = r_cons_singleton ()->is_html;
+        int is_json = opts & R_CORE_ANAL_JSON;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int i, j, line = 0, oline = 0, idx = 0;
 	ut64 at;
@@ -67,7 +68,13 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 					cmdstr[idx] = 0;
 					// TODO: optimize all this strcat stuff
 					strcat (cmdstr, filestr);
-					strcat (cmdstr, "\\l");
+					if (is_json)
+						strcat (cmdstr, "\\n");
+					else
+					if (is_html)
+						strcat (cmdstr, "<br />");
+					else
+						strcat (cmdstr, "\\l");
 					idx += strlen (filestr);
 					free (filestr);
 				}
@@ -75,6 +82,7 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 			oline = line;
 		}
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
+		r_cons_flush ();
 		snprintf (cmd, sizeof (cmd), "pD %"PFMT64d" @ 0x%08"PFMT64x"", bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
@@ -96,7 +104,7 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 					str[j] = cmdstr[i];
 				}  else {
 					str[j] = '\\';
-					str[++j] = cmdstr[i]=='"'? '"': 'l';
+					str[++j] = cmdstr[i]=='"'? '"': ((is_json)?'n':'l');
 				}
 				break;
 			default:
@@ -111,13 +119,45 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 
 static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
         int is_html = r_cons_singleton ()->is_html;
+        int is_json = opts & R_CORE_ANAL_JSON;
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 	char *str;
 	int top = 0;
 	int left = 300;
+	int count = 0;
 
+	if (is_json) {
+		// TODO: show vars, refs and xrefs
+		r_cons_printf ("{\"name\":\"%s\"", fcn->name);
+		r_cons_printf (",\"offset\":%"PFMT64d, fcn->addr);
+		r_cons_printf (",\"ninstr\":%"PFMT64d, fcn->ninstr);
+		r_cons_printf (",\"nargs\":%"PFMT64d, fcn->nargs);
+		r_cons_printf (",\"size\":%d", fcn->size);
+		r_cons_printf (",\"stack\":%d", fcn->stack);
+		r_cons_printf (",\"type\":%d", fcn->type); // TODO: output string
+		//r_cons_printf (",\"cc\":%d", fcn->call); // TODO: calling convention
+		if (fcn->dsc) r_cons_printf (",\"signature\":\"%s\"", fcn->dsc);
+		r_cons_printf (",\"blocks\":[");
+	}
 	r_list_foreach (fcn->bbs, iter, bbi) {
+		count ++;
+		if (is_json) {
+			if (count>1)
+				r_cons_printf (",");
+			r_cons_printf ("{\"offset\":%"PFMT64d",\"size\":%"PFMT64d, bbi->addr, bbi->size);
+			if (bbi->jump != -1)
+				r_cons_printf (",\"jump\":%"PFMT64d, bbi->jump);
+			if (bbi->fail != -1)
+				r_cons_printf (",\"fail\":%"PFMT64d, bbi->fail);
+			if ((str = r_core_anal_graph_label (core, bbi, opts))) {
+				str = r_str_replace (str, "\\ ", "\\\\ ", 1);
+				r_cons_printf (",\"code\":\"%s\"", str);
+				free (str);
+			}
+			r_cons_printf ("}");
+			continue;
+		}
 		if (bbi->jump != -1) {
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
@@ -131,7 +171,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		if (bbi->fail != -1) {
 			if (is_html) {
 				r_cons_printf ("<div class=\"connector _0x%08"PFMT64x" _0x%08"PFMT64x"\">\n"
-					"  <img class=\"connector-end\" src=\"img/arrow.gif\" /></div>\n",
+					"  <img class=\"connector-end\" src=\"img/arrow.gif\"/></div>\n",
 						bbi->addr, bbi->fail);
 			} else r_cons_printf ("\t\"0x%08"PFMT64x"_0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"_0x%08"PFMT64x"\" "
 				"[color=\"red\"];\n", fcn->addr, bbi->addr, fcn->addr, bbi->fail);
@@ -147,7 +187,7 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					fcn->name, bbi->addr);
 			} else {
 				if (is_html) {
-					r_cons_printf ("<p class=\"block draggable\" style=\"top: %dpx; left: %dpx; width: 500px;\" id=\"_0x%08"PFMT64x"\">\n"
+					r_cons_printf ("<p class=\"block draggable\" style=\"top: %dpx; left: %dpx; width: 400px;\" id=\"_0x%08"PFMT64x"\">\n"
 						"%s</p>\n", top, left, bbi->addr, str);
 					left = left? 0: 600;
 					if (!left) top += 250;
@@ -162,6 +202,8 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			free (str);
 		}
 	}
+	if (is_json)
+		r_cons_printf ("]}");
 }
 
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
@@ -704,11 +746,14 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	const char *font = r_config_get (core->config, "graph.font");
+	int count = 0;
         int is_html = r_cons_singleton ()->is_html;
+        int is_json = opts & R_CORE_ANAL_JSON;
 	int reflines, bytes, dwarf;
 	RAnalFunction *fcni;
 	RListIter *iter;
 
+opts|=R_CORE_ANAL_GRAPHBODY;
 	if (r_list_empty (core->anal->fcns))
 		return R_FALSE;
 
@@ -718,17 +763,25 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 	r_config_set_i (core->config, "asm.dwarf", 0);
-	if (!is_html)
+	if (!is_html && !is_json)
 	r_cons_printf ("digraph code {\n"
 		"\tgraph [bgcolor=white];\n"
 		"\tnode [color=lightgray, style=filled shape=box"
 		" fontname=\"%s\" fontsize=\"8\"];\n", font);
+	if (is_json) {
+		r_cons_printf ("[");
+	}
 	r_cons_flush ();
-	r_list_foreach (core->anal->fcns, iter, fcni)
-		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN) &&
-			(addr == 0 || addr == fcni->addr))
+	r_list_foreach (core->anal->fcns, iter, fcni) {
+		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN)
+				&& (addr == 0 || addr == fcni->addr)) {
+			if (is_json && count++>0) r_cons_printf (",");
 			r_core_anal_graph_nodes (core, fcni, opts);
-	if (!is_html) r_cons_printf ("}\n");
+		}
+	}
+	if (!is_html && !is_json) r_cons_printf ("}\n");
+	if (is_json)
+		r_cons_printf ("]\n");
 	r_cons_flush ();
 	r_config_set_i (core->config, "asm.lines", reflines);
 	r_config_set_i (core->config, "asm.bytes", bytes);

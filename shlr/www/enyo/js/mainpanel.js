@@ -69,8 +69,11 @@ enyo.kind ({
       {kind:"Disassembler", name: "pageDisassembler"},
       {kind:"Assembler", name:"pageAssembler"},
       {kind:"Hexdump", name: "pageHexdump"},
+      {kind:"Graph", name: "pageGraph"},
       {kind:"Search", name: "pageSearch"},
       {kind:"Console", name: "pageConsole"},
+      {kind:"Logs", name: "pageLogs"},
+      {kind:"Script", name: "pageScript"},
       {kind:"Preferences", name:"pagePreferences"},
       {kind:"About", name: "pageAbout"},
     ]}
@@ -99,10 +102,13 @@ enyo.kind ({
 	case "Disassembler": idx = 0; break;
 	case "Assembler": idx = 1; break;
 	case "Hexdump": idx = 2; break;
-	case "Search": idx = 3; break;
-	case "Console": idx = 4; break;
-	case "Settings": idx = 5; break;
-	case "About": idx = 6; break;
+	case "Graph": idx = 3; break;
+	case "Search": idx = 4; break;
+	case "Console": idx = 5; break;
+	case "Logs": idx = 6; break;
+	case "Script": idx = 7; break;
+	case "Settings": idx = 8; break;
+	case "About": idx = 9; break;
       }
       //x.setContent (str);
       sp.setIndex (idx);

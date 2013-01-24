@@ -1,7 +1,6 @@
-enyo.kind({
+enyo.kind ({
   name: "Console",
   kind: "Scroller",
-  tag: "div",
   style:"margin-left:8px",
   components: [
     {tag: "form", attributes: {action:"javascript:#"}, components: [
@@ -13,15 +12,15 @@ enyo.kind({
       ]}
     ]}
   ],
-  runCommand: function(inSender, inEvent) {
+  runCommand: function (inSender, inEvent) {
     if (inEvent.keyCode === 13) {
-      var cmd = this.$.input.getValue ();;
+      var cmd = this.$.input.getValue ();
       this.$.input.setValue ("");
-      var out = this.$.output;
-      r2.cmd (cmd, function(x) {
-        out.setContent (x);
-      });
-      return false;
+      (function (out) {
+        r2.cmd (cmd, function (x) {
+          out.setContent (x);
+        });
+      })(this.$.output);
     }
   }
 });

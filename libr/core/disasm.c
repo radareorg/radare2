@@ -2,6 +2,40 @@
 
 #include "r_core.h"
 
+R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
+// XXX not here
+	static char *hint_arch = NULL;
+	static int hint_bits = 0;
+	if (hint) {
+		r_anal_hint_free (hint);
+		hint = NULL;
+	}
+	hint = r_anal_hint_get (core->anal, at);
+	if (hint_arch) {
+		r_config_set (core->config, "asm.arch", hint_arch);
+		hint_arch = NULL;
+	}
+	if (hint_bits) {
+		r_config_set_i (core->config, "asm.bits", hint_bits);
+		hint_bits = 0;
+	}
+	if (hint) {
+		/* arch */
+		if (hint->arch) {
+			if (!hint_arch) hint_arch = strdup (
+				r_config_get (core->config, "asm.arch"));
+			r_config_set (core->config, "asm.arch", hint->arch);
+		}
+		/* bits */
+		if (hint->bits) {
+			if (!hint_bits) hint_bits =
+				r_config_get_i (core->config, "asm.bits");
+			r_config_set_i (core->config, "asm.bits", hint->bits);
+		}
+	}
+	return hint;
+}
+
 static char *filter_refline(const char *str) {
 	char *p, *s = strdup (str);
 	p = strstr (s, "->");
@@ -36,8 +70,6 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
 	/* hints */
 	RAnalHint *hint = NULL;
-	char *hint_arch = NULL;
-	int hint_bits = 0;
 	/* other */
 	int ret, idx = 0, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
@@ -175,35 +207,10 @@ toro:
 	oplen = 1;
 	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
-		if (hint) {
-			r_anal_hint_free (hint);
-			hint = NULL;
-		}
-		hint = r_anal_hint_get (core->anal, at);
+
+		hint = r_core_hint_begin (core, hint, at);
 		if (cbytes && idx>=l)
 			break;
-		if (hint_arch) {
-			r_config_set (core->config, "asm.arch", hint_arch);
-			hint_arch = NULL;
-		}
-		if (hint_bits) {
-			r_config_set_i (core->config, "asm.bits", hint_bits);
-			hint_bits = 0;
-		}
-		if (hint) {
-			/* arch */
-			if (hint->arch) {
-				if (!hint_arch) hint_arch = strdup (
-					r_config_get (core->config, "asm.arch"));
-				r_config_set (core->config, "asm.arch", hint->arch);
-			}
-			/* bits */
-			if (hint->bits) {
-				if (!hint_bits) hint_bits =
-					r_config_get_i (core->config, "asm.bits");
-				r_config_set_i (core->config, "asm.bits", hint->bits);
-			}
-		}
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
 			line = r_anal_reflines_str (core->anal,
@@ -700,7 +707,7 @@ toro:
 					RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
 					if (show_color)
 						r_cons_printf ("\n%s%s   "Color_TURQOISE"; %s (%s+%d)"Color_RESET,
-							f?pre:"", refline, ccstr, flag? flag->name: "", f? cc.jump-flag->offset: 0);
+							f?pre:"", refline, ccstr, flag? flag->name: "", (f&&flag)? cc.jump-flag->offset: 0);
 					else r_cons_printf ("\n%s%s    ; %s (%s+%d)",
 						pre, refline, ccstr,
 						flag?flag->name:"", flag? cc.jump-flag->offset: 0);
@@ -876,14 +883,22 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	const ut8 *buf = core->block;
 	int bs = core->blocksize;
 	RAnalOp analop = {0};
+	RAnalHint *hint = NULL;
 	int decode = r_config_get_i (core->config, "asm.decode");
+	ut64 at;
 
 // TODO: add support for anal hints
 	if (len>core->blocksize)
 		r_core_block_size (core, len);
 	if (l==0) l = len;
 	for (i=j=0; i<bs && i<len && j<len; i+=ret, j++) {
-		r_asm_set_pc (core->assembler, core->offset+i);
+		at = core->offset +i;
+		if (hint) {
+			r_anal_hint_free (hint);
+			hint = NULL;
+		}
+		hint = r_core_hint_begin (core, hint, at);
+		r_asm_set_pc (core->assembler, at);
 		ret = r_asm_disassemble (core->assembler,
 			&asmop, buf+i, core->blocksize-i);
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
@@ -893,7 +908,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		} else {
 			if (decode) {
 				char *tmpopstr, *opstr;
-				r_anal_op (core->anal, &analop, core->offset+i,
+				r_anal_op (core->anal, &analop, at,
 					buf+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);
 				opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
@@ -902,4 +917,6 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 			} else r_cons_printf ("%s\n", asmop.buf_asm);
 		}
 	}
+	if (hint) r_anal_hint_free (hint);
+	return 0;
 }

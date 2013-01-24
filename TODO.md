@@ -14,6 +14,7 @@ Broken stuff to fixe before release
 
 0.9.4
 =====
+* foldable stuff .. was in r1..redo?
 * cmp rip+xx -> not resolved wtf
 * search for CALL instructions in text segment.
   - analyze the destination address of each call destination

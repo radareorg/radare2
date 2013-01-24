@@ -1,50 +1,55 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>r2-js-graph.it</title>
+<title>r2 code graph</title>
 <script type="text/javascript" src="js-graph-it.js"></script>
 <link rel="stylesheet" type="text/css" href="js-graph-it.css" />
 <link rel="stylesheet" type="text/css" href="sf-homepage.css" />
 <style>
 p {
-	white-space: pre;
-	font-family: monospace;
-	display: block;
+  white-space: pre;
+  font-family: monospace;
+  display: block;
 }
 body {
-	overflow:hidden;
+  overflow:hidden;
 }
 </style>
 <script>
-
+window.onresize = function () {
+  resizeCanvas ();
+}
 function Ajax (method, uri, body, fn) {
-        var x = new XMLHttpRequest ();
-        x.open (method, uri, false);
-        x.onreadystatechange = function (y) {
-                if (fn) fn (x.responseText);
-        }
-        x.send (body);
+  var x = new XMLHttpRequest ();
+  x.open (method, uri, false);
+  x.onreadystatechange = function (y) {
+    if (x.status == 200) {
+      if (fn) fn (x.responseText);
+    }
+  }
+  x.send (body);
 }
 
 function get_graph() {
-	Ajax ('GET', "/cmd/ag $$", '', function (x) {
-		document.getElementById ('mainCanvas').innerHTML = x;
-		setMenu ();
-		resizeCanvas ();
-		initPageObjects ();
-	});
+  Ajax ('GET', "/cmd/ag $$", '', function (x) {
+    document.getElementById ('mainCanvas').innerHTML = x;
+    setMenu ();
+    resizeCanvas ();
+    initPageObjects ();
+  });
 }
+
 function onLoad() {
-	get_graph ();
+  get_graph ();
 }
 
 /**
  * Resizes the main canvas to the maximum visible height.
  */
 function resizeCanvas() {
-	var divElement = document.getElementById("mainCanvas");
-	var screenHeight = window.innerHeight || document.body.offsetHeight;
-	divElement.style.height = (screenHeight - 16) + "px";
+  var divElement = document.getElementById("mainCanvas");
+  var screenHeight = window.innerHeight || document.body.offsetHeight;
+  divElement.style.height = (screenHeight - 16) + "px";
 }
 
 /**
@@ -52,55 +57,35 @@ function resizeCanvas() {
  * of the one of the current page ignoring file extension.
  * Nice trick!
  */
-function setMenu()
-{
-	var url = document.location.href;
-	// strip extension
-	url = stripExtension(url);
-	
-	var ulElement = document.getElementById("menu");
-	var links = ulElement.getElementsByTagName("A");
-	var i;
-	for(i = 0; i < links.length; i++)
-	{
-		if(url.indexOf(stripExtension(links[i].href)) == 0)
-		{
-			links[i].className = "active_menu";
-			return;
-		}
-	}
+function setMenu() {
+  var url = document.location.href;
+  // strip extension
+  url = stripExtension(url);
+  
+  var ulElement = document.getElementById("menu");
+  var links = ulElement.getElementsByTagName("A");
+  var i;
+  for(i = 0; i < links.length; i++) {
+    if(url.indexOf(stripExtension(links[i].href)) == 0) {
+      links[i].className = "active_menu";
+      return;
+    }
+  }
 }
 
 /**
  * Strips the file extension and everything after from a url
  */
 function stripExtension(url) {
-	var lastDotPos = url.lastIndexOf('.');
-	return (lastDotPos <= 0)? url:
-		url.substring(0, lastDotPos - 1);
-}
-
-/**
- * this function opens a popup to show samples during explanations.
- */
-function openSample(url) {
-	var popup = window.open(url, "sampleWindow", "width=400,height=300");
-	popup.focus();
-	return false;
+  var lastDotPos = url.lastIndexOf('.');
+  return (lastDotPos <= 0)? url:
+    url.substring (0, lastDotPos - 1);
 }
 </script>
 </head>
 <body onload="onLoad();">
-<h1><a href="../"> back</a></h1>
-<table class="main_table" style="height: 100%;">
-  <tr>
-    <td style="vertical-align: top; padding: 0px;">
-      <div id="mainCanvas" class="canvas" style="width: 100%; height: 100%;"></div>
-    </td>
-    <td width="1" style="vertical-align: top;" class="menu">
-      <ul id="menu"> </ul>
-    </td>
-  </tr>
-</table>
+  <div id="menu"></div>
+  <div id="mainCanvas" class="canvas" style="width:100%;height:100%;"></div>
+  <div style="z-index:99999;top:0px;left:5px;position:absolute"><h1><a href="../">back</a></h1></div>
 </body>
 </html>

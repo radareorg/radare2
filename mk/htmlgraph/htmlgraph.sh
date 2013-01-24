@@ -109,6 +109,7 @@ body{
 </script>
 </head>
 <body onload="onLoad();">
+<!--
 <table class="main_table" style="height: 100%;">
 <tr>
 <td colspan=3>
@@ -127,18 +128,21 @@ body{
 </ul>
 </td>
 <td style="vertical-align: top; padding: 0px;">
+-->
 <div id="mainCanvas" class="canvas" style="width: 100%; height: 400px;">
 EOF
 
 cat ${DOTFILE} >> $T
 
 cat <<EOF >> $T
+<!--
 </td>
 <td width="1" style="vertical-align: top;" class="menu">
 <ul id="menu"> </ul>
 </td>
 </tr>
 </table>
+-->
 </body>
 </html>
 EOF

@@ -590,6 +590,9 @@ static int cmd_anal(void *data, const char *input) {
 		case 'c':
 			r_core_anal_refs (core, r_num_math (core->num, input+2), input[2]=='j'? 2: 1);
 			break;
+		case 'j':
+			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_JSON);
+			break;
 		case 'l':
 			r_core_anal_graph (core, r_num_math (core->num, input+2), R_CORE_ANAL_GRAPHLINES);
 			break;
@@ -601,6 +604,8 @@ static int cmd_anal(void *data, const char *input) {
 					R_CORE_ANAL_GRAPHBODY|R_CORE_ANAL_GRAPHDIFF);
 			break;
 		case 'v':
+			r_core_cmd0 (core, "=H /graph/");
+#if 0
 			{
 				int is_html = (r_config_get_i (core->config, "scr.html"));
 				const char *cmd = r_config_get (core->config, "cmd.graph");
@@ -622,6 +627,7 @@ static int cmd_anal(void *data, const char *input) {
 				r_core_cmdf (core, "%s", cmd);
 				free (tmp);
 			}
+#endif
 			break;
 		case '?':
 			r_cons_printf (

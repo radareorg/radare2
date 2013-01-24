@@ -1,18 +1,15 @@
-enyo.kind({
+enyo.kind ({
   name: "Hexdump",
   kind: "Scroller",
-  style: "background-color:#f0f0f0",
+  style: "background-color:#c0c0c0;padding:8px",
   components: [
-    {tag: "center", components: [
-      {tag: "h1", style: "color:#303030", content: "hexdump"},
-      {tag: "pre", name: "output"}
-    ]}
+    {tag: "pre", allowHtml: true, name: "output"}
   ],
   create: function() {
     this.inherited (arguments);
     var output = this.$.output;
     r2.cmd ("px 8192", function(a) {
-      output.setContent (a);
+      output.setContent (r2.filter_asm (a, "px"));
     });
   }
 });
