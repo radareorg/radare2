@@ -368,11 +368,6 @@ int main(int argc, char **argv) {
 	if (fullfile) r_core_block_size (&r, r.file->size);
 	else if (bsize) r_core_block_size (&r, bsize);
 
-	if (r_config_get_i (r.config, "scr.prompt"))
-	if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
-		r_core_cmd (&r, "fo", 0);
-		r_cons_flush ();
-	}
 	r_core_seek (&r, r.offset, 1); // read current block
 
 	/* check if file.sha1 has changed */
@@ -406,7 +401,11 @@ int main(int argc, char **argv) {
 	/* run -i and -c flags */
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
-		int ret = r_core_cmd_file (&r, cmdfile[i]);
+		if (!r_file_exists (cmdfile[i])) {
+			eprintf ("Script '%s' not found.\n", cmdfile[i]);
+			return 1;
+		}
+		ret = r_core_cmd_file (&r, cmdfile[i]);
 		if (ret ==-2)
 			eprintf ("Cannot open '%s'\n", cmdfile[i]);
 		if (ret<0 || (ret==0 && quiet))
@@ -422,6 +421,11 @@ int main(int argc, char **argv) {
 		return 0;
 	r_list_free (cmds);
 /////
+	if (r_config_get_i (r.config, "scr.prompt"))
+	if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
+		r_core_cmd (&r, "fo", 0);
+		r_cons_flush ();
+	}
 
 	if (patchfile) {
 		r_core_patch (&r, patchfile);
