@@ -631,9 +631,6 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	r_config_desc (cfg, "cfg.editor", "Select default editor program");
 	free (p);
-	if (r_file_exists ("/usr/bin/htmlgraph.sh"))
-		r_config_set (cfg, "cmd.graph", "!htmlgraph.sh a.dot");
-	else
 	if (r_file_exists ("/usr/bin/xdot"))
 		r_config_set (cfg, "cmd.graph", "!xdot a.dot");
 	else

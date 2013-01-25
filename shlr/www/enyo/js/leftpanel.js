@@ -2,22 +2,32 @@ enyo.kind ({
   name: "LeftPanel",
   classes: "onyx-toolbar",
   kind: "Scroller",
-  fit:true,
-  style: "width: 220px;height:100%",
+  fit: true,
+  /* touch:true, */
+  style: "width: 220px;height:100%;margin:0px;",
+  accelerated: true,
+  horizontal: "hidden",
+  //strategyKind: "TranslateScrollStrategy",
+  create: function() {
+    this.inherited (arguments);
+    this.$.strategy.setTranslateOptimized = true;
+  },
   components: [
-    {tag: "h2", content: "crackme01", style: "margin-left:12px; margin-top:0px;margin-bottom:50px;height:10px;width:190px,overflow:hidden" },
-     {kind: "Group", onActivate:"buttonActivated", classes: "enyo-border-box group", defaultKind: "onyx.Button", highlander: true, components: [
-       {content: "Disassembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Disassembler", active: true},
-       {content: "Assembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Assembler" },
-       {content: "Hexdump", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Hexdump" },
-       {content: "Graph", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Graph" },
-       {content: "Search", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Search" },
-       {content: "Console", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Console" },
-       {content: "Logs", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Logs" },
-       {content: "Script", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Script" },
-       {content: "Settings", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Settings" },
-       {content: "About", classes: "onyx-dark menu-button" , ontap: "openPanel", name:"About"},
-     ]}
+    {tag: "center", components:[
+      {tag: "h2", content: "radare2", style: "margin:0px;margin-bottom:20px;" },
+    {kind: "Group", onActivate:"buttonActivated", classes: "enyo-border-box group", defaultKind: "onyx.Button", highlander: true, components: [
+      {content: "Disassembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Disassembler", active: true},
+      {content: "Assembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Assembler" },
+      {content: "Hexdump", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Hexdump" },
+      {content: "Graph", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Graph" },
+      {content: "Search", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Search" },
+      {content: "Console", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Console" },
+      {content: "Logs", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Logs" },
+      {content: "Script", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Script" },
+      {content: "Settings", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Settings" },
+      {content: "About", classes: "onyx-dark menu-button" , ontap: "openPanel", name:"About"},
+    ]}
+    ]},
   ],
   openPanel: function (x) {
     if (enyo.Panels.isScreenNarrow())

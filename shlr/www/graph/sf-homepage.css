@@ -13,9 +13,11 @@ div.block, h1.block, h2.block, p.block {
 div.canvas {
 	border: 0px solid #262A37;
 	background-color: black;
+/*
 	background-image: url('gradient.jpg');
 	background-repeat: no-repeat;
 	background-position: top right;
+*/
 	padding: 0px;	
 }
 

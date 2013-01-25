@@ -211,7 +211,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'i': 
-		r_core_print_disasm_instructions (core, len, l);
+		r_core_print_disasm_instructions (core, core->blocksize, l);
 		break;
 	case 'D':
 	case 'd':

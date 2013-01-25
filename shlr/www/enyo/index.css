@@ -1,6 +1,10 @@
+a {
+  color: #3030a0;
+}
+
 .app-panels > * {
   width: 320px;
-  background-color: #EAEAEA;
+  background-color: #eaeaea;
   box-shadow: -4px -4px 4px rgba(0,0,0,0.3);
 }
 
@@ -39,4 +43,13 @@
   background-color: #909090;
   width: 90%;
   display: inline-block;
+}
+
+/* TODO: :hover change mouse pointer */
+.moreless {
+  background-color:#d0d0d0;
+  width:90%;
+  height:24px;
+  padding-left:10px;
+  border:0px;
 }

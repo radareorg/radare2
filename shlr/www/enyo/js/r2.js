@@ -51,7 +51,7 @@ r2.disassemble = function (offset, bytes, fn) {
 
 r2.get_disasm = function (offset, length, cb) {
   // TODO: honor offset and length
-  r2.cmd ("b 512;pd", cb);
+  r2.cmd ("pD "+length+"@"+offset, cb);
 }
 
 r2.config_set = function (fn) {
@@ -247,18 +247,18 @@ r2.filter_asm = function (x, display) {
     return false;
   }
   if (haveDisasm (display)) {
-    x = x.replace (/function:/g,"<span style=color:red>function:</span>");
+    x = x.replace (/function:/g,"<span style=color:green>function:</span>");
     x = x.replace (/;(\s+)/g, ";");
-    x = x.replace (/;(.*)/g, "// <span style='color:red'>$1</span>");
+    x = x.replace (/;(.*)/g, "// <span style='color:white'>$1</span>");
     x = x.replace (/(bl|call)/g, "<b style='color:green'>call</b>");
     x = x.replace (/(jmp|bne|beq|jnz|jae|jge|jbe|jg|je|jl|jz|jb|ja|jne)/g, "<b style='color:green'>$1</b>");
-    x = x.replace (/(dword|qword|word|byte|movzx|movsxd|cmovz|mov\ |lea\ )/g, "<b style='color:orange'>$1</b>");
+    x = x.replace (/(dword|qword|word|byte|movzx|movsxd|cmovz|mov\ |lea\ )/g, "<b style='color:#1070d0'>$1</b>");
     x = x.replace (/(hlt|leave|retn|ret)/g, "<b style='color:red'>$1</b>");
-    x = x.replace (/(add|sub|mul|div|shl|shr|and|not|xor|inc|dec|sar|sal)/g, "<b style='color:orange'>$1</b>");
-    x = x.replace (/(push|pop)/g, "<b style='color:magenta'>$1</b>");
-    x = x.replace (/(test|cmp)/g, "<b style='color:green'>$1</b>");
+    x = x.replace (/(add|sub|mul|div|shl|shr|and|not|xor|inc|dec|sar|sal)/g, "<b style='color:#d06010'>$1</b>");
+    x = x.replace (/(push|pop)/g, "<b style='color:#40a010'>$1</b>");
+    x = x.replace (/(test|cmp)/g, "<b style='color:#c04080'>$1</b>");
     x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
-    x = x.replace (/(sym|fcn|imp|loc).(.*)/g, "<a href='javascript:r2ui.seek(\"$1.$2\")'>$1.$2</a>");
+    x = x.replace (/(sym|fcn|imp|loc).([^<(\\\/ \|)\->]+)/g, "<a href='javascript:r2ui.seek(\"$1.$2\")'>$1.$2</a>");
   }
   x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:r2ui.seek(\"0x$1\")'>0x$1</a>");
 // registers

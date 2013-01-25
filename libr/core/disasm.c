@@ -879,6 +879,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	RAsmOp asmop;
+	char *opstr, *tmpopstr;
 	int i, j, ret, err = 0;
 	const ut8 *buf = core->block;
 	int bs = core->blocksize;
@@ -887,11 +888,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	int decode = r_config_get_i (core->config, "asm.decode");
 	ut64 at;
 
-// TODO: add support for anal hints
 	if (len>core->blocksize)
 		r_core_block_size (core, len);
 	if (l==0) l = len;
-	for (i=j=0; i<bs && i<len && j<len; i+=ret, j++) {
+	for (i=j=0; i<bs && i<len && j<l; i+=ret, j++) {
 		at = core->offset +i;
 		if (hint) {
 			r_anal_hint_free (hint);
@@ -902,19 +902,23 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		ret = r_asm_disassemble (core->assembler,
 			&asmop, buf+i, core->blocksize-i);
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		if (hint && hint->length)
+			ret = hint->length;
+		if (hint && hint->opcode) {
+			opstr = strdup (hint->opcode);
+		} else {
+			if (decode) {
+				r_anal_op (core->anal, &analop, at, buf+i, core->blocksize-i);
+				tmpopstr = r_anal_op_to_string (core->anal, &analop);
+				opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
+			} else opstr = strdup (asmop.buf_asm);
+		}
 		if (ret<1) {
 			ret = err = 1;
 			r_cons_printf ("???\n");
 		} else {
-			if (decode) {
-				char *tmpopstr, *opstr;
-				r_anal_op (core->anal, &analop, at,
-					buf+i, core->blocksize-i);
-				tmpopstr = r_anal_op_to_string (core->anal, &analop);
-				opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
-				r_cons_printf ("%s\n", opstr);
-				free (opstr);
-			} else r_cons_printf ("%s\n", asmop.buf_asm);
+			r_cons_printf ("%s\n", opstr);
+			free (opstr);
 		}
 	}
 	if (hint) r_anal_hint_free (hint);

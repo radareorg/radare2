@@ -1,3 +1,4 @@
+
 enyo.kind ({
   name: "MainPanel",
   classes: "onyx",
@@ -64,7 +65,7 @@ enyo.kind ({
         ]}
       ]}
     ]},
-    {kind: "Panels", name:"samplePanels", fit:true, draggable: false,
+    {kind: "Panels", name:"panels", fit:true, draggable: false,
         realtimeFit: true, classes: "enyo-border-box", components: [
       {kind:"Disassembler", name: "pageDisassembler"},
       {kind:"Assembler", name:"pageAssembler"},
@@ -80,9 +81,9 @@ enyo.kind ({
   ],
   create: function() {
     this.inherited(arguments);
-       //this.$.samplePanels.setArrangerKind ("CardArranger");
+       //this.$.panels.setArrangerKind ("CardArranger");
       // if (enyo.Panels.isScreenNarrow()) {
-    this.$.samplePanels.setIndex(0);
+    this.$.panels.setIndex(0);
   },
   ra: null,
   openSidebar: function() {
@@ -95,7 +96,7 @@ enyo.kind ({
       this.inherited(arguments);
   },
   openPage: function(idx) {
-      var str, sp = this.$.samplePanels;
+      var str, sp = this.$.panels;
       eval ("var x = this.$.page"+idx);
 // TODO: this is just a hack
       switch (idx) {
@@ -116,17 +117,17 @@ enyo.kind ({
   seekStack: [],
   nextSeek: function() {
     var addr = '?';
-    alert ("nxt "+addr);
+    //alert ("nxt "+addr);
   },
   prevSeek: function() {
     var addr = this.seekStack.pop ();
-    alert ("pop "+addr);
+    //alert ("pop "+addr);
   },
   gotoSeek: function() {
     var addr = this.$.input.getValue();
     this.seekStack.push ();
 /*
-      var sp = this.$.samplePanels;
+      var sp = this.$.panels;
       //this.openPage (this.$.input.getValue());
       //sp.components[3].setContent ("JAJAJ");
 this.$.page3.setContent ("content-a");

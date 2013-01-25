@@ -1,3 +1,5 @@
+/* not used. must be deprecated or merged */
+
 var r2ui = {}
 r2ui.consoleExec = function () {
 	var xx = document.getElementById ('consoleBody');
@@ -171,10 +173,10 @@ function filter_asm(x) {
 		x = x.replace (/;(.*)/g, "// <span style='color:red'>$1</span>");
 		x = x.replace (/(bl|call)/g, "<b style='color:green'>call</b>");
 		x = x.replace (/(jmp|bne|beq|jnz|jae|jge|jbe|jg|je|jl|jz|jb|ja|jne)/g, "<b style='color:green'>$1</b>");
-		x = x.replace (/(dword|qword|word|byte|movzx|movsxd|cmovz|mov\ |lea\ )/g, "<b style='color:orange'>$1</b>");
+		x = x.replace (/(dword|qword|word|byte|movzx|movsxd|cmovz|mov\ |lea\ )/g, "<b style='color:grey'>$1</b>");
 		x = x.replace (/(hlt|leave|retn|ret)/g, "<b style='color:red'>$1</b>");
-		x = x.replace (/(add|sub|mul|div|shl|shr|and|not|xor|inc|dec|sar|sal)/g, "<b style='color:orange'>$1</b>");
-		x = x.replace (/(push|pop)/g, "<b style='color:magenta'>$1</b>");
+		x = x.replace (/(add|sub|mul|div|shl|shr|and|not|xor|inc|dec|sar|sal)/g, "<b style='color:grey'>$1</b>");
+		x = x.replace (/(push|pop)/g, "<b style='color:black'>$1</b>");
 		x = x.replace (/(test|cmp)/g, "<b style='color:green'>$1</b>");
 		x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
 		x = x.replace (/(sym|fcn|imp|loc).(.*)/g, "<a href='javascript:r2ui.seek(\"$1.$2\")'>$1.$2</a>");

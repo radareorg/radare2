@@ -2,6 +2,7 @@ enyo.kind ({
   name: "RightPanel",
   classes: "onyx-toolbar",
   kind: "Scroller",
+  horizontal: false,
   style: "width:25px",
   ra: null,
   components: [
@@ -31,7 +32,7 @@ enyo.kind ({
           {kind: "onyx.Button", name: "msg", style: "width:100%", fit:true, active: true, ontap: "rowTap"}
         ]}
       ]},
-      {tag: "pre", style:"font-size:10px", allowHtml:true, name: "output", content:".." }
+      {tag: "pre", style:"font-size:12px", allowHtml:true, name: "output", content:".." }
     ]}
   ],
   rowTap: function () {
