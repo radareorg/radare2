@@ -651,24 +651,25 @@ R_API int r_str_escape(char *buf) {
 
 R_API void r_str_sanitize(char *c) {
 	char *d = c;
-	for (; *d; c++, d++) {
-		switch (*d) {
-		case '`':
-		case '$':
-		case '{':
-		case '}':
-		case '~':
-		case '|':
-		case ';':
-		case '#':
-		case '@':
-		case '&':
-		case '<':
-		case '>':
-			d++;
-			*c = '_';
-			continue;
-		}
+	if(d)
+		for (; *d; c++, d++) {
+			switch (*d) {
+			case '`':
+			case '$':
+			case '{':
+			case '}':
+			case '~':
+			case '|':
+			case ';':
+			case '#':
+			case '@':
+			case '&':
+			case '<':
+			case '>':
+				d++;
+				*c = '_';
+				continue;
+			}
 		*c = *d;
 	}
 }

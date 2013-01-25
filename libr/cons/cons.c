@@ -504,6 +504,7 @@ R_API void r_cons_column(int c) {
 	// align current buffer N chars right
 	r_cons_strcat_justify (b, c, 0);
 	r_cons_gotoxy (0, 0);
+	free(b);
 }
 
 static int lasti = 0; /* last interactive mode */

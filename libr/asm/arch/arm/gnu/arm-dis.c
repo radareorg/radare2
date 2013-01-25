@@ -2288,7 +2288,7 @@ print_insn_coprocessor (bfd_vma pc,
 		  case 'z':
 		    {
 		      int single = *c++ == 'y';
-		      int regno;
+		      int regno = 0;
 
 		      switch (*c)
 			{

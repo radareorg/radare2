@@ -542,6 +542,8 @@ R_API void r_print_zoom (RPrint *p, void *user, RPrintZoomCallback cb, ut64 from
 	if (maxlen<2) maxlen = 1024*1024;
 	if (size>maxlen) size = maxlen;
 	if (size<1) size = 1;
+	if (len<1) len = 1;
+
 	if (mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size==p->zoom->size) {
 		// get from cache
 		bufz = p->zoom->buf;
