@@ -30,7 +30,7 @@ R_API ut64 r_num_htonq(ut64 value) {
 }
 
 R_API void r_num_irand() {
-	srand (rand () % r_sys_now ());
+	srand (r_sys_now ());
 }
 
 R_API int r_num_rand(int max) {

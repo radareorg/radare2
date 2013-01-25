@@ -210,6 +210,9 @@ static int cmd_print(void *data, const char *input) {
 		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
 		}
 		break;
+	case 'I': 
+		r_core_print_disasm_instructions (core, len, l);
+		break;
 	case 'i': 
 		r_core_print_disasm_instructions (core, core->blocksize, l);
 		break;
@@ -664,7 +667,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	default:
 		r_cons_printf (
-		"Usage: p[fmt] [len]\n"
+		"Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
 		" p=              show entropy bars of full file\n"
 		" p6[de] [len]    base64 decode/encode\n"
 		" p8 [len]        8bit hexpair list of bytes\n"
@@ -674,14 +677,14 @@ static int cmd_print(void *data, const char *input) {
 		" pd[lf] [l]      disassemble N opcodes (see pd?)\n"
 		" pD [len]        disassemble N bytes\n"
 		" pf[$nam] [fmt]  print formatted data (pf$name, pf$name $<expression>) \n"
-		" pi[f] [len]     print N instructions (f=function) (see pdi)\n"
+		" p[iI][f] [len]  print N instructions/bytes (f=func) (see pdi)\n"
 		" pm [magic]      print libmagic data (pm? for more information)\n"
 		" pr [len]        print N raw bytes\n"
 		" ps[pwz] [len]   print pascal/wide/zero-terminated strings\n"
 		" pt[dn?] [len]   print different timestamps\n"
-		" pu[w] [len]   print N url encoded bytes (w=wide)\n"
-		" px[owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
-		" pz [len]      print zoom view (see pz? for help)\n");
+		" pu[w] [len]     print N url encoded bytes (w=wide)\n"
+		" px[owq] [len]   hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
+		" pz [len]        print zoom view (see pz? for help)\n");
 		break;
 	}
 	if (tbs != core->blocksize)

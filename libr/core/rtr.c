@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2012 - pancake, nibble */
+/* radare - Copyright 2009-2013 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -36,8 +36,9 @@ SECURITY IMPLICATIONS
 #endif
 
 R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
+	char buf[32];
 	RSocketHTTPRequest *rs;
-	int oldsandbox = -1;
+	int iport, oldsandbox = -1;
 	int timeout = r_config_get_i (core->config, "http.timeout");
 	int x = r_config_get_i (core->config, "scr.html");
 	int y = r_config_get_i (core->config, "scr.color");
@@ -48,6 +49,12 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return 1;
+	}
+	if (!strcmp (port, "0")) {
+		r_num_irand ();
+		iport = 1024+r_num_rand (45256);
+		snprintf (buf, sizeof (buf), "%d", iport);
+		port = buf;
 	}
 	s = r_socket_new (R_FALSE);
 	s->local = !r_config_get_i (core->config, "http.public");
