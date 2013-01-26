@@ -56,4 +56,5 @@ r2ui.opendis = function (addr) {
   r2ui.seek (addr);
   if (r2ui.ra.getIndex ()==2)
     r2ui.ra.setIndex (1);
+  r2ui.mp.openPage (0);
 }

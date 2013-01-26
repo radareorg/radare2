@@ -33,6 +33,7 @@ enyo.kind ({
       this.$.lp.ra =
       this.$.rp.ra = this;
       var mp = this.$.mp;
+      r2ui.mp = mp;
       this.$.lp.openCallback = function (idx) {
         mp.openPage (idx);
       };
