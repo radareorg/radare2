@@ -1,12 +1,3 @@
-var r2ui = {};
-
-r2ui.seek = function (addr) {
-  /* XXX. this is only for disasm */
-  r2.cmd ("s "+addr);
-  r2ui._dis.seek (addr);
-  r2ui._dis.scrollTo (0, 0);
-}
-
 enyo.kind ({
   name: "Disassembler",
   kind: "Scroller",
@@ -27,12 +18,13 @@ enyo.kind ({
   ],
   min: 0,
   max: 0,
+  block: 512,
   base: "entry0",
   less: function() {
     var self = this;
     var text = this.$.text;
-    this.min += 256;
-    r2.get_disasm (this.base+"-"+this.min, 256, function (x) {
+    this.min += this.block;
+    r2.get_disasm (this.base+"-"+this.min, this.block, function (x) {
       x = r2.filter_asm (x, "pd");
       var oldy = r2ui._dis.getScrollBounds().height;
       text.setContent (x+text.getContent());
@@ -42,8 +34,8 @@ enyo.kind ({
   },
   more: function() {
     var text = this.$.text;
-    this.max += 256;
-    r2.get_disasm (this.base+"+"+this.max, 256, function (x) {
+    this.max += this.block;
+    r2.get_disasm (this.base+"+"+this.max, this.block, function (x) {
       x = r2.filter_asm (x, "pd");
       text.setContent (text.getContent() + x);
     });
@@ -52,7 +44,7 @@ enyo.kind ({
     var text = this.$.text;
     this.base = addr;
     this.min = this.max = 0;
-    r2.get_disasm (addr, 256, function (x) {
+    r2.get_disasm (addr, this.block, function (x) {
       x = r2.filter_asm (x, "pd");
       text.setContent (x);
     });
@@ -63,10 +55,11 @@ enyo.kind ({
     var text = this.$.text;
     this.seek ("entry0");
     r2ui._dis = this;
+    r2ui.history_push ("entry0");
     //this.refresh ();
   },
   setupItem: function (inSender, inIndex) {
-      this.$.msg.setContent (this.data[inIndex.index]); //"patata"); //item.name);
+      this.$.msg.setContent (this.data[inIndex.index]);
       return true;
   }
 });

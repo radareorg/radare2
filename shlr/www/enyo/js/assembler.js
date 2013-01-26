@@ -1,6 +1,7 @@
 enyo.kind ({
   name: "Assembler",
   kind: "Scroller",
+  classes: "r2panel",
 //  kind: "Scroller",
   components: [
     {tag: "form", style:"margin-top:8px;margin-left:8px", attributes: {action:"javascript:#"}, components: [

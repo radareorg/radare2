@@ -111,6 +111,18 @@ r2.bin_sections = function (cb) {
   });
 }
 
+r2.cmds = function (cmds, cb) {
+  (function lala(cmds, cb) {
+    var cmd = cmds[0];
+    if (cmd == undefined || cmds.length == 0) {
+      cb ();
+      return;
+    }
+    cmds = cmds.splice (1);
+    r2.cmd (cmd, lala)
+  })(cmds, cb);
+}
+
 r2.cmd = function (c, cb) {
   Ajax ('GET', r2.root+"/cmd/"+encodeURI (c), '', function (x) {
     if (cb) cb (x);

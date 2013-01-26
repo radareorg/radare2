@@ -28,6 +28,7 @@ enyo.kind ({
       ];
       this.$.lp.data = data;
       this.$.mp.data = data;
+      r2ui.ra = 
       this.$.mp.ra = 
       this.$.lp.ra =
       this.$.rp.ra = this;

@@ -1,7 +1,7 @@
 enyo.kind ({
   name: "Logs",
   kind: "Scroller",
-  style: "background-color:#c0c0c0;margin-left:8px",
+  style: "background-color:#c0c0c0;padding-left:8px",
   components: [
     {tag: "form", attributes: {action:"javascript:#"}, components: [
       {kind: "FittableRows", fit: true, classes: "fittable-sample-shadow", components: [
