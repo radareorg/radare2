@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
 
 // TODO: dlopen library and show address
 
@@ -20,7 +20,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 
 	if (arch && arch->buf && to > arch->buf->length)
 		to = arch->buf->length;
-	if (to > 0xffffff) {
+	if (to > 0xf00000) {
 		eprintf ("WARNING: bin_strings buffer is too big\n");
 		return;
 	}
@@ -450,10 +450,11 @@ R_API void r_bin_list_archs(RBin *bin) {
 	for (i = 0; i < bin->narch; i++)
 		if (r_bin_select_idx (bin, i)) {
 			RBinInfo *info = bin->cur.o->info;
-			printf ("%03i 0x%08"PFMT64x" %s_%i %s\n", i, 
-				bin->cur.offset, info->arch,
+			printf ("%03i 0x%08"PFMT64x" %d %s_%i %s\n", i, 
+				bin->cur.offset, bin->cur.size, info->arch,
 				info->bits, info->machine);
-		}
+		} else eprintf ("%03i 0x%08"PFMT64x" %d unknown_0\n", i,
+				bin->cur.offset, bin->cur.size);
 }
 
 R_API void r_bin_set_user_ptr(RBin *bin, void *user) {

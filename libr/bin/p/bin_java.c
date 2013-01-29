@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -132,19 +132,25 @@ static RBinInfo* info(RBinArch *arch) {
 static int check(RBinArch *arch) {
 	int off, ret = R_FALSE;
 
-	if (arch && arch->buf && arch->buf->buf)
+	if (arch && arch->buf && arch->buf->buf && arch->buf->length>10)
 	if (!memcmp (arch->buf->buf, "\xca\xfe\xba\xbe", 4)) {
-		ret = R_TRUE;
+		ut16 major = (arch->buf->buf[8]<<8) | arch->buf->buf[7];
 		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
-		if (off > 0 && off < arch->buf->length) {
-			memmove (arch->buf->buf, arch->buf->buf+off, 4);
-			if (	!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
-				!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4) ||
-				!memcmp (arch->buf->buf, "\xfe\xed\xfa\xcf", 4) ||
-				!memcmp (arch->buf->buf, "\xcf\xfa\xed\xfe", 4))
+		if (major>=45 && major<=55)
+			ret = R_TRUE;
+		// TODO: in case of failed trick attempt discard on known mach0 headers?
+#if 0
+		/* KNOWN MACH0 HEADERS TO DISCARD */
+		if (off > 0 && off+5 < arch->buf->length) {
+			const ut8 * pbuf = arch->buf->buf+off;
+			if (	!memcmp (pbuf, "\xce\xfa\xed\xfe", 4) ||
+				!memcmp (pbuf, "\xfe\xed\xfa\xce", 4) ||
+				!memcmp (pbuf, "\xfe\xed\xfa\xcf", 4) ||
+				!memcmp (pbuf, "\xcf\xfa\xed\xfe", 4))
 				ret = R_FALSE;
 		}
+#endif
 	}
 	return ret;
 }

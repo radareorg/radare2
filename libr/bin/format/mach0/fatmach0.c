@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 - nibble */
+/* radare - LGPL - Copyright 2010-2013 - nibble */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -12,9 +12,7 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 		return R_FALSE;
 	}
 	bin->nfat_arch = bin->hdr.nfat_arch;
-	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0)
-		return R_FALSE;
-	if (bin->nfat_arch<1)
+	if (bin->hdr.magic != FAT_MAGIC || bin->nfat_arch == 0 || bin->nfat_arch<1)
 		return R_FALSE;
 	if (!(bin->archs = malloc (bin->nfat_arch * sizeof (struct fat_arch)))) {
 		perror ("malloc (fat_arch)");
@@ -29,8 +27,8 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 }
 
 struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin, int idx, int *narch) {
-	ut8 *buf = NULL;
 	struct r_bin_fatmach0_arch_t *ret;
+	ut8 *buf = NULL;
 
 	if (bin->hdr.nfat_arch < 0 || idx < 0 || idx > bin->hdr.nfat_arch)
 		return NULL;

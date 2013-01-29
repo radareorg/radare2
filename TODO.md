@@ -14,6 +14,7 @@ Broken stuff to fixe before release
 
 0.9.4
 =====
+* rabin2 -x should not work on non-fatmach0 files
 * foldable stuff .. was in r1..redo?
 * cmp rip+xx -> not resolved wtf
 * search for CALL instructions in text segment.

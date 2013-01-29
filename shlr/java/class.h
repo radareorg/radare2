@@ -1,14 +1,18 @@
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
+
+#ifndef _INCLUDE_JAVA_CLASS_H_
+#define _INCLUDE_JAVA_CLASS_H_
+
 #include <r_types.h>
 
-#define USHORT(x,y) ((unsigned short)(x[y+1]|(x[y]<<8)))
-#define UINT(x,y) ((unsigned int)((x[y]<<24)|(x[y+1]<<16)|(x[y+2]<<8)|x[y+3]))
+#define USHORT(x,y) ((ut16)(x[y+1]|(x[y]<<8)))
+#define UINT(x,y) ((ut32)((x[y]<<24)|(x[y+1]<<16)|(x[y+2]<<8)|x[y+3]))
 
 #define R_BIN_JAVA_MAXSTR 256
 
-#define R_BIN_JAVA_USHORT(x,y) ((unsigned short)(((0xff&x[y+1])|((x[y]&0xff)<<8)) & 0xffff))
-#define R_BIN_JAVA_UINT(x,y) ((unsigned int)(((x[y]&0xff)<<24)|((x[y+1]&0xff)<<16)|((x[y+2]&0xff)<<8)|(x[y+3]&0xff)))
-#define R_BIN_JAVA_SWAPUSHORT(x) ((unsigned short)((x<<8)|((x>>8)&0x00FF)))
+#define R_BIN_JAVA_USHORT(x,y) ((ut16)(((0xff&x[y+1])|((x[y]&0xff)<<8)) & 0xffff))
+#define R_BIN_JAVA_UINT(x,y) ((ut32)(((x[y]&0xff)<<24)|((x[y+1]&0xff)<<16)|((x[y+2]&0xff)<<8)|(x[y+3]&0xff)))
+#define R_BIN_JAVA_SWAPUSHORT(x) ((ut16)((x<<8)|((x>>8)&0x00FF)))
 
 enum {
 	R_BIN_JAVA_TYPE_FIELD,
@@ -21,13 +25,13 @@ typedef struct r_bin_java_classfile_t {
 	ut8 cafebabe[4];
 	ut8 minor[2];
 	ut8 major[2];
-	unsigned short cp_count;
+	ut16 cp_count;
 } RBinJavaClass;
 
 typedef struct r_bin_java_classfile2_t {
-	unsigned short access_flags;
-	unsigned short this_class;
-	unsigned short super_class;
+	ut16 access_flags;
+	ut16 this_class;
+	ut16 super_class;
 } RBinJavaClass2;
 
 typedef struct r_bin_java_cp_item_t {
@@ -35,9 +39,9 @@ typedef struct r_bin_java_cp_item_t {
 	char name[32];
 	char *value;
 	ut8 bytes[5];
-	unsigned short length;
-	unsigned short ord;
-	unsigned short off;
+	ut16 length;
+	ut16 ord;
+	ut16 off;
 } RBinJavaCpItem;
 
 typedef struct r_bin_java_constant_t {
@@ -47,43 +51,43 @@ typedef struct r_bin_java_constant_t {
 } RBinJavaConstant;
 
 struct r_bin_java_attr_code_t {
-	unsigned short max_stack;
-	unsigned short max_locals;
-	unsigned short code_length;
-	unsigned short code_offset;
-	unsigned int exception_table_length;
-	unsigned short start_pc;
-	unsigned short end_pc;
-	unsigned short handler_pc;
-	unsigned short catch_type;
+	ut16 max_stack;
+	ut16 max_locals;
+	ut16 code_length;
+	ut16 code_offset;
+	ut32 exception_table_length;
+	ut16 start_pc;
+	ut16 end_pc;
+	ut16 handler_pc;
+	ut16 catch_type;
 };
 
 struct r_bin_java_attr_linenum_t {
-	unsigned int table_length;
-	unsigned short start_pc;
-	unsigned short line_number;
+	ut32 table_length;
+	ut16 start_pc;
+	ut16 line_number;
 };
 
 struct r_bin_java_attr_t {
 	int type;
 	char *name;
-	unsigned short name_idx;
-	unsigned int length;
+	ut16 name_idx;
+	ut32 length;
 	union {
 		struct r_bin_java_attr_code_t code;
 		struct r_bin_java_attr_linenum_t linenum;
-		unsigned short const_value_idx;
+		ut16 const_value_idx;
 	} info;
 	struct r_bin_java_attr_t *attributes;
 };
 
 struct r_bin_java_fm_t {
-	unsigned short flags;
+	ut16 flags;
 	char *name;
-	unsigned short name_idx;
+	ut16 name_idx;
 	char *descriptor;
-	unsigned short descriptor_idx;
-	unsigned short attr_count;
+	ut16 descriptor_idx;
+	ut16 attr_count;
 	struct r_bin_java_attr_t *attributes;
 };
 
@@ -104,7 +108,7 @@ typedef struct r_bin_java_obj_t {
 	int size;
 	const char* file;
 	RBinJavaLines lines;
-	struct r_buf_t*b;
+	struct r_buf_t* b;
 	int midx;
 	int fsym;
 	int fsymsz;
@@ -125,11 +129,13 @@ typedef struct r_bin_java_str_t {
 	int last;
 } RBinJavaString;
 
-char* r_bin_java_get_version(struct r_bin_java_obj_t* bin);
-ut64 r_bin_java_get_entrypoint(struct r_bin_java_obj_t* bin);
-ut64 r_bin_java_get_main(struct r_bin_java_obj_t* bin);
-struct r_bin_java_sym_t* r_bin_java_get_symbols(struct r_bin_java_obj_t* bin);
-struct r_bin_java_str_t* r_bin_java_get_strings(struct r_bin_java_obj_t* bin);
-void* r_bin_java_free(struct r_bin_java_obj_t* bin);
-struct r_bin_java_obj_t* r_bin_java_new(const char* file);
-struct r_bin_java_obj_t* r_bin_java_new_buf(struct r_buf_t *buf);
+char* r_bin_java_get_version(RBinJavaObj* bin);
+ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin);
+ut64 r_bin_java_get_main(RBinJavaObj* bin);
+RBinJavaSymbol* r_bin_java_get_symbols(RBinJavaObj* bin);
+RBinJavaString* r_bin_java_get_strings(RBinJavaObj* bin);
+void* r_bin_java_free(RBinJavaObj* bin);
+RBinJavaObj* r_bin_java_new(const char* file);
+RBinJavaObj* r_bin_java_new_buf(struct r_buf_t * buf);
+
+#endif

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,10 +86,18 @@ static int rabin_extract(int all) {
 	// XXX: Wrong for w32 (/)
 	if (all) {
 		for (i=0; i<bin->narch; i++) {
+			const char *arch;
+			int bits;
+
 			r_bin_select_idx (bin, i);
 			if (bin->cur.o->info == NULL) {
-				eprintf ("No extract info found.\n");
-				continue;
+				arch = "unknown";
+				bits = 0;
+			//	eprintf ("No extract info found.\n");
+			//	continue;
+			} else {
+				arch = bin->cur.o->info->arch;
+				bits = bin->cur.o->info->bits;
 			}
 			path = strdup (bin->cur.file);
 			if ((ptr = strrchr (path, '/'))) {
@@ -107,8 +115,7 @@ static int rabin_extract(int all) {
 				return R_FALSE;
 			}
 			snprintf (outfile, sizeof (outfile), "%s/%s.%s_%i.%d",
-					outpath, ptr, bin->cur.o->info->arch,
-					bin->cur.o->info->bits, i);
+					outpath, ptr, arch, bits, i);
 			if (!r_file_dump (outfile, bin->cur.buf->buf, bin->cur.size)) {
 				eprintf ("Error extracting %s\n", outfile);
 				return R_FALSE;
@@ -345,15 +352,15 @@ int main(int argc, char **argv) {
 				r_config_set_i (core.config, "bin.rawstr", 1);
 			set_action(ACTION_STRINGS); 
 			break;
-		case 'Z': set_action(ACTION_SIZE); break;
-		case 'I': set_action(ACTION_INFO); break;
-		case 'H': set_action(ACTION_FIELDS); break;
-		case 'd': set_action(ACTION_DWARF); break;
-		case 'e': set_action(ACTION_ENTRIES); break;
-		case 'M': set_action(ACTION_MAIN); break;
-		case 'l': set_action(ACTION_LIBS); break;
-		case 'R': set_action(ACTION_RELOCS); break;
-		case 'x': set_action(ACTION_EXTRACT); break;
+		case 'Z': set_action (ACTION_SIZE); break;
+		case 'I': set_action (ACTION_INFO); break;
+		case 'H': set_action (ACTION_FIELDS); break;
+		case 'd': set_action (ACTION_DWARF); break;
+		case 'e': set_action (ACTION_ENTRIES); break;
+		case 'M': set_action (ACTION_MAIN); break;
+		case 'l': set_action (ACTION_LIBS); break;
+		case 'R': set_action (ACTION_RELOCS); break;
+		case 'x': set_action (ACTION_EXTRACT); break;
 		case 'w': rw = R_TRUE; break;
 		case 'O':
 			op = optarg;

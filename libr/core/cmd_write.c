@@ -136,7 +136,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 't':
 		if (*str != ' ') {
-			eprintf ("Usage: wt file [off]\n");
+			eprintf ("Usage: wt file [size]\n");
 		} else {
 			tmp = strchr (str+1, ' ');
 			if (tmp) {
@@ -434,7 +434,7 @@ static int cmd_write(void *data, const char *input) {
 			" wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
 			" wf file      write contents of file at current offset\n"
 			" wF file      write contents of hexpairs file here\n"
-			" wt file      write current block to file\n"
+			" wt file [sz] write to file (from current seek, blocksize or sz bytes)\n"
 			" wp file      apply radare patch file. See wp? fmi\n");
 			//TODO: add support for offset+seek
 			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"
