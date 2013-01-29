@@ -85,7 +85,11 @@ static int cmd_info(void *data, const char *input) {
 		else r_core_bin_load (core, core->file->filename);
 		break;
 	case 'S':
-		r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS|R_CORE_BIN_ACC_FIELDS, mode, va, NULL, offset);
+		//r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS|R_CORE_BIN_ACC_FIELDS, mode, va, NULL, offset);
+		r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS, mode, va, NULL, offset);
+		break;
+	case 'h':
+		r_core_bin_info (core, R_CORE_BIN_ACC_FIELDS, mode, va, NULL, offset);
 		break;
 	case 'c':
 	case 'C':
@@ -137,10 +141,11 @@ static int cmd_info(void *data, const char *input) {
 		" io [file] ; load info from given file (or last opened)\n"
 		" ia        ; show all info (imports, exports, sections..)\n"
 		" ic        ; list classes\n"
-		" ii        ; imports\n"
-		" iI        ; binary info\n"
 		" id        ; debug information (source lines)\n"
 		" ie        ; entrypoint\n"
+		" ih        ; headers\n"
+		" ii        ; imports\n"
+		" iI        ; binary info\n"
 		" is        ; symbols\n"
 		" iS        ; sections\n"
 		" iz        ; strings\n");

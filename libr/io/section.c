@@ -31,8 +31,9 @@ R_API void r_io_section_add(RIO *io, ut64 offset, ut64 vaddr, ut64 size, ut64 vs
 	int update = 0;
 	RIOSection *s;
 
-	if (size==0 || size>0xf00000) {
-		//eprintf ("Invalid size (0x%08"PFMT64x") for section at 0x%08"PFMT64x"\n", size, vaddr);
+	if (size==0 || size>0xf0000000) {
+		eprintf ("Invalid size (0x%08"PFMT64x") for section '%s' at 0x%08"PFMT64x"\n",
+			size, name, vaddr);
 		return;
 	}
 	s = r_io_section_get_name (io, name);
