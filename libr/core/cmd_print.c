@@ -723,23 +723,23 @@ static int cmd_print(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
-		" p=              show entropy bars of full file\n"
-		" p6[de] [len]    base64 decode/encode\n"
-		" p8 [len]        8bit hexpair list of bytes\n"
-		" pa [opcode]     bytes of assembled opcode\n"
-		" pb [len]        bitstream of N bytes\n"
-		" pc[p] [len]     output C (or python) format\n"
-		" pd[lf] [l]      disassemble N opcodes (see pd?)\n"
-		" pD [len]        disassemble N bytes\n"
-		" pf[$nam] [fmt]  print formatted data (pf.name, pf.name $<expression>) \n"
-		" p[iI][f] [len]  print N instructions/bytes (f=func) (see pdi)\n"
-		" pm [magic]      print libmagic data (pm? for more information)\n"
-		" pr [len]        print N raw bytes\n"
-		" ps[pwz] [len]   print pascal/wide/zero-terminated strings\n"
-		" pt[dn?] [len]   print different timestamps\n"
-		" pu[w] [len]     print N url encoded bytes (w=wide)\n"
-		" px[owq] [len]   hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
-		" pz [len]        print zoom view (see pz? for help)\n");
+		" p=               show entropy bars of full file\n"
+		" p6[de] [len]     base64 decode/encode\n"
+		" p8 [len]         8bit hexpair list of bytes\n"
+		" pa [opcode]      bytes of assembled opcode\n"
+		" pb [len]         bitstream of N bytes\n"
+		" pc[p] [len]      output C (or python) format\n"
+		" pd[lf] [l]       disassemble N opcodes (see pd?)\n"
+		" pD [len]         disassemble N bytes\n"
+		" pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expression>) \n"
+		" p[iI][f] [len]   print N instructions/bytes (f=func) (see pdi)\n"
+		" pm [magic]       print libmagic data (pm? for more information)\n"
+		" pr [len]         print N raw bytes\n"
+		" ps[pwz] [len]    print pascal/wide/zero-terminated strings\n"
+		" pt[dn?] [len]    print different timestamps\n"
+		" pu[w] [len]      print N url encoded bytes (w=wide)\n"
+		" px[owq] [len]    hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
+		" pz [len]         print zoom view (see pz? for help)\n");
 		break;
 	}
 	if (tbs != core->blocksize)
