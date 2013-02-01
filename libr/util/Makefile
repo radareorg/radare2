@@ -8,7 +8,7 @@ OBJS+=prof.o cache.o sys.o buf.o w32-sys.o base64.o base85.o name.o
 OBJS+=list.o flist.o ht.o ht64.o mixed.o btree.o chmod.o graph.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
 OBJS+=sandbox.o calc.o thread.o lock.o strpool.o bitmap.o strht.o
-OBJS+= p_date.o p_format.o p_print.o p_seven.o
+OBJS+=p_date.o p_format.o print.o p_seven.o slist.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)
 ifeq (1,0)

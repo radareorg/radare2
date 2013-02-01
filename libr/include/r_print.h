@@ -43,6 +43,7 @@ typedef struct r_print_t {
 	int flags;
 	int addrmod;
 	int col;
+	int stride;
 	RPrintZoom *zoom;
 	RPrintNameCallback offname;
 	RStrHT *formats;
@@ -68,7 +69,7 @@ R_API void r_print_cursor(RPrint *p, int cur, int set);
 R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
 R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt);
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt, int idx, const char *setval);
 R_API int r_print_format_length (const char *fmt);
 // XXX . change wide, zeroend, urlencode for option flags
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int wide, int zeroend, int urlencode);

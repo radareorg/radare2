@@ -29,6 +29,7 @@ R_API RPrint *r_print_new() {
 	r_io_bind_init (p->iob);
 	p->printf = printf;
 	p->oprintf = nullprinter;
+	p->stride = 0;
 	p->interrupt = 0;
 	p->bigendian = 0;
 	p->col = 0;
@@ -343,7 +344,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	p->interrupt = 0;
-	for (i=j=0; !p->interrupt && i<len; i+=inc) {
+	for (i=j=0; !p->interrupt && i<len; i+=(p->stride?p->stride:inc)) {
 		if (use_sparse) {
 			if (check_sparse (buf+i, inc, sparse_char)) {
 				if (i+inc>=len || check_sparse (buf+i+inc, inc, sparse_char)) {

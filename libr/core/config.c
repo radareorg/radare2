@@ -341,6 +341,13 @@ static int config_scrprompt_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_scrstride_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = (RCore *) user;
+	core->print->stride = node->i_value;
+	return R_TRUE;
+}
+
 static int config_scrsparse_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore *) user;
@@ -481,14 +488,6 @@ R_API int r_core_config_init(RCore *core) {
 	cfg->printf = r_cons_printf;
 	cfg->num = core->num;
 
-	r_config_set (cfg, "dir.types", "/usr/include");
-	r_config_desc (cfg, "dir.types", "Default path to look for cparse type files");
-	r_config_set (cfg, "dir.source", "");
-	r_config_desc (cfg, "dir.source", "Path to find source files");
-	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
-	r_config_desc (cfg, "dir.magic", "Path to r_magic files");
-	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
-	r_config_desc (cfg, "dir.plugins", "Path to plugin files to be loaded at startup");
 	/* anal */
 	r_config_set (cfg, "anal.prelude", "");
 	r_config_desc (cfg, "anal.prelude", "Specify an hexpair to find preludes in code");
@@ -599,6 +598,15 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "diff.from", "set source diffing address for px (uses cc command)");
 	r_config_set_i (cfg, "diff.to", 0);
 	r_config_desc (cfg, "diff.to", "set destination diffing address for px (uses cc command)");
+	/* dir */
+	r_config_set (cfg, "dir.types", "/usr/include");
+	r_config_desc (cfg, "dir.types", "Default path to look for cparse type files");
+	r_config_set (cfg, "dir.source", "");
+	r_config_desc (cfg, "dir.source", "Path to find source files");
+	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
+	r_config_desc (cfg, "dir.magic", "Path to r_magic files");
+	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
+	r_config_desc (cfg, "dir.plugins", "Path to plugin files to be loaded at startup");
 	/* debug */
 	if (core->cons->rows>30) // HACKY
 		r_config_set_i (cfg, "dbg.follow", 64);
@@ -698,6 +706,8 @@ R_API int r_core_config_init(RCore *core) {
 
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
+	r_config_set_i_cb (cfg, "scr.stride", 0, config_scrstride_callback);
+	r_config_desc (cfg, "scr.stride", "select row stride for hexdump (px)");
 	r_config_set_cb (cfg, "scr.sparse", "false", config_scrsparse_callback);
 	r_config_set_cb (cfg, "scr.interactive", "true", config_scrint_callback);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);

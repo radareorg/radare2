@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static int cmd_zign(void *data, const char *input) {
 	RCore *core = (RCore *)data;

@@ -511,7 +511,7 @@ toro:
 			continue;
 		case R_META_TYPE_FORMAT:
 			r_cons_printf ("format %s {\n", mi->str);
-			r_print_format (core->print, at, buf+idx, len-idx, mi->str);
+			r_print_format (core->print, at, buf+idx, len-idx, mi->str, -1, NULL);
 			r_cons_printf ("} %d\n", mi->size);
 			oplen = ret = (int)mi->size;
 			free (line);

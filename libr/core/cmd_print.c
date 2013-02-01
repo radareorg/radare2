@@ -540,7 +540,7 @@ static int cmd_print(void *data, const char *input) {
 		r_print_bytes (core->print, core->block, len, "%02x");
 		break;
 	case 'f':
-		if (input[1]=='$') {
+		if (input[1]=='.') {
 			if (input[2]=='\0') {
 				RListIter *iter;
 				RStrHT *sht = core->print->formats;
@@ -549,7 +549,7 @@ static int cmd_print(void *data, const char *input) {
 					int idx = ((int)(size_t)i)-1;
 					const char *key = r_strpool_get (sht->sp, idx);
 					const char *val = r_strht_get (core->print->formats, key);
-					r_cons_printf ("pf$%s %s\n", key, val);
+					r_cons_printf ("pf.%s %s\n", key, val);
 				}
 			} else
 			if (input[2]=='-') {
@@ -564,16 +564,71 @@ static int cmd_print(void *data, const char *input) {
 					r_strht_set (core->print->formats, name, space);
 					return 0;
 				} else {
-					const char *fmt = r_strht_get (core->print->formats, name);
-					if (fmt) {
-						//printf ("GET (%s) = %s\n", name, fmt);
-						r_print_format (core->print, core->offset,
-							core->block, len, fmt);
-					} else eprintf ("Unknown format (%s)\n", name);
+					char *fmt, *eq, *dot = strchr (name, '.');
+					if (dot) {
+						// TODO: support multiple levels
+						*dot++ = 0;
+						eq = strchr (dot, '=');
+						if (eq) {
+							char *res;
+							fmt = r_strht_get (core->print->formats, name);
+							// TODO: spaguettti, reuse code below.. and handle atoi() too
+							res = strdup (fmt);
+							*eq++ = 0;
+#if 0
+							ut64 v;
+							v = r_num_math (NULL, eq);
+							r_print_format (core->print, core->offset,
+								core->block, core->blocksize, fmt, v, eq);
+#endif
+							r_str_word_set0 (res);
+							for (i = 1; ; i++) {
+								const char *k = r_str_word_get0 (res, i);
+								if (!k) break;
+								if (!strcmp (k, dot)) {
+									r_print_format (core->print, core->offset,
+										core->block, core->blocksize, fmt, i-1, eq);
+									break;
+								}
+							}
+							free (res);
+						} else {
+							const char *k, *fmt = r_strht_get (core->print->formats, name);
+							if (fmt) {
+								if (atoi (dot)>0 || *dot=='0') {
+									// indexed field access
+									r_print_format (core->print, core->offset,
+											core->block, core->blocksize, fmt, atoi (dot), NULL);
+								} else {
+									char *res = strdup (fmt);
+									r_str_word_set0 (res);
+									for (i = 1; ; i++) {
+										k = r_str_word_get0 (res, i);
+										if (!k) break;
+										if (!strcmp (k, dot)) {
+											r_print_format (core->print, core->offset,
+												core->block, core->blocksize, fmt, i-1, NULL);
+											break;
+										}
+									}
+									free (res);
+								}
+							} else {
+								
+							}
+						}
+					} else {
+						const char *fmt = r_strht_get (core->print->formats, name);
+						if (fmt) {
+							//printf ("GET (%s) = %s\n", name, fmt);
+							r_print_format (core->print, core->offset,
+								core->block, len, fmt, -1, NULL);
+						} else eprintf ("Unknown format (%s)\n", name);
+					}
 				}
 				free (name);
 			}
-		} else r_print_format (core->print, core->offset, core->block, len, input+1);
+		} else r_print_format (core->print, core->offset, core->block, len, input+1, -1, NULL);
 		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
@@ -676,7 +731,7 @@ static int cmd_print(void *data, const char *input) {
 		" pc[p] [len]     output C (or python) format\n"
 		" pd[lf] [l]      disassemble N opcodes (see pd?)\n"
 		" pD [len]        disassemble N bytes\n"
-		" pf[$nam] [fmt]  print formatted data (pf$name, pf$name $<expression>) \n"
+		" pf[$nam] [fmt]  print formatted data (pf.name, pf.name $<expression>) \n"
 		" p[iI][f] [len]  print N instructions/bytes (f=func) (see pdi)\n"
 		" pm [magic]      print libmagic data (pm? for more information)\n"
 		" pr [len]        print N raw bytes\n"
