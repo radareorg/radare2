@@ -381,6 +381,7 @@ static int cmd_bsize(void *data, const char *input) {
 static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 oldsize, newsize;
+	RFlagItem *flag
 	st64 delta = 0;
 	int grow;
 
@@ -391,6 +392,15 @@ static int cmd_resize(void *data, const char *input) {
 		case '+':
 		case '-':
 			delta = (st64)r_num_math (NULL, input);
+			if (isalpha (input[1]) && delta == 0) {
+				flag = r_flag_get (core->flags, input+1);
+				if (!flag) {
+					eprintf ("Cannot find address for '%s'\n", input+1);
+					return R_FALSE;
+				}
+				delta = flag->offset;
+			}
+			if (input[0] == '-') delta = -delta;
 			newsize = oldsize + delta;
 			break;
 		case '\0':
