@@ -1,3 +1,4 @@
+include ../../../global.mk
 include ../../config.mk
 
 CFLAGS+=-I../../include

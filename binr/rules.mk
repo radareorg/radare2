@@ -16,6 +16,7 @@ LDFLAGS+=../../libr/db/sdb/src/libsdb.a
 LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
 LDFLAGS+=-lm
 endif
+LDFLAGS+=${DL_LIBS}
 
 #--------------------#
 # Rules for programs #

@@ -80,6 +80,9 @@ endif
 
 # XXX do it in configure stage
 OSTYPE?=gnulinux
+ifeq (${OSTYPE},auto)
+OSTYPE=gnulinux
+endif
 # Output
 ifeq (${OSTYPE},windows)
 CFLAGS+=-D__WINDOWS__=1
@@ -125,7 +128,7 @@ endif
 
 ifeq (${EXT_SO},)
 all:
-	@echo Unidentified platform; exit 1
+	@echo "Unidentified platform '${OSTYPE}'" ; exit 1
 endif
 
 LIB=lib${NAME}

@@ -66,7 +66,7 @@ static inline void r_flist_free(void **it) {
 	free (--it);
 }
 
-static int r_flist_length (void **it) {
+static inline int r_flist_length (void **it) {
 	void *pos;
 	int len = 0;
 	r_flist_foreach (it, pos)

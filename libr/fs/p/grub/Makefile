@@ -63,7 +63,7 @@ endif
 
 BIN=test${EXT_EXE}
 
-all: ${BIN}
+all: ${KERNOBJS}
 
 ${BIN}: ${KERNOBJS} main.o
 	${CC} -o ${BIN} main.o ${CFLAGS} ${KERNOBJS}
