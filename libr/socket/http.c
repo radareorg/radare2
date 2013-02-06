@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2013 - pancake */
 
 #include <r_socket.h>
 
@@ -48,15 +48,16 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	}
 	host += 3;
 	port = strchr (host, ':');
-	if (!port)
+	if (!port) {
 		port = (ssl)?"443":"80";
-	else
+		path = host;
+	}else{
 		*port++ = 0;
-	path = strchr (host, '/');
-	if (!path)
-		path = "";
-	else
-		*path++ = 0;
+		path = port;
+	}
+	path = strchr (path, '/');
+	if (!path) path = "";
+	else *path++ = 0;
 	s = r_socket_new (ssl);
 	if (!s) {
 		printf ("Cannot create socket\n");

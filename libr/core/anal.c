@@ -1007,3 +1007,36 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 		free (buf);
 	return R_TRUE;
 }
+
+/* core analysis stats */
+/* stats --- colorful bar */
+R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut64 step) {
+	RFlagItem *f;
+	ut64 addr;
+	RListIter *iter;
+	RCoreAnalStats *as = R_NEW0 (RCoreAnalStats);
+	int piece, as_size, blocks = (to-from)/step;
+	as_size = blocks * sizeof (RCoreAnalStatsItem);
+	as->block = malloc (as_size);
+	memset (as->block, 0, as_size);
+	eprintf ("Use %d blocks\n", blocks);
+	r_list_foreach (core->flags->flags , iter, f) {
+		if (f->offset+f->size < from) continue;
+		if (f->offset > to) continue;
+		piece = (f->offset-from)/step;
+		as->block[piece].flags++;
+	}
+	// iter all flags
+	//r_list_append (as->items, item);
+	// iter all comments
+	// iter all symbols
+	// iter all imports
+	// iter all functions
+	// iter all metadata
+	// iter all strings
+	return as;
+}
+
+R_API void r_core_anal_stats_free (RCoreAnalStats *s) {
+	free (s);
+}

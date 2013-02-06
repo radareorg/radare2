@@ -46,9 +46,17 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	int u = r_config_get_i (core->config, "scr.interactive");
 	int v = r_config_get_i (core->config, "asm.cmtright");
 	const char *port = r_config_get (core->config, "http.port");
+	if (core->http_up) {
+		eprintf ("http server is already running\n");
+		return 1;
+	}
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
 		return 1;
+	}
+	if (path && atoi (path)) {
+		port = path;
+		path = NULL;
 	}
 	if (!strcmp (port, "0")) {
 		r_num_irand ();
@@ -80,6 +88,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	}
 	eprintf ("Starting http server...\n");
 	eprintf ("http://localhost:%d/\n", atoi (port));
+	core->http_up = R_TRUE;
 	while (!r_cons_singleton ()->breaked) {
 		r_cons_break (http_break, core);
 		rs = r_socket_http_accept (s, timeout);
@@ -134,16 +143,33 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 							"Permission denied\n", 0, NULL);
 				}
 			} else if (!memcmp (rs->path, "/cmd/", 5)) {
+				char *cmd = rs->path +5;
+				char foo[32];
+				const char *httpcmd = r_config_get (core->config, "http.uri");
+				while (*cmd=='/') cmd++;
+				if (httpcmd && *httpcmd) {
+					int len;
+					char *res;
+					// do remote http query and proxy response
+					snprintf (foo, sizeof (foo), "%s/%s", httpcmd, cmd);
+					res = r_socket_http_get (foo, NULL, &len);
+					if (res) {
+						res[len]=0;
+						r_cons_printf ("%s\n", res);
+					}
+				} else {
 					char *out, *cmd = rs->path+5;
-				r_str_uri_decode (cmd);
-				out = r_core_cmd_str_pipe (core, cmd);
-				if (out) {
-					char *res = r_str_uri_encode (out);
-					r_socket_http_response (rs, 200, out, 0,
-						"Content-Type: text/plain\n");
-					free (out);
-					free (res);
-				} else r_socket_http_response (rs, 200, "", 0, NULL);
+					r_str_uri_decode (cmd);
+					// eprintf ("CMD (%s)\n", cmd);
+					out = r_core_cmd_str_pipe (core, cmd);
+					if (out) {
+						char *res = r_str_uri_encode (out);
+						r_socket_http_response (rs, 200, out, 0,
+							"Content-Type: text/plain\n");
+						free (out);
+						free (res);
+					} else r_socket_http_response (rs, 200, "", 0, NULL);
+				}
 			} else {
 				const char *root = r_config_get (core->config, "http.root");
 				char *path;
@@ -218,6 +244,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		}
 		r_socket_http_close (rs);
 	}
+	core->http_up = R_FALSE;
 	r_socket_free (s);
 	r_cons_break_end ();
 	r_config_set_i (core->config, "scr.html", x);
@@ -290,8 +317,10 @@ R_API void r_core_rtr_list(RCore *core) {
 	for (i = 0; i < RTR_MAX_HOSTS; i++)
 		if (rtr_host[i].fd) {
 			r_cons_printf("%i - ", rtr_host[i].fd->fd);
+			if (rtr_host[i].proto == RTR_PROT_HTTP)
+				r_cons_printf( "http://");
 			if (rtr_host[i].proto == RTR_PROT_TCP)
-				r_cons_printf("tcp://");
+				r_cons_printf ("tcp://");
 			else if (rtr_host[i].proto == RTR_PROT_UDP)
 				r_cons_printf("udp://");
 			else r_cons_printf("rap://");
@@ -310,6 +339,9 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	if ((ptr = strstr(input, "tcp://"))) {
 		proto = RTR_PROT_TCP;
 		host = ptr+6;
+	} else if ((ptr = strstr(input, "http://"))) {
+		proto = RTR_PROT_HTTP;
+		host = ptr+7;
 	} else if ((ptr = strstr(input, "udp://"))) {
 		proto = RTR_PROT_UDP;
 		host = ptr+6;
@@ -342,6 +374,50 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		return;
 	}
 	switch (proto) {
+	case RTR_PROT_HTTP:
+		if (r_sandbox_enable (0)) {
+			eprintf ("sandbox: connect disabled\n");
+			return;
+		}
+		{
+			char uri[1024], prompt[64];
+			int len;
+			char *str, *res;
+			if (file[strlen (file)-1]=='/') {
+				snprintf (prompt, sizeof (prompt), "[http://%s:%s/%s]> ",
+					host, port, file);
+				r_line_set_prompt (prompt);
+				while (1) {
+					char *str = r_line_readline ();
+					if (!str || !*str) break;
+					snprintf (uri, sizeof (uri), "http://%s:%s/%s%s",
+						host, port, file, str);
+					str = r_socket_http_get (uri, NULL, &len);
+					if (str) {
+						str[len] = 0;
+						res = strstr (str, "\n\n");
+						if (res) res = strstr (res+1, "\n\n");
+						if (res) res += 2; else res = str;
+						printf ("%s", res);
+						free (str);
+					} else eprintf ("Http fail\n");
+				}
+				return;
+			}
+			snprintf (uri, sizeof (uri), "http://%s:%s/%s", host, port, file);
+			str = r_socket_http_get (uri, NULL, &len);
+			if (str) {
+				str[len] = 0;
+				res = strstr (str, "\n\n");
+				if (res) res = strstr (res+1, "\n\n");
+				if (res) res += 2; else res = str;
+				printf ("%s", res);
+				free (str);
+			} else eprintf ("Http fail\n");
+			// do not add connection. wtf
+			return;
+		}
+		break;
 	case RTR_PROT_RAP:
 		if (r_sandbox_enable (0)) {
 			eprintf ("sandbox: connect disabled\n");
@@ -402,8 +478,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			rtr_n = i;
 			break;
 		}
-
-	r_core_rtr_list (core);
+	//r_core_rtr_list (core);
 }
 
 R_API void r_core_rtr_remove(RCore *core, const char *input) {

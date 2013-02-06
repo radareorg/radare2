@@ -19,14 +19,14 @@ Broken stuff to fixe before release
 * cmp rip+xx -> not resolved wtf
 * search for CALL instructions in text segment.
   - analyze the destination address of each call destination
-* Analysis: assume there is a function at the end of each function
-* Integrate dwarf parser with disassembler and debugger
-* Step back .. log all state changes on every debugger stop
-* Show analized functions in 'aa' -> discuss
-* Timeout for code analysis (check timestamp)
+* analysis: assume there is a function at the end of each function
+* integrate dwarf parser with disassembler and debugger
+* step back .. log all state changes on every debugger stop
+* show analized functions in 'aa' -> discuss
+* timeout for code analysis (check timestamp)
   - add analysis points continuation, so 'aa' can be used progressively
 * Allow to seek to branch N like in visual, but from cmdline
-* Colorize multiple ranges of chars in hexdump
+* Colorize multiple ranges of chars in hexdump -- cparse
 * refactor vmenus.c -> refresh function must be redefined for each menu
 // show hints for
     0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             

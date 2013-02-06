@@ -405,6 +405,7 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->print = r_print_new ();
+	core->http_up = R_FALSE;
 	core->print->user = core;
 	core->print->offname = r_core_print_offname;
 	core->print->printf = (void *)r_cons_printf;

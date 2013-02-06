@@ -1,4 +1,5 @@
 /* radare - LGPL - Copyright 2010-2013 - pancake */
+// XXX. this is dupped inside the r_flist.h for optimizations
 
 int r_flist_iterator(void **x) {
 	return *x!=0;
@@ -69,4 +70,12 @@ R_API void r_flist_free(void **it) {
 		free (pos);
 	r_flist_rewind (it);
 	free (--it);
+}
+
+R_API int r_flist_length (void **it) {
+	void *pos;
+	int len = 0;
+	r_flist_foreach (it, pos)
+		len++;
+	return len;
 }

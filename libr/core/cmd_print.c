@@ -103,20 +103,31 @@ static int cmd_print(void *data, const char *input) {
 	switch (*input) {
 	case '%':
 		// TODO: use RAnal_navbar
+		// TODO: p% is not in p? help
 		// TODO: if p%j -> show json!
+		// TODO: if p%x -> show hexblock
 		{
-			ut64 off = core->io->off;
-			ut64 s = core->file?core->file->size:0;
-			ut64 piece = 0;
+			int is_json = input[1]=='j';
+			ut64 piece, off = core->io->off;
+			ut64 s = core->file? core->file->size: 0xffffff;
 			int w = core->print->cols * 4;
 			piece = s/w;
-			r_cons_strcat ("  [");
+			r_cons_strcat ("[");
+{
+	RCoreAnalStats *as;
+	r_core_anal_get_stats (core->anal,
+			off, off+s, piece);
+	r_core_anal_stats_free (as);
+}
 			for (i=0; i<w; i++) {
 				ut64 from = (piece*i);
 				ut64 to = from+piece;
-				if (off>=from && off<to)
-					r_cons_memcat ("#", 1);
-				else r_cons_memcat (".", 1);
+				if (is_json) {
+				} else {
+					if (off>=from && off<to)
+						r_cons_memcat ("#", 1);
+					else r_cons_memcat (".", 1);
+				}
 				// TODO: print where flags are.. code, ..
 			}
 			r_cons_strcat ("]\n");

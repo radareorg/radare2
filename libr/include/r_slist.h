@@ -1,5 +1,8 @@
-
+/* radare - LGPL - Copyright 2013 - pancake */
 /* sliced list */
+
+#ifndef _INCLUDE_RSLIST_H_
+#define _INCLUDE_RSLIST_H_
 
 typedef struct r_slist_item_t {
 	ut64 from;
@@ -9,13 +12,13 @@ typedef struct r_slist_item_t {
 
 typedef struct r_slist_t {
 	RList *list;
-	ut64 from;
-	ut64 to;
+	ut64 min;
+	ut64 max;
 	int mod;
-	int nitems;
 	int *last;
 	int lastslot;
-	RSListItem **items;
+	int nitems;
+	RSListItem ***items;
 	void **alloc;
 } RSList;
 
@@ -27,3 +30,5 @@ R_API RSListItem **r_slist_get (RSList *s, ut64 addr);
 R_API void r_slist_del (RSList *s, RSListItem *p);
 R_API void *r_slist_get_at (RSList *list, ut64 addr);
 R_API void r_slist_optimize (RSList *s);
+
+#endif

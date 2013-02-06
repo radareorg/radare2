@@ -33,7 +33,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 			if (p) *p = 0;
 			hr->method = strdup (buf);
 			if (p) {
-				q = strchr (p+1, ' ');
+				q = strstr (p+1, " HTTP"); //strchr (p+1, ' ');
 				if (q) *q = 0;
 				hr->path = strdup (p+1);
 			}

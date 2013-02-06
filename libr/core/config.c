@@ -690,6 +690,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "http.public", "set to true to listen on 0.0.0.0");
 	r_config_set (cfg, "http.port", "9090");
 	r_config_desc (cfg, "http.root", "port to listen for http connections");
+	r_config_set (cfg, "http.uri", "");
+	r_config_desc (cfg, "http.uri", "base uri to remote host proxy host");
 	r_config_set (cfg, "http.root", WWWROOT);
 	r_config_desc (cfg, "http.root", "http root directory");
 

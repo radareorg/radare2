@@ -170,7 +170,7 @@ static int cmd_rap(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '\0': r_core_rtr_list (core); break;
-	case 'h': r_core_rtr_http (core, 0, NULL); break;
+	case 'h': r_core_rtr_http (core, 0, input+1); break;
 	case 'H': 
 		  while (input[1]==' ') input++;
 		  r_core_rtr_http (core, 1, input+1); break;
@@ -390,7 +390,7 @@ static int cmd_resize(void *data, const char *input) {
 	switch (*input) {
 		case '+':
 		case '-':
-			delta = (st64)r_num_math (NULL, input);
+			delta = (st64)r_num_math (core->num, input);
 			newsize = oldsize + delta;
 			break;
 		case '\0':

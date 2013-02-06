@@ -38,6 +38,7 @@
 #define RTR_PROT_RAP 0
 #define RTR_PROT_TCP 1
 #define RTR_PROT_UDP 2
+#define RTR_PROT_HTTP 3
 
 #define RTR_RAP_OPEN   0x01
 #define RTR_RAP_CMD    0x07
@@ -84,7 +85,7 @@ typedef struct r_core_t {
 	ut32 blocksize;
 	ut32 blocksize_max;
 	ut8 *block;
-	ut8 *oobi; /* out of band input ; used to get input from file or multiline */
+	ut8 *oobi; /* out of band input ; used for multiline or file input */
 	int ffio;
 	int oobi_len;
 	ut8 *yank_buf;
@@ -102,7 +103,6 @@ typedef struct r_core_t {
 	RNum *num;
 	RLib *lib;
 	RCmd *rcmd;
-
 	RAnal *anal;
 	RAsm *assembler;
 	RAnalRefline *reflines;
@@ -128,6 +128,7 @@ typedef struct r_core_t {
 	RCoreAsmsteps asmsteps[R_CORE_ASMSTEPS];
 	ut64 asmqjmps[10];
 	// visual
+	int http_up;
 	int printidx;
 	RList *watchers;
 } RCore;
@@ -333,6 +334,21 @@ R_API RCoreLog *r_core_log_new ();
 R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);
+
+/* anal stats */
+
+typedef struct {
+	ut32 youarehere;
+	ut32 flags;
+	ut32 symbols;
+	ut32 imports;
+} RCoreAnalStatsItem;
+typedef struct {
+	RCoreAnalStatsItem *block;
+} RCoreAnalStats;
+
+R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
+R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 
 #endif
 

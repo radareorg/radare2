@@ -65,6 +65,14 @@ static inline void r_flist_free(void **it) {
 	r_flist_rewind (it);
 	free (--it);
 }
+
+static int r_flist_length (void **it) {
+	void *pos;
+	int len = 0;
+	r_flist_foreach (it, pos)
+		len++;
+	return len;
+}
 #endif
 
 #endif
