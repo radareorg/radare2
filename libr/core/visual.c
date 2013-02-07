@@ -23,14 +23,15 @@ static int marks_init = 0;
 static ut64 marks[UT8_MAX+1];
 
 static int r_core_visual_hud(RCore *core) {
+	const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
+	char *homehud = r_str_home("/.radare2/hud");
 	char *res = NULL;
 	char *p = 0;
+
 	r_cons_show_cursor (R_TRUE);
-	char *homehud = r_str_home("/.radare2/hud");
 	if (homehud)
 		res = r_cons_hud_file (homehud);
 	if (!res) {
-		const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
 		if (r_file_exists (f))
 			res = r_cons_hud_file (f);
 		else r_cons_message ("Cannot find hud file");
@@ -205,7 +206,7 @@ static void visual_search (RCore *core) {
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	char buf[4096];
-	int i, cols = core->print->cols;
+	int i, ret, offscreen, cols = core->print->cols;
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch<2) return 1;
@@ -403,8 +404,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case 'G':
-{
-		int ret = 0;
+		ret = 0;
 		if (core->io->va) {
 			ut64 offset = r_io_section_get_vaddr (core->io, 0);
 			if (offset == UT64_MAX) {
@@ -420,7 +420,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		if (ret != -1)
 			r_io_sundo_push (core->io, core->offset);
-}
 		break;
 	case 'h':
 		if (curset) {
@@ -460,13 +459,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (curset) {
 			if (ocursor==-1) ocursor=cursor;
 			cursor++;
-			{
-				int offscreen = (core->cons->rows-3)*cols;
-				if (cursor>=offscreen) {
-					r_core_seek (core, core->offset+cols, 1);
-					cursor-=cols;
-					ocursor-=cols;
-				}
+			offscreen = (core->cons->rows-3)*cols;
+			if (cursor>=offscreen) {
+				r_core_seek (core, core->offset+cols, 1);
+				cursor-=cols;
+				ocursor-=cols;
 			}
 		} else r_core_seek_delta (core, 2);
 		break;
@@ -477,13 +474,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					&op, core->block+cursor, 32);
 			cursor += cols;
 			ocursor = -1;
-			{
-				int offscreen = (core->cons->rows-3)*cols;
-				if (cursor>=offscreen) {
-					//ut64 x = core->offset + cols;
-					r_core_seek (core, core->offset+cols, 1);
-					cursor-=cols;
-				}
+			offscreen = (core->cons->rows-3)*cols;
+			if (cursor>=offscreen) {
+				//ut64 x = core->offset + cols;
+				r_core_seek (core, core->offset+cols, 1);
+				cursor-=cols;
 			}
 		} else {
 			if (core->printidx == 1 || core->printidx == 2) {
@@ -501,13 +496,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (curset) {
 			if (ocursor==-1) ocursor = cursor;
 			cursor += cols;
-			{
-				int offscreen = (core->cons->rows-3)*cols;
-				if (cursor>=offscreen) {
-					r_core_seek (core, core->offset+cols, 1);
-					cursor-=cols;
-					ocursor-=cols;
-				}
+			offscreen = (core->cons->rows-3)*cols;
+			if (cursor>=offscreen) {
+				r_core_seek (core, core->offset+cols, 1);
+				cursor-=cols;
+				ocursor-=cols;
 			}
 		} else r_core_seek (core, core->offset+obs, 1);
 		break;
@@ -524,7 +517,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			}
 		} else {
 			if (core->printidx == 1 || core->printidx == 2) {
-				int i;
 				cols = core->inc;
 				for (i = 0; i < R_CORE_ASMSTEPS; i++)
 					if (core->offset == core->asmsteps[i].offset)

@@ -148,6 +148,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define PFMT64o "llo"
 #endif
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 #if __APPLE__
 # if __i386__

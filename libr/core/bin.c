@@ -3,27 +3,23 @@
 #include <r_core.h>
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
-	int i = 0;
-	RList *list;
-	RListIter *iter;
-	RBinString *string;
+	int rawstr, hasstr, minstr;
+	char *p, *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
-	char str[R_FLAG_NAME_SIZE];
+	RBinString *string;
+	RListIter *iter;
+	RList *list;
+	int i = 0;
 
-	/* bin str limits */
-	int hasstr = r_config_get_i (r->config, "bin.strings");
-	int rawstr = r_config_get_i (r->config, "bin.rawstr");
-	int minstr = r_config_get_i (r->config, "bin.minstr");
+	hasstr = r_config_get_i (r->config, "bin.strings");
 	if (!hasstr) return 0;
 	if (!r->bin->cur.curplugin) return 0;
+	rawstr = r_config_get_i (r->config, "bin.rawstr");
 	if (!rawstr && !r->bin->cur.curplugin->info)
 		return 0;
-	if (minstr>0) {
-		r->bin->minstrlen = minstr;
-	} else {
-		r_config_set_i (r->config, "bin.minstr",
-			r->bin->minstrlen);
-	}
+	minstr = r_config_get_i (r->config, "bin.minstr");
+	if (minstr>0) r->bin->minstrlen = minstr;
+	else r_config_set_i (r->config, "bin.minstr", r->bin->minstrlen);
 	if (r->bin->minstrlen==0) return -1;
 
 	/* code */
@@ -33,21 +29,19 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_JSON)) {
 		r_cons_printf ("[");
 		r_list_foreach (list, iter, string) {
-			char *p, *str = strdup (string->string);
+			q = strdup (string->string);
 			//r_name_filter (str, 128);
-			for (p=str;*p;p++) if(*p=='"')*p='\'';
+			for (p=q;*p;p++) if(*p=='"')*p='\'';
 			r_cons_printf ("%s{\"offset\":%"PFMT64d",\"length\":%d,\"string\":\"%s\"}", 
-				iter->p?",":"", va? string->rva:string->offset,
-				string->size, str);
-			free (str);
+				iter->p? ",": "", va? string->rva: string->offset, string->size, q);
+			free (q);
 		}
 		r_cons_printf ("]");
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
-		r_list_foreach (list, iter, string) {
+		r_list_foreach (list, iter, string)
 			r_cons_printf ("%"PFMT64d" %d %s\n", 
 				va? string->rva:string->offset, string->size, string->string);
-		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		if (r_config_get_i (r->config, "bin.strings"))
@@ -68,25 +62,22 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		}
 		r_cons_break_end ();
 	} else {
-		if (mode) r_cons_printf ("fs strings\n");
-		else r_cons_printf ("[strings]\n");
-
+		r_cons_printf (mode?"fs strings\n": "[strings]\n");
 		r_list_foreach (list, iter, string) {
 			section = r_bin_get_section_at (r->bin, string->offset, 0);
 			if (mode) {
 				r_name_filter (string->string, sizeof (string->string));
 				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
-						"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-						string->string, string->size, va?baddr+string->rva:string->offset,
-						string->size, va?baddr+string->rva:string->offset);
+					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+					string->string, string->size, va?baddr+string->rva:string->offset,
+					string->size, va?baddr+string->rva:string->offset);
 			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-					"sz=%"PFMT64d" section=%s string=%s\n",
-					baddr+string->rva, string->offset,
-					string->ordinal, string->size,
-					section?section->name:"unknown", string->string);
+				"sz=%"PFMT64d" section=%s string=%s\n",
+				baddr+string->rva, string->offset,
+				string->ordinal, string->size,
+				section?section->name:"unknown", string->string);
 			i++;
 		}
-
 		if (!mode) r_cons_printf ("\n%i strings\n", i);
 	}
 	return R_TRUE;
@@ -178,32 +169,31 @@ static int bin_info (RCore *r, int mode) {
 			}
 		} else {
 			// if type is 'fs' show something different?
-			r_cons_printf ("[File info]\n");
-			r_cons_printf ("File=%s\n"
-					"Type=%s\n"
-					"PositionIndependent=%s\n"
-					"HasVA=%s\n"
-					"RootClass=%s\n"
-					"Class=%s\n"
-					"Language=%s\n"
-					"Arch=%s %i\n"
-					"Machine=%s\n"
-					"OS=%s\n"
-					"Subsystem=%s\n"
-					"Big endian=%s\n"
-					"Stripped=%s\n"
-					"Static=%s\n"
-					"Line_nums=%s\n"
-					"Local_syms=%s\n"
-					"Relocs=%s\n"
-					"RPath=%s\n",
+			r_cons_printf ("# File info\n");
+			r_cons_printf ("file\t%s\n"
+					"type\t%s\n"
+					"pic\t%s\n"
+					"has_va\t%s\n"
+					"root\t%s\n"
+					"class\t%s\n"
+					"lang\t%s\n"
+					"arch\t%s %i\n"
+					"machine\t%s\n"
+					"os\t%s\n"
+					"subsys\t%s\n"
+					"endian\t%s\n"
+					"strip\t%s\n"
+					"static\t%s\n"
+					"linenum\t%s\n"
+					"lsyms\t%s\n"
+					"relocs\t%s\n"
+					"rpath\t%s\n",
 					info->file, info->type,
 					r_str_bool (info->has_pi),
 					r_str_bool (info->has_va),
 					info->rclass, info->bclass, info->lang?info->lang:"unknown",
 					info->arch, info->bits, info->machine, info->os,
-					info->subsystem,
-					r_str_bool (info->big_endian), 
+					info->subsystem, info->big_endian? "big": "little", 
 					r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
 					r_str_bool (R_BIN_DBG_STATIC (info->dbg_info)),
 					r_str_bool (R_BIN_DBG_LINENUMS (info->dbg_info)),

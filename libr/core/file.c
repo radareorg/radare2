@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_core.h>
 
@@ -136,7 +136,10 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 }
 
 R_API int r_core_bin_load(RCore *r, const char *file) {
-	int va = r->io->va || r->io->debug;
+	int i, va = r->io->va || r->io->debug;
+	RListIter *iter;
+	ut64 offset;
+	RIOMap *im;
 
 	if (file == NULL || !r->file || !*file) {
 		if (!r->file || !r->file->filename)
@@ -145,7 +148,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	}
 	if (r_bin_load (r->bin, file, R_FALSE)) {
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
-			int i;
 			RBinObject *o = r->bin->cur.o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
 					r->assembler->cur->arch, r->assembler->bits);
@@ -163,9 +165,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		}
 		r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);//"x86_32");
 
-		{
-		RIOMap *im;
-		RListIter *iter;
 		/* Fix for fat bins */
 		r_list_foreach (r->io->maps, iter, im) {
 			if (r->bin->cur.size > 0) {
@@ -173,27 +172,24 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 				im->to = im->from + r->bin->cur.size;
 			}
 		}
-		}
 	} else if (!r_bin_load (r->bin, file, R_TRUE))
 		return R_FALSE;
 	r->file->obj = r_bin_get_object (r->bin, 0);
-	if (r->file->obj->info != NULL) {
-		r_config_set_i (r->config, "io.va", r->file->obj->info->has_va);
-	} else r_config_set_i (r->config, "io.va", 0);
-	{
-		ut64 offset = r_bin_get_offset (r->bin);
-		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
-	}
+
+	r_config_set_i (r->config, "io.va", 
+		(r->file->obj->info)? r->file->obj->info->has_va: 0);
+	offset = r_bin_get_offset (r->bin);
+	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
 	if (r_config_get_i (r->config, "file.analyze"))
 		r_core_cmd0 (r, "aa");
 	return R_TRUE;
 }
 
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loadaddr) {
-	RCoreFile *fh;
 	const char *cp;
-	char *p;
+	RCoreFile *fh;
 	RIODesc *fd;
+	char *p;
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
 		mode = 4|2;
@@ -308,10 +304,10 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 }
 
 R_API int r_core_hash_load(RCore *r, const char *file) {
-	ut8 *buf = NULL;
-	int i, buf_len = 0;
 	const ut8 *md5, *sha1;
 	char hash[128], *p;
+	int i, buf_len = 0;
+	ut8 *buf = NULL;
 	RHash *ctx;
 	ut64 limit;
 

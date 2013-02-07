@@ -70,13 +70,7 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 					cmdstr[idx] = 0;
 					// TODO: optimize all this strcat stuff
 					strcat (cmdstr, filestr);
-					if (is_json)
-						strcat (cmdstr, "\\n");
-					else
-					if (is_html)
-						strcat (cmdstr, "<br />");
-					else
-						strcat (cmdstr, "\\l");
+					strcat (cmdstr, is_json? "\\n": is_html? "<br />": "\\l");
 					idx += strlen (filestr);
 					free (filestr);
 				}
@@ -124,10 +118,10 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
         int is_json = opts & R_CORE_ANAL_JSON;
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
-	char *str;
-	int top = 0;
 	int left = 300;
 	int count = 0;
+	int top = 0;
+	char *str;
 
 	if (is_json) {
 		// TODO: show vars, refs and xrefs
@@ -490,18 +484,17 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 #define FMT_GV 1
 #define FMT_JS 2
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int fmt) {
+	const char *font = r_config_get (core->config, "graph.font");
+        int is_html = r_cons_singleton ()->is_html;
+	int first, first2, showhdr = 0;
+	RListIter *iter, *iter2;
 	const int hideempty = 1;
 	const int usenames = 1;
-        int is_html = r_cons_singleton ()->is_html;
-	const char *font = r_config_get (core->config, "graph.font");
-	RListIter *iter, *iter2;
-	RAnalRef *fcnr;
 	RAnalFunction *fcni;
-	int showhdr = 0;
-	int first, first2;
+	RAnalRef *fcnr;
 
 	if (fmt==2) r_cons_printf ("[");
-	first= 0;
+	first = 0;
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (addr != 0 && addr != fcni->addr)
 			continue;
@@ -593,16 +586,14 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
+	ut64 addr = r_num_math (core->num, input+1);
+	RListIter *iter, *iter2;
+	RAnalFunction *fcn;
 	RAnalRef *refi;
 	RAnalVar *vari;
-	RAnalFunction *fcn;
-	RListIter *iter, *iter2;
-	ut64 addr = r_num_math (core->num, input+1);
+	int bbs;
 
 	if (rad==2) {
-		RListIter *iter;
-		int bbs;
-
 		r_list_foreach (core->anal->fcns, iter, fcn) {
 			if (input[2]!='*' && !memcmp (fcn->name, "loc.", 4))
 				continue;
@@ -748,14 +739,14 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	const char *font = r_config_get (core->config, "graph.font");
-	int count = 0;
         int is_html = r_cons_singleton ()->is_html;
         int is_json = opts & R_CORE_ANAL_JSON;
 	int reflines, bytes, dwarf;
 	RAnalFunction *fcni;
 	RListIter *iter;
+	int count = 0;
 
-opts|=R_CORE_ANAL_GRAPHBODY;
+	opts |= R_CORE_ANAL_GRAPHBODY;
 	if (r_list_empty (core->anal->fcns))
 		return R_FALSE;
 
@@ -770,9 +761,8 @@ opts|=R_CORE_ANAL_GRAPHBODY;
 		"\tgraph [bgcolor=white];\n"
 		"\tnode [color=lightgray, style=filled shape=box"
 		" fontname=\"%s\" fontsize=\"8\"];\n", font);
-	if (is_json) {
+	if (is_json)
 		r_cons_printf ("[");
-	}
 	r_cons_flush ();
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN)
@@ -802,9 +792,7 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 	}
 	if (depth < 1)
 		return R_FALSE;
-	if (core->bin->cur.o->info->big_endian)
-		endian = !LIL_ENDIAN;
-	else endian = LIL_ENDIAN;
+	endian = (core->bin->cur.o->info->big_endian)? !LIL_ENDIAN: LIL_ENDIAN;
 	wordsize = (int)(core->anal->bits/8);
 	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1) {
 		return R_FALSE;
@@ -828,9 +816,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	if (ref==0LL)
 		eprintf ("Null reference search is not supported\n");
 	else
-	if (core->blocksize<=OPSZ)
-		eprintf ("error: block size too small\n");
-	else
+	if (core->blocksize>OPSZ) {
 		for (at = from; at < to; at += core->blocksize - OPSZ) {
 			if (r_cons_singleton ()->breaked)
 				break;
@@ -860,6 +846,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 				}
 			}
 		}
+	} else eprintf ("error: block size too small\n");
 	free (buf);
 	r_anal_op_fini (&op);
 	return count;
@@ -1016,10 +1003,9 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut
 	RFlagItem *f;
 	RAnalFunction *F;
 	RMetaItem *m;
-	ut64 addr, at;
 	RListIter *iter;
 	RCoreAnalStats *as = R_NEW0 (RCoreAnalStats);
-	int i, piece, as_size, blocks = (to-from)/step;
+	int piece, as_size, blocks = (to-from)/step;
 	as_size = blocks * sizeof (RCoreAnalStatsItem);
 	as->block = malloc (as_size);
 	memset (as->block, 0, as_size);
