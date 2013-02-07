@@ -9,9 +9,8 @@ scan-build echo >/dev/null
 cd `dirname $PWD/$0` ; cd ..
 
 # build
-if [ -f config-user.mk ]; then
-	${MAKE} mrproper > /dev/null 2>&1
-fi
-./configure --prefix=/usr && \
-scan-build -o sys/clang-log ${MAKE} -j 4
+${MAKE} mrproper > /dev/null 2>&1
+rm -rf scan-log
+scan-build ./configure --prefix=/usr && \
+scan-build -o ${PWD}/clang-log ${MAKE} -j 4
 echo Check ${PWD}/clang-log
