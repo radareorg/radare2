@@ -33,7 +33,7 @@ typedef struct r_meta_item_t {
 } RMetaItem;
 
 typedef struct r_meta_t {
-	RList *data;
+	RList *data; // TODO: rename to 'list'
 	PrintfCallback printf;
 } RMeta;
 

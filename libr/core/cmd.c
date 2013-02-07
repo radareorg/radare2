@@ -258,6 +258,7 @@ static int cmd_quit(void *data, const char *input) {
 			r_num_math (core->num, input);
 		else core->num->value = 0LL;
 		//exit (*input?r_num_math (core->num, input+1):0);
+		//if (core->http_up) return R_FALSE; // cancel quit when http is running
 		return -2;
 	}
 	return R_FALSE;
@@ -467,12 +468,13 @@ static int cmd_eval(void *data, const char *input) {
 			break;
 		default:
 			if (input[2]) {
-				const char *input2 = strchr (input+2, ' ');
-				if (input2) input2++; else input2 = input+2;
 				const char *desc = r_config_desc (
-					core->config, input2, NULL);
-				if (desc) r_cons_strcat (desc);
-				r_cons_newline ();
+					core->config, r_str_chop_ro (input+1), NULL);
+				if (desc) {
+					r_cons_strcat (desc);
+					r_cons_newline ();
+					core->num->value = 0;
+				} else core->num->value = 1;
 			}
 			break;
 		case 0:
@@ -509,6 +511,8 @@ static int cmd_eval(void *data, const char *input) {
 static int cmd_visual(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	int ret;
+	if (core->http_up)
+		return R_FALSE;
 	if (!r_config_get_i (core->config, "scr.interactive"))
 		return R_FALSE;
 	r_cons_show_cursor (R_FALSE);

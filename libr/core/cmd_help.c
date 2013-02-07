@@ -2,14 +2,14 @@
 
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	char out[128];
-	ut64 n;
+	const char *k;
+	char *p, out[128];
+	ut64 n, n2;
 	int i;
 
 	switch (input[0]) {
 	case 'r':
 		{ // TODO : Add support for 64bit random numbers
-		char *p;
 		ut64 b = 0;
 		ut32 r = UT32_MAX;
 		if (input[1]) {
@@ -33,6 +33,11 @@ static int cmd_help(void *data, const char *input) {
 		r_num_to_bits (out, n);
 		r_cons_printf ("%s\n", out);
 		}
+		break;
+	case 'B':
+		k = r_str_chop_ro (input+1);
+		r_core_get_boundaries (core, k, &n, &n2);
+		r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", n, n2);
 		break;
 	case 'd':
 		if (input[1]==' '){
@@ -259,11 +264,11 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'p':
 		if (core->io->va) {
-		// physical address
-		ut64 o, n = (input[0] && input[1])?
-			r_num_math (core->num, input+2): core->offset;
-		o = r_io_section_vaddr_to_offset (core->io, n);
-		r_cons_printf ("0x%08"PFMT64x"\n", o);
+			// physical address
+			ut64 o, n = (input[0] && input[1])?
+				r_num_math (core->num, input+2): core->offset;
+			o = r_io_section_vaddr_to_offset (core->io, n);
+			r_cons_printf ("0x%08"PFMT64x"\n", o);
 		} else {
 			eprintf ("Virtual addresses not enabled!\n");
 		}
@@ -390,6 +395,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?? [cmd]          ? == 0 run command when math matches\n"
 			" ?_ hudfile        load hud menu with given file\n"
 			" ?b [num]          show binary value of number\n"
+			" ?B [elem]         show range boundaries like 'e?search.in\n"
 			" ?d opcode         describe opcode for asm.arch\n"
 			" ?e string         echo string\n"
 			" ?f [num] [str]    map each bit of the number as flag string index\n"

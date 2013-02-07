@@ -309,6 +309,7 @@ R_API int r_core_visual_comments (RCore *core);
 R_API void r_core_visual_prompt (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
+R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to);
 
 R_API int r_core_patch (RCore *core, const char *patch);
 
@@ -340,7 +341,10 @@ R_API void r_core_log_del(RCore *core, int n);
 typedef struct {
 	ut32 youarehere;
 	ut32 flags;
+	ut32 comments;
+	ut32 functions;
 	ut32 symbols;
+	ut32 strings;
 	ut32 imports;
 } RCoreAnalStatsItem;
 typedef struct {

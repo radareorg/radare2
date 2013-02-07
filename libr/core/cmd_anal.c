@@ -877,7 +877,7 @@ static int cmd_anal(void *data, const char *input) {
 				" ahb 16 @ $$   # force 16bit for current instruction\n"
 				" ahl 4 32      # set opcode size=4 for range of 32 bytes\n"
 				" aho foo a0,33 # replace opcode string\n"
-				" ahA eax+=3    # set vm analysis string\n"
+				" ahs eax+=3    # set vm analysis string\n"
 			);
 			break;
 #if 0
@@ -916,7 +916,7 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 			r_anal_hint_set_opcode (core->anal, core->offset,
 				1, input+2);
 			break;
-		case 'A': // set analysis string
+		case 's': // set analysis string
 			r_anal_hint_set_analstr (core->anal, core->offset,
 				1, input+2);
 			break;

@@ -14,11 +14,13 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 	r_list_foreach (a->hints, iter, hint) {
 		switch (mode) {
 		case '*':
-			if (hint->arch) r_cons_printf ("aha %s @ 0x%"PFMT64x"\n", hint->arch, hint->from);
-			if (hint->bits) r_cons_printf ("ahb %d @ 0x%"PFMT64x"\n", hint->bits, hint->from);
-			if (hint->length) r_cons_printf ("ahl %d @ 0x%"PFMT64x"\n", hint->length, hint->from);
-			if (hint->opcode) r_cons_printf ("aho %s @ 0x%"PFMT64x"\n", hint->opcode, hint->from);
-			if (hint->analstr) r_cons_printf ("ahA %s @ 0x%"PFMT64x"\n", hint->analstr, hint->from);
+#define HINTCMD(x,y) if(hint->x) \
+	r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->from)
+			HINTCMD (arch, "aha %s");
+			HINTCMD (bits, "ahb %d");
+			HINTCMD (length, "ahl %d");
+			HINTCMD (opcode, "aho %s");
+			HINTCMD (opcode, "ahs %s");
 			break;
 		case 'j':
 			r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d, 
@@ -1012,27 +1014,55 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 /* stats --- colorful bar */
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut64 step) {
 	RFlagItem *f;
-	ut64 addr;
+	RAnalFunction *F;
+	RMetaItem *m;
+	ut64 addr, at;
 	RListIter *iter;
 	RCoreAnalStats *as = R_NEW0 (RCoreAnalStats);
-	int piece, as_size, blocks = (to-from)/step;
+	int i, piece, as_size, blocks = (to-from)/step;
 	as_size = blocks * sizeof (RCoreAnalStatsItem);
 	as->block = malloc (as_size);
 	memset (as->block, 0, as_size);
-	eprintf ("Use %d blocks\n", blocks);
-	r_list_foreach (core->flags->flags , iter, f) {
-		if (f->offset+f->size < from) continue;
+//	eprintf ("Use %d blocks\n", blocks);
+//	eprintf (" ( 0x%"PFMT64x" - 0x%"PFMT64x" )\n", from, to);
+	// iter all flags
+	r_list_foreach (core->flags->flags, iter, f) {
+		//if (f->offset+f->size < from) continue;
+		if (f->offset< from) continue;
 		if (f->offset > to) continue;
 		piece = (f->offset-from)/step;
 		as->block[piece].flags++;
 	}
-	// iter all flags
-	//r_list_append (as->items, item);
+
+	r_list_foreach (core->anal->fcns, iter, F) {
+		if (F->addr< from) continue;
+		if (F->addr> to) continue;
+		piece = (F->addr-from)/step;
+		as->block[piece].functions++;
+	}
+	r_list_foreach (core->anal->meta->data, iter, m) {
+		if (m->from< from) continue;
+		if (m->from> to) continue;
+		piece = (m->from-from)/step;
+		switch (m->type) {
+		case R_META_TYPE_STRING:
+			as->block[piece].strings++;
+			break;
+		case R_META_TYPE_COMMENT:
+			as->block[piece].comments++;
+			break;
+		case R_META_TYPE_MAGIC:
+		case R_META_TYPE_DATA:
+		case R_META_TYPE_FORMAT:
+		//as->block[piece].comments++;
+			break;
+		}
+	}
+	//for (i=0, at = from; at <to; at+= step) eprintf ("%llx %d\n", at, as->block[i++].flags);
 	// iter all comments
 	// iter all symbols
 	// iter all imports
 	// iter all functions
-	// iter all metadata
 	// iter all strings
 	return as;
 }

@@ -335,11 +335,9 @@ R_API int r_str_nstr(char *from, char *to, int size) {
 	return (size!=i);
 }
 
+// TODO: rewrite in macro?
 R_API const char *r_str_chop_ro(const char *str) {
-	if (!str) return NULL;
-	while (*str && iswhitechar (*str))
-		str++;
-	return str;
+	if (str) while (*str && iswhitechar (*str)) str++; return str;
 }
 
 R_API char *r_str_new(char *str) {

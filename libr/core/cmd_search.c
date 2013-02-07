@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static int preludecnt = 0;
 static int searchflags = 0;
@@ -143,6 +143,68 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 			at, to, n, (c%2)?"[ #]":"[# ]");
 }
 
+R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut64 *to) {
+	if (!strcmp (mode, "block")) {
+		*from = core->offset;
+		*to = core->offset + core->blocksize;
+	} else
+	if (!strcmp (mode, "file")) {
+		if (core->io->va) {
+			RListIter *iter;
+			RIOSection *s;
+			*from = *to = core->offset;
+			r_list_foreach (core->io->sections, iter, s) {
+				if (((s->vaddr) < *from) && s->vaddr)
+					*from = s->vaddr;
+				if ((s->vaddr+s->size) > *to && *from>=s->vaddr)
+					*to = s->vaddr+s->size;
+			}
+			if (*to == 0LL || *to == UT64_MAX || *to == UT32_MAX)
+				*to = r_io_size (core->io);
+		} else {
+			RIOMap *map = r_io_map_get (core->io, core->offset);
+			*from = core->offset;
+			*to = r_io_size (core->io) + (map? map->to:0);
+		}
+	} else
+	if (!strcmp (mode, "section")) {
+		if (core->io->va) {
+			RListIter *iter;
+			RIOSection *s;
+			*from = *to = core->offset;
+			r_list_foreach (core->io->sections, iter, s) {
+				if (*from >= s->vaddr && *from < (s->vaddr+s->size)) {
+					*to = s->vaddr+s->size;
+					break;
+				}
+			}
+		} else {
+			*from = core->offset;
+			*to = r_io_size (core->io);
+		}
+	} else {
+		//if (!strcmp (mode, "raw")) {
+		/* obey temporary seek if defined '/x 8080 @ addr:len' */
+		if (core->tmpseek) {
+			*from = core->offset;
+			*to = core->offset + core->blocksize;
+		} else {
+			// TODO: repeat last search doesnt works for /a
+			*from = r_config_get_i (core->config, "search.from");
+			if (*from == UT64_MAX)
+				*from = core->offset;
+			*to = r_config_get_i (core->config, "search.to");
+			if (*to == UT64_MAX) {
+				if (core->io->va) {
+					/* TODO: section size? */
+				} else {
+					*to = core->file->size;
+				}
+			}
+		}
+	}
+}
+
 static int cmd_search(void *data, const char *input) {
 	int i, len, ret, dosearch = R_FALSE;
 	RCore *core = (RCore *)data;
@@ -163,66 +225,7 @@ c = 0;
 
 	searchshow = r_config_get_i (core->config, "search.show");
 	mode = r_config_get (core->config, "search.in");
-	if (!strcmp (mode, "block")) {
-		from = core->offset;
-		to = core->offset + core->blocksize;
-	} else
-	if (!strcmp (mode, "file")) {
-		if (core->io->va) {
-			RListIter *iter;
-			RIOSection *s;
-			from = core->offset;
-			to = from;
-			r_list_foreach (core->io->sections, iter, s) {
-				if ((s->vaddr+s->size) > to && from>=s->vaddr) {
-					to = s->vaddr+s->size;
-				}
-			}
-			if (to == 0LL || to == UT64_MAX || to == UT32_MAX)
-				to = r_io_size (core->io);
-		} else {
-			RIOMap *map = r_io_map_get (core->io, core->offset);
-			from = core->offset;
-			to = r_io_size (core->io) + (map? map->to:0);
-		}
-	} else
-	if (!strcmp (mode, "section")) {
-		if (core->io->va) {
-			RListIter *iter;
-			RIOSection *s;
-			from = core->offset;
-			to = from;
-			r_list_foreach (core->io->sections, iter, s) {
-				if (from >= s->vaddr && from < (s->vaddr+s->size)) {
-					to = s->vaddr+s->size;
-					break;
-				}
-			}
-		} else {
-			from = core->offset;
-			to = r_io_size (core->io);
-		}
-	} else {
-		//if (!strcmp (mode, "raw")) {
-		/* obey temporary seek if defined '/x 8080 @ addr:len' */
-		if (core->tmpseek) {
-			from = core->offset;
-			to = core->offset + core->blocksize;
-		} else {
-			// TODO: repeat last search doesnt works for /a
-			from = r_config_get_i (core->config, "search.from");
-			if (from == UT64_MAX)
-				from = core->offset;
-			to = r_config_get_i (core->config, "search.to");
-			if (to == UT64_MAX) {
-				if (core->io->va) {
-					/* TODO: section size? */
-				} else {
-					to = core->file->size;
-				}
-			}
-		}
-	}
+	r_core_get_boundaries (core, mode, &from, &to);
 
 	if (__from != UT64_MAX) from = __from;
 	if (__to != UT64_MAX) to = __to;

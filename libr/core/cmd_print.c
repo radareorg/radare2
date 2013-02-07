@@ -63,7 +63,7 @@ static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut32 tbs = core->blocksize;
 	ut8 *ptr = core->block;
-	int i, l, len;
+	int p, i, l, len;
 
 	/* TODO: Change also blocksize for 'pd'.. */
 	l = len = core->blocksize;
@@ -107,18 +107,140 @@ static int cmd_print(void *data, const char *input) {
 		// TODO: if p%j -> show json!
 		// TODO: if p%x -> show hexblock
 		{
-			int is_json = input[1]=='j';
+		//	int is_json = input[1]=='j';
+			int mode = input[1];
+// TODO. handle argument to override number of pieces
+#if 0
 			ut64 piece, off = core->io->off;
 			ut64 s = core->file? core->file->size: 0xffffff;
 			int w = core->print->cols * 4;
 			piece = s/w;
-			r_cons_strcat ("[");
+#endif
+		if (mode == 'j')
+			r_cons_strcat ("{");
 {
+	int total[10];
+	int w = core->print->cols * 4;
+	ut64 from, to, at, ate, piece;
+	ut64 off = core->offset;
 	RCoreAnalStats *as;
-	r_core_anal_get_stats (core->anal,
-			off, off+s, piece);
+	for (i=0;i<10;i++)total[i] = 0;
+
+	r_core_get_boundaries (core, "file", &from, &to);
+	piece = (to-from) / w;
+	as = r_core_anal_get_stats (core, from, to, piece);
+	//eprintf ("RANGE = %llx %llx\n", from, to);
+	switch (mode) {
+	case '?':
+		r_cons_printf ("Usage: p%%[jh] [pieces]\n");
+		r_cons_printf (" p%%   show ascii-art bar of metadata in file boundaries\n");
+		r_cons_printf (" p%%j  show json format\n");
+		r_cons_printf (" p%%h  show histogram analysis of metadata per block\n");
+		return 0;
+	case 'j':
+		r_cons_printf ("\"from\":%"PFMT64d",", from);
+		r_cons_printf ("\"to\":%"PFMT64d",", to);
+		r_cons_printf ("\"blocksize\":%d,", piece);
+		r_cons_printf ("\"blocks\":[");
+		break;
+	case 'h':
+		r_cons_printf (".-------------.---------------------------------.\n");
+		r_cons_printf ("|   offset    | flags funcs cmts imps syms str  |\n");
+		r_cons_printf ("|-------------)---------------------------------|\n");
+		//r_cons_printf ("__offset___|_flags_funcs_cmts_imps_syms_str__|\n");
+		break;
+	default:
+		r_cons_printf ("0x%"PFMT64x" [", from);
+	}
+
+	for (i=0; i<w; i++) {
+		at = from + (piece*i);
+		ate = at + piece;
+		p = (at-from)/piece;
+		switch (mode) {
+		case 'j':
+			r_cons_printf ("{");
+			if ((as->block[p].flags) 
+			  || (as->block[p].functions)
+			  || (as->block[p].comments)
+			  || (as->block[p].imports)
+			  || (as->block[p].symbols)
+			  || (as->block[p].strings))
+			r_cons_printf ("\"offset\":%"PFMT64d",", at);
+// TODO: simplify with macro
+			if (as->block[p].flags) r_cons_printf ("\"flags\":%d,", as->block[p].flags);
+			if (as->block[p].functions) r_cons_printf ("\"functions\":%d,", as->block[p].functions);
+			if (as->block[p].comments) r_cons_printf ("\"comments\":%d,", as->block[p].comments);
+			if (as->block[p].imports) r_cons_printf ("\"imports\":%d,", as->block[p].imports);
+			if (as->block[p].symbols) r_cons_printf ("\"symbols\":%d,", as->block[p].symbols);
+			if (as->block[p].strings) r_cons_printf ("\"strings\":%d,", as->block[p].strings);
+			r_cons_printf ("},");
+			break;
+		case 'h':
+			total[0] += as->block[p].flags;
+			total[1] += as->block[p].functions;
+			total[2] += as->block[p].comments;
+			total[3] += as->block[p].imports;
+			total[4] += as->block[p].symbols;
+			total[5] += as->block[p].strings;
+			if ((as->block[p].flags) 
+			  || (as->block[p].functions)
+			  || (as->block[p].comments)
+			  || (as->block[p].imports)
+			  || (as->block[p].symbols)
+			  || (as->block[p].strings))
+			r_cons_printf ("| 0x%09"PFMT64x" | %4d %4d %4d %4d %4d %4d   |\n", at,
+					as->block[p].flags,
+					as->block[p].functions,
+					as->block[p].comments,
+					as->block[p].imports,
+					as->block[p].symbols,
+					as->block[p].strings);
+			break;
+		default:
+			if (off>=at && off<ate) {
+				r_cons_memcat ("^", 1);
+			} else {
+				if (as->block[p].strings>0)
+					r_cons_memcat ("z", 1);
+				else if (as->block[p].imports>0)
+					r_cons_memcat ("i", 1);
+				else if (as->block[p].symbols>0)
+					r_cons_memcat ("s", 1);
+				else if (as->block[p].functions>0)
+					r_cons_memcat ("F", 1);
+				else if (as->block[p].flags>0)
+					r_cons_memcat ("f", 1);
+				else if (as->block[p].comments>0)
+					r_cons_memcat ("c", 1);
+				else r_cons_memcat (".", 1);
+			}
+		}
+	}
+	switch (mode) {
+	case 'j':
+		r_cons_memcat ("]}\n", 3);
+		break;
+	case 'h':
+		//r_cons_printf ("  total    | flags funcs cmts imps syms str  |\n");
+		r_cons_printf ("|-------------)---------------------------------|\n");
+		r_cons_printf ("|    total    | %4d %4d %4d %4d %4d %4d   |\n",
+			total[0],
+			total[1],
+			total[2],
+			total[3],
+			total[4],
+			total[5]
+			);
+		r_cons_printf ("`-------------'---------------------------------'\n");
+		break;
+	default:
+		r_cons_printf ("] 0x%"PFMT64x"\n", to);
+	}
+
 	r_core_anal_stats_free (as);
 }
+#if 0
 			for (i=0; i<w; i++) {
 				ut64 from = (piece*i);
 				ut64 to = from+piece;
@@ -130,7 +252,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 				// TODO: print where flags are.. code, ..
 			}
-			r_cons_strcat ("]\n");
+#endif
 		}
 		break;
 	case '=':
@@ -575,7 +697,8 @@ static int cmd_print(void *data, const char *input) {
 					r_strht_set (core->print->formats, name, space);
 					return 0;
 				} else {
-					char *fmt, *eq, *dot = strchr (name, '.');
+					const char *fmt;
+					char *eq, *dot = strchr (name, '.');
 					if (dot) {
 						// TODO: support multiple levels
 						*dot++ = 0;
@@ -639,7 +762,8 @@ static int cmd_print(void *data, const char *input) {
 				}
 				free (name);
 			}
-		} else r_print_format (core->print, core->offset, core->block, len, input+1, -1, NULL);
+		} else r_print_format (core->print, core->offset,
+			core->block, len, input+1, -1, NULL);
 		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
@@ -735,14 +859,14 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_printf (
 		"Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
 		" p=               show entropy bars of full file\n"
+		" p%%[jh] [mode]    bar|json|histogram blocks (mode: e?search.in)\n"
 		" p6[de] [len]     base64 decode/encode\n"
 		" p8 [len]         8bit hexpair list of bytes\n"
 		" pa [opcode]      bytes of assembled opcode\n"
 		" pb [len]         bitstream of N bytes\n"
 		" pc[p] [len]      output C (or python) format\n"
-		" pd[lf] [l]       disassemble N opcodes (see pd?)\n"
-		" pD [len]         disassemble N bytes\n"
-		" pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expression>) \n"
+		" p[dD][lf] [l]    disassemble N opcodes/bytes (see pd?)\n"
+		" pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expr>) \n"
 		" p[iI][f] [len]   print N instructions/bytes (f=func) (see pdi)\n"
 		" pm [magic]       print libmagic data (pm? for more information)\n"
 		" pr [len]         print N raw bytes\n"
