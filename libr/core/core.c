@@ -714,6 +714,7 @@ static void rap_break (void *u) {
 }
 
 // TODO: move into core/io/rap? */
+// TODO: use static buffer instead of mallocs all the time. it's network!
 R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut8 cmd, flg, *ptr = NULL, buf[1024];
 	int i, pipefd;
@@ -992,6 +993,7 @@ reaccept:
 					if (ptr) {
 						memcpy (ptr+5, out, i);
 						free (out);
+						ptr = NULL;
 					}
 					}
 					//unlink((char*)buf);

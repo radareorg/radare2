@@ -35,7 +35,7 @@ R_API RSList *r_slist_add (RSList *s, void *data, ut64 from, ut64 to) {
 	ut64 at = from;
 	int slot, lastslot;
 	RSListItem *item = get_new_item ();
-	RSListItem **items;
+	//RSListItem **items;
 	// append to list
 	item->from = from;
 	item->to = to;
@@ -94,10 +94,11 @@ R_API void *r_slist_get_at (RSList *list, ut64 addr) {
 R_API void r_slist_optimize (RSList *s) {
 	RSListItem *ptr;
 	RListIter *iter;
-	ut64 min, max, mid;
+	ut64 min, max;
 	int begin = 1;
 
 	s->nitems = 0;
+	min = max = 0;
 	r_list_foreach (s->list, iter, ptr) {
 		s->nitems++;
 		if (begin) {
@@ -118,7 +119,7 @@ R_API void r_slist_optimize (RSList *s) {
 	s->max = max;
 	s->mod = ((max-min));
 	s->items = malloc (sizeof (void*) * s->nitems);
-	eprintf ("MOD %d (block size)\n", s->mod);
+	//eprintf ("MOD %d (block size)\n", s->mod);
 // store integers as indexes inside the allocated heap
 
 #if 0

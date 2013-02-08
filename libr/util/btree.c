@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <btree.h>
 
@@ -50,7 +50,8 @@ R_API void *btree_search(struct btree_node *root, void *x, BTREE_CMP(cmp), int p
 R_API int btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del)) {
 	struct btree_node *p = btree_search (proot, x, cmp, 1);
 	if (p) {
-		p->right = btree_remove (p->left, del);
+		// p->right = 
+		btree_remove (p->left, del);
 		return R_TRUE;
 	}
 	return R_FALSE;

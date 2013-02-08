@@ -176,6 +176,7 @@ R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int 
 		}
 		r_anal_data_free (data);
         }
+	if (j<1) return "unknown";
 	if ((inv*100/j)>60) return "invalid";
 	if ((unk*100/j)>60) return "code";
 	if ((num*100/j)>60) return "code";

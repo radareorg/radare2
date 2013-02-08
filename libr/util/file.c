@@ -20,21 +20,21 @@ R_API const char *r_file_basename (const char *path) {
 }
 
 R_API boolt r_file_is_directory(const char *str) {
-	struct stat buf;
+	struct stat buf = {0};
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
 	return ((S_IFDIR &buf.st_mode))? R_TRUE: R_FALSE;
 }
 
 R_API boolt r_file_exists(const char *str) {
-	struct stat buf;
+	struct stat buf = {0};
 	if (str && *str && stat (str, &buf)==-1)
 		return R_FALSE;
 	return (S_ISREG (buf.st_mode))? R_TRUE: R_FALSE;
 }
 
 R_API int r_file_size(const char *str) {
-	struct stat buf;
+	struct stat buf = {0};
 	if (stat (str, &buf)==-1)
 		return 0;
 	return buf.st_size;

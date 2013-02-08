@@ -88,9 +88,9 @@ R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v) {
 	}
 	// new
 	i = cmd->aliases.count++;
-	cmd->aliases.keys = realloc (cmd->aliases.keys,
+	cmd->aliases.keys = (char **)realloc (cmd->aliases.keys,
 		sizeof (char**)*cmd->aliases.count);
-	cmd->aliases.values = realloc (cmd->aliases.values,
+	cmd->aliases.values = (char **)realloc (cmd->aliases.values,
 		sizeof (char**)*cmd->aliases.count);
 	cmd->aliases.keys[i] = strdup (k);
 	cmd->aliases.values[i] = strdup (v);

@@ -978,7 +978,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 				ret_ctr++;
 			}
 			{
-			ut8 *p = realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
+			ut8 *p = (ut8*)realloc (ret, (ret_ctr+1)* sizeof (struct r_bin_elf_symbol_t));
 			if (!p) {
 				free (ret);
 				return NULL;
