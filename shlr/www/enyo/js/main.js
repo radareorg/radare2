@@ -50,7 +50,7 @@ enyo.kind ({
           }
         }
       } else {
-        var k = key.substring (2).charCodeAt (0);
+        var k = key.charCodeAt (0);
         if (inEvent.charCode == k) {
           var cmd = Config.keys[key];
           eval (cmd+";");

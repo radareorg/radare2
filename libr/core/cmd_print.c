@@ -101,7 +101,7 @@ static int cmd_print(void *data, const char *input) {
 	ptr = core->block;
 	core->num->value = len;
 	switch (*input) {
-	case '%':
+	case 'v':
 		// TODO: use RAnal_navbar
 		// TODO: p% is not in p? help
 		// TODO: if p%j -> show json!
@@ -128,14 +128,15 @@ static int cmd_print(void *data, const char *input) {
 
 	r_core_get_boundaries (core, "file", &from, &to);
 	piece = (to-from) / w;
+	if (piece<1) piece = 1;
 	as = r_core_anal_get_stats (core, from, to, piece);
 	//eprintf ("RANGE = %llx %llx\n", from, to);
 	switch (mode) {
 	case '?':
 		r_cons_printf ("Usage: p%%[jh] [pieces]\n");
-		r_cons_printf (" p%%   show ascii-art bar of metadata in file boundaries\n");
-		r_cons_printf (" p%%j  show json format\n");
-		r_cons_printf (" p%%h  show histogram analysis of metadata per block\n");
+		r_cons_printf (" pv   show ascii-art bar of metadata in file boundaries\n");
+		r_cons_printf (" pvj  show json format\n");
+		r_cons_printf (" pvh  show histogram analysis of metadata per block\n");
 		return 0;
 	case 'j':
 		r_cons_printf ("\"from\":%"PFMT64d",", from);
@@ -174,7 +175,7 @@ static int cmd_print(void *data, const char *input) {
 			if (as->block[p].imports) r_cons_printf ("\"imports\":%d,", as->block[p].imports);
 			if (as->block[p].symbols) r_cons_printf ("\"symbols\":%d,", as->block[p].symbols);
 			if (as->block[p].strings) r_cons_printf ("\"strings\":%d,", as->block[p].strings);
-			r_cons_printf ("},");
+			r_cons_printf ("\"\":0},");
 			break;
 		case 'h':
 			total[0] += as->block[p].flags;
@@ -219,7 +220,7 @@ static int cmd_print(void *data, const char *input) {
 	}
 	switch (mode) {
 	case 'j':
-		r_cons_memcat ("]}\n", 3);
+		r_cons_memcat ("{}]}\n", 5);
 		break;
 	case 'h':
 		//r_cons_printf ("  total    | flags funcs cmts imps syms str  |\n");
@@ -859,7 +860,6 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_printf (
 		"Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
 		" p=               show entropy bars of full file\n"
-		" p%%[jh] [mode]    bar|json|histogram blocks (mode: e?search.in)\n"
 		" p6[de] [len]     base64 decode/encode\n"
 		" p8 [len]         8bit hexpair list of bytes\n"
 		" pa [opcode]      bytes of assembled opcode\n"
@@ -873,6 +873,7 @@ static int cmd_print(void *data, const char *input) {
 		" ps[pwz] [len]    print pascal/wide/zero-terminated strings\n"
 		" pt[dn?] [len]    print different timestamps\n"
 		" pu[w] [len]      print N url encoded bytes (w=wide)\n"
+		" pv[jh] [mode]    bar|json|histogram blocks (mode: e?search.in)\n"
 		" px[owq] [len]    hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
 		" pz [len]         print zoom view (see pz? for help)\n");
 		break;

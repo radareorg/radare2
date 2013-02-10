@@ -36,8 +36,9 @@ r2ui.history_next = function () {
 // XXX . this is used from disasm()
 r2ui.seek = function (addr, x) {
   // XXX. this is only for disasm 
-  if (x !== true)
     r2ui.history_push (addr);
+  if (r2ui.ra.getIndex ()==2)
+    r2ui.ra.setIndex (1);
   r2.cmd ("s "+addr);
   r2ui._dis.seek (addr);
   r2ui._dis.scrollTo (0, 0);
@@ -52,9 +53,22 @@ r2ui.seek_prev = function () {
 }
 
 /* used from mainpanel */
-r2ui.opendis = function (addr) {
-  r2ui.seek (addr);
+r2ui.openpage = function(addr, idx) {
+  if (idx === undefined) {
+    idx = addr;
+    addr = undefined;
+  } else
+  if (addr !== undefined)
+    r2ui.seek (addr);
   if (r2ui.ra.getIndex ()==2)
     r2ui.ra.setIndex (1);
-  r2ui.mp.openPage (0);
+  r2ui.mp.openPage (idx);
+}
+
+r2ui.opendis = function (addr) {
+  r2ui.openpage (addr, 0);
+}
+
+r2ui.openhex = function (addr) {
+  r2ui.openpage (addr, 2);
 }

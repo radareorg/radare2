@@ -88,6 +88,7 @@ enyo.kind ({
     switch (selected) {
     case "functions":
       r2.cmd ("afl", function(x) {
+        x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a style='color:yellow' href='javascript:r2ui.seek(\"0x$1\")'>0x$1</a>");
 	self.$.output.setContent (x);
       });
       break;

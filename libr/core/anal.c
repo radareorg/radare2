@@ -1005,7 +1005,9 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut
 	RMetaItem *m;
 	RListIter *iter;
 	RCoreAnalStats *as = R_NEW0 (RCoreAnalStats);
-	int piece, as_size, blocks = (to-from)/step;
+	int piece, as_size, blocks;
+	if (step<1) step = 1;
+	blocks = (to-from)/step;
 	as_size = blocks * sizeof (RCoreAnalStatsItem);
 	as->block = malloc (as_size);
 	memset (as->block, 0, as_size);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 - pancake */
+/* radare - LGPL - Copyright 2008-2013 - pancake */
 
 #include <r_cons.h>
 #include <stdio.h>
@@ -95,9 +95,7 @@ static BOOL __w32_control(DWORD type) {
 	}
 	return R_FALSE;
 }
-#endif
-
-#if __UNIX__
+#elif __UNIX__
 static void resize (int sig) {
 	if (I.event_resize)
 		I.event_resize (I.data);

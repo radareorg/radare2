@@ -25,6 +25,17 @@ enyo.kind ({
       r2ui.opendis (off);
     }
   },
+goRename: function() {
+ var msg = prompt ("New name?");
+ r2.cmd("afr "+name, function() {
+   r2ui.seek ("$$", true);
+ });
+},
+goAnalyze: function() {
+ r2.cmd("af", function() {
+ r2ui.seek ("$$", true);
+ });
+},
   components: [
     {kind: "onyx.Toolbar", components: [
     //{kind: "onyx.MoreToolbar", components: [
@@ -41,8 +52,8 @@ enyo.kind ({
           {kind: "onyx.PickerDecorator", components: [
             {kind: "onyx.Button", content: "Actions"},
             {kind: "onyx.Picker", components: [
-              {content: "Analyze"},
-              {content: "Rename"},
+              {content: "Analyze", ontap: "goAnalyze"},
+              {content: "Rename", ontap: "goRename"},
               {content: "Comment"},
               {content: "Flag"},
               {content: "Copy"},
@@ -136,7 +147,13 @@ enyo.kind ({
   },
   gotoSeek: function() {
     var addr = this.$.input.getValue();
-    this.seekStack.push ();
+    if (addr[0]=='!') {
+      r2.cmd (addr.slice (1), function (x) {
+        alert (x);
+      });
+    } else {
+      this.seekStack.push ();
+    }
 /*
       var sp = this.$.panels;
       //this.openPage (this.$.input.getValue());
