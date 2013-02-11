@@ -9,6 +9,7 @@ var Config = {
     "g": "r2ui.openpage(3)",
     "c": "r2ui.openpage(5)",
     "s": "r2ui.openpage(8)",
+    ";": "r2.cmd('CC '+prompt('comment'));r2ui.seek('$$',true);",
     //"C-3": "this.setIndex(2)",
   }
 }

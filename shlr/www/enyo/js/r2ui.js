@@ -39,17 +39,23 @@ r2ui.seek = function (addr, x) {
     r2ui.history_push (addr);
   if (r2ui.ra.getIndex ()==2)
     r2ui.ra.setIndex (1);
-  r2.cmd ("s "+addr);
-  r2ui._dis.seek (addr);
-  r2ui._dis.scrollTo (0, 0);
+  r2.cmd ("s "+addr, function () {
+    r2ui._dis.seek (addr);
+    r2ui._dis.scrollTo (0, 0);
+    r2ui._hex.seek (addr);
+    r2ui._hex.scrollTo (0, 0);
+  });
 }
 
 r2ui.seek_prev = function () {
   // XXX. this is only for disasm 
   var addr = r2ui.history.pop ();
-  r2.cmd ("s "+addr);
-  r2ui._dis.seek (addr);
-  r2ui._dis.scrollTo (0, 0);
+  r2.cmd ("s "+addr, function () {
+    r2ui._dis.seek (addr);
+    r2ui._dis.scrollTo (0, 0);
+    r2ui._hex.seek (addr);
+    r2ui._hex.scrollTo (0, 0);
+  });
 }
 
 /* used from mainpanel */

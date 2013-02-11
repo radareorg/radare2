@@ -49,6 +49,9 @@ r2.disassemble = function (offset, bytes, fn) {
   r2.cmd (str, fn);
 }
 
+r2.get_hexdump = function (offset, length, cb) {
+  r2.cmd ("px "+length+"@"+offset, cb);
+}
 r2.get_disasm = function (offset, length, cb) {
   // TODO: honor offset and length
   r2.cmd ("pD "+length+"@"+offset, cb);
@@ -112,15 +115,20 @@ r2.bin_sections = function (cb) {
 }
 
 r2.cmds = function (cmds, cb) {
-  (function lala(cmds, cb) {
-    var cmd = cmds[0];
+  if (cmds.length==0) return;
+  var cmd = cmds[0];
+  cmds = cmds.splice (1);
+  function lala () {
     if (cmd == undefined || cmds.length == 0) {
-      cb ();
       return;
     }
+    cmd = cmds[0];
     cmds = cmds.splice (1);
-    r2.cmd (cmd, lala)
-  })(cmds, cb);
+    r2.cmd (cmd, lala);
+    if (cb) cb ();
+    return;
+  }
+  r2.cmd (cmd, lala);
 }
 
 r2.cmd = function (c, cb) {
@@ -202,7 +210,7 @@ r2.filter_asm = function (x, display) {
   var lines = x.split (/\n/g);
   r2.cmd ("s", function (x) { curoff = x; });
   for (var i=lines.length-1;i>0;i--)  {
-    var a = lines[i].match (/0x([a-fA-F0-9]*)/);
+    var a = lines[i].match (/0x([a-fA-F0-9]+)/);
     if (a && a.length>0) {
       lastoff = a[0].replace (/:/g, "");
       break;
@@ -261,19 +269,19 @@ r2.filter_asm = function (x, display) {
   if (haveDisasm (display)) {
     x = x.replace (/function:/g,"<span style=color:green>function:</span>");
     x = x.replace (/;(\s+)/g, ";");
-    x = x.replace (/;(.*)/g, "// <span style='color:white'>$1</span>");
-    x = x.replace (/(bl|call)/g, "<b style='color:green'>call</b>");
+    x = x.replace (/;(.*)/g, "// <span style='color:#209020'>$1</span>");
+    x = x.replace (/(bl|goto|call)/g, "<b style='color:green'>call</b>");
     x = x.replace (/(jmp|bne|beq|js|jnz|jae|jge|jbe|jg|je|jl|jz|jb|ja|jne)/g, "<b style='color:green'>$1</b>");
     x = x.replace (/(dword|qword|word|byte|movzx|movsxd|cmovz|mov\ |lea\ )/g, "<b style='color:#1070d0'>$1</b>");
     x = x.replace (/(hlt|leave|iretd|retn|ret)/g, "<b style='color:red'>$1</b>");
     x = x.replace (/(add|sbb|sub|mul|div|shl|shr|and|not|xor|inc|dec|sar|sal)/g, "<b style='color:#d06010'>$1</b>");
     x = x.replace (/(push|pop)/g, "<b style='color:#40a010'>$1</b>");
     x = x.replace (/(test|cmp)/g, "<b style='color:#c04080'>$1</b>");
-    x = x.replace (/(out|invalid|int|int3|trap|main|in)/g, "<b style='color:red'>$1</b>");
+    x = x.replace (/(outsd|out|string|invalid|int |int3|trap|main|in)/g, "<b style='color:red'>$1</b>");
     x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
-    x = x.replace (/(sym|fcn|imp|loc).([^<(\\\/ \|)\->]+)/g, "<a href='javascript:r2ui.seek(\"$1.$2\")'>$1.$2</a>");
+    x = x.replace (/(sym|fcn|imp|loc).([^:<(\\\/ \|)\->]+)/g, "<a href='javascript:r2ui.seek(\"$1.$2\")'>$1.$2</a>");
   }
-  x = x.replace (/0x([a-zA-Z0-9]*)/g, "<a href='javascript:r2ui.seek(\"0x$1\")'>0x$1</a>");
+  x = x.replace (/0x([a-zA-Z0-9]+)/g, "<a href='javascript:r2ui.seek(\"0x$1\")'>0x$1</a>");
 // registers
   if (backward) {
     prev_curoff = curoff;

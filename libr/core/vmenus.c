@@ -1231,6 +1231,7 @@ R_API void r_core_visual_define (RCore *core) {
 		} while (ntotal<core->blocksize);
 		break;
 	case 's':
+		// TODO: r_core_cmd0 (core, "Cz");
 		{
 			char *name;
 			int n = r_str_nlen ((const char*)p, plen)+1;

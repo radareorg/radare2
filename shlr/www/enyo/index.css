@@ -68,3 +68,17 @@ a {
  background-color: black;
  width: 90%; 
 }
+.topbox {
+  position:absolute;
+  left: 48px;
+  padding:0px;
+  margin:0px;
+  top:0px;
+  display:inline;
+}
+.top {
+  position:float;
+  padding:8px;
+  margin:0px;
+  display:inline;
+}

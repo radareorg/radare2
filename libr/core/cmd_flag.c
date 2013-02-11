@@ -180,7 +180,7 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case 'r':
-		{
+		if (input[1]==' ' && input[2]) {
 			char *old, *new;
 			RFlagItem *item;
 			old = str+1;

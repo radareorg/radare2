@@ -72,10 +72,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 static int parse(RParse *p, const char *data, char *str) {
-	char w0[64], w1[64], w2[64], w3[64];
+	char w0[256], w1[256], w2[256], w3[256];
 	int i, len = strlen (data);
 	char *buf, *ptr, *optr;
 
+	if (len>=sizeof (w0))
+		return R_FALSE;
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
 		return R_FALSE;

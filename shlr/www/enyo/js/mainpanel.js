@@ -1,9 +1,9 @@
-
 enyo.kind ({
   name: "MainPanel",
   classes: "onyx",
   kind: "FittableRows",
   classes: "enyo-fit",
+  style: "margin:0px;padding:0px;border:0px",
   //style: "background-color: #c0c0c0",
   data: null,
 /*
@@ -12,6 +12,7 @@ enyo.kind ({
     this.$.list.refresh (); // necessary?? // inherit??
   },
 */
+  /* callbacks */
   buttonClicked: function (x) {
     alert ("let's play!");
   },
@@ -25,62 +26,160 @@ enyo.kind ({
       r2ui.opendis (off);
     }
   },
-goRename: function() {
- var msg = prompt ("New name?");
- r2.cmd("afr "+name, function() {
+  /* menu actions */
+  goRename: function() {
+   var msg = prompt ('New name?', '');
+   if(msg)
+   r2.cmd("afr "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  goComment: function() {
+   var msg = prompt ('Comment?', '');
+   if(msg)
+   r2.cmd("CC "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  goFlag: function() {
+   var msg = prompt ('Flag name?', '');
+   if(msg)
+   r2.cmd("f "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  goUnflag: function() {
+   r2.cmd("f-$$", function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  goAnalyze: function() {
+   r2.cmd("af", function() {
    r2ui.seek ("$$", true);
- });
-},
-goAnalyze: function() {
- r2.cmd("af", function() {
- r2ui.seek ("$$", true);
- });
-},
+   });
+  },
+  goCopy: function() {
+   var msg = prompt ('How many bytes?', '');
+   if(msg)
+   r2.cmd("y "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  goPaste: function() {
+   r2.cmd("yy", function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  /*-- write */
+  wrString: function() {
+   var msg = prompt ('Text', '');
+   if(msg)
+   r2.cmd("w "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  wrOpcode: function() {
+   var msg = prompt ('Opcode', '');
+   if(msg)
+   r2.cmd ("wa "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  wrFile: function() {
+   var msg = prompt ('Filename', '');
+   if(msg)
+   r2.cmd("wf "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  wrHex: function() {
+   var msg = prompt ('Hexpair', '');
+   if(msg)
+   r2.cmd("wx "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  /* -- convert */
+  coCode: function() {
+   var msg = prompt ('How many bytes?', '');
+   if(msg)
+   r2.cmd("y "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  coString: function() {
+   r2.cmd("Cz", function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  coData: function() {
+   var msg = prompt ('How many bytes?', '');
+   if(msg)
+   r2.cmd("Cd "+msg, function() {
+     r2ui.seek ("$$", true);
+   });
+  },
+  setTitle: function (title) {
+    if (title) {
+      this.$.title.setContent (title);
+      this.$.title.setStyle ("visibility:visible;top:8px");
+      this.$.extra.setStyle ("visibility:hidden;");//position:absolute;left:48px;scroll:overflow");
+    } else {
+      this.$.title.setStyle ("visibility:hidden");
+      this.$.extra.setStyle ("visibility:visible;");//position:absolute;left:48px;scroll:overflow");
+    }
+  },
+  /* widgets dom */
   components: [
     {kind: "onyx.Toolbar", components: [
     //{kind: "onyx.MoreToolbar", components: [
-      {kind: "onyx.Button", content: "[", ontap: "openSidebar", style: "padding:4px"},
+      {kind: "onyx.Button", content: "[", ontap: "openSidebar", classes: "top" },
+    {name: "title", tag: "h2", content: "Assembler", classes: "topbox", style: "visibility:hidden" },
+    {name: "extra", tag: "div", classes: "topbox", components: [
+//style: "position:absolute;top:0px;left:48px;scroll:overflow;visibility:visible", components: [
 /*
           {kind: "onyx.Button", content: "]", ontap: "openSidebar2", style: "padding:4px"},
 */
-      {kind: "onyx.Button", content: "<", ontap: "prevSeek", style: "padding:8px"},
-      {kind: "onyx.Button", content: ">", ontap: "nextSeek", style:"padding:8px"},
-      {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
-        {kind: "onyx.Input", name:"input", value: 'entry0', onchange: "gotoSeek", onkeydown:"inputKey"}
-      ]},
+        {kind: "onyx.Button", content: "<", ontap: "prevSeek", classes: "top" },
+        {kind: "onyx.Button", content: ">", ontap: "nextSeek", classes: "top" },
+        {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
+          {kind: "onyx.Input", name:"input", value: 'entry0', onchange: "gotoSeek", onkeydown:"inputKey"}
+        ]},
           //{kind: "onyx.Button", content: "Go", ontap: "gotoSeek"},
-          {kind: "onyx.PickerDecorator", components: [
-            {kind: "onyx.Button", content: "Actions"},
-            {kind: "onyx.Picker", components: [
-              {content: "Analyze", ontap: "goAnalyze"},
-              {content: "Rename", ontap: "goRename"},
-              {content: "Comment"},
-              {content: "Flag"},
-              {content: "Copy"},
-              {content: "Paste"}
-            ]}
-          ]},
-          {kind: "onyx.PickerDecorator", components: [
+        {kind: "onyx.PickerDecorator", classes: "top", components: [
+          {kind: "onyx.Button", content: "Actions"},
+          {kind: "onyx.Picker", components: [
+            {content: "Analyze", ontap: "goAnalyze"},
+            {content: "Rename", ontap: "goRename"},
+            {content: "Comment", ontap: "goComment"},
+            {content: "Flag", ontap: "goFlag"},
+            {content: "Unflag", ontap: "goUnflag"},
+            {content: "Copy", ontap: "goCopy"},
+            {content: "Paste", ontap: "goPaste"}
+          ]}
+        ]},
+          {kind: "onyx.PickerDecorator", style: "display:inline", components: [
             {kind: "onyx.Button", content: "Convert"},
             {kind: "onyx.Picker", components: [
-              {content: "Data"},
-              {content: "Code"},
-              {content: "String"},
+              {content: "Data", ontap: 'coData'},
+              {content: "Code", ontap: 'coCode'},
+              {content: "String", ontap: 'coString'},
             ]}
           ]},
-          {kind: "onyx.PickerDecorator", components: [
+          {kind: "onyx.PickerDecorator", style: "display:inline", components: [
             {kind: "onyx.Button", content: "Write"},
             {kind: "onyx.Picker", components: [
-              {content: "File"},
-              {content: "Hexpair"},
-              {content: "String"},
-              {content: "Opcode"},
+              {content: "File", ontap: 'wrFile'},
+              {content: "Hexpair", ontap: 'wrHex'},
+              {content: "String", ontap: 'wrString'},
+              {content: "Opcode", ontap: 'wrOpcode'},
             ]}
           ]},
 /*
           {kind: "onyx.Button", content: "Add", ontap: "addPanel"},
           {kind: "onyx.Button", content: "Delete", ontap: "deletePanel"}
 */
+    ]},
     ]},
     {kind: "Panels", name:"panels", fit:true, draggable: false,
         realtimeFit: true, components: [
@@ -114,23 +213,38 @@ goAnalyze: function() {
     this.inherited(arguments);
   },
   openPage: function(idx) {
-      var str, sp = this.$.panels;
-      eval ("var x = this.$.page"+idx);
+    var str, sp = this.$.panels;
 // TODO: this is just a hack
-      switch (idx) {
-	case "Disassembler": idx = 0; break;
-	case "Assembler": idx = 1; break;
-	case "Hexdump": idx = 2; break;
-	case "Graph": idx = 3; break;
-	case "Search": idx = 4; break;
-	case "Console": idx = 5; break;
-	case "Logs": idx = 6; break;
-	case "Script": idx = 7; break;
-	case "Settings": idx = 8; break;
-	case "About": idx = 9; break;
+    var r = -1;
+    switch (idx) {
+	case "Disassembler": r = 0; break;
+	case "Assembler": r = 1; break;
+	case "Hexdump": r = 2; break;
+	case "Graph": r = 3; break;
+	case "Search": r = 4; break;
+	case "Console": r = 5; break;
+	case "Logs": r = 6; break;
+	case "Script": r = 7; break;
+	case "Settings": r = 8; break;
+	case "About": r = 9; break;
+      }
+      if (r==-1) {
+        // alert ("Unknown page");
+        sp.setIndex (idx);
+        return;
+      }
+      eval ("var x = this.$.page"+idx);
+      switch (r) {
+      case 0:
+      case 2:
+        this.setTitle ();
+        break;
+      default:
+        this.setTitle (idx);
+        break;
       }
       //x.setContent (str);
-      sp.setIndex (idx);
+      sp.setIndex (r);
   },
   seekStack: [],
   nextSeek: function() {
@@ -175,4 +289,3 @@ var i = 3;
 */
   }
 });
-

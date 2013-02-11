@@ -2,12 +2,12 @@ enyo.kind ({
   name: "Disassembler",
   kind: "Scroller",
   tag: "div",
-  style:"margin:0px;background-color:#a0a0a0",
+  style:"margin:0px;background-color:#c0c0c0",
   data: null,
   components: [
     {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
     {tag: "div", content: "^", classes: "moreless", ontap: "less"},
-    {tag: "pre", allowHtml: true, name: "text", content: ".."},
+    {tag: "pre", allowHtml: true, name: "text", content: "..", style:"margin-left:5px"},
     {tag: "div", content: "v", classes: "moreless", ontap: "more"},
 /*
     {kind: "List", count:3, name: "list", style:"height:400px", realtimeFit:false, onSetupItem: "setupItem", components: [
@@ -73,24 +73,26 @@ enyo.kind ({
         var y = JSON.parse (x);
       } catch (e) {
         alert (e);
-return;
+        return;
       }
       console.log (y);
 
 // TODO: use canvas api for faster rendering and smaller dom
       var c = "<table class='colorbar'><tr valign=top style='height:20px;border-spacing:0'>";
-var colors = {
- flags: "#c0c0c0",
- comments: "yellow",
- functions: "#5050f0",
- strings: "orange",
-};
+      var colors = {
+       flags: "#c0c0c0",
+       comments: "yellow",
+       functions: "#5050f0",
+       strings: "orange",
+      };
 
-var off = "";
- var HEIGHT = 30;
+      var off = "";
+      var WIDTH = 10;
+      var HEIGHT = 30;
       for (var i=0; i< y.blocks.length; i++) {
         var block = y.blocks[i];
-        var r = "<div style='background-color:#404040;width:10px;'>&nbsp;</div>";
+        var r = "<div style='overflow:hidden;background-color:#404040;width:"
+              + WIDTH+"px;'>&nbsp;</div>";
         if (block.offset) {  // Object.keys(block).length>1) {
           var r = "<table height="+HEIGHT+" style='border-spacing:0px'>";
           var count = 0;
@@ -104,16 +106,18 @@ var off = "";
           for (var k in colors) {
             var color = colors[k];
             if (block[k]) 
-              r += "<tr><td style='width:10px;width:100%;;background-color: "+
-                  colors[k]+"'><div style='width:10px;overflow:hidden;height:"+h+"px'>&nbsp;</div></td></tr>";
+              r += "<tr><td style='width:"+WIDTH+"px;background-color:"
+                  + colors[k]+"'><div style='width:"+WIDTH+"px;overflow:"
+                  + "hidden;height:"+h+"px'>&nbsp;</div></td></tr>";
           }
           r += "</table>";
           off = "0x"+block.offset.toString (16);
         } else {
           off = "0x"+(y.from + (y.blocksize * i)).toString (16);
         }
-        c += "<td onclick='r2ui.seek("+off+",true)' title='"+off+"' style='height:"+HEIGHT+"px' "+
-		"width=100%>"+r+"</td>";
+        c += "<td onclick='r2ui.seek("+off+",true)' title='"+off
+              + "' style='height:"+HEIGHT+"px' "
+	      + "width=15px>"+r+"</td>";
       }
       c += "</tr></table>";
       self.$.colorbar.setContent (c);

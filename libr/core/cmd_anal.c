@@ -497,7 +497,7 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'r':
-			{
+			if (1) { //input[2]==' ' && input[3]) {
 				RAnalFunction *fcn;
 				ut64 off = core->offset;
 				char *p, *name = strdup (input+3);
@@ -505,16 +505,18 @@ static int cmd_anal(void *data, const char *input) {
 					*p++ = 0;
 					off = r_num_math (core->num, p);
 				}
-				fcn = r_anal_fcn_find (core->anal, off,
-						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-				if (fcn) {
-					eprintf ("fr %s %s @ 0x%"PFMT64x,
-						fcn->name, name, off);
-					r_core_cmdf (core, "fr %s %s @ 0x%"PFMT64x,
-						fcn->name, name, off);
-					free (fcn->name);
-					fcn->name = strdup (name);
-				} else eprintf ("Cannot find function '%s' at 0x%08llx\n", name, off);
+				if (*name) {
+					fcn = r_anal_fcn_find (core->anal, off,
+							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+					if (fcn) {
+						eprintf ("fr %s %s@ 0x%"PFMT64x"\n",
+							fcn->name, name, off);
+						r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
+							fcn->name, name, off);
+						free (fcn->name);
+						fcn->name = strdup (name);
+					} else eprintf ("Cannot find function '%s' at 0x%08llx\n", name, off);
+				} else eprintf ("Usage: afr [newname] [off]\n");
 			}
 			break;
 		case 'e':

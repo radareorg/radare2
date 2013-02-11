@@ -6,7 +6,18 @@ enyo.kind ({
   style:"padding-left:16px",
   components: [
     {kind: "FittableRows", fit: false, components: [
-      {tag: "h2", content: "CPU" }
+      {tag: "h2", content: "General" },
+      {kind: "onyx.InputDecorator", components: [
+        {tag: "p", content: "Two panels", classes:"rowline" },
+        {kind: "onyx.ToggleButton", name: "twopanels"},
+      ]},
+      {kind: "onyx.InputDecorator", components: [
+        {tag: "p", content: "Edit keybindings", classes:"rowline" },
+        {kind: "onyx.Button", content: '+'},
+      ]}
+    ]},
+    {kind: "FittableRows", fit: false, components: [
+      {tag: "h2", content: "Target" }
       ,{kind: "onyx.InputDecorator", components: [
          {tag: "p", content: "Arch", classes:"rowline"},
          {kind: "onyx.PickerDecorator", components: [
@@ -55,10 +66,22 @@ enyo.kind ({
            ]}
          ]}
       ]}
+      ,{kind: "onyx.InputDecorator", components: [
+         {tag: "p", content: "OS", classes:"rowline"},
+         {kind: "onyx.PickerDecorator", components: [
+           {},
+           {kind: "onyx.Picker", components: [
+             {content: "linux", active: true},
+             {content: "darwin"},
+             {content: "w32"},
+             {content: "dos"},
+           ]}
+         ]}
+      ]}
       ,{tag: "h2", content: "Disassembly" },
       {kind: "onyx.InputDecorator", components: [
         {tag: "p", content: "Show bytes", classes:"rowline", ontap: "nextPanel"},
-        {kind: "onyx.ToggleButton", name: "toggle_bytes "},
+        {kind: "onyx.ToggleButton", name: "toggle_bytes"},
       ]}
       ,{kind: "onyx.InputDecorator",components: [
         {tag: "p", content: "Show offsets", classes:"rowline", ontap: "nextPanel"},
@@ -80,15 +103,45 @@ enyo.kind ({
     ]}
     ,{tag: "div", style: "height:64px"}
   ],
+  load: function() {
+    var self = this;
+    self.$.twopanels.setActive (document.referrer.indexOf ("/two") != -1);
+    r2.cmd ("e asm.bytes", function (x) {
+      self.$.toggle_bytes.setActive (x[0] == 't');
+    });
+    r2.cmd ("e asm.pseudo", function (x) {
+      self.$.toggle_pseudo.setActive (x[0] == 't');
+    });
+    r2.cmd ("e asm.offset", function (x) {
+      self.$.toggle_offset.setActive (x[0] == 't');
+    });
+  },
+  create: function () {
+    this.inherited (arguments);
+    this.load ();
+  },
   save: function() {
     var arch = this.$.arch.selected.content;
     var bits = this.$.bits.selected.content;
-    r2.cmds (["e asm.arch="+arch, "e asm.bits="+bits]);
-    alert ("save");
+    var show_bytes = this.$.toggle_bytes.active;
+    var show_pseudo = this.$.toggle_pseudo.active;
+    var show_offset = this.$.toggle_offset.active;
+    var twopanels = this.$.twopanels.active;
+    r2.cmds ([
+      "e asm.arch="+arch,
+      "e asm.bits="+bits,
+      "e asm.bytes="+show_bytes,
+      "e asm.offset="+show_offset,
+      "e asm.pseudo="+show_pseudo
+    ]);
+    if (twopanels) {
+      window.parent.location ="/enyo/two";
+    } else {
+      window.parent.location ="/enyo/";
+    }
+    r2ui.seek ("$$", true);
   },
   reset: function() {
-    r2.cmd ("e asm.arch", function (x) {
-      alert ("arch = "+x);
-    });
+    this.load ();
   }
 });
