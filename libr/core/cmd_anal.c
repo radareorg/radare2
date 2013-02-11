@@ -203,11 +203,11 @@ static const char *optypestr(int type) {
 	return "err";
 }
 
-static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len) {
-	int ret, idx;
+static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
+	int ret, i, idx;
 	RAnalOp op;
 
-	for (idx=ret=0; idx<len; idx+=ret) {
+	for (idx=ret=0; idx<len && (nops&&i<nops); i++, idx+=ret) {
 		ret = r_anal_op (core->anal, &op,
 				core->offset+idx, buf + idx, (len-idx));
 		if (ret<1) {
@@ -236,19 +236,6 @@ static int cmd_anal(void *data, const char *input) {
 	ut64 addr = core->offset;
 	ut32 tbs = core->blocksize;
 
-#if 1
-	switch (input[0]) {
-	case 'o':
-		if (input[0] && input[1]) {
-			l = (int) r_num_get (core->num, input+2);
-			if (l>0) len = l;
-			if (l>tbs) {
-				r_core_block_size (core, l);
-				len = l;
-			}
-		} else len = l = core->blocksize;
-	}
-#endif
 	r_cons_break (NULL, NULL);
 
 	switch (input[0]) {
@@ -258,7 +245,7 @@ static int cmd_anal(void *data, const char *input) {
 			ut8 *buf = malloc (strlen (input));
 			len = r_hex_str2bin (input+2, buf);
 			if (len>0)
-				r_core_anal_bytes (core, buf, len);
+				r_core_anal_bytes (core, buf, len, 0);
 			free (buf);
 		} else eprintf ("Usage: ab [hexpair-bytes]\n");
 		break;
@@ -338,7 +325,16 @@ static int cmd_anal(void *data, const char *input) {
 		if (input[1] == 'e') {
 			eprintf ("TODO: r_anal_op_execute\n");
 		} else {
-			r_core_anal_bytes (core, core->block, len);
+			int count = 0;
+			if (input[0] && input[1]) {
+				l = (int) r_num_get (core->num, input+2);
+				if (l>0) count = l;
+				if (l>tbs) {
+					r_core_block_size (core, l*4);
+					//len = l;
+				}
+			} else len = l = core->blocksize;
+			r_core_anal_bytes (core, core->block, len, count);
 		}
 		break;
 	case 'F':

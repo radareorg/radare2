@@ -34,6 +34,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
+	RAnalFunction *fcn;
 	RFlagItem *flag;
 	RAnalOp op;
 	ut64 ret = 0;
@@ -125,17 +126,13 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'D': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_DATA);
 		case 'X': return getref (core, atoi (str+2), 'x', R_ANAL_REF_TYPE_CALL);
 		case 'I':
-			  {
-				  RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
-				  if (fcn) return fcn->ninstr;
-				  return 0;
-			  }
+			  fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+			  if (fcn) return fcn->ninstr;
+			  return 0;
 		case 'F':
-			  {
-				  RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
-				  if (fcn) return fcn->size;
-				  return 0;
-			  }
+			  fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+			  if (fcn) return fcn->size;
+			  return 0;
 		}
 	} else
 	if (*str>'A') {
@@ -229,8 +226,7 @@ static int autocomplete(RLine *line) {
 			p = r_str_lchr (path, '/');
 			if (p) {
 				if (p==path) path = "/";
-				else if (p!=path+1)
-					*p = 0;
+				else if (p!=path+1) *p = 0;
 				p++;
 			}
 			if (p) {
@@ -576,6 +572,8 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	char prompt[32];
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 
+	// hacky fix fo rio
+	r_core_block_read (r, 0);
 	if (cmdprompt && *cmdprompt)
 		r_core_cmd (r, cmdprompt, 0);
 
@@ -717,11 +715,10 @@ static void rap_break (void *u) {
 // TODO: use static buffer instead of mallocs all the time. it's network!
 R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut8 cmd, flg, *ptr = NULL, buf[1024];
-	int i, pipefd;
-	ut64 x;
 	RSocket *c, *fd;
+	int i, pipefd;
 	RIORap *rior;
-	//int j; RListIter *iter;
+	ut64 x;
 
 	rior = (RIORap *)file->data;
 	if (rior == NULL|| rior->fd == NULL) {

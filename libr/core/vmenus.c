@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include "r_core.h"
 
@@ -1188,7 +1188,9 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 }
 
 R_API void r_core_visual_define (RCore *core) {
-	int ch, ntotal = 0;
+	char *name;
+	RAnalFunction *f;
+	int n, ch, ntotal = 0;
 	ut64 off = core->offset;
 	ut8 *p = core->block;
 	int plen = core->blocksize;
@@ -1217,8 +1219,7 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'S':
 		do {
-			char *name;
-			int n = r_str_nlen ((const char*)p+ntotal, plen-ntotal)+1;
+			n = r_str_nlen ((const char*)p+ntotal, plen-ntotal)+1;
 			name = malloc (n+10);
 			strcpy (name, "str.");
 			strncpy (name+4, (const char *)p+ntotal, n);
@@ -1232,16 +1233,13 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 's':
 		// TODO: r_core_cmd0 (core, "Cz");
-		{
-			char *name;
-			int n = r_str_nlen ((const char*)p, plen)+1;
-			name = malloc (n+10);
-			strcpy (name, "str.");
-			strncpy (name+4, (const char *)p, n);
-			r_flag_set (core->flags, name, off, n, 0);
-			r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);
-			free (name);
-		}
+		n = r_str_nlen ((const char*)p, plen)+1;
+		name = malloc (n+10);
+		strcpy (name, "str.");
+		strncpy (name+4, (const char *)p, n);
+		r_flag_set (core->flags, name, off, n, 0);
+		r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);
+		free (name);
 		break;
 	case 'd': // TODO: check
 		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+core->blocksize, "");
@@ -1251,13 +1249,10 @@ R_API void r_core_visual_define (RCore *core) {
 		break;
 	case 'u':
 		r_flag_unset_i (core->flags, off, NULL);
-		{
-			// rm bbs
-			RAnalFunction *f = r_anal_fcn_find (core->anal, off, 0);
-			r_anal_fcn_del_locs (core->anal, off);
-			if (f) r_meta_del (core->anal->meta, R_META_TYPE_ANY, off, f->size, "");
-			r_anal_fcn_del (core->anal, off);
-		}
+		f = r_anal_fcn_find (core->anal, off, 0);
+		r_anal_fcn_del_locs (core->anal, off);
+		if (f) r_meta_del (core->anal->meta, R_META_TYPE_ANY, off, f->size, "");
+		r_anal_fcn_del (core->anal, off);
 		break;
 	case 'f':
 		r_cons_break(NULL,NULL);

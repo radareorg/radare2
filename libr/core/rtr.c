@@ -162,6 +162,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 					r_str_uri_decode (cmd);
 					// eprintf ("CMD (%s)\n", cmd);
 					out = r_core_cmd_str_pipe (core, cmd);
+					// eprintf ("\nOUT LEN = %d\n", strlen (out));
 					if (out) {
 						char *res = r_str_uri_encode (out);
 						r_socket_http_response (rs, 200, out, 0,

@@ -91,7 +91,7 @@ R_API void r_core_sysenv_end(RCore *core, const char *cmd) {
 }
 
 R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
-	char buf[64], *ret;
+	char buf[64], *ret, *f;
 #if DISCUSS
 	// EDITOR      cfg.editor (vim or so)
 	CURSOR      cursor position (offset from curseek)
@@ -106,8 +106,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	ret = strdup (cmd);
 	if (strstr (cmd, "BLOCK")) {
 		// replace BLOCK in RET string
-		char *f = r_file_temp ("r2block");
-		if (f) {
+		if ((f = r_file_temp ("r2block"))) {
 			if (r_file_dump (f, core->block, core->blocksize))
 				r_sys_setenv ("BLOCK", f);
 			free (f);
