@@ -633,12 +633,14 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 	bump = realloc (core->block, bsize+1);
 	if (bump == NULL) {
 		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
-		return R_FALSE;
+		ret = R_FALSE;
+	} else {
+		ret = R_TRUE;
+		core->block = bump;
+		core->blocksize = bsize;
+		memset (core->block, 0xff, core->blocksize);
+		r_core_block_read (core, 0);
 	}
-	core->block = bump;
-	core->blocksize = bsize;
-	memset (core->block, 0xff, core->blocksize);
-	r_core_block_read (core, 0);
 	return ret;
 }
 
