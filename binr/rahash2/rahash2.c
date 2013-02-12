@@ -68,6 +68,10 @@ static int do_hash(const char *algo, RIO *io, int bsize, int rad) {
 		return 1;
 	}
 	fsize = r_io_size (io);
+	if (fsize <1) {
+		eprintf ("Invalid file size\n");
+		return 1;
+	}
 	if (bsize == 0 || bsize > fsize)
 		bsize = fsize;
 	if (to == 0LL)
@@ -191,8 +195,16 @@ int main(int argc, char **argv) {
 		return do_help (1);
 
 	io = r_io_new ();
+	if (r_file_is_directory (argv[optind])) {
+		eprintf ("Cannot hash directories\n");
+		return 1;
+	}
 	if (!r_io_open (io, argv[optind], 0, 0)) {
 		eprintf ("Cannot open '%s'\n", argv[optind]);
+		return 1;
+	}
+	if (bsize<1) {
+		eprintf ("Invalid block size\n");
 		return 1;
 	}
 	return do_hash (algo, io, bsize, rad);
