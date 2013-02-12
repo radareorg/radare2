@@ -17,7 +17,6 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad) {
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = r_hash_name (hash);
-	ut32 *n = c;
 	int i;
 	switch (rad) {
 	case 0:
@@ -33,8 +32,8 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad) {
 		printf ("\n");
 		break;
 	default:
-		o = r_print_randomart (c, dlen, *n);
-		printf ("%s\n", o);
+		o = r_print_randomart (c, dlen, from);
+		printf ("%s\n%s\n", hname, o);
 		free (o);
 		break;
 	}
@@ -131,7 +130,7 @@ static int do_help(int line) {
 	printf ("Usage: rahash2 [-rBkv] [-b bsize] [-a algo] [-s str] [-f from] [-t to] [file] ...\n");
 	if (line) return 0;
 	printf (
-	" -a algo     comma separated list of algorithms (default is 'sha1')\n"
+	" -a algo     comma separated list of algorithms (default is 'sha256')\n"
 	" -b bsize    specify the size of the block (instead of full file)\n"
 	" -B          show per-block hash\n"
 	" -s string   hash this string instead of files\n"
@@ -146,7 +145,7 @@ static int do_help(int line) {
 }
 
 int main(int argc, char **argv) {
-	const char *algo = "md5,sha1"; /* default hashing algorithm */
+	const char *algo = "sha256"; /* default hashing algorithm */
 	int c, rad = 0, quit = 0, bsize = 0;
 	RIO *io;
 
