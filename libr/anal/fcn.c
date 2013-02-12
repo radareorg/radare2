@@ -4,14 +4,12 @@
 #include <r_util.h>
 #include <r_list.h>
 
-/* work in progress */
-#define USE_NEW_FCN_STORE 0
 /* faster retrival, slower storage */
+// TODO: use slist ?
 
 R_API RAnalFunction *r_anal_fcn_new() {
-	RAnalFunction *fcn = R_NEW (RAnalFunction);
+	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
 	if (!fcn) return NULL;
-	memset (fcn, 0, sizeof (RAnalFunction));
 	fcn->name = NULL;
 	fcn->dsc = NULL;
 	/* Function return type */
@@ -73,7 +71,7 @@ R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
 	RAnalRef *ref;
 	RListIter *iter;
-	/* No _safe loop necessary because we return immediately after the delete. */
+	/* No need for _safe loop coz we return immediately after the delete. */
 	r_list_foreach (fcn->xrefs, iter, ref) {
 		if ((type != -1 || type == ref->type)  &&
 			(at == 0LL || at == ref->at) &&
@@ -254,7 +252,7 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr) {
 R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 #if USE_NEW_FCN_STORE
 	// TODO: type is ignored here? wtf.. we need more work on fcnstore
-	if (root) return r_listrange_find_root (anal->fcnstore, addr);
+	//if (root) return r_listrange_find_root (anal->fcnstore, addr);
 	return r_listrange_find_in_range (anal->fcnstore, addr);
 #else
 	RAnalFunction *fcn, *ret = NULL;

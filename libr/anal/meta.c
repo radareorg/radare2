@@ -1,6 +1,7 @@
-/* radare - LGPL - Copyright 2008-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2013 - nibble, pancake */
 
 #include <r_anal.h>
+#include <r_print.h>
 
 R_API RMeta *r_meta_new() {
 	RMeta *m = R_NEW (RMeta);

@@ -25,8 +25,7 @@ R_API RAnal *r_anal_new() {
 	int i;
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW (RAnal);
-	if (!anal)
-		return NULL;
+	if (!anal) return NULL;
 	memset (anal, 0, sizeof (RAnal));
 	anal->diff_ops = 0;
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
@@ -39,7 +38,9 @@ R_API RAnal *r_anal_new() {
 	anal->reg = r_reg_new ();
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
+#if USE_NEW_FCN_STORE
 	anal->fcnstore = r_listrange_new ();
+#endif
 	anal->hints = r_list_new ();
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();

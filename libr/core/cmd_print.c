@@ -732,6 +732,39 @@ static int cmd_print(void *data, const char *input) {
 		} else r_print_format (core->print, core->offset,
 			core->block, len, input+1, -1, NULL);
 		break;
+	case 'k':
+		{
+		char *s = r_print_randomart (core->block, core->blocksize, core->offset);
+		r_cons_printf ("%s\n", s);
+		free (s);
+		}
+		break;
+	case 'K':
+		{
+		ut64 offset0 = core->offset;
+		r_cons_clear ();
+		for (i=0; i< 4; i++) {
+			char *s = r_print_randomart (core->block, core->blocksize, core->offset);
+			r_cons_gotoxy (0, 0);
+			r_cons_printf ("\n%s\n", s);
+			free (s);
+			core->offset += core->blocksize;
+			r_core_read_at (core, core->offset, core->block, core->blocksize);
+			s = r_print_randomart (core->block, core->blocksize, core->offset);
+			r_cons_printf ("%s\n", s);
+			core->offset += core->blocksize;
+			r_core_read_at (core, core->offset, core->block, core->blocksize);
+			s = r_print_randomart (core->block, core->blocksize, core->offset);
+			r_cons_printf ("%s\n", s);
+			r_cons_column (i!=3?20:0);
+			free (s);
+			core->offset += core->blocksize;
+			r_core_read_at (core, core->offset, core->block, core->blocksize);
+		}
+		r_core_read_at (core, offset0, core->block, core->blocksize);
+		core->offset = offset0;
+		}
+		break;
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
 			printf ("\r8");
@@ -836,6 +869,7 @@ static int cmd_print(void *data, const char *input) {
 		" p[iI][f] [len]   print N instructions/bytes (f=func) (see pdi)\n"
 		" pm [magic]       print libmagic data (pm? for more information)\n"
 		" pr [len]         print N raw bytes\n"
+		" p[kK] [len]      print key in randomart (K is for mosaic)\n"
 		" ps[pwz] [len]    print pascal/wide/zero-terminated strings\n"
 		" pt[dn?] [len]    print different timestamps\n"
 		" pu[w] [len]      print N url encoded bytes (w=wide)\n"

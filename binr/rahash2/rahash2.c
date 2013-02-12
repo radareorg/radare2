@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -14,28 +14,36 @@ static ut64 to = 0LL;
 static int incremental = 1;
 
 static void do_hash_print(RHash *ctx, int hash, int dlen, int rad) {
+	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = r_hash_name (hash);
+	ut32 *n = c;
 	int i;
-	if (rad) {
-		printf ("e file.%s=", hname);
-		for (i=0; i<dlen; i++)
-			printf ("%02x", c[i]);
-		printf ("\n");
-	} else {
+	switch (rad) {
+	case 0:
 		printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %s: ", from, to, hname);
 		for (i=0; i<dlen; i++)
 			printf ("%02x", c[i]);
 		printf ("\n");
+		break;
+	case 1:
+		printf ("e file.%s=", hname);
+		for (i=0; i<dlen; i++)
+			printf ("%02x", c[i]);
+		printf ("\n");
+		break;
+	default:
+		o = r_print_randomart (c, dlen, *n);
+		printf ("%s\n", o);
+		free (o);
+		break;
 	}
 }
 
 static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print) {
 	int dlen = r_hash_calculate (ctx, hash, buf, len);
-	if (!dlen || rad == 2)
-		return 0;
-	if (!print)
-		return 1;
+	if (!dlen) return 0;
+	if (!print) return 1;
 	if (hash == R_HASH_ENTROPY) {
 		double e = r_hash_entropy (buf, len);
 		if (rad) {
@@ -47,7 +55,6 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 			printf ("\n");
 		}
 	} else do_hash_print (ctx, hash, dlen, rad);
-
 	return 1;
 }
 
@@ -121,7 +128,7 @@ static int do_hash(const char *algo, RIO *io, int bsize, int rad) {
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-rBv] [-b bsize] [-a algo] [-s str] [-f from] [-t to] [file] ...\n");
+	printf ("Usage: rahash2 [-rBkv] [-b bsize] [-a algo] [-s str] [-f from] [-t to] [file] ...\n");
 	if (line) return 0;
 	printf (
 	" -a algo     comma separated list of algorithms (default is 'sha1')\n"
@@ -130,6 +137,7 @@ static int do_help(int line) {
 	" -s string   hash this string instead of files\n"
 	" -f from     start hashing at given address\n"
 	" -t to       stop hashing at given address\n"
+	" -k          show hash using the openssh's randomkey algorithm\n"
 	" -r          output radare commands\n"
 	" -v          show version information\n"
 	"Supported algorithms: md4, md5, sha1, sha256, sha384, sha512, crc16,\n"
@@ -142,17 +150,12 @@ int main(int argc, char **argv) {
 	int c, rad = 0, quit = 0, bsize = 0;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "rva:s:b:Bhf:t:")) != -1) {
+	while ((c = getopt (argc, argv, "rva:s:b:Bhf:t:k")) != -1) {
 		switch (c) {
-		case 'r':
-			rad = 1;
-			break;
-		case 'a':
-			algo = optarg;
-			break;
-		case 'B':
-			incremental = 0;
-			break;
+		case 'r': rad = 1; break;
+		case 'k': rad = 2; break;
+		case 'a': algo = optarg; break;
+		case 'B': incremental = 0; break;
 		case 'b':
 			bsize = (int)r_num_math (NULL, optarg);
 			break;
@@ -164,7 +167,7 @@ int main(int argc, char **argv) {
 				to = strlen (optarg);
 				do_hash_internal (ctx, //0, strlen (optarg),
 					algobit, (const ut8*) optarg,
-					strlen (optarg), 0, 1);
+					strlen (optarg), rad, 1);
 				r_hash_free (ctx);
 				quit = R_TRUE;
 			}

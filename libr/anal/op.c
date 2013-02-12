@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 */
-/*   nibble<.ds@gmail.com> + pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2013 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -10,6 +9,7 @@ R_API RAnalOp *r_anal_op_new() {
 	if (op) {
 		memset (op, 0, sizeof (RAnalOp));
 		op->mnemonic = NULL;
+		op->evalstr = NULL;
 		op->addr = -1;
 		op->jump = -1;
 		op->fail = -1;

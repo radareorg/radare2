@@ -11,6 +11,7 @@
 // 1024
 #define RANGE (1<<RANGEBITS)
 #include <r_anal.h>
+#if USE_NEW_FCN_STORE
 
 static int cmpfun(void *a, void *b) {
 	RAnalFunction *fa = (RAnalFunction*)a;
@@ -113,9 +114,4 @@ R_API RAnalFunction *r_listrange_find_root(RListRange* s, ut64 addr) {
 	return NULL;
 }
 
-#if 0
-main() {
-	RHashTable64 *h = r_listrange_new();
-	r_listrange_add (h, f1);
-}
 #endif

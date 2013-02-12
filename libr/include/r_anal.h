@@ -20,6 +20,9 @@
 */
 #define R_ANAL_BB_HAS_OPS 0
 
+/* TODO: work in progress */
+#define USE_NEW_FCN_STORE 0
+
 // TODO: Remove this define? /cc @nibble_ds
 #define VERBOSE_ANAL if(0)
 
@@ -539,6 +542,7 @@ typedef struct r_anal_op_t {
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	int refptr;
+	char *evalstr; /* evaluation string . the new anal */
 	struct r_anal_op_t *next;
 } RAnalOp;
 
