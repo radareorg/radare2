@@ -362,12 +362,12 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
 			}
 			/* TODO: Dupped analysis, needs more optimization */
-		fcn->depth = 256;
+			fcn->depth = 256;
 			r_core_anal_bb (core, fcn, fcn->addr, R_TRUE);
 // hack
-		if (fcn->depth == 0) {
-			eprintf ("Analysis depth reached at 0x%08"PFMT64x"\n", fcn->addr);
-		} else fcn->depth = 256-fcn->depth;
+			if (fcn->depth == 0) {
+				eprintf ("Analysis depth reached at 0x%08"PFMT64x"\n", fcn->addr);
+			} else fcn->depth = 256-fcn->depth;
 			r_list_sort (fcn->bbs, &cmpaddr);
 
 			/* New function: Add initial xref */
@@ -541,10 +541,9 @@ else
 			} else if (fmt==2) {
 				if (fr) {
 					if (!hideempty || (hideempty && r_list_length (fr->refs)>0)) {
-if (usenames)
-						r_cons_printf ("%s\"%s\"", first2?",":"", fr->name);
-else
-						r_cons_printf ("%s\"0x%08"PFMT64x"\"", first2?",":"", fr->addr);
+						if (usenames)
+							r_cons_printf ("%s\"%s\"", first2?",":"", fr->name);
+						else r_cons_printf ("%s\"0x%08"PFMT64x"\"", first2?",":"", fr->addr);
 						first2 = 1;
 					}
 				}
@@ -794,9 +793,8 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 		return R_FALSE;
 	endian = (core->bin->cur.o->info->big_endian)? !LIL_ENDIAN: LIL_ENDIAN;
 	wordsize = (int)(core->anal->bits/8);
-	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1) {
+	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1)
 		return R_FALSE;
-	}
 	return r_core_anal_followptr (core, at, dataptr, ref, code, depth-1);
 }
 
@@ -820,6 +818,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 		for (at = from; at < to; at += core->blocksize - OPSZ) {
 			if (r_cons_singleton ()->breaked)
 				break;
+			// TODO: this can be probably enhaced
 			ret = r_io_read_at (core->io, at, buf, core->blocksize);
 			if (ret != core->blocksize)
 				break;

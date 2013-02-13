@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2013 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -60,8 +60,8 @@ R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 	RAnalRef *ref;
 	if (!fcn || !anal || !(ref = r_anal_ref_new ()))
 		return R_FALSE;
-	ref->at = at;
-	ref->addr = addr;
+	ref->at = at; // from 
+	ref->addr = addr; // to
 	ref->type = type;
 	// TODO: ensure we are not dupping xrefs
 	r_list_append (fcn->refs, ref);
