@@ -1,4 +1,4 @@
-.Dd Mar 12, 2010
+.Dd Mar 12, 2013
 .Dt RAX2 1
 .Os
 .Sh NAME
@@ -6,7 +6,7 @@
 .Nd radare base converter
 .Sh SYNOPSIS
 .Nm rax2
-.Op Fl ebsSvxkh
+.Op Fl ebBsSvxkh
 .Op [value] ...
 .Sh DESCRIPTION
 This command is part of the radare project.
@@ -14,10 +14,14 @@ This command is part of the radare project.
 This command allows you to convert values between positive and negative integer, float octal, binary and hexadecimal values.
 .Sh OPTIONS
 .Bl -tag -width Fl
-.It Fl e
-Swap endian.
 .It Fl b
 Convert from binary string to caracter (rax2 \-b 01000101)
+.It Fl B
+Keep de same base as the input data
+.It Fl e
+Swap endian.
+.It Fl k
+Show randomart key asciiart for values or hexpairs
 .It Fl s
 Convert from hex string to caracter (rax2 \-s 43 4a 50)
 .It Fl S
@@ -26,8 +30,6 @@ Convert from hex string to caracter (rax2 \-S C J P)
 Show program version
 .It Fl x
 Convert a string into a hash
-.It Fl k
-Keep de same base as the input data
 .It Fl h
 Show usage help message
 .El

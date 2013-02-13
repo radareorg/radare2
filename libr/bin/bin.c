@@ -21,7 +21,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	if (arch && arch->buf && to > arch->buf->length)
 		to = arch->buf->length;
 	if (to > 0xf00000) {
-		eprintf ("WARNING: bin_strings buffer is too big\n");
+		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);
 		return;
 	}
 	if (to == 0)
