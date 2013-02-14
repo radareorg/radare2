@@ -199,6 +199,7 @@ int main(int argc, char **argv) {
 		eprintf ("Cannot hash directories\n");
 		return 1;
 	}
+	// TODO: use mmap
 	if (!r_io_open (io, argv[optind], 0, 0)) {
 		eprintf ("Cannot open '%s'\n", argv[optind]);
 		return 1;

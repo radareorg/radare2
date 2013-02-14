@@ -1,4 +1,4 @@
-.Dd Oct 18, 2011
+.Dd Feb 14, 2013
 .Dt RAFIND2 1
 .Os
 .Sh NAME
@@ -6,7 +6,7 @@
 .Nd Advanced commandline hexadecimal editor
 .Sh SYNOPSIS
 .Nm rafind2
-.Op Fl zXnrhv
+.Op Fl zZXnrhv
 .Op Fl b Ar size
 .Op Fl f Ar from
 .Op Fl t Ar to
@@ -34,6 +34,8 @@ Specify the source adddress
 Specify the target adddress
 .It Fl X
 Display hexdump of search results
+.It Fl Z
+Display zero-terminated strings results
 .It Fl n
 Do not stop the search when a read error occurs
 .It Fl r

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +14,7 @@
 
 static struct r_io_t *io;
 static RIODesc *fd = NULL;
+static int showstr = 0;
 static int rad = 0;
 struct r_search_t *rs;
 static ut64 from = 0LL, to = -1;
@@ -33,10 +34,14 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	if (rad) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
-		printf ("0x%"PFMT64x"\n", addr);
-		if (pr) {
-			r_print_hexdump (pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);
-			r_cons_flush ();
+		if (showstr) {
+			printf ("0x%"PFMT64x" %s\n", addr, buffer+delta);
+		} else {
+			printf ("0x%"PFMT64x"\n", addr);
+			if (pr) {
+				r_print_hexdump (pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);
+				r_cons_flush ();
+			}
 		}
 	}
 	return 1;
@@ -132,7 +137,7 @@ int main(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt(argc, argv, "e:b:m:s:x:Xzf:t:rnhv")) != -1) {
+	while ((c = getopt(argc, argv, "e:b:m:s:x:Xzf:t:rnhvZ")) != -1) {
 		switch (c) {
 		case 'r':
 			rad = 1;
@@ -152,9 +157,6 @@ int main(int argc, char **argv) {
 			break;
 		case 'b':
 			bsize = r_num_math (NULL, optarg);
-			break;
-		case 'z':
-			mode = R_SEARCH_STRING;
 			break;
 		case 'x':
 			mode = R_SEARCH_KEYWORD;
@@ -179,6 +181,12 @@ int main(int argc, char **argv) {
 			return 0;
 		case 'h':
 			return show_help(argv[0], 0);
+		case 'z':
+			mode = R_SEARCH_STRING;
+			break;
+		case 'Z':
+			showstr = 1;
+			break;
 		}
 	}
 

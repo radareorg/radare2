@@ -55,8 +55,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		len /= 8;
 
 	if (bin) {
-		if (len<0)
-			return R_FALSE;
+		if (len<0) return R_FALSE;
 		clen = len; // XXX
 		data = (ut8*)buf;
 	} else if (ascii) {
@@ -78,6 +77,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		RAsmOp op;
 		r_asm_set_pc (a, offset);
 		while (len-ret > 0 && r_asm_disassemble (a, &op, data+ret, len-ret) != -1) {
+			if (op.inst_len<1) break;
 			printf ("0x%08"PFMT64x"  %d %12s %s\n", 
 				a->pc, op.inst_len, op.buf_hex, op.buf_asm);
 			ret += op.inst_len;
@@ -113,8 +113,8 @@ static void print_buf(char *str) {
 
 static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
 	struct r_asm_code_t *acode;
-	int i, j;
 	int ret = 0;
+	int i, j;
 
 	r_asm_set_pc (a, offset);
 	if (!(acode = r_asm_massemble (a, buf)))
@@ -150,6 +150,7 @@ static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 int main(int argc, char *argv[]) {
+	char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL;
 	ut64 offset = 0;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
@@ -218,13 +219,13 @@ int main(int argc, char *argv[]) {
 
 	if (arch) {
 		if (!r_asm_use (a, arch)) {
-			eprintf ("Error: Unknown asm plugin '%s'\n", arch);
+			eprintf ("rasm2: Unknown asm plugin '%s'\n", arch);
 			return 0;
 		}
 		if (!strcmp (arch, "bf"))
 			ascii = 1;
 	} else if (!r_asm_use (a, "x86")) {
-		eprintf ("Error: Cannot find asm.x86 plugin\n");
+		eprintf ("rasm2: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
 	r_asm_set_bits (a, bits);
@@ -248,14 +249,12 @@ int main(int argc, char *argv[]) {
 		char *content;
 		int length;
 		if (!strcmp (file, "-")) {
-			char buf[R_ASM_BUFSIZE]; // TODO: Fix this limitation
-			ret = fread (buf, 1, sizeof (buf)-1, stdin);
+			ret = read (0, buf, sizeof (buf)-1);
 			if (ret == R_ASM_BUFSIZE)
-				eprintf ("WARNING: Cannot slurp more from stdin\n");
-			if (ret>=0)
+				eprintf ("rasm2: Cannot slurp all stdin data\n");
+			if (ret>=0) // only for text
 				buf[ret] = '\0';
-			if (dis)
-				ret = rasm_disasm (buf, offset, len,
+			if (dis) ret = rasm_disasm (buf, offset, len,
 					a->bits, ascii, bin, dis-1);
 			else ret = rasm_asm (buf, offset, len, a->bits, bin);
 		} else {
@@ -263,16 +262,15 @@ int main(int argc, char *argv[]) {
 			if (content) {
 				content[length] = '\0';
 				if (dis) ret = rasm_disasm (content, offset,
-					len, a->bits, ascii, bin, dis-1);
-				else ret = rasm_asm (content, offset, len, a->bits, bin);
+					length, a->bits, ascii, bin, dis-1);
+				else ret = rasm_asm (content, offset, length, a->bits, bin);
 				free (content);
-			} else eprintf ("Cannot open file %s\n", file);
+			} else eprintf ("rasm2: Cannot open file %s\n", file);
 		}
 	} else if (argv[optind]) {
 		if (!strcmp (argv[optind], "-")) {
-			char buf[R_ASM_BUFSIZE];
-			for (;;) {
-				fgets (buf, sizeof (buf)-1, stdin);
+			do {
+				len = read (0, buf, sizeof (buf)-1);
 				if ((!bin || !dis) && feof (stdin))
 					break;
 				if (!bin || !dis) buf[strlen (buf)-1]='\0';
@@ -282,12 +280,10 @@ int main(int argc, char *argv[]) {
 				idx += ret;
 				offset += ret;
 				if (!ret) {
-					eprintf ("invalid\n");
+					//eprintf ("invalid\n");
 					return 0;
 				}
-				if (len && idx >= len)
-					break;
-			}
+			} while (!len || idx<len);
 			return idx;
 		}
 		if (dis) ret = rasm_disasm (argv[optind], offset, len,

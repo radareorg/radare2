@@ -52,6 +52,7 @@ BUGS
 * RBinCreate:
   - mach0 create for darwin-ppc
   - mz
+  - pe <- must be fixed
   - pe64
   - plan9 bins
 * Implement support for args in 'oo' (like in r1s !load debugger..)

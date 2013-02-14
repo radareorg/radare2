@@ -1,4 +1,4 @@
-/* radare2 - Copyleft 2011-2012 - pancake */
+/* radare2 - Copyleft 2011-2013 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,7 +122,7 @@ static int runfile () {
 	if (_listen) {
 		RSocket *child, *fd = r_socket_new (0);
 		if (!r_socket_listen (fd, _listen, NULL)) {
-			eprintf ("Cannot listen\n");
+			eprintf ("rarun2: cannot listen\n");
 			return 1;
 		}
 		child = r_socket_accept (fd);
@@ -139,6 +139,12 @@ static int runfile () {
 	if (_chgdir) chdir (_chgdir);
 	if (_chroot) chdir (_chroot);
 #if __UNIX__
+	if (_chroot) {
+		if (chroot (".")) {
+			eprintf ("rarun2: cannot chroot\n");
+			return 1;
+		}
+	}
 	if (_setuid) setuid (atoi (_setuid));
 	if (_seteuid) seteuid (atoi (_seteuid));
 	if (_setgid) setgid (atoi (_setgid));
@@ -164,13 +170,17 @@ static int runfile () {
 		if (!fork ()) {
 			sleep (_timeout);
 			if (!kill (mypid, 0))
-				fprintf (stderr, "\nInterrupted by timeout\n");
+				fprintf (stderr, "\nrarun2: Interrupted by timeout\n");
 			kill (mypid, SIGKILL);
 			exit (0);
 		}
 #else
 		eprintf ("timeout not supported for this platform\n");
 #endif
+	}
+	if (!r_file_exists (_program)) {
+		eprintf ("rarun2: %s: file not found\n", _program);
+		return 1;
 	}
 	exit (execv (_program, _args));
 }
