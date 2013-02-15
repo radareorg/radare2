@@ -51,19 +51,23 @@ static int show_help(char *argv0, int line) {
 	printf ("Usage: %s [-Xnzhv] [-b size] [-f from] [-t to] [-[m|s|e] str] [-x hex] file ...\n", argv0);
 	if (line) return 0;
 	printf (
-	" -z         search for zero-terminated strings\n"
-	" -s [str]   search for a specific string (can be used multiple times)\n"
-	" -e [regex] search for regular expression string matches\n"
-	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
-	" -m [str]   set a binary mask to be applied on keywords\n"
-	" -f [from]  start searching from address 'from'\n"
-	" -t [to]    stop search at address 'to'\n"
-	" -X         show hexdump of search results\n"
-	" -n         do not stop on read errors\n"
-	" -r         print using radare commands\n"
-	" -b [size]  set block size\n"
 	" -h         show this help\n"
 	" -v         print version and exit\n"
+	" -b [size]  set block size\n"
+
+	" -f [from]  start searching from address 'from'\n"
+	" -t [to]    stop search at address 'to'\n"
+	" -n         do not stop on read errors\n"
+
+	" -s [str]   search for a specific string (can be used multiple times)\n"
+	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
+	" -e [regex] search for regular expression string matches\n"
+	" -m [str]   set a binary mask to be applied on keywords\n"
+	" -z         search for zero-terminated strings\n"
+
+	" -r         print using radare commands\n"
+	" -X         show hexdump of search results\n"
+	" -Z         show zero-terminated strings of search results\n"
 	);
 	return 0;
 }

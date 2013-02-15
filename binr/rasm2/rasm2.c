@@ -260,6 +260,8 @@ int main(int argc, char *argv[]) {
 		} else {
 			content = r_file_slurp (file, &length);
 			if (content) {
+				if (len && len>0 && len<length)
+					length = len;
 				content[length] = '\0';
 				if (dis) ret = rasm_disasm (content, offset,
 					length, a->bits, ascii, bin, dis-1);
@@ -269,21 +271,24 @@ int main(int argc, char *argv[]) {
 		}
 	} else if (argv[optind]) {
 		if (!strcmp (argv[optind], "-")) {
+			int length;
 			do {
-				len = read (0, buf, sizeof (buf)-1);
+				length = read (0, buf, sizeof (buf)-1);
+				if (len>0 && len < length)
+					length = len;
 				if ((!bin || !dis) && feof (stdin))
 					break;
 				if (!bin || !dis) buf[strlen (buf)-1]='\0';
 				if (dis) ret = rasm_disasm (buf, offset,
-					len, a->bits, ascii, bin, dis-1);
-				else ret = rasm_asm (buf, offset, len, a->bits, bin);
+					length, a->bits, ascii, bin, dis-1);
+				else ret = rasm_asm (buf, offset, length, a->bits, bin);
 				idx += ret;
 				offset += ret;
 				if (!ret) {
 					//eprintf ("invalid\n");
 					return 0;
 				}
-			} while (!len || idx<len);
+			} while (!len || idx<length);
 			return idx;
 		}
 		if (dis) ret = rasm_disasm (argv[optind], offset, len,

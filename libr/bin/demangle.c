@@ -1,18 +1,18 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2013 - pancake */
 
 #include <r_bin.h>
 #include <cxx/demangle.h>
 
 // http://code.google.com/p/smali/wiki/TypesMethodsAndFields
 R_API char *r_bin_demangle_java(const char *str) {
-	RBuffer *buf;
 	const char *w = NULL;
-	int n = 0;
-	char *ret;
-	const char *ptr;
 	int is_array = 0;
+	const char *ptr;
 	int is_ret = 0;
 	int wlen = 0;
+	RBuffer *buf;
+	int n = 0;
+	char *ret;
 
 	ptr = strchr (str, '(');
 	if (!ptr)
@@ -119,7 +119,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 			clas = strdup (sym+2);
 			name = strchr (clas, ' ');
 			if (name) *name++ = 0;
-			for (i=0;name[i];i++) {
+			for (i=0; name[i]; i++) {
 				if (name[i]==']') {
 					name[i] = 0;
 				} else
@@ -138,7 +138,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 			return NULL;
 		}
 		*args = 0;
-		name = strdup (args+2);
+		name = strdup (args+2); // memleak :D
 		args = NULL;
 		for (i=0; name[i]; i++) {
 			if (name[i]=='_') {
@@ -154,7 +154,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 	}
 	if (type) {
 		if (!strcmp (type, "field")) {
-			ret = malloc (strlen (type)+strlen (name)+32);
+			ret = malloc (strlen (clas)+strlen (name)+32);
 			sprintf (ret, "field int %s::%s", clas, name);
 		} else {
 			if (nargs) {
@@ -174,6 +174,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 				r_bin_class_add_method (bin, clas, name, nargs);
 			}
 		}
+		name = NULL;
 	}
 	free (clas);
 	free (args);

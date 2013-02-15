@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #define USE_THREADS 1
 
@@ -20,8 +20,8 @@ static int main_help(int line) {
 		printf ("Usage: r2 [-dDwntLqv] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
 			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] [file]\n");
 	if (line != 1) printf (
-		" -a [arch]    set asm.arch eval var\n"
-		" -b [bits]    set asm.bits eval var\n"
+		" -a [arch]    set asm.arch\n"
+		" -b [bits]    set asm.bits\n"
 		" -B [size]    initial block size\n"
 		" -c 'cmd..'   execute radare command\n"
 		" -d           use 'file' as a program to debug\n"
