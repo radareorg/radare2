@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -197,7 +197,8 @@ int main(int argc, char **argv) {
 	bufa = (ut8*)r_file_slurp (file, &sza);
 	bufb = (ut8*)r_file_slurp (file2, &szb);
 	if (bufa == NULL || bufb == NULL) {
-		eprintf ("Error slurping source files\n");
+		eprintf ("radiff2: Cannot open: %s\n",
+			bufa? file2: file);
 		return 1;
 	}
 

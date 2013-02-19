@@ -1,6 +1,13 @@
 #!/bin/sh
-# ragg2-cc : a shellcode compiler -- pancake<nopcode.org> 2011
-#   - for bsd, linux and osx
+# ragg2-cc : a shellcode compiler -- pancake - 2011-2013
+#
+# Supported operating systems:
+#  - GNU/Linux
+#  - OSX
+#  - BSD
+# Supported compilers
+#  - gcc
+#  - clang
 # TODO
 #  remove temporary files
 #  add support for arm
@@ -226,7 +233,7 @@ if [ "$C" = 1 ]; then
 	exit 0
 fi
 
-[ "$X" = 1 ] && exec rax2 -S - < $F.text
+[ "$X" = 1 ] && exec rax2 -S < $F.text
 
 if [ "$D" ]; then
 #	hexdump -C $F.text

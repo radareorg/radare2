@@ -575,13 +575,13 @@ static AssembleFunction assemble[2] = { &arm_assemble, &thumb_assemble };
 int armass_assemble(const char *str, unsigned long off, int thumb) {
 	int i, j;
 	char buf[128];
-	ArmOpcode aop = {0};
-	arm_opcode_parse (&aop, str);
-	aop.off = off;
+	ArmOpcode aop = {.off = off};
 	for (i=j=0; str[i] && i<sizeof (buf)-1; i++, j++) {
 		if (str[j]=='#') { i--; continue; }
 		buf[i] = tolower (str[j]);
 	}
+	buf[i] = 0;
+	arm_opcode_parse (&aop, buf);
 	if (!assemble[thumb] (&aop, buf)) {
 		printf ("armass: Unknown opcode (%s)\n", buf);
 		return -1;

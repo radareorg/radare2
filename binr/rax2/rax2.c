@@ -11,10 +11,9 @@ static int rax (char *str, int len, int last);
 static int use_stdin ();
 
 static int format_output (char mode, const char *s) {
-	ut64 n;
-	char *str = (char*) &n;
+	ut64 n = r_num_math (num, s);
+	const char *str = (char*) &n;
 	char strbits[65];
-	n = r_num_math (num, s);
 
 	if (flags & 2)
 		r_mem_copyendian ((ut8*) str, (ut8*) str, 4, 0);
@@ -55,7 +54,7 @@ static int help () {
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
 		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
-		"  -S    raw -> hexstr     ;  rax2 -S C  J  P\n"
+		"  -S    raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
 		"  -v    version           ;  rax2 -V\n"
 		"  -x    hash string       ;  rax2 -x linux osx\n"
 		"  -k    randomart         ;  rax2 -k 0x34 1020304050\n"
@@ -67,9 +66,9 @@ static int help () {
 static int rax (char *str, int len, int last) {
 	float f;
 	ut8 *buf;
-	char *p, out_mode = (flags&128)?'I':'0';
+	char *p, out_mode = (flags&128)? 'I': '0';
 	int i;
-	if (!len)
+	if (!(flags&4) || !len)
 		len = strlen (str);
 
 	if ((flags & 4))
