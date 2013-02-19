@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <r_util.h>
 
@@ -572,11 +573,17 @@ typedef int (*AssembleFunction)(ArmOpcode *, const char *);
 static AssembleFunction assemble[2] = { &arm_assemble, &thumb_assemble };
 
 int armass_assemble(const char *str, unsigned long off, int thumb) {
+	int i, j;
+	char buf[128];
 	ArmOpcode aop = {0};
 	arm_opcode_parse (&aop, str);
 	aop.off = off;
-	if (!assemble[thumb] (&aop, str)) {
-		printf ("armass: Unknown opcode (%s)\n", str);
+	for (i=j=0; str[i] && i<sizeof (buf)-1; i++, j++) {
+		if (str[j]=='#') { i--; continue; }
+		buf[i] = tolower (str[j]);
+	}
+	if (!assemble[thumb] (&aop, buf)) {
+		printf ("armass: Unknown opcode (%s)\n", buf);
 		return -1;
 	}
 	return aop.o;

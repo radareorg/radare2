@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
+
 
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +9,13 @@
 #include "class.h"
 #include <r_types.h>
 #include <r_util.h>
+
+#if 0
+#undef IFDBG
+#define IFDBG if(1)
+#endif
+
+// pool count = 0x52
 
 static RBinJavaConstant r_bin_java_constants[] = {
 	{ "Class", 7, 2 }, // 2 name_idx
@@ -76,7 +84,6 @@ static int attributes_walk(RBinJavaObj *bin, struct r_bin_java_attr_t *attr, int
 		}
 		if (fields) {
 			attr->type = R_BIN_JAVA_TYPE_FIELD;
-			eprintf ("FIELD\n");
 		} else if (sz3 > 0) {
 			attr->length = sz3;
 			IFDBG printf ("     Length: %d\n", sz3); //R_BIN_JAVA_UINT(buf, 2));
@@ -179,8 +186,8 @@ eprintf ("local.%d.%d.name=%s\n", bin->midx, i, name);
 				attr->info.const_value_idx = R_BIN_JAVA_USHORT(buf, 0);
 				IFDBG printf ("     ConstValueIndex: %d\n", attr->info.const_value_idx);
 			} else {
-				eprintf ("** ERROR ** Unknown section '%s'\n", name);
-				return R_FALSE;
+				//if (*name) eprintf ("** ERROR ** Unknown section '%s'\n", name);
+				IFDBG eprintf ("** ERROR ** Unknown section name\n");
 			}
 		}
 	}
@@ -202,7 +209,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	/* Initialize cp_null_item */
 	cp_null_item.tag = -1;
 	strncpy (cp_null_item.name, "(null)", sizeof (cp_null_item.name)-1);
-	cp_null_item.value = strdup ("(null)");
+	cp_null_item.value = strdup ("(null)"); // strdup memleak wtf
 
 	/* start parsing */
 	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf, 10);
@@ -223,7 +230,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	IFDBG printf ("ConstantPoolCount %d\n", bin->cf.cp_count);
 	bin->cp_items = malloc (sizeof (RBinJavaCpItem)*(bin->cf.cp_count+1));
 //eprintf ("CP = %d = %p\n", bin->cf.cp_count, bin->cp_items);
-	bufsz = 1024;
+	bufsz = 4024;
 	buf = malloc (bufsz);
 	for (i=0; i<bin->cf.cp_count; i++) {
 		r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 1);
@@ -266,8 +273,10 @@ static int javasm_init(RBinJavaObj *bin) {
 			}
 			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, sz);
 			buf[sz] = '\0';
+//eprintf ("\n %d ((%s))\n", i+1, buf);
 			break;
 		default:
+//eprintf ("\n %d ((%s))\n", i+1, c->name);
 			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, c->len);
 		}
 
@@ -279,15 +288,21 @@ static int javasm_init(RBinJavaObj *bin) {
 			// eprintf ("%s\n", buf);
 			bin->cp_items[i].value = strdup (buf);
 			break;
+		case 3:
+			IFDBG eprintf ("integer = %d\n", R_BIN_JAVA_UINT (buf, 0));
+			break;
 		case 5:
 		case 6:
-			i += 2;
+			IFDBG eprintf ("longlong %d\n", R_BIN_JAVA_UINT (buf, 0));
+			IFDBG eprintf ("longlong %d\n", R_BIN_JAVA_UINT (buf, 4));
+			// 64bit values
+			i++; // skip one cp item
 			break;
 		case 7:
-			IFDBG eprintf ("%d\n", R_BIN_JAVA_USHORT (buf,0));
+			IFDBG eprintf ("class ref %d\n", R_BIN_JAVA_USHORT (buf, 0));
 			break;
 		case 8:
-			IFDBG printf("string ptr %d\n", R_BIN_JAVA_USHORT(buf, 0));
+			IFDBG printf("string ptr %d\n", R_BIN_JAVA_USHORT (buf, 0));
 			break;
 		case 9:
 		case 11:
@@ -300,7 +315,7 @@ static int javasm_init(RBinJavaObj *bin) {
 			IFDBG printf("descriptor = %d\n", R_BIN_JAVA_USHORT(buf,2));
 			break;
 		default:
-			printf ("%d\n", R_BIN_JAVA_UINT (buf, 40));
+			printf ("UNKNOWN TAG %d\n", R_BIN_JAVA_UINT (buf, 40));
 		}
 	}
 	free (buf);
@@ -309,11 +324,11 @@ static int javasm_init(RBinJavaObj *bin) {
 	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf2,
 		sizeof(struct r_bin_java_classfile2_t));
 	IFDBG printf ("Access flags: 0x%04x\n", bin->cf2.access_flags);
-	bin->cf2.this_class = R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class);
+	bin->cf2.this_class = R_BIN_JAVA_SWAPUSHORT (bin->cf2.this_class);
 	IFDBG printf ("This class: %d\n", bin->cf2.this_class);
 	//printf("This class: %d (%s)\n", R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class), bin->cp_items[R_BIN_JAVA_SWAPUSHORT(bin->cf2.this_class)-1].value); // XXX this is a double pointer !!1
 	//printf("Super class: %d (%s)\n", R_BIN_JAVA_SWAPUSHORT(bin->cf2.super_class), bin->cp_items[R_BIN_JAVA_SWAPUSHORT(bin->cf2.super_class)-1].value);
-	sz = read_short(bin);
+	sz = read_short (bin);
 
 	/* TODO: intefaces*/
 	IFDBG printf("Interfaces count: %d\n", sz);
@@ -322,9 +337,8 @@ static int javasm_init(RBinJavaObj *bin) {
 		buf = malloc (bufsz+8);
 		r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, bufsz);
 		sz = read_short (bin);
-		for (i=0;i<sz;i++) {
-			fprintf (stderr, "Interfaces: TODO\n");
-		}
+		for (i=0;i<sz;i++)
+			eprintf ("Interfaces: TODO (%d)\n", sz);
 	} else buf = malloc (128);
 
 	sz = read_short (bin);
@@ -348,7 +362,8 @@ static int javasm_init(RBinJavaObj *bin) {
 			if (sz2 > 0) {
 				bin->fields[i].attributes = malloc(1+sz2 * sizeof(struct r_bin_java_attr_t));
 				for (j=0;j<sz2;j++)
-					attributes_walk(bin, &bin->fields[i].attributes[j], sz2, 1);
+					if (!attributes_walk(bin, &bin->fields[i].attributes[j], sz2, 1))
+						return R_TRUE; // false?
 			}
 		}
 	}
@@ -357,23 +372,35 @@ static int javasm_init(RBinJavaObj *bin) {
 	bin->methods_count = sz;
 	IFDBG eprintf ("Methods count: %d\n", sz);
 	if (sz>0) {
-		bin->methods = malloc(sz * sizeof(struct r_bin_java_fm_t));
+		int methods_sz = sz * sizeof(struct r_bin_java_fm_t);
+		bin->methods = malloc (methods_sz);
+		memset (bin->methods, 0, methods_sz);
 		for (i=0; i<sz; i++) {
 			r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)buf, 8);
 
-			bin->methods[i].flags = R_BIN_JAVA_USHORT(buf, 0);
+			bin->methods[i].flags = R_BIN_JAVA_USHORT (buf, 0);
 			IFDBG printf("%2d: Access Flags: %d\n", i, bin->methods[i].flags);
-			bin->methods[i].name_idx = R_BIN_JAVA_USHORT(buf, 2);
-#if OLD
+			bin->methods[i].name_idx = R_BIN_JAVA_USHORT (buf, 2);
+#if 0
 			bin->methods[i].name = r_str_dup (NULL, (get_CP(bin, R_BIN_JAVA_USHORT(buf, 2)-1))->value);
 #else
-			bin->methods[i].name = malloc (1024);
-// XXX: can null ptr here
-			snprintf (bin->methods[i].name, 1023, "%s%s",
-				(get_CP (bin, R_BIN_JAVA_USHORT (buf, 2)-1))->value,
-				(get_CP (bin, R_BIN_JAVA_USHORT (buf, 2)))->value);
+			{
+				struct r_bin_java_cp_item_t *a, *b;
+				a = get_CP (bin, R_BIN_JAVA_USHORT (buf, 2)-1);
+				b = get_CP (bin, R_BIN_JAVA_USHORT (buf, 2));
+				if (a == &cp_null_item || b == &cp_null_item) {
+					bin->methods[i].name = NULL;
+					bin->methods[i].name = malloc (32);
+					sprintf (bin->methods[i].name, "sym.method_%d", i);
+				} else {
+					int newlen = strlen (a->value) + strlen (b->value);
+					bin->methods[i].name = malloc (newlen+2);
+					// XXX: can null ptr here
+					snprintf (bin->methods[i].name, newlen, "%s%s", a->value, b->value);
+				}
+			}
 #endif
-bin->midx = i;
+			bin->midx = i;
 			IFDBG printf("    Name Index: %d (%s)\n", bin->methods[i].name_idx, bin->methods[i].name);
 			bin->methods[i].descriptor_idx = R_BIN_JAVA_USHORT (buf, 4);
 			bin->methods[i].descriptor = r_str_dup (NULL, (get_CP(bin, R_BIN_JAVA_USHORT(buf, 4)-1))->value);
@@ -386,9 +413,9 @@ bin->midx = i;
 				bin->methods[i].attributes = malloc (1+sz2 * sizeof (struct r_bin_java_attr_t));
 				for (j=0; j<sz2; j++) {
 					if (!attributes_walk (bin, &bin->methods[i].attributes[j], sz2, 0))
-						return R_TRUE; // can be false :?
+						break; // can be false :?
 				}
-			}
+			} else bin->methods[i].attributes = NULL;
 		}
 	}
 	free (buf);
@@ -404,7 +431,8 @@ R_API char* r_bin_java_get_version(RBinJavaObj* bin) {
 R_API ut64 r_bin_java_get_main(RBinJavaObj* bin) {
 	int i, j;
 	for (i=0; i < bin->methods_count; i++) {
-		if (!strcmp(bin->methods[i].name, "main([Ljava/lang/String;)V"))
+		if (!strcmp (bin->methods[i].name, "main([Ljava/lang/String;)") || // WTF.. 
+				!strcmp (bin->methods[i].name, "main([Ljava/lang/String;)V"))
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
 					return (ut64)bin->methods[i].attributes->info.code.code_offset;
@@ -414,38 +442,54 @@ R_API ut64 r_bin_java_get_main(RBinJavaObj* bin) {
 
 R_API ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin) {
 	int i, j;
-	for (i=0; i < bin->methods_count; i++)
+	for (i=0; i < bin->methods_count; i++) {
 		if (!strcmp (bin->methods[i].name, "<init>()V"))
 			for (j=0; j < bin->methods[i].attr_count; j++)
 				if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE)
 					return (ut64)bin->methods[i].attributes->info.code.code_offset;
+	}
 	return 0;
 }
 
 struct r_bin_java_sym_t* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	struct r_bin_java_sym_t *symbols;
 	int ns, i, j, ctr = 0;
+	int symbols_sz = (bin->methods_count + 1) *  sizeof (struct r_bin_java_sym_t);
 
-	if (!(symbols = malloc ((bin->methods_count + 1) * \
-			sizeof (struct r_bin_java_sym_t))))
+	if (!(symbols = malloc (symbols_sz)))
 		return NULL;
 	bin->fsym = 0;
 	bin->fsymsz = 0;
 	for (i=0; i < bin->methods_count; i++) {
-		memcpy (symbols[ctr].name, bin->methods[i].name, R_BIN_JAVA_MAXSTR);
-		symbols[ctr].name[R_BIN_JAVA_MAXSTR-1] = '\0';
-		for (j=0; j < bin->methods[i].attr_count; j++)
+		symbols[i].last = 0;
+		if (bin->methods[i].name) {
+			strncpy (symbols[ctr].name, bin->methods[i].name, R_BIN_JAVA_MAXSTR);
+			symbols[ctr].name[R_BIN_JAVA_MAXSTR-1] = '\0';
+#if 0
+		} else {
+eprintf ("-----------\n");
+			sprintf (symbols[ctr].name, "method_%d", i);
+			symbols[ctr].offset = (ut64)123; //bin->methods[i].attributes->info.code.code_offset;
+			symbols[ctr].size = 456; //bin->methods[i].attributes->info.code.code_length;
+			ctr++;
+			continue;
+#endif
+			symbols[ctr].offset = (ut64)bin->methods[i].attributes->info.code.code_offset;
+			symbols[ctr].size = bin->methods[i].attributes->info.code.code_length;
+		}
+		for (j=0; j < bin->methods[i].attr_count; j++) {
 			if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE) {
 				symbols[ctr].offset = (ut64)bin->methods[i].attributes->info.code.code_offset;
 				symbols[ctr].size = bin->methods[i].attributes->info.code.code_length;
-				symbols[ctr].last = 0;
 				if (bin->fsym == 0 || symbols[ctr].offset<bin->fsym)
 					bin->fsym = symbols[ctr].offset;
 				ns = symbols[ctr].offset + symbols[ctr].size;
 				if (ns>bin->fsymsz)
 					bin->fsymsz = ns;
-				ctr++;
+				break;
 			}
+		}
+		ctr++;
 	}
 	bin->fsymsz -= bin->fsym;
 	symbols[ctr].last = 1;
@@ -464,7 +508,7 @@ struct r_bin_java_str_t* r_bin_java_get_strings(RBinJavaObj* bin) {
 			strings[ctr].offset = (ut64)bin->cp_items[i].off;
 			strings[ctr].ordinal = (ut64)bin->cp_items[i].ord;
 			strings[ctr].size = (ut64)bin->cp_items[i].length;
-			memcpy (strings[ctr].str, bin->cp_items[i].value, R_BIN_JAVA_MAXSTR);
+			strncpy (strings[ctr].str, bin->cp_items[i].value, R_BIN_JAVA_MAXSTR);
 			strings[ctr].last = 0;
 			ctr++;
 		}

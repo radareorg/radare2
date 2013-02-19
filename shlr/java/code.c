@@ -1,5 +1,4 @@
-// asm.c
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -36,7 +35,6 @@ static int java_resolve(int idx, char *str) {
 	if (str == NULL)
 		return 0;
 	sprintf (str, "(%d)", idx);
-// eprintf ("
 	if (cf.cp_count<1) {
 		/* load constant pool here */
 	}
