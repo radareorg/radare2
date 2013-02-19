@@ -309,6 +309,7 @@ R_API RList* r_bin_get_imports(RBin *bin) {
 }
 
 R_API RBinInfo* r_bin_get_info(RBin *bin) {
+	if (!bin->cur.buf) return NULL;
 	return bin->cur.o->info;
 }
 
