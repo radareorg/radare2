@@ -51,7 +51,7 @@ static void r_core_file_info (RCore *core, int mode) {
 			r_cons_printf (",\"format\":\"%s\"", core->bin->cur.curplugin->name);
 		r_cons_printf ("}");
 	} else {
-		r_cons_printf ("# Core file info\n");
+		//r_cons_printf ("# Core file info\n");
 		r_cons_printf ("file\t%s\n", fn);
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		r_cons_printf ("fd\t%d\n", core->file->fd->fd);

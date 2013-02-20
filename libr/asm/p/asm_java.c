@@ -14,9 +14,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	void *cp;
 	RBinJavaObj *obj = NULL;
 	RBin *b = a->binb.bin;
-	if (!strcmp (b->cur.curplugin->name, "java")) { // XXX slow
-		obj = b->cur.bin_obj; //o; 
-		if (obj) r_java_setcp (obj->cp_items, obj->cf.cp_count);
+	if (b->cur.curplugin) {
+		if (!strcmp (b->cur.curplugin->name, "java")) { // XXX slow
+			obj = b->cur.bin_obj; //o; 
+			if (obj) r_java_setcp (obj->cp_items, obj->cf.cp_count);
+		}
 	}
 	// XXX: crossmodule dependency
 // TODO: get class info from rbin if loaded

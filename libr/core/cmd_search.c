@@ -504,6 +504,7 @@ c = 0;
 		"Configuration:\n"
 		" e cmd.hit = x         ; command to execute on every search hit\n"
 		" e search.distance = 0 ; search string distance\n"
+		" e search.in = [foo]   ; boundaries to raw, block, file, section)\n"
 		" e search.align = 4    ; only catch aligned search hits\n"
 		" e search.from = 0     ; start address\n"
 		" e search.to = 0       ; end address\n"
