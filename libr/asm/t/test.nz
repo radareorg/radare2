@@ -37,6 +37,13 @@ if [ -n "$1" ]; then
 fi
 
 # some may fail coz shorter length
+foo 'pop cs'
+foo 'pop ds'
+foo 'pop fs'
+foo 'pop gs'
+foo 'push fs'
+foo 'push ds'
+exit 1
 foo 'mov eax,[eax+ebx*4+32]' # this is ok on x86.olly, but broken on x86.nz
 foo 'lea eax, [ebp+24]'
 foo 'lea eax, [ebx+24]'

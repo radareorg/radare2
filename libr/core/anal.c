@@ -957,17 +957,21 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	int endi = core->anal->big_endian;
         int i, j;
 
-	if (addr != core->offset) {
+	//if (addr != core->offset) {
 		buf = malloc (len);
 		memset (buf, 0xff, len);
-		//int r = r_io_read_at (core->io, addr, buf, len);
-		//int r = r_core_read_at (core, addr, buf, len);
-		// TODO: handle error here
-	}
+		r_io_read_at (core->io, addr, buf, len);
+	//}
 
-	for (i = j = 0; i<len && j<count; j++ ) {
+	for (i = j = 0; j<count; j++ ) {
 		char *str;
 
+		if (i>=len) {
+			r_io_read_at (core->io, addr+i, buf, len);
+			i = 0;
+			eprintf ("load next\n");
+			continue;
+		}
 		RAnalData *d = r_anal_data (core->anal, addr+i,
 			buf+i, len-i);
 		str = r_anal_data_to_string (d);
@@ -991,7 +995,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 		free (str);
 		r_anal_data_free (d);
         }
-	if (addr != core->offset)
+	//if (addr != core->offset)
 		free (buf);
 	return R_TRUE;
 }

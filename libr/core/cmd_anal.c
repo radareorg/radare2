@@ -101,28 +101,28 @@ static void cmd_anal_trampoline (RCore *core, const char *input) {
 	ut64 b = p?r_num_math (core->num, p+1):0;
 	free (inp);
 	switch (bits) {
-		case 32:
-			for (i=0; i<core->blocksize; i+=4) {
-				ut32 n;
-				memcpy (&n, core->block+i, sizeof(ut32));
-				if (n>=a && n<=b) {
-					r_cons_printf ("f trampoline.%x @ 0x%"PFMT64x"\n", n, core->offset+i);
-					r_cons_printf ("Cd 4 @ 0x%"PFMT64x":4\n", core->offset+i);
-					// TODO: add data xrefs
-				}
+	case 32:
+		for (i=0; i<core->blocksize; i+=4) {
+			ut32 n;
+			memcpy (&n, core->block+i, sizeof(ut32));
+			if (n>=a && n<=b) {
+				r_cons_printf ("f trampoline.%x @ 0x%"PFMT64x"\n", n, core->offset+i);
+				r_cons_printf ("Cd 4 @ 0x%"PFMT64x":4\n", core->offset+i);
+				// TODO: add data xrefs
 			}
-			break;
-		case 64:
-			for (i=0; i<core->blocksize; i+=8) {
-				ut32 n;
-				memcpy (&n, core->block+i, sizeof(ut32));
-				if (n>=a && n<=b) {
-					r_cons_printf ("f trampoline.%"PFMT64x" @ 0x%"PFMT64x"\n", n, core->offset+i);
-					r_cons_printf ("Cd 8 @ 0x%"PFMT64x":8\n", core->offset+i);
-					// TODO: add data xrefs
-				}
+		}
+		break;
+	case 64:
+		for (i=0; i<core->blocksize; i+=8) {
+			ut32 n;
+			memcpy (&n, core->block+i, sizeof(ut32));
+			if (n>=a && n<=b) {
+				r_cons_printf ("f trampoline.%"PFMT64x" @ 0x%"PFMT64x"\n", n, core->offset+i);
+				r_cons_printf ("Cd 8 @ 0x%"PFMT64x":8\n", core->offset+i);
+				// TODO: add data xrefs
 			}
-			break;
+		}
+		break;
 	}
 }
 
@@ -207,7 +207,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 	int ret, i, idx;
 	RAnalOp op;
 
-	for (idx=ret=0; idx<len && (nops&&i<nops); i++, idx+=ret) {
+	for (idx=ret=0; idx<len && (!nops|| (nops&&i<nops)); i++, idx+=ret) {
 		ret = r_anal_op (core->anal, &op,
 				core->offset+idx, buf + idx, (len-idx));
 		if (ret<1) {
@@ -239,7 +239,7 @@ static int cmd_anal(void *data, const char *input) {
 	r_cons_break (NULL, NULL);
 
 	switch (input[0]) {
-	case '8':
+	case '8': // TODO: rename to 'ab'?
 		if (input[1]==' ') {
 			int len;
 			ut8 *buf = malloc (strlen (input));
@@ -290,10 +290,10 @@ static int cmd_anal(void *data, const char *input) {
 				char *p;
 				ut64 a, b;
 				RAnalFunction *fcn;
-				char *mi = strdup (input);
-				if (mi && mi[2]==' ' && (p=strchr (mi+3, ' '))) {
+				char *mi = strdup (input+2);
+				if (mi && *mi==' ' && (p=strchr (mi+1, ' '))) {
 					*p = 0;
-					a = r_num_math (core->num, mi+2);
+					a = r_num_math (core->num, mi);
 					b = r_num_math (core->num, p+1);
 					fcn = r_anal_fcn_find (core->anal, a, R_ANAL_FCN_TYPE_ROOT);
 					if (fcn) {
@@ -344,7 +344,8 @@ static int cmd_anal(void *data, const char *input) {
 		switch (input[1]) {
 		case '-':
 			{
-			ut64 addr = r_num_math (core->num, input+2);
+			ut64 addr = input[2]?
+				r_num_math (core->num, input+2): core->offset;
 			r_anal_fcn_del_locs (core->anal, addr);
 			r_anal_fcn_del (core->anal, addr);
 			}
@@ -844,8 +845,7 @@ static int cmd_anal(void *data, const char *input) {
 		case '\0':
 			{
 				int word = core->assembler->bits / 8;
-				r_core_anal_data (core, core->offset,
-						core->blocksize/word, 1);
+				r_core_anal_data (core, core->offset, core->blocksize, 1);
 			}
 			break;
 		default:
