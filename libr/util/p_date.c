@@ -35,7 +35,7 @@ R_API int r_print_date_unix(struct r_print_t *p, const ut8 *buf, int len) {
 	const struct tm* time;
 
 	if (p != NULL && len >= sizeof(t)) {
-		r_mem_copyendian ((ut8*)&t, buf, sizeof(time_t), p->bigendian);
+		r_mem_copyendian ((ut8*)&t, buf, sizeof(time_t), p->big_endian);
 		// "%d:%m:%Y %H:%M:%S %z",
 		if (p->datefmt && p->datefmt[0]) {
 			time = (const struct tm*)gmtime((const time_t*)&t);
@@ -89,7 +89,7 @@ R_API int r_print_date_w32(struct r_print_t *p, const ut8 *buf, int len) {
 	char datestr[256];
 
 	if (p && p->datefmt && len >= sizeof (ut64)) {
-		r_mem_copyendian ((ut8*)&l, buf, sizeof (ut64), p->bigendian);
+		r_mem_copyendian ((ut8*)&l, buf, sizeof (ut64), p->big_endian);
 		l /= 10000000; // 100ns to s
 		l = (l > L ? l-L : 0); // isValidUnixTime?
 		t = (time_t) l; // TODO limit above!

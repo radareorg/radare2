@@ -31,7 +31,7 @@ R_API RPrint *r_print_new() {
 	p->oprintf = nullprinter;
 	p->stride = 0;
 	p->interrupt = 0;
-	p->bigendian = 0;
+	p->big_endian = CPU_ENDIAN;
 	p->col = 0;
 	p->width = 78;
 	p->cols = 16;

@@ -54,6 +54,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 	char namefmt[8];
 	ut8 buffer[256];
 
+	endian = p->big_endian;
+
 	oldprintf = NULL;
 	realprintf = p->printf;
 

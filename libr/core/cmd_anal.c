@@ -844,7 +844,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		case '\0':
 			{
-				int word = core->assembler->bits / 8;
+				//int word = core->assembler->bits / 8;
 				r_core_anal_data (core, core->offset, core->blocksize, 1);
 			}
 			break;

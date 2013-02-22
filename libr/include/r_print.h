@@ -33,7 +33,7 @@ typedef struct r_print_t {
 	int (*oprintf)(const char *str, ...);
 	/* TODO: add printf callback */
 	int interrupt;
-	int bigendian;
+	int big_endian;
 	int width;
 	int limit;
 	int cur_enabled;

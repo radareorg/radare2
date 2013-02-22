@@ -793,17 +793,17 @@ static int cmd_print(void *data, const char *input) {
 				r_print_date_dos (core->print, core->block+l, 4);
 			break;
 		case 'n':
-			core->print->bigendian = !core->print->bigendian;
+			core->print->big_endian = !core->print->big_endian;
 			for (l=0; l<len; l+=sizeof (ut64))
 				r_print_date_w32 (core->print, core->block+l, sizeof (ut64));
-			core->print->bigendian = !core->print->bigendian;
+			core->print->big_endian = !core->print->big_endian;
 			break;
 		case '?':
 			r_cons_printf (
 			"Usage: pt[dn?]\n"
-			" pt      print unix time (32 bit cfg.bigendian)\n"
-			" ptd     print dos time (32 bit cfg.bigendian)\n"
-			" ptn     print ntfs time (64 bit !cfg.bigendian)\n"
+			" pt      print unix time (32 bit cfg.big_endian)\n"
+			" ptd     print dos time (32 bit cfg.big_endian)\n"
+			" ptn     print ntfs time (64 bit !cfg.big_endian)\n"
 			" pt?     show help message\n");
 			break;
 		}
