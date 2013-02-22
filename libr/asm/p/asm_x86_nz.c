@@ -105,6 +105,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	if (!strcmp (str, "outsb")) { data[0] = 0x6e; return 1; }
 	if (!strcmp (str, "insb")) { data[0] = 0x6c; return 1; }
 	if (!strcmp (str, "hlt")) { data[0] = 0xf4; return 1; }
+	if (!strcmp (str, "cpuid")) { data[0] = 0xf; data[1] = 0xa2; return 2; }
 
 	if (!strcmp (str, "call $$")) {
 		memcpy (data, "\xE8\xFF\xFF\xFF\xFF\xC1", 6);
@@ -440,12 +441,23 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				}
 				return l;
 			}
-			dst = r_num_math (NULL, arg);
-			addr = dst;
-			ptr = (ut8 *)&addr;
 			if (!arg) {
 				eprintf ("Missing argument for push\n");
 				return 0;
+			}
+			dst = r_num_math (NULL, arg);
+			addr = dst;
+			ptr = (ut8 *)&addr;
+			if (arg[0] && arg[1]=='s' && !arg[2]) {
+				data[l++] = 0x0f;
+				switch (arg[0]) {
+				case 'c': data[0] = 0x0e; return 1;
+				case 'd': data[0] = 0x1e; return 1;
+				case 's': data[0] = 0x16; return 1;
+				case 'f': data[l++] = 0xa0; break;
+				case 'g': data[l++] = 0xa8; break;
+				}
+				return l;
 			}
 			if (!isnum (a, arg)) {
 				ut8 ch = getreg (arg) | 0x50;
@@ -491,6 +503,16 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 						data[l++] = 0x45;
 						data[l++] = 0;
 					} else data[l++] = r;
+				}
+				return l;
+			}
+			if (arg[0] && arg[1]=='s' && !arg[2]) {
+				data[l++] = 0x0f;
+				switch (arg[0]) {
+				case 's': data[0] = 0x17; return 1;
+				case 'f': data[l++] = 0xa1; break;
+				case 'g': data[l++] = 0xa9; break;
+				case 'd': data[0] = 0x1f; return 1;
 				}
 				return l;
 			}

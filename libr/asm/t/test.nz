@@ -37,7 +37,7 @@ if [ -n "$1" ]; then
 fi
 
 # some may fail coz shorter length
-foo 'pop cs'
+foo 'push cs'
 foo 'pop ds'
 foo 'pop fs'
 foo 'pop gs'

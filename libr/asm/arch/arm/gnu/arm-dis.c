@@ -5106,7 +5106,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
       printer = print_insn_thumb16;
       info->bytes_per_chunk = 2;
       size = 2;
-printf ("THUMB MODE \n");
+//printf ("THUMB MODE \n");
 
       status = info->read_memory_func (pc, (bfd_byte *) b, 2, info);
       if (!little_code)
