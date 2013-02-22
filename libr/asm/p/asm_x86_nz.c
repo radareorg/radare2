@@ -919,6 +919,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 		if (!strcmp(op, "int3")) {
 			data[l++] = 0xcc;
 		} else
+		if (!strcmp(op, "iret") || !strcmp(op, "iretd")) {
+			data[l++] = 0xcf;
+		} else
 		if (!strcmp (op, "pusha")) {
 			data[l++] = 0x60;
 		} else
