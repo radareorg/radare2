@@ -1,4 +1,4 @@
-.Dd Feb 15, 2013
+.Dd Feb 24, 2013
 .Dt RASM2 1
 .Os
 .Sh NAME
@@ -6,7 +6,7 @@
 .Nd radare2 assembler and disassembler tool
 .Sh SYNOPSIS
 .Nm rasm2
-.Op Fl dDfBCLev
+.Op Fl dDfBCLevw
 .Op Fl F Ar in:out
 .Op Fl o Ar offset
 .Op Fl a Ar arch
@@ -46,6 +46,8 @@ List supported asm plugins
 Use big endian
 .It Fl h
 Show usage help message.
+.It Fl w
+Describe opcode (whats op)
 .El
 .Sh EXAMPLES
 .Pp

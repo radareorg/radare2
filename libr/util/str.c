@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -74,14 +74,14 @@ R_API int r_str_replace_char (char *s, int a, int b) {
 	char *o = s;
 	for (; *o; s++, o++) {
 		if (*o==a) {
+			ret++;
 			if (b) {
 				*s = b;
-				ret++;
-				break;
+			} else {
+				/* remove char */
+				s--;
 			}
-			o++;
-		}
-		*s = *o;
+		} else *s = *o;
 	}
 	*s = 0;
 	return ret;

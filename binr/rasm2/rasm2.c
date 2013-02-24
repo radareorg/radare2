@@ -28,7 +28,7 @@ static int rasm_show_help() {
 	printf ("rasm2 [-de] [-o offset] [-a arch] [-s syntax] [-f file ..] \"code\"|hex|-\n"
 		" -d           Disassemble from hexpair bytes\n"
 		" -D           Disassemble showing hexpair and opcode\n"
-		" -f           Read data from file\n"
+		" -f [file]    Read data from file\n"
 		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
 		" -o [offset]  Set start address for code (default 0)\n"
 		" -a [arch]    Set assemble/disassemble plugin\n"
@@ -40,6 +40,7 @@ static int rasm_show_help() {
 		" -L           List supported asm plugins\n"
 		" -e           Use big endian\n"
 		" -v           Show version information\n"
+		" -w           What's this instruction for? describe opcode\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
 		" If the last argument is '-' reads from stdin\n");
 	return 0;
@@ -153,7 +154,7 @@ int main(int argc, char *argv[]) {
 	char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL;
 	ut64 offset = 0;
-	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c;
+	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0;
 
 	a = r_asm_new ();
@@ -166,7 +167,7 @@ int main(int argc, char *argv[]) {
 		return rasm_show_help ();
 
 	r_asm_use (a, R_SYS_ARCH);
-	while ((c = getopt (argc, argv, "DCeva:b:s:do:Bl:hLf:F:")) != -1) {
+	while ((c = getopt (argc, argv, "DCeva:b:s:do:Bl:hLf:F:w")) != -1) {
 		switch (c) {
 		case 'D':
 			dis = 2;
@@ -214,6 +215,9 @@ int main(int argc, char *argv[]) {
 			return 0;
 		case 'h':
 			return rasm_show_help ();
+		case 'w':
+			whatsop = R_TRUE;
+			break;
 		}
 	}
 
@@ -232,6 +236,15 @@ int main(int argc, char *argv[]) {
 	//if (!r_asm_set_bits (a, bits))
 	//	eprintf ("WARNING: cannot set asm backend to %d bits\n", bits);
 
+	if (whatsop) {
+		const char *s = r_asm_describe (a, argv[optind]);
+		if (s) {
+			printf ("%s\n", s);
+			return 0;
+		}
+		return 1;
+	}
+
 	if (filters) {
 		char *p = strchr (filters, ':');
 		if (p) {
@@ -247,13 +260,14 @@ int main(int argc, char *argv[]) {
 
 	if (file) {
 		char *content;
-		int length;
+		int length = 0;
 		if (!strcmp (file, "-")) {
 			ret = read (0, buf, sizeof (buf)-1);
 			if (ret == R_ASM_BUFSIZE)
 				eprintf ("rasm2: Cannot slurp all stdin data\n");
 			if (ret>=0) // only for text
 				buf[ret] = '\0';
+			len = ret;
 			if (dis) ret = rasm_disasm (buf, offset, len,
 					a->bits, ascii, bin, dis-1);
 			else ret = rasm_asm (buf, offset, len, a->bits, bin);

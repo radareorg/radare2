@@ -414,8 +414,13 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	lbuf = strdup (buf);
 
 	/* accept ';' as comments when input is multiline */
-	if (strchr (lbuf, '\n'))
-		r_str_replace_char (lbuf, ';', '#');
+	{
+		char *nl = strchr (lbuf, '\n');
+		if (nl) {
+			if (strchr (nl+1, '\n'))
+				r_str_replace_char (lbuf, ';', '#');
+		}
+	}
 
 	if (strchr (lbuf, ':'))
 		labels = 1;
@@ -425,8 +430,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		(ptr = strchr (tokens[ctr], ';')) || 
 		(ptr = strchr (tokens[ctr], '\n')) ||
 		(ptr = strchr (tokens[ctr], '\r'));
-		tokens[++ctr] = ptr+1)
+		tokens[++ctr] = ptr+1) {
 			*ptr = '\0';
+	}
 
 	/* Stage 0-1: Parse labels*/
 	/* Stage 2: Assemble */

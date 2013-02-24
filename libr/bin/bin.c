@@ -117,6 +117,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	RBinArch *a = &bin->cur;
 	RBinObject *o = a->o;
 	a->curplugin = NULL;
+// DEBUG eprintf ("LOAD\n");
 	r_list_foreach (bin->plugins, it, plugin) {
 		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
 			(!dummy && (plugin->check && plugin->check (&bin->cur)))) {
@@ -426,6 +427,7 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) {
 	int i;
 	RBinInfo *info;
+	//if (bin->narch >1) // fix double load when no multiarch bin is loaded
 	for (i=0; i<bin->narch; i++) {
 		r_bin_select_idx (bin, i);
 		info = bin->cur.o->info;
