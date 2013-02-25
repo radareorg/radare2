@@ -398,9 +398,11 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 	return NULL;
 }
 
-static int __disasm(RCore *core, ut64 addr) {
+static int __disasm(void *_core, ut64 addr) {
+	RCore *core = _core;
+	ut8 buf[32], *oblock;
 	int len;
-	ut8 buf[32], *oblock = core->block;
+	oblock = core->block;
 	r_io_read_at (core->io, addr, (ut8*)buf, sizeof (buf));
 	len = r_core_print_disasm_instructions (core, sizeof (buf), 1);
 	core->block = oblock;
