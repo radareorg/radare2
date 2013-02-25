@@ -12,7 +12,7 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
 	int depth = r_config_get_i (core->config, "anal.depth");
 	//eprintf ("ap: Found function prelude %d at 0x%08"PFMT64x"\n", preludecnt, addr);
-	searchhits = kw->count+1;
+	searchhits ++; //= kw->count+1;
 	r_core_anal_fcn (core, addr, -1, R_ANAL_REF_TYPE_NULL, depth);
 	preludecnt++;
 	return R_TRUE;
@@ -83,7 +83,7 @@ R_API int r_core_search_preludes(RCore *core) {
 
 static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RCore *core = (RCore *)user;
-	searchhits = kw->count+1;
+	searchhits ++ ;///= kw->count+1;
 	if (searchcount) {
 		if (!--searchcount) {
 			//eprintf ("\nsearch stop: search.count reached\n");
@@ -579,7 +579,7 @@ c = 0;
 					searchhits,
 					searchprefix, core->search->n_kws-1,
 					searchprefix, core->search->n_kws-1, searchcount-1);
-			} else eprintf ("hits: %d\n", searchhits>0?searchhits-1:0);
+			} else eprintf ("hits: %d\n", searchhits);
 		} else eprintf ("No keywords defined\n");
 	}
 	return R_TRUE;
