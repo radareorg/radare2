@@ -443,7 +443,7 @@ static int cmd_help(void *data, const char *input) {
 		" #[algo] [len]         calculate hash checksum of current block\n"
 		" .[ file|!sh|cmd]      interpret as radare commands\n"
 		" q [ret]               quit program with a return value\n"
-		" :/;                   (:) manage command plugins, (;) set raw comments\n"
+		" :/;                   (:) manage command plugins, (;) separator\n"
 		" a                     perform analysis of code\n"
 		" b [bsz]               get or change block size\n"
 		" c[dqxXfg] [arg]       compare block with given data\n"

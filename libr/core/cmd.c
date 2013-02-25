@@ -622,20 +622,13 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (*cmd && cmd[1] && !memcmp (cmd, "# ", 2))
 		return 0;
 	cmt = *icmd ? strchr (icmd+1, '#'): NULL;
-	if (cmt && cmt[1]==' ') {
+	if (cmt && cmt[1]==' ')
 		*cmt = 0;
-	}
-	if (*cmd == ';') {
-		r_meta_add (core->anal->meta, 'C', core->offset, core->offset+1, cmd+1);
-		colon = NULL;
-		return R_TRUE;
-	} else {
-		if (*cmd != '"') {
-			colon = strchr (icmd, ';');
-			if (colon)
-				*colon = 0;
-		} else colon = NULL;
-	}
+	if (*cmd != '"') {
+		colon = strchr (icmd, ';');
+		if (colon)
+			*colon = 0;
+	} else colon = NULL;
 	if (rep>0) {
 		while (*cmd>='0' && *cmd<='9')
 			cmd++;
@@ -753,7 +746,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		}
 	}
 
-// TODO must honor " and `
+	// TODO must honor " and `
 	/* pipe console to shell process */
 	//ptr = strchr (cmd, '|');
 	ptr = (char *)r_str_lastbut (cmd, '|', quotestr);
@@ -770,7 +763,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		}
 	}
 
-// TODO must honor " and `
+	// TODO must honor " and `
 	/* bool conditions */
 	ptr = (char *)r_str_lastbut (cmd, '&', quotestr);
 	//ptr = strchr (cmd, '&');

@@ -207,7 +207,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 	int ret, i, idx;
 	RAnalOp op;
 
-	for (idx=ret=0; idx<len && (!nops|| (nops&&i<nops)); i++, idx+=ret) {
+	for (i=idx=ret=0; idx<len && (!nops|| (nops&&i<nops)); i++, idx+=ret) {
 		ret = r_anal_op (core->anal, &op,
 				core->offset+idx, buf + idx, (len-idx));
 		if (ret<1) {
