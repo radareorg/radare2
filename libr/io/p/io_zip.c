@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2013 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -60,7 +60,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 struct r_io_plugin_t r_io_plugin_zip = {
 	.name = "zip",
-        .desc = "Open files inside zip archives apk://foo.apk or zip://whatsapp.apk/classes.dex",
+        .desc = "Open files inside zip apk://foo.apk or zip://foo.apk/classes.dex",
         .open = __open,
         .plugin_open = __plugin_open,
 	.lseek = NULL,

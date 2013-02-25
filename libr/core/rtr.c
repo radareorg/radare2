@@ -46,6 +46,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	int u = r_config_get_i (core->config, "scr.interactive");
 	int v = r_config_get_i (core->config, "asm.cmtright");
 	const char *port = r_config_get (core->config, "http.port");
+	char *allow = (char *)r_config_get (core->config, "http.allow");
 	if (core->http_up) {
 		eprintf ("http server is already running\n");
 		return 1;
@@ -94,8 +95,32 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		rs = r_socket_http_accept (s, timeout);
 		if (!rs) {
 			if (!s) break;
-			r_sys_usleep (200);
+			r_sys_usleep (100);
 			continue;
+		}
+		if (allow && *allow) {
+			int accepted = R_FALSE;
+			const char *host;
+			char *p, *peer = r_socket_to_string (rs->s);
+			char *allows = strdup (allow);
+			//eprintf ("Firewall (%s)\n", allows);
+			int i, count = r_str_split (allows, ',');
+			p = strchr (peer, ':');
+			if (p) *p = 0;
+			for (i=0; i<count; i++) {
+				host = r_str_word_get0 (allows, i);
+				//eprintf ("--- (%s) (%s)\n", host, peer);
+				if (!strcmp (host, peer)) {
+					accepted = R_TRUE;
+					break;
+				}
+			}
+			free (peer);
+			free (allows);
+			if (!accepted) {
+				r_socket_http_close (rs);
+				continue;
+			}
 		}
 		if (!rs->method || !rs->path) {
 			r_socket_http_close (rs);

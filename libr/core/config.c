@@ -671,6 +671,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.vprompt", "Visual prompt commands");
 	r_config_set (cfg, "cmd.bp", "");
 	r_config_desc (cfg, "cmd.bp", "Command to executed every breakpoint hitted");
+	r_config_set (cfg, "http.allow", "");
+	r_config_desc (cfg, "http.allow", "http firewall. only accept clients from the comma separated IP list");
 #if __WINDOWS__
 	r_config_set (cfg, "http.browser", "start");
 #else

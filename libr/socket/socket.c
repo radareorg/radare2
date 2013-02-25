@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2012 - pancake */
+/* radare - LGPL - Copyright 2006-2013 - pancake */
 
 #include <errno.h>
 #include <r_types.h>
@@ -253,7 +253,6 @@ R_API int r_socket_free (RSocket *s) {
 
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
-	struct sockaddr_in sa;
 	struct linger linger = { 0 };
 
 	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
@@ -266,12 +265,12 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (const char *)&x, sizeof (int));
 	}
 	setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
-	memset (&sa, 0, sizeof (sa));
-	sa.sin_family = AF_INET;
-	sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
-	sa.sin_port = htons (atoi (port)); // WTF we should honor etc/services
+	memset (&s->sa, 0, sizeof (s->sa));
+	s->sa.sin_family = AF_INET;
+	s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
+	s->sa.sin_port = htons (atoi (port)); // WTF we should honor etc/services
 
-	if (bind (s->fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+	if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof(s->sa)) < 0) {
 		close (s->fd);
 		return R_FALSE;
 	}
@@ -305,11 +304,12 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 
 R_API RSocket *r_socket_accept(RSocket *s) {
 	RSocket *sock;
+	socklen_t salen = sizeof (s->sa);
 	if (!s) return NULL;
 	sock = R_NEW (RSocket);
 	if (!sock) return NULL;
 	//signal (SIGPIPE, SIG_DFL);
-	sock->fd = accept (s->fd, NULL, NULL);
+	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
 	if (sock->fd == -1) {
 		free (sock);
 		return NULL;
@@ -426,7 +426,7 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	for (;;) {
-		int b = len ; //65536; // Use MTU 1500?
+		int b = 1500; //65536; // Use MTU 1500?
 		if (b>len) b = len;
 #if HAVE_LIB_SSL
 		if (s->is_ssl)
@@ -436,13 +436,12 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 				ret = SSL_write (s->sfd, buf+delta, b);
 		else
 #endif
-			ret = send (s->fd, buf+delta, len, 0);
+			ret = send (s->fd, buf+delta, b, 0);
 		//if (ret == 0) return -1;
-		if (!ret) break; //continue;
+		if (ret<1) break;
 		if (ret == len)
 			return len;
-		if (ret<0)
-			break;
+		usleep (100); // take breath, wtf
 		delta += ret;
 		len -= ret;
 	}

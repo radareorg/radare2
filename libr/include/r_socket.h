@@ -15,6 +15,7 @@ typedef struct r_socket_t {
 	int fd;
 	int is_ssl;
 	int local; // TODO: merge ssl with local -> flags/options
+	struct sockaddr_in sa;
 #if HAVE_LIB_SSL
 	SSL_CTX *ctx;
 	SSL *sfd;
