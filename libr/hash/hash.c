@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2007-2013 pancake */
 
 #include "r_hash.h"
 
@@ -56,7 +56,7 @@ R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 }
 
 /* TODO: rewrite in a non-spaguetty way */
-R_API const char *r_hash_name(int bit) {
+R_API const char *r_hash_name(ut64 bit) {
 	if (bit & R_HASH_MD4) return "md4";
 	if (bit & R_HASH_MD5) return "md5";
 	if (bit & R_HASH_SHA1) return "sha1";
@@ -67,10 +67,12 @@ R_API const char *r_hash_name(int bit) {
 	if (bit & R_HASH_CRC32) return "crc32";
 	if (bit & R_HASH_PARITY) return "parity";
 	if (bit & R_HASH_ENTROPY) return "entropy";
+	if (bit & R_HASH_HAMDIST) return "hamdist";
 	if (bit & R_HASH_XOR) return "xor";
 	if (bit & R_HASH_XORPAIR) return "xorpair";
 	if (bit & R_HASH_MOD255) return "mod255";
 	if (bit & R_HASH_PCPRINT) return "pcprint";
+	if (bit & R_HASH_XXHASH) return "xxhash";
 	return "";
 }
 
@@ -83,6 +85,7 @@ R_API int r_hash_size(int bit) {
 	if (bit & R_HASH_SHA512) return R_HASH_SIZE_SHA512;
 	if (bit & R_HASH_CRC16) return R_HASH_SIZE_CRC16;
 	if (bit & R_HASH_CRC32) return R_HASH_SIZE_CRC32;
+	if (bit & R_HASH_XXHASH) return R_HASH_SIZE_XXHASH;
 	if (bit & R_HASH_PARITY) return 1;
 	if (bit & R_HASH_ENTROPY) return 4; // special case
 	if (bit & R_HASH_XOR) return 1;
@@ -112,6 +115,8 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 		bits |= R_HASH_CRC16;
 	if (strstr (name, "crc32"))
 		bits |= R_HASH_CRC32;
+	if (strstr (name, "xxhash"))
+		bits |= R_HASH_XXHASH;
 	if (strstr (name, "xorpair"))
 		bits |= R_HASH_XORPAIR;
 	else if (strstr (name, "xor")) /* XXX: hacky elsif solution */

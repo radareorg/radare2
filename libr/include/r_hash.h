@@ -43,14 +43,15 @@ typedef struct r_hash_t {
 	ut8 digest[128];
 } RHash;
 
+#define R_HASH_SIZE_CRC16 2
+#define R_HASH_SIZE_CRC32 4
+#define R_HASH_SIZE_XXHASH 4
 #define R_HASH_SIZE_MD4 16
 #define R_HASH_SIZE_MD5 16
 #define R_HASH_SIZE_SHA1 20
 #define R_HASH_SIZE_SHA256 32
 #define R_HASH_SIZE_SHA384 48
 #define R_HASH_SIZE_SHA512 64
-#define R_HASH_SIZE_CRC16 2
-#define R_HASH_SIZE_CRC32 4
 
 #define R_HASH_NONE 0
 #define R_HASH_MD5 1
@@ -68,6 +69,7 @@ typedef struct r_hash_t {
 #define R_HASH_HAMDIST 4096
 #define R_HASH_PCPRINT 8192
 #define R_HASH_MOD255 16384
+#define R_HASH_XXHASH 32768
 #define R_HASH_ALL 0xFFFF
 
 #ifdef R_API
@@ -82,9 +84,10 @@ R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, ut32 len);
 R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, ut32 len);
 R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, ut32 len);
 R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, ut32 len);
+R_API ut8 *r_hash_do_xxhash(RHash *ctx, const ut8 *input, ut32 len);
 
 /* static methods */
-R_API const char *r_hash_name(int bit);
+R_API const char *r_hash_name(ut64 bit);
 R_API ut64 r_hash_name_to_bits(const char *name);
 R_API int r_hash_size(int bit);
 R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *input, ut32 len);
@@ -95,6 +98,7 @@ R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *input, ut32 len);
 R_API ut8 r_hash_deviation(const ut8 *b, ut64 len);
 R_API ut16 r_hash_crc16(ut16 crc, const ut8 *buffer, ut64 len);
 R_API ut32 r_hash_crc32(const ut8 *buf, ut64 len);
+R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len);
 R_API ut8 r_hash_xor(const ut8 *b, ut64 len);
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len);
 R_API int r_hash_parity(const ut8 *buf, ut64 len);

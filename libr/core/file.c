@@ -59,6 +59,7 @@ R_API void r_core_sysenv_help() {
 	r_cons_printf (
 	"Usage: !<cmd>\n"
 	"  !ls                   ; execute 'ls' in shell\n"
+	"  !!ls~txt              ; printo utput of 'ls' and grep for 'txt'\n"
 	"  .!rabin2 -rvi ${FILE} ; run each output line as a r2 cmd\n"
 	"  !echo $SIZE           ; display file size\n"
 	"Environment:\n"

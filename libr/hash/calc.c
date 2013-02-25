@@ -13,7 +13,7 @@ static int bitnum(int bit) {
 
 /* TODO: do it more beautiful with structs and not spaguetis */
 /* TODO: find a better method name */
-R_API int r_hash_calculate(struct r_hash_t *ctx, int algobit, const ut8 *buf, ut32 len) {
+R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *buf, ut32 len) {
 	if (algobit & R_HASH_MD4) {
 		r_hash_do_md4 (ctx, buf, len);
 		return R_HASH_SIZE_MD4;
@@ -47,6 +47,11 @@ R_API int r_hash_calculate(struct r_hash_t *ctx, int algobit, const ut8 *buf, ut
 		ut32 res = r_hash_crc32 (buf, len);
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
 		return R_HASH_SIZE_CRC32;
+	}
+	if (algobit & R_HASH_XXHASH) {
+		ut32 res = r_hash_xxhash (buf, len);
+		memcpy (ctx->digest, &res, R_HASH_SIZE_XXHASH);
+		return R_HASH_SIZE_XXHASH;
 	}
 	if (algobit & R_HASH_PCPRINT) {
 		*ctx->digest = r_hash_pcprint (buf, len);
