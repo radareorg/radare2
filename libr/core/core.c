@@ -869,6 +869,7 @@ reaccept:
 				r_socket_flush (c);
 #endif
 				free (ptr);
+				ptr = NULL;
 				break;
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
@@ -934,6 +935,7 @@ reaccept:
 				r_socket_read (c, ptr, x);
 				r_core_write_at (core, core->offset, ptr, x);
 				free (ptr);
+				ptr = NULL;
 				break;
 			case RMT_SEEK:
 				r_socket_read_block (c, buf, 9);

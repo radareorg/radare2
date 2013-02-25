@@ -146,16 +146,13 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 				nargs++;
 			}
 		}
-		if (sym[1] == 'i') { // instance method
-			type = "public";
-		} else if (sym[1] == 'c') { // static method
-			type = "static";
-		}
+		if (sym[1] == 'i') type = "public";
+		else if (sym[1] == 'c') type = "static";
 	}
 	if (type) {
 		if (!strcmp (type, "field")) {
 			ret = malloc (strlen (clas)+strlen (name)+32);
-			sprintf (ret, "field int %s::%s", clas, name);
+			if (ret) sprintf (ret, "field int %s::%s", clas, name);
 		} else {
 			if (nargs) {
 				const char *arg = "int";
@@ -170,9 +167,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 			ret = malloc (strlen (type)+strlen (name)+
 				strlen(clas)+strlen(args)+15);
 			sprintf (ret, "%s int %s::%s(%s)", type, clas, name, args);
-			if (bin) {
-				r_bin_class_add_method (bin, clas, name, nargs);
-			}
+			if (bin) r_bin_class_add_method (bin, clas, name, nargs);
 		}
 		name = NULL;
 	}

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2012 - esteve, pancake */
+/* radare - LGPL - Copyright 2006-2013 - esteve, pancake */
 
 #include "r_search.h"
 
@@ -29,6 +29,7 @@ static void fini_fi(fnditem* fi) {
 		fu = fi;
 		fi = fi->next;
 		free (fu);
+		fu = NULL;
 	}
 	free (fu);
 }

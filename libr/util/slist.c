@@ -118,7 +118,7 @@ R_API void r_slist_optimize (RSList *s) {
 	s->min = min;
 	s->max = max;
 	s->mod = ((max-min));
-	s->items = malloc (sizeof (void*) * s->nitems);
+	s->items = malloc (1+ (sizeof (void*) * s->nitems));
 	//eprintf ("MOD %d (block size)\n", s->mod);
 // store integers as indexes inside the allocated heap
 
