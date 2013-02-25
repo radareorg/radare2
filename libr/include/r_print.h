@@ -30,8 +30,8 @@ typedef struct r_print_t {
 	char datefmt[32];
 	int (*write)(const unsigned char *buf, int len);
 	int (*printf)(const char *str, ...);
+	int (*disasm)(void *p, ut64 addr);
 	int (*oprintf)(const char *str, ...);
-	/* TODO: add printf callback */
 	int interrupt;
 	int big_endian;
 	int width;
@@ -71,8 +71,10 @@ R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt, int idx, const char *setval);
 R_API int r_print_format_length (const char *fmt);
-// XXX . change wide, zeroend, urlencode for option flags
-R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int wide, int zeroend, int urlencode);
+#define R_PRINT_STRING_WIDE 1
+#define R_PRINT_STRING_ZEROEND 2
+#define R_PRINT_STRING_URLENCODE 4
+R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int options);
 R_API int r_print_date_dos(RPrint *p, ut8 *buf, int len);
 R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len);
 R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len);

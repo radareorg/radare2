@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
@@ -376,6 +376,8 @@ static int cmd_write(void *data, const char *input) {
 				}
 			case '2':
 			case '4':
+eprintf ("RUN OP (%s) (%c)\n", input+3, input[1]);
+sleep (2);
 				r_core_write_op (core, input+3, input[1]);
 				r_core_block_read (core, 0);
 				break;

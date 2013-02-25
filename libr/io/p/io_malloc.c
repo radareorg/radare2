@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2013 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -20,8 +20,9 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (fd == NULL || fd->data == NULL)
 		return -1;
 	if (io->off+count > RIOMALLOC_SZ (fd))
-		return -1;
-	memcpy (RIOMALLOC_BUF (fd)+io->off, buf, count);
+		count -= (io->off+count-(RIOMALLOC_SZ (fd)));
+	if (count>0)
+		memcpy (RIOMALLOC_BUF (fd)+io->off, buf, count);
 	return count;
 }
 

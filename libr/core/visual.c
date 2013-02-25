@@ -294,6 +294,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_set_raw (R_TRUE);
 		break;
 	case 'i':
+	case 'I':
 		if (core->file && !(core->file->rwx & 2)) {
 			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 			r_cons_any_key ();
@@ -302,12 +303,21 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_show_cursor (R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (0);
-		if (core->print->cur_enabled) {
+		if (ch=='I') {
 			strcpy (buf, "wow ");
-			r_line_set_prompt ("insert string: ");
+			r_line_set_prompt ("insert hexpair block: ");
 			if (r_cons_fgets (buf+4, sizeof (buf)-3, 0, NULL) <0)
 				buf[0]='\0';
-		} else
+			char *p = strdup (buf);
+			int cur = core->print->cur;
+			if (cur>=core->blocksize)
+				cur = core->print->cur-1;
+			snprintf (buf, sizeof (buf), "%s @ $$0!%i", p,
+				core->blocksize-cursor);
+			r_core_cmd (core, buf, 0);
+			free (p);
+			break;
+		}
 		if (core->print->col==2) {
 			strcpy (buf, "w ");
 			r_line_set_prompt ("insert string: ");
@@ -319,22 +329,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (r_cons_fgets (buf+3, sizeof (buf)-4, 0, NULL) <0)
 				buf[0]='\0';
 		}
-		if (*buf) {
-			if (core->print->cur_enabled) {
-				char *p = strdup (buf);
-				int cur = core->print->cur;
-				if (cur>=core->blocksize)
-					cur = core->print->cur-1;
-				sprintf (buf, "%s @ $$+%i!%i", p, cursor<ocursor?
-					cursor:ocursor, R_ABS (ocursor-cursor)+1);
-				r_core_cmd (core, buf, 0);
-				free (p);
-			} else {
-				if (curset) r_core_seek (core, core->offset + cursor, 0);
-				r_core_cmd (core, buf, 1);
-				if (curset) r_core_seek (core, core->offset - cursor, 1);
-			}
-		}
+		if (curset) r_core_seek (core, core->offset + cursor, 0);
+		r_core_cmd (core, buf, 1);
+		if (curset) r_core_seek (core, core->offset - cursor, 1);
 		r_cons_set_raw (1);
 		r_cons_show_cursor (R_FALSE);
 		break;
@@ -559,10 +556,12 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_config_set_i (core->config, "scr.cols", scrcols+2);
 		}
 		break;
+#if 0
 	case 'I':
 		r_core_cmd (core, "dsp", 0);
 		r_core_cmd (core, ".dr*", 0);
 		break;
+#endif
 	case 's':
 		if (curset) {
 			// dcu 0xaddr

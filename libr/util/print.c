@@ -27,6 +27,8 @@ R_API RPrint *r_print_new() {
 	strcpy (p->datefmt, "%d:%m:%Y %H:%M:%S %z");
 	p->user = NULL;
 	r_io_bind_init (p->iob);
+	p->user = NULL;
+	p->disasm = NULL;
 	p->printf = printf;
 	p->oprintf = nullprinter;
 	p->stride = 0;
@@ -235,8 +237,11 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	}
 }
 
-R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int wide, int zeroend, int urlencode) {
-	int i;
+R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
+	int i, wide, zeroend, urlencode;
+	wide = (options & R_PRINT_STRING_WIDE);
+	zeroend = (options & R_PRINT_STRING_ZEROEND);
+	urlencode = (options & R_PRINT_STRING_URLENCODE);
 	//if (p->flags & R_PRINT_FLAGS_OFFSET)
 		// r_print_addr(p, seek);
 	p->interrupt = 0;

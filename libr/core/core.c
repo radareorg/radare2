@@ -398,6 +398,15 @@ static const char *r_core_print_offname(void *p, ut64 addr) {
 	return NULL;
 }
 
+static int __disasm(RCore *core, ut64 addr) {
+	int len;
+	ut8 buf[32], *oblock = core->block;
+	r_io_read_at (core->io, addr, (ut8*)buf, sizeof (buf));
+	len = r_core_print_disasm_instructions (core, sizeof (buf), 1);
+	core->block = oblock;
+	return len;
+}
+
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->print = r_print_new ();
@@ -406,6 +415,8 @@ R_API int r_core_init(RCore *core) {
 	core->print->offname = r_core_print_offname;
 	core->print->printf = (void *)r_cons_printf;
 	core->print->write = (void *)r_cons_memcat;
+	core->print->user = core;
+	core->print->disasm = __disasm;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->watchers = r_list_new ();

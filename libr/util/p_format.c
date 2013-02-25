@@ -29,6 +29,7 @@ static void print_format_help(RPrint *p) {
 	" q - quadword (8 bytes)\n"
 	" p - pointer reference (2, 4 or 8 bytes)\n"
 	" d - 0x%%08x hexadecimal value (4 bytes)\n"
+	" D - disassemble one opcode\n"
 	" x - 0x%%08x hexadecimal value and flag (fd @ addr)\n"
 	" z - \\0 terminated string\n"
 	" Z - \\0 terminated wide string\n"
@@ -270,6 +271,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 				}
 				i += 4;
 				break;
+			case 'D':
+				if (p->disasm && p->user)
+					i += p->disasm (p->user, seeki);
+				break;
 			case 'x':
 				if (MUSTSET) {
 					realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
@@ -356,7 +361,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 				s = p->offname (p->user, addr);
 				if (s) p->printf ("*(%s)", s);
 			}
-			p->printf ("\n");
+			if (tmp != 'D')
+				p->printf ("\n");
 			last = tmp;
 		}
 		if (otimes>1)

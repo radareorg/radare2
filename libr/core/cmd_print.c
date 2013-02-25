@@ -518,20 +518,22 @@ static int cmd_print(void *data, const char *input) {
 			// TODO: add support for 2-4 byte length pascal strings
 			if (mylen < core->blocksize) {
 				r_print_string (core->print, core->offset,
-					core->block, mylen, 0, 1, 0);
+					core->block, mylen, R_PRINT_STRING_ZEROEND);
 				core->num->value = mylen;
 			} else core->num->value = 0; // error
 			}
 			break;
 		case 'w':
-			r_print_string (core->print, core->offset, core->block, len, 1, 1, 0);
+			r_print_string (core->print, core->offset, core->block, len,
+				R_PRINT_STRING_WIDE | R_PRINT_STRING_ZEROEND);
 			break;
 		case ' ':
 			len = r_num_math (core->num, input+2);
-			r_print_string (core->print, core->offset, core->block, len, 0, 0, 0);
+			r_print_string (core->print, core->offset, core->block, len, 0);
 			break;
 		default:
-			r_print_string (core->print, core->offset, core->block, len, 0, 1, 0);
+			r_print_string (core->print, core->offset, core->block, len,
+				R_PRINT_STRING_ZEROEND);
 			break;
 		}
 		break;
@@ -548,7 +550,9 @@ static int cmd_print(void *data, const char *input) {
 		} else r_core_magic (core, input+1, R_TRUE);
 		break;
 	case 'u':
-		r_print_string (core->print, core->offset, core->block, len, (input[1]=='w'), 1, 1);
+		r_print_string (core->print, core->offset, core->block, len,
+			R_PRINT_STRING_ZEROEND| R_PRINT_STRING_URLENCODE|
+			(input[1]=='w')?R_PRINT_STRING_WIDE:0);
 		break;
 	case 'c':
 		r_print_code (core->print, core->offset, core->block, len, input[1]);
