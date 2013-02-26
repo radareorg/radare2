@@ -975,7 +975,7 @@ R_API char *r_str_uri_encode (const char *s) {
 // TODO: merge print inside rutil
 /* hack from print */
 R_API int r_print_format_length (const char *fmt) {
-	int nargs, i, j, idx, times, otimes, endian;
+	int nargs, i, j, idx, times, endian;
 	char *args, *bracket, tmp, last = 0;
 	const char *arg = fmt;
 	const char *argend = arg+strlen (fmt);
@@ -985,7 +985,7 @@ R_API int r_print_format_length (const char *fmt) {
 
 	while (*arg && iswhitechar (*arg)) arg++;
 	/* get times */
-	otimes = times = atoi (arg);
+	times = atoi (arg);
 	if (times > 0)
 		while ((*arg>='0'&&*arg<='9')) arg++;
 	bracket = strchr (arg,'{');
@@ -1022,7 +1022,7 @@ R_API int r_print_format_length (const char *fmt) {
 
 	/* go format */
 	i = 0;
-	if (!times) otimes = times = 1;
+	if (!times) times = 1;
 	for (; times; times--) { // repeat N times
 		const char * orig = arg;
 		idx = 0;

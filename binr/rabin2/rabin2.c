@@ -305,7 +305,6 @@ int main(int argc, char **argv) {
 	RCoreBinFilter filter;
 	const char *op = NULL;
 	int c, bits = 0;
-	ut64 offset;
 	RCore core;
 
 	r_core_init (&core);
@@ -475,7 +474,7 @@ int main(int argc, char **argv) {
 	filter.offset = at;
 	filter.name = name;
 
-	offset = r_bin_get_offset (bin);
+//	ut64 offset = r_bin_get_offset (bin);
 	r_cons_new ()->is_interactive = R_FALSE;
 
 #define isradjson rad==R_CORE_BIN_JSON&&actions>1
