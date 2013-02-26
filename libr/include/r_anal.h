@@ -820,12 +820,13 @@ typedef struct r_anal_data_t {
 	ut64 ptr;
 	char *str;
 	int len;
-	ut8 buf[8];
+	ut8 *buf;
+	ut8 sbuf[8];
 } RAnalData;
 
 R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size);
 R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int len);
-R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int wide);
+R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int size, int wide);
 R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len);
 R_API void r_anal_data_free (RAnalData *d);
 R_API char *r_anal_data_to_string (RAnalData *d);

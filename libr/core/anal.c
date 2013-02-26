@@ -968,8 +968,9 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 
 		if (i>=len) {
 			r_io_read_at (core->io, addr+i, buf, len);
+			addr += i;
 			i = 0;
-			eprintf ("load next\n");
+			//eprintf ("load next %d\n", len);
 			continue;
 		}
 		RAnalData *d = r_anal_data (core->anal, addr+i,
@@ -979,7 +980,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	
 		switch (d->type) {
 		case R_ANAL_DATA_TYPE_POINTER:
-			r_cons_printf ("--> ");
+			r_cons_printf ("`- ");
 			dstaddr = r_mem_get_num (buf+i, word, !endi);
 			if (depth>0)
 				r_core_anal_data (core,

@@ -1,23 +1,33 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2013 - pancake */
 
 #include <r_anal.h>
 
 #define MINLEN 1
-static int is_string (const ut8 *buf, int len) {
+static int is_string (const ut8 *buf, int size, int *len) {
 	int i;
-	if (len>3 && buf[0] &&!buf[1]&&buf[2]&&!buf[3])
+	if (size>3 && buf[0] &&!buf[1]&&buf[2]&&!buf[3]) {
+		*len = 1; // XXX: TODO: Measure wide string length
 		return 2; // is wide
-	for (i=0; i<len; i++) {
-		if (!buf[i] && i>MINLEN) return 1;
-		if (!IS_PRINTABLE (buf[i]))
-			return 0;
 	}
+	for (i=0; i<size; i++) {
+		if (!buf[i] && i>MINLEN) {
+			*len = i;
+			return 1;
+		}
+		if (buf[i]==10||buf[i]==13)
+			continue;
+		if (!IS_PRINTABLE (buf[i])) {
+			*len = i;
+			return 0;
+		}
+	}
+	*len = i;
 	return 1;
 }
 
 static int is_number (const ut8 *buf, int endian, int size) {
 	ut64 n = r_mem_get_num (buf, size, endian);
-	return (n<0xffffffff)? (int)n: 0;
+	return (n<UT32_MAX)? (int)n: 0;
 }
 
 static int is_null (const ut8 *buf, int size) {
@@ -67,8 +77,14 @@ R_API char *r_anal_data_to_string (RAnalData *d) {
 		strcat (line, "wide string");
 		break;
 	case R_ANAL_DATA_TYPE_NUMBER:
+		{
+		ut32 n32 = (ut32)d->ptr;
 		strcat (line, "number ");
-		sprintf (line+strlen (line), " 0x%"PFMT64x, d->ptr);
+		if (n32 == d->ptr) 
+			sprintf (line+strlen (line), " %d 0x%x", n32, n32);
+		else sprintf (line+strlen (line), " %"PFMT64d" 0x%"PFMT64x,
+				d->ptr, d->ptr);
+		}
 		break;
 	case R_ANAL_DATA_TYPE_POINTER:
 		strcat (line, "pointer ");
@@ -83,20 +99,30 @@ R_API char *r_anal_data_to_string (RAnalData *d) {
 	case R_ANAL_DATA_TYPE_UNKNOWN:
 		strcat (line, "unknown");
 		break;
+	default:
+		strcat (line, "(null)");
+		break;
 	}
 	return line;
 }
 
-R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int type) {
+R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int type) {
 	RAnalData *ad = R_NEW0 (RAnalData);
+	ad->str = NULL;
 	ad->addr = addr;
 	ad->type = type;
-	if (type) {
+	if (len == 0)
+		len = strlen (p);
+	if (type == R_ANAL_DATA_TYPE_WIDE_STRING) {
 		/* TODO: add support for wide strings */
 		eprintf ("r_anal_data_new_string: wide string not supported yet\n");
 	} else {
-		ad->str = strdup (p);
-		ad->len = strlen (p); 
+		ad->str = malloc (len+1);
+		memcpy (ad->str, p, len);
+		ad->str[len] = 0;
+		ad->buf = malloc (len);
+		memcpy (ad->buf, ad->str, len+1);
+		ad->len = len+1; // string length + \x00
 	}
 	ad->ptr = 0L; 
 	return ad;
@@ -104,6 +130,7 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int type) {
 
 R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
 	RAnalData *ad = R_NEW0 (RAnalData);
+	ad->buf = (ut8*) &(ad->sbuf);
 	if (buf) memcpy (ad->buf, buf, 8);
 	else memset (ad->buf, 0, 8);
 	ad->addr = addr;
@@ -115,13 +142,15 @@ R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, i
 }
 
 R_API void r_anal_data_free (RAnalData *d) {
+	if (d->buf != (ut8*)&(d->sbuf))
+		free (d->buf);
 	free (d->str);
 	free (d);
 }
 
 R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) {
 	ut64 dst;
-	int n;
+	int n, nsize = 0;
 	int bits = anal->bits;
 	int endi = !anal->big_endian;
 	int word = bits/8;
@@ -134,12 +163,12 @@ R_API RAnalData *r_anal_data (RAnal *anal, ut64 addr, const ut8 *buf, int size) 
 		return r_anal_data_new (addr, R_ANAL_DATA_TYPE_HEADER, -1, buf, word);
 	dst = is_pointer (&anal->iob, buf, endi, word);
 	if (dst) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_POINTER, dst, buf, word);
+	switch (is_string (buf, size, &nsize)) {
+	case 1: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_STRING);
+	case 2: return r_anal_data_new_string (addr, (const char *)buf, nsize, R_ANAL_DATA_TYPE_WIDE_STRING);
+	}
 	n = is_number (buf, endi, word);
 	if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER, n, buf, word);
-	switch (is_string (buf, size)) {
-	case 1: return r_anal_data_new_string (addr, (const char *)buf, R_ANAL_DATA_TYPE_STRING);
-	case 2: return r_anal_data_new_string (addr, (const char *)buf, R_ANAL_DATA_TYPE_WIDE_STRING);
-	}
 	return r_anal_data_new (addr, R_ANAL_DATA_TYPE_UNKNOWN, dst, buf, word);
 }
 
@@ -152,8 +181,7 @@ R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int 
 	RAnalData *data;
 	int word = anal->bits /8;
 	for (i = j = 0; i<len ; j++ ) {
-		data = r_anal_data (anal, addr+i,
-			buf+i, len-i);
+		data = r_anal_data (anal, addr+i, buf+i, len-i);
 		switch (data->type) {
 		case R_ANAL_DATA_TYPE_INVALID:
 			inv++;
@@ -168,7 +196,7 @@ R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int 
 			i += word;
 			break;
 		case R_ANAL_DATA_TYPE_STRING:
-			i += strlen ((const char*)buf+i)+1;
+			i += data->len; //strlen ((const char*)buf+i)+1;
 			str++;
 			break;
 		default:
@@ -176,6 +204,7 @@ R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int 
 		}
 		r_anal_data_free (data);
         }
+eprintf ("J = %d\n", j);
 	if (j<1) return "unknown";
 	if ((inv*100/j)>60) return "invalid";
 	if ((unk*100/j)>60) return "code";
