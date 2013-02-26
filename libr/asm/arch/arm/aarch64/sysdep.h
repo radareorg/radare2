@@ -5,8 +5,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <stdlib.h>
-typedef unsigned int uint32_t;
-typedef unsigned long long uint64_t;
+#include <stdint.h>
 #include "mybfd.h"
 #if 0
 #define bfd_boolean int
