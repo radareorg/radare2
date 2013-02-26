@@ -54,7 +54,8 @@ static void parseline (char *b) {
 		int n = atoi (b+3);
 		if (n>=0 && n<NARGS) {
 			_args[n] = strdup (e);
-		} else fprintf (stderr, "Out of bounds args index: %d\n", n);
+			r_str_escape (_args[n]);
+		} else eprintf ("Out of bounds args index: %d\n", n);
 	} else if (!strcmp (b, "timeout")) _timeout = atoi (e);
 	else if (!strcmp (b, "setenv")) {
 		char *v = strchr (e, '=');

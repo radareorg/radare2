@@ -13,7 +13,7 @@
 static int arm_mode = 0;
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
-static unsigned char bytes[4];
+static unsigned char bytes[8];
 
 static int arm_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr,
 		unsigned int length, struct disassemble_info *info) {
@@ -83,6 +83,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 
 	op->buf_asm[0]='\0';
 	if (a->bits==64) {
+		/* endianness is ignored on 64bits */
+		r_mem_copyendian (bytes, buf, 4, !a->big_endian);
 		op->inst_len = print_insn_aarch64 ((bfd_vma)Offset, &obj);
 	} else {
 		op->inst_len = obj.endian?
@@ -94,15 +96,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	return op->inst_len; //(a->bits/8); //op->inst_len;
 }
 
-// XXX: This is wrong, some opcodes are 32bit in thumb mode
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int is_thumb = a->bits==16? 1: 0;
 	int opcode = armass_assemble (buf, a->pc, is_thumb);
 	if (opcode==-1)
 		return -1;
-	if (a->bits==64)
-		r_mem_copyendian (op->buf, (void *)&opcode, 8, a->big_endian);
-	else if (a->bits==32)
+	if (a->bits>=32)
 		r_mem_copyendian (op->buf, (void *)&opcode, 4, a->big_endian);
 	else r_mem_copyendian (op->buf, (void *)&opcode, 2, !a->big_endian);
 	return (a->bits/8);
