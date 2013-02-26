@@ -6,12 +6,12 @@
 #include <r_asm.h>
 
 #include "../../shlr/java/class.h"
-//#include "../../shlr/java/code.h"
+#include "../../shlr/java/code.h"
 #include <r_core.h>
 
-static const char *lastfile = NULL;
+//static const char *lastfile = NULL;
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
-	void *cp;
+	//void *cp;
 	RBinJavaObj *obj = NULL;
 	RBin *b = a->binb.bin;
 	if (b->cur.curplugin) {

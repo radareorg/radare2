@@ -53,37 +53,42 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	return R_TRUE;
 }
 
-static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
-	struct disassemble_info disasm_obj;
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+	struct disassemble_info obj;
 
 	if (len<(a->bits/8)) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
+////	if (a->bits==64)
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
-	memset (&disasm_obj,'\0', sizeof(struct disassemble_info));
+	memset (&obj,'\0', sizeof (struct disassemble_info));
 	arm_mode = a->bits;
-	//disasm_obj.arch = ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
+	//obj.arch = ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
 	/* TODO: set arch */
-	disasm_obj.arch = 0xffffffff;
-	disasm_obj.mach = 0xffffffff;
+	obj.arch = 0xffffffff;
+	obj.mach = 0xffffffff;
 
-	disasm_obj.buffer = bytes;
-	disasm_obj.read_memory_func = &arm_buffer_read_memory;
-	disasm_obj.symbol_at_address_func = &symbol_at_address;
-	disasm_obj.memory_error_func = &memory_error_func;
-	disasm_obj.print_address_func = &print_address;
-	disasm_obj.endian = !a->big_endian;
-	disasm_obj.fprintf_func = &buf_fprintf;
-	disasm_obj.stream = stdout;
-	disasm_obj.bytes_per_chunk =
-	disasm_obj.bytes_per_line = (a->bits/8);
+	obj.buffer = bytes;
+	obj.read_memory_func = &arm_buffer_read_memory;
+	obj.symbol_at_address_func = &symbol_at_address;
+	obj.memory_error_func = &memory_error_func;
+	obj.print_address_func = &print_address;
+	obj.endian = !a->big_endian;
+	obj.fprintf_func = &buf_fprintf;
+	obj.stream = stdout;
+	obj.bytes_per_chunk =
+	obj.bytes_per_line = (a->bits/8);
 
 	op->buf_asm[0]='\0';
-	op->inst_len = disasm_obj.endian?
-		print_insn_little_arm ((bfd_vma)Offset, &disasm_obj):
-		print_insn_big_arm ((bfd_vma)Offset, &disasm_obj);
+	if (a->bits==64) {
+		op->inst_len = print_insn_aarch64 ((bfd_vma)Offset, &obj);
+	} else {
+		op->inst_len = obj.endian?
+			print_insn_little_arm ((bfd_vma)Offset, &obj):
+			print_insn_big_arm ((bfd_vma)Offset, &obj);
+	}
 	if (op->inst_len == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
 	return op->inst_len; //(a->bits/8); //op->inst_len;
@@ -95,7 +100,9 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int opcode = armass_assemble (buf, a->pc, is_thumb);
 	if (opcode==-1)
 		return -1;
-	if (a->bits==32)
+	if (a->bits==64)
+		r_mem_copyendian (op->buf, (void *)&opcode, 8, a->big_endian);
+	else if (a->bits==32)
 		r_mem_copyendian (op->buf, (void *)&opcode, 4, a->big_endian);
 	else r_mem_copyendian (op->buf, (void *)&opcode, 2, !a->big_endian);
 	return (a->bits/8);
@@ -104,7 +111,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_arm = {
 	.name = "arm",
 	.arch = "arm",
-	.bits = (int[]){ 16, 32, 0 },
+	.bits = (int[]){ 16, 32, 64, 0 },
 	.desc = "ARM disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

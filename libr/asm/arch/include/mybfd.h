@@ -91,7 +91,9 @@ typedef struct bfd bfd;
    General rule: Functions which are bfd_boolean return TRUE on
    success and FALSE on failure (unless they're a predicate).  */
 
+#ifndef bfd_boolean
 typedef int bfd_boolean;
+#endif
 #undef FALSE
 #undef TRUE
 #define FALSE 0
@@ -5188,4 +5190,5 @@ static inline bfd_vma bfd_getl32 (const void *p) {
   v |= (unsigned long) addr[3] << 24;
   return v;
 }
+#define CONST_STRNEQ(STR1,STR2) (strncmp ((STR1), (STR2), sizeof (STR2) - 1) == 0)
 #endif
