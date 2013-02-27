@@ -667,6 +667,8 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "cmd.prompt", "Prompt commands");
 	r_config_set (cfg, "cmd.cprompt", "");
 	r_config_desc (cfg, "cmd.cprompt", "Column visual prompt commands");
+	r_config_set (cfg, "cmd.visual", "");
+	r_config_desc (cfg, "cmd.visual", "Replace current print mode");
 	r_config_set (cfg, "cmd.vprompt", "");
 	r_config_desc (cfg, "cmd.vprompt", "Visual prompt commands");
 	r_config_set (cfg, "cmd.bp", "");

@@ -75,7 +75,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					}
 				}
 			}
-			{
+			if (core->flags->spaces[9]) {
 				if (option == j) {
 					fs = "*";
 					hit = 1;

@@ -834,8 +834,10 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	}
 
 	if (cursor<0) cursor = 0;
+
 	if (color) r_cons_strcat (Color_YELLOW);
 	strncpy (bar, printfmt[PIDX], sizeof (bar)-1);
+
 	bar[sizeof (bar)-1] = 0; // '\0'-terminate bar
 	bar[10] = '.'; // chop cmdfmt
 	bar[11] = '.'; // chop cmdfmt
@@ -853,7 +855,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 static void r_core_visual_refresh (RCore *core) {
 	RCons *cons;
-	const char *vi;
+	const char *vi, *vcmd;
 	if (!core) return;
 	r_cons_get_size (NULL);
 	r_print_set_cursor (core->print, curset, ocursor, cursor);
@@ -884,8 +886,13 @@ static void r_core_visual_refresh (RCore *core) {
 		r_core_visual_title (core, color);
 	}
 
-	if (zoom) r_core_cmd (core, "pz", 0);
-	else r_core_cmd (core, printfmt[PIDX], 0);
+	vcmd = r_config_get (core->config, "cmd.visual");
+	if (vcmd && *vcmd) {
+		r_core_cmd (core, vcmd, 0);
+	} else {
+		if (zoom) r_core_cmd (core, "pz", 0);
+		else r_core_cmd (core, printfmt[PIDX], 0);
+	}
 	blocksize = core->num->value? core->num->value : core->blocksize;
 
 	/* this is why there's flickering */
