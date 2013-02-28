@@ -72,6 +72,8 @@ static int do_hash(const char *algo, RIO *io, int bsize, int rad) {
 		eprintf ("Invalid file size\n");
 		return 1;
 	}
+	if (bsize<0)
+		bsize = fsize / -bsize;
 	if (bsize == 0 || bsize > fsize)
 		bsize = fsize;
 	if (to == 0LL)
@@ -162,11 +164,12 @@ static void algolist() {
 
 int main(int argc, char **argv) {
 	const char *algo = "sha256"; /* default hashing algorithm */
-	int c, rad = 0, quit = 0, bsize = 0;
+	int c, rad = 0, quit = 0, bsize = 0, numblocks = 0;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "rva:s:b:Bhf:t:kL")) != -1) {
+	while ((c = getopt (argc, argv, "rva:s:b:nBhf:t:kL")) != -1) {
 		switch (c) {
+		case 'n': numblocks = 1; break;
 		case 'L': algolist (); return 0;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
@@ -206,19 +209,20 @@ int main(int argc, char **argv) {
 		return 0;
 	if (optind>=argc)
 		return do_help (1);
+	if (numblocks) {
+		bsize = -bsize;
+	} else if (bsize<0) {
+		eprintf ("rahash2: Invalid block size\n");
+		return 1;
+	}
 
 	io = r_io_new ();
 	if (r_file_is_directory (argv[optind])) {
-		eprintf ("Cannot hash directories\n");
+		eprintf ("rahash2: Cannot hash directories\n");
 		return 1;
 	}
-	// TODO: use mmap
 	if (!r_io_open (io, argv[optind], 0, 0)) {
-		eprintf ("Cannot open '%s'\n", argv[optind]);
-		return 1;
-	}
-	if (bsize<1) {
-		eprintf ("Invalid block size\n");
+		eprintf ("rahash2: Cannot open '%s'\n", argv[optind]);
 		return 1;
 	}
 	return do_hash (algo, io, bsize, rad);
