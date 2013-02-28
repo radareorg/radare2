@@ -451,6 +451,8 @@ R_API int r_debug_syscall(RDebug *dbg, int num) {
 
 R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 	int ret = R_FALSE;
+	if (r_debug_is_dead (dbg))
+		return R_FALSE;
 	if (dbg->h && dbg->h->kill)
 		ret = dbg->h->kill (dbg, pid, tid, sig);
 	else eprintf ("Backend does not implements kill()\n");
