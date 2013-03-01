@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2013 pancake */
 
 // XXX: not yet tested
 
@@ -22,16 +22,17 @@ typedef struct {
 #define RIOEWF_IS_VALID(x) ((x) && (x->data) && (x->plugin==&r_io_plugin_ewf))
 
 static int ewf__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	return libewf_write_buffer (RIOEWF_HANDLE (fd), (void*)buf, count);
+	return libewf_handle_write_buffer (RIOEWF_HANDLE (fd),
+		(void*)buf, count, NULL);
 }
 
 static int ewf__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	return libewf_read_buffer (RIOEWF_HANDLE (fd), buf, count);
+	return libewf_handle_read_buffer (RIOEWF_HANDLE (fd), buf, count, NULL);
 }
 
 static int ewf__close(RIODesc *fd) {
 	if (RIOEWF_IS_VALID (fd)) {
-		libewf_close (RIOEWF_HANDLE (fd));
+		libewf_handle_close (RIOEWF_HANDLE (fd), NULL);
 		return 0;
 	}
 	return -1;
@@ -48,11 +49,12 @@ static ut64 ewf__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 			offset += io->off;
 			break;
 		case SEEK_END:
-			libewf_get_media_size (RIOEWF_HANDLE (fd), &media_size);
-			offset = media_size - offset;
+			if (libewf_handle_get_media_size (
+					RIOEWF_HANDLE (fd), &media_size, NULL))
+				offset = media_size - offset;
 			break;
 		}
-		libewf_seek_offset (RIOEWF_HANDLE (fd), offset);
+		libewf_handle_seek_offset (RIOEWF_HANDLE (fd), offset, whence, NULL);
 		return offset;
 	}
 	return (ut64)-1;
@@ -74,13 +76,12 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 	ut8 hash[1024];
 	size64_t media_size;
 	uint32_t bytes_per_sector;
-	uint32_t amount_of_sectors;
+	uint64_t amount_of_sectors;
 	uint32_t error_granularity;
 	//uint32_t amount_of_acquiry_errors;
 	int8_t compression_level;
 	uint8_t media_type;
 	uint8_t media_flags;
-	uint8_t volume_type;
 	uint8_t compress_empty_block;
 	uint8_t format;
 	int i;
@@ -115,9 +116,9 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 		filenames[0] = pathname + 6;
 		filenames[1] = NULL;
 	}
-	ewf_h = libewf_open ((char * const *)filenames, 1, rw?
-		LIBEWF_OPEN_READ_WRITE: LIBEWF_OPEN_READ);
-	if (ewf_h == NULL)
+	libewf_handle_initialize (&ewf_h, NULL);
+	if (libewf_handle_open (ewf_h, (char * const *)filenames, (int)1, rw?
+			LIBEWF_OPEN_READ_WRITE: LIBEWF_OPEN_READ, NULL) != 1)
 		return NULL;
 #if 0
 		if( ((libewf_internal_plugin_t*)ewf_h)->header_values == NULL ) {
@@ -129,25 +130,24 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 			eprintf("CaseNumber:       %s\n", hash);
 		}
 #endif
-	libewf_get_format (ewf_h, &format);
+	libewf_handle_get_format (ewf_h, &format, NULL);
 	eprintf ("FormatVersion:    %d\n", format);
-	libewf_get_compression_values (ewf_h, &compression_level, &compress_empty_block);
+	libewf_handle_get_compression_values (ewf_h,
+		&compression_level, &compress_empty_block, NULL);
 	eprintf ("CompressionLevel: %d\n", compression_level);
-	libewf_get_error_granularity (ewf_h, &error_granularity);
+	libewf_handle_get_error_granularity (ewf_h, &error_granularity, NULL);
 	eprintf ("ErrorGranurality: %d\n", error_granularity);
-	libewf_get_amount_of_sectors (ewf_h, &amount_of_sectors);
-	eprintf ("AmountOfSectors:  %d\n", amount_of_sectors);
-	libewf_get_bytes_per_sector (ewf_h, &bytes_per_sector);
+	//libewf_handle_get_number_of_sectors (ewf_h, &amount_of_sectors, NULL);
+	//eprintf ("AmountOfSectors:  %"PFMT64d"\n", amount_of_sectors);
+	libewf_handle_get_bytes_per_sector (ewf_h, &bytes_per_sector, NULL);
 	eprintf ("BytesPerSector:   %d\n", bytes_per_sector);
-	libewf_get_volume_type (ewf_h, &volume_type);
-	eprintf ("VolumeType:       %d\n", volume_type);
-	libewf_get_media_size (ewf_h, &media_size);
+	libewf_handle_get_media_size (ewf_h, &media_size, NULL);
 	eprintf ("MediaSize:        %"PFMT64d"\n", media_size);
-	libewf_get_media_type (ewf_h, &media_type);
+	libewf_handle_get_media_type (ewf_h, &media_type, NULL);
 	eprintf ("MediaType:        %d\n", media_type);
-	libewf_get_media_flags (ewf_h, &media_flags);
+	libewf_handle_get_media_flags (ewf_h, &media_flags, NULL);
 	eprintf ("MediaFlags:       %d\n", media_flags);
-	libewf_get_md5_hash (ewf_h, hash, 128);
+	libewf_handle_get_md5_hash (ewf_h, hash, 128, NULL);
 	eprintf ("CalculatedHash:   %s\n", hash);
 
 	rewf = R_NEW (RIOEwf);

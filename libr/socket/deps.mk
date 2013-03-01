@@ -19,4 +19,3 @@ ifeq (${OSTYPE},windows)
 LDFLAGS+=-lwsock32
 #LDFLAGS+=-lws2_32
 endif
-

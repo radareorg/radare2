@@ -2,7 +2,7 @@
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
-include $(LIBR)/../config-user.mk
+#include $(LIBR)/../config-user.mk
 include $(LIBR)/../global.mk
 include $(LIBR)/../mk/${COMPILER}.mk
 
@@ -81,7 +81,12 @@ endif
 # XXX do it in configure stage
 OSTYPE?=gnulinux
 ifeq (${OSTYPE},auto)
+_UNAME=$(shell uname)
+ifeq ($(_UNAME),Darwin)
+OSTYPE=darwin
+else
 OSTYPE=gnulinux
+endif
 endif
 # Output
 ifeq (${OSTYPE},windows)
@@ -127,8 +132,12 @@ TH_LIBS=
 endif
 
 ifeq (${EXT_SO},)
-all:
-	@echo "Unidentified platform '${OSTYPE}'" ; exit 1
+main:
+	@echo
+	@echo "OSTYPE: ${OSTYPE}"
+	@echo ERROR: Unknown platform
+	@echo
+	@exit 1
 endif
 
 LIB=lib${NAME}

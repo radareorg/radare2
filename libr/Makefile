@@ -34,7 +34,7 @@ ifeq (${WITHNONPIC},1)
 endif
 
 # looks hacky :D
-libr.a: $(shell ls */libr_*.a)
+libr.a: $(shell ls */libr_*.a 2>/dev/null)
 	rm -f libr.a
 	echo CREATE libr.a > libr.m
 	for a in */libr_*.a ; do echo ADDLIB $$a >> libr.m ; done
