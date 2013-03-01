@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2013 - nibble, pancake */
 
 #ifndef _INCLUDE_R_BIN_H_
 #define _INCLUDE_R_BIN_H_

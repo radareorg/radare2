@@ -107,6 +107,8 @@ static void load_languages(RBin *bin) {
 	/* load objc information if available */
 	if (r_bin_lang_objc (bin)) //->cur.o))
 		eprintf ("ObjectiveC information loaded\n");
+	else if (r_bin_lang_cxx (bin)) //->cur.o))
+		eprintf ("C++ information loaded\n");
 	/* TODO : do the same for dex, java and c++ name demangling? */
 }
 

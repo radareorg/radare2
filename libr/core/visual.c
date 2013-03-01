@@ -667,7 +667,23 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'N': r_core_seek_delta (core, 0-(int)core->blocksize); break;
 #endif
 	case ':':
-		r_core_visual_prompt (core);
+		{
+			ut64 addr = core->offset;
+			ut64 bsze = core->blocksize;
+			if (curset) {
+				if (ocursor != -1) {
+					r_core_block_size (core, cursor-ocursor);
+					r_core_seek (core, core->offset + ocursor, 1);
+				} else {
+					r_core_seek (core, core->offset + cursor, 1);
+				}
+			}
+			r_core_visual_prompt (core);
+			if (curset) {
+				r_core_seek (core, addr, 1);
+				r_core_block_size (core, bsze);
+			}
+		}
 		break;
 	case '_':
 		if (r_config_get_i (core->config, "hud.once"))

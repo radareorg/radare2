@@ -130,10 +130,6 @@ static RList* imports(RBinArch *arch) {
 	return NULL;
 }
 
-static RList* libs(RBinArch *arch) {
-	return NULL;
-}
-
 static RBinInfo* info(RBinArch *arch) {
 	struct EXE *exe = (struct EXE*) arch->buf->buf;
 	RBinInfo *ret = NULL;
@@ -197,7 +193,7 @@ struct r_bin_plugin_t r_bin_plugin_mz = {
 	.strings = NULL,
 	.info = &info,
 	.fields = NULL,
-	.libs = &libs,
+	.libs = NULL,
 	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,

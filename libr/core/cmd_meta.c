@@ -69,7 +69,8 @@ static int cmd_meta(void *data, const char *input) {
 		}
 		break;
 	case 'L': // debug information of current offset
-		ret = r_bin_meta_get_line (core->bin, core->offset, file, sizeof (file)-1, &line);
+		ret = r_bin_meta_get_line (core->bin, core->offset, file,
+			sizeof (file)-1, &line);
 		if (ret) {
 			r_cons_printf ("file %s\nline %d\n", file, line);
 			ret = (line<5)? 5-line: 5;
@@ -79,7 +80,8 @@ static int cmd_meta(void *data, const char *input) {
 				r_cons_printf ("%c %.3x  %s\n", (i==2)?'>':' ', line+i, row);
 				free (row);
 			}
-		} else eprintf ("Cannot find meta information at 0x%08"PFMT64x"\n", core->offset);
+		} else eprintf ("Cannot find meta information at 0x%08"
+			PFMT64x"\n", core->offset);
 		break;
 	// XXX: use R_META_TYPE_XXX here
 	case 'z': /* string */
@@ -89,6 +91,7 @@ static int cmd_meta(void *data, const char *input) {
 			n = strlen (name);
 			eprintf ("%d\n", n);
 		}
+	case 'h': /* comment */
 	case 'C': /* comment */
 	case 's': /* string */
 	case 'd': /* data */
@@ -101,12 +104,14 @@ static int cmd_meta(void *data, const char *input) {
 		case '-':
 			switch (input[2]) {
 			case '*':
-				core->num->value = r_meta_del (core->anal->meta, input[0], 0, UT64_MAX, NULL);
+				core->num->value = r_meta_del (core->anal->meta,
+					input[0], 0, UT64_MAX, NULL);
 				break;
 			case ' ':
 				addr = r_num_math (core->num, input+3);
 			default:
-				core->num->value = r_meta_del (core->anal->meta, input[0], addr, 1, NULL);
+				core->num->value = r_meta_del (core->anal->meta,
+					input[0], addr, 1, NULL);
 				break;
 			}
 			break;
@@ -115,12 +120,14 @@ static int cmd_meta(void *data, const char *input) {
 			break;
 		case '!':
 			{
-				char *out, *comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, addr);
+				char *out, *comment = r_meta_get_string (
+					core->anal->meta, R_META_TYPE_COMMENT, addr);
 				out = r_core_editor (core, comment);
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
-				r_meta_set_string (core->anal->meta, R_META_TYPE_COMMENT, addr, out);
+				r_meta_set_string (core->anal->meta,
+					R_META_TYPE_COMMENT, addr, out);
 				free (out);
 				free (comment);
 			}
@@ -131,7 +138,8 @@ static int cmd_meta(void *data, const char *input) {
 				break;
 			}
 			t = strdup (input+2);
-			if (!*t || atoi (t)>0) {
+			n = r_num_math (core->num, t);
+			if (!*t || n>0) { //atoi (t)>0) {
 				RFlagItem *fi;
 				p = strchr (t, ' ');
 				if (p) {
@@ -156,7 +164,7 @@ static int cmd_meta(void *data, const char *input) {
 					//	return 1;
 					}
 				}
-				if (!n) n = atoi (input+1);
+				//if (!n) n = atoi (input+1);
 			} else {
 				p = NULL;
 				strncpy (name, t, sizeof (name)-1);
@@ -179,7 +187,8 @@ static int cmd_meta(void *data, const char *input) {
 			ut64 offset;
 			if (input[2]==' ') {
 				offset = r_num_math (core->num, input+3);
-				if ((f = r_anal_fcn_find (core->anal, offset, R_ANAL_FCN_TYPE_NULL)) != NULL)
+				if ((f = r_anal_fcn_find (core->anal, offset,
+						R_ANAL_FCN_TYPE_NULL)) != NULL)
 					memset (f->varsubs, 0, sizeof (f->varsubs));
 			} else if (input[2]=='*') {
 				r_list_foreach (core->anal->fcns, iter, f)
@@ -240,6 +249,7 @@ static int cmd_meta(void *data, const char *input) {
 		" CC[-] [size] [string]  # add/remove comment. Use CC! to edit with $EDITOR\n"
 		" Cv[-] offset reg name  # add var substitution\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
+		" Ch[-] [size]           # hide data\n"
 		" Cd[-] [size]           # hexdump data\n"
 		" Cf[-] [sz] [fmt..]     # format memory (see pf?)\n"
 		" Cm[-] [sz] [fmt..]     # magic parse (see pm?)\n");

@@ -50,6 +50,7 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr) {
 
 	switch(type) {
 	case R_META_TYPE_COMMENT:
+	case R_META_TYPE_HIDE:
 	case R_META_TYPE_ANY:
 		break;
 	case R_META_TYPE_CODE:
@@ -173,6 +174,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 	if (to<from)
 		to = from+to;
 	switch (type) {
+	case R_META_TYPE_HIDE:
 	case R_META_TYPE_CODE:
 	case R_META_TYPE_DATA:
 	case R_META_TYPE_STRING:

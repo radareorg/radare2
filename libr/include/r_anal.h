@@ -357,6 +357,7 @@ enum {
 	R_META_TYPE_STRING = 's',
 	R_META_TYPE_FORMAT = 'f',
 	R_META_TYPE_MAGIC = 'm',
+	R_META_TYPE_HIDE = 'h',
 	R_META_TYPE_COMMENT = 'C',
 };
 

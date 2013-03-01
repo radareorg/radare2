@@ -1,6 +1,6 @@
 #include <r_util.h>
 
-/* dwarf uleb128 implementation */
+/* dex/dwarf uleb128 implementation */
 
 R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v) {
 	ut8 c;

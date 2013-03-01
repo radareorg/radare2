@@ -487,10 +487,14 @@ toro:
 			free (out);
 			}
 			oplen = ret = (int)mi->size;
-		i += mi->size-1;
+			i += mi->size-1; // wtf?
 			free (line);
 			free (refline);
 			line = refline = NULL;
+			continue;
+		case R_META_TYPE_HIDE:
+			r_cons_printf ("(%d bytes hidden)\n", mi->size);
+			oplen = mi->size;
 			continue;
 		case R_META_TYPE_DATA:
 			{

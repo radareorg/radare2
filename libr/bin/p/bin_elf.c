@@ -216,7 +216,7 @@ static RBinInfo* info(RBinArch *arch) {
 
 	if(!(ret = R_NEW0 (RBinInfo)))
 		return NULL;
-	ret->lang = "C";
+	ret->lang = "c";
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	if ((str = Elf_(r_bin_elf_get_rpath)(arch->bin_obj))) {
 		strncpy (ret->rpath, str, R_BIN_SIZEOF_STRINGS);
