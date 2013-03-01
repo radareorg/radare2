@@ -1115,6 +1115,7 @@ eprintf ("TODO: Add new function manually\n");
 		case 'q':
 			if (level==0)
 				goto beach;
+			else level--;
 			break;
 		}
 	}
