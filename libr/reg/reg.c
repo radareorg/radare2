@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -270,7 +270,7 @@ R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
 	RRegArena *dst = r_list_head (reg->regset[item->type].pool)->n->data;
 	if (off+len>src->size) len = src->size-off;
 	if (off+len>dst->size) len = dst->size-off;
-	if (len>0 && memcmp (dst->bytes+off, src->bytes+off, len)) {
+	if (len>1 && memcmp (dst->bytes+off, src->bytes+off, len)) {
 		r_reg_arena_set (reg, ptr, 0);
 		ret = r_reg_get_value (reg, item);
 		r_reg_arena_set (reg, !ptr, 0);

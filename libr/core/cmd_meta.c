@@ -13,8 +13,9 @@ static int cmd_meta(void *data, const char *input) {
 	char file[1024];
 
 	switch (*input) {
+	case 'j':
 	case '*':
-		r_meta_list (core->anal->meta, R_META_TYPE_ANY, 1);
+		r_meta_list (core->anal->meta, R_META_TYPE_ANY, *input);
 		break;
 	case 'l':
 		// XXX: this should be moved to CL?

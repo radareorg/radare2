@@ -48,7 +48,7 @@ R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr) {
 	RListIter *iter;
 	RMetaItem *d;
 
-	switch(type) {
+	switch (type) {
 	case R_META_TYPE_COMMENT:
 	case R_META_TYPE_HIDE:
 	case R_META_TYPE_ANY:
@@ -259,6 +259,7 @@ int r_meta_get_bounds(RMeta *m, ut64 addr, int type, ut64 *from, ut64 *to)
 R_API const char *r_meta_type_to_string(int type) {
 	// XXX: use type as '%c'
 	switch(type) {
+	case R_META_TYPE_HIDE: return "Ch";
 	case R_META_TYPE_CODE: return "Cc";
 	case R_META_TYPE_DATA: return "Cd";
 	case R_META_TYPE_STRING: return "Cs";
@@ -292,13 +293,22 @@ static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 			return;
 		r_name_filter (str, 0);
 		// XXX r_str_sanitize (str);
-		if (rad)
-			m->printf ("%s %d %s @ 0x%08"PFMT64x"\n",
-				r_meta_type_to_string (d->type),
-				(int)(d->to-d->from), str, d->from);
-		else
+		switch (rad) {
+		case 'j':
+			m->printf ("{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"}",
+				d->from, r_meta_type_to_string (d->type), str);
+			break;
+		case 0:
 			m->printf ("0x%08"PFMT64x" %s\n",
 				d->from, str);
+		case 1:
+		case '*':
+		default:
+			m->printf ("%s %d %s@0x%08"PFMT64x"\n",
+				r_meta_type_to_string (d->type),
+				(int)(d->to-d->from), str, d->from);
+			break;
+		}
 		free (str);
 	}
 }
@@ -308,12 +318,15 @@ R_API int r_meta_list(RMeta *m, int type, int rad) {
 	int count = 0;
 	RListIter *iter;
 	RMetaItem *d;
+	if (rad=='j') m->printf ("[");
 	r_list_foreach (m->data, iter, d) {
 		if (d->type == type || type == R_META_TYPE_ANY) {
 			printmetaitem (m, d, rad);
 			count++;
+			if (rad=='j' && iter->n) m->printf (",");
 		}
 	}
+	if (rad=='j') m->printf ("]\n");
 	return count;
 }
 

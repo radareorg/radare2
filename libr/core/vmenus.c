@@ -947,12 +947,17 @@ static ut64 addr = 0;
 static int option = 0;
 
 static void r_core_visual_anal_refresh (RCore *core) {
-	ut64 addr = core->offset;
-	char old[1024];
-	old[0]='\0';
-	int cols = r_cons_get_size (NULL);
-	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL); // once
+	RAnalFunction *fcn;
 	char *oprofile;
+	ut64 addr;
+	int cols;
+	char old[1024];
+
+	if (!core) return;
+	old[0]='\0';
+	cols = r_cons_get_size (NULL);
+	addr = core->offset;
+	fcn = r_anal_fcn_find (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL); // once
 
 	cols -= 50;
 	if (cols> 60) cols = 60;
@@ -965,7 +970,7 @@ static void r_core_visual_anal_refresh (RCore *core) {
 
 		oprofile = strdup (r_config_get (core->config, "asm.profile"));
 		r_config_set (core->config, "asm.profile", "simple");
-		r_core_cmdf (core, "pd @ 0x%"PFMT64x":32", addr);
+		r_core_cmdf (core, "pd @ 0x%"PFMT64x"!32", addr);
 		r_config_set (core->config, "asm.profile", oprofile);
 		free (oprofile);
 
