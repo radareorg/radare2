@@ -179,6 +179,13 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
+static int check(RBinArch *arch) {
+	if (arch && arch->buf && arch->buf->buf)
+	if (!memcmp (arch->buf->buf, "\x56\x5a", 2))
+		return R_TRUE;
+	return R_FALSE;
+}
+
 struct r_bin_plugin_t r_bin_plugin_te = {
 	.name = "te",
 	.desc = "TE bin plugin",
@@ -186,7 +193,7 @@ struct r_bin_plugin_t r_bin_plugin_te = {
 	.fini = NULL,
 	.load = &load,
 	.destroy = &destroy,
-	.check = NULL,
+	.check = &check,
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
