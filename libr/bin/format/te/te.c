@@ -61,7 +61,7 @@ static int r_bin_te_init_hdr(struct r_bin_te_obj_t* bin) {
 }
 
 static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
-	int sections_size = sizeof(TE_image_file_header) * bin->header->NumberOfSections;
+	int sections_size = sizeof(TE_image_section_header) * bin->header->NumberOfSections;
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
 		return R_FALSE;
