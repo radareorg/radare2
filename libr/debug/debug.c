@@ -342,7 +342,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 #if __UNIX__
 		/* XXX Uh? */
 		if (dbg->stop_all_threads && dbg->pid>0)
-			kill (dbg->pid, SIGSTOP);
+			r_sandbox_kill (dbg->pid, SIGSTOP);
 #endif
 #endif
 		r_debug_select (dbg, dbg->pid, ret);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake */
+/* radare - LGPL - Copyright 2009-2013 pancake */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -1114,15 +1114,6 @@ if (dbg->bits & R_SYS_BITS_32) {
 #endif
 }
 
-/*
-	TODO: list all pids in linux and bsd.. osx seems to be strange
-	int i;
-	for (i=1; i<9999; i++) {
-		if (!kill (i, 0))
-			r_list_append (list, r_debug_pid_new ("???", i, 's', 0));
-	}
-*/
-
 #if __APPLE__
 // XXX
 static RDebugPid *darwin_get_pid(int pid) {
@@ -1303,7 +1294,7 @@ static RList *r_debug_native_pids(int pid) {
 		closedir (dh);
 	} else
 	for (i=2; i<MAXPID; i++) {
-		if (!kill (i, 0)) {
+		if (!r_sandbox_kill (i, 0)) {
 			// TODO: Use slurp!
 			snprintf (cmdline, sizeof (cmdline), "/proc/%d/cmdline", i);
 			fd = open (cmdline, O_RDONLY);
@@ -2120,7 +2111,7 @@ static int r_debug_native_kill(RDebug *dbg, int pid, int tid, int sig) {
 	} else {
 #endif
 		if (pid==0) pid = dbg->pid;
-		if ((kill (pid, sig) != -1))
+		if ((r_sandbox_kill (pid, sig) != -1))
 			ret = R_TRUE;
 		if (errno == 1) // EPERM
 			ret = -R_TRUE;

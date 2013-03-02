@@ -4,7 +4,6 @@
   |__\__|_|__|___/__|__|_\__\___\ |____(_)____/
 
 
-
 Broken stuff to fixe before release
 ===================================
 - java
@@ -14,6 +13,7 @@ Broken stuff to fixe before release
 
 0.9.4
 =====
+* continue execution until condition happen (reg, mem, ..)
 * rabin2 -x should not work on non-fatmach0 files
 * foldable stuff .. was in r1..redo?
 * cmp rip+xx -> not resolved wtf
