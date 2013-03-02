@@ -343,7 +343,7 @@ struct r_bin_te_export_t* r_bin_te_get_exports(struct r_bin_te_obj_t* bin) {
 	return NULL;
 }
 
-struct r_bin_te_import_t* r_bin_pe_get_imports(struct r_bin_te_obj_t *bin) {
+struct r_bin_te_import_t* r_bin_te_get_imports(struct r_bin_te_obj_t *bin) {
 	return NULL;
 }
 
@@ -374,7 +374,7 @@ struct r_bin_te_obj_t* r_bin_te_new(const char* file) {
 	return bin;
 }
 
-struct r_bin_te_obj_t* r_bin_pe_new_buf(struct r_buf_t *buf) {
+struct r_bin_te_obj_t* r_bin_te_new_buf(struct r_buf_t *buf) {
 	struct r_bin_te_obj_t *bin = R_NEW0 (struct r_bin_te_obj_t);
 	if (!bin) return NULL;
 	bin->b = buf;

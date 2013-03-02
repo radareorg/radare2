@@ -150,10 +150,7 @@ static RBinInfo* info(RBinArch *arch) {
 	if (!ret) return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	if ((str = r_bin_te_get_class (arch->bin_obj))) {
-		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
-		free (str);
-	}
+	strncpy (ret->bclass, "TE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rclass, "te", R_BIN_SIZEOF_STRINGS);
 	if ((str = r_bin_te_get_os (arch->bin_obj))) {
 		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
