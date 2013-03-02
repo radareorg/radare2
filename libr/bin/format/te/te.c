@@ -70,7 +70,7 @@ static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 		perror ("malloc (sections headers)");
 		return R_FALSE;
 	}
-	if (r_buf_read_at (bin->b, bin->header + sizeof(TE_image_file_header),
+	if (r_buf_read_at (bin->b, sizeof(TE_image_file_header),
 				(ut8*)bin->section_header, sections_size) == -1) {
 		eprintf ("Error: read (sections headers)\n");
 		return R_FALSE;
