@@ -39,7 +39,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RAnalOp op;
 	ut64 ret = 0;
 	*ok = 0;
-	if (str[0]=='[') {
+	if (*str=='[') {
 		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
 		const char *p = strchr (str+5, ':');
 		ut64 n;
@@ -50,10 +50,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// push state
 		{
-			// TODO: remove trailing ']'
+			char *o = strdup (str+1);
 			const char *q = r_num_calc_index (core->num, NULL);
-			n = r_num_math (core->num, str+1);
+			r_str_replace_char (o, ']', 0);
+			n = r_num_math (core->num, o);
 			r_num_calc_index (core->num, q);
+			free (o);
 		}
 		// pop state
 		switch (refsz) {

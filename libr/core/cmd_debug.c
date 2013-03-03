@@ -579,7 +579,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"db sym.main       ; add breakpoint into sym.main\n"
 		"db 0x804800       ; add breakpoint\n"
 		"db -0x804800      ; remove breakpoint\n"
-		"dbi 0x848 ecx=3   ; stop execution when condition matches\n"
+		// "dbi 0x848 ecx=3   ; stop execution when condition matches\n"
 		"dbs 0x8048000     ; toggle breakpoint on given address\n"
 		"dbe 0x8048000     ; enable breakpoint\n"
 		"dbc 0x8048000 cmd ; run command when breakpoint is hit\n"
@@ -756,7 +756,10 @@ static int cmd_debug(void *data, const char *input) {
 		case 'i':
 			if (input[2] == ' ') {
 				int n = 0;
+				r_cons_break (static_debug_stop, core->dbg);
 				do {
+					if (r_cons_singleton ()->breaked)
+						break;
 					r_debug_step (core->dbg, 1);
 					if (checkbpcallback (core)) {
 						eprintf ("Interrupted by a breakpoint\n");
