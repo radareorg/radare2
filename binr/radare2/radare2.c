@@ -66,10 +66,16 @@ static int main_version() {
 }
 
 static void list_io_plugins(RIO *io) {
+	char str[4];
 	struct list_head *pos;
 	list_for_each_prev(pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
-		printf (" %-10s %s\n", il->plugin->name, il->plugin->desc);
+		// read, write, debug, proxy
+		str[0] = 'r';
+		str[1] = il->plugin->write? 'w': '_';
+		str[2] = il->plugin->debug? 'd': '_';
+		str[3] = 0;
+		printf ("%s  %-11s %s\n", str, il->plugin->name, il->plugin->desc);
 	}
 }
 

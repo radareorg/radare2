@@ -266,10 +266,10 @@ R_API int r_bin_list(RBin *bin) {
 	RBinXtrPlugin *plugin;
 	RBinXtrPlugin *xtr;
 	r_list_foreach (bin->plugins, it, plugin) {
-		printf ("bin %-10s %s\n", plugin->name, plugin->desc);
+		printf ("bin  %-11s %s\n", plugin->name, plugin->desc);
 	}
 	r_list_foreach (bin->binxtrs, it, xtr) {
-		printf ("bin-xtr %-10s %s\n", xtr->name, xtr->desc);
+		printf ("xtr  %-11s %s\n", xtr->name, xtr->desc);
 	}
 	return R_FALSE;
 }

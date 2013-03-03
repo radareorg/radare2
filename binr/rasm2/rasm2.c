@@ -20,7 +20,7 @@ static void r_asm_list(RAsm *a) {
 		if (h->assemble && h->disassemble)  feat = "ad";
 		if (h->assemble && !h->disassemble) feat = "a_";
 		if (!h->assemble && h->disassemble) feat = "_d";
-		printf ("%s  %-8s  %s\n", feat, h->name, h->desc);
+		printf ("%s  %-11s  %s\n", feat, h->name, h->desc);
 	}
 }
 

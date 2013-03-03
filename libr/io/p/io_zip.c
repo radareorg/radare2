@@ -65,7 +65,7 @@ struct r_io_plugin_t r_io_plugin_zip = {
         .plugin_open = __plugin_open,
 	.lseek = NULL,
 	.system = NULL,
-	.debug = (void *)1,
+	.debug = NULL
 };
 
 #ifndef CORELIB
