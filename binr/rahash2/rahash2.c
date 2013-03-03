@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	for (i=optind; i<argc; i++) {
+	for (ret=0, i=optind; i<argc; i++) {
 		io = r_io_new ();
 		if (r_file_is_directory (argv[i])) {
 			eprintf ("rahash2: Cannot hash directories\n");
@@ -229,7 +229,8 @@ int main(int argc, char **argv) {
 			eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
 			return 1;
 		}
-		ret = do_hash (argv[i], algo, io, bsize, rad);
+		ret |= do_hash (argv[i], algo, io, bsize, rad);
 		r_io_free (io);
 	}
+	return ret;
 }
