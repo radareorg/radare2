@@ -313,7 +313,9 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 						if (!n) goto fail;
 					}
 				}
-				r_str_replace_char (s, '=', '-');
+				lgt = strstr (p, "==");
+				if (lgt) *lgt = ' ';
+				r_str_replace_char (p, '=', '-');
 				n = r_num_math (num, p);
 				if (n) goto fail;
 			}

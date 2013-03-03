@@ -24,6 +24,7 @@ static int main_help(int line) {
 		" -b [bits]    set asm.bits\n"
 		" -B [size]    initial block size\n"
 		" -c 'cmd..'   execute radare command\n"
+		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
 		" -d           use 'file' as a program to debug\n"
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
@@ -117,6 +118,7 @@ int main(int argc, char **argv) {
 	//int threaded = R_FALSE;
 	int has_project = R_FALSE;
  	int ret, i, c, perms = R_IO_READ;
+	int do_connect = 0;
 	int run_anal = 1;
 	int run_rc = 1;
 	int help = 0;
@@ -143,12 +145,15 @@ int main(int argc, char **argv) {
 		return main_help (1);
 	r_core_init (&r);
 
-	while ((c = getopt (argc, argv, "wfhm:e:nNdqvs:p:b:B:a:Lui:l:P:c:D:"
+	while ((c = getopt (argc, argv, "Cwfhm:e:nNdqvs:p:b:B:a:Lui:l:P:c:D:"
 #if USE_THREADS
 "t"
 #endif
 			))!=-1) {
 		switch (c) {
+		case 'C':
+			do_connect = R_TRUE;
+			break;
 #if USE_THREADS
 		case 't':
 			threaded = R_TRUE;
@@ -193,6 +198,11 @@ int main(int argc, char **argv) {
 	}
 	if (help>1) return main_help (2);
 	else if (help) return main_help (0);
+
+	if (do_connect) {
+		r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
+		return 0;
+	}
 
 	// DUP
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
