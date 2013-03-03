@@ -23,20 +23,23 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		return 1;
 	}
 	if (rad) {
-		if (op->a_len== op->b_len) {
+		if (op->a_len == op->b_len) {
 			printf ("wx ");
 			for (i=0; i<op->b_len; i++)
 				printf ("%02x", op->b_buf[i]);
 			printf (" @ 0x%08"PFMT64x"\n", op->b_off);
 		} else {
-			printf ("r-%d @ 0x%08"PFMT64x"\n",
-				op->a_len, op->b_off+delta);
-			printf ("r+%d @ 0x%08"PFMT64x"\n",
-				op->b_len, op->b_off+delta);
-			printf ("wx ");
-			for (i=0; i<op->b_len; i++)
-				printf ("%02x", op->b_buf[i]);
-			printf (" @ 0x%08"PFMT64x"\n", op->b_off+delta);
+			if ((op->a_len)>0)
+				printf ("r-%d @ 0x%08"PFMT64x"\n",
+					op->a_len, op->a_off+delta);
+			if (op->b_len> 0) {
+				printf ("r+%d @ 0x%08"PFMT64x"\n",
+					op->b_len, op->b_off+delta);
+				printf ("wx ");
+				for (i=0; i<op->b_len; i++)
+					printf ("%02x", op->b_buf[i]);
+				printf (" @ 0x%08"PFMT64x"\n", op->b_off+delta);
+			}
 			delta += (op->b_off - op->a_off);
 		}
 	} else {
@@ -202,7 +205,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	delta = 0;
+	//delta = 0;
 	switch (mode) {
 	case MODE_COLS:
 		dump_cols (bufa, sza, bufb, szb);
