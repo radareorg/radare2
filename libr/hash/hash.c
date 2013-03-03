@@ -87,6 +87,7 @@ R_API int r_hash_size(int bit) {
 	if (bit & R_HASH_XXHASH) return R_HASH_SIZE_XXHASH;
 	if (bit & R_HASH_PARITY) return 1;
 	if (bit & R_HASH_ENTROPY) return 4; // special case
+	if (bit & R_HASH_HAMDIST) return 1;
 	if (bit & R_HASH_XOR) return 1;
 	if (bit & R_HASH_XORPAIR) return 1;
 	if (bit & R_HASH_MOD255) return 1;

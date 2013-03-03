@@ -250,15 +250,20 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'f':
 		{
+		int range;
 		char name[256], *n;
 		r_line_set_prompt ("flag name: ");
 		if (r_cons_fgets (name, sizeof (name), 0, NULL) >=0 && *name) {
-			int range = curset? (R_ABS (cursor-ocursor)+1): 1;
-			if (range<1) range=1;
 			n = r_str_chop (name);
-			if (*n) r_flag_set (core->flags, n, core->offset + cursor, range, 1);
-		}
-		}
+			if (*name=='-') {
+				if (*n) r_flag_unset (core->flags, n+1, NULL);
+			} else {
+				range = curset? (R_ABS (cursor-ocursor)+1): 1;
+				if (range<1) range = 1;
+				if (*n) r_flag_set (core->flags, n,
+					core->offset + cursor, range, 1);
+			}
+		} }
 		break;
 	case 'F':
 		r_flag_unset_i (core->flags, core->offset + cursor, NULL);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 pancake */
 
 #include "r_hash.h"
 
@@ -52,6 +52,10 @@ R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *buf, ut32 len) {
 		ut32 res = r_hash_xxhash (buf, len);
 		memcpy (ctx->digest, &res, R_HASH_SIZE_XXHASH);
 		return R_HASH_SIZE_XXHASH;
+	}
+	if (algobit & R_HASH_HAMDIST) {
+		*ctx->digest = r_hash_hamdist (buf, len);
+		return 1;
 	}
 	if (algobit & R_HASH_PCPRINT) {
 		*ctx->digest = r_hash_pcprint (buf, len);

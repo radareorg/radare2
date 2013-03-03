@@ -324,10 +324,11 @@ static int cmd_print(void *data, const char *input) {
 			int show_bytes = r_config_get_i (core->config, "asm.bytes");
 			int decode = r_config_get_i (core->config, "asm.decode");
 			const ut8 *buf = core->block;
-			int j, ret, err = 0;
+			int ilen, j, ret, err = 0;
 			RAsmOp asmop;
 			if (l==0) l = len;
-			for (i=j=0; j<len && j<l; i+=ret,j++) {
+			ilen = (*input=='D')? core->blocksize: 0xfffffff;
+			for (i=j=0; j<len && j<l && i<ilen; i+=ret, j++) {
 				r_asm_set_pc (core->assembler, core->offset+i);
 				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
 				if (show_offset)
@@ -371,7 +372,7 @@ static int cmd_print(void *data, const char *input) {
 				return R_TRUE;
 			}
 			break;
-		case 'r':
+		case 'r': // pdr
 			{
 			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);

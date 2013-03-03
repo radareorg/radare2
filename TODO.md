@@ -13,6 +13,8 @@ Broken stuff to fixe before release
 
 0.9.4
 =====
+* ah -> add hint to define calls that do not return
+* pdr doesnt works well with antidisasm tricks, wtf
 * continue execution until condition happen (reg, mem, ..)
 * rabin2 -x should not work on non-fatmach0 files
 * foldable stuff .. was in r1..redo?

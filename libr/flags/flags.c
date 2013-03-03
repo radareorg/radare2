@@ -111,6 +111,10 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 	RList *list2, *list;
 	dup = 0; // XXX: force nondup
 
+	if (!name || !*name) {
+		/* contract fail */
+		return R_FALSE;
+	}
 	if (dup) {
 		RFlagItem *item = R_NEW0 (RFlagItem);
 		item->space = f->space_idx;
