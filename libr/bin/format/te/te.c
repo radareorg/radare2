@@ -8,13 +8,6 @@
 #include "te_specs.h"
 #include "te.h"
 
-
-/* TODO:
- * 1. Implement import/export
- * 2. Implement symbols support
- * 3. Implement debugging info support
- * 4. More sections parse
- */
 ut64 r_bin_te_get_main_offset(struct r_bin_te_obj_t *bin) {
 	struct r_bin_te_addr_t *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
@@ -81,8 +74,6 @@ static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 static int r_bin_te_init(struct r_bin_te_obj_t* bin) {
 	bin->header = NULL;
 	bin->section_header = NULL;
-	//bin->export_directory = NULL;
-	//bin->import_directory = NULL;
 	bin->endian = 0;
 	if (!r_bin_te_init_hdr(bin)) {
 		eprintf("Warning: File is not TE\n");
@@ -92,9 +83,6 @@ static int r_bin_te_init(struct r_bin_te_obj_t* bin) {
 		eprintf("Warning: Cannot initialize sections\n");
 		return R_FALSE;
 	}
-	// FIXME: Not yet implemented!
-	//r_bin_te_init_imports(bin);
-	//r_bin_te_init_exports(bin);
 	return R_TRUE;
 }
 
@@ -145,10 +133,6 @@ struct r_bin_te_addr_t* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin)
 {
 	return (ut64)bin->header->ImageBase;
-}
-
-int r_bin_te_get_image_size(struct r_bin_te_obj_t* bin) {
-	return bin->header->StrippedSize;
 }
 
 char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin) {
@@ -339,20 +323,10 @@ char* r_bin_te_get_subsystem(struct r_bin_te_obj_t* bin) {
 	return subsystem;
 }
 
-struct r_bin_te_export_t* r_bin_te_get_exports(struct r_bin_te_obj_t* bin) {
-	return NULL;
-}
-
-struct r_bin_te_import_t* r_bin_te_get_imports(struct r_bin_te_obj_t *bin) {
-	return NULL;
-}
-
 void* r_bin_te_free(struct r_bin_te_obj_t* bin) {
 	if (!bin) return NULL;
 	free (bin->header);
 	free (bin->section_header);
-	//free (bin->export_directory);
-	//free (bin->import_directory);
 	r_buf_free (bin->b);
 	free (bin);
 	return NULL;

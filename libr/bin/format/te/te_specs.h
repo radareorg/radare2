@@ -48,6 +48,9 @@
 
 #define TE_IMAGE_DIRECTORY_ENTRIES				2
 
+#define TE_IMAGE_DIRECTORY_ENTRY_BASERELOC          0
+#define TE_IMAGE_DIRECTORY_ENTRY_DEBUG              1
+
 #define TE_IMAGE_SUBSYSTEM_UNKNOWN                  0
 #define TE_IMAGE_SUBSYSTEM_NATIVE                   1
 #define TE_IMAGE_SUBSYSTEM_WINDOWS_GUI              2

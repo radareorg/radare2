@@ -88,62 +88,6 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
-	RList *ret = NULL;
-	RBinSymbol *ptr = NULL;
-	struct r_bin_te_export_t *symbols = NULL;
-	int i;
-
-	if (!(ret = r_list_new ()))
-		return NULL;
-	ret->free = free;
-	if (!(symbols = r_bin_te_get_exports(arch->bin_obj)))
-		return ret;
-	for (i = 0; !symbols[i].last; i++) {
-		if (!(ptr = R_NEW (RBinSymbol)))
-			break;
-		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->forwarder, (char*)symbols[i].forwarder, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type 
-		ptr->size = 0;
-		ptr->rva = symbols[i].rva;
-		ptr->offset = symbols[i].offset;
-		ptr->ordinal = symbols[i].ordinal;
-		r_list_append (ret, ptr);
-	}
-	free (symbols);
-	return ret;
-}
-
-static RList* imports(RBinArch *arch) {
-	RList *ret = NULL;
-	RBinImport *ptr = NULL;
-	struct r_bin_te_import_t *imports = NULL;
-	int i;
-
-	if (!(ret = r_list_new ()))
-		return NULL;
-	ret->free = free;
-	if (!(imports = r_bin_te_get_imports(arch->bin_obj)))
-		return ret;
-	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = R_NEW (RBinImport)))
-			break;
-		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-		ptr->rva = imports[i].rva;
-		ptr->offset = imports[i].offset;
-		ptr->size = 0;
-		ptr->ordinal = imports[i].ordinal;
-		ptr->hint = imports[i].hint;
-		r_list_append (ret, ptr);
-	}
-	free (imports);
-	return ret;
-}
-
 static RBinInfo* info(RBinArch *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -195,12 +139,12 @@ struct r_bin_plugin_t r_bin_plugin_te = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
-	.imports = &imports,
+	.symbols = NULL, // TE doesn't have exports data directory
+	.imports = NULL, // TE doesn't have imports data directory
 	.strings = NULL,
 	.info = &info,
 	.fields = NULL,
-	.libs = NULL,
+	.libs = NULL, // TE doesn't have imports data directory
 	.relocs = NULL,
 	.meta = NULL,
 	.write = NULL,
