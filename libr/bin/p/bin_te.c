@@ -113,7 +113,7 @@ static RBinInfo* info(RBinArch *arch) {
 		free (str);
 	}
 	strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
-	ret->bits = 0;
+	ret->bits = r_bin_te_get_bits (arch->bin_obj);
 	ret->big_endian = 1;
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;
@@ -129,7 +129,7 @@ static int check(RBinArch *arch) {
 
 struct r_bin_plugin_t r_bin_plugin_te = {
 	.name = "te",
-	.desc = "TE bin plugin",
+	.desc = "TE bin plugin", // Terse Executable format
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

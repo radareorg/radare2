@@ -116,6 +116,11 @@ char* r_bin_te_get_arch(struct r_bin_te_obj_t* bin) {
 	return arch;
 }
 
+int r_bin_te_get_bits(struct r_bin_te_obj_t* bin) {
+	return 32; // It is always 32 bit by now
+}
+
+
 struct r_bin_te_addr_t* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 	struct r_bin_te_addr_t *entry = NULL;
 

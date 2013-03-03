@@ -49,6 +49,7 @@ ut64 r_bin_te_get_main_offset(struct r_bin_te_obj_t *bin);
 ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin);
 int r_bin_te_get_image_size(struct r_bin_te_obj_t* bin);
 char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin);
+int r_bin_te_get_bits(struct r_bin_te_obj_t* bin);
 char* r_bin_te_get_os(struct r_bin_te_obj_t* bin);
 struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin);
 char* r_bin_te_get_subsystem(struct r_bin_te_obj_t* bin);
