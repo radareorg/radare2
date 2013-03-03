@@ -502,6 +502,8 @@ R_API int r_core_init(RCore *core) {
 	r_core_cmd_init (core);
 	core->flags = r_flag_new ();
 	core->dbg = r_debug_new (R_TRUE);
+	core->dbg->graph->printf = (PrintfCallback)r_cons_printf;
+	core->dbg->printf = (PrintfCallback)r_cons_printf;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	//r_debug_use (core->dbg, "native");
 	r_reg_arena_push (core->dbg->reg); // create a 2 level register state stack

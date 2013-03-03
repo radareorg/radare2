@@ -197,6 +197,7 @@ typedef struct r_graph_t {
 	RList *roots; // <RGraphNode>
 	RListIter *cur; // ->data = RGraphNode*
 	RList *nodes; // <RGraphNode>
+	PrintfCallback printf;
 	int level;
 } RGraph;
 

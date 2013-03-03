@@ -761,6 +761,8 @@ static int cmd_debug(void *data, const char *input) {
 					if (r_cons_singleton ()->breaked)
 						break;
 					r_debug_step (core->dbg, 1);
+					if (r_debug_is_dead (core->dbg))
+						break;
 					if (checkbpcallback (core)) {
 						eprintf ("Interrupted by a breakpoint\n");
 						break;

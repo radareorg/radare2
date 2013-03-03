@@ -44,13 +44,13 @@ static void walk_children (RGraph *t, RGraphNode *tn, int level) {
 		return;
 	}
 	for (i=0; i<level; i++) 
-		eprintf ("   ");
-	eprintf ("%d: 0x%08"PFMT64x" refs %d\n",
-			level, tn->addr, tn->refs);
+		t->printf ("   ");
+	t->printf (" 0x%08"PFMT64x" refs %d\n",
+			tn->addr, tn->refs);
 	r_list_foreach (tn->parents, iter, n) {
 		for (i=0; i<level; i++) 
-			eprintf ("   ");
-		eprintf ("   ^ 0x%08"PFMT64x"\n", n->addr);
+			t->printf ("   ");
+		t->printf (" |_ 0x%08"PFMT64x"\n", n->addr);
 	}
 	r_list_push (t->path, tn);
 	r_list_foreach (tn->children, iter, n) {
@@ -73,6 +73,7 @@ R_API void r_graph_traverse(RGraph *t) {
 
 R_API RGraph * r_graph_new () {
 	RGraph *t = R_NEW0 (RGraph);
+	t->printf = printf;
 	t->path = r_list_new ();
 	t->nodes = r_list_new ();
 	t->roots = r_list_new ();
