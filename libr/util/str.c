@@ -952,24 +952,25 @@ R_API void r_str_uri_decode (char *s) {
 }
 
 R_API char *r_str_uri_encode (const char *s) {
-	char ch[4], *o, *d;
+	char ch[4], *o, *d, *od, *os;
 	if (!s) return NULL;
-	d = malloc (1+(strlen (s)*4));
+	os = s;
+	od = d = malloc (1+(strlen (s)*4));
 	if (!d) return NULL;
-	for (o=d; *s; s++, d++) {
+	for (o=d; *s; s++) {
 		if((*s>='0' && *s<='9') 
 		|| (*s>='a' && *s<='z')
 		|| (*s>='A' && *s<='Z')) {
 			*d++ = *s;
 		} else {
 			*d++ = '%';
-			sprintf (ch, "%02x", *s);
+			sprintf (ch, "%02x", (unsigned char)*s);
 			*d++ = ch[0];
 			*d++ = ch[1];
 		}
 	}
 	*d = 0;
-	return realloc (o, strlen (d)+1); // FIT
+	return realloc (od, strlen (od)+1); // FIT
 }
 
 // TODO: merge print inside rutil

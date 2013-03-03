@@ -1,36 +1,72 @@
 /* radare - LGPL - Copyright 2011-2013 - pancake */
 
 #include <r_socket.h>
+#include <r_util.h>
 
 static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
-	char *p;
-	int i, len;
-	char *buf = malloc (32768); // XXX: use r_buffer here
+	const char *p;
+	int i, line, len, bufsz = 32768;
+	char *buf = malloc (bufsz); // XXX: use r_buffer here
 	/* Read Header */
-	i = 0;
+	int llen = 01234;
+	line = i = 0;
+	int isremote = 0;
 	do {
-		len = r_socket_gets (s, buf+i, sizeof (buf)-i);
+		line ++;
+		len = r_socket_gets (s, buf+i, bufsz-i);
+		if (len<0) {
+			break;
+		}
+		if (len == 0) {
+			if (!isremote && line>2) break;
+			if (isremote && llen == 0) break;
+			if (!isremote) {
+				if (line==2) {
+					isremote = 1;
+				} else {
+					if (line>2) isremote = 1;
+				}
+			}
+			llen = len;
+			continue;
+		}
+		llen = len;
 		i += len;
-		r_socket_gets (s, buf+i, 1);
 		buf[i++] = '\n';
-	} while (len > 0);
+	} while (1); //i==0 || len > 0);
 	buf[i] = 0;
 	/* Parse Code */
 	p = strchr (buf, ' ');
 	if (code) *code = (p)? atoi (p+1):-1;
 	/* Parse Len */
-	p = strstr (buf, "Content-Length: ");
+	p = r_str_casestr (buf, "Content-Length: ");
 	if (p) {
 		len = atoi (p+16);
-		if (len>0)
-			len = r_socket_read_block (s, (ut8*)buf+i, len);
-		else len = 0;
+		free (buf);
+		buf = malloc (len+1);
+		if (len>0) {
+			if (isremote) {
+				int j = 0;
+				while (j<len) {
+					len = r_socket_read (s, (ut8*)buf+j, len-j);
+					if (len<1) break;
+					j+=len;
+				}
+			} else len = r_socket_read_block (s, (ut8*)buf, len);
+		} else len = 0;
 	} else {
+		// hack
 		len = 32768-i;
 		len = r_socket_read (s, (ut8*)buf+i, len);
+#if 0
+p = strstr(buf, "\n\n");
+if (!p) p = strstr (buf, "\n\r\n");
+if (p) strcpy (buf, p+2);
+len = strlen (buf);
+#endif
 	}
 	r_socket_close (s);
-	if (rlen) *rlen = len+i;
+	if (rlen) *rlen = len;
 	return buf;
 }
 
@@ -51,7 +87,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	if (!port) {
 		port = (ssl)?"443":"80";
 		path = host;
-	}else{
+	} else {
 		*port++ = 0;
 		path = port;
 	}

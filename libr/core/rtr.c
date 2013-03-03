@@ -413,20 +413,24 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				snprintf (prompt, sizeof (prompt), "[http://%s:%s/%s]> ",
 					host, port, file);
 				r_line_set_prompt (prompt);
-				while (1) {
-					char *str = r_line_readline ();
+				for (;;) {
+					char *ptr, *str = r_line_readline ();
 					if (!str || !*str) break;
+					ptr = r_str_uri_encode (str);
+					if (ptr) str = ptr;
 					snprintf (uri, sizeof (uri), "http://%s:%s/%s%s",
 						host, port, file, str);
+					if (ptr == str) free (ptr);
 					str = r_socket_http_get (uri, NULL, &len);
 					if (str) {
 						str[len] = 0;
 						res = strstr (str, "\n\n");
 						if (res) res = strstr (res+1, "\n\n");
 						if (res) res += 2; else res = str;
-						printf ("%s", res);
+						printf ("%s%s", res, (res[strlen (res)-1]=='\n')?"":"\n");
+						r_line_hist_add (str);
 						free (str);
-					} else eprintf ("Http fail\n");
+					} else eprintf ("http protocol fail\n");
 				}
 				return;
 			}
@@ -439,7 +443,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				if (res) res += 2; else res = str;
 				printf ("%s", res);
 				free (str);
-			} else eprintf ("Http fail\n");
+			} else eprintf ("HTTP connection has failed\n");
 			// do not add connection. wtf
 			return;
 		}

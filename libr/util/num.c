@@ -33,8 +33,12 @@ R_API void r_num_irand() {
 	srand (r_sys_now ());
 }
 
+static int rand_initialized = 0;
 R_API int r_num_rand(int max) {
-	// TODO: add srand here for security and so on
+	if (!rand_initialized) {
+		r_num_irand ();
+		rand_initialized = 1;
+	}
 	if (max==0) max=1;
 	return rand()%max;
 }

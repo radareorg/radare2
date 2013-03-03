@@ -53,11 +53,13 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 			r_print_progressbar (NULL, 12.5 * e, 60);
 			printf ("\n");
 		}
-	} else do_hash_print (ctx, hash, dlen, rad);
+	} else {
+		do_hash_print (ctx, hash, dlen, rad);
+	}
 	return 1;
 }
 
-static int do_hash(const char *algo, RIO *io, int bsize, int rad) {
+static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int rad) {
 	ut8 *buf;
 	RHash *ctx;
 	ut64 j, fsize;
@@ -102,6 +104,7 @@ static int do_hash(const char *algo, RIO *io, int bsize, int rad) {
 						bsize: (fsize-j), rad, 0);
 				}
 				r_hash_do_end (ctx, i);
+				printf ("%s: ", file);
 				do_hash_print (ctx, i, dlen, rad);
 			}
 		}
@@ -164,7 +167,7 @@ static void algolist() {
 
 int main(int argc, char **argv) {
 	const char *algo = "sha256"; /* default hashing algorithm */
-	int c, rad = 0, quit = 0, bsize = 0, numblocks = 0;
+	int i, ret, c, rad = 0, quit = 0, bsize = 0, numblocks = 0;
 	RIO *io;
 
 	while ((c = getopt (argc, argv, "rva:s:b:nBhf:t:kL")) != -1) {
@@ -216,14 +219,17 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	io = r_io_new ();
-	if (r_file_is_directory (argv[optind])) {
-		eprintf ("rahash2: Cannot hash directories\n");
-		return 1;
+	for (i=optind; i<argc; i++) {
+		io = r_io_new ();
+		if (r_file_is_directory (argv[i])) {
+			eprintf ("rahash2: Cannot hash directories\n");
+			return 1;
+		}
+		if (!r_io_open (io, argv[i], 0, 0)) {
+			eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+			return 1;
+		}
+		ret = do_hash (argv[i], algo, io, bsize, rad);
+		r_io_free (io);
 	}
-	if (!r_io_open (io, argv[optind], 0, 0)) {
-		eprintf ("rahash2: Cannot open '%s'\n", argv[optind]);
-		return 1;
-	}
-	return do_hash (algo, io, bsize, rad);
 }

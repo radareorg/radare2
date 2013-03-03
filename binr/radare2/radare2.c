@@ -200,7 +200,10 @@ int main(int argc, char **argv) {
 	else if (help) return main_help (0);
 
 	if (do_connect) {
-		r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
+		const char *uri = argv[optind];
+		if (!strncmp (uri, "http://", 7))
+			r_core_cmdf (&r, "=+%s", uri);
+		else r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
 		return 0;
 	}
 
