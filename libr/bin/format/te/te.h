@@ -25,24 +25,6 @@ struct r_bin_te_section_t {
 	int last;
 };
 
-struct r_bin_te_import_t {
-	ut8  name[TE_NAME_LENGTH];
-	ut64 rva;
-	ut64 offset;
-	ut64 hint;
-	ut64 ordinal;
-	int last;
-};
-
-struct r_bin_te_export_t {
-	ut8  name[TE_NAME_LENGTH];
-	ut8  forwarder[TE_NAME_LENGTH];
-	ut64 rva;
-	ut64 offset;
-	ut64 ordinal;
-	int last;
-};
-
 struct r_bin_te_string_t {
 	char string[TE_STRING_LENGTH];
 	ut64 rva;
@@ -51,8 +33,6 @@ struct r_bin_te_string_t {
 	char type;
 	int last;
 };
-
-#endif
 
 struct r_bin_te_obj_t {
 	TE_image_file_header				*header;
@@ -69,9 +49,12 @@ ut64 r_bin_te_get_main_offset(struct r_bin_te_obj_t *bin);
 ut64 r_bin_te_get_image_base(struct r_bin_te_obj_t* bin);
 int r_bin_te_get_image_size(struct r_bin_te_obj_t* bin);
 char* r_bin_te_get_machine(struct r_bin_te_obj_t* bin);
+int r_bin_te_get_bits(struct r_bin_te_obj_t* bin);
 char* r_bin_te_get_os(struct r_bin_te_obj_t* bin);
 struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin);
 char* r_bin_te_get_subsystem(struct r_bin_te_obj_t* bin);
 void* r_bin_te_free(struct r_bin_te_obj_t* bin);
 struct r_bin_te_obj_t* r_bin_te_new(const char* file);
 struct r_bin_te_obj_t* r_bin_te_new_buf(struct r_buf_t *buf);
+
+#endif
