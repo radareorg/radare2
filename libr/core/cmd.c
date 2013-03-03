@@ -464,18 +464,10 @@ static int cmd_eval(void *data, const char *input) {
 	case '?':
 		switch (input[1]) {
 		case '?':
-			r_config_list (core->config, NULL, 2);
+			r_config_list (core->config, input+2, 2);
 			break;
 		default:
-			if (input[2]) {
-				const char *desc = r_config_desc (
-					core->config, r_str_chop_ro (input+1), NULL);
-				if (desc) {
-					r_cons_strcat (desc);
-					r_cons_newline ();
-					core->num->value = 0;
-				} else core->num->value = 1;
-			}
+			r_config_list (core->config, input+1, 2);
 			break;
 		case 0:
 			r_cons_printf (
