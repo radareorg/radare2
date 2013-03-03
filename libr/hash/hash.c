@@ -26,8 +26,7 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 /* These functions comes from 0xFFFF */
 /* fmi: nopcode.org/0xFFFF */
 R_API ut16 r_hash_xorpair(const ut8 *a, ut64 len) {
-	ut16 *b = (ut16 *)a;
-	ut16 result = 0;
+	ut16 result = 0, *b = (ut16 *)a;
 	for (len>>=1; len--; b++)
 		result ^= *b;
 	return result;
@@ -97,39 +96,22 @@ R_API int r_hash_size(int bit) {
 /* TODO: ignore case.. we have to use strcasestr */
 R_API ut64 r_hash_name_to_bits(const char *name) {
 	ut64 bits = R_HASH_NONE;
-	if (strstr (name, "all"))
-		return 0xffffffff;
-	if (strstr (name, "md4"))
-		bits |= R_HASH_MD4;
-	if (strstr (name, "md5"))
-		bits |= R_HASH_MD5;
-	if (strstr (name, "sha1"))
-		bits |= R_HASH_SHA1;
-	if (strstr (name, "sha256"))
-		bits |= R_HASH_SHA256;
-	if (strstr (name, "sha384"))
-		bits |= R_HASH_SHA384;
-	if (strstr (name, "sha512"))
-		bits |= R_HASH_SHA512;
-	if (strstr (name, "crc16"))
-		bits |= R_HASH_CRC16;
-	if (strstr (name, "crc32"))
-		bits |= R_HASH_CRC32;
-	if (strstr (name, "xxhash"))
-		bits |= R_HASH_XXHASH;
-	if (strstr (name, "xorpair"))
-		bits |= R_HASH_XORPAIR;
-	else if (strstr (name, "xor")) /* XXX: hacky elsif solution */
-		bits |= R_HASH_XOR;
-	if (strstr (name, "parity"))
-		bits |= R_HASH_PARITY;
-	if (strstr (name, "entropy"))
-		bits |= R_HASH_ENTROPY;
-	if (strstr (name, "hamdist"))
-		bits |= R_HASH_HAMDIST;
-	if (strstr (name, "pcprint"))
-		bits |= R_HASH_PCPRINT;
-	if (strstr (name, "mod255"))
-		bits |= R_HASH_MOD255;
+	if (strstr (name, "all")) return UT64_MAX;
+	if (strstr (name, "md4")) bits |= R_HASH_MD4;
+	if (strstr (name, "md5")) bits |= R_HASH_MD5;
+	if (strstr (name, "sha1")) bits |= R_HASH_SHA1;
+	if (strstr (name, "sha256")) bits |= R_HASH_SHA256;
+	if (strstr (name, "sha384")) bits |= R_HASH_SHA384;
+	if (strstr (name, "sha512")) bits |= R_HASH_SHA512;
+	if (strstr (name, "crc16")) bits |= R_HASH_CRC16;
+	if (strstr (name, "crc32")) bits |= R_HASH_CRC32;
+	if (strstr (name, "xxhash")) bits |= R_HASH_XXHASH;
+	if (strstr (name, "xorpair")) bits |= R_HASH_XORPAIR;
+	else if (strstr (name, "xor")) bits |= R_HASH_XOR;
+	if (strstr (name, "parity")) bits |= R_HASH_PARITY;
+	if (strstr (name, "entropy")) bits |= R_HASH_ENTROPY;
+	if (strstr (name, "hamdist")) bits |= R_HASH_HAMDIST;
+	if (strstr (name, "pcprint")) bits |= R_HASH_PCPRINT;
+	if (strstr (name, "mod255")) bits |= R_HASH_MOD255;
 	return bits;
 }

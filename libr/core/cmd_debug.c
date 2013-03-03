@@ -579,6 +579,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"db sym.main       ; add breakpoint into sym.main\n"
 		"db 0x804800       ; add breakpoint\n"
 		"db -0x804800      ; remove breakpoint\n"
+		"dbi 0x848 ecx=3   ; stop execution when condition matches\n"
 		"dbs 0x8048000     ; toggle breakpoint on given address\n"
 		"dbe 0x8048000     ; enable breakpoint\n"
 		"dbc 0x8048000 cmd ; run command when breakpoint is hit\n"
@@ -740,15 +741,34 @@ static int cmd_debug(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("Usage: ds[ol] [count]\n"
-				" ds       step one instruction\n"
-				" ds 4     step 4 instructions\n"
-				" dss 3    skip 3 step instructions\n"
-				" dso 3    step over 3 instructions\n"
-				" dsp      step into program (skip libs)\n"
-				" dsu addr step until address\n"
-				" dsf      step until end of frame\n"
-				" dsl      step one source line\n"
-				" dsl 40   step 40 source lines\n");
+				" ds          step one instruction\n"
+				" ds 4        step 4 instructions\n"
+				" dsf         step until end of frame\n"
+				" dsi [cond]  continue until condition matches\n"
+				" dsl         step one source line\n"
+				" dsl 40      step 40 source lines\n"
+				" dso 3       step over 3 instructions\n"
+				" dsp         step into program (skip libs)\n"
+				" dss 3       skip 3 step instructions\n"
+				" dsu addr    step until address\n"
+				);
+			break;
+		case 'i':
+			if (input[2] == ' ') {
+				int n = 0;
+				do {
+					r_debug_step (core->dbg, 1);
+					if (checkbpcallback (core)) {
+						eprintf ("Interrupted by a breakpoint\n");
+						break;
+					}
+					r_core_cmd0 (core, ".dr*");
+					n++;
+				} while (!r_num_conditional (core->num, input+3));
+				eprintf ("Stopped after %d instructions\n", n);
+			} else {
+				eprintf ("Missing argument\n");
+			}
 			break;
 		case 'f':
 			step_until_eof(core);

@@ -86,7 +86,6 @@ radare contributes to the One Byte Per Child fundation
 setup dbg.fpregs to true to visualize the fpu registers in the debugger view
 To debug a program you can do dbg://${path-to-program} or use -d ${path..}
 3nl4r9e y0\/r r4d4r3
-LUA is the default scripting language for radare. Read radare.lua fmi
 I did it for the pwnz
 If you send the program you are debugging to 15 friends before 143 minutes and then step three times on the same opcode you will get the name of the person who loves you
 To remove this message, put `dbxenv suppress_startup_message 7.5' in your .dbxrc
@@ -126,3 +125,4 @@ Use -e bin.strings=false to disable search for strings when loading the binary
 wait a moment..
 Don't do this.
 No such file or directory.
+Default scripting languages are NodeJS and Python.

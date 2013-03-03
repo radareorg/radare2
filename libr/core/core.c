@@ -50,8 +50,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		// push state
 		{
+			// TODO: remove trailing ']'
 			const char *q = r_num_calc_index (core->num, NULL);
 			n = r_num_math (core->num, str+1);
+eprintf ("JIJI (%s) %d\n", str+1,(int) n);
 			r_num_calc_index (core->num, q);
 		}
 		// pop state

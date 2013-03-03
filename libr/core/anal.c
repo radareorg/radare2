@@ -955,6 +955,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	int len = core->blocksize;
 	int word = core->assembler->bits /8;
 	int endi = core->anal->big_endian;
+	char *str;
         int i, j;
 
 	//if (addr != core->offset) {
@@ -964,8 +965,6 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	//}
 
 	for (i = j = 0; j<count; j++ ) {
-		char *str;
-
 		if (i>=len) {
 			r_io_read_at (core->io, addr+i, buf, len);
 			addr += i;

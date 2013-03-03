@@ -337,28 +337,34 @@ static int cmd_help(void *data, const char *input) {
 		if (!r_config_get_i (core->config, "scr.interactive")) {
 			eprintf ("Not running in interactive mode\n");
 		} else
-		if (input[1]=='m') {
+		switch (input[1]) {
+		case 'f':
+			core->num->value = !r_num_conditional (core->num, input+2);
+			eprintf ("%s\n", r_str_bool (!core->num->value));
+			break;
+		case 'm':
 			r_cons_message (input+2);
-		} else
-		if (input[1]=='p') {
+			break;
+		case 'p': {
 			char *p = r_cons_hud_path (input+2, 0);
 			core->yank_buf = (ut8*)p;
 			core->yank_len = p? strlen (p): 0;
 			core->num->value = (p != NULL);
-		} else
-		if (input[1]=='k') {
+			} break;
+		case 'k':
 			r_cons_any_key ();
-		} else
-		if (input[1]=='y') {
+			break;
+		case 'y':
 			for (input+=2; *input==' '; input++);
 			core->num->value =
 			r_cons_yesno (1, "%s? (Y/n)", input);
-		} else
-		if (input[1]=='n') {
+			break;
+		case 'n':
 			for (input+=2; *input==' '; input++);
 			core->num->value =
 			r_cons_yesno (0, "%s? (y/N)", input);
-		} else {
+			break;
+		default: {
 			char foo[1024];
 			r_cons_flush ();
 			for (input++; *input==' '; input++);
@@ -370,6 +376,8 @@ static int cmd_help(void *data, const char *input) {
 			core->yank_buf = (ut8 *)strdup (foo);
 			core->yank_len = strlen (foo);
 			core->num->value = r_num_math (core->num, foo);
+			}
+			break;
 		}
 		break;
 	case 't': {

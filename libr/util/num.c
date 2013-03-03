@@ -270,3 +270,58 @@ R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {
 	if (sectorsize<1) sectorsize = 512;
 	return cylinder * head * sector * sectorsize;
 }
+
+R_API int r_num_conditional(RNum *num, const char *str) {
+	char *lgt, *t, *p, *s = strdup (str);
+	int res = 0;
+	ut64 n, a, b;
+	p = s;
+	do {
+		t = strchr (p, ',');
+		if (t) *t = 0;
+		lgt = strchr (p, '<');
+		if (lgt) {
+			*lgt = 0;
+			a = r_num_math (num, p);
+			if (lgt[1]=='=') {
+				b = r_num_math (num, lgt+2);
+				if (a>b) goto fail;
+			} else {
+				b = r_num_math (num, lgt+1);
+				if (a>=b) goto fail;
+			}
+		} else {
+			lgt = strchr (p, '>');
+			if (lgt) {
+				*lgt = 0;
+				a = r_num_math (num, p);
+				if (lgt[1]=='=') {
+					b = r_num_math (num, lgt+2);
+					if (a<b) goto fail;
+				} else {
+					b = r_num_math (num, lgt+1);
+					if (a<=b) goto fail;
+				}
+			} else {
+				lgt = strchr (p, '=');
+				if (lgt && lgt > p) {
+					lgt--;
+					if (*lgt=='!') {
+						r_str_replace_char (p, '!', ' ');
+						r_str_replace_char (p, '=', '-');
+						n = r_num_math (num, p);
+						if (!n) goto fail;
+					}
+				}
+				r_str_replace_char (s, '=', '-');
+				n = r_num_math (num, p);
+				if (n) goto fail;
+			}
+		}
+		p = t+1;
+	} while (t);
+	res = 1;
+fail:
+	free (s);
+	return res;
+}

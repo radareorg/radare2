@@ -493,7 +493,7 @@ R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 
 	return NULL;
 }
 
-R_API RBinObject *r_bin_get_object(RBin *bin, int flags) {
+R_API RBinObject *r_bin_get_object(RBin *bin) {
 	bin->cur.o->referenced = R_TRUE;
 	return bin->cur.o;
 }

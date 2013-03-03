@@ -176,7 +176,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		}
 	} else if (!r_bin_load (r->bin, file, R_TRUE))
 		return R_FALSE;
-	r->file->obj = r_bin_get_object (r->bin, 0);
+	r->file->obj = r_bin_get_object (r->bin);
 
 	r_config_set_i (r->config, "io.va", 
 		(r->file->obj->info)? r->file->obj->info->has_va: 0);
