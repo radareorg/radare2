@@ -5,6 +5,7 @@
 static char crc_table_is_init = 0;
 static ut32 crc_table[256];
 
+// result is endian swap
 R_API ut32 r_hash_crc32(const ut8 *buf, ut64 len) {
 	unsigned int crc = 0;
 	if (!crc_table_is_init) {

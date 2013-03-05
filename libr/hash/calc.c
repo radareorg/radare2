@@ -44,8 +44,19 @@ R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *buf, ut32 len) {
 		return R_HASH_SIZE_CRC16;
 	}
 	if (algobit & R_HASH_CRC32) {
+		ut8 *pres;
 		ut32 res = r_hash_crc32 (buf, len);
+#if CPU_ENDIAN
+		/* big endian here */
 		memcpy (ctx->digest, &res, R_HASH_SIZE_CRC32);
+#else
+		/* little endian here */
+		pres = &res;
+		ctx->digest[0] = pres[3];
+		ctx->digest[1] = pres[2];
+		ctx->digest[2] = pres[1];
+		ctx->digest[3] = pres[0];
+#endif
 		return R_HASH_SIZE_CRC32;
 	}
 	if (algobit & R_HASH_XXHASH) {

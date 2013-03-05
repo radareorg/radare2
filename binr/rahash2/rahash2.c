@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <getopt.c>
-/* r2 api */
 #include <r_io.h>
 #include <r_hash.h>
 #include <r_util.h>
@@ -12,15 +11,18 @@
 static ut64 from = 0LL;
 static ut64 to = 0LL;
 static int incremental = 1;
+static int quiet = 0;
 
 static void do_hash_print(RHash *ctx, int hash, int dlen, int rad) {
+	int i;
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = r_hash_name (hash);
-	int i;
 	switch (rad) {
 	case 0:
-		printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %s: ", from, to, hname);
+		if (!quiet)
+			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %s: ",
+				from, to, hname);
 		for (i=0; i<dlen; i++)
 			printf ("%02x", c[i]);
 		printf ("\n");
@@ -53,9 +55,7 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 			r_print_progressbar (NULL, 12.5 * e, 60);
 			printf ("\n");
 		}
-	} else {
-		do_hash_print (ctx, hash, dlen, rad);
-	}
+	} else do_hash_print (ctx, hash, dlen, rad);
 	return 1;
 }
 
@@ -66,26 +66,23 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	int i;
 	ut64 algobit = r_hash_name_to_bits (algo);
 	if (algobit == R_HASH_NONE) {
-		eprintf ("Invalid hashing algorithm specified\n");
+		eprintf ("rahash2: Invalid hashing algorithm specified\n");
 		return 1;
 	}
 	fsize = r_io_size (io);
 	if (fsize <1) {
-		eprintf ("Invalid file size\n");
+		eprintf ("rahash2: Invalid file size\n");
 		return 1;
 	}
-	if (bsize<0)
-		bsize = fsize / -bsize;
-	if (bsize == 0 || bsize > fsize)
-		bsize = fsize;
-	if (to == 0LL)
-		to = fsize;
+	if (bsize<0) bsize = fsize / -bsize;
+	if (bsize == 0 || bsize > fsize) bsize = fsize;
+	if (to == 0LL) to = fsize;
 	if (from>to) {
-		eprintf ("Invalid -f -t range\n");
+		eprintf ("rahash2: Invalid -f -t range\n");
 		return 1;
 	}
 	if (fsize == -1LL) {
-		eprintf ("Unknown file size\n");
+		eprintf ("rahash2: Unknown file size\n");
 		return 1;
 	}
 	buf = malloc (bsize+1);
@@ -104,7 +101,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 						bsize: (fsize-j), rad, 0);
 				}
 				r_hash_do_end (ctx, i);
-				printf ("%s: ", file);
+				if (!quiet)
+					printf ("%s: ", file);
 				do_hash_print (ctx, i, dlen, rad);
 			}
 		}
@@ -142,15 +140,14 @@ static int do_help(int line) {
 	" -a algo     comma separated list of algorithms (default is 'sha256')\n"
 	" -b bsize    specify the size of the block (instead of full file)\n"
 	" -B          show per-block hash\n"
-	" -s string   hash this string instead of files\n"
 	" -f from     start hashing at given address\n"
-	" -t to       stop hashing at given address\n"
-	" -L          list all available algorithms (see -a)\n"
 	" -k          show hash using the openssh's randomkey algorithm\n"
+	" -q          run in quiet mode (only show results)\n"
+	" -L          list all available algorithms (see -a)\n"
 	" -r          output radare commands\n"
+	" -s string   hash this string instead of files\n"
+	" -t to       stop hashing at given address\n"
 	" -v          show version information\n");
-	//"Supported algorithms: md4, md5, sha1, sha256, sha384, sha512, crc16,\n"
-	//"    crc32, xor, xorpair, parity, mod255, hamdist, entropy, pcprint\n");
 	return 0;
 }
 
@@ -166,45 +163,38 @@ static void algolist() {
 }
 
 int main(int argc, char **argv) {
+	RIO *io;
+	RHash *ctx;
+	ut64 algobit;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	int i, ret, c, rad = 0, quit = 0, bsize = 0, numblocks = 0;
-	RIO *io;
 
-	while ((c = getopt (argc, argv, "rva:s:b:nBhf:t:kL")) != -1) {
+	while ((c = getopt (argc, argv, "rva:s:b:nBhf:t:kLq")) != -1) {
 		switch (c) {
+		case 'q': quiet = 1; break;
 		case 'n': numblocks = 1; break;
 		case 'L': algolist (); return 0;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
 		case 'a': algo = optarg; break;
 		case 'B': incremental = 0; break;
-		case 'b':
-			bsize = (int)r_num_math (NULL, optarg);
-			break;
+		case 'b': bsize = (int)r_num_math (NULL, optarg); break;
+		case 'f': from = r_num_math (NULL, optarg); break;
+		case 't': to = r_num_math (NULL, optarg); break;
+		case 'v': printf ("rahash2 v"R2_VERSION"\n"); return 0;
+		case 'h': return do_help (0);
 		case 's':
-			{
-				ut64 algobit = r_hash_name_to_bits (algo);
-				RHash *ctx = r_hash_new (R_TRUE, algobit);
-				from = 0;
-				to = strlen (optarg);
-				do_hash_internal (ctx, //0, strlen (optarg),
-					algobit, (const ut8*) optarg,
-					strlen (optarg), rad, 1);
-				r_hash_free (ctx);
-				quit = R_TRUE;
-			}
+			algobit = r_hash_name_to_bits (algo);
+			ctx = r_hash_new (R_TRUE, algobit);
+			from = 0;
+			to = strlen (optarg);
+			do_hash_internal (ctx, //0, strlen (optarg),
+				algobit, (const ut8*) optarg,
+				strlen (optarg), rad, 1);
+			r_hash_free (ctx);
+			quit = R_TRUE;
 			break;
-		case 'f':
-			from = r_num_math (NULL, optarg);
-			break;
-		case 't':
-			to = r_num_math (NULL, optarg);
-			break;
-		case 'v':
-			printf ("rahash2 v"R2_VERSION"\n");
-			return 0;
-		case 'h':
-			return do_help (0);
+		default: eprintf ("rahash2: Unknown flag\n"); return 1;
 		}
 	}
 
