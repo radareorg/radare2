@@ -50,6 +50,7 @@ static int help () {
 		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
 		"  hex   ->  raw           ;  rax2 -s 414141\n"
 		"  -e    swap endianness   ;  rax2 -e 0x33\n"
+		"  -n    binary number     ;  rax2 -e 0x1234   # 34120000\n"
 		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
 		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
@@ -85,6 +86,7 @@ static int rax (char *str, int len, int last) {
 			case 'f': flags ^= 64; break;
 			case 'd': flags ^=128; break;
 			case 'k': flags ^=256; break;
+			case 'n': flags ^=512; break;
 			case 'v': printf ("rax2 v"R2_VERSION"\n"); break;
 			case '\0': return use_stdin ();
 			default:
@@ -104,6 +106,14 @@ static int rax (char *str, int len, int last) {
 		return help ();
 
 	dotherax:
+	if (flags & 512) { // -k
+		ut32 n = r_num_math (num, str);
+		ut8 *np = (ut8*)&n;
+		if (flags & 1) write (1, &n, sizeof (n));
+		else printf ("%02x%02x%02x%02x\n",
+			np[0], np[1], np[2], np[3]);
+		return R_TRUE;
+	}
 	if (flags & 256) { // -k
 		int n = ((strlen (str))>>1)+1;
 		char *s;

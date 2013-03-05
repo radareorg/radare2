@@ -13,6 +13,7 @@ Broken stuff to fixe before release
 
 0.9.4
 =====
+* libr/debug/p/drx.c <- not used .. debug must have a hw reg api for drx and gpio
 * ah -> add hint to define calls that do not return
 * pdr doesnt works well with antidisasm tricks, wtf
 * continue execution until condition happen (reg, mem, ..)
