@@ -157,7 +157,8 @@ R_API RCore *r_core_new() {
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
 	"?", "?v",
-	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "db-", "dp", "dr", "dcu",
+	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "db-",
+        "dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"S",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
 	"!", "!!", 
@@ -172,8 +173,7 @@ static const char *radare_argv[] = {
 	"q", 
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
-	"o", "o-",
-	"x",
+	"o", "o-", "x",
 	".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
@@ -215,27 +215,24 @@ static int autocomplete(RLine *line) {
 		     !memcmp (line->buffer.data, ". ", 2) ||
 		     !memcmp (line->buffer.data, "tf ", 3) ||
 		     !memcmp (line->buffer.data, "pm ", 3) ||
+		     !memcmp (line->buffer.data, "dml ", 4) ||
 		     !memcmp (line->buffer.data, "/m ", 3)) {
 			// XXX: SO MANY FUCKING MEMORY LEAKS
 			char *str, *p, *path;
-			RList *list;
 			int n = 0, i = 0;
-			int sdelta = (line->buffer.data[1]==' ')?2:3;
-			if (!line->buffer.data[sdelta]) {
-				path = r_sys_getdir ();
-			} else {
-				path = strdup (line->buffer.data+sdelta);
-			}
+			RList *list;
+			int sdelta = (line->buffer.data[1]==' ')? 2:
+				(line->buffer.data[2]==' ')? 3:4;
+			path = line->buffer.data[sdelta]?
+				strdup (line->buffer.data+sdelta):
+				r_sys_getdir ();
 			p = r_str_lchr (path, '/');
 			if (p) {
 				if (p==path) path = "/";
 				else if (p!=path+1) *p = 0;
 				p++;
 			}
-			if (p) {
-				if (*p) n = strlen (p);
-				else p = "";
-			}
+			if (p) { if (*p) n = strlen (p); else p = ""; }
 			if (*path=='~') {
 				char *lala = r_str_home (path+1);
 				free (path);

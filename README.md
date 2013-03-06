@@ -27,7 +27,7 @@ radare2 is portable.
 
 Architectures: x86, arm, mips, ppc, java, dalvik, arc, avr, bf, csr, dcpu16, m68k, msil, sh, sparc
 
-File Formats: dex, elf, elf64, filesystem, java, fatmach0, mach0, mach0-64, MZ, PE, PE+, plan9, dyldcache
+File Formats: dex, elf, elf64, filesystem, java, fatmach0, mach0, mach0-64, MZ, PE, PE+, TE, plan9, dyldcache
 
 Operating Systems: Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32, w64, Solaris.
 
