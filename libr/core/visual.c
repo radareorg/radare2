@@ -276,8 +276,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'A':
 		{ int oc = curset;
+		ut64 off = curset? core->offset+cursor : core->offset;
 		curset = 0;
-		r_core_visual_asm (core, curset? core->offset+cursor : core->offset);
+		r_core_visual_asm (core, off);
 		curset = oc;
 		}
 		break;
