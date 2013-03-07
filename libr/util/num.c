@@ -78,6 +78,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 
 	if (!str) return 0;
 	for (; *str==' '; ) str++;
+	if (!*str) return 0;
 
 	/* resolve string with an external callback */
 	if (num && num->callback) {

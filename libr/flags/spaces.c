@@ -38,15 +38,15 @@ R_API void r_flag_space_set(RFlag *f, const char *name) {
 		return;
 	}
 
-	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
+	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i] != NULL)
 		if (!strcmp (name, f->spaces[i])) {
-			f->space_idx = i; //flag_space_idx = i;
+			f->space_idx = i;
 			return;
 		}
 	}
 	/* not found */
-	for (i=0;i<R_FLAG_SPACES_MAX;i++) {
+	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i] == NULL) {
 			f->spaces[i] = strdup (name);
 			f->space_idx = i;
@@ -80,4 +80,24 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 	if (mode == 'j')
 		r_cons_printf ("]\n");
 	return j;
+}
+
+R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname) {
+	int i;
+	if (!oname) {
+		if (f->space_idx == -1)
+			return R_FALSE;
+		oname = f->spaces[f->space_idx];
+	}
+	if (!nname) return R_FALSE;
+	while (*oname==' ') oname++;
+	while (*nname==' ') nname++;
+	for (i=0; i<R_FLAG_SPACES_MAX; i++) {
+		if (f->spaces[i]  && !strcmp (oname, f->spaces[i])) {
+			free (f->spaces[i]);
+			f->spaces[i] = strdup (nname);
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
 }

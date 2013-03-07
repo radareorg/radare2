@@ -33,7 +33,7 @@ typedef struct r_flag_t {
 	st64 base;
 	int space_idx;
 	int space_idx2;
-	const char *spaces[R_FLAG_SPACES_MAX];
+	char *spaces[R_FLAG_SPACES_MAX];
 #if USE_HT
 	RHashTable64 *ht_off;
 	RHashTable64 *ht_name;
@@ -67,6 +67,7 @@ R_API int r_flag_space_get(RFlag *f, const char *name);
 R_API const char *r_flag_space_get_i(RFlag *f, int idx);
 R_API void r_flag_space_set(RFlag *f, const char *name);
 R_API int r_flag_space_list(RFlag *f, int mode);
+R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
 #endif
 
 #endif

@@ -24,9 +24,7 @@ static int cmd_flag(void *data, const char *input) {
 					if (r_str_glob (flag->name, ptr+1))
 						flag->offset += base;
 				}
-			} else {
-				core->flags->base = r_num_math (core->num, input+1);
-			}
+			} else core->flags->base = r_num_math (core->num, input+1);
 			free (str);
 			str = NULL;
 			break;
@@ -113,6 +111,11 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 's':
 		switch (input[1]) {
+		case 'r':
+			if (input[2]==' ')
+				r_flag_space_rename (core->flags, NULL, input+2);
+			else eprintf ("Usage: fsr [newname]\n");
+			break;
 		case 'j':
 		case '\0':
 		case '*':
@@ -236,6 +239,7 @@ static int cmd_flag(void *data, const char *input) {
 		" fs               ; display flagspaces\n"
 		" fs *             ; set all flagspace\n"
 		" fs sections      ; set flagspace (f will only list flags from selected ones)\n"
+		" fsr newname      ; set flagspace (f will only list flags from selected ones)\n"
 		" fsm [addr]       ; move flags at given address to the current flagspace\n"
 		" fb [addr]        ; set base address for new flags\n"
 		" fb [addr] [flag*]; move flags matching 'flag' to relative addr\n"

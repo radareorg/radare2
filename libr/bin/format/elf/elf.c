@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 - nibble, pancake */
-// TODO: review the rest of strtab index out of range
+/* radare - LGPL - Copyright 2008-2013 - nibble, pancake */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -553,7 +552,7 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case ELFCLASSNONE: return 0;
 	case ELFCLASS32:   return 32;
 	case ELFCLASS64:   return 64;
-	default:           return -1;
+	default:           return 32; // defaults
 	}
 }
 

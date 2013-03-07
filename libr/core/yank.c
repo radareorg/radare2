@@ -37,7 +37,7 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	return R_TRUE;
 }
 
-R_API int r_core_yank_paste(struct r_core_t *core, ut64 addr, int len) {
+R_API int r_core_yank_paste(RCore *core, ut64 addr, int len) {
 	if (len == 0)
 		len = core->yank_len;
 	if (len > core->yank_len)

@@ -188,13 +188,16 @@ static int cmd_rap(void *data, const char *input) {
 
 static int cmd_yank(void *data, const char *input) {
 	int i;
+	ut64 n;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case ' ':
 		r_core_yank (core, core->offset, r_num_math (core->num, input+1));
 		break;
 	case 'y':
-		r_core_yank_paste (core, r_num_math (core->num, input+2), 0);
+		while (input[1]==' ') input++;
+		n = input[1]? r_num_math (core->num, input+1): core->offset;
+		r_core_yank_paste (core, n, 0);
 		break;
 	case 'x':
 		r_print_hexdump (core->print, 0LL, core->yank_buf, core->yank_len, 16, 4);
