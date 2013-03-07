@@ -62,29 +62,31 @@ static int is_bin(const ut8 *buf) {
 
 // XXX: optimize by removing all strlens here
 R_API char *r_anal_data_to_string (RAnalData *d) {
-	int i;
-	char *line = malloc (128);
-	sprintf (line, "0x%08"PFMT64x"  ", d->addr);
-	for (i=0;i<d->len; i++)
-		sprintf (line+strlen (line), "%02x", d->buf[i]);
+	int i, idx;
+	int mallocsz = 256;
+	ut32 n32 = (ut32)d->ptr;
+	char *line = malloc (mallocsz);
+	snprintf (line, mallocsz, "0x%08"PFMT64x"  ", d->addr);
+	for (i=0, idx = strlen (line); i<d->len; i++) {
+		snprintf (line+idx, mallocsz-idx, "%02x", d->buf[i]);
+		idx += 2;
+	}
 	strcat (line, "  ");
+	if ((mallocsz-idx)>12)
 	switch (d->type) {
 	case R_ANAL_DATA_TYPE_STRING:
-		// XXX: overflow
-		sprintf (line+strlen (line), "string \"%s\"", d->str);
+		snprintf (line+idx, mallocsz-idx, "string \"%s\"", d->str);
+		idx = strlen (line);
 		break;
 	case R_ANAL_DATA_TYPE_WIDE_STRING:
 		strcat (line, "wide string");
 		break;
 	case R_ANAL_DATA_TYPE_NUMBER:
-		{
-		ut32 n32 = (ut32)d->ptr;
 		strcat (line, "number ");
-		if (n32 == d->ptr) 
-			sprintf (line+strlen (line), " %d 0x%x", n32, n32);
-		else sprintf (line+strlen (line), " %"PFMT64d" 0x%"PFMT64x,
+		if (n32 == d->ptr)
+			snprintf (line+idx, mallocsz-idx, " %d 0x%x", n32, n32);
+		else snprintf (line+idx, mallocsz-idx, " %"PFMT64d" 0x%"PFMT64x,
 				d->ptr, d->ptr);
-		}
 		break;
 	case R_ANAL_DATA_TYPE_POINTER:
 		strcat (line, "pointer ");
@@ -120,7 +122,7 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 		ad->str = malloc (len+1);
 		memcpy (ad->str, p, len);
 		ad->str[len] = 0;
-		ad->buf = malloc (len);
+		ad->buf = malloc (len+1);
 		memcpy (ad->buf, ad->str, len+1);
 		ad->len = len+1; // string length + \x00
 	}

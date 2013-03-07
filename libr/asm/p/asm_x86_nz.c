@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2012 - pancake */
+/* Copyright (C) 2008-2013 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -62,7 +62,7 @@ static int bits8 (const char *p) {
 static ut8 getreg(const char *str) {
 	int i;
 	const char *regs[] = { "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi", NULL };
-	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh" };
+	const char *regs16[] = { "al", "ah", "cl", "ch", "dl", "dh", "bl", "bh", NULL };
 	const char *regs64[] = { "rax", "rcx", "rdx", "rbx", "rsp", "rbp", "rsi", "rdi", NULL };
 	if (!str)
 		return 0xff;

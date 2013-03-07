@@ -275,7 +275,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 		break;
 	case 'A':
-		r_core_visual_asm (core);
+		{ int oc = curset;
+		curset = 0;
+		r_core_visual_asm (core, curset? core->offset+cursor : core->offset);
+		curset = oc;
+		}
 		break;
 	case 'a':
 		if (core->file && !(core->file->rwx & 2)) {

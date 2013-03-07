@@ -10,6 +10,7 @@ typedef struct {
 	ut8 buf[128];
 	RAsmCode *acode;
 	int blocklen;
+	ut64 off;
 } RCoreVisualAsm;
 
 static int readline_callback(void *_a, const char *str) {
@@ -38,23 +39,25 @@ static int readline_callback(void *_a, const char *str) {
 			strcpy (a->codebuf, a->blockbuf);
 			memcpy (a->codebuf, a->acode->buf_hex, xlen);
 		}
-		r_core_cmdf (a->core, "pd 7@b:%s", a->codebuf);
+		r_core_cmdf (a->core, "pd 7@b:%s @0x%"PFMT64x, a->codebuf, a->off);
 	}
 	r_cons_flush ();
 	return 1;
 }
 
-R_API void r_core_visual_asm(RCore *core) {
+R_API void r_core_visual_asm(RCore *core, ut64 off) {
 	RCoreVisualAsm cva = {0};
 	cva.core = core;
+	cva.off = off;
 
-	r_io_read_at (core->io, core->offset, cva.buf, sizeof (cva.buf));
+	r_io_read_at (core->io, off, cva.buf, sizeof (cva.buf));
 	cva.blocklen = r_hex_bin2str (cva.buf, sizeof (cva.buf), cva.blockbuf);
 
 	r_line_readline_cb (readline_callback, &cva);
 
 	if (cva.acode && cva.acode->len>0)
 		if (r_cons_yesno ('y', "Save changes? (Y/n)"))
-			r_core_cmdf (core, "wx %s", cva.acode->buf_hex);
+			r_core_cmdf (core, "wx %s @ 0x%"PFMT64x,
+				cva.acode->buf_hex, off);
 	r_asm_code_free (cva.acode);
 }
