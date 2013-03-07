@@ -611,6 +611,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 				size = r->file->size;
 			secbase >>= 16;
 			secbase <<= 16;
+			secbase = baddr; // always override?
 			r_io_section_add (r->io, 0, secbase, size, size, 7, "ehdr");
 		}
 	} else {
