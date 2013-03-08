@@ -125,13 +125,14 @@ static RList* methods (RBinArch *arch) {
 		r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 6);
 		len = dex_read_uleb128 (buf);
 		if (len<1) continue;
-		name = malloc (len);
+		name = malloc (len+1);
 		if (!name) {
 			eprintf ("error malloc string length %d\n", len);
 			break;
 		}
 		r_buf_read_at (bin->b, bin->strings[bin->methods[i].name_id]+
 				dex_uleb128_len (buf), (ut8*)name, len);
+		name[len] = 0;
 		snprintf (ptr->name, sizeof (ptr->name), "method.%d.%s", 
 				bin->methods[i].class_id, name);
 		free (name);
@@ -268,10 +269,10 @@ static RList* sections(RBinArch *arch) {
 	struct r_bin_java_sym_t *s = NULL;
 	RList *ml;
 	RListIter *iter;
-
 	int ns, fsymsz = 0;
 	int fsym = 0;
 	RBinSymbol *m;
+
 	ml = methods (arch);
 	r_list_foreach (ml, iter, m) {
 		if (fsym == 0 || m->offset<fsym)
