@@ -291,8 +291,9 @@ static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 	if (str) {
 		if (d->type=='s' && !*str)
 			return;
-		r_name_filter (str, 0);
-		// XXX r_str_sanitize (str);
+		if (d->type != 'C')
+			r_name_filter (str, 0);
+//		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
 			m->printf ("{\"offset\":%"PFMT64d", \"type\":\"%s\", \"name\":\"%s\"}",

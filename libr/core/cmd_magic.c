@@ -2,7 +2,7 @@
 
 static int magicdepth = 99; //XXX: do not use global var here
 
-static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
+static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v) {
 	const char *fmt;
 	char *q, *p;
 	const char *str;
@@ -10,7 +10,7 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 	static char *oldfile = NULL;
 
 	if (--depth<0)
-		return;
+		 return 1;
 	if (addr != core->offset)
 		r_core_seek (core, addr, R_TRUE);
 	if (file) {
@@ -25,12 +25,14 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 	if (file) {
 		if (r_magic_load (ck, file) == -1) {
 			eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
-			return;
+			return -1;
 		}
 	} else {
 		const char *magicpath = r_config_get (core->config, "dir.magic");
-		if (r_magic_load (ck, magicpath) == -1)
+		if (r_magic_load (ck, magicpath) == -1) {
 			eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
+			return -1;
+		}
 	}
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	str = r_magic_buffer (ck, core->block, core->blocksize);
@@ -64,7 +66,9 @@ static void r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth,
 			}
 		}
 		free (p);
+		return 1;
 	}
+	return 0;
 }
 
 static void r_core_magic(RCore *core, const char *file, int v) {
@@ -74,4 +78,3 @@ static void r_core_magic(RCore *core, const char *file, int v) {
 	if (addr != core->offset)
 		r_core_seek (core, addr, R_TRUE);
 }
-

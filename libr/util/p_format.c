@@ -35,7 +35,7 @@ static void print_format_help(RPrint *p) {
 	" Z - \\0 terminated wide string\n"
 	" s - 32bit pointer to string (4 bytes)\n"
 	" S - 64bit pointer to string (8 bytes)\n"
-	" t - unix timestamp string\n"
+	//" t - unix timestamp string\n"
 	" * - next char is pointer\n"
 	" + - toggle show flags for each offset\n"
 	" . - skip 1 byte\n");

@@ -1070,7 +1070,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				addr = r_num_math (core->num, each);
 				*str = ' ';
 			} else addr = r_num_math (core->num, each);
-			eprintf ("; 0x%08"PFMT64x":\n", addr);
+			//eprintf ("; 0x%08"PFMT64x":\n", addr);
 			each = str+1;
 			r_core_seek (core, addr, 1);
 			r_core_cmd (core, cmd, 0);

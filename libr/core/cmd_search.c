@@ -291,7 +291,10 @@ c = 0;
 			for (; addr<to; addr++) {
 				if (r_cons_singleton ()->breaked)
 					break;
-				r_core_magic_at (core, file, addr, 99, R_FALSE);
+				if (r_core_magic_at (core, file, addr, 99, R_FALSE) == -1) {
+					// something went terribly wrong.
+					break;
+				}
 			}
 			r_cons_break_end ();
 		} else eprintf ("Usage: /m [file]\n");
