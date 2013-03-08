@@ -67,7 +67,7 @@ static int is_data_section(RBinArch *a, RBinSection *s) {
 	RBinObject *o = a->o;
 	if (strstr (o->info->bclass, "MACH0") && strstr (s->name, "_cstring")) // OSX
 		return 1;
-	if (strstr (o->info->bclass, "ELF") && strstr (s->name, "data")) // LINUX
+	if (strstr (o->info->bclass, "ELF") && strstr (s->name, "data") && !strstr (s->name, "rel")) // LINUX
 		return 1;
 #define X 1
 #define ROW (4|2)

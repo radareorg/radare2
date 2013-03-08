@@ -83,7 +83,7 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 #endif
 			bin->ehdr.e_shnum);
 	if (len == -1) {
-		eprintf ("Error: read (shdr)\n");
+		eprintf ("Error: read (shdr) at 0x%"PFMT64x"\n", (ut64) bin->ehdr.e_shoff);
 		R_FREE (bin->shdr);
 		return R_FALSE;
 	}
@@ -94,11 +94,11 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int sz;
 	if (bin->strtab || !bin->shdr) return R_FALSE;
 	bin->shstrtab_section =
-	bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
+		bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
 	if (bin->strtab_section == NULL)
 		return R_FALSE;
 	bin->shstrtab_size =
-	bin->strtab_size = bin->strtab_section->sh_size;
+		bin->strtab_size = bin->strtab_section->sh_size;
 	sz = sizeof (struct r_bin_elf_section_t) + bin->strtab_section->sh_size;
 	if ((bin->strtab = (char *)malloc (sz)) == NULL) {
 		perror ("malloc");
@@ -107,9 +107,11 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	memset (bin->strtab, 0, sz);
 	bin->shstrtab = bin->strtab;
+	//bin->strtab_section->sh_offset = 0;
 	if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)bin->strtab,
 				bin->strtab_section->sh_size) == -1) {
-		eprintf ("Error: read (strtab)\n");
+		eprintf ("Error: read (strtab) at 0x%"PFMT64x"\n",
+				(ut64) bin->strtab_section->sh_offset);
 		R_FREE (bin->strtab);
 		bin->shstrtab = NULL;
 		return R_FALSE;
@@ -185,7 +187,7 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 	Elf_(r_bin_elf_init_phdr) (bin);
 	//if (!Elf_(r_bin_elf_init_phdr) (bin))
-		//eprintf ("Warning: Cannot initialize program headers\n");
+	//	eprintf ("Warning: Cannot initialize program headers\n");
 	if (!Elf_(r_bin_elf_init_shdr) (bin))
 		eprintf ("Warning: Cannot initialize section headers\n");
 	if (!Elf_(r_bin_elf_init_strtab) (bin))
@@ -549,9 +551,9 @@ char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin) {
 
 int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
-	case ELFCLASSNONE: return 0;
 	case ELFCLASS32:   return 32;
 	case ELFCLASS64:   return 64;
+	case ELFCLASSNONE:
 	default:           return 32; // defaults
 	}
 }
@@ -863,7 +865,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	ut64 sym_offset = 0, data_offset = 0, toffset;
 	int shdr_size, tsize, nsym, ret_ctr, i, j, k, len;
 
-	if (!bin->shdr || bin->ehdr.e_shnum == 0)
+	if (!bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
 		return NULL;
 	if (bin->ehdr.e_type == ET_REL) {
 		// XXX: we must obey shndx here
@@ -873,11 +875,9 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			data_offset = 0;
 	}
 	shdr_size = bin->ehdr.e_shnum * sizeof (Elf_(Shdr));
-	for (i = 0; i < bin->ehdr.e_shnum; i++)
-		if ((type == R_BIN_ELF_IMPORTS &&
-				bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
-			(type == R_BIN_ELF_SYMBOLS  &&
-			 	bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
+	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		if ((type == R_BIN_ELF_IMPORTS && bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
+		(type == R_BIN_ELF_SYMBOLS && bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
 			if (bin->shdr[i].sh_link > shdr_size) {
 				/* oops. fix out of range pointers */
 				continue;
@@ -989,6 +989,7 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 			ret[ret_ctr].last = 1; // ugly dirty hack :D
 			break;
 		}
+	}
 	return ret;
 }
 

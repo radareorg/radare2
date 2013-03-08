@@ -215,6 +215,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	if (ch>='0'&& ch<='9') {
 		r_io_sundo_push (core->io, core->offset);
 		r_core_seek (core, core->asmqjmps[ch-'0'], 1);
+		r_core_block_read (core, 1);
 	} else
 	switch (ch) {
 	case 9: // tab

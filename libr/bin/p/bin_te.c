@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake, xvilka */
+/* radare - LGPL - Copyright 2013 - xvilka */
 
 #include <r_types.h>
 #include <r_util.h>

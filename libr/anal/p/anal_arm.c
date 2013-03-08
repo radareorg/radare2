@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 - pancake */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
 
 #include <string.h>
 #include <r_types.h>
@@ -277,10 +277,22 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		}
 	}
 
-	if (IS_EXITPOINT (code[i])) {
+	if  (
+( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
+) && ((code[i]&0xffffff00) == 0xe12fff00)
+||
+	IS_EXITPOINT (code[i])) {
+//if (IS_EXITPOINT (code[i])) {
 		b=data;
 		branch_dst_addr = disarm_branch_offset (addr, b[0] | (b[1]<<8) | (b[2]<<16)); //code[i]&0x00FFFFFF);
 		op->ref = 0;
+if (
+( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
+) && ((code[i]&0xffffff00) == 0xe12fff00)
+) {
+		op->type = R_ANAL_OP_TYPE_UJMP;
+			op->eob = 1;
+} else
 		if (IS_BRANCHL (code[i])) {
 			if (IS_BRANCH (code[i])) {
 				op->type = R_ANAL_OP_TYPE_CALL;
@@ -294,7 +306,6 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		} else if (IS_BRANCH (code[i])) {
 			if (IS_CONDAL (code[i])) {
 				op->type = R_ANAL_OP_TYPE_JMP;
-		//op->type = R_ANAL_OP_TYPE_NOP;
 				op->jump = branch_dst_addr;
 				op->fail = UT64_MAX;
 				op->eob = 1;
@@ -306,8 +317,10 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			}
 		} else {
 			//unknown jump o return
-			op->type = R_ANAL_OP_TYPE_UJMP;
-			op->eob = 1;
+			//op->type = R_ANAL_OP_TYPE_UJMP;
+		//op->type = R_ANAL_OP_TYPE_NOP;
+		//	op->eob = 1;
+		op->eob = 0;
 		}
 	}
 	//op->jump = arminsn->jmp;
