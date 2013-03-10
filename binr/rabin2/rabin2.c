@@ -202,13 +202,6 @@ static int rabin_dump_sections(char *scnname) {
 static int rabin_do_operation(const char *op) {
 	char *arg = NULL, *ptr = NULL, *ptr2 = NULL;
 
-	if (!strcmp (op, "help")) {
-		printf ("Operation string:\n"
-				"  Dump symbols: d/s/1024\n"
-				"  Dump section: d/S/.text\n"
-				"  Resize section: r/.data/1024\n");
-		return R_FALSE;
-	}
 	/* Implement alloca with fixed-size buffer? */
 	if (!(arg = strdup (op)))
 		return R_FALSE;
@@ -364,6 +357,13 @@ int main(int argc, char **argv) {
 		case 'O':
 			op = optarg;
 			set_action (ACTION_OPERATION);
+			if (!strcmp (op, "help")) {
+				printf ("Operation string:\n"
+						"  Dump symbols: d/s/1024\n"
+						"  Dump section: d/S/.text\n"
+						"  Resize section: r/.data/1024\n");
+				return 0;
+			}
 			if (optind==argc) {
 				eprintf ("Missing filename\n");
 				return 1;

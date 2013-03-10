@@ -529,8 +529,8 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 					r_cons_printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size,
 							va?baddr+symbol->rva:symbol->offset);
-				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-						"forwarder=%s sz=%"PFMT64d" bind=%s type=%s name=%s\n",
+				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ord=%03"PFMT64d" "
+						"fwd=%s sz=%"PFMT64d" bind=%s type=%s name=%s\n",
 						baddr+symbol->rva, symbol->offset,
 						symbol->ordinal, symbol->forwarder,
 						symbol->size, symbol->bind, symbol->type,

@@ -154,7 +154,7 @@ static int do_help(int line) {
 static void algolist() {
 	ut64 bits;
 	int i;
-	for (i=0;; i++) {
+	for (i=0; ; i++) {
 		bits = 1<<i;
 		const char *name = r_hash_name (bits);
 		if (!name||!*name) break;
@@ -184,15 +184,21 @@ int main(int argc, char **argv) {
 		case 'v': printf ("rahash2 v"R2_VERSION"\n"); return 0;
 		case 'h': return do_help (0);
 		case 's':
-			algobit = r_hash_name_to_bits (algo);
-			ctx = r_hash_new (R_TRUE, algobit);
-			from = 0;
-			to = strlen (optarg);
-			do_hash_internal (ctx, //0, strlen (optarg),
-				algobit, (const ut8*) optarg,
-				strlen (optarg), rad, 1);
-			r_hash_free (ctx);
-			quit = R_TRUE;
+			  algobit = r_hash_name_to_bits (algo);
+			  for (i=1; i<0x800000; i<<=1) {
+				  ut64 f, t, ofrom, oto;
+				  if (algobit & i) {
+					  int hashbit = i & algobit;
+					  ctx = r_hash_new (R_TRUE, hashbit);
+					  from = 0;
+					  to = strlen (optarg);
+					  do_hash_internal (ctx, //0, strlen (optarg),
+							  hashbit, (const ut8*) optarg,
+							  strlen (optarg), rad, 1);
+					  r_hash_free (ctx);
+					  quit = R_TRUE;
+				  }
+			  }
 			break;
 		default: eprintf ("rahash2: Unknown flag\n"); return 1;
 		}

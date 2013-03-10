@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2013 - pancake<nopcode.org> */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -14,6 +14,28 @@
 #endif
 
 static char *r_line_nullstr = "";
+
+#define ONLY_VALID_CHARS 1
+
+#if ONLY_VALID_CHARS
+static int is_valid_char (unsigned char ch) {
+	if (ch>=32 && ch<=127) return R_TRUE;
+	switch (ch) {
+	case 0: // wat
+	case 1: // ^a
+	case 4: // ^d
+	case 5: // ^e
+	case 8: // backspace
+	case 9: // tab
+	case 10: // newline
+	case 13: // carriage return
+	case 23: // ^w
+	case 27: // arrow
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+#endif
 
 static int inithist() {
 	ZERO_FILL (&I.history);
@@ -37,6 +59,7 @@ R_API int r_line_dietline_init() {
 static int r_line_readchar() {
 	ut8 buf[2];
 	*buf = '\0';
+do_it_again:
 #if __WINDOWS__
 	BOOL ret;
 	LPDWORD mode, out;
@@ -65,6 +88,10 @@ static int r_line_readchar() {
 			*buf = '\0';
 		}	
 	} while (*buf == '\0');
+#endif
+#if ONLY_VALID_CHARS
+	if (!is_valid_char (buf[0]))
+		goto do_it_again;
 #endif
 	return buf[0];
 }
