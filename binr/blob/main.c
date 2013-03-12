@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2012-2013 - pancake */
+
 #include <stdio.h>
 #include <string.h>
 
@@ -31,10 +33,8 @@ Main foo[] = {
 int main(int argc, char **argv) {
 	int i=0;
 	while (foo[i].name) {
-		if (strstr (argv[0], foo[i].name)) {
-			printf ("Using (%s)\n", foo[i].name);
+		if (strstr (argv[0], foo[i].name))
 			return foo[i].main (argc, argv);
-		}
 		i++;
 	}
 	for (i=0; foo[i].name; i++)

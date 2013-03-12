@@ -287,7 +287,7 @@ static RList* fields(RBinArch *arch) {
 static int check(RBinArch *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 	//if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46\x01", 5))
-	if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46", 4))
+	if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46", 4) && arch->buf->buf[4] != 2)
 		return R_TRUE;
 	return R_FALSE;
 }
