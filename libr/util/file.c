@@ -252,13 +252,33 @@ R_API boolt r_file_rm(const char *file) {
 }
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
-	int fd;
 #if __WINDOWS__
-	fd = r_sandbox_open (file, O_BINARY, 0644);
-#else
-	fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
-#endif
-#if __UNIX__
+	HANDLE fm, fh;
+	if (r_sandbox_enable (0)) return -1;
+	fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
+		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+	if (fh == INVALID_HANDLE_VALUE) {
+		r_sys_perror ("CreateFile");
+		free (m);
+		return -1;
+	}
+	fm = CreateFileMapping (m->fh, NULL,
+		rw? PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
+	if (fm == NULL) {
+		CloseHandle (fh);
+		return -1;
+	}
+	if (fm != INVALID_HANDLE_VALUE) {
+		ut8 *obuf = MapViewOfFile (m->fm, rw?
+			(FILE_MAP_READ|FILE_MAP_WRITE):FILE_MAP_READ,
+			UT32_HI (base), UT32_LO (base), 0);
+		memcpy (obuf, buf, len);
+		UnmapViewOfFile (obuf);
+	}
+	CloseHandle (fh);
+	CloseHandle (fm);
+#elif __UNIX__
+	int fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
 	const int pagesize = 4096;
 	int mmlen = len+pagesize;
 	int rest = addr%pagesize;
@@ -272,17 +292,39 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
         munmap (mmap_buf, mmlen*2);
 	close (fd);
 	return len;
+#else
+	return -1;
 #endif
-	return 0;
 }
 
 R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 #if __WINDOWS__
-	int fd = r_sandbox_open (file, O_BINARY, 0644);
-#else
+	HANDLE fm, fh;
+	if (r_sandbox_enable (0)) return -1;
+	fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
+		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+	if (fh == INVALID_HANDLE_VALUE) {
+		r_sys_perror ("CreateFile");
+		free (m);
+		return -1;
+	}
+	fm = CreateFileMapping (m->fh, NULL,
+		rw? PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
+	if (fm == NULL) {
+		CloseHandle (fh);
+		return -1;
+	}
+	if (fm != INVALID_HANDLE_VALUE) {
+		ut8 *obuf = MapViewOfFile (m->fm, rw?
+			(FILE_MAP_READ|FILE_MAP_WRITE):FILE_MAP_READ,
+			UT32_HI (base), UT32_LO (base), 0);
+		memcpy (obuf, buf, len);
+		UnmapViewOfFile (obuf);
+	}
+	CloseHandle (fh);
+	CloseHandle (fm);
+#elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDONLY, 0644);
-#endif
-#if __UNIX__
 	const int pagesize = 4096;
 	int mmlen = len+pagesize;
 	int rest = addr%pagesize;
@@ -302,64 +344,61 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 
 // TODO: add rwx support?
 R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
-	RMmap *m = NULL;
-#if __WINDOWS__
-	int fd = r_sandbox_open (file, O_BINARY, 0644);
-#else
+	RMmap *m;
 	int fd = r_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
-#endif
-	if (fd != -1) {
-		m = R_NEW (RMmap);
-		if (!m) {
-			close (fd);
-			return NULL;
-		}
-		m->base = base;
-		m->rw = rw;
-		m->fd = fd;
-		m->len = lseek (fd, (off_t)0, SEEK_END);
-#if __UNIX__
-		m->buf = mmap (NULL, m->len, rw?PROT_READ|PROT_WRITE:PROT_READ,
-				MAP_SHARED, fd, (off_t)base);
-		if (m->buf == MAP_FAILED) {
-			free (m);
-			m = NULL;
-		}
-#elif __WINDOWS__
+	if (fd == -1) return NULL;
+	m = R_NEW (RMmap);
+	if (!m) {
 		close (fd);
-		m->fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
-			FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
-		if (m->fh == INVALID_HANDLE_VALUE) {
-			r_sys_perror ("CreateFile");
-			free (m);
-			return NULL;
-		}
-		m->fm = CreateFileMapping (m->fh, NULL,
-			rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
-		if (m->fm == NULL) {
-			CloseHandle (m->fh);
-			free (m);
-			return NULL;
-		}
-		if (m->fm != INVALID_HANDLE_VALUE) {
-			m->buf = MapViewOfFile (m->fm, rw?
-				FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ, base, 0, 0);
-		} else {
-			CloseHandle (m->fh);
-			free (m);
-			m = NULL;
-		}
-#else
-		m->buf = malloc (m->len);
-		if (m->buf) {
-			lseek (fd, (off_t)0, SEEK_SET);
-			read (fd, m->buf, m->len);
-		} else {
-			free (m);
-			m = NULL;
-		}
-#endif
+		return NULL;
 	}
+	m->base = base;
+	m->rw = rw;
+	m->fd = fd;
+	m->len = lseek (fd, (off_t)0, SEEK_END);
+#if __UNIX__
+	m->buf = mmap (NULL, m->len,
+		rw?PROT_READ|PROT_WRITE:PROT_READ,
+		MAP_SHARED, fd, (off_t)base);
+	if (m->buf == MAP_FAILED) {
+		free (m);
+		m = NULL;
+	}
+#elif __WINDOWS__
+	close (fd);
+	m->fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
+		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+	if (m->fh == INVALID_HANDLE_VALUE) {
+		r_sys_perror ("CreateFile");
+		free (m);
+		return NULL;
+	}
+	m->fm = CreateFileMapping (m->fh, NULL,
+		rw?PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
+	if (m->fm == NULL) {
+		CloseHandle (m->fh);
+		free (m);
+		return NULL;
+	}
+	if (m->fm != INVALID_HANDLE_VALUE) {
+		m->buf = MapViewOfFile (m->fm, rw?
+			FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ,
+			UT32_HI (base), UT32_LO (base), 0);
+	} else {
+		CloseHandle (m->fh);
+		free (m);
+		m = NULL;
+	}
+#else
+	m->buf = malloc (m->len);
+	if (m->buf) {
+		lseek (fd, (off_t)0, SEEK_SET);
+		read (fd, m->buf, m->len);
+	} else {
+		free (m);
+		m = NULL;
+	}
+#endif
 	return m;
 }
 

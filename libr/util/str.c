@@ -952,12 +952,11 @@ R_API void r_str_uri_decode (char *s) {
 }
 
 R_API char *r_str_uri_encode (const char *s) {
-	char ch[4], *o, *d, *od, *os;
+	char ch[4], *d, *od;
 	if (!s) return NULL;
-	os = s;
 	od = d = malloc (1+(strlen (s)*4));
 	if (!d) return NULL;
-	for (o=d; *s; s++) {
+	for (; *s; s++) {
 		if((*s>='0' && *s<='9') 
 		|| (*s>='a' && *s<='z')
 		|| (*s>='A' && *s<='Z')) {

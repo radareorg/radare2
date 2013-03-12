@@ -34,7 +34,6 @@ R_API int r_sandbox_system (const char *x, int n) {
 
 R_API int r_sandbox_creat (const char *path, int mode) {
 	if (enabled) {
-		// cannot create
 		if (mode & O_CREAT) return -1;
 		if (mode & O_RDWR) return -1;
 		if (!r_sandbox_check_path (path))
@@ -44,8 +43,10 @@ R_API int r_sandbox_creat (const char *path, int mode) {
 }
 
 R_API int r_sandbox_open (const char *path, int mode, int perm) {
+#if __WINDOWS__
+	mode |= O_BINARY;
+#endif
 	if (enabled) {
-		// cannot create
 		if (mode & O_CREAT) return -1;
 		if (mode & O_RDWR) return -1;
 		if (!r_sandbox_check_path (path))
@@ -70,25 +71,19 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 R_API int r_sandbox_chdir (const char *path) {
 	if (enabled) {
 		// TODO: check path
-		if (strstr (path, "../"))
-			return -1;
-		if (*path == '/')
-			return -1;
+		if (strstr (path, "../")) return -1;
+		if (*path == '/') return -1;
 		return -1;
 	}
 	return chdir (path);
 }
 
 R_API int r_sandbox_kill(int pid, int sig) {
-	if (enabled) // XXX: fine-tune. maybe we want to enable kill for child?
-		return -1;
+	// XXX: fine-tune. maybe we want to enable kill for child?
+	if (enabled) return -1;
 #if __UNIX__
-	if (pid<1) {
-		eprintf ("r_sandbox_kill: Better not to kill negative pids.\n");
-		return -1;
-	}
-	return kill (pid, sig);
-#else
-	return -1;
+	if (pid>=0) return kill (pid, sig);
+	eprintf ("r_sandbox_kill: Better not to kill negative pids.\n");
 #endif
+	return -1;
 }

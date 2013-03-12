@@ -42,6 +42,9 @@
 #define UT8_MAX  0xFFU
 #define UT8_MIN  0x00U
 
+#define UT32_LO(x) ((ut32)((x)&UT32_MAX))
+#define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
+
 /* copied from bithacks.h */
 #define B_IS_SET(x, n)   (((x) & (1<<(n)))?1:0)
 #define B_SET(x, n)      ((x) |= (1<<(n)))
