@@ -29,26 +29,23 @@ R_API RBuffer *r_buf_new() {
 R_API RBuffer *r_buf_mmap (const char *file, int rw) {
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
-	b->mmap = r_file_mmap (file, rw);
+	b->mmap = r_file_mmap (file, rw, 0);
 	if (b->mmap && b->mmap->len>0) {
 		b->buf = b->mmap->buf;
 		b->length = b->mmap->len;
-	} else {
-		r_buf_free (b);
-		return NULL; /* we just freed b, don't return it */
+		return b;
 	}
-	return b;
+	r_buf_free (b);
+	return NULL; /* we just freed b, don't return it */
 }
 
 R_API RBuffer *r_buf_file (const char *file) {
 	RBuffer *b = r_buf_new ();
 	if (!b) return NULL;
 	b->buf = (ut8*)r_file_slurp (file, &b->length);
-	if (!b->buf) {
-		r_buf_free (b);
-		return NULL; /* we just freed b, don't return it */
-	}
-	return b;
+	if (b->buf) return b;
+	r_buf_free (b);
+	return NULL; /* we just freed b, don't return it */
 }
 
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
@@ -58,10 +55,8 @@ R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value) {
 }
 
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length) {
-	if (b->buf)
-		free (b->buf);
-	if (length<0)
-		return R_FALSE;
+	if (b->buf) free (b->buf);
+	if (length<0) return R_FALSE;
 	if (!(b->buf = malloc (length+1)))
 		return R_FALSE;
 	memcpy (b->buf, buf, length);

@@ -9,7 +9,7 @@
 static int check(RBin *bin) {
 	ut8 *h, buf[4];
 	int off, ret = R_FALSE;
-	RMmap *m = r_file_mmap (bin->file, R_FALSE);
+	RMmap *m = r_file_mmap (bin->file, R_FALSE, 0);
 	if (!m || !m->buf) {
 		r_file_mmap_free (m);
 		return R_FALSE;

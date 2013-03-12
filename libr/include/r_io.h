@@ -346,6 +346,7 @@ extern RIOPlugin r_io_plugin_bfdbg;
 extern RIOPlugin r_io_plugin_w32;
 extern RIOPlugin r_io_plugin_ewf;
 extern RIOPlugin r_io_plugin_zip;
+extern RIOPlugin r_io_plugin_mmap;
 #endif
 
 #endif

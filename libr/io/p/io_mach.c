@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_userconf.h>
 
@@ -260,7 +260,7 @@ struct r_io_plugin_t r_io_plugin_mach = {
 
 #else
 struct r_io_plugin_t r_io_plugin_mach = {
-	.name = "io.mach",
+	.name = "mach",
         .desc = "mach debug io (unsupported in this platform)"
 };
 #endif

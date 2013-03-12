@@ -65,6 +65,7 @@ typedef struct r_mem_pool_factory_t {
 
 typedef struct r_mmap_t {
 	ut8 *buf;
+	ut64 base;
 	int len;
 	int fd;
 	int rw;
@@ -218,7 +219,9 @@ R_API RGraphNode* r_graph_pop(RGraph *t);
 R_API int r_file_size(const char *str);
 R_API char *r_file_root(const char *root, const char *path);
 R_API boolt r_file_is_directory(const char *str);
-R_API RMmap *r_file_mmap (const char *file, boolt rw);
+R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base);
+R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len);
+R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len);
 R_API void r_file_mmap_free (RMmap *m);
 
 // TODO: find better names and write vapis

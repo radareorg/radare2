@@ -231,7 +231,7 @@ R_API char *r_file_root(const char *root, const char *path) {
 
 R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 	int ret;
-	FILE *fd = r_sandbox_fopen(file, "wb");
+	FILE *fd = r_sandbox_fopen (file, "wb");
 	if (fd == NULL) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
@@ -251,8 +251,57 @@ R_API boolt r_file_rm(const char *file) {
 #endif
 }
 
+R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
+	int fd;
+#if __WINDOWS__
+	fd = r_sandbox_open (file, O_BINARY, 0644);
+#else
+	fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
+#endif
+#if __UNIX__
+	const int pagesize = 4096;
+	int mmlen = len+pagesize;
+	int rest = addr%pagesize;
+        ut8 *mmap_buf;
+	if (fd == -1) return -1;
+	mmap_buf = mmap (NULL, mmlen*2, PROT_READ|PROT_WRITE,
+		MAP_SHARED, fd, (off_t)addr-rest);
+        if (((int)(size_t)mmap_buf)==-1)
+                return -1;
+        memcpy (mmap_buf+rest, buf, len);
+        munmap (mmap_buf, mmlen*2);
+	close (fd);
+	return len;
+#endif
+	return 0;
+}
+
+R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
+#if __WINDOWS__
+	int fd = r_sandbox_open (file, O_BINARY, 0644);
+#else
+	int fd = r_sandbox_open (file, O_RDONLY, 0644);
+#endif
+#if __UNIX__
+	const int pagesize = 4096;
+	int mmlen = len+pagesize;
+	int rest = addr%pagesize;
+        ut8 *mmap_buf;
+	if (fd == -1) return -1;
+	mmap_buf = mmap (NULL, mmlen*2, PROT_READ,
+		MAP_SHARED, fd, (off_t)addr-rest);
+        if (((int)(size_t)mmap_buf)==-1)
+                return -1;
+        memcpy (buf, mmap_buf+rest, len);
+        munmap (mmap_buf, mmlen*2);
+	close (fd);
+	return len;
+#endif
+	return 0;
+}
+
 // TODO: add rwx support?
-R_API RMmap *r_file_mmap (const char *file, boolt rw) {
+R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 	RMmap *m = NULL;
 #if __WINDOWS__
 	int fd = r_sandbox_open (file, O_BINARY, 0644);
@@ -265,12 +314,13 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 			close (fd);
 			return NULL;
 		}
+		m->base = base;
 		m->rw = rw;
 		m->fd = fd;
 		m->len = lseek (fd, (off_t)0, SEEK_END);
 #if __UNIX__
 		m->buf = mmap (NULL, m->len, rw?PROT_READ|PROT_WRITE:PROT_READ,
-				MAP_SHARED, fd, (off_t)0);
+				MAP_SHARED, fd, (off_t)base);
 		if (m->buf == MAP_FAILED) {
 			free (m);
 			m = NULL;
@@ -293,7 +343,7 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw) {
 		}
 		if (m->fm != INVALID_HANDLE_VALUE) {
 			m->buf = MapViewOfFile (m->fm, rw?
-				FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ, 0, 0, 0);
+				FILE_MAP_READ|FILE_MAP_WRITE:FILE_MAP_READ, base, 0, 0);
 		} else {
 			CloseHandle (m->fh);
 			free (m);
