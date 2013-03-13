@@ -75,7 +75,7 @@ static ArmOp ops[] = {
 	//{ "mov", 0x3, TYPE_MOV },
 	//{ "mov", 0x0a3, TYPE_MOV },
 	{ "mov", 0xa001, TYPE_MOV },
-	{ "mvn", 0, TYPE_MOV },
+	{ "mvn", 0xe000, TYPE_MOV },
 	{ "svc", 0xf, TYPE_SWI }, // ???
 
 	{ "and", 0x0000, TYPE_ARI },
@@ -478,7 +478,7 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 }
 
 static int arm_assemble(ArmOpcode *ao, const char *str) {
-	int i, j, ret, reg;
+	int i, j, ret, reg, a, b;
 	for (i=0; ops[i].name; i++) {
 		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
@@ -565,11 +565,33 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				else ao->o |= 0xa003 | getnum (ao->a[1])<<24;
 				break;
 			case TYPE_TST:
+				a = getreg (ao->a[0]);
+				b = getreg (ao->a[1]);
+				if (b == -1) {
+					b = getnum (ao->a[1]);
+					if (b<0|| b>255) {
+						eprintf ("Parameter out of range (0-255)\n");
+						return 0;
+					}
+					ao->o = 0x50e3;
+					// TODO: if (b>255) -> automatic multiplier
+					if (ao->a[2]) {
+						int n = getnum (ao->a[2]);
+						if (n&1) {
+							eprintf ("Invalid multiplier\n");
+							return 0;
+						}
+						ao->o |= (n>>1)<<16;
+					}
+					ao->o |= (a<<8);
+					ao->o |= ((b&0xff)<<24);
+				} else {
 				//ao->o |= getreg(ao->a[0])<<20; // ???
-				ao->o |= getreg (ao->a[0])<<8;
-				ao->o |= getreg (ao->a[1])<<24;
-				if (ao->a[2])
-					ao->o |= getshift (ao->a[2]);
+					ao->o |= (a<<8);
+					ao->o |= (b<<24);
+					if (ao->a[2])
+						ao->o |= getshift (ao->a[2]);
+				}
 				break;
 			}
 			return 1;

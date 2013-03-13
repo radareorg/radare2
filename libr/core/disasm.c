@@ -432,9 +432,7 @@ toro:
 				} else if (at > f->addr && at < f->addr+f->size-1) {
 					r_cons_printf ("| ");
 					pre = "| ";
-				} else {
-					f = NULL;
-				}
+				} else f = NULL;
 				if (f && at == f->addr+f->size-analop.length) // HACK
 					pre = "\\ ";
 			} else pre = "  "; //r_cons_printf ("  ");
@@ -445,7 +443,7 @@ toro:
 				if (show_lines && refline)
 					r_cons_strcat (refline);
 				if (show_offset)
-				r_cons_printf ("; -------- ");
+					r_cons_printf ("; -------- ");
 				if (show_functions)
 					r_cons_printf ("%s:\n%s", flag->name, f?pre:"");
 				else r_cons_printf ("%s:\n", flag->name);
@@ -800,7 +798,7 @@ toro:
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
-				r_cons_printf ("%s%s; ------------\n", show_functions?"  ":"", line);
+				r_cons_printf ("%s%s; ------------\n", (f&&show_functions)?"  ":"", line);
 			}
 			free (line);
 			free (refline);
