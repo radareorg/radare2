@@ -597,6 +597,14 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				}
 			} else eprintf ("Invalid args for lea?\n");
 			return l;
+		} else if (!strcmp (op, "cmovz")) {
+			ut8 a, b;
+			if ((a = getreg (arg))==0xff) return 0;
+			if ((b = getreg (arg2))==0xff) return 0;
+			data[l++] = 0x0f;
+			data[l++] = 0x44;
+			data[l++] = 0xc0 + (b|(a<<3));
+			return 3;
 		} else if (!strcmp (op, "mov")) {
 			ut64 dst;
 			ut8 *ptr;

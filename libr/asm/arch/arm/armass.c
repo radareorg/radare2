@@ -31,6 +31,7 @@ enum {
 	TYPE_ARI = 6,
 	TYPE_IMM = 7,
 	TYPE_MEM = 8,
+	TYPE_BKP = 9,
 };
 
 // static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};
@@ -40,6 +41,7 @@ static ArmOp ops[] = {
 	{ "adcs", 0xb000, TYPE_ARI },
 	{ "adds", 0x9000, TYPE_ARI },
 	{ "add", 0x8000, TYPE_ARI },
+	{ "bkpt", 0x2001, TYPE_BKP },
 	{ "subs", 0x5000, TYPE_ARI },
 	{ "sub", 0x4000, TYPE_ARI },
 	{ "sbc", 0xc000, TYPE_ARI },
@@ -476,12 +478,12 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 }
 
 static int arm_assemble(ArmOpcode *ao, const char *str) {
-	int i, ret;
-	for (i=0;ops[i].name;i++) {
+	int i, j, ret, reg;
+	for (i=0; ops[i].name; i++) {
 		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
-			if (ao->a[0])
+			if (ao->a[0] || ops[i].type == TYPE_BKP)
 			switch (ops[i].type) {
 			case TYPE_MEM:
 				getrange (ao->a[0]);
@@ -500,7 +502,6 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				break;
 			case TYPE_IMM:
 				if (*ao->a[0]++=='{') {
-					int j, reg;
 					for (j=0; j<16; j++) {
 						if (ao->a[j] && *ao->a[j]) {
 							getrange (ao->a[j]); // XXX filter regname string
@@ -516,7 +517,7 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				} else ao->o |= getnum(ao->a[0])<<24; // ???
 				break;
 			case TYPE_BRA:
-				if ((ret = getreg(ao->a[0])) == -1) {
+				if ((ret = getreg (ao->a[0])) == -1) {
 					// TODO: control if branch out of range
 					ret = (getnum(ao->a[0])-ao->off-8)/4;
 					ao->o |= ((ret>>8)&0xff)<<16;
@@ -524,6 +525,14 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				} else {
 					printf("This branch does not accept reg as arg\n");
 					return 0;
+				}
+				break;
+			case TYPE_BKP:
+				ao->o |= 0x70<<24;
+				if (ao->a[0]) {
+					int n = getnum (ao->a[0]);
+					ao->o |= ((n&0xf)<<24);
+					ao->o |= (((n>>4)&0xff)<<16);
 				}
 				break;
 			case TYPE_BRR:
