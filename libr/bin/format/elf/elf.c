@@ -740,8 +740,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			perror ("malloc (reloc)");
 			return NULL;
 		}
-		if (sym)
-		for (j =  0; j < nrel; j++) {
+		j = 0;
+		if (sym) for (; j < nrel; j++) {
 			idx = ELF_R_SYM (rel[j].r_info);
 			if (idx < nsym) {
 				if (sym[idx].st_name > bin->strtab_section->sh_size) {
