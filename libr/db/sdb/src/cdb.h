@@ -16,7 +16,7 @@
 #define USE_MMAN 1
 #endif
 
-// TODO THIS MUST GTFO!
+/* TODO THIS MUST GTFO! */
 int getkvlen(int fd, ut32 *klen, ut32 *vlen);
 #define CDB_HASHSTART 5381
 

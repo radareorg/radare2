@@ -431,60 +431,60 @@ int sdb_finish (Sdb *s) {
 	return 1; // XXX: 
 }
 
+// TODO: return char *
 int sdb_query (Sdb *s, const char *cmd) {
+	char *p, *eq, *ask = strchr (cmd, '?');
+	const char *p2;
 	int save = 0;
 	ut64 n;
-	const char *p2;
-	char *p, *eq;
+
 	switch (*cmd) {
 	case '+': // inc
-		if ((eq = strchr (cmd+1, '?'))) {
-			*eq = 0;
-			n = sdb_json_inc (s, cmd+1, eq+1, 1, 0);
-			save = 1;
-			printf ("%"ULLFMT"d\n", n);
-		} else {
-			n = sdb_inc (s, cmd+1, 1, 0);
-			save = 1;
-			printf ("%"ULLFMT"d\n", n);
-		}
+		n = ask? 
+			sdb_json_inc (s, cmd+1, ask, 1, 0):
+			sdb_inc (s, cmd+1, 1, 0);
+		printf ("%"ULLFMT"d\n", n);
+		save = 1;
 		break;
 	case '-': // dec
-		if ((eq = strchr (cmd+1, '?'))) {
-			*eq = 0;
-			n = sdb_json_dec (s, cmd+1, eq+1, 1, 0);
-			save = 1;
-			printf ("%"ULLFMT"d\n", n);
-		} else {
-			n = sdb_dec (s, cmd+1, 1, 0);
-			save = 1;
-			printf ("%"ULLFMT"d\n", n);
-		}
+		n = ask? 
+			sdb_json_dec (s, cmd+1, ask, 1, 0):
+			sdb_dec (s, cmd+1, 1, 0);
+		printf ("%"ULLFMT"d\n", n);
+		save = 1;
 		break;
 	default:
-		/* spaghetti */
-		if ((eq = strchr (cmd, '?'))) {
-			char *path = eq+1;
-			*eq = 0;
-			if ((eq = strchr (path+1, '='))) {
-				save = 1;
-				*eq = 0;
-				sdb_json_set (s, cmd, path, eq+1, 0);
-			} else
-			if ((p = sdb_json_get (s, cmd, path, 0))) {
-				printf ("%s\n", p);
-				free (p);
+		eq = strchr (cmd, '=');
+		if (eq && ask>eq) ask = NULL;
+		if (eq) {
+			// 1 0 kvpath=value
+			// 1 1 kvpath?jspath=value
+			save = 1;
+			*eq++ = 0;
+			if (ask) {
+				// sdbjsonset
+				*ask++ = 0;
+				sdb_json_set (s, cmd, ask, eq, 0);
+			} else {
+				// sdbset
+				sdb_set (s, cmd, eq, 0);
 			}
 		} else {
-			if ((eq = strchr (cmd, '='))) {
-				save = 1;
-				*eq = 0;
-				sdb_set (s, cmd, eq+1, 0);
-			} else
-			if ((p2 = sdb_getc (s, cmd, 0)))
-				printf ("%s\n", p2);
+			// 0 1 kvpath?jspath
+			// 0 0 kvpath
+			if (ask) {
+				// sdbjsonget
+				*ask++ = 0;
+				if ((p = sdb_json_get (s, cmd, ask, 0))) {
+					printf ("%s\n", p);
+					free (p);
+				}
+			} else {
+				// sdbget
+				if ((p2 = sdb_getc (s, cmd, 0)))
+					printf ("%s\n", p2);
+			}
 		}
 	}
 	return save;
 }
-

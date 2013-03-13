@@ -8,10 +8,10 @@
 #include <sys/mman.h>
 #endif
 
-// XXX: this code must be rewritten . too slow
+/* XXX: this code must be rewritten . too slow */
 int getkvlen(int fd, ut32 *klen, ut32 *vlen) {
 	ut8 buf[4];
-	if (read (fd, buf, 4) != 4)
+	if (fd == -1 || read (fd, buf, 4) != 4)
 		return 0;
 	*klen = (ut32)buf[0];
 	*vlen = (ut32)(buf[1] + ((ut32)buf[2]<<8) + ((ut32)buf[3]<<16));
@@ -37,11 +37,12 @@ void cdb_init(struct cdb *c, int fd) {
 	c->map = NULL;
 	cdb_findstart (c);
 	c->fd = fd;
-	if (!fstat (fd, &st) && st.st_size != UT32_MAX) {
+	if (fd != -1 && !fstat (fd, &st) && st.st_size != UT32_MAX) {
 #if USE_MMAN
 		char *x = mmap (0, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 #else
 		char *x = malloc (st.st_size);
+		if (!x) return;
 		read (fd, x, st.st_size); // TODO: handle return value
 #endif
 		if (x + 1) {

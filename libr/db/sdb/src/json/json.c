@@ -49,6 +49,28 @@ rep:
 	return 1;
 }
 
+typedef int (*JSONCallback)();
+
+int json_foreach(const char *s, JSONCallback cb) {
+	int i, len, ret;
+	unsigned short *res = NULL;
+	len = strlen (s);
+	res = malloc (len);
+	ret = js0n ((unsigned char *)s, len, res);
+	if (!ret) return 0;
+	if (*s=='[') {
+		for (i=0; res[i]; i+=2) {
+			printf ("%d %.*s\n", i, res[i+1], s+res[i]);
+		}
+	} else {
+		for (i=0; res[i]; i+=4) {
+			printf ("%.*s = ", res[i+1], s+res[i]);
+			printf ("%.*s\n", res[i+3], s+res[i+2]);
+		}
+	}
+	return 1;
+}
+
 int json_walk (const char *s) {
 	int i, len, ret;
 	unsigned short *res;
@@ -56,7 +78,7 @@ int json_walk (const char *s) {
 	res = malloc (len);
 	ret = js0n ((unsigned char *)s, len, res);
 	if (!ret) return 0;
-	if (*s=='[') {
+	if (*s=='[' || *s=='{') {
 		for (i=0; res[i]; i+=2) {
 			printf ("%d %.*s\n", i, res[i+1], s+res[i]);
 		}
@@ -135,7 +157,10 @@ fprintf (stderr, "onjson (%s)\n", rangstr_dup (&rj));
 //fprintf (stderr, "++ (%s)(%d vs %d)\n", rangstr_dup (&rs), x, rs.t);
 //if (rj.p[rj.f]=='[') { break; }
 //fprintf (stderr, "ee %c\n", rj.p[rj.f]);
-			if (!rj2.p) break;
+			if (!rj2.p) {
+				if (!rj.p[rj.t]) return rj2;
+				break;
+			}
 			rj = rj2;
 #if 0
 fprintf (stderr, "--  (%s)\n", rangstr_dup (&rj));
@@ -159,4 +184,3 @@ return rj;
 char *json_set (const char *s, const char *k, const char *v) {
 	return NULL;
 }
-

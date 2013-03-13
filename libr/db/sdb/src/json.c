@@ -5,12 +5,11 @@
 #include "json/json.h"
 
 static int __itoa(int value, char *string) {
-	int i, sign, count;
+	int i, sign, count = 0;
 	char buf[64];
 	char *temp = buf;
 	char *ptr = string;
 
-	count = 0;
 	temp[0] = 0;
 	string[0] = 0;
 
@@ -33,9 +32,10 @@ static int __itoa(int value, char *string) {
 }
 
 char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
+	Rangstr rs;
 	char *u, *v = sdb_get (s, k, cas);
 	if (!v) return NULL;
-	Rangstr rs = json_get (v, p);
+	rs = json_get (v, p);
 	u = rangstr_dup (&rs);
 	free (v);
 	return u;
@@ -80,7 +80,6 @@ int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas)
 		free (js);
 		return 0;
 	}
-
 	if (!js) return 0;
 	rs = json_get (js, p);
 	if (!rs.p) {
@@ -124,12 +123,9 @@ char *sdb_json_indent(const char *s) {
 	char *o, *O = malloc (strlen (s)*2);
 	for (o=O; *s; s++) {
 		if (instr) {
-			if (s[0] == '"') {
-				instr = 0;
-			} else {
-				if (s[0] == '\\' && s[1] == '"')
-					*o++ = *s;
-			}
+			if (s[0] == '"') instr = 0;
+			else if (s[0] == '\\' && s[1] == '"')
+				*o++ = *s;
 			*o++ = *s;
 			continue;
 		} else {
@@ -151,13 +147,8 @@ char *sdb_json_indent(const char *s) {
                         break;
                 case '{':
                 case '[':
-                        if (indent!=-1 ) {
-                                *o++ = *s;
-                                *o++ = '\n';
-                        } else {
-                                *o++ = *s;
-                                *o++ = ' ';
-                        }
+			*o++ = *s;
+			*o++ = (indent!=-1)?'\n':' ';
                         INDENT (1);
                         break;
                 case '}':

@@ -19,13 +19,15 @@ src/sdb-version.h:
 clean:
 	rm -f src/sdb-version.h
 	cd src && ${MAKE} clean
+	cd memcache && ${MAKE} clean
+	cd test && ${MAKE} clean
 	cd ${VALADIR} && ${MAKE} clean
 
 dist:
 	rm -f sdb-${VERSION}.tar.gz
 	rm -rf sdb-${VERSION}
-	hg clone . sdb-${VERSION}
-	rm -rf sdb-${VERSION}/.hg*
+	git clone . sdb-${VERSION}
+	rm -rf sdb-${VERSION}/.git*
 	tar czvf sdb-${VERSION}.tar.gz sdb-${VERSION}
 	pub sdb-${VERSION}.tar.gz
 	rm -rf sdb-${VERSION}
@@ -74,7 +76,8 @@ ifneq (${HAVE_VALA},)
 endif
 
 symstall: install-dirs
-	cd src ; for a in libsdb.* ; do ln -fs ${PWD}/src/$$a ${PFX}/lib/$$a ; done
+	cd src ; for a in libsdb.* ; do \
+		ln -fs ${PWD}/src/$$a ${PFX}/lib/$$a ; done
 	ln -fs ${PWD}/src/sdb ${PFX}/bin
 	ln -fs ${PWD}/src/sdb.h ${PFX}/include/sdb
 	ln -fs ${PWD}/src/sdb-version.h ${PFX}/include/sdb
@@ -85,8 +88,8 @@ symstall: install-dirs
 	ln -fs ${PWD}/src/cdb_make.h ${PFX}/include/sdb
 	ln -fs ${PWD}/src/buffer.h ${PFX}/include/sdb
 	ln -fs ${PWD}/src/config.h ${PFX}/include/sdb
-	ln -fs ${PWD}/vala/sdb.pc ${PFX}/lib/pkgconfig
-	ln -fs ${PWD}/vala/mcsdb.pc ${PFX}/lib/pkgconfig
+	ln -fs ${PWD}/bindings/vala/sdb.pc ${PFX}/lib/pkgconfig
+	ln -fs ${PWD}/bindings/vala/mcsdb.pc ${PFX}/lib/pkgconfig
 ifneq (${HAVE_VALA},)
 	ln -fs ${PWD}/vala/sdb.vapi ${PFX}/share/vala/vapi
 	ln -fs ${PWD}/vala/mcsdb.vapi ${PFX}/share/vala/vapi

@@ -6,7 +6,7 @@
 #include "rangstr.h"
 
 void rangstr_print (Rangstr *s) {
-	//printf ("%.%s", s->t-s->f, s->p);
+	/*printf ("%.%s", s->t-s->f, s->p); */
 	if (s->p) fwrite (s->p+s->f, s->t-s->f, 1, stdout);
 }
 

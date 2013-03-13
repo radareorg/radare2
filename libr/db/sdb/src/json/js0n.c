@@ -15,7 +15,7 @@ int js0n(unsigned char *js, unsigned int len, unsigned short *out) {
 		[0 ... 255] = &&l_bad,
 		['\t'] = &&l_loop, [' '] = &&l_loop, ['\r'] = &&l_loop, ['\n'] = &&l_loop,
 		['"'] = &&l_qup,
-		[':'] = &&l_loop,[','] = &&l_loop,
+		[':'] = &&l_loop, [','] = &&l_loop,
 		['['] = &&l_up, [']'] = &&l_down, // tracking [] and {} individually would allow fuller validation but is really messy
 		['{'] = &&l_up, ['}'] = &&l_down,
 //TODO: add support for rawstrings 
@@ -75,7 +75,7 @@ printf ("                 goesc = %p\n", goesc);
 printf ("                 goutf8= %p\n", goutf8_continue);
 #endif
 	for (cur=js, end = js+len; cur<end; cur++) {
-//printf (" --> %c %p\n", *cur, go);
+//printf (" --> %s %p\n", cur, go[*cur]);
 		goto *go[*cur];
 l_loop:;
 	}
