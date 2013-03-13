@@ -229,7 +229,7 @@ typedef struct {
 #define PE_IMAGE_SCN_MEM_WRITE     0x80000000
 
 typedef struct {
-	ut8  Name[PE_IMAGE_SIZEOF_SHORT_NAME];
+	ut8 Name[PE_IMAGE_SIZEOF_SHORT_NAME];
 	union {
 		ut32 PhysicalAddress;
 		ut32 VirtualSize;

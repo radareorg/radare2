@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008 nibble, xvilka */
+/* radare - LGPL - Copyright 2008-2013 nibble, xvilka */
 
 #undef TE_
 #undef TE_Word
@@ -12,8 +12,8 @@
 #ifndef _INCLUDE_R_BIN_TE_SPECS_H_
 #define _INCLUDE_R_BIN_TE_SPECS_H_
 
-#define TE_NAME_LENGTH							256
-#define TE_STRING_LENGTH						256
+#define TE_NAME_LENGTH    256
+#define TE_STRING_LENGTH  256
 
 #define TE_IMAGE_FILE_MACHINE_UNKNOWN          0x0000
 #define TE_IMAGE_FILE_MACHINE_ALPHA            0x0184
@@ -46,7 +46,7 @@
 #define TE_IMAGE_FILE_MACHINE_TRICORE          0x0520
 #define TE_IMAGE_FILE_MACHINE_WCEMIPSV2        0x0169
 
-#define TE_IMAGE_DIRECTORY_ENTRIES				2
+#define TE_IMAGE_DIRECTORY_ENTRIES                  2
 
 #define TE_IMAGE_DIRECTORY_ENTRY_BASERELOC          0
 #define TE_IMAGE_DIRECTORY_ENTRY_DEBUG              1

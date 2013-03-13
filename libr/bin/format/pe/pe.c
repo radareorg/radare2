@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 nibble, pancake */
+/* radare - LGPL - Copyright 2008-2013 nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -110,7 +110,7 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 				return R_FALSE;
 			}
 			memcpy((*importp)[*nimp].name, import_name, PE_NAME_LENGTH);
-			(*importp)[*nimp].name[PE_NAME_LENGTH-1] = '\0';
+			(*importp)[*nimp].name[PE_NAME_LENGTH] = '\0';
 			(*importp)[*nimp].rva = FirstThunk + i * sizeof(PE_DWord);
 			(*importp)[*nimp].offset = PE_(r_bin_pe_rva_to_offset)(bin, FirstThunk) + i * sizeof(PE_DWord);
 			(*importp)[*nimp].hint = import_hint;
@@ -349,10 +349,10 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 		exports[i].rva = function_rva;
 		exports[i].offset = PE_(r_bin_pe_rva_to_offset)(bin, function_rva);
 		exports[i].ordinal = function_ordinal;
-		memcpy(exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
-		exports[i].forwarder[PE_NAME_LENGTH-1] = '\0';
-		memcpy(exports[i].name, export_name, PE_NAME_LENGTH);
-		exports[i].name[PE_NAME_LENGTH-1] = '\0';
+		memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
+		exports[i].forwarder[PE_NAME_LENGTH] = '\0';
+		memcpy (exports[i].name, export_name, PE_NAME_LENGTH);
+		exports[i].name[PE_NAME_LENGTH] = '\0';
 		exports[i].last = 0;
 	}
 	exports[i].last = 1;
@@ -447,7 +447,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 		}
 	}
 	for (i = 0; i < j; i++) {
-		libs[i].name[PE_STRING_LENGTH-1] = '\0';
+		libs[i].name[PE_STRING_LENGTH] = '\0';
 		libs[i].last = 0;
 	}
 	libs[i].last = 1;
@@ -633,7 +633,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 	}
 	for (i = 0; i < sections_count; i++) {
 		memcpy (sections[i].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
+		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 		sections[i].rva = shdr[i].VirtualAddress;
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].Misc.VirtualSize;
