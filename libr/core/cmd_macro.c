@@ -1,20 +1,14 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static int cmd_macro(void *data, const char *input) {
 	char *buf = NULL;
 	RCore *core = (RCore*)data;
 
 	switch (*input) {
-	case ')':
-		r_cmd_macro_break (&core->rcmd->macro, input+1);
-		break;
-	case '-':
-		r_cmd_macro_rm (&core->rcmd->macro, input+1);
-		break;
+	case ')': r_cmd_macro_break (&core->rcmd->macro, input+1); break;
+	case '-': r_cmd_macro_rm (&core->rcmd->macro, input+1); break;
 	case '*':
-	case '\0':
-		r_cmd_macro_list (&core->rcmd->macro);
-		break;
+	case '\0': r_cmd_macro_list (&core->rcmd->macro); break;
 	case '?':
 		eprintf (
 		"Usage: (foo args,cmd1,cmd2,..)\n"

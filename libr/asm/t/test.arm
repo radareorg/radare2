@@ -20,18 +20,23 @@ fi
 
 BITS=32
 # arm32
-foo 'bkpt'
+foo 'bkpt 0x0000'
 foo 'svc 0x1024'
-foo 'cmp r7, 1338'
-foo 'cmp r7, 666'
-foo 'tst r4, r5, 10' # e1140505
+foo 'hlt 0x1024'
+foo 'hlt 0x1234'
+#foo 'cmp r7, 1338'
+#foo 'cmp r7, 666'
+foo 'cmp r7, 0xfe'
+foo 'cmp r7, 0x20'
+foo 'tst r4, r5' # e1140505
+foo 'tst r4, r5, lsl 10' # e1140505
 foo 'cmp r1, r2'
 foo 'cmp r1, r2, lsl r3'
 foo 'cmp sl, fp, lsl r3'
 foo 'cmp sl, fp, ror r1'
-foo 'mvn r4, 32' # e3e04020
+foo 'mvn r4, 0x21' # e3e04020
 foo 'add r2, r2, r1'
-foo 'mov r2, #33'
+foo 'mov r2, 0x21'
 foo 'mov r2, 0x21'
 foo 'sub r1, r3, r3'
 foo 'push {r1, r2}'

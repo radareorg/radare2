@@ -517,32 +517,42 @@ static int cmd_visual(void *data, const char *input) {
 }
 
 static int cmd_system(void *data, const char *input) {
+	RCore *core = (RCore*)data;
+	ut64 n;
 	int ret = 0;
 	switch (*input) {
 	case '!': {
 		int olen;
 		char *out = NULL;
-		char *cmd = r_core_sysenv_begin ((RCore*)data, input);
+		char *cmd = r_core_sysenv_begin (core, input);
 		if (cmd) {
 			ret = r_sys_cmd_str_full (cmd+1, NULL, &out, &olen, NULL);
-			r_core_sysenv_end ((RCore*)data, input);
+			r_core_sysenv_end (core, input);
 			r_cons_memcat (out, olen);
 			free (out);
 			free (cmd);
 		} else eprintf ("Error setting up system environment\n");
 		}
 		break;
+	case '\0':
+		r_line_hist_list ();
+		break;
 	case '?':
 		r_core_sysenv_help ();
 		break;
 	default:
-		{
-		char *cmd = r_core_sysenv_begin ((RCore*)data, input);
-		if (cmd) {
-			ret = r_sys_cmd (cmd);
-			r_core_sysenv_end ((RCore*)data, input);
-			free (cmd);
-		} else eprintf ("Error setting up system environment\n");
+		n = r_num_math (core->num, input);
+		if (*input=='0' || n>0) {
+			char *cmd = r_line_hist_get (n);
+			if (cmd) r_core_cmd0 (core, cmd);
+			else eprintf ("Error setting up system environment\n");
+		} else {
+			char *cmd = r_core_sysenv_begin (core, input);
+			if (cmd) {
+				ret = r_sys_cmd (cmd);
+				r_core_sysenv_end (core, input);
+				free (cmd);
+			} else eprintf ("Error setting up system environment\n");
 		}
 		break;
 	}

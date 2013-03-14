@@ -3537,7 +3537,10 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			    value_in_comment = value + 1;
 			    break;
 			  case 'x':
-			    func (stream, "0x%08lx", value);
+			    if (value)
+				    func (stream, "0x%lx", value);
+			    else
+				    func (stream, "0");
 
 			    /* Some SWI instructions have special
 			       meanings.  */
@@ -3864,7 +3867,10 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 			    break;
 
 			  case 'x':
-			    func (stream, "0x%04lx", (long) reg);
+			    if (reg) {
+				    func (stream, "0x%lx", (long) reg);
+			    }else
+				    func (stream, "0");
 			    break;
 
 			  case 'B':

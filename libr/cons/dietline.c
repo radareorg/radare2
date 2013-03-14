@@ -140,13 +140,23 @@ static int r_line_hist_down() {
 	return R_FALSE;
 }
 
+R_API const char *r_line_hist_get(int n) {
+	int i = 0;
+	if (!I.history.data)
+		inithist ();
+	if (I.history.data != NULL)
+		for (i=0; i<I.history.size && I.history.data[i]; i++)
+			if (n==i) return I.history.data[i];
+	return NULL;
+}
+
 R_API int r_line_hist_list() {
 	int i = 0;
 	if (!I.history.data)
 		inithist ();
 	if (I.history.data != NULL)
 		for (i=0; i<I.history.size && I.history.data[i]; i++)
-			printf ("%.3d  %s\n", i, I.history.data[i]);
+			printf (" !%d  # %s\n", i, I.history.data[i]);
 	return i;
 }
 
@@ -625,6 +635,7 @@ _end:
 		fflush (stdout);
 	}
 
+	// should be here or not?
 	if (!memcmp (I.buffer.data, "!history", 8)) {
 	//if (I.buffer.data[0]=='!' && I.buffer.data[1]=='\0') {
 		r_line_hist_list ();

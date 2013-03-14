@@ -38,7 +38,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	str = r_magic_buffer (ck, core->block, core->blocksize);
 	if (str) {
 		if (!v && !strcmp (str, "data"))
-			return;
+			return -1;
 		p = strdup (str);
 		fmt = p;
 		// processing newlinez

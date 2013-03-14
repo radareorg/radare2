@@ -26,12 +26,13 @@ enum {
 	TYPE_MOV = 1,
 	TYPE_TST = 2,
 	TYPE_SWI = 3,
-	TYPE_BRA = 4,
-	TYPE_BRR = 5,
-	TYPE_ARI = 6,
-	TYPE_IMM = 7,
-	TYPE_MEM = 8,
-	TYPE_BKP = 9,
+	TYPE_HLT = 4,
+	TYPE_BRA = 5,
+	TYPE_BRR = 6,
+	TYPE_ARI = 7,
+	TYPE_IMM = 8,
+	TYPE_MEM = 9,
+	TYPE_BKP = 10,
 };
 
 // static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};
@@ -77,6 +78,7 @@ static ArmOp ops[] = {
 	{ "mov", 0xa001, TYPE_MOV },
 	{ "mvn", 0xe000, TYPE_MOV },
 	{ "svc", 0xf, TYPE_SWI }, // ???
+	{ "hlt", 0x70000001, TYPE_HLT }, // ???
 
 	{ "and", 0x0000, TYPE_ARI },
 	{ "ands", 0x1000, TYPE_ARI },
@@ -122,6 +124,15 @@ static char *getrange(char *s) {
 	return p;
 }
 
+static int getshift_unused (const char *s) {
+	int i;
+	const char *shifts[] = { "lsl", "lsr", "asr", "ror", NULL };
+	for (i=0; shifts[i]; i++)
+		if (!strcmp (s, shifts[i]))
+			return i * 0x20;
+	return 0; 
+}
+
 static int getreg(const char *str) {
 	int i;
 	const char *aliases[] = { "sl", "fp", "ip", "sp", "lr", "pc", NULL };
@@ -164,13 +175,11 @@ static ut32 getshift(const char *str) {
 
 	strncpy (type, str, sizeof (type)-1);
 
-	// handle RRX alias case
+	// XXX strcaecmp is probably unportable
 	if (!strcasecmp (type, shifts[5])) {
+		// handle RRX alias case
 		shift = 6;
-	}
-	// all other shift types
-	else {
-		// split the string into type and arg
+	} else { // all other shift types
 		space = strchr (type, ' ');
 		if (!space)
 			return 0;
@@ -188,21 +197,22 @@ static ut32 getshift(const char *str) {
 		shift = (i*2);
 
 		if ((i = getreg (arg)) != -1) {
-			shift |= 1;
-			i = i<<4;
-		}
-		else {
+			i<<=8; // set reg
+//			i|=1; // use reg
+			i |= (1<<4); // bitshift
+			i|=shift<<4; // set shift mode
+			if (shift == 6) i|=(1<<20);
+		} else {
 			i = getnum (arg);
 			// ensure only the bottom 5 bits are used
 			i &= 0x1f;
-			if (!i)
-				i = 32;
+			if (!i) i = 32;
 			i = (i*8);
+			i |= shift; // lsl, ror, ...
+			i = i << 4;
 		}
 	}
 
-	i += shift;
-	i = i << 4;
 	r_mem_copyendian ((ut8*)&shift, (const ut8*)&i, sizeof (ut32), 0);
 
 	return shift;
@@ -541,6 +551,16 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 					return 0;
 				} else ao->o |= (getreg (ao->a[0])<<24);
 				break;
+			case TYPE_HLT:
+				{
+					ut32 o = 0, n = getnum (ao->a[0]);
+					o |= ((n>>12)&0xf)<<8;
+					o |= ((n>>8)&0xf)<<20;
+					o |= ((n>>4)&0xf)<<16;
+					o |= ((n)&0xf)<<24;
+					ao->o |=o;
+				}
+				break;
 			case TYPE_SWI:
 				ao->o |= (getnum (ao->a[0])&0xff)<<24;
 				ao->o |= ((getnum (ao->a[0])>>8)&0xff)<<16;
@@ -575,22 +595,21 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 					}
 					ao->o = 0x50e3;
 					// TODO: if (b>255) -> automatic multiplier
-					if (ao->a[2]) {
-						int n = getnum (ao->a[2]);
-						if (n&1) {
-							eprintf ("Invalid multiplier\n");
-							return 0;
-						}
-						ao->o |= (n>>1)<<16;
-					}
 					ao->o |= (a<<8);
 					ao->o |= ((b&0xff)<<24);
 				} else {
-				//ao->o |= getreg(ao->a[0])<<20; // ???
 					ao->o |= (a<<8);
 					ao->o |= (b<<24);
 					if (ao->a[2])
 						ao->o |= getshift (ao->a[2]);
+				}
+				if (ao->a[2]) {
+					int n = getnum (ao->a[2]);
+					if (n&1) {
+						eprintf ("Invalid multiplier\n");
+						return 0;
+					}
+					ao->o |= (n>>1)<<16;
 				}
 				break;
 			}
