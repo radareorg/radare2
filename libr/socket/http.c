@@ -4,70 +4,35 @@
 #include <r_util.h>
 
 static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
-	const char *p;
-	int i, line, len, bufsz = 32768;
+	const char *p, *dn;
+	int len, bufsz = 32768;
 	char *buf = malloc (bufsz); // XXX: use r_buffer here
 	/* Read Header */
-	int llen = 01234;
-	line = i = 0;
-	int isremote = 0;
-	do {
-		line ++;
-		len = r_socket_gets (s, buf+i, bufsz-i);
-		if (len<0) {
-			break;
-		}
-		if (len == 0) {
-			if (!isremote && line>2) break;
-			if (isremote && llen == 0) break;
-			if (!isremote) {
-				if (line==2) {
-					isremote = 1;
-				} else {
-					if (line>2) isremote = 1;
-				}
-			}
-			llen = len;
-			continue;
-		}
-		llen = len;
-		i += len;
-		buf[i++] = '\n';
-	} while (1); //i==0 || len > 0);
-	buf[i] = 0;
-	/* Parse Code */
-	p = strchr (buf, ' ');
-	if (code) *code = (p)? atoi (p+1):-1;
+	char *resp;
+
+	len = r_socket_read_block (s, (unsigned char*) buf, bufsz);
+	if (len < 1) return 0;
+
+	if ((dn = r_str_casestr (buf, "\n\n"))) {
+		dn += 2;
+	} else if ((dn = r_str_casestr (buf, "\r\n\r\n"))) {
+		dn += 4;
+	} else return 0;
+
 	/* Parse Len */
 	p = r_str_casestr (buf, "Content-Length: ");
-	if (p) {
+	if (p)
 		len = atoi (p+16);
-		free (buf);
-		buf = malloc (len+1);
-		if (len>0) {
-			if (isremote) {
-				int j = 0;
-				while (j<len) {
-					len = r_socket_read (s, (ut8*)buf+j, len-j);
-					if (len<1) break;
-					j+=len;
-				}
-			} else len = r_socket_read_block (s, (ut8*)buf, len);
-		} else len = 0;
-	} else {
-		// hack
-		len = 32768-i;
-		len = r_socket_read (s, (ut8*)buf+i, len);
-#if 0
-p = strstr(buf, "\n\n");
-if (!p) p = strstr (buf, "\n\r\n");
-if (p) strcpy (buf, p+2);
-len = strlen (buf);
-#endif
-	}
+	else len = len - (dn - buf);
+
+	resp = malloc (len+1);
+	memcpy (resp, dn, len);
+	resp[len] = '\n';
+
+	free (buf);
 	r_socket_close (s);
 	if (rlen) *rlen = len;
-	return buf;
+	return resp;
 }
 
 R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
