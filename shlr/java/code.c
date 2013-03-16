@@ -101,6 +101,7 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 	case 0xb7: // invokespecial
 	case 0xb8: // invokestatic
 	case 0xb9: // invokeinterface
+	case 0xba: // invokedynamic
 		java_resolve ((int)USHORT (bytes, 1)-1, arg);
 		snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
 		return java_ops[idx].size;

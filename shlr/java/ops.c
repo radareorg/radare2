@@ -134,6 +134,7 @@ struct java_op java_ops[] = {
 	{ "invokespecial"   , 0xb7 , 3 } , 
 	{ "invokestatic"    , 0xb8 , 3 } , 
 	{ "invokeinterface" , 0xb9 , 5 } , 
+	{ "invokedynamic"   , 0xba , 5 } , 
 	{ "ior"             , 0x80 , 1 } , 
 	{ "irem"            , 0x70 , 1 } , 
 	{ "ireturn"         , 0xac , 1 } , 
