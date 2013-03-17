@@ -81,17 +81,19 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 		if (rad) {
 			char *n = strdup (s->name);
 			r_name_filter (n, strlen (n));
-			io->printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n", n, s->size, s->vaddr);
-			io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
-				s->offset, s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->rwx));
+			io->printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n",
+				n, s->size, s->vaddr);
+			io->printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
+				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->offset,
+				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->rwx));
 		} else {
-			io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s",
+			io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
+				" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s",
 			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);
 			if (s->arch && s->bits)
 				io->printf ("  ; %s %d\n", r_sys_arch_str (s->arch), s->bits);
 			else io->printf ("\n");
-
 		}
 		i++;
 	}
@@ -119,7 +121,7 @@ R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len) {
 		i = 0;
 		r_list_foreach (io->sections, iter, s) {
 			io->printf ("%02d%c 0x%08"PFMT64x" |",
-					i, (seek>=s->offset && seek<s->offset+s->size)?'*':' ', s->offset);
+				i, (seek>=s->offset && seek<s->offset+s->size)?'*':' ', s->offset);
 			for (j=0; j<width; j++) {
 				ut64 pos = min + (j*mul);
 				ut64 npos = min + ((j+1)*mul);
@@ -246,24 +248,37 @@ R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 }
 
 R_API ut64 r_io_section_next(RIO *io, ut64 o) {
+	int oset = 0;
+	ut64 newsec = 0LL;
 	RListIter *iter;
 	RIOSection *s;
 
 	r_list_foreach (io->sections, iter, s) {
-//eprintf (" o=%llx (%llx) (%llx)\n", o, s->offset, s->size);
+		ut64 addr = s->vaddr;
+		if (o < addr) {
+			if (newsec) {
+				if (addr<newsec)
+					newsec = addr;//s->offset;//addr;
+			} else newsec = addr; //s->offset; //addr;
+		}
+		if (o >= s->offset && o < (s->offset + s->size)) {
+			ut64 n = s->offset + s->size;
+			if (n>o) {
+				o = n;
+				oset = 1;
+			}
+		}
 		if (o >= s->vaddr && o < (s->vaddr + s->size)) {
 			ut64 n = s->vaddr + s->size;
-			if (n>o)
+			if (n>o) {
 				o = n;
-#if 0
-			if (first) {
-				first = 0;
-goto restart;
-			} else o = s->vaddr;
-#endif
+				oset = 1;
+			}
 		}
 	}
-	return o;
+	//eprintf ("Newsec %d %llx\n", oset, newsec);
+	if (oset) return o;
+	return newsec? newsec: o;
 }
 
 R_API int r_io_section_set_archbits(RIO *io, ut64 addr, const char *arch, int bits) {

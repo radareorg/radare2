@@ -1157,7 +1157,8 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 					if (r_str_glob (flag->name, word)) {
 						r_core_seek (core, flag->offset, 1);
 						//r_cons_printf ("# @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
-						r_cons_printf ("0x%08"PFMT64x"  ", core->offset);
+					//	r_cons_printf ("0x%08"PFMT64x" %s\n", core->offset, flag->name);
+						eprintf ("# 0x%08"PFMT64x": %s\n", addr, cmd);
 						r_core_cmd (core, cmd, 0);
 					}
 				}

@@ -163,7 +163,9 @@ R_API int r_core_block_read(RCore *core, int next) {
 	off = r_io_seek (core->io, core->offset+((next)?core->blocksize:0), R_IO_SEEK_SET);
 	if (off == UT64_MAX) {
 		memset (core->block, 0xff, core->blocksize);
-		return -1;
+// TODO: do continuation in io
+		if (!core->io->va)
+			return -1;
 	}
 	return (int)r_io_read (core->io, core->block, core->blocksize);
 }

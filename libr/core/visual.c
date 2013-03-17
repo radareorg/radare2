@@ -816,6 +816,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		setcursor (core, 0);
 		return R_FALSE;
 	}
+	r_core_block_read (core, 0);
 	return R_TRUE;
 }
 
@@ -851,12 +852,13 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		filename = core->file->filename;
 	else filename = "";
 	{ /* get flag with delta */
-		RFlagItem *f = r_flag_get_at (core->flags, core->offset);
+		ut64 addr = core->offset + curset? cursor: 0;
+		RFlagItem *f = r_flag_get_at (core->flags, addr);
 		if (f) {
-			if (f->offset == core->offset)
+			if (f->offset == addr || !f->offset)
 				snprintf (pos, sizeof (pos), "@ %s", f->name);
 			else snprintf (pos, sizeof (pos), "@ %s+%d (0x%"PFMT64x")",
-				f->name, (int)(core->offset-f->offset), f->offset);
+				f->name, (int)(addr-f->offset), f->offset);
 		} else pos[0] = 0;
 	}
 
@@ -870,9 +872,10 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	bar[11] = '.'; // chop cmdfmt
 	bar[12] = 0; // chop cmdfmt
 	if (curset)
-		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s(0x%x:%d=%d)]> %s\n", core->offset,
-				core->blocksize, filename, cursor, ocursor,
-				ocursor==-1?1:R_ABS (cursor-ocursor)+1, bar);
+		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d (0x%x:%d=%d)]> %s %s\n",
+				core->offset, core->blocksize, 
+				cursor, ocursor, ocursor==-1?1:R_ABS (cursor-ocursor)+1,
+				bar, pos);
 	else
 		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x" %d %s]> %s %s\n",
 			core->offset, core->blocksize, filename, bar, pos);

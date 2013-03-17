@@ -178,7 +178,9 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 	 */
 	return r_io_read_at (io, io->off, buf, len);
 }
+
 // XXX: this is buggy. must use seek+read
+#define USE_CACHE 1
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret, l, olen = len;
 	int w = 0;
@@ -188,21 +190,30 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	// XXX: this is buggy!
 	memset (buf, 0xff, len);
 
-	if (io->buffer_enabled) {
+	if (io->buffer_enabled)
 		return r_io_buffer_read (io, addr, buf, len);
-	}
 	while (len>0) {
 		int ms;
-		ut64 last = r_io_section_next (io, addr);
-		ut64 last2 = r_io_map_next (io, addr);
-		if (last == addr) last = last2;
-		else if (last2<last) last = last2;
-		l = (len > (last-addr))? (last-addr): len;
+		ut64 last = r_io_section_next (io, addr+w);
+		ut64 last2 = r_io_map_next (io, addr+w); // XXX: must use physical address
+		if (last == (addr+w)) last = last2;
+		//else if (last2<last) last = last2;
+		l = (len > (last-addr+w))? (last-addr+w): len;
 		if (l<1) l = len;
-		if (r_io_seek (io, addr+w, R_IO_SEEK_SET)==UT64_MAX) {
+{
+ut64 paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+st64 q = last-addr+w;
+//if (q>0) l = q;
+if (len>0 && l>len) l = len;
+addr = paddr-w;
+//eprintf ("next read is %llx %llx\n", addr, last);
+//eprintf ("-_________----______ w = %d\n", w);
+//eprintf ("//-------------------------// ADDR %llx  len = %d\n", addr+w, l);
+		if (r_io_seek (io, paddr, R_IO_SEEK_SET)==UT64_MAX) {
 			memset (buf+w, 0xff, l);
-			return -1;
+//			return -1;
 		}
+}
 #if 0
 		if (io->zeromap)
 			if (!r_io_map_get (io, addr+w)) {
@@ -216,27 +227,30 @@ eprintf ("RETRERET\n");
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
+//eprintf ("READ %d = %02x %02x %02x\n", ret, buf[w], buf[w+1], buf[w+2]);
 		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
 			ret = 1;
 		} else if (ret<l) {
 			l = ret;
 		}
+#if USE_CACHE
 		if (io->cached) {
 			r_io_cache_read (io, addr+w, buf+w, len-w);
 		} else if (r_list_length (io->maps) >1) {
 			if (!io->debug && ms>0) {
 				//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
 				/* check if address is vaddred in sections */
-				ut64 o = r_io_section_offset_to_vaddr (io, addr);
+				ut64 o = r_io_section_offset_to_vaddr (io, addr+w);
 				if (o == UT64_MAX) {
-					ut64 o = r_io_section_vaddr_to_offset (io, addr);
+					ut64 o = r_io_section_vaddr_to_offset (io, addr+w);
 					if (o == UT64_MAX)
 						memset (buf+w, 0xff, l);
 				}
 				break;
 			}
 		}
+#endif
 		w += l;
 		len -= l;
 	}

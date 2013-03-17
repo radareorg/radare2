@@ -382,17 +382,18 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		host++;
 
 	if (!(ptr = strchr (host, ':'))) {
-		eprintf ("Error: Port is not specified\n");
-		return;
+		ptr = host;
+		port = "80";
+	} else {
+		*ptr++ = '\0';
+		port = ptr;
 	}
-	*ptr++ = '\0';
 
 	if (!(file = strchr (ptr, '/'))) {
 		eprintf("Error: Missing '/'\n");
 		return;
 	}
 	*file++ = 0;
-	port = ptr;
 
 	fd = r_socket_new (R_FALSE);
 	if (!fd) {
@@ -416,6 +417,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				for (;;) {
 					char *ptr, *str = r_line_readline ();
 					if (!str || !*str) break;
+					if (*str == 'q') break;
 					ptr = r_str_uri_encode (str);
 					if (ptr) str = ptr;
 					snprintf (uri, sizeof (uri), "http://%s:%s/%s%s",
@@ -430,7 +432,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						printf ("%s%s", res, (res[strlen (res)-1]=='\n')?"":"\n");
 						r_line_hist_add (str);
 						free (str);
-					} else eprintf ("http protocol fail\n");
+					}
 				}
 				return;
 			}
