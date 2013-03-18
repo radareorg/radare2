@@ -71,6 +71,9 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Isyscall:
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
+	case UD_Inop:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
 	default:
 		break;
 	}
