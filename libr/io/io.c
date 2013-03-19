@@ -182,38 +182,29 @@ R_API int r_io_read(RIO *io, ut8 *buf, int len) {
 // XXX: this is buggy. must use seek+read
 #define USE_CACHE 1
 R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-	int ret, l, olen = len;
-	int w = 0;
+	ut64 paddr, last, last2;
+	int ms, ret, l, olen = len, w = 0;
 
-	io->off = addr; // HACK
-	//r_io_seek (io, addr, R_IO_SEEK_SET);
-	// XXX: this is buggy!
-	memset (buf, 0xff, len);
+	io->off = addr;
+	memset (buf, 0xff, len); // probably unnecessary
 
 	if (io->buffer_enabled)
 		return r_io_buffer_read (io, addr, buf, len);
 	while (len>0) {
-		int ms;
-		ut64 last = r_io_section_next (io, addr+w);
-		ut64 last2 = r_io_map_next (io, addr+w); // XXX: must use physical address
+		last = r_io_section_next (io, addr+w);
+		last2 = r_io_map_next (io, addr+w); // XXX: must use physical address
 		if (last == (addr+w)) last = last2;
 		//else if (last2<last) last = last2;
 		l = (len > (last-addr+w))? (last-addr+w): len;
 		if (l<1) l = len;
-{
-ut64 paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
-st64 q = last-addr+w;
-//if (q>0) l = q;
-if (len>0 && l>len) l = len;
-addr = paddr-w;
-//eprintf ("next read is %llx %llx\n", addr, last);
-//eprintf ("-_________----______ w = %d\n", w);
-//eprintf ("//-------------------------// ADDR %llx  len = %d\n", addr+w, l);
-		if (r_io_seek (io, paddr, R_IO_SEEK_SET)==UT64_MAX) {
-			memset (buf+w, 0xff, l);
-//			return -1;
+		{
+paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+			if (len>0 && l>len) l = len;
+			addr = paddr-w;
+			if (r_io_seek (io, paddr, R_IO_SEEK_SET)==UT64_MAX) {
+				memset (buf+w, 0xff, l);
+			}
 		}
-}
 #if 0
 		if (io->zeromap)
 			if (!r_io_map_get (io, addr+w)) {

@@ -1085,8 +1085,8 @@ static int set_reg_profile(RAnal *anal) {
 				"drx	dr7	.32	28	0\n");
 }
 
-struct r_anal_plugin_t r_anal_plugin_x86 = {
-	.name = "x86",
+struct r_anal_plugin_t r_anal_plugin_x86_im = {
+	.name = "x86.im86",
 	.desc = "X86 analysis plugin (x86im backend)",
 	.arch = R_SYS_ARCH_X86,
 	.bits = 16|32|64,
@@ -1104,6 +1104,6 @@ struct r_anal_plugin_t r_anal_plugin_x86 = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_x86
+	.data = &r_anal_plugin_x86_im
 };
 #endif

@@ -531,7 +531,7 @@ static int cmd_system(void *data, const char *input) {
 			r_cons_memcat (out, olen);
 			free (out);
 			free (cmd);
-		} else eprintf ("Error setting up system environment\n");
+		} //else eprintf ("Error setting up system environment\n");
 		}
 		break;
 	case '\0':
