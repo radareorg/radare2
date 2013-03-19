@@ -2390,7 +2390,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 #elif __arm__
 	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_ARM,
-	.canstep = 1,
+	.canstep = 0, // XXX it's 1 on some platforms...
 #elif __mips__
 	.bits = R_SYS_BITS_64,
 	.arch = R_ASM_ARCH_MIPS,

@@ -16,7 +16,11 @@ static int r_debug_recoil(RDebug *dbg) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);
 		eprintf ("[R2] Breakpoint recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
-		if (recoil<1) recoil = 1; // XXX Hack :D
+#if __arm__
+		if (recoil<1) recoil = 0; // XXX Hack :D
+#else
+		if (recoil<1) recoil = 1; // XXX Hack :D (x86 only?)
+#endif
 		if (recoil) {
 			dbg->reason = R_DBG_REASON_BP;
 			r_reg_set_value (dbg->reg, ri, addr-recoil);
@@ -247,10 +251,11 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 //eprintf ("breakpoint at pc1 = 0x%llx\n", pc1);
 	// XXX: Does not works for 'ret'
 	pc2 = op.jump? op.jump: 0;
+//eprintf ("ADD SECOND BREAKPOINT FRO CALLS %llx\n", op.jump);
 //eprintf ("breakpoint 2 at pc2 = 0x%llx\n", pc2);
 
 	r_bp_add_sw (dbg->bp, pc1, 4, R_BP_PROT_EXEC);
-	//if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);
+	if (pc2) r_bp_add_sw (dbg->bp, pc2, 4, R_BP_PROT_EXEC);
 	r_debug_continue (dbg);
 //eprintf ("wait\n");
 	//r_debug_wait (dbg);
