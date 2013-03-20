@@ -1,4 +1,4 @@
-/* Copyleft 2011-2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* Copyleft 2011-2013 - sdb - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -435,10 +435,52 @@ int sdb_finish (Sdb *s) {
 int sdb_query (Sdb *s, const char *cmd) {
 	char *p, *eq, *ask = strchr (cmd, '?');
 	const char *p2;
-	int save = 0;
+	int i, save = 0;
 	ut64 n;
 
 	switch (*cmd) {
+	case '[': // inc
+		p = strchr (cmd, ']');
+		if (p) {
+			*p = 0;
+			eq = strchr (p+1, '=');
+			if (cmd[1]) {
+				i = atoi (cmd+1);
+				if (eq) {
+					*eq = 0;
+					if (eq[1]) {
+						sdb_aset (s, p+1, i, eq+1);
+					} else {
+						sdb_adel (s, p+1, i);
+					}
+				} else {
+					char *val = sdb_aget (s, p+1, i);
+					printf ("%s\n", val);
+					free (val);
+				}
+			} else {
+				if (eq) {
+					char *q, *out = strdup (eq+1);
+					*eq = 0;
+					// TODO: define new printable separator character
+					for (q=out;*q;q++) if (*q==',') *q = SDB_RS;
+					sdb_set (s, p+1, out, 0);
+					free (out);
+				} else {
+					int hasnext = 1;
+					char *ptr, *list = sdb_get (s, p+1, 0);
+					ptr = list;
+					hasnext = list && *list;
+					while (hasnext) {
+						char *str = sdb_astring (ptr, &hasnext);
+						printf ("%s\n", str);
+						ptr = (char *)sdb_anext (str);
+					}
+					free (list);
+				}
+			}
+		} else fprintf (stderr, "Missing ']'.\n");
+		break;
 	case '+': // inc
 		n = ask? 
 			sdb_json_inc (s, cmd+1, ask, 1, 0):

@@ -12,6 +12,8 @@ extern "C" {
 
 #include "sdb-version.h"
 
+#define SDB_RS '\x1e'
+
 typedef struct sdb_ns_t {
 // todo. store last used
 // todo. sync?
@@ -33,7 +35,6 @@ typedef struct sdb_t {
 	ut64 expire;
 	SdbList *ns;
 } Sdb;
-
 
 // XXX: use buckets here, drop these limits
 #define SDB_BLOCK 4096
@@ -120,6 +121,17 @@ Sdb *sdb_ns(Sdb *s, const char *name);
 void sdb_ns_init(Sdb *s);
 void sdb_ns_free(Sdb *s);
 void sdb_ns_sync (Sdb *s);
+
+// array
+int sdb_aset(Sdb *s, const char *key, int idx, const char *val);
+char *sdb_aget(Sdb *s, const char *key, int idx);
+int sdb_adel(Sdb *s, const char *key, int n);
+// helpers
+const char *sdb_anext(const char *str);
+char *sdb_astring(char *str, int *hasnext);
+int sdb_alen(const char *str);
+// iter
+const char *sdb_anext(const char *str);
 
 #ifdef __cplusplus
 }
