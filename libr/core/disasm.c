@@ -776,7 +776,11 @@ toro:
 						free (str);
 					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
 				}
-			} else r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
+			} else {
+				st64 sref = analop.ref;
+				if (sref>0)
+					r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
+			}
 		} else {
 			if (analop.ref != UT64_MAX && analop.ref) {
 				r_cons_printf (" ; 0x%08"PFMT64x" ", analop.ref);
