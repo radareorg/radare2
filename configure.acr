@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.9.4
+VERSION 0.9.5git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
