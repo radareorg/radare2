@@ -54,6 +54,9 @@ void sdb_file (Sdb* s, const char *dir);
 void sdb_reset (Sdb *s);
 
 int sdb_query (Sdb *s, const char *cmd);
+int sdb_queryf (Sdb *s, const char *fmt, ...);
+char *sdb_querys (Sdb *s, char *buf, int len, const char *cmd);
+char *sdb_querysf (Sdb *s, char *buf, int buflen, const char *fmt, ...);
 int sdb_exists (Sdb*, const char *key);
 int sdb_nexists (Sdb*, const char *key);
 int sdb_remove (Sdb*, const char *key, ut32 cas);
@@ -123,15 +126,18 @@ void sdb_ns_free(Sdb *s);
 void sdb_ns_sync (Sdb *s);
 
 // array
-int sdb_aset(Sdb *s, const char *key, int idx, const char *val);
-char *sdb_aget(Sdb *s, const char *key, int idx);
-int sdb_adel(Sdb *s, const char *key, int n);
+int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas);
+char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas);
+int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas);
+int sdb_adel(Sdb *s, const char *key, int n, ut32 cas);
 // helpers
 const char *sdb_anext(const char *str);
 char *sdb_astring(char *str, int *hasnext);
 int sdb_alen(const char *str);
-// iter
+int sdb_alength(Sdb *s, const char *key);
+int sdb_alist(Sdb *s, const char *key);
 const char *sdb_anext(const char *str);
+const char *sdb_aindex(const char *str, int idx);
 
 #ifdef __cplusplus
 }

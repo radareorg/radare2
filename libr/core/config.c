@@ -182,10 +182,12 @@ static int config_analsplit_callback(void *user, void *data) {
 
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
+	RConfigNode *asmarch = r_config_node_get (core->config, "asm.arch");
 	RConfigNode *node = (RConfigNode*) data;
-	r_syscall_setup (core->anal->syscall, 
-			r_config_get (core->config, "asm.arch"),
+	if (asmarch) {
+		r_syscall_setup (core->anal->syscall, asmarch->value,
 			node->value, core->anal->bits);
+	}
 	//if (!ret) eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;
 }
@@ -395,7 +397,7 @@ static int config_asmlineswidth_callback(void *user, void *data) {
 static int config_asmarch_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-	const char *asmos = r_config_get (core->config, "asm.os");
+	const char *asmos = core->config? r_config_get (core->config, "asm.os"): NULL;
 	r_egg_setup (core->egg, node->value, core->anal->bits, 0, R_SYS_OS);
 	if (!r_asm_use (core->assembler, node->value))
 		eprintf ("asm.arch: cannot find (%s)\n", node->value);
@@ -501,6 +503,9 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_set_cb (cfg, "anal.plugin", R_SYS_ARCH, &config_analplugin_callback);
 	r_config_desc (cfg, "anal.plugin", "Specify the anal plugin to use");
 	/* asm */
+r_config_set (cfg, "asm.arch", R_SYS_ARCH);
+	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
+	r_config_desc (cfg, "asm.os", "Select operating system (kernel) (linux, darwin, w32,..)");
 	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
 	r_config_desc (cfg, "asm.arch", "Set the arch to be usedd by asm");
 	// XXX: not portable
@@ -562,8 +567,6 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "asm.lineswidth", "");
 	r_config_set (cfg, "asm.linescall", "false");
 	r_config_desc (cfg, "asm.linescall", "Enable call lines");
-	r_config_set_cb (cfg, "asm.os", R_SYS_OS, &config_asmos_callback);
-	r_config_desc (cfg, "asm.os", "Select operating system (kernel) (linux, darwin, w32,..)");
 	r_config_set_cb (cfg, "asm.syntax", "intel", &config_asmsyntax_callback);
 	r_config_desc (cfg, "asm.syntax", "Select assembly syntax");
 	r_config_set_cb (cfg, "asm.profile", "default", &config_asmprofile_callback);

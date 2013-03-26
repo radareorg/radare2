@@ -1,4 +1,4 @@
-/* Public domain -- pancake @ 2011-2012 */
+/* Public domain -- pancake @ 2011-2013 */
 
 #include <signal.h>
 #include <stdio.h>
@@ -63,7 +63,7 @@ static void createdb(const char *f) {
 }
 
 static void showusage(int o) {
-	printf ("usage: sdb [-v|-h] [file.db] [-=]|[-+][key[?path|=value] ..]\n");
+	printf ("usage: sdb [-fhv] [file.db] [-=]|[-+][(idx)key[?path|=value] ..]\n");
 	exit (o);
 }
 
@@ -72,15 +72,19 @@ static void showversion() {
 	exit (0);
 }
 
+static void showfeatures() {
+	// TODO lock
+	printf ("ns json array\n");
+	exit (0);
+}
+
 int main(int argc, char **argv) {
 	int i;
 
-	if (argc<2)
-		showusage (1);
-	if (!strcmp (argv[1], "-v"))
-		showversion ();
-	if (!strcmp (argv[1], "-h"))
-		showusage (0);
+	if (argc<2) showusage (1);
+	if (!strcmp (argv[1], "-v")) showversion ();
+	if (!strcmp (argv[1], "-h")) showusage (0);
+	if (!strcmp (argv[1], "-f")) showfeatures ();
 	if (!strcmp (argv[1], "-")) {
 		argv[1] = "";
 		if (argc == 2) {
@@ -94,10 +98,9 @@ int main(int argc, char **argv) {
 	signal (SIGINT, terminate);
 	signal (SIGHUP, syncronize);
 #endif
-	if (!strcmp (argv[2], "=")) {
+	if (!strcmp (argv[2], "="))
 		createdb (argv[1]);
-	} else
-	if (!strcmp (argv[2], "-")) {
+	else if (!strcmp (argv[2], "-")) {
 		char line[SDB_VSZ+SDB_KSZ]; // XXX can overflow stack
 		if ((s = sdb_new (argv[1], 0)))
 			for (;;) {
@@ -107,11 +110,9 @@ int main(int argc, char **argv) {
 				line[strlen (line)-1] = 0;
 				save = sdb_query (s, line);
 			}
-	} else
-	if ((s = sdb_new (argv[1], 0))) {
+	} else if ((s = sdb_new (argv[1], 0)))
 		for (i=2; i<argc; i++)
 			save = sdb_query (s, argv[i]);
-	}
 	terminate (0);
 	return 0;
 }

@@ -1,4 +1,4 @@
-/* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* Copyleft 2012-2013 - sdb - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -133,8 +133,7 @@ beach:
 
 Rangstr json_get (const char *js, const char *p) {
 	int x, rst, n = 0;
-	Rangstr rj2 = {0};
-	Rangstr rj = rangstr_new (js);
+	Rangstr rj2, rj = rangstr_new (js);
 	Rangstr rs = rangstr_new (p);
 	json_path_first (&rs);
 	do {

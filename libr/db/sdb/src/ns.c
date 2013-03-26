@@ -1,4 +1,4 @@
-/* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* Copyleft 2012-2013 - sdb (aka SimpleDB) - pancake<nopcode.org> */
 
 #include "sdb.h"
 

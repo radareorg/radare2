@@ -190,8 +190,9 @@ void sdb_reset (Sdb *s) {
 	s->ht = ht_new ();
 }
 
+// TODO: too many allocs here. use slices
 struct sdb_kv* sdb_kv_new (const char *k, const char *v) {
-	struct sdb_kv *kv = R_NEW (struct sdb_kv); // TODO: too many allocs here. use slices
+	struct sdb_kv *kv = R_NEW (struct sdb_kv);
 	strncpy (kv->key, k, sizeof (kv->key)-1);
 	strncpy (kv->value, v, sizeof (kv->value)-1);
 	kv->cas = nextcas ();
@@ -429,104 +430,4 @@ int sdb_finish (Sdb *s) {
 	free (s->ndump);
 	s->ndump = NULL;
 	return 1; // XXX: 
-}
-
-// TODO: return char *
-int sdb_query (Sdb *s, const char *cmd) {
-	char *p, *eq, *ask = strchr (cmd, '?');
-	const char *p2;
-	int i, save = 0;
-	ut64 n;
-
-	switch (*cmd) {
-	case '[': // inc
-		p = strchr (cmd, ']');
-		if (p) {
-			*p = 0;
-			eq = strchr (p+1, '=');
-			if (cmd[1]) {
-				i = atoi (cmd+1);
-				if (eq) {
-					*eq = 0;
-					if (eq[1]) {
-						sdb_aset (s, p+1, i, eq+1);
-					} else {
-						sdb_adel (s, p+1, i);
-					}
-				} else {
-					char *val = sdb_aget (s, p+1, i);
-					printf ("%s\n", val);
-					free (val);
-				}
-			} else {
-				if (eq) {
-					char *q, *out = strdup (eq+1);
-					*eq = 0;
-					// TODO: define new printable separator character
-					for (q=out;*q;q++) if (*q==',') *q = SDB_RS;
-					sdb_set (s, p+1, out, 0);
-					free (out);
-				} else {
-					int hasnext = 1;
-					char *ptr, *list = sdb_get (s, p+1, 0);
-					ptr = list;
-					hasnext = list && *list;
-					while (hasnext) {
-						char *str = sdb_astring (ptr, &hasnext);
-						printf ("%s\n", str);
-						ptr = (char *)sdb_anext (str);
-					}
-					free (list);
-				}
-			}
-		} else fprintf (stderr, "Missing ']'.\n");
-		break;
-	case '+': // inc
-		n = ask? 
-			sdb_json_inc (s, cmd+1, ask, 1, 0):
-			sdb_inc (s, cmd+1, 1, 0);
-		printf ("%"ULLFMT"d\n", n);
-		save = 1;
-		break;
-	case '-': // dec
-		n = ask? 
-			sdb_json_dec (s, cmd+1, ask, 1, 0):
-			sdb_dec (s, cmd+1, 1, 0);
-		printf ("%"ULLFMT"d\n", n);
-		save = 1;
-		break;
-	default:
-		eq = strchr (cmd, '=');
-		if (eq && ask>eq) ask = NULL;
-		if (eq) {
-			// 1 0 kvpath=value
-			// 1 1 kvpath?jspath=value
-			save = 1;
-			*eq++ = 0;
-			if (ask) {
-				// sdbjsonset
-				*ask++ = 0;
-				sdb_json_set (s, cmd, ask, eq, 0);
-			} else {
-				// sdbset
-				sdb_set (s, cmd, eq, 0);
-			}
-		} else {
-			// 0 1 kvpath?jspath
-			// 0 0 kvpath
-			if (ask) {
-				// sdbjsonget
-				*ask++ = 0;
-				if ((p = sdb_json_get (s, cmd, ask, 0))) {
-					printf ("%s\n", p);
-					free (p);
-				}
-			} else {
-				// sdbget
-				if ((p2 = sdb_getc (s, cmd, 0)))
-					printf ("%s\n", p2);
-			}
-		}
-	}
-	return save;
 }

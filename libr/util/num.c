@@ -97,6 +97,14 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		if (sscanf (str, "0x%04x:0x%04x", &s, &a) == 2) return (ut64) ((s<<4) + a);
 		if (sscanf (str, "0x%04x:%04x", &s, &a) == 2) return (ut64) ((s<<4) + a);
 	}
+	if (str[0]=='0' && str[1]=='b') {
+		ret = 0;
+		for (j=0, i=strlen (str)-1; i>0; i--, j++) {
+			if (str[i]=='1') ret|=1<<j;
+			else if (str[i]!='0') break;
+		}
+		sscanf (str, "0x%"PFMT64x"", &ret);
+	} else
 	if (str[0]=='0' && str[1]=='x') {
 		sscanf (str, "0x%"PFMT64x"", &ret);
 	} else {

@@ -1,3 +1,5 @@
+/* Copyleft 2011-2013 - sdb - pancake */
+
 #include "sdb.h"
 #include "types.h"
 

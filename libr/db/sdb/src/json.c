@@ -1,18 +1,16 @@
-/* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* Copyleft 2012-2013 - sdb - pancake */
 
 #include <stdarg.h>
 #include "sdb.h"
 #include "json/json.h"
 
-static int __itoa(int value, char *string) {
+static void __itoa(int value, char *string) {
 	int i, sign, count = 0;
 	char buf[64];
 	char *temp = buf;
 	char *ptr = string;
 
-	temp[0] = 0;
-	string[0] = 0;
-
+	temp[0] = string[0] = 0;
 	if ((sign = value) < 0) {
 		value = -value;
 		count++;
@@ -28,7 +26,6 @@ static int __itoa(int value, char *string) {
 	for (i = 0; i < count; i++, temp--, ptr++)
 		*ptr = *temp;
 	*ptr = 0;
-	return 1;
 }
 
 char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
@@ -76,11 +73,11 @@ int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas)
 	Rangstr rs;
 	ut32 c;
 	char *js = sdb_get (s, k, &c);
+	if (!js) return 0;
 	if (cas && c != cas) {
 		free (js);
 		return 0;
 	}
-	if (!js) return 0;
 	rs = json_get (js, p);
 	if (!rs.p) {
 		free (js);

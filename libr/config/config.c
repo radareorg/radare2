@@ -66,7 +66,7 @@ R_API const char *r_config_get(RConfig *cfg, const char *name) {
 				  || (!strcmp ("1", node->value)))?
 				  (const char *)"true":"false"); // XXX (char*)1 is ugly
 		return node->value;
-	}
+	} else eprintf ("r_config_get: variable '%s' not found\n", name);
 	cfg->last_notfound = 1;
 	return NULL;
 }
@@ -156,7 +156,7 @@ R_API RConfigNode *r_config_set(RConfig *cfg, const char *name, const char *valu
 				r_list_append (cfg->nodes, node);
 				cfg->n_nodes++;
 			}
-		} else eprintf ("config is locked: cannot create '%s'\n", name);
+		} else eprintf ("r_config_set: variable '%s' not found\n", name);
 	}
 
 	if (node && node->callback) {

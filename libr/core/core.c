@@ -411,6 +411,7 @@ static int __disasm(void *_core, ut64 addr) {
 
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
+	core->config = NULL;
 	core->print = r_print_new ();
 	core->http_up = R_FALSE;
 	core->print->user = core;
@@ -510,6 +511,7 @@ R_API int r_core_init(RCore *core) {
 	core->dbg->printf = r_cons_printf;
 	core->dbg->bp->printf = r_cons_printf;
 	r_debug_io_bind (core->dbg, core->io);
+
 	r_core_config_init (core);
 
 	/* load plugins */
