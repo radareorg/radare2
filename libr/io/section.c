@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 - pancake, nibble */
+/* radare - LGPL - Copyright 2008-2013 - pancake, nibble */
 
 #include "r_io.h"
 

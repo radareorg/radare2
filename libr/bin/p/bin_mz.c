@@ -89,7 +89,7 @@ static RList* sections(RBinArch *arch) {
 		return NULL;
 	ret->free = free; // r_bin-section_free
 
-	ptr = R_NEW (RBinSection);
+	ptr = R_NEW0 (RBinSection);
 	strncpy (ptr->name, ".text", R_BIN_SIZEOF_STRINGS);
 	ptr->offset = exe->header_paragraphs * 16L;
 	ptr->size = arch->buf->length - ptr->offset;

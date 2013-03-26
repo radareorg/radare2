@@ -49,11 +49,12 @@ static RList* sections(RBinArch *arch) {
 	ret->free = free;
 
 	// TODO: return NULL here?
-	if (memcmp (arch->buf+0x30, "\x00\x00\x00\x00\x20\x73\x74\x64\x6f\x75\x74\x20\x21\x55\x0c\xcd", 16))
+	if (memcmp (arch->buf+0x30,
+	"\x00\x00\x00\x00\x20\x73\x74\x64\x6f\x75\x74\x20\x21\x55\x0c\xcd", 16))
 		return ret;
 
 	// add text segment
-	if (!(ptr = R_NEW (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection)))
 		return ret;
 	strncpy (ptr->name, "header", R_BIN_SIZEOF_STRINGS);
 	ptr->size =
@@ -64,7 +65,7 @@ static RList* sections(RBinArch *arch) {
 	r_list_append (ret, ptr);
 
 	/* rarvm code */
-	if (!(ptr = R_NEW (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection)))
 		return ret;
 	strncpy (ptr->name, "rarvm", R_BIN_SIZEOF_STRINGS);
 	ptr->vsize = ptr->size = arch->buf->length - 0x9a;

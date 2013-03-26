@@ -55,7 +55,7 @@ static RList* sections(RBinArch *arch) {
 
 	// add text segment
 	textsize = r_mem_get_num (arch->buf->buf+4, 4, big_endian);
-	if (!(ptr = R_NEW (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection)))
 		return ret;
 	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
 	ptr->size = textsize;
@@ -67,7 +67,7 @@ static RList* sections(RBinArch *arch) {
 	// add data segment
 	datasize = r_mem_get_num (arch->buf->buf+8, 4, big_endian);
 	if (datasize>0) {
-		if (!(ptr = R_NEW (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection)))
 			return ret;
 		strncpy (ptr->name, "data", R_BIN_SIZEOF_STRINGS);
 		ptr->size = datasize;
@@ -81,7 +81,7 @@ static RList* sections(RBinArch *arch) {
 	// add syms segment
 	symssize = r_mem_get_num (arch->buf->buf+16, 4, big_endian);
 	if (symssize) {
-		if (!(ptr = R_NEW (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection)))
 			return ret;
 		strncpy (ptr->name, "syms", R_BIN_SIZEOF_STRINGS);
 		ptr->size = symssize;
@@ -94,7 +94,7 @@ static RList* sections(RBinArch *arch) {
 	// add spsz segment
 	spszsize = r_mem_get_num (arch->buf->buf+24, 4, big_endian);
 	if (spszsize) {
-		if (!(ptr = R_NEW (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection)))
 			return ret;
 		strncpy (ptr->name, "spsz", R_BIN_SIZEOF_STRINGS);
 		ptr->size = spszsize;
@@ -107,7 +107,7 @@ static RList* sections(RBinArch *arch) {
 	// add pcsz segment
 	pcszsize = r_mem_get_num (arch->buf->buf+24, 4, big_endian);
 	if (pcszsize) {
-		if (!(ptr = R_NEW (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection)))
 			return ret;
 		strncpy (ptr->name, "pcsz", R_BIN_SIZEOF_STRINGS);
 		ptr->size = pcszsize;

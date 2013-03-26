@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -65,7 +65,7 @@ static RList* sections(RBinArch *arch) {
 	if (!(sections = PE_(r_bin_pe_get_sections)(arch->bin_obj)))
 		return NULL;
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;

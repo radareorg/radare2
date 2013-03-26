@@ -141,6 +141,9 @@ typedef struct r_bin_section_t {
 	ut64 rva;
 	ut64 offset;
 	ut64 srwx;
+	// per section platform info
+	const char *arch;
+	int bits;
 } RBinSection;
 
 typedef struct r_bin_class_t {
