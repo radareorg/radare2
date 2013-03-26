@@ -260,6 +260,39 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 
 // TODO: group similar instructions like for non-thumb
 static int thumb_assemble(ArmOpcode *ao, const char *str) {
+	int reg, j;
+	if (!strcmp (ao->op, "pop") && ao->a[0]) {
+		ao->o = 0xbd;
+		if (*ao->a[0]++=='{') {
+			for (j=0; j<16; j++) {
+				if (ao->a[j] && *ao->a[j]) {
+					getrange (ao->a[j]); // XXX filter regname string
+					reg = getreg (ao->a[j]);
+					if (reg != -1) {
+						if (reg<8)
+							ao->o |= 1<<(8+reg);
+					//	else ignore...
+					}
+				}
+			}
+		} else ao->o |= getnum (ao->a[0])<<24; // ???
+	} else
+	if (!strcmp (ao->op, "push") && ao->a[0]) {
+		ao->o = 0xb5;
+		if (*ao->a[0]++=='{') {
+			for (j=0; j<16; j++) {
+				if (ao->a[j] && *ao->a[j]) {
+					getrange (ao->a[j]); // XXX filter regname string
+					reg = getreg (ao->a[j]);
+					if (reg != -1) {
+						if (reg<8)
+							ao->o |= 1<<(8+reg);
+					//	else ignore...
+					}
+				}
+			}
+		} else ao->o |= getnum (ao->a[0])<<24; // ???
+	} else
 	if (!strcmp (ao->op, "ldmia")) {
 		ao->o = 0xc8 + getreg (ao->a[0]);
 		ao->o |= getlist(ao->opstr) << 8;
@@ -524,7 +557,7 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 							}
 						}
 					}
-				} else ao->o |= getnum(ao->a[0])<<24; // ???
+				} else ao->o |= getnum (ao->a[0])<<24; // ???
 				break;
 			case TYPE_BRA:
 				if ((ret = getreg (ao->a[0])) == -1) {
