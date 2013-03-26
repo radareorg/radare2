@@ -421,7 +421,7 @@ tmp=`pkg-config --libs openssl 2>/dev/null`
 if [ $? = 0 ]; then 
 echo yes; HAVE_PKGCFG_OPENSSL=1; 
 SSL_LDFLAGS=$tmp; fi; fi
-if [ ! "$SSL_CFLAGS" = "" ]; then
+if [ ! "$SSL_LDFLAGS" = "" ]; then
 HAVE_OPENSSL="1"; fi
 if [ 11 = "$WANT_OPENSSL$HAVE_OPENSSL" ]; then
 
