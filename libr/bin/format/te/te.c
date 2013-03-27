@@ -8,6 +8,10 @@
 #include "te_specs.h"
 #include "te.h"
 
+ut64 r_bin_te_get_stripped_delta(struct r_bin_te_obj_t *bin) {
+	return bin->header->StrippedSize - sizeof(TE_image_file_header);
+}
+
 ut64 r_bin_te_get_main_offset(struct r_bin_te_obj_t *bin) {
 	struct r_bin_te_addr_t *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
@@ -128,7 +132,7 @@ struct r_bin_te_addr_t* r_bin_te_get_entrypoint(struct r_bin_te_obj_t* bin) {
 		perror("malloc (entrypoint)");
 		return NULL;
 	}
-	entry->rva = bin->header->AddressOfEntryPoint;
+	entry->rva = bin->header->AddressOfEntryPoint - r_bin_te_get_stripped_delta(bin);
 	if (entry->rva == 0) // in TE if EP = 0 then EP = baddr
 		entry->rva = bin->header->ImageBase;
 	entry->offset = r_bin_te_rva_to_offset(bin, entry->rva);
@@ -277,10 +281,10 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 	for (i = 0; i < sections_count; i++) {
 		memcpy (sections[i].name, shdr[i].Name, TE_IMAGE_SIZEOF_NAME);
 		sections[i].name[TE_IMAGE_SIZEOF_NAME] = '\0';
-		sections[i].rva = shdr[i].VirtualAddress;
+		sections[i].rva = shdr[i].VirtualAddress - r_bin_te_get_stripped_delta(bin);
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].VirtualSize;
-		sections[i].offset = shdr[i].PointerToRawData;
+		sections[i].offset = shdr[i].PointerToRawData - r_bin_te_get_stripped_delta(bin);
 		sections[i].flags = shdr[i].Characteristics;
 		sections[i].last = 0;
 	}
