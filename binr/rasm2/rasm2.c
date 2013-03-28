@@ -26,19 +26,19 @@ static void r_asm_list(RAsm *a) {
 
 static int rasm_show_help() {
 	printf ("rasm2 [-de] [-o offset] [-a arch] [-s syntax] [-f file ..] \"code\"|hex|-\n"
+		" -a [arch]    Set assemble/disassemble plugin (RASM2_ARCH)\n"
+		" -b [bits]    Set cpu register size (16, 32, 64) (RASM2_BITS)\n"
+		" -C           Output in C format\n"
 		" -d           Disassemble from hexpair bytes\n"
 		" -D           Disassemble showing hexpair and opcode\n"
+		" -e           Use big endian\n"
 		" -f [file]    Read data from file\n"
 		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
+		" -l [int]     Input/Output length\n"
+		" -L           List supported asm plugins\n"
 		" -o [offset]  Set start address for code (default 0)\n"
-		" -a [arch]    Set assemble/disassemble plugin\n"
-		" -b [bits]    Set cpu register size in bits (16, 32, 64)\n"
 		" -s [syntax]  Select syntax (intel, att)\n"
 		" -B           Binary input/output (-l is mandatory for binary input)\n"
-		" -l [int]     Input/Output length\n"
-		" -C           Output in C format\n"
-		" -L           List supported asm plugins\n"
-		" -e           Use big endian\n"
 		" -v           Show version information\n"
 		" -w           What's this instruction for? describe opcode\n"
 		" If '-l' value is greater than output length, output is padded with nops\n"
@@ -151,6 +151,8 @@ static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 int main(int argc, char *argv[]) {
+	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
+	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL;
 	ut64 offset = 0;
@@ -228,11 +230,18 @@ int main(int argc, char *argv[]) {
 		}
 		if (!strcmp (arch, "bf"))
 			ascii = 1;
+	} else if (env_arch) {
+		if (!r_asm_use (a, env_arch)) {
+			eprintf ("rasm2: Unknown asm plugin '%s'\n", env_arch);
+			return 0;
+		}
 	} else if (!r_asm_use (a, "x86")) {
 		eprintf ("rasm2: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
-	r_asm_set_bits (a, bits);
+	if (env_bits && *env_bits) {
+		r_asm_set_bits (a, atoi (env_bits));
+	} else r_asm_set_bits (a, bits);
 	//if (!r_asm_set_bits (a, bits))
 	//	eprintf ("WARNING: cannot set asm backend to %d bits\n", bits);
 
