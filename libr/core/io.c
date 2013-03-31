@@ -90,12 +90,20 @@ beach:
 
 R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
 	static char *oldarch = NULL;
-	static int oldbits;
+	static int oldbits = 32;
 	int bits = 0;// = core->io->section->bits;
-	const char *arch = r_io_section_get_archbits (core->io, core->offset, &bits);
+	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);
 	if (arch && bits) {
-		oldarch = strdup (r_config_get (core->config, "asm.arch"));
-		oldbits = r_config_get_i (core->config, "asm.bits");
+		if (!oldarch) {
+			RBinInfo *info = r_bin_get_info (core->bin);
+			if (info) {
+				oldarch = strdup (info->arch);
+				oldbits = info->bits;
+			} else {
+				oldarch = strdup (r_config_get (core->config, "asm.arch"));
+				oldbits = 32;
+			}
+		}
 		r_config_set (core->config, "asm.arch", arch);
 		r_config_set_i (core->config, "asm.bits", bits);
 		return 1;

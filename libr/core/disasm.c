@@ -900,6 +900,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	if (l==0) l = len;
 	for (i=j=0; i<bs && i<len && j<l; i+=ret, j++) {
 		at = core->offset +i;
+		r_core_seek_archbits (core, at);
 		if (hint) {
 			r_anal_hint_free (hint);
 			hint = NULL;
