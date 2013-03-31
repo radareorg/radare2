@@ -174,6 +174,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_seek_next (RCore *core, const char *type);
 R_API int r_core_seek_align(RCore *core, ut64 align, int count);
+R_API int r_core_seek_archbits (RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core, int next);
 R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);

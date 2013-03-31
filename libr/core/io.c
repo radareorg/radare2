@@ -88,6 +88,27 @@ beach:
 	return ret;
 }
 
+R_API int r_core_seek_archbits (RCore *core, ut64 addr) {
+	static char *oldarch = NULL;
+	static int oldbits;
+	int bits = 0;// = core->io->section->bits;
+	const char *arch = r_io_section_get_archbits (core->io, core->offset, &bits);
+	if (arch && bits) {
+		oldarch = strdup (r_config_get (core->config, "asm.arch"));
+		oldbits = r_config_get_i (core->config, "asm.bits");
+		r_config_set (core->config, "asm.arch", arch);
+		r_config_set_i (core->config, "asm.bits", bits);
+		return 1;
+	}
+	if (oldarch) {
+		r_config_set (core->config, "asm.arch", oldarch);
+		r_config_set_i (core->config, "asm.bits", oldbits);
+		free (oldarch);
+		oldarch = NULL;
+	}
+	return 0;
+}
+
 R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 	RIOSection *newsection;
 	ut64 old = core->offset;
@@ -110,7 +131,7 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 		//core->offset = addr;
 		if (!core->io->va)
 			return R_FALSE;
-		memset (core->block, 0xff, core->blocksize);
+		//memset (core->block, 0xff, core->blocksize);
 	} else core->offset = addr;
 	if (rb) {
 		ret = r_core_block_read (core, 0);
@@ -128,15 +149,33 @@ R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb) {
 		}
 	}
 	if (core->section != newsection) {//&& core->io->section->arch) {
-		int bits = 0;// = core->io->section->bits;
-		const char *arch = r_io_section_get_archbits (core->io, core->offset, &bits);
-		if (arch && bits) {
-			r_config_set (core->config, "asm.arch", arch);
-			r_config_set_i (core->config, "asm.bits", bits);
-		}
+		r_core_seek_archbits (core, core->offset);
 		core->section = core->io->section;
 	}
 	return (ret==-1)? R_FALSE: R_TRUE;
+}
+
+R_API int r_core_seek_delta(RCore *core, st64 addr) {
+	ut64 tmp = core->offset;
+	int ret;
+	if (addr == 0)
+		return R_TRUE;
+	if (addr>0LL) {
+		/* check end of file */
+		if (0) addr = 0;
+		else addr += tmp;
+	} else {
+		/* check < 0 */
+		if (-addr > tmp) addr = 0;
+		else addr += tmp;
+	}
+	core->offset = addr;
+	ret = r_core_seek (core, addr, 1);
+	//ret = r_core_block_read (core, 0);
+	//if (ret == -1)
+	//	memset (core->block, 0xff, core->blocksize);
+	//	core->offset = tmp;
+	return ret;
 }
 
 R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {

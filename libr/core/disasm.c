@@ -208,6 +208,7 @@ toro:
 	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
 
+		r_core_seek_archbits (core, at); // slow but safe
 		hint = r_core_hint_begin (core, hint, at);
 		if (cbytes && idx>=l)
 			break;

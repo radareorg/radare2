@@ -682,28 +682,6 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 	return r_core_seek (core, seek+diff, 1);
 }
 
-R_API int r_core_seek_delta(RCore *core, st64 addr) {
-	ut64 tmp = core->offset;
-	int ret;
-	if (addr == 0)
-		return R_TRUE;
-	if (addr>0LL) {
-		/* check end of file */
-		if (0) addr = 0; // XXX tmp+addr>) {
-		else addr += tmp;
-	} else {
-		/* check < 0 */
-		if (-addr > tmp) addr = 0;
-		else addr += tmp;
-	}
-	core->offset = addr;
-	ret = r_core_block_read (core, 0);
-	//if (ret == -1)
-	//	memset (core->block, 0xff, core->blocksize);
-	//	core->offset = tmp;
-	return ret;
-}
-
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
 	RAsmOp op;
 	ut8 buf[64];

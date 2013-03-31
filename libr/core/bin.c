@@ -600,7 +600,8 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 				int bits = section->bits;
 				if (!arch) arch = info->arch;
 				if (!bits) bits = info->bits;
-				r_io_section_set_archbits (r->io, section->offset, arch, bits);
+				r_io_section_set_archbits (r->io,
+					baddr+section->rva, arch, bits);
 			}
 			snprintf (str, R_FLAG_NAME_SIZE, "[%i] va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"
 					PFMT64d" vsz=%"PFMT64d" rwx=%c%c%c%c %s",
@@ -650,7 +651,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 						if (!bits) bits = info->bits;
 						r_cons_printf ("Sa %s %d @ 0x%08"
 							PFMT64x"\n", arch, bits,
-							section->offset);
+							baddr+section->rva);
 					}
 					r_cons_printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							section->name, section->size, va?baddr+section->rva:section->offset);
@@ -664,14 +665,24 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 							R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
 							R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
 							section->name,va?baddr+section->rva:section->offset);
-				} else r_cons_printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-						"perm=%c%c%c%c name=%s\n",
+				} else {
+					char str[128];
+					if (section->arch || section->bits) {
+						const char *arch = section->arch;
+						int bits = section->bits;
+						if (!arch) arch = info->arch;
+						if (!bits) bits = info->bits;
+						snprintf (str, sizeof (str), "arch=%s bits=%d ", arch, bits);
+					} else str[0] = 0;
+					r_cons_printf ("idx=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+						"perm=%c%c%c%c %sname=%s\n",
 						i, baddr+section->rva, section->offset, section->size, section->vsize,
 						R_BIN_SCN_SHAREABLE (section->srwx)?'s':'-',
 						R_BIN_SCN_READABLE (section->srwx)?'r':'-',
 						R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
-				R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
-				section->name);
+						R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
+						str, section->name);
+				}
 			}
 			i++;
 		}
