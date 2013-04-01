@@ -20,7 +20,7 @@ Rangstr rangstr_new (const char *s) {
 	return rs;
 }
 
-Rangstr rangstr_null() {
+Rangstr rangstr_null(void) {
 	Rangstr rs = {0};
 	return rs;
 }
@@ -28,7 +28,8 @@ Rangstr rangstr_null() {
 int rangstr_int (Rangstr *s) {
 	const int base = 10;
 	int mul = 1;
-	int ch, i = 0, n = 0;
+	int ch, n = 0;
+	size_t i = 0;
 	if (s->p[s->f]=='[')
 		i++;
 	if (s->p[s->f]=='-') {
@@ -73,9 +74,9 @@ int rangstr_cmp (Rangstr *a, Rangstr *b) {
 }
 
 int rangstr_find (Rangstr* a, char ch) {
-	int i = a->f;
+	size_t i = a->f;
 	while (a->p[i] && i<a->t && a->p[i] != ch) i++;
-	return a->p[i]? i: -1;
+	return a->p[i]? (int)i: -1;
 }
 
 const char *rangstr_str (Rangstr* rs) {

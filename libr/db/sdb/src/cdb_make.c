@@ -1,15 +1,11 @@
 /* Public domain. */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include "alloc.h"
 #include "sdb.h"
 #include "cdb.h"
 #include "cdb_make.h"
-
-/****/
-#include <stdlib.h>
-#include "alloc.h"
 
 #define ALIGNMENT 16 /* XXX: assuming that this alignment is enough */
 #define SPACE 4096 /* must be multiple of ALIGNMENT */

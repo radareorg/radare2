@@ -1,17 +1,18 @@
-/* Copyleft 2012-2013 - sdb - pancake */
+/* sdb - LGPLv3 - Copyright 2012-2013 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "rangstr.h"
 #include "json.h"
+#include "../types.h"
 
 void json_path_first(Rangstr *s) {
 	char *p;
 	if (!s->p) return;
 	p = strchr (s->p, '.');
 	s->f = 0;
-	s->t = p? p-s->p: strlen (s->p);
+	s->t = p? (size_t)(p-s->p): strlen (s->p);
 }
 
 int json_path_next(Rangstr *s) {
@@ -49,14 +50,15 @@ rep:
 	return 1;
 }
 
+#if 0
 typedef int (*JSONCallback)();
 
-int json_foreach(const char *s, JSONCallback cb) {
+int json_foreach(const char *s, JSONCallback cb __unused) {
 	int i, len, ret;
 	unsigned short *res = NULL;
 	len = strlen (s);
 	res = malloc (len);
-	ret = js0n ((unsigned char *)s, len, res);
+	ret = js0n ((const unsigned char *)s, len, res);
 	if (!ret) return 0;
 	if (*s=='[') {
 		for (i=0; res[i]; i+=2) {
@@ -70,13 +72,14 @@ int json_foreach(const char *s, JSONCallback cb) {
 	}
 	return 1;
 }
+#endif
 
 int json_walk (const char *s) {
 	int i, len, ret;
 	unsigned short *res;
 	len = strlen (s);
 	res = malloc (len);
-	ret = js0n ((unsigned char *)s, len, res);
+	ret = js0n ((const unsigned char *)s, len, res);
 	if (!ret) return 0;
 	if (*s=='[' || *s=='{') {
 		for (i=0; res[i]; i+=2) {
@@ -96,12 +99,12 @@ Rangstr json_find (const char *s, Rangstr *rs) {
 	unsigned short resfix[RESFIXSZ];
 	unsigned short *res = NULL;
 	int i, j, n, len, ret;
-	Rangstr rs2;
+	Rangstr rsn;
 
 	if (!s) return rangstr_null ();
 	len = strlen (s);
 	res = (len<RESFIXSZ)? resfix: malloc (len);
-	ret = js0n ((unsigned char *)s, len, res);
+	ret = js0n ((const unsigned char *)s, len, res);
 #define PFREE(x) if (x&&x!=resfix) free (x)
 	if (ret>0) {
 		PFREE (res);
@@ -113,16 +116,16 @@ Rangstr json_find (const char *s, Rangstr *rs) {
 		if (n<0) goto beach;
 		for (i=j=0; res[i] && j<n; i+=2, j++);
 		if (j<n) goto beach;
-		rs2 = rangstr_news (s, res, i-2);
+		rsn = rangstr_news (s, res, i-2);
 		PFREE (res);
-		return rs2;
+		return rsn;
 	} else {
 		for (i=0; res[i]; i+=4) {
-			Rangstr rs2 = rangstr_news (s, res, i);
-			if (!rangstr_cmp (rs, &rs2)) {
-				rs2 = rangstr_news (s, res, i+2);
+			Rangstr rsn = rangstr_news (s, res, i);
+			if (!rangstr_cmp (rs, &rsn)) {
+				rsn = rangstr_news (s, res, i+2);
 				PFREE (res);
-				return rs2;
+				return rsn;
 			}
 		}
 	}
@@ -132,7 +135,8 @@ beach:
 }
 
 Rangstr json_get (const char *js, const char *p) {
-	int x, rst, n = 0;
+	int x, n = 0;
+	size_t rst;
 	Rangstr rj2, rj = rangstr_new (js);
 	Rangstr rs = rangstr_new (p);
 	json_path_first (&rs);
@@ -180,6 +184,8 @@ return rj;
 	return rj;
 }
 
-char *json_set (const char *s, const char *k, const char *v) {
+#if 0
+char *json_set (const char *s __unused, const char *k __unused, const char *v __unused) {
 	return NULL;
 }
+#endif

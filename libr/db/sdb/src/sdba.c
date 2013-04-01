@@ -1,26 +1,37 @@
-/* Copyleft 2011-2013 - sdb - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
 
 #include "sdb.h"
 
-const char *sdb_anext(const char *str) {
+static char *sdb_aindex_nc(char *str, int idx) {
+	int len = 0;
+	char *n, *p = str;
+	for (len=0; ; len++) {
+		if (len == idx)
+			return p;
+		n = strchr (p, SDB_RS);
+		if (n) p = n+1;
+		else break;
+	}
+	return NULL;
+}
+
+SDB_VISIBLE const char *sdb_anext(const char *str) {
 	return str+strlen (str)+1;
 }
 
-char *sdb_astring(char *str, int *hasnext) {
+SDB_VISIBLE char *sdb_astring(char *str, int *hasnext) {
+	int nxt = 0;
 	char *p = strchr (str, SDB_RS);
-	if (!p) {
-		if (hasnext) *hasnext = 0;
-		return str;
-	}
-	*p = 0;
-	if (hasnext) *hasnext = 1;
+	if (p) { *p = 0; nxt = 1; }
+	if (hasnext) *hasnext = nxt;
 	return str;
 }
 
-char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
+SDB_VISIBLE char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
+	const char *str = sdb_getc (s, key, 0); // XXX cas
+	const char *p = str;
+	char *o, *n;
 	int i, len;
-	const char *str = sdb_getc (s, key, cas);
-	char *o, *n, *p = (char*)str;
 	if (!str || !*str) return NULL;
 	if (idx==0) {
 		n = strchr (str, SDB_RS);
@@ -47,7 +58,7 @@ char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
 }
 
 // TODO: done, but there's room for improvement
-int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
+SDB_VISIBLE int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 	const char *str = sdb_getc (s, key, 0);
 	int lnstr, lstr, lval, ret;
 	char *x, *ptr, *nstr = NULL;
@@ -66,7 +77,7 @@ int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 		memcpy (x+lval+1, str, lstr+1);
 	} else {
 		nstr = strdup (str);
-		ptr = (char*)sdb_aindex (nstr, idx);
+		ptr = sdb_aindex_nc (nstr, idx);
 		if (ptr) {
 			*(ptr-1) = 0;
 			lnstr = strlen (nstr);
@@ -84,7 +95,7 @@ int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 }
 
 // set/replace
-int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
+SDB_VISIBLE int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 	char *nstr, *ptr;
 	const char *usr, *str = sdb_getc (s, key, 0);
 	int lval, len, ret = 0;
@@ -94,7 +105,7 @@ int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 	if (idx<0 || idx>len) // append
 		return sdb_ains (s, key, -1, val, cas);
 	nstr = strdup (str);
-	ptr = (char *)sdb_aindex (nstr, idx);
+	ptr = sdb_aindex_nc (nstr, idx);
 	if (ptr) {
 		lval = strlen (val);
 		memcpy (ptr, val, lval+1);
@@ -109,7 +120,7 @@ int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 	return ret;
 }
 
-int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
+SDB_VISIBLE int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
 	int i;
 	char *p, *n, *str = sdb_get (s, key, 0);
 	p = str;
@@ -128,7 +139,7 @@ int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
 	return 1;
 }
 
-const char *sdb_aindex(const char *str, int idx) {
+SDB_VISIBLE const char *sdb_aindex(const char *str, int idx) {
 	int len = 0;
 	const char *n, *p = str;
 	for (len=0; ; len++) {
@@ -142,7 +153,7 @@ const char *sdb_aindex(const char *str, int idx) {
 }
 
 // TODO: make static inline?
-int sdb_alen(const char *str) {
+SDB_VISIBLE int sdb_alen(const char *str) {
 	int len = 1;
 	const char *n, *p = str;
 	if (!p|| !*p) return 0;
@@ -155,14 +166,14 @@ int sdb_alen(const char *str) {
 	return len;
 }
 
-int sdb_alength(Sdb *s, const char *key) {
+SDB_VISIBLE int sdb_alength(Sdb *s, const char *key) {
 	const char *str = sdb_getc (s, key, 0);
 	return sdb_alen (str);
 }
 
 #if 0
 // XXX: totally unefficient. do not use, replace SDB_RS for '\n' may be enought
-int sdb_alist(Sdb *s, const char *key) {
+SDB_VISIBLE int sdb_alist(Sdb *s, const char *key) {
 	int len = 0, hasnext = 1;
 	char *list = sdb_get (s, key, 0);
 	char *ptr = list;

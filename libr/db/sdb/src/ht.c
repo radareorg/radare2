@@ -44,7 +44,7 @@
  * free to avoid exponential performance degradation as the hash table fills
  */
 
-static const ut32 deleted_data;
+static ut32 deleted_data;
 
 static const struct {
 	ut32 max_entries, size, rehash;
@@ -110,7 +110,7 @@ SdbHashEntry* ht_search(SdbHash *ht, ut32 hash) {
 }
 
 static int rehash = 0;
-static void ht_rehash(SdbHash *ht, int new_size_index) {
+static void ht_rehash(SdbHash *ht, ut32 new_size_index) {
 	SdbHash old_ht = *ht;
 	SdbHashEntry *e;
 	if (new_size_index >= ARRAY_SIZE (hash_sizes))

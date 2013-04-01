@@ -9,13 +9,13 @@
 typedef struct {
 	int type;
 	int next;
-	int f, t;
+	size_t f, t;
 	const char *p;
 } Rangstr;
 
 void rangstr_print (Rangstr *s);
 Rangstr rangstr_new (const char *s);
-Rangstr rangstr_null();
+Rangstr rangstr_null(void);
 int rangstr_int (Rangstr *s);
 char *rangstr_dup (Rangstr *rs);
 Rangstr rangstr_news (const char *s, ut16 *res, int i);

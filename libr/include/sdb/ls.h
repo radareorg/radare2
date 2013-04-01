@@ -39,7 +39,7 @@ typedef int (*SdbListComparator)(void *a, void *b);
 #define ls_iter_next(x) (x?1:0)
 #define ls_iter_cur(x) x->p
 #define ls_iter_unref(x) x
-R_API SdbList *ls_new();
+R_API SdbList *ls_new(void);
 R_API SdbListIter *ls_append(SdbList *list, void *data);
 R_API SdbListIter *ls_prepend(SdbList *list, void *data);
 R_API int ls_length(SdbList *list);

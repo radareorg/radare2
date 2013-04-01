@@ -1,0 +1,56 @@
+.Dd Mar 30, 2013
+.Dt SDB 1
+.Os
+.Sh NAME
+.Nm sdb
+.Nd simple key-value database with json and arrays
+.Sh SYNOPSIS
+.Nm sdb
+.Op Fl fhv
+.Ar db
+.Ar -=
+.Ar [expr ..]
+.Sh DESCRIPTION
+SDB is a simple disk and memory string-based key-value database. It is based on CDB and uses
+.Bl -tag -width Fl
+.It Fl h
+Show help message
+.It Fl f
+Show features string
+.It Fl v
+Show version
+.El
+.Sh EXAMPLES
+Some useful ways to run it:
+.Pp
+$ sdb -                           ; in memory database
+.Pp
+$ sdb test.db = < test.txt        ; create database from text file
+.Pp
+$ sdb test.db                     ; dump contents of database
+.Pp
+$ sdb test.db a=b a               ; inline queries
+.Pp
+Append those quoted commands to 'sdb -' to test these sdb_query expressions:
+.Pp
+a=hello b=world a b    # hello world
+.Pp
+a=1 +a -a              # 2 1     ; key inc/dec
+.Pp
+a={"a":122} a?a=O a    # {"a":0} ; json set
+.Pp
+a={"foo":122} +a?foo   # 123     ; json increment
+.Pp
+()a=1,2,3,4,5 (?)a     # 5       ; count array
+.Pp
+()a=1,2,3,4,5 (0)a     # 1       ; get element
+.Pp
+()a=1,2 (0)a=X a       # X2      ; replace
+.Pp
+()a=1,2 (+0)a=0 a      # 012     ; prepend
+.Pp
+()a=1,2 (-1)a=3 a      # 123     ; append
+.Pp
+.Sh AUTHORS
+.Pp
+pancake <pancake@nopcode.org>

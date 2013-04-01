@@ -1,4 +1,4 @@
-/* Public domain -- pancake @ 2011-2013 */
+/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -10,7 +10,7 @@
 static int save = 0;
 static Sdb *s = NULL;
 
-static void terminate(int sig) {
+static void terminate(int sig __unused) {
 	if (!s) return;
 	if (save) sdb_sync (s);
 	sdb_free (s);
@@ -18,7 +18,7 @@ static void terminate(int sig) {
 }
 
 #if USE_MMAN
-static void syncronize(int sig) {
+static void syncronize(int sig __unused) {
 	// TODO: must be in sdb_sync() or wat?
 	Sdb *n;
 	sdb_sync (s);
@@ -50,8 +50,7 @@ static void createdb(const char *f) {
 		exit (1);
 	}
 	for (;;) {
-		fgets (line, sizeof line, stdin);
-		if (feof (stdin))
+		if (!fgets (line, sizeof line, stdin) || feof (stdin))
 			break;
 		line[strlen (line)-1] = 0;
 		if ((eq = strchr (line, '='))) {
@@ -63,22 +62,22 @@ static void createdb(const char *f) {
 }
 
 static void showusage(int o) {
-	printf ("usage: sdb [-fhv] [file.db] [-=]|[-+][(idx)key[?path|=value] ..]\n");
+	printf ("usage: sdb [-fhv] [db] [-=]|[-+][(idx)key[?path|=value] ..]\n");
 	exit (o);
 }
 
-static void showversion() {
+static void showversion(void) {
 	printf ("sdb "VERSION"\n");
 	exit (0);
 }
 
-static void showfeatures() {
+static void showfeatures(void) {
 	// TODO lock
 	printf ("ns json array\n");
 	exit (0);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
 	int i;
 
 	if (argc<2) showusage (1);
@@ -104,8 +103,7 @@ int main(int argc, char **argv) {
 		char line[SDB_VSZ+SDB_KSZ]; // XXX can overflow stack
 		if ((s = sdb_new (argv[1], 0)))
 			for (;;) {
-				fgets (line, sizeof line, stdin);
-				if (feof (stdin))
+				if (!fgets (line, sizeof line, stdin) || feof (stdin))
 					break;
 				line[strlen (line)-1] = 0;
 				save = sdb_query (s, line);

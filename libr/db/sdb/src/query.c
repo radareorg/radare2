@@ -1,4 +1,4 @@
-/* Copyleft 2011-2013 - sdb - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "sdb.h"
 
-int sdb_queryf (Sdb *s, const char *fmt, ...) {
+SDB_VISIBLE int sdb_queryf (Sdb *s, const char *fmt, ...) {
         char string[4096];
         int ret;
         va_list ap;
@@ -17,7 +17,7 @@ int sdb_queryf (Sdb *s, const char *fmt, ...) {
         return ret;
 }
 
-char *sdb_querysf (Sdb *s, char *buf, int buflen, const char *fmt, ...) {
+SDB_VISIBLE char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
         char string[4096];
         char *ret;
         va_list ap;
@@ -28,21 +28,27 @@ char *sdb_querysf (Sdb *s, char *buf, int buflen, const char *fmt, ...) {
         return ret;
 }
 
-char *sdb_querys (Sdb *s, char *buf, int len, const char *cmd) {
+SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
+	const char *q;
 	char *p, *eq, *ask = strchr (cmd, '?');
 	int i, ok, w, alength;
 	ut64 n;
 
 	if (*cmd == '+' || *cmd == '-') {
-		n = (*cmd=='+')?(
-			ask?  sdb_json_inc (s, cmd+1, ask, 1, 0):
-				sdb_inc (s, cmd+1, 1, 0)):(
-			ask?  sdb_json_dec (s, cmd+1, ask, 1, 0):
-				sdb_dec (s, cmd+1, 1, 0));
-		w = snprintf (buf, sizeof (buf), "%"ULLFMT"d\n", n);
-		if (w>len) {
+		*buf = 0;
+		if (ask) {
+			*ask = 0;
+			if (*cmd=='+') n = sdb_json_inc (s, cmd+1, ask+1, 1, 0);
+			else n = sdb_json_dec (s, cmd+1, ask+1, 1, 0);
+			*ask = '?';
+		} else {
+			if (*cmd=='+') n = sdb_inc (s, cmd+1, 1, 0);
+			else n = sdb_dec (s, cmd+1, 1, 0);
+		}
+		w = snprintf (buf, sizeof (buf), "%"ULLFMT"d", n);
+		if (w<0 || (size_t)w>len) {
 			buf = malloc (64);
-			snprintf (buf, 64, "%"ULLFMT"d\n", n);
+			snprintf (buf, 64, "%"ULLFMT"d", n);
 		}
 		return buf;
 	} else if (*cmd == '(') {
@@ -56,7 +62,7 @@ char *sdb_querys (Sdb *s, char *buf, int len, const char *cmd) {
 		if (cmd[1]=='?') {
 			alength = sdb_alength (s, p+1);
 			w = snprintf (buf, len, "%d", alength);
-			if (w>len) {
+			if (w<0 || (size_t)w>len) {
 				buf = malloc (32);
 				snprintf (buf, 32, "%d", alength);
 			}
@@ -89,9 +95,10 @@ char *sdb_querys (Sdb *s, char *buf, int len, const char *cmd) {
 				}
 			} else {
 				const char *out = sdb_getc (s, p+1, 0);
+				size_t wl;
 				if (!out) return NULL;
-				w = strlen (out);
-				if (w>len) buf = malloc (w+2);
+				wl = strlen (out);
+				if (wl>len) buf = malloc (wl+2);
 				for (i=0; out[i]; i++)
 					buf[i] = out[i]==SDB_RS? '\n': out[i];
 				buf[i] = 0;
@@ -122,10 +129,10 @@ char *sdb_querys (Sdb *s, char *buf, int len, const char *cmd) {
 					return p;
 			} else {
 				// sdbget
-				const char *p = sdb_getc (s, cmd, 0);
-				if (!p) return NULL;
-				if (strlen (p)> len) return strdup (p);
-				strcpy (buf, p);
+				if (!(q = sdb_getc (s, cmd, 0)))
+					return NULL;
+				if (strlen (q)> len) return strdup (q);
+				strcpy (buf, q);
 				return buf;
 			}
 		}
@@ -133,7 +140,7 @@ char *sdb_querys (Sdb *s, char *buf, int len, const char *cmd) {
 	return NULL;
 }
 
-int sdb_query (Sdb *s, const char *cmd) {
+SDB_VISIBLE int sdb_query (Sdb *s, const char *cmd) {
 	char buf[1024], *out = sdb_querys (s, buf, sizeof (buf), cmd);
 	if (!out) return 0;
 	if (*out) puts (out);

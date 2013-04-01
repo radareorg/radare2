@@ -36,7 +36,7 @@ while : ; do
 ENVWORDS="${ENVWORDS} $1_CPU $1_OS"
 STR=`eval "echo ${S}$1"`
 SPLIT_CPU="`echo "$STR" | cut -d - -f 1`"
-SPLIT_OS="`echo "$STR" | awk -F - '{if(NF==4){print $4}else{print $2}}'`"
+SPLIT_OS="`echo "$STR" | awk -F - '{if(NF==4){print $4}else{print $3}}'`"
 eval "$1_CPU=\"$SPLIT_CPU\""
 eval "$1_OS=\"$SPLIT_OS\""
 shift

@@ -13,7 +13,8 @@ void buffer_init(buffer *s, BufferOp op, int fd, char *buf, ut32 len) {
 static int allwrite(BufferOp op, int fd, const char *buf, ut32 len) {
 	int w;
 	while (len > 0) {
-		if ((w = op (fd, buf, len)) != len)
+		w = op (fd, buf, len);
+		if (w < 0)
 			return 0;
 		buf += w;
 		len -= w;
