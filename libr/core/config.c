@@ -21,6 +21,11 @@ static int config_scrcols_callback(void *user, void *data) {
 	((RCore *)user)->print->cols = c & ~1;
 	return R_TRUE;
 }
+static int config_widthfix_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->widthfix = node->i_value;
+	return R_TRUE;
+}
 
 static int config_scrhtml_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
@@ -741,6 +746,8 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "scr.cols", "Configure the number of columns to print");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
+	r_config_set_cb (cfg, "scr.widthfix", "false", &config_widthfix_callback);
+	r_config_desc (cfg, "scr.widthfix", "Workaround for Prompt iOS ssh client");
 	r_config_set (cfg, "search.in", "file");
 	r_config_desc (cfg, "search.in", "Specify search boundaries (raw, block, file, section)");
 	r_config_set_i (cfg, "search.kwidx", 0);

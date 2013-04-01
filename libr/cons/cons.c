@@ -98,15 +98,17 @@ static BOOL __w32_control(DWORD type) {
 #elif __UNIX__
 static void resize (int sig) {
 	if (I.event_resize)
-		I.event_resize (I.data);
+		I.event_resize (I.event_data);
 }
 #endif
 
 R_API RCons *r_cons_new () {
 	I.event_interrupt = NULL;
 	I.blankline = R_TRUE;
+	I.widthfix = 0;
 	I.event_resize = NULL;
 	I.data = NULL;
+	I.event_data = NULL;
 	I.is_interactive = R_TRUE;
 	I.noflush = R_FALSE;
 	I.fdin = stdin;
@@ -429,6 +431,7 @@ R_API int r_cons_get_size(int *rows) {
 #endif
 	if (rows)
 		*rows = I.rows;
+	if (I.widthfix) I.columns--;
 	return I.columns;
 }
 

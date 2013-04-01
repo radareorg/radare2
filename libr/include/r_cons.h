@@ -71,6 +71,7 @@ typedef struct r_cons_t {
 	RConsEvent event_interrupt;
 	RConsEvent event_resize;
 	void *data;
+	void *event_data;
 #if __UNIX__
 	struct termios term_raw, term_buf;
 #elif __WINDOWS__
@@ -81,6 +82,7 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
+	int widthfix;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */

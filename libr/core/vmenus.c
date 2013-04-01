@@ -90,7 +90,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				continue;
 			}
 		}
-		r_cons_flush ();
+		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
@@ -325,7 +325,7 @@ R_API int r_core_visual_comments (RCore *core) {
 		}
 		if (*cmd) r_core_cmd (core, cmd, 0);
 
-		r_cons_flush ();
+		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
@@ -416,10 +416,9 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	if (!(node = r_config_node_get (core->config, name)))
 		return;
 	if (node->flags & CN_BOOL) {
-		/* TOGGLE */
-		node->i_value = !node->i_value;
-		node->value = r_str_dup (node->value, node->i_value?"true":"false");
+		r_config_set_i (core->config, name, node->i_value? 0:1);
 	} else {
+// XXX: must use config_set () to run callbacks!
 		if (editor) {
 			char * buf = r_core_editor (core, node->value);
 			node->value = r_str_dup (node->value, buf);
@@ -434,7 +433,8 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 			r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (R_FALSE);
-			node->value = r_str_dup (node->value, buf);
+			r_config_set (core->config, name, buf);
+			//node->value = r_str_dup (node->value, buf);
 		}
 	}
 }
@@ -520,7 +520,7 @@ R_API void r_core_visual_config(RCore *core) {
 
 		if (fs && !memcmp (fs, "asm.", 4))
 			r_core_cmd (core, "pd 5", 0);
-		r_cons_flush ();
+		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
