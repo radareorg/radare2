@@ -7,11 +7,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifndef __unused
+#ifndef UNUSED
 #ifdef __GNUC__
-#define __unused	__attribute__((unused))
+#define UNUSED	__attribute__((__unused__))
 #else
-#define __unused
+#define UNUSED
 #endif
 #endif
 

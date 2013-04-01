@@ -53,7 +53,7 @@ rep:
 #if 0
 typedef int (*JSONCallback)();
 
-int json_foreach(const char *s, JSONCallback cb __unused) {
+int json_foreach(const char *s, JSONCallback cb UNUSED) {
 	int i, len, ret;
 	unsigned short *res = NULL;
 	len = strlen (s);
@@ -185,7 +185,7 @@ return rj;
 }
 
 #if 0
-char *json_set (const char *s __unused, const char *k __unused, const char *v __unused) {
+char *json_set (const char *s UNUSED, const char *k UNUSED, const char *v UNUSED) {
 	return NULL;
 }
 #endif

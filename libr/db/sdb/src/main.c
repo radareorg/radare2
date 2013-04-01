@@ -10,7 +10,7 @@
 static int save = 0;
 static Sdb *s = NULL;
 
-static void terminate(int sig __unused) {
+static void terminate(int sig UNUSED) {
 	if (!s) return;
 	if (save) sdb_sync (s);
 	sdb_free (s);
@@ -18,7 +18,7 @@ static void terminate(int sig __unused) {
 }
 
 #if USE_MMAN
-static void syncronize(int sig __unused) {
+static void syncronize(int sig UNUSED) {
 	// TODO: must be in sdb_sync() or wat?
 	Sdb *n;
 	sdb_sync (s);

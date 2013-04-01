@@ -33,7 +33,7 @@ SDB_VISIBLE int sdb_lock(const char *s) {
 	return 1;
 }
 
-SDB_VISIBLE void sdb_lock_wait(const char *s __unused) {
+SDB_VISIBLE void sdb_lock_wait(const char *s UNUSED) {
 	// TODO use flock() here
  	while (!sdb_lock (s)) {
 #if WINDOWS
