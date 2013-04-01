@@ -59,6 +59,18 @@
 #define R_SYS_HOME "HOME"
 #endif
 
+#ifndef __packed
+#define __packed __attribute__((__packed__))
+#endif
+
+#ifndef __unused
+#ifdef __GNUC__
+#define __unused        __attribute__((unused))
+#else
+#define __unused
+#endif
+#endif
+
 /* provide a per-module debug-enabled feature */
 // TODO NOT USED. DEPREACATE
 #if R_DEBUG
@@ -87,7 +99,11 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #elif R_INLINE
   #define R_API inline
 #else
-  #define R_API
+  #if defined(__GNUC__)
+    #define R_API __attribute__((visibility("default")))
+  #else
+    #define R_API
+  #endif
 #endif
 
 #define BITS2BYTES(x) ((x/8)+((x%8)?1:0))

@@ -189,6 +189,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty);
 
 /* control */
 R_API void r_cons_reset();
+R_API void r_cons_reset_colors();
 R_API void r_cons_print_clear();
 R_API void r_cons_clear();
 R_API void r_cons_clear00();
@@ -237,12 +238,16 @@ R_API void r_cons_grep(const char *str);
 R_API int r_cons_grep_line(char *buf, int len); // must be static
 R_API int r_cons_grepbuf(char *buf, int len);
 
+R_API void r_cons_rgb (ut8 r, ut8 g, ut8 b, int is_bg);
+R_API void r_cons_rgb_fgbg (ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
+R_API void r_cons_rgb_init (void);
+R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg);
 R_API void r_cons_color (int fg, int r, int g, int b);
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
 R_API void r_cons_set_cup(int enable);
 R_API void r_cons_column(int c);
-R_API int r_cons_get_column();
+R_API int r_cons_get_column (void);
 R_API char *r_cons_message(const char *msg);
 #endif
 

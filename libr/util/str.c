@@ -700,11 +700,23 @@ R_API char *r_str_unscape(char *buf) {
 
 /* ansi helpers */
 R_API int r_str_ansi_len(const char *str) {
-	int i=0, len = 0;
+	int ch, ch2, i=0, len = 0;
 	while (str[i]) {
-		if (str[i]==0x1b && str[i+1]=='[')
-			for (++i;str[i]&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
-		else len++;
+		ch = str[i];
+		ch2 = str[i+1];
+		if (ch == 0x1b) {
+			if (ch2 == '\\') {
+				i++;
+			} else
+			if (ch2 == ']') {
+				if (!strncmp (str+2+5, "rgb:", 4))
+					i += 13 +5;
+			} else if (ch2 == '[') {
+				for (++i;
+				str[i]&&str[i]!='J'&&
+				str[i]!='m'&&str[i]!='H';i++);
+			}
+		} else len++;
 		i++;
 	}
 	return len;

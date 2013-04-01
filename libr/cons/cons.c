@@ -208,6 +208,10 @@ R_API void r_cons_clear00() {
 	r_cons_gotoxy (0, 0);
 }
 
+R_API void r_cons_reset_colors() {
+	r_cons_strcat (Color_RESET);
+}
+
 R_API void r_cons_clear() {
 	r_cons_strcat (Color_RESET"\x1b[2J");
 	r_cons_gotoxy (0, 0);
