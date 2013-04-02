@@ -50,9 +50,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_printf ("\n Selected: %s\n\n", fs2);
 
 			switch (format) {
-			case 0: sprintf (cmd, "px @ %s:64", fs2); core->printidx = 0; break;
-			case 1: sprintf (cmd, "pd 12 @ %s:64", fs2); core->printidx = 1; break;
-			case 2: sprintf (cmd, "ps @ %s:64", fs2); core->printidx = 5; break;
+			case 0: sprintf (cmd, "px @ %s!64", fs2); core->printidx = 0; break;
+			case 1: sprintf (cmd, "pd 12 @ %s!64", fs2); core->printidx = 1; break;
+			case 2: sprintf (cmd, "ps @ %s!64", fs2); core->printidx = 5; break;
 			default: format = 0; continue;
 			}
 			if (*cmd) r_core_cmd (core, cmd, 0);
@@ -117,7 +117,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			break;
 		case 'h':
 		case 'b': // back
-			menu = 0;
+		case 'q':
+			if (menu<=0) return R_TRUE; menu--;
 			option = _option;
 			break;
 		case 'a':
@@ -151,9 +152,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			/* TODO: prompt for addr, size, name */
 			eprintf ("TODO\n");
 			r_sys_sleep (1);
-			break;
-		case 'q':
-			if (menu<=0) return R_TRUE; menu--;
 			break;
 		case '*':
 			r_core_block_size (core, core->blocksize+16);
@@ -462,12 +460,10 @@ R_API void r_core_visual_config(RCore *core) {
 		switch (menu) {
 		case 0: // flag space
 			r_cons_printf ("\n Eval spaces:\n\n");
-			hit = 0;
-			j = i = 0;
+			hit = j = i = 0;
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (option==i) {
 					fs = bt->name;
-					hit = 1;
 				}
 				if (old[0]=='\0') {
 					r_str_ccpy (old, bt->name, '.');
@@ -478,7 +474,8 @@ R_API void r_core_visual_config(RCore *core) {
 				} else show = 0;
 
 				if (show) {
-					if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					if (option == i) hit = 1;
+					if ( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
 						r_cons_printf(" %c  %s\n", (option==i)?'>':' ', old);
 						j++;
 					}
@@ -486,7 +483,7 @@ R_API void r_core_visual_config(RCore *core) {
 				}
 			}
 			if (!hit && j>0) {
-				option = j-1;
+				option--;
 				continue;
 			}
 			r_cons_printf ("\n Sel:%s \n\n", fs);
