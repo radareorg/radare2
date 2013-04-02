@@ -1,9 +1,11 @@
 include ../config.mk
+
 CFLAGS+= -g -ggdb
-LDFLAGS+= -g -ggdb
 #CFLAGS+=-DOLDFMT=1
-OBJ=alloc.o cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o lock.o
-OBJ+=json.o json/js0n.o json/json.o json/rangstr.o ns.o
+OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o sdba.o query.o
+OBJ+=json.o json/js0n.o json/json.o json/rangstr.o ns.o lock.o util.o
+
+SOBJ=$(subst .o,._o,${OBJ})
 
 BIN=sdb${EXEXT}
 
@@ -23,35 +25,52 @@ static: sdb-version.h
 	${MAKE} libsdb.a
 
 libsdb.a: ${OBJ}
-	@#ar qf libasb.a ${OBJ}
+ifneq ($(SILENT),)
+	@echo AR libsdb.a
+endif
 	rm -f libsdb.a
 	${AR} -r libsdb.a ${OBJ}
 	${RANLIB} libsdb.a
 
-libsdb.${SOEXT}: ${OBJ}
-	${CC} ${CFLAGS} ${LDFLAGS} -o $@ $(subst .o,.c,${OBJ}) -fPIC -shared
-
-t:
-	rm -f foo
-	./sdb foo a=3 b=200
-	hexdump -C foo
-	./sdb foo
-	./sdb foo a
-
-tdd test:
-	sh tdd.sh
-
-xxx:
-	rm -f foo
-	./sdb foo a=3
-	valgrind ./sdb foo a
-	valgrind ./sdb foo a=3 b=4
-	valgrind ./sdb foo a=9 b=2
-
-main.c:
+libsdb.${SOEXT}: ${SOBJ}
+ifneq ($(SILENT),)
+	@echo LIB libsdb.${SOEXT}
+endif
+	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
 
 ${BIN}: libsdb.a main.o
-	${CC} ${CFLAGS} -o ${BIN} main.o ${OBJ}
+ifneq ($(SILENT),)
+	@echo BIN ${BIN}
+endif
+	${CC} ${LDFLAGS} -o ${BIN} main.o ${OBJ}
 
 clean:
-	rm -rf ${OBJ} libsdb.a a.out sdb sdb.dSYM *.sdb *.db *.${SOEXT}
+	rm -rf ${OBJ} ${SOBJ} main.o libsdb.a a.out ${BIN} sdb.dSYM
+	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.${SOEXT}
+
+# rules #
+.c:
+ifneq ($(SILENT),)
+	@echo LD $<
+endif
+	$(CC) $(LDFLAGS) -c $(CFLAGS) -o $@ $<
+
+S=$
+
+%.o: %.c
+ifneq ($(SILENT),)
+	@echo CC $<
+endif
+	${CC} -c ${CPPFLAGS} ${CFLAGS} ${CFLAGS_SHARED} -o $@ $<
+
+%._o: %.c
+ifneq ($(SILENT),)
+	@echo CC PIC $<
+endif
+	@mv `echo $<|sed -e 's,\.c$S,\.d,g'` $<.tmp 2>/dev/null || true
+	${CC} -c ${CPPFLAGS} ${CFLAGS} ${CFLAGS_SHARED} -o $@ $<
+	@mv `echo $<|sed -e 's,\.c$S,\.d,g'` `echo $<|sed -e 's,\.c$S,\._d,g'` 2>/dev/null || true
+	@mv $<.tmp `echo $<|sed -e 's,\.c$S,\.d,g'` 2>/dev/null ||true
+
+-include ${OBJ:.o=.d}
+-include ${OBJ:.o=._d}

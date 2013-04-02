@@ -26,8 +26,7 @@ sdbclean:
 
 $(SDBLIB):
 	cd sdb ; ${MAKE} src/sdb-version.h
-	cd sdb/src ; ${MAKE} ARCH=xxx \
-		RANLIB="${RANLIB}" \
+	cd sdb/src ; ${MAKE} ARCH=xxx RANLIB="${RANLIB}" \
 		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 
 .PHONY: sdb-sync sync-sdb sdbclean

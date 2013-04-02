@@ -1,14 +1,18 @@
-/* Copyleft 2011-2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* sdb - LGPLv3 - Copyright 2012-2013 - pancake */
 
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "sdb.h"
+#if WINDOWS
+#include <windows.h>
+#endif
 
 static char buf[128];
 
-const char *sdb_lockfile(const char *f) {
-	int len;
+SDB_VISIBLE const char *sdb_lockfile(const char *f) {
+	size_t len;
 	if (!f || !*f)
 		return NULL;
 	len = strlen (f);
@@ -19,7 +23,7 @@ const char *sdb_lockfile(const char *f) {
 	return buf;
 }
 
-int sdb_lock(const char *s) {
+SDB_VISIBLE int sdb_lock(const char *s) {
 	int ret;
 	if (!s) return 0;
 	ret = open (s, O_CREAT | O_TRUNC | O_WRONLY | O_EXCL, 0644);
@@ -29,14 +33,20 @@ int sdb_lock(const char *s) {
 	return 1;
 }
 
-void sdb_lock_wait(const char *s) {
+SDB_VISIBLE void sdb_lock_wait(const char *s UNUSED) {
 	// TODO use flock() here
-	while (!sdb_lock (s)) {
+ 	while (!sdb_lock (s)) {
+#if WINDOWS
+	 	Sleep (500); // hack
+#else
+	// TODO flock (fd, LOCK_EX);
 	// 	usleep (100); // hack
-	}
+#endif
+ 	}
 }
 
-void sdb_unlock(const char *s) {
+SDB_VISIBLE void sdb_unlock(const char *s) {
+	//flock (fd, LOCK_UN);
 	unlink (s);
 }
 

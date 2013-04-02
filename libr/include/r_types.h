@@ -59,6 +59,18 @@
 #define R_SYS_HOME "HOME"
 #endif
 
+#ifndef __packed
+#define __packed __attribute__((__packed__))
+#endif
+
+#ifndef UNUSED
+#ifdef __GNUC__
+#define UNUSED __attribute__((__unused__))
+#else
+#define UNUSED
+#endif
+#endif
+
 /* provide a per-module debug-enabled feature */
 // TODO NOT USED. DEPREACATE
 #if R_DEBUG
@@ -82,12 +94,19 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define CTI(x,y,z) (*((size_t*)(CTA(x,y,z))))
 #define CTS(x,y,z,t,v) {t* _=(t*)CTA(x,y,z);*_=v;}
 
+#ifdef R_API
+#undef R_API
+#endif
 #if R_SWIG
   #define R_API export
 #elif R_INLINE
   #define R_API inline
 #else
-  #define R_API
+  #if defined(__GNUC__)
+    #define R_API __attribute__((visibility("default")))
+  #else
+    #define R_API
+  #endif
 #endif
 
 #define BITS2BYTES(x) ((x/8)+((x%8)?1:0))

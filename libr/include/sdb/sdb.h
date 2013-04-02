@@ -1,6 +1,12 @@
 #ifndef _INCLUDE_SDB_H_
 #define _INCLUDE_SDB_H_
 
+#if defined(__GNUC__)
+#define SDB_VISIBLE __attribute__((visibility("default")))
+#else
+#define SDB_VISIBLE
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,6 +17,8 @@ extern "C" {
 #include "cdb_make.h"
 
 #include "sdb-version.h"
+
+#define SDB_RS '\x1e'
 
 typedef struct sdb_ns_t {
 // todo. store last used
@@ -34,7 +42,6 @@ typedef struct sdb_t {
 	SdbList *ns;
 } Sdb;
 
-
 // XXX: use buckets here, drop these limits
 #define SDB_BLOCK 4096
 #define SDB_KSZ 64
@@ -53,6 +60,9 @@ void sdb_file (Sdb* s, const char *dir);
 void sdb_reset (Sdb *s);
 
 int sdb_query (Sdb *s, const char *cmd);
+int sdb_queryf (Sdb *s, const char *fmt, ...);
+char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd);
+char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ...);
 int sdb_exists (Sdb*, const char *key);
 int sdb_nexists (Sdb*, const char *key);
 int sdb_remove (Sdb*, const char *key, ut32 cas);
@@ -89,8 +99,8 @@ void sdb_unlock(const char *s);
 int sdb_expire(Sdb* s, const char *key, ut64 expire);
 ut64 sdb_get_expire(Sdb* s, const char *key);
 // int sdb_get_cas(Sdb* s, const char *key) -> takes no sense at all..
-ut64 sdb_now ();
-ut64 sdb_unow ();
+ut64 sdb_now (void);
+ut64 sdb_unow (void);
 ut32 sdb_hash (const char *key, int klen);
 #define sdb_hashstr(x) sdb_hash(x,strlen(x))
 
@@ -108,8 +118,8 @@ char *sdb_json_unindent(const char *s);
 
 typedef struct {
 	char *buf;
-	int blen;
-	int len;
+	size_t blen;
+	size_t len;
 } SdbJsonString;
 
 const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...);
@@ -120,6 +130,19 @@ Sdb *sdb_ns(Sdb *s, const char *name);
 void sdb_ns_init(Sdb *s);
 void sdb_ns_free(Sdb *s);
 void sdb_ns_sync (Sdb *s);
+
+// array
+int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas);
+char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas);
+int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas);
+int sdb_adel(Sdb *s, const char *key, int n, ut32 cas);
+// helpers
+char *sdb_astring(char *str, int *hasnext);
+int sdb_alen(const char *str);
+int sdb_alength(Sdb *s, const char *key);
+int sdb_alist(Sdb *s, const char *key);
+const char *sdb_anext(const char *str);
+const char *sdb_aindex(const char *str, int idx);
 
 #ifdef __cplusplus
 }

@@ -286,21 +286,21 @@ static RList* sections(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if ((ptr = R_NEW (RBinSection))) {
+	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "code");
 		ptr->size = ptr->vsize = fsymsz;
 		ptr->offset = ptr->rva = fsym;
 		ptr->srwx = 4|1;
 		r_list_append (ret, ptr);
 	}
-	if ((ptr = R_NEW (RBinSection))) {
+	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "constpool");
 		ptr->size = ptr->vsize = fsym;
 		ptr->offset = ptr->rva = 0;
 		ptr->srwx = 4;
 		r_list_append (ret, ptr);
 	}
-	if ((ptr = R_NEW (RBinSection))) {
+	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "data");
 		ptr->offset = ptr->rva = fsymsz+fsym;
 		ptr->size = ptr->vsize = arch->buf->length - ptr->rva;

@@ -7,9 +7,9 @@
 #define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)
 #define CAP(i) if(depth == 1) prev = *out++ = ((cur+i) - (js + prev) + 1)
 
-int js0n(unsigned char *js, unsigned int len, unsigned short *out) {
+int js0n(const unsigned char *js, unsigned int len, unsigned short *out) {
 	unsigned short prev = 0;
-	unsigned char *cur, *end;
+	const unsigned char *cur, *end;
 	int depth = 0, utf8_remain = 0;
 	static void *gostruct[] = {
 		[0 ... 255] = &&l_bad,

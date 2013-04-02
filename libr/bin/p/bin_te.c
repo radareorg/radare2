@@ -66,7 +66,7 @@ static RList* sections(RBinArch *arch) {
 	if (!(sections = r_bin_te_get_sections(arch->bin_obj)))
 		return NULL;
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->size = sections[i].size;
@@ -82,6 +82,10 @@ static RList* sections(RBinArch *arch) {
 			ptr->srwx |= 0x4;
 		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags))
 			ptr->srwx |= 0x8;
+		/* All TE files have _TEXT_RE section, which is 16-bit, because of
+		 * CPU start in this mode */
+		if (!strncmp(ptr->name, "_TEXT_RE", 8))
+			ptr->bits = 16;
 		r_list_append (ret, ptr);
 	}
 	free (sections);

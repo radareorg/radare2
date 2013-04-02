@@ -21,7 +21,7 @@ typedef struct ht_t {
 
 SdbHash* ht_new(void);
 void ht_free(SdbHash *ht);
-void ht_set(SdbHash *ht, ut32 hash, void *data);
+//void ht_set(SdbHash *ht, ut32 hash, void *data);
 SdbHashEntry* ht_search(SdbHash *ht, ut32 hash);
 void *ht_lookup(SdbHash *ht, ut32 hash);
 void ht_set(SdbHash *ht, ut32 hash, void *data);

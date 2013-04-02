@@ -1,4 +1,4 @@
-#!/usr/bin/rasm2 -a x86.as -b 64 -f
+#!/usr/bin/rasm2 -a x86 -b 64 -f
 # - pancake xor encoder egg engine  #
 # rasm2 -a x86.nasm -f xorencoder.asm
 

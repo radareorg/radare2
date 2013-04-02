@@ -1,8 +1,8 @@
-/* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
 
 #include "sdb.h"
 
-void sdb_ns_free(Sdb *s) {
+SDB_VISIBLE void sdb_ns_free(Sdb *s) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ls_foreach (s->ns, it, ns) {
@@ -19,7 +19,7 @@ SdbNs *sdb_ns_new (const char *name, ut32 hash) {
 	return ns;
 }
 
-Sdb *sdb_ns(Sdb *s, const char *name) {
+SDB_VISIBLE Sdb *sdb_ns(Sdb *s, const char *name) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ut32 hash = sdb_hashstr (name);
@@ -32,7 +32,7 @@ Sdb *sdb_ns(Sdb *s, const char *name) {
 	return ns->sdb;
 }
 
-void sdb_ns_sync (Sdb *s) {
+SDB_VISIBLE void sdb_ns_sync (Sdb *s) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ls_foreach (s->ns, it, ns) {

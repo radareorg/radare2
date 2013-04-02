@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 0.9.3git
+VERSION 0.9.5git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -43,7 +43,7 @@ HAVE_GMP = 0 ;
 
 CHKLIB ssl
 PKGCFG SSL_CFLAGS SSL_LDFLAGS openssl
-IFNOTNULL SSL_CFLAGS {
+IFNOTNULL SSL_LDFLAGS {
 	HAVE_OPENSSL = 1 ;
 }
 (( ARG_WITHOUT HAVE_OPENSSL ssl disable openssl dependency ; ))

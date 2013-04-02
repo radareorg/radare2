@@ -71,7 +71,7 @@ static RList* sections(RBinArch *arch) {
 		return ret;
 	for (i = 0; !section[i].last; i++) {
 		if (!section[i].size) continue;
-		if (!(ptr = R_NEW (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection)))
 			break;
 		strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
 		ptr->size = section[i].size;
@@ -97,7 +97,7 @@ static RList* sections(RBinArch *arch) {
 			struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
 			arch->size = bin? bin->size: 0x9999;
 		}
-		if (!(ptr = R_NEW (RBinSection)))
+		if (!(ptr = R_NEW0 (RBinSection)))
 			return ret;
 		strncpy (ptr->name, "undefined", R_BIN_SIZEOF_STRINGS);
 		ptr->size = arch->size;

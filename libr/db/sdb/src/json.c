@@ -1,18 +1,16 @@
-/* Copyleft 2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* sdb - LGPLv3 - Copyright 2012-2013 - pancake */
 
 #include <stdarg.h>
 #include "sdb.h"
 #include "json/json.h"
 
-static int __itoa(int value, char *string) {
+static void __itoa(int value, char *string) {
 	int i, sign, count = 0;
 	char buf[64];
 	char *temp = buf;
 	char *ptr = string;
 
-	temp[0] = 0;
-	string[0] = 0;
-
+	temp[0] = string[0] = 0;
 	if ((sign = value) < 0) {
 		value = -value;
 		count++;
@@ -28,10 +26,9 @@ static int __itoa(int value, char *string) {
 	for (i = 0; i < count; i++, temp--, ptr++)
 		*ptr = *temp;
 	*ptr = 0;
-	return 1;
 }
 
-char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
+SDB_VISIBLE char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	Rangstr rs;
 	char *u, *v = sdb_get (s, k, cas);
 	if (!v) return NULL;
@@ -41,19 +38,19 @@ char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	return u;
 }
 
-int sdb_json_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
+SDB_VISIBLE int sdb_json_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
 	int cur = sdb_json_geti (s, k, p);
 	sdb_json_seti (s, k, p, cur+n, cas);
-	return cur;
+	return cur+n;
 }
 
-int sdb_json_dec(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
+SDB_VISIBLE int sdb_json_dec(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
 	int cur = sdb_json_geti (s, k, p);
 	sdb_json_seti (s, k, p, cur-n, cas);
-	return cur;
+	return cur-n;
 }
 
-int sdb_json_geti (Sdb *s, const char *k, const char *p) {
+SDB_VISIBLE int sdb_json_geti (Sdb *s, const char *k, const char *p) {
 	char *v = sdb_get (s, k, 0); // XXX cas
 	if (v) {
 		Rangstr rs = json_get (v, p);
@@ -62,13 +59,13 @@ int sdb_json_geti (Sdb *s, const char *k, const char *p) {
 	return 0;
 }
 
-int sdb_json_seti (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
+SDB_VISIBLE int sdb_json_seti (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
 	char str[64];
 	__itoa (v, str);
 	return sdb_json_set (s, k, p, str, cas);
 }
 
-int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
+SDB_VISIBLE int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
 	const char *beg[3];
 	const char *end[3];
 	int l, idx, len[3];
@@ -76,11 +73,11 @@ int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas)
 	Rangstr rs;
 	ut32 c;
 	char *js = sdb_get (s, k, &c);
+	if (!js) return 0;
 	if (cas && c != cas) {
 		free (js);
 		return 0;
 	}
-	if (!js) return 0;
 	rs = json_get (js, p);
 	if (!rs.p) {
 		free (js);
@@ -117,7 +114,7 @@ int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas)
 	return 1;
 }
 
-char *sdb_json_indent(const char *s) {
+SDB_VISIBLE char *sdb_json_indent(const char *s) {
 	int indent = 0;
 	int i, instr = 0;
 	char *o, *O = malloc (strlen (s)*2);
@@ -165,7 +162,7 @@ char *sdb_json_indent(const char *s) {
 	return O;
 }
 
-char *sdb_json_unindent(const char *s) {
+SDB_VISIBLE char *sdb_json_unindent(const char *s) {
 	int instr = 0;
 	int len = strlen (s);
 	char *o, *O = malloc (len);
@@ -193,7 +190,7 @@ char *sdb_json_unindent(const char *s) {
 	return O;
 }
 
-const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
+SDB_VISIBLE const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
 	va_list ap;
 	char *arg_s, *x, tmp[128];
 	float arg_f;

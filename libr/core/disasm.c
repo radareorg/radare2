@@ -208,6 +208,7 @@ toro:
 	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
 
+		r_core_seek_archbits (core, at); // slow but safe
 		hint = r_core_hint_begin (core, hint, at);
 		if (cbytes && idx>=l)
 			break;
@@ -776,7 +777,11 @@ toro:
 						free (str);
 					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
 				}
-			} else r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
+			} else {
+				st64 sref = analop.ref;
+				if (sref>0)
+					r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
+			}
 		} else {
 			if (analop.ref != UT64_MAX && analop.ref) {
 				r_cons_printf (" ; 0x%08"PFMT64x" ", analop.ref);
@@ -895,6 +900,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	if (l==0) l = len;
 	for (i=j=0; i<bs && i<len && j<l; i+=ret, j++) {
 		at = core->offset +i;
+		r_core_seek_archbits (core, at);
 		if (hint) {
 			r_anal_hint_free (hint);
 			hint = NULL;

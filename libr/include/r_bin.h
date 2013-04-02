@@ -141,6 +141,9 @@ typedef struct r_bin_section_t {
 	ut64 rva;
 	ut64 offset;
 	ut64 srwx;
+	// per section platform info
+	const char *arch;
+	int bits;
 } RBinSection;
 
 typedef struct r_bin_class_t {
@@ -264,6 +267,7 @@ R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(const char *str);
 R_API char *r_bin_demangle_objc(RBin *bin, const char *sym);
 R_API int r_bin_lang_objc(RBin *a);
+R_API int r_bin_lang_cxx(RBin *a);
 
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);

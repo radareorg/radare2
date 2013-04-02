@@ -1,9 +1,25 @@
 #ifndef UINT32_H
 #define UINT32_H
 
+#include <sys/types.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#ifndef UNUSED
+#ifdef __GNUC__
+#define UNUSED	__attribute__((__unused__))
+#else
+#define UNUSED
+#endif
+#endif
+
+#if __WIN32__ || __CYGWIN__ || MINGW32
+#define WINDOWS 1
+#else
+#define WINDOWS 0
+#endif
 
 #ifndef ut8
 #define ut8 unsigned char

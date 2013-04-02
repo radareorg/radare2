@@ -1,4 +1,4 @@
-/* Copyleft 2011-2012 - sdb (aka SimpleDB) - pancake<nopcode.org> */
+/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -21,7 +21,7 @@ static inline int nextcas() {
 }
 
 // TODO: use mmap instead of read.. much faster!
-Sdb* sdb_new (const char *dir, int lock) {
+SDB_VISIBLE Sdb* sdb_new (const char *dir, int lock) {
 	Sdb* s;
 	if (lock && !sdb_lock (sdb_lockfile (dir)))
 		return NULL;
@@ -47,7 +47,7 @@ Sdb* sdb_new (const char *dir, int lock) {
 	return s;
 }
 
-void sdb_file (Sdb* s, const char *dir) {
+SDB_VISIBLE void sdb_file (Sdb* s, const char *dir) {
 	if (s->lock)
 		sdb_unlock (sdb_lockfile (s->dir));
 	free (s->dir);
@@ -56,7 +56,7 @@ void sdb_file (Sdb* s, const char *dir) {
 		sdb_lock (sdb_lockfile (s->dir));
 }
 
-void sdb_free (Sdb* s) {
+SDB_VISIBLE void sdb_free (Sdb* s) {
 	if (!s) return;
 	cdb_free (&s->db);
 	if (s->lock)
@@ -70,7 +70,7 @@ void sdb_free (Sdb* s) {
 	free (s);
 }
 
-const char *sdb_getc (Sdb* s, const char *key, ut32 *cas) {
+SDB_VISIBLE const char *sdb_getc (Sdb* s, const char *key, ut32 *cas) {
 	ut32 hash, pos, len, keylen;
 	SdbKv *kv;
 	ut64 now = 0LL;
@@ -110,7 +110,7 @@ const char *sdb_getc (Sdb* s, const char *key, ut32 *cas) {
 	return s->db.map+pos;
 }
 
-char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
+SDB_VISIBLE char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
 	char *buf;
 	ut32 hash, pos, len, keylen;
 	SdbKv *kv;
@@ -156,18 +156,18 @@ char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
 	return buf;
 }
 
-int sdb_remove (Sdb* s, const char *key, ut32 cas) {
+SDB_VISIBLE int sdb_remove (Sdb* s, const char *key, ut32 cas) {
 	return key? sdb_set (s, key, "", cas): 0;
 }
 
 // set if not defined
-int sdb_add (Sdb *s, const char *key, const char *val, ut32 cas) {
+SDB_VISIBLE int sdb_add (Sdb *s, const char *key, const char *val, ut32 cas) {
 	if (sdb_exists (s, key))
 		return 0;
 	return sdb_set (s, key, val, cas);
 }
 
-int sdb_exists (Sdb* s, const char *key) {
+SDB_VISIBLE int sdb_exists (Sdb* s, const char *key) {
 	char ch;
 	SdbKv *kv;
 	int klen = strlen (key);
@@ -185,13 +185,14 @@ int sdb_exists (Sdb* s, const char *key) {
 	return 0;
 }
 
-void sdb_reset (Sdb *s) {
+SDB_VISIBLE void sdb_reset (Sdb *s) {
 	ht_free (s->ht);
 	s->ht = ht_new ();
 }
 
-struct sdb_kv* sdb_kv_new (const char *k, const char *v) {
-	struct sdb_kv *kv = R_NEW (struct sdb_kv); // TODO: too many allocs here. use slices
+// TODO: too many allocs here. use slices
+SdbKv* sdb_kv_new (const char *k, const char *v) {
+	SdbKv *kv = R_NEW (struct sdb_kv);
 	strncpy (kv->key, k, sizeof (kv->key)-1);
 	strncpy (kv->value, v, sizeof (kv->value)-1);
 	kv->cas = nextcas ();
@@ -199,11 +200,11 @@ struct sdb_kv* sdb_kv_new (const char *k, const char *v) {
 	return kv;
 }
 
-void sdb_kv_free (struct sdb_kv *kv) {
+SDB_VISIBLE void sdb_kv_free (struct sdb_kv *kv) {
 	free (kv);
 }
 
-int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
+SDB_VISIBLE int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	SdbHashEntry *e;
 	SdbKv *kv;
 	ut32 hash, klen;
@@ -229,7 +230,7 @@ int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	return *val? kv->cas: 0;
 }
 
-int sdb_sync (Sdb* s) {
+SDB_VISIBLE int sdb_sync (Sdb* s) {
 	SdbKv *kv;
 	SdbListIter it, *iter;
 	char k[SDB_KSZ];
@@ -284,7 +285,7 @@ static int getbytes(int fd, char *b, int len) {
 	return len;
 }
 
-void sdb_dump_begin (Sdb* s) {
+SDB_VISIBLE void sdb_dump_begin (Sdb* s) {
 	if (s->fd != -1) {
 		seek_set (s->fd, 0);
 		eod = getnum (s->fd);
@@ -295,7 +296,7 @@ void sdb_dump_begin (Sdb* s) {
 
 // XXX: overflow if caller doesnt respects sizes
 // TODO: add support for readonly dump next here
-int sdb_dump_next (Sdb* s, char *key, char *value) {
+SDB_VISIBLE int sdb_dump_next (Sdb* s, char *key, char *value) {
 	ut32 dlen, klen;
 	if (s->fd==-1 || !getkvlen (s->fd, &klen, &dlen))
 		return 0;
@@ -310,13 +311,13 @@ int sdb_dump_next (Sdb* s, char *key, char *value) {
 	return 0;
 }
 
-ut64 sdb_now () {
+SDB_VISIBLE ut64 sdb_now () {
         struct timeval now;
         gettimeofday (&now, NULL);
 	return now.tv_sec;
 }
 
-ut64 sdb_unow () {
+SDB_VISIBLE ut64 sdb_unow () {
 	ut64 x;
         struct timeval now;
         gettimeofday (&now, NULL);
@@ -332,7 +333,7 @@ static ut64 parse_expire (ut64 e) {
 	return e;
 }
 
-int sdb_expire(Sdb* s, const char *key, ut64 expire) {
+SDB_VISIBLE int sdb_expire(Sdb* s, const char *key, ut64 expire) {
 	char *buf;
 	ut32 hash, pos, len;
 	SdbKv *kv;
@@ -365,7 +366,7 @@ int sdb_expire(Sdb* s, const char *key, ut64 expire) {
 	return sdb_expire (s, key, expire); // recursive
 }
 
-ut64 sdb_get_expire(Sdb* s, const char *key) {
+SDB_VISIBLE ut64 sdb_get_expire(Sdb* s, const char *key) {
 	SdbKv *kv;
 	ut32 hash = sdb_hash (key, 0);
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
@@ -374,17 +375,7 @@ ut64 sdb_get_expire(Sdb* s, const char *key) {
 	return 0LL;
 }
 
-ut32 sdb_hash(const char *s, int len) {
-	ut32 h = CDB_HASHSTART;
-	if (len<1) len = strlen (s)+1; // XXX slow
-	while (len--) {
-		h += (h<<5);
-		h ^= *s++;
-	}
-	return h;
-}
-
-void sdb_flush(Sdb* s) {
+SDB_VISIBLE void sdb_flush(Sdb* s) {
 	ht_free (s->ht);
 	s->ht = ht_new ();
 	close (s->fd);
@@ -392,7 +383,7 @@ void sdb_flush(Sdb* s) {
 }
 
 /* sdb-create api */
-int sdb_create (Sdb *s) {
+SDB_VISIBLE int sdb_create (Sdb *s) {
 	int nlen;
 	char *str;
 	if (!s || !s->dir || s->fdump != -1) return 0; // cannot re-create
@@ -411,14 +402,14 @@ int sdb_create (Sdb *s) {
 	return 1;
 }
 
-int sdb_append (Sdb *s, const char *key, const char *val) {
+SDB_VISIBLE int sdb_append (Sdb *s, const char *key, const char *val) {
 	struct cdb_make *c = &s->m;
 	if (!key || !val) return 0;
 	//if (!*val) return 0; //undefine variable if no value
 	return cdb_make_add (c, key, strlen (key)+1, val, strlen (val)+1);
 }
 
-int sdb_finish (Sdb *s) {
+SDB_VISIBLE int sdb_finish (Sdb *s) {
 	cdb_make_finish (&s->m);
 #if USE_MMAN
 	fsync (s->fdump);
@@ -429,62 +420,4 @@ int sdb_finish (Sdb *s) {
 	free (s->ndump);
 	s->ndump = NULL;
 	return 1; // XXX: 
-}
-
-// TODO: return char *
-int sdb_query (Sdb *s, const char *cmd) {
-	char *p, *eq, *ask = strchr (cmd, '?');
-	const char *p2;
-	int save = 0;
-	ut64 n;
-
-	switch (*cmd) {
-	case '+': // inc
-		n = ask? 
-			sdb_json_inc (s, cmd+1, ask, 1, 0):
-			sdb_inc (s, cmd+1, 1, 0);
-		printf ("%"ULLFMT"d\n", n);
-		save = 1;
-		break;
-	case '-': // dec
-		n = ask? 
-			sdb_json_dec (s, cmd+1, ask, 1, 0):
-			sdb_dec (s, cmd+1, 1, 0);
-		printf ("%"ULLFMT"d\n", n);
-		save = 1;
-		break;
-	default:
-		eq = strchr (cmd, '=');
-		if (eq && ask>eq) ask = NULL;
-		if (eq) {
-			// 1 0 kvpath=value
-			// 1 1 kvpath?jspath=value
-			save = 1;
-			*eq++ = 0;
-			if (ask) {
-				// sdbjsonset
-				*ask++ = 0;
-				sdb_json_set (s, cmd, ask, eq, 0);
-			} else {
-				// sdbset
-				sdb_set (s, cmd, eq, 0);
-			}
-		} else {
-			// 0 1 kvpath?jspath
-			// 0 0 kvpath
-			if (ask) {
-				// sdbjsonget
-				*ask++ = 0;
-				if ((p = sdb_json_get (s, cmd, ask, 0))) {
-					printf ("%s\n", p);
-					free (p);
-				}
-			} else {
-				// sdbget
-				if ((p2 = sdb_getc (s, cmd, 0)))
-					printf ("%s\n", p2);
-			}
-		}
-	}
-	return save;
 }

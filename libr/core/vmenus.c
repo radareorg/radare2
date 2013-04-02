@@ -50,9 +50,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_cons_printf ("\n Selected: %s\n\n", fs2);
 
 			switch (format) {
-			case 0: sprintf (cmd, "px @ %s:64", fs2); core->printidx = 0; break;
-			case 1: sprintf (cmd, "pd 12 @ %s:64", fs2); core->printidx = 1; break;
-			case 2: sprintf (cmd, "ps @ %s:64", fs2); core->printidx = 5; break;
+			case 0: sprintf (cmd, "px @ %s!64", fs2); core->printidx = 0; break;
+			case 1: sprintf (cmd, "pd 12 @ %s!64", fs2); core->printidx = 1; break;
+			case 2: sprintf (cmd, "ps @ %s!64", fs2); core->printidx = 5; break;
 			default: format = 0; continue;
 			}
 			if (*cmd) r_core_cmd (core, cmd, 0);
@@ -90,7 +90,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				continue;
 			}
 		}
-		r_cons_flush ();
+		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
@@ -117,7 +117,8 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			break;
 		case 'h':
 		case 'b': // back
-			menu = 0;
+		case 'q':
+			if (menu<=0) return R_TRUE; menu--;
 			option = _option;
 			break;
 		case 'a':
@@ -151,9 +152,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			/* TODO: prompt for addr, size, name */
 			eprintf ("TODO\n");
 			r_sys_sleep (1);
-			break;
-		case 'q':
-			if (menu<=0) return R_TRUE; menu--;
 			break;
 		case '*':
 			r_core_block_size (core, core->blocksize+16);
@@ -325,7 +323,7 @@ R_API int r_core_visual_comments (RCore *core) {
 		}
 		if (*cmd) r_core_cmd (core, cmd, 0);
 
-		r_cons_flush ();
+		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
@@ -416,10 +414,9 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 	if (!(node = r_config_node_get (core->config, name)))
 		return;
 	if (node->flags & CN_BOOL) {
-		/* TOGGLE */
-		node->i_value = !node->i_value;
-		node->value = r_str_dup (node->value, node->i_value?"true":"false");
+		r_config_set_i (core->config, name, node->i_value? 0:1);
 	} else {
+// XXX: must use config_set () to run callbacks!
 		if (editor) {
 			char * buf = r_core_editor (core, node->value);
 			node->value = r_str_dup (node->value, buf);
@@ -434,7 +431,8 @@ static void config_visual_hit(RCore *core, const char *name, int editor) {
 			r_cons_fgets (buf, sizeof (buf)-1, 0, 0);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (R_FALSE);
-			node->value = r_str_dup (node->value, buf);
+			r_config_set (core->config, name, buf);
+			//node->value = r_str_dup (node->value, buf);
 		}
 	}
 }
@@ -462,12 +460,10 @@ R_API void r_core_visual_config(RCore *core) {
 		switch (menu) {
 		case 0: // flag space
 			r_cons_printf ("\n Eval spaces:\n\n");
-			hit = 0;
-			j = i = 0;
+			hit = j = i = 0;
 			r_list_foreach (core->config->nodes, iter, bt) {
 				if (option==i) {
 					fs = bt->name;
-					hit = 1;
 				}
 				if (old[0]=='\0') {
 					r_str_ccpy (old, bt->name, '.');
@@ -478,7 +474,8 @@ R_API void r_core_visual_config(RCore *core) {
 				} else show = 0;
 
 				if (show) {
-					if( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+					if (option == i) hit = 1;
+					if ( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
 						r_cons_printf(" %c  %s\n", (option==i)?'>':' ', old);
 						j++;
 					}
@@ -486,7 +483,7 @@ R_API void r_core_visual_config(RCore *core) {
 				}
 			}
 			if (!hit && j>0) {
-				option = j-1;
+				option--;
 				continue;
 			}
 			r_cons_printf ("\n Sel:%s \n\n", fs);
@@ -520,7 +517,7 @@ R_API void r_core_visual_config(RCore *core) {
 
 		if (fs && !memcmp (fs, "asm.", 4))
 			r_core_cmd (core, "pd 5", 0);
-		r_cons_flush ();
+		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 

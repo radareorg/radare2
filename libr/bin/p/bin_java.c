@@ -201,21 +201,21 @@ static RList* sections(RBinArch *arch) {
 		return NULL;
 	ret->free = free;
 	if ((s = r_bin_java_get_symbols (arch->bin_obj))) {
-		if ((ptr = R_NEW (RBinSection))) {
+		if ((ptr = R_NEW0 (RBinSection))) {
 			strcpy (ptr->name, "code");
 			ptr->size = ptr->vsize = b->fsymsz;
 			ptr->offset = ptr->rva = b->fsym;
 			ptr->srwx = 4|1;
 			r_list_append (ret, ptr);
 		}
-		if ((ptr = R_NEW (RBinSection))) {
+		if ((ptr = R_NEW0 (RBinSection))) {
 			strcpy (ptr->name, "constpool");
 			ptr->size = ptr->vsize = b->fsym;
 			ptr->offset = ptr->rva = 0;
 			ptr->srwx = 4;
 			r_list_append (ret, ptr);
 		}
-		if ((ptr = R_NEW (RBinSection))) {
+		if ((ptr = R_NEW0 (RBinSection))) {
 			strcpy (ptr->name, "data");
 			ptr->offset = ptr->rva = b->fsymsz+b->fsym;
 			ptr->size = ptr->vsize = arch->buf->length - ptr->rva;

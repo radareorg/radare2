@@ -1,12 +1,14 @@
-/* radare - LGPL - Copyright 2011-2012 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2011-2013 - pancake */
 #include <r_egg.h>
 #include <r_bin.h>
 #include <getopt.c>
 
-static int usage () {
-	printf ("ragg2 [options] [file|-]\n"
-	" -a [x86|arm]    select architecture\n"
-	" -b [32|64]      register size\n"
+static int usage (int v) {
+	printf ("Usage: ragg2 [-FOLsrxvh] [-a arch] [-b bits] [-k os] [-o file] [-I /] [-i sc]\n"
+		"             [-e enc] [-B hex] [-c k=v] [-C file] [-dDw v] [-p pad] file|-\n");
+	if (v) printf (
+	" -a [arch]       select architecture (x86, mips, arm)\n"
+	" -b [bits]       register size (32, 64, ..)\n"
 	" -k [os]         operating system's kernel (linux,bsd,osx,w32)\n"
 	" -f [format]     output format (raw, pe, elf, mach0)\n"
 	" -F              output native format (osx=mach0, linux=elf, ..)\n"
@@ -214,7 +216,7 @@ int main(int argc, char **argv) {
 			list (egg);
 			return 0;
 		case 'h':
-			return usage ();
+			return usage (1);
 		case 'v':
 			printf ("ragg2 "R2_VERSION" "R2_INCDIR"/sflib\n");
 			return 0;
@@ -222,8 +224,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding) {
-		eprintf ("Missing argument\n");
-		return usage ();
+		return usage (0);
 	} else file = argv[optind];
 
 	r_egg_setup (egg, arch, bits, 0, os);

@@ -16,6 +16,9 @@ CFLAGS_OPT2=-O2
 CFLAGS_OPT3=-O3
 CFLAGS_DEBUG=-g
 
+ifeq ($(OSTYPE),auto)
+OSTYPE=$(shell uname | tr 'A-Z' 'a-z')
+endif
 ifeq ($(OSTYPE),darwin)
 ARCH=$(shell uname -m)
 #CFLAGS+=-arch ${ARCH}
@@ -29,6 +32,8 @@ LDFLAGS_LIB=-shared
 #endif
 LDFLAGS_SONAME=-Wl,-soname=
 endif
+# XXX
+#LDFLAGS_SONAME=-D_
 
 CC_LIB=${CC} ${LDFLAGS_LIB} -o ${LIBSO}
 endif

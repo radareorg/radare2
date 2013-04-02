@@ -21,7 +21,7 @@ with binary data.
 Radare project started as a forensics tool, an scriptable
 commandline hexadecimal editor able to open disk files,
 but later support for analyzing binaries, disassembling
-code, debugging programs, attaching to remove gdb servers, ..
+code, debugging programs, attaching to remote gdb servers, ..
 
 radare2 is portable.
 
