@@ -267,6 +267,7 @@ R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(const char *str);
 R_API char *r_bin_demangle_objc(RBin *bin, const char *sym);
 R_API int r_bin_lang_objc(RBin *a);
+R_API int r_bin_lang_cxx(RBin *a);
 
 R_API RList* r_bin_get_entries(RBin *bin);
 R_API RList* r_bin_get_fields(RBin *bin);

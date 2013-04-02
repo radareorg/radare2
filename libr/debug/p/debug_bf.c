@@ -154,7 +154,7 @@ static int r_debug_bf_breakpoint (void *user, int type, ut64 addr, int hw, int r
 	return R_FALSE;
 }
 
-static int r_debug_bf_kill(RDebug *dbg, boolt thread, int sig) {
+static int r_debug_bf_kill(RDebug *dbg, int pid, int tid, int sig) {
 	RIOBfdbg *o = dbg->iob.io->fd->data;
 	bfvm_reset (o->bfvm);
 	return R_TRUE;

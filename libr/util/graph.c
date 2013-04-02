@@ -71,9 +71,9 @@ R_API void r_graph_traverse(RGraph *t) {
 	t->path = path;
 }
 
-R_API RGraph * r_graph_new () {
+R_API RGraph* r_graph_new () {
 	RGraph *t = R_NEW0 (RGraph);
-	t->printf = printf;
+	t->printf = (PrintfCallback) printf;
 	t->path = r_list_new ();
 	t->nodes = r_list_new ();
 	t->roots = r_list_new ();

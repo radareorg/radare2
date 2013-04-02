@@ -4,9 +4,7 @@
 
 R_API int r_bin_lang_cxx(RBin *bin) {
 	RListIter *iter;
-	RBinSymbol *sym;
 	int hascxx = R_FALSE;
-	char *dsym;
 	const char *lib;
 
 	if (!bin || !bin->cur.o || !bin->cur.o->info)

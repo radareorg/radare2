@@ -543,7 +543,7 @@ static int cmd_system(void *data, const char *input) {
 	default:
 		n = r_num_math (core->num, input);
 		if (*input=='0' || n>0) {
-			char *cmd = r_line_hist_get (n);
+			const char *cmd = r_line_hist_get (n);
 			if (cmd) r_core_cmd0 (core, cmd);
 			else eprintf ("Error setting up system environment\n");
 		} else {
@@ -1158,7 +1158,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						r_core_seek (core, flag->offset, 1);
 						//r_cons_printf ("# @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
 					//	r_cons_printf ("0x%08"PFMT64x" %s\n", core->offset, flag->name);
-						eprintf ("# 0x%08"PFMT64x": %s\n", addr, cmd);
+						eprintf ("# 0x%08"PFMT64x": %s\n", flag->offset, cmd);
 						r_core_cmd (core, cmd, 0);
 					}
 				}

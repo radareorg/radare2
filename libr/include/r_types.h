@@ -94,6 +94,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define CTI(x,y,z) (*((size_t*)(CTA(x,y,z))))
 #define CTS(x,y,z,t,v) {t* _=(t*)CTA(x,y,z);*_=v;}
 
+#ifdef R_API
+#undef R_API
+#endif
 #if R_SWIG
   #define R_API export
 #elif R_INLINE

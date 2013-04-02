@@ -1,4 +1,4 @@
-/* ported to C by pancake for r2 in 2012 */
+/* ported to C by pancake for r2 in 2012-2013 */
 // TODO: integrate floating point support
 // TODO: do not use global variables
 /*
@@ -46,11 +46,11 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 	for (;;) {
 		if (nc->curr_tok == RNCPLUS)
 			left = Nadd (left, term (num, nc, 1));
-		else
-		if (nc->curr_tok == RNCMINUS)
+		else if (nc->curr_tok == RNCMINUS)
 			left = Nsub (left, term (num, nc, 1));
-		else return left;
+		else break;
 	}
+	return left;
 }
 
 static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {

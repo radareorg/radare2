@@ -134,7 +134,7 @@ R_API void r_slist_optimize (RSList *s) {
 	r_array_add (idx);
 
 [  ptr ] [ -1 ] [  int ]
-|   -1 |  `--'  |   -1 |
+|   -1 |  '--'  |   -1 |
 
 	items = malloc (sizeof (RSListItem), );
 	items_capacity

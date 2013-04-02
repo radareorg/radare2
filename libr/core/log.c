@@ -54,14 +54,13 @@ R_API void r_core_log_add(RCore *core, const char *msg) {
 
 R_API void r_core_log_del(RCore *core, int n) {
 	int idx;
-	char *s;
 	if (n>0) {
 		if (n > core->log->last)
 			n = core->log->last;
 		idx = n-core->log->first;
 		if (idx<0) return;
 		core->log->first += idx+1;
-		s = r_strpool_get_i (core->log->sp, idx);
+		/* s= */ r_strpool_get_i (core->log->sp, idx);
 		r_strpool_slice (core->log->sp, idx);
 	} else {
 		core->log->first = core->log->last;
