@@ -1,3 +1,4 @@
+-/* radare - LGPL - Copyright 2009, 2011 nibble<.ds@gmail.com> */
 
 namespace Radare {
 /**
