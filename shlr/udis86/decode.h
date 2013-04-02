@@ -31,33 +31,16 @@
 
 #define MAX_INSN_LENGTH 15
 
-/* register classes */
-#define T_NONE  0
-#define T_GPR   1
-#define T_MMX   2
-#define T_CRG   3
-#define T_DBG   4
-#define T_SEG   5
-#define T_XMM   6
-
 /* itab prefix bits */
 #define P_none          ( 0 )
 #define P_cast          ( 1 << 0 )
 #define P_CAST(n)       ( ( n >> 0 ) & 1 )
-#define P_c1            ( 1 << 0 )
-#define P_C1(n)         ( ( n >> 0 ) & 1 )
 #define P_rexb          ( 1 << 1 )
 #define P_REXB(n)       ( ( n >> 1 ) & 1 )
-#define P_depM          ( 1 << 2 )
-#define P_DEPM(n)       ( ( n >> 2 ) & 1 )
-#define P_c3            ( 1 << 3 )
-#define P_C3(n)         ( ( n >> 3 ) & 1 )
 #define P_inv64         ( 1 << 4 )
 #define P_INV64(n)      ( ( n >> 4 ) & 1 )
 #define P_rexw          ( 1 << 5 )
 #define P_REXW(n)       ( ( n >> 5 ) & 1 )
-#define P_c2            ( 1 << 6 )
-#define P_C2(n)         ( ( n >> 6 ) & 1 )
 #define P_def64         ( 1 << 7 )
 #define P_DEF64(n)      ( ( n >> 7 ) & 1 )
 #define P_rexr          ( 1 << 8 )
@@ -72,29 +55,6 @@
 #define P_IMPADDR(n)    ( ( n >> 12 ) & 1 )
 #define P_seg           ( 1 << 13 )
 #define P_SEG(n)        ( ( n >> 13 ) & 1 )
-#define P_sext          ( 1 << 14 )
-#define P_SEXT(n)       ( ( n >> 14 ) & 1 )
-
-/* rex prefix bits */
-#define REX_W(r)        ( ( 0xF & ( r ) )  >> 3 )
-#define REX_R(r)        ( ( 0x7 & ( r ) )  >> 2 )
-#define REX_X(r)        ( ( 0x3 & ( r ) )  >> 1 )
-#define REX_B(r)        ( ( 0x1 & ( r ) )  >> 0 )
-#define REX_PFX_MASK(n) ( ( P_REXW(n) << 3 ) | \
-                          ( P_REXR(n) << 2 ) | \
-                          ( P_REXX(n) << 1 ) | \
-                          ( P_REXB(n) << 0 ) )
-
-/* scable-index-base bits */
-#define SIB_S(b)        ( ( b ) >> 6 )
-#define SIB_I(b)        ( ( ( b ) >> 3 ) & 7 )
-#define SIB_B(b)        ( ( b ) & 7 )
-
-/* modrm bits */
-#define MODRM_REG(b)    ( ( ( b ) >> 3 ) & 7 )
-#define MODRM_NNN(b)    ( ( ( b ) >> 3 ) & 7 )
-#define MODRM_MOD(b)    ( ( ( b ) >> 6 ) & 3 )
-#define MODRM_RM(b)     ( ( b ) & 7 )
 
 /* operand type constants -- order is important! */
 
@@ -102,25 +62,15 @@ enum ud_operand_code {
     OP_NONE,
 
     OP_A,      OP_E,      OP_M,       OP_G,       
-    OP_I,
+    OP_I,      OP_F,
 
-    OP_AL,     OP_CL,     OP_DL,      OP_BL,
-    OP_AH,     OP_CH,     OP_DH,      OP_BH,
+    OP_R0,     OP_R1,     OP_R2,      OP_R3,
+    OP_R4,     OP_R5,     OP_R6,      OP_R7,
 
-    OP_ALr8b,  OP_CLr9b,  OP_DLr10b,  OP_BLr11b,
-    OP_AHr12b, OP_CHr13b, OP_DHr14b,  OP_BHr15b,
-
-    OP_AX,     OP_CX,     OP_DX,      OP_BX,
-    OP_SI,     OP_DI,     OP_SP,      OP_BP,
-
-    OP_rAX,    OP_rCX,    OP_rDX,     OP_rBX,  
-    OP_rSP,    OP_rBP,    OP_rSI,     OP_rDI,
-
-    OP_rAXr8,  OP_rCXr9,  OP_rDXr10,  OP_rBXr11,  
-    OP_rSPr12, OP_rBPr13, OP_rSIr14,  OP_rDIr15,
-
-    OP_eAX,    OP_eCX,    OP_eDX,     OP_eBX,
-    OP_eSP,    OP_eBP,    OP_eSI,     OP_eDI,
+    OP_AL,     OP_CL,     OP_DL,
+    OP_AX,     OP_CX,     OP_DX,
+    OP_eAX,    OP_eCX,    OP_eDX,
+    OP_rAX,    OP_rCX,    OP_rDX,
 
     OP_ES,     OP_CS,     OP_SS,      OP_DS,  
     OP_FS,     OP_GS,
@@ -129,11 +79,12 @@ enum ud_operand_code {
     OP_ST4,    OP_ST5,    OP_ST6,     OP_ST7,
 
     OP_J,      OP_S,      OP_O,          
-    OP_I1,     OP_I3, 
+    OP_I1,     OP_I3,     OP_sI,
 
     OP_V,      OP_W,      OP_Q,       OP_P, 
+    OP_U,      OP_N,      OP_MU,
 
-    OP_R,      OP_C,  OP_D,       OP_VR,  OP_PR,
+    OP_R,      OP_C,      OP_D,       
 
     OP_MR
 } UD_ATTR_PACKED;
@@ -145,10 +96,6 @@ enum ud_operand_size {
     SZ_NA  = 0,
     SZ_Z   = 1,
     SZ_V   = 2,
-    SZ_P   = 3,
-    SZ_WP  = 4,
-    SZ_DP  = 5,
-    SZ_MDQ = 6,
     SZ_RDQ = 7,
 
     /* the following values are used as is,
@@ -162,12 +109,38 @@ enum ud_operand_size {
     SZ_T   = 80,
     SZ_O   = 128,
 
-    SZ_WV  = 17,
-    SZ_BV  = 18,
-    SZ_DY  = 19
+    SZ_Y   = 17,
+
+    /*
+     * complex size types, that encode sizes for operands
+     * of type MR (memory or register), for internal use
+     * only. Id space 256 and above.
+     */
+    SZ_BD  = (SZ_B << 8) | SZ_D,
+    SZ_BV  = (SZ_B << 8) | SZ_V,
+    SZ_WV  = (SZ_W << 8) | SZ_V,
+    SZ_WY  = (SZ_W << 8) | SZ_Y,
+    SZ_DY  = (SZ_D << 8) | SZ_Y,
+    SZ_WO  = (SZ_W << 8) | SZ_O,
+    SZ_DO  = (SZ_D << 8) | SZ_O,
+    SZ_QO  = (SZ_Q << 8) | SZ_O,
 
 } UD_ATTR_PACKED;
 
+
+/* resolve complex size type.
+ */
+static inline enum ud_operand_size
+Mx_mem_size(enum ud_operand_size size)
+{
+    return (size >> 8) & 0xff;
+}
+
+static inline enum ud_operand_size
+Mx_reg_size(enum ud_operand_size size)
+{
+    return size & 0xff;
+}
 
 /* A single operand of an entry in the instruction table. 
  * (internal use only)
@@ -198,55 +171,12 @@ struct ud_lookup_table_list_entry {
 };
      
 
-extern const char * ud_lookup_mnemonic( enum ud_mnemonic_code c );
 
-static inline unsigned int sse_pfx_idx( const unsigned int pfx ) 
+static inline int
+ud_opcode_field_sext(uint8_t primary_opcode)
 {
-    /* 00 = 0
-     * f2 = 1
-     * f3 = 2
-     * 66 = 3
-     */
-    return ( ( pfx & 0xf ) + 1 ) / 2;
+  return (primary_opcode & 0x02) != 0;
 }
-
-static inline unsigned int mode_idx( const unsigned int mode ) 
-{
-    /* 16 = 0
-     * 32 = 1
-     * 64 = 2
-     */
-    return ( mode / 32 );
-}
-
-static inline unsigned int modrm_mod_idx( const unsigned int mod )
-{
-    /* !11 = 0
-     *  11 = 1
-     */
-    return ( mod + 1 ) / 4;
-}
-
-static inline unsigned int vendor_idx( const unsigned int vendor )
-{
-    switch ( vendor ) {
-        case UD_VENDOR_AMD: return 0;
-        case UD_VENDOR_INTEL: return 1;
-        case UD_VENDOR_ANY: return 2; 
-        default: return 2;
-    }
-}
-
-static inline unsigned int is_group_ptr( uint16_t ptr )
-{
-    return ( 0x8000 & ptr );
-}
-
-static inline unsigned int group_idx( uint16_t ptr )
-{
-    return ( ~0x8000 & ptr );
-}
-
 
 extern struct ud_itab_entry ud_itab[];
 extern struct ud_lookup_table_list_entry ud_lookup_table_list[];

@@ -1,5 +1,5 @@
-/* udis86 - libudis86/input.h
- *
+/* udis86 - libudis86/udint.h -- definitions for internal use only
+ * 
  * Copyright (c) 2002-2009 Vivek Thampi
  * All rights reserved.
  * 
@@ -23,82 +23,48 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef UD_INPUT_H
-#define UD_INPUT_H
+#ifndef _UDINT_H_
+#define _UDINT_H_
 
-#include "types.h"
-#include "udint.h"
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif /* HAVE_CONFIG_H */
 
-uint8_t ud_inp_next(struct ud* u);
+#if HAVE_ASSERT_H
+# include <assert.h>
+# define UD_ASSERT(_x) assert(_x)
+#else
+# define UD_ASSERT(_x)
+#endif /* !HAVE_ASSERT_H */
 
-/* 
- * inp_start
- *    Should be called before each de-code operation.
- */
-static inline void
-inp_start(struct ud *u)
-{
-  u->inp_ctr = 0;
-}
+#ifdef LOGERR
+  #define UDERR(u, msg) \
+    do { \
+      (u)->error = 1; \
+      fprintf(stderr, "decode-error: %s:%d: %s", \
+              __FILE__, __LINE__, (msg)); \
+    } while (0)
+#else
+  #define UDERR(u, m) \
+    do { \
+      (u)->error = 1; \
+    } while (0)
+#endif /* !LOGERR */
 
-/* inp_reset
- *    Resets the current pointer to its position before the current
- *    instruction disassembly was started.
- */
-static inline void
-inp_reset(struct ud *u)
-{
-  u->inp_curr -= u->inp_ctr;
-  u->inp_ctr   = 0;
-}
+/* printf formatting int64 specifier */
+#ifdef FMT64
+# undef FMT64
+#endif
+#ifdef _MSC_VER
+# define FMT64 "I64"
+#else
+# if defined(__APPLE__)
+#  define FMT64 "ll"
+# elif defined(__amd64__) || defined(__x86_64__)
+#  define FMT64 "l"
+# else 
+#  define FMT64 "ll"
+# endif /* !x64 */
+#endif
 
-/* inp_sess
- *    Returns the pointer to current session.
- */
-static inline uint8_t*
-inp_sess(struct ud *u)
-{
-  return u->inp_sess;
-}
-
-/* 
- * inp_curr 
- *    Returns the current input byte.
- */
-static inline uint8_t
-inp_curr(const struct ud *u)
-{
-  return u->inp_cache[u->inp_curr];
-}
-
-/*
- * inp_back
- *    Move back a single byte in the stream.
- */
-static inline void
-inp_back(struct ud* u) 
-{
-  if (u->inp_ctr > 0) {
-    --u->inp_curr;
-    --u->inp_ctr;
-  }
-}
-
-/* 
- * inp_peek
- *    Peek next byte in input. 
- */
-static inline uint8_t
-inp_peek(struct ud* u) 
-{
-  uint8_t r = ud_inp_next(u);
-  if (!u->error) {
-      inp_back(u); /* Don't backup if there was an error */
-  }
-  return r;
-}
-
-#endif /* UD_INPUT_H */
-/*
-vim: set ts=2 sw=2 expandtab
-*/
+#endif /* _UDINT_H_ */
