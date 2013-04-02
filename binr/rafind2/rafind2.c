@@ -48,7 +48,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-Xnzhv] [-b size] [-f from] [-t to] [-[m|s|e] str] [-x hex] file ...\n", argv0);
+	printf ("Usage: %s [-Xnzhv] [-b sz] [-f/t from/to] [-[m|s|e] str] [-x hex] file ..\n", argv0);
 	if (line) return 0;
 	printf (
 	" -h         show this help\n"

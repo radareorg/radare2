@@ -24,17 +24,19 @@ static void r_asm_list(RAsm *a) {
 	}
 }
 
-static int rasm_show_help() {
-	printf ("rasm2 [-de] [-o offset] [-a arch] [-s syntax] [-f file ..] \"code\"|hex|-\n"
-		" -a [arch]    Set assemble/disassemble plugin (RASM2_ARCH)\n"
-		" -b [bits]    Set cpu register size (16, 32, 64) (RASM2_BITS)\n"
+static int rasm_show_help(int v) {
+	printf ("Usage: rasm2 [-CdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
+		"             [-f file] [-F fil:ter] [-l len] 'code'|hexpairs|-\n");
+	if (v)
+	printf (" -a [arch]    Set assemble/disassemble plugin (RASM2_ARCH)\n"
+		" -b [bits]    Set cpu register size (8, 16, 32, 64) (RASM2_BITS)\n"
 		" -C           Output in C format\n"
-		" -d           Disassemble from hexpair bytes\n"
-		" -D           Disassemble showing hexpair and opcode\n"
-		" -e           Use big endian\n"
+		" -d, -D       Disassemble from hexpair bytes (-D show hexpairs)\n"
+		" -e           Use big endian instead of little endian\n"
 		" -f [file]    Read data from file\n"
 		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
-		" -l [int]     Input/Output length\n"
+		" -h           Show this help\n"
+		" -l [len]     Input/Output length\n"
 		" -L           List supported asm plugins\n"
 		" -o [offset]  Set start address for code (default 0)\n"
 		" -s [syntax]  Select syntax (intel, att)\n"
@@ -113,9 +115,8 @@ static void print_buf(char *str) {
 }
 
 static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
-	struct r_asm_code_t *acode;
-	int ret = 0;
-	int i, j;
+	RAsmCode *acode;
+	int i, j, ret = 0;
 
 	r_asm_set_pc (a, offset);
 	if (!(acode = r_asm_massemble (a, buf)))
@@ -128,15 +129,12 @@ static int rasm_asm(char *buf, ut64 offset, ut64 len, int bits, int bin) {
 			int b = acode->len;
 			if (bits==1) {
 				int bytes = (b/8)+1;
-				for (i=0; i<bytes; i++) {
-					for (j=0; j<8 && b--; j++) {
+				for (i=0; i<bytes; i++)
+					for (j=0; j<8 && b--; j++)
 						printf ("%c", (acode->buf[i] & (1<<j))?'1':'0');
-					}
-				}
 				printf ("\n");
 			} else print_buf (acode->buf_hex);
 		}
-		if (!bin && len>0) printf ("\n");
 	}
 	r_asm_code_free (acode);
 	return ret > 0;
@@ -166,7 +164,7 @@ int main(int argc, char *argv[]) {
 	r_lib_opendir (l, r_sys_getenv ("LIBR_PLUGINS"));
 
 	if (argc<2)
-		return rasm_show_help ();
+		return rasm_show_help (0);
 
 	r_asm_use (a, R_SYS_ARCH);
 	while ((c = getopt (argc, argv, "DCeva:b:s:do:Bl:hLf:F:w")) != -1) {
@@ -216,7 +214,7 @@ int main(int argc, char *argv[]) {
 			printf ("rasm2 v"R2_VERSION"\n");
 			return 0;
 		case 'h':
-			return rasm_show_help ();
+			return rasm_show_help (1);
 		case 'w':
 			whatsop = R_TRUE;
 			break;
@@ -239,11 +237,7 @@ int main(int argc, char *argv[]) {
 		eprintf ("rasm2: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
-	if (env_bits && *env_bits) {
-		r_asm_set_bits (a, atoi (env_bits));
-	} else r_asm_set_bits (a, bits);
-	//if (!r_asm_set_bits (a, bits))
-	//	eprintf ("WARNING: cannot set asm backend to %d bits\n", bits);
+	r_asm_set_bits (a, (env_bits && *env_bits)? atoi (env_bits): bits);
 
 	if (whatsop) {
 		const char *s = r_asm_describe (a, argv[optind]);

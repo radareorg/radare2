@@ -60,11 +60,10 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 }
 
 static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int rad) {
-	ut8 *buf;
+	ut64 j, fsize, algobit = r_hash_name_to_bits (algo);
 	RHash *ctx;
-	ut64 j, fsize;
+	ut8 *buf;
 	int i;
-	ut64 algobit = r_hash_name_to_bits (algo);
 	if (algobit == R_HASH_NONE) {
 		eprintf ("rahash2: Invalid hashing algorithm specified\n");
 		return 1;
@@ -134,7 +133,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-rBLkv] [-b sz] [-a algo] [-s str] [-f from] [-t to] [file] ...\n");
+	printf ("Usage: rahash2 [-rBhLkv] [-b sz] [-a algo] [-s str] [-f from] [-t to] [file] ...\n");
 	if (line) return 0;
 	printf (
 	" -a algo     comma separated list of algorithms (default is 'sha256')\n"
@@ -186,7 +185,6 @@ int main(int argc, char **argv) {
 		case 's':
 			  algobit = r_hash_name_to_bits (algo);
 			  for (i=1; i<0x800000; i<<=1) {
-				  ut64 f, t, ofrom, oto;
 				  if (algobit & i) {
 					  int hashbit = i & algobit;
 					  ctx = r_hash_new (R_TRUE, hashbit);

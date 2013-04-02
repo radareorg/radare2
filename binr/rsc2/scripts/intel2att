@@ -1,8 +1,0 @@
-#!/bin/sh
-while : ; do
-  printf ">> "
-  read op
-  bytes=`rasm2  -a x86.olly "$op"`
-  printf "$bytes  "
-  rasm2 -a x86 -s att -d $bytes
-done

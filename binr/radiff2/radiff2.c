@@ -71,19 +71,19 @@ static void diff_graph(RCore *c, RCore *c2, const char *arg) {
 	r_core_cmdf (c, "agd %s", arg);
 }
 
-static int show_help(int line) {
-	printf ("Usage: radiff2 [-cCdrspOv] [-g sym] [file] [file]\n");
-	if (!line) printf (
+static int show_help(int v) {
+	printf ("Usage: radiff2 [-cCdrspOv] [-g sym] [-t %%] [file] [file]\n");
+	if (v) printf (
 //		"  -l        diff lines of text\n"
 		"  -c         count of changes\n"
 		"  -C         graphdiff code\n"
-		"  -O         code diffing with opcode bytes only\n"
-		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -d         use delta diffing\n"
 		"  -g [sym]   graph diff of given symbol\n"
+		"  -O         code diffing with opcode bytes only\n"
+		"  -p         use physical addressing (io.va=0)\n"
 		"  -r         output in radare commands\n"
 		"  -s         compute text distance\n"
-		"  -p         use physical addressing (io.va=0)\n"
+		"  -t [0-100] set threshold for code diff (default is 70%%)\n"
 		"  -v         show version information\n");
 	return 1;
 }
@@ -152,9 +152,7 @@ int main(int argc, char **argv) {
 			delta = 1;
 			break;
 		case 'h':
-			argc = 0;
-			mode = MODE_DIST;
-			break;
+			return show_help (1);
 		case 's':
 			mode = MODE_DIST;
 			break;
@@ -168,12 +166,12 @@ int main(int argc, char **argv) {
 			printf ("radiff2 v"R2_VERSION"\n");
 			return 0;
 		default:
-			return show_help (R_TRUE);
+			return show_help (0);
 		}
 	}
 	
 	if (argc<3 || optind+2>argc)
-		return show_help (R_FALSE);
+		return show_help (0);
 
 	file = argv[optind];
 	file2 = argv[optind+1];

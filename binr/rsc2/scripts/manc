@@ -1,9 +1,0 @@
-#!/bin/bash
-
-[[ -z $1 ]] && echo "$0 <Function>" && exit 1
-
-MANPAGE=$(man 3 $1  2>/dev/null) ||
-MANPAGE=$(man 2 $1  2>/dev/null) ||
-MANPAGE=$(man 3C $1 2>/dev/null)
-
-[[ -z "$MANPAGE" ]] && echo "Not found: $1" || (echo "$MANPAGE" | less)

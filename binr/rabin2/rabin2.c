@@ -39,8 +39,11 @@ static int va = R_FALSE;
 static ut64 at = 0LL;
 static RLib *l;
 
-static int rabin_show_help() {
-	printf ("rabin2 [options] [file]\n"
+static int rabin_show_help(int v) {
+	printf ("Usage: rabin2 [-ACdehHiIjlLMqrRsSvVxzZ] [-@ addr] [-a arch] [-b bits]\n"
+		"              [-B addr] [-c F:C:D] [-f str] [-m addr] [-n str] [-N len]\n"
+		"              [-o str] [-O str] file\n");
+	if (v) printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
 		" -A              list archs\n"
 		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
@@ -72,9 +75,9 @@ static int rabin_show_help() {
 		" -v              use vaddr in radare output\n"
 		" -V              show version information\n"
 		" -x              extract bins contained in file\n"
-		" -Z              size of binary\n"
 		" -z              strings (from data section)\n"
 		" -zz             strings (from raw bins [e bin.rawstr=1])\n"
+		" -Z              guess size of binary program\n"
 		);
 	return 1;
 }
@@ -83,7 +86,6 @@ static int rabin_extract(int all) {
 	char outfile[512], outpath[512], *path, *ptr;
 	int i = 0;
 
-	// XXX: Wrong for w32 (/)
 	if (all) {
 		for (i=0; i<bin->narch; i++) {
 			const char *arch;
@@ -100,6 +102,7 @@ static int rabin_extract(int all) {
 				bits = bin->cur.o->info->bits;
 			}
 			path = strdup (bin->cur.file);
+			// XXX: Wrong for w32 (/)
 			if ((ptr = strrchr (path, '/'))) {
 				*ptr = '\0';
 				ptr++;
@@ -292,23 +295,22 @@ static int rabin_show_version () {
 }
 
 int main(int argc, char **argv) {
+	int c, bits = 0, actions_done=0, actions = 0, action = ACTION_UNK;
 	char *homeplugindir = r_str_home (".radare/plugins");
-	char *arch = NULL, *arch_name = NULL;
-	int actions_done=0, actions = 0, action = ACTION_UNK;
-	RCoreBinFilter filter;
+	char *ptr, *arch = NULL, *arch_name = NULL;
 	const char *op = NULL;
-	int c, bits = 0;
+	RCoreBinFilter filter;
 	RCore core;
 
 	r_core_init (&core);
-	bin = core.bin; //r_bin_new ();
+	bin = core.bin;
 	l = r_lib_new ("radare_plugin");
 	r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 					   &__lib_bin_cb, &__lib_bin_dt, NULL);
 	r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
 					   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 
-	 /* load plugins everywhere */
+	/* load plugins everywhere */
 	r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
 	r_lib_opendir (l, homeplugindir);
 	r_lib_opendir (l, LIBDIR"/radare2/");
@@ -368,7 +370,6 @@ int main(int argc, char **argv) {
 				eprintf ("Missing filename\n");
 				return 1;
 			}
-			//	return rabin_do_operation (op);
 			break;
 		case 'o': output = optarg; break;
 		case 'r': rad = R_TRUE; break;
@@ -379,20 +380,18 @@ int main(int argc, char **argv) {
 		case 'n': name = optarg; break;
 		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
 		case 'V': return rabin_show_version();
-		case 'h':
-		default:
-			action |= ACTION_HELP;
+		case 'h': return rabin_show_help (1);
+		default: action |= ACTION_HELP;
 		}
 	}
 
 	file = argv[optind];
 	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL) {
 		if (va) return rabin_show_version ();
-		return rabin_show_help ();
+		return rabin_show_help (0);
 	}
 
 	if (arch) {
-		char *ptr;
 		ptr = strchr (arch, '_');
 		if (ptr) {
 			*ptr = '\0';
@@ -474,10 +473,9 @@ int main(int argc, char **argv) {
 	filter.offset = at;
 	filter.name = name;
 
-//	ut64 offset = r_bin_get_offset (bin);
 	r_cons_new ()->is_interactive = R_FALSE;
 
-#define isradjson rad==R_CORE_BIN_JSON&&actions>1
+#define isradjson (rad==R_CORE_BIN_JSON&&actions>1)
 #define run_action(n,x,y) {\
 	if (action&x) {\
 		if (isradjson) r_cons_printf ("\"%s\":",n);\
@@ -486,7 +484,6 @@ int main(int argc, char **argv) {
 		if (isradjson) r_cons_printf (actions==actions_done? "":",");\
 	}\
 }
-
 	if (isradjson) r_cons_printf ("{");
 	run_action ("sections", ACTION_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
 	run_action ("entries", ACTION_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
