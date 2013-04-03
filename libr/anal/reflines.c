@@ -3,6 +3,8 @@
 #include <r_anal.h>
 #include <r_util.h>
 
+#define USE_UTF8 0
+
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall)
 {
@@ -102,13 +104,26 @@ R_API char* r_anal_reflines_str(RAnal *anal, RAnalRefline *list, ut64 addr, int 
 		if (wide)
 			str = r_str_concatch (str, (ch=='='||ch=='-')?ch:' ');
 	}
+	//str = r_str_concat (str, (dir==1)?"-> ":(dir==2)?"=< ":"   ");
 	str = r_str_concat (str, (dir==1)?"-> ":(dir==2)?"=< ":"   ");
 	if (anal->lineswidth>0) {
-		l = strlen (str);
+		l = r_str_len_utf8 (str);
 		if (l>anal->lineswidth)
 			r_str_cpy (str, str+l-anal->lineswidth);
 	}
-	for (l = anal->lineswidth-strlen (str);l-->0;)
+#if USE_UTF8
+	/* HACK */
+	str = r_str_replace (str, "=", "-", 1);
+	str = r_str_replace (str, "<", "\xe2\x8a\x82", 1);
+	str = r_str_replace (str, ">", "\xe2\x89\xab", 1);
+	str = r_str_replace (str, "|", "\xe2\x94\x82", 1);
+	str = r_str_replace (str, "=", "\xe2\x94\x80", 1);
+	str = r_str_replace (str, "-", "\xe2\x94\x80", 1);
+	str = r_str_replace (str, ".", "\xe2\x94\x8c", 1);
+	str = r_str_replace (str, ",", "\xe2\x94\x8c", 1);
+	str = r_str_replace (str, "`", "\xe2\x94\x94", 1);
+#endif
+	for (l = anal->lineswidth-r_str_len_utf8 (str);l-->0;)
 		str = r_str_prefix (str, " ");
 	return str;
 }

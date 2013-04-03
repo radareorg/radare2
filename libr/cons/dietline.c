@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2007-2013 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -12,6 +12,8 @@
 #include <termios.h>
 #include <signal.h>
 #endif
+
+#define USE_UTF8 1
 
 static char *r_line_nullstr = "";
 
@@ -54,6 +56,24 @@ R_API int r_line_dietline_init() {
 		return R_FALSE;
 	I.echo = R_TRUE;
 	return R_TRUE;
+}
+
+/* read utf8 char into 's', return the length in bytes */
+static int r_line_readchar_utf8(unsigned char *s) {
+	// TODO: add support for w32
+	int ret, len;
+	for (len = 0; ; len++) {
+		ret = read (0, s+len, 1);
+		if (ret == 1) {
+			if (is_valid_char (s[len]))
+				return 1;
+			if ((s[len] & 0xc0) != 0x80) continue;
+			if (len>0) break;
+		} else return 0;
+	}
+	len++;
+	s[len] = 0;
+	return len;
 }
 
 static int r_line_readchar() {
@@ -306,7 +326,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
 	signed char buf[10];
-	int ch, i; /* grep completion */
+	int utflen, ch, i; /* grep completion */
 
 	I.buffer.index = I.buffer.length = 0;
 	I.buffer.data[0] = '\0';
@@ -347,12 +367,15 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.data[0] = 0;
 			I.buffer.length = 0;
 		}
-
+#if USE_UTF8
+		utflen = r_line_readchar_utf8 ((unsigned char*)buf);
+		if (utflen <1) return NULL;
+		buf[utflen] = 0;
+#else
 		ch = r_line_readchar ();
-		if (ch == -1)
-			return NULL; //I.buffer.data;
+		if (ch == -1) return NULL;
 		buf[0] = ch;
-		
+#endif
 		if (I.echo)
 			r_cons_clear_line();
 		columns = r_cons_get_size (NULL)-2;
@@ -407,7 +430,19 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 19: // ^S -- backspace
 			if (gcomp) gcomp--;
-			else I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+			else {
+#if USE_UTF8
+				if (I.buffer.index>0) {
+					char *s;
+					do {
+						I.buffer.index--;
+						s = I.buffer.data+I.buffer.index;
+					} while ((*s & 0xc0) == 0x80);
+				}
+#else
+				I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+#endif
+			}
 			break;
 		case 21: // ^U - cut
 			free (I.clipboard);
@@ -468,9 +503,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					break;
 				/* arrows */
 				case 0x41:
-					if (gcomp) {
-						gcomp_idx++;
-					} else r_line_hist_up ();
+					if (gcomp) gcomp_idx++;
+					else r_line_hist_up ();
 					break;
 				case 0x42:
 					if (gcomp) {
@@ -478,12 +512,37 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							gcomp_idx--;
 					} else r_line_hist_down ();
 					break;
-				case 0x43: // end
+				case 0x43: // C --> right arrow
+#if USE_UTF8
+					{
+						char *s = I.buffer.data+I.buffer.index+1;
+						utflen = 1;
+						while ((*s & 0xc0) == 0x80) {
+							utflen++;
+							s++;
+						}
+						I.buffer.index = I.buffer.index<I.buffer.length?
+							I.buffer.index+utflen: I.buffer.length;
+					}
+#else
 					I.buffer.index = I.buffer.index<I.buffer.length?
 						I.buffer.index+1: I.buffer.length;
+#endif
 					break;
-				case 0x44: // begin
+				case 0x44: // D --> left arrow
+#if USE_UTF8
+					{
+						char *s = I.buffer.data+I.buffer.index-1;
+						utflen = 1;
+						while (s>I.buffer.data && (*s & 0xc0) == 0x80) {
+							utflen++;
+							s--;
+						}
+					}
+					I.buffer.index = I.buffer.index? I.buffer.index-utflen: 0;
+#else
 					I.buffer.index = I.buffer.index? I.buffer.index-1: 0;
+#endif
 					break;
 				case 0x31: // control + arrow
 					r_cons_readchar ();
@@ -541,13 +600,39 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 127:
 			if (I.buffer.index < I.buffer.length) {
 				if (I.buffer.index>0) {
+					int len = 0;
+					// TODO: WIP
+#if USE_UTF8
+					char *s;
+					do {
+						I.buffer.index--;
+						s = I.buffer.data+I.buffer.index;
+						len++;
+					} while ((*s &0xc0)==0x80);
+#else
+					len = 1;
 					I.buffer.index--;
+#endif
 					memmove (I.buffer.data+I.buffer.index,
-						I.buffer.data+I.buffer.index+1,
+						I.buffer.data+I.buffer.index+len,
 						strlen (I.buffer.data+I.buffer.index));
+					I.buffer.length -= len;
+					I.buffer.data[I.buffer.length] = 0;
 				}
 			} else {
+// OK
+#if USE_UTF8
+				char *s;
+				// utf8 backward size
+				do {
+					I.buffer.length--;
+					s = I.buffer.data+I.buffer.length;
+					i++;
+				} while ((*s &0xc0)==0x80);
+				I.buffer.index = I.buffer.length;
+#else
 				I.buffer.index = --I.buffer.length;
+#endif
 				if (I.buffer.length<0) I.buffer.length=0;
 				I.buffer.data[I.buffer.length]='\0';
 			}
@@ -580,19 +665,39 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		default:
 			if (gcomp)
 				gcomp++;
-			/* XXX use ^A & ^E */
 			if (I.buffer.index<I.buffer.length) {
-				for(i = ++I.buffer.length;i>I.buffer.index;i--)
-					I.buffer.data[i] = I.buffer.data[i-1];
+#if USE_UTF8
+				I.buffer.length += utflen;
+				for (i = I.buffer.length; i>I.buffer.index; i--)
+					I.buffer.data[i] = I.buffer.data[i-utflen];
+				memcpy (I.buffer.data+I.buffer.index, buf, utflen);
+#else
+				for (i = ++I.buffer.length;i>I.buffer.index;i--)
+					I.buffer.data[i] = I.buffer.data[i-];
 				I.buffer.data[I.buffer.index] = buf[0];
+#endif
 			} else {
+#if USE_UTF8
+				memcpy (I.buffer.data+I.buffer.length, buf, utflen);
+				I.buffer.length+=utflen;
+#if 0
+				if (I.buffer.length>(R_LINE_BUFSIZE-1))
+					I.buffer.length--;
+#endif
+				I.buffer.data[I.buffer.length]='\0';
+#else
 				I.buffer.data[I.buffer.length]=buf[0];
 				I.buffer.length++;
 				if (I.buffer.length>(R_LINE_BUFSIZE-1))
 					I.buffer.length--;
 				I.buffer.data[I.buffer.length]='\0';
+#endif
 			}
+#if USE_UTF8
+			I.buffer.index += utflen;
+#else
 			I.buffer.index++;
+#endif
 			break;
 		}
 		if (I.echo) {

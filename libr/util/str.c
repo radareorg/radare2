@@ -707,10 +707,9 @@ R_API int r_str_ansi_len(const char *str) {
 		if (ch == 0x1b) {
 			if (ch2 == '\\') {
 				i++;
-			} else
-			if (ch2 == ']') {
+			} else if (ch2 == ']') {
 				if (!strncmp (str+2+5, "rgb:", 4))
-					i += 13 +5;
+					i += 18;
 			} else if (ch2 == '[') {
 				for (++i;
 				str[i]&&str[i]!='J'&&
@@ -736,7 +735,8 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 		if (str[i]==0x1b && str[i+1]=='[') {
 			for (++i;str[i]&&str[i]!='J'&&str[i]!='m'&&str[i]!='H';i++);
 		} else {
-			len++;
+			if ((str[i] & 0xc0) != 0x80) len++;
+			//len++;
 			li = i;
 		}
 	}
@@ -873,32 +873,36 @@ R_API void r_str_argv_free(char **argv) {
 }
 
 R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
-	int _b = 0;
+	int idx, _b = 0;
 	ut8 *b = (ut8*)&_b;
-	const char *p, *lp = NULL;
+	const char *isbut, *p, *lp = NULL;
 	const int bsz = sizeof (_b);
 	if (strlen (but) >= bsz) {
 		eprintf ("r_str_lastbut: but string too long\n");
 		return NULL;
 	}
 	for (p=s; *p; p++) {
-		char *isbut = but? strchr (but, *p): NULL;
-		//isbut = NULL;
+		isbut = but? strchr (but, *p): NULL;
 		if (isbut) {
-			int idx = (int)(size_t)(isbut-but);
-			if (R_BIT_CHK (b, idx)) {
-				_b = R_BIT_UNSET (b, idx);
-			} else {
-				_b = R_BIT_SET (b, idx);
-			}
+			idx = (int)(size_t)(isbut-but);
+			_b = R_BIT_CHK (b, idx)?
+				R_BIT_UNSET (b, idx):
+				R_BIT_SET (b, idx);
 			continue;
 		}
-		if (*p == ch) {
-			if (!_b)
-				lp = p;
-		}
+		if (*p == ch && !_b) lp = p;
 	}
 	return lp;
+}
+
+// Must be merged inside strlen
+R_API int r_str_len_utf8 (const char *s) {
+	int i = 0, j = 0;
+	while (s[i]) {
+		if ((s[i] & 0xc0) != 0x80) j++;
+		i++;
+	}
+	return j;
 }
 
 // TODO: if unix.. move to .h? static inline

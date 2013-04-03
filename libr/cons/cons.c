@@ -318,7 +318,6 @@ R_API void r_cons_visual_write (char *buffer) {
 			len = (endptr-ptr);
 			if (lines>0) {
 				r_cons_write (ptr, len);
-				//r_cons_write (newline, strlen (newline));
 			}
 		} else {
 			if (lines>0) {
