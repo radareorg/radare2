@@ -176,8 +176,8 @@ struct ud
   uint8_t   inp_curr;
   uint8_t   inp_fill;
   uint8_t   inp_ctr;
-  uint8_t*  inp_buff;
-  uint8_t*  inp_buff_end;
+  const uint8_t*  inp_buff;
+  const uint8_t*  inp_buff_end;
   uint8_t   inp_end;
   uint8_t   inp_cache[256];
   uint8_t   inp_sess[64];

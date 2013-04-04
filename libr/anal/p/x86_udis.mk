@@ -12,7 +12,7 @@ SHARED_OBJ+=${SHARED_X86_UDIS86}
 TARGET_X86_UDIS86=anal_x86_udis86.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_X86_UDIS86}
-CFLAGS+=-I../asm/arch/x86/udis86 -I../../asm/arch/x86/udis86
+CFLAGS+=-I../asm/arch/x86/udis86 -I../../asm/arch/x86/udis86 -DHAVE_STRING_H=1
 
 ${TARGET_X86_UDIS86}: ${OBJ_X86_UDIS86}
 	${CC} ${CFLAGS} $(call libname,anal_x86) -o anal_x86_udis.${EXT_SO} ${OBJ_X86_UDIS86}

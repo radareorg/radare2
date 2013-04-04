@@ -4,6 +4,7 @@ include $(TOP)/libr/config.mk
 PYTHON=python2
 SRC=$(shell ls *.c)
 OUT=$(subst .c,.o,$(SRC))
+CFLAGS+=-DHAVE_STRING_H=1
 
 all: $(OUT)
 

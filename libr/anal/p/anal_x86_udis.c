@@ -35,8 +35,12 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	oplen = op->length = ud_insn_len (&u);
 	switch (u.mnemonic) {
 	case UD_Ijmp:
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = addr + oplen + getval (&u.operand[0]);
+		if (u.operand[0].type == UD_OP_REG) {
+			op->type = R_ANAL_OP_TYPE_UJMP;
+		} else {
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->jump = addr + oplen + getval (&u.operand[0]);
+		}
 		break;
 	case UD_Ijz:
 	case UD_Ijnz:
