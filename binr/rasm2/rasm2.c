@@ -7,6 +7,7 @@
 #include <r_asm.h>
 #include <r_util.h>
 #include <r_lib.h>
+#include "../blob/version.c"
 
 static struct r_lib_t *l;
 static struct r_asm_t *a;
@@ -211,8 +212,7 @@ int main(int argc, char *argv[]) {
 			r_asm_set_big_endian (a, R_TRUE);
 			break;
 		case 'v':
-			printf ("rasm2 v"R2_VERSION"\n");
-			return 0;
+			return blob_version ("rasm2");
 		case 'h':
 			return rasm_show_help (1);
 		case 'w':

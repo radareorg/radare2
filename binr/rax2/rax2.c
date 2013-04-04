@@ -2,6 +2,7 @@
 
 #include <r_util.h>
 #include <r_print.h>
+#include "../blob/version.c"
 
 static ut64 flags = 0;
 
@@ -87,7 +88,7 @@ static int rax (char *str, int len, int last) {
 			case 'd': flags ^=128; break;
 			case 'k': flags ^=256; break;
 			case 'n': flags ^=512; break;
-			case 'v': printf ("rax2 v"R2_VERSION"\n"); break;
+			case 'v': blob_version ("rax2"); break;
 			case '\0': return use_stdin ();
 			default:
 				if (str[1]>='0' && str[1]<='9')
@@ -193,11 +194,10 @@ static int rax (char *str, int len, int last) {
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
-		format_output (out_mode, str); //r_num_math (NULL, str));
+		format_output (out_mode, str);
 		str = p+1;
 	}
-	if (*str)
-		format_output (out_mode, str); //r_num_math (NULL, str));
+	if (*str) format_output (out_mode, str);
 	return R_TRUE;
 }
 

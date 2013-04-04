@@ -2,6 +2,8 @@ BINR_PROGRAM=1
 include ../../libr/config.mk
 
 CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
+CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\" -DR2_GITTIP=\"$(GIT_TIP)\"
+
 
 ifeq ($(USE_RPATH),1)
 LDFLAGS+=-Wl,-R${PREFIX}/lib

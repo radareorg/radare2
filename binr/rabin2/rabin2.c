@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.c>
-
 #include <r_core.h>
+#include "../blob/version.c"
 
 #define ACTION_UNK       0x00000
 #define ACTION_ENTRIES   0x00001
@@ -289,11 +289,6 @@ static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 	return R_TRUE;
 }
 
-static int rabin_show_version () {
-	printf ("rabin2 v"R2_VERSION"\n");
-	return 0;
-}
-
 int main(int argc, char **argv) {
 	int c, bits = 0, actions_done=0, actions = 0, action = ACTION_UNK;
 	char *homeplugindir = r_str_home (".radare/plugins");
@@ -379,7 +374,7 @@ int main(int argc, char **argv) {
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
 		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
-		case 'V': return rabin_show_version();
+		case 'V': return blob_version ("rabin2");
 		case 'h': return rabin_show_help (1);
 		default: action |= ACTION_HELP;
 		}
@@ -387,7 +382,7 @@ int main(int argc, char **argv) {
 
 	file = argv[optind];
 	if (action & ACTION_HELP || action == ACTION_UNK || file == NULL) {
-		if (va) return rabin_show_version ();
+		if (va) return blob_version ("rabin2");
 		return rabin_show_help (0);
 	}
 

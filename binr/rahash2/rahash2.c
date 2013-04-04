@@ -7,6 +7,7 @@
 #include <r_hash.h>
 #include <r_util.h>
 #include <r_print.h>
+#include "../blob/version.c"
 
 static ut64 from = 0LL;
 static ut64 to = 0LL;
@@ -180,7 +181,7 @@ int main(int argc, char **argv) {
 		case 'b': bsize = (int)r_num_math (NULL, optarg); break;
 		case 'f': from = r_num_math (NULL, optarg); break;
 		case 't': to = r_num_math (NULL, optarg); break;
-		case 'v': printf ("rahash2 v"R2_VERSION"\n"); return 0;
+		case 'v': return blob_version ("rahash2");
 		case 'h': return do_help (0);
 		case 's':
 			  algobit = r_hash_name_to_bits (algo);

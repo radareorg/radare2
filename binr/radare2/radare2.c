@@ -7,6 +7,7 @@
 #include <r_io.h>
 #include <stdio.h>
 #include <getopt.c>
+#include "../blob/version.c"
 
 #if USE_THREADS
 #include <r_th.h>
@@ -58,13 +59,6 @@ static int main_help(int line) {
 	return 0;
 }
 
-static int main_version() {
-	printf ("radare2 "R2_VERSION" @ "R_SYS_OS"-"R_SYS_ENDIAN"-"
-		R_SYS_ARCH"-%d build "R2_BIRTH"\n", R_SYS_BITS&8?64:32);
-	if (*R2_GITTIP)
-		printf ("commit: %s\n", R2_GITTIP);
-	return 0;
-}
 
 static void list_io_plugins(RIO *io) {
 	char str[4];
@@ -186,7 +180,7 @@ int main(int argc, char **argv) {
 		case 'f': fullfile = 1; break;
 		case 'n': run_anal = 0; break;
 		case 'N': run_rc = 0; break;
-		case 'v': return main_version ();
+		case 'v': return blob_version ("radare2");
 		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		case 'a': asmarch = optarg; break;
 		case 'b': asmbits = optarg; break;
