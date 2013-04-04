@@ -287,20 +287,22 @@ static int getoffset (RBinArch *arch, int type, int idx) {
 }
 
 static RList* sections(RBinArch *arch) {
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
 	struct r_bin_java_sym_t *s = NULL;
-	RList *ml;
-	RListIter *iter;
+	RBinSection *ptr = NULL;
 	int ns, fsymsz = 0;
-	int fsym = 0;
+	RList *ret = NULL;
+	RListIter *iter;
 	RBinSymbol *m;
+	int fsym = 0;
+	RList *ml;
 
 	ml = methods (arch);
 	r_list_foreach (ml, iter, m) {
 		if (fsym == 0 || m->offset<fsym)
 			fsym = m->offset;
 		ns = m->offset + m->size;
+		if (ns > arch->buf->length)
+			continue;
 		if (ns>fsymsz)
 			fsymsz = ns;
 	}
@@ -329,12 +331,12 @@ static RList* sections(RBinArch *arch) {
 		if (arch->buf->length > ptr->rva) {
 			ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
 		} else {
-			ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
+			ptr->size = ptr->vsize = ptr->rva - arch->buf->length ;
 			// hacky workaround
 			eprintf ("Hack\n");
 			//ptr->size = ptr->vsize = 1024;
 		}
-		ptr->srwx = 4|2;
+		ptr->srwx = 4; //|2;
 		r_list_append (ret, ptr);
 	}
 	free (s);

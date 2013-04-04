@@ -979,5 +979,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	r_cons_clear00 ();
 	r_cons_set_cup (R_FALSE);
 	core->vmode = R_FALSE;
+	core->cons->event_resize = NULL;
+	core->cons->event_data = NULL;
 	return 0;
 }

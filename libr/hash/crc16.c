@@ -43,8 +43,7 @@ static ut16 const crc16_table[256] = {
 	0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
 };
 
-static inline ut16 crc16_byte(ut16 crc, const ut8 data)
-{
+static inline ut16 crc16_byte(ut16 crc, const ut8 data) {
 	return (crc >> 8) ^ crc16_table[(crc ^ data) & 0xff];
 }
 
@@ -56,8 +55,7 @@ static inline ut16 crc16_byte(ut16 crc, const ut8 data)
  *
  * Returns the updated CRC value.
  */
-R_API ut16 r_hash_crc16(ut16 crc, ut8 const *buffer, ut64 len)
-{
+R_API ut16 r_hash_crc16(ut16 crc, ut8 const *buffer, ut64 len) {
 	while (len--)
 		crc = crc16_byte(crc, *buffer++);
 	return crc;

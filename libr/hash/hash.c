@@ -72,6 +72,7 @@ R_API const char *r_hash_name(ut64 bit) {
 	if (bit & R_HASH_MOD255) return "mod255";
 	if (bit & R_HASH_PCPRINT) return "pcprint";
 	if (bit & R_HASH_XXHASH) return "xxhash";
+	if (bit & R_HASH_ADLER32) return "adler32";
 	return "";
 }
 
@@ -85,6 +86,7 @@ R_API int r_hash_size(int bit) {
 	if (bit & R_HASH_CRC16) return R_HASH_SIZE_CRC16;
 	if (bit & R_HASH_CRC32) return R_HASH_SIZE_CRC32;
 	if (bit & R_HASH_XXHASH) return R_HASH_SIZE_XXHASH;
+	if (bit & R_HASH_ADLER32) return R_HASH_SIZE_ADLER32;
 	if (bit & R_HASH_PARITY) return 1;
 	if (bit & R_HASH_ENTROPY) return 4; // special case
 	if (bit & R_HASH_HAMDIST) return 1;
@@ -106,6 +108,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	if (strstr (name, "sha512")) bits |= R_HASH_SHA512;
 	if (strstr (name, "crc16")) bits |= R_HASH_CRC16;
 	if (strstr (name, "crc32")) bits |= R_HASH_CRC32;
+	if (strstr (name, "adler32")) bits |= R_HASH_ADLER32;
 	if (strstr (name, "xxhash")) bits |= R_HASH_XXHASH;
 	if (strstr (name, "xorpair")) bits |= R_HASH_XORPAIR;
 	else if (strstr (name, "xor")) bits |= R_HASH_XOR;
@@ -114,5 +117,6 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	if (strstr (name, "hamdist")) bits |= R_HASH_HAMDIST;
 	if (strstr (name, "pcprint")) bits |= R_HASH_PCPRINT;
 	if (strstr (name, "mod255")) bits |= R_HASH_MOD255;
+	if (strstr (name, "hashxx")) bits |= R_HASH_XXHASH;
 	return bits;
 }

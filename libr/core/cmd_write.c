@@ -410,6 +410,21 @@ static int cmd_write(void *data, const char *input) {
 				break;
 		}
 		break;
+	case 's':
+		{
+			ut8 ulen;
+			len = r_str_escape (str+1);
+			if (len>255) {
+				eprintf ("Too large\n");
+			} else {
+				ulen = (ut8)len;
+				r_core_write_at (core, core->offset, &ulen, 1);
+				r_core_write_at (core, core->offset+1, (const ut8*)str+1, len);
+				WSEEK (core, len);
+				r_core_block_read (core, 0);
+			}
+		}
+		break;
 	default:
 	case '?':
 		if (core->oobi) {
@@ -432,6 +447,7 @@ static int cmd_write(void *data, const char *input) {
 			" wv eip+34    write 32-64 bit value\n"
 			" wo? hex      write in block with operation. 'wo?' fmi\n"
 			" wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
+			" ws pstring   write 1 byte for length and then the string\n"
 			" wf file      write contents of file at current offset\n"
 			" wF file      write contents of hexpairs file here\n"
 			" wt file [sz] write to file (from current seek, blocksize or sz bytes)\n"
