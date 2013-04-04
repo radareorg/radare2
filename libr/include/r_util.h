@@ -253,6 +253,7 @@ R_API int r_buf_append_ut64(RBuffer *b, ut64 n);
 R_API int r_buf_append_ut16(RBuffer *b, ut16 n);
 R_API int r_buf_prepend_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API char *r_buf_to_string(RBuffer *b);
+R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *len);
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len);
 R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);

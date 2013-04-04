@@ -165,7 +165,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		switch (fmt[j]) {
 		case '0'...'9':
 			if (m == 1)
-				m = r_num_get(NULL, &fmt[j]);
+				m = r_num_get (NULL, &fmt[j]);
 			continue;
 		case 's': tsize = 2; endian = 1; break;
 		case 'S': tsize = 2; endian = 0; break;
@@ -177,15 +177,28 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		default: return -1;
 		}
 		for (k = 0; k < m; k++) {
-			if (write) r_mem_copyendian((ut8*)&buf[addr+len+k*tsize],
-					(ut8*)&b->buf[len+k*tsize], tsize, endian);
-			else r_mem_copyendian((ut8*)&buf[len+k*tsize],
-					(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
+			if (write) r_mem_copyendian(
+				(ut8*)&buf[addr+len+k*tsize],
+				(ut8*)&b->buf[len+k*tsize], tsize, endian);
+			else r_mem_copyendian(
+				(ut8*)&buf[len+k*tsize],
+				(ut8*)&b->buf[addr+len+k*tsize], tsize, endian);
 		}
 		len += m*tsize; m = 1;
 	}
 	b->cur = addr + len;
 	return len;
+}
+
+R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
+	if (addr == R_BUF_CUR)
+		addr = b->cur;
+	else addr -= b->base;
+	if (addr < 0 || addr > b->length)
+		return NULL;
+	if (left)
+		*left = b->length - addr;
+	return b->buf+addr;
 }
 
 R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {

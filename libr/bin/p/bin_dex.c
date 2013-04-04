@@ -7,7 +7,7 @@
 #include "dex/dex.h"
 
 static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = r_bin_dex_new_buf(arch->buf)))
+	if(!(arch->bin_obj = r_bin_dex_new_buf (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
@@ -19,15 +19,20 @@ static ut64 baddr(RBinArch *arch) {
 static int check(RBinArch *arch) {
 	if (!arch->buf || !arch->buf->buf)
 		return R_FALSE;
-	if (!memcmp (arch->buf->buf, "dex\n035\0", 8)) // Non-extended opcode dex file
+	// Non-extended opcode dex file
+	if (!memcmp (arch->buf->buf, "dex\n035\0", 8))
 	        return R_TRUE;
-	else if (!memcmp (arch->buf->buf, "dex\n036\0", 8)) // Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
+	// Extended (jumnbo) opcode dex file, ICS+ only (sdk level 14+)
+	if (!memcmp (arch->buf->buf, "dex\n036\0", 8))
 	        return R_TRUE;
-	else if (!memcmp (arch->buf->buf, "dex\n009\0", 8)) // M3 (Nov-Dec 07)
+	// M3 (Nov-Dec 07)
+	if (!memcmp (arch->buf->buf, "dex\n009\0", 8))
 	        return R_TRUE;
-        else if (!memcmp (arch->buf->buf, "dex\n009\0", 8)) // M5 (Feb-Mar 08)
+	// M5 (Feb-Mar 08)
+        if (!memcmp (arch->buf->buf, "dex\n009\0", 8))
 	        return R_TRUE;
-	else if (!memcmp (arch->buf->buf, "dex\n", 4)) // Default fall through, should still be a dex file
+	// Default fall through, should still be a dex file
+	if (!memcmp (arch->buf->buf, "dex\n", 4))
                 return R_TRUE;
 	return R_FALSE;
 }
@@ -85,11 +90,12 @@ static RList* strings (RBinArch *arch) {
 }
 
 static ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *size) {
-	ut32 mapsz, off = 0L;
 	ut8 *buf, *map_end, *map;
+	ut32 mapsz, off = 0L;
+	int left;
 	*size = 0;
-	map = buf = malloc (bin->header.data_size);
-	r_buf_read_at (bin->b, bin->header.data_offset, buf, bin->header.data_size);
+	map = buf = r_buf_get_at (bin->b, bin->header.data_offset, &left);
+	if (!map) return 0;
 	for (map_end = map+bin->header.data_size; map<map_end;) {
 		int num = map[0] + (map[1]<<8);
 		int ninsn = map[12] + (map[13]<<8);
@@ -102,40 +108,43 @@ static ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *size) {
 		}
 		map += mapsz;
 	}
-	free (buf);
 	return off;
 }
 
 static RList* methods (RBinArch *arch) {
-	RList *ret = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
-	int i, j, len;
-	char *name, buf[6];
+	int i, j, len, left;
+	char *name, *buf;
+	RList *ret = NULL;
 	RBinSymbol *ptr;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
+	eprintf ("Loading %d methods... ", bin->header.method_size);
 	for (i = 0; i<bin->header.method_size; i++) {
 		int idx = bin->methods[i].name_id;
 		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
 		if (idx >= bin->header.strings_size) // workaround
 			continue;
-		r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 6);
+		buf = r_buf_get_at (bin->b, bin->strings[idx], &left);
 		len = dex_read_uleb128 (buf);
 		if (len<1) continue;
-		name = malloc (len+1);
+		name = r_buf_get_at (bin->b, 
+				bin->strings[bin->methods[i].name_id]+
+				dex_uleb128_len (buf), &left);
 		if (!name) {
-			eprintf ("error malloc string length %d\n", len);
+			eprintf ("string index out of range\n");
 			break;
 		}
-		r_buf_read_at (bin->b, bin->strings[bin->methods[i].name_id]+
-				dex_uleb128_len (buf), (ut8*)name, len);
-		name[len] = 0;
-		snprintf (ptr->name, sizeof (ptr->name), "method.%d.%s", 
-				bin->methods[i].class_id, name);
-		free (name);
+		if (len > left) {
+			eprintf ("string length reaches out of file\n");
+			len = left; // workaround
+			//break;
+		}
+		snprintf (ptr->name, sizeof (ptr->name), "method.%d.%.*s", 
+				bin->methods[i].class_id, len, name);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		ptr->ordinal = i+1;
@@ -144,26 +153,37 @@ static RList* methods (RBinArch *arch) {
 		strncpy (ptr->type, ptr->rva? "FUNC":"IMPORT", R_BIN_SIZEOF_STRINGS);
 		r_list_append (ret, ptr);
 	}
+	eprintf ("Done\n");
 	j = i;
+	eprintf ("Loading %d fields... ", bin->header.fields_size);
 	for (i = 0; i<bin->header.fields_size; i++) {
 		int idx = bin->fields[i].name_id;
 		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
 		if (idx >= bin->header.strings_size) // workaround
 			continue;
-		r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 6);
+		buf = r_buf_get_at (bin->b, bin->strings[idx], &left);
+		//r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 6);
 
+// TODO: use r_buf_get_at here
 		len = dex_read_uleb128 (buf);
-		name = malloc (len);
+		name = r_buf_get_at (bin->b, 
+				bin->strings[bin->methods[i].name_id]+
+				dex_uleb128_len (buf), &left);
 		if (!name) {
-			eprintf ("error malloc string length %d\n", len);
+			eprintf ("string index out of range\n");
 			break;
 		}
-		r_buf_read_at (bin->b, bin->strings[bin->fields[i].name_id]+
-				dex_uleb128_len (buf), (ut8*)name, len);
-		snprintf (ptr->name, sizeof (ptr->name), "field.%d.%s", 
-			bin->fields[i].class_id, name);
-		free (name);
+		if (len > left) {
+			eprintf ("string length reaches out of file\n");
+			len = left; // workaround
+			//break;
+		}
+		//r_buf_read_at (bin->b, bin->strings[bin->fields[i].name_id]+
+		//		dex_uleb128_len (buf), (ut8*)name, len);
+		snprintf (ptr->name, sizeof (ptr->name), "field.%d.%.*s", 
+			bin->fields[i].class_id, len, name);
+		//free (name);
 
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
@@ -174,6 +194,7 @@ static RList* methods (RBinArch *arch) {
 		ptr->ordinal = j+i+1;
 		r_list_append (ret, ptr);
 	}
+	eprintf ("Done\n");
 	return ret;
 }
 
@@ -182,23 +203,25 @@ static void __r_bin_class_free(RBinClass *p) {
 }
 
 static RList* classes (RBinArch *arch) {
-	RBinClass *class;
-	RList *ret = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
 	struct dex_class_t entry;
-	int i;
+	RList *ret = NULL;
+	RBinClass *class;
+	int i, len;
+	char *name;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = (RListFree)__r_bin_class_free;
 	for (i = 0; i < bin->header.class_size; i++) {
+		// ETOOSLOW
 		r_buf_read_at (bin->b, (ut64) bin->header.class_offset
 				+ (sizeof (struct dex_class_t)*i), (ut8*)&entry,
 				sizeof (struct dex_class_t));
 		// TODO: implement sections.. each section specifies a class boundary
 {
-		int len = 100;
-		char *name = malloc (len);
+		len = 100;
+		name = malloc (len);
 		if (!name) {
 			eprintf ("error malloc string length %d\n", len);
 			break;
@@ -303,7 +326,14 @@ static RList* sections(RBinArch *arch) {
 	if ((ptr = R_NEW0 (RBinSection))) {
 		strcpy (ptr->name, "data");
 		ptr->offset = ptr->rva = fsymsz+fsym;
-		ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
+		if (arch->buf->length > ptr->rva) {
+			ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
+		} else {
+			ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
+			// hacky workaround
+			eprintf ("Hack\n");
+			//ptr->size = ptr->vsize = 1024;
+		}
 		ptr->srwx = 4|2;
 		r_list_append (ret, ptr);
 	}

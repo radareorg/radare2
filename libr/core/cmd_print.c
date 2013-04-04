@@ -519,7 +519,7 @@ static int cmd_print(void *data, const char *input) {
 			// TODO: add support for 2-4 byte length pascal strings
 			if (mylen < core->blocksize) {
 				r_print_string (core->print, core->offset,
-					core->block, mylen, R_PRINT_STRING_ZEROEND);
+					core->block+1, mylen, R_PRINT_STRING_ZEROEND);
 				core->num->value = mylen;
 			} else core->num->value = 0; // error
 			}
