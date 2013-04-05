@@ -67,7 +67,7 @@ static void showusage(int o) {
 }
 
 static void showversion(void) {
-	printf ("sdb "VERSION"\n");
+	printf ("sdb "SDB_VERSION"\n");
 	exit (0);
 }
 

@@ -77,6 +77,7 @@ struct r_bin_dex_obj_t {
 	ut32 *strings;
 	struct dex_method_t *methods;
 	struct dex_field_t *fields;
+	RList *methods_list;
 };
 
 struct r_bin_dex_str_t {

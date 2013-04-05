@@ -11,7 +11,7 @@ Broken stuff to fixe before release
 - dwarf
 - rar asm/dis
 
-0.9.4
+0.9.6
 =====
 * scr.cols -> hex.cols
 * scr.width

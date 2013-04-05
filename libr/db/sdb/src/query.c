@@ -30,10 +30,16 @@ SDB_VISIBLE char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt
 
 SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 	const char *q;
-	char *p, *eq, *ask = strchr (cmd, '?');
+	char *p, *eq, *ask;
 	int i, ok, w, alength;
 	ut64 n;
+	if (cmd == NULL) {
+		cmd = buf;
+		buf = NULL;
+	}
+	if (!len || !buf) buf = malloc ((len=32));
 
+	ask = strchr (cmd, '?');
 	if (*cmd == '+' || *cmd == '-') {
 		*buf = 0;
 		if (ask) {
