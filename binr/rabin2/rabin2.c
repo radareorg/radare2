@@ -72,8 +72,8 @@ static int rabin_show_help(int v) {
 		" -R              relocations\n"
 		" -s              symbols (exports)\n"
 		" -S              sections\n"
-		" -v              use vaddr in radare output\n"
-		" -V              show version information\n"
+		" -v              use vaddr in radare output (or show version if no file)\n"
+		//" -V              show version information\n"
 		" -x              extract bins contained in file\n"
 		" -z              strings (from data section)\n"
 		" -zz             strings (from raw bins [e bin.rawstr=1])\n"
@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |=x
-	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:N:@:VisSIHelRwO:o:rvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:N:@:isSIHelRwO:o:rvLhxzZ")) != -1) {
 		switch (c) {
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
@@ -374,7 +374,7 @@ int main(int argc, char **argv) {
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
 		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
-		case 'V': return blob_version ("rabin2");
+		//case 'V': return blob_version ("rabin2");
 		case 'h': return rabin_show_help (1);
 		default: action |= ACTION_HELP;
 		}
