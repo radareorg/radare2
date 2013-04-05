@@ -213,7 +213,7 @@ static int cmd_flag(void *data, const char *input) {
 			RFlagItem *f = NULL;
 			switch (input[1]) {
 			case '?':
-				eprintf ("Usage: fd [off]\n");
+				eprintf ("Usage: fd [offset|flag|expression]\n");
 				return R_FALSE;
 			case '\0':
 				addr = core->offset;
@@ -225,7 +225,7 @@ static int cmd_flag(void *data, const char *input) {
 			f = r_flag_get_at (core->flags, addr);
 			if (f) {
 				if (f->offset != addr) {
-					r_cons_printf ("%s+%d\n", f->name, (int)(addr-f->offset));
+					r_cons_printf ("%s + %d\n", f->name, (int)(addr-f->offset));
 				} else r_cons_printf ("%s\n", f->name);
 			}
 		}

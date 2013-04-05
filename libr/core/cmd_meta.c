@@ -174,6 +174,7 @@ static int cmd_meta(void *data, const char *input) {
 			addr_end = addr + n;
 			if (!r_meta_add (core->anal->meta, type, addr, addr_end, name))
 				free (t);
+			r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 			}
 			break;
 		}

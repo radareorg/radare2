@@ -62,6 +62,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				va? baddr+string->rva:string->offset,
 				string->size, 0);
 		}
+		r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
 		r_cons_break_end ();
 	} else {
 		r_cons_printf (mode?"fs strings\n": "[strings]\n");
@@ -501,6 +502,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 				free (dname);
 			}
 			free (name);
+			r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
 		}
 	} else {
 		if (!at) {

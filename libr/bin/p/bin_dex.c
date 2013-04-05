@@ -118,6 +118,8 @@ static RList* methods (RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr;
 
+	if (bin->methods_list)
+		return bin->methods_list;
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
@@ -195,6 +197,7 @@ static RList* methods (RBinArch *arch) {
 		r_list_append (ret, ptr);
 	}
 	eprintf ("Done\n");
+	bin->methods_list = ret;
 	return ret;
 }
 

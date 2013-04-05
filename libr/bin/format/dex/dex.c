@@ -10,7 +10,7 @@ char* r_bin_dex_get_version(struct r_bin_dex_obj_t* bin) {
 	return version;
 }
 
-struct r_bin_dex_obj_t* r_bin_dex_new_buf(struct r_buf_t *buf) {
+struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 	struct r_bin_dex_obj_t *bin;
 
 	if (!(bin = malloc (sizeof (struct r_bin_dex_obj_t))))

@@ -1197,6 +1197,7 @@ R_API void r_core_visual_define (RCore *core) {
 	ut64 off = core->offset;
 	ut8 *p = core->block;
 	int plen = core->blocksize;
+	int cleanup = R_FALSE;
 	if (core->print->cur_enabled) {
 		off += core->print->cur;
 		p += core->print->cur;
@@ -1233,6 +1234,7 @@ R_API void r_core_visual_define (RCore *core) {
 			if (n<2) break;
 			ntotal+= n;
 		} while (ntotal<core->blocksize);
+		cleanup = R_TRUE;
 		break;
 	case 's':
 		// TODO: r_core_cmd0 (core, "Cz");
@@ -1242,13 +1244,16 @@ R_API void r_core_visual_define (RCore *core) {
 		strncpy (name+4, (const char *)p, n);
 		r_flag_set (core->flags, name, off, n, 0);
 		r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);
+		cleanup = R_TRUE;
 		free (name);
 		break;
 	case 'd': // TODO: check
 		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+core->blocksize, "");
+		cleanup = R_TRUE;
 		break;
 	case 'c': // TODO: check
 		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+core->blocksize, "");
+		cleanup = R_TRUE;
 		break;
 	case 'u':
 		r_flag_unset_i (core->flags, off, NULL);
@@ -1267,4 +1272,6 @@ R_API void r_core_visual_define (RCore *core) {
 	default:
 		break;
 	}
+	if (cleanup)
+		r_meta_cleanup (core->anal->meta, 0, UT64_MAX);
 }
