@@ -130,10 +130,10 @@ static RList* methods (RBinArch *arch) {
 			break;
 		if (idx >= bin->header.strings_size) // workaround
 			continue;
-		buf = r_buf_get_at (bin->b, bin->strings[idx], &left);
+		buf = (char*)r_buf_get_at (bin->b, bin->strings[idx], &left);
 		len = dex_read_uleb128 (buf);
 		if (len<1) continue;
-		name = r_buf_get_at (bin->b, 
+		name = (char *) r_buf_get_at (bin->b, 
 				bin->strings[bin->methods[i].name_id]+
 				dex_uleb128_len (buf), &left);
 		if (!name) {
@@ -164,12 +164,12 @@ static RList* methods (RBinArch *arch) {
 			break;
 		if (idx >= bin->header.strings_size) // workaround
 			continue;
-		buf = r_buf_get_at (bin->b, bin->strings[idx], &left);
+		buf = (char*)r_buf_get_at (bin->b, bin->strings[idx], &left);
 		//r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 6);
 
 // TODO: use r_buf_get_at here
 		len = dex_read_uleb128 (buf);
-		name = r_buf_get_at (bin->b, 
+		name = (char *)r_buf_get_at (bin->b, 
 				bin->strings[bin->methods[i].name_id]+
 				dex_uleb128_len (buf), &left);
 		if (!name) {

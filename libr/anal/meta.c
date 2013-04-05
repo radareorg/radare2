@@ -180,7 +180,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 	case R_META_TYPE_STRING:
 	case R_META_TYPE_FORMAT:
 		/* we should remove overlapped types and so on.. */
-	//	r_meta_cleanup (m, from, to);
+		//r_meta_cleanup (m, from, to);
 	case R_META_TYPE_COMMENT:
 		if (type == R_META_TYPE_COMMENT)
 			if (r_meta_comment_check (m, str))
