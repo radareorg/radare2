@@ -20,5 +20,3 @@ static int cmd_project(void *data, const char *input) {
 	free (str);
 	return R_TRUE;
 }
-
-

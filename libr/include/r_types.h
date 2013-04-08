@@ -63,11 +63,11 @@
 #define __packed __attribute__((__packed__))
 #endif
 
-#ifndef __unused
+#ifndef UNUSED
 #ifdef __GNUC__
-#define __unused __attribute__((__unused__))
+#define UNUSED __attribute__((__unused__))
 #else
-#define __unused
+#define UNUSED
 #endif
 #endif
 

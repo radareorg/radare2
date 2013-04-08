@@ -10,10 +10,8 @@
 #include <r_types.h>
 #include <r_util.h>
 
-#if 0
 #undef IFDBG
-#define IFDBG if(1)
-#endif
+#define IFDBG if(0)
 
 // pool count = 0x52
 
