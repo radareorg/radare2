@@ -63,20 +63,12 @@
 #define __packed __attribute__((__packed__))
 #endif
 
-#ifndef UNUSED
+#ifndef __unused
 #ifdef __GNUC__
-#define UNUSED __attribute__((__unused__))
+#define __unused __attribute__((__unused__))
 #else
-#define UNUSED
+#define __unused
 #endif
-#endif
-
-/* provide a per-module debug-enabled feature */
-// TODO NOT USED. DEPREACATE
-#if R_DEBUG
-#define IFDBG
-#else
-#define IFDBG if (0)
 #endif
 
 typedef void (*PrintfCallback)(const char *str, ...);

@@ -1,4 +1,22 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake, nibbl */
+/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+
+static void algolist(int mode) {
+	const char *name;
+	ut64 bits;
+	int i;
+	for (i=0; ; i++) {
+		bits = 1<<i;
+		name = r_hash_name (bits);
+		if (!name||!*name) break;
+		if (mode) {
+			r_cons_printf ("%s\n", name);
+		} else {
+			r_cons_printf (" #%s", name);
+			if (!((i+1)%10)) r_cons_newline ();
+		}
+	}
+	if (!mode) r_cons_printf ("\n");
+}
 
 static int cmd_hash(void *data, const char *input) {
 	char *p, algo[32];
@@ -7,6 +25,10 @@ static int cmd_hash(void *data, const char *input) {
 	const char *ptr;
 
 	if (input[0]==' ') return 0;
+	if (input[0]=='#' && !input[1]) {
+		algolist (1);
+		return R_TRUE;
+	}
 	if (input[0]=='!') {
 #if 0
 	TODO: Honor OOBI
@@ -95,25 +117,19 @@ static int cmd_hash(void *data, const char *input) {
 	if (input[0]=='?') {
 		r_cons_printf (
 		"Usage: #algo <size> @ addr\n"
-		" #xor                 ; calculate xor of all bytes in current block\n"
-		" #crc32               ; calculate crc32 of current block\n"
-		" #crc32 < /etc/fstab  ; calculate crc32 of this file\n"
-		" #pcprint             ; count printable chars in current block\n"
-		" #hamdist             ; calculate hamming distance in current block\n"
-		" #entropy             ; calculate entropy of current block\n"
-		" #md4                 ; calculate md4\n"
-		" #md5 128K @ edi      ; calculate md5 of 128K from 'edi'\n"
-		" #sha1                ; calculate SHA-1\n"
-		" #sha256              ; calculate SHA-256\n"
-		" #sha512              ; calculate SHA-512\n"
+		" ##                    List hash/checksum algorithms.\n"
+		" #sha256 10K @ 33      calculate sha256 of 10K at 33\n"
+		"Hashes:\n");
+		algolist (0);
+		r_cons_printf (
 		"Usage #!interpreter [<args>] [<file] [<<eof]\n"
-		" #!                   ; list all available interpreters\n"
-		" #!python             ; run python commandline\n"
-		" #!python < foo.py    ; run foo.py python script\n"
-		" #!python <<EOF       ; get python code until 'EOF' mark\n"
-		" #!python arg0 a1 <<q ; set arg0 and arg1 and read until 'q'\n"
+		" #!                    list all available interpreters\n"
+		" #!python              run python commandline\n"
+		" #!python < foo.py     run foo.py python script\n"
+		" #!python <<EOF        get python code until 'EOF' mark\n"
+		" #!python arg0 a1 <<q  set arg0 and arg1 and read until 'q'\n"
 		"Comments:\n"
-		" # this is a comment  ; note the space after the sharp sign\n");
+		" # this is a comment   note the space after the sharp sign\n");
 	}
 	return 0;
 }

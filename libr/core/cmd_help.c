@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -28,11 +28,9 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'b':
-		{
 		n = r_num_get (core->num, input+1);
 		r_num_to_bits (out, n);
 		r_cons_printf ("%s\n", out);
-		}
 		break;
 	case 'B':
 		k = r_str_chop_ro (input+1);
@@ -79,37 +77,45 @@ static int cmd_help(void *data, const char *input) {
 			free (p);
 		} else eprintf ("Whitespace expected after '?f'\n");
 		break;
+	case 'o':
+		n = r_num_math (core->num, input+1);
+		r_cons_printf ("0%"PFMT64o"\n", n);
+		break;
+	case 'u':
+		{
+			char unit[32];
+			n = r_num_math (core->num, input+1);
+			r_num_units (unit, n);
+			r_cons_printf ("%s\n", unit);
+		}
+		break;
 	case ' ':
 		{
-		ut32 n32, s, a;
-		float f;
-		n = r_num_math (core->num, input+1);
-		n32 = (ut32)n;
-		memcpy (&f, &n32, sizeof (f));
-		/* decimal, hexa, octal */
-		s = n>>16<<12;
-		a = n & 0x0fff;
-		r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" %04x:%04x ",
-			n, n, n, s, a);
-		if (n>>32) {
-			r_cons_printf ("%"PFMT64d" ", (st64)n);
-		} else {
-			r_cons_printf ("%d ", (st32)n);
-		}
-		/* binary and floating point */
-		r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
-		r_cons_printf ("%s %.01lf %f\n", out, core->num->fvalue, f);
+			char unit[32];
+			ut32 n32, s, a;
+			float f;
+			n = r_num_math (core->num, input+1);
+			n32 = (ut32)n;
+			memcpy (&f, &n32, sizeof (f));
+			/* decimal, hexa, octal */
+			s = n>>16<<12;
+			a = n & 0x0fff;
+			r_num_units (unit, n);
+			r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o" %s %04x:%04x ",
+				n, n, n, unit, s, a);
+			if (n>>32) r_cons_printf ("%"PFMT64d" ", (st64)n);
+			else r_cons_printf ("%d ", (st32)n);
+			/* binary and floating point */
+			r_str_bits (out, (const ut8*)&n, sizeof (n), NULL);
+			r_cons_printf ("%s %.01lf %f\n", out, core->num->fvalue, f);
 		}
 		break;
 	case 'v':
 		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
 		switch (input[1]) {
 		case 'i':
-			if (n>>32) {
-				r_cons_printf ("%"PFMT64d"\n", (st64)n);
-			} else {
-				r_cons_printf ("%d\n", (st32)n);
-			}
+			if (n>>32) r_cons_printf ("%"PFMT64d"\n", (st64)n);
+			else r_cons_printf ("%d\n", (st32)n);
 			break;
 		case 'd':
 			r_cons_printf ("%"PFMT64d"\n", n);
@@ -125,21 +131,18 @@ static int cmd_help(void *data, const char *input) {
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '+':
-//eprintf ("NUMVAL %llx\n", core->num->value);
 		if (input[1]) {
 			st64 n = (st64)core->num->value;
 			if (n>0) r_core_cmd (core, input+1, 0);
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '-':
-//eprintf ("NUMVAL %llx\n", core->num->value);
 		if (input[1]) {
 			st64 n = (st64)core->num->value;
 			if (n<0) r_core_cmd (core, input+1, 0);
 		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		break;
 	case '!': // ??
-//eprintf ("NUMVAL %llx\n", core->num->value);
 		if (input[1]) {
 			if (!core->num->value)
 				r_core_cmd (core, input+1, 0);
@@ -258,9 +261,7 @@ static int cmd_help(void *data, const char *input) {
 				r_num_math (core->num, input+2): core->offset;
 			o = r_io_section_offset_to_vaddr (core->io, n);
 			r_cons_printf ("0x%08"PFMT64x"\n", o);
-		} else {
-			eprintf ("io.va is false\n");
-		}
+		} else eprintf ("io.va is false\n");
 		break;
 	case 'p':
 		if (core->io->va) {
@@ -269,9 +270,7 @@ static int cmd_help(void *data, const char *input) {
 				r_num_math (core->num, input+2): core->offset;
 			o = r_io_section_vaddr_to_offset (core->io, n);
 			r_cons_printf ("0x%08"PFMT64x"\n", o);
-		} else {
-			eprintf ("Virtual addresses not enabled!\n");
-		}
+		} else eprintf ("Virtual addresses not enabled!\n");
 		break;
 	case 'S': {
 		// section name
@@ -287,25 +286,24 @@ static int cmd_help(void *data, const char *input) {
 		free (core->yank_buf);
 		for (input++; *input==' '; input++);
 		core->yank_buf = (ut8*)r_cons_hud_file (input);
-		core->yank_len = core->yank_buf? strlen ((const char *)core->yank_buf): 0;
+		core->yank_len = core->yank_buf? strlen (
+			(const char *)core->yank_buf): 0;
 		break;
 	case 'k': // key=value utility
 		switch (input[1]) {
 		case ' ':
-			{
-			char *p = strchr (input+1, '='); 
+			p = strchr (input+1, '='); 
 			if (p) {
 				// set
 				*p = 0;
 				r_pair_set (core->kv, input+2, p+1);
 			} else {
 				// get
-				char *g = r_pair_get (core->kv, input+2);
-				if (g) {
-					r_cons_printf ("%s\n", g);
-					free (g);
+				p = r_pair_get (core->kv, input+2);
+				if (p) {
+					r_cons_printf ("%s\n", p);
+					free (p);
 				}
-			}
 			}
 			break;
 		case 's':
@@ -414,12 +412,14 @@ static int cmd_help(void *data, const char *input) {
 			" ?ik               press any key input dialog\n"
 			" ?k k[=v]          key-value temporal storage for the user\n"
 			" ?l str            returns the length of string (0 if null)\n"
+			" ?o num            get octal value\n"
 			" ?p vaddr          get physical address for given virtual address\n"
 			" ?P paddr          get virtual address for given physical one\n"
 			" ?r [from] [to]    generate random number between from-to\n"
 			" ?s from to step   sequence of numbers from to by steps\n"
 			" ?S addr           return section name of given address\n"
 			" ?t cmd            returns the time to run a command\n"
+			" ?u num            get value in human units (KB, MB, GB, TB)\n"
 			" ?v eip-0x804800   show hex value of math expr\n"
 			" ?vi rsp-rbp       show decimal value of math expr\n"
 			" ?V                show library version of r_core\n"

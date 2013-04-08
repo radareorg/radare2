@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2013 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -31,7 +31,9 @@ static const char *r_lib_types[] = {
 	"bp", "syscall", "fastcall", "crypto", "cmd", NULL
 };
 
-static int r_lib_debug_enabled = 0;
+static int __has_debug = 0;
+
+#define IFDBG if(__has_debug)
 
 /* XXX: Rename this helper function */
 R_API const char *r_lib_types_get(int idx) {
@@ -43,7 +45,7 @@ R_API const char *r_lib_types_get(int idx) {
 R_API void *r_lib_dl_open(const char *libname) {
 	void *ret;
 	ret = DLOPEN (libname);
-	if (r_lib_debug_enabled && ret == NULL)
+	if (__has_debug && ret == NULL)
 #if __UNIX__
 		eprintf ("dlerror(%s): %s\n", libname, dlerror ());
 #else
@@ -96,7 +98,7 @@ R_API char *r_lib_path(const char *libname) {
 R_API RLib *r_lib_new(const char *symname) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
-		r_lib_debug_enabled = r_sys_getenv ("R_DEBUG")?R_TRUE:R_FALSE;
+		__has_debug = r_sys_getenv ("R_DEBUG")?R_TRUE:R_FALSE;
 		lib->handlers = r_list_new ();
 		lib->plugins = r_list_new ();
 		strncpy (lib->symname, symname, sizeof (lib->symname)-1);
@@ -206,7 +208,8 @@ R_API int r_lib_open(RLib *lib, const char *file) {
 	
 	stru = (RLibStruct *) r_lib_dl_sym (handler, lib->symname);
 	if (stru == NULL) {
-		IFDBG eprintf ("No root symbol '%s' found in library '%s'\n", lib->symname, file);
+		IFDBG eprintf ("Cannot find symbol '%s' in library '%s'\n",
+			lib->symname, file);
 		return R_FAIL;
 	}
 
