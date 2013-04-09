@@ -347,6 +347,7 @@ extern RIOPlugin r_io_plugin_w32;
 extern RIOPlugin r_io_plugin_ewf;
 extern RIOPlugin r_io_plugin_zip;
 extern RIOPlugin r_io_plugin_mmap;
+extern RIOPlugin r_io_plugin_ihex;
 #endif
 
 #endif
