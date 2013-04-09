@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2013 - nibble */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -57,7 +57,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	return 0;
 }
 
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
 	if (len<4)
 		return -1;

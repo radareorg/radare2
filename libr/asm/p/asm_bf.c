@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -8,7 +8,7 @@
 #include <r_asm.h>
 
 
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	char *buf_cp, *b;
 	int i;
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - earada, pancake */
+/* radare - LGPL - Copyright 2009-2013 - earada, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -9,7 +9,7 @@
 
 #include <dalvik/opcode.h>
 
-static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int i = (int) buf[0];
 	int vA, vB, vC;
 	char str[1024];

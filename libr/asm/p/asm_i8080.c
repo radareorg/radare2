@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - Alexander */
+/* radare - LGPL - Copyright 2012-2013 - Alexander */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -7,7 +7,7 @@
 
 #include "../arch/i8080/i8080dis.c"
 
-static int do_disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
+static int do_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	int dlen = i8080_disasm (buf, op->buf_asm, len);
 	if (dlen<0) dlen = 0;
 	op->inst_len = dlen;

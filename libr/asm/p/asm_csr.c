@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2009-2010 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2013 - nibble */
 
 #include <stdio.h>
-
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_util.h>
@@ -29,7 +28,7 @@ static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
 #endif
 	return 0;
 }
-static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	arch_csr_disasm (op->buf_asm, buf, a->pc);
 	return (op->inst_len=2);
 }

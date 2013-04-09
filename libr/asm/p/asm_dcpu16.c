@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2012 pancake<nopcode.org> */
+/* radare2 - LGPL - Copyright 2012-2013 pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -10,7 +10,7 @@
 #include "../arch/dcpu16/dcpu16.h"
 
 // ut64 for length here is overkill!
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len<2) return -1; // at least 2 bytes!
 	op->inst_len = dcpu16_disasm (op->buf_asm, (const ut16*)buf, len, NULL);
 	if (op->inst_len == -1)

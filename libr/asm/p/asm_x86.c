@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +43,7 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 	return ret;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static ud_t disasm_obj;
 	ud_init (&disasm_obj);
 	ud_set_syntax (&disasm_obj, 

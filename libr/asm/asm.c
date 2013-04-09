@@ -281,7 +281,7 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 	return R_TRUE;
 }
 
-R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret = op->payload = 0;
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble (a, op, buf, len);
@@ -328,7 +328,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return ret;
 }
 
-R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, ut64 len) {
+R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, int len) {
 	RAsmCode *acode;
 	int ret, slen;
 	RAsmOp op;

@@ -9,8 +9,7 @@
 #include <r_asm.h>
 #include "../arch/8051/8051.c"
 
-// ut64 for length here is overkill!
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	Op8051 o = do8051struct (buf, len);
 	if (!o.name) return 0; // invalid instruction
 	do8051disasm (o, op->buf_asm, sizeof (op->buf_asm));

@@ -9,7 +9,7 @@
 #include <r_asm.h>
 #include "../../shlr/rar/all.c"
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	// TODO: support bitsize opcodes
 	// rarvm_disassemble (&b, str);
 	return 0;

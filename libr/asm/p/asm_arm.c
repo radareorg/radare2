@@ -53,7 +53,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	return R_TRUE;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info obj;
 
 	if (len<(a->bits/8)) return -1;

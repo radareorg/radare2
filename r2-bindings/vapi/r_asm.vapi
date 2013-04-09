@@ -161,9 +161,9 @@ public class RAsm {
 	public bool set_pc(uint64 addr);
 	public bool set_big_endian(bool big);
 	// TODO: Use Code? instead of op??
-	public int disassemble(out Op op, uint8* buf, uint64 length);
+	public int disassemble(out Op op, uint8* buf, int length);
 	public int assemble(out Op op, string buf);
-	public Code? mdisassemble(uint8 *buf, uint64 length);
+	public Code? mdisassemble(uint8 *buf, int length);
 	public Code? mdisassemble_hexstr(string hexstr);
 	public Code? massemble(string buf);
 	public Code? assemble_file(string file);
