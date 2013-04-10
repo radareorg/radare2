@@ -228,6 +228,7 @@ enum {
 	R_SYS_ARCH_ARC = 0x8000,
 	R_SYS_ARCH_I8080 = 0x10000,
 	R_SYS_ARCH_RAR = 0x20000,
+	R_SYS_ARCH_8051 = 0x40000,
 };
 
 /* os */

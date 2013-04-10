@@ -65,8 +65,8 @@ enum {
 #define _OFFSET(x) OFFSET, ((x[1])), NULL, buf
 #define _DIRECT(x) DIRECT, (x[1]), NULL, x
 
-static const char *arg[] = { "#immed", "direct", "@r0", "@r1", "r0",
-	"r1", "r1", "r2", "r3", "r4", "r5", "r6", "r7" };
+static const char *arg[] = { "#immed", "#imm", "@r0", "@r1",
+	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7" };
 static const char *ops[] = {
 	"inc",         // 0.   04 : immed=a
 	"dec",         // 1.   14 : immed=a
@@ -75,15 +75,15 @@ static const char *ops[] = {
 	"orl a,",      // 4.
 	"anl a,",      // 5.
 	"xrl a,",      // 6.
-	"+#immed;mov", // 7.    74 == immed=a
+	"+, $1;mov",   // 7.    74 == immed=a
 	"mov direct,", // 8.    84 == DIV AB
 	"subb a,",     // 9.
-	"+direct;mov", // A.    A4 == MUL AB
+	"+, $1;mov", // A.    A4 == MUL AB
 	"+, $1, $2;cjne",
 		// B4, B4 = {cjne a, {#immed,direct}, offset}
 		// cjne arg, #immed, offset
 	"xch a,",       // C.   C4 == SWAP A
-	"+offset;djnz", // D.   D4 = DA
+	"+, $1;djnz", // D.   D4 = DA
 			//      D5 = DJNZ d,off
 			//      D6,7 = XCHD A, r0,1
 	"mov a,",       // E.   E4 == CLR A
@@ -103,14 +103,14 @@ Op8051 do8051struct(const ut8 *buf, int len) {
 	case 0x50: return _{ "jnc", 2, _OFFSET(buf) };
 	case 0x60: return _{ "jz", 2, _OFFSET(buf) };
 	case 0x70: return _{ "jnz", 2, _OFFSET(buf) };
-	case 0x80: return _{ "sjmp", 2, _OFFSET(buf) };
+	case 0x80: return _{ "sjmp", 2, _OFFSET (buf) };
 
-	case 0x90: return _{ "mov dptr, #immed", 3, _ADDR16(buf) }; // XXX
+	case 0x90: return _{ "mov dptr,", 3, _ADDR16(buf) }; // XXX
 	case 0xa0: return _{ "orl c, /bin", 2, NONE };
 	case 0xb0: return _{ "anl c, /bin", 2, NONE };
 
-	case 0xc0: return _{ "push direct", 2, NONE };
-	case 0xd0: return _{ "pop direct", 2, NONE };
+	case 0xc0: return _{ "push", 2, _DIRECT (buf)};
+	case 0xd0: return _{ "pop", 2, _DIRECT (buf)};
 
 	case 0x02: return _{ "ljmp", 3, _ADDR16(buf) };
 	case 0x12: return _{ "lcall", 3, _ADDR16(buf) };
@@ -118,7 +118,7 @@ Op8051 do8051struct(const ut8 *buf, int len) {
 	case 0x32: return _{ "reti", 1, NONE };
 	case 0x42: return _{ "orl direct, a", 2, _DIRECT (buf)};
 	case 0x92: return _{ "+, c;mov", 2, _DIRECT (buf) };
-	case 0xc2: return _{ "clr  c", 1, _DIRECT (buf) };
+	case 0xc2: return _{ "clr bit", 2, _DIRECT (buf) };
 	case 0xd2: return _{ "setb", 2, _DIRECT (buf) };
 	case 0xa2: return _{ "mov c,", 2, _DIRECT (buf) };
 
@@ -141,6 +141,7 @@ Op8051 do8051struct(const ut8 *buf, int len) {
 	case 0xf0: return _{ "movx @dptr, a", 1, NONE };
 	case 0xf2: return _{ "movx @r0, a", 1, NONE };
 	case 0xf3: return _{ "movx @r1, a", 1, NONE };
+	case 0x74: return _{ "mov a,", 2, _DIRECT(buf) };
 	}
 	// general opcodes
 	if ((op&0xf)>=4) {
@@ -151,18 +152,23 @@ Op8051 do8051struct(const ut8 *buf, int len) {
 		int length = ((op&0xf)<6)? 2: 1;
 		/* exceptions */
 		switch (op) {
-		case 0x04: length = 1; opstr = "inc a"; break;
+		case 0x04: length = 1; opstr = "inc a"; argstr=""; break;
 		case 0x14: length = 1; opstr = "dec a"; break;
-		case 0x74: opstr = "mov a,"; break;
+		case 0x78: length = 2; break;
+		case 0xaa: length = 2; break;
+		case 0x77: length = 2; break;
+		case 0x7f: length = 2; break;
 		case 0xa4: opstr = "mul ab"; break;
 		case 0xa5: opstr = "reserved"; break;
-		case 0x75: length = 3; break;
+   // XXX: 75 opcode is wrong
+		case 0x75: opstr = "mov $1, #RAM_D0"; argstr=""; length = 3; break;
 		case 0xc4: opstr = "swap a"; break;
 		case 0xd4: opstr = "da a"; break;
 		case 0xd5: opstr = "djnz d, "; break;
 		case 0xd6: opstr = "xchd a, r0"; break;
 		case 0xd7: opstr = "xchd a, r1"; break;
-		case 0xe4: opstr = "clr a"; break;
+		case 0xd8: length = 2; break;
+		case 0xe4: opstr = "clr a"; argstr=""; length = 1; break;
 		case 0xf4: opstr = "cpl a"; break;
 		}
 		/* exceptions */
@@ -192,13 +198,20 @@ static char *strdup_filter (const char *str, const ut8 *buf) {
 	return o;
 }
 
-char *do8051disasm(Op8051 op, char *str, int len) {
+char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 	char *tmp, *eof, *out = str? str: malloc ((len=32));
 	switch (op.operand) {
 	case NONE: strcpy (out, op.name); break;
-	case ARG: snprintf (out, len, "%s %s", op.name, op.arg); break;
+	case ARG: 
+		   if (!strncmp (op.arg, "#imm", 4))
+			   snprintf (out, len, "%s 0x%x", op.name, op.buf[1]);
+		   else snprintf (out, len, "%s %s", op.name, op.arg);
+		break;
 	case ADDR11:
-	case ADDR16: snprintf (out, len, "%s %d", op.name, op.addr); break;
+	case ADDR16:
+	case DIRECT: snprintf (out, len, "%s 0x%02x", op.name, op.addr); break;
+	case OFFSET:
+		snprintf (out, len, "%s 0x%02x", op.name, op.addr+addr+2); break;
 	}
 	if (*out == '+') {
 		eof = strchr (out+1, ';');
@@ -209,6 +222,10 @@ char *do8051disasm(Op8051 op, char *str, int len) {
 			strcat (out, tmp);
 			free (tmp);
 		} else eprintf ("do8051disasm: Internal bug\n");
+	} else {
+		tmp = strdup_filter (out, (const ut8*)op.buf);
+		strcpy (out, tmp);
+		free (tmp);
 	}
 	return out;
 }
@@ -223,7 +240,7 @@ int main() {
 	char *str;
 	ut8 buf[3] = {0xb3, 0x11, 0x22};
 	Op8051 op = do8051struct (buf, sizeof (buf));
-	str = do8051disasm (op, NULL, 0);
+	str = do8051disasm (op, 0, NULL, 0);
 	eprintf ("%s\n", str);
 	free (str);
 	return 0;

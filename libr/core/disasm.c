@@ -596,6 +596,7 @@ toro:
 			case R_ANAL_OP_TYPE_SWI:
 				r_cons_printf (Color_MAGENTA);
 				break;
+			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_TRAP:
 				r_cons_printf (Color_BRED);
 				break;
