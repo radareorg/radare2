@@ -50,18 +50,20 @@ static int help () {
 		"  hex   ->  bin           ;  rax2 Bx63\n"
 		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
 		"  hex   ->  raw           ;  rax2 -s 414141\n"
-		"  -e    swap endianness   ;  rax2 -e 0x33\n"
-		"  -n    binary number     ;  rax2 -e 0x1234   # 34120000\n"
-		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
-		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
 		"  -b    binstr -> bin     ;  rax2 -b 01000101 01110110\n"
+		"  -B    keep base         ;  rax2 -B 33+3 -> 36\n"
+		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
+		"  -e    swap endianness   ;  rax2 -e 0x33\n"
+		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
+		"  -h    help              ;  rax2 -h\n"
+		"  -k    randomart         ;  rax2 -k 0x34 1020304050\n"
+		"  -n    binary number     ;  rax2 -e 0x1234   # 34120000\n"
 		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
 		"  -S    raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
-		"  -v    version           ;  rax2 -V\n"
 		"  -x    hash string       ;  rax2 -x linux osx\n"
-		"  -k    randomart         ;  rax2 -k 0x34 1020304050\n"
-		"  -B    keep base         ;  rax2 -B 33+3 -> 36\n"
-		"  -h    help              ;  rax2 -h\n");
+		"  -u    units             ;  rax2 -u 389289238 # 317.0M\n"
+		"  -v    version           ;  rax2 -V\n"
+		);
 	return R_TRUE;
 }
 
@@ -88,6 +90,7 @@ static int rax (char *str, int len, int last) {
 			case 'd': flags ^=128; break;
 			case 'k': flags ^=256; break;
 			case 'n': flags ^=512; break;
+			case 'u': flags ^=1024;break;
 			case 'v': blob_version ("rax2"); break;
 			case '\0': return use_stdin ();
 			default:
@@ -157,6 +160,12 @@ static int rax (char *str, int len, int last) {
 		if (len>0)
 			for (i=0; i<len; i++)
 				printf ("%c", buf[i]);
+		return R_TRUE;
+	}
+	if (flags & 1024) {
+		char buf[80];
+		r_num_units (buf, r_num_math (NULL, str));
+		printf ("%s\n", buf);
 		return R_TRUE;
 	}
 	if (flags & 16) {
