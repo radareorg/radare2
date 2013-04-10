@@ -21,7 +21,7 @@ static void algolist(int mode) {
 static int cmd_hash(void *data, const char *input) {
 	char *p, algo[32];
 	RCore *core = (RCore *)data;
-	ut32 i, len = core->blocksize;
+	ut32 i, osize, len = core->blocksize;
 	const char *ptr;
 
 	if (input[0]==' ') return 0;
@@ -59,7 +59,11 @@ static int cmd_hash(void *data, const char *input) {
 	if (ptr != NULL) {
 		int nlen = r_num_math (core->num, ptr+1);
 		if (nlen>0) len = nlen;
-	}
+		osize = core->blocksize;
+		if (nlen>core->blocksize) {
+			r_core_block_size (core, nlen);
+		}
+	} else osize =0;
 	/* TODO: Simplify this spaguetti monster */
 	if (!r_str_ccmp (input, "md4", ' ')) {
 		RHash *ctx = r_hash_new (R_TRUE, R_HASH_MD4);
@@ -67,6 +71,11 @@ static int cmd_hash(void *data, const char *input) {
 		for (i=0; i<R_HASH_SIZE_MD4; i++) r_cons_printf ("%02x", c[i]);
 		r_cons_newline ();
 		r_hash_free (ctx);
+	} else
+	if (!r_str_ccmp (input, "adler32", ' ')) {
+		ut32 hn = r_hash_adler32 (core->block, len);
+		ut8 *b = &hn;
+		r_cons_printf ("%02x%02x%02x%02x\n", b[0], b[1], b[2], b[3]);
 	} else
 	if (!r_str_ccmp (input, "md5", ' ')) {
 		RHash *ctx = r_hash_new (R_TRUE, R_HASH_MD5);
@@ -131,6 +140,7 @@ static int cmd_hash(void *data, const char *input) {
 		"Comments:\n"
 		" # this is a comment   note the space after the sharp sign\n");
 	}
+	if (osize)
+		r_core_block_size (core, osize);
 	return 0;
 }
-

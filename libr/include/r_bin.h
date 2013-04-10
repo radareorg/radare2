@@ -50,6 +50,16 @@ typedef struct r_bin_addr_t {
 	ut64 offset;
 } RBinAddr;
 
+typedef struct r_bin_hash_t {
+	const char *type;
+	ut64 addr;
+	int len;
+	ut64 from;
+	ut64 to;
+	ut8 buf[32];
+	const char *cmd;
+} RBinHash;
+
 typedef struct r_bin_info_t {
 	char file[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
@@ -66,6 +76,7 @@ typedef struct r_bin_info_t {
 	int has_pi; // pic/pie
 	int big_endian;
 	ut64 dbg_info;
+	RBinHash sum[2];
 } RBinInfo;
 
 // XXX: this is a copy of RBinObject

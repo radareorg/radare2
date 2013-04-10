@@ -5,6 +5,8 @@
 #include <r_lib.h>
 #include <r_bin.h>
 #include "dex/dex.h"
+#define r_hash_adler32 __adler32
+#include "../../hash/adler32.c"
 
 static int load(RBinArch *arch) {
 	if(!(arch->bin_obj = r_bin_dex_new_buf (arch->buf)))
@@ -37,8 +39,9 @@ static int check(RBinArch *arch) {
 	return R_FALSE;
 }
 
-static RBinInfo * info(RBinArch *arch) {
+static RBinInfo *info(RBinArch *arch) {
 	char *version;
+RBinHash *h;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
@@ -53,6 +56,34 @@ static RBinInfo * info(RBinArch *arch) {
 	strncpy (ret->subsystem, "any", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->machine, "Dalvik VM", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->arch, "dalvik", R_BIN_SIZEOF_STRINGS);
+
+	h = &ret->sum[0];
+	h->type = "sha1";
+	h->len = 20;
+	h->addr = 12;
+	h->from = 12;
+	h->to = arch->buf->length-32;
+	memcpy (h->buf, arch->buf->buf+12, 20);
+
+	h = &ret->sum[1];
+	h->type = "adler32";
+	h->len = 4;
+	h->addr = 0x8;
+	h->from = 12;
+	h->to = arch->buf->length-h->from;
+	memcpy (h->buf, arch->buf->buf+8, 4);
+	{
+		ut32 *fc = (ut32 *)(arch->buf->buf + 8);
+		ut32  cc = __adler32 (arch->buf->buf + h->from, h->to);
+		ut8 *fb = (ut8*)fc, *cb = (ut8*)&cc;
+		if (*fc != cc) {
+			eprintf ("wx %02x%02x%02x%02x @ 0x8 "
+				"# Fix %02x%02x%02x%02x adler32 checksum\n",
+					cb[0], cb[1], cb[2], cb[3],
+					fb[0], fb[1], fb[2], fb[3]);
+		}
+	}
+
 	ret->lang = "java";
 	ret->bits = 32;
 	ret->big_endian = 0;
@@ -334,7 +365,7 @@ static RList* sections(RBinArch *arch) {
 		if (arch->buf->length > ptr->rva) {
 			ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
 		} else {
-			ptr->size = ptr->vsize = ptr->rva - arch->buf->length ;
+			ptr->size = ptr->vsize = ptr->rva - arch->buf->length;
 			// hacky workaround
 			eprintf ("Hack\n");
 			//ptr->size = ptr->vsize = 1024;
