@@ -3,6 +3,7 @@ namespace Radare {
 /**
  * Radare2 Assembler module
  */
+[Compact]
 [CCode (cheader_filename="r_asm.h", cname="RAsm", free_function="r_asm_free", cprefix="r_asm_")]
 public class RAsm {
 	/**
