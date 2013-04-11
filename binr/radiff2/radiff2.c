@@ -13,12 +13,13 @@ enum {
 };
 
 static ut32 count = 0;
+static int showcount = 0;
 static int useva = R_TRUE;
 static int delta = 0;
 
 static int cb(RDiff *d, void *user, RDiffOp *op) {
 	int i, rad = (int)(size_t)user;
-	if (count) {
+	if (showcount) {
 		count++;
 		return 1;
 	}
@@ -119,7 +120,7 @@ int main(int argc, char **argv) {
 	char *file, *file2;
 	ut8 *bufa, *bufb;
 	int o, sza, szb, rad = 0, delta = 0;
-	int showcount = 0, mode = MODE_DIFF;
+	int mode = MODE_DIFF;
 	int diffops = 0;
 	int threshold = -1;
 	double sim;
