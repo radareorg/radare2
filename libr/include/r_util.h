@@ -577,5 +577,6 @@ R_API const char *r_strht_get(RStrHT *s, const char *key);
 R_API int r_strht_set(RStrHT *s, const char *key, const char *val);
 R_API void r_strht_clear(RStrHT *s);
 R_API void r_strht_del(RStrHT *s, const char *key);
+R_API int r_is_heap (void *p);
 
 #endif

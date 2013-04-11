@@ -77,10 +77,8 @@ RBinHash *h;
 		ut32  cc = __adler32 (arch->buf->buf + h->from, h->to);
 		ut8 *fb = (ut8*)fc, *cb = (ut8*)&cc;
 		if (*fc != cc) {
-			eprintf ("wx %02x%02x%02x%02x @ 0x8 "
-				"# Fix %02x%02x%02x%02x adler32 checksum\n",
-					cb[0], cb[1], cb[2], cb[3],
-					fb[0], fb[1], fb[2], fb[3]);
+			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
+			eprintf ("wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8\n");
 		}
 	}
 

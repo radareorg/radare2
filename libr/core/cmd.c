@@ -45,16 +45,16 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	RAsmOp *op;
 	if (b == NULL) {
 		b = r_buf_new ();
-		if (r_core_read_at (core, addr, buf, sizeof (buf))) {
-			b->base = addr;
-			r_buf_set_bytes (b, buf, sizeof (buf));
-		} else return NULL;
+		if (!r_core_read_at (core, addr, buf, sizeof (buf)))
+			return NULL;
+		b->base = addr;
+		r_buf_set_bytes (b, buf, sizeof (buf));
 	} else {
 		if ((addr < b->base) || addr > (b->base+b->length-32)) {
-			if (r_core_read_at (core, addr, buf, sizeof (buf))) {
-				b->base = addr;
-				r_buf_set_bytes (b, buf, sizeof (buf));
-			} else return NULL;
+			if (!r_core_read_at (core, addr, buf, sizeof (buf)))
+				return NULL;
+			b->base = addr;
+			r_buf_set_bytes (b, buf, sizeof (buf));
 		}
 	}
 	delta = addr - b->base;

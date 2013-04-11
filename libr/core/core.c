@@ -174,7 +174,7 @@ static const char *radare_argv[] = {
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
 	"o", "o-", "x",
-	".", ".!", ".(", "./",
+	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
 	"/", "//", "/a", "/c", "/m", "/x", "/v",
@@ -267,6 +267,36 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 			//free (path);
+		} else
+		if((!memcmp (line->buffer.data, ".(", 2))  ||
+		   (!memcmp (line->buffer.data, "(-", 2))) {
+			const char *str = line->buffer.data+2;
+			RCmdMacroItem *item;
+			char buf[1024];
+			int n, i = 0;
+
+			n = line->buffer.length-2;
+			if (!strchr (str, ' ')) {
+				r_list_foreach (core->rcmd->macro.macros, iter, item) {
+					char *p = item->name;
+					if (!str || !*str || !memcmp (str, p, n)) {
+						snprintf (buf, sizeof (buf), "%c%c%s)",
+							line->buffer.data[0],
+							line->buffer.data[1],
+							p);
+						eprintf ("------ %p\n", tmp_argv[i]);
+						if (r_is_heap (tmp_argv[i]))
+							free ((char *)tmp_argv[i]);
+						tmp_argv[i] = strdup (buf); // LEAKS
+						i++;
+						if (i==TMP_ARGV_SZ)
+							break;
+					}
+				}
+			}
+			tmp_argv[i] = NULL;
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
 		} else
 		if ((!memcmp (line->buffer.data, "s ", 2)) ||
 		    (!memcmp (line->buffer.data, "ag ", 3)) ||

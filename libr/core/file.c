@@ -183,6 +183,9 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		(r->file->obj->info)? r->file->obj->info->has_va: 0);
 	offset = r_bin_get_offset (r->bin);
 	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
+	if (!strcmp (r->bin->cur.curplugin->name, "dex")) {
+		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
+	}
 	if (r_config_get_i (r->config, "file.analyze"))
 		r_core_cmd0 (r, "aa");
 	return R_TRUE;
