@@ -39,6 +39,7 @@ x86)
 	;;
 esac
 
+
 PLATFORM=android-${ANDROID_SDK_VERSION}
 
 PLATFORM_ROOT=${PROGDIR}/platforms/${PLATFORM}/arch-${ARCH}
@@ -57,10 +58,10 @@ LDFLAGS="${LDFLAGS} --sysroot=${PLATFORM_ROOT}"
 #LDFLAGS="${LDFLAGS} ${PLATFORM_PATH}/lib/crtbegin_dynamic.o"
 #fi
 CC=${NDKPFX}-gcc
+AR=${NDKPFX}-ar
 EXT_SO=so
 
 export PATH=${NDK_BINS}:$PATH
-export EXT_SO CC CFLAGS LDFLAGS PATH
-
+export EXT_SO AR CC CFLAGS LDFLAGS PATH
 #echo ${CC} ${CFLAGS} ${LDFLAGS} $@
 ${CC} ${CFLAGS} ${LDFLAGS} $@

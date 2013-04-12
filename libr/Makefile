@@ -34,18 +34,19 @@ ifeq (${WITHNONPIC},1)
 endif
 
 # looks hacky :D
+#AR=arm-linux-androideabi-ar
 libr.a: $(shell ls */libr_*.a 2>/dev/null)
 	rm -f libr.a
 	echo CREATE libr.a > libr.m
 	for a in */libr_*.a ; do echo ADDLIB $$a >> libr.m ; done
 	echo SAVE >> libr.m
 	# ar -M is a gnu-ism .. try to find a proper portable way to do that
-	ar -M < libr.m
+	${AR} -M < libr.m
 	rm -f libr.m
 
 $(LIBS):
 	@echo "DIR $@"
-	cd $@ ; ${MAKE}
+	@${MAKE} -C $@
 
 pkgcfg:
 	@for lib in ${LIBS}; do ( cd $${lib} && ${MAKE} pkgcfg ); done

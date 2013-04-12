@@ -70,6 +70,8 @@ CC=ndk-gcc
 PS1="[r2-android-${NDK_ARCH}]> "
 export CC
 export PS1
+AR=arm-linux-androideabi-ar
+export AR
 A=$@
 if [ -n "$A" ]; then
 	${SHELL} -c "$A"

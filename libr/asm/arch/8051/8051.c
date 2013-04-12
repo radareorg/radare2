@@ -65,6 +65,10 @@ enum {
 #define _OFFSET(x) OFFSET, ((x[1])), NULL, buf
 #define _DIRECT(x) DIRECT, (x[1]), NULL, x
 
+#ifndef R_AII
+#define R_AII static
+#endif
+
 static const char *arg[] = { "#immed", "#imm", "@r0", "@r1",
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7" };
 static const char *ops[] = {
@@ -90,7 +94,7 @@ static const char *ops[] = {
 	"+, a;mov"      // F.   F4 == CPL A
 };
 
-Op8051 do8051struct(const ut8 *buf, int len) {
+R_AII Op8051 do8051struct(const ut8 *buf, int len) {
 	ut8 op = buf[0];
 	if (!op) return _{ "nop", 1, NONE, 0 };
 	if ((op&0xf)==1)
@@ -198,7 +202,7 @@ static char *strdup_filter (const char *str, const ut8 *buf) {
 	return o;
 }
 
-char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
+R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 	char *tmp, *eof, *out = str? str: malloc ((len=32));
 	switch (op.operand) {
 	case NONE: strcpy (out, op.name); break;
@@ -230,7 +234,7 @@ char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 	return out;
 }
 
-Op8051 do8051assemble(const char *str) {
+R_AII Op8051 do8051assemble(const char *str) {
 	return _{"TODO"};
 }
 
