@@ -4,35 +4,22 @@
 
 #define IS_PRINTABLE(x) (x>=' '&&x<='~')
 
+/* TODO: use a whitelist :) */
 static int r_name_validate_char(const char ch) {
+	if ((ch>='a' && ch<='z') || (ch>='A' && ch<='Z') || (ch>='0' && ch<='9'))
+		return R_TRUE;
 	switch (ch) {
-	case '{':
-	case '}':
-	case '$':
-	case '=':
-	case '*':
-	case '/':
-	case '+':
-	case '|':
-	case '&':
-	case ';':
-	case ':':
-	case '~':
-	case '"':
-	case '>':
-	case '<':
-	case '#':
-	case '%':
-	case '(':
-	case ')':
-	case '`':
-	case '\'':
-	case '-':
-	case ' ':
-	case '\n':
-	case '\t':
-	case '[':
-	case ']':
+		case '.':
+		case '_':
+			return R_TRUE;
+	}
+	return R_FALSE;
+#if 0
+	switch (ch) {
+	case '!': case ':': case '{': case '}': case '$': case '=': case '*':
+	case '/': case '+': case '|': case '&': case ';': case '~': case '"':
+	case '>': case '<': case '#': case '%': case '(': case ')': case '`':
+	case '\'': case '-': case ' ': case '\n': case '\t': case '[': case ']':
 	case '@':
 		return 0;
 	default:
@@ -42,10 +29,11 @@ static int r_name_validate_char(const char ch) {
 			return R_FALSE;
 	}
 	return R_TRUE;
+#endif
 }
 
 R_API int r_name_check(const char *name) {
-	if (!*name)
+	if (!name || !*name)
 		return R_FALSE;
 	for (;*name!='\0'; name++)
 		if (!r_name_validate_char (*name))

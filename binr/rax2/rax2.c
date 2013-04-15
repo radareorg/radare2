@@ -4,20 +4,22 @@
 #include <r_print.h>
 #include "../blob/version.c"
 
-static ut64 flags = 0;
-
 static RNum *num;
 static int help ();
-static int rax (char *str, int len, int last);
+static ut64 flags = 0;
 static int use_stdin ();
+static int rax (char *str, int len, int last);
 
 static int format_output (char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
 	const char *str = (char*) &n;
 	char strbits[65];
 
-	if (flags & 2)
-		r_mem_copyendian ((ut8*) str, (ut8*) str, 4, 0);
+	if (flags & 2) {
+		/* swap endian */
+		ut32 n2 = (n>>32)? 8:4;
+		r_mem_copyendian ((ut8*) str, (ut8*) str, n2, 0);
+	}
 	switch (mode) {
 	case 'I': printf ("%"PFMT64d"\n", n); break;
 	case '0': printf ("0x%"PFMT64x"\n", n); break;
@@ -60,6 +62,7 @@ static int help () {
 		"  -n    binary number     ;  rax2 -e 0x1234   # 34120000\n"
 		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
 		"  -S    raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
+		"  -t    tstamp -> str     ;  rax2 -t 1234567890\n"
 		"  -x    hash string       ;  rax2 -x linux osx\n"
 		"  -u    units             ;  rax2 -u 389289238 # 317.0M\n"
 		"  -v    version           ;  rax2 -V\n"
@@ -91,8 +94,9 @@ static int rax (char *str, int len, int last) {
 			case 'k': flags ^=256; break;
 			case 'n': flags ^=512; break;
 			case 'u': flags ^=1024;break;
+			case 't': flags ^=2048;break;
 			case 'v': blob_version ("rax2"); break;
-			case '\0': return use_stdin ();
+			case '\0': return !use_stdin ();
 			default:
 				if (str[1]>='0' && str[1]<='9')
 					return format_output (out_mode, str);
@@ -102,13 +106,13 @@ static int rax (char *str, int len, int last) {
 			str++;
 		}
 		if (last)
-			return use_stdin ();
+			return !use_stdin ();
 		return R_TRUE;
-	} else if (*str=='q')
+	}
+	if (*str=='q')
 		return R_FALSE;
-	else if (*str=='h' || *str=='?')
+	if (*str=='h' || *str=='?')
 		return help ();
-
 	dotherax:
 	if (flags & 512) { // -k
 		ut32 n = r_num_math (num, str);
@@ -168,6 +172,15 @@ static int rax (char *str, int len, int last) {
 		printf ("%s\n", buf);
 		return R_TRUE;
 	}
+	if (flags & 2048) {
+		ut32 n = r_num_math (num, str);
+		RPrint *p = r_print_new ();
+		p->big_endian = 0; // TODO: honor endian here
+		r_mem_copyendian ((ut8*) &n, (ut8*) &n, 8, 0); // fix endian here
+		r_print_date_unix (p, (const ut8*)&n, sizeof (ut64));
+		r_print_free (p);
+		return R_TRUE;
+	}
 	if (flags & 16) {
 		int h = r_str_hash (str);
 		printf ("0x%x\n", h);
@@ -210,9 +223,9 @@ static int rax (char *str, int len, int last) {
 	return R_TRUE;
 }
 
-static char buf[354096]; // TODO: remove this limit
 
 static int use_stdin () {
+	static char buf[354096]; // TODO: remove this limit
 	while (!feof (stdin)) {
 		int n = read (0, buf, sizeof (buf));
 		if (n<1) break;

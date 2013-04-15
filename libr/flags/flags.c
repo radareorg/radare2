@@ -108,19 +108,23 @@ R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 }
 
 R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
+	RFlagItem *item;
 	RList *list2, *list;
 	dup = 0; // XXX: force nondup
 
-	if (!name || !*name) {
-		/* contract fail */
+	/* contract fail */
+	if (!name || !*name)
 		return R_FALSE;
-	}
 	if (dup) {
-		RFlagItem *item = R_NEW0 (RFlagItem);
+		item = R_NEW0 (RFlagItem);
+		if (!r_flag_item_set_name (item, name)) {
+			eprintf ("Invalid flag name '%s'.\n", name);
+			free (item);
+			return R_FALSE;
+		}
 		item->space = f->space_idx;
 		r_list_append (f->flags, item);
 
-		r_flag_item_set_name (item, name);
 		item->offset = off + f->base;
 		item->size = size;
 
@@ -176,10 +180,13 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 			item->size = size;
 		} else {
 			item = R_NEW0 (RFlagItem);
+			if (!r_flag_item_set_name (item, name)) {
+				eprintf ("Invalid flag name '%s'.\n", name);
+				free (item);
+				return R_FALSE;
+			}
 			item->space = f->space_idx;
 			r_list_append (f->flags, item);
-
-			r_flag_item_set_name (item, name);
 			item->offset = off + f->base;
 			item->size = size;
 
