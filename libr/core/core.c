@@ -80,7 +80,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return num;
 			}
 		default:
-			eprintf ("Invalid reference size: %d\n", refsz);
+			eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
 			break;
 		}
 	} else

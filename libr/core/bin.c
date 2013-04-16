@@ -256,8 +256,7 @@ static int bin_dwarf (RCore *core, int mode) {
 			if ((mode & R_CORE_BIN_SET)) {
 				r_core_cmdf (core, "\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
 						row->file, row->line, line?line:"", row->address);
-			} else
-			r_cons_printf ("\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
+			} else r_cons_printf ("\"CC %s:%d  %s\"@0x%"PFMT64x"\n",
 				row->file, row->line, line?line:"", row->address);
 			free (line);
 		} else {
@@ -392,7 +391,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 }
 
 static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
-	char *dname, *p, str[R_FLAG_NAME_SIZE];
+	char *dname, *mn, *p, str[R_FLAG_NAME_SIZE];
 	const char *iname;
 	RBinImport *import;
 	RListIter *iter;
@@ -432,9 +431,9 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 					eprintf ("Cannot add function: %s (duplicated)\n", import->name);
 			r_flag_set (r->flags, str, va?baddr+import->rva:import->offset,
 					import->size, 0);
-	iname = import->name;
-	p = strstr (iname+1, "__");
-	if (p) iname = p+1;
+			iname = import->name;
+			p = strstr (iname+1, "__");
+			if (p) iname = p+1;
 			dname = r_bin_demangle (r->bin, iname);
 			if (dname) {
 				r_meta_add (r->anal->meta, R_META_TYPE_COMMENT,
@@ -458,9 +457,20 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 			} else {
 				if (mode) {
 					r_name_filter (import->name, sizeof (import->name));
+					iname = import->name;
+					p = strstr (iname+1, "__");
+					if (p) iname = p+1;
+					mn = r_bin_demangle (r->bin, iname);
+					if (mn) {
+						//r_name_filter (mn, strlen (mn));
+						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
+							import->offset, mn);
+						free (mn);
+					}
 					if (import->size)
 						r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
-								va?baddr+import->rva:import->offset, import->size, import->name);
+								va?baddr+import->rva:import->offset,
+								import->size, import->name);
 					r_cons_printf ("f imp.%s @ 0x%08"PFMT64x"\n",
 							import->name, va?baddr+import->rva:import->offset);
 				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
@@ -550,7 +560,9 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 				if (mode) {
 					char *mn = r_bin_demangle (r->bin, symbol->name);
 					if (mn) {
-						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n", symbol->offset, mn);
+						//r_name_filter (mn, strlen (mn));
+						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
+							symbol->offset, mn);
 						free (mn);
 					}
 					r_name_filter (symbol->name, sizeof (symbol->name));

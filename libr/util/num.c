@@ -89,10 +89,10 @@ R_API char *r_num_units(char *buf, ut64 num) {
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
 R_API ut64 r_num_get(RNum *num, const char *str) {
-	int i, j;
-	ut32 s, a;
+	int i, j, ok;
 	char lch, len;
 	ut64 ret = 0LL;
+	ut32 s, a;
 
 	if (!str) return 0;
 	for (; *str==' '; ) str++;
@@ -100,7 +100,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 
 	/* resolve string with an external callback */
 	if (num && num->callback) {
-		int ok = 0;
+		ok = 0;
 		ret = num->callback (num->userptr, str, &ok);
 		if (ok) return ret;
 	}

@@ -35,6 +35,8 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int ret;
 	char *prj = r_core_project_file (prjfile);
 	ret = r_core_cmd_file (core, prj);
+// prj += .sdb/asm
+// r_asm_project_open (core->assembler, prj);
 	free (prj);
 	return ret;
 }

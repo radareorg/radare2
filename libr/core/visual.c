@@ -556,15 +556,15 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case '[':
 		{
-			int scrcols = r_config_get_i (core->config, "scr.cols");
+			int scrcols = r_config_get_i (core->config, "hex.cols");
 			if (scrcols>2)
-				r_config_set_i (core->config, "scr.cols", scrcols-2);
+				r_config_set_i (core->config, "hex.cols", scrcols-2);
 		}
 		break;
 	case ']':
 		{
-			int scrcols = r_config_get_i (core->config, "scr.cols");
-			r_config_set_i (core->config, "scr.cols", scrcols+2);
+			int scrcols = r_config_get_i (core->config, "hex.cols");
+			r_config_set_i (core->config, "hex.cols", scrcols+2);
 		}
 		break;
 #if 0
@@ -780,7 +780,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" /        in cursor mode search in current block\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
-		" /*+-[]   change block size, [] = resize scr.cols\n"
+		" /*+-[]   change block size, [] = resize hex.cols\n"
 		" >||<     seek aligned to block size\n"
 		" iaA      (i)nsert hex, (a)ssemble code, visual (A)ssembler\n"
 		" b/B      toggle breakpoint / automatic block size\n"
@@ -829,13 +829,13 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	switch (core->printidx) {
 	case 0:
 		{
-		int scrcols = r_config_get_i (core->config, "scr.cols");
+		int scrcols = r_config_get_i (core->config, "hex.cols");
 		r_core_block_size (core, core->cons->rows * scrcols);
 		}
 		break;
 	case 3: // XXX pw
 		{
-		int scrcols = r_config_get_i (core->config, "scr.cols");
+		int scrcols = r_config_get_i (core->config, "hex.cols");
 		r_core_block_size (core, core->cons->rows * scrcols);
 		}
 		break;

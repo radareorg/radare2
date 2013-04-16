@@ -92,8 +92,8 @@ static int cmd_meta(void *data, const char *input) {
 			n = strlen (name);
 			eprintf ("%d\n", n);
 		}
-	case 'h': /* comment */
 	case 'C': /* comment */
+	case 'h': /* comment */
 	case 's': /* string */
 	case 'd': /* data */
 	case 'm': /* magic */
@@ -139,42 +139,37 @@ static int cmd_meta(void *data, const char *input) {
 				break;
 			}
 			t = strdup (input+2);
-			n = r_num_math (core->num, t);
-			if (!*t || n>0) { //atoi (t)>0) {
-				RFlagItem *fi;
-				p = strchr (t, ' ');
-				if (p) {
-					*p = '\0';
-					strncpy (name, p+1, sizeof (name)-1);
-				} else
-				switch (type) {
-				case 'z':
-					type='s';
-				case 's':
-					// TODO: filter \n and so on :)
-					strncpy (name, t, sizeof (name)-1);
-					r_core_read_at (core, addr, (ut8*)name, sizeof (name));
-					break;
-				default:
-					fi = r_flag_get_i (core->flags, addr);
-					if (fi) {
-						strncpy (name, fi->name, sizeof (name)-1);
-					//else sprintf (name, "ptr_%08"PFMT64x"", addr);
-					//} else {
-					//	eprintf ("meta: Invalid arguments (%s)\n", input);
-					//	return 1;
+			p = NULL;
+			n = 0;
+			strncpy (name, t, sizeof (name)-1);
+			if (*input != 'C') {
+				n = r_num_math (core->num, t);
+				if (!*t || n>0) {
+					RFlagItem *fi;
+					p = strchr (t, ' ');
+					if (p) {
+						*p = '\0';
+						strncpy (name, p+1, sizeof (name)-1);
+					} else
+					switch (type) {
+					case 'z':
+						type='s';
+					case 's':
+						// TODO: filter \n and so on :)
+						strncpy (name, t, sizeof (name)-1);
+						r_core_read_at (core, addr, (ut8*)name, sizeof (name));
+						break;
+					default:
+						fi = r_flag_get_i (core->flags, addr);
+						if (fi) strncpy (name, fi->name, sizeof (name)-1);
 					}
 				}
-				//if (!n) n = atoi (input+1);
-			} else {
-				p = NULL;
-				strncpy (name, t, sizeof (name)-1);
 			}
 			if (!n) n++;
 			addr_end = addr + n;
 			if (!r_meta_add (core->anal->meta, type, addr, addr_end, name))
 				free (t);
-			r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
+			//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 			}
 			break;
 		}
@@ -248,7 +243,7 @@ static int cmd_meta(void *data, const char *input) {
 		" C- [len] [@][ addr]    # delete metadata at given address range\n"
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
 		" Cl  file:line [addr]   # add comment with line information\n"
-		" CC[-] [size] [string]  # add/remove comment. Use CC! to edit with $EDITOR\n"
+		" CC[-] [comment-text]   # add/remove comment. Use CC! to edit with $EDITOR\n"
 		" Cv[-] offset reg name  # add var substitution\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
 		" Ch[-] [size]           # hide data\n"

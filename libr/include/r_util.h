@@ -123,6 +123,7 @@ typedef struct r_num_calc_t {
 	int calc_len;
 } RNumCalc;
 
+
 typedef struct r_num_t {
 	ut64 (*callback)(struct r_num_t *userptr, const char *str, int *ok);
 //	RNumCallback callback;
@@ -132,7 +133,7 @@ typedef struct r_num_t {
 	RNumCalc nc;
 } RNum;
 
-typedef ut64 (*RNumCallback)(RNum *self, const char *str, int *ok);
+typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
 
 typedef struct r_range_item_t {
 	ut64 fr;

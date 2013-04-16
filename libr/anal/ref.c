@@ -54,14 +54,14 @@ R_API int r_anal_ref_del(RAnal *anal, ut64 at) {
 			return R_FALSE;
 	} else {
 		r_list_foreach_safe (anal->refs, iter, iter_tmp, refi) {
-			if (at == refi->at) {
+			if (at == refi->at)
 				r_list_delete (anal->refs, iter);
-			}
 		}
 	}
 	return R_TRUE;
 }
 
+// XXX: MAJOR SLOWDOWN PLZ FIX
 R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
 	RAnalFunction *fcni;
 	RAnalRef *refi, *ref, *refr;
