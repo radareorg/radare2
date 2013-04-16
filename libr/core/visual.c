@@ -852,13 +852,13 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		filename = core->file->filename;
 	else filename = "";
 	{ /* get flag with delta */
-		ut64 addr = core->offset + curset? cursor: 0;
+		ut64 addr = core->offset + (curset? cursor: 0);
 		RFlagItem *f = r_flag_get_at (core->flags, addr);
 		if (f) {
 			if (f->offset == addr || !f->offset)
 				snprintf (pos, sizeof (pos), "@ %s", f->name);
-			else snprintf (pos, sizeof (pos), "@ %s+%d (0x%"PFMT64x")",
-				f->name, (int)(addr-f->offset), f->offset);
+			else snprintf (pos, sizeof (pos), "@ %s+%d # 0x%"PFMT64x,
+				f->name, (int)(addr-f->offset), addr);
 		} else pos[0] = 0;
 	}
 

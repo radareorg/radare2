@@ -64,8 +64,8 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		break;
 	case UD_Icall:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = oplen + getval (&u.operand[0]);
-		op->fail = addr+oplen;
+		op->jump = addr + oplen + getval (&u.operand[0]);
+		op->fail = addr + oplen;
 		break;
 	case UD_Iret:
 	case UD_Iretf:

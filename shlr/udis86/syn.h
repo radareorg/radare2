@@ -33,7 +33,7 @@
 
 extern const char* ud_reg_tab[];
 
-uint64_t ud_syn_rel_target(struct ud*, struct ud_operand*);
+uint64_t ud_syn_rel_target(struct ud*, struct ud_operand*, int mask);
 
 #ifdef __GNUC__
 int ud_asmprintf(struct ud *u, char *fmt, ...) 

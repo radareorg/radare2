@@ -94,7 +94,7 @@ gen_operand(struct ud* u, struct ud_operand* op)
     break;
 
   case UD_OP_JIMM:
-    ud_syn_print_addr(u, ud_syn_rel_target(u, op));
+    ud_syn_print_addr(u, ud_syn_rel_target(u, op, 0));
     break;
 
   case UD_OP_PTR:

@@ -392,10 +392,11 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 }
 
 static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
-	char str[R_FLAG_NAME_SIZE];
-	RList *imports;
-	RListIter *iter;
+	char *dname, *p, str[R_FLAG_NAME_SIZE];
+	const char *iname;
 	RBinImport *import;
+	RListIter *iter;
+	RList *imports;
 	int i = 0;
 
 	if ((imports = r_bin_get_imports (r->bin)) == NULL)
@@ -431,6 +432,16 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 					eprintf ("Cannot add function: %s (duplicated)\n", import->name);
 			r_flag_set (r->flags, str, va?baddr+import->rva:import->offset,
 					import->size, 0);
+	iname = import->name;
+	p = strstr (iname+1, "__");
+	if (p) iname = p+1;
+			dname = r_bin_demangle (r->bin, iname);
+			if (dname) {
+				r_meta_add (r->anal->meta, R_META_TYPE_COMMENT,
+						va? baddr+import->rva: import->offset,
+						import->size, dname);
+				free (dname);
+			}
 		}
 	} else {
 		if (!at) {

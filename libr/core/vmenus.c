@@ -269,6 +269,7 @@ R_API int r_core_visual_comments (RCore *core) {
 	RAnalFunction *fcn;
 	RMetaItem *d;
 
+// XXX: mode is always 0, remove useless code
 	for (;;) {
 		r_cons_gotoxy (0, 0);
 		r_cons_clear ();
@@ -290,9 +291,9 @@ R_API int r_core_visual_comments (RCore *core) {
 						from = d->from;
 						size = d->size;
 						p = str;
-						r_cons_printf("  >  %s\n", str);
+						r_cons_printf ("  >  %s\n", str);
 					} else {
-						r_cons_printf("     %s\n", str);
+						r_cons_printf ("     %s\n", str);
 						free (str);
 					}
 				}
@@ -303,6 +304,8 @@ R_API int r_core_visual_comments (RCore *core) {
 			option--;
 			continue;
 		}
+		r_cons_newline ();
+#if 0
 		r_list_foreach (core->anal->fcns, iter, fcn) {
 			if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
 				if (option==i) {
@@ -310,10 +313,11 @@ R_API int r_core_visual_comments (RCore *core) {
 					from = fcn->addr;
 					size = fcn->size;
 				}
-				r_cons_printf("  %c  %s\n", (option==i)?'>':' ', fcn->name);
+				r_cons_printf("  %c .. %s\n", (option==i)?'>':' ', fcn->name);
 			}
 			i++;
 		}
+#endif
 
 		switch (format) {
 		case 0: sprintf (cmd, "px @ 0x%"PFMT64x":64", from); core->printidx = 0; break;

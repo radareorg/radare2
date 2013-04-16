@@ -705,6 +705,18 @@ toro:
 		}
 
 		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
+			if (core->vmode)
+			switch (analop.type) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_CALL:
+				counter++;
+				if (counter<10){
+					core->asmqjmps[counter] = analop.jump;
+					r_cons_printf (" [%d]", counter);
+				} else r_cons_strcat (" [?]");
+				break;
+			}
 			if (show_functions) {
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
 				if (ccstr) {
@@ -721,18 +733,6 @@ toro:
 			r_anal_cc_reset (&cc);
 		}
 
-		if (core->vmode)
-		switch (analop.type) {
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_CALL:
-			counter++;
-			if (counter<10){
-				core->asmqjmps[counter] = analop.jump;
-				r_cons_printf (" [%d]", counter);
-			} else r_cons_strcat (" [?]");
-			break;
-		}
 		switch (analop.type) {
 		case R_ANAL_OP_TYPE_PUSH:
 			if (analop.value) {
