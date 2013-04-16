@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2013 - pancake */
 
 // XXX: All this stuff must be linked to the code injection api
 

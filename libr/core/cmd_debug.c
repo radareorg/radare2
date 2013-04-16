@@ -666,11 +666,6 @@ static int cmd_debug(void *data, const char *input) {
 	char *ptr;
 
 	switch (input[0]) {
-	case 'x': // XXX : only for testing
-		r_debug_execute (core->dbg, (ut8*)
-			"\xc7\xc0\x03\x00\x00\x00\x33\xdb\x33"
-			"\xcc\xc7\xc2\x10\x00\x00\x00\xcd\x80", 18);
-		break;
 	case 't':
 		switch (input[1]) {
 		case '?':
@@ -1013,6 +1008,16 @@ static int cmd_debug(void *data, const char *input) {
 			r_debug_use (core->dbg, input+2);
 		else r_debug_plugin_list (core->dbg);
 		break;
+	case 'i':
+		if (input[1] ==' ') {
+			char bytes[4096];
+			int bytes_len = r_hex_str2bin (input+2, bytes);
+			r_debug_execute (core->dbg, bytes, bytes_len, 0);
+		} else {
+			eprintf ("Usage: di 9090\n");
+			eprintf ("TODO: option to not restore registers\n");
+		}
+		break;
 	case 'o':
 		r_core_file_reopen (core, input[1]? input+2: NULL, 0);
 		break;
@@ -1034,6 +1039,7 @@ static int cmd_debug(void *data, const char *input) {
 		" dd             file descriptors (!fd in r1)\n"
 		" ds[ol] N       step, over, source line\n"
 		" do             open process (reload, alias for 'oo')\n"
+		" di [bytes]     inject code on running process and execute it\n"
 		" dp[=*?t][pid]  list, attach to process or thread id\n"
 		" dc[?]          continue execution. dc? for more\n"
 		" dr[?]          cpu registers, dr? for extended help\n"
