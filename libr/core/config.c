@@ -16,11 +16,18 @@ static int config_scrnkey_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
-static int config_scrcols_callback(void *user, void *data) {
+static int config_hexstride_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode*) data;
+	((RCore *)user)->print->stride = node->i_value;
+	return R_TRUE;
+}
+
+static int config_hexcols_callback(void *user, void *data) {
 	int c = R_MIN (128, R_MAX (((RConfigNode*)data)->i_value, 0));
 	((RCore *)user)->print->cols = c & ~1;
 	return R_TRUE;
 }
+
 static int config_widthfix_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->widthfix = node->i_value;
@@ -346,13 +353,6 @@ static int config_fsview_callback(void *user, void *data) {
 static int config_scrprompt_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_line_singleton()->echo = node->i_value;
-	return R_TRUE;
-}
-
-static int config_scrstride_callback(void *user, void *data) {
-	RConfigNode *node = (RConfigNode *) data;
-	RCore *core = (RCore *) user;
-	core->print->stride = node->i_value;
 	return R_TRUE;
 }
 
@@ -721,8 +721,6 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
-	r_config_set_i_cb (cfg, "scr.stride", 0, config_scrstride_callback);
-	r_config_desc (cfg, "scr.stride", "select row stride for hexdump (px)");
 	r_config_set_cb (cfg, "scr.sparse", "false", config_scrsparse_callback);
 	r_config_set_cb (cfg, "scr.interactive", "true", config_scrint_callback);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
@@ -742,8 +740,10 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set (cfg, "scr.seek", "");
 	r_config_set_i(cfg, "scr.colpos", 80);
 	r_config_desc (cfg, "scr.colpos", "Column position of cmd.cprompt in visual");
-	r_config_set_i_cb (cfg, "scr.cols", 16, &config_scrcols_callback);
-	r_config_desc (cfg, "scr.cols", "Configure the number of columns to print");
+	r_config_set_i_cb (cfg, "hex.stride", 0, &config_hexstride_callback);
+	r_config_desc (cfg, "hex.stride", "Define the line stride in hexdump (default is 0)");
+	r_config_set_i_cb (cfg, "hex.cols", 16, &config_hexcols_callback);
+	r_config_desc (cfg, "hex.cols", "Configure the number of columns in hexdump");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
 	r_config_set_cb (cfg, "scr.widthfix", "false", &config_widthfix_callback);

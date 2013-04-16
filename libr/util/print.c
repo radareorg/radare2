@@ -349,7 +349,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	p->interrupt = 0;
-	for (i=j=0; !p->interrupt && i<len; i+=(p->stride?p->stride:inc)) {
+	for (i=j=0; !p->interrupt && i<len; i+=(p->stride?p->stride:inc), j+=(p->stride?p->stride:0)) {
 		if (use_sparse) {
 			if (check_sparse (buf+i, inc, sparse_char)) {
 				if (i+inc>=len || check_sparse (buf+i+inc, inc, sparse_char)) {
