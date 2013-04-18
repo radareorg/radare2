@@ -26,6 +26,7 @@ If you want to open the file in read-write mode use -w flag or -e cfg.write=true
 Print the contents of the current block with the 'p' command
 Command layout is: <repeat><command><bytes>@<offset>.\  For example: 3x20@0x33 will show 3 hexdumps of 20 bytes at 0x33
 Press 'c' in visual mode to toggle the cursor mode
+Press 'C' in visual mode to toggle colors
 You can "copy/paste" bytes using the cursor in visual mode 'c' and using the 'y' and 'Y' keys
 Move around the bytes with hjkl! Arrow keys are not portable and are less productive to use
 Seek at relative offsets with 's +<offset>' or 's -<offset>'
@@ -47,7 +48,6 @@ Use hasher to calculate hashes of portion blocks of a file
 Use zoom.byte=entropy and press 'z' in visual mode to zoom out to see the entropy of the whole file
 Use zoom.byte=printable in zoom mode (z key in visual mode) to find strings
 Set colors to your screen with 'e scr.color=true'
-Press 'C' in visual mode to toggle colors
 Trace the register changes when debugging with trace.cmtregs
 Move the comments to the right changing their margin with e asm.cmtmargin
 Execute a command on the visual prompt with cmd.vprompt
@@ -126,3 +126,12 @@ wait a moment..
 Don't do this.
 No such file or directory.
 Default scripting languages are NodeJS and Python.
+-bash: r2: command not found
+The unix-like reverse engineering framework
+To start the webserver type the following command: 'r2 -c=H /bin/ls'
+To enter into the visual mode type 'V' in the prompt and hit enter
+Press any key to continue...
+To disable those fortune messages: $ echo cfg.fortunes=false > ~/.radare2rc
+ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
+Radare for FideOS, now with extra potato
+Your project name should contain an uppercase letter, 8 vowels, some numbers and the 5 first numbers of your private bitcoin key

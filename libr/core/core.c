@@ -16,17 +16,17 @@ static int core_cmd_callback (void *user, const char *cmd) {
 
 static ut64 getref (RCore *core, int n, char t, int type) {
 	RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
-	if (fcn) {
-		RList *list = t=='r'? fcn->refs: fcn->xrefs;
-		RListIter *iter;
-		RAnalRef *r;
-		int i=0;
-		r_list_foreach (list, iter, r) {
-			if (r->type == type) {
-				if (i == n)
-					return r->addr;
-				i++;
-			}
+	RListIter *iter;
+	RAnalRef *r;
+	RList *list;
+	int i=0;
+	if (!fcn) return UT64_MAX;
+	list = (t=='r')? fcn->refs: fcn->xrefs;
+	r_list_foreach (list, iter, r) {
+		if (r->type == type) {
+			if (i == n)
+				return r->addr;
+			i++;
 		}
 	}
 	return UT64_MAX;
@@ -35,10 +35,13 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RAnalFunction *fcn;
+	char *ptr, *bptr;
 	RFlagItem *flag;
+	RIOSection *s;
 	RAnalOp op;
 	ut64 ret = 0;
-	*ok = 0;
+
+	if (ok) *ok = R_FALSE;
 	if (*str=='[') {
 		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
 		const char *p = strchr (str+5, ':');
@@ -62,30 +65,26 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 8: {
 			ut64 num = 0;
 			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
-			return num;
-			}
+			return num; }
 		case 4: {
 			ut32 num = 0;
 			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
-			return num;
-			}
+			return num; }
 		case 2: {
 			ut16 num = 0;
 			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
-			return num;
-			}
+			return num; }
 		case 1: {
 			ut8 num = 0;
 			r_io_read_at (core->io, n, (ut8*)&num, sizeof (num));
-			return num;
-			}
+			return num; }
 		default:
 			eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
 			break;
 		}
 	} else
 	if (str[0]=='$') {
-		*ok = 1;
+		if (ok) *ok = 1;
 		// TODO: group analop-dependant vars after a char, so i can filter
 		r_anal_op (core->anal, &op, core->offset,
 			core->block, core->blocksize);
@@ -93,18 +92,16 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str+2);
 		case '{':
-			{
-				char *ptr, *bptr = strdup (str+2);
-				ptr = strchr (bptr, '}');
-				if (ptr != NULL) {
-					ut64 ret;
-					ptr[0]='\0';
-					ret = r_config_get_i (core->config, bptr);
-					free (bptr);
-					return ret;
-				}
+			bptr = strdup (str+2);
+			ptr = strchr (bptr, '}');
+			if (ptr != NULL) {
+				ut64 ret;
+				ptr[0] = '\0';
+				ret = r_config_get_i (core->config, bptr);
+				free (bptr);
+				return ret;
 			}
-			return 0;
+			break;
 		case 'e': return op.eob;
 		case 'j': return op.jump;
 		case 'f': return op.fail;
@@ -112,37 +109,36 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'l': return op.length;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
-		case 'w': {
-			int bits = r_config_get_i (core->config, "asm.bits");
-			return bits/8;
-			} break;
-		case 'S': {
-			RIOSection *s = r_io_section_get (core->io, 
-				r_io_section_vaddr_to_offset (core->io, core->offset));
-			return s? (str[2]=='S'?s->size: s->offset): 0;
-			}
+		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
+		case 'S':
+			s = r_io_section_get (core->io, 
+				r_io_section_vaddr_to_offset (core->io,
+				core->offset));
+			return s? (str[2]=='S'? s->size: s->offset): 0;
 		case '?': return core->num->value;
 		case '$': return core->offset;
 		case 'o': return core->io->off;
-		case 'C': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CALL);
-		case 'J': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_CODE);
-		case 'D': return getref (core, atoi (str+2), 'r', R_ANAL_REF_TYPE_DATA);
-		case 'X': return getref (core, atoi (str+2), 'x', R_ANAL_REF_TYPE_CALL);
+		case 'C': return getref (core, atoi (str+2), 'r',
+				R_ANAL_REF_TYPE_CALL);
+		case 'J': return getref (core, atoi (str+2), 'r',
+				R_ANAL_REF_TYPE_CODE);
+		case 'D': return getref (core, atoi (str+2), 'r',
+				R_ANAL_REF_TYPE_DATA);
+		case 'X': return getref (core, atoi (str+2), 'x',
+				R_ANAL_REF_TYPE_CALL);
 		case 'I':
-			  fcn = r_anal_fcn_find (core->anal, core->offset, 0);
-			  if (fcn) return fcn->ninstr;
-			  return 0;
+			fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+			return fcn? fcn->ninstr: 0;
 		case 'F':
-			  fcn = r_anal_fcn_find (core->anal, core->offset, 0);
-			  if (fcn) return fcn->size;
-			  return 0;
+			fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+			return fcn? fcn->size: 0;
 		}
 	} else
 	if (*str>'A') {
 		if ((flag = r_flag_get (core->flags, str))) {
 			ret = flag->offset;
-			*ok = R_TRUE;
-		} else *ok = ret = 0;
+			if (ok) *ok = R_TRUE;
+		}
 	}
 	return ret;
 }
