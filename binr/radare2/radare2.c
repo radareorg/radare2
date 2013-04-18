@@ -144,11 +144,12 @@ int main(int argc, char **argv) {
 			for (;;) {
 				struct dirent* de = readdir (d);
 				if (!de) break;
-				if (!strcmp (".d", de->d_name+de->d_namlen-2)) {
+				ret = strlen (de->d_name);
+				if (!strcmp (".d", de->d_name+ret-2)) {
 					// TODO:
 					// do more checks to ensure it is a project
 					// show project info (opened? file? ..?)
-					printf ("%.*s\n", de->d_namlen-2, de->d_name);
+					printf ("%.*s\n", ret-2, de->d_name);
 				}
 			}
 		}
