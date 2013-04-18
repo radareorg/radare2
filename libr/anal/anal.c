@@ -24,9 +24,11 @@ static RAnalVarType anal_default_vartypes[] =
 R_API RAnal *r_anal_new() {
 	int i;
 	RAnalPlugin *static_plugin;
-	RAnal *anal = R_NEW (RAnal);
+	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
 	memset (anal, 0, sizeof (RAnal));
+	anal->sdb_xrefs = NULL;
+	r_anal_xrefs_init (anal);
 	anal->diff_ops = 0;
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
@@ -185,3 +187,17 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 }
 
 R_API RList* r_anal_get_fcns (RAnal *anal) { return anal->fcns; }
+
+R_API int r_anal_project_load(RAnal *anal, const char *prjfile) {
+	if (!prjfile || !*prjfile)
+		return R_FALSE;
+	r_anal_xrefs_load (anal, prjfile);
+	return R_TRUE;
+}
+
+R_API int r_anal_project_save(RAnal *anal, const char *prjfile) {
+	if (!prjfile || !*prjfile)
+		return R_FALSE;
+	r_anal_xrefs_save (anal, prjfile);
+	return R_TRUE;
+}

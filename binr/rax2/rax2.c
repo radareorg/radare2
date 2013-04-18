@@ -100,7 +100,7 @@ static int rax (char *str, int len, int last) {
 			default:
 				if (str[1]>='0' && str[1]<='9')
 					return format_output (out_mode, str);
-				printf ("Usage: rax2 [options] [expression]\n");
+				printf ("Usage: rax2 [options] [expr ...]\n");
 				return help ();
 			}
 			str++;

@@ -35,8 +35,7 @@ R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int ret;
 	char *prj = r_core_project_file (prjfile);
 	ret = r_core_cmd_file (core, prj);
-// prj += .sdb/asm
-// r_asm_project_open (core->assembler, prj);
+	r_anal_project_load (core->anal, prjfile);
 	free (prj);
 	return ret;
 }
@@ -70,6 +69,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 
 	prj = r_core_project_file (file);
 	r_core_project_init ();
+	r_anal_project_save (core->anal, prj);
 	fd = r_sandbox_open (prj, O_BINARY|O_RDWR|O_CREAT, 0644);
 	if (fd != -1) {
 		fdold = r_cons_singleton ()->fdout;

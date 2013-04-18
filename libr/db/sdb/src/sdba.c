@@ -27,8 +27,24 @@ SDB_VISIBLE char *sdb_astring(char *str, int *hasnext) {
 	return str;
 }
 
+SDB_VISIBLE ut64 sdb_agetn(Sdb *s, const char *key, int idx, ut32 *cas) {
+	const char *str = sdb_getc (s, key, cas);
+	const char *n, *p = str;
+	int i;
+	if (!str || !*str) return UT64_MAX;
+	if (idx==0)
+		return sdb_atoi (str);
+	for (i=0; i<idx; i++) {
+		n = strchr (p, SDB_RS);
+		if (!n) return UT64_MAX;
+		p = n+1;
+	}
+	if (!p) return UT64_MAX;
+	return sdb_atoi (p);
+}
+
 SDB_VISIBLE char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
-	const char *str = sdb_getc (s, key, 0); // XXX cas
+	const char *str = sdb_getc (s, key, cas);
 	const char *p = str;
 	char *o, *n;
 	int i, len;
@@ -55,6 +71,11 @@ SDB_VISIBLE char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
 	memcpy (o, p, len);
 	o[len] = 0;
 	return o;
+}
+
+SDB_VISIBLE int sdb_ainsn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
+	char valstr[64];
+	return sdb_ains(s, key, idx, sdb_itoa (val, valstr), cas);
 }
 
 // TODO: done, but there's room for improvement
@@ -94,7 +115,29 @@ SDB_VISIBLE int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32
 	return ret;
 }
 
-// set/replace
+SDB_VISIBLE int sdb_asetn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
+	char valstr[64];
+	return sdb_aset (s, key, idx, sdb_itoa (val, valstr), cas);
+}
+
+SDB_VISIBLE int sdb_aaddn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
+	char valstr[64];
+	sdb_itoa (val, valstr);
+	if (sdb_aexists (s, key, valstr))
+		return 0;
+	return sdb_aadd (s, key, idx, valstr, cas);
+}
+
+SDB_VISIBLE int sdb_aadd(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
+/*
+	if (sdb_exists (s, key))
+		return 0;
+*/
+	if (sdb_aexists (s, key, val))
+		return 0;
+	return sdb_aset (s, key, idx, val, cas);
+}
+
 SDB_VISIBLE int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 	char *nstr, *ptr;
 	const char *usr, *str = sdb_getc (s, key, 0);
@@ -118,6 +161,22 @@ SDB_VISIBLE int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32
 	}
 	free (nstr);
 	return ret;
+}
+
+SDB_VISIBLE int sdb_adeln(Sdb *s, const char *key, ut64 val, ut32 cas) {
+	const char *str = sdb_getc (s, key, 0);
+	const char *n, *p = str;
+	ut64 num;
+	int idx;
+	for (idx=0; ; idx++) {
+		num = sdb_atoi (p);
+		if (num == val)
+			return sdb_adel (s, key, idx, cas);
+		n = strchr (p, SDB_RS);
+		if (!n) break;
+		p = n+1;
+	}
+	return 0;
 }
 
 SDB_VISIBLE int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
@@ -150,6 +209,23 @@ SDB_VISIBLE const char *sdb_aindex(const char *str, int idx) {
 		else break;
 	}
 	return NULL;
+}
+
+SDB_VISIBLE int sdb_aexists(Sdb *s, const char *key, const char *val) {
+	int found = 0, hasnext = 1;
+	char *list = sdb_get (s, key, 0);
+	char *ptr = list;
+	hasnext = list && *list;
+	while (hasnext) {
+		char *str = sdb_astring (ptr, &hasnext);
+		if (!strcmp (str, val)) {
+			found = 1;
+			break;
+		}
+		ptr = (char *)sdb_anext (str);
+	}
+	free (list);
+	return found;
 }
 
 // TODO: make static inline?

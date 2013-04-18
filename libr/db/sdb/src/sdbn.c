@@ -12,12 +12,21 @@ static void __strrev(char *s, int len) {
 	}
 }
 
-static void __ulltoa(ut64 n, char *s) {
+R_API char *sdb_itoa(ut64 n, char *s) {
 	int i = 0;
+	if (!s) s = malloc (64);
 	do s[i++] = n % 10 + '0';
 	while ((n /= 10) > 0);
 	s[i] = '\0';
-	__strrev (s, i);
+	__strrev (s, i); // TODO find an algo without strrev
+	return s;
+}
+
+R_API ut64 sdb_atoi(const char *s) {
+	char *p;
+	if (!strncmp (s, "0x", 2))
+		return strtoull (s+2, &p, 16);
+	return strtoull (s, &p, 10);
 }
 
 SDB_VISIBLE int sdb_nexists (Sdb *s, const char *key) {
@@ -33,15 +42,20 @@ SDB_VISIBLE ut64 sdb_getn(Sdb *s, const char *key, ut32 *cas) {
 	char *p;
 	const char *v = sdb_getc (s, key, cas);
 	if (!v) return 0LL;
-	n = strtoull (v, &p, 10);
+	if (!strncmp (v, "0x", 2)) {
+		n = strtoull (v+2, &p, 16);
+	} else {
+		n = strtoull (v, &p, 10);
+	}
 	if (!p) return 0LL;
+// TODO: support hexa
 	//XXX sdb_setn (s, key, n);
 	return n;
 }
 
 SDB_VISIBLE int sdb_setn(Sdb *s, const char *key, ut64 v, ut32 cas) {
 	char b[128];
-	__ulltoa (v, b);
+	sdb_itoa (v, b);
 	return sdb_set (s, key, b, cas);
 }
 

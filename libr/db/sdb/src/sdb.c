@@ -5,6 +5,8 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include "sdb.h"
 #ifndef O_BINARY
@@ -381,6 +383,29 @@ SDB_VISIBLE void sdb_flush(Sdb* s) {
 	close (s->fd);
 	s->fd = -1;
 }
+#if __WINDOWS__
+#define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
+#define r_sys_mkdir_failed() (GetLastError () != ERROR_ALREADY_EXISTS)
+#else
+#define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
+#define r_sys_mkdir_failed() (errno != EEXIST)
+#endif
+
+static int r_sys_rmkdir(char *dir) {
+        char *path = dir, *ptr = path;
+        if (*ptr=='/') ptr++; // XXX \\ on w32?
+        while ((ptr = strchr (ptr, '/'))) {
+                *ptr = 0;
+                if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
+                        fprintf (stderr, "r_sys_rmkdir: fail %s\n", dir);
+                        free (path);
+                        return R_FALSE;
+                }
+                *ptr = '/';
+                ptr++;
+        }
+        return R_TRUE;
+}
 
 /* sdb-create api */
 SDB_VISIBLE int sdb_create (Sdb *s) {
@@ -391,9 +416,11 @@ SDB_VISIBLE int sdb_create (Sdb *s) {
 	str = malloc (nlen+5);
 	if (!str) return 0;
 	strcpy (str, s->dir);
+	r_sys_rmkdir (str);
 	strcpy (str+nlen, ".tmp");
 	s->fdump = open (str, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, 0644);
 	if (s->fdump == -1) {
+		fprintf (stderr, "sdb: Cannot open '%s' for writing.\n", str);
 		free (str);
 		return 0;
 	}

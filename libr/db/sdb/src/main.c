@@ -62,7 +62,7 @@ static void createdb(const char *f) {
 }
 
 static void showusage(int o) {
-	printf ("usage: sdb [-fhv] [db] [-=]|[-+][(idx)key[?path|=value] ..]\n");
+	printf ("usage: sdb [-fhv] [-|db] [-=]|[-+][(idx)key[?path|=value] ..]\n");
 	exit (o);
 }
 

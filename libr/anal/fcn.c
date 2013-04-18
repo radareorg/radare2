@@ -63,6 +63,7 @@ R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 	ref->at = at; // from 
 	ref->addr = addr; // to
 	ref->type = type;
+r_anal_xrefs_set (anal, type=='d'?"data":"code", addr, at);
 	// TODO: ensure we are not dupping xrefs
 	r_list_append (fcn->refs, ref);
 	return R_TRUE;

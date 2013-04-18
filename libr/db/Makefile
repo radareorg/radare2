@@ -5,9 +5,27 @@ DEPS=r_util
 
 OBJS=db.o table.o pair.o
 
+
 SDBLIB=sdb/src/libsdb.a
 EXTRA_CLEAN=sdbclean
 EXTRA_TARGETS+=${SDBLIB}
+
+OBJS+=sdb/src/buffer.o
+OBJS+=sdb/src/cdb.o
+OBJS+=sdb/src/cdb_make.o
+OBJS+=sdb/src/ht.o
+OBJS+=sdb/src/json/js0n.o
+OBJS+=sdb/src/json/json.o
+OBJS+=sdb/src/json/rangstr.o
+OBJS+=sdb/src/json.o
+OBJS+=sdb/src/lock.o
+OBJS+=sdb/src/ls.o
+OBJS+=sdb/src/ns.o
+OBJS+=sdb/src/query.o
+OBJS+=sdb/src/sdb.o
+OBJS+=sdb/src/sdba.o
+OBJS+=sdb/src/sdbn.o
+OBJS+=sdb/src/util.o
 
 CFLAGS+=-Isdb/src
 
@@ -19,7 +37,7 @@ SYNCFILES=$(addprefix sdb.vc/,${F})
 include ../rules.mk
 
 # link against sdb
-LINK+=${SDBLIB}
+#LINK+=${SDBLIB}
 
 sdbclean:
 	cd sdb/src ; ${MAKE} clean

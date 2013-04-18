@@ -285,7 +285,7 @@ static int autocomplete(RLine *line) {
 							line->buffer.data[1],
 							p);
 						eprintf ("------ %p\n", tmp_argv[i]);
-						if (r_is_heap (tmp_argv[i]))
+						if (r_is_heap ((void*)tmp_argv[i]))
 							free ((char *)tmp_argv[i]);
 						tmp_argv[i] = strdup (buf); // LEAKS
 						i++;

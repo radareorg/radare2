@@ -68,6 +68,36 @@ R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
 	RListIter *iter, *iter2, *iter3;
 	RList *ret;
 
+return r_anal_xrefs_get (anal, addr);
+return NULL; // fuck yeah optimization!
+
+#if 0
+for (list = sdb_list_begin (DB); list; list = sdb_list_next (list)) {
+	char *str = astring();
+	eprintf ("--> %s\n", str);
+}
+
+char *list = sdb_list_begin(DB)
+while (list) {
+	
+	list = sdb_list_next (list);
+}
+	$ sdb xrefs
+	()types=code,data
+	()data.0x1200=0x1000,0x1030,0x1090
+	()code.0x3020=0x2010,0x2042
+
+	int clen, dlen;
+	const char **coderefs, **datarefs;
+
+	coderefs = r_anal_xrefs_get (anal, "code", &clen);
+	datarefs = r_anal_xrefs_get (anal, "data", &dlen);
+	if (!coderefs && !datarefs)
+		return NULL;
+
+	xrefs[0x80480] = { type: "data", from: "
+	RAnalFudr_anal_fcn_get_at (anal, addr);
+#endif
 	if (!(ret = r_anal_ref_list_new ()))
 		return NULL;
 	// XXX: this is just a hack that makes analysis/disasm much slower but

@@ -178,10 +178,9 @@ R_API void r_str_case(char *str, int up) {
 		char oc = 0;
 		for (; *str; oc = *str++)
 			*str = (*str=='x' && oc=='0') ? 'x': toupper (*str);
-	} else {
+	} else
 		for (; *str; str++)
 			*str = tolower (*str);
-	}
 }
 
 R_API char *r_str_home(const char *str) {
@@ -191,9 +190,8 @@ R_API char *r_str_home(const char *str) {
 	if (home == NULL)
 		return NULL;
 	length = strlen (home) + 1;
-	if (str) {
+	if (str)
 		length += strlen (R_SYS_DIR) + strlen (str);
-	}
 	dst = (char *)malloc (length);
 	if (dst == NULL)
 		goto fail;

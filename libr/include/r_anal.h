@@ -497,6 +497,7 @@ typedef struct r_anal_t {
 	struct r_anal_plugin_t *cur;
 	struct list_head anals; // TODO: Reimplement with RList
 	RList *hints; // XXX use better data structure here (slist?)
+	Sdb *sdb_xrefs;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -760,6 +761,12 @@ R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
+
+/* project */
+R_API int r_anal_project_load(RAnal *anal, const char *prjfile);
+R_API int r_anal_project_save(RAnal *anal, const char *prjfile);
+R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile);
+R_API void r_anal_xrefs_init (RAnal *anal);
 
 #define R_ANAL_THRESHOLDFCN 0.7F
 #define R_ANAL_THRESHOLDBB 0.7F

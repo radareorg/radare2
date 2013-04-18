@@ -278,8 +278,8 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	}
 
 	if  (
-( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
-) && ((code[i]&0xffffff00) == 0xe12fff00)
+(( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
+) && ((code[i]&0xffffff00) == 0xe12fff00))
 ||
 	IS_EXITPOINT (code[i])) {
 //if (IS_EXITPOINT (code[i])) {
