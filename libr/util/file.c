@@ -237,18 +237,28 @@ R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 		return R_FALSE;
 	}
 	ret = fwrite (buf, 1, len, fd) == len;
-	if (!ret)
-		eprintf ("r_file_dump: fwrite: error\n");
+	if (!ret) eprintf ("r_file_dump: fwrite: error\n");
 	fclose (fd);
 	return ret;
 }
 
 R_API boolt r_file_rm(const char *file) {
+	if (r_sandbox_enable (0)) return R_FALSE;
 #if __WINDOWS__
 	return (DeleteFile (file)==0)? R_TRUE: R_FALSE;
 #else
 	return (unlink (file)==0)? R_TRUE: R_FALSE;
 #endif
+}
+
+R_API boolt r_file_rmrf(const char *file) {
+	char *nfile = strdup (file);
+	if (r_sandbox_enable (0)) return R_FALSE;
+	nfile[ strlen (nfile)-1 ] = '_';
+	nfile[ strlen (nfile)-2 ] = '_';
+	rename (file, nfile);
+	eprintf ("mv %s %s\n", file, nfile);
+	return R_TRUE;
 }
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {

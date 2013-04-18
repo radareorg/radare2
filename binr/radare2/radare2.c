@@ -137,8 +137,25 @@ int main(int argc, char **argv) {
 
 	if (argc<2)
 		return main_help (1);
+	if (argc==2 && !strcmp (argv[1], "-p")) {
+		char *path = r_str_home (".radare2/rdb/");
+		DIR *d = r_sandbox_opendir (path);
+		if (d) {
+			for (;;) {
+				struct dirent* de = readdir (d);
+				if (!de) break;
+				if (!strcmp (".d", de->d_name+de->d_namlen-2)) {
+					// TODO:
+					// do more checks to ensure it is a project
+					// show project info (opened? file? ..?)
+					printf ("%.*s\n", de->d_namlen-2, de->d_name);
+				}
+			}
+		}
+		free (path);
+		return 0;
+	}
 	r_core_init (&r);
-
 	while ((c = getopt (argc, argv, "Cwfhm:e:nNdqvs:p:b:B:a:Lui:l:P:c:D:"
 #if USE_THREADS
 "t"
@@ -163,7 +180,24 @@ int main(int argc, char **argv) {
 			r_config_set (r.config, "scr.prompt", "false");
 			quiet = R_TRUE;
 			break;
-		case 'p': r_config_set (r.config, "file.project", optarg); break;
+		case 'p':
+			if (*optarg == '-') {
+				// TODO: handle error when removing project
+				char *path, repath[128];
+				snprintf (repath, sizeof (repath),
+					".radare2/rdb/%s.d", optarg+1);
+				path = r_str_home (repath);
+				if (r_file_exists (path)) {
+					r_file_rmrf (path);
+					path [strlen (path)-2] = 0;
+					r_file_rm (path);
+					free (path);
+					return 0;
+				} 
+				eprintf ("Can't find project '%s'\n", optarg+1);
+				return 1;
+			} else r_config_set (r.config, "file.project", optarg);
+			break;
 		case 'P': patchfile = optarg; break;
 		case 'c': r_list_append (cmds, optarg); break;
 		case 'i': cmdfile[cmdfilei++] = optarg; break;

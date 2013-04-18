@@ -487,8 +487,9 @@ static int cmd_anal(void *data, const char *input) {
 				fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			}
 			if ((fcn = r_anal_get_fcn_at (core->anal, fcnaddr)) == NULL ||
-				!r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff))
-				eprintf ("Error: Cannot add bb\n");
+					!r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff)) {
+				//eprintf ("Error: Cannot add bb\n");
+			}
 			r_anal_diff_free (diff);
 			free (ptr);
 			}

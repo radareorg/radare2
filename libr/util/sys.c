@@ -44,10 +44,7 @@ R_API int r_sys_truncate(const char *file, int sz) {
 
 R_API RList *r_sys_dir(const char *path) {
 	struct dirent *entry;
-	DIR *dir;
-	if (!path || (r_sandbox_enable (0) && !r_sandbox_check_path (path)))
-		return NULL;
-	dir = opendir (path);
+	DIR *dir = r_sandbox_opendir (path);
 	if (dir) {
 		RList *list = r_list_new ();
 		if (list) {

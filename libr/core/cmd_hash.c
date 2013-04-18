@@ -74,7 +74,7 @@ static int cmd_hash(void *data, const char *input) {
 	} else
 	if (!r_str_ccmp (input, "adler32", ' ')) {
 		ut32 hn = r_hash_adler32 (core->block, len);
-		ut8 *b = &hn;
+		ut8 *b = (ut8*)&hn;
 		r_cons_printf ("%02x%02x%02x%02x\n", b[0], b[1], b[2], b[3]);
 	} else
 	if (!r_str_ccmp (input, "md5", ' ')) {

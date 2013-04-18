@@ -1010,7 +1010,7 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'i':
 		if (input[1] ==' ') {
-			char bytes[4096];
+			ut8 bytes[4096];
 			int bytes_len = r_hex_str2bin (input+2, bytes);
 			r_debug_execute (core->dbg, bytes, bytes_len, 0);
 		} else {

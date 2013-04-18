@@ -416,6 +416,7 @@ R_API char *r_file_slurp_random_line(const char *file);
 R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz);
 R_API boolt r_file_dump(const char *file, const ut8 *buf, int len);
 R_API boolt r_file_rm(const char *file);
+R_API boolt r_file_rmrf(const char *file);
 R_API boolt r_file_exists(const char *str);
 R_API char *r_file_slurp_line(const char *file, int line, int context);
 R_API int r_file_mkstemp(const char *prefix, char **oname);
@@ -536,6 +537,7 @@ R_API const char *r_constr_append (RConstr *c, const char *str);
 R_API const char *r_constr_add (RConstr *c, const char *str);
 
 /* sandbox */
+R_API DIR* r_sandbox_opendir (const char *path);
 R_API int r_sandbox_enable (int e);
 R_API int r_sandbox_system (const char *x, int fork);
 R_API int r_sandbox_creat (const char *path, int mode);

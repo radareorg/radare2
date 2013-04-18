@@ -13,7 +13,6 @@ Broken stuff to fixe before release
 
 0.9.6
 =====
-* scr.cols -> hex.cols
 * scr.width
 * use __unused if available
 * rafind2 : add support for unicode/widestring search

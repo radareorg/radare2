@@ -87,3 +87,9 @@ R_API int r_sandbox_kill(int pid, int sig) {
 #endif
 	return -1;
 }
+
+R_API DIR* r_sandbox_opendir (const char *path) {
+	if (!path || (r_sandbox_enable (0) && !r_sandbox_check_path (path)))
+		return NULL;
+	return opendir (path);
+}
