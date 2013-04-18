@@ -88,7 +88,8 @@ install-doc:
 
 install-doc-symlink:
 	${INSTALL_DIR} ${PFX}/share/doc/radare2
-	cd doc ; for a in * ; do ln -fs ${PWD}/doc/$$a ${PFX}/share/doc/radare2 ; done
+	cd doc ; for a in * ; do \
+		ln -fs ${PWD}/doc/$$a ${PFX}/share/doc/radare2 ; done
 
 install: install-doc install-man install-www
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
@@ -101,14 +102,16 @@ install: install-doc install-man install-www
 
 install-www:
 	rm -rf ${DESTDIR}/${WWWROOT}
+	rm -rf ${DLIBDIR}/radare2/${VERSION}/www # old dir
 	mkdir -p ${DESTDIR}/${WWWROOT}
 	cp -rf shlr/www/* ${DESTDIR}/${WWWROOT}
 
 symstall-www:
 	rm -rf ${DESTDIR}/${WWWROOT}
+	rm -rf ${DLIBDIR}/radare2/${VERSION}/www # old dir
 	mkdir -p ${DESTDIR}/${WWWROOT}
 	cd ${DESTDIR}/${WWWROOT} ; for a in ${PWD}/shlr/www/* ; do \
-		ln -fs $$a ${DLIBDIR}/radare2/${VERSION}/www ; done
+		ln -fs $$a ${DESTDIR}/${DATADIR}/radare2/${VERSION}/www ; done
 
 
 install-pkgconfig-symlink:
