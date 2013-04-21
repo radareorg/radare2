@@ -21,7 +21,26 @@ BLA:
 static int getnum(RAsm *a, const char *s) {
 	if (!s) return 0;
 	if (*s=='$') s++;
-	return r_num_get (a->num, s);
+	return r_num_math (a->num, s);
+}
+
+static ut8 getshop(const char *s) {
+	int i;
+	const char *ops = \
+		"sar\xf8" \
+		"shl\xf0" \
+		"shr\xe8" \
+		"shl\xe0" \
+		"rcr\xd8" \
+		"rcl\xd0" \
+		"ror\xc8" \
+		"rol\xc0";
+	if (strlen (s<3))
+		return 0;
+	for (i=0; i<strlen (ops); i+=4)
+		if (!memcmp (s, ops+i, 3))
+			return (ut8)ops[3];
+	return 0;
 }
 
 static int jop (RAsm *a, ut8 *data, ut8 x, ut8 b, const char *arg) {
@@ -85,7 +104,7 @@ static int isnum(RAsm *a, const char *str) {
 
 static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	ut64 offset = a->pc;
-	ut8 *data = ao->buf;
+	ut8 t, *data = ao->buf;
 	char *arg, op[128];
 	int l = 0;
 
@@ -596,15 +615,20 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				}
 			} else eprintf ("Invalid args for lea?\n");
 			return l;
-		} else if (!strcmp (op, "sar")) {
+		} else if ((t=getshop (op))) { // sar, shl, shr, rcr, rcl, ror, rol
+			if (arg[1]=='l') { // 8bits
+				data[l++] = 0xc0;
+				data[l++] = t | getreg (arg);
+				data[l++] = getnum (a, arg2);
+			} else
 			if (*arg=='r') { // 64bits
 				data[l++] = 0x48;
 				data[l++] = 0xc1;
-				data[l++] = 0xf8 | getreg (arg);
+				data[l++] = t | getreg (arg);
 				data[l++] = getnum (a, arg2);
 			} else { // 32bits
 				data[l++] = 0xc1;
-				data[l++] = 0xf8 | getreg (arg);
+				data[l++] = t | getreg (arg);
 				data[l++] = getnum (a, arg2);
 			}
 			return l;

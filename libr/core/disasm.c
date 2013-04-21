@@ -249,6 +249,7 @@ toro:
 			}
 		}
 
+// else r_cons_printf ("  ");
 		/* show comment at right? */
 		show_comment_right = 0;
 		if (show_comments) {
@@ -321,26 +322,23 @@ toro:
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
 		} else {
 			lastfail = 0;
-			if (hint && hint->length)
-				oplen = hint->length;
-			else oplen = r_asm_op_get_size (&asmop);
+			oplen = (hint && hint->length)?
+				hint->length: r_asm_op_get_size (&asmop);
 		}
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
 		if (atabs) {
-			int i = 0;
-			char *b = asmop.buf_asm;
+			int n, i = 0;
+			char *t, *b = asmop.buf_asm;
 			for (;*b;b++,i++) {
-				if (*b==' ') {
-					//*b = '\t';
-					int n = (10-i);
-					char *t = strdup (b+1); //XXX slow!
-					if (n<1) n = 1;
-					memset (b, ' ', n);
-					b += n;
-					strcpy (b, t);
-					free (t);
-				}
+				if (*b!=' ') continue;
+				n = (10-i);
+				*t = strdup (b+1); //XXX slow!
+				if (n<1) n = 1;
+				memset (b, ' ', n);
+				b += n;
+				strcpy (b, t);
+				free (t);
 			}
 		}
 		// TODO: store previous oplen in core->dec
@@ -407,10 +405,9 @@ toro:
 					core->reflines, at, analop.length);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		if (show_functions) {
+			pre = "__"; // ignored?
 			if (f) {
 //eprintf ("fun    0x%llx 0x%llx\n", at, f->addr+f->size-analop.length);
-				pre = "  ";
-
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
@@ -436,7 +433,7 @@ toro:
 				} else f = NULL;
 				if (f && at == f->addr+f->size-analop.length) // HACK
 					pre = "\\ ";
-			} else pre = "  "; //r_cons_printf ("  ");
+			} else r_cons_printf ("  ");
 		}
 		if (show_flags) {
 			flag = r_flag_get_i (core->flags, at);
@@ -446,7 +443,7 @@ toro:
 				if (show_offset)
 					r_cons_printf ("; -------- ");
 				if (show_functions)
-					r_cons_printf ("%s:\n%s", flag->name, f?pre:"");
+					r_cons_printf ("%s:\n%s", flag->name, f?pre:"  ");
 				else r_cons_printf ("%s:\n", flag->name);
 			}
 		}

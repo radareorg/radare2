@@ -421,6 +421,13 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				r_str_replace_char (lbuf, ';', '#');
 		}
 	}
+	// XXX: ops like mov eax, $pc+33 fail coz '+' is nov alid number!!!
+	// XXX: must be handled here to be global.. and not arch-specific
+	{
+		char val[32];
+		snprintf (val, sizeof (val), "0x%"PFMT64x, a->pc);
+		lbuf = r_str_replace (lbuf, "$pc", val, 1);
+	}
 
 	if (strchr (lbuf, ':'))
 		labels = 1;

@@ -483,16 +483,20 @@ R_API const char *r_sys_arch_str(int arch) {
 
 R_API int r_sys_run(const ut8 *buf, int len) {
 	const int sz = 4096;
-	int ret, (*cb)();
+	int pdelta, ret, (*cb)();
+// TODO: define R_SYS_ALIGN_FORWARD in r_util.h
 	ut8 *ptr, *p = malloc ((sz+len)<<1);
-	ptr = (ut8*)R_MEM_ALIGN (p);
+	ptr = p;
+	pdelta = ((size_t)(p)) & (4096-1);
+	if (pdelta)
+		ptr += (4096-pdelta);
 	if (!ptr) {
 		free (p);
 		return R_FALSE;
 	}
 	memcpy (ptr, buf, sz);
-	r_mem_protect (ptr, sz, "rx");
-	r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
+	r_mem_protect (ptr, sz, "rx"));
+	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (void*)ptr;
 	ret = cb ();
 	free (p);
