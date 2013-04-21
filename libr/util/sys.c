@@ -495,7 +495,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 		return R_FALSE;
 	}
 	memcpy (ptr, buf, sz);
-	r_mem_protect (ptr, sz, "rx"));
+	r_mem_protect (ptr, sz, "rx");
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (void*)ptr;
 	ret = cb ();

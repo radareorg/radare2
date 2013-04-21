@@ -564,6 +564,8 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
 				entry->offset = (ut64)bin->sects[i].offset;
 				entry->addr = (ut64)bin->sects[i].addr;
+				if (entry->addr==0) // workaround for object files
+					entry->addr=entry->offset;
 				break;
 			}
 	}
