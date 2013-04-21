@@ -291,6 +291,7 @@ int main(int argc, char *argv[]) {
 			int length;
 			do {
 				length = read (0, buf, sizeof (buf)-1);
+				if (length<1) break;
 				if (len>0 && len < length)
 					length = len;
 				if ((!bin || !dis) && feof (stdin))
@@ -301,10 +302,7 @@ int main(int argc, char *argv[]) {
 				else ret = rasm_asm (buf, offset, length, a->bits, bin);
 				idx += ret;
 				offset += ret;
-				if (!ret) {
-					//eprintf ("invalid\n");
-					return 0;
-				}
+				if (!ret) return 0;
 			} while (!len || idx<length);
 			return idx;
 		}
