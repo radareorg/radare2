@@ -20,8 +20,7 @@ BLA:
 
 static int getnum(RAsm *a, const char *s) {
 	if (!s) return 0;
-	if (*s=='$')
-		s++;
+	if (*s=='$') s++;
 	return r_num_get (a->num, s);
 }
 
@@ -596,6 +595,18 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					}
 				}
 			} else eprintf ("Invalid args for lea?\n");
+			return l;
+		} else if (!strcmp (op, "sar")) {
+			if (*arg=='r') { // 64bits
+				data[l++] = 0x48;
+				data[l++] = 0xc1;
+				data[l++] = 0xf8 | getreg (arg);
+				data[l++] = getnum (a, arg2);
+			} else { // 32bits
+				data[l++] = 0xc1;
+				data[l++] = 0xf8 | getreg (arg);
+				data[l++] = getnum (a, arg2);
+			}
 			return l;
 		} else if (!strcmp (op, "cmovz")) {
 			ut8 a, b;
