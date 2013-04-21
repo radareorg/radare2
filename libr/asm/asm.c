@@ -494,9 +494,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					a->syntax = R_ASM_SYNTAX_INTEL;
 				else if (!memcmp (ptr, ".att_syntax", 10)) 
 					a->syntax = R_ASM_SYNTAX_ATT;
-				else if (!memcmp (ptr, ".string", 7)) {
-					r_str_chop (ptr+7);
-					ret = r_asm_pseudo_string (&op, ptr+7, 1);
+				else if (!memcmp (ptr, ".string ", 8)) {
+					r_str_chop (ptr+8);
+					ret = r_asm_pseudo_string (&op, ptr+8, 1);
 				} else if (!memcmp (ptr, ".ascii ", 7))
 					ret = r_asm_pseudo_string (&op, ptr+7, 0);
 				else if (!memcmp (ptr, ".align", 7))
