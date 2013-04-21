@@ -1,4 +1,4 @@
-/* radare 2010-2011 GPL -- pancake <youterm.com> */
+/* radare 2010-2013 GPL -- pancake */
 
 #include <r_syscall.h>
 
@@ -19,8 +19,8 @@ static struct r_syscall_regs_t fastcall_mips [R_SYSCALL_ARGS] = {
 };
 
 // TODO: add ppc and ppc64 regs here
-// TODO: add support for 64bit syscalls here
-static struct r_syscall_regs_t fastcall_x86 [R_SYSCALL_ARGS] = {
+
+static struct r_syscall_regs_t fastcall_x86_32 [R_SYSCALL_ARGS] = {
 	{{ "eax", NULL }},
 	{{ "eax", "ebx", NULL }},
 	{{ "eax", "ebx", "ecx", NULL }},
@@ -28,7 +28,24 @@ static struct r_syscall_regs_t fastcall_x86 [R_SYSCALL_ARGS] = {
 	{{ NULL }}
 };
 
+// TODO: x86-64-microsoft RCX, RDX, R8, R9 
+static struct r_syscall_regs_t fastcall_x86_64 [R_SYSCALL_ARGS] = {
+	{{ "rdi", NULL }},
+	{{ "rdi", "rsi", NULL }},
+	{{ "rdi", "rsi", "rdx", NULL }},
+	{{ "rdi", "rsi", "rdx", "rdx", NULL }},
+	{{ "rdi", "rsi", "rdx", "rdx", "r8", NULL }},
+	{{ "rdi", "rsi", "rdx", "rdx", "r8", "r9", NULL }},
+	{{ NULL }}
+};
 
+static struct r_syscall_regs_t fastcall_x86_8 [R_SYSCALL_ARGS] = {
+	{{ "ax", NULL }},
+	{{ "ax", "dx", NULL }},
+	{{ "ax", "dx", "bx", NULL }},
+	{{ "ax", "dx", "bx", "cx", NULL }},
+	{{ NULL }}
+};
 
 static struct r_syscall_regs_t fastcall_sh [R_SYSCALL_ARGS] = {
 	{{ "r4", NULL }},

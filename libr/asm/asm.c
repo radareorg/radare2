@@ -134,6 +134,7 @@ R_API RAsm *r_asm_new() {
 	a->ifilter = NULL;
 	a->ofilter = NULL;
 	a->syntax = R_ASM_SYNTAX_INTEL;
+	a->syscall = NULL;
 	a->plugins = r_list_new ();
 	a->plugins->free = free;
 	for (i=0; asm_static_plugins[i]; i++) {
@@ -427,6 +428,17 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		char val[32];
 		snprintf (val, sizeof (val), "0x%"PFMT64x, a->pc);
 		lbuf = r_str_replace (lbuf, "$pc", val, 1);
+	}
+	if (a->syscall) {
+		char val[32];
+		char *p = strstr (lbuf, "$sys.");
+		if (p) {
+			char *aa = strdup (p);
+			int num = r_syscall_get_num (a->syscall, aa+5);
+			snprintf (val, sizeof (val), "%d", num);
+			lbuf = r_str_replace (lbuf, aa, val, 1);
+			free (aa);
+		}
 	}
 
 	if (strchr (lbuf, ':'))

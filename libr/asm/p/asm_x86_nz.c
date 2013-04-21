@@ -35,7 +35,7 @@ static ut8 getshop(const char *s) {
 		"rcl\xd0" \
 		"ror\xc8" \
 		"rol\xc0";
-	if (strlen (s<3))
+	if (strlen (s)<3)
 		return 0;
 	for (i=0; i<strlen (ops); i+=4)
 		if (!memcmp (s, ops+i, 3))
@@ -411,10 +411,18 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l;
 			}
 		} else if (!strcmp (op, "inc")) {
-			data[l++] = 0x40 | getreg (arg);
+			if (arg[0]=='r') {
+				data[l++] = 0x48;
+				data[l++] = 0xff;
+				data[l++] = 0xc0 | getreg (arg);
+			} else data[l++] = 0x40 | getreg (arg);
 			return l;
 		} else if (!strcmp (op, "dec")) {
-			data[l++] = 0x48 | getreg (arg);
+			if (arg[0]=='r') {
+				data[l++] = 0x48;
+				data[l++] = 0xff;
+				data[l++] = 0xc8 | getreg (arg);
+			} else data[l++] = 0x48 | getreg (arg);
 			return l;
 		} else if (!strcmp (op, "push")) {
 			char *delta;

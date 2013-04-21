@@ -1,4 +1,4 @@
-/* radare 2008-2011 LGPL -- pancake <youterm.com> */
+/* radare 2008-2013 LGPL -- pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -18,7 +18,7 @@ R_API RSyscall* r_syscall_new() {
 		rs->sysport = sysport_x86;
 		rs->syspair = NULL;
 		rs->printf = (PrintfCallback)printf;
-		rs->regs = fastcall_x86;
+		rs->regs = fastcall_x86_32;
 	}
 	return rs;
 }
@@ -41,20 +41,19 @@ R_API int r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int b
 		os = R_SYS_OS;
 	if (arch == NULL)
 		arch = R_SYS_ARCH;
-	if (!strcmp (os, "any")) {
-		// ignored
+	if (!strcmp (os, "any")) // ignored
 		return R_TRUE;
-	}
-	if (!strcmp (arch, "mips")) {
+	if (!strcmp (arch, "mips"))
 		ctx->regs = fastcall_mips;
-	} else
-	if (!strcmp (arch, "arm")) {
+	else if (!strcmp (arch, "arm"))
 		ctx->regs = fastcall_arm;
-	} else
-	if (!strcmp (arch, "x86")) {
-		ctx->regs = fastcall_x86;
-	} else
-	if (!strcmp (arch,"sh")) {
+	else if (!strcmp (arch, "x86")) {
+		switch (bits) {
+		case 8: ctx->regs = fastcall_x86_8;
+		case 32: ctx->regs = fastcall_x86_32;
+		case 64: ctx->regs = fastcall_x86_64;
+		}
+	} else if (!strcmp (arch,"sh")) {
 		ctx->regs = fastcall_sh;
 	}
 

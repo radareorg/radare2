@@ -88,6 +88,7 @@ typedef struct r_asm_t {
 	RParse *ifilter;
 	RParse *ofilter;
 	RPair *pair;
+	RSyscall *syscall;
 	RNum *num;
 } RAsm;
 

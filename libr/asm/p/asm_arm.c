@@ -75,7 +75,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	obj.symbol_at_address_func = &symbol_at_address;
 	obj.memory_error_func = &memory_error_func;
 	obj.print_address_func = &print_address;
-	obj.endian = !a->big_endian;
+	obj.endian = (a->bits==16)? 0:!a->big_endian;
 	obj.fprintf_func = &buf_fprintf;
 	obj.stream = stdout;
 	obj.bytes_per_chunk =
@@ -104,6 +104,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (a->bits>=32)
 		r_mem_copyendian (op->buf, (void *)&opcode, 4, a->big_endian);
 	else r_mem_copyendian (op->buf, (void *)&opcode, 2, !a->big_endian);
+// XXX. thumb endian assembler needs no swap
 	return (a->bits/8);
 }
 

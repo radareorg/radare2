@@ -7,7 +7,7 @@
 #include <r_db.h>
 #include <list.h>
 
-#define R_SYSCALL_ARGS 6
+#define R_SYSCALL_ARGS 7
 
 typedef struct r_syscall_regs_t {
 	const char *arg[R_SYSCALL_ARGS];

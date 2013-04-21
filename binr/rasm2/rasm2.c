@@ -37,6 +37,7 @@ static int rasm_show_help(int v) {
 		" -f [file]    Read data from file\n"
 		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
 		" -h           Show this help\n"
+		" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 		" -l [len]     Input/Output length\n"
 		" -L           List supported asm plugins\n"
 		" -o [offset]  Set start address for code (default 0)\n"
@@ -153,7 +154,7 @@ int main(int argc, char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	char buf[R_ASM_BUFSIZE];
-	char *arch = NULL, *file = NULL, *filters = NULL;
+	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL;
 	ut64 offset = 0;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0;
@@ -168,8 +169,11 @@ int main(int argc, char *argv[]) {
 		return rasm_show_help (0);
 
 	r_asm_use (a, R_SYS_ARCH);
-	while ((c = getopt (argc, argv, "DCeva:b:s:do:Bl:hLf:F:w")) != -1) {
+	while ((c = getopt (argc, argv, "k:DCeva:b:s:do:Bl:hLf:F:w")) != -1) {
 		switch (c) {
+		case 'k':
+			kernel = optarg;
+			break;
 		case 'D':
 			dis = 2;
 			break;
@@ -238,6 +242,8 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 	r_asm_set_bits (a, (env_bits && *env_bits)? atoi (env_bits): bits);
+	a->syscall = r_syscall_new ();
+	r_syscall_setup (a->syscall, arch, kernel, bits);
 
 	if (whatsop) {
 		const char *s = r_asm_describe (a, argv[optind]);

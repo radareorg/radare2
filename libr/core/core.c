@@ -496,12 +496,13 @@ R_API int r_core_init(RCore *core) {
 	core->lang = r_lang_new ();
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
-	core->anal = r_anal_new ();
-	r_anal_set_user_ptr (core->anal, core);
-	core->anal->meta->printf = (void *) r_cons_printf;
 	core->assembler = r_asm_new ();
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
+	core->anal = r_anal_new ();
+	core->assembler->syscall = core->anal->syscall; // BIND syscall anal/asm
+	r_anal_set_user_ptr (core->anal, core);
+	core->anal->meta->printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
 	r_parse_set_user_ptr (core->parser, core);
 	core->bin = r_bin_new ();
