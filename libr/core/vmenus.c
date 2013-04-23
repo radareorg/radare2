@@ -301,6 +301,7 @@ R_API int r_core_visual_comments (RCore *core) {
 		}
 		if (!found) {
 			option--;
+			if (option<0) break;
 			continue;
 		}
 		r_cons_newline ();
