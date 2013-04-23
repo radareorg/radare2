@@ -102,6 +102,11 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return ret;
 			}
 			break;
+		case 'h': {
+			int rows;
+			r_cons_get_size (&rows);
+			return rows;
+			}
 		case 'e': return op.eob;
 		case 'j': return op.jump;
 		case 'f': return op.fail;
