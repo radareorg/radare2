@@ -232,25 +232,25 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	if (b[3]==0xe2 && b[2]==0x8d && b[1]==0xd0) {
 		// ADD SP, SP, ...
 		op->type = R_ANAL_OP_TYPE_ADD;
-		op->stackop = R_ANAL_STACK_INCSTACK;
+		op->stackop = R_ANAL_STACK_INC;
 		op->value = -b[0];
 	} else
 	if (b[3]==0xe2 && b[2]==0x4d && b[1]==0xd0) {
 		// SUB SP, SP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
-		op->stackop = R_ANAL_STACK_INCSTACK;
+		op->stackop = R_ANAL_STACK_INC;
 		op->value = b[0];
 	} else
 	if (b[3]==0xe2 && b[2]==0x4c && b[1]==0xb0) {
 		// SUB SP, FP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
-		op->stackop = R_ANAL_STACK_INCSTACK;
+		op->stackop = R_ANAL_STACK_INC;
 		op->value = -b[0];
 	} else
 	if (b[3]==0xe2 && b[2]==0x4b && b[1]==0xd0) {
 		// SUB SP, IP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
-		op->stackop = R_ANAL_STACK_INCSTACK;
+		op->stackop = R_ANAL_STACK_INC;
 		op->value = -b[0];
 	} else
 	if ( (code[i] == 0x1eff2fe1) ||(code[i] == 0xe12fff1e)) { // bx lr

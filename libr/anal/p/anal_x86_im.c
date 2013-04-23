@@ -545,7 +545,7 @@ static void anal_add(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		op->src[0] = anal_fill_im (anal, io);
 		/* TODO: Deprecate */
 		if (X86IM_IO_ROP_GET_ID (io.rop[0]) == X86IM_IO_ROP_ID_ESP) { /* add esp, 0x1 */
-			op->stackop = R_ANAL_STACK_INCSTACK;
+			op->stackop = R_ANAL_STACK_INC;
 			op->value = imm;
 			op->stackptr = -imm;
 		}
@@ -595,7 +595,7 @@ static void anal_sub(RAnal *anal, RAnalOp *op, x86im_instr_object io) {
 		op->src[0] = anal_fill_im (anal, io);
 		/* TODO: Deprecate */
 		if (X86IM_IO_ROP_GET_ID (io.rop[0]) == X86IM_IO_ROP_ID_ESP) { /* sub esp, 0x1*/
-			op->stackop = R_ANAL_STACK_INCSTACK;
+			op->stackop = R_ANAL_STACK_INC;
 			op->value = imm;
 			op->stackptr = imm;
 		}

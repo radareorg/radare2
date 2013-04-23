@@ -339,7 +339,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			/* sub $0x????????, $esp*/
   			// 81ece00d0000    sub esp, 0xde0 ; 
 			op->value = buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);
-			op->stackop = R_ANAL_STACK_INCSTACK;
+			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = op->value;
 			break;
 		} else
@@ -358,7 +358,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case 0xc4:
 			/* inc $0x????????, $esp*/
 			op->value = -(ut64)(unsigned char)buf[2];
-			op->stackop = R_ANAL_STACK_INCSTACK;
+			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = op->value;
 			break;
 		case 0xf8:
@@ -378,7 +378,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case 0xec:
 			/* sub $0x????????, $esp*/
 			op->value = (ut64)(unsigned char)buf[2];
-			op->stackop = R_ANAL_STACK_INCSTACK;
+			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = op->value;
 			break;
 		case 0xbd: /* 837dfc02        cmp dword [ebp-0x4], 0x2 */

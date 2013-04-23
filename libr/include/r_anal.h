@@ -227,7 +227,6 @@ typedef struct r_anal_cc_type_t {
 	//const char **reglist; //
 } RAnalCCType;
 
-
 enum {
 	R_ANAL_FCN_TYPE_NULL = 0,
 	R_ANAL_FCN_TYPE_FCN = 1,
@@ -457,7 +456,7 @@ typedef enum {
 enum {
 	R_ANAL_STACK_NULL = 0,
 	R_ANAL_STACK_NOP,
-	R_ANAL_STACK_INCSTACK,
+	R_ANAL_STACK_INC,
 	R_ANAL_STACK_GET,
 	R_ANAL_STACK_SET,
 };

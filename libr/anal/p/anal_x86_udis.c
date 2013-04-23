@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include <r_lib.h>
 #include <r_types.h>
@@ -34,6 +34,50 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->ref = op->value = -1;
 	oplen = op->length = ud_insn_len (&u);
 	switch (u.mnemonic) {
+	case UD_Ipush:
+		switch (u.operand[0].type) {
+		case UD_OP_CONST:
+		case UD_OP_JIMM:
+		case UD_OP_IMM:
+			op->type = R_ANAL_OP_TYPE_PUSH;
+			op->ref = getval (&u.operand[0]);
+			break;
+		case UD_OP_REG:
+		case UD_OP_PTR:
+		case UD_OP_MEM:
+		default:
+			op->type = R_ANAL_OP_TYPE_UPUSH;
+			op->ref = 0;
+			break;
+		}
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 4;
+		break;
+	case UD_Ipop:
+		op->type = R_ANAL_OP_TYPE_POP;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -4;
+		break;
+	case UD_Ileave:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -4;
+		break;
+	case UD_Iadd:
+	case UD_Isub:
+		op->type = (u.mnemonic==UD_Iadd)? R_ANAL_OP_TYPE_ADD: R_ANAL_OP_TYPE_SUB;
+		op->ref = 0;
+		if (u.operand[0].type == UD_OP_REG) {
+			if (u.operand[0].base == UD_R_RSP) {
+				op->stackop = R_ANAL_STACK_INC;
+				if (u.mnemonic ==UD_Iadd) {
+					op->stackptr = -getval (&u.operand[1]);
+				} else {
+					op->stackptr = getval (&u.operand[1]);
+				}
+			}
+		}
+		break;
 	case UD_Ijmp:
 		if (u.operand[0].type == UD_OP_REG) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
@@ -71,6 +115,8 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Iretf:
 	case UD_Isysret:
 		op->type = R_ANAL_OP_TYPE_RET;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -4;
 		break;
 	case UD_Isyscall:
 		op->type = R_ANAL_OP_TYPE_SWI;

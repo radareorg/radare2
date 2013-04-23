@@ -513,7 +513,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 		r_list_foreach (symbols, iter, symbol) {
 			char *name = strdup (symbol->name);
 			r_name_filter (name, 80);
-			r_cons_printf ("0x%"PFMT64x" %"PFMT64d" %s\n",
+			r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
 				baddr+symbol->rva, symbol->size, name);
 			free (name);
 		}

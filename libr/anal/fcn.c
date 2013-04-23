@@ -113,7 +113,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		fcn->size += oplen;
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
-		case R_ANAL_STACK_INCSTACK:
+		case R_ANAL_STACK_INC:
 			fcn->stack += op.value;
 			break;
 		// TODO: use fcn->stack to know our stackframe

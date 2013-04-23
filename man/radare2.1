@@ -12,10 +12,11 @@ radare2 \- Advanced commandline hexadecimal editor, disassembler and debugger
 .Op Fl c Ar cmd
 .Op Fl e Ar k=v
 .Op Fl i Ar file
+.Op Fl k Ar kernel
 .Op Fl p Ar project
 .Op Fl P Ar patch
 .Op Fl s Ar addr
-.Op Fl dDwntLqv
+.Op Fl AdDwntLqv
 .Ar file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -28,6 +29,8 @@ The options are:
 .Bl -tag -width Fl
 .It Fl a Ar arch
 force asm.arch (x86, ppc, arm, mips, bf, java, ...)
+.It Fl A
+run 'aa' command before prompt or patch to analyze all referenced code
 .It Fl b Ar bits
 force asm.bits (16, 32, 64)
 .It Fl B Ar bsize
@@ -44,6 +47,8 @@ Set configuration eval variable key=value. For example \-e scr.color=false
 Blocksize = file size
 .It Fl i Ar file
 Run script file
+.It Fl k Ar kernel
+Select kernel (asm.os) for syscall resolution
 .It Fl l Ar plugfile
 Load given plugin file
 .It Fl L

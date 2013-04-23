@@ -22,6 +22,7 @@ static int main_help(int line) {
 			"          [-s addr] [-B blocksize] [-c cmd] [-e k=v] file|-\n");
 	if (line != 1) printf (
 		" -a [arch]    set asm.arch\n"
+		" -A           run 'aa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"
 		" -B [size]    initial block size\n"
 		" -c 'cmd..'   execute radare command\n"
@@ -31,6 +32,7 @@ static int main_help(int line) {
 		" -e k=v       evaluate config var\n"
 		" -f           block size = file size\n"
 		" -i [file]    run script file\n"
+		" -k [kernel]  set asm.os variable for asm and anal\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
 		" -n           disable analysis\n"
@@ -113,6 +115,7 @@ int main(int argc, char **argv) {
 	int has_project = R_FALSE;
  	int ret, i, c, perms = R_IO_READ;
 	int do_connect = 0;
+	int do_analysis = 0;
 	int run_anal = 1;
 	int run_rc = 1;
 	int help = 0;
@@ -124,6 +127,7 @@ int main(int argc, char **argv) {
 	char *cmdfile[32];
 	const char *debugbackend = "native";
 	const char *asmarch = NULL;
+	const char *asmos = NULL;
 	const char *asmbits = NULL;
 	ut64 mapaddr = 0LL;
 	int quiet = R_FALSE;
@@ -157,12 +161,15 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	r_core_init (&r);
-	while ((c = getopt (argc, argv, "Cwfhm:e:nNdqvs:p:b:B:a:Lui:l:P:c:D:"
+	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqvs:p:b:B:a:Lui:l:P:c:D:"
 #if USE_THREADS
 "t"
 #endif
 			))!=-1) {
 		switch (c) {
+		case 'A':
+			do_analysis = R_TRUE;
+			break;
 		case 'C':
 			do_connect = R_TRUE;
 			break;
@@ -218,6 +225,7 @@ int main(int argc, char **argv) {
 		case 'v': return blob_version ("radare2");
 		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		case 'a': asmarch = optarg; break;
+		case 'k': asmos = optarg; break;
 		case 'b': asmbits = optarg; break;
 		case 'B': bsize = (ut32) r_num_math (r.num, optarg); break;
 		case 's': seek = r_num_math (r.num, optarg); break;
@@ -239,6 +247,7 @@ int main(int argc, char **argv) {
 	// DUP
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
+	if (asmos) r_config_set (r.config, "asm.bits", asmos);
 
 	if (debug) {
 		int filelen = 0;
@@ -371,6 +380,7 @@ int main(int argc, char **argv) {
 	}
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
+	if (asmos) r_config_set (r.config, "asm.os", asmos);
 
 	debug = r.file && r.file->fd && r.file->fd->plugin && \
 		r.file->fd->plugin->debug != NULL;
@@ -472,6 +482,10 @@ int main(int argc, char **argv) {
 	if (r_config_get_i (r.config, "scr.prompt"))
 	if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
 		r_core_cmd (&r, "fo", 0);
+		r_cons_flush ();
+	}
+	if (do_analysis) {
+		r_core_cmd0 (&r, "aa");
 		r_cons_flush ();
 	}
 

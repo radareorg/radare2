@@ -61,6 +61,7 @@ R_API int r_anal_ref_del(RAnal *anal, ut64 at) {
 	return R_TRUE;
 }
 
+R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr);
 // XXX: MAJOR SLOWDOWN PLZ FIX
 R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
 	RAnalFunction *fcni;
