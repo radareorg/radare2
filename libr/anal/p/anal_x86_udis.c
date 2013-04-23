@@ -20,8 +20,15 @@ static st64 getval(ud_operand_t *op) {
 }
 
 int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	int oplen;
+	int oplen, regsz;
 	struct ud u;
+
+	switch (anal->bits) {
+	case 64: regsz = 8; break;
+	case 16: regsz = 2; break;
+	default:
+	case 32: regsz = regsz; break;
+	}
 	ud_init (&u);
 	ud_set_pc (&u, addr);
 	ud_set_mode (&u, anal->bits);
@@ -33,6 +40,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->jump = op->fail = -1;
 	op->ref = op->value = -1;
 	oplen = op->length = ud_insn_len (&u);
+	
 	switch (u.mnemonic) {
 	case UD_Ipush:
 		switch (u.operand[0].type) {
@@ -51,17 +59,17 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		}
 		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = 4;
+		op->stackptr = regsz;
 		break;
 	case UD_Ipop:
 		op->type = R_ANAL_OP_TYPE_POP;
 		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = -4;
+		op->stackptr = -regsz;
 		break;
 	case UD_Ileave:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = -4;
+		op->stackptr = -regsz;
 		break;
 	case UD_Iadd:
 	case UD_Isub:
@@ -116,7 +124,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Isysret:
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->stackop = R_ANAL_STACK_INC;
-		op->stackptr = -4;
+		op->stackptr = -regsz;
 		break;
 	case UD_Isyscall:
 		op->type = R_ANAL_OP_TYPE_SWI;
