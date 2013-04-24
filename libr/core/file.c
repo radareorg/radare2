@@ -139,14 +139,19 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 R_API int r_core_bin_load(RCore *r, const char *file) {
 	int i, va = r->io->va || r->io->debug;
 	RListIter *iter;
+	const char *p;
 	ut64 offset;
 	RIOMap *im;
 
-	if (file == NULL || !r->file || !*file) {
-		if (!r->file || !r->file->filename)
-			return R_FALSE;
-		file = r->file->filename;
+	if (file == NULL)
+		if (r->file)
+			file = r->file->filename;
+	if (!file) {
+		eprintf ("r_core_bin_load: no file specified\n");
+		return R_FALSE;
 	}
+	p = strstr (file, "://");
+	if (p) file = p+3;
 	while (*file==' ') file++;
 	/* TODO: fat bins are loaded multiple times, this is a problem that must be fixed . see '-->' marks. */
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
@@ -175,8 +180,17 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 				im->to = im->from + r->bin->cur.size;
 			}
 		}
-	} else if (!r_bin_load (r->bin, file, R_TRUE))
+	} else if (!r_bin_load (r->bin, file, R_TRUE)) {
 		return R_FALSE;
+	}
+	if (!r->file) {
+		int bits;
+		RBinObject *obj = r_bin_get_object (r->bin);
+		if (obj && obj->info && obj->info->bits) {
+			r_config_set_i (r->config, "asm.bits", obj->info->bits);
+		}
+		return R_TRUE;
+	}
 	r->file->obj = r_bin_get_object (r->bin);
 
 	r_config_set_i (r->config, "io.va", 

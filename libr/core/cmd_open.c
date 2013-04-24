@@ -30,7 +30,7 @@ static int cmd_open(void *data, const char *input) {
 			file = r_core_file_open (core, input+1, perms, addr);
 			if (file) {
 				// MUST CLEAN BEFORE LOADING
-				// r_core_bin_load (core, input+1);
+				r_core_bin_load (core, input+1);
 				//eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
 				//	input+1, addr, file->size);
 			} else eprintf ("Cannot open file '%s'\n", input+1);
