@@ -427,7 +427,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	{
 		char val[32];
 		snprintf (val, sizeof (val), "0x%"PFMT64x, a->pc);
-		lbuf = r_str_replace (lbuf, "$pc", val, 1);
+		lbuf = r_str_replace (lbuf, "$$", val, 1);
 	}
 	if (a->syscall) {
 		char val[32];

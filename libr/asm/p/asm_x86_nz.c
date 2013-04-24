@@ -391,13 +391,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				ut32 addr = dst;
 				ut8 *ptr = (ut8 *)&addr;
 
-				if (dst == 0) {
+				if (dst == 0 && *arg != '0') {
 					data[l++] = '\xff';
 					data[l] = getreg (arg) | 0xd0;
-					if (data[l] == 0xff) {
-						//eprintf ("Invalid argument for 'call' (%s)\n", arg);
+					if (data[l] == 0xff)
 						return 0;
-					}
 					l++;
 					return l;
 				}
@@ -869,11 +867,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					return -1;
 				}
 			} else {
-				ut64 dst = getnum (a, arg) - offset;
+				st64 dst = getnum (a, arg) - offset;
 				ut32 addr = dst;
 				ut8 *ptr = (ut8 *)&addr;
 
-				if (dst+offset == 0) {
+				if (dst+offset == 0 && *arg != '0') {
 					data[l++] = '\xff';
 					data[l] = getreg (arg) | 0xe0;
 					if (data[l] != 0xff)
@@ -885,35 +883,13 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 						l++;
 					}
 					return -1;
-#if 0
-					if (!strcmp(arg, "esp")) { data[1]='\x24'; data[2]='\x24'; } else
-					if (!strcmp(arg, "ebp")) { data[1]='\x24'; data[2]='\x24'; } else
-					if (strstr(arg, "[eax")) { data[1]='\x60'; data[2]=(char)r_num_math (NULL, arg+4); } else
-					if (strstr(arg, "[ebx")) { data[1]='\x63'; data[2]=(char)r_num_math (NULL, arg+4); } else
-					if (strstr(arg, "[ecx")) { data[1]='\x61'; data[2]=(char)r_num_math (NULL, arg+4); } else
-					if (strstr(arg, "[edx")) { data[1]='\x62'; data[2]=(char)r_num_math (NULL, arg+4); } else
-					if (strstr(arg, "[esi")) { data[1]='\x66'; data[2]=(char)r_num_math (NULL, arg+4); } else
-					if (strstr(arg, "[edi")) { data[1]='\x67'; data[2]=(char)r_num_math (NULL, arg+4); } else
-					if (strstr(arg, "[esi")) { data[1]='\x67'; data[2]=(char)r_num_math (NULL, arg+4); } else
-					if (strstr(arg, "[ebp")) { data[1]='\x65'; data[2]=(char)r_num_math (NULL, arg+4); } 
-					else {
-						if (!strcmp(arg, "[esp")) { data[1]='\x64'; data[2]='\x24'; data[3]=(char)r_num_math (NULL, arg+4); }
-							else return 0;
-						return 4;
-					}
-#endif
 				}
 
 				dst -= offset;
-		// 7C90EAF5   .- E9 42158783   JMP     0018003C
-		// RELATIVE LONG JUMP (nice coz is 4 bytes, not 5) 
-
 				if (dst>-0x80 && dst<0x7f) {
-					/* relative address */
-					addr -= 2;
-					addr -= offset;
+					/* relative byte address */
 					data[l++] = 0xeb;
-					data[l++] = (char)dst;
+					data[l++] = (char)(addr-offset-2);
 					return l;
 				} else {
 					/* absolute address */
