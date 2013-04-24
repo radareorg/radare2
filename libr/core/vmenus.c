@@ -613,6 +613,7 @@ R_API void r_core_visual_config(RCore *core) {
 
 R_API void r_core_visual_mounts (RCore *core) {
 	RList *list;
+	RFSRoot *fsroot;
 	RListIter *iter;
 	RFSFile *file;
 	RFSPartition *part;
@@ -652,6 +653,16 @@ R_API void r_core_visual_mounts (RCore *core) {
 				n = r_fs_partition_type_get (i);
 				if (!n) break;
 				r_cons_printf ("%s%s\n", (i==partition)?" > ":"   ", n);
+			}
+		} else if (mode == 3) {
+			i = 0;
+			r_cons_printf ("Mountpoints:\n\n");
+			r_list_foreach (core->fs->roots, iter, fsroot) {
+				if ((option-delta <= i) && (i <= option+delta)) {
+					r_cons_printf ("%s %s\n", (option == i)?" > ":"   ",
+							fsroot->path);
+				}
+				i++;
 			}
 		} else {
 			if (root) {
@@ -745,11 +756,17 @@ R_API void r_core_visual_mounts (RCore *core) {
 						r_cons_flush ();
 						r_cons_any_key ();
 					}
+
+				} else if (mode == 3) {
+					fsroot = r_list_get_n (core->fs->roots, option);
+					root = strdup (fsroot->path);
+					strncpy (path, root, sizeof (path)-1);
+					mode = 2;
 				}
 				dir = partition = option = 0;
 				break;
 			case 'k':
-				if (mode == 0) {
+				if (mode == 0 || mode == 3) {
 					if (option > 0)
 						option--;
 				} else if (mode == 1) {
@@ -769,6 +786,9 @@ R_API void r_core_visual_mounts (RCore *core) {
 				} else if (mode == 1) {
 					if (partition < r_fs_partition_get_size ()-1)
 						partition++;
+				} else if (mode == 3) {
+					if (option < r_list_length (core->fs->roots)-1)
+						option++;
 				} else {
 					list = r_fs_dir (core->fs, path);
 					if (dir < r_list_length (list)-1)
@@ -834,6 +854,10 @@ R_API void r_core_visual_mounts (RCore *core) {
 					*str='\0';
 				}
 				break;
+			case 'm':
+				mode = 3;
+				option = 0;
+				break;
 			case '?':
 				r_cons_clear00 ();
 				r_cons_printf ("\nVM: Visual Mount points help:\n\n");
@@ -842,6 +866,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 				r_cons_printf (" h/l   - forward/go keys\n");
 				r_cons_printf (" t     - choose partition type\n");
 				r_cons_printf (" g     - dump file\n");
+				r_cons_printf (" m     - show mountpoints\n");
 				r_cons_printf (" :     - enter command\n");
 				r_cons_printf (" ?     - show this help\n");
 				r_cons_flush ();
