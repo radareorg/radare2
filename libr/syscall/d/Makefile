@@ -39,7 +39,8 @@ clean:
 ${SDB}:
 	cp -rf $(LTOP)/db/sdb/src $(LTOP)/db/sdb/src-native
 	#cd $(LTOP)/db/sdb/src-native && ${MAKE} -j ${MAKE_JOBS} ARCH=xxx CC=gcc clean sdb
-	cd $(LTOP)/db/sdb/src-native && CFLAGS='' ${MAKE} -j 1 ARCH=xxx CC=gcc clean sdb
+	cd $(LTOP)/db/sdb/src-native && CFLAGS='${CFLAGS}' \
+		${MAKE} -j 1 ARCH=xxx CC=gcc clean sdb
 	cp -f $(LTOP)/db/sdb/src-native/sdb $(LTOP)/db/sdb/sdb
 	rm -rf $(LTOP)/db/sdb/src-native
 

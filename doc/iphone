@@ -20,11 +20,14 @@ Setup SDK
 4) /var/include/sys/stat.h is broken.
   Solution: add 'int foo[3];' after 'st_rdev' at line 178
 
+5) wget lolcathost.org/b/varinclude.tar.gz 
+   tar xzvf varinclude.tar.gz -C /
+
 Compilation
 ===========
   export CC=gcc
   export CFLAGS=-I/var/include
-  ./configure --disable-debugger --prefix=/private/var/radare2 --with-rpath
+  ./configure --prefix=/usr --with-ostype=darwin
   make
   make symstall
 
