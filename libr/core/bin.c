@@ -11,12 +11,16 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	RList *list;
 	int i = 0;
 
-	hasstr = r_config_get_i (r->config, "bin.strings");
-	if (!hasstr) return 0;
-	if (!r->bin->cur.curplugin) return 0;
-	rawstr = r_config_get_i (r->config, "bin.rawstr");
-	if (!rawstr && !r->bin->cur.curplugin->info)
+	if (!(hasstr = r_config_get_i (r->config, "bin.strings")))
 		return 0;
+	if (!r->bin->cur.curplugin) return 0;
+	if (!r->bin->cur.curplugin->info) {
+		if (!r_config_get_i (r->config, "bin.rawstr")) {
+			eprintf ("WARNING: Use 'e bin.rawstr=true' to"
+				" find strings on unknown filetypes\n");
+			return 0;
+		}
+	}
 	minstr = r_config_get_i (r->config, "bin.minstr");
 	if (minstr>0) r->bin->minstrlen = minstr;
 	else r_config_set_i (r->config, "bin.minstr", r->bin->minstrlen);
@@ -43,7 +47,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (list, iter, string)
 			r_cons_printf ("%"PFMT64d" %d %s\n", 
-				va? string->rva:string->offset, string->size, string->string);
+				va? string->rva:string->offset,
+				string->size, string->string);
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		if (r_config_get_i (r->config, "bin.strings"))

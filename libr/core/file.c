@@ -155,6 +155,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	while (*file==' ') file++;
 	/* TODO: fat bins are loaded multiple times, this is a problem that must be fixed . see '-->' marks. */
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
+        r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
 	if (r_bin_load (r->bin, file, R_FALSE)) { // --->
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
 			RBinObject *o = r->bin->cur.o;

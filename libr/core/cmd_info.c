@@ -42,13 +42,16 @@ static void r_core_file_info (RCore *core, int mode) {
 		if (dbg) dbg = R_IO_WRITE | R_IO_EXEC;
 		r_cons_printf (",\"fd\":%d", core->file->fd->fd);
 		r_cons_printf (",\"size\":%d", core->file->size);
-		r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (core->file->rwx | dbg));
+		r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
+			core->file->rwx | dbg));
 		r_cons_printf (",\"block\":%d", core->blocksize);
 		r_cons_printf (",\"uri\":\"%s\"", core->file->uri);
 		if (core->bin->curxtr)
-			r_cons_printf (",\"packet\":\"%s\"", core->bin->curxtr->name);
+			r_cons_printf (",\"packet\":\"%s\"",
+				core->bin->curxtr->name);
 		if (core->bin->curxtr)
-			r_cons_printf (",\"format\":\"%s\"", core->bin->cur.curplugin->name);
+			r_cons_printf (",\"format\":\"%s\"",
+				core->bin->cur.curplugin->name);
 		r_cons_printf ("}");
 	} else {
 		//r_cons_printf ("# Core file info\n");
@@ -60,9 +63,11 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf ("block\t0x%x\n", core->blocksize);
 		r_cons_printf ("uri\t%s\n", core->file->uri);
 		if (core->bin->curxtr)
-			r_cons_printf ("packet\t%s\n", core->bin->curxtr->name);
+			r_cons_printf ("packet\t%s\n",
+				core->bin->curxtr->name);
 		if (core->bin->curxtr)
-			r_cons_printf ("format\t%s\n", core->bin->cur.curplugin->name);
+			r_cons_printf ("format\t%s\n",
+				core->bin->cur.curplugin->name);
 	}
 }
 
@@ -80,20 +85,19 @@ static int cmd_info(void *data, const char *input) {
 	}
 
 	switch (*input) {
+	case 'o': r_core_bin_load (core, input[1]==' '?
+			input+1: core->file->filename); break;
+#define RBININFO(x) r_core_bin_info(core,x,mode,va,NULL,offset)
+	case 'S': RBININFO (R_CORE_BIN_ACC_SECTIONS); break;
+	case 'h': RBININFO (R_CORE_BIN_ACC_FIELDS); break;
+	case 's': RBININFO (R_CORE_BIN_ACC_SYMBOLS); break;
+	case 'd': RBININFO (R_CORE_BIN_ACC_DWARF); break;
+	case 'i': RBININFO (R_CORE_BIN_ACC_IMPORTS); break;
+	case 'I': RBININFO (R_CORE_BIN_ACC_INFO); break;
+	case 'e': RBININFO (R_CORE_BIN_ACC_ENTRIES); break;
+	case 'z': RBININFO (R_CORE_BIN_ACC_STRINGS); break;
 	case 'c':
-	case 'C':
-		r_core_bin_info (core, R_CORE_BIN_ACC_CLASSES, mode, va, NULL, offset);
-		break;
-	//r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS|R_CORE_BIN_ACC_FIELDS, mode, va, NULL, offset);
-	case 'S': r_core_bin_info (core, R_CORE_BIN_ACC_SECTIONS, mode, va, NULL, offset); break;
-	case 'o': r_core_bin_load (core, input[1]==' '? input+1: core->file->filename); break;
-	case 'h': r_core_bin_info (core, R_CORE_BIN_ACC_FIELDS, mode, va, NULL, offset); break;
-	case 's': r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, mode, va, NULL, offset); break;
-	case 'd': r_core_bin_info (core, R_CORE_BIN_ACC_DWARF, mode, va, NULL, offset); break;
-	case 'i': r_core_bin_info (core, R_CORE_BIN_ACC_IMPORTS, mode, va, NULL, offset); break;
-	case 'I': r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, offset); break;
-	case 'e': r_core_bin_info (core, R_CORE_BIN_ACC_ENTRIES, mode, va, NULL, offset); break;
-	case 'z': r_core_bin_info (core, R_CORE_BIN_ACC_STRINGS, mode, va, NULL, offset); break;
+	case 'C': RBININFO (R_CORE_BIN_ACC_CLASSES); break;
 	case 'a':
 		if (input[1]=='*') {
 			cmd_info (core, "I*");

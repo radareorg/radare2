@@ -18,7 +18,10 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	int i, matches = 0, ctr = 0;
 	RBinString *ptr = NULL;
 
-	if (arch && arch->buf && to > arch->buf->length)
+	if (!arch->rawstr)
+		if (!arch->curplugin || !arch->curplugin->info)
+			return;
+	if (arch && arch->buf && (!to || to > arch->buf->length))
 		to = arch->buf->length;
 	if (to<1 || to > 0xf00000) {
 		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);
@@ -186,7 +189,7 @@ static void r_bin_free_items(RBin *bin) {
 		a->curplugin->destroy (a);
 }
 
-static void r_bin_init(RBin *bin) {
+static void r_bin_init(RBin *bin, int rawstr) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
@@ -207,6 +210,7 @@ static void r_bin_init(RBin *bin) {
 	}
 	if (bin->curxtr && bin->curxtr->load)
 		bin->curxtr->load (bin);
+	bin->cur.rawstr = rawstr;
 }
 
 static int r_bin_extract(RBin *bin, int idx) {
@@ -278,7 +282,7 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy) {
 	if (!bin || !file)
 		return R_FALSE;
 	bin->file = r_file_abspath (file);
-	r_bin_init (bin);
+	r_bin_init (bin, bin->cur.rawstr);
 	bin->narch = r_bin_extract (bin, 0);
 	if (bin->narch == 0)
 		return R_FALSE;

@@ -120,7 +120,7 @@ namespace Radare {
 		public enum Stack {
 			NULL,
 			NOP,
-			INCSTACK,
+			INC,
 			GET,
 			SET
 		}

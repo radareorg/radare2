@@ -85,6 +85,7 @@ typedef struct r_bin_arch_t {
 	RBuffer *buf;
 	char *file;
 	int size;
+	int rawstr;
 	ut64 offset;
 	struct r_bin_object_t *o;
 	void *bin_obj; // internal pointer used by formats
