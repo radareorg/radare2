@@ -293,6 +293,10 @@ int main(int argc, char **argv) {
 				}
 			}
 
+			if (!r_core_bin_load (&r, file)) {
+				RBinObject *obj = r_bin_get_object (r.bin);
+				eprintf ("bits %d\n", obj->info->bits);
+			}
 			fh = r_core_file_open (&r, file, perms, mapaddr);
 			if (fh != NULL) {
 				//const char *arch = r_config_get (r.config, "asm.arch");

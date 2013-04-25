@@ -13,9 +13,9 @@
 #include <r_util.h>
 #include <r_list.h>
 
-#define R_FLAG_NAME_SIZE 128
-#define R_FLAG_BUF_SIZE 128
-#define R_FLAG_SPACES_MAX 128
+#define R_FLAG_NAME_SIZE 256
+#define R_FLAG_BUF_SIZE 256
+#define R_FLAG_SPACES_MAX 256
 
 typedef struct r_flag_item_t {
 	char name[R_FLAG_NAME_SIZE];

@@ -326,6 +326,7 @@ R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len);
 
 /* strings */
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
+R_API const char *r_str_rchr(const char *base, const char *p, int ch);
 R_API void r_str_unescape (char *s);
 R_API int r_str_len_utf8 (const char *s);
 R_API void r_str_filter_zeroline(char *str, int len);
@@ -372,6 +373,7 @@ R_API int r_str_ccmp(const char *dst, const char *orig, int ch);
 R_API int r_str_cmp(const char *dst, const char *orig, int len);
 R_API int r_str_ccpy(char *dst, char *orig, int ch);
 R_API const char *r_str_get(const char *str);
+R_API char *r_str_ndup(const char *ptr, int len);
 R_API char *r_str_dup(char *ptr, const char *string);
 R_API char *r_str_dup_printf(const char *fmt, ...);
 R_API void *r_str_free(void *ptr);

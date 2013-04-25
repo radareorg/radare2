@@ -19,7 +19,7 @@
 #define R_BIN_DBG_SYMS(x)     x & 0x08
 #define R_BIN_DBG_RELOCS(x)   x & 0x10
 
-#define R_BIN_SIZEOF_STRINGS 256
+#define R_BIN_SIZEOF_STRINGS 512
 #define R_BIN_MAX_ARCH 1024
 
 enum {

@@ -5,9 +5,9 @@
 R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v) {
 	ut8 c;
 	ut32 s, sum;
-	for (s = sum = 0; ; s+= 7) {
+	for (s = sum = 0; ; s += 7) {
 		c = *(data++) & 0xff;
-		sum |= ((ut32) (c&0x7f)<<s);
+		sum |= ((ut32) (c&0x7f) << s);
 		if (!(c&0x80)) break;
 	}
 	if (v) *v = sum;
@@ -17,7 +17,7 @@ R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v) {
 R_API const ut8 *r_leb128 (const ut8 *data, st32 *v) {
 	ut8 c;
 	st32 s, sum;
-	for (s = sum = 0; ; s+= 7) {
+	for (s = sum = 0; ;  s+= 7) {
 		c = *data++ & 0x0ff;
 		sum |= ((st32) ((*data++) & 0x7f) << s);
 		if (!(c&0x80)) break;

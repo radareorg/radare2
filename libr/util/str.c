@@ -310,11 +310,21 @@ R_API char *r_str_ichr(char *str, char chr) {
 
 // find last char
 R_API char *r_str_lchr(char *str, char chr) {
-	int len = strlen (str)+1;
-	for (;len>=0;len--)
-		if (str[len]==chr)
-			return str+len;
+	if (str) {
+		int len = strlen (str);
+		for (;len>=0;len--)
+			if (str[len]==chr)
+				return str+len;
+	}
 	return NULL;
+}
+
+R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
+	if (!base||!p) return NULL;
+	for (; p>base; p--)
+		if (ch == *p)
+			break;
+	return p;
 }
 
 R_API int r_str_nchr(const char *str, char chr) {
@@ -473,6 +483,13 @@ R_API const char *r_str_get(const char *str) {
 	if (str == NULL)
 		return nullstr_c;
 	return str;
+}
+
+R_API char *r_str_ndup(const char *ptr, int len) {
+	char *out = malloc (len+1);
+	memcpy (out, ptr, len);
+	out[len] = 0;
+	return out;
 }
 
 R_API char *r_str_dup(char *ptr, const char *string) {

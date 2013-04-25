@@ -87,7 +87,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 */
 	case 0x27: // throw
 	case 0xed: // throw-verification-error
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0x00: // nop
 		op->type = R_ANAL_OP_TYPE_NOP;
