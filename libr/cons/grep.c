@@ -31,8 +31,8 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.str = NULL;
 	cons->grep.neg = 0;
 	cons->grep.amp = 0;
-	cons->grep.begin = 0;
 	cons->grep.end = 0;
+	cons->grep.begin = 0;
 	cons->grep.nstrings = 0;
 	cons->grep.tokenfrom = 0;
 	cons->grep.tokento = ST32_MAX;
@@ -208,7 +208,8 @@ R_API int r_cons_grep_line(char *buf, int len) {
 	if (hit) {
 		if ((cons->grep.tokenfrom != 0 || cons->grep.tokento != ST32_MAX) &&
 			(cons->grep.line == -1 || cons->grep.line == cons->lines)) {
-			for (i=0; i<len; i++) for (j=0; j<6; j++)
+			const int delims_count = sizeof (delims) / 2;
+			for (i=0; i<len; i++) for (j=0; j<delims_count; j++)
 				if (in[i] == delims[j][0])
 					in[i] = ' ';
 			for (i=0; i <= cons->grep.tokento; i++) {
@@ -237,7 +238,6 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			}
 			memcpy (buf, out, len);
 			len = outlen;
-			
 		}
 	} else len = 0;
 
