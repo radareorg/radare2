@@ -14,6 +14,7 @@ endif
 PWD=$(shell pwd)
 
 all: plugins.cfg
+	${MAKE} shlr
 	${MAKE} libr
 	${MAKE} binr
 
@@ -22,7 +23,7 @@ plugins.cfg:
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
 
-binr libr:
+shlr binr libr:
 	cd $@ && ${MAKE} all
 
 w32:
@@ -61,7 +62,7 @@ w32dist:
 	zip -r radare2-w32-${VERSION}.zip radare2-w32-${VERSION}
 
 clean:
-	for a in libr binr shlr ; do (cd $$a ; ${MAKE} clean) ; done
+	for a in shlr libr binr ; do (cd $$a ; ${MAKE} clean) ; done
 
 distclean mrproper:
 	for a in libr binr shlr ; do ( cd $$a ; ${MAKE} mrproper) ; done

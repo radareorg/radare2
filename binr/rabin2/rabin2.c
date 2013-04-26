@@ -334,12 +334,14 @@ int main(int argc, char **argv) {
 			set_action (ACTION_SRCLINE);
 			break;
 		case 'i': set_action (ACTION_IMPORTS); break;
-		case 's': set_action(ACTION_SYMBOLS); break;
-		case 'S': set_action(ACTION_SECTIONS); break;
+		case 's': set_action (ACTION_SYMBOLS); break;
+		case 'S': set_action (ACTION_SECTIONS); break;
 		case 'z': 
-			if (is_active (ACTION_STRINGS))
-				r_config_set_i (core.config, "bin.rawstr", 1);
-			set_action(ACTION_STRINGS); 
+			if (is_active (ACTION_STRINGS)) {
+				r_config_set_i (core.config, "bin.rawstr", R_TRUE);
+				core.bin->cur.rawstr = R_TRUE;
+			}
+			set_action (ACTION_STRINGS); 
 			break;
 		case 'Z': set_action (ACTION_SIZE); break;
 		case 'I': set_action (ACTION_INFO); break;
