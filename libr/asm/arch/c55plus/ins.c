@@ -1,23 +1,16 @@
-// get instruction len
+#include "ins.h"
 
-//char ins_buff [] = "\x77\x20\x21\x21";
-/*
-000000: 772021
-000003: 21
-000004: 772120
-*/
-unsigned char *ins_buff; // = "\x77\x21\x20\x21\x00\x30\x21\x77\x20\x21";
-unsigned int ins_buff_len = 0;
+ut8 *ins_buff = (ut8 *)NULL; // = "\x77\x21\x20\x21\x00\x30\x21\x77\x20\x21";
+ut32 ins_buff_len = 0;
 
-unsigned int dword_4c424c = 0;
-unsigned int dword_4c4258 = 0;
+static unsigned int dword_4c424c = 0;
 
 extern int debug;
 
-int get_ins_len(unsigned char opcode)
+ut32 get_ins_len(ut8 opcode)
 {
-	int val = (opcode >> 4) & 0xF;
-	int len = 0;
+	ut32 val = (opcode >> 4) & 0xF;
+	ut32 len = 0;
 
 	switch(val) {
 		case 0:
@@ -62,21 +55,18 @@ int get_ins_len(unsigned char opcode)
 	return len;
 }
 
-// get instruction part
-int get_ins_part(int pos, int len)
+ut32 get_ins_part(ut32 pos, ut32 len)
 {
-	unsigned int ret = 0;
-
+	ut32 ret = 0;
 
 	if(debug)
         	printf("pos => 0x%x len => %d ins_buff_len => %d\n", pos, len, ins_buff_len);
 
-	if(pos < dword_4c4258 || pos >= (ins_buff_len + dword_4c4258)) {
+	if(pos < 0 || pos >= ins_buff_len) {
 		dword_4c424c = 1;
 		return ret;
 	} 
 
-	pos -= dword_4c4258;
 	for(; len > 0; --len) {
 		ret <<= 8;
 		if(pos >= ins_buff_len) 
@@ -89,7 +79,8 @@ int get_ins_part(int pos, int len)
 	return ret;
 }
 
-char* ins_str[] = {
+// pseudo instructions array (used for replacement tokens)
+st8* ins_str[] = {
 (char *)0x0,
 "OOOOOOppHHHhhhhhkkkkkkkk"
 ,
