@@ -50,7 +50,7 @@ public class Radare.RDebug {
 	public uint64 arg_get (int fast, int num);
 	public bool arg_set (int fast, int num, uint64 val);
 
-	public uint64 execute(uint8 *buf, int len); // XXX: uint8
+	public uint64 execute(uint8 *buf, int len, bool restore); // XXX: uint8
 	public int desc_open (string path);
 	public int desc_close (int fd);
 	public int desc_dup (int fd, int newfd);
