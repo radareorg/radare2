@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -44,22 +44,15 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	static ud_t disasm_obj;
-	ud_init (&disasm_obj);
-	ud_set_syntax (&disasm_obj, 
-		a->syntax==R_ASM_SYNTAX_ATT?
+	static ud_t d;
+	ud_init (&d);
+	ud_set_syntax (&d, (a->syntax==R_ASM_SYNTAX_ATT)?
 			UD_SYN_ATT: UD_SYN_INTEL);
-	ud_set_input_buffer (&disasm_obj, (uint8_t*) buf, len);
-	ud_set_pc (&disasm_obj, a->pc);
-	ud_set_mode (&disasm_obj, a->bits);
-/*
-disasm_obj.inp_fill = 10;
-disasm_obj.inp_curr = 0;
-disasm_obj.inp_end = 128; //256;
-*/
-	op->inst_len = ud_disassemble (&disasm_obj);
-	//op->inst_len = ud_insn_len (&disasm_obj);
-	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&disasm_obj));
+	ud_set_input_buffer (&d, (uint8_t*) buf, len);
+	ud_set_pc (&d, a->pc);
+	ud_set_mode (&d, a->bits);
+	op->inst_len = ud_disassemble (&d);
+	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&d));
 	if (!op->inst_len || strstr (op->buf_asm, "invalid"))
 		op->inst_len = -1;
 	if (op->inst_len<1)

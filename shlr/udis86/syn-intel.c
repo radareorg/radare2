@@ -92,7 +92,7 @@ static void gen_operand(struct ud* u, struct ud_operand* op, int syn_cast)
 
 
   case UD_OP_JIMM:
-    ud_syn_print_addr(u, ud_syn_rel_target(u, op, 0));
+    ud_syn_print_addr(u, ud_syn_rel_target(u, op, 1));
     break;
 
   case UD_OP_PTR:
