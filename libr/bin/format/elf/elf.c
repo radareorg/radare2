@@ -733,11 +733,13 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 					1);
 			if (len == -1) {
 				eprintf ("Error: read (rel)\n");
+				free(rel);
 				return NULL;
 			}
 		}
 		if ((ret = (struct r_bin_elf_reloc_t *)malloc ((nrel+1) * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
 			perror ("malloc (reloc)");
+			free(rel);
 			return NULL;
 		}
 		j = 0;
@@ -761,6 +763,7 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		ret[j].last = 1;
 		break;
 	}
+	free(rel);
 	return ret;
 }
 
