@@ -14,17 +14,14 @@ endif
 PWD=$(shell pwd)
 
 all: plugins.cfg
-	${MAKE} shlr
-	${MAKE} libr
-	${MAKE} binr
+	${MAKE} -C shlr
+	${MAKE} -C libr
+	${MAKE} -C binr
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \
 	echo "  Please, run ./configure first" ; echo ; exit 1 ; fi
 	./configure-plugins
-
-shlr binr libr:
-	cd $@ && ${MAKE} all
 
 w32:
 	${MAKE} clean

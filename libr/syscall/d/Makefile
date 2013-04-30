@@ -18,7 +18,8 @@ include $(TOP)/config-user.mk
 
 F_SDB=$(addsuffix .sdb,$F)
 
-SDB=$(LTOP)/db/sdb/sdb
+SDBPATH=$(LTOP)/../shlr/sdb/
+SDB=$(SDBPATH)/sdb
 
 all: ${SDB}
 	@${MAKE} compile
@@ -37,12 +38,12 @@ clean:
 	rm -f *.sdb
 
 ${SDB}:
-	cp -rf $(LTOP)/db/sdb/src $(LTOP)/db/sdb/src-native
+	cp -rf $(SDBPATH)/src $(SDBPATH)/src-native
 	#cd $(LTOP)/db/sdb/src-native && ${MAKE} -j ${MAKE_JOBS} ARCH=xxx CC=gcc clean sdb
-	cd $(LTOP)/db/sdb/src-native && CFLAGS='${CFLAGS}' \
+	cd $(SDBPATH)/src-native && CFLAGS='${CFLAGS}' \
 		${MAKE} -j 1 ARCH=xxx CC=gcc clean sdb
-	cp -f $(LTOP)/db/sdb/src-native/sdb $(LTOP)/db/sdb/sdb
-	rm -rf $(LTOP)/db/sdb/src-native
+	cp -f $(SDBPATH)/src-native/sdb $(SDBPATH)/sdb
+	rm -rf $(SDBPATH)/src-native
 
 .PHONY: all clean install install-symlink symstall
 

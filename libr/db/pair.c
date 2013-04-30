@@ -2,7 +2,7 @@
 
 #include <r_db.h>
 #include <r_util.h>
-#include "sdb/src/sdb.h"
+#include "../../shlr/sdb/src/sdb.h"
 
 R_API void r_pair_set_file (RPair*p, const char *file) {
 	if (!file || !*file) return;

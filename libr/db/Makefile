@@ -5,58 +5,31 @@ DEPS=r_util
 
 OBJS=db.o table.o pair.o
 
-
-SDBLIB=sdb/src/libsdb.a
-EXTRA_CLEAN=sdbclean
+SDBPATH=../../shlr/sdb/src/
+SDBLIB=${SDBPATH}/libsdb.a
 EXTRA_TARGETS+=${SDBLIB}
+SDB_OBJS=
+SDB_OBJS+=buffer.o
+SDB_OBJS+=cdb.o
+SDB_OBJS+=cdb_make.o
+SDB_OBJS+=ht.o
+SDB_OBJS+=json/js0n.o
+SDB_OBJS+=json/json.o
+SDB_OBJS+=json/rangstr.o
+SDB_OBJS+=json.o
+SDB_OBJS+=lock.o
+SDB_OBJS+=ls.o
+SDB_OBJS+=ns.o
+SDB_OBJS+=query.o
+SDB_OBJS+=sdb.o
+SDB_OBJS+=sdba.o
+SDB_OBJS+=sdbn.o
+SDB_OBJS+=util.o
 
-OBJS+=sdb/src/buffer.o
-OBJS+=sdb/src/cdb.o
-OBJS+=sdb/src/cdb_make.o
-OBJS+=sdb/src/ht.o
-OBJS+=sdb/src/json/js0n.o
-OBJS+=sdb/src/json/json.o
-OBJS+=sdb/src/json/rangstr.o
-OBJS+=sdb/src/json.o
-OBJS+=sdb/src/lock.o
-OBJS+=sdb/src/ls.o
-OBJS+=sdb/src/ns.o
-OBJS+=sdb/src/query.o
-OBJS+=sdb/src/sdb.o
-OBJS+=sdb/src/sdba.o
-OBJS+=sdb/src/sdbn.o
-OBJS+=sdb/src/util.o
+SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 
-CFLAGS+=-Isdb/src
+OBJS+=${SDBOBJS}
 
-URL=git://github.com/radare/sdb
-
-F=README.md config.mk src Makefile
-SYNCFILES=$(addprefix sdb.vc/,${F})
+CFLAGS+=-I${SDBPATH}/src
 
 include ../rules.mk
-
-# link against sdb
-#LINK+=${SDBLIB}
-
-sdbclean:
-	cd sdb/src ; ${MAKE} clean
-
-$(SDBLIB):
-	cd sdb ; ${MAKE} src/sdb-version.h
-	cd sdb/src ; ${MAKE} ARCH=xxx RANLIB="${RANLIB}" \
-		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
-
-.PHONY: sdb-sync sync-sdb sdbclean
-sdb-sync sync-sdb:
-	rm -rf sdb sdb.vc
-	git clone ${URL} sdb.vc
-	mkdir -p sdb
-	cp -rf ${SYNCFILES} sdb
-	rm -rf sdb.vc ../include/sdb
-	mkdir -p ../include/sdb
-	cd sdb ; ${MAKE} src/sdb-version.h
-	cp -f sdb/src/*.h ../include/sdb
-	echo '#include <sdb/sdb.h>' > ../include/sdb.h
-	git add ../include/sdb*
-	git add sdb
