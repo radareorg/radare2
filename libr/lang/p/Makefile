@@ -57,6 +57,6 @@ lang_perl.${EXT_SO}:
 		`perl -MExtUtils::Embed -e ccopts | sed -e 's/-arch [^\s]* //g'` \
 		`perl -MExtUtils::Embed -e ldopts | sed -e 's/-arch [^\s]* //g'` -lncurses
 
-clean:
+mrproper clean:
 	-rm -f *.${EXT_SO} *.${EXT_AR} *.o
 	-rm -rf *.dSYM

@@ -3,7 +3,7 @@ enyo.kind ({
   classes: "panels-sample-sliding-content r2panel",
   kind: "Scroller",
   tag: "div",
-  style:"padding-left:16px",
+  style:"padding:0px;margin:0px;border:0px;overflow:hidden",
   components: [
     {kind: "FittableRows", fit: false, components: [
       {tag: "h2", content: "General" },

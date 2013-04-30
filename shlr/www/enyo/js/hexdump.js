@@ -49,7 +49,7 @@ enyo.kind ({
       x = r2.filter_asm (x, "px");
       text.setContent (x);
     });
-  this.colorbar_create ();
+    this.colorbar_create ();
   },
   create: function() {
     this.inherited (arguments);

@@ -103,12 +103,10 @@ static int cmd_print(void *data, const char *input) {
 	switch (*input) {
 	case 'v':
 		mode = input[1];
-		w = core->print->cols * 4;
-		if (mode == 'j')
-			r_cons_strcat ("{");
+		w = len? len: core->print->cols * 4;
+		if (mode == 'j') r_cons_strcat ("{");
 		off = core->offset;
 		for (i=0; i<10; i++) total[i] = 0;
-
 		r_core_get_boundaries (core, "file", &from, &to);
 		piece = (to-from) / w;
 		if (piece<1) piece = 1;

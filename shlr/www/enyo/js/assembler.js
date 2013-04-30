@@ -2,13 +2,12 @@ enyo.kind ({
   name: "Assembler",
   kind: "Scroller",
   classes: "r2panel",
-//  kind: "Scroller",
   components: [
     {tag: "form", style:"margin-top:8px;margin-left:8px", attributes: {action:"javascript:#"}, components: [
       {kind: "FittableRows", fit: true, components: [
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
           {tag: "font", content: "opcode", style:"font-weight:bold;margin-right:20px"},
-          {kind: "Input", value: '', style:"width:89%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "opcode"},
+          {kind: "Input", value: '', style:"width:60%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "opcode"},
         ]},
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
           {tag: "font", content: "bytes", style:"margin-right:20px;font-weight:bold"},

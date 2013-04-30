@@ -1,6 +1,23 @@
 a {
   color: #3030a0;
 }
+.sourcecode {
+  width:280px;
+  height:200px;
+  margin-left:10px;
+  font-size:12px;
+  background-color:#e0e0e0;
+  font-family: Consolas, monospace;
+}
+
+.sourcebutton {
+  margin:4px;
+  vertical-align:top;
+}
+
+h2 {
+  padding-left:12px;
+}
 
 .app-panels > * {
   width: 320px;
@@ -46,8 +63,13 @@ a {
 }
 
 /* TODO: :hover change mouse pointer */
-.moreless {
+.moreless:hover {
   background-color:#d0d0d0;
+  cursor:pointer;
+}
+
+.moreless {
+  background-color:#a0a0a0;
   width:90%;
   height:24px;
   padding-left:10px;
@@ -64,9 +86,19 @@ a {
  border-spacing:0px;
  spacing: 0px;
  border: 0px;
- height: 32px;
+ height: 16px;
  background-color: black;
- width: 90%; 
+ width: 380px; 
+ max-width:100%;
+ margin:0px;
+}
+
+.colorbar_item {
+  max-width:100%;
+  width:100%;
+  border:0px;
+  spacing:0px;
+  padding:0px;
 }
 .topbox {
   position:absolute;
@@ -76,9 +108,15 @@ a {
   top:0px;
   display:inline;
 }
+
 .top {
   position:float;
   padding:8px;
   margin:0px;
+  top:12px;
   display:inline;
+}
+
+pre {
+	font-size:11px; 
 }

@@ -6,16 +6,10 @@ enyo.kind ({
   data: null,
   components: [
     {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
+    {tag: "br" },
     {tag: "div", content: "^", classes: "moreless", ontap: "less"},
     {tag: "pre", allowHtml: true, name: "text", content: "..", style:"margin-left:5px"},
     {tag: "div", content: "v", classes: "moreless", ontap: "more"},
-/*
-    {kind: "List", count:3, name: "list", style:"height:400px", realtimeFit:false, onSetupItem: "setupItem", components: [
-      {kind: "onyx.Item", layoutKind: "HFlexLayout", style:"padding:0px", components: [
-        {kind: "onyx.Button", name: "msg", fit:true, active: true, ontap: "rowTap"}
-      ]}
-    ]}
-*/
   ],
   min: 0,
   max: 0,
@@ -49,7 +43,7 @@ enyo.kind ({
       x = r2.filter_asm (x, "pd");
       text.setContent (x);
     });
-  this.colorbar_create ();
+    this.colorbar_create ();
   },
   create: function() {
     this.inherited (arguments);
@@ -62,13 +56,9 @@ enyo.kind ({
     this.colorbar_create ();
     //this.refresh ();
   },
-  setupItem: function (inSender, inIndex) {
-      this.$.msg.setContent (this.data[inIndex.index]);
-      return true;
-  },
   colorbar_create: function () {
     var self = this;
-    r2.cmd ("pvj", function(x) {
+    r2.cmd ("pvj 24", function(x) {
       try {
         var y = JSON.parse (x);
       } catch (e) {
@@ -78,37 +68,35 @@ enyo.kind ({
       console.log (y);
 
 // TODO: use canvas api for faster rendering and smaller dom
-      var c = "<table class='colorbar'><tr valign=top style='height:20px;border-spacing:0'>";
+      var c = "<table class='colorbar'>"+
+          "<tr valign=top style='height:8px;border-spacing:0'>";
       var colors = {
-       flags: "#c0c0c0",
-       comments: "yellow",
-       functions: "#5050f0",
-       strings: "orange",
+        flags: "#c0c0c0",
+        comments: "yellow",
+        functions: "#5050f0",
+        strings: "orange",
       };
-
       var off = "";
-      var WIDTH = 10;
-      var HEIGHT = 30;
+      var WIDTH = '100%';
+      var HEIGHT = 16;
       for (var i=0; i< y.blocks.length; i++) {
         var block = y.blocks[i];
-        var r = "<div style='overflow:hidden;background-color:#404040;width:"
-              + WIDTH+"px;'>&nbsp;</div>";
+        var r = "<div style='overflow:hidden;width:12px;'>____</div>";
         if (block.offset) {  // Object.keys(block).length>1) {
-          var r = "<table height="+HEIGHT+" style='border-spacing:0px'>";
+          var r = "<table width='width:100%' height="+HEIGHT+" style='border-spacing:0px'>";
           var count = 0;
-          for (var k in colors) {
+          for (var k in colors)
             if (block[k]) 
               count++;
-          }
 	  count++; // avoid 0div wtf
 	  if (count==1) break;
           var h = HEIGHT / count;
           for (var k in colors) {
             var color = colors[k];
             if (block[k]) 
-              r += "<tr><td style='width:"+WIDTH+"px;background-color:"
-                  + colors[k]+"'><div style='width:"+WIDTH+"px;overflow:"
-                  + "hidden;height:"+h+"px'>&nbsp;</div></td></tr>";
+              r += "<tr><td class='colorbar_item' style='background-color:"
+                  + colors[k]+"'><div style='width:12px;overflow:"
+                  + "hidden;height:"+h+"px'>____</div></td></tr>";
           }
           r += "</table>";
           off = "0x"+block.offset.toString (16);

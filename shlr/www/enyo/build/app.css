@@ -1,13 +1,423 @@
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/onyx/css/onyx.css */
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/contextual/source/ContextualLayout.css */
 
-/* WARNING: This is a generated file for backward-compatibility.  Most      */
-/* usrs should instead modify LESS files.  If you choose to edit this CSS   */
-/* directly rather than LESS files, you should make sure less.xx.yy.min.js  */
-/* is commented out in your debug.html, and run deploy.sh/bat using the     */
-/* '-c' flag to disable LESS compilation.  This will force the loader and   */
-/* minifier to fall back to using CSS files in place of the same-name       */
-/* LESS file.                                                               */
+/* ContextualLayout.css - popup positioning and border radius adjustments */
+
+/*for popups above activator*/
+.vertical.above {
+  top: auto;
+  margin-top:-10px;
+  bottom: 100%;
+  margin-bottom: 10px;
+}
+/*for popups below activator*/
+.vertical.below {
+  margin-top:10px;
+}
+/*for popups on the left of the activator*/
+.right.horizontal {
+  margin-left: -11px;
+}
+/*for popups on the right of the activator*/
+.left.horizontal {
+  margin-left: 10px;
+}
+/*corners*/
+/*vertical top corners*/
+/*for popups on the left of the activator*/
+.vertical.right.corner {
+  margin-left: 0px;
+}
+/*for popups on the right of the activator*/
+.vertical.left.corner {
+  margin-left: 0px;
+}
+.vertical.below.left.corner {
+  border-top-right-radius: 0px;
+}
+.vertical.below.right.corner {
+  border-top-left-radius: 0px;
+}
+/*vertical bottom corners*/
+.left.above.corner {
+  border-bottom-right-radius: 0px;
+}
+.right.above.corner {
+  border-bottom-left-radius: 0px;
+}
+/*horizontal bottom corners*/
+.left.low.corner {
+  border-bottom-left-radius: 0px;
+}
+.right.low.corner {
+  border-bottom-right-radius: 0px;
+}
+/*horizontal top corners*/
+.left.high.corner {
+  border-top-left-radius: 0px;
+}
+.right.high.corner {
+  border-top-right-radius: 0px;
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/fittable/source/FittableLayout.css */
+
+.enyo-fittable-rows-layout {
+	position: relative;
+}
+
+.enyo-fittable-rows-layout > * {
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	/* float when not stretched */
+	float: left;
+	clear: both;
+}
+
+/* non-floating when stretched */
+.enyo-fittable-rows-layout.enyo-stretch > * {
+	float: none;
+	clear: none;
+}
+
+/* setting to enforce margin collapsing */
+/* NOTE: rows cannot have margin left/right */
+.enyo-fittable-rows-layout.enyo-stretch.enyo-margin-expand > * {
+	float: left;
+	clear: both;
+	width: 100%;
+	/* note: harsh resets */
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
+.enyo-fittable-columns-layout {
+	position: relative;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.enyo-fittable-columns-layout.enyo-center {
+	text-align: center;
+}
+
+.enyo-fittable-columns-layout > * {
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	vertical-align: top;
+	display: inline-block;
+	white-space: normal;
+}
+
+.enyo-fittable-columns-layout.enyo-tool-decorator > * {
+	vertical-align: middle;
+}
+
+/* repair clobbered white-space setting for pre, code */
+.enyo-fittable-columns-layout > pre, .enyo-fittable-columns-layout > code {
+	white-space: pre;
+}
+
+.enyo-fittable-columns-layout > .enyo-fittable-columns-layout, .enyo-fittable-columns-layout > .onyx-toolbar-inline {
+	white-space: nowrap;
+}
+
+/* NOTE: columns cannot have margin top/bottom */
+.enyo-fittable-columns-layout.enyo-stretch > * {
+	height: 100%;
+	/* note: harsh resets */
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/List.css */
+
+.enyo-list {
+	position: relative;
+}
+
+.enyo-list-port {
+	overflow: hidden;
+	position: relative;
+	height: 1000000px;
+}
+
+.enyo-list-holdingarea {
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
+.enyo-list-port.horizontal {
+	white-space: nowrap;
+}
+
+.enyo-list-page {
+	position: absolute;
+	left: 0;
+}
+
+.enyo-list-page.vertical {
+	right: 0;
+}
+
+.enyo-list-holdingarea {
+	top: -10000px;
+}
+
+.enyo-pinned-list-placeholder {
+	border: 1px solid red;
+	position: absolute;
+	top: 0; left: 0;
+	z-index: 1000;
+	background: transparent;
+	overflow: hidden;
+}
+
+.enyo-pinned-list-placeholder button {
+	width: 100px; height: 100%;
+	position: absolute;
+	top: 0; right: 0;
+}
+
+.enyo-list-reorder-container {
+	position: absolute;
+	top: 0; left: 0;
+	z-index: 1000;
+	background: transparent;
+	overflow: hidden;
+}
+
+.enyo-animatedTopAndLeft {
+	-webkit-transition: top 0.1s linear, left 0.1s linear;
+	-moz-transition: top 0.1s linear, left 0.1s linear;
+	-o-transition: top 0.1s linear, left 0.1s linear;
+	transition: top 0.1s linear, left 0.1s linear;
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/PulldownList.css */
+
+.enyo-list-pulldown {
+	position: absolute;
+	bottom: 100%;
+	left: 0;
+	right: 0;
+}
+
+.enyo-puller {
+	position: relative;
+	height: 50px;
+	font-size: 22px;
+	color: #444;
+	padding: 20px 0 0px 34px;
+}
+
+.enyo-puller-text {
+	position: absolute;
+	left: 80px;
+	top: 22px;
+}
+
+.enyo-puller-arrow {
+	position: relative;
+	background: #444;
+	width: 7px;
+	height: 28px;
+	transition: transform 0.3s;
+	-webkit-transition: -webkit-transform 0.3s;
+	-moz-transition: -moz-transform 0.3s;
+	-o-transition: -o-transform 0.3s;
+	-ms-transition: -ms-transform 0.3s;
+}
+
+.enyo-puller-arrow:after {
+	content: " ";
+	height: 0;
+	width: 0;
+	position: absolute;
+	border: 10px solid transparent;
+	border-bottom-color: #444;
+	bottom: 100%;
+	left: 50%;
+	margin-left: -10px;
+}
+
+.enyo-puller-arrow-up {
+	transform: rotate(0deg);
+	-webkit-transform: rotate(0deg);
+	-moz-transform: rotate(0deg);
+	-o-transform: rotate(0deg);
+	-ms-transform: rotate(0deg);
+}
+
+.enyo-puller-arrow-down {
+	transform: rotate(180deg);
+	-webkit-transform: rotate(180deg);
+	-moz-transform: rotate(180deg);
+	-o-transform: rotate(180deg);
+	-ms-transform: rotate(180deg);
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/GridList.css */
+
+/*
+	Put anything you reference with "url(../lib/layout/list/source)" in ../assets/
+	This way, you can minify your application, and just remove the "source" folder for production
+*/
+.enyo-gridlist {
+	height: 100%;
+	/*activate the GPU for compositing each page */
+  	-webkit-transform: translate3d(0, 0, 0);
+  	z-index: 1;
+}
+.enyo-gridlist-row {
+	display: inline-block;
+	background-color: #000;
+	width: auto;
+	height: auto;
+	overflow: hidden;
+	vertical-align: top;
+	border: 0;
+	padding: 0;
+	margin: 0 auto;
+  	/* TODO: Investigate if these properties cause scrolling performance issues */
+  	/*
+  	-webkit-border-radius: 5px;
+	border-radius: 5px;
+	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+	-moz-box-shadow: 0 2px 3px rgba(0,0,0,0.5);
+	-ms-box-shadow: 0 2px 3px rgba(0,0,0,0.5);
+	-webkit-box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
+	*/
+}
+.enyo-gridlist-dummy {
+	display:inline-block;
+	width:auto;
+	height:auto;
+	z-index: -1;
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/GridListImageItem.css */
+
+/*
+	Put anything you reference with "url(../lib/layout/list/source)" in ../assets/
+	This way, you can minify your application, and just remove the "source" folder for production
+*/
+.enyo-gridlist-imageitem {
+	width: 100%;
+	height: 100%;
+	background: #333;
+	color: #fff;
+}
+.enyo-gridlist-imageitem img {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+.enyo-gridlist-imageitem .caption, .enyo-gridlist-imageitem .sub-caption {
+	opacity: 0.7;
+	font-weight: bold;
+	text-align: center;
+	font-size: 10pt;
+	text-transform: uppercase;
+	z-index: 10;
+	padding-top: 10px;
+	width: 100%;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+	color: #fff;
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/panels/source/arrangers/Arranger.css */
+
+.enyo-arranger {
+	position: relative;
+	overflow: hidden;
+}
+
+.enyo-arranger.enyo-fit {
+	position: absolute;
+}
+
+.enyo-arranger > * {
+	position: absolute;
+	left: 0;
+	top: 0;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+.enyo-arranger-fit > * {
+	/* override any width/height set on panels */
+	width: 100% !important;
+	height: 100% !important;
+	min-width: 0 !important;
+	min-height: 0 !important;
+}
+
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/panels/source/Panels.css */
+
+.enyo-panels {
+}
+
+.enyo-panels-fit-narrow {
+}
+
+@media all and (max-width: 800px) {
+	.enyo-panels-fit-narrow > * {
+		min-width: 100%;
+		max-width: 100%;
+	}
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/tree/source/Node.css */
+
+.enyo-node {
+	cursor: default;
+	padding: 4px;
+}
+
+.enyo-node img {
+	vertical-align: middle;
+	padding-right: 6px;
+}
+
+.enyo-node-box {
+	overflow: hidden;
+}
+
+.enyo-node-client {
+	position: relative;
+}
+
+.enyo-animate .enyo-node-box, .enyo-animate .enyo-node-client {
+	-ms-transition-property: height, top;
+	-ms-transition-duration: 0.2s, 0.2s;
+	-moz-transition-property: height, top;
+	-moz-transition-duration: 0.2s, 0.2s;
+	-o-transition-property: height, top;
+	-o-transition-duration: 0.2s, 0.2s;
+	-webkit-transition-property: height, top;
+	-webkit-transition-duration: 0.2s, 0.2s;
+	transition-property: height, top;
+	transition-duration: 0.2s, 0.2s;
+}
+
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/layout/imageview/source/ImageViewPin.css */
+
+
+.pinDebug {
+	background:yellow;
+	border:1px solid yellow;
+}
+
+/* /Users/pancake/prg/bootplate/enyo/../lib/onyx/css/onyx.less */
 
 /* Onyx default parameters defined here */
 /* Fonts */
@@ -29,7 +439,7 @@
 /* Images */
 /* ---------------------------------------*/
 /* Onyx rules defined here */
-/* onyx-classes.less - combined CSS (less) files for all released Onyx controls 
+/* onyx-classes.less - combined CSS (less) files for all released Onyx controls
    into single onyx.less file to avoid IE bug that allows
    a maximum of 31 style sheets to be loaded before silently failing */
 .onyx {
@@ -63,6 +473,7 @@
   vertical-align: middle;
 }
 .onyx-icon.onyx-icon-button.active,
+.onyx-icon.onyx-icon-button.pressed,
 .onyx-icon.onyx-icon-button:active:hover,
 .onyx-icon-toggle.active {
   background-position: 0 -32px;
@@ -100,7 +511,7 @@
   /* border-bottom: 1px solid rgba(15, 15, 15, 0.5); */
 
   box-shadow: inset 0px 1px 0px rgba(255, 255, 255, 0.2);
-  background: #e1e1e1 url(images/gradient.png) repeat-x bottom;
+  background: #e1e1e1 url(../lib/onyx/images/gradient.png) repeat-x bottom;
   background-size: contain;
   /**/
 
@@ -119,14 +530,15 @@
 
 	the effect is as if .onyx-button.active doesn't exist
 */
-.onyx-button.active {
-  background-image: url(images/gradient-invert.png);
+.onyx-button.active,
+.onyx-button.pressed {
+  background-image: url(../lib/onyx/images/gradient-invert.png);
   background-position: top;
   border-top: 1px solid rgba(15, 15, 15, 0.6);
   box-shadow: inset 0px 1px 0px rgba(0, 0, 0, 0.1);
 }
 .onyx-button:active:hover:not([disabled]) {
-  background-image: url(images/gradient-invert.png);
+  background-image: url(../lib/onyx/images/gradient-invert.png);
   background-position: top;
   border-top: 1px solid rgba(15, 15, 15, 0.6);
   box-shadow: inset 0px 1px 0px rgba(0, 0, 0, 0.1);
@@ -147,7 +559,7 @@
   cursor: pointer;
   height: 32px;
   width: 32px;
-  background: url(images/checkbox.png) no-repeat;
+  background: url(../lib/onyx/images/checkbox.png) no-repeat;
   /* reset for ? */
 
   margin: 0px;
@@ -164,7 +576,7 @@
 }
 /* Grabber.css */
 .onyx-grabber {
-  background: url(images/grabbutton.png) no-repeat center;
+  background: url(../lib/onyx/images/grabbutton.png) no-repeat center;
   width: 23px;
   height: 27px;
 }
@@ -176,7 +588,7 @@
   border-radius: 8px;
   padding: 6px;
   color: #ffffff;
-  background: #4c4c4c url(images/gradient.png) repeat-x 0 bottom;
+  background: #4c4c4c url(../lib/onyx/images/gradient.png) repeat-x 0 bottom;
 }
 .onyx-popup-decorator {
   position: relative;
@@ -218,7 +630,7 @@
 
   background-color: #4c4c4c;
   border: none;
-  background: #4c4c4c url(images/gradient.png) repeat-x 0 10px;
+  background: #4c4c4c url(../lib/onyx/images/gradient.png) repeat-x 0 10px;
 }
 .onyx-groupbox .onyx-input-decorator {
   display: block;
@@ -268,6 +680,7 @@
   outline: none;
   cursor: pointer;
   background-color: transparent;
+  background-image: none;
   font-size: 16px;
   box-shadow: none;
   /* FIXME: hack for styling reset on Android */
@@ -392,6 +805,7 @@
   outline: none;
   cursor: pointer;
   background-color: transparent;
+  background-image: none;
   font-size: 16px;
   box-shadow: none;
   /* Remove scrollbars and resize handle */
@@ -424,6 +838,7 @@
   outline: none;
   cursor: pointer;
   background-color: transparent;
+  background-image: none;
   font-size: 16px;
   min-height: 20px;
   min-width: 100px;
@@ -449,7 +864,7 @@
   text-align: center;
   /**/
 
-  background: #e7e7e7 url(images/gradient.png) repeat-x bottom;
+  background: #e7e7e7 url(../lib/onyx/images/gradient.png) repeat-x bottom;
   /* IE8 */
 
   border: 1px solid #333333;
@@ -471,7 +886,7 @@
 }
 .onyx-radiobutton.active {
   color: #ffffff;
-  background: #0091f2 url(images/gradient-invert.png) repeat-x top;
+  background: #0091f2 url(../lib/onyx/images/gradient-invert.png) repeat-x top;
   border-top: 1px solid rgba(15, 15, 15, 0.6);
   box-shadow: inset 1px 2px 2px rgba(0, 0, 0, 0.2);
 }
@@ -514,7 +929,7 @@
 
   border-radius: 3px;
   box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.4);
-  background: #8bba3d url(images/gradient-invert.png) repeat-x bottom;
+  background: #8bba3d url(../lib/onyx/images/gradient-invert.png) repeat-x bottom;
   background-size: auto 100%;
   /* label */
 
@@ -532,7 +947,7 @@
   height: 30px;
   margin: 1px;
   border-radius: 3px;
-  background: #f6f6f6 url(images/gradient.png) repeat-x;
+  background: #f6f6f6 url(../lib/onyx/images/gradient.png) repeat-x;
   background-size: auto 100%;
 }
 .onyx-toggle-button .onyx-toggle-button-knob {
@@ -572,13 +987,13 @@
 
   padding: 9px 8px 10px 8px;
   border: 1px solid #3A3A3A;
-  background: #4c4c4c url(images/gradient.png) repeat-x 0 bottom;
+  background: #4c4c4c url(../lib/onyx/images/gradient.png) repeat-x 0 bottom;
   background-size: contain;
   color: #ffffff;
   /**/
 
   white-space: nowrap;
-  overflow: hidden;
+  overflow-y: visible;
   font-size: 20px;
 }
 .onyx-toolbar-inline > *,
@@ -619,7 +1034,8 @@
 .onyx-toolbar .onyx-input-decorator .onyx-input:focus::-webkit-input-placeholder {
   color: #dddddd;
 }
-/* Tooltip.css */.onyx-tooltip {
+/* Tooltip.css */
+.onyx-tooltip {
   z-index: 20;
   left: 0;
   padding: 4px 6px;
@@ -628,7 +1044,7 @@
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(0, 0, 0, 0.2);
   color: #ffffff;
-  background: #216593 url(images/gradient.png) repeat-x 0 bottom;
+  background: #216593 url(../lib/onyx/images/gradient.png) repeat-x 0 bottom;
   border-radius: 3px;
   white-space: nowrap;
 }
@@ -685,13 +1101,13 @@
   height: 8px;
   border: 1px solid rgba(15, 15, 15, 0.2);
   border-radius: 3px;
-  background: #b8b8b8 url(images/gradient-invert.png) repeat-x;
+  background: #b8b8b8 url(../lib/onyx/images/gradient-invert.png) repeat-x;
   background-size: auto 100%;
 }
 .onyx-progress-bar-bar {
   height: 100%;
   border-radius: 3px;
-  background: #58abef url(images/gradient.png) repeat-x;
+  background: #58abef url(../lib/onyx/images/gradient.png) repeat-x;
   background-size: auto 100%;
 }
 .onyx-progress-bar-bar.striped {
@@ -785,10 +1201,11 @@
   position: relative;
   height: 40px;
   width: 40px;
-  background: url(images/slider-handle.png) left top no-repeat;
+  background: url(../lib/onyx/images/slider-handle.png) left top no-repeat;
   margin: -23px -20px;
 }
 .onyx-slider-knob.active,
+.onyx-slider-knob.pressed,
 .onyx-slider-knob:active:hover {
   background-position: 0 -40px;
 }
@@ -829,10 +1246,10 @@
   width: 59px;
   height: 58px;
   display: inline-block;
-  background: url(images/spinner-dark.gif) no-repeat 0 0;
+  background: url(../lib/onyx/images/spinner-dark.gif) no-repeat 0 0;
 }
 .onyx-spinner.onyx-light {
-  background: url(images/spinner-light.gif) no-repeat 0 0;
+  background: url(../lib/onyx/images/spinner-light.gif) no-repeat 0 0;
 }
 /* MoreToolbar.css */
 .onyx-more-toolbar {
@@ -856,7 +1273,7 @@
   margin-bottom: 5px;
 }
 .onyx-more-button {
-  background-image: url(/lib/onyx/images/more.png);
+  background-image: url(../lib/onyx/images/more.png);
   width: 32px;
   height: 32px;
 }
@@ -901,6 +1318,236 @@
   background-color: #cacaca;
   color: #2F2F2F;
 }
+/* ContextualPopup.css */
+.onyx-contextual-popup-title {
+  font-weight: bold;
+  padding: 24px 32px 0px;
+}
+.onyx-contextual-popup-scroller {
+  padding: 24px 32px;
+}
+.onyx-contextual-popup-action-buttons {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+}
+.onyx-contextual-popup-action-button {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.onyx-contextual-popup,
+.onyx.onyx-contextual-popup {
+  font-size: 16px;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 6px;
+  color: #ffffff;
+  background: #4c4c4c;
+}
+/*setup the nub*/
+.onyx-contextual-popup::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+}
+/*for popups above activator*/
+.onyx-contextual-popup.vertical.above {
+  top: auto;
+  margin-top: -10px;
+  bottom: 100%;
+  margin-bottom: 10px;
+}
+/*for popups below activator*/
+.onyx-contextual-popup.vertical.below {
+  margin-top: 10px;
+}
+/*for popups on the left of the activator*/
+.onyx-contextual-popup.right.horizontal {
+  margin-left: -11px;
+}
+/*for popups on the right of the activator*/
+.onyx-contextual-popup.left.horizontal {
+  margin-left: 10px;
+}
+/*nub positioning*/
+/*horizontally centered nub*/
+.onyx-contextual-popup.vertical::after {
+  position: absolute;
+  left: 45%;
+  border-bottom: 10px solid #4c4c4c;
+  border-top: none;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+}
+/*nub near horizontal left*/
+.onyx-contextual-popup.vertical.right::after {
+  left: 0%;
+  margin-left: 20px;
+}
+/*nub near horizontal right*/
+.onyx-contextual-popup.vertical.left::after {
+  left: 100%;
+  margin-left: -55px;
+}
+/*downward facing nub*/
+.onyx-contextual-popup.vertical.above::after {
+  top: 100%;
+  border-top: 10px solid #4c4c4c;
+  border-bottom: none;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+}
+.onyx-contextual-popup.vertical.below.right::after {
+  top: 0%;
+  margin-top: -10px;
+  border-bottom: 10px solid #4c4c4c;
+  border-left: 10px solid transparent;
+}
+.onyx-contextual-popup.vertical.below.left::after {
+  top: 0%;
+  margin-top: -10px;
+  border-right: 10px solid transparent;
+}
+/*nub positioning for left/right popups*/
+/*vertically centered nub for popups on left of activator*/
+.onyx-contextual-popup.right::after {
+  left: 100%;
+  top: 47%;
+  margin-right: 20px;
+  border-left: 10px solid #4C4C4C;
+}
+/*nub near vertical top for popups on left of activator*/
+.onyx-contextual-popup.right.high::after {
+  top: 35px;
+  border-left: 10px solid #4C4C4C;
+}
+/*nub near vertical bottom for popups on left of activator*/
+.onyx-contextual-popup.right.low::after {
+  top: 100%;
+  margin-top: -55px;
+  border-left: 10px solid #4C4C4C;
+}
+/*vertically centered nub for popups on right of activator*/
+.onyx-contextual-popup.left::after {
+  left: 0%;
+  margin-left: -20px;
+  top: 45%;
+  border-right: 10px solid #4C4C4C;
+}
+/*nub near vertical top for popups on right of activator*/
+.onyx-contextual-popup.left.high::after {
+  top: 35px;
+  border-right: 10px solid #4C4C4C;
+}
+/*nub near vertical bottom for popups on right of activator*/
+.onyx-contextual-popup.left.low::after {
+  top: 100%;
+  margin-top: -55px;
+  border-right: 10px solid #4C4C4C;
+}
+/*corners*/
+/*vertical top corners*/
+/*for popups on the left of the activator*/
+.onyx-contextual-popup.vertical.right.corner {
+  margin-left: 0px;
+}
+/*for popups on the right of the activator*/
+.onyx-contextual-popup.vertical.left.corner {
+  margin-left: 0px;
+}
+.onyx-contextual-popup.vertical.below.left.corner {
+  border-top-right-radius: 0px;
+}
+.onyx-contextual-popup.vertical.below.right.corner {
+  border-top-left-radius: 0px;
+}
+.onyx-contextual-popup.vertical.below.left.corner::after {
+  top: 0%;
+  left: 100%;
+  margin-top: -10px;
+  margin-left: -19px;
+  border-right: 10px solid #4c4c4c;
+  border-top: 10px solid transparent;
+}
+.onyx-contextual-popup.vertical.below.right.corner::after {
+  top: 0%;
+  left: 0%;
+  margin-left: -1px;
+  border-left: 10px solid #4c4c4c;
+  border-top: 10px solid transparent;
+}
+/*vertical bottom corners*/
+.onyx-contextual-popup.left.above.corner {
+  border-bottom-right-radius: 0px;
+}
+.onyx-contextual-popup.right.above.corner {
+  border-bottom-left-radius: 0px;
+}
+.onyx-contextual-popup.vertical.left.above.corner::after {
+  top: 100%;
+  margin-left: -19px;
+  border-right: 10px solid #4C4C4C;
+  border-bottom: 10px solid transparent;
+  border-top: none;
+}
+.onyx-contextual-popup.vertical.right.above.corner::after {
+  top: 100%;
+  left: 0%;
+  margin-left: -1px;
+  border-left: 10px solid #4c4c4c;
+  border-bottom: 10px solid transparent;
+  border-top: none;
+}
+/*horizontal bottom corners*/
+.onyx-contextual-popup.left.low.corner {
+  border-bottom-left-radius: 0px;
+}
+.onyx-contextual-popup.right.low.corner {
+  border-bottom-right-radius: 0px;
+}
+.onyx-contextual-popup.left.low.corner::after {
+  top: 100%;
+  left: 0%;
+  margin-top: -19px;
+  margin-left: -12px;
+  border-bottom: 10px solid #4c4c4c;
+  border-right: 10px solid #4c4c4c;
+}
+.onyx-contextual-popup.right.low.corner::after {
+  top: 100%;
+  left: 100%;
+  margin-top: -19px;
+  border-bottom: 10px solid#4c4c4c;
+  border-left: none;
+}
+/*horizontal top corners*/
+.onyx-contextual-popup.left.high.corner {
+  border-top-left-radius: 0px;
+}
+.onyx-contextual-popup.right.high.corner {
+  border-top-right-radius: 0px;
+}
+.onyx-contextual-popup.left.high.corner::after {
+  top: 0%;
+  left: 0%;
+  margin-top: -1px;
+  margin-left: -12px;
+  border-top: 10px solid #4C4C4C;
+  border-bottom: none;
+}
+.onyx-contextual-popup.right.high.corner::after {
+  top: 0%;
+  left: 100%;
+  margin-top: -1px;
+  margin-left: -9px;
+  border-top: 10px solid #4C4C4C;
+  border-bottom: none;
+}
 /* some default colors */
 .onyx-dark {
   background-color: #555656;
@@ -919,243 +1566,12 @@
 }
 
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/fittable/source/FittableLayout.css */
+/* source/App.css */
 
-.enyo-fittable-rows-layout {
-	position: relative;
-}
-
-.enyo-fittable-rows-layout > * {
-	box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
-	/* float when not stretched */
-	float: left;
-	clear: both;
-}
-
-/* non-floating when stretched */
-.enyo-fittable-rows-layout.enyo-stretch > * {
-	float: none;
-	clear: none;
-}
-
-/* setting to enforce margin collapsing */
-/* NOTE: rows cannot have margin left/right */
-.enyo-fittable-rows-layout.enyo-stretch.enyo-margin-expand > * {
-	float: left;
-	clear: both;
-	width: 100%;
-	/* note: harsh resets */
-	margin-left: 0 !important;
-	margin-right: 0 !important;
-}
-
-.enyo-fittable-columns-layout {
-	position: relative;
-	text-align: left;
-	white-space: nowrap;
-}
-
-.enyo-fittable-columns-layout.enyo-center {
-	text-align: center;
-}
-
-.enyo-fittable-columns-layout > * {
-	box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
-	vertical-align: top;
-	display: inline-block;
-	white-space: normal;
-}
-
-.enyo-fittable-columns-layout.enyo-tool-decorator > * {
-	vertical-align: middle;
-}
-
-/* repair clobbered white-space setting for pre, code */
-.enyo-fittable-columns-layout > pre, .enyo-fittable-columns-layout > code {
-	white-space: pre;
-}
-
-.enyo-fittable-columns-layout > .enyo-fittable-columns-layout, .enyo-fittable-columns-layout > .onyx-toolbar-inline {
-	white-space: nowrap;
-}
-
-/* NOTE: columns cannot have margin top/bottom */
-.enyo-fittable-columns-layout.enyo-stretch > * {
-	height: 100%;
-	/* note: harsh resets */
-	margin-top: 0 !important;
-	margin-bottom: 0 !important;
-}
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/List.css */
-
-.enyo-list {
-	position: relative;
-}
-
-.enyo-list-port {
-	overflow: hidden;
-	position: relative;
-	height: 1000000px;
-}
-
-.enyo-list-page {
-	position: absolute;
-	left: 0;
-	right: 0;
-}
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/PulldownList.css */
-
-.enyo-list-pulldown {
-	position: absolute;
-	bottom: 100%;
-	left: 0;
-	right: 0;
-}
-
-.enyo-puller {
-	position: relative;
-	height: 50px;
-	font-size: 22px;
-	color: #444;
-	padding: 20px 0 0px 34px;
-}
-
-.enyo-puller-text {
-	position: absolute;
-	left: 80px;
-	top: 22px;
-}
-
-.enyo-puller-arrow {
-	position: relative;
-	background: #444;
-	width: 7px;
-	height: 28px;
-	transition: transform 0.3s;
-	-webkit-transition: -webkit-transform 0.3s;
-	-moz-transition: -moz-transform 0.3s;
-	-o-transition: -o-transform 0.3s;
-	-ms-transition: -ms-transform 0.3s;
-}
-
-.enyo-puller-arrow:after {
-	content: " ";
-	height: 0;
-	width: 0;
-	position: absolute;
-	border: 10px solid transparent;
-	border-bottom-color: #444;
-	bottom: 100%;
-	left: 50%;
-	margin-left: -10px;
-}
-
-.enyo-puller-arrow-up {
-	transform: rotate(0deg);
-	-webkit-transform: rotate(0deg);
-	-moz-transform: rotate(0deg);
-	-o-transform: rotate(0deg);
-	-ms-transform: rotate(0deg);
-}
-
-.enyo-puller-arrow-down {
-	transform: rotate(180deg);
-	-webkit-transform: rotate(180deg);
-	-moz-transform: rotate(180deg);
-	-o-transform: rotate(180deg);
-	-ms-transform: rotate(180deg);
-}
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/panels/source/arrangers/Arranger.css */
-
-.enyo-arranger {
-	position: relative;
-	overflow: hidden;
-}
-
-.enyo-arranger.enyo-fit {
-	position: absolute;
-}
-
-.enyo-arranger > * {
-	position: absolute;
-	left: 0;
-	top: 0;
-	box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	-moz-box-sizing: border-box;
-}
-
-.enyo-arranger-fit > * {
-	/*
-	override any width/height set on panels
-	*/
-	width: 100% !important;
-	height: 100% !important;
-	min-width: 0 !important;
-	max-width: auto !important;
-	min-height: 0 !important;
-	max-height: auto !important;
-}
-
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/panels/source/Panels.css */
-
-.enyo-panels {
-}
-
-.enyo-panels-fit-narrow {
-}
-
-@media all and (max-width: 800px) {
-	.enyo-panels-fit-narrow > * {
-		min-width: 100%;
-		max-width: 100%;
-	}
-}
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/tree/source/Node.css */
-
-.enyo-node {
-	cursor: default;
-	padding: 4px;
-}
-
-.enyo-node img {
-	vertical-align: middle;
-	padding-right: 6px;
-}
-
-.enyo-node-box {
-	overflow: hidden;
-}
-
-.enyo-node-client {
-	position: relative;
-}
-
-.enyo-animate .enyo-node-box, .enyo-animate .enyo-node-client {
-	transition-property: height, top;
-	transition-duration: 0.2s, 0.2s;
-	-moz-transition-property: height, top;
-	-moz-transition-duration: 0.2s, 0.2s;
-	-o-transition-property: height, top;
-	-o-transition-duration: 0.2s, 0.2s;
-	-webkit-transition-property: height, top;
-	-webkit-transition-duration: 0.2s, 0.2s;
-}
-
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/imageview/source/ImageViewPin.css */
-
-
-.pinDebug {
-	background:yellow;
-	border:1px solid yellow;
+/*
+	Put anything you reference with "url(../source)" in ../assets/
+	This way, you can minify your application, and just remove the "source" folder for production
+*/
+.nice-padding {
+	padding: 15px;
 }

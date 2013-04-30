@@ -40,6 +40,10 @@ button {
 	font-size: inherit;
 	font-family: inherit;
 }
+button::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+}
 
 /* user selection */
 
