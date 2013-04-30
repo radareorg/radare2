@@ -59,6 +59,42 @@ R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 	free (b);
 }
 
+static int pdi(RCore *core, int l, int len, int ilen) {
+	int show_offset = r_config_get_i (core->config, "asm.offset");
+	int show_bytes = r_config_get_i (core->config, "asm.bytes");
+	int decode = r_config_get_i (core->config, "asm.decode");
+	const ut8 *buf = core->block;
+	int i, j, ret, err = 0;
+	RAsmOp asmop;
+	if (l==0) l = len;
+	for (i=j=0; j<len && j<l && i<ilen; i+=ret, j++) {
+		r_asm_set_pc (core->assembler, core->offset+i);
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
+		if (show_offset)
+			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
+		if (ret<1) {
+			ret = err = 1;
+			if (show_bytes)
+				r_cons_printf ("%14s%02x  ", "", buf[i]);
+			r_cons_printf ("%s\n", "???");
+		} else {
+			if (show_bytes)
+				r_cons_printf ("%16s  ", asmop.buf_hex);
+			if (decode) {
+				RAnalOp analop = {0};
+				char *tmpopstr, *opstr;
+				r_anal_op (core->anal, &analop, core->offset+i,
+					buf+i, core->blocksize-i);
+				tmpopstr = r_anal_op_to_string (core->anal, &analop);
+				opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
+				r_cons_printf ("%s\n", opstr);
+				free (opstr);
+			} else r_cons_printf ("%s\n", asmop.buf_asm);
+		}
+	}
+	return err;
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int mode, w, p, i, l, len, total[10];
@@ -312,47 +348,20 @@ static int cmd_print(void *data, const char *input) {
 		r_core_print_disasm_instructions (core, len, l);
 		break;
 	case 'i': 
-		r_core_print_disasm_instructions (core, core->blocksize, l);
+		if (input[1]=='d') {
+			pdi (core, l, len, core->blocksize);
+		} else {
+			r_core_print_disasm_instructions (core,
+				core->blocksize, l);
+		}
+			return 0;
 		break;
 	case 'D':
 	case 'd':
 		switch (input[1]) {
-		case 'i': {// TODO
-			int show_offset = r_config_get_i (core->config, "asm.offset");
-			int show_bytes = r_config_get_i (core->config, "asm.bytes");
-			int decode = r_config_get_i (core->config, "asm.decode");
-			const ut8 *buf = core->block;
-			int ilen, j, ret, err = 0;
-			RAsmOp asmop;
-			if (l==0) l = len;
-			ilen = (*input=='D')? core->blocksize: 0xfffffff;
-			for (i=j=0; j<len && j<l && i<ilen; i+=ret, j++) {
-				r_asm_set_pc (core->assembler, core->offset+i);
-				ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
-				if (show_offset)
-					r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-				if (ret<1) {
-					ret = err = 1;
-					if (show_bytes)
-						r_cons_printf ("%14s%02x  ", "", buf[i]);
-					r_cons_printf ("%s\n", "???");
-				} else {
-					if (show_bytes)
-						r_cons_printf ("%16s  ", asmop.buf_hex);
-					if (decode) {
-						RAnalOp analop = {0};
-						char *tmpopstr, *opstr;
-						r_anal_op (core->anal, &analop, core->offset+i, buf+i, core->blocksize-i);
-						tmpopstr = r_anal_op_to_string (core->anal, &analop);
-						opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
-						r_cons_printf ("%s\n", opstr);
-						free (opstr);
-					} else r_cons_printf ("%s\n", asmop.buf_asm);
-				}
-			}
-			return err;
-			}
-			break;
+		case 'i': 
+			pdi (core, l, len, (*input=='D')? len: core->blocksize);
+			return 0;
 		case 'a':
 			{
 				RAsmOp asmop;
@@ -360,7 +369,8 @@ static int cmd_print(void *data, const char *input) {
 				const ut8 *buf = core->block;
 				if (l==0) l = len;
 				for (i=j=0; i<core->blocksize && j<len && j<l; i++,j++ ) {
-					ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
+					ret = r_asm_disassemble (core->assembler, &asmop,
+						buf+i, core->blocksize-i);
 					if (ret<1) {
 						ret = err = 1;
 						r_cons_printf ("???\n");
@@ -390,7 +400,6 @@ static int cmd_print(void *data, const char *input) {
 					if (b->fail != UT64_MAX)
 						r_cons_printf ("--> 0x%08"PFMT64x"\n", b->fail);
 					r_cons_printf ("--\n");
-					//eprintf ( "pD %"PFMT64d" @0x%"PFMT64x"\n", b->size, b->addr);
 				}
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 			return R_TRUE;
@@ -455,7 +464,6 @@ static int cmd_print(void *data, const char *input) {
 			"  pdi  : like 'pi', with offset and bytes\n"
 			"  pdl  : show instruction sizes\n");
 			return 0;
-			break;
 		}
 		//if (core->visual)
 		//	l = core->cons->rows-core->cons->lines;
