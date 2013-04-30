@@ -79,11 +79,15 @@ static int r_line_readchar_utf8(unsigned char *s) {
 static int r_line_readchar() {
 	ut8 buf[2];
 	*buf = '\0';
-do_it_again:
 #if __WINDOWS__
 	BOOL ret;
 	LPDWORD mode, out;
-	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
+	HANDLE h;
+#endif
+
+do_it_again:
+#if __WINDOWS__
+	h = GetStdHandle (STD_INPUT_HANDLE);
 
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW

@@ -13,6 +13,10 @@
 #define O_BINARY 0
 #endif
 
+#if __WINDOWS__
+#include <windows.h>
+#endif
+
 // must be deprecated
 static ut32 eod, pos; // what about lseek?
 

@@ -17,6 +17,8 @@
 #include <openssl/bn.h>
 #endif
 
+#include <dirent.h>
+
 // TODO: use lowercase here?
 #define R_REFCTR_CLASS int refctr;void (*ref_free)(x)
 #define R_REFCTR_INIT(x,y) x->refctr=0;x->ref_free=y

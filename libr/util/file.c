@@ -265,23 +265,24 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 #if __WINDOWS__
 	HANDLE fm, fh;
 	if (r_sandbox_enable (0)) return -1;
-	fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
+	fh = CreateFile (file, GENERIC_WRITE,
 		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
 	if (fh == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("CreateFile");
-		free (m);
 		return -1;
 	}
-	fm = CreateFileMapping (m->fh, NULL,
-		rw? PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
+
+	fm = CreateFileMapping (fh, NULL,
+		PAGE_READWRITE, 0, 0, NULL);
 	if (fm == NULL) {
 		CloseHandle (fh);
 		return -1;
 	}
+
 	if (fm != INVALID_HANDLE_VALUE) {
-		ut8 *obuf = MapViewOfFile (m->fm, rw?
-			(FILE_MAP_READ|FILE_MAP_WRITE):FILE_MAP_READ,
-			UT32_HI (base), UT32_LO (base), 0);
+		ut8 *obuf = MapViewOfFile (fm,
+			FILE_MAP_READ|FILE_MAP_WRITE,
+			0, 0, len);
 		memcpy (obuf, buf, len);
 		UnmapViewOfFile (obuf);
 	}
@@ -310,29 +311,33 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 #if __WINDOWS__
 	HANDLE fm, fh;
+
 	if (r_sandbox_enable (0)) return -1;
-	fh = CreateFile (file, rw?GENERIC_WRITE:GENERIC_READ,
+	fh = CreateFile (file, GENERIC_READ,
 		FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+
 	if (fh == INVALID_HANDLE_VALUE) {
 		r_sys_perror ("CreateFile");
-		free (m);
 		return -1;
 	}
-	fm = CreateFileMapping (m->fh, NULL,
-		rw? PAGE_READWRITE:PAGE_READONLY, 0, 0, NULL);
+
+	fm = CreateFileMapping (fh, NULL,
+		PAGE_READONLY, 0, 0, NULL);
 	if (fm == NULL) {
 		CloseHandle (fh);
 		return -1;
 	}
+
 	if (fm != INVALID_HANDLE_VALUE) {
-		ut8 *obuf = MapViewOfFile (m->fm, rw?
-			(FILE_MAP_READ|FILE_MAP_WRITE):FILE_MAP_READ,
-			UT32_HI (base), UT32_LO (base), 0);
+		ut8 *obuf = MapViewOfFile (fm,
+		    FILE_MAP_READ,
+			0, 0, len);
 		memcpy (obuf, buf, len);
 		UnmapViewOfFile (obuf);
 	}
 	CloseHandle (fh);
 	CloseHandle (fm);
+
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDONLY, 0644);
 	const int pagesize = 4096;

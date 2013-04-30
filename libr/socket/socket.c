@@ -26,6 +26,10 @@ R_API RSocket *r_socket_new (int is_ssl) { return NULL; }
 //#include <sys/fcntl.h>
 #endif
 
+#ifdef __WINDOWS__
+#include <ws2tcpip.h>
+#endif
+
 #define BUFFER_SIZE 4096
 
 #if __UNIX__
