@@ -1,26 +1,22 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <r_types.h>
 
 #include "ins.h"
 #include "decode.h"
+#include "utils.h"
+#include "hashtable.h"
 #include "decode_funcs.h"
 
 extern int debug;
 
+extern st8 *ins_str[];
+extern ut32 ins_buff_len;
 
-extern char *ins_str[];
-extern unsigned int ins_buff_len;
-
-int get_ins_part(int pos, int len);
-
-char* get_token_decoded(unsigned int hash_code, char *ins_token, int ins_token_len, char *reg_arg, unsigned int *ret_ins_bits, unsigned int *ret_reg_len, unsigned int magic_value, unsigned ins_pos, unsigned int ins_len, unsigned int two_ins, int *err_code);
-
-static char hexstr[] = "01234567890abcdef";
-
-static unsigned int get_q_bits(unsigned int val, char *ins, int ins_len, int *err_code)
+static ut32 get_q_bits(ut32 val, st8 *ins, ut32 ins_len, int *err_code)
 {
-	int res = 0;
+	ut32 res = 0;
 
 	if(!strncasecmp(ins, "q_MMAP", 6)) {
 		res = val & 1;
@@ -57,7 +53,7 @@ static unsigned int get_q_bits(unsigned int val, char *ins, int ins_len, int *er
 
 	} else {
 		/* INVALID CONDITION */
-		fprintf(stderr, "Invalid token %s\n", ins_str); *err_code = -1; 
+		fprintf(stderr, "Invalid token %s\n", ins); *err_code = -1; 
 	}
 
 	return res;
@@ -67,13 +63,12 @@ static unsigned int get_q_bits(unsigned int val, char *ins, int ins_len, int *er
 	a2 = 0x223;
 	0x800 = valor que se crea en sub_40BAE0<) con and 0xfffff800
 */
-int get_ins_bits(int hash_code, unsigned int ins_pos, char *ins, int ins_len, unsigned int magic_value, int *err_code)
+static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, st8 *ins, ut32 ins_len, ut32 magic_value, int *err_code)
 {
-	int x, i;
-	char *op_str, *aux;
-	int res = 0;
-	unsigned char op_b;
-	unsigned int len;
+	ut32 res = 0;
+	ut8 op_b;
+	ut32 len, x, i;
+	st8 *op_str, *aux;
 
 	if(ins[0] == 'q') 
 		return get_q_bits(magic_value, ins, ins_len, err_code);
@@ -97,7 +92,7 @@ int get_ins_bits(int hash_code, unsigned int ins_pos, char *ins, int ins_len, un
 		//printf("OPP: %x\n", op_b);
 
 		x = len + 1;
-		res = res * 2 | (op_b >> ((1023 - len) % 8)) & 1;	
+		res = (res * 2) | ((op_b >> ((1023 - len) % 8)) & 1);	
 		if(!op_str[x])
 			x = 0;
 	}
@@ -110,28 +105,28 @@ int get_ins_bits(int hash_code, unsigned int ins_pos, char *ins, int ins_len, un
 	return res;
 }
 
-static int check_arg(int arg, int *err_code)
+static boolt check_arg(ut32 ins_bits, int *err_code)
 {
-	int res = 0;
+	boolt res = 0;
 
-	if((arg >= 0 && arg <= 31) | (arg >= 128 && arg < 160)) {
+	if((ins_bits >= 0 && ins_bits <= 31) | (ins_bits >= 128 && ins_bits < 160)) {
 		res = 1;
 
-	} else if(arg >= 32 && arg <= 252) {
+	} else if(ins_bits >= 32 && ins_bits <= 252) {
 		res = 0;
 
 	} else {
-		fprintf(stderr, "Invalid arg: %d\n", arg); 
+		fprintf(stderr, "Invalid arg: %u\n", ins_bits);
 		*err_code = -1;
 	}
 
 	return res;
 }
 
-static char *decode_register(char *reg_arg, unsigned int hash_code, unsigned int ins_bits, unsigned int *ret_ins_bits, int *err_code)
+static char *decode_regis(st8 *reg_arg, st32 hash_code, ut32 ins_bits, ut32 *ret_ins_bits, int *err_code)
 {
-	int reg_type;
-	char *res;
+	ut8 reg_type;
+	st8 *res;
 
 	reg_type = *reg_arg;
 	res = NULL;
@@ -272,17 +267,15 @@ static char *decode_register(char *reg_arg, unsigned int hash_code, unsigned int
 
 
 
-char *decode_ins(unsigned int hash_code, int ins_pos, int ins_off, unsigned int *ins_len_dec, unsigned int *reg_len_dec, unsigned int *ret_ins_bits, unsigned int magic_value, unsigned int two_ins, int *err_code)
+static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len_dec, ut32 *reg_len_dec, ut32 *ret_ins_bits, ut32 magic_value, ut8 two_ins, int *err_code)
 {
-	unsigned int ins_len;
-	char *ins;
-	char *pos;
-	char token_aux[80];
-	int i, len;
-	char *reg = NULL;
-	char *res_decode = NULL;
-	char *aux = NULL;
-	unsigned int ret_ins_len = 0;
+	ut32 ins_len;
+	st8 *ins, *pos;
+	st8 token_aux[80];
+	ut32 i, len;
+	st8 *reg = NULL;
+	st8 *res_decode = NULL;
+	st8 *aux = NULL;
 
 	// get instruction length
 	ins_len = get_ins_len(get_ins_part(ins_pos + ins_off, 1));
@@ -317,13 +310,13 @@ char *decode_ins(unsigned int hash_code, int ins_pos, int ins_off, unsigned int 
 
 			}
 
-			len = (unsigned int)aux - (unsigned int)pos;
+			len = (ut32)aux - (ut32)pos;
 			if(len >= 80) {
 				fprintf(stderr, "Invalid length token %d\n", len); *err_code = -1; return NULL;
 			}
 
 			memcpy(token_aux, pos, len); 
-			token_aux[len] = (char)NULL;
+			token_aux[len] = '\0';
 
 			pos = aux;
 
@@ -342,7 +335,7 @@ char *decode_ins(unsigned int hash_code, int ins_pos, int ins_off, unsigned int 
 				}
 			}		
 
-			aux = get_token_decoded(hash_code, token_aux, len, reg, &ret_ins_bits, reg_len_dec, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
+			aux = get_token_decoded(hash_code, token_aux, len, reg, ret_ins_bits, reg_len_dec, magic_value, ins_pos + ins_off, ins_len, two_ins, err_code);
 			if(*err_code < 0)
 				return NULL;
 
@@ -353,7 +346,7 @@ char *decode_ins(unsigned int hash_code, int ins_pos, int ins_off, unsigned int 
 
 		} else {
 			token_aux[0] = *pos;
-			token_aux[1] = NULL;
+			token_aux[1] = '\0';
 
 			res_decode = strcat_dup(res_decode, token_aux, 1);
 		}	
@@ -369,9 +362,9 @@ char *decode_ins(unsigned int hash_code, int ins_pos, int ins_off, unsigned int 
 	return res_decode;
 }
 
-int is_hash(int hash_code)
+static boolt is_hash(st32 hash_code)
 {
-	int ret;
+	boolt ret;
 
 	switch(hash_code) {
 
@@ -395,7 +388,7 @@ int is_hash(int hash_code)
 	return ret;
 }
 
-void set_magic_value(unsigned int *magic_value, unsigned int hash_code, int *err_code)
+void set_magic_value(ut32 *magic_value, st32 hash_code, int *err_code)
 {
 	switch(hash_code) {
 		case 232:
@@ -439,22 +432,18 @@ void set_magic_value(unsigned int *magic_value, unsigned int hash_code, int *err
 
 
 		default:
-			fprintf("invalid hash code 0x%x for magic value 0x%x\n", *magic_value, hash_code);
+			fprintf(stderr, "invalid hash code 0x%x for magic value 0x%x\n", 				hash_code, *magic_value);
 			*err_code = -1;
 	}
 }
 
 
-char *do_decode(int ins_off, int ins_pos, unsigned int two_ins, unsigned int *next_ins_pos, unsigned int *ins_hash_code, int *err_code)
+static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_pos, st32 *ins_hash_code, int *err_code)
 {
-	int hash_code;
-	int hash_aux;
-	char *ins_res = NULL, *ins_aux = NULL;
-	unsigned int hexnum;
-	unsigned int magic_value = 0x800;
-	char hex_res[3];
-	int ins_pos_off = ins_pos + ins_off;
-	unsigned int reg_len_dec, ins_len_dec, ret_ins_bits;
+	st32 hash_code, hash_aux;
+	ut32 reg_len_dec, ins_len_dec, ret_ins_bits;
+	st8 *ins_res = NULL, *ins_aux = NULL;
+	ut32 magic_value = 0x800;
 	
 	*next_ins_pos = 0;
 
@@ -498,15 +487,12 @@ char *do_decode(int ins_off, int ins_pos, unsigned int two_ins, unsigned int *ne
 
 	if(hash_code == 0x223) {
 		ins_res = strcat_dup(ins_aux, ".byte 0x", 1);
-		hexnum = get_ins_part(ins_pos, 1);
+		ins_aux = get_hex_str(get_ins_part(ins_pos, 1));
 
-		hex_res[2] = NULL;
-		hex_res[1] = hexstr[hexnum & 0xF];
-		hex_res[0] = hexstr[(hexnum >> 4) & 0xF];
+		ins_res = strcat_dup(ins_res, ins_aux, 2);
 
-		ins_res = strcat_dup(ins_res, hex_res, 1);
+		*next_ins_pos = *next_ins_pos + 1;
 
-		*next_ins_pos++;
 	} else {
 		ins_aux = decode_ins(hash_code, ins_pos, ins_off, &ins_len_dec, &reg_len_dec, &ret_ins_bits, magic_value, two_ins, err_code);
 		if(*err_code < 0)
@@ -524,18 +510,20 @@ char *do_decode(int ins_off, int ins_pos, unsigned int two_ins, unsigned int *ne
 	return ins_res;
 }
 
-char *decode(int ins_pos, unsigned int *next_ins_pos)
+st8 *decode(ut32 ins_pos, ut32 *next_ins_pos)
 {
-	int opcode, err_code, i;
-	unsigned char two_ins = 0;
-	unsigned int next_ins1_pos, next_ins2_pos, hash_code;
-	char *ins1, *ins2, *aux, *ins_res;
+	ut8 opcode, two_ins = 0;
+	ut32 next_ins1_pos, next_ins2_pos;
+	st32 hash_code;
+	st8 *ins1, *ins2, *aux, *ins_res;
+	int err_code;
 
 	if(ins_pos >= ins_buff_len)
 		return NULL;
 
 	ins_res = NULL;
 	err_code = 0;
+
 	opcode = get_ins_part(ins_pos, 1);
 	if((opcode & 0xF0) == 0x30) {
 		two_ins = opcode & 0x0F;
@@ -569,44 +557,11 @@ char *decode(int ins_pos, unsigned int *next_ins_pos)
 			free(ins2);
 		}
 
-		aux = get_hex_str(opcode);
-
 		*next_ins_pos = next_ins1_pos + next_ins2_pos + 1;
-/*
-			if(next_ins_pos > 1) {
-
-				for(i = 1 ; i < next_ins_pos; i++) {
-					opcode = get_ins_part(ins_pos + i, 1);
-					if(i == (next_ins_pos + 1)) {
-						free(aux);
-						aux = strdup("_");
-					}
-
-					aux2 = get_hex_str(opcode);
-					aux = strcat_dup(aux, aux2, 1);
-					free(aux2);
-
-				}
-			}
-*/
-
 		if(*next_ins_pos != two_ins) {
 			ins_res = strcat_dup(ins_res, " P-tag problem", 1);
-/*
-				if(next_ins_pos < two_ins) {
-					aux = strcat_dup(aux, "_", 1);
-
-					for(i = next_ins_pos; i < two_ins; i++) {
-					opcode = get_ins_part(ins_pos + i + 1, 1);
-
-					aux2 = get_hex_str(opcode);
-					aux = strcat_dup(aux, aux2, 1);
-					free(aux2);
-
-					}
-				}
-				*/
-
+			err_code = -1;
+			return NULL;
 		}
 
 
@@ -621,26 +576,24 @@ char *decode(int ins_pos, unsigned int *next_ins_pos)
 	return ins_res;
 }
 
-int is_linear_circular(int value)
+static boolt is_linear_circular(ut32 ins_bits)
 {
-	int op, op2, op3;
+	ut8 op, op2, op3;
 
-	op = (value >> 6) | 16 * (value & 3);
-	op2 = (value >> 2) & 0xF;
+	op = (ins_bits >> 6) | 16 * (ins_bits & 3);
+	op2 = (ins_bits >> 2) & 0xF;
 	op3 = op2 & 0xF;
 
 	return (op == 26 || op == 30 || (op3 > 7 && op3 != 15));
 }
 
-char* get_token_decoded(unsigned int hash_code, char *ins_token, int ins_token_len, char *reg_arg, unsigned int *ret_ins_bits, unsigned int *ret_reg_len, unsigned int magic_value, unsigned ins_pos, unsigned int ins_len, unsigned int two_ins, int *err_code)
+static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len, st8 *reg_arg, ut32 *ret_ins_bits, ut32 *ret_reg_len, ut32 magic_value, ut32 ins_pos, ut32 ins_len, ut8 two_ins, int *err_code)
 {
-	int tok_op;
-	int ins_bits;
-	char *res = NULL;
-	char buff_aux[512];
-	char *aux;
-	int ret_len;
-	int flag;
+	ut32 tok_op, ins_bits;
+	st8 *res = NULL;
+	st8 buff_aux[512];
+	st8 *aux;
+	ut32 ret_len, flag;
 
 	*ret_ins_bits = 0;
 	*ret_reg_len = 0;
@@ -665,12 +618,12 @@ char* get_token_decoded(unsigned int hash_code, char *ins_token, int ins_token_l
 		case 63:
 		case 64:
 		case 65:
-			if(reg_arg == NULL || *reg_arg == NULL) {
+			if(reg_arg == NULL || *reg_arg == '\0') {
 				res = strdup("<register>");
 				goto ret_decode;
 			}
 
-			res = decode_register(reg_arg, hash_code, ins_bits, ret_ins_bits, err_code);
+			res = decode_regis(reg_arg, hash_code, ins_bits, ret_ins_bits, err_code);
 			if(*err_code < 0)
 				return NULL;
 
@@ -721,9 +674,9 @@ char* get_token_decoded(unsigned int hash_code, char *ins_token, int ins_token_l
 				*ret_ins_bits = ins_bits;
 
 			if(!reg_arg || *reg_arg != '-') {
-				sprintf(buff_aux, "#0x%lx", ins_bits);
+				sprintf(buff_aux, "#0x%lx", (long unsigned int)ins_bits);
 			} else {
-				sprintf(buff_aux, "-#0x%lx", ins_bits);
+				sprintf(buff_aux, "-#0x%lx", (long unsigned int)ins_bits);
 			}
 
 			res = strdup(buff_aux);
@@ -771,7 +724,7 @@ char* get_token_decoded(unsigned int hash_code, char *ins_token, int ins_token_l
 				res = strdup("");
 
 			} else {
-				sprintf(buff_aux, "#0x%06lx", ins_bits);
+				sprintf(buff_aux, "#0x%06lx", (long unsigned int)ins_bits);
 				res = strdup(buff_aux);
 			} 
 

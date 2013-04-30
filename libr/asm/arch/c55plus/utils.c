@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "utils.h"
 
 static char hex_str[] = "01234567890abcdef";
 
-char *strcat_dup(char *s1, char *s2, int n_free)
+st8 *strcat_dup(st8 *s1, st8 *s2, st32 n_free)
 {
-	char *res;
-	int len_s1, len_s2;
+	st8 *res;
+	ut32 len_s1, len_s2;
 
 
 	if(s1 != NULL)
@@ -30,7 +31,7 @@ char *strcat_dup(char *s1, char *s2, int n_free)
 	if(len_s2 > 0)
 		memcpy(res + len_s1, s2, len_s2);
 
-	res[len_s1 + len_s2] = (char)NULL;
+	res[len_s1 + len_s2] = '\0';
 
 	if(n_free == 1) {
 		if(s1 != NULL)
@@ -51,11 +52,11 @@ char *strcat_dup(char *s1, char *s2, int n_free)
 	return res;
 }
 
-char *get_hex_str(unsigned int hex_num)
+st8 *get_hex_str(ut32 hex_num)
 {
-    char aux[3];
+    st8 aux[3];
 
-    aux[2] = (char)NULL;
+    aux[2] = '\0';
     aux[1] = hex_str[hex_num & 0xF];
     aux[0] = hex_str[(hex_num >> 4) & 0xF];
 
