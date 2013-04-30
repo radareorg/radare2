@@ -10,7 +10,7 @@ CFLAGS+=-Wall
 #CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0
 
-HAVE_VALA=#$(shell valac --version 2> /dev/null)
+HAVE_VALA=$(shell valac --version 2> /dev/null)
 # This is hacky
 HOST_CC?=gcc
 RANLIB?=ranlib

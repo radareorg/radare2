@@ -27,7 +27,9 @@ clean:
 	cd src && ${MAKE} clean
 	cd memcache && ${MAKE} clean
 	cd test && ${MAKE} clean
+ifneq (${HAVE_VALA},)
 	cd ${VALADIR} && ${MAKE} clean
+endif
 
 dist:
 	rm -f sdb-${VERSION}.tar.gz

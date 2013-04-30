@@ -27,6 +27,9 @@ sdb-sync sync-sdb:
 	cd sdb ; ${MAKE} src/sdb-version.h
 	cp -f sdb/src/*.h $I/sdb
 	echo '#include <sdb/sdb.h>' > $I/sdb.h
-	mkdir -p sdb/memcache && echo all: > sdb/memcache/Makefile
+	mkdir -p sdb/test sdb/memcache
+	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' -i foo sdb/config.mk
+	echo all clean mrproper: > sdb/memcache/Makefile
+	echo all clean mrproper: > sdb/test/Makefile
 	git add $I/sdb*
 	git add sdb
