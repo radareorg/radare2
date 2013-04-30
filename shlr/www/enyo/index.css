@@ -110,13 +110,14 @@ h2 {
 }
 
 .top {
-  position:float;
-  padding:8px;
+  display:inline-block;
+  position:relative;
+vertical-align:top;
+  padding:10px;
   margin:0px;
-  top:12px;
-  display:inline;
+margin-top:0px;
 }
 
 pre {
-  font-size:12px; 
+  font-size:13px; 
 }

@@ -152,12 +152,12 @@ enyo.kind ({
             {content: "Paste", ontap: "goPaste"}
           ]}
         ]},
-        {kind: "onyx.Button", content: "<", ontap: "prevSeek", classes: "top" },
-        {kind: "onyx.Button", content: ">", ontap: "nextSeek", classes: "top" },
-        {kind: "onyx.InputDecorator", style: "width: 200px;", components: [
-          {kind: "onyx.Input", name:"input", value: 'entry0', onchange: "gotoSeek", onkeydown:"inputKey"}
+        {kind: "onyx.Button", content: "<", ontap: "prevSeek", classes: "top", style: "top:10px" },
+        {kind: "onyx.Button", content: ">", ontap: "nextSeek", classes: "top", style: "top:10px" },
+        {kind: "onyx.InputDecorator", style: "width: 200px;top:10px", classes: "top", components: [
+          {kind: "onyx.Input", name:"input", value: 'entry0', onchange: "gotoSeek", onkeydown:"inputKey" }
         ]},
-          {kind: "onyx.PickerDecorator", style: "display:inline", classes: "top", components: [
+          {kind: "onyx.PickerDecorator", classes: "top", components: [
             {kind: "onyx.Button", content: "Convert"},
             {kind: "onyx.Picker", components: [
               {content: "Data", ontap: 'coData'},
@@ -165,7 +165,7 @@ enyo.kind ({
               {content: "String", ontap: 'coString'},
             ]}
           ]},
-          {kind: "onyx.PickerDecorator", style: "display:inline", classes: "top", components: [
+          {kind: "onyx.PickerDecorator", classes: "top", components: [
             {kind: "onyx.Button", content: "Write"},
             {kind: "onyx.Picker", components: [
               {content: "File", ontap: 'wrFile'},
