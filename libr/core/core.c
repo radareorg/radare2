@@ -174,13 +174,13 @@ static const char *radare_argv[] = {
 	"q", 
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
-	"o", "o-", "x",
+	"o", "o-", "x", "wf", "wF", "wt", "wp",
 	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
 	"b", "bf", "b?",
 	"/", "//", "/a", "/c", "/m", "/x", "/v",
 	"y", "yy", "y?",
-	"wx", "ww", "wf", "w?",
+	"wx", "ww", "w?",
 	"p6d", "p6e", "p8", "pb", "pc",
 	"pd", "pda", "pdj", "pdb", "pdr", "pdf", "pdi", "pdl",
 	"pD", "px", "pX", "po",
@@ -214,6 +214,10 @@ static int autocomplete(RLine *line) {
 		} else
 		if ((!memcmp (line->buffer.data, "o ", 2)) ||
 		     !memcmp (line->buffer.data, ". ", 2) ||
+		     !memcmp (line->buffer.data, "wf ", 3) ||
+		     !memcmp (line->buffer.data, "wF ", 3) ||
+		     !memcmp (line->buffer.data, "wt ", 3) ||
+		     !memcmp (line->buffer.data, "wp ", 3) ||
 		     !memcmp (line->buffer.data, "tf ", 3) ||
 		     !memcmp (line->buffer.data, "pm ", 3) ||
 		     !memcmp (line->buffer.data, "dml ", 4) ||
