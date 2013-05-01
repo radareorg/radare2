@@ -592,7 +592,7 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 	ut32 tok_op, ins_bits;
 	st8 *res = NULL;
 	st8 buff_aux[512];
-	st8 *aux;
+	st8 *aux = NULL;
 	ut32 ret_len, flag;
 
 	*ret_ins_bits = 0;
