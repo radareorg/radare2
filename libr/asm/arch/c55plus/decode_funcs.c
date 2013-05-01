@@ -335,7 +335,7 @@ st8 *get_reg_pair(ut32 idx)
 
 st8 *get_reg_name_3(ut32 idx)
 {
-  st8 *res;
+  st8 *res = NULL;
 
   switch (idx) {
 
@@ -505,7 +505,7 @@ st8 *get_reg_name_3(ut32 idx)
 
 st8 *get_reg_name_2(ut32 idx)
 {
-  st8 *res; // eax@2
+  st8 *res = NULL;
 
   switch(idx) {
 
@@ -647,7 +647,7 @@ st8 *get_reg_name_2(ut32 idx)
 
 st8 *get_reg_name_1(ut32 idx)
 {
-  st8 *res;
+  st8 *res = NULL;
 
   switch (idx) {
 
