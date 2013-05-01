@@ -1672,7 +1672,7 @@ st8 *get_status_regs_and_bits(st8 *reg_arg, int reg_bit)
 
 st8 *get_reg_name_4(ut32 idx)
 {
-  st8 *res; // eax@2
+  st8 *res = NULL;
 
   switch(idx) {
 
