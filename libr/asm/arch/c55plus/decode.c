@@ -283,7 +283,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 	// get pseudo instruction
 	ins = ins_str[1 + 2 + hash_code * 4];
 
-	if(ins == NULL || ins_str[4 * hash_code] == 0) {
+	if(ins == NULL /*|| ins_str[4 * hash_code] == 0*/) {
 		fprintf(stderr, "Invalid instruction %s /hash %x\n", ins, hash_code); *err_code = -1; return NULL;
 	}
 
