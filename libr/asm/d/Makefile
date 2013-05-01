@@ -1,6 +1,6 @@
 FILES=x86 arm ppc
 F_SDB=$(addsuffix .sdb,${FILES})
-SDB=../../db/sdb/sdb
+SDB=../../../shlr/sdb/sdb
 include ../../../config-user.mk
 
 all: ${F_SDB}
