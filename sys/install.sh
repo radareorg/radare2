@@ -15,5 +15,6 @@ elif [ -d .git ]; then
 fi
 
 [ "`id -u`" = 0 ] || SUDO=sudo
+[ -n "${NOSUDO}" ] && SUDO=
 
-./sys/build.sh && ${SUDO} ${MAKE} symstall
+./sys/build.sh $@ && ${SUDO} ${MAKE} symstall

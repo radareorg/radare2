@@ -44,12 +44,40 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	if (buf == NULL || str == NULL)
 		goto beach;
 	memcpy (buf, core->block, core->blocksize);
-	len = r_hex_str2bin (arg, (ut8 *)str);
-	if (len==-1) {
-		eprintf ("Invalid hexpair string\n");
-		goto beach;
-	}
+	if (op!='e') {
+		len = r_hex_str2bin (arg, (ut8 *)str);
+		if (len==-1) {
+			eprintf ("Invalid hexpair string\n");
+			goto beach;
+		}
+	} else len = 0;
 
+	if (op=='e') {
+		char *p, *s = strdup (arg);
+		int n, from = 0, to = 0, dif = 0, step = 1;
+		n = from = to;
+		to = UT8_MAX;
+		//
+		p = strchr (s, ' ');
+		if (p) {
+			*p = 0;
+			step = atoi (p+1);
+		}
+		p = strchr (s, '-');
+		if (p) {
+			*p = 0;
+			to = atoi (p+1);
+		}
+		if (to<1 || to>UT8_MAX) to = UT8_MAX;
+		from = atoi (s);
+		free (s);
+		dif = (to<=from)? UT8_MAX: (to-from)+1;
+		from %= (UT8_MAX+1);
+		if (dif<1) dif = UT8_MAX+1;
+		if (step<1) step = 1;
+		for (i=n=0; i<core->blocksize; i++, n+= step)
+			buf[i] = (ut8)(n%dif)+from;
+	} else
 	if (op=='2' || op=='4') {
 		op -= '0';
 		for (i=0; i<core->blocksize; i+=op) {

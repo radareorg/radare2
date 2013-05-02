@@ -362,6 +362,7 @@ static int cmd_write(void *data, const char *input) {
 		switch (input[1]) {
 			case 'a':
 			case 's':
+			case 'e':
 			case 'A':
 			case 'x':
 			case 'r':
@@ -371,7 +372,10 @@ static int cmd_write(void *data, const char *input) {
 			case 'o':
 			case 'w':
 				if (input[2]!=' ') {
-					r_cons_printf ("Usage: 'wo%c 00 11 22'\n", input[1]);
+					if (input[1]=='e') r_cons_printf (
+						"Usage: 'woe from-to step'\n");
+					else r_cons_printf (
+						"Usage: 'wo%c 00 11 22'\n", input[1]);
 					return 0;
 				}
 			case '2':
@@ -393,6 +397,7 @@ static int cmd_write(void *data, const char *input) {
 						"  wox 90     ; xor cur block with 0x90\n"
 						"  wox 0x0203 ; xor cur block with 0203\n"
 						"  woa 02 03  ; add [0203][0203][...] to curblk\n"
+						"  woe 02 03  \n"
 						"Supported operations:\n"
 						"  wow  ==  write looped value (alias for 'wb')\n"
 						"  woa  +=  addition\n"

@@ -1,7 +1,20 @@
 #!/bin/sh
 
 MAKE_JOBS=8
-PREFIX=/usr
+[ -z "${PREFIX}" ] && PREFIX=/usr
+
+case "$1" in
+-h)
+	echo "Usage: sys/build.sh [/usr]"
+	exit 0
+	;;
+'')
+	:
+	;;
+*)
+	PREFIX="$1"
+	;;
+esac
 
 [ ! "${PREFIX}" = /usr ] && \
 	CFGARG=--with-rpath

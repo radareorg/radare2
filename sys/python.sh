@@ -4,14 +4,18 @@
 cd `dirname $PWD/$0` ; cd ..
 
 . ./sys/CONFIG
+echo =============
 cat sys/CONFIG
+echo =============
 
+[ -z "${PREFIX}" ] && PREFIX=/usr
 ID=`id -u` 
 if [ "$ID" = 0 ]; then
 	SUDO=
 else
 	SUDO=sudo
 fi
+[ -n "${NOSUDO}" ] && SUDO=
 
 export PYTHON
 export PYTHON_VERSION
@@ -22,7 +26,7 @@ echo "Using PYTHON_CONFIG ${PYTHON_CONFIG}"
 echo
 
 cd r2-bindings
-./configure --prefix=/usr --enable=python || exit 1
+./configure --prefix=${PREFIX} --enable=python || exit 1
 ${SUDO} make install-vapi || exit 1
 cd python
 make clean
