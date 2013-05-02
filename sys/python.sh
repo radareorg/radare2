@@ -32,4 +32,4 @@ cd python
 make clean
 make PYTHON=${PYTHON}
 [ ! "$1" = --no-install ] && \
-	sudo make install PYTHON=${PYTHON} PYTHON_VERSION=${PYTHON_VERSION}
+	${SUDO} make install PYTHON=${PYTHON} PYTHON_VERSION=${PYTHON_VERSION}
