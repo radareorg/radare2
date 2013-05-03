@@ -665,7 +665,7 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_reloc_t *ret = NULL;
 	Elf_(Sym) *sym = NULL;
-	Elf_(Rel) *rel;
+	Elf_(Rel) *rel = NULL;
 	ut64 got_addr, got_offset;
 	char *strtab = NULL;
 	int i, j, nrel, tsize, len, nsym, idx;
