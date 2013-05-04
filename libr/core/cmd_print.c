@@ -166,7 +166,6 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf (".-------------.---------------------------------.\n");
 			r_cons_printf ("|   offset    | flags funcs cmts imps syms str  |\n");
 			r_cons_printf ("|-------------)---------------------------------|\n");
-			//r_cons_printf ("__offset___|_flags_funcs_cmts_imps_syms_str__|\n");
 			break;
 		default:
 			r_cons_printf ("0x%"PFMT64x" [", from);

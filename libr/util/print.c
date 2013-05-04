@@ -189,10 +189,16 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 }
 
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
-	int i, w = p->cols*0.7;
+	int ws, i, w = p->cols*0.7;
 	switch (lang) {
 	case '?':
 		eprintf ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n");
+		eprintf ("  pcs    -> string\n");
+		eprintf ("  pcj    -> json\n");
+		eprintf ("  pcp    -> python\n");
+		eprintf ("  pc     -> python\n");
+		eprintf ("  pcw    -> words (4 byte)\n");
+		eprintf ("  pcd    -> dwords (8 byte)\n");
 		break;
 	case 's':
 		p->printf ("\"");
@@ -221,6 +227,42 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 			r_print_cursor (p, i, 0);
 		}
 		p->printf ("\n");
+		break;
+	case 'w':
+		{
+		ut32 *pbuf = buf;
+		w = 5;
+		ws = 4;
+		len /= ws;
+		p->printf ("#define _BUFFER_SIZE %d\n", len);
+		p->printf ("unsigned char buffer[%d] = {", len);
+		p->interrupt = 0;
+		for (i=0; !p->interrupt && i<len; i++) {
+			if (!(i%w)) p->printf ("\n  ");
+			r_print_cursor (p, i, 1);
+			p->printf ("0x%08x, ", pbuf[i]);
+			r_print_cursor (p, i, 0);
+		}
+		p->printf ("};\n");
+		}
+		break;
+	case 'd':
+		{
+		ut64 *pbuf = buf;
+		w = 3;
+		ws = 8;
+		len /= ws;
+		p->printf ("#define _BUFFER_SIZE %d\n", len);
+		p->printf ("unsigned char buffer[%d] = {", len);
+		p->interrupt = 0;
+		for (i=0; !p->interrupt && i<len; i++) {
+			if (!(i%w)) p->printf ("\n  ");
+			r_print_cursor (p, i, 1);
+			p->printf ("0x%016"PFMT64x", ", pbuf[i]);
+			r_print_cursor (p, i, 0);
+		}
+		p->printf ("};\n");
+		}
 		break;
 	default:
 		p->printf ("#define _BUFFER_SIZE %d\n", len);
