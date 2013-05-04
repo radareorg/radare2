@@ -27,6 +27,7 @@ R_API RAnal *r_anal_new() {
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
 	memset (anal, 0, sizeof (RAnal));
+	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
 	r_anal_xrefs_init (anal);
 	anal->diff_ops = 0;

@@ -8,6 +8,95 @@
 #include "udis86/types.h"
 #include "udis86/extern.h"
 
+static st64 getval(ud_operand_t *op);
+// XXX Copypasta from udis
+static const char* ud_reg_tab[] =
+{
+  "al",   "cl",   "dl",   "bl",
+  "ah",   "ch",   "dh",   "bh",
+  "spl",  "bpl",    "sil",    "dil",
+  "r8b",  "r9b",    "r10b",   "r11b",
+  "r12b", "r13b",   "r14b",   "r15b",
+
+  "ax",   "cx",   "dx",   "bx",
+  "sp",   "bp",   "si",   "di",
+  "r8w",  "r9w",    "r10w",   "r11w",
+  "r12w", "r13w"  , "r14w",   "r15w",
+
+  "eax",  "ecx",    "edx",    "ebx",
+  "esp",  "ebp",    "esi",    "edi",
+  "r8d",  "r9d",    "r10d",   "r11d",
+  "r12d", "r13d",   "r14d",   "r15d",
+
+  "rax",  "rcx",    "rdx",    "rbx",
+  "rsp",  "rbp",    "rsi",    "rdi",
+  "r8",   "r9",   "r10",    "r11",
+  "r12",  "r13",    "r14",    "r15",
+
+  "es",   "cs",   "ss",   "ds",
+  "fs",   "gs",
+
+  "cr0",  "cr1",    "cr2",    "cr3",
+  "cr4",  "cr5",    "cr6",    "cr7",
+  "cr8",  "cr9",    "cr10",   "cr11",
+  "cr12", "cr13",   "cr14",   "cr15",
+
+  "dr0",  "dr1",    "dr2",    "dr3",
+  "dr4",  "dr5",    "dr6",    "dr7",
+  "dr8",  "dr9",    "dr10",   "dr11",
+  "dr12", "dr13",   "dr14",   "dr15",
+
+  "mm0",  "mm1",    "mm2",    "mm3",
+  "mm4",  "mm5",    "mm6",    "mm7",
+
+  "st0",  "st1",    "st2",    "st3",
+  "st4",  "st5",    "st6",    "st7",
+
+  "xmm0", "xmm1",   "xmm2",   "xmm3",
+  "xmm4", "xmm5",   "xmm6",   "xmm7",
+  "xmm8", "xmm9",   "xmm10",  "xmm11",
+  "xmm12",  "xmm13",  "xmm14",  "xmm15",
+
+  "rip"
+};
+
+static int getarg(char *src, struct ud *u, int idx) {
+	ud_operand_t *op = &u->operand[idx];
+	st64 n;
+	src[0] = 0;
+	switch (op->type) {
+	case UD_OP_CONST:
+	case UD_OP_JIMM:
+	case UD_OP_IMM:
+		n = getval (op);
+		if (op->type == UD_OP_JIMM) {
+			n += u->pc;
+		}
+		if (n>=0 && n<256)
+			sprintf (src, "%"PFMT64d, n);
+		else sprintf (src, "0x%"PFMT64x, n);
+		break;
+	case UD_OP_REG:
+		strcpy (src, ud_reg_tab[op->base - UD_R_AL]);
+		break;
+	case UD_OP_PTR:
+		strcpy (src, "ptr");
+		break;
+	case UD_OP_MEM:
+		n = getval (op);
+		// TODO ->scale
+		if (u->mnemonic == UD_Ilea) {
+			sprintf (src, "%s+%d", ud_reg_tab[op->base-UD_R_AL], 0); // XXX
+		} else {
+			sprintf (src, "[%s+%d]", ud_reg_tab[op->base-UD_R_AL], n);
+		}
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
 static st64 getval(ud_operand_t *op) {
 	int bits = op->size;
 	switch (bits) {
@@ -20,8 +109,12 @@ static st64 getval(ud_operand_t *op) {
 }
 
 int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+	const char *pc = anal->bits==64? "rip": anal->bits==32? "eip": "ip";
+	const char *sp = anal->bits==64? "rsp": anal->bits==32? "esp": "sp";
 	int oplen, regsz;
+	char str[64], src[32], dst[32];
 	struct ud u;
+	ut64 n;
 
 	switch (anal->bits) {
 	case 64: regsz = 8; break;
@@ -40,8 +133,89 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->jump = op->fail = -1;
 	op->ref = op->value = -1;
 	oplen = op->length = ud_insn_len (&u);
+
+	op->code[0] = 0;
+	if (anal->decode) {
+		switch (u.mnemonic) {
+		case UD_Ijz: // TODO: carry flag
+			getarg (src, &u, 0);
+			sprintf (op->code, "?zf,%s=%s", pc, src);
+			break;
+		case UD_Ijnz: // TODO: carry flag
+			getarg (src, &u, 0);
+			sprintf (op->code, "?!zf,%s=%s", src);
+			break;
+		case UD_Ijmp: // TODO: carry flag
+			getarg (src, &u, 0);
+			sprintf (op->code, "%s=%s", pc, src);
+			break;
+		case UD_Icall: // TODO: carry flag
+			getarg (src, &u, 0);
+			sprintf (op->code, "%s-=%d,%d[%s]=%s,%s=%s",
+				sp, regsz, regsz, sp, pc, pc, src);
+			break;
+		case UD_Ishl: // TODO: carry flag
+			getarg (src, &u, 0);
+			getarg (dst, &u, 1);
+			sprintf (op->code, "%s<<=%s", src, dst);
+			break;
+		case UD_Ishr: // TODO: carry flag
+			getarg (src, &u, 0);
+			getarg (dst, &u, 1);
+			sprintf (op->code, "%s>>=%s", src, dst);
+			break;
+		case UD_Iadd: // TODO: carry flag
+			getarg (src, &u, 0);
+			getarg (dst, &u, 1);
+			sprintf (op->code, "%s+=%s", src, dst);
+			break;
+		case UD_Isub: // TODO: below flag
+			getarg (src, &u, 0);
+			getarg (dst, &u, 1);
+			sprintf (op->code, "%s-=%s", src, dst);
+			break;
+		case UD_Iand:
+			getarg (src, &u, 0);
+			getarg (dst, &u, 1);
+			sprintf (op->code, "%s&=%s", src, dst);
+			break;
+		case UD_Isyscall:
+			strcpy (op->code, "$");
+			break;
+		case UD_Iint:
+			n = getval (&u.operand[0]);
+			sprintf (op->code, "$0x%x,%s+=%d", n, pc, oplen);
+			break;
+		case UD_Ilea:
+		case UD_Imov:
+			getarg (src, &u, 0);
+			getarg (dst, &u, 1);
+			sprintf (op->code, "%s=%s,%s+=%d", src, dst, pc, oplen);
+			break;
+		case UD_Ipush:
+			getarg (str, &u, 0);
+			sprintf (op->code, "%s-=%d,%d[%s]=%s,%s+=%d",
+				sp, regsz, regsz, sp, str, pc, oplen);
+			break;
+		default:
+			break;
+		}
+	}
 	
 	switch (u.mnemonic) {
+	case UD_Iand:
+		op->type = R_ANAL_OP_TYPE_AND;
+		break;
+	case UD_Ishl:
+		op->type = R_ANAL_OP_TYPE_SHL;
+		break;
+	case UD_Ishr:
+		op->type = R_ANAL_OP_TYPE_SHR;
+		break;
+	case UD_Ilea:
+	case UD_Imov:
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case UD_Ipush:
 		switch (u.operand[0].type) {
 		case UD_OP_CONST:

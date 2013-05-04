@@ -15,6 +15,7 @@ R_API RAnalOp *r_anal_op_new() {
 		op->fail = -1;
 		op->ref = -1;
 		op->value = -1;
+		op->code[0] = 0;
 		op->next = NULL;
 	}
 	return op;

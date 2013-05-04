@@ -491,6 +491,7 @@ typedef struct r_anal_t {
 	double diff_thbb;
 	double diff_thfcn;
 	RIOBind iob;
+	int decode;
 	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
@@ -542,6 +543,7 @@ typedef struct r_anal_op_t {
 	st64 stackptr;  /* stack pointer */
 	RAnalValue *src[3];
 	RAnalValue *dst;
+	char code[64];
 	int refptr;
 	char *evalstr; /* evaluation string . the new anal */
 	struct r_anal_op_t *next;

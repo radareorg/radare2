@@ -205,22 +205,30 @@ static const char *optypestr(int type) {
 
 static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 	int ret, i, idx;
+	RAsmOp asmop;
 	RAnalOp op;
 
 	for (i=idx=ret=0; idx<len && (!nops|| (nops&&i<nops)); i++, idx+=ret) {
-		ret = r_anal_op (core->anal, &op,
-				core->offset+idx, buf + idx, (len-idx));
+		r_asm_set_pc (core->assembler, core->offset+idx);
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
+		ret = r_anal_op (core->anal, &op, core->offset+idx, buf + idx, len-idx);
 		if (ret<1) {
 			eprintf ("Oops at 0x%08"PFMT64x" (%02x %02x %02x ...)\n",
 					core->offset+idx, buf[idx], buf[idx+1], buf[idx+2]);
 			break;
 		}
+
+		r_cons_printf ("opcode: %s\n", asmop.buf_asm);
 		r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
 		r_cons_printf ("size: %d\n", op.length);
 		r_cons_printf ("type: %d (%s)\n", op.type, optypestr (op.type)); // TODO: string
+		if (op.code)
+			r_cons_printf ("code: %s\n", op.code);
 		r_cons_printf ("eob: %d\n", op.eob);
-		r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
-		r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
+		if (op.jump != UT64_MAX)
+			r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
+		if (op.fail != UT64_MAX)
+			r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
 		r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
 		r_cons_printf ("cond: %d\n", op.cond); // TODO: string
 		r_cons_printf ("family: %d\n", op.family);
@@ -313,6 +321,11 @@ static int cmd_anal(void *data, const char *input) {
 			" ax- sym.main str.helloworld    ; remove reference\n");
 			break;
 		}
+		break;
+	case 'e':
+		if (input[1] == ' ') {
+			r_anal_code_eval (core->anal, input+2);
+		} else eprintf ("Usage: ae [expression]  # wip\n");
 		break;
 	case 'o':
 		if (input[1] == '?') {
@@ -945,6 +958,7 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 		" aa               ; analyze all (fcns + bbs)\n"
 		" ad               ; analyze data trampoline (wip)\n"
 		" ad [from] [to]   ; analyze data pointers to (from-to)\n"
+		" ae [expr]        ; analyze opcode eval expression (see ao)\n"
 		" af[bcsl?+-*]     ; analyze Functions\n"
 		" aF               ; same as above, but using graph.depth=1\n"
 		" ag[?acgdlf]      ; output Graphviz code\n"
