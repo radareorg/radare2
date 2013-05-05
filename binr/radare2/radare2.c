@@ -65,7 +65,7 @@ static int main_help(int line) {
 static void list_io_plugins(RIO *io) {
 	char str[4];
 	struct list_head *pos;
-	list_for_each_prev(pos, &io->io_list) {
+	list_for_each_prev (pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
 		// read, write, debug, proxy
 		str[0] = 'r';
@@ -266,7 +266,12 @@ int main(int argc, char **argv) {
 			if (is_gdb) *file = 0;
 			else memcpy (file, "dbg://", 7);
 			if (optind < argc) {
-				char *ptr = r_file_path (argv[optind]);
+				const char *f = argv[optind];
+				char *ptr;
+				/* implicit ./ to make unix behave like windows */
+				if (*f!='/' && *f!='.' && r_file_exists (argv[optind])) {
+					ptr = r_str_prefix (strdup (argv[optind]), "./");
+				} else ptr = r_file_path (argv[optind]);
 				if (ptr) {
 					strcat (file, ptr);
 					free (ptr);

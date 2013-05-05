@@ -208,7 +208,6 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 #endif
 			posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
 
-			//ret = posix_spawnp (NULL, argv[0], NULL, &attr, argv, NULL);
 			ret = posix_spawnp (&p, argv[0], NULL, &attr, argv, NULL);
 			switch (ret) {
 			case 0:
@@ -268,7 +267,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {
-			// TODO: get bits from ELF?
 			pid = fork_and_ptraceme (io->bits, file+6);
 			if (pid==-1)
 				return NULL;
