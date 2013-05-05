@@ -8,7 +8,7 @@
 R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
         char *path, *db = r_str_dup_printf ("/.radare2/rdb/%s.d/xrefs", prjfile);
 	path = r_str_home (db);
-	eprintf ("Open (%s)\n", path);
+	//eprintf ("Open (%s)\n", path);
 	sdb_free (DB);
 	DB = sdb_new (path, 0);
 	sdb_aset (DB, "types", -1, "code"SDB_SS"data", 0);

@@ -43,6 +43,8 @@ R_API int r_file_size(const char *str) {
 R_API char *r_file_abspath(const char *file) {
 	char *ret = NULL;
 	char *cwd = r_sys_getdir ();
+	if (!memcmp (file, "~/", 2))
+		return r_str_home (file+2);
 #if __UNIX__
 	if (cwd && *file != '/')
 		ret = r_str_dup_printf ("%s/%s", cwd, file);

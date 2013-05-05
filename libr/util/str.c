@@ -353,6 +353,7 @@ R_API char *r_str_new(char *str) {
 }
 
 R_API char *r_str_newf(const char *fmt, ...) {
+//TODO: use asprintf ?
 	char string[1024];
 	va_list ap;
 	va_start (ap, fmt);
@@ -540,6 +541,7 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
  * first argument must be allocated
  * return: the pointer ptr resized to string size.
  */
+// TODO: use vararg here?
 R_API char *r_str_concat(char *ptr, const char *string) {
 	int slen, plen;
 	if (ptr == NULL)

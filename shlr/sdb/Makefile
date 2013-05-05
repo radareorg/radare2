@@ -22,7 +22,7 @@ EMCCFLAGS=-O2 -s ASM_JS=1
 sdb.js: src/sdb-version.h
 	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js *.c json/api.c json/js0n.c json/json.c json/rangstr.c  
 
-clean:
+mrproper clean:
 	rm -f src/sdb-version.h
 	cd src && ${MAKE} clean
 	cd memcache && ${MAKE} clean

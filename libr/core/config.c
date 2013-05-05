@@ -608,6 +608,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set_i (cfg, "diff.to", 0);
 	r_config_desc (cfg, "diff.to", "set destination diffing address for px (uses cc command)");
 	/* dir */
+	r_config_set (cfg, "dir.projects", "~/.radare2/rdb");
 	r_config_set (cfg, "dir.types", "/usr/include");
 	r_config_desc (cfg, "dir.types", "Default path to look for cparse type files");
 	r_config_set (cfg, "dir.source", "");
