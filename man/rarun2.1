@@ -60,6 +60,13 @@ Connecting a program to a socket
   $ nc -l 9999
   $ rarun2 program=/bin/ls connect=localhost:9999
 .Pp
+Debugging a program redirecting io to another terminal
+.Pp
+  ## open a new terminal and type 'tty' to get
+  $ tty ; clear ; sleep 999999
+  /dev/ttyS010
+  ## in another terminal run r2
+  $ r2 -d rarun2 program=/bin/ls stdio=/dev/ttys010
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1) ,

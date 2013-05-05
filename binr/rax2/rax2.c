@@ -98,6 +98,7 @@ static int rax (char *str, int len, int last) {
 			case 'v': blob_version ("rax2"); break;
 			case '\0': return !use_stdin ();
 			default:
+				out_mode = (flags^32)? '0': 'I';
 				if (str[1]>='0' && str[1]<='9')
 					return format_output (out_mode, str);
 				printf ("Usage: rax2 [options] [expr ...]\n");

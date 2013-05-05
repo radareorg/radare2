@@ -41,7 +41,10 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "connect")) _connect = strdup (e);
 	else if (!strcmp (b, "listen")) _listen = strdup (e);
 	else if (!strcmp (b, "stdout")) _stdout = strdup (e);
-	else if (!strcmp (b, "stdin")) _stdin = strdup (e);
+	else if (!strcmp (b, "stdio")) {
+		_stdout = _stderr = _stdin = strdup (e);
+	} else if (!strcmp (b, "stdin")) _stdin = strdup (e);
+	else if (!strcmp (b, "stderr")) _stderr = strdup (e);
 	else if (!strcmp (b, "input")) _input = strdup (e);
 	else if (!strcmp (b, "chdir")) _chgdir = strdup (e);
 	else if (!strcmp (b, "chroot")) _chroot = strdup (e);
@@ -89,12 +92,12 @@ static int runfile () {
 		dup2 (f, 0);
 	}
 	if (_stdout) {
-		int f = open (_stdout, O_RDONLY);
+		int f = open (_stdout, O_WRONLY);
 		close (1);
 		dup2 (f, 1);
 	}
 	if (_stderr) {
-		int f = open (_stderr, O_RDONLY);
+		int f = open (_stderr, O_WRONLY);
 		close (2);
 		dup2 (f, 2);
 	}
@@ -171,7 +174,7 @@ static int runfile () {
 		if (!fork ()) {
 			sleep (_timeout);
 			if (!kill (mypid, 0))
-				fprintf (stderr, "\nrarun2: Interrupted by timeout\n");
+				eprintf ("\nrarun2: Interrupted by timeout\n");
 			kill (mypid, SIGKILL);
 			exit (0);
 		}
@@ -191,7 +194,7 @@ int main(int argc, char **argv) {
 	FILE *fd;
 	char *file, buf[4096];
 	if (argc==1 || !strcmp (argv[1], "-h")) {
-		fprintf (stderr, "Usage: rarun2 [-v] [script.rr2] [directive ..]\n");
+		eprintf ("Usage: rarun2 [-v] [script.rr2] [directive ..]\n");
 		printf (
 			"program=/bin/ls\n"
 			"arg1=/bin\n"
@@ -200,6 +203,8 @@ int main(int argc, char **argv) {
 			"timeout=3\n"
 			"# connect=localhost:8080\n"
 			"# listen=8080\n"
+			"# #stdio=blah.txt\n"
+			"# #stderr=foo.txt\n"
 			"# stdout=foo.txt\n"
 			"# stdin=input.txt\n"
 			"# input=input.txt\n"
@@ -220,7 +225,7 @@ int main(int argc, char **argv) {
 	if (*file && !strchr (file, '=')) {
 		fd = fopen (file, "r");
 		if (!fd) {
-			fprintf (stderr, "Cannot open %s\n", file);
+			eprintf ("Cannot open %s\n", file);
 			return 1;
 		}
 		for (;;) {

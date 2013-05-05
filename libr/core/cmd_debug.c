@@ -943,6 +943,10 @@ static int cmd_debug(void *data, const char *input) {
 				return 1;
 			}
 		case 'u':
+			if (input[2] != ' ') {
+				eprintf ("Usage: dcu [address]\n");
+				return 1;
+			}
 			ptr = strchr (input+3, ' ');
 // TODO : handle ^C here
 			if (ptr) { // TODO: put '\0' in *ptr to avoid
