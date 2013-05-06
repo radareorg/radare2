@@ -85,10 +85,14 @@ static int getarg(char *src, struct ud *u, int idx) {
 	case UD_OP_MEM:
 		n = getval (op);
 		// TODO ->scale
-		if (u->mnemonic == UD_Ilea) {
-			sprintf (src, "%s+%d", ud_reg_tab[op->base-UD_R_AL], 0); // XXX
-		} else {
-			sprintf (src, "[%s+%d]", ud_reg_tab[op->base-UD_R_AL], n);
+		if (op->base != UD_NONE) {
+			if (u->mnemonic == UD_Ilea) {
+				sprintf (src, "%s+%d", ud_reg_tab[
+					op->base-UD_R_AL], 0); // XXX
+			} else {
+				sprintf (src, "[%s+%d]", ud_reg_tab[
+					op->base-UD_R_AL], n);
+			}
 		}
 		break;
 	default:
