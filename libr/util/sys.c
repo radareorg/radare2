@@ -356,6 +356,19 @@ R_API int r_sys_cmdf (const char *fmt, ...) {
 	return ret;
 }
 
+R_API int r_sys_cmdbg (const char *str) {
+#if __UNIX__
+	int ret, pid = fork ();
+	if (pid == -1) return -1;
+	if (pid) return pid;
+	ret = r_sandbox_system (str, 0);
+	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
+	exit (0);
+#else
+#warning r_sys_cmdbg is not implemented for this platform
+#endif
+}
+
 R_API int r_sys_cmd (const char *str) {
 #if __FreeBSD__
 	/* freebsd system() is broken */
