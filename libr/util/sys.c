@@ -446,6 +446,7 @@ R_API int r_sys_arch_id(const char *arch) {
 	if (!strcmp (arch, "mips")) return R_SYS_ARCH_MIPS;
 	if (!strcmp (arch, "sparc")) return R_SYS_ARCH_SPARC;
 	if (!strcmp (arch, "csr")) return R_SYS_ARCH_CSR;
+	if (!strcmp (arch, "c55+")) return R_SYS_ARCH_C55PLUS;
 	if (!strcmp (arch, "msil")) return R_SYS_ARCH_MSIL;
 	if (!strcmp (arch, "objd")) return R_SYS_ARCH_OBJD;
 	if (!strcmp (arch, "bf")) return R_SYS_ARCH_BF;
@@ -468,6 +469,7 @@ R_API const char *r_sys_arch_str(int arch) {
 	if (arch & R_SYS_ARCH_MIPS) return "mips";
 	if (arch & R_SYS_ARCH_SPARC) return "sparc";
 	if (arch & R_SYS_ARCH_CSR) return "csr";
+	if (arch & R_SYS_ARCH_C55PLUS) return "c55+";
 	if (arch & R_SYS_ARCH_MSIL) return "msil";
 	if (arch & R_SYS_ARCH_OBJD) return "objd";
 	if (arch & R_SYS_ARCH_BF) return "bf";

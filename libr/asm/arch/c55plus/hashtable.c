@@ -14,20 +14,20 @@ extern HASHCODE_ENTRY_T ins_hash[];
 
 extern st32 debug;
 
-//----- (004060F0) --------------------------------------------------------
-st32 sub_4060F0(st32 a1, st32 a2)
+
+st32 get_hashfunc_01(st32 arg1, st32 arg2)
 {
-  return a1;
+  return arg1;
 }
 
-//----- (00406100) --------------------------------------------------------
-st32 sub_406100(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  char v4; // zf@122
 
-  v2 = a2 & 0xFE000000;
-  if ( (a2 & 0xFE000000u) > 0x72000000 )
+st32 get_hashfunc_02(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  char v4; 
+
+  v2 = arg2 & 0xFE000000;
+  if ( (arg2 & 0xFE000000u) > 0x72000000 )
   {
     if ( (ut32)v2 <= 0xD8000000 )
     {
@@ -41,13 +41,13 @@ st32 sub_406100(st32 a1, st32 a2)
             {
               if ( v2 == -704643072 )
                 return 95;
-              return a1;
+              return arg1;
             }
             if ( v2 != -738197504 && v2 != -805306368 )
             {
               if ( v2 == -771751936 )
                 return 95;
-              return a1;
+              return arg1;
             }
           }
           else
@@ -58,13 +58,13 @@ st32 sub_406100(st32 a1, st32 a2)
               {
                 if ( v2 == -872415232 )
                   return 95;
-                return a1;
+                return arg1;
               }
               if ( v2 != -905969664 && v2 != -973078528 )
               {
                 if ( v2 == -939524096 )
                   return 95;
-                return a1;
+                return arg1;
               }
             }
           }
@@ -80,7 +80,7 @@ st32 sub_406100(st32 a1, st32 a2)
                 if ( (ut32)v2 > 0x78000000 )
                 {
                   if ( v2 != 2046820352 && v2 != 2080374784 )
-                    return a1;
+                    return arg1;
                 }
                 else
                 {
@@ -88,7 +88,7 @@ st32 sub_406100(st32 a1, st32 a2)
                   {
                     if ( v2 == 1979711488 )
                       return 226;
-                    return a1;
+                    return arg1;
                   }
                 }
               }
@@ -98,7 +98,7 @@ st32 sub_406100(st32 a1, st32 a2)
             {
               if ( v2 == -1040187392 )
                 return 95;
-              return a1;
+              return arg1;
             }
             if ( v2 != -1073741824 )
             {
@@ -106,7 +106,7 @@ st32 sub_406100(st32 a1, st32 a2)
                 return 540;
               if ( v2 == -1577058304 )
                 return 541;
-              return a1;
+              return arg1;
             }
           }
         }
@@ -120,7 +120,7 @@ st32 sub_406100(st32 a1, st32 a2)
         if ( (ut32)v2 > 0xFC000000 )
         {
           if ( v2 != -33554432 )
-            return a1;
+            return arg1;
           return 96;
         }
         if ( v2 == -67108864 || v2 == -134217728 )
@@ -167,17 +167,17 @@ st32 sub_406100(st32 a1, st32 a2)
         if ( (ut32)v2 <= 0xDE000000 )
         {
           if ( v2 != -570425344 && v2 != -637534208 && v2 != -603979776 )
-            return a1;
+            return arg1;
           return 95;
         }
         v4 = v2 == -536870912;
       }
     }
     if ( !v4 )
-      return a1;
+      return arg1;
     return 96;
   }
-  if ( (a2 & 0xFE000000) == 1912602624 )
+  if ( (arg2 & 0xFE000000) == 1912602624 )
     return 226;
   if ( (ut32)v2 > 0x48000000 )
   {
@@ -190,7 +190,7 @@ st32 sub_406100(st32 a1, st32 a2)
           if ( (ut32)v2 > 0x5A000000 )
           {
             if ( v2 != 1543503872 )
-              return a1;
+              return arg1;
           }
           else
           {
@@ -198,7 +198,7 @@ st32 sub_406100(st32 a1, st32 a2)
             {
               if ( v2 == 1476395008 )
                 return 178;
-              return a1;
+              return arg1;
             }
           }
         }
@@ -212,7 +212,7 @@ st32 sub_406100(st32 a1, st32 a2)
               {
                 if ( v2 == 1375731712 )
                   return 178;
-                return a1;
+                return arg1;
               }
             }
             else
@@ -221,7 +221,7 @@ st32 sub_406100(st32 a1, st32 a2)
               {
                 if ( v2 == 1275068416 )
                   return 178;
-                return a1;
+                return arg1;
               }
             }
           }
@@ -235,13 +235,13 @@ st32 sub_406100(st32 a1, st32 a2)
       {
         if ( v2 == 1879048192 )
           return 226;
-        return a1;
+        return arg1;
       }
       if ( v2 != 1845493760 && v2 != 1778384896 )
       {
         if ( v2 == 1811939328 )
           return 226;
-        return a1;
+        return arg1;
       }
     }
     else
@@ -252,13 +252,13 @@ st32 sub_406100(st32 a1, st32 a2)
         {
           if ( v2 == 1711276032 )
             return 226;
-          return a1;
+          return arg1;
         }
         if ( v2 != 1677721600 && v2 != 1610612736 )
         {
           if ( v2 == 1644167168 )
             return 226;
-          return a1;
+          return arg1;
         }
       }
     }
@@ -276,13 +276,13 @@ st32 sub_406100(st32 a1, st32 a2)
         {
           if ( v2 == 301989888 )
             return 142;
-          return a1;
+          return arg1;
         }
         if ( v2 != 268435456 && v2 != 201326592 )
         {
           if ( v2 == 234881024 )
             return 142;
-          return a1;
+          return arg1;
         }
       }
       else
@@ -295,7 +295,7 @@ st32 sub_406100(st32 a1, st32 a2)
             {
               if ( v2 == 134217728 )
                 return 142;
-              return a1;
+              return arg1;
             }
           }
           else
@@ -304,7 +304,7 @@ st32 sub_406100(st32 a1, st32 a2)
             {
               if ( v2 == 33554432 )
                 return 142;
-              return a1;
+              return arg1;
             }
           }
         }
@@ -318,13 +318,13 @@ st32 sub_406100(st32 a1, st32 a2)
     {
       if ( v2 == 1174405120 )
         return 178;
-      return a1;
+      return arg1;
     }
     if ( v2 != 1140850688 && v2 != 1073741824 )
     {
       if ( v2 == 1107296256 )
         return 178;
-      return a1;
+      return arg1;
     }
     return 178;
   }
@@ -336,47 +336,47 @@ st32 sub_406100(st32 a1, st32 a2)
     {
       if ( v2 == 402653184 )
         return 142;
-      return a1;
+      return arg1;
     }
     return 142;
   }
   if ( v2 == 469762048 )
     return 142;
-  return a1;
+  return arg1;
 }
 
-//----- (004064F0) --------------------------------------------------------
-st32 sub_4064F0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0xE0000000;
-  if ( (a2 & 0xE0000000u) <= 0x80000000 )
+st32 get_hashfunc_03(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0xE0000000;
+  if ( (arg2 & 0xE0000000u) <= 0x80000000 )
   {
-    if ( (a2 & 0xE0000000) == -2147483648 )
+    if ( (arg2 & 0xE0000000) == -2147483648 )
       return 102;
     if ( !v2 )
       return 485;
     if ( v2 == 536870912 )
       return 486;
-    return a1;
+    return arg1;
   }
   if ( v2 != -1610612736 )
-    return a1;
+    return arg1;
   return 475;
 }
 
-//----- (00406540) --------------------------------------------------------
-st32 sub_406540(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x80000000 )
+st32 get_hashfunc_04(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x80000000 )
   {
-    if ( (a2 & 0x80000000) == -2147483648 )
+    if ( (arg2 & 0x80000000) == -2147483648 )
       result = 99;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -385,17 +385,17 @@ st32 sub_406540(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406570) --------------------------------------------------------
-st32 sub_406570(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x80000000 )
+st32 get_hashfunc_05(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x80000000 )
   {
-    if ( (a2 & 0x80000000) == -2147483648 )
+    if ( (arg2 & 0x80000000) == -2147483648 )
       result = 97;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -404,17 +404,17 @@ st32 sub_406570(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004065A0) --------------------------------------------------------
-st32 sub_4065A0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x80000000 )
+st32 get_hashfunc_06(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x80000000 )
   {
-    if ( (st32)(a2 & 0x80000000) == -2147483648 )
+    if ( (st32)(arg2 & 0x80000000) == -2147483648 )
       result = 228;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -423,17 +423,17 @@ st32 sub_4065A0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004065D0) --------------------------------------------------------
-st32 sub_4065D0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x80000000 )
+st32 get_hashfunc_07(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x80000000 )
   {
-    if ( (a2 & 0x80000000) == -2147483648 )
+    if ( (arg2 & 0x80000000) == -2147483648 )
       result = 52;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -442,55 +442,55 @@ st32 sub_4065D0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406600) --------------------------------------------------------
-st32 sub_406600(st32 a1, st32 a2)
-{
-  st32 tmp; // eax@1
 
-  tmp = a2 & 0xC0000000;
-  if ( (a2 & 0xC0000000u) <= 0x80000000 )
+st32 get_hashfunc_08(st32 arg1, st32 arg2)
+{
+  st32 tmp; 
+
+  tmp = arg2 & 0xC0000000;
+  if ( (arg2 & 0xC0000000u) <= 0x80000000 )
   {
-    if ( (a2 & 0xC0000000) == -2147483648 )
+    if ( (arg2 & 0xC0000000) == -2147483648 )
       return 87;
     if ( !tmp )
       return 85;
     if ( tmp == 1073741824 )
       return 86;
-    return a1;
+    return arg1;
   }
   if ( tmp != -1073741824 )
-    return a1;
+    return arg1;
   return 88;
 }
 
-//----- (00406650) --------------------------------------------------------
-st32 sub_406650(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0xC0000000;
-  if ( (a2 & 0xC0000000u) <= 0x80000000 )
+st32 get_hashfunc_09(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0xC0000000;
+  if ( (arg2 & 0xC0000000u) <= 0x80000000 )
   {
-    if ( (a2 & 0xC0000000) == -2147483648 )
+    if ( (arg2 & 0xC0000000) == -2147483648 )
       return 91;
     if ( !v2 )
       return 89;
     if ( v2 == 1073741824 )
       return 90;
-    return a1;
+    return arg1;
   }
   if ( v2 != -1073741824 )
-    return a1;
+    return arg1;
   return 92;
 }
 
-//----- (004066A0) --------------------------------------------------------
-st32 sub_4066A0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
 
-  v2 = a2;
+st32 get_hashfunc_10(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+
+  v2 = arg2;
   v3 = v2 & 0x500000;
   if ( (ut32)v3 <= 0x400000 )
   {
@@ -500,26 +500,26 @@ st32 sub_4066A0(st32 a1, st32 a2)
       return 245;
     if ( v3 == 1048576 )
       return 249;
-    return a1;
+    return arg1;
   }
   if ( v3 != 5242880 )
-    return a1;
+    return arg1;
   return 248;
 }
 
-//----- (004066F0) --------------------------------------------------------
-st32 sub_4066F0(st32 a1, st32 a2)
+
+st32 get_hashfunc_11(st32 arg1, st32 arg2)
 {
-  st32 result; // eax@3
+  st32 result; 
 
   /* */
 
-  if ( (ut32)dword_480000 & a2 )
+  if ( (ut32)dword_480000 & arg2 )
   {
-    if ( ((ut32)dword_480000 & a2) == 524288 )
+    if ( ((ut32)dword_480000 & arg2) == 524288 )
       result = 460;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -527,23 +527,21 @@ st32 sub_4066F0(st32 a1, st32 a2)
   }
   return result;
 }
-// 480000: using guessed type st32 dword_480000[4];
 
-//----- (00406720) --------------------------------------------------------
-st32 sub_406720(st32 a1, st32 a2)
+st32 get_hashfunc_12(st32 arg1, st32 arg2)
 {
-  st32 tmp; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@3
+  st32 tmp; 
+  st32 v3; 
+  st32 result; 
 
-  tmp = a2;
+  tmp = arg2;
   v3 = tmp & 0x400000;
   if ( v3 )
   {
     if ( v3 == 4194304 )
       result = 521;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -552,17 +550,17 @@ st32 sub_406720(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406750) --------------------------------------------------------
-st32 sub_406750(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_13(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 30;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -571,17 +569,17 @@ st32 sub_406750(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406780) --------------------------------------------------------
-st32 sub_406780(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_14(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 61;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -590,17 +588,17 @@ st32 sub_406780(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004067B0) --------------------------------------------------------
-st32 sub_4067B0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_15(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 63;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -609,17 +607,17 @@ st32 sub_4067B0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004067E0) --------------------------------------------------------
-st32 sub_4067E0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_16(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 69;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -628,17 +626,17 @@ st32 sub_4067E0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406810) --------------------------------------------------------
-st32 sub_406810(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_17(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 68;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -647,17 +645,17 @@ st32 sub_406810(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406840) --------------------------------------------------------
-st32 sub_406840(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_18(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 66;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -666,83 +664,82 @@ st32 sub_406840(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406870) --------------------------------------------------------
-st32 sub_406870(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0xC1000000;
-  if ( (a2 & 0xC1000000u) > 0x40000000 )
+st32 get_hashfunc_19(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0xC1000000;
+  if ( (arg2 & 0xC1000000u) > 0x40000000 )
   {
     if ( v2 != -2147483648 && v2 != -1073741824 )
-      return a1;
+      return arg1;
   }
   else
   {
-    if ( (a2 & 0xC1000000) != 1073741824 && v2 )
+    if ( (arg2 & 0xC1000000) != 1073741824 && v2 )
     {
       if ( v2 == 16777216 )
         return 469;
-      return a1;
+      return arg1;
     }
   }
   return 59;
 }
 
-//----- (004068B0) --------------------------------------------------------
-//AQUI 0x223, 0x61020000
-st32 sub_4068B0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0x1400000;
-  if ( (a2 & 0x1400000u) <= 0x1000000 )
+st32 get_hashfunc_20(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0x1400000;
+  if ( (arg2 & 0x1400000u) <= 0x1000000 )
   {
-    if ( (a2 & 0x1400000) == 16777216 )
+    if ( (arg2 & 0x1400000) == 16777216 )
       return 75;
     if ( !v2 )
       return 74;
     if ( v2 == 4194304 )
       return 78;
-    return a1;
+    return arg1;
   }
   if ( v2 != 20971520 )
-    return a1;
+    return arg1;
   return 77;
 }
 
-//----- (00406900) --------------------------------------------------------
-st32 sub_406900(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0x1400000;
-  if ( (a2 & 0x1400000u) <= 0x1000000 )
+st32 get_hashfunc_21(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0x1400000;
+  if ( (arg2 & 0x1400000u) <= 0x1000000 )
   {
-    if ( (a2 & 0x1400000) == 16777216 )
+    if ( (arg2 & 0x1400000) == 16777216 )
       return 73;
     if ( !v2 )
       return 72;
     if ( v2 == 4194304 )
       return 108;
-    return a1;
+    return arg1;
   }
   if ( v2 != 20971520 )
-    return a1;
+    return arg1;
   return 109;
 }
 
-//----- (00406950) --------------------------------------------------------
-st32 sub_406950(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x8200 )
+st32 get_hashfunc_22(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x8200 )
   {
-    if ( (unsigned short)(a2 & 0x8200) == 512 )
+    if ( (unsigned short)(arg2 & 0x8200) == 512 )
       result = 364;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -751,13 +748,13 @@ st32 sub_406950(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406980) --------------------------------------------------------
-st32 sub_406980(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
 
-  v2 = a2;
+st32 get_hashfunc_23(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+
+  v2 = arg2;
   v3 = v2 & 0x41C000;
   if ( (ut32)v3 <= 0x400000 )
   {
@@ -773,7 +770,7 @@ st32 sub_406980(st32 a1, st32 a2)
           return 370;
         if ( v3 == 32768 )
           return 325;
-        return a1;
+        return arg1;
       }
       return 372;
     }
@@ -783,7 +780,7 @@ st32 sub_406980(st32 a1, st32 a2)
       {
         if ( v3 == 114688 )
           return 371;
-        return a1;
+        return arg1;
       }
       return 373;
     }
@@ -799,7 +796,7 @@ st32 sub_406980(st32 a1, st32 a2)
       if ( (st32 (*)(char))v3 == (char *)loc_408000 )
         return 325;
       if ( v3 != 4243456 )
-        return a1;
+        return arg1;
       return 372;
     }
     return 314;
@@ -808,19 +805,17 @@ st32 sub_406980(st32 a1, st32 a2)
   {
     if ( v3 == 4308992 )
       return 371;
-    return a1;
+    return arg1;
   }
   return 373;
 }
-// 408000: using guessed type st32 loc_408000(char);
 
-//----- (00406A30) --------------------------------------------------------
-st32 sub_406A30(st32 a1, st32 a2)
+st32 get_hashfunc_24(st32 arg1, st32 arg2)
 {
-  st32 v2; // eax@1
-  st32 v3; // eax@1
+  st32 v2; 
+  st32 v3; 
 
-  v2 = a2;
+  v2 = arg2;
   v3 = v2 & 0x418000;
   if ( (ut32)v3 <= 0x400000 )
   {
@@ -834,13 +829,13 @@ st32 sub_406A30(st32 a1, st32 a2)
           return 329;
         if ( v3 == 32768 )
           return 307;
-        return a1;
+        return arg1;
       }
       return 480;
     }
     if ( v3 == 98304 )
       return 467;
-    return a1;
+    return arg1;
   }
   if ( (st32 (*)(char))v3 != (char *)loc_408000 )
   {
@@ -848,21 +843,19 @@ st32 sub_406A30(st32 a1, st32 a2)
       return 480;
     if ( v3 == 4292608 )
       return 467;
-    return a1;
+    return arg1;
   }
   return 308;
 }
-// 408000: using guessed type st32 loc_408000(char);
 
-//----- (00406AA0) --------------------------------------------------------
-st32 sub_406AA0(st32 a1, st32 a2)
+st32 get_hashfunc_25(st32 arg1, st32 arg2)
 {
-  ut32 v2; // eax@1
+  ut32 v2; 
 
-  v2 = (ut32)loc_408600 & a2;
-  if ( ((ut32)loc_408600 & a2) <= 0x8000 )
+  v2 = (ut32)loc_408600 & arg2;
+  if ( ((ut32)loc_408600 & arg2) <= 0x8000 )
   {
-    if ( ((ut32)loc_408600 & a2) != 32768 )
+    if ( ((ut32)loc_408600 & arg2) != 32768 )
     {
       if ( v2 <= 0x400 )
       {
@@ -870,36 +863,33 @@ st32 sub_406AA0(st32 a1, st32 a2)
         {
           if ( v2 == 512 )
             return 365;
-          return a1;
+          return arg1;
         }
         return 365;
       }
       if ( v2 == 1536 )
         return 365;
-      return a1;
+      return arg1;
     }
     return 382;
   }
   if ( v2 <= 0x8600 )
   {
     if ( v2 != 34304 && v2 != 33280 && v2 != 33792 )
-      return a1;
+      return arg1;
     return 382;
   }
   if ( (st32 (*)(char))v2 != (char *)loc_408000 )
-    return a1;
+    return arg1;
   return 380;
 }
-// 408000: using guessed type st32 loc_408000(char);
-// 408600: using guessed type st32 loc_408600();
 
-//----- (00406B10) --------------------------------------------------------
-st32 sub_406B10(st32 a1, st32 a2)
+st32 get_hashfunc_26(st32 arg1, st32 arg2)
 {
-  st32 v2; // eax@1
-  st32 v3; // eax@1
+  st32 v2; 
+  st32 v3; 
 
-  v2 = a2;
+  v2 = arg2;
   v3 = v2 & 0x41C000;
   if ( (ut32)v3 <= 0x404000 )
   {
@@ -909,28 +899,26 @@ st32 sub_406B10(st32 a1, st32 a2)
     {
       if ( v3 == 4194304 )
         return 312;
-      return a1;
+      return arg1;
     }
     return 311;
   }
   if ( (st32 (*)(char))v3 != (st32 (*)(char))loc_408000 )
   {
     if ( v3 != 4243456 )
-      return a1;
+      return arg1;
     return 311;
   }
   return 313;
 }
-// 408000: using guessed type st32 loc_408000(char);
 
-//----- (00406B70) --------------------------------------------------------
-st32 sub_406B70(st32 a1, st32 a2)
+st32 get_hashfunc_27(st32 arg1, st32 arg2)
 {
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@4
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
 
-  v2 = a2;
+  v2 = arg2;
   v3 = v2 & 0x18000;
   if ( v3 )
   {
@@ -943,7 +931,7 @@ st32 sub_406B70(st32 a1, st32 a2)
       if ( v3 == 65536 )
         result = 377;
       else
-        result = a1;
+        result = arg1;
     }
   }
   else
@@ -953,14 +941,14 @@ st32 sub_406B70(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406BA0) --------------------------------------------------------
-st32 sub_406BA0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  char v5; // zf@34
 
-  v2 = a2;
+st32 get_hashfunc_28(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  char v5; 
+
+  v2 = arg2;
   v3 = v2 & 0x1F800;
   if ( (ut32)v3 <= 0xA000 )
   {
@@ -976,13 +964,13 @@ st32 sub_406BA0(st32 a1, st32 a2)
           {
             if ( v3 == 4096 )
               return 384;
-            return a1;
+            return arg1;
           }
           return 384;
         }
         if ( v3 == 8192 || v3 == 10240 )
           return 384;
-        return a1;
+        return arg1;
       }
       if ( (ut32)v3 > 0x8800 )
       {
@@ -990,7 +978,7 @@ st32 sub_406BA0(st32 a1, st32 a2)
         {
           if ( v3 == 38912 )
             return 385;
-          return a1;
+          return arg1;
         }
       }
       else
@@ -1003,7 +991,7 @@ st32 sub_406BA0(st32 a1, st32 a2)
               return 388;
             if ( v3 == 32768 )
               return 385;
-            return a1;
+            return arg1;
           }
           return 384;
         }
@@ -1020,7 +1008,7 @@ st32 sub_406BA0(st32 a1, st32 a2)
       if ( v3 == 57344 )
         return 387;
       if ( v3 != 43008 && v3 != 45056 && v3 != 47104 )
-        return a1;
+        return arg1;
       return 385;
     }
     if ( v3 == 65536 )
@@ -1028,7 +1016,7 @@ st32 sub_406BA0(st32 a1, st32 a2)
     v5 = v3 == 67584;
 LABEL_35:
     if ( !v5 )
-      return a1;
+      return arg1;
     return 386;
   }
   if ( (ut32)v3 <= 0x13000 )
@@ -1041,17 +1029,17 @@ LABEL_35:
   if ( v3 == 79872 )
     return 386;
   if ( v3 != 90112 )
-    return a1;
+    return arg1;
   return 389;
 }
 
-//----- (00406CC0) --------------------------------------------------------
-st32 sub_406CC0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
 
-  v2 = a2;
+st32 get_hashfunc_29(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+
+  v2 = arg2;
   v3 = v2 & 0x40F800;
   if ( v3 <= (ut32)loc_402000 )
   {
@@ -1061,22 +1049,20 @@ st32 sub_406CC0(st32 a1, st32 a2)
       return 306;
     if ( v3 == 57344 )
       return 391;
-    return a1;
+    return arg1;
   }
   if ( v3 != 4218880 )
-    return a1;
+    return arg1;
   return 390;
 }
-// 402000: using guessed type st32 loc_402000(int, int, int);
 
-//----- (00406D10) --------------------------------------------------------
-st32 sub_406D10(st32 a1, st32 a2)
+st32 get_hashfunc_30(st32 arg1, st32 arg2)
 {
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@4
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
 
-  v2 = a2;
+  v2 = arg2;
   v3 = v2 & 0x18000;
   if ( v3 )
   {
@@ -1089,7 +1075,7 @@ st32 sub_406D10(st32 a1, st32 a2)
       if ( v3 == 65536 )
         result = 304;
       else
-        result = a1;
+        result = arg1;
     }
   }
   else
@@ -1099,14 +1085,14 @@ st32 sub_406D10(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406D40) --------------------------------------------------------
-st32 sub_406D40(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@7
 
-  v2 = a2;
+st32 get_hashfunc_31(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
+
+  v2 = arg2;
   v3 = v2 & 0x380000;
   if ( (ut32)v3 <= 0x200000 )
   {
@@ -1126,7 +1112,7 @@ st32 sub_406D40(st32 a1, st32 a2)
       if ( v3 == 524288 )
         return 533;
     }
-    return a1;
+    return arg1;
   }
   if ( v3 == 2621440 )
   {
@@ -1141,21 +1127,21 @@ st32 sub_406D40(st32 a1, st32 a2)
     else
     {
       if ( v3 != 3670016 )
-        return a1;
+        return arg1;
       result = 536;
     }
   }
   return result;
 }
 
-//----- (00406DC0) --------------------------------------------------------
-st32 sub_406DC0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@4
 
-  v2 = a2;
+st32 get_hashfunc_32(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
+
+  v2 = arg2;
   v3 = v2 & 0x18000;
   if ( v3 )
   {
@@ -1168,7 +1154,7 @@ st32 sub_406DC0(st32 a1, st32 a2)
       if ( v3 == 65536 )
         result = 259;
       else
-        result = a1;
+        result = arg1;
     }
   }
   else
@@ -1178,17 +1164,17 @@ st32 sub_406DC0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406DF0) --------------------------------------------------------
-st32 sub_406DF0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x8000 )
+st32 get_hashfunc_33(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x8000 )
   {
-    if ( (unsigned short)(a2 & 0x8000) == 32768 )
+    if ( (unsigned short)(arg2 & 0x8000) == 32768 )
       result = 327;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1197,14 +1183,14 @@ st32 sub_406DF0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406E20) --------------------------------------------------------
-st32 sub_406E20(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@6
 
-  v2 = a2;
+st32 get_hashfunc_34(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
+
+  v2 = arg2;
   v3 = v2 & 0x580000;
   if ( (ut32)v3 <= 0x180000 )
   {
@@ -1216,7 +1202,7 @@ st32 sub_406E20(st32 a1, st32 a2)
       return 470;
     if ( v3 == 1048576 )
       return 393;
-    return a1;
+    return arg1;
   }
   if ( v3 == 4194304 )
   {
@@ -1225,23 +1211,23 @@ st32 sub_406E20(st32 a1, st32 a2)
   else
   {
     if ( v3 != 5242880 )
-      return a1;
+      return arg1;
     result = 395;
   }
   return result;
 }
 
-//----- (00406E80) --------------------------------------------------------
-st32 sub_406E80(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_35(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 189;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1250,17 +1236,17 @@ st32 sub_406E80(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406EB0) --------------------------------------------------------
-st32 sub_406EB0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1C00000 )
+st32 get_hashfunc_36(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1C00000 )
   {
-    if ( (a2 & 0x1C00000) == 16777216 )
+    if ( (arg2 & 0x1C00000) == 16777216 )
       result = 188;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1269,76 +1255,76 @@ st32 sub_406EB0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406EE0) --------------------------------------------------------
-st32 sub_406EE0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( (a2 & 0x1800000) == 8388608 )
+st32 get_hashfunc_37(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( (arg2 & 0x1800000) == 8388608 )
   {
     result = 473;
   }
   else
   {
-    if ( (a2 & 0x1800000) == 25165824 )
+    if ( (arg2 & 0x1800000) == 25165824 )
       result = 474;
     else
-      result = a1;
+      result = arg1;
   }
   return result;
 }
 
-//----- (00406F10) --------------------------------------------------------
-st32 sub_406F10(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0x1010000;
-  if ( (a2 & 0x1010000u) <= 0x1000000 )
+st32 get_hashfunc_38(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0x1010000;
+  if ( (arg2 & 0x1010000u) <= 0x1000000 )
   {
-    if ( (a2 & 0x1010000) == 16777216 )
+    if ( (arg2 & 0x1010000) == 16777216 )
       return 472;
     if ( !v2 )
       return 23;
     if ( v2 == 65536 )
       return 24;
-    return a1;
+    return arg1;
   }
   if ( v2 != 16842752 )
-    return a1;
+    return arg1;
   return 26;
 }
 
-//----- (00406F60) --------------------------------------------------------
-st32 sub_406F60(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( (a2 & 0x1010000) == 65536 )
+st32 get_hashfunc_39(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( (arg2 & 0x1010000) == 65536 )
   {
     result = 25;
   }
   else
   {
-    if ( (a2 & 0x1010000) == 16842752 )
+    if ( (arg2 & 0x1010000) == 16842752 )
       result = 27;
     else
-      result = a1;
+      result = arg1;
   }
   return result;
 }
 
-//----- (00406F90) --------------------------------------------------------
-st32 sub_406F90(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1010000 )
+st32 get_hashfunc_40(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1010000 )
   {
-    if ( (a2 & 0x1010000) == 16777216 )
+    if ( (arg2 & 0x1010000) == 16777216 )
       result = 135;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1347,14 +1333,14 @@ st32 sub_406F90(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406FC0) --------------------------------------------------------
-st32 sub_406FC0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 result; // eax@4
 
-  v2 = a2 & 0x1010000;
-  if ( a2 & 0x1010000 )
+st32 get_hashfunc_41(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 result; 
+
+  v2 = arg2 & 0x1010000;
+  if ( arg2 & 0x1010000 )
   {
     if ( v2 == 16777216 )
     {
@@ -1365,7 +1351,7 @@ st32 sub_406FC0(st32 a1, st32 a2)
       if ( v2 == 16842752 )
         result = 139;
       else
-        result = a1;
+        result = arg1;
     }
   }
   else
@@ -1375,59 +1361,59 @@ st32 sub_406FC0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00406FF0) --------------------------------------------------------
-st32 sub_406FF0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0x1010000;
-  if ( (a2 & 0x1010000u) <= 0x1000000 )
+st32 get_hashfunc_42(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0x1010000;
+  if ( (arg2 & 0x1010000u) <= 0x1000000 )
   {
-    if ( (a2 & 0x1010000) == 16777216 )
+    if ( (arg2 & 0x1010000) == 16777216 )
       return 12;
     if ( !v2 )
       return 11;
     if ( v2 == 65536 )
       return 8;
-    return a1;
+    return arg1;
   }
   if ( v2 != 16842752 )
-    return a1;
+    return arg1;
   return 9;
 }
 
-//----- (00407040) --------------------------------------------------------
-st32 sub_407040(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0x1010000;
-  if ( (a2 & 0x1010000u) <= 0x1000000 )
+st32 get_hashfunc_43(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0x1010000;
+  if ( (arg2 & 0x1010000u) <= 0x1000000 )
   {
-    if ( (a2 & 0x1010000) == 16777216 )
+    if ( (arg2 & 0x1010000) == 16777216 )
       return 13;
     if ( !v2 )
       return 15;
     if ( v2 == 65536 )
       return 10;
-    return a1;
+    return arg1;
   }
   if ( v2 != 16842752 )
-    return a1;
+    return arg1;
   return 14;
 }
 
-//----- (00407090) --------------------------------------------------------
-st32 sub_407090(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_44(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 29;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1436,17 +1422,17 @@ st32 sub_407090(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004070C0) --------------------------------------------------------
-st32 sub_4070C0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_45(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 17;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1455,40 +1441,40 @@ st32 sub_4070C0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004070F0) --------------------------------------------------------
-st32 sub_4070F0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0xC1000000;
-  if ( (a2 & 0xC1000000u) > 0x40000000 )
+st32 get_hashfunc_46(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0xC1000000;
+  if ( (arg2 & 0xC1000000u) > 0x40000000 )
   {
     if ( v2 != -2147483648 && v2 != -1073741824 )
-      return a1;
+      return arg1;
   }
   else
   {
-    if ( (a2 & 0xC1000000) != 1073741824 && v2 )
+    if ( (arg2 & 0xC1000000) != 1073741824 && v2 )
     {
       if ( v2 == 16777216 )
         return 136;
-      return a1;
+      return arg1;
     }
   }
   return 18;
 }
 
-//----- (00407130) --------------------------------------------------------
-st32 sub_407130(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_47(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 130;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1497,17 +1483,17 @@ st32 sub_407130(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407160) --------------------------------------------------------
-st32 sub_407160(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_48(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 133;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1516,17 +1502,17 @@ st32 sub_407160(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407190) --------------------------------------------------------
-st32 sub_407190(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x80000000 )
+st32 get_hashfunc_49(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x80000000 )
   {
-    if ( (a2 & 0x80000000) == -2147483648 )
+    if ( (arg2 & 0x80000000) == -2147483648 )
       result = 33;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1535,13 +1521,13 @@ st32 sub_407190(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004071C0) --------------------------------------------------------
-st32 sub_4071C0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
 
-  v2 = a2;
+st32 get_hashfunc_50(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+
+  v2 = arg2;
   v3 = v2 & 0x780000;
   if ( (ut32)v3 <= 0x400000 )
   {
@@ -1563,7 +1549,7 @@ st32 sub_4071C0(st32 a1, st32 a2)
       if ( v3 == 524288 )
         return 400;
     }
-    return a1;
+    return arg1;
   }
   if ( (ut32)v3 <= 0x680000 )
   {
@@ -1573,26 +1559,24 @@ st32 sub_4071C0(st32 a1, st32 a2)
       return 524;
     if ( v3 == 5767168 )
       return 525;
-    return a1;
+    return arg1;
   }
   if ( v3 != 7340032 )
-    return a1;
+    return arg1;
   return 523;
 }
-// 480000: using guessed type st32 dword_480000[4];
 
-//----- (00407260) --------------------------------------------------------
-st32 sub_407260(st32 a1, st32 a2)
+st32 get_hashfunc_51(st32 arg1, st32 arg2)
 {
-  st32 v2; // eax@1
-  st32 v3; // eax@1
+  st32 v2; 
+  st32 v3; 
 
-  v2 = a2;
+  v2 = arg2;
   v3 = v2 & 0x180000;
   if ( (ut32)v3 > 0x100000 )
   {
     if ( v3 != 1572864 )
-      return a1;
+      return arg1;
   }
   else
   {
@@ -1602,19 +1586,19 @@ st32 sub_407260(st32 a1, st32 a2)
         return 396;
       if ( v3 == 524288 )
         return 532;
-      return a1;
+      return arg1;
     }
   }
   return 398;
 }
 
-//----- (004072A0) --------------------------------------------------------
-st32 sub_4072A0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
 
-  v2 = a2;
+st32 get_hashfunc_52(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+
+  v2 = arg2;
   v3 = v2 & 0x18000;
   if ( (ut32)v3 <= 0x10000 )
   {
@@ -1624,21 +1608,21 @@ st32 sub_4072A0(st32 a1, st32 a2)
       return 298;
     if ( v3 == 32768 )
       return 300;
-    return a1;
+    return arg1;
   }
   if ( v3 != 98304 )
-    return a1;
+    return arg1;
   return 301;
 }
 
-//----- (004072F0) --------------------------------------------------------
-st32 sub_4072F0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 result; // eax@4
 
-  v2 = a2 & 0x8200;
-  if ( a2 & 0x8200 )
+st32 get_hashfunc_53(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 result; 
+
+  v2 = arg2 & 0x8200;
+  if ( arg2 & 0x8200 )
   {
     if ( v2 == 512 )
     {
@@ -1649,7 +1633,7 @@ st32 sub_4072F0(st32 a1, st32 a2)
       if ( v2 == 32768 )
         result = 297;
       else
-        result = a1;
+        result = arg1;
     }
   }
   else
@@ -1659,38 +1643,38 @@ st32 sub_4072F0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407320) --------------------------------------------------------
-st32 sub_407320(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
 
-  v2 = a2 & 0x8200;
+st32 get_hashfunc_54(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+
+  v2 = arg2 & 0x8200;
   if ( (ut32)v2 <= 0x8000 )
   {
     if ( v2 == 32768 )
       return 316;
-    if ( !(a2 & 0x8200) )
+    if ( !(arg2 & 0x8200) )
       return 410;
     if ( v2 == 512 )
       return 531;
-    return a1;
+    return arg1;
   }
   if ( v2 != 33280 )
-    return a1;
+    return arg1;
   return 315;
 }
 
-//----- (00407370) --------------------------------------------------------
-st32 sub_407370(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x8000 )
+st32 get_hashfunc_55(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x8000 )
   {
-    if ( (unsigned short)(a2 & 0x8000) == 32768 )
+    if ( (unsigned short)(arg2 & 0x8000) == 32768 )
       result = 295;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1699,14 +1683,14 @@ st32 sub_407370(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004073A0) --------------------------------------------------------
-st32 sub_4073A0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@6
 
-  v2 = a2;
+st32 get_hashfunc_56(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
+
+  v2 = arg2;
   v3 = v2 & 0x18180;
   if ( (ut32)v3 <= 0x8080 )
   {
@@ -1718,7 +1702,7 @@ st32 sub_4073A0(st32 a1, st32 a2)
       return 527;
     if ( v3 == 32768 )
       return 407;
-    return a1;
+    return arg1;
   }
   if ( v3 == 98304 )
   {
@@ -1727,23 +1711,23 @@ st32 sub_4073A0(st32 a1, st32 a2)
   else
   {
     if ( v3 != 98432 )
-      return a1;
+      return arg1;
     result = 529;
   }
   return result;
 }
 
-//----- (00407400) --------------------------------------------------------
-st32 sub_407400(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x8000 )
+st32 get_hashfunc_57(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x8000 )
   {
-    if ( (unsigned short)(a2 & 0x8000) == 32768 )
+    if ( (unsigned short)(arg2 & 0x8000) == 32768 )
       result = 405;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1752,14 +1736,14 @@ st32 sub_407400(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407430) --------------------------------------------------------
-st32 sub_407430(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@4
 
-  v2 = a2;
+st32 get_hashfunc_58(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
+
+  v2 = arg2;
   v3 = v2 & 0x18000;
   if ( v3 )
   {
@@ -1772,7 +1756,7 @@ st32 sub_407430(st32 a1, st32 a2)
       if ( v3 == 65536 )
         result = 264;
       else
-        result = a1;
+        result = arg1;
     }
   }
   else
@@ -1782,22 +1766,22 @@ st32 sub_407430(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407460) --------------------------------------------------------
-st32 sub_407460(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 result; // eax@5
 
-  v2 = a2 & 0x8180;
+st32 get_hashfunc_59(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 result; 
+
+  v2 = arg2 & 0x8180;
   if ( (ut32)v2 <= 0x100 )
   {
     if ( v2 == 256 )
       return 505;
-    if ( !(a2 & 0x8180) )
+    if ( !(arg2 & 0x8180) )
       return 503;
     if ( v2 == 128 )
       return 504;
-    return a1;
+    return arg1;
   }
   if ( v2 == 384 )
   {
@@ -1806,23 +1790,23 @@ st32 sub_407460(st32 a1, st32 a2)
   else
   {
     if ( v2 != 32768 )
-      return a1;
+      return arg1;
     result = 507;
   }
   return result;
 }
 
-//----- (004074B0) --------------------------------------------------------
-st32 sub_4074B0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_60(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 173;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1831,17 +1815,17 @@ st32 sub_4074B0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004074E0) --------------------------------------------------------
-st32 sub_4074E0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_61(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 175;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1850,17 +1834,17 @@ st32 sub_4074E0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407510) --------------------------------------------------------
-st32 sub_407510(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_62(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 152;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1869,17 +1853,17 @@ st32 sub_407510(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407540) --------------------------------------------------------
-st32 sub_407540(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_63(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 154;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1888,17 +1872,17 @@ st32 sub_407540(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407570) --------------------------------------------------------
-st32 sub_407570(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_64(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 180;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1907,17 +1891,17 @@ st32 sub_407570(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004075A0) --------------------------------------------------------
-st32 sub_4075A0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_65(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 182;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1926,36 +1910,36 @@ st32 sub_4075A0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004075D0) --------------------------------------------------------
-st32 sub_4075D0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( (a2 & 0x1C00000) == 12582912 )
+st32 get_hashfunc_66(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( (arg2 & 0x1C00000) == 12582912 )
   {
     result = 157;
   }
   else
   {
-    if ( (a2 & 0x1C00000) == 29360128 )
+    if ( (arg2 & 0x1C00000) == 29360128 )
       result = 158;
     else
-      result = a1;
+      result = arg1;
   }
   return result;
 }
 
-//----- (00407600) --------------------------------------------------------
-st32 sub_407600(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_67(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 57;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1964,17 +1948,17 @@ st32 sub_407600(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407630) --------------------------------------------------------
-st32 sub_407630(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_68(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 208;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -1983,17 +1967,17 @@ st32 sub_407630(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407660) --------------------------------------------------------
-st32 sub_407660(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_69(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 209;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -2002,14 +1986,14 @@ st32 sub_407660(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407690) --------------------------------------------------------
-st32 sub_407690(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 result; // eax@4
 
-  v2 = a2 & 0x1400000;
-  if ( a2 & 0x1400000 )
+st32 get_hashfunc_70(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 result; 
+
+  v2 = arg2 & 0x1400000;
+  if ( arg2 & 0x1400000 )
   {
     if ( v2 == 16777216 )
     {
@@ -2020,7 +2004,7 @@ st32 sub_407690(st32 a1, st32 a2)
       if ( v2 == 20971520 )
         result = 212;
       else
-        result = a1;
+        result = arg1;
     }
   }
   else
@@ -2030,17 +2014,17 @@ st32 sub_407690(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004076C0) --------------------------------------------------------
-st32 sub_4076C0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1400000 )
+st32 get_hashfunc_71(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1400000 )
   {
-    if ( (a2 & 0x1400000) == 4194304 )
+    if ( (arg2 & 0x1400000) == 4194304 )
       result = 211;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -2049,17 +2033,17 @@ st32 sub_4076C0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004076F0) --------------------------------------------------------
-st32 sub_4076F0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_72(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 221;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -2068,17 +2052,17 @@ st32 sub_4076F0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407720) --------------------------------------------------------
-st32 sub_407720(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1010000 )
+st32 get_hashfunc_73(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1010000 )
   {
-    if ( (a2 & 0x1010000) == 16777216 )
+    if ( (arg2 & 0x1010000) == 16777216 )
       result = 215;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -2087,36 +2071,36 @@ st32 sub_407720(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407750) --------------------------------------------------------
-st32 sub_407750(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( (a2 & 0x1010000) == 65536 )
+st32 get_hashfunc_74(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( (arg2 & 0x1010000) == 65536 )
   {
     result = 213;
   }
   else
   {
-    if ( (a2 & 0x1010000) == 16842752 )
+    if ( (arg2 & 0x1010000) == 16842752 )
       result = 426;
     else
-      result = a1;
+      result = arg1;
   }
   return result;
 }
 
-//----- (00407780) --------------------------------------------------------
-st32 sub_407780(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x80000000 )
+st32 get_hashfunc_75(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x80000000 )
   {
-    if ( (a2 & 0x80000000) == -2147483648 )
+    if ( (arg2 & 0x80000000) == -2147483648 )
       result = 457;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -2125,17 +2109,17 @@ st32 sub_407780(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004077B0) --------------------------------------------------------
-st32 sub_4077B0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_76(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 21;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -2144,17 +2128,17 @@ st32 sub_4077B0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (004077E0) --------------------------------------------------------
-st32 sub_4077E0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_77(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 22;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -2163,13 +2147,13 @@ st32 sub_4077E0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407810) --------------------------------------------------------
-st32 sub_407810(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
 
-  v2 = a2;
+st32 get_hashfunc_78(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+
+  v2 = arg2;
   v3 = v2 & 0x18000;
   if ( (ut32)v3 <= 0x10000 )
   {
@@ -2179,21 +2163,21 @@ st32 sub_407810(st32 a1, st32 a2)
       return 427;
     if ( v3 == 32768 )
       return 428;
-    return a1;
+    return arg1;
   }
   if ( v3 != 98304 )
-    return a1;
+    return arg1;
   return 252;
 }
 
-//----- (00407860) --------------------------------------------------------
-st32 sub_407860(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@8
 
-  v2 = a2;
+st32 get_hashfunc_79(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
+
+  v2 = arg2;
   v3 = v2 & 0x18180;
   if ( (ut32)v3 <= 0x8100 )
   {
@@ -2217,7 +2201,7 @@ st32 sub_407860(st32 a1, st32 a2)
       if ( v3 == 256 )
         return 434;
     }
-    return a1;
+    return arg1;
   }
   if ( (ut32)v3 <= 0x10100 )
   {
@@ -2229,7 +2213,7 @@ st32 sub_407860(st32 a1, st32 a2)
       return 433;
     if ( v3 == 65664 )
       return 436;
-    return a1;
+    return arg1;
   }
   if ( v3 == 65920 )
   {
@@ -2238,20 +2222,20 @@ st32 sub_407860(st32 a1, st32 a2)
   else
   {
     if ( v3 != 98688 )
-      return a1;
+      return arg1;
     result = 438;
   }
   return result;
 }
 
-//----- (00407920) --------------------------------------------------------
-st32 sub_407920(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@8
 
-  v2 = a2;
+st32 get_hashfunc_80(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
+
+  v2 = arg2;
   v3 = v2 & 0x18180;
   if ( (ut32)v3 <= 0x8100 )
   {
@@ -2275,7 +2259,7 @@ st32 sub_407920(st32 a1, st32 a2)
       if ( v3 == 256 )
         return 447;
     }
-    return a1;
+    return arg1;
   }
   if ( (ut32)v3 <= 0x10100 )
   {
@@ -2287,7 +2271,7 @@ st32 sub_407920(st32 a1, st32 a2)
       return 446;
     if ( v3 == 65664 )
       return 449;
-    return a1;
+    return arg1;
   }
   if ( v3 == 65920 )
   {
@@ -2296,22 +2280,22 @@ st32 sub_407920(st32 a1, st32 a2)
   else
   {
     if ( v3 != 98688 )
-      return a1;
+      return arg1;
     result = 451;
   }
   return result;
 }
 
-//----- (004079E0) --------------------------------------------------------
-st32 sub_4079E0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 result; // eax@7
 
-  v2 = a2 & 0x1000180;
-  if ( (a2 & 0x1000180u) <= 0x1000000 )
+st32 get_hashfunc_81(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 result; 
+
+  v2 = arg2 & 0x1000180;
+  if ( (arg2 & 0x1000180u) <= 0x1000000 )
   {
-    if ( (a2 & 0x1000180) == 16777216 )
+    if ( (arg2 & 0x1000180) == 16777216 )
       return 191;
     if ( (ut32)v2 > 0x100 )
     {
@@ -2327,7 +2311,7 @@ st32 sub_4079E0(st32 a1, st32 a2)
       if ( v2 == 128 )
         return 537;
     }
-    return a1;
+    return arg1;
   }
   if ( v2 == 16777344 )
   {
@@ -2342,29 +2326,29 @@ st32 sub_4079E0(st32 a1, st32 a2)
     else
     {
       if ( v2 != 16777600 )
-        return a1;
+        return arg1;
       result = 201;
     }
   }
   return result;
 }
 
-//----- (00407A60) --------------------------------------------------------
-st32 sub_407A60(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 result; // eax@5
 
-  v2 = a2 & 0x1000180;
-  if ( (a2 & 0x1000180u) <= 0x100 )
+st32 get_hashfunc_82(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 result; 
+
+  v2 = arg2 & 0x1000180;
+  if ( (arg2 & 0x1000180u) <= 0x100 )
   {
-    if ( (a2 & 0x1000180) == 256 )
+    if ( (arg2 & 0x1000180) == 256 )
       return 203;
     if ( !v2 )
       return 192;
     if ( v2 == 128 )
       return 195;
-    return a1;
+    return arg1;
   }
   if ( v2 == 384 )
   {
@@ -2373,23 +2357,23 @@ st32 sub_407A60(st32 a1, st32 a2)
   else
   {
     if ( v2 != 16777600 )
-      return a1;
+      return arg1;
     result = 196;
   }
   return result;
 }
 
-//----- (00407AB0) --------------------------------------------------------
-st32 sub_407AB0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 result; // eax@9
-  char v4; // zf@10
 
-  v2 = a2 & 0x1810180;
-  if ( (a2 & 0x1810180u) <= 0x800080 )
+st32 get_hashfunc_83(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 result; 
+  char v4; 
+
+  v2 = arg2 & 0x1810180;
+  if ( (arg2 & 0x1810180u) <= 0x800080 )
   {
-    if ( (a2 & 0x1810180) != 8388736 )
+    if ( (arg2 & 0x1810180) != 8388736 )
     {
       if ( (ut32)v2 <= 0x10000 )
       {
@@ -2403,7 +2387,7 @@ st32 sub_407AB0(st32 a1, st32 a2)
             {
               if ( v2 == 128 )
                 return 197;
-              return a1;
+              return arg1;
             }
             return 193;
           }
@@ -2413,13 +2397,13 @@ st32 sub_407AB0(st32 a1, st32 a2)
 LABEL_11:
         if ( v4 )
           return 199;
-        return a1;
+        return arg1;
       }
       if ( (ut32)v2 > 0x10180 )
       {
         if ( v2 == 8388608 )
           return 193;
-        return a1;
+        return arg1;
       }
       if ( v2 == 65920 )
         return 199;
@@ -2427,7 +2411,7 @@ LABEL_11:
       {
         if ( v2 == 65792 )
           return 202;
-        return a1;
+        return arg1;
       }
     }
     return 197;
@@ -2446,7 +2430,7 @@ LABEL_11:
       goto LABEL_11;
     }
     if ( v2 != 8454272 )
-      return a1;
+      return arg1;
     return 197;
   }
   if ( v2 == 8454528 )
@@ -2458,20 +2442,20 @@ LABEL_11:
   else
   {
     if ( v2 != 16777344 )
-      return a1;
+      return arg1;
     result = 206;
   }
   return result;
 }
 
-//----- (00407B80) --------------------------------------------------------
-st32 sub_407B80(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 result; // eax@4
 
-  v2 = a2 & 0x1000180;
-  if ( a2 & 0x1000180 )
+st32 get_hashfunc_84(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 result; 
+
+  v2 = arg2 & 0x1000180;
+  if ( arg2 & 0x1000180 )
   {
     if ( v2 == 16777344 )
     {
@@ -2482,7 +2466,7 @@ st32 sub_407B80(st32 a1, st32 a2)
       if ( v2 == 16777472 )
         result = 510;
       else
-        result = a1;
+        result = arg1;
     }
   }
   else
@@ -2492,36 +2476,36 @@ st32 sub_407B80(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407BB0) --------------------------------------------------------
-st32 sub_407BB0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( (a2 & 0x1000180) == 128 )
+st32 get_hashfunc_85(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( (arg2 & 0x1000180) == 128 )
   {
     result = 511;
   }
   else
   {
-    if ( (a2 & 0x1000180) == 256 )
+    if ( (arg2 & 0x1000180) == 256 )
       result = 512;
     else
-      result = a1;
+      result = arg1;
   }
   return result;
 }
 
-//----- (00407BE0) --------------------------------------------------------
-st32 sub_407BE0(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( a2 & 0x1000000 )
+st32 get_hashfunc_86(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( arg2 & 0x1000000 )
   {
-    if ( (a2 & 0x1000000) == 16777216 )
+    if ( (arg2 & 0x1000000) == 16777216 )
       result = 171;
     else
-      result = a1;
+      result = arg1;
   }
   else
   {
@@ -2530,14 +2514,14 @@ st32 sub_407BE0(st32 a1, st32 a2)
   return result;
 }
 
-//----- (00407C10) --------------------------------------------------------
-st32 sub_407C10(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
-  st32 result; // eax@4
 
-  v2 = a2;
+st32 get_hashfunc_87(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+  st32 result; 
+
+  v2 = arg2;
   v3 = v2 & 0x79B981;
   if ( v3 == 33024 || v3 == 4227328 )
   {
@@ -2548,18 +2532,18 @@ st32 sub_407C10(st32 a1, st32 a2)
     if ( v3 == 4260097 )
       result = 491;
     else
-      result = a1;
+      result = arg1;
   }
   return result;
 }
 
-//----- (00407C40) --------------------------------------------------------
-st32 sub_407C40(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v3; // eax@1
 
-  v2 = a2;
+st32 get_hashfunc_88(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v3; 
+
+  v2 = arg2;
   v3 = v2 & 0x79B981;
   if ( (ut32)v3 <= 0x410101 )
   {
@@ -2567,44 +2551,42 @@ st32 sub_407C40(st32 a1, st32 a2)
       return 493;
     if ( v3 == 33024 || v3 == 4227328 )
       return 492;
-    return a1;
+    return arg1;
   }
   if ( (st32 (*)())v3 != (st32 (*)())loc_418181 )
-    return a1;
+    return arg1;
   return 494;
 }
-// 418181: using guessed type st32 loc_418181();
 
-//----- (00407C80) --------------------------------------------------------
-st32 sub_407C80(st32 a1, st32 a2)
+st32 get_hashfunc_89(st32 arg1, st32 arg2)
 {
-  st32 result; // eax@3
+  st32 result; 
 
-  if ( (a2 & 0x1B901B9) == 16777600 )
+  if ( (arg2 & 0x1B901B9) == 16777600 )
   {
     result = 488;
   }
   else
   {
-    if ( (a2 & 0x1B901B9) == 25231616 )
+    if ( (arg2 & 0x1B901B9) == 25231616 )
       result = 495;
     else
-      result = a1;
+      result = arg1;
   }
   return result;
 }
 
-//----- (00407CB0) --------------------------------------------------------
-st32 sub_407CB0(st32 a1, st32 a2)
-{
-  st32 v2; // eax@1
-  st32 v4; // eax@12
-  st32 v5; // eax@13
 
-  v2 = a2 & 0x1F901B9;
-  if ( (a2 & 0x1F901B9u) <= 0x1810101 )
+st32 get_hashfunc_90(st32 arg1, st32 arg2)
+{
+  st32 v2; 
+  st32 v4; 
+  st32 v5; 
+
+  v2 = arg2 & 0x1F901B9;
+  if ( (arg2 & 0x1F901B9u) <= 0x1810101 )
   {
-    if ( (a2 & 0x1F901B9) == 25231617 )
+    if ( (arg2 & 0x1F901B9) == 25231617 )
       return 498;
     if ( (ut32)v2 <= 0x1000180 )
     {
@@ -2614,13 +2596,13 @@ st32 sub_407CB0(st32 a1, st32 a2)
           return 497;
         if ( v2 == 8454529 )
           return 499;
-        return a1;
+        return arg1;
       }
       return 489;
     }
     if ( v2 == 20971904 )
       return 489;
-    return a1;
+    return arg1;
   }
   v4 = v2 - 25231744;
   if ( v4 )
@@ -2632,31 +2614,31 @@ st32 sub_407CB0(st32 a1, st32 a2)
     /* FIX */
     v5 -= 0x3FFFFF;
     if(v5 != 0) {
-	return a1;
+	return arg1;
     }
     /*
     if ( (_UNKNOWN *)v5 != &unk_3FFFFF )
-      return a1;
+      return arg1;
     */
   }
   return 496;
 }
 
-//----- (00407D20) --------------------------------------------------------
-st32 sub_407D20(st32 a1, st32 a2)
-{
-  st32 result; // eax@3
 
-  if ( (a2 & 0x1F901BF) == 8454145 )
+st32 get_hashfunc_91(st32 arg1, st32 arg2)
+{
+  st32 result; 
+
+  if ( (arg2 & 0x1F901BF) == 8454145 )
   {
     result = 501;
   }
   else
   {
-    if ( (a2 & 0x1F901BF) == 25231361 )
+    if ( (arg2 & 0x1F901BF) == 25231361 )
       result = 502;
     else
-      result = a1;
+      result = arg1;
   }
   return result;
 }

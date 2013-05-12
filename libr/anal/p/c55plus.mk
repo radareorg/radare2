@@ -1,0 +1,9 @@
+OBJ_C55PLUS=anal_c55plus.o
+
+STATIC_OBJ+=${OBJ_C55PLUS}
+TARGET_C55PLUS=anal_c55plus.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_C55PLUS}
+
+${TARGET_C55PLUS}: ${OBJ_C55PLUS}
+	${CC} $(call libname,anal_c55plus) ${CFLAGS} -o anal_c55plus.${EXT_SO} ${OBJ_C55PLUS}
