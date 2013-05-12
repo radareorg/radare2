@@ -146,6 +146,17 @@ static int getreg(const char *str) {
 	return -1;
 }
 
+static int thumb_getreg(const char *str) {
+	if (!str)
+		return -1;
+	if (*str=='r')
+		return atoi (str+1);
+	//FIXME Note that pc is only allowed un pop, lr in push in Thumb1 mode.
+	if (!strcmp (str, "pc") || !strcmp(str,"lr"))
+		return 8;
+	return -1;
+}
+
 static int getlist(char *op) {
 	int reg, list = 0;
 	char *ptr = strchr (op, '{');
@@ -262,15 +273,18 @@ static inline int arm_opcode_cond(ArmOpcode *ao, int delta) {
 static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	int reg, j;
 	if (!strcmp (ao->op, "pop") && ao->a[0]) {
-		ao->o = 0xbd;
+		ao->o = 0xbc;
 		if (*ao->a[0]++=='{') {
 			for (j=0; j<16; j++) {
 				if (ao->a[j] && *ao->a[j]) {
 					getrange (ao->a[j]); // XXX filter regname string
-					reg = getreg (ao->a[j]);
+					reg = thumb_getreg (ao->a[j]);
 					if (reg != -1) {
 						if (reg<8)
 							ao->o |= 1<<(8+reg);
+						if (reg==8){
+							ao->o |= 1;
+						}
 					//	else ignore...
 					}
 				}
@@ -278,15 +292,17 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 		} else ao->o |= getnum (ao->a[0])<<24; // ???
 	} else
 	if (!strcmp (ao->op, "push") && ao->a[0]) {
-		ao->o = 0xb5;
+		ao->o = 0xb4;
 		if (*ao->a[0]++=='{') {
 			for (j=0; j<16; j++) {
 				if (ao->a[j] && *ao->a[j]) {
 					getrange (ao->a[j]); // XXX filter regname string
-					reg = getreg (ao->a[j]);
+					reg = thumb_getreg (ao->a[j]);
 					if (reg != -1) {
 						if (reg<8)
 							ao->o |= 1<<(8+reg);
+						if (reg==8)
+							ao->o |= 1;
 					//	else ignore...
 					}
 				}
