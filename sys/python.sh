@@ -18,6 +18,7 @@ fi
 [ -n "${NOSUDO}" ] && SUDO=
 
 export PYTHON
+export DESTDIR
 export PYTHON_VERSION
 export PYTHON_CONFIG
 echo "Using PYTHON_VERSION ${PYTHON_VERSION}"
@@ -27,9 +28,9 @@ echo
 
 cd r2-bindings
 ./configure --prefix=${PREFIX} --enable=python || exit 1
-${SUDO} make install-vapi || exit 1
+${SUDO} make install-vapi DESTDIR=${DESTDIR} || exit 1
 cd python
 make clean
 make PYTHON=${PYTHON}
 [ ! "$1" = --no-install ] && \
-	${SUDO} make install PYTHON=${PYTHON} PYTHON_VERSION=${PYTHON_VERSION}
+	${SUDO} make install PYTHON=${PYTHON} PYTHON_VERSION=${PYTHON_VERSION} DESTDIR=${DESTDIR}
