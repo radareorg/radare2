@@ -7,6 +7,11 @@
 #define SDB_VISIBLE
 #endif
 
+#if __WIN32__ || __CYGWIN__ || MINGW32
+#define __WINDOWS__ 1
+#include <windows.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,14 +48,11 @@ typedef struct sdb_t {
 	SdbList *ns;
 } Sdb;
 
-// XXX: use buckets here, drop these limits
-#define SDB_BLOCK 4096
-#define SDB_KSZ 64
-#define SDB_VSZ (SDB_BLOCK-sizeof(ut64)-SDB_KEYSIZE)
+#define SDB_KSZ 0xff
 
 typedef struct sdb_kv {
-	char key[SDB_KSZ]; // key = 64
-	char value[SDB_VSZ]; // value = 4032
+	char key[SDB_KSZ];
+	char *value;
 	ut64 expire;
 	ut32 cas;
 } SdbKv;
@@ -84,6 +86,7 @@ int sdb_finish (Sdb *s);
 /* iterate */
 void sdb_dump_begin (Sdb* s);
 int sdb_dump_next (Sdb* s, char *key, char *value); // XXX: needs refactor?
+int sdb_dump_dupnext (Sdb* s, char **key, char **value);
 
 /* numeric */
 R_API char *sdb_itoa(ut64 n, char *s);

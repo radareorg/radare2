@@ -9,7 +9,7 @@ MAKE_JOBS=8
 OLD_LDFLAGS="${LDFLAGS}"
 unset LDFLAGS
 
-CFGFLAGS="--without-gmp --without-ewf --without-ssl --with-ostype=windows"
+CFGFLAGS="--without-ewf --with-ostype=windows"
 
 if [ -x /usr/bin/pacman ]; then
 	make clean

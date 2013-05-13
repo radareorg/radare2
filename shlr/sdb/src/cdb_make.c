@@ -65,16 +65,20 @@ int cdb_make_addend(struct cdb_make *c, ut32 keylen, ut32 datalen, ut32 h) {
 	return posplus (c, KVLSZ+keylen+datalen);
 }
 
-static void pack_kvlen(ut8 *buf, ut32 klen, ut32 vlen) {
+static int pack_kvlen(ut8 *buf, ut32 klen, ut32 vlen) {
+	if (klen>=0xff) return 0;
+	if (vlen>=0xffffff) return 0;
 	buf[0] = (ut8)klen;
 	buf[1] = (ut8)((vlen    ) & 255);
 	buf[2] = (ut8)((vlen>>8 ) & 255);
 	buf[3] = (ut8)((vlen>>16) & 255);
+	return 1;
 }
 
 int cdb_make_addbegin(struct cdb_make *c,unsigned int keylen,unsigned int datalen) {
 	ut8 buf[KVLSZ];
-	pack_kvlen (buf, keylen, datalen);
+	if (!pack_kvlen (buf, keylen, datalen))
+		return 0;
 	return buffer_putalign (&c->b, (const char *)buf, KVLSZ);
 }
 

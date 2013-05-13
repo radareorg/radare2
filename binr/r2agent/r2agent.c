@@ -4,6 +4,12 @@
 #include <r_core.h>
 #include <signal.h>
 
+
+#if __WINDOWS__
+int main() {
+	eprintf ("r2agent: Not yet implemented for this platform.\n");
+}
+#else
 #include "index.h"
 
 static int usage (int v) {
@@ -90,3 +96,4 @@ int main(int argc, char **argv) {
 	r_socket_free (s);
 	return 0;
 }
+#endif

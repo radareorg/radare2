@@ -40,7 +40,9 @@ clean:
 ${SDB}:
 	cp -rf $(SDBPATH)/src $(SDBPATH)/src-native
 	#cd $(LTOP)/db/sdb/src-native && ${MAKE} -j ${MAKE_JOBS} ARCH=xxx CC=gcc clean sdb
-	cd $(SDBPATH)/src-native && CFLAGS='${CFLAGS}' \
+	#${CFLAGS}'
+	# TODO use HOST_CC
+	cd $(SDBPATH)/src-native && CFLAGS='-w' \
 		${MAKE} -j 1 ARCH=xxx CC=gcc clean sdb
 	cp -f $(SDBPATH)/src-native/sdb $(SDBPATH)/sdb
 	rm -rf $(SDBPATH)/src-native

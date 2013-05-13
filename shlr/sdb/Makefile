@@ -22,7 +22,7 @@ EMCCFLAGS=-O2 -s ASM_JS=1
 sdb.js: src/sdb-version.h
 	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js *.c json/api.c json/js0n.c json/json.c json/rangstr.c  
 
-mrproper clean:
+clean:
 	rm -f src/sdb-version.h
 	cd src && ${MAKE} clean
 	cd memcache && ${MAKE} clean
@@ -46,7 +46,8 @@ install-dirs:
 
 install: install-dirs
 	cp -f src/sdb.1 ${MANDIR}
-	cp -f src/libsdb.* ${PFX}/lib
+	cp -f src/libsdb.${SOEXT} ${PFX}/lib
+	cp -f src/libsdb.${SOVER} ${PFX}/lib
 	cp -f src/sdb.h ${PFX}/include/sdb
 	cp -f src/sdb-version.h ${PFX}/include/sdb
 	cp -f src/cdb.h ${PFX}/include/sdb

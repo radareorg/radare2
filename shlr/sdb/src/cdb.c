@@ -121,6 +121,8 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, unsigned int len) {
 				return -1;
 			if (!getkvlen (c->fd, &u, &c->dlen))
 				return -1;
+			if (u == 0)
+				return -1;
 			if (u == len) {
 				if ((m = match (c, key, len, pos + KVLSZ))==-1)
 					return 0;

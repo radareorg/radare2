@@ -181,7 +181,6 @@ grub_puts_ (const char *s)
   return grub_puts (_(s));
 }
 
-#if defined (APPLE_CC) && ! defined (GRUB_UTIL)
 int
 grub_err_printf (const char *fmt, ...)
 {
@@ -194,12 +193,6 @@ grub_err_printf (const char *fmt, ...)
 
 	return ret;
 }
-#endif
-
-#if ! defined (APPLE_CC) && ! defined (GRUB_UTIL)
-int grub_err_printf (const char *fmt, ...)
-__attribute__ ((alias("grub_printf")));
-#endif
 
 void
 grub_real_dprintf (const char *file, const int line, const char *condition,

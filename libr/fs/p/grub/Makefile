@@ -68,7 +68,7 @@ all: ${KERNOBJS}
 ${BIN}: ${KERNOBJS} main.o
 	${CC} -o ${BIN} main.o ${CFLAGS} ${KERNOBJS}
 
-lib: all libgrubfs.a
+lib: libgrubfs.a
 
 libgrubfs.a: ${KERNOBJS}
 	rm -f libgrubfs.a
@@ -101,4 +101,4 @@ fs: /tmp/fs
 sync:
 	echo "XXX: Implement syncing with burg project"
 
-.PHONY: fs clean all lib
+.PHONY: fs clean all lib fs sync

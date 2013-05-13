@@ -19,7 +19,7 @@ sdb-version.h:
 	cd .. ; ${MAKE} src/sdb-version.h
 
 shared: sdb-version.h
-	${MAKE} libsdb.${SOEXT}
+	${MAKE} libsdb.${SOVER}
 
 static: sdb-version.h
 	${MAKE} libsdb.a
@@ -32,9 +32,12 @@ endif
 	${AR} -r libsdb.a ${OBJ}
 	${RANLIB} libsdb.a
 
-libsdb.${SOEXT}: ${SOBJ}
+libsdb.${SOVER}: ${SOBJ}
+ifneq ($(SOEXT),${SOVER})
+	ln -fs libsdb.${SOVER} libsdb.${SOEXT}
+endif
 ifneq ($(SILENT),)
-	@echo LIB libsdb.${SOEXT}
+	@echo LIB libsdb.${SOVER}
 endif
 	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${SOBJ}
 
@@ -44,9 +47,9 @@ ifneq ($(SILENT),)
 endif
 	${CC} ${LDFLAGS} -o ${BIN} main.o ${OBJ}
 
-clean:
+mrproper clean:
 	rm -rf ${OBJ} ${SOBJ} main.o libsdb.a a.out ${BIN} sdb.dSYM
-	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.${SOEXT}
+	rm -rf *.d *._d json/*.d json/*._d *.sdb *.db *.${SOEXT} *.${SOEXT}.*
 
 # rules #
 .c:

@@ -1,7 +1,7 @@
 DESTDIR?=
 PREFIX?=/usr
 
-VERSION=0.6.2
+VERSION=0.6.4
 
 CFLAGS_STD?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700
 CFLAGS+=${CFLAGS_STD}
@@ -34,6 +34,7 @@ CFLAGS+=-MMD
 
 ifeq (${OS},Darwin)
 SOEXT=dylib
+SOVER=dylib
 LDFLAGS+=-dynamic
 LDFLAGS_SHARED?=-fPIC -shared
  ifeq (${ARCH},i386)
@@ -42,7 +43,8 @@ LDFLAGS_SHARED?=-fPIC -shared
  endif
 else
 SOVERSION=0
-SOEXT=so.0.0.0
+SOEXT=so
+SOVER=${SOEXT}.${VERSION}
 LDFLAGS_SHARED?=-fPIC -shared
 LDFLAGS_SHARED+=-Wl,-soname,libsdb.so.$(SOVERSION)
 endif
@@ -51,4 +53,8 @@ ifeq ($(MAKEFLAGS),s)
 SILENT=1
 else
 SILENT=
+endif
+
+ifneq (${SDB_CONFIG},)
+include ${SDB_CONFIG}
 endif

@@ -17,6 +17,52 @@ static void terminate(int sig UNUSED) {
 	exit (0);
 }
 
+static char *stdin_gets() {
+	static char buf[96096];
+	fgets (buf, sizeof (buf)-1, stdin);
+	if (feof (stdin)) return NULL;
+	buf[strlen (buf)-1] = 0;
+	return strdup (buf);
+#if 0
+	static char *previn = NULL;
+        int n, l=0, size = 128; // increase for performance
+        char *p, *tmp, *in = malloc (128);
+	for (;;) {
+		if (previn) {
+			strcpy (in, previn);
+			n = strlen (previn);
+			free (previn);
+			previn = NULL;
+		} else {
+			n = read (0, in+l, size);
+			if (n <1) {
+				free (in);
+				return NULL;
+			}
+		}
+		p = strchr (in+l, '\n');
+		if (p) {
+			free (previn);
+			previn = strdup (p+1);
+			n = (int)(size_t)(p-in+l);
+			l += n+1;
+			break;
+		}
+                l += n;
+                if (n!=size) break;
+		if (in[l-1]=='\n') break;
+                tmp = realloc (in, l+1);
+		if (!tmp) {
+			free (in);
+			return NULL;
+		}
+		in = tmp;
+        }
+        in[l>0?l-1:0] = 0;
+        return in;
+#endif
+}
+
 #if USE_MMAN
 static void syncronize(int sig UNUSED) {
 	// TODO: must be in sdb_sync() or wat?
@@ -29,34 +75,33 @@ static void syncronize(int sig UNUSED) {
 #endif
 
 static int sdb_dump (const char *db) {
-	char k[SDB_KSZ];
-	char v[SDB_VSZ];
+	char *k, *v;
 	Sdb *s = sdb_new (db, 0);
 	if (!s) return 1;
 	sdb_dump_begin (s);
-	while (sdb_dump_next (s, k, v))
+	while (sdb_dump_dupnext (s, &k, &v)) {
 		printf ("%s=%s\n", k, v);
+		free (k);
+		free (v);
+	}
 	sdb_free (s);
 	s = NULL;
 	return 0;
 }
 
 static void createdb(const char *f) {
-	char line[SDB_VSZ];
-	char *eq;
+	char *line, *eq;
 	s = sdb_new (f, 0);
 	if (!sdb_create (s)) {
 		printf ("Cannot create database\n");
 		exit (1);
 	}
-	for (;;) {
-		if (!fgets (line, sizeof line, stdin) || feof (stdin))
-			break;
-		line[strlen (line)-1] = 0;
+	for (;(line = stdin_gets ());) {
 		if ((eq = strchr (line, '='))) {
 			*eq = 0;
 			sdb_append (s, line, eq+1);
 		}
+		free (line);
 	}
 	sdb_finish (s);
 }
@@ -78,6 +123,7 @@ static void showfeatures(void) {
 }
 
 int main(int argc, const char **argv) {
+	char *line;
 	int i;
 
 	if (argc<2) showusage (1);
@@ -100,13 +146,10 @@ int main(int argc, const char **argv) {
 	if (!strcmp (argv[2], "="))
 		createdb (argv[1]);
 	else if (!strcmp (argv[2], "-")) {
-		char line[SDB_VSZ+SDB_KSZ]; // XXX can overflow stack
 		if ((s = sdb_new (argv[1], 0)))
-			for (;;) {
-				if (!fgets (line, sizeof line, stdin) || feof (stdin))
-					break;
-				line[strlen (line)-1] = 0;
+			for (;(line = stdin_gets ());) {
 				save = sdb_query (s, line);
+				free (line);
 			}
 	} else if ((s = sdb_new (argv[1], 0)))
 		for (i=2; i<argc; i++)

@@ -156,12 +156,14 @@ R_API RList *r_pair_list (RPair *p, const char *domain) {
 	else s = r_hashtable_lookup (p->ht, r_str_hash (domain));
 	if (s) {
 		RList *list = r_list_new ();
-		char key[SDB_KSZ];
-		char val[SDB_VSZ];
+		char *key, *val;
 		list->free = (RListFree)r_pair_item_free;
 		sdb_dump_begin (s);
-		while (sdb_dump_next (s, key, val))
+		while (sdb_dump_dupnext (s, &key, &val)) {
 			r_list_append (list, r_pair_item_new (key, val));
+			free (key);
+			free (val);
+		}
 		return list;
 	}
 	return NULL;

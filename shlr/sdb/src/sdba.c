@@ -75,14 +75,14 @@ SDB_VISIBLE char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
 
 SDB_VISIBLE int sdb_ainsn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[64];
-	return sdb_ains(s, key, idx, sdb_itoa (val, valstr), cas);
+	return sdb_ains (s, key, idx, sdb_itoa (val, valstr), cas);
 }
 
 // TODO: done, but there's room for improvement
 SDB_VISIBLE int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 	const char *str = sdb_getc (s, key, 0);
 	int lnstr, lstr, lval, ret;
-	char *x, *ptr, *nstr = NULL;
+	char *x, *ptr;
 	if (!str || !*str)
 		return sdb_set (s, key, val, cas);
 	lval = strlen (val);
@@ -97,7 +97,7 @@ SDB_VISIBLE int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32
 		x[lval] = SDB_RS;
 		memcpy (x+lval+1, str, lstr+1);
 	} else {
-		nstr = strdup (str);
+		char *nstr = strdup (str);
 		ptr = sdb_aindex_nc (nstr, idx);
 		if (ptr) {
 			*(ptr-1) = 0;
@@ -108,9 +108,9 @@ SDB_VISIBLE int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32
 			x[lnstr+lval+1] = SDB_RS;
 			memcpy (x+lval+2+lnstr, ptr, strlen (ptr)+1);
 		} else ret = 0;
+		free (nstr);
 	}
 	ret = sdb_set (s, key, x, cas);
-	free (nstr);
 	free (x);
 	return ret;
 }

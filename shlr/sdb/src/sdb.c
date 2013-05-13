@@ -13,10 +13,6 @@
 #define O_BINARY 0
 #endif
 
-#if __WINDOWS__
-#include <windows.h>
-#endif
-
 // must be deprecated
 static ut32 eod, pos; // what about lseek?
 
@@ -198,15 +194,18 @@ SDB_VISIBLE void sdb_reset (Sdb *s) {
 
 // TODO: too many allocs here. use slices
 SdbKv* sdb_kv_new (const char *k, const char *v) {
-	SdbKv *kv = R_NEW (struct sdb_kv);
+	int vl = strlen (v)+1;
+	SdbKv *kv = R_NEW (SdbKv);
 	strncpy (kv->key, k, sizeof (kv->key)-1);
-	strncpy (kv->value, v, sizeof (kv->value)-1);
+	kv->value = malloc (vl);
+	memcpy (kv->value, v, vl);
 	kv->cas = nextcas ();
 	kv->expire = 0LL;
 	return kv;
 }
 
-SDB_VISIBLE void sdb_kv_free (struct sdb_kv *kv) {
+SDB_VISIBLE void sdb_kv_free (SdbKv *kv) {
+	free (kv->value);
 	free (kv);
 }
 
@@ -222,30 +221,32 @@ SDB_VISIBLE int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	e = ht_search (s->ht, hash);
 	if (e) {
 		if (cdb_findnext (&s->db, hash, key, klen)) {
+			int vl = strlen (val)+1;
 			kv = e->data;
 			if (cas && kv->cas != cas)
 				return 0;
 			kv->cas = cas = nextcas ();
-			strcpy (kv->value, val); // XXX overflow
+			free (kv->value);
+			kv->value = malloc (vl);
+			memcpy (kv->value, val, vl);
 		} else ht_remove_entry (s->ht, e);
 		return cas;
 	}
 	kv = sdb_kv_new (key, val);
 	kv->cas = nextcas ();
 	ht_insert (s->ht, hash, kv, NULL);
-	return *val? kv->cas: 0;
+	return kv->cas;
 }
 
 SDB_VISIBLE int sdb_sync (Sdb* s) {
 	SdbKv *kv;
 	SdbListIter it, *iter;
-	char k[SDB_KSZ];
-	char v[SDB_VSZ];
+	char *k, *v;
 
 	if (!sdb_create (s))
 		return 0;
 	sdb_dump_begin (s);
-	while (sdb_dump_next (s, k, v)) {
+	while (sdb_dump_dupnext (s, &k, &v)) {
 		ut32 hash = sdb_hash (k, 0);
 		SdbHashEntry *hte = ht_search (s->ht, hash);
 		if (hte) {
@@ -259,6 +260,8 @@ SDB_VISIBLE int sdb_sync (Sdb* s) {
 			ht_remove_entry (s->ht, hte);
 		} else if (*v)
 			sdb_append (s, k, v);
+		free (k);
+		free (v);
 	}
 	/* append new keyvalues */
 	ls_foreach (s->ht->list, iter, kv) {
@@ -284,6 +287,15 @@ static ut32 getnum(int fd) {
 	return ret;
 }
 
+#if 0
+static int skipbytes(int fd, int len) {
+	int addr = lseek (fd, len, SEEK_CUR);
+	if (addr == -1) return -1;
+	pos += len;
+	return len;
+}
+#endif
+
 static int getbytes(int fd, char *b, int len) {
 	if (read (fd, b, len) != len)
 		return -1;
@@ -300,21 +312,43 @@ SDB_VISIBLE void sdb_dump_begin (Sdb* s) {
 	} else eod = pos = 0;
 }
 
-// XXX: overflow if caller doesnt respects sizes
-// TODO: add support for readonly dump next here
-SDB_VISIBLE int sdb_dump_next (Sdb* s, char *key, char *value) {
-	ut32 dlen, klen;
-	if (s->fd==-1 || !getkvlen (s->fd, &klen, &dlen))
+SDB_VISIBLE int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
+	ut32 vlen, klen;
+	if (s->fd==-1 || !getkvlen (s->fd, &klen, &vlen))
 		return 0;
-	if (klen >= SDB_KSZ || dlen >= SDB_VSZ)
+	if (klen<1 || vlen<1)
 		return 0;
-	pos += 4;
-	if (key && getbytes (s->fd, key, klen)>0)
-	if (value && getbytes (s->fd, value, dlen)>0) {
-		key[klen] = value[dlen] = 0;
-		return 1;
+	if (key) {
+		*key = 0;
+		if (klen>0) {
+			*key = malloc (klen+1);
+			if (getbytes (s->fd, *key, klen) == -1) {
+				free (*key);
+				*key = NULL;
+				return 0;
+			}
+			(*key)[klen] = 0;
+		}
 	}
-	return 0;
+
+	if (value) {
+		*value = 0;
+		if (vlen>0) {
+			*value = malloc (vlen+10);
+			if (getbytes (s->fd, *value, vlen)==-1) {
+				if (key) {
+					free (*key);
+					*key = NULL;
+				}
+				free (*value);
+				*value = NULL;
+				return 0;
+			}
+			(*value)[vlen] = 0;
+		}
+	}
+	 pos += 4; // XXX no
+	return 1;
 }
 
 SDB_VISIBLE ut64 sdb_now () {
@@ -389,7 +423,10 @@ SDB_VISIBLE void sdb_flush(Sdb* s) {
 }
 #if __WINDOWS__
 #define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
-#define r_sys_mkdir_failed() (GetLastError () != ERROR_ALREADY_EXISTS)
+#ifndef ERROR_ALREADY_EXISTS
+#define ERROR_ALREADY_EXISTS 183
+#endif
+#define r_sys_mkdir_failed() (GetLastError () != 183)
 #else
 #define r_sys_mkdir(x) (mkdir(x,0755)!=-1)
 #define r_sys_mkdir_failed() (errno != EEXIST)

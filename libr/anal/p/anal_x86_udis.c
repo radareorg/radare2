@@ -10,6 +10,7 @@
 
 static st64 getval(ud_operand_t *op);
 // XXX Copypasta from udis
+#define UD_REG_TAB_SIZE (sizeof (ud_reg_tab)/sizeof (*ud_reg_tab))
 static const char* ud_reg_tab[] =
 {
   "al",   "cl",   "dl",   "bl",
@@ -77,7 +78,9 @@ static int getarg(char *src, struct ud *u, int idx) {
 		else sprintf (src, "0x%"PFMT64x, n);
 		break;
 	case UD_OP_REG:
-		strcpy (src, ud_reg_tab[op->base - UD_R_AL]);
+		idx = op->base-UD_R_AL;
+		if (idx>=0 && idx<UD_REG_TAB_SIZE)
+			strcpy (src, ud_reg_tab[op->base - UD_R_AL]);
 		break;
 	case UD_OP_PTR:
 		strcpy (src, "ptr");
@@ -86,12 +89,11 @@ static int getarg(char *src, struct ud *u, int idx) {
 		n = getval (op);
 		// TODO ->scale
 		if (op->base != UD_NONE) {
-			if (u->mnemonic == UD_Ilea) {
-				sprintf (src, "%s+%d", ud_reg_tab[
-					op->base-UD_R_AL], 0); // XXX
-			} else {
-				sprintf (src, "[%s+%d]", ud_reg_tab[
-					op->base-UD_R_AL], n);
+			idx = op->base-UD_R_AL;
+			if (idx>=0 && idx<UD_REG_TAB_SIZE) {
+				if (u->mnemonic == UD_Ilea)
+					sprintf (src, "%s+%d", ud_reg_tab[idx], 0);
+				else sprintf (src, "[%s+%d]", ud_reg_tab[idx], n);
 			}
 		}
 		break;
@@ -147,7 +149,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		case UD_Ijnz: // TODO: carry flag
 			getarg (src, &u, 0);
-			sprintf (op->code, "?!zf,%s=%s", src);
+			sprintf (op->code, "?!zf,%s=%s", pc, src);
 			break;
 		case UD_Ijmp: // TODO: carry flag
 			getarg (src, &u, 0);

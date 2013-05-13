@@ -1,8 +1,12 @@
 MODS=udis86 java sdb
 URL=git://github.com/radare/sdb
+PWD=$(shell pwd)
+SDB_CONFIG=${PWD}/sdb-config.mk
 
 all:
-	@for a in ${MODS} ; do ${MAKE} -C $$a HAVE_VALA=; done
+	@for a in ${MODS} ; do \
+		${MAKE} -C $$a HAVE_VALA= SDB_CONFIG=${SDB_CONFIG} ROOT=${PWD}/../ ; \
+	done
 
 clean mrproper:
 	@for a in ${MODS} ; do ${MAKE} -C $$a clean ; done

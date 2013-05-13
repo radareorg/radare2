@@ -53,8 +53,8 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 		}
 		w = snprintf (buf, sizeof (buf), "%"ULLFMT"d", n);
 		if (w<0 || (size_t)w>len) {
-			buf = malloc (64);
-			snprintf (buf, 64, "%"ULLFMT"d", n);
+			buf = malloc (0xff);
+			snprintf (buf, 0xff, "%"ULLFMT"d", n);
 		}
 		return buf;
 	} else if (*cmd == '(') {
@@ -66,6 +66,7 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 		*p = 0;
 		eq = strchr (p+1, '=');
 		if (cmd[1]=='?') {
+			// if (!eq) { ...
 			alength = sdb_alength (s, p+1);
 			w = snprintf (buf, len, "%d", alength);
 			if (w<0 || (size_t)w>len) {
