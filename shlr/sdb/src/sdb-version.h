@@ -1,1 +1,1 @@
-#define SDB_VERSION "0.9.5git"
+#define SDB_VERSION "0.6.4"

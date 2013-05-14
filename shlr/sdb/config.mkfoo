@@ -54,3 +54,7 @@ SILENT=1
 else
 SILENT=
 endif
+
+ifneq (${SDB_CONFIG},)
+include ${SDB_CONFIG}
+endif

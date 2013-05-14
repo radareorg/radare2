@@ -51,7 +51,7 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 			if (*cmd=='+') n = sdb_inc (s, cmd+1, 1, 0);
 			else n = sdb_dec (s, cmd+1, 1, 0);
 		}
-		w = snprintf (buf, sizeof (buf), "%"ULLFMT"d", n);
+		w = snprintf (buf, len-1, "%"ULLFMT"d", n);
 		if (w<0 || (size_t)w>len) {
 			buf = malloc (0xff);
 			snprintf (buf, 0xff, "%"ULLFMT"d", n);
