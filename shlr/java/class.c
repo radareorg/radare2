@@ -386,7 +386,7 @@ static int javasm_init(RBinJavaObj *bin) {
 				struct r_bin_java_cp_item_t *a, *b;
 				a = get_CP (bin, R_BIN_JAVA_USHORT (buf, 2)-1);
 				b = get_CP (bin, R_BIN_JAVA_USHORT (buf, 2));
-				if (a == &cp_null_item || b == &cp_null_item) {
+				if (a == &cp_null_item || b == &cp_null_item || a->value == NULL || b->value == NULL) {
 					bin->methods[i].name = NULL;
 					bin->methods[i].name = malloc (32);
 					sprintf (bin->methods[i].name, "sym.method_%d", i);
