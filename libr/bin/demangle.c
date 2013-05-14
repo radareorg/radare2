@@ -65,6 +65,7 @@ R_API char *r_bin_demangle_java(const char *str) {
 			}
 		}
 		w = NULL;
+		if (!str) break;
 		str++;
 	}
 	ret = r_buf_to_string (buf);
