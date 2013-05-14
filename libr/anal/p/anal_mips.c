@@ -36,6 +36,11 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	R-TYPE
 	======
 	opcode (6)  rs (5)  rt (5)  rd (5)  sa (5)  function (6) 
+	rs = register source
+	rs = register target
+	rd = register destination
+	sa = 
+	fu =
 		
 		 |--[0]--|  |--[1]--|  |--[2]--|  |--[3]--|
 		 1111 1111  1111 1111  1111 1111  1111 1111
