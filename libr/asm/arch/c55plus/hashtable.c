@@ -2,11 +2,11 @@
 #include "hashvector.h"
 #include <r_types.h>
 
-st32 loc_408000 = 0x2474f685;
-st32 loc_408600 = 0x42fbc0b8;
-st32 loc_402000 = 0x086a18eb;
-st32 loc_418181 = 0x001d02e8;
-st32 dword_480000 = 0;
+static const st32 hash_const_01 = 0x2474f685;
+static const st32 hash_const_02 = 0x42fbc0b8;
+static const st32 hash_const_03 = 0x086a18eb;
+static const st32 hash_const_04 = 0x001d02e8;
+static const st32 hash_const_05 = 0;
 
 extern ut8* ins_buff;
 extern ut32 ins_buff_len;
@@ -416,8 +416,8 @@ st32 get_hashfunc_11(st32 arg1, st32 arg2)
 
   /* */
 
-  if ( (ut32)dword_480000 & arg2 ) {
-    if ( ((ut32)dword_480000 & arg2) == 524288 )
+  if ( (ut32)hash_const_05 & arg2 ) {
+    if ( ((ut32)hash_const_05 & arg2) == 524288 )
       result = 460;
     else
       result = arg1;
@@ -655,7 +655,7 @@ st32 get_hashfunc_23(st32 arg1, st32 arg2)
       if ( v3 == 4210688 )
         return 369;
     
-      if ( (st32 (*)(char))v3 == (char *)loc_408000 )
+      if ( (st32 (*)(char))v3 == (char *)hash_const_01 )
         return 325;
       if ( v3 != 4243456 )
         return arg1;
@@ -695,7 +695,7 @@ st32 get_hashfunc_24(st32 arg1, st32 arg2)
       return 467;
     return arg1;
   }
-  if ( (st32 (*)(char))v3 != (char *)loc_408000 ) {
+  if ( (st32 (*)(char))v3 != (char *)hash_const_01 ) {
     if ( v3 == 4259840 )
       return 480;
     if ( v3 == 4292608 )
@@ -709,9 +709,9 @@ st32 get_hashfunc_25(st32 arg1, st32 arg2)
 {
   ut32 v2; 
 
-  v2 = (ut32)loc_408600 & arg2;
-  if ( ((ut32)loc_408600 & arg2) <= 0x8000 ) {
-    if ( ((ut32)loc_408600 & arg2) != 32768 ) {
+  v2 = (ut32)hash_const_02 & arg2;
+  if ( ((ut32)hash_const_02 & arg2) <= 0x8000 ) {
+    if ( ((ut32)hash_const_02 & arg2) != 32768 ) {
       if ( v2 <= 0x400 ) {
         if ( v2 != 1024 && v2 ) {
           if ( v2 == 512 )
@@ -731,7 +731,7 @@ st32 get_hashfunc_25(st32 arg1, st32 arg2)
       return arg1;
     return 382;
   }
-  if ( (st32 (*)(char))v2 != (char *)loc_408000 )
+  if ( (st32 (*)(char))v2 != (char *)hash_const_01 )
     return arg1;
   return 380;
 }
@@ -753,7 +753,7 @@ st32 get_hashfunc_26(st32 arg1, st32 arg2)
     }
     return 311;
   }
-  if ( (st32 (*)(char))v3 != (st32 (*)(char))loc_408000 ) {
+  if ( (st32 (*)(char))v3 != (st32 (*)(char))hash_const_01 ) {
     if ( v3 != 4243456 )
       return arg1;
     return 311;
@@ -870,8 +870,8 @@ st32 get_hashfunc_29(st32 arg1, st32 arg2)
 
   v2 = arg2;
   v3 = v2 & 0x40F800;
-  if ( v3 <= (ut32)loc_402000 ) {
-    if ( (st32 (*)(int, int, int))v3 == (st32 (*)(int, int, int))loc_402000)
+  if ( v3 <= (ut32)hash_const_03 ) {
+    if ( (st32 (*)(int, int, int))v3 == (st32 (*)(int, int, int))hash_const_03)
       return 305;
     if ( v3 == 40960 )
       return 306;
@@ -1306,7 +1306,7 @@ st32 get_hashfunc_50(st32 arg1, st32 arg2)
   if ( (ut32)v3 <= 0x680000 ) {
     if ( v3 == 6815744 )
       return 526;
-    if ( (st32 *)v3 == (st32 *)dword_480000 )
+    if ( (st32 *)v3 == (st32 *)hash_const_05 )
       return 524;
     if ( v3 == 5767168 )
       return 525;
@@ -2156,7 +2156,7 @@ st32 get_hashfunc_88(st32 arg1, st32 arg2)
       return 492;
     return arg1;
   }
-  if ( (st32 (*)())v3 != (st32 (*)())loc_418181 )
+  if ( (st32 (*)())v3 != (st32 (*)())hash_const_04 )
     return arg1;
   return 494;
 }
