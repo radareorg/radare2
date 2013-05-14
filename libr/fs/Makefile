@@ -17,7 +17,7 @@ OBJS=${STATIC_OBJS} fs.o file.o
 #p/grub/main.o
 
 p/grub/libgrubfs.a:
-	cd p/grub && ${MAKE} libgrubfs.a CC=${CC}
+	cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
 
 pre: 
 	cd d && ${MAKE}
@@ -35,7 +35,7 @@ test:
 	gdb --args r2 -i test.rsc /tmp/test.fs.img
 
 plugins:
-	cd p/grub && ${MAKE} libgrubfs.a CC=${CC}
+	cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
 	cd p && ${MAKE} all
 
 include ../rules.mk
