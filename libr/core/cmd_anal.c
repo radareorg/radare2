@@ -222,8 +222,8 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 		r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
 		r_cons_printf ("size: %d\n", op.length);
 		r_cons_printf ("type: %d (%s)\n", op.type, optypestr (op.type)); // TODO: string
-		if (op.code)
-			r_cons_printf ("code: %s\n", op.code);
+		if (op.esil)
+			r_cons_printf ("esil: %s\n", op.esil);
 		r_cons_printf ("eob: %d\n", op.eob);
 		if (op.jump != UT64_MAX)
 			r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);

@@ -140,67 +140,67 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->ref = op->value = -1;
 	oplen = op->length = ud_insn_len (&u);
 
-	op->code[0] = 0;
+	op->esil[0] = 0;
 	if (anal->decode) {
 		switch (u.mnemonic) {
 		case UD_Ijz: // TODO: carry flag
 			getarg (src, &u, 0);
-			sprintf (op->code, "?zf,%s=%s", pc, src);
+			sprintf (op->esil, "?zf,%s=%s", pc, src);
 			break;
 		case UD_Ijnz: // TODO: carry flag
 			getarg (src, &u, 0);
-			sprintf (op->code, "?!zf,%s=%s", pc, src);
+			sprintf (op->esil, "?!zf,%s=%s", pc, src);
 			break;
 		case UD_Ijmp: // TODO: carry flag
 			getarg (src, &u, 0);
-			sprintf (op->code, "%s=%s", pc, src);
+			sprintf (op->esil, "%s=%s", pc, src);
 			break;
 		case UD_Icall: // TODO: carry flag
 			getarg (src, &u, 0);
-			sprintf (op->code, "%s-=%d,%d[%s]=%s,%s=%s",
+			sprintf (op->esil, "%s-=%d,%d[%s]=%s,%s=%s",
 				sp, regsz, regsz, sp, pc, pc, src);
 			break;
 		case UD_Ishl: // TODO: carry flag
 			getarg (src, &u, 0);
 			getarg (dst, &u, 1);
-			sprintf (op->code, "%s<<=%s", src, dst);
+			sprintf (op->esil, "%s<<=%s", src, dst);
 			break;
 		case UD_Ishr: // TODO: carry flag
 			getarg (src, &u, 0);
 			getarg (dst, &u, 1);
-			sprintf (op->code, "%s>>=%s", src, dst);
+			sprintf (op->esil, "%s>>=%s", src, dst);
 			break;
 		case UD_Iadd: // TODO: carry flag
 			getarg (src, &u, 0);
 			getarg (dst, &u, 1);
-			sprintf (op->code, "%s+=%s", src, dst);
+			sprintf (op->esil, "%s+=%s", src, dst);
 			break;
 		case UD_Isub: // TODO: below flag
 			getarg (src, &u, 0);
 			getarg (dst, &u, 1);
-			sprintf (op->code, "%s-=%s", src, dst);
+			sprintf (op->esil, "%s-=%s", src, dst);
 			break;
 		case UD_Iand:
 			getarg (src, &u, 0);
 			getarg (dst, &u, 1);
-			sprintf (op->code, "%s&=%s", src, dst);
+			sprintf (op->esil, "%s&=%s", src, dst);
 			break;
 		case UD_Isyscall:
-			strcpy (op->code, "$");
+			strcpy (op->esil, "$");
 			break;
 		case UD_Iint:
 			n = getval (&u.operand[0]);
-			sprintf (op->code, "$0x%x,%s+=%d", n, pc, oplen);
+			sprintf (op->esil, "$0x%x,%s+=%d", n, pc, oplen);
 			break;
 		case UD_Ilea:
 		case UD_Imov:
 			getarg (src, &u, 0);
 			getarg (dst, &u, 1);
-			sprintf (op->code, "%s=%s,%s+=%d", src, dst, pc, oplen);
+			sprintf (op->esil, "%s=%s,%s+=%d", src, dst, pc, oplen);
 			break;
 		case UD_Ipush:
 			getarg (str, &u, 0);
-			sprintf (op->code, "%s-=%d,%d[%s]=%s,%s+=%d",
+			sprintf (op->esil, "%s-=%d,%d[%s]=%s,%s+=%d",
 				sp, regsz, regsz, sp, str, pc, oplen);
 			break;
 		default:

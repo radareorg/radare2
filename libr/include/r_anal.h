@@ -543,7 +543,7 @@ typedef struct r_anal_op_t {
 	st64 stackptr;  /* stack pointer */
 	RAnalValue *src[3];
 	RAnalValue *dst;
-	char code[64];
+	char esil[64];
 	int refptr;
 	char *evalstr; /* evaluation string . the new anal */
 	struct r_anal_op_t *next;
