@@ -23,12 +23,17 @@ static int usage (int v) {
 int main(int argc, char **argv) {
 	RSocket *s;
 	RSocketHTTPRequest *rs;
-	int c, timeout = 3, dodaemon = 0;
+	int c, timeout = 3;
+	int dodaemon = 0;
+	int dosandbox = 0;
 	const char *port = "8080";
 
 	// TODO: add flag to specify if listen in local or 0.0.0.0
-        while ((c = getopt (argc, argv, "hp:d")) != -1) {
+        while ((c = getopt (argc, argv, "hp:ds")) != -1) {
                 switch (c) {
+		case 's':
+			dosandbox = 1;
+			break;
 		case 'd':
 			dodaemon = 1;
 			break;
@@ -72,14 +77,21 @@ int main(int argc, char **argv) {
 				int filename_len = strlen (filename);
 				char *cmd;
 
-				cmd = malloc (filename_len+40);
-				sprintf (cmd, "r2 -q -e http.port=%d -c=h %s",
+				if (!(cmd = malloc (filename_len+40))) {
+					perror ("malloc");
+					return 1;
+				}
+				sprintf (cmd, "r2 -q -e http.port=%d -c=h \"%s\"",
 					session_port, filename);
 
 				// TODO: use r_sys api to get pid when running in bg
 				pid = r_sys_cmdbg (cmd);
 				free (cmd);
 				result = result_heap = malloc (80+filename_len);
+				if (!result) {
+					perror ("malloc");
+					return 1;
+				}
 				sprintf (result_heap,
 				"<html><body>"
 				"<a href='/'>back</a><hr size=1/>"
