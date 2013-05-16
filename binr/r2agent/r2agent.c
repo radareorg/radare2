@@ -8,6 +8,7 @@
 #if __WINDOWS__
 int main() {
 	eprintf ("r2agent: Not yet implemented for this platform.\n");
+	return 1;
 }
 #else
 #include "index.h"

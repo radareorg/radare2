@@ -1,9 +1,11 @@
-OBJ_C55PLUS=anal_c55plus.o
+OBJ_C55PLUS=anal_c55plus.o 
+SHARED_C55PLUS=../../asm/arch/c55plus/ins.o
 
 STATIC_OBJ+=${OBJ_C55PLUS}
+STATIC_OBJ+=${SHARED_C55PLUS}
 TARGET_C55PLUS=anal_c55plus.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_C55PLUS}
 
 ${TARGET_C55PLUS}: ${OBJ_C55PLUS}
-	${CC} $(call libname,anal_c55plus) ${CFLAGS} -o anal_c55plus.${EXT_SO} ${OBJ_C55PLUS}
+	${CC} $(call libname,anal_c55plus) ${CFLAGS} -o anal_c55plus.${EXT_SO} ${OBJ_C55PLUS} ${SHARED_C55PLUS}

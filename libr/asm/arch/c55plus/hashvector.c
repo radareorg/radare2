@@ -1,3 +1,4 @@
+/* c55plus - LGPL - Copyright 2013 - th0rpe */
 #include "hashvector.h"
 
 extern st32 get_hashfunc_01(st32 A1, st32 A2);

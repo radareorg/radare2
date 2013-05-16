@@ -1,3 +1,5 @@
+/* c55plus - LGPL - Copyright 2013 - th0rpe */
+
 #include "ins.h"
 #include "hashvector.h"
 #include <r_types.h>
@@ -12,11 +14,8 @@ extern ut8* ins_buff;
 extern ut32 ins_buff_len;
 extern HASHCODE_ENTRY_T ins_hash[];
 
-extern st32 debug;
 
-
-st32 get_hashfunc_01(st32 arg1, st32 arg2)
-{
+st32 get_hashfunc_01(st32 arg1, st32 arg2) {
   return arg1;
 }
 
@@ -2252,7 +2251,7 @@ st32 get_hash_code(ut32 ins_pos)
   opcode = get_ins_part(ins_pos, 1);
   ins_len = get_ins_len(opcode);
 
-  if(debug) {
+  if(C55PLUS_DEBUG) {
 	printf("opcode: 0x%x part: %d\n", opcode, ins_pos);
 	printf("ins_len: 0x%x\n", ins_len);
   }
@@ -2279,14 +2278,14 @@ st32 get_hash_code(ut32 ins_pos)
   get_hashcode_func = ins_hash[pos].hash_func;
 
 	
-  if(debug) {
+  if(C55PLUS_DEBUG) {
   	printf("hashfunc => 0x%x 0x%x\n", (unsigned int)get_hashcode_func, pos);
   	printf("hashargs => 0x%x 0x%x 0x%x\n", (unsigned int)arg, ins_part1, ins_part2);
   }
 
 
   hash_code = get_hashcode_func(arg, ins_part2);
-  if(debug) {
+  if(C55PLUS_DEBUG) {
 	printf("ret hashcode: 0x%x\n", hash_code);
   }
  

@@ -1,3 +1,5 @@
+/* c55plus - LGPL - Copyright 2013 - th0rpe */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -9,13 +11,10 @@
 #include "hashtable.h"
 #include "decode_funcs.h"
 
-extern int debug;
-
 extern st8 *ins_str[];
 extern ut32 ins_buff_len;
 
-static ut32 get_q_bits(ut32 val, st8 *ins, ut32 ins_len, int *err_code)
-{
+static ut32 get_q_bits(ut32 val, st8 *ins, ut32 ins_len, int *err_code) {
 	ut32 res = 0;
 
 	if(!strncasecmp(ins, "q_MMAP", 6)) {
@@ -97,7 +96,7 @@ static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, st8 *ins, ut32 ins_len, u
 			x = 0;
 	}
 
-	if(debug) {
+	if(C55PLUS_DEBUG) {
 		printf("INS_BITS => 0x%x\n", res);
 		getchar();
 	}
@@ -293,7 +292,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 			return NULL;
 
 
-	if(debug)
+	if(C55PLUS_DEBUG)
 		printf("PSEUDO INS %s\n", ins);
 
 	pos = ins;
@@ -320,7 +319,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 
 			pos = aux;
 
-			if(debug)
+			if(C55PLUS_DEBUG)
 				printf("TOKEN AUX: %s\n", token_aux);
 
 			reg = NULL;
@@ -329,7 +328,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 					len = (unsigned int)&token_aux[i] - (unsigned int)token_aux;
 					reg = &token_aux[i + 1];
 
-					if(debug)
+					if(C55PLUS_DEBUG)
 						printf("REG : %s\n", reg);
 					break;
 				}
@@ -340,7 +339,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 				return NULL;
 
 			res_decode = strcat_dup(res_decode, aux, 3);
-			if(debug) {
+			if(C55PLUS_DEBUG) {
 				printf("RET TOKEN %s\n", res_decode);
 			}
 
@@ -356,7 +355,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 	}
 
 
-	if(debug)
+	if(C55PLUS_DEBUG)
 		printf("RESULT DECODE: %s\n", res_decode);
 
 	return res_decode;
@@ -472,7 +471,7 @@ static st8 *do_decode(ut32 ins_off, ut32 ins_pos, ut32 two_ins, ut32 *next_ins_p
 	if(ins_hash_code != NULL)
 		*ins_hash_code = hash_code;
 
-	if(debug) {
+	if(C55PLUS_DEBUG) {
 		printf("MAGIC VALUE 0x%x\n", 0x800);
 	}
 
@@ -604,482 +603,394 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 
 	tok_op = *ins_token - 0x23;
 
-	if(debug) {
+	if (C55PLUS_DEBUG)
 		printf("WAY ins_bits: OP = %d 0x%x %s %d %d\n", tok_op, ins_bits, ins_token, ins_token_len, ins_pos); getchar();
-	}
 
-	switch(tok_op) {
-		case 30:
-		case 31:
-		case 32:
-		case 33:
-		case 43:
-		case 62:
-		case 63:
-		case 64:
-		case 65:
-			if(reg_arg == NULL || *reg_arg == '\0') {
-				res = strdup("<register>");
-				goto ret_decode;
-			}
-
-			res = decode_regis(reg_arg, hash_code, ins_bits, ret_ins_bits, err_code);
-			if(*err_code < 0)
-				return NULL;
-
-			break;
-
-		case 35:
-			res = ins_bits? strdup(" || far()") : NULL;
-			break;
-
-		case 36:
-			res = ins_bits? strdup(" || local()") : NULL;
-			break;
-
-		case 37:
-			res = get_opers(ins_bits);
-			break;
-
-		case 38:
-			res = ins_bits? "LO" : "HI";
-			res = strdup(res);
-			break;
-
-		case 39:
-			res = get_cmp_op(ins_bits);
-			break;
-
-		case 40:
-		case 48:
-			sprintf(buff_aux, "#0x%x", (ins_bits << (32 - ins_token_len) >> (32 - ins_token_len)));
-			res = strdup(buff_aux);
-			break;
-
-		case 70:
-		case 72:
-		case 80:
-			if(reg_arg) {
-				if(*reg_arg == '!') {
-					res = get_reg_pair(ins_bits);
-					break;
-
-				} else if(!strncasecmp(reg_arg, "ST", 2)) {
-					res = get_status_regs_and_bits(reg_arg, ins_bits);
-					break;
-				}
-			}	
-
-			if(hash_code == 0xDF || hash_code == 0xE0)
-				*ret_ins_bits = ins_bits;
-
-			if(!reg_arg || *reg_arg != '-') {
-				sprintf(buff_aux, "#0x%lx", (long unsigned int)ins_bits);
-			} else {
-				sprintf(buff_aux, "-#0x%lx", (long unsigned int)ins_bits);
-			}
-
-			res = strdup(buff_aux);
-
-			if(!reg_arg || *reg_arg != 'm') 
+	switch (tok_op) {
+	case 30:
+	case 31:
+	case 32:
+	case 33:
+	case 43:
+	case 62:
+	case 63:
+	case 64:
+	case 65:
+		if(reg_arg == NULL || *reg_arg == '\0') {
+			res = strdup("<register>");
+			goto ret_decode;
+		}
+		res = decode_regis(reg_arg, hash_code, ins_bits, ret_ins_bits, err_code);
+		if(*err_code < 0)
+			return NULL;
+		break;
+	case 35: res = ins_bits? strdup(" || far()") : NULL; break;
+	case 36: res = ins_bits? strdup(" || local()") : NULL; break;
+	case 37: res = get_opers(ins_bits); break;
+	case 38:
+		res = ins_bits? "LO" : "HI";
+		res = strdup(res);
+		break;
+	case 39: res = get_cmp_op(ins_bits); break;
+	case 40:
+	case 48:
+		sprintf(buff_aux, "#0x%x", (ins_bits << (32 - ins_token_len) >> (32 - ins_token_len)));
+		res = strdup(buff_aux);
+		break;
+	case 70:
+	case 72:
+	case 80:
+		if(reg_arg) {
+			if(*reg_arg == '!') {
+				res = get_reg_pair(ins_bits);
 				break;
 
-			res = strcat_dup(res, ")", 1);
-			res = strcat_dup("*(", res, 2);
-
-			if(magic_value & 0xC0) {
-				res = strcat_dup(res, ")", 1);
-				res = strcat_dup("volatile(", res, 2);
-
-			} else if(magic_value & 0x30) {
-				res = strcat_dup(res, ")", 1);
-				res = strcat_dup("port(", res, 2);
+			} else if(!strncasecmp(reg_arg, "ST", 2)) {
+				res = get_status_regs_and_bits(reg_arg, ins_bits);
+				break;
 			}
+		}	
 
+		if(hash_code == 0xDF || hash_code == 0xE0)
+			*ret_ins_bits = ins_bits;
+
+		if(!reg_arg || *reg_arg != '-') {
+			sprintf(buff_aux, "#0x%lx", (long unsigned int)ins_bits);
+		} else {
+			sprintf(buff_aux, "-#0x%lx", (long unsigned int)ins_bits);
+		}
+
+		res = strdup(buff_aux);
+
+		if(!reg_arg || *reg_arg != 'm') 
 			break;
 
-		case 41:
-		case 73:
-			if((reg_arg && *reg_arg == 'L') || hash_code == 105 || hash_code == 7) {
+		res = strcat_dup(res, ")", 1);
+		res = strcat_dup("*(", res, 2);
 
-				if(debug) {
+		if(magic_value & 0xC0) {
+			res = strcat_dup(res, ")", 1);
+			res = strcat_dup("volatile(", res, 2);
 
-				fprintf(stderr, "Ooops!!! look up address in sections!! %d", hash_code);
-				}
-#if 0
-				if(two_ins) {
-					;//sections(ins_pos + two_ins);
-
-				} else {
-					;//sections(ins_pos + *ret_reg_len+ *ret_ins_bits);
-				}
-#endif
-
+		} else if(magic_value & 0x30) {
+			res = strcat_dup(res, ")", 1);
+			res = strcat_dup("port(", res, 2);
+		}
+		break;
+	case 41:
+	case 73:
+		if ((reg_arg && *reg_arg == 'L') || hash_code == 105 || hash_code == 7) {
+			if(C55PLUS_DEBUG) {
+				fprintf (stderr, "Ooops!!! look up address in sections!! %d", hash_code);
 			}
-
-			if(reg_arg && *reg_arg == 'L') 
-				ins_bits = ins_bits << (32 - ins_token_len) >> (32 - ins_token_len);
-
-			if(reg_arg && *reg_arg == 'i') {
-				res = strdup("");
+#if 0
+			if(two_ins) {
+				;//sections(ins_pos + two_ins);
 
 			} else {
-				sprintf(buff_aux, "#0x%06lx", (long unsigned int)ins_bits);
-				res = strdup(buff_aux);
-			} 
+				;//sections(ins_pos + *ret_reg_len+ *ret_ins_bits);
+			}
+#endif
+		}
+		if (reg_arg && *reg_arg == 'L') 
+			ins_bits = ins_bits << (32 - ins_token_len) >> (32 - ins_token_len);
 
+		if (reg_arg && *reg_arg == 'i') {
+			res = strdup ("");
+		} else {
+			sprintf(buff_aux, "#0x%06lx", (long unsigned int)ins_bits);
+			res = strdup(buff_aux);
+		} 
+		break;
+	case 42:
+		flag = 0;
+
+		if(reg_arg && *reg_arg == '3') {
+			flag = ins_bits & 1;
+			ins_bits = ins_bits >> 1;
+			reg_arg++;
+		}
+
+		if(magic_value & 1) {
+			aux = get_sim_reg(reg_arg, ins_bits);
+
+		} else if(reg_arg) {
+			switch(*reg_arg) {
+			case 'b':
+			case 'd':
+				reg_arg++;
+				break;
+
+			case '!': 
+				//strncpy(buff_aux, reg_arg + 1, 8);
+				reg_arg+=10;
+				//ins_bits2 = get_ins_bits(hash_code, ins_pos, buff_aux, 8);
+				break;
+			}
+			aux = get_AR_regs_class2(ins_bits, &ret_len, ins_len + ins_pos, 1);
+		}
+
+		if(magic_value & 1) {
+			aux = strcat_dup(aux, ")", 1);
+			aux = strcat_dup("mmap(", aux, 2);
+
+		} else if((magic_value & 4) && is_linear_circular(ins_bits)) {
+			aux = strcat_dup(aux, ")", 1);
+			aux = strcat_dup("linear(", aux, 2);
+
+		} else if((magic_value & 8) && is_linear_circular(ins_bits)) {
+			aux = strcat_dup(aux, ")", 1);
+			aux = strcat_dup("circular(", aux, 2);
+
+		} else if(magic_value & 2) {
+
+			aux = strcat_dup(aux, ")", 1);
+			aux = strcat_dup("lock(", aux, 2);
+
+		} else if(reg_arg) {
+			if(((magic_value & 0x10) && strchr(reg_arg, 'r')) ||
+			   ((magic_value & 0x20) && strchr(reg_arg, 'w'))) {
+				
+				aux = strcat_dup(aux, ")", 1);
+				aux = strcat_dup("port(", aux, 2);
+			} else if(
+			((magic_value & 0x40) && strchr(reg_arg, 'r')) ||
+			((magic_value < 0) && strchr(reg_arg, 'w'))) {
+
+				aux = strcat_dup(aux, ")", 1);
+				aux = strcat_dup("volatile(", aux, 2);
+			} 
+		}
+
+		if(flag) { 
+			res = strcat_dup("T3 = ", aux, 2);
+		} else {
+			res = aux;
+			*ret_reg_len = ret_len;
+		}
+		break;
+	case 79:
+		res = get_trans_reg(ins_bits);
+		if(res == NULL) 
+			*err_code = -1;
+		break;
+	case 49:
+		if(reg_arg) {
+			if(*reg_arg == '1') {
+				res = get_tc2_tc1(ins_bits >> 1);	
+			} else if (*reg_arg == '2')
+				res = get_tc2_tc1(ins_bits & 1);	
+		} else res = get_tc2_tc1(ins_bits);	
+		if(res == NULL) {
+			*err_code = -1; 
+			return NULL;
+		}	
+		break;
+	case 52:
+		if(ins_bits == 0)
 			break;
 
-		case 42:
-			flag = 0;
 
-			if(reg_arg && *reg_arg == '3') {
-				flag = ins_bits & 1;
-				ins_bits = ins_bits >> 1;
-				reg_arg++;
+		if(reg_arg) {
+			if(*reg_arg == 'H') {
+				res = "HI(";
+
+			} else if(*reg_arg == 'L') {
+				res = "LO(";
+
+			} else if(*reg_arg == 'd') {
+				res = "dbl(";
+
+			} else if(*reg_arg == ')') {
+				res = ")";
+
+			} else {
+				res = "<W>";
 			}
 
-			if(magic_value & 1) {
-				aux = get_sim_reg(reg_arg, ins_bits);
+		} else {
+			res = "<W !flags>";
+		}
 
-			} else if(reg_arg) {
-				switch(*reg_arg) {
-					case 'b':
-					case 'd':
-						reg_arg++;
-						break;
+		res = strdup(res);
 
-					case '!': 
-						//strncpy(buff_aux, reg_arg + 1, 8);
-						reg_arg+=10;
-						//ins_bits2 = get_ins_bits(hash_code, ins_pos, buff_aux, 8);
-						break;
+		break;
 
 
-				}
+	case 53:		
+	case 54:		
+	case 55:		
+		flag = 0;
 
-				aux = get_AR_regs_class2(ins_bits, &ret_len, ins_len + ins_pos, 1);
-			}
+		if(reg_arg && *reg_arg == '3') {
+			flag = ins_bits & 1;
+			ins_bits = ins_bits >> 1;
+			reg_arg++;
+		}
 
-			if(magic_value & 1) {
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("mmap(", aux, 2);
+		aux = get_AR_regs_class1(ins_bits);
+		tok_op = ins_bits & 0xF;
 
-			} else if((magic_value & 4) && is_linear_circular(ins_bits)) {
+		if(magic_value & 4) {
+			if(tok_op <= 7 || tok_op == 0xF) {
 				aux = strcat_dup(aux, ")", 1);
 				aux = strcat_dup("linear(", aux, 2);
 
-			} else if((magic_value & 8) && is_linear_circular(ins_bits)) {
+			}
+
+		} else if(magic_value & 8) {
+			if(tok_op <= 7 || tok_op == 0xF) {
 				aux = strcat_dup(aux, ")", 1);
 				aux = strcat_dup("circular(", aux, 2);
 
-			} else if(magic_value & 2) {
-
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("lock(", aux, 2);
-
-			} else if(reg_arg) {
-				if(((magic_value & 0x10) && strchr(reg_arg, 'r')) ||
-				   ((magic_value & 0x20) && strchr(reg_arg, 'w'))) {
-					
-					aux = strcat_dup(aux, ")", 1);
-					aux = strcat_dup("port(", aux, 2);
-				} else if(
-				((magic_value & 0x40) && strchr(reg_arg, 'r')) ||
-				((magic_value < 0) && strchr(reg_arg, 'w'))) {
-
-					aux = strcat_dup(aux, ")", 1);
-					aux = strcat_dup("volatile(", aux, 2);
-				} 
 			}
 
-			if(flag) { 
-				res = strcat_dup("T3 = ", aux, 2);
+		} else if(magic_value & 2) {
+			aux = strcat_dup(aux, ")", 1);
+			aux = strcat_dup("lock(", aux, 2);
+
+		} else if(reg_arg) {
+
+			if( 
+			   ((magic_value & 0x10) && *ins_token == 'X' && strchr(reg_arg, 'r')) 
+			    || 
+			   ((magic_value & 0x20) && *ins_token == 'Y' && strchr(reg_arg, 'w'))
+			  ) {
+
+				aux = strcat_dup(aux, ")", 1); 
+				aux = strcat_dup("port(", aux, 2); 
+			} else if(
+			((magic_value & 0x40) && *ins_token == 'X' && strchr(reg_arg, 'r')) 
+			    || 
+			   (magic_value < 0 && *ins_token == 'Y' && strchr(reg_arg, 'w')) 
+
+
+
+			) {
+				aux = strcat_dup(aux, ")", 1); 
+				aux = strcat_dup("volatile(", aux, 2); 
+			} 
+
+		}
+
+		res = flag? strcat_dup ("T3 = ", aux, 2): aux;
+		break;
+	case 0:
+	case 1:
+		if (!ins_bits)
+			break;
+		if (!reg_arg) {
+			res = "U";
+		} else {
+			if(*reg_arg == '(') {
+				res = "uns(";
+			} else if(*reg_arg == ')') {
+				res = ")";
+			} else res = "<$/#>";
+		} 	
+		res = strdup(res);
+		break;
+	case 2:
+		if(!ins_bits)
+			break;
+
+		if(!reg_arg) {
+			res = "R";
+
+		} else {
+			if(*reg_arg == '(') {
+				res = "rnd(";
+				
+			} else if(*reg_arg == ')') {
+				res = ")";
+			} else res = "<%>";
+		} 	
+		res = strdup(res);
+		break;
+	case 12:
+		if(!ins_bits)
+			break;
+
+		if(!reg_arg) {
+			res = "F";
+		} else {
+			if(*reg_arg == '(') {
+				res = "frct(";
+				
+			} else if(*reg_arg == ')') {
+				res = ")";
+
+			} else if(*reg_arg == 'a') {
+				res = "<%>";
+
 			} else {
-				res = aux;
-				*ret_reg_len = ret_len;
+				res = "</>";
 			}
+		}
+
+		res = strdup(res);
+
+		break;
+
+	case 29:
+		if(!ins_bits)
+			break;
 	
-			break;
 
-		case 79:
-			res = get_trans_reg(ins_bits);
-			if(res == NULL) 
-				*err_code = -1;
+		if(!reg_arg) {
+			res = "saturate";
+		} else {
+			if(*reg_arg == '(')  {
+				res = "saturate(";
 
-			break;
-
-		case 49:
-			if(reg_arg) {
-				if(*reg_arg == '1') {
-					res = get_tc2_tc1(ins_bits >> 1);	
-
-				} else if (*reg_arg == '2') {
-					res = get_tc2_tc1(ins_bits & 1);	
-				}
+			} else if(*reg_arg == ')') {
+				res = ")";
 
 			} else {
-				res = get_tc2_tc1(ins_bits);	
+				res = "<saturate>";
 			}
-
-			if(res == NULL) {
-				*err_code = -1; 
-				return NULL;
-			}	
-
+		}
+		res = strdup(res);
+		break;
+	case 16:
+		res = (ins_bits != 0)? strdup("T3 = ") : NULL;
+		break;
+	case 17:
+		if(!ins_bits)
 			break;
 
-		case 52:
-			if(ins_bits == 0)
-				break;
+		if(!reg_arg) {
+			res = "40";
 
+		} else {
+			if(*reg_arg == '(') {
+				res = "M40(";
 
-			if(reg_arg) {
-				if(*reg_arg == 'H') {
-					res = "HI(";
-
-				} else if(*reg_arg == 'L') {
-					res = "LO(";
-
-				} else if(*reg_arg == 'd') {
-					res = "dbl(";
-
-				} else if(*reg_arg == ')') {
-					res = ")";
-
-				} else {
-					res = "<W>";
-				}
+			} else if(*reg_arg == ')') {
+				res = ")";
 
 			} else {
-				res = "<W !flags>";
+				res = "<4>";
 			}
+		}
 
+		res = strdup(res);
+
+		break;
+
+	case 78:
+		if(!strncasecmp(ins_token, "q_SAT", 5)) {
+			res = ins_bits? "S": NULL;
+		} else if(!strncasecmp(ins_token, "q_CIRC", 6)) {
+			res = ins_bits? ".CR": NULL;
+		} else if(!strncasecmp(ins_token, "q_LINR", 6)) {
+			res = ins_bits? ".LR": NULL;
+		} else fprintf (stderr, "Invalid instruction %s\n!", ins_token); *err_code = -1; return NULL;
+		if (res != NULL)
 			res = strdup(res);
-
-			break;
-
-	
-		case 53:		
-		case 54:		
-		case 55:		
-			flag = 0;
-
-			if(reg_arg && *reg_arg == '3') {
-				flag = ins_bits & 1;
-				ins_bits = ins_bits >> 1;
-				reg_arg++;
-			}
-
-			aux = get_AR_regs_class1(ins_bits);
-			tok_op = ins_bits & 0xF;
-
-			if(magic_value & 4) {
-				if(tok_op <= 7 || tok_op == 0xF) {
-					aux = strcat_dup(aux, ")", 1);
-					aux = strcat_dup("linear(", aux, 2);
-
-				}
-
-			} else if(magic_value & 8) {
-				if(tok_op <= 7 || tok_op == 0xF) {
-					aux = strcat_dup(aux, ")", 1);
-					aux = strcat_dup("circular(", aux, 2);
-
-				}
-
-			} else if(magic_value & 2) {
-				aux = strcat_dup(aux, ")", 1);
-				aux = strcat_dup("lock(", aux, 2);
-
-			} else if(reg_arg) {
-
-				if( 
-				   ((magic_value & 0x10) && *ins_token == 'X' && strchr(reg_arg, 'r')) 
-				    || 
-				   ((magic_value & 0x20) && *ins_token == 'Y' && strchr(reg_arg, 'w'))
-				  ) {
-
-					aux = strcat_dup(aux, ")", 1); 
-					aux = strcat_dup("port(", aux, 2); 
-				} else if(
-				((magic_value & 0x40) && *ins_token == 'X' && strchr(reg_arg, 'r')) 
-				    || 
-				   (magic_value < 0 && *ins_token == 'Y' && strchr(reg_arg, 'w')) 
-
-
-
-				) {
-					aux = strcat_dup(aux, ")", 1); 
-					aux = strcat_dup("volatile(", aux, 2); 
-				} 
-
-			}
-
-			if(flag) {
-				res = strcat_dup("T3 = ", aux, 2);
-			} else {
-				res = aux;
-			}
-
-			break;
-
-
-		case 0:
-		case 1:
-			if(!ins_bits)
-				break;
-
-			if(!reg_arg) {
-				res = "U";
-			} else {
-				if(*reg_arg == '(') {
-					res = "uns(";
-					
-				} else if(*reg_arg == ')') {
-					res = ")";
-
-				} else {
-					res = "<$/#>";
-				}
-			} 	
-
-			res = strdup(res);
-			
-			break;
-
-		case 2:
-			if(!ins_bits)
-				break;
-
-			if(!reg_arg) {
-				res = "R";
-
-			} else {
-				if(*reg_arg == '(') {
-					res = "rnd(";
-					
-				} else if(*reg_arg == ')') {
-					res = ")";
-
-				} else {
-					res = "<%>";
-				}
-			} 	
-
-			res = strdup(res);
-			
-			break;
-
-		case 12:
-			if(!ins_bits)
-				break;
-
-			if(!reg_arg) {
-				res = "F";
-			} else {
-				if(*reg_arg == '(') {
-					res = "frct(";
-					
-				} else if(*reg_arg == ')') {
-					res = ")";
-
-				} else if(*reg_arg == 'a') {
-					res = "<%>";
-
-				} else {
-					res = "</>";
-				}
-			}
-
-			res = strdup(res);
-
-			break;
-
-		case 29:
-			if(!ins_bits)
-				break;
-		
-
-			if(!reg_arg) {
-				res = "saturate";
-			} else {
-				if(*reg_arg == '(')  {
-					res = "saturate(";
-
-				} else if(*reg_arg == ')') {
-					res = ")";
-
-				} else {
-					res = "<saturate>";
-				}
-
-			}
-
-			res = strdup(res);
-			break;
-
-		case 16:
-			res = (ins_bits != 0)? strdup("T3 = ") : NULL;
-			break;
-
-		case 17:
-			if(!ins_bits)
-				break;
-
-			if(!reg_arg) {
-				res = "40";
-
-			} else {
-				if(*reg_arg == '(') {
-					res = "M40(";
-
-				} else if(*reg_arg == ')') {
-					res = ")";
-
-				} else {
-					res = "<4>";
-				}
-			}
-
-			res = strdup(res);
-
-			break;
-
-		case 78:
-			if(!strncasecmp(ins_token, "q_SAT", 5)) {
-				if(!ins_bits) {
-					res = NULL;
-				} else {
-					res = "S";
-				}
-
-			} else if(!strncasecmp(ins_token, "q_CIRC", 6)) {
-				if(!ins_bits) {
-					res = NULL;
-				} else {
-					res = ".CR";
-				}
-
-			} else if(!strncasecmp(ins_token, "q_LINR", 6)) {
-				if(!ins_bits) {
-					res = NULL;
-				} else {
-					res = ".LR";
-				}
-
-			} else {
-				fprintf(stderr, "Invalid instruction %s\n!", ins_token); *err_code = -1; return NULL;
-			}
-
-			if(res != NULL)
-				res = strdup(res);
-
-			break;
-		
+		break;
 	}
 
 ret_decode:
-
 	return res;
 }

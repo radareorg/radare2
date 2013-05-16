@@ -102,7 +102,8 @@ static int config_iova_callback(void *user, void *data) {
 		core->io->va = node->i_value;
 		r_core_block_read (core, 0);
 		// reload symbol information
-		r_core_cmd0 (core, ".ia*");
+		if (r_list_length (r_bin_get_sections (core->bin))>0)
+			r_core_cmd0 (core, ".ia*");
 	}
 	return R_TRUE;
 }

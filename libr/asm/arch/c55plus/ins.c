@@ -1,79 +1,68 @@
+/* c55plus - LGPL - Copyright 2013 - th0rpe */
+
 #include "ins.h"
 
 ut8 *ins_buff = (ut8 *)NULL; // = "\x77\x21\x20\x21\x00\x30\x21\x77\x20\x21";
 ut32 ins_buff_len = 0;
 
-static unsigned int dword_4c424c = 0;
+static unsigned int has_failed = 0;
 
-extern int debug;
-
-ut32 get_ins_len(ut8 opcode)
-{
+ut32 get_ins_len(ut8 opcode) {
 	ut32 val = (opcode >> 4) & 0xF;
 	ut32 len = 0;
 
-	switch(val) {
-		case 0:
-		case 1:
-			len = 2;
-			break;
-
-		case 2:
-		case 3:
-			len = 1;
-			break;
-
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-			len = 3;
-			break;
-
-		case 8:
-		case 9:
-		case 10:
-			len = 4;
-			break;
-
-		case 11:
-		case 12:
-		case 13:
-			len = 5;
-			break;
-
-		case 14:
-			len = 6;
-			break;
-
-		case 15:
-			len = 7;
-			break;
-
+	switch (val) {
+	case 0:
+	case 1:
+		len = 2;
+		break;
+	case 2:
+	case 3:
+		len = 1;
+		break;
+	case 4:
+	case 5:
+	case 6:
+	case 7:
+		len = 3;
+		break;
+	case 8:
+	case 9:
+	case 10:
+		len = 4;
+		break;
+	case 11:
+	case 12:
+	case 13:
+		len = 5;
+		break;
+	case 14:
+		len = 6;
+		break;
+	case 15:
+		len = 7;
+		break;
 	}
 
 	return len;
 }
 
-ut32 get_ins_part(ut32 pos, ut32 len)
-{
+ut32 get_ins_part(ut32 pos, ut32 len) {
 	ut32 ret = 0;
-
-	if(debug)
+	has_failed = 0;
+	if (C55PLUS_DEBUG)
         	printf("pos => 0x%x len => %d ins_buff_len => %d\n", pos, len, ins_buff_len);
 
-	if(pos < 0 || pos >= ins_buff_len) {
-		dword_4c424c = 1;
+	if (pos < 0 || pos >= ins_buff_len) {
+		has_failed = 1;
 		return ret;
 	} 
 
-	for(; len > 0; --len) {
+	for (; len > 0; --len) {
 		ret <<= 8;
-		if(pos >= ins_buff_len) 
-			dword_4c424c = 1;
-		else
-			ret |= ins_buff[pos++];
-
+		if (pos >= ins_buff_len) 
+			has_failed = 1;
+		else ret |= ins_buff[pos++];
 	}
 
 	return ret;
