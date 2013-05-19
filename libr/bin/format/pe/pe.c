@@ -72,7 +72,7 @@ static int PE_(r_bin_pe_get_delay_import_dirs_count)(struct PE_(r_bin_pe_obj_t) 
 
 static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk)
 {
-	char import_name[PE_NAME_LENGTH], name[PE_NAME_LENGTH];
+	char import_name[PE_NAME_LENGTH + 1], name[PE_NAME_LENGTH + 1];
 	PE_Word import_hint, import_ordinal;
 	PE_DWord import_table = 0, off = 0;
 	int i = 0;
@@ -295,8 +295,8 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	struct r_bin_pe_export_t *exports = NULL;
 	PE_VWord functions_offset, names_offset, ordinals_offset, function_rva, name_rva, name_offset;
 	PE_Word function_ordinal;
-	char function_name[PE_NAME_LENGTH], forwarder_name[PE_NAME_LENGTH];
-	char dll_name[PE_NAME_LENGTH], export_name[PE_NAME_LENGTH];
+	char function_name[PE_NAME_LENGTH + 1], forwarder_name[PE_NAME_LENGTH + 1];
+	char dll_name[PE_NAME_LENGTH + 1], export_name[PE_NAME_LENGTH + 1];
 	int i;
 	PE_(image_data_directory) *data_dir_export = \
 		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
@@ -372,7 +372,7 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin)
 struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t) *bin)
 {
 	struct r_bin_pe_import_t *imps, *imports = NULL;
-	char dll_name[PE_NAME_LENGTH];
+	char dll_name[PE_NAME_LENGTH + 1];
 	int import_dirs_count = PE_(r_bin_pe_get_import_dirs_count)(bin);
 	int delay_import_dirs_count = PE_(r_bin_pe_get_delay_import_dirs_count)(bin);
 	int i, nimp = 0;

@@ -27,7 +27,7 @@ struct r_bin_pe_section_t {
 };
 
 struct r_bin_pe_import_t {
-	ut8  name[PE_NAME_LENGTH];
+	ut8  name[PE_NAME_LENGTH + 1];
 	ut64 rva;
 	ut64 offset;
 	ut64 hint;
@@ -36,8 +36,8 @@ struct r_bin_pe_import_t {
 };
 
 struct r_bin_pe_export_t {
-	ut8  name[PE_NAME_LENGTH];
-	ut8  forwarder[PE_NAME_LENGTH];
+	ut8  name[PE_NAME_LENGTH + 1];
+	ut8  forwarder[PE_NAME_LENGTH + 1];
 	ut64 rva;
 	ut64 offset;
 	ut64 ordinal;
