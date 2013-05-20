@@ -93,6 +93,30 @@ static int cmd_meta(void *data, const char *input) {
 			eprintf ("%d\n", n);
 		}
 	case 'C': /* comment */
+		if (input[1] == 'a') {
+			const char *p = strchr (input+3, ' ');
+			ut64 addr;
+			if (input[2]=='-') {
+				if (input[3]) {
+					addr = r_num_math (core->num, input+3);
+					r_meta_del (core->anal->meta,
+						R_META_TYPE_COMMENT,
+						addr, 1, NULL);
+				} else {
+					eprintf ("Usage: CCa-[address]\n");
+				}
+				return R_TRUE;
+			}
+			addr = r_num_math (core->num, input+2);
+			// Comment at
+			if (p) {
+				r_meta_set_string (core->anal->meta,
+					R_META_TYPE_COMMENT, addr, p+1);
+			} else {
+				eprintf ("Usage: CCa [address] [comment]\n");
+			}
+			return R_TRUE;
+		}
 	case 'h': /* comment */
 	case 's': /* string */
 	case 'd': /* data */
@@ -244,6 +268,7 @@ static int cmd_meta(void *data, const char *input) {
 		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
 		" Cl  file:line [addr]   # add comment with line information\n"
 		" CC[-] [comment-text]   # add/remove comment. Use CC! to edit with $EDITOR\n"
+		" CCa[-at]|[at] [text]   # add/remove comment at given address\n"
 		" Cv[-] offset reg name  # add var substitution\n"
 		" Cs[-] [size] [[addr]]  # add string\n"
 		" Ch[-] [size]           # hide data\n"
