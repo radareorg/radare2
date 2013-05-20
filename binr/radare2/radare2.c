@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 	int fullfile = 0;
 	ut32 bsize = 0;
 	ut64 seek = 0;
-	char file[4096];
+	char *pfile = NULL, file[4096];
 	char *cmdfile[32];
 	const char *debugbackend = "native";
 	const char *asmarch = NULL;
@@ -261,6 +261,18 @@ int main(int argc, char **argv) {
 		if (debug == 2) {
 			// autodetect backend with -D
 			r_config_set (r.config, "dbg.backend", debugbackend);
+			if (strcmp (debugbackend, "native")) {
+				pfile = argv[optind++];
+				perms = R_IO_READ; // XXX. should work with rw too
+				debug = 1;
+				fh = r_core_file_open (&r, pfile, perms, mapaddr);
+/*
+				if (fh) {
+					r_core_bin_load (&r, pfile);
+					r_debug_use (r.dbg, debugbackend);
+				}
+*/
+			}
 		} else {
 			is_gdb = (!memcmp (argv[optind], "gdb://", 6));
 			if (is_gdb) *file = 0;
@@ -300,7 +312,8 @@ int main(int argc, char **argv) {
 
 			if (!r_core_bin_load (&r, file)) {
 				RBinObject *obj = r_bin_get_object (r.bin);
-				eprintf ("bits %d\n", obj->info->bits);
+				if (obj && obj->info)
+					eprintf ("bits %d\n", obj->info->bits);
 			}
 			fh = r_core_file_open (&r, file, perms, mapaddr);
 			if (fh != NULL) {
@@ -315,30 +328,29 @@ int main(int argc, char **argv) {
 	if (!debug || debug==2) {
 		if (optind<argc) {
 			while (optind < argc) {
-				const char *file = argv[optind++];
-				fh = r_core_file_open (&r, file, perms, mapaddr);
+				pfile = argv[optind++];
+				fh = r_core_file_open (&r, pfile, perms, mapaddr);
 				if (perms & R_IO_WRITE) {
 					if (!fh) {
-						r_io_create (r.io, file, 0644, 0);
-						fh = r_core_file_open (&r, file, perms, mapaddr);
+						r_io_create (r.io, pfile, 0644, 0);
+						fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					}
 				}
 			}
 		} else {
 			const char *prj = r_config_get (r.config, "file.project");
 			if (prj && *prj) {
-				char *file = r_core_project_info (&r, prj);
-				if (file) fh = r_core_file_open (&r, file, perms, mapaddr);
+				pfile = r_core_project_info (&r, prj);
+				if (pfile) fh = r_core_file_open (&r, pfile, perms, mapaddr);
 				else eprintf ("No file\n");
 			}
 		}
 	}
-
-	/* execute -c commands */
+	if (!pfile) pfile = file;
 	if (fh == NULL) {
 		if (perms & R_IO_WRITE)
-			eprintf ("Cannot open file for writing.\n");
-		else eprintf ("Cannot open file.\n");
+			eprintf ("Cannot open '%s' for writing.\n", pfile);
+		else eprintf ("Cannot open '%s'.\n", pfile);
 		return 1;
 	}
 	if (r.file == NULL) // no given file
@@ -347,6 +359,7 @@ int main(int argc, char **argv) {
 #if USE_THREADS
 	if (run_anal) {
 		if (threaded) {
+			// XXX: if no rabin2 in path that may fail
 			rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
 					(debug||r.io->va)?"v":"", r.file->filename);
 			/* TODO: only load data if no project is used */
@@ -374,7 +387,7 @@ int main(int argc, char **argv) {
 				// XXX: this is incorrect for PIE binaries
 				filepath = strstr (file, "://");
 				if (filepath) filepath += 3;
-				else filepath = file;
+				else filepath = pfile;
 			}
 			if (!r_core_bin_load (&r, filepath))
 				r_config_set (r.config, "io.va", "false");
@@ -456,7 +469,6 @@ int main(int argc, char **argv) {
 		free (sha1);
 		free (path);
 	}
-
 #if 1
 	r_list_foreach (evals, iter, cmdn) {
 		r_config_eval (r.config, cmdn); 
@@ -464,7 +476,6 @@ int main(int argc, char **argv) {
 	}
 	r_list_free (evals);
 #endif
-
 	/* run -i and -c flags */
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
@@ -478,7 +489,6 @@ int main(int argc, char **argv) {
 		if (ret<0 || (ret==0 && quiet))
 			return 0;
 	}
-
 /////
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd0 (&r, cmdn);

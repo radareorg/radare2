@@ -1,13 +1,7 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 pancake<nopcode.org> */
 
 #include <r_debug.h>
 #include "../config.h"
-
-/* plugin pointers */
-extern RDebugPlugin r_debug_plugin_native;
-extern RDebugPlugin r_debug_plugin_rap;
-extern RDebugPlugin r_debug_plugin_gdb;
-extern RDebugPlugin r_debug_plugin_bf;
 
 static RDebugPlugin *debug_static_plugins[] = 
 	{ R_DEBUG_STATIC_PLUGINS };

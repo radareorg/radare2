@@ -444,8 +444,9 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case 'j':
 	case '\0':
 		if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE)) {
-			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0]);
-		} else eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
+		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, str[0]);
+		} else
+			eprintf ("Cannot retrieve registers from pid %d\n", core->dbg->pid);
 		break;
 	case ' ':
 		arg = strchr (str+1, '=');

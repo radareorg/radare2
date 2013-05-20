@@ -279,4 +279,3 @@ R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
 	}
 	return 0LL;
 }
-

@@ -859,7 +859,7 @@ static int bin_libs (RCore *r, int mode) {
 		// Nothing to set.
 		// TODO: load libraries with iomaps?
 	} else {
-		r_cons_printf ("[Linked libraries]\n");
+		if (!mode) r_cons_printf ("[Linked libraries]\n");
 		r_list_foreach (libs, iter, lib) {
 			r_cons_printf ("%s\n", lib);
 			i++;

@@ -105,14 +105,12 @@ static RList* get_strings(RBinArch *a, int min) {
 	return ret;
 }
 
-// public api?
-static void load_languages(RBin *bin) {
-	/* load objc information if available */
-	if (r_bin_lang_objc (bin)) //->cur.o))
-		eprintf ("ObjectiveC information loaded\n");
-	else if (r_bin_lang_cxx (bin)) //->cur.o))
-		eprintf ("C++ information loaded\n");
-	/* TODO : do the same for dex, java and c++ name demangling? */
+R_API int r_bin_load_languages(RBin *bin) {
+	if (r_bin_lang_objc (bin))
+		return R_BIN_NM_OBJC;
+	if (r_bin_lang_cxx (bin))
+		return R_BIN_NM_CXX;
+	return R_BIN_NM_NONE;
 }
 
 static int r_bin_init_items(RBin *bin, int dummy) {
@@ -161,7 +159,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	if (cp->symbols) o->symbols = cp->symbols (a);
 	if (cp->classes) o->classes = cp->classes (a);
 	if (cp->lines) o->lines = cp->lines (a);
-	load_languages (bin);
+	o->lang = r_bin_load_languages (bin);
 
 	return R_TRUE;
 }

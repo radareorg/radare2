@@ -4,7 +4,7 @@
 #include <r_cons.h>
 #include <r_reg.h>
 
-R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
+R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	ut8 buf[4096]; // XXX hacky!
 	int size, ret = R_FALSE;
 	if (!dbg || !dbg->reg || dbg->pid == -1)
@@ -14,7 +14,7 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, type, &size);
 			if (!dbg->h->reg_write (dbg, type, buf, sizeof (buf)))
 				eprintf ("r_debug_reg: error writing registers\n");
-		} else eprintf ("r_debug_reg: cannot set registers\n");
+		} //else eprintf ("r_debug_reg: cannot set registers\n");
 	} else {
 		/* read registers from debugger backend to dbg->regs */
 		if (dbg && dbg->h && dbg->h->reg_read) {
@@ -24,12 +24,12 @@ R_API int r_debug_reg_sync(struct r_debug_t *dbg, int type, int write) {
 			} else {
 				ret = r_reg_set_bytes (dbg->reg, type, buf, size);
 			}
-		} else eprintf ("r_debug_reg: cannot read registers\n");
+		} //else eprintf ("r_debug_reg: cannot read registers\n");
 	}
 	return ret;
 }
 
-R_API int r_debug_reg_list(struct r_debug_t *dbg, int type, int size, int rad) {
+R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 	ut64 diff;
 	int cols, n = 0;
 	RList *head; //struct list_head *pos, *head;

@@ -323,9 +323,12 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'e':
+		if (input[1] == 'r') {
+			r_debug_reg_list (core->dbg, 0, 0, 0);
+		} else
 		if (input[1] == ' ') {
-			r_anal_code_eval (core->anal, input+2);
-		} else eprintf ("Usage: ae [expression]  # wip\n");
+			r_anal_esil_eval (core->anal, input+2);
+		} else eprintf ("Usage: ae [esil]  # wip. analyze esil. (evaluable string intermediate language)\n");
 		break;
 	case 'o':
 		if (input[1] == '?') {

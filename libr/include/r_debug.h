@@ -126,7 +126,7 @@ typedef struct r_debug_t {
 	int reason; /* stop reason */
 	RDebugTrace *trace;
 	int stop_all_threads;
-	struct r_reg_t *reg;
+	RReg *reg;
 	RBreakpoint *bp;
 	void *user;
 	/* io */
@@ -304,6 +304,13 @@ R_API void r_debug_trace_free (RDebug *dbg);
 R_API int r_debug_trace_tag (RDebug *dbg, int tag);
 R_API int r_debug_fork (RDebug *dbg);
 R_API int r_debug_clone (RDebug *dbg);
+
+/* plugin pointers */
+extern RDebugPlugin r_debug_plugin_native;
+extern RDebugPlugin r_debug_plugin_esil;
+extern RDebugPlugin r_debug_plugin_rap;
+extern RDebugPlugin r_debug_plugin_gdb;
+extern RDebugPlugin r_debug_plugin_bf;
 
 #endif
 #endif

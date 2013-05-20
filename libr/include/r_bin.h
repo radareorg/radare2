@@ -35,6 +35,7 @@ enum {
 	R_BIN_NM_NONE = 0,
 	R_BIN_NM_JAVA = 1,
 	R_BIN_NM_CXX = 2,
+	R_BIN_NM_OBJC= 3,
 	R_BIN_NM_ANY = -1,
 };
 
@@ -244,6 +245,7 @@ typedef struct r_bin_object_t {
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	int referenced;
+	int lang;
 } RBinObject;
 
 // TODO: deprecate r_bin_is_big_endian

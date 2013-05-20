@@ -198,7 +198,7 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		l = (len > (last-addr+w))? (last-addr+w): len;
 		if (l<1) l = len;
 		{
-paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+			paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
 			if (len>0 && l>len) l = len;
 			addr = paddr-w;
 			if (r_io_seek (io, paddr, R_IO_SEEK_SET)==UT64_MAX) {
