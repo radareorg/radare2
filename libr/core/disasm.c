@@ -116,6 +116,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int show_flags = r_config_get_i (core->config, "asm.flags");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int show_comments = r_config_get_i (core->config, "asm.comments");
+	int show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
 	int show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	int show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	int show_functions = r_config_get_i (core->config, "asm.functions");
@@ -249,7 +250,6 @@ toro:
 			}
 		}
 
-// else r_cons_printf ("  ");
 		/* show comment at right? */
 		show_comment_right = 0;
 		if (show_comments) {
@@ -279,6 +279,7 @@ toro:
 						mycols = 0;
 					mycols /= 2;
 					if (show_color) r_cons_strcat (Color_TURQOISE);
+					r_cons_strcat ("  ; ");
 // XXX: always prefix with ; the comments
 				//	if (*comment != ';') r_cons_strcat ("  ;  ");
 					r_cons_strcat_justify (comment, mycols, ';');
@@ -333,7 +334,7 @@ toro:
 			for (;*b;b++,i++) {
 				if (*b!=' ') continue;
 				n = (10-i);
-				*t = strdup (b+1); //XXX slow!
+				t = strdup (b+1); //XXX slow!
 				if (n<1) n = 1;
 				memset (b, ' ', n);
 				b += n;
@@ -398,6 +399,22 @@ toro:
 					}
 				}
 #endif
+			}
+		}
+		if (show_comments && show_cmtflgrefs) {
+			switch (analop.type) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_CALL:
+				{
+				RFlagItem *item = r_flag_get_i (core->flags, analop.jump);
+				if (item && item->comment) {
+					if (show_color) r_cons_strcat (Color_TURQOISE);
+					r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
+					if (show_color) r_cons_strcat (Color_RESET);
+				}
+				}
+				break;
 			}
 		}
 		if (adistrick)
@@ -781,9 +798,8 @@ toro:
 					r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
 			}
 		} else {
-			if (analop.ref != UT64_MAX && analop.ref) {
+			if (analop.ref != UT64_MAX && analop.ref)
 				r_cons_printf (" ; 0x%08"PFMT64x" ", analop.ref);
-			}
 		}
 		if (show_comments && show_comment_right && comment) {
 			int c = r_cons_get_column ();

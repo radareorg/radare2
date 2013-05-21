@@ -549,6 +549,8 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "asm.varsub", "Substitute variables in disasm");
 	r_config_set (cfg, "asm.trace", "true");
 	r_config_desc (cfg, "asm.trace", "Show execution traces for each opcode");
+	r_config_set (cfg, "asm.cmtflgrefs", "true");
+	r_config_desc (cfg, "asm.cmtflgrefs", "Show comment flags associated to branch referece");
 	r_config_set (cfg, "asm.decode", "false");
 	r_config_desc (cfg, "asm.decode", "Use code analysis as a disassembler");
 	r_config_set (cfg, "asm.offset", "true");
