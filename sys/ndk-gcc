@@ -41,7 +41,6 @@ esac
 
 
 PLATFORM=android-${ANDROID_SDK_VERSION}
-
 PLATFORM_ROOT=${PROGDIR}/platforms/${PLATFORM}/arch-${ARCH}
 PLATFORM_PATH=${PLATFORM_ROOT}/usr
 TOOLCHAIN=`ls ${PROGDIR}/toolchains/ |grep "^${ARCH}" |sort |tail -n 1`
