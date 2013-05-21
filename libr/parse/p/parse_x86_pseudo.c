@@ -156,48 +156,6 @@ static inline int issegoff (const char *w) {
 	return 1;
 }
 
-#define isx86separator(x) ( \
-	(x)==' '||(x)=='\t'||(x)=='\n'|| (x)=='\r'||(x)==' '|| \
-	(x)==','||(x)==';'||(x)=='['||(x)==']'|| \
-	(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
-
-static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
-	char *ptr = data, *ptr2;
-	//RListIter *iter;
-	RFlagItem *flag;
-	ut64 off;
-
-	ptr2 = NULL;
-	while ((ptr = strstr (ptr, "0x"))) {
-		for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
-		off = r_num_math (NULL, ptr);
-		if (!off) {
-			ptr = ptr2;
-			continue;
-		}
-		flag = r_flag_get_i (f, off);
-		if (flag && strchr (flag->name, '.')) {
-		// XXX. tooslow but correct
-		//r_list_foreach (f->flags, iter, flag) { if (flag->offset == off && strchr (flag->name, '.')) {
-				if (p->notin_flagspace != -1) {
-					if (p->flagspace == flag->space)
-						continue;
-				} else
-				if (p->flagspace != -1 && \
-					(p->flagspace != flag->space)) {
-					continue;
-				}
-				*ptr = 0;
-				snprintf (str, len, "%s%s%s", data, flag->name,
-					ptr2!=ptr? ptr2: "");
-				return R_TRUE;
-			}
-		//}
-		ptr = ptr2;
-	}
-	strncpy (str, data, len);
-	return R_FALSE;
-}
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	int i;
@@ -222,7 +180,7 @@ struct r_parse_plugin_t r_parse_plugin_x86_pseudo = {
 	.fini = NULL,
 	.parse = parse,
 	.assemble = &assemble,
-	.filter = &filter,
+	.filter = NULL,
 	.varsub = &varsub,
 };
 

@@ -254,7 +254,8 @@ R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 #if USE_NEW_FCN_STORE
 	// TODO: type is ignored here? wtf.. we need more work on fcnstore
 	//if (root) return r_listrange_find_root (anal->fcnstore, addr);
-	return r_listrange_find_in_range (anal->fcnstore, addr);
+	RAnalFunction *f = r_listrange_find_in_range (anal->fcnstore, addr);
+	return (f->addr == addr)? f: NULL;
 #else
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;

@@ -660,8 +660,10 @@ toro:
 			free (opstr);
 			opstr = strdup (str);
 			core->parser->flagspace = ofs; // ???
-		} else 
-		if (!opstr) opstr = strdup (asmop.buf_asm);
+		} else {
+			if (!opstr)
+				opstr = strdup (asmop.buf_asm);
+		}
 		if (pseudo) {
 			r_parse_parse (core->parser, opstr?
 				opstr:asmop.buf_asm, str);

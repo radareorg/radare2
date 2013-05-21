@@ -170,32 +170,6 @@ static int assemble(RParse *p, char *data, char *str) {
 	return R_TRUE;
 }
 
-static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
-	RListIter *iter;
-	RFlagItem *flag;
-	char *ptr, *ptr2;
-	ut64 off;
-	ptr = data;
-	while ((ptr = strstr (ptr, "0x"))) {
-		for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
-		off = r_num_math (NULL, ptr);
-		if (!off) {
-			ptr = ptr2;
-			continue;
-		}
-		r_list_foreach (f->flags, iter, flag) {
-			if (flag->offset == off && strchr (flag->name, '.')) {
-				*ptr = 0;
-				snprintf (str, len, "%s%s%s", data, flag->name, ptr2!=ptr? ptr2: "");
-				return R_TRUE;
-			}
-		}
-		ptr = ptr2;
-	}
-	strncpy (str, data, len);
-	return R_FALSE;
-}
-
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 	char *ptr, *ptr2;
 	int i;
@@ -218,7 +192,6 @@ struct r_parse_plugin_t r_parse_plugin_att2intel = {
 	.fini = NULL,
 	.parse = &parse,
 	.assemble = &assemble,
-	.filter = &filter,
 	.varsub = &varsub,
 };
 
