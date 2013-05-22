@@ -52,16 +52,15 @@ static char *filter_refline(const char *str) {
 
 static void printoffset(ut64 off, int show_color, int invert, int opt) {
 	if (show_color) {
+		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
 		if (invert)
 			r_cons_invert (R_TRUE, R_TRUE);
 		if (opt) {
 			ut32 s, a;
 			a = off & 0xffff;
 			s = (off-a)>>4;
-			r_cons_printf (Color_GREEN"%04x:%04x"Color_RESET, s, a);
-		} else r_cons_printf (Color_GREEN"0x%08"PFMT64x""Color_RESET, off);
-		if (invert)
-			r_cons_printf (Color_RESET);
+			r_cons_printf ("%s%04x:%04x"Color_RESET, k, s, a);
+		} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
 		r_cons_puts ("  ");
 	} else r_cons_printf ("0x%08"PFMT64x"  ", off);
 }

@@ -822,6 +822,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 
 #define PIDX (R_ABS(core->printidx%NPF))
 R_API void r_core_visual_title (RCore *core, int color) {
+	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
 	char pos[512], foo[512], bar[512];
 	/* automatic block size */
@@ -864,7 +865,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 
 	if (cursor<0) cursor = 0;
 
-	if (color) r_cons_strcat (Color_YELLOW);
+	if (color) r_cons_strcat (BEGIN);
 	strncpy (bar, printfmt[PIDX], sizeof (bar)-1);
 
 	bar[sizeof (bar)-1] = 0; // '\0'-terminate bar

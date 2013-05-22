@@ -2,8 +2,8 @@ include ../config.mk
 
 NAME=r_cons
 OBJS=cons.o pipe.o output.o grep.o
-OBJS+=line.o hud.o rgb.o input.o
-DEPS=r_util
+OBJS+=line.o hud.o rgb.o input.o pal.o
+DEPS=r_util r_db
 
 include ../rules.mk
 

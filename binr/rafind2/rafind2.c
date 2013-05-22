@@ -22,7 +22,7 @@ static char *mask = "";
 static int nonstop = 0;
 static int mode = R_SEARCH_STRING;
 static ut64 cur = 0;
-static ut8 *buffer = NULL;
+static ut8 *buf = NULL;
 static char *curfile = NULL;
 static ut64 bsize = 4096;
 static int hexstr = 0;
@@ -35,11 +35,11 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		printf ("f hit%d_%d 0x%08"PFMT64x" ; %s\n", 0, kw->count, addr, curfile);
 	} else {
 		if (showstr) {
-			printf ("0x%"PFMT64x" %s\n", addr, buffer+delta);
+			printf ("0x%"PFMT64x" %s\n", addr, buf+delta);
 		} else {
 			printf ("0x%"PFMT64x"\n", addr);
 			if (pr) {
-				r_print_hexdump (pr, addr, (ut8*)buffer+delta, 78, 16, R_TRUE);
+				r_print_hexdump (pr, addr, (ut8*)buf+delta, 78, 16, R_TRUE);
 				r_cons_flush ();
 			}
 		}
@@ -86,12 +86,12 @@ static int rafind_open(char *file) {
 
 	r_cons_new ();
 	rs = r_search_new (mode);
-	buffer = malloc (bsize);
-	if (buffer==NULL) {
+	buf = malloc (bsize);
+	if (buf==NULL) {
 		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);
 		return 1;
 	}
-	r_search_set_callback (rs, &hit, buffer);
+	r_search_set_callback (rs, &hit, buf);
 	if (to == -1)
 		to = r_io_size(io);
 	if (mode == R_SEARCH_STRING) {
@@ -117,7 +117,7 @@ static int rafind_open(char *file) {
 			bsize = to-cur;
 			last=1;
 		}
-		ret = r_io_read_at (io, cur, buffer, bsize);
+		ret = r_io_read_at (io, cur, buf, bsize);
 		if (ret == 0) {
 			if (nonstop) continue;
 		//	fprintf(stderr, "Error reading at 0x%08"PFMT64x"\n", cur);
@@ -126,14 +126,14 @@ static int rafind_open(char *file) {
 		if (ret != bsize)
 			bsize = ret;
 
-		if (r_search_update (rs, &cur, buffer, ret) == -1) {
+		if (r_search_update (rs, &cur, buf, ret) == -1) {
 			eprintf ("search: update read error at 0x%08"PFMT64x"\n", cur);
 			break;
 		}
 
 	}
 	rs = r_search_free (rs);
-	free (buffer);
+	free (buf);
 	return 0;
 }
 

@@ -125,15 +125,30 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 // XXX no control for max length here?!?!
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	RCons *cons = r_cons_singleton ();
-	if (cons->user_fgets)
-		return cons->user_fgets (buf, len);
+	int color = cons->pal.input && *cons->pal.input;
+	if (cons->user_fgets) {
+		int ret = cons->user_fgets (buf, len);
+		return ret;
+	}
 	*buf = '\0';
 	fflush (cons->fdin);
-	if (fgets (buf, len, cons->fdin) == NULL)
+	if (color) {
+		printf (cons->pal.input);
+		fflush (stdout);
+	}
+	if (fgets (buf, len, cons->fdin) == NULL) {
+		if (color) {
+			printf (Color_RESET);
+			fflush (stdout);
+		}
 		return -1;
-	if (feof (cons->fdin))
+	}
+	if (feof (cons->fdin)) {
+		if (color) printf (Color_RESET);
 		return -2;
+	}
 	buf[strlen (buf)-1] = '\0';
+	if (color) printf (Color_RESET);
 	return strlen (buf);
 }
 

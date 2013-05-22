@@ -484,16 +484,16 @@ R_API int r_core_init(RCore *core) {
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
 	/* initialize libraries */
+	core->cons = r_cons_singleton ();
 	if (singleton) {
 		RLine *line = r_line_new ();
 		r_cons_new ();
 		line->user = core;
-		r_cons_singleton()->user_fgets = (void *)myfgets;
+		core->cons->user_fgets = (void *)myfgets;
 		//r_line_singleton()->user = (void *)core;
 		r_line_hist_load (".radare2_history");
 		singleton = R_FALSE;
 	}
-	core->cons = r_cons_singleton ();
 	core->cons->num = core->num;
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);
@@ -626,6 +626,9 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	char prompt[32];
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 
+	const char *BEGIN = r->cons->pal.prompt;
+	const char *END = r->cons->pal.reset;
+
 	// hacky fix fo rio
 	r_core_block_read (r, 0);
 	if (cmdprompt && *cmdprompt)
@@ -641,20 +644,20 @@ R_API int r_core_prompt(RCore *r, int sync) {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
-				Color_YELLOW"[%04x:%04x]> "
-				Color_RESET, a, b);
+				"%s[%04x:%04x]>%s ",
+				BEGIN, a, b, END);
 		else
 #endif
-		sprintf (prompt, "[%04x:%04x]> ", a, b);
+		snprintf (prompt, sizeof (prompt), "[%04x:%04x]> ", a, b);
 	} else {
 #if __UNIX__
 		if (r_config_get_i (r->config, "scr.color"))
 			snprintf (prompt, sizeof (prompt),
-				Color_YELLOW"[0x%08"PFMT64x"]> "
-				Color_RESET, r->offset);
+				"%s[0x%08"PFMT64x"]>%s ",
+				BEGIN, r->offset, END);
 		else
 #endif
-		sprintf (prompt, "[0x%08"PFMT64x"]> ", r->offset);
+		snprintf (prompt, sizeof (prompt), "[0x%08"PFMT64x"]> ", r->offset);
 	}
 	r_line_set_prompt (prompt);
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);

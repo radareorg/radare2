@@ -5,6 +5,7 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <sdb.h>
 
 #include <stdio.h>
 #include <unistd.h>
@@ -48,6 +49,15 @@ typedef struct r_cons_grep_t {
 	int end;
 } RConsGrep;
 
+typedef struct r_cons_palette_t {
+	char *prompt;
+	char *offset;
+	char *comment;
+	char *input;
+	char *reset;
+	Sdb *db;
+} RConsPalette;
+
 typedef void (*RConsEvent)(void *);
 
 typedef struct r_cons_t {
@@ -83,6 +93,7 @@ typedef struct r_cons_t {
 	char *pager;
 	int blankline;
 	int widthfix;
+	RConsPalette pal;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -115,18 +126,25 @@ typedef struct r_cons_t {
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
 /* plain colors */
-#define Color_BLACK    "\x1b[30m"
-#define Color_BGBLACK  "\x1b[40m"
-#define Color_RED      "\x1b[31m"
-#define Color_BGRED    "\x1b[41m"
-#define Color_WHITE    "\x1b[37m"
-#define Color_RESET    "\x1b[0m"
-#define Color_GREEN    "\x1b[32m"
-#define Color_MAGENTA  "\x1b[35m"
-#define Color_YELLOW   "\x1b[33m"
-#define Color_TURQOISE "\x1b[36m"
-#define Color_BLUE     "\x1b[34m"
-#define Color_GRAY     "\x1b[38m"
+#define Color_RESET      "\x1b[0m"
+#define Color_BLACK      "\x1b[30m"
+#define Color_BGBLACK    "\x1b[40m"
+#define Color_RED        "\x1b[31m"
+#define Color_BGRED      "\x1b[41m"
+#define Color_WHITE      "\x1b[37m"
+#define Color_BGWHITE    "\x1b[47m"
+#define Color_GREEN      "\x1b[32m"
+#define Color_BGGREEN    "\x1b[42m"
+#define Color_MAGENTA    "\x1b[35m"
+#define Color_BGMAGENTA  "\x1b[45m"
+#define Color_YELLOW     "\x1b[33m"
+#define Color_BGYELLOW   "\x1b[43m"
+#define Color_TURQOISE   "\x1b[36m"
+#define Color_BGTURQOISE "\x1b[46m"
+#define Color_BLUE       "\x1b[34m"
+#define Color_BGBLUE     "\x1b[44m"
+#define Color_GRAY       "\x1b[38m"
+#define Color_BGGRAY     "\x1b[48m"
 /* bold colors */
 #define Color_BBLACK    "\x1b[1;30m"
 #define Color_BRED      "\x1b[1;31m"
@@ -314,6 +332,9 @@ R_API int r_line_hist_list();
 R_API const char *r_line_hist_get(int n);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
+
+/* palette */
+R_API void r_cons_pal_init(const char *foo);
 
 #endif
 

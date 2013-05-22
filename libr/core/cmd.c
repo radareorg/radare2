@@ -437,6 +437,24 @@ static int cmd_eval(void *data, const char *input) {
 	case '\0':
 		r_config_list (core->config, NULL, 0);
 		break;
+	case 'c':
+		{
+			char *p = strdup (input+2);
+			char *q = strchr (p, ' ');
+			if (p) {
+				if (q) {
+					// set
+					 *q++ = 0;
+					r_cons_pal_set (p, q);
+				} else {
+					// get
+					eprintf ("(%s)(%s)\n", p, q);
+				}
+			} else {
+				eprintf ("TODO: ec list\n");
+			}
+		}
+		break;
 	case 'e':
 		if (input[1]==' ') {
 			char *p;
@@ -482,7 +500,8 @@ static int cmd_eval(void *data, const char *input) {
 			"  e-           ; reset config vars\n"
 			"  e*           ; dump config vars in r commands\n"
 			"  e!a          ; invert the boolean value of 'a' var\n"
-			"  er [key]     ; set config key as readonly. no way back\n"
+			"  er [key]        ; set config key as readonly. no way back\n"
+			"  ec [k] [color]  ; set color for given key (prompt, offset, ...)\n"
 			"  e a          ; get value of var 'a'\n"
 			"  e a=b        ; set var 'a' the 'b' value\n");
 		}

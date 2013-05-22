@@ -17,16 +17,16 @@ static int rgb(int r, int g, int b) {
 	r = R_DIM (r/k, 0, 5);
 	g = R_DIM (g/k, 0, 5);
 	b = R_DIM (b/k, 0, 5);
-	return 16 + r*36 + g*6 +b;
+	return 16 + ((r&7)*29) + ((g&7)*12) + (b&7);
 }
 
 static inline void rgbinit(int r, int g, int b) {
 #if __UNIX__
 	r_cons_printf ("\x1b]4;%d;rgb:%2.2x/%2.2x/%2.2x\x1b\\",
-			16 + (r* 36) + (g* 6) + b,
+			16 + (r * 36) + (g * 6) + b,
 			(r ? (r * 40 + 55) : 0),
-			(g ? (g* 40 + 55) : 0),
-			(b ? (b* 40 + 55) : 0));
+			(g ? (g * 40 + 55) : 0),
+			(b ? (b * 40 + 55) : 0));
 #endif
 }
 

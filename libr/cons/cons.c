@@ -139,7 +139,8 @@ R_API RCons *r_cons_new () {
 		eprintf ("r_cons: Cannot set control console handler\n");
 #endif
 	I.pager = NULL; /* no pager by default */
-	//r_cons_palette_init(NULL);
+	r_cons_pal_init (NULL);
+	r_cons_rgb_init ();
 	r_cons_reset ();
 	return &I;
 }
