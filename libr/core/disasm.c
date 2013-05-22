@@ -680,10 +680,26 @@ toro:
 			}
 		}
 		r_cons_strcat (opstr);
-		free (opstr);
-		opstr = NULL;
 		if (show_color)
 			r_cons_strcat (Color_RESET);
+
+		{ /* show function name */
+			RAnalFunction *f;
+			switch (analop.type) {
+			case R_ANAL_OP_TYPE_JMP:
+			case R_ANAL_OP_TYPE_CJMP:
+			case R_ANAL_OP_TYPE_CALL:
+				f = r_anal_fcn_find (core->anal,
+					analop.jump, R_ANAL_FCN_TYPE_NULL);
+				if (f && !strstr (opstr, f->name)) {
+					r_cons_printf (" ; (%s)", f->name);
+				}
+				break;
+			}
+		}
+		free (opstr);
+		opstr = NULL;
+
 		if (show_dwarf) {
 			char *sl = r_bin_meta_get_source_line (core->bin, at);
 			int len = strlen (opstr);
