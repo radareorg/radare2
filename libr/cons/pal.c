@@ -9,7 +9,6 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.input = Color_WHITE;
 	cons->pal.comment = Color_TURQOISE;
 	cons->pal.reset = "\x1b[0m";
-	cons->pal.db = NULL;
 }
 
 struct {
@@ -77,9 +76,7 @@ struct {
 };
 
 R_API void r_cons_pal_walk() {
-	RCons *c = r_cons_singleton ();
-	// const char *color = sdb_get (c->pal.db, "color.prompt")
-	//c->pal.prompt = r_cons_pal_parse ("green");
+	//RCons *c = r_cons_singleton ();
 }
 
 R_API void r_cons_pal_load(const char *sdbfile) {

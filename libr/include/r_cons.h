@@ -55,7 +55,6 @@ typedef struct r_cons_palette_t {
 	char *comment;
 	char *input;
 	char *reset;
-	Sdb *db;
 } RConsPalette;
 
 typedef void (*RConsEvent)(void *);
