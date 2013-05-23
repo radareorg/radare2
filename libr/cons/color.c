@@ -38,8 +38,8 @@ static char r_cons_palette[CONS_PALETTE_SIZE][8] = {
 
 static const char *r_cons_color_names[CONS_COLORS_SIZE+1] = {
 	"black", "gray", "white", "red", "magenta", "blue", "green", "yellow",
-	"turqoise", "bblack", "bgray", "bwhite", "bred", "bmagenta", "bblue",
-	"bgreen", "byellow", "bturqoise", "reset", "bgblack", "bgred", NULL
+	"cyan", "bblack", "bgray", "bwhite", "bred", "bmagenta", "bblue",
+	"bgreen", "byellow", "bcyan", "reset", "bgblack", "bgred", NULL
 };
 
 static const char *r_cons_colors[CONS_COLORS_SIZE+1] = {
@@ -51,7 +51,7 @@ static const char *r_cons_colors[CONS_COLORS_SIZE+1] = {
 	Color_BLUE,       // 5
 	Color_GREEN,      // 6
 	Color_YELLOW,     // 7
-	Color_TURQOISE,   // 8
+	Color_CYAN,   // 8
 	/* BOLD */
 	Color_BBLACK,     // a
 	Color_BGRAY,      // b
@@ -61,7 +61,7 @@ static const char *r_cons_colors[CONS_COLORS_SIZE+1] = {
 	Color_BBLUE,      // f
 	Color_BGREEN,     // g
 	Color_BYELLOW,    // h
-	Color_BTURQOISE,  // i
+	Color_BCYAN,  // i
 	/* SPECIAL */
 	Color_RESET,      // r
 	Color_BGBLACK,    //
@@ -103,9 +103,9 @@ R_API int r_cons_palette_init(const unsigned char *pal) {
 			r_cons_printf("%s .%s\x1b[0m ", r_cons_palette[j], pal_names[j]);
 		r_cons_printf ("\n\n=>( Colors ): "
 		"/*normal*/, " "black, = 0, " "gray, = 1, " "white, = 2, " "red, = 3, " "magenta, = 4, "
-		"blue, = 5, " "green, = 6, " "yellow, = 7, " "turqoise, = 8, " "/*bold*/, " "bblack, = a, "
+		"blue, = 5, " "green, = 6, " "yellow, = 7, " "cyan, = 8, " "/*bold*/, " "bblack, = a, "
 		"bgray, = b, " "bwhite, = c, " "bred, = d, " "bmagenta, = e, " "bblue, = f, " "bgreen, = g, "
-		"byellow, = h, " "bturqoise, = i, " "/*special*/, " "reset, = r\n");
+		"byellow, = h, " "bcyan, = i, " "/*special*/, " "reset, = r\n");
 		r_cons_printf("\nExample: eval scr.palette = .prompt=3.address=4\n\n");
 		return 0;
 	}

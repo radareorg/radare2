@@ -135,7 +135,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 /* color palette */
 #define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 	// TODO: only if show_color?
-	const char *color_comment = P(comment): Color_TURQOISE;
+	const char *color_comment = P(comment): Color_CYAN;
 	const char *color_nop = P(nop): Color_BLUE;
 	const char *color_jmp = P(jmp): Color_GREEN;
 	const char *color_call = P(call): Color_BGREEN;

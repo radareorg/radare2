@@ -151,8 +151,8 @@ typedef struct r_cons_t {
 #define Color_BGMAGENTA  "\x1b[45m"
 #define Color_YELLOW     "\x1b[33m"
 #define Color_BGYELLOW   "\x1b[43m"
-#define Color_TURQOISE   "\x1b[36m"
-#define Color_BGTURQOISE "\x1b[46m"
+#define Color_CYAN       "\x1b[36m"
+#define Color_BGCYAN     "\x1b[46m"
 #define Color_BLUE       "\x1b[34m"
 #define Color_BGBLUE     "\x1b[44m"
 #define Color_GRAY       "\x1b[38m"
@@ -165,7 +165,7 @@ typedef struct r_cons_t {
 #define Color_BGREEN    "\x1b[1;32m"
 #define Color_BMAGENTA  "\x1b[1;35m"
 #define Color_BYELLOW   "\x1b[1;33m"
-#define Color_BTURQOISE "\x1b[1;36m"
+#define Color_BCYAN     "\x1b[1;36m"
 #define Color_BBLUE     "\x1b[1;34m"
 #define Color_BGRAY     "\x1b[1;38m"
 
@@ -191,17 +191,6 @@ enum {
 	PAL_7F,
 	PAL_FF
 };
-
-/* default byte colors */
-#if 0
-#define COLOR_00 C_TURQOISE
-#define COLOR_FF C_RED
-#define COLOR_7F C_MAGENTA
-#define COLOR_PR C_YELLOW
-#define COLOR_HD C_GREEN
-// addresses
-#define COLOR_AD C_GREEN
-#endif
 
 #ifdef R_API
 R_API RCons *r_cons_new ();

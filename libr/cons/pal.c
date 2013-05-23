@@ -8,12 +8,20 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.prompt = Color_YELLOW;
 	cons->pal.offset = Color_GREEN;
 	cons->pal.input = Color_WHITE;
-	cons->pal.comment = Color_TURQOISE;
+	cons->pal.comment = Color_CYAN;
 	cons->pal.b0x00 = Color_GREEN;
 	cons->pal.b0x7f = Color_YELLOW;
 	cons->pal.b0xff = Color_RED;
 	cons->pal.btext = Color_MAGENTA;
 	cons->pal.push = Color_YELLOW;
+	cons->pal.pop = Color_BYELLOW;
+	cons->pal.nop = Color_BLUE;
+	cons->pal.jmp = Color_GREEN;
+	cons->pal.call = Color_BGREEN;
+	cons->pal.cmp = Color_CYAN;
+	cons->pal.swi = Color_MAGENTA;
+	cons->pal.trap = Color_BRED;
+	cons->pal.ret = Color_RED;
 	cons->pal.reset = "\x1b[0m";
 }
 
@@ -28,7 +36,7 @@ struct {
 	{ "green",    Color_GREEN,    Color_BGGREEN },
 	{ "magenta",  Color_MAGENTA,  Color_BGMAGENTA },
 	{ "yellow",   Color_YELLOW,   Color_BGYELLOW },
-	{ "turqoise", Color_TURQOISE, Color_BGTURQOISE },
+	{ "cyan",     Color_CYAN,     Color_BGCYAN },
 	{ "blue",     Color_BLUE,     Color_BGBLUE },
 	{ "gray",     Color_GRAY,     Color_BGGRAY },
 	{ NULL, NULL, NULL }
@@ -152,12 +160,13 @@ R_API void r_cons_pal_show () {
 R_API void r_cons_pal_list () {
 	RConsPalette *pal = &(r_cons_singleton ()->pal);
 	ut8 *p = (ut8*)pal;
-	char *color;
+	char **color;
 	int i;
 	for (i=0; keys[i].name; i++) {
-		color = *(p+keys[i].off);
-		r_cons_printf ("%s\\/"Color_RESET" %s\n",
-			color, keys[i].name);
+		color = (char**)(p + keys[i].off);
+		color = (char**)*color;
+		r_cons_printf (" %s##"Color_RESET"  %s\n",
+			(color)? (char*)color: "", keys[i].name);
 	}
 }
 
