@@ -119,7 +119,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *)malloc ((strlen (str)+2)*32);
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;
-	const char *color_0x00, *color_0x7f, *color_0xff, *color_text;
+	const char *color_0x00, *color_0x7f, *color_0xff, *color_text, *color_other;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	/* TODO: Use r_print_set_cursor for win support */
 	int cur = R_MIN (p->cur, p->ocur);
@@ -132,6 +132,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 		color_0x7f = P(b0x7f): Color_YELLOW;
 		color_0xff = P(b0xff): Color_RED;
 		color_text = P(btext): Color_MAGENTA;
+		color_other = P(other): "";
 	}
 	if (p->cur_enabled && cur==-1)
 		cur = ocur;
@@ -161,10 +162,11 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 			else if (s[0]=='7' && s[1]=='f') lastcol = color_0x7f;
 			else if (s[0]=='f' && s[1]=='f') lastcol = color_0xff;
 			else {
-				ch = r_hex_pair2bin(s);
+				ch = r_hex_pair2bin (s);
 				//sscanf (s, "%02x", &ch); // XXX can be optimized
 				if (IS_PRINTABLE (ch))
 					lastcol = color_text;
+				else lastcol = color_other;
 			}
 			memcat (d, lastcol);
 		}
@@ -184,10 +186,11 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	//if (p->flags & R_PRINT_FLAGS_CURSOR && idx == p->cur) {
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
 #define P(x) (p->cons &&p->cons->pal.x)?p->cons->pal.x
-		const char *color_0x00 = P(b0x00): Color_GREEN;
-		const char *color_0x7f = P(b0x7f): Color_YELLOW;
-		const char *color_0xff = P(b0xff): Color_RED;
-		const char *color_text = P(btext): Color_MAGENTA;
+		char *color_0x00 = P(b0x00): Color_GREEN;
+		char *color_0x7f = P(b0x7f): Color_YELLOW;
+		char *color_0xff = P(b0xff): Color_RED;
+		char *color_text = P(btext): Color_MAGENTA;
+		char *color_other = P(other): Color_WHITE;
 		char *pre = NULL;
 		switch (ch) {
 		case 0x00: pre = color_0x00; break;
@@ -196,6 +199,7 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 		default:
 			if (IS_PRINTABLE (ch))
 				pre = color_text;
+			else pre = color_other;
 		}
 		if (pre) p->printf (pre);
 		p->printf (fmt, rch);
@@ -342,6 +346,7 @@ static int check_sparse (const ut8 *p, int len, int ch) {
 // XXX: step is borken
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
 	int i, j, k, inc;
+	const char *color;
 	int sparse_char = 0;
 	int use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
 	const char *fmt = "%02x";
@@ -367,10 +372,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	inc = p->cols;
 	//if (base==64) inc = p->cols/1.2;
 		
-	k = "";
-	if (p->flags & R_PRINT_FLAGS_COLOR) {
-		k = (p->cons && p->cons->pal.offset)? p->cons->pal.offset: "";
-	}
+	color = "";
+	if (p->flags & R_PRINT_FLAGS_COLOR)
+		color = (p->cons && p->cons->pal.offset)? p->cons->pal.offset: "";
 	if (base<32)
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		ut32 opad = (ut32)(addr >> 32);
@@ -383,9 +387,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				ut32 s, a;
 				a = addr & 0xffff;
 				s = (addr-a)>>4;
-				snprintf (soff, sizeof (soff), "%s%04x:%04x", p, s, a);
+				snprintf (soff, sizeof (soff), "%s%04x:%04x", color, s, a);
 			} else {
-				snprintf (soff, sizeof (soff), "%s0x%08"PFMT64x, p, addr);
+				snprintf (soff, sizeof (soff), "%s0x%08"PFMT64x, color, addr);
 			}
 			delta = strlen (soff) - 10;
 			for (i=0; i<delta; i++)

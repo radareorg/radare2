@@ -137,6 +137,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: only if show_color?
 	const char *color_comment = P(comment): Color_CYAN;
 	const char *color_nop = P(nop): Color_BLUE;
+	const char *color_bin = P(bin): Color_YELLOW;
+	const char *color_math = P(math): Color_YELLOW;
 	const char *color_jmp = P(jmp): Color_GREEN;
 	const char *color_call = P(call): Color_BGREEN;
 	const char *color_cmp = P(cmp): Color_MAGENTA;
@@ -609,6 +611,18 @@ toro:
 			case R_ANAL_OP_TYPE_NOP:
 				r_cons_printf (color_nop);
 				break;
+			case R_ANAL_OP_TYPE_ADD:
+			case R_ANAL_OP_TYPE_SUB:
+			case R_ANAL_OP_TYPE_MUL:
+			case R_ANAL_OP_TYPE_DIV:
+				r_cons_strcat (color_math);
+				break;
+			case R_ANAL_OP_TYPE_AND:
+			case R_ANAL_OP_TYPE_OR:
+			case R_ANAL_OP_TYPE_XOR:
+			case R_ANAL_OP_TYPE_NOT:
+				r_cons_strcat (color_bin);
+				break;
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_UJMP:
@@ -757,7 +771,7 @@ toro:
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_CALL:
 				counter++;
-				if (counter<10){
+				if (counter<10) {
 					core->asmqjmps[counter] = analop.jump;
 					r_cons_printf (" [%d]", counter);
 				} else r_cons_strcat (" [?]");
@@ -769,18 +783,19 @@ toro:
 					RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
 					if (show_color)
 						r_cons_printf ("\n%s%s   %s; %s (%s+%d)"Color_RESET,
-							f?pre:"", refline, ccstr, flag?
-							flag->name: "", (f&&flag)?
-							cc.jump-flag->offset: 0);
+							f?pre:"", refline, ccstr,
+							(flag&&flag->name)? flag->name: "",
+							(flag&&flag->name)? flag->name: "",
+							(f&&flag)? cc.jump-flag->offset: 0);
 					else r_cons_printf ("\n%s%s    ; %s (%s+%d)",
 						pre, refline, ccstr,
-						flag?flag->name:"", flag? cc.jump-flag->offset: 0);
+						(flag&&flag->name)?flag->name:"",
+						flag? cc.jump-flag->offset: 0);
 					free (ccstr);
 				}
 			}
 			r_anal_cc_reset (&cc);
 		}
-
 		switch (analop.type) {
 		case R_ANAL_OP_TYPE_PUSH:
 			if (analop.value) {

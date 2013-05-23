@@ -51,7 +51,7 @@ static inline ut8 rgbnum (const char ch) {
 R_API char *r_cons_pal_parse(const char *str) {
 	int i;
 	ut8 r, g, b;
-	char out[64];
+	char out[128];
 	char *s = strdup (str);
 	char *p = strchr (s+1, ' ');
 	out[0] = 0;
@@ -61,12 +61,12 @@ R_API char *r_cons_pal_parse(const char *str) {
 		g = rgbnum (s[5]);
 		b = rgbnum (s[6]);
 		r_cons_rgb_str (out, r, g, b, 0);
-		if (p && !strncmp (p, "rgb:", 4)) {
-			r = rgbnum (p[4]);
-			g = rgbnum (p[5]);
-			b = rgbnum (p[6]);
-			r_cons_rgb_str (out+strlen (out), r, g, b, 1);
-		}
+	}
+	if (p && !strncmp (p, "rgb:", 4)) {
+		r = rgbnum (p[4]);
+		g = rgbnum (p[5]);
+		b = rgbnum (p[6]);
+		r_cons_rgb_str (out+strlen (out), r, g, b, 1);
 	}
 	for (i=0; colors[i].name; i++) {
 		if (!strcmp (s, colors[i].name))
@@ -86,10 +86,13 @@ struct {
 	{ "prompt", r_offsetof (RConsPalette, prompt) },
 	{ "offset", r_offsetof (RConsPalette, offset) },
 	{ "input", r_offsetof (RConsPalette, input) },
+	{ "other", r_offsetof (RConsPalette, other) },
 	{ "b0x00", r_offsetof (RConsPalette, b0x00) },
 	{ "b0x7f", r_offsetof (RConsPalette, b0x7f) },
 	{ "b0xff", r_offsetof (RConsPalette, b0xff) },
 	{ "btext", r_offsetof (RConsPalette, btext) },
+	{ "math",  r_offsetof (RConsPalette, math) },
+	{ "bin",  r_offsetof (RConsPalette, bin) },
 	{ "push",  r_offsetof (RConsPalette, push) },
 	{ "pop", r_offsetof (RConsPalette, pop) },
 	{ "jmp", r_offsetof (RConsPalette, jmp) },

@@ -59,6 +59,9 @@ typedef struct r_cons_palette_t {
 	char *b0x7f;
 	char *b0xff;
 	char *btext;
+	char *other;
+	char *math;
+	char *bin;
 	char *push;
 	char *pop;
 	char *jmp;

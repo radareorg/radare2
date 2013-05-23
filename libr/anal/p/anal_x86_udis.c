@@ -209,6 +209,16 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	}
 	
 	switch (u.mnemonic) {
+	case UD_Itest:
+	case UD_Icmp:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+	case UD_Ixor:
+		op->type = R_ANAL_OP_TYPE_XOR;
+		break;
+	case UD_Ior:
+		op->type = R_ANAL_OP_TYPE_OR;
+		break;
 	case UD_Iand:
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;

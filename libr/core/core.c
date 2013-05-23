@@ -624,7 +624,7 @@ R_API void r_core_prompt_loop(RCore *r) {
 R_API int r_core_prompt(RCore *r, int sync) {
 	int ret;
 	char line[4096];
-	char prompt[32];
+	char prompt[64];
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 
 	const char *BEGIN = r->cons->pal.prompt;
