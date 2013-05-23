@@ -99,9 +99,33 @@ static RList* get_strings(RBinArch *a, int min) {
 					section->rva);
 			}
 		}	
+		if (r_list_empty (a->o->sections)) {
+			int i, next = 0, from = 0, funn = 0, to = 0;
+			ut8 *buf = a->buf->buf;
+			for (i=0; i<a->buf->length; i++) {
+				if (!buf[i] || IS_PRINTABLE (buf[i])) {
+					if (buf[i]) {
+						if (!from) from = i;
+						funn++;
+						next = 0;
+					}
+				} else {
+					next++;
+					if (next>5) from = 0;
+					if (!to) to = i;
+					to = i;
+					if (from && next==5 && funn>16) {
+						get_strings_range (a, ret, min, from, to, 0);
+				//eprintf ("FUNN %d\n", funn);
+				//eprintf ("MIN %d %d\n", from, to);
+						funn = 0;
+						from = 0;
+						to = 0;
+					}
+				}
+			}
+		}
 	}
-	if (r_list_empty (a->o->sections))
-		get_strings_range (a, ret, min, 0, a->size, 0);
 	return ret;
 }
 
