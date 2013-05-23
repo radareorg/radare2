@@ -287,12 +287,14 @@ struct r_range_t *r_meta_ranges(RMeta *m)
 #endif
 
 static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
-	char *str = r_str_unscape (d->str);
+	char *pstr, *str = r_str_unscape (d->str);
 	if (str) {
 		if (d->type=='s' && !*str)
 			return;
-		if (d->type != 'C')
+		if (d->type != 'C') {
 			r_name_filter (str, 0);
+			pstr = str;
+		} else pstr = d->str;
 //		r_str_sanitize (str);
 		switch (rad) {
 		case 'j':
@@ -305,9 +307,9 @@ static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 		case 1:
 		case '*':
 		default:
-			m->printf ("%s %d %s@0x%08"PFMT64x"\n",
+			m->printf ("\"%s %d %s\" @ 0x%08"PFMT64x"\n",
 				r_meta_type_to_string (d->type),
-				(int)(d->to-d->from), str, d->from);
+				(int)(d->to-d->from), pstr, d->from);
 			break;
 		}
 		free (str);

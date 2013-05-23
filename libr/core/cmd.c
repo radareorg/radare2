@@ -721,7 +721,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			char *line, *p = find_eoq (cmd);
 			if (p) {
 				*p = 0;
-				if (p[1]=='@' || p[2]=='@') {
+				if (p[1]=='@' || (p[1] && p[2]=='@')) {
 					char *q = strchr (p+1, '"');
 					if (q) *q = 0;
 					oseek = core->offset;
