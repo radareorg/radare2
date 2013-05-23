@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 				// TODO: use r_sys api to get pid when running in bg
 				pid = r_sys_cmdbg (cmd);
 				free (cmd);
-				result = result_heap = malloc (80+filename_len);
+				result = result_heap = malloc (1024+filename_len);
 				if (!result) {
 					perror ("malloc");
 					return 1;

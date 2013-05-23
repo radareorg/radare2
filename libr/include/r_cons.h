@@ -55,6 +55,19 @@ typedef struct r_cons_palette_t {
 	char *comment;
 	char *input;
 	char *reset;
+	char *b0x00;
+	char *b0x7f;
+	char *b0xff;
+	char *btext;
+	char *push;
+	char *pop;
+	char *jmp;
+	char *call;
+	char *nop;
+	char *ret;
+	char *trap;
+	char *swi;
+	char *cmp;
 } RConsPalette;
 
 typedef void (*RConsEvent)(void *);
@@ -241,6 +254,8 @@ R_API void r_cons_any_key();
 R_API int  r_cons_eof();
 
 R_API int r_cons_palette_init(const unsigned char *pal);
+R_API int r_cons_pal_set (const char *key, const char *val);
+R_API void r_cons_pal_list ();
 R_API int r_cons_get_size(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API int r_cons_html_print(const char *ptr);

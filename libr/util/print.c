@@ -102,11 +102,14 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		p->printf ("%04x:%04x", s, a);
 	} else
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
+#define P(x) (p->cons &&p->cons->pal.x)?p->cons->pal.x
+		const char *pre = P(offset): Color_GREEN;
+		const char *fin = Color_RESET;
 #if 0
 		p->printf("%s0x%08"PFMT64x""Color_RESET"%c ",
 			r_cons_singleton ()->palette[PAL_ADDRESS], addr, ch);
 #endif
-		p->printf ("0x%08"PFMT64x"%c", addr, ch);
+		p->printf ("%s0x%08"PFMT64x"%c%s", pre, addr, ch, fin);
 	} else p->printf ("0x%08"PFMT64x"%c", addr, ch);
 }
 
@@ -116,12 +119,20 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	const char *s, *lastcol = Color_WHITE;
 	char *d, *dst = (char *)malloc ((strlen (str)+2)*32);
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;
+	const char *color_0x00, *color_0x7f, *color_0xff, *color_text;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	/* TODO: Use r_print_set_cursor for win support */
 	int cur = R_MIN (p->cur, p->ocur);
 	int ocur = R_MAX (p->cur, p->ocur);
 	int ch, i;
 
+	if (colors) {
+#define P(x) (p->cons &&p->cons->pal.x)?p->cons->pal.x
+		color_0x00 = P(b0x00): Color_GREEN;
+		color_0x7f = P(b0x7f): Color_YELLOW;
+		color_0xff = P(b0xff): Color_RED;
+		color_text = P(btext): Color_MAGENTA;
+	}
 	if (p->cur_enabled && cur==-1)
 		cur = ocur;
 	ocur++;
@@ -146,14 +157,14 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 				memcat (d, "\x1b[7m");
 		}
 		if (colors) {
-			if (s[0]=='0' && s[1]=='0') lastcol = Color_GREEN;
-			else if (s[0]=='7' && s[1]=='f') lastcol = Color_YELLOW;
-			else if (s[0]=='f' && s[1]=='f') lastcol = Color_RED;
+			if (s[0]=='0' && s[1]=='0') lastcol = color_0x00;
+			else if (s[0]=='7' && s[1]=='f') lastcol = color_0x7f;
+			else if (s[0]=='f' && s[1]=='f') lastcol = color_0xff;
 			else {
 				ch = r_hex_pair2bin(s);
 				//sscanf (s, "%02x", &ch); // XXX can be optimized
 				if (IS_PRINTABLE (ch))
-					lastcol = Color_MAGENTA;
+					lastcol = color_text;
 			}
 			memcat (d, lastcol);
 		}
@@ -172,14 +183,19 @@ R_API void r_print_byte(RPrint *p, const char *fmt, int idx, ut8 ch) {
 	r_print_cursor (p, idx, 1);
 	//if (p->flags & R_PRINT_FLAGS_CURSOR && idx == p->cur) {
 	if (p->flags & R_PRINT_FLAGS_COLOR) {
+#define P(x) (p->cons &&p->cons->pal.x)?p->cons->pal.x
+		const char *color_0x00 = P(b0x00): Color_GREEN;
+		const char *color_0x7f = P(b0x7f): Color_YELLOW;
+		const char *color_0xff = P(b0xff): Color_RED;
+		const char *color_text = P(btext): Color_MAGENTA;
 		char *pre = NULL;
 		switch (ch) {
-		case 0x00: pre = Color_GREEN; break;
-		case 0x7F: pre = Color_YELLOW; break;
-		case 0xFF: pre = Color_RED; break;
+		case 0x00: pre = color_0x00; break;
+		case 0x7F: pre = color_0x7f; break;
+		case 0xFF: pre = color_0xff; break;
 		default:
 			if (IS_PRINTABLE (ch))
-				pre = Color_MAGENTA;
+				pre = color_text;
 		}
 		if (pre) p->printf (pre);
 		p->printf (fmt, rch);
@@ -220,8 +236,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	case 'p':
 		p->printf ("import struct\nbuf = struct.pack (\"%dB\", ", len);
 		for (i=0; !p->interrupt && i<len; i++) {
-			if (!(i%w))
-				p->printf ("\n");
+			if (!(i%w)) p->printf ("\n");
 			r_print_cursor (p, i, 1);
 			p->printf ("0x%02x%c", buf[i], (i+1<len)?',':')');
 			r_print_cursor (p, i, 0);
@@ -230,7 +245,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		break;
 	case 'w':
 		{
-		ut32 *pbuf = buf;
+		ut32 *pbuf = (ut32*)buf;
 		w = 5;
 		ws = 4;
 		len /= ws;
@@ -248,7 +263,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		break;
 	case 'd':
 		{
-		ut64 *pbuf = buf;
+		ut64 *pbuf = (ut64*)buf;
 		w = 3;
 		ws = 8;
 		len /= ws;
@@ -352,6 +367,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	inc = p->cols;
 	//if (base==64) inc = p->cols/1.2;
 		
+	k = "";
+	if (p->flags & R_PRINT_FLAGS_COLOR) {
+		k = (p->cons && p->cons->pal.offset)? p->cons->pal.offset: "";
+	}
 	if (base<32)
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		ut32 opad = (ut32)(addr >> 32);
@@ -364,9 +383,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				ut32 s, a;
 				a = addr & 0xffff;
 				s = (addr-a)>>4;
-				snprintf (soff, sizeof (soff), "%04x:%04x", s, a);
+				snprintf (soff, sizeof (soff), "%s%04x:%04x", p, s, a);
 			} else {
-				snprintf (soff, sizeof (soff), "0x%08"PFMT64x, addr);
+				snprintf (soff, sizeof (soff), "%s0x%08"PFMT64x, p, addr);
 			}
 			delta = strlen (soff) - 10;
 			for (i=0; i<delta; i++)

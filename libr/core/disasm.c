@@ -69,6 +69,7 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
 	/* hints */
 	RAnalHint *hint = NULL;
+	const char *pal_comment = core->cons->pal.comment;
 	/* other */
 	int ret, idx = 0, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
@@ -130,6 +131,20 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int lastfail = 0;
 	int ocols = 0;
 	int lcols = 0;
+
+/* color palette */
+#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+	// TODO: only if show_color?
+	const char *color_comment = P(comment): Color_TURQOISE;
+	const char *color_nop = P(nop): Color_BLUE;
+	const char *color_jmp = P(jmp): Color_GREEN;
+	const char *color_call = P(call): Color_BGREEN;
+	const char *color_cmp = P(cmp): Color_MAGENTA;
+	const char *color_swi = P(swi): Color_MAGENTA;
+	const char *color_trap = P(trap): Color_BRED;
+	const char *color_ret = P(ret): Color_RED;
+	const char *color_push = P(push): Color_YELLOW;
+	const char *color_pop = P(pop): Color_BYELLOW;
 
 	if (show_lines) ocols += 10; // XXX
 	if (show_offset) ocols += 14;
@@ -236,8 +251,8 @@ toro:
 					r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
 						&&f->addr==at)?' ':'|',refline);
 					if (show_color)
-					r_cons_printf (Color_TURQOISE"; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
-						refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+					r_cons_printf ("%s; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
+						pal_comment, refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 						refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
 						fun?fun->name:"unk");
 					else r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
@@ -277,7 +292,7 @@ toro:
 					if (mycols + linelen + 10 > core->cons->columns)
 						mycols = 0;
 					mycols /= 2;
-					if (show_color) r_cons_strcat (Color_TURQOISE);
+					if (show_color) r_cons_strcat (pal_comment);
 					r_cons_strcat ("  ; ");
 // XXX: always prefix with ; the comments
 				//	if (*comment != ';') r_cons_strcat ("  ;  ");
@@ -289,7 +304,7 @@ toro:
 
 					/* flag one */
 					if (item && item->comment && ocomment != item->comment) {
-						if (show_color) r_cons_strcat (Color_TURQOISE);
+						if (show_color) r_cons_strcat (pal_comment);
 						r_cons_newline ();
 						r_cons_strcat ("  ;  ");
 						r_cons_strcat_justify (item->comment, mycols, ';');
@@ -408,7 +423,7 @@ toro:
 				{
 				RFlagItem *item = r_flag_get_i (core->flags, analop.jump);
 				if (item && item->comment) {
-					if (show_color) r_cons_strcat (Color_TURQOISE);
+					if (show_color) r_cons_strcat (pal_comment);
 					r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
 					if (show_color) r_cons_strcat (Color_RESET);
 				}
@@ -592,38 +607,38 @@ toro:
 		if (show_color) {
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_NOP:
-				r_cons_printf (Color_BLUE);
+				r_cons_printf (color_nop);
 				break;
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_UJMP:
-				r_cons_printf (Color_GREEN);
+				r_cons_printf (color_jmp);
 				break;
 			case R_ANAL_OP_TYPE_CMP:
-				r_cons_printf (Color_BMAGENTA);
+				r_cons_printf (color_cmp);
 				break;
 			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_CALL:
-				r_cons_printf (Color_BGREEN);
+				r_cons_printf (color_call);
 				break;
 			case R_ANAL_OP_TYPE_SWI:
-				r_cons_printf (Color_MAGENTA);
+				r_cons_printf (color_swi);
 				break;
 			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_TRAP:
-				r_cons_printf (Color_BRED);
+				r_cons_printf (color_trap);
 				break;
 			case R_ANAL_OP_TYPE_RET:
-				r_cons_printf (Color_RED);
+				r_cons_printf (color_ret);
 				break;
 			case R_ANAL_OP_TYPE_PUSH:
 			case R_ANAL_OP_TYPE_UPUSH:
 			case R_ANAL_OP_TYPE_LOAD:
-				r_cons_printf (Color_YELLOW);
+				r_cons_printf (color_push);
 				break;
 			case R_ANAL_OP_TYPE_POP:
 			case R_ANAL_OP_TYPE_STORE:
-				r_cons_printf (Color_BYELLOW);
+				r_cons_printf (color_pop);
 				break;
 			}
 		}
@@ -709,8 +724,8 @@ toro:
 					while (len--)
 						r_cons_strcat (" ");
 					if (show_color)
-						r_cons_printf (Color_TURQOISE
-						"  ; %s"Color_RESET"%s", sl, pre);
+						r_cons_printf ("%s  ; %s"Color_RESET"%s",
+								pal_comment, l, pre);
 					else r_cons_printf ("  ; %s\n%s", sl, pre);
 					free (osl);
 					osl = sl;
@@ -753,8 +768,10 @@ toro:
 				if (ccstr) {
 					RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
 					if (show_color)
-						r_cons_printf ("\n%s%s   "Color_TURQOISE"; %s (%s+%d)"Color_RESET,
-							f?pre:"", refline, ccstr, flag? flag->name: "", (f&&flag)? cc.jump-flag->offset: 0);
+						r_cons_printf ("\n%s%s   %s; %s (%s+%d)"Color_RESET,
+							f?pre:"", refline, ccstr, flag?
+							flag->name: "", (f&&flag)?
+							cc.jump-flag->offset: 0);
 					else r_cons_printf ("\n%s%s    ; %s (%s+%d)",
 						pre, refline, ccstr,
 						flag?flag->name:"", flag? cc.jump-flag->offset: 0);
@@ -822,7 +839,7 @@ toro:
 			int c = r_cons_get_column ();
 			if (c<ocols)
 				r_cons_memset (' ',ocols-c);
-			if (show_color) r_cons_strcat (Color_TURQOISE);
+			if (show_color) r_cons_strcat (color_comment);
 			r_cons_strcat ("  ; ");
 	//		r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
 			r_cons_strcat (comment);

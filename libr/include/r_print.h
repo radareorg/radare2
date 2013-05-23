@@ -3,6 +3,7 @@
 
 #include "r_types.h"
 #include "r_util.h"
+#include "r_cons.h"
 #include "r_io.h"
 
 #define R_PRINT_FLAGS_COLOR   0x00000001
@@ -47,6 +48,7 @@ typedef struct r_print_t {
 	RPrintZoom *zoom;
 	RPrintNameCallback offname;
 	RStrHT *formats;
+	RCons *cons;
 } RPrint;
 
 #ifdef R_API

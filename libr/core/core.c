@@ -494,6 +494,7 @@ R_API int r_core_init(RCore *core) {
 		r_line_hist_load (".radare2_history");
 		singleton = R_FALSE;
 	}
+	core->print->cons = core->cons;
 	core->cons->num = core->num;
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)malloc (R_CORE_BLOCKSIZE);

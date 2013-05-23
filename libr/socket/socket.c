@@ -355,7 +355,7 @@ R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 	ioctlsocket (s->fd, FIONBIO, (u_long FAR*)&block);
 #endif
 	if (sec > 0) {
-		struct timeval tv;
+		struct timeval tv = {0};
 		tv.tv_sec = sec;
 		tv.tv_usec = 0;
 		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO,
