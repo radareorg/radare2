@@ -174,7 +174,8 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->cond = op_cond (data);
 	if (b[2]==0x8f && b[3]==0xe2) {
 		op->type = R_ANAL_OP_TYPE_ADD;
-		op->ref = addr+b[0]+((b[1]&0xf)<<8);
+		op->ref = addr + (((b[1]&0xf0)>>4)<<(32-b[0]));
+		//op->ref = addr + b[0] + ((b[1]&0xf)<<8);
 	} else
 	if (b[2]>=0x9c && b[2]<= 0x9f) { // load instruction
 		char ch = b[3]&0xf;
