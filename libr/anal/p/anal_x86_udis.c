@@ -93,7 +93,7 @@ static int getarg(char *src, struct ud *u, int idx) {
 			if (idx>=0 && idx<UD_REG_TAB_SIZE) {
 				if (u->mnemonic == UD_Ilea)
 					sprintf (src, "%s+%d", ud_reg_tab[idx], 0);
-				else sprintf (src, "[%s+%d]", ud_reg_tab[idx], n);
+				else sprintf (src, "[%s+%d]", ud_reg_tab[idx], (int)n);
 			}
 		}
 		break;

@@ -3,7 +3,7 @@
 #if 1
 /* TODO: Move into cmd_anal() */
 static void var_help() {
-	eprintf("Try afv?\n"
+	eprintf ("Try afv?\n"
 	" afv 12 int buffer[3]\n"
 	" afv 12 byte buffer[1024]\n"
 	"Try af[aAv][gs] [delta] [[addr]]\n"
@@ -237,6 +237,59 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 	}
 }
 
+static int anal_fcn_add_bb (RCore *core, const char *input) {
+	char *ptr = strdup(input);
+	const char *ptr2 = NULL;
+	ut64 fcnaddr = -1LL, addr = -1LL;
+	ut64 size = 0LL;
+	ut64 jump = -1LL;
+	ut64 fail = -1LL;
+	int type = R_ANAL_BB_TYPE_NULL;
+	RAnalFunction *fcn = NULL;
+	RAnalDiff *diff = NULL;
+
+	switch(r_str_word_set0 (ptr)) {
+		case 7:
+			ptr2 = r_str_word_get0 (ptr, 6);
+			if (!(diff = r_anal_diff_new ())) {
+				eprintf ("error: Cannot init RAnalDiff\n");
+				free (ptr);
+				return R_FALSE;
+			}
+			if (ptr2[0] == 'm')
+				diff->type = R_ANAL_DIFF_TYPE_MATCH;
+			else if (ptr2[0] == 'u')
+				diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
+		case 6:
+			ptr2 = r_str_word_get0 (ptr, 5);
+			if (strchr (ptr2, 'h'))
+				type |= R_ANAL_BB_TYPE_HEAD;
+			if (strchr (ptr2, 'b'))
+				type |= R_ANAL_BB_TYPE_BODY;
+			if (strchr (ptr2, 'l'))
+				type |= R_ANAL_BB_TYPE_LAST;
+			if (strchr (ptr2, 'f'))
+				type |= R_ANAL_BB_TYPE_FOOT;
+		case 5: // get fail
+			fail = r_num_math (core->num, r_str_word_get0 (ptr, 4));
+		case 4: // get jump
+			jump = r_num_math (core->num, r_str_word_get0 (ptr, 3));
+		case 3: // get size
+			size = r_num_math (core->num, r_str_word_get0 (ptr, 2));
+		case 2: // get addr
+			addr = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+		case 1: // get fcnaddr
+			fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+	}
+	if ((fcn = r_anal_get_fcn_at (core->anal, fcnaddr)) == NULL ||
+			!r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff)) {
+		//eprintf ("Error: Cannot add bb\n");
+	}
+	r_anal_diff_free (diff);
+	free (ptr);
+	return R_TRUE;
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *ptr;
 	RCore *core = (RCore *)data;
@@ -458,56 +511,13 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'b':
-			{
-			char *ptr = strdup(input+3);
-			const char *ptr2 = NULL;
-			ut64 fcnaddr = -1LL, addr = -1LL;
-			ut64 size = 0LL;
-			ut64 jump = -1LL;
-			ut64 fail = -1LL;
-			int type = R_ANAL_BB_TYPE_NULL;
-			RAnalFunction *fcn = NULL;
-			RAnalDiff *diff = NULL;
-
-			switch(r_str_word_set0 (ptr)) {
-			case 7:
-				ptr2 = r_str_word_get0 (ptr, 6);
-				if (!(diff = r_anal_diff_new ())) {
-					eprintf ("error: Cannot init RAnalDiff\n");
-					free (ptr);
-					return R_FALSE;
-				}
-				if (ptr2[0] == 'm')
-					diff->type = R_ANAL_DIFF_TYPE_MATCH;
-				else if (ptr2[0] == 'u')
-					diff->type = R_ANAL_DIFF_TYPE_UNMATCH;
-			case 6:
-				ptr2 = r_str_word_get0 (ptr, 5);
-				if (strchr (ptr2, 'h'))
-					type |= R_ANAL_BB_TYPE_HEAD;
-				if (strchr (ptr2, 'b'))
-					type |= R_ANAL_BB_TYPE_BODY;
-				if (strchr (ptr2, 'l'))
-					type |= R_ANAL_BB_TYPE_LAST;
-				if (strchr (ptr2, 'f'))
-					type |= R_ANAL_BB_TYPE_FOOT;
-			case 5: // get fail
-				fail = r_num_math (core->num, r_str_word_get0 (ptr, 4));
-			case 4: // get jump
-				jump = r_num_math (core->num, r_str_word_get0 (ptr, 3));
-			case 3: // get size
-				size = r_num_math (core->num, r_str_word_get0 (ptr, 2));
-			case 2: // get addr
-				addr = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			case 1: // get fcnaddr
-				fcnaddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-			}
-			if ((fcn = r_anal_get_fcn_at (core->anal, fcnaddr)) == NULL ||
-					!r_anal_fcn_add_bb (fcn, addr, size, jump, fail, type, diff)) {
-				//eprintf ("Error: Cannot add bb\n");
-			}
-			r_anal_diff_free (diff);
-			free (ptr);
+			if (input[2] == 'b') {
+				anal_fcn_add_bb (core, input+3);
+			} else {
+				RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+				if (fcn) fcn->bits = atoi (input+3);
+				else eprintf ("Cannot find function to set bits\n");
 			}
 			break;
 		case 'r':
@@ -570,7 +580,8 @@ static int cmd_anal(void *data, const char *input) {
 			" af @ [addr]               ; Analyze functions (start at addr)\n"
 			" af+ addr size name [type] [diff] ; Add function\n"
 			" af- [addr]                ; Clean all function analysis data (or function at addr)\n"
-			" afb fcnaddr addr size name [type] [diff] ; Add bb to function @ fcnaddr\n"
+			" afb 16                    ; set current function as thumb\n"
+			" afbb fcnaddr addr size name [type] [diff] ; Add bb to function @ fcnaddr\n"
 			" afl[*] [fcn name]         ; List functions (addr, size, bbs, name)\n"
 			" afi [fcn name]            ; Show function(s) information (verbose afl)\n"
 			" afr name [addr]           ; Rename name for function at address (change flag too)\n"

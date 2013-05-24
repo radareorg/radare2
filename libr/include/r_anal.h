@@ -300,6 +300,7 @@ typedef struct r_anal_type_function_t {
 	char* name;
 	char* dsc; // For producing nice listings
 	int size; // Size of function XXX. use int, or ut32. no need for ut64
+	int bits; // ((> bits 0) (set-bits bits))
 	short type;
 	/*item_list *rets; // Type of return value */
 	short rets;

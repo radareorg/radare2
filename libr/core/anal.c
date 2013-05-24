@@ -561,7 +561,7 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 	RListIter *iter;
 
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		r_cons_printf ("afb 0x%08"PFMT64x" 0x%08"PFMT64x" %04"PFMT64d" ",
+		r_cons_printf ("afbb 0x%08"PFMT64x" 0x%08"PFMT64x" %04"PFMT64d" ",
 				fcn->addr, bbi->addr, bbi->size);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->jump);
 		r_cons_printf ("0x%08"PFMT64x" ", bbi->fail);

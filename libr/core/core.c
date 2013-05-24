@@ -167,7 +167,7 @@ static const char *radare_argv[] = {
 	"#!python", "#!perl", "#!vala",
 	"V",
 	"aa", "ab", "af", "ar", "ag", "at", "a?", 
-	"af", "afc", "afi", "afb", "afr", "afs", "af*", 
+	"af", "afc", "afi", "afb", "afbb", "afr", "afs", "af*", 
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "e-", "e*", "e!", "e?",
 	"i", "ii", "iI", "is", "iS", "iz",

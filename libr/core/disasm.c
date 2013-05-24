@@ -129,6 +129,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	char *ocomment = NULL;
 	int linesopts = 0;
 	int lastfail = 0;
+	int oldbits = 0;
 	int ocols = 0;
 	int lcols = 0;
 
@@ -240,6 +241,25 @@ toro:
 		}
 		f = show_functions? r_anal_fcn_find (core->anal, at,
 			R_ANAL_FCN_TYPE_NULL): NULL;
+		if (!hint || !hint->bits) {
+			if (f) {
+				if (f->bits) {
+					if (!oldbits)
+						oldbits = r_config_get_i (core->config, "asm.bits");
+					if (oldbits != f->bits) {
+						r_config_set_i (core->config, "asm.bits", f->bits);
+					}
+				} else {
+					r_config_set_i (core->config, "asm.bits", oldbits);
+					oldbits = 0;
+				}
+			} else {
+				if (oldbits) {
+					r_config_set_i (core->config, "asm.bits", oldbits);
+					oldbits = 0;
+				}
+			}
+		}
 		// Show xrefs
 		if (show_xrefs) {
 			RList *xrefs;
@@ -902,6 +922,10 @@ toro:
 			goto toro;
 	}
 #endif
+	if(oldbits) {
+		r_config_set_i (core->config, "asm.bits", oldbits);
+		oldbits = 0;
+	}
 	r_anal_op_fini (&analop);
 	if (hint) r_anal_hint_free (hint);
 	free (osl);
@@ -954,8 +978,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	const ut8 *buf = core->block;
 	int bs = core->blocksize;
 	RAnalOp analop = {0};
+	RAnalFunction *f;
 	RAnalHint *hint = NULL;
 	int decode = r_config_get_i (core->config, "asm.decode");
+	int oldbits = 0;
 	ut64 at;
 
 	if (len>core->blocksize)
@@ -970,6 +996,27 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		}
 		hint = r_core_hint_begin (core, hint, at);
 		r_asm_set_pc (core->assembler, at);
+	// XXX copypasta from main disassembler function
+		f = r_anal_fcn_find (core->anal, at, R_ANAL_FCN_TYPE_NULL);
+		if (!hint || !hint->bits) {
+			if (f) {
+				if (f->bits) {
+					if (!oldbits)
+						oldbits = r_config_get_i (core->config, "asm.bits");
+					if (oldbits != f->bits) {
+						r_config_set_i (core->config, "asm.bits", f->bits);
+					}
+				} else {
+					r_config_set_i (core->config, "asm.bits", oldbits);
+					oldbits = 0;
+				}
+			} else {
+				if (oldbits) {
+					r_config_set_i (core->config, "asm.bits", oldbits);
+					oldbits = 0;
+				}
+			}
+		}
 		ret = r_asm_disassemble (core->assembler,
 			&asmop, buf+i, core->blocksize-i);
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
@@ -991,6 +1038,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 			r_cons_printf ("%s\n", opstr);
 			free (opstr);
 		}
+	}
+	if(oldbits) {
+		r_config_set_i (core->config, "asm.bits", oldbits);
+		oldbits = 0;
 	}
 	if (hint) r_anal_hint_free (hint);
 	return 0;
