@@ -1,8 +1,9 @@
 {
   "name": "radare2.js",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "url": "http://www.radare.org",
   "description": "radare2 valabind-ffi bindings for nodejs",
+  "repository" : {"type": "git", "url": "git://github.com/radare/radare2.git"},
   "dependencies": {
     "ref-struct": "0.0.4",
     "ref": "~0.1.3",
