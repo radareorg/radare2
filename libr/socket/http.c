@@ -75,8 +75,8 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 			"GET /%s HTTP/1.1\r\n"
 			"User-Agent: radare2 "R2_VERSION"\r\n"
 			"Accept: */*\r\n"
-			"Host: %s\r\n"
-			"\r\n", path, host);
+			"Host: %s:%s\r\n"
+			"\r\n", path, host, port);
 	response = r_socket_http_answer (s, code, rlen);
 	free (uri);
 	return response;

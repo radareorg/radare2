@@ -87,57 +87,63 @@ R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const cha
 	return ret;
 }
 
-R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
-	struct r_io_plugin_t *plugin = NULL;
+static inline RIODesc *__getioplugin(RIO *io, const char *uri, int flags, int mode) {
+	RIOPlugin *plugin, *iop = NULL;
 	RIODesc *desc = NULL;
-	int fd = -2;
-	char *uri;
-	if (!io) return NULL;
-	io->plugin = NULL;
-	uri = strdup (file);
 	for (;;) {
 		plugin = r_io_plugin_resolve (io, uri);
 		if (plugin && plugin->open) {
 			desc = plugin->open (io, uri, flags, mode);
 			if (io->redirect) {
-				// TODO: free desc if not null
-				free ((void *)uri);
-				uri = strdup (io->redirect);
+				uri = io->redirect;
 				r_io_redirect (io, NULL);
 				continue;
 			}
 			if (desc != NULL) {
 				r_io_desc_add (io, desc);
-				fd = desc->fd;
-				if (fd != -1)
-					r_io_plugin_open (io, fd, plugin);
+				if (desc->fd != -1)
+					r_io_plugin_open (io, desc->fd, plugin);
 				if (desc != io->fd)
-					io->plugin = plugin;
+					iop = plugin;
 			}
 		}
 		break;
 	}
-	if (fd == -2) {
+	io->plugin = iop;
+	return desc;
+}
+
+static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
+	int fd;
 #if __WINDOWS__
-		if (flags & R_IO_WRITE) {
-			fd = r_sandbox_open (uri, O_BINARY | 1, 0);
-			if (fd == -1)
-				r_sandbox_creat (uri, O_BINARY);
-			fd = r_sandbox_open (uri, O_BINARY | 1, 0);
-		} else fd = r_sandbox_open (uri, O_BINARY, 0);
+	if (flags & R_IO_WRITE) {
+		fd = r_sandbox_open (file, O_BINARY | 1, 0);
+		if (fd == -1)
+			r_sandbox_creat (file, O_BINARY);
+		fd = r_sandbox_open (file, O_BINARY | 1, 0);
+	} else fd = r_sandbox_open (file, O_BINARY, 0);
 #else
-		fd = r_sandbox_open (uri, (flags&R_IO_WRITE)?
-			O_RDWR: O_RDONLY, mode);
+	fd = r_sandbox_open (file, (flags&R_IO_WRITE)?
+			(O_RDWR|O_CREAT): O_RDONLY, mode);
 #endif
+	return fd;
+}
+
+R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
+	RIODesc *desc = __getioplugin (io, file, flags, mode);
+	int fd;
+	if (desc) {
+		fd = desc->fd;
+	} else {
+		fd = __io_posix_open (io, file, flags, mode);
+		if (fd>=0)
+			desc = r_io_desc_new (io->plugin,
+				fd, file, flags, mode, NULL);
 	}
 	if (fd >= 0) {
-		if (desc == NULL)
-			desc = r_io_desc_new (io->plugin,
-				fd, uri, flags, mode, NULL);
 		r_io_desc_add (io, desc);
 		r_io_set_fd (io, desc);
 	}
-	free ((void *)uri);
 	return desc;
 }
 

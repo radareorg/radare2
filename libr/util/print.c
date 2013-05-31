@@ -387,9 +387,9 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				ut32 s, a;
 				a = addr & 0xffff;
 				s = (addr-a)>>4;
-				snprintf (soff, sizeof (soff), "%s%04x:%04x", color, s, a);
+				snprintf (soff, sizeof (soff), "%04x:%04x", s, a);
 			} else {
-				snprintf (soff, sizeof (soff), "%s0x%08"PFMT64x, color, addr);
+				snprintf (soff, sizeof (soff), "0x%08"PFMT64x, addr);
 			}
 			delta = strlen (soff) - 10;
 			for (i=0; i<delta; i++)

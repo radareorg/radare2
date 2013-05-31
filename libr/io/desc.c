@@ -13,8 +13,10 @@ R_API void r_io_desc_fini(RIO *io) {
 }
 
 R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data) {
+	int i;
 	RIODesc *desc = R_NEW (RIODesc);
 	if (!desc) return NULL;
+	if (fd<0) eprintf ("r_io_desc_new: Warning: fd '%s' is -1\n", name);
 	desc->state = R_IO_DESC_TYPE_OPENED;
 	desc->name = strdup (name);
 	if (desc->name == NULL) {
@@ -23,10 +25,12 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 	}
 	desc->plugin = plugin;
 	desc->flags = flags;
-	if (fd == -1) {
+	if (fd <0) {
 		ut8 *p = (ut8 *)&(desc->fd);
 		desc->fd = ((int) ((size_t) desc) & 0xffffff);
-		desc->fd = p[0]^p[1]^p[2]^p[3];
+		desc->fd = p[0];
+		for (i=1; i<sizeof (desc->fd); i++)
+			desc->fd ^= p[i]; 
 	} else desc->fd = fd;
 	desc->data = data;
 	return desc;
@@ -40,13 +44,16 @@ R_API void r_io_desc_free(RIODesc *desc) {
 		free (desc->name);
 		desc->name = NULL;
 	}
+//	free (desc); double free orw at
 }
 
-R_API void r_io_desc_add(RIO *io, RIODesc *desc) {
-	r_list_append (io->desc, desc);
+R_API int r_io_desc_add(RIO *io, RIODesc *desc) {
+	RIODesc *foo = r_io_desc_get (io, desc->fd);
+	if (foo) r_list_append (io->desc, desc);
+	return foo? 1: 0;
 }
 
-R_API int r_io_desc_del(struct r_io_t *io, int fd) {
+R_API int r_io_desc_del(RIO *io, int fd) {
 	RListIter *iter;
 	RIODesc *d;
 	/* No _safe loop necessary because we return immediately after the delete. */

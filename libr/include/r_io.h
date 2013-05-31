@@ -132,19 +132,15 @@ typedef struct r_io_t {
 	int buffer_enabled;
 } RIO;
 
-//struct r_io_plugin_fd_t {
-// ... store io changes here
-//};
-
 typedef struct r_io_plugin_t {
         void *plugin;
         char *name;
         char *desc;
         void *widget;
-		int (*listener)(RIODesc *io);
+	int (*listener)(RIODesc *io);
         int (*init)();
-		RIOUndo undo;
-        struct debug_t *debug; // ???
+	RIOUndo undo;
+        struct r_debug_t *debug;
         int (*system)(RIO *io, RIODesc *fd, const char *);
         RIODesc* (*open)(RIO *io, const char *, int rw, int mode);
         int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
@@ -155,7 +151,6 @@ typedef struct r_io_plugin_t {
         int (*accept)(RIO *io, RIODesc *desc, int fd);
         int (*create)(RIO *io, const char *file, int mode, int type);
         int (*plugin_open)(RIO *io, const char *);
-        //int (*plugin_fd)(RIO *, int);
 } RIOPlugin;
 
 typedef struct r_io_list_t {
@@ -282,7 +277,7 @@ R_API const char *r_io_section_get_archbits(RIO* io, ut64 addr, int *bits);
 R_API int r_io_section_rm(RIO *io, int idx);
 R_API void r_io_section_list(RIO *io, ut64 offset, int rad);
 R_API void r_io_section_list_visual(RIO *io, ut64 seek, ut64 len);
-R_API struct r_io_section_t *r_io_section_get(RIO *io, ut64 offset);
+R_API RIOSection *r_io_section_get(RIO *io, ut64 offset);
 R_API ut64 r_io_section_get_offset(RIO *io, ut64 offset);
 R_API ut64 r_io_section_get_vaddr(RIO *io, ut64 offset);
 R_API int r_io_section_get_rwx(RIO *io, ut64 offset);
@@ -316,10 +311,9 @@ R_API void r_io_desc_init(RIO *io);
 R_API void r_io_desc_fini(RIO *io);
 R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data);
 R_API void r_io_desc_free(RIODesc *desc);
-//R_API void r_io_desc_add(RIO *io, RIODesc *desc);
 R_API int r_io_desc_del(RIO *io, int fd);
 R_API RIODesc *r_io_desc_get(RIO *io, int fd);
-R_API void r_io_desc_add(RIO *io, RIODesc *desc); //int fd, const char *file, int flags, struct r_io_plugin_t *plugin);
+R_API int r_io_desc_add(RIO *io, RIODesc *desc);
 R_API int r_io_desc_del(RIO *io, int fd);
 R_API RIODesc *r_io_desc_get(RIO *io, int fd);
 //R_API int r_io_desc_generate(RIO *io);

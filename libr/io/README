@@ -1,0 +1,5 @@
+RIO design
+==========
+
+rio api allows to seamlessly access to underlying io backends
+and define rules on top of it to act as an mmu.
