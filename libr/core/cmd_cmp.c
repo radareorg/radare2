@@ -197,7 +197,8 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case 'X':
 		buf = malloc (core->blocksize);
-		ret = r_io_read_at (core->io, r_num_math (core->num, input+1), buf, core->blocksize);
+		ret = r_io_read_at (core->io, r_num_math (core->num, input+1),
+			buf, core->blocksize);
 		radare_compare (core, core->block, buf, ret);
 		free (buf);
 		break;
@@ -249,11 +250,8 @@ static int cmd_cmp(void *data, const char *input) {
 		if (!b) return 0;
 		memset (b, 0xff, core->blocksize);
 		r_core_read_at (core, addr, b, core->blocksize);
-#if 0
-		r_io_seek (core->io, addr, R_IO_SEEK_SET);
-		r_io_read (core->io, b, core->blocksize);
-#endif
-		r_print_hexdiff (core->print, core->offset, core->block, addr, b, core->blocksize, col);
+		r_print_hexdiff (core->print, core->offset, core->block,
+			addr, b, core->blocksize, col);
 		free (b);
 		}
 		break;

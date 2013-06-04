@@ -3,7 +3,7 @@
 #include <r_core.h>
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
-	int rawstr, hasstr, minstr;
+	int hasstr, minstr;
 	char *p, *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
 	RBinString *string;

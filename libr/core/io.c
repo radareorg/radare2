@@ -235,7 +235,8 @@ R_API int r_core_block_read(RCore *core, int next) {
 		return -1;
 	}
 	r_io_set_fd (core->io, core->file->fd);
-	off = r_io_seek (core->io, core->offset+((next)?core->blocksize:0), R_IO_SEEK_SET);
+	off = r_io_seek (core->io, core->offset+((next)?core->blocksize:0),
+		R_IO_SEEK_SET);
 	if (off == UT64_MAX) {
 		memset (core->block, 0xff, core->blocksize);
 // TODO: do continuation in io
@@ -266,5 +267,5 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
 	if (addr>=core->offset && addr<=core->offset+core->blocksize)
 		r_core_block_read (core, 0);
 #endif
-	return (ret==size); //UT64_MAX);
+	return (ret==size);
 }

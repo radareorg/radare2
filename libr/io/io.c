@@ -176,13 +176,16 @@ static inline int r_io_read_internal(RIO *io, ut8 *buf, int len) {
 }
 
 R_API int r_io_read(RIO *io, ut8 *buf, int len) {
+	int ret;
 	if (io==NULL || io->fd == NULL)
 		return -1;
 	/* IGNORE check section permissions 
 	if (io->enforce_rwx && !(r_io_section_get_rwx (io, io->off) & R_IO_READ))
 		return -1;
 	 */
-	return r_io_read_at (io, io->off, buf, len);
+	ret = r_io_read_at (io, io->off, buf, len);
+	if (ret>0) io->off += ret;
+	return ret;
 }
 
 // XXX: this is buggy. must use seek+read
@@ -256,14 +259,11 @@ eprintf ("RETRERET\n");
 
 R_API ut64 r_io_read_i(RIO *io, ut64 addr, int sz, int endian) {
 	ut64 ret = 0LL;
-	int err;
 	ut8 buf[8];
-	if (sz > 8) sz = 8;
-	if (sz < 0) sz = 1;
-	err = r_io_read_at (io, addr, buf, sz);
-	if (err == sz) r_mem_copyendian ((ut8*)&ret, buf, sz, endian);
-	else return -1;
-	//else perror("Cannot read");
+	sz = R_DIM (sz, 1, 8);
+	if (sz != r_io_read_at (io, addr, buf, sz))
+		return UT64_MAX;
+	r_mem_copyendian ((ut8*)&ret, buf, sz, endian);
 	return ret;
 }
 
@@ -276,7 +276,7 @@ R_API int r_io_resize(RIO *io, ut64 newsize) {
 
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len) {
 	int ret = R_FALSE;
-	if (len) {
+	if (len>0) {
 		io->write_mask_fd = io->fd->fd;
 		io->write_mask_buf = (ut8 *)malloc (len);
 		memcpy (io->write_mask_buf, buf, len);
