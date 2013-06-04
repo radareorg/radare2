@@ -1,4 +1,7 @@
-MODS=udis86 java sdb
+include ../config-user.mk
+include ../mk/gcc.mk
+
+MODS=udis86 java sdb tcc
 URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
@@ -33,7 +36,29 @@ sdb-sync sync-sdb:
 	echo '#include <sdb/sdb.h>' > $I/sdb.h
 	mkdir -p sdb/test sdb/memcache
 	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' -i foo sdb/config.mk
-	echo all clean mrproper: > sdb/memcache/Makefile
-	echo all clean mrproper: > sdb/test/Makefile
+	echo all clean mrproper: | tee sdb/test/Makefile > sdb/memcache/Makefile
 	git add $I/sdb*
 	git add sdb
+
+$(TCCLIB) libr_tcc/libr_tcc.a:
+	cd libr_tcc ; ${MAKE}
+
+tcc-clean tccclean:
+	cd libr_tcc ; ${MAKE} clean
+
+CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
+HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
+HFILES+=elf.h libtcc.h elf.h config.h i386-tok.h
+
+# TODO: use mob branch?
+
+.PHONY: sdb-sync sync-sdb sdbclean
+tcc-sync sync-tcc:
+	rm -rf _
+	git clone git://repo.or.cz/tinycc.git _
+	cd _ ; ./configure --prefix=${PREFIX}
+	mkdir -p tcc
+	for a in ${CFILES} ${HFILES} ; do cp -f _/$$a tcc ; done
+	cp -f _/VERSION _/COPYING _/stab.def tcc
+	git add tcc
+	rm -rf _
