@@ -21,8 +21,6 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 	LIBMAGIC = -lr_magic ;
 }
 
-CHKPRG FLEX flex
-
 CHKLIB ewf
 PKGCFG EWF_CFLAGS EWF_LDFLAGS libewf
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
@@ -69,7 +67,7 @@ ARG_WITH HAVE_BIGEND big-endian force big endian ;
 IF HAVE_BIGEND { LIL_ENDIAN = 0 ; }
 
 CHKLIB lua5.1
-CHKLIB tcc
+(( CHKLIB tcc ))
 
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;

@@ -92,6 +92,7 @@ install-doc-symlink:
 install: install-doc install-man install-www
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd shlr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	for a in ${DATADIRS} ; do \
 	(cd $$a ; ${MAKE} install LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
@@ -119,6 +120,7 @@ install-pkgconfig-symlink:
 symstall install-symlink: install-man-symlink install-doc-symlink install-pkgconfig-symlink symstall-www
 	cd libr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd shlr && ${MAKE} install-symlink PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	for a in ${DATADIRS} ; do (\
 		cd $$a ; \
 		echo $$a ; \
@@ -130,6 +132,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
+	cd shlr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd libr/syscall/d && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR} LIBDIR=${LIBDIR}
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"

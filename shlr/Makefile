@@ -48,7 +48,7 @@ tcc-clean tccclean:
 
 CFILES=i386-asm.c i386-gen.c libtcc.c tccasm.c tccelf.c tccgen.c tccpp.c
 HFILES=tcc.h i386-asm.h tcclib.h tcctok.h stab.h
-HFILES+=elf.h libtcc.h elf.h config.h i386-tok.h
+HFILES+=elf.h libtcc.h config.h i386-tok.h
 
 # TODO: use mob branch?
 
@@ -62,3 +62,16 @@ tcc-sync sync-tcc:
 	cp -f _/VERSION _/COPYING _/stab.def tcc
 	git add tcc
 	rm -rf _
+
+D=${DESTDIR}/${PREFIX}
+install:
+	mkdir -p ${D}/lib
+	cp -f tcc/libr_tcc* ${D}/lib
+
+symstall:
+	mkdir -p ${D}/lib
+	for a in tcc/libr_tcc* ; do \
+		ln -fs ${PWD}/$$a ${D}/lib/$$a ; done
+
+uninstall deinstall:
+	rm -f ${D}/lib/libr_tcc*

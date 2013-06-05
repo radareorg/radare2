@@ -1,5 +1,30 @@
 RIO design
 ==========
 
-rio api allows to seamlessly access to underlying io backends
+rio api allows to seamlessly access to underlying IO backends
 and define rules on top of it to act as an mmu.
+
+Actions
+-------
+ - open
+ - read
+ - seek
+ - write
+ - close
+
+Layers
+------
+ - cache    caches write ops and modifies reads
+ - map      allows to map a certain file at a given offset
+ - sections like maps, but provide more information for virtual addressing
+
+Features
+--------
+ - undo
+ - buffer
+ - desc
+
+fn read(io: IO) {
+	ut64 offset;
+	if io.offset
+}
