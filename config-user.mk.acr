@@ -55,6 +55,7 @@ SSL_CFLAGS=@SSL_CFLAGS@
 SSL_LDFLAGS=@SSL_LDFLAGS@
 
 GIT_TIP=$(shell git log HEAD^..HEAD|head -n1|cut -d ' ' -f2)
+GIT_TAP=$(shell git describe --tags)
 
 # cache compiler flags at configure time #
 CFLAGS+=@CFLAGS@

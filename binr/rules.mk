@@ -2,7 +2,9 @@ BINR_PROGRAM=1
 include ../../libr/config.mk
 
 CFLAGS+=-DLIBDIR=\"${LIBDIR}\" -I$(LTOP)/include
-CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\" -DR2_GITTIP=\"$(GIT_TIP)\"
+CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\" 
+CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
+CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 
 
 ifeq ($(USE_RPATH),1)

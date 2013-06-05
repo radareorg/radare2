@@ -10,7 +10,9 @@ sign:
 	ldid -Sradare2.xml radare2
 
 osxsign:
-	${CC} radare2.o ${CFLAGS} ${LDFLAGS} -sectcreate __TEXT __info_plist ./Info.plist -o radare2 -framework Security -framework CoreFoundation
+	${CC} radare2.o ${CFLAGS} ${LDFLAGS} -o radare2 \
+		-sectcreate __TEXT __info_plist ./Info.plist \
+		-framework Security -framework CoreFoundation
 	codesign -dvvv -s radare2 ./radare2
 	sudo chown root:procmod radare2
 	sudo chmod g+s radare2
