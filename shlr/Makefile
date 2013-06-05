@@ -68,10 +68,10 @@ install:
 	mkdir -p ${D}/lib
 	cp -f tcc/libr_tcc* ${D}/lib
 
-symstall:
+install-symlink symstall:
 	mkdir -p ${D}/lib
-	for a in tcc/libr_tcc* ; do \
-		ln -fs ${PWD}/$$a ${D}/lib/$$a ; done
+	cd tcc ; for a in libr_tcc* ; do \
+		ln -fs `pwd`/$$a ${D}/lib/$$a ; done
 
 uninstall deinstall:
 	rm -f ${D}/lib/libr_tcc*
