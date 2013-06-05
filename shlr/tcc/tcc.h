@@ -50,7 +50,9 @@
 #ifndef _WIN32
 # include <unistd.h>
 # include <sys/time.h>
-# include <sys/ucontext.h>
+# ifndef __HAIKU__
+#  include <sys/ucontext.h>
+# endif
 # include <sys/mman.h>
 # ifndef CONFIG_TCC_STATIC
 #  include <dlfcn.h>

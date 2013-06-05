@@ -8,6 +8,10 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
+#ifdef __HAIKU__
+# define __UNIX__ 1
+#endif
+
 #if defined (__FreeBSD__) || defined (__FreeBSD_kernel__)
 #define __KFBSD__ 1
 #else

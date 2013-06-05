@@ -9,7 +9,7 @@
 #define __UNIX__ 0
 #endif
 
-#if __UNIX__ && !defined (__QNX__)
+#if __UNIX__ && !defined (__QNX__) && !defined (__HAIKU__)
 #include <sys/ipc.h>
 #include <sys/shm.h>
 

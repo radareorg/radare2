@@ -18,7 +18,9 @@ ifeq ($(WITHNONPIC),1)
 LDFLAGS+=../../libr/libr.a
 LDFLAGS+=../../libr/db/sdb/src/libsdb.a
 LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
+ifneq (${OSTYPE},haiku)
 LDFLAGS+=-lm
+endif
 endif
 LDFLAGS+=${DL_LIBS}
 

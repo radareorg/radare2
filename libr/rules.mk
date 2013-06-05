@@ -29,6 +29,10 @@ else
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}
 endif
 
+ifeq (${OSTYPE},haiku)
+LDFLAGS+=-lnetwork
+endif
+
 all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 ifneq ($(SILENT),)
 	@-if [ -f p/Makefile ]; then (cd p && ${MAKE} all) ; fi

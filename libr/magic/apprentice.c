@@ -48,6 +48,10 @@
 #define	EATAB {while (isascii((ut8) *l) && isspace((ut8) *l))  ++l;}
 #define LOWCASE(l) (isupper((ut8) (l)) ? tolower((ut8) (l)) : (l))
 
+#ifdef __HAIKU__
+#define MAP_FILE 0
+#endif
+
 struct r_magic_entry {
 	struct r_magic *mp;	
 	ut32 cont_count;

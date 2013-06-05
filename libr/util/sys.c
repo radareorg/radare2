@@ -12,6 +12,9 @@
 # include <sys/stat.h>
 # include <errno.h>
 # include <signal.h>
+#ifdef __HAIKU__
+# define Sleep sleep
+#endif
 #elif __WINDOWS__
 # include <io.h>
 # include <winbase.h>

@@ -29,6 +29,10 @@
 typedef unsigned short uint16_t;
 #endif
 
+#ifdef __HAIKU__
+#include <stdint.h>
+#endif
+
 enum{
 	P_NONE,
 	P_U8,

@@ -33,7 +33,9 @@ ifneq (,$(findstring r_fs,$(BINDEPS)))
 LDLIBS+=$(LIBR)/fs/p/grub/libgrubfs.a
 endif
 ifneq (,$(findstring r_hash,$(BINDEPS)))
+ifneq (${OSTYPE},haiku)
 LDLIBS+=-lm
+endif
 endif
 ifneq (,$(findstring r_lib,$(BINDEPS)))
 LDLIBS+=${DL_LIBS}
@@ -109,6 +111,13 @@ EXT_AR=a
 EXT_SO=so
 EXT_EXE=
 TH_LIBS=-lpthread
+endif
+ifeq (${OSTYPE},haiku)
+CFLAGS+=-D__UNIX__=1
+EXT_AR=a
+EXT_SO=so
+EXT_EXE=
+TH_LIBS=
 endif
 ifeq (${OSTYPE},darwin)
 CFLAGS+=-D__UNIX__=1
