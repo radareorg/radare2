@@ -1,9 +1,11 @@
 /* radare - LGPL - Copyright 2012 - Anton Kochkov */
 
 #include <r_anal.h>
+#if 0
 #include "cparse/lexglb.h"
 #include "cparse/cdata.h"
 #include "cparse/pp.h"
+#endif
 
 // TOTHINK: Right now we are loading types in RList
 // but may be better to add argument RAnal *a, to
