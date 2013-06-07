@@ -7,8 +7,6 @@
 #include <signal.h>
 #endif
 
-static int endian = 1; // XXX HACK
-
 static int core_cmd_callback (void *user, const char *cmd) {
 	RCore *core = (RCore *)user;
 	return r_core_cmd0 (core, cmd);
@@ -46,7 +44,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		int refsz = (core->assembler->bits & R_SYS_BITS_64)? 8: 4;
 		const char *p = strchr (str+5, ':');
 		ut64 n;
-		// TODO: honor endian
+		// TODO: honor LE
 		if (p) {
 			refsz = atoi (str+1);
 			str = p;
@@ -749,7 +747,7 @@ static void rap_break (void *u) {
 	}
 }
 
-// TODO: move into core/io/rap? */
+// TODO: PLEASE move into core/io/rap? */
 // TODO: use static buffer instead of mallocs all the time. it's network!
 R_API int r_core_serve(RCore *core, RIODesc *file) {
 	ut8 cmd, flg, *ptr = NULL, buf[1024];
@@ -757,6 +755,7 @@ R_API int r_core_serve(RCore *core, RIODesc *file) {
 	int i, pipefd;
 	RIORap *rior;
 	ut64 x;
+	int LE = 1; // 1 if host is little LE
 
 	rior = (RIORap *)file->data;
 	if (rior == NULL|| rior->fd == NULL) {
@@ -824,7 +823,7 @@ reaccept:
 					}
 				}
 				buf[0] = RMT_OPEN | RMT_REPLY;
-				r_mem_copyendian (buf+1, (ut8 *)&pipefd, 4, !endian);
+				r_mem_copyendian (buf+1, (ut8 *)&pipefd, 4, !LE);
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
 
@@ -841,7 +840,7 @@ reaccept:
 							r_meta_type_to_string (d->type),
 							(int)(d->to-d->from), d->str, d->from);
 					i = strlen ((char *)buf);
-					r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !endian);
+					r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
 					r_socket_write (c, (ut8 *)&j, 4);
 					r_socket_write (c, buf, i);
 					r_socket_flush (c);
@@ -854,7 +853,7 @@ reaccept:
 							"S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d",
 							s->offset, s->vaddr, s->size, s->vsize, s->name, s->rwx);
 					i = strlen ((char *)buf);
-					r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !endian);
+					r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
 					r_socket_write (c, (ut8 *)&j, 4);
 					r_socket_write (c, buf, i);
 					r_socket_flush (c);
@@ -869,7 +868,7 @@ reaccept:
 						snprintf ((char *)buf, sizeof (buf),
 								"fs %s", r_flag_space_get_i (core->flags, fs));
 						i = strlen ((char *)buf);
-						r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !endian);
+						r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
 						r_socket_write (c, (ut8 *)&j, 4);
 						r_socket_write (c, buf, i);
 					}
@@ -877,7 +876,7 @@ reaccept:
 									"f %s %"PFMT64d" 0x%08"PFMT64x,
 									flag->name, flag->size, flag->offset);
 						i = strlen ((char *)buf);
-						r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !endian);
+						r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
 						r_socket_write (c, (ut8 *)&j, 4);
 						r_socket_write (c, buf, i);
 						r_socket_flush (c);
@@ -885,7 +884,7 @@ reaccept:
 
 				snprintf ((char *)buf, sizeof (buf), "s 0x%"PFMT64x, core->offset);
 				i = strlen ((char *)buf);
-				r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !endian);
+				r_mem_copyendian ((ut8 *)&j, (ut8 *)&i, 4, !LE);
 				r_socket_write (c, (ut8 *)&j, 4);
 				r_socket_write (c, buf, i);
 
@@ -898,7 +897,7 @@ reaccept:
 				break;
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
-				r_mem_copyendian ((ut8*)&i, buf, 4, !endian);
+				r_mem_copyendian ((ut8*)&i, buf, 4, !LE);
 				ptr = (ut8 *)malloc (i+core->blocksize+5);
 				if (ptr==NULL) {
 					eprintf ("Cannot read %d bytes\n", i);
@@ -911,7 +910,7 @@ reaccept:
 						i = RMT_MAX;
 					if (i>core->blocksize)
 						r_core_block_size (core, i);
-					r_mem_copyendian (ptr+1, (ut8 *)&i, 4, !endian);
+					r_mem_copyendian (ptr+1, (ut8 *)&i, 4, !LE);
 					memcpy (ptr+5, core->block, i); //core->blocksize);
 					r_socket_write (c, ptr, i+5);
 					r_socket_flush (c);
@@ -925,7 +924,7 @@ reaccept:
 
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
-				r_mem_copyendian ((ut8*)&i, (ut8 *)bufr, 4, !endian);
+				r_mem_copyendian ((ut8*)&i, (ut8 *)bufr, 4, !LE);
 				if (i>0 && i<RMT_MAX) {
 					if ((cmd=malloc (i))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
@@ -945,7 +944,7 @@ reaccept:
 				}
 				bufw = malloc (cmd_len + 5);
 				bufw[0] = RMT_CMD | RMT_REPLY;
-				r_mem_copyendian ((ut8*)bufw+1, (ut8 *)&cmd_len, 4, !endian);
+				r_mem_copyendian ((ut8*)bufw+1, (ut8 *)&cmd_len, 4, !LE);
 				memcpy (bufw+5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);
 				r_socket_flush (c);
@@ -955,7 +954,7 @@ reaccept:
 				}
 			case RMT_WRITE:
 				r_socket_read (c, buf, 5);
-				r_mem_copyendian((ut8 *)&x, buf+1, 4, endian);
+				r_mem_copyendian((ut8 *)&x, buf+1, 4, LE);
 				ptr = malloc (x);
 				r_socket_read (c, ptr, x);
 				r_core_write_at (core, core->offset, ptr, x);
@@ -964,13 +963,13 @@ reaccept:
 				break;
 			case RMT_SEEK:
 				r_socket_read_block (c, buf, 9);
-				r_mem_copyendian((ut8 *)&x, buf+1, 8, !endian);
+				r_mem_copyendian((ut8 *)&x, buf+1, 8, !LE);
 				if (buf[0]!=2) {
 					r_core_seek (core, x, buf[0]);
 					x = core->offset;
 				} else x = core->file->size;
 				buf[0] = RMT_SEEK | RMT_REPLY;
-				r_mem_copyendian (buf+1, (ut8*)&x, 8, !endian);
+				r_mem_copyendian (buf+1, (ut8*)&x, 8, !LE);
 				r_socket_write (c, buf, 9);
 				r_socket_flush (c);
 				break;
@@ -978,11 +977,11 @@ reaccept:
 				eprintf ("CLOSE\n");
 				// XXX : proper shutdown
 				r_socket_read_block (c, buf, 4);
-				r_mem_copyendian ((ut8*)&i, buf, 4, endian);
+				r_mem_copyendian ((ut8*)&i, buf, 4, LE);
 				{
 				//FIXME: Use r_socket_close
 				int ret = close (i);
-				r_mem_copyendian (buf+1, (ut8*)&ret, 4, !endian);
+				r_mem_copyendian (buf+1, (ut8*)&ret, 4, !LE);
 				buf[0] = RMT_CLOSE | RMT_REPLY;
 				r_socket_write (c, buf, 5);
 				r_socket_flush (c);
@@ -991,7 +990,7 @@ reaccept:
 			case RMT_SYSTEM:
 				// read
 				r_socket_read_block (c, buf, 4);
-				r_mem_copyendian ((ut8*)&i, buf, 4, !endian);
+				r_mem_copyendian ((ut8*)&i, buf, 4, !LE);
 				if (i>0&&i<RMT_MAX) {
 					ptr = (ut8 *) malloc (i+6);
 					if (!ptr) return R_FALSE;
@@ -1041,7 +1040,7 @@ reaccept:
 				
 				// send
 				ptr[0] = (RMT_SYSTEM | RMT_REPLY);
-				r_mem_copyendian ((ut8*)ptr+1, (ut8*)&i, 4, !endian);
+				r_mem_copyendian ((ut8*)ptr+1, (ut8*)&i, 4, !LE);
 				if (i<0) i = 0;
 				r_socket_write (c, ptr, i+5);
 				r_socket_flush (c);

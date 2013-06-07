@@ -124,7 +124,7 @@ static int bin_info (RCore *r, int mode) {
 			info->has_va? "true": "false",
 			info->bits,
 			r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
-			r_str_bool (R_BIN_DBG_STATIC (info->dbg_info)),
+			r_str_bool (r_bin_is_static (r->bin)),//R_BIN_DBG_STATIC (info->dbg_info)),
 			r_str_bool (R_BIN_DBG_LINENUMS (info->dbg_info)),
 			r_str_bool (R_BIN_DBG_SYMS (info->dbg_info)),
 			r_str_bool (R_BIN_DBG_RELOCS (info->dbg_info))
@@ -202,7 +202,7 @@ static int bin_info (RCore *r, int mode) {
 					info->arch, info->bits, info->machine, info->os,
 					info->subsystem, info->big_endian? "big": "little", 
 					r_str_bool (R_BIN_DBG_STRIPPED (info->dbg_info)),
-					r_str_bool (R_BIN_DBG_STATIC (info->dbg_info)),
+					r_str_bool (r_bin_is_static (r->bin)),
 					r_str_bool (R_BIN_DBG_LINENUMS (info->dbg_info)),
 					r_str_bool (R_BIN_DBG_SYMS (info->dbg_info)),
 					r_str_bool (R_BIN_DBG_RELOCS (info->dbg_info)),
@@ -854,6 +854,11 @@ static int bin_libs (RCore *r, int mode) {
 			r_cons_printf ("%s\"%s\"", iter->p?",":"",lib);
 		}
 		r_cons_printf ("]");
+	} else
+	if ((mode & R_CORE_BIN_RADARE)) {
+		r_list_foreach (libs, iter, lib) {
+			r_cons_printf ("CCa entry0 %s\n", lib);
+		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		// Nothing to set.

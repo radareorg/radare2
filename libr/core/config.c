@@ -926,14 +926,6 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	config_set("range.graphs", "true");
 	config_set("range.functions", "true");
 
-	config_set("child.stdio", "");
-	config_set("child.stdin", "");
-	config_set("child.stdout", "");
-	config_set("child.stderr", "");
-	config_set("child.setgid", ""); // must be int ?
-	config_set("child.chdir", ".");
-	config_set("child.chroot", "/");
-	config_set("child.setuid", "");
 #if __mips__
 	config_set("dbg.fpregs", "true");
 #else
@@ -942,24 +934,6 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	config_set("dbg.forks", "false"); // stop debugger in any fork or clone
 	config_set("dbg.controlc", "true"); // stop debugger if ^C is pressed
 	config_set_i("dbg.focus", 0); // focus on ps.pid or not (ignore events of rest of procs)
-	config_set("dbg.syms", "true");
-	config_set("dbg.stepo", "false"); // step over for !contu (debug_step())
-	config_set("dbg.maps", "true");
-	config_set("dbg.sections", "true");
-	config_set("dbg.strings", "false");
-	config_set("dbg.stop", "false");
-	config_set("dbg.threads", "false");
-	config_set("dbg.contscbt", "true");
-	config_set("dbg.contsc2", "true"); // WTF?
-	config_set("dbg.regs", "true");
-	config_set("dbg.regs2", "false");
-	config_set("dbg.stack", "true");
-	config_set("dbg.vstack", "true");
-	config_set("dbg.wptrace", "false");
-	config_set_i("dbg.stacksize", 66);
-	config_set("dbg.stackreg", "esp");
-	config_set("dbg.bt", "false");
-	config_set_i("dbg.btlast", 0);
 	config_set("dbg.fullbt", "false"); // user backtrace or lib+user backtrace
 	config_set("dbg.bttype", "default"); // default, st and orig or so!
 #if __APPLE__ || __ARM__ || __mips__

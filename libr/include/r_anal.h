@@ -872,6 +872,8 @@ R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int size, int length);
 R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, int size, const char *str);
 R_API void r_anal_hint_set_analstr (RAnal *a, ut64 addr, int size, const char *str);
 
+R_API int r_anal_esil_eval(RAnal *anal, const char *str);
+
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;
 extern RAnalPlugin r_anal_plugin_c55plus;

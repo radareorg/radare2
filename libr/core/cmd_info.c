@@ -90,6 +90,7 @@ static int cmd_info(void *data, const char *input) {
 #define RBININFO(x) r_core_bin_info(core,x,mode,va,NULL,offset)
 	case 'S': RBININFO (R_CORE_BIN_ACC_SECTIONS); break;
 	case 'h': RBININFO (R_CORE_BIN_ACC_FIELDS); break;
+	case 'l': RBININFO (R_CORE_BIN_ACC_LIBS); break;
 	case 's': RBININFO (R_CORE_BIN_ACC_SYMBOLS); break;
 	case 'd': RBININFO (R_CORE_BIN_ACC_DWARF); break;
 	case 'i': RBININFO (R_CORE_BIN_ACC_IMPORTS); break;

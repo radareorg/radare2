@@ -169,6 +169,7 @@ static void rcc_reset_callname() {
 #define FRAME_END_FMT "__%d_%d_end_frame%d"
 #endif
 
+#if 0
 static char *get_frame_label(int type) {
 	static char label[128];
 	int nf = nfunctions;
@@ -192,6 +193,7 @@ static char *get_end_frame_label(REgg *egg) {
 	//snprintf (label, sizeof (label)-1, "frame_end_%d_%d", nfunctions, nbrackets);
 	return label;
 }
+#endif
 
 static void rcc_pusharg(REgg *egg, char *str) {
 	REggEmit *e = egg->emit;

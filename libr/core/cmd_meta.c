@@ -94,7 +94,9 @@ static int cmd_meta(void *data, const char *input) {
 		}
 	case 'C': /* comment */
 		if (input[1] == 'a') {
-			const char *p = strchr (input+3, ' ');
+			char *s = strdup (input+3);
+			char *p = strchr (s, ' ');
+			if (p) *p++ = 0;
 			ut64 addr;
 			if (input[2]=='-') {
 				if (input[3]) {
@@ -105,16 +107,19 @@ static int cmd_meta(void *data, const char *input) {
 				} else {
 					eprintf ("Usage: CCa-[address]\n");
 				}
+				free (s);
 				return R_TRUE;
 			}
-			addr = r_num_math (core->num, input+2);
+			addr = r_num_math (core->num, s);
 			// Comment at
 			if (p) {
-				r_meta_set_string (core->anal->meta,
-					R_META_TYPE_COMMENT, addr, p+1);
+				r_meta_add (core->anal->meta,
+					R_META_TYPE_COMMENT,
+					addr, addr+1, p);
 			} else {
 				eprintf ("Usage: CCa [address] [comment]\n");
 			}
+			free (s);
 			return R_TRUE;
 		}
 	case 'h': /* comment */

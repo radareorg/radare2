@@ -558,6 +558,13 @@ int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 }
 
+static inline int noodle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
+	const ut8 *p = bin->b->buf;
+	if (bin->b->length>64) {
+		p += bin->b->length-64;
+	} else return 0;
+	return r_mem_mem (p, 64, (const ut8 *)s, strlen (s)) != NULL;
+}
 static inline int needle(struct Elf_(r_bin_elf_obj_t) *bin, const char *s) {
 	if (bin->shstrtab) {
 		int len = bin->shstrtab_size;
@@ -574,6 +581,7 @@ char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (needle (bin, "openbsd")) return strdup ("openbsd");
 	if (needle (bin, "netbsd")) return strdup ("netbsd");
 	if (needle (bin, "freebsd")) return strdup ("freebsd");
+	if (noodle (bin, "BEOS:APP_VERSION")) return strdup ("beos");
 	if (needle (bin, "GNU")) return strdup ("linux");
 	return strdup ("linux");
 #if 0

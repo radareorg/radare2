@@ -250,8 +250,10 @@ toro:
 						r_config_set_i (core->config, "asm.bits", f->bits);
 					}
 				} else {
-					r_config_set_i (core->config, "asm.bits", oldbits);
-					oldbits = 0;
+					if (oldbits) {
+						r_config_set_i (core->config, "asm.bits", oldbits);
+						oldbits = 0;
+					}
 				}
 			} else {
 				if (oldbits) {

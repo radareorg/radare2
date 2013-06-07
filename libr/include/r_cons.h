@@ -248,6 +248,7 @@ R_API int  r_cons_eof();
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set (const char *key, const char *val);
 R_API void r_cons_pal_list ();
+R_API void r_cons_pal_show ();
 R_API int r_cons_get_size(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
 R_API int r_cons_html_print(const char *ptr);

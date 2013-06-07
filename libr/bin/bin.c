@@ -388,6 +388,8 @@ R_API int r_bin_is_stripped (RBin *bin) {
 }
 
 R_API int r_bin_is_static (RBin *bin) {
+	if (r_list_length (bin->cur.o->libs)>0)
+		return R_FALSE;
 	return R_BIN_DBG_STATIC (bin->cur.o->info->dbg_info);
 }
 

@@ -46,6 +46,11 @@ static int cmd_help(void *data, const char *input) {
 			} else eprintf ("Unknown opcode\n");
 		} else eprintf ("Use: ?d [opcode]    to get the description of the opcode\n");
 		break;
+	case 'h':
+		if (input[1]==' ') {
+			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input+2));
+		} else eprintf ("Usage: ?h [string-to-hash]\n");
+		break;
 	case 'y':
 		for (input++; input[0]==' '; input++);
 		if (*input) {
@@ -405,6 +410,7 @@ static int cmd_help(void *data, const char *input) {
 			" ?d opcode         describe opcode for asm.arch\n"
 			" ?e string         echo string\n"
 			" ?f [num] [str]    map each bit of the number as flag string index\n"
+			" ?h [str]          calculate hash for given string\n"
 			" ?iy prompt        yesno input prompt\n"
 			" ?i[ynmkp] arg     prompt for number or Yes,No,Msg,Key,Path and store in $$?\n"
 			" ?in prompt        yesno input prompt\n"

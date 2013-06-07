@@ -40,12 +40,24 @@ typedef struct r_egg_t {
 } REgg;
 
 /* XXX: this may fail in different arches */
-#define R_EGG_OS_LINUX 0xcd21ce66
-#define R_EGG_OS_OSX 0x1bf9e4
-#define R_EGG_OS_DARWIN 0x5e417f87
-#define R_EGG_OS_MACOS 0xdc208773
-#define R_EGG_OS_W32 0x1dd9f6
-#define R_EGG_OS_WINDOWS 0xc9f3d7f
+#if 0
+r2 -q - <<EOF
+?e #define R_EGG_OS_LINUX \`?h linux\`
+?e #define R_EGG_OS_OSX \`?h osx\`
+?e #define R_EGG_OS_DARWIN \`?h darwin\`
+?e #define R_EGG_OS_MACOS \`?h macos\`
+?e #define R_EGG_OS_W32 \`?h w32\`
+?e #define R_EGG_OS_WINDOWS \`?h windows\`
+?e #define R_EGG_OS_BEOS \`?h beos\`
+EOF
+#endif
+#define R_EGG_OS_LINUX 0x0a52b843
+#define R_EGG_OS_OSX 0x0b875ee1
+#define R_EGG_OS_DARWIN 0x4292f662
+#define R_EGG_OS_MACOS 0x0a66c956
+#define R_EGG_OS_W32 0x0b877473
+#define R_EGG_OS_WINDOWS 0x7de634da
+#define R_EGG_OS_BEOS 0x7c70357e
 
 #if __APPLE__
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX

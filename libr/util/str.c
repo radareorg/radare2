@@ -205,20 +205,26 @@ fail:
 	return dst;
 }
 
-/* XXX Fix new hash algo*/
-R_API ut64 r_str_hash64(const char *str) {
-	ut64 ret = 0;
-	for (; *str; str++)
-		ret ^= (ret<<7 | *str);
-	return ret;
+R_API ut64 r_str_hash64(const char *s) {
+	int len = strlen (s);
+        ut64 h = 5381;
+        if (len<1) len = strlen (s)+1; // XXX slow
+        while (len--) {
+                h += (h<<5);
+                h ^= *s++;
+        }
+        return h;
 }
 
-R_API ut32 r_str_hash(const char *str) {
-	ut32 ret = 0;
-	if (str && *str)
-		for (; *str; str++)
-			ret ^= (ret<<7 | *str);
-	return ret;
+R_API ut32 r_str_hash (const char *s) {
+	int len = strlen (s);
+        ut32 h = 5381;
+        if (len<1) len = strlen (s)+1; // XXX slow
+        while (len--) {
+                h += (h<<5);
+                h ^= *s++;
+        }
+        return h;
 }
 
 R_API int r_str_delta(char *p, char a, char b) {

@@ -222,28 +222,28 @@ static RBinInfo* info(RBinArch *arch) {
 		strncpy (ret->rpath, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	} else strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	if ((str = Elf_(r_bin_elf_get_file_type) (arch->bin_obj)) == NULL)
+	if (!(str = Elf_(r_bin_elf_get_file_type) (arch->bin_obj)))
 		return NULL;
 	strncpy (ret->type, str, R_BIN_SIZEOF_STRINGS);
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
 	free (str);
-	if ((str = Elf_(r_bin_elf_get_elf_class) (arch->bin_obj)) == NULL)
+	if (!(str = Elf_(r_bin_elf_get_elf_class) (arch->bin_obj)))
 		return NULL;
 	strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	if ((str = Elf_(r_bin_elf_get_osabi_name) (arch->bin_obj)) == NULL)
+	if (!(str = Elf_(r_bin_elf_get_osabi_name) (arch->bin_obj)))
 		return NULL;
 	strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	if ((str = Elf_(r_bin_elf_get_osabi_name) (arch->bin_obj)) == NULL)
+	if (!(str = Elf_(r_bin_elf_get_osabi_name) (arch->bin_obj)))
 		return NULL;
 	strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	if ((str = Elf_(r_bin_elf_get_machine_name) (arch->bin_obj)) == NULL)
+	if (!(str = Elf_(r_bin_elf_get_machine_name) (arch->bin_obj)))
 		return NULL;
 	strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
 	free (str);
-	if ((str = Elf_(r_bin_elf_get_arch) (arch->bin_obj)) == NULL)
+	if (!(str = Elf_(r_bin_elf_get_arch) (arch->bin_obj)))
 		return NULL;
 	strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 	free (str);

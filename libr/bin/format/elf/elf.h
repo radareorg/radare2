@@ -77,7 +77,7 @@ struct Elf_(r_bin_elf_obj_t) {
 	ut64 baddr;
 	int endian;
 	const char* file;
-	struct r_buf_t* b;
+	RBuffer *b;
 };
 
 int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin);

@@ -16,7 +16,7 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 	int i;
 	RIODesc *desc = R_NEW (RIODesc);
 	if (!desc) return NULL;
-	if (fd<0) eprintf ("r_io_desc_new: Warning: fd '%s' is -1\n", name);
+	if (fd==-1) eprintf ("WARNING: r_io_desc_new with fd = -1\n");
 	desc->state = R_IO_DESC_TYPE_OPENED;
 	desc->name = strdup (name);
 	if (desc->name == NULL) {
@@ -25,7 +25,7 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 	}
 	desc->plugin = plugin;
 	desc->flags = flags;
-	if (fd <0) {
+	if (fd == -2) {
 		ut8 *p = (ut8 *)&(desc->fd);
 		desc->fd = ((int) ((size_t) desc) & 0xffffff);
 		desc->fd = p[0];
