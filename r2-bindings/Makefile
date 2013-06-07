@@ -159,7 +159,10 @@ install-python:
 	: > ${PYTHON_INSTALL_DIR}/__init__.py ; \
 	cp -rf python/r_*.py python/*.$$E ${PYTHON_INSTALL_DIR}
 
+LUAPATH=$(shell strings `../sys/whereis.sh lua`| grep lib/lua | cut -d ';' -f 2 | grep '.so'  | cut -d '?' -f 1)
+
 install-lua:
+	@echo LUA PATH IS ${LUAPATH}
 	for a in 5.1 ; do \
 		mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
 		echo "Installing lua$$a r2 modules..." ; \
