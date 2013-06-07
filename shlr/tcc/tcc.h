@@ -51,7 +51,9 @@
 # include <unistd.h>
 # include <sys/time.h>
 # ifndef __HAIKU__
+#if __UNIX__
 #  include <sys/ucontext.h>
+#endif
 # endif
 # include <sys/mman.h>
 # ifndef CONFIG_TCC_STATIC

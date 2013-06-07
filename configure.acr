@@ -71,7 +71,7 @@ CHKLIB lua5.1
 
 (( rules for the compiler ))
 ARG_WITH USERCC=gcc compiler Define compiler to use (see mk/) ;
-ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin ) ;
+ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin haiku ) ;
 
 (( TODO: throw error if unknown ostype ))
 (( TODO: handle BSD os as different ostype? ))

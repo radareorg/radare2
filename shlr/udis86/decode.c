@@ -416,7 +416,7 @@ decode_reg(struct ud *u,
     }
     default:
       UD_ASSERT(!"invalid register type");
-      break;
+      return;
   }
   opr->type = UD_OP_REG;
   opr->base = reg;

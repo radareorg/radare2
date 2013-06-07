@@ -36,7 +36,7 @@ while : ; do
 ENVWORDS="${ENVWORDS} $1_CPU $1_OS"
 STR=`eval "echo ${S}$1"`
 SPLIT_CPU="`echo "$STR" | cut -d - -f 1`"
-SPLIT_OS="`echo "$STR" | awk -F - '{if(NF==4){print $4}else{print $3}}'`"
+SPLIT_OS="`echo "$STR" | awk -F - '{if(NF==4){print $4}else{print $2}}'`"
 eval "$1_CPU=\"$SPLIT_CPU\""
 eval "$1_OS=\"$SPLIT_OS\""
 shift
@@ -160,7 +160,7 @@ Optional Features:
   --with-little-endian   force little endian 
   --with-big-endian      force big endian 
   --with-compiler        Define compiler to use (see mk/)  (USERCC=gcc)
-  --with-ostype          Choose OS type ( gnulinux windows darwin )  (USEROSTYPE=auto)
+  --with-ostype          Choose OS type ( gnulinux windows darwin haiku )  (USEROSTYPE=auto)
   --without-pic          do not build libr as a program independent location 
   --with-nonpic          build the library archives .a 
   --with-libversion      specify different libversion  (LIBVERSION=xxx)

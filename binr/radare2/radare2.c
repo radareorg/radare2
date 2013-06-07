@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	r_core_init (&r);
-	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqvs:p:b:B:a:Lui:l:P:c:D:"
+	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vV"
 #if USE_THREADS
 "t"
 #endif
@@ -222,6 +222,7 @@ int main(int argc, char **argv) {
 		case 'f': fullfile = 1; break;
 		case 'n': run_anal = 0; break;
 		case 'N': run_rc = 0; break;
+		case 'V':
 		case 'v': return blob_version ("radare2");
 		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		case 'a': asmarch = optarg; break;
