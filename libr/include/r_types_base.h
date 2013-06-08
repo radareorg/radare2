@@ -10,6 +10,7 @@
 #define ut8 unsigned char
 #define st8 char
 #define boolt int
+#define cstr const char
 
 #define R_FAIL -1
 #define R_FALSE 0

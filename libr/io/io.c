@@ -66,13 +66,13 @@ R_API RIO *r_io_free(RIO *io) {
 }
 
 /* used by uri handler plugins */
-R_API int r_io_redirect(struct r_io_t *io, const char *file) {
+R_API int r_io_redirect(RIO *io, const char *file) {
 	free (io->redirect);
 	io->redirect = file? strdup (file): NULL;
 	return 0;
 }
 
-R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const char *file, int flags, int mode) {
+R_API RIODesc *r_io_open_as(RIO *io, cstr *urihandler, cstr *file, int flags, int mode) {
 	RIODesc *ret;
 	char *uri;
 	int urilen, hlen = strlen (urihandler);
@@ -87,15 +87,17 @@ R_API RIODesc *r_io_open_as(struct r_io_t *io, const char *urihandler, const cha
 	return ret;
 }
 
-static inline RIODesc *__getioplugin(RIO *io, const char *uri, int flags, int mode) {
+static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int mode) {
 	RIOPlugin *plugin, *iop = NULL;
 	RIODesc *desc = NULL;
+	char *uri = strdup (_uri);
 	for (;;) {
 		plugin = r_io_plugin_resolve (io, uri);
 		if (plugin && plugin->open) {
 			desc = plugin->open (io, uri, flags, mode);
 			if (io->redirect) {
-				uri = io->redirect;
+				free (uri);
+				uri = strdup (io->redirect);
 				r_io_redirect (io, NULL);
 				continue;
 			}
@@ -110,6 +112,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *uri, int flags, int mo
 		break;
 	}
 	io->plugin = iop;
+	free (uri);
 	return desc;
 }
 
@@ -132,6 +135,8 @@ static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 	RIODesc *desc = __getioplugin (io, file, flags, mode);
 	int fd;
+	if (io->redirect) 
+		return NULL;
 	if (desc) {
 		fd = desc->fd;
 	} else {

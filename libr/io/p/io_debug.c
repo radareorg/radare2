@@ -278,7 +278,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			// TODO: use io_procpid here? faster or what?
 			sprintf (uri, "ptrace://%d", pid);
 #endif
-			eprintf ("io_redirect: %s\n", uri);
 			r_io_redirect (io, uri);
 			return NULL;
 		} else {
