@@ -193,13 +193,20 @@ static int config_analsplit_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static inline int __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
+	if (!strcmp (asmarch, "x86"))
+		r_config_set_i (cfg, "asm.segoff", (asmbits==16)?1:0);
+}
+
 static int config_asmos_callback(void *user, void *data) {
 	RCore *core = (RCore*) user;
+	int asmbits = r_config_get_i (core->config, "asm.bits");
 	RConfigNode *asmarch = r_config_node_get (core->config, "asm.arch");
 	RConfigNode *node = (RConfigNode*) data;
 	if (asmarch) {
 		r_syscall_setup (core->anal->syscall, asmarch->value,
 			node->value, core->anal->bits);
+		__setsegoff (core->config, asmarch, asmbits);
 	}
 	//if (!ret) eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;
@@ -427,6 +434,7 @@ static int config_asmarch_callback(void *user, void *data) {
 	}
 	//if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
+	__setsegoff (core->config, node->value, core->assembler->bits);
 	return R_TRUE;
 }
 
@@ -467,6 +475,7 @@ static int config_asmbits_callback(void *user, void *data) {
 		//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 		//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 	}
+	__setsegoff (core->config, asmarch, core->anal->bits);
 	return ret;
 }
 
