@@ -72,7 +72,7 @@ R_API int r_io_redirect(RIO *io, const char *file) {
 	return 0;
 }
 
-R_API RIODesc *r_io_open_as(RIO *io, cstr *urihandler, cstr *file, int flags, int mode) {
+R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode) {
 	RIODesc *ret;
 	char *uri;
 	int urilen, hlen = strlen (urihandler);
