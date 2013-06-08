@@ -490,6 +490,16 @@ int main(int argc, char **argv) {
 		if (ret<0 || (ret==0 && quiet))
 			return 0;
 	}
+	/* load <file>.r2 */
+	{
+		char f[128];
+		snprintf (f, sizeof (f), "%s.r2", pfile);
+		if (r_file_exists (f)) {
+			if (!quiet)
+				eprintf ("NOTE: Loading '%s' script.\n", f);
+			r_core_cmd_file (&r, f);
+		}
+	}
 /////
 	r_list_foreach (cmds, iter, cmdn) {
 		r_core_cmd0 (&r, cmdn);

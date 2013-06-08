@@ -150,8 +150,9 @@ static int cmd_section(void *data, const char *input) {
 		default:
 			{
 			int i, rwx = 7;
-			char *ptr = strdup(input+1);
+			char *ptr = strdup (input+1);
 			const char *name = NULL;
+			char vname[64];
 			ut64 vaddr = 0LL;
 			ut64 offset = 0LL;
 			ut64 size = 0LL;
@@ -171,6 +172,16 @@ static int cmd_section(void *data, const char *input) {
 				vaddr = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 			case 1: // get offset
 				offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+			}
+			if (vsize == 0) {
+				vsize = size;
+				if (i>3) name = r_str_word_get0 (ptr, 3);
+				if (i>4) rwx = r_str_rwx (r_str_word_get0 (ptr, 4));
+			}
+			if (!name || !*name) {
+				sprintf (vname, "area%d",
+					r_list_length (core->io->sections));
+				name = vname;
 			}
 			r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name);
 			free (ptr);

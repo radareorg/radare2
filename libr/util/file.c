@@ -26,6 +26,17 @@ R_API boolt r_file_is_directory(const char *str) {
 	return ((S_IFDIR &buf.st_mode))? R_TRUE: R_FALSE;
 }
 
+R_API boolt r_file_fexists(const char *fmt, ...) {
+	int ret;
+	char string[1024];
+	va_list ap;
+	va_start (ap, fmt);
+	vsnprintf (string, sizeof (string), fmt, ap);
+	ret = r_file_exists (string);
+	va_end (ap);
+	return ret;
+}
+
 R_API boolt r_file_exists(const char *str) {
 	struct stat buf = {0};
 	if (str && *str && stat (str, &buf)==-1)
