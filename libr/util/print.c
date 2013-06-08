@@ -92,6 +92,7 @@ R_API void r_print_cursor(RPrint *p, int cur, int set) {
 		p->printf ("%s", R_CONS_INVERT (set, 1)); //r_cons_invert (set, 1); //p->flags&R_PRINT_FLAGS_COLOR);
 }
 
+#define P(x) (p->cons &&p->cons->pal.x)?p->cons->pal.x
 R_API void r_print_addr(RPrint *p, ut64 addr) {
 	int mod = p->flags & R_PRINT_FLAGS_ADDRMOD;
 	char ch = (p->addrmod&&mod)?((addr%p->addrmod)?' ':','):' ';
@@ -99,18 +100,18 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 		ut32 s, a;
 		a = addr & 0xffff;
 		s = (addr-a)>>4;
-		p->printf ("%04x:%04x", s, a);
-	} else
-	if (p->flags & R_PRINT_FLAGS_COLOR) {
-#define P(x) (p->cons &&p->cons->pal.x)?p->cons->pal.x
-		const char *pre = P(offset): Color_GREEN;
-		const char *fin = Color_RESET;
-#if 0
-		p->printf("%s0x%08"PFMT64x""Color_RESET"%c ",
-			r_cons_singleton ()->palette[PAL_ADDRESS], addr, ch);
-#endif
-		p->printf ("%s0x%08"PFMT64x"%c%s", pre, addr, ch, fin);
-	} else p->printf ("0x%08"PFMT64x"%c", addr, ch);
+		if (p->flags & R_PRINT_FLAGS_COLOR) {
+			const char *pre = P(offset): Color_GREEN;
+			const char *fin = Color_RESET;
+			p->printf ("%s%04x:%04x%c%s", pre, s & 0xffff, a & 0xffff, ch, fin);
+		} else p->printf ("%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
+	} else {
+		if (p->flags & R_PRINT_FLAGS_COLOR) {
+			const char *pre = P(offset): Color_GREEN;
+			const char *fin = Color_RESET;
+			p->printf ("%s0x%08"PFMT64x"%c%s", pre, addr, ch, fin);
+		} else p->printf ("0x%08"PFMT64x"%c", addr, ch);
+	}
 }
 
 #define CURDBG 0
@@ -379,7 +380,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (p->flags & R_PRINT_FLAGS_HEADER) {
 		ut32 opad = (ut32)(addr >> 32);
 		//p->printf ("   offset  ");
-		p->printf ("-- offset -");
 		{ // XXX: use r_print_addr
 			int i, delta;
 			char soff[32];
@@ -387,13 +387,15 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				ut32 s, a;
 				a = addr & 0xffff;
 				s = (addr-a)>>4;
-				snprintf (soff, sizeof (soff), "%04x:%04x", s, a);
+				snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
+				p->printf ("- offset -");
 			} else {
+				p->printf ("- offset - ");
 				snprintf (soff, sizeof (soff), "0x%08"PFMT64x, addr);
 			}
 			delta = strlen (soff) - 10;
 			for (i=0; i<delta; i++)
-				p->printf (i+1==delta?" ":"-");
+				p->printf (i+1==delta?" ":" ");
 		}
 		//while (opad>0) {
 			p->printf (p->col==1?"|":" ");
@@ -459,7 +461,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				memcpy (&a, buf+j, 4);
 				memcpy (&b, buf+j+4, 4);
 				r_print_cursor (p, j, 1);
-				p->printf ("0x%08x%08x ", b, a); //n<<32, n&0xffffff);
+				p->printf ("0x%08x%08x  ", b, a); //n<<32, n&0xffffff);
 				r_print_cursor (p, j, 0);
 				j += 7;
 			} else {
