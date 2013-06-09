@@ -59,7 +59,8 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 			ut32 s, a;
 			a = off & 0xffff;
 			s = (off-a)>>4;
-			r_cons_printf ("%s%04x:%04x"Color_RESET, k, s, a);
+			r_cons_printf ("%s%04x:%04x"Color_RESET,
+				k, s&0xFFFF, a&0xFFFF);
 		} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
 		r_cons_puts ("  ");
 	} else r_cons_printf ("0x%08"PFMT64x"  ", off);
