@@ -50,10 +50,12 @@ static RBinInfo* info(RBinArch *arch) {
 }
 
 static int check(RBinArch *arch) {
-	const ut32 ep = 0x0007fff0;
+	const ut32 ep = 0x000ffff0; /* F000:FFF0 address */
 	if (arch->buf && arch->buf->length > ep) {
 		if (arch->buf->buf[0] == 0xff)
-			if (arch->buf->buf[ep] != 0xff)
+			/* Check if this a 'jmp' opcode */
+			if ((arch->buf->buf[ep] == 0xea) | 
+			(arch->buf->buf[ep] == 0xe9))
 				return 1;
 	}
 	return 0;
