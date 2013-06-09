@@ -98,6 +98,18 @@ inp_peek(struct ud* u)
   return r;
 }
 
+
+/*
+ * inp_len
+ *    Returns the number of bytes input in the current
+ *    session.
+ */
+static inline size_t
+inp_len(const struct ud *u)
+{
+  return u->inp_ctr;
+}
+
 #endif /* UD_INPUT_H */
 /*
 vim: set ts=2 sw=2 expandtab

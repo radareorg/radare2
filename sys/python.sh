@@ -32,5 +32,6 @@ ${SUDO} make install-vapi DESTDIR=${DESTDIR} || exit 1
 cd python
 make clean
 make PYTHON=${PYTHON}
-[ ! "$1" = --no-install ] && \
-	${SUDO} make install PYTHON=${PYTHON} PYTHON_VERSION=${PYTHON_VERSION} DESTDIR=${DESTDIR}
+[ "$1" != '--no-install' ] && \
+	${SUDO} make install PYTHON=${PYTHON} \
+	PYTHON_VERSION=${PYTHON_VERSION} DESTDIR=${DESTDIR}

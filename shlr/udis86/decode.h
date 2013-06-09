@@ -55,6 +55,10 @@
 #define P_IMPADDR(n)    ( ( n >> 12 ) & 1 )
 #define P_seg           ( 1 << 13 )
 #define P_SEG(n)        ( ( n >> 13 ) & 1 )
+#define P_str           ( 1 << 14 )
+#define P_STR(n)        ( ( n >> 14 ) & 1 )
+#define P_strz          ( 1 << 15 )
+#define P_STR_ZF(n)     ( ( n >> 15 ) & 1 )
 
 /* operand type constants -- order is important! */
 
@@ -118,6 +122,7 @@ enum ud_operand_size {
      */
     SZ_BD  = (SZ_B << 8) | SZ_D,
     SZ_BV  = (SZ_B << 8) | SZ_V,
+    SZ_WD  = (SZ_W << 8) | SZ_D,
     SZ_WV  = (SZ_W << 8) | SZ_V,
     SZ_WY  = (SZ_W << 8) | SZ_Y,
     SZ_DY  = (SZ_D << 8) | SZ_Y,

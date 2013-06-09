@@ -90,11 +90,12 @@ gen_operand(struct ud* u, struct ud_operand* op)
     break;
 
   case UD_OP_IMM:
+    ud_asmprintf(u, "$");
     ud_syn_print_imm(u, op);
     break;
 
   case UD_OP_JIMM:
-    ud_syn_print_addr(u, ud_syn_rel_target(u, op, u->dis_mode==16? 1: 0));
+    ud_syn_print_addr(u, ud_syn_rel_target(u, op));
     break;
 
   case UD_OP_PTR:
@@ -154,10 +155,13 @@ ud_translate_att(struct ud *u)
 
   if (u->pfx_lock)
     ud_asmprintf(u,  "lock ");
-  if (u->pfx_rep)
-  ud_asmprintf(u,  "rep ");
-  if (u->pfx_repne)
-    ud_asmprintf(u,  "repne ");
+  if (u->pfx_rep) {
+    ud_asmprintf(u, "rep ");
+  } else if (u->pfx_rep) {
+    ud_asmprintf(u, "repe ");
+  } else if (u->pfx_repne) {
+    ud_asmprintf(u, "repne ");
+  }
 
   /* special instructions */
   switch (u->mnemonic) {

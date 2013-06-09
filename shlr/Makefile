@@ -43,6 +43,9 @@ sdb-sync sync-sdb:
 $(TCCLIB) libr_tcc/libr_tcc.a:
 	cd libr_tcc ; ${MAKE}
 
+udis-sync udis86-sync sync-udis sync-udis86:
+	cd udis86 ; ${MAKE} sync
+
 tcc-clean tccclean:
 	cd libr_tcc ; ${MAKE} clean
 

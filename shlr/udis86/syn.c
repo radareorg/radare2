@@ -84,17 +84,15 @@ const char* ud_reg_tab[] =
 
 
 uint64_t
-ud_syn_rel_target(struct ud *u, struct ud_operand *opr, int mask)
+ud_syn_rel_target(struct ud *u, struct ud_operand *opr)
 {
-  uint64_t trunc_mask = 0xffffffffffffffffull;
-  if (mask) trunc_mask >>= (64 - u->opr_mode);
   switch (opr->size) {
-  case 8 : return (u->pc + opr->lval.sbyte)  & trunc_mask;
-  case 16: return (u->pc + opr->lval.sword)  & trunc_mask;
-  case 32: return (u->pc + opr->lval.sdword) & trunc_mask;
+  case 8 : return (u->pc + opr->lval.sbyte);
+  case 16: return (u->pc + opr->lval.sword);
+  case 32: return (u->pc + opr->lval.sdword);
   default: UD_ASSERT(!"invalid relative offset size.");
+    return 0;
   }
-  return 0LL;
 }
 
 
@@ -106,7 +104,7 @@ ud_syn_rel_target(struct ud *u, struct ud_operand *opr, int mask)
  *    returns a negative number and truncates the output.
  */
 int
-ud_asmprintf(struct ud *u, char *fmt, ...)
+ud_asmprintf(struct ud *u, const char *fmt, ...)
 {
   int ret;
   int avail;
@@ -133,11 +131,7 @@ ud_syn_print_addr(struct ud *u, uint64_t addr)
     name = u->sym_resolver(u, addr, &offset);
     if (name) {
       if (offset) {
-#if __WIN32__ || __CYGWIN__ || MINGW32
-        ud_asmprintf(u, "%s%+I64d", name, (long long)offset);
-#else
-        ud_asmprintf(u, "%s%+lld", name, (long long)offset);
-#endif
+        ud_asmprintf(u, "%s%+" FMT64 "d", name, offset);
       } else {
         ud_asmprintf(u, "%s", name);
       }

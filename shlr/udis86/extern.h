@@ -78,7 +78,7 @@ extern const struct ud_operand* ud_insn_opr(const struct ud *u, unsigned int n);
 
 extern int ud_opr_is_sreg(const struct ud_operand *opr);
 
-extern int ud_opr_isgpr(const struct ud_operand *opr);
+extern int ud_opr_is_gpr(const struct ud_operand *opr);
 
 extern const char* ud_lookup_mnemonic(enum ud_mnemonic_code c);
 

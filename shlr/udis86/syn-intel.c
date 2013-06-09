@@ -92,7 +92,7 @@ static void gen_operand(struct ud* u, struct ud_operand* op, int syn_cast)
 
 
   case UD_OP_JIMM:
-    ud_syn_print_addr(u, ud_syn_rel_target(u, op, u->dis_mode==16? 1: 0));
+    ud_syn_print_addr(u, ud_syn_rel_target(u, op));
     break;
 
   case UD_OP_PTR:
@@ -153,8 +153,9 @@ ud_translate_intel(struct ud* u)
   }
   if (u->pfx_rep) {
     ud_asmprintf(u, "rep ");
-  }
-  if (u->pfx_repne) {
+  } else if (u->pfx_repe) {
+    ud_asmprintf(u, "repe ");
+  } else if (u->pfx_repne) {
     ud_asmprintf(u, "repne ");
   }
 

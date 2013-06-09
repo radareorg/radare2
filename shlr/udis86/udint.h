@@ -26,11 +26,11 @@
 #ifndef _UDINT_H_
 #define _UDINT_H_
 
-#if HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif /* HAVE_CONFIG_H */
 
-#if HAVE_ASSERT_H
+#ifdef HAVE_ASSERT_H
 # include <assert.h>
 # define UD_ASSERT(_x) assert(_x)
 #else
@@ -51,11 +51,24 @@
     } while (0)
 #endif /* !LOGERR */
 
+#define UD_RETURN_ON_ERROR(u) \
+  do { \
+    if ((u)->error != 0) { \
+      return (u)->error; \
+    } \
+  } while (0)
+
+#define UD_RETURN_WITH_ERROR(u, m) \
+  do { \
+    UDERR(u, m); \
+    return (u)->error; \
+  } while (0)
+
 /* printf formatting int64 specifier */
 #ifdef FMT64
 # undef FMT64
 #endif
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__BORLANDC__)
 # define FMT64 "I64"
 #else
 # if defined(__APPLE__)
