@@ -140,13 +140,13 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		case 2: // j
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = address;
-			sprintf (op->esil, "pc=0x%08"PFMT64x, address);
+			sprintf (op->esil, "pc=0x%08x", address);
 			break;
 		case 3: // jal
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = address;
 			op->fail = addr+8;
-			sprintf (op->esil, "lr=pc+4,pc=0x%08"PFMT64x, address);
+			sprintf (op->esil, "lr=pc+4,pc=0x%08x", address);
 			break;
 		}
 		family = 'J';

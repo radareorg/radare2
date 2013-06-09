@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2013 pancake<@nopcode.org> */
 
 /* this vapi is broken as shit... we need to rename some stuff here ..
    if we can just avoid to use cname CCode attribute... */
@@ -24,6 +24,7 @@ namespace Radare {
 		*/
 
 		public RAnal ();
+		public bool esil_eval (string str);
 		public bool set_bits (int bits);
 		public bool set_big_endian (bool big);
 		//public bool set_pc (uint64 addr);
@@ -226,15 +227,18 @@ namespace Radare {
 			public uint64 jump;
 			public uint64 fail;
 			public uint32 selector;
-/*
 			public int64 ref;
 			public uint64 value;
-*/
 			public int64 stackptr;
+			public bool refptr;
+			public char esil[64];
 			//TODO public uint64 ref;
 			public Value src[3];
 			public Value dst;
 		}
+
+		public string to_string(Op op);
+		public unowned string to_esil_string(Op op);
 
 		[Compact]
 		[CCode (cprefix="r_anal_diff_", cname="RAnalDiff")]

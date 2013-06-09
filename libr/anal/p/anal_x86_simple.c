@@ -43,7 +43,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->addr = addr;
 	op->jump = op->fail = -1;
-	op->ref = op->value = -1;
+	op->ptr = op->val = -1;
 
 	switch (buf[0]) {
 	case 0x8a:
@@ -56,19 +56,19 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case 0x5d:
 		case 0x7d:
 			/* mov -0xc(%ebp, %eax */
-			op->ref = (st64)((char)buf[2]);
+			op->ptr = (st64)((char)buf[2]);
 			op->stackop = R_ANAL_STACK_GET;
 			break;
 		case 0x95:
 			if (buf[2]==0xe0) { // ebp
-				op->ref = (st64)((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24)));
+				op->ptr = (st64)((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24)));
 				op->stackop = R_ANAL_STACK_GET;
 			}
-			//op->ref = -(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
+			//op->ptr = -(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			break;
 		case 0xbd:
-			op->ref = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
-			//op->ref = -(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
+			op->ptr = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
+			//op->ptr = -(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			op->stackop = R_ANAL_STACK_GET;
 			break;
 		}
@@ -80,15 +80,15 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case 0x4d: //  894de0          mov [ebp-0x20], ecx 
 		case 0x55:
 			op->stackop = R_ANAL_STACK_SET;
-			op->ref = (st64)((char)buf[2]);
+			op->ptr = (st64)((char)buf[2]);
 			break;
 		case 0x85:
 			op->stackop = R_ANAL_STACK_SET;
-			op->ref = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
+			op->ptr = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
 			break;
 		case 0x75:
 			op->stackop = R_ANAL_STACK_GET;
-			op->ref = (st64)((char)buf[2]); //+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
+			op->ptr = (st64)((char)buf[2]); //+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24));
 			break;
 		}
 		// XXX: maybe store or mov depending on opcode
@@ -110,7 +110,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	//case 0xea: // far jmp
 	// TODO moar
 	case 0x3b: //cmp
-		op->ref = (st64)((char)buf[2]);
+		op->ptr = (st64)((char)buf[2]);
 		op->stackop = R_ANAL_STACK_GET;
 	case 0x39:
 	case 0x3c:
@@ -168,7 +168,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 0x0f: // 3 byte nop
 		//0fbe55ff        movsx edx, byte [ebp-0x1]
 		if (buf[1]==0xbe) {
-			op->ref = (st64)((char)buf[3]);
+			op->ptr = (st64)((char)buf[3]);
 			op->stackop = R_ANAL_STACK_GET;
 		} else
 		if (buf[1]==0x31) {
@@ -195,12 +195,12 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case 0xcc: // int3
 //		op->eob = 1;
-		op->value = 3;
+		op->val = 3;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xf1: // int1
 		op->length = 1;
-		op->value = 1;
+		op->val = 1;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xb8: // mov eax, <inmedate>
@@ -211,12 +211,12 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 0xbd: // mov esp, <inmedate>
 	case 0xbf:
 		op->type = R_ANAL_OP_TYPE_MOV; //  bfdc054000      mov edi, 0x4005dc
-		op->ref = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));//((unsigned long)((buf+2))+6);
+		op->ptr = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));//((unsigned long)((buf+2))+6);
 		break;
 	case 0xcd:
 		op->length = 2;
 		op->type = R_ANAL_OP_TYPE_SWI;
-		op->value = buf[1];
+		op->val = buf[1];
 		break;
 	case 0xe8: // call
 		op->type   = R_ANAL_OP_TYPE_CALL;
@@ -253,14 +253,14 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		if (buf[1]== 0x75) {
 			op->type = R_ANAL_OP_TYPE_PUSH;
 			op->stackop = R_ANAL_STACK_GET;
-			op->ref = 0LL;
-			op->ref = (st64)((char)(buf[2]));
+			op->ptr = 0LL;
+			op->ptr = (st64)((char)(buf[2]));
 			op->stackptr = 4;
 		} else
 		if (buf[1]== 0x45) {
 			op->type = R_ANAL_OP_TYPE_ADD;
 			op->stackop = R_ANAL_STACK_SET;
-			op->ref = (st64)((char)buf[2]);
+			op->ptr = (st64)((char)buf[2]);
 		} else
 		if (buf[1]>=0x50 && buf[1]<=0x6f) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
@@ -291,12 +291,12 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 0x58:
 	case 0x59:
 		op->type = R_ANAL_OP_TYPE_UPUSH;
-		op->ref = 0; // TODO value of register here! get_offset
+		op->ptr = 0; // TODO value of register here! get_offset
 		op->stackptr = 4;
 		break;
 	case 0x6a: // push $7
 		op->type = R_ANAL_OP_TYPE_PUSH;
-		op->ref = buf[1];
+		op->ptr = buf[1];
 		op->stackptr = 4;
 		break;
 		break;
@@ -330,7 +330,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case 0x68:
 		op->type = R_ANAL_OP_TYPE_PUSH;
-		op->ref = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));
+		op->ptr = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));
 		op->stackptr = 4;
 		break;
 	case 0x81:
@@ -338,9 +338,9 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		if (buf[1] == 0xec) {
 			/* sub $0x????????, $esp*/
   			// 81ece00d0000    sub esp, 0xde0 ; 
-			op->value = buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);
+			op->val = buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = op->value;
+			op->stackptr = op->val;
 			break;
 		} else
 		if (buf[1] == 0xfa) {
@@ -352,14 +352,14 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 0x83:
 		switch (buf[1]) {
 		case 0xe4: // and
-			op->value = (ut64)(unsigned char)buf[2];
+			op->val = (ut64)(unsigned char)buf[2];
 			op->type = R_ANAL_OP_TYPE_AND;
 			break;
 		case 0xc4:
 			/* inc $0x????????, $esp*/
-			op->value = -(ut64)(unsigned char)buf[2];
+			op->val = -(ut64)(unsigned char)buf[2];
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = op->value;
+			op->stackptr = op->val;
 			break;
 		case 0xf8:
 		case 0xf9:
@@ -377,19 +377,19 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case 0xec:
 			/* sub $0x????????, $esp*/
-			op->value = (ut64)(unsigned char)buf[2];
+			op->val = (ut64)(unsigned char)buf[2];
 			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = op->value;
+			op->stackptr = op->val;
 			break;
 		case 0xbd: /* 837dfc02        cmp dword [ebp-0x4], 0x2 */
 			switch (buf[2]) {
 			case 0xe0: // ebp
 				if ((char)buf[2]>0) {
 					op->stackop = R_ANAL_STACK_GET;
-					op->value = buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24);
+					op->val = buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24);
 				} else {
 					op->stackop = R_ANAL_STACK_GET;
-					op->value = buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24);
+					op->val = buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24);
 				}
 				op->type = R_ANAL_OP_TYPE_CMP;
 				break;
@@ -398,10 +398,10 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case 0x7d: /* 837dfc02        cmp dword [ebp-0x4], 0x2 */
 			if ((char)buf[2]>0) {
 				op->stackop = R_ANAL_STACK_GET;
-				op->value = (ut64)(char)buf[2];
+				op->val = (ut64)(char)buf[2];
 			} else {
 				op->stackop = R_ANAL_STACK_GET;
-				op->value = (ut64)-(char)buf[2];
+				op->val = (ut64)-(char)buf[2];
 			}
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
@@ -410,7 +410,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 0x8d:
 		/* LEA */
 		if (buf[1] == 0x85) {
-			op->ref = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
+			op->ptr = (st64)((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24)));
 			op->stackop = R_ANAL_STACK_GET;
 		}
 		op->type =R_ANAL_OP_TYPE_MOV;
@@ -420,12 +420,12 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		/* mov dword [ebp-0xc], 0x0  ||  c7 45 f4 00000000 */
 		switch (buf[1]) {
 		case 0x85:
-			op->ref = (st64)(((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
+			op->ptr = (st64)(((int)(buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24))));
 			break;
  			//c785 e4fbffff 00. mov dword [ebp+0xfffffbe4], 0x0
 		case 0x45:
 			op->stackop = R_ANAL_STACK_SET;
-			op->ref = (st64)((char)buf[2]);
+			op->ptr = (st64)((char)buf[2]);
 			break;
 		case 0x05:
 			// c7050c0106080000. mov dword [0x806010c], 0x0
@@ -434,8 +434,8 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case 0x04:
 			// c7042496850408    dword [esp] = 0x8048596 ; LOL
-			op->refptr = 4;
-			op->ref = (st64)(((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
+                        op->refptr = 4;
+			op->ptr = (st64)(((int)(buf[3]+(buf[4]<<8)+(buf[5]<<16)+(buf[6]<<24))));
 			break;
 		}
 		op->type = R_ANAL_OP_TYPE_STORE;

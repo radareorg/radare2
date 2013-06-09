@@ -833,13 +833,13 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 						count ++;
 					}
 				} else if (op.type == R_ANAL_OP_TYPE_UJMP || op.type == R_ANAL_OP_TYPE_UCALL) {
-					if (op.ref != -1 &&
-						r_core_anal_followptr (core, at+i, op.ref, ref, R_TRUE, 1)) {
+					if (op.ptr != -1 &&
+						r_core_anal_followptr (core, at+i, op.ptr, ref, R_TRUE, 1)) {
 						count ++;
 					}
 				} else {
-					if (op.ref != -1 &&
-						r_core_anal_followptr (core, at+i, op.ref, ref, R_FALSE, ptrdepth)) {
+					if (op.ptr != -1 &&
+						r_core_anal_followptr (core, at+i, op.ptr, ref, R_FALSE, ptrdepth)) {
 						count ++;
 					}
 				}

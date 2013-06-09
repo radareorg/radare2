@@ -9,12 +9,11 @@ R_API RAnalOp *r_anal_op_new() {
 	if (op) {
 		memset (op, 0, sizeof (RAnalOp));
 		op->mnemonic = NULL;
-		op->evalstr = NULL;
 		op->addr = -1;
 		op->jump = -1;
 		op->fail = -1;
-		op->ref = -1;
-		op->value = -1;
+		op->ptr = -1;
+		op->val = -1;
 		op->esil[0] = 0;
 		op->next = NULL;
 	}
@@ -167,6 +166,11 @@ R_API char *r_anal_optype_to_string(int t) {
 	return "undefined";
 }
 
+R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
+	return op->esil;
+}
+
+// TODO: use esil here?
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	RAnalFunction *f;
 	char ret[128];

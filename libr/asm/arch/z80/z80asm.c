@@ -1404,7 +1404,7 @@ return obuflen;
 }
 
 // XXX
-R_API_I int z80asm (unsigned char *outbuf, const char *s) {
+R_API_I inline int z80asm (unsigned char *outbuf, const char *s) {
 	return assemble (s, outbuf);
 }
 

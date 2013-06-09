@@ -193,7 +193,7 @@ static int config_analsplit_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
-static inline int __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
+static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 	if (!strcmp (asmarch, "x86"))
 		r_config_set_i (cfg, "asm.segoff", (asmbits==16)?1:0);
 }
@@ -206,7 +206,7 @@ static int config_asmos_callback(void *user, void *data) {
 	if (asmarch) {
 		r_syscall_setup (core->anal->syscall, asmarch->value,
 			node->value, core->anal->bits);
-		__setsegoff (core->config, asmarch, asmbits);
+		__setsegoff (core->config, asmarch->value, asmbits);
 	}
 	//if (!ret) eprintf ("asm.os: Cannot setup syscall os/arch for '%s'\n", node->value);
 	return R_TRUE;

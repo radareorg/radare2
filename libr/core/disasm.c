@@ -821,8 +821,8 @@ toro:
 		}
 		switch (analop.type) {
 		case R_ANAL_OP_TYPE_PUSH:
-			if (analop.value) {
-				RFlagItem *flag = r_flag_get_i (core->flags, analop.value);
+			if (analop.val) {
+				RFlagItem *flag = r_flag_get_i (core->flags, analop.val);
 				if (flag) r_cons_printf (" ; %s", flag->name);
 			}
 			break;
@@ -833,11 +833,11 @@ toro:
 			ut32 word4 = 0;
 			int ret;
 			if (core->assembler->bits==64) {
-				ret = r_io_read_at (core->io, analop.ref,
+				ret = r_io_read_at (core->io, analop.ptr,
 					(void *)&word8, sizeof (word8))
 					== sizeof (word8);
 			} else {
-				ret = r_io_read_at (core->io, analop.ref,
+				ret = r_io_read_at (core->io, analop.ptr,
 					(void *)&word4, sizeof (word4))
 					== sizeof (word4);
 				word8 = word4;
@@ -847,15 +847,15 @@ toro:
 				RMetaItem *mi2 = r_meta_find (core->anal->meta, word8,
 					R_META_TYPE_ANY, R_META_WHERE_HERE);
 				if (!mi2) {
-					mi2 = r_meta_find (core->anal->meta, (ut64)analop.ref,
+					mi2 = r_meta_find (core->anal->meta, (ut64)analop.ptr,
 						R_META_TYPE_ANY, R_META_WHERE_HERE);
 					if (mi2) {
 						char *str = r_str_unscape (mi2->str);
 						r_cons_printf (" \"%s\" @ 0x%08"PFMT64x":%"PFMT64d,
-								str, analop.ref, mi2->size);
+								str, analop.ptr, mi2->size);
 						free (str);
 					} else r_cons_printf (" ; 0x%08x [0x%"PFMT64x"]",
-							word8, analop.ref);
+							word8, analop.ptr);
 				} else {
 					if (mi2->type == R_META_TYPE_STRING) {
 						char *str = r_str_unscape (mi2->str);
@@ -865,13 +865,13 @@ toro:
 					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
 				}
 			} else {
-				st64 sref = analop.ref;
+				st64 sref = analop.ptr;
 				if (sref>0)
-					r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ref); //addr+idx+analop.ref);
+					r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ptr);
 			}
 		} else {
-			if (analop.ref != UT64_MAX && analop.ref)
-				r_cons_printf (" ; 0x%08"PFMT64x" ", analop.ref);
+			if (analop.ptr != UT64_MAX && analop.ptr)
+				r_cons_printf (" ; 0x%08"PFMT64x" ", analop.ptr);
 		}
 		if (show_comments && show_comment_right && comment) {
 			int c = r_cons_get_column ();

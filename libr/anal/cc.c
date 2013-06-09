@@ -128,7 +128,7 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_SWI: // syscall
 		cc->type = R_ANAL_CC_TYPE_FASTCALL;
 		cc->off = op->jump;
-		cc->jump = op->value; // syscall number
+		cc->jump = op->val; // syscall number
 		return R_FALSE;
 	case R_ANAL_OP_TYPE_XOR:
 		if (op->src[0] && op->src[0]->reg && op->dst && op->dst->reg && op->dst->reg->name) {
@@ -153,7 +153,7 @@ R_API boolt r_anal_cc_update (RAnal *anal, RAnalCC *cc, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_UPUSH: // add argument
 		cc->nargs ++;
 		if (cc->nargs>0 && cc->nargs < R_ANAL_CC_ARGS)
-			cc->args[cc->nargs] = op->value;
+			cc->args[cc->nargs] = op->val;
 		return R_TRUE;
 	}
 	// must update internal stuff to recognize parm

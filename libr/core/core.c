@@ -108,7 +108,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'e': return op.eob;
 		case 'j': return op.jump;
 		case 'f': return op.fail;
-		case 'r': return op.ref;
+		case 'r': return op.ptr;
 		case 'l': return op.length;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
@@ -229,7 +229,7 @@ static int autocomplete(RLine *line) {
 			path = line->buffer.data[sdelta]?
 				strdup (line->buffer.data+sdelta):
 				r_sys_getdir ();
-			p = r_str_lchr (path, '/');
+			p = (char *)r_str_lchr (path, '/');
 			if (p) {
 				if (p==path) path = "/";
 				else if (p!=path+1) *p = 0;

@@ -23,7 +23,7 @@ static int c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->addr = addr;
 	op->jump = op->fail = -1;
-	op->ref = op->value = -1;
+	op->ptr = op->val = -1;
         op->length = ins_len;
 
 	if (ins_len >= 1 && *ins == 0x20) {

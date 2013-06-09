@@ -299,7 +299,7 @@ eprintf ("STACK POINTER %d\n", curstack);
 	return 0;
 }
 
-ut64 num(struct r_anal_esil_t *c, const char *str) {
+static ut64 num(struct r_anal_esil_t *c, const char *str) {
 	return r_num_get (NULL, str);
 }
 

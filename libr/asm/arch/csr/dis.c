@@ -454,7 +454,7 @@ static int read_bin(struct state *s, struct directive *d) {
 	return 1;
 }
 
-static struct directive *next_inst(struct state *s) {
+static inline struct directive *next_inst(struct state *s) {
 	int rd;
 	struct directive *d = malloc (sizeof (*d));
 	if (!d) {

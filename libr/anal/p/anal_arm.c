@@ -95,10 +95,10 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->fail = addr+4;
         } else if ( (ins & _(B1111,B1111,0,0)) == _(B1011,B1110,0,0) ) {
 		op->type = R_ANAL_OP_TYPE_TRAP;
-		op->value = (ut64)(ins>>8);
+		op->val = (ut64)(ins>>8);
         } else if ( (ins & _(B1111,B1111,0,0)) == _(B1101,B1111,0,0)) {
 		op->type = R_ANAL_OP_TYPE_SWI;
-		op->value = (ut64)(ins>>8);
+		op->val = (ut64)(ins>>8);
 	}
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
@@ -162,7 +162,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	}
 #if 0
 	op->jump = op->fail = -1;
-	op->ref = op->value = -1;
+	op->ptr = op->val = -1;
 #endif
 	if (anal->bits==16)
 		return op_thumb (anal, op, addr, data, len);
@@ -175,14 +175,14 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	if (b[2]==0x8f && b[3]==0xe2) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 #define ROR(x,y) ((int)((x)>>(y)) | (((x)<<(32-(y)))))
-		op->ref = addr + ROR (b[0], (b[1]&0xf)<<1) + 8;
+		op->ptr = addr + ROR (b[0], (b[1]&0xf)<<1) + 8;
 	} else
 	if (b[2]>=0x9c && b[2]<= 0x9f) { // load instruction
 		char ch = b[3]&0xf;
 		switch (ch) {
 			case 5:
 				if ((b[3]&0xf) == 5) {
-					op->ref = 12+addr+b[0]+((b[1]&0xf)<<8);
+					op->ptr = 12+addr+b[0]+((b[1]&0xf)<<8);
 					op->refptr = R_TRUE;
 				}
 			case 4:
@@ -208,7 +208,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	} else
 	if (b[3]==0xef) {
 		op->type = R_ANAL_OP_TYPE_SWI;
-		op->value = (b[0] | (b[1]<<8) | (b[2]<<2));
+		op->val = (b[0] | (b[1]<<8) | (b[2]<<2));
 	} else
 #if 0
           0x00000000      a4a09fa4         ldrge sl, [pc], 0xa4
@@ -224,8 +224,8 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			op->type = R_ANAL_OP_TYPE_RET; // FAKE FOR FUN
 			//op->stackop = R_ANAL_STACK_SET;
 			op->jump = 1234;
-			//op->ref = 4+addr+b[0]; // sure? :)
-			//op->refptr = R_TRUE;
+			//op->ptr = 4+addr+b[0]; // sure? :)
+			//op->ptrptr = R_TRUE;
 		}
 	} else
 //eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
@@ -234,25 +234,25 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		// ADD SP, SP, ...
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->stackop = R_ANAL_STACK_INC;
-		op->value = -b[0];
+		op->val = -b[0];
 	} else
 	if (b[3]==0xe2 && b[2]==0x4d && b[1]==0xd0) {
 		// SUB SP, SP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->stackop = R_ANAL_STACK_INC;
-		op->value = b[0];
+		op->val = b[0];
 	} else
 	if (b[3]==0xe2 && b[2]==0x4c && b[1]==0xb0) {
 		// SUB SP, FP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->stackop = R_ANAL_STACK_INC;
-		op->value = -b[0];
+		op->val = -b[0];
 	} else
 	if (b[3]==0xe2 && b[2]==0x4b && b[1]==0xd0) {
 		// SUB SP, IP, ..
 		op->type = R_ANAL_OP_TYPE_SUB;
 		op->stackop = R_ANAL_STACK_INC;
-		op->value = -b[0];
+		op->val = -b[0];
 	} else
 	if ( (code[i] == 0x1eff2fe1) ||(code[i] == 0xe12fff1e)) { // bx lr
 		op->type = R_ANAL_OP_TYPE_RET;
@@ -264,17 +264,17 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		if (b[2]==0x1b) {
 			/* XXX pretty incomplete */
 			op->stackop = R_ANAL_STACK_GET;
-			op->ref = b[0];
+			op->ptr = b[0];
 			//var_add_access(addr, -b[0], 1, 0); // TODO: set/get (the last 0)
 		} else {
 			//ut32 oaddr = addr+8+b[0];
 			//XXX TODO ret = radare_read_at(oaddr, (ut8*)&ptr, 4);
 			if (anal->bits == 32) {
 				b = (ut8*)&ptr;
-				op->ref = b[0] + (b[1]<<8) + (b[2]<<16) + (b[3]<<24);
-				//XXX data_xrefs_add(oaddr, op->ref, 1);
+				op->ptr = b[0] + (b[1]<<8) + (b[2]<<16) + (b[3]<<24);
+				//XXX data_xrefs_add(oaddr, op->ptr, 1);
 				//TODO change data type to pointer
-			} else op->ref = 0;
+			} else op->ptr = 0;
 		}
 	}
 
@@ -286,7 +286,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 //if (IS_EXITPOINT (code[i])) {
 		b=data;
 		branch_dst_addr = disarm_branch_offset (addr, b[0] | (b[1]<<8) | (b[2]<<16)); //code[i]&0x00FFFFFF);
-		op->ref = 0;
+		op->ptr = 0;
 if (
 ( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
 ) && ((code[i]&0xffffff00) == 0xe12fff00)

@@ -452,7 +452,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
   op->addr = addr;
   op->length = sz;
   op->jump = op->fail = -1;
-  op->ref = op->value = -1;
+  op->ptr = op->val = -1;
 
   if(LIL_ENDIAN)
     {

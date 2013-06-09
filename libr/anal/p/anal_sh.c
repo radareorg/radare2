@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 eloi<limited-entropy.com> */
+/* radare - LGPL - Copyright 2010-2013 eloi<limited-entropy.com> */
 
 #include <string.h>
 #include <r_types.h>
@@ -366,7 +366,7 @@ static int bsr(RAnal* anal, RAnalOp* op, ut16 code){
 static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code){
 	if (IS_TRAP(code)){
 		op->type = R_ANAL_OP_TYPE_SWI;
-		op->value = (ut8)(code&0xFF);
+		op->val = (ut8)(code&0xFF);
 	} else if (IS_MOVA_PCREL_R0(code)){
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->src[0] = anal_pcrel_disp_mov(anal,op,code&0xFF);
@@ -443,7 +443,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) 
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->jump = op->fail = -1;
-	op->ref = op->value = -1;
+	op->ptr = op->val = -1;
 
 	op->length = 2;
 

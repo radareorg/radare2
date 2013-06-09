@@ -539,15 +539,18 @@ typedef struct r_anal_op_t {
 	ut64 jump;      /* true jmp */
 	ut64 fail;      /* false jmp */
 	ut32 selector;  /* segment selector */
-	st64 ref;       /* reference to memory */ /* XXX signed? */
-	ut64 value;     /* reference to value */ /* XXX signed? */
+#if 0
+ref->ptr
+value->val
+#endif
+	st64 ptr;       /* reference to memory */ /* XXX signed? */
+	ut64 val;     /* reference to value */ /* XXX signed? */
 	st64 stackptr;  /* stack pointer */
+	int refptr;
+	char esil[64];
 	RAnalValue *src[3];
 	RAnalValue *dst;
-	char esil[64];
-	int refptr;
-	char *evalstr; /* evaluation string . the new anal */
-	struct r_anal_op_t *next;
+	struct r_anal_op_t *next; // XXX deprecate
 } RAnalOp;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
@@ -702,6 +705,7 @@ R_API RList *r_anal_op_list_new();
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		const ut8 *data, int len);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
+R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op);
 
 /* fcn.c */
 R_API RAnalFunction *r_anal_fcn_new();
@@ -735,6 +739,7 @@ R_API int r_anal_fcn_count (RAnal *a, ut64 from, ut64 to);
 R_API RList* r_anal_fcn_get_refs (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal);
 R_API RList *r_anal_xrefs_set (RAnal *anal, const char *type, ut64 from, ut64 to);
+R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile);
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_bbs (RAnalFunction *anal);
 R_API RList* r_anal_get_fcns (RAnal *anal);

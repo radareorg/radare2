@@ -137,7 +137,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->jump = op->fail = -1;
-	op->ref = op->value = -1;
+	op->ptr = op->val = -1;
 	oplen = op->length = ud_insn_len (&u);
 
 	op->esil[0] = 0;
@@ -190,7 +190,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		case UD_Iint:
 			n = getval (&u.operand[0]);
-			sprintf (op->esil, "$0x%x,%s+=%d", n, pc, oplen);
+			sprintf (op->esil, "$0x%"PFMT64x",%s+=%d", n, pc, oplen);
 			break;
 		case UD_Ilea:
 		case UD_Imov:
@@ -238,14 +238,14 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		case UD_OP_JIMM:
 		case UD_OP_IMM:
 			op->type = R_ANAL_OP_TYPE_PUSH;
-			op->ref = getval (&u.operand[0]);
+			op->ptr = getval (&u.operand[0]);
 			break;
 		case UD_OP_REG:
 		case UD_OP_PTR:
 		case UD_OP_MEM:
 		default:
 			op->type = R_ANAL_OP_TYPE_UPUSH;
-			op->ref = 0;
+			op->ptr = 0;
 			break;
 		}
 		op->stackop = R_ANAL_STACK_INC;
@@ -264,7 +264,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Iadd:
 	case UD_Isub:
 		op->type = (u.mnemonic==UD_Iadd)? R_ANAL_OP_TYPE_ADD: R_ANAL_OP_TYPE_SUB;
-		op->ref = 0;
+		op->ptr = 0;
 		if (u.operand[0].type == UD_OP_REG) {
 			if (u.operand[0].base == UD_R_RSP) {
 				op->stackop = R_ANAL_STACK_INC;

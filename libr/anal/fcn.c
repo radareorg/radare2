@@ -115,30 +115,30 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
 		case R_ANAL_STACK_INC:
-			fcn->stack += op.value;
+			fcn->stack += op.val;
 			break;
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:
-			if (op.ref > 0) {
-				varname = r_str_dup_printf ("arg_%x", op.ref);
-				r_anal_var_add (anal, fcn, op.addr, op.ref,
+			if (op.ptr > 0) {
+				varname = r_str_dup_printf ("arg_%x", op.ptr);
+				r_anal_var_add (anal, fcn, op.addr, op.ptr,
 						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
-				varname = r_str_dup_printf ("local_%x", -op.ref);
-				r_anal_var_add (anal, fcn, op.addr, -op.ref,
+				varname = r_str_dup_printf ("local_%x", -op.ptr);
+				r_anal_var_add (anal, fcn, op.addr, -op.ptr,
 						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
 			free (varname);
 			break;
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_GET:
-			if (op.ref > 0) {
-				varname = r_str_dup_printf ("arg_%x", op.ref);
-				r_anal_var_add (anal, fcn, op.addr, op.ref,
+			if (op.ptr > 0) {
+				varname = r_str_dup_printf ("arg_%x", op.ptr);
+				r_anal_var_add (anal, fcn, op.addr, op.ptr,
 						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
-				varname = r_str_dup_printf ("local_%x", -op.ref);
-				r_anal_var_add (anal, fcn, op.addr, -op.ref,
+				varname = r_str_dup_printf ("local_%x", -op.ptr);
+				r_anal_var_add (anal, fcn, op.addr, -op.ptr,
 						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}
 			free (varname);
