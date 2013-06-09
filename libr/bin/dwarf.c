@@ -133,7 +133,7 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, int len, RList *list) {
 	RBinDwarfInfoHeader hdr;
 	ut64 address = 0;
 	int line = 1;
-	const ut8 *buf_end, *buf, *code;
+	const ut8 *buf_end, *buf; //, *code;
 	int type;
 	ut8 opcode;
 	const char *types[] = {
@@ -142,7 +142,7 @@ R_API int r_bin_dwarf_parse_line_raw(const ut8 *obuf, int len, RList *list) {
 	};
 
 	buf = r_bin_dwarf_parse_header (obuf, &hdr);
-	code = obuf+hdr.total_length;
+	//code = obuf+hdr.total_length;
 
 	buf_end = obuf + hdr.total_length;
 	// XXX

@@ -49,7 +49,7 @@ struct r_bin_dex_obj_t* r_bin_dex_new_buf(RBuffer *buf) {
 }
 
 // Move to r_util ??
-int dex_read_uleb128 (const char *ptr) {
+int dex_read_uleb128 (const ut8 *ptr) {
 	int cur, result = *(ptr++);
 
 	if (result > 0x7f) {
@@ -72,7 +72,7 @@ int dex_read_uleb128 (const char *ptr) {
 }
 
 #define LEB_MAX_SIZE 6
-int dex_uleb128_len (const char *ptr) {
+int dex_uleb128_len (const ut8 *ptr) {
 	int i=1, result = *(ptr++);
 
 	while (result > 0x7f && i <= LEB_MAX_SIZE) {

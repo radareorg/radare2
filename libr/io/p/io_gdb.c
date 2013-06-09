@@ -5,7 +5,7 @@
 #include <r_socket.h>
 #include <r_util.h>
 ////#include "../../debug/p/libgdbwrap/include/gdbwrapper.h"
-#define IRAPI static
+#define IRAPI static inline
 #include <gdbwrapper.h>
 #include "../../debug/p/libgdbwrap/gdbwrapper.c"
 //#include "../../debug/p/libgdbwrap/interface.c"

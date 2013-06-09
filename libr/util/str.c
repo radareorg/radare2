@@ -315,7 +315,7 @@ R_API char *r_str_ichr(char *str, char chr) {
 }
 
 // find last char
-R_API char *r_str_lchr(char *str, char chr) {
+R_API const char *r_str_lchr(const char *str, char chr) {
 	if (str) {
 		int len = strlen (str);
 		for (;len>=0;len--)

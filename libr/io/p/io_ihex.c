@@ -168,7 +168,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	RIOMalloc *mal;
 	char *str;
 	if (__plugin_open (io, pathname)) {
-		mal->fd = -1; /* causes r_io_desc_new() to set the correct fd */
 		str = r_file_slurp (pathname+7, NULL);
 		if (!str) return NULL;
 		mal = R_NEW (RIOMalloc);
@@ -176,6 +175,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			free (str);
 			return NULL;
 		}
+		mal->fd = -1; /* causes r_io_desc_new() to set the correct fd */
 		mal->buf = malloc (MEMSIZE);
 		if (!mal->buf) {
 			free (str);

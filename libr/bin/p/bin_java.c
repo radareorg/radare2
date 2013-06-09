@@ -44,7 +44,7 @@ static RList* classes(RBinArch *arch) {
 	c->name = strdup (arch->file);
 	p = strchr (c->name, '.');
 	if (p) *p = 0;
-	p = r_str_lchr (c->name, '/');
+	p = (char*)r_str_lchr (c->name, '/');
 	if (p) strcpy (c->name, p+1);
 	c->super = strdup ("Object"); //XXX
 	r_list_append (ret, c);

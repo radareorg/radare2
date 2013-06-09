@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2013 pancake<nopcode.org> */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #undef R_API
-#define R_API static
+#define R_API static inline
 #include "../debug/p/bfvm.h"
 #include "../debug/p/bfvm.c"
 
@@ -118,6 +118,7 @@ static int __close(RIODesc *fd) {
 	if (fd == NULL || fd->data == NULL)
 		return -1;
 	riom = fd->data;
+	bfvm_free (riom->bfvm);
 	free (riom->buf);
 	riom->buf = NULL;
 	free (fd->data);

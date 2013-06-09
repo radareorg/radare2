@@ -347,7 +347,6 @@ static int check_sparse (const ut8 *p, int len, int ch) {
 // XXX: step is borken
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step) {
 	int i, j, k, inc;
-	const char *color;
 	int sparse_char = 0;
 	int use_sparse = p->flags & R_PRINT_FLAGS_SPARSE;
 	const char *fmt = "%02x";
@@ -371,22 +370,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 
 	inc = p->cols;
-	//if (base==64) inc = p->cols/1.2;
 		
-	color = "";
-	if (p->flags & R_PRINT_FLAGS_COLOR)
-		color = (p->cons && p->cons->pal.offset)? p->cons->pal.offset: "";
-	if (base<32)
-	if (p->flags & R_PRINT_FLAGS_HEADER) {
+	if ((base<32) && (p->flags & R_PRINT_FLAGS_HEADER)) {
 		ut32 opad = (ut32)(addr >> 32);
-		//p->printf ("   offset  ");
-		{ // XXX: use r_print_addr
+		{ // XXX: use r_print_addr_header
 			int i, delta;
 			char soff[32];
 			if (p->flags & R_PRINT_FLAGS_SEGOFF) {
 				ut32 s, a;
 				a = addr & 0xffff;
-				s = (addr-a)>>4;
+				s = ((addr-a)>>4 ) &0xffff;
 				snprintf (soff, sizeof (soff), "%04x:%04x ", s, a);
 				p->printf ("- offset -");
 			} else {
@@ -397,10 +390,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			for (i=0; i<delta; i++)
 				p->printf (i+1==delta?" ":" ");
 		}
-		//while (opad>0) {
-			p->printf (p->col==1?"|":" ");
-			opad >>= 4;
-		//}
+		p->printf (p->col==1?"|":" ");
+		opad >>= 4;
 		k = 0; // TODO: ??? SURE??? config.seek & 0xF;
 		/* extra padding for offsets > 8 digits */
 		for (i=0; i<inc; i++) {
@@ -437,7 +428,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 		p->printf ((p->col==1)? "|": " ");
 		for (j=i; j<i+inc; j++) {
 			if (j>=len) {
-				//p->printf (j%2?"   ":"  ");
 				if (p->col==1) {
 					if (j+1>=inc+i)
 						p->printf (j%2?"  |":"| ");
@@ -481,7 +471,6 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 			else r_print_byte (p, "%c", j, buf[j]);
 		}
 		p->printf (p->col==2?"|\n":"\n");
-		//addr+=inc;
 	}
 }
 

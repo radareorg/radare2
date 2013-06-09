@@ -13,7 +13,7 @@
 #if DEBUG_PRINTF
 #define dprintf eprintf
 #else
-#define dprintf //
+#define dprintf if (0)eprintf
 #endif
 
 static int load(RBinArch *arch) {
@@ -28,10 +28,10 @@ static ut64 baddr(RBinArch *arch) {
 static char *flagname (const char *class, const char *method) {
 	char *p, *str, *s = malloc (strlen (class) + strlen (method)+2);
 	str = s;
-	p = r_str_lchr (class, '$');
-	if (!p) p = r_str_lchr (class, '/');
+	p = (char*)r_str_lchr (class, '$');
+	if (!p) p = (char *)r_str_lchr (class, '/');
 //eprintf ("D=%d (%s)\n", p, p?p:".");
-	p = r_str_rchr (class, p, '/');
+	p = (char*)r_str_rchr (class, p, '/');
 #if 1
 	//if (!p) p = class; else p--;
 //if (p) p = r_str_lchr (p, '/');
@@ -137,12 +137,11 @@ static RBinInfo *info(RBinArch *arch) {
 }
 
 static RList* strings (RBinArch *arch) {
-	RList *ret = NULL;
-	RBinString *ptr = NULL;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
-	ut32 i;
-	char buf[6];
-	int len;
+	RBinString *ptr = NULL;
+	RList *ret = NULL;
+	int i, len;
+	ut8 buf[6];
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -165,7 +164,7 @@ static RList* strings (RBinArch *arch) {
 	return ret;
 }
 
-static ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *size) {
+static inline ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *size) {
 	ut8 *buf, *map_end, *map;
 	ut32 mapsz, off = 0L;
 	int left;
@@ -188,11 +187,11 @@ static ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *size) {
 }
 
 static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
-	char buf[128], *buf2;
+	const ut8 buf[128], *buf2;
 	int len, uleblen;
 	r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 8);
 	len = dex_read_uleb128 (buf);
-	buf2 = r_uleb128 (buf, &len);
+	buf2 = r_uleb128 (buf, (ut32*) &len);
 	uleblen = (size_t)(buf2 - buf);
 	// XXX what about 0 length strings?
 	if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
@@ -221,25 +220,23 @@ static char *dex_method_name (RBinDexObj *bin, int idx) {
 static char *dex_class_name (RBinDexObj *bin, RBinDexClass *c) {
 	int cid = c->class_id;
 	int tid = bin->types [cid].descriptor_id;
-	int sid = bin->strings[tid];
+	//int sid = bin->strings[tid];
 	return get_string (bin, tid);
 }
 
 static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 	int cid = c->super_class;
 	int tid = bin->types [cid].descriptor_id;
-	int sid = bin->strings[tid];
+	//int sid = bin->strings[tid];
 	return get_string (bin, tid);
 }
 
 
 static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 	int *methods;
-	int i, j, len, left;
-	char *name, *buf;
-	RList *ret = NULL;
-	RBinSymbol *ptr;
-	ut8 *p;
+	int i, j;
+	char *name;
+	const ut8 *p;
 
 	// doublecheck??
 	if (bin->methods_list)
@@ -270,7 +267,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 		p = r_buf_get_at (arch->buf, c->class_data_offset, NULL);
 		/* data header */
 		{
-			int SF, IF, DM, VM;
+			ut32 SF, IF, DM, VM;
 			p = r_uleb128 (p, &SF);
 			p = r_uleb128 (p, &IF);
 			p = r_uleb128 (p, &DM);
@@ -278,7 +275,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 			dprintf ("  static fields: %d\n", SF);
 			/* static fields */
 			for (j=0; j<SF; j++) {
-				int FI, FA;
+				ut32 FI, FA;
 				p = r_uleb128 (p, &FI);
 				p = r_uleb128 (p, &FA);
 				dprintf ("    field_idx: %d\n", FI);
@@ -287,7 +284,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 			/* instance fields */
 			dprintf ("  instance fields: %d\n", IF);
 			for (j=0; j<IF; j++) {
-				int FI, FA;
+				ut32 FI, FA;
 				p = r_uleb128 (p, &FI);
 				p = r_uleb128 (p, &FA);
 				dprintf ("    field_idx: %d,\n", FI);
@@ -297,7 +294,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 			dprintf ("  direct methods: %d\n", DM);
 			for (j=0; j<DM; j++) {
 				char *method_name, *flag_name;
-				int MI, MA, MC;
+				ut32 MI, MA, MC;
 				p = r_uleb128 (p, &MI);
 				p = r_uleb128 (p, &MA);
 				p = r_uleb128 (p, &MC);
@@ -329,8 +326,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 			/* virtual methods */
 			dprintf ("  virtual methods: %d\n", VM);
 			for (j=0; j<VM; j++) {
-				char *name, *flag;
-				int MI, MA, MC;
+				ut32 MI, MA, MC;
 				p = r_uleb128 (p, &MI);
 				p = r_uleb128 (p, &MA);
 				p = r_uleb128 (p, &MC);
@@ -354,7 +350,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 	}
 	dprintf ("imports: \n");
 	for (i = 0; i<bin->header.method_size; i++) {
-		RBinDexMethod *method = &bin->methods[i];
+		//RBinDexMethod *method = &bin->methods[i];
 		if (!methods[i]) {
 			char *method_name = dex_method_name (bin, i);
 			dprintf ("import %d (%s)\n", i, method_name);
