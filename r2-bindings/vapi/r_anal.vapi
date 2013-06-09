@@ -227,8 +227,8 @@ namespace Radare {
 			public uint64 jump;
 			public uint64 fail;
 			public uint32 selector;
-			public int64 ref;
-			public uint64 value;
+			public int64 ptr;
+			public uint64 val;
 			public int64 stackptr;
 			public bool refptr;
 			public char esil[64];
@@ -237,8 +237,8 @@ namespace Radare {
 			public Value dst;
 		}
 
-		public string to_string(Op op);
-		public unowned string to_esil_string(Op op);
+		public string op_to_string(Op op);
+		public unowned string op_to_esil_string(Op op);
 
 		[Compact]
 		[CCode (cprefix="r_anal_diff_", cname="RAnalDiff")]
