@@ -676,13 +676,12 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			return ret;
 		}
 	}
-	if (colon) {
+	if (colon && colon[1]) {
 		for (++colon; *colon==';'; colon++);
 		r_core_cmd_subst (core, colon);
-		//*colon = ';';
 	} else {
-		if (!*cmd)
-			r_core_cmd_nullcallback(core);
+		if (icmd && !*icmd)
+			r_core_cmd_nullcallback (core);
 	}
 	free (icmd);
 	return 0;

@@ -393,7 +393,7 @@ c = 0;
 	case 'e': /* match regexp */
 		{
 		char *inp = strdup (input+2);
-		char *res = r_str_lchr (inp+1, inp[0]);
+		char *res = (char *)r_str_lchr (inp+1, inp[0]);
 		char *opt = NULL;
 		if (res > inp) {
 			opt = strdup (res+1);
