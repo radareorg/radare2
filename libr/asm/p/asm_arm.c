@@ -67,8 +67,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	arm_mode = a->bits;
 	//obj.arch = ARM_EXT_V1|ARM_EXT_V4T|ARM_EXT_V5;
 	/* TODO: set arch */
-	obj.arch = 0xffffffff;
-	obj.mach = 0xffffffff;
+	obj.arch = UT32_MAX;
+	obj.mach = UT32_MAX;
 
 	obj.buffer = bytes;
 	obj.read_memory_func = &arm_buffer_read_memory;

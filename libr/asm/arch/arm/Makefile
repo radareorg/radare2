@@ -1,3 +1,3 @@
 all:
-	gcc armass.c -DMAIN
+	gcc -I../../../include armass.c -DMAIN -lr_util
 	./a.out
