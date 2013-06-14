@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #ifndef _INCLUDE_R_SYSCALL_H_
 #define _INCLUDE_R_SYSCALL_H_
@@ -6,6 +6,8 @@
 #include <r_types.h>
 #include <r_db.h>
 #include <list.h>
+
+R_LIB_VERSION_HEADER (r_syscall);
 
 #define R_SYSCALL_ARGS 7
 

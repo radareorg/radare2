@@ -7,6 +7,8 @@
 #include <list.h>
 #include "../config.h"
 
+R_LIB_VERSION(r_parse);
+
 static RParsePlugin *parse_static_plugins[] =
 	{ R_PARSE_STATIC_PLUGINS };
 

@@ -6,6 +6,8 @@
 #include <errno.h>
 #include "p/grub/include/grub/msdos_partition.h"
 
+R_LIB_VERSION(r_fs);
+
 static RFSPlugin *fs_static_plugins[] = { R_FS_STATIC_PLUGINS };
 
 R_API RFS *r_fs_new () {

@@ -2,6 +2,7 @@
 #define _INCLUDE_SOCKET_H_
 
 #include "r_types.h"
+R_LIB_VERSION_HEADER(r_socket);
 
 #if __UNIX__
 #include <netinet/in.h>

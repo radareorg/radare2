@@ -5,6 +5,8 @@
 #include <r_list.h>
 #include <r_io.h>
 
+R_LIB_VERSION_HEADER (r_fs);
+
 struct r_fs_plugin_t;
 struct r_fs_root_t;
 struct r_fs_t;

@@ -4,6 +4,8 @@
 #include <r_util.h>
 #include <list.h>
 
+R_LIB_VERSION(r_reg);
+
 static const char *types[R_REG_TYPE_LAST+1] = {
 	"gpr", "drx", "fpu", "mmx", "xmm", "flg", "seg", NULL
 };

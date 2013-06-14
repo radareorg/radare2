@@ -5,6 +5,8 @@
 
 #include <r_types.h>
 
+R_LIB_VERSION_HEADER(r_magic);
+
 #ifndef MAGIC
 #define MAGIC "/etc/magic"
 #endif

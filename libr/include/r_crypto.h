@@ -4,6 +4,8 @@
 #include <list.h>
 #include <r_types.h>
 
+R_LIB_VERSION_HEADER(r_crypto);
+
 enum {
 	R_CRYPTO_MODE_ECB,
 	R_CRYPTO_MODE_CBC,

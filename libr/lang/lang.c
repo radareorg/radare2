@@ -1,9 +1,12 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
 
+R_LIB_VERSION(r_lang);
+
 #include "p/vala.c" // hardcoded
+
 
 RLang *__lang = NULL;
 R_API void r_lang_plugin_free (RLangPlugin *p) {

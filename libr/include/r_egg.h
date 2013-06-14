@@ -7,6 +7,8 @@
 #include <r_util.h>
 #include <r_syscall.h>
 
+R_LIB_VERSION_HEADER(r_egg);
+
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
 #define R_EGG_INCDIR_PATH R2_PREFIX"/lib/radare2/"R2_VERSION"/egg"
 

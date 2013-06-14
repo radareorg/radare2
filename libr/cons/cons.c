@@ -9,6 +9,8 @@
 #include <signal.h>
 #endif
 
+R_LIB_VERSION(r_cons);
+
 static RCons r_cons_instance;
 #define I r_cons_instance
 

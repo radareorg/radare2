@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+R_LIB_VERSION(r_socket);
+
 #if EMSCRIPTEN
 /* no network */
 R_API RSocket *r_socket_new (int is_ssl) { return NULL; }

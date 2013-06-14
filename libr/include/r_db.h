@@ -5,6 +5,8 @@
 #include "r_util.h"
 #include "sdb.h"
 
+R_LIB_VERSION_HEADER(r_db);
+
 // TODO: add support for network. (udp). memcache, with hooks
 typedef struct r_pair_t {
 	char *dir;

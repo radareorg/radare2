@@ -5,6 +5,8 @@
 #include <r_util.h>
 #include "list.h"
 
+R_LIB_VERSION_HEADER(r_cmd);
+
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
 #define R_CMD_MAXLEN 4096

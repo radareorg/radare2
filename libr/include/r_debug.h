@@ -10,6 +10,8 @@
 #include <r_syscall.h>
 #include "list.h"
 
+R_LIB_VERSION_HEADER(r_debug);
+
 /* hack to fix compilation of debugger on BSD systems */
 /* This needs some testing (netbsd, freebsd, openbsd, kfreebsd) */
 #if __BSD__

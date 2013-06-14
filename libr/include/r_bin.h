@@ -8,6 +8,8 @@
 #include <r_list.h>
 #include <r_bin_dwarf.h>
 
+R_LIB_VERSION_HEADER (r_bin);
+
 #define R_BIN_SCN_EXECUTABLE(x) x & 0x1
 #define R_BIN_SCN_WRITABLE(x)   x & 0x2
 #define R_BIN_SCN_READABLE(x)   x & 0x4

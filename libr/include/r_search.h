@@ -6,6 +6,8 @@
 #include <r_list.h>
 #include <r_io.h>
 
+R_LIB_VERSION_HEADER(r_search);
+
 enum {
 	R_SEARCH_KEYWORD,
 	R_SEARCH_REGEXP,

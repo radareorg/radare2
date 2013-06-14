@@ -18,6 +18,14 @@
 #define __KFBSD__ 0
 #endif
 
+#ifndef GIT_TAP
+#define GIT_TAP R2_VERSION
+#endif
+#define R_LIB_VERSION_HEADER(x) \
+const char *x##_version();
+#define R_LIB_VERSION(x) \
+const char *x##_version() { return ""GIT_TAP; }
+
 #if defined(EMSCRIPTEN) || defined(__linux__) || defined(__APPLE__) || defined(__GNU__) || defined(__ANDROID__) || defined(__QNX__)
   #define __BSD__ 0
   #define __UNIX__ 1

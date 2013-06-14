@@ -11,6 +11,8 @@
 #include <r_util.h>
 #include <r_syscall.h>
 
+R_LIB_VERSION_HEADER(r_anal);
+
 // TODO: save memory2 : fingerprints must be pointers to a buffer
 // containing a dupped file in memory
 

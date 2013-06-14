@@ -2,6 +2,7 @@
 #define _INCLUDE_R_HASH_H_
 
 #include "r_types.h"
+R_LIB_VERSION_HEADER (r_hash);
 
 /* hashing */
 typedef struct {

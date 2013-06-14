@@ -5,6 +5,7 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
+R_LIB_VERSION_HEADER(r_sign);
 
 enum {
 	R_SIGN_BYTE = 'b',

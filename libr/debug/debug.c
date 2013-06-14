@@ -4,6 +4,8 @@
 #include <r_anal.h>
 #include <signal.h>
 
+R_LIB_VERSION(r_debug);
+
 /* restore program counter after breakpoint hit */
 static int r_debug_recoil(RDebug *dbg) {
 	int recoil;

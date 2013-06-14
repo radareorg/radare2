@@ -25,22 +25,36 @@ code, debugging programs, attaching to remote gdb servers, ..
 
 radare2 is portable.
 
-Architectures: x86, arm, mips, ppc, java, dalvik, arc, avr, bf, csr, dcpu16, m68k, msil, sh, sparc
+Architectures:
 
-File Formats: dex, elf, elf64, filesystem, java, fatmach0, mach0, mach0-64, MZ, PE, PE+, TE, plan9, dyldcache
+  8051, arm, arc, avr, bf, c55+, csr, dcpu16,
+  dalvik, i8080, mips, m68k, mips, msil, sh,
+  sparc, rar, powerpc, i386, x86-64
 
-Operating Systems: Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32, w64, Solaris.
+File Formats:
 
-Bindings: Vala/Genie, Python, NodeJS, LUA, Go, Perl, Guile, php5, newlisp, Ruby, Java
+  bios, dex, elf, elf64, filesystem, java,
+  fatmach0, mach0, mach0-64, MZ, PE, PE+,
+  TE, plan9, dyldcache
+
+Operating Systems:
+
+  Android, GNU/Linux, [Net|Free|Open]BSD, iOS,
+  OSX, QNX, w32, w64, Solaris, FirefoxOS
+
+Bindings:
+
+  Vala/Genie, Python, NodeJS, LUA, Go, Perl,
+  Guile, php5, newlisp, Ruby, Java, ...
 
 # Dependencies
 
 radare2 can be built without any special dependency, just
-use make and get a working toolchain (gcc, clang, ..)
+use make and get a working toolchain (gcc, clang, tcc, ..)
 
 Optionally you can use libewf for loading EnCase disk images.
 
-To build the bindings you need valabind, g++ and swig2.
+To build the bindings you need latest valabind, g++ and swig2.
 
 # Install
 
@@ -51,7 +65,8 @@ the following command:
 
 # Uninstall
 
-In case of poluted filesystem you can uninstall current version or remove all previous installations:
+In case of poluted filesystem you can uninstall current
+version or remove all previous installations:
 
     $ make uninstall
     $ make purge

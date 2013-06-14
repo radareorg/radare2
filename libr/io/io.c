@@ -4,6 +4,8 @@
 #include "r_util.h"
 #include <stdio.h>
 
+R_LIB_VERSION(r_io);
+
 // TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
 //  --- check for EXEC perms in section (use cached read to accelerate)
 

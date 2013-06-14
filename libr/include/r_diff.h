@@ -4,6 +4,8 @@
 #include <r_types.h>
 #include <r_util.h>
 
+R_LIB_VERSION_HEADER(r_diff);
+
 typedef struct r_diff_op_t {
 	/* file A */
 	ut64 a_off;

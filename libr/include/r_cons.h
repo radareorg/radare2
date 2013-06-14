@@ -35,6 +35,8 @@
 #define R_CONS_GREP_WORDS 10
 #define R_CONS_GREP_WORD_SIZE 64
 
+R_LIB_VERSION_HEADER(r_cons);
+
 typedef struct r_cons_grep_t {
 	char strings[R_CONS_GREP_WORDS][R_CONS_GREP_WORD_SIZE];
 	int nstrings;

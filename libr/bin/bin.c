@@ -10,6 +10,8 @@
 #include <list.h>
 #include "../config.h"
 
+R_LIB_VERSION(r_bin);
+
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS };
 

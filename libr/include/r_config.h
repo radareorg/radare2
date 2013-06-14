@@ -5,6 +5,8 @@
 #include "r_util.h"
 #include "list.h" // TODO: port to r_list
 
+R_LIB_VERSION_HEADER(r_config);
+
 #define CN_BOOL  0x000001
 #define CN_INT   0x000002
 #define CN_OFFT  0x000004

@@ -185,7 +185,6 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		return R_FALSE;
 	}
 	if (!r->file) {
-		int bits;
 		RBinObject *obj = r_bin_get_object (r->bin);
 		if (obj && obj->info && obj->info->bits) {
 			r_config_set_i (r->config, "asm.bits", obj->info->bits);

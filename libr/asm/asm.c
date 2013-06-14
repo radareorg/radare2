@@ -7,6 +7,8 @@
 #include <list.h>
 #include "../config.h"
 
+R_LIB_VERSION (r_asm);
+
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static int r_asm_pseudo_align(RAsmOp *op, char *input) {

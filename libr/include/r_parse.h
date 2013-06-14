@@ -11,6 +11,8 @@
 // XXX : remove this define???
 #define R_PARSE_STRLEN 256
 
+R_LIB_VERSION_HEADER(r_parse);
+
 typedef struct r_parse_t {
 	void *user;
 	int flagspace;

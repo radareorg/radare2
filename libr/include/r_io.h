@@ -26,6 +26,7 @@
 #define RMT_CMD    0x07
 #define RMT_REPLY  0x80
 
+R_LIB_VERSION_HEADER (r_io);
 // #define RMT_DLDIR "/tmp/$USER/r2"
 // #define RMT_UPLOAD 0x08
 // #define RMT_DOWNLOAD 0x09

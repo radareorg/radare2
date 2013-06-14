@@ -254,7 +254,7 @@ R_API void r_line_autocomplete() {
 		argv = I.completion.argv;
 	} else opt = 0;
 
-	p = r_str_lchr (I.buffer.data, ' ');
+	p = (char *)r_str_lchr (I.buffer.data, ' ');
 	if (p) {
 		p++;
 		plen = sizeof (I.buffer.data)-(int)(size_t)(p-I.buffer.data);

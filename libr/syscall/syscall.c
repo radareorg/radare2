@@ -8,6 +8,8 @@
 #include <string.h>
 #include "fastcall.h"
 
+R_LIB_VERSION (r_syscall);
+
 extern RSyscallPort sysport_x86[];
 
 R_API RSyscall* r_syscall_new() {

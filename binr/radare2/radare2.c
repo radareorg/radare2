@@ -45,7 +45,7 @@ static int main_help(int line) {
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
-		" -v           show radare2 version\n"
+		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
 		" -h, -hh      show help message, -hh for long\n");
 	if (line==2)
@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
 		case 'f': fullfile = 1; break;
 		case 'n': run_anal = 0; break;
 		case 'N': run_rc = 0; break;
-		case 'V':
+		case 'V': return verify_version (1);
 		case 'v': return blob_version ("radare2");
 		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		case 'a': asmarch = optarg; break;
@@ -237,6 +237,7 @@ int main(int argc, char **argv) {
 	if (help>1) return main_help (2);
 	else if (help) return main_help (0);
 
+	verify_version (0);
 	if (do_connect) {
 		const char *uri = argv[optind];
 		if (!strncmp (uri, "http://", 7))

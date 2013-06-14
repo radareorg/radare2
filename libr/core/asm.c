@@ -88,9 +88,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			op.buf_asm[0] = 0;
 			op.buf_hex[0] = 0;
 			if (!(len = r_asm_disassemble (core->assembler, &op, buf+idx, core->blocksize-idx))) {
-				if (matchcount != 0)
-					idx = tidx+1;
-				else idx++;
+				idx = (matchcount)? tidx+1: idx+1;
 				matchcount = 0;
 				continue;
 			}
@@ -101,19 +99,14 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 						tidx = idx;
 					if (!(hit = r_core_asm_hit_new ())) {
 						r_list_destroy (hits);
-						free (buf);
-						free (ptr);
-						free (code);
-						return NULL;
+						hits = NULL;
+						goto beach;
 					}
 					hit->addr = at+tidx;
 					hit->len = idx+len-tidx;
 					if (hit->len == -1) {
 						r_core_asm_hit_free (hit);
-						free (buf);
-						free (ptr);
-						free (code);
-						return hits;
+						goto beach;
 					}
 					hit->code = strdup (code);
 					r_list_append (hits, hit);
@@ -136,6 +129,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		}
 	}
 	r_asm_set_pc (core->assembler, toff);
+beach:
 	free (buf);
 	free (ptr);
 	free (code);

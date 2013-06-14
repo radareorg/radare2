@@ -72,7 +72,7 @@ R_API void r_pair_delete (RPair *p, const char *name) {
 	ut32 hdom;
 	char *dom, *key = strdup (name);
 
-	dom = r_str_lchr (key, '.');
+	dom = (char *)r_str_lchr (key, '.');
 	if (dom) {
 		key = dom+1;
 		*dom = 0;
@@ -111,7 +111,7 @@ R_API char *r_pair_get (RPair *p, const char *name) {
 		return sdb_get (p->sdb, name, NULL);
 
 	key = okey = strdup (name);
-	dom = r_str_lchr (okey, '.');
+	dom = (char*)r_str_lchr (okey, '.');
 	if (dom) {
 		char *tmp = okey;
 		*dom = 0;
@@ -137,7 +137,7 @@ R_API void r_pair_set (RPair *p, const char *name, const char *value) {
 		return;
 	}
 	key = strdup (name);
-	dom = r_str_lchr (key, '.');
+	dom = (char*)r_str_lchr (key, '.');
 	if (dom) {
 		okey = key;
 		*dom = 0;

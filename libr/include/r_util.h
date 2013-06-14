@@ -17,6 +17,8 @@
 #include <openssl/bn.h>
 #endif
 
+R_LIB_VERSION_HEADER(r_util);
+
 #include <dirent.h>
 
 // TODO: use lowercase here?

@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_io.h>
 #include <r_list.h>
+R_LIB_VERSION_HEADER(r_bp);
 
 #define R_BP_MAXPIDS 10
 #define R_BP_CONT_NORMAL 0

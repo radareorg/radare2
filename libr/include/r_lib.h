@@ -7,6 +7,7 @@
 #include "r_types.h"
 #include "r_list.h"
 
+R_LIB_VERSION_HEADER (r_lib);
 // rename to '.' ??
 #define R_LIB_SEPARATOR "."
 

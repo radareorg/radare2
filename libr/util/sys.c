@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <sys/types.h>
 #include <dirent.h>
@@ -19,6 +19,8 @@
 # include <io.h>
 # include <winbase.h>
 #endif
+
+R_LIB_VERSION(r_util);
 
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 /* TODO: check endianness issues here */

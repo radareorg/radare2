@@ -24,6 +24,9 @@
 #include "r_bin.h"
 #include "r_hash.h"
 #include "r_socket.h"
+#include "r_crypto.h"
+
+R_LIB_VERSION_HEADER(r_core);
 
 #define R_CORE_CMD_EXIT -2
 #define R_CORE_BLOCKSIZE 64

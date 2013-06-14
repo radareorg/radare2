@@ -1,7 +1,9 @@
-/* radare - LGPL - Copyright 2009 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include "r_crypto.h"
 #include "../config.h"
+
+R_LIB_VERSION(r_crypto);
 
 static struct r_crypto_plugin_t *crypto_static_plugins[] = 
 	{ R_CRYPTO_STATIC_PLUGINS };
