@@ -29,6 +29,9 @@
  */
 
 #include <r_userconf.h>
+#include <r_types.h>
+
+R_LIB_VERSION (r_magic);
 
 #if USE_LIB_MAGIC
 #include <magic.h>

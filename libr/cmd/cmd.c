@@ -3,6 +3,8 @@
 #include <r_cmd.h>
 #include <r_util.h>
 
+R_LIB_VERSION (r_cmd);
+
 R_API void r_cmd_alias_init(RCmd *cmd) {
 	cmd->aliases.count = 0;
 	cmd->aliases.keys = NULL;

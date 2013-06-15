@@ -1,7 +1,9 @@
-/* radare2 - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare2 - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_bp.h>
 #include "../config.h"
+
+R_LIB_VERSION (r_bp);
 
 static struct r_bp_plugin_t *bp_static_plugins[] = 
 	{ R_BP_STATIC_PLUGINS };

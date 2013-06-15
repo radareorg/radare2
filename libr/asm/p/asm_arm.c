@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -69,6 +69,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	/* TODO: set arch */
 	obj.arch = UT32_MAX;
 	obj.mach = UT32_MAX;
+	obj.arch = 0;
+	obj.mach = 0;
 
 	obj.buffer = bytes;
 	obj.read_memory_func = &arm_buffer_read_memory;

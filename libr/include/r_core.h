@@ -8,6 +8,7 @@
 #include "r_io.h"
 #include "r_fs.h"
 #include "r_lib.h"
+#include "r_diff.h"
 #include "r_egg.h"
 #include "r_lang.h"
 #include "r_asm.h"

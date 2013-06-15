@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <dirent.h>
 
+R_LIB_VERSION(r_lib);
+
 /* TODO: support for nested plugins ?? here */
 
 #if __UNIX__

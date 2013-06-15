@@ -78,13 +78,15 @@ typedef struct {
 	char *value;
 } RAsmEqu;
 
+#define _RAsmPlugin struct r_asm_plugin_t
 typedef struct r_asm_t {
+	const char *cpu;
 	int  bits;
 	int  big_endian;
 	int  syntax;
 	ut64 pc;
 	void *user;
-	struct r_asm_plugin_t *cur;
+	_RAsmPlugin *cur;
 	RList *plugins;
 	RBinBind binb;
 	RParse *ifilter;

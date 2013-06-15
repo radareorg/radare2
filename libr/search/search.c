@@ -4,6 +4,8 @@
 #include <r_list.h>
 #include <ctype.h>
 
+R_LIB_VERSION (r_search);
+
 R_API RSearch *r_search_new(int mode) {
 	RSearch *s = R_NEW0 (RSearch);
 	if (!s) return NULL;

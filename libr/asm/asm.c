@@ -131,6 +131,7 @@ R_API RAsm *r_asm_new() {
 	a->cur = NULL;
 	a->binb.bin = NULL;
 	a->bits = 32;
+	a->cpu = NULL;
 	a->big_endian = 0;
 	a->pc = 0;
 	a->ifilter = NULL;
@@ -181,6 +182,7 @@ R_API int r_asm_filter_output(RAsm *a, const char *f) {
 
 R_API void r_asm_free(RAsm *a) {
 	if (!a) return;
+	free (a->cpu);
 	// TODO: any memory leak here?
 	r_pair_free (a->pair);
 	a->pair = NULL;
@@ -253,6 +255,11 @@ static int has_bits(RAsmPlugin *h, int bits) {
 			if (bits == h->bits[i])
 				return R_TRUE;
 	return R_FALSE;
+}
+
+R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
+	free (a->cpu);
+	a->cpu = strdup (cpu);
 }
 
 R_API int r_asm_set_bits(RAsm *a, int bits) {

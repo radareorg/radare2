@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include "r_db.h"
 
+R_LIB_VERSION (r_db);
 #if 0
 Configurable options:
  - allow dupped nodes? (two times the same pointer?)

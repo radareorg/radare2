@@ -2,6 +2,8 @@
 
 #include "r_hash.h"
 
+R_LIB_VERSION(r_hash);
+
 /* returns 0-100 */
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 	const ut8 *end = buffer + len;

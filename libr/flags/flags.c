@@ -5,6 +5,8 @@
 #include <r_cons.h>
 #include <stdio.h>
 
+R_LIB_VERSION(r_flag);
+
 R_API RFlag * r_flag_new() {
 	int i;
 	RFlag *f = R_NEW (RFlag);

@@ -1,7 +1,9 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_sign.h>
 #include <r_anal.h>
+
+R_LIB_VERSION (r_sign);
 
 R_API RSign *r_sign_new() {
 	RSign *sig = R_NEW (RSign);

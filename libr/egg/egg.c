@@ -1,7 +1,9 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2013 - pancake */
 
 #include <r_egg.h>
 #include "../config.h"
+
+R_LIB_VERSION (r_egg);
 
 // TODO: must be plugins
 extern REggEmit emit_x86;

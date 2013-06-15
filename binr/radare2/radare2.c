@@ -24,18 +24,30 @@ static int verify_version(int show) {
 		const char *name;
 		vc callback;
 	} vcs[] = {
+		{ "r_cmd", &r_cmd_version },
 		{ "r_anal", &r_anal_version },
+		{ "r_lib", &r_lib_version },
+		{ "r_egg", &r_egg_version },
+		{ "r_asm", &r_asm_version },
 		{ "r_bin", &r_bin_version },
 		{ "r_cons", &r_cons_version },
+		{ "r_flags", &r_flag_version }, // XXX inconsistency
 		{ "r_core", &r_core_version },
-		{ "r_util", &r_util_version },
-		{ "r_debug", &r_debug_version },
-		{ "r_io", &r_io_version },
-		{ "r_fs", &r_fs_version },
 		{ "r_crypto", &r_crypto_version },
-		{ "r_asm", &r_asm_version },
+		{ "r_db", &r_db_version },
+		{ "r_bp", &r_bp_version },
+		{ "r_debug", &r_debug_version },
+		{ "r_hash", &r_hash_version },
+		{ "r_diff", &r_diff_version },
+		{ "r_fs", &r_fs_version },
+		{ "r_io", &r_io_version },
+		{ "r_magic", &r_magic_version },
 		{ "r_parse", &r_parse_version },
 		{ "r_reg", &r_reg_version },
+		{ "r_sign", &r_sign_version },
+		{ "r_search", &r_search_version },
+		{ "r_syscall", &r_syscall_version },
+		{ "r_util", &r_util_version },
 		/* ... */
 		{NULL,NULL}
 	};
