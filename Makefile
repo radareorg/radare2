@@ -98,6 +98,7 @@ install: install-doc install-man install-www
 	done
 	mkdir -p ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud
 	cp -f shlr/hud/main ${DESTDIR}/${LIBDIR}/radare2/${VERSION}/hud/
+	sys/ldconfig.sh
 
 install-www:
 	rm -rf ${DESTDIR}/${WWWROOT}
@@ -128,6 +129,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
 	ln -fs ${PWD}/shlr/hud/main ${DLIBDIR}/radare2/${VERSION}/hud/main
+	sys/ldconfig.sh
 
 deinstall uninstall:
 	cd libr && ${MAKE} uninstall PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
