@@ -644,6 +644,8 @@ toro:
 			case R_ANAL_OP_TYPE_OR:
 			case R_ANAL_OP_TYPE_XOR:
 			case R_ANAL_OP_TYPE_NOT:
+			case R_ANAL_OP_TYPE_SHL:
+			case R_ANAL_OP_TYPE_SHR:
 				r_cons_strcat (color_bin);
 				break;
 			case R_ANAL_OP_TYPE_JMP:
