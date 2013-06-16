@@ -211,6 +211,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	switch (u.mnemonic) {
 	case UD_Itest:
 	case UD_Icmp:
+	case UD_Isalc:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
 	case UD_Ixor:
@@ -233,6 +234,9 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->type = R_ANAL_OP_TYPE_MOV;
 		break;
 	case UD_Ipush:
+	case UD_Ipusha:
+	case UD_Ipushf:
+	case UD_Ipushfw:
 		switch (u.operand[0].type) {
 		case UD_OP_CONST:
 		case UD_OP_JIMM:
@@ -252,6 +256,9 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->stackptr = regsz;
 		break;
 	case UD_Ipop:
+	case UD_Ipopa:
+	case UD_Ipopf:
+	case UD_Ipopfw:
 		op->type = R_ANAL_OP_TYPE_POP;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -regsz;
@@ -276,6 +283,14 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			}
 		}
 		break;
+	case UD_Iadc:
+	case UD_Iinc:
+		op->type = R_ANAL_OP_TYPE_ADD;
+		break;
+	case UD_Isbb:
+	case UD_Idec:
+		op->type = R_ANAL_OP_TYPE_SUB;
+		break;
 	case UD_Ijmp:
 		if (u.operand[0].type == UD_OP_REG) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
@@ -289,6 +304,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Ijb:
 	case UD_Ijbe:
 	case UD_Ija:
+	case UD_Ijae:
 	case UD_Ijs:
 	case UD_Ijns:
 	case UD_Ijo:
@@ -300,6 +316,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Ijle:
 	case UD_Ijg:
 	case UD_Ijcxz:
+	case UD_Iloop:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + oplen + getval (&u.operand[0]);
 		op->fail = addr+oplen;
