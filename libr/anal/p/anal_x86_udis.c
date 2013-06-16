@@ -235,7 +235,8 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		break;
 	case UD_Ipush:
 	case UD_Ipusha:
-	case UD_Ipushf:
+	case UD_Ipushfq:
+	case UD_Ipushfd:
 	case UD_Ipushfw:
 		switch (u.operand[0].type) {
 		case UD_OP_CONST:
@@ -255,10 +256,10 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = regsz;
 		break;
-	case UD_Ipop:
 	case UD_Ipopa:
-	case UD_Ipopf:
 	case UD_Ipopfw:
+	case UD_Ipopfd:
+	case UD_Ipopfq:
 		op->type = R_ANAL_OP_TYPE_POP;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -regsz;
