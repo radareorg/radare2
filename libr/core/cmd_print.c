@@ -684,25 +684,27 @@ static int cmd_print(void *data, const char *input) {
 							char *res;
 							fmt = r_strht_get (core->print->formats, name);
 							// TODO: spaguettti, reuse code below.. and handle atoi() too
-							res = strdup (fmt);
-							*eq++ = 0;
+							if (fmt) {
+								res = strdup (fmt);
+								*eq++ = 0;
 #if 0
-							ut64 v;
-							v = r_num_math (NULL, eq);
-							r_print_format (core->print, core->offset,
-								core->block, core->blocksize, fmt, v, eq);
+								ut64 v;
+								v = r_num_math (NULL, eq);
+								r_print_format (core->print, core->offset,
+										core->block, core->blocksize, fmt, v, eq);
 #endif
-							r_str_word_set0 (res);
-							for (i = 1; ; i++) {
-								const char *k = r_str_word_get0 (res, i);
-								if (!k) break;
-								if (!strcmp (k, dot)) {
-									r_print_format (core->print, core->offset,
-										core->block, core->blocksize, fmt, i-1, eq);
-									break;
+								r_str_word_set0 (res);
+								for (i = 1; ; i++) {
+									const char *k = r_str_word_get0 (res, i);
+									if (!k) break;
+									if (!strcmp (k, dot)) {
+										r_print_format (core->print, core->offset,
+												core->block, core->blocksize, fmt, i-1, eq);
+										break;
+									}
 								}
+								free (res);
 							}
-							free (res);
 						} else {
 							const char *k, *fmt = r_strht_get (core->print->formats, name);
 							if (fmt) {
