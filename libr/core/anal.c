@@ -21,6 +21,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 			HINTCMD (length, "ahl %d");
 			HINTCMD (opcode, "aho %s");
 			HINTCMD (opcode, "ahs %s");
+			HINTCMD (opcode, "ahp %s");
 			break;
 		case 'j':
 			r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d, 
@@ -30,6 +31,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 			if (hint->length) r_cons_printf (",\"length\":%d", hint->length);
 			if (hint->opcode) r_cons_printf (",\"opcode\":\"%s\"", hint->opcode);
 			if (hint->analstr) r_cons_printf (",\"analstr\":\"%s\"", hint->analstr);
+			if (hint->ptr) r_cons_printf (",\"ptr\":\"0x%"PFMT64x"x\"", hint->ptr);
 			r_cons_printf ("}");
 			break;
 		default:

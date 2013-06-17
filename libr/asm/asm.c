@@ -259,7 +259,7 @@ static int has_bits(RAsmPlugin *h, int bits) {
 
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 	free (a->cpu);
-	a->cpu = strdup (cpu);
+	a->cpu = cpu? strdup (cpu): NULL;
 }
 
 R_API int r_asm_set_bits(RAsm *a, int bits) {
@@ -270,8 +270,8 @@ R_API int r_asm_set_bits(RAsm *a, int bits) {
 	return R_FALSE;
 }
 
-R_API int r_asm_set_big_endian(RAsm *a, int boolean) {
-	a->big_endian = boolean;
+R_API int r_asm_set_big_endian(RAsm *a, int b) {
+	a->big_endian = b;
 	return R_TRUE;
 }
 

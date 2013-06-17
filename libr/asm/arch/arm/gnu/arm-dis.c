@@ -150,7 +150,7 @@ enum opcode_sentinel_enum
   SENTINEL_GENERIC_START
 } opcode_sentinels;
 
-#define UNDEFINED_INSTRUCTION      "  ; <UNDEFINED> instruction: %0-31x"
+#define UNDEFINED_INSTRUCTION      " ; <UNDEFINED> instruction: %0-31x"
 #define UNPREDICTABLE_INSTRUCTION  " ; <UNPREDICTABLE>"
 
 /* Common coprocessor opcodes shared between Arm and Thumb-2.  */
@@ -1939,6 +1939,7 @@ print_insn_coprocessor (bfd_vma pc,
   unsigned long allowed_arches = private_data->features.coproc;
   int cond;
 
+//allowed_arches = ARM_EXT_V5T;
   for (insn = coprocessor_opcodes; insn->assembler; insn++)
     {
       unsigned long u_reg = 16;
@@ -4732,6 +4733,7 @@ is_mapping_symbol (struct disassemble_info *info, int n,
 /* Try to infer the code type (ARM or Thumb) from a mapping symbol.
    Returns nonzero if *MAP_TYPE was set.  */
 
+#if 0
 static int
 get_map_sym_type (struct disassemble_info *info,
 		  int n,
@@ -4754,6 +4756,7 @@ get_sym_code_type (struct disassemble_info *info,
 {
   return FALSE;
 }
+#endif
 
 /* Given a bfd_mach_arm_XXX value, this function fills in the fields
    of the supplied arm_feature_set structure with bitmasks indicating
@@ -4772,6 +4775,7 @@ select_arm_features (unsigned long mach,
   features->coproc = (CEXT) | FPU_FPA; \
   return
 
+//printf ("ARM FEATURES %d\n", mach);
   switch (mach)
     {
     case bfd_mach_arm_2:       ARM_ARCH_V2;
@@ -4813,6 +4817,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
   bfd_boolean   found = FALSE;
   struct arm_private_data *private_data;
 
+//printf ("-> %d\n", info->mach);
   if (info->disassembler_options)
     {
       parse_disassembler_options (info->disassembler_options);
@@ -4826,6 +4831,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
     {
       static struct arm_private_data private;
 
+#if 0
       if ((info->flags & USER_SPECIFIED_MACHINE_TYPE) == 0)
 	/* If the user did not use the -m command line switch then default to
 	   disassembling all types of ARM instruction.
@@ -4846,11 +4852,13 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	   "unknown" arm architecture which is compatible with any ARM
 	   instruction.  */
 	  info->mach = bfd_mach_arm_unknown;
+#endif
 
       /* Compute the architecture bitmask from the machine number.
 	 Note: This assumes that the machine number will not change
 	 during disassembly....  */
-info->mach = bfd_mach_arm_5TE;
+//info->mach = bfd_mach_arm_5TE;
+//printf ("MACH %d\n", info->mach);
       select_arm_features (info->mach, &private.features);
 
       private.has_mapping_symbols = -1;
@@ -5049,6 +5057,10 @@ info->mach = bfd_mach_arm_5TE;
     }
 #endif
 
+if (info->bytes_per_line==2) {
+	force_thumb = 1;
+	info->bytes_per_line = 4;
+}
   if (force_thumb)
     is_thumb = TRUE;
 

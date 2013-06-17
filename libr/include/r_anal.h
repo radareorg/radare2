@@ -508,6 +508,7 @@ typedef struct r_anal_t {
 typedef struct r_anal_hint_t {
 	ut64 from;
 	ut64 to;
+	ut64 ptr;
 	char *arch;
 	char *opcode;
 	char *analstr;
@@ -531,7 +532,7 @@ typedef struct r_anal_value_t {
 typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
-	int type;       /* type of opcode */
+	ut64 type;       /* type of opcode */
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
 	int length;     /* length in bytes of opcode */
@@ -881,6 +882,7 @@ R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, int size, const char *arch
 R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int size, int length);
 R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, int size, const char *str);
 R_API void r_anal_hint_set_analstr (RAnal *a, ut64 addr, int size, const char *str);
+R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
 
 R_API int r_anal_esil_eval(RAnal *anal, const char *str);
 

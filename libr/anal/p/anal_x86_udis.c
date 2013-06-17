@@ -66,6 +66,7 @@ static int getarg(char *src, struct ud *u, int idx) {
 	st64 n;
 	src[0] = 0;
 	switch (op->type) {
+	case UD_OP_PTR:
 	case UD_OP_CONST:
 	case UD_OP_JIMM:
 	case UD_OP_IMM:
@@ -81,9 +82,6 @@ static int getarg(char *src, struct ud *u, int idx) {
 		idx = op->base-UD_R_AL;
 		if (idx>=0 && idx<UD_REG_TAB_SIZE)
 			strcpy (src, ud_reg_tab[op->base - UD_R_AL]);
-		break;
-	case UD_OP_PTR:
-		strcpy (src, "ptr");
 		break;
 	case UD_OP_MEM:
 		n = getval (op);
@@ -105,6 +103,12 @@ static int getarg(char *src, struct ud *u, int idx) {
 
 static st64 getval(ud_operand_t *op) {
 	int bits = op->size;
+	switch (op->type) {
+	case UD_OP_PTR:
+		return (op->lval.ptr.seg<<4) | (op->lval.ptr.off & 0xFFFF);
+default:
+	break;
+	}
 	switch (bits) {
 	case 8: return (char)op->lval.sbyte;
 	case 16: return (short) op->lval.uword;
@@ -300,6 +304,25 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			op->type = R_ANAL_OP_TYPE_UJMP;
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
+#if 0
+{
+ut16 a = (op->lval.ptr.seg & 0xFFFF);
+ut16 b = (op->lval.ptr.off);
+switch (op->size) {
+case 32:
+	sprintf (src, "%04x:%04x", a, b & 0xFFFF);
+	break;
+case 48:
+	sprintf (src, "%04x:%04x", a, b);
+	break;
+default:
+	eprintf ("FUCK YOU\n");
+}
+}
+#endif
+if (u.operand[0].type==UD_OP_PTR) {
+			op->jump = getval (&u.operand[0]);
+}else
 			op->jump = addr + oplen + getval (&u.operand[0]);
 		}
 		break;

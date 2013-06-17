@@ -407,6 +407,13 @@ static int config_asmlineswidth_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_asmcpu_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	r_asm_set_cpu (core->assembler, node->value);
+	return R_TRUE;
+}
+
 static int config_asmarch_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -523,6 +530,8 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "asm.os", "Select operating system (kernel) (linux, darwin, w32,..)");
 	r_config_set_cb (cfg, "asm.arch", R_SYS_ARCH, &config_asmarch_callback);
 	r_config_desc (cfg, "asm.arch", "Set the arch to be usedd by asm");
+	r_config_set_cb (cfg, "asm.cpu", R_SYS_ARCH, &config_asmcpu_callback);
+	r_config_desc (cfg, "asm.cpu", "Set the kind of asm.arch cpu");
 	// XXX: not portable
 	r_parse_use (core->parser, "x86.pseudo");
 	r_config_set_cb (cfg, "asm.parser", "x86.pseudo", &config_asmparser_callback);

@@ -29,8 +29,9 @@ static int rasm_show_help(int v) {
 	printf ("Usage: rasm2 [-CdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
 		"             [-f file] [-F fil:ter] [-l len] 'code'|hexpairs|-\n");
 	if (v)
-	printf (" -a [arch]    Set assemble/disassemble plugin (RASM2_ARCH)\n"
+	printf (" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
 		" -b [bits]    Set cpu register size (8, 16, 32, 64) (RASM2_BITS)\n"
+		" -c [cpu]     Select specific CPU (depends on arch)\n"
 		" -C           Output in C format\n"
 		" -d, -D       Disassemble from hexpair bytes (-D show hexpairs)\n"
 		" -e           Use big endian instead of little endian\n"
@@ -154,7 +155,7 @@ int main(int argc, char *argv[]) {
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	char buf[R_ASM_BUFSIZE];
-	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL;
+	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL;
 	ut64 offset = 0;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0;
@@ -169,7 +170,8 @@ int main(int argc, char *argv[]) {
 		return rasm_show_help (0);
 
 	r_asm_use (a, R_SYS_ARCH);
-	while ((c = getopt (argc, argv, "k:DCeva:b:s:do:Bl:hLf:F:w")) != -1) {
+	r_asm_set_big_endian (a, R_FALSE);
+	while ((c = getopt (argc, argv, "k:DCc:eva:b:s:do:Bl:hLf:F:w")) != -1) {
 		switch (c) {
 		case 'k':
 			kernel = optarg;
@@ -182,6 +184,9 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'F':
 			filters = optarg;
+			break;
+		case 'c':
+			cpu = optarg;
 			break;
 		case 'C':
 			coutput = R_TRUE;
@@ -213,7 +218,7 @@ int main(int argc, char *argv[]) {
 			r_asm_list (a);
 			exit (1);
 		case 'e':
-			r_asm_set_big_endian (a, R_TRUE);
+			r_asm_set_big_endian (a, !!!a->big_endian);
 			break;
 		case 'v':
 			return blob_version ("rasm2");
@@ -241,6 +246,7 @@ int main(int argc, char *argv[]) {
 		eprintf ("rasm2: Cannot find asm.x86 plugin\n");
 		return 0;
 	}
+	r_asm_set_cpu (a, cpu);
 	r_asm_set_bits (a, (env_bits && *env_bits)? atoi (env_bits): bits);
 	a->syscall = r_syscall_new ();
 	r_syscall_setup (a->syscall, arch, kernel, bits);

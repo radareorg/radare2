@@ -13,6 +13,11 @@ R_API void r_anal_hint_del (RAnal *a, ut64 addr) {
 	if (hint) r_list_delete_data (a->hints, hint);
 }
 
+R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 ptr) {
+	RAnalHint *hint = r_anal_hint_add (a, addr, 0);
+	hint->ptr = ptr;
+}
+
 R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, int size, const char *arch) {
 	RAnalHint *hint = r_anal_hint_add (a, addr, size);
 	free (hint->arch);
@@ -50,7 +55,7 @@ R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from, int size) {
 	RListIter *iter;
 	if (size>0)
 		r_list_foreach (a->hints, iter, hint) {
-			if (from == hint->from && (!size|| (to == hint->to)))
+			if (from == hint->from && (!size || (to == hint->to)))
 				return hint;
 		}
 	return NULL;
@@ -81,11 +86,13 @@ R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr) {
 	r_list_foreach (anal->hints, iter, hint) {
 		if (addr >= hint->from && addr < hint->to) {
 			if (!res) res = R_NEW0 (RAnalHint);
-#define SETRET(x) if(hint->x)res->x=hint->x
-			SETRET(arch);
+#define SETRETS(x) if(hint->x) res->x=strdup(hint->x);
+#define SETRET(x) if(hint->x) res->x=hint->x
+			SETRETS(arch);
 			SETRET(bits);
-			SETRET(opcode);
-			SETRET(analstr);
+			SETRET(ptr);
+			SETRETS(opcode);
+			SETRETS(analstr);
 			SETRET(length);
 		}
 	}

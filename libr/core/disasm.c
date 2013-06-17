@@ -68,7 +68,6 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
-	/* hints */
 	RAnalHint *hint = NULL;
 	const char *pal_comment = core->cons->pal.comment;
 	/* other */
@@ -283,7 +282,7 @@ toro:
 					else r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
 						refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
 						refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
-						fun?fun->name:"unk");
+						fun?fun->name: "unk");
 				}
 				r_list_free (xrefs);
 			}
@@ -370,7 +369,7 @@ toro:
 		if (atabs) {
 			int n, i = 0;
 			char *t, *b = asmop.buf_asm;
-			for (;*b;b++,i++) {
+			for (; *b; b++, i++) {
 				if (*b!=' ') continue;
 				n = (10-i);
 				t = strdup (b+1); //XXX slow!
@@ -388,8 +387,10 @@ toro:
 		r_anal_op_fini (&analop);
 		if (!lastfail)
 			r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
-		if (hint && hint->length)
-			analop.length = hint->length;
+		if (hint) {
+			if (hint->length) analop.length = hint->length;
+			if (hint->ptr) analop.ptr = hint->ptr;
+		}
 		{
 			RAnalValue *src;
 			switch (analop.type) {
@@ -441,17 +442,16 @@ toro:
 			}
 		}
 		if (show_comments && show_cmtflgrefs) {
+			RFlagItem *item;
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_CALL:
-				{
-				RFlagItem *item = r_flag_get_i (core->flags, analop.jump);
+				item = r_flag_get_i (core->flags, analop.jump);
 				if (item && item->comment) {
 					if (show_color) r_cons_strcat (pal_comment);
 					r_cons_printf ("  ; ref to %s: %s\n", item->name, item->comment);
 					if (show_color) r_cons_strcat (Color_RESET);
-				}
 				}
 				break;
 			}
@@ -646,6 +646,8 @@ toro:
 			case R_ANAL_OP_TYPE_NOT:
 			case R_ANAL_OP_TYPE_SHL:
 			case R_ANAL_OP_TYPE_SHR:
+			case R_ANAL_OP_TYPE_ROL:
+			case R_ANAL_OP_TYPE_ROR:
 				r_cons_strcat (color_bin);
 				break;
 			case R_ANAL_OP_TYPE_JMP:
@@ -835,9 +837,8 @@ toro:
 			ut32 word4 = 0;
 			int ret;
 			if (core->assembler->bits==64) {
-				ret = r_io_read_at (core->io, analop.ptr,
-					(void *)&word8, sizeof (word8))
-					== sizeof (word8);
+				ret = r_io_read_at (core->io, analop.ptr, (void *)&word8,
+					sizeof (word8)) == sizeof (word8);
 			} else {
 				ret = r_io_read_at (core->io, analop.ptr,
 					(void *)&word4, sizeof (word4))
@@ -848,7 +849,14 @@ toro:
 			if (ret) {
 				RMetaItem *mi2 = r_meta_find (core->anal->meta, word8,
 					R_META_TYPE_ANY, R_META_WHERE_HERE);
-				if (!mi2) {
+				if (mi2) {
+					if (mi2->type == R_META_TYPE_STRING) {
+						char *str = r_str_unscape (mi2->str);
+						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d
+							") \"%s\" ", word8, mi2->size, str);
+						free (str);
+					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
+				} else {
 					mi2 = r_meta_find (core->anal->meta, (ut64)analop.ptr,
 						R_META_TYPE_ANY, R_META_WHERE_HERE);
 					if (mi2) {
@@ -858,13 +866,6 @@ toro:
 						free (str);
 					} else r_cons_printf (" ; 0x%08x [0x%"PFMT64x"]",
 							word8, analop.ptr);
-				} else {
-					if (mi2->type == R_META_TYPE_STRING) {
-						char *str = r_str_unscape (mi2->str);
-						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d
-							") \"%s\" ", word8, mi2->size, str);
-						free (str);
-					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
 				}
 			} else {
 				st64 sref = analop.ptr;
@@ -927,7 +928,7 @@ toro:
 			goto toro;
 	}
 #endif
-	if(oldbits) {
+	if (oldbits) {
 		r_config_set_i (core->config, "asm.bits", oldbits);
 		oldbits = 0;
 	}
@@ -977,16 +978,16 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 }
 
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
-	RAsmOp asmop;
-	char *opstr, *tmpopstr;
-	int i, j, ret, err = 0;
+	int decode = r_config_get_i (core->config, "asm.decode");
 	const ut8 *buf = core->block;
 	int bs = core->blocksize;
+	RAnalHint *hint = NULL;
+	char *opstr, *tmpopstr;
+	int i, j, ret, err = 0;
 	RAnalOp analop = {0};
 	RAnalFunction *f;
-	RAnalHint *hint = NULL;
-	int decode = r_config_get_i (core->config, "asm.decode");
 	int oldbits = 0;
+	RAsmOp asmop;
 	ut64 at;
 
 	if (len>core->blocksize)

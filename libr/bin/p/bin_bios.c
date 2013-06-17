@@ -62,7 +62,6 @@ static int check(RBinArch *arch) {
 static RList* sections(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	int i;
 
 	if (!(ret = r_list_new ()))
 		return NULL;

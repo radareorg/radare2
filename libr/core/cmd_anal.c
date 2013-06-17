@@ -207,9 +207,13 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 	int ret, i, idx;
 	RAsmOp asmop;
 	RAnalOp op;
-
+	ut64 addr;
+	RAnalHint *hint;
 	for (i=idx=ret=0; idx<len && (!nops|| (nops&&i<nops)); i++, idx+=ret) {
-		r_asm_set_pc (core->assembler, core->offset+idx);
+		addr = core->offset+idx;
+// TODO: use more anal hints
+  		hint = r_anal_hint_get (core->anal, addr);
+		r_asm_set_pc (core->assembler, addr);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		ret = r_anal_op (core->anal, &op, core->offset+idx, buf + idx, len-idx);
 		if (ret<1) {
@@ -219,8 +223,10 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 		}
 
 		r_cons_printf ("opcode: %s\n", asmop.buf_asm);
+		if (hint && hint->opcode)
+			r_cons_printf ("ophint: %s\n", hint->opcode);
 		r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
-		r_cons_printf ("size: %d\n", op.length);
+		r_cons_printf ("size: %d\n", (hint&&hint->length)?hint->length: op.length);
 		r_cons_printf ("type: %d (%s)\n", op.type, optypestr (op.type)); // TODO: string
 		if (op.esil)
 			r_cons_printf ("esil: %s\n", op.esil);
@@ -901,7 +907,9 @@ static int cmd_anal(void *data, const char *input) {
 				" ah* offset    # list hints in radare commands format\n"
 				" aha ppc 51    # set arch for a range of N bytes\n"
 				" ahb 16 @ $$   # force 16bit for current instruction\n"
-				" ahl 4 32      # set opcode size=4 for range of 32 bytes\n"
+				" ahc 0x804804  # override call/jump address\n"
+				" ahf 0x804840  # override fallback address for call\n"
+				" ahl 4         # set opcode size=4\n"
 				" aho foo a0,33 # replace opcode string\n"
 				" ahs eax+=3    # set vm analysis string\n"
 			);
@@ -926,8 +934,18 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
   r_anal_hint_free (hint);
 #endif
 		case 'a': // set arch
+{
+const char *arch = input+3;
+int sz = 1;
+char *p = strchr (input+3, ' ');
+if (p) {
+	*p = 0;
+sz = atoi (p+1);
+}
+if (arch && *arch) 
 			r_anal_hint_set_arch (core->anal, core->offset,
-				1, input+2);
+				sz, arch);
+}
 			break;
 		case 'b': // set bits
 			r_anal_hint_set_bits (core->anal, core->offset,
@@ -952,6 +970,9 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 				1, atoi (input+2));
 			break;
 #endif
+		case 'p':
+			r_anal_hint_set_pointer (core->anal, core->offset, r_num_math (core->num, input+2));
+			break;
 		case '*':
 		case 'j':
 		case '\0':
