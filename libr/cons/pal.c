@@ -9,6 +9,8 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.offset = Color_GREEN;
 	cons->pal.input = Color_WHITE;
 	cons->pal.comment = Color_CYAN;
+	cons->pal.fname = Color_CYAN;
+	cons->pal.flow = Color_CYAN;
 	cons->pal.b0x00 = Color_GREEN;
 	cons->pal.b0x7f = Color_YELLOW;
 	cons->pal.b0xff = Color_RED;
@@ -17,6 +19,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.pop = Color_BMAGENTA;
 	cons->pal.nop = Color_BLUE;
 	cons->pal.jmp = Color_GREEN;
+	cons->pal.cjmp = Color_GREEN;
 	cons->pal.call = Color_BGREEN;
 	cons->pal.cmp = Color_CYAN;
 	cons->pal.swi = Color_MAGENTA;
@@ -83,6 +86,8 @@ struct {
 	int off;
 } keys[] = {
 	{ "comment", r_offsetof (RConsPalette, comment) },
+	{ "fname", r_offsetof (RConsPalette, fname) },
+	{ "flow", r_offsetof (RConsPalette, flow) },
 	{ "prompt", r_offsetof (RConsPalette, prompt) },
 	{ "offset", r_offsetof (RConsPalette, offset) },
 	{ "input", r_offsetof (RConsPalette, input) },
@@ -96,6 +101,7 @@ struct {
 	{ "push",  r_offsetof (RConsPalette, push) },
 	{ "pop", r_offsetof (RConsPalette, pop) },
 	{ "jmp", r_offsetof (RConsPalette, jmp) },
+	{ "cjmp", r_offsetof (RConsPalette, cjmp) },
 	{ "call", r_offsetof (RConsPalette, call) },
 	{ "nop", r_offsetof (RConsPalette, nop) },
 	{ "ret", r_offsetof (RConsPalette, ret) },

@@ -137,10 +137,13 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 #define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 	// TODO: only if show_color?
 	const char *color_comment = P(comment): Color_CYAN;
+	const char *color_fname = P(fname): Color_CYAN;
+	const char *color_flow = P(flow): Color_CYAN;
 	const char *color_nop = P(nop): Color_BLUE;
 	const char *color_bin = P(bin): Color_YELLOW;
 	const char *color_math = P(math): Color_YELLOW;
 	const char *color_jmp = P(jmp): Color_GREEN;
+	const char *color_cjmp = P(cjmp): Color_GREEN;
 	const char *color_call = P(call): Color_BGREEN;
 	const char *color_cmp = P(cmp): Color_MAGENTA;
 	const char *color_swi = P(swi): Color_MAGENTA;
@@ -651,9 +654,11 @@ toro:
 				r_cons_strcat (color_bin);
 				break;
 			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_UJMP:
 				r_cons_printf (color_jmp);
+				break;
+			case R_ANAL_OP_TYPE_CJMP:
+				r_cons_printf (color_cjmp);
 				break;
 			case R_ANAL_OP_TYPE_CMP:
 				r_cons_printf (color_cmp);
@@ -736,8 +741,6 @@ toro:
 			}
 		}
 		r_cons_strcat (opstr);
-		if (show_color)
-			r_cons_strcat (Color_RESET);
 
 		{ /* show function name */
 			RAnalFunction *f;
@@ -748,6 +751,7 @@ toro:
 				f = r_anal_fcn_find (core->anal,
 					analop.jump, R_ANAL_FCN_TYPE_NULL);
 				if (f && !strstr (opstr, f->name)) {
+					r_cons_printf (color_fname);
 					r_cons_printf (" ; (%s)", f->name);
 				}
 				break;
@@ -755,6 +759,9 @@ toro:
 		}
 		free (opstr);
 		opstr = NULL;
+
+		if (show_color)
+			r_cons_strcat (Color_RESET);
 
 		if (show_dwarf) {
 			char *sl = r_bin_meta_get_source_line (core->bin, at);
@@ -845,7 +852,7 @@ toro:
 					== sizeof (word4);
 				word8 = word4;
 			}
-			
+
 			if (ret) {
 				RMetaItem *mi2 = r_meta_find (core->anal->meta, word8,
 					R_META_TYPE_ANY, R_META_WHERE_HERE);
