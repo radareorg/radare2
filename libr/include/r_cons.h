@@ -55,6 +55,8 @@ typedef struct r_cons_palette_t {
 	char *prompt;
 	char *offset;
 	char *comment;
+	char *fname;
+	char *flow;
 	char *input;
 	char *reset;
 	char *b0x00;
@@ -67,6 +69,7 @@ typedef struct r_cons_palette_t {
 	char *push;
 	char *pop;
 	char *jmp;
+	char *cjmp;
 	char *call;
 	char *nop;
 	char *ret;
