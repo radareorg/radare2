@@ -3,8 +3,12 @@ LD=/etc/ld.so.conf.d
 if test -w $LD ; then
 	if type ldconfig > /dev/null 2>&1 ; then
 		mkdir -p $LD
-		awk -F= '/^LIBDIR/{print $2}' config-user.mk > $LD/radare.conf
-		ldconfig
+		P=$(awk -F= '/^LIBDIR/{print $2}' config-user.mk)
+		D=`dirname $P``basename $P`
+		if [ /usr != "$D" ]; then
+			echo $P > $LD/radare.conf
+			ldconfig
+		fi
 	fi
 fi
 exit 0

@@ -14,13 +14,15 @@ core = RCore()
 
 # Detect sub-bins in fatmach0
 path="/tmp/fatmach0-3true"
+path="/bin/ls"
 core.bin.load (path, 0)
 print ("Supported archs: %d"%core.bin.narch)
 
 for i in range (0,core.bin.narch):
 	core.bin.select_idx (i)
 	info = core.bin.get_info ()
-	print ("%d: %s %s"%(i,info.arch,info.bits))
+	if info:
+		print ("%d: %s %s"%(i,info.arch,info.bits))
 
 # Load file in core
 core.config.set ("asm.arch", "x86");
@@ -28,6 +30,7 @@ core.config.set ("asm.bits", "32");
 #core.config.set ("asm.bits", "64");
 
 f = core.file_open(path, False, 0)
+#core.bin_load (None)
 core.bin_load ("")
 
 # show entrypoint

@@ -163,7 +163,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	if (!cp || !cp->load || !cp->load (a)) {
 		r_buf_free (a->buf);
 		a->buf = r_buf_mmap (bin->cur.file, 0);
-		a->size = a->buf->length;
+		a->size = a->buf? a->buf->length: 0;
 		o->strings = get_strings (a, minlen);
 		return R_FALSE;
 	}

@@ -143,7 +143,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	ut64 offset;
 	RIOMap *im;
 
-	if (file == NULL)
+	if (file == NULL || !*file)
 		if (r->file)
 			file = r->file->filename;
 	if (!file) {
