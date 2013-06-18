@@ -5,6 +5,10 @@
 #include "r_util.h"
 #include "list.h" // TODO: port to r_list
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_config);
 
 #define CN_BOOL  0x000001
@@ -58,6 +62,10 @@ R_API RConfigNode *r_config_node_get(RConfig *cfg, const char *name);
 R_API RConfigNode *r_config_node_new(const char *name, const char *value);
 R_API int r_config_swap(RConfig *cfg, const char *name);
 R_API int r_config_readonly (RConfig *cfg, const char *key);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

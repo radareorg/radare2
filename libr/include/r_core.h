@@ -27,6 +27,10 @@
 #include "r_socket.h"
 #include "r_crypto.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_core);
 
 #define R_CORE_CMD_EXIT -2
@@ -360,6 +364,10 @@ typedef struct {
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

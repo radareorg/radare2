@@ -6,6 +6,10 @@
 #include "r_cons.h"
 #include "r_io.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define R_PRINT_FLAGS_COLOR   0x00000001
 #define R_PRINT_FLAGS_ADDRMOD 0x00000002
 #define R_PRINT_FLAGS_CURSOR  0x00000004
@@ -86,6 +90,10 @@ R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr
 // WIP
 R_API int r_print_unpack7bit(const char *src, char *dest);
 R_API int r_print_pack7bit(const char *src, char *dest);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

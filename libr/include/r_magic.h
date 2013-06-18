@@ -5,6 +5,10 @@
 
 #include <r_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_magic);
 
 #ifndef MAGIC
@@ -289,10 +293,6 @@ struct r_magic_set {
 	union VALUETYPE ms_value;	/* either number or string */
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct r_magic_set RMagic;
 
 #ifdef R_API
@@ -312,11 +312,12 @@ R_API int r_magic_check(RMagic*, const char *);
 R_API int r_magic_errno(RMagic*);
 #endif
 
-#ifdef __cplusplus
-};
-#endif
 
 #endif
 #endif // USE_LIB_MAGIC
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MAGIC_H */

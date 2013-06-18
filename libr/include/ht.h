@@ -1,3 +1,6 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** hashtable **/
 typedef struct r_hashtable_entry_t {
@@ -42,3 +45,6 @@ R_API void *r_hashtable64_lookup(RHashTable64 *ht, ut64 hash);
 R_API boolt r_hashtable64_insert(RHashTable64 *ht, ut64 hash, void *data);
 R_API void r_hashtable64_remove(RHashTable64 *ht, ut64 hash);
 
+#ifdef __cplusplus
+}
+#endif

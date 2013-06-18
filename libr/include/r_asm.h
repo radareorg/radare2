@@ -9,6 +9,10 @@
 #include <r_util.h>
 #include <r_parse.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_asm);
 
 #define R_ASM_OPCODES_PATH R2_LIBDIR"/radare2/"R2_VERSION"/opcodes"
@@ -178,6 +182,10 @@ extern RAsmPlugin r_asm_plugin_rar;
 extern RAsmPlugin r_asm_plugin_dcpu16;
 extern RAsmPlugin r_asm_plugin_8051;
 extern RAsmPlugin r_asm_plugin_c55plus;
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

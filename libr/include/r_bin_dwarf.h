@@ -1,6 +1,10 @@
 #ifndef _INCLUDE_BIN_DWARF_H_
 #define _INCLUDE_BIN_DWARF_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DW_EXTENDED_OPCODE 0
 #define LOP_EXTENDED 1
 #define LOP_DISCARD  2
@@ -146,5 +150,9 @@ typedef struct {
 #define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
 
 R_API int r_bin_dwarf_parse_info_raw(const ut8 *obuf);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

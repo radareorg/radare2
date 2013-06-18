@@ -10,6 +10,10 @@
 #include <r_syscall.h>
 #include "list.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_debug);
 
 /* hack to fix compilation of debugger on BSD systems */
@@ -315,6 +319,11 @@ extern RDebugPlugin r_debug_plugin_gdb;
 extern RDebugPlugin r_debug_plugin_bf;
 
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 
 /* regset */

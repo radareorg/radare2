@@ -5,6 +5,10 @@
 #include "r_util.h"
 #include "sdb.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_db);
 
 // TODO: add support for network. (udp). memcache, with hooks
@@ -100,6 +104,9 @@ R_API RDatabaseIter *r_db_iter_free(RDatabaseIter *iter);
 R_API int r_db_free(RDatabase *db);
 //R_API int r_db_push(RDatabase *db, const ut8 *b);
 //R_API ut8 *r_db_pop(RDatabase *db);
+#endif
+#ifdef __cplusplus
+}
 #endif
 
 #endif

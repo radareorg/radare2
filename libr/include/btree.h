@@ -3,6 +3,10 @@
 
 #include "r_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct btree_node {
 	void *data;
 	int hits; // profiling
@@ -22,6 +26,10 @@ R_API void *btree_get(struct btree_node *proot, void *x, BTREE_CMP(cmp));
 R_API void btree_insert(struct btree_node **T, struct btree_node *p, BTREE_CMP(cmp));
 R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp));
 R_API void btree_cleartree(struct btree_node *proot, BTREE_DEL(del));
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

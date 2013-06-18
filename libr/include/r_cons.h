@@ -3,6 +3,10 @@
 
 #define HAVE_DIETLINE 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <r_types.h>
 #include <r_util.h>
 #include <sdb.h>
@@ -348,6 +352,10 @@ R_API const char *r_line_hist_get(int n);
 /* palette */
 R_API void r_cons_pal_init(const char *foo);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

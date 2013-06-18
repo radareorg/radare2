@@ -5,6 +5,10 @@
 #include <r_util.h>
 #include "list.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_cmd);
 
 #define MACRO_LIMIT 1024
@@ -109,6 +113,10 @@ R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz);
 R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v);
 R_API char *r_cmd_alias_get (RCmd *cmd, const char *k);
 R_API void r_cmd_alias_free (RCmd *cmd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 #endif

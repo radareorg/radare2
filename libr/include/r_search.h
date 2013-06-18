@@ -6,6 +6,10 @@
 #include <r_list.h>
 #include <r_io.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_search);
 
 enum {
@@ -112,5 +116,10 @@ R_API int r_search_begin(RSearch *s);
 /* pattern search */
 R_API void r_search_pattern_size(RSearch *s, int size);
 R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 #endif

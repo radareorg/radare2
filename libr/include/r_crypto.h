@@ -4,6 +4,10 @@
 #include <list.h>
 #include <r_types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_crypto);
 
 enum {
@@ -60,5 +64,9 @@ R_API ut8 *r_crypto_get_output(RCrypto *cry);
 
 /* plugin pointers */
 extern RCryptoPlugin r_crypto_plugin_aes;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -5,6 +5,10 @@
 #include <r_list.h>
 #include <r_io.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER (r_fs);
 
 struct r_fs_plugin_t;
@@ -138,4 +142,9 @@ extern RFSPlugin r_fs_plugin_fb;
 extern RFSPlugin r_fs_plugin_minix;
 extern RFSPlugin r_fs_plugin_posix;
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

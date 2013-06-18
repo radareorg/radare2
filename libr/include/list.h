@@ -1,6 +1,9 @@
 #ifndef LIST_H
 #define LIST_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*
  * Simple doubly linked list implementation.
  *
@@ -219,5 +222,9 @@ static inline void list_splice_init(struct list_head *list,
   for (pos = list_entry((head)->next, typeof(*pos), member);  \
        &pos->member != (head);           \
        pos = list_entry(pos->member.next, typeof(*pos), member))  \
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

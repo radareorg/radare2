@@ -27,6 +27,10 @@
 
 #define R_TH_FUNCTION(x) int (*x)(struct r_th_t *)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct r_th_lock_t {
 	int refs;
 	R_TH_LOCK_T lock;
@@ -63,6 +67,10 @@ R_API int r_th_lock_check(RThreadLock *thl);
 R_API int r_th_lock_enter(RThreadLock *thl);
 R_API int r_th_lock_leave(RThreadLock *thl);
 R_API void *r_th_lock_free(RThreadLock *thl);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

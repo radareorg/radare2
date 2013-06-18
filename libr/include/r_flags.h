@@ -13,6 +13,10 @@
 #include <r_util.h>
 #include <r_list.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // TODO: rename to r_flags_XXX api
 R_LIB_VERSION_HEADER(r_flag);
 
@@ -71,6 +75,10 @@ R_API const char *r_flag_space_get_i(RFlag *f, int idx);
 R_API void r_flag_space_set(RFlag *f, const char *name);
 R_API int r_flag_space_list(RFlag *f, int mode);
 R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

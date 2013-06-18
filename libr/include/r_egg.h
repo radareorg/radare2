@@ -7,6 +7,10 @@
 #include <r_util.h>
 #include <r_syscall.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_egg);
 
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
@@ -155,4 +159,9 @@ extern REggPlugin r_egg_plugin_xor;
 extern REggPlugin r_egg_plugin_shya;
 extern REggPlugin r_egg_plugin_exec;
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

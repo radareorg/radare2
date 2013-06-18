@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2008-2013 - pancake */
+
 #ifndef _INCLUDE_UTIL_R_
 #define _INCLUDE_UTIL_R_
 
@@ -8,7 +10,7 @@
 #include <r_flist.h> // radare fixed pointer array iterators
 #include <list.h> // kernel linked list
 #include <r_th.h>
-/* profiling */
+#include <dirent.h>
 #include <sys/time.h>
 #ifdef HAVE_LIB_GMP
 #include <gmp.h>
@@ -17,9 +19,12 @@
 #include <openssl/bn.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_util);
 
-#include <dirent.h>
 
 // TODO: use lowercase here?
 #define R_REFCTR_CLASS int refctr;void (*ref_free)(x)
@@ -589,5 +594,9 @@ R_API int r_strht_set(RStrHT *s, const char *key, const char *val);
 R_API void r_strht_clear(RStrHT *s);
 R_API void r_strht_del(RStrHT *s, const char *key);
 R_API int r_is_heap (void *p);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -8,6 +8,10 @@
 #include <r_anal.h>
 #include <list.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // XXX : remove this define???
 #define R_PARSE_STRLEN 256
 
@@ -53,6 +57,10 @@ extern struct r_parse_plugin_t r_parse_plugin_x86_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mips_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_dalvik_pseudo;
 extern struct r_parse_plugin_t r_parse_plugin_mreplace;
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

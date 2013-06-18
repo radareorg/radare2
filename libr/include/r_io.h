@@ -5,6 +5,10 @@
 #include <r_util.h>
 #include <r_socket.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define R_IO_READ  4
 #define R_IO_WRITE 2
 #define R_IO_EXEC  1
@@ -343,6 +347,10 @@ extern RIOPlugin r_io_plugin_ewf;
 extern RIOPlugin r_io_plugin_zip;
 extern RIOPlugin r_io_plugin_mmap;
 extern RIOPlugin r_io_plugin_ihex;
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

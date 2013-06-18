@@ -5,6 +5,11 @@
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_sign);
 
 enum {
@@ -52,6 +57,10 @@ R_API RSignItem *r_sign_check(RSign *sig, const ut8 *buf, int len);
 R_API int r_sign_load_file(RSign *sig, const char *file);
 R_API int r_sign_option(RSign *sig, const char *option);
 R_API int r_sign_item_set(RSignItem *sig, const char *key, const char *value);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

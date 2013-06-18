@@ -3,6 +3,10 @@
 #ifndef _INCLUDE_R_SYSCALL_H_
 #define _INCLUDE_R_SYSCALL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <r_types.h>
 #include <r_db.h>
 #include <list.h>
@@ -75,6 +79,10 @@ R_API int r_syscall_get_num(RSyscall *ctx, const char *str);
 R_API char *r_syscall_get_i(RSyscall *ctx, int num, int swi);
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num);
 R_API RList *r_syscall_list(RSyscall *ctx);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

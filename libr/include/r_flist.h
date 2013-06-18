@@ -3,6 +3,10 @@
 #ifndef _INCLUDE_R_FLIST_H_
 #define _INCLUDE_R_FLIST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 //#include <r_types.h>
@@ -72,6 +76,10 @@ static inline int r_flist_length (void **it) {
 	r_flist_foreach (it, pos)
 		len++;
 	return len;
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 

@@ -8,6 +8,10 @@
 #include <r_list.h>
 #include <r_bin_dwarf.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER (r_bin);
 
 #define R_BIN_SCN_EXECUTABLE(x) x & 0x1
@@ -347,5 +351,10 @@ extern RBinPlugin r_bin_plugin_rar;
 extern RBinXtrPlugin r_bin_xtr_plugin_zip;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 #endif

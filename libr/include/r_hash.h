@@ -2,6 +2,11 @@
 #define _INCLUDE_R_HASH_H_
 
 #include "r_types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER (r_hash);
 
 /* hashing */
@@ -117,6 +122,10 @@ R_API int r_hash_pcprint(const ut8 *buffer, ut64 len);
 /* lifecycle */
 R_API void r_hash_do_begin(RHash *ctx, int flags);
 R_API void r_hash_do_end(RHash *ctx, int flags);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

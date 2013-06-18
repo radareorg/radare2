@@ -2,6 +2,11 @@
 #define _INCLUDE_SOCKET_H_
 
 #include "r_types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_socket);
 
 #if __UNIX__
@@ -87,4 +92,9 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 R_API void r_socket_http_close (RSocketHTTPRequest *rs);
 R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

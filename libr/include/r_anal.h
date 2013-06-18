@@ -11,6 +11,10 @@
 #include <r_util.h>
 #include <r_syscall.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER(r_anal);
 
 // TODO: save memory2 : fingerprints must be pointers to a buffer
@@ -907,6 +911,10 @@ extern RAnalPlugin r_anal_plugin_z80;
 extern RAnalPlugin r_anal_plugin_i8080;
 extern RAnalPlugin r_anal_plugin_8051;
 extern RAnalPlugin r_anal_plugin_arc;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 #endif

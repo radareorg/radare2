@@ -7,6 +7,10 @@
 #include "r_types.h"
 #include "r_list.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 R_LIB_VERSION_HEADER (r_lib);
 // rename to '.' ??
 #define R_LIB_SEPARATOR "."
@@ -96,6 +100,10 @@ R_API int r_lib_add_handler(RLib *lib, int type, const char *desc,
 	void *user );
 R_API int r_lib_del_handler(RLib *lib, int type);
 R_API int r_lib_close(RLib *lib, const char *file);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
