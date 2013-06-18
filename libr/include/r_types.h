@@ -275,6 +275,10 @@ enum {
 #define R_SYS_ENDIAN "big"
 #endif
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif
 
 // Usage: R_DEFINE_OBJECT(r_asm);
@@ -288,6 +292,3 @@ enum {
  }
 #endif
 
-#ifdef __cplusplus
-}
-#endif
