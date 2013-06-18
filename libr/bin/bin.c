@@ -53,7 +53,11 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 			}
 			str[matches] = '\0';
 			ptr->offset = i-matches;
-			ptr->rva = ptr->offset-from+scnrva;
+			if (scnrva) {
+				ptr->rva = (ptr->offset-from+scnrva);
+			} else {
+				ptr->rva = ptr->offset;
+			}
 			//HACK if (scnrva) ptr->rva = ptr->offset-from+scnrva; else ptr->rva = ptr->offset;
 			ptr->size = matches+1;
 			ptr->ordinal = ctr;
