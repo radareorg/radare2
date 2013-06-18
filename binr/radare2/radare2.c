@@ -61,7 +61,7 @@ static int verify_version(int show) {
 			ret = 1;
 		if (show) printf ("%s  %s\n", name, v->name);
 	}
-	if (ret) eprintf ("Warning: r2 library versions missmatch!\n");
+	if (ret) eprintf ("Warning: r2 library versions mismatch!\n");
 	return ret;
 }
 
@@ -184,6 +184,7 @@ int main(int argc, char **argv) {
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	int cmdfilei = 0;
+	file[0] = 0;
 
 	if (r_sys_getenv ("R_DEBUG"))
 		r_sys_crash_handler ("gdb --pid %d");
@@ -393,15 +394,17 @@ int main(int argc, char **argv) {
 			if (prj && *prj) {
 				pfile = r_core_project_info (&r, prj);
 				if (pfile) fh = r_core_file_open (&r, pfile, perms, mapaddr);
-				else eprintf ("No file\n");
+				else eprintf ("Cannot find project file\n");
 			}
 		}
 	}
 	if (!pfile) pfile = file;
 	if (fh == NULL) {
-		if (perms & R_IO_WRITE)
-			eprintf ("Cannot open '%s' for writing.\n", pfile);
-		else eprintf ("Cannot open '%s'.\n", pfile);
+		if (*pfile) {
+			if (perms & R_IO_WRITE)
+				eprintf ("Cannot open '%s' for writing.\n", pfile);
+			else eprintf ("Cannot open '%s'\n", pfile);
+		}
 		return 1;
 	}
 	if (r.file == NULL) // no given file

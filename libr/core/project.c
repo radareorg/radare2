@@ -43,7 +43,7 @@ R_API char *r_core_project_info(RCore *core, const char *prjfile) {
 			break;
 		}
 	}
-	fclose (fd);
+	if (fd) fclose (fd);
 	r_cons_printf ("Project : %s\n", prj);
 	if (file) r_cons_printf ("FilePath: %s\n", file);
 	free (prj);
