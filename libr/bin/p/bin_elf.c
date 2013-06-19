@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -97,40 +97,24 @@ static RList* sections(RBinArch *arch) {
 		struct Elf_(r_bin_elf_obj_t)* obj = arch->bin_obj;
 		Elf_(Phdr)* phdr = obj->phdr;
 		int num = obj->ehdr.e_phnum;
-		char name[32];
-		int i, n;
-ut64 baddr = obj->baddr;
+		int i, n, found = 0;
 		if (!arch->size) {
 			struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
 			arch->size = bin? bin->size: 0x9999;
 		}
 		for (i=n=0;i<num; i++) {
 			if (phdr[i].p_type == 1) {
+				found = 1;
 				ut64 paddr = phdr[i].p_offset;
 				ut64 vaddr = phdr[i].p_vaddr;
 				int memsz = (int)phdr[i].p_memsz;
 				int perms = phdr[i].p_flags;
 				ut64 align = phdr[i].p_align;
 				if (!align) align = 0x1000;
-				memsz = R_PTR_ALIGN_NEXT (memsz, align);
-				paddr = R_PTR_ALIGN (paddr, align);
-				vaddr = R_PTR_ALIGN (vaddr, align);
-				vaddr -= baddr; // yeah
-#if 0
-#define X "0x%08"PFMT64x
-				eprintf ("PHDR %d type=%d off="X" va="X
-						" pa="X" memsz="X
-						" flags=0%o align=0x%x\n",
-						i, 
-						phdr[i].p_type,
-						(ut64)phdr[i].p_offset,
-						(ut64)phdr[i].p_vaddr,
-						(ut64)phdr[i].p_paddr,
-						(ut64)phdr[i].p_memsz,
-						phdr[i].p_flags,
-						phdr[i].p_align
-					);
-#endif
+				memsz = (int)(size_t)R_PTR_ALIGN_NEXT ((size_t)memsz, align);
+				paddr = (ut64)R_PTR_ALIGN ((ut64)paddr, align);
+				vaddr = (ut64)R_PTR_ALIGN ((ut64)vaddr, align);
+				vaddr -= obj->baddr; // yeah
 				if (!(ptr = R_NEW0 (RBinSection)))
 					return ret;
 				sprintf (ptr->name, "phdr%d", n);
@@ -143,6 +127,17 @@ ut64 baddr = obj->baddr;
 				n++;
 			}
 		}
+		if (found == 0) {
+			if (!(ptr = R_NEW0 (RBinSection)))
+				return ret;
+			sprintf (ptr->name, "undefined");
+			ptr->size = arch->size;
+			ptr->vsize = arch->size;
+			ptr->offset = 0;
+			ptr->rva = 0;
+			ptr->srwx = 7;
+			r_list_append (ret, ptr);
+		} 
 	}
 	return ret;
 }
