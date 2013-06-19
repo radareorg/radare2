@@ -130,6 +130,13 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define IS_WHITESPACE(x) (x==' '||x=='\t')
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 
+#define R_PTR_ALIGN(v,t) \
+	((char *)(((ut64)(v) ) \
+	& ~(t - 1))) 
+#define R_PTR_ALIGN_NEXT(v,t) \
+	((char *)(((ut64)(v) + (t - 1)) \
+	& ~(t - 1))) 
+
 #define R_BIT_SET(x,y) (x[y>>4] |= (1<<(y&0xf)))
 #define R_BIT_UNSET(x,y) (x[y>>4] &= ~(1<<(y&0xf)))
 #define R_BIT_CHK(x,y) ((x[y>>4] & (1<<(y&0xf))))

@@ -67,45 +67,82 @@ static RList* sections(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(section = Elf_(r_bin_elf_get_sections) (arch->bin_obj)))
-		return ret;
-	for (i = 0; !section[i].last; i++) {
-		if (!section[i].size) continue;
-		if (!(ptr = R_NEW0 (RBinSection)))
-			break;
-		strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
-		ptr->size = section[i].size;
-		ptr->vsize = section[i].size;
-		ptr->offset = section[i].offset;
-		ptr->rva = section[i].rva;
-		// HACK
-		if (ptr->rva == 0) ptr->rva = section[i].offset;
-		ptr->srwx = 0;
-		if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
-			ptr->srwx |= 1;
-		if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags))
-			ptr->srwx |= 2;
-		if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags))
-			ptr->srwx |= 4;
-		r_list_append (ret, ptr);
+	if ((section = Elf_(r_bin_elf_get_sections) (arch->bin_obj))) {
+		for (i = 0; !section[i].last; i++) {
+			if (!section[i].size) continue;
+			if (!(ptr = R_NEW0 (RBinSection)))
+				break;
+			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
+			ptr->size = section[i].size;
+			ptr->vsize = section[i].size;
+			ptr->offset = section[i].offset;
+			ptr->rva = section[i].rva;
+			// HACK
+			if (ptr->rva == 0) ptr->rva = section[i].offset;
+			ptr->srwx = 0;
+			if (R_BIN_ELF_SCN_IS_EXECUTABLE (section[i].flags))
+				ptr->srwx |= 1;
+			if (R_BIN_ELF_SCN_IS_WRITABLE (section[i].flags))
+				ptr->srwx |= 2;
+			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags))
+				ptr->srwx |= 4;
+			r_list_append (ret, ptr);
+		}
+		free (section); // TODO: use r_list_free here
 	}
-	free (section); // TODO: use r_list_free here
 
 	// program headers is another section
 	if (r_list_empty (ret)) {
+
+		struct Elf_(r_bin_elf_obj_t)* obj = arch->bin_obj;
+		Elf_(Phdr)* phdr = obj->phdr;
+		int num = obj->ehdr.e_phnum;
+		char name[32];
+		int i, n;
+ut64 baddr = obj->baddr;
 		if (!arch->size) {
 			struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
 			arch->size = bin? bin->size: 0x9999;
 		}
-		if (!(ptr = R_NEW0 (RBinSection)))
-			return ret;
-		strncpy (ptr->name, "undefined", R_BIN_SIZEOF_STRINGS);
-		ptr->size = arch->size;
-		ptr->vsize = arch->size;
-		ptr->offset = 0;
-		ptr->rva = 0;
-		ptr->srwx = 7;
-		r_list_append (ret, ptr);
+		for (i=n=0;i<num; i++) {
+			if (phdr[i].p_type == 1) {
+				ut64 paddr = phdr[i].p_offset;
+				ut64 vaddr = phdr[i].p_vaddr;
+				int memsz = (int)phdr[i].p_memsz;
+				int perms = phdr[i].p_flags;
+				ut64 align = phdr[i].p_align;
+				if (!align) align = 0x1000;
+				memsz = R_PTR_ALIGN_NEXT (memsz, align);
+				paddr = R_PTR_ALIGN (paddr, align);
+				vaddr = R_PTR_ALIGN (vaddr, align);
+				vaddr -= baddr; // yeah
+#if 0
+#define X "0x%08"PFMT64x
+				eprintf ("PHDR %d type=%d off="X" va="X
+						" pa="X" memsz="X
+						" flags=0%o align=0x%x\n",
+						i, 
+						phdr[i].p_type,
+						(ut64)phdr[i].p_offset,
+						(ut64)phdr[i].p_vaddr,
+						(ut64)phdr[i].p_paddr,
+						(ut64)phdr[i].p_memsz,
+						phdr[i].p_flags,
+						phdr[i].p_align
+					);
+#endif
+				if (!(ptr = R_NEW0 (RBinSection)))
+					return ret;
+				sprintf (ptr->name, "phdr%d", n);
+				ptr->size = memsz;
+				ptr->vsize = memsz;
+				ptr->offset = paddr;
+				ptr->rva = vaddr;
+				ptr->srwx = perms;
+				r_list_append (ret, ptr);
+				n++;
+			}
+		}
 	}
 	return ret;
 }
