@@ -510,11 +510,12 @@ static void static_debug_stop(void *u) {
 }
 
 static void r_core_cmd_bp(RCore *core, const char *input) {
-	ut64 addr;
-	RList *list;
-	RListIter *iter;
-	RDebugFrame *frame;
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
+	RDebugFrame *frame;
+	RListIter *iter;
+	const char *p;
+	RList *list;
+	ut64 addr;
 	switch (input[1]) {
 	case 't':
 		addr = UT64_MAX;
@@ -528,9 +529,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		r_list_destroy (list);
 		break;
-	case '\0':
-		r_bp_list (core->dbg->bp, input[1]=='*');
-		break;
+	case '*': r_bp_list (core->dbg->bp, 1); break;
+	case '\0': r_bp_list (core->dbg->bp, 0); break;
 	case '-':
 		r_bp_del (core->dbg->bp, r_num_math (core->num, input+2));
 		break;
@@ -573,7 +573,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Invalid name: '%s'.\n", input+3);
 		} else r_bp_plugin_list (core->dbg->bp);
 		break;
+	case ' ':
+		for (p=input+1; *p==' ';p++);
+		if (*p == '-') {
+			r_bp_del (core->dbg->bp, r_num_math (core->num, p+1));
+		} else {
+			addr = r_num_math (core->num, input+2);
+			if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+			else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
+			if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
+		}
+		break;
 	case '?':
+	default:
 		r_cons_printf (
 		"Usage: db[ecdht] [[-]addr] [len] [rwx] [condstring]\n"
 		"db                ; list breakpoints\n"
@@ -588,12 +600,6 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		"dbh x86           ; set/list breakpoint plugin handlers\n"
 		"Unrelated:\n"
 		"dbt [ebp]         ; debug backtrace\n");
-		break;
-	default:
-		addr = r_num_math (core->num, input+2);
-		if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-		else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
-		if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
 		break;
 	}
 }

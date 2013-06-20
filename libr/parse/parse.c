@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include <stdio.h>
 
@@ -7,7 +7,7 @@
 #include <list.h>
 #include "../config.h"
 
-R_LIB_VERSION(r_parse);
+R_LIB_VERSION (r_parse);
 
 static RParsePlugin *parse_static_plugins[] =
 	{ R_PARSE_STATIC_PLUGINS };

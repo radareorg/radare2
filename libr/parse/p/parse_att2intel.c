@@ -66,12 +66,12 @@ static int replace(int argc, const char *argv[], char *newstr) {
 }
 
 static int parse(RParse *p, const char *data, char *str) {
-	int i, len = strlen (data);
+	int i, n, len = strlen (data);
 	char w0[32];
 	char w1[32];
 	char w2[32];
 	char w3[32];
-	char *buf, *ptr, *optr;
+	char *buf, *ptr, *optr, *num;
 
 	// malloc can be slow here :?
 	if ((buf = malloc (len+1)) == NULL)
@@ -98,17 +98,15 @@ static int parse(RParse *p, const char *data, char *str) {
 	r_str_replace_char (buf, ')', ']');
 	ptr = strchr (buf, '[');
 	if (ptr) {
-		int n;
-		char *num;
 		*ptr = 0;
-		num = r_str_lchr (buf, ' ');
+		num = (char*)r_str_lchr (buf, ' ');
 		if (!num)
-			num = r_str_lchr (buf, ',');
+			num = (char*)r_str_lchr (buf, ',');
 		if (num) {
 			n = atoi (num+1);
 			*ptr = '[';
 			memmove (num+1, ptr, strlen (ptr)+1);
-			ptr = r_str_lchr (buf, ']');
+			ptr = (char*)r_str_lchr (buf, ']');
 			if (n && ptr) {
 				char *rest = strdup (ptr+1);
 				if(n>0) sprintf (ptr, "+%d]%s", n, rest);
