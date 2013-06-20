@@ -472,10 +472,12 @@ toro:
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
 						r_cons_printf ("|- %s (%d)\n| ", f->name, f->size);
 					} else {
-						const char *fmt = show_color? 
-							"/ "Color_MAGENTA"%s: "Color_YELLOW"%s"Color_RESET" (%d)\n| ":
+						const char *fmt = show_color?
+							"/ %s: %s"Color_RESET" (%d)\n| ":
 							"/ %s: %s (%d)\n| ";
-						r_cons_printf (fmt, 
+						if (show_color)
+							r_cons_printf(color_fname);
+						r_cons_printf (fmt,
 							(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
 							(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
 							f->name, f->size);
