@@ -869,12 +869,12 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 }
 
 struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj_t) *bin, int type) {
+	int shdr_size, tsize, nsym, ret_ctr, i, j, k, len;
+	ut64 sym_offset = 0, data_offset = 0, toffset;
+	struct r_bin_elf_symbol_t *ret = NULL;
 	Elf_(Shdr) *strtab_section;
 	Elf_(Sym) *sym;
-	struct r_bin_elf_symbol_t *ret = NULL;
 	char *strtab;
-	ut64 sym_offset = 0, data_offset = 0, toffset;
-	int shdr_size, tsize, nsym, ret_ctr, i, j, k, len;
 
 	if (!bin->shdr || bin->ehdr.e_shnum == 0 || bin->ehdr.e_shnum == 0xffff)
 		return NULL;
@@ -887,8 +887,18 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	}
 	shdr_size = bin->ehdr.e_shnum * sizeof (Elf_(Shdr));
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+if (
+	(
+		(type == R_BIN_ELF_IMPORTS) || (type == R_BIN_ELF_SYMBOLS)
+	) && (
+		(bin->shdr[i].sh_type == SHT_DYNSYM) || (bin->shdr[i].sh_type == SHT_SYMTAB)
+	)
+)
+{
+#if 0
 		if ((type == R_BIN_ELF_IMPORTS && bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
 		(type == R_BIN_ELF_SYMBOLS && bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
+#endif
 			if (bin->shdr[i].sh_link > shdr_size) {
 				/* oops. fix out of range pointers */
 				continue;
