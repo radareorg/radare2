@@ -283,9 +283,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->stackptr = 0;
 		if (u.operand[0].type == UD_OP_REG) {
 			if (u.operand[0].base == UD_R_RSP) {
-int o = (int)getval (&u.operand[1]);
-eprintf ("FUC\n");
-eprintf ("O = %d\n", o);
+				int o = (int)getval (&u.operand[1]);
 				op->stackop = R_ANAL_STACK_INC;
 				if (u.mnemonic ==UD_Iadd) {
 					op->stackptr = -o;
@@ -294,7 +292,7 @@ eprintf ("O = %d\n", o);
 				}
 			}
 		}
-					op->stackptr = 4;
+		op->stackptr = 4;
 		break;
 	case UD_Iadc:
 	case UD_Iinc:
