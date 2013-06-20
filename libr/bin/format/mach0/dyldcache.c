@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010 nibble at develsec.org */
+/* radare - LGPL - Copyright 2010-2013 - nibble, pancake  */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -25,7 +25,7 @@ static int r_bin_dyldcache_apply_patch (struct r_buf_t* buf, ut32 data, ut64 off
 struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj_t* bin, int idx, int *nlib) {
 	struct r_bin_dyldcache_lib_t *ret = NULL;
 	struct mach_header *mh;
-	struct r_buf_t *dbuf;
+	RBuffer* dbuf;
 	ut64 curoffset, liboff, libla, libpath, linkedit_offset;
 	ut8 *data, *cmdptr;
 	char *libname;
@@ -34,11 +34,11 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	if (bin->nlibs < 0 || idx < 0 || idx > bin->nlibs)
 		return NULL;
 	*nlib = bin->nlibs;
-	if (!(ret = malloc (sizeof (struct r_bin_dyldcache_lib_t)))) {
+	ret = R_NEW0 (struct r_bin_dyldcache_lib_t);
+	if (!ret) {
 		perror ("malloc (ret)");
 		return NULL;
 	}
-	memset (ret, 0, sizeof(struct r_bin_dyldcache_lib_t));
 	curoffset = bin->hdr.startaddr+idx*32;
 	libla = *(ut64*)(bin->b->buf+curoffset);
 	liboff = libla - *(ut64*)&bin->b->buf[bin->hdr.baseaddroff];
@@ -47,6 +47,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		free (ret);
 		return NULL;
 	}
+	ret->offset = liboff;
 	libpath = *(ut64*)(bin->b->buf+curoffset + 24);
 	/* Locate lib hdr in cache */
 	data = bin->b->buf+liboff;
@@ -66,13 +67,13 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	r_buf_set_bytes (dbuf, data, sizeof (struct mach_header));
 	cmdptr = data + sizeof(struct mach_header);
 	/* Write load commands */
-	for(cmd = 0; cmd < mh->ncmds; cmd++) {
+	for (cmd = 0; cmd < mh->ncmds; cmd++) {
 		struct load_command *lc = (struct load_command *)cmdptr;
 		cmdptr += lc->cmdsize;
 		r_buf_append_bytes (dbuf, (ut8*)lc, lc->cmdsize);
 	}
 	/* Write segments */
-	for (cmd = linkedit_offset = 0, cmdptr = data + sizeof(struct mach_header); cmd < mh->ncmds; cmd++) {
+	for (cmd = linkedit_offset = 0, cmdptr = data + sizeof (struct mach_header); cmd < mh->ncmds; cmd++) {
 		struct load_command *lc = (struct load_command *)cmdptr;
 		cmdptr += lc->cmdsize;
 		switch (lc->cmd) {
@@ -95,7 +96,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 				struct section *sects = (struct section *)((ut8 *)seg + sizeof(struct segment_command));
 				int nsect;
 				for (nsect = 0; nsect < seg->nsects; nsect++) {
-					if(sects[nsect].offset > libsz) {
+					if (sects[nsect].offset > libsz) {
 						r_bin_dyldcache_apply_patch (dbuf, sects[nsect].offset - sect_offset,
 							(ut64)((size_t)&sects[nsect].offset - (size_t)data));
 					}

@@ -1,6 +1,7 @@
 LANG=lua
 LANG_EXT=lua
 LIBS_PFX=
+SOEXT=so
 
 include ../rules.mk
 

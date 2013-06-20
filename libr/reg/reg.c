@@ -234,6 +234,10 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 	return ret;
 }
 
+R_API ut64 r_reg_getv(RReg *reg, const char *name) {
+	return r_reg_get_value (reg, r_reg_get (reg, name, -1));
+}
+
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	RListIter *iter;
 	RRegItem *r;

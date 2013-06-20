@@ -798,7 +798,6 @@ toro:
 			r_asm_set_syntax (core->assembler, os);
 		}
 
-		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (core->vmode)
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
@@ -811,13 +810,14 @@ toro:
 				} else r_cons_strcat (" [?]");
 				break;
 			}
+		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (show_functions) {
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
 				if (ccstr) {
 					RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
 					if (show_color)
 						r_cons_printf ("\n%s%s   %s; %s (%s+%d)"Color_RESET,
-							f?pre:"", refline, ccstr,
+							pre, refline, ccstr,
 							(flag&&flag->name)? flag->name: "",
 							(flag&&flag->name)? flag->name: "",
 							(f&&flag)? cc.jump-flag->offset: 0);

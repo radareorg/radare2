@@ -60,16 +60,15 @@ typedef struct r_reg_t {
 
 
 #ifdef R_API
-R_API const char *r_reg_get_type(int idx);
 R_API void r_reg_free(RReg *reg);
 R_API RReg *r_reg_new();
-//R_API RReg *r_reg_new();
+R_API int r_reg_set_name(RReg *reg, int role, const char *name);
 R_API int r_reg_set_profile_string(RReg *reg, const char *profile);
 R_API int r_reg_set_profile(RReg *reg, const char *profile);
 
+R_API ut64 r_reg_getv(RReg *reg, const char *name);
+R_API const char *r_reg_get_type(int idx);
 R_API const char *r_reg_get_name(RReg *reg, int kind);
-R_API int r_reg_set_name(RReg *reg, int role, const char *name);
-
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
 R_API RList *r_reg_get_list(RReg *reg, int type);
 

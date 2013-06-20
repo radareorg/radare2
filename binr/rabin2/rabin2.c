@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
 		switch (c) {
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
-		case 'A': set_action(ACTION_LISTARCHS); break;
+		case 'A': set_action (ACTION_LISTARCHS); break;
 		case 'a': if (optarg) arch = strdup (optarg); break;
 		case 'c':
 			if (!optarg) {

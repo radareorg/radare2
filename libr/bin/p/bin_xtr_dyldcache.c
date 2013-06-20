@@ -33,6 +33,7 @@ static int extract(RBin *bin, int idx) {
 		(struct r_bin_dyldcache_obj_t*)bin->bin_obj, idx, &nlib);
 	if (lib) {
 		bin->cur.file = strdup (lib->path);
+		bin->cur.offset = lib->offset;
 		bin->cur.buf = lib->b;
 		bin->cur.size = lib->size;
 		free (lib);

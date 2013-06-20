@@ -11,13 +11,14 @@ struct r_bin_dyldcache_obj_t {
 	int size;
 	int nlibs;
 	struct cache_header hdr;
-	struct r_buf_t* b;
+	RBuffer* b;
 };
 
 struct r_bin_dyldcache_lib_t {
 	char path[1024];
 	int size;
-	struct r_buf_t *b; 
+	ut64 offset;
+	RBuffer *b; 
 	int last;
 };
 

@@ -121,7 +121,7 @@ default:
 int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const char *pc = anal->bits==64? "rip": anal->bits==32? "eip": "ip";
 	const char *sp = anal->bits==64? "rsp": anal->bits==32? "esp": "sp";
-	int oplen, regsz;
+	int oplen, regsz = 4;
 	char str[64], src[32], dst[32];
 	struct ud u;
 	ut64 n;
@@ -280,16 +280,21 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Isub:
 		op->type = (u.mnemonic==UD_Iadd)? R_ANAL_OP_TYPE_ADD: R_ANAL_OP_TYPE_SUB;
 		op->ptr = 0;
+		op->stackptr = 0;
 		if (u.operand[0].type == UD_OP_REG) {
 			if (u.operand[0].base == UD_R_RSP) {
+int o = (int)getval (&u.operand[1]);
+eprintf ("FUC\n");
+eprintf ("O = %d\n", o);
 				op->stackop = R_ANAL_STACK_INC;
 				if (u.mnemonic ==UD_Iadd) {
-					op->stackptr = -getval (&u.operand[1]);
+					op->stackptr = -o;
 				} else {
-					op->stackptr = getval (&u.operand[1]);
+					op->stackptr = o;
 				}
 			}
 		}
+					op->stackptr = 4;
 		break;
 	case UD_Iadc:
 	case UD_Iinc:
@@ -345,12 +350,16 @@ if (u.operand[0].type==UD_OP_PTR) {
 	case UD_Ijcxz:
 	case UD_Iloop:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + oplen + getval (&u.operand[0]);
+		op->jump = addr + oplen + (int)getval (&u.operand[0]);
 		op->fail = addr+oplen;
 		break;
 	case UD_Icall:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = addr + oplen + getval (&u.operand[0]);
+		if (u.operand[0].type==UD_OP_REG) {
+			op->jump = 0; // EAX, EBX, ... use anal->reg
+		} else {
+			op->jump = addr + oplen + (int)getval (&u.operand[0]);
+		}
 		op->fail = addr + oplen;
 		break;
 	case UD_Iret:
