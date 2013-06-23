@@ -3665,6 +3665,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 {
   const struct opcode16 *insn;
   void *stream = info->stream;
+  given = ((given & 0xFF) << 8) | ((given & 0xFF00) >> 8);
   fprintf_ftype func = info->fprintf_func;
 
   for (insn = thumb_opcodes; insn->assembler; insn++)
