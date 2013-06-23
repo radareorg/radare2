@@ -142,7 +142,7 @@ oldcpucode = cpucode;
 	obj.symbol_at_address_func = &symbol_at_address;
 	obj.memory_error_func = &memory_error_func;
 	obj.print_address_func = &print_address;
-	obj.endian = (a->bits==16)? 0:!a->big_endian;
+	obj.endian = !a->big_endian;
 	obj.fprintf_func = &buf_fprintf;
 	obj.stream = stdout;
 	obj.bytes_per_chunk =
