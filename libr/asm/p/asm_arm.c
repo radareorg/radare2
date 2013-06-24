@@ -114,6 +114,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int oldcpucode = 0;
 	int cpucode = 0;
 	struct disassemble_info obj;
+	char* options = "no-force-thumb";
 
 	if (len<(a->bits/8)) return -1;
 	buf_global = op->buf_asm;
@@ -147,6 +148,7 @@ oldcpucode = cpucode;
 	obj.stream = stdout;
 	obj.bytes_per_chunk =
 	obj.bytes_per_line = (a->bits/8);
+	obj.disassembler_options = options;
 
 	op->buf_asm[0]='\0';
 	if (a->bits==64) {
