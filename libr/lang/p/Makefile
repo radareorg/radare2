@@ -43,10 +43,8 @@ lang_tcc.${EXT_SO}: tcc.o
 	-${CC} ${CFLAGS} -fPIC ${LDFLAGS_LIB} -o lang_tcc.${EXT_SO} tcc.c ${LDFLAGS_LINKPATH}.. -ldl -ltcc
 endif
 
-ifeq ($(HAVE_LIB_LUA5_1),1)
 lang_lua.${EXT_SO}: lua.o
 	-${CC} ${CFLAGS} -fPIC ${LDFLAGS_LIB} -o lang_lua.${EXT_SO} lua.c ${LDFLAGS_LINKPATH}.. -llua5.1
-endif
 
 lang_ruby.${EXT_SO}:
 	-env CFLAGS="${CFLAGS}" ruby mkruby.rb
