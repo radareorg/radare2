@@ -939,12 +939,11 @@ next2:
 
 	/* grep the content */
 	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
-	//ptr = strchr (cmd, '~');
-	if (ptr) {
+	if (*cmd!='.' && ptr) {
 		*ptr = '\0';
 		ptr++;
+		r_cons_grep (ptr);
 	}
-	r_cons_grep (ptr);
 
 	/* temporary seek commands */
 	if (*cmd!='(' && *cmd!='"') {
@@ -1240,7 +1239,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 
 R_API int r_core_cmd_file(RCore *core, const char *file) {
 	int ret = R_TRUE;
-	char *nl, *data, *odata = r_file_slurp (file, NULL);
+	char *nl, *data, *odata;
+	data = r_file_abspath (file);
+	odata = r_file_slurp (data, NULL);
+	free (data);
 	if (!odata) return R_FALSE;
 	nl = strchr (odata, '\n');
 	if (nl) {
@@ -1249,7 +1251,7 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 			*nl = '\0';
 			ret = r_core_cmd (core, data, 0);
 			if (ret == -1) {
-				eprintf ("r_core_cmd_file: Failed to run '%s'\n", data);
+				eprintf ("r_core_cmd_file: Failed to run '%s'\n", file);
 				break;
 			}
 			r_cons_flush ();
