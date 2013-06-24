@@ -182,7 +182,7 @@ static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		switch (ch) {
 			case 5:
 				if ((b[3]&0xf) == 5) {
-					op->ptr = 12+addr+b[0]+((b[1]&0xf)<<8);
+					op->ptr = 8+addr+b[0]+((b[1]&0xf)<<8);
 					op->refptr = R_TRUE;
 				}
 			case 4:
