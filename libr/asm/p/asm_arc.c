@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2013 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -48,6 +48,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 }
 
 int decodeInstr (bfd_vma address, disassemble_info * info);
+int ARCTangent_decodeInstr (bfd_vma address, disassemble_info * info);
+int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
 	if (len<4) return -1;
@@ -70,7 +73,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	op->buf_asm[0]='\0';
 	//op->inst_len = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
 	//op->inst_len = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
-	op->inst_len = decodeInstr ((bfd_vma)Offset, &disasm_obj);
+if (a->bits==16)
+	op->inst_len = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+else
+	op->inst_len = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
 
 	if (op->inst_len == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
@@ -80,7 +86,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
-	.bits = (int[]){ 32 },
+	.bits = (int[]){ 16, 32, 0 },
 	.desc = "ARC disassembler",
 	.init = NULL,
 	.fini = NULL,
