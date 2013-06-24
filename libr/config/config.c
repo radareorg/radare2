@@ -282,10 +282,9 @@ R_API int r_config_eval(RConfig *cfg, const char *str) {
 		} else {
 			/* get */
 			const char *str = r_config_get(cfg, foo);
-			if (cfg->last_notfound)
-				r_config_list (cfg, name, 0);
-			else cfg->printf ("%s\n", (((int)(size_t)str)==1)?"true":
-					(str==0)?"false":str);
+			if (str)
+				cfg->printf ("%s\n",
+					(((int)(size_t)str)==1)?"true":str);
 		}
 	}
 	return R_TRUE;
