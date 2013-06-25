@@ -14,6 +14,7 @@ endif
 PWD=$(shell pwd)
 
 all: plugins.cfg
+	${MAKE} -C libr/util
 	${MAKE} -C shlr
 	${MAKE} -C libr
 	${MAKE} -C binr

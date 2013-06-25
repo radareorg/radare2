@@ -17,6 +17,7 @@ static int usage (int v) {
 	printf ("Usage: r2agent [-dh] [-p port]\n"
 	"  -d       run in daemon mode (background\n"
 	"  -h       show this help message\n"
+	"  -s       run in sandbox mode\n"
 	"  -p 8392  specify listening port (defaults to 8080)\n");
 	return !!!v;
 }
@@ -59,6 +60,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	
+	r_sandbox_enable (dosandbox);
 	while (!r_cons_singleton ()->breaked) {
 		char *result_heap = NULL;
 		const char *result = page_index;
