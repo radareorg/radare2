@@ -60,6 +60,8 @@ typedef struct r_cons_palette_t {
 	char *offset;
 	char *comment;
 	char *fname;
+	char *flag;
+	char *label;
 	char *flow;
 	char *input;
 	char *reset;

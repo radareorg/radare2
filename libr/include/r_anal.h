@@ -287,6 +287,11 @@ typedef struct r_anal_locals_t {
 	RAnalType *items;
 } RAnalLocals;
 
+typedef struct r_anal_fcn_local_t {
+	ut64 addr;
+	char* name;
+} RAnalFcnLocal;
+
 typedef struct r_anal_attr_t RAnalAttr;
 struct r_anal_attr_t {
 	char *key;
@@ -321,9 +326,10 @@ typedef struct r_anal_type_function_t {
 	int depth;
 	RAnalType *args; // list of arguments
 	RAnalVarSub varsubs[R_ANAL_VARSUBS];
-	RList *locs; // list of local variables
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
+	RList *locs; // list of local variables
+	RList *locals; // list of local labels
 	RList *bbs;
 	RList *vars;
 	RList *refs;
@@ -720,6 +726,7 @@ R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op);
 R_API RAnalFunction *r_anal_fcn_new();
 R_API int r_anal_fcn_is_in_offset (RAnalFunction *fcn, ut64 addr);
 R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type);
+R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name);
 R_API RList *r_anal_fcn_list_new();
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_fcn_free(void *fcn);
@@ -731,6 +738,9 @@ R_API int r_anal_fcn_del(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr);
 R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size,
 		ut64 jump, ut64 fail, int type, RAnalDiff *diff);
+R_API int r_anal_fcn_local_add(RAnal *anal, RAnalFunction *fcn, ut64 addr, const char *name);
+R_API int r_anal_fcn_local_del_name(RAnal *anal, RAnalFunction *fcn, const char *name);
+R_API int r_anal_fcn_local_del_addr(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
 R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr);
 R_API int r_anal_fcn_overlap_bb(RAnalFunction *fcn, RAnalBlock *bb);

@@ -30,6 +30,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->diff = r_anal_diff_new ();
 	fcn->args = NULL;
 	fcn->locs = NULL;
+	fcn->locals = NULL;
 	return fcn;
 }
 
@@ -51,6 +52,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->vars);
 	r_list_free (fcn->locs);
 	r_list_free (fcn->bbs);
+	r_list_free (fcn->locals);
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
 	free (fcn->args);
@@ -61,10 +63,10 @@ R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 	RAnalRef *ref;
 	if (!fcn || !anal || !(ref = r_anal_ref_new ()))
 		return R_FALSE;
-	ref->at = at; // from 
+	ref->at = at; // from
 	ref->addr = addr; // to
 	ref->type = type;
-r_anal_xrefs_set (anal, type=='d'?"data":"code", addr, at);
+	r_anal_xrefs_set (anal, type=='d'?"data":"code", addr, at);
 	// TODO: ensure we are not dupping xrefs
 	r_list_append (fcn->refs, ref);
 	return R_TRUE;
@@ -84,6 +86,47 @@ R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 	}
 	return R_FALSE;
 }
+
+R_API int r_anal_fcn_local_add (RAnal *anal, RAnalFunction *fcn, ut64 addr, const char *name) {
+	RAnalFcnLocal *l = R_NEW0 (RAnalFcnLocal);
+	if (!fcn || !anal) {
+		return R_FALSE;
+	}
+	l->addr = addr;
+	l->name = strdup (name);
+	// TODO: do not allow duplicate locals!
+	if (!fcn->locals)
+		fcn->locals = r_list_new();
+	r_list_append (fcn->locals, l);
+	return R_TRUE;
+}
+
+R_API int r_anal_fcn_local_del_name (RAnal *anal, RAnalFunction *fcn, const char *name) {
+	RAnalFcnLocal *l;
+	RListIter *iter;
+	/* No need for _safe loop coz we return immediately after the delete. */
+	r_list_foreach (fcn->locals, iter, l) {
+		if (!strcmp(l->name, name)) {
+				r_list_delete (fcn->locals, iter);
+				return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
+R_API int r_anal_fcn_local_del_addr (RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+	RAnalFcnLocal *l;
+	RListIter *iter;
+	/* No need for _safe loop coz we return immediately after the delete. */
+	r_list_foreach (fcn->locals, iter, l) {
+		if (addr == 0UL || addr == l->addr) {
+				r_list_delete (fcn->locals, iter);
+				return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	RAnalOp op = {0};
@@ -283,6 +326,17 @@ R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 	return ret;
 #endif
 }
+
+R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
+	RAnalFunction *fcn = NULL;
+	RListIter *iter;
+	r_list_foreach (anal->fcns, iter, fcn) {
+		if (!strcmp(name, fcn->name))
+			return fcn;
+	}
+	return NULL;
+}
+
 
 /* rename RAnalFunctionBB.add() */
 R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {

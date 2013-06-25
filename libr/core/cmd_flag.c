@@ -40,7 +40,28 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case '+':
 	case ' ': {
-		char *s = NULL, *s2 = NULL, *eq = strchr (str, '=');
+		char *s = strchr (str, ' '), *s2 = NULL, *eq = strchr (str, '=');
+		if (s[1] == '.') { // local label, e.g. '.return'
+			RAnalFunction *fcn;
+			*s = '\0';
+			s2 = strchr (s+1, ' ');
+			if (s2) {
+				*s2 = '\0';
+				if (s2[1]&&s2[2])
+					off = r_num_math (core->num, s2+1);
+			}
+			char *name = s + 1;
+			if (*name) {
+					fcn = r_anal_fcn_find (core->anal, off,
+							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+					if (fcn) {
+						eprintf ("Adding %s to fcn %s at 0x%08llx\n", name, fcn->name, off);
+						r_anal_fcn_local_add (core->anal, fcn, off, name);
+					} else eprintf ("Cannot find function at 0x%08llx\n", off);
+			} else eprintf ("Usage: f+ [.name] [addr]\n");
+			break;
+		}
+
 		ut32 bsze = 1; //core->blocksize;
 		if (eq) {
 			// TODO: add support for '=' char in flag comments
@@ -69,6 +90,18 @@ static int cmd_flag(void *data, const char *input) {
 				r_flag_unset_glob (core->flags, flagname);
 			else r_flag_unset (core->flags, flagname, NULL);
 		} else r_flag_unset_i (core->flags, off, NULL);
+		break;
+	case '.':
+		{
+		RAnalFunction *fcn;
+		char *name = strdup (input+2);
+		if (*name) {
+			fcn = r_anal_fcn_find_name (core->anal, name);
+			if (fcn) {
+				r_core_anal_fcn_local_list (fcn);
+			} else eprintf ("Cannot find function %s\n", name);
+		} else eprintf ("Usage: f. [fname]\n");
+		}
 		break;
 	case 'l':
 		if (input[1] == ' ') {
@@ -248,8 +281,10 @@ static int cmd_flag(void *data, const char *input) {
 		" f name 12 33     ; same as above\n"
 		" f name 12 33 cmt ; same as above + set flag comment\n"
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
+		" f+ .name 12      ; add local label at 12 offset, if it is inside function\n"
 		" f-name           ; remove flag 'name'\n"
 		" f-@addr          ; remove flag at address expression\n"
+		" f. fname         ; list all local labels for the given function\n"
 		" fd addr          ; return flag+delta\n"
 		//" fc [name] [cmt]  ; set execution command for a specific flag\n"
 		" fC [name] [cmt]  ; set comment for given flag\n"
