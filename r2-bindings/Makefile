@@ -161,13 +161,16 @@ install-python:
 
 LUAPATH=$(shell strings `../sys/whereis.sh lua`| grep lib/lua | cut -d ';' -f 2 | grep '.so'  | cut -d '?' -f 1)
 
-install-lua:
-	@echo LUA PATH IS ${LUAPATH}
-	for a in 5.1 ; do \
-		mkdir -p ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
-		echo "Installing lua$$a r2 modules..." ; \
-		cp -rf lua/*.${SOEXT} ${DESTDIR}${PREFIX}/lib/lua/$$a ; \
-	done
+LUAPKG=$(shell pkg-config --list-all|awk '/lua-/{print $$1;}')
+ifneq (${LUAPKG},)
+LUADIR=$(shell pkg-config --variable=INSTALL_CMOD ${LUAPKG})
+lua-install install-lua:
+	@mkdir -p ${DESTDIR}${LUADIR} ; \
+	echo "Installing lua r2 modules... ${LUADIR}" ; \
+	cp -rf lua/*.so ${DESTDIR}${LUADIR}/
+else
+lua-install install-lua:
+endif
 
 install-go:
 	@. ./go/goenv.sh ; \

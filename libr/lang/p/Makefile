@@ -6,6 +6,11 @@ CFLAGS+=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
 ifeq ($(OSTYPE),darwin)
 CFLAGS+=-undefined dynamic_lookup
 endif
+LUAPKG=$(shell pkg-config --list-all|awk '/lua-/{print $$1;}')
+ifneq (${LUAPKG},)
+CFLAGS+=$(shell pkg-config --cflags ${LUAPKG})
+LUA_LDFLAGS+=$(shell pkg-config --libs ${LUAPKG})
+endif
 
 BINDEPS=
 
@@ -44,7 +49,7 @@ lang_tcc.${EXT_SO}: tcc.o
 endif
 
 lang_lua.${EXT_SO}: lua.o
-	-${CC} ${CFLAGS} -fPIC ${LDFLAGS_LIB} -o lang_lua.${EXT_SO} lua.c ${LDFLAGS_LINKPATH}.. -llua5.1
+	-${CC} ${CFLAGS} -fPIC ${LDFLAGS_LIB} -o lang_lua.${EXT_SO} lua.c ${LDFLAGS_LINKPATH}.. ${LUA_LDFLAGS}
 
 lang_ruby.${EXT_SO}:
 	-env CFLAGS="${CFLAGS}" ruby mkruby.rb

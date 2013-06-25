@@ -138,7 +138,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: only if show_color?
 	const char *color_comment = P(comment): Color_CYAN;
 	const char *color_fname = P(fname): Color_CYAN;
-	const char *color_flow = P(flow): Color_CYAN;
+	//const char *color_flow = P(flow): Color_CYAN;
 	const char *color_nop = P(nop): Color_BLUE;
 	const char *color_bin = P(bin): Color_YELLOW;
 	const char *color_math = P(math): Color_YELLOW;

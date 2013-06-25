@@ -152,7 +152,7 @@ typedef struct r_core_cmpwatch_t {
 typedef int (*RCoreSearchCallback)(RCore *core, ut64 from, ut8 *buf, int len);
 
 #ifdef R_API
-#define r_core_cast(x) (RCore*)(size_t)(x)
+//#define r_core_ncast(x) (RCore*)(size_t)(x)
 R_API RCons *r_core_get_cons (RCore *core);
 R_API RBin *r_core_get_bin (RCore *core);
 R_API RConfig *r_core_get_config (RCore *core);
@@ -161,6 +161,8 @@ R_API int r_core_init(RCore *core);
 R_API RCore *r_core_new();
 R_API RCore *r_core_free(RCore *core);
 R_API RCore *r_core_fini(RCore *c);
+R_API RCore *r_core_ncast(ut64 p);
+R_API RCore *r_core_cast(void *p);
 R_API int r_core_config_init(RCore *core);
 R_API int r_core_prompt(RCore *core, int sync);
 R_API int r_core_prompt_exec(RCore *core);
