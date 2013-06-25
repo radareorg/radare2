@@ -9,6 +9,14 @@
 
 R_LIB_VERSION(r_core);
 
+R_API RCore *r_core_ncast(ut64 p) {
+	return (RCore*)(size_t)p;
+}
+
+R_API RCore *r_core_cast(void *p) {
+	return (RCore*)p;
+}
+
 static int core_cmd_callback (void *user, const char *cmd) {
 	RCore *core = (RCore *)user;
 	return r_core_cmd0 (core, cmd);
@@ -149,7 +157,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 }
 
 R_API RCore *r_core_new() {
-	RCore *c = R_NEW (struct r_core_t);
+	RCore *c = R_NEW (RCore);
 	r_core_init (c);
 	return c;
 }

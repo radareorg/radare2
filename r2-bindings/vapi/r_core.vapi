@@ -90,7 +90,8 @@ public class RCore {
 	public RConfig* get_config ();
 	public RCore();
 
-	public static unowned RCore cast(uint64 ptr);
+	public static unowned RCore ncast(uint64 ptr);
+	public static unowned RCore cast(void *p);
 	public bool loadlibs();
 	/* commands */
 	public int prompt(bool sync);

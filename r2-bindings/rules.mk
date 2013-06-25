@@ -1,6 +1,9 @@
 include ../config.mk
-
 include ../libs.mk
+
+ifneq ($(MY_SOEXT),)
+SOEXT=${MY_SOEXT}
+endif
 
 .SUFFIXES: .$(SOEXT)
 

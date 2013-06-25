@@ -196,13 +196,27 @@ R_API int r_lang_prompt(RLang *lang) {
 		if (!p) break;
 		r_line_hist_add (p);
 		strcpy (buf, p);
+		if (buf[0] == '!') {
+			r_sandbox_system (buf+1, 1);
+			continue;
+		}
+		if (!memcmp (buf, ". ", 2)) {
+			char *file = r_file_abspath (buf+2);
+			if (file) {
+				r_lang_run_file (lang, file);
+				free (file);
+			}
+			continue;
+		}
 		if (!strcmp (buf, "q"))
 			return R_TRUE;
 		if (!strcmp (buf, "?")) {
 			RLangDef *def;
 			RListIter *iter;
-			eprintf("  ?    - show this help message\n"
-				"  q    - quit\n");
+			eprintf("  ?        - show this help message\n"
+				"  !command - run system command\n"
+				"  . file   - interpret file\n"
+				"  q        - quit prompt\n");
 			if (lang->cur) {
 				eprintf ("%s example:\n", lang->cur->name);
 				if (lang->cur->help)

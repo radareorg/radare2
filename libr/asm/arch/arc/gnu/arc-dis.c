@@ -1,7 +1,9 @@
 /* Instruction printing code for the ARC.
-   Copyright 1994, 1995, 1997, 1998, 2000, 2001, 2002, 2005, 2007, 2009, 2010
+   Copyright 1994, 1995, 1997, 1998, 2000, 2001, 2002, 2005, 2006, 2007, 2008, 2009
    Free Software Foundation, Inc.
    Contributed by Doug Evans (dje@cygnus.com).
+
+   Copyright 2008-2012 Synopsys Inc.
 
    This file is part of libopcodes.
 
@@ -23,15 +25,23 @@
 #include "ansidecl.h"
 #include "libiberty.h"
 #include "dis-asm.h"
-#include "arc.h"
+//#include "opcode/arc.h"
 #include "elf-bfd.h"
-//#include "elf/arc.h"
+#include "arc.h"
 #include <string.h>
 #include "opintl.h"
 
 #include <stdarg.h>
 #include "arc-dis.h"
 #include "arc-ext.h"
+#include "arcompact-dis.h"
+
+#include <stdlib.h>
+  /*
+    warning: implicit declaration of function `printf_unfiltered'
+    if dbg is 1 then this definition is required
+  */
+  void printf_unfiltered (const char *,...);
 
 #ifndef dbg
 #define dbg (0)
@@ -60,7 +70,9 @@ typedef enum
 } a4_decoding_class;
 
 #define BIT(word,n)	((word) & (1 << n))
-#define BITS(word,s,e)  (((word) << (31 - e)) >> (s + (31 - e)))
+/* START ARC LOCAL */
+#define BITS(word,s,e)  (((word) << (sizeof(word)*8-1 - e)) >> (s + (sizeof(word)*8-1 - e)))
+/* END ARC LOCAL */
 #define OPCODE(word)	(BITS ((word), 27, 31))
 #define FIELDA(word)	(BITS ((word), 21, 26))
 #define FIELDB(word)	(BITS ((word), 15, 20))
@@ -74,7 +86,7 @@ typedef enum
   do									\
     {									\
       if (is_limm == 1 && !NEXT_WORD (1))				\
-        mwerror (state, _("Illegal limm reference in last instruction!\n")); \
+	mwerror (state, _("Illegal limm reference in last instruction!\n")); \
       a = state->words[1];						\
     }									\
   while (0)
@@ -83,11 +95,11 @@ typedef enum
   do								\
     {								\
       if (is_shimm == 0)					\
-        {							\
-          flag = BIT (state->words[0], 8);			\
-          state->nullifyMode = BITS (state->words[0], 5, 6);	\
-          cond = BITS (state->words[0], 0, 4);			\
-        }							\
+	{							\
+	  flag = BIT (state->words[0], 8);			\
+	  state->nullifyMode = BITS (state->words[0], 5, 6);	\
+	  cond = BITS (state->words[0], 0, 4);			\
+	}							\
     }								\
   while (0)
 
@@ -95,7 +107,7 @@ typedef enum
   do						\
     {						\
       if (is_shimm == 0)			\
-        cond = BITS (state->words[0], 0, 4);	\
+	cond = BITS (state->words[0],0,4);	\
     }						\
   while (0)
 
@@ -103,14 +115,14 @@ typedef enum
   do						\
     {						\
       if (field == 62)				\
-        {					\
-          is_limm++;				\
+	{					\
+	  is_limm++;				\
 	  field##isReg = 0;			\
 	  PUT_NEXT_WORD_IN (field);		\
 	  limm_value = field;			\
 	}					\
       else if (field > 60)			\
-        {					\
+	{					\
 	  field##isReg = 0;			\
 	  is_shimm++;				\
 	  flag = (field == 61);			\
@@ -124,7 +136,7 @@ typedef enum
     {						\
       fieldA = FIELDA (state->words[0]);	\
       if (fieldA > 60)				\
-        {					\
+	{					\
 	  fieldAisReg = 0;			\
 	  fieldA = 0;				\
 	}					\
@@ -216,9 +228,9 @@ static const char *
 post_address (struct arcDisState * state, int addr)
 {
   static char id[3 * ARRAY_SIZE (state->addresses)];
-  int j, i = state->acnt;
+  unsigned int j, i = state->acnt;
 
-  if (i < ((int) ARRAY_SIZE (state->addresses)))
+  if (i < ARRAY_SIZE (state->addresses))
     {
       state->addresses[i] = addr;
       ++state->acnt;
@@ -238,6 +250,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   char *bp;
   const char *p;
   int size, leading_zero, regMap[2];
+  long auxNum;
   va_list ap;
 
   va_start (ap, format);
@@ -245,6 +258,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   bp = buf;
   *bp = 0;
   p = format;
+  auxNum = -1;
   regMap[0] = 0;
   regMap[1] = 0;
 
@@ -252,7 +266,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
     switch (*p++)
       {
       case 0:
-	goto DOCOMM; /* (return)  */
+	goto DOCOMM; /* Return.  */
       default:
 	*bp++ = p[-1];
 	break;
@@ -276,7 +290,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 	      /* size.  */
 	      size = p[-1] - '0';
 	      if (size == 0)
-		leading_zero = 1; /* e.g. %08x  */
+		leading_zero = 1; /* e.g. %08x */
 	      while (*p >= '0' && *p <= '9')
 		{
 		  size = size * 10 + *p - '0';
@@ -289,10 +303,9 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 	  case 'h':
 	    {
 	      unsigned u = va_arg (ap, int);
-
 	      /* Hex.  We can change the format to 0x%08x in
-		 one place, here, if we wish.
-		 We add underscores for easy reading.  */
+	         one place, here, if we wish.
+	         We add underscores for easy reading.  */
 	      if (u > 65536)
 		sprintf (bp, "0x%x_%04x", u >> 16, u & 0xffff);
 	      else
@@ -332,7 +345,6 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 
 #define REG2NAME(num, name) case num: sprintf (bp, ""name); \
   regMap[(num < 32) ? 0 : 1] |= 1 << (num - ((num < 32) ? 0 : 32)); break;
-
 	      switch (val)
 		{
 		  REG2NAME (26, "gp");
@@ -344,13 +356,13 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 		  REG2NAME (60, "lp_count");
 		default:
 		  {
-		    const char * ext;
+		    const char *ext;
 
 		    ext = core_reg_name (state, val);
 		    if (ext)
 		      sprintf (bp, "%s", ext);
 		    else
-		      sprintf (bp,"r%d",val);
+		      sprintf (bp, "r%d", val);
 		  }
 		  break;
 		}
@@ -361,9 +373,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 	    {
 	      /* Aux Register.  */
 	      int val = va_arg (ap, int);
-
-#define AUXREG2NAME(num, name) case num: sprintf (bp,name); break;
-
+#define AUXREG2NAME(num, name) case num: sprintf (bp,""name); break;
 	      switch (val)
 		{
 		  AUXREG2NAME (0x0, "status");
@@ -372,6 +382,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 		  AUXREG2NAME (0x3, "lp_end");
 		  AUXREG2NAME (0x4, "identity");
 		  AUXREG2NAME (0x5, "debug");
+		
 		default:
 		  {
 		    const char *ext;
@@ -387,14 +398,12 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 	      inc_bp ();
 	    }
 	    break;
-
 	  case 's':
 	    {
 	      sprintf (bp, "%s", va_arg (ap, char *));
 	      inc_bp ();
 	    }
 	    break;
-
 	  default:
 	    fprintf (stderr, "?? format %c\n", p[-1]);
 	    break;
@@ -455,28 +464,22 @@ write_instr_name_(struct arcDisState * state,
 		  int directMem)
 {
   strcpy (state->instrBuffer, instrName);
-
   if (cond > 0)
     {
       const char *cc = 0;
 
       if (!condCodeIsPartOfName)
 	strcat (state->instrBuffer, ".");
-
       if (cond < 16)
 	cc = condName[cond];
       else
 	cc = cond_code_name (state, cond);
-
       if (!cc)
 	cc = "???";
-
       strcat (state->instrBuffer, cc);
     }
-
   if (flag)
     strcat (state->instrBuffer, ".f");
-
   switch (state->nullifyMode)
     {
     case BR_exec_always:
@@ -485,14 +488,13 @@ write_instr_name_(struct arcDisState * state,
     case BR_exec_when_jump:
       strcat (state->instrBuffer, ".jd");
       break;
+    case BR_exec_when_no_jump:
+      break;
     }
-
   if (signExtend)
     strcat (state->instrBuffer, ".x");
-
   if (addrWriteBack)
     strcat (state->instrBuffer, ".a");
-
   if (directMem)
     strcat (state->instrBuffer, ".di");
 }
@@ -500,7 +502,7 @@ write_instr_name_(struct arcDisState * state,
 #define write_instr_name()						\
   do									\
     {									\
-      write_instr_name_(state, instrName,cond, condCodeIsPartOfName,	\
+      write_instr_name_(state, instrName, cond, condCodeIsPartOfName,	\
 			flag, signExtend, addrWriteBack, directMem);	\
       formatString[0] = '\0';						\
     }									\
@@ -521,28 +523,19 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 {
   int condCodeIsPartOfName = 0;
   a4_decoding_class decodingClass;
-  const char * instrName;
+  const char *instrName;
   int repeatsOp = 0;
-  int fieldAisReg = 1;
-  int fieldBisReg = 1;
-  int fieldCisReg = 1;
-  int fieldA;
-  int fieldB;
-  int fieldC = 0;
-  int flag = 0;
-  int cond = 0;
-  int is_shimm = 0;
-  int is_limm = 0;
+  int fieldAisReg = 1, fieldBisReg = 1, fieldCisReg = 1;
+  int fieldA, fieldB, fieldC = 0;
+  int flag = 0, cond = 0, is_shimm = 0, is_limm = 0;
   long limm_value = 0;
-  int signExtend = 0;
-  int addrWriteBack = 0;
-  int directMem = 0;
+  int signExtend = 0, addrWriteBack = 0, directMem = 0;
   int is_linked = 0;
   int offset = 0;
   int usesAuxReg = 0;
-  int flags = 0;
   int ignoreFirstOpd;
   char formatString[60];
+  int flags = E_ARC_MACH_A4;
 
   state->instructionLen = 4;
   state->nullifyMode = BR_exec_when_no_jump;
@@ -608,22 +601,11 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	{
 	  switch (BITS (state->words[0], 10, 11))
 	    {
-	    case 0:
-	      instrName = "ld";
-	      state->_load_len = 4;
-	      break;
-	    case 1:
-	      instrName = "ldb";
-	      state->_load_len = 1;
-	      break;
-	    case 2:
-	      instrName = "ldw";
-	      state->_load_len = 2;
-	      break;
-	    default:
-	      instrName = "??? (1[3])";
-	      state->flow = invalid_instr;
-	      break;
+	    case 0: instrName = "ld";       state->_load_len = 4; break;
+	    case 1: instrName = "ldb";      state->_load_len = 1; break;
+	    case 2: instrName = "ldw";      state->_load_len = 2; break;
+	    default: instrName = "??? (1[3])"; 
+	      state->flow = invalid_instr; break;
 	    }
 	  decodingClass = CLASS_A4_LD1;
 	}
@@ -639,19 +621,11 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	{
 	  switch (BITS (state->words[0], 22, 23))
 	    {
-	    case 0:
-	      instrName = "st";
-	      break;
-	    case 1:
-	      instrName = "stb";
-	      break;
-	    case 2:
-	      instrName = "stw";
-	      break;
-	    default:
-	      instrName = "??? (2[3])";
-	      state->flow = invalid_instr;
-	      break;
+	    case 0: instrName = "st";       break;
+	    case 1: instrName = "stb";      break;
+	    case 2: instrName = "stw";      break;
+	    default: instrName = "??? (2[3])"; 
+	      state->flow = invalid_instr; break;
 	    }
 	  decodingClass = CLASS_A4_ST;
 	}
@@ -726,17 +700,13 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	  if (flags & IGNORE_FIRST_OPD)
 	    ignoreFirstOpd = 1;
 	  break;
+	  
 	}
       break;
 
-    case op_BC:
-      instrName = "b";
-    case op_BLC:
-      if (!instrName)
-	instrName = "bl";
-    case op_LPC:
-      if (!instrName)
-	instrName = "lp";
+    case op_BC:  instrName = "b";  
+    case op_BLC: if (!instrName) instrName = "bl"; 
+    case op_LPC: if (!instrName) instrName = "lp"; 
     case op_JC:
       if (!instrName)
 	{
@@ -760,34 +730,26 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
     case op_ADC:
     case op_AND:
       repeatsOp = (FIELDC (state->words[0]) == FIELDB (state->words[0]));
-
       switch (state->_opcode)
 	{
-	case op_ADD:
-	  instrName = (repeatsOp ? "asl" : "add");
-	  break;
-	case op_ADC:
-	  instrName = (repeatsOp ? "rlc" : "adc");
-	  break;
-	case op_AND:
-	  instrName = (repeatsOp ? "mov" : "and");
-	  break;
+	case op_ADD: instrName = (repeatsOp ? "asl" : "add"); break;
+	case op_ADC: instrName = (repeatsOp ? "rlc" : "adc"); break;
+	case op_AND: instrName = (repeatsOp ? "mov" : "and"); break;
 	}
       break;
 
-    case op_SUB: instrName = "sub";
-      break;
-    case op_SBC: instrName = "sbc";
-      break;
-    case op_OR:  instrName = "or";
-      break;
-    case op_BIC: instrName = "bic";
-      break;
+
+    case op_SUB: instrName = "sub"; break;
+    case op_SBC: instrName = "sbc"; break;
+    case op_OR:  instrName = "or";  break;
+    case op_BIC: instrName = "bic"; break;
 
     case op_XOR:
       if (state->words[0] == 0x7fffffff)
 	{
-	  /* NOP encoded as xor -1, -1, -1.   */
+	/*
+	 * Official encoding for NOP (there are many possibilities
+	   with ARC).  This encoding says: xor -1, -1, -1.  */
 	  instrName = "nop";
 	  decodingClass = CLASS_A4_OP3_SUBOPC3F;
 	}
@@ -797,7 +759,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 
     default:
       instrName = instruction_name (state,state->_opcode,0,&flags);
-      /* if (instrName) printf("FLAGS=0x%x\n", flags);  */
+      /* if (instrName) printf ("FLAGS=0x%x\n", flags); */
       if (!instrName)
 	{
 	  instrName = "???";
@@ -810,7 +772,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 
   fieldAisReg = fieldBisReg = fieldCisReg = 1; /* Assume regs for now.  */
   flag = cond = is_shimm = is_limm = 0;
-  state->nullifyMode = BR_exec_when_no_jump;	/* 0  */
+  state->nullifyMode = BR_exec_when_no_jump;	/* 0 */
   signExtend = addrWriteBack = directMem = 0;
   usesAuxReg = 0;
 
@@ -884,15 +846,14 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       fieldA += addr + 4;
       CHECK_FLAG_COND_NULLIFY ();
       flag = 0;
-
+ 
       write_instr_name ();
-      /* This address could be a label we know. Convert it.  */
-      if (state->_opcode != op_LPC /* LP  */)
+      /* This address could be a label we know.  Convert it.  */
+      if (state->_opcode != op_LPC /* LP */)
 	{
 	  add_target (fieldA); /* For debugger.  */
-	  state->flow = state->_opcode == op_BLC /* BL  */
-	    ? direct_call
-	    : direct_jump;
+	  state->flow
+	    = state->_opcode == op_BLC /* BL */ ? direct_call : direct_jump;
 	  /* indirect calls are achieved by "lr blink,[status];
 	     lr dest<- func addr; j [dest]"  */
 	}
@@ -950,8 +911,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       break;
 
     case CLASS_A4_LD0:
-      /* LD instruction.
-	 B and C can be regs, or one (both?) can be limm.  */
+      /* LD instruction.  B and C can be regs, or one (both?) can be limm.  */
       CHECK_FIELD_A ();
       CHECK_FIELD_B ();
       CHECK_FIELD_C ();
@@ -994,8 +954,8 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       fieldC = FIELDD (state->words[0]);
 
       if (dbg)
-	printf ("6:b reg %d %d c 0x%x  \n",
-		fieldBisReg, fieldB, fieldC);
+	printf_unfiltered ("6:b reg %d %d c 0x%x  \n",
+			   fieldBisReg, fieldB, fieldC);
       state->_ea_present = 1;
       state->_offset = fieldC;
       state->_mem_load = 1;
@@ -1037,11 +997,11 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       /* ST instruction.  */
       CHECK_FIELD_B();
       CHECK_FIELD_C();
-      fieldA = FIELDD(state->words[0]); /* shimm  */
-
-      /* [B,A offset]  */
-      if (dbg) printf("7:b reg %d %x off %x\n",
-		      fieldBisReg,fieldB,fieldA);
+      fieldA = FIELDD(state->words[0]); /* shimm */
+      
+      /* [B,A offset] */
+      if (dbg) printf_unfiltered("7:b reg %d %x off %x\n",
+				 fieldBisReg,fieldB,fieldA);
       state->_ea_present = 1;
       state->_offset = fieldA;
       if (fieldBisReg)
@@ -1080,7 +1040,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       break;
 
     case CLASS_A4_SR:
-      /* SR instruction  */
+      /* SR instruction */
       CHECK_FIELD_B();
       CHECK_FIELD_C();
 
@@ -1124,66 +1084,72 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 }
 
 
-/* Returns the name the user specified core extension register.  */
+/* Return the name of the user specified core extension register REGNUM.
+   CPP_THIS is the C++ this pointer.  */
 
 static const char *
-_coreRegName(void * arg ATTRIBUTE_UNUSED, int regval)
+_coreRegName (void *cpp_this ATTRIBUTE_UNUSED, int regnum)
 {
-  return arcExtMap_coreRegName (regval);
+  return arcExtMap_coreRegName (regnum);
 }
 
-/* Returns the name the user specified AUX extension register.  */
+/* Return the name of the user specified AUX extension register REGNUM.
+   CPP_THIS is the C++ this pointer.  */
 
 static const char *
-_auxRegName(void *_this ATTRIBUTE_UNUSED, int regval)
+_auxRegName (void *cpp_this ATTRIBUTE_UNUSED, int regnum)
 {
-  return arcExtMap_auxRegName(regval);
+  return arcExtMap_auxRegName (regnum);
 }
 
-/* Returns the name the user specified condition code name.  */
+/* Return the name of the user specified condition code with encoding NUM.
+   CPP_THIS is the C++ this pointer.  */
 
 static const char *
-_condCodeName(void *_this ATTRIBUTE_UNUSED, int regval)
+_condCodeName (void *cpp_this ATTRIBUTE_UNUSED, int num)
 {
-  return arcExtMap_condCodeName(regval);
+  return arcExtMap_condCodeName (num);
 }
 
-/* Returns the name the user specified extension instruction.  */
+/* Return the name of the user specified extension instruction
+   with major opcode MAJOP and minor opcode MINOP.
+   CPP_THIS is the C++ this pointer.
+   FLAGS are the instruction flags.  */
 
 static const char *
 _instName (void *_this ATTRIBUTE_UNUSED, int majop, int minop, int *flags)
 {
-  return arcExtMap_instName(majop, minop, flags);
+  return arcExtMap_instName (majop, minop, flags);
 }
 
-/* Decode an instruction returning the size of the instruction
-   in bytes or zero if unrecognized.  */
+/* Decode an ARCtangent instruction returning the size of the instruction
+   in bytes or zero if unrecognized.
+   ADDRESS is the address of this instruction.  */
 
 int
-decodeInstr (bfd_vma            address, /* Address of this instruction.  */
-	     disassemble_info * info)
+ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
 {
   int status;
   bfd_byte buffer[4];
   struct arcDisState s;		/* ARC Disassembler state.  */
   void *stream = info->stream; 	/* Output stream.  */
   fprintf_ftype func = info->fprintf_func;
+  int bytes;
 
   memset (&s, 0, sizeof(struct arcDisState));
 
-  /* read first instruction  */
+  /* Read first instruction.  */
   status = (*info->read_memory_func) (address, buffer, 4, info);
   if (status != 0)
     {
       (*info->memory_error_func) (status, address, info);
-      return 0;
+      return -1;
     }
   if (info->endian == BFD_ENDIAN_LITTLE)
     s.words[0] = bfd_getl32(buffer);
   else
     s.words[0] = bfd_getb32(buffer);
   /* Always read second word in case of limm.  */
-
   /* We ignore the result since last insn may not have a limm.  */
   status = (*info->read_memory_func) (address + 4, buffer, 4, info);
   if (info->endian == BFD_ENDIAN_LITTLE)
@@ -1198,36 +1164,48 @@ decodeInstr (bfd_vma            address, /* Address of this instruction.  */
   s.instName = _instName;
 
   /* Disassemble.  */
-  dsmOneArcInst (address, & s);
+  bytes = dsmOneArcInst (address, (void *)& s);
 
-#if 0
   /* Display the disassembly instruction.  */
   (*func) (stream, "%08lx ", s.words[0]);
   (*func) (stream, "    ");
-#endif
-  (*func) (stream, "%s ", s.instrBuffer);
+  (*func) (stream, "%-10s ", s.instrBuffer);
 
   if (__TRANSLATION_REQUIRED (s))
     {
       bfd_vma addr = s.addresses[s.operandBuffer[1] - '0'];
 
       (*info->print_address_func) ((bfd_vma) addr, info);
+      (*func) (stream, "\n");
     }
   else
     (*func) (stream, "%s",s.operandBuffer);
 
   return s.instructionLen;
+
 }
 
 /* Return the print_insn function to use.
-   Side effect: load (possibly empty) extension section  */
-#if 0
+   Side effect: load (possibly empty) extension section.  */
 
 disassembler_ftype
-arc_get_disassembler (void *ptr)
+arc_get_disassembler (bfd *abfd)
 {
-  if (ptr)
-    build_ARC_extmap ((struct bfd *) ptr);
-  return decodeInstr;
-}
+  unsigned short mach_abfd = elf_elfheader(abfd)->e_machine;
+  build_ARC_extmap (abfd);
+
+  switch(mach_abfd)
+    {
+    case EM_ARC:
+      return ARCTangent_decodeInstr;
+    case EM_ARCOMPACT:
+      return ARCompact_decodeInstr;
+    default:
+#if 0
+      if (bfd_get_mach (abfd) ==  E_ARC_MACH_A4)
+	return ARCTangent_decodeInstr;
+      else 
 #endif
+	return ARCompact_decodeInstr;
+    }
+}
