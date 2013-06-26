@@ -8,8 +8,8 @@ R_API void r_anal_hint_clear (RAnal *a) {
 	a->hints = r_list_new ();
 }
 
-R_API void r_anal_hint_del (RAnal *a, ut64 addr) {
-	RAnalHint *hint = r_anal_hint_at (a, addr, 0);
+R_API void r_anal_hint_del (RAnal *a, ut64 addr, int size) {
+	RAnalHint *hint = r_anal_hint_at (a, addr, size);
 	if (hint) r_list_delete_data (a->hints, hint);
 }
 
