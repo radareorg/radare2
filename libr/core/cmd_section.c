@@ -5,17 +5,17 @@ static int cmd_section(void *data, const char *input) {
 	switch (*input) {
 	case '?':
 		r_cons_printf (
-		" S               ; list sections\n"
-		" S.              ; show current section name\n"
-		" S?              ; show this help message\n"
-		" S*              ; list sections (in radare commands)\n"
-		" S=              ; list sections (in nice ascii-art bars)\n"
-		" Sa[-] [arch] [bits] ; Specify arch and bits for given section\n"
-		" Sd [file]       ; dump current section to a file (see dmd)\n"
-		" Sl [file]       ; load contents of file into current section (see dml)\n"
-		" Sr [name]       ; rename section on current seek\n"
-		" S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
-		" S-[id|0xoff|*]  ; remove this section definition\n");
+			" S               ; list sections\n"
+			" S.              ; show current section name\n"
+			" S?              ; show this help message\n"
+			" S*              ; list sections (in radare commands)\n"
+			" S=              ; list sections (in nice ascii-art bars)\n"
+			" Sa[-] [arch] [bits] [[off]] ; Specify arch and bits for given section\n"
+			" Sd [file]       ; dump current section to a file (see dmd)\n"
+			" Sl [file]       ; load contents of file into current section (see dml)\n"
+			" Sr [name]       ; rename section on current seek\n"
+			" S [off] [vaddr] [sz] [vsz] [name] [rwx] ; add new section\n"
+			" S-[id|0xoff|*]  ; remove this section definition\n");
 		break;
 	case 'a':
 		switch (input[1]) {
@@ -36,20 +36,30 @@ static int cmd_section(void *data, const char *input) {
 			break;
 		case ' ':
 			{
-			char *p, *str = strdup (input+2); // SKIPSPACES HERE
-			p = strchr (str, ' ');
-			if (p) {
-				*p++ = 0;
+				int i;
+				char *ptr = strdup (input+2);
+				const char *arch = NULL;
+				char bits = 0;
+				ut64 offset = core->offset;
+				i = r_str_word_set0 (ptr);
+				if (i < 2) {
+					eprintf ("Missing argument\n");
+					free (ptr);
+					break;
+				}
+				if (i==3)
+					offset = r_num_math (core->num, r_str_word_get0 (ptr, 2));
+				bits = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				arch = r_str_word_get0 (ptr, 0);
 				if (r_io_section_set_archbits (core->io,
-						core->offset, str, atoi (p))) {
+						offset, arch, bits)) {
 					core->section = NULL;
 					r_core_seek (core, core->offset, 0);
 				} else eprintf ("Cannot set arch/bits at 0x%08"PFMT64x"\n",
-						core->offset);
-			} else eprintf ("Missing argument\n");
-			free (str);
+								offset);
+				free (ptr);
+				break;
 			}
-			break;
 		}
 		break;
 	case 'r':
@@ -149,29 +159,29 @@ static int cmd_section(void *data, const char *input) {
 			break;
 		default:
 			{
-			int i, rwx = 7;
-			char *ptr = strdup (input+1);
-			const char *name = NULL;
-			char vname[64];
-			ut64 vaddr = 0LL;
-			ut64 offset = 0LL;
-			ut64 size = 0LL;
-			ut64 vsize = 0LL;
+				int i, rwx = 7;
+				char *ptr = strdup (input+1);
+				const char *name = NULL;
+				char vname[64];
+				ut64 vaddr = 0LL;
+				ut64 offset = 0LL;
+				ut64 size = 0LL;
+				ut64 vsize = 0LL;
 
-			i = r_str_word_set0 (ptr);
-			switch (i) {
-			case 6: // get rwx
-				rwx = r_str_rwx (r_str_word_get0 (ptr, 5));
-			case 5: // get name
-				name = r_str_word_get0 (ptr, 4);
-			case 4: // get vsize
-				vsize = r_num_math (core->num, r_str_word_get0 (ptr, 3));
-			case 3: // get size
-				size = r_num_math (core->num, r_str_word_get0 (ptr, 2));
-			case 2: // get vaddr
-				vaddr = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			case 1: // get offset
-				offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				i = r_str_word_set0 (ptr);
+				switch (i) {
+				case 6: // get rwx
+					rwx = r_str_rwx (r_str_word_get0 (ptr, 5));
+				case 5: // get name
+					name = r_str_word_get0 (ptr, 4);
+				case 4: // get vsize
+					vsize = r_num_math (core->num, r_str_word_get0 (ptr, 3));
+				case 3: // get size
+					size = r_num_math (core->num, r_str_word_get0 (ptr, 2));
+				case 2: // get vaddr
+					vaddr = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				case 1: // get offset
+					offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			}
 			if (vsize == 0) {
 				vsize = size;
