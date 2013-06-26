@@ -221,7 +221,7 @@ static int setup(RLang *lang) {
 			snprintf (cmd, sizeof (cmd), "%s=%d", def->name, (int)(size_t)def->value);
 		else if (!strcmp (def->type, "string"))
 			snprintf (cmd, sizeof (cmd), "%s=\"%s\"", def->name, (char *)def->value);
-		else snprintf (cmd, sizeof (cmd), "%s=%s.cast(%p)",
+		else snprintf (cmd, sizeof (cmd), "%s=%s.ncast(%p)",
 			def->name, def->type, def->value);
 		PyRun_SimpleString (cmd);
 	}
