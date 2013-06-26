@@ -899,19 +899,19 @@ static int cmd_anal(void *data, const char *input) {
 			} else
 			r_cons_printf (
 				"Usage: ah[lba-]\n"
-				" ah?           # show this help\n"
-				" ah? offset    # show hint of given offset\n"
-				" ah            # list hints in human-readable format\n"
-				" ah-           # remove all hints\n"
-				" ah- offset    # remove hints at given offset\n"
-				" ah* offset    # list hints in radare commands format\n"
-				" aha ppc 51    # set arch for a range of N bytes\n"
-				" ahb 16 @ $$   # force 16bit for current instruction\n"
-				" ahc 0x804804  # override call/jump address\n"
-				" ahf 0x804840  # override fallback address for call\n"
-				" ahl 4         # set opcode size=4\n"
-				" aho foo a0,33 # replace opcode string\n"
-				" ahs eax+=3    # set vm analysis string\n"
+				" ah?               # show this help\n"
+				" ah? offset        # show hint of given offset\n"
+				" ah                # list hints in human-readable format\n"
+				" ah-               # remove all hints\n"
+				" ah- offset [size] # remove hints at given offset\n"
+				" ah* offset        # list hints in radare commands format\n"
+				" aha ppc 51        # set arch for a range of N bytes\n"
+				" ahb 16 @ $$       # force 16bit for current instruction\n"
+				" ahc 0x804804      # override call/jump address\n"
+				" ahf 0x804840      # override fallback address for call\n"
+				" ahl 4             # set opcode size=4\n"
+				" aho foo a0,33     # replace opcode string\n"
+				" ahs eax+=3        # set vm analysis string\n"
 			);
 			break;
 #if 0
@@ -980,8 +980,18 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 			break;
 		case '-':
 			if (input[2]) {
-				r_anal_hint_del (core->anal,
-					r_num_math (core->num, input+2));
+				int i;
+				char *ptr = strdup (input+3);
+				ut64 addr;
+				int size = 0;
+				i = r_str_word_set0 (ptr);
+				if (i < 1)
+					eprintf("Missing argument\n");
+				if (i==2)
+					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				r_anal_hint_del (core->anal, addr, size);
+				free (ptr);
 			} else r_anal_hint_clear (core->anal);
 			break;
 		}
