@@ -934,23 +934,32 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
   r_anal_hint_free (hint);
 #endif
 		case 'a': // set arch
-			{
-				const char *arch = input+3;
-				int sz = 1;
-				char *p = strchr (input+3, ' ');
-				if (p) {
-					*p = 0;
-				sz = atoi (p+1);
-			}
-			if (arch && *arch) 
-						r_anal_hint_set_arch (core->anal, core->offset,
-							sz, arch);
-			}
+			if (input[2]) {
+				int i;
+				char *ptr = strdup (input+3);
+				int size = 1;
+				i = r_str_word_set0 (ptr);
+				if (i==2)
+					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				r_anal_hint_set_arch (core->anal, core->offset,
+					size, r_str_word_get0 (ptr, 0));
+				free (ptr);
+			} else eprintf("Missing argument\n");
 			break;
 		case 'b': // set bits
-			r_anal_hint_set_bits (core->anal, core->offset,
-				1, atoi (input+2));
-			//r_anal_hint_bits (op, 1);
+			if (input[2]) {
+				int i;
+				char *ptr = strdup (input+3);
+				int bits;
+				int size = 1;
+				i = r_str_word_set0 (ptr);
+				if (i==2)
+					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+				bits = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+				r_anal_hint_set_bits (core->anal, core->offset,
+					size, bits);
+				free (ptr);
+			} else eprintf("Missing argument\n");
 			break;
 		case 'l': // set size (opcode length)
 			r_anal_hint_set_length (core->anal, core->offset,
@@ -985,8 +994,6 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 				ut64 addr;
 				int size = 0;
 				i = r_str_word_set0 (ptr);
-				if (i < 1)
-					eprintf("Missing argument\n");
 				if (i==2)
 					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 				addr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
