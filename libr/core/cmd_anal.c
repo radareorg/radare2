@@ -934,18 +934,18 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
   r_anal_hint_free (hint);
 #endif
 		case 'a': // set arch
-{
-const char *arch = input+3;
-int sz = 1;
-char *p = strchr (input+3, ' ');
-if (p) {
-	*p = 0;
-sz = atoi (p+1);
-}
-if (arch && *arch) 
-			r_anal_hint_set_arch (core->anal, core->offset,
-				sz, arch);
-}
+			{
+				const char *arch = input+3;
+				int sz = 1;
+				char *p = strchr (input+3, ' ');
+				if (p) {
+					*p = 0;
+				sz = atoi (p+1);
+			}
+			if (arch && *arch) 
+						r_anal_hint_set_arch (core->anal, core->offset,
+							sz, arch);
+			}
 			break;
 		case 'b': // set bits
 			r_anal_hint_set_bits (core->anal, core->offset,
