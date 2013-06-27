@@ -148,14 +148,15 @@ oldcpucode = cpucode;
 	obj.stream = stdout;
 	obj.bytes_per_chunk =
 	obj.bytes_per_line = (a->bits/8);
-	obj.disassembler_options = options;
 
 	op->buf_asm[0]='\0';
 	if (a->bits==64) {
+	obj.disassembler_options = NULL;
 		/* is endianness ignored on 64bits? */
 		//r_mem_copyendian (bytes, buf, 4, !a->big_endian);
 		op->inst_len = print_insn_aarch64 ((bfd_vma)Offset, &obj);
 	} else {
+	obj.disassembler_options = options;
 		op->inst_len = obj.endian?
 			print_insn_little_arm ((bfd_vma)Offset, &obj):
 			print_insn_big_arm ((bfd_vma)Offset, &obj);
