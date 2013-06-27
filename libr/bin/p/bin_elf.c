@@ -145,8 +145,24 @@ static RList* sections(RBinArch *arch) {
 static RList* symbols(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
+	ut64 base = 0;
 	struct r_bin_elf_symbol_t *symbol = NULL;
 	int i;
+
+	int has_va = Elf_(r_bin_elf_has_va) (arch->bin_obj);
+	if (!has_va) {
+		// find base address for non-linked object (.o) //
+		if (arch->o->sections) {
+			RBinSection *s;
+			RListIter *iter;
+			r_list_foreach (arch->o->sections, iter, s) {
+				if (s->srwx & 1) {
+					base = s->offset;
+					break;
+				}
+			}
+		}
+	}
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -160,8 +176,8 @@ static RList* symbols(RBinArch *arch) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = symbol[i].offset;
-		ptr->offset = symbol[i].offset;
+		ptr->rva = symbol[i].offset + base;
+		ptr->offset = symbol[i].offset + base;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
 		r_list_append (ret, ptr);
