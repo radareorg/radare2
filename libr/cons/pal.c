@@ -134,7 +134,7 @@ R_API void r_cons_pal_show () {
 	for (i=n=0; i<=0xf; i+=1) {
 		char fg[32], bg[32];
 		int r = i*16;
-		if (i<2) strcpy (fg, Color_WHITE);
+		if (i<5) strcpy (fg, Color_WHITE);
 		else r_cons_rgb_str (fg, 0, 0, 0, 0);
 		r_cons_rgb_str (bg, r, r, r, 1);
 		r_cons_printf ("%s%s  rgb:%x%x%x  "Color_RESET, fg, bg, i, i, i);
@@ -145,13 +145,15 @@ R_API void r_cons_pal_show () {
 	}
 	r_cons_printf ("\n\nRGB:\n");
 	for (i=n=0; i<=0xf; i+=inc) {
-		for (j=0; j<=0xf; j+=inc) {
 			for (k=0; k<=0xf; k+=inc) {
+		for (j=0; j<=0xf; j+=inc) {
 				char fg[32], bg[32];
 				int r = i*16;
 				int g = j*16;
 				int b = k*16;
-				if (i<2 && j<6 && k<13) strcpy (fg, Color_WHITE);
+				if ((i<6) && (j<5) ) 
+					strcpy (fg, Color_WHITE);
+				//if (i<2 && j<6 && k<13) 
 				else r_cons_rgb_str (fg, 0, 0, 0, 0);
 				r_cons_rgb_str (bg, r, g, b, 1);
 				r_cons_printf ("%s%s  rgb:%x%x%x  "Color_RESET,

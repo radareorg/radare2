@@ -9,15 +9,16 @@ static inline int cast(double d) {
 }
 
 static int gs (int rgb) {
-	return 232 + (double)rgb/10.6;
+	return 232 + (double)rgb/(255/24.16);
 }
 
 static int rgb(int r, int g, int b) {
 	const double k = (255/6);
-	r = R_DIM (r/k, 0, 5);
-	g = R_DIM (g/k, 0, 5);
-	b = R_DIM (b/k, 0, 5);
-	return 16 + ((r&7)*29) + ((g&7)*12) + (b&7);
+	r = R_DIM (r/k, 0, 6);
+	g = R_DIM (g/k, 0, 6);
+	b = R_DIM (b/k, 0, 6);
+	return 16 + (r*36) + (g*6) + b;
+	
 }
 
 static inline void rgbinit(int r, int g, int b) {
