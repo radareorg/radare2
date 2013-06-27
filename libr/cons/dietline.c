@@ -221,6 +221,12 @@ R_API int r_line_hist_save(const char *file) {
 	int i, ret = R_FALSE;
 	char *path = r_str_home (file);
 	if (path != NULL) {
+		char *p = r_str_lastbut (path, R_SYS_DIR[0], NULL); // TODO: use fs
+		if (p) {
+			*p = 0;
+			r_sys_rmkdir (path);
+			*p = R_SYS_DIR[0];
+		}
 		fd = fopen (path, "w");
 		if (fd != NULL && I.history.data) {
 			for (i=0; i<I.history.index; i++) {

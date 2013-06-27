@@ -897,6 +897,8 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 	ut8 *b = (ut8*)&_b;
 	const char *isbut, *p, *lp = NULL;
 	const int bsz = sizeof (_b);
+	if (!but)
+		return r_str_lchr (s, ch);
 	if (strlen (but) >= bsz) {
 		eprintf ("r_str_lastbut: but string too long\n");
 		return NULL;
