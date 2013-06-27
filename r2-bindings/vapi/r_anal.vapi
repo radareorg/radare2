@@ -252,6 +252,8 @@ namespace Radare {
 		public class Function {
 			public string name;
 			public string dsc;
+			public int size;
+			public int bits;
 			public short type;
 			public short rets;
 			public short fmod;
