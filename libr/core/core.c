@@ -499,7 +499,7 @@ R_API int r_core_init(RCore *core) {
 		line->user = core;
 		core->cons->user_fgets = (void *)myfgets;
 		//r_line_singleton()->user = (void *)core;
-		r_line_hist_load (".radare2_history");
+		r_line_hist_load (R2_HOMEDIR"/history");
 		singleton = R_FALSE;
 	}
 	core->print->cons = core->cons;

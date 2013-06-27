@@ -86,6 +86,25 @@ typedef struct r_bin_info_t {
 	RBinHash sum[2];
 } RBinInfo;
 
+typedef struct r_bin_object_t {
+	ut64 baddr;
+	int size;
+	RList/*<RBinSection>*/ *sections;
+	RList/*<RBinImport>*/ *imports;
+	RList/*<RBinSymbol>*/ *symbols;
+	RList/*<??>*/ *entries;
+	RList/*<??>*/ *fields;
+	RList/*<??>*/ *libs;
+	RList/*<??>*/ *relocs;
+	RList/*<??>*/ *strings;
+	RList/*<RBinClass>*/ *classes;
+	RList/*<RBinDwarfRow>*/ *lines;
+	RBinInfo *info;
+	RBinAddr *binsym[R_BIN_SYM_LAST];
+	int referenced;
+	int lang;
+} RBinObject;
+
 // XXX: this is a copy of RBinObject
 // TODO: rename RBinArch to RBinFile
 typedef struct r_bin_arch_t {
@@ -94,7 +113,7 @@ typedef struct r_bin_arch_t {
 	int size;
 	int rawstr;
 	ut64 offset;
-	struct r_bin_object_t *o;
+	RBinObject *o;
 	void *bin_obj; // internal pointer used by formats
 	struct r_bin_plugin_t *curplugin;
 } RBinArch;
@@ -234,25 +253,6 @@ typedef struct r_bin_write_t {
 	ut64 (*scn_resize)(RBinArch *arch, const char *name, ut64 size);
 	int (*rpath_del)(RBinArch *arch);
 } RBinWrite;
-
-typedef struct r_bin_object_t {
-	ut64 baddr;
-	int size;
-	RList/*<RBinSection>*/ *sections;
-	RList/*<RBinImport>*/ *imports;
-	RList/*<RBinSymbol>*/ *symbols;
-	RList/*<??>*/ *entries;
-	RList/*<??>*/ *fields;
-	RList/*<??>*/ *libs;
-	RList/*<??>*/ *relocs;
-	RList/*<??>*/ *strings;
-	RList/*<RBinClass>*/ *classes;
-	RList/*<RBinDwarfRow>*/ *lines;
-	RBinInfo *info;
-	RBinAddr *binsym[R_BIN_SYM_LAST];
-	int referenced;
-	int lang;
-} RBinObject;
 
 // TODO: deprecate r_bin_is_big_endian
 // TODO: has_dbg_syms... maybe flags?

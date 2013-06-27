@@ -100,6 +100,7 @@ static int main_help(int line) {
 	if (line==2)
 		printf (
 		"Files:\n"
+		" RHOMEDIR     ~/.config/radare2\n"
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n"
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		"Environment:\n"
@@ -192,7 +193,7 @@ int main(int argc, char **argv) {
 	if (argc<2)
 		return main_help (1);
 	if (argc==2 && !strcmp (argv[1], "-p")) {
-		char *path = r_str_home (".radare2/rdb/");
+		char *path = r_str_home (R2_HOMEDIR"/rdb/");
 		DIR *d = r_sandbox_opendir (path);
 		if (d) {
 			for (;;) {
@@ -243,7 +244,7 @@ int main(int argc, char **argv) {
 				// TODO: handle error when removing project
 				char *path, repath[128];
 				snprintf (repath, sizeof (repath),
-					".radare2/rdb/%s.d", optarg+1);
+					R2_HOMEDIR"/rdb/%s.d", optarg+1);
 				path = r_str_home (repath);
 				if (r_file_exists (path)) {
 					r_file_rmrf (path);

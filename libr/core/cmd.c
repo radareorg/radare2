@@ -256,7 +256,7 @@ static int cmd_quit(void *data, const char *input) {
 	case '\0':
 		// TODO
 	default:
-		r_line_hist_save (".radare2_history");
+		r_line_hist_save (R2_HOMEDIR"/history");
 		if (*input)
 			r_num_math (core->num, input);
 		else core->num->value = 0LL;

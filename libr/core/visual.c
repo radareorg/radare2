@@ -24,7 +24,7 @@ static ut64 marks[UT8_MAX+1];
 
 static int r_core_visual_hud(RCore *core) {
 	const char *f = R2_LIBDIR"/radare2/"R2_VERSION"/hud/main";
-	char *homehud = r_str_home("/.radare2/hud");
+	char *homehud = r_str_home(R2_HOMEDIR"/hud");
 	char *res = NULL;
 	char *p = 0;
 

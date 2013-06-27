@@ -6,7 +6,7 @@
 #define DB anal->sdb_xrefs
 
 R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
-        char *path, *db = r_str_dup_printf ("/.radare2/rdb/%s.d/xrefs", prjfile);
+        char *path, *db = r_str_dup_printf (R2_HOMEDIR"/rdb/%s.d/xrefs", prjfile);
 	path = r_str_home (db);
 	//eprintf ("Open (%s)\n", path);
 	sdb_free (DB);

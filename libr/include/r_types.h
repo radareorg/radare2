@@ -76,6 +76,8 @@ const char *x##_version() { return ""GIT_TAP; }
 #define R_SYS_HOME "HOME"
 #endif
 
+#define R2_HOMEDIR ".config/radare2"
+
 #ifndef __packed
 #define __packed __attribute__((__packed__))
 #endif

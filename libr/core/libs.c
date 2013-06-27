@@ -46,7 +46,7 @@ R_API int r_core_loadlibs_init(struct r_core_t *core) {
 
 R_API int r_core_loadlibs(struct r_core_t *core) {
 	/* TODO: all those default plugin paths should be defined in r_lib */
-	char *homeplugindir = r_str_home (".radare2/plugins");
+	char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
 	core->lib = r_lib_new ("radare_plugin");
 	r_core_loadlibs_init (core);
 	r_lib_opendir (core->lib, r_config_get (core->config, "dir.plugins"));

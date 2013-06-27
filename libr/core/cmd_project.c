@@ -14,7 +14,7 @@ static int cmd_project(void *data, const char *input) {
 		" Po [file]  open project\n"
 		" Ps [file]  save project\n"
 		" Pi [file]  info\n"
-		"NOTE: project files are stored in ~/.radare2/rdb\n");
+		"NOTE: project files are stored in ~/.config/radare2/rdb\n");
 		break;
 	}
 	free (str);
