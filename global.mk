@@ -6,6 +6,7 @@ COMPILER?=gcc
 
 TOP:=$(dir $(lastword $(MAKEFILE_LIST)))
 LTOP:=$(TOP)/libr
+STOP:=$(TOP)/shlr
 BTOP:=$(TOP)/binr
 
 ifeq ($(MAKEFLAGS),s)
