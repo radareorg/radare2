@@ -281,7 +281,7 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 
 #define add_target(x) 	(state->targets[state->tcnt++] = (x))
 
-static char comment_prefix[] = "\t; ";
+static char comment_prefix[] = " ; ";
 static short int enable_simd = 0;
 static short int enable_insn_stream = 0;
 
@@ -3886,7 +3886,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
 
         addr = s.addresses[operand[i] - '0'];
         (*info->print_address_func) ((bfd_vma) addr, info);
-        (*func) (stream, "\n");
+        //(*func) (stream, "\n");
       }
     else
       (*func) (stream, "%s", operand);

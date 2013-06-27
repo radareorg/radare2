@@ -1724,10 +1724,10 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	  assert (idx == 1);
 	  if (aarch64_get_qualifier_esize (opnds[0].qualifier) != 8)
 	    {
-	      /* uimm8 */
-	      if (!value_in_range_p (opnd->imm.value, 0, 255))
+	      /* uimm8 or simm8 */
+	      if (!value_in_range_p (opnd->imm.value, -128, 255))
 		{
-		  set_imm_out_of_range_error (mismatch_detail, idx, 0, 255);
+		  set_imm_out_of_range_error (mismatch_detail, idx, -128, 255);
 		  return 0;
 		}
 	    }

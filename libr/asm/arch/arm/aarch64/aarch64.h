@@ -38,6 +38,7 @@ typedef uint32_t aarch64_insn;
 #define AARCH64_FEATURE_CRYPTO	0x00010000	/* Crypto instructions.  */
 #define AARCH64_FEATURE_FP	0x00020000	/* FP instructions.  */
 #define AARCH64_FEATURE_SIMD	0x00040000	/* SIMD instructions.  */
+#define AARCH64_FEATURE_CRC	0x00080000
 
 /* Architectures are the sum of the base and extensions.  */
 #define AARCH64_ARCH_V8		AARCH64_FEATURE (AARCH64_FEATURE_V8, \

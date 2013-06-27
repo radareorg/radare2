@@ -20,7 +20,6 @@
 
 #ifndef OPCODES_AARCH64_DIS_H
 #define OPCODES_AARCH64_DIS_H
-//#include "bfd_stdint.h"
 #include "aarch64-opc.h"
 
 /* Lookup opcode WORD in the opcode table.

@@ -22,7 +22,7 @@
 #define OPCODES_AARCH64_OPC_H
 
 #include <string.h>
-#include "sysdep.h"
+#include "aarch64.h"
 
 /* Instruction fields.
    Keep synced with fields.  */

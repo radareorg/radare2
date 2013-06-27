@@ -20,16 +20,10 @@
 
 #include "sysdep.h"
 #include "dis-asm.h"
-#include <stdarg.h>
-//#include "libiberty.h"
-//#include "opintl.h"
+#include "libiberty.h"
+#include "opintl.h"
 #include "aarch64-dis.h"
-
-#if !defined(EMBEDDED_ENV)
-#define SYMTAB_AVAILABLE 1
 #include "elf-bfd.h"
-#include "aarch64.h"
-#endif
 
 #define ERR_OK   0
 #define ERR_UND -1
@@ -38,28 +32,6 @@
 
 #define INSNLEN 4
 
-bfd_uint64_t
-bfd_get_bits (const void *p, int bits, bfd_boolean big_p)
-{
-  const bfd_byte *addr = (const bfd_byte *) p;
-  bfd_uint64_t data;
-  int i;
-  int bytes;
-
-  if (bits % 8 != 0)
-    abort ();
-
-  data = 0;
-  bytes = bits / 8;
-  for (i = 0; i < bytes; i++)
-    {
-      int addr_index = big_p ? i : bytes - i - 1;
-
-      data = (data << 8) | addr[addr_index];
-    }
-
-  return data;
-}
 /* Cached mapping symbol state.  */
 enum map_type
 {
@@ -105,7 +77,7 @@ parse_aarch64_dis_option (const char *option, unsigned int len ATTRIBUTE_UNUSED)
 #endif /* DEBUG_AARCH64 */
 
   /* Invalid option.  */
-  fprintf (stderr, "Unrecognised disassembler option: %s\n", option);
+  fprintf (stderr, _("Unrecognised disassembler option: %s\n"), option);
 }
 
 static void
@@ -2415,20 +2387,20 @@ print_insn_aarch64 (bfd_vma pc,
 void
 print_aarch64_disassembler_options (FILE *stream)
 {
-  fprintf (stream, "\n\
+  fprintf (stream, _("\n\
 The following AARCH64 specific disassembler options are supported for use\n\
-with the -M switch (multiple options should be separated by commas):\n");
+with the -M switch (multiple options should be separated by commas):\n"));
 
-  fprintf (stream, "\n\
-  no-aliases         Don't print instruction aliases.\n");
+  fprintf (stream, _("\n\
+  no-aliases         Don't print instruction aliases.\n"));
 
-  fprintf (stream, "\n\
-  aliases            Do print instruction aliases.\n");
+  fprintf (stream, _("\n\
+  aliases            Do print instruction aliases.\n"));
 
 #ifdef DEBUG_AARCH64
-  fprintf (stream, "\n\
-  debug_dump         Temp switch for debug trace.\n");
+  fprintf (stream, _("\n\
+  debug_dump         Temp switch for debug trace.\n"));
 #endif /* DEBUG_AARCH64 */
 
-  fprintf (stream, "\n");
+  fprintf (stream, _("\n"));
 }

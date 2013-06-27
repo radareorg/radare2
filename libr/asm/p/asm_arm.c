@@ -152,8 +152,8 @@ oldcpucode = cpucode;
 
 	op->buf_asm[0]='\0';
 	if (a->bits==64) {
-		/* endianness is ignored on 64bits */
-		r_mem_copyendian (bytes, buf, 4, !a->big_endian);
+		/* is endianness ignored on 64bits? */
+		//r_mem_copyendian (bytes, buf, 4, !a->big_endian);
 		op->inst_len = print_insn_aarch64 ((bfd_vma)Offset, &obj);
 	} else {
 		op->inst_len = obj.endian?
@@ -162,7 +162,7 @@ oldcpucode = cpucode;
 	}
 	if (op->inst_len == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-	return op->inst_len; //(a->bits/8); //op->inst_len;
+	return op->inst_len;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
