@@ -1220,17 +1220,19 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 }
 
 R_API void r_core_visual_define (RCore *core) {
-	char *name;
-	RAnalFunction *f;
-	int n, ch, ntotal = 0;
-	ut64 off = core->offset;
-	ut8 *p = core->block;
+	int cur = R_MIN (core->print->cur, core->print->ocur);
 	int plen = core->blocksize;
+	ut64 off = core->offset;
+	int n, ch, ntotal = 0;
 	int cleanup = R_FALSE;
+	ut8 *p = core->block;
+	RAnalFunction *f;
+	char *name;
+
 	if (core->print->cur_enabled) {
-		off += core->print->cur;
-		p += core->print->cur;
-		plen -= core->print->cur;
+		off += cur;
+		p += cur;
+		plen = R_ABS (core->print->cur- core->print->ocur)+1;
 	}
 	r_cons_printf ("Define current block as:\n"
 		" r  - rename function\n"
@@ -1277,11 +1279,13 @@ R_API void r_core_visual_define (RCore *core) {
 		free (name);
 		break;
 	case 'd': // TODO: check
-		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+core->blocksize, "");
+		r_meta_cleanup (core->anal->meta, off, off+plen);
+		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+plen, "");
 		cleanup = R_TRUE;
 		break;
 	case 'c': // TODO: check
-		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+core->blocksize, "");
+		r_meta_cleanup (core->anal->meta, off, off+plen);
+		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+plen, "");
 		cleanup = R_TRUE;
 		break;
 	case 'u':
@@ -1301,6 +1305,6 @@ R_API void r_core_visual_define (RCore *core) {
 	default:
 		break;
 	}
-	if (cleanup)
-		r_meta_cleanup (core->anal->meta, 0, UT64_MAX);
+//	if (cleanup)
+//		r_meta_cleanup (core->anal->meta, 0, UT64_MAX);
 }

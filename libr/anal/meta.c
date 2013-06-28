@@ -123,7 +123,7 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 #endif
 			if (to>d->from && to<d->to) {
 				d->from = to;
-				ret= R_TRUE;
+				ret = R_TRUE;
 			} else
 			if (from>d->from && from<d->to &&to>d->to) {
 				d->to = from;
@@ -173,6 +173,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 	RMetaItem *mi;
 	if (to<from)
 		to = from+to;
+
 	switch (type) {
 	case R_META_TYPE_HIDE:
 	case R_META_TYPE_CODE:
@@ -288,6 +289,7 @@ struct r_range_t *r_meta_ranges(RMeta *m)
 
 static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 	char *pstr, *str = r_str_unscape (d->str);
+eprintf ("STR = (%s)\n", str);
 	if (str) {
 		if (d->type=='s' && !*str)
 			return;
