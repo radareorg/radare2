@@ -906,7 +906,7 @@ toro:
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
-				r_cons_printf ("%s%s; ------------\n", (f&&show_functions)?"  ":"", line);
+				r_cons_printf ("  %s; ------------\n", line);
 			}
 			free (line);
 			free (refline);
