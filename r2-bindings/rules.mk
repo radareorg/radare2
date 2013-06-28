@@ -24,6 +24,11 @@ ifeq (${LANG},cxx)
 	valabind --cxx -N Radare -m $$mod --vapidir=../vapi $$mod && \
 	${CXX} -shared -fPIC -o $@ $${mod}.cxx `pkg-config --cflags --libs $$mod`
 else
+ifeq (${LANG},dlang)
+	mod=`echo $@ | sed -e s,.${SOEXT},,` ; \
+	echo "MOD=$$mod" ; \
+	valabind --dlang -N Radare -m $$mod --vapidir=../vapi $$mod
+else
 	@-test ../vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
 	if [ ! $$? = 0 ]; then \
 	  if [ ! -e ${LIBS_PFX}$@ ]; then \
@@ -38,6 +43,7 @@ else
 		[ "${LANG}`uname`" = pythonDarwin ] && cp _${LIBPFX}$@ _`echo $@|sed -e s,.${SOEXT},.so,` ; \
 		true
 	@echo ... $@
+endif
 endif
 
 install:

@@ -123,14 +123,14 @@ static ut64 esil_get (RAnalEsil *e, const char *s) {
 }
 
 #define OPUSH(x) r_list_push(c->opstack,x)
-#define PUSH(x) r_list_push(c->stack,x)
+#define PUSH(x) r_list_push (c->stack,(void*)x)
 #define OPOP() r_list_pop (c->opstack)
 #define POP() r_list_pop (c->stack)
 
 static int esil_commit (RAnalEsil *c, const char *op) {
 	const char *q = POP();
 	const char *p = POP();
-	const char *o = op;
+	//const char *o = op;
 	int ss = c->opsize;
 	if (ss) {
 //		eprintf (";; GET %d[%s]\n", ss, q);
@@ -219,7 +219,7 @@ eprintf ("STACK POINTER %d\n", curstack);
 						if (!strcmp (str, "]")) {
 							if (!c->opsize) c->opsize = 
 								c->anal->bits==64?8:4;
-							int j, len = r_list_length (c->stack) - curstack;
+							//int j, len = r_list_length (c->stack) - curstack;
 							char *a;
 							OPUSH (op);
 							while ((a = OPOP ())) {
