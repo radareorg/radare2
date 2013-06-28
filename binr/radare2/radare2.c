@@ -318,6 +318,7 @@ int main(int argc, char **argv) {
 				pfile = argv[optind++];
 				perms = R_IO_READ; // XXX. should work with rw too
 				debug = 1;
+eprintf ("LOAD (%s)\n", pfile);
 				fh = r_core_file_open (&r, pfile, perms, mapaddr);
 /*
 				if (fh) {

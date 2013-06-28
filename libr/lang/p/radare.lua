@@ -110,8 +110,8 @@ end
 
 function chop(text)
 	if text == nil then return "" end
-	text = string.gsub(text, "\ *$", "")
-	return string.gsub(text, "^\ *", "")
+	text = string.gsub(text, " *$", "")
+	return string.gsub(text, "^ *", "")
 end
 
 function hexpairs(buf)
@@ -770,4 +770,4 @@ function Radare.Debugger.backtrace()
 	return ret;
 end
 
-print "[radare.lua] Type 'help()' or 'quit' to return to radare shell."
+-- print "[radare.lua] Type 'help()' or 'quit' to return to radare shell."

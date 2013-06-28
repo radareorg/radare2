@@ -1,5 +1,4 @@
 BINDEPS=foo
-#include ../../../config-user.mk
 include ../../config.mk
 
 CFLAGS+=-I../../include -Wall -DPREFIX=\"${PREFIX}\"
