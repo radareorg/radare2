@@ -139,6 +139,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	const char *color_comment = P(comment): Color_CYAN;
 	const char *color_fname = P(fname): Color_CYAN;
 	//const char *color_flow = P(flow): Color_CYAN;
+	const char *color_flag = P(flag): Color_CYAN;
+	const char *color_label = P(label): Color_CYAN;
 	const char *color_nop = P(nop): Color_BLUE;
 	const char *color_bin = P(bin): Color_YELLOW;
 	const char *color_math = P(math): Color_YELLOW;
@@ -467,6 +469,23 @@ toro:
 			pre = "__"; // ignored?
 			if (f) {
 //eprintf ("fun    0x%llx 0x%llx\n", at, f->addr+f->size-analop.length);
+				if (f->locals != NULL) {
+					RAnalFcnLocal *f_loc;
+					RListIter *l_iter;
+					r_list_foreach (f->locals, l_iter, f_loc) {
+						if (f_loc && f_loc->addr == at) {
+							if (show_lines && refline)
+								r_cons_strcat (refline);
+							if (show_offset)
+								r_cons_printf ("; -------- ");
+							if (show_color)
+								r_cons_printf ("%s %s\n", color_label, f_loc->name?f_loc->name:"unk");
+							else
+								r_cons_printf (" %s\n", f_loc->name?f_loc->name:"unk");
+						}
+					}
+				}
+
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
@@ -504,6 +523,8 @@ toro:
 		if (show_flags) {
 			flag = r_flag_get_i (core->flags, at);
 			if (flag) {
+				if (show_color)
+					r_cons_printf("%s", color_flag);
 				if (show_lines && refline)
 					r_cons_strcat (refline);
 				if (show_offset)

@@ -870,7 +870,7 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			break;
 		case 'k':
-			{ 
+			{
 				const char *r = r_anal_data_kind (core->anal,
 					core->offset, core->block, core->blocksize);
 				r_cons_printf ("%s\n", r);

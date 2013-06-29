@@ -586,6 +586,18 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 	}
 }
 
+R_API void r_core_anal_fcn_local_list(RAnalFunction *fcn) {
+	if (fcn && fcn->locals) {
+		RAnalFcnLocal *loc;
+		RListIter *iter;
+		r_list_foreach (fcn->locals, iter, loc) {
+			if ((loc != NULL) && (loc->name != NULL))
+				r_cons_printf (" %s at [%s + %lld] (0x%08llx)\n", loc->name,
+					fcn->name, loc->addr - fcn->addr, loc->addr);
+		}
+	}
+}
+
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 	ut64 addr = r_num_math (core->num, input+1);
 	RListIter *iter, *iter2;
