@@ -91,7 +91,6 @@ install-doc-symlink:
 		ln -fs ${PWD}/doc/$$a ${PFX}/share/doc/radare2 ; done
 
 install: install-doc install-man install-www
-	cp -f libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	cd libr && ${MAKE} install PARENT=1 PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd binr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
 	cd shlr && ${MAKE} install PREFIX=${PREFIX} DESTDIR=${DESTDIR}
