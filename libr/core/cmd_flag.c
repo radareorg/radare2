@@ -6,6 +6,7 @@ static int cmd_flag(void *data, const char *input) {
 	char *ptr, *str = NULL;
 	st64 base;
 
+	// TODO: off+=cursor
 	if (*input)
 		str = strdup (input+1);
 	switch (*input) {
@@ -41,27 +42,6 @@ static int cmd_flag(void *data, const char *input) {
 	case '+':
 	case ' ': {
 		char *s = strchr (str, ' '), *s2 = NULL, *eq = strchr (str, '=');
-		if (s[1] == '.') { // local label, e.g. '.return'
-			RAnalFunction *fcn;
-			*s = '\0';
-			s2 = strchr (s+1, ' ');
-			if (s2) {
-				*s2 = '\0';
-				if (s2[1]&&s2[2])
-					off = r_num_math (core->num, s2+1);
-			}
-			char *name = s + 1;
-			if (*name) {
-					fcn = r_anal_fcn_find (core->anal, off,
-							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-					if (fcn) {
-						eprintf ("Adding %s to fcn %s at 0x%08llx\n", name, fcn->name, off);
-						r_anal_fcn_local_add (core->anal, fcn, off, name);
-					} else eprintf ("Cannot find function at 0x%08llx\n", off);
-			} else eprintf ("Usage: f+ [.name] [addr]\n");
-			break;
-		}
-
 		ut32 bsze = 1; //core->blocksize;
 		if (eq) {
 			// TODO: add support for '=' char in flag comments
@@ -79,28 +59,53 @@ static int cmd_flag(void *data, const char *input) {
 			}
 			bsze = r_num_math (core->num, s+1);
 		}
-		r_flag_set (core->flags, str, off, bsze, (*input=='+'));
+		if (*str == '.') {
+			RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+			if (fcn) r_anal_fcn_local_add (core->anal, fcn, off, str+1);
+			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+		} else r_flag_set (core->flags, str, off, bsze, (*input=='+'));
 		}
 		break;
 	case '-':
 		if (input[1]) {
 			const char *flagname = input+1;
 			while (*flagname==' ') flagname++;
-			if (strchr (input+1, '*'))
-				r_flag_unset_glob (core->flags, flagname);
-			else r_flag_unset (core->flags, flagname, NULL);
+			if (*flagname=='.') {
+				RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+				if (fcn) r_anal_fcn_local_del_name (core->anal, fcn, flagname+1);
+				else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+			} else {
+				if (strchr (flagname, '*'))
+					r_flag_unset_glob (core->flags, flagname);
+				else r_flag_unset (core->flags, flagname, NULL);
+			}
 		} else r_flag_unset_i (core->flags, off, NULL);
 		break;
 	case '.':
-		{
-		RAnalFunction *fcn;
-		char *name = strdup (input+2);
-		if (*name) {
-			fcn = r_anal_fcn_find_name (core->anal, name);
-			if (fcn) {
-				r_core_anal_fcn_local_list (fcn);
-			} else eprintf ("Cannot find function %s\n", name);
-		} else eprintf ("Usage: f. [fname]\n");
+		if (input[1]) {
+			if (input[1] == '*') {
+				if (input[2] == '*') {
+					r_core_anal_fcn_local_list (core, NULL, 1);
+				} else {
+					RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+					if (fcn) r_core_anal_fcn_local_list (core, fcn, 1);
+					else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+				}
+			} else {
+				const char *name = input+((input[2]==' ')? 2:1);
+				RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+				if (fcn) {
+					if (*name=='-') {
+						r_anal_fcn_local_del_name (core->anal, fcn, name+1);
+					} else {
+						r_anal_fcn_local_add (core->anal, fcn, off, name);
+					}
+				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+			}
+		} else {
+			RAnalFunction *fcn = r_anal_fcn_find (core->anal, off, 0);
+			if (fcn) r_core_anal_fcn_local_list (core, fcn, 0);
+			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
 		}
 		break;
 	case 'l':
@@ -267,6 +272,7 @@ static int cmd_flag(void *data, const char *input) {
 		r_cons_printf (
 		"Usage: f[?] [flagname]\n"
 		" f                ; list flags\n"
+		" f.[*[*]]         ; list local per-function flags (*) for r2 commands (cur, all)\n"
 		" f*               ; list flags in r commands\n"
 		" fj               ; list flags in JSON format\n"
 		" fs               ; display flagspaces\n"
@@ -280,8 +286,9 @@ static int cmd_flag(void *data, const char *input) {
 		" f name = 33      ; alias for 'f name @ 33' or 'f name 1 33'\n"
 		" f name 12 33     ; same as above\n"
 		" f name 12 33 cmt ; same as above + set flag comment\n"
+		" f.blah=$$+12     ; set local function label named 'blah'\n"
+		" f-.blah@fcn.foo  ; delete local label from function at current seek (also f.-)\n"
 		" f+name 12 @ 33   ; like above but creates new one if doesnt exist\n"
-		" f+ .name 12      ; add local label at 12 offset, if it is inside function\n"
 		" f-name           ; remove flag 'name'\n"
 		" f-@addr          ; remove flag at address expression\n"
 		" f. fname         ; list all local labels for the given function\n"

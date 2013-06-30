@@ -466,26 +466,25 @@ toro:
 					core->reflines, at, analop.length);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		if (show_functions) {
-			pre = "__"; // ignored?
+			//pre = "  ";
 			if (f) {
-//eprintf ("fun    0x%llx 0x%llx\n", at, f->addr+f->size-analop.length);
 				if (f->locals != NULL) {
 					RAnalFcnLocal *f_loc;
 					RListIter *l_iter;
 					r_list_foreach (f->locals, l_iter, f_loc) {
 						if (f_loc && f_loc->addr == at) {
+								r_cons_strcat (pre); //"| ");
 							if (show_lines && refline)
 								r_cons_strcat (refline);
 							if (show_offset)
-								r_cons_printf ("; -------- ");
+								r_cons_printf ("; -- ");
 							if (show_color)
-								r_cons_printf ("%s %s\n", color_label, f_loc->name?f_loc->name:"unk");
-							else
-								r_cons_printf (" %s\n", f_loc->name?f_loc->name:"unk");
+								r_cons_printf ("%s %s"Color_RESET"\n",
+									color_label, f_loc->name?f_loc->name:"unk");
+							else r_cons_printf (" %s\n", f_loc->name?f_loc->name:"unk");
 						}
 					}
 				}
-
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
@@ -523,15 +522,13 @@ toro:
 		if (show_flags) {
 			flag = r_flag_get_i (core->flags, at);
 			if (flag) {
-				if (show_color)
-					r_cons_printf("%s", color_flag);
-				if (show_lines && refline)
-					r_cons_strcat (refline);
-				if (show_offset)
-					r_cons_printf ("; -------- ");
-				if (show_functions)
-					r_cons_printf ("%s:\n%s", flag->name, f?pre:"  ");
+				if (show_lines && refline) r_cons_strcat (refline);
+				if (show_offset) r_cons_printf ("; -- ");
+				if (show_color) r_cons_strcat (color_flag);
+				if (show_functions) r_cons_printf ("%s:\n", flag->name);
 				else r_cons_printf ("%s:\n", flag->name);
+				if (show_color) r_cons_strcat (Color_RESET);
+				r_cons_strcat (f?pre:"  ");
 			}
 		}
 		if (!linesright && show_lines && line) r_cons_strcat (line);
@@ -779,8 +776,9 @@ toro:
 				f = r_anal_fcn_find (core->anal,
 					analop.jump, R_ANAL_FCN_TYPE_NULL);
 				if (f && !strstr (opstr, f->name)) {
-					r_cons_printf (color_fname);
+					r_cons_strcat (color_fname);
 					r_cons_printf (" ; (%s)", f->name);
+					r_cons_strcat (Color_RESET);
 				}
 				break;
 			}
@@ -927,7 +925,7 @@ toro:
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
-				r_cons_printf ("  %s; ------------\n", line);
+				r_cons_printf ("  %s; --\n", line);
 			}
 			free (line);
 			free (refline);
