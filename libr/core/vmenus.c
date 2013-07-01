@@ -689,7 +689,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 			list = r_fs_dir (core->fs, path);
 			file = r_list_get_n (list, dir);
 			if (file && file->type != 'd')
-				r_core_cmdf (core, "x @ 0x%"PFMT64x":32", file->off);
+				r_core_cmdf (core, "px @ 0x%"PFMT64x"!64", file->off);
 			*str='\0';
 		}
 		r_cons_flush ();

@@ -476,7 +476,9 @@ int main(int argc, char **argv) {
 #define run_action(n,x,y) {\
 	if (action&x) {\
 		if (isradjson) r_cons_printf ("\"%s\":",n);\
-		r_core_bin_info (&core, y, rad, va, &filter, 0);\
+		if (!r_core_bin_info (&core, y, rad, va, &filter, 0)) {\
+			if (isradjson) r_cons_printf("false");\
+		};\
 		actions_done++;\
 		if (isradjson) r_cons_printf (actions==actions_done? "":",");\
 	}\
