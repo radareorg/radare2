@@ -748,6 +748,17 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 	if ((fields = r_bin_get_fields (r->bin)) == NULL)
 		return R_FALSE;
 
+	if (mode & R_CORE_BIN_JSON) {
+		r_cons_printf ("[");
+		r_list_foreach (fields, iter, field) {
+			r_cons_printf ("%s{\"name\":\"%s\","
+				"\"offset\":%"PFMT64d"}",
+				iter->p?",":"",
+				field->name,
+				baddr+field->rva);
+		}
+		r_cons_printf ("]");
+	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		//XXX: Need more flags??
 		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr");
