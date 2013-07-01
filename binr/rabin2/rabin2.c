@@ -290,8 +290,8 @@ static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
 }
 
 int main(int argc, char **argv) {
-	int c, bits = 0, actions_done=0, actions = 0, action = ACTION_UNK;
-	char *homeplugindir = r_str_home (".radare/plugins");
+	int c, bits = 0, actions_done = 0, actions = 0, action = ACTION_UNK;
+	char *homeplugindir = r_str_home (R2_HOMEDIR"/plugins");
 	char *ptr, *arch = NULL, *arch_name = NULL;
 	const char *op = NULL;
 	RCoreBinFilter filter;
@@ -472,7 +472,7 @@ int main(int argc, char **argv) {
 
 	r_cons_new ()->is_interactive = R_FALSE;
 
-#define isradjson (rad==R_CORE_BIN_JSON&&actions>1)
+#define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
 #define run_action(n,x,y) {\
 	if (action&x) {\
 		if (isradjson) r_cons_printf ("\"%s\":",n);\

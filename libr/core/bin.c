@@ -361,6 +361,19 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	if ((relocs = r_bin_get_relocs (r->bin)) == NULL)
 		return R_FALSE;
 
+	if (mode & R_CORE_BIN_JSON) {
+		r_cons_printf ("[");
+		r_list_foreach (relocs, iter, reloc) {
+			r_cons_printf ("%s{\"name\":\"%s\","
+				"\"type\":%"PFMT64d","
+				"\"offset\":%"PFMT64d"}",
+				iter->p?",":"",
+				reloc->name,
+				reloc->type,
+				baddr+reloc->rva);
+		}
+		r_cons_printf ("]");
+	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		r_flag_space_set (r->flags, "relocs");
 		r_list_foreach (relocs, iter, reloc) {
