@@ -4,7 +4,8 @@
 
 static int config_cfgsandbox_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
-	return r_sandbox_enable (node->i_value);
+	int ret = r_sandbox_enable (node->i_value);
+	return (!node->i_value && ret)? 0: 1;
 }
 
 static int config_scrnkey_callback(void *user, void *data) {
@@ -112,13 +113,8 @@ static int config_zoombyte_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	switch (*node->value) {
-	case 'p':
-	case 'f':
-	case 's':
-	case '0':
-	case 'F':
-	case 'e':
-	case 'h':
+	case 'p': case 'f': case 's': case '0':
+	case 'F': case 'e': case 'h':
 		core->print->zoom->mode = *node->value;
 		break;
 	default:
