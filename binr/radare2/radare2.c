@@ -318,7 +318,6 @@ int main(int argc, char **argv) {
 				pfile = argv[optind++];
 				perms = R_IO_READ; // XXX. should work with rw too
 				debug = 1;
-eprintf ("LOAD (%s)\n", pfile);
 				fh = r_core_file_open (&r, pfile, perms, mapaddr);
 /*
 				if (fh) {
@@ -328,22 +327,20 @@ eprintf ("LOAD (%s)\n", pfile);
 */
 			}
 		} else {
+			const char *f = argv[optind];
+			char *ptr;
 			is_gdb = (!memcmp (argv[optind], "gdb://", 6));
 			if (is_gdb) *file = 0;
 			else memcpy (file, "dbg://", 7);
-			if (optind < argc) {
-				const char *f = argv[optind];
-				char *ptr;
-				/* implicit ./ to make unix behave like windows */
-				if (*f!='/' && *f!='.' && r_file_exists (argv[optind])) {
-					ptr = r_str_prefix (strdup (argv[optind]), "./");
-				} else ptr = r_file_path (argv[optind]);
-				if (ptr) {
-					strcat (file, ptr);
-					free (ptr);
-					optind++;
-				}
-			}
+			/* implicit ./ to make unix behave like windows */
+			if (*f!='/' && *f!='.' && r_file_exists (argv[optind])) {
+				ptr = r_str_prefix (strdup (argv[optind]), "./");
+			} else ptr = r_file_path (argv[optind]);
+			optind++;
+			strcat (file, ptr);
+			if (optind <argc)
+				strcat (file, " ");
+			filelen = strlen (file);
 			while (optind < argc) {
 				int largv = strlen (argv[optind]);
 				if (filelen+largv+1>=sizeof (file)) {
@@ -356,14 +353,15 @@ eprintf ("LOAD (%s)\n", pfile);
 					eprintf ("Too long arguments\n");
 					return 1;
 				}
-				memcpy (file+filelen, " ", 2);
+optind++;
+				if (optind<argc)
+					memcpy (file+filelen, " ", 2);
 				filelen += 2;
-				if (++optind != argc) {
+				if (optind != argc) {
 					memcpy (file+filelen, " ", 2);
 					filelen += 2;
 				}
 			}
-
 			if (!r_core_bin_load (&r, file)) {
 				RBinObject *obj = r_bin_get_object (r.bin);
 				if (obj && obj->info)

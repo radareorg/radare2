@@ -398,7 +398,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 		} else {
 			r_cons_printf ("[Relocations]\n");
 			r_list_foreach (relocs, iter, reloc) {
-				r_cons_printf ("sym=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=0x%08x %s\n",
+				r_cons_printf ("sym=%02i addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=%d %s\n",
 					reloc->sym, baddr+reloc->rva, reloc->offset, reloc->type, reloc->name);
 				i++;
 			}
