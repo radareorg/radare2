@@ -279,7 +279,7 @@ r2.filter_asm = function (x, display) {
     x = x.replace (/(test|cmp)/g, "<b style='color:#c04080'>$1</b>");
     x = x.replace (/(outsd|out|string|invalid|int |int3|trap|main|in)/g, "<b style='color:red'>$1</b>");
     x = x.replace (/nop/g, "<b style='color:blue'>nop</b>");
-    x = x.replace (/(sym|fcn|imp|loc).([^:<(\\\/ \|)\->]+)/g, "<a href='javascript:r2ui.seek(\"$1.$2\")'>$1.$2</a>");
+    x = x.replace (/(sym|fcn|str|imp|loc).([^:<(\\\/ \|)\->]+)/g, "<a href='javascript:r2ui.seek(\"$1.$2\")'>$1.$2</a>");
   }
   x = x.replace (/0x([a-zA-Z0-9]+)/g, "<a href='javascript:r2ui.seek(\"0x$1\")'>0x$1</a>");
 // registers

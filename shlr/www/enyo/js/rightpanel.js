@@ -21,6 +21,7 @@ enyo.kind ({
           {content: "flags", value: "2"},
           {content: "flagspaces", value: "2"},
           {classes: "onyx-menu-divider"},
+          {content: "strings", value: "1"},
           {content: "symbols", value: "1"},
           {content: "imports", value: "1"},
           {content: "functions", value: "1"},
@@ -96,6 +97,9 @@ enyo.kind ({
       r2.cmd ("fs", function (x) {
 	self.$.output.setContent (x);
       });
+      break;
+    case "strings":
+      self.$.output.setContent ("TODO");
       break;
     case "sections":
       r2.bin_sections(function (x) {

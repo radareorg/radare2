@@ -14,7 +14,7 @@ enyo.kind ({
   },
   components: [
     {tag: "center", components:[
-      {tag: "h2", ontap: "openPanel2", content: "radare2", style: "margin:0px;margin-bottom:20px;" },
+      {tag: "h2", ontap: "openPanel2", content: "radare2", style: "padding-left:-20px;margin:0px;margin-bottom:20px;" },
     {kind: "Group", onActivate:"buttonActivated", classes: "enyo-border-box group", defaultKind: "onyx.Button", highlander: true, components: [
       {content: "Disassembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Disassembler", active: true},
       {content: "Assembler", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Assembler" },
@@ -35,9 +35,13 @@ enyo.kind ({
   openPanel: function (x) {
     if (enyo.Panels.isScreenNarrow())
       this.ra.setIndex (1);
+    if (x.name == this.oname)
+      this.ra.setIndex (1);
+    this.oname = x.name;
     if (this.openCallback)
       this.openCallback (x.name);
   },
+  oname: null,
   ra: null,
   oldSender: null,
   rowTap: function (inSender, inIndex) {
