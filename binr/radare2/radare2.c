@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
 	int fullfile = 0;
 	ut32 bsize = 0;
 	ut64 seek = 0;
-	char *pfile = NULL, file[4096];
+	char *pfile = NULL, *file = NULL;
 	char *cmdfile[32];
 	const char *debugbackend = "native";
 	const char *asmarch = NULL;
@@ -185,7 +185,6 @@ int main(int argc, char **argv) {
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	int cmdfilei = 0;
-	file[0] = 0;
 
 	if (r_sys_getenv ("R_DEBUG"))
 		r_sys_crash_handler ("gdb --pid %d");
@@ -303,7 +302,6 @@ int main(int argc, char **argv) {
 	if (asmos) r_config_set (r.config, "asm.bits", asmos);
 
 	if (debug) {
-		int filelen = 0;
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
 		perms = R_IO_READ | R_IO_WRITE;
@@ -330,37 +328,20 @@ int main(int argc, char **argv) {
 			const char *f = argv[optind];
 			char *ptr;
 			is_gdb = (!memcmp (argv[optind], "gdb://", 6));
-			if (is_gdb) *file = 0;
-			else memcpy (file, "dbg://", 7);
+			if (!is_gdb) file = strdup ("dbg://");
 			/* implicit ./ to make unix behave like windows */
 			if (*f!='/' && *f!='.' && r_file_exists (argv[optind])) {
 				ptr = r_str_prefix (strdup (argv[optind]), "./");
 			} else ptr = r_file_path (argv[optind]);
 			optind++;
-			strcat (file, ptr);
+			file = r_str_concat (file, ptr);
 			if (optind <argc)
 				strcat (file, " ");
-			filelen = strlen (file);
 			while (optind < argc) {
-				int largv = strlen (argv[optind]);
-				if (filelen+largv+1>=sizeof (file)) {
-					eprintf ("Too long arguments\n");
-					return 1;
-				}
-				memcpy (file+filelen, argv[optind], largv);
-				filelen += largv;
-				if (filelen+6>=sizeof (file)) {
-					eprintf ("Too long arguments\n");
-					return 1;
-				}
-optind++;
+				file = r_str_concat (file, argv[optind]);
+				optind++;
 				if (optind<argc)
-					memcpy (file+filelen, " ", 2);
-				filelen += 2;
-				if (optind != argc) {
-					memcpy (file+filelen, " ", 2);
-					filelen += 2;
-				}
+					file = r_str_concat (file, " ");
 			}
 			if (!r_core_bin_load (&r, file)) {
 				RBinObject *obj = r_bin_get_object (r.bin);
@@ -368,12 +349,8 @@ optind++;
 					eprintf ("bits %d\n", obj->info->bits);
 			}
 			fh = r_core_file_open (&r, file, perms, mapaddr);
-			if (fh != NULL) {
-				//const char *arch = r_config_get (r.config, "asm.arch");
-				// TODO: move into if (debug) ..
-				if (is_gdb) r_debug_use (r.dbg, "gdb");
-				else r_debug_use (r.dbg, debugbackend);
-			}
+			if (fh != NULL)
+				r_debug_use (r.dbg, is_gdb? "gdb": debugbackend);
 		}
 	}
 
@@ -439,7 +416,7 @@ optind++;
 			const char *filepath = NULL;
 			if (debug) {
 				// XXX: this is incorrect for PIE binaries
-				filepath = strstr (file, "://");
+				filepath = file? strstr (file, "://"): NULL;
 				if (filepath) filepath += 3;
 				else filepath = pfile;
 			}
@@ -614,5 +591,6 @@ optind++;
 	r_core_file_close (&r, fh);
 	r_core_fini (&r);
 	r_cons_set_raw (0);
+	free (file);
 	return ret;
 }
