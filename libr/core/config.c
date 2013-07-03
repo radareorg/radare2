@@ -749,7 +749,9 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);
-	r_config_desc (cfg, "scr.color", "Enable/Disable colors");
+	r_config_desc (cfg, "scr.color", "enable/Disable colors");
+	r_config_set (cfg, "scr.colorops", "true");
+	r_config_desc (cfg, "scr.colorops", "colorize in numbers/registers in opcodes");
 	r_config_set_cb (cfg, "scr.pager", "", &config_pager_callback);
 	r_config_desc (cfg, "scr.pager", "Select pager program (used if output doesn't fit on window)");
 	//r_config_set_cb (cfg, "scr.nkey", "function", &config_scrnkey_callback);

@@ -27,6 +27,8 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.swi = Color_MAGENTA;
 	cons->pal.trap = Color_BRED;
 	cons->pal.ret = Color_RED;
+	cons->pal.num = Color_WHITE;
+	cons->pal.reg = Color_YELLOW;
 	cons->pal.reset = "\x1b[0m";
 }
 
@@ -112,6 +114,8 @@ struct {
 	{ "trap", r_offsetof (RConsPalette, trap) },
 	{ "swi", r_offsetof (RConsPalette, swi) },
 	{ "cmp", r_offsetof (RConsPalette, cmp) },
+	{ "reg", r_offsetof (RConsPalette, reg) },
+	{ "num", r_offsetof (RConsPalette, num) },
 	{ NULL, 0 }
 };
 
@@ -197,4 +201,17 @@ R_API int r_cons_pal_set (const char *key, const char *val) {
 		}
 	}
 	return R_FALSE;
+}
+
+R_API const char *r_cons_pal_get (const char *key) {
+	int i;
+	char **p;
+	for (i=0; keys[i].name; i++) {
+		if (!strcmp (key, keys[i].name)) {
+			p = (char **)((char *)&(r_cons_singleton()->pal) + keys[i].off);
+			if (!p) return "";
+			return *p;
+		}
+	}
+	return "";
 }

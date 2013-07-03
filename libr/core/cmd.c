@@ -460,7 +460,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_cons_pal_set (p, q);
 			} else {
 				// get
-				eprintf ("(%s)(%s)\n", p, q);
+				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, r_cons_pal_get (p));
 			}
 		}
 		break;

@@ -66,6 +66,40 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 	} else r_cons_printf ("0x%08"PFMT64x"  ", off);
 }
 
+static void colorize_opcode (char *p, const char *reg, const char *num) {
+	int i, j, k;
+	char *o = malloc (1024);
+	for (i=j=0; p[i]; i++,j++) {
+		/* colorize numbers */
+		if (p[i] == ' ') {
+			// find if next ',' before ' ' is found
+			int is_mod = 0;
+			for (k = i+1; p[k]; k++) {
+				if (p[k]==' ')
+					break;
+				if (p[k]==',') {
+					is_mod = 1;
+					break;
+				}
+			}
+			if (!p[k]) is_mod = 1;
+			if (is_mod) {
+				// COLOR FOR REGISTER
+				strcpy (o+j, reg);
+				j += strlen (reg);
+			}
+		}
+		if (p[i] == '0' && p[i+1]== 'x') {
+			strcpy (o+j, num);
+			j += strlen (num);
+		}
+		o[j] = p[i];
+	}
+	// decolorize at the end
+	strcpy (o+j, Color_RESET);
+	strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
+}
+
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes) {
 	RAnalHint *hint = NULL;
@@ -96,6 +130,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
+	int colorop = r_config_get_i (core->config, "scr.colorops");
 	int acase = r_config_get_i (core->config, "asm.ucase");
 	int atabs = r_config_get_i (core->config, "asm.tabs");
 	int decode = r_config_get_i (core->config, "asm.decode");
@@ -153,6 +188,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	const char *color_ret = P(ret): Color_RED;
 	const char *color_push = P(push): Color_YELLOW;
 	const char *color_pop = P(pop): Color_BYELLOW;
+	const char *color_reg = P(reg): Color_YELLOW;
+	const char *color_num = P(num): Color_YELLOW;
 
 	if (show_lines) ocols += 10; // XXX
 	if (show_offset) ocols += 14;
@@ -371,6 +408,8 @@ toro:
 		}
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
+		if (colorop)
+			colorize_opcode (asmop.buf_asm, color_reg, color_num);
 		if (atabs) {
 			int n, i = 0;
 			char *t, *b = asmop.buf_asm;
