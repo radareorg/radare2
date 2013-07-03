@@ -150,7 +150,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 	RBinArch *a = &bin->cur;
 	RBinObject *o = a->o;
 	a->curplugin = NULL;
-// DEBUG eprintf ("LOAD\n");
+
 	r_list_foreach (bin->plugins, it, plugin) {
 		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
 			(!dummy && (plugin->check && plugin->check (&bin->cur)))) {
@@ -158,14 +158,15 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 			break;
 		}
 	}
-	cp = bin->cur.curplugin;
+	cp = a->curplugin;
 	if (minlen<0) {
 		if (cp && cp->minstrlen) 
 			minlen = cp->minstrlen;
 		else minlen = -minlen;
 	}
 	if (!cp || !cp->load || !cp->load (a)) {
-		r_buf_free (a->buf);
+		// already freed in format/pe/pe.c:r_bin_pe_free()
+		// r_buf_free (a->buf);
 		a->buf = r_buf_mmap (bin->cur.file, 0);
 		a->size = a->buf? a->buf->length: 0;
 		o->strings = get_strings (a, minlen);

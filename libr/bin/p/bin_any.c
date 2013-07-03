@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - nibble */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,6 +11,7 @@ static int load(RBinArch *arch) {
 
 static int destroy(RBinArch *arch) {
 	r_buf_free (arch->buf);
+	arch->buf = NULL;
 	return R_TRUE;
 }
 
