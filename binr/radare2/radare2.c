@@ -377,11 +377,11 @@ int main(int argc, char **argv) {
 	}
 	if (!pfile) pfile = file;
 	if (fh == NULL) {
-		if (*pfile) {
+		if (pfile && *pfile) {
 			if (perms & R_IO_WRITE)
 				eprintf ("Cannot open '%s' for writing.\n", pfile);
 			else eprintf ("Cannot open '%s'\n", pfile);
-		}
+		} else eprintf ("Missing file to open\n");
 		return 1;
 	}
 	if (r.file == NULL) // no given file
