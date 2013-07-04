@@ -135,7 +135,7 @@ enyo.kind ({
     //{kind: "onyx.MoreToolbar", components: [
       {kind: "onyx.Button", content: "[", ontap: "openSidebar", classes: "top" },
       {kind: "onyx.Button", content: "]", ontap: "openSidebar2", classes: "top" },
-    {name: "title", tag: "h2", content: "Assembler", classes: "topbox", style: "visibility:hidden" },
+    {name: "title", tag: "h2", content: "Assembler", classes: "topbox", style: "visibility:hidden;" },
     {name: "extra", tag: "div", classes: "topbox", components: [
 //style: "position:absolute;top:0px;left:48px;scroll:overflow;visibility:visible", components: [
 /*

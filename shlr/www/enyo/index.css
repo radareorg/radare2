@@ -16,7 +16,7 @@ a {
 }
 
 h2 {
-  padding-left:12px;
+  padding-left:14px;
 }
 
 .app-panels > * {
@@ -109,7 +109,7 @@ color: black;
 }
 .topbox {
   position:absolute;
-  left: 48px;
+  left: 70px;
   padding:0px;
   margin:0px;
   top:0px;
@@ -121,7 +121,7 @@ color: black;
   position:relative;
 vertical-align:top;
   padding:10px;
-  margin:0px;
+  margin:1px;
 margin-top:0px;
 }
 

@@ -113,6 +113,8 @@ R_API RCons *r_cons_new () {
 	I.event_data = NULL;
 	I.is_interactive = R_TRUE;
 	I.noflush = R_FALSE;
+	I.force_rows = 0;
+	I.force_columns = 0;
 	I.fdin = stdin;
 	I.fdout = 1;
 	I.breaked = R_FALSE;
@@ -434,6 +436,8 @@ R_API int r_cons_get_size(int *rows) {
 	if (rows)
 		*rows = I.rows;
 	if (I.widthfix) I.columns--;
+	if (I.force_columns) I.columns = I.force_columns;
+	if (I.force_rows) I.rows = I.force_rows;
 	return I.columns;
 }
 

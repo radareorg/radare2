@@ -17,7 +17,7 @@ enyo.kind ({
     {kind: "onyx.Button", content: "[", ontap: "closeSidebar", style: "padding:8px;margin-right:8px"},
       {onup:"toggleScroll", style:"position:absolute;left:40px;top:0px;", kind: "onyx.MenuDecorator", onSelect: "itemSelected", components: [
         {content: "List elements" },
-        {kind: "onyx.Menu", showOnTop: true, maxHeight:290, style:"height:300px", components: [
+        {kind: "onyx.Menu", showOnTop: true, maxHeight:290, name: "menu", style:"height:300px", components: [
           {content: "flags", value: "2"},
           {content: "flagspaces", value: "2"},
           {classes: "onyx-menu-divider"},
@@ -50,6 +50,7 @@ enyo.kind ({
   toggleScroll: function() { 
     var state = !!! this.visible;
     this.$.scroll.setShowing (this.visible = state);
+    this.$.menu.setShowing (false);
   },
   visible: true,
   rowTap: function () {

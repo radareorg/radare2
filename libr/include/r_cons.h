@@ -100,6 +100,8 @@ typedef struct r_cons_t {
 	int lines;
 	int rows;
 	int columns;
+	int force_rows;
+	int force_columns;
 	int breaked;
 	int noflush;
 	FILE *fdin; // FILE? and then int ??

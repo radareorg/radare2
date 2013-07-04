@@ -1,6 +1,19 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_core.h>
+static int config_scrcolumns_callback(void* user, void* data) {
+	RConfigNode *node = (RConfigNode*) data;
+	int n = atoi (node->value);
+	((RCore *)user)->cons->force_columns = n;
+	return R_TRUE;
+}
+
+static int config_scrrows_callback(void* user, void* data) {
+	RConfigNode *node = (RConfigNode*) data;
+	int n = atoi (node->value);
+	((RCore *)user)->cons->force_rows = n;
+	return R_TRUE;
+}
 
 static int config_cfgsandbox_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
@@ -739,6 +752,8 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
+	r_config_set_cb (cfg, "scr.columns", "0", config_scrcolumns_callback);
+	r_config_set_cb (cfg, "scr.rows", "0", config_scrrows_callback);
 	r_config_set_cb (cfg, "scr.sparse", "false", config_scrsparse_callback);
 	r_config_set_cb (cfg, "scr.interactive", "true", config_scrint_callback);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
