@@ -1,3 +1,7 @@
+function docss(x) {
+  return '<font color=black>'+x+'</font>';
+}
+
 enyo.kind ({
   name: "Disassembler",
   kind: "Scroller",
@@ -20,7 +24,7 @@ enyo.kind ({
     var text = this.$.text;
     this.min += this.block;
     r2.get_disasm (this.base+"-"+this.min, this.block, function (x) {
-      x = r2.filter_asm (x, "pd");
+      x = docss (r2.filter_asm (x, "pd"));
       var oldy = r2ui._dis.getScrollBounds().height;
       text.setContent (x+text.getContent());
       var newy = r2ui._dis.getScrollBounds().height;
@@ -31,7 +35,7 @@ enyo.kind ({
     var text = this.$.text;
     this.max += this.block;
     r2.get_disasm (this.base+"+"+this.max, this.block, function (x) {
-      x = r2.filter_asm (x, "pd");
+      x = docss (r2.filter_asm (x, "pd"));
       text.setContent (text.getContent() + x);
     });
   },
@@ -40,7 +44,7 @@ enyo.kind ({
     this.base = addr;
     this.min = this.max = 0;
     r2.get_disasm (addr, this.block, function (x) {
-      x = r2.filter_asm (x, "pd");
+      x = docss (r2.filter_asm (x, "pd"));
       text.setContent (x);
     });
     this.colorbar_create ();

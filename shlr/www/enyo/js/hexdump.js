@@ -1,13 +1,17 @@
+function docss(x) {
+  return '<font color=black>'+x+'</font>';
+}
+
 enyo.kind ({
   name: "Hexdump",
   kind: "Scroller",
   tag: "div",
-  style:"margin:0px;background-color:#c0c0c0",
+  style:"margin:0px;background-color:#c0c0c0;color:black",
   data: null,
   components: [
     {tag: "div", allowHtml: true, classes: "colorbar", name: "colorbar" },
     {tag: "div", content: "^", classes: "moreless", ontap: "less"},
-    {tag: "pre", allowHtml: true, name: "text", content: "..", style:"margin-left:5px"},
+    {tag: "pre", allowHtml: true, name: "text", content: "..", style:"margin-left:5px;color:black"},
     {tag: "div", content: "v", classes: "moreless", ontap: "more"},
 /*
     {kind: "List", count:3, name: "list", style:"height:400px", realtimeFit:false, onSetupItem: "setupItem", components: [
@@ -26,7 +30,7 @@ enyo.kind ({
     var text = this.$.text;
     this.min += this.block;
     r2.get_hexdump (this.base+"-"+this.min, this.block, function (x) {
-      x = r2.filter_asm (x, "px");
+      x = css (r2.filter_asm (x, "px"));
       var oldy = r2ui._hex.getScrollBounds().height;
       text.setContent (x+text.getContent());
       var newy = r2ui._hex.getScrollBounds().height;
@@ -37,7 +41,7 @@ enyo.kind ({
     var text = this.$.text;
     this.max += this.block;
     r2.get_hexdump (this.base+"+"+this.max, this.block, function (x) {
-      x = r2.filter_asm (x, "px");
+      x = docss (r2.filter_asm (x, "px"));
       text.setContent (text.getContent() + x);
     });
   },
@@ -46,7 +50,7 @@ enyo.kind ({
     this.base = addr;
     this.min = this.max = 0;
     r2.get_hexdump (addr, this.block, function (x) {
-      x = r2.filter_asm (x, "px");
+      x = docss (r2.filter_asm (x, "px"));
       text.setContent (x);
     });
     this.colorbar_create ();
@@ -95,7 +99,7 @@ enyo.kind ({
         var r = "<div style='overflow:hidden;background-color:#404040;width:"
               + WIDTH+"px;'>&nbsp;</div>";
         if (block.offset) {  // Object.keys(block).length>1) {
-          var r = "<table height="+HEIGHT+" style='border-spacing:0px'>";
+          var r = "<table height="+HEIGHT+" style='color:black;border-spacing:0px'>";
           var count = 0;
           for (var k in colors) {
             if (block[k]) 

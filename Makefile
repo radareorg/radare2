@@ -25,10 +25,7 @@ plugins.cfg:
 	./configure-plugins
 
 w32:
-	${MAKE} clean
-	# TODO: add support for debian
-	./configure --without-ssl --without-gmp --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
-	${MAKE}
+	sys/mingw32.sh
 
 .PHONY: depgraph.png
 depgraph.png:

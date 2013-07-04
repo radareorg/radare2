@@ -67,13 +67,33 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 }
 
 static void colorize_opcode (char *p, const char *reg, const char *num) {
-	int i, j, k;
+	int i, j, k, is_mod;
+	int is_jmp = (*p == 'j' || *p == 'c')? 1: 0;
 	char *o = malloc (1024);
 	for (i=j=0; p[i]; i++,j++) {
 		/* colorize numbers */
-		if (p[i] == ' ') {
+		switch (p[i]) {
+		case '+':
+		case '-':
+		case '/':
+		case '>':
+		case '<':
+		case '(':
+		case ')':
+		case '*':
+		case '%':
+		case ']':
+		case '[':
+		case ',':
+			strcpy (o+j, Color_RESET);
+			j += strlen (Color_RESET);
+			o[j++] = p[i];
+			strcpy (o+j, reg);
+			j += strlen (reg)-1;
+			continue;
+		case ' ':
 			// find if next ',' before ' ' is found
-			int is_mod = 0;
+			is_mod = 0;
 			for (k = i+1; p[k]; k++) {
 				if (p[k]==' ')
 					break;
@@ -83,15 +103,18 @@ static void colorize_opcode (char *p, const char *reg, const char *num) {
 				}
 			}
 			if (!p[k]) is_mod = 1;
-			if (is_mod) {
+			if (!is_jmp && is_mod) {
 				// COLOR FOR REGISTER
 				strcpy (o+j, reg);
 				j += strlen (reg);
 			}
-		}
-		if (p[i] == '0' && p[i+1]== 'x') {
-			strcpy (o+j, num);
-			j += strlen (num);
+			break;
+		case '0':
+			if (!is_jmp && p[i+1]== 'x') {
+				strcpy (o+j, num);
+				j += strlen (num);
+			}
+			break;
 		}
 		o[j] = p[i];
 	}
@@ -431,6 +454,7 @@ toro:
 		r_anal_op_fini (&analop);
 		if (!lastfail)
 			r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
+		if (ret<1) analop.type = R_ANAL_OP_TYPE_ILL;
 		if (hint) {
 			if (hint->length) analop.length = hint->length;
 			if (hint->ptr) analop.ptr = hint->ptr;
@@ -863,7 +887,7 @@ toro:
 			r_asm_set_syntax (core->assembler, os);
 		}
 
-			if (core->vmode)
+		if (core->vmode) {
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
@@ -875,6 +899,7 @@ toro:
 				} else r_cons_strcat (" [?]");
 				break;
 			}
+		}
 		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (show_functions) {
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);

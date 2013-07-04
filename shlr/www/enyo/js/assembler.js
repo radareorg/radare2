@@ -6,15 +6,15 @@ enyo.kind ({
     {tag: "form", style:"margin-top:8px;margin-left:8px", attributes: {action:"javascript:#"}, components: [
       {kind: "FittableRows", fit: true, components: [
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
-          {tag: "font", content: "opcode", style:"font-weight:bold;margin-right:20px"},
+          {tag: "font", content: "opcode", classes:"r2ui-input"},
           {kind: "Input", value: '', style:"width:60%", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "opcode"},
         ]},
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
-          {tag: "font", content: "bytes", style:"margin-right:20px;font-weight:bold"},
+          {tag: "font", content: "bytes", classes:"r2ui-input"},
           {kind: "Input", value: '', style:"width:120px", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "bytes"},
         ]},
         {kind: "onyx.InputDecorator", classes: "r2ui-input", components: [
-          {tag: "font", content: "offset", style:"margin-right:20px;font-weight:bold"},
+          {tag: "font", content: "offset", classes: "r2ui-input"},
           {kind: "Input", value: 'entry0', style:"width:120px", onkeydown: "assembleOpcode", attributes: {autocapitalize:"off"}, name: "offset"}
         ]}
       ]}

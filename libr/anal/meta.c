@@ -289,7 +289,6 @@ struct r_range_t *r_meta_ranges(RMeta *m)
 
 static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 	char *pstr, *str = r_str_unscape (d->str);
-eprintf ("STR = (%s)\n", str);
 	if (str) {
 		if (d->type=='s' && !*str)
 			return;

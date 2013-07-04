@@ -56,6 +56,7 @@ R_API void r_flag_space_set(RFlag *f, const char *name) {
 }
 
 R_API int r_flag_space_list(RFlag *f, int mode) {
+	const char *defspace = NULL;
 	int i, j = 0;
 	if (mode == 'j')
 		r_cons_printf ("[");
@@ -67,9 +68,8 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 					(i==f->space_idx)?
 					",\"selected\":true":"");
 		} else if (mode=='*') {
-			r_cons_printf ("fs %02d %c %s\n", j++,
-					(i==f->space_idx)?'*':' ',
-					f->spaces[i]);
+			r_cons_printf ("fs %s\n", f->spaces[i]);
+			if (i==f->space_idx) defspace = f->spaces[i];
 		} else {
 			r_cons_printf ("%02d %c %s\n", j++,
 					(i==f->space_idx)?'*':' ',
@@ -77,6 +77,8 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 		}
 		j++;
 	}
+	if (defspace)
+		r_cons_printf ("fs %s # current\n", defspace);
 	if (mode == 'j')
 		r_cons_printf ("]\n");
 	return j;

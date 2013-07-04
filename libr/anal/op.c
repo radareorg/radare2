@@ -44,9 +44,12 @@ R_API void r_anal_op_free(void *_op) {
 }
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
-	if (len>0 && anal && op && anal->cur && anal->cur->op)
-		return anal->cur->op (anal, op, addr, data, len);
-	return R_FALSE;
+	int ret = R_FALSE;
+	if (len>0 && anal && op && anal->cur && anal->cur->op) {
+		ret = anal->cur->op (anal, op, addr, data, len);
+		if (ret<1) op->type = R_ANAL_OP_TYPE_ILL;
+	}
+	return ret;
 }
 
 R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {

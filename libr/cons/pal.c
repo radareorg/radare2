@@ -14,9 +14,9 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.label = Color_CYAN;
 	cons->pal.flow = Color_CYAN;
 	cons->pal.b0x00 = Color_GREEN;
-	cons->pal.b0x7f = Color_YELLOW;
+	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;
-	cons->pal.btext = Color_MAGENTA;
+	cons->pal.btext = Color_YELLOW;
 	cons->pal.push = Color_MAGENTA;
 	cons->pal.pop = Color_BMAGENTA;
 	cons->pal.nop = Color_BLUE;
@@ -27,8 +27,8 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.swi = Color_MAGENTA;
 	cons->pal.trap = Color_BRED;
 	cons->pal.ret = Color_RED;
-	cons->pal.num = Color_WHITE;
-	cons->pal.reg = Color_YELLOW;
+	cons->pal.num = Color_YELLOW;
+	cons->pal.reg = Color_CYAN;
 	cons->pal.reset = "\x1b[0m";
 }
 

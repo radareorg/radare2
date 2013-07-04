@@ -78,7 +78,7 @@ R_API void r_flag_list(RFlag *f, int rad) {
 			r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x" %s\n",
 				flag->name, flag->size, flag->offset,
 				flag->comment? flag->comment:"");
-		} else r_cons_printf("0x%08"PFMT64x" %"PFMT64d" %s\n",
+		} else r_cons_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
 				flag->offset, flag->size, flag->name);
 	}
 }
