@@ -431,7 +431,7 @@ toro:
 		}
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
-		if (colorop)
+		if (show_color && colorop)
 			colorize_opcode (asmop.buf_asm, color_reg, color_num);
 		if (atabs) {
 			int n, i = 0;
