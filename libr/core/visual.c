@@ -5,8 +5,8 @@
 #define NPF 5
 static int blocksize = 0;
 static const char *printfmt[] = {
-	"x", "pd $h",
-	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $h",
+	"x", "pd $r",
+	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r",
 	"pxw", "pc"
 };
 static int autoblocksize = 1;
