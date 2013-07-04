@@ -472,8 +472,14 @@ eprintf ("-----------\n");
 			ctr++;
 			continue;
 #endif
-			symbols[ctr].offset = (ut64)bin->methods[i].attributes->info.code.code_offset;
-			symbols[ctr].size = bin->methods[i].attributes->info.code.code_length;
+			if (bin->methods[i].attributes) {
+				symbols[ctr].offset = (ut64)bin->methods[i].attributes->info.code.code_offset;
+				symbols[ctr].size = bin->methods[i].attributes->info.code.code_length;
+			} else {
+				symbols[ctr].offset = symbols[ctr].size = 0;
+				eprintf ("[r2-java-class] Cannot load method attributes for %d (%s)\n", i,
+					bin->methods[i].name);
+			}
 		}
 		for (j=0; j < bin->methods[i].attr_count; j++) {
 			if (bin->methods[i].attributes[j].type == R_BIN_JAVA_TYPE_CODE) {

@@ -69,10 +69,18 @@ static void printoffset(ut64 off, int show_color, int invert, int opt) {
 static void colorize_opcode (char *p, const char *reg, const char *num) {
 	int i, j, k, is_mod;
 	int is_jmp = (*p == 'j' || *p == 'c')? 1: 0;
-	char *o = malloc (1024);
+	char *o;
+	if (is_jmp)
+		return;
+	o = malloc (1024);
 	for (i=j=0; p[i]; i++,j++) {
 		/* colorize numbers */
 		switch (p[i]) {
+		case 0x1b:
+			/* skip until 'm' */
+			for(++i;p[i] && p[i]!='m'; i++)
+				o[j] = p[i];
+			continue;
 		case '+':
 		case '-':
 		case '/':
@@ -121,6 +129,7 @@ static void colorize_opcode (char *p, const char *reg, const char *num) {
 	// decolorize at the end
 	strcpy (o+j, Color_RESET);
 	strcpy (p, o); // may overflow .. but shouldnt because asm.buf_asm is big enought
+	free (o);
 }
 
 // int l is for lines
@@ -828,6 +837,7 @@ toro:
 				opstr = strdup (strsub);
 			}
 		}
+
 		r_cons_strcat (opstr);
 
 		{ /* show function name */

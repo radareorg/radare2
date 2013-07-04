@@ -110,15 +110,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return ret;
 			}
 			break;
-		case 'h': {
-			int rows;
-			r_cons_get_size (&rows);
-			return rows;
-			}
+		case 'c': return r_cons_get_size (NULL);
+		case 'r': { int rows; r_cons_get_size (&rows); return rows; }
 		case 'e': return op.eob;
 		case 'j': return op.jump;
 		case 'f': return op.fail;
-		case 'r': return op.ptr;
+		case 'm': return op.ptr; // memref
 		case 'l': return op.length;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
@@ -168,6 +165,7 @@ static const char *radare_argv[] = {
 	"?", "?v",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "db-",
         "dp", "dr", "dcu", "dmd", "dmp", "dml",
+	"ec","ecs",
 	"S",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
 	"!", "!!", 

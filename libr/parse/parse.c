@@ -90,7 +90,7 @@ R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 #define isx86separator(x) ( \
 	(x)==' '||(x)=='\t'||(x)=='\n'|| (x)=='\r'||(x)==' '|| \
 	(x)==','||(x)==';'||(x)=='['||(x)==']'|| \
-	(x)=='('||(x)==')'||(x)=='{'||(x)=='}')
+	(x)=='('||(x)==')'||(x)=='{'||(x)=='}'||(x)=='\x1b')
 
 static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	char *ptr = data, *ptr2;
@@ -103,7 +103,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	ptr2 = NULL;
 	while ((ptr = strstr (ptr, "0x"))) {
 		if (x86) for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++);
-		else for (ptr2 = ptr; *ptr2 && !isseparator (*ptr2); ptr2++);
+		else for (ptr2 = ptr; *ptr2 && (*ptr2=='\x1b')||!isseparator (*ptr2); ptr2++);
 		off = r_num_math (NULL, ptr);
 		if (!off) {
 			ptr = ptr2;
