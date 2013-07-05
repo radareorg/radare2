@@ -48,11 +48,9 @@ enyo.kind ({
     ]}
   ],
   toggleScroll: function() { 
-    var state = !!! this.visible;
-    this.$.scroll.setShowing (this.visible = state);
-    this.$.menu.setShowing (false);
+    var is_visible = this.$.menu.getShowing ();
+    this.$.scroll.setShowing (is_visible);
   },
-  visible: true,
   rowTap: function () {
     /* do something here */
   },
@@ -68,7 +66,6 @@ enyo.kind ({
     var item = this.data[inIndex.index];
     if (!item)
       return false;
-    //this.visible = true;
     var msg = item.name + " "+item.offset;
     console.log (msg);
     this.$.msg.setContent (msg);
@@ -81,6 +78,10 @@ enyo.kind ({
   itemSelected: function (inSender, inEvent) {
     var self = this;
     var selected = inEvent.originator.content;
+    var is_visible = this.$.menu.getShowing ();
+    r2ui.rp = self;
+    this.$.scroll.setShowing (!!! is_visible);
+    this.$.menu.setShowing (false);
     this.$.scroll.scrollToTop();
     //this.$.output.scrollToTop();
     switch (selected) {
@@ -97,9 +98,7 @@ enyo.kind ({
       });
       break;
     case "flagspaces":
-      r2.cmd ("fs", function (x) {
-	self.$.output.setContent (x);
-      });
+      this.updateFlagspace ();
       break;
     case "strings":
       r2.cmd ("izj", function(x) {
@@ -139,5 +138,24 @@ enyo.kind ({
   },
   closeSidebar: function() {
     this.ra.setIndex (1);
-  }
+  },
+  selectFlagspace: function (x) {
+    r2.cmd ('fs '+x, function(x) {
+      r2ui.rp.updateFlagspace();
+    });
+  },
+  updateFlagspace: function() {
+      var self = r2ui.rp;
+      r2.cmd ("fsj", function (x) {
+        var s = JSON.parse (x);
+        var h = '';
+        for (var i in s) {
+          var nam = s[i].name;
+          var sel = s[i].selected;
+          h += '<a style="color:yellow" href="javascript:r2ui.rp.selectFlagspace(\''+
+            nam+'\')">'+nam+'</a> '+(sel?"  (selected)":"")+'<br />';
+        }
+        self.$.output.setContent (h);
+      });
+}
 });
