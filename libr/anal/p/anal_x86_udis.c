@@ -329,10 +329,10 @@ default:
 }
 }
 #endif
-if (u.operand[0].type==UD_OP_PTR) {
-			op->jump = getval (&u.operand[0]);
-}else
-			op->jump = addr + oplen + getval (&u.operand[0]);
+			if (u.operand[0].type==UD_OP_PTR) {
+				op->jump = getval (&u.operand[0]);
+			} else
+				op->jump = addr + oplen + getval (&u.operand[0]);
 		}
 		break;
 	case UD_Ijz:
