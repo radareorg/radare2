@@ -846,12 +846,39 @@ toro:
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_CALL:
+				{
 				f = r_anal_fcn_find (core->anal,
 					analop.jump, R_ANAL_FCN_TYPE_NULL);
+				RAnalFunction *cf = r_anal_fcn_find (core->anal, /* current function */
+					at, R_ANAL_FCN_TYPE_NULL);
 				if (f && !strstr (opstr, f->name)) {
+					if (f->locals != NULL) {
+						RAnalFcnLocal *l;
+						RListIter *iter;
+						r_list_foreach (f->locals, iter, l) {
+							if (analop.jump == l->addr) {
+								if ((cf != NULL) && (f == cf)) {
+									r_cons_strcat (color_label);
+									r_cons_printf (" ; (%s)", l->name);
+									r_cons_strcat (Color_RESET);
+									break;
+								} else {
+									r_cons_strcat (color_fname);
+									r_cons_printf ("; (%s", f->name);
+									r_cons_strcat (Color_RESET);
+									r_cons_strcat (color_label);
+									r_cons_printf (".%s)", l->name);
+									r_cons_strcat (Color_RESET);
+									break;
+								}
+							}
+						}
+					}
+
 					r_cons_strcat (color_fname);
 					r_cons_printf (" ; (%s)", f->name);
 					r_cons_strcat (Color_RESET);
+				}
 				}
 				break;
 			}
