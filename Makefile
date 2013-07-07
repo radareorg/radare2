@@ -6,10 +6,15 @@ R2BINS=$(shell cd binr ; echo r*2)
 DATADIRS=libr/asm/d libr/syscall/d libr/magic/d
 #binr/ragg2/d
 STRIP?=strip
-ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
-TAR=bsdtar czvf
+#ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
+ifneq ($(shell xz --help 2>/dev/null|grep improve),)
+TAR=tar -cvf
+TAREXT=tar.xz
+CZ=xz -f
 else
-TAR=tar -czvf
+TAR=bsdtar cvf
+TAREXT=tar.gz
+CZ=gzip -f
 endif
 PWD=$(shell pwd)
 
@@ -166,16 +171,19 @@ dist:
 	DIR=`basename $$PWD` ; \
 	FILES=`git ls-files | sed -e s,^,radare2-${VERSION}/,` ; \
 	cd .. && mv $${DIR} radare2-${VERSION} && \
-	${TAR} radare2-${VERSION}.tar.gz $${FILES} radare2-${VERSION}/ChangeLog ;\
+	${TAR} radare2-${VERSION}.tar $${FILES} radare2-${VERSION}/ChangeLog ;\
+	${CZ} radare2-${VERSION}.tar ; \
 	mv radare2-${VERSION} $${DIR}
 
 shot:
 	DATE=`date '+%Y%m%d'` ; \
 	FILES=`git ls-files | sed -e s,^,radare2-${DATE}/,` ; \
 	cd .. && mv radare2 radare2-$${DATE} && \
-	${TAR} radare2-$${DATE}.tar.gz $${FILES} ;\
+	${TAR} radare2-$${DATE}.tar $${FILES} ;\
+	${CZ} radare2-$${DATE}.tar ;\
 	mv radare2-$${DATE} radare2 && \
-	scp radare2-$${DATE}.tar.gz radare.org:/srv/http/radareorg/get/shot
+	scp radare2-$${DATE}.${TAREXT} \
+		radare.org:/srv/http/radareorg/get/shot
 
 tests:
 	@if [ -d r2-regressions ]; then \
