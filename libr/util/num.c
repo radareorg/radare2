@@ -22,7 +22,7 @@ R_API ut16 r_num_ntohs (ut16 foo) {
         (((x) & 0x00000000000000ffLL) << 56))
 
 R_API ut64 r_num_htonq(ut64 value) {
-        ut64 ret  = value;
+        ut64 ret = value;
 #if LIL_ENDIAN
         r_mem_copyendian ((ut8*)&ret, (ut8*)&value, 8, 0);
 #endif

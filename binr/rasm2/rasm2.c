@@ -82,9 +82,14 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 	if (hex) {
 		RAsmOp op;
 		r_asm_set_pc (a, offset);
-		while (len-ret > 0 && r_asm_disassemble (a, &op, data+ret, len-ret) != -1) {
-			if (op.inst_len<1) break;
-			printf ("0x%08"PFMT64x"  %d %12s %s\n", 
+		while (len-ret > 0) {
+			int dr = r_asm_disassemble (a, &op, data+ret, len-ret);
+			if (dr == -1 || op.inst_len<1) {
+				op.inst_len = 1;
+				strcpy (op.buf_asm, "invalid");
+				sprintf (op.buf_hex, "%02x", data[ret]);
+			}
+			printf ("0x%08"PFMT64x"  %2d %24s  %s\n", 
 				a->pc, op.inst_len, op.buf_hex, op.buf_asm);
 			ret += op.inst_len;
 			r_asm_set_pc (a, offset+ret);
