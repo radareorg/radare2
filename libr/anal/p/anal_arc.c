@@ -18,8 +18,8 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			//int x = b[0]&1? 8:4;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			//op->jump = addr+x+ (8*b[1]);
-			op->jump = addr + 4 + ((b[1] << 1) + (b[2] << 8) +
-				((b[3] & 7) << 15) + (b[0] & (1 << 7))) << 2;
+			op->jump = addr + 4 + ((b[1] << 1) | (b[2] << 8) |
+				((b[3] & 7) << 16) | ((b[0] & (1 << 7)) >> 7) ) << 2;
 			op->fail = addr + 4;
 		} else if (basecode == 0x07) { /* Conditional Jump and Jump with Link */
 			op->type = R_ANAL_OP_TYPE_CJMP;
