@@ -851,17 +851,17 @@ toro:
 					analop.jump, R_ANAL_FCN_TYPE_NULL);
 				RAnalFunction *cf = r_anal_fcn_find (core->anal, /* current function */
 					at, R_ANAL_FCN_TYPE_NULL);
+				ut8 have_local = 0;
 				if (f && !strstr (opstr, f->name)) {
 					if (f->locals != NULL) {
 						RAnalFcnLocal *l;
 						RListIter *iter;
 						r_list_foreach (f->locals, iter, l) {
 							if (analop.jump == l->addr) {
-								if ((cf != NULL) && (f == cf)) {
+								if ((cf != NULL) && (f->addr == cf->addr)) {
 									r_cons_strcat (color_label);
 									r_cons_printf (" ; (%s)", l->name);
 									r_cons_strcat (Color_RESET);
-									break;
 								} else {
 									r_cons_strcat (color_fname);
 									r_cons_printf ("; (%s", f->name);
@@ -869,15 +869,17 @@ toro:
 									r_cons_strcat (color_label);
 									r_cons_printf (".%s)", l->name);
 									r_cons_strcat (Color_RESET);
-									break;
 								}
+								have_local = 1;
+								break;
 							}
 						}
 					}
-
-					r_cons_strcat (color_fname);
-					r_cons_printf (" ; (%s)", f->name);
-					r_cons_strcat (Color_RESET);
+					if (!have_local) {
+						r_cons_strcat (color_fname);
+						r_cons_printf (" ; (%s)", f->name);
+						r_cons_strcat (Color_RESET);
+					}
 				}
 				}
 				break;
