@@ -18,6 +18,9 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+#include <string.h>
+#define abort(x) if(0) {x}
+
 /* The following bitmasks control CPU extensions:  */
 #define ARM_EXT_V1	 0x00000001	/* All processors (core set).  */
 #define ARM_EXT_V2	 0x00000002	/* Multiply instructions.  */
@@ -62,6 +65,7 @@
 #define ARM_CEXT_MAVERICK 0x00000002	/* Use Cirrus/DSP coprocessor.  */
 #define ARM_CEXT_IWMMXT   0x00000004    /* Intel Wireless MMX technology coprocessor.   */
 #define ARM_CEXT_IWMMXT2  0x00000008    /* Intel Wireless MMX technology coprocessor version 2.   */
+#define ARM_CEXT_IWMMXt2  0x00000008    /* Intel Wireless MMX technology coprocessor version 2.   */
 
 #define FPU_ENDIAN_PURE	 0x80000000	/* Pure-endian doubles.	      */
 #define FPU_ENDIAN_BIG	 0		/* Double words-big-endian.   */
@@ -287,3 +291,5 @@ typedef struct
   } while (0)
 
 #define ARM_FEATURE(core, coproc) {(core), (coproc)}
+
+#define STT_GNU_IFUNC 10

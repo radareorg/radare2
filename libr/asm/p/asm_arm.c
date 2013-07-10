@@ -73,7 +73,10 @@ static unsigned char bytes[8];
 
 static int arm_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr,
 		unsigned int length, struct disassemble_info *info) {
-	memcpy (myaddr, bytes, length);
+	int delta = (memaddr - Offset);
+	if (delta<0) return -1; // disable backward reads
+	if ((delta+length)>4) return -1;
+	memcpy (myaddr, bytes+delta, length);
 	return 0;
 }
 
@@ -114,7 +117,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int oldcpucode = 0;
 	int cpucode = 0;
 	struct disassemble_info obj;
-	char* options = "no-force-thumb";
+	char *options = (a->bits==16)? "force-thumb": "no-force-thumb";
 
 	if (len<(a->bits/8)) return -1;
 	buf_global = op->buf_asm;
@@ -151,12 +154,12 @@ oldcpucode = cpucode;
 
 	op->buf_asm[0]='\0';
 	if (a->bits==64) {
-	obj.disassembler_options = NULL;
+		obj.disassembler_options = NULL;
 		/* is endianness ignored on 64bits? */
 		//r_mem_copyendian (bytes, buf, 4, !a->big_endian);
 		op->inst_len = print_insn_aarch64 ((bfd_vma)Offset, &obj);
 	} else {
-	obj.disassembler_options = options;
+		obj.disassembler_options = options;
 		op->inst_len = obj.endian?
 			print_insn_little_arm ((bfd_vma)Offset, &obj):
 			print_insn_big_arm ((bfd_vma)Offset, &obj);

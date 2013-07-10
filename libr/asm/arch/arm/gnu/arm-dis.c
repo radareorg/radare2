@@ -27,25 +27,13 @@
 #include "dis-asm.h"
 #include "arm.h"
 #include "opintl.h"
-//#include "safe-ctype.h"
-//#include "floatformat.h"
-#define bfd_mach_arm_iWMMXt2	13
-#define ISASCII(c) isascii(c)
-#define ISSPACE(c) (ISASCII (c) && isspace (c))
 
 /* FIXME: This shouldn't be done here.  */
-#if 0
-#include "coff/internal.h"
-#include "libcoff.h"
 #include "elf-bfd.h"
 #include "elf/internal.h"
-#include "elf/arm.h"
-#endif
-#include <string.h>
-#include <ctype.h>
+#include "elfarm.h"
 
 /* FIXME: Belongs in global header.  */
-#define abort(x) if(0) {x}
 #ifndef strneq
 #define strneq(a,b,n)	(strncmp ((a), (b), (n)) == 0)
 #endif
@@ -150,7 +138,7 @@ enum opcode_sentinel_enum
   SENTINEL_GENERIC_START
 } opcode_sentinels;
 
-#define UNDEFINED_INSTRUCTION      " ; <UNDEFINED> instruction: %0-31x"
+#define UNDEFINED_INSTRUCTION      "  ; <UNDEFINED> instruction: %0-31x"
 #define UNPREDICTABLE_INSTRUCTION  " ; <UNPREDICTABLE>"
 
 /* Common coprocessor opcodes shared between Arm and Thumb-2.  */
@@ -506,10 +494,10 @@ static const struct opcode32 coprocessor_opcodes[] =
   {FPU_VFP_EXT_ARMV8, 0xfe800b40, 0xffb00f40, "vminnm%u.f64 %z1, %z2, %z0"},
   {FPU_VFP_EXT_ARMV8, 0xfebc0a40, 0xffbc0f50, "vcvt%16-17?mpna%u.%7?su32.f32 %y1, %y0"},
   {FPU_VFP_EXT_ARMV8, 0xfebc0b40, 0xffbc0f50, "vcvt%16-17?mpna%u.%7?su32.f64 %y1, %z0"},
-  {FPU_VFP_EXT_ARMV8, 0x0eb60a40, 0x0fbe0f50, "vrint%7,16??xzr%c.f32 %y1, %y0"},
-  {FPU_VFP_EXT_ARMV8, 0x0eb60b40, 0x0fbe0f50, "vrint%7,16??xzr%c.f64 %z1, %z0"},
-  {FPU_VFP_EXT_ARMV8, 0xfeb80a40, 0xffbc0f50, "vrint%16-17?mpna%u.f32 %y1, %y0"},
-  {FPU_VFP_EXT_ARMV8, 0xfeb80b40, 0xffbc0f50, "vrint%16-17?mpna%u.f64 %z1, %z0"},
+  {FPU_VFP_EXT_ARMV8, 0x0eb60a40, 0x0fbe0f50, "vrint%7,16??xzr%c.f32.f32 %y1, %y0"},
+  {FPU_VFP_EXT_ARMV8, 0x0eb60b40, 0x0fbe0f50, "vrint%7,16??xzr%c.f64.f64 %z1, %z0"},
+  {FPU_VFP_EXT_ARMV8, 0xfeb80a40, 0xffbc0f50, "vrint%16-17?mpna%u.f32.f32 %y1, %y0"},
+  {FPU_VFP_EXT_ARMV8, 0xfeb80b40, 0xffbc0f50, "vrint%16-17?mpna%u.f64.f64 %z1, %z0"},
 
   /* Generic coprocessor instructions.  */
   { 0, SENTINEL_GENERIC_START, 0, "" },
@@ -592,7 +580,7 @@ static const struct opcode32 neon_opcodes[] =
   {FPU_NEON_EXT_FMA, 0xf2200c10, 0xffa00f10, "vfms%c.f%20U0 %12-15,22R, %16-19,7R, %0-3,5R"},
 
   /* Two registers, miscellaneous.  */
-  {FPU_NEON_EXT_ARMV8, 0xf3ba0400, 0xffbf0c10, "vrint%7-9?p?m?zaxn%u.f32 %12-15,22R, %0-3,5R"},
+  {FPU_NEON_EXT_ARMV8, 0xf3ba0400, 0xffbf0c10, "vrint%7-9?p?m?zaxn%u.f32.f32 %12-15,22R, %0-3,5R"},
   {FPU_NEON_EXT_ARMV8, 0xf3bb0000, 0xffbf0c10, "vcvt%8-9?mpna%u.%7?us32.f32 %12-15,22R, %0-3,5R"},
   {FPU_CRYPTO_EXT_ARMV8, 0xf3b00300, 0xffbf0fd0, "aese%u.8 %12-15,22Q, %0-3,5Q"},
   {FPU_CRYPTO_EXT_ARMV8, 0xf3b00340, 0xffbf0fd0, "aesd%u.8 %12-15,22Q, %0-3,5Q"},
@@ -911,13 +899,6 @@ static const struct opcode32 arm_opcodes[] =
   {ARM_EXT_V8,	 0x01d00c9f, 0x0ff00fff, "ldab%c %12-15r, [%16-19R]"},
   {ARM_EXT_V8,	 0x01e0fc90, 0x0ff0fff0, "stlh%c %0-3r, [%16-19R]"},
   {ARM_EXT_V8,	 0x01f00c9f, 0x0ff00fff, "ldaexh%c %12-15r, [%16-19R]"},
-  /* CRC32 instructions.  */
-  {CRC_EXT_ARMV8, 0xe1000040, 0xfff00ff0, "crc32b %12-15R, %16-19R, %0-3R"},
-  {CRC_EXT_ARMV8, 0xe1200040, 0xfff00ff0, "crc32h %12-15R, %16-19R, %0-3R"},
-  {CRC_EXT_ARMV8, 0xe1400040, 0xfff00ff0, "crc32w %12-15R, %16-19R, %0-3R"},
-  {CRC_EXT_ARMV8, 0xe1000240, 0xfff00ff0, "crc32cb %12-15R, %16-19R, %0-3R"},
-  {CRC_EXT_ARMV8, 0xe1200240, 0xfff00ff0, "crc32ch %12-15R, %16-19R, %0-3R"},
-  {CRC_EXT_ARMV8, 0xe1400240, 0xfff00ff0, "crc32cw %12-15R, %16-19R, %0-3R"},
 
   /* Virtualization Extension instructions.  */
   {ARM_EXT_VIRT, 0x0160006e, 0x0fffffff, "eret%c"},
@@ -943,8 +924,8 @@ static const struct opcode32 arm_opcodes[] =
   {ARM_EXT_V6T2, 0x07c0001f, 0x0fe0007f, "bfc%c %12-15R, %E"},
   {ARM_EXT_V6T2, 0x07c00010, 0x0fe00070, "bfi%c %12-15R, %0-3r, %E"},
   {ARM_EXT_V6T2, 0x00600090, 0x0ff000f0, "mls%c %16-19R, %0-3R, %8-11R, %12-15R"},
-  {ARM_EXT_V6T2, 0x002000b0, 0x0f3000f0, "strht%c %12-15R, %S"},
-
+  {ARM_EXT_V6T2, 0x006000b0, 0x0f7000f0, "strht%c %12-15R, %S"},
+  
   {ARM_EXT_V6T2, 0x00300090, 0x0f3000f0, UNDEFINED_INSTRUCTION },
   {ARM_EXT_V6T2, 0x00300090, 0x0f300090, "ldr%6's%5?hbt%c %12-15R, %S"},
   
@@ -1470,8 +1451,7 @@ static const struct opcode16 thumb_opcodes[] =
        %<bitfield>d	print bitfield in decimal
        %<bitfield>W	print bitfield*4 in decimal
        %<bitfield>r	print bitfield as an ARM register
-       %<bitfield>R	as %<>r but r15 is UNPREDICTABLE
-       %<bitfield>S	as %<>R but r13 is UNPREDICTABLE
+       %<bitfield>R	as %<>r bit r15 is UNPREDICTABLE
        %<bitfield>c	print bitfield as a condition code
 
        %<bitfield>'c	print specified char iff bitfield is all ones
@@ -1505,14 +1485,6 @@ static const struct opcode32 thumb32_opcodes[] =
   {ARM_EXT_V8, 0xe8d00fdf, 0xfff00fff, "ldaexh%c %12-15r, [%16-19R]"},
   {ARM_EXT_V8, 0xe8d00fef, 0xfff00fff, "ldaex%c %12-15r, [%16-19R]"},
   {ARM_EXT_V8, 0xe8d000ff, 0xfff000ff, "ldaexd%c %12-15r, %8-11r, [%16-19R]"},
-
-  /* CRC32 instructions.  */
-  {CRC_EXT_ARMV8, 0xfac0f080, 0xfff0f0f0, "crc32b %8-11S, %16-19S, %0-3S"},
-  {CRC_EXT_ARMV8, 0xfac0f090, 0xfff0f0f0, "crc32h %9-11S, %16-19S, %0-3S"},
-  {CRC_EXT_ARMV8, 0xfac0f0a0, 0xfff0f0f0, "crc32w %8-11S, %16-19S, %0-3S"},
-  {CRC_EXT_ARMV8, 0xfad0f080, 0xfff0f0f0, "crc32cb %8-11S, %16-19S, %0-3S"},
-  {CRC_EXT_ARMV8, 0xfad0f090, 0xfff0f0f0, "crc32ch %8-11S, %16-19S, %0-3S"},
-  {CRC_EXT_ARMV8, 0xfad0f0a0, 0xfff0f0f0, "crc32cw %8-11S, %16-19S, %0-3S"},
 
   /* V7 instructions.  */
   {ARM_EXT_V7, 0xf910f000, 0xff70f000, "pli%c %a"},
@@ -1939,7 +1911,6 @@ print_insn_coprocessor (bfd_vma pc,
   unsigned long allowed_arches = private_data->features.coproc;
   int cond;
 
-//allowed_arches = ARM_EXT_V5T;
   for (insn = coprocessor_opcodes; insn->assembler; insn++)
     {
       unsigned long u_reg = 16;
@@ -1950,15 +1921,16 @@ print_insn_coprocessor (bfd_vma pc,
       if (insn->arch == 0)
 	switch (insn->value)
 	  {
+#if 0
 	  case SENTINEL_IWMMXT_START:
 	    if (info->mach != bfd_mach_arm_XScale
 		&& info->mach != bfd_mach_arm_iWMMXt
-		&& info->mach != bfd_mach_arm_iWMMXt2)
+		&& info->mach != bfd_mach_arm_iWMMXT2)
 	      do
 		insn++;
 	      while (insn->arch != 0 && insn->value != SENTINEL_IWMMXT_END);
 	    continue;
-
+#endif
 	  case SENTINEL_IWMMXT_END:
 	    continue;
 
@@ -2491,8 +2463,10 @@ print_insn_coprocessor (bfd_vma pc,
 	    func (stream, "%c", *c);
 	}
 
+#if 0
       if (value_in_comment > 32 || value_in_comment < -16)
 	func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
+#endif
 
       if (is_unpredictable)
 	func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -2910,11 +2884,11 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                         switch (size)
                           {
                           case 8:
-			    func (stream, "#%ld ; 0x%.2lx", value, value);
+			    func (stream, "#%ld", value); // ; 0x%.2lx", value, value);
                             break;
                           
                           case 16:
-                            func (stream, "#%ld ; 0x%.4lx", value, value);
+                            func (stream, "#%ld", value); // ; 0x%.4lx", value, value);
                             break;
 
                           case 32:
@@ -2930,14 +2904,16 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                                 valbytes[2] = (value >> 16) & 0xff;
                                 valbytes[3] = (value >> 24) & 0xff;
                                 
-#if 0
+#if HAVE_FLOAT
                                 floatformat_to_double 
                                   (& floatformat_ieee_single_little, valbytes,
                                   & fvalue);
-#endif
                                                                 
                                 func (stream, "#%.7g ; 0x%.8lx", fvalue,
                                       value);
+#else
+                                func (stream, "<TODO:float>");
+#endif
                               }
                             else
                               func (stream, "#%ld ; 0x%.8lx",
@@ -3060,8 +3036,10 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 		func (stream, "%c", *c);
 	    }
 
+#if 0
 	  if (value_in_comment > 32 || value_in_comment < -16)
 	    func (stream, " ; 0x%lx", value_in_comment);
+#endif
 
 	  if (is_unpredictable)
 	    func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -3080,14 +3058,14 @@ banked_regname (unsigned reg)
   switch (reg)
     {
       case 15: return "CPSR";
-      case 32: return "R8_usr"; 
+      case 32: return "R8_usr";
       case 33: return "R9_usr";
       case 34: return "R10_usr";
       case 35: return "R11_usr";
       case 36: return "R12_usr";
       case 37: return "SP_usr";
       case 38: return "LR_usr";
-      case 40: return "R8_fiq"; 
+      case 40: return "R8_fiq";
       case 41: return "R9_fiq";
       case 42: return "R10_fiq";
       case 43: return "R11_fiq";
@@ -3645,9 +3623,10 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 	      else
 		func (stream, "%c", *c);
 	    }
-
+#if 0
 	  if (value_in_comment > 32 || value_in_comment < -16)
 	    func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
+#endif
 
 	  if (is_unpredictable)
 	    func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -4454,10 +4433,6 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      value_in_comment = val * 4;
 		      break;
 
-		    case 'S':
-		      if (val == 13)
-			is_unpredictable = TRUE;
-		      /* Fall through.  */
 		    case 'R':
 		      if (val == 15)
 			is_unpredictable = TRUE;
@@ -4517,8 +4492,10 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 	      }
 	  }
 
+#if 0
 	if (value_in_comment > 32 || value_in_comment < -16)
 	  func (stream, " ; 0x%lx", value_in_comment);
+#endif
 
 	if (is_unpredictable)
 	  func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -4609,6 +4586,7 @@ parse_arm_disassembler_option (char *option)
 /* Parse the string of disassembler options, spliting it at whitespaces
    or commas.  (Whitespace separators supported for backwards compatibility).  */
 
+#define ISSPACE(x) (x==' '||x=='\t')
 static void
 parse_disassembler_options (char *options)
 {
@@ -4733,7 +4711,6 @@ is_mapping_symbol (struct disassemble_info *info, int n,
 /* Try to infer the code type (ARM or Thumb) from a mapping symbol.
    Returns nonzero if *MAP_TYPE was set.  */
 
-#if 0
 static int
 get_map_sym_type (struct disassemble_info *info,
 		  int n,
@@ -4748,12 +4725,33 @@ get_map_sym_type (struct disassemble_info *info,
 
 /* Try to infer the code type (ARM or Thumb) from a non-mapping symbol.
    Returns nonzero if *MAP_TYPE was set.  */
+#if 0
 
 static int
 get_sym_code_type (struct disassemble_info *info,
 		   int n,
 		   enum map_type *map_type)
 {
+  elf_symbol_type *es;
+  unsigned int type;
+
+  /* If the symbol is in a different section, ignore it.  */
+  if (info->section != NULL && info->section != info->symtab[n]->section)
+    return FALSE;
+
+  es = *(elf_symbol_type **)(info->symtab + n);
+  type = ELF_ST_TYPE (es->internal_elf_sym.st_info);
+
+  /* If the symbol has function type then use that.  */
+  if (type == STT_FUNC || type == STT_GNU_IFUNC)
+    {
+      if (ARM_SYM_BRANCH_TYPE (&es->internal_elf_sym) == ST_BRANCH_TO_THUMB)
+	*map_type = MAP_THUMB;
+      else
+	*map_type = MAP_ARM;
+      return TRUE;
+    }
+
   return FALSE;
 }
 #endif
@@ -4775,7 +4773,6 @@ select_arm_features (unsigned long mach,
   features->coproc = (CEXT) | FPU_FPA; \
   return
 
-//printf ("ARM FEATURES %d\n", mach);
   switch (mach)
     {
     case bfd_mach_arm_2:       ARM_ARCH_V2;
@@ -4817,7 +4814,6 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
   bfd_boolean   found = FALSE;
   struct arm_private_data *private_data;
 
-//printf ("-> %d\n", info->mach);
   if (info->disassembler_options)
     {
       parse_disassembler_options (info->disassembler_options);
@@ -4831,7 +4827,6 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
     {
       static struct arm_private_data private;
 
-#if 0
       if ((info->flags & USER_SPECIFIED_MACHINE_TYPE) == 0)
 	/* If the user did not use the -m command line switch then default to
 	   disassembling all types of ARM instruction.
@@ -4852,14 +4847,11 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	   "unknown" arm architecture which is compatible with any ARM
 	   instruction.  */
 	  info->mach = bfd_mach_arm_unknown;
-#endif
 
       /* Compute the architecture bitmask from the machine number.
 	 Note: This assumes that the machine number will not change
 	 during disassembly....  */
-//info->mach = bfd_mach_arm_5TE;
-//printf ("MACH %d\n", info->mach);
-      select_arm_features (info->mach, &private.features);
+      select_arm_features (info->mach, & private.features);
 
       private.has_mapping_symbols = -1;
       private.last_mapping_sym = -1;
@@ -4874,7 +4866,6 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
      function argument might say.  */
   little_code = ((info->endian_code == BFD_ENDIAN_LITTLE) || little);
 
-#if 0
   /* For ELF, consult the symbol table to determine what kind of code
      or data we have.  */
   if (info->symtab_size != 0
@@ -4963,6 +4954,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 
       /* Next search for function symbols to separate ARM from Thumb
 	 in binaries without mapping symbols.  */
+#if 0
       if (!found)
 	{
 	  /* Scan up to the location being disassembled.  */
@@ -4993,6 +4985,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 		}
 	    }
 	}
+#endif
 
       private_data->last_mapping_sym = last_sym;
       private_data->last_type = type;
@@ -5026,6 +5019,7 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	}
     }
 
+#if 0
   if (info->symbols != NULL)
     {
       if (bfd_asymbol_flavour (*info->symbols) == bfd_target_coff_flavour)
@@ -5057,10 +5051,6 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
     }
 #endif
 
-if (info->bytes_per_line==2) {
-	force_thumb = 1;
-	info->bytes_per_line = 4;
-}
   if (force_thumb)
     is_thumb = TRUE;
 
@@ -5178,12 +5168,10 @@ int
 print_insn_big_arm (bfd_vma pc, struct disassemble_info *info)
 {
   /* Detect BE8-ness and record it in the disassembler info.  */
-#if 0
   if (info->flavour == bfd_target_elf_flavour
       && info->section != NULL
       && (elf_elfheader (info->section->owner)->e_flags & EF_ARM_BE8))
     info->endian_code = BFD_ENDIAN_LITTLE;
-#endif
 
   return print_insn (pc, info, FALSE);
 }
