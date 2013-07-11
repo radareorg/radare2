@@ -334,16 +334,6 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'b': {
-		const int size = len*8;
-		char *buf = malloc (size+1);
-		if (buf) {
-			r_str_bits (buf, core->block, size, NULL);
-			r_cons_printf ("%s\n", buf);
-			free (buf);
-		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
-		}
-		break;
-	case 'B': {
 		ut32 n;
 		int i, c;
 		char buf[32];
@@ -363,6 +353,16 @@ static int cmd_print(void *data, const char *input) {
 				c = -1;
 			}
 		}
+		}
+		break;
+	case 'B': {
+		const int size = len*8;
+		char *buf = malloc (size+1);
+		if (buf) {
+			r_str_bits (buf, core->block, size, NULL);
+			r_cons_printf ("%s\n", buf);
+			free (buf);
+		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
 		}
 		break;
 	case 'I': 
@@ -908,7 +908,7 @@ static int cmd_print(void *data, const char *input) {
 		" pt[dn?] [len]    print different timestamps\n"
 		" pu[w] [len]      print N url encoded bytes (w=wide)\n"
 		" pv[jh] [mode]    bar|json|histogram blocks (mode: e?search.in)\n"
-		" px[owq] [len]    hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
+		" p[xX][owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
 		" pz [len]         print zoom view (see pz? for help)\n");
 		break;
 	}
