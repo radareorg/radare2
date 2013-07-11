@@ -12,33 +12,48 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 	if (anal->bits == 32) {
 		/* ARCtangent A4 */
+		op->fail = addr + 4;
 		ut8 basecode = b[3] & 0xf8;
-		if ((basecode == 0x04) || (basecode == 0x05) || /* Branch and Branch with Link */
-			(basecode == 0x06)) { /* Loop */
+		switch (basecode) {
+		case 0x04: /* Branch */
+		case 0x05: /* Branch with Link */
+		case 0x06: /* Loop */
 			//int x = b[0]&1? 8:4;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			//op->jump = addr+x+ (8*b[1]);
 			op->jump = addr + 4 + ((b[1] << 1) | (b[2] << 8) |
-				((b[3] & 7) << 16) | ((b[0] & (1 << 7)) >> 7) ) << 2;
-			op->fail = addr + 4;
-		} else if (basecode == 0x07) { /* Conditional Jump and Jump with Link */
+				((b[3] & 7) << 16) | ((b[0] & (1 << 7)) >> 7)) << 2;
+			break;
+		case 0x07: /* Conditional Jump and Jump with Link */
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = 0;
-			op->fail = addr + 4;
-		} else if ((basecode == 0x08) || (basecode == 0x09)) {
+			break;
+		case 0x08:
+		case 0x09:
 			op->type = R_ANAL_OP_TYPE_ADD;
-		} else if ((basecode == 0x0a) || (basecode == 0x0b)) {
+			break;
+		case 0x0a:
+		case 0x0b:
 			op->type = R_ANAL_OP_TYPE_SUB;
-		} else if (basecode == 0x0c) {
+			break;
+		case 0x0c:
 			op->type = R_ANAL_OP_TYPE_AND;
-		} else if (basecode == 0x0d) {
+			break;
+		case 0x0d:
 			op->type = R_ANAL_OP_TYPE_OR;
-		} else if (basecode == 0x0f) {
+			break;
+		case 0x0f:
+			if ((b[0] == 0xff) && (b[1] == 0xff)) {
+				op->type = R_ANAL_OP_TYPE_NOP;
+				break;
+			}
 			op->type = R_ANAL_OP_TYPE_XOR;
-		} else if (basecode == 0x13) {
+			break;
+		case 0x13:
 			op->type = R_ANAL_OP_TYPE_ROR;
-		} else if ((basecode == 0xf) && (b[0] == 0xff) && (b[1] == 0xff)) {
-			op->type = R_ANAL_OP_TYPE_NOP;
+			break;
+		default:
+			break;
 		}
 	} else {
 		/* ARCompact ISA */
