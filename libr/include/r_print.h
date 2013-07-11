@@ -77,6 +77,7 @@ R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
 R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt, int idx, const char *setval);
 R_API int r_print_format_length (const char *fmt);
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt);
 #define R_PRINT_STRING_WIDE 1
 #define R_PRINT_STRING_ZEROEND 2
 #define R_PRINT_STRING_URLENCODE 4

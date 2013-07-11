@@ -50,22 +50,6 @@ static char *filter_refline(const char *str) {
 	return s;
 }
 
-static void printoffset(ut64 off, int show_color, int invert, int opt) {
-	if (show_color) {
-		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
-		if (invert)
-			r_cons_invert (R_TRUE, R_TRUE);
-		if (opt) {
-			ut32 s, a;
-			a = off & 0xffff;
-			s = (off-a)>>4;
-			r_cons_printf ("%s%04x:%04x"Color_RESET,
-				k, s&0xFFFF, a&0xFFFF);
-		} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
-		r_cons_puts ("  ");
-	} else r_cons_printf ("0x%08"PFMT64x"  ", off);
-}
-
 static void colorize_opcode (char *p, const char *reg, const char *num) {
 	int i, j, k, is_mod;
 	int is_jmp = (*p == 'j' || *p == 'c')? 1: 0;
@@ -605,7 +589,7 @@ toro:
 		}
 		if (!linesright && show_lines && line) r_cons_strcat (line);
 		if (show_offset)
-			printoffset (at, show_color, (at==dest), show_offseg);
+			r_print_offset (core->print, at, (at==dest), show_offseg);
 		if (show_size)
 			r_cons_printf ("%d ", analop.length);
 		if (show_trace) {

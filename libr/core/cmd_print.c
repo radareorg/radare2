@@ -343,6 +343,28 @@ static int cmd_print(void *data, const char *input) {
 		} else eprintf ("ERROR: Cannot malloc %d bytes\n", size);
 		}
 		break;
+	case 'B': {
+		ut32 n;
+		int i, c;
+		char buf[32];
+#define P(x) (IS_PRINTABLE(x)?x:'.')
+#define SPLIT_BITS(x) memmove (x+5, x+4, 5); x[4]=0
+		for (i=c=0; i<len; i++,c++) {
+			if (c==0) r_print_offset (core->print, core->offset+i, 0, 0);
+			r_str_bits (buf, core->block+i, 8, NULL);
+			SPLIT_BITS (buf);
+			r_cons_printf ("%s.%s  ", buf, buf+5);
+			if (c==3) {
+				const ut8 *b = core->block + i-3;
+				#define B(x) (b[3-x]<<(8*x))
+				n = B(0) | B(1) | B(2) | B(3);
+				r_cons_printf ("0x%08x  %c%c%c%c\n",
+					n, P(b[0]), P(b[1]), P(b[2]), P(b[3]));
+				c = -1;
+			}
+		}
+		}
+		break;
 	case 'I': 
 		r_core_print_disasm_instructions (core, len, l);
 		break;
@@ -874,7 +896,7 @@ static int cmd_print(void *data, const char *input) {
 		" p6[de] [len]     base64 decode/encode\n"
 		" p8 [len]         8bit hexpair list of bytes\n"
 		" pa [opcode]      bytes of assembled opcode\n"
-		" pb [len]         bitstream of N bytes\n"
+		" p[bB] [len]      bitstream of N bytes\n"
 		" pc[p] [len]      output C (or python) format\n"
 		" p[dD][lf] [l]    disassemble N opcodes/bytes (see pd?)\n"
 		" pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expr>) \n"
@@ -898,3 +920,21 @@ static int cmd_print(void *data, const char *input) {
 static int cmd_hexdump(void *data, const char *input) {
 	return cmd_print (data, input-1);
 }
+
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt) {
+	int show_color = p->flags & R_PRINT_FLAGS_COLOR;
+	if (show_color) {
+		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
+		if (invert)
+			r_cons_invert (R_TRUE, R_TRUE);
+		if (opt) {
+			ut32 s, a;
+			a = off & 0xffff;
+			s = (off-a)>>4;
+			r_cons_printf ("%s%04x:%04x"Color_RESET,
+				k, s&0xFFFF, a&0xFFFF);
+		} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
+		r_cons_puts ("  ");
+	} else r_cons_printf ("0x%08"PFMT64x"  ", off);
+}
+
