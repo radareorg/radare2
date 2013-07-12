@@ -25,4 +25,6 @@
 #define HAVE_LIB_SSL @HAVE_OPENSSL@
 #define HAVE_LIB_EWF @HAVE_LIB_EWF@
 
+#define R2_WWWROOT "@DATADIR@/radare2/@VERSION@/www"
+
 #endif

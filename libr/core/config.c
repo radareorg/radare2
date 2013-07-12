@@ -645,7 +645,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "dir.source", "Path to find source files");
 	r_config_set (cfg, "dir.magic", R_MAGIC_PATH);
 	r_config_desc (cfg, "dir.magic", "Path to r_magic files");
-	r_config_set (cfg, "dir.plugins", LIBDIR"/radare2/"R2_VERSION"/");
+	r_config_set (cfg, "dir.plugins", R2_LIBDIR"/radare2/"R2_VERSION"/");
 	r_config_desc (cfg, "dir.plugins", "Path to plugin files to be loaded at startup");
 	/* debug */
 	if (core->cons->rows>30) // HACKY
@@ -736,7 +736,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "http.root", "port to listen for http connections");
 	r_config_set (cfg, "http.uri", "");
 	r_config_desc (cfg, "http.uri", "base uri to remote host proxy host");
-	r_config_set (cfg, "http.root", WWWROOT);
+	r_config_set (cfg, "http.root", R2_WWWROOT);
 	r_config_desc (cfg, "http.root", "http root directory");
 
 	r_config_set (cfg, "http.upload", "false");

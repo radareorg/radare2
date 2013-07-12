@@ -23,17 +23,7 @@ else
 endif
 endif
 
-CFLAGS+=-DWWWROOT=\"${WWWROOT}\"
 LDFLAGS+=${BN_LIBS}
 LDFLAGS=${TH_LIBS}
 
 include ../rules.mk
-
-ht64:
-	cat ht.c | sed -e s,hashtable,hashtable64,g -e s,HashTable,HashTable64,g -e s,ut32,ut64,g > ht64.c
-	#cat ht.c ht64.c | sed -e 's,) {,);,'
-m:
-	${CC} mixed.c -I ../include/ -DTEST=1 -lr_util -g
-
-h:
-	${CC} ht.c -I ../include/ -DTEST=1 -lr_util -g

@@ -8,7 +8,7 @@ static int enabled = 0;
 R_API int r_sandbox_check_path (const char *path) {
 	char ch;
 	/* XXX: the sandbox can be bypassed if a directory is symlink */
-	if (!memcmp (path, WWWROOT, strlen (WWWROOT)))
+	if (!memcmp (path, R2_WWWROOT, strlen (R2_WWWROOT)))
 		return R_TRUE;
 	if (strstr (path, "../")) return 0;
 	if (*path == '/') return 0;

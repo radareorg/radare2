@@ -113,11 +113,12 @@ static int cmd_alias(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	if (*input=='?') {
 		r_cons_printf ("Usage: -alias[=cmd] [args...]\n"
-			" $analyze=af;pdf # create command -analyze to show function\n"
-			" $analyze=       # undefine alias\n"
-			" $analyze        # execute the previously defined alias\n"
-			" $analyze ?      # show commands aliased by 'analyze'\n"
-			" $               # list all defined aliases\n");
+			" $dis=af,pdf # create command -analyze to show function\n"
+			" $dis=       # undefine alias\n"
+			" $dis# execute the previously defined alias\n"
+			" $dis?       # show commands aliased by 'analyze'\n"
+			" $           # list all defined aliases\n"
+			" $*          # sas above, but using r2 commands\n");
 		return 0;
 	}
 	i = strlen (input);
@@ -134,36 +135,50 @@ static int cmd_alias(void *data, const char *input) {
 			else r_cmd_alias_del (core->rcmd, buf);
 		}
 	} else 
+	if (buf[1]=='*') {
+		int i, count = 0;
+		char **keys = r_cmd_alias_keys (core->rcmd, &count);
+		for (i=0; i<count; i++) {
+			const char *v = r_cmd_alias_get (core->rcmd, keys[i]);
+			r_cons_printf ("%s=%s\n", keys[i], v);
+		}
+	} else
 	if (!buf[1]) {
-		int i, count;
+		int i, count = 0;
 		char **keys = r_cmd_alias_keys (core->rcmd, &count);
 		for (i=0; i<count; i++)
 			r_cons_printf ("%s\n", keys[i]);
 	} else {
-		const char *v;
+		char *describe = strchr (buf, '?');
+		char *v;
 		if (q) *q = 0;
+		if (describe) *describe = 0;
 		v = r_cmd_alias_get (core->rcmd, buf);
 		if (v) {
+			if (describe) {
+				r_cons_printf ("%s\n", v);
+				return 1;
+			}
 			if (q) {
 				char *out, *args = q+1;
-				if (strchr (q+1, '?')) {
-					r_cons_printf ("%s\n", v);
-					return 1;
-				}
 				out = malloc (strlen (v) + strlen (args) + 2);
 				if (out) { //XXX slow
 					strcpy (out, v);
 					strcat (out, " ");
 					strcat (out, args);
+					r_str_replace_char (out,',', ';');
 					r_core_cmd0 (core, out);
+					r_str_replace_char (out,';', ',');
 					free (out);
 				} else eprintf ("cannot malloc\n");
 			} else {
+				r_str_replace_char (v, ',', ';');
 				r_core_cmd0 (core, v);
+				r_str_replace_char (v, ';', ',');
 			}
 		} else eprintf ("unknown key '%s'\n", buf);
 	}
-	return 1;
+	return 0;
 }
 
 static int cmd_rap(void *data, const char *input) {
