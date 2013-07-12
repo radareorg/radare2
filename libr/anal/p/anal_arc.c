@@ -13,16 +13,14 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	if (anal->bits == 32) {
 		/* ARCtangent A4 */
 		op->fail = addr + 4;
-		ut8 basecode = b[3] & 0xf8;
+		ut8 basecode = (b[3] & 0xf8) >> 3;
 		switch (basecode) {
 		case 0x04: /* Branch */
 		case 0x05: /* Branch with Link */
 		case 0x06: /* Loop */
-			//int x = b[0]&1? 8:4;
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			//op->jump = addr+x+ (8*b[1]);
 			op->jump = addr + 4 + ((b[1] << 1) | (b[2] << 8) |
-				((b[3] & 7) << 16) | ((b[0] & (1 << 7)) >> 7)) << 2;
+				((b[3] & 7) << 16) | ((b[0] & 0x80) >> 7)) << 2;
 			break;
 		case 0x07: /* Conditional Jump and Jump with Link */
 			op->type = R_ANAL_OP_TYPE_CJMP;
@@ -64,7 +62,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 struct r_anal_plugin_t r_anal_plugin_arc = {
 	.name = "arc",
 	.arch = R_SYS_ARCH_ARC,
-	.bits = 32,
+	.bits = 16|32,
 	.desc = "ARC code analysis plugin",
 	.init = NULL,
 	.fini = NULL,
