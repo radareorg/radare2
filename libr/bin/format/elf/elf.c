@@ -145,7 +145,7 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return R_FALSE;
 	}
 //eprintf ("BUFBUFBUF %p\n",
-	eprintf ("%p off=%x buf=%p sz=%llx\n", 
+	eprintf ("%p off=%x buf=%p sz=%llx\n",
 bin->b, bin->shstrtab_section->sh_offset, (ut8*)bin->shstrtab, size);
 	if (r_buf_read_at (bin->b, (ut64)bin->shstrtab_section->sh_offset, (ut8*)bin->shstrtab, size) == -1) {
 		eprintf ("Error: read (strtab)\n");
@@ -228,7 +228,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 	Elf_(Addr) plt_sym_addr;
 	ut64 got_addr, got_offset;
 	int i, j, k, tsize, len;
-	
+
 	if (!bin->shdr || !bin->strtab)
 		return -1;
 	if ((got_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".got")) == -1 &&
@@ -419,7 +419,9 @@ int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin) {
 // TODO: do not strdup here
 char* Elf_(r_bin_elf_get_arch)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	switch (bin->ehdr.e_machine) {
-	case EM_ARC: return strdup ("arc");
+	case EM_ARC:
+	case EM_ARC_A5:
+		return strdup ("arc");
 	case EM_AVR: return strdup ("avr");
 	case EM_68K: return strdup ("m68k");
 	case EM_MIPS:
@@ -550,6 +552,10 @@ char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin) {
 }
 
 int Elf_(r_bin_elf_get_bits)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	/* Hack for ARCompact */
+	if (bin->ehdr.e_machine == EM_ARC_A5)
+		return 16;
+
 	switch (bin->ehdr.e_ident[EI_CLASS]) {
 	case ELFCLASS32:   return 32;
 	case ELFCLASS64:   return 64;
@@ -841,7 +847,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_section_t *ret = NULL;
 	int i, nidx;
-	
+
 	if ((ret = malloc ((bin->ehdr.e_shnum + 1) * sizeof (struct r_bin_elf_section_t))) == NULL)
 		return NULL;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
@@ -1023,13 +1029,13 @@ struct r_bin_elf_field_t* Elf_(r_bin_elf_get_fields)(struct Elf_(r_bin_elf_obj_t
 	if ((ret = malloc ((bin->ehdr.e_phnum+3 + 1) *
 			sizeof (struct r_bin_elf_field_t))) == NULL)
 		return NULL;
-	strncpy (ret[i].name, "ehdr", ELF_STRING_LENGTH); 
+	strncpy (ret[i].name, "ehdr", ELF_STRING_LENGTH);
 	ret[i].offset = 0;
 	ret[i++].last = 0;
-	strncpy (ret[i].name, "shoff", ELF_STRING_LENGTH); 
+	strncpy (ret[i].name, "shoff", ELF_STRING_LENGTH);
 	ret[i].offset = bin->ehdr.e_shoff;
 	ret[i++].last = 0;
-	strncpy (ret[i].name, "phoff", ELF_STRING_LENGTH); 
+	strncpy (ret[i].name, "phoff", ELF_STRING_LENGTH);
 	ret[i].offset = bin->ehdr.e_phoff;
 	ret[i++].last = 0;
 	for (j = 0; bin->phdr && j < bin->ehdr.e_phnum; i++, j++) {
@@ -1060,7 +1066,7 @@ struct Elf_(r_bin_elf_obj_t)* Elf_(r_bin_elf_new)(const char* file) {
 		return NULL;
 	memset (bin, 0, sizeof (struct Elf_(r_bin_elf_obj_t)));
 	bin->file = file;
-	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) 
+	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
 		return Elf_(r_bin_elf_free) (bin);
 	bin->b = r_buf_new ();
 	if (!r_buf_set_bytes (bin->b, buf, bin->size))
