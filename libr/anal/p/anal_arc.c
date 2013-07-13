@@ -9,6 +9,7 @@
 static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const ut8 *b = (ut8 *)data;
 	memset (op, '\0', sizeof (RAnalOp));
+	op->length = 4;
 
 	if (anal->bits == 32) {
 		/* ARCtangent A4 */
@@ -55,8 +56,69 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		}
 	} else {
 		/* ARCompact ISA */
+		op->fail = addr + 4;
+		ut8 basecode = (b[3] & 0xf8) >> 3;
+		switch (basecode) {
+		case 0x0:
+			{
+			ut64 imm = ((((b[0] & 0xc0) >> 6) | (b[1] << 2)) << 11) |
+				((((b[2] & 0xfe) >> 1) | ((b[3] & 0x7) << 8)) << 1);
+			if (imm != 0) {
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->jump = imm;
+			}
+			}
+			break;
+		case 0x01:
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->jump = 0;
+			break;
+		case 0x02:
+		case 0x03:
+		case 0x04:
+		case 0x05:
+		case 0x06:
+		case 0x07:
+		case 0x08:
+		case 0x09:
+		case 0x0a:
+		case 0x0b:
+			break;
+		default:
+			/* This is 16 bit instruction */
+			op->length = 2;
+			op->fail = addr + 2;
+			basecode = (b[1] & 0xf8) >> 3;
+			switch (basecode) {
+			case 0x0c:
+			case 0x0d:
+				op->type = R_ANAL_OP_TYPE_ADD;
+				break;
+			case 0x0e:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				break;
+			case 0x1b:
+				op->type = R_ANAL_OP_TYPE_MOV;
+				break;
+			case 0x1c:
+				if (b[0] & 0x80)
+					op->type = R_ANAL_OP_TYPE_CMP;
+				else
+					op->type = R_ANAL_OP_TYPE_ADD;
+				break;
+			case 0x1d:
+			case 0x1e:
+			case 0x1f:
+				op->type = R_ANAL_OP_TYPE_CJMP;
+				op->jump = 0;
+				break;
+			default:
+				break;
+			}
+			break;
+		}
 	}
-	return op->length = 4;
+	return op->length;
 }
 
 struct r_anal_plugin_t r_anal_plugin_arc = {
