@@ -53,7 +53,6 @@ static void mdfour64(ut32 * M, ut32 * A, ut32 *B, ut32 * C, ut32 *D) {
 	ut32 AA, BB, CC, DD;
 	ut32 X[16];
 
-
 	for (j = 0; j < 16; j++)
 		X[j] = M[j];
 
@@ -143,7 +142,7 @@ static void copy4(ut8 *out, ut32 x) {
 
 /* produce a md4 message digest from data of length n bytes */
 // XXX : rename as a static method
-void mdfour(ut8 *out, const ut8 *in, int n) {
+R_API void mdfour(ut8 *out, const ut8 *in, int n) {
 	unsigned char buf[128];
 	ut32 M[16];
 	ut32 b = n * 8;

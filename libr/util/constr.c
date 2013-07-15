@@ -34,7 +34,7 @@ R_API const char *r_constr_append (RConstr *c, const char *str) {
 }
 
 R_API const char *r_constr_add (RConstr *c, const char *str) {
-	char *p = r_constr_get (c, str);
+	char *p = (char *)r_constr_get (c, str);
 	return p? p: r_constr_append (c, str);
 }
 

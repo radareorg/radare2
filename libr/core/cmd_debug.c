@@ -111,12 +111,12 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		} else eprintf ("cmd_debug_pid: Invalid arguments (%s)\n", input);
 		break;
 	case 'n':
-		eprintf ("TODO: debug_fork: %d\n", r_debug_fork (core->dbg));
+		eprintf ("TODO: debug_fork: %d\n", r_debug_child_fork (core->dbg));
 		break;
 	case 't':
 		switch (input[2]) {
 		case 'n':
-			eprintf ("TODO: debug_clone: %d\n", r_debug_clone (core->dbg));
+			eprintf ("TODO: debug_clone: %d\n", r_debug_child_clone (core->dbg));
 			break;
 		case '=':
 		case ' ':

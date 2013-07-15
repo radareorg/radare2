@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2009-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 pancake<nopcode.org> */
 
 // TODO: use ptr tablez here
 #include "r_hash.h"
 #include "md5.h"
 #include "sha1.h"
 #include "sha2.h"
-#include "md4.c" // included directly
+R_API void mdfour(ut8 *out, const ut8 *in, int n);
 
 #define CHKFLAG(f,x) if (f==0||f&x)
 

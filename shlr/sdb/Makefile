@@ -20,7 +20,8 @@ src/sdb-version.h:
 EMCCFLAGS=-O2 -s ASM_JS=1
 #EMCCFLAGS+=--embed-file sdb.data
 sdb.js: src/sdb-version.h
-	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js *.c json/api.c json/js0n.c json/json.c json/rangstr.c  
+	cd src ; emcc ${EMCCFLAGS} -I. -o ../sdb.js *.c 
+#json/api.c json/js0n.c json/json.c json/rangstr.c  
 
 clean:
 	rm -f src/sdb-version.h

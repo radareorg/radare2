@@ -1,9 +1,12 @@
+/* radare - LGPL - Copyright 2013 - pancake */
+
 #include <iconv.h>
 #include <stdio.h>
+#include <string.h>
 
 char *r_str_iconv (const char *str, int *len) {
 	iconv_t cd;
-	char *inbuf = str;
+	char *inbuf = (char*)str; // XXX dangerous cast
 	size_t inbytesleft = strlen (str);
 	char data[1024];
 	char *outbuf = (char*)&data;

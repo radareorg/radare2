@@ -85,7 +85,7 @@ R_API void r_sys_backtrace(void) {
 #if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE)
         void *array[10];
         size_t i, size = backtrace (array, 10);
-        char **strings = backtrace_symbols (array, size);
+        char **strings = (char **)(size_t)backtrace_symbols (array, size);
         printf ("Backtrace %zd stack frames.\n", size);
         for (i = 0; i < size; i++)
                 printf ("%s\n", strings[i]);

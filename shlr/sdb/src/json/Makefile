@@ -1,4 +1,5 @@
 include ../../config.mk
+
 CFLAGS+=-Wall -g -ggdb
 BIN=a.out
 OBJ=rangstr.o json.o js0n.o api.o main.o
@@ -7,7 +8,7 @@ OBJ+=../libsdb.a
 all: ${BIN}
 
 ${BIN}: ${OBJ}
-	${CC} -o ${BIN} ${OBJ}
+	${CC} main.c -DMAIN=1 -o ${BIN} ../libsdb.a
 
 clean:
 	rm -f ${OBJ} ${BIN}
