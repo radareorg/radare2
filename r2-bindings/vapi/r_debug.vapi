@@ -42,8 +42,8 @@ public class Radare.RDebug {
 	public RDebug.Map map_get(uint64 addr);
 	public bool map_sync ();
 
-	public bool fork ();
-	public bool clone();
+	public bool child_fork ();
+	public bool child_clone();
 
 	// TODO: public RList<RDebug.Frame> frames ();
 
