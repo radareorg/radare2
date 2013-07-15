@@ -887,17 +887,19 @@ struct r_bin_elf_symbol_t* Elf_(r_bin_elf_get_symbols)(struct Elf_(r_bin_elf_obj
 	}
 	shdr_size = bin->ehdr.e_shnum * sizeof (Elf_(Shdr));
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+#define BUGGY 0
+#if BUGGY
+/* XXX: this regression was introduced because some binary was wrongly parsed.. must be reviewed */
 if (
 	(
 		(type == R_BIN_ELF_IMPORTS) || (type == R_BIN_ELF_SYMBOLS)
 	) && (
 		(bin->shdr[i].sh_type == SHT_DYNSYM) || (bin->shdr[i].sh_type == SHT_SYMTAB)
 	)
-)
-{
-#if 0
-		if ((type == R_BIN_ELF_IMPORTS && bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
-		(type == R_BIN_ELF_SYMBOLS && bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
+) {
+#else
+         if ((type == R_BIN_ELF_IMPORTS && bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) ||
+                (type == R_BIN_ELF_SYMBOLS && bin->shdr[i].sh_type == (Elf_(r_bin_elf_get_stripped) (bin) ? SHT_DYNSYM : SHT_SYMTAB))) {
 #endif
 			if (bin->shdr[i].sh_link > shdr_size) {
 				/* oops. fix out of range pointers */
