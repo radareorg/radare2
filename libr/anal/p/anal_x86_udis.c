@@ -242,6 +242,20 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Ilea:
 	case UD_Imov:
 		op->type = R_ANAL_OP_TYPE_MOV;
+		switch (u.operand[1].type) {
+		case UD_OP_MEM:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			if (u.operand[1].base == UD_R_RIP) {
+				int delta = u.operand[1].lval.uword;
+				op->ptr = addr + oplen + delta;
+			}
+			break;
+		default:
+			// XX
+			break;
+		}
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = regsz;
 		break;
 	case UD_Ipush:
 	case UD_Ipusha:
