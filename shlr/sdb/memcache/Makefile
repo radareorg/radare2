@@ -1,0 +1,1 @@
+all clean mrproper:

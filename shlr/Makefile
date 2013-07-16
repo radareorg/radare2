@@ -31,11 +31,12 @@ sdb-sync sync-sdb:
 	cp -rf ${SYNCFILES} sdb
 	rm -rf sdb.vc $I/sdb
 	mkdir -p $I/sdb
+	rm -f src/sdb-version.h
 	cd sdb ; ${MAKE} src/sdb-version.h
 	cp -f sdb/src/*.h $I/sdb
 	echo '#include <sdb/sdb.h>' > $I/sdb.h
 	mkdir -p sdb/test sdb/memcache
-	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' -i foo sdb/config.mk
+	sed -e 's,HAVE_VALA=,HAVE_VALA=#,' -i sdb/config.mk
 	echo all clean mrproper: | tee sdb/test/Makefile > sdb/memcache/Makefile
 	git add $I/sdb*
 	git add sdb
