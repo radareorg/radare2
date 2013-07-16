@@ -189,6 +189,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: only if show_color?
 	const char *color_comment = P(comment): Color_CYAN;
 	const char *color_fname = P(fname): Color_CYAN;
+	const char *color_fline = P(fline): Color_CYAN;
 	//const char *color_flow = P(flow): Color_CYAN;
 	const char *color_flag = P(flag): Color_CYAN;
 	const char *color_label = P(label): Color_CYAN;
@@ -330,8 +331,14 @@ toro:
 					RAnalFunction *fun = r_anal_fcn_find (
 						core->anal, refi->addr,
 						R_ANAL_FCN_TYPE_NULL);
-					r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
-						&&f->addr==at)?' ':'|',refline);
+					if (show_color) {
+						r_cons_printf ("%s%c "Color_RESET"%s", color_fline,
+							((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==at)
+							?' ':'|',refline);
+					} else {
+						r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
+							&&f->addr==at)?' ':'|',refline);
+					}
 					if (show_color)
 					r_cons_printf ("%s; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 						pal_comment, refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
@@ -529,7 +536,12 @@ toro:
 					RListIter *l_iter;
 					r_list_foreach (f->locals, l_iter, f_loc) {
 						if (f_loc && f_loc->addr == at) {
-								r_cons_strcat (pre); //"| ");
+							if (show_color) {
+								r_cons_strcat (color_fline);
+								r_cons_strcat (pre); //"| "
+								r_cons_strcat (Color_RESET);
+							} else
+								r_cons_strcat (pre); //"| "
 							if (show_lines && refline)
 								r_cons_strcat (refline);
 							if (show_offset)
@@ -544,18 +556,26 @@ toro:
 				if (f->addr == at) {
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
-						r_cons_printf ("|- %s (%d)\n| ", f->name, f->size);
+						if (show_color) {
+							r_cons_strcat (color_fline);
+							r_cons_printf ("|- "Color_RESET"%s (%d)\n", f->name, f->size);
+							r_cons_strcat (color_fline);
+							r_cons_strcat ("| "Color_RESET);
+						} else {
+							r_cons_printf ("|- %s (%d)\n| ", f->name, f->size);
+						}
 					} else {
 						const char *fmt = show_color?
-							"/ %s%s: %s"Color_RESET" (%d)\n| ":
+							"%s/ "Color_RESET"%s%s: %s"Color_RESET" (%d)\n":
 							"/ %s: %s (%d)\n| ";
-						if (show_color)
-							r_cons_printf (fmt, color_fname,
+						if (show_color) {
+							r_cons_printf (fmt, color_fline, color_fname,
 								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
 								(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
 								f->name, f->size);
-
-						else
+							r_cons_strcat (color_fline);
+							r_cons_strcat ("| "Color_RESET);
+						} else
 							r_cons_printf (fmt,
 								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
 								(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
@@ -566,9 +586,21 @@ toro:
 					pre = "| ";
 					stackptr = 0;
 				} else if (f->addr+f->size-analop.length == at) {
-					r_cons_printf ("\\ ");
+					if (show_color) {
+						r_cons_strcat (color_fline);
+						r_cons_printf ("\\ ");
+						r_cons_strcat (Color_RESET);
+					} else {
+						r_cons_printf ("\\ ");
+					}
 				} else if (at > f->addr && at < f->addr+f->size-1) {
-					r_cons_printf ("| ");
+					if (show_color) {
+						r_cons_strcat (color_fline);
+						r_cons_printf ("| ");
+						r_cons_strcat (Color_RESET);
+					} else {
+						r_cons_printf ("| ");
+					}
 					pre = "| ";
 				} else f = NULL;
 				if (f && at == f->addr+f->size-analop.length) // HACK
@@ -583,8 +615,13 @@ toro:
 				if (show_color) r_cons_strcat (color_flag);
 				if (show_functions) r_cons_printf ("%s:\n", flag->name);
 				else r_cons_printf ("%s:\n", flag->name);
-				if (show_color) r_cons_strcat (Color_RESET);
-				r_cons_strcat (f?pre:"  ");
+				if (show_color) {
+					r_cons_strcat (Color_RESET);
+					r_cons_strcat (color_fline);
+					r_cons_strcat (f ? pre : "  ");
+					r_cons_strcat (Color_RESET);
+				} else
+					r_cons_strcat (f ? pre : "  ");
 			}
 		}
 		if (!linesright && show_lines && line) r_cons_strcat (line);

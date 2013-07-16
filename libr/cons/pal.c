@@ -10,6 +10,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.input = Color_WHITE;
 	cons->pal.comment = Color_CYAN;
 	cons->pal.fname = Color_CYAN;
+	cons->pal.fline = Color_CYAN;
 	cons->pal.flag = Color_CYAN;
 	cons->pal.label = Color_CYAN;
 	cons->pal.flow = Color_CYAN;
@@ -91,6 +92,7 @@ struct {
 } keys[] = {
 	{ "comment", r_offsetof (RConsPalette, comment) },
 	{ "fname", r_offsetof (RConsPalette, fname) },
+	{ "fline", r_offsetof (RConsPalette, fline) },
 	{ "flag", r_offsetof (RConsPalette, flag) },
 	{ "label", r_offsetof (RConsPalette, label) },
 	{ "flow", r_offsetof (RConsPalette, flow) },
