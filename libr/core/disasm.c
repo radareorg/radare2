@@ -190,7 +190,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	const char *color_comment = P(comment): Color_CYAN;
 	const char *color_fname = P(fname): Color_CYAN;
 	const char *color_fline = P(fline): Color_CYAN;
-	//const char *color_flow = P(flow): Color_CYAN;
+	const char *color_flow = P(flow): Color_CYAN;
 	const char *color_flag = P(flag): Color_CYAN;
 	const char *color_label = P(label): Color_CYAN;
 	const char *color_nop = P(nop): Color_BLUE;
@@ -332,9 +332,9 @@ toro:
 						core->anal, refi->addr,
 						R_ANAL_FCN_TYPE_NULL);
 					if (show_color) {
-						r_cons_printf ("%s%c "Color_RESET"%s", color_fline,
+						r_cons_printf ("%s%c "Color_RESET"%s%s"Color_RESET, color_fline,
 							((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==at)
-							?' ':'|',refline);
+							?' ':'|',color_flow, refline);
 					} else {
 						r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
 							&&f->addr==at)?' ':'|',refline);
@@ -542,8 +542,11 @@ toro:
 								r_cons_strcat (Color_RESET);
 							} else
 								r_cons_strcat (pre); //"| "
-							if (show_lines && refline)
+							if (show_lines && refline) {
+								r_cons_strcat (color_flow);
 								r_cons_strcat (refline);
+								r_cons_strcat (Color_RESET);
+							}
 							if (show_offset)
 								r_cons_printf ("; -- ");
 							if (show_color)
@@ -610,7 +613,12 @@ toro:
 		if (show_flags) {
 			flag = r_flag_get_i (core->flags, at);
 			if (flag) {
-				if (show_lines && refline) r_cons_strcat (refline);
+				if (show_lines && refline)
+				{
+					r_cons_strcat (color_flow);
+					r_cons_strcat (refline);
+					r_cons_strcat (Color_RESET);
+				}
 				if (show_offset) r_cons_printf ("; -- ");
 				if (show_color) r_cons_strcat (color_flag);
 				if (show_functions) r_cons_printf ("%s:\n", flag->name);
@@ -624,7 +632,11 @@ toro:
 					r_cons_strcat (f ? pre : "  ");
 			}
 		}
-		if (!linesright && show_lines && line) r_cons_strcat (line);
+		if (!linesright && show_lines && line) {
+			r_cons_strcat (color_flow);
+			r_cons_strcat (line);
+			r_cons_strcat (Color_RESET);
+		}
 		if (show_offset)
 			r_print_offset (core->print, at, (at==dest), show_offseg);
 		if (show_size)
@@ -749,7 +761,11 @@ toro:
 			free (str);
 		}
 
-		if (linesright && show_lines && line) r_cons_strcat (line);
+		if (linesright && show_lines && line) {
+			r_cons_strcat (color_flow);
+			r_cons_strcat (line);
+			r_cons_strcat (Color_RESET);
+		}
 		if (show_color) {
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_NOP:
@@ -966,8 +982,8 @@ toro:
 				if (ccstr) {
 					RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
 					if (show_color)
-						r_cons_printf ("\n%s%s   %s; %s (%s+%d)"Color_RESET,
-							pre, refline, ccstr,
+						r_cons_printf ("\n%s%s"Color_RESET"%s%s"Color_RESET"   %s; %s (%s+%d)"Color_RESET,
+							color_fline, pre, color_flow, refline, ccstr,
 							(flag&&flag->name)? flag->name: "",
 							(flag&&flag->name)? flag->name: "",
 							(f&&flag)? cc.jump-flag->offset: 0);
