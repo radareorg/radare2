@@ -166,7 +166,7 @@ ifneq (${LUAPKG},)
 LUADIR=$(shell pkg-config --variable=INSTALL_CMOD ${LUAPKG})
 lua-install install-lua:
 	@mkdir -p ${DESTDIR}${LUADIR} ; \
-	echo "Installing lua r2 modules... ${LUADIR}" ; \
+	echo "Installing lua r2 modules... ${DESTDIR}${LUADIR}" ; \
 	cp -rf lua/*.so ${DESTDIR}${LUADIR}/
 else
 lua-install install-lua:
