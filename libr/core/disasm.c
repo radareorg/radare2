@@ -52,7 +52,7 @@ static char *filter_refline(const char *str) {
 
 static void colorize_opcode (char *p, const char *reg, const char *num) {
 	int i, j, k, is_mod;
-	int is_jmp = (*p == 'j' || *p == 'c')? 1: 0;
+	int is_jmp = (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	char *o;
 	if (is_jmp)
 		return;
@@ -80,8 +80,13 @@ static void colorize_opcode (char *p, const char *reg, const char *num) {
 			strcpy (o+j, Color_RESET);
 			j += strlen (Color_RESET);
 			o[j++] = p[i];
-			strcpy (o+j, reg);
-			j += strlen (reg)-1;
+			if ((p[i] > '0') && (p[i] < '9')) {
+				strcpy (o+j, num);
+				j += strlen (num)-1;
+			} else {
+				strcpy (o+j, reg);
+				j += strlen (reg)-1;
+			}
 			continue;
 		case ' ':
 			// find if next ',' before ' ' is found
