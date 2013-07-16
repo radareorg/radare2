@@ -6,6 +6,7 @@
 LNG=$1
 MOD=$2
 VALABINDFLAGS="" ; [ 1 = "${DIST}" ] && VALABINDFLAGS="-C"
+RADARE_JPKG_DIR=org/radare/radare2
 if [ -z "${MOD}" ]; then
 	echo "Usage: ./libr-swig.sh [python] [r_foo]"
 	exit 1
@@ -21,6 +22,10 @@ case "${LNG}" in
 *node*|ctypes)
 	VBMODE=''
 	;;
+java)
+        export SWIGFLAGS="-package org.radare.radare2 -outdir ${RADARE_JPKG_DIR}"
+        VBMODE=--swig
+        ;;
 *)
 	VBMODE=--swig
 	;;

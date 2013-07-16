@@ -1,10 +1,11 @@
 /* Run: java -Djava.library.path=. TestRBin */
 
 import java.util.*;
+import org.radare.radare2.*;
 
 class TestRBin {
 	static {
-		System.loadLibrary("r");
+		System.loadLibrary("r_bin");
 	}
 	public static void main (String args[]) {
 		RBin b;
@@ -14,7 +15,7 @@ class TestRBin {
 		int i;
 
 		b = new RBin ();
-		b.load ("/bin/ls", null);
+		b.load ("/bin/ls", false);
 		sv = b.get_sections ();
 		nsects = sv.size ();
 

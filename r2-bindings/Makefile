@@ -40,7 +40,7 @@ $(foreach p,${ALANGS},$(eval $(call ADD_lang,$(p))))
 
 ifeq ($(DEVEL_MODE),1)
 LANGS=$(shell cat supported.langs 2>/dev/null)
-all: supported.langs 
+all: supported.langs
 	@for a in ${LANGS} ; do \
 		[ $$a = valac ] && continue; \
 		(cd $$a && ${MAKE} ) ; done
@@ -141,10 +141,13 @@ PYTHON_INSTALL_DIR=${DESTDIR}/${PYTHON_PKGDIR}/r2
 
 .PHONY: purge purge-python install-cxx
 
-purge: purge-python
+purge: purge-python purge-java
 
 install-cxx:
 	@echo TODO: install-cxx
+
+purge-java:
+	cd java && ${MAKE} purge
 
 purge-python:
 	[ -n "${PYTHON_PKGDIR}" ] && \
@@ -182,7 +185,7 @@ install-go:
 	fi
 
 install-java:
-	@echo "TODO: install-java"
+	cd java && ${MAKE} install
 
 install-ruby:
 	for a in 1.8 1.9.1; do \
@@ -253,8 +256,8 @@ mrproper:
 version:
 	@echo ${VERSION}
 
-.PHONY: $(LANGS) $(ALANGS) 
-.PHONY: clean mrproper all vdoc 
-.PHONY: oldtest test 
-.PHONY: w32 w32dist check check-w32 
+.PHONY: $(LANGS) $(ALANGS)
+.PHONY: clean mrproper all vdoc
+.PHONY: oldtest test
+.PHONY: w32 w32dist check check-w32
 .PHONY: deinstall uninstall install version
