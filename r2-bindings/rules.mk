@@ -30,7 +30,7 @@ ifeq (${LANG},dlang)
 	valabind --dlang -N Radare -m $$mod --vapidir=../vapi $$mod
 else
 ifeq (${LANG},java)
-	mkdir -p ${RADARE_JPKG_DIR}
+	mkdir -p ${R2_JAVA_DIR}
 endif
 	@-test ../vapi/`echo $@|sed -e s,.${SOEXT},.vapi,` -nt ${LIBS_PFX}$@ ; \
 	if [ ! $$? = 0 ]; then \
@@ -55,7 +55,7 @@ install:
 clean:
 ifeq (${LANG},java)
 	rm -rf radare2.jar
-	rm -rf ${RADARE_JPKG_DIR}
+	rm -rf ${R2_JAVA_DIR}
 endif
 ifneq ($(SAVED),)
 	mkdir -p .skip
