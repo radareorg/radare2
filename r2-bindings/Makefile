@@ -161,7 +161,7 @@ install-python:
 
 LUAPATH=$(shell strings `../sys/whereis.sh lua`| grep lib/lua | cut -d ';' -f 2 | grep '.so'  | cut -d '?' -f 1)
 
-LUAPKG=$(shell pkg-config --list-all|awk '/lua-/{print $$1;}')
+LUAPKG=$(shell pkg-config --list-all|awk '/lua|lua-/{print $$1;}')
 ifneq (${LUAPKG},)
 LUADIR=$(shell pkg-config --variable=INSTALL_CMOD ${LUAPKG})
 lua-install install-lua:

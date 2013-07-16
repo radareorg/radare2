@@ -8,6 +8,6 @@ case "$1" in
 	printf "==> Using valabind "
 	valabind --version
 	printf "==> Using swig "
-	swig -version | grep Version |cut -d ' ' -f3
+	swig -version | grep Version | cut -d ' ' -f3
 	./configure-langs $@
 esac
