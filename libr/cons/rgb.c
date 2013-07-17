@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2013 - pancake */
 /* ansi 256 color extension for r_cons */
+/* https://en.wikipedia.org/wiki/ANSI_color */
 
 #include <r_cons.h>
 
@@ -39,28 +40,52 @@ R_API void r_cons_rgb_init (void) {
 }
 
 R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
+	const char *q = 0;
+	int isbg = 0, bold=127;
 	//const double k = (256/6);
 	if (!p) return 0;
 	if (*p==0x1b) p++;
 	if (*p!='[') return 0;
-	if (p[3]==';') {
-		int R,G,B,n = atoi (p+6);
-		n-=16;
-		B = (n&3) * 2.3;
-		G = ((n>>3)&3) * 2.3;
-		R = ((n>>6)&3) * 2.3;
-		
-		if (r) *r = R* 42.2;
-		if (g) *g = G*42.2;
-		if (b) *b = B*42.2;
-		//n = (r*36) + (g*6) + b;
-		// b = n - (r*36) - (g*6)
-		// r = (n-b-(g*6))/36
-		if (is_bg) *is_bg = (atoi (p+1) == 48)?1:0;
-		return 1;
+	switch (p[1]) {
+	case '1': bold=255; p+=2; break;
+	case '3': isbg=0; break;
+	case '4': isbg=1; break;
 	}
-	// TODO support ansi
-	return 0;
+#define SETRGB(x,y,z) if(r)*r=x;if(g)*g=y;if(b)*b=z
+	if (bold != 255 && strchr (p, ';')) {
+		if (p[4]=='5')  {
+			/* indexed rgb cube */
+			int x, y, z;
+			// TODO :Implement colors.txt
+			SETRGB (0,0,0);
+		} else {
+			/* truecolor */
+			p += 6;
+			/* complex rgb */
+			if (r) *r = atoi (p);
+			q = strchr (p, ';');
+			if (!q) return 0;
+			if (g) *g = atoi (q+1);
+			q = strchr (q+1, ';');
+			if (!q) return 0;
+			if (b) *b = atoi (q+1);
+		}
+		return 1;
+	} else {
+		/* plain ansi */
+		if (is_bg) is_bg = isbg;
+		switch (p[2]) {
+		case '0': SETRGB (0,0,0); break;
+		case '1': SETRGB (bold,0,0); break;
+		case '2': SETRGB (0,bold,0); break;
+		case '3': SETRGB (bold,bold,0); break;
+		case '4': SETRGB (0,0,bold); break;
+		case '5': SETRGB (bold,0,bold); break;
+		case '6': SETRGB (0,bold,bold); break;
+		case '7': SETRGB (bold,bold,bold); break;
+		}
+	}
+	return 1;
 }
 
 R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
@@ -68,7 +93,13 @@ R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 	k = (r == g && g == b)?  gs (r): rgb (r, g, b);
 	//k = rgb (r, g, b);
 	if (!outstr) outstr = malloc (32);
-	sprintf (outstr, "\x1b[%d;5;%dm", fgbg, k);
+
+	if (r_cons_singleton()->truecolor) // only for xterm
+		sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg, 
+				R_DIM (r, 0, 255),
+				R_DIM (g, 0, 255),
+				R_DIM (b, 0, 255));
+	else sprintf (outstr, "\x1b[%d;5;%dm", fgbg, k);
 	return outstr;
 }
 

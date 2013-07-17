@@ -442,7 +442,6 @@ static int cmd_resize(void *data, const char *input) {
 			oldsize < core->offset+core->blocksize) {
 		r_core_block_read (core, 0);
 	}
-
 	return R_TRUE;
 }
 
@@ -455,15 +454,20 @@ static int cmd_eval(void *data, const char *input) {
 	case 'c':
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: ec[s?] [key][[=| ]fg] [bg]\n");
-			r_cons_printf ("  ec                list all color keys\n");
-			r_cons_printf ("  ec*       (TODO)  same as above, but using r2 commands\n");
-			r_cons_printf ("  ecs               show a colorful palette\n");
-			r_cons_printf ("  ecf white         load white color scheme from $DATADIR/radare2/cons\n");
-			r_cons_printf ("  ec prompt red     change coloro of prompt\n");
-			r_cons_printf ("Available colors:\n");
-			r_cons_printf ("  rgb:000           24 bit hexadecimal rgb color\n");
-			r_cons_printf ("  red|green|blue|.  well known ansi colors\n");
+			r_cons_printf ("Usage: ec[s?] [key][[=| ]fg] [bg]\n"
+			"  ec                list all color keys\n"
+			"  ec*       (TODO)  same as above, but using r2 commands\n"
+			"  ec:               set random palete\n"
+			"  ecs               show a colorful palette\n"
+			"  ecf dark|white    load white color scheme template\n"
+			"  ec prompt red     change coloro of prompt\n"
+			"Available colors:\n"
+			"  rgb:000           24 bit hexadecimal rgb color\n"
+			"  red|green|blue|.  well known ansi colors\n"
+			"See:\n"
+			"  e scr.rgbcolor    = true|false for 256 color cube\n"
+			"  e scr.truecolor   = true|false for 256*256*256 colors\n"
+			"  $DATADIR/radare2/cons ~/.config/radare2/cons ./\n");
 			break;
 		case 'f':
 			if (input[2] == ' ') {
@@ -472,20 +476,20 @@ static int cmd_eval(void *data, const char *input) {
 				home = r_str_home (path);
 				snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
 					R2_VERSION"/cons/%s", input+3);
-				if (!r_core_cmd_file (core, home)) {
-					if (!r_core_cmd_file (core, path)) {
-						eprintf ("Oops. Cannot find cons %s\n", path);
-					}
-				}
+				if (!r_core_cmd_file (core, home))
+					if (!r_core_cmd_file (core, path)) 
+						if (!r_core_cmd_file (core, input+3))
+							eprintf ("ecf: cannot open colorscheme profile\n");
 				free (home);
 			} else {
 				// TODO: lof stuff
-				eprintf ("Invalid argument.\n");
+				eprintf ("Usage: ecf [themename].\n");
 			}
 			break;
 		case 's': r_cons_pal_show (); break;
 		case '*': r_cons_pal_list (1); break;
 		case '\0': r_cons_pal_list (0); break;
+		case ':': r_cons_pal_random (); break;
 		default:{
 			char *p = strdup (input+2);
 			char *q = strchr (p, '=');
@@ -495,8 +499,8 @@ static int cmd_eval(void *data, const char *input) {
 				 *q++ = 0;
 				r_cons_pal_set (p, q);
 			} else {
-				// get
-				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, r_cons_pal_get (p));
+				const char *k = r_cons_pal_get (p);
+				if (k) eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, k);
 			}
 		}
 		}
@@ -522,20 +526,12 @@ static int cmd_eval(void *data, const char *input) {
 		r_core_config_init (core);
 		eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
-	case 'v':
-		eprintf ("Invalid command '%s'. Use 'e?'\n", input);
-		break;
-	case '*':
-		r_config_list (core->config, NULL, 1);
-		break;
+	case 'v': eprintf ("Invalid command '%s'. Use 'e?'\n", input); break;
+	case '*': r_config_list (core->config, NULL, 1); break;
 	case '?':
 		switch (input[1]) {
-		case '?':
-			r_config_list (core->config, input+2, 2);
-			break;
-		default:
-			r_config_list (core->config, input+1, 2);
-			break;
+		case '?': r_config_list (core->config, input+2, 2); break;
+		default: r_config_list (core->config, input+1, 2); break;
 		case 0:
 			r_cons_printf (
 			"Usage: e[?] [var[=value]]\n"
@@ -559,11 +555,8 @@ static int cmd_eval(void *data, const char *input) {
 				eprintf ("cannot find key '%s'\n", key);
 		} else eprintf ("Usage: er [key]\n");
 		break;
-	case ' ':
-		r_config_eval (core->config, input+1);
-		break;
-	default:
-		r_config_eval (core->config, input);
+	case ' ': r_config_eval (core->config, input+1); break;
+	default: r_config_eval (core->config, input); break;
 	}
 	return 0;
 }
@@ -599,6 +592,7 @@ static int cmd_system(void *data, const char *input) {
 				free (cmd);
 			} //else eprintf ("Error setting up system environment\n");
 		} else {
+			eprintf ("History saved to "R2_HOMEDIR"/history\n");
 			r_line_hist_save (R2_HOMEDIR"/history");
 		}
 		break;

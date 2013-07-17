@@ -6,6 +6,7 @@ all clean:
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
+	rm -rf $P
 	mkdir -p $P
 	cp -f * $P
 

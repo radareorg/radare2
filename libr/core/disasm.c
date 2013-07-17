@@ -1070,7 +1070,10 @@ toro:
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
-				r_cons_printf ("  %s; --\n", line);
+				if (show_color) {
+					r_cons_printf ("  %s%s"Color_RESET"; --\n", color_flow, line);
+				} else 
+					r_cons_printf ("  %s; --\n", line);
 			}
 			free (line);
 			free (refline);

@@ -730,9 +730,7 @@ R_API int r_str_ansi_len(const char *str) {
 				if (!strncmp (str+2+5, "rgb:", 4))
 					i += 18;
 			} else if (ch2 == '[') {
-				for (++i;
-				str[i]&&str[i]!='J'&&
-				str[i]!='m'&&str[i]!='H';i++);
+				for (++i; str[i]&&str[i]!='J'&& str[i]!='m'&&str[i]!='H';i++);
 			}
 		} else len++;
 		i++;

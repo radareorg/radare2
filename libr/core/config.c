@@ -495,6 +495,12 @@ static int config_asmbits_callback(void *user, void *data) {
 	return ret;
 }
 
+static int config_truecolor_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton()->truecolor = (node->i_value)? 1: 0;
+	return R_TRUE;
+}
+
 static int config_color_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -761,6 +767,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
 	r_config_set (cfg, "scr.pipecolor", "false");
 	r_config_desc (cfg, "scr.pipecolor", "enable colors when using pipes if true");
+	r_config_set_cb (cfg, "scr.truecolor", "false", &config_truecolor_callback);
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",
 		&config_color_callback);

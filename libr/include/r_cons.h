@@ -124,6 +124,7 @@ typedef struct r_cons_t {
 	char *pager;
 	int blankline;
 	int widthfix;
+	int truecolor;
 	RConsPalette pal;
 } RCons;
 
@@ -264,6 +265,8 @@ R_API int  r_cons_eof();
 
 R_API int r_cons_palette_init(const unsigned char *pal);
 R_API int r_cons_pal_set (const char *key, const char *val);
+R_API void r_cons_pal_init(const char *foo);
+R_API void r_cons_pal_random();
 R_API const char *r_cons_pal_get (const char *key);
 R_API const char *r_cons_pal_get_i (int n);
 R_API const char *r_cons_pal_get_color(int n);
@@ -360,9 +363,6 @@ R_API int r_line_hist_list();
 R_API const char *r_line_hist_get(int n);
 
 #define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
-
-/* palette */
-R_API void r_cons_pal_init(const char *foo);
 
 #endif
 

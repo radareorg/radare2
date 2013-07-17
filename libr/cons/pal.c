@@ -14,6 +14,8 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.flag = Color_CYAN;
 	cons->pal.label = Color_CYAN;
 	cons->pal.flow = Color_CYAN;
+	cons->pal.math = Color_YELLOW;
+	cons->pal.bin = Color_RED;
 	cons->pal.b0x00 = Color_GREEN;
 	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;
@@ -48,6 +50,7 @@ struct {
 	{ "cyan",     Color_CYAN,     Color_BGCYAN },
 	{ "blue",     Color_BLUE,     Color_BGBLUE },
 	{ "gray",     Color_GRAY,     Color_BGGRAY },
+	{ "none",     Color_RESET,    Color_RESET },
 	{ NULL, NULL, NULL }
 };
 
@@ -55,6 +58,22 @@ static inline ut8 rgbnum (const char ch) {
 	ut8 r;
 	r_hex_to_byte (&r, ch);
 	return r*16;
+}
+
+R_API void r_cons_pal_random() {
+	ut8 r, g, b;
+	char val[32];
+        const char *k;
+	int i;
+	for (i=0;;i++) {
+		k = r_cons_pal_get_i (i);
+		if (!k) break;
+		r = r_num_rand (0xf);
+		g = r_num_rand (0xf);
+		b = r_num_rand (0xf);
+		sprintf (val, "rgb:%x%x%x", r, g, b);
+		r_cons_pal_set (k, val);
+	}
 }
 
 R_API char *r_cons_pal_parse(const char *str) {
@@ -107,8 +126,6 @@ static struct {
 	{ "math", r_offsetof (RConsPalette, math) },
 	{ "bin", r_offsetof (RConsPalette, bin) },
 	{ "btext", r_offsetof (RConsPalette, btext) },
-	{ "math",  r_offsetof (RConsPalette, math) },
-	{ "bin",  r_offsetof (RConsPalette, bin) },
 	{ "push",  r_offsetof (RConsPalette, push) },
 	{ "pop", r_offsetof (RConsPalette, pop) },
 	{ "jmp", r_offsetof (RConsPalette, jmp) },
@@ -203,17 +220,16 @@ R_API void r_cons_pal_list (int rad) {
 	int i;
 	for (i=0; keys[i].name; i++) {
 		color = (char**)(p + keys[i].off);
-		color = (char**)*color;
 		if (rad) {
 			r = g = b = 0;
-			r_cons_rgb_parse (color, &r, &g, &b, NULL);
+			r_cons_rgb_parse (*color, &r, &g, &b, NULL);
 			rgbstr[0] = 0;
 			r_cons_rgb_str (rgbstr, r, g, b, 0);
-			r >>=4;
-			g >>=4;
-			b >>=4;
-			r_cons_printf ("ec %s %srgb:%x%x%x"Color_RESET " # vs %sTEST"Color_RESET"\n",
-				keys[i].name, color, r, g, b, rgbstr);
+			r >>= 4;
+			g >>= 4;
+			b >>= 4;
+			r_cons_printf ("ec %s rgb:%x%x%x\n", //Color_RESET " # vs %sTEST"Color_RESET"\n",
+				keys[i].name, r, g, b);
 		} else
 		r_cons_printf (" %s##"Color_RESET"  %s\n",
 			(color)? (char*)color: "", keys[i].name);

@@ -1224,7 +1224,7 @@ R_API void r_core_visual_define (RCore *core) {
 	int plen = core->blocksize;
 	ut64 off = core->offset;
 	int n, ch, ntotal = 0;
-	int cleanup = R_FALSE;
+	//int cleanup = R_FALSE;
 	ut8 *p = core->block;
 	RAnalFunction *f;
 	char *name;
@@ -1265,7 +1265,7 @@ R_API void r_core_visual_define (RCore *core) {
 			if (n<2) break;
 			ntotal+= n;
 		} while (ntotal<core->blocksize);
-		cleanup = R_TRUE;
+		//cleanup = R_TRUE;
 		break;
 	case 's':
 		// TODO: r_core_cmd0 (core, "Cz");
@@ -1275,18 +1275,18 @@ R_API void r_core_visual_define (RCore *core) {
 		strncpy (name+4, (const char *)p, n);
 		r_flag_set (core->flags, name, off, n, 0);
 		r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);
-		cleanup = R_TRUE;
+		//cleanup = R_TRUE;
 		free (name);
 		break;
 	case 'd': // TODO: check
 		r_meta_cleanup (core->anal->meta, off, off+plen);
 		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+plen, "");
-		cleanup = R_TRUE;
+		//cleanup = R_TRUE;
 		break;
 	case 'c': // TODO: check
 		r_meta_cleanup (core->anal->meta, off, off+plen);
 		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+plen, "");
-		cleanup = R_TRUE;
+		//cleanup = R_TRUE;
 		break;
 	case 'u':
 		r_flag_unset_i (core->flags, off, NULL);
@@ -1312,7 +1312,7 @@ R_API void r_core_visual_define (RCore *core) {
 R_API void r_core_visual_colors(RCore *core) {
 	char color[32], cstr[32];
 	const char *k, *kol;
-	int i, ch, opt = 0;
+	int ch, opt = 0;
 	ut8 r, g, b;
 
 	r = g = b = 0;
@@ -1326,6 +1326,9 @@ R_API void r_core_visual_colors(RCore *core) {
 		}
 		r_cons_gotoxy (0, 0);
 		r_cons_rgb_str (cstr, r, g, b, 0);
+		r&=0xf;
+		g&=0xf;
+		b&=0xf;
 		sprintf (color, "rgb:%x%x%x", r, g, b);
 //r_cons_printf ("COLOR%s(%sXXX)"Color_RESET"\n", kol, kol?kol+1:"");
 		r_cons_printf ("# Colorscheme %d - Use '.' and ':' to randomize palette\n"
@@ -1343,14 +1346,8 @@ R_API void r_core_visual_colors(RCore *core) {
 		CASE_RGB ('R','r',r);
 		CASE_RGB ('G','g',g);
 		CASE_RGB ('B','b',b);
-		case 'k': opt--; 
-			kol = r_cons_pal_get_color (opt);
-			r_cons_rgb_parse (kol, &r, &g, &b, NULL);
-			break;
-		case 'j': opt++; 
-			kol = r_cons_pal_get_color (opt);
-			r_cons_rgb_parse (kol, &r, &g, &b, NULL);
-			break;
+		case 'k': opt--; break;
+		case 'j': opt++; break;
 		case 'K': opt=0; break;
 		case 'J': opt=0; break; // XXX must go to end
 		case 'q': return;
@@ -1360,15 +1357,10 @@ R_API void r_core_visual_colors(RCore *core) {
 			b = r_num_rand (0xf);
 			break;
 		case ':':
-			for (i=0;;i++) {
-				k = r_cons_pal_get_i (i);
-				if (!k) break;
-				r = r_num_rand (0xf);
-				g = r_num_rand (0xf);
-				b = r_num_rand (0xf);
-				r_core_cmdf (core, "ec %s rgb:%x%x%x", k, r,g,b);
-			}
+			r_cons_pal_random ();
 			break;
 		}
+		kol = r_cons_pal_get_color (opt);
+		r_cons_rgb_parse (kol, &r, &g, &b, NULL);
 	}
 }
