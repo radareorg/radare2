@@ -124,6 +124,7 @@ static char *getrange(char *s) {
 	return p;
 }
 
+#if 0
 static int getshift_unused (const char *s) {
 	int i;
 	const char *shifts[] = { "lsl", "lsr", "asr", "ror", NULL };
@@ -132,6 +133,7 @@ static int getshift_unused (const char *s) {
 			return i * 0x20;
 	return 0; 
 }
+#endif
 
 static int getreg(const char *str) {
 	int i;
@@ -581,6 +583,7 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 					ret = (getnum(ao->a[0])-ao->off-8)/4;
 					ao->o |= ((ret>>8)&0xff)<<16;
 					ao->o |= ((ret)&0xff)<<24;
+					if (ret<0) ao->o |= (0xff<<8); // MAKE IT NEGATIVE!
 				} else {
 					printf("This branch does not accept reg as arg\n");
 					return 0;
@@ -681,6 +684,7 @@ int armass_assemble(const char *str, unsigned long off, int thumb) {
 	}
 	buf[i] = 0;
 	arm_opcode_parse (&aop, buf);
+	aop.off = off;
 	if (!assemble[thumb] (&aop, buf)) {
 		printf ("armass: Unknown opcode (%s)\n", buf);
 		return -1;
