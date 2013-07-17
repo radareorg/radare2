@@ -94,13 +94,13 @@ and valabind from git/hg.
 r2-bindings
 ===========
 
-If you compile from the repo you need valabind and pass the --enable-devel
+If you compile from the repo you need the latest version of valabind and then:
 
-  ./configure --prefix=/usr --enable-devel
+  ./configure --prefix=/usr
 
 You can select the languages you want to compile with --enable={list-of-langs}
 
-  ./configure --prefix=/usr --enable-devel --enable=python
+  ./configure --prefix=/usr --enable=python
 
 
 PYTHON

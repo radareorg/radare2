@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_core.h>
+
 static int config_scrcolumns_callback(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int n = atoi (node->value);
@@ -495,9 +496,22 @@ static int config_asmbits_callback(void *user, void *data) {
 	return ret;
 }
 
+static int config_rgbcolor_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	RCore *core = (RCore *) user;
+	if (node->i_value) {
+		r_cons_singleton()->truecolor = 
+		(r_config_get_i (core->config, "scr.truecolor"))?2:1;
+	} else {
+		r_cons_singleton()->truecolor = 0;
+	}
+	return R_TRUE;
+}
+
 static int config_truecolor_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->truecolor = (node->i_value)? 1: 0;
+	if (r_cons_singleton()->truecolor)
+		r_cons_singleton()->truecolor = (node->i_value)? 2: 1;
 	return R_TRUE;
 }
 
@@ -767,6 +781,11 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
 	r_config_set (cfg, "scr.pipecolor", "false");
 	r_config_desc (cfg, "scr.pipecolor", "enable colors when using pipes if true");
+#if __WINDOWS__
+	r_config_set_cb (cfg, "scr.rgbcolor", "false", &config_rgbcolor_callback);
+#else
+	r_config_set_cb (cfg, "scr.rgbcolor", "true", &config_rgbcolor_callback);
+#endif
 	r_config_set_cb (cfg, "scr.truecolor", "false", &config_truecolor_callback);
 	r_config_set_cb (cfg, "scr.color",
 		(core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false",

@@ -51,13 +51,24 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 	case '3': isbg=0; break;
 	case '4': isbg=1; break;
 	}
-#define SETRGB(x,y,z) if(r)*r=x;if(g)*g=y;if(b)*b=z
+#define SETRGB(x,y,z) if(r)*r=(x);if(g)*g=(y);if(b)*b=(z)
 	if (bold != 255 && strchr (p, ';')) {
 		if (p[4]=='5')  {
-			/* indexed rgb cube */
+			const double k = (256/6);
 			int x, y, z;
-			// TODO :Implement colors.txt
-			SETRGB (0,0,0);
+			int n = atoi (p+6);
+			/* this is slow.. need to reverse search */
+			/* bruteforce indexed rgb cube */
+			SETRGB (0,0,0); // UNKNOWN
+
+			for (x=0; x<6; x++)
+				for (y=0; y<6; y++)
+					for (z=0; z<6; z++)
+						if (n== rgb (x*k, y*k, z*k)) {
+							x++;y++;z++;// HACK
+							SETRGB (x*k,y*k,z*k);
+							break;
+						}
 		} else {
 			/* truecolor */
 			p += 6;
@@ -73,7 +84,7 @@ R_API int r_cons_rgb_parse (const char *p, ut8 *r, ut8 *g, ut8 *b, int *is_bg) {
 		return 1;
 	} else {
 		/* plain ansi */
-		if (is_bg) is_bg = isbg;
+		if (is_bg) *is_bg = isbg;
 		switch (p[2]) {
 		case '0': SETRGB (0,0,0); break;
 		case '1': SETRGB (bold,0,0); break;
@@ -94,12 +105,26 @@ R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg) {
 	//k = rgb (r, g, b);
 	if (!outstr) outstr = malloc (32);
 
-	if (r_cons_singleton()->truecolor) // only for xterm
+	switch (r_cons_singleton()->truecolor) {
+	case 1: // 256 color palette
+		sprintf (outstr, "\x1b[%d;5;%dm", fgbg, k);
+		break;
+	case 2: // 16M - xterm only
 		sprintf (outstr, "\x1b[%d;2;%d;%d;%dm", fgbg, 
-				R_DIM (r, 0, 255),
-				R_DIM (g, 0, 255),
-				R_DIM (b, 0, 255));
-	else sprintf (outstr, "\x1b[%d;5;%dm", fgbg, k);
+			r&0xff, g&0xff, b&0xff);
+		break;
+	case 0: // ansi 16 colors
+	default:
+		{
+		int k = (r+g+b)/3;
+		r = (r>k)?1:0;
+		g = (g>k)?1:0;
+		b = (b>k)?1:0;
+		k = (r?1:0) + (g? (b?6:2): (b?4:0));
+		sprintf (outstr, "\x1b[%dm", 30+k);
+		}
+		break;
+	}
 	return outstr;
 }
 

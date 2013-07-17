@@ -1312,11 +1312,12 @@ R_API void r_core_visual_define (RCore *core) {
 R_API void r_core_visual_colors(RCore *core) {
 	char color[32], cstr[32];
 	const char *k, *kol;
-	int ch, opt = 0;
+	int ch, opt = 0, oopt = -1;
 	ut8 r, g, b;
 
 	r = g = b = 0;
 	kol = r_cons_pal_get_color (opt);
+	r_cons_rgb_parse (kol, &r, &g, &b, NULL);
 	for (;;) {
 		r_cons_clear ();
 		k = r_cons_pal_get_i (opt);
@@ -1346,21 +1347,22 @@ R_API void r_core_visual_colors(RCore *core) {
 		CASE_RGB ('R','r',r);
 		CASE_RGB ('G','g',g);
 		CASE_RGB ('B','b',b);
+		case 'q': return;
 		case 'k': opt--; break;
 		case 'j': opt++; break;
 		case 'K': opt=0; break;
 		case 'J': opt=0; break; // XXX must go to end
-		case 'q': return;
+		case ':': r_cons_pal_random (); break;
 		case '.':
 			r = r_num_rand (0xf);
 			g = r_num_rand (0xf);
 			b = r_num_rand (0xf);
 			break;
-		case ':':
-			r_cons_pal_random ();
-			break;
 		}
-		kol = r_cons_pal_get_color (opt);
-		r_cons_rgb_parse (kol, &r, &g, &b, NULL);
+		if (opt != oopt) {
+			kol = r_cons_pal_get_color (opt);
+			r_cons_rgb_parse (kol, &r, &g, &b, NULL);
+			oopt = opt;
+		}
 	}
 }

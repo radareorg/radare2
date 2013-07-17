@@ -457,7 +457,7 @@ static int cmd_eval(void *data, const char *input) {
 			r_cons_printf ("Usage: ec[s?] [key][[=| ]fg] [bg]\n"
 			"  ec                list all color keys\n"
 			"  ec*       (TODO)  same as above, but using r2 commands\n"
-			"  ec:               set random palete\n"
+			"  ecr               set random palette\n"
 			"  ecs               show a colorful palette\n"
 			"  ecf dark|white    load white color scheme template\n"
 			"  ec prompt red     change coloro of prompt\n"
@@ -489,14 +489,14 @@ static int cmd_eval(void *data, const char *input) {
 		case 's': r_cons_pal_show (); break;
 		case '*': r_cons_pal_list (1); break;
 		case '\0': r_cons_pal_list (0); break;
-		case ':': r_cons_pal_random (); break;
-		default:{
+		case 'r': r_cons_pal_random (); break;
+		default: {
 			char *p = strdup (input+2);
 			char *q = strchr (p, '=');
 			if (!q) q = strchr (p, ' ');
 			if (q) {
 				// set
-				 *q++ = 0;
+				*q++ = 0;
 				r_cons_pal_set (p, q);
 			} else {
 				const char *k = r_cons_pal_get (p);

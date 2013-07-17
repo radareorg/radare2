@@ -167,7 +167,8 @@ R_API void r_cons_pal_show () {
 		if (i<5) strcpy (fg, Color_WHITE);
 		else r_cons_rgb_str (fg, 0, 0, 0, 0);
 		r_cons_rgb_str (bg, r, r, r, 1);
-		r_cons_printf ("%s%s  rgb:%x%x%x  "Color_RESET, fg, bg, i, i, i);
+		r_cons_printf ("%s%s  rgb:%x%x%x  "
+			Color_RESET, fg, bg, i, i, i);
 		if (n++==5) {
 			n = 0;
 			r_cons_newline();
@@ -232,7 +233,7 @@ R_API void r_cons_pal_list (int rad) {
 				keys[i].name, r, g, b);
 		} else
 		r_cons_printf (" %s##"Color_RESET"  %s\n",
-			(color)? (char*)color: "", keys[i].name);
+			(color)? *color: "", keys[i].name);
 	}
 }
 
