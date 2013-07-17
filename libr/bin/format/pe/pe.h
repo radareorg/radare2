@@ -68,8 +68,9 @@ struct PE_(r_bin_pe_obj_t) {
 	PE_(image_import_directory)       *import_directory;
 	PE_(image_delay_import_directory) *delay_import_directory;
 	int size;
-	int	endian;
-    const char* file;
+	int endian;
+	RList *relocs;
+	const char* file;
 	struct r_buf_t* b;
 };
 
