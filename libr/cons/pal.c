@@ -17,6 +17,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.b0x00 = Color_GREEN;
 	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;
+	cons->pal.other = Color_YELLOW;
 	cons->pal.btext = Color_YELLOW;
 	cons->pal.push = Color_MAGENTA;
 	cons->pal.pop = Color_BMAGENTA;
@@ -86,7 +87,7 @@ R_API char *r_cons_pal_parse(const char *str) {
 	return *out? strdup (out): NULL;
 }
 
-struct {
+static struct {
 	const char *name;
 	int off;
 } keys[] = {
@@ -103,6 +104,8 @@ struct {
 	{ "b0x00", r_offsetof (RConsPalette, b0x00) },
 	{ "b0x7f", r_offsetof (RConsPalette, b0x7f) },
 	{ "b0xff", r_offsetof (RConsPalette, b0xff) },
+	{ "math", r_offsetof (RConsPalette, math) },
+	{ "bin", r_offsetof (RConsPalette, bin) },
 	{ "btext", r_offsetof (RConsPalette, btext) },
 	{ "math",  r_offsetof (RConsPalette, math) },
 	{ "bin",  r_offsetof (RConsPalette, bin) },
@@ -155,8 +158,8 @@ R_API void r_cons_pal_show () {
 	}
 	r_cons_printf ("\n\nRGB:\n");
 	for (i=n=0; i<=0xf; i+=inc) {
-			for (k=0; k<=0xf; k+=inc) {
-		for (j=0; j<=0xf; j+=inc) {
+		for (k=0; k<=0xf; k+=inc) {
+			for (j=0; j<=0xf; j+=inc) {
 				char fg[32], bg[32];
 				int r = i*16;
 				int g = j*16;
@@ -178,14 +181,40 @@ R_API void r_cons_pal_show () {
 	}
 }
 
-R_API void r_cons_pal_list () {
+R_API const char *r_cons_pal_get_color(int n) {
 	RConsPalette *pal = &(r_cons_singleton ()->pal);
 	ut8 *p = (ut8*)pal;
-	char **color;
+	const char **color = NULL;
+	int i;
+	for (i=0; keys[i].name; i++) {
+		if (i<n) continue;
+		color = (const char**)(p + keys[i].off);
+		color = (const char**)*color;
+		return (const char *)color;
+	}
+	return NULL;
+}
+
+R_API void r_cons_pal_list (int rad) {
+	RConsPalette *pal = &(r_cons_singleton ()->pal);
+	ut8 *p = (ut8*)pal;
+	ut8 r, g, b;
+	char **color, rgbstr[32];;
 	int i;
 	for (i=0; keys[i].name; i++) {
 		color = (char**)(p + keys[i].off);
 		color = (char**)*color;
+		if (rad) {
+			r = g = b = 0;
+			r_cons_rgb_parse (color, &r, &g, &b, NULL);
+			rgbstr[0] = 0;
+			r_cons_rgb_str (rgbstr, r, g, b, 0);
+			r >>=4;
+			g >>=4;
+			b >>=4;
+			r_cons_printf ("ec %s %srgb:%x%x%x"Color_RESET " # vs %sTEST"Color_RESET"\n",
+				keys[i].name, color, r, g, b, rgbstr);
+		} else
 		r_cons_printf (" %s##"Color_RESET"  %s\n",
 			(color)? (char*)color: "", keys[i].name);
 	}
@@ -203,6 +232,13 @@ R_API int r_cons_pal_set (const char *key, const char *val) {
 		}
 	}
 	return R_FALSE;
+}
+
+R_API const char *r_cons_pal_get_i (int n) {
+	int i;
+	for (i=0; i<n && keys[i].name; i++) {}
+	if (i==n) return keys[n].name;
+	return NULL;
 }
 
 R_API const char *r_cons_pal_get (const char *key) {

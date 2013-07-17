@@ -196,6 +196,19 @@ R_API void r_cons_print_clear() {
 	//r_cons_memcat ("\x1b[2J", 4);
 }
 
+R_API void r_cons_fill_line() {
+	char *p, white[1024];
+	int cols = I.columns-1;
+	if (cols<1) return;
+	if (cols>sizeof (white)) {
+		p = malloc (cols+1);
+	} else p = white;
+	memset (p, ' ', cols);
+	p[cols] = 0;
+	r_cons_strcat (p);
+	if (white != p) free (p);
+}
+
 R_API void r_cons_clear_line() {
 #if __WINDOWS__
 	char white[1024];
@@ -302,7 +315,7 @@ R_API void r_cons_visual_flush() {
 }
 
 R_API void r_cons_visual_write (char *buffer) {
-	const char white[1024];
+	char white[1024];
 	int cols = I.columns;
 	int alen, lines = I.rows;
 	const char *endptr;
@@ -401,7 +414,9 @@ R_API void r_cons_memset(char ch, int len) {
 }
 
 R_API void r_cons_strcat(const char *str) {
-	int len = strlen (str);
+	int len;
+	if (!str) return;
+	len = strlen (str);
 	if (len>0)
 		r_cons_memcat (str, len);
 }

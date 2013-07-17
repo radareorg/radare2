@@ -1308,3 +1308,67 @@ R_API void r_core_visual_define (RCore *core) {
 //	if (cleanup)
 //		r_meta_cleanup (core->anal->meta, 0, UT64_MAX);
 }
+
+R_API void r_core_visual_colors(RCore *core) {
+	char color[32], cstr[32];
+	const char *k, *kol;
+	int i, ch, opt = 0;
+	ut8 r, g, b;
+
+	r = g = b = 0;
+	kol = r_cons_pal_get_color (opt);
+	for (;;) {
+		r_cons_clear ();
+		k = r_cons_pal_get_i (opt);
+		if (!k) {
+			opt = 0;
+			k = r_cons_pal_get_i (opt);
+		}
+		r_cons_gotoxy (0, 0);
+		r_cons_rgb_str (cstr, r, g, b, 0);
+		sprintf (color, "rgb:%x%x%x", r, g, b);
+//r_cons_printf ("COLOR%s(%sXXX)"Color_RESET"\n", kol, kol?kol+1:"");
+		r_cons_printf ("# Colorscheme %d - Use '.' and ':' to randomize palette\n"
+			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (%s)\n",
+			opt, k, color, atoi (cstr+7), cstr+1);
+		r_core_cmdf (core, "ec %s %s", k, color);
+		r_core_cmd0 (core, "pd 25");
+		r_cons_flush ();
+		ch = r_cons_readchar ();
+		ch = r_cons_arrow_to_hjkl (ch);
+		switch (ch) {
+#define CASE_RGB(x,X,y) \
+	case x:y--;if(y>0x7f)y=0;break;\
+	case X:y++;if(y>15)y=15;break;
+		CASE_RGB ('R','r',r);
+		CASE_RGB ('G','g',g);
+		CASE_RGB ('B','b',b);
+		case 'k': opt--; 
+			kol = r_cons_pal_get_color (opt);
+			r_cons_rgb_parse (kol, &r, &g, &b, NULL);
+			break;
+		case 'j': opt++; 
+			kol = r_cons_pal_get_color (opt);
+			r_cons_rgb_parse (kol, &r, &g, &b, NULL);
+			break;
+		case 'K': opt=0; break;
+		case 'J': opt=0; break; // XXX must go to end
+		case 'q': return;
+		case '.':
+			r = r_num_rand (0xf);
+			g = r_num_rand (0xf);
+			b = r_num_rand (0xf);
+			break;
+		case ':':
+			for (i=0;;i++) {
+				k = r_cons_pal_get_i (i);
+				if (!k) break;
+				r = r_num_rand (0xf);
+				g = r_num_rand (0xf);
+				b = r_num_rand (0xf);
+				r_core_cmdf (core, "ec %s rgb:%x%x%x", k, r,g,b);
+			}
+			break;
+		}
+	}
+}

@@ -453,19 +453,40 @@ static int cmd_eval(void *data, const char *input) {
 		r_config_list (core->config, NULL, 0);
 		break;
 	case 'c':
-		if (input[1] == '?') {
+		switch (input[1]) {
+		case '?':
 			r_cons_printf ("Usage: ec[s?] [key][[=| ]fg] [bg]\n");
 			r_cons_printf ("  ec                list all color keys\n");
+			r_cons_printf ("  ec*       (TODO)  same as above, but using r2 commands\n");
 			r_cons_printf ("  ecs               show a colorful palette\n");
+			r_cons_printf ("  ecf white         load white color scheme from $DATADIR/radare2/cons\n");
 			r_cons_printf ("  ec prompt red     change coloro of prompt\n");
 			r_cons_printf ("Available colors:\n");
 			r_cons_printf ("  rgb:000           24 bit hexadecimal rgb color\n");
 			r_cons_printf ("  red|green|blue|.  well known ansi colors\n");
-		} else if (input[1] == 's') {
-			r_cons_pal_show ();
-		} else if (input[1] == '\0') {
-			r_cons_pal_list ();
-		} else {
+			break;
+		case 'f':
+			if (input[2] == ' ') {
+				char *home, path[512];
+				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input+3);
+				home = r_str_home (path);
+				snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
+					R2_VERSION"/cons/%s", input+3);
+				if (!r_core_cmd_file (core, home)) {
+					if (!r_core_cmd_file (core, path)) {
+						eprintf ("Oops. Cannot find cons %s\n", path);
+					}
+				}
+				free (home);
+			} else {
+				// TODO: lof stuff
+				eprintf ("Invalid argument.\n");
+			}
+			break;
+		case 's': r_cons_pal_show (); break;
+		case '*': r_cons_pal_list (1); break;
+		case '\0': r_cons_pal_list (0); break;
+		default:{
 			char *p = strdup (input+2);
 			char *q = strchr (p, '=');
 			if (!q) q = strchr (p, ' ');
@@ -477,6 +498,7 @@ static int cmd_eval(void *data, const char *input) {
 				// get
 				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, r_cons_pal_get (p));
 			}
+		}
 		}
 		break;
 	case 'e':
@@ -564,17 +586,20 @@ static int cmd_system(void *data, const char *input) {
 	ut64 n;
 	int ret = 0;
 	switch (*input) {
-	case '!': {
-		int olen;
-		char *out = NULL;
-		char *cmd = r_core_sysenv_begin (core, input);
-		if (cmd) {
-			ret = r_sys_cmd_str_full (cmd+1, NULL, &out, &olen, NULL);
-			r_core_sysenv_end (core, input);
-			r_cons_memcat (out, olen);
-			free (out);
-			free (cmd);
-		} //else eprintf ("Error setting up system environment\n");
+	case '!': 
+		if (input[1]) {
+			int olen;
+			char *out = NULL;
+			char *cmd = r_core_sysenv_begin (core, input);
+			if (cmd) {
+				ret = r_sys_cmd_str_full (cmd+1, NULL, &out, &olen, NULL);
+				r_core_sysenv_end (core, input);
+				r_cons_memcat (out, olen);
+				free (out);
+				free (cmd);
+			} //else eprintf ("Error setting up system environment\n");
+		} else {
+			r_line_hist_save (R2_HOMEDIR"/history");
 		}
 		break;
 	case '\0':

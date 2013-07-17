@@ -636,6 +636,8 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	const char *BEGIN = r->cons->pal.prompt;
 	const char *END = r->cons->pal.reset;
 
+	if (!BEGIN) BEGIN = "";
+	if (!END) END = "";
 	// hacky fix fo rio
 	r_core_block_read (r, 0);
 	if (cmdprompt && *cmdprompt)

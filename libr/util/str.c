@@ -184,9 +184,8 @@ R_API void r_str_case(char *str, int up) {
 }
 
 R_API char *r_str_home(const char *str) {
+	char *dst, *home = r_sys_getenv (R_SYS_HOME);
 	size_t length;
-	char *dst;
-	char *home = r_sys_getenv (R_SYS_HOME);
 	if (home == NULL)
 		return NULL;
 	length = strlen (home) + 1;
@@ -257,7 +256,7 @@ R_API int r_str_word_set0(char *str) {
 		if (*p=='\"') {
 			if (quote) {
 				quote = 0;
-				*p='\0';
+				*p = '\0';
 				// FIX: i++;
 				continue;
 			} else {
@@ -269,7 +268,7 @@ R_API int r_str_word_set0(char *str) {
 		if (*p==' ') {
 			char *q = p-1;
 			if (p>str && *q=='\\') {
-				strcpy (q,p);
+				strcpy (q, p);
 				continue;
 			}
 			i++;

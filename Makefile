@@ -3,7 +3,7 @@ include global.mk
 
 DLIBDIR=$(DESTDIR)/$(LIBDIR)
 R2BINS=$(shell cd binr ; echo r*2)
-DATADIRS=libr/asm/d libr/syscall/d libr/magic/d
+DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
 #binr/ragg2/d
 STRIP?=strip
 #ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)

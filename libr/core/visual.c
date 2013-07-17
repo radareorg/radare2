@@ -349,6 +349,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'e':
 		r_core_visual_config (core);
 		break;
+	case 'E':
+		r_core_visual_colors (core);
+		break;
 	case 'M':
 		r_core_visual_mounts (core);
 		break;
@@ -845,7 +848,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		break;
 	case 1: // pd
 	case 2: // pd+dbg
-		r_core_block_size (core, core->cons->rows *5); // this is hacky
+		r_core_block_size (core, core->cons->rows * 5); // this is hacky
 		break;
 	}
 
@@ -893,6 +896,8 @@ static void r_core_visual_refresh (RCore *core) {
 	cons = r_cons_singleton ();
 	cons->blankline = R_TRUE;
 
+	/* hack to blank last line. move prompt here? */
+	r_cons_fill_line ();
 	if (autoblocksize) {
 		r_cons_gotoxy (0, 0);
 		r_cons_flush ();
