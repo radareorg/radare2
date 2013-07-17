@@ -141,11 +141,12 @@ namespace Radare {
 
 		[CCode (cname="RBinReloc", free_function="", ref_function="", unref_function="")]
 		public class Reloc {
-			public char name[512]; // FIXME proper static strings w/o hardcoded size
+			public uint8 type;
+			public uint8 additive;
+			public RBin.Import import;
+			public int64 addend;
 			public uint64 rva;
 			public uint64 offset;
-			public uint32 sym;
-			public uint32 type;
 		}
 
 		[CCode (cname="RBinInfo", free_function="", ref_function="", unref_function="")]
