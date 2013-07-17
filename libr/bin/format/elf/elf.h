@@ -37,6 +37,8 @@ typedef struct r_bin_elf_symbol_t {
 typedef struct r_bin_elf_reloc_t {
 	int sym;
 	int type;
+	int is_rela;
+	st64 addend;
 	ut64 offset;
 	ut64 rva;
 	int last;

@@ -679,9 +679,9 @@ char *Elf_(r_bin_elf_get_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_reloc_t *ret = NULL;
 	Elf_(Sym) *sym = NULL;
-	Elf_(Rel) *rel = NULL;
+	Elf_(Rela) *rel = NULL;
 	ut64 got_addr, got_offset;
-	char *strtab = NULL;
+	char *strtab = NULL, rel_fmt[] = "2i";
 	int i, j, nrel, tsize, len, nsym, idx;
 	
 	if (!bin->shdr || !bin->strtab)
@@ -726,30 +726,36 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 				bin->shdr[i].sh_name, (ut64) bin->strtab_size);
 			continue;
 		}
-		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt"))
+		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt")) {
 			tsize = sizeof (Elf_(Rel));
-		else if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rela.plt"))
+			rel_fmt[0] = '2';
+		} else if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rela.plt")) {
 			tsize = sizeof (Elf_(Rela));
-		else continue;
-		if (tsize <1)
+			rel_fmt[0] = '3';
+		} else continue;
+
+		rel_fmt[1] =
+#if R_BIN_ELF64
+			bin->endian?'L':'l';
+#else
+			bin->endian?'I':'i';
+#endif
+
+		if (tsize <1) // NOTE(eddyb) UNREACHABLE.
 			return ret; // -1 ?
-		if ((rel = (Elf_(Rel) *)malloc ((int)(bin->shdr[i].sh_size / tsize) * sizeof (Elf_(Rel)))) == NULL) {
+
+		if ((rel = (Elf_(Rela)*)malloc ((int)(bin->shdr[i].sh_size / tsize) * sizeof (Elf_(Rela)))) == NULL) {
 			perror ("malloc (rel)");
 			return NULL;
 		}
 		for (j = nrel = 0; j < bin->shdr[i].sh_size; j += tsize, nrel++) {
-			len = r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[nrel],
-#if R_BIN_ELF64
-					bin->endian?"2L":"2l",
-#else
-					bin->endian?"2I":"2i",
-#endif
-					1);
-			if (len == -1) {
+			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[nrel], rel_fmt, 1) == -1) {
 				eprintf ("Error: read (rel)\n");
 				free(rel);
 				return NULL;
 			}
+			if (tsize < sizeof (Elf_(Rela)))
+				rel[nrel].r_addend = 0;
 		}
 		if ((ret = (struct r_bin_elf_reloc_t *)malloc ((nrel+1) * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
 			perror ("malloc (reloc)");
@@ -770,8 +776,10 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			} else strncpy (ret[j].name, "unknown", ELF_STRING_LENGTH);
 			ret[j].sym = ELF_R_SYM (rel[j].r_info);
 			ret[j].type = ELF_R_TYPE (rel[j].r_info);
-			ret[j].offset = rel[j].r_offset-got_addr+got_offset,
+			ret[j].offset = rel[j].r_offset-got_addr+got_offset;
 			ret[j].rva = rel[j].r_offset - bin->baddr;
+			ret[j].addend = rel[j].r_addend;
+			ret[j].is_rela = tsize == sizeof (Elf_(Rela));
 			ret[j].last = 0;
 		}
 		ret[j].last = 1;
