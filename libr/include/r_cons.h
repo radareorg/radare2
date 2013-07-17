@@ -60,6 +60,7 @@ typedef struct r_cons_palette_t {
 	char *offset;
 	char *comment;
 	char *fname;
+	char *floc;
 	char *fline;
 	char *flag;
 	char *label;
@@ -85,6 +86,7 @@ typedef struct r_cons_palette_t {
 	char *cmp;
 	char *num;
 	char *reg;
+	char *invalid;
 } RConsPalette;
 
 typedef void (*RConsEvent)(void *);

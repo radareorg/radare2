@@ -193,7 +193,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 #define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
 	// TODO: only if show_color?
 	const char *color_comment = P(comment): Color_CYAN;
-	const char *color_fname = P(fname): Color_CYAN;
+	const char *color_fname = P(fname): Color_RED;
+	const char *color_floc = P(floc): Color_MAGENTA;
 	const char *color_fline = P(fline): Color_CYAN;
 	const char *color_flow = P(flow): Color_CYAN;
 	const char *color_flag = P(flag): Color_CYAN;
@@ -212,6 +213,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	const char *color_pop = P(pop): Color_BYELLOW;
 	const char *color_reg = P(reg): Color_YELLOW;
 	const char *color_num = P(num): Color_YELLOW;
+	const char *color_invalid = P(invalid): Color_BRED;
 
 	if (show_lines) ocols += 10; // XXX
 	if (show_offset) ocols += 14;
@@ -566,16 +568,18 @@ toro:
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
 						if (show_color) {
 							r_cons_strcat (color_fline);
-							r_cons_printf ("|- "Color_RESET"%s (%d)\n", f->name, f->size);
+							r_cons_strcat ("|- ");
+							r_cons_strcat (color_floc);
+							r_cons_printf ("%s"Color_RESET" %d\n", f->name, f->size);
 							r_cons_strcat (color_fline);
 							r_cons_strcat ("| "Color_RESET);
 						} else {
-							r_cons_printf ("|- %s (%d)\n| ", f->name, f->size);
+							r_cons_printf ("|- %s %d\n| ", f->name, f->size);
 						}
 					} else {
 						const char *fmt = show_color?
-							"%s/ "Color_RESET"%s%s: %s"Color_RESET" (%d)\n":
-							"/ %s: %s (%d)\n| ";
+							"%s/ "Color_RESET"%s%s: %s"Color_RESET" %d\n":
+							"/ %s: %s %d\n| ";
 						if (show_color) {
 							r_cons_printf (fmt, color_fline, color_fname,
 								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
@@ -618,11 +622,12 @@ toro:
 		if (show_flags) {
 			flag = r_flag_get_i (core->flags, at);
 			if (flag) {
-				if (show_lines && refline)
-				{
-					r_cons_strcat (color_flow);
-					r_cons_strcat (refline);
-					r_cons_strcat (Color_RESET);
+				if (show_lines && refline) {
+					if (show_color) {
+						r_cons_strcat (color_flow);
+						r_cons_strcat (refline);
+						r_cons_strcat (Color_RESET);
+					} else r_cons_strcat (refline);
 				}
 				if (show_offset) r_cons_printf ("; -- ");
 				if (show_color) r_cons_strcat (color_flag);
@@ -638,9 +643,11 @@ toro:
 			}
 		}
 		if (!linesright && show_lines && line) {
-			r_cons_strcat (color_flow);
-			r_cons_strcat (line);
-			r_cons_strcat (Color_RESET);
+			if (show_color) {
+				r_cons_strcat (color_flow);
+				r_cons_strcat (line);
+				r_cons_strcat (Color_RESET);
+			} else r_cons_strcat (line);
 		}
 		if (show_offset)
 			r_print_offset (core->print, at, (at==dest), show_offseg);
@@ -767,14 +774,17 @@ toro:
 		}
 
 		if (linesright && show_lines && line) {
-			r_cons_strcat (color_flow);
-			r_cons_strcat (line);
-			r_cons_strcat (Color_RESET);
+			if (show_color) {
+				r_cons_strcat (color_flow);
+				r_cons_strcat (line);
+				r_cons_strcat (Color_RESET);
+			} else 
+				r_cons_strcat (line);
 		}
 		if (show_color) {
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_NOP:
-				r_cons_printf (color_nop);
+				r_cons_strcat (color_nop);
 				break;
 			case R_ANAL_OP_TYPE_ADD:
 			case R_ANAL_OP_TYPE_SUB:
@@ -794,37 +804,40 @@ toro:
 				break;
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_UJMP:
-				r_cons_printf (color_jmp);
+				r_cons_strcat (color_jmp);
 				break;
 			case R_ANAL_OP_TYPE_CJMP:
-				r_cons_printf (color_cjmp);
+				r_cons_strcat (color_cjmp);
 				break;
 			case R_ANAL_OP_TYPE_CMP:
-				r_cons_printf (color_cmp);
+				r_cons_strcat (color_cmp);
 				break;
 			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_CALL:
-				r_cons_printf (color_call);
+				r_cons_strcat (color_call);
 				break;
 			case R_ANAL_OP_TYPE_SWI:
-				r_cons_printf (color_swi);
+				r_cons_strcat (color_swi);
 				break;
 			case R_ANAL_OP_TYPE_ILL:
 			case R_ANAL_OP_TYPE_TRAP:
-				r_cons_printf (color_trap);
+				r_cons_strcat (color_trap);
 				break;
 			case R_ANAL_OP_TYPE_RET:
-				r_cons_printf (color_ret);
+				r_cons_strcat (color_ret);
 				break;
 			case R_ANAL_OP_TYPE_PUSH:
 			case R_ANAL_OP_TYPE_UPUSH:
 			case R_ANAL_OP_TYPE_LOAD:
-				r_cons_printf (color_push);
+				r_cons_strcat (color_push);
 				break;
 			case R_ANAL_OP_TYPE_POP:
 			case R_ANAL_OP_TYPE_STORE:
-				r_cons_printf (color_pop);
+				r_cons_strcat (color_pop);
 				break;
+			case R_ANAL_OP_TYPE_NULL:
+			case R_ANAL_OP_TYPE_UNK:
+				r_cons_strcat (color_invalid);
 			}
 		}
 		opstr = NULL;
@@ -883,17 +896,16 @@ toro:
 		r_cons_strcat (opstr);
 
 		{ /* show function name */
-			RAnalFunction *f;
+			ut8 have_local = 0;
+			RAnalFunction *f, *cf;
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_CALL:
-				{
+				cf = r_anal_fcn_find (core->anal, /* current function */
+					at, R_ANAL_FCN_TYPE_NULL);
 				f = r_anal_fcn_find (core->anal,
 					analop.jump, R_ANAL_FCN_TYPE_NULL);
-				RAnalFunction *cf = r_anal_fcn_find (core->anal, /* current function */
-					at, R_ANAL_FCN_TYPE_NULL);
-				ut8 have_local = 0;
 				if (f && !strstr (opstr, f->name)) {
 					if (f->locals != NULL) {
 						RAnalFcnLocal *l;
@@ -922,7 +934,6 @@ toro:
 						r_cons_printf (" ; (%s)", f->name);
 						r_cons_strcat (Color_RESET);
 					}
-				}
 				}
 				break;
 			}

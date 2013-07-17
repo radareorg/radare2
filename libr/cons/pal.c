@@ -6,10 +6,12 @@ R_API void r_cons_pal_init(const char *foo) {
 	RCons *cons = r_cons_singleton ();
 	memset (&cons->pal, 0, sizeof (cons->pal));
 	cons->pal.prompt = Color_YELLOW;
+	cons->pal.invalid = Color_BRED;
 	cons->pal.offset = Color_GREEN;
+	cons->pal.floc = Color_CYAN;
 	cons->pal.input = Color_WHITE;
 	cons->pal.comment = Color_CYAN;
-	cons->pal.fname = Color_CYAN;
+	cons->pal.fname = Color_RED;
 	cons->pal.fline = Color_CYAN;
 	cons->pal.flag = Color_CYAN;
 	cons->pal.label = Color_CYAN;
@@ -20,7 +22,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;
 	cons->pal.other = Color_YELLOW;
-	cons->pal.btext = Color_YELLOW;
+	cons->pal.btext = Color_WHITE;
 	cons->pal.push = Color_MAGENTA;
 	cons->pal.pop = Color_BMAGENTA;
 	cons->pal.nop = Color_BLUE;
@@ -33,7 +35,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.ret = Color_RED;
 	cons->pal.num = Color_YELLOW;
 	cons->pal.reg = Color_CYAN;
-	cons->pal.reset = "\x1b[0m";
+	cons->pal.reset = Color_RESET;
 }
 
 struct {

@@ -537,7 +537,7 @@ static int cmd_anal(void *data, const char *input) {
 				}
 				if (*name) {
 					fcn = r_anal_fcn_find (core->anal, off,
-							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
 					if (fcn) {
 						eprintf ("fr %s %s@ 0x%"PFMT64x"\n",
 							fcn->name, name, off);
