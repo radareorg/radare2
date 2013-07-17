@@ -144,7 +144,6 @@ static RList* imports(RBinArch *arch) {
 			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
 		else strncpy (ptr->type, "OBJECT", R_BIN_SIZEOF_STRINGS);
 		ptr->ordinal = 0;
-		ptr->hint = 0;
 		r_list_append (ret, ptr);
 	}
 	free (imports);

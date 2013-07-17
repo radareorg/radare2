@@ -226,7 +226,6 @@ static RList* imports(RBinArch *arch) {
 		strncpy (ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, import[i].type, R_BIN_SIZEOF_STRINGS);
 		ptr->ordinal = import[i].ordinal;
-		ptr->hint = 0;
 		r_list_append (ret, ptr);
 	}
 	free (import);

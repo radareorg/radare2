@@ -137,7 +137,6 @@ namespace Radare {
 			public char bind[512]; // FIXME proper static strings w/o hardcoded size
 			public char type[512]; // FIXME proper static strings w/o hardcoded size
 			public uint64 ordinal;
-			public uint64 hint;
 		}
 
 		[CCode (cname="RBinReloc", free_function="", ref_function="", unref_function="")]

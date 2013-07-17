@@ -133,7 +133,9 @@ static RList* imports(RBinArch *arch) {
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
 		ptr->ordinal = imports[i].ordinal;
-		ptr->hint = imports[i].hint;
+		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
+		// index for the import. There is no point in exposing it.
+		//ptr->hint = imports[i].hint;
 		r_list_append (ret, ptr);
 	}
 	free (imports);
