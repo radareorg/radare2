@@ -95,6 +95,31 @@ static RList* symbols(RBinArch *arch) {
 		r_list_append (ret, ptr);
 	}
 	free (symbols);
+
+	struct r_bin_mach0_import_t *imports = NULL;
+	if (!(imports = MACH0_(r_bin_mach0_get_imports) (arch->bin_obj)))
+		return ret;
+	for (i = 0; !imports[i].last; i++) {
+		// TODO(eddyb) only create symbols for lazy import wrappers.
+		if (imports[i].type != R_BIN_MACH0_IMPORT_TYPE_FUNC)
+			continue;
+		if (!(ptr = R_NEW (RBinSymbol)))
+			break;
+		// TODO(eddyb) make a better distinction between imports and other symbols.
+		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "imp.%s", (char*)imports[i].name);
+		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		if (imports[i].type == R_BIN_MACH0_IMPORT_TYPE_FUNC)
+			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		else strncpy (ptr->type, "OBJECT", R_BIN_SIZEOF_STRINGS);
+		ptr->rva = imports[i].addr;
+		ptr->offset = imports[i].offset;
+		ptr->size = 6;
+		ptr->ordinal = 0;
+		r_list_append (ret, ptr);
+	}
+	free (imports);
+
 	return ret;
 }
 
@@ -110,6 +135,7 @@ static RList* imports(RBinArch *arch) {
 	if (!(imports = MACH0_(r_bin_mach0_get_imports) (arch->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
+		// TODO(eddyb) there should be only one import per imported symbol.
 		if (!(ptr = R_NEW (RBinImport)))
 			break;
 		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
@@ -117,9 +143,6 @@ static RList* imports(RBinArch *arch) {
 		if (imports[i].type == R_BIN_MACH0_IMPORT_TYPE_FUNC)
 			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
 		else strncpy (ptr->type, "OBJECT", R_BIN_SIZEOF_STRINGS);
-		ptr->rva = imports[i].addr;
-		ptr->offset = imports[i].offset;
-		ptr->size = 6;
 		ptr->ordinal = 0;
 		ptr->hint = 0;
 		r_list_append (ret, ptr);

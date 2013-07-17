@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
+#include <stdio.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -183,6 +184,27 @@ static RList* symbols(RBinArch *arch) {
 		r_list_append (ret, ptr);
 	}
 	free (symbol);
+
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->bin_obj, R_BIN_ELF_IMPORTS)))
+		return ret;
+	for (i = 0; !symbol[i].last; i++) {
+		if (!symbol[i].size)
+			continue;
+		if (!(ptr = R_NEW (RBinSymbol)))
+			break;
+		// TODO(eddyb) make a better distinction between imports and other symbols.
+		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "imp.%s", symbol[i].name);
+		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
+		ptr->rva = symbol[i].offset;
+		ptr->offset = symbol[i].offset;
+		ptr->size = symbol[i].size;
+		ptr->ordinal = symbol[i].ordinal;
+		r_list_append (ret, ptr);
+	}
+	free (symbol);
+
 	return ret;
 }
 
@@ -203,9 +225,6 @@ static RList* imports(RBinArch *arch) {
 		strncpy (ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, import[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = import[i].offset;
-		ptr->offset = import[i].offset;
-		ptr->size = import[i].size;
 		ptr->ordinal = import[i].ordinal;
 		ptr->hint = 0;
 		r_list_append (ret, ptr);

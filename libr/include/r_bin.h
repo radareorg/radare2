@@ -215,9 +215,6 @@ typedef struct r_bin_import_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
-	ut64 rva;
-	ut64 offset;
-	ut64 size;
 	ut64 ordinal;
 	ut64 hint;
 } RBinImport;

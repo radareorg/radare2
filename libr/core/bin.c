@@ -408,7 +408,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	return R_TRUE;
 }
 
-static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const char *name) {
+static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name) {
 	char *dname, *mn, *p, str[R_FLAG_NAME_SIZE];
 	const char *iname;
 	RBinImport *import;
@@ -421,25 +421,17 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
-		r_list_foreach (imports, iter, import) {
-			r_cons_printf ("%s{\"name\":\"%s\","
-				"\"size\":%"PFMT64d","
-				"\"offset\":%"PFMT64d"}",
-				iter->p?",":"",
-				import->name,
-				import->size,
-				baddr+import->rva);
-		}
+		r_list_foreach (imports, iter, import)
+			r_cons_printf ("%s{\"name\":\"%s\"}", iter->p?",":"", import->name);
 		r_cons_printf ("]");
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
-		r_list_foreach (imports, iter, import) {
-			r_cons_printf ("%"PFMT64d" %"PFMT64d" %s\n",
-				baddr+import->rva, import->size, import->name);
-		}
+		r_list_foreach (imports, iter, import)
+			r_cons_printf ("%s\n", import->name);
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
-		r_flag_space_set (r->flags, "imports");
+		// TODO(eddyb) use the logic below for symbols that are imports.
+		/*r_flag_space_set (r->flags, "imports");
 		r_list_foreach (imports, iter, import) {
 			r_name_filter (import->name, 128);
 			snprintf (str, R_FLAG_NAME_SIZE, "imp.%s", import->name);
@@ -459,47 +451,40 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 						import->size, dname);
 				free (dname);
 			}
-		}
+		}*/
 	} else {
-		if (!at) {
-			if (mode) r_cons_printf ("fs imports\n");
-			else r_cons_printf ("[Imports]\n");
-		}
+		if (mode) r_cons_printf ("fs imports\n");
+		else r_cons_printf ("[Imports]\n");
 
 		r_list_foreach (imports, iter, import) {
 			if (name && strcmp (import->name, name))
 				continue;
-			if (at) {
-				if (baddr+import->rva == at || import->offset == at)
-					r_cons_printf ("%s\n", import->name);
-			} else {
-				if (mode) {
-					r_name_filter (import->name, sizeof (import->name));
-					iname = import->name;
-					p = strstr (iname+1, "__");
-					if (p) iname = p+1;
-					mn = r_bin_demangle (r->bin, iname);
-					if (mn) {
-						//r_name_filter (mn, strlen (mn));
-						r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
-							import->offset, mn);
-						free (mn);
-					}
-					if (import->size)
-						r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
-								va?baddr+import->rva:import->offset,
-								import->size, import->name);
-					r_cons_printf ("f imp.%s @ 0x%08"PFMT64x"\n",
-							import->name, va?baddr+import->rva:import->offset);
-				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-						"hint=%03"PFMT64d" bind=%s type=%s name=%s\n",
-						baddr+import->rva, import->offset,
-						import->ordinal, import->hint,  import->bind,
-						import->type, import->name);
-			}
+			if (mode) {
+				// TODO(eddyb) use the logic below for symbols that are imports.
+				/*r_name_filter (import->name, sizeof (import->name));
+				iname = import->name;
+				p = strstr (iname+1, "__");
+				if (p) iname = p+1;
+				mn = r_bin_demangle (r->bin, iname);
+				if (mn) {
+					//r_name_filter (mn, strlen (mn));
+					r_cons_printf ("s 0x%08"PFMT64x"\n\"CC %s\"\n",
+						import->offset, mn);
+					free (mn);
+				}
+				if (import->size)
+					r_cons_printf ("af+ 0x%08"PFMT64x" %"PFMT64d" imp.%s i\n",
+							va?baddr+import->rva:import->offset,
+							import->size, import->name);
+				r_cons_printf ("f imp.%s @ 0x%08"PFMT64x"\n",
+						import->name, va?baddr+import->rva:import->offset);*/
+			} else r_cons_printf ("ordinal=%03"PFMT64d" hint=%03"PFMT64d" "
+					"bind=%s type=%s name=%s\n",
+					import->ordinal, import->hint,
+					import->bind, import->type, import->name);
 			i++;
 		}
-		if (!at && !mode) r_cons_printf ("\n%i imports\n", i);
+		if (!mode) r_cons_printf ("\n%i imports\n", i);
 	}
 	return R_TRUE;
 }
@@ -921,7 +906,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	if ((action & R_CORE_BIN_ACC_RELOCS))
 		ret &= bin_relocs (core, mode, baddr, va);
 	if ((action & R_CORE_BIN_ACC_IMPORTS))
-		ret &= bin_imports (core, mode, baddr, va, at, name);
+		ret &= bin_imports (core, mode, baddr, va, name);
 	if ((action & R_CORE_BIN_ACC_SYMBOLS))
 		ret &= bin_symbols (core, mode, baddr, va, at, name);
 	if ((action & R_CORE_BIN_ACC_SECTIONS))
