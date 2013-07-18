@@ -1122,3 +1122,25 @@ R_API int r_print_format_length (const char *fmt) {
 //	free((void *)&args);
 	return i;
 }
+
+R_API char *r_str_prefix_all (char *s, const char *pfx) {
+	int newlines = 1;
+	int len = strlen (s);
+	int plen = strlen (pfx);
+	char *o, *p, *os = s;
+
+	for (p=s;*p;p++) if (*p=='\n') newlines++;
+	o = malloc (len + (plen*newlines)+1);
+	if (!s) return NULL;
+	memcpy (o, pfx, plen);
+	for (p=o+plen;*s;s++) {
+		*p++ = *s;
+		if (*s=='\n' && s[1]) {
+			memcpy (p, pfx, plen);
+			p += plen;
+		}
+	}
+	*p = 0;
+	free (os);
+	return o;
+}

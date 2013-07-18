@@ -384,15 +384,22 @@ toro:
 					}
 				}
 				if (!show_comment_right) {
-					int mycols = lcols;
+					int infun, mycols = lcols;
 					if (mycols + linelen + 10 > core->cons->columns)
 						mycols = 0;
 					mycols /= 2;
 					if (show_color) r_cons_strcat (pal_comment);
-					r_cons_strcat ("  ; ");
-// XXX: always prefix with ; the comments
-				//	if (*comment != ';') r_cons_strcat ("  ;  ");
+#if OLD_COMMENTS
+					r_cons_strcat ("; ");
+					// XXX: always prefix with ; the comments
+					if (*comment != ';') r_cons_strcat ("  ;  ");
 					r_cons_strcat_justify (comment, mycols, ';');
+#else
+					infun = f && (f->addr != at);
+					comment = r_str_prefix_all (comment, infun?
+							"|  ;      ":"   ;      ");
+					r_cons_strcat (comment);
+#endif
 					if (show_color) r_cons_strcat (Color_RESET);
 					if (!strchr (comment, '\n')) r_cons_newline ();
 					free (comment);

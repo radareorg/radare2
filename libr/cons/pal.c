@@ -10,7 +10,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.offset = Color_GREEN;
 	cons->pal.floc = Color_CYAN;
 	cons->pal.input = Color_WHITE;
-	cons->pal.comment = Color_CYAN;
+	cons->pal.comment = Color_BLUE;
 	cons->pal.fname = Color_RED;
 	cons->pal.fline = Color_CYAN;
 	cons->pal.flag = Color_CYAN;

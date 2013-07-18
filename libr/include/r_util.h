@@ -399,6 +399,7 @@ R_API char *r_str_uri_encode (const char *buf);
 R_API char *r_str_home(const char *str);
 R_API int r_str_nlen (const char *s, int n);
 R_API char *r_str_prefix(char *ptr, const char *string);
+R_API char *r_str_prefix_all (char *s, const char *pfx);
 R_API char *r_str_concat(char *ptr, const char *string);
 R_API char *r_str_concatf(char *ptr, const char *fmt, ...);
 R_API char *r_str_concatch(char *x, char y);
