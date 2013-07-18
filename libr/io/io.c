@@ -389,7 +389,7 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 		// XXX can be problematic on w32..so no 64 bit offset?
 		else ret = (ut64)lseek (io->fd->fd, offset, posix_whence);
 		if (ret != UT64_MAX) {
-			io->off = ret;
+			io->off = offset; // ret; // FIX linux-arm-32-bs at 0x10000
 			// XXX this can be tricky.. better not to use this .. must be deprecated
 			// r_io_sundo_push (io);
 			ret = (!io->debug && io->va && !r_list_empty (io->sections))?
