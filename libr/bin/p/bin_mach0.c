@@ -84,41 +84,18 @@ static RList* symbols(RBinArch *arch) {
 			break;
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
 		if (symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)
-			strncat (ptr->type, "_LOCAL", sizeof (ptr->type)-strlen (ptr->type)-1);
+			strncpy (ptr->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+		else
+			strncpy (ptr->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS); //XXX Get the right type
 		ptr->rva = symbols[i].addr;
 		ptr->offset = symbols[i].offset;
 		ptr->size = symbols[i].size;
-		ptr->ordinal = 0;
+		ptr->ordinal = i;
 		r_list_append (ret, ptr);
 	}
 	free (symbols);
-
-	struct r_bin_mach0_import_t *imports = NULL;
-	if (!(imports = MACH0_(r_bin_mach0_get_imports) (arch->bin_obj)))
-		return ret;
-	for (i = 0; !imports[i].last; i++) {
-		// TODO(eddyb) only create symbols for lazy import wrappers.
-		if (imports[i].type != R_BIN_MACH0_IMPORT_TYPE_FUNC)
-			continue;
-		if (!(ptr = R_NEW (RBinSymbol)))
-			break;
-		// TODO(eddyb) make a better distinction between imports and other symbols.
-		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "imp.%s", (char*)imports[i].name);
-		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		if (imports[i].type == R_BIN_MACH0_IMPORT_TYPE_FUNC)
-			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-		else strncpy (ptr->type, "OBJECT", R_BIN_SIZEOF_STRINGS);
-		ptr->rva = imports[i].addr;
-		ptr->offset = imports[i].offset;
-		ptr->size = 6;
-		ptr->ordinal = 0;
-		r_list_append (ret, ptr);
-	}
-	free (imports);
 
 	return ret;
 }
@@ -127,7 +104,9 @@ static RList* imports(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_mach0_import_t *imports = NULL;
+	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->bin_obj;
 	int i;
+	const char *name, *type;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -135,18 +114,66 @@ static RList* imports(RBinArch *arch) {
 	if (!(imports = MACH0_(r_bin_mach0_get_imports) (arch->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
-		// TODO(eddyb) there should be only one import per imported symbol.
 		if (!(ptr = R_NEW (RBinImport)))
 			break;
-		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
+		name = imports[i].name;
+		type = "FUNC";
+
+		// Objective-C class and metaclass imports.
+		if (!strncmp (name, "_OBJC_CLASS_$", strlen ("_OBJC_CLASS_$"))) {
+			name += strlen ("_OBJC_CLASS_$");
+			type = "OBJC_CLASS";
+		} else if (!strncmp (name, "_OBJC_METACLASS_$", strlen ("_OBJC_METACLASS_$"))) {
+			name += strlen ("_OBJC_METACLASS_$");
+			type = "OBJC_METACLASS";
+		}
+
+		// Remove the extra underscore that every import seems to have in Mach-O.
+		if (*name == '_')
+			name++;
+
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		if (imports[i].type == R_BIN_MACH0_IMPORT_TYPE_FUNC)
-			strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-		else strncpy (ptr->type, "OBJECT", R_BIN_SIZEOF_STRINGS);
-		ptr->ordinal = 0;
+		strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, type, R_BIN_SIZEOF_STRINGS);
+		ptr->ordinal = imports[i].ord;
+		if(bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
+			bin->imports_by_ord[ptr->ordinal] = ptr;
 		r_list_append (ret, ptr);
 	}
 	free (imports);
+	return ret;
+}
+
+static RList* relocs(RBinArch *arch) {
+	RList *ret = NULL;
+	RBinReloc *ptr = NULL;
+	struct r_bin_mach0_reloc_t *relocs = NULL;
+	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->bin_obj;
+	int i;
+
+	if (!(ret = r_list_new ()))
+		return NULL;
+	ret->free = free;
+	if (!(relocs = MACH0_(r_bin_mach0_get_relocs) (arch->bin_obj)))
+		return ret;
+	for (i = 0; !relocs[i].last; i++) {
+		// TODO(eddyb) filter these out earlier.
+		if (!relocs[i].addr)
+			continue;
+		if (!(ptr = R_NEW (RBinReloc)))
+			break;
+		ptr->type = relocs[i].type;
+		ptr->additive = 0;
+		if(bin->imports_by_ord && relocs[i].ord < bin->imports_by_ord_size)
+			ptr->import = bin->imports_by_ord[relocs[i].ord];
+		else
+			ptr->import = NULL;
+		ptr->addend = 0;
+		ptr->rva = relocs[i].addr;
+		ptr->offset = relocs[i].offset;
+		r_list_append (ret, ptr);
+	}
+	free (relocs);
 	return ret;
 }
 
@@ -432,7 +459,7 @@ struct r_bin_plugin_t r_bin_plugin_mach0 = {
 	.info = &info,
 	.fields = NULL,
 	.libs = &libs,
-	.relocs = NULL,
+	.relocs = &relocs,
 	.meta = NULL,
 	.write = NULL,
 	.create = &create,
