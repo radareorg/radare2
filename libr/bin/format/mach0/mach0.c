@@ -31,9 +31,9 @@ static int MACH0_(r_bin_mach0_init_hdr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 		eprintf ("Error: read (magic)\n");
 		return R_FALSE;
 	}
-	if (magic == MH_MAGIC)
+	if (magic == MACH0_(MH_MAGIC))
 		bin->endian = !LIL_ENDIAN;
-	else if (magic == MH_CIGAM)
+	else if (magic == MACH0_(MH_CIGAM))
 		bin->endian = LIL_ENDIAN;
 	else if (magic == FAT_CIGAM)
 		bin->endian = LIL_ENDIAN;

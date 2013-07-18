@@ -125,7 +125,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY:
 			{
-			struct dyld_info_32 *st = (struct dyld_info_32 *)lc;
+			struct dyld_info_command *st = (struct dyld_info_command *)lc;
 			NZ_OFFSET (st->rebase_off);
 			NZ_OFFSET (st->bind_off);
 			NZ_OFFSET (st->weak_bind_off);

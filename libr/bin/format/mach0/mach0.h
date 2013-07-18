@@ -52,7 +52,6 @@ struct r_bin_mach0_lib_t {
 	char name[R_BIN_MACH0_STRING_LENGTH];
 	int last;
 };
-#endif
 
 struct MACH0_(r_bin_mach0_obj_t) {
 	struct MACH0_(mach_header) hdr;
@@ -123,4 +122,6 @@ int r_bin_mach0_is_stripped_relocs(r_bin_mach0_obj*);
 int r_bin_mach0_is_stripped_line_nums(r_bin_mach0_obj*);
 int r_bin_mach0_is_stripped_local_syms(r_bin_mach0_obj*);
 int r_bin_mach0_is_stripped_debug(r_bin_mach0_obj*);
+#endif
+
 #endif
