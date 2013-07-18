@@ -374,24 +374,24 @@ R_API char *r_str_chop(char *str) {
 
 	if (str == NULL)
 		return NULL;
-		
+
 	while (*str && iswhitechar (*str))
 		str = str + 1;
-		
+
 	len = strlen (str);
-	
+
 	if (len>0)
 	for (ptr = str+len-1; ptr!=str; ptr--) {
-		if (iswhitechar (*ptr)) 
+		if (iswhitechar (*ptr))
 			*ptr = '\0';
 		else break;
-	}	       
+	}
 	return str;
 }
 
 R_API const char *r_str_trim_head(const char *str) {
 	if (str)
-		while (*str && iswhitechar (*str)) 
+		while (*str && iswhitechar (*str))
 			str++;
 	return str;
 }
@@ -533,8 +533,8 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 	int slen, plen;
 	if (ptr == NULL)
 		return strdup (string);
-	plen = strlen (ptr);
-	slen = strlen (string);
+	plen = r_str_len_utf8 (ptr);
+	slen = r_str_len_utf8 (string);
 	ptr = realloc (ptr, slen + plen + 1);
 	if (ptr == NULL)
 		return NULL;
@@ -589,14 +589,14 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	int klen = strlen (key);
 	int vlen = strlen (val);
 	int slen = strlen (str);
-	char *new, *old, *p = str;
-	for (i=0; i<slen; ) {
+	char *new, *old, *p2, *p = str;
+	for (i = 0; i < slen; ) {
 		p = (char *)r_mem_mem (
-			(const ut8*)str+i, slen-i,
+			(const ut8*)str + i, slen - i,
 			(const ut8*)key, klen);
 		if (!p) break; // || !p[klen]) break;
 		old = strdup (p+klen);
-		slen += (vlen-klen)+1;
+		slen += (vlen-klen) + 1;
 		off = (int)(size_t)(p-str);
 		new = realloc (str, slen);
 		if (!new) {
@@ -617,18 +617,19 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	return str;
 }
 
+
 R_API char *r_str_clean(char *str) {
 	int len;
 	char *ptr;
 	if (str != NULL) {
 		while (*str && iswhitechar (*str))
 			str++;
-		if ((len = strlen(str))>0) 
-		for (ptr = str+len-1; ptr!=str; ptr = ptr - 1) {
-			if (iswhitechar (*ptr))
-				*ptr = '\0';
-			else break;
-		}
+		if ((len = strlen(str))>0)
+			for (ptr = str+len-1; ptr!=str; ptr = ptr - 1) {
+				if (iswhitechar (*ptr))
+					*ptr = '\0';
+				else break;
+			}
 	}
 	return str;
 }
@@ -866,7 +867,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 			if (!escape && !quote) {
 				*ptr = '\0';
 				if (*optr) {
-					argv[argc++] = optr; 
+					argv[argc++] = optr;
 					optr = ptr+1;
 				}
 			}
@@ -877,7 +878,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 		}
 	}
 	if (*optr) {
-		argv[argc++] = optr; 
+		argv[argc++] = optr;
 		optr = ptr+1;
 	}
 	argv[argc] = NULL;
@@ -995,7 +996,7 @@ R_API char *r_str_uri_encode (const char *s) {
 	od = d = malloc (1+(strlen (s)*4));
 	if (!d) return NULL;
 	for (; *s; s++) {
-		if((*s>='0' && *s<='9') 
+		if((*s>='0' && *s<='9')
 		|| (*s>='a' && *s<='z')
 		|| (*s>='A' && *s<='Z')) {
 			*d++ = *s;

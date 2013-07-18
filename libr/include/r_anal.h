@@ -837,11 +837,10 @@ R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
-R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
+R_API RAnalRefline *r_anal_reflines_get(RAnal *anal,
 	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
-R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
-	ut64 addr, int opts);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
+R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr);
