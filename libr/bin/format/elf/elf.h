@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2008 nibble<.ds@gmail.com> */
 
+#include <r_bin.h>
 #include <r_types.h>
 
 #include "elf_specs.h"
@@ -37,10 +38,11 @@ typedef struct r_bin_elf_symbol_t {
 typedef struct r_bin_elf_reloc_t {
 	int sym;
 	int type;
+	int is_rela;
+	st64 addend;
 	ut64 offset;
 	ut64 rva;
 	int last;
-	char name[ELF_STRING_LENGTH];
 } RBinElfReloc;
 
 typedef struct r_bin_elf_field_t {
@@ -66,12 +68,20 @@ struct Elf_(r_bin_elf_obj_t) {
 	Elf_(Ehdr) ehdr;
 	Elf_(Phdr)* phdr;
 	Elf_(Shdr)* shdr;
+
 	Elf_(Shdr) *strtab_section;
 	ut64 strtab_size;
 	char* strtab;
+
 	Elf_(Shdr) *shstrtab_section;
 	ut64 shstrtab_size;
 	char* shstrtab;
+
+	RBinImport **imports_by_ord;
+	size_t imports_by_ord_size;
+	RBinSymbol **symbols_by_ord;
+	size_t symbols_by_ord_size;
+
 	int bss;
 	int size;
 	ut64 baddr;
@@ -81,6 +91,7 @@ struct Elf_(r_bin_elf_obj_t) {
 };
 
 int Elf_(r_bin_elf_has_va)(struct Elf_(r_bin_elf_obj_t) *bin);
+ut64 Elf_(r_bin_elf_get_section_addr)(struct Elf_(r_bin_elf_obj_t) *bin, const char *section_name);
 ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut64 Elf_(r_bin_elf_get_entry_offset)(struct Elf_(r_bin_elf_obj_t) *bin);
 ut64 Elf_(r_bin_elf_get_main_offset)(struct Elf_(r_bin_elf_obj_t) *bin);

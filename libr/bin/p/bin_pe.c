@@ -116,31 +116,56 @@ static RList* symbols(RBinArch *arch) {
 }
 
 static RList* imports(RBinArch *arch) {
-	RList *ret = NULL;
+	RList *ret = NULL, *relocs = NULL;
 	RBinImport *ptr = NULL;
+	RBinReloc *rel = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
 	int i;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ()) || !(relocs = r_list_new ()))
 		return NULL;
+
 	ret->free = free;
+	relocs->free = free;
+
+	((struct PE_(r_bin_pe_obj_t)*)arch->bin_obj)->relocs = relocs;
+
 	if (!(imports = PE_(r_bin_pe_get_imports)(arch->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW (RBinImport)))
 			break;
+
 		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-		ptr->rva = imports[i].rva;
-		ptr->offset = imports[i].offset;
-		ptr->size = 0;
 		ptr->ordinal = imports[i].ordinal;
-		ptr->hint = imports[i].hint;
+		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
+		// index for the import. There is no point in exposing it.
+		//ptr->hint = imports[i].hint;
 		r_list_append (ret, ptr);
+
+		if (!(rel = R_NEW (RBinReloc)))
+			break;
+#ifdef R_BIN_PE64
+		rel->type = R_BIN_RELOC_64;
+#else
+		rel->type = R_BIN_RELOC_32;
+#endif
+		rel->additive = 0;
+		rel->import = ptr;
+		rel->addend = 0;
+		rel->rva = imports[i].rva;
+		rel->offset = imports[i].offset;
+		r_list_append (relocs, rel);
 	}
 	free (imports);
+
 	return ret;
+}
+
+static RList* relocs(RBinArch *arch) {
+	return ((struct PE_(r_bin_pe_obj_t)*)arch->bin_obj)->relocs;
 }
 
 static RList* libs(RBinArch *arch) {
@@ -305,7 +330,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.info = &info,
 	.fields = NULL,
 	.libs = &libs,
-	.relocs = NULL,
+	.relocs = &relocs,
 	.meta = NULL,
 	.write = NULL,
 	.minstrlen = 4,

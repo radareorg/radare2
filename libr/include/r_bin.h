@@ -52,6 +52,13 @@ enum {
 	R_BIN_CLASS_PROTECTED,
 };
 
+enum {
+	R_BIN_RELOC_8,
+	R_BIN_RELOC_16,
+	R_BIN_RELOC_32,
+	R_BIN_RELOC_64
+};
+
 typedef struct r_bin_addr_t {
 	ut64 rva;
 	ut64 offset;
@@ -215,19 +222,16 @@ typedef struct r_bin_import_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
-	ut64 rva;
-	ut64 offset;
-	ut64 size;
 	ut64 ordinal;
-	ut64 hint;
 } RBinImport;
 
 typedef struct r_bin_reloc_t {
-	char name[R_BIN_SIZEOF_STRINGS];
+	ut8 type;
+	ut8 additive;
+	RBinImport *import;
+	st64 addend;
 	ut64 rva;
 	ut64 offset;
-	int sym;
-	int type;
 } RBinReloc;
 
 typedef struct r_bin_string_t {

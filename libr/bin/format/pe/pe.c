@@ -244,6 +244,7 @@ static int PE_(r_bin_pe_init)(struct PE_(r_bin_pe_obj_t)* bin) {
 	}
 	PE_(r_bin_pe_init_imports)(bin);
 	PE_(r_bin_pe_init_exports)(bin);
+	bin->relocs = NULL;
 	return R_TRUE;
 }
 

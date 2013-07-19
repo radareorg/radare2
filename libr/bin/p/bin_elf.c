@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
+#include <stdio.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -147,6 +148,7 @@ static RList* symbols(RBinArch *arch) {
 	RBinSymbol *ptr = NULL;
 	ut64 base = 0;
 	struct r_bin_elf_symbol_t *symbol = NULL;
+	struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
 	int i;
 
 	int has_va = Elf_(r_bin_elf_has_va) (arch->bin_obj);
@@ -167,6 +169,7 @@ static RList* symbols(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
+
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->bin_obj, R_BIN_ELF_SYMBOLS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
@@ -180,9 +183,34 @@ static RList* symbols(RBinArch *arch) {
 		ptr->offset = symbol[i].offset + base;
 		ptr->size = symbol[i].size;
 		ptr->ordinal = symbol[i].ordinal;
+		if(bin->symbols_by_ord && ptr->ordinal < bin->symbols_by_ord_size)
+			bin->symbols_by_ord[ptr->ordinal] = ptr;
 		r_list_append (ret, ptr);
 	}
 	free (symbol);
+
+	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->bin_obj, R_BIN_ELF_IMPORTS)))
+		return ret;
+	for (i = 0; !symbol[i].last; i++) {
+		if (!symbol[i].size)
+			continue;
+		if (!(ptr = R_NEW (RBinSymbol)))
+			break;
+		// TODO(eddyb) make a better distinction between imports and other symbols.
+		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "imp.%s", symbol[i].name);
+		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
+		ptr->rva = symbol[i].offset;
+		ptr->offset = symbol[i].offset;
+		ptr->size = symbol[i].size;
+		ptr->ordinal = symbol[i].ordinal;
+		if(bin->symbols_by_ord && ptr->ordinal < bin->symbols_by_ord_size)
+			bin->symbols_by_ord[ptr->ordinal] = ptr;
+		r_list_append (ret, ptr);
+	}
+	free (symbol);
+
 	return ret;
 }
 
@@ -190,6 +218,7 @@ static RList* imports(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_elf_symbol_t *import = NULL;
+	struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
 	int i;
 
 	if (!(ret = r_list_new ()))
@@ -203,11 +232,9 @@ static RList* imports(RBinArch *arch) {
 		strncpy (ptr->name, import[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, import[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, import[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = import[i].offset;
-		ptr->offset = import[i].offset;
-		ptr->size = import[i].size;
 		ptr->ordinal = import[i].ordinal;
-		ptr->hint = 0;
+		if(bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
+			bin->imports_by_ord[ptr->ordinal] = ptr;
 		r_list_append (ret, ptr);
 	}
 	free (import);
@@ -233,25 +260,107 @@ static RList* libs(RBinArch *arch) {
 	return ret;
 }
 
+static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc *rel, ut64 GOT) {
+	RBinReloc *r = NULL;
+	ut64 B = bin->baddr, P = B + rel->rva;
+	char *str;
+
+	if (!(r = R_NEW (RBinReloc)))
+		return r;
+
+	r->import = NULL;
+	r->addend = rel->addend;
+	if (rel->sym) {
+		if (rel->sym < bin->imports_by_ord_size && bin->imports_by_ord[rel->sym])
+			r->import = bin->imports_by_ord[rel->sym];
+		else if (rel->sym < bin->symbols_by_ord_size && bin->symbols_by_ord[rel->sym])
+			r->addend += B + bin->symbols_by_ord[rel->sym]->rva;
+	}
+	r->rva = rel->rva;
+	r->offset = rel->offset;
+
+	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
+	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; r->addend += A; r->additive = !rel->is_rela; return r
+
+	switch (bin->ehdr.e_machine) {
+	case EM_386: switch (rel->type) {
+		case R_386_NONE:     break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case R_386_32:       ADD(32, 0);
+		case R_386_PC32:     ADD(32,-P);
+		case R_386_GLOB_DAT: SET(32);
+		case R_386_JMP_SLOT: SET(32);
+		case R_386_RELATIVE: ADD(32, B);
+		case R_386_GOTOFF:   ADD(32,-GOT);
+		case R_386_GOTPC:    ADD(32, GOT-P);
+		case R_386_16:       ADD(16, 0);
+		case R_386_PC16:     ADD(16,-P);
+		case R_386_8:        ADD(8,  0);
+		case R_386_PC8:      ADD(8, -P);
+		default: eprintf("TODO(eddyb): uninmplemented ELF/x86 reloc type %i\n", rel->type);
+		}
+		break;
+	case EM_X86_64: switch (rel->type) {
+		case R_X86_64_NONE:		break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case R_X86_64_64:		ADD(64, 0);
+		case R_X86_64_PC32:		ADD(32,-P);
+		case R_X86_64_GLOB_DAT:	SET(64);
+		case R_X86_64_JUMP_SLOT:SET(64);
+		case R_X86_64_RELATIVE:	ADD(64, B);
+		case R_X86_64_32:		ADD(32, 0);
+		case R_X86_64_32S:		ADD(32, 0);
+		case R_X86_64_16:		ADD(16, 0);
+		case R_X86_64_PC16:		ADD(16,-P);
+		case R_X86_64_8:		ADD(8,  0);
+		case R_X86_64_PC8:		ADD(8, -P);
+		default: eprintf("TODO(eddyb): uninmplemented ELF/x64 reloc type %i\n", rel->type);
+		}
+		break;
+	case EM_ARM: switch (rel->type) {
+		case R_ARM_NONE:		break; // malloc then free. meh. then again, there's no real world use for _NONE.
+		case R_ARM_ABS32:		ADD(32, 0);
+		case R_ARM_REL32:		ADD(32,-P);
+		case R_ARM_ABS16:		ADD(16, 0);
+		case R_ARM_ABS8:		ADD(8,  0);
+		case R_ARM_SBREL32:		ADD(32, -B);
+		case R_ARM_GLOB_DAT:	ADD(32, 0);
+		case R_ARM_JUMP_SLOT:	ADD(32, 0);
+		case R_ARM_RELATIVE:	ADD(32, B);
+		case R_ARM_GOTOFF:		ADD(32,-GOT);
+		default: eprintf("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
+		}
+		break;
+	default:
+		if (!(str = Elf_(r_bin_elf_get_machine_name) (bin)))
+			break;
+		eprintf("TODO(eddyb): uninmplemented ELF reloc_convert for %s\n", str);
+		free(str);
+	}
+
+	#undef SET
+	#undef ADD
+
+	free(r);
+	return 0;
+}
+
 static RList* relocs(RBinArch *arch) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
-	struct r_bin_elf_reloc_t *relocs = NULL;
+	RBinElfReloc *relocs = NULL;
+	ut64 got_addr;
 	int i;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
+	if ((got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->bin_obj, ".got")) == -1 &&
+		(got_addr = Elf_ (r_bin_elf_get_section_addr) (arch->bin_obj, ".got.plt")) == -1)
+		return ret;
 	if (!(relocs = Elf_(r_bin_elf_get_relocs) (arch->bin_obj)))
 		return ret;
 	for (i = 0; !relocs[i].last; i++) {
-		if (!(ptr = R_NEW (RBinReloc)))
+		if (!(ptr = reloc_convert(arch->bin_obj, &relocs[i], got_addr)))
 			break;
-		strncpy (ptr->name, relocs[i].name, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = relocs[i].rva;
-		ptr->offset = relocs[i].offset;
-		ptr->type = relocs[i].type;
-		ptr->sym = relocs[i].sym;
 		r_list_append (ret, ptr);
 	}
 	free (relocs);
