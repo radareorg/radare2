@@ -85,7 +85,6 @@ static int sdb_dump (const char *db) {
 		free (v);
 	}
 	sdb_free (s);
-	s = NULL;
 	return 0;
 }
 

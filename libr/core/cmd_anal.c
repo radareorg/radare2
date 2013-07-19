@@ -372,6 +372,7 @@ static int cmd_anal(void *data, const char *input) {
 			break;
 		default:
 		case '?':
+eprintf ("XXX: This command conflicts with 'ar'\n");
 			r_cons_printf (
 			"Usage: ax[-cCd?] [src] [dst]\n"
 			" axc sym.main+0x38 sym.printf   ; add code ref\n"
@@ -539,7 +540,7 @@ static int cmd_anal(void *data, const char *input) {
 					fcn = r_anal_fcn_find (core->anal, off,
 							R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM|R_ANAL_FCN_TYPE_LOC);
 					if (fcn) {
-						eprintf ("fr %s %s@ 0x%"PFMT64x"\n",
+						r_cons_printf ("fr %s %s@ 0x%"PFMT64x"\n",
 							fcn->name, name, off);
 						r_core_cmdf (core, "fr %s %s@ 0x%"PFMT64x,
 							fcn->name, name, off);
@@ -798,31 +799,23 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'r':
-		switch(input[1]) {
-		case '?':
-			r_cons_printf (
-			"Usage: ar[?d-l*]\n"
-			" ar addr [at]   ; Add code ref\n"
-			" ard addr [at]  ; Add data ref\n"
-			" ar- [at]       ; Clean all refs (or refs from addr)\n"
-			" arl            ; List refs\n"
-			" ar*            ; Output radare commands\n");
-			break;
+		switch (input[1]) {
 		case '-':
-			r_anal_ref_del (core->anal, r_num_math (core->num, input+2));
+			r_anal_ref_del (core->anal, r_num_math (core->num, input+2), core->offset);
 			break;
-		case 'l':
+		case '\0':
 			r_core_anal_ref_list (core, R_FALSE);
 			break;
 		case '*':
 			r_core_anal_ref_list (core, R_TRUE);
 			break;
-		default:
+		case 'd':
+		case ' ':
 			{
 			char *ptr = strdup (r_str_trim_head ((char*)input+2));
 			int n = r_str_word_set0 (ptr);
 			ut64 at = core->offset;
-			ut64 addr = -1LL;
+			ut64 addr = UT64_MAX;
 			switch (n) {
 			case 2: // get at
 				at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
@@ -833,9 +826,22 @@ static int cmd_anal(void *data, const char *input) {
 				return R_FALSE;
 			}
 			r_anal_ref_add (core->anal, addr, at,
-					input[1]=='d'?R_ANAL_REF_TYPE_DATA:R_ANAL_REF_TYPE_CODE);
+				input[1]=='d'? R_ANAL_REF_TYPE_DATA:
+				R_ANAL_REF_TYPE_CODE);
 			free (ptr);
 			}
+			break;
+		default:
+		case '?':
+			eprintf ("XXX: This command conflicts with 'ax'\n");
+			r_cons_printf (
+			"Usage: ar[?d-l*]\n"
+			" ar addr [at]   ; Add code ref pointing to addr (at is curseek)\n"
+			" ard addr [at]  ; Add data ref\n"
+			" ar- [at]       ; Clean all refs (or refs from addr)\n"
+			" ar             ; List refs\n"
+			" ar*            ; Output radare commands\n");
+			break;
 		}
 		break;
 	case 'a':

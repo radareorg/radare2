@@ -24,28 +24,56 @@ R_API void r_anal_ref_free(void *ref) {
 	free (ref);
 }
 
+#define USE_NEW_REFS 1
+// TODO: use sdb or hashmap for fucks sake
 R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
+#if USE_NEW_REFS
+	const char *types = type=='c'?"jmp":
+		type=='C'?"call": "data";
+	r_anal_xrefs_set (anal, types, at, addr);
+#else
 	RAnalRef *ref = NULL, *refi;
-	RListIter *iter;
-	int append = 0;
-	r_list_foreach (anal->refs, iter, refi)
+	RListIter *iter, *iter2;
+	RAnalFunction *fcni;
+	// search in funrefs
+	r_list_foreach (anal->fcns, iter, fcni) {
+		r_list_foreach (fcni->refs, iter2, refi) {
+			if (at == refi->at) {
+				if (addr == refi->addr) {
+					return R_FALSE;
+				}
+				ref = refi;
+				break;
+			}
+		}
+	}
+	if (!ref)
+	r_list_foreach (anal->refs, iter, refi) {
 		if (at == refi->at) {
+			if (addr == refi->addr) {
+				return R_FALSE;
+			}
 			ref = refi;
 			break;
 		}
+	}
 	if (ref == NULL) {
 		if (!(ref = r_anal_ref_new ()))
 			return R_FALSE;
-		append = 1;
+		r_list_append (anal->refs, ref);
 	}
 	ref->addr = addr;
 	ref->at = at;
 	ref->type = type;
-	if (append) r_list_append (anal->refs, ref);
 	return R_TRUE;
+#endif
 }
 
-R_API int r_anal_ref_del(RAnal *anal, ut64 at) {
+R_API int r_anal_ref_del(RAnal *anal, ut64 at, ut64 addr) {
+#if USE_NEW_REFS
+	r_anal_xrefs_deln (anal, "code", at, addr);
+	r_anal_xrefs_deln (anal, "data", at, addr);
+#else
 	RAnalRef *refi;
 	RListIter *iter, *iter_tmp;
 	if (at == 0) {
@@ -58,20 +86,21 @@ R_API int r_anal_ref_del(RAnal *anal, ut64 at) {
 				r_list_delete (anal->refs, iter);
 		}
 	}
+#endif
 	return R_TRUE;
 }
 
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr);
 // XXX: MAJOR SLOWDOWN PLZ FIX
 R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
+	return r_anal_xrefs_get (anal, addr);
+}
+
+#if 0
 	RAnalFunction *fcni;
 	RAnalRef *refi, *ref, *refr;
 	RListIter *iter, *iter2, *iter3;
 	RList *ret;
-
-return r_anal_xrefs_get (anal, addr);
-return NULL; // fuck yeah optimization!
-
 #if 0
 for (list = sdb_list_begin (DB); list; list = sdb_list_next (list)) {
 	char *str = astring();
@@ -160,3 +189,4 @@ while (list) {
 		}
 	return ret;
 }
+#endif

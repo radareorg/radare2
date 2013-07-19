@@ -542,7 +542,7 @@ typedef struct r_anal_value_t {
 typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
-	ut64 type;       /* type of opcode */
+	ut64 type;      /* type of opcode */
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
 	int length;     /* length in bytes of opcode */
@@ -769,7 +769,7 @@ R_API RAnalRef *r_anal_ref_new();
 R_API RList *r_anal_ref_list_new();
 R_API void r_anal_ref_free(void *ref);
 R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type);
-R_API int r_anal_ref_del(RAnal *anal, ut64 at);
+R_API int r_anal_ref_del(RAnal *anal, ut64 at, ut64 addr);
 R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr);
 R_API RList *r_anal_ref_get(RAnal *anal, ut64 addr);
 

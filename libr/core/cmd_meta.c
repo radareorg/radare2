@@ -104,9 +104,7 @@ static int cmd_meta(void *data, const char *input) {
 					r_meta_del (core->anal->meta,
 						R_META_TYPE_COMMENT,
 						addr, 1, NULL);
-				} else {
-					eprintf ("Usage: CCa-[address]\n");
-				}
+				} else eprintf ("Usage: CCa-[address]\n");
 				free (s);
 				return R_TRUE;
 			}
@@ -116,9 +114,7 @@ static int cmd_meta(void *data, const char *input) {
 				r_meta_add (core->anal->meta,
 					R_META_TYPE_COMMENT,
 					addr, addr+1, p);
-			} else {
-				eprintf ("Usage: CCa [address] [comment]\n");
-			}
+			} else eprintf ("Usage: CCa [address] [comment]\n");
 			free (s);
 			return R_TRUE;
 		}
@@ -266,7 +262,7 @@ static int cmd_meta(void *data, const char *input) {
 		break;
 	case '\0':
 	case '?':
-		eprintf (
+		r_cons_strcat (
 		"Usage: C[-LCvsdfm?] [...]\n"
 		" C*                     # List meta info in r2 commands\n"
 		" C- [len] [@][ addr]    # delete metadata at given address range\n"

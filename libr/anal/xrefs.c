@@ -39,28 +39,38 @@ R_API RList *r_anal_xrefs_deln (RAnal *anal, const char *type, ut64 from, ut64 t
 }
 
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const char *type, ut64 addr) {
-	const char *str;
-	char key[256];
+	char *s, *str, *ptr, key[256];
+	RAnalRef *ref = NULL;
+	int hasnext = 1;
 	snprintf (key, sizeof (key), "%s.%s.%"PFMT64x, kind, type, addr);
-	str = sdb_getc (DB, key, 0);
-	//eprintf ("-->add %s %s\n", kind, type);
-	//r_list_append ();
-	return R_FALSE;
+	str = sdb_get (DB, key, 0);
+	if (!str) return R_FALSE;
+	for (ptr=str; hasnext; ptr = (char *)sdb_anext (s)) {
+		s = sdb_astring (ptr, &hasnext);
+		if (!(ref = r_anal_ref_new ()))
+			return R_FALSE;
+		ref->addr = addr;
+		ref->at = r_num_get (NULL, s);
+		ref->type = (!strcmp (type, "code"))?'C':'d'; // XXX
+		r_list_append (list, ref);
+	}
+	free (str);
+	return R_TRUE;
 }
 
 // (in,out)[code,data]
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr) {
 	RList *list = r_list_new ();
 	list->free = NULL; // XXX
-	r_anal_xrefs_from (anal, list, "xref", "code", addr);
-	r_anal_xrefs_from (anal, list, "xref", "data", addr);
+// XXX: not all!
+	//r_anal_xrefs_from (anal, list, "xref", "code", addr);
+	//r_anal_xrefs_from (anal, list, "xref", "data", addr);
 	r_anal_xrefs_from (anal, list, "ref", "code", addr);
 	r_anal_xrefs_from (anal, list, "ref", "data", addr);
 	if (r_list_length (list)<1) {
 		r_list_free (list);
 		list = NULL;
 	}
-
 	return list;
 }
 
@@ -71,5 +81,20 @@ R_API void r_anal_xrefs_init (RAnal *anal) {
 #if 0
 	//...
 	r_anal_xrefs_get (anal, "code", 0);
+#endif
+}
+
+R_API void r_anal_xrefs_list(RAnal *anal) {
+
+	// TODO: make it better!
+	sdb_list (DB);
+#if 0
+	char *k, *v;
+	sdb_dump_begin (DB);
+	while (sdb_dump_dupnext (DB, &k, &v)) {
+		printf ("%s=%s\n", k, v);
+		free (k);
+		free (v);
+	}
 #endif
 }

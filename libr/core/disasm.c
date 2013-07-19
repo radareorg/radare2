@@ -333,29 +333,39 @@ toro:
 			RList *xrefs;
 			RAnalRef *refi;
 			RListIter *iter;
+
+			/* show reverse refs */
+
+			/* show xrefs */
 			if ((xrefs = r_anal_xref_get (core->anal, at))) {
 				r_list_foreach (xrefs, iter, refi) {
+#if 0
+			r_list_foreach (core->anal->refs, iter, refi)
+#endif
+				if (refi->addr == at) {
 					RAnalFunction *fun = r_anal_fcn_find (
-						core->anal, refi->addr,
-						R_ANAL_FCN_TYPE_NULL);
+						core->anal, refi->at,
+						R_ANAL_FCN_TYPE_FCN|
+						R_ANAL_FCN_TYPE_ROOT);
 					if (show_color) {
 						r_cons_printf ("%s%c "Color_RESET"%s%s"Color_RESET, color_fline,
 							((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==at)
 							?' ':'|',color_flow, refline);
 					} else {
 						r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
-							&&f->addr==at)?' ':'|',refline);
+							&& f->addr==at)?' ':'|',refline);
 					}
 					if (show_color)
-					r_cons_printf ("%s; %s XREF 0x%08"PFMT64x" (%s)"Color_RESET"\n",
+					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 						pal_comment, refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-						refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
 						fun?fun->name:"unk");
-					else r_cons_printf ("; %s XREF 0x%08"PFMT64x" (%s)\n",
-						refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-						refi->type==R_ANAL_REF_TYPE_CALL?"CODE (CALL)":"DATA", refi->addr,
+					else r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
+						refi->type=='c'?"CODE (JMP)":
+						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
 						fun?fun->name: "unk");
 				}
+			}
 				r_list_free (xrefs);
 			}
 		}
@@ -442,6 +452,12 @@ toro:
 			lastfail = 0;
 			oplen = (hint && hint->length)?
 				hint->length: r_asm_op_get_size (&asmop);
+		}
+		if (pseudo) {
+			r_parse_parse (core->parser, opstr?
+				opstr:asmop.buf_asm, str);
+			free (opstr);
+			opstr = strdup (str);
 		}
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
@@ -585,19 +601,19 @@ toro:
 						}
 					} else {
 						const char *fmt = show_color?
-							"%s/ "Color_RESET"%s%s: %s"Color_RESET" %d\n":
-							"/ %s: %s %d\n| ";
+							"%s/ "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
+							"/ (%s) %s %d\n| ";
 						if (show_color) {
 							r_cons_printf (fmt, color_fline, color_fname,
-								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
-								(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
+								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
+								(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
 								f->name, f->size);
 							r_cons_strcat (color_fline);
 							r_cons_strcat ("| "Color_RESET);
 						} else
 							r_cons_printf (fmt,
-								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"function":
-								(f->type==R_ANAL_FCN_TYPE_IMP)?"import":"loc",
+								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
+								(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
 								f->name, f->size);
 					}
 					if (sign) r_cons_printf ("// %s\n", sign);
@@ -739,6 +755,7 @@ toro:
 			strcpy (extra, " ");
 			flag = NULL; // HACK
 			if (!flag) {
+
 				str = strdup (asmop.buf_hex);
 				if (r_str_ansi_len (str) > nb) {
 					char *p = (char *)r_str_ansi_chrn (str, nb);
@@ -845,6 +862,7 @@ toro:
 			case R_ANAL_OP_TYPE_NULL:
 			case R_ANAL_OP_TYPE_UNK:
 				r_cons_strcat (color_invalid);
+				break;
 			}
 		}
 		opstr = NULL;
@@ -882,12 +900,6 @@ toro:
 		} else {
 			if (!opstr)
 				opstr = strdup (asmop.buf_asm);
-		}
-		if (pseudo) {
-			r_parse_parse (core->parser, opstr?
-				opstr:asmop.buf_asm, str);
-			free (opstr);
-			opstr = strdup (str);
 		}
 		if (varsub) {
 			RAnalFunction *f = r_anal_fcn_find (core->anal,

@@ -187,6 +187,12 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 			free (varname);
 			break;
 		}
+		if (op.ptr && op.ptr != UT64_MAX) {
+			if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_ERROR;
+			}
+		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_JMP:
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,

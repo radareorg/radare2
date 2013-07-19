@@ -1296,10 +1296,22 @@ R_API void r_core_visual_define (RCore *core) {
 		r_anal_fcn_del (core->anal, off);
 		break;
 	case 'f':
-		r_cons_break(NULL,NULL);
-		r_core_anal_fcn (core, off, -1, R_ANAL_REF_TYPE_NULL,
-				r_config_get_i (core->config, "anal.depth"));
-		r_cons_break_end();
+		{
+			int funsize = 0;
+			int depth = r_config_get_i (core->config, "anal.depth");
+			if (core->print->cur_enabled) {
+				funsize = 1+ R_ABS (core->print->cur - core->print->ocur);
+				depth = 0;
+			}
+			r_cons_break (NULL,NULL);
+			r_core_anal_fcn (core, off, UT64_MAX,
+				R_ANAL_REF_TYPE_NULL, depth);
+			r_cons_break_end ();
+			if (funsize) {
+				RAnalFunction *f = r_anal_fcn_find (core->anal, off, -1);
+				if (f) f->size = funsize;
+			}
+		}
 		break;
 	case 'q':
 	default:

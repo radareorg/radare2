@@ -238,6 +238,14 @@ SDB_VISIBLE int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	return kv->cas;
 }
 
+SDB_VISIBLE void sdb_list (Sdb *s) {
+	SdbKv *kv;
+	SdbListIter *iter;
+	ls_foreach (s->ht->list, iter, kv) {
+		printf ("%s=%s\n", kv->key, kv->value);
+	}
+}
+
 SDB_VISIBLE int sdb_sync (Sdb* s) {
 	SdbKv *kv;
 	SdbListIter it, *iter;

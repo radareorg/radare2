@@ -296,7 +296,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	ut8 *buf;
 #define ANALBS 256
 
-	if (at>>63 == 1 || at == UT64_MAX || depth < 0)
+	if (from != UT64_MAX && at == 0)
+		return R_FALSE;
+	if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
 		return R_FALSE;
 #warning This must be optimized to use the fcnstore api
 	r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -304,7 +306,16 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			break;
 		if (at == fcni->addr) { /* Function already analyzed */
 			if (from != -1) {
-				r_list_foreach (fcni->xrefs, iter2, refi) /* If the xref is new, add it */
+#define USE_NEW_REFS 1
+#if USE_NEW_REFS
+				r_list_foreach (fcni->xrefs, iter2, refi) {
+					const char *types = "code";
+					if (refi->type == 'd') types = "data";
+					r_anal_xrefs_set (core->anal, types, refi->addr, refi->at);
+				}
+#else
+				/* If the xref is new, add it */
+				r_list_foreach (fcni->xrefs, iter2, refi)
 					if (from == refi->addr)
 						return R_TRUE;
 				if (!(ref = r_anal_ref_new ())) {
@@ -316,6 +327,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				ref->type = reftype;
 				if (reftype == 'd') // XXX HACK TO AVOID INVALID REFS
 					r_list_append (fcni->xrefs, ref);
+#endif
 			}
 			return R_TRUE;
 		}
@@ -881,28 +893,30 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 }
 
 R_API int r_core_anal_ref_list(RCore *core, int rad) {
+	r_anal_xrefs_list (core->anal);
+	return 0;
+#if 0
 	RAnalFunction *fcni;
 	struct r_anal_ref_t *refi;
 	RListIter *iter, *iter2;
 
 	r_list_foreach (core->anal->fcns, iter, fcni)
 		r_list_foreach (fcni->refs, iter2, refi) {
-			if (rad)
-			r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-						refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
-						refi->at, refi->addr);
+			if (rad) r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+					refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
+					refi->addr, refi->at);
 			else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n",
-					refi->at, refi->addr, refi->type);
+					refi->addr, refi->at, refi->type);
 		}
 	r_list_foreach (core->anal->refs, iter2, refi) {
 		if (rad) r_cons_printf ("ar%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-					refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
-					refi->at, refi->addr);
+				refi->type==R_ANAL_REF_TYPE_DATA?"d":"",
+				refi->addr, refi->at);
 		else r_cons_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x" (%c)\n",
-				refi->at, refi->addr, refi->type);
+				refi->addr, refi->at, refi->type);
 	}
-	r_cons_flush ();
 	return R_TRUE;
+#endif
 }
 
 R_API int r_core_anal_all(RCore *core) {
