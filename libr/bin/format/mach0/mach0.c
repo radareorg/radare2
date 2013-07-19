@@ -612,9 +612,9 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 	int i = 0;
 
 	if (bin->dyld_info) {
-		ut8 *bind_opcodes, *p, *end, type, rel_type;
+		ut8 *opcodes, *p, *end, type, rel_type;
 		int lib_ord, seg_idx, sym_ord = -1, wordsize;
-		size_t j, count, skip;
+		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;
 		ut64 addr;
 
@@ -628,23 +628,26 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 			default: return NULL;
 		}
 #undef CASE
+		bind_size = bin->dyld_info->bind_size;
+		lazy_size = bin->dyld_info->lazy_bind_size;
 
-		if (!bin->dyld_info->bind_size)
+		if (!bind_size || !lazy_size)
 			return NULL;
 
 		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
-		if (!(relocs = malloc (bin->dyld_info->bind_size * sizeof(struct r_bin_mach0_reloc_t))))
+		if (!(relocs = malloc ((bind_size + lazy_size) * sizeof(struct r_bin_mach0_reloc_t))))
 			return NULL;
 
-		bind_opcodes = malloc (bin->dyld_info->bind_size);
-		if (r_buf_read_at (bin->b, bin->dyld_info->bind_off, bind_opcodes, bin->dyld_info->bind_size) == -1) {
+		opcodes = malloc (bind_size + lazy_size);
+		if (r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size) == -1
+			|| r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size) == -1) {
 			eprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", bin->dyld_info->bind_off);
-			free (bind_opcodes);
+			free (opcodes);
 			relocs[i].last = 1;
 			return relocs;
 		}
 
-		for (p = bind_opcodes, end = bind_opcodes + bin->dyld_info->bind_size; p < end; ) {
+		for (p = opcodes, end = opcodes + bind_size + lazy_size; p < end; ) {
 			ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
 			p++;
 			switch (op) {
@@ -736,12 +739,12 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 #undef SLEB
 				default:
 					eprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
-					free (bind_opcodes);
+					free (opcodes);
 					relocs[i].last = 1;
 					return relocs;
 			}
 		}
-		free (bind_opcodes);
+		free (opcodes);
 	} else {
 		int j;
 		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
