@@ -168,7 +168,7 @@ static RList* relocs(RBinArch *arch) {
 			ptr->import = bin->imports_by_ord[relocs[i].ord];
 		else
 			ptr->import = NULL;
-		ptr->addend = 0;
+		ptr->addend = relocs[i].addend;
 		ptr->rva = relocs[i].addr;
 		ptr->offset = relocs[i].offset;
 		r_list_append (ret, ptr);
@@ -290,7 +290,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		ncmds = 2;
 		cmdsize = 0;
 	}
-	
+
 	/* COMMANDS */
 	D (ncmds); // ncmds
 	p_cmdsize = buf->length;

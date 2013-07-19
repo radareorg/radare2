@@ -305,6 +305,15 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			if (!MACH0_(r_bin_mach0_parse_dylib)(bin, off))
 				return R_FALSE;
 			break;
+		case LC_DYLD_INFO:
+		case LC_DYLD_INFO_ONLY:
+			bin->dyld_info = malloc (sizeof(struct dyld_info_command));
+			if (r_buf_fread_at (bin->b, off, (ut8*)bin->dyld_info, bin->endian?"12I":"12i", 1) == -1) {
+				free (bin->dyld_info);
+				bin->dyld_info = NULL;
+				eprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
+			}
+			break;
 		}
 	}
 	return R_TRUE;
@@ -328,6 +337,7 @@ void* MACH0_(r_bin_mach0_free)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	free (bin->symstr);
 	free (bin->indirectsyms);
 	free (bin->imports_by_ord);
+	free (bin->dyld_info);
 	free (bin->toc);
 	free (bin->modtab);
 	free (bin->libs);
@@ -350,6 +360,9 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file) {
 	if (!r_buf_set_bytes(bin->b, buf, bin->size))
 		return MACH0_(r_bin_mach0_free)(bin);
 	free (buf);
+
+	bin->dyld_info = NULL;
+
 	if (!MACH0_(r_bin_mach0_init)(bin))
 		return MACH0_(r_bin_mach0_free)(bin);
 
@@ -496,13 +509,14 @@ static int MACH0_(r_bin_mach0_parse_import_ptr)(struct MACH0_(r_bin_mach0_obj_t)
 	int i, j, sym, wordsize;
 	ut32 stype;
 
-	wordsize = (int)(MACH0_(r_bin_mach0_get_bits)(bin)/8);
+	wordsize = MACH0_(r_bin_mach0_get_bits)(bin) / 8;
 	if ((bin->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY)
 		stype = S_LAZY_SYMBOL_POINTERS;
 	else stype = S_NON_LAZY_SYMBOL_POINTERS;
 
-	reloc->offset = 0LL;
-	reloc->addr = 0LL;
+	reloc->offset = 0;
+	reloc->addr = 0;
+	reloc->addend = 0;
 #define CASE(T) case (T / 8): reloc->type = R_BIN_RELOC_ ## T; break
 	switch (wordsize) {
 		CASE(8);
@@ -537,7 +551,7 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 
 	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
 		return NULL;
-	if (!(imports = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
+	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
 		return NULL;
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
 		stridx = bin->symtab[bin->dysymtab.iundefsym + i].n_un.n_strx;
@@ -561,20 +575,186 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 	return imports;
 }
 
+static ut64 read_uleb128(ut8 **p) {
+	ut64 r = 0, byte;
+	int bit = 0;
+	do {
+		if (bit > 63) {
+			eprintf ("uleb128 too big for u64 (%d bits) - partial result: 0x%08"PFMT64x"\n", bit, r);
+			return r;
+		}
+
+		byte = *(*p)++;
+		r |= (byte & 0x7f) << bit;
+		bit += 7;
+	} while (byte & 0x80);
+	return r;
+}
+
+
+static st64 read_sleb128(ut8 **p) {
+	st64 r = 0, byte;
+	int bit = 0;
+	do {
+		byte = *(*p)++;
+		r |= (byte & 0x7f) << bit;
+		bit += 7;
+	} while (byte & 0x80);
+
+	// Sign extend negative numbers.
+	if (byte & 0x40)
+		r |= -1LL << bit;
+	return r;
+}
+
 struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct r_bin_mach0_reloc_t *relocs;
-	int i, j;
+	int i = 0;
 
-	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
-		return NULL;
-	if (!(relocs = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
-		return NULL;
-	for (i = j = 0; i < bin->dysymtab.nundefsym; i++)
-		if (MACH0_(r_bin_mach0_parse_import_ptr)(bin, &relocs[j], bin->dysymtab.iundefsym + i)) {
-			relocs[j].ord = i;
-			relocs[j++].last = 0;
+	if (bin->dyld_info) {
+		ut8 *bind_opcodes, *p, *end, type, rel_type;
+		int lib_ord, seg_idx, sym_ord = -1, wordsize;
+		size_t j, count, skip;
+		st64 addend = 0;
+		ut64 addr;
+
+		wordsize = MACH0_(r_bin_mach0_get_bits)(bin) / 8;
+#define CASE(T) case (T / 8): rel_type = R_BIN_RELOC_ ## T; break
+		switch (wordsize) {
+			CASE(8);
+			CASE(16);
+			CASE(32);
+			CASE(64);
+			default: return NULL;
 		}
-	relocs[j].last = 1;
+#undef CASE
+
+		if (!bin->dyld_info->bind_size)
+			return NULL;
+
+		// NOTE(eddyb) it's a waste of memory, but we don't know the actual number of relocs.
+		if (!(relocs = malloc (bin->dyld_info->bind_size * sizeof(struct r_bin_mach0_reloc_t))))
+			return NULL;
+
+		bind_opcodes = malloc (bin->dyld_info->bind_size);
+		if (r_buf_read_at (bin->b, bin->dyld_info->bind_off, bind_opcodes, bin->dyld_info->bind_size) == -1) {
+			eprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", bin->dyld_info->bind_off);
+			free (bind_opcodes);
+			relocs[i].last = 1;
+			return relocs;
+		}
+
+		for (p = bind_opcodes, end = bind_opcodes + bin->dyld_info->bind_size; p < end; ) {
+			ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
+			p++;
+			switch (op) {
+#define ULEB() read_uleb128 (&p)
+#define SLEB() read_sleb128 (&p)
+				case BIND_OPCODE_DONE:
+					break;
+				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+					lib_ord = imm;
+					break;
+				case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+					lib_ord = ULEB();
+					break;
+				case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+					if (!imm)
+						lib_ord = 0;
+					else
+						lib_ord = (st8)(BIND_OPCODE_MASK | imm);
+					break;
+				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
+					char *sym_name = (char*)p;
+					//ut8 sym_flags = imm;
+					while (*p++);
+					sym_ord = -1;
+					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
+						int stridx = bin->symtab[bin->dysymtab.iundefsym + j].n_un.n_strx;
+						if (stridx < 0 || stridx >= bin->symstrlen)
+							continue;
+						if (!strcmp((char *)bin->symstr + stridx, sym_name)) {
+							sym_ord = j;
+							break;
+						}
+					}
+					break;
+				}
+				case BIND_OPCODE_SET_TYPE_IMM:
+					type = imm;
+					break;
+				case BIND_OPCODE_SET_ADDEND_SLEB:
+					addend = SLEB();
+					break;
+				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+					seg_idx = imm;
+					if (seg_idx > bin->nsegs )
+						eprintf ("Error: BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has unexistent segment %d\n", seg_idx);
+					addr = bin->segs[seg_idx].vmaddr + ULEB();
+					break;
+				case BIND_OPCODE_ADD_ADDR_ULEB:
+					addr += ULEB();
+					break;
+
+#define DO_BIND() do {\
+	if (sym_ord == -1)\
+		break;\
+	relocs[i].addr = addr;\
+	relocs[i].offset = addr - bin->segs[seg_idx].vmaddr + bin->segs[seg_idx].fileoff;\
+	if (type == BIND_TYPE_TEXT_PCREL32)\
+		relocs[i].addend = addend - (bin->baddr + addr);\
+	else\
+		relocs[i].addend = addend;\
+	relocs[i].ord = sym_ord;\
+	relocs[i].type = rel_type;\
+	relocs[i++].last = 0;\
+} while (0)
+
+				case BIND_OPCODE_DO_BIND:
+					DO_BIND();
+					addr += wordsize;
+					break;
+				case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+					DO_BIND();
+					addr += ULEB() + wordsize;
+					break;
+				case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+					DO_BIND();
+					addr += imm * wordsize + wordsize;
+					break;
+				case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+					count = ULEB();
+					skip = ULEB();
+					for (j = 0; j < count; j++) {
+						DO_BIND();
+						addr += skip + wordsize;
+					}
+					break;
+#undef DO_BIND
+
+#undef ULEB
+#undef SLEB
+				default:
+					eprintf ("Error: unknown bind opcode 0x%02x in dyld_info\n", *p);
+					free (bind_opcodes);
+					relocs[i].last = 1;
+					return relocs;
+			}
+		}
+		free (bind_opcodes);
+	} else {
+		int j;
+		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
+			return NULL;
+		if (!(relocs = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
+			return NULL;
+		for (j = 0; j < bin->dysymtab.nundefsym; j++)
+			if (MACH0_(r_bin_mach0_parse_import_ptr)(bin, &relocs[i], bin->dysymtab.iundefsym + j)) {
+				relocs[i].ord = j;
+				relocs[i++].last = 0;
+			}
+	}
+	relocs[i].last = 1;
 
 	return relocs;
 }

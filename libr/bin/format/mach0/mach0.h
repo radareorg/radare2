@@ -37,6 +37,7 @@ struct r_bin_mach0_import_t {
 struct r_bin_mach0_reloc_t {
 	ut64 offset;
 	ut64 addr;
+	st64 addend;
 	ut8 type;
 	int ord;
 	int last;
@@ -70,6 +71,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	size_t imports_by_ord_size;
 
 	struct dysymtab_command dysymtab;
+	struct dyld_info_command *dyld_info;
 	struct dylib_table_of_contents* toc;
 	int ntoc;
 	struct MACH0_(dylib_module)* modtab;
