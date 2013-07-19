@@ -204,3 +204,13 @@ R_API int r_anal_project_save(RAnal *anal, const char *prjfile) {
 	r_anal_xrefs_save (anal, prjfile);
 	return R_TRUE;
 }
+
+R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
+	int len;
+	char *buf;
+	RAnalOp *op = R_NEW0 (RAnalOp);
+	buf = malloc (strlen (str));
+	len = r_hex_str2bin (str, buf);
+	r_anal_op (anal, op, addr, buf, len);
+	return op;
+}

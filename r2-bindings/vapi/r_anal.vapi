@@ -24,6 +24,7 @@ namespace Radare {
 		*/
 
 		public RAnal ();
+		public bool op_hexstr(uint64 addr, string hexstr);
 		public bool esil_eval (string str);
 		public bool set_bits (int bits);
 		public bool set_big_endian (bool big);
