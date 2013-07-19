@@ -139,6 +139,14 @@ namespace Radare {
 			public uint64 ordinal;
 		}
 
+
+		[CCode (cprefix="R_BIN_RELOC")]
+		public enum RelocType {
+			_8,
+			_16,
+			_32,
+			_64
+		}
 		[CCode (cname="RBinReloc", free_function="", ref_function="", unref_function="")]
 		public class Reloc {
 			public uint8 type;
