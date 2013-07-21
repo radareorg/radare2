@@ -1851,6 +1851,50 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 }
 #endif
 
+static RDebugMap* r_debug_native_map_alloc(RDebug *dbg, ut64 addr, int size) {
+#if __APPLE__
+	RDebugMap *map = NULL;
+	kern_return_t ret;
+	unsigned char *base = (unsigned char *)addr;
+	boolean_t anywhere = !VM_FLAGS_ANYWHERE;
+
+	if (addr == -1)
+		anywhere = VM_FLAGS_ANYWHERE;
+
+	ret = vm_allocate (pid_to_task (dbg->tid),
+			(vm_address_t*)&base,
+			(vm_size_t)size,
+			anywhere);
+	if (ret != KERN_SUCCESS) {
+		printf("vm_allocate failed\n");
+		return NULL;
+	}
+	r_debug_map_sync (dbg); // update process memory maps
+	map = r_debug_map_get(dbg, base);
+	return map;
+#else
+#warning malloc not implemented for this platform
+	return NULL;
+#endif
+}
+
+static int r_debug_native_map_dealloc(RDebug *dbg, ut64 addr, int size) {
+#if __APPLE__
+	int ret;
+	ret = vm_deallocate (pid_to_task (dbg->tid),
+			(vm_address_t)addr,
+			(vm_size_t)size);
+	if (ret != KERN_SUCCESS) {
+		printf("vm_deallocate failed\n");
+		return R_FALSE;
+	}
+	return R_TRUE;
+#else
+#warning mdealloc not implemented for this platform
+	return R_FALSE;
+#endif
+}
+
 static RList *r_debug_native_map_get(RDebug *dbg) {
 	RList *list = NULL;
 #if __KFBSD__
@@ -2420,6 +2464,8 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.reg_profile = (void *)r_debug_native_reg_profile,
 	.reg_read = r_debug_native_reg_read,
 	.reg_write = (void *)&r_debug_native_reg_write,
+	.map_alloc = r_debug_native_map_alloc,
+	.map_dealloc = r_debug_native_map_dealloc,
 	.map_get = r_debug_native_map_get,
 	.map_protect = r_debug_native_map_protect,
 	.breakpoint = r_debug_native_bp,

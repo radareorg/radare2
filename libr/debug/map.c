@@ -64,26 +64,22 @@ R_API int r_debug_map_sync(RDebug *dbg) {
 	return ret;
 }
 
-R_API int r_debug_map_alloc(RDebug *dbg, RDebugMap *map) {
-	int ret = R_FALSE;
+R_API RDebugMap* r_debug_map_alloc(RDebug *dbg, ut64 addr, int size) {
+	RDebugMap *map = NULL;
 	if (dbg->h && dbg->h->map_alloc) {
-		if (dbg->h->map_alloc (dbg, map)) {
-			ret = R_TRUE;
-			r_list_append (dbg->maps_user, map);
-		}
+		map = dbg->h->map_alloc (dbg, addr, size);
 	}
-	return ret;
+	return map;
 }
 
 R_API int r_debug_map_dealloc(RDebug *dbg, RDebugMap *map) {
 	int ret = R_FALSE;
 	ut64 addr = map->addr;
-	if (dbg->h && dbg->h->map_dealloc) 
-		if (dbg->h->map_dealloc (dbg, addr)) {
+	if (dbg->h && dbg->h->map_dealloc) {
+		if (dbg->h->map_dealloc (dbg, addr, map->size)) {
 			ret = R_TRUE;
-			r_list_unlink (dbg->maps_user, map);
 		}
-	//r_debug_map_free (map);
+	}
 	return ret;
 }
 
