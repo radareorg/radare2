@@ -223,7 +223,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		"Usage: dm [size]\n"
 		" dm            List memory maps of target process\n"
 		" dm*           Same as above but in radare commands\n"
-		" dm 4096       Allocate 4096 bytes in child process\n"
+		" dm addr size  Allocate size bytes at addr (anywhere if addr is -1) in child process\n"
 		" dm-0x8048     Deallocate memory map of address 0x8048\n"
 		" dmp A S rwx   Change page at A with size S protection permissions\n"
 		" dmd [file]    Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
@@ -348,9 +348,32 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_debug_map_list (core->dbg, core->offset, 1);
 		break;
-	case '-':
 	case ' ':
-		eprintf ("TODO\n");
+		{
+			char *p;
+			int size;
+			p = strchr (input+2, ' ');
+			if (p) {
+				*p++ = 0;
+				addr = r_num_math (core->num, input+1);
+				size = r_num_math (core->num, p);
+				r_debug_map_alloc(core->dbg, addr, size);
+			} else {
+				eprintf ("Usage: dm addr size\n");
+				return R_FALSE;
+			}
+		}
+		break;
+	case '-':
+		addr = r_num_math (core->num, input+2);
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (addr >= map->addr && addr < map->addr_end) {
+				r_debug_map_dealloc(core->dbg, map);
+				r_debug_map_sync (core->dbg);
+				return R_TRUE;
+			}
+		}
+		eprintf ("The address doesn't match with any map.\n");
 		break;
 	default:
 		r_debug_map_sync (core->dbg); // update process memory maps
