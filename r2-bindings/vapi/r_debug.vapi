@@ -34,12 +34,12 @@ public class Radare.RDebug {
 	public bool continue_syscall(int syscall);
 
 	//public bool map_list(RDebug.Map map);
-	public bool map_alloc (RDebug.Map map);
 	public bool map_dealloc (RDebug.Map map);
 	//public RList<RDebug.Map> map_list_new ();
 	//public void map_list_free (RList<RDebug.Map> maps);
 	public void map_list (uint64 addr, bool rad);
-	public RDebug.Map map_get(uint64 addr);
+	public RDebug.Map map_get (uint64 addr);
+	public RDebug.Map map_alloc (uint64 addr, int size);
 	public bool map_sync ();
 
 	public bool child_fork ();
