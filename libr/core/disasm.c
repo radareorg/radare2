@@ -62,7 +62,7 @@ static void colorize_opcode (char *p, const char *reg, const char *num) {
 		switch (p[i]) {
 		case 0x1b:
 			/* skip until 'm' */
-			for(++i;p[i] && p[i]!='m'; i++)
+			for (++i;p[i] && p[i]!='m'; i++)
 				o[j] = p[i];
 			continue;
 		case '+':
@@ -129,7 +129,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int ret, idx = 0, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
 	int continueoninvbreak = (len == l) && invbreak;
-	char str[128], strsub[128];
+	char str[512], strsub[512];
 	RAnalFunction *f = NULL;
 	char *refline = NULL;
 	RAnalCC cc = {0};
