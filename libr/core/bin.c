@@ -208,7 +208,7 @@ static int bin_info (RCore *r, int mode) {
 					r_str_bool (R_BIN_DBG_RELOCS (info->dbg_info)),
 					info->rpath);
 			for (i=0; info->sum[i].type; i++) {
-				int len, hashchk = 1;
+				int len;
 				//ut8 *sum = &info; // XXX
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
@@ -216,7 +216,6 @@ static int bin_info (RCore *r, int mode) {
 				len = r_hash_calculate (rh, hash, (const ut8*)r->bin->cur.buf+h->from, h->to);
 				//ut8 *p = r->bin->cur.buf+h->addr;
 				if (len<1) eprintf ("Invaild wtf\n");
-				hashchk = (!memcmp (rh->digest, h->buf, h->len));
 				r_hash_free (rh);
 
 				r_cons_printf ("%s\t%d-%dc\t", h->type, h->from, h->to+h->from);
@@ -457,8 +456,6 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 }
 
 static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name) {
-	char *dname, *mn, *p, str[R_FLAG_NAME_SIZE];
-	const char *iname;
 	RBinImport *import;
 	RListIter *iter;
 	RList *imports;

@@ -65,8 +65,8 @@ R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
 	ref->addr = addr;
 	ref->at = at;
 	ref->type = type;
-	return R_TRUE;
 #endif
+	return R_TRUE;
 }
 
 R_API int r_anal_ref_del(RAnal *anal, ut64 at, ut64 addr) {
@@ -96,12 +96,12 @@ R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
 	return r_anal_xrefs_get (anal, addr);
 }
 
-#if 0
+/*
 	RAnalFunction *fcni;
 	RAnalRef *refi, *ref, *refr;
 	RListIter *iter, *iter2, *iter3;
 	RList *ret;
-#if 0
+
 for (list = sdb_list_begin (DB); list; list = sdb_list_next (list)) {
 	char *str = astring();
 	eprintf ("--> %s\n", str);
@@ -189,4 +189,4 @@ while (list) {
 		}
 	return ret;
 }
-#endif
+*/
