@@ -141,10 +141,11 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	}
 	return R_TRUE;
 #elif __UNIX__
-	if (proto==0) proto= R_SOCKET_PROTO_TCP;
 	int gai, ret;
 	struct addrinfo hints, *res, *rp;
+	if (proto==0) proto= R_SOCKET_PROTO_TCP;
 	signal (SIGPIPE, SIG_IGN);
+eprintf ("Connect\n");
 	if (proto == R_SOCKET_PROTO_UNIX) {
 		if (!r_socket_unix_connect (s, host))
 			return R_FALSE;
@@ -168,29 +169,35 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 			if (timeout<1) {
 				if (ret == -1) {
 					close (s->fd);
+					continue;
 					return R_FALSE;
 				}
 				return R_TRUE;
-			}
+			} 
 			if (timeout>0) {
 				struct timeval tv;
-				fd_set fdset;
+				fd_set fdset, errset;
 				FD_ZERO (&fdset);
 				FD_SET (s->fd, &fdset);
 				tv.tv_sec = timeout;
 				tv.tv_usec = 0;
-				if (select (s->fd + 1, NULL, &fdset, NULL, &tv) == 1) {
+eprintf ("gonna check\n");
+				if (select (s->fd + 1, NULL, NULL, &errset, &tv) == 1) {
 					int so_error;
 					socklen_t len = sizeof so_error;
+printf ("FD %d\n", FD_ISSET (s->fd, &errset)?1:0);
 					ret = getsockopt (s->fd, SOL_SOCKET,
 						SO_ERROR, &so_error, &len);
 			//		fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
 //					r_socket_block_time (s, 0, 0);
 					freeaddrinfo (res);
+eprintf ("WIN\n");
 					return R_TRUE;
 				} else {
 					freeaddrinfo (res);
+eprintf ("FAIl\n");
 					close (s->fd);
+					s->fd = -1;
 					return R_FALSE;
 				}
 			}
