@@ -15,7 +15,10 @@ static char *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int arc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
-	memcpy (myaddr, bytes, length);
+	int delta = (memaddr - Offset);
+	if (delta<0) return -1; // disable backward reads
+	if ((delta+length)>4) return -1;
+	memcpy (myaddr, bytes+delta, length);
 	return 0;
 }
 
