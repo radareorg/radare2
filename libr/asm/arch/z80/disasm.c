@@ -256,7 +256,8 @@ static UBYTE OpcodeLen(ULONG p, const ut8 *Opcodes) {
 	}
 	return(len);
 }
- 
+
+#if MAIN_DIS
 R_API_I ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
 	int i;
 	ULONG   next;
@@ -349,7 +350,8 @@ R_API_I ULONG ParseOpcodes(ULONG adr, ut8 *Opcodes, int len) {
         }
 	return next;
 }
- 
+#endif
+
 // Disassemblieren
 static int Disassemble(UWORD adr, const unsigned char *Opcodes, STR s, int olen) {
 	UBYTE           a = Opcodes[0];
