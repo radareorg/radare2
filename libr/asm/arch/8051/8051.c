@@ -234,9 +234,11 @@ R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 	return out;
 }
 
+#if 0
 R_AII Op8051 do8051assemble(const char *str) {
 	return _{"TODO"};
 }
+#endif
 
 #if MAIN
 
