@@ -194,7 +194,7 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	write (2, "\n", 1);
 	if (key == 'Y')
 		key = 'y';
-	r_cons_set_raw (1); // XXX with set_raw(0) causes problems wtf
+	r_cons_set_raw (0);
 	if (key=='\n' || key=='\r')
 		key = def;
 	return key=='y';
