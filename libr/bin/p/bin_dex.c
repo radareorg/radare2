@@ -207,13 +207,12 @@ static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
 
 /* TODO: check boundaries */
 static char *dex_method_name (RBinDexObj *bin, int idx) {
-	int tid, sid;
+	int tid;
 	if (idx<0 || idx>bin->header.method_size)
 		return NULL;
 	tid = bin->methods[idx].name_id;
 	if (tid<0 || tid>bin->header.strings_size)
 		return NULL;
-	sid = bin->strings[tid];
 	return get_string (bin, tid);
 }
 
