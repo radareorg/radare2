@@ -1,7 +1,7 @@
 #!/bin/sh
-cd `dirname $PWD/$0`
+cd `dirname $(pwd)/$0`
 
-D=${PWD}/../prefix-install
+D=$(pwd)/../prefix-install
 ./python.sh --no-install
 cd ../r2-bindings
 P=`./configure --version|head -n 1|cut -d ' ' -f 1`

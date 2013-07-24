@@ -10,7 +10,7 @@ gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd `dirname $(pwd)/$0` ; cd ..
 if [ -d .hg ]; then
 	echo hg up -C -r "${REV}"
 	hg up -C -r "${REV}"

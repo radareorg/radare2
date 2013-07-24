@@ -5,7 +5,7 @@ gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd `dirname $(pwd)/$0` ; cd ..
 
 # update
 if [ -d .hg ]; then

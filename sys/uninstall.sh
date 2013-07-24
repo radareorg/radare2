@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd `dirname $(pwd)/$0` ; cd ..
 
 MAKE=make
 gmake --help >/dev/null 2>&1

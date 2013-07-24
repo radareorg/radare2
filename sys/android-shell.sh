@@ -17,7 +17,7 @@ esac
 
 LANG=C
 export LANG
-ROOT=`dirname $PWD/$0`
+ROOT=`dirname $(pwd)/$0`
 OS=`uname|tr 'A-Z' 'a-z'`
 [ "${OS}" = macosx ] && OS=darwin
 

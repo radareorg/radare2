@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd `dirname $(pwd)/$0` ; cd ..
 
-export PATH=${PWD}/sys/_work/mingw64/bin:${PATH}
+export PATH=$(pwd)/sys/_work/mingw64/bin:${PATH}
 # TODO: add support for ccache
 
 make clean

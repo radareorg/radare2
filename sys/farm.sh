@@ -7,7 +7,7 @@
 [ -z "${DIR}" ] && DIR=radare2.build
 [ -z "${URL}" ] && URL=http://github.com/radare/${NAME}
 PYTHON=python2
-WD=${PWD}/${DIR}
+WD=$(pwd)/${DIR}
 NOW=$(date +%Y%m%d-%H%M%S)
 if [ -z "$1" ]; then
 	LOGFILE=${WD}/build.log.${NOW}

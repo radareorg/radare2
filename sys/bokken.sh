@@ -1,6 +1,6 @@
 #!/bin/sh
 # find root
-cd `dirname $PWD/$0`
+cd `dirname $(pwd)/$0`
 
 mkdir -p _work
 cd _work

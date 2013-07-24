@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0`
+cd `dirname $(pwd)/$0`
 
 if [ -x /opt/local/bin/port ]; then
 	sudo port install i386-mingw32-gcc

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0`
+cd `dirname $(pwd)/$0`
 
 if [ `uname` = Linux ]; then
 case `uname -m` in

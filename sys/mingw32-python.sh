@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cd `dirname $PWD/$0`
+cd `dirname $(pwd)/$0`
 cd ../r2-bindings
 make clean
 ./configure --enable-devel --prefix=/usr || exit 1

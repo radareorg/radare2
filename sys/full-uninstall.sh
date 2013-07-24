@@ -1,6 +1,6 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd `dirname $(pwd)/$0` ; cd ..
 
 make purge

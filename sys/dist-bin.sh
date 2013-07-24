@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd `dirname $(pwd)/$0` ; cd ..
 
-D=${PWD}/prefix-install
+D=$(pwd)/prefix-install
 P=`./configure --version|head -n 1|cut -d ' ' -f 1`
 rm -rf $D
 mkdir $D
