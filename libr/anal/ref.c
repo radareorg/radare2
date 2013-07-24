@@ -96,12 +96,12 @@ R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
 	return r_anal_xrefs_get (anal, addr);
 }
 
-#if 0
+/*
 	RAnalFunction *fcni;
 	RAnalRef *refi, *ref, *refr;
 	RListIter *iter, *iter2, *iter3;
 	RList *ret;
-#if 0
+
 for (list = sdb_list_begin (DB); list; list = sdb_list_next (list)) {
 	char *str = astring();
 	eprintf ("--> %s\n", str);
@@ -189,4 +189,4 @@ while (list) {
 		}
 	return ret;
 }
-#endif
+*/
