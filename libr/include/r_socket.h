@@ -57,6 +57,7 @@ R_API void r_socket_printf (RSocket *s, const char *fmt, ...);
 R_API int r_socket_read (RSocket *s, ut8 *read, int len);
 R_API int r_socket_read_block (RSocket *s, unsigned char *buf, int len);
 R_API int r_socket_gets (RSocket *s, char *buf, int size);
+R_API int r_socket_is_connected (RSocket *);
 
 /* process */
 typedef struct r_socket_proc_t {

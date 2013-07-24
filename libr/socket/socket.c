@@ -56,6 +56,12 @@ static int r_socket_unix_connect(RSocket *s, const char *file) {
 	return R_TRUE;
 }
 
+R_API int r_socket_is_connected (RSocket *s) {
+	char buf[2];
+	int ret = recv (s->fd, &buf, 1, MSG_PEEK | MSG_DONTWAIT);
+	return ret? R_TRUE: R_FALSE;
+}
+
 R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 	struct sockaddr_un unix_name;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
@@ -141,11 +147,10 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	}
 	return R_TRUE;
 #elif __UNIX__
+	if (proto==0) proto= R_SOCKET_PROTO_TCP;
 	int gai, ret;
 	struct addrinfo hints, *res, *rp;
-	if (proto==0) proto= R_SOCKET_PROTO_TCP;
 	signal (SIGPIPE, SIG_IGN);
-eprintf ("Connect\n");
 	if (proto == R_SOCKET_PROTO_UNIX) {
 		if (!r_socket_unix_connect (s, host))
 			return R_FALSE;
@@ -166,39 +171,44 @@ eprintf ("Connect\n");
 				r_socket_block_time (s, 1, timeout);
 				//fcntl (s->fd, F_SETFL, O_NONBLOCK, 1);
 			ret = connect (s->fd, rp->ai_addr, rp->ai_addrlen);
+			if (ret<0) {
+				close (s->fd);
+				s->fd = -1;
+				continue;
+			}
 			if (timeout<1) {
 				if (ret == -1) {
 					close (s->fd);
-					continue;
+					s->fd = -1;
 					return R_FALSE;
 				}
 				return R_TRUE;
-			} 
+			}
 			if (timeout>0) {
 				struct timeval tv;
 				fd_set fdset, errset;
 				FD_ZERO (&fdset);
 				FD_SET (s->fd, &fdset);
-				tv.tv_sec = timeout;
+				tv.tv_sec = 1; //timeout;
 				tv.tv_usec = 0;
-eprintf ("gonna check\n");
+
+				if (r_socket_is_connected (s))
+					return R_TRUE;
 				if (select (s->fd + 1, NULL, NULL, &errset, &tv) == 1) {
 					int so_error;
 					socklen_t len = sizeof so_error;
-printf ("FD %d\n", FD_ISSET (s->fd, &errset)?1:0);
 					ret = getsockopt (s->fd, SOL_SOCKET,
 						SO_ERROR, &so_error, &len);
 			//		fcntl (s->fd, F_SETFL, O_NONBLOCK, 0);
 //					r_socket_block_time (s, 0, 0);
 					freeaddrinfo (res);
-eprintf ("WIN\n");
 					return R_TRUE;
 				} else {
-					freeaddrinfo (res);
-eprintf ("FAIl\n");
+	//				freeaddrinfo (res);
 					close (s->fd);
 					s->fd = -1;
-					return R_FALSE;
+					continue;
+	//				return R_FALSE;
 				}
 			}
 			close (s->fd);

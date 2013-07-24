@@ -272,7 +272,6 @@ static char *gdbwrap_run_length_decode(char *dstpacket, const char *srcpacket, u
 		memset (encodestr, valuetocopy, numberoftimes);
 		encodestr = strstr (NEXT_CHAR (encodestr), GDBWRAP_START_ENCOD);
 	}
-
 	return dstpacket;
 }
 
@@ -376,14 +375,15 @@ static char *gdbwrap_get_packet(gdbwrap_t *desc) {
 		{
 			gdbwrap_send_ack(desc);
 			gdbwrap_errorhandler(desc, desc->packet);
-			return gdbwrap_run_length_decode(desc->packet, desc->packet,
-					desc->max_packet_size);
+			return gdbwrap_run_length_decode(desc->packet,
+				desc->packet, desc->max_packet_size);
 		} else {
 			if (gdbwrap_is_interrupted (desc)) {
 				desc->interrupted = FALSE;
 				gdbwrap_errorhandler (desc, desc->packet);
-				return gdbwrap_run_length_decode (desc->packet, desc->packet,
-						desc->max_packet_size);
+				return gdbwrap_run_length_decode (
+					desc->packet, desc->packet,
+					desc->max_packet_size);
 			} else {
 				fprintf (stderr, "Muh ?\n");
 				return NULL;
@@ -402,13 +402,14 @@ static char *gdbwrap_send_data(gdbwrap_t *desc, const char *query) {
 
 	if (gdbwrap_is_active (desc)) {
 		do {
-			mes  = gdbwrap_make_message (desc, query);
+			mes = gdbwrap_make_message (desc, query);
 			if (!mes) break;
 			rval = send (desc->fd, mes, strlen (mes), 0);
+			if (rval<1) break;
 		} while (gdbwrap_check_ack (desc) != TRUE);
 		if (rval == -1)
 			return NULL;
-		mes  = gdbwrap_get_packet (desc);
+		mes = gdbwrap_get_packet (desc);
 	} else {
 		gdbwrap_errorhandler (desc, GDBWRAP_DEAD);
 		mes = NULL;
@@ -588,7 +589,7 @@ IRAPI ut8 *gdbwrap_readgenreg(gdbwrap_t *desc) {
 	int i;
 	ureg32 regvalue;
 	char *rec = gdbwrap_send_data (desc, GDBWRAP_GENPURPREG);
-	if (gdbwrap_is_active (desc)) {
+	if (rec && gdbwrap_is_active (desc)) {
 		for (i = 0; i < desc->num_registers; i++) {
 			/* 1B = 2 characters */
 			regvalue = gdbwrap_atoh (rec, 2 * DWORD_IN_BYTE);
