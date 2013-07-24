@@ -100,7 +100,7 @@ install: install-doc install-man install-www
 	(cd $$a ; ${MAKE} install LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
-	cp -f shlr/hud/main ${DLIBDIR}/radare2/${VERSION}/hud/
+	cp -f doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
 	cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
 
@@ -117,7 +117,6 @@ symstall-www:
 	cd ${DESTDIR}/${WWWROOT} ; for a in ${PWD}/shlr/www/* ; do \
 		ln -fs $$a ${DESTDIR}/${DATADIR}/radare2/${VERSION}/www ; done
 
-
 install-pkgconfig-symlink:
 	@${INSTALL_DIR} ${DLIBDIR}/pkgconfig
 	cd pkgcfg ; for a in *.pc ; do ln -fs $${PWD}/$$a ${DLIBDIR}/pkgconfig/$$a ; done
@@ -132,7 +131,7 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 		${MAKE} install-symlink LIBDIR=${LIBDIR} PREFIX=${PREFIX} DESTDIR=${DESTDIR} ); \
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
-	ln -fs ${PWD}/shlr/hud/main ${DLIBDIR}/radare2/${VERSION}/hud/main
+	ln -fs ${PWD}/doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
 	ln -fs ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
 
