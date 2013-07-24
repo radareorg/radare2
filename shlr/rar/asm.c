@@ -1,5 +1,4 @@
-#if 0
-
+/*
 mov r0, #33
 
   .-- select  3 bit opcode mode
@@ -20,7 +19,7 @@ memr  01 0 x3
 memi  01 11 11 x32
 memri 01 10 r3 11 x32
 imm   0011 x32
-#endif
+*/
 static int assemble_arg(Bitbuf *b, char *a) {
 printf ("A = (%s)\n", a);
 	int r = getreg (a);
