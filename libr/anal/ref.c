@@ -65,8 +65,8 @@ R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
 	ref->addr = addr;
 	ref->at = at;
 	ref->type = type;
-	return R_TRUE;
 #endif
+	return R_TRUE;
 }
 
 R_API int r_anal_ref_del(RAnal *anal, ut64 at, ut64 addr) {
