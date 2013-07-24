@@ -459,7 +459,6 @@ int main(int argc, char **argv) {
 			}
 			printf ("]");
 		} else r_bin_list_archs (bin);
-		free (arch);
 		free (arch_name);
 	}
 
