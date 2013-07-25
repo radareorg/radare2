@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
 		case 'A': set_action (ACTION_LISTARCHS); break;
-		case 'a': if (optarg) arch = strdup (optarg); break;
+		case 'a': if (optarg) arch = optarg; break;
 		case 'c':
 			if (!optarg) {
 				eprintf ("Missing argument for -c");
@@ -459,7 +459,6 @@ int main(int argc, char **argv) {
 			}
 			printf ("]");
 		} else r_bin_list_archs (bin);
-		free (arch);
 		free (arch_name);
 	}
 
