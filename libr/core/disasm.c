@@ -144,6 +144,9 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int oplen = 0;
 	int tries = 3;
 
+	opstr = NULL;
+	memset(str, 0, sizeof(str));
+
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
 	// TODO: allow to get those register snapshots from traces
@@ -865,7 +868,6 @@ toro:
 				break;
 			}
 		}
-		opstr = NULL;
 		if (decode) {
 			char *tmpopstr = r_anal_op_to_string (core->anal, &analop);
 			// TODO: Use data from code analysis..not raw analop here
@@ -873,7 +875,8 @@ toro:
 			opstr = tmpopstr? tmpopstr: strdup (asmop.buf_asm);
 		}
 		if (hint && hint->opcode) {
-			free (opstr);
+			if (opstr)
+				free (opstr);
 			opstr = strdup (hint->opcode);
 		}
 		if (filter) {
@@ -894,7 +897,8 @@ toro:
 			r_parse_filter (core->parser, core->flags,
 				opstr? opstr: asmop.buf_asm, str, sizeof (str));
 			core->parser->flagspace = ofs;
-			free (opstr);
+			if (opstr)
+				free (opstr);
 			opstr = strdup (str);
 			core->parser->flagspace = ofs; // ???
 		} else {
