@@ -7,7 +7,6 @@
 #ifndef R_API
 #define R_API
 #endif
-// TODO: implement ls_foreach_prev
 
 typedef void (*SdbListFree)(void *ptr);
 

@@ -20,6 +20,10 @@
 
 #include "tcc.h"
 
+/* callback pointers */
+ST_DATA char **tcc_cb_ptr;
+ST_DATA void (*tcc_cb)(const char *, char **);
+
 /********************************************************/
 /* global variables */
 
@@ -47,6 +51,7 @@ ST_DATA Section *stab_section, *stabstr_section;
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
+static int arraysize = 0;
 
 ST_DATA Sym *global_stack;
 ST_DATA Sym *local_stack;
@@ -119,7 +124,7 @@ static Sym *__sym_malloc(void)
     Sym *sym_pool, *sym, *last_sym;
     int i;
 
-    sym_pool = tcc_malloc(SYM_POOL_NB * sizeof(Sym));
+    sym_pool = malloc(SYM_POOL_NB * sizeof(Sym));
     dynarray_add(&sym_pools, &nb_sym_pools, sym_pool);
 
     last_sym = sym_free_first;
@@ -146,7 +151,7 @@ static inline Sym *sym_malloc(void)
 ST_INLN void sym_free(Sym *sym)
 {
     sym->next = sym_free_first;
-    tcc_free(sym->asm_label);
+    free(sym->asm_label);
     sym_free_first = sym;
 }
 
@@ -160,6 +165,7 @@ ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long c)
                 tcc_error("incompatible types for redefinition of '%s'",
                           get_tok_str(v, NULL));
     }
+	// printf (" %d %ld set symbol '%s'\n", t, c, get_tok_str(v, NULL));
     s = *ps;
     s = sym_malloc();
     s->asm_label = NULL;
@@ -2231,7 +2237,6 @@ static void type_to_str(char *buf, int buf_size,
     Sym *s, *sa;
     char buf1[256];
     const char *tstr;
-
     t = type->t & VT_TYPE;
     bt = t & VT_BTYPE;
     buf[0] = '\0';
@@ -2745,9 +2750,11 @@ static void struct_decl(CType *type, int u)
     Sym *s, *ss, *ass, **ps;
     AttributeDef ad;
     CType type1, btype;
+const char *name = NULL;
 
     a = tok; /* save decl type */
     next();
+name = get_tok_str (tok, NULL);
     if (tok != '{') {
         v = tok;
         next();
@@ -2899,16 +2906,29 @@ static void struct_decl(CType *type, int u)
                             }
                             if (align > maxalign)
                                 maxalign = align;
-                        }
+			}
+#if 1
+			char b[1024];
+			char *varstr = get_tok_str (v, NULL);
+			type_to_str (b, sizeof(b), &type1, NULL);
+			tcc_appendf ("(+)struct.%s=%s\n",
+				name, varstr);
+			/* compact form */
+			tcc_appendf ("()struct.%s.%s=%s,%d,%d\n",
+				name,varstr,b,offset,arraysize);
 #if 0
-                        printf("add field %s offset=%d", 
-                               get_tok_str(v, NULL), offset);
-                        if (type1.t & VT_BITFIELD) {
-                            printf(" pos=%d size=%d", 
-                                   (type1.t >> VT_STRUCT_SHIFT) & 0x3f,
-                                   (type1.t >> (VT_STRUCT_SHIFT + 6)) & 0x3f);
-                        }
-                        printf("\n");
+			printf ("struct.%s.%s.type=%s\n", name, varstr, b);
+			printf ("struct.%s.%s.offset=%d\n", name, varstr, offset);
+			printf ("struct.%s.%s.array=%d\n", name, varstr, arraysize);
+#endif
+			 //(%s) field (%s) offset=%d array=%d", name, b, get_tok_str(v, NULL), offset, arraysize);
+			arraysize = 0;
+			if (type1.t & VT_BITFIELD) {
+				tcc_appendf (" pos=%d size=%d", 
+						(type1.t >> VT_STRUCT_SHIFT) & 0x3f,
+						(type1.t >> (VT_STRUCT_SHIFT + 6)) & 0x3f);
+			}
+                        //printf("\n");
 #endif
                     }
                     if (v == 0 && (type1.t & VT_BTYPE) == VT_STRUCT) {
@@ -3173,7 +3193,7 @@ static void asm_label_instr(CString *astr)
     parse_asm_str(astr);
     skip(')');
 #ifdef ASM_DEBUG
-    printf("asm_alias: \"%s\"\n", (char *)astr->data);
+    //printf("asm_alias: \"%s\"\n", (char *)astr->data);
 #endif
 }
 
@@ -3295,6 +3315,14 @@ static void post_type(CType *type, AttributeDef *ad)
                 
         /* we push an anonymous symbol which will contain the array
            element type */
+arraysize = n;
+#if 0
+if (n<0) {
+	printf ("array with no size []\n");
+} else {
+	printf ("PUSH SIZE %d\n", n);
+}
+#endif
         s = sym_push(SYM_FIELD, type, 0, n);
         type->t = (t1 ? VT_VLA : VT_ARRAY) | VT_PTR;
         type->ref = s;
@@ -4786,7 +4814,11 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         }
         skip(';');
     } else if (tok == TOK_ASM1 || tok == TOK_ASM2 || tok == TOK_ASM3) {
+#if 0
         asm_instr();
+#else
+	expect ("asm inline not supported");
+#endif
     } else {
         b = is_label();
         if (b) {
@@ -5723,7 +5755,7 @@ static int decl0(int l, int is_for_loop_init)
     Sym *sym;
     AttributeDef ad;
 
-    while (1) {
+    for (;;) {
         if (!parse_btype(&btype, &ad)) {
             if (is_for_loop_init)
                 return 0;
@@ -5736,7 +5768,11 @@ static int decl0(int l, int is_for_loop_init)
             if (l == VT_CONST &&
                 (tok == TOK_ASM1 || tok == TOK_ASM2 || tok == TOK_ASM3)) {
                 /* global asm block */
-                asm_global_instr();
+#if 1
+printf ("global asm not supported\n");
+return 1;
+#endif
+                //asm_global_instr();
                 continue;
             }
             /* special test for old K&R protos without explicit int
@@ -5779,7 +5815,7 @@ static int decl0(int l, int is_for_loop_init)
                 CString astr;
 
                 asm_label_instr(&astr);
-                asm_label = tcc_strdup(astr.data);
+                asm_label = strdup(astr.data);
                 cstr_free(&astr);
                 
                 /* parse one last attribute list, after asm label */
@@ -5873,7 +5909,7 @@ static int decl0(int l, int is_for_loop_init)
                     tok_str_add(&func_str, -1);
                     tok_str_add(&func_str, 0);
                     filename = file ? file->filename : "";
-                    fn = tcc_malloc(sizeof *fn + strlen(filename));
+                    fn = malloc(sizeof *fn + strlen(filename));
                     strcpy(fn->filename, filename);
                     fn->sym = sym;
                     fn->token_str = func_str.str;

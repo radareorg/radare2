@@ -110,7 +110,7 @@ static void cstr_realloc(CString *cstr, int new_size)
         size = 8; /* no need to allocate a too small first string */
     while (size < new_size)
         size = size * 2;
-    data = tcc_realloc(cstr->data_allocated, size);
+    data = realloc(cstr->data_allocated, size);
     cstr->data_allocated = data;
     cstr->size_allocated = size;
     cstr->data = data;
@@ -158,7 +158,7 @@ ST_FUNC void cstr_new(CString *cstr)
 /* free string and reset it to NULL */
 ST_FUNC void cstr_free(CString *cstr)
 {
-    tcc_free(cstr->data_allocated);
+    free(cstr->data_allocated);
     cstr_new(cstr);
 }
 
@@ -202,11 +202,11 @@ static TokenSym *tok_alloc_new(TokenSym **pts, const char *str, int len)
     /* expand token table if needed */
     i = tok_ident - TOK_IDENT;
     if ((i % TOK_ALLOC_INCR) == 0) {
-        ptable = tcc_realloc(table_ident, (i + TOK_ALLOC_INCR) * sizeof(TokenSym *));
+        ptable = realloc(table_ident, (i + TOK_ALLOC_INCR) * sizeof(TokenSym *));
         table_ident = ptable;
     }
 
-    ts = tcc_malloc(sizeof(TokenSym) + len);
+    ts = malloc(sizeof(TokenSym) + len);
     table_ident[i] = ts;
     ts->tok = tok_ident++;
     ts->sym_define = NULL;
@@ -832,7 +832,7 @@ ST_INLN void tok_str_new(TokenString *s)
 
 ST_FUNC void tok_str_free(int *str)
 {
-    tcc_free(str);
+    free(str);
 }
 
 static int *tok_str_realloc(TokenString *s)
@@ -844,7 +844,7 @@ static int *tok_str_realloc(TokenString *s)
     } else {
         len = s->allocated_len * 2;
     }
-    str = tcc_realloc(s->str, len * sizeof(int));
+    str = realloc(s->str, len * sizeof(int));
     s->allocated_len = len;
     s->str = str;
     return str;
@@ -1283,7 +1283,7 @@ static inline void add_cached_include(TCCState *s1, const char *filename, int if
 #ifdef INC_DEBUG
     printf("adding cached '%s' %s\n", filename, get_tok_str(ifndef_macro, NULL));
 #endif
-    e = tcc_malloc(sizeof(CachedInclude) + strlen(filename));
+    e = malloc(sizeof(CachedInclude) + strlen(filename));
     strcpy(e->filename, filename);
     e->ifndef_macro = ifndef_macro;
     dynarray_add((void ***)&s1->cached_includes, &s1->nb_cached_includes, e);
@@ -1492,7 +1492,7 @@ include_trynext:
 #endif
             /* update target deps */
             dynarray_add((void ***)&s1->target_deps, &s1->nb_target_deps,
-                    tcc_strdup(buf1));
+                    strdup(buf1));
             /* push current file in stack */
             ++s1->include_stack_ptr;
             /* add include file debug info */

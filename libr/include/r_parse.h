@@ -49,6 +49,8 @@ R_API int r_parse_parse(RParse *p, const char *data, char *str);
 R_API int r_parse_assemble(RParse *p, char *data, char *str);
 R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len);
 R_API int r_parse_varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len);
+R_API char *r_parse_c_string(const char *code);
+R_API char *r_parse_c_file(const char *path);
 
 /* plugin pointers */
 extern struct r_parse_plugin_t r_parse_plugin_dummy;

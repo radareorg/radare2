@@ -1,0 +1,19 @@
+struct Cow {
+	int cowa;
+	int cowb;
+};
+struct Foo {
+	int a;
+	char bu[10];
+	char bu2[];
+	char *bu3;
+	const char *b;
+	struct Cow c;
+	int d;
+};
+struct Foo foot = {0};
+int boo = 3;
+
+int main(int argc, char **argv) {
+	puts ("Hello World\n");
+}

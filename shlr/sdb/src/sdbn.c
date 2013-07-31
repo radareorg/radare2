@@ -12,17 +12,19 @@ static void __strrev(char *s, int len) {
 	}
 }
 
-R_API char *sdb_itoa(ut64 n, char *s) {
+/* TODO: find algorithm without strrev */
+/* TODO: try to avoid the use of heap */
+SDB_VISIBLE char *sdb_itoa(ut64 n, char *s) {
 	int i = 0;
 	if (!s) s = malloc (64);
 	do s[i++] = n % 10 + '0';
 	while ((n /= 10) > 0);
 	s[i] = '\0';
-	__strrev (s, i); // TODO find an algo without strrev
+	__strrev (s, i);
 	return s;
 }
 
-R_API ut64 sdb_atoi(const char *s) {
+SDB_VISIBLE ut64 sdb_atoi(const char *s) {
 	char *p;
 	if (!strncmp (s, "0x", 2))
 		return strtoull (s+2, &p, 16);
@@ -42,14 +44,10 @@ SDB_VISIBLE ut64 sdb_getn(Sdb *s, const char *key, ut32 *cas) {
 	char *p;
 	const char *v = sdb_getc (s, key, cas);
 	if (!v) return 0LL;
-	if (!strncmp (v, "0x", 2)) {
-		n = strtoull (v+2, &p, 16);
-	} else {
-		n = strtoull (v, &p, 10);
-	}
+	n = (!strncmp (v, "0x", 2))?
+		strtoull (v+2, &p, 16):
+		strtoull (v, &p, 10);
 	if (!p) return 0LL;
-// TODO: support hexa
-	//XXX sdb_setn (s, key, n);
 	return n;
 }
 
@@ -76,7 +74,7 @@ SDB_VISIBLE ut64 sdb_dec(Sdb *s, const char *key, ut64 n2, ut32 cas) {
 		return 0LL;
 	if (n2>n) {
 		sdb_set (s, key, "0", cas);
-		return 0LL; // XXX must be -1?
+		return 0LL; // XXX must be -1LL?
 	}
 	n -= n2;
 	sdb_setn (s, key, n, cas);

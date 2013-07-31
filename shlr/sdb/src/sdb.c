@@ -9,12 +9,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "sdb.h"
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
 
-// must be deprecated
-static ut32 eod, pos; // what about lseek?
+// XXX: deprecate, or use the one inside Sdb*
+static ut32 pos = 0L;
 
 static inline int nextcas() {
 	static ut32 cas = 1;
@@ -42,6 +39,7 @@ SDB_VISIBLE Sdb* sdb_new (const char *dir, int lock) {
 	s->ht = ht_new ();
 	s->lock = lock;
 	s->expire = 0LL;
+	s->tmpkv.value = NULL;
 	//s->ht->list->free = (SdbListFree)sdb_kv_free;
 	// if open fails ignore
 	cdb_init (&s->db, s->fd);
@@ -58,7 +56,7 @@ SDB_VISIBLE void sdb_file (Sdb* s, const char *dir) {
 		sdb_lock (sdb_lockfile (s->dir));
 }
 
-SDB_VISIBLE void sdb_free (Sdb* s) {
+static void sdb_fini(Sdb* s, int donull) {
 	if (!s) return;
 	cdb_free (&s->db);
 	if (s->lock)
@@ -67,8 +65,22 @@ SDB_VISIBLE void sdb_free (Sdb* s) {
 	ht_free (s->ht);
 	if (s->fd != -1)
 		close (s->fd);
+	s->fd = -1;
 	free (s->ndump);
 	free (s->dir);
+	free (s->tmpkv.value);
+
+	if (donull) {
+		s->ns = NULL;
+		s->ht = NULL;
+		s->dir = NULL;
+		s->ndump = NULL;
+		s->tmpkv.value = NULL;
+	}
+}
+
+SDB_VISIBLE void sdb_free (Sdb* s) {
+	sdb_fini (s, 0);
 	free (s);
 }
 
@@ -150,9 +162,9 @@ SDB_VISIBLE char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
 	len = cdb_datalen (&s->db);
 	if (len == 0)
 		return NULL;
-	pos = cdb_datapos (&s->db);
 	if (!(buf = malloc (len+1))) // XXX too many mallocs
 		return NULL;
+	pos = cdb_datapos (&s->db);
 	cdb_read (&s->db, buf, len, pos);
 	buf[len] = 0;
 	return buf;
@@ -163,7 +175,7 @@ SDB_VISIBLE int sdb_remove (Sdb* s, const char *key, ut32 cas) {
 }
 
 // set if not defined
-SDB_VISIBLE int sdb_add (Sdb *s, const char *key, const char *val, ut32 cas) {
+SDB_VISIBLE int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas) {
 	if (sdb_exists (s, key))
 		return 0;
 	return sdb_set (s, key, val, cas);
@@ -187,7 +199,7 @@ SDB_VISIBLE int sdb_exists (Sdb* s, const char *key) {
 	return 0;
 }
 
-SDB_VISIBLE void sdb_reset (Sdb *s) {
+SDB_VISIBLE void sdb_reset (Sdb* s) {
 	ht_free (s->ht);
 	s->ht = ht_new ();
 }
@@ -238,7 +250,7 @@ SDB_VISIBLE int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	return kv->cas;
 }
 
-SDB_VISIBLE void sdb_list (Sdb *s) {
+SDB_VISIBLE void sdb_list (Sdb* s) {
 	SdbKv *kv;
 	SdbListIter *iter;
 	ls_foreach (s->ht->list, iter, kv) {
@@ -247,9 +259,9 @@ SDB_VISIBLE void sdb_list (Sdb *s) {
 }
 
 SDB_VISIBLE int sdb_sync (Sdb* s) {
-	SdbKv *kv;
 	SdbListIter it, *iter;
 	char *k, *v;
+	SdbKv *kv;
 
 	if (!sdb_create (s))
 		return 0;
@@ -285,25 +297,6 @@ SDB_VISIBLE int sdb_sync (Sdb* s) {
 	return 0;
 }
 
-static ut32 getnum(int fd) {
-	char buf[4];
-	ut32 ret = 0;
-	if (read (fd, buf, 4) != 4)
-		return 0;
-	pos += 4;
-	ut32_unpack (buf, &ret);
-	return ret;
-}
-
-#if 0
-static int skipbytes(int fd, int len) {
-	int addr = lseek (fd, len, SEEK_CUR);
-	if (addr == -1) return -1;
-	pos += len;
-	return len;
-}
-#endif
-
 static int getbytes(int fd, char *b, int len) {
 	if (read (fd, b, len) != len)
 		return -1;
@@ -314,10 +307,20 @@ static int getbytes(int fd, char *b, int len) {
 SDB_VISIBLE void sdb_dump_begin (Sdb* s) {
 	if (s->fd != -1) {
 		seek_set (s->fd, 0);
-		eod = getnum (s->fd);
 		pos = 2048;
 		seek_set (s->fd, 2048);
-	} else eod = pos = 0;
+	} else pos = 0;
+}
+
+SDB_VISIBLE SdbKv *sdb_dump_next (Sdb* s) {
+	char *k = NULL, *v = NULL;
+	if (!sdb_dump_dupnext (s, &k, &v))
+		return NULL;
+	strcpy (s->tmpkv.key, k); // no overflow here?
+	free (k);
+	free (s->tmpkv.value);
+	s->tmpkv.value = v;
+	return &s->tmpkv;
 }
 
 SDB_VISIBLE int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
@@ -338,7 +341,6 @@ SDB_VISIBLE int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
 			(*key)[klen] = 0;
 		}
 	}
-
 	if (value) {
 		*value = 0;
 		if (vlen>0) {
@@ -355,7 +357,7 @@ SDB_VISIBLE int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
 			(*value)[vlen] = 0;
 		}
 	}
-	 pos += 4; // XXX no
+	pos += 4; // XXX no
 	return 1;
 }
 
@@ -429,6 +431,7 @@ SDB_VISIBLE void sdb_flush(Sdb* s) {
 	close (s->fd);
 	s->fd = -1;
 }
+
 #if __WINDOWS__
 #define r_sys_mkdir(x) (CreateDirectory(x,NULL)!=0)
 #ifndef ERROR_ALREADY_EXISTS
@@ -442,22 +445,22 @@ SDB_VISIBLE void sdb_flush(Sdb* s) {
 
 static int r_sys_rmkdir(char *dir) {
         char *path = dir, *ptr = path;
-        if (*ptr=='/') ptr++; // XXX \\ on w32?
-        while ((ptr = strchr (ptr, '/'))) {
+        if (*ptr==DIRSEP) ptr++;
+        while ((ptr = strchr (ptr, DIRSEP))) {
                 *ptr = 0;
                 if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
                         fprintf (stderr, "r_sys_rmkdir: fail %s\n", dir);
                         free (path);
-                        return R_FALSE;
+                        return 0;
                 }
-                *ptr = '/';
+                *ptr = DIRSEP;
                 ptr++;
         }
-        return R_TRUE;
+        return 1;
 }
 
 /* sdb-create api */
-SDB_VISIBLE int sdb_create (Sdb *s) {
+SDB_VISIBLE int sdb_create (Sdb* s) {
 	int nlen;
 	char *str;
 	if (!s || !s->dir || s->fdump != -1) return 0; // cannot re-create
@@ -478,22 +481,29 @@ SDB_VISIBLE int sdb_create (Sdb *s) {
 	return 1;
 }
 
-SDB_VISIBLE int sdb_append (Sdb *s, const char *key, const char *val) {
+SDB_VISIBLE int sdb_append (Sdb* s, const char *key, const char *val) {
 	struct cdb_make *c = &s->m;
 	if (!key || !val) return 0;
 	//if (!*val) return 0; //undefine variable if no value
 	return cdb_make_add (c, key, strlen (key)+1, val, strlen (val)+1);
 }
 
-SDB_VISIBLE int sdb_finish (Sdb *s) {
-	cdb_make_finish (&s->m);
+#define IFRET(x) if(x)ret=0
+SDB_VISIBLE int sdb_finish (Sdb* s) {
+	int ret = 1;
+	IFRET (!cdb_make_finish (&s->m));
 #if USE_MMAN
-	fsync (s->fdump);
+	IFRET (fsync (s->fdump));
 #endif
-	close (s->fdump);
+	IFRET (close (s->fdump));
 	s->fdump = -1;
-	rename (s->ndump, s->dir);
+	IFRET (rename (s->ndump, s->dir));
 	free (s->ndump);
 	s->ndump = NULL;
-	return 1; // XXX: 
+	return ret;
+}
+
+SDB_VISIBLE void sdb_drop (Sdb* s) {
+	sdb_fini (s, 1);
+	unlink (s->dir);
 }

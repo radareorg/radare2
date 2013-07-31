@@ -5,6 +5,7 @@
 
 #include <r_types.h>
 #include <list.h>
+#include <r_db.h>
 #include <r_io.h>
 #include <r_reg.h>
 #include <r_list.h>
@@ -513,6 +514,7 @@ typedef struct r_anal_t {
 	struct list_head anals; // TODO: Reimplement with RList
 	RList *hints; // XXX use better data structure here (slist?)
 	Sdb *sdb_xrefs;
+	Sdb *sdb_types;
 } RAnal;
 
 typedef struct r_anal_hint_t {

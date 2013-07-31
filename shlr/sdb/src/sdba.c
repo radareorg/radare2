@@ -133,6 +133,7 @@ SDB_VISIBLE int sdb_aadd(Sdb *s, const char *key, int idx, const char *val, ut32
 	if (sdb_exists (s, key))
 		return 0;
 */
+// TODO: use agetv here ?
 	if (sdb_aexists (s, key, val))
 		return 0;
 	return sdb_aset (s, key, idx, val, cas);
@@ -179,12 +180,62 @@ SDB_VISIBLE int sdb_adeln(Sdb *s, const char *key, ut64 val, ut32 cas) {
 	return 0;
 }
 
+static int astrcmp (const char *a, const char *b) {
+	for (;;) {
+		if (*a == '\0' || *a == SDB_RS) {
+			if (*b == '\0' || *b == SDB_RS)
+				return 0;
+			return 1;
+		}
+		if (*b == '\0' || *b == SDB_RS)
+			return 1;
+		if (*a != *b) return 1;
+		a++;
+		b++;
+	}
+	return 1;
+}
+
+/* array value index */
+SDB_VISIBLE int sdb_agetv(Sdb *s, const char *key, const char *val, ut32 cas) {
+	const char *str = sdb_getc (s, key, 0);
+	const char *n, *p = str;
+	int idx;
+	for (idx=0; ; idx++) {
+		if (!p) break;
+		if (!astrcmp (p, val))
+			return idx;
+		n = strchr (p, SDB_RS);
+		if (!n) break;
+		p = n+1;
+	}
+	return -1;
+}
+
+SDB_VISIBLE int sdb_adels(Sdb *s, const char *key, const char *val, ut32 cas) {
+	const char *str = sdb_getc (s, key, 0);
+	const char *n, *p = str;
+	int idx;
+	for (idx=0; ; idx++) {
+		if (!p) break;
+		if (!astrcmp (p, val))
+			return sdb_adel (s, key, idx, cas);
+		n = strchr (p, SDB_RS);
+		if (!n) break;
+		p = n+1;
+	}
+	return 0;
+}
+
 SDB_VISIBLE int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
 	int i;
 	char *p, *n, *str = sdb_get (s, key, 0);
 	p = str;
 	if (!str || !*str) return 0;
-	if (idx<0) idx = sdb_alen (str);
+	if (idx<0) {
+		idx = sdb_alen (str);
+		if (idx) idx--;
+	}
 	for (i = 0; i<idx; i++) {
 		n = strchr (p, SDB_RS);
 		if (n) p = n+1;

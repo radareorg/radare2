@@ -345,8 +345,8 @@ static void sort_syms(TCCState *s1, Section *s)
     int type, sym_index;
 
     nb_syms = s->data_offset / sizeof(ElfW(Sym));
-    new_syms = tcc_malloc(nb_syms * sizeof(ElfW(Sym)));
-    old_to_new_syms = tcc_malloc(nb_syms * sizeof(int));
+    new_syms = malloc(nb_syms * sizeof(ElfW(Sym)));
+    old_to_new_syms = malloc(nb_syms * sizeof(int));
 
     /* first pass for local symbols */
     p = (ElfW(Sym) *)s->data;
@@ -373,7 +373,7 @@ static void sort_syms(TCCState *s1, Section *s)
     
     /* we copy the new symbols to the old */
     memcpy(s->data, new_syms, nb_syms * sizeof(ElfW(Sym)));
-    tcc_free(new_syms);
+    free(new_syms);
 
     /* now we modify all the relocations */
     for(i = 1; i < s1->nb_sections; i++) {
@@ -391,7 +391,7 @@ static void sort_syms(TCCState *s1, Section *s)
         }
     }
     
-    tcc_free(old_to_new_syms);
+    free(old_to_new_syms);
 }
 
 /* relocate common symbols in the .bss section */
@@ -956,7 +956,7 @@ static struct sym_attr *alloc_sym_attr(TCCState *s1, int index)
         n = 1;
         while (index >= n)
             n *= 2;
-        tab = tcc_realloc(s1->sym_attrs, n * sizeof(*s1->sym_attrs));
+        tab = realloc(s1->sym_attrs, n * sizeof(*s1->sym_attrs));
         s1->sym_attrs = tab;
         memset(s1->sym_attrs + s1->nb_sym_attrs, 0,
                (n - s1->nb_sym_attrs) * sizeof(*s1->sym_attrs));
@@ -1361,10 +1361,12 @@ ST_FUNC void tcc_add_runtime(TCCState *s1)
     /* add libc */
     if (!s1->nostdlib) {
         tcc_add_library(s1, "c");
+#if 0
 #ifdef CONFIG_USE_LIBGCC
         tcc_add_file(s1, TCC_LIBGCC);
 #elif !defined WITHOUT_LIBTCC
         tcc_add_support(s1, "libtcc1.a");
+#endif
 #endif
         /* add crt end if not memory output */
         if (s1->output_type != TCC_OUTPUT_MEMORY)
@@ -1538,6 +1540,9 @@ ST_FUNC void fill_got(TCCState *s1)
 /* XXX: suppress unneeded sections */
 static int elf_output_file(TCCState *s1, const char *filename)
 {
+printf ("elf_output_file (%s)\n", filename);
+return 0;
+#if 0
     ElfW(Ehdr) ehdr;
     FILE *f;
     int fd, mode, ret;
@@ -1807,7 +1812,7 @@ static int elf_output_file(TCCState *s1, const char *filename)
     shnum = s1->nb_sections;
 
     /* this array is used to reorder sections in the output file */
-    section_order = tcc_malloc(sizeof(int) * shnum);
+    section_order = malloc(sizeof(int) * shnum);
     section_order[0] = 0;
     sh_order_index = 1;
     
@@ -2313,11 +2318,12 @@ static int elf_output_file(TCCState *s1, const char *filename)
 
     ret = 0;
  the_end:
-    tcc_free(s1->symtab_to_dynsym);
-    tcc_free(section_order);
-    tcc_free(phdr);
-    tcc_free(s1->sym_attrs);
+    free(s1->symtab_to_dynsym);
+    free(section_order);
+    free(phdr);
+    free(s1->sym_attrs);
     return ret;
+#endif
 }
 
 LIBTCCAPI int tcc_output_file(TCCState *s, const char *filename)
@@ -2338,7 +2344,7 @@ static void *load_data(int fd, unsigned long file_offset, unsigned long size)
 {
     void *data;
 
-    data = tcc_malloc(size);
+    data = malloc(size);
     lseek(fd, file_offset, SEEK_SET);
     read(fd, data, size);
     return data;
@@ -2632,12 +2638,12 @@ ST_FUNC int tcc_load_object_file(TCCState *s1,
     
     ret = 0;
  the_end:
-    tcc_free(symtab);
-    tcc_free(strtab);
-    tcc_free(old_to_new_syms);
-    tcc_free(sm_table);
-    tcc_free(strsec);
-    tcc_free(shdr);
+    free(symtab);
+    free(strtab);
+    free(old_to_new_syms);
+    free(sm_table);
+    free(strsec);
+    free(shdr);
     return ret;
 }
 
@@ -2665,7 +2671,7 @@ static int tcc_load_alacarte(TCCState *s1, int fd, int size)
     const uint8_t *ar_index;
     ElfW(Sym) *sym;
 
-    data = tcc_malloc(size);
+    data = malloc(size);
     if (read(fd, data, size) != size)
         goto fail;
     nsyms = get_be32(data);
@@ -2696,7 +2702,7 @@ static int tcc_load_alacarte(TCCState *s1, int fd, int size)
     } while(bound);
     ret = 0;
  the_end:
-    tcc_free(data);
+    free(data);
     return ret;
 }
 
@@ -2862,10 +2868,10 @@ ST_FUNC int tcc_load_dll(TCCState *s1, int fd, const char *filename, int level)
     }
     ret = 0;
  the_end:
-    tcc_free(dynstr);
-    tcc_free(dynsym);
-    tcc_free(dynamic);
-    tcc_free(shdr);
+    free(dynstr);
+    free(dynsym);
+    free(dynamic);
+    free(shdr);
     return ret;
 }
 
@@ -3060,9 +3066,9 @@ static int ld_add_file_list(TCCState *s1, const char *cmd, int as_needed)
                     goto lib_parse_error;
                 if (group) {
                     /* Add the filename *and* the libname to avoid future conversions */
-                    dynarray_add((void ***) &libs, &nblibs, tcc_strdup(filename));
+                    dynarray_add((void ***) &libs, &nblibs, strdup(filename));
                     if (libname[0] != '\0')
-                        dynarray_add((void ***) &libs, &nblibs, tcc_strdup(libname));
+                        dynarray_add((void ***) &libs, &nblibs, strdup(libname));
                 }
             }
         }

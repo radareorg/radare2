@@ -1,9 +1,10 @@
 DESTDIR?=
 PREFIX?=/usr
 
-VERSION=0.6.4
+VERSION=0.6.6
 
 CFLAGS_STD?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700
+#CFLAGS+=-Wno-initializer-overrides
 CFLAGS+=${CFLAGS_STD}
 
 CFLAGS+=-Wall
@@ -21,10 +22,10 @@ ifeq (${OS},w32)
 WCP?=i386-mingw32
 CC=${WCP}-gcc
 AR?=${WCP}-ar
-CFLAGS_SHARED?=-fPIC -shared
+CFLAGS_SHARED?=-fPIC
 EXEXT=.exe
 else
-CFLAGS_SHARED?=-fPIC -shared -fvisibility=hidden
+CFLAGS_SHARED?=-fPIC -fvisibility=hidden
 CC?=gcc
 EXEXT=
 endif

@@ -1,0 +1,5 @@
+#include "libtcc.c"
+#include "tccelf.c"
+#include "tccpp.c"
+#include "tccgen.c"
+#include "i386-gen.c"

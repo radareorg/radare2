@@ -1,32 +1,40 @@
-#if 0
-truct r_parse_code_t {
-	kSym *symbols;
-} RParseCode;
+/* radare - LGPL - Copyright 2013 - pancake */
 
-R_API void r_parse_code_free (RParseCodeResult* c) {
+#include "r_types.h"
+#include "libr_tcc.h"
+
+/* parse C code and return it in key-value form */
+
+static void appendstring(char *msg, char **s) {
+	if (!s)
+		printf ("%s\n", msg);
+	else
+	if (*s) {
+		char *p = malloc (strlen (msg) + strlen (*s)+1);
+		strcpy (p, *s);
+		free (*s);
+		*s = p;
+		strcpy (p+strlen (p), msg);
+	} else *s = strdup (msg);
 }
 
-R_API RParseCode *r_parse_code(RParse *p, const char *code) {
-	RParseCode *r;
-	int codelen = strlen (code);
-	if (!p || !code) return NULL;
-	r = R_NEW0 (RParseCode);
-	r->state = tcc_new ();
-	tcc_open (r->state, filename);
-	ST_FUNC int tcc_open(TCCState *s1, const char *filename)
-		tcc_open_bf(s, "<string>", codelen);
-	memcpy(file->buffer, code, codelen);
-	// tcc_open_bf (s1, filename, 0);
-	preprocess_init(s1);
-	// ST_FUNC int tcc_preprocess(TCCState *s1)
-	// ST_FUNC
-	r->symbols = /* tcc_pp + tcc_gen */
-		return r;
+R_API char *r_parse_c_file(const char *path) {
+	char *str = NULL;
+	TCCState *T = tcc_new ();
+	tcc_set_callback (T, &appendstring, &str);
+	if (tcc_add_file (T, path) == -1) {
+		free (str);
+		str = NULL;
+	}
+	tcc_delete (T);
+	return str;
 }
 
-R_API void r_parse_code_file(RParse *p, const char *file) {
-	char *str = r_file_slurp (file, NULL);
-	RParseCode *ret = r_parse_code (p, str);
-	return ret;
+R_API char *r_parse_c_string(const char *code) {
+	char *str = NULL;
+	TCCState *T = tcc_new ();
+	tcc_set_callback (T, &appendstring, &str);
+	tcc_compile_string (T, code);
+	tcc_delete (T);
+	return str;
 }
-#endif

@@ -1,3 +1,4 @@
+#if 0
 /*
  *  i386 specific functions for TCC assembler
  *
@@ -1496,3 +1497,4 @@ ST_FUNC void asm_clobber(uint8_t *clobber_regs, const char *str)
     }
     clobber_regs[reg] = 1;
 }
+#endif

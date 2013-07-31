@@ -1,3 +1,4 @@
+#if 0
 /*
  *  GAS like assembler for TCC
  * 
@@ -1116,3 +1117,4 @@ ST_FUNC void asm_global_instr(void)
     cstr_free(&astr);
 }
 #endif /* CONFIG_TCC_ASM */
+#endif

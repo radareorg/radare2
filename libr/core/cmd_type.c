@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - Anton Kochkov */
+/* radare - LGPL - Copyright 2009-2013 - pancake, Anton Kochkov */
 
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
@@ -6,6 +6,7 @@ static int cmd_type(void *data, const char *input) {
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
+#if 0
 	case ' ':
 	{
 		const char *tname = input + 1;
@@ -18,10 +19,12 @@ static int cmd_type(void *data, const char *input) {
 	case '*':
 		r_anal_type_list (core->anal, R_ANAL_TYPE_ANY, 1);
 		break;
+#endif
 	case 'f':
 		if (input[1] == ' ') {
 			const char *filename = input + 2;
 			if (!strcmp (filename, "-")) {
+#if 0
 				char *out, *ctype = "";
 				out = r_core_editor (core, ctype);
 				t = r_anal_str_to_type (core->anal, out);
@@ -29,11 +32,19 @@ static int cmd_type(void *data, const char *input) {
 					r_anal_type_add (core->anal, t);
 				free (out);
 				free (ctype);
+#endif
 			} else {
-				r_anal_type_loadfile (core->anal, filename);
+				char *out = r_parse_c_file (filename);
+				if (out) {
+					r_cons_strcat (out);
+					sdb_query_lines (core->anal->sdb_types, out);
+					free (out);
+				}
+				//r_anal_type_loadfile (core->anal, filename);
 			}
 		}
 		break;
+#if 0
 	// td - parse string with cparse engine and load types from it
 	case 'd':
 		if (input[1] == ' ') {
@@ -106,6 +117,7 @@ static int cmd_type(void *data, const char *input) {
 		}
 	}
 		break;
+#endif
 	case '?':
 		eprintf (
 		"Usage: t[-LCvsdfm?] [...]\n"

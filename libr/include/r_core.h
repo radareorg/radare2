@@ -192,6 +192,7 @@ R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_cmd(RCore *core, int ch);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
+R_API void r_core_visual_colors(RCore *core);
 
 R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback cb);
 R_API int r_core_serve(RCore *core, RIODesc *fd);

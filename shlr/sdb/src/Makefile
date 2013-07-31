@@ -1,10 +1,8 @@
 include ../config.mk
 
 CFLAGS+= -g -ggdb
-#CFLAGS+=-DOLDFMT=1
 OBJ=cdb.o buffer.o cdb_make.o ls.o ht.o sdb.o sdbn.o sdba.o query.o
 OBJ+=json.o ns.o lock.o util.o
-#json/js0n.o json/json.o json/rangstr.o 
 
 SOBJ=$(subst .o,._o,${OBJ})
 
