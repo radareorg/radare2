@@ -20,6 +20,9 @@ static int cmd_type(void *data, const char *input) {
 		r_anal_type_list (core->anal, R_ANAL_TYPE_ANY, 1);
 		break;
 #endif
+	case 0:
+		sdb_list (core->anal->sdb_types);
+		break;
 	case 'f':
 		if (input[1] == ' ') {
 			const char *filename = input + 2;

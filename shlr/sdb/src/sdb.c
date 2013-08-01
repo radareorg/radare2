@@ -254,7 +254,14 @@ SDB_VISIBLE void sdb_list (Sdb* s) {
 	SdbKv *kv;
 	SdbListIter *iter;
 	ls_foreach (s->ht->list, iter, kv) {
-		printf ("%s=%s\n", kv->key, kv->value);
+		if (strchr (kv->value, SDB_RS)) {
+			char *o, *p = strdup (kv->value);
+			for (o=p; *o; o++) if (*o==SDB_RS) *o = ',';
+			printf ("()%s=%s\n", kv->key, p);
+			free (p);
+		} else {
+			printf ("%s=%s\n", kv->key, kv->value);
+		}
 	}
 }
 

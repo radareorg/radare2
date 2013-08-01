@@ -74,7 +74,7 @@ void sdb_reset (Sdb* s);
 
 int sdb_query (Sdb* s, const char *cmd);
 int sdb_queryf (Sdb* s, const char *fmt, ...);
-void sdb_query_lines (Sdb *s, const char *cmd);
+int sdb_query_lines (Sdb *s, const char *cmd);
 char *sdb_querys (Sdb* s, char *buf, size_t len, const char *cmd);
 char *sdb_querysf (Sdb* s, char *buf, size_t buflen, const char *fmt, ...);
 int sdb_exists (Sdb*, const char *key);

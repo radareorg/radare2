@@ -31,6 +31,7 @@ R_API RAnal *r_anal_new() {
 	memset (anal, 0, sizeof (RAnal));
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
+	anal->sdb_types = sdb_new (NULL, 0);
 	r_anal_xrefs_init (anal);
 	anal->diff_ops = 0;
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
