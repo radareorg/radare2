@@ -41,6 +41,7 @@ typedef struct r_print_t {
 	int big_endian;
 	int width;
 	int limit;
+	int bits;
 	int cur_enabled;
 	int cur;
 	int cols;

@@ -1,5 +1,16 @@
 /* radare - LGPL - Copyright 2007-2013 - pancake */
 
+#if 0
+# TEST DAT PTR SHIT
+e asm.bits=32
+wv 0x10
+wv 0x10 @ 4
+w hello @ 0x10
+pf ss
+pf *x*x
+pf *z*z
+#endif
+
 #include "r_cons.h"
 #include "r_util.h"
 #include "r_print.h"
@@ -36,25 +47,30 @@ static void print_format_help(RPrint *p) {
 	" s - 32bit pointer to string (4 bytes)\n"
 	" S - 64bit pointer to string (8 bytes)\n"
 	//" t - unix timestamp string\n"
-	" * - next char is pointer\n"
+	" * - next char is pointer (honors asm.bits)\n"
 	" + - toggle show flags for each offset\n"
 	" . - skip 1 byte\n");
 }
 
 /* TODO: needs refactoring */
-R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const char *fmt, int elem, const char *setval) {
-	int nargs, i, j, idx, times, otimes, endian;
+R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char *fmt, int elem, const char *setval) {
+	int nargs, i, j, nexti, idx, times, otimes, endian, isptr = 0;
 	int (*realprintf)(const char *str, ...);
 	int (*oldprintf)(const char *str, ...);
 	const char *argend = fmt+strlen (fmt);
 	ut64 addr = 0, addr64 = 0, seeki = 0;;
 	char *args, *bracket, tmp, last = 0;
-	nargs = endian = i = j = 0;
 	const char *arg = fmt;
 	int viewflags = 0;
 	char namefmt[8];
-	ut8 buffer[256];
+	ut8 *buf, buffer[256];
 
+	nargs = endian = i = j = 0;
+
+	if (len<1) return 0;
+	buf = malloc (len);
+	if (!buf) return 0;
+	memcpy (buf, b, len);
 	endian = p->big_endian;
 
 	oldprintf = NULL;
@@ -70,7 +86,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 		char *end = strchr (arg,'}');
 		if (end == NULL) {
 			eprintf ("No end bracket. Try pm {ecx}b @ esi\n");
-			return 0;
+			goto beach;
 		}
 		*end='\0';
 		times = r_num_math (NULL, bracket+1);
@@ -79,7 +95,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 
 	if (*arg=='\0') {
 		print_format_help (p);
-		return 0;
+		goto beach;
 	}
 	/* get args */
 	args = strchr (arg, ' ');
@@ -107,7 +123,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 			p->printf ("0x%08"PFMT64x" [%d] {\n", seek+i, otimes-times);
 		idx = 0;
 		arg = orig;
-		for (idx=0; arg<argend && *arg; idx++, arg++) {
+		for (idx=0; i<len && arg<argend && *arg; idx++, arg++) {
 			seeki = seek+i;
 			addr = 0LL;
 			if (endian)
@@ -122,15 +138,42 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 				 	| (*(buf+i+3))<<24 | (*(buf+i+2))<<16 | *(buf+i+1)<<8 | *(buf+i);
 			tmp = *arg;
 		feed_me_again:
+			switch (isptr) {
+			case 1:
+				nexti = i + (p->bits/8);
+				i = 0;
+				tmp = *arg;
+				memset (buf, '\0', len);
+				p->printf ("(*0x%"PFMT64x") ", addr);
+				if (p->iob.read_at) {
+					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
+				} else {
+					eprintf ("(cannot read memory)\n");
+					break;
+				}
+				isptr = 2;
+				break;
+			case 2:
+				// restore state after pointer seek
+				i = nexti;
+				seeki = seek+i;
+				memcpy (buf, b, len);
+				isptr = 0;
+				arg--;
+				idx--;
+				continue;
+			}
 			if (tmp == 0 && last != '*')
 				break;
 			/* skip chars */
 			switch (tmp) {
 			case '*':
-				if (i<=0) break;
-				tmp = last;
-				arg--;
-				idx--;
+				isptr = 1;
+				if (i<=0 || !arg[1]) break;
+				arg++;
+				tmp = *arg; //last;
+			//	arg--;
+			//	idx--;
 				goto feed_me_again;
 			case '+':
 				idx--;
@@ -254,15 +297,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 				i += 4;
 				break;
 			case 'i':
-				if (MUSTSET) {
-					realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
-				} else {
-					p->printf ("0x%08"PFMT64x" = ", seeki);
-					p->printf ("%d", addr);
-				}
-				i += 4;
-				break;
-			case 'd':
+			case 'd': // TODO: support unsigned int?
 				if (MUSTSET) {
 					realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
 				} else {
@@ -314,7 +349,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 				break;
 			case 'Z': // zero terminated wide string
 				p->printf ("0x%08"PFMT64x" = ", seeki);
-				for (; buf[i]&&i<len; i+=2) {
+				for (; buf[i] && i<len; i+=2) {
 					if (IS_PRINTABLE (buf[i]))
 						p->printf ("%c", buf[i]);
 					else p->printf (".");
@@ -372,6 +407,8 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* buf, int len, const ch
 	}
 	if (oldprintf)
 		p->printf = oldprintf;
+beach:
+	free (buf);
 //	free((void *)&args);
 	return i;
 }

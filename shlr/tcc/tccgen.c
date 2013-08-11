@@ -2911,6 +2911,7 @@ name = get_tok_str (tok, NULL);
 			char b[1024];
 			char *varstr = get_tok_str (v, NULL);
 			type_to_str (b, sizeof(b), &type1, NULL);
+			tcc_appendf ("%s=struct\n", name);
 			tcc_appendf ("(+)struct.%s=%s\n",
 				name, varstr);
 			/* compact form */

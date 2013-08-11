@@ -481,6 +481,7 @@ static int config_asmbits_callback(void *user, void *data) {
 	}
 	if (!r_anal_set_bits (core->anal, node->i_value))
 		eprintf ("asm.arch: Cannot setup '%i' bits analysis engine\n", (int)node->i_value);
+	core->print->bits = node->i_value;
 	if (core->dbg  && core->anal && core->anal->cur)
 		r_debug_set_arch (core->dbg, core->anal->cur->arch, node->i_value);
 

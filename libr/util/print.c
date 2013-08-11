@@ -31,6 +31,7 @@ R_API RPrint *r_print_new() {
 	p->disasm = NULL;
 	p->printf = printf;
 	p->oprintf = nullprinter;
+	p->bits = 32;
 	p->stride = 0;
 	p->interrupt = 0;
 	p->big_endian = CPU_ENDIAN;

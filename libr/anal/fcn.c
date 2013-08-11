@@ -530,11 +530,9 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	strcpy(str, "function ");
 	strcat(str, sig);
 
-	t = r_anal_str_to_type(a, str);
-
 	/* TODO: Improve arguments parsing */
-
 /*
+	t = r_anal_str_to_type(a, str);
 	str = strdup (sig);
 
 	// TODO : implement parser

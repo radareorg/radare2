@@ -1,5 +1,16 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake, Anton Kochkov */
 
+
+static void cmd_type_init(RCore *core) {
+	Sdb *D = core->anal->sdb_types;
+	sdb_set (D, "type.unsigned int", "i", 0);
+	sdb_set (D, "type.int", "d", 0);
+	sdb_set (D, "type.long", "x", 0);
+	sdb_set (D, "type.char", "x", 0);
+	sdb_set (D, "type.char*", "*z", 0);
+	sdb_set (D, "type.const char*", "*z", 0);
+}
+
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	RAnalType *t = NULL;
@@ -47,12 +58,17 @@ static int cmd_type(void *data, const char *input) {
 			}
 		}
 		break;
-#if 0
 	// td - parse string with cparse engine and load types from it
 	case 'd':
 		if (input[1] == ' ') {
 			const char *string = input + 2;
-			r_anal_str_to_type (core->anal, string);
+			//r_anal_str_to_type (core->anal, string);
+			char *out = r_parse_c_string (string);
+			if (out) {
+				r_cons_strcat (out);
+				sdb_query_lines (core->anal->sdb_types, out);
+				free (out);
+			}
 		} else {
 			eprintf ("Usage: td[...]\n"
 				" td [string]    : load types from string\n");
@@ -61,23 +77,24 @@ static int cmd_type(void *data, const char *input) {
 	// tl - link a type to an address
 	case 'l':
 	{
-		char *ptr = NULL;
+		char var[128], *ptr = NULL;
 		ut64 addr = core->offset;
 		ptr = strchr (input + 2, ' ');
 		if (ptr) {
 			*ptr = '\0';
 			addr = r_num_math (core->num, ptr + 1);
-			//do linking
-			// TODO
-			if (addr <= 0) {
-				eprintf("Wrong address to link!\n");
-			}
-			eprintf ("TODO: not implemented\n");
+			if (addr > 0) {
+				if (sdb_getc (core->anal->sdb_types, input+2,0)) {
+				sprintf (var, "link.%08"PFMT64x, addr);
+				sdb_set (core->anal->sdb_types, var, input+2, 0);
+				} else eprintf ("Cannot find type\n");
+			} else eprintf ("Wrong address to link!\n");
 		} else
 			eprintf("Usage: tl[...]\n"
 				" tl [typename] ([addr])@[addr|function]\n");
 	}
 		break;
+#if 0
 	// tv - get/set type value linked to a given address
 	case 'v':
 		break;
@@ -122,6 +139,9 @@ static int cmd_type(void *data, const char *input) {
 		break;
 #endif
 	case '?':
+		if (input[1]) {
+			sdb_query (core->anal->sdb_types, input+1);
+		} else
 		eprintf (
 		"Usage: t[-LCvsdfm?] [...]\n"
 		" t                      # list all loaded types\n"
