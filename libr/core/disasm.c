@@ -36,6 +36,26 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 	return hint;
 }
 
+// this is another random hack for reflines.. crappy stuff
+static char *filter_refline2(const char *str) {
+	char n = '|';
+	char *p, *s = strdup (str);
+	for (p=s; *p; p++) {
+		switch (*p) {
+		case '`':
+		case '|':
+			*p = n;
+			break;
+		case ',':
+			if (p[1]=='|') n = ' ';
+		default:
+			*p = ' ';
+			break;
+		}
+	}
+	return s;
+}
+
 static char *filter_refline(const char *str) {
 	char *p, *s = strdup (str);
 	p = strstr (s, "->");
@@ -132,6 +152,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	char str[512], strsub[512];
 	RAnalFunction *f = NULL;
 	char *refline = NULL;
+	char *refline2 = NULL;
 	RAnalCC cc = {0};
 	ut8 *nbuf = NULL;
 	int counter = 0;
@@ -304,9 +325,11 @@ toro:
 			line = r_anal_reflines_str (core->anal,
 				core->reflines, at, linesopts);
 			refline = filter_refline (line);
+			refline2 = filter_refline2 (refline);
 		} else {
 			line = NULL;
 			refline = strdup ("");
+			refline2 = strdup ("");
 		}
 		f = show_functions? r_anal_fcn_find (core->anal, at,
 			R_ANAL_FCN_TYPE_NULL): NULL;
@@ -348,15 +371,15 @@ toro:
 				if (refi->addr == at) {
 					RAnalFunction *fun = r_anal_fcn_find (
 						core->anal, refi->at,
-						R_ANAL_FCN_TYPE_FCN|
+						R_ANAL_FCN_TYPE_FCN |
 						R_ANAL_FCN_TYPE_ROOT);
 					if (show_color) {
 						r_cons_printf ("%s%c "Color_RESET"%s%s"Color_RESET, color_fline,
 							((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==at)
-							?' ':'|',color_flow, refline);
+							?' ':'|', color_flow, refline2);
 					} else {
 						r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
-							&& f->addr==at)?' ':'|',refline);
+							&& f->addr==at)?' ':'|', refline2);
 					}
 					if (show_color)
 					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
@@ -713,7 +736,8 @@ toro:
 			i += mi->size-1; // wtf?
 			free (line);
 			free (refline);
-			line = refline = NULL;
+			free (refline2);
+			line = refline = refline2 = NULL;
 			continue;
 		case R_META_TYPE_HIDE:
 			r_cons_printf ("(%d bytes hidden)\n", mi->size);
@@ -733,7 +757,8 @@ toro:
 				oplen = ret = (int)mi->size; //-delta;
 				free (line);
 				free (refline);
-				line = refline = NULL;
+				free (refline2);
+				line = refline = refline2 = NULL;
 			}
 			continue;
 		case R_META_TYPE_FORMAT:
@@ -743,7 +768,8 @@ toro:
 			oplen = ret = (int)mi->size;
 			free (line);
 			free (refline);
-			line = refline = NULL;
+			free (refline2);
+			line = refline = refline2 = NULL;
 			continue;
 		}
 		/* show cursor */
@@ -1091,7 +1117,7 @@ toro:
 		if (show_comments && show_comment_right && comment) {
 			int c = r_cons_get_column ();
 			if (c<ocols)
-				r_cons_memset (' ',ocols-c);
+				r_cons_memset (' ', ocols-c);
 			if (show_color) r_cons_strcat (color_comment);
 			r_cons_strcat ("  ; ");
 	//		r_cons_strcat_justify (comment, strlen (refline) + 5, ';');
@@ -1111,7 +1137,8 @@ toro:
 			}
 			free (line);
 			free (refline);
-			line = refline = NULL;
+			free (refline2);
+			line = refline = refline2 = NULL;
 		}
 	}
 	if (nbuf == buf) {
