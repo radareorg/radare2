@@ -283,9 +283,10 @@ static int cmd_quit(void *data, const char *input) {
 }
 
 static int cmd_interpret(void *data, const char *input) {
+	char *str, *ptr, *eol, *rbuf, *filter, *inp;
 	const char *host, *port, *cmd;
-	char *str, *ptr, *eol, *rbuf;
 	RCore *core = (RCore *)data;
+
 	switch (*input) {
 	case '\0':
 		r_core_cmd_repeat (core, 0);
@@ -338,19 +339,27 @@ static int cmd_interpret(void *data, const char *input) {
 		" ./ ELF            ; interpret output of command /m ELF as r. commands\n");
 		break;
 	default:
-		ptr = str = r_core_cmd_str (core, input);
+		inp = strdup (input);
+		filter = strchr (inp, '~');
+		if (filter) *filter = 0;
+		ptr = str = r_core_cmd_str (core, inp);
+		if (filter) *filter = '~';
 		r_cons_break (NULL, NULL);
 		for (;;) {
 			if (r_cons_singleton()->breaked) break;
 			eol = strchr (ptr, '\n');
 			if (eol) *eol = '\0';
-			if (*ptr)
-			r_core_cmd0 (core, ptr);
+			if (*ptr) {
+				char *p = r_str_concat (strdup (ptr), filter);
+				r_core_cmd0 (core, p);
+				free (p);
+			}
 			if (!eol) break;
 			ptr = eol+1;
 		}
 		r_cons_break_end ();
 		free (str);
+		free (inp);
 		break;
 	}
 	return 0;
