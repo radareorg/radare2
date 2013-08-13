@@ -23,6 +23,17 @@ static RAnalVarType anal_default_vartypes[] =
 	 { NULL,    NULL, 0 }};
 */
 
+static void r_anal_type_init(RAnal *anal) {
+	Sdb *D = anal->sdb_types;
+	sdb_set (D, "type.unsigned int", "i", 0);
+	sdb_set (D, "type.int", "d", 0);
+	sdb_set (D, "type.long", "x", 0);
+	sdb_set (D, "type.void *", "p", 0);
+	sdb_set (D, "type.char", "x", 0);
+	sdb_set (D, "type.char*", "*z", 0);
+	sdb_set (D, "type.const char*", "*z", 0);
+}
+
 R_API RAnal *r_anal_new() {
 	int i;
 	RAnalPlugin *static_plugin;
@@ -32,6 +43,7 @@ R_API RAnal *r_anal_new() {
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
 	anal->sdb_types = sdb_new (NULL, 0);
+	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
 	anal->diff_ops = 0;
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;

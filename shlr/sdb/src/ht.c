@@ -223,6 +223,7 @@ void ht_remove_entry(SdbHash *ht, SdbHashEntry *entry) {
 	if (!entry)
 		return;
 	if (!rehash && entry->iter) {
+	// XXX: ls_delete not working wtf
 		ls_delete (ht->list, entry->iter);
 		//free (entry->iter);
 		entry->iter = NULL;

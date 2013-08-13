@@ -1,37 +1,44 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake, Anton Kochkov */
 
-
-static void cmd_type_init(RCore *core) {
-	Sdb *D = core->anal->sdb_types;
-	sdb_set (D, "type.unsigned int", "i", 0);
-	sdb_set (D, "type.int", "d", 0);
-	sdb_set (D, "type.long", "x", 0);
-	sdb_set (D, "type.char", "x", 0);
-	sdb_set (D, "type.char*", "*z", 0);
-	sdb_set (D, "type.const char*", "*z", 0);
+static void show_help() {
+	eprintf ("Usage: t[-LCvsdfm?] [...]\n"
+	" t                      list all loaded types\n"
+	" t*                     list types info in r2 commands\n"
+	" t- [name]              delete type by its name.\n"
+	" t-*                    remove all types\n"
+	//". Use t-! to open $EDITOR\n"
+	" t [type]               show given type in 'pf' syntax\n"
+	" tf [path]              load types from C header file\n"
+	" tf -                   open cfg.editor to load types\n"
+	" td int foo(int a)      parse oneliner type definition\n"
+	" tv addr                view linked type at given address\n"
+	" tl [type] [addr]       link type to a given address\n");
 }
 
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
+	char pcmd[512];
 	RAnalType *t = NULL;
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
-#if 0
 	case ' ':
 	{
-		const char *tname = input + 1;
-		t = r_anal_type_find (core->anal, tname);
-		if (t == NULL) eprintf ("Type %s not found!\n", tname);
-		else r_anal_type_to_str (core->anal, t, "; ");
+		char *fmt = r_anal_type_format (core->anal, input +1);
+		if (fmt) {
+			r_cons_printf ("pf %s\n", fmt);
+			free (fmt);
+		} else eprintf ("Cannot find '%s' type\n", input+1);
 	}
 		break;
+#if 0
 	// t* - list all types in 'pf' syntax
 	case '*':
 		r_anal_type_list (core->anal, R_ANAL_TYPE_ANY, 1);
 		break;
 #endif
 	case 0:
+		// TODO: use r_cons here
 		sdb_list (core->anal->sdb_types);
 		break;
 	case 'f':
@@ -61,9 +68,11 @@ static int cmd_type(void *data, const char *input) {
 	// td - parse string with cparse engine and load types from it
 	case 'd':
 		if (input[1] == ' ') {
-			const char *string = input + 2;
+			char tmp[256];
+			snprintf (tmp, sizeof (tmp), "%s;", input+2);
+			//const char *string = input + 2;
 			//r_anal_str_to_type (core->anal, string);
-			char *out = r_parse_c_string (string);
+			char *out = r_parse_c_string (tmp);
 			if (out) {
 				r_cons_strcat (out);
 				sdb_query_lines (core->anal->sdb_types, out);
@@ -77,81 +86,42 @@ static int cmd_type(void *data, const char *input) {
 	// tl - link a type to an address
 	case 'l':
 	{
-		char var[128], *ptr = NULL;
-		ut64 addr = core->offset;
-		ptr = strchr (input + 2, ' ');
+		ut64 addr = r_num_math (core->num, input+2);
+		char *ptr = strchr (input + 2, ' ');
 		if (ptr) {
-			*ptr = '\0';
 			addr = r_num_math (core->num, ptr + 1);
+			*ptr = '\0';
 			if (addr > 0) {
-				if (sdb_getc (core->anal->sdb_types, input+2,0)) {
-				sprintf (var, "link.%08"PFMT64x, addr);
-				sdb_set (core->anal->sdb_types, var, input+2, 0);
-				} else eprintf ("Cannot find type\n");
+				r_anal_type_link (core->anal, input+2, addr);
 			} else eprintf ("Wrong address to link!\n");
 		} else
 			eprintf("Usage: tl[...]\n"
-				" tl [typename] ([addr])@[addr|function]\n");
+				" tl [typename|addr] ([addr])@[addr|function]\n");
 	}
-		break;
-#if 0
-	// tv - get/set type value linked to a given address
-	case 'v':
-		break;
-	case 'h':
-		switch (input[1]) {
-		case ' ':
-			break;
-		/* Convert type into format string */
-		case '*':
-			break;
-		default:
-			eprintf ("Usage: th[..]\n"
-				"th [path] [name] : show definition of type\n");
-			break;
-		}
 		break;
 	case '-':
-		if (input[1]!='*') {
-			ut64 n = r_num_math (core->num, input + ((input[1] == ' ') ? 2 : 1));
-			eprintf ("val 0x%"PFMT64x"\n", n);
-			//TODO r_anal_type_del (core->anal->types, R_ANAL_TYPE_ANY, core->offset, i, "");
+		if (input[1]=='*') {
+			eprintf ("TODO\n");
 		} else {
-			const char *ntr, *name = input + 2;
-			ntr = strchr(name, ' ');
-			if (ntr && !ntr[1]) {
+			const char *ntr, *name = input + 1;
+			if (*name==' ') name++;
+			ntr = strchr (name, ' ');
+			if (*name) {
 				r_anal_type_del (core->anal, name);
-			} else
-				eprintf ("Usage: t- name\n"
-					"t- name : delete type by its name\n");
+			} else eprintf ("Usage: t- name\n"
+				"t- name : delete type by its name\n");
 		}
 		break;
-	// t - list all types in C syntax
-	case '\0':
-	{
-		RListIter *k;
-		RAnalType *t;
-		r_list_foreach (core->anal->types, k, t) {
-			const char *str = r_anal_type_to_str (core->anal, t, "; ");
-			r_cons_printf ("%s\n", str);
-		}
-	}
+	// tv - get/set type value linked to a given address
+	case 'v':
+		snprintf (pcmd, sizeof (pcmd), "pf `t %s`", input+2);
+		r_core_cmd0 (core, pcmd);
 		break;
-#endif
 	case '?':
 		if (input[1]) {
 			sdb_query (core->anal->sdb_types, input+1);
-		} else
-		eprintf (
-		"Usage: t[-LCvsdfm?] [...]\n"
-		" t                      # list all loaded types\n"
-		" t*                     # list types info in r2 commands\n"
-		" t- [name]              # delete type by its name. Use t-* to remove all types. Use t-! to open $EDITOR\n"
-		" t [type]               # show given type in C syntax\n"
-		" tf [path]              # load types from C header file\n"
-		" tf -                   # open cfg.editor to load types\n"
-		" td int foo(int a);     # parse oneliner type definition\n"
-		" tl [type] [addr]       # link type to a given address\n");
+		} else show_help();
+
 		break;
 	}
 	return R_TRUE;

@@ -549,8 +549,11 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 // TODO: use vararg here?
 R_API char *r_str_concat(char *ptr, const char *string) {
 	int slen, plen;
-	if (ptr == NULL)
+	if (!string && ptr)
+		return ptr;
+	if (string && !ptr)
 		return strdup (string);
+	if (!ptr) ptr = strdup (string);
 	plen = strlen (ptr);
 	slen = strlen (string);
 	ptr = realloc (ptr, slen + plen + 1);
