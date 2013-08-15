@@ -119,10 +119,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info obj;
 	char *options = (a->bits==16)? "force-thumb": "no-force-thumb";
 
+	if (len<2) return -1;
+	memset (bytes, 0, sizeof (buf));
+	memcpy (bytes, buf, len<4?len:4);
 	if (len<(a->bits/8)) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&obj,'\0', sizeof (struct disassemble_info));

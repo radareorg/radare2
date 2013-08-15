@@ -338,7 +338,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return ret;
 }
 
-R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, int len) {
+R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	RAsmCode *acode;
 	int ret, slen;
 	RAsmOp op;
@@ -352,7 +352,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, ut8 *buf, int len) {
 	if (!(acode->buf_hex = malloc (2*len+1)))
 		return r_asm_code_free(acode);
 	r_hex_bin2str (buf, len, acode->buf_hex);
-	if (!(acode->buf_asm = malloc (2)))
+	if (!(acode->buf_asm = malloc (4)))
 		return r_asm_code_free (acode);
 	
 	for (idx = ret = slen = 0, acode->buf_asm[0] = '\0'; idx < len; idx+=ret) {
