@@ -771,7 +771,8 @@ int Printfloat10(char *s,long double ext) {
     k=sprintf(s,"-0.0");               // Negative floating 0.0
   else if (ext==0.0)
     k=sprintf(s,"0.0");                // Print 0 with decimal point
-#if __WINDOWS__
+#if 0
+ // Visual Studio only?
   else if ((ext>=-1.e10 && ext<-1.0) || (ext>1.0 && ext<=1.e10))
     k=sprintf(s,"%#.20lg",ext);
   else if ((ext>=-1.0 && ext<=-1.e-5) || (ext>=1.e-5 && ext<=1.0))

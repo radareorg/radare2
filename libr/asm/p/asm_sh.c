@@ -18,7 +18,7 @@ static int sh_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned in
 	return 0;
 }
 
-//int print_insn_shl (bfd_vma memaddr, struct disassemble_info *info);
+int print_insn_shl (bfd_vma memaddr, struct disassemble_info *info);
 
 static int symbol_at_address(bfd_vma addr, struct disassemble_info * info) {
 	return 0;
