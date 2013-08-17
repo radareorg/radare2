@@ -1,4 +1,6 @@
--include config.mk
+# Requires ./configure
+include config.mk
+
 PREFIX?=/usr
 PYTHON2_CONFIG=python2.7-config
 PYTHON3_CONFIG=python3.2-config

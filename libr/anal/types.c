@@ -2,14 +2,33 @@
 
 #include "r_anal.h"
 
+R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val) {
+	Sdb *DB = anal->sdb_types;
+	const char *kind;
+	char var[128];
+	sprintf (var, "link.%08"PFMT64x, at);
+	kind = sdb_getc (DB, var, NULL);
+	if (kind) {
+		const char *p = sdb_getc (DB, kind, NULL);
+		if (p) {
+			snprintf (var, sizeof (var), "%s.%s.%s", p, kind, field);
+			int off = sdb_agetn (DB, var, 1, NULL);
+			int siz = sdb_agetn (DB, var, 2, NULL);
+eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at+off);
+			return R_TRUE;
+		} else eprintf ("Invalid kind of type\n");
+	}
+	return R_FALSE;
+}
+
 R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	int n;
 	char *p, str[128], str2[128];
 	Sdb *DB = anal->sdb_types;
 	const char *kind = sdb_getc (DB, name, 0);
 	snprintf (str, sizeof (str), "%s.%s", kind, name);
-eprintf ("(((%s)))\n", str);
-	
+	eprintf ("(((%s)))\n", str);
+
 #define SDB_FOREACH(x,y,z) for (z = 0; (p = sdb_aget (x, y, z, NULL)); z++)
 #define SDB_FOREACH_NEXT() free(p)
 	SDB_FOREACH (DB, str, n) {
@@ -59,7 +78,7 @@ static void filter_type(char *t) {
 	for (;*t; t++) {
 		if (*t == ' ')
 			*t = '_';
-	//		memmove (t, t+1, strlen (t));
+		//		memmove (t, t+1, strlen (t));
 	}
 }
 

@@ -693,6 +693,7 @@ R_API void r_anal_type_header (RAnal *anal, const char *hdr);
 
 R_API int r_anal_type_link (RAnal *anal, const char *val, ut64 addr);
 R_API char *r_anal_type_format (RAnal *anal, const char *t);
+R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val);
 
 /* anal.c */
 R_API RAnal *r_anal_new();

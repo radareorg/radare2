@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 nibble<.ds@gmail.com> */
+/* radare2 - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 [CCode (cheader_filename="r_lang.h", cprefix="r_lang_", lower_case_cprefix="r_lang_")]
 namespace Radare {
@@ -14,6 +14,8 @@ namespace Radare {
 		public bool set_argv(int argc, char **argv);
 		public bool run(string code, int len);
 		public bool run_file(string file);
+		public Plugin get_by_extension (string file);
+		public Plugin get_by_name (string file);
 		public bool prompt();
 
 		[Compact]

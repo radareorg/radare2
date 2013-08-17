@@ -72,6 +72,7 @@ static int vala_run(RLang *lang, const char *code, int len) {
 
 static struct r_lang_plugin_t r_lang_plugin_vala = {
 	.name = "vala",
+	.ext = "vala",
 	.desc = "VALA language extension",
 	.help = NULL,
 	.run = vala_run,

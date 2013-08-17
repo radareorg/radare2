@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 /* python extension for libr (radare2) */
 
 #include <r_lib.h>
@@ -107,12 +107,9 @@ static int Radare_init(Radare *self, PyObject *args, PyObject *kwds) {
 }
 
 static PyMemberDef Radare_members[] = {
-	{"first", T_OBJECT_EX, offsetof(Radare, first), 0,
-		"first name"},
-	{"last", T_OBJECT_EX, offsetof(Radare, last), 0,
-		"last name"},
-	{"number", T_INT, offsetof(Radare, number), 0,
-		"noddy number"},
+	{"first", T_OBJECT_EX, offsetof(Radare, first), 0, "first name"},
+	{"last", T_OBJECT_EX, offsetof(Radare, last), 0, "last name"},
+	{"number", T_INT, offsetof(Radare, number), 0, "noddy number"},
 	{NULL}  /* Sentinel */
 };
 
@@ -231,9 +228,8 @@ static int setup(RLang *lang) {
 static int init(RLang *lang) {
 	core = lang->user;
 	// DO NOT INITIALIZE MODULE IF ALREADY INITIALIZED
-	if (Py_IsInitialized ()) {
+	if (Py_IsInitialized ())
 		return 0;
-	}
 	Py_Initialize ();
 	init_radare_module ();
 	return R_TRUE;
@@ -249,6 +245,7 @@ static const char *help =
 
 struct r_lang_plugin_t r_lang_plugin_python = {
 	.name = "python",
+	.ext = "py",
 	.desc = "Python language extension",
 	.init = &init,
 	.setup = &setup,

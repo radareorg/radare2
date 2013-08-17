@@ -181,6 +181,7 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...);
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
 R_API int r_core_cmd_file(RCore *core, const char *file);
 R_API int r_core_cmd_command(RCore *core, const char *command);
+R_API int r_core_run_script (RCore *core, const char *file);
 R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_seek_next (RCore *core, const char *type);

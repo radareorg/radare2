@@ -91,6 +91,7 @@ static const char *help =
 
 static struct r_lang_plugin_t r_lang_plugin_ruby = {
 	.name = "ruby",
+	.ext = "rb",
 	.desc = "Ruby language extension",
 	.init = &init,
 	.fini = &fini,

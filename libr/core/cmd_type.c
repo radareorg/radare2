@@ -12,16 +12,40 @@ static void show_help() {
 	" tf -                   open cfg.editor to load types\n"
 	" td int foo(int a)      parse oneliner type definition\n"
 	" tv addr                view linked type at given address\n"
+	" ts k=v k=v @ link.addr set fields at given linked type\n"
 	" tl [type] [addr]       link type to a given address\n");
 }
 
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-	char pcmd[512];
+	char *arg, pcmd[512];
 	RAnalType *t = NULL;
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
+	case 's':
+	{
+		char *q, *p, *o, *e;
+		p = o = strdup (input+1);
+		for (;;) {
+			q = strchr (p, ' ');
+			if (q) *q = 0;
+			if (!*p) {
+				p++;
+				continue;
+			}
+			e = strchr (p, '=');
+			if (e) {
+				*e = 0;
+				r_anal_type_set (core->anal, core->offset,
+					p, r_num_math (core->num, e+1));
+			} else eprintf ("TODO: implement get\n");
+			if (!q) break;
+			p = q+1;
+		}
+		free (o);
+	}
+		break;
 	case ' ':
 	{
 		char *fmt = r_anal_type_format (core->anal, input +1);

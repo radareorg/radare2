@@ -30,27 +30,22 @@ static int cmd_hash(void *data, const char *input) {
 		return R_TRUE;
 	}
 	if (input[0]=='!') {
-#if 0
-	TODO: Honor OOBI
-		#!lua < file
-		#!lua <<EOF
-		#!lua
-		#!lua foo bar
-                        //r_lang_run (core->lang, p+1, strlen (p+1));
-                                //core->oobi, core->oobi_len);
-#endif
-		if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
+		const char *lang = input+1;
+		if (*lang==' ') {
+			RLangPlugin *p = r_lang_get_by_extension (core->lang, input+2);
+			if (p && p->name) lang = p->name;
+		} else if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
 			r_lang_list (core->lang);
 			return R_TRUE;
 		}
-		p = strchr (input+1, ' ');
+		p = strchr (input, ' ');
 		if (p) *p=0;
 		// TODO: set argv here
-		if (r_lang_use (core->lang, input+1)) {
+		if (r_lang_use (core->lang, lang)) {
 			r_lang_setup (core->lang);
 			if (p) r_lang_run_file (core->lang, p+1);
 			else r_lang_prompt (core->lang);
-		} else eprintf ("Invalid hashbang plugin name. Try '#!'\n");
+		} else eprintf ("Invalid hashbang. See '#!' for help.\n");
 		return R_TRUE;
 	}
 
@@ -126,6 +121,7 @@ static int cmd_hash(void *data, const char *input) {
 	if (input[0]=='?') {
 		r_cons_printf (
 		"Usage: #algo <size> @ addr\n"
+		" # this is a comment   note the space after the sharp sign\n"
 		" ##                    List hash/checksum algorithms.\n"
 		" #sha256 10K @ 33      calculate sha256 of 10K at 33\n"
 		"Hashes:\n");
@@ -134,11 +130,9 @@ static int cmd_hash(void *data, const char *input) {
 		"Usage #!interpreter [<args>] [<file] [<<eof]\n"
 		" #!                    list all available interpreters\n"
 		" #!python              run python commandline\n"
-		" #!python < foo.py     run foo.py python script\n"
-		" #!python <<EOF        get python code until 'EOF' mark\n"
-		" #!python arg0 a1 <<q  set arg0 and arg1 and read until 'q'\n"
-		"Comments:\n"
-		" # this is a comment   note the space after the sharp sign\n");
+		" #!python foo.py       run foo.py python script (same as '. foo.py')\n"
+		//" #!python <<EOF        get python code until 'EOF' mark\n"
+		" #!python arg0 a1 <<q  set arg0 and arg1 and read until 'q'\n");
 	}
 	if (osize)
 		r_core_block_size (core, osize);

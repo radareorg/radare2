@@ -514,7 +514,8 @@ int main(int argc, char **argv) {
 			eprintf ("Script '%s' not found.\n", cmdfile[i]);
 			return 1;
 		}
-		ret = r_core_cmd_file (&r, cmdfile[i]);
+		ret = r_core_run_script (&r, cmdfile[i]);
+		//ret = r_core_cmd_file (&r, cmdfile[i]);
 		if (ret ==-2)
 			eprintf ("Cannot open '%s'\n", cmdfile[i]);
 		if (ret<0 || (ret==0 && quiet))

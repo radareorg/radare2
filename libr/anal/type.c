@@ -1,4 +1,6 @@
 /* radare - LGPL - Copyright 2012 - Anton Kochkov */
+#if 0
+// DEPRECATED
 
 #include <r_anal.h>
 #if 0
@@ -322,3 +324,4 @@ R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value) 
 
 R_API void r_anal_type_header (RAnal *anal, const char *hdr) {
 }
+#endif

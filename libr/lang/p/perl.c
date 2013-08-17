@@ -98,6 +98,7 @@ static const char *help =
 
 static struct r_lang_plugin_t r_lang_plugin_perl = {
 	.name = "perl",
+	.ext = "pl",
 	.desc = "Perl language extension",
 	.init = &init,
 	.setup = &setup,

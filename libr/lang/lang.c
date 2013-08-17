@@ -94,7 +94,7 @@ R_API int r_lang_setup(RLang *lang) {
 }
 
 R_API int r_lang_add(RLang *lang, RLangPlugin *foo) {
-	if (foo && (!r_lang_get (lang, foo->name))) {
+	if (foo && (!r_lang_get_by_name (lang, foo->name))) {
 		if (foo->init)
 			foo->init (lang);
 		r_list_append (lang->langs, foo);
@@ -112,7 +112,19 @@ R_API int r_lang_list(RLang *lang) {
 	return R_FALSE;
 }
 
-R_API RLangPlugin *r_lang_get (RLang *lang, const char *name) {
+R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {
+	RListIter *iter;
+	RLangPlugin *h;
+	const char *p = strchr (ext, '.');
+	if (p) ext = p+1;
+	r_list_foreach (lang->langs, iter, h) {
+		if (!strcmp (h->ext, ext))
+			return h;
+	}
+	return NULL;
+}
+
+R_API RLangPlugin *r_lang_get_by_name (RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
 	r_list_foreach (lang->langs, iter, h) {
@@ -123,7 +135,7 @@ R_API RLangPlugin *r_lang_get (RLang *lang, const char *name) {
 }
 
 R_API int r_lang_use(RLang *lang, const char *name) {
-	RLangPlugin *h = r_lang_get (lang, name);
+	RLangPlugin *h = r_lang_get_by_name (lang, name);
 	if (h) {
 		lang->cur = h;
 		return R_TRUE;

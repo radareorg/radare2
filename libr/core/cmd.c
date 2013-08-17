@@ -282,6 +282,15 @@ static int cmd_quit(void *data, const char *input) {
 	return R_FALSE;
 }
 
+R_API int r_core_run_script (RCore *core, const char *file) {
+	RLangPlugin *p = r_lang_get_by_extension (core->lang, file);
+	if (p) {
+		r_lang_use (core->lang, p->name);
+		return r_lang_run_file (core->lang, file);
+	}
+	return r_core_cmd_file (core, file);
+}
+
 static int cmd_interpret(void *data, const char *input) {
 	char *str, *ptr, *eol, *rbuf, *filter, *inp;
 	const char *host, *port, *cmd;
@@ -317,8 +326,7 @@ static int cmd_interpret(void *data, const char *input) {
 		r_core_cmd_repeat (core, 1);
 		break;
 	case ' ':
-		if (!r_core_cmd_file (core, input+1))
-			eprintf ("cannot interpret file.\n");
+		r_core_run_script (core, input+1);
 		break;
 	case '!':
 		/* from command */
