@@ -118,7 +118,7 @@ R_API void r_io_sundo_list(RIO *io) {
 /* undo writez */
 
 R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
-	struct r_io_undo_w_t *uw;
+	RIOUndoWrite *uw;
 	if (!io->undo.w_enable)
 		return;
 	/* undo write changes */
@@ -141,8 +141,8 @@ R_API void r_io_wundo_clear(RIO *io) {
 
 // rename to r_io_undo_length ?
 R_API int r_io_wundo_size(RIO *io) {
-	RListIter *iter;
 	RIOUndoWrite *uw;
+	RListIter *iter;
 	int i = 0;
 
 	if (io->undo.w_init)

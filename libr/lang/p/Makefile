@@ -38,8 +38,8 @@ PYCFLAGS=$(shell ${PYCFG} --cflags)
 PYLDFLAGS=$(shell ${PYCFG} --libs) -L$(shell ${PYCFG} --prefix)/lib
 
 lang_python.${EXT_SO}:
-	${CC} ${CFLAGS} ${PYCFLAGS} ${PYLDFLAGS} \
-	${LDFLAGS} ${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO} python.c
+	${CC} python.c ${CFLAGS} ${PYCFLAGS} ${PYLDFLAGS} \
+	${LDFLAGS} ${LDFLAGS_LIB} -fPIC -o lang_python.${EXT_SO}
 endif
 
 ifeq ($(HAVE_LIB_TCC),1)

@@ -266,7 +266,7 @@ namespace Radare {
 			public int ninstr;
 			public int nargs;
 			public int depth;
-			public Type args;
+			//public Type args;
 			// MUST BE deprecated public VarSub varsubs[32];
 
 			public Diff diff;
@@ -287,7 +287,7 @@ namespace Radare {
 		public class Var {
 			public string name;
 			public int delta;
-			public Type type;
+			//public Type type;
 			public RList<RAnal.VarAccess> accesses;
 		}
 
@@ -305,7 +305,6 @@ namespace Radare {
 			public char pat[1024];
 			public char sub[1024];
 		}
-#endif
 
 		[Compact]
 		[CCode (cname="RAnalType")]
@@ -315,6 +314,7 @@ namespace Radare {
 			public int type;
 			// TODO. add custom union type here
 		}
+#endif
 /*
 		[Compact]
 		[CCode (cname="RAnalVarType")]
