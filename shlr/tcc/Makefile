@@ -11,7 +11,7 @@ all: ${LIBNAME} libr_tcc.a
 	${MAKE} test
 
 test:
-	gcc test.c libr_tcc.a -I.
+	gcc libr_tcc.a -I. test.c
 
 ${LIBNAME}: ${OFILES}
 	${CC} -o ${LIBNAME} ${LDFLAGS} ${OFILES}

@@ -146,20 +146,7 @@
 #define TCC_TARGET_COFF
 #endif
 
-/* only native compiler supports -run */
-#if defined _WIN32 == defined TCC_TARGET_PE
-# if (defined __i386__ || defined _X86_) && defined TCC_TARGET_I386
-#  define TCC_IS_NATIVE
-# elif (defined __x86_64__ || defined _AMD64_) && defined TCC_TARGET_X86_64
-#  define TCC_IS_NATIVE
-# elif defined __arm__ && defined TCC_TARGET_ARM
-#  define TCC_IS_NATIVE
-# endif
-#endif
-
-#if defined TCC_IS_NATIVE && !defined CONFIG_TCCBOOT
-# define CONFIG_TCC_BACKTRACE
-#endif
+#undef TCC_IS_NATIVE
 
 /* ------------ path configuration ------------ */
 
