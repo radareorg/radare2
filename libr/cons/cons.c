@@ -401,8 +401,9 @@ R_API int r_cons_get_column() {
 R_API void r_cons_memcat(const char *str, int len) {
 	if (str && len>0) {
 		palloc (len+1);
-		memcpy (I.buffer+I.buffer_len, str, len+1);
+		memcpy (I.buffer+I.buffer_len, str, len);
 		I.buffer_len += len;
+		I.buffer[I.buffer_len] = 0;
 	}
 }
 
