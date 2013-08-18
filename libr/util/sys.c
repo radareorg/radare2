@@ -7,6 +7,10 @@
 #if __linux__ && __GNU_LIBRARY__
 # include <execinfo.h>
 #endif
+#if __APPLE__
+#include <errno.h>
+#include <libproc.h>
+#endif
 #if __UNIX__
 # include <sys/wait.h>
 # include <sys/stat.h>
@@ -533,4 +537,21 @@ R_API int r_is_heap (void *p) {
 	mask<<=16;
 	free (q);
 	return (((ut64)(size_t)p) == mask);
+}
+
+R_API char *r_sys_pid_to_path(int pid) {
+#if __APPLE__
+	int ret;
+	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
+
+	ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	if (ret <= 0)
+		return NULL;
+#else
+	char buf[128], pathbuf[1024];
+	snprintf (buf, "/proc/%d/exe", pid);
+	if (readlink (buf, pathbuf, sizeof (pathbuf))<1)
+		return NULL;
+#endif
+	return strdup (pathbuf);
 }

@@ -147,6 +147,16 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	case '*':
 		r_debug_pid_list (core->dbg, 0);
 		break;
+	case 'e':
+		{
+			int pid = (input[2] == ' ')? atoi(input+2): core->dbg->pid;
+			char *exe = r_sys_pid_to_path (pid);
+			if (exe) {
+				r_cons_printf ("%s\n", exe);
+				free (exe);
+			}
+		}
+		break;
 	case ' ':
 		r_debug_pid_list (core->dbg,
 			(int) r_num_math (core->num, input+2));
@@ -156,8 +166,10 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			" dp      list current pid and childrens\n"
 			" dp 748  list children of pid\n"
 			" dp*     list all attachable pids\n"
+			" dpe     show path to executable\n"
 			" dpa 377 attach and select this pid\n"
 			" dp=748  select this pid\n"
+			" dpf     Attach to pid like file fd // HACK\n"
 			" dpn     Create new process (fork)\n"
 			" dpnt    Create new thread (clone)\n"
 			" dpt     List threads of current pid\n"
