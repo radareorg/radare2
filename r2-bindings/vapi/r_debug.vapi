@@ -138,8 +138,8 @@ public class Radare.RDebug {
 		//public Map(string name, uint64 addr, uint64 addr_end, int perm, int user);
 	}
 
-	[CCode (cname="RDebugTrace")]
-	public struct Trace {
+	[CCode (cname="RDebugTrace", free_function="", unref_function="")]
+	public class Trace {
 		RList<RDebug.Tracepoint> traces;
 		int count;
 		int enabled;
@@ -149,7 +149,7 @@ public class Radare.RDebug {
 	}
 
 	[Compact]
-	[CCode (cname="RDebugTracepoint", free_function="")]
+	[CCode (cname="RDebugTracepoint", free_function="", unref_function="")]
 	public class Tracepoint {
 		uint64 addr;
 		uint64 tags;
@@ -166,7 +166,7 @@ public class Radare.RDebug {
 	public bool swstep;
 	public int newstate;
 	//public RDebug.Trace *trace;
-	public void *trace;
+	public RDebug.Trace trace;
 	public bool stop_all_threads;
 	public RReg reg;
 	public RAnal anal;
