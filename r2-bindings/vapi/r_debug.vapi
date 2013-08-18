@@ -165,7 +165,8 @@ public class Radare.RDebug {
 	public int tid;
 	public bool swstep;
 	public int newstate;
-	public RDebug.Trace *trace;
+	//public RDebug.Trace *trace;
+	public void *trace;
 	public bool stop_all_threads;
 	public RReg reg;
 	public RAnal anal;

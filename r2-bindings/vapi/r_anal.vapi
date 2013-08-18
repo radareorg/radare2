@@ -50,12 +50,14 @@ namespace Radare {
 			public RReg.Item regdelta;
 		}
 
+/*
 		[Compact]
 		[CCode (cname="RAnalCond")]
 		public class Cond {
 			public int type;
-			public RAnal.Value arg[2];
+			public Value arg[2];
 		}
+*/
 
 		[CCode (cname="int", cprefix="R_ANAL_COND_")]
 		public enum Cnd {
