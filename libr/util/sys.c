@@ -540,7 +540,10 @@ R_API int r_is_heap (void *p) {
 }
 
 R_API char *r_sys_pid_to_path(int pid) {
-#if __APPLE__
+#if __WINDOWS__
+	// TODO: implement r_sys_pid_to_path on W32
+	return NULL;
+#elif __APPLE__
 	int ret;
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
 
