@@ -506,11 +506,19 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				else if (!memcmp (ptr, ".string ", 8)) {
 					r_str_chop (ptr+8);
 					ret = r_asm_pseudo_string (&op, ptr+8, 1);
-				} else if (!memcmp (ptr, ".ascii ", 7))
+				} else if (!memcmp (ptr, ".ascii ", 7)) {
 					ret = r_asm_pseudo_string (&op, ptr+7, 0);
-				else if (!memcmp (ptr, ".align", 7))
+				} else if (!memcmp (ptr, ".align", 7)) {
 					ret = r_asm_pseudo_align (&op, ptr+7);
-				else if (!memcmp (ptr, ".arch ", 6))
+				} else if (!memcmp (ptr, ".arm", 4)) {
+					r_asm_use (a, "arm");
+					r_asm_set_bits (a, 32);
+					ret = 0;
+				} else if (!memcmp (ptr, ".thumb", 6)) {
+					r_asm_use (a, "arm");
+					r_asm_set_bits (a, 16);
+					ret = 0;
+				} else if (!memcmp (ptr, ".arch ", 6))
 					ret = r_asm_pseudo_arch (a, ptr+6);
 				else if (!memcmp (ptr, ".bits ", 6))
 					ret = r_asm_pseudo_bits (a, ptr+6);
