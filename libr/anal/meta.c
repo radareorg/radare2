@@ -157,13 +157,15 @@ R_API RMetaItem *r_meta_item_new(int type) {
 }
 
 // TODO: This is ultraslow. must accelerate with hashtables
-R_API int r_meta_comment_check (RMeta *m, const char *s) {
+R_API int r_meta_comment_check (RMeta *m, const char *s, ut64 addr) {
 	RMetaItem *d;
 	RListIter *iter;
 
 	r_list_foreach (m->data, iter, d) {
-		if (d->type == R_META_TYPE_COMMENT && (!strcmp (s, d->str)))
-			return R_TRUE;
+		if (d->type == R_META_TYPE_COMMENT)
+			if (d->from == addr)
+				if (!strcmp (s, d->str))
+					return R_TRUE;
 	}
 
 	return R_FALSE;
@@ -184,7 +186,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 		//r_meta_cleanup (m, from, to);
 	case R_META_TYPE_COMMENT:
 		if (type == R_META_TYPE_COMMENT)
-			if (r_meta_comment_check (m, str))
+			if (r_meta_comment_check (m, str, from))
 				return R_FALSE;
 		mi = r_meta_item_new (type);
 		mi->size = R_ABS (to-from);//size;
