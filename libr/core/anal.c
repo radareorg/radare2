@@ -941,8 +941,11 @@ R_API int r_core_anal_all(RCore *core) {
 	/* Entries */
 	{
 	RFlagItem *item = r_flag_get (core->flags, "entry0");
-	if (item)
+	if (item) {
 		r_core_anal_fcn (core, item->offset, -1, R_ANAL_REF_TYPE_NULL, depth);
+	} else {
+		r_core_cmd0 (core, "af");
+	}
 	}
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
