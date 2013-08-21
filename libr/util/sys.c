@@ -544,17 +544,16 @@ R_API char *r_sys_pid_to_path(int pid) {
 	// TODO: implement r_sys_pid_to_path on W32
 	return NULL;
 #elif __APPLE__
-	int ret;
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
-
-	ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
 	if (ret <= 0)
 		return NULL;
+	return strdup (pathbuf);
 #else
 	char buf[128], pathbuf[1024];
 	snprintf (buf, "/proc/%d/exe", pid);
 	if (readlink (buf, pathbuf, sizeof (pathbuf))<1)
 		return NULL;
-#endif
 	return strdup (pathbuf);
+#endif
 }
