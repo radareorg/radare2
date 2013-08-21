@@ -594,7 +594,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???
 	r_config_desc (cfg, "asm.pseudo", "Enable pseudo syntax");
 	r_config_set (cfg, "asm.filter", "true");
-	r_config_desc (cfg, "asm.filter", "Show filtered flags at disassembly");
+	r_config_desc (cfg, "asm.filter", "Replace numbers in disasm using flags containing a dot in the name in disassembly");
 	r_config_set (cfg, "asm.varsub", "true");
 	r_config_desc (cfg, "asm.varsub", "Substitute variables in disasm");
 	r_config_set (cfg, "asm.trace", "true");
