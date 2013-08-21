@@ -232,22 +232,47 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		}
 		break;
+	case 'a':
+		if (core->file && !(core->file->rwx & 2)) {
+			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
+			r_cons_any_key ();
+			return R_TRUE;
+		}
+		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
+		r_cons_show_cursor (R_TRUE);
+		r_cons_flush ();
+		r_cons_set_raw (R_FALSE);
+		strcpy (buf, "wa ");
+		r_line_set_prompt (":> ");
+		if (r_cons_fgets (buf+3, 1000, 0, NULL) <0) buf[0]='\0';
+		if (*buf) {
+			if (curset) r_core_seek (core, core->offset + cursor, 0);
+			r_core_cmd (core, buf, R_TRUE);
+			if (curset) r_core_seek (core, core->offset - cursor, 1);
+		}
+		r_cons_show_cursor (R_FALSE);
+		r_cons_set_raw (R_TRUE);
+		break;
+	case 'A':
+		{ int oc = curset;
+		ut64 off = curset? core->offset+cursor : core->offset;
+		curset = 0;
+		r_core_visual_asm (core, off);
+		curset = oc;
+		}
+		break;
 	case 'c':
-		// XXX dupped flag imho
 		setcursor (core, curset ^ 1);
+		break;
+	case 'C':
+		color = color? 0: 1;
+		r_config_set_i (core->config, "scr.color", color);
 		break;
 	case 'd':
 		r_core_visual_define (core);
 		break;
 	case 'D':
 		setdiff (core);
-		break;
-	case 'C':
-		color ^= 1;
-		if (color) flags |= R_PRINT_FLAGS_COLOR;
-		else flags &= ~(flags&R_PRINT_FLAGS_COLOR);
-		r_config_set_i (core->config, "scr.color", color);
-		r_print_set_flags (core->print, flags);
 		break;
 	case 'f':
 		{
@@ -274,35 +299,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'N':
 		r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
-		break;
-	case 'A':
-		{ int oc = curset;
-		ut64 off = curset? core->offset+cursor : core->offset;
-		curset = 0;
-		r_core_visual_asm (core, off);
-		curset = oc;
-		}
-		break;
-	case 'a':
-		if (core->file && !(core->file->rwx & 2)) {
-			r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
-			r_cons_any_key ();
-			return R_TRUE;
-		}
-		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
-		r_cons_show_cursor (R_TRUE);
-		r_cons_flush ();
-		r_cons_set_raw (R_FALSE);
-		strcpy (buf, "wa ");
-		r_line_set_prompt (":> ");
-		if (r_cons_fgets (buf+3, 1000, 0, NULL) <0) buf[0]='\0';
-		if (*buf) {
-			if (curset) r_core_seek (core, core->offset + cursor, 0);
-			r_core_cmd (core, buf, R_TRUE);
-			if (curset) r_core_seek (core, core->offset - cursor, 1);
-		}
-		r_cons_show_cursor (R_FALSE);
-		r_cons_set_raw (R_TRUE);
 		break;
 	case 'i':
 	case 'I':
@@ -828,20 +824,17 @@ R_API void r_core_visual_title (RCore *core, int color) {
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
 	char pos[512], foo[512], bar[512];
+	int scrcols;
 	/* automatic block size */
 	if (autoblocksize)
 	switch (core->printidx) {
 	case 0:
-		{
-		int scrcols = r_config_get_i (core->config, "hex.cols");
+		scrcols = r_config_get_i (core->config, "hex.cols");
 		r_core_block_size (core, core->cons->rows * scrcols);
-		}
 		break;
 	case 3: // XXX pw
-		{
-		int scrcols = r_config_get_i (core->config, "hex.cols");
+		scrcols = r_config_get_i (core->config, "hex.cols");
 		r_core_block_size (core, core->cons->rows * scrcols);
-		}
 		break;
 	case 4: // XXX pc
 		r_core_block_size (core, core->cons->rows * 5);
@@ -852,9 +845,7 @@ R_API void r_core_visual_title (RCore *core, int color) {
 		break;
 	}
 
-	if (core->file && core->file->filename)
-		filename = core->file->filename;
-	else filename = "";
+	filename = (core->file && core->file->filename)? core->file->filename: "";
 	{ /* get flag with delta */
 		ut64 addr = core->offset + (curset? cursor: 0);
 		RFlagItem *f = r_flag_get_at (core->flags, addr);
@@ -958,11 +949,11 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	teefile = r_cons_singleton ()->teefile;
 	r_cons_singleton ()->teefile = "";
 
-	color = r_config_get_i (core->config, "scr.color");
-	debug = r_config_get_i (core->config, "cfg.debug");
-	flags = R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
-	if (color) flags |= R_PRINT_FLAGS_COLOR;
 	do {
+		color = r_config_get_i (core->config, "scr.color");
+		if (color) flags |= R_PRINT_FLAGS_COLOR;
+		debug = r_config_get_i (core->config, "cfg.debug");
+		flags = R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
 		scrseek = r_num_math (core->num,
 			r_config_get (core->config, "scr.seek"));
 		if (scrseek != 0LL)
