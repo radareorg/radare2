@@ -612,7 +612,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set_cb (cfg, "asm.segoff", "false", &config_segoff_callback);
 	r_config_desc (cfg, "asm.segoff", "show segmented address in prompt (x86-16)");
 	r_config_set (cfg, "asm.lines", "true");
-	r_config_desc (cfg, "asm.lines", "If enabled show ascci-art lines at disassembly");
+	r_config_desc (cfg, "asm.lines", "If enabled show ascii-art lines at disassembly");
 	r_config_set (cfg, "asm.linesright", "false");
 	r_config_desc (cfg, "asm.linesright", "If enabled show lines before opcode instead of offset");
 	r_config_set (cfg, "asm.linesout", "true");
