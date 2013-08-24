@@ -369,14 +369,31 @@ static int cmd_print(void *data, const char *input) {
 		r_core_print_disasm_instructions (core, len, l);
 		break;
 	case 'i': 
-		if (input[1]=='d') {
+		switch (input[1]) {
+		case '?':
+			r_cons_printf ("Usage: pi[df] [num]\n");
+			break;
+		case 'd':
 			pdi (core, l, len, core->blocksize);
-		} else {
+			break;
+		case 'f':
+			{
+			RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
+					R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
+			if (f) {
+				r_core_print_disasm_instructions (core, f->size, l);
+			} else {
+				r_core_print_disasm_instructions (core,
+					core->blocksize, l);
+			}
+			}
+			break;
+		default:
 			r_core_print_disasm_instructions (core,
 				core->blocksize, l);
+			break;
 		}
-			return 0;
-		break;
+		return 0;
 	case 'D':
 	case 'd':
 		switch (input[1]) {
@@ -900,7 +917,7 @@ static int cmd_print(void *data, const char *input) {
 		" pc[p] [len]      output C (or python) format\n"
 		" p[dD][lf] [l]    disassemble N opcodes/bytes (see pd?)\n"
 		" pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expr>) \n"
-		" p[iI][f] [len]   print N instructions/bytes (f=func) (see pdi)\n"
+		" p[iI][df] [len]  print N instructions/bytes (f=func) (see pi? and pdi)\n"
 		" pm [magic]       print libmagic data (pm? for more information)\n"
 		" pr [len]         print N raw bytes\n"
 		" p[kK] [len]      print key in randomart (K is for mosaic)\n"
