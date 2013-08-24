@@ -610,7 +610,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		p = str+off;
 		memcpy (p, val, vlen);
 		memcpy (p+vlen, old, strlen (old)+1);
-		i += off+vlen;
+		i = off+vlen;
 		free (old);
 		if (!g) break;
 	}
