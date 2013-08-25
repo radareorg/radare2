@@ -59,11 +59,13 @@ R_API int r_line_dietline_init() {
 }
 
 /* read utf8 char into 's', return the length in bytes */
-static int r_line_readchar_utf8(unsigned char *s) {
+static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	// TODO: add support for w32
 	int ret, len;
-	for (len = 0; ; len++) {
+	for (len = 0; len+2<slen; len++) {
 		ret = read (0, s+len, 1);
+		if (s[len] < 28)
+			return 1;
 		if (ret == 1) {
 			if (is_valid_char (s[len]))
 				return 1;
@@ -375,7 +377,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.length = 0;
 		}
 #if USE_UTF8
-		utflen = r_line_readchar_utf8 ((unsigned char*)buf);
+		utflen = r_line_readchar_utf8 (
+			(ut8*)buf, sizeof (buf));
 		if (utflen <1) return NULL;
 		buf[utflen] = 0;
 #else
@@ -429,7 +432,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.index = (I.buffer.index<I.buffer.length)?
 				I.buffer.index+1 : I.buffer.length;
 			if (I.echo)
-				printf ("\x1b[2J\x1b[0;0H");
+				eprintf ("\x1b[2J\x1b[0;0H");
 			fflush (stdout);
 			break;
 		case 18: // ^R -- autocompletion
