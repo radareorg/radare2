@@ -40,7 +40,7 @@ static inline int is_valid_char (unsigned char ch) {
 #endif
 
 static int inithist() {
-	ZERO_FILL (&I.history);
+	ZERO_FILL (I.history);
 	I.history.data = (char **)malloc ((I.history.size+1024)*sizeof(char *));
 	if (I.history.data==NULL)
 		return R_FALSE;
@@ -51,7 +51,7 @@ static int inithist() {
 
 /* initialize history stuff */
 R_API int r_line_dietline_init() {
-	ZERO_FILL (&I.completion);
+	ZERO_FILL (I.completion);
 	if (!inithist ())
 		return R_FALSE;
 	I.echo = R_TRUE;

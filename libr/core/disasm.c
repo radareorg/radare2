@@ -670,7 +670,7 @@ toro:
 		}
 		if (show_flags) {
 			flag = r_flag_get_i (core->flags, at);
-			if (flag && (!f || (f && strcmp (f->name, flag)))) {
+			if (flag && (!f || (f && strcmp (f->name, flag->name)))) {
 				if (show_lines && refline) {
 					if (show_color) {
 						r_cons_strcat (color_flow);
