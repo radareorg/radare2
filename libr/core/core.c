@@ -200,6 +200,8 @@ static int autocomplete(RLine *line) {
 	RCore *core = line->user;
 	RListIter *iter;
 	RFlagItem *flag;
+	line->completion.argc = 0;
+	line->completion.argv = tmp_argv;
 	if (core) {
 		char *ptr = strchr (line->buffer.data, '@');
 		if (ptr && line->buffer.data+line->buffer.index >= ptr) {

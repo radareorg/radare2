@@ -1255,8 +1255,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 						r_config_set_i (core->config, "asm.bits", f->bits);
 					}
 				} else {
-					r_config_set_i (core->config, "asm.bits", oldbits);
-					oldbits = 0;
+					if (oldbits != 0) {
+						r_config_set_i (core->config, "asm.bits", oldbits);
+						oldbits = 0;
+					}
 				}
 			} else {
 				if (oldbits) {

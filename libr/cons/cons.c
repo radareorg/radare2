@@ -201,7 +201,7 @@ R_API void r_cons_fill_line() {
 	char *p, white[1024];
 	int cols = I.columns-1;
 	if (cols<1) return;
-	if (cols>sizeof (white)) {
+	if (cols>=sizeof (white)) {
 		p = malloc (cols+1);
 	} else p = white;
 	memset (p, ' ', cols);

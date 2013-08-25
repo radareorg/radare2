@@ -20,7 +20,7 @@ static char *r_line_nullstr = "";
 #define ONLY_VALID_CHARS 1
 
 #if ONLY_VALID_CHARS
-static int is_valid_char (unsigned char ch) {
+static inline int is_valid_char (unsigned char ch) {
 	if (ch>=32 && ch<=127) return R_TRUE;
 	switch (ch) {
 	case 0: // wat
@@ -88,7 +88,6 @@ static int r_line_readchar() {
 do_it_again:
 #if __WINDOWS__
 	h = GetStdHandle (STD_INPUT_HANDLE);
-
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
 	ret = ReadConsole (h, buf, 1, &out, NULL);
@@ -261,11 +260,13 @@ R_API void r_line_autocomplete() {
 	} else opt = 0;
 
 	p = (char *)r_str_lchr (I.buffer.data, ' ');
+	if (!p)
+		p = (char *)r_str_lchr (I.buffer.data, '@'); // HACK FOR r2
 	if (p) {
 		p++;
 		plen = sizeof (I.buffer.data)-(int)(size_t)(p-I.buffer.data);
 	} else {
-		p = I.buffer.data;
+		p = I.buffer.data; // XXX: removes current buffer 
 		plen = sizeof (I.buffer.data);
 	}
 	/* autocomplete */
@@ -279,21 +280,18 @@ R_API void r_line_autocomplete() {
 	} else
 	if (argc>0) {
 		if (*p) {
-			// TODO: do not use strdup here
 			// TODO: avoid overflow
-			char *root = strdup (argv[0]);
+			const char *root = argv[0];
 			// try to autocomplete argument
 			for (i=0; i<argc; i++) {
 				j = 0;
 				while (argv[i][j]==root[j] && root[j] != '\0') j++;
-				free (root);
-				root = strdup (argv[i]);
-				if (j<strlen (root))
-					root[j] = 0;
+				root = argv[i];
 			}
 			strcpy (p, root);
+			if (j<strlen (root))
+				p[j] = 0;
 			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
-			free (root);
 		}
 	}
 
@@ -351,10 +349,9 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	memset (&buf, 0, sizeof buf);
 	r_cons_set_raw (1);
 
-//r_cons_gotoxy()
 	if (I.echo) {
 		r_cons_clear_line();
-		eprintf ("\x1b[0K\r%s", I.prompt);
+		printf ("\x1b[0K\r%s", I.prompt);
 		fflush (stdout);
 	}
 	for (;;) {
