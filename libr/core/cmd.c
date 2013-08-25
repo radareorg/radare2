@@ -1294,7 +1294,10 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 	data = r_file_abspath (file);
 	odata = r_file_slurp (data, NULL);
 	free (data);
-	if (!odata) return R_FALSE;
+	if (!odata) {
+		eprintf ("Cannot open '%s'\n", file);
+		return R_FALSE;
+	}
 	nl = strchr (odata, '\n');
 	if (nl) {
 		data = odata;
