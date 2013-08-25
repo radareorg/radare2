@@ -442,7 +442,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1]) {
 			if (core->num->value == UT64_MIN)
 				r_core_cmd (core, input+1, 0);
-		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+		} else r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		break;
 	case '\0':
 	default:
