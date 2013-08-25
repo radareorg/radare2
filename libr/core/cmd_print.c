@@ -796,7 +796,7 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_clear ();
 		for (i=0; i< 4; i++) {
 			char *s = r_print_randomart (core->block, core->blocksize, core->offset);
-			r_cons_gotoxy (0, 0);
+			r_cons_gotoxy (1, 0);
 			r_cons_printf ("\n%s\n", s);
 			free (s);
 			core->offset += core->blocksize;
@@ -807,7 +807,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_read_at (core, core->offset, core->block, core->blocksize);
 			s = r_print_randomart (core->block, core->blocksize, core->offset);
 			r_cons_printf ("%s\n", s);
-			r_cons_column (i!=3?20:0);
+			r_cons_column (i!=3? 20: 0);
 			free (s);
 			core->offset += core->blocksize;
 			r_core_read_at (core, core->offset, core->block, core->blocksize);
