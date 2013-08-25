@@ -1127,14 +1127,16 @@ toro:
 			comment = NULL;
 		} else r_cons_newline ();
 		if (line) {
+#if 0
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
 					memset (line, ' ', strlen (line));
 				if (show_color) {
-					r_cons_printf ("  %s%s"Color_RESET"; --\n", color_flow, line);
+					r_cons_printf ("| %s%s"Color_RESET"; --\n", color_flow, line);
 				} else 
 					r_cons_printf ("  %s; --\n", line);
 			}
+#endif
 			free (line);
 			free (refline);
 			free (refline2);
