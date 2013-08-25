@@ -1,7 +1,7 @@
 include ../config.mk
 
 NAME=r_cons
-OBJS=cons.o pipe.o output.o grep.o
+OBJS=cons.o pipe.o output.o grep.o canvas.o
 OBJS+=line.o hud.o rgb.o input.o pal.o
 DEPS=r_util
 

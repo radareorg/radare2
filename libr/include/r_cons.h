@@ -91,6 +91,15 @@ typedef struct r_cons_palette_t {
 
 typedef void (*RConsEvent)(void *);
 
+typedef struct r_cons_canvas_t {
+	int w;
+	int h;
+	int x;
+	int y;
+	char *b;
+	int blen;
+} RConsCanvas;
+
 typedef struct r_cons_t {
 	RConsGrep grep;
 	char *buffer;
@@ -215,6 +224,13 @@ enum {
 };
 
 #ifdef R_API
+R_API RConsCanvas* r_cons_canvas_new (int w, int h);
+R_API void r_cons_canvas_free (RConsCanvas *c);
+R_API void r_cons_canvas_print(RConsCanvas *c);
+R_API char *r_cons_canvas_to_string(RConsCanvas *c);
+R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
+R_API void r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
+
 R_API RCons *r_cons_new ();
 R_API RCons *r_cons_singleton ();
 R_API RCons *r_cons_free ();
