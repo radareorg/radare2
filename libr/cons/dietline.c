@@ -287,15 +287,19 @@ R_API void r_line_autocomplete() {
 		if (*p) {
 			// TODO: avoid overflow
 			const char *root = argv[0];
+			int min_common_len = strlen(root);
+
 			// try to autocomplete argument
 			for (i=0; i<argc; i++) {
 				j = 0;
 				while (argv[i][j]==root[j] && root[j] != '\0') j++;
+				if (j < min_common_len)
+					min_common_len = j;
 				root = argv[i];
 			}
 			strcpy (p, root);
-			if (j<strlen (root))
-				p[j] = 0;
+			if (min_common_len<strlen (root))
+				p[min_common_len] = 0;
 			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
 		}
 	}
