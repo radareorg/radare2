@@ -16,7 +16,6 @@ static int obs = 0;
 static int curset = 0, cursor = 0, ocursor=-1;
 static int color = 1;
 static int debug = 1;
-static int flags = R_PRINT_FLAGS_ADDRMOD;
 static int zoom = 0;
 
 static int marks_init = 0;
@@ -153,9 +152,10 @@ static int visual_nkey(RCore *core, int ch) {
 }
 
 static void setcursor (RCore *core, int cur) {
+	int flags = core->print->flags; // wtf
 	curset = cur;
-	if (curset) flags|=R_PRINT_FLAGS_CURSOR;
-	else flags &= ~(flags&R_PRINT_FLAGS_CURSOR);
+	if (curset) flags |= R_PRINT_FLAGS_CURSOR;
+	else flags &= ~(R_PRINT_FLAGS_CURSOR);
 	r_print_set_flags (core->print, flags);
 	core->print->col = curset? 1: 0;
 }
@@ -262,7 +262,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		break;
 	case 'c':
-		setcursor (core, curset ^ 1);
+		setcursor (core, curset?0:1);
 		break;
 	case 'C':
 		color = color? 0: 1;
@@ -930,9 +930,9 @@ static void r_core_visual_refresh (RCore *core) {
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt, *teefile;
 	ut64 scrseek;
-	int ch;
-	obs = core->blocksize;
+	int flags, ch;
 
+	obs = core->blocksize;
 	core->vmode = R_TRUE;
 	core->cons->event_data = core;
 	core->cons->event_resize = \
@@ -949,11 +949,14 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	teefile = r_cons_singleton ()->teefile;
 	r_cons_singleton ()->teefile = "";
 
+	core->print->flags |=  R_PRINT_FLAGS_ADDRMOD;
 	do {
+		flags = core->print->flags;
 		color = r_config_get_i (core->config, "scr.color");
 		if (color) flags |= R_PRINT_FLAGS_COLOR;
 		debug = r_config_get_i (core->config, "cfg.debug");
 		flags = R_PRINT_FLAGS_ADDRMOD | R_PRINT_FLAGS_HEADER;
+		r_print_set_flags (core->print, core->print->flags);
 		scrseek = r_num_math (core->num,
 			r_config_get (core->config, "scr.seek"));
 		if (scrseek != 0LL)
