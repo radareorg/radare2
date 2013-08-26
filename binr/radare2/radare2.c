@@ -99,11 +99,14 @@ static int main_help(int line) {
 		" -h, -hh      show help message, -hh for long\n");
 	if (line==2)
 		printf (
-		"Files:\n"
+		"Scripts:\n"
+		" system "R2_PREFIX"/share/radare2/radare2rc\n"
+		" user   ~/.radare2rc\n"
+		" file   ${filename}.r2\n"
+		"Environment:\n"
 		" RHOMEDIR     ~/.config/radare2\n"
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n"
 		" MAGICPATH    "R_MAGIC_PATH"\n"
-		"Environment:\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" LIBR_PLUGINS path to plugins directory\n"
 		" VAPIDIR      path to extra vapi directory\n"
@@ -507,6 +510,11 @@ int main(int argc, char **argv) {
 	}
 	r_list_free (evals);
 #endif
+	{
+	const char *global_rc = R2_PREFIX"/share/radare2/radare2rc";
+	if (r_file_exists (global_rc))
+		(void)r_core_run_script (&r, global_rc);
+	}
 	/* run -i and -c flags */
 	cmdfile[cmdfilei] = 0;
 	for (i=0; i<cmdfilei; i++) {
@@ -521,6 +529,7 @@ int main(int argc, char **argv) {
 		if (ret<0 || (ret==0 && quiet))
 			return 0;
 	}
+
 	/* load <file>.r2 */
 	{
 		char f[128];
