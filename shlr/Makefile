@@ -16,7 +16,7 @@ all: sdb/sdb
 clean mrproper:
 	@for a in ${MODS} ; do ${MAKE} -C $$a clean ; done
 
-#$(SDBLIB) sdb/sdb:
+$(SDBLIB) sdb/sdb:
 	cd sdb ; ${MAKE} src/sdb-version.h
 	cd sdb ; \
 		${MAKE} clean && \
