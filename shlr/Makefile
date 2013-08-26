@@ -14,6 +14,8 @@ all: sdb/sdb
 	done
 
 clean mrproper:
+	rm -f sdb/sdb
+	cd sdb ; ${MAKE} clean
 	@for a in ${MODS} ; do ${MAKE} -C $$a clean ; done
 
 $(SDBLIB) sdb/sdb:
