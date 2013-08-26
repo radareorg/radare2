@@ -1,12 +1,13 @@
 include ../config.mk
 
 NAME=r_anal
-DEPS=r_util r_db r_lib r_reg r_syscall r_diff r_db
+DEPS=r_util r_db r_lib r_reg r_syscall r_diff
 # r_core (commented as it would be recursive)
 CFLAGS*=HAVE_CPARSE=$(HAVE_CPARSE)
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
 LDFLAGS+=${BN_LIBS}
+include ../db/build.mk
 
 .PHONY: pre libs ${EXTRA_CLEAN}
 
