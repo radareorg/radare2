@@ -9,15 +9,14 @@ SDB_CONFIG=${PWD}/sdb-config.mk
 
 all: sdb/sdb
 	@for a in ${MODS} ; do \
-		echo ${MAKE} -C $$a HAVE_VALA= SDB_CONFIG=${SDB_CONFIG} ROOT=${PWD}/../ ; \
-		${MAKE} -C $$a HAVE_VALA= SDB_CONFIG=${SDB_CONFIG} ROOT=${PWD}/../ ; \
+		echo ${MAKE} -C $$a ; \
+		${MAKE} -C $$a HAVE_VALA= ROOT=${PWD}/../ ; \
 	done
 
 clean mrproper:
 	@for a in ${MODS} ; do ${MAKE} -C $$a clean ; done
 
-#$(SDBLIB):
-sdb/sdb:
+#$(SDBLIB) sdb/sdb:
 	cd sdb ; ${MAKE} src/sdb-version.h
 	cd sdb ; \
 		${MAKE} clean && \

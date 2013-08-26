@@ -8,10 +8,6 @@ SOEXT?=dylib
 LIBNAME=libr_tcc.${SOEXT}
 
 all: ${LIBNAME} libr_tcc.a
-	${MAKE} test
-
-test:
-	gcc libr_tcc.a -I. test.c
 
 ${LIBNAME}: ${OFILES}
 	${CC} -o ${LIBNAME} ${LDFLAGS} ${OFILES}
