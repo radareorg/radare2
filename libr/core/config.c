@@ -522,7 +522,8 @@ static int config_color_callback(void *user, void *data) {
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_COLOR;
 	} else {
-		core->print->flags ^= R_PRINT_FLAGS_COLOR;
+		//c:core->print->flags ^= R_PRINT_FLAGS_COLOR;
+		core->print->flags &= (~R_PRINT_FLAGS_COLOR);
 	}
 	r_print_set_flags (core->print, core->print->flags);
 	return R_TRUE;

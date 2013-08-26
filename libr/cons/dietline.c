@@ -7,13 +7,14 @@
 
 #if __WINDOWS__
 #include <windows.h>
+#define USE_UTF8 0
 #else
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <signal.h>
+#define USE_UTF8 1
 #endif
 
-#define USE_UTF8 1
 
 static char *r_line_nullstr = "";
 
@@ -58,6 +59,7 @@ R_API int r_line_dietline_init() {
 	return R_TRUE;
 }
 
+#if USE_UTF8
 /* read utf8 char into 's', return the length in bytes */
 static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	// TODO: add support for w32
@@ -77,13 +79,14 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	s[len] = 0;
 	return len;
 }
+#endif
 
 static int r_line_readchar() {
 	ut8 buf[2];
 	*buf = '\0';
 #if __WINDOWS__
 	BOOL ret;
-	LPDWORD mode, out;
+	DWORD mode, out;
 	HANDLE h;
 #endif
 
@@ -336,7 +339,10 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	static int gcomp_idx = 0;
 	static int gcomp = 0;
 	signed char buf[10];
-	int utflen, ch, i; /* grep completion */
+#if USE_UTF8
+	int utflen;
+#endif
+	int ch, i; /* grep completion */
 
 	I.buffer.index = I.buffer.length = 0;
 	I.buffer.data[0] = '\0';
@@ -682,8 +688,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					I.buffer.data[i] = I.buffer.data[i-utflen];
 				memcpy (I.buffer.data+I.buffer.index, buf, utflen);
 #else
-				for (i = ++I.buffer.length;i>I.buffer.index;i--)
-					I.buffer.data[i] = I.buffer.data[i-];
+				for (i = ++I.buffer.length; i>I.buffer.index; i--)
+					I.buffer.data[i] = I.buffer.data[i-1];
 				I.buffer.data[I.buffer.index] = buf[0];
 #endif
 			} else {

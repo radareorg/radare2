@@ -969,6 +969,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 
 	if (color)
 		r_cons_printf (Color_RESET);
+	r_config_set_i (core->config, "scr.color", color);
 	core->print->cur_enabled = R_FALSE;
 	if (autoblocksize)
 		r_core_block_size (core, obs);
