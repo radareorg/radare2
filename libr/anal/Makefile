@@ -12,10 +12,10 @@ LDFLAGS+=${BN_LIBS}
 
 all: plugins
 
-plugins: libr_anal.${EXT_SO} libr_anal.${EXT_AR}
+plugins: ${LIBSO} ${LIBAR}
 	@${MAKE} -C p all
 
-libr_anal.${EXT_SO} libr_anal.${EXT_AR}: pre
+#${LIBSO} ${LIBAR}: pre
 
 include ${STATIC_ANAL_PLUGINS}
 STATIC_OBJS=$(addprefix $(LTOP)/anal/p/,$(STATIC_OBJ))
@@ -25,7 +25,7 @@ OBJLIBS+=hint.o vm.o anal.o data.o xrefs.o esil.o
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
 
-pre:
-	@cd $(TOP)/shlr && ${MAKE}
+#pre:
+#	@cd $(TOP)/shlr && ${MAKE}
 
 include $(LTOP)/rules.mk

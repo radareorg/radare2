@@ -30,7 +30,7 @@ else
 	NDK=${HOME}/Downloads/android-ndk-r7b
 fi
 
-if [ ! -d "${SDK}" ]; then 
+if [ ! -d "${SDK}/tools" ]; then 
 	echo "Cannot find Android SDK ${SDK}"
 	echo "Edit ~/.r2androidrc with:"
 	echo 'SDK=~/Downloads/android-sdk-$(uname)'
@@ -72,6 +72,8 @@ export CC
 export PS1
 AR=arm-linux-androideabi-ar
 export AR
+RANLIB=arm-linux-androideabi-ranlib
+export RANLIB
 A=$@
 if [ -n "$A" ]; then
 	${SHELL} -c "$A"

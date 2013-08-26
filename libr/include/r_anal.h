@@ -419,8 +419,8 @@ enum {
 	R_ANAL_OP_TYPE_LOAD  = 0x20000000,  /* load from memory to register */
 	R_ANAL_OP_TYPE_LEA   = 0x40000000,
 	R_ANAL_OP_TYPE_LEAVE = 0x80000000,
-	R_ANAL_OP_TYPE_ROR   = 0x100000000,
-	R_ANAL_OP_TYPE_ROL   = 0x200000000,
+	R_ANAL_OP_TYPE_ROR   = 0x100000000LL,
+	R_ANAL_OP_TYPE_ROL   = 0x200000000LL,
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */

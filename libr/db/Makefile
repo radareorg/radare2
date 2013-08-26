@@ -28,5 +28,11 @@ SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 OBJS+=${SDBOBJS}
 
 CFLAGS+=-I${SDBPATH}/src
+pre: ${SDBLIB}
+	${MAKE} all
 
 include ../rules.mk
+
+${SDBLIB}:
+	${MAKE} -C ${SDBPATH}
+

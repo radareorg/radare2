@@ -1,5 +1,5 @@
 include ../../../global.mk
-SDB=$(STOP)/sdb/src/sdb
+SDB=$(STOP)/sdb/sdb
 
 all: dospart.sdb
 

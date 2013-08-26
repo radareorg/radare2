@@ -17,6 +17,7 @@ Rangstr rangstr_new (const char *s) {
 	rs.next = 1;
 	rs.t = strlen (s);
 	rs.p = s;
+	rs.type = 0;
 	return rs;
 }
 
@@ -62,6 +63,7 @@ Rangstr rangstr_news (const char *s, ut16 *res, int i) {
 	rs.f = res[i];
 	rs.t = res[i]+res[i+1];
 	rs.p = s;
+	rs.type = 0;
 	return rs;
 }
 
