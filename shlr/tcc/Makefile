@@ -17,8 +17,8 @@ ${LIBNAME}: ${OFILES}
 	${CC} -o ${LIBNAME} ${LDFLAGS} ${OFILES}
 
 libr_tcc.a: ${OFILES}
-	ar -r libr_tcc.a ${OFILES}
-	ranlib libr_tcc.a
+	${AR} -r libr_tcc.a ${OFILES}
+	${RANLIB} libr_tcc.a
 
 clean:
 	rm -f ${LIBNAME} *.o *.a

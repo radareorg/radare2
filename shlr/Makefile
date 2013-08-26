@@ -1,23 +1,34 @@
 include ../config-user.mk
 include ../mk/gcc.mk
 
-MODS=udis86 java sdb tcc
+HOST_CC?=gcc
+MODS=udis86 java tcc
 URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
-all:
+all: sdb/sdb
 	@for a in ${MODS} ; do \
+		echo ${MAKE} -C $$a HAVE_VALA= SDB_CONFIG=${SDB_CONFIG} ROOT=${PWD}/../ ; \
 		${MAKE} -C $$a HAVE_VALA= SDB_CONFIG=${SDB_CONFIG} ROOT=${PWD}/../ ; \
 	done
 
 clean mrproper:
 	@for a in ${MODS} ; do ${MAKE} -C $$a clean ; done
 
-$(SDBLIB):
+#$(SDBLIB):
+sdb/sdb:
+	cd sdb ; ${MAKE} src/sdb-version.h
+	cd sdb ; \
+		${MAKE} clean && \
+		${MAKE} CC=${HOST_CC} && \
+		cp -f src/sdb sdb && \
+		${MAKE} clean
 	cd sdb ; ${MAKE} src/sdb-version.h
 	cd sdb/src ; ${MAKE} ARCH=xxx RANLIB="${RANLIB}" \
 		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
+	${RANLIB} sdb/src/libsdb.a
+
 
 .PHONY: sdb-sync sync-sdb sdbclean
 F=README.md config.mk src Makefile
