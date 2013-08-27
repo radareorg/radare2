@@ -3,7 +3,7 @@ RANLIB=x86_64-w64-mingw32-ranlib
 ONELIB=0
 OSTYPE=windows
 LINK=
-CC_AR=echo ar -r ${LIBAR}
+CC_AR=x86_64-w64-mingw32-ar -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o

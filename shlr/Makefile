@@ -1,5 +1,5 @@
 include ../config-user.mk
-include ../mk/gcc.mk
+include ../mk/${COMPILER}.mk
 
 HOST_CC?=gcc
 MODS=udis86 java tcc
@@ -23,10 +23,10 @@ $(SDBLIB) sdb/sdb:
 	cd sdb ; \
 		${MAKE} clean && \
 		${MAKE} CC=${HOST_CC} && \
-		cp -f src/sdb sdb && \
-		${MAKE} clean
+		cp -f src/sdb sdb
+	cd sdb ; ${MAKE} clean
 	cd sdb ; ${MAKE} src/sdb-version.h
-	cd sdb/src ; ${MAKE} ARCH=xxx RANLIB="${RANLIB}" \
+	cd sdb/src ; ${MAKE} ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED=-fPIC \
 		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 

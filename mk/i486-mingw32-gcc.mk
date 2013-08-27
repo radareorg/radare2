@@ -5,7 +5,7 @@ RANLIB=i486-mingw32-ranlib
 OSTYPE=windows
 ONELIB=0
 LINK=-shared
-CC_AR=echo ar -r ${LIBAR}
+CC_AR=i486-mingw32-gcc -r ${LIBAR}
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o
