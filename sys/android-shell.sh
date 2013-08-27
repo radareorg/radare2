@@ -26,7 +26,7 @@ if [ -f ~/.r2androidrc ]; then
 	. ~/.r2androidrc
 	echo "Using data from ${HOME}/.r2androidrc.."
 else
-	[ -z "${SDKk}" ] && SDK=${HOME}/Downloads/android-sdk-${OS}
+	[ -z "${SDK}" ] && SDK=${HOME}/Downloads/android-sdk-${OS}
 	[ -z "${NDK}" ] && NDK=${HOME}/Downloads/android-ndk-r7b
 fi
 
