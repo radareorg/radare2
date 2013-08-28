@@ -103,7 +103,7 @@ typedef struct r_cons_canvas_t {
 typedef struct r_cons_t {
 	RConsGrep grep;
 	char *buffer;
-	int line;
+	//int line;
 	int buffer_len;
 	int buffer_sz;
 	char *lastline;
@@ -137,6 +137,7 @@ typedef struct r_cons_t {
 	int widthfix;
 	int truecolor; // 1 = rgb 256), 2 = truecolor (16M)
 	RConsPalette pal;
+	struct r_line_t *line;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -358,6 +359,9 @@ struct r_line_t {
 	char *clipboard;
 	int disable;
 	void *user;
+	int (*hist_up)(void *user);
+	int (*hist_down)(void *user);
+	char *contents;
 }; /* RLine */
 
 #ifdef R_API

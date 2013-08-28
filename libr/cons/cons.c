@@ -105,6 +105,7 @@ static void resize (int sig) {
 #endif
 
 R_API RCons *r_cons_new () {
+	I.line = r_line_new ();
 	I.event_interrupt = NULL;
 	I.blankline = R_TRUE;
 	I.widthfix = 0;
@@ -118,7 +119,7 @@ R_API RCons *r_cons_new () {
 	I.fdin = stdin;
 	I.fdout = 1;
 	I.breaked = R_FALSE;
-	I.lines = 0;
+	//I.lines = 0;
 	I.buffer = NULL;
 	I.buffer_sz = 0;
 	I.buffer_len = 0;
@@ -151,6 +152,10 @@ R_API RCons *r_cons_new () {
 }
 
 R_API RCons *r_cons_free () {
+	if (I.line) {
+		r_line_free (I.line);
+		I.line = NULL;
+	}
 	if (I.buffer) {
 		free (I.buffer);
 		I.buffer = NULL;

@@ -14,7 +14,10 @@ R_API RLine *r_line_singleton () {
 }
 
 R_API RLine *r_line_new () {
+	I.hist_up = NULL;
+	I.hist_down = NULL;
 	I.prompt = strdup ("> ");
+	I.contents = NULL;
 	if (!r_line_dietline_init ())
 		eprintf ("error: r_line_dietline_init\n");
 	return &I;

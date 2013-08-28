@@ -494,9 +494,8 @@ R_API int r_core_init(RCore *core) {
 	/* initialize libraries */
 	core->cons = r_cons_singleton ();
 	if (singleton) {
-		RLine *line = r_line_new ();
 		r_cons_new ();
-		line->user = core;
+		core->cons->line->user = core;
 		core->cons->user_fgets = (void *)myfgets;
 		//r_line_singleton()->user = (void *)core;
 		r_line_hist_load (R2_HOMEDIR"/history");

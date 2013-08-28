@@ -244,7 +244,10 @@ R_API char *r_file_root(const char *root, const char *path) {
 
 R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 	int ret;
-	FILE *fd = r_sandbox_fopen (file, "wb");
+	FILE *fd;
+	if (!file || !*file || !buf)
+		return R_FALSE;
+	fd = r_sandbox_fopen (file, "wb");
 	if (fd == NULL) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
