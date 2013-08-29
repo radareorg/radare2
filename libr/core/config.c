@@ -43,6 +43,11 @@ static int config_hexcols_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_heightfix_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->heightfix = node->i_value;
+	return R_TRUE;
+}
 static int config_widthfix_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->widthfix = node->i_value;
@@ -832,6 +837,8 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "hex.cols", "Configure the number of columns in hexdump");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
+	r_config_set_cb (cfg, "scr.heightfix", "false", &config_widthfix_callback);
+	r_config_desc (cfg, "scr.heightfix", "Workaround for Linux TTY");
 	r_config_set_cb (cfg, "scr.widthfix", "false", &config_widthfix_callback);
 	r_config_desc (cfg, "scr.widthfix", "Workaround for Prompt iOS ssh client");
 	r_config_set (cfg, "search.in", "file");

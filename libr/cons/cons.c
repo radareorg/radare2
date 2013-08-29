@@ -108,6 +108,7 @@ R_API RCons *r_cons_new () {
 	I.line = r_line_new ();
 	I.event_interrupt = NULL;
 	I.blankline = R_TRUE;
+	I.heightfix = 0;
 	I.widthfix = 0;
 	I.event_resize = NULL;
 	I.data = NULL;
@@ -441,6 +442,8 @@ R_API int r_cons_get_size(int *rows) {
 	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
 		I.columns = win.ws_col;
 		I.rows = win.ws_row-1;
+		if (I.heightfix)
+			I.rows--;
 	} else {
 		I.columns = 80;
 		I.rows = 23;

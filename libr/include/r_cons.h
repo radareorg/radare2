@@ -135,6 +135,7 @@ typedef struct r_cons_t {
 	char *pager;
 	int blankline;
 	int widthfix;
+	int heightfix;
 	int truecolor; // 1 = rgb 256), 2 = truecolor (16M)
 	RConsPalette pal;
 	struct r_line_t *line;
