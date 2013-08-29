@@ -533,8 +533,10 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 	int slen, plen;
 	if (ptr == NULL)
 		return strdup (string);
-	plen = r_str_len_utf8 (ptr);
-	slen = r_str_len_utf8 (string);
+	//plen = r_str_len_utf8 (ptr);
+	//slen = r_str_len_utf8 (string);
+	plen = strlen (ptr);
+	slen = strlen (string);
 	ptr = realloc (ptr, slen + plen + 1);
 	if (ptr == NULL)
 		return NULL;
