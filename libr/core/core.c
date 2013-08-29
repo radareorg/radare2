@@ -1119,3 +1119,30 @@ R_API char *r_core_editor (RCore *core, const char *str) {
 R_API RCons *r_core_get_cons (RCore *core) { return core->cons; }
 R_API RConfig *r_core_get_config (RCore *core) { return core->config; }
 R_API RBin *r_core_get_bin (RCore *core) { return core->bin; }
+
+R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) {
+	int i, num;
+	RBuffer *b= NULL;
+	char code[1024], ptr[128];
+
+	num = r_syscall_get_num (core->anal->syscall, name);
+	snprintf (code, sizeof (code),
+		"ptr@syscall(%d);\n"
+		"main@global(0) { ptr(%s); }\n", num, args);
+	r_egg_reset (core->egg);
+	// TODO: setup arch/bits/os?
+	r_egg_load (core->egg, code, 0);
+	if (!r_egg_compile (core->egg))
+		eprintf ("Cannot compile.\n" );
+	if (!r_egg_assemble (core->egg)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+	}
+	if ((b = r_egg_get_bin (core->egg))) {
+		if (b->length>0) {
+			for (i=0; i<b->length; i++)
+				r_cons_printf ("%02x", b->buf[i]);
+			r_cons_printf ("\n");
+		}
+	}
+	return b;
+}

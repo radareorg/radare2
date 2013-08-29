@@ -92,6 +92,12 @@ typedef struct r_debug_map_t {
 	int user;
 } RDebugMap;
 
+typedef struct r_debug_signal_t {
+	int type;
+	int num;
+	ut64 handler;
+} RDebugSignal;
+
 typedef struct r_debug_desc_t {
 	int fd;
 	char *path;
@@ -184,6 +190,7 @@ typedef struct r_debug_plugin_t {
 	int (*cont)(RDebug *dbg, int pid, int tid, int sig);
 	int (*wait)(RDebug *dbg, int pid);
 	int (*kill)(RDebug *dbg, int pid, int tid, int sig);
+	RList* (*kill_list)(RDebug *dbg);
 	int (*contsc)(RDebug *dbg, int pid, int sc);
 	RList* (*frames)(RDebug *dbg, ut64 at);
 	RBreakpointCallback breakpoint;
@@ -240,6 +247,7 @@ R_API RDebug *r_debug_free(RDebug *dbg);
 
 /* send signals */
 R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig);
+R_API RList *r_debug_kill_list(RDebug *dbg);
 // XXX: must be uint64 action
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
 R_API int r_debug_step(RDebug *dbg, int steps);
