@@ -138,6 +138,7 @@ typedef struct r_core_t {
 	// visual
 	int http_up;
 	int printidx;
+	int utf8;
 	RList *watchers;
 } RCore;
 

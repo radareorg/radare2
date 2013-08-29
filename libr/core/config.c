@@ -434,7 +434,7 @@ static int config_asmarch_callback(void *user, void *data) {
 	{
 		char asmparser[32];
 		snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
-		
+
 		r_config_set (core->config, "asm.parser", asmparser);
 	}
 	if (!r_config_set (core->config, "anal.plugin", node->value)) {
@@ -501,7 +501,7 @@ static int config_rgbcolor_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore *) user;
 	if (node->i_value) {
-		r_cons_singleton()->truecolor = 
+		r_cons_singleton()->truecolor =
 		(r_config_get_i (core->config, "scr.truecolor"))?2:1;
 	} else {
 		r_cons_singleton()->truecolor = 0;
@@ -535,6 +535,13 @@ static int config_pager_callback(void *user, void *data) {
 
 	/* Let cons know we have a new pager. */
 	core->cons->pager = node->value;
+	return R_TRUE;
+}
+
+static int config_utf8_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->utf8 = node->i_value;
 	return R_TRUE;
 }
 
@@ -799,6 +806,8 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "scr.colorops", "colorize in numbers/registers in opcodes");
 	r_config_set_cb (cfg, "scr.pager", "", &config_pager_callback);
 	r_config_desc (cfg, "scr.pager", "Select pager program (used if output doesn't fit on window)");
+	r_config_set_cb (cfg, "scr.utf8", "false", &config_utf8_callback);
+	r_config_desc (cfg, "scr.utf8", "show UTF-8 characters instead of ANSI");
 	//r_config_set_cb (cfg, "scr.nkey", "function", &config_scrnkey_callback);
 	r_config_set_cb (cfg, "scr.nkey", "hit", &config_scrnkey_callback);
 	r_config_desc (cfg, "scr.nkey", "Select the seek mode in visual");

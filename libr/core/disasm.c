@@ -1,6 +1,31 @@
 /* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include "r_core.h"
+#include "r_cons.h"
+
+const char* const r_vline_a[] = {
+	"|", // LINE_VERT
+	"|-", // LINE_CROSS
+	"/", // RUP_CORNER
+	"\\", // RDWN_CORNER
+	"->", // ARROW_RIGHT
+	"=<", // ARROW_LEFT
+	"-", // LINE_HORIZ
+	",", // LUP_CORNER
+	"`", // LDWN_CORNER
+};
+
+const char* const r_vline_u[] = {
+	"│", // LINE_VERT
+	"├", // LINE_CROSS
+	"╒", // RUP_CORNER
+	"╘", // RDWN_CORNER
+	">", // ARROW_RIGHT
+	"<", // ARROW_LEFT
+	"─", // LINE_HORIZ
+	"┌", // LUP_CORNER
+	"└", // LDWN_CORNER
+};
 
 R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 // XXX not here
@@ -37,9 +62,11 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 }
 
 // this is another random hack for reflines.. crappy stuff
-static char *filter_refline2(const char *str) {
+static char *filter_refline2(RCore *core, const char *str) {
+	char *p = r_str_replace (strdup (str), "|", core->cons->vline[LINE_VERT], 1);
+	p = r_str_replace (strdup (p), "`", core->cons->vline[LINE_VERT], 1);
 	char n = '|';
-	char *p, *s = strdup (str);
+	char *s = strdup (str);
 	for (p=s; *p; p++) {
 		switch (*p) {
 		case '`':
@@ -56,17 +83,24 @@ static char *filter_refline2(const char *str) {
 	return s;
 }
 
-static char *filter_refline(const char *str) {
+static char *filter_refline(RCore *core, const char *str) {
 	char *p, *s = strdup (str);
-	p = strstr (s, "->");
-	if (p) p[0]=p[1]=' ';
-	p = strstr (s, "=<");
-	if (p) p[0]=p[1]=' ';
-	for (p=s; *p; p++) {
-		if (*p=='`') *p = '|';
-		if (*p=='-') *p = ' ';
-		if (*p=='=') *p = '|';
-	}
+	p = strstr (s, core->cons->vline[ARROW_RIGHT]);
+	if (p)
+		p = r_str_replace (strdup (p), core->cons->vline[ARROW_RIGHT], " ", 0);
+
+	p = strstr (s, core->cons->vline[ARROW_LEFT]);
+	if (p)
+		p = r_str_replace (strdup (p), core->cons->vline[ARROW_LEFT], " ", 0);
+
+	p = s;
+	p = r_str_replace (strdup (p), "`",
+		core->cons->vline[LINE_VERT], 1); // "`" -> "|"
+	p = r_str_replace (strdup (p),
+		core->cons->vline[LINE_HORIZ], " ", 1); // "-" -> " "
+	p = r_str_replace (strdup (p),
+		core->cons->vline[LINE_HORIZ],
+		core->cons->vline[LINE_VERT], 1); // "=" -> "|"
 	return s;
 }
 
@@ -176,6 +210,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int colorop = r_config_get_i (core->config, "scr.colorops");
+	int show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	int acase = r_config_get_i (core->config, "asm.ucase");
 	int atabs = r_config_get_i (core->config, "asm.tabs");
 	int decode = r_config_get_i (core->config, "asm.decode");
@@ -205,7 +240,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int flagspace_ports = r_flag_space_get (core->flags, "ports");
 	int lbytes = r_config_get_i (core->config, "asm.lbytes");
 	int show_comment_right = 0;
-	const char *pre = "  ";
+	char *pre = "  ";
 	char *ocomment = NULL;
 	int linesopts = 0;
 	int lastfail = 0;
@@ -279,6 +314,11 @@ toro:
 		}
 	}
 #endif
+	if (r_config_get_i (core->config, "scr.utf8"))
+		core->cons->vline = r_vline_u;
+	else
+		core->cons->vline = r_vline_a;
+
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
 		if (r_anal_op (core->anal, &analop, core->offset+core->print->cur,
@@ -322,10 +362,9 @@ toro:
 			break;
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
-			line = r_anal_reflines_str (core->anal,
-				core->reflines, at, linesopts);
-			refline = filter_refline (line);
-			refline2 = filter_refline2 (refline);
+			line = r_anal_reflines_str (core, at, linesopts);
+			refline = filter_refline (core, line);
+			refline2 = filter_refline2 (core, refline);
 		} else {
 			line = NULL;
 			refline = strdup ("");
@@ -381,15 +420,17 @@ toro:
 						r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
 							&& f->addr==at)?' ':'|', refline2);
 					}
-					if (show_color)
-					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
-						pal_comment, refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
-						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
-						fun?fun->name:"unk");
-					else r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
-						refi->type=='c'?"CODE (JMP)":
-						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
-						fun?fun->name: "unk");
+					if (show_color) {
+						r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
+							pal_comment, refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
+							refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
+							fun?fun->name:"unk");
+					} else {
+						r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
+							refi->type=='c'?"CODE (JMP)":
+							refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
+							fun?fun->name: "unk");
+					}
 				}
 			}
 				r_list_free (xrefs);
@@ -555,7 +596,8 @@ toro:
 						r_core_read_at (core, ptr, b, sizeof (b)); //memref);
 						off = r_mem_get_num (b, memref, 1);
 						item = r_flag_get_i (core->flags, off);
-						{ char s[64];
+						{
+						char s[64];
 						r_str_ncpy (s, (const char *)b, sizeof (s));
 						r_cons_printf ("; LEA %s = [0x%"PFMT64x"] = 0x%"PFMT64x" \"%s\"\n",
 								dst->reg->name, ptr, off, item?item->name: s);
@@ -593,15 +635,11 @@ toro:
 					r_list_foreach (f->locals, l_iter, f_loc) {
 						if (f_loc && f_loc->addr == at) {
 							if (show_color) {
-								r_cons_strcat (color_fline);
-								r_cons_strcat (pre); //"| "
-								r_cons_strcat (Color_RESET);
+								r_cons_printf ("%s%s"Color_RESET, color_fline, pre); // "|"
 							} else
-								r_cons_strcat (pre); //"| "
+								r_cons_printf (pre); //"| "
 							if (show_lines && refline) {
-								r_cons_strcat (color_flow);
-								r_cons_strcat (refline);
-								r_cons_strcat (Color_RESET);
+								r_cons_printf ("%s%s"Color_RESET, color_flow, refline);
 							}
 							if (show_offset)
 								r_cons_printf ("; -- ");
@@ -616,56 +654,64 @@ toro:
 					char *sign = r_anal_fcn_to_string (core->anal, f);
 					if (f->type == R_ANAL_FCN_TYPE_LOC) {
 						if (show_color) {
-							r_cons_strcat (color_fline);
-							r_cons_strcat ("|- ");
-							r_cons_strcat (color_floc);
-							r_cons_printf ("%s"Color_RESET" %d\n", f->name, f->size);
-							r_cons_strcat (color_fline);
-							r_cons_strcat ("| "Color_RESET);
+							r_cons_printf ("%s%s ", color_fline,
+								core->cons->vline[LINE_CROSS]); // |-
+							r_cons_printf ("%s%s"Color_RESET" %d\n",
+								color_floc, f->name, f->size);
+							r_cons_printf ("%s%s "Color_RESET,
+								color_fline, core->cons->vline[LINE_VERT]); // |
 						} else {
-							r_cons_printf ("|- %s %d\n| ", f->name, f->size);
+							r_cons_printf ("%s %s %d\n| ", core->cons->vline[LINE_CROSS],
+								f->name, f->size); // |-
+
 						}
 					} else {
 						const char *fmt = show_color?
-							"%s/ "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
-							"/ (%s) %s %d\n| ";
+							"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
+							"%s (%s) %s %d\n%s ";
 						if (show_color) {
-							r_cons_printf (fmt, color_fline, color_fname,
-								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
+							r_cons_printf (fmt, color_fline,
+								core->cons->vline[RUP_CORNER], color_fname,
+								(f->type==R_ANAL_FCN_TYPE_FCN || f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 								(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
 								f->name, f->size);
-							r_cons_strcat (color_fline);
-							r_cons_strcat ("| "Color_RESET);
+							r_cons_printf ("%s%s "Color_RESET,
+								color_fline, core->cons->vline[LINE_VERT]);
 						} else
-							r_cons_printf (fmt,
+							r_cons_printf (fmt, core->cons->vline[RUP_CORNER],
 								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 								(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-								f->name, f->size);
+								f->name, f->size, core->cons->vline[LINE_VERT]);
 					}
 					if (sign) r_cons_printf ("// %s\n", sign);
 					free (sign);
-					pre = "| ";
+					//pre = "| "; // TOFIX!
+					pre = strdup (core->cons->vline[LINE_VERT]);
+					pre = r_str_concat (pre, " ");
 					stackptr = 0;
 				} else if (f->addr+f->size-analop.length == at) {
 					if (show_color) {
-						r_cons_strcat (color_fline);
-						r_cons_printf ("\\ ");
-						r_cons_strcat (Color_RESET);
+						r_cons_printf ("%s%s "Color_RESET,
+							color_fline, core->cons->vline[RDWN_CORNER]);
 					} else {
-						r_cons_printf ("\\ ");
+						r_cons_printf ("%s ", core->cons->vline[RDWN_CORNER]);
 					}
 				} else if (at > f->addr && at < f->addr+f->size-1) {
 					if (show_color) {
-						r_cons_strcat (color_fline);
-						r_cons_printf ("| ");
-						r_cons_strcat (Color_RESET);
+						r_cons_printf ("%s%s "Color_RESET,
+							color_fline, core->cons->vline[LINE_VERT]);
 					} else {
-						r_cons_printf ("| ");
+						r_cons_printf ("%s ", core->cons->vline[LINE_VERT]);
 					}
-					pre = "| ";
+					//pre = "| "; // TOFIX!
+					pre = strdup (core->cons->vline[LINE_VERT]);
+					pre = r_str_concat (pre, " ");
 				} else f = NULL;
-				if (f && at == f->addr+f->size-analop.length) // HACK
-					pre = "\\ ";
+				if (f && at == f->addr+f->size-analop.length) { // HACK
+					//pre = R_LINE_BOTTOM_DCORNER" ";
+					pre = strdup (core->cons->vline[RDWN_CORNER]);
+					pre = r_str_concat (pre, " ");
+				}
 			} else r_cons_printf ("  ");
 		}
 		if (show_flags) {
@@ -673,30 +719,24 @@ toro:
 			if (flag && (!f || (f && strcmp (f->name, flag->name)))) {
 				if (show_lines && refline) {
 					if (show_color) {
-						r_cons_strcat (color_flow);
-						r_cons_strcat (refline);
-						r_cons_strcat (Color_RESET);
-					} else r_cons_strcat (refline);
+						r_cons_printf ("%s%s"Color_RESET, color_flow, refline);
+					} else r_cons_printf (refline);
 				}
 				if (show_offset) r_cons_printf ("; -- ");
 				if (show_color) r_cons_strcat (color_flag);
 				if (show_functions) r_cons_printf ("%s:\n", flag->name);
 				else r_cons_printf ("%s:\n", flag->name);
 				if (show_color) {
-					r_cons_strcat (Color_RESET);
-					r_cons_strcat (color_fline);
-					r_cons_strcat (f ? pre : "  ");
-					r_cons_strcat (Color_RESET);
+					r_cons_printf (Color_RESET"%s%s"Color_RESET, color_fline,
+						f ? pre : "  ");
 				} else
-					r_cons_strcat (f ? pre : "  ");
+					r_cons_printf (f ? pre : "  ");
 			}
 		}
 		if (!linesright && show_lines && line) {
 			if (show_color) {
-				r_cons_strcat (color_flow);
-				r_cons_strcat (line);
-				r_cons_strcat (Color_RESET);
-			} else r_cons_strcat (line);
+				r_cons_printf ("%s%s"Color_RESET, color_flow, line);
+			} else r_cons_printf (line);
 		}
 		if (show_offset)
 			r_print_offset (core->print, at, (at==dest), show_offseg);
@@ -828,11 +868,9 @@ toro:
 
 		if (linesright && show_lines && line) {
 			if (show_color) {
-				r_cons_strcat (color_flow);
-				r_cons_strcat (line);
-				r_cons_strcat (Color_RESET);
-			} else 
-				r_cons_strcat (line);
+				r_cons_printf ("%s%s"Color_RESET, color_flow, line);
+			} else
+				r_cons_printf (line);
 		}
 		if (show_color) {
 			switch (analop.type) {
@@ -1130,10 +1168,11 @@ toro:
 #if 0
 			if (show_lines && analop.type == R_ANAL_OP_TYPE_RET) {
 				if (strchr (line, '>'))
-					memset (line, ' ', strlen (line));
+					memset (line, ' ', r_str_len_utf8 (line));
 				if (show_color) {
-					r_cons_printf ("| %s%s"Color_RESET"; --\n", color_flow, line);
-				} else 
+					r_cons_printf ("%s %s%s"Color_RESET"; --\n",
+						core->cons->vline[LINE_VERT], color_flow, line);
+				} else
 					r_cons_printf ("  %s; --\n", line);
 			}
 #endif

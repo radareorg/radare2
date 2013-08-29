@@ -138,6 +138,7 @@ typedef struct r_cons_t {
 	int truecolor; // 1 = rgb 256), 2 = truecolor (16M)
 	RConsPalette pal;
 	struct r_line_t *line;
+	char **vline;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -223,6 +224,19 @@ enum {
 	PAL_7F,
 	PAL_FF
 };
+
+// UTF-8 symbols indexes
+
+#define LINE_VERT 0
+#define LINE_CROSS 1
+#define RUP_CORNER 2
+#define RDWN_CORNER 3
+#define ARROW_RIGHT 4
+#define ARROW_LEFT 5
+#define LINE_HORIZ 6
+#define LUP_CORNER 7
+#define LDWN_CORNER 8
+
 
 #ifdef R_API
 R_API RConsCanvas* r_cons_canvas_new (int w, int h);
