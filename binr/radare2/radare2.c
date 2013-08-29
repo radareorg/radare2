@@ -305,6 +305,7 @@ int main(int argc, char **argv) {
 	if (asmos) r_config_set (r.config, "asm.bits", asmos);
 
 	if (debug) {
+		r_config_set (r.config, "search.in", "raw"); // implicit?
 		r_config_set (r.config, "io.va", "false"); // implicit?
 		r_config_set (r.config, "cfg.debug", "true");
 		perms = R_IO_READ | R_IO_WRITE;
