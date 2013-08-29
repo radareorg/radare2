@@ -1121,7 +1121,7 @@ static int cmd_debug(void *data, const char *input) {
 		" ds[ol] N       step, over, source line\n"
 		" do             open process (reload, alias for 'oo')\n"
 		" dk [sig][=act] list, send, get, set, signal handlers of child\n"
-		" di [bytes]     inject code on running process and execute it\n"
+		" di[s] [arg..]  inject code on running process and execute it (See gs)\n"
 		" dp[=*?t][pid]  list, attach to process or thread id\n"
 		" dc[?]          continue execution. dc? for more\n"
 		" dr[?]          cpu registers, dr? for extended help\n"
