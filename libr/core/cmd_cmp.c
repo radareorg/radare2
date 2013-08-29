@@ -179,6 +179,15 @@ static int cmd_cmp(void *data, const char *input) {
 	ut64 v64;
 
 	switch (*input) {
+	case 'a':
+		if (input[1]=='t' && input[2]==' ') {
+			char *p = r_file_slurp (input+3, NULL);
+			if (p) {
+				r_cons_strcat (p);
+				free (p);
+			}
+		}
+		break;
 	case 'w':
 		cmd_cmp_watcher (core, input+1);
 		break;
@@ -323,7 +332,7 @@ static int cmd_cmp(void *data, const char *input) {
 		" cw[us?] [...]  Compare memory watchers\n");
 		break;
 	default:
-		eprintf ("Usage: c[?cDdxfw] [argument]\n");
+		eprintf ("Usage: c[?48cdDxfw] [argument]\n");
 	}
 	return 0;
 }

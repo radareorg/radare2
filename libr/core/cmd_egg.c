@@ -65,16 +65,16 @@ static int cmd_egg(void *data, const char *input) {
 		if (input[1]=='?' || !input[1]) {
 			eprintf ("Usage: gs [syscallname] [parameters]\n");
 		} else {
-		oa = strdup (input+2);
-		p = strchr (oa+1, ' ');
-		if (p) {
-			*p = 0;
-			r_core_syscall (core, oa, p+1);
-		} else {
-			r_core_syscall (core, oa,"");
-		}
-free (oa);
+			oa = strdup (input+2);
+			p = strchr (oa+1, ' ');
+			if (p) {
+				*p = 0;
+				r_core_syscall (core, oa, p+1);
+			} else {
+				r_core_syscall (core, oa, "");
 			}
+			free (oa);
+		}
 		break;
 	case ' ':
 		r_egg_load (egg, input+2, 0);

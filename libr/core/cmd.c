@@ -1010,7 +1010,6 @@ next:
 		return ret;
 	}
 next2:
-
 	/* sub commands */
 	ptr = strchr (cmd, '`');
 	if (ptr) {
@@ -1021,7 +1020,7 @@ next2:
 		}
 		ptr2 = strchr (ptr+1, '`');
 		if (!ptr2) {
-			eprintf ("parse: Missing '´' in expression.\n");
+			eprintf ("parse: Missing backtick in expression.\n");
 			return -1;
 		} else {
 			*ptr = '\0';

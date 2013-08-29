@@ -1107,12 +1107,26 @@ static int cmd_debug(void *data, const char *input) {
 		break;
 	case 'i':
 		switch (input[1]) {
+		case 'a':
+			{
+			RAsmCode *acode;
+			r_asm_set_pc (core->assembler, core->offset);
+			acode = r_asm_massemble (core->assembler, input+2);
+			if (acode && *acode->buf_hex) {
+				r_reg_arena_push (core->dbg->reg);
+				r_debug_execute (core->dbg, acode->buf, acode->len, 0);
+				r_reg_arena_pop (core->dbg->reg);
+				r_asm_code_free (acode);
+			}
+			}
+			break;
 		case 's':
-			r_core_cmdf (core, "di `gs %s`", input+2);
+			// XXX: last byte fails (ret) should not be generated
+			r_core_cmdf (core, "dir `gs %s`", input+2);
 			break;
 		case 'r':
 			r_reg_arena_push (core->dbg->reg);
-			if (input[1]==' ') {
+			if (input[2]==' ') {
 				ut8 bytes[4096];
 				int bytes_len = r_hex_str2bin (input+2, bytes);
 				r_debug_execute (core->dbg, bytes, bytes_len, 0);
@@ -1127,10 +1141,11 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		default:
-			eprintf ("Usage: di[s] [arg| ...]\n");
-			eprintf (" di 9090                  ; inject two x86 nops\n");
-			eprintf (" dir 9090                 ; inject and restore state\n");
-			eprintf (" dis write 1, 0x8048, 12  ; syscall injection\n");
+			r_cons_printf ("Usage: di[asr] [arg| ...]\n"
+			" di 9090                           ; inject two x86 nops\n"
+			" \"dia mov eax,6;mov ebx,0;int 0x80\"  ; inject and restore state\n"
+			" dir 9090                          ; inject and restore state\n"
+			" dis write 1, 0x8048, 12           ; syscall injection (see gs)\n");
 			break;
 		}
 		break;
