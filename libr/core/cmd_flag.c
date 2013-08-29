@@ -10,6 +10,29 @@ static int cmd_flag(void *data, const char *input) {
 	if (*input)
 		str = strdup (input+1);
 	switch (*input) {
+	case 'R':
+		{
+		char *p = strchr (str+1, ' ');
+		ut64 from, to, mask = 0xffff;
+		int ret;
+		if (p) {
+			char *q = strchr (p+1, ' ');
+			*p = 0;
+			if (q) {
+				*q = 0;
+				mask = r_num_math (core->num, q+1);
+			}
+			from = r_num_math (core->num, str+1);
+			to = r_num_math (core->num, p+1);
+			ret = r_flag_relocate (core->flags, from, mask, to);
+			eprintf ("Relocated %d flags\n", ret);
+		} else {
+			eprintf ("Usage: fR [from] [to] ([mask])\n");
+			eprintf ("Example to relocate PIE flags on debugger:\n"
+				" > fR entry0 `dm~:1[1]`\n");
+		}
+		}
+		break;
 	case 'b':
 		switch (input[1]) {
 		case ' ':
@@ -298,6 +321,7 @@ static int cmd_flag(void *data, const char *input) {
 		" fr [old] [[new]] ; rename flag (if no new flag current seek one is used)\n"
 		" fl [flagname]    ; show flag length (size)\n"
 		" fS[on]           ; sort flags by offset or name\n"
+		" fR [f] [t] [m]   ; relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask\n"
 		" fx[d]            ; show hexdump (or disasm) of flag:flagsize\n"
 		" fo               ; show fortunes\n");
 		break;
