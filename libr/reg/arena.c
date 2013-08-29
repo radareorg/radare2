@@ -16,8 +16,9 @@ R_API ut8* r_reg_get_bytes(RReg *reg, int type, int *size) {
 			arena = reg->regset[i].arena;
 			sz += arena->size;
 			buf = realloc (buf, sz);
-			memcpy (buf+osize, arena->bytes, arena->size-osize);
-			osize += sz;
+			if (!buf) break;
+			memcpy (buf+osize, arena->bytes, arena->size);
+			osize = sz;
 		}
 		if (size)
 			*size = sz;
