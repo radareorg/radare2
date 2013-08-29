@@ -82,10 +82,10 @@ R_API RReg *r_reg_new() {
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		arena = r_reg_arena_new (0);
 		if (!arena) return NULL;
-		reg->regset[i].arena = arena;
 		reg->regset[i].pool = r_list_newf ((RListFree)r_reg_arena_free);
 		reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
-		r_list_append (reg->regset[i].pool, reg->regset[i].arena);
+		reg->regset[i].arena = arena;
+		//r_list_append (reg->regset[i].pool, arena);
 	}
 	return reg;
 }
@@ -269,11 +269,16 @@ R_API RList *r_reg_get_list(RReg *reg, int type) {
 
 R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item) {
 	ut64 ret, ret2;
+	RListIter *it;
 	int ptr = !(reg->iters%2);
 	int len = (item->size/8); // TODO: must use r_mem_bitcmp or so.. flags not correctly checked
 	int off = BITS2BYTES (item->offset);
-	RRegArena *src = r_list_head (reg->regset[item->type].pool)->data;
-	RRegArena *dst = r_list_head (reg->regset[item->type].pool)->n->data;
+	RRegArena *dst, *src;
+	it = r_list_head (reg->regset[item->type].pool);
+	if (!it || !it->n)
+		return UT64_MAX;
+	src = r_list_head (reg->regset[item->type].pool)->data;
+	dst = it->n->data;
 	if (off+len>src->size) len = src->size-off;
 	if (off+len>dst->size) len = dst->size-off;
 	if (len>1 && memcmp (dst->bytes+off, src->bytes+off, len)) {

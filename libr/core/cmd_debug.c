@@ -421,6 +421,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			" dr 32      show 32 bit registers\n"
 			" dr eax=33  set register value. eax = 33\n"
 			" dr?        display this help message\n"
+			" drs?       stack register states\n"
 			" drt        show all register types\n"
 			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
 			" dro        show previous (old) values of registers\n"
@@ -439,6 +440,27 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		const ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
 		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+		}
+		break;
+	case 's':
+		switch (str[1]) {
+		case '-':
+			r_reg_arena_pop (core->dbg->reg);
+			// restore debug registers if in debugger mode
+			r_debug_reg_sync (core->dbg, 0, 1);
+			break;
+		case '+':
+			r_reg_arena_push (core->dbg->reg);
+			break;
+		case '?':
+			r_cons_printf ("Usage: drs[+-]\n"
+				"drs+   push register state\n"
+				"drs-   pop register state\n"
+				"drs    list register stack\n");
+			break;
+		default:
+			r_cons_printf ("%d\n", r_list_length (core->dbg->reg->regset[0].pool));
+			break;
 		}
 		break;
 	case 'p':
@@ -1084,17 +1106,32 @@ static int cmd_debug(void *data, const char *input) {
 		else r_debug_plugin_list (core->dbg);
 		break;
 	case 'i':
-		if (input[1] == 's') {
+		switch (input[1]) {
+		case 's':
 			r_core_cmdf (core, "di `gs %s`", input+2);
-		} else
-		if (input[1] ==' ') {
+			break;
+		case 'r':
+			r_reg_arena_push (core->dbg->reg);
+			if (input[1]==' ') {
+				ut8 bytes[4096];
+				int bytes_len = r_hex_str2bin (input+2, bytes);
+				r_debug_execute (core->dbg, bytes, bytes_len, 0);
+			}
+			r_reg_arena_pop (core->dbg->reg);
+			break;
+		case ' ':
+			{
 			ut8 bytes[4096];
 			int bytes_len = r_hex_str2bin (input+2, bytes);
 			r_debug_execute (core->dbg, bytes, bytes_len, 0);
-		} else {
+			}
+			break;
+		default:
 			eprintf ("Usage: di[s] [arg| ...]\n");
 			eprintf (" di 9090                  ; inject two x86 nops\n");
-			eprintf (" dis write 1, 0x8048,12   ; syscall injection\n");
+			eprintf (" dir 9090                 ; inject and restore state\n");
+			eprintf (" dis write 1, 0x8048, 12  ; syscall injection\n");
+			break;
 		}
 		break;
 	case 'o':

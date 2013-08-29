@@ -914,7 +914,7 @@ static int cmd_print(void *data, const char *input) {
 		" p=               show entropy bars of full file\n"
 		" p6[de] [len]     base64 decode/encode\n"
 		" p8 [len]         8bit hexpair list of bytes\n"
-		" pa [opcode]      bytes of assembled opcode\n"
+		" pa[d] [hex|asm]  print code from hex or bytes of given data\n"
 		" p[bB] [len]      bitstream of N bytes\n"
 		" pc[p] [len]      output C (or python) format\n"
 		" p[dD][lf] [l]    disassemble N opcodes/bytes (see pd?)\n"

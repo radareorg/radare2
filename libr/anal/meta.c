@@ -193,7 +193,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 		mi->type = type;
 		mi->from = from;
 		mi->to = to;
-		mi->str = str? strdup (str): NULL;
+		mi->str = (str&&*str)? strdup (str): NULL;
 		r_list_append (m->data, mi);
 		break;
 	default:
