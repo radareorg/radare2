@@ -136,8 +136,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		fcn->addr = addr;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
-	if (len>16)
-		len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
+	//if (len>16)
+	//	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
 
 	while (idx < len) {
 		r_anal_op_fini (&op);
