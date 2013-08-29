@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 R_API void r_core_cmpwatch_free (RCoreCmpWatcher *w) {
 	free (w->ndata);
@@ -174,6 +174,7 @@ static int cmd_cmp(void *data, const char *input) {
 	FILE *fd;
 	ut8 *buf;
 	int ret;
+	ut16 v16;
 	ut32 v32;
 	ut64 v64;
 
@@ -218,13 +219,22 @@ static int cmd_cmp(void *data, const char *input) {
 		radare_compare (core, core->block, buf, core->blocksize);
 		free (buf);
 		break;
-	case 'q':
-		v64 = (ut64) r_num_math (core->num, input+1);
-		radare_compare (core, core->block, (ut8*)&v64, sizeof (v64));
-		break;
 	case 'd':
+		while (input[1]==' ') input++;
+		if (r_sandbox_chdir (input+1)==-1)
+			eprintf ("Cannot chdir\n");
+		break;
+	case '2':
+		v16 = (ut16) r_num_math (core->num, input+1);
+		radare_compare (core, core->block, (ut8*)&v16, sizeof (v16));
+		break;
+	case '4':
 		v32 = (ut32) r_num_math (core->num, input+1);
 		radare_compare (core, core->block, (ut8*)&v32, sizeof (v32));
+		break;
+	case '8':
+		v64 = (ut64) r_num_math (core->num, input+1);
+		radare_compare (core, core->block, (ut8*)&v64, sizeof (v64));
 		break;
 #if 0
 	case 'c':
@@ -303,9 +313,9 @@ static int cmd_cmp(void *data, const char *input) {
 		" c  [string]    Compares a plain with escaped chars string\n"
 		" cc [at] [(at)] Compares in two hexdump columns of block size\n"
 		//" cc [offset]   Code bindiff current block against offset\n"
-		" cd [value]     Compare a doubleword from a math expression\n"
+		" c4 [value]     Compare a doubleword from a math expression\n"
 		//" cD [file]     Like above, but using radiff -b\n");
-		" cq [value]     Compare a quadword from a math expression\n"
+		" c8 [value]     Compare a quadword from a math expression\n"
 		" cx [hexpair]   Compare hexpair string\n"
 		" cX [addr]      Like 'cc' but using hexdiff output\n"
 		" cf [file]      Compare contents of file at current seek\n"

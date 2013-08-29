@@ -141,9 +141,8 @@ static int cmd_type(void *data, const char *input) {
 		if (input[1]=='*') {
 			eprintf ("TODO\n");
 		} else {
-			const char *ntr, *name = input + 1;
+			const char *name = input + 1;
 			if (*name==' ') name++;
-			ntr = strchr (name, ' ');
 			if (*name) {
 				r_anal_type_del (core->anal, name);
 			} else eprintf ("Usage: t- name\n"
