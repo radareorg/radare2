@@ -42,7 +42,7 @@ LDFLAGS+=../../libr/util/libr_util.a
 LDFLAGS+=../../libr/socket/libr_socket.a
 # extra libs #
 LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
-LDFLAGS+=../../libr/db/sdb/src/libsdb.a
+LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=-lm
 else
 LDFLAGS+=-L../../libr/io -lr_io
