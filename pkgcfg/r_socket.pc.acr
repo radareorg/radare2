@@ -7,5 +7,5 @@ Name: r_socket
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lr_socket
+Libs: -L${libdir} -lr_socket -lr_util
 Cflags: -I${includedir}/libr

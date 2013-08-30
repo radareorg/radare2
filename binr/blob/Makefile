@@ -17,10 +17,10 @@ ifeq ($(WITHNONPIC),1)
 LDFLAGS+=../../libr/io/libr_io.a
 LDFLAGS+=../../libr/asm/libr_asm.a
 LDFLAGS+=../../libr/db/libr_db.a
-LDFLAGS+=../../libr/parse/libr_parse.a
 LDFLAGS+=../../libr/lib/libr_lib.a
 LDFLAGS+=../../libr/egg/libr_egg.a
 LDFLAGS+=../../libr/core/libr_core.a
+LDFLAGS+=../../libr/parse/libr_parse.a
 LDFLAGS+=../../libr/anal/libr_anal.a
 LDFLAGS+=../../libr/cmd/libr_cmd.a
 LDFLAGS+=../../libr/fs/libr_fs.a
