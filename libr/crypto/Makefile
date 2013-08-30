@@ -14,13 +14,6 @@ OBJS=${STATIC_OBJS} crypto.o
 pre:
 	@if [ ! -e ${LIBSO} ]; then rm -f ${STATIC_OBJS} ; fi
 
-re:
-	rm -f crypto.o libr_crypto.so
-	${MAKE}
-	rm -f t/fastcall.o
-	sudo ${MAKE} install
-	cd t && ${MAKE}
-
 plugins:
 	cd p && ${MAKE} all
 
