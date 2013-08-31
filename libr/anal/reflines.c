@@ -136,7 +136,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 		str = r_str_replace (str, ",", cons->vline[LUP_CORNER], 1);
 		str = r_str_replace (str, "`", cons->vline[LDWN_CORNER], 1);
 	}
-	{
+	if (((RCore*)core)->anal->lineswidth>0) {
 		char pfx[128];
 		int l = ((RCore*)core)->anal->lineswidth-r_str_len_utf8 (str);
 		memset (pfx, ' ', sizeof (pfx));
