@@ -8,10 +8,12 @@ static void show_help() {
 	" t-*                    remove all types\n"
 	//". Use t-! to open $EDITOR\n"
 	" t [type]               show given type in 'pf' syntax\n"
-	" tf [path]              load types from C header file\n"
-	" tf -                   open cfg.editor to load types\n"
+	//" to                     list of opened files\n"
+	" to [path]              load types from C header file\n"
+	" to -                   open cfg.editor to load types\n"
 	" td int foo(int a)      parse oneliner type definition\n"
-	" tv addr                view linked type at given address\n"
+	" td-foo                 undefine type 'foo'\n"
+	" tf addr                view linked type at given address\n"
 	" ts k=v k=v @ link.addr set fields at given linked type\n"
 	" tl [type] [addr]       link type to a given address\n");
 }
@@ -65,19 +67,21 @@ static int cmd_type(void *data, const char *input) {
 		// TODO: use r_cons here
 		sdb_list (core->anal->sdb_types);
 		break;
-	case 'f':
+	case 'o':
 		if (input[1] == ' ') {
 			const char *filename = input + 2;
 			if (!strcmp (filename, "-")) {
-#if 0
-				char *out, *ctype = "";
-				out = r_core_editor (core, ctype);
-				t = r_anal_str_to_type (core->anal, out);
-				if (t != NULL)
-					r_anal_type_add (core->anal, t);
-				free (out);
-				free (ctype);
-#endif
+				char *out, *tmp;
+				tmp = r_core_editor (core, "");
+				if (tmp) {
+					out = r_parse_c_string (tmp);
+					if (out) {
+						r_cons_strcat (out);
+						sdb_query_lines (core->anal->sdb_types, out);
+						free (out);
+					}
+					free (tmp);
+				}
 			} else {
 				char *out = r_parse_c_file (filename);
 				if (out) {
@@ -91,6 +95,11 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// td - parse string with cparse engine and load types from it
 	case 'd':
+		if (input[1] == '-') {
+			char *arg = strchr (input+1, ' ');
+			if (arg) arg++; else arg = input+2;
+			r_anal_type_del (core->anal, arg);
+		} else
 		if (input[1] == ' ') {
 			char tmp[256];
 			snprintf (tmp, sizeof (tmp), "%s;", input+2);
@@ -137,7 +146,7 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	// tv - get/set type value linked to a given address
-	case 'v':
+	case 'f':
 		snprintf (pcmd, sizeof (pcmd), "pf `t %s`", input+2);
 		r_core_cmd0 (core, pcmd);
 		break;

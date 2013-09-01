@@ -503,10 +503,14 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 		if (!(arg = r_anal_fcn_get_var (fs, i,
 				R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_SCOPE_ARGREG)))
 			break;
+#if 0
+// TODO: implement array support using sdb
 		if (arg->type->type == R_ANAL_TYPE_ARRAY)
 			sign = r_str_concatf (sign, i?", %s %s:%02x[%d]":"%s %s:%02x[%d]",
 				arg->type, arg->name, arg->delta, arg->type->custom.a->count);
-		else sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
+		else 
+#endif
+sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
 				arg->type, arg->name, arg->delta);
 	}
 	return (sign = r_str_concatf (sign, ");"));

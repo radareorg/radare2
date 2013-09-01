@@ -602,11 +602,11 @@ typedef struct r_anal_var_access_t {
 
 typedef struct r_anal_var_t {
 	char *name;		/* name of the variable */
+	char *type;
 	ut64 addr;		// not used correctly?
 	ut64 eaddr;		// not used correctly?
 	int delta;		/* delta offset inside stack frame */
 	int scope;		/* global, local... | in, out... */
-	RAnalType *type;
 	/* probably dupped or so */
 	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
 	RList/*RAnalValue*/ *stores;   /* where this */
@@ -684,7 +684,7 @@ R_API RList *r_anal_type_list_new();
 R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
-R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep);
+R_API char *r_anal_type_to_str(RAnal *a, const char *name);
 R_API char *r_anal_optype_to_string(int t);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);

@@ -684,9 +684,11 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 
 				if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM) {
 					r_cons_printf ("\n vars: %d");
-					r_list_foreach (fcn->vars, iter2, vari)
-						r_cons_printf ("\n  %s %s @ 0x%02x", r_anal_type_to_str (
-							core->anal, vari->type, ";"), vari->name, vari->delta);
+					r_list_foreach (fcn->vars, iter2, vari) {
+						char *s = r_anal_type_to_str (core->anal, vari->type);
+						r_cons_printf ("\n  %s %s @ 0x%02x", s, vari->name, vari->delta);
+						free (s);
+					}
 					r_cons_printf ("\n diff: type: %s",
 							fcn->diff->type==R_ANAL_DIFF_TYPE_MATCH?"match":
 							fcn->diff->type==R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
