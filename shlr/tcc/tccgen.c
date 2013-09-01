@@ -2787,6 +2787,12 @@ name = get_tok_str (tok, NULL);
         c = 0;
         /* non empty enums are not allowed */
         if (a == TOK_ENUM) {
+		if (!strcmp (name, "{")) {
+			// UNNAMED
+			fprintf (stderr, "anonymous enums are ignored\n");
+		} else {
+			tcc_appendf ("%s=enum\n", name);
+		}
             for(;;) {
                 v = tok;
                 if (v < TOK_UIDENT)
@@ -2796,6 +2802,10 @@ name = get_tok_str (tok, NULL);
                     next();
                     c = expr_const();
                 }
+	if (strcmp (name, "{")) {
+		char *varstr = get_tok_str (v, NULL);
+		tcc_appendf ("%s.%s=%d\n", name, varstr, c);
+	}
                 /* enum symbols have static storage */
                 ss = sym_push(v, &int_type, VT_CONST, c);
                 ss->type.t |= VT_STATIC;
