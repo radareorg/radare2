@@ -905,15 +905,23 @@ static void var_index_show(RAnal *anal, RAnalFunction *fcn, ut64 addr, int idx) 
 				}
 				if (idx == i) r_cons_printf (" * ");
 				else r_cons_printf ("   ");
-				if (v->type->type == R_ANAL_TYPE_ARRAY)
+#if 0
+				if (v->type->type == R_ANAL_TYPE_ARRAY) {
+eprintf ("TODO: support for arrays\n");
 					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d array=%d\n",
 						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
 						r_anal_type_to_str (anal, v->type, ""),
 						v->name, v->delta, v->type->custom.a->count);
-				else
+				} else 
+#endif
+				{
+					char *s = r_anal_type_to_str (anal, v->type);
+					if (!s) s = strdup ("<unk>");
 					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d\n",
 						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
-						r_anal_type_to_str (anal, v->type, ""), v->name, v->delta);
+						s, v->name, v->delta);
+					free (s);
+				}
 				r_list_foreach (v->accesses, iter2, x) {
 					r_cons_printf ("  0x%08llx %s\n", x->addr, x->set?"set":"get");
 				}
@@ -999,22 +1007,22 @@ static void r_core_visual_anal_refresh (RCore *core) {
 		r_core_cmdf (core, "pd @ 0x%"PFMT64x"!32", addr);
 		r_config_set (core->config, "asm.profile", oprofile);
 		free (oprofile);
-
-		r_cons_column (cols); //32);
+		r_cons_column (cols);
 	}
 	switch (level) {
 	case 0:
 		r_cons_printf ("-[ functions ]---------------- \n"
-			"(a) add     (x)xrefs    (q)quit  \n"
-			"(m) modify  (c)calls    (g)go    \n"
-			"(d) delete  (v)variables         \n");
+			"(a) add     (x)xrefs     (q)quit \n"
+			"(m) modify  (c)calls     (g)go   \n"
+			"(d) delete  (v)variables (?)help \n");
 		addr = var_functions_show (core, option, 1);
 		break;
 	case 1:
-		r_cons_printf ("-[ variables ]---------------- 0x%08"PFMT64x"\n"
-			"(a) add     (x)xrefs     (q)quit \n"
-			"(m) modify  (c)calls     (g)go   \n"
-			"(d) delete  (v)variables         \n", addr);
+		r_cons_printf (
+			"-[ variables ]----- 0x%08"PFMT64x"\n"
+			"(a) add     (x)xrefs  \n"
+			"(m) modify  (g)go     \n"
+			"(d) delete  (q)quit   \n", addr);
 		var_index_show (core->anal, fcn, addr, option);
 		break;
 	case 2:
@@ -1054,6 +1062,21 @@ R_API void r_core_visual_anal(RCore *core) {
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
+		case '?':
+			r_cons_clear ();
+			r_cons_printf (
+				"Usage: Vv [\n"
+				"Actions supported:\n"
+				" functions: Add, Modify, Delete, Xrefs Calls Vars\n"
+				" variables: Add, Modify, Delete\n"
+				"Moving:\n"
+				" j,k     select next/prev item\n"
+				" h,q     go back, quit\n"
+				" l,ret   enter, function\n"
+			);
+			r_cons_flush ();
+			r_cons_any_key ();
+			break;
 		case ':':
 			r_core_visual_prompt (core);
 			continue;
