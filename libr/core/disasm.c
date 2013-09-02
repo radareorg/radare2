@@ -3,7 +3,7 @@
 #include "r_core.h"
 #include "r_cons.h"
 
-const char* const r_vline_a[] = {
+static const char* const r_vline_a[] = {
 	"|", // LINE_VERT
 	"|-", // LINE_CROSS
 	"/", // RUP_CORNER
@@ -15,7 +15,7 @@ const char* const r_vline_a[] = {
 	"`", // LDWN_CORNER
 };
 
-const char* const r_vline_u[] = {
+static const char* const r_vline_u[] = {
 	"│", // LINE_VERT
 	"├", // LINE_CROSS
 	"╒", // RUP_CORNER

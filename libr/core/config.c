@@ -806,7 +806,19 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "scr.colorops", "colorize in numbers/registers in opcodes");
 	r_config_set_cb (cfg, "scr.pager", "", &config_pager_callback);
 	r_config_desc (cfg, "scr.pager", "Select pager program (used if output doesn't fit on window)");
+#if 0
+{
+	const char *val;
+	char *sval = r_sys_getenv ("LC_CTYPE");
+	r_str_case (sval, 0);
+	val = strcmp (sval, "utf-8")? "false": "true";
+	free (sval);
+	r_config_set_cb (cfg, "scr.utf8", val, &config_utf8_callback);
+}
+#else
 	r_config_set_cb (cfg, "scr.utf8", "false", &config_utf8_callback);
+#endif
+	
 	r_config_desc (cfg, "scr.utf8", "show UTF-8 characters instead of ANSI");
 	//r_config_set_cb (cfg, "scr.nkey", "function", &config_scrnkey_callback);
 	r_config_set_cb (cfg, "scr.nkey", "hit", &config_scrnkey_callback);

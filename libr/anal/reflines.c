@@ -124,7 +124,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 	}
 
 	/* HACK */
-	if (((RCore*)core)->utf8) {
+	if (((RCore*)core)->utf8 && ((RCore*)core)->cons->vline) {
 		RCons *cons = ((RCore*)core)->cons;
 		//str = r_str_replace (str, "=", "-", 1);
 		str = r_str_replace (str, "<", cons->vline[ARROW_LEFT], 1);
@@ -134,6 +134,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 		str = r_str_replace (str, "-", cons->vline[LINE_HORIZ], 1);
 		//str = r_str_replace (str, ".", "\xe2\x94\x8c", 1);
 		str = r_str_replace (str, ",", cons->vline[LUP_CORNER], 1);
+		str = r_str_replace (str, ".", cons->vline[LUP_CORNER], 1);
 		str = r_str_replace (str, "`", cons->vline[LDWN_CORNER], 1);
 	}
 	if (((RCore*)core)->anal->lineswidth>0) {
