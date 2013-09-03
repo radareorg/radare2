@@ -1,0 +1,27 @@
+rasm2 -a x86.olly "lea eax, [$@]"
+rasm2 -a x86.olly "lea ecx, [$@]"
+rasm2 -a x86.olly "lea edx, [$@]"
+rasm2 -a x86.olly "lea ebx, [$@]"
+
+test() {
+	echo "       $1"
+	O=`rasm2 -a x86.olly "$1"`
+	printf "olly: $O         -> "
+	rasm2 -d $O
+	O=`rasm2 -a x86.nz "$1"`
+	printf ".nz.: $O         -> "
+	rasm2 -d $O
+}
+
+test "lea eax, [ecx+1024]"
+test "lea ebp, [eax+3]"
+test "lea ebp, [esp+3]"
+test "lea ebp, [ecx+eax]"
+test "lea edx, [edx+ecx]"
+
+exit 0
+
+test "lea eax, [3]"
+test "lea eax, [eax+3]"
+test "lea ebp, [ebp+3]"
+test "lea ebp, [esp+0x28]"
