@@ -310,6 +310,15 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 	return r_core_cmd_file (core, file);
 }
 
+static int cmd_stdin(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	if (input[0]=='?') {
+		r_cons_printf ("Usage: '-' '.-' '. -' do the same\n");
+		return R_FALSE;
+	}
+	return r_core_run_script (core, "-");
+}
+
 static int cmd_interpret(void *data, const char *input) {
 	char *str, *ptr, *eol, *rbuf, *filter, *inp;
 	const char *host, *port, *cmd;
@@ -345,7 +354,9 @@ static int cmd_interpret(void *data, const char *input) {
 		r_core_cmd_repeat (core, 1);
 		break;
 	case '-':
-		r_core_run_script (core, "-");
+		if (input[1]=='?') {
+			r_cons_printf ("Usage: '-' '.-' '. -' do the same\n");
+		} else r_core_run_script (core, "-");
 		break;
 	case ' ':
 		r_core_run_script (core, input+1);
@@ -363,7 +374,8 @@ static int cmd_interpret(void *data, const char *input) {
 		" .                 ; repeat last command backward\n"
 		" ..                ; repeat last command forward (same as \\n)\n"
 		" .:8080            ; listen for commands on given tcp port\n"
-		" . foo.rs          ; interpret r script\n"
+		" . foo.r2          ; interpret r2 script\n"
+		" .-                ; open cfg.editor and interpret tmp file\n"
 		" .!rabin -ri $FILE ; interpret output of command\n"
 		" .(foo 1 2 3)      ; run macro 'foo' with args 1, 2, 3\n"
 		" ./ ELF            ; interpret output of command /m ELF as r. commands\n");
@@ -1314,13 +1326,12 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	int ret = R_TRUE;
-	char *nl, *odata;
+	char *nl, *data, *odata;
 
 	if (!lines || !*lines) return R_TRUE;
-	odata = strdup (lines);
+	data = odata = strdup (lines);
 	nl = strchr (odata, '\n');
 	if (nl) {
-		char *data = odata;
 		do {
 			*nl = '\0';
 			ret = r_core_cmd (core, data, 0);
@@ -1337,9 +1348,9 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			}
 			data = nl+1;
 		} while ((nl = strchr (data, '\n')));
-		if (data && *data) {
-			r_core_cmd (core, data, 0);
-		}
+	}
+	if (data && *data) {
+		r_core_cmd (core, data, 0);
 	}
 	free (odata);
 	return ret;
@@ -1542,6 +1553,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "$",        "alias", &cmd_alias);
 	r_cmd_add (core->rcmd, ".",        "interpret", &cmd_interpret);
 	r_cmd_add (core->rcmd, "/",        "search kw, pattern aes", &cmd_search);
+	r_cmd_add (core->rcmd, "-",        "open cfg.editor and run script", &cmd_stdin);
 	r_cmd_add (core->rcmd, "(",        "macro", &cmd_macro);
 	r_cmd_add (core->rcmd, "quit",     "exit program session", &cmd_quit);
 }
