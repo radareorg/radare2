@@ -283,7 +283,17 @@ static int cmd_quit(void *data, const char *input) {
 }
 
 R_API int r_core_run_script (RCore *core, const char *file) {
-	RLangPlugin *p = r_lang_get_by_extension (core->lang, file);
+	RLangPlugin *p;
+	if (r_parse_is_c_file (file)) {
+		char *out = r_parse_c_file (file);
+		if (out) {
+			r_cons_strcat (out);
+			sdb_query_lines (core->anal->sdb_types, out);
+			free (out);
+		}
+		return out? R_TRUE: R_FALSE;
+	}
+	p = r_lang_get_by_extension (core->lang, file);
 	if (p) {
 		r_lang_use (core->lang, p->name);
 		return r_lang_run_file (core->lang, file);
