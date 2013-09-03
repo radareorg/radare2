@@ -92,8 +92,28 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 	return NULL;
 }
 
-#define R_FLAG_TEST 0
 
+R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
+	RFlagItem *oitem = NULL;
+	RFlagItem *item = NULL;
+	RList *list = r_hashtable64_lookup (f->ht_off, off);
+	if (list) {
+		RListIter *iter;
+		r_list_foreach (list, iter, item) {
+			// XXX: hack, because some times the hashtable is poluted by ghost values
+			if (item->offset != off)
+				continue;
+			if (!strchr (item->name, '.'))
+				oitem = item;
+			if (strlen (item->name) < 5 || item->name[3]!='.')
+				continue;
+			oitem = item;
+		}
+	}
+	return oitem;
+}
+
+#define R_FLAG_TEST 0
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off) {
 	RList *list = r_hashtable64_lookup (f->ht_off, off);
 	if (list) {
@@ -118,6 +138,7 @@ R_API int r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size, int dup) {
 	if (!name || !*name)
 		return R_FALSE;
 	if (dup) {
+// XXX: doesnt works well 
 		item = R_NEW0 (RFlagItem);
 		if (!r_flag_item_set_name (item, name)) {
 			eprintf ("Invalid flag name '%s'.\n", name);

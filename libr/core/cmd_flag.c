@@ -10,6 +10,11 @@ static int cmd_flag(void *data, const char *input) {
 	if (*input)
 		str = strdup (input+1);
 	switch (*input) {
+	case '2':
+		{
+		r_flag_get_i2 (core->flags, r_num_math (core->num, input+1));
+		}
+		break;
 	case 'R':
 		{
 		char *p = strchr (str+1, ' ');

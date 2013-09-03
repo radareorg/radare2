@@ -953,6 +953,16 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 }
 
 // Must be merged inside strlen
+R_API int r_str_len_utf8char (const char *s, int left) {
+	int i = 1;
+	while (s[i] && (!left || i<left)) {
+		if ((s[i] & 0xc0) != 0x80) {
+			i++;
+		} else break;
+	}
+	return i;
+}
+
 R_API int r_str_len_utf8 (const char *s) {
 	int i = 0, j = 0;
 	while (s[i]) {

@@ -9,7 +9,7 @@
 #include <signal.h>
 #endif
 
-R_LIB_VERSION(r_cons);
+R_LIB_VERSION (r_cons);
 
 static RCons r_cons_instance;
 #define I r_cons_instance
@@ -199,6 +199,7 @@ R_API void r_cons_gotoxy(int x, int y) {
 R_API void r_cons_print_clear() {
 	// xlr8!
 	r_cons_write ("\x1b[0;0H", 6);
+	r_cons_write ("\x1b[0m", 4);
 	//r_cons_memcat ("\x1b[2J", 4);
 }
 

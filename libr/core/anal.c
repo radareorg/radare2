@@ -363,7 +363,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
-			RFlagItem *f = r_flag_get_i (core->flags, at);
+			RFlagItem *f = r_flag_get_i2 (core->flags, at);
 			if (f) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name); // memleak here?
 			} else {

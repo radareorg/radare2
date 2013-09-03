@@ -58,6 +58,7 @@ R_API RFlag * r_flag_free(RFlag *f);
 R_API void r_flag_list(RFlag *f, int rad);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
+R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
 R_API int r_flag_unset(RFlag *f, const char *name, RFlagItem *p);
 R_API int r_flag_unset_i(RFlag *f, ut64 addr, RFlagItem *p);
 R_API int r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size, int dup);

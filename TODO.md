@@ -15,7 +15,6 @@ Broken stuff to fixe before release
 =====
 * use __unused if available
 * rafind2 : add support for unicode/widestring search
-* e dbg.hwbp para evitar q use hwbps
 * .dr- # documented... but not working
 * libr/debug/p/drx.c <- not used .. debug must have a hw reg api for drx and gpio
 * ah -> add hint to define calls that do not return
