@@ -467,9 +467,9 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	else h = -1;
 #else
 	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
-	h = mkstemp (name)!=-1? R_TRUE: R_FALSE;
+	h = mkstemp (name);
 #endif
-	if (oname) *oname = h? strdup (name): NULL;
+	if (oname) *oname = (h!=-1)? strdup (name): NULL;
 	free (path);
 	return h;
 }

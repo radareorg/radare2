@@ -283,7 +283,16 @@ static int cmd_quit(void *data, const char *input) {
 }
 
 R_API int r_core_run_script (RCore *core, const char *file) {
+	int ret = R_FALSE;
 	RLangPlugin *p;
+	if (!strcmp (file, "-")) {
+		char *out = r_core_editor (core, NULL);
+		if (out) {
+			ret = r_core_cmd_lines (core, out);
+			free (out);
+		}
+		return R_TRUE;;
+	}
 	if (r_parse_is_c_file (file)) {
 		char *out = r_parse_c_file (file);
 		if (out) {
@@ -334,6 +343,9 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '.': // same as \n
 		r_core_cmd_repeat (core, 1);
+		break;
+	case '-':
+		r_core_run_script (core, "-");
 		break;
 	case ' ':
 		r_core_run_script (core, input+1);
@@ -540,8 +552,10 @@ static int cmd_eval(void *data, const char *input) {
 			if (input2) input2++; else input2 = input+2;
 			val = r_config_get (core->config, input2);
 			p = r_core_editor (core, val);
-			r_str_replace_char (p, '\n', ';');
-			r_config_set (core->config, input2, p);
+			if (p) {
+				r_str_replace_char (p, '\n', ';');
+				r_config_set (core->config, input2, p);
+			}
 		} else eprintf ("Usage: ee varname\n");
 		break;
 	case '!':
@@ -1298,24 +1312,20 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	return ret;
 }
 
-R_API int r_core_cmd_file(RCore *core, const char *file) {
+R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	int ret = R_TRUE;
-	char *nl, *data, *odata;
-	data = r_file_abspath (file);
-	odata = r_file_slurp (data, NULL);
-	free (data);
-	if (!odata) {
-		eprintf ("Cannot open '%s'\n", file);
-		return R_FALSE;
-	}
+	char *nl, *odata;
+
+	if (!lines || !*lines) return R_TRUE;
+	odata = strdup (lines);
 	nl = strchr (odata, '\n');
 	if (nl) {
-		data = odata;
+		char *data = odata;
 		do {
 			*nl = '\0';
 			ret = r_core_cmd (core, data, 0);
 			if (ret == -1) {
-				eprintf ("r_core_cmd_file: Failed to run '%s'\n", file);
+				ret = R_FALSE;
 				break;
 			}
 			r_cons_flush ();
@@ -1327,8 +1337,27 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 			}
 			data = nl+1;
 		} while ((nl = strchr (data, '\n')));
+		if (data && *data) {
+			r_core_cmd (core, data, 0);
+		}
 	}
 	free (odata);
+	return ret;
+}
+
+R_API int r_core_cmd_file(RCore *core, const char *file) {
+	int ret = R_TRUE;
+	char *nl, *data, *odata;
+	data = r_file_abspath (file);
+	odata = r_file_slurp (data, NULL);
+	free (data);
+	if (!odata) {
+		return -1;
+	}
+	if (!r_core_cmd_lines (core, odata)) {
+		eprintf ("Failed to run script '%s'\n", file);
+		return R_FALSE;
+	}
 	return R_TRUE;
 }
 

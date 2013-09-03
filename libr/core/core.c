@@ -1101,13 +1101,21 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 
 R_API char *r_core_editor (RCore *core, const char *str) {
-	char *name, *ret;
-	int len, fd = r_file_mkstemp ("r2editor", &name);
+	const char *editor;
+	char *name, *ret = NULL;
+	int len, fd;
+	fd = r_file_mkstemp ("r2ed", &name);
 	if (fd == -1)
 		return NULL;
 	if (str) write (fd, str, strlen (str));
 	close (fd);
-	r_sys_cmdf ("%s %s", r_config_get (core->config, "cfg.editor"), name);
+
+	editor = r_config_get (core->config, "cfg.editor");
+	if (!editor || !*editor || !strcmp (editor, "-")) {
+		r_cons_editor (name);
+	} else {
+		r_sys_cmdf ("%s '%s'", editor, name);
+	}
 	ret = r_file_slurp (name, &len);
 	ret[len-1] = 0; // chop
 	r_file_rm (name);

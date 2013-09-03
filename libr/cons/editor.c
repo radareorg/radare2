@@ -81,7 +81,7 @@ R_API char *r_cons_editor (const char *file) {
 		nlines = r_str_split (lines, '\n');
 		eprintf ("Loaded %d lines on %d bytes\n", nlines-1, bytes);
 	} else path = NULL;
-	r_cons_new ();
+	//r_cons_new ();
 	I->line->hist_up = up;
 	I->line->hist_down = down;
 	I->line->contents = I->line->buffer.data;
@@ -95,5 +95,8 @@ R_API char *r_cons_editor (const char *file) {
 		if (!line) break;
 	}
 	filesave ();
+	I->line->hist_up = 
+	I->line->hist_down = NULL;
+	I->line->contents = NULL;
 	return NULL;
 }
