@@ -370,6 +370,10 @@ toro:
 			refline = strdup ("");
 			refline2 = strdup ("");
 		}
+
+		/* show type links */
+		r_core_cmdf (core, "tf 0x%08"PFMT64x, at);
+
 		f = show_functions? r_anal_fcn_find (core->anal, at,
 			R_ANAL_FCN_TYPE_NULL): NULL;
 		if (!hint || !hint->bits) {

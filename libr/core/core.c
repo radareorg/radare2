@@ -1131,7 +1131,7 @@ R_API RBin *r_core_get_bin (RCore *core) { return core->bin; }
 R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) {
 	int i, num;
 	RBuffer *b= NULL;
-	char code[1024], ptr[128];
+	char code[1024];
 
 	num = r_syscall_get_num (core->anal->syscall, name);
 	snprintf (code, sizeof (code),

@@ -139,7 +139,7 @@ typedef struct r_cons_t {
 	int truecolor; // 1 = rgb 256), 2 = truecolor (16M)
 	RConsPalette pal;
 	struct r_line_t *line;
-	char **vline;
+	const char **vline;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -263,6 +263,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty);
 #endif
 
 /* control */
+R_API char *r_cons_editor (const char *file);
 R_API void r_cons_reset();
 R_API void r_cons_reset_colors();
 R_API void r_cons_print_clear();

@@ -15,13 +15,15 @@ static void show_help() {
 	" td-foo                 undefine type 'foo'\n"
 	" tf addr                view linked type at given address\n"
 	" ts k=v k=v @ link.addr set fields at given linked type\n"
-	" tl [type] [addr]       link type to a given address\n");
+	" tl [type] ([addr])     show show / link type to a address\n");
 }
 
+static int sdbforcb (void *p, const char *k, const char *v) {
+	r_cons_printf ("%s=%s\n", k, v);
+}
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	char *arg, pcmd[512];
-	RAnalType *t = NULL;
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
@@ -65,7 +67,8 @@ static int cmd_type(void *data, const char *input) {
 #endif
 	case 0:
 		// TODO: use r_cons here
-		sdb_list (core->anal->sdb_types);
+		//sdb_list (core->anal->sdb_types);
+		sdb_foreach (core->anal->sdb_types, sdbforcb, core);
 		break;
 	case 'o':
 		if (input[1] == ' ') {
@@ -118,19 +121,20 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// tl - link a type to an address
 	case 'l':
-	{
-		ut64 addr = r_num_math (core->num, input+2);
-		char *ptr = strchr (input + 2, ' ');
-		if (ptr) {
-			addr = r_num_math (core->num, ptr + 1);
-			*ptr = '\0';
-			if (addr > 0) {
-				r_anal_type_link (core->anal, input+2, addr);
-			} else eprintf ("Wrong address to link!\n");
-		} else
+		if (input[1]=='?') {
 			eprintf("Usage: tl[...]\n"
 				" tl [typename|addr] ([addr])@[addr|function]\n");
-	}
+		} else if (input[1]) {
+			ut64 addr = r_num_math (core->num, input+2);
+			char *ptr = strchr (input + 2, ' ');
+			if (ptr) {
+				addr = r_num_math (core->num, ptr + 1);
+				*ptr = '\0';
+			} else addr = core->offset;
+			r_anal_type_link (core->anal, input+2, addr);
+		} else {
+			r_core_cmd0 (core, "t~^link");
+		}
 		break;
 	case '-':
 		if (input[1]=='*') {
@@ -147,8 +151,21 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// tv - get/set type value linked to a given address
 	case 'f':
-		snprintf (pcmd, sizeof (pcmd), "pf `t %s`", input+2);
-		r_core_cmd0 (core, pcmd);
+		 {
+			ut64 addr;
+			char *fmt, key[128];
+			const char *type;
+			if (input[1]) {
+				addr = r_num_math (core->num, input+1);
+			} else addr = core->offset;
+			snprintf (key, sizeof (key), "link.%"PFMT64x, addr);
+			type = sdb_getc (core->anal->sdb_types, key, 0);
+			fmt = r_anal_type_format (core->anal, type);
+			if (fmt) {
+				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, addr);
+				free (fmt);
+			}// else eprintf ("Cannot find '%s' type\n", input+1);
+		 }
 		break;
 	case '?':
 		if (input[1]) {
