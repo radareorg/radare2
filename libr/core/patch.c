@@ -30,6 +30,10 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 		fgets (str, sizeof (str), fd);
 		if (*str=='#' || *str=='\n' || *str=='\r')
 			continue;
+		if (*str==':') {
+			r_core_cmd0 (core, str+1);
+			continue;
+		}
 		if (*str=='.' || *str=='!') {
 			r_core_cmd0 (core, str);
 			continue;
@@ -37,7 +41,7 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 		p = strchr (str+1, ' ');
 		if (p) {
 			*p = 0;
-			for (++p;*p==' ';p++); // XXX: skipsspaces here
+			for (++p; *p==' '; p++); // XXX: skipsspaces here
 			switch (*p) {
 			case '{': {
 				char *s, *off = strdup (str);
@@ -82,7 +86,7 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 				p2 = strchr (p+1,'"');
 				if (p2) *p2=0;
 				r_core_cmdf (core, "s %s", str);
-				r_core_cmdf (core, "\" %s\"", p+1);
+				r_core_cmdf (core, "\"w %s\"", p+1);
 				break;
 			case ':':
 				r_core_cmdf (core, "s %s", str);

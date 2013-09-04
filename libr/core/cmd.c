@@ -1325,7 +1325,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 }
 
 R_API int r_core_cmd_lines(RCore *core, const char *lines) {
-	int ret = R_TRUE;
+	int r, ret = R_TRUE;
 	char *nl, *data, *odata;
 
 	if (!lines || !*lines) return R_TRUE;
@@ -1334,8 +1334,8 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 	if (nl) {
 		do {
 			*nl = '\0';
-			ret = r_core_cmd (core, data, 0);
-			if (ret == -1) {
+			r = r_core_cmd (core, data, 0);
+			if (r == -1) {
 				ret = R_FALSE;
 				break;
 			}
@@ -1349,9 +1349,8 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 			data = nl+1;
 		} while ((nl = strchr (data, '\n')));
 	}
-	if (data && *data) {
+	if (data && *data)
 		r_core_cmd (core, data, 0);
-	}
 	free (odata);
 	return ret;
 }
@@ -1360,11 +1359,10 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 	int ret = R_TRUE;
 	char *nl, *data, *odata;
 	data = r_file_abspath (file);
+	if (!data) return R_FALSE;
 	odata = r_file_slurp (data, NULL);
 	free (data);
-	if (!odata) {
-		return -1;
-	}
+	if (!odata) return R_FALSE;
 	if (!r_core_cmd_lines (core, odata)) {
 		eprintf ("Failed to run script '%s'\n", file);
 		return R_FALSE;
