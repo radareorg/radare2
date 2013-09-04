@@ -7,6 +7,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_bin.h>
 
 #define USHORT(x,y) ((ut16)(x[y+1]|(x[y]<<8)))
 #define UINT(x,y) ((ut32)((x[y]<<24)|(x[y+1]<<16)|(x[y+2]<<8)|x[y+3]))
@@ -459,15 +460,22 @@ typedef struct r_bin_java_stack_verification_t{
 typedef struct r_bin_java_fm_t {
 	RBinJavaMetaInfo *metas;
 	ut64 size;
-	ut8 *name;
-	ut8 *descriptor;
+	char *name;
+	char *descriptor;
+	char *class_name;
+
 	ut64 file_offset;
 	R_BIN_JAVA_FIELD_TYPE type;
 	ut16 flags;
 	ut16 name_idx;
 	ut16 descriptor_idx;
+	
+	RBinJavaCPTypeObj *field_ref_cp_obj;
+
 	ut16 attr_count;
 	RList *attributes;
+	ut64 method_number;
+
 } RBinJavaField;
 
 
@@ -625,16 +633,6 @@ typedef struct r_bin_java_attr_t {
 }RBinJavaAttrInfo;
 
 
-typedef struct r_bin_java_field_info_t {
-	RBinJavaMetaInfo *metas;
-	ut64 file_offset;
-	ut16 flags;
-	ut16 name_idx;
-	ut16 descriptor_idx;
-	ut16 attr_count;
-	struct r_bin_java_attr_t *attributes;
-	RList * attributes_list;
-} RBinJavaFieldInfo;
 
 typedef struct r_bin_java_attr_classes_t {
 	ut8 *name;
@@ -716,30 +714,15 @@ typedef struct r_bin_java_obj_t {
 	RList * methods_list;
 	RList * cp_list;
 	RList * interfaces_list;
+	RList * all_attributes;
 } RBinJavaObj;
 
-
-
-typedef struct r_bin_java_sym_t {
-	char * name[R_BIN_JAVA_MAXSTR];
-	ut64 offset; // XXX: ut64 is too much
-	ut64 size;
-	int last;
-} RBinJavaSymbol;
-
-typedef struct r_bin_java_str_t {
-	char * str[R_BIN_JAVA_MAXSTR];
-	ut64 offset;
-	ut64 ordinal;
-	ut64 size;
-	int last;
-} RBinJavaString;
 
 R_API char * r_bin_java_get_version(RBinJavaObj* bin);
 R_API ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin);
 R_API ut64 r_bin_java_get_main(RBinJavaObj* bin);
-R_API RBinJavaSymbol* r_bin_java_get_symbols(RBinJavaObj* bin);
-R_API RBinJavaString* r_bin_java_get_strings(RBinJavaObj* bin);
+R_API RList * r_bin_java_get_symbols(RBinJavaObj* bin);
+R_API RList * r_bin_java_get_strings(RBinJavaObj* bin);
 R_API void * r_bin_java_free(RBinJavaObj* bin);
 R_API RBinJavaObj * r_bin_java_new(const char* file);
 R_API RBinJavaObj * r_bin_java_new_buf(struct r_buf_t * buf);
@@ -1113,9 +1096,19 @@ R_API ut64 r_bin_java_methodhandle_cp_calc_size(RBinJavaCPTypeObj* obj);
 R_API ut64 r_bin_java_methodtype_cp_calc_size(RBinJavaCPTypeObj* obj);
 R_API ut64 r_bin_java_invokedynamic_cp_calc_size(RBinJavaCPTypeObj* obj);
 
-
 R_API RBinJavaStackMapFrame * r_bin_java_default_stack_frame();
 
+R_API RBinSymbol * r_bin_java_allocate_symbol();
+R_API RBinSymbol * r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx);
+R_API RBinSymbol * r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTypeObj *obj);
+R_API RBinSymbol * r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj);
+R_API RBinSymbol * r_bin_java_create_new_symbol_from_method(RBinJavaField *fm_type);
 
+R_API ut64 r_bin_java_get_method_code_offset(RBinJavaField *fm_type);
+R_API ut64 r_bin_java_get_method_code_size(RBinJavaField *fm_type);
+
+R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(ut16 name_and_typeidx);
+R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info_from_name_and_type(ut16 name_idx, ut16 descriptor_idx);
+R_API RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(ut16 name_idx, ut16 descriptor_idx);
 
 #endif

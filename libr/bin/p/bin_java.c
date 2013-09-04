@@ -1,3 +1,4 @@
+
 /* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
 
 #include <r_types.h>
@@ -53,54 +54,11 @@ static RList* classes(RBinArch *arch) {
 }
 
 static RList* symbols(RBinArch *arch) {
-	RList *ret = NULL;
-	RBinSymbol *ptr = NULL;
-	struct r_bin_java_sym_t *s = NULL;
-	int i;
-
-	if (!(ret = r_list_new ()))
-		return NULL;
-	ret->free = free;
-	if (!(s = r_bin_java_get_symbols ((struct r_bin_java_obj_t*)arch->bin_obj)))
-		return ret;
-	for (i = 0; !s[i].last; i++) {
-		if (!(ptr = R_NEW (RBinSymbol)))
-			break;
-		strncpy ( ptr->name, (const char *) s[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy ( ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy ( ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy ( ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
-		ptr->rva = ptr->offset = s[i].offset;
-		ptr->size = s[i].size;
-		ptr->ordinal = i;
-		r_list_append (ret, ptr);
-	}
-	free (s);
-	return ret;
+	return r_bin_java_get_symbols ((struct r_bin_java_obj_t*)arch->bin_obj);
 }
 
 static RList* strings(RBinArch *arch) {
-	RList *ret = NULL;
-	RBinString *ptr = NULL;
-	struct r_bin_java_str_t *strings = NULL;
-	int i;
-
-	if (!(ret = r_list_new ()))
-		return NULL;
-	ret->free = free;
-	if (!(strings = r_bin_java_get_strings((struct r_bin_java_obj_t*)arch->bin_obj)))
-		return ret;
-	for (i = 0; !strings[i].last; i++) {
-		if (!(ptr = R_NEW (RBinString)))
-			break;
-		strncpy (ptr->string, (const char *) strings[i].str, R_BIN_SIZEOF_STRINGS);
-		ptr->rva = ptr->offset = strings[i].offset;
-		ptr->size = strings[i].size;
-		ptr->ordinal = strings[i].ordinal;
-		r_list_append (ret, ptr);
-	}
-	free (strings);
-	return ret;
+	return r_bin_java_get_strings((struct r_bin_java_obj_t*)arch->bin_obj);
 }
 
 static RBinInfo* info(RBinArch *arch) {
