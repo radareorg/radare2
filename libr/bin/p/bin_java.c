@@ -66,10 +66,10 @@ static RList* symbols(RBinArch *arch) {
 	for (i = 0; !s[i].last; i++) {
 		if (!(ptr = R_NEW (RBinSymbol)))
 			break;
-		strncpy (ptr->name, s[i].name, R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+		strncpy ( ptr->name, (const char *) s[i].name, R_BIN_SIZEOF_STRINGS);
+		strncpy ( ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy ( ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
+		strncpy ( ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);
 		ptr->rva = ptr->offset = s[i].offset;
 		ptr->size = s[i].size;
 		ptr->ordinal = i;
@@ -93,7 +93,7 @@ static RList* strings(RBinArch *arch) {
 	for (i = 0; !strings[i].last; i++) {
 		if (!(ptr = R_NEW (RBinString)))
 			break;
-		strncpy (ptr->string, strings[i].str, R_BIN_SIZEOF_STRINGS);
+		strncpy (ptr->string, (const char *) strings[i].str, R_BIN_SIZEOF_STRINGS);
 		ptr->rva = ptr->offset = strings[i].offset;
 		ptr->size = strings[i].size;
 		ptr->ordinal = strings[i].ordinal;

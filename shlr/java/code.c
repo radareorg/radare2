@@ -6,32 +6,47 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <r_list.h>
 #include "code.h"
+#include "class.h"
 
 #define V if(verbose)
 
-static RBinJavaCpItem *cp_items = NULL;
-static RBinJavaCpItem cp_null_item = {
-	.tag = -1,
-	.name = "(?)",
-	.value = "(?)" // must be strduped
-};
+
+
+static RList *cp_items = NULL;
+
 
 static RBinJavaClass cf;
 
 R_API void r_java_setcp(void *cp, int n) {
 	// eprintf ("SET CP (%p) %d\n", cp, n);
-	cp_items = cp;
+	cp_items = (RList *) cp;
+	if(cp == NULL)
+		cp_items = r_list_new();
+
 	cf.cp_count = n;
 }
 
-static RBinJavaCpItem* get_cp(int i) {
+static RBinJavaCPTypeObj* get_cp(int i) {
+	RBinJavaCPTypeObj *item = NULL;
 	if (i<0||i>cf.cp_count)
-		return &cp_null_item;
-	return &cp_items[i];
+		return r_bin_java_get_java_null_cp();
+	item = (RBinJavaCPTypeObj *) r_list_get_n(cp_items, i);
+	return item;
 }
 
 static int java_resolve(int idx, char *str) {
+	// TODO XXX FIXME add a size parameter to the str when it is passed in
+	RBinJavaCPTypeObj *item = NULL, 
+					*class_cp_item = NULL, 
+					*namet_cp_item = NULL;
+	char *class_str = NULL, 
+		 *namet_str = NULL, 
+		 *string_str = NULL, 
+		 *empty = "",
+		 *cp_name = NULL;
+	int class_idx, namet_idx;
 	if (str == NULL)
 		return 0;
 	sprintf (str, "(%d)", idx);
@@ -40,30 +55,91 @@ static int java_resolve(int idx, char *str) {
 	}
 	if (idx<0||idx>cf.cp_count)
 		return 1;
-	if (cp_items) {
-		if (!cp_items[idx].name) {  
-			sprintf (str, "0x%04x", USHORT (get_cp (idx)->bytes, 0));
-			return 0;
+
+	// default case.
+	if (cp_items == NULL){
+		strcpy (str, "(null)");
+		return 0;	
+	}
+	
+
+	item = (RBinJavaCPTypeObj *) r_list_get_n(cp_items, idx);
+	if (!item){
+		sprintf (str, "(?): 0x%04x", item->tag);
+		return 0;			
+	}
+	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
+	if ( !cp_name) {  
+		sprintf (str, "0x%02x", item->tag);
+		return 0;
+	}
+	
+	// Damn this is a long logic statement :-(
+	if ( strcmp (cp_name, "Class") == 0 ){
+		class_idx = item->info.cp_class.name_idx;
+		class_str = r_bin_java_get_utf8_from_cp_item_list(cp_items, class_idx);	
+		if (class_str == NULL)
+			class_str = empty;
+
+		sprintf (str, "%s", class_str);
+		
+		if (class_str != empty)
+			free(class_str);
+	
+	}else if ( strcmp (cp_name, "MethodRef") == 0 ||
+		 strcmp (cp_name, "FieldRef") == 0 || 
+		 strcmp (cp_name, "InterfaceMethodRef") == 0) {
+		
+		int class_idx = -1;
+		int namet_idx =	-1;		
+		if (strcmp (cp_name, "MethodRef") == 0){
+			class_idx = item->info.cp_method.class_idx;
+			namet_idx = item->info.cp_method.name_and_type_idx;
+		}else if(strcmp (cp_name, "FieldRef") == 0){
+			class_idx = item->info.cp_field.class_idx;
+			namet_idx = item->info.cp_field.name_and_type_idx;				
+		}else if(strcmp (cp_name, "InterfaceMethodRef") == 0){
+			class_idx = item->info.cp_interface.class_idx;
+			namet_idx = item->info.cp_interface.name_and_type_idx;				
 		}
-		if ((!strcmp (cp_items[idx].name, "MethodRef"))
-		|| (!strcmp (cp_items[idx].name, "FieldRef"))) {
-			int class_idx = USHORT (get_cp (idx)->bytes, 0);
-			int namet_idx = USHORT (get_cp (idx)->bytes, 2);
-			//int namet = USHORT(get_cp(idx)->bytes,2);
-			char *class_str = get_cp (class_idx)->name;
-			char *namet_str = get_cp (namet_idx)->name;
-			//char *namet_str = get_cp(namet)->value;
-//eprintf ("-----> %d %s\n", class_idx, class_str);
-// XXX: uberflaw?
-			sprintf (str, "%s %s", class_str, namet_str);
-		} else
-		if (!strcmp (cp_items[idx].name, "String")) {
-			sprintf (str, "\"%s\"", get_cp (USHORT (get_cp (idx)->bytes,0)-1)->value);
-		} else
-		if (!strcmp (cp_items[idx].name, "Utf8")) {
-			sprintf (str, "\"%s\"", get_cp (idx)->value);
-		} else sprintf (str, "0x%04x", USHORT (get_cp (idx)->bytes,0));
-	} else strcpy (str, "(null)");
+
+		class_str = r_bin_java_get_name_from_cp_item_list(cp_items, class_idx);	
+		namet_str = r_bin_java_get_item_name_from_cp_item_list(cp_items, item);
+		if (class_str == NULL)
+			class_str = empty;
+		if (namet_str == NULL)
+			namet_str = empty;
+		
+		sprintf (str, "%s %s", class_str, namet_str);
+		
+		if (class_str != empty)
+			free(class_str);
+		if (namet_str != empty)
+			free(namet_str);
+	} else if (strcmp (cp_name, "String") == 0) {
+		string_str = r_bin_java_get_utf8_from_cp_item_list(cp_items, item->info.cp_string.string_idx); 
+		if (string_str){
+			sprintf (str, "\"%s\"", string_str);
+			free(string_str);	
+		}else
+			sprintf (str, "\"%s\"", empty);
+
+		
+	} else if (strcmp (cp_name, "Utf8") == 0) {
+		sprintf (str, "\"%s\"", item->info.cp_utf8.bytes);
+	} else if (strcmp (cp_name, "Long") == 0) {
+		sprintf (str, "0x%llx", rbin_java_raw_to_long (item->info.cp_long.bytes.raw,0));
+	} else if (strcmp (cp_name, "Double") == 0) {
+		sprintf (str, "%f", rbin_java_raw_to_double (item->info.cp_double.bytes.raw,0));
+	} else if (strcmp (cp_name, "Integer") == 0) {
+		sprintf (str, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw,0));
+	} else if (strcmp (cp_name, "Float") == 0) {
+		sprintf (str, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw,0));
+	} else if (strcmp (cp_name, "NameAndType") == 0) {
+		sprintf (str, "Name: 0x%04x Type: 0x%04x", item->info.cp_name_and_type.name_idx, item->info.cp_name_and_type.descriptor_idx);
+	}  else{ 
+		strcpy (str, "(null)");
+	}
 	return 0;
 }
 
