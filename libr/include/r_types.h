@@ -121,7 +121,7 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #endif
 
 #define BITS2BYTES(x) ((x/8)+((x%8)?1:0))
-#define ZERO_FILL(x) memset (x, 0, sizeof (x))
+#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
 #define R_NEWS0(x,y) (x*)memset (malloc(sizeof(x)*y), 0, sizeof(x)*y);
 #define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
 #define R_NEW(x) (x*)malloc(sizeof(x))
@@ -133,10 +133,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 
 #define R_PTR_ALIGN(v,t) \
-	((char *)(((ut64)(v) ) \
+	((char *)(((size_t)(v) ) \
 	& ~(t - 1))) 
 #define R_PTR_ALIGN_NEXT(v,t) \
-	((char *)(((ut64)(v) + (t - 1)) \
+	((char *)(((size_t)(v) + (t - 1)) \
 	& ~(t - 1))) 
 
 #define R_BIT_SET(x,y) (x[y>>4] |= (1<<(y&0xf)))

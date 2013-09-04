@@ -591,23 +591,35 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					data[l++] = ptr[2];
 					data[l++] = ptr[3];
 				} else {
-					char *p= strchr (arg2, '+');
+					char *p = strchr (arg2, '+');
 					if (!p) p = strchr (arg2, '-');
 					if (p) {
-						int n = getnum (a, p+1);
-						*p++ = 0;
-						ut8 *ptr = (ut8*)&n;
-						//data[l++]= 0x9d;
-						if (n>127 || n<-127) {
-							data[l++] = 0x80 | getreg (arg)<<3 | getreg (arg2);
-							data[l++] = ptr[0];
-							data[l++] = ptr[1];
-							data[l++] = ptr[2];
-							data[l++] = ptr[3];
-							// TODO
+						if (isnum (a, p+1)) {
+							int n = getnum (a, p+1);
+							*p++ = 0;
+							ut8 *ptr = (ut8*)&n;
+							if (n>127 || n<-127 || r2==4) {
+								data[l++] = 0x80 | getreg (arg)<<3 | getreg (arg2);
+								if (r2==4)
+									data[l++] = 0x24; // THE ESP EXCEPTION
+								data[l++] = ptr[0];
+								data[l++] = ptr[1];
+								data[l++] = ptr[2];
+								data[l++] = ptr[3];
+								// TODO
+							} else {
+								data[l++] = 0x40 | getreg (arg)<<3 | getreg (arg2);
+								data[l++] = n;
+							}
 						} else {
-							data[l++] = 0x40 | getreg (arg)<<3 | getreg (arg2);
-							data[l++] = n;
+							int r3 = getreg (p+1);
+							// lea reg, [reg+reg]
+							data[l++] = (r<<3) | 4;
+							if (r2>r3) {
+								data[l++] = (r3) | (r2<<3);
+							} else {
+								data[l++] = (r3<<3) | (r2);
+							}
 						}
 					} else {
 						if (r2==4) { //ESP

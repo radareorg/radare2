@@ -28,7 +28,7 @@ else
 	exit 1
 fi
 
-make clean
+make mrproper
 
 ./configure ${CFGFLAGS} --with-compiler=$C --host=$H && \
 	make -s -j ${MAKE_JOBS} && \

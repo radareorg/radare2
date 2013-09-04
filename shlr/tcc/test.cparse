@@ -1,3 +1,9 @@
+enum {
+	FOO = 1,
+	BAR = 2,
+	COW = 3
+};
+
 struct Cow {
 	int cowa;
 	int cowb;

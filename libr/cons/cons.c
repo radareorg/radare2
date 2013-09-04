@@ -9,7 +9,7 @@
 #include <signal.h>
 #endif
 
-R_LIB_VERSION(r_cons);
+R_LIB_VERSION (r_cons);
 
 static RCons r_cons_instance;
 #define I r_cons_instance
@@ -105,8 +105,10 @@ static void resize (int sig) {
 #endif
 
 R_API RCons *r_cons_new () {
+	I.line = r_line_new ();
 	I.event_interrupt = NULL;
 	I.blankline = R_TRUE;
+	I.heightfix = 0;
 	I.widthfix = 0;
 	I.event_resize = NULL;
 	I.data = NULL;
@@ -118,7 +120,7 @@ R_API RCons *r_cons_new () {
 	I.fdin = stdin;
 	I.fdout = 1;
 	I.breaked = R_FALSE;
-	I.lines = 0;
+	//I.lines = 0;
 	I.buffer = NULL;
 	I.buffer_sz = 0;
 	I.buffer_len = 0;
@@ -151,6 +153,10 @@ R_API RCons *r_cons_new () {
 }
 
 R_API RCons *r_cons_free () {
+	if (I.line) {
+		r_line_free (I.line);
+		I.line = NULL;
+	}
 	if (I.buffer) {
 		free (I.buffer);
 		I.buffer = NULL;
@@ -194,6 +200,7 @@ R_API void r_cons_gotoxy(int x, int y) {
 R_API void r_cons_print_clear() {
 	// xlr8!
 	r_cons_write ("\x1b[0;0H", 6);
+	r_cons_write ("\x1b[0m", 4);
 	//r_cons_memcat ("\x1b[2J", 4);
 }
 
@@ -201,7 +208,7 @@ R_API void r_cons_fill_line() {
 	char *p, white[1024];
 	int cols = I.columns-1;
 	if (cols<1) return;
-	if (cols>sizeof (white)) {
+	if (cols>=sizeof (white)) {
 		p = malloc (cols+1);
 	} else p = white;
 	memset (p, ' ', cols);
@@ -435,6 +442,8 @@ R_API int r_cons_get_size(int *rows) {
 	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
 		I.columns = win.ws_col;
 		I.rows = win.ws_row-1;
+		if (I.heightfix)
+			I.rows--;
 	} else {
 		I.columns = 80;
 		I.rows = 23;

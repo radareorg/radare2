@@ -250,6 +250,28 @@ SDB_VISIBLE int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	return kv->cas;
 }
 
+SDB_VISIBLE void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
+	SdbKv *kv;
+	SdbListIter *iter;
+	ls_foreach (s->ht->list, iter, kv) {
+		if (!kv->value || !*kv->value)
+			continue;
+		if (strchr (kv->value, SDB_RS)) {
+			char *o, *p = strdup (kv->value);
+			for (o=p; *o; o++) if (*o==SDB_RS) *o = ',';
+			o = malloc (strlen (kv->key)+3);
+			memcpy (o, "()", 2);
+			strcpy (o+2, kv->key);
+			cb (user, o, p);
+			free (o);
+			free (p);
+		} else {
+			cb (user, kv->key, kv->value);
+		}
+	}
+}
+
+// TODO: reuse sdb_foreach
 SDB_VISIBLE void sdb_list (Sdb* s) {
 	SdbKv *kv;
 	SdbListIter *iter;

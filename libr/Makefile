@@ -112,7 +112,7 @@ install: install-includes install-pkgconfig
 	${INSTALL_DATA} $$a ${LFX}/radare2/${VERSION} ; done
 	@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
 	${INSTALL_DATA} lang/p/radare.* ${LFX}/radare2/${VERSION}
-	ln -fs ${LFX}/radare2/${VERSION} ${LFX}/radare2/last
+	cd ${LFX}/radare2 ; ln -fs ${VERSION} last
 
 deinstall uninstall:
 	# libraries

@@ -64,6 +64,25 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 	if (!memcmp (in, "0x", 2))
 		in += 2;
 	for (ptr = in; ; ptr++) {
+		/* comments */
+		if (*ptr=='#') {
+			while (*ptr && *ptr != '\n') ptr++;
+			if (!ptr[0])
+				break;
+			ptr--;
+			continue;
+		}
+		if (*ptr == '/' && ptr[1]=='*') {
+			while (*ptr && ptr[1]) {
+				if (*ptr == '*' && ptr[1]=='/')
+					break;
+				ptr++;
+			}
+			if (!ptr[0] || !ptr[1])
+				break;
+			ptr++;
+			continue;
+		}
 		/* ignored chars */
 		if (*ptr==':' || *ptr=='\n' || *ptr=='\t' || *ptr=='\r' || *ptr==' ')
 			continue;

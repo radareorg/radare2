@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2013 - pancake */
 
+#include "r_util.h"
 #include "r_types.h"
 #include "libr_tcc.h"
 
@@ -37,4 +38,17 @@ R_API char *r_parse_c_string(const char *code) {
 	tcc_compile_string (T, code);
 	tcc_delete (T);
 	return str;
+}
+
+R_API int r_parse_is_c_file (const char *file) {
+
+	const char *ext = r_str_lchr (file, '.');
+	if (ext) {
+		ext = ext+1;
+		if (!strcmp (ext, "cparse")
+		||  !strcmp (ext, "c")
+		||  !strcmp (ext, "h"))
+			return R_TRUE;
+	}
+	return R_FALSE;
 }

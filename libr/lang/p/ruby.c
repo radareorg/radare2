@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 pancake<nopcode.org> */
 /* ruby extension for libr (radare2) */
 
 #include "r_lib.h"
@@ -7,80 +7,73 @@
 
 // XXX
 //#define RUBYAPI  LIBDIR"/ruby1.8/radare.rb"
-#define RUBYAPI  "/usr/lib/radare2/radare.rb"
+#define RUBYAPI  "/usr/lib/radare2/"R2_VERSION"/radare.rb"
 
 #include "r_core.h"
 static struct r_core_t *core = NULL;
 
-static VALUE radare_ruby_cmd(VALUE self, VALUE string)
-{
+static VALUE radare_ruby_cmd(VALUE self, VALUE string) {
 	const char *retstr;
-	Check_Type(string, T_STRING);
-	retstr = r_core_cmd_str(core, RSTRING(string)->ptr);
+	Check_Type (string, T_STRING);
+	retstr = r_core_cmd_str (core, RSTRING(string)->ptr);
 	if (retstr == NULL || retstr[0]=='\0')
-		return rb_str_new2("");
-	return rb_str_new2(retstr);
+		return rb_str_new2 ("");
+	return rb_str_new2 (retstr);
 }
 
-static int run(void *user, const char *code, int len)
-{
+static int run(void *user, const char *code, int len) {
 	int err, ret = R_TRUE;
-	rb_eval_string_protect(code, &err);
+	rb_eval_string_protect (code, &err);
 	if (err != 0) {
-		printf("error %d handled\n", err);
+		fprintf (stderr, "error %d handled\n", err);
 		ret = R_FALSE;
 	}
 	return ret;
 }
 
-static int slurp_ruby(const char *file)
-{
-	if (r_file_exists(file)) {
-		rb_load_file(file);
-		ruby_exec();
+static int slurp_ruby(const char *file) {
+	if (r_file_exists (file)) {
+		rb_load_file (file);
+		ruby_exec ();
 		return R_TRUE;
 	}
-	eprintf("lang_ruby: Cannot open '%s'\n", file);
+	eprintf ("lang_ruby: Cannot open '%s'\n", file);
 	return R_FALSE;
 }
 
-static int run_file(void *user, const char *file)
-{
-	return slurp_ruby(file);
+static int run_file(void *user, const char *file) {
+	return slurp_ruby (file);
 }
 
-static int init(void *user)
-{
+static int init(void *user) {
 	VALUE rb_RadareCmd;
 
-	ruby_init();
-	ruby_init_loadpath();
+	ruby_init ();
+	ruby_init_loadpath ();
 
-	rb_eval_string_protect("require 'irb'", NULL);
+	rb_eval_string_protect ("require 'irb'", NULL);
 	core = user;
-	rb_RadareCmd = rb_define_class("RadareInternal", rb_cObject);
-	rb_define_method(rb_RadareCmd, "cmd", radare_ruby_cmd, 1);
-	rb_eval_string_protect("$r = RadareInternal.new()", NULL);
+	rb_RadareCmd = rb_define_class ("RadareInternal", rb_cObject);
+	rb_define_method (rb_RadareCmd, "cmd", radare_ruby_cmd, 1);
+	rb_eval_string_protect ("$r = RadareInternal.new()", NULL);
 
-	if (!slurp_ruby(RUBYAPI)) {
-		printf("[ruby] error loading ruby api\n");
+	if (!slurp_ruby (RUBYAPI)) {
+		fprintf (stderr, "[ruby] error loading ruby api\n");
 		//return R_FALSE;
 	}
 	return R_TRUE;
 }
 
-static int prompt(void *user)
-{
+static int prompt(void *user) {
 	int err;
-	rb_eval_string_protect("IRB.start();", &err);
+	rb_eval_string_protect ("IRB.start();", &err);
 	if (err != 0)
 		return R_FALSE;
 	return R_TRUE;
 }
 
-static int fini(void *user)
-{
-	ruby_finalize();
+static int fini(void *user) {
+	ruby_finalize ();
 	return R_TRUE;
 }
 

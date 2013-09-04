@@ -43,6 +43,11 @@ static int config_hexcols_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int config_heightfix_callback(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->heightfix = node->i_value;
+	return R_TRUE;
+}
 static int config_widthfix_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->widthfix = node->i_value;
@@ -434,7 +439,7 @@ static int config_asmarch_callback(void *user, void *data) {
 	{
 		char asmparser[32];
 		snprintf (asmparser, sizeof (asmparser), "%s.pseudo", node->value);
-		
+
 		r_config_set (core->config, "asm.parser", asmparser);
 	}
 	if (!r_config_set (core->config, "anal.plugin", node->value)) {
@@ -501,7 +506,7 @@ static int config_rgbcolor_callback(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore *) user;
 	if (node->i_value) {
-		r_cons_singleton()->truecolor = 
+		r_cons_singleton()->truecolor =
 		(r_config_get_i (core->config, "scr.truecolor"))?2:1;
 	} else {
 		r_cons_singleton()->truecolor = 0;
@@ -522,7 +527,8 @@ static int config_color_callback(void *user, void *data) {
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_COLOR;
 	} else {
-		core->print->flags &= ~(core->print->flags&R_PRINT_FLAGS_COLOR);
+		//c:core->print->flags ^= R_PRINT_FLAGS_COLOR;
+		core->print->flags &= (~R_PRINT_FLAGS_COLOR);
 	}
 	r_print_set_flags (core->print, core->print->flags);
 	return R_TRUE;
@@ -534,6 +540,13 @@ static int config_pager_callback(void *user, void *data) {
 
 	/* Let cons know we have a new pager. */
 	core->cons->pager = node->value;
+	return R_TRUE;
+}
+
+static int config_utf8_callback(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->utf8 = node->i_value;
 	return R_TRUE;
 }
 
@@ -612,7 +625,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set_cb (cfg, "asm.segoff", "false", &config_segoff_callback);
 	r_config_desc (cfg, "asm.segoff", "show segmented address in prompt (x86-16)");
 	r_config_set (cfg, "asm.lines", "true");
-	r_config_desc (cfg, "asm.lines", "If enabled show ascci-art lines at disassembly");
+	r_config_desc (cfg, "asm.lines", "If enabled show ascii-art lines at disassembly");
 	r_config_set (cfg, "asm.linesright", "false");
 	r_config_desc (cfg, "asm.linesright", "If enabled show lines before opcode instead of offset");
 	r_config_set (cfg, "asm.linesout", "true");
@@ -622,7 +635,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set (cfg, "asm.lineswide", "false");
 	r_config_desc (cfg, "asm.lineswide", "If enabled put an space between lines");
 	r_config_set_i_cb (cfg, "asm.lineswidth", 10, &config_asmlineswidth_callback);
-	r_config_desc (cfg, "asm.lineswidth", "");
+	r_config_desc (cfg, "asm.lineswidth", "Number of columns for program flow arrows");
 	r_config_set (cfg, "asm.linescall", "false");
 	r_config_desc (cfg, "asm.linescall", "Enable call lines");
 	r_config_set_cb (cfg, "asm.syntax", "intel", &config_asmsyntax_callback);
@@ -798,6 +811,20 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "scr.colorops", "colorize in numbers/registers in opcodes");
 	r_config_set_cb (cfg, "scr.pager", "", &config_pager_callback);
 	r_config_desc (cfg, "scr.pager", "Select pager program (used if output doesn't fit on window)");
+#if 0
+{
+	const char *val;
+	char *sval = r_sys_getenv ("LC_CTYPE");
+	r_str_case (sval, 0);
+	val = strcmp (sval, "utf-8")? "false": "true";
+	free (sval);
+	r_config_set_cb (cfg, "scr.utf8", val, &config_utf8_callback);
+}
+#else
+	r_config_set_cb (cfg, "scr.utf8", "false", &config_utf8_callback);
+#endif
+	
+	r_config_desc (cfg, "scr.utf8", "show UTF-8 characters instead of ANSI");
 	//r_config_set_cb (cfg, "scr.nkey", "function", &config_scrnkey_callback);
 	r_config_set_cb (cfg, "scr.nkey", "hit", &config_scrnkey_callback);
 	r_config_desc (cfg, "scr.nkey", "Select the seek mode in visual");
@@ -810,6 +837,8 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "hex.cols", "Configure the number of columns in hexdump");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
+	r_config_set_cb (cfg, "scr.heightfix", "false", &config_widthfix_callback);
+	r_config_desc (cfg, "scr.heightfix", "Workaround for Linux TTY");
 	r_config_set_cb (cfg, "scr.widthfix", "false", &config_widthfix_callback);
 	r_config_desc (cfg, "scr.widthfix", "Workaround for Prompt iOS ssh client");
 	r_config_set (cfg, "search.in", "file");

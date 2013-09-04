@@ -161,7 +161,6 @@ R_API void r_cons_any_key() {
 
 R_API int r_cons_readchar() {
 	char buf[2];
-	buf[0] = -1;
 #if __WINDOWS__
 	BOOL ret;
 	DWORD out;
@@ -169,12 +168,14 @@ R_API int r_cons_readchar() {
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
+	buf[0] = -1;
 	ret = ReadConsole (h, buf, 1, &out, NULL);
 	if (!ret)
 		return -1;
 	SetConsoleMode (h, mode);
 #else
 	r_cons_set_raw (1);
+	buf[0] = -1;
 	if (read (0, buf, 1)==-1)
 		return -1;
 	r_cons_set_raw (0);

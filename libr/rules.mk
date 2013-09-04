@@ -1,7 +1,7 @@
 ifeq ($(_INCLUDE_RULES_MK_),)
 _INCLUDE_RULES_MK_=
 
-include $(LTOP)/config.mk
+-include $(LTOP)/config.mk
 
 ifeq ($(DEBUG),1)
 export NOSTRIP=1

@@ -419,8 +419,8 @@ enum {
 	R_ANAL_OP_TYPE_LOAD  = 0x20000000,  /* load from memory to register */
 	R_ANAL_OP_TYPE_LEA   = 0x40000000,
 	R_ANAL_OP_TYPE_LEAVE = 0x80000000,
-	R_ANAL_OP_TYPE_ROR   = 0x100000000,
-	R_ANAL_OP_TYPE_ROL   = 0x200000000,
+	R_ANAL_OP_TYPE_ROR   = 0x100000000LL,
+	R_ANAL_OP_TYPE_ROL   = 0x200000000LL,
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -602,11 +602,11 @@ typedef struct r_anal_var_access_t {
 
 typedef struct r_anal_var_t {
 	char *name;		/* name of the variable */
+	char *type;
 	ut64 addr;		// not used correctly?
 	ut64 eaddr;		// not used correctly?
 	int delta;		/* delta offset inside stack frame */
 	int scope;		/* global, local... | in, out... */
-	RAnalType *type;
 	/* probably dupped or so */
 	RList/*RAnalVarAccess*/ *accesses; /* list of accesses for this var */
 	RList/*RAnalValue*/ *stores;   /* where this */
@@ -684,7 +684,7 @@ R_API RList *r_anal_type_list_new();
 R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
-R_API char *r_anal_type_to_str(RAnal *a, RAnalType *t, const char *sep);
+R_API char *r_anal_type_to_str(RAnal *a, const char *name);
 R_API char *r_anal_optype_to_string(int t);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
@@ -837,11 +837,10 @@ R_API int r_anal_cond_eval (RAnal *anal, RAnalCond *cond);
 R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
-R_API struct r_anal_refline_t *r_anal_reflines_get(RAnal *anal,
+R_API RAnalRefline *r_anal_reflines_get(RAnal *anal,
 	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
-R_API char* r_anal_reflines_str(struct r_anal_t *anal, struct r_anal_refline_t *list,
-	ut64 addr, int opts);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
+R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr);

@@ -373,8 +373,10 @@ R_API int r_sys_cmdbg (const char *str) {
 	ret = r_sandbox_system (str, 0);
 	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
 	exit (0);
+	return -1;
 #else
 #warning r_sys_cmdbg is not implemented for this platform
+	return -1;
 #endif
 }
 

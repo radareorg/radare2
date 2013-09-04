@@ -442,7 +442,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1]) {
 			if (core->num->value == UT64_MIN)
 				r_core_cmd (core, input+1, 0);
-		} else r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
+		} else r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		break;
 	case '\0':
 	default:
@@ -452,7 +452,7 @@ static int cmd_help(void *data, const char *input) {
 		"Prefix with number to repeat command N times (f.ex: 3x)\n"
 		" $alias=value          alias commands (simple macros)\n"
 		" (macro arg0 arg1)     manage scripting macros\n"
-		" .[ file|!sh|cmd]      interpret as radare commands\n"
+		" .[ -|file|!sh|cmd]    interpret cparse, r2 or rlang file\n"
 		" = [cmd]               run this command via rap://\n"
 		" /[xmp/]               search for bytes, regexps, patterns, ..\n"
 		" ![cmd]                run given command as in system(3)\n"

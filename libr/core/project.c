@@ -23,7 +23,10 @@ static int r_core_project_init(RCore *core) {
 
 R_API int r_core_project_open(RCore *core, const char *prjfile) {
 	int ret;
-	char *prj = r_core_project_file (core, prjfile);
+	char *prj;
+	if (!prjfile || !*prjfile)
+		return R_FALSE;
+	prj = r_core_project_file (core, prjfile);
 	ret = r_core_cmd_file (core, prj);
 	r_anal_project_load (core->anal, prjfile);
 	free (prj);

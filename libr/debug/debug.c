@@ -21,7 +21,7 @@ static int r_debug_recoil(RDebug *dbg) {
 #if __arm__
 		if (recoil<1) recoil = 0; // XXX Hack :D
 #else
-		if (recoil<1) recoil = 1; // XXX Hack :D (x86 only?)
+		if (recoil<1) recoil = 0; //1; // XXX Hack :D (x86 only?)
 #endif
 		if (recoil) {
 			dbg->reason = R_DBG_REASON_BP;
@@ -338,7 +338,19 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	return ret;
 }
 
+R_API RList *r_debug_kill_list(RDebug *dbg) {
+	if (dbg->h->kill_list)
+		return dbg->h->kill_list (dbg);
+	return NULL;
+}
+
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
+	eprintf ("TODO: set signal handlers of child\n");
+	// TODO: must inject code to call signal()
+#if 0
+	if (dbg->h->kill_setup)
+		return dbg->h->kill_setup (dbg, sig, action);
+#endif
 	// TODO: implement r_debug_kill_setup
 	return R_FALSE;
 }

@@ -115,7 +115,7 @@ R_API int r_lang_list(RLang *lang) {
 R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {
 	RListIter *iter;
 	RLangPlugin *h;
-	const char *p = strchr (ext, '.');
+	const char *p = r_str_lchr (ext, '.');
 	if (p) ext = p+1;
 	r_list_foreach (lang->langs, iter, h) {
 		if (!strcmp (h->ext, ext))

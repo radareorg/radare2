@@ -89,6 +89,9 @@ int sdb_sync (Sdb*);
 void sdb_kv_free (struct sdb_kv *kv);
 void sdb_flush (Sdb* s);
 
+typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
+void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);
+
 /* create db */
 int sdb_create (Sdb* s);
 int sdb_append (Sdb* s, const char *key, const char *val);

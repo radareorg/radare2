@@ -244,7 +244,10 @@ R_API char *r_file_root(const char *root, const char *path) {
 
 R_API boolt r_file_dump(const char *file, const ut8 *buf, int len) {
 	int ret;
-	FILE *fd = r_sandbox_fopen (file, "wb");
+	FILE *fd;
+	if (!file || !*file || !buf)
+		return R_FALSE;
+	fd = r_sandbox_fopen (file, "wb");
 	if (fd == NULL) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return R_FALSE;
@@ -301,6 +304,7 @@ R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len
 	}
 	CloseHandle (fh);
 	CloseHandle (fm);
+	return len;
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDWR|O_SYNC, 0644);
 	const int pagesize = 4096;
@@ -350,7 +354,6 @@ R_API int r_file_mmap_read (const char *file, ut64 addr, ut8 *buf, int len) {
 	}
 	CloseHandle (fh);
 	CloseHandle (fm);
-
 #elif __UNIX__
 	int fd = r_sandbox_open (file, O_RDONLY, 0644);
 	const int pagesize = 4096;
@@ -464,9 +467,9 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	else h = -1;
 #else
 	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
-	h = mkstemp (name)!=-1? R_TRUE: R_FALSE;
+	h = mkstemp (name);
 #endif
-	if (oname) *oname = h? strdup (name): NULL;
+	if (oname) *oname = (h!=-1)? strdup (name): NULL;
 	free (path);
 	return h;
 }

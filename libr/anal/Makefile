@@ -1,21 +1,22 @@
 include ../config.mk
 
 NAME=r_anal
-DEPS=r_util r_db r_lib r_reg r_syscall r_diff r_db
+DEPS=r_util r_db r_lib r_reg r_syscall r_diff
 # r_core (commented as it would be recursive)
 CFLAGS*=HAVE_CPARSE=$(HAVE_CPARSE)
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
 LDFLAGS+=${BN_LIBS}
+include ../db/build.mk
 
 .PHONY: pre libs ${EXTRA_CLEAN}
 
 all: plugins
 
-plugins: libr_anal.${EXT_SO} libr_anal.${EXT_AR}
+plugins: ${LIBSO} ${LIBAR}
 	@${MAKE} -C p all
 
-libr_anal.${EXT_SO} libr_anal.${EXT_AR}: pre
+#${LIBSO} ${LIBAR}: pre
 
 include ${STATIC_ANAL_PLUGINS}
 STATIC_OBJS=$(addprefix $(LTOP)/anal/p/,$(STATIC_OBJ))
@@ -25,7 +26,7 @@ OBJLIBS+=hint.o vm.o anal.o data.o xrefs.o esil.o
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
 
-pre:
-	@cd $(TOP)/shlr && ${MAKE}
+#pre:
+#	@cd $(TOP)/shlr && ${MAKE}
 
 include $(LTOP)/rules.mk

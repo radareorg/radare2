@@ -342,7 +342,7 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 }
 
 R_API int r_io_write_at(RIO *io, ut64 addr, const ut8 *buf, int len) {
-	if (r_io_seek (io, addr, R_IO_SEEK_SET)<0)
+	if (r_io_seek (io, addr, R_IO_SEEK_SET) == UT64_MAX)
 		return -1;
 	return r_io_write (io, buf, len);
 }

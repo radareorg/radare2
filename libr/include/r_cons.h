@@ -91,10 +91,19 @@ typedef struct r_cons_palette_t {
 
 typedef void (*RConsEvent)(void *);
 
+typedef struct r_cons_canvas_t {
+	int w;
+	int h;
+	int x;
+	int y;
+	char *b;
+	int blen;
+} RConsCanvas;
+
 typedef struct r_cons_t {
 	RConsGrep grep;
 	char *buffer;
-	int line;
+	//int line;
 	int buffer_len;
 	int buffer_sz;
 	char *lastline;
@@ -126,8 +135,11 @@ typedef struct r_cons_t {
 	char *pager;
 	int blankline;
 	int widthfix;
+	int heightfix;
 	int truecolor; // 1 = rgb 256), 2 = truecolor (16M)
 	RConsPalette pal;
+	struct r_line_t *line;
+	const char **vline;
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -214,7 +226,27 @@ enum {
 	PAL_FF
 };
 
+// UTF-8 symbols indexes
+
+#define LINE_VERT 0
+#define LINE_CROSS 1
+#define RUP_CORNER 2
+#define RDWN_CORNER 3
+#define ARROW_RIGHT 4
+#define ARROW_LEFT 5
+#define LINE_HORIZ 6
+#define LUP_CORNER 7
+#define LDWN_CORNER 8
+
+
 #ifdef R_API
+R_API RConsCanvas* r_cons_canvas_new (int w, int h);
+R_API void r_cons_canvas_free (RConsCanvas *c);
+R_API void r_cons_canvas_print(RConsCanvas *c);
+R_API char *r_cons_canvas_to_string(RConsCanvas *c);
+R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s);
+R_API void r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y);
+
 R_API RCons *r_cons_new ();
 R_API RCons *r_cons_singleton ();
 R_API RCons *r_cons_free ();
@@ -231,6 +263,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty);
 #endif
 
 /* control */
+R_API char *r_cons_editor (const char *file);
 R_API void r_cons_reset();
 R_API void r_cons_reset_colors();
 R_API void r_cons_print_clear();
@@ -342,6 +375,9 @@ struct r_line_t {
 	char *clipboard;
 	int disable;
 	void *user;
+	int (*hist_up)(void *user);
+	int (*hist_down)(void *user);
+	char *contents;
 }; /* RLine */
 
 #ifdef R_API

@@ -189,7 +189,7 @@ R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 to, const char *str) {
 			if (r_meta_comment_check (m, str, from))
 				return R_FALSE;
 		mi = r_meta_item_new (type);
-		mi->size = R_ABS (to-from);//size;
+		mi->size = to-from;
 		mi->type = type;
 		mi->from = from;
 		mi->to = to;

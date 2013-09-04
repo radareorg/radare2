@@ -199,8 +199,6 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 					R_ANAL_REF_TYPE_CODE)) {
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_ERROR;
-			} else {
-				return R_ANAL_RET_END;
 			}
 		case R_ANAL_OP_TYPE_CJMP:
 #if 0
@@ -505,10 +503,14 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 		if (!(arg = r_anal_fcn_get_var (fs, i,
 				R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_SCOPE_ARGREG)))
 			break;
+#if 0
+// TODO: implement array support using sdb
 		if (arg->type->type == R_ANAL_TYPE_ARRAY)
 			sign = r_str_concatf (sign, i?", %s %s:%02x[%d]":"%s %s:%02x[%d]",
 				arg->type, arg->name, arg->delta, arg->type->custom.a->count);
-		else sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
+		else 
+#endif
+sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
 				arg->type, arg->name, arg->delta);
 	}
 	return (sign = r_str_concatf (sign, ");"));

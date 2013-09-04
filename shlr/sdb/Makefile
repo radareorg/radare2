@@ -3,7 +3,7 @@ VALADIR=bindings/vala
 
 PWD=$(shell pwd)
 PFX=${DESTDIR}${PREFIX}
-HGFILES=`find sdb-${VERSION} -type f | grep -v hg | grep -v swp`
+HGFILES=`find sdb-${SDBVER} -type f | grep -v hg | grep -v swp`
 MANDIR=${PFX}/share/man/man1
 
 all: src/sdb-version.h
@@ -15,7 +15,7 @@ ifneq (${HAVE_VALA},)
 endif
 
 src/sdb-version.h:
-	echo '#define SDB_VERSION "${VERSION}"' > src/sdb-version.h
+	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb-version.h
 
 EMCCFLAGS=-O2 -s ASM_JS=1
 #EMCCFLAGS+=--embed-file sdb.data
@@ -33,13 +33,13 @@ ifneq (${HAVE_VALA},)
 endif
 
 dist:
-	rm -f sdb-${VERSION}.tar.gz
-	rm -rf sdb-${VERSION}
-	git clone . sdb-${VERSION}
-	rm -rf sdb-${VERSION}/.git*
-	tar czvf sdb-${VERSION}.tar.gz sdb-${VERSION}
-	pub sdb-${VERSION}.tar.gz
-	rm -rf sdb-${VERSION}
+	rm -f sdb-${SDBVER}.tar.gz
+	rm -rf sdb-${SDBVER}
+	git clone . sdb-${SDBVER}
+	rm -rf sdb-${SDBVER}/.git*
+	tar czvf sdb-${SDBVER}.tar.gz sdb-${SDBVER}
+	pub sdb-${SDBVER}.tar.gz
+	rm -rf sdb-${SDBVER}
 
 install-dirs:
 	mkdir -p ${MANDIR} ${PFX}/lib/pkgconfig ${PFX}/bin 

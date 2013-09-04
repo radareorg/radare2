@@ -299,7 +299,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case '?':
 		r_cons_strcat (
-		"Usage: c[?cdfx] [argument]\n"
+		"Usage: c[?dfx] [argument]\n"
 		" c  [string]    Compares a plain with escaped chars string\n"
 		" cc [at] [(at)] Compares in two hexdump columns of block size\n"
 		//" cc [offset]   Code bindiff current block against offset\n"
