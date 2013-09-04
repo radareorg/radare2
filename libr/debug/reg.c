@@ -42,9 +42,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 	//if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 	if (dbg->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = " %3s 0x%08"PFMT64x"%s";
+		fmt2 = "%4s 0x%08"PFMT64x"%s";
 		cols = 3;
-		kwhites = "        ";
+		kwhites = "         ";
 	} else {
 		fmt = " %s = 0x%08"PFMT64x"%s";
 		fmt2 = " %3s 0x%08"PFMT64x"%s";
@@ -113,8 +113,8 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 
 						if (len>10) {
 							len -= 10;
-							if (len>8)len=8;
-							else len = 8-len;
+							if (len>9)len=9;
+							else len = 9-len;
 							whites[len] = 0;
 						}
 						dbg->printf (fmt2, item->name, value,

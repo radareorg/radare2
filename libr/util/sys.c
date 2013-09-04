@@ -553,10 +553,13 @@ R_API char *r_sys_pid_to_path(int pid) {
 		return NULL;
 	return strdup (pathbuf);
 #else
+	int ret;
 	char buf[128], pathbuf[1024];
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-	if (readlink (buf, pathbuf, sizeof (pathbuf))<1)
+	ret = readlink (buf, pathbuf, sizeof (pathbuf));
+	if (ret<1)
 		return NULL;
+	pathbuf[ret] = 0;
 	return strdup (pathbuf);
 #endif
 }
