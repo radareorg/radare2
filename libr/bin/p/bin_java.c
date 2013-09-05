@@ -34,7 +34,7 @@ static ut64 baddr(RBinArch *arch) {
 }
 
 static RList* classes(RBinArch *arch) {
-	char *p;
+	/*char *p;
 	RBinClass *c;
 	RList *ret = r_list_new ();
 	if (!ret) return NULL;
@@ -48,8 +48,9 @@ static RList* classes(RBinArch *arch) {
 	p = (char*)r_str_lchr (c->name, '/');
 	if (p) strcpy (c->name, p+1);
 	c->super = strdup ("Object"); //XXX
-	r_list_append (ret, c);
-
+	r_list_append (ret, c);*/
+	RList *ret;
+	ret = r_bin_java_get_classes((struct r_bin_java_obj_t*)arch->bin_obj);
 	return ret;
 }
 
@@ -150,41 +151,12 @@ static RList* lines(RBinArch *arch) {
 }
 
 static RList* sections(RBinArch *arch) {
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
-	struct r_bin_java_sym_t *s = NULL;
-	RBinJavaObj *b = arch->bin_obj;
-
-	if (!(ret = r_list_new ()))
-		return NULL;
-	ret->free = free;
-	if ((s = r_bin_java_get_symbols (arch->bin_obj))) {
-		if ((ptr = R_NEW0 (RBinSection))) {
-			strcpy (ptr->name, "code");
-			ptr->size = ptr->vsize = b->fsymsz;
-			ptr->offset = ptr->rva = b->fsym;
-			ptr->srwx = 4|1;
-			r_list_append (ret, ptr);
-		}
-		if ((ptr = R_NEW0 (RBinSection))) {
-			strcpy (ptr->name, "constpool");
-			ptr->size = ptr->vsize = b->fsym;
-			ptr->offset = ptr->rva = 0;
-			ptr->srwx = 4;
-			r_list_append (ret, ptr);
-		}
-		if ((ptr = R_NEW0 (RBinSection))) {
-			strcpy (ptr->name, "data");
-			ptr->offset = ptr->rva = b->fsymsz+b->fsym;
-			ptr->size = ptr->vsize = arch->buf->length - ptr->rva;
-			ptr->srwx = 4|2;
-			r_list_append (ret, ptr);
-		}
-		free (s);
-	}
-	return ret;
+	return r_bin_java_get_sections (arch->bin_obj);
 }
 
+static RList* fields(RBinArch *arch) {
+	return r_bin_java_get_fields (arch->bin_obj);
+}
 struct r_bin_plugin_t r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
@@ -201,7 +173,7 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.imports = NULL,
 	.strings = &strings,
 	.info = &info,
-	.fields = NULL,
+	.fields = fields,
 	.libs = NULL,
 	.relocs = NULL,
 	.meta = NULL,
