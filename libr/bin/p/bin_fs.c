@@ -16,17 +16,19 @@ static char *fsname(RBinArch *arch) {
 		RFSType *f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf));
 		r_buf_read_at (arch->buf, f->bufoff, buf, len);
-		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
-			ret = R_TRUE;
-			len = R_MIN (f->bytelen, sizeof (buf));
-			r_buf_read_at (arch->buf, f->byteoff, buf, len);
-			for (j=0; j<f->bytelen; j++) {
-				if (buf[j] != f->byte) {
-					ret = R_FALSE;
-					break;
+		if ((f->buflen>0) && (len>=f->buflen)) {
+			if (!memcmp (buf, f->buf, f->buflen)) {
+				ret = R_TRUE;
+				len = R_MIN (f->bytelen, sizeof (buf));
+				r_buf_read_at (arch->buf, f->byteoff, buf, len);
+				for (j=0; j<f->bytelen; j++) {
+					if (buf[j] != f->byte) {
+						ret = R_FALSE;
+						break;
+					}
 				}
+				if (ret) return strdup (f->name);
 			}
-			if (ret) return strdup (f->name);
 		}
 	}
 	return NULL;

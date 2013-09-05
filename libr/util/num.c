@@ -128,7 +128,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		sscanf (str, "0x%"PFMT64x, &ret);
 	} else
 	if (str[0]=='0' && str[1]=='x') {
-		sscanf (str, "0x%"PFMT64x, &ret);
+		ret = strtoll (str+2, NULL, 16);
 	} else {
 		lch = str[len>0?len-1:0];
 		if (*str=='0' && lch != 'b' && lch != 'h')
@@ -138,7 +138,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			sscanf (str, "%"PFMT64x, &ret);
 			break;
 		case 'o': // octal
-			sscanf (str, "%"PFMT64o, &ret);
+			ret = strtoll (str, NULL, 8);
 			break;
 		case 'b': // binary
 			ret = 0;
@@ -160,7 +160,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			ret *= 1024*1024*1024;
 			break;
 		default:
-			sscanf (str, "%"PFMT64d, &ret);
+			ret = strtoll (str, NULL, 10);
 			break;
 		}
 	}

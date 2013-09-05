@@ -486,6 +486,10 @@ R_API char *r_file_tmpdir() {
 	char *path = strdup ("/data/data/org.radare.installer/radare2/tmp");
 #else
 	char *path = r_sys_getenv ("TMPDIR");
+	if (path && !*path) {
+		free (path);
+		path = NULL;
+	}
 	if (!path) path = strdup ("/tmp");
 #endif
 	if (!r_file_is_directory (path)) {

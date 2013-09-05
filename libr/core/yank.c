@@ -24,8 +24,10 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	core->yank_buf = (ut8 *)malloc (len);
 	if (addr != core->offset)
 		r_core_seek (core, addr, 1);
-	if (len == 0)
+	if (len == 0) {
 		len = core->blocksize;
+		core->yank_buf = realloc (core->yank_buf, len);
+	} else
 	if (len > core->blocksize) {
 		oldbsz = core->blocksize;
 		r_core_block_size (core, len);
