@@ -216,6 +216,7 @@ typedef struct r_bin_symbol_t {
 	ut64 offset;
 	ut64 size;
 	ut64 ordinal;
+	ut32 visibility;
 } RBinSymbol;
 
 typedef struct r_bin_import_t {
@@ -223,6 +224,7 @@ typedef struct r_bin_import_t {
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
 	ut64 ordinal;
+	ut32 visibility;
 } RBinImport;
 
 typedef struct r_bin_reloc_t {
@@ -232,6 +234,7 @@ typedef struct r_bin_reloc_t {
 	st64 addend;
 	ut64 rva;
 	ut64 offset;
+	ut32 visibility;
 } RBinReloc;
 
 typedef struct r_bin_string_t {
@@ -247,6 +250,7 @@ typedef struct r_bin_field_t {
 	char name[R_BIN_SIZEOF_STRINGS];
 	ut64 rva;
 	ut64 offset;
+	ut32 visibility;
 } RBinField;
 
 typedef struct r_bin_meta_t {
@@ -268,6 +272,7 @@ typedef struct r_bin_bind_t {
 	RBin *bin;
 	RBinGetOffset get_offset;
 	RBinGetName get_name;
+	ut32 visibility;
 } RBinBind;
 
 #ifdef R_API

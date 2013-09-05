@@ -37,6 +37,53 @@ R_API ut64 rbin_java_raw_to_long(ut8* raw, ut64 offset);
 
 #define R_BIN_JAVA_DOUBLE(x,y) rbin_java_raw_to_double(x, y)
 
+typedef enum{
+	R_BIN_JAVA_METHOD_ACC_PUBLIC= 0x0001,
+	R_BIN_JAVA_METHOD_ACC_PRIVATE = 0x0002,
+	R_BIN_JAVA_METHOD_ACC_PROTECTED = 0x0004,
+	R_BIN_JAVA_METHOD_ACC_STATIC = 0x0008,
+
+	R_BIN_JAVA_METHOD_ACC_FINAL = 0x0010,
+	R_BIN_JAVA_METHOD_ACC_SYNCHRONIZED = 0x0020,
+	R_BIN_JAVA_METHOD_ACC_BRIDGE = 0x0040,
+	R_BIN_JAVA_METHOD_ACC_VARARGS = 0x0080,
+	
+	R_BIN_JAVA_METHOD_ACC_NATIVE = 0x0100,
+	R_BIN_JAVA_METHOD_ACC_INTERFACE = 0x0200,
+	R_BIN_JAVA_METHOD_ACC_ABSTRACT = 0x0400,
+	R_BIN_JAVA_METHOD_ACC_STRICT= 0x0800,
+	
+	R_BIN_JAVA_METHOD_ACC_SYNTHETIC = 0x1000,
+	R_BIN_JAVA_METHOD_ACC_ANNOTATION = 0x2000,
+	R_BIN_JAVA_METHOD_ACC_ENUM = 0x4000
+}R_BIN_JAVA_METHOD_ACCESS;
+
+typedef enum{
+	R_BIN_JAVA_CLASS_ACC_PUBLIC= 0x0001,
+	R_BIN_JAVA_CLASS_ACC_PRIVATE = 0x0002,
+	R_BIN_JAVA_CLASS_ACC_PROTECTED = 0x0004,
+	R_BIN_JAVA_CLASS_ACC_STATIC = 0x0008,
+
+	R_BIN_JAVA_CLASS_ACC_FINAL = 0x0010,
+	R_BIN_JAVA_CLASS_ACC_SUPER = 0x0020,
+	R_BIN_JAVA_CLASS_ACC_BRIDGE = 0x0040,
+	R_BIN_JAVA_CLASS_ACC_VARARGS = 0x0080,
+	
+	R_BIN_JAVA_CLASS_ACC_NATIVE = 0x0100,
+	R_BIN_JAVA_CLASS_ACC_INTERFACE = 0x0200,
+	R_BIN_JAVA_CLASS_ACC_ABSTRACT = 0x0400,
+	R_BIN_JAVA_CLASS_ACC_STRICT= 0x0800,
+	
+	R_BIN_JAVA_CLASS_ACC_SYNTHETIC = 0x1000,
+	R_BIN_JAVA_CLASS_ACC_ANNOTATION = 0x2000,
+	R_BIN_JAVA_CLASS_ACC_ENUM = 0x4000
+}R_BIN_JAVA_CLASS_ACCESS;
+
+
+typedef struct {
+	char *str;
+	ut16 value;
+} RBinJavaAccessFlags;
 
 typedef enum{
 	R_BIN_JAVA_REF_UNKNOWN = 0, 
@@ -264,7 +311,7 @@ typedef struct  r_bin_java_cp_object_t {
 		RBinJavaCPTypeMethodType cp_method_type;
 		RBinJavaCPTypeInvokeDynamic cp_invoke_dynamic;
 	} info;
-	ut8 * name;
+	char * name;
 	ut8 * value;
 
 } RBinJavaCPTypeObj;
@@ -297,9 +344,9 @@ typedef struct r_bin_java_source_debugging_extension_attr_t {
 typedef struct r_bin_java_enclosing_method_attr_t { 
 	ut16 class_idx;
 	ut16 method_idx;
-	ut8 *class_name;
-	ut8 *method_name;
-	ut8 *method_descriptor;
+	char *class_name;
+	char *method_name;
+	char *method_descriptor;
 }RBinJavaEnclosingMethodAttr;
 
 typedef struct r_bin_java_boot_strap_arg_t{   
@@ -401,7 +448,7 @@ typedef struct r_bin_java_element_value_pair_t{
 	ut64 file_offset;
 	ut64 size;
 	ut16 element_name_idx;
-	ut8 * name;
+	char * name;
     RBinJavaElementValue *value;
 }RBinJavaElementValuePair;
 
@@ -440,7 +487,7 @@ typedef struct r_bin_java_stack_map_table_attr_t { // attribute StackMap
 
 typedef struct r_bin_java_signature_attr_t {
 	ut16 signature_idx;
-	ut8 *signature;
+	char *signature;
 }RBinJavaSignatureAttr;
 
 typedef struct r_bin_java_stack_verification_t{
@@ -484,7 +531,7 @@ typedef struct r_bin_java_fm_t {
 
 
 typedef struct r_bin_java_interface_info_desc_t{
-	ut8 *name;
+	char *name;
 	ut64 size;
 	ut64 file_offset;
 	ut16 class_info_idx;
@@ -557,8 +604,8 @@ typedef struct r_bin_java_attr_linenum_t {
 }RBinJavaLineNumberTableAttribute;
 
 typedef struct r_bin_java_attr_localvariabletype_t{  
-	ut8 *name;
-	ut8 *signature;
+	char *name;
+	char *signature;
 
 	ut64 file_offset;
 	ut16 start_pc;
@@ -577,8 +624,8 @@ typedef struct r_bin_java_attr_localvariable_type_table_t {
 
 
 typedef struct r_bin_java_attr_localvariable_t{  
-	ut8 *name;
-	ut8 *descriptor;
+	char *name;
+	char *descriptor;
 
 	ut64 file_offset;
 	ut16 start_pc;
@@ -599,7 +646,7 @@ typedef struct r_bin_java_attr_t {
 	ut8 *bytes;
 	ut64 pos;
 	ut64 size;
-    ut8 *name;
+    char *name;
     ut64 file_offset; 
     RBinJavaMetaInfo *metas;
 	int type;
@@ -635,7 +682,7 @@ typedef struct r_bin_java_attr_t {
 
 
 typedef struct r_bin_java_attr_classes_t {
-	ut8 *name;
+	char *name;
 	ut64 file_offset;
 	RBinJavaAttrInfo *clint_attr;
 	RBinJavaField *clint_field;
@@ -673,12 +720,14 @@ typedef struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
 	RBinJavaClass2 * cf2;
 	
-	ut32 cp_count;
-	ut32 fields_count;
-	ut32 interfaces_count;
-	ut32 methods_count;
-	ut32 classes_count;
-	
+
+	ut32 cp_offset, cp_size, cp_count;
+	ut32 fields_offset, fields_size, fields_count;
+	ut32 interfaces_offset, interfaces_size, interfaces_count;
+	ut32 methods_offset, methods_size, methods_count;
+	ut32 classes_offset, classes_size, classes_count;
+	ut32 attributes_offset, attributes_size, attributes_count;
+
 	int size;
 	const char* file;
 	RBinJavaLines lines;
@@ -697,6 +746,7 @@ typedef struct r_bin_java_obj_t {
 	ut32 field_idx;
 	ut32 cp_idx;
 	ut32 interface_idx;
+	ut32 attributes_idx;
 
 	//ut32 classes_idx; //TODO: when classes list is being used, update this value
 
@@ -714,10 +764,11 @@ typedef struct r_bin_java_obj_t {
 	RList * methods_list;
 	RList * cp_list;
 	RList * interfaces_list;
-	RList * all_attributes;
+	RList * attributes;
 } RBinJavaObj;
 
-
+R_API RList * r_bin_java_get_sections(RBinJavaObj *bin);
+R_API RList * r_bin_java_get_fields(RBinJavaObj *bin);
 R_API char * r_bin_java_get_version(RBinJavaObj* bin);
 R_API ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin);
 R_API ut64 r_bin_java_get_main(RBinJavaObj* bin);
@@ -811,19 +862,19 @@ inline ut16 r_bin_java_read_short_from_buffer(ut8 *buf, ut64 offset);
 
 
 R_API ut8 * r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 offset, ut64 sz);
-R_API ut8 * r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx);
-R_API ut8 * r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx);
-R_API ut8 * r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx);
-R_API ut8 * r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj);
-R_API ut8 * r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj);
+R_API char * r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx);
+R_API char * r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx);
+R_API char * r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx);
+R_API char * r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj);
+R_API char * r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaCPTypeObj *obj);
 R_API RBinJavaCPTypeObj * r_bin_java_get_item_from_cp_item_list(RList *cp_list, ut64 idx);
 
 
-R_API ut8 * r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
-R_API ut8 * r_bin_java_get_utf8_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
-R_API ut8 * r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
-R_API ut8 * r_bin_java_get_item_name_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj);
-R_API ut8 * r_bin_java_get_item_desc_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj);
+R_API char * r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
+R_API char * r_bin_java_get_utf8_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
+R_API char * r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
+R_API char * r_bin_java_get_item_name_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj);
+R_API char * r_bin_java_get_item_desc_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj);
 R_API RBinJavaCPTypeObj * r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
 
 // Allocs for objects
@@ -1110,5 +1161,11 @@ R_API ut64 r_bin_java_get_method_code_size(RBinJavaField *fm_type);
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(ut16 name_and_typeidx);
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info_from_name_and_type(ut16 name_idx, ut16 descriptor_idx);
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(ut16 name_idx, ut16 descriptor_idx);
+
+R_API RList * r_bin_java_allocate_r_bin_class();
+R_API RList * r_bin_java_get_classes(RBinJavaObj *bin);
+R_API RList * r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
+R_API RList * r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
+
 
 #endif
