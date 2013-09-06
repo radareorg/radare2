@@ -18,7 +18,8 @@ OBJ+=${BIN}.o
 BEXE=${BIN}${EXT_EXE}
 
 ifeq ($(WITHNONPIC),1)
-LDFLAGS+=../../libr/libr.a
+## LDFLAGS+=$(addsuffix /lib${BINDEPS}.a,$(addprefix ../../libr/,$(subst r_,,$(BINDEPS))))
+LDFLAGS+=$(shell for a in ${BINDEPS} ; do b=`echo $$a |sed -e s,r_,,g`; echo ../../libr/$$b/lib$$a.a ; done )
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
 ifneq (${OSTYPE},haiku)
@@ -39,7 +40,7 @@ ${BINS}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo CC $@
 endif
-	${CC} ${CFLAGS} $@.c ${OBJS} ${LDFLAGS} -o $@
+	${CC} ${CFLAGS} $@.c ${LDFLAGS} ${OBJS} -o $@
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
 ifneq ($(SILENT),)
@@ -53,7 +54,7 @@ endif
 myclean:
 
 clean:: myclean
-	-rm -f ${OBJS} ${OBJ} ${BIN}
+	-rm -f ${OBJS} ${OBJ} ${BEXE}
 
 mrproper: clean
 	-rm -f *.d

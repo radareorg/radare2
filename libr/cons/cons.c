@@ -437,7 +437,10 @@ R_API void r_cons_newline() {
 }
 
 R_API int r_cons_get_size(int *rows) {
-#if __UNIX__
+#if EMSCRIPTEN
+	I.columns = 80;
+	I.rows = 23;
+#elif __UNIX__
 	struct winsize win;
 	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
 		I.columns = win.ws_col;
