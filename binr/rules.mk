@@ -6,6 +6,9 @@ CFLAGS+=-DR2_BIRTH=\"`date +%Y-%m-%d`\"
 CFLAGS+=-DR2_GITTIP=\"$(GIT_TIP)\"
 CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 
+ifeq (${COMPILER},emscripten)
+EXT_EXE=.js
+endif
 
 ifeq ($(USE_RPATH),1)
 LDFLAGS+=-Wl,-R${PREFIX}/lib

@@ -1,5 +1,6 @@
 include ../global.mk
 include config.mk
+include ../mk/${COMPILER}.mk
 
 PREFIX?=${PWD}/../prefix
 PFX=${DESTDIR}/${PREFIX}
@@ -41,7 +42,7 @@ libr.a: $(shell ls */libr_*.a 2>/dev/null)
 	for a in */libr_*.a ; do echo ADDLIB $$a >> libr.m ; done
 	echo SAVE >> libr.m
 	# ar -M is a gnu-ism .. try to find a proper portable way to do that
-	${AR} -M < libr.m
+	${CC_AR} -M < libr.m
 	rm -f libr.m
 
 $(LIBS):

@@ -20,15 +20,17 @@ clean mrproper:
 
 $(SDBLIB) sdb/sdb:
 	cd sdb ; ${MAKE} src/sdb-version.h
+	cd sdb ; ${MAKE} clean
 	cd sdb ; \
 		${MAKE} clean && \
 		${MAKE} CC=${HOST_CC} && \
-		cp -f src/sdb sdb
+		cp -f src/sdb src/.sdb
 	cd sdb ; ${MAKE} clean
 	cd sdb ; ${MAKE} src/sdb-version.h
 	cd sdb/src ; ${MAKE} ARCH=xxx RANLIB="${RANLIB}" CFLAGS_SHARED=-fPIC \
-		CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
+		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
+	cp -f sdb/src/.sdb sdb/sdb
 
 
 .PHONY: sdb-sync sync-sdb sdbclean

@@ -100,6 +100,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	int pid, sig;
 	switch (input[1]) {
 	case 'k':
+		/* stop, print, pass -- just use flags*/
 		/* XXX: not for threads? signal is for a whole process!! */
 		/* XXX: but we want fine-grained access to process resources */
 		pid = atoi (input+2);

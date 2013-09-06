@@ -8,6 +8,9 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
+
+#if DEBUGGER
+
 #if __UNIX__
 #include <errno.h>
 #include <sys/ptrace.h>
@@ -15,7 +18,6 @@
 #include <signal.h>
 #endif
 
-#if DEBUGGER
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
