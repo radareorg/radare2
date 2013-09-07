@@ -36,7 +36,18 @@ endif
 
 # looks hacky :D
 #AR=arm-linux-androideabi-ar
-libr.a: $(shell ls */libr_*.a 2>/dev/null)
+libr.a:
+	rm -rf .libr
+	mkdir .libr
+	for a in */libr_*.a ; do \
+		mkdir -p .libr/$$a ; \
+		cp -f $$a .libr/$$a ; \
+		(cd .libr/$$a ; ${AR} x *.a ; rm -f *.a ) ; \
+		done
+	${AR} qvf libr.a `find .libr/ | grep '\\.o$$'`
+	rm -rf .libr
+
+gnu_libr.a: $(shell ls */libr_*.a 2>/dev/null)
 	rm -f libr.a
 	echo CREATE libr.a > libr.m
 	for a in */libr_*.a ; do echo ADDLIB $$a >> libr.m ; done

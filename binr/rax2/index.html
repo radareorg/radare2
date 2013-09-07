@@ -14,12 +14,18 @@
       canvas.emscripten { border: 0px none; }
     </style>
   </head>
-  <body>
+<body onload="FocusOnInput()">
     
 <center>
 <script>
+var _(x) { return document.getElementById(x); }
+
+function FocusOnInput() {
+	_('input').focus();
+}
+
 function doin () {
-	var input=document.getElementById('input');
+	var input=_('input');
 	if (false) {
 		window.location.href = "#"+input.value;
 		location.reload();
