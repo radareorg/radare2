@@ -288,8 +288,8 @@ namespace Radare {
 		[CCode (cname="RAnalVar")]
 		public class Var {
 			public string name;
+			public string type;
 			public int delta;
-			//public Type type;
 			public RList<RAnal.VarAccess> accesses;
 		}
 

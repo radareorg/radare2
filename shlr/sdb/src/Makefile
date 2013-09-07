@@ -28,7 +28,7 @@ ifneq ($(SILENT),)
 	@echo AR libsdb.a
 endif
 	rm -f libsdb.a
-	${AR} -r libsdb.a ${OBJ}
+	${AR} q libsdb.a ${OBJ}
 	${RANLIB} libsdb.a
 
 libsdb.${SOVER}: ${SOBJ}

@@ -8,14 +8,36 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#if __UNIX__
-#include <errno.h>
-#endif
 
 #if DEBUGGER
+
+#if __UNIX__
+#include <errno.h>
+#include <sys/ptrace.h>
+#include <sys/wait.h>
+#include <signal.h>
+#endif
+
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);
 static int r_debug_native_reg_read(RDebug *dbg, int type, ut8 *buf, int size);
 static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int size);
+
+static int r_debug_handle_signals (RDebug *dbg) {
+#if __linux__
+	siginfo_t siginfo = {0};
+	int ret2 = ptrace (PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
+	if (siginfo.si_signo>0) {
+		// TODO: export this information into dbg->status
+		eprintf ("[+] SIGNAL %d errno=%d code=%d ret=%d\n",
+			siginfo.si_signo, siginfo.si_errno,
+			siginfo.si_code, ret2);
+	}
+	return R_TRUE;
+#else
+	eprintf ("Signal handling not yet supported for this platform\n");
+	return R_FALSE;
+#endif
+}
 
 #define MAXBT 128
 
@@ -159,18 +181,12 @@ ut32[16]
 #endif
 
 #elif __sun
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #define R_DEBUG_REG_T gregset_t
 #undef DEBUGGER
 #define DEBUGGER 0
 #warning No debugger support for SunOS yet
 
 #elif __linux__
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <limits.h>
 
 struct user_regs_struct_x86_64 {
@@ -238,7 +254,6 @@ task_t pid_to_task(int pid) {
 	}
 	old_pid = pid;
 	old_task = task;
-
 	return task;
 }
 
@@ -312,6 +327,7 @@ static int r_debug_native_step(RDebug *dbg) {
 	//printf("NATIVE STEP over PID=%d\n", pid);
 	addr = r_debug_reg_get (dbg, "pc");
 	ret = ptrace (PTRACE_SINGLESTEP, pid, (void*)(size_t)addr, 0); //addr, data);
+	r_debug_handle_signals (dbg);
 	if (ret == -1) {
 		perror ("native-singlestep");
 		ret = R_FALSE;
@@ -394,7 +410,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	ret = waitpid (pid, &status, 0);
 #endif
 /*
-        ptrace(PT_ATTACHEXC, pid, 0, 0);
+        ptrace (PT_ATTACHEXC, pid, 0, 0);
 
         if (task_threads (pid_to_task (pid), &inferior_threads,
 			&inferior_thread_count) != KERN_SUCCESS) {
@@ -429,6 +445,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 	ret = waitpid (pid, &status, 0);
 	//printf ("status=%d (return=%d)\n", status, ret);
 	// TODO: switch status and handle reasons here
+	r_debug_handle_signals (dbg);
 	if (status == 0 || ret == -1) {
 		status = R_DBG_REASON_DEAD;
 	} else {

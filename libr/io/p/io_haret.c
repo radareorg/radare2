@@ -33,10 +33,11 @@ static void haret_wait_until_prompt(RSocket *s) {
 	}
 }
 
-static int haret__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
+static int haret__read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	char tmp[1024];
 	int i = 0;
-	ut64 off, j;
+	ut64 off;
+	st64 j;
 	RSocket *s = HARET_FD (fd);
 
 	off = io->off & -4;
@@ -55,7 +56,7 @@ static int haret__read(struct r_io_t *io, RIODesc *fd, ut8 *buf, int count) {
 			tmp[(io->off - off)*2] = 0;
 			i += r_hex_str2bin (tmp+j, buf+i);
 		}
-		j=0;
+		j = 0;
 	}
 	haret_wait_until_prompt (s);
 	return i;

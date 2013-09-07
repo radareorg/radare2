@@ -40,7 +40,7 @@ R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
 	if (addr < c->base) {
 		ut8 *b;
 		int baselen = (c->base - addr);
-		int newlen = baselen + (len > c->len)? len: c->base;
+		int newlen = baselen + ((len > c->len)? len: c->base);
 		// XXX expensive heap usage. must simplify
 		b = malloc (newlen);
 		if (!b) return 0;

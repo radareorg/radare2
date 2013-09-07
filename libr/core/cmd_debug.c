@@ -100,6 +100,7 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 	int pid, sig;
 	switch (input[1]) {
 	case 'k':
+		/* stop, print, pass -- just use flags*/
 		/* XXX: not for threads? signal is for a whole process!! */
 		/* XXX: but we want fine-grained access to process resources */
 		pid = atoi (input+2);
@@ -701,6 +702,34 @@ static void r_core_debug_trace_calls (RCore *core) {
 	r_cons_break_end();
 }
 
+static void r_core_debug_kill (RCore *core, const char *input) {
+	char *p;
+	if (!input || *input=='?') {
+		eprintf ("Usage: dk [sig][=val]\n"
+			"  dk      ; list all signal handlers of child process\n"
+			"  dk 9    ; send KILL signal to child\n"
+			"  dk 9=1  ; set signal handler for KILL signal in child\n");
+	} else if (!*input) {
+		RListIter *iter;
+		RDebugSignal *ds;
+		eprintf ("TODO: list signal handlers of child\n");
+		RList *list = r_debug_kill_list (core->dbg);
+		r_list_foreach (list, iter, ds) {
+			// TODO: resolve signal name by number and show handler offset
+			eprintf ("--> %d\n", ds->num);
+		}
+		r_list_free (list);
+	} else {
+		int sig = atoi (input);
+		p = strchr (input, '=');
+		if (p) {
+			r_debug_kill_setup (core->dbg, sig, r_num_math (core->num, p+1));
+		} else {
+			r_debug_kill (core->dbg, core->dbg->pid, core->dbg->tid, sig);
+		}
+	}
+}
+
 static int cmd_debug(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int i, times, sig, follow=0;
@@ -1055,13 +1084,17 @@ static int cmd_debug(void *data, const char *input) {
 		else r_debug_plugin_list (core->dbg);
 		break;
 	case 'i':
+		if (input[1] == 's') {
+			r_core_cmdf (core, "di `gs %s`", input+2);
+		} else
 		if (input[1] ==' ') {
 			ut8 bytes[4096];
 			int bytes_len = r_hex_str2bin (input+2, bytes);
 			r_debug_execute (core->dbg, bytes, bytes_len, 0);
 		} else {
-			eprintf ("Usage: di 9090\n");
-			eprintf ("TODO: option to not restore registers\n");
+			eprintf ("Usage: di[s] [arg| ...]\n");
+			eprintf (" di 9090                  ; inject two x86 nops\n");
+			eprintf (" dis write 1, 0x8048,12   ; syscall injection\n");
 		}
 		break;
 	case 'o':
@@ -1078,6 +1111,9 @@ static int cmd_debug(void *data, const char *input) {
 		}
 			r_cons_break_end();
 		break;
+	case 'k':
+		r_core_debug_kill (core, input+1);
+		break;
 	default:
 		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"
 		" dh [handler]   list or set debugger handler\n"
@@ -1085,7 +1121,8 @@ static int cmd_debug(void *data, const char *input) {
 		" dd             file descriptors (!fd in r1)\n"
 		" ds[ol] N       step, over, source line\n"
 		" do             open process (reload, alias for 'oo')\n"
-		" di [bytes]     inject code on running process and execute it\n"
+		" dk [sig][=act] list, send, get, set, signal handlers of child\n"
+		" di[s] [arg..]  inject code on running process and execute it (See gs)\n"
 		" dp[=*?t][pid]  list, attach to process or thread id\n"
 		" dc[?]          continue execution. dc? for more\n"
 		" dr[?]          cpu registers, dr? for extended help\n"

@@ -14,10 +14,20 @@ static int cmd_write(void *data, const char *input) {
 
 	switch (*input) {
 	case 'p':
+		if (input[1]=='-' || (input[1]==' '&&input[2]=='-')) {
+			const char *tmpfile = ".tmp";
+			char *out = r_core_editor (core, NULL);
+			if (out) {
+				// XXX hacky .. patch should support str, not only file
+				r_file_dump (tmpfile, out, strlen (out));
+				r_core_patch (core, tmpfile);
+				r_file_rm (tmpfile);
+			}
+		} else
 		if (input[1]==' ' && input[2]) {
 			r_core_patch (core, input+2);
 		} else {
-			eprintf ("Usage: wp [rapatch-file]\n"
+			eprintf ("Usage: wp [-|r2patch-file]\n"
 			         "TODO: rapatch format documentation here\n");
 		}
 		break;
@@ -152,6 +162,13 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'f':
 		arg = (const char *)(input+((input[1]==' ')?2:1));
+		if (!strcmp (arg, "-")) {
+			char *out = r_core_editor (core, NULL);
+			if (out) {
+				r_io_write_at (core->io, core->offset, out, strlen (out));
+				free (out);
+			}
+		} else
 		if ((buf = (ut8*) r_file_slurp (arg, &size))) {
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
@@ -162,6 +179,20 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'F':
 		arg = (const char *)(input+((input[1]==' ')?2:1));
+		if (!strcmp (arg, "-")) {
+			int len;
+			char *out, *in = r_core_editor (core, NULL);
+			if (in) {
+				out = strdup (in);
+				if (out) {
+					len = r_hex_str2bin (in, out);
+					if (len>0)
+						r_io_write_at (core->io, core->offset, out, len);
+					free (out);
+				}
+				free (in);
+			}
+		} else
 		if ((buf = r_file_slurp_hexpairs (arg, &size))) {
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
@@ -453,10 +484,11 @@ static int cmd_write(void *data, const char *input) {
 			" wo? hex      write in block with operation. 'wo?' fmi\n"
 			" wm f0ff      set binary mask hexpair to be used as cyclic write mask\n"
 			" ws pstring   write 1 byte for length and then the string\n"
-			" wf file      write contents of file at current offset\n"
-			" wF file      write contents of hexpairs file here\n"
+			" wf -|file    write contents of file at current offset\n"
+			" wF -|file    write contents of hexpairs file here\n"
+			" wp -|file    apply radare patch file. See wp? fmi\n"
 			" wt file [sz] write to file (from current seek, blocksize or sz bytes)\n"
-			" wp file      apply radare patch file. See wp? fmi\n");
+			);
 			//TODO: add support for offset+seek
 			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"
 		break;

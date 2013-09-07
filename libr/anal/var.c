@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 */
-/*   nibble<.ds@gmail.com> + pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2013 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -161,6 +160,14 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 	if (fcn && fcn->vars)
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
+#if 0
+			char *s = r_anal_type_field_to_string (anal, fcn->addr, v->name);
+			var a = ("frame.${addr}.${name}")
+			a[0] = "type"
+			a[1] = offset
+			a[2] = arraysize
+			eprintf ("%s\n", s);
+			free (s);
 			//ut32 value = r_var_dbg_read(v->delta);
 			if (v->type->type == R_ANAL_TYPE_ARRAY)
 				eprintf ("%s %s %s[%d] = ",
@@ -179,6 +186,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
 			//	r_cons_printf(" ; %s\n", buf);
 			//else
 			eprintf ("\n"); //r_cons_newline();
+#endif
 		}
 	}
 }
@@ -191,10 +199,12 @@ R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta
 	if (fcn && fcn->vars)
 	r_list_foreach (fcn->vars, iter, v) {
 		if (addr == 0 || (addr >= v->addr && addr <= v->eaddr)) {
+eprintf ("TODO\n");
+#if 0
 			if (v->type->type == R_ANAL_TYPE_ARRAY)
 				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d array=%d\n",
 					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
-					r_anal_type_to_str(anal, v->type, ""), v->name, v->delta, (int)v->type->custom.a->count);
+					r_anal_type_to_str (anal, v->type, ""), v->name, v->delta, (int)v->type->custom.a->count);
 			else
 				eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" type=%s type=%s name=%s delta=%d\n",
 					v->addr, v->eaddr, r_anal_var_scope_to_str(anal, v->scope),
@@ -203,6 +213,7 @@ R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta
 			r_list_foreach (v->accesses, iter2, x) {
 				eprintf ("  0x%08"PFMT64x" %s\n", x->addr, x->set?"set":"get");
 			}
+#endif
 		}
 	}
 }

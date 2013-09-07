@@ -12,6 +12,7 @@ struct java_op {
 
 extern struct java_op java_ops[];
 
+
 int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen);
 //int r_java_disasm(const ut8 *bytes, char *output, int len);
 unsigned short read_short(FILE *fd);

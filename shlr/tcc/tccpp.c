@@ -1953,12 +1953,16 @@ static void parse_number(const char *p)
                 tokc.f = strtof(token_buf, NULL);
             } else if (t == 'L') {
                 ch = *p++;
+                tok = TOK_CDOUBLE;
+                tokc.d = strtod(token_buf, NULL);
+#if 0
 #ifdef TCC_TARGET_PE
                 tok = TOK_CDOUBLE;
                 tokc.d = strtod(token_buf, NULL);
 #else
                 tok = TOK_CLDOUBLE;
                 tokc.ld = strtold(token_buf, NULL);
+#endif
 #endif
             } else {
                 tok = TOK_CDOUBLE;

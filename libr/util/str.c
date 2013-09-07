@@ -235,7 +235,7 @@ R_API int r_str_delta(char *p, char a, char b) {
 R_API int r_str_split(char *str, char ch) {
 	int i;
 	char *p;
-	if (!*str)
+	if (!str || !*str)
 		return 0;
 	/* TODO: sync with r1 code */
 	for (i=1, p=str; *p; p++)
@@ -276,6 +276,38 @@ R_API int r_str_word_set0(char *str) {
 		} // s/ /\0/g
 	}
 	return i;
+}
+
+R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen) {
+	char *p = NULL;
+	char *out;
+	int alen, blen, nlen;
+	if (!stra && !newstr) return NULL;
+	if (stra)
+		p = r_str_word_get0 (stra, idx);
+	if (!p) {
+		int nslen = strlen (newstr);
+		out = malloc (nslen+1);
+		strcpy (out, newstr);
+		out[nslen] = 0;
+		if (newlen)
+			*newlen = nslen;
+		return out;
+	}
+	alen = (size_t)(p-stra);
+	blen = stralen - ((alen + strlen (p))+1);
+	if (blen<0) blen = 0;
+	nlen = alen+blen+strlen (newstr);
+	out = malloc (nlen);
+	if (alen>0)
+		memcpy (out, stra, alen);
+	memcpy (out+alen, newstr, strlen (newstr)+1);
+	if (blen>0)
+		memcpy (out+alen+strlen (newstr)+1, p+strlen(p)+1, blen)+1;
+	out[nlen+1] = 0;
+	if (newlen)
+		*newlen = nlen + ((blen==0)?1:0);
+	return out;
 }
 
 R_API const char *r_str_word_get0(const char *str, int idx) {
@@ -374,24 +406,24 @@ R_API char *r_str_chop(char *str) {
 
 	if (str == NULL)
 		return NULL;
-		
+
 	while (*str && iswhitechar (*str))
 		str = str + 1;
-		
+
 	len = strlen (str);
-	
+
 	if (len>0)
 	for (ptr = str+len-1; ptr!=str; ptr--) {
-		if (iswhitechar (*ptr)) 
+		if (iswhitechar (*ptr))
 			*ptr = '\0';
 		else break;
-	}	       
+	}
 	return str;
 }
 
 R_API const char *r_str_trim_head(const char *str) {
 	if (str)
-		while (*str && iswhitechar (*str)) 
+		while (*str && iswhitechar (*str))
 			str++;
 	return str;
 }
@@ -533,6 +565,8 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 	int slen, plen;
 	if (ptr == NULL)
 		return strdup (string);
+	//plen = r_str_len_utf8 (ptr);
+	//slen = r_str_len_utf8 (string);
 	plen = strlen (ptr);
 	slen = strlen (string);
 	ptr = realloc (ptr, slen + plen + 1);
@@ -589,14 +623,14 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	int klen = strlen (key);
 	int vlen = strlen (val);
 	int slen = strlen (str);
-	char *new, *old, *p = str;
-	for (i=0; i<slen; ) {
+	char *new, *old, *p2, *p = str;
+	for (i = 0; i < slen; ) {
 		p = (char *)r_mem_mem (
-			(const ut8*)str+i, slen-i,
+			(const ut8*)str + i, slen - i,
 			(const ut8*)key, klen);
 		if (!p) break; // || !p[klen]) break;
 		old = strdup (p+klen);
-		slen += (vlen-klen)+1;
+		slen += (vlen-klen) + 1;
 		off = (int)(size_t)(p-str);
 		new = realloc (str, slen);
 		if (!new) {
@@ -617,18 +651,19 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	return str;
 }
 
+
 R_API char *r_str_clean(char *str) {
 	int len;
 	char *ptr;
 	if (str != NULL) {
 		while (*str && iswhitechar (*str))
 			str++;
-		if ((len = strlen(str))>0) 
-		for (ptr = str+len-1; ptr!=str; ptr = ptr - 1) {
-			if (iswhitechar (*ptr))
-				*ptr = '\0';
-			else break;
-		}
+		if ((len = strlen(str))>0)
+			for (ptr = str+len-1; ptr!=str; ptr = ptr - 1) {
+				if (iswhitechar (*ptr))
+					*ptr = '\0';
+				else break;
+			}
 	}
 	return str;
 }
@@ -866,7 +901,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 			if (!escape && !quote) {
 				*ptr = '\0';
 				if (*optr) {
-					argv[argc++] = optr; 
+					argv[argc++] = optr;
 					optr = ptr+1;
 				}
 			}
@@ -877,7 +912,7 @@ R_API char **r_str_argv(const char *_str, int *_argc) {
 		}
 	}
 	if (*optr) {
-		argv[argc++] = optr; 
+		argv[argc++] = optr;
 		optr = ptr+1;
 	}
 	argv[argc] = NULL;
@@ -918,6 +953,16 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 }
 
 // Must be merged inside strlen
+R_API int r_str_len_utf8char (const char *s, int left) {
+	int i = 1;
+	while (s[i] && (!left || i<left)) {
+		if ((s[i] & 0xc0) != 0x80) {
+			i++;
+		} else break;
+	}
+	return i;
+}
+
 R_API int r_str_len_utf8 (const char *s) {
 	int i = 0, j = 0;
 	while (s[i]) {
@@ -995,7 +1040,7 @@ R_API char *r_str_uri_encode (const char *s) {
 	od = d = malloc (1+(strlen (s)*4));
 	if (!d) return NULL;
 	for (; *s; s++) {
-		if((*s>='0' && *s<='9') 
+		if((*s>='0' && *s<='9')
 		|| (*s>='a' && *s<='z')
 		|| (*s>='A' && *s<='Z')) {
 			*d++ = *s;

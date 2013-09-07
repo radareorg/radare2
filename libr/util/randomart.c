@@ -35,7 +35,7 @@
 #define	FLDSIZE_X	(FLDBASE * 2 + 1)
 
 //static char * key_fingerprint_randomart(ut8 *dgst_raw, ut32 dgst_raw_len) {
-R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr) {
+R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr) {
 	/*
 	 * Chars to be used after each other every time the worm
 	 * intersects with itself.  Matter of taste.

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	if (input[1]!=' ') {
@@ -9,6 +9,7 @@ static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 		}
 	} else r_egg_option_set (egg, key, input+2);
 }
+
 static int cmd_egg_compile(REgg *egg) {
 	int i;
 	RBuffer *b;
@@ -59,6 +60,22 @@ static int cmd_egg(void *data, const char *input) {
 		core->assembler->bits, 0,
 		r_config_get (core->config, "asm.os")); // XXX
 	switch (*input) {
+	case 's':
+		// TODO: pass args to r_core_syscall without vararg
+		if (input[1]=='?' || !input[1]) {
+			eprintf ("Usage: gs [syscallname] [parameters]\n");
+		} else {
+		oa = strdup (input+2);
+		p = strchr (oa+1, ' ');
+		if (p) {
+			*p = 0;
+			r_core_syscall (core, oa, p+1);
+		} else {
+			r_core_syscall (core, oa,"");
+		}
+free (oa);
+			}
+		break;
 	case ' ':
 		r_egg_load (egg, input+2, 0);
 		if (!cmd_egg_compile (egg))
@@ -127,6 +144,7 @@ static int cmd_egg(void *data, const char *input) {
 			" gc cmd=/bin/ls : set config option for shellcodes and encoders\n"
 			" gc             : list all config options\n"
 			" gl             : list plugins (shellcodes, encoders)\n"
+			" gs name args   : compile syscall name(args)\n"
 			" gi exec        : compile shellcode. like ragg2 -i\n"
 			" gp padding     : define padding for command\n"
 			" ge xor         : specify an encoder\n"

@@ -226,17 +226,26 @@ static int rax (char *str, int len, int last) {
 
 
 static int use_stdin () {
+	int l;
 	static char buf[354096]; // TODO: remove this limit
-	while (!feof (stdin)) {
-		int n = read (0, buf, sizeof (buf));
+	int _S = (flags & 4);
+	for (l=0; l>=0; l++) {
+		int n = read (0, buf+l, sizeof (buf)-l);
 		if (n<1) break;
+		l+= n;
+		if (buf[l]==0) {
+			l--;
+			continue;
+		}
 		buf[n] = 0;
-		if (feof (stdin)) break;
-		if ((flags & 4) && strlen (buf) < sizeof (buf)) // -S
+		if (_S && strlen (buf) < sizeof (buf)) // -S
 			buf[strlen (buf)] = '\0';
 		else buf[strlen (buf)-1] = '\0';
-		if (!rax (buf, n, 0)) break;
+		if (!rax (buf, l, 0)) break;
+		l = 0;
 	}
+	if(l>0)
+		rax (buf, l, 0);
 	return 0;
 }
 

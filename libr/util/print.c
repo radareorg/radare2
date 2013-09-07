@@ -141,7 +141,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	ocur++;
 #if CURDBG
 	sprintf (dst, "(%d/%d/%d/%d)", p->cur_enabled, cur, ocur, n);
-	d = dst+ strlen(dst);
+	d = dst + strlen (dst);
 #else
 	d = dst;
 #endif

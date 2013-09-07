@@ -1,7 +1,8 @@
 include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 
-CFLAGS+=-g -ggdb -fPIC
+#CFLAGS+=-g -ggdb -fPIC
+CFLAGS+=-fPIC
 CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o

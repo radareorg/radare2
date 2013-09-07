@@ -494,9 +494,8 @@ R_API int r_core_init(RCore *core) {
 	/* initialize libraries */
 	core->cons = r_cons_singleton ();
 	if (singleton) {
-		RLine *line = r_line_new ();
 		r_cons_new ();
-		line->user = core;
+		core->cons->line->user = core;
 		core->cons->user_fgets = (void *)myfgets;
 		//r_line_singleton()->user = (void *)core;
 		r_line_hist_load (R2_HOMEDIR"/history");
@@ -630,13 +629,14 @@ R_API void r_core_prompt_loop(RCore *r) {
 }
 
 R_API int r_core_prompt(RCore *r, int sync) {
-	int ret;
+	int ret, rnv;
 	char line[4096];
 	char prompt[64];
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 
 	const char *BEGIN = r->cons->pal.prompt;
 	const char *END = r->cons->pal.reset;
+	rnv = r->num->value;
 
 	if (!BEGIN) BEGIN = "";
 	if (!END) END = "";
@@ -674,6 +674,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
 	if (ret == -2) return R_CORE_CMD_EXIT;
 	if (ret == -1) return R_FALSE;
+	r->num->value = rnv;
 	if (sync) return r_core_prompt_exec (r);
 	free (r->cmdqueue);
 	r->cmdqueue = strdup (line);
@@ -1100,13 +1101,21 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 
 R_API char *r_core_editor (RCore *core, const char *str) {
-	char *name, *ret;
-	int len, fd = r_file_mkstemp ("r2editor", &name);
+	const char *editor;
+	char *name, *ret = NULL;
+	int len, fd;
+	fd = r_file_mkstemp ("r2ed", &name);
 	if (fd == -1)
 		return NULL;
 	if (str) write (fd, str, strlen (str));
 	close (fd);
-	r_sys_cmdf ("%s %s", r_config_get (core->config, "cfg.editor"), name);
+
+	editor = r_config_get (core->config, "cfg.editor");
+	if (!editor || !*editor || !strcmp (editor, "-")) {
+		r_cons_editor (name);
+	} else {
+		r_sys_cmdf ("%s '%s'", editor, name);
+	}
 	ret = r_file_slurp (name, &len);
 	ret[len-1] = 0; // chop
 	r_file_rm (name);
@@ -1118,3 +1127,30 @@ R_API char *r_core_editor (RCore *core, const char *str) {
 R_API RCons *r_core_get_cons (RCore *core) { return core->cons; }
 R_API RConfig *r_core_get_config (RCore *core) { return core->config; }
 R_API RBin *r_core_get_bin (RCore *core) { return core->bin; }
+
+R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) {
+	int i, num;
+	RBuffer *b= NULL;
+	char code[1024];
+
+	num = r_syscall_get_num (core->anal->syscall, name);
+	snprintf (code, sizeof (code),
+		"ptr@syscall(%d);\n"
+		"main@global(0) { ptr(%s); }\n", num, args);
+	r_egg_reset (core->egg);
+	// TODO: setup arch/bits/os?
+	r_egg_load (core->egg, code, 0);
+	if (!r_egg_compile (core->egg))
+		eprintf ("Cannot compile.\n" );
+	if (!r_egg_assemble (core->egg)) {
+		eprintf ("r_egg_assemble: invalid assembly\n");
+	}
+	if ((b = r_egg_get_bin (core->egg))) {
+		if (b->length>0) {
+			for (i=0; i<b->length; i++)
+				r_cons_printf ("%02x", b->buf[i]);
+			r_cons_printf ("\n");
+		}
+	}
+	return b;
+}

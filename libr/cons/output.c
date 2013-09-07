@@ -43,6 +43,19 @@ void w32_gotoxy(int x, int y) {
         SetConsoleCursorPosition (hStdout, coord);
 }
 
+static int wrapline (const char *s, int len) {
+	const char *p = s;
+	int l, n = 0;
+	for (; n<len; ) {
+		l = r_str_len_utf8char (s+n, (len-n));
+		n += l;
+	}
+	if (n>len)
+		n -= l;
+	else n--;
+	return n;
+}
+
 R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 	HANDLE hConsole = GetStdHandle (STD_OUTPUT_HANDLE);
 	int esc = 0;
@@ -63,6 +76,7 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 			if (ll<1)
 				continue;
 			if (empty) {
+				// TODO: Fix utf8 chop
 				/* only chop columns if necessary */
 				if (linelen+ll>cols) {
 					// chop line if too long
@@ -101,12 +115,15 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 					}
 				}
 				write (1, "\n\r", 2);
+				//write (1, "\r\n", 2);
 				//lines--;
 				linelen = 0;
 			}
 			if (linelen+ll>cols) {
 				// chop line if too long
 				ll = (cols-linelen)-1;
+				// fix utf8 len here
+				ll = wrapline (str, cols-linelen-1);
 			}
 			if (ll>0) {
 				write (1, str, ll);

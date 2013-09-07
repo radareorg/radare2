@@ -792,26 +792,28 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'K':
 		{
+		int w, h;
+		RConsCanvas *c;
+		w = r_cons_get_size (&h);
 		ut64 offset0 = core->offset;
-		r_cons_clear ();
-		for (i=0; i< 4; i++) {
-			char *s = r_print_randomart (core->block, core->blocksize, core->offset);
-			r_cons_gotoxy (0, 0);
-			r_cons_printf ("\n%s\n", s);
-			free (s);
-			core->offset += core->blocksize;
-			r_core_read_at (core, core->offset, core->block, core->blocksize);
-			s = r_print_randomart (core->block, core->blocksize, core->offset);
-			r_cons_printf ("%s\n", s);
-			core->offset += core->blocksize;
-			r_core_read_at (core, core->offset, core->block, core->blocksize);
-			s = r_print_randomart (core->block, core->blocksize, core->offset);
-			r_cons_printf ("%s\n", s);
-			r_cons_column (i!=3?20:0);
-			free (s);
-			core->offset += core->blocksize;
-			r_core_read_at (core, core->offset, core->block, core->blocksize);
+		int cols = (w/20);
+		int rows = (h/12);
+		int i, j;
+		char *s;
+		if (rows<1) rows = 1;
+		c = r_cons_canvas_new (w, rows*11);
+		for (i = 0; i<rows; i++) {
+			for (j = 0; j<cols; j++) {
+				r_cons_canvas_gotoxy (c, j*20, i*11);
+				core->offset += core->blocksize;
+				r_core_read_at (core, core->offset, core->block, core->blocksize);
+				s = r_print_randomart (core->block, core->blocksize, core->offset);
+				r_cons_canvas_write (c, s);
+				free (s);
+			}
 		}
+		r_cons_canvas_print (c);
+		r_cons_canvas_free (c);
 		r_core_read_at (core, offset0, core->block, core->blocksize);
 		core->offset = offset0;
 		}
@@ -819,7 +821,7 @@ static int cmd_print(void *data, const char *input) {
 	case 'n': // easter penis
 		for (l=0; l<10; l++) {
 			printf ("\r8");
-			for (len=0;len<l;len++)
+			for (len=0; len<l; len++)
 				printf ("=");
 			printf ("D");
 			r_sys_usleep (100000);

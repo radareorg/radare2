@@ -24,13 +24,13 @@ OS=`uname|tr 'A-Z' 'a-z'`
 # TODO: autodetect or gtfo
 if [ -f ~/.r2androidrc ]; then
 	. ~/.r2androidrc
-	echo "Using data from ~/.r2androidrc.."
+	echo "Using data from ${HOME}/.r2androidrc.."
 else
-	SDK=${HOME}/Downloads/android-sdk-${OS}
-	NDK=${HOME}/Downloads/android-ndk-r7b
+	[ -z "${SDK}" ] && SDK=${HOME}/Downloads/android-sdk-${OS}
+	[ -z "${NDK}" ] && NDK=${HOME}/Downloads/android-ndk-r7b
 fi
 
-if [ ! -d "${SDK}" ]; then 
+if [ ! -d "${SDK}/tools" ]; then 
 	echo "Cannot find Android SDK ${SDK}"
 	echo "Edit ~/.r2androidrc with:"
 	echo 'SDK=~/Downloads/android-sdk-$(uname)'
@@ -72,6 +72,8 @@ export CC
 export PS1
 AR=arm-linux-androideabi-ar
 export AR
+RANLIB=arm-linux-androideabi-ranlib
+export RANLIB
 A=$@
 if [ -n "$A" ]; then
 	${SHELL} -c "$A"
