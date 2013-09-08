@@ -351,7 +351,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int utflen;
 #endif
 	int ch, i; /* grep completion */
-	char *tmp_ed_cmd;
+	char *tmp_ed_cmd, prev;
 
 	I.buffer.index = I.buffer.length = 0;
 	if (I.contents) {
@@ -429,7 +429,25 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.index = 0;
 			break;
 		case 5: // ^E
-			I.buffer.index = I.buffer.length;
+		        if(prev == 24){
+			        /* at this point we have to tell whether we are already in 
+				   ^x^e editing mode and r_line_readline is called from inside
+				   the pancake's hand-written editor (cons/editor.c). 
+				   Otherwise it's going to be just stupid*/
+                                I.buffer.index--;
+				I.buffer.data[I.buffer.index] = 0; /* junk from ^x */
+			        tmp_ed_cmd = r_core_editor((RCore *) user, I.buffer.data);
+				if(tmp_ed_cmd){ 
+			                 /* copied from yank (case 25) */ 
+		                         I.buffer.length += strlen(tmp_ed_cmd);
+		                         if (I.buffer.length < R_LINE_BUFSIZE) {
+					   I.buffer.index = I.buffer.length;
+					   strcpy (I.buffer.data, tmp_ed_cmd);
+				         } else I.buffer.length -= strlen (tmp_ed_cmd);
+				free(tmp_ed_cmd);
+				}
+			}
+			else I.buffer.index = I.buffer.length;  
 			break;
 		case 3: // ^C 
 			if (I.echo)
@@ -497,23 +515,6 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.index = i;
 			}
 			break;
-		case 24: // ^x
-		  /* at this point we have to tell whether we are already in 
-		     ^x^e editing mode and r_line_readline is called from inside
-		     the pancake's hand-written editor (cons/editor.c). 
-		     Otherwise it's going to be just stupid*/
-		        tmp_ed_cmd = r_core_editor((RCore *) user, I.buffer.data);
-		        if(tmp_ed_cmd){ 
-			        /* copied from yank (case 25) */ 
-		                I.buffer.length += strlen(tmp_ed_cmd);
-		                if (I.buffer.length < R_LINE_BUFSIZE) {
-					I.buffer.index = I.buffer.length;
-					strcpy (I.buffer.data, tmp_ed_cmd);
-				} else I.buffer.length -= strlen (tmp_ed_cmd);
-				free(tmp_ed_cmd);
-		        }
-		        printf("hello 24\n");
-		        break;
 		case 25: // ^Y - paste
 			if (I.clipboard != NULL) {
 				I.buffer.length += strlen(I.clipboard);
@@ -754,6 +755,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			break;
 		}
+		prev = buf[0];
 		if (I.echo) {
 			if (gcomp) {
 				gcomp_line = "";

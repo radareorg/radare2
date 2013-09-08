@@ -764,7 +764,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 	}
 	if (colon && colon[1]) {
-		for (++colon; *colon==';'; colon++);
+	        for (++colon; *colon==';'; colon++);
 		r_core_cmd_subst (core, colon);
 	} else {
 		if (icmd && !*icmd)
