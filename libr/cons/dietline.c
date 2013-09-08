@@ -438,6 +438,12 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.data[I.buffer.index] = 0; /* junk from ^x */
 			        tmp_ed_cmd = r_core_editor((RCore *) user, I.buffer.data);
 				if(tmp_ed_cmd){ 
+				         char* col_rep_ind = tmp_ed_cmd;
+				         for(; *col_rep_ind != 0; col_rep_ind++){
+					   if(*col_rep_ind == '\n') *col_rep_ind = ';';
+					   /* sloppy workaround 
+					    temporary until someone adds '\n' seperator support*/
+					 }
 			                 /* copied from yank (case 25) */ 
 		                         I.buffer.length += strlen(tmp_ed_cmd);
 		                         if (I.buffer.length < R_LINE_BUFSIZE) {
