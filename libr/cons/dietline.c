@@ -2,6 +2,7 @@
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
+#include <r_core.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -350,6 +351,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int utflen;
 #endif
 	int ch, i; /* grep completion */
+	char *tmp_ed_cmd;
 
 	I.buffer.index = I.buffer.length = 0;
 	if (I.contents) {
@@ -495,6 +497,23 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.index = i;
 			}
 			break;
+		case 24: // ^x
+		  /* at this point we have to tell whether we are already in 
+		     ^x^e editing mode and r_line_readline is called from inside
+		     the pancake's hand-written editor (cons/editor.c). 
+		     Otherwise it's going to be just stupid*/
+		        tmp_ed_cmd = r_core_editor((RCore *) user, I.buffer.data);
+		        if(tmp_ed_cmd){ 
+			        /* copied from yank (case 25) */ 
+		                I.buffer.length += strlen(tmp_ed_cmd);
+		                if (I.buffer.length < R_LINE_BUFSIZE) {
+					I.buffer.index = I.buffer.length;
+					strcpy (I.buffer.data, tmp_ed_cmd);
+				} else I.buffer.length -= strlen (tmp_ed_cmd);
+				free(tmp_ed_cmd);
+		        }
+		        printf("hello 24\n");
+		        break;
 		case 25: // ^Y - paste
 			if (I.clipboard != NULL) {
 				I.buffer.length += strlen(I.clipboard);
