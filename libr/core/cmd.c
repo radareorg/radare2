@@ -389,7 +389,7 @@ static int cmd_interpret(void *data, const char *input) {
 		r_cons_break (NULL, NULL);
 		for (;;) {
 			if (r_cons_singleton()->breaked) break;
-			eol = strrchr (ptr, '\n');
+			eol = strchr (ptr, '\n');
 			if (eol) *eol = '\0';
 			if (*ptr) {
 				char *p = r_str_concat (strdup (ptr), filter);
