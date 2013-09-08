@@ -1110,9 +1110,12 @@ R_API char *r_core_editor (RCore *core, const char *str) {
 	if (str) write (fd, str, strlen (str));
 	close (fd);
 
-	editor = r_config_get (core->config, "cfg.editor");
+	if(core)
+	        editor = r_config_get (core->config, "cfg.editor");
+	else editor = 0;
+	
 	if (!editor || !*editor || !strcmp (editor, "-")) {
-		r_cons_editor (name);
+	        r_cons_editor (name);
 	} else {
 		r_sys_cmdf ("%s '%s'", editor, name);
 	}
