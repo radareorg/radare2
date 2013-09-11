@@ -3,7 +3,7 @@
 #include "r_core.h"
 #include "r_cons.h"
 
-static const char* const r_vline_a[] = {
+static const char* r_vline_a[] = {
 	"|", // LINE_VERT
 	"|-", // LINE_CROSS
 	"/", // RUP_CORNER
@@ -15,7 +15,7 @@ static const char* const r_vline_a[] = {
 	"`", // LDWN_CORNER
 };
 
-static const char* const r_vline_u[] = {
+static const char* r_vline_u[] = {
 	"│", // LINE_VERT
 	"├", // LINE_CROSS
 	"╒", // RUP_CORNER
@@ -210,7 +210,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: All those options must be print flags
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int colorop = r_config_get_i (core->config, "scr.colorops");
-	int show_utf8 = r_config_get_i (core->config, "scr.utf8");
+	//int show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	int acase = r_config_get_i (core->config, "asm.ucase");
 	int atabs = r_config_get_i (core->config, "asm.tabs");
 	int decode = r_config_get_i (core->config, "asm.decode");

@@ -250,6 +250,7 @@ typedef struct r_core_asm_hit {
 	ut64 addr;
 } RCoreAsmHit;
 
+R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args);
 R_API RCoreAsmHit *r_core_asm_hit_new();
 R_API RList *r_core_asm_hit_list_new();
 R_API void r_core_asm_hit_free(void *_hit);

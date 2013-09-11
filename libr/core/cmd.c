@@ -166,9 +166,9 @@ static int cmd_alias(void *data, const char *input) {
 					strcpy (out, v);
 					strcat (out, " ");
 					strcat (out, args);
-					r_str_replace_char (out,',', ';');
+					r_str_replace_char (out, ',', ';');
 					r_core_cmd0 (core, out);
-					r_str_replace_char (out,';', ',');
+					r_str_replace_char (out, ';', ',');
 					free (out);
 				} else eprintf ("cannot malloc\n");
 			} else {
@@ -1293,8 +1293,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 }
 
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
+	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = R_FALSE;
-	char *cmd, *ocmd;
+
 	if (cstr==NULL)
 		return R_FALSE;
 	if (log && *cstr && *cstr!='.') {
@@ -1310,12 +1311,24 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		}
 		return 0;
 	}
-	ocmd = cmd = malloc (strlen (cstr)+8192);
+	ocmd = cmd = malloc (strlen (cstr)+4096);
 	if (ocmd == NULL)
 		return R_FALSE;
 	r_str_cpy (cmd, cstr);
-	ret = r_core_cmd_subst (core, cmd);
+
 	if (log) r_line_hist_add (cstr);
+
+	for (rcmd = cmd;;) {
+		ptr = strstr (rcmd, "\n");
+		if (ptr) *ptr = '\0';
+		ret = r_core_cmd_subst (core, rcmd);
+		if (ret == -1) {
+			eprintf ("Error running command '%s'\n", rcmd);
+			break;
+		}
+		if (!ptr) break;
+		rcmd = ptr+1;
+	}
 
 	free (ocmd);
 	free (core->oobi);
@@ -1356,8 +1369,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines) {
 }
 
 R_API int r_core_cmd_file(RCore *core, const char *file) {
-	int ret = R_TRUE;
-	char *nl, *data, *odata;
+	char *data, *odata;
 	data = r_file_abspath (file);
 	if (!data) return R_FALSE;
 	odata = r_file_slurp (data, NULL);
@@ -1371,21 +1383,14 @@ R_API int r_core_cmd_file(RCore *core, const char *file) {
 }
 
 R_API int r_core_cmd_command(RCore *core, const char *command) {
-	int len;
+	int ret, len;
 	char *buf, *rcmd, *ptr;
 	rcmd = ptr = buf = r_sys_cmd_str (command, 0, &len);
 	if (buf == NULL)
 		return -1;
-	while ((ptr = strstr (rcmd, "\n"))) {
-		*ptr = '\0';
-		if (r_core_cmd (core, rcmd, 0) == -1) {
-			eprintf ("Error running command '%s'\n", rcmd);
-			break;
-		}
-		rcmd += strlen (rcmd)+1;
-	}
+	ret = r_core_cmd (core, rcmd, 0);
 	free (buf);
-	return 0;
+	return ret;
 }
 
 //TODO: Fix disasm loop is mandatory

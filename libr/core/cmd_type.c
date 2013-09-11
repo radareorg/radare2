@@ -20,10 +20,11 @@ static void show_help() {
 
 static int sdbforcb (void *p, const char *k, const char *v) {
 	r_cons_printf ("%s=%s\n", k, v);
+	return 0;
 }
+
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore*)data;
-	char *arg, pcmd[512];
 
 	switch (input[0]) {
 	// t [typename] - show given type in C syntax
