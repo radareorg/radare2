@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2010 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 [CCode (cheader_filename="r_parse.h", cprefix="r_parse_", lower_case_cprefix="r_parse_")]
 namespace Radare {
@@ -19,5 +19,9 @@ namespace Radare {
 		// This is the destructor
 		public void free();
 */
+		/* CParse api */
+		public string c_file (string path);
+		public string c_string (string str);
+		public bool is_c_file (string path);
 	}
 }

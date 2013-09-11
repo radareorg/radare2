@@ -1,0 +1,11 @@
+Connecting r2 with gdb
+======================
+
+Running gdbserver
+-----------------
+        $ gdbserver :2345 /bin/ls
+        (gdb) target remote localhost:2345
+
+Connecting from r2
+------------------
+        $Write failed: Host is down5
