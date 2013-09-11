@@ -20,8 +20,8 @@ namespace Radare {
 		public void free();
 */
 		/* CParse api */
-		public string c_file (string path);
-		public string c_string (string str);
-		public bool is_c_file (string path);
+		public static string c_file (string path);
+		public static string c_string (string str);
+		public static bool is_c_file (string path);
 	}
 }
