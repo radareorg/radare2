@@ -790,7 +790,7 @@ PC = 272
 	"gpr	pc	.64	272	0\n"
 	);
 #elif (__i386__ || __x86_64__) && __linux__
-if (dbg->bits & R_SYS_BITS_32) {
+#ifdef __i386
 	return strdup (
 	"=pc	eip\n"
 	"=sp	esp\n"
@@ -843,6 +843,69 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"flg	flag_d	.1	.455	0\n"
 	"flg	flag_o	.1	.456	0\n"
 	"flg	flag_r	.1	.457	0\n"
+	"drx	dr0	.32	0	0\n"
+	"drx	dr1	.32	4	0\n"
+	"drx	dr2	.32	8	0\n"
+	"drx	dr3	.32	12	0\n"
+	//"drx	dr4	.32	16	0\n"
+	//"drx	dr5	.32	20	0\n"
+	"drx	dr6	.32	24	0\n"
+	"drx	dr7	.32	28	0\n"
+	);
+#else
+if (dbg->bits & R_SYS_BITS_32) {
+	return strdup (
+	"=pc	eip\n"
+	"=sp	esp\n"
+	"=bp	ebp\n"
+	"=a0	eax\n"
+	"=a1	ebx\n"
+	"=a2	ecx\n"
+	"=a3	edi\n"
+	"gpr	eip	.32	128	0\n"
+	"gpr	ip	.16	128	0\n"
+	"gpr	oeax	.32	120	0\n"
+	"gpr	eax	.32	80	0\n"
+	"gpr	ax	.16	80	0\n"
+	"gpr	ah	.8	80	0\n"
+	"gpr	al	.8	81	0\n"
+	"gpr	ebx	.32	40	0\n"
+	"gpr	bx	.16	40	0\n"
+	"gpr	bh	.8	40	0\n"
+	"gpr	bl	.8	41	0\n"
+	"gpr	ecx	.32	88	0\n"
+	"gpr	cx	.16	88	0\n"
+	"gpr	ch	.8	88	0\n"
+	"gpr	cl	.8	89	0\n"
+	"gpr	edx	.32	96	0\n"
+	"gpr	dx	.16	96	0\n"
+	"gpr	dh	.8	96	0\n"
+	"gpr	dl	.8	97	0\n"
+	"gpr	esp	.32	152	0\n"
+	"gpr	sp	.16	152	0\n"
+	"gpr	ebp	.32	32	0\n"
+	"gpr	bp	.16	32	0\n"
+	"gpr	esi	.32	104	0\n"
+	"gpr	si	.16	104	0\n"
+	"gpr	edi	.32	112	0\n"
+	"gpr	di	.16	112	0\n"
+	"seg	xfs	.32	200	0\n"
+	"seg	xgs	.32	208	0\n"
+	"seg	xcs	.32	136	0\n"
+	"seg	cs	.16	136	0\n"
+	"seg	xss	.32	160	0\n"
+	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
+	"gpr	flags	.16	144	0\n"
+	"flg	carry	.1	.1152	0\n"
+	"flg	flag_p	.1	.1153	0\n"
+	"flg	flag_a	.1	.1154	0\n"
+	"flg	zero	.1	.1155	0\n"
+	"flg	sign	.1	.1156	0\n"
+	"flg	flag_t	.1	.1157	0\n"
+	"flg	flag_i	.1	.1158	0\n"
+	"flg	flag_d	.1	.1159	0\n"
+	"flg	flag_o	.1	.1160	0\n"
+	"flg	flag_r	.1	.1161	0\n"
 	"drx	dr0	.32	0	0\n"
 	"drx	dr1	.32	4	0\n"
 	"drx	dr2	.32	8	0\n"
@@ -914,6 +977,7 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"drx	dr7	.32	28	0\n"
 	);
 }
+#endif
 #elif __arm__ && __APPLE__
 #if 0
 ut32 r[13]
