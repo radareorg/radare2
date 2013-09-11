@@ -848,6 +848,7 @@ if (dbg->bits & R_SYS_BITS_32) {
  	"drx	dr0	.32	0	0\n"
  	"drx	dr1	.32	4	0\n"
  	"drx	dr2	.32	8	0\n"
+	);
 #else
 	// 32bit host debugging 32bit target
 	return strdup (
