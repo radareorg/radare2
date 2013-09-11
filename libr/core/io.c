@@ -2,6 +2,39 @@
 
 #include "r_core.h"
 
+
+static ut64 rev_bits(ut64 input) {
+	ut64 output = 0;
+	ut64 n = sizeof(input);
+	ut64 i = 0;
+
+	for (i = 0; i < n; i++)
+		if ((input >> i) & 0x1)
+			output |=  (0x1 << (n - 1 - i));
+
+	return output;
+}
+
+R_API int r_core_seek_base (RCore *core, const char *hex) {
+	int i;
+	ut64 n = 0;
+	ut64 addr = core->offset;
+	ut64 mask = 0LL;
+	char * p;
+
+	i = strlen (hex) * 4;
+	p = malloc (strlen (hex)+10);
+	if (p) {
+		strcpy (p, "0x");
+		strcpy (p+2, hex);
+		n = r_num_math (core->num, p);
+		free (p);
+	}
+	mask = UT64_MAX << i;
+	addr = (addr & mask) | n;
+	return r_core_seek (core, addr, 1);
+}
+
 R_API int r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size) {
 	ut64 i;
 	ut8 *buf;

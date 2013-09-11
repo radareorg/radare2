@@ -185,6 +185,7 @@ R_API int r_core_cmd_lines(RCore *core, const char *lines);
 R_API int r_core_cmd_command(RCore *core, const char *command);
 R_API int r_core_run_script (RCore *core, const char *file);
 R_API boolt r_core_seek(RCore *core, ut64 addr, boolt rb);
+R_API int r_core_seek_base (RCore *core, const char *hex);
 R_API void r_core_seek_previous (RCore *core, const char *type);
 R_API void r_core_seek_next (RCore *core, const char *type);
 R_API int r_core_seek_align(RCore *core, ut64 align, int count);

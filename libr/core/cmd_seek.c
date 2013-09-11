@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
@@ -99,6 +99,10 @@ static int cmd_seek(void *data, const char *input) {
 			}
 			}
 			break;
+		case '.':
+			for (input++;*input=='.';input++);
+			r_core_seek_base (core, input);
+			break;
 		case '*':
 			r_io_sundo_list (core->io);
 			break;
@@ -174,6 +178,7 @@ static int cmd_seek(void *data, const char *input) {
 			" s--        ; seek blocksize bytes backward\n"
 			" s+ 512     ; seek 512 bytes forward\n"
 			" s- 512     ; seek 512 bytes backward\n"
+			" s.hexoff   ; Seek honoring a base from core->offset\n"
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
 			" sn|sN      ; seek next/prev scr.nkey\n"
 			" s/ DATA    ; search for next occurrence of 'DATA'\n"
