@@ -200,12 +200,13 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_ERROR;
 			}
+			return R_ANAL_RET_END;	
 		case R_ANAL_OP_TYPE_CJMP:
 #if 0
 		// do not add xrefs for cjmps?
 				r_anal_op_fini (&op);
-				break;
 #endif
+			break;
 		case R_ANAL_OP_TYPE_CALL:
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					op.type == R_ANAL_OP_TYPE_CALL?
