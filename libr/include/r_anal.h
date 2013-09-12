@@ -763,6 +763,7 @@ R_API int r_anal_fcn_count (RAnal *a, ut64 from, ut64 to);
 #define r_anal_fcn_get_vars(x) x->vars
 #define r_anal_fcn_get_bbs(x) x->bbs
 #else
+R_API void r_anal_xrefs_list(RAnal *anal);
 R_API RList* r_anal_fcn_get_refs (RAnalFunction *anal);
 R_API RList* r_anal_fcn_get_xrefs (RAnalFunction *anal);
 R_API RList *r_anal_xrefs_set (RAnal *anal, const char *type, ut64 from, ut64 to);

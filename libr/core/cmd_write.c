@@ -19,7 +19,7 @@ static int cmd_write(void *data, const char *input) {
 			char *out = r_core_editor (core, NULL);
 			if (out) {
 				// XXX hacky .. patch should support str, not only file
-				r_file_dump (tmpfile, out, strlen (out));
+				r_file_dump (tmpfile, (ut8*)out, strlen (out));
 				r_core_patch (core, tmpfile);
 				r_file_rm (tmpfile);
 			}
@@ -165,7 +165,8 @@ static int cmd_write(void *data, const char *input) {
 		if (!strcmp (arg, "-")) {
 			char *out = r_core_editor (core, NULL);
 			if (out) {
-				r_io_write_at (core->io, core->offset, out, strlen (out));
+				r_io_write_at (core->io, core->offset,
+					(ut8*)out, strlen (out));
 				free (out);
 			}
 		} else
@@ -181,9 +182,10 @@ static int cmd_write(void *data, const char *input) {
 		arg = (const char *)(input+((input[1]==' ')?2:1));
 		if (!strcmp (arg, "-")) {
 			int len;
-			char *out, *in = r_core_editor (core, NULL);
+			ut8 *out;
+			char *in = r_core_editor (core, NULL);
 			if (in) {
-				out = strdup (in);
+				out = (ut8 *)strdup (in);
 				if (out) {
 					len = r_hex_str2bin (in, out);
 					if (len>0)

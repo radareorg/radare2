@@ -100,7 +100,7 @@ static int cmd_type(void *data, const char *input) {
 	// td - parse string with cparse engine and load types from it
 	case 'd':
 		if (input[1] == '-') {
-			char *arg = strchr (input+1, ' ');
+			const char *arg = strchr (input+1, ' ');
 			if (arg) arg++; else arg = input+2;
 			r_anal_type_del (core->anal, arg);
 		} else

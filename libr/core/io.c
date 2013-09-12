@@ -3,18 +3,6 @@
 #include "r_core.h"
 
 
-static ut64 rev_bits(ut64 input) {
-	ut64 output = 0;
-	ut64 n = sizeof(input);
-	ut64 i = 0;
-
-	for (i = 0; i < n; i++)
-		if ((input >> i) & 0x1)
-			output |=  (0x1 << (n - 1 - i));
-
-	return output;
-}
-
 R_API int r_core_seek_base (RCore *core, const char *hex) {
 	int i;
 	ut64 n = 0;
