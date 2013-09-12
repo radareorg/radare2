@@ -155,6 +155,7 @@ R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		RRegArena *o = reg->regset[i].arena;
 		RRegArena *a = (RRegArena*)r_list_get_n (reg->regset[i].pool, n); 
+		if (!a) continue;
 		reg->regset[i].arena = a;
 		if (a->size != o->size) {
 			a->size = o->size;
