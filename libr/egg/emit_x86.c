@@ -1,4 +1,4 @@
-/* pancake // nopcode.org 2010-2011 -- emit module for rcc */
+/* pancake // nopcode.org 2010-2013 -- emit module for rcc */
 
 #include <r_egg.h>
 

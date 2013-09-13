@@ -10,6 +10,7 @@
 #if __APPLE__
 #include <errno.h>
 #include <libproc.h>
+#include <execinfo.h>
 #endif
 #if __UNIX__
 # include <sys/wait.h>
@@ -516,7 +517,8 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	pdelta = ((size_t)(p)) & (4096-1);
 	if (pdelta)
 		ptr += (4096-pdelta);
-	if (!ptr) {
+	if (!ptr || !buf) {
+		eprintf ("r_sys_run: Cannot run empty buffer\n");
 		free (p);
 		return R_FALSE;
 	}

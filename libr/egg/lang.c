@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 pancake<@nopcode.org> */
+/* radare - LGPL - Copyright 2010-2013 - pancake */
 
 #include <r_egg.h>
 
@@ -50,6 +50,7 @@ enum {
 	ALIAS,
 	DATA,
 	INLINE,
+	NAKED,
 	SYSCALL,
 	SYSCALLBODY,
 	GOTO,
@@ -258,7 +259,8 @@ static void rcc_element(REgg *egg, char *str) {
 			num = atoi (str) + num2;
 			stackframe = num;
 			stackfixed = num2;
-			e->frame (egg, stackframe+stackfixed);
+			if (mode != NAKED)
+				e->frame (egg, stackframe+stackfixed);
 		}
 		elem[0] = 0;
 		elem_n = 0;
@@ -433,6 +435,14 @@ static void rcc_fun(REgg *egg, const char *str) {
 				dstvar = strdup (skipspaces (str));
 				dstval = malloc (4096);
 			} else
+			if (strstr (ptr, "naked")) {
+				mode = NAKED;
+				free (dstvar);
+				dstvar = strdup (skipspaces (str));
+				dstval = malloc (4096);
+				ndstval = 0;
+				r_egg_printf (egg, "%s:\n", str);
+			} else
 			if (strstr (ptr, "inline")) {
 				mode = INLINE;
 				free (dstvar);
@@ -504,6 +514,7 @@ static void rcc_context(REgg *egg, int delta) {
 	lastctxdelta = delta;
 
 	if (context == 0 && delta < 0) {
+if (mode != NAKED)
 		emit->frame_end (egg, stackframe+stackfixed, nbrackets);
 		if (mode == NORMAL) /* XXX : commenting this makes hello.r unhappy! TODO: find a cleaner alternative */
 			stackframe = 0;
@@ -812,11 +823,13 @@ static void rcc_next(REgg *egg) {
 		}
 		/* store result of call */
 		if (dstvar) {
+if (mode != NAKED) {
 			*buf = 0;
 			str = r_egg_mkvar (egg, buf, dstvar, 0);
 			if (*buf == 0)
 				eprintf ("Cannot resolve variable '%s'\n", dstvar);
 			else e->get_result (egg, buf);
+}
 			R_FREE (dstvar);
 		}
 		rcc_reset_callname ();
@@ -950,15 +963,15 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 				r_egg_printf (egg, "%s\n", endframe);
 			//	R_FREE (endframe);
 			}
-if (context>0) {
-if (nestede[context]) {
-	r_egg_printf (egg, "%s:\n", nestede[context]);
-//nestede[context] = NULL;
-} else {
-	 r_egg_printf (egg, "  __end_%d_%d_%d:\n",
-		nfunctions, context, nestedi[context-1]);
-	//get_end_frame_label (egg));
-}
+			if (context>0) {
+				if (nestede[context]) {
+					r_egg_printf (egg, "%s:\n", nestede[context]);
+					//nestede[context] = NULL;
+				} else {
+					r_egg_printf (egg, "  __end_%d_%d_%d:\n",
+						nfunctions, context, nestedi[context-1]);
+					//get_end_frame_label (egg));
+				}
 				nbrackets++;
 			}
 			rcc_context (egg, -1);

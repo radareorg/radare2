@@ -250,11 +250,13 @@ R_API int r_egg_compile(REgg *egg) {
 	if (!b || !egg->emit)
 		return R_FALSE;
 	// only emit begin if code is found
+#if 0
 	if (*b)
 	if (egg->emit) {
 		if (egg->emit->init)
 			egg->emit->init (egg);
 	}
+#endif
 	for (; *b; b++) {
 		r_egg_lang_parsechar (egg, *b);
 		// XXX: some parse fail errors are false positives :(
