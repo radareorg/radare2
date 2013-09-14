@@ -837,7 +837,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "hex.cols", "Configure the number of columns in hexdump");
 	r_config_set_cb (cfg, "scr.html", "false", &config_scrhtml_callback);
 	r_config_desc (cfg, "scr.html", "If enabled disassembly use HTML syntax");
-	r_config_set_cb (cfg, "scr.heightfix", "false", &config_widthfix_callback);
+	r_config_set_cb (cfg, "scr.heightfix", "false", &config_heightfix_callback);
 	r_config_desc (cfg, "scr.heightfix", "Workaround for Linux TTY");
 	r_config_set_cb (cfg, "scr.widthfix", "false", &config_widthfix_callback);
 	r_config_desc (cfg, "scr.widthfix", "Workaround for Prompt iOS ssh client");

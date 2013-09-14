@@ -2895,7 +2895,9 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                             if (isfloat)
                               {
                                 unsigned char valbytes[4];
+#if HAVE_FLOAT
                                 double fvalue;
+#endif
                                 
                                 /* Do this a byte at a time so we don't have to
                                    worry about the host's endianness.  */

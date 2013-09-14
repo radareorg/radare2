@@ -1385,5 +1385,6 @@ ST_FUNC void tcc_set_num_callers(int n);
 #define ST_DATA
 #endif
 /********************************************************/
+PUB_FUNC void tcc_appendf (const char *fmt, ...);
 
 #endif /* _TCC_H */

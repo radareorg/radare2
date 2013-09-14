@@ -2,7 +2,7 @@ include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 OFILES=i386-gen.o libtcc.o tccelf.o tccgen.o tccpp.o 
 
-CFLAGS+=-fPIC
+CFLAGS+=-fPIC -Wall
 LDFLAGS=-shared
 SOEXT?=dylib
 LIBNAME=libr_tcc.${SOEXT}

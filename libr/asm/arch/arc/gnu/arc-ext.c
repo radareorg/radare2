@@ -23,6 +23,7 @@
 
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "arc-ext.h"
@@ -114,6 +115,7 @@ static struct arcExtMap arc_extension_map;
 /*                               local functions                              */
 /* -------------------------------------------------------------------------- */
 
+#if 0
 static void create_map(unsigned char *block, unsigned long length)
 {
   unsigned char *p = block;
@@ -267,6 +269,7 @@ static void destroy_map(void)
 
   memset (&arc_extension_map, 0, sizeof (arc_extension_map));
 }
+#endif
 
 
 static const char* ExtReadWrite_image(enum ExtReadWrite val)

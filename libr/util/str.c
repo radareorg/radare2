@@ -284,7 +284,7 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	int alen, blen, nlen;
 	if (!stra && !newstr) return NULL;
 	if (stra)
-		p = r_str_word_get0 (stra, idx);
+		p = (char *)r_str_word_get0 (stra, idx);
 	if (!p) {
 		int nslen = strlen (newstr);
 		out = malloc (nslen+1);
@@ -303,7 +303,7 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 		memcpy (out, stra, alen);
 	memcpy (out+alen, newstr, strlen (newstr)+1);
 	if (blen>0)
-		memcpy (out+alen+strlen (newstr)+1, p+strlen(p)+1, blen)+1;
+		memcpy (out+alen+strlen (newstr)+1, p+strlen (p)+1, blen+1);
 	out[nlen+1] = 0;
 	if (newlen)
 		*newlen = nlen + ((blen==0)?1:0);
@@ -316,7 +316,7 @@ R_API const char *r_str_word_get0(const char *str, int idx) {
 	if (ptr == NULL)
 		return (char *)nullstr;
 	for (i=0; *ptr && i != idx; i++)
-		ptr = ptr + strlen(ptr) + 1;
+		ptr += strlen (ptr) + 1;
 	return ptr;
 }
 
@@ -623,7 +623,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	int klen = strlen (key);
 	int vlen = strlen (val);
 	int slen = strlen (str);
-	char *new, *old, *p2, *p = str;
+	char *new, *old, *p = str;
 	for (i = 0; i < slen; ) {
 		p = (char *)r_mem_mem (
 			(const ut8*)str + i, slen - i,

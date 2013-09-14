@@ -34,7 +34,7 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.info = &info,
 	.fields = NULL,
 	.libs = &libs,
-	.relocs = NULL,
+	.relocs = &relocs,
 	.meta = NULL,
 	.write = NULL,
 };

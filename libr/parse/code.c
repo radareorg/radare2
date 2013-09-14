@@ -6,7 +6,7 @@
 
 /* parse C code and return it in key-value form */
 
-static void appendstring(char *msg, char **s) {
+static void appendstring(const char *msg, char **s) {
 	if (!s)
 		printf ("%s\n", msg);
 	else

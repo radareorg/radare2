@@ -309,7 +309,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 
 			}
 
-			len = (ut32)aux - (ut32)pos;
+			len = (ut32)(size_t)(aux-pos);
 			if(len >= 80) {
 				fprintf(stderr, "Invalid length token %d\n", len); *err_code = -1; return NULL;
 			}
@@ -325,7 +325,7 @@ static st8 *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_len
 			reg = NULL;
 			for(i = 0; i < len; i++) {
 				if(token_aux[i] == ',') {
-					len = (unsigned int)&token_aux[i] - (unsigned int)token_aux;
+					len = (unsigned int)(size_t)(&token_aux[i] - token_aux);
 					reg = &token_aux[i + 1];
 
 					if(C55PLUS_DEBUG)

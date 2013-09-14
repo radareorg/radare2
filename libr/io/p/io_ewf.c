@@ -76,7 +76,7 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 	ut8 hash[1024];
 	size64_t media_size;
 	uint32_t bytes_per_sector;
-	uint64_t amount_of_sectors;
+	//uint64_t amount_of_sectors;
 	uint32_t error_granularity;
 	//uint32_t amount_of_acquiry_errors;
 	int8_t compression_level;

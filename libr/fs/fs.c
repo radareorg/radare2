@@ -569,7 +569,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			while (*input == ' ')
 				input++;
 			if (!strcmp (input, "..")) {
-				char *p = r_str_lchr (path, '/');
+				char *p = (char *)r_str_lchr (path, '/');
 				if (p) p[(p==path)?1:0]=0;
 			} else {
 				strcat (path, "/");

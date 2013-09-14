@@ -3,8 +3,10 @@
 
 #if __WINDOWS__
 #include <windows.h> 
-#include <tchar.h>
 #include <stdio.h> 
+#ifndef __CYGWIN__
+#include <tchar.h>
+#endif
 
 #define BUFSIZE 1024
 void r_sys_perror(const char *fun);

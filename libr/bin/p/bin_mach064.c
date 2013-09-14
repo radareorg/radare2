@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
+/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
@@ -36,11 +36,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D(0x80000003); // unknown subtype issue
 	D (2); // filetype (executable)
 
-	if (data && datalen>0) {
-		ncmds = 3;
-	} else {
-		ncmds = 2;
-	}
+	ncmds = (data && datalen>0)? 3: 2;
 	
 	/* COMMANDS */
 	D (ncmds); // ncmds
@@ -197,7 +193,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.info = &info,
 	.fields = NULL,
 	.libs = &libs,
-	.relocs = NULL,
+	.relocs = &relocs,
 	.meta = NULL,
 	.write = NULL,
 	.create = &create,

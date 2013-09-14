@@ -512,8 +512,8 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs) {
 				arg->type, arg->name, arg->delta, arg->type->custom.a->count);
 		else 
 #endif
-sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
-				arg->type, arg->name, arg->delta);
+		sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
+			arg->type, arg->name, arg->delta);
 	}
 	return (sign = r_str_concatf (sign, ");"));
 }
@@ -522,7 +522,6 @@ sign = r_str_concatf (sign, i?", %s %s:%02x":"%s %s:%02x",
 /* set function signature from string */
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	char *str; //*p, *q, *r
-	RAnalType *t;
 
 	if (!a || !f || !sig) {
 		eprintf ("r_anal_str_to_fcn: No function received\n");
@@ -536,6 +535,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 
 	/* TODO: Improve arguments parsing */
 /*
+	RAnalType *t;
 	t = r_anal_str_to_type(a, str);
 	str = strdup (sig);
 

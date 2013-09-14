@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
+#include <mach/mach_vm.h>
 #include <mach/mach_init.h>
 #include <mach/mach_port.h>
 #include <mach/mach_traps.h>

@@ -10,7 +10,7 @@
 #include "../arch/arm/winedbg/be_arm.h"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	char buf2[4];
+	ut8 buf2[4];
 	struct arm_insn *arminsn = arm_new();
 	arm_set_pc (arminsn, a->pc);
 	arm_set_thumb (arminsn, a->bits == 16);

@@ -1247,7 +1247,7 @@ static inline int hash_cached_include(const char *filename)
     unsigned int h;
 
     h = TOK_HASH_INIT;
-    s = filename;
+    s = (const unsigned char *)filename;
     while (*s) {
         h = TOK_HASH_FUNC(h, *s);
         s++;
@@ -2226,7 +2226,7 @@ maybe_newline:
                     goto token_found;
                 pts = &(ts->hash_next);
             }
-            ts = tok_alloc_new(pts, p1, len);
+            ts = tok_alloc_new(pts, (const char*)p1, len);
         token_found: ;
         } else {
             /* slower case */
