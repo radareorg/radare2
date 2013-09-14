@@ -575,6 +575,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				eprintf ("No args for lea?\n");
 				return 0;
 			}
+			if (a->bits==64)
+				data[l++] = 0x48;
 			data[l++] = 0x8d;
 			if (*arg2=='[') {
 				int r = getreg (arg);
@@ -712,46 +714,51 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			} else pfx = 0xc0;
 
 			if (*arg2=='[') {
+				int N;
 				arg2++;
-				if (a->bits == 64)  {
-					data[l++] = 0x67;
-					data[l++] = 0x8b;
-					data[l++] = getreg (arg)<<3 | getreg (arg2);
+				if (a->bits==64)
+					data[l++] = 0x48;
+				delta = strchr (arg2, '+');
+				if (delta) {
+					N=1;
+					*delta++ = 0;
 				} else {
-					delta = strchr (arg2, '+');
-					if (delta)
-						*delta++ = 0;
-					data[l++] = 0x8b;
+					delta = strchr (arg2, '-');
 					if (delta) {
-						int r = getreg (arg2);
-						if (r==4) { //ESP
-							data[l++] = getreg (arg)<<3 | r | 0x40;
-							data[l++] = 0x24;
-						} else if (r==5) { // EBP
-							data[l++] = getreg (arg)<<3 | r | 0x40;
-							data[l++] = 0;
-						} else data[l++] = getreg (arg) | r | 0x40;
-						data[l++] = atoi (delta);
+						N=-1;
+						*delta++ = 0;
+					}
+				}
+				data[l++] = 0x8b;
+				if (delta) {
+					int r = getreg (arg2);
+					if (r==4) { //ESP
+						data[l++] = getreg (arg)<<3 | r | 0x40;
+						data[l++] = 0x24;
+					} else if (r==5) { // EBP
+						data[l++] = getreg (arg)<<3 | r | 0x40;
+						data[l++] = 0;
+					} else data[l++] = getreg (arg) | r | 0x40;
+					data[l++] = atoi (delta) * N;
+				} else {
+					int r = getreg (arg2);
+					if (r==4) { //ESP
+						data[l++] = getreg (arg)<<3 | r;
+						data[l++] = 0x24;
+					} else if (r== 5) { // EBP
+						data[l++] = getreg (arg)<<3 | r | 0x40;
+						data[l++] = 0;
 					} else {
-						int r = getreg (arg2);
-						if (r==4) { //ESP
-							data[l++] = getreg (arg)<<3 | r;
-							data[l++] = 0x24;
-						} else if (r== 5) { // EBP
-							data[l++] = getreg (arg)<<3 | r | 0x40;
-							data[l++] = 0;
-						} else {
-							if (r == 0xff) {
-								ut32 n;
-								ut8 *N = (ut8*)&n;
-								data[l++] = getreg (arg)<<3|5;
-								n = getnum (a, arg2);
-								data[l++] = N[0];
-								data[l++] = N[1];
-								data[l++] = N[2];
-								data[l++] = N[3];
-							} else data[l++] = getreg (arg)<<3 | r;
-						}
+						if (r == 0xff) {
+							ut32 n;
+							ut8 *N = (ut8*)&n;
+							data[l++] = getreg (arg)<<3|5;
+							n = getnum (a, arg2);
+							data[l++] = N[0];
+							data[l++] = N[1];
+							data[l++] = N[2];
+							data[l++] = N[3];
+						} else data[l++] = getreg (arg)<<3 | r;
 					}
 				}
 				return l;
@@ -770,7 +777,9 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = ptr[3];
 				return l;
 			}
+#if 0
 			if (a->bits==64) {
+eprintf ("--> \n");
 				if (isnum (a, arg2)) {
 					data[l++] = 0x48;
 					data[l++] = 0xc7;
@@ -786,6 +795,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
 				return l;
 			}
+#endif
 
 			if (isnum (a, arg2)) {
 				if (delta) {
@@ -836,6 +846,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = ptr[3];
 				return l;
 			} else {
+				if (a->bits==64)
+					data[l++] = 0x48;
 				data[l++] = 0x89;
 				if (delta) {
 					if (isnum (a, delta)){

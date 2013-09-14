@@ -228,6 +228,9 @@ int main(int argc, char **argv) {
 		return usage (0);
 	} else file = argv[optind];
 
+	if (bits==64 && !strcmp (format, "mach0"))
+		format = "mach064";
+
 	r_egg_setup (egg, arch, bits, 0, os);
 	if (file) {
 		if (!strcmp (file, "-")) {

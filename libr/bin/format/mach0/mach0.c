@@ -194,16 +194,15 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:
 		if (bin->thread.flavor == X86_THREAD_STATE32) {
-			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
-				(ut8*)&bin->thread_state.x86_32, bin->endian?"16I":"16i", 1)) == -1) {
+			if ((len = r_buf_fread_at (bin->b, off + sizeof(struct thread_command),
+				(ut8*)&bin->thread_state.x86_32, "16i", 1)) == -1) {
 				eprintf ("Error: read (thread state x86_32)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_32.eip;
-
 		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
-			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
-				(ut8*)&bin->thread_state.x86_64, bin->endian?"21L":"21l", 1)) == -1) {
+			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
+				(ut8*)&bin->thread_state.x86_64, "32l", 1)) == -1) {
 				eprintf ("Error: read (thread state x86_64)\n");
 				return R_FALSE;
 			}
@@ -641,7 +640,8 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 		opcodes = malloc (bind_size + lazy_size);
 		if (r_buf_read_at (bin->b, bin->dyld_info->bind_off, opcodes, bind_size) == -1
 			|| r_buf_read_at (bin->b, bin->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size) == -1) {
-			eprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", bin->dyld_info->bind_off);
+			eprintf ("Error: read (dyld_info bind) at 0x%08"PFMT64x"\n", 
+			(ut64)(size_t)bin->dyld_info->bind_off);
 			free (opcodes);
 			relocs[i].last = 1;
 			return relocs;

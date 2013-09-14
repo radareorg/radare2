@@ -260,10 +260,12 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut32 baddr = 0x1000;
 	int is_arm = !strcmp (bin->cur.o->info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
+#ifndef R_BIN_MACH064
 	if (bin->cur.o->info->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");
-		return 0;
+		return NULL;
 	}
+#endif
 
 #define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
 #define D(x) r_buf_append_ut32(buf,x)

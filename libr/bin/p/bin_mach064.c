@@ -179,7 +179,7 @@ static RBinAddr* binsym(RBinArch *arch, int sym) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_mach064 = {
+RBinPlugin r_bin_plugin_mach064 = {
 	.name = "mach064",
 	.desc = "mach064 bin plugin",
 	.init = NULL,
