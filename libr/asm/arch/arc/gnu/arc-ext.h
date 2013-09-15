@@ -48,8 +48,6 @@
 #define ARC_EXTENSIONS_H
 
 #define IGNORE_FIRST_OPD 1
-#define xmalloc malloc
-#define xstrdup strdup
 
 /* Define this if we do not want to encode instructions based on the
    ARCompact Programmer's Reference.  */

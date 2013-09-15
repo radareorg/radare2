@@ -155,7 +155,7 @@ static void create_map(unsigned char *block, unsigned long length)
 	    struct ExtInstruction **bucket =
                    &arc_extension_map.instructions[INST_HASH (major, minor)];
 
-	    insn->name  = xstrdup ((char *) (p+5));
+	    insn->name  = strdup ((char *) (p+5));
 	    insn->major = major;
 	    insn->minor = minor;
 	    insn->flags = p[4];
@@ -171,7 +171,7 @@ static void create_map(unsigned char *block, unsigned long length)
 
 	    arc_extension_map.coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].number = number;
 	    arc_extension_map.coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].rw     = REG_READWRITE;
-	    arc_extension_map.coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].name   = xstrdup (name);
+	    arc_extension_map.coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].name   = strdup (name);
 	    break;
 	  }
 
@@ -183,12 +183,12 @@ static void create_map(unsigned char *block, unsigned long length)
 
 	    arc_extension_map.coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].number = number;
 	    arc_extension_map.coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].rw     = rw;
-	    arc_extension_map.coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].name   = xstrdup (name);
+	    arc_extension_map.coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].name   = strdup (name);
 	  }
 
 	case EXT_COND_CODE:
 	  {
-	    char *cc_name = xstrdup ((char *) (p+3));
+	    char *cc_name = strdup ((char *) (p+3));
 
 	    arc_extension_map.condCodes[p[2] - FIRST_EXTENSION_CONDITION_CODE] = cc_name;
 	    break;
@@ -198,7 +198,7 @@ static void create_map(unsigned char *block, unsigned long length)
 	  {
 	    /* trickier -- need to store linked list of these */
 	    struct ExtAuxRegister *newAuxRegister = XNEW (struct ExtAuxRegister);
-	    char *aux_name = xstrdup ((char *) (p+6));
+	    char *aux_name = strdup ((char *) (p+6));
 
 	    newAuxRegister->name           = aux_name;
 	    newAuxRegister->address        = p[2]<<24 | p[3]<<16 | p[4]<<8 | p[5];

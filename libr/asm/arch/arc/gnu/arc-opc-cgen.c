@@ -3199,7 +3199,7 @@ arc_cgen_init_opcode_table (CGEN_CPU_DESC cd)
 		    sizeof (arc_cgen_macro_insn_table[0]));
   const CGEN_IBASE *ib = & arc_cgen_macro_insn_table[0];
   const CGEN_OPCODE *oc = & arc_cgen_macro_insn_opcode_table[0];
-  CGEN_INSN *insns = xmalloc (num_macros * sizeof (CGEN_INSN));
+  CGEN_INSN *insns = malloc (num_macros * sizeof (CGEN_INSN));
 
 /* ??? This is a manual patch to avoid a compiler warning about a zero-sized
    memset.  cgen should be fixed not to emit or comment out this code when
