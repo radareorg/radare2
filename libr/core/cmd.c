@@ -1067,7 +1067,9 @@ next2:
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
 
-		*ptr = '\0'; for (ptr++; *ptr== ' '; ptr++); ptr--;
+		*ptr = '\0';
+		for (ptr++; *ptr== ' '; ptr++);
+		ptr--;
 
 		arroba = strchr (ptr+2, '@');
 repeat_arroba:

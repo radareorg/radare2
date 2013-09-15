@@ -53,7 +53,7 @@ ut32 get_ins_part(ut32 pos, ut32 len) {
 	if (C55PLUS_DEBUG)
         	printf("pos => 0x%x len => %d ins_buff_len => %d\n", pos, len, ins_buff_len);
 
-	if (pos < 0 || pos >= ins_buff_len) {
+	if ((st32)pos < 0 || pos >= ins_buff_len) {
 		has_failed = 1;
 		return ret;
 	} 

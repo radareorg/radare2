@@ -298,7 +298,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 				p = r_uleb128 (p, &MA);
 				p = r_uleb128 (p, &MC);
 
-				if (MI>=0&&MI<bin->header.method_size) methods[MI] = 1;
+				if (MI<bin->header.method_size) methods[MI] = 1;
 				if (MC>0 && bin->code_from>MC) bin->code_from = MC;
 				if (MC>0 && bin->code_to<MC) bin->code_to = MC;
 
@@ -330,7 +330,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 				p = r_uleb128 (p, &MA);
 				p = r_uleb128 (p, &MC);
 
-				if (MI>=0&&MI<bin->header.method_size) methods[MI] = 1;
+				if (MI<bin->header.method_size) methods[MI] = 1;
 				if (bin->code_from>MC) bin->code_from = MC;
 				if (bin->code_to<MC) bin->code_to = MC;
 
@@ -454,7 +454,7 @@ static RList* classes (RBinArch *arch) {
 			dprintf ("error malloc string length %d\n", len);
 			break;
 		}
-		if (entry.source_file> bin->header.strings_size || entry.source_file<0)
+		if ((entry.source_file>bin->header.strings_size) || (entry.source_file<0))
 			continue;
 		r_buf_read_at (bin->b, bin->strings[entry.source_file],
 				(ut8*)name, len);

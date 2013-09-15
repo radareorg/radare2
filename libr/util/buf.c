@@ -156,7 +156,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	if (addr == R_BUF_CUR)
 		addr = b->cur;
 	else addr -= b->base;
-	if (addr < 0 || addr > b->length)
+	if (addr == UT64_MAX || addr > b->length)
 		return -1;
 	for (i = len = 0; i < n; i++)
 	for (j = 0; fmt[j]; j++) {
@@ -194,7 +194,7 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	if (addr == R_BUF_CUR)
 		addr = b->cur;
 	else addr -= b->base;
-	if (addr < 0 || addr > b->length)
+	if (addr == UT64_MAX || addr > b->length)
 		return NULL;
 	if (left)
 		*left = b->length - addr;

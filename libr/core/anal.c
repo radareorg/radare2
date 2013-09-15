@@ -589,9 +589,9 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 			if ((bbi->type & R_ANAL_BB_TYPE_LAST))
 				r_cons_printf ("l");
 		} else r_cons_printf ("n");
-		if ((bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH))
+		if (bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH)
 			r_cons_printf (" m");
-		else if ((bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH))
+		else if (bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH)
 			r_cons_printf (" u");
 		else r_cons_printf (" n");
 		r_cons_printf ("\n");

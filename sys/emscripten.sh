@@ -15,6 +15,8 @@ export AR="emar"
 CFGFLAGS="./configure --prefix=/usr --disable-shared --enable-static --disable-debugger --with-compiler=emscripten --without-ewf --without-pic --with-nonpic --without-gmp"
 
 make mrproper
+cp -f plugins.emscripten.cfg plugins.cfg
+./configure-plugins
 
 ./configure ${CFGFLAGS} --host=emscripten && \
 	make -s -j ${MAKE_JOBS} DEBUG=0

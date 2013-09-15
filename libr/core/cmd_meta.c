@@ -88,7 +88,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 'z': /* string */
 		{
 			r_core_read_at (core, addr, (ut8*)name, sizeof (name));
-			name[sizeof(name)] = 0;
+			name[sizeof(name)-1] = 0;
 			n = strlen (name);
 			eprintf ("%d\n", n);
 		}
