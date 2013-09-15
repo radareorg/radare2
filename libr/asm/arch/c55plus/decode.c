@@ -603,8 +603,10 @@ static st8* get_token_decoded(st32 hash_code, st8 *ins_token, ut32 ins_token_len
 
 	tok_op = *ins_token - 0x23;
 
-	if (C55PLUS_DEBUG)
-		printf("WAY ins_bits: OP = %d 0x%x %s %d %d\n", tok_op, ins_bits, ins_token, ins_token_len, ins_pos); getchar();
+	if (C55PLUS_DEBUG) {
+		printf("WAY ins_bits: OP = %d 0x%x %s %d %d\n", tok_op, ins_bits, ins_token, ins_token_len, ins_pos);
+		getchar();
+	}
 
 	switch (tok_op) {
 	case 30:

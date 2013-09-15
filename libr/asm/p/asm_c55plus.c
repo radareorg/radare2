@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - th0rpe, pancake */
 
 #include <stdio.h>
 #include <string.h>
