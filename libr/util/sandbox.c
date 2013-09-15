@@ -82,8 +82,8 @@ R_API int r_sandbox_kill(int pid, int sig) {
 	// XXX: fine-tune. maybe we want to enable kill for child?
 	if (enabled) return -1;
 #if __UNIX__
-	if (pid>=0) return kill (pid, sig);
-	eprintf ("r_sandbox_kill: Better not to kill negative pids.\n");
+	if (pid>0) return kill (pid, sig);
+	eprintf ("r_sandbox_kill: Better not to kill pids <= 0.\n");
 #endif
 	return -1;
 }

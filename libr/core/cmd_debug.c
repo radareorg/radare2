@@ -810,8 +810,13 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '-':
 			// close file
+			r_core_syscallf (core, "close", "%d", atoi (input+2));
+			// TODO: run
 			break;
 		case ' ':
+			// TODO: handle read, readwrite, append
+			r_core_syscallf (core, "open", "%s, %d, %d",
+				input+2, 2, 0644);
 			// open file
 			break;
 		case '?':

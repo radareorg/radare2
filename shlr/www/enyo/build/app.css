@@ -1,66 +1,5 @@
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/contextual/source/ContextualLayout.css */
-
-/* ContextualLayout.css - popup positioning and border radius adjustments */
-
-/*for popups above activator*/
-.vertical.above {
-  top: auto;
-  margin-top:-10px;
-  bottom: 100%;
-  margin-bottom: 10px;
-}
-/*for popups below activator*/
-.vertical.below {
-  margin-top:10px;
-}
-/*for popups on the left of the activator*/
-.right.horizontal {
-  margin-left: -11px;
-}
-/*for popups on the right of the activator*/
-.left.horizontal {
-  margin-left: 10px;
-}
-/*corners*/
-/*vertical top corners*/
-/*for popups on the left of the activator*/
-.vertical.right.corner {
-  margin-left: 0px;
-}
-/*for popups on the right of the activator*/
-.vertical.left.corner {
-  margin-left: 0px;
-}
-.vertical.below.left.corner {
-  border-top-right-radius: 0px;
-}
-.vertical.below.right.corner {
-  border-top-left-radius: 0px;
-}
-/*vertical bottom corners*/
-.left.above.corner {
-  border-bottom-right-radius: 0px;
-}
-.right.above.corner {
-  border-bottom-left-radius: 0px;
-}
-/*horizontal bottom corners*/
-.left.low.corner {
-  border-bottom-left-radius: 0px;
-}
-.right.low.corner {
-  border-bottom-right-radius: 0px;
-}
-/*horizontal top corners*/
-.left.high.corner {
-  border-top-left-radius: 0px;
-}
-.right.high.corner {
-  border-top-right-radius: 0px;
-}
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/fittable/source/FittableLayout.css */
+/* /home/reviewdaemon/hudson/trunk/agent/workspace/Enyo-github-build/bootplate/enyo/../lib/layout/fittable/source/FittableLayout.css */
 
 .enyo-fittable-rows-layout {
 	position: relative;
@@ -132,7 +71,7 @@
 	margin-bottom: 0 !important;
 }
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/List.css */
+/* /home/reviewdaemon/hudson/trunk/agent/workspace/Enyo-github-build/bootplate/enyo/../lib/layout/list/source/List.css */
 
 .enyo-list {
 	position: relative;
@@ -144,22 +83,9 @@
 	height: 1000000px;
 }
 
-.enyo-list-holdingarea {
+.enyo-list-page, .enyo-list-holdingarea {
 	position: absolute;
 	left: 0;
-	right: 0;
-}
-
-.enyo-list-port.horizontal {
-	white-space: nowrap;
-}
-
-.enyo-list-page {
-	position: absolute;
-	left: 0;
-}
-
-.enyo-list-page.vertical {
 	right: 0;
 }
 
@@ -197,7 +123,7 @@
 	transition: top 0.1s linear, left 0.1s linear;
 }
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/PulldownList.css */
+/* /home/reviewdaemon/hudson/trunk/agent/workspace/Enyo-github-build/bootplate/enyo/../lib/layout/list/source/PulldownList.css */
 
 .enyo-list-pulldown {
 	position: absolute;
@@ -260,78 +186,7 @@
 	-ms-transform: rotate(180deg);
 }
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/GridList.css */
-
-/*
-	Put anything you reference with "url(../lib/layout/list/source)" in ../assets/
-	This way, you can minify your application, and just remove the "source" folder for production
-*/
-.enyo-gridlist {
-	height: 100%;
-	/*activate the GPU for compositing each page */
-  	-webkit-transform: translate3d(0, 0, 0);
-  	z-index: 1;
-}
-.enyo-gridlist-row {
-	display: inline-block;
-	background-color: #000;
-	width: auto;
-	height: auto;
-	overflow: hidden;
-	vertical-align: top;
-	border: 0;
-	padding: 0;
-	margin: 0 auto;
-  	/* TODO: Investigate if these properties cause scrolling performance issues */
-  	/*
-  	-webkit-border-radius: 5px;
-	border-radius: 5px;
-	box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
-	-moz-box-shadow: 0 2px 3px rgba(0,0,0,0.5);
-	-ms-box-shadow: 0 2px 3px rgba(0,0,0,0.5);
-	-webkit-box-shadow: 0 2px 3px rgba(0, 0, 0, 0.5);
-	*/
-}
-.enyo-gridlist-dummy {
-	display:inline-block;
-	width:auto;
-	height:auto;
-	z-index: -1;
-}
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/list/source/GridListImageItem.css */
-
-/*
-	Put anything you reference with "url(../lib/layout/list/source)" in ../assets/
-	This way, you can minify your application, and just remove the "source" folder for production
-*/
-.enyo-gridlist-imageitem {
-	width: 100%;
-	height: 100%;
-	background: #333;
-	color: #fff;
-}
-.enyo-gridlist-imageitem img {
-	display: block;
-	width: 100%;
-	height: auto;
-}
-.enyo-gridlist-imageitem .caption, .enyo-gridlist-imageitem .sub-caption {
-	opacity: 0.7;
-	font-weight: bold;
-	text-align: center;
-	font-size: 10pt;
-	text-transform: uppercase;
-	z-index: 10;
-	padding-top: 10px;
-	width: 100%;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	overflow: hidden;
-	color: #fff;
-}
-
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/panels/source/arrangers/Arranger.css */
+/* /home/reviewdaemon/hudson/trunk/agent/workspace/Enyo-github-build/bootplate/enyo/../lib/layout/panels/source/arrangers/Arranger.css */
 
 .enyo-arranger {
 	position: relative;
@@ -360,7 +215,7 @@
 }
 
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/panels/source/Panels.css */
+/* /home/reviewdaemon/hudson/trunk/agent/workspace/Enyo-github-build/bootplate/enyo/../lib/layout/panels/source/Panels.css */
 
 .enyo-panels {
 }
@@ -375,7 +230,7 @@
 	}
 }
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/tree/source/Node.css */
+/* /home/reviewdaemon/hudson/trunk/agent/workspace/Enyo-github-build/bootplate/enyo/../lib/layout/tree/source/Node.css */
 
 .enyo-node {
 	cursor: default;
@@ -409,7 +264,7 @@
 }
 
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/layout/imageview/source/ImageViewPin.css */
+/* /home/reviewdaemon/hudson/trunk/agent/workspace/Enyo-github-build/bootplate/enyo/../lib/layout/imageview/source/ImageViewPin.css */
 
 
 .pinDebug {
@@ -417,7 +272,7 @@
 	border:1px solid yellow;
 }
 
-/* /Users/pancake/prg/bootplate/enyo/../lib/onyx/css/onyx.less */
+/* /home/reviewdaemon/hudson/trunk/agent/workspace/Enyo-github-build/bootplate/enyo/../lib/onyx/css/onyx.less */
 
 /* Onyx default parameters defined here */
 /* Fonts */

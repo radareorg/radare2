@@ -555,7 +555,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	return strdup (pathbuf);
 #else
 	char buf[128], pathbuf[1024];
-	snprintf (buf, "/proc/%d/exe", pid);
+	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
 	if (readlink (buf, pathbuf, sizeof (pathbuf))<1)
 		return NULL;
 	return strdup (pathbuf);
