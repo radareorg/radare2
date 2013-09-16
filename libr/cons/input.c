@@ -126,10 +126,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	RCons *cons = r_cons_singleton ();
 	int color = cons->pal.input && *cons->pal.input;
-	if (cons->user_fgets) {
-		int ret = cons->user_fgets (buf, len);
-		return ret;
-	}
+	if (cons->user_fgets)
+		return cons->user_fgets (buf, len);
 	*buf = '\0';
 	fflush (cons->fdin);
 	if (color) {

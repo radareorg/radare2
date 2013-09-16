@@ -171,6 +171,7 @@ R_API void r_core_prompt_loop(RCore *core);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API void r_core_cmd_repeat(RCore *core, int next);
 R_API char *r_core_editor (RCore *core, const char *str);
+R_API int r_core_fgets(char *buf, int len);
 // FIXME: change (void *user) to (RCore *core)
 R_API int r_core_cmdf(void *user, const char *fmt, ...);
 R_API int r_core_flush(void *user, const char *cmd);

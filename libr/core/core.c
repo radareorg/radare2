@@ -402,7 +402,7 @@ static int autocomplete(RLine *line) {
 	return R_TRUE;
 }
 
-static int myfgets(char *buf, int len) {
+R_API int r_core_fgets(char *buf, int len) {
 	/* TODO: link against dietline if possible for autocompletion */
 	char *ptr;
 	RLine *rli = r_line_singleton (); 
@@ -496,7 +496,11 @@ R_API int r_core_init(RCore *core) {
 	if (singleton) {
 		r_cons_new ();
 		core->cons->line->user = core;
-		core->cons->user_fgets = (void *)myfgets;
+#if __EMSCRIPTEN__
+		core->cons->user_fgets = NULL;
+#else
+		core->cons->user_fgets = (void *)r_core_fgets;
+#endif
 		//r_line_singleton()->user = (void *)core;
 		r_line_hist_load (R2_HOMEDIR"/history");
 		singleton = R_FALSE;

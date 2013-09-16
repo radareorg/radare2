@@ -2,6 +2,15 @@
 
 #include <r_core.h>
 
+static int config_scrfgets_callback(void* user, void* data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode*) data;
+	if (node->i_value) 
+		core->cons->user_fgets = NULL;
+	else core->cons->user_fgets = (void *)r_core_fgets;
+	return R_TRUE;
+}
+
 static int config_scrcolumns_callback(void* user, void* data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int n = atoi (node->value);
@@ -788,6 +797,13 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 
 	r_config_set (cfg, "graph.font", "Courier");
 	r_config_desc (cfg, "graph.font", "font to be used by the dot graphs");
+
+#if __EMSCRIPTEN__
+	r_config_set_cb (cfg, "scr.fgets", "true", config_scrfgets_callback);
+#else
+	r_config_set_cb (cfg, "scr.fgets", "false", config_scrfgets_callback);
+#endif
+	r_config_desc (cfg, "scr.fgets", "Use fgets instead of dietline for prompt input");
 	r_config_set_cb (cfg, "scr.columns", "0", config_scrcolumns_callback);
 	r_config_set_cb (cfg, "scr.rows", "0", config_scrrows_callback);
 	r_config_set_cb (cfg, "scr.sparse", "false", config_scrsparse_callback);

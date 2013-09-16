@@ -118,9 +118,10 @@ static int rax (char *str, int len, int last) {
 	if (flags & 512) { // -k
 		ut32 n = r_num_math (num, str);
 		ut8 *np = (ut8*)&n;
-		if (flags & 1) write (1, &n, sizeof (n));
+		if (flags & 1) fwrite (&n, sizeof (n), 1, stdout);
 		else printf ("%02x%02x%02x%02x\n",
 			np[0], np[1], np[2], np[3]);
+		fflush (stdout);
 		return R_TRUE;
 	}
 	if (flags & 256) { // -k
@@ -148,7 +149,11 @@ static int rax (char *str, int len, int last) {
 		buf = malloc (n);
 		memset (buf, '\0', n);
 		n = r_hex_str2bin (str, (ut8*)buf);
-		write (1, buf, n);
+		fwrite (buf, n, 1, stdout);
+#if __EMSCRIPTEN__
+		puts ("");
+#endif
+		fflush (stdout);
 		free (buf);
 		return R_TRUE;
 	}
