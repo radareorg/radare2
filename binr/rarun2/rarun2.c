@@ -59,8 +59,28 @@ static void parseline (char *b) {
 			_args[n] = strdup (e);
 			r_str_escape (_args[n]);
 		} else eprintf ("Out of bounds args index: %d\n", n);
-	} else if (!strcmp (b, "timeout")) _timeout = atoi (e);
-	else if (!strcmp (b, "setenv")) {
+	} else if (!strcmp (b, "timeout")) {
+		_timeout = atoi (e);
+	} else if (!strcmp (b, "envfile")) {
+		char *p, buf[1024];
+		FILE *fd = fopen (e, "r");
+		if (!fd) {
+			eprintf ("Cannot open '%s'\n", e);
+			return;
+		}
+		for (;;) {
+			fgets (buf, sizeof (buf)-1, fd);
+			if (feof (fd)) break;
+			p = strchr (buf, '=');
+			if (p) {
+				*p = 0;
+				r_sys_setenv (buf, p+1);
+			}
+		}
+		fclose (fd);
+	} else if (!strcmp (b, "unsetenv")) {
+		r_sys_setenv (e, NULL);
+	} else if (!strcmp (b, "setenv")) {
 		char *v = strchr (e, '=');
 		if (v) {
 			*v++ = 0;
@@ -200,6 +220,8 @@ int main(int argc, char **argv) {
 			"arg1=/bin\n"
 			"# arg#=...\n"
 			"setenv=FOO=BAR\n"
+			"# unsetenv=FOO\n"
+			"# envfile=environ.txt\n"
 			"timeout=3\n"
 			"# connect=localhost:8080\n"
 			"# listen=8080\n"
