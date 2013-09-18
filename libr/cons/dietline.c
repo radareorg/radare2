@@ -2,6 +2,7 @@
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
+#include <r_core.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -350,6 +351,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	int utflen;
 #endif
 	int ch, i; /* grep completion */
+	char *tmp_ed_cmd, prev;
 
 	I.buffer.index = I.buffer.length = 0;
 	if (I.contents) {
@@ -427,7 +429,26 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.index = 0;
 			break;
 		case 5: // ^E
-			I.buffer.index = I.buffer.length;
+		        if (prev == 24) { // ^X = 0x18
+			        /* at this point we have to tell whether we are already in 
+				   ^x^e editing mode and r_line_readline is called from inside
+				   the hand-written editor (cons/editor.c). 
+				   Otherwise it's going to be just stupid*/
+				I.buffer.data[I.buffer.length] = 0; /* junk from ^x */
+				/* so "user" is NULL and "I.user" is NULL =>
+				   no way of getting cons->editor_cb */
+				tmp_ed_cmd = I.editor_cb (I.user, I.buffer.data);
+				if (tmp_ed_cmd) {
+					/* copied from yank (case 25) */ 
+					I.buffer.length = strlen (tmp_ed_cmd);
+					if (I.buffer.length < R_LINE_BUFSIZE) {
+						I.buffer.index = I.buffer.length;
+						// XXX may overflow here
+						strcpy (I.buffer.data, tmp_ed_cmd);
+					} else I.buffer.length -= strlen (tmp_ed_cmd);
+					free (tmp_ed_cmd);
+				}
+			} else I.buffer.index = I.buffer.length;  
 			break;
 		case 3: // ^C 
 			if (I.echo)
@@ -494,6 +515,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = i;
 			}
+			break;
+		case 24: // ^X -- do nothing but store in prev = *buf
 			break;
 		case 25: // ^Y - paste
 			if (I.clipboard != NULL) {
@@ -735,6 +758,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			break;
 		}
+		prev = buf[0];
 		if (I.echo) {
 			if (gcomp) {
 				gcomp_line = "";

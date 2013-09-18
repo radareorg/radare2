@@ -365,10 +365,13 @@ typedef struct r_line_comp_t {
 	RLineCallback run;
 } RLineCompletion;
 
+typedef char* (*RLineEditorCb)(void *core, const char *str);
+
 struct r_line_t {
 	RLineCompletion completion;
 	RLineHistory history;
 	RLineBuffer buffer;
+	RLineEditorCb editor_cb;
 	int echo;
 	int has_echo;
 	char *prompt;

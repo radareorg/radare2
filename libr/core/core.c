@@ -496,6 +496,7 @@ R_API int r_core_init(RCore *core) {
 	if (singleton) {
 		r_cons_new ();
 		core->cons->line->user = core;
+		core->cons->line->editor_cb = (RLineEditorCb)&r_core_editor;
 #if __EMSCRIPTEN__
 		core->cons->user_fgets = NULL;
 #else
@@ -1117,9 +1118,7 @@ R_API char *r_core_editor (RCore *core, const char *str) {
 	editor = r_config_get (core->config, "cfg.editor");
 	if (!editor || !*editor || !strcmp (editor, "-")) {
 		r_cons_editor (name);
-	} else {
-		r_sys_cmdf ("%s '%s'", editor, name);
-	}
+	} else r_sys_cmdf ("%s '%s'", editor, name);
 	ret = r_file_slurp (name, &len);
 	ret[len-1] = 0; // chop
 	r_file_rm (name);
