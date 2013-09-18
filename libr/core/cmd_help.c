@@ -211,7 +211,9 @@ static int cmd_help(void *data, const char *input) {
 		);
 		return R_TRUE;
 	case 'V':
-		r_cons_printf ("%s aka %s\n", R2_VERSION, GIT_TAP);
+		if (!strcmp (R2_VERSION, GIT_TAP))
+			r_cons_printf ("%s\n", R2_VERSION);
+		else r_cons_printf ("%s aka %s\n", R2_VERSION, GIT_TAP);
 		break;
 	case 'l':
 		for (input++; input[0]==' '; input++);
