@@ -471,6 +471,11 @@ static int cmd_resize(void *data, const char *input) {
 	while (*input==' ')
 		input++;
 	switch (*input) {
+		case 'm':
+			if (input[1]==' ')
+				r_file_rm (input+2);
+			else eprintf ("Usage: rm [file]   # removes a file\n");
+			break;
 		case '+':
 		case '-':
 			delta = (st64)r_num_math (core->num, input);
@@ -480,9 +485,10 @@ static int cmd_resize(void *data, const char *input) {
 		case '?':
 			r_cons_printf (
 				"Usage: r[+-][ size]\n"
-				" r size   expand or truncate file to given size\n"
-				" r-num    remove num bytes, move following data down\n"
-				" r+num    insert num bytes, move following data up\n");
+				" r size    expand or truncate file to given size\n"
+				" r-num     remove num bytes, move following data down\n"
+				" r+num     insert num bytes, move following data up\n"
+				" rm [file] remove file\n");
 			return R_TRUE;
 		default:
 			newsize = r_num_math (core->num, input);
@@ -1001,12 +1007,14 @@ next:
 			r_config_set (core->config, "scr.color", "false");
 		}
 		pipefd = r_cons_pipe_open (str, ptr[1]=='>');
-		if (!pipecolor)
-			r_config_set_i (core->config, "scr.color", 0);
+		if (pipefd != -1) {
+			if (!pipecolor)
+				r_config_set_i (core->config, "scr.color", 0);
 
-		ret = r_core_cmd_subst (core, cmd);
-		r_cons_flush ();
-		r_cons_pipe_close (pipefd);
+			ret = r_core_cmd_subst (core, cmd);
+			r_cons_flush ();
+			r_cons_pipe_close (pipefd);
+		}
 		r_cons_set_last_interactive ();
 		if (!pipecolor) {
 			r_config_set_i (core->config, "scr.color", ocolor);
