@@ -105,7 +105,6 @@ do_it_again:
 		int ret = read (0, buf, 1);
 		if (ret == -1) return 0; // read no char
 		if (ret == 0) return -1; // eof
-//eprintf ("(((0x%x)))\n", buf[0]);
 		// TODO: add support for other invalid chars
 		if (*buf==0x1a) { // ^Z
 			kill (getpid (), SIGSTOP);
@@ -430,13 +429,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 5: // ^E
 		        if (prev == 24) { // ^X = 0x18
-			        /* at this point we have to tell whether we are already in 
-				   ^x^e editing mode and r_line_readline is called from inside
-				   the hand-written editor (cons/editor.c). 
-				   Otherwise it's going to be just stupid*/
-				I.buffer.data[I.buffer.length] = 0; /* junk from ^x */
-				/* so "user" is NULL and "I.user" is NULL =>
-				   no way of getting cons->editor_cb */
+				I.buffer.data[I.buffer.length] = 0; // probably unnecessary
 				tmp_ed_cmd = I.editor_cb (I.user, I.buffer.data);
 				if (tmp_ed_cmd) {
 					/* copied from yank (case 25) */ 

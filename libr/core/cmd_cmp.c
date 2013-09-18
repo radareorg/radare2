@@ -180,13 +180,18 @@ static int cmd_cmp(void *data, const char *input) {
 
 	switch (*input) {
 	case 'a':
-		if (input[1]=='t' && input[2]==' ') {
-			char *p = r_file_slurp (input+3, NULL);
+		{
+			int sz;
+			char *p = strchr (input+1, ' ');
 			if (p) {
-				r_cons_strcat (p);
-				free (p);
-			}
+				char *data = r_file_slurp (p+1, &sz);
+				if (data) {
+					r_cons_memcat (data, sz);
+					free (data);
+				} else eprintf ("No such file or directory\n");
+			} else eprintf ("Usage: cat [file]\n");
 		}
+		break;
 		break;
 	case 'w':
 		cmd_cmp_watcher (core, input+1);
@@ -329,7 +334,8 @@ static int cmd_cmp(void *data, const char *input) {
 		" cX [addr]      Like 'cc' but using hexdiff output\n"
 		" cf [file]      Compare contents of file at current seek\n"
 		" cg[o] [file]   Graphdiff current file and [file]\n"
-		" cw[us?] [...]  Compare memory watchers\n");
+		" cw[us?] [...]  Compare memory watchers\n"
+		" cat  [file]    Show contents of file (see pwd, ls)\n");
 		break;
 	default:
 		eprintf ("Usage: c[?48cdDxfw] [argument]\n");

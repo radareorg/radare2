@@ -137,6 +137,15 @@ static int cmd_print(void *data, const char *input) {
 	ptr = core->block;
 	core->num->value = len;
 	switch (*input) {
+	case 'w':
+		{
+		char *cwd = r_sys_getdir ();
+		if (cwd) {
+			eprintf ("%s\n", cwd);
+			free (cwd);
+		}
+		}
+		break;
 	case 'v':
 		mode = input[1];
 		w = len? len: core->print->cols * 4;
@@ -928,7 +937,8 @@ static int cmd_print(void *data, const char *input) {
 		" pu[w] [len]      print N url encoded bytes (w=wide)\n"
 		" pv[jh] [mode]    bar|json|histogram blocks (mode: e?search.in)\n"
 		" p[xX][owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
-		" pz [len]         print zoom view (see pz? for help)\n");
+		" pz [len]         print zoom view (see pz? for help)\n"
+		" pwd              display current working directory\n");
 		break;
 	}
 	if (tbs != core->blocksize)

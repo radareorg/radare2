@@ -89,6 +89,7 @@ static int cmd_log(void *data, const char *input) {
 			"  l 123   list log from 123 \n"
 			"  l       list all log messages\n"
 			"  l 10 3  list 3 log messages starting from 10\n"
+			"  ls      list files in current directory (see pwd, cd)\n"
 			"  lj      list in json format\n"
 			"  l*      list in radare commands\n"
 		);
@@ -98,6 +99,18 @@ static int cmd_log(void *data, const char *input) {
 			r_core_log_add (core, input+1);
 			break;
 		}
+	case 's':
+		{
+		char *name;
+		RListIter *iter;
+		RList *files = r_sys_dir (".");
+		r_list_foreach (files, iter, name) {
+			r_cons_printf ("%s%s\n", name,
+				r_file_is_directory (name)? "/":"");
+		}
+		r_list_free (files);
+		}
+		break;
 	case 'j':
 	case '*':
 	case '\0':
