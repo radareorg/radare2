@@ -755,7 +755,7 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			//  - trace
 			//  - stop
 			if (signum<1) signum = r_debug_signal_resolve (core->dbg, name);
-			if (signal>0) {
+			if (signum>0) {
 				int sigopt = 0;
 				if (strchr (p, 's')) sigopt |= R_DBG_SIGNAL_SKIP;
 				if (strchr (p, 'c')) sigopt |= R_DBG_SIGNAL_CONT;
