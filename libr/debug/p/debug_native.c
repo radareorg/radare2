@@ -41,7 +41,6 @@ static int r_debug_handle_signals (RDebug *dbg) {
 	}
 	return R_FALSE;
 #else
-	eprintf ("Signal handling not yet supported for this platform\n");
 	return -1;
 #endif
 }
@@ -428,7 +427,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return 1;
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
-	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
+	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, data);
         return 0;
 #endif
 #elif __BSD__
@@ -444,7 +443,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 #if __WINDOWS__
 	return w32_dbg_wait (dbg, pid);
 #else
-	int ret, status = -1;
+	int stopsig, ret, status = -1;
 	//printf ("prewait\n");
 	if (pid==-1)
 		return R_DBG_REASON_UNKNOWN;
@@ -452,18 +451,23 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 	//printf ("status=%d (return=%d)\n", status, ret);
 	// TODO: switch status and handle reasons here
 	r_debug_handle_signals (dbg);
+
+	if (WIFSTOPPED (status)) {
+		stopsig = WSTOPSIG (status);
+		dbg->signum = WSTOPSIG (status);
+		status = R_DBG_REASON_SIGNAL;
+	} else
+#if 0
+	if (WIFEXITED (status)) {
+		status = R_DBG_REASON_DEAD;
+	} else
+#endif
 	if (status == 0 || ret == -1) {
 		status = R_DBG_REASON_DEAD;
 	} else {
 		if (ret != pid)
 			status = R_DBG_REASON_NEW_PID;
 		else status = dbg->reason;
-	}
-	if (WIFEXITED (status)) {
-		status = R_DBG_REASON_DEAD;
-	}
-	if (WIFSIGNALED (status)) {
-		status = R_DBG_REASON_SIGNAL;
 	}
 	return status;
 #endif
