@@ -851,7 +851,8 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '-':
 			// close file
-			r_core_syscallf (core, "close", "%d", atoi (input+2));
+			//r_core_syscallf (core, "close", "%d", atoi (input+2));
+			r_core_cmdf (core, "dis close %d", atoi (input+2));
 			// TODO: run
 			break;
 		case ' ':
@@ -865,6 +866,8 @@ static int cmd_debug(void *data, const char *input) {
 			r_cons_printf ("Usage: dd[*sdrw-?]\n"
 				" dd       list filedescriptors\n"
 				" dd*      list filedescriptors (in radare commands)\n"
+				" dd-1     close stdout fd\n"
+				" dd file  open and map that file into the UI\n"
 				" dd?      show this help\n");
 			break;
 		}

@@ -246,7 +246,9 @@ R_API int r_debug_wait(RDebug *dbg) {
 		if (ret == R_DBG_REASON_SIGNAL) {
 			/* handle signal on continuations here */
 			int what = r_debug_signal_what (dbg, dbg->signum);
-			r_cons_printf ("[+] signal %d received\n", dbg->signum);
+			const char *name = r_debug_signal_resolve_i (dbg, dbg->signum);
+			r_cons_printf ("[+] signal %d aka %s received\n",
+				dbg->signum, name);
 			if (what & R_DBG_SIGNAL_SKIP) {
 				dbg->signum = 0;
 				// TODO: use ptrace-setsiginfo to ignore signal
