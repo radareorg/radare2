@@ -46,6 +46,7 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->graph = r_graph_new ();
 		dbg->swstep = 0;
 		dbg->newstate = 0;
+		dbg->signum = 0;
 		dbg->reason = R_DBG_REASON_UNKNOWN;
 		dbg->stop_all_threads = R_FALSE;
 		dbg->trace = r_debug_trace_new ();
@@ -246,12 +247,13 @@ R_API int r_debug_wait(RDebug *dbg) {
 			/* handle signal on continuations here */
 			int what = r_debug_signal_what (dbg, dbg->signum);
 			r_cons_printf ("[+] signal %d received\n", dbg->signum);
+			if (what & R_DBG_SIGNAL_SKIP) {
+				dbg->signum = 0;
+				// TODO: use ptrace-setsiginfo to ignore signal
+			}
 			if (what & R_DBG_SIGNAL_CONT) {
 				// XXX: support step, steptrace, continue_until_foo, etc..
 				r_debug_continue (dbg);
-			}
-			if (what & R_DBG_SIGNAL_SKIP) {
-				// TODO: use ptrace-setsiginfo to ignore signal
 			}
 		}
 	}
@@ -359,6 +361,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 	if (dbg && dbg->h && dbg->h->cont) {
 		r_bp_restore (dbg->bp, R_FALSE); // set sw breakpoints
 		ret = dbg->h->cont (dbg, dbg->pid, dbg->tid, sig);
+		dbg->signum = 0;
 		r_debug_wait (dbg);
 		r_bp_restore (dbg->bp, R_TRUE); // unset sw breakpoints
 		r_debug_recoil (dbg);
@@ -375,7 +378,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 }
 
 R_API int r_debug_continue(RDebug *dbg) {
-	return r_debug_continue_kill (dbg, -1);
+	return r_debug_continue_kill (dbg, dbg->signum);
 }
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {

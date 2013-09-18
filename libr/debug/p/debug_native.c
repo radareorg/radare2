@@ -25,16 +25,18 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 static int r_debug_handle_signals (RDebug *dbg) {
 #if __linux__
 	siginfo_t siginfo = {0};
-	int ret2 = ptrace (PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
-	if (siginfo.si_signo>0) {
+	int ret = ptrace (PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
+	if (ret != -1 && siginfo.si_signo>0) {
+		siginfo_t newsiginfo = {0};
+		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason = R_DBG_REASON_SIGNAL;
-		// TODO: export this information into dbg->status
+		dbg->signum = siginfo.si_signo;
+		// siginfo.si_code -> USER, KERNEL or WHAT
 #if 0
 		eprintf ("[+] SIGNAL %d errno=%d code=%d ret=%d\n",
 			siginfo.si_signo, siginfo.si_errno,
 			siginfo.si_code, ret2);
 #endif
-		dbg->signum = siginfo.si_signo;
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -293,7 +295,7 @@ static int r_debug_native_step(RDebug *dbg) {
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (pid, dbg->tid, R_REG_TYPE_GPR, &regs, sizeof (regs));
 */
-	r_debug_native_continue (dbg, pid, dbg->tid, -1);
+	r_debug_native_continue (dbg, pid, dbg->tid, dbg->signum);
 #elif __APPLE__
 	//debug_arch_x86_trap_set (dbg, 1);
 	// TODO: not supported in all platforms. need dbg.swstep=
@@ -390,9 +392,7 @@ static int r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 /* TODO: specify thread? */
 /* TODO: must return true/false */
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
-	void *data = NULL;
-	if (sig != -1)
-		data = (void*)(size_t)sig;
+	void *data = (void*)(size_t)((sig != -1)?sig: dbg->signum);
 #if __WINDOWS__
 	if (ContinueDebugEvent (pid, tid, DBG_CONTINUE) == 0) {
 		print_lasterr ((char *)__FUNCTION__);
@@ -435,6 +435,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	ut64 pc = r_debug_reg_get (dbg, "pc");
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)data);
 #else
+//eprintf ("SIG %d\n", dbg->signum);
 	return ptrace (PTRACE_CONT, pid, NULL, data);
 #endif
 }
@@ -457,6 +458,12 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 		if (ret != pid)
 			status = R_DBG_REASON_NEW_PID;
 		else status = dbg->reason;
+	}
+	if (WIFEXITED (status)) {
+		status = R_DBG_REASON_DEAD;
+	}
+	if (WIFSIGNALED (status)) {
+		status = R_DBG_REASON_SIGNAL;
 	}
 	return status;
 #endif
