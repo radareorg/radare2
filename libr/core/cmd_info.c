@@ -92,6 +92,7 @@ static int cmd_info(void *data, const char *input) {
 	case 'h': RBININFO (R_CORE_BIN_ACC_FIELDS); break;
 	case 'l': RBININFO (R_CORE_BIN_ACC_LIBS); break;
 	case 's': RBININFO (R_CORE_BIN_ACC_SYMBOLS); break;
+	case 'r': RBININFO (R_CORE_BIN_ACC_RELOCS); break;
 	case 'd': RBININFO (R_CORE_BIN_ACC_DWARF); break;
 	case 'i': RBININFO (R_CORE_BIN_ACC_IMPORTS); break;
 	case 'I': RBININFO (R_CORE_BIN_ACC_INFO); break;

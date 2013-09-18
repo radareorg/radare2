@@ -407,6 +407,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 		r_list_foreach (relocs, iter, reloc) {
 			if (reloc->import) {
 				snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", reloc->import->name);
+				r_str_replace_char (str, '$', '_');
 				r_flag_set (r->flags, str, va?baddr+reloc->rva:reloc->offset,
 					bin_reloc_size (reloc), 0);
 			} else {
@@ -424,8 +425,11 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			r_cons_printf ("fs relocs\n");
 			r_list_foreach (relocs, iter, reloc) {
 				if (reloc->import) {
-					r_cons_printf ("f reloc.%s @ 0x%08"PFMT64x"\n", reloc->import->name,
+					char *str = strdup (reloc->import->name);
+					r_str_replace_char (str, '$', '_');
+					r_cons_printf ("f reloc.%s @ 0x%08"PFMT64x"\n", str,
 						va?baddr+reloc->rva:reloc->offset);
+					free (str);
 				} else {
 					// TODO(eddyb) implement constant relocs.
 				}
