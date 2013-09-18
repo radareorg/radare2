@@ -17,7 +17,7 @@ static int r_debug_recoil(RDebug *dbg) {
 	if (ri) {
 		ut64 addr = r_reg_get_value (dbg->reg, ri);
 		recoil = r_bp_recoil (dbg->bp, addr);
-		eprintf ("[R2] Breakpoint recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
+		//eprintf ("[R2] Breakpoint recoil at 0x%"PFMT64x" = %d\n", addr, recoil);
 #if __arm__
 		if (recoil<1) recoil = 0; // XXX Hack :D
 #else
@@ -55,6 +55,7 @@ R_API RDebug *r_debug_new(int hard) {
 		/* TODO: needs a redesign? */
 		dbg->maps = r_debug_map_list_new ();
 		dbg->maps_user = r_debug_map_list_new ();
+		r_debug_signal_init (dbg);
 		if (hard) {
 			dbg->bp = r_bp_new ();
 			r_debug_plugin_init (dbg);
@@ -204,6 +205,7 @@ R_API int r_debug_detach(struct r_debug_t *dbg, int pid) {
 }
 
 R_API int r_debug_select(RDebug *dbg, int pid, int tid) {
+	if (!tid) tid = pid;
 	if (pid != dbg->pid || tid != dbg->tid)
 		eprintf ("r_debug_select: %d %d\n", pid, tid);
 	dbg->pid = pid;
@@ -235,11 +237,23 @@ R_API int r_debug_wait(RDebug *dbg) {
 		dbg->newstate = 1;
 		if (ret == -1) {
 			eprintf ("\n==> Process finished\n\n");
-			r_debug_select (dbg, -1, -1); //dbg->pid = -1;
+			r_debug_select (dbg, -1, -1);
 		}
 		//eprintf ("wait = %d\n", ret);
 		if (dbg->trace->enabled)
 			r_debug_trace_pc (dbg);
+		if (ret == R_DBG_REASON_SIGNAL) {
+			/* handle signal on continuations here */
+			int what = r_debug_signal_what (dbg, dbg->signum);
+			r_cons_printf ("[+] signal %d received\n", dbg->signum);
+			if (what & R_DBG_SIGNAL_CONT) {
+				// XXX: support step, steptrace, continue_until_foo, etc..
+				r_debug_continue (dbg);
+			}
+			if (what & R_DBG_SIGNAL_SKIP) {
+				// TODO: use ptrace-setsiginfo to ignore signal
+			}
+		}
 	}
 	return ret;
 }
@@ -336,23 +350,6 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		}
 	} else eprintf ("Undefined debugger backend\n");
 	return ret;
-}
-
-R_API RList *r_debug_kill_list(RDebug *dbg) {
-	if (dbg->h->kill_list)
-		return dbg->h->kill_list (dbg);
-	return NULL;
-}
-
-R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
-	eprintf ("TODO: set signal handlers of child\n");
-	// TODO: must inject code to call signal()
-#if 0
-	if (dbg->h->kill_setup)
-		return dbg->h->kill_setup (dbg, sig, action);
-#endif
-	// TODO: implement r_debug_kill_setup
-	return R_FALSE;
 }
 
 R_API int r_debug_continue_kill(RDebug *dbg, int sig) {

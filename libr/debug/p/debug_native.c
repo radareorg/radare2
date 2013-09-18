@@ -27,15 +27,20 @@ static int r_debug_handle_signals (RDebug *dbg) {
 	siginfo_t siginfo = {0};
 	int ret2 = ptrace (PTRACE_GETSIGINFO, dbg->pid, 0, &siginfo);
 	if (siginfo.si_signo>0) {
+		dbg->reason = R_DBG_REASON_SIGNAL;
 		// TODO: export this information into dbg->status
+#if 0
 		eprintf ("[+] SIGNAL %d errno=%d code=%d ret=%d\n",
 			siginfo.si_signo, siginfo.si_errno,
 			siginfo.si_code, ret2);
+#endif
+		dbg->signum = siginfo.si_signo;
+		return R_TRUE;
 	}
-	return R_TRUE;
+	return R_FALSE;
 #else
 	eprintf ("Signal handling not yet supported for this platform\n");
-	return R_FALSE;
+	return -1;
 #endif
 }
 
@@ -451,7 +456,7 @@ static int r_debug_native_wait(RDebug *dbg, int pid) {
 	} else {
 		if (ret != pid)
 			status = R_DBG_REASON_NEW_PID;
-		else status = R_DBG_REASON_UNKNOWN;
+		else status = dbg->reason;
 	}
 	return status;
 #endif

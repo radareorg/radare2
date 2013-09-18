@@ -3,9 +3,11 @@
 
 #include <r_types.h>
 #include <r_anal.h>
+#include <r_cons.h>
 #include <r_util.h>
 #include <r_reg.h>
 #include <r_bp.h>
+#include <r_db.h>
 #include <r_io.h>
 #include <r_syscall.h>
 #include "list.h"
@@ -50,12 +52,12 @@ enum {
 	R_DBG_PROC_RAISED = 'R' // has produced a signal, breakpoint, etc..
 };
 
+
 // signal handling must support application and debugger level options
 enum {
-	R_DBG_SIGNAL_IGNORE, // ignore signal handler
-	R_DBG_SIGNAL_BYPASS,
-	R_DBG_SIGNAL_HANDLE, //
-	R_DBG_SIGNAL_SETUP,
+	R_DBG_SIGNAL_IGNORE=0, // ignore signal handler
+	R_DBG_SIGNAL_CONT=1, // pass signal to chlidren and continue execution
+	R_DBG_SIGNAL_SKIP=2, //
 	//..
 };
 
@@ -136,6 +138,7 @@ typedef struct r_debug_t {
 	int steps;  /* counter of steps done */
 	int newstate;
 	int reason; /* stop reason */
+	int signum;
 	RDebugTrace *trace;
 	int stop_all_threads;
 	RReg *reg;
@@ -150,6 +153,7 @@ typedef struct r_debug_t {
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
 	RGraph *graph;
+	Sdb *signals;
 	/* TODO
 	- list of processes and their threads
 	- list of mapped memory (from /proc/XX/maps)
@@ -246,6 +250,14 @@ R_API RDebug *r_debug_new(int hard);
 R_API RDebug *r_debug_free(RDebug *dbg);
 
 /* send signals */
+R_API void r_debug_signal_init(RDebug *dbg);
+R_API int r_debug_signal_send(RDebug *dbg, int num);
+R_API int r_debug_signal_what(RDebug *dbg, int num);
+R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame);
+R_API const char *r_debug_signal_resolve_i(RDebug *dbg, int signum);
+R_API void r_debug_signal_setup(RDebug *dbg, int num, int opt);
+R_API int r_debug_signal_set(RDebug *dbg, int num, ut64 addr);
+R_API void r_debug_signal_list(RDebug *dbg);
 R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig);
 R_API RList *r_debug_kill_list(RDebug *dbg);
 // XXX: must be uint64 action

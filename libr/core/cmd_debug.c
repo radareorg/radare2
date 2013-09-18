@@ -725,13 +725,53 @@ static void r_core_debug_trace_calls (RCore *core) {
 }
 
 static void r_core_debug_kill (RCore *core, const char *input) {
-	char *p;
 	if (!input || *input=='?') {
-		eprintf ("Usage: dk [sig][=val]\n"
-			"  dk      ; list all signal handlers of child process\n"
-			"  dk 9    ; send KILL signal to child\n"
-			"  dk 9=1  ; set signal handler for KILL signal in child\n");
+		if (input[1]) {
+			const char *signame, *arg = input+1;
+			int signum = atoi (arg);
+			if (signum>0) {
+				signame = r_debug_signal_resolve_i (core->dbg, signum);
+				if (signame)
+					r_cons_printf ("%s\n", signame);
+			} else {
+				signum = r_debug_signal_resolve (core->dbg, arg);
+				if (signum>0)
+					r_cons_printf ("%d\n", signum);
+			}
+		} else eprintf ("Usage: dk[o] [sig][=val]\n"
+				" dk?9      ; name/signum resolver\n"
+				" dk        ; list all signal handlers of child process\n"
+				" dko 9 sc  ; on SIGKILL Skip and CONT (default stop, always trace)\n"
+				" dk 9      ; send KILL signal to child\n"
+				" dk 9=1    ; set signal handler for KILL signal in child\n");
+	} else if (*input=='o') {
+		char *p, *name = strdup (input+2);
+		p = strchr (name, ' ');
+		if (p) {
+			int signum = atoi (name);
+			*p++ = 0;
+			// Actions:
+			//  - pass
+			//  - trace
+			//  - stop
+			if (signum<1) signum = r_debug_signal_resolve (core->dbg, name);
+			if (signal>0) {
+				int sigopt = 0;
+				if (strchr (p, 's')) sigopt |= R_DBG_SIGNAL_SKIP;
+				if (strchr (p, 'c')) sigopt |= R_DBG_SIGNAL_CONT;
+				r_debug_signal_setup (core->dbg, signum, sigopt);
+			} else {
+				eprintf ("Invalid signal\n");
+			}
+		} else {
+			eprintf ("Usage: dko SIGNAL sc\n"
+			" 'SIGNAL' can be a number or a string that resolves with dk?..\n"
+			" 'sc' stands for SKIP and CONT\n");
+		}
+		free (name);
 	} else if (!*input) {
+		r_debug_signal_list (core->dbg);
+#if 0
 		RListIter *iter;
 		RDebugSignal *ds;
 		eprintf ("TODO: list signal handlers of child\n");
@@ -741,9 +781,10 @@ static void r_core_debug_kill (RCore *core, const char *input) {
 			eprintf ("--> %d\n", ds->num);
 		}
 		r_list_free (list);
+#endif
 	} else {
 		int sig = atoi (input);
-		p = strchr (input, '=');
+		char *p = strchr (input, '=');
 		if (p) {
 			r_debug_kill_setup (core->dbg, sig, r_num_math (core->num, p+1));
 		} else {
