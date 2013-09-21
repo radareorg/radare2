@@ -411,13 +411,13 @@ static int cmd_write(void *data, const char *input) {
 						"Usage: 'wo%c 00 11 22'\n", input[1]);
 					return 0;
 				}
-			case 'R':
-				r_core_cmd0 (core, "wr $b");
-				break;
 			case '2':
 			case '4':
 				r_core_write_op (core, input+3, input[1]);
 				r_core_block_read (core, 0);
+				break;
+			case 'R':
+				r_core_cmd0 (core, "wr $b");
 				break;
 			case 'n':
 				r_core_write_op (core, "ff", 'x');
