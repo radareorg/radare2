@@ -17,6 +17,10 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	int menu = 0;
 	int hit, i, j, ch;
 
+	for (j=i=0;i<R_FLAG_SPACES_MAX;i++)
+		if (core->flags->spaces[i])
+			j = 1;
+	if (j==0) menu = 1;
 	for (;;) {
 		r_cons_gotoxy (0, 0);
 		r_cons_clear ();
@@ -47,15 +51,19 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				option = i-1;
 				continue;
 			}
-			r_cons_printf ("\n Selected: %s\n\n", fs2);
+			if (fs2) {
+				r_cons_printf ("\n Selected: %s\n\n", fs2);
 
-			switch (format) {
-			case 0: sprintf (cmd, "px @ %s!64", fs2); core->printidx = 0; break;
-			case 1: sprintf (cmd, "pd 12 @ %s!64", fs2); core->printidx = 1; break;
-			case 2: sprintf (cmd, "ps @ %s!64", fs2); core->printidx = 5; break;
-			default: format = 0; continue;
+				switch (format) {
+				case 0: sprintf (cmd, "px @ %s!64", fs2); core->printidx = 0; break;
+				case 1: sprintf (cmd, "pd 12 @ %s!64", fs2); core->printidx = 1; break;
+				case 2: sprintf (cmd, "ps @ %s!64", fs2); core->printidx = 5; break;
+				default: format = 0; continue;
+				}
+				if (*cmd) r_core_cmd (core, cmd, 0);
+			} else {
+				r_cons_printf ("(no flags)\n");
 			}
-			if (*cmd) r_core_cmd (core, cmd, 0);
 		} else {
 			r_cons_printf ("Flag spaces:\n\n");
 			hit = 0;
@@ -120,6 +128,13 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'q':
 			if (menu<=0) return R_TRUE; menu--;
 			option = _option;
+			if (menu==0) {
+				// if no flagspaces, just quit
+				for (j=i=0;i<R_FLAG_SPACES_MAX;i++)
+					if (core->flags->spaces[i])
+						j = 1;
+				if (!j) return R_TRUE;
+			}
 			break;
 		case 'a':
 			switch (menu) {
@@ -156,14 +171,18 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case '*':
 			r_core_block_size (core, core->blocksize+16);
 			break;
-		case '+':
-			r_core_block_size (core, core->blocksize+1);
-			break;
 		case '/':
 			r_core_block_size (core, core->blocksize-16);
 			break;
+		case '+':
+			if (menu==1)
+				r_core_cmdf (core, "f %s=%s+1", fs2, fs2);
+			else r_core_block_size (core, core->blocksize+1);
+			break;
 		case '-':
-			r_core_block_size (core, core->blocksize-1);
+			if (menu==1)
+				r_core_cmdf (core, "f %s=%s-1", fs2, fs2);
+			else r_core_block_size (core, core->blocksize-1);
 			break;
 		case 'r':
 			if (menu == 1) {
