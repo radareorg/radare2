@@ -16,7 +16,6 @@ w32:
 	export CC CXX CFLAGS LDFLAGS ; \
 	${MAKE} CC=i486-mingw32-gcc CXX=i486-mingw32-g++ \
 
-ifeq ($(DEVEL_MODE),1)
 %.${SOEXT}: ../vapi/%.vapi
 ifeq (${LANG},cxx)
 	mod=`echo $@ | sed -e s,.${SOEXT},,` ; \
@@ -65,29 +64,6 @@ endif
 ifneq ($(SAVED),)
 	cd .skip ; cp * ..
 	rm -rf .skip
-endif
-else
-%.${SOEXT}:
-	@VAPI=`echo $@|sed -e s,.${SOEXT},.vapi,` ; \
-	test ../vapi/$${VAPI} -nt ${LIBS_PFX}$@ -o ! -e ${LIBS_PFX}$@ ; \
-	if [ $$? = 0 ]; then echo " - ${LANG} $@" ; \
-	LIB=`echo $@ | sed -e s,.${SOEXT},,` ; \
-	case "${LANG}" in \
-	"python") \
-		${CXX} -fPIC -shared $${LIB}_wrap.cxx `../python-config-wrapper --cflags --libs` \
-			`pkg-config --cflags --libs $${LIB}` ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
-		[ "`uname`" = Darwin ] && cp ${LIBPFX}$@ `echo $@|sed -e s,.${SOEXT},.so,` ; \
-		;; \
-	"lua") \
-		${CXX} -fPIC -shared $${LIB}_wrap.cxx -I/usr/include/lua5.1 ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
-		;; \
-	"php5")	\
-		${CXX} -fPIC -shared $${LIB}_wrap.cpp `php-config --cflags --libs` ${CFLAGS} ${LDFLAGS} -o ${LIBS_PFX}$@ ; \
-		;; \
-	esac ; fi ; true
-
-clean:
-	@rm -f *.${SOEXT} ; rm -rf *.dSYM
 endif
 
 mrproper: clean
