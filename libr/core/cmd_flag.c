@@ -1,5 +1,21 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
+static void flagbars(RCore *core) {
+	int total = 0;
+	int cols = r_cons_get_size (NULL);
+	RListIter *iter;
+	RFlagItem *flag;
+	r_list_foreach (core->flags->flags, iter, flag) {
+		total += flag->offset;
+	}
+	r_list_foreach (core->flags->flags, iter, flag) {
+		r_cons_printf ("%10s", flag->name);
+		r_print_progressbar (core->print,
+			(flag->offset*100)/total, cols);
+		r_cons_newline ();
+	}
+}
+
 static int cmd_flag(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 off = core->offset;
@@ -10,10 +26,11 @@ static int cmd_flag(void *data, const char *input) {
 	if (*input)
 		str = strdup (input+1);
 	switch (*input) {
+	case '=':
+		flagbars (core);
+		break;
 	case '2':
-		{
 		r_flag_get_i2 (core->flags, r_num_math (core->num, input+1));
-		}
 		break;
 	case 'R':
 		{
