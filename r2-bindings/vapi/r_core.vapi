@@ -101,6 +101,7 @@ public class RCore {
 	//public int cmdf(...);
 	public int cmd(string cmd, bool log);
 	public int cmd0(string cmd);
+	public void cmd_flush ();
 	public void cmd_init ();
 
 	// XXX. must be const in .h public int cmd_foreach(string cmd, string each);
