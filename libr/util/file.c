@@ -268,13 +268,17 @@ R_API boolt r_file_rm(const char *file) {
 }
 
 R_API boolt r_file_rmrf(const char *file) {
-	char *nfile = strdup (file);
-	if (r_sandbox_enable (0)) return R_FALSE;
-	nfile[ strlen (nfile)-1 ] = '_';
-	nfile[ strlen (nfile)-2 ] = '_';
-	rename (file, nfile);
-	eprintf ("mv %s %s\n", file, nfile);
-	return R_TRUE;
+	if (r_sandbox_enable (0))
+        return R_FALSE;
+    else {
+        char *nfile = strdup (file);
+        nfile[ strlen (nfile)-1 ] = '_';
+        nfile[ strlen (nfile)-2 ] = '_';
+        rename (file, nfile);
+        eprintf ("mv %s %s\n", file, nfile);
+        free (nfile);
+        return R_TRUE;
+    }
 }
 
 R_API int r_file_mmap_write(const char *file, ut64 addr, const ut8 *buf, int len) {
