@@ -11,10 +11,8 @@ def flush2(c):
 
 def flush3(c):
 	k = c.cons
-	k.__init_methods__()
 	k.flush()
 
-cons = RCons()
 c = RCore ()
 #c.__init_methods__ ()
 
@@ -33,6 +31,9 @@ c.cmd0 ("p8 20 @ $$+1")
 #c.cmd_flush()
 flush2(c)
 
-# WTF WHY c = RCons instead of RCore?!?!?
 c.cmd0 ("pd 3")
 flush(c)
+
+# BUGBUG
+c.cmd0 ("pd 3")
+flush3(c)

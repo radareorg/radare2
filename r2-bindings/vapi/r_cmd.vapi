@@ -33,12 +33,12 @@ namespace Radare {
 		RCmdCallback call;
 	}
 */
-	[CCode (has_target=false, cname="RCmdCallback")]
-	public delegate bool RCmdCallback (void *user, string cmd);
 
 	[Compact]
 	[CCode (cheader_filename="r_cmd.h", cprefix="r_cmd_", cname="RCmd", free_function="r_cmd_free")]
 	public class RCmd {
+		[CCode (has_target=false, cname="RCmdCallback")]
+		public delegate bool RCmdCallback (void *user, string cmd);
 		public RCmd ();
 		public void set_data (void *data);
 		public bool @add (string cmd, string desc, RCmdCallback cb);
