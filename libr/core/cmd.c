@@ -463,7 +463,7 @@ static int cmd_bsize(void *data, const char *input) {
 
 static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
-	ut64 oldsize, newsize;
+	ut64 oldsize, newsize=0;
 	st64 delta = 0;
 	int grow;
 
