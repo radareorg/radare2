@@ -913,7 +913,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		case 'f':
-			step_until_eof(core);
+			step_until_eof (core);
 			break;
 		case 'u':
 			r_reg_arena_swap (core->dbg->reg, R_TRUE);

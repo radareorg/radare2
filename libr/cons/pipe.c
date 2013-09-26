@@ -14,7 +14,7 @@ static int backup_fd = -1;
 
 R_API int r_cons_pipe_open(const char *file, int append) {
 	int fd = r_sandbox_open (file,
-		O_BINARY | O_RDWR | O_CREAT | (append?O_APPEND:O_TRUNC), 0644);
+		O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC), 0644);
 	if (fd==-1) {
 		eprintf ("r_cons_pipe_open: Cannot open file '%s'\n", file);
 		return -1;
@@ -26,6 +26,7 @@ R_API int r_cons_pipe_open(const char *file, int append) {
 	if (_dup2 (1, backup_fd) == -1) {
 #else
 	backup_fd = sysconf (_SC_OPEN_MAX)-(fd-2); // portable getdtablesize()
+	if (backup_fd <2) backup_fd = 2002-(fd-2); // fallback
 	if (dup2 (1, backup_fd) == -1) {
 #endif
 		eprintf ("Cannot dup stdout to %d\n", backup_fd);
