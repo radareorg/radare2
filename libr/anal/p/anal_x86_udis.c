@@ -130,7 +130,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case 64: regsz = 8; break;
 	case 16: regsz = 2; break;
 	default:
-	case 32: regsz = regsz; break;
+	case 32: regsz = 4; break;
 	}
 	ud_init (&u);
 	ud_set_pc (&u, addr);
