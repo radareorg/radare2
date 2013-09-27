@@ -34,6 +34,7 @@ struct r_bin_mach0_import_t {
 	int ord;
 	int last;
 };
+
 struct r_bin_mach0_reloc_t {
 	ut64 offset;
 	ut64 addr;
@@ -91,7 +92,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	ut64 entry;
 	int endian;
 	const char* file;
-	struct r_buf_t* b;
+	RBuffer* b;
 };
 
 struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file);
