@@ -67,6 +67,7 @@
 #define B0100 4
 #define B0011 3
 #define B0010 2
+#undef _
 #define _(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
 
 #endif
