@@ -605,7 +605,6 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 		}
 		break;
 	case 'g':
-	eprintf ("INPUT (%s)\n", input);
 		switch (input[1]) {
 		case 't':
 			{
@@ -685,6 +684,7 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 			r_core_anal_graph (core, r_num_math (core->num, arg),
 				R_CORE_ANAL_GRAPHBODY);
 			}
+			break;
 		}
 		break;
 	case 't':

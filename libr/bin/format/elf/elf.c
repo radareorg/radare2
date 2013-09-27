@@ -244,6 +244,8 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 		(got_addr = Elf_(r_bin_elf_get_section_addr) (bin, ".got.plt")) == -1)
 		return -1;
 	for (i = 0; i < bin->ehdr.e_shnum; i++) {
+		if (bin->shdr[i].sh_name > bin->shstrtab_section->sh_size)
+			continue;
 		if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rel.plt"))
 			tsize = sizeof (Elf_(Rel));
 		else if (!strcmp (&bin->strtab[bin->shdr[i].sh_name], ".rela.plt"))

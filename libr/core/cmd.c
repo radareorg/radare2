@@ -699,7 +699,8 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	int fds[2];
 	int stdout_fd;
 #endif
-	int ret = -1, pipecolor = -1;
+	int olen, ret = -1, pipecolor = -1;
+	char *str, *out = NULL;
 	if (!r_config_get_i (core->config, "scr.pipecolor")) {
 		pipecolor = r_config_get_i (core->config, "scr.color");
 		r_config_set_i (core->config, "scr.color", 0);
@@ -711,8 +712,8 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 			*_ptr = '\0';
 			_ptr++;
 		}
-		int olen = 0;
-		char *str, *out = NULL;
+		olen = 0;
+		out = NULL;
 		// TODO: implement foo
 		str = r_core_cmd_str (core, radare_cmd);
 		r_sys_cmd_str_full (shell_cmd+1, str, &out, &olen, NULL);

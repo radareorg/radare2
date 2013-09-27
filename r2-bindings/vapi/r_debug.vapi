@@ -3,8 +3,33 @@
 [Compact]
 [CCode (cheader_filename="r_debug.h", cname="RDebug", free_function="r_debug_free", cprefix="r_debug_")]
 public class Radare.RDebug {
+	public int arch;
+	public int bits;
+	public int pid;
+	public int tid;
+	public bool swstep;
+	public int steps;
+	public int newstate;
+	public int reason;
+	public int signum;
+
 	public RBreakpoint bp;
 	public RDebug(int hard);
+/*
+	public int steps;
+	public int pid;
+	public int tid;
+	public bool swstep;
+	public int newstate;
+	//public RDebug.Trace *trace;
+	public RDebug.Trace trace;
+	public bool stop_all_threads;
+	public RReg reg;
+	public RAnal anal;
+
+	public RList<RDebug.Map> maps;
+	public RList<RDebug.Map> maps_user;
+*/
 
 	public bool use(string plugin);
 
@@ -160,19 +185,6 @@ public class Radare.RDebug {
 		uint64 stamp;
 	}
 
-	public int steps;
-	public int pid;
-	public int tid;
-	public bool swstep;
-	public int newstate;
-	//public RDebug.Trace *trace;
-	public RDebug.Trace trace;
-	public bool stop_all_threads;
-	public RReg reg;
-	public RAnal anal;
-
-	public RList<RDebug.Map> maps;
-	public RList<RDebug.Map> maps_user;
 
 
 	//public int pid_add();

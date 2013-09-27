@@ -38,10 +38,10 @@ namespace Radare {
 	[CCode (cheader_filename="r_cmd.h", cprefix="r_cmd_", cname="RCmd", free_function="r_cmd_free")]
 	public class RCmd {
 		[CCode (has_target=false, cname="RCmdCallback")]
-		public delegate bool RCmdCallback (void *user, string cmd);
+		public delegate bool Callback (void *user, string cmd);
 		public RCmd ();
 		public void set_data (void *data);
-		public bool @add (string cmd, string desc, RCmdCallback cb);
+		public bool @add (string cmd, string desc, Callback cb);
 		public bool add_long (string cmd, string scmd, string desc);
 		public bool del (string cmd);
 		public bool call (string cmd);
