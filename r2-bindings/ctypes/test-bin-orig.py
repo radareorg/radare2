@@ -24,15 +24,12 @@ baddr= a.get_baddr ()
 print ("base address: "+str(baddr))
 
 sect = a.get_sections ()
-sect.__init_methods__()
 #sect._o = addressof (sect)
 print(dir(sect))
 
 it = sect.iterator ()
-#it.__init_methods__()
 print(dir(it))
 while True:
-	it.__init_methods__()
 	data = it.get_data ()
 	print ("+++++",sect._o)
 	ds = cast (data, POINTER(RBinSection)).contents
@@ -44,7 +41,6 @@ while True:
 
 exit(0)
 sect._o = addressof (sect)
-sect.__init_methods__()
 print ("_________________O ",a._o)
 
 print ("sections: "+str(sect))

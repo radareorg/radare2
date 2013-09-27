@@ -6,15 +6,9 @@ def flush(c):
 
 def flush2(c):
 	k = c.cons
-	k.__init_methods__()
-	k.flush()
-
-def flush3(c):
-	k = c.cons
 	k.flush()
 
 c = RCore ()
-#c.__init_methods__ ()
 
 h = c.file_open ("/bin/ls", 0, 0);
 c.bin_load (None)
@@ -33,7 +27,3 @@ flush2(c)
 
 c.cmd0 ("pd 3")
 flush(c)
-
-# BUGBUG
-c.cmd0 ("pd 3")
-flush3(c)
