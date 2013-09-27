@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2012 nibble at develsec.org, pancake at nopcode.org */
+/* radare - LGPL - Copyright 2010-2013 nibble at develsec.org, pancake at nopcode.org */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -837,7 +837,8 @@ char* MACH0_(r_bin_mach0_get_cputype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	case CPU_TYPE_MC88000:	return strdup ("mc88000");
 	case CPU_TYPE_MC98000:	return strdup ("mc98000");
 	case CPU_TYPE_HPPA:	return strdup ("hppa");
-	case CPU_TYPE_ARM:	return strdup ("arm");
+	case CPU_TYPE_ARM:
+	case CPU_TYPE_ARM64:	return strdup ("arm");
 	case CPU_TYPE_SPARC:	return strdup ("sparc");
 	case CPU_TYPE_MIPS:	return strdup ("mips");
 	case CPU_TYPE_I860:	return strdup ("i860");
