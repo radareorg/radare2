@@ -274,15 +274,10 @@ static void Decode (ut32 *output, ut8 *input, unsigned int len) {
 
 /* Note: Replace "for loop" with standard memcpy if possible.  */
 static void MD5_memcpy (ut8 *output, ut8 *input, unsigned int len) {
-	// TODO: use memmove here
-	unsigned int i;
-	for (i = 0; i < len; i++)
-		output[i] = input[i];
+    memmove(output, input, len);
 }
 
 /* Note: Replace "for loop" with standard memset if possible.  */
 static void MD5_memset (ut8 *output, int value, unsigned int len) {
-	unsigned int i;
-	for (i = 0; i < len; i++)
-		output[i] = (char)value;
+    memset(output, value, len);
 }
