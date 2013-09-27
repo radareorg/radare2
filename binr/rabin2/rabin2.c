@@ -504,8 +504,8 @@ int main(int argc, char **argv) {
 		rabin_do_operation (op);
 	if (isradjson)
 		printf ("}");
-	r_core_fini (&core);
 	r_cons_flush ();
+	r_core_fini (&core);
 
 	return 0;
 }
