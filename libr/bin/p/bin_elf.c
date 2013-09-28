@@ -94,7 +94,6 @@ static RList* sections(RBinArch *arch) {
 
 	// program headers is another section
 	if (r_list_empty (ret)) {
-
 		struct Elf_(r_bin_elf_obj_t)* obj = arch->bin_obj;
 		Elf_(Phdr)* phdr = obj->phdr;
 		int num = obj->ehdr.e_phnum;
@@ -103,8 +102,8 @@ static RList* sections(RBinArch *arch) {
 			struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
 			arch->size = bin? bin->size: 0x9999;
 		}
-		for (i=n=0;i<num; i++) {
-			if (phdr[i].p_type == 1) {
+		for (i=n=0; i<num; i++) {
+			if (phdr && phdr[i].p_type == 1) {
 				found = 1;
 				ut64 paddr = phdr[i].p_offset;
 				ut64 vaddr = phdr[i].p_vaddr;
