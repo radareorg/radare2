@@ -115,6 +115,16 @@ static RList* symbols(RBinArch *arch) {
 	return ret;
 }
 
+static void filter_import(ut8 *n) {
+	int I;
+	for (I=0; n[I]; I++) {
+		if (n[I]<30 || n[I]>=0x7f) {
+			n[I] = 0;
+			break;
+		}
+	}
+}
+
 static RList* imports(RBinArch *arch) {
 	RList *ret = NULL, *relocs = NULL;
 	RBinImport *ptr = NULL;
@@ -136,6 +146,7 @@ static RList* imports(RBinArch *arch) {
 		if (!(ptr = R_NEW (RBinImport)))
 			break;
 
+		filter_import (imports[i].name);
 		strncpy (ptr->name, (char*)imports[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, "FUNC", R_BIN_SIZEOF_STRINGS);

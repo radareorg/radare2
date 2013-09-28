@@ -14,7 +14,7 @@ ut64 PE_(r_bin_pe_get_main_offset)(struct PE_(r_bin_pe_obj_t) *bin) {
 
 	// option2: /x 8bff558bec83ec20         
 	if (r_buf_read_at (bin->b, entry->offset, buf, sizeof (buf)) == -1) {
-		eprintf ("Error: read (entry)\n");
+		eprintf ("Error: Cannot read entry at 0x%08"PFMT64x"\n", entry->offset);
 	} else {
 		if (buf[367] == 0xe8) {
 			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
@@ -73,7 +73,7 @@ static int PE_(r_bin_pe_get_delay_import_dirs_count)(struct PE_(r_bin_pe_obj_t) 
 static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_import_t** importp, int* nimp, char* dll_name, PE_DWord OriginalFirstThunk, PE_DWord FirstThunk)
 {
 	char import_name[PE_NAME_LENGTH + 1], name[PE_NAME_LENGTH + 1];
-	PE_Word import_hint, import_ordinal;
+	PE_Word import_hint, import_ordinal = 0;
 	PE_DWord import_table = 0, off = 0;
 	int i = 0;
 
@@ -92,10 +92,11 @@ static int PE_(r_bin_pe_parse_imports)(struct PE_(r_bin_pe_obj_t)* bin, struct r
 				import_hint = 0;
 				snprintf(import_name, PE_NAME_LENGTH, "%s_Ordinal_%i", dll_name, import_ordinal);
 			} else {
-				import_ordinal = 0;
-				if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, import_table),
+				import_ordinal ++;
+				ut64 off = PE_(r_bin_pe_rva_to_offset)(bin, import_table);
+				if (r_buf_read_at(bin->b, off,
 							(ut8*)&import_hint, sizeof(PE_Word)) == -1) {
-					eprintf("Error: read (import hint)\n");
+					eprintf("Error: read import hint at 0x%08"PFMT64x"\n", off);
 					return 0;
 				}
 				if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, import_table) + sizeof(PE_Word),
