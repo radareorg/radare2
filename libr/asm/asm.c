@@ -616,7 +616,9 @@ R_API char *r_asm_op_get_asm(RAsmOp *op) {
 }
 
 R_API int r_asm_op_get_size(RAsmOp *op) {
-	return op->inst_len - op->payload;
+	int len = op->inst_len - op->payload;
+	if (len<1) len = 1;
+	return len;
 }
 
 R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin

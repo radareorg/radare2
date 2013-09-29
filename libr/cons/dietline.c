@@ -66,6 +66,8 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	int ret, len;
 	for (len = 0; len+2<slen; len++) {
 		ret = read (0, s+len, 1);
+		if (ret==-1)
+			return 0;
 		if (s[len] < 28)
 			return 1;
 		if (ret == 1) {

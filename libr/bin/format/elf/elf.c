@@ -108,6 +108,10 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	memset (bin->strtab, 0, sz);
 	bin->shstrtab = bin->strtab;
 	//bin->strtab_section->sh_offset = 0;
+	if (!bin->strtab_section->sh_offset) {
+		bin->strtab = NULL;
+		return R_TRUE;
+	}
 	if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)bin->strtab,
 				bin->strtab_section->sh_size) == -1) {
 		eprintf ("Error: read (strtab) at 0x%"PFMT64x"\n",

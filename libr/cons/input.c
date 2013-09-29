@@ -131,7 +131,10 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	*buf = '\0';
 	fflush (cons->fdin);
 	if (color) {
-		printf ("%s", cons->pal.input);
+		const char *p = cons->pal.input;
+		int len = p? strlen (p):0;
+		if (len>0)
+			fwrite (p, len, 1, stdout);
 		fflush (stdout);
 	}
 	if (fgets (buf, len, cons->fdin) == NULL) {

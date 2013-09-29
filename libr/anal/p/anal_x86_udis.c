@@ -251,6 +251,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			}
 			break;
 		default:
+			op->type = R_ANAL_OP_TYPE_MOV;
 			// XX
 			break;
 		}

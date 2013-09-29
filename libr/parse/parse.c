@@ -92,6 +92,13 @@ R_API int r_parse_parse(RParse *p, const char *data, char *str) {
 	(x)==','||(x)==';'||(x)=='['||(x)==']'|| \
 	(x)=='('||(x)==')'||(x)=='{'||(x)=='}'||(x)=='\x1b')
 
+static int isvalidflag(RFlagItem *flag) {
+	if (flag && strchr (flag->name, '.')) {
+		return 1; //strlen (flag->name)>3) {
+	}
+	return 0;
+}
+
 static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 	char *ptr = data, *ptr2;
 	RAnalFunction *fcn;
@@ -119,8 +126,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 			}
 		}
 		if (f) {
-			flag = r_flag_get_i (f, off);
-			if (flag && strchr (flag->name, '.')) {
+			flag = r_flag_get_i2 (f, off);
+			if (isvalidflag (flag)) {
+
 				if (p->notin_flagspace != -1) {
 					if (p->flagspace == flag->space)
 						continue;

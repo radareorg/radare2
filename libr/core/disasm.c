@@ -258,6 +258,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	const char *color_flow = P(flow): Color_CYAN;
 	const char *color_flag = P(flag): Color_CYAN;
 	const char *color_label = P(label): Color_CYAN;
+	const char *color_other = P(other): Color_WHITE;
 	const char *color_nop = P(nop): Color_BLUE;
 	const char *color_bin = P(bin): Color_YELLOW;
 	const char *color_math = P(math): Color_YELLOW;
@@ -873,8 +874,7 @@ toro:
 		if (linesright && show_lines && line) {
 			if (show_color) {
 				r_cons_printf ("%s%s"Color_RESET, color_flow, line);
-			} else
-				r_cons_printf (line);
+			} else r_cons_printf (line);
 		}
 		if (show_color) {
 			switch (analop.type) {
@@ -931,6 +931,8 @@ toro:
 				r_cons_strcat (color_pop);
 				break;
 			case R_ANAL_OP_TYPE_NULL:
+				r_cons_strcat (color_other);
+				break;
 			case R_ANAL_OP_TYPE_UNK:
 				r_cons_strcat (color_invalid);
 				break;

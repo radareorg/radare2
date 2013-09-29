@@ -8,7 +8,7 @@
 #include <r_asm.h>
 
 
-static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	char *buf_cp, *b;
 	int i;
 
@@ -22,45 +22,51 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 
 	switch (*buf) {
 	case '[':
-		strcpy (op->buf_asm, "[ while [ptr]");
+		strcpy (op->buf_asm, "while [ptr]");
 		break;
 	case ']':
-		strcpy (op->buf_asm, "] loop"); // TODO: detect clause and put label name
+		strcpy (op->buf_asm, "loop"); // TODO: detect clause and put label name
 		break;
 	case '>':
-		if (i>1) strcpy (op->buf_asm, "> add ptr");
-		else strcpy (op->buf_asm, "> inc ptr");
+		if (i>1) strcpy (op->buf_asm, "add ptr");
+		else strcpy (op->buf_asm, "inc ptr");
 		break;
 	case '<':
-		if (i>1) strcpy (op->buf_asm, "< sub ptr");
-		else strcpy (op->buf_asm, "< dec ptr");
+		if (i>1) strcpy (op->buf_asm, "sub ptr");
+		else strcpy (op->buf_asm, "dec ptr");
 		break;
 	case '+':
-		if (i>1) strcpy (op->buf_asm, "+ add [ptr]");
-		else strcpy (op->buf_asm, "+ inc [ptr]");
+		if (i>1) strcpy (op->buf_asm, "add [ptr]");
+		else strcpy (op->buf_asm, "inc [ptr]");
 		break;
 	case '-':
-		if (i>1) strcpy (op->buf_asm, "- sub [ptr]");
-		else strcpy (op->buf_asm, "- dec [ptr]");
+		if (i>1) strcpy (op->buf_asm, "sub [ptr]");
+		else strcpy (op->buf_asm, "dec [ptr]");
 		break;
 	case ',':
-		strcpy (op->buf_asm, ", peek [ptr]");
+		strcpy (op->buf_asm, "peek [ptr]");
 		break;
 	case '.':
-		strcpy (op->buf_asm, ". poke [ptr]");
+		strcpy (op->buf_asm, "poke [ptr]");
 		break;
-	case '\x00':
-		strcpy (op->buf_asm, "  trap");
+	case 0xff:
+	case 0x00:
+		strcpy (op->buf_asm, "trap");
 		break;
 	default:
-		strcpy (op->buf_asm, "  nop");
+		strcpy (op->buf_asm, "nop");
 		break;
 	}
 
-	if (i>0) snprintf (op->buf_asm, sizeof (op->buf_asm), "%s, %d", op->buf_asm, i+1);
+	if (i>0) {
+		if (strchr (op->buf_asm, ' '))
+		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s, %d", op->buf_asm, i+1);
+		else snprintf (op->buf_asm, sizeof (op->buf_asm), "%s %d", op->buf_asm, i+1);
+	}
 	if (i<1) i=1; else i++;
 
 	free (buf_cp);
+	op->inst_len = i;
 	return i;
 }
 

@@ -136,7 +136,7 @@ static int op_cond (const ut8 *data) {
 	return iconds[b];
 }
 
-static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const ut8 *b = (ut8 *)data;
 	ut8 ndata[4];
 	ut32 branch_dst_addr, i = 0;
@@ -330,7 +330,27 @@ if (
 	return op->length;
 }
 
+
+static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) {
+	memset (op, 0, sizeof (RAnalOp));
+	if (d[3]==0) return -1; // invalid
+	op->length = 4;
+	op->type = R_ANAL_OP_TYPE_NULL;
+	if (d[0]==0xc0 && d[3]==0xd6) {
+		// defaults to x30 reg. but can be different
+		op->type = R_ANAL_OP_TYPE_RET;
+	}
+	return op->length;
+}
+
+static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+	if (anal->bits==64)
+		return arm_op64(anal, op, addr, data, len);
+	return arm_op32(anal, op, addr, data, len);
+}
+
 static int set_reg_profile(RAnal *anal) {
+	// TODO: support 64bit profile
 	/* XXX Dupped Profiles */
 	return r_reg_set_profile_string (anal->reg,
 			"=pc	r15\n"
@@ -366,7 +386,7 @@ static int set_reg_profile(RAnal *anal) {
 struct r_anal_plugin_t r_anal_plugin_arm = {
 	.name = "arm",
 	.arch = R_SYS_ARCH_ARM,
-	.bits = 32,
+	.bits = 32 | 64,
 	.desc = "ARM code analysis plugin",
 	.init = NULL,
 	.fini = NULL,

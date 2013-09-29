@@ -841,7 +841,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 						p = q;
 					} else p = NULL;
 				}
-				if (p[1]=='>') {
+				if (*p && p[1]=='>') {
 					char *str = p+2;
 					while (*str=='>') str++;
 					while (IS_WHITESPACE (*str)) str++;
@@ -862,9 +862,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 					r_core_seek (core, oseek, 1);
 					oseek = UT64_MAX;
 				}
-				if (pipefd != -1) {
-				r_cons_flush ();
-				r_cons_pipe_close (pipefd);
+				if (pipefd >0) {//!= -1) {
+					r_cons_flush ();
+					r_cons_pipe_close (pipefd);
 				}
 				if (!p) break;
 				*p = '"';
