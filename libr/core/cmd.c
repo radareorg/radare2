@@ -841,7 +841,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 						p = q;
 					} else p = NULL;
 				}
-				if (*p && p[1]=='>') {
+				if (p && *p && p[1]=='>') {
 					char *str = p+2;
 					while (*str=='>') str++;
 					while (IS_WHITESPACE (*str)) str++;
@@ -850,7 +850,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 				}
 				line = strdup (cmd);
 				line = r_str_replace (line, "\\\"", "\"", R_TRUE);
-				if (p[1]=='|') {
+				if (p && p[1]=='|') {
 					str = p+2;
 					while (IS_WHITESPACE (*str))str++;
 					r_core_cmd_pipe (core, cmd, str);
