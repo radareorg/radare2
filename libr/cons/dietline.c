@@ -437,7 +437,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					if (I.buffer.length < R_LINE_BUFSIZE) {
 						I.buffer.index = I.buffer.length;
 						// XXX may overflow here
-						strcpy (I.buffer.data, tmp_ed_cmd);
+						strncpy (I.buffer.data, tmp_ed_cmd, I.buffer.length);
 					} else I.buffer.length -= strlen (tmp_ed_cmd);
 					free (tmp_ed_cmd);
 				}
