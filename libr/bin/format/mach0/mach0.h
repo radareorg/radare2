@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 nibble at develsec.org */
+/* radare - LGPL - Copyright 2010-2013 - pancake, nibble */
 
 #include <r_bin.h>
 #include <r_types.h>
@@ -83,7 +83,8 @@ struct MACH0_(r_bin_mach0_obj_t) {
 		struct x86_thread_state64 x86_64;
 		struct ppc_thread_state32 ppc_32;
 		struct ppc_thread_state64 ppc_64;
-		struct arm_thread_state arm;
+		struct arm_thread_state32 arm_32;
+		struct arm_thread_state64 arm_64;
 	} thread_state;
 	char (*libs)[R_BIN_MACH0_STRING_LENGTH];
 	int nlibs;
@@ -93,6 +94,7 @@ struct MACH0_(r_bin_mach0_obj_t) {
 	int endian;
 	const char* file;
 	RBuffer* b;
+	int os;
 };
 
 struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file);
@@ -109,6 +111,7 @@ char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 int MACH0_(r_bin_mach0_get_bits)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 int MACH0_(r_bin_mach0_is_big_endian)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 int MACH0_(r_bin_mach0_is_pie)(struct MACH0_(r_bin_mach0_obj_t)* bin);
+const char* MACH0_(r_bin_mach0_get_os)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 char* MACH0_(r_bin_mach0_get_cputype)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin);
 char* MACH0_(r_bin_mach0_get_filetype)(struct MACH0_(r_bin_mach0_obj_t)* bin);

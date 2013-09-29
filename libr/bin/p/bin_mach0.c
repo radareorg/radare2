@@ -207,8 +207,7 @@ static RBinInfo* info(RBinArch *arch) {
 		free (str);
 	}
 	strncpy (ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
-	/* TODO get os */
-	strncpy (ret->os, "darwin", R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->os, MACH0_(r_bin_mach0_get_os) (arch->bin_obj), R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->subsystem, "darwin", R_BIN_SIZEOF_STRINGS);
 	if ((str = MACH0_(r_bin_mach0_get_cputype) (arch->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);

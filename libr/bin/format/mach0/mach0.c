@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 nibble at develsec.org, pancake at nopcode.org */
+/* radare - LGPL - Copyright 2010-2013 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -224,16 +224,24 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 				eprintf ("Error: read (thread state ppc_64)\n");
 				return R_FALSE;
 			}
-			bin->entry =  bin->thread_state.ppc_64.srr0;
+			bin->entry = bin->thread_state.ppc_64.srr0;
 		}
 		break;
 	case CPU_TYPE_ARM:
-		if ((len = r_buf_fread_at(bin->b, off + sizeof (struct thread_command),
-					(ut8*)&bin->thread_state.arm, bin->endian?"17I":"17i", 1)) == -1) {
+		if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command),
+				(ut8*)&bin->thread_state.arm_32, bin->endian?"17I":"17i", 1)) == -1) {
 			eprintf ("Error: read (thread state arm)\n");
 			return R_FALSE;
 		}
-		bin->entry =  bin->thread_state.arm.r15;
+		bin->entry = bin->thread_state.arm_32.r15;
+		break;
+	case CPU_TYPE_ARM64:
+		if ((len = r_buf_fread_at(bin->b, off + sizeof (struct thread_command),
+				(ut8*)&bin->thread_state.arm_64, bin->endian?"34LI1I":"34Li1i", 1)) == -1) {
+			eprintf ("Error: read (thread state arm)\n");
+			return R_FALSE;
+		}
+		bin->entry = bin->thread_state.arm_64.pc;
 		break;
 	default:
 		eprintf ("Error: read (unknown thread state structure)\n");
@@ -268,6 +276,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	ut64 off = 0LL;
 	int i, len;
 
+	bin->os = 0;
 	for (i = 0, off = sizeof (struct MACH0_(mach_header)); i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		len = r_buf_fread_at (bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
 		if (len == -1) {
@@ -275,11 +284,14 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			return R_FALSE;
 		}
 		switch (lc.cmd) {
-#if R_BIN_MACH064
+		case LC_DATA_IN_CODE:
+			// TODO table of non-instructions in __text
+			break;
+		case LC_RPATH:
+			eprintf ("--->\n");
+			break;
 		case LC_SEGMENT_64:
-#else
 		case LC_SEGMENT:
-#endif
 			bin->nsegs++;
 			if (!MACH0_(r_bin_mach0_parse_seg)(bin, off)) {
 				bin->nsegs--;
@@ -294,6 +306,26 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			if (!MACH0_(r_bin_mach0_parse_dysymtab)(bin, off))
 				return R_FALSE;
 			break;
+		case LC_DYLIB_CODE_SIGN_DRS:
+			//eprintf ("[mach0] code is signed\n");
+			break;
+		case LC_VERSION_MIN_MACOSX:
+			bin->os = 1;
+			// set OS = osx
+			//eprintf ("[mach0] Requires OSX >= x\n");
+			break;
+		case LC_VERSION_MIN_IPHONEOS:
+			bin->os = 2;
+			// set OS = ios
+			//eprintf ("[mach0] Requires iOS >= x\n");
+			break;
+		case LC_UUID:
+			//eprintf ("[mach0] UUID\n");
+			break;
+		case LC_LOAD_DYLINKER:
+			//eprintf ("[mach0] load dynamic linker\n");
+			break;
+		case LC_MAIN:
 		case LC_UNIXTHREAD:
 		case LC_THREAD:
 			if (!MACH0_(r_bin_mach0_parse_thread)(bin, off))
@@ -312,6 +344,9 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 				bin->dyld_info = NULL;
 				eprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
 			}
+			break;
+		default:
+			///eprintf ("Unknown header command %x\n", lc.cmd);
 			break;
 		}
 	}
@@ -828,6 +863,14 @@ int MACH0_(r_bin_mach0_is_big_endian)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	return bin->endian;
 }
 
+const char* MACH0_(r_bin_mach0_get_os)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
+	switch (bin->os) {
+	case 1: return "osx";
+	case 2: return "ios";
+	}
+	return "darwin";
+}
+
 char* MACH0_(r_bin_mach0_get_cputype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_VAX: 	return strdup ("vax");
@@ -922,6 +965,8 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		case CPU_SUBTYPE_HPPA_7100LC:	return strdup ("hppa7100LC");
 		default:			return strdup ("Unknown hppa subtype");
 		}
+	case CPU_TYPE_ARM64:
+		return strdup ("v8");
 	case CPU_TYPE_ARM:
 		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_ARM_ALL:
@@ -939,12 +984,12 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		default:return strdup ("unknown ARM subtype");
 		}
 	case CPU_TYPE_SPARC:
-		switch (bin->hdr.cpusubtype &0xff) {
+		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_SPARC_ALL:	return strdup ("all");
 		default:			return strdup ("Unknown sparc subtype");
 		}
 	case CPU_TYPE_MIPS:
-		switch (bin->hdr.cpusubtype &0xff) {
+		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_MIPS_ALL:	return strdup ("all");
 		case CPU_SUBTYPE_MIPS_R2300:	return strdup ("r2300");
 		case CPU_SUBTYPE_MIPS_R2600:	return strdup ("r2600");
@@ -956,14 +1001,14 @@ char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) 
 		default:			return strdup ("Unknown mips subtype");
 		}
 	case CPU_TYPE_I860:
-		switch (bin->hdr.cpusubtype &0xff) {
+		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_I860_ALL:	return strdup ("all");
 		case CPU_SUBTYPE_I860_860:	return strdup ("860");
 		default:			return strdup ("Unknown i860 subtype");
 		}
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
-		switch (bin->hdr.cpusubtype &0xff) {
+		switch (bin->hdr.cpusubtype & 0xff) {
 		case CPU_SUBTYPE_POWERPC_ALL:	return strdup ("all");
 		case CPU_SUBTYPE_POWERPC_601:	return strdup ("601");
 		case CPU_SUBTYPE_POWERPC_602:	return strdup ("602");

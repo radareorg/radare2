@@ -161,7 +161,7 @@ struct ppc_thread_state64 {
 	ut32 vrsave;		/* Vector Save Register */
 };
 
-struct arm_thread_state {
+struct arm_thread_state32 {
 	ut32 r0;
 	ut32 r1;
 	ut32 r2;
@@ -179,6 +179,15 @@ struct arm_thread_state {
 	ut32 r14;
 	ut32 r15;
 	ut32 r16;   /* Apple's thread_state has this 17th reg, bug?? */
+};
+
+struct arm_thread_state64 {
+	ut64 x[29];
+	ut64 fp;
+	ut64 lr;
+	ut64 sp;
+	ut64 pc;
+	ut32 cpsr;
 };
 
 /* Cache header */
