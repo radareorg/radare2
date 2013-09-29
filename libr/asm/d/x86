@@ -3,7 +3,6 @@ aad=ascii adjust ax before division
 aam=ascii adjust ax after multiply
 aas=ascii adjust al after subtraction
 adc=add with carry
-add=add
 add=adds src and dst, stores result on dst
 addpd=add packed double-fp values
 addps=add packed single-fp values
@@ -12,7 +11,6 @@ addss=add scalar single-fp values
 addsubpd=packed double-fp add/subtract
 addsubps=packed single-fp add/subtract
 and=binary and operation between src and dst, stores result on dst
-and=logical and
 andnpd=bitwise logical and not of packed double-fp values
 andnps=bitwise logical and not of packed single-fp values
 andpd=bitwise logical and of packed double-fp values
@@ -31,18 +29,14 @@ btc=bit test and complement
 btr=bit test and reset
 bts=bit test and set
 call"=> "calls a subroutine, pushes eip into stack (esp)
-call=call procedure
+call=calls a subroutine, push eip into the stack (esp)
 callf=call procedure
-cbw=convert
 cbw=convert byte to word
 cdq=convert doubleword to quadword
 clc=clear carry flag
-clc=eflags[CF] = 0
 cld=clear direction flag
-cld=elfags[DF] = 0
 clflush=flush cache line
 cli=clear interrupt flag
-cli=elfags[IF] = 0
 clts=clear task-switched flag in cr0
 cmc=complement carry flag
 cmovb=conditional move - below/not above or equal/carry (cf=1)
@@ -98,7 +92,6 @@ cvttps2dq=convert with trunc. packed single-fp values to <!--1.11 packed -->dw i
 cvttps2pi=convert with trunc. packed single-fp values to <!--1.11 packed -->dw integers
 cvttsd2si=conv. with trunc. scalar double-fp value to signed dw int
 cvttss2si=convert with trunc. scalar single-fp value to dw integer
-cwd=convert
 cwd=convert word to doubleword
 cwde=convert word to doubleword
 daa=decimal adjust al after addition
@@ -115,20 +108,14 @@ dpps=dot product of packed single-fp values
 ds=ds segment override prefix
 emms=empty mmx technology state
 enter=alias for push ebp mov ebp, esp
-enter=make stack frame for procedure parameters
 es=es segment override prefix
 extractps=extract packed single-fp value
 f2xm1=compute 2<sup>x</sup>-1
 fabs=absolute value
-fadd" => 	"fmul" => 	"fcom=compare real
-fadd=add
 fadd=floating point add
-faddp=add and pop
 faddp=floating point add and pop
-fbld=load bcd
 fbld=load binary coded decimal
-fbstp=store bcd and pop
-fbstp=store bcd integer and pop
+fbstp=store binary coded decimal integer and pop
 fchs=change sign
 fclex=clear exceptions
 fcmovb=fp conditional move - below (cf=1)
@@ -139,95 +126,54 @@ fcmovnbe=fp conditional move - below or equal (cf=0 and zf=0)
 fcmovne=fp conditional move - not equal (zf=0)
 fcmovnu=fp conditional move - not unordered (pf=0)
 fcmovu=fp conditional move - unordered (pf=1)
-fcom=compare real
 fcom=floating point compare
 fcomi=compare floating point values and set eflags
 fcomip=compare floating point values and set eflags and pop
-fcomp=compare real and pop
 fcomp=floating point compare and pop
-fcompp=compare real and pop twice
 fcompp=floating point compare and pop twice
-fcos=cosine
 fcos=floating point cosine
-fdecstp=decrement floating point stack pointer (%foo)
-fdecstp=decrement stack-top pointer
-fdisi=disable interrupts
-fdisi=disable npx interrupt
-fdiv=divide
-fdiv=divide and pop
-fdiv=floating divide
-fdivp=divide and pop
-fdivp=floating divide and pop
-fdivr=floating divide reversed
-fdivr=reverse divide
-fdivrp=floating divide reversed and pop
-fdivrp=reverse divide and pop
-feni=enable interrupts
-feni=enable npx interrupt
+fdecstp=decrement floating point stack pointer
+fdisi=disable npx (numeric coprocessor extension) interrupt
+fdiv=floating point divide
+fdivp=floting point divide and pop
+fdivr=floating point divide reversed
+fdivrp=floating point reverse divide and pop
+feni=enable npx (numeric coprocessor extension) interrupt
 ffree=free floating-point register
-ffree=free register
-fiadd=add
 fiadd=integer add
-ficom=compare integer
 ficom=integer compare
-ficomp=compare integer and pop
 ficomp=integer compare and pop
-fidiv=divide
 fidiv=integer divide
 fidivr=integer divide reserved
-fidivr=reverse divide
+fidivr=integer reverse divide
 fild=load integer
 fimul=integer multiply
-fimul=multiply
-fincstp=increment floating point stack pointer (%foo)
-fincstp=increment stack-top pointer
-finit=initialize floating-point unit
-finit=initialize fpu
+fincstp=increment floating-point stack pointer
+finit=initialize fpu (floating-point unit)
 fist=store integer
 fistp=store integer and pop
 fisttp=store integer with truncation and pop
 fisub=integer substract
-fisub=subtract
 fisubr=integer susbtract reversed
-fisubr=reverse subtract
-fld1=load constant +1.0
-fld1=load constant onto stack 1.0f
-fld=floatint point load
+fld1=load constant onto stack +1.0f
 fld=load floating point value
-fldcw=load control word
 fldcw=load x87 fpu control word
-fldenv=load environment state
 fldenv=load x87 fpu environment
-fldl2e=load constant log<sub>2</sub>e
-fldl2e=load constant onto stack, logarithm base 2 (e)
-fldl2t=load constant log<sub>2</sub>10
-fldl2t=load constant onto stack, logarithm base 2 (10)
-fldlg2=load constant log<sub>10</sub>2
-fldlg2=load constant onto stack, logarithm base 10 (2)
-fldln2=load constant log<sub>e</sub>2
-fldln2=load constant onto stack, natural logarithm (2)
-fldpi=load constant &#960;
-fldpi=load constant onto stack, 3.14159..
-fldz=load constant +0.0
+fldl2e=load constant onto stack: logarithm base 2 (e)
+fldl2t=load constant onto stack: logarithm base 2 (10)
+fldlg2=load constant onto stack: logarithm base 10 (2)
+fldln2=load constant onto stack: natural logarithm (2)
+fldpi=load constant onto stack: pi (3.141592...)
 fldz=load constant onto stack 0.0f
 fmul=floating point multiply
-fmul=multiply
 fmulp=floating point multiply and pop
-fmulp=multiply and pop
 fnclex=clear exceptions
-fnclex=clear exceptions, no wait
-fndisi=disable interrupts, no wait
-fndisi=disable npx interrupt
-fndisi=treated as integer nop
-fneni=enable interrupts, no wait
-fneni=enable npx interrupt
-fneni=treated as integer nop
-fninit=initialize floating-point unit
-fninit=initialize fpu, no wait
+fndisi=disable npx (numeric coprocessor extension) interrupts (8087 only, otherwise, FNOP)
+fneni=enable npx (numeric coprocessor extension) interrupts (8087 only, otherwise, FNOP)
+fninit=initialize fpu (floating-point unit)
 fnop=no operation
 fnsave=store x87 fpu state
-fnsetpm=set protected mode
-fnsetpm=treated as integer nop
+fnsetpm=set protected mode (8087 only, otherwise FNOP)
 fnstcw=store x87 fpu control word
 fnstenv=store x87 fpu environment
 fnstsw=store x87 fpu status word
@@ -249,8 +195,7 @@ fstcw=store x87 fpu control word
 fstenv=store x87 fpu environment
 fstp=store floating point value and pop
 fstsw=store x87 fpu status word
-fsub" => 	"fsubr" => 	"fdiv" => 	"fdivr" => 	"fld=load floating point value
-fsub=subtract
+fsub=floating point subtract
 fsubp=subtract and pop
 fsubr=reverse subtract
 fsubrp=reverse subtract and pop
@@ -266,8 +211,8 @@ fxch=exchange register contents
 fxrstor=restore x87 fpu, mmx, xmm, and mxcsr state
 fxsave=save x87 fpu, mmx, xmm, and mxcsr state
 fxtract=extract exponent and significand
-fyl2x=compute y &#215; log<sub>2</sub>x and pop
-fyl2xp1=compute y &#215; log<sub>2</sub>(x+1) and pop
+fyl2x=compute y times log2(x) and pop
+fyl2xp1=compute y times log2(x+1) and pop
 getsec=getsec leaf functions
 gs=gs segment override prefix
 haddpd=packed double-fp horizontal add
@@ -281,26 +226,22 @@ idiv=signed divide
 imul=signed multiply
 in=input from port
 inc=increment by 1
-inc=register++
 ins=input from port to string
+insb=input from port to string
 int1=call to interrupt procedure
 int=call to interrupt procedure
 into=call to interrupt if overflow
-into=interrupt if eflags[OF]=1
 invd=invalidate internal caches
 invept=invalidate translations derived from ept
 invlpg=invalidate tlb entry
 invvpid=invalidate translations based on vpid
-iret=interrupt return
 iret=return from interrupt
 iretd=interrupt return
 jb=jump short if below/not above or equal/carry (cf=1)
 jbe=jump short if below or equal/not above (cf=1 and zf=1)
-jcxz=Jump if ecx = 0
 jcxz=jump short if ecx register is 0
 jl=jump short if less/not greater (sf!=of)
 jle=jump short if less or equal/not greater ((zf=1) or (sf!=of))
-jmp=changes eip to another position
 jmp=jump
 jmpe=jump to ia-64 instruction set
 jmpf=jump
@@ -317,15 +258,15 @@ jp=jump short if parity/parity even (pf=1)
 jrcxz=jump short if rcx register is 0
 js=jump short if sign (sf=1)
 jz=jump short if zero/equal (zf=0)
-lahf=AH = SF:ZF:X:AF:X:PF:X:CF
 lahf=load status flags into ah register
-lar" => 	"lsl" => 	"loadall=load all of the cpu registers
+lar=load acces right byte
+lldt=load local descriptor table register
+lsl=load segemtn limit
+loadall=load all of the cpu registers
 lddqu=load unaligned integer 128 bits
 ldmxcsr=load mxcsr register
 lds=load far pointer
-lea=load efective address
 lea=load effective address
-leave=high level procedure exit
 leave=one byte alias for mov esp, ebp ; pop ebp
 les=load far pointer
 lfence=load fence
@@ -333,17 +274,15 @@ lfs=load far pointer
 lgdt=load global descriptor table register
 lgs=load far pointer
 lidt=load interrupt descriptor table register
+lmsw=load machine status word
 loadall=load all of the cpu registers
-lock=assert lock# signal prefix
 lock=instruction prefix to setup the LOCK pin
 lods=load string
 lodsb=al = (byte)DS:[esi] (esi++)
 lodsw=ax = (word)DS:[esi] (esi+=2)
-loop=decrement count; jump short if count!=0
-loop=if (ecx-- == 0) jmp ..
-loopnz=decrement count; jump short if count!=0 and zf=0
-loopz=decrement count; jump short if count!=0 and zf=1
-loopz=if (ecx-- == 0 && eflags[ZF] == 1) jmp ..
+loop=decrement count; jump short if ecx!=0
+loopnz=decrement count; jump short if ecx!=0 and zf=0
+loopz=decrement count; jump short if ecx!=0 and zf=1
 lss=load far pointer
 ltr=load task register
 maskmovdqu=store selected bytes of double quadword
@@ -358,9 +297,6 @@ minps=return minimum packed single-fp values
 minsd=return minimum scalar double-fp value
 minss=return minimum scalar single-fp value
 monitor=set up monitor address
-mov=move
-mov=move to/from control registers
-mov=move value from/to memory or register
 mov=moves data from src to dst
 movapd=move aligned packed double-fp values
 movaps=move aligned packed single-fp values
@@ -386,10 +322,8 @@ movntps=store packed single-fp values using non-temporal hint
 movntq=store of quadword using non-temporal hint
 movq2dq=move quadword from mmx technology to xmm register
 movq=move doubleword/quadword
-movq=move quadword
 movs=move data from string to string
-movsb=ES:[edi] = (byte)DS:[esi] (esi++, edi++)
-movsd=ES:[edi] = (dword)DS:[esi] (esi+=4, edi+=4)
+movsb=move byte sting
 movsd=move scalar double-fp value
 movshdup=move packed single-fp high and duplicate
 movsldup=move packed single-fp low and duplicate
@@ -397,11 +331,9 @@ movss=move scalar single-fp values
 movsw=ES:[edi] = (word)DS:[esi] (esi+=2, edi+=2)
 movsx=move with sign-extension
 movsxd=move with sign-extension
-movupd=move unaligned packed double-fp value
 movupd=move unaligned packed double-fp values
 movups=move unaligned packed single-fp values
 movzx=move dst register size padding with zeroes
-movzx=move with zero-extend
 mpsadbw=compute multiple packed sums of absolute difference
 mul=unsigned multiply
 mulpd=multiply packed double-fp values
@@ -410,7 +342,6 @@ mulsd=multiply scalar double-fp values
 mulss=multiply scalar single-fp value
 mwait=monitor wait
 neg=two's complement negation
-nop=does nothing (nop [eax] (0F 1X XX) performs a memory read and nops)
 nop=no operation
 not=one's complement negation
 or=logical inclusive or
@@ -452,7 +383,10 @@ pcmpgtd=compare packed signed integers for greater than
 pcmpgtw=compare packed signed integers for greater than
 pcmpistri=packed compare implicit length strings, return index
 pcmpistrm=packed compare implicit length strings, return mask
-pextrb" => 	"pextrw" => 	"pextrd=extract dword/qword
+pextrb=extract a byte from an XMM register and insert the value into a general-purpose register or memory
+pextrw=extract a word from an XMM register and insert the value into a general-purpose register or memory
+pextrd=extract a dword from an XMM register and insert the value into a general-purpose register or memory
+pextrq=extract a qword from an XMM register and insert the value into a general-purpose register or memory
 phaddd=packed horizontal add
 phaddsw=packed horizontal add and saturate
 phaddw=packed horizontal add
@@ -460,8 +394,9 @@ phminposuw=packed horizontal word minimum
 phsubd=packed horizontal subtract
 phsubsw=packed horizontal subtract and saturate
 phsubw=packed horizontal subtract
-pinsrb" => 	"insertps" => 	"pinsrd=insert dword/qword
-pinsrw" => 	"pextrw=extract word
+pinsrb=insert a byte value from a register or memory into an XMM register
+pinsrd=insert a dword value from a register or memory into an XMM register
+pinsrq=insert a qword value from a register or memory into an XMM register
 pmaddubsw=multiply and add packed signed and unsigned bytes
 pmaddwd=multiply and add packed integers
 pmaxsb=maximum of packed signed byte integers
@@ -477,21 +412,29 @@ pminub=minimum of packed unsigned byte integers
 pminud=minimum of packed unsigned dword integers
 pminuw=minimum of packed unsigned word integers
 pmovmskb=move byte mask
-pmovsxbw" => 	"pmovsxbd" => 	"pmovsxbq" => 	"pmovsxwd" => 	"pmovsxwq" => 	"pmovsxdq" => 	"pmuldq=multiply packed signed dword integers
-pmovzxbw" => 	"pmovzxbd" => 	"pmovzxbq" => 	"pmovzxwd" => 	"pmovzxwq" => 	"pmovzxdq" => 	"pcmpgtq=compare packed qword data for greater than
+pmovsxbw=sign extend the lower 8-bit integer of each packed word element into packed signed word integers
+pmovzxbw=zero extend the lower 8-bit integer of each packed word element into packed signed word integers
+pmovsxbd=sign extend the lower 8-bit integer of each packed dword element into packed signed dword integers
+pmovzxbd=zero extend the lower 8-bit integer of each packed dword element into packed signed dword integers
+pmovsxwd=sign extend the lower 16-bit integer of each packed dword element into packed signed dword integers
+pmovzxwd=zero extend the lower 16-bit integer of each packed dword element into packed signed dword integers
+pmovsxbq=sign extend the lower 8-bit integer of each packed qword element into packed signed qword integers
+pmovzxbq=zero extend the lower 8-bit integer of each packed qword element into packed signed qword integers
+pmovsxwq=sign extend the lower 16-bit integer of each packed qword element into packed signed qword integers
+pmovzxwq=zero extend the lower 16-bit integer of each packed qword element into packed signed qword integers
+pmovsxdq=sign extend the lower 32-bit integer of each packed qword element into packed signed qword integers
+pmovzxdq=zero extend the lower 32-bit integer of each packed qword element into packed signed qword integers
 pmulhrsw=packed multiply high with round and scale
 pmulhuw=multiply packed unsigned integers and store high result
 pmulhw=multiply packed signed integers and store high result
 pmulld=multiply packed signed dword integers and store low result
 pmullw=multiply packed signed integers and store low result
 pmuludq=multiply packed unsigned dw integers
-pop=pop a value from the stack
 pop=pops last element of stack and stores the result in argument
 popa=pop all general-purpose registers
 popad=pop all general-purpose registers
 popcnt=bit population count
 popf=pop stack into flags register
-popf=pop stack into rflags register
 popfd=pop stack into eflags register
 por=bitwise logical or
 prefetchnta=prefetch data into caches
@@ -505,7 +448,6 @@ pshufhw=shuffle packed high words
 pshuflw=shuffle packed low words
 pshufw=shuffle packed words
 psignb=packed sign
-psignd=packed sign
 psignw=packed sign
 pslld=shift packed data left logical
 pslldq=shift double quadword left logical
@@ -513,7 +455,6 @@ psllq=shift packed data left logical
 psllw=shift packed data left logical
 psrad=shift packed data right arithmetic
 psraw=shift packed data right arithmetic
-psrld=shift double quadword right logical
 psrld=shift packed data right logical
 psrldq=shift double quadword right logical
 psrlq=shift packed data right logical
@@ -535,32 +476,25 @@ punpcklbw=unpack low data
 punpckldq=unpack low data
 punpcklqdq=unpack low data
 punpcklwd=unpack low data
-push"=> "pushes the argument to stack (esp)
 push=push word, doubleword or quadword onto the stack
 pusha=push all general-purpose registers
 pushad=push all general-purpose registers
 pushf=push flags register onto the stack
-pushf=push rflags register onto the stack
 pushfd=push eflags register onto the stack
 pxor=logical exclusive or
-rcl=rotate
 rcl=rotate bits left (with CF)
 rcpps=compute reciprocals of packed single-fp values
 rcpss=compute reciprocal of scalar single-fp values
-rcr=rotate
 rcr=rotate bits right (with CF)
 rdmsr=read from model specific register
 rdpmc=read performance-monitoring counters
 rdtsc=read time-stamp counter
 rdtscp=read time-stamp counter and processor id
-rep=repeat string operation prefix
 rep=repeats next instruction ECX times
 repnz=repeat string operation prefix
 repz=repeat string operation prefix
 ret=return from subroutine. pop 4 bytes from esp and jump there.
-retf=ret* to other code segment
 retf=return from procedure
-retn=ret* to the same code segment
 retn=return from procedure
 rex.b=extension of r/m field, base field, or opcode reg field
 rex.r=extension of modr/m reg field
@@ -578,9 +512,7 @@ rex.wxb=rex.w, rex.x and rex.b combination
 rex.x=extension of sib index field
 rex.xb=rex.x and rex.b combination
 rex=access to new 8-bit registers
-rol=rotate
 rol=rotate bits left
-ror=rotate
 ror=rotate bits right
 roundpd=round packed double-fp values
 roundps=round packed single-fp values
@@ -592,10 +524,8 @@ rsqrtss=compute recipr. of square root of scalar single-fp value
 sahf=eflags(SF:ZF:X:AF:X:PF:X:CF) = AX
 sahf=store ah into flags
 sal=arithmetic left shift
-sal=shift
 salc=set al if carry
 sar=arithmetic right shift
-sar=shift
 sbb=integer subtraction with borrow
 scas=scan string
 scasb=cmp al, ES:[edi++]
@@ -619,32 +549,27 @@ setz=set byte on condition - zero/equal (zf=0)
 sfence=store fence
 sgdt=store global descriptor table register
 shl=logic left shift (0 padding)
-shl=shift
 shld=double precision shift left
 shr=logic right shift (0 padding)
-shr=shift
 shrd=double precision shift right
 shufpd=shuffle packed double-fp values
 shufps=shuffle packed single-fp values
 sidt=store interrupt descriptor table register
-sldt" => 	"str" => 	"lldt=load local descriptor table register
-smsw" => 	"lmsw=load machine status word
+sldt=store local descriptor table register.
+smsw=store machine status word
 sqrtpd=compute square roots of packed double-fp values
 sqrtps=compute square roots of packed single-fp values
 sqrtsd=compute square root of scalar double-fp value
 sqrtss=compute square root of scalar single-fp value
 ss=ss segment override prefix
-stc=eflags[CF] = 1
 stc=set carry flag
-std=elfags[DF] = 1
 std=set direction flag
-sti=elfags[IF] = 1
 sti=set interrupt flag
 stmxcsr=store mxcsr register state
 stos=store string
-stosb=ES:[edi] = al (edi++)
+stosb=store string
+str=store task register
 sub=substract src and dst, stores result on dst
-sub=subtract
 subpd=subtract packed double-fp values
 subps=subtract packed single-fp values
 subsd=subtract scalar double-fp values
@@ -654,7 +579,6 @@ syscall=fast system call
 sysenter=fast system call
 sysexit=fast return from fast system call
 sysret=return from fast system call
-test=logical compare
 test=set eflags after comparing two registers (AF, CF, OF, PF, SF, ZF)
 ucomisd=unordered compare scalar double-fp values and set eflags
 ucomiss=unordered compare scalar single-fp values and set eflags
@@ -681,9 +605,7 @@ wrmsr=write to model specific register
 xadd=exchange and add
 xchg=exchange register/memory with register
 xgetbv=get value of extended control register
-xlat=al = [ebx+al]
 xlat=table look-up translation
-xor=exclusive or x^=y (x86) or x = y ^ z (arm)
 xor=logical exclusive or
 xorpd=bitwise logical xor for double-fp values
 xorps=bitwise logical xor for single-fp values
