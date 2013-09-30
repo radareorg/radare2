@@ -708,7 +708,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 					va?baddr+section->rva:section->offset, str);
 		}
 		// H -> Header fields
-		{
+		if (0) {
 			ut64 size = r_io_size (r->io);
 			if (size == 0)
 				size = r->file->size;

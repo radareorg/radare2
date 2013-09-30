@@ -340,6 +340,39 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 		// defaults to x30 reg. but can be different
 		op->type = R_ANAL_OP_TYPE_RET;
 	}
+	switch (d[3]) {
+	case 0xeb:
+		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+	case 0xf8:
+	case 0xa9: // ldp/stp
+	case 0xf9: // ldr/str
+		op->type = R_ANAL_OP_TYPE_LOAD;
+		break;
+	case 0x91: // mov
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
+	case 0x94: // bl A
+	case 0x97: // bl A
+		op->type = R_ANAL_OP_TYPE_CALL;
+		if (d[2]>>7) {
+			st32 n = (d[0] + (d[1]<<8) + (d[2]<<16) + (0xff<<24));
+			n = -n;
+			op->jump = addr - (n*4);
+		} else op->jump = addr + (4*(d[0] + (d[1]<<8) + (d[2]<<16)));
+		op->fail = addr+4;
+		break;
+	case 0x54: // beq A
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		op->jump = addr + (4*((d[0]>>4) | (d[1]<<8) | (d[2]<<16)));
+		op->fail = addr+4;
+		break;
+	case 0x14: // b A
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = addr + (4*(d[0] | (d[1]<<8) | (d[2]<<16)));
+		op->fail = addr+4;
+		break;
+	}
 	return op->length;
 }
 

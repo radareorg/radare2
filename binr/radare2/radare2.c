@@ -479,6 +479,7 @@ int main(int argc, char **argv) {
 
 	if (seek)
 		r_core_seek (&r, seek, 1);
+	else r_core_cmd0 (&r, "s entry0");
 
 	if (fullfile) r_core_block_size (&r, r.file->size);
 	else if (bsize) r_core_block_size (&r, bsize);

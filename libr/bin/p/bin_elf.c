@@ -102,6 +102,8 @@ static RList* sections(RBinArch *arch) {
 			struct Elf_(r_bin_elf_obj_t) *bin = arch->bin_obj;
 			arch->size = bin? bin->size: 0x9999;
 		}
+#define USE_PHDR 0
+#if USE_PHDR
 		for (i=n=0; i<num; i++) {
 			if (phdr && phdr[i].p_type == 1) {
 				found = 1;
@@ -127,6 +129,7 @@ static RList* sections(RBinArch *arch) {
 				n++;
 			}
 		}
+#endif
 		if (found == 0) {
 			if (!(ptr = R_NEW0 (RBinSection)))
 				return ret;

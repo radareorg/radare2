@@ -17,7 +17,7 @@ static int MACH0_(r_bin_mach0_addr_to_offset)(struct MACH0_(r_bin_mach0_obj_t)* 
 		if (addr >= section_base && addr < section_base + section_size) {
 			if (bin->sects[i].offset == 0)
 				return 0;
-			else return bin->sects[i].offset + (addr - section_base);
+			return bin->sects[i].offset + (addr - section_base);
 		}
 	}
 	return 0;
@@ -808,9 +808,10 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 	if (bin->entry) {
 		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
 		entry->addr = bin->entry;
-	} else {
+	} 
+	if (!bin->entry || (entry->offset==0)) {
 		// XXX: section name doesnt matters at all.. just check for exec flags
-		for (i = 0; i < bin->nsects; i++)
+		for (i = 0; i < bin->nsects; i++) {
 			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
 				entry->offset = (ut64)bin->sects[i].offset;
 				entry->addr = (ut64)bin->sects[i].addr;
@@ -818,6 +819,8 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 					entry->addr=entry->offset;
 				break;
 			}
+		}
+		bin->entry = entry->addr;
 	}
 	return entry;
 }
