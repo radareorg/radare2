@@ -679,7 +679,7 @@ static int cmd_system(void *data, const char *input) {
 		if (*input=='0' || n>0) {
 			const char *cmd = r_line_hist_get (n);
 			if (cmd) r_core_cmd0 (core, cmd);
-			else eprintf ("Error setting up system environment\n");
+			//else eprintf ("Error setting up system environment\n");
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
 			if (cmd) {

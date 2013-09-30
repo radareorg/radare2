@@ -433,7 +433,7 @@ struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_b
 
 	if (!bin->sects)
 		return NULL;
-	if (!(sections = malloc ((bin->nsects + 1) * sizeof(struct r_bin_mach0_section_t))))
+	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct r_bin_mach0_section_t))))
 		return NULL;
 	for (i = 0; i<bin->nsects; i++) {
 		sections[i].offset = (ut64)bin->sects[i].offset;

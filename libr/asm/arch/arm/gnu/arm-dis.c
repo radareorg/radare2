@@ -874,7 +874,7 @@ static const struct opcode32 neon_opcodes[] =
 static const struct opcode32 arm_opcodes[] =
 {
   /* ARM instructions.  */
-  {ARM_EXT_V1, 0xe1a00000, 0xffffffff, "nop   ; (mov r0, r0)"},
+  {ARM_EXT_V1, 0xe1a00000, 0xffffffff, "nop"}, //   ; (mov r0, r0)"},
   {ARM_EXT_V4T | ARM_EXT_V5, 0x012FFF10, 0x0ffffff0, "bx%c %0-3r"},
   {ARM_EXT_V2, 0x00000090, 0x0fe000f0, "mul%20's%c %16-19R, %0-3R, %8-11R"},
   {ARM_EXT_V2, 0x00200090, 0x0fe000f0, "mla%20's%c %16-19R, %0-3R, %8-11R, %12-15R"},

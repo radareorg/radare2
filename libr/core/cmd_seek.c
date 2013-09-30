@@ -19,7 +19,7 @@ static int cmd_seek(void *data, const char *input) {
 		int sign = 1;
 		inputnum = inputnum? inputnum+1: input+1;
 		off = r_num_math (core->num, inputnum);
-		if ((st64)off<0) off = -off; // hack to fix s-2;s -2
+		if (*inputnum== '-') off = -off;
 		if (input[0]!='/' && inputnum && isalpha (inputnum[0]) && off == 0) {
 			if (!r_flag_get (core->flags, inputnum)) {
 				eprintf ("Cannot find address for '%s'\n", inputnum);
