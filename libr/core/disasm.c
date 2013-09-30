@@ -105,7 +105,7 @@ static char *filter_refline(RCore *core, const char *str) {
 }
 
 static void colorize_opcode (char *p, const char *reg, const char *num) {
-	int i, j, k, is_mod;
+	int i, j, k, is_mod, is_arg = 0;
 	int is_jmp = (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	char *o;
 	if (is_jmp)
@@ -131,18 +131,22 @@ static void colorize_opcode (char *p, const char *reg, const char *num) {
 		case ']':
 		case '[':
 		case ',':
-			strcpy (o+j, Color_RESET);
-			j += strlen (Color_RESET);
-			o[j++] = p[i];
-			if ((p[i] > '0') && (p[i] < '9')) {
-				strcpy (o+j, num);
-				j += strlen (num)-1;
-			} else {
-				strcpy (o+j, reg);
-				j += strlen (reg)-1;
-			}
-			continue;
+			if (is_arg) {
+				strcpy (o+j, Color_RESET);
+				j += strlen (Color_RESET);
+				o[j++] = p[i];
+				if ((p[i] > '0') && (p[i] < '9')) {
+					strcpy (o+j, num);
+					j += strlen (num)-1;
+				} else {
+					strcpy (o+j, reg);
+					j += strlen (reg)-1;
+				}
+				continue;
+			} 
+			break;
 		case ' ':
+			is_arg = 1;
 			// find if next ',' before ' ' is found
 			is_mod = 0;
 			for (k = i+1; p[k]; k++) {
