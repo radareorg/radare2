@@ -65,6 +65,8 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			}
 			break;
 		}
+		if (oplen<1)
+			return R_ANAL_RET_END;
 		idx += oplen;
 		bb->size += oplen;
 		bb->ninstr++;

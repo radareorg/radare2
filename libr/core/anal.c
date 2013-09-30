@@ -298,7 +298,8 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	if (from != UT64_MAX && at == 0)
 		return R_FALSE;
-	if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
+	//if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
+	if (at == UT64_MAX || depth < 0)
 		return R_FALSE;
 #warning This must be optimized to use the fcnstore api
 	r_list_foreach (core->anal->fcns, iter, fcni) {

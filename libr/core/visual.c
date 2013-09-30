@@ -342,6 +342,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_cons_set_raw (1);
 		r_cons_show_cursor (R_FALSE);
 		break;
+	case 'R':
+		r_core_cmd0 (core, "ecr");
+		break;
 	case 'e':
 		r_core_visual_config (core);
 		break;
@@ -777,6 +780,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		" _        enter the hud\n"
 		" .        seek to program counter\n"
 		" /        in cursor mode search in current block\n"
+		" R        randomize color palette (ecr)\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
 		" /*+-[]   change block size, [] = resize hex.cols\n"
