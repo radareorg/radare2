@@ -477,9 +477,12 @@ int main(int argc, char **argv) {
 		r_config_set (r.config, "cmd.vprompt", ".dr*");
 	}
 
-	if (seek)
+	if (seek) {
 		r_core_seek (&r, seek, 1);
-	else r_core_cmd0 (&r, "s entry0");
+	} else {
+		if (r_flag_get (r.flags, "entry0"))
+			r_core_cmd0 (&r, "s entry0");
+	}
 
 	if (fullfile) r_core_block_size (&r, r.file->size);
 	else if (bsize) r_core_block_size (&r, bsize);
