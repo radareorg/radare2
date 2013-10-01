@@ -44,7 +44,7 @@ libr.a:
 		cp -f $$a .libr/$$a ; \
 		(cd .libr/$$a ; ${AR} x *.a ; rm -f *.a ) ; \
 		done
-	${AR} qvf libr.a `find .libr/ | grep '\\.o$$'`
+	${AR} qv libr.a `find .libr/ | grep '\\.o$$'`
 	rm -rf .libr
 
 gnu_libr.a: $(shell ls */libr_*.a 2>/dev/null)
