@@ -9,8 +9,12 @@
 #endif
 #if __APPLE__
 #include <errno.h>
-#include <libproc.h>
 #include <execinfo.h>
+#ifndef PROC_PIDPATHINFO_MAXSIZE
+#define PROC_PIDPATHINFO_MAXSIZE 512
+#else
+#include <libproc.h>
+#endif
 #endif
 #if __UNIX__
 # include <sys/wait.h>
@@ -541,7 +545,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	return NULL;
 #elif __APPLE__
 	char pathbuf[PROC_PIDPATHINFO_MAXSIZE];
-	int ret = proc_pidpath (pid, pathbuf, sizeof(pathbuf));
+	int ret = proc_pidpath (pid, pathbuf, sizeof (pathbuf));
 	if (ret <= 0)
 		return NULL;
 	return strdup (pathbuf);
