@@ -27,6 +27,29 @@
 
 R_LIB_VERSION(r_util);
 
+struct {const char* name; ut64 bit;} const static arch_bit_array[] = {
+    {"x86", R_SYS_ARCH_X86},
+    {"arm", R_SYS_ARCH_ARM},
+    {"ppc", R_SYS_ARCH_PPC},
+    {"m68k", R_SYS_ARCH_M68K},
+    {"java", R_SYS_ARCH_JAVA},
+    {"mips", R_SYS_ARCH_MIPS},
+    {"sparc", R_SYS_ARCH_SPARC},
+    {"csr", R_SYS_ARCH_CSR},
+    {"c55+", R_SYS_ARCH_C55PLUS},
+    {"msil", R_SYS_ARCH_MSIL},
+    {"objd", R_SYS_ARCH_OBJD},
+    {"bf", R_SYS_ARCH_BF},
+    {"sh", R_SYS_ARCH_SH},
+    {"avr", R_SYS_ARCH_AVR},
+    {"dalvik", R_SYS_ARCH_DALVIK},
+    {"z80", R_SYS_ARCH_Z80},
+    {"arc", R_SYS_ARCH_ARC},
+    {"i8080", R_SYS_ARCH_I8080},
+    {"rar", R_SYS_ARCH_RAR},
+    {NULL, 0}
+};
+
 /* TODO: import stuff fron bininfo/p/bininfo_addr2line */
 /* TODO: check endianness issues here */
 R_API ut64 r_sys_now(void) {
@@ -461,50 +484,19 @@ R_API void r_sys_perror(const char *fun) {
 #endif
 }
 
-// TODO: use array :P
 R_API int r_sys_arch_id(const char *arch) {
-	if (!strcmp (arch, "x86")) return R_SYS_ARCH_X86;
-	if (!strcmp (arch, "arm")) return R_SYS_ARCH_ARM;
-	if (!strcmp (arch, "ppc")) return R_SYS_ARCH_PPC;
-	if (!strcmp (arch, "m68k")) return R_SYS_ARCH_M68K;
-	if (!strcmp (arch, "java")) return R_SYS_ARCH_JAVA;
-	if (!strcmp (arch, "mips")) return R_SYS_ARCH_MIPS;
-	if (!strcmp (arch, "sparc")) return R_SYS_ARCH_SPARC;
-	if (!strcmp (arch, "csr")) return R_SYS_ARCH_CSR;
-	if (!strcmp (arch, "c55+")) return R_SYS_ARCH_C55PLUS;
-	if (!strcmp (arch, "msil")) return R_SYS_ARCH_MSIL;
-	if (!strcmp (arch, "objd")) return R_SYS_ARCH_OBJD;
-	if (!strcmp (arch, "bf")) return R_SYS_ARCH_BF;
-	if (!strcmp (arch, "sh")) return R_SYS_ARCH_SH;
-	if (!strcmp (arch, "avr")) return R_SYS_ARCH_AVR;
-	if (!strcmp (arch, "dalvik")) return R_SYS_ARCH_DALVIK;
-	if (!strcmp (arch, "z80")) return R_SYS_ARCH_Z80;
-	if (!strcmp (arch, "arc")) return R_SYS_ARCH_ARC;
-	if (!strcmp (arch, "i8080")) return R_SYS_ARCH_I8080;
-	if (!strcmp (arch, "rar")) return R_SYS_ARCH_RAR;
-	return 0;
+    int i;
+    for (i=0; arch_bit_array[i].name; i++)
+        if (!strcmp (arch, arch_bit_array[i].name))
+            return arch_bit_array[i].bit;
+    return 0;
 }
 
 R_API const char *r_sys_arch_str(int arch) {
-	if (arch & R_SYS_ARCH_X86) return "x86";
-	if (arch & R_SYS_ARCH_ARM) return "arm";
-	if (arch & R_SYS_ARCH_PPC) return "ppc";
-	if (arch & R_SYS_ARCH_M68K) return "m68k";
-	if (arch & R_SYS_ARCH_JAVA) return "java";
-	if (arch & R_SYS_ARCH_MIPS) return "mips";
-	if (arch & R_SYS_ARCH_SPARC) return "sparc";
-	if (arch & R_SYS_ARCH_CSR) return "csr";
-	if (arch & R_SYS_ARCH_C55PLUS) return "c55+";
-	if (arch & R_SYS_ARCH_MSIL) return "msil";
-	if (arch & R_SYS_ARCH_OBJD) return "objd";
-	if (arch & R_SYS_ARCH_BF) return "bf";
-	if (arch & R_SYS_ARCH_SH) return "sh";
-	if (arch & R_SYS_ARCH_AVR) return "avr";
-	if (arch & R_SYS_ARCH_DALVIK) return "dalvik";
-	if (arch & R_SYS_ARCH_Z80) return "z80";
-	if (arch & R_SYS_ARCH_ARC) return "arc";
-	if (arch & R_SYS_ARCH_I8080) return "i8080";
-	if (arch & R_SYS_ARCH_RAR) return "rar";
+    int i;
+    for (i=0; arch_bit_array[i].name; i++)
+        if (arch & arch_bit_array[i].bit)
+            return arch_bit_array[i].name;
 	return "none";
 }
 
