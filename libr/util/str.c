@@ -205,25 +205,25 @@ fail:
 }
 
 R_API ut64 r_str_hash64(const char *s) {
-	int len = strlen (s);
-        ut64 h = 5381;
-        if (len<1) len = strlen (s)+1; // XXX slow
-        while (len--) {
-                h += (h<<5);
-                h ^= *s++;
-        }
-        return h;
+	size_t len = strlen (s);
+    ut64 h = 5381;
+    if (!len) len = 1;
+    while (len--) {
+        h += (h<<5);
+        h ^= *s++;
+    }
+    return h;
 }
 
 R_API ut32 r_str_hash (const char *s) {
-	int len = strlen (s);
-        ut32 h = 5381;
-        if (len<1) len = strlen (s)+1; // XXX slow
-        while (len--) {
-                h += (h<<5);
-                h ^= *s++;
-        }
-        return h;
+    size_t len = strlen (s);
+    ut32 h = 5381;
+    if (!len) len = 1;
+    while (len--) {
+        h += (h<<5);
+        h ^= *s++;
+    }
+    return h;
 }
 
 R_API int r_str_delta(char *p, char a, char b) {
@@ -390,14 +390,12 @@ R_API char *r_str_new(char *str) {
 }
 
 R_API char *r_str_newf(const char *fmt, ...) {
-//TODO: use asprintf ?
-	char string[1024];
+    char* strp;
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, sizeof (string), fmt, ap);
-	fmt = r_str_new (string);
+    vasprintf(&strp, fmt, ap);
 	va_end (ap);
-	return (char*)fmt;
+	return (char*)strp;
 }
 
 R_API char *r_str_chop(char *str) {
@@ -454,13 +452,8 @@ R_API char *r_str_trim(char *str) {
 	return str;
 }
 
-/* strcpy() copies more than one byte at once which might cause problems when
- * copying into the same buffer. TODO: memmove()? */
 R_API void r_str_cpy(char *dst, const char *src) {
-	int i;
-	for (i=0; src[i]; i++)
-		dst[i] = src[i];
-	dst[i] = 0;
+    memmove(dst, src, strlen(src) + 1);
 }
 
 R_API void r_str_ncpy(char *dst, const char *src, int n) {
@@ -598,12 +591,13 @@ R_API char *r_str_concat(char *ptr, const char *string) {
 }
 
 R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
-	char string[4096];
+    char* strp;
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, sizeof (string), fmt, ap);
-	ptr = r_str_concat (ptr, string);
+	vasprintf (&strp, fmt, ap);
+	ptr = r_str_concat (ptr, strp);
 	va_end (ap);
+    free(strp);
 	return ptr;
 }
 
