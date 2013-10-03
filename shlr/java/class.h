@@ -745,6 +745,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin);
 R_API RList* r_bin_java_get_fields(RBinJavaObj *bin);
 R_API char* r_bin_java_get_version(RBinJavaObj* bin);
 R_API ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin);
+R_API RList* r_bin_java_get_entrypoints(RBinJavaObj* bin);
 R_API ut64 r_bin_java_get_main(RBinJavaObj* bin);
 R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin);
 R_API RList* r_bin_java_get_strings(RBinJavaObj* bin);
