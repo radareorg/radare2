@@ -17,16 +17,7 @@ static int destroy(RBinArch *arch) {
 }
 
 static RList* entries(RBinArch *arch) {
-	RBinAddr *ptr;
-	RList *ret = r_list_new ();
-	if (!ret) return NULL;
-	ret->free = free;
-	if (!(ptr = R_NEW (RBinAddr)))
-		return ret;
-	memset (ptr, '\0', sizeof (RBinAddr));
-	ptr->offset = ptr->rva = r_bin_java_get_entrypoint (arch->bin_obj);
-	r_list_append (ret, ptr);
-	return ret;
+	return r_bin_java_get_entrypoints (arch->bin_obj);
 }
 
 static ut64 baddr(RBinArch *arch) {
@@ -34,21 +25,6 @@ static ut64 baddr(RBinArch *arch) {
 }
 
 static RList* classes(RBinArch *arch) {
-	/*char *p;
-	RBinClass *c;
-	RList *ret = r_list_new ();
-	if (!ret) return NULL;
-	
-	// TODO: add proper support for inner classes in Java
-	c = R_NEW0 (RBinClass);
-	c->visibility = R_BIN_CLASS_PUBLIC;
-	c->name = strdup (arch->file);
-	p = strchr (c->name, '.');
-	if (p) *p = 0;
-	p = (char*)r_str_lchr (c->name, '/');
-	if (p) strcpy (c->name, p+1);
-	c->super = strdup ("Object"); //XXX
-	r_list_append (ret, c);*/
 	RList *ret;
 	ret = r_bin_java_get_classes((struct r_bin_java_obj_t*)arch->bin_obj);
 	return ret;

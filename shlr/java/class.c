@@ -1281,11 +1281,32 @@ R_API ut64 r_bin_java_get_main(RBinJavaObj* bin) {
 	return 0;
 }
 
-R_API ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin) {
+R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
+	RList *ret = r_list_new ();	
+	RBinAddr *addr;
+
 	if (bin->entrypoint_code_attr){
-		return bin->entrypoint_code_attr->info.code_attr.code_offset;
+		if (!ret) 
+			return NULL;
+		
+		ret->free = free;
+		
+		addr = R_NEW (RBinAddr);
+
+		if (addr){
+			memset (addr, '\0', sizeof (RBinAddr));
+			addr->offset = addr->rva = bin->entrypoint_code_attr->info.code_attr.code_offset;		
+		}
 	}
-	return 0;
+	return ret;
+}
+
+R_API ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin) {
+	ut64 result = 0;
+	if (bin->entrypoint_code_attr){
+		result = bin->entrypoint_code_attr->info.code_attr.code_offset;		
+	}
+	return result;
 }
 
 R_API ut64 r_bin_java_get_class_entrypoint(RBinJavaObj* bin) {
