@@ -14,7 +14,8 @@ int main() {
 #include "index.h"
 
 static int usage (int v) {
-	printf ("Usage: r2agent [-dh] [-p port]\n"
+	printf ("Usage: r2agent [-adhs] [-p port]\n"
+    "  -a       listen on all interfaces (defaults is 127.0.0.1 only)\n"
 	"  -d       run in daemon mode (background\n"
 	"  -h       show this help message\n"
 	"  -s       run in sandbox mode\n"
@@ -27,25 +28,28 @@ int main(int argc, char **argv) {
 	RSocketHTTPRequest *rs;
 	int c, timeout = 3;
 	int dodaemon = 0;
-	int dosandbox = 0;
-	const char *port = "8080";
+    int dosandbox = 0;
+    int dolistenall = 0;
+    const char *port = "8080";
 
-	// TODO: add flag to specify if listen in local or 0.0.0.0
-        while ((c = getopt (argc, argv, "hp:ds")) != -1) {
-                switch (c) {
-		case 's':
-			dosandbox = 1;
-			break;
-		case 'd':
-			dodaemon = 1;
-			break;
-		case 'h':
-			return usage (1);
-		case 'p':
-			port = optarg;
-			break;
-		}
-	}
+    while ((c = getopt (argc, argv, "hp:dsh")) != -1) {
+        switch (c) {
+            case 'a':
+                dolistenall = 1;
+                break;
+            case 's':
+                dosandbox = 1;
+                break;
+            case 'd':
+                dodaemon = 1;
+                break;
+            case 'h':
+                return usage (1);
+            case 'p':
+                port = optarg;
+                break;
+        }
+    }
 	if (dodaemon) {
 		int pid = fork ();
 		if (pid >0) {
@@ -54,7 +58,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	s = r_socket_new (R_FALSE);
-	s->local = 1; // by default
+	s->local = !dolistenall;
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Cannot listen on http.port\n");
 		return 1;
