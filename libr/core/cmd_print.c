@@ -55,7 +55,8 @@ R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 	memset (b, 0xff, core->blocksize);
 	delta = addr - from;
 	r_core_read_at (core, to+delta, b, core->blocksize);
-	r_print_hexdiff (core->print, core->offset, core->block, to+delta, b, core->blocksize, col);
+	r_print_hexdiff (core->print, core->offset, core->block,
+		to+delta, b, core->blocksize, col);
 	free (b);
 }
 
@@ -69,7 +70,8 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 	if (l==0) l = len;
 	for (i=j=0; j<len && j<l && i<ilen; i+=ret, j++) {
 		r_asm_set_pc (core->assembler, core->offset+i);
-		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, core->blocksize-i);
+		ret = r_asm_disassemble (core->assembler, &asmop, buf+i,
+			core->blocksize-i);
 		if (show_offset)
 			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret<1) {
@@ -412,18 +414,25 @@ static int cmd_print(void *data, const char *input) {
 		case 'a':
 			{
 				RAsmOp asmop;
-				int j, ret, err = 0;
-				const ut8 *buf = core->block;
-				if (l==0) l = len;
-				for (i=j=0; i<core->blocksize && j<len && j<l; i++,j++ ) {
+				int ret, err = 0;
+				ut8 *buf = core->block;
+				if (l<1) l = len;
+				if (l>=core->blocksize) {
+					buf = malloc (l+1);
+					r_core_read_at (core, core->offset, buf, l);
+				}
+				for (i=0; i<l; i++ ) {
 					ret = r_asm_disassemble (core->assembler, &asmop,
-						buf+i, core->blocksize-i);
+						buf+i, l-i);
 					if (ret<1) {
 						ret = err = 1;
-						r_cons_printf ("???\n");
+						//r_cons_printf ("???\n");
+						r_cons_printf ("0x%08"PFMT64x" ???\n", core->offset+i);
 					} else r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
 						core->offset+i, asmop.buf_hex, asmop.buf_asm);
 				}
+				if (buf != core->block)
+					free (buf);
 				return R_TRUE;
 			}
 			break;

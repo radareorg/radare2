@@ -25,7 +25,6 @@ R_API RSocket *r_socket_new (int is_ssl) { return NULL; }
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/socket.h>
-//#include <sys/fcntl.h>
 #endif
 
 #ifdef __WINDOWS__
@@ -97,6 +96,7 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 R_API RSocket *r_socket_new (int is_ssl) {
 	RSocket *s = R_NEW (RSocket);
 	s->is_ssl = is_ssl;
+	s->port = 0;
 #if __UNIX_
 	signal (SIGPIPE, SIG_IGN);
 #endif
@@ -139,7 +139,9 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	}
 
 	sa.sin_addr = *((struct in_addr *)he->h_addr);
-	sa.sin_port = htons (atoi (port));
+
+	s->port = r_socket_port_by_name (port);
+	sa.sin_port = htons (s->port);
 #warning TODO: implement connect timeout on w32
 	if (connect (s->fd, (const struct sockaddr*)&sa, sizeof (struct sockaddr))) {
 		close (s->fd);
@@ -147,7 +149,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 	}
 	return R_TRUE;
 #elif __UNIX__
-	if (proto==0) proto= R_SOCKET_PROTO_TCP;
+	if (!proto) proto = R_SOCKET_PROTO_TCP;
 	int gai, ret;
 	struct addrinfo hints, *res, *rp;
 	signal (SIGPIPE, SIG_IGN);
@@ -274,6 +276,13 @@ R_API int r_socket_free (RSocket *s) {
 	return res;
 }
 
+R_API int r_socket_port_by_name(const char *name) {
+	struct servent *p = getservbyname (name, "tcp");
+	if (p && p->s_port)
+		return ntohs (p->s_port);
+	return atoi (name);
+}
+
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	struct linger linger = { 0 };
@@ -291,7 +300,10 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;
 	s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);
-	s->sa.sin_port = htons (atoi (port)); // WTF we should honor etc/services
+	s->port = r_socket_port_by_name (port);
+	if (s->port <1)
+		return R_FALSE;
+	s->sa.sin_port = htons (s->port); // TODO honor etc/services
 
 	if (bind (s->fd, (struct sockaddr *)&s->sa, sizeof(s->sa)) < 0) {
 		close (s->fd);

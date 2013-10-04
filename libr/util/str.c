@@ -205,25 +205,16 @@ fail:
 }
 
 R_API ut64 r_str_hash64(const char *s) {
-	int len = strlen (s);
-        ut64 h = 5381;
-        if (len<1) len = strlen (s)+1; // XXX slow
-        while (len--) {
-                h += (h<<5);
-                h ^= *s++;
-        }
+        ut64 len, h = 5381;
+	if (!s)
+		return 0;
+        for (len=strlen (s); len>0; len--)
+                h = (h^(h<<5)) ^ *s++;
         return h;
 }
 
 R_API ut32 r_str_hash (const char *s) {
-	int len = strlen (s);
-        ut32 h = 5381;
-        if (len<1) len = strlen (s)+1; // XXX slow
-        while (len--) {
-                h += (h<<5);
-                h ^= *s++;
-        }
-        return h;
+	return (ut32) r_str_hash64 (s);
 }
 
 R_API int r_str_delta(char *p, char a, char b) {
@@ -452,15 +443,6 @@ R_API char *r_str_trim(char *str) {
 			*ptr++ = str[i];
 	*ptr='\0';
 	return str;
-}
-
-/* strcpy() copies more than one byte at once which might cause problems when
- * copying into the same buffer. TODO: memmove()? */
-R_API void r_str_cpy(char *dst, const char *src) {
-	int i;
-	for (i=0; src[i]; i++)
-		dst[i] = src[i];
-	dst[i] = 0;
 }
 
 R_API void r_str_ncpy(char *dst, const char *src, int n) {

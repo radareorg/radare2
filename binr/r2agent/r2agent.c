@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare2 - LGPL - Copyright 2013 - pancake */
 
 #include <getopt.c>
 #include <r_core.h>
@@ -14,8 +14,9 @@ int main() {
 #include "index.h"
 
 static int usage (int v) {
-	printf ("Usage: r2agent [-dh] [-p port]\n"
-	"  -d       run in daemon mode (background\n"
+	printf ("Usage: r2agent [-adhs] [-p port]\n"
+	"  -a       listen for everyone (localhost by default)\n"
+	"  -d       run in daemon mode (background)\n"
 	"  -h       show this help message\n"
 	"  -s       run in sandbox mode\n"
 	"  -p 8392  specify listening port (defaults to 8080)\n");
@@ -28,11 +29,15 @@ int main(int argc, char **argv) {
 	int c, timeout = 3;
 	int dodaemon = 0;
 	int dosandbox = 0;
+	int listenlocal = 1; 
 	const char *port = "8080";
 
 	// TODO: add flag to specify if listen in local or 0.0.0.0
-        while ((c = getopt (argc, argv, "hp:ds")) != -1) {
-                switch (c) {
+	while ((c = getopt (argc, argv, "ahp:ds")) != -1) {
+		switch (c) {
+		case 'a':
+			listenlocal = 0;
+			break;
 		case 's':
 			dosandbox = 1;
 			break;
@@ -46,6 +51,8 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
+	if (optind != argc)
+		return usage (1);
 	if (dodaemon) {
 		int pid = fork ();
 		if (pid >0) {
@@ -54,12 +61,14 @@ int main(int argc, char **argv) {
 		}
 	}
 	s = r_socket_new (R_FALSE);
-	s->local = 1; // by default
+	s->local = listenlocal;
 	if (!r_socket_listen (s, port, NULL)) {
-		eprintf ("Cannot listen on http.port\n");
+		eprintf ("Cannot listen on %d\n", s->port);
+		r_socket_free (s);
 		return 1;
 	}
 	
+	eprintf ("http://localhost:%d/\n", s->port);
 	r_sandbox_enable (dosandbox);
 	while (!r_cons_singleton ()->breaked) {
 		char *result_heap = NULL;

@@ -21,6 +21,7 @@ typedef struct r_socket_t {
 	int fd;
 	int is_ssl;
 	int local; // TODO: merge ssl with local -> flags/options
+	int port;
 	struct sockaddr_in sa;
 #if HAVE_LIB_SSL
 	SSL_CTX *ctx;
@@ -43,6 +44,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 #define r_socket_connect_unix(a,b) r_socket_connect(a,b,NULL,R_SOCKET_PROTO_UNIX)
 R_API int r_socket_unix_listen (RSocket *s, const char *file);
 #endif
+R_API int r_socket_port_by_name(const char *name);
 R_API int r_socket_close (RSocket *s);
 R_API int r_socket_free (RSocket *s);
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile);

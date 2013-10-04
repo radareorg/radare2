@@ -480,7 +480,7 @@ int main(int argc, char **argv) {
 	if (seek) {
 		r_core_seek (&r, seek, 1);
 	} else {
-		if (r_flag_get (r.flags, "entry0"))
+		if (!debug && r_flag_get (r.flags, "entry0"))
 			r_core_cmd0 (&r, "s entry0");
 	}
 

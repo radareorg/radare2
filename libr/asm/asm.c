@@ -499,61 +499,61 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				continue;	
 			} else if (*ptr_start == '.') { /* pseudo */
 				ptr = ptr_start;
-				if (!memcmp (ptr, ".intel_syntax", 13)) 
+				if (!strncmp (ptr, ".intel_syntax", 13)) 
 					a->syntax = R_ASM_SYNTAX_INTEL;
-				else if (!memcmp (ptr, ".att_syntax", 10)) 
+				else if (!strncmp (ptr, ".att_syntax", 10)) 
 					a->syntax = R_ASM_SYNTAX_ATT;
-				else if (!memcmp (ptr, ".string ", 8)) {
+				else if (!strncmp (ptr, ".string ", 8)) {
 					r_str_chop (ptr+8);
 					ret = r_asm_pseudo_string (&op, ptr+8, 1);
-				} else if (!memcmp (ptr, ".ascii ", 7)) {
+				} else if (!strncmp (ptr, ".ascii ", 7)) {
 					ret = r_asm_pseudo_string (&op, ptr+7, 0);
-				} else if (!memcmp (ptr, ".align", 7)) {
+				} else if (!strncmp (ptr, ".align", 7)) {
 					ret = r_asm_pseudo_align (&op, ptr+7);
-				} else if (!memcmp (ptr, ".arm", 4)) {
+				} else if (!strncmp (ptr, ".arm", 4)) {
 					r_asm_use (a, "arm");
 					r_asm_set_bits (a, 32);
 					ret = 0;
-				} else if (!memcmp (ptr, ".thumb", 6)) {
+				} else if (!strncmp (ptr, ".thumb", 6)) {
 					r_asm_use (a, "arm");
 					r_asm_set_bits (a, 16);
 					ret = 0;
-				} else if (!memcmp (ptr, ".arch ", 6))
+				} else if (!strncmp (ptr, ".arch ", 6))
 					ret = r_asm_pseudo_arch (a, ptr+6);
-				else if (!memcmp (ptr, ".bits ", 6))
+				else if (!strncmp (ptr, ".bits ", 6))
 					ret = r_asm_pseudo_bits (a, ptr+6);
-				else if (!memcmp (ptr, ".fill ", 6))
+				else if (!strncmp (ptr, ".fill ", 6))
 					ret = r_asm_pseudo_fill (&op, ptr+6);
-				else if (!memcmp (ptr, ".hex ", 5))
+				else if (!strncmp (ptr, ".hex ", 5))
 					ret = r_asm_pseudo_hex (&op, ptr+5);
-				else if ((!memcmp (ptr, ".int16 ", 7)) || !memcmp (ptr, ".short ", 7))
+				else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7))
 					ret = r_asm_pseudo_int16 (a, &op, ptr+7);
-				else if (!memcmp (ptr, ".int32 ", 7))
+				else if (!strncmp (ptr, ".int32 ", 7))
 					ret = r_asm_pseudo_int32 (a, &op, ptr+7);
-				else if (!memcmp (ptr, ".int64 ", 7))
+				else if (!strncmp (ptr, ".int64 ", 7))
 					ret = r_asm_pseudo_int64 (a, &op, ptr+7);
-				else if (!memcmp (ptr, ".size", 5))
+				else if (!strncmp (ptr, ".size", 5))
 					ret = R_TRUE; // do nothing, ignored
-				else if (!memcmp (ptr, ".section", 8))
+				else if (!strncmp (ptr, ".section", 8))
 					ret = R_TRUE; // do nothing, ignored
-				else if ((!memcmp (ptr, ".byte ", 6)) || (!memcmp (ptr, ".int8 ", 6)))
+				else if ((!strncmp (ptr, ".byte ", 6)) || (!strncmp (ptr, ".int8 ", 6)))
 					ret = r_asm_pseudo_byte (&op, ptr+6);
-				else if (!memcmp (ptr, ".glob", 5)) { // .global .globl
+				else if (!strncmp (ptr, ".glob", 5)) { // .global .globl
 				//	eprintf (".global directive not yet implemented\n");
 					ret = 0;
 					continue;
-				} else if (!memcmp (ptr, ".equ ", 5)) {
+				} else if (!strncmp (ptr, ".equ ", 5)) {
 					ptr2 = strchr (ptr+5, ',');
 					if (ptr2) {
 						*ptr2 = '\0';
 						r_asm_code_set_equ (acode, ptr+5, ptr2+1);
 					} else eprintf ("TODO: undef equ\n");
-				} else if (!memcmp (ptr, ".org ", 5)) {
+				} else if (!strncmp (ptr, ".org ", 5)) {
 					ret = r_asm_pseudo_org (a, ptr+5);
 					off = a->pc;
-				} else if (!memcmp (ptr, ".text", 5)) {
+				} else if (!strncmp (ptr, ".text", 5)) {
 					acode->code_offset = a->pc;
-				} else if (!memcmp (ptr, ".data", 5)) {
+				} else if (!strncmp (ptr, ".data", 5)) {
 					acode->data_offset = a->pc;
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);

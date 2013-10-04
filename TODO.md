@@ -4,13 +4,6 @@
   |__\__|_|__|___/__|__|_\__\___\ |____(_)____/
 
 
-Broken stuff to fixe before release
-===================================
-- java
-- dalvik
-- dwarf
-- rar asm/dis
-
 0.9.6
 =====
 * use __unused if available

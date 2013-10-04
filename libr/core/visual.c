@@ -921,8 +921,8 @@ static void r_core_visual_refresh (RCore *core) {
 	if (vcmd && *vcmd) {
 		r_core_cmd (core, vcmd, 0);
 	} else {
-		if (zoom) r_core_cmd (core, "pz", 0);
-		else r_core_cmd (core, printfmt[PIDX], 0);
+		if (zoom) r_core_cmd0 (core, "pz");
+		else r_core_cmd0 (core, printfmt[PIDX]);
 	}
 	blocksize = core->num->value? core->num->value : core->blocksize;
 
