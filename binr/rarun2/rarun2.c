@@ -13,7 +13,6 @@
 
 #define NARGS (sizeof (_args)/sizeof(*_args))
 static char *_args[512] = {NULL};
-
 static char *_program = NULL;
 static char *_stdin = NULL;
 static char *_stdout = NULL;
@@ -29,6 +28,57 @@ static char *_input = NULL;
 static char *_connect = NULL;
 static char *_listen = NULL;
 static int _timeout = 0;
+
+static char *getstr(const char *src) {
+	int len;
+	char *ret;
+	switch (*src) {
+	case '\'':
+		ret = strdup (src+1);
+		if (ret) {
+			len = strlen (ret);
+			if (len>0) {
+				len--;
+				if (ret[len]=='\'') {
+					ret[len] = 0;
+					return ret;
+				} else eprintf ("Missing \"\n");
+			}
+		}
+		return NULL;
+	case '"':
+		ret = strdup (src+1);
+		if (ret) {
+			len = strlen (ret);
+			if (len>0) {
+				len--;
+				if (ret[len]=='"') {
+					ret[len] = 0;
+					r_str_escape (ret);
+					return ret;
+				} else eprintf ("Missing \"\n");
+			}
+		}
+		return NULL;
+	case '@':
+		// slurp file
+		return r_file_slurp (src+1, NULL);
+	case ':':
+		// hexpairs
+		ret = strdup (src);
+		len = r_hex_str2bin (src+1, (ut8*)ret);
+		if (len>0) {
+			ret[len] = 0;
+			return ret;
+		} else {
+			eprintf ("Invalid hexpair string\n");
+			return NULL;
+		}
+	}
+	ret = strdup (src);
+	r_str_escape (ret);
+	return ret;
+}
 
 static void parseline (char *b) {
 	char *e = strchr (b, '=');
@@ -56,8 +106,7 @@ static void parseline (char *b) {
 	else if (!memcmp (b, "arg", 3)) {
 		int n = atoi (b+3);
 		if (n>=0 && n<NARGS) {
-			_args[n] = strdup (e);
-			r_str_escape (_args[n]);
+			_args[n] = getstr (e);
 		} else eprintf ("Out of bounds args index: %d\n", n);
 	} else if (!strcmp (b, "timeout")) {
 		_timeout = atoi (e);
@@ -222,7 +271,10 @@ int main(int argc, char **argv) {
 		printf (
 			"program=/bin/ls\n"
 			"arg1=/bin\n"
-			"# arg#=...\n"
+			"# arg2=hello\n"
+			"# arg3=\"hello\\nworld\"\n"
+			"# arg4=:048490184058104849\n"
+			"# arg4=@arg.txt\n"
 			"setenv=FOO=BAR\n"
 			"# unsetenv=FOO\n"
 			"# envfile=environ.txt\n"
