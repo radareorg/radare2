@@ -525,10 +525,14 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'c':
 		switch (input[1]) {
+		case 'd':
+			r_cons_pal_init (NULL);
+			break;
 		case '?':
 			r_cons_printf ("Usage: ec[s?] [key][[=| ]fg] [bg]\n"
 			"  ec                list all color keys\n"
 			"  ec*       (TODO)  same as above, but using r2 commands\n"
+			"  ecd               set default palette\n"
 			"  ecr               set random palette\n"
 			"  ecs               show a colorful palette\n"
 			"  ecf dark|white    load white color scheme template\n"
