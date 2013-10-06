@@ -4,9 +4,33 @@
 #include <r_list.h>
 
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
+	int notfirst = R_FALSE;
 	RListIter *iter;
 	RDebugMap *map;
-	if (rad) {
+	switch (rad) {
+	case 'j':
+		dbg->printf ("[");
+		r_list_foreach (dbg->maps, iter, map) {
+			if (notfirst) dbg->printf (",");
+			dbg->printf ("{\"name\":\"%s\",",map->name);
+			dbg->printf ("\"addr\":%"PFMT64d",", map->addr);
+			dbg->printf ("\"addr_end\":%"PFMT64d",", map->addr_end);
+			dbg->printf ("\"type\":\"%c\",", map->user?'u':'s');
+			dbg->printf ("\"perm\":\"%s\"}", r_str_rwx_i (map->perm));
+			notfirst = R_TRUE;
+		}
+		r_list_foreach (dbg->maps_user, iter, map) {
+			if (notfirst) dbg->printf (",");
+			dbg->printf ("{\"name\":\"%s\",",map->name);
+			dbg->printf ("\"addr\":%"PFMT64d",", map->addr);
+			dbg->printf ("\"addr_end\":%"PFMT64d",", map->addr_end);
+			dbg->printf ("\"type\":\"%c\",", map->user?'u':'s');
+			dbg->printf ("\"perm\":\"%s\"}", r_str_rwx_i (map->perm));
+			notfirst = R_TRUE;
+		}
+		dbg->printf ("]\n");
+		break;
+	case '*':
 		r_list_foreach (dbg->maps, iter, map) {
 			dbg->printf ("f map.%s.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
 				map->name, r_str_rwx_i (map->perm),
@@ -17,7 +41,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 				map->name, r_str_rwx_i (map->perm),
 				map->addr_end - map->addr, map->addr);
 		}
-	} else {
+		break;
+	default:
 		r_list_foreach (dbg->maps, iter, map) {
 			dbg->printf ("sys 0x%08"PFMT64x" %c 0x%08"PFMT64x" %c %s %s\n",
 				map->addr, (addr>=map->addr && addr<=map->addr_end)?'*':'-',
@@ -29,6 +54,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 				map->user?'u':'s',
 				map->perm, map->name);
 		}
+		break;
 	}
 }
 

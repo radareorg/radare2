@@ -396,6 +396,10 @@ static int cmd_help(void *data, const char *input) {
 		} break;
 	case '?': // ???
 		if (input[1]=='?') {
+			if (input[2]=='?') {
+				r_cons_printf ("What are you doing?\n");
+				return 0;
+			}
 			if (input[2]) {
 				if (core->num->value)
 					r_core_cmd (core, input+1, 0);

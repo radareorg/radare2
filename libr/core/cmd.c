@@ -518,6 +518,8 @@ static int cmd_resize(void *data, const char *input) {
 static int cmd_eval(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
+	case 'x': // exit
+		return cmd_quit (data, "");
 	case '\0':
 		r_config_list (core->config, NULL, 0);
 		break;

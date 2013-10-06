@@ -235,6 +235,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		r_cons_printf (
 		"Usage: dm [size]\n"
 		" dm            List memory maps of target process\n"
+		" dmj           List memmaps in JSON format\n"
 		" dm*           Same as above but in radare commands\n"
 		" dm addr size  Allocate size bytes at addr (anywhere if addr is -1) in child process\n"
 		" dm-0x8048     Deallocate memory map of address 0x8048\n"
@@ -357,10 +358,6 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		free (ptr);
 		}
 		break;
-	case '*':
-		r_debug_map_sync (core->dbg); // update process memory maps
-		r_debug_map_list (core->dbg, core->offset, 1);
-		break;
 	case ' ':
 		{
 			char *p;
@@ -387,10 +384,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			}
 		}
 		eprintf ("The address doesn't match with any map.\n");
-		break;
-	default:
+		break; case '\0': case '*': case 'j':
 		r_debug_map_sync (core->dbg); // update process memory maps
-		r_debug_map_list (core->dbg, core->offset, 0);
+		r_debug_map_list (core->dbg, core->offset, input[0]);
 		break;
 	}
 	return R_TRUE;
