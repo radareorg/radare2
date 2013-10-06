@@ -607,8 +607,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 's':
 		addr = r_num_math (core->num, input+2);
 		RBreakpointItem *bp = r_bp_get (core->dbg->bp, addr);
-		if (bp) bp->enabled = !bp->enabled;
-		else {
+		if (bp) {
+			//bp->enabled = !bp->enabled;
+			r_bp_del (core->dbg->bp, addr);
+		} else {
 			if (hwbp) bp = r_bp_add_hw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
 			else bp = r_bp_add_sw (core->dbg->bp, addr, 1, R_BP_PROT_EXEC);
 			if (!bp) eprintf ("Cannot set breakpoint (%s)\n", input+2);
@@ -642,18 +644,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: db[ecdht] [[-]addr] [len] [rwx] [condstring]\n"
-		"db                ; list breakpoints\n"
-		"db sym.main       ; add breakpoint into sym.main\n"
-		"db 0x804800       ; add breakpoint\n"
-		"db -0x804800      ; remove breakpoint\n"
+		"db                 list breakpoints\n"
+		"db sym.main        add breakpoint into sym.main\n"
+		"db 0x804800        add breakpoint\n"
+		"db -0x804800       remove breakpoint\n"
 		// "dbi 0x848 ecx=3   ; stop execution when condition matches\n"
-		"dbs 0x8048000     ; toggle breakpoint on given address\n"
-		"dbe 0x8048000     ; enable breakpoint\n"
-		"dbc 0x8048000 cmd ; run command when breakpoint is hit\n"
-		"dbd 0x8048000     ; disable breakpoint\n"
-		"dbh x86           ; set/list breakpoint plugin handlers\n"
+		"dbs 0x8048000      toggle breakpoint on given address\n"
+		"dbe 0x8048000      enable breakpoint\n"
+		"dbc 0x8048000 cmd  run command when breakpoint is hit\n"
+		"dbd 0x8048000      disable breakpoint\n"
+		"dbh x86            set/list breakpoint plugin handlers\n"
 		"Unrelated:\n"
-		"dbt [ebp]         ; debug backtrace\n");
+		"dbt [ebp]          debug backtrace\n");
 		break;
 	}
 }

@@ -97,57 +97,65 @@ R_API void r_core_visual_prompt (RCore *core) {
 
 static int visual_nkey(RCore *core, int ch) {
 	const char *cmd;
+	ut64 oseek = UT64_MAX;
+	if (ocursor == -1) {
+		oseek = core->offset;
+		r_core_seek (core, core->offset + cursor, 0);
+	}
+
 	switch (ch) {
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		ch = '?';
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
+		else ch = '?';
 		break;
 	case R_CONS_KEY_F2:
 		cmd = r_config_get (core->config, "key.f2");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 		break;
 	case R_CONS_KEY_F3:
 		cmd = r_config_get (core->config, "key.f3");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 		break;
 	case R_CONS_KEY_F4:
 		cmd = r_config_get (core->config, "key.f4");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 	case R_CONS_KEY_F5:
 		cmd = r_config_get (core->config, "key.f5");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 	case R_CONS_KEY_F6:
 		cmd = r_config_get (core->config, "key.f6");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 		break;
 	case R_CONS_KEY_F7:
 		cmd = r_config_get (core->config, "key.f7");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		ch = 's';
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
+		else ch = 's';
 		break;
 	case R_CONS_KEY_F8:
 		cmd = r_config_get (core->config, "key.f8");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 		break;
 	case R_CONS_KEY_F9:
 		cmd = r_config_get (core->config, "key.f9");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
-		r_core_cmd0 (core, "dc");
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
+		else r_core_cmd0 (core, "dc");
 		break;
 	case R_CONS_KEY_F10:
 		cmd = r_config_get (core->config, "key.f10");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 		break;
 	case R_CONS_KEY_F11:
 		cmd = r_config_get (core->config, "key.f11");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 		break;
 	case R_CONS_KEY_F12:
 		cmd = r_config_get (core->config, "key.f12");
-		if (cmd && *cmd) return r_core_cmd0 (core, cmd);
+		if (cmd && *cmd) ch = r_core_cmd0 (core, cmd);
 		break;
 	}
+	if (oseek != UT64_MAX)
+		r_core_seek (core, oseek, 0);
 	return ch;
 }
 
@@ -443,7 +451,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'H':
 		if (curset) {
-			if (ocursor==-1) ocursor=cursor;
+			if (ocursor==-1) ocursor = cursor;
 			cursor--;
 			if (cursor<0) {
 				r_core_seek (core, core->offset-cols, 1);
@@ -467,7 +475,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'L':
 		if (curset) {
-			if (ocursor==-1) ocursor=cursor;
+			if (ocursor==-1) ocursor = cursor;
 			cursor++;
 			offscreen = (core->cons->rows-3)*cols;
 			if (cursor>=offscreen) {
