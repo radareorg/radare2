@@ -183,7 +183,11 @@ static int runfile () {
 #endif
 	if (_preload) {
 #if __APPLE__
+		// 10.6
 		r_sys_setenv ("DYLD_PRELOAD", _preload);
+		r_sys_setenv ("DYLD_INSERT_LIBRARIES", _preload);
+		// 10.8
+		r_sys_setenv ("DYLD_FORCE_FLAT_NAMESPACE", "1");
 #else
 		r_sys_setenv ("LD_PRELOAD", _preload);
 #endif

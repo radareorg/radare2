@@ -57,13 +57,13 @@ r2 -q - <<EOF
 ?e #define R_EGG_OS_BEOS \`?h beos\`
 EOF
 #endif
-#define R_EGG_OS_LINUX 0x0a52b843
-#define R_EGG_OS_OSX 0x0b875ee1
-#define R_EGG_OS_DARWIN 0x4292f662
-#define R_EGG_OS_MACOS 0x0a66c956
-#define R_EGG_OS_W32 0x0b877473
-#define R_EGG_OS_WINDOWS 0x7de634da
-#define R_EGG_OS_BEOS 0x7c70357e
+#define R_EGG_OS_LINUX 0x5ca62a43
+#define R_EGG_OS_OSX 0x0ad593a1
+#define R_EGG_OS_DARWIN 0xd86d1ae2
+#define R_EGG_OS_MACOS 0x5cb23c16
+#define R_EGG_OS_W32 0x0ad5fbb3
+#define R_EGG_OS_WINDOWS 0x05b7de9a
+#define R_EGG_OS_BEOS 0x506108be
 
 #if __APPLE__
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX

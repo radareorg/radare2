@@ -133,6 +133,7 @@ static int cmd_info(void *data, const char *input) {
 		" ih        ; headers\n"
 		" ii        ; imports\n"
 		" iI        ; binary info\n"
+		" il        ; libraries\n"
 		" is        ; symbols\n"
 		" iS        ; sections\n"
 		" iz        ; strings\n");
