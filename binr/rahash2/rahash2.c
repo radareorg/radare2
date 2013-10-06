@@ -166,6 +166,7 @@ int main(int argc, char **argv) {
 	RIO *io;
 	RHash *ctx;
 	ut64 algobit;
+	const char *hashstr = NULL;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	int i, ret, c, rad = 0, quit = 0, bsize = 0, numblocks = 0;
 
@@ -183,26 +184,27 @@ int main(int argc, char **argv) {
 		case 't': to = r_num_math (NULL, optarg); break;
 		case 'v': return blob_version ("rahash2");
 		case 'h': return do_help (0);
-		case 's':
-			  algobit = r_hash_name_to_bits (algo);
-			  for (i=1; i<0x800000; i<<=1) {
-				  if (algobit & i) {
-					  int hashbit = i & algobit;
-					  ctx = r_hash_new (R_TRUE, hashbit);
-					  from = 0;
-					  to = strlen (optarg);
-					  do_hash_internal (ctx, //0, strlen (optarg),
-							  hashbit, (const ut8*) optarg,
-							  strlen (optarg), rad, 1);
-					  r_hash_free (ctx);
-					  quit = R_TRUE;
-				  }
-			  }
-			break;
+		case 's': hashstr = optarg; break;
 		default: eprintf ("rahash2: Unknown flag\n"); return 1;
 		}
 	}
-
+	if (hashstr) {
+		algobit = r_hash_name_to_bits (algo);
+		for (i=1; i<0x800000; i<<=1) {
+			if (algobit & i) {
+				int hashbit = i & algobit;
+				ctx = r_hash_new (R_TRUE, hashbit);
+				from = 0;
+				to = strlen (hashstr);
+				do_hash_internal (ctx, hashbit,
+					(const ut8*) hashstr,
+					strlen (hashstr), rad, 1);
+				r_hash_free (ctx);
+				quit = R_TRUE;
+			}
+		}
+		return 0;
+	}
 	if (quit)
 		return 0;
 	if (optind>=argc)
