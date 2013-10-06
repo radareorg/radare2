@@ -551,7 +551,6 @@ R_API void r_core_visual_config(RCore *core) {
 				if (fs2 != NULL)
 					config_visual_hit (core, fs2, (ch=='E'));
 			} else {
-				r_flag_space_set (core->flags, fs);
 				menu = 1;
 				_option = option;
 				option = 0;
