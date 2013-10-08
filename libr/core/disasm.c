@@ -357,6 +357,9 @@ toro:
 			addr, buf, len, -1, linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
 
+	for (i=0; i<10; i++)
+		core->asmqjmps[counter] = 0LL;
+
 	oplen = 1;
 	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
@@ -684,14 +687,15 @@ toro:
 								core->cons->vline[RUP_CORNER], color_fname,
 								(f->type==R_ANAL_FCN_TYPE_FCN || f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 								(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-								f->name, f->size);
+								f->name, f->size, corner);
 							r_cons_printf ("%s%s "Color_RESET,
 								color_fline, core->cons->vline[corner]);
-						} else
+						} else {
 							r_cons_printf (fmt, core->cons->vline[RUP_CORNER],
 								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 								(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-								f->name, f->size, corner);
+								f->name, f->size, core->cons->vline[corner]);
+						}
 					}
 					if (sign) r_cons_printf ("// %s\n", sign);
 					free (sign);
@@ -998,7 +1002,7 @@ toro:
 			RAnalFunction *f, *cf;
 			switch (analop.type) {
 			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_CJMP:
+		//	case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_CALL:
 				cf = r_anal_fcn_find (core->anal, /* current function */
 					at, R_ANAL_FCN_TYPE_NULL);

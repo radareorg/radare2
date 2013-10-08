@@ -4,6 +4,7 @@
 #include <signal.h>
 
 static int enabled = 0;
+static int disabled = 0;
 
 R_API int r_sandbox_check_path (const char *path) {
 	char ch;
@@ -16,6 +17,16 @@ R_API int r_sandbox_check_path (const char *path) {
 	if (readlink (path, &ch, 1) != -1) return 0;
 #endif
 	return R_TRUE;
+}
+
+R_API int r_sandbox_disable (int e) {
+	if (e) {
+		disabled = enabled;
+		enabled = 0;
+	} else {
+		enabled = disabled;
+	}
+	return enabled;
 }
 
 R_API int r_sandbox_enable (int e) {

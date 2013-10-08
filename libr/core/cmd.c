@@ -621,17 +621,17 @@ static int cmd_eval(void *data, const char *input) {
 		case 0:
 			r_cons_printf (
 			"Usage: e[?] [var[=value]]\n"
-			"  e?             ; show this help\n"
-			"  e?asm.bytes    ; show description\n"
-			"  e??            ; list config vars with description\n"
-			"  e              ; list config vars\n"
-			"  e-             ; reset config vars\n"
-			"  e*             ; dump config vars in r commands\n"
-			"  e!a            ; invert the boolean value of 'a' var\n"
-			"  er [key]       ; set config key as readonly. no way back\n"
-			"  ec [k] [color] ; set color for given key (prompt, offset, ...)\n"
-			"  e a            ; get value of var 'a'\n"
-			"  e a=b          ; set var 'a' the 'b' value\n");
+			" e?             ; show this help\n"
+			" e?asm.bytes    ; show description\n"
+			" e??            ; list config vars with description\n"
+			" e              ; list config vars\n"
+			" e-             ; reset config vars\n"
+			" e*             ; dump config vars in r commands\n"
+			" e!a            ; invert the boolean value of 'a' var\n"
+			" er [key]       ; set config key as readonly. no way back\n"
+			" ec [k] [color] ; set color for given key (prompt, offset, ...)\n"
+			" e a            ; get value of var 'a'\n"
+			" e a=b          ; set var 'a' the 'b' value\n");
 		}
 		break;
 	case 'r':
@@ -818,11 +818,11 @@ static char *find_eoq (char *p) {
 }
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd) {
-	char *ptr, *ptr2, *str;
-	int i, ret, pipefd;
-	const char *tick = NULL;
 	const char *quotestr = "`";
+	const char *tick = NULL;
+	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
+	int i, ret, pipefd;
 	int usemyblock = 0;
 
 	cmd = r_str_trim_head_tail (cmd);
@@ -830,10 +830,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	/* quoted / raw command */
 	switch (*cmd) {
 	case '.':
-		if (cmd[1] == '"') { /* interpret */
-			ret = r_cmd_call (core->rcmd, cmd);
-			return ret;
-		}
+		if (cmd[1] == '"') /* interpret */
+			return r_cmd_call (core->rcmd, cmd);
 		break;
 	case '"':
 		for (cmd++; *cmd; ) {
@@ -1509,21 +1507,29 @@ R_API int r_core_flush(void *user, const char *cmd) {
 
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	char *s, *tmp;
-	if (r_sandbox_enable (0))
+	eprintf ("SANDBOXED PIPE (%s)\n", cmd);
+	r_sandbox_disable (1);
+	if (r_sandbox_enable (0)) {
+		r_sandbox_disable (0);
 		return r_core_cmd_str (core, cmd);
+	}
 	r_cons_reset ();
 	if (r_file_mkstemp ("cmd", &tmp)) {
 		char *_cmd = strdup (cmd);
 		int pipefd = r_cons_pipe_open (tmp, 0);
+		r_sandbox_disable (0);
 		r_core_cmd_subst (core, _cmd);
 		r_cons_flush ();
 		r_cons_pipe_close (pipefd);
+		r_sandbox_disable (1);
 		s = r_file_slurp (tmp, NULL);
 		r_file_rm (tmp);
+		r_sandbox_disable (0);
 		free (tmp);
 		free (_cmd);
 		return s;
 	}
+	r_sandbox_disable (0);
 	return NULL;
 }
 
@@ -1545,13 +1551,12 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	r_cons_reset ();
 	if (r_core_cmd (core, cmd, 0) == -1) {
 		eprintf ("Invalid command: %s\n", cmd);
-		retstr = strdup ("");
-	} else {
-		r_cons_filter ();
-		static_str = r_cons_get_buffer ();
-		retstr = strdup (static_str? static_str: "");
-		r_cons_reset ();
+		return NULL;
 	}
+	r_cons_filter ();
+	static_str = r_cons_get_buffer ();
+	retstr = strdup (static_str? static_str: "");
+	r_cons_reset ();
 	return retstr;
 }
 

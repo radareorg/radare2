@@ -556,6 +556,7 @@ R_API const char *r_constr_add (RConstr *c, const char *str);
 /* sandbox */
 R_API DIR* r_sandbox_opendir (const char *path);
 R_API int r_sandbox_enable (int e);
+R_API int r_sandbox_disable (int e);
 R_API int r_sandbox_system (const char *x, int fork);
 R_API int r_sandbox_creat (const char *path, int mode);
 R_API int r_sandbox_open (const char *path, int mode, int perm);

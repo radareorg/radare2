@@ -129,6 +129,8 @@ static int cmd_write(void *data, const char *input) {
 			r_io_cache_list (core->io, R_TRUE);
 			break;
 		case '\0':
+			if (!r_config_get_i (core->config, "io.cache"))
+				eprintf ("[warning] e io.cache must be true\n");
 			r_io_cache_list (core->io, R_FALSE);
 			break;
 		}
@@ -484,7 +486,7 @@ static int cmd_write(void *data, const char *input) {
 			" waf file     assemble file and write bytes\n"
 			" wA r 0       alter/modify opcode at current seek (see wA?)\n"
 			" wb 010203    fill current block with cyclic hexpairs\n"
-			" wc[ir*?]     write cache commit/reset/list\n"
+			" wc[ir*?]     write cache undo/commit/reset/list\n"
 			" wx 9090      write two intel nops\n"
 			" wv eip+34    write 32-64 bit value\n"
 			" wo? hex      write in block with operation. 'wo?' fmi\n"

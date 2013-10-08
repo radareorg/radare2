@@ -132,7 +132,7 @@ static int cmd_seek(void *data, const char *input) {
 			r_io_sundo_push (core->io, core->offset);
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
 			break;
-		case 'N':
+		case 'p':
 			r_io_sundo_push (core->io, core->offset);
 			r_core_seek_previous (core, r_config_get (core->config, "scr.nkey"));
 			break;
@@ -180,7 +180,7 @@ static int cmd_seek(void *data, const char *input) {
 			" s- 512     ; seek 512 bytes backward\n"
 			" s.hexoff   ; Seek honoring a base from core->offset\n"
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
-			" sn|sN      ; seek next/prev scr.nkey\n"
+			" sn/sp      ; seek next/prev scr.nkey\n"
 			" s/ DATA    ; search for next occurrence of 'DATA'\n"
 			" s/x 9091   ; search for next occurrence of \\x90\\x91\n"
 			" sb         ; seek aligned to bb start\n"

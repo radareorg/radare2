@@ -49,6 +49,7 @@ static void print_format_help(RPrint *p) {
 	//" t - unix timestamp string\n"
 	" * - next char is pointer (honors asm.bits)\n"
 	" + - toggle show flags for each offset\n"
+	" : - skip 4 bytes\n"
 	" . - skip 1 byte\n");
 }
 
@@ -183,6 +184,10 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 				idx--;
 				endian ^= 1;
 				continue;
+			case ':': // skip char
+				i+=4;
+				idx-=4;
+				continue;
 			case '.': // skip char
 				i++;
 				idx--;
@@ -294,6 +299,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 						if (IS_PRINTABLE (buf[j]))
 							p->printf ("%c", buf[j]);
 					p->printf (")");
+				}
+				i += 4;
+				break;
+			case 'f':
+				if (MUSTSET) {
+					realprintf ("wv4 %s @ 0x%08"PFMT64x"\n", setval, seeki);
+				} else {
+					p->printf ("0x%08"PFMT64x" = %f", seeki,
+						(float)(addr));
 				}
 				i += 4;
 				break;
