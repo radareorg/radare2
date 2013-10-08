@@ -675,6 +675,7 @@ toro:
 
 						}
 					} else {
+						int corner = (f->size <= analop.length)? RDWN_CORNER: LINE_VERT;
 						const char *fmt = show_color?
 							"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
 							"%s (%s) %s %d\n%s ";
@@ -685,12 +686,12 @@ toro:
 								(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
 								f->name, f->size);
 							r_cons_printf ("%s%s "Color_RESET,
-								color_fline, core->cons->vline[LINE_VERT]);
+								color_fline, core->cons->vline[corner]);
 						} else
 							r_cons_printf (fmt, core->cons->vline[RUP_CORNER],
 								(f->type==R_ANAL_FCN_TYPE_FCN||f->type==R_ANAL_FCN_TYPE_SYM)?"fcn":
 								(f->type==R_ANAL_FCN_TYPE_IMP)?"imp":"loc",
-								f->name, f->size, core->cons->vline[LINE_VERT]);
+								f->name, f->size, corner);
 					}
 					if (sign) r_cons_printf ("// %s\n", sign);
 					free (sign);
@@ -1011,7 +1012,7 @@ toro:
 							if (analop.jump == l->addr) {
 								if ((cf != NULL) && (f->addr == cf->addr)) {
 									r_cons_strcat (color_label);
-									r_cons_printf (" ; (%s)", l->name);
+									r_cons_printf ("; (%s)", l->name);
 									r_cons_strcat (Color_RESET);
 								} else {
 									r_cons_strcat (color_fname);
@@ -1100,7 +1101,7 @@ toro:
 							(flag&&flag->name)? flag->name: "",
 							(flag&&flag->name)? flag->name: "",
 							(f&&flag)? cc.jump-flag->offset: 0);
-					else r_cons_printf ("\n%s%s    ; %s (%s+%d)",
+					else r_cons_printf ("\n%s%s   ; %s (%s+%d)",
 						pre, refline, ccstr,
 						(flag&&flag->name)?flag->name:"",
 						flag? cc.jump-flag->offset: 0);
