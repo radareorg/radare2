@@ -4,8 +4,7 @@
 #include <r_util.h>
 #include <r_list.h>
 
-/* faster retrival, slower storage */
-// TODO: use slist ?
+#define FCN_DEPTH 32
 
 R_API RAnalFunction *r_anal_fcn_new() {
 	RAnalFunction *fcn = R_NEW0 (RAnalFunction);
@@ -141,6 +140,7 @@ static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	return NULL;
 }
 
+#if 0
 static int bbsum(RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -150,8 +150,9 @@ static int bbsum(RAnalFunction *fcn) {
 	}
 	return size;
 }
+#endif
 
-static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
+static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int ret = 0;
 	ut8 bbuf[8096];
 	int overlapped = 0;
@@ -161,6 +162,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 // add basic block
 	RAnalBlock *bb = NULL;
 	RAnalBlock *bbg = NULL;
+	if (depth<1)
+		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	if (bbget (fcn, addr)) 
 		return R_ANAL_RET_ERROR; // MUST BE DUP
 	bb = R_NEW0 (RAnalBlock);
@@ -255,17 +258,17 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			if (op.jump > addr+512)
 				return R_ANAL_RET_END;	
 			//
-			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof(bbuf));
-			return fcn_recurse (anal, fcn, op.jump, bbuf, 8096, reftype);
+			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
+			return fcn_recurse (anal, fcn, op.jump, bbuf, sizeof (bbuf), depth-1);
 		case R_ANAL_OP_TYPE_CJMP:
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;
 			}
 			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
-			fcn_recurse (anal, fcn, op.jump, bbuf, sizeof (bbuf), reftype);
+			fcn_recurse (anal, fcn, op.jump, bbuf, sizeof (bbuf), depth-1);
 			anal->iob.read_at (anal->iob.io, op.fail, bbuf, sizeof (bbuf));
-			return fcn_recurse (anal, fcn, op.fail, bbuf, sizeof (bbuf), reftype);
+			return fcn_recurse (anal, fcn, op.fail, bbuf, sizeof (bbuf), depth-1);
 #if 0
 		// do not add xrefs for cjmps?
 				r_anal_op_fini (&op);
@@ -300,8 +303,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	//if (len>16)
 	//	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
-
-	return fcn_recurse (anal, fcn, addr, buf, len, reftype);
+	return fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);
 }
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
