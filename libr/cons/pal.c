@@ -17,7 +17,7 @@ R_API void r_cons_pal_init(const char *foo) {
 	cons->pal.label = Color_CYAN;
 	cons->pal.flow = Color_CYAN;
 	cons->pal.math = Color_YELLOW;
-	cons->pal.bin = Color_RED;
+	cons->pal.bin = Color_YELLOW;
 	cons->pal.b0x00 = Color_GREEN;
 	cons->pal.b0x7f = Color_CYAN;
 	cons->pal.b0xff = Color_RED;

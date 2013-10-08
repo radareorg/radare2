@@ -127,34 +127,77 @@ R_API int r_anal_fcn_local_del_addr (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 	return R_FALSE;
 }
 
+// TODO: limit recursivity
 
-R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	RAnalOp op = {0};
+static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == addr)
+			return bb;
+		if (addr >= bb->addr && (addr < bb->addr+bb->size))
+			return bb;
+	}
+	return NULL;
+}
+
+static int bbsum(RAnalFunction *fcn) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	ut32 size = 0;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		size += bb->size;
+	}
+	return size;
+}
+
+static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
+	int ret = 0;
+	ut8 bbuf[8096];
+	int overlapped = 0;
 	char *varname;
+	RAnalOp op = {0};
 	int oplen, idx = 0;
-	if (fcn->addr == -1)
-		fcn->addr = addr;
-	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
-		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
-	//if (len>16)
-	//	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
+// add basic block
+	RAnalBlock *bb = NULL;
+	RAnalBlock *bbg = NULL;
+	if (bbget (fcn, addr)) 
+		return R_ANAL_RET_ERROR; // MUST BE DUP
+	bb = R_NEW0 (RAnalBlock);
+	bb->addr = addr;
+	bb->size = 0;
+	bb->jump = UT64_MAX;
+	bb->fail = UT64_MAX;
+	bb->type = 0; // TODO
+	r_list_append (fcn->bbs, bb);
 
 	while (idx < len) {
 		r_anal_op_fini (&op);
-		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff) {
-			r_anal_op_fini (&op);
+		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff)
 			return R_ANAL_RET_ERROR;
-		}
+// check if opcode is in another basic block
+// in that case we break
 		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) < 1) {
 			if (idx == 0) {
 				VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
-			} else break;
+			} else break; // unspecified behaviour
 		}
-		fcn->ninstr++;
+		if (idx>0 && !overlapped) {
+			bbg = bbget (fcn, addr+idx);
+			if (bbg && bbg != bb) {
+				bb->jump = addr+idx;
+				overlapped = 1;
+				//return R_ANAL_RET_END;
+			}
+		}
 		idx += oplen;
-		fcn->size += oplen;
+		if (!overlapped) {
+			bb->size += oplen;
+			fcn->ninstr++;
+			fcn->size += oplen; /// XXX. must be the sum of all the bblocks
+		}
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
 		case R_ANAL_STACK_INC:
@@ -195,14 +238,34 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_JMP:
+#if 0
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_ERROR;
 			}
-			break;
-			//return R_ANAL_RET_END;	
+#endif
+			if (!overlapped) {
+				bb->jump = op.jump;
+				bb->fail = UT64_MAX;
+			}
+			// hardcoded jmp size // must be checked at the end wtf?
+			if (op.jump < addr-512 && op.jump<addr)
+				return R_ANAL_RET_END;	
+			if (op.jump > addr+512)
+				return R_ANAL_RET_END;	
+			//
+			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof(bbuf));
+			return fcn_recurse (anal, fcn, op.jump, bbuf, 8096, reftype);
 		case R_ANAL_OP_TYPE_CJMP:
+			if (!overlapped) {
+				bb->jump = op.jump;
+				bb->fail = op.fail;
+			}
+			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
+			fcn_recurse (anal, fcn, op.jump, bbuf, sizeof (bbuf), reftype);
+			anal->iob.read_at (anal->iob.io, op.fail, bbuf, sizeof (bbuf));
+			return fcn_recurse (anal, fcn, op.fail, bbuf, sizeof (bbuf), reftype);
 #if 0
 		// do not add xrefs for cjmps?
 				r_anal_op_fini (&op);
@@ -213,6 +276,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 					op.type == R_ANAL_OP_TYPE_CALL?
 					R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE)) {
 				r_anal_op_fini (&op);
+				//fcn->size = bbsum (fcn);
 				return R_ANAL_RET_ERROR;
 			}
 			break;
@@ -220,11 +284,24 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
 			r_anal_op_fini (&op);
+			//fcn->size = bbsum (fcn);
 			return R_ANAL_RET_END;
 		}
 	}
 	r_anal_op_fini (&op);
-	return fcn->size;
+	return ret;
+}
+
+R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
+	//int oplen, idx = 0;
+	if (fcn->addr == -1)
+		fcn->addr = addr;
+	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
+		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
+	//if (len>16)
+	//	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
+
+	return fcn_recurse (anal, fcn, addr, buf, len, reftype);
 }
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
@@ -342,7 +419,6 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 	}
 	return NULL;
 }
-
 
 /* rename RAnalFunctionBB.add() */
 R_API int r_anal_fcn_add_bb(RAnalFunction *fcn, ut64 addr, ut64 size, ut64 jump, ut64 fail, int type, RAnalDiff *diff) {

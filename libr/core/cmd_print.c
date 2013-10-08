@@ -452,9 +452,9 @@ static int cmd_print(void *data, const char *input) {
 				r_list_foreach (f->bbs, iter, b) {
 					r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
 					if (b->jump != UT64_MAX)
-						r_cons_printf ("--> 0x%08"PFMT64x"\n", b->jump);
+						r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
 					if (b->fail != UT64_MAX)
-						r_cons_printf ("--> 0x%08"PFMT64x"\n", b->fail);
+						r_cons_printf ("-[false]-> 0x%08"PFMT64x"\n", b->fail);
 					r_cons_printf ("--\n");
 				}
 			} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);

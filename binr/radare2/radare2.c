@@ -61,7 +61,7 @@ static int verify_version(int show) {
 			ret = 1;
 		if (show) printf ("%s  %s\n", name, v->name);
 	}
-	if (ret) eprintf ("Warning: r2 library versions mismatch!\n");
+	//if (ret) eprintf ("Warning: r2 library versions mismatch!\n");
 	return ret;
 }
 

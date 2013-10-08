@@ -475,6 +475,15 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 			free (ptr);
 			}
 			break;
+		case 'o':
+			{
+			ut64 addr = core->offset;
+			if (input[2]==' ')
+				addr = r_num_math (core->num, input+2);
+			RAnalFunction *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+			if (fcn) r_cons_printf ("0x%08"PFMT64x"\n", fcn->addr);
+			}
+			break;
 		case 'i':
 			r_core_anal_fcn_list (core, input+2, 0);
 			break;

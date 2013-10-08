@@ -5,6 +5,8 @@
 #include <r_flags.h>
 #include <r_core.h>
 
+#define ANALBS 1024
+
 R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 	int count = 0;
 	RAnalHint *hint;
@@ -294,7 +296,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	ut64 *next = NULL;
 	int i, nexti = 0;
 	ut8 *buf;
-#define ANALBS 256
 
 	if (from != UT64_MAX && at == 0)
 		return R_FALSE;
@@ -386,7 +387,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			r_list_sort (fcn->bbs, &cmpaddr);
 
 			/* New function: Add initial xref */
-			if (from != -1) {
+			if (from != UT64_MAX) {
 				if (!(ref = r_anal_ref_new ())) {
 					eprintf ("Error: new (xref)\n");
 					goto error;
@@ -415,7 +416,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 #endif
 			//r_list_append (core->anal->fcns, fcn);
 			r_list_foreach (fcn->refs, iter, refi)
-				if (refi->addr != -1)
+				if (refi->addr != UT64_MAX)
 					// TODO: fix memleak here, fcn not freed even though it is
 					// added in core->anal->fcns which is freed in r_anal_free()
 					r_core_anal_fcn (core, refi->addr, refi->at, refi->type, depth-1);
@@ -645,9 +646,10 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 		}
 		return R_TRUE;
 	}
+#define infun(x,y) (y>=x->addr&&y<(x->addr+x->size))
 	r_list_foreach (core->anal->fcns, iter, fcn)
 		if (((input == NULL || *input == '\0') && fcn->type!=R_ANAL_FCN_TYPE_LOC)
-			 || fcn->addr == addr || !strcmp (fcn->name, input+1)) {
+			 || infun(fcn, addr) || !strcmp (fcn->name, input+1)) {
 			if (!rad) {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
 						fcn->addr, fcn->name, fcn->size);
@@ -684,7 +686,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 						r_cons_printf ("0x%08"PFMT64x" ", refi->addr);
 
 				if (fcn->type==R_ANAL_FCN_TYPE_FCN || fcn->type==R_ANAL_FCN_TYPE_SYM) {
-					r_cons_printf ("\n vars: %d");
+					r_cons_printf ("\n vars: %d", r_list_length (fcn->vars));
 					r_list_foreach (fcn->vars, iter2, vari) {
 						char *s = r_anal_type_to_str (core->anal, vari->type);
 						r_cons_printf ("\n  %s %s @ 0x%02x", s, vari->name, vari->delta);
