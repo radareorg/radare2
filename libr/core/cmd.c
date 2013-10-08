@@ -516,6 +516,7 @@ static int cmd_resize(void *data, const char *input) {
 }
 
 static int cmd_eval(void *data, const char *input) {
+	char *p;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case 'x': // exit
@@ -525,6 +526,13 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'c':
 		switch (input[1]) {
+		case 'h': // echo
+			p = strchr (input, ' ');
+			if (p) {
+				r_cons_strcat (p+1);
+				r_cons_newline ();
+			}
+			break;
 		case 'd':
 			r_cons_pal_init (NULL);
 			break;

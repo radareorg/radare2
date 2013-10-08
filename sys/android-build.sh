@@ -119,7 +119,7 @@ WWWROOT="/data/data/org.radare.installer/radare2/lib/radare2/${VERSION}/www"
 ln -fs /data/data/org.radare.installer/radare2/${WWWROOT} \
 	/data/data/org.radare.installer/www
 cd $D
-tar czvf ../$D.tar.gz *
+tar -czovf ../$D.tar.gz data
 cd ..
 D2=`git log HEAD 2>/dev/null|head -n1|awk '{print $2}'|cut -c 1-8`
 if [ -n "$D2" ]; then
