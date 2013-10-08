@@ -61,7 +61,7 @@ static int verify_version(int show) {
 			ret = 1;
 		if (show) printf ("%s  %s\n", name, v->name);
 	}
-	//if (ret) eprintf ("Warning: r2 library versions mismatch!\n");
+	if (ret) eprintf ("WARNING: r2 library versions mismatch! See r2 -V\n");
 	return ret;
 }
 
@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 		case 'n': run_anal = 0; break;
 		case 'N': run_rc = 0; break;
 		case 'V': return verify_version (1);
-		case 'v': return blob_version ("radare2");
+		case 'v': verify_version(0); return blob_version ("radare2");
 		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		case 'a': asmarch = optarg; break;
 		case 'k': asmos = optarg; break;
@@ -290,7 +290,7 @@ int main(int argc, char **argv) {
 	if (help>1) return main_help (2);
 	else if (help) return main_help (0);
 
-	verify_version (0);
+	//cverify_version (0);
 	if (do_connect) {
 		const char *uri = argv[optind];
 		if (!strncmp (uri, "http://", 7))
