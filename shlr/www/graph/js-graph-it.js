@@ -106,8 +106,7 @@ function movemouse(e) {
 		elementToMove.style.right = null;
 		elementToMove.style.bottom = null;
 		
-		var i;
-		for(i = 0; i < blocksToMove.length; i++) {
+		for (var i = 0; i < blocksToMove.length; i++) {
 			if (blocksToMove[i])
 				blocksToMove[i].onMove();
 		}
@@ -296,39 +295,32 @@ function Canvas(htmlElement) {
 		this.innerDiv.style.height = this.height + "px";
 		
 		// init connectors
-		for(i = 0; i < this.connectors.length; i++)
-		{
+		for(i = 0; i < this.connectors.length; i++) {
 			this.connectors[i].initConnector();
 		}
 	}
 	
-	this.visit = function(element)
-	{
-		if(element == this.htmlElement)
+	this.visit = function(element) {
+		if (element == this.htmlElement)
 			return true;
 	
 		// check the element dimensions against the acutal size of the canvas
 		this.width = Math.max(this.width, calculateOffsetLeft(element) - this.offsetLeft + element.offsetWidth);
 		this.height = Math.max(this.height, calculateOffsetTop(element) - this.offsetTop + element.offsetHeight);
 		
-		if(isBlock(element))
-		{
+		if(isBlock(element)) {
 			// block found initialize it
 			var newBlock = new Block(element, this);
 			newBlock.initBlock();
 			this.blocks.push(newBlock);
 			return false;
-		}
-		else if(isConnector(element))
-		{
+		} else if(isConnector(element)) {
 			// connector found, just create it, source or destination blocks may not 
 			// have been initialized yet
 			var newConnector = new Connector(element, this);
 			this.connectors.push(newConnector);
 			return false;
-		}
-		else
-		{
+		} else {
 			// continue searching nested elements
 			return true;
 		}
@@ -351,6 +343,28 @@ function Canvas(htmlElement) {
 		return output;
 	}
 	
+	this.alignBlocks = function()
+	{
+		var i;
+		for (i = 0; i < this.blocks.length ; i++) {
+			var b = this.blocks[i]; //.findBlock(blockId);
+			b.onMove();
+			// TODO: alert ("align "+b);
+		}
+		for(i = 0; i < this.connectors.length; i++) {
+			this.connectors[i].repaint();
+			console.log( this.connectors[i]);
+		}
+	}
+
+	this.fitBlocks = function()
+	{
+		var i;
+		for (i = 0; i < this.blocks.length ; i++) {
+			var b = this.blocks[i]; //.findBlock(blockId);
+			this.blocks[i].fit ();
+		}
+	}
 	/*
 	 * This function searches for a nested block with a given id
 	 */
@@ -477,12 +491,31 @@ function Block(htmlElement, canvas)
 		
 		return result;
 	}
+
+	this.fit = function()
+	{
+		function getlines(txt) {
+			return (12*txt.split ("\n").length);
+		}
+		function getcolumns(txt) {
+			var cols = 0;
+			var txts = txt.split ("\n");
+			for (var x in txts) {
+				const len = txts[x].length;
+				if (len>cols)
+					cols = len;
+			}
+			return 10+ (7*cols);
+		}
+		var text = this.htmlElement.innerHTML;
+		this.htmlElement.style.width = getcolumns (text);
+		this.htmlElement.style.height = getlines (text);
+	}
 	
 	this.move = function(left, top)
 	{
 		this.htmlElement.style.left = left;
 		this.htmlElement.style.top = top;
-		
 		this.onMove();
 	}
 		
@@ -536,46 +569,42 @@ function Segment(id, parentElement)
 		if(this.nextSegment)
 		{
 			this.nextSegment.startX = this.getEndX();
-			this.nextSegment.startY = this.getEndY();			
+			this.nextSegment.startY = this.getEndY();
 		}
 		
-		if(this.visible)
-			this.htmlElement.style.display = 'block';
-		else
-			this.htmlElement.style.display = 'none';
+		this.htmlElement.style.display = this.visible?'block':'none';
 	
-		switch(this.orientation)
-		{
-			case LEFT:
-				this.htmlElement.style.left = (this.startX - this.length) + "px";				
-				this.htmlElement.style.top = this.startY + "px";
+		switch (this.orientation) {
+		case LEFT:
+			this.htmlElement.style.left = (this.startX - this.length) + "px";				
+			this.htmlElement.style.top = this.startY + "px";
+			this.htmlElement.style.width = this.length + "px";
+			this.htmlElement.style.height = this.thickness + "px";
+			break;
+		case RIGHT:
+			this.htmlElement.style.left = this.startX + "px";
+			this.htmlElement.style.top = this.startY + "px";
+			if(this.nextSegment)
+				this.htmlElement.style.width = this.length + this.thickness + "px";
+			else
 				this.htmlElement.style.width = this.length + "px";
-				this.htmlElement.style.height = this.thickness + "px";
-				break;
-			case RIGHT:
-				this.htmlElement.style.left = this.startX + "px";
-				this.htmlElement.style.top = this.startY + "px";
-				if(this.nextSegment)
-					this.htmlElement.style.width = this.length + this.thickness + "px";
-				else
-					this.htmlElement.style.width = this.length + "px";
-				this.htmlElement.style.height = this.thickness + "px";
-				break;
-			case UP:
-				this.htmlElement.style.left = this.startX + "px";
-				this.htmlElement.style.top = (this.startY - this.length) + "px";
-				this.htmlElement.style.width = this.thickness + "px";
+			this.htmlElement.style.height = this.thickness + "px";
+			break;
+		case UP:
+			this.htmlElement.style.left = this.startX + "px";
+			this.htmlElement.style.top = (this.startY - this.length) + "px";
+			this.htmlElement.style.width = this.thickness + "px";
+			this.htmlElement.style.height = this.length + "px";
+			break;
+		case DOWN:
+			this.htmlElement.style.left = this.startX + "px";
+			this.htmlElement.style.top = this.startY + "px";
+			this.htmlElement.style.width = this.thickness + "px";
+			if(this.nextSegment)
+				this.htmlElement.style.height = this.length + this.thickness + "px";
+			else
 				this.htmlElement.style.height = this.length + "px";
-				break;
-			case DOWN:
-				this.htmlElement.style.left = this.startX + "px";
-				this.htmlElement.style.top = this.startY + "px";
-				this.htmlElement.style.width = this.thickness + "px";
-				if(this.nextSegment)
-					this.htmlElement.style.height = this.length + this.thickness + "px";
-				else
-					this.htmlElement.style.height = this.length + "px";
-				break;
+			break;
 		}
 		
 		if(this.nextSegment)
@@ -599,14 +628,12 @@ function Segment(id, parentElement)
 	/**
 	 * Returns the "top" coordinate of the end point of this segment
 	 */
-	this.getEndY = function()
-	{		
-		switch(this.orientation)
-		{
-			case LEFT: return this.startY;
-			case RIGHT: return this.startY;
-			case DOWN: return this.startY + this.length;
-			case UP: return this.startY - this.length;
+	this.getEndY = function() {		
+		switch (this.orientation) {
+		case LEFT: return this.startY;
+		case RIGHT: return this.startY;
+		case DOWN: return this.startY + this.length;
+		case UP: return this.startY - this.length;
 		}
 	}
 		
@@ -1166,6 +1193,8 @@ function initPageObjects()
 				var newCanvas = new Canvas(divs[i]);
 				newCanvas.initCanvas();
 				canvases.push(newCanvas);
+				newCanvas.fitBlocks();
+				newCanvas.alignBlocks();
 			}
 		}
 	}
@@ -1175,7 +1204,6 @@ function initPageObjects()
 /*
  * Utility functions
  */
-
 
 function findCanvas(canvasId) {	
 	for (var i = 0; i < canvases.length; i++)
@@ -1709,8 +1737,9 @@ function VerticalCStrategy(connector, startOrientation)
 }
 
 strategies[0] = function(connector) {return new VerticalSStrategy(connector)};
+strategies[1] = function(connector) {return new HorizontalSStrategy(connector)};
 /*
-strategies[0] = function(connector) {return new HorizontalSStrategy(connector)};
+strategies[2] = function(connector) {return new HorizontalCStrategy(connector, LEFT)};
 strategies[1] = function(connector) {return new VerticalSStrategy(connector)};
 strategies[2] = function(connector) {return new HorizontalLStrategy(connector)};
 strategies[3] = function(connector) {return new VerticalLStrategy(connector)};

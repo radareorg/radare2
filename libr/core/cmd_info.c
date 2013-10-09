@@ -136,6 +136,7 @@ static int cmd_info(void *data, const char *input) {
 		" il        ; libraries\n"
 		" is        ; symbols\n"
 		" iS        ; sections\n"
+		" ir        ; relocs\n"
 		" iz        ; strings\n");
 		break;
 	case '*': mode = R_CORE_BIN_RADARE;

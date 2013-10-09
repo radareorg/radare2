@@ -1507,12 +1507,9 @@ R_API int r_core_flush(void *user, const char *cmd) {
 
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	char *s, *tmp;
-	eprintf ("SANDBOXED PIPE (%s)\n", cmd);
 	r_sandbox_disable (1);
-	if (r_sandbox_enable (0)) {
-		r_sandbox_disable (0);
+	if (r_sandbox_enable (0))
 		return r_core_cmd_str (core, cmd);
-	}
 	r_cons_reset ();
 	if (r_file_mkstemp ("cmd", &tmp)) {
 		char *_cmd = strdup (cmd);

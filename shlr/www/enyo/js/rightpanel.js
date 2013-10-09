@@ -24,6 +24,7 @@ enyo.kind ({
           {content: "strings", value: "1"},
           {content: "symbols", value: "1"},
           {content: "imports", value: "1"},
+          {content: "relocs", value: "1"},
           {content: "functions", value: "1"},
           {content: "comments", value: "1"},
           {classes: "onyx-menu-divider"},
@@ -119,6 +120,11 @@ enyo.kind ({
       break;
     case "symbols":
       r2.bin_symbols(function (x) {
+	self.$.output.setContent (makelist (x));
+      });
+      break;
+    case "relocs":
+      r2.bin_relocs (function (x) {
 	self.$.output.setContent (makelist (x));
       });
       break;

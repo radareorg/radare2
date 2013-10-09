@@ -96,6 +96,11 @@ r2.get_info = function (cb) {
     cb (JSON.parse (json));
   });
 }
+r2.bin_relocs = function (cb) {
+  r2.cmd ("irj", function (json) {
+    cb (JSON.parse (json));
+  });
+}
 r2.bin_imports = function (cb) {
   r2.cmd ("iij", function (json) {
     cb (JSON.parse (json));

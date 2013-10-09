@@ -389,17 +389,17 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 		r_cons_printf ("[");
 		r_list_foreach (relocs, iter, reloc) {
 			if (reloc->import)
-				r_cons_printf ("%s{\"name\":\"%s\",", iter->p?",":"");
+				r_cons_printf ("%s{\"name\":\"%s\",", iter->p?",":"", reloc->import->name);
 			else
 				r_cons_printf ("%s{\"name\":null,", iter->p?",":"");
 			r_cons_printf ("\"type\":\"%s\","
-				"\"addend\":%"PFMT64d","
-				"\"offset\":%"PFMT64d"}",
-				iter->p?",":"",
-				reloc->import->name,
+				"\"offset\":%"PFMT64d","
+				//"\"addend\":%"PFMT64d","
+				"\"physical\":%"PFMT64d"}",
 				bin_reloc_type_name (reloc),
-				reloc->addend,
-				baddr+reloc->rva);
+				baddr+reloc->rva,
+				//reloc->addend,
+				reloc->offset);
 		}
 		r_cons_printf ("]");
 	} else
