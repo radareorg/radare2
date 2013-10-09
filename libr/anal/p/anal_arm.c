@@ -44,20 +44,20 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
 
 	/* CMP */
-	if (((ins & _(B1110,0,0,0)) == _(B0010,0,0,0) )
-                && (1 == (ins & _(1,B1000,0,0)) >> 11)) { // dp3
+	if (((ins & B(B1110,0,0,0)) == B(B0010,0,0,0) )
+                && (1 == (ins & B(1,B1000,0,0)) >> 11)) { // dp3
 		op->type = R_ANAL_OP_TYPE_CMP;
 		return op->length;
 	}
-        if ( (ins & _(B1111,B1100,0,0)) == _(B0100,0,0,0) ) {
-                op_code = (ins & _(0,B0011,B1100,0)) >> 6;
+        if ( (ins & B(B1111,B1100,0,0)) == B(B0100,0,0,0) ) {
+                op_code = (ins & B(0,B0011,B1100,0)) >> 6;
                 if (op_code == 8 || op_code == 10) { // dp5
 			op->type = R_ANAL_OP_TYPE_CMP;
 			return op->length;
 		}
 	}
-        if ( (ins & _(B1111,B1100,0,0)) == _(B0100,B0100,0,0) ) {
-                op_code = (ins & _(0,B0011,0,0)) >> 8; // dp8
+        if ( (ins & B(B1111,B1100,0,0)) == B(B0100,B0100,0,0) ) {
+                op_code = (ins & B(0,B0011,0,0)) >> 8; // dp8
 		if (op_code== 1) {
 			op->type = R_ANAL_OP_TYPE_CMP;
 			return op->length;
@@ -66,37 +66,37 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (ins == 0xbf) {
 		// TODO: add support for more NOP instructions
 		op->type = R_ANAL_OP_TYPE_NOP;
-        } else if (((op_code = ((ins & _(B1111,B1000,0,0)) >> 11)) >= 12 && op_code <= 17 )) {
+        } else if (((op_code = ((ins & B(B1111,B1000,0,0)) >> 11)) >= 12 && op_code <= 17 )) {
 		if (op_code%2)
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		else op->type = R_ANAL_OP_TYPE_STORE;
-        } else if ( (ins & _(B1111,0,0,0)) == _(B0101,0,0,0) ) {
-                op_code = (ins & _(0,B1110,0,0)) >> 9;
+        } else if ( (ins & B(B1111,0,0,0)) == B(B0101,0,0,0) ) {
+                op_code = (ins & B(0,B1110,0,0)) >> 9;
 		if (op_code%2)
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		else op->type = R_ANAL_OP_TYPE_STORE;
-	} else if ( (ins & _(B1111,0,0,0)) == _(B1101,0,0,0) ) {
+	} else if ( (ins & B(B1111,0,0,0)) == B(B1101,0,0,0) ) {
 		// BNE..
-		int delta = (ins & _(0,0,B1111,B1111));
+		int delta = (ins & B(0,0,B1111,B1111));
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
-        } else if ( (ins & _(B1110,B1000,0,0)) == _(B1110,0,0,0) ) {
+        } else if ( (ins & B(B1110,B1000,0,0)) == B(B1110,0,0,0) ) {
 		// B
-		int delta = (ins & _(0,0,B1111,B1111));
+		int delta = (ins & B(0,0,B1111,B1111));
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
 		op->eob = 1;
-        } else if ( (ins & _(B1111,B1111,0,0)) == _(B0100,B0111,0,0) ) {
+        } else if ( (ins & B(B1111,B1111,0,0)) == B(B0100,B0111,0,0) ) {
 		// BLX
 		op->type = R_ANAL_OP_TYPE_UJMP;
-		op->jump = addr+4+(ut32)((ins & _(0,0,B0111,B1000)) >> 3);
+		op->jump = addr+4+(ut32)((ins & B(0,0,B0111,B1000)) >> 3);
 		op->fail = addr+4;
-        } else if ( (ins & _(B1111,B1111,0,0)) == _(B1011,B1110,0,0) ) {
+        } else if ( (ins & B(B1111,B1111,0,0)) == B(B1011,B1110,0,0) ) {
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		op->val = (ut64)(ins>>8);
-        } else if ( (ins & _(B1111,B1111,0,0)) == _(B1101,B1111,0,0)) {
+        } else if ( (ins & B(B1111,B1111,0,0)) == B(B1101,B1111,0,0)) {
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = (ut64)(ins>>8);
 	}
@@ -331,7 +331,7 @@ if (
 }
 
 
-static ut64 getaddr (ut64 addr, ut8 *d) {
+static ut64 getaddr (ut64 addr, const ut8 *d) {
 	if (d[2]>>7) {
 		st32 n = (d[0] + (d[1]<<8) + (d[2]<<16) + (0xff<<24));
 		n = -n;
@@ -339,6 +339,7 @@ static ut64 getaddr (ut64 addr, ut8 *d) {
 	} 
 	return addr + (4*(d[0] + (d[1]<<8) + (d[2]<<16)));
 }
+
 static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) {
 	memset (op, 0, sizeof (RAnalOp));
 	if (d[3]==0) return -1; // invalid
