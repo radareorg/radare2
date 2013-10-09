@@ -805,7 +805,8 @@ toro:
 					hexlen = mi->size;
 				core->print->flags &= ~R_PRINT_FLAGS_HEADER;
 				r_cons_printf ("hex length=%lld delta=%d\n", mi->size , delta);
-				r_print_hexdump (core->print, at, buf+idx, hexlen, 16, 1);
+				r_print_hexdump (core->print, at,
+					buf+idx, hexlen-delta, 16, 1);
 			core->inc = 16;
 				core->print->flags |= R_PRINT_FLAGS_HEADER;
 				oplen = ret = (int)mi->size; //-delta;

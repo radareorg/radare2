@@ -5,7 +5,7 @@
 #include <r_flags.h>
 #include <r_core.h>
 
-#define ANALBS 1024
+#define ANALBS 4096
 
 R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 	int count = 0;
@@ -227,7 +227,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		goto error;
 	} else if (ret == R_ANAL_RET_NEW) { /* New bb */
 		// XXX: use static buffer size of 512 or so
-		if (!(buf = malloc (core->blocksize)))
+		if (!(buf = malloc (ANALBS))) //core->blocksize)))
 			goto error;
 		do {
 #if 1
@@ -236,10 +236,10 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 	//core->blocksize)) != core->blocksize)
 				goto error;
 #endif
-			r_core_read_at (core, at+bblen, buf, core->blocksize);
+			r_core_read_at (core, at+bblen, buf, ANALBS); //core->blocksize);
 			if (!memcmp (buf, "\xff\xff\xff\xff", 4))
 				goto error;
-			buflen = core->blocksize;
+			buflen = ANALBS; //core->blocksize;
 //eprintf ("Pre %llx %d\n", at, buflen);
 			bblen = r_anal_bb (core->anal, bb, at+bblen, buf, buflen, head); 
 //eprintf ("Pos %d\n", bblen);

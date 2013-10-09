@@ -4,7 +4,7 @@ enyo.kind ({
   kind: "Scroller",
   fit: true,
   /* touch:true, */
-  style: "width: 220px;height:100%;margin:0px;",
+  style: "width: 200px;height:100%;margin:0px;",
   accelerated: true,
   horizontal: "hidden",
   //strategyKind: "TranslateScrollStrategy",
@@ -22,9 +22,10 @@ enyo.kind ({
       {content: "Graph", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Graph" },
       {content: "Search", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Search" },
       {content: "Console", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Console" },
-      {content: "Logs", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Logs" },
+      {content: "Debugger", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Debugger" },
       {content: "Script", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Script" },
       {content: "Settings", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Settings" },
+      {content: "Logs", classes: "onyx-dark menu-button", ontap:"openPanel", name: "Logs" },
       {content: "About", classes: "onyx-dark menu-button" , ontap: "openPanel", name:"About"},
     ]}
     ]},

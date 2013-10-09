@@ -189,6 +189,7 @@ enyo.kind ({
       {kind:"Graph", name: "pageGraph"},
       {kind:"Search", name: "pageSearch"},
       {kind:"Console", name: "pageConsole"},
+      {kind:"Debugger", name: "pageDebugger"},
       {kind:"Logs", name: "pageLogs"},
       {kind:"Script", name: "pageScript"},
       {kind:"Settings", name:"pageSettings"},
@@ -223,10 +224,11 @@ enyo.kind ({
 	case "Graph": r = 3; break;
 	case "Search": r = 4; break;
 	case "Console": r = 5; break;
-	case "Logs": r = 6; break;
+	case "Debugger": r = 6; break;
 	case "Script": r = 7; break;
 	case "Settings": r = 8; break;
-	case "About": r = 9; break;
+	case "Logs": r = 9; break;
+	case "About": r = 10; break;
       }
       if (r==-1) {
         // alert ("Unknown page");

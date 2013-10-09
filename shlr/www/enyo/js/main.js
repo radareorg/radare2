@@ -19,11 +19,13 @@ enyo.kind ({
         { name: "Disassembler", active: true },
         { name: "Assembler" },
         { name: "Hexdump" },
+        { name: "Graph" },
         { name: "Search" },
         { name: "Console" },
-        { name: "Logs" },
+        { name: "Debugger" },
         { name: "Script" },
         { name: "Settings", separator: true },
+        { name: "Logs" },
         { name: "About" }
       ];
       this.$.lp.data = data;
