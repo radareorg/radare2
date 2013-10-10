@@ -486,7 +486,7 @@ static int cmd_write(void *data, const char *input) {
 			" waf file     assemble file and write bytes\n"
 			" wA r 0       alter/modify opcode at current seek (see wA?)\n"
 			" wb 010203    fill current block with cyclic hexpairs\n"
-			" wc[ir*?]     write cache undo/commit/reset/list\n"
+			" wc[ir*?]     write cache undo/commit/reset/list (io.cache)\n"
 			" wx 9090      write two intel nops\n"
 			" wv eip+34    write 32-64 bit value\n"
 			" wo? hex      write in block with operation. 'wo?' fmi\n"

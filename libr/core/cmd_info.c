@@ -92,6 +92,7 @@ static int cmd_info(void *data, const char *input) {
 	case 'h': RBININFO (R_CORE_BIN_ACC_FIELDS); break;
 	case 'l': RBININFO (R_CORE_BIN_ACC_LIBS); break;
 	case 's': RBININFO (R_CORE_BIN_ACC_SYMBOLS); break;
+	case 'R':
 	case 'r': RBININFO (R_CORE_BIN_ACC_RELOCS); break;
 	case 'd': RBININFO (R_CORE_BIN_ACC_DWARF); break;
 	case 'i': RBININFO (R_CORE_BIN_ACC_IMPORTS); break;
@@ -136,7 +137,7 @@ static int cmd_info(void *data, const char *input) {
 		" il        ; libraries\n"
 		" is        ; symbols\n"
 		" iS        ; sections\n"
-		" ir        ; relocs\n"
+		" ir/iR     ; relocs\n"
 		" iz        ; strings\n");
 		break;
 	case '*': mode = R_CORE_BIN_RADARE;

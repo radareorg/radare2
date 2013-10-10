@@ -115,7 +115,9 @@ R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
 			}
 			if (l>len)
 				l = len;
-			if (l<1) l = 1; // XXX: fail
+			if (l<1) {
+				l = 1; // XXX: fail
+			}
 			memcpy (buf+da, c->data+db, l);
 		}
 	}

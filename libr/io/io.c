@@ -243,7 +243,7 @@ eprintf ("RETRERET\n");
 		}
 #if USE_CACHE
 		if (io->cached) {
-			r_io_cache_read (io, addr+w, buf+w, len-w);
+			r_io_cache_read (io, addr+w, buf+w, len); //-w);
 		} else if (r_list_length (io->maps) >1) {
 			if (!io->debug && ms>0) {
 				//eprintf ("FAIL MS=%d l=%d d=%d\n", ms, l, d);
