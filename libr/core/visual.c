@@ -12,6 +12,12 @@ static const char *printfmt[] = {
 static int autoblocksize = 1;
 static int obs = 0;
 
+static void showcursor(RCore *core, int x) {
+eprintf ("CURSOR %d\n", core && core->vmode);
+	if (core && core->vmode)
+		r_cons_show_cursor (x);
+}
+
 // XXX: use core->print->cur_enabled instead of curset/cursor/ocursor
 static int curset = 0, cursor = 0, ocursor=-1;
 static int color = 1;
@@ -27,7 +33,7 @@ static int r_core_visual_hud(RCore *core) {
 	char *res = NULL;
 	char *p = 0;
 
-	r_cons_show_cursor (R_TRUE);
+	showcursor (core, R_TRUE);
 	if (homehud)
 		res = r_cons_hud_file (homehud);
 	if (!res) {
@@ -44,7 +50,7 @@ static int r_core_visual_hud(RCore *core) {
 		if (p) r_core_cmd0 (core, p+1);
 		free (res);
 	}
-	r_cons_show_cursor (R_FALSE);
+	showcursor (core, R_FALSE);
 	r_cons_flush ();
 	return (int)(size_t)p;
 }
@@ -72,9 +78,9 @@ static void r_core_visual_mark(RCore *core, ut8 ch) {
 
 static void prompt_read (const char *p, char *buf, int buflen) {
 	r_line_set_prompt (p);
-	r_cons_show_cursor (R_TRUE);
+	showcursor (NULL, R_TRUE);
 	r_cons_fgets (buf, buflen, 0, NULL);
-	r_cons_show_cursor (R_FALSE);
+	showcursor (NULL, R_FALSE);
 }
 
 R_API void r_core_visual_prompt (RCore *core) {
@@ -85,13 +91,13 @@ R_API void r_core_visual_prompt (RCore *core) {
 #else
 	r_line_set_prompt (":> ");
 #endif
-	r_cons_show_cursor (R_TRUE);
+	showcursor (core, R_TRUE);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	r_line_hist_add (buf);
 	r_core_cmd (core, buf, 0);
 	r_cons_any_key ();
 	r_cons_clear00 ();
-	r_cons_show_cursor (R_FALSE);
+	showcursor (core, R_FALSE);
 	if (curset) r_core_seek (core, oseek, 1);
 }
 
@@ -164,6 +170,7 @@ static void setcursor (RCore *core, int cur) {
 	curset = cur;
 	if (curset) flags |= R_PRINT_FLAGS_CURSOR;
 	else flags &= ~(R_PRINT_FLAGS_CURSOR);
+	core->print->cur_enabled = cur;
 	r_print_set_flags (core->print, flags);
 	core->print->col = curset? 1: 0;
 }
@@ -201,7 +208,7 @@ static void visual_search (RCore *core) {
 		if (len>1) {
 			ocursor = cursor+len-1;
 		} else ocursor = -1;
-		r_cons_show_cursor (R_TRUE);
+		showcursor (core, R_TRUE);
 		eprintf ("FOUND IN %d\n", cursor);
 		r_cons_any_key ();
 	} else {
@@ -253,7 +260,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			return R_TRUE;
 		}
 		r_cons_printf ("Enter assembler opcodes separated with ';':\n");
-		r_cons_show_cursor (R_TRUE);
+		showcursor (core, R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (R_FALSE);
 		strcpy (buf, "wa ");
@@ -264,7 +271,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_core_cmd (core, buf, R_TRUE);
 			if (curset) r_core_seek (core, core->offset - cursor, 1);
 		}
-		r_cons_show_cursor (R_FALSE);
+		showcursor (core, R_FALSE);
 		r_cons_set_raw (R_TRUE);
 		break;
 	case 'A':
@@ -321,7 +328,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			r_cons_any_key ();
 			return R_TRUE;
 		}
-		r_cons_show_cursor (R_TRUE);
+		showcursor (core, R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (0);
 		if (ch=='I') {
@@ -354,7 +361,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_core_cmd (core, buf, 1);
 		if (curset) r_core_seek (core, core->offset - cursor, 1);
 		r_cons_set_raw (1);
-		r_cons_show_cursor (R_FALSE);
+		showcursor (core, R_FALSE);
 		break;
 	case 'R':
 		r_core_cmd0 (core, "ecr");
@@ -722,7 +729,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case ';':
 		r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
-		r_cons_show_cursor (R_TRUE);
+		showcursor (core, R_TRUE);
 		r_cons_flush ();
 		r_cons_set_raw (R_FALSE);
 		strcpy (buf, "CC ");
@@ -747,7 +754,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (curset) r_core_seek (core, orig, 1);
 		}
 		r_cons_set_raw (R_TRUE);
-		r_cons_show_cursor (R_FALSE);
+		showcursor (core, R_FALSE);
 		break;
 	case 'b':
 		{
@@ -955,17 +962,19 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	int flags, ch;
 
 	obs = core->blocksize;
-	core->vmode = R_TRUE;
-	core->cons->event_data = core;
-	core->cons->event_resize = \
-		(RConsEvent)r_core_visual_refresh;
 	//r_cons_set_cup (R_TRUE);
 
+	core->vmode = R_FALSE;
 	while (*input) {
 		if (!r_core_visual_cmd (core, input[0]))
 			return 0;
 		input++;
 	}
+	core->vmode = R_TRUE;
+	core->cons->event_data = core;
+	core->cons->event_resize = \
+		(RConsEvent)r_core_visual_refresh;
+	r_cons_show_cursor (R_FALSE);
 
 	// disable tee in cons
 	teefile = r_cons_singleton ()->teefile;
@@ -1004,5 +1013,6 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	core->vmode = R_FALSE;
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
+	r_cons_show_cursor (R_TRUE);
 	return 0;
 }

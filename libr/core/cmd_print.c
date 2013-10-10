@@ -357,8 +357,8 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf ("%s.%s  ", buf, buf+5);
 			if (c==3) {
 				const ut8 *b = core->block + i-3;
-				#define B(x) (b[3-x]<<(8*x))
-				n = B(0) | B(1) | B(2) | B(3);
+				#define K(x) (b[3-x]<<(8*x))
+				n = K(0) | K(1) | K(2) | K(3);
 				r_cons_printf ("0x%08x  %c%c%c%c\n",
 					n, P(b[0]), P(b[1]), P(b[2]), P(b[3]));
 				c = -1;

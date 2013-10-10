@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 // pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
@@ -7,6 +7,7 @@ static int cmd_open(void *data, const char *input) {
 	RCoreFile *file;
 	RListIter *iter;
 	int num = -1;
+	int isn = 0;
 	ut64 addr;
 	char *ptr;
 
@@ -17,23 +18,26 @@ static int cmd_open(void *data, const char *input) {
 	case '+':
 		perms = R_IO_READ|R_IO_WRITE;
 		input++;
+	case 'n':
+		// like in r2 -n
+		isn = 1;
 	case ' ':
 		ptr = strchr (input+1, ' ');
 		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
 			*ptr = '\0';
 			addr = r_num_math (core->num, ptr+1);
 		} else {
-			num = atoi (input+1);
+			num = atoi (ptr? ptr: input+1);
 			addr = 0LL;
 		}
 		if (num<=0) {
-			file = r_core_file_open (core, input+1, perms, addr);
+			const char *file = ptr? ptr+1: input+1;
+			file = r_core_file_open (core, file, perms, addr);
 			if (file) {
 				// MUST CLEAN BEFORE LOADING
-				r_core_bin_load (core, input+1);
-				//eprintf ("Map '%s' in 0x%08"PFMT64x" with size 0x%"PFMT64x"\n",
-				//	input+1, addr, file->size);
-			} else eprintf ("Cannot open file '%s'\n", input+1);
+				if (!isn)
+					r_core_bin_load (core, file);
+			} else eprintf ("Cannot open file '%s'\n", file);
 		} else r_io_raise (core->io, num);
 		r_core_block_read (core, 0);
 		break;
@@ -152,6 +156,7 @@ static int cmd_open(void *data, const char *input) {
 		" o /bin/ls          open /bin/ls file in read-only\n"
 		" o+/bin/ls          open /bin/ls file in read-write mode\n"
 		" o /bin/ls 0x4000   map file at 0x4000\n"
+		" on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
 		" om[?]              create, list, remove IO maps\n");
 		break;
 	}
