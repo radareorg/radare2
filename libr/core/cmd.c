@@ -654,9 +654,7 @@ static int cmd_visual(void *data, const char *input) {
 		return R_FALSE;
 	if (!r_config_get_i (core->config, "scr.interactive"))
 		return R_FALSE;
-	r_cons_show_cursor (R_FALSE);
 	ret = r_core_visual ((RCore *)data, input);
-	r_cons_show_cursor (R_TRUE);
 	return ret;
 }
 
