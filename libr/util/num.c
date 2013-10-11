@@ -288,14 +288,29 @@ R_API double r_num_get_float(struct r_num_t *num, const char *str) {
 R_API int r_num_to_bits (char *out, ut64 num) {
 	int size = 64, i;
 
-	if (num&0xff000000) size = 32;
+	if (num&0xff00000000) size = 64;
+	else if (num&0xff000000) size = 32;
 	else if (num&0xff0000) size = 24;
 	else if (num&0xff00) size = 16;
 	else if (num&0xff) size = 8;
 	if (out) {
-		for (i=0; i<size; i++)
-			out[size-1-i] = (num>>i&1)? '1': '0';
-		out[size] = '\0'; //Maybe not nesesary?
+		int pos = 0;
+		int realsize = 0;
+		int hasbit = 0;
+		for (i=0; i<size; i++) {
+			char bit = ((num>>(size-i-1))&1)? '1': '0';
+			if (hasbit || bit=='1') {
+				out[pos++] = bit;//size-1-i] = bit; 
+			}
+			if (!hasbit && bit=='1') {
+				hasbit=1;
+				realsize = size-i;
+			}
+		}
+		if (realsize==0)
+		out[realsize++] = '0';
+		out[realsize] = '\0'; //Maybe not nesesary?
+
 	}
 	return size;
 }

@@ -791,10 +791,10 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	RListIter *iter;
 	int count = 0;
 
-	opts |= R_CORE_ANAL_GRAPHBODY;
 	if (r_list_empty (core->anal->fcns))
 		return R_FALSE;
 
+	opts |= R_CORE_ANAL_GRAPHBODY;
 	reflines = r_config_get_i (core->config, "asm.lines");
 	bytes = r_config_get_i (core->config, "asm.bytes");
 	dwarf = r_config_get_i (core->config, "asm.dwarf");
@@ -809,9 +809,10 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (is_json)
 		r_cons_printf ("[");
 	r_cons_flush ();
+#define inrange(x,f) ((x>=f->addr)&&(x<(f->addr+f->size)))
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN)
-				&& (addr == 0 || addr == fcni->addr)) {
+				&& (addr == 0 || inrange (addr, fcni))) {
 			if (is_json && count++>0) r_cons_printf (",");
 			r_core_anal_graph_nodes (core, fcni, opts);
 		}

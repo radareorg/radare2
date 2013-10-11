@@ -30,7 +30,7 @@ static int cmd_help(void *data, const char *input) {
 	case 'b':
 		n = r_num_get (core->num, input+1);
 		r_num_to_bits (out, n);
-		r_cons_printf ("%s\n", out);
+		r_cons_printf ("%sb\n", out);
 		break;
 	case 'B':
 		k = r_str_chop_ro (input+1);
