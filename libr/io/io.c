@@ -166,7 +166,8 @@ R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
 R_API int r_io_set_fdn(RIO *io, int fd) {
 	if (fd != -1 && io->fd != NULL && fd != io->fd->fd) {
 		RIODesc *desc = r_io_desc_get (io, fd);
-		if (!desc) return R_FALSE;
+		if (!desc)
+			return R_FALSE;
 		io->fd = desc;
 		io->plugin = desc->plugin;
 		return R_TRUE;
@@ -214,7 +215,9 @@ R_API int r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		l = (len > (last-addr+w))? (last-addr+w): len;
 		if (l<1) l = len;
 		{
+			paddr = r_io_map_select (io, addr); // XXX
 			paddr = w? r_io_section_vaddr_to_offset (io, addr+w): addr;
+			r_io_map_select (io, addr); // XXX
 			if (len>0 && l>len) l = len;
 			addr = paddr-w;
 			if (r_io_seek (io, paddr, R_IO_SEEK_SET)==UT64_MAX) {
@@ -234,7 +237,6 @@ eprintf ("RETRERET\n");
 		// XXX is this necessary?
 		ms = r_io_map_select (io, addr+w);
 		ret = r_io_read_internal (io, buf+w, l);
-//eprintf ("READ %d = %02x %02x %02x\n", ret, buf[w], buf[w+1], buf[w+2]);
 		if (ret<1) {
 			memset (buf+w, 0xff, l); // reading out of file
 			ret = 1;

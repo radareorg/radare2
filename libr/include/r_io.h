@@ -266,7 +266,7 @@ R_API int r_io_map_del_at(RIO *io, ut64 addr);
 R_API RIOMap *r_io_map_get(RIO *io, ut64 addr);
 R_API int r_io_map_del(RIO *io, int fd);
 R_API int r_io_map(RIO *io, const char *file, ut64 offset);
-R_API int r_io_map_select(RIO *io, ut64 off);
+R_API ut64 r_io_map_select(RIO *io, ut64 off);
 //R_API int r_io_map_read_rest(RIO *io, ut64 off, ut8 *buf, ut64 len);
 R_API RIOMap *r_io_map_resolve(RIO *io, int fd);
 

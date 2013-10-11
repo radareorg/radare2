@@ -49,7 +49,8 @@ R_API void r_io_desc_free(RIODesc *desc) {
 
 R_API int r_io_desc_add(RIO *io, RIODesc *desc) {
 	RIODesc *foo = r_io_desc_get (io, desc->fd);
-	if (foo) r_list_append (io->desc, desc);
+	if (!foo)
+		r_list_append (io->desc, desc);
 	return foo? 1: 0;
 }
 

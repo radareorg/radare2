@@ -30,7 +30,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	if (fd == NULL || fd->data == NULL)
 		return -1;
-	if (io->off>= RIOMALLOC_SZ (fd))
+	if (io->off>RIOMALLOC_SZ (fd))
 		return -1;
 	if (io->off+count >= RIOMALLOC_SZ (fd))
 		count = RIOMALLOC_SZ (fd) - io->off;

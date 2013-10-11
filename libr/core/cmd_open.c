@@ -22,7 +22,7 @@ static int cmd_open(void *data, const char *input) {
 		// like in r2 -n
 		isn = 1;
 	case ' ':
-		ptr = strchr (input+1, ' ');
+		ptr = strchr (input+(isn?2:1), ' ');
 		if (ptr && ptr[1]=='0' && ptr[2]=='x') { // hack to fix opening files with space in path
 			*ptr = '\0';
 			addr = r_num_math (core->num, ptr+1);
@@ -31,7 +31,7 @@ static int cmd_open(void *data, const char *input) {
 			addr = 0LL;
 		}
 		if (num<=0) {
-			const char *file = ptr? ptr+1: input+1;
+			const char *file = input+(isn?2:1);
 			file = r_core_file_open (core, file, perms, addr);
 			if (file) {
 				// MUST CLEAN BEFORE LOADING
