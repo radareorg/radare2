@@ -34,12 +34,17 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	int op_code;
 	ut16 *_ins = (ut16*)data;
 	ut16 ins = *_ins;
+	ut32 *_ins32 = (ut32*)data;
+	ut32 ins32 = *_ins32;
 
 	struct arm_insn *arminsn = arm_new();
 	arm_set_thumb(arminsn, R_TRUE);
 	arm_set_input_buffer(arminsn, data);
 	arm_set_pc(arminsn, addr);
 	op->length = arm_disasm_one_insn(arminsn);
+	op->jump = arminsn->jmp;
+	op->fail = arminsn->fail;
+	arm_free(arminsn);
 
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
 
@@ -81,7 +86,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
-        } else if ( (ins & B(B1110,B1000,0,0)) == B(B1110,0,0,0) ) {
+        } else if ( (ins & B(B1111,B1000,0,0)) == B(B1110,0,0,0) ) {
 		// B
 		int delta = (ins & B(0,0,B1111,B1111));
 		op->type = R_ANAL_OP_TYPE_JMP;
@@ -90,8 +95,21 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->eob = 1;
         } else if ( (ins & B(B1111,B1111,0,0)) == B(B0100,B0111,0,0) ) {
 		// BLX
-		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->jump = addr+4+(ut32)((ins & B(0,0,B0111,B1000)) >> 3);
+		op->fail = addr+4;
+        } else if ( (ins & B(B1111,B1000,0,0)) == B(B1111,0,0,0) ) {
+		// BL The long branch with link, it's in 2 instructions:
+		// prefix: 11110[offset]
+		// suffix: 11111[offset] (11101[offset] for blx)
+		ut16 nextins = (ins32 & 0xFFFF0000) >> 16;
+		ut32 high = (ins & B(0, B0111, B1111, B1111)) << 12;
+		if (ins & B(0, B0100, 0, 0)) {
+			high |= B(B1111, B1000, 0, 0) << 16;
+		}
+		int delta = high + ((nextins & B(0, B0111, B1111, B1111))*2);
+		op->jump = (int)(addr+4+(delta));
+		op->type = R_ANAL_OP_TYPE_CALL;
 		op->fail = addr+4;
         } else if ( (ins & B(B1111,B1111,0,0)) == B(B1011,B1110,0,0) ) {
 		op->type = R_ANAL_OP_TYPE_TRAP;
@@ -100,9 +118,6 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = (ut64)(ins>>8);
 	}
-	op->jump = arminsn->jmp;
-	op->fail = arminsn->fail;
-	arm_free(arminsn);
 	return op->length;
 }
 
