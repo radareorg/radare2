@@ -381,9 +381,14 @@ default:
 		break;
 	case UD_Icall:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		if (u.operand[0].type==UD_OP_REG) {
+		switch (u.operand[0].type) {
+		case UD_OP_REG:
 			op->jump = 0; // EAX, EBX, ... use anal->reg
-		} else {
+			break;
+		case UD_OP_IMM:
+		case UD_OP_MEM:
+		case UD_OP_PTR:
+		default:
 			op->jump = addr + oplen + (int)getval (&u.operand[0]);
 		}
 		op->fail = addr + oplen;

@@ -835,6 +835,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 				&& (addr == 0 || inrange (addr, fcni))) {
 			if (is_json && count++>0) r_cons_printf (",");
 			r_core_anal_graph_nodes (core, fcni, opts);
+			if (addr != 0) break;
 		}
 	}
 	if (!is_html && !is_json) r_cons_printf ("}\n");
