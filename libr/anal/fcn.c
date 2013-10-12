@@ -234,6 +234,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			break;
 		}
 		if (op.ptr && op.ptr != UT64_MAX) {
+			// swapped parameters wtf //
 			if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_ERROR;
@@ -296,8 +297,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	//int oplen, idx = 0;
-	if (fcn->addr == -1)
+	if (fcn->addr == UT64_MAX)
 		fcn->addr = addr;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;

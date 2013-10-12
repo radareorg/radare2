@@ -287,6 +287,11 @@ static int cmpaddr (void *_a, void *_b) {
 	return (a->addr > b->addr);
 }
 
+static int iscodesection(RCore *core, ut64 addr) {
+	RIOSection *s = r_io_section_getv (core->io, addr);
+	return (s && s->rwx & R_IO_EXEC)? 1: 0;
+}
+
 // XXX: This function takes sometimes forever
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	RListIter *iter, *iter2;
@@ -414,12 +419,27 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				}
 			}
 #endif
-			//r_list_append (core->anal->fcns, fcn);
-			r_list_foreach (fcn->refs, iter, refi)
-				if (refi->addr != UT64_MAX)
+			r_list_foreach (fcn->refs, iter, refi) {
+				if (refi->addr != UT64_MAX) {
+					switch (refi->type) {
+					case 'd':
+						// check if destination is in text. and analyze!
+						if (iscodesection (core, refi->at)) {
+							//refi->type = 'c';
+							r_core_anal_fcn (core, refi->at, refi->addr, 0, depth-1);
+						}
+						break;
+					case R_ANAL_REF_TYPE_CODE:
+					case R_ANAL_REF_TYPE_CALL:
+						r_core_anal_fcn (core, refi->addr, refi->at, refi->type, depth-1);
+						break;
+					default:
+						break;
+					}
 					// TODO: fix memleak here, fcn not freed even though it is
 					// added in core->anal->fcns which is freed in r_anal_free()
-					r_core_anal_fcn (core, refi->addr, refi->at, refi->type, depth-1);
+				}
+			}
 		}
 	} while (fcnlen != R_ANAL_RET_END);
 	free (buf);

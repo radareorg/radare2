@@ -713,7 +713,9 @@ R_API void r_str_sanitize(char *c) {
 
 R_API char *r_str_unscape(char *buf) {
 	char *ptr, *ret;
-	int len = strlen (buf);
+	int len;
+	if (!buf) return NULL;
+	len = strlen (buf);
 	ptr = ret = malloc (1+len*2);
 	if (ptr == NULL)
 		return NULL;

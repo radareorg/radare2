@@ -13,7 +13,6 @@ static int autoblocksize = 1;
 static int obs = 0;
 
 static void showcursor(RCore *core, int x) {
-eprintf ("CURSOR %d\n", core && core->vmode);
 	if (core && core->vmode)
 		r_cons_show_cursor (x);
 }
