@@ -678,6 +678,7 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 			r_cons_printf (
 			"Usage: ag[?f]\n"
 			" ag [addr]       ; Output graphviz code (bb at addr and children)\n"
+			" agj [addr]      ; Idem, but in JSON format\n"
 			" aga [addr]      ; Idem, but only addresses\n"
 			" agc [addr]      ; Output graphviz call graph of function\n"
 			" agd [fcn name]  ; Output graphviz code of diffed function\n"

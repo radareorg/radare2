@@ -19,11 +19,15 @@ typedef struct {
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (fd == NULL || fd->data == NULL)
 		return -1;
+	if (io->off > RIOMALLOC_SZ (fd))
+		return -1;
 	if (io->off+count > RIOMALLOC_SZ (fd))
 		count -= (io->off+count-(RIOMALLOC_SZ (fd)));
-	if (count>0)
+	if (count>0) {
 		memcpy (RIOMALLOC_BUF (fd)+io->off, buf, count);
-	return count;
+		return count;
+	}
+	return -1;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {

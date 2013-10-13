@@ -228,14 +228,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	// do we need hotkeys for data references? not only calls?
 	if (ch>='0'&& ch<='9') {
 		ut64 off = core->asmqjmps[ch-'0'];
-		int delta = R_ABS (off-core->offset);
-		r_io_sundo_push (core->io, core->offset);
-		if (curset && delta<100) {
-			cursor = delta;
-		} else {
-			r_core_seek (core, off, 1);
+		if (off != UT64_MAX) {
+			int delta = R_ABS (off-core->offset);
+			r_io_sundo_push (core->io, core->offset);
+			if (curset && delta<100) {
+				cursor = delta;
+			} else {
+				r_core_seek (core, off, 1);
+			}
+			r_core_block_read (core, 1);
 		}
-		r_core_block_read (core, 1);
 	} else
 	switch (ch) {
 	case 9: // tab

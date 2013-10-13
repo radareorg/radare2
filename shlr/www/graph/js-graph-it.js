@@ -343,24 +343,25 @@ function Canvas(htmlElement) {
 		return output;
 	}
 	
-	this.alignBlocks = function()
-	{
+	this.alignBlocks = function() {
 		var i;
+		var roof = 0;
+		// TODO: implement proper layout
 		for (i = 0; i < this.blocks.length ; i++) {
 			var b = this.blocks[i]; //.findBlock(blockId);
 			b.onMove();
+			b.htmlElement.style.top =roof;
+			roof += b.htmlElement.style.height+20;
 			// TODO: alert ("align "+b);
 		}
-		for(i = 0; i < this.connectors.length; i++) {
+		for (i = 0; i < this.connectors.length; i++) {
 			this.connectors[i].repaint();
 			console.log( this.connectors[i]);
 		}
 	}
 
-	this.fitBlocks = function()
-	{
-		var i;
-		for (i = 0; i < this.blocks.length ; i++) {
+	this.fitBlocks = function() {
+		for (var i = 0; i < this.blocks.length ; i++) {
 			var b = this.blocks[i]; //.findBlock(blockId);
 			this.blocks[i].fit ();
 		}
@@ -368,20 +369,14 @@ function Canvas(htmlElement) {
 	/*
 	 * This function searches for a nested block with a given id
 	 */
-	this.findBlock = function(blockId)
-	{
+	this.findBlock = function(blockId) {
 		var result;
-		var i;
-		for(i = 0; i < this.blocks.length && !result; i++)
-		{
+		for(var i = 0; i < this.blocks.length && !result; i++)
 			result = this.blocks[i].findBlock(blockId);
-		}
-		
 		return result;
 	}
 	
-	this.toString = function()
-	{
+	this.toString = function() {
 		return 'canvas: ' + this.id;		
 	}
 }
@@ -406,65 +401,50 @@ function Block(htmlElement, canvas)
 	this.currentTop = calculateOffsetTop(this.htmlElement) - this.canvas.offsetTop;
 	this.currentLeft = calculateOffsetLeft(this.htmlElement) - this.canvas.offsetLeft;
 	
-	this.visit = function(element)
-	{
-		if(element == this.htmlElement)
-		{
+	this.visit = function(element) {
+		if (element == this.htmlElement) {
 			// exclude itself
 			return true;
 		}
-
-		if(isBlock(element))
-		{
+		if (isBlock(element)) {
 			var innerBlock = new Block(element, this.canvas);
 			innerBlock.initBlock();
 			this.blocks.push(innerBlock);
 			this.moveListeners.push(innerBlock);
 			return false;
 		}
-		else
-			return true;
+		return true;
 	}
 	
-	this.initBlock = function()
-	{
+	this.initBlock = function() {
 		// inspect block children to identify nested blocks
-		
 		new DocumentScanner(this, true).scan(this.htmlElement);
 	}
 	
-	this.top = function()
-	{
+	this.top = function() {
 		return this.currentTop;
 	}
 	
-	this.left = function()
-	{
+	this.left = function() {
 		return this.currentLeft;
 	}
 	
-	this.width = function()
-	{
+	this.width = function() {
 		return this.htmlElement.offsetWidth;		
 	}
 	
-	this.height = function()
-	{
+	this.height = function() {
 		return this.htmlElement.offsetHeight;
 	}
 	
 	/*
 	 * methods
 	 */	
-	this.print = function()
-	{
+	this.print = function() {
 		var output = 'block: ' + this.id;
-		if(this.blocks.length > 0)
-		{
+		if (this.blocks.length > 0) {
 			output += '<ul>';
-			var i;
-			for(i = 0; i < this.blocks.length; i++)
-			{
+			for(var i = 0; i < this.blocks.length; i++) {
 				output += '<li>';
 				output += this.blocks[i].print();
 				output += '</li>';
@@ -477,23 +457,16 @@ function Block(htmlElement, canvas)
 	/*
 	 * This function searches for a nested block (or the block itself) with a given id
 	 */
-	this.findBlock = function(blockId)
-	{
+	this.findBlock = function(blockId) {
 		if(this.id == blockId)
 			return this;
-			
 		var result;
-		var i;
-		for(i = 0; i < this.blocks.length && !result; i++)
-		{
+		for(var i = 0; i < this.blocks.length && !result; i++)
 			result = this.blocks[i].findBlock(blockId);
-		}
-		
 		return result;
 	}
 
-	this.fit = function()
-	{
+	this.fit = function() {
 		function getlines(txt) {
 			return (12*txt.split ("\n").length);
 		}
@@ -512,27 +485,21 @@ function Block(htmlElement, canvas)
 		this.htmlElement.style.height = getlines (text);
 	}
 	
-	this.move = function(left, top)
-	{
+	this.move = function(left, top) {
 		this.htmlElement.style.left = left;
 		this.htmlElement.style.top = top;
 		this.onMove();
 	}
 		
-	this.onMove = function()
-	{
-		var i;
+	this.onMove = function() {
 		this.currentLeft = calculateOffsetLeft(this.htmlElement) - this.canvas.offsetLeft;
 		this.currentTop = calculateOffsetTop(this.htmlElement) - this.canvas.offsetTop;
 		// notify listeners
-		for(i = 0; i < this.moveListeners.length; i++)
-		{
+		for(var i = 0; i < this.moveListeners.length; i++)
 			this.moveListeners[i].onMove();
-		}
 	}
 	
-	this.toString = function()
-	{
+	this.toString = function() {
 		return 'block: ' + this.id;
 	}
 }
@@ -869,14 +836,12 @@ function Connector(htmlElement, canvas)
 	 */
 	this.repaint = function() {
 		// check strategies fitness and choose the best fitting one
-		var i;
 		var maxFitness = 0;
 		var fitness;
 		var s;
 		
 		// check if any strategy is possible with preferredOrientation
-		for(i = 0; i < strategies.length; i++)
-		{
+		for(var i = 0; i < strategies.length; i++) {
 			this.clearSegments();
 			
 			fitness = 0;
@@ -1345,8 +1310,7 @@ function HorizontalSStrategy(connector) {
 		return Math.abs(2 * destinationLeft + destinationWidth - (2 * sourceLeft + sourceWidth)) - (sourceWidth + destinationWidth) > 4 * this.connector.minSegmentLength;
 	}
 	
-	this.paint = function()
-	{
+	this.paint = function() {
 		this.startSegment = connector.createSegment();
 		this.middleSegment = connector.createSegment();
 		this.endSegment = connector.createSegment();
@@ -1641,13 +1605,11 @@ function HorizontalCStrategy(connector, startOrientation)
 	
 	this.strategyName = "horizontal_c";
 	
-	this.getMiddleSegment = function()
-	{
+	this.getMiddleSegment = function() {
 		return this.middleSegment;
 	}	
 	
-	this.isApplicable = function()
-	{
+	this.isApplicable = function() {
 		return true;
 	}
 	
@@ -1736,6 +1698,7 @@ function VerticalCStrategy(connector, startOrientation)
 	}
 }
 
+//strategies[0] = function(connector) {return new VerticalCStrategy(connector)};
 strategies[0] = function(connector) {return new VerticalSStrategy(connector)};
 strategies[1] = function(connector) {return new HorizontalSStrategy(connector)};
 /*
