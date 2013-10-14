@@ -86,6 +86,8 @@ R_API char *r_cons_pal_parse(const char *str) {
 	char *p = strchr (s+1, ' ');
 	out[0] = 0;
 	if (p) *p++ = 0;
+	if (!strcmp (str, "random"))
+		return r_cons_color_random (0);
 	if (!strncmp (s, "rgb:", 4)) {
 		r = rgbnum (s[4]);
 		g = rgbnum (s[5]);

@@ -31,6 +31,39 @@ static inline void r_cons_write (const char *buf, int len) {
 #endif
 }
 
+R_API char *r_cons_color_random(int bg) {
+	int r, g, b;
+	if (I.truecolor>0) {
+		char out[32];
+		r = r_num_rand (0xf);
+		g = r_num_rand (0xf);
+		b = r_num_rand (0xf);
+		r_cons_rgb_str (out, r, g, b, bg);
+		return strdup (out);
+	}
+	// random ansi
+	r = r_num_rand (16);
+	switch (r) {
+	case 0: return strdup (Color_RED);
+	case 1: return strdup (Color_BRED);
+	case 2: return strdup (Color_WHITE);
+	case 3: return strdup (Color_BWHITE);
+	case 4: return strdup (Color_GREEN);
+	case 5: return strdup (Color_BGREEN);
+	case 6: return strdup (Color_MAGENTA);
+	case 7: return strdup (Color_BMAGENTA);
+	case 8: return strdup (Color_YELLOW);
+	case 9: return strdup (Color_BYELLOW);
+	case 10: return strdup (Color_CYAN);
+	case 11: return strdup (Color_BCYAN);
+	case 12: return strdup (Color_BLUE);
+	case 13: return strdup (Color_BBLUE);
+	case 14: return strdup (Color_GRAY);
+	case 15: return strdup (Color_BGRAY);
+	}
+	return Color_RESET;
+}
+
 R_API void r_cons_color (int fg, int r, int g, int b) {
 	int k;
 	r = R_DIM (r, 0, 255);

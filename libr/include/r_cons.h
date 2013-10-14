@@ -136,7 +136,7 @@ typedef struct r_cons_t {
 	int blankline;
 	int widthfix;
 	int heightfix;
-	int truecolor; // 1 = rgb 256), 2 = truecolor (16M)
+	int truecolor; // 0 = ansi, 1 = rgb 256), 2 = truecolor (16M)
 	RConsPalette pal;
 	struct r_line_t *line;
 	const char **vline;
@@ -329,6 +329,7 @@ R_API void r_cons_rgb_fgbg (ut8 r, ut8 g, ut8 b, ut8 R, ut8 G, ut8 B);
 R_API void r_cons_rgb_init (void);
 R_API char *r_cons_rgb_str (char *outstr, ut8 r, ut8 g, ut8 b, int is_bg);
 R_API void r_cons_color (int fg, int r, int g, int b);
+R_API char *r_cons_color_random(int bg);
 R_API void r_cons_invert(int set, int color);
 R_API int r_cons_yesno(int def, const char *fmt, ...);
 R_API void r_cons_set_cup(int enable);
