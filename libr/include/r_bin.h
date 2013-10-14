@@ -90,7 +90,7 @@ typedef struct r_bin_info_t {
 	int has_pi; // pic/pie
 	int big_endian;
 	ut64 dbg_info;
-	RBinHash sum[2];
+	RBinHash sum[3];
 } RBinInfo;
 
 typedef struct r_bin_object_t {

@@ -214,7 +214,8 @@ static int bin_info (RCore *r, int mode) {
 				RBinHash *h = &info->sum[i];
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (R_TRUE, hash);
-				len = r_hash_calculate (rh, hash, (const ut8*)r->bin->cur.buf+h->from, h->to);
+				len = r_hash_calculate (rh, hash, (const ut8*)
+					r->bin->cur.buf->buf+h->from, h->to);
 				//ut8 *p = r->bin->cur.buf+h->addr;
 				if (len<1) eprintf ("Invaild wtf\n");
 				r_hash_free (rh);

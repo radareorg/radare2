@@ -117,6 +117,10 @@ static RBinInfo *info(RBinArch *arch) {
 	h->addr = 0x8;
 	h->from = 12;
 	h->to = arch->buf->length-h->from;
+
+	h = &ret->sum[2];
+	h->type = 0;
+
 	memcpy (h->buf, arch->buf->buf+8, 4);
 	{
 		ut32 *fc = (ut32 *)(arch->buf->buf + 8);
