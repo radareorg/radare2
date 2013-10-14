@@ -276,8 +276,10 @@ int main(int argc, char **argv) {
 	if (ofileauto) {
 		int fd;
 		if (file) {
-			char *o, *p = strdup (file);
+			char *o, *q, *p = strdup (file);
 			if ( (o = strchr (p, '.')) ) {
+				while ( (q = strchr (o+1, '.')) )
+					o = q;
 				*o = 0;
 				fd = openfile (p, ISEXEC);
 			} else fd = openfile ("a.out", ISEXEC);
