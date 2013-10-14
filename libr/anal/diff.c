@@ -105,12 +105,12 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 
 	fcn->diff->type = fcn2->diff->type = R_ANAL_DIFF_TYPE_MATCH;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->diff->type != R_ANAL_DIFF_TYPE_NULL)
+		if (bb->diff && bb->diff->type != R_ANAL_DIFF_TYPE_NULL)
 			continue;
 		ot = 0;
 		mbb = mbb2 = NULL;
 		r_list_foreach (fcn2->bbs, iter2, bb2) {
-			if (bb2->diff->type == R_ANAL_DIFF_TYPE_NULL) {
+			if (bb2->diff && bb2->diff->type == R_ANAL_DIFF_TYPE_NULL) {
 				r_diff_buffers_distance (NULL, bb->fingerprint, bb->size,
 						bb2->fingerprint, bb2->size, NULL, &t);
 #if 0

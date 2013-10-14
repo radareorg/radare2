@@ -458,7 +458,7 @@ static int cmd_help(void *data, const char *input) {
 		"Prefix with number to repeat command N times (f.ex: 3x)\n"
 		" $alias=value          alias commands (simple macros)\n"
 		" (macro arg0 arg1)     manage scripting macros\n"
-		" .[ -|file|!sh|cmd]    interpret cparse, r2 or rlang file\n"
+		" .[ -|file|!sh|cmd]    interpret cparse, r2 or rlang file (see -?)\n"
 		" = [cmd]               run this command via rap://\n"
 		" /[xmp/]               search for bytes, regexps, patterns, ..\n"
 		" ![cmd]                run given command as in system(3)\n"
