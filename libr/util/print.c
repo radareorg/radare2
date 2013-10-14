@@ -256,7 +256,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		ws = 4;
 		len /= ws;
 		p->printf ("#define _BUFFER_SIZE %d\n", len);
-		p->printf ("unsigned char buffer[%d] = {", len);
+		p->printf ("unsigned int buffer[%d] = {", len);
 		p->interrupt = 0;
 		for (i=0; !p->interrupt && i<len; i++) {
 			if (!(i%w)) p->printf ("\n  ");
@@ -274,7 +274,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		ws = 8;
 		len /= ws;
 		p->printf ("#define _BUFFER_SIZE %d\n", len);
-		p->printf ("unsigned char buffer[%d] = {", len);
+		p->printf ("unsigned long long buffer[%d] = {", len);
 		p->interrupt = 0;
 		for (i=0; !p->interrupt && i<len; i++) {
 			if (!(i%w)) p->printf ("\n  ");

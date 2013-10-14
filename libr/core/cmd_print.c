@@ -618,9 +618,14 @@ static int cmd_print(void *data, const char *input) {
 			r_cons_printf ("Usage: ps[zpw] [N]\n"
 				" ps  = print string\n"
 				" psb = print strings in current block\n"
+				" psx = show string with scaped chars\n"
 				" psz = print zero terminated string\n"
 				" psp = print pascal string\n"
 				" psw = print wide string\n");
+			break;
+		case 'x':
+			r_print_string (core->print, core->offset, core->block, len,
+				0);
 			break;
 		case 'b':
 			{
@@ -706,8 +711,8 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'u':
 		r_print_string (core->print, core->offset, core->block, len,
-			R_PRINT_STRING_ZEROEND| R_PRINT_STRING_URLENCODE|
-			(input[1]=='w')?R_PRINT_STRING_WIDE:0);
+			R_PRINT_STRING_URLENCODE |
+			((input[1]=='w')?R_PRINT_STRING_WIDE:0));
 		break;
 	case 'c':
 		r_print_code (core->print, core->offset, core->block, len, input[1]);
