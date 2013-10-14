@@ -524,7 +524,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			if (arg && size==0) {
 				*arg='\0';
 				size = atoi (arg);
-			} else size = core->dbg->bits;
+			} else size = bits;
 			type = r_reg_type_by_name (str+1);
 		}
 		if (type != R_REG_TYPE_LAST) {

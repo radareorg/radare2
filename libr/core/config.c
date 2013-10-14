@@ -811,6 +811,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_set_cb (cfg, "scr.tee", "", config_teefile_callback);
 	r_config_desc (cfg, "scr.tee", "Pipe console output to file if not empty");
 	r_config_set_cb (cfg, "scr.prompt", "true", &config_scrprompt_callback);
+	r_config_desc (cfg, "scr.prompt", "Show/hide user prompt (used by r2 -q)");
 	r_config_set (cfg, "scr.pipecolor", "false");
 	r_config_desc (cfg, "scr.pipecolor", "enable colors when using pipes if true");
 #if __WINDOWS__

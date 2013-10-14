@@ -1,7 +1,8 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
 R_API void r_core_print_examine(RCore *core, const char *str) {
-	char cmd[128];
+	char cmd[128], *p;
+	ut64 addr = core->offset;
 	int size = (core->anal->bits/4);
 	int count = atoi (str);
 	if (count<1) count = 1;
@@ -16,31 +17,32 @@ Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 	case 'w': size = 4; break;
 	case 'g': size = 8; break;
 	}
-#if 0
-#endif
+	if ((p=strchr (str, ' ')))
+		addr = r_num_math (core->num, p+1);
 	switch (*str) {
 	case '?':
 		eprintf (
 "Format is x/[num][format][size]\n"
-"Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).\n"
+"Num specifies the number of format elements to display\n"
 "Format letters are o(octal), x(hex), d(decimal), u(unsigned decimal),\n"
 "  t(binary), f(float), a(address), i(instruction), c(char) and s(string),\n"
 "  T(OSType), A(floating point values in hex).\n"
+"Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).\n"
 );
 		break;
 	case 's':
-		snprintf (cmd, sizeof (cmd), "psb %d", count*size);
+		snprintf (cmd, sizeof (cmd), "psb %d @ 0x%"PFMT64x, count*size, addr);
 		r_core_cmd0 (core, cmd);
 		break;
 	case 'o':
-		snprintf (cmd, sizeof (cmd), "pxo %d", count*size);
+		snprintf (cmd, sizeof (cmd), "pxo %d @ 0x%"PFMT64x, count*size, addr);
 		r_core_cmd0 (core, cmd);
 		break;
 	case 'f':
 	case 'A': // XXX (float in hex wtf)
 		{
 			int i, n = 3;
-			snprintf (cmd, sizeof (cmd), "pxo %d", count*size);
+			snprintf (cmd, sizeof (cmd), "pxo %d @ 0x%"PFMT64x, count*size, addr);
 
 			strcpy (cmd, "pf ");
 			for (i=0;i<count && n<sizeof (cmd);i++) {
@@ -52,11 +54,11 @@ Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 		break;
 	case 'a':
 	case 'd':
-		snprintf (cmd, sizeof (cmd), "pxw %d", count*size);
+		snprintf (cmd, sizeof (cmd), "pxw %d @ 0x%"PFMT64x, count*size, addr);
 		r_core_cmd0 (core, cmd);
 		break;
 	case 'i':
-		snprintf (cmd, sizeof (cmd), "pid %d", count);
+		snprintf (cmd, sizeof (cmd), "pid %d @ 0x%"PFMT64x, count, addr);
 		r_core_cmd0 (core, cmd);
 		break;
 	}
