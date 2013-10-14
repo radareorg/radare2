@@ -12,6 +12,7 @@ rasm2 \- radare2 assembler and disassembler tool
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
 .Op Fl s Ar syntax
+.Op Fl i Ar int
 .Op Fl l Ar int
 .Op ARG
 .Sh DESCRIPTION
@@ -42,6 +43,8 @@ Specify input and/or output filters (att2intel, x86.pseudo, ...)
 Show usage help message.
 .It Fl l Ar int
 Input/Output length
+.It Fl i Ar int
+Ignore/skip N bytes from the begining of the input buffer
 .It Fl L
 List supported asm plugins
 .It Fl o Ar offset

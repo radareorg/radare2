@@ -17,7 +17,7 @@ static void r_asm_list(RAsm *a) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h) {
-		const char *feat="---";
+		const char *feat = "---";
 		if (h->assemble && h->disassemble)  feat = "ad";
 		if (h->assemble && !h->disassemble) feat = "a_";
 		if (!h->assemble && h->disassemble) feat = "_d";
@@ -27,7 +27,7 @@ static void r_asm_list(RAsm *a) {
 
 static int rasm_show_help(int v) {
 	printf ("Usage: rasm2 [-CdDehLBvw] [-a arch] [-b bits] [-o addr] [-s syntax]\n"
-		"             [-f file] [-F fil:ter] [-l len] 'code'|hexpairs|-\n");
+		"             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	if (v)
 	printf (" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
 		" -b [bits]    Set cpu register size (8, 16, 32, 64) (RASM2_BITS)\n"
@@ -38,6 +38,7 @@ static int rasm_show_help(int v) {
 		" -f [file]    Read data from file\n"
 		" -F [in:out]  Specify input and/or output filters (att2intel, x86.pseudo, ...)\n"
 		" -h           Show this help\n"
+		" -i [len]     ignore/skip N bytes of the input buffer\n"
 		" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 		" -l [len]     Input/Output length\n"
 		" -L           List supported asm plugins\n"
@@ -163,7 +164,7 @@ int main(int argc, char *argv[]) {
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL;
 	ut64 offset = 0;
 	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
-	ut64 len = 0, idx = 0;
+	ut64 len = 0, idx = 0, skip = 0;
 
 	a = r_asm_new ();
 	l = r_lib_new ("radare_plugin");
@@ -176,7 +177,7 @@ int main(int argc, char *argv[]) {
 
 	r_asm_use (a, R_SYS_ARCH);
 	r_asm_set_big_endian (a, R_FALSE);
-	while ((c = getopt (argc, argv, "k:DCc:eva:b:s:do:Bl:hLf:F:w")) != -1) {
+	while ((c = getopt (argc, argv, "i:k:DCc:eva:b:s:do:Bl:hLf:F:w")) != -1) {
 		switch (c) {
 		case 'k':
 			kernel = optarg;
@@ -215,6 +216,9 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'B':
 			bin = 1;
+			break;
+		case 'i':
+			skip = r_num_math (NULL, optarg);
 			break;
 		case 'l':
 			len = r_num_math (NULL, optarg);
@@ -288,9 +292,16 @@ int main(int argc, char *argv[]) {
 			if (ret>=0) // only for text
 				buf[ret] = '\0';
 			len = ret;
-			if (dis) ret = rasm_disasm (buf, offset, len,
+			if (dis) {
+				if (skip && length>skip) {
+					if (bin) {
+						memmove (buf, buf+skip, length-skip);
+						length -= skip;
+					}
+				}
+				ret = rasm_disasm (buf, offset, len,
 					a->bits, ascii, bin, dis-1);
-			else ret = rasm_asm (buf, offset, len, a->bits, bin);
+			} else ret = rasm_asm (buf, offset, len, a->bits, bin);
 		} else {
 			content = r_file_slurp (file, &length);
 			if (content) {
@@ -313,6 +324,12 @@ int main(int argc, char *argv[]) {
 					length = len;
 				if ((!bin || !dis) && feof (stdin))
 					break;
+				if (skip && length>skip) {
+					if (bin) {
+						memmove (buf, buf+skip, length-skip);
+						length -= skip;
+					}
+				}
 				if (!bin || !dis) buf[strlen (buf)-1]='\0';
 				if (dis) ret = rasm_disasm (buf, offset,
 					length, a->bits, ascii, bin, dis-1);
@@ -323,9 +340,19 @@ int main(int argc, char *argv[]) {
 			} while (!len || idx<length);
 			return idx;
 		}
-		if (dis) ret = rasm_disasm (argv[optind], offset, len,
-			a->bits, ascii, bin, dis-1);
-		else ret = rasm_asm (argv[optind], offset, len, a->bits, bin);
+		if (dis) {
+			char *buf = argv[optind];
+			len = strlen (buf);
+			if (skip && len>skip) {
+				skip *= 2;
+				eprintf ("SKIP (%s) (%lld)\n", buf, skip);
+				memmove (buf, buf+skip, len-skip);
+				len -= skip;
+				buf[len] = 0;
+			}
+			ret = rasm_disasm (buf, offset, len,
+				a->bits, ascii, bin, dis-1);
+		} else ret = rasm_asm (argv[optind], offset, len, a->bits, bin);
 		if (!ret) eprintf ("invalid\n");
 		return !ret;
 	}

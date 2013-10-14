@@ -70,7 +70,10 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 					continue;
 			}
 			value = r_reg_get_value (dbg->reg, item);
+		//r_reg_arena_swap (dbg->reg, R_FALSE);
+			//diff = r_reg_get_value (dbg->reg, item);
 			diff = (ut64)r_reg_cmp (dbg->reg, item);
+		//r_reg_arena_swap (dbg->reg, R_TRUE);
 			switch (rad) {
 			case 'j':
 				dbg->printf ("%s\"%s\":%"PFMT64d,
