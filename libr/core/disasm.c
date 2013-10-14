@@ -1099,19 +1099,31 @@ toro:
 		}
 		if (!r_anal_cc_update (core->anal, &cc, &analop)) {
 			if (show_functions) {
+				char tmp[128];
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
 				if (ccstr) {
 					RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
+					if (flag && ccstr) {
+						int delta = 0;
+						if (f) { delta = cc.jump-flag->offset; }
+						if (!strncmp (flag->name, ccstr, strlen (flag->name))) {
+							if (ccstr[strlen(flag->name)] == '(') {
+								tmp[0] = 0;
+							} else {
+								if (delta)
+									snprintf (tmp, sizeof (tmp), " ; %s+%d", flag->name, delta);
+								else snprintf (tmp, sizeof (tmp), " ; %s", flag->name);
+							}
+						} else {
+							if (delta)
+								snprintf (tmp, sizeof (tmp), " ; %s+%d", flag->name, delta);
+							else snprintf (tmp, sizeof (tmp), " ; %s", flag->name);
+						}
+					}
 					if (show_color)
-						r_cons_printf ("\n%s%s"Color_RESET"%s%s"Color_RESET"   %s; %s (%s+%d)"Color_RESET,
-							color_fline, pre, color_flow, refline, ccstr,
-							(flag&&flag->name)? flag->name: "",
-							(flag&&flag->name)? flag->name: "",
-							(f&&flag)? cc.jump-flag->offset: 0);
-					else r_cons_printf ("\n%s%s   ; %s (%s+%d)",
-						pre, refline, ccstr,
-						(flag&&flag->name)?flag->name:"",
-						flag? cc.jump-flag->offset: 0);
+						r_cons_printf ("\n%s%s"Color_RESET"%s%s"Color_RESET"   %s%s"Color_RESET,
+							color_fline, pre, color_flow, refline, ccstr, tmp);
+					else r_cons_printf ("\n%s%s   %s%s", pre, refline, ccstr, tmp);
 					free (ccstr);
 				}
 			}

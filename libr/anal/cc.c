@@ -89,7 +89,7 @@ R_API char *r_anal_cc_to_string (RAnal *anal, RAnalCC* cc) {
 			snprintf (str, sizeof (str), "0x%08"PFMT64x"(", cc->jump);
 		else strncpy (str, "unk(", sizeof (str)-1);
 		str_len = strlen (str);
-		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?cc->nargs:fcn->nargs);
+		if (fcn) cc->nargs = (fcn->nargs>cc->nargs?fcn->nargs:cc->nargs);
 		if (cc->nargs>8) {
 			//eprintf ("too many arguments for stdcall. chop to 8\n");
 			cc->nargs = 8;
