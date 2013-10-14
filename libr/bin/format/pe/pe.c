@@ -184,6 +184,10 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 	if (import_dir_offset == 0 && delay_import_dir_offset == 0)
 		return R_FALSE;
 	if (import_dir_offset != 0) {
+		if (import_dir_size>0xffff) {
+			eprintf ("Warning: Invalid import directory size: 0x%x\n", import_dir_size);
+			import_dir_size = 0xffff;
+		}
 		if (!(bin->import_directory = malloc(import_dir_size))) {
 			perror("malloc (import directory)");
 			return R_FALSE;
