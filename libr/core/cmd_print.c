@@ -1,5 +1,67 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
+R_API void r_core_print_examine(RCore *core, const char *str) {
+	char cmd[128];
+	int size = (core->anal->bits/4);
+	int count = atoi (str);
+	if (count<1) count = 1;
+	// skipsapces
+	while (*str>='0' && *str<='9') str++;
+#if 0
+Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
+#endif
+	switch (str[1]) {
+	case 'b': size = 1; break;
+	case 'h': size = 2; break;
+	case 'w': size = 4; break;
+	case 'g': size = 8; break;
+	}
+#if 0
+#endif
+	switch (*str) {
+	case '?':
+		eprintf (
+"Format is x/[num][format][size]\n"
+"Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).\n"
+"Format letters are o(octal), x(hex), d(decimal), u(unsigned decimal),\n"
+"  t(binary), f(float), a(address), i(instruction), c(char) and s(string),\n"
+"  T(OSType), A(floating point values in hex).\n"
+);
+		break;
+	case 's':
+		snprintf (cmd, sizeof (cmd), "psb %d", count*size);
+		r_core_cmd0 (core, cmd);
+		break;
+	case 'o':
+		snprintf (cmd, sizeof (cmd), "pxo %d", count*size);
+		r_core_cmd0 (core, cmd);
+		break;
+	case 'f':
+	case 'A': // XXX (float in hex wtf)
+		{
+			int i, n = 3;
+			snprintf (cmd, sizeof (cmd), "pxo %d", count*size);
+
+			strcpy (cmd, "pf ");
+			for (i=0;i<count && n<sizeof (cmd);i++) {
+				cmd[n++] = 'f';
+			}
+			cmd[n] = 0;
+			r_core_cmd0 (core, cmd);
+		}
+		break;
+	case 'a':
+	case 'd':
+		snprintf (cmd, sizeof (cmd), "pxw %d", count*size);
+		r_core_cmd0 (core, cmd);
+		break;
+	case 'i':
+		snprintf (cmd, sizeof (cmd), "pid %d", count);
+		r_core_cmd0 (core, cmd);
+		break;
+	}
+}
+
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size) {
 	RCore *core = (RCore *) user;
 	int j, ret = 0;
@@ -553,9 +615,37 @@ static int cmd_print(void *data, const char *input) {
 		case '?':
 			r_cons_printf ("Usage: ps[zpw] [N]\n"
 				" ps  = print string\n"
+				" psb = print strings in current block\n"
 				" psz = print zero terminated string\n"
 				" psp = print pascal string\n"
 				" psw = print wide string\n");
+			break;
+		case 'b':
+			{
+				char *s = malloc (core->blocksize+1);
+				int i, j, hasnl = 0;;
+				if (s) {
+					memset (s, 0, core->blocksize);
+					// TODO: filter more chars?
+					for (i=j=0;i<core->blocksize; i++) {
+						char ch = (char)core->block[i];
+						if (!ch) {
+							if (!hasnl) {
+								if (*s) r_cons_printf ("%s\n", s);
+								j = 0;
+								s[0] = 0;
+							}
+							hasnl = 1;
+							continue;
+						}
+						hasnl = 0;
+						if (IS_PRINTABLE (ch))
+							s[j++] = ch;
+					}
+					r_cons_printf ("%s", s); // TODO: missing newline?
+					free (s);
+				}
+			}
 			break;
 		case 'z':
 			{
@@ -635,6 +725,9 @@ static int cmd_print(void *data, const char *input) {
 		}
 		}
 		switch (input[1]) {
+		case '/':
+			r_core_print_examine (core, input+2);
+			break;
 		case '?':
 			eprintf ("Usage: px[owqWQ][f]\n"
 				" px     show hexdump\n"
@@ -644,6 +737,7 @@ static int cmd_print(void *data, const char *input) {
 				" pxW    same as above, but one per line\n"
 				" pxq    show hexadeciaml quad-words dump (64bit)\n"
 				" pxQ    same as above, but one per line\n"
+				" px/    same as x/ in gdb (help x)\n"
 				);
 			break;
 		case 'o':

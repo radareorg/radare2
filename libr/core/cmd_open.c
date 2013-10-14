@@ -31,13 +31,13 @@ static int cmd_open(void *data, const char *input) {
 			addr = 0LL;
 		}
 		if (num<=0) {
-			const char *file = input+(isn?2:1);
-			file = r_core_file_open (core, file, perms, addr);
+			const char *fn = input+(isn?2:1);
+			file = r_core_file_open (core, fn, perms, addr);
 			if (file) {
 				// MUST CLEAN BEFORE LOADING
 				if (!isn)
-					r_core_bin_load (core, file);
-			} else eprintf ("Cannot open file '%s'\n", file);
+					r_core_bin_load (core, fn);
+			} else eprintf ("Cannot open file '%s'\n", fn);
 		} else r_io_raise (core->io, num);
 		r_core_block_read (core, 0);
 		break;
