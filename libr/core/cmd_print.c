@@ -1,5 +1,113 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
+static void annotated_hexdump(RCore *core, const char *str) {
+	const int COLS = 16;
+	const ut8 *buf = core->block;
+	int len = core->blocksize;
+	ut64 addr = core->offset;
+	char *ebytes, *echars;
+	ut64 fend = UT64_MAX;
+	int rows = len/COLS;
+	char out[256];
+	char *note[COLS];
+	int lnote[COLS];
+	char bytes[128];
+	char chars[32];
+	int i, j, low, max, marks;
+	ut8 ch;
+	const char *colors[8] = {
+		Color_WHITE, Color_GREEN, Color_YELLOW, Color_RED,
+		Color_CYAN, Color_MAGENTA, Color_GRAY, Color_BLUE
+	};
+
+	r_cons_strcat ("- offset -   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0123456789ABCDEF\n");
+	for (i=0; i<rows; i++) {
+		bytes[0] = 0;
+		ebytes = bytes;
+		chars[0] = 0;
+		echars = chars;
+		marks = 0;
+		for (j=0; j<COLS; j++) {
+			note[j] = NULL;
+			lnote[j] = 0;
+			// collect comments
+			// collect flags
+			RFlagItem *f = r_flag_get_i (core->flags, addr+j);
+			if (f) {
+				note[j] = f->name;
+				marks++;
+				fend = addr +j+ f->size;
+
+				//strcat (ebytes, Color_RED);
+#if 1
+				strcat (ebytes, colors[marks%5]);
+				ebytes += strlen (ebytes);
+#else
+
+				// TODO: too psicodelic!
+				char *color = r_cons_color_random (1);
+				strcat (ebytes, color);
+				ebytes += strlen (ebytes);
+				free (color);
+#endif
+			}
+			ch = buf[(i*COLS)+j];
+			if (core->print->ocur!=-1) {
+				low = R_MIN (core->print->cur, core->print->ocur);
+				max = R_MAX (core->print->cur, core->print->ocur);
+			} else {
+				low = max = core->print->cur;
+			}
+			if (core->print->cur_enabled) {
+				if (low == ((i*COLS)+j)) {
+					strcpy (ebytes, Color_INVERT);
+					ebytes += strlen (ebytes);
+				}
+			}
+			sprintf (ebytes, "%02x ", ch);
+			ebytes += strlen (ebytes);
+			if (core->print->cur_enabled) {
+				if (max == ((i*COLS)+j)) {
+					strcpy (ebytes, Color_RESET);
+					ebytes += strlen (ebytes);
+				}	
+			}
+			sprintf (echars, "%c", IS_PRINTABLE (ch)?ch:'.');
+			echars++;
+			if (fend!=UT64_MAX && fend == addr+j+1) {
+				strcpy (ebytes, Color_RESET);
+				ebytes += strlen (ebytes);
+				fend = UT64_MAX;
+			}
+		}
+		// show comments and flags
+		if (marks>0) {
+			r_cons_strcat ("            ");
+			memset (out, ' ', sizeof (out));
+			out[sizeof(out)-1] = 0;
+			for (j=0; j<COLS; j++) {
+				if (note[j]) {
+					memcpy (out+(j*3), "/", 1);
+					memcpy (out+(j*3)+1, note[j], strlen (note[j]));
+				}
+				/// XXX overflow
+			}
+			out[80] = 0;
+			r_cons_strcat (out);
+			r_cons_newline ();
+			marks = 0;
+		}
+		r_cons_printf ("0x%08"PFMT64x"  ", addr);
+		// show bytes
+		r_cons_strcat (bytes);
+		r_cons_strcat (" ");
+		r_cons_strcat (chars);
+		// show chars
+		r_cons_newline ();
+		addr += 16;
+	}
+}
+
 R_API void r_core_print_examine(RCore *core, const char *str) {
 	char cmd[128], *p;
 	ut64 addr = core->offset;
@@ -738,6 +846,7 @@ static int cmd_print(void *data, const char *input) {
 		case '?':
 			eprintf ("Usage: px[owqWQ][f]\n"
 				" px     show hexdump\n"
+				" pxa    show annotated hexdump\n"
 				" pxf    show hexdump of current function\n"
 				" pxo    show octal dump\n"
 				" pxw    show hexadeciaml words dump (32bit)\n"
@@ -746,6 +855,9 @@ static int cmd_print(void *data, const char *input) {
 				" pxQ    same as above, but one per line\n"
 				" px/    same as x/ in gdb (help x)\n"
 				);
+			break;
+		case 'a':
+			annotated_hexdump (core, input+2);
 			break;
 		case 'o':
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);

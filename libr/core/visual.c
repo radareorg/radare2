@@ -298,7 +298,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'f':
 		{
-		int range;
+		int range, min, max;
 		char name[256], *n;
 		r_line_set_prompt ("flag name: ");
 		if (r_cons_fgets (name, sizeof (name), 0, NULL) >=0 && *name) {
@@ -306,10 +306,16 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (*name=='-') {
 				if (*n) r_flag_unset (core->flags, n+1, NULL);
 			} else {
-				range = curset? (R_ABS (cursor-ocursor)+1): 1;
+				if (ocursor != -1) {
+					min = R_MIN (cursor, ocursor);
+					max = R_MAX (cursor, ocursor);
+				} else {
+					min = max = cursor;
+				}
+				range = max-min;
 				if (range<1) range = 1;
 				if (*n) r_flag_set (core->flags, n,
-					core->offset + cursor, range, 1);
+					core->offset + min, range, 1);
 			}
 		} }
 		break;

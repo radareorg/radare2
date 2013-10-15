@@ -35,9 +35,9 @@ R_API char *r_cons_color_random(int bg) {
 	int r, g, b;
 	if (I.truecolor>0) {
 		char out[32];
-		r = r_num_rand (0xf);
-		g = r_num_rand (0xf);
-		b = r_num_rand (0xf);
+		r = r_num_rand (0xff);
+		g = r_num_rand (0xff);
+		b = r_num_rand (0xff);
 		r_cons_rgb_str (out, r, g, b, bg);
 		return strdup (out);
 	}

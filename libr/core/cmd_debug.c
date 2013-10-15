@@ -384,7 +384,10 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			}
 		}
 		eprintf ("The address doesn't match with any map.\n");
-		break; case '\0': case '*': case 'j':
+		break;
+	case '\0':
+	case '*':
+	case 'j':
 		r_debug_map_sync (core->dbg); // update process memory maps
 		r_debug_map_list (core->dbg, core->offset, input[0]);
 		break;
