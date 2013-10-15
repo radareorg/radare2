@@ -97,6 +97,8 @@ static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
 	if (bin->strtab_section == NULL)
 		return R_FALSE;
+        if (bin->strtab_section->sh_size > (0xffff - sizeof (struct r_bin_elf_section_t)))
+            bin->strtab_section->sh_size = 0xffff - sizeof (struct r_bin_elf_section_t);
 	bin->shstrtab_size =
 		bin->strtab_size = bin->strtab_section->sh_size;
 	sz = sizeof (struct r_bin_elf_section_t) + bin->strtab_section->sh_size;
@@ -856,7 +858,8 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 
 struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_section_t *ret = NULL;
-	int i, nidx;
+        char unknown_s[20];
+	int i, nidx, unknown_c=0;
 
 	if ((ret = malloc ((bin->ehdr.e_shnum + 1) * sizeof (struct r_bin_elf_section_t))) == NULL)
 		return NULL;
@@ -875,8 +878,15 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 		nidx = bin->shdr[i].sh_name;
 		if (nidx<0 || nidx>bin->shstrtab_section->sh_size)
 			strncpy (ret[i].name, "invalid", sizeof (ret[i].name)-4);
-		else strncpy (ret[i].name, bin->shstrtab?
-			&bin->shstrtab[bin->shdr[i].sh_name]: "unknown", sizeof (ret[i].name)-4);
+		else {
+                    if (bin->shstrtab && bin->shstrtab_size > bin->shdr[i].sh_name && bin->shdr[i].sh_name > 0)
+                        strncpy (ret[i].name, &bin->shstrtab[bin->shdr[i].sh_name], sizeof (ret[i].name)-4);
+                    else {
+                        snprintf(unknown_s, sizeof(unknown_s), "unknown%d", unknown_c);
+                        strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
+                        unknown_c++;
+                    }
+                }
 		ret[i].name[sizeof (ret[i].name)-2] = 0;
 		ret[i].last = 0;
 	}
