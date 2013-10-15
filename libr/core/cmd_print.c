@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
+// > pxa
+#define append(x,y) { strcat(x,y);x += strlen(y); }
 static void annotated_hexdump(RCore *core, const char *str) {
 	const int COLS = 16;
 	const ut8 *buf = core->block;
@@ -7,47 +9,63 @@ static void annotated_hexdump(RCore *core, const char *str) {
 	ut64 addr = core->offset;
 	char *ebytes, *echars;
 	ut64 fend = UT64_MAX;
+	char *comment;
 	int rows = len/COLS;
-	char out[256];
+	char out[1024];
 	char *note[COLS];
 	int lnote[COLS];
-	char bytes[128];
+	char bytes[1024];
 	char chars[32];
-	int i, j, low, max, marks;
+	int i, j, low, max, marks, tmarks, setcolor, hascolor;
 	ut8 ch;
 	const char *colors[8] = {
 		Color_WHITE, Color_GREEN, Color_YELLOW, Color_RED,
 		Color_CYAN, Color_MAGENTA, Color_GRAY, Color_BLUE
 	};
 
-	r_cons_strcat ("- offset -   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F  0123456789ABCDEF\n");
+	r_cons_strcat (Color_GREEN);
+	r_cons_strcat ("- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n");
+	r_cons_strcat (Color_RESET);
+	hascolor = 0;
+	tmarks = marks = 0;
 	for (i=0; i<rows; i++) {
 		bytes[0] = 0;
 		ebytes = bytes;
 		chars[0] = 0;
 		echars = chars;
-		marks = 0;
+		hascolor = 0;
 		for (j=0; j<COLS; j++) {
 			note[j] = NULL;
 			lnote[j] = 0;
 			// collect comments
+			comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, addr+j);
+			if (comment) {
+				comment = r_str_prefix_all (comment, "  ; ");
+				r_cons_strcat (comment);
+				free (comment);
+			}
 			// collect flags
 			RFlagItem *f = r_flag_get_i (core->flags, addr+j);
+			setcolor = 1;
 			if (f) {
+				fend = addr +j+ f->size;
 				note[j] = f->name;
 				marks++;
-				fend = addr +j+ f->size;
-
-				//strcat (ebytes, Color_RED);
+				tmarks++;
+			} else {
+				if (fend==UT64_MAX || fend<=(addr+j))
+					setcolor = 0;
+				// use old flag if still valid
+			}
+			if (setcolor && !hascolor) {
+				hascolor = 1;
 #if 1
-				strcat (ebytes, colors[marks%5]);
-				ebytes += strlen (ebytes);
+				append (ebytes, colors[tmarks%5]);
 #else
 
 				// TODO: too psicodelic!
-				char *color = r_cons_color_random (1);
-				strcat (ebytes, color);
-				ebytes += strlen (ebytes);
+				char *color = r_cons_color_random (0);
+				append (ebytes, color);
 				free (color);
 #endif
 			}
@@ -59,48 +77,60 @@ static void annotated_hexdump(RCore *core, const char *str) {
 				low = max = core->print->cur;
 			}
 			if (core->print->cur_enabled) {
-				if (low == ((i*COLS)+j)) {
-					strcpy (ebytes, Color_INVERT);
-					ebytes += strlen (ebytes);
+				int here = (i*COLS)+j;
+				if (low==max) {
+					if (low == here)
+						append (ebytes, Color_INVERT);
+				} else {
+					if (here >= low && here <max)
+						append (ebytes, Color_INVERT);
 				}
 			}
-			sprintf (ebytes, "%02x ", ch);
+			sprintf (ebytes, "%02x", ch);
 			ebytes += strlen (ebytes);
 			if (core->print->cur_enabled) {
 				if (max == ((i*COLS)+j)) {
-					strcpy (ebytes, Color_RESET);
-					ebytes += strlen (ebytes);
-				}	
+					append (ebytes, Color_RESET);
+					hascolor = 0;
+				}
 			}
+			if (j<15&&j%2) append (ebytes, " ");
+
 			sprintf (echars, "%c", IS_PRINTABLE (ch)?ch:'.');
 			echars++;
+
 			if (fend!=UT64_MAX && fend == addr+j+1) {
-				strcpy (ebytes, Color_RESET);
-				ebytes += strlen (ebytes);
+				append (ebytes, Color_RESET);
 				fend = UT64_MAX;
+				hascolor = 0;
 			}
 		}
 		// show comments and flags
 		if (marks>0) {
 			r_cons_strcat ("            ");
 			memset (out, ' ', sizeof (out));
-			out[sizeof(out)-1] = 0;
+			out[sizeof (out)-1] = 0;
 			for (j=0; j<COLS; j++) {
 				if (note[j]) {
-					memcpy (out+(j*3), "/", 1);
-					memcpy (out+(j*3)+1, note[j], strlen (note[j]));
+					int off = (j*3);
+					off -= (j/2);
+					if (j%2) off--;
+					memcpy (out+off, "/", 1);
+					memcpy (out+off+1, note[j], strlen (note[j]));
 				}
 				/// XXX overflow
 			}
-			out[80] = 0;
+			out[70] = 0;
 			r_cons_strcat (out);
 			r_cons_newline ();
 			marks = 0;
 		}
+		r_cons_strcat (Color_GREEN);
 		r_cons_printf ("0x%08"PFMT64x"  ", addr);
+		r_cons_strcat (Color_RESET);
 		// show bytes
 		r_cons_strcat (bytes);
-		r_cons_strcat (" ");
+		r_cons_strcat (Color_RESET"  ");
 		r_cons_strcat (chars);
 		// show chars
 		r_cons_newline ();

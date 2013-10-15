@@ -312,7 +312,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				} else {
 					min = max = cursor;
 				}
-				range = max-min;
+				range = max-min+1;
 				if (range<1) range = 1;
 				if (*n) r_flag_set (core->flags, n,
 					core->offset + min, range, 1);
