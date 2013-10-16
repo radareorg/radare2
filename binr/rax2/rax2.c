@@ -4,6 +4,8 @@
 #include <r_print.h>
 #include "../blob/version.c"
 
+#define STDIN_BUFFER_SIZE 354096
+
 static RNum *num;
 static int help ();
 static ut64 flags = 0;
@@ -231,9 +233,8 @@ static int rax (char *str, int len, int last) {
 
 
 static int use_stdin () {
-	int l;
-	static char buf[354096]; // TODO: remove this limit
-	int _S = (flags & 4);
+	static char buf[STDIN_BUFFER_SIZE];
+	int l, sflag = (flags & 4);
 	for (l=0; l>=0; l++) {
 		int n = read (0, buf+l, sizeof (buf)-l);
 		if (n<1) break;
@@ -243,7 +244,7 @@ static int use_stdin () {
 			continue;
 		}
 		buf[n] = 0;
-		if (_S && strlen (buf) < sizeof (buf)) // -S
+		if (sflag && strlen (buf) < sizeof (buf)) // -S
 			buf[strlen (buf)] = '\0';
 		else buf[strlen (buf)-1] = '\0';
 		if (!rax (buf, l, 0)) break;
