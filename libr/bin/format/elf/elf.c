@@ -93,6 +93,10 @@ static int Elf_(r_bin_elf_init_shdr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 static int Elf_(r_bin_elf_init_strtab)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	int sz;
 	if (bin->strtab || !bin->shdr) return R_FALSE;
+        if (bin->ehdr.e_shstrndx != SHN_UNDEF &&
+            (bin->ehdr.e_shstrndx >= bin->ehdr.e_shnum ||
+            (bin->ehdr.e_shstrndx >= SHN_LORESERVE && bin->ehdr.e_shstrndx <= SHN_HIRESERVE)))
+            return R_FALSE;
 	bin->shstrtab_section =
 		bin->strtab_section = &bin->shdr[bin->ehdr.e_shstrndx];
 	if (bin->strtab_section == NULL)
@@ -192,8 +196,8 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 		return R_FALSE;
 	}
 	Elf_(r_bin_elf_init_phdr) (bin);
-	//if (!Elf_(r_bin_elf_init_phdr) (bin))
-	//	eprintf ("Warning: Cannot initialize program headers\n");
+        if (!Elf_(r_bin_elf_init_phdr) (bin))
+                eprintf ("Warning: Cannot initialize program headers\n");
 	if (!Elf_(r_bin_elf_init_shdr) (bin))
 		eprintf ("Warning: Cannot initialize section headers\n");
 	if (!Elf_(r_bin_elf_init_strtab) (bin))
