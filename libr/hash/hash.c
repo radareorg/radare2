@@ -100,51 +100,55 @@ R_API int r_hash_size(int bit) {
 }
 
 R_API ut64 r_hash_name_to_bits(const char *name) {
-    struct { const char *name; ut64 bit; } static const array[] = {
-        {"all", UT64_MAX},
-        {"md4", R_HASH_MD4},
-        {"md5", R_HASH_MD5},
-        {"sha1", R_HASH_SHA1},
-        {"sha256", R_HASH_SHA256},
-        {"sha384", R_HASH_SHA384},
-        {"sha512", R_HASH_SHA512},
-        {"crc16", R_HASH_CRC16},
-        {"crc32", R_HASH_CRC32},
-        {"adler32", R_HASH_ADLER32},
-        {"xxhash", R_HASH_XXHASH},
-        {"parity", R_HASH_PARITY},
-        {"entropy", R_HASH_ENTROPY},
-        {"hamdist", R_HASH_HAMDIST},
-        {"pcprint", R_HASH_PCPRINT},
-        {"mod255", R_HASH_MOD255},
-        {NULL, 0}};
-    int i = 0, j, len = 0;
-    char name_lowercase[128];
-    const char* ptr = name_lowercase;
-	ut64 bits = R_HASH_NONE;
+	struct { const char *name; ut64 bit; } static const array[] = {
+		 {"all", UT64_MAX},
+		 {"xor", R_HASH_XOR},
+		 {"xorpair", R_HASH_XORPAIR},
+		 {"md4", R_HASH_MD4},
+		 {"md5", R_HASH_MD5},
+		 {"sha1", R_HASH_SHA1},
+		 {"sha256", R_HASH_SHA256},
+		 {"sha384", R_HASH_SHA384},
+		 {"sha512", R_HASH_SHA512},
+		 {"crc16", R_HASH_CRC16},
+		 {"crc32", R_HASH_CRC32},
+		 {"adler32", R_HASH_ADLER32},
+		 {"xxhash", R_HASH_XXHASH},
+		 {"parity", R_HASH_PARITY},
+		 {"entropy", R_HASH_ENTROPY},
+		 {"hamdist", R_HASH_HAMDIST},
+		 {"pcprint", R_HASH_PCPRINT},
+		 {"mod255", R_HASH_MOD255},
+		 {NULL, 0}};
+	int i = 0, j, len = 0;
+	char name_lowercase[128];
+	const char* ptr = name_lowercase;
+	ut64 bits = 0; //R_HASH_NONE;
 
-    for(j=0;name[j] && j<sizeof(name_lowercase); j++)
-        name_lowercase[j] = tolower(name[j]);
-    name_lowercase[j] = 0;
+	for (j=0;name[j] && j<sizeof (name_lowercase); j++)
+		name_lowercase[j] = tolower (name[j]);
+	name_lowercase[j] = 0;
 
-    while (name_lowercase[i++]) {
-        if (name_lowercase[i] == ',') {
-            for (j=0; array[j].name; j++) {
-                if (!strncmp (ptr, array[j].name, len))
-                    bits |= array[j].bit;
-            }
-            ptr = name_lowercase + i + 1;
-            len = -1;
-        }
-        while (name_lowercase[i+1] == ' ') {
-            ++i;
-            ++ptr;
-        }
-        ++len;
-    }
-    for (i=0; array[i].name;i++) { //last word of the list
-        if (!strcmp (ptr, array[i].name))
-            bits |= array[i].bit;
-    }
+	while (name_lowercase[i++]) {
+		len++;
+		if (name_lowercase[i] == ',') {
+			for (j=0; array[j].name; j++) {
+				if (!strncmp (ptr, array[j].name, len)) {
+					bits |= array[j].bit;
+					break;
+				}
+			}
+			ptr = name_lowercase + i + 1;
+			len = -1;
+		}
+		while (name_lowercase[i+1] == ' ') {
+			i++;
+			ptr++;
+		}
+	}
+	for (i=0; array[i].name; i++) { //last word of the list
+		if (!strcmp (ptr, array[i].name))
+			bits |= array[i].bit;
+	}
 	return bits;
 }
