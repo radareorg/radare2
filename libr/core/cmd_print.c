@@ -3,6 +3,7 @@
 // > pxa
 #define append(x,y) { strcat(x,y);x += strlen(y); }
 static void annotated_hexdump(RCore *core, const char *str) {
+	const int usecolor = r_config_get_i (core->config, "scr.color");
 	const int COLS = 16;
 	const ut8 *buf = core->block;
 	int len = core->blocksize;
@@ -15,17 +16,18 @@ static void annotated_hexdump(RCore *core, const char *str) {
 	char *note[COLS];
 	int lnote[COLS];
 	char bytes[1024];
-	char chars[32];
+	char chars[1024];
 	int i, j, low, max, marks, tmarks, setcolor, hascolor;
 	ut8 ch;
 	const char *colors[8] = {
 		Color_WHITE, Color_GREEN, Color_YELLOW, Color_RED,
 		Color_CYAN, Color_MAGENTA, Color_GRAY, Color_BLUE
 	};
+	int col = core->print->col;
 
-	r_cons_strcat (Color_GREEN);
+	if (usecolor) r_cons_strcat (Color_GREEN);
 	r_cons_strcat ("- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF\n");
-	r_cons_strcat (Color_RESET);
+	if (usecolor) r_cons_strcat (Color_RESET);
 	hascolor = 0;
 	tmarks = marks = 0;
 	for (i=0; i<rows; i++) {
@@ -59,15 +61,18 @@ static void annotated_hexdump(RCore *core, const char *str) {
 			}
 			if (setcolor && !hascolor) {
 				hascolor = 1;
+				if (usecolor) {
 #if 1
-				append (ebytes, colors[tmarks%5]);
+					append (ebytes, colors[tmarks%5]);
 #else
-
-				// TODO: too psicodelic!
-				char *color = r_cons_color_random (0);
-				append (ebytes, color);
-				free (color);
+					// psycodelia!
+					char *color = r_cons_color_random (0);
+					append (ebytes, color);
+					free (color);
 #endif
+				} else {
+					append (ebytes, Color_INVERT);
+				}
 			}
 			ch = buf[(i*COLS)+j];
 			if (core->print->ocur!=-1) {
@@ -79,28 +84,36 @@ static void annotated_hexdump(RCore *core, const char *str) {
 			if (core->print->cur_enabled) {
 				int here = (i*COLS)+j;
 				if (low==max) {
-					if (low == here)
+					if (low == here) {
+						append (echars, Color_INVERT);
 						append (ebytes, Color_INVERT);
+					}
 				} else {
-					if (here >= low && here <max)
+					if (here >= low && here <max) {
 						append (ebytes, Color_INVERT);
+						append (echars, Color_INVERT);
+					}
 				}
 			}
 			sprintf (ebytes, "%02x", ch);
 			ebytes += strlen (ebytes);
+			sprintf (echars, "%c", IS_PRINTABLE (ch)?ch:'.');
+			echars++;
 			if (core->print->cur_enabled) {
 				if (max == ((i*COLS)+j)) {
 					append (ebytes, Color_RESET);
+					append (echars, Color_RESET);
 					hascolor = 0;
 				}
 			}
 			if (j<15&&j%2) append (ebytes, " ");
 
-			sprintf (echars, "%c", IS_PRINTABLE (ch)?ch:'.');
-			echars++;
 
 			if (fend!=UT64_MAX && fend == addr+j+1) {
-				append (ebytes, Color_RESET);
+				if (usecolor) {
+					append (ebytes, Color_RESET);
+					append (echars, Color_RESET);
+				}
 				fend = UT64_MAX;
 				hascolor = 0;
 			}
@@ -125,14 +138,16 @@ static void annotated_hexdump(RCore *core, const char *str) {
 			r_cons_newline ();
 			marks = 0;
 		}
-		r_cons_strcat (Color_GREEN);
-		r_cons_printf ("0x%08"PFMT64x"  ", addr);
-		r_cons_strcat (Color_RESET);
-		// show bytes
+		if (usecolor) r_cons_strcat (Color_GREEN);
+		r_cons_printf ("0x%08"PFMT64x, addr);
+		if (usecolor) r_cons_strcat (Color_RESET);
+		r_cons_strcat ((col==1)?" |":"  ");
 		r_cons_strcat (bytes);
-		r_cons_strcat (Color_RESET"  ");
+		r_cons_strcat (Color_RESET);
+		r_cons_strcat ((col==1)?"| ":(col==2)?" |":"  ");
 		r_cons_strcat (chars);
-		// show chars
+		r_cons_strcat (Color_RESET);
+		if (col==2) r_cons_strcat ("|");
 		r_cons_newline ();
 		addr += 16;
 	}
