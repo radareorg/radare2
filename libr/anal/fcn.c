@@ -106,8 +106,8 @@ R_API int r_anal_fcn_local_del_name (RAnal *anal, RAnalFunction *fcn, const char
 	/* No need for _safe loop coz we return immediately after the delete. */
 	r_list_foreach (fcn->locals, iter, l) {
 		if (!strcmp(l->name, name)) {
-				r_list_delete (fcn->locals, iter);
-				return R_TRUE;
+			r_list_delete (fcn->locals, iter);
+			return R_TRUE;
 		}
 	}
 	return R_FALSE;
@@ -119,8 +119,8 @@ R_API int r_anal_fcn_local_del_addr (RAnal *anal, RAnalFunction *fcn, ut64 addr)
 	/* No need for _safe loop coz we return immediately after the delete. */
 	r_list_foreach (fcn->locals, iter, l) {
 		if (addr == 0UL || addr == l->addr) {
-				r_list_delete (fcn->locals, iter);
-				return R_TRUE;
+			r_list_delete (fcn->locals, iter);
+			return R_TRUE;
 		}
 	}
 	return R_FALSE;
@@ -152,6 +152,9 @@ static int bbsum(RAnalFunction *fcn) {
 }
 #endif
 
+#define FITFCNSZ() {st64 n=bb->addr+bb->size-fcn->addr; \
+	if(n<0) { fcn->addr += n; fcn->size = -n; } else \
+	if(fcn->size<n)fcn->size=n; }
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	int ret = 0;
 	ut8 bbuf[8096];
@@ -176,14 +179,17 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 	while (idx < len) {
 		r_anal_op_fini (&op);
-		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff)
+		if (buf[idx]==buf[idx+1] && buf[idx]==0xff && buf[idx+2]==0xff) {
+			FITFCNSZ();
 			return R_ANAL_RET_ERROR;
+		}
 // check if opcode is in another basic block
 // in that case we break
 		if ((oplen = r_anal_op (anal, &op, addr+idx, buf+idx, len-idx)) < 1) {
 			if (idx == 0) {
 				VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 				r_anal_op_fini (&op);
+				FITFCNSZ();
 				return R_ANAL_RET_END;
 			} else break; // unspecified behaviour
 		}
@@ -199,7 +205,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		if (!overlapped) {
 			bb->size += oplen;
 			fcn->ninstr++;
-			fcn->size += oplen; /// XXX. must be the sum of all the bblocks
+FITFCNSZ();
+		//	fcn->size += oplen; /// XXX. must be the sum of all the bblocks
 		}
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
@@ -237,6 +244,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			// swapped parameters wtf //
 			if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
 				r_anal_op_fini (&op);
+				FITFCNSZ();
 				return R_ANAL_RET_ERROR;
 			}
 		}
@@ -254,12 +262,22 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				bb->fail = UT64_MAX;
 			}
 			// hardcoded jmp size // must be checked at the end wtf?
-			if (op.jump < addr-512 && op.jump<addr)
-				return R_ANAL_RET_END;	
-			if (op.jump > addr+512)
-				return R_ANAL_RET_END;	
+			if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
+				/* jump inside the same function */
+				return 0;
+			} else {
+				if (op.jump < addr-512 && op.jump<addr) {
+					FITFCNSZ();
+					return R_ANAL_RET_END;
+				}
+				if (op.jump > addr+512) {
+					FITFCNSZ();
+					return R_ANAL_RET_END;	
+				}
+			}
 			//
 			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
+			FITFCNSZ();
 			return fcn_recurse (anal, fcn, op.jump, bbuf, sizeof (bbuf), depth-1);
 		case R_ANAL_OP_TYPE_CJMP:
 			if (!overlapped) {
@@ -267,8 +285,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 				bb->fail = op.fail;
 			}
 			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
+			FITFCNSZ();
 			fcn_recurse (anal, fcn, op.jump, bbuf, sizeof (bbuf), depth-1);
 			anal->iob.read_at (anal->iob.io, op.fail, bbuf, sizeof (bbuf));
+			FITFCNSZ();
 			return fcn_recurse (anal, fcn, op.fail, bbuf, sizeof (bbuf), depth-1);
 #if 0
 		// do not add xrefs for cjmps?
@@ -281,6 +301,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 					R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE)) {
 				r_anal_op_fini (&op);
 				//fcn->size = bbsum (fcn);
+				FITFCNSZ();
 				return R_ANAL_RET_ERROR;
 			}
 			break;
@@ -288,17 +309,20 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
 			r_anal_op_fini (&op);
+			FITFCNSZ();
 			//fcn->size = bbsum (fcn);
 			return R_ANAL_RET_END;
 		}
 	}
 	r_anal_op_fini (&op);
+	FITFCNSZ();
 	return ret;
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	if (fcn->addr == UT64_MAX)
 		fcn->addr = addr;
+	fcn->size =0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	//if (len>16)
@@ -404,7 +428,8 @@ R_API RAnalFunction *r_anal_fcn_find(RAnal *anal, ut64 addr, int type) {
 	}
 	r_list_foreach (anal->fcns, iter, fcn) {
 		if (!type || (fcn->type & type)) {
-			if (addr == fcn->addr || (ret == NULL && (addr > fcn->addr && addr < fcn->addr+fcn->size)))
+			if (addr == fcn->addr || (ret == NULL && 
+			   ((addr > fcn->addr) && (addr < fcn->addr+fcn->size))))
 				ret = fcn;
 		}
 	}
@@ -416,7 +441,7 @@ R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
 	RAnalFunction *fcn = NULL;
 	RListIter *iter;
 	r_list_foreach (anal->fcns, iter, fcn) {
-		if (!strcmp(name, fcn->name))
+		if (!strcmp (name, fcn->name))
 			return fcn;
 	}
 	return NULL;

@@ -230,7 +230,7 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		break;
 	case 'g':
-		eprintf ("radare2: fg: current: no such job :)\n");
+		r_core_cmd0 (core, "V");
 		break;
 	case 'c':
 		eprintf ("TODO: fc\n");
