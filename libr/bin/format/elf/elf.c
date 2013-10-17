@@ -862,8 +862,8 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 
 struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_section_t *ret = NULL;
-        char unknown_s[20];
-	int i, nidx, unknown_c=0;
+        char unknown_s[20], invalid_s[20];
+	int i, nidx, unknown_c=0, invalid_c=0;
 
 	if ((ret = malloc ((bin->ehdr.e_shnum + 1) * sizeof (struct r_bin_elf_section_t))) == NULL)
 		return NULL;
@@ -880,13 +880,17 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 		ret[i].flags = bin->shdr[i].sh_flags;
 		//memset (ret[i].name, 0, sizeof (ret[i].name));
 		nidx = bin->shdr[i].sh_name;
-		if (nidx<0 || nidx>bin->shstrtab_section->sh_size)
-			strncpy (ret[i].name, "invalid", sizeof (ret[i].name)-4);
+		if (nidx<0 || !bin->shstrtab_section ||
+                    !bin->shstrtab_section->sh_size || nidx > bin->shstrtab_section->sh_size) {
+                        snprintf(invalid_s, sizeof(invalid_s)-4, "invalid%d", invalid_c);
+                        strncpy (ret[i].name, invalid_s, sizeof (ret[i].name)-4);
+                        invalid_c++;
+                }
 		else {
                     if (bin->shstrtab && bin->shstrtab_size > bin->shdr[i].sh_name && bin->shdr[i].sh_name > 0)
                         strncpy (ret[i].name, &bin->shstrtab[bin->shdr[i].sh_name], sizeof (ret[i].name)-4);
                     else {
-                        snprintf(unknown_s, sizeof(unknown_s), "unknown%d", unknown_c);
+                        snprintf(unknown_s, sizeof(unknown_s)-4, "unknown%d", unknown_c);
                         strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
                         unknown_c++;
                     }
