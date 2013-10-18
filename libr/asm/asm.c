@@ -300,7 +300,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (oplen>len) oplen = len;
 		if (a->ofilter)
 			r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
-		else memcpy (op->buf, buf, oplen);
+		r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
 		r_hex_bin2str (buf, oplen, op->buf_hex);
 	} else ret = 0;
 	return ret;
