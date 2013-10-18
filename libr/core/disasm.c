@@ -1156,12 +1156,21 @@ toro:
 				RMetaItem *mi2 = r_meta_find (core->anal->meta, word8,
 					R_META_TYPE_ANY, R_META_WHERE_HERE);
 				if (mi2) {
-					if (mi2->type == R_META_TYPE_STRING) {
-						char *str = r_str_unscape (mi2->str);
+					switch (mi2->type) {
+					case R_META_TYPE_STRING:
+						{ char *str = r_str_unscape (mi2->str);
 						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d
 							") \"%s\" ", word8, mi2->size, str);
 						free (str);
-					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
+						}
+						break;
+					case 'd':
+						r_cons_printf (" (data)");
+						break;
+					default:
+						eprintf ("unknown type '%c'\n", mi2->type);
+						break;
+					} 
 				} else {
 					mi2 = r_meta_find (core->anal->meta, (ut64)analop.ptr,
 						R_META_TYPE_ANY, R_META_WHERE_HERE);
