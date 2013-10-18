@@ -225,18 +225,18 @@ enyo.kind ({
 	case "Search": r = 4; break;
 	case "Console": r = 5; break;
 	case "Debugger": r = 6; break;
-	case "Script": r = 7; break;
-	case "Settings": r = 8; break;
-	case "Logs": r = 9; break;
+	case "Logs": r = 7; break;
+	case "Script": r = 8; break;
+	case "Settings": r = 9; break;
 	case "About": r = 10; break;
-      }
-      if (r==-1) {
+    }
+    if (r==-1) {
         // alert ("Unknown page");
         sp.setIndex (idx);
         return;
-      }
-      eval ("var x = this.$.page"+idx);
-      switch (r) {
+    }
+    eval ("var x = this.$.page"+idx);
+    switch (r) {
       case 0:
       case 2:
         this.setTitle ();
@@ -244,9 +244,9 @@ enyo.kind ({
       default:
         this.setTitle (idx);
         break;
-      }
+    }
       //x.setContent (str);
-      sp.setIndex (r);
+    sp.setIndex (r);
   },
   seekStack: [],
   nextSeek: function() {
