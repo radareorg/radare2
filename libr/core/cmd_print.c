@@ -895,16 +895,17 @@ static int cmd_print(void *data, const char *input) {
 			r_core_print_examine (core, input+2);
 			break;
 		case '?':
-			eprintf ("Usage: px[owqWQ][f]\n"
+			eprintf ("Usage: px[afoswqWqQ][f]\n"
 				" px     show hexdump\n"
+				" px/    same as x/ in gdb (help x)\n"
 				" pxa    show annotated hexdump\n"
 				" pxf    show hexdump of current function\n"
 				" pxo    show octal dump\n"
-				" pxw    show hexadeciaml words dump (32bit)\n"
-				" pxW    same as above, but one per line\n"
-				" pxq    show hexadeciaml quad-words dump (64bit)\n"
+				" pxq    show hexadecimal quad-words dump (64bit)\n"
+				" pxs    show hexadecimal in sparse mode\n"
 				" pxQ    same as above, but one per line\n"
-				" px/    same as x/ in gdb (help x)\n"
+				" pxw    show hexadecimal words dump (32bit)\n"
+				" pxW    same as above, but one per line\n"
 				);
 			break;
 		case 'a':
@@ -931,6 +932,12 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf ("0x%08"PFMT64x" 0x%016"PFMT64x"\n",
 					core->offset+i, *p);
 			}
+			break;
+		case 's':
+			core->print->flags |= R_PRINT_FLAGS_SPARSE;
+			r_print_hexdump (core->print, core->offset,
+				core->block, len, 16, 1);
+			core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SPARSE));
 			break;
 		default: {
 				 ut64 from = r_config_get_i (core->config, "diff.from");
