@@ -425,6 +425,11 @@ static int cmd_bsize(void *data, const char *input) {
 	RFlagItem *flag;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
+	case 'm':
+		n = r_num_math (core->num, input+1);
+		if (n>1) core->blocksize_max = n;
+		else r_cons_printf ("0x%x\n", (ut32)core->blocksize_max);
+		break;
 	case '+':
 		n = r_num_math (core->num, input+1);
 		r_core_block_size (core, core->blocksize+n);
@@ -446,12 +451,13 @@ static int cmd_bsize(void *data, const char *input) {
 		break;
 	case '?':
 		r_cons_printf ("Usage: b[f] [arg]\n"
-			" b        # display current block size\n"
-			" b+3      # increase blocksize by 3\n"
-			" b-16     # decrement blocksize by 3\n"
-			" b 33     # set block size to 33\n"
-			" b eip+4  # numeric argument can be an expression\n"
-			" bf foo   # set block size to flag size\n");
+			" b         display current block size\n"
+			" b+3       increase blocksize by 3\n"
+			" b-16      decrement blocksize by 3\n"
+			" b 33      set block size to 33\n"
+			" b eip+4   numeric argument can be an expression\n"
+			" bf foo    set block size to flag size\n"
+			" bm 1M     set max block size\n");
 		break;
 	default:
 		//input = r_str_clean(input);

@@ -158,6 +158,7 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	ut64 addr = core->offset;
 	int size = (core->anal->bits/4);
 	int count = atoi (str);
+	int i, n;
 	if (count<1) count = 1;
 	// skipsapces
 	while (*str>='0' && *str<='9') str++;
@@ -193,17 +194,14 @@ Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 		break;
 	case 'f':
 	case 'A': // XXX (float in hex wtf)
-		{
-			int i, n = 3;
-			snprintf (cmd, sizeof (cmd), "pxo %d @ 0x%"PFMT64x, count*size, addr);
-
-			strcpy (cmd, "pf ");
-			for (i=0;i<count && n<sizeof (cmd);i++) {
-				cmd[n++] = 'f';
-			}
-			cmd[n] = 0;
-			r_core_cmd0 (core, cmd);
-		}
+		n = 3;
+		snprintf (cmd, sizeof (cmd), "pxo %d @ 0x%"PFMT64x,
+			count*size, addr);
+		strcpy (cmd, "pf ");
+		for (i=0;i<count && n<sizeof (cmd);i++)
+			cmd[n++] = 'f';
+		cmd[n] = 0;
+		r_core_cmd0 (core, cmd);
 		break;
 	case 'a':
 	case 'd':
@@ -332,11 +330,17 @@ static int cmd_print(void *data, const char *input) {
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'm') {
 				if (l>0) len = l;
-				if (l>tbs) r_core_block_size (core, l);
-				l = len;
+				if (l>tbs) {
+					r_core_block_size (core, l);
+					l = core->blocksize;
+				} else {
+					l = len;
+				}
 			}
 		}// else l = 0;
 	} else l = len;
+	if (len > core->blocksize)
+		len = core->blocksize;
 
 	n = r_config_get_i (core->config, "io.maxblk");
 	i = (int)n;
@@ -747,10 +751,12 @@ static int cmd_print(void *data, const char *input) {
 			ut8 *block = malloc (core->blocksize);
 			if (block) {
 				l = -l;
-				bwdhits = r_core_asm_bwdisassemble (core, core->offset, l, core->blocksize);
+				bwdhits = r_core_asm_bwdisassemble (core,
+					core->offset, l, core->blocksize);
 				if (bwdhits) {
 					r_list_foreach (bwdhits, iter, hit) {
-						r_core_read_at (core, hit->addr, block, core->blocksize);
+						r_core_read_at (core, hit->addr,
+							block, core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
 							core, hit->addr, block, core->blocksize, l, 0, 1);
 						r_cons_printf ("------\n");

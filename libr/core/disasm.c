@@ -363,8 +363,11 @@ toro:
 			core->asmqjmps[counter] = UT64_MAX;
 
 	oplen = 1;
+	r_cons_break (NULL, NULL);
 	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
+		if (r_cons_singleton ()->breaked)
+			break;
 
 		r_core_seek_archbits (core, at); // slow but safe
 		hint = r_core_hint_begin (core, hint, at);
@@ -1225,6 +1228,7 @@ toro:
 		free (buf);
 		buf = NULL;
 	}
+	r_cons_break_end ();
 #if 1
 	if (!cbytes && idx>=len) {// && (invbreak && !lastfail)) {
 	retry:
