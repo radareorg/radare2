@@ -139,6 +139,7 @@ typedef struct r_core_t {
 	int http_up;
 	int printidx;
 	int utf8;
+	int vseek;
 	RList *watchers;
 } RCore;
 
@@ -197,6 +198,7 @@ R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_cmd(RCore *core, int ch);
+R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
 R_API void r_core_visual_colors(RCore *core);
 

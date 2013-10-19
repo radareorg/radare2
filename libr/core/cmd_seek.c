@@ -159,6 +159,13 @@ static int cmd_seek(void *data, const char *input) {
 			r_io_sundo_push (core->io, core->offset);
 			r_core_anal_bb_seek (core, off);
 			break;
+		case 'f':
+			{
+			RAnalFunction *fcn = r_anal_fcn_find (core->anal, core->offset, 0);
+			if (fcn)
+				r_core_seek (core, fcn->addr+fcn->size, 1);
+			}
+			break;
 		case 'o':
 			{
 			RAnalOp op;
@@ -186,6 +193,7 @@ static int cmd_seek(void *data, const char *input) {
 			" sb         ; seek aligned to bb start\n"
 			//" sp [page]  ; seek page N (page = block)\n"
 			" so         ; seek to next opcode\n"
+			" sf         ; seek to next function (f->addr+f->size)\n"
 			" sC str     ; seek to comment matching given string\n"
 			" sr pc      ; seek to register\n");
 			break;

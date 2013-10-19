@@ -1021,16 +1021,26 @@ toro:
 						r_list_foreach (f->locals, iter, l) {
 							if (analop.jump == l->addr) {
 								if ((cf != NULL) && (f->addr == cf->addr)) {
-									r_cons_strcat (color_label);
-									r_cons_printf ("; (%s)", l->name);
-									r_cons_strcat (Color_RESET);
+									if (show_color) {
+										r_cons_strcat (color_label);
+										r_cons_printf ("; (%s)", l->name);
+										r_cons_strcat (Color_RESET);
+									} else {
+										r_cons_printf ("; (%s)", l->name);
+									}
 								} else {
-									r_cons_strcat (color_fname);
-									r_cons_printf ("; (%s", f->name);
-									r_cons_strcat (Color_RESET);
-									r_cons_strcat (color_label);
-									r_cons_printf (".%s)", l->name);
-									r_cons_strcat (Color_RESET);
+									if (show_color) {
+										r_cons_strcat (color_fname);
+										r_cons_printf ("; (%s", f->name);
+										r_cons_strcat (Color_RESET);
+										r_cons_strcat (color_label);
+										r_cons_printf (".%s)", l->name);
+										r_cons_strcat (Color_RESET);
+									} else {
+										r_cons_printf ("; (%s", f->name);
+										r_cons_strcat (color_label);
+										r_cons_printf (".%s)", l->name);
+									}
 								}
 								have_local = 1;
 								break;
