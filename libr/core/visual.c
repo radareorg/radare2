@@ -4,6 +4,7 @@
 
 #define NPF 5
 static int blocksize = 0;
+static void r_core_visual_refresh (RCore *core);
 static const char *printfmt[] = {
 	"x", "pd $r",
 	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r",
@@ -217,6 +218,37 @@ static void visual_search (RCore *core) {
 	}
 }
 
+R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
+#if 0
+	int i, ns = 90000;
+	const char *scmd = (addr > core->offset)? "so": "s-4";
+	for (i=0;i<5;i++) {
+		r_core_cmd0 (core, scmd);
+		r_core_visual_refresh (core);
+		r_cons_flush();
+		r_sys_usleep (ns);
+		ns -= 1000;
+	}
+	r_core_seek (core, addr, 1);
+#else
+	if (core->offset == addr)
+		return;
+	r_cons_gotoxy (1, 2);
+	if (addr>core->offset) {
+		r_cons_printf (".----.\n");
+		r_cons_printf ("| \\/ |\n");
+		r_cons_printf ("'----'\n");
+	} else {
+		r_cons_printf (".----.\n");
+		r_cons_printf ("| /\\ |\n");
+		r_cons_printf ("'----'\n");
+	}
+	r_cons_flush();
+	r_sys_usleep(90000);
+#endif
+	r_core_seek (core, addr, 1);
+}
+
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
 	char buf[4096];
@@ -234,7 +266,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (curset && delta<100) {
 				cursor = delta;
 			} else {
-				r_core_seek (core, off, 1);
+				r_core_visual_seek_animation (core, off);
+				//r_core_seek (core, off, 1);
 			}
 			r_core_block_read (core, 1);
 		}
@@ -522,7 +555,6 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			ocursor = -1;
 			offscreen = (core->cons->rows-3)*cols;
 			if (cursor>=offscreen) {
-				//ut64 x = core->offset + cols;
 				r_core_seek (core, core->offset+cols, 1);
 				cursor-=cols;
 			}
@@ -709,7 +741,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case '.':
-		r_core_cmd (core, "sr pc", 0);
+		if (r_debug_reg_get (core->dbg, "pc") != 0) {
+			r_core_cmd (core, "sr pc", 0);
+		} else {
+			r_core_cmd (core, "s entry0", 0);
+		}
 		break;
 #if 0
 	case 'n': r_core_seek_delta (core, core->blocksize); break;
@@ -790,7 +826,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		{
 		ut64 off = r_io_sundo (core->io, core->offset);
 		if (off != UT64_MAX)
-			r_core_seek (core, off, 1);
+			//r_core_seek (core, off, 1);
+			r_core_visual_seek_animation (core, off);
 		else eprintf ("Cannot undo\n");
 		}
 		break;
@@ -798,7 +835,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		{
 		ut64 off = r_io_sundo_redo (core->io);
 		if (off != UT64_MAX)
-			r_core_seek (core, off, 1);
+			//r_core_seek (core, off, 1);
+			r_core_visual_seek_animation (core, off);
 		}
 		break;
 	case 'z':

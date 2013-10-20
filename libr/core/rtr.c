@@ -74,7 +74,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 	if (launch) {
 		char cmd[128];
 		const char *browser = r_config_get (core->config, "http.browser");
-		snprintf (cmd, sizeof (cmd)-1, "%s http://localhost:%d/%s",
+		snprintf (cmd, sizeof (cmd)-1, "%s http://localhost:%d/%s &",
 			browser, atoi (port), path?path:"");
 		r_sys_cmd (cmd);
 	}

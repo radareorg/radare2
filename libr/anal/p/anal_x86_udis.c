@@ -330,9 +330,12 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case UD_Ijmp:
-		if (u.operand[0].type == UD_OP_REG) {
+		switch (u.operand[0].type) {
+		case UD_OP_MEM:
+		case UD_OP_REG:
 			op->type = R_ANAL_OP_TYPE_UJMP;
-		} else {
+			break;
+		default:
 			op->type = R_ANAL_OP_TYPE_JMP;
 #if 0
 {

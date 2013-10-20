@@ -2,11 +2,11 @@
 
 // > pxa
 #define append(x,y) { strcat(x,y);x += strlen(y); }
-static void annotated_hexdump(RCore *core, const char *str) {
+static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	const int COLS = 16;
 	const ut8 *buf = core->block;
-	int len = core->blocksize;
+	//int len = core->blocksize;
 	ut64 addr = core->offset;
 	char *ebytes, *echars;
 	ut64 fend = UT64_MAX;
@@ -359,6 +359,8 @@ static int cmd_print(void *data, const char *input) {
 	}
 	ptr = core->block;
 	core->num->value = len;
+	if (len>core->blocksize)
+		len = core->blocksize;
 	switch (*input) {
 	case 'w':
 		{
@@ -783,8 +785,7 @@ static int cmd_print(void *data, const char *input) {
 				" psw = print wide string\n");
 			break;
 		case 'x':
-			r_print_string (core->print, core->offset, core->block, len,
-				0);
+			r_print_string (core->print, core->offset, core->block, len, 0);
 			break;
 		case 'b':
 			{
@@ -909,7 +910,9 @@ static int cmd_print(void *data, const char *input) {
 				);
 			break;
 		case 'a':
-			annotated_hexdump (core, input+2);
+			if (len%16)
+				len += 16-(len%16);
+			annotated_hexdump (core, input+2, len);
 			break;
 		case 'o':
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
