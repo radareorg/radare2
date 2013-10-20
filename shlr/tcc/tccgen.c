@@ -33,21 +33,6 @@ ST_DATA void (*tcc_cb)(const char *, char **);
    anon_sym: anonymous symbol index
 */
 ST_DATA int rsym, anon_sym, ind, loc;
-
-ST_DATA Section *text_section, *data_section, *bss_section; /* predefined sections */
-ST_DATA Section *cur_text_section; /* current section where function code is generated */
-#ifdef CONFIG_TCC_ASM
-ST_DATA Section *last_text_section; /* to handle .previous asm directive */
-#endif
-#ifdef CONFIG_TCC_BCHECK
-/* bound check related sections */
-ST_DATA Section *bounds_section; /* contains global data bound description */
-ST_DATA Section *lbounds_section; /* contains local data bound description */
-#endif
-/* symbol sections */
-ST_DATA Section *symtab_section, *strtab_section;
-/* debug sections */
-ST_DATA Section *stab_section, *stabstr_section;
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
 ST_DATA int nb_sym_pools;
@@ -83,7 +68,7 @@ static int is_compatible_types(CType *type1, CType *type2);
 static int parse_btype(CType *type, AttributeDef *ad);
 static void type_decl(CType *type, AttributeDef *ad, int *v, int td);
 static void parse_expr_type(CType *type);
-static void decl_initializer(CType *type, Section *sec, unsigned long c, int first, int size_only);
+static void decl_initializer(CType *type, unsigned long c, int first, int size_only);
 static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r, int has_init, int v, char *asm_label, int scope);
 static int decl0(int l, int is_for_loop_init);
 static void expr_eq(void);
@@ -299,16 +284,8 @@ ST_FUNC void swap(int *p, int *q)
 
 static void vsetc(CType *type, int r, CValue *vc)
 {
-    int v;
-
     if (vtop >= vstack + (VSTACK_SIZE - 1))
         tcc_error("memory full");
-    /* cannot let cpu flags if other instruction are generated. Also
-       avoid leaving VT_JMP anywhere except on the top of the stack
-       because it would complicate the code generator. */
-    if (vtop >= vstack) {
-        v = vtop->r & VT_VALMASK;
-    }
     vtop++;
     vtop->type = *type;
     vtop->r = r;
@@ -692,7 +669,6 @@ static void type_to_str(char *buf, int buf_size,
    extensions are recognized:
    - aligned(n) : set data/function alignment.
    - packed : force data alignment to 1
-   - section(x) : generate data/code in this section.
    - unused : currently ignored, but may be used someday.
    - regparm(n) : pass function parameters in registers (i386 only)
  */
@@ -1602,7 +1578,7 @@ ST_FUNC void unary(void)
         /* fall thru */
     case TOK___FUNC__:
         {
-            void *ptr;
+            void *ptr = NULL;
             int len;
             /* special function name identifier */
             len = strlen(funcname) + 1;
@@ -1809,8 +1785,7 @@ ST_FUNC void unary(void)
             /* if referencing an inline function, then we generate a
                symbol to it if not already done. It will have the
                effect to generate code for it at the end of the
-               compilation unit. Inline function as always
-               generated in the text section. */
+               compilation unit. */
             r = VT_SYM | VT_CONST;
         } else {
             r = s->r;
@@ -1976,11 +1951,8 @@ static void expr_lor_const(void)
 /* only used if non constant */
 static void expr_land(void)
 {
-    int t;
-
     expr_or();
     if (tok == TOK_LAND) {
-        t = 0;
         for(;;) {
             if (tok != TOK_LAND) {
                 break;
@@ -1993,11 +1965,8 @@ static void expr_land(void)
 
 static void expr_lor(void)
 {
-    int t;
-
     expr_land();
     if (tok == TOK_LOR) {
-        t = 0;
         for(;;) {
             if (tok != TOK_LOR) {
                 break;
@@ -2014,9 +1983,7 @@ static void expr_cond(void)
     if (const_wanted) {
         expr_lor_const();
         if (tok == '?') {
-            int c;
             vdup();
-            c = vtop->c.i;
             next();
             if (tok != ':' || !gnu_ext) {
                 gexpr();
@@ -2131,7 +2098,7 @@ static int is_label(void)
    address. cur_index/cur_field is the pointer to the current
    value. 'size_only' is true if only size info is needed (only used
    in arrays) */
-static void decl_designator(CType *type, Section *sec, unsigned long c,
+static void decl_designator(CType *type, unsigned long c,
                             int *cur_index, Sym **cur_field,
                             int size_only)
 {
@@ -2225,24 +2192,7 @@ static void decl_designator(CType *type, Section *sec, unsigned long c,
             c += f->c;
         }
     }
-    decl_initializer(type, sec, c, 0, size_only);
-
-    /* XXX: make it more general */
-    if (!size_only && nb_elems > 1) {
-        unsigned long c_end;
-        uint8_t *src, *dst;
-        int i;
-
-        if (!sec)
-            tcc_error("range init not supported yet for dynamic storage");
-        c_end = c + nb_elems * elem_size;
-        src = sec->data + c;
-        dst = src;
-        for(i = 1; i < nb_elems; i++) {
-            dst += elem_size;
-            memcpy(dst, src, elem_size);
-        }
-    }
+    decl_initializer(type, c, 0, size_only);
 }
 
 #define EXPR_VAL   0
@@ -2250,12 +2200,10 @@ static void decl_designator(CType *type, Section *sec, unsigned long c,
 #define EXPR_ANY   2
 
 /* store a value or an expression directly in global data or in local array */
-static void init_putv(CType *type, Section *sec, unsigned long c,
+static void init_putv(CType *type, unsigned long c,
                       int v, int expr_type)
 {
-    int saved_global_expr, bt, bit_pos, bit_size;
-    void *ptr;
-    unsigned long long bit_mask;
+    int saved_global_expr;
     CType dtype;
 
     switch(expr_type) {
@@ -2280,68 +2228,16 @@ static void init_putv(CType *type, Section *sec, unsigned long c,
     dtype = *type;
     dtype.t &= ~VT_CONSTANT; /* need to do that to avoid false warning */
 
-    if (sec) {
-        /* XXX: not portable */
-        /* XXX: generate error if incorrect relocation */
-        bt = type->t & VT_BTYPE;
-        ptr = sec->data + c;
-        /* XXX: make code faster ? */
-        if (!(type->t & VT_BITFIELD)) {
-            bit_pos = 0;
-            bit_size = 32;
-            bit_mask = -1LL;
-        } else {
-            bit_pos = (vtop->type.t >> VT_STRUCT_SHIFT) & 0x3f;
-            bit_size = (vtop->type.t >> (VT_STRUCT_SHIFT + 6)) & 0x3f;
-            bit_mask = (1LL << bit_size) - 1;
-        }
-        if ((vtop->r & VT_SYM) &&
-            (bt == VT_BYTE ||
-             bt == VT_SHORT ||
-             bt == VT_DOUBLE ||
-             bt == VT_LDOUBLE ||
-             bt == VT_LLONG ||
-             (bt == VT_INT && bit_size != 32)))
-            tcc_error("initializer element is not computable at load time");
-        switch(bt) {
-        case VT_BOOL:
-            vtop->c.i = (vtop->c.i != 0);
-        case VT_BYTE:
-            *(char *)ptr |= (vtop->c.i & bit_mask) << bit_pos;
-            break;
-        case VT_SHORT:
-            *(short *)ptr |= (vtop->c.i & bit_mask) << bit_pos;
-            break;
-        case VT_DOUBLE:
-            *(double *)ptr = vtop->c.d;
-            break;
-        case VT_LDOUBLE:
-            *(long double *)ptr = vtop->c.ld;
-            break;
-        case VT_LLONG:
-            *(long long *)ptr |= (vtop->c.ll & bit_mask) << bit_pos;
-            break;
-        default:
-            *(int *)ptr |= (vtop->c.i & bit_mask) << bit_pos;
-            break;
-        }
-        vtop--;
-    } else {
-        vset(&dtype, VT_LOCAL|VT_LVAL, c);
-        vswap();
-    }
+    vset(&dtype, VT_LOCAL|VT_LVAL, c);
+    vswap();
 }
 
 /* put zeros for variable based init */
-static void init_putz(CType *t, Section *sec, unsigned long c, int size)
+static void init_putz(CType *t, unsigned long c, int size)
 {
-    if (sec) {
-        /* nothing to do because globals are already set to zero */
-    } else {
-        vseti(VT_LOCAL, c);
-        vpushi(0);
-        vpushs(size);
-    }
+	vseti(VT_LOCAL, c);
+	vpushi(0);
+	vpushs(size);
 }
 
 /* 't' contains the type and storage info. 'c' is the offset of the
@@ -2349,7 +2245,7 @@ static void init_putz(CType *t, Section *sec, unsigned long c, int size)
    allocation. 'first' is true if array '{' must be read (multi
    dimension implicit array init handling). 'size_only' is true if
    size only evaluation is wanted (only for arrays). */
-static void decl_initializer(CType *type, Section *sec, unsigned long c,
+static void decl_initializer(CType *type, unsigned long c,
                              int first, int size_only)
 {
     int index, array_length, n, no_oblock, nb, parlevel, parlevel1, i;
@@ -2403,17 +2299,13 @@ static void decl_initializer(CType *type, Section *sec, unsigned long c,
                     /* in order to go faster for common case (char
                        string in global variable, we handle it
                        specifically */
-                    if (sec && tok == TOK_STR && size1 == 1) {
-                        memcpy(sec->data + c + array_length, cstr->data, nb);
-                    } else {
-                        for(i=0;i<nb;i++) {
-                            if (tok == TOK_STR)
-                                ch = ((unsigned char *)cstr->data)[i];
-                            else
-                                ch = ((nwchar_t *)cstr->data)[i];
-                            init_putv(t1, sec, c + (array_length + i) * size1,
+                    for(i=0;i<nb;i++) {
+						if (tok == TOK_STR)
+							ch = ((unsigned char *)cstr->data)[i];
+						else
+							ch = ((nwchar_t *)cstr->data)[i];
+						init_putv(t1, c + (array_length + i) * size1,
                                       ch, EXPR_VAL);
-                        }
                     }
                 }
                 array_length += nb;
@@ -2423,20 +2315,20 @@ static void decl_initializer(CType *type, Section *sec, unsigned long c,
                warning in this case since it is standard) */
             if (n < 0 || array_length < n) {
                 if (!size_only) {
-                    init_putv(t1, sec, c + (array_length * size1), 0, EXPR_VAL);
+                    init_putv(t1, c + (array_length * size1), 0, EXPR_VAL);
                 }
                 array_length++;
             }
         } else {
             index = 0;
             while (tok != '}') {
-                decl_designator(type, sec, c, &index, NULL, size_only);
+                decl_designator(type, c, &index, NULL, size_only);
                 if (n >= 0 && index >= n)
                     tcc_error("index too large");
                 /* must put zero in holes (note that doing it that way
                    ensures that it even works with designators) */
                 if (!size_only && array_length < index) {
-                    init_putz(t1, sec, c + array_length * size1,
+                    init_putz(t1, c + array_length * size1,
                               (index - array_length) * size1);
                 }
                 index++;
@@ -2456,14 +2348,14 @@ static void decl_initializer(CType *type, Section *sec, unsigned long c,
             skip('}');
         /* put zeros at the end */
         if (!size_only && n >= 0 && array_length < n) {
-            init_putz(t1, sec, c + array_length * size1,
+            init_putz(t1, c + array_length * size1,
                       (n - array_length) * size1);
         }
         /* patch type size if needed */
         if (n < 0)
             s->c = array_length;
     } else if ((type->t & VT_BTYPE) == VT_STRUCT &&
-               (sec || !first || tok == '{')) {
+               (!first || tok == '{')) {
         int par_count;
 
         /* NOTE: the previous test is a specific case for automatic
@@ -2503,10 +2395,10 @@ static void decl_initializer(CType *type, Section *sec, unsigned long c,
         index = 0;
         n = s->c;
         while (tok != '}') {
-            decl_designator(type, sec, c, NULL, &f, size_only);
+            decl_designator(type, c, NULL, &f, size_only);
             index = f->c;
             if (!size_only && array_length < index) {
-                init_putz(type, sec, c + array_length,
+                init_putz(type, c + array_length,
                           index - array_length);
             }
             index = index + type_size(&f->type, &align1);
@@ -2539,7 +2431,7 @@ static void decl_initializer(CType *type, Section *sec, unsigned long c,
         }
         /* put zeros at the end */
         if (!size_only && array_length < n) {
-            init_putz(type, sec, c + array_length,
+            init_putz(type, c + array_length,
                       n - array_length);
         }
         if (!no_oblock)
@@ -2550,7 +2442,7 @@ static void decl_initializer(CType *type, Section *sec, unsigned long c,
         }
     } else if (tok == '{') {
         next();
-        decl_initializer(type, sec, c, first, size_only);
+        decl_initializer(type, c, first, size_only);
         skip('}');
     } else if (size_only) {
         /* just skip expression */
@@ -2571,9 +2463,7 @@ static void decl_initializer(CType *type, Section *sec, unsigned long c,
         /* currently, we always use constant expression for globals
            (may change for scripting case) */
         expr_type = EXPR_CONST;
-        if (!sec)
-            expr_type = EXPR_ANY;
-        init_putv(type, sec, c, 0, expr_type);
+        init_putv(type, c, 0, expr_type);
     }
 }
 
@@ -2589,11 +2479,10 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r,
                                    int has_init, int v, char *asm_label,
                                    int scope)
 {
-    int size, align, addr, data_offset;
+    int size, align, addr;
     int level;
     ParseState saved_parse_state = {0};
     TokenString init_str;
-    Section *sec;
     Sym *flexible_array;
 
     flexible_array = NULL;
@@ -2650,7 +2539,7 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r,
 
         macro_ptr = init_str.str;
         next();
-        decl_initializer(type, NULL, 0, 1, 1);
+        decl_initializer(type, 0, 1, 1);
         /* prepare second initializer parsing */
         macro_ptr = init_str.str;
         next();
@@ -2670,7 +2559,6 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r,
         align = 1;
     }
     if ((r & VT_VALMASK) == VT_LOCAL) {
-        sec = NULL;
         loc = (loc - size) & -align;
         addr = loc;
         if (v) {

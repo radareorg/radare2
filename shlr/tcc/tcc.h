@@ -247,43 +247,6 @@ typedef struct Sym {
     struct Sym *prev_tok; /* previous symbol for this token */
 } Sym;
 
-/* section definition */
-/* XXX: use directly ELF structure for parameters ? */
-/* special flag to indicate that the section should not be linked to
-   the other ones */
-#define SHF_PRIVATE 0x80000000
-
-/* special flag, too */
-#define SECTION_ABS ((void *)1)
-
-typedef struct Section {
-    unsigned long data_offset; /* current data offset */
-    unsigned char *data;       /* section data */
-    unsigned long data_allocated; /* used for realloc() handling */
-    int sh_name;             /* elf section name (only used during output) */
-    int sh_num;              /* elf section number */
-    int sh_type;             /* elf section type */
-    int sh_flags;            /* elf section flags */
-    int sh_info;             /* elf section info */
-    int sh_addralign;        /* elf section alignment */
-    int sh_entsize;          /* elf entry size */
-    unsigned long sh_size;   /* section size (only used during output) */
-    addr_t sh_addr;          /* address at which the section is relocated */
-    unsigned long sh_offset; /* file offset */
-    int nb_hashed_syms;      /* used to resize the hash table */
-    struct Section *link;    /* link to another section */
-    struct Section *reloc;   /* corresponding section for relocation, if any */
-    struct Section *hash;     /* hash table for symbols */
-    struct Section *next;
-    char name[1];           /* section name */
-} Section;
-
-typedef struct DLLReference {
-    int level;
-    void *handle;
-    char name[1];
-} DLLReference;
-
 /* GNUC attribute definition */
 typedef struct AttributeDef {
     unsigned
@@ -296,7 +259,6 @@ typedef struct AttributeDef {
       mode          : 4,
       weak          : 1,
       fill          : 11;
-    struct Section *section;
     int alias_target;    /* token */
 } AttributeDef;
 
@@ -477,10 +439,6 @@ struct TCCState {
     int seg_size; /* 32. Can be 16 with i386 assembler (.code16) */
 #endif
 
-    /* array of all loaded dlls (including those referenced by loaded dlls) */
-    DLLReference **loaded_dlls;
-    int nb_loaded_dlls;
-
     /* include paths */
     char **include_paths;
     int nb_include_paths;
@@ -531,56 +489,13 @@ struct TCCState {
     struct InlineFunc **inline_fns;
     int nb_inline_fns;
 
-    /* sections */
-    Section **sections;
-    int nb_sections; /* number of sections, including first dummy section */
-
-    Section **priv_sections;
-    int nb_priv_sections; /* number of private sections */
-
-    /* got & plt handling */
-    Section *got;
-    Section *plt;
-    struct sym_attr *sym_attrs;
+     struct sym_attr *sym_attrs;
     int nb_sym_attrs;
     /* give the correspondance from symtab indexes to dynsym indexes */
     int *symtab_to_dynsym;
 
-    /* temporary dynamic symbol sections (for dll loading) */
-    Section *dynsymtab_section;
-    /* exported dynamic symbol section */
-    Section *dynsym;
-    /* copy of the gobal symtab_section variable */
-    Section *symtab;
     /* tiny assembler state */
     Sym *asm_labels;
-
-#ifdef TCC_TARGET_PE
-    /* PE info */
-    int pe_subsystem;
-    unsigned pe_file_align;
-    unsigned pe_stack_size;
-# ifdef TCC_TARGET_X86_64
-    Section *uw_pdata;
-    int uw_sym;
-    unsigned uw_offs;
-# endif
-#endif
-
-#ifdef TCC_IS_NATIVE
-    /* for tcc_relocate */
-    void *runtime_mem;
-# ifdef HAVE_SELINUX
-    void *write_mem;
-    unsigned long mem_size;
-# endif
-# if !defined TCC_TARGET_PE && (defined TCC_TARGET_X86_64 || defined TCC_TARGET_ARM)
-    /* write PLT and GOT here */
-    char *runtime_plt_and_got;
-    unsigned runtime_plt_and_got_offset;
-#  define TCC_HAS_RUNTIME_PLTGOT
-# endif
-#endif
 
     /* used by main and tcc_parse_args only */
     char **files; /* files seen on command line */
@@ -944,16 +859,6 @@ ST_FUNC void cstr_new(CString *cstr);
 ST_FUNC void cstr_free(CString *cstr);
 ST_FUNC void cstr_reset(CString *cstr);
 
-ST_FUNC Section *new_section(TCCState *s1, const char *name, int sh_type, int sh_flags);
-ST_FUNC void section_realloc(Section *sec, unsigned long new_size);
-ST_FUNC void *section_ptr_add(Section *sec, unsigned long size);
-ST_FUNC void section_reserve(Section *sec, unsigned long size);
-ST_FUNC Section *find_section(TCCState *s1, const char *name);
-
-ST_FUNC void put_extern_sym2(Sym *sym, Section *section, addr_t value, unsigned long size, int can_add_underscore);
-ST_FUNC void put_extern_sym(Sym *sym, Section *section, addr_t value, unsigned long size);
-ST_FUNC void greloc(Section *s, Sym *sym, unsigned long offset, int type);
-
 ST_INLN void sym_free(Sym *sym);
 ST_FUNC Sym *sym_push2(Sym **ps, int v, int t, long c);
 ST_FUNC Sym *sym_find2(Sym *s, int v);
@@ -1042,21 +947,6 @@ ST_FUNC void expect(const char *msg);
 #define REG_LRET 2
 #define REG_FRET 3
 
-ST_DATA Section *text_section, *data_section, *bss_section; /* predefined sections */
-ST_DATA Section *cur_text_section; /* current section where function code is generated */
-#ifdef CONFIG_TCC_ASM
-ST_DATA Section *last_text_section; /* to handle .previous asm directive */
-#endif
-#ifdef CONFIG_TCC_BCHECK
-/* bound check related sections */
-ST_DATA Section *bounds_section; /* contains global data bound description */
-ST_DATA Section *lbounds_section; /* contains local data bound description */
-#endif
-/* symbol sections */
-ST_DATA Section *symtab_section, *strtab_section;
-/* debug sections */
-ST_DATA Section *stab_section, *stabstr_section;
-
 #define SYM_POOL_NB (8192 / sizeof(Sym))
 ST_DATA Sym *sym_free_first;
 ST_DATA void **sym_pools;
@@ -1118,9 +1008,6 @@ ST_FUNC void gexpr(void);
 ST_FUNC int expr_const(void);
 ST_FUNC void gen_inline_functions(void);
 ST_FUNC void decl(int l);
-#if defined CONFIG_TCC_BCHECK || defined TCC_TARGET_C67
-ST_FUNC Sym *get_sym_ref(CType *type, Section *sec, unsigned long offset, unsigned long size);
-#endif
 #if defined TCC_TARGET_X86_64 && !defined TCC_TARGET_PE
 ST_FUNC int classify_x86_64_va_arg(CType *ty);
 #endif

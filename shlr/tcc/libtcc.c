@@ -389,14 +389,12 @@ static int tcc_compile(TCCState *s1)
 {
     Sym *define_start;
     SValue *pvtop;
-    char buf[512];
 
 #ifdef INC_DEBUG
     printf("%s: **** new file\n", file->filename);
 #endif
     preprocess_init(s1);
 
-    cur_text_section = NULL;
     funcname = "";
     anon_sym = SYM_FIRST_ANOM;
 
@@ -661,8 +659,6 @@ LIBTCCAPI TCCState *tcc_new(void)
 
 LIBTCCAPI void tcc_delete(TCCState *s1)
 {
-    int i;
-
     tcc_cleanup();
 
     /* free library paths */
@@ -711,7 +707,7 @@ LIBTCCAPI int tcc_add_sysinclude_path(TCCState *s, const char *pathname)
 ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
 {
     const char *ext;
-    int fd, ret, size;
+    int ret;
 
     /* find source file type with extension */
     ext = tcc_fileextension(filename);
@@ -780,22 +776,6 @@ static int tcc_add_library_internal(TCCState *s, const char *fmt,
             return 0;
     }
     return -1;
-}
-
-/* find and load a dll. Return non zero if not found */
-/* XXX: add '-rpath' option support ? */
-ST_FUNC int tcc_add_dll(TCCState *s, const char *filename, int flags)
-{
-    return tcc_add_library_internal(s, "%s/%s", filename, flags,
-        s->library_paths, s->nb_library_paths);
-}
-
-ST_FUNC int tcc_add_crt(TCCState *s, const char *filename)
-{
-    if (-1 == tcc_add_library_internal(s, "%s/%s",
-        filename, 0, s->crt_paths, s->nb_crt_paths))
-        tcc_error_noabort("file '%s' not found", filename);
-    return 0;
 }
 
 /* the library name is the same as the argument of the '-l' option */
