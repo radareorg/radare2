@@ -1,0 +1,23 @@
+#!/bin/sh
+t() {
+	ok=`rasm2 -ax86.olly -b32 "$1"`
+	echo "OLD $ok $1"
+	o=`rasm2 -ax86 -b32 "$1"`
+	printf "NEW $o "
+	rasm2 -ax86 -b32 -d $o
+	if [ "$o" = "$ok" ]; then
+		echo "\x1b[32mOK\x1b[0m"
+	else
+		echo "\x1b[31mFAIL\x1b[0m"
+	fi
+}
+
+t 'cmp eax, [esp+0x8]'
+echo
+t 'cmp ebx, [esp+0x8]'
+echo
+t 'cmp edi, [eax+0x8]'
+echo
+t 'cmp edi, [esi+0x8]'
+echo
+t 'cmp edi, [ebp+0x500]'
