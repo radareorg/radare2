@@ -400,6 +400,7 @@ static int tcc_compile(TCCState *s1)
 
 	/* define some often used types */
     int_type.t = VT_INT;
+	llong_type.t = VT_LLONG;
 
     char_pointer_type.t = VT_BYTE;
     mk_pointer(&char_pointer_type);
