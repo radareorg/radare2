@@ -310,9 +310,9 @@ static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 		case 1:
 		case '*':
 		default:
-			m->printf ("\"%s %d %s\" @ 0x%08"PFMT64x"\n",
-				r_meta_type_to_string (d->type),
-				(int)(d->to-d->from), pstr, d->from);
+			m->printf ("\"%s %s\" @ 0x%08"PFMT64x"\n",
+				r_meta_type_to_string (d->type), pstr, d->from);
+				// (int)(d->to-d->from), 
 			break;
 		}
 		free (str);
