@@ -30,7 +30,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 }
 
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
-	int i, from, to, cols, n = 0;
+	int i, delta, from, to, cols, n = 0;
 	const char *fmt, *fmt2;
 	RListIter *iter;
 	RRegItem *item;
@@ -41,8 +41,8 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 		return R_FALSE;
 	//if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 	if (dbg->bits & R_SYS_BITS_64) {
-		fmt = "%s = 0x%016"PFMT64x"%s";
-		fmt2 = "%4s 0x%016"PFMT64x"%s";
+		fmt = "%s = 0x%08"PFMT64x"%s";
+		fmt2 = "%4s 0x%08"PFMT64x"%s";
 		cols = 3;
 	} else {
 		fmt = "%s = 0x%08"PFMT64x"%s";
@@ -70,10 +70,11 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 					continue;
 			}
 			value = r_reg_get_value (dbg->reg, item);
-		//r_reg_arena_swap (dbg->reg, R_FALSE);
-			//diff = r_reg_get_value (dbg->reg, item);
-			diff = (ut64)r_reg_cmp (dbg->reg, item);
-		//r_reg_arena_swap (dbg->reg, R_TRUE);
+			r_reg_arena_swap (dbg->reg, R_FALSE);
+			diff = r_reg_get_value (dbg->reg, item);
+			r_reg_arena_swap (dbg->reg, R_FALSE);
+
+			delta = value-diff;
 			switch (rad) {
 			case 'j':
 				dbg->printf ("%s\"%s\":%"PFMT64d,
@@ -99,7 +100,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 			case 3:
 				if (diff) {
 					char woot[32];
-					snprintf (woot, sizeof (woot), " was 0x%08"PFMT64x"\n", diff);
+					snprintf (woot, sizeof (woot), " was 0x%08"PFMT64x" delta %d\n", diff, delta);
 					dbg->printf (fmt, item->name, value, woot);
 				}
 				break;
