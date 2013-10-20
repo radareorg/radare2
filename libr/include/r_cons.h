@@ -310,7 +310,7 @@ R_API void r_cons_pal_list (int rad);
 R_API void r_cons_pal_show ();
 R_API int r_cons_get_size(int *rows);
 R_API int r_cons_arrow_to_hjkl(int ch);
-R_API int r_cons_html_print(const char *ptr);
+R_API int r_cons_filter_html(const char *ptr);
 
 // TODO: use gets() .. MUST BE DEPRECATED
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv);
