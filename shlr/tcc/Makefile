@@ -1,6 +1,6 @@
 include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
-OFILES=i386-gen.o libtcc.o tccelf.o tccgen.o tccpp.o 
+OFILES=libtcc.o tccgen.o tccpp.o
 
 CFLAGS+=-fPIC -Wall
 LDFLAGS=-shared

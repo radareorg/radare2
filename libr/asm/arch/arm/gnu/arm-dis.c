@@ -2208,7 +2208,7 @@ print_insn_coprocessor (bfd_vma pc,
 
 		      case 'f':
 			if (value > 7)
-			  func (stream, "#%s", arm_fp_const[value & 7]);
+			  func (stream, "%s", arm_fp_const[value & 7]);
 			else
 			  func (stream, "f%ld", value);
 			break;
@@ -2884,11 +2884,11 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                         switch (size)
                           {
                           case 8:
-			    func (stream, "#%ld", value); // ; 0x%.2lx", value, value);
+			    func (stream, "%ld", value); // ; 0x%.2lx", value, value);
                             break;
                           
                           case 16:
-                            func (stream, "#%ld", value); // ; 0x%.4lx", value, value);
+                            func (stream, "%ld", value); // ; 0x%.4lx", value, value);
                             break;
 
                           case 32:
@@ -2911,21 +2911,21 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                                   (& floatformat_ieee_single_little, valbytes,
                                   & fvalue);
                                                                 
-                                func (stream, "#%.7g ; 0x%.8lx", fvalue,
+                                func (stream, "%.7g ; 0x%.8lx", fvalue,
                                       value);
 #else
                                 func (stream, "<TODO:float>");
 #endif
                               }
                             else
-                              func (stream, "#%ld ; 0x%.8lx",
+                              func (stream, "%ld ; 0x%.8lx",
 				    (long) (((value & 0x80000000L) != 0) 
 					    ? value | ~0xffffffffL : value),
 				    value);
                             break;
 
                           case 64:
-                            func (stream, "#0x%.8lx%.8lx", hival, value);
+                            func (stream, "0x%.8lx%.8lx", hival, value);
                             break;
                           
                           default:
@@ -3343,9 +3343,9 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			      break;
 
 			  if (i != rotate)
-			    func (stream, "#%d, %d", immed, rotate);
+			    func (stream, "%d, %d", immed, rotate);
 			  else
-			    func (stream, "#%d", a);
+			    func (stream, "%d", a);
 			  value_in_comment = a;
 			}
 		      else
@@ -3464,7 +3464,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			    {
 			    case 0xf: func (stream, "sy"); break;
 			    default:
-			      func (stream, "#%d", (int) given & 0xf);
+			      func (stream, "%d", (int) given & 0xf);
 			      break;
 			    }
 			} 
@@ -3474,7 +3474,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			  if (opt != NULL)
 			    func (stream, "%s", opt);
 			  else
-			      func (stream, "#%d", (int) given & 0xf);
+			      func (stream, "%d", (int) given & 0xf);
 			}
 		      break;
 
@@ -3582,7 +3582,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			  long w = msb - lsb + 1;
 
 			  if (w > 0)
-			    func (stream, "#%lu, #%lu", lsb, w);
+			    func (stream, "%lu, %lu", lsb, w);
 			  else
 			    func (stream, "(invalid: %lu:%lu)", lsb, msb);
 			}
@@ -3612,7 +3612,7 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
 			  long lo = (given & 0x00000fff);
 			  long imm16 = hi | lo;
 
-			  func (stream, "#%lu", imm16);
+			  func (stream, "%lu", imm16);
 			  value_in_comment = imm16;
 			}
 			break;
@@ -3799,7 +3799,7 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 		  long imm = (given & 0x07c0) >> 6;
 		  if (imm == 0)
 		    imm = 32;
-		  func (stream, "#%ld", imm);
+		  func (stream, "%ld", imm);
 		}
 		break;
 
@@ -3994,7 +3994,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm12 |= (given & 0x000000ffu);
 		  imm12 |= (given & 0x00007000u) >> 4;
 		  imm12 |= (given & 0x04000000u) >> 15;
-		  func (stream, "#%u", imm12);
+		  func (stream, "%u", imm12);
 		  value_in_comment = imm12;
 		}
 		break;
@@ -4019,7 +4019,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      imm8 = (bits & 0x07f) | 0x80;
 		      imm  = (((imm8 << (32 - mod)) | (imm8 >> mod)) & 0xffffffff);
 		    }
-		  func (stream, "#%u", imm);
+		  func (stream, "%u", imm);
 		  value_in_comment = imm;
 		}
 		break;
@@ -4032,7 +4032,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x00007000u) >> 4;
 		  imm |= (given & 0x04000000u) >> 15;
 		  imm |= (given & 0x000f0000u) >> 4;
-		  func (stream, "#%u", imm);
+		  func (stream, "%u", imm);
 		  value_in_comment = imm;
 		}
 		break;
@@ -4044,7 +4044,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		  imm |= (given & 0x000f0000u) >> 16;
 		  imm |= (given & 0x00000ff0u) >> 0;
 		  imm |= (given & 0x0000000fu) << 12;
-		  func (stream, "#%u", imm);
+		  func (stream, "%u", imm);
 		  value_in_comment = imm;
 		}
 		break;
@@ -4055,7 +4055,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 
 		  imm |= (given & 0x00000fffu);
 		  imm |= (given & 0x000f0000u) >> 4;
-		  func (stream, "#%u", imm);
+		  func (stream, "%u", imm);
 		  value_in_comment = imm;
 		}
 		break;
@@ -4205,7 +4205,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      func (stream, "], ");
 		      if (W)
 			{
-			  func (stream, "#%c%u", U ? '+' : '-', off * 4);
+			  func (stream, "%c%u", U ? '+' : '-', off * 4);
 			  value_in_comment = off * 4 * U ? 1 : -1;
 			}
 		      else
@@ -4262,7 +4262,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 
 		  lsb |= (given & 0x000000c0u) >> 6;
 		  lsb |= (given & 0x00007000u) >> 10;
-		  func (stream, "#%u, #%u", lsb, msb - lsb + 1);
+		  func (stream, "%u, %u", lsb, msb - lsb + 1);
 		}
 		break;
 
@@ -4273,7 +4273,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 
 		  lsb |= (given & 0x000000c0u) >> 6;
 		  lsb |= (given & 0x00007000u) >> 10;
-		  func (stream, "#%u, #%u", lsb, width);
+		  func (stream, "%u, %u", lsb, width);
 		}
 		break;
 
@@ -4348,7 +4348,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		      {
 			case 0xf: func (stream, "sy"); break;
 			default:
-			  func (stream, "#%d", (int) given & 0xf);
+			  func (stream, "%d", (int) given & 0xf);
 			      break;
 		      }
 		  }
@@ -4358,7 +4358,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 		    if (opt != NULL)
 		      func (stream, "%s", opt);
 		    else
-		      func (stream, "#%d", (int) given & 0xf);
+		      func (stream, "%d", (int) given & 0xf);
 		   }
 		break;
 

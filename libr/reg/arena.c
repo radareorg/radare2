@@ -145,19 +145,25 @@ R_API void r_reg_arena_free(RRegArena* ra) {
 }
 
 R_API void r_reg_arena_swap(RReg *reg, int copy) {
-	r_reg_arena_set (reg, (++reg->iters)%2, copy);
+	int index = (++reg->iters)%2;
+	r_reg_arena_set (reg, index, copy);
 }
 
 R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
 	int i;
-	if (n>r_list_length (reg->regset[0].pool))
+	if (n>r_list_length (reg->regset[0].pool)) {
 		return R_FALSE;
+	}
 	for (i=0; i<R_REG_TYPE_LAST; i++) {
 		RRegArena *o = reg->regset[i].arena;
 		RRegArena *a = (RRegArena*)r_list_get_n (reg->regset[i].pool, n); 
+		if (!a) {
+			a = r_reg_arena_new (o->size);
+			r_list_append (reg->regset[i].pool, a);
+		}
 		if (!a) continue;
 		reg->regset[i].arena = a;
-		if (a->size != o->size) {
+		if ((a->size != o->size) && (o->size>0)) {
 			a->size = o->size;
 			a->bytes = realloc (a->bytes, a->size+4);
 			if (!a->bytes) {

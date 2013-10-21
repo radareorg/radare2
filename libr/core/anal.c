@@ -343,6 +343,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		eprintf ("Error: new (fcn)\n");
 		return R_FALSE;
 	}
+fcn->addr = at;
+fcn->size = 0;
+fcn->name = r_str_dup_printf ("fcn.%08"PFMT64x, at);
 	if (!(buf = malloc (ANALBS))) { //core->blocksize))) {
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
@@ -353,24 +356,33 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 	//eprintf ("FUNC 0x%08"PFMT64x"\n", at+fcnlen);
 	do {
+		int delta = fcn->size;
 		// check io error
-		if ((buflen = r_io_read_at (core->io, at+fcnlen, buf, 4) != 4)) {
+		if ((buflen = r_io_read_at (core->io, at+delta, buf, 4) != 4)) {
 			goto error;
 		}
 		// real read.
-		if (!r_core_read_at (core, at+fcnlen, buf, ANALBS))
+		if (!r_core_read_at (core, at+delta, buf, ANALBS))
 			goto error;
 		if (!memcmp (buf, "\xff\xff\xff\xff", 4))
 			goto error;
 		buflen = ANALBS;
 		if (r_cons_singleton ()->breaked)
 			break;
-		fcnlen = r_anal_fcn (core->anal, fcn, at+fcnlen, buf, buflen, reftype);
+		fcnlen = r_anal_fcn (core->anal, fcn, at+delta, buf, buflen, reftype);
+		if (fcn->size<0 || fcn->size>999999) {
+			eprintf ("Oops. Negative function size at 0x%08"PFMT64x" (%d)\n",
+				at, fcnlen);
+			continue;
+		}
+// HACK
+		//r_anal_fcn_insert (core->anal, fcn);
 		if (fcnlen == R_ANAL_RET_ERROR ||
 			(fcnlen == R_ANAL_RET_END && fcn->size < 1)) { /* Error analyzing function */
 			goto error;
 		} else if (fcnlen == R_ANAL_RET_END) { /* Function analysis complete */
 			RFlagItem *f = r_flag_get_i2 (core->flags, at);
+			free (fcn->name);
 			if (f) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name); // memleak here?
 			} else {
@@ -382,6 +394,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				r_flag_space_set (core->flags, "functions");
 				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
 			}
+			fcn->addr = at;
 			/* TODO: Dupped analysis, needs more optimization */
 			fcn->depth = 256;
 			r_core_anal_bb (core, fcn, fcn->addr, R_TRUE);
@@ -408,7 +421,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			if (next && nexti<MAXNEXT) {
 				int i;
 				ut64 addr = fcn->addr + fcn->size;
-				for (i=0;i<nexti;i++)
+				for (i=0; i<nexti; i++)
 					if (next[i] == addr)
 						break;
 				if (i==nexti) {
@@ -451,7 +464,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		}
 		free (next);
 	}
-
 	return R_TRUE;
 
 error:
@@ -961,10 +973,6 @@ R_API int r_core_anal_all(RCore *core) {
 	baddr = r_bin_get_baddr (core->bin);
 	offset = r_bin_get_offset (core->bin);
 	/* Analyze Functions */
-	/* Main */
-	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL)
-		r_core_anal_fcn (core, offset + va?baddr+binmain->rva:binmain->offset, -1,
-				R_ANAL_REF_TYPE_NULL, depth);
 	/* Entries */
 	{
 	RFlagItem *item = r_flag_get (core->flags, "entry0");
@@ -974,6 +982,10 @@ R_API int r_core_anal_all(RCore *core) {
 		r_core_cmd0 (core, "af");
 	}
 	}
+	/* Main */
+	if ((binmain = r_bin_get_sym (core->bin, R_BIN_SYM_MAIN)) != NULL)
+		r_core_anal_fcn (core, offset + va?baddr+binmain->rva:binmain->offset, -1,
+				R_ANAL_REF_TYPE_NULL, depth);
 	if ((list = r_bin_get_entries (core->bin)) != NULL)
 		r_list_foreach (list, iter, entry)
 			r_core_anal_fcn (core, offset + va? baddr+entry->rva:entry->offset, -1,

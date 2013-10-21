@@ -87,7 +87,9 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
-	return mips_assemble (str, a->pc, op->buf);
+	int ret = mips_assemble (str, a->pc, op->buf);
+	r_mem_copyendian (op->buf, op->buf, 4, !a->big_endian);
+	return ret;
 }
 
 RAsmPlugin r_asm_plugin_mips = {

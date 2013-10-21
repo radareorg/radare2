@@ -319,6 +319,35 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			}
 			if (a->bits==64)
 				data[l++] = 0x48;
+			if (*arg2=='[') {
+				char *p = strchr (arg2+1, '+');
+				if (!p) {
+					p = strchr (arg2+1, '-');
+				}
+				if (p) {
+					*p = 0;
+					ut32 n = getnum (a, p+1);
+					ut8 *ptr = &n;
+					arg1 = getreg (arg2+1);
+					data[l++] = 0x3b;
+					if (arg1 == 4) { // esp
+						data[l++] = 0x80 | arg1 | (arg0<<3);
+						data[l++] = 0x24;
+					} else {
+						data[l++] = 0xb8 | arg1;
+					}
+					data[l++] = ptr[0];
+					data[l++] = ptr[1];
+					data[l++] = ptr[2];
+					data[l++] = ptr[3];
+					return l;
+				} else {
+					eprintf ("unknown cmp\n");
+					return 0;
+				}
+
+				return 0;
+			}
 			if (isnum (a, arg2)) { // reg, num
 				int n = atoi (arg2);
 				if (n>127 || n<-127) {

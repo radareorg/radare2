@@ -78,13 +78,6 @@ static int config_searchalign_callback(void *user, void *data) {
 	return R_TRUE;
 }
 
-static int config_iomaxblk_callback(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	core->blocksize_max = node->i_value;
-	return R_TRUE;
-}
-
 static int config_iobuffer_callback(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -888,9 +881,6 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	sprintf (buf, "0");
 	r_config_set_cb (cfg, "io.zeromap", buf, &config_iozeromap_callback);
 	r_config_desc (cfg, "io.zeromap", "double map the last opened file to address zero");
-	r_config_set_cb (cfg, "io.maxblk", buf, &config_iomaxblk_callback);
-	r_config_desc (cfg, "io.maxblk", "set max block size (soft limit)");
-
 	r_config_set_cb (cfg, "io.ffio", "true", &config_ioffio_callback);
 	r_config_desc (cfg, "io.ffio", "fill invalid buffers with 0xff instead of returning error");
 	r_config_set_cb (cfg, "io.va", "true", &config_iova_callback);

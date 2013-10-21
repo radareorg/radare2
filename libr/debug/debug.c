@@ -243,7 +243,7 @@ R_API int r_debug_wait(RDebug *dbg) {
 		//eprintf ("wait = %d\n", ret);
 		if (dbg->trace->enabled)
 			r_debug_trace_pc (dbg);
-		if (ret == R_DBG_REASON_SIGNAL) {
+		if (ret == R_DBG_REASON_SIGNAL && dbg->signum != -1) {
 			/* handle signal on continuations here */
 			int what = r_debug_signal_what (dbg, dbg->signum);
 			const char *name = r_debug_signal_resolve_i (dbg, dbg->signum);

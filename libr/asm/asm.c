@@ -300,7 +300,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (oplen>len) oplen = len;
 		if (a->ofilter)
 			r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
-		else memcpy (op->buf, buf, oplen);
+		r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
 		r_hex_bin2str (buf, oplen, op->buf_hex);
 	} else ret = 0;
 	return ret;
@@ -406,6 +406,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	RAsmOp op;
 	ut64 off;
 	RAsmCode *acode = NULL;
+	int linenum = 0;
 	int labels = 0, stage, ret, idx, ctr, i, j;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
@@ -483,6 +484,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			if (!*ptr_start)
 				continue;
 			//eprintf ("LINE %d %s\n", stage, ptr_start);
+			linenum ++;
 			if (labels) /* Labels */
 			if ((ptr = strchr (ptr_start, ':'))) {
 				char food[64];
@@ -584,7 +586,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			}
 			if (stage == 2) {
 				if (ret < 1) {
-					//eprintf ("Cannot assemble '%s'\n", ptr_start);
+					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;

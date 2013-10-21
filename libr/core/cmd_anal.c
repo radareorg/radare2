@@ -1043,7 +1043,7 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 		" ar[?ld-*]        ; manage refs/xrefs\n"
 		" as [num]         ; analyze syscall using dbg.reg\n"
 		" at[trd+-*?] [.]  ; analyze execution Traces\n"
-		" ax[-cCd] [f] [t] ; manage code/call/data xrefs\n"
+		" ax[-cCd] [f] [t] ; manage code/call/data xrefs\n"
 		"Examples:\n"
 		" f ts @ `S*~text:0[3]`; f t @ section..text\n"
 		" f ds @ `S*~data:0[3]`; f d @ section..data\n"

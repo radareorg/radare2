@@ -13,6 +13,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->dsc = NULL;
 	/* Function return type */
 	fcn->rets = 0;
+	fcn->size = 0;
 	/* Function qualifier: static/volatile/inline/naked/virtual */
 	fcn->fmod = R_ANAL_FQUALIFIER_NONE;
 	/* Function calling convention: cdecl/stdcall/fastcall/etc */
@@ -156,7 +157,7 @@ static int bbsum(RAnalFunction *fcn) {
 	if(n<0) { fcn->addr += n; fcn->size = -n; } else \
 	if(fcn->size<n)fcn->size=n; }
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
-	int ret = 0;
+	int ret = R_ANAL_RET_END;
 	ut8 bbuf[8096];
 	int overlapped = 0;
 	char *varname;
@@ -205,7 +206,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		if (!overlapped) {
 			bb->size += oplen;
 			fcn->ninstr++;
-FITFCNSZ();
+			FITFCNSZ();
 		//	fcn->size += oplen; /// XXX. must be the sum of all the bblocks
 		}
 		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
@@ -250,9 +251,10 @@ FITFCNSZ();
 		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_JMP:
-#if 0
+#if 1
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump,
 					R_ANAL_REF_TYPE_CODE)) {
+				FITFCNSZ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_ERROR;
 			}
@@ -264,7 +266,8 @@ FITFCNSZ();
 			// hardcoded jmp size // must be checked at the end wtf?
 			if (op.jump>fcn->addr && op.jump<(fcn->addr+fcn->size)) {
 				/* jump inside the same function */
-				return 0;
+				FITFCNSZ();
+				return R_ANAL_RET_END;
 			} else {
 				if (op.jump < addr-512 && op.jump<addr) {
 					FITFCNSZ();
@@ -276,9 +279,14 @@ FITFCNSZ();
 				}
 			}
 			//
+			FITFCNSZ();
+			return R_ANAL_RET_END;
+/// DO not follow jmps.. this is probably a bug ... 
+#if 0
 			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
 			FITFCNSZ();
 			return fcn_recurse (anal, fcn, op.jump, bbuf, sizeof (bbuf), depth-1);
+#endif
 		case R_ANAL_OP_TYPE_CJMP:
 			if (!overlapped) {
 				bb->jump = op.jump;
@@ -308,21 +316,21 @@ FITFCNSZ();
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
-			r_anal_op_fini (&op);
 			FITFCNSZ();
+			r_anal_op_fini (&op);
 			//fcn->size = bbsum (fcn);
 			return R_ANAL_RET_END;
 		}
 	}
 	r_anal_op_fini (&op);
-	FITFCNSZ();
+	FITFCNSZ ();
 	return ret;
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	if (fcn->addr == UT64_MAX)
 		fcn->addr = addr;
-	fcn->size =0;
+	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
 	//if (len>16)
@@ -332,6 +340,11 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
+	// avoid dups
+
+	RAnalFunction *f = r_anal_fcn_find (anal, fcn->addr, R_ANAL_FCN_TYPE_ROOT);
+	if (f) return R_FALSE;
+//eprintf ("ADDDD 0x%llx\n", fcn->addr);
 #if USE_NEW_FCN_STORE
 	r_listrange_add (anal->fcnstore, fcn);
 	// HUH? store it here .. for backweird compatibility

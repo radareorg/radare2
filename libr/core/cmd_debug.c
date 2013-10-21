@@ -423,6 +423,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			" drs?       stack register states\n"
 			" drt        show all register types\n"
 			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
+			" drd        show only different registers\n"
 			" dro        show previous (old) values of registers\n"
 			" dr=        show registers in columns\n"
 			" dr?eax     show value of eax register\n"

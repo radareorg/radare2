@@ -363,8 +363,11 @@ toro:
 			core->asmqjmps[counter] = UT64_MAX;
 
 	oplen = 1;
+	r_cons_break (NULL, NULL);
 	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
 		ut64 at = addr + idx;
+		if (r_cons_singleton ()->breaked)
+			break;
 
 		r_core_seek_archbits (core, at); // slow but safe
 		hint = r_core_hint_begin (core, hint, at);
@@ -1018,16 +1021,26 @@ toro:
 						r_list_foreach (f->locals, iter, l) {
 							if (analop.jump == l->addr) {
 								if ((cf != NULL) && (f->addr == cf->addr)) {
-									r_cons_strcat (color_label);
-									r_cons_printf ("; (%s)", l->name);
-									r_cons_strcat (Color_RESET);
+									if (show_color) {
+										r_cons_strcat (color_label);
+										r_cons_printf ("; (%s)", l->name);
+										r_cons_strcat (Color_RESET);
+									} else {
+										r_cons_printf ("; (%s)", l->name);
+									}
 								} else {
-									r_cons_strcat (color_fname);
-									r_cons_printf ("; (%s", f->name);
-									r_cons_strcat (Color_RESET);
-									r_cons_strcat (color_label);
-									r_cons_printf (".%s)", l->name);
-									r_cons_strcat (Color_RESET);
+									if (show_color) {
+										r_cons_strcat (color_fname);
+										r_cons_printf ("; (%s", f->name);
+										r_cons_strcat (Color_RESET);
+										r_cons_strcat (color_label);
+										r_cons_printf (".%s)", l->name);
+										r_cons_strcat (Color_RESET);
+									} else {
+										r_cons_printf ("; (%s", f->name);
+										r_cons_strcat (color_label);
+										r_cons_printf (".%s)", l->name);
+									}
 								}
 								have_local = 1;
 								break;
@@ -1156,12 +1169,21 @@ toro:
 				RMetaItem *mi2 = r_meta_find (core->anal->meta, word8,
 					R_META_TYPE_ANY, R_META_WHERE_HERE);
 				if (mi2) {
-					if (mi2->type == R_META_TYPE_STRING) {
-						char *str = r_str_unscape (mi2->str);
+					switch (mi2->type) {
+					case R_META_TYPE_STRING:
+						{ char *str = r_str_unscape (mi2->str);
 						r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d
 							") \"%s\" ", word8, mi2->size, str);
 						free (str);
-					} else r_cons_printf ("unknown type '%c'\n", mi2->type);
+						}
+						break;
+					case 'd':
+						r_cons_printf (" (data)");
+						break;
+					default:
+						eprintf ("unknown type '%c'\n", mi2->type);
+						break;
+					} 
 				} else {
 					mi2 = r_meta_find (core->anal->meta, (ut64)analop.ptr,
 						R_META_TYPE_ANY, R_META_WHERE_HERE);
@@ -1216,6 +1238,7 @@ toro:
 		free (buf);
 		buf = NULL;
 	}
+	r_cons_break_end ();
 #if 1
 	if (!cbytes && idx>=len) {// && (invbreak && !lastfail)) {
 	retry:

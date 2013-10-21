@@ -702,9 +702,13 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 	int ret = R_FALSE;
 	if (bsize == core->blocksize)
 		return R_FALSE;
-	if (bsize<1)
+	if (bsize<0 || bsize > core->blocksize_max) {
+		eprintf ("Block size %d is too big\n", bsize);
+		return R_FALSE;
+	}
+	if (bsize<1) {
 		bsize = 1;
-	else if (core->blocksize_max && bsize>core->blocksize_max) {
+	} else if (core->blocksize_max && bsize>core->blocksize_max) {
 		eprintf ("bsize is bigger than io.maxblk. dimmed to 0x%x > 0x%x\n",
 			bsize, core->blocksize_max);
 		bsize = core->blocksize_max;

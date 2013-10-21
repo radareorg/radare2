@@ -301,6 +301,19 @@ R_API void r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
 		r_list_sort (list, cmp); // TODO: inefficient
 }
 
+R_API int r_list_set_n(RList *list, int n, void *p) {
+	RListIter *it;
+	int i;
+	if (list)
+	for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
+		if (i == n) {
+			it->data = p;
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
 R_API void *r_list_get_n(RList *list, int n) {
 	RListIter *it;
 	int i;

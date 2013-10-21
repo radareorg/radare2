@@ -2,11 +2,11 @@
 
 // > pxa
 #define append(x,y) { strcat(x,y);x += strlen(y); }
-static void annotated_hexdump(RCore *core, const char *str) {
+static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	const int COLS = 16;
 	const ut8 *buf = core->block;
-	int len = core->blocksize;
+	//int len = core->blocksize;
 	ut64 addr = core->offset;
 	char *ebytes, *echars;
 	ut64 fend = UT64_MAX;
@@ -158,6 +158,7 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	ut64 addr = core->offset;
 	int size = (core->anal->bits/4);
 	int count = atoi (str);
+	int i, n;
 	if (count<1) count = 1;
 	// skipsapces
 	while (*str>='0' && *str<='9') str++;
@@ -193,17 +194,14 @@ Size letters are b(byte), h(halfword), w(word), g(giant, 8 bytes).
 		break;
 	case 'f':
 	case 'A': // XXX (float in hex wtf)
-		{
-			int i, n = 3;
-			snprintf (cmd, sizeof (cmd), "pxo %d @ 0x%"PFMT64x, count*size, addr);
-
-			strcpy (cmd, "pf ");
-			for (i=0;i<count && n<sizeof (cmd);i++) {
-				cmd[n++] = 'f';
-			}
-			cmd[n] = 0;
-			r_core_cmd0 (core, cmd);
-		}
+		n = 3;
+		snprintf (cmd, sizeof (cmd), "pxo %d @ 0x%"PFMT64x,
+			count*size, addr);
+		strcpy (cmd, "pf ");
+		for (i=0;i<count && n<sizeof (cmd);i++)
+			cmd[n++] = 'f';
+		cmd[n] = 0;
+		r_core_cmd0 (core, cmd);
 		break;
 	case 'a':
 	case 'd':
@@ -332,11 +330,17 @@ static int cmd_print(void *data, const char *input) {
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'm') {
 				if (l>0) len = l;
-				if (l>tbs) r_core_block_size (core, l);
-				l = len;
+				if (l>tbs) {
+					r_core_block_size (core, l);
+					l = core->blocksize;
+				} else {
+					l = len;
+				}
 			}
 		}// else l = 0;
 	} else l = len;
+	if (len > core->blocksize)
+		len = core->blocksize;
 
 	n = r_config_get_i (core->config, "io.maxblk");
 	i = (int)n;
@@ -355,6 +359,8 @@ static int cmd_print(void *data, const char *input) {
 	}
 	ptr = core->block;
 	core->num->value = len;
+	if (len>core->blocksize)
+		len = core->blocksize;
 	switch (*input) {
 	case 'w':
 		{
@@ -747,10 +753,12 @@ static int cmd_print(void *data, const char *input) {
 			ut8 *block = malloc (core->blocksize);
 			if (block) {
 				l = -l;
-				bwdhits = r_core_asm_bwdisassemble (core, core->offset, l, core->blocksize);
+				bwdhits = r_core_asm_bwdisassemble (core,
+					core->offset, l, core->blocksize);
 				if (bwdhits) {
 					r_list_foreach (bwdhits, iter, hit) {
-						r_core_read_at (core, hit->addr, block, core->blocksize);
+						r_core_read_at (core, hit->addr,
+							block, core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
 							core, hit->addr, block, core->blocksize, l, 0, 1);
 						r_cons_printf ("------\n");
@@ -777,8 +785,7 @@ static int cmd_print(void *data, const char *input) {
 				" psw = print wide string\n");
 			break;
 		case 'x':
-			r_print_string (core->print, core->offset, core->block, len,
-				0);
+			r_print_string (core->print, core->offset, core->block, len, 0);
 			break;
 		case 'b':
 			{
@@ -889,20 +896,23 @@ static int cmd_print(void *data, const char *input) {
 			r_core_print_examine (core, input+2);
 			break;
 		case '?':
-			eprintf ("Usage: px[owqWQ][f]\n"
+			eprintf ("Usage: px[afoswqWqQ][f]\n"
 				" px     show hexdump\n"
+				" px/    same as x/ in gdb (help x)\n"
 				" pxa    show annotated hexdump\n"
 				" pxf    show hexdump of current function\n"
 				" pxo    show octal dump\n"
-				" pxw    show hexadeciaml words dump (32bit)\n"
-				" pxW    same as above, but one per line\n"
-				" pxq    show hexadeciaml quad-words dump (64bit)\n"
+				" pxq    show hexadecimal quad-words dump (64bit)\n"
+				" pxs    show hexadecimal in sparse mode\n"
 				" pxQ    same as above, but one per line\n"
-				" px/    same as x/ in gdb (help x)\n"
+				" pxw    show hexadecimal words dump (32bit)\n"
+				" pxW    same as above, but one per line\n"
 				);
 			break;
 		case 'a':
-			annotated_hexdump (core, input+2);
+			if (len%16)
+				len += 16-(len%16);
+			annotated_hexdump (core, input+2, len);
 			break;
 		case 'o':
 			r_print_hexdump (core->print, core->offset, core->block, len, 8, 1);
@@ -925,6 +935,12 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf ("0x%08"PFMT64x" 0x%016"PFMT64x"\n",
 					core->offset+i, *p);
 			}
+			break;
+		case 's':
+			core->print->flags |= R_PRINT_FLAGS_SPARSE;
+			r_print_hexdump (core->print, core->offset,
+				core->block, len, 16, 1);
+			core->print->flags &= (((ut32)-1) & (~R_PRINT_FLAGS_SPARSE));
 			break;
 		default: {
 				 ut64 from = r_config_get_i (core->config, "diff.from");
