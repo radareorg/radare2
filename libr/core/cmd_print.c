@@ -321,7 +321,6 @@ static int cmd_print(void *data, const char *input) {
 	RCoreAnalStats *as;
 	ut64 n;
 
-	/* TODO: Change also blocksize for 'pd'.. */
 	l = len = core->blocksize;
 	if (input[0] && input[1]) {
 		const char *p = strchr (input, ' ');
@@ -331,7 +330,11 @@ static int cmd_print(void *data, const char *input) {
 			if (input[0] != 'd' && input[0] != 'm') {
 				if (l>0) len = l;
 				if (l>tbs) {
-					r_core_block_size (core, l);
+					if (!r_core_block_size (core, l)) {
+						eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
+							 *input, input+2);
+						return R_FALSE;
+					}
 					l = core->blocksize;
 				} else {
 					l = len;
