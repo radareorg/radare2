@@ -835,6 +835,7 @@ inline ut32 r_bin_java_read_int_from_buffer(ut8 *buf, ut64 offset);
 inline ut16 r_bin_java_read_short_from_buffer(ut8 *buf, ut64 offset);
 
 
+R_API static int javasm_init(RBinJavaObj *bin);
 
 R_API ut8* r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 offset, ut64 sz);
 R_API char* r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx);
