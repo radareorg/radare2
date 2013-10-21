@@ -14,174 +14,216 @@
 
 
 
-static RList *cp_items = NULL;
+static RBinJavaObj *BIN_OBJ = NULL;
 
-
-static RBinJavaClass cf;
-
-R_API void r_java_setcp(void *cp, int n) {
+R_API void r_java_set_obj(RBinJavaObj *obj) {
 	// eprintf ("SET CP (%p) %d\n", cp, n);
-	cp_items = (RList *) cp;
-	if(cp == NULL)
-		cp_items = r_list_new();
+	BIN_OBJ = obj;
 
-	cf.cp_count = n;
 }
 
-static RBinJavaCPTypeObj* get_cp(int i) {
-	RBinJavaCPTypeObj *item = NULL;
-	if (i<0||i>cf.cp_count)
-		return r_bin_java_get_java_null_cp();
-	item = (RBinJavaCPTypeObj *) r_list_get_n(cp_items, i);
-	return item;
-}
 
-static int java_resolve(int idx, char *str) {
+static char * java_resolve(int idx) {
 	// TODO XXX FIXME add a size parameter to the str when it is passed in
-	RBinJavaCPTypeObj *item = NULL, 
-					*class_cp_item = NULL, 
-					*namet_cp_item = NULL;
+	RBinJavaCPTypeObj *item = NULL;
 	char *class_str = NULL, 
-		 *namet_str = NULL, 
+		 *name_str = NULL, 
+		 *desc_str = NULL,
 		 *string_str = NULL, 
 		 *empty = "",
-		 *cp_name = NULL;
-	int class_idx, namet_idx;
-	if (str == NULL)
-		return 0;
-	sprintf (str, "(%d)", idx);
-	if (cf.cp_count<1) {
-		/* load constant pool here */
-	}
-	if (idx<0||idx>cf.cp_count)
-		return 1;
-
-	// default case.
-	if (cp_items == NULL){
-		strcpy (str, "(null)");
-		return 0;	
-	}
+		 *cp_name = NULL,
+		 *str = NULL;
 	
+	int memory_alloc = 0;
 
-	item = (RBinJavaCPTypeObj *) r_list_get_n(cp_items, idx);
+	if (BIN_OBJ && BIN_OBJ->cp_count < 1 ) {
+		//javasm_init(BIN_OBJ);
+		return NULL;
+	}
+
+
+	item = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list(BIN_OBJ, idx);
+	
 	if (!item){
-		sprintf (str, "(?): 0x%04x", item->tag);
-		return 0;			
-	}
-	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
-	if ( !cp_name) {  
-		sprintf (str, "0x%02x", item->tag);
-		return 0;
-	}
-	
-	// Damn this is a long logic statement :-(
-	if ( strcmp (cp_name, "Class") == 0 ){
-		class_idx = item->info.cp_class.name_idx;
-		class_str = r_bin_java_get_utf8_from_cp_item_list(cp_items, class_idx);	
-		if (class_str == NULL)
-			class_str = empty;
-
-		sprintf (str, "%s", class_str);
+		str = malloc(512);
+		if (str)
+			snprintf (str,512,  "(%d) INVALID CP_OBJ", idx);		
 		
-		if (class_str != empty)
-			free(class_str);
+		return str;
+	}
+
+	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
+	if ( strcmp (cp_name, "Class") == 0 ){
+		
+		str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, idx-1);
 	
 	}else if ( strcmp (cp_name, "MethodRef") == 0 ||
 		 strcmp (cp_name, "FieldRef") == 0 || 
 		 strcmp (cp_name, "InterfaceMethodRef") == 0) {
-		
-		int class_idx = -1;
-		int namet_idx =	-1;		
-		if (strcmp (cp_name, "MethodRef") == 0){
-			class_idx = item->info.cp_method.class_idx;
-			namet_idx = item->info.cp_method.name_and_type_idx;
-		}else if(strcmp (cp_name, "FieldRef") == 0){
-			class_idx = item->info.cp_field.class_idx;
-			namet_idx = item->info.cp_field.name_and_type_idx;				
-		}else if(strcmp (cp_name, "InterfaceMethodRef") == 0){
-			class_idx = item->info.cp_interface.class_idx;
-			namet_idx = item->info.cp_interface.name_and_type_idx;				
-		}
+				
+		/*
+		 *  The MethodRef, FieldRef, and InterfaceMethodRef structures
+		 */
 
-		class_str = r_bin_java_get_name_from_cp_item_list(cp_items, class_idx);	
-		namet_str = r_bin_java_get_item_name_from_cp_item_list(cp_items, item);
-		if (class_str == NULL)
+		class_str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, item->info.cp_method.class_idx-1);	
+		if (!class_str)
 			class_str = empty;
-		if (namet_str == NULL)
-			namet_str = empty;
+
+		name_str = r_bin_java_get_item_name_from_bin_cp_list(BIN_OBJ, item);	
+		if (!name_str)
+			name_str = empty;
+
+		desc_str = r_bin_java_get_item_desc_from_bin_cp_list(BIN_OBJ, item);			
+		if (!desc_str)
+			desc_str = empty;
+
+		memory_alloc = strlen(class_str) + strlen(name_str) + strlen(desc_str) + 3;
 		
-		sprintf (str, "%s %s", class_str, namet_str);
+		if (memory_alloc)
+			str = malloc(memory_alloc);
+		
+		if (str)
+			snprintf (str, memory_alloc, "%s.%s%s", class_str, name_str, desc_str);
 		
 		if (class_str != empty)
 			free(class_str);
-		if (namet_str != empty)
-			free(namet_str);
+		if (name_str != empty)
+			free(name_str);
+		if (desc_str != empty)
+			free(desc_str);
+
 	} else if (strcmp (cp_name, "String") == 0) {
-		string_str = r_bin_java_get_utf8_from_cp_item_list(cp_items, item->info.cp_string.string_idx); 
-		if (string_str){
-			sprintf (str, "\"%s\"", string_str);
-			free(string_str);	
-		}else
-			sprintf (str, "\"%s\"", empty);
+		string_str = r_bin_java_get_utf8_from_bin_cp_list(BIN_OBJ, item->info.cp_string.string_idx); 
+		if(!string_str)
+			string_str = empty;
+
+		memory_alloc = strlen(string_str) + 4;
+		
+		if (memory_alloc)
+			str = malloc(memory_alloc);
+		
+		if (str){
+			snprintf (str, "\"%s\"", string_str);
+		}
+		
+		if (string_str != empty)
+			free(string_str);
 
 		
 	} else if (strcmp (cp_name, "Utf8") == 0) {
-		sprintf (str, "\"%s\"", item->info.cp_utf8.bytes);
+		str = malloc(item->info.cp_utf8.length+3);
+		if (str){
+			snprintf (str, item->info.cp_utf8.length+3, "\"%s\"", item->info.cp_utf8.bytes);	
+		}
 	} else if (strcmp (cp_name, "Long") == 0) {
-		sprintf (str, "0x%llx", rbin_java_raw_to_long (item->info.cp_long.bytes.raw,0));
+		str = malloc(34);
+		if (str){
+			snprintf (str, 34, "0x%llx", rbin_java_raw_to_long (item->info.cp_long.bytes.raw,0));
+		}
 	} else if (strcmp (cp_name, "Double") == 0) {
-		sprintf (str, "%f", rbin_java_raw_to_double (item->info.cp_double.bytes.raw,0));
+		str = malloc(1000);
+		if (str){
+			snprintf (str, 1000, "%f", rbin_java_raw_to_double (item->info.cp_double.bytes.raw,0));
+		}
 	} else if (strcmp (cp_name, "Integer") == 0) {
-		sprintf (str, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw,0));
+		str = malloc(34);
+		if (str){
+			snprintf (str, 34, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw,0));
+		}
 	} else if (strcmp (cp_name, "Float") == 0) {
-		sprintf (str, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw,0));
+		str = malloc(34);
+		if (str){
+			snprintf (str, 34, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw,0));
+		}
 	} else if (strcmp (cp_name, "NameAndType") == 0) {
-		sprintf (str, "Name: 0x%04x Type: 0x%04x", item->info.cp_name_and_type.name_idx, item->info.cp_name_and_type.descriptor_idx);
+		str = malloc(64);
+		if (str){
+			
+			name_str = r_bin_java_get_item_name_from_bin_cp_list(BIN_OBJ, item);	
+			if (!name_str)
+				name_str = empty;
+
+			desc_str = r_bin_java_get_item_desc_from_bin_cp_list(BIN_OBJ, item);			
+			if (!desc_str)
+				desc_str = empty;
+
+			memory_alloc = strlen(name_str) + strlen(desc_str) + 3;
+			
+			if (memory_alloc)
+				str = malloc(memory_alloc);
+			
+			if (str)
+				snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
+			
+			if (name_str != empty)
+				free(name_str);
+			if (desc_str != empty)
+				free(desc_str);
+		}
 	}  else{ 
-		strcpy (str, "(null)");
+		str = malloc(16);
+		if (str){
+			snprintf (str, 16, "(null)");
+		}
 	}
-	return 0;
+	return str;
 }
 
 int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
-	char arg[1024];
+	char *arg = NULL; //(char *) malloc(1024);
+
 
 	switch (java_ops[idx].byte) {
-	case 0x12:
-	case 0x13:
-	case 0x14:
-		java_resolve (bytes[1]-1, arg);
-		snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
-		return java_ops[idx].size;
-	case 0x99: // ifeq
-	case 0x9a: // ifne
-	case 0x9b: // iflt
-	case 0x9c: // ifge
-	case 0x9d: // ifgt
-	case 0x9e: // ifle
-	case 0x9f: // if_icmpeq
-	case 0xa0: // if_icmpne
-	case 0xa1: // if_icmplt
-	case 0xa2: // if_icmpge
-	case 0xa3: // if_icmpgt
-	case 0xa4: // if_icmple
-	case 0xa5: // if_acmpne
-	case 0xa6: // if_acmpne
-	case 0xa7: // goto
-	case 0xa8: // jsr
-		snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
-			addr+(int)(short)USHORT (bytes, 1));
-		return java_ops[idx].size;
-	case 0xb2: // getstatic
-	case 0xb6: // invokevirtual
-	case 0xb7: // invokespecial
-	case 0xb8: // invokestatic
-	case 0xb9: // invokeinterface
-	case 0xba: // invokedynamic
-		java_resolve ((int)USHORT (bytes, 1)-1, arg);
-		snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
-		return java_ops[idx].size;
-	}
+		case 0x12:
+		case 0x13:
+		case 0x14:
+			arg = java_resolve ((int)USHORT (bytes, 1)-1);				
+			if(arg){
+				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+				free(arg);
+			}else{
+				snprintf (output, outlen, "%s %s", java_ops[idx].name, "\0");
+			}
+			return java_ops[idx].size;
+
+		case 0x99: // ifeq
+		case 0x9a: // ifne
+		case 0x9b: // iflt
+		case 0x9c: // ifge
+		case 0x9d: // ifgt
+		case 0x9e: // ifle
+		case 0x9f: // if_icmpeq
+		case 0xa0: // if_icmpne
+		case 0xa1: // if_icmplt
+		case 0xa2: // if_icmpge
+		case 0xa3: // if_icmpgt
+		case 0xa4: // if_icmple
+		case 0xa5: // if_acmpne
+		case 0xa6: // if_acmpne
+		case 0xa7: // goto
+		case 0xa8: // jsr
+			snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
+				addr+(int)(short)USHORT (bytes, 1));
+			return java_ops[idx].size;
+		
+		case 0xb2: // getstatic
+		case 0xb6: // invokevirtual
+		case 0xb7: // invokespecial
+		case 0xb8: // invokestatic
+		case 0xb9: // invokeinterface
+		case 0xba: // invokedynamic
+			arg = java_resolve ((int)USHORT (bytes, 1)-1);					
+			if(arg){
+				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+				free(arg);
+			}else{
+				char test[2048];
+				RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)-1));
+				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
+			}
+			return java_ops[idx].size;
+
+		}
 
 	/* process arguments */
 	switch (java_ops[idx].size) {
@@ -194,6 +236,7 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 	case 5: snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
 		break;
 	}
+
 	return java_ops[idx].size;
 }
 
@@ -203,6 +246,7 @@ R_API int r_java_disasm(ut64 addr, const ut8 *bytes, char *output, int outlen) {
 	for (i = 0; java_ops[i].name != NULL; i++)
 		if (bytes[0] == java_ops[i].byte)
 			return java_print_opcode (addr, i, bytes, output, outlen);
+		
 	return -1;
 }
 

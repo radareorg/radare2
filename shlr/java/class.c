@@ -697,6 +697,9 @@ R_API RBinJavaCPTypeObj* r_bin_java_get_item_from_bin_cp_list(RBinJavaObj *bin, 
 	if (bin == NULL)
 		return NULL;
 
+	if (idx > bin->cp_count || idx == 0)
+		return r_bin_java_get_java_null_cp();
+
 	return r_bin_java_get_item_from_cp_item_list(bin->cp_list, idx);
 }
 
@@ -790,45 +793,26 @@ R_API char* r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaC
 		@rvalue ut8* (user frees) or NULL
 	*/
 
-	char *value = NULL;
 	ut32 idx = 0;
 
 	if(obj == NULL || cp_list == NULL)
 		return NULL;
 
-	else if( obj->tag != R_BIN_JAVA_CP_METHODREF &&
-		obj->tag != R_BIN_JAVA_CP_INTERFACEMETHOD_REF &&
-		obj->tag != R_BIN_JAVA_CP_FIELDREF && 
-		obj->tag != R_BIN_JAVA_CP_CLASS)
-		return NULL;
-
-	if (obj->tag == R_BIN_JAVA_CP_CLASS){
-		idx = obj->info.cp_class.name_idx;
-		value = r_bin_java_get_utf8_from_cp_item_list(cp_list, idx);
-	}else{
-		switch(obj->tag){
-			case R_BIN_JAVA_CP_METHODREF:
-				idx = obj->info.cp_method.name_and_type_idx;
-				break;
-			case R_BIN_JAVA_CP_FIELDREF:
-				idx = obj->info.cp_field.name_and_type_idx;
-				break;
-			case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
-				idx = obj->info.cp_interface.name_and_type_idx;
-				break;			
-		}
-
-		RBinJavaCPTypeObj *item = r_bin_java_get_item_from_cp_item_list(cp_list, idx);
-
-		if(item){
-			idx = obj->info.cp_name_and_type.name_idx;	
-			value = r_bin_java_get_utf8_from_cp_item_list(cp_list, idx);	
-		}
+	switch(obj->tag){
+		case R_BIN_JAVA_CP_NAMEANDTYPE:
+			return r_bin_java_get_utf8_from_cp_item_list(cp_list, obj->info.cp_name_and_type.name_idx);
+		case R_BIN_JAVA_CP_CLASS:
+			return r_bin_java_get_utf8_from_cp_item_list(cp_list, obj->info.cp_class.name_idx);
+		// XXX - Probably not good form, but they are the same memory structure
+		case R_BIN_JAVA_CP_FIELDREF:
+		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:	
+		case R_BIN_JAVA_CP_METHODREF:
+			idx = obj->info.cp_method.name_and_type_idx;
+			obj = r_bin_java_get_item_from_cp_item_list(cp_list, obj->info.cp_method.name_and_type_idx-1);
+			return r_bin_java_get_item_name_from_cp_item_list(cp_list, obj);
+		default:
+			return NULL;
 	}
-
-
-	return value; 
-
 }
 
 R_API char* r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx){
@@ -843,7 +827,6 @@ R_API char* r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx){
 	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_cp_item_list(cp_list, idx);
 	if (cp_list == NULL)
 		return NULL;
-
 	return r_bin_java_get_item_name_from_cp_item_list(cp_list, obj);
 
 }
@@ -856,35 +839,24 @@ R_API char* r_bin_java_get_item_desc_from_cp_item_list(RList *cp_list, RBinJavaC
 		@rvalue ut8* (user frees) or NULL
 	*/
 
-	RBinJavaCPTypeObj *item = NULL;
 	ut32 idx = 0;
 
 	if(obj == NULL || cp_list == NULL)
 		return NULL;
-	else if( obj->tag != R_BIN_JAVA_CP_METHODREF &&
-		obj->tag != R_BIN_JAVA_CP_INTERFACEMETHOD_REF &&
-		obj->tag != R_BIN_JAVA_CP_FIELDREF)
-		return NULL;
 
 	switch(obj->tag){
+		case R_BIN_JAVA_CP_NAMEANDTYPE:
+			return r_bin_java_get_utf8_from_cp_item_list(cp_list, obj->info.cp_name_and_type.descriptor_idx);
+		// XXX - Probably not good form, but they are the same memory structure
+		case R_BIN_JAVA_CP_FIELDREF:
+		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:	
 		case R_BIN_JAVA_CP_METHODREF:
 			idx = obj->info.cp_method.name_and_type_idx;
-			break;
-		case R_BIN_JAVA_CP_FIELDREF:
-			idx = obj->info.cp_field.name_and_type_idx;
-			break;
-		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
-			idx = obj->info.cp_interface.name_and_type_idx;
-			break;			
+			obj = r_bin_java_get_item_from_cp_item_list(cp_list, obj->info.cp_method.name_and_type_idx-1);
+			return r_bin_java_get_item_desc_from_cp_item_list(cp_list, obj);
+		default:
+			return NULL;
 	}
-
-	item = r_bin_java_get_item_from_cp_item_list(cp_list, idx);
-
-	if(item == NULL)
-		return NULL;
-	
-	idx = obj->info.cp_name_and_type.descriptor_idx;
-	return r_bin_java_get_name_from_cp_item_list(cp_list, idx); 
 }
 
 R_API char* r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx){
@@ -894,36 +866,11 @@ R_API char* r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx){
 
 		@rvalue ut8* (user frees) or NULL
 	*/
-
-	char *value = NULL;
-
-	RBinJavaCPTypeObj *obj = NULL;
-
+	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_cp_item_list(cp_list, idx);
 	if (cp_list == NULL)
 		return NULL;
-
-	obj = r_bin_java_get_item_from_cp_item_list(cp_list, idx);
-
-	if(obj == NULL)
-		return value;
-	else if( obj->tag != R_BIN_JAVA_CP_METHODREF &&
-		obj->tag != R_BIN_JAVA_CP_INTERFACEMETHOD_REF &&
-		obj->tag != R_BIN_JAVA_CP_FIELDREF)
-		return value;
-
-	switch(obj->tag){
-		case R_BIN_JAVA_CP_METHODREF:
-			idx = obj->info.cp_method.name_and_type_idx;
-			break;
-		case R_BIN_JAVA_CP_FIELDREF:
-			idx = obj->info.cp_field.name_and_type_idx;
-			break;
-		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
-			idx = obj->info.cp_interface.name_and_type_idx;
-			break;			
-	}
-
-	return r_bin_java_get_utf8_from_cp_item_list(cp_list, idx); 
+	return r_bin_java_get_item_desc_from_cp_item_list(cp_list, obj);
+ 
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(RBinJavaField *method){
