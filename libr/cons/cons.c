@@ -337,7 +337,7 @@ R_API void r_cons_flush() {
 		} else eprintf ("Cannot write on '%s'\n", tee);
 	}
 	// is_html must be a filter, not a write endpoint
-	if (I.is_html) r_cons_html_print (I.buffer);
+	if (I.is_html) r_cons_filter_html (I.buffer);
 	else r_cons_write (I.buffer, I.buffer_len);
 	r_cons_reset ();
 }
