@@ -16,7 +16,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (b->cur.curplugin) {
 		if (!strcmp (b->cur.curplugin->name, "java")) { // XXX slow
 			obj = b->cur.bin_obj; //o; 
-			if (obj) r_java_setcp (obj->cp_list, obj->cf.cp_count);
+			if (obj) r_java_set_obj (obj);
 		}
 	}
 	return op->inst_len = r_java_disasm (a->pc, buf,
