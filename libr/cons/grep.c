@@ -47,7 +47,7 @@ R_API void r_cons_grep(const char *str) {
 		case '?': str++; cons->grep.counter = 1;
 			if (*str=='?') {
 				r_cons_grep_help ();
-				str = "THIS\x01IS\x02A\x03HACK\x04:D";
+                return;
 			}
 			break;
 		default: goto while_end;
@@ -195,9 +195,11 @@ R_API int r_cons_grep_line(char *buf, int len) {
 			if (cons->grep.begin)
 				hit = (p == in)? 1: 0;
 			else hit = !cons->grep.neg;
-			// TODO: optimize this strlen
-			if (cons->grep.end && (strlen (cons->grep.strings[i]) != strlen (p)))
-				hit = 0;
+			if (cons->grep.end){
+                for (j=0; cons->grep.strings[i][j] && p[j]; j++);
+                if (!(cons->grep.strings[i][j] || p[j]))
+                    hit = 0;
+            }
 			if (!cons->grep.amp)
 				break;
 		}
@@ -222,7 +224,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 						outlen += toklen+1;
 					}
 				} else {
-					if (strlen (out) == 0) {
+					if (!(*out)) {
 						free (in);
 						free (out);
 						return -1;
