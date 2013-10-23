@@ -30,7 +30,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 	struct r_bin_fatmach0_arch_t *ret;
 	ut8 *buf = NULL;
 
-	if (bin->hdr.nfat_arch < 0 || idx < 0 || idx > bin->hdr.nfat_arch)
+	if ((bin->hdr.nfat_arch<0) || (idx < 0) || (idx > bin->hdr.nfat_arch))
 		return NULL;
 	if (narch) *narch = bin->hdr.nfat_arch;
 	if (!(ret = R_NEW0 (struct r_bin_fatmach0_arch_t))) {

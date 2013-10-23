@@ -23,7 +23,8 @@
 
 
 // taken from LLVM Code Byte Swap
-inline ut32 r_bin_java_swap_uint(ut32 x){
+// TODO: move into r_util
+static ut32 r_bin_java_swap_uint(ut32 x){
 	ut32 Byte0 = x & 0x000000FF;
 	ut32 Byte1 = x & 0x0000FF00;
 	ut32 Byte2 = x & 0x00FF0000;
@@ -31,28 +32,31 @@ inline ut32 r_bin_java_swap_uint(ut32 x){
 	return (Byte0 << 24) | (Byte1 << 8) | (Byte2 >> 8) | (Byte3 >> 24); 
 }
 
-inline ut16 r_bin_java_swap_ushort(ut16 x){
+static ut16 r_bin_java_swap_ushort(ut16 x){
 	ut32 Byte0 = x & 0x00FF;
 	ut32 Byte1 = x & 0xFF00;
 	return (Byte0 << 8) | (Byte1 >> 8); 
 }
-inline ut32 r_bin_java_read_int(RBinJavaObj *bin, ut64 offset){
+
+static ut32 r_bin_java_read_int(RBinJavaObj *bin, ut64 offset){
 	ut32 sh = 0;
 	r_buf_read_at (bin->b, offset, (ut8*)&sh, 4);
 	return r_bin_java_swap_uint(sh);
 }
-inline ut16 r_bin_java_read_short(RBinJavaObj *bin, ut64 offset){
+
+static ut16 r_bin_java_read_short(RBinJavaObj *bin, ut64 offset){
 	ut16 sh = 0;
 	r_buf_read_at (bin->b, offset, (ut8*)&sh, 2);
 	return r_bin_java_swap_ushort (sh);
 }
 
-inline ut32 r_bin_java_read_int_from_buffer(ut8 *buffer, ut64 offset){
+static ut32 r_bin_java_read_int_from_buffer(ut8 *buffer, ut64 offset){
 	ut32 sh = 0;
 	memcpy((ut8 *)&sh, buffer, 4);
 	return r_bin_java_swap_uint(sh);
 }
-inline ut16 r_bin_java_read_short_from_buffer(ut8 *buffer, ut64 offset){
+
+static ut16 r_bin_java_read_short_from_buffer(ut8 *buffer, ut64 offset){
 	ut16 sh = 0;
 	memcpy((ut8 *)&sh, buffer, 2);
 	return r_bin_java_swap_ushort (sh);
