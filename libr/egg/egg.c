@@ -261,6 +261,10 @@ R_API int r_egg_compile(REgg *egg) {
 		r_egg_lang_parsechar (egg, *b);
 		// XXX: some parse fail errors are false positives :(
 	}
+	if (egg->context>0) {
+		eprintf ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
+		return R_FALSE;
+	}
 	// TODO: handle errors here
 	return R_TRUE;
 }

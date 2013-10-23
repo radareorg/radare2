@@ -247,7 +247,9 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	r_egg_compile (egg);
+	if (!r_egg_compile (egg)) {
+		return 1;
+	}
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
