@@ -1133,4 +1133,8 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin);
 R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
 R_API RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
 
+
+
+R_API void debug_dump_all_cp_obj();
+
 #endif

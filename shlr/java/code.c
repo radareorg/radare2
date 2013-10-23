@@ -20,29 +20,33 @@ R_API void r_java_set_obj(RBinJavaObj *obj) {
 	// eprintf ("SET CP (%p) %d\n", cp, n);
 	BIN_OBJ = obj;
 
+
 }
+
 
 
 static char * java_resolve(int idx) {
 	// TODO XXX FIXME add a size parameter to the str when it is passed in
-	RBinJavaCPTypeObj *item = NULL;
+	RBinJavaCPTypeObj *item = NULL, *item2 = NULL;
 	char *class_str = NULL, 
 		 *name_str = NULL, 
 		 *desc_str = NULL,
 		 *string_str = NULL, 
 		 *empty = "",
 		 *cp_name = NULL,
+		 *cp_name2 = NULL,
 		 *str = NULL;
-	
-	int memory_alloc = 0;
+
+   	int memory_alloc = 0;
 
 	if (BIN_OBJ && BIN_OBJ->cp_count < 1 ) {
 		//javasm_init(BIN_OBJ);
 		return NULL;
 	}
-
-
+	
 	item = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list(BIN_OBJ, idx);
+	
+	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
 	
 	if (!item){
 		str = malloc(512);
@@ -53,10 +57,41 @@ static char * java_resolve(int idx) {
 	}
 
 	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
+
 	if ( strcmp (cp_name, "Class") == 0 ){
+		item2 = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list(BIN_OBJ, idx);
 		
-		str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, idx-1);
-	
+		//str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, idx-1);
+		class_str = empty;
+		class_str = r_bin_java_get_item_name_from_bin_cp_list(BIN_OBJ, item);	
+		
+		if (!class_str)
+			class_str = empty;
+
+		name_str = r_bin_java_get_item_name_from_bin_cp_list(BIN_OBJ, item2);	
+		if (!name_str)
+			name_str = empty;
+
+		desc_str = r_bin_java_get_item_desc_from_bin_cp_list(BIN_OBJ, item2);			
+		if (!desc_str)
+			desc_str = empty;
+
+		memory_alloc = strlen(class_str) + strlen(name_str) + strlen(desc_str) + 3;
+		
+		if (memory_alloc)
+			str = malloc(memory_alloc);
+		
+		if (str)
+			snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
+		
+		if (class_str != empty)
+			free(class_str);
+		
+		if (name_str != empty)
+			free(name_str);
+		if (desc_str != empty)
+			free(desc_str);
+
 	}else if ( strcmp (cp_name, "MethodRef") == 0 ||
 		 strcmp (cp_name, "FieldRef") == 0 || 
 		 strcmp (cp_name, "InterfaceMethodRef") == 0) {
@@ -65,7 +100,7 @@ static char * java_resolve(int idx) {
 		 *  The MethodRef, FieldRef, and InterfaceMethodRef structures
 		 */
 
-		class_str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, item->info.cp_method.class_idx-1);	
+		class_str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, item->info.cp_method.class_idx);	
 		if (!class_str)
 			class_str = empty;
 
@@ -83,7 +118,7 @@ static char * java_resolve(int idx) {
 			str = malloc(memory_alloc);
 		
 		if (str)
-			snprintf (str, memory_alloc, "%s.%s%s", class_str, name_str, desc_str);
+			snprintf (str, memory_alloc, "%s/%s%s", class_str, name_str, desc_str);
 		
 		if (class_str != empty)
 			free(class_str);
@@ -171,13 +206,12 @@ static char * java_resolve(int idx) {
 
 int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc(1024);
-
-
+	
 	switch (java_ops[idx].byte) {
 		case 0x12:
 		case 0x13:
 		case 0x14:
-			arg = java_resolve ((int)USHORT (bytes, 1)-1);				
+			arg = java_resolve ((int)USHORT (bytes, 1));				
 			if(arg){
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
 				free(arg);
@@ -208,17 +242,39 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 		
 		case 0xb2: // getstatic
 		case 0xb6: // invokevirtual
-		case 0xb7: // invokespecial
-		case 0xb8: // invokestatic
-		case 0xb9: // invokeinterface
-		case 0xba: // invokedynamic
-			arg = java_resolve ((int)USHORT (bytes, 1)-1);					
+			arg = java_resolve ((int)USHORT (bytes, 1));					
 			if(arg){
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
 				free(arg);
 			}else{
 				char test[2048];
-				RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)-1));
+				RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
+				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
+			}
+			return java_ops[idx].size;
+
+		case 0xb7: // invokespecial
+			arg = java_resolve ((int)USHORT (bytes, 1));					
+			if(arg){
+				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+				free(arg);
+			}else{
+				char test[2048];
+				RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
+				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
+			}
+			return java_ops[idx].size;
+
+		case 0xb8: // invokestatic
+		case 0xb9: // invokeinterface
+		case 0xba: // invokedynamic
+			arg = java_resolve ((int)USHORT (bytes, 1));					
+			if(arg){
+				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+				free(arg);
+			}else{
+				char test[2048];
+				RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
 			}
 			return java_ops[idx].size;
@@ -241,13 +297,8 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 }
 
 R_API int r_java_disasm(ut64 addr, const ut8 *bytes, char *output, int outlen) {
-	int i;
-	// TODO: replace loop for direct array index
-	for (i = 0; java_ops[i].name != NULL; i++)
-		if (bytes[0] == java_ops[i].byte)
-			return java_print_opcode (addr, i, bytes, output, outlen);
-		
-	return -1;
+	//r_cons_printf("r_java_disasm: 0x%02x, 0x%0x.\n", bytes[0], addr);
+	return java_print_opcode (addr, bytes[0], bytes, output, outlen);
 }
 
 R_API int r_java_assemble(ut8 *bytes, const char *string) {

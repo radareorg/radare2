@@ -7,6 +7,8 @@
 #include <r_bin.h>
 #include "../../shlr/java/class.h"
 
+#define IFDBG  if(0)
+
 static int load(RBinArch *arch) {
 	return ((arch->bin_obj = r_bin_java_new_buf (arch->buf)))? 1: 0;
 }
@@ -31,6 +33,7 @@ static RList* classes(RBinArch *arch) {
 }
 
 static RList* symbols(RBinArch *arch) {
+	IFDBG debug_dump_all_cp_obj((struct r_bin_java_obj_t*)arch->bin_obj);
 	return r_bin_java_get_symbols ((struct r_bin_java_obj_t*)arch->bin_obj);
 }
 
@@ -97,6 +100,10 @@ static int retdemangle(const char *str) {
 static RBinAddr* binsym(RBinArch *arch, int sym) {
 	RBinAddr *ret = NULL;
 	switch (sym) {
+
+	// XXX - TODO implement the INIT FINI symbol requests 
+	case R_BIN_SYM_INIT:
+	case R_BIN_SYM_FINI:
 	case R_BIN_SYM_ENTRY:
 		if (!(ret = R_NEW0 (RBinAddr)))
 			return NULL;
