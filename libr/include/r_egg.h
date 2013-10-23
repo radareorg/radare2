@@ -43,6 +43,7 @@ typedef struct r_egg_t {
 	int endian;
 	int bits;
 	ut32 os;
+	int context;
 } REgg;
 
 /* XXX: this may fail in different arches */
