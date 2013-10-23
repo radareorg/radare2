@@ -87,7 +87,7 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
 	if (cmdstr) {
-		if (!(str = malloc (strlen(cmdstr)*2)))
+		if (!(str = malloc (strlen (cmdstr)*2)))
 			return NULL;
 		for (i=j=0; cmdstr[i]; i++,j++) {
 			switch (cmdstr[i]) {
@@ -179,11 +179,13 @@ static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		}
 		if ((str = r_core_anal_graph_label (core, bbi, opts))) {
 			if (opts & R_CORE_ANAL_GRAPHDIFF) {
+				const char *difftype = bbi->diff? (\
+					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "lightgray":
+					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red"): "black";
 				r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
 					" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 					fcn->addr, bbi->addr, 
-					bbi->diff->type==R_ANAL_DIFF_TYPE_MATCH? "lightgray":
-					bbi->diff->type==R_ANAL_DIFF_TYPE_UNMATCH? "yellow": "red", str,
+					difftype, str,
 					fcn->name, bbi->addr);
 			} else {
 				if (is_html) {
@@ -623,11 +625,13 @@ static void fcn_list_bbs(RAnalFunction *fcn) {
 			if ((bbi->type & R_ANAL_BB_TYPE_LAST))
 				r_cons_printf ("l");
 		} else r_cons_printf ("n");
-		if (bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH)
-			r_cons_printf (" m");
-		else if (bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH)
-			r_cons_printf (" u");
-		else r_cons_printf (" n");
+		if (bbi->diff) {
+			if (bbi->diff->type == R_ANAL_DIFF_TYPE_MATCH)
+				r_cons_printf (" m");
+			else if (bbi->diff->type == R_ANAL_DIFF_TYPE_UNMATCH)
+				r_cons_printf (" u");
+			else r_cons_printf (" n");
+		}
 		r_cons_printf ("\n");
 	}
 }
