@@ -30,8 +30,10 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 	/* get opcode size */
 	for(i = 0;java_ops[i].name != NULL;i++)
-		if (data[0] == java_ops[i].byte)
+		if (data[0] == java_ops[i].byte) {
 			sz = java_ops[i].size;
+			break;
+		}
 
 	if (op == NULL)
 		return sz;
@@ -40,7 +42,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->length = sz;
 
-	switch(data[0]) {
+	switch (data[0]) {
 	case 0xa9: // ret
 	case 0xb1: // return
 	case 0xb0: // areturn
@@ -168,7 +170,6 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
 	}
-
 	return sz;
 }
 
