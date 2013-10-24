@@ -252,7 +252,7 @@ R_API int r_str_word_set0(char *str) {
 				continue;
 			} else {
 				quote = 1;
-				strcpy (p, p+1);
+				memmove (p, p+1, strlen (p+1)+1);
 			}
 		}
 		if (quote) continue;
