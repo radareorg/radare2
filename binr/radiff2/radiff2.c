@@ -68,10 +68,6 @@ static RCore* opencore(const char *f) {
 	return c;
 }
 
-static void diff_graph(RCore *c, RCore *c2, const char *arg) {
-	r_core_cmdf (c, "agd %s", arg);
-}
-
 static int show_help(int v) {
 	printf ("Usage: radiff2 [-cCdrspOv] [-g sym] [-t %%] [file] [file]\n");
 	if (v) printf (
@@ -190,9 +186,10 @@ int main(int argc, char **argv) {
 		r_anal_diff_setup_i (c->anal, diffops, threshold, threshold);
 		r_anal_diff_setup_i (c2->anal, diffops, threshold, threshold);
 		r_core_gdiff (c, c2);
-		if (mode == MODE_GRAPH)
-			diff_graph (c, c2, addr);
-		else r_core_diff_show (c, c2);
+		if (mode == MODE_GRAPH) {
+			/* show only ->diff info from main core */
+			r_core_cmdf (c, "agd %s", addr);
+		} else r_core_diff_show (c, c2);
 		return 0;
 	}
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2011 - nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2013 - nibble<.ds@gmail.com>, pancake<nopcode.org> */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -123,7 +123,7 @@ R_API int r_anal_diff_bb(RAnal *anal, RAnalFunction *fcn, RAnalFunction *fcn2) {
 					mbb2 = bb2;
 					if (t == 1) break;
 				}
-			}
+}
 		}
 		if (mbb != NULL && mbb2 != NULL) {
 			if (ot == 1 || t > anal->diff_thfcn )

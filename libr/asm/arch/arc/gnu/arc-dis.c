@@ -162,11 +162,11 @@ typedef enum
 #define IS_SMALL(x)                 (((field##x) < 256) && ((field##x) > -257))
 #define IS_REG(x)                    (field##x##isReg)
 #define WRITE_FORMAT_LB_Rx_RB(x)     WRITE_FORMAT (x, "[","]","","")
-#define WRITE_FORMAT_x_COMMA_LB(x)   WRITE_FORMAT (x, "",",[","",",[")
-#define WRITE_FORMAT_COMMA_x_RB(x)   WRITE_FORMAT (x, ",","]",",","]")
+#define WRITE_FORMAT_x_COMMA_LB(x)   WRITE_FORMAT (x, "",", [","",", [")
+#define WRITE_FORMAT_COMMA_x_RB(x)   WRITE_FORMAT (x, ", ","]",",","]")
 #define WRITE_FORMAT_x_RB(x)         WRITE_FORMAT (x, "","]","","]")
-#define WRITE_FORMAT_COMMA_x(x)      WRITE_FORMAT (x, ",","",",","")
-#define WRITE_FORMAT_x_COMMA(x)      WRITE_FORMAT (x, "",",","",",")
+#define WRITE_FORMAT_COMMA_x(x)      WRITE_FORMAT (x, ", ","",", ","")
+#define WRITE_FORMAT_x_COMMA(x)      WRITE_FORMAT (x, "",", ","",", ")
 #define WRITE_FORMAT_x(x)            WRITE_FORMAT (x, "","","","")
 #define WRITE_FORMAT(x,cb1,ca1,cb,ca) strcat (formatString,		\
 				     (IS_REG (x) ? cb1"%r"ca1 :		\
@@ -1167,9 +1167,11 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
   bytes = dsmOneArcInst (address, (void *)& s);
 
   /* Display the disassembly instruction.  */
+/*
   (*func) (stream, "%08lx ", s.words[0]);
-  (*func) (stream, "    ");
-  (*func) (stream, "%-10s ", s.instrBuffer);
+  (*func) (stream, "  ");
+*/
+  (*func) (stream, "%s ", s.instrBuffer);
 
   if (__TRANSLATION_REQUIRED (s))
     {

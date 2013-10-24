@@ -511,7 +511,7 @@ R_API int r_anal_fcn_split_bb(RAnalFunction *fcn, RAnalBlock *bb, ut64 addr) {
 			return R_ANAL_RET_DUP;
 		if (addr > bbi->addr && addr < bbi->addr + bbi->size) {
 			r_list_append (fcn->bbs, bb);
-			bb->addr = addr;
+			bb->addr = addr+bbi->size;
 			bb->size = bbi->addr + bbi->size - addr;
 			bb->jump = bbi->jump;
 			bb->fail = bbi->fail;

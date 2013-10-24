@@ -135,7 +135,7 @@ static void colorize_opcode (char *p, const char *reg, const char *num) {
 				strcpy (o+j, Color_RESET);
 				j += strlen (Color_RESET);
 				o[j++] = p[i];
-				if ((p[i] > '0') && (p[i] < '9')) {
+				if (p[i]=='$' || ((p[i] > '0') && (p[i] < '9'))) {
 					strcpy (o+j, num);
 					j += strlen (num)-1;
 				} else {
@@ -552,7 +552,7 @@ toro:
 			char *t, *b = asmop.buf_asm;
 			for (; *b; b++, i++) {
 				if (*b!=' ') continue;
-				n = (10-i);
+				n = (12-i);
 				t = strdup (b+1); //XXX slow!
 				if (n<1) n = 1;
 				memset (b, ' ', n);

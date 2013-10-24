@@ -936,7 +936,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 }
 
 R_API int r_core_anal_ref_list(RCore *core, int rad) {
-	r_anal_xrefs_list (core->anal);
+	r_anal_xrefs_list (core->anal, rad);
 	return 0;
 #if 0
 	RAnalFunction *fcni;

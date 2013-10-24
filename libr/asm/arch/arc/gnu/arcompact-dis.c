@@ -256,11 +256,11 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 #define IS_SIMD_16_REG(x)   (usesSimdReg##x == 2)
 #define IS_SIMD_DATA_REG(x) (usesSimdReg##x == 3)
 #define WRITE_FORMAT_LB_Rx_RB(x)     WRITE_FORMAT(x,"[","]","","")
-#define WRITE_FORMAT_x_COMMA_LB(x)   WRITE_FORMAT(x,"",",[","",",[")
-#define WRITE_FORMAT_COMMA_x_RB(x)   WRITE_FORMAT(x,",","]",",","]")
+#define WRITE_FORMAT_x_COMMA_LB(x)   WRITE_FORMAT(x,"",", [","",",[")
+#define WRITE_FORMAT_COMMA_x_RB(x)   WRITE_FORMAT(x,", ","]",", ","]")
 #define WRITE_FORMAT_x_RB(x)         WRITE_FORMAT(x,"","]","","]")
-#define WRITE_FORMAT_COMMA_x(x)      WRITE_FORMAT(x,",","",",","")
-#define WRITE_FORMAT_x_COMMA(x)      WRITE_FORMAT(x,"",",","",",")
+#define WRITE_FORMAT_COMMA_x(x)      WRITE_FORMAT(x,", ","",", ","")
+#define WRITE_FORMAT_x_COMMA(x)      WRITE_FORMAT(x,"",", ","",", ")
 #define WRITE_FORMAT_x(x)            WRITE_FORMAT(x,"","","","")
 #define WRITE_FORMAT(x,cb1,ca1,cb,ca) strcat(formatString,              \
                                      (IS_SIMD_128_REG(x) ? cb1"%S"ca1:  \
@@ -3866,7 +3866,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
           operand = space + 1;
       }
 
-    (*func) (stream, "%-10s ", instr);
+    (*func) (stream, "%s ", instr);
 
     if (__TRANSLATION_REQUIRED(s))
       {
@@ -3895,8 +3895,7 @@ ARCompact_decodeInstr (bfd_vma           address,    /* Address of this instruct
   /* We print max bytes for instruction */
   info->bytes_per_line = 8;
   
-  return s.instructionLen;
-
+  return bytes; //s.instructionLen;
 }
 
 /*

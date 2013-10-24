@@ -85,6 +85,12 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_str_write (fd, "# meta\n");
 		r_meta_list (core->anal->meta, R_META_TYPE_ANY, 1);
 		r_cons_flush ();
+		 {
+			char buf[1024];
+			snprintf (buf, sizeof(buf), "%s.d/xrefs", prj);
+			sdb_file (core->anal->sdb_xrefs, buf);
+			sdb_sync (core->anal->sdb_xrefs);
+		 }
 		r_core_cmd (core, "ar*", 0);
 		r_cons_flush ();
 		r_core_cmd (core, "af*", 0);

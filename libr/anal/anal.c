@@ -50,6 +50,8 @@ R_API RAnal *r_anal_new() {
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
 	anal->sdb_types = sdb_new (NULL, 0);
+	anal->meta = r_meta_new ();
+	anal->meta->printf = anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
 	anal->diff_ops = 0;
@@ -57,7 +59,6 @@ R_API RAnal *r_anal_new() {
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
 	anal->split = R_TRUE; // used from core
 	anal->queued = NULL;
-	anal->meta = r_meta_new ();
 	anal->syscall = r_syscall_new ();
 	r_io_bind_init (anal->iob);
 	anal->reg = r_reg_new ();
@@ -117,7 +118,7 @@ R_API int r_anal_list(RAnal *anal) {
 	struct list_head *pos;
 	list_for_each_prev(pos, &anal->anals) {
 		RAnalPlugin *h = list_entry(pos, RAnalPlugin, list);
-		printf ("anal %-10s %s\n", h->name, h->desc);
+		anal->printf ("anal %-10s %s\n", h->name, h->desc);
 	}
 	return R_FALSE;
 }
@@ -227,7 +228,7 @@ R_API int r_anal_project_save(RAnal *anal, const char *prjfile) {
 
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	int len;
-	char *buf;
+	ut8 *buf;
 	RAnalOp *op = R_NEW0 (RAnalOp);
 	buf = malloc (strlen (str));
 	len = r_hex_str2bin (str, buf);

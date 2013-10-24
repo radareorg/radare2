@@ -59,7 +59,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len<4) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, 4); // TODO handle thumb
+	memcpy (bytes, buf, 4); // TODO handle compact
 
 	/* prepare disassembler */
 	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
@@ -71,15 +71,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.endian = !a->big_endian;
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
-	disasm_obj.mach = 0; //((a->bits == 64)
+	disasm_obj.mach = 0;
 
 	op->buf_asm[0]='\0';
-	//op->inst_len = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
-	//op->inst_len = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
-if (a->bits==16)
-	op->inst_len = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
-else
-	op->inst_len = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+	if (a->bits==16)
+		op->inst_len = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+	else op->inst_len = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
 
 	if (op->inst_len == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);

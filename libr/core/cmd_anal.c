@@ -821,10 +821,9 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 			r_anal_ref_del (core->anal, r_num_math (core->num, input+2), core->offset);
 			break;
 		case '\0':
-			r_core_anal_ref_list (core, R_FALSE);
-			break;
+		case 'j':
 		case '*':
-			r_core_anal_ref_list (core, R_TRUE);
+			r_core_anal_ref_list (core, input[1]);
 			break;
 		case 'd':
 		case ' ':
@@ -853,11 +852,12 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 			eprintf ("XXX: This command conflicts with 'ax'\n");
 			r_cons_printf (
 			"Usage: ar[?d-l*]\n"
-			" ar addr [at]   ; Add code ref pointing to addr (at is curseek)\n"
-			" ard addr [at]  ; Add data ref\n"
-			" ar- [at]       ; Clean all refs (or refs from addr)\n"
-			" ar             ; List refs\n"
-			" ar*            ; Output radare commands\n");
+			" ar addr [at]    Add code ref pointing to addr (at is curseek)\n"
+			" ard addr [at]   Add data ref\n"
+			" arj             List refs in json format\n"
+			" ar- [at]        Clean all refs (or refs from addr)\n"
+			" ar              List refs\n"
+			" ar*             Output radare commands\n");
 			break;
 		}
 		break;

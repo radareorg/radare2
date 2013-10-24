@@ -21,8 +21,8 @@
 #define X86IM_CORE_OP_DEC                           1
 #define X86IM_CORE_OP_GEN                           2
 
-#define X86IM_CORE_OP_IS_DEC(x)                     ( (x)->op == X86IM_CORE_OP_DEC )
-#define X86IM_CORE_OP_IS_GEN(x)                     ( (x)->op == X86IM_CORE_OP_GEN )
+#define X86IM_CORE_OP_IS_DEC(x)                     (x)->op == X86IM_CORE_OP_DEC
+#define X86IM_CORE_OP_IS_GEN(x)                     (x)->op == X86IM_CORE_OP_GEN
 
 typedef struct _core_opdata
 {

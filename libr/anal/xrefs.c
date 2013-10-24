@@ -23,9 +23,9 @@ R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
 
 R_API RList *r_anal_xrefs_set (RAnal *anal, const char *type, ut64 from, ut64 to) {
 	char key[32];
-	snprintf (key, sizeof (key), "ref.%s.%"PFMT64x, type, from);
+	snprintf (key, sizeof (key), "ref.%s.0x%"PFMT64x, type, from);
 	sdb_aaddn (DB, key, -1, to, 0);
-	snprintf (key, sizeof (key), "xref.%s.%"PFMT64x, type, to);
+	snprintf (key, sizeof (key), "xref.%s.0x%"PFMT64x, type, to);
 	sdb_aaddn (DB, key, -1, from, 0);
 	// (-1)funfor.%d=%d
 	return NULL;
@@ -33,7 +33,7 @@ R_API RList *r_anal_xrefs_set (RAnal *anal, const char *type, ut64 from, ut64 to
 
 R_API RList *r_anal_xrefs_deln (RAnal *anal, const char *type, ut64 from, ut64 to) {
 	char key[32];
-	snprintf (key, sizeof (key), "%s.%"PFMT64x, type, from);
+	snprintf (key, sizeof (key), "%s.0x%"PFMT64x, type, from);
 	sdb_adeln (DB, key, to, 0);
 	return NULL;
 }
@@ -42,7 +42,7 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const c
 	char *s, *str, *ptr, key[256];
 	RAnalRef *ref = NULL;
 	int hasnext = 1;
-	snprintf (key, sizeof (key), "%s.%s.%"PFMT64x, kind, type, addr);
+	snprintf (key, sizeof (key), "%s.%s.0x%"PFMT64x, kind, type, addr);
 	str = sdb_get (DB, key, 0);
 	if (!str) return R_FALSE;
 	for (ptr=str; hasnext; ptr = (char *)sdb_anext (s)) {
@@ -84,17 +84,46 @@ R_API void r_anal_xrefs_init (RAnal *anal) {
 #endif
 }
 
-R_API void r_anal_xrefs_list(RAnal *anal) {
-
-	// TODO: make it better!
-	sdb_list (DB);
-#if 0
-	char *k, *v;
-	sdb_dump_begin (DB);
-	while (sdb_dump_dupnext (DB, &k, &v)) {
-		printf ("%s=%s\n", k, v);
-		free (k);
-		free (v);
+static void xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
+	ut64 dst, src = r_num_get (NULL, v);
+	if (!strncmp (k, "ref.", 4)) {
+		char *p = strchr (k+4, '.');
+		if (p) {
+			dst = r_num_get (NULL, p+1);
+			anal->printf ("ar 0x%"PFMT64x" 0x%"PFMT64x"\n", src, dst);
+		}
 	}
-#endif
+}
+
+static void xrefs_list_cb_json(RAnal *anal, const char *k, const char *v) {
+	ut64 dst, src = r_num_get (NULL, v);
+	if (!strncmp (k, "ref.", 4) && (strlen (k)>8)) {
+		char *p = strchr (k+4, '.');
+		if (p) {
+			dst = r_num_get (NULL, p+1);
+			sscanf (p+1, "0x%"PFMT64x, &dst);
+			anal->printf ("%"PFMT64d":%"PFMT64d",", src, dst);
+		}
+	}
+}
+
+static void xrefs_list_cb_plain(RAnal *anal, const char *k, const char *v) {
+	anal->printf ("%s=%s\n", k, v);
+}
+
+R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
+	switch (rad) {
+	case 1:
+	case '*':
+		sdb_foreach (DB, xrefs_list_cb_rad, anal);
+		break;
+	case 'j':
+		anal->printf ("{");
+		sdb_foreach (DB, xrefs_list_cb_json, anal);
+		anal->printf ("}\n");
+		break;
+	default:
+		sdb_foreach (DB, xrefs_list_cb_plain, anal);
+		break;
+	}
 }
