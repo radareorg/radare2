@@ -881,8 +881,8 @@ toro:
 				pad[j] = '\0';
 			}
 			if (show_color)
-				r_cons_printf (" %s %s %s"Color_RESET, pad, str, extra);
-			else r_cons_printf (" %s %s %s", pad, str, extra);
+				r_cons_printf ("%s %s %s"Color_RESET, pad, str, extra);
+			else r_cons_printf ("%s %s %s", pad, str, extra);
 			free (str);
 		}
 

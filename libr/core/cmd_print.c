@@ -1249,7 +1249,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt) {
 			r_cons_printf ("%s%04x:%04x"Color_RESET,
 				k, s&0xFFFF, a&0xFFFF);
 		} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
-		r_cons_puts ("  ");
-	} else r_cons_printf ("0x%08"PFMT64x"  ", off);
+		r_cons_puts (" ");
+	} else r_cons_printf ("0x%08"PFMT64x" ", off);
 }
 

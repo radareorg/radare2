@@ -603,7 +603,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "asm.stackptr", "Show stack pointer at disassembly");
 	r_config_set (cfg, "asm.dwarf", "false");
 	r_config_desc (cfg, "asm.dwarf", "Show dwarf comment at disassembly");
-	r_config_set_i (cfg, "asm.nbytes", 8);
+	r_config_set_i (cfg, "asm.nbytes", 6);
 	r_config_set (cfg, "asm.tabs", "false");
 	r_config_desc (cfg, "asm.nbytes", "Number of bytes for each opcode at disassembly");
 	r_config_set (cfg, "asm.pseudo", "false");  // DEPRECATED ???

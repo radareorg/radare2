@@ -12,12 +12,12 @@
 
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
-static unsigned char bytes[4];
+static unsigned char bytes[32];
 
 static int arc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta<0) return -1; // disable backward reads
-	if ((delta+length)>4) return -1;
+	if ((delta+length)>sizeof (bytes)) return -1;
 	memcpy (myaddr, bytes+delta, length);
 	return 0;
 }
@@ -59,7 +59,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len<4) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
-	memcpy (bytes, buf, 4); // TODO handle compact
+	if (len>sizeof (bytes))
+		len = sizeof (bytes);
+	memcpy (bytes, buf, len); // TODO handle compact
 
 	/* prepare disassembler */
 	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
