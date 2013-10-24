@@ -259,7 +259,7 @@ R_API int r_str_word_set0(char *str) {
 		if (*p==' ') {
 			char *q = p-1;
 			if (p>str && *q=='\\') {
-				strcpy (q, p);
+				memmove (q, p, strlen (p)+1);
 				continue;
 			}
 			i++;
