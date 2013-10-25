@@ -327,7 +327,7 @@ static int cmd_print(void *data, const char *input) {
 		if (p) {
 			l = (int) r_num_math (core->num, p+1);
 			/* except disasm and memoryfmt (pd, pm) */
-			if (input[0] != 'd' && input[0] != 'm') {
+			if (input[0] != 'd' && input[0] != 'm' && input[0]!='a') {
 				if (l>0) len = l;
 				if (l>tbs) {
 					if (!r_core_block_size (core, l)) {

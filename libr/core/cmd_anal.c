@@ -233,15 +233,23 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 		if (op.esil)
 			r_cons_printf ("esil: %s\n", op.esil);
 		r_cons_printf ("eob: %d\n", op.eob);
+
+		if (hint && hint->jump != UT64_MAX)
+			op.jump = hint->jump;
 		if (op.jump != UT64_MAX)
 			r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
+
+		if (hint && hint->fail != UT64_MAX)
+			op.fail = hint->fail;
 		if (op.fail != UT64_MAX)
 			r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
+
 		r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
 		r_cons_printf ("cond: %d\n", op.cond); // TODO: string
 		r_cons_printf ("family: %d\n", op.family);
 		r_cons_printf ("\n");
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
+		free (hint);
 	}
 }
 
@@ -250,13 +258,13 @@ static int anal_fcn_add_bb (RCore *core, const char *input) {
 	const char *ptr2 = NULL;
 	ut64 fcnaddr = -1LL, addr = -1LL;
 	ut64 size = 0LL;
-	ut64 jump = -1LL;
-	ut64 fail = -1LL;
+	ut64 jump = UT64_MAX;
+	ut64 fail = UT64_MAX;
 	int type = R_ANAL_BB_TYPE_NULL;
 	RAnalFunction *fcn = NULL;
 	RAnalDiff *diff = NULL;
 
-	switch(r_str_word_set0 (ptr)) {
+	switch (r_str_word_set0 (ptr)) {
 		case 7:
 			ptr2 = r_str_word_get0 (ptr, 6);
 			if (!(diff = r_anal_diff_new ())) {
@@ -411,7 +419,10 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 					r_core_block_size (core, l*4);
 					//len = l;
 				}
-			} else len = l = core->blocksize;
+			} else {
+				len = l = core->blocksize;
+				count = 1;
+			}
 			r_core_anal_bytes (core, core->block, len, count);
 		}
 		break;
@@ -971,11 +982,10 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 			break;
 		case 'b': // set bits
 			if (input[2]) {
-				int i;
 				char *ptr = strdup (input+3);
 				int bits;
 				int size = 1;
-				i = r_str_word_set0 (ptr);
+				int i = r_str_word_set0 (ptr);
 				if (i==2)
 					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 				bits = r_num_math (core->num, r_str_word_get0 (ptr, 0));
@@ -983,6 +993,14 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 					size, bits);
 				free (ptr);
 			} else eprintf("Missing argument\n");
+			break;
+		case 'c':
+			r_anal_hint_set_jump (core->anal, core->offset,
+				r_num_math (core->num, input+2));
+			break;
+		case 'f':
+			r_anal_hint_set_fail (core->anal, core->offset,
+				r_num_math (core->num, input+2));
 			break;
 		case 'l': // set size (opcode length)
 			r_anal_hint_set_length (core->anal, core->offset,

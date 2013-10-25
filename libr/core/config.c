@@ -636,7 +636,7 @@ r_config_set (cfg, "asm.arch", R_SYS_ARCH);
 	r_config_desc (cfg, "asm.linesstyle", "If enabled iterate the jump list backwards");
 	r_config_set (cfg, "asm.lineswide", "false");
 	r_config_desc (cfg, "asm.lineswide", "If enabled put an space between lines");
-	r_config_set_i_cb (cfg, "asm.lineswidth", 10, &config_asmlineswidth_callback);
+	r_config_set_i_cb (cfg, "asm.lineswidth", 7, &config_asmlineswidth_callback);
 	r_config_desc (cfg, "asm.lineswidth", "Number of columns for program flow arrows");
 	r_config_set (cfg, "asm.linescall", "false");
 	r_config_desc (cfg, "asm.linescall", "Enable call lines");

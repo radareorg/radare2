@@ -261,7 +261,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	if (ch>='0'&& ch<='9') {
 		ut64 off = core->asmqjmps[ch-'0'];
 		if (off != UT64_MAX) {
-			int delta = R_ABS (off-core->offset);
+			int delta = R_ABS ((st64)off-(st64)core->offset);
 			r_io_sundo_push (core->io, core->offset);
 			if (curset && delta<100) {
 				cursor = delta;

@@ -278,9 +278,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 					return R_ANAL_RET_END;	
 				}
 			}
+			break;
 			//
-			FITFCNSZ();
-			return R_ANAL_RET_END;
+			//FITFCNSZ();
+			//return R_ANAL_RET_END;
 /// DO not follow jmps.. this is probably a bug ... 
 #if 0
 			anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));

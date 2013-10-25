@@ -386,41 +386,43 @@ enum {
 
 // XXX: this definition is plain wrong. use enum or empower bits
 enum {
-	R_ANAL_OP_TYPE_NULL  = 0x0,
-	R_ANAL_OP_TYPE_JMP   = 0x1,  /* mandatory jump */
-	R_ANAL_OP_TYPE_UJMP  = 0x2,  /* unknown jump (register or so) */
-	R_ANAL_OP_TYPE_CJMP  = 0x4,  /* conditional jump */
-	R_ANAL_OP_TYPE_CALL  = 0x8,  /* call to subroutine (branch+link) */
-	R_ANAL_OP_TYPE_UCALL = 0x10, /* unknown call (register or so) */
-	R_ANAL_OP_TYPE_REP   = 0x20, /* repeats next instruction N times */
-	R_ANAL_OP_TYPE_RET   = 0x40, /* returns from subrutine */
-	R_ANAL_OP_TYPE_ILL   = 0x80,  /* illegal instruction // trap */
-	R_ANAL_OP_TYPE_UNK   = 0x100, /* unknown opcode type */
-	R_ANAL_OP_TYPE_NOP   = 0x200, /* does nothing */
-	R_ANAL_OP_TYPE_MOV   = 0x400, /* register move */
-	R_ANAL_OP_TYPE_TRAP  = 0x800, /* it's a trap! */
-	R_ANAL_OP_TYPE_SWI   = 0x1000,  /* syscall, software interrupt */
-	R_ANAL_OP_TYPE_UPUSH = 0x2000, /* unknown push of data into stack */
-	R_ANAL_OP_TYPE_PUSH  = 0x4000,  /* push value into stack */
-	R_ANAL_OP_TYPE_POP   = 0x8000,   /* pop value from stack to register */
-	R_ANAL_OP_TYPE_CMP   = 0x10000,  /* copmpare something */
-	R_ANAL_OP_TYPE_ADD   = 0x20000,
-	R_ANAL_OP_TYPE_SUB   = 0x40000,
-	R_ANAL_OP_TYPE_IO    = 0x80000,
-	R_ANAL_OP_TYPE_MUL   = 0x100000,
-	R_ANAL_OP_TYPE_DIV   = 0x200000,
-	R_ANAL_OP_TYPE_SHR   = 0x400000,
-	R_ANAL_OP_TYPE_SHL   = 0x800000,
-	R_ANAL_OP_TYPE_OR    = 0x1000000,
-	R_ANAL_OP_TYPE_AND   = 0x2000000,
-	R_ANAL_OP_TYPE_XOR   = 0x4000000,
-	R_ANAL_OP_TYPE_NOT   = 0x8000000,
-	R_ANAL_OP_TYPE_STORE = 0x10000000,  /* store from register to memory */
-	R_ANAL_OP_TYPE_LOAD  = 0x20000000,  /* load from memory to register */
-	R_ANAL_OP_TYPE_LEA   = 0x40000000,
-	R_ANAL_OP_TYPE_LEAVE = 0x80000000,
-	R_ANAL_OP_TYPE_ROR   = 0x100000000LL,
-	R_ANAL_OP_TYPE_ROL   = 0x200000000LL,
+	R_ANAL_OP_TYPE_COND  = 0x80000000,
+	R_ANAL_OP_TYPE_REP   = 0x40000000, /* repeats next instruction N times */
+	R_ANAL_OP_TYPE_NULL  = 0,
+	R_ANAL_OP_TYPE_JMP   = 1,  /* mandatory jump */
+	R_ANAL_OP_TYPE_UJMP  = 2,  /* unknown jump (register or so) */
+	R_ANAL_OP_TYPE_CJMP  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
+	R_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
+	R_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
+	R_ANAL_OP_TYPE_RET   = 5, /* returns from subrutine */
+	R_ANAL_OP_TYPE_CRET  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_RET, /* returns from subrutine */
+	R_ANAL_OP_TYPE_ILL   = 6,  /* illegal instruction // trap */
+	R_ANAL_OP_TYPE_UNK   = 7, /* unknown opcode type */
+	R_ANAL_OP_TYPE_NOP   = 8, /* does nothing */
+	R_ANAL_OP_TYPE_MOV   = 9, /* register move */
+	R_ANAL_OP_TYPE_TRAP  = 10, /* it's a trap! */
+	R_ANAL_OP_TYPE_SWI   = 11,  /* syscall, software interrupt */
+	R_ANAL_OP_TYPE_UPUSH = 12, /* unknown push of data into stack */
+	R_ANAL_OP_TYPE_PUSH  = 13,  /* push value into stack */
+	R_ANAL_OP_TYPE_POP   = 14,   /* pop value from stack to register */
+	R_ANAL_OP_TYPE_CMP   = 15,  /* copmpare something */
+	R_ANAL_OP_TYPE_ADD   = 16,
+	R_ANAL_OP_TYPE_SUB   = 17,
+	R_ANAL_OP_TYPE_IO    = 18,
+	R_ANAL_OP_TYPE_MUL   = 19,
+	R_ANAL_OP_TYPE_DIV   = 20,
+	R_ANAL_OP_TYPE_SHR   = 21,
+	R_ANAL_OP_TYPE_SHL   = 22,
+	R_ANAL_OP_TYPE_OR    = 23,
+	R_ANAL_OP_TYPE_AND   = 24,
+	R_ANAL_OP_TYPE_XOR   = 25,
+	R_ANAL_OP_TYPE_NOT   = 26,
+	R_ANAL_OP_TYPE_STORE = 27,  /* store from register to memory */
+	R_ANAL_OP_TYPE_LOAD  = 28,  /* load from memory to register */
+	R_ANAL_OP_TYPE_LEA   = 29,
+	R_ANAL_OP_TYPE_LEAVE = 30,
+	R_ANAL_OP_TYPE_ROR   = 31,
+	R_ANAL_OP_TYPE_ROL   = 32,
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -525,6 +527,8 @@ typedef struct r_anal_hint_t {
 	char *arch;
 	char *opcode;
 	char *analstr;
+	ut64 jump;
+	ut64 fail;
 	int length;
 	int bits;
 } RAnalHint;
@@ -901,6 +905,8 @@ R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from, int size);
 R_API RAnalHint *r_anal_hint_add (RAnal *a, ut64 from, int size);
 R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
+R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr);
+R_API void r_anal_hint_set_fail (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_bits (RAnal *a, ut64 addr, int size, int bits);
 R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, int size, const char *arch);
 R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int size, int length);
