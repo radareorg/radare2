@@ -170,7 +170,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	if (bbget (fcn, addr)) 
 		return R_ANAL_RET_ERROR; // MUST BE DUP
-	bb = R_NEW0 (RAnalBlock);
+	bb = r_anal_bb_new();
 	bb->addr = addr;
 	bb->size = 0;
 	bb->jump = UT64_MAX;

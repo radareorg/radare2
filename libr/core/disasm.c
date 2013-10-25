@@ -933,6 +933,7 @@ toro:
 			case R_ANAL_OP_TYPE_TRAP:
 				r_cons_strcat (color_trap);
 				break;
+			case R_ANAL_OP_TYPE_CRET:
 			case R_ANAL_OP_TYPE_RET:
 				r_cons_strcat (color_ret);
 				break;
