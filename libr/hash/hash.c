@@ -4,6 +4,27 @@
 
 R_LIB_VERSION(r_hash);
 
+struct { const char *name; ut64 bit; } static const hash_name_bytes[] = {
+    {"all", UT64_MAX},
+    {"xor", R_HASH_XOR},
+    {"xorpair", R_HASH_XORPAIR},
+    {"md4", R_HASH_MD4},
+    {"md5", R_HASH_MD5},
+    {"sha1", R_HASH_SHA1},
+    {"sha256", R_HASH_SHA256},
+    {"sha384", R_HASH_SHA384},
+    {"sha512", R_HASH_SHA512},
+    {"crc16", R_HASH_CRC16},
+    {"crc32", R_HASH_CRC32},
+    {"adler32", R_HASH_ADLER32},
+    {"xxhash", R_HASH_XXHASH},
+    {"parity", R_HASH_PARITY},
+    {"entropy", R_HASH_ENTROPY},
+    {"hamdist", R_HASH_HAMDIST},
+    {"pcprint", R_HASH_PCPRINT},
+    {"mod255", R_HASH_MOD255},
+    {NULL, 0}};
+
 /* returns 0-100 */
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
 	const ut8 *end = buffer + len;
@@ -56,26 +77,12 @@ R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 	return c;
 }
 
-/* TODO: rewrite in a non-spaguetty way */
 R_API const char *r_hash_name(ut64 bit) {
-	if (bit & R_HASH_MD4) return "md4";
-	if (bit & R_HASH_MD5) return "md5";
-	if (bit & R_HASH_SHA1) return "sha1";
-	if (bit & R_HASH_SHA256) return "sha256";
-	if (bit & R_HASH_SHA384) return "sha384";
-	if (bit & R_HASH_SHA512) return "sha512";
-	if (bit & R_HASH_CRC16) return "crc16";
-	if (bit & R_HASH_CRC32) return "crc32";
-	if (bit & R_HASH_PARITY) return "parity";
-	if (bit & R_HASH_ENTROPY) return "entropy";
-	if (bit & R_HASH_HAMDIST) return "hamdist";
-	if (bit & R_HASH_XOR) return "xor";
-	if (bit & R_HASH_XORPAIR) return "xorpair";
-	if (bit & R_HASH_MOD255) return "mod255";
-	if (bit & R_HASH_PCPRINT) return "pcprint";
-	if (bit & R_HASH_XXHASH) return "xxhash";
-	if (bit & R_HASH_ADLER32) return "adler32";
-	return "";
+    int i;
+    for (i=1; hash_name_bytes[i].bit; i++)
+        if (bit & hash_name_bytes[i].bit)
+            return hash_name_bytes[i].name;
+    return "";
 }
 
 R_API int r_hash_size(int bit) {
@@ -100,30 +107,10 @@ R_API int r_hash_size(int bit) {
 }
 
 R_API ut64 r_hash_name_to_bits(const char *name) {
-	struct { const char *name; ut64 bit; } static const array[] = {
-		 {"all", UT64_MAX},
-		 {"xor", R_HASH_XOR},
-		 {"xorpair", R_HASH_XORPAIR},
-		 {"md4", R_HASH_MD4},
-		 {"md5", R_HASH_MD5},
-		 {"sha1", R_HASH_SHA1},
-		 {"sha256", R_HASH_SHA256},
-		 {"sha384", R_HASH_SHA384},
-		 {"sha512", R_HASH_SHA512},
-		 {"crc16", R_HASH_CRC16},
-		 {"crc32", R_HASH_CRC32},
-		 {"adler32", R_HASH_ADLER32},
-		 {"xxhash", R_HASH_XXHASH},
-		 {"parity", R_HASH_PARITY},
-		 {"entropy", R_HASH_ENTROPY},
-		 {"hamdist", R_HASH_HAMDIST},
-		 {"pcprint", R_HASH_PCPRINT},
-		 {"mod255", R_HASH_MOD255},
-		 {NULL, 0}};
 	int i = 0, j, len = 0;
 	char name_lowercase[128];
 	const char* ptr = name_lowercase;
-	ut64 bits = 0; //R_HASH_NONE;
+	ut64 bits = R_HASH_NONE;
 
 	for (j=0;name[j] && j<sizeof (name_lowercase); j++)
 		name_lowercase[j] = tolower (name[j]);
@@ -132,9 +119,9 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	while (name_lowercase[i++]) {
 		len++;
 		if (name_lowercase[i] == ',') {
-			for (j=0; array[j].name; j++) {
-				if (!strncmp (ptr, array[j].name, len)) {
-					bits |= array[j].bit;
+			for (j=0; hash_name_bytes[j].name; j++) {
+				if (!strncmp (ptr, hash_name_bytes[j].name, len)) {
+					bits |= hash_name_bytes[j].bit;
 					break;
 				}
 			}
@@ -146,9 +133,9 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 			ptr++;
 		}
 	}
-	for (i=0; array[i].name; i++) { //last word of the list
-		if (!strcmp (ptr, array[i].name))
-			bits |= array[i].bit;
+	for (i=0; hash_name_bytes[i].name; i++) { //last word of the list
+		if (!strcmp (ptr, hash_name_bytes[i].name))
+			bits |= hash_name_bytes[i].bit;
 	}
 	return bits;
 }
