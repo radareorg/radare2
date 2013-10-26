@@ -869,13 +869,17 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 	int wordsize, endian;
 
 	if (ptr == ref) {
-		if (code) r_cons_printf ("ar 0x%08"PFMT64x" 0x%08"PFMT64x"\n", (ut64)ref, (ut64)at);
-		else r_cons_printf ("ard 0x%08"PFMT64x" 0x%08"PFMT64x"\n", (ut64)ref, (ut64)at);
+		if (code) r_cons_printf ("ar 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+			(ut64)ref, (ut64)at);
+		else r_cons_printf ("ard 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+			(ut64)ref, (ut64)at);
 		return R_TRUE;
 	}
 	if (depth < 1)
 		return R_FALSE;
-	endian = (core->bin->cur.o->info->big_endian)? !LIL_ENDIAN: LIL_ENDIAN;
+	if (core->bin && core->bin->cur.o && core->bin->cur.o->info) {
+		endian = core->bin->cur.o->info->big_endian;
+	} else endian = CPU_ENDIAN;
 	wordsize = (int)(core->anal->bits/8);
 	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1)
 		return R_FALSE;
