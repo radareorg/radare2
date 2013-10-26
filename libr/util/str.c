@@ -601,33 +601,37 @@ R_API void *r_str_free(void *ptr) {
 }
 
 R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
-	int off, i;
-	int klen = strlen (key);
-	int vlen = strlen (val);
-	int slen = strlen (str);
-	char *new, *old, *p = str;
+	int off, i, klen, vlen, slen;
+	char *newstr, *scnd, *p = str;
+
+	if (!str || !key || !val) return NULL;
+	klen = strlen (key);
+	vlen = strlen (val);
+	slen = strlen (str);
 	for (i = 0; i < slen; ) {
+		if ((i+vlen)>slen)
+			break;
 		p = (char *)r_mem_mem (
 			(const ut8*)str + i, slen - i,
 			(const ut8*)key, klen);
-		if (!p) break; // || !p[klen]) break;
-		old = strdup (p+klen);
-		slen += (vlen-klen) + 1;
+		if (!p) break;
 		off = (int)(size_t)(p-str);
-		new = realloc (str, slen);
-		if (!new) {
+		scnd = strdup (p+klen);
+		slen += vlen - klen + 1;
+		newstr = realloc (str, slen+1);
+		if (!newstr) {
 			eprintf ("realloc fail\n");
 			free (str);
-			free (old);
+			free (scnd);
 			str = NULL;
 			break;
 		}
-		str = new;
+		str = newstr;
 		p = str+off;
 		memcpy (p, val, vlen);
-		memcpy (p+vlen, old, strlen (old)+1);
+		memcpy (p+vlen, scnd, strlen (scnd)+1);
 		i = off+vlen;
-		free (old);
+		free (scnd);
 		if (!g) break;
 	}
 	return str;
