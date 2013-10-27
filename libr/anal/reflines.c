@@ -35,14 +35,13 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 			}
 		}
 #endif
-
 		addr += sz;
 		// This can segflauta if opcode length and buffer check fails
 		r_anal_op_fini (&op);
 		sz = r_anal_op (anal, &op, addr, ptr, (int)(end-ptr));
 		if (sz > 0) {
 			/* store data */
-			switch(op.type) {
+			switch (op.type) {
 			case R_ANAL_OP_TYPE_CALL:
 				if (!linescall)
 					break;
@@ -66,6 +65,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	r_anal_op_fini (&op);
 	return list;
 }
+
 R_API int r_anal_reflines_middle(RAnal *a, RAnalRefline *list, ut64 addr, int len) {
 	struct list_head *pos;
 	for (pos = (&(list->list))->next; pos != (&(list->list)); pos = pos->next) {

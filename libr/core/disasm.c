@@ -3,6 +3,8 @@
 #include "r_core.h"
 #include "r_cons.h"
 
+#define HASRETRY 0
+
 static const char* r_vline_a[] = {
 	"|", // LINE_VERT
 	"|-", // LINE_CROSS
@@ -514,10 +516,11 @@ toro:
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
 		if (ret<1) { // XXX: move to r_asm_disassemble ()
-			oplen = ret = 1;
+			oplen = 1;
+			ret = -1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" %d %d**\n",
 			//	core->assembler->pc + ret, l, len);
-#if 1
+#if HASRETRY
 //eprintf ("~~~~~~LEN~~~~ %d %d %d\n", l, len, lines);
 			if (!cbytes && tries>0) { //1||l < len) {
 //eprintf ("~~~~~~~~~~~~~ %d %d\n", idx, core->blocksize);
@@ -1240,7 +1243,7 @@ toro:
 		buf = NULL;
 	}
 	r_cons_break_end ();
-#if 1
+#if HASRETRY
 	if (!cbytes && idx>=len) {// && (invbreak && !lastfail)) {
 	retry:
 		if (len<4) len = 4;

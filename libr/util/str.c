@@ -609,8 +609,6 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 	vlen = strlen (val);
 	slen = strlen (str);
 	for (i = 0; i < slen; ) {
-		if ((i+vlen)>slen)
-			break;
 		p = (char *)r_mem_mem (
 			(const ut8*)str + i, slen - i,
 			(const ut8*)key, klen);
@@ -618,7 +616,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		off = (int)(size_t)(p-str);
 		scnd = strdup (p+klen);
 		slen += vlen - klen + 1;
-		newstr = realloc (str, slen+1);
+		newstr = realloc (str, slen+klen);
 		if (!newstr) {
 			eprintf ("realloc fail\n");
 			free (str);
