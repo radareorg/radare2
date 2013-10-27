@@ -372,10 +372,18 @@ fcn->name = r_str_dup_printf ("fcn.%08"PFMT64x, at);
 		if (r_cons_singleton ()->breaked)
 			break;
 		fcnlen = r_anal_fcn (core->anal, fcn, at+delta, buf, buflen, reftype);
-		if (fcn->size<0 || fcn->size>999999) {
-			eprintf ("Oops. Negative function size at 0x%08"PFMT64x" (%d)\n",
-				at, fcnlen);
-			continue;
+		if (fcnlen<0) {
+			switch (fcnlen) {
+			case R_ANAL_RET_ERROR:
+			case R_ANAL_RET_NEW:
+			case R_ANAL_RET_DUP:
+			case R_ANAL_RET_END:
+				break;
+			default:
+				eprintf ("Oops. Negative function size at 0x%08"PFMT64x" (%d)\n",
+					at, fcnlen);
+				continue;
+			}	
 		}
 // HACK
 		//r_anal_fcn_insert (core->anal, fcn);
@@ -507,7 +515,7 @@ error:
 			if (!next[i]) continue;
 			r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
 		}
-		free(next);
+		free (next);
 	}
 	return R_FALSE;
 }

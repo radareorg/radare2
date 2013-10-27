@@ -34,7 +34,7 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_core);
 
 #define R_CORE_CMD_EXIT -2
-#define R_CORE_BLOCKSIZE 64
+#define R_CORE_BLOCKSIZE 0x100
 #define R_CORE_BLOCKSIZE_MAX 0x40000 /* 256KB */
 
 #define R_CORE_ANAL_GRAPHLINES 0x1
