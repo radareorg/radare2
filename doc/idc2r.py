@@ -173,7 +173,39 @@ def enums_parse(idc):
 # ----------------------------------------------------------------------
 
 def structs_parse(idc):
-	pass
+	# id = AddStrucEx (-1, "struct_MTRR", 0);
+	mkstruct_re = re.compile("""
+		(?m)								# Multiline
+		^[ \t]*id[ \t]*=[ \t]*AddStrucEx[ \t]*\(
+		[ \t]*-1[ \t]*,[ \t]*
+		"(?P<sname>.*)"						# Structure name
+		[ \t]*\,[ \t]*0
+		[ \t]*\);[ \t]*$
+	""", re.VERBOSE)
+	mkstruct_group_name = dict([(v,k) for k,v in mkstruct_re.groupindex.items()])
+	mkstruct = mkstruct_re.finditer(idc)
+	for match in mkstruct :
+		s = Struct()
+		for group_index,group in enumerate(match.groups()) :
+			if group :
+				if mkstruct_group_name[group_index+1] == "sname" :
+					s.name = group
+		structs.append(s)
+
+	# Case 1: not nested structures
+	# =============================
+	# id = GetStrucIdByName ("struct_header");
+	# mid = AddStructMember(id,"BCPNV", 0, 0x5000c500, 0, 7);
+	# mid = AddStructMember(id,"_", 0X7, 0x00500, -1, 1);
+	# mid = AddStructMember(id, "BCPNV_size",0X8, 0x004500, -1, 1);
+	mkstruct_re = re.compile("""
+		(?m)								# Multiline
+		^[ \t]*id[ \t]*=[ \t]*GetStrucIdByName[ \t]*\(
+		[ \t]*-1[ \t]*,[ \t]*
+		"(?P<sname>.*)"						# Structure name
+		[ \t]*\,[ \t]*0
+		[ \t]*\);[ \t]*$
+	""", re.VERBOSE)
 
 # ----------------------------------------------------------------------
 
@@ -190,14 +222,17 @@ def comments_parse(idc):
 	mkcomm_group_name = dict([(v,k) for k,v in mkcomm_re.groupindex.items()])
 	mkcomm = mkcomm_re.finditer(idc)
 	for match in mkcomm :
-		com = Comm()
 		for group_index,group in enumerate(match.groups()) :
 			if group :
 				if mkcomm_group_name[group_index+1] == "caddr" :
-					com.address = int(group, 16)
+					address = int(group, 16)
 				if mkcomm_group_name[group_index+1] == "ctext" :
-					com.text = group
-		comments.append(com)
+					com_multi = group.split('\\n')
+					for a in com_multi :
+						com = Comm()
+						com.address = address
+						com.text = a
+						comments.append(com)
 
 # ----------------------------------------------------------------------
 
