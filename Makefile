@@ -188,7 +188,7 @@ tests:
 	@if [ -d r2-regressions ]; then \
 		cd r2-regressions ; git clean -xdf ; git pull ; \
 	else \
-		git clone git://github.com/vext01/r2-regressions.git ; \
+		git clone git://github.com/radare2/r2-regressions.git ; \
 	fi
 	cd r2-regressions ; ${MAKE}
 
