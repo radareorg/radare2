@@ -221,6 +221,8 @@ int main(int argc, char **argv) {
 		case 'v':
 			printf ("ragg2 "R2_VERSION" "R2_INCDIR"/sflib\n");
 			return 0;
+		default:
+			return 1;
 		}
 	}
 
