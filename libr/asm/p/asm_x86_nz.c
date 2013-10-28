@@ -39,7 +39,7 @@ static ut8 getshop(const char *s) {
 		return 0;
 	for (i=0; i<strlen (ops); i+=4)
 		if (!memcmp (s, ops+i, 3))
-			return (ut8)ops[3];
+			return (ut8)ops[i+3];
 	return 0;
 }
 
