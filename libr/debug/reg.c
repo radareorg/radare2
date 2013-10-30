@@ -73,8 +73,8 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 			r_reg_arena_swap (dbg->reg, R_FALSE);
 			diff = r_reg_get_value (dbg->reg, item);
 			r_reg_arena_swap (dbg->reg, R_FALSE);
-
 			delta = value-diff;
+
 			switch (rad) {
 			case 'j':
 				dbg->printf ("%s\"%s\":%"PFMT64d,
@@ -86,19 +86,19 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 				break;
 			case 'd':
 			case 2:
-				if (diff) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
+				if (delta) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
 					dbg->printf (Color_BWHITE); //INVERT); //Color_BWHITE);
 				if (item->flags) {
 					char *str = r_reg_get_bvalue (dbg->reg, item);
 					dbg->printf ("%s = %s%s", item->name, str, ((n+1)%cols)?"   ":"\n");
 					free (str);
 				} else dbg->printf (fmt2, item->name, value, ((n+1)%cols)?"   ":"\n");
-				if (diff) // TODO: use inverse colors
+				if (delta) // TODO: use inverse colors
 					//dbg->printf (Color_INVERT_RESET); //Color_RESET);
 					dbg->printf (Color_RESET); //Color_RESET);
 				break;
 			case 3:
-				if (diff) {
+				if (delta) {
 					char woot[32];
 					snprintf (woot, sizeof (woot), " was 0x%08"PFMT64x" delta %d\n", diff, delta);
 					dbg->printf (fmt, item->name, value, woot);
