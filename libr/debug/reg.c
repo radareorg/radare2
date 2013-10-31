@@ -31,7 +31,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 
 R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 	int i, delta, from, to, cols, n = 0;
-	const char *fmt, *fmt2;
+	const char *fmt, *fmt2, *kwhites;
 	RListIter *iter;
 	RRegItem *item;
 	RList *head;
@@ -42,12 +42,14 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 	//if (dbg->h && dbg->h->bits & R_SYS_BITS_64) {
 	if (dbg->bits & R_SYS_BITS_64) {
 		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%4s 0x%08"PFMT64x"%s";
+		fmt2 = " %3s 0x%08"PFMT64x"%s";
 		cols = 3;
+		kwhites = "        ";
 	} else {
-		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%5s 0x%08"PFMT64x"%s";
+		fmt = " %s = 0x%08"PFMT64x"%s";
+		fmt2 = " %3s 0x%08"PFMT64x"%s";
 		cols = 4;
+		kwhites = "    ";
 	}
 	if (rad=='j')
 		dbg->printf ("{");
@@ -88,21 +90,26 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 			case 2:
 				 {
 					char whites[16];
-					strcpy (whites, "        ");
+					strcpy (whites, kwhites); 
 					if (delta) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
-						dbg->printf (Color_BWHITE); //INVERT); //Color_BWHITE);
+						dbg->printf (Color_BWHITE);
 					if (item->flags) {
 						char *str = r_reg_get_bvalue (dbg->reg, item);
-						//int len = strlen (str);
-						dbg->printf ("%s = %s%s", item->name,
+						int len = strlen (str);
+						strcpy (whites, "        ");
+						if (len>9)len=9;
+						else len = 9-len;
+						whites[len] = 0;
+						dbg->printf (" %s = %s%s", item->name,
 							str, ((n+1)%cols)? whites: "\n");
 						free (str);
 					} else {
 						char content[128];
 						int len;
 
-						snprintf (content, sizeof (content), "0x%"PFMT64x, value);
+						snprintf (content, sizeof(content), fmt2, item->name, value, "");
 						len = strlen (content);
+						len -= 4;
 
 						if (len>10) {
 							len -= 10;
@@ -110,9 +117,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 							else len = 8-len;
 							whites[len] = 0;
 						}
-
 						dbg->printf (fmt2, item->name, value,
-							((n+1)%cols)? whites:"\n");
+							((n+1)%cols)? whites: "\n");
+
 					}
 					if (delta) // TODO: only in color mode ON
 						dbg->printf (Color_RESET);
@@ -120,8 +127,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 				break;
 			case 3:
 				if (delta) {
-					char woot[32];
-					snprintf (woot, sizeof (woot), " was 0x%08"PFMT64x" delta %d\n", diff, delta);
+					char woot[64];
+					snprintf (woot, sizeof (woot),
+						" was 0x%08"PFMT64x" delta %d\n", diff, delta);
 					dbg->printf (fmt, item->name, value, woot);
 				}
 				break;
