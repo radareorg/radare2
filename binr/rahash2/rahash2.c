@@ -141,6 +141,7 @@ static int do_help(int line) {
 	" -b bsize    specify the size of the block (instead of full file)\n"
 	" -B          show per-block hash\n"
 	" -f from     start hashing at given address\n"
+	" -i num      repeat hash N iterations\n"
 	" -k          show hash using the openssh's randomkey algorithm\n"
 	" -q          run in quiet mode (only show results)\n"
 	" -L          list all available algorithms (see -a)\n"

@@ -100,8 +100,11 @@ static void open_pidmem (RIOPtrace *iop) {
 	char pidmem[32];
 	snprintf (pidmem, sizeof (pidmem), "/proc/%d/mem", iop->pid);
 	iop->fd = open (pidmem, O_RDWR);
+#if 0
 	if (iop->fd == -1)
-		eprintf ("Cannot use /proc/%d/mem. Fallback to ptrace io.\n", iop->fd);
+		eprintf ("Warning: Cannot open /proc/%d/mem. "
+			"Fallback to ptrace io.\n", iop->pid);
+#endif
 }
 
 static void close_pidmem(RIOPtrace *iop) {

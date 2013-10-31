@@ -46,7 +46,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 		cols = 3;
 	} else {
 		fmt = "%s = 0x%08"PFMT64x"%s";
-		fmt2 = "%4s 0x%08"PFMT64x"%s";
+		fmt2 = "%5s 0x%08"PFMT64x"%s";
 		cols = 4;
 	}
 	if (rad=='j')
@@ -86,16 +86,37 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 				break;
 			case 'd':
 			case 2:
-				if (delta) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
-					dbg->printf (Color_BWHITE); //INVERT); //Color_BWHITE);
-				if (item->flags) {
-					char *str = r_reg_get_bvalue (dbg->reg, item);
-					dbg->printf ("%s = %s%s", item->name, str, ((n+1)%cols)?"   ":"\n");
-					free (str);
-				} else dbg->printf (fmt2, item->name, value, ((n+1)%cols)?"   ":"\n");
-				if (delta) // TODO: use inverse colors
-					//dbg->printf (Color_INVERT_RESET); //Color_RESET);
-					dbg->printf (Color_RESET); //Color_RESET);
+				 {
+					char whites[16];
+					strcpy (whites, "        ");
+					if (delta) // TODO: DO NOT COLORIZE ALWAYS ..do debug knows about console?? use inverse colors
+						dbg->printf (Color_BWHITE); //INVERT); //Color_BWHITE);
+					if (item->flags) {
+						char *str = r_reg_get_bvalue (dbg->reg, item);
+						//int len = strlen (str);
+						dbg->printf ("%s = %s%s", item->name,
+							str, ((n+1)%cols)? whites: "\n");
+						free (str);
+					} else {
+						char content[128];
+						int len;
+
+						snprintf (content, sizeof (content), "0x%"PFMT64x, value);
+						len = strlen (content);
+
+						if (len>10) {
+							len -= 10;
+							if (len>8)len=8;
+							else len = 8-len;
+							whites[len] = 0;
+						}
+
+						dbg->printf (fmt2, item->name, value,
+							((n+1)%cols)? whites:"\n");
+					}
+					if (delta) // TODO: only in color mode ON
+						dbg->printf (Color_RESET);
+				 }
 				break;
 			case 3:
 				if (delta) {

@@ -1124,7 +1124,7 @@ toro:
 						int delta = 0;
 						if (f) { delta = cc.jump-flag->offset; }
 						if (!strncmp (flag->name, ccstr, strlen (flag->name))) {
-							if (ccstr[strlen(flag->name)] == '(') {
+							if (ccstr[strlen (flag->name)] == '(') {
 								tmp[0] = 0;
 							} else {
 								if (delta)
