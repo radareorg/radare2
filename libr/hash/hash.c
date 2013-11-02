@@ -1,29 +1,32 @@
 /* radare - LGPL - Copyright 2007-2013 pancake */
 
 #include "r_hash.h"
+#include "r_util.h"
 
 R_LIB_VERSION(r_hash);
 
-struct { const char *name; ut64 bit; } static const hash_name_bytes[] = {
-    {"all", UT64_MAX},
-    {"xor", R_HASH_XOR},
-    {"xorpair", R_HASH_XORPAIR},
-    {"md4", R_HASH_MD4},
-    {"md5", R_HASH_MD5},
-    {"sha1", R_HASH_SHA1},
-    {"sha256", R_HASH_SHA256},
-    {"sha384", R_HASH_SHA384},
-    {"sha512", R_HASH_SHA512},
-    {"crc16", R_HASH_CRC16},
-    {"crc32", R_HASH_CRC32},
-    {"adler32", R_HASH_ADLER32},
-    {"xxhash", R_HASH_XXHASH},
-    {"parity", R_HASH_PARITY},
-    {"entropy", R_HASH_ENTROPY},
-    {"hamdist", R_HASH_HAMDIST},
-    {"pcprint", R_HASH_PCPRINT},
-    {"mod255", R_HASH_MOD255},
-    {NULL, 0}};
+struct { const char *name; ut64 bit; }
+static const hash_name_bytes[] = {
+	 {"all", UT64_MAX},
+	 {"xor", R_HASH_XOR},
+	 {"xorpair", R_HASH_XORPAIR},
+	 {"md4", R_HASH_MD4},
+	 {"md5", R_HASH_MD5},
+	 {"sha1", R_HASH_SHA1},
+	 {"sha256", R_HASH_SHA256},
+	 {"sha384", R_HASH_SHA384},
+	 {"sha512", R_HASH_SHA512},
+	 {"crc16", R_HASH_CRC16},
+	 {"crc32", R_HASH_CRC32},
+	 {"adler32", R_HASH_ADLER32},
+	 {"xxhash", R_HASH_XXHASH},
+	 {"parity", R_HASH_PARITY},
+	 {"entropy", R_HASH_ENTROPY},
+	 {"hamdist", R_HASH_HAMDIST},
+	 {"pcprint", R_HASH_PCPRINT},
+	 {"mod255", R_HASH_MOD255},
+	 {NULL, 0}
+};
 
 /* returns 0-100 */
 R_API int r_hash_pcprint(const ut8 *buffer, ut64 len) {
@@ -138,4 +141,25 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 			bits |= hash_name_bytes[i].bit;
 	}
 	return bits;
+}
+
+R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed) {
+	ut8 buf[1024];
+	int i, len, dlen, hlen = r_hash_size (algo);
+	for (i = 0; i< loops; i++) {
+		if (seed) {
+			if (seed->prefix) {
+				memcpy (buf, seed->buf, seed->len);
+				memcpy (buf+seed->len, ctx->digest, hlen);
+			} else {
+				memcpy (buf, ctx->digest, hlen);
+				memcpy (buf+hlen, seed->buf, seed->len);
+			}
+			len = hlen + seed->len;
+		} else {
+			memcpy (buf, ctx->digest, hlen);
+			len = hlen;
+		}
+		dlen = r_hash_calculate (ctx, algo, buf, len);
+	}
 }

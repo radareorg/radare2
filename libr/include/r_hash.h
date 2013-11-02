@@ -49,6 +49,12 @@ typedef struct r_hash_t {
 	ut8 digest[128];
 } RHash;
 
+typedef struct r_hash_seed_t {
+	int prefix;
+	ut8 *buf;
+	int len;
+} RHashSeed;
+
 #define R_HASH_SIZE_CRC16 2
 #define R_HASH_SIZE_CRC32 4
 #define R_HASH_SIZE_XXHASH 4
@@ -122,6 +128,7 @@ R_API int r_hash_pcprint(const ut8 *buffer, ut64 len);
 /* lifecycle */
 R_API void r_hash_do_begin(RHash *ctx, int flags);
 R_API void r_hash_do_end(RHash *ctx, int flags);
+R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed);
 #endif
 
 #ifdef __cplusplus
