@@ -10,11 +10,11 @@
 #if __APPLE__
 #include <errno.h>
 #include <execinfo.h>
-#ifndef PROC_PIDPATHINFO_MAXSIZE
-#define PROC_PIDPATHINFO_MAXSIZE 512
-#else
-#include <libproc.h>
-#endif
+# ifndef PROC_PIDPATHINFO_MAXSIZE
+#  define PROC_PIDPATHINFO_MAXSIZE 512
+int proc_pidpath(int pid, void * buffer, uint32_t  buffersize);
+//#  include <libproc.h>
+# endif
 #endif
 #if __UNIX__
 # include <sys/wait.h>
@@ -145,7 +145,7 @@ R_API void r_sys_backtrace(void) {
 
 R_API int r_sys_sleep(int secs) {
 #if __UNIX__
-	return sleep(secs);
+	return sleep (secs);
 #else
 	Sleep (secs * 1000); // W32
 	return 0;
@@ -154,8 +154,11 @@ R_API int r_sys_sleep(int secs) {
 
 R_API int r_sys_usleep(int usecs) {
 #if __UNIX__
+	// unix api uses microseconds
 	return usleep (usecs);
 #else
+	// w32 api uses milliseconds
+	usecs /= 1000;
 	Sleep (usecs); // W32
 	return 0;
 #endif
