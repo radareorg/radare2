@@ -7,6 +7,7 @@
 #include <r_types.h>
 #include <r_list.h>
 #include <r_bin_dwarf.h>
+#include <r_io.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -285,6 +286,7 @@ R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_list(RBin *bin);
+R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *file, int dummy);
 R_API int r_bin_load(RBin *bin, const char *file, int dummy);
 R_API RBinObject *r_bin_get_object(RBin *bin);
 R_API ut64 r_bin_get_baddr(RBin *bin);

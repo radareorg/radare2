@@ -143,7 +143,94 @@ R_API int r_bin_load_languages(RBin *bin) {
 	return R_BIN_NM_NONE;
 }
 
-static int r_bin_init_items(RBin *bin, int dummy) {
+R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy){
+	int result = R_FALSE,
+		rawstr = 0;
+	RBuffer *bin_buf = NULL;
+	ut64 start, end, 
+		 sz = -1, 
+		 offset = 0;
+	
+	ut8* buf_bytes;
+
+	if (!io || !io->plugin || !io->plugin->read || !io->plugin->lseek){
+		return result;
+	}else if (!desc || !desc->fd){
+		return result;
+	}
+
+
+	buf_bytes = NULL;
+	end = io->plugin->lseek(io, desc, 0, SEEK_END);
+	start = io->plugin->lseek(io, desc, 0, SEEK_SET);
+	sz = -1;
+	offset = 0;
+	
+
+	if (end == -1 || start == -1){
+		return result;
+	}
+
+	sz = end - start;
+	buf_bytes = malloc(sz);
+	
+	if (!buf_bytes || !io->plugin->read(io, desc, buf_bytes, sz)){
+		free(buf_bytes);
+		return R_FALSE;
+	}
+
+	memcpy(&rawstr, buf_bytes, 4);
+	bin->cur.file = strdup (desc->name);
+	bin->cur.buf = bin_buf;			
+	bin->cur.rawstr = rawstr;
+		
+	bin_buf = r_buf_new();
+	if (bin_buf){	
+		r_buf_set_bytes(bin_buf, buf_bytes, sz);
+	}
+
+	if (buf_bytes)
+		free(buf_bytes);
+
+	//r_config_set_i (r->config, "bin.rawstr", rawstr);
+	bin->cur.file = strdup (desc->name);
+	bin->cur.buf = bin_buf;			
+	bin->cur.rawstr = rawstr;
+	// Here is the pertinent stuf from r_bin_init
+	// we can't call r_bin_init, because it will
+	// deref stuff unecessarily.
+	// XXX - note stopped here copy file.c to here????
+	{
+		RListIter *it;
+		RBinXtrPlugin *xtr;
+		bin->cur.o = R_NEW0 (RBinObject);
+		memset (bin->cur.o, 0, sizeof (RBinObject));
+		bin->curxtr = NULL;
+		r_list_foreach (bin->binxtrs, it, xtr) {
+			if (xtr->check && xtr->check (bin)) {
+				bin->curxtr = xtr;
+				break;
+			}
+		}
+		if (bin->curxtr && bin->curxtr->load)
+			bin->curxtr->load (bin);
+
+
+	}
+	r_bin_init_items(bin, R_FALSE);
+	result = R_TRUE;
+
+	return result;
+}
+// XXX - TODO Currently RIO plugins are not handled
+// properly.  They are init'ed in the core/file.c
+// and then this will be called directly.  Right
+// now its a hack (2a).  
+
+// r_bin_load needs to be modified so that it
+// respects the IO Plugin data sources, and does not
+// try to open files that do not exist.
+R_API int r_bin_init_items(RBin *bin, int dummy) {
 	int i, minlen = bin->minstrlen;
 	RListIter *it;
 	RBinPlugin *plugin, *cp;
@@ -155,6 +242,7 @@ static int r_bin_init_items(RBin *bin, int dummy) {
 		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
 			(!dummy && (plugin->check && plugin->check (&bin->cur)))) {
 			bin->cur.curplugin = plugin;
+			eprintf("Plugins: %s selected\n", plugin->name);
 			break;
 		}
 	}
@@ -212,11 +300,14 @@ static void r_bin_free_items(RBin *bin) {
 	free (o->info);
 	o->info = NULL;
 	if (o->binsym)
-		for (i=0; i<R_BIN_SYM_LAST; i++)
+		for (i=0; i<R_BIN_SYM_LAST; i++){
 			free (o->binsym[i]);
+			o->binsym[i] = NULL;
+		}
 	if (a->curplugin && a->curplugin->destroy)
 		a->curplugin->destroy (a);
 }
+
 
 static void r_bin_init(RBin *bin, int rawstr) {
 	RListIter *it;
@@ -312,7 +403,10 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy) {
 		return R_FALSE;
 	bin->file = r_file_abspath (file);
 	r_bin_init (bin, bin->cur.rawstr);
-	bin->narch = r_bin_extract (bin, 0);
+	
+	if (!bin->narch)
+		bin->narch = r_bin_extract (bin, 0);
+	
 	if (bin->narch == 0)
 		return R_FALSE;
 	/* FIXME: temporary hack to fix malloc:// */
