@@ -144,6 +144,14 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 	ut64 offset;
 	RIOMap *im;
 
+	// Handle the io plugins here
+
+	if (file == NULL && r->io->plugin){
+		if (r->file->filename)
+			file = r->file->filename;
+	}
+
+
 	if (file == NULL || !*file)
 		if (r->file)
 			file = r->file->filename;
@@ -151,13 +159,24 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		eprintf ("r_core_bin_load: no file specified\n");
 		return R_FALSE;
 	}
-	p = strstr (file, "://");
-	if (p) file = p+3;
-	while (*file==' ') file++;
+	
+	// XXX - TODO determine if the following three lines are meaningful
+	// after adding an IO aware API to core_bin_load
+	//p = strstr (file, "://");
+	//if (p) file = p+3;
+	//while (*file==' ') file++;
+	// XXX - end of dead code
+
 	/* TODO: fat bins are loaded multiple times, this is a problem that must be fixed . see '-->' marks. */
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
-        r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
-	if (r_bin_load (r->bin, file, R_FALSE)) { // --->
+    
+
+    r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
+	if(r->io->plugin && r_bin_io_load(r->bin, r->io, r->io->fd, R_FALSE)){
+		// XXX - not sure what to do here?
+
+
+	}else if (r_bin_load (r->bin, file, R_FALSE)) { // --->
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
 			RBinObject *o = r->bin->cur.o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
@@ -198,7 +217,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		(r->file->obj->info)? r->file->obj->info->has_va: 0);
 	offset = r_bin_get_offset (r->bin);
 	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
-	if (!strcmp (r->bin->cur.curplugin->name, "dex")) {
+	if (r->bin->cur.curplugin && !strcmp (r->bin->cur.curplugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
 	if (r_config_get_i (r->config, "file.analyze"))
