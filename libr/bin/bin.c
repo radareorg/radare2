@@ -199,7 +199,6 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy){
 	// Here is the pertinent stuf from r_bin_init
 	// we can't call r_bin_init, because it will
 	// deref stuff unecessarily.
-	// XXX - note stopped here copy file.c to here????
 	{
 		RListIter *it;
 		RBinXtrPlugin *xtr;
@@ -222,12 +221,8 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy){
 
 	return result;
 }
-// XXX - TODO Currently RIO plugins are not handled
-// properly.  They are init'ed in the core/file.c
-// and then this will be called directly.  Right
-// now its a hack (2a).  
 
-// r_bin_load needs to be modified so that it
+// XXX - r_bin_load needs to be modified so that it
 // respects the IO Plugin data sources, and does not
 // try to open files that do not exist.
 R_API int r_bin_init_items(RBin *bin, int dummy) {
