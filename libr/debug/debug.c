@@ -380,7 +380,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 }
 
 R_API int r_debug_continue(RDebug *dbg) {
-	return r_debug_continue_kill (dbg, dbg->signum);
+	return r_debug_continue_kill (dbg, 0); //dbg->signum);
 }
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
