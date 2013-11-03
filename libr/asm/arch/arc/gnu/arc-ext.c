@@ -441,7 +441,7 @@ build_ARC_extmap (void *text_bfd)
 {
 #if 0
   asection *sect;
-    
+
   /* the map is built each time gdb loads an executable file - so free any
    * existing map, as the map defined by the new file may differ from the old
    */
@@ -479,7 +479,7 @@ void dump_ARC_extmap (void)
         printf("AUX : %s %ld\n", r->name, r->address);
         r = r->next;
     }
-  
+
     for (i = 0; i < INST_HASH_SIZE; i++)
     {
         struct ExtInstruction *insn;

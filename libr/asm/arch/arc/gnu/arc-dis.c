@@ -52,13 +52,13 @@
 
 typedef enum
 {
-  CLASS_A4_ARITH,	     
+  CLASS_A4_ARITH,
   CLASS_A4_OP3_GENERAL,
   CLASS_A4_FLAG,
   /* All branches other than JC.  */
   CLASS_A4_BRANCH,
   CLASS_A4_JC ,
-  /* All loads other than immediate 
+  /* All loads other than immediate
      indexed loads.  */
   CLASS_A4_LD0,
   CLASS_A4_LD1,
@@ -163,7 +163,7 @@ typedef enum
 #define IS_REG(x)                    (field##x##isReg)
 #define WRITE_FORMAT_LB_Rx_RB(x)     WRITE_FORMAT (x, "[","]","","")
 #define WRITE_FORMAT_x_COMMA_LB(x)   WRITE_FORMAT (x, "",", [","",", [")
-#define WRITE_FORMAT_COMMA_x_RB(x)   WRITE_FORMAT (x, ", ","]",",","]")
+#define WRITE_FORMAT_COMMA_x_RB(x)   WRITE_FORMAT (x, ", ","]",", ","]")
 #define WRITE_FORMAT_x_RB(x)         WRITE_FORMAT (x, "","]","","]")
 #define WRITE_FORMAT_COMMA_x(x)      WRITE_FORMAT (x, ", ","",", ","")
 #define WRITE_FORMAT_x_COMMA(x)      WRITE_FORMAT (x, "",", ","",", ")
@@ -303,13 +303,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 	  case 'h':
 	    {
 	      unsigned u = va_arg (ap, int);
-	      /* Hex.  We can change the format to 0x%08x in
-	         one place, here, if we wish.
-	         We add underscores for easy reading.  */
-	      if (u > 65536)
-		sprintf (bp, "0x%x_%04x", u >> 16, u & 0xffff);
-	      else
-		sprintf (bp, "0x%x", u);
+		  sprintf (bp, "0x%x", u);
 	      inc_bp ();
 	    }
 	    break;
@@ -382,7 +376,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 		  AUXREG2NAME (0x3, "lp_end");
 		  AUXREG2NAME (0x4, "identity");
 		  AUXREG2NAME (0x5, "debug");
-		
+
 		default:
 		  {
 		    const char *ext;
@@ -604,7 +598,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	    case 0: instrName = "ld";       state->_load_len = 4; break;
 	    case 1: instrName = "ldb";      state->_load_len = 1; break;
 	    case 2: instrName = "ldw";      state->_load_len = 2; break;
-	    default: instrName = "??? (1[3])"; 
+	    default: instrName = "??? (1[3])";
 	      state->flow = invalid_instr; break;
 	    }
 	  decodingClass = CLASS_A4_LD1;
@@ -624,7 +618,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	    case 0: instrName = "st";       break;
 	    case 1: instrName = "stb";      break;
 	    case 2: instrName = "stw";      break;
-	    default: instrName = "??? (2[3])"; 
+	    default: instrName = "??? (2[3])";
 	      state->flow = invalid_instr; break;
 	    }
 	  decodingClass = CLASS_A4_ST;
@@ -700,13 +694,13 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	  if (flags & IGNORE_FIRST_OPD)
 	    ignoreFirstOpd = 1;
 	  break;
-	  
+
 	}
       break;
 
-    case op_BC:  instrName = "b";  
-    case op_BLC: if (!instrName) instrName = "bl"; 
-    case op_LPC: if (!instrName) instrName = "lp"; 
+    case op_BC:  instrName = "b";
+    case op_BLC: if (!instrName) instrName = "bl";
+    case op_LPC: if (!instrName) instrName = "lp";
     case op_JC:
       if (!instrName)
 	{
@@ -846,7 +840,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       fieldA += addr + 4;
       CHECK_FLAG_COND_NULLIFY ();
       flag = 0;
- 
+
       write_instr_name ();
       /* This address could be a label we know.  Convert it.  */
       if (state->_opcode != op_LPC /* LP */)
@@ -998,7 +992,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       CHECK_FIELD_B();
       CHECK_FIELD_C();
       fieldA = FIELDD(state->words[0]); /* shimm */
-      
+
       /* [B,A offset] */
       if (dbg) printf_unfiltered("7:b reg %d %x off %x\n",
 				 fieldBisReg,fieldB,fieldA);
@@ -1187,27 +1181,3 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
 
 }
 
-/* Return the print_insn function to use.
-   Side effect: load (possibly empty) extension section.  */
-
-disassembler_ftype
-arc_get_disassembler (bfd *abfd)
-{
-  unsigned short mach_abfd = elf_elfheader(abfd)->e_machine;
-  build_ARC_extmap (abfd);
-
-  switch(mach_abfd)
-    {
-    case EM_ARC:
-      return ARCTangent_decodeInstr;
-    case EM_ARCOMPACT:
-      return ARCompact_decodeInstr;
-    default:
-#if 0
-      if (bfd_get_mach (abfd) ==  E_ARC_MACH_A4)
-	return ARCTangent_decodeInstr;
-      else 
-#endif
-	return ARCompact_decodeInstr;
-    }
-}
