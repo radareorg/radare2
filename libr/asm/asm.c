@@ -403,13 +403,12 @@ R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
 }
 
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
-	RAsmOp op;
-	ut64 off;
-	RAsmCode *acode = NULL;
-	int linenum = 0;
-	int labels = 0, stage, ret, idx, ctr, i, j;
+	int labels = 0, stage, ret, idx, ctr, i, j, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
+	RAsmCode *acode = NULL;
+	RAsmOp op;
+	ut64 off;
 	if (buf == NULL)
 		return NULL;
 	if (!(acode = r_asm_code_new ()))

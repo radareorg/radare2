@@ -7,6 +7,20 @@
 
 #define ANALBS 4096
 
+
+R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
+	RAnalOp op, *_op;
+	char buf[128];
+	if (r_io_read_at (core->io, addr, buf, sizeof (buf))<1)
+		return NULL;
+	if (r_anal_op (core->anal, &op, addr, buf, sizeof (buf))<1)
+		return NULL;
+	_op = malloc (sizeof (op));
+	if (!_op) return NULL;
+	memcpy (_op, &op, sizeof (op));
+	return _op;
+}
+
 R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 	int count = 0;
 	RAnalHint *hint;

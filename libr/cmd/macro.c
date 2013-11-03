@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2012 - pancake */
+/* radare - LGPL - Copyright 2008-2013 - pancake */
 
 #include <stdio.h>
 #include <r_cons.h>
@@ -19,16 +19,16 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 // XXX add support single line function definitions
 // XXX add support for single name multiple nargs macros
 R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
-	RListIter *iter;
-	RCmdMacroItem *m;
 	struct r_cmd_macro_item_t *macro;
+	char *name, *args = NULL;
 	char buf[R_CMD_MAXLEN];
-	char *bufp;
+	RCmdMacroItem *m;
+	int macro_update;
+	RListIter *iter;
 	char *pbody;
+	char *bufp;
 	char *ptr;
 	int lidx;
-	int macro_update;
-	char *name, *args = NULL;
 
 	if (!*oname) {
 		r_cmd_macro_list (mac);
@@ -54,12 +54,12 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	}
 
 	macro = NULL;
-	macro_update = 0;
 	ptr = strchr (name, ' ');
 	if (ptr) {
 		*ptr='\0';
 		args = ptr +1;
 	}
+	macro_update = 0;
 	r_list_foreach (mac->macros, iter, m) {
 		if (!strcmp (name, m->name)) {
 			macro = m;
@@ -73,7 +73,8 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	if (ptr)
 		*ptr = ' ';
 	if (macro == NULL) {
-		macro = (struct r_cmd_macro_item_t *)malloc (sizeof (struct r_cmd_macro_item_t));
+		macro = (struct r_cmd_macro_item_t *)malloc (
+			sizeof (struct r_cmd_macro_item_t));
 		macro->name = strdup (name);
 	}
 

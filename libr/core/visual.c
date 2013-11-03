@@ -608,6 +608,28 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'K':
 		if (curset) {
 			if (ocursor==-1) ocursor=cursor;
+			{
+				char *man = NULL;
+				/* check for manpage */
+				RAnalOp *op = r_core_anal_op (core, core->offset+cursor);
+				if (op) {
+					if (op->jump != UT64_MAX) {
+						RFlagItem *item = r_flag_get_i (core->flags, op->jump);
+						if (item) {
+							const char *ptr = r_str_lchr (item->name, '.');
+							if (ptr)
+								man = strdup (ptr+1);
+						}
+					}
+					r_anal_op_free (op);
+				}
+				if (man) {
+					r_cons_clear();
+					r_cons_flush();
+					r_sys_cmdf ("man %s", man);
+					break;
+				}
+			}
 			cursor -= cols;
 			if (cursor<0) {
 				if (core->offset>=cols) {
