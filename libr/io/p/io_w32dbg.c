@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2011 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2008-2013 - pancake */
 
 #include <r_userconf.h>
 
@@ -61,6 +61,7 @@ static int __attach (RIOW32Dbg *dbg) {
 
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file)) {
+		char *pidpath;
 		RIOW32Dbg *dbg = R_NEW (RIOW32Dbg);
 		if (dbg == NULL)
 			return NULL;
@@ -69,7 +70,9 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 			free (dbg);
 			return NULL;
 		}
-		RETURN_IO_DESC_NEW (&r_io_plugin_w32dbg, -1, file, R_TRUE, 0, dbg);
+		pidpath = r_sys_pid_to_path (dbg->pid);
+		RETURN_IO_DESC_NEW (&r_io_plugin_w32dbg, -1,
+			pidpath, R_TRUE, 0, dbg);
 	}
 	return NULL;
 }

@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <execinfo.h>
 # ifndef PROC_PIDPATHINFO_MAXSIZE
-#  define PROC_PIDPATHINFO_MAXSIZE 512
+#  define PROC_PIDPATHINFO_MAXSIZE 1024
 int proc_pidpath(int pid, void * buffer, uint32_t  buffersize);
 //#  include <libproc.h>
 # endif

@@ -347,16 +347,14 @@ static int r_debug_native_attach(RDebug *dbg, int pid) {
 	int ret = -1;
 #if __WINDOWS__
 	HANDLE hProcess = OpenProcess (PROCESS_ALL_ACCESS, FALSE, pid);
-	if (hProcess != (HANDLE)NULL && DebugActiveProcess (pid)) {
+	if (hProcess != (HANDLE)NULL && DebugActiveProcess (pid))
 		ret = w32_first_thread (pid);
-	} else ret = -1;
+	else ret = -1;
 	ret = w32_first_thread (pid);
 #elif __APPLE__ || __KFBSD__
 	ret = ptrace (PT_ATTACH, pid, 0, 0);
-	if (ret!=-1) {
-		perror ("ptrace(PT_ATTACH)");
-		ret = pid;
-	}
+	if (ret!=-1)
+		perror ("ptrace (PT_ATTACH)");
 	ret = pid;
 #else
 	ret = ptrace (PTRACE_ATTACH, pid, 0, 0);

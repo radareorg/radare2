@@ -279,12 +279,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			sprintf (uri, "ptrace://%d", pid);
 #endif
 			r_io_redirect (io, uri);
-			return NULL;
 		} else {
 			sprintf (uri, "attach://%d", pid);
 			r_io_redirect (io, uri);
-			return NULL;
 		}
+		return NULL;
 	}
 	r_io_redirect (io, NULL);
 	return NULL;

@@ -233,11 +233,11 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh = R_NEW (RCoreFile);
 	fh->fd = fd;
 	fh->map = NULL;
-	fh->uri = strdup (fd->name);
+	fh->uri = strdup (file); //fd->name);
 	fh->size = r_file_size (fh->uri);
 	if (!fh->size)
 		fh->size = r_io_size (r->io);
-	fh->filename = strdup (fh->uri);
+	fh->filename = strdup (fd->name);
 	p = strstr (fh->filename, "://");
 	if (p != NULL) {
 		char *s = strdup (p+3);

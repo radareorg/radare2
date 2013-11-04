@@ -201,6 +201,7 @@ typedef struct r_io_cache_t {
 			desc = NULL; \
 		} \
 	} \
+	free (fname); \
 	return desc; \
 }
 

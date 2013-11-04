@@ -424,6 +424,8 @@ int main(int argc, char **argv) {
 				if (filepath) filepath += 3;
 				else filepath = pfile;
 			}
+			if (r.file && r.file->filename)
+				filepath = r.file->filename;
 			if (!r_core_bin_load (&r, filepath))
 				r_config_set (r.config, "io.va", "false");
 		}

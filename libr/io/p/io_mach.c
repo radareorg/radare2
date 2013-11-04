@@ -181,8 +181,10 @@ static int debug_attach(int pid) {
         return task;
 }
 
-static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
+static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOMach *riom;
+	RIODesc *ret;
+	char *pidpath;
 	int pid;
 	task_t task;
 	if (!__plugin_open (io, file))
@@ -209,7 +211,11 @@ static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	riom = R_NEW (RIOMach);
 	riom->pid = pid;
 	riom->task = task;
-	return r_io_desc_new (&r_io_plugin_mach, riom->pid, file, 1, mode, riom);
+	pidpath = r_sys_pid_to_path (pid);
+	ret = r_io_desc_new (&r_io_plugin_mach, riom->pid,
+		pidpath, 1, mode, riom);
+	free (pidpath);
+	return ret;
 }
 
 static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
