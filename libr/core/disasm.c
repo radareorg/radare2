@@ -145,7 +145,7 @@ static void colorize_opcode (char *p, const char *reg, const char *num) {
 					j += strlen (reg)-1;
 				}
 				continue;
-			} 
+			}
 			break;
 		case ' ':
 			is_arg = 1;
@@ -432,12 +432,12 @@ toro:
 						R_ANAL_FCN_TYPE_FCN |
 						R_ANAL_FCN_TYPE_ROOT);
 					if (show_color) {
-						r_cons_printf ("%s%c "Color_RESET"%s%s"Color_RESET, color_fline,
+						r_cons_printf ("%s%s "Color_RESET"%s%s"Color_RESET, color_fline,
 							((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==at)
-							?' ':'|', color_flow, refline2);
+							?" ":core->cons->vline[LINE_VERT], color_flow, refline2);
 					} else {
-						r_cons_printf ("%c %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
-							&& f->addr==at)?' ':'|', refline2);
+						r_cons_printf ("%s %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
+							&& f->addr==at)?" ":core->cons->vline[LINE_VERT], refline2);
 					}
 					if (show_color) {
 						r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
