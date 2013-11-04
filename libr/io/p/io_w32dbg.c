@@ -5,6 +5,7 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_cons.h>
+#include <r_util.h>
 
 #if __WINDOWS__
 
