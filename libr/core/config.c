@@ -212,7 +212,7 @@ static int config_analsplit_callback(void *user, void *data) {
 
 static inline void __setsegoff(RConfig *cfg, const char *asmarch, int asmbits) {
 	if (!strcmp (asmarch, "x86"))
-		r_config_set_i (cfg, "asm.segoff", (asmbits==16)?1:0);
+		r_config_set (cfg, "asm.segoff", (asmbits==16)?"true":"false");
 }
 
 static int config_asmos_callback(void *user, void *data) {
