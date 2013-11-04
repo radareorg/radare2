@@ -1236,6 +1236,7 @@ static int cmd_hexdump(void *data, const char *input) {
 	return cmd_print (data, input-1);
 }
 
+// TODO : move to r_util? .. depends on r_cons...
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt) {
 	int show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
@@ -1250,6 +1251,14 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int opt) {
 				k, s&0xFFFF, a&0xFFFF);
 		} else r_cons_printf ("%s0x%08"PFMT64x""Color_RESET, k, off);
 		r_cons_puts (" ");
-	} else r_cons_printf ("0x%08"PFMT64x" ", off);
+	} else {
+		if (opt) {
+			ut32 s, a;
+			a = off & 0xffff;
+			s = (off-a)>>4;
+			r_cons_printf ("%04x:%04x", s&0xFFFF, a&0xFFFF);
+		} else {
+			r_cons_printf ("0x%08"PFMT64x" ", off);
+		}
+	}
 }
-

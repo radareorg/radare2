@@ -490,8 +490,8 @@ static const char *getchardiff (char *fmt, ut8 a, ut8 b) {
 	return fmt;
 }
 
-#define B(a,b) getbytediff(fmt, a[i+j], b[i+j])
-#define C(a,b) getchardiff(fmt, a[i+j], b[i+j])
+#define BD(a,b) getbytediff(fmt, a[i+j], b[i+j])
+#define CD(a,b) getchardiff(fmt, a[i+j], b[i+j])
 
 static ut8 *M(const ut8 *b, int len) {
 	ut8 *r = malloc (len+16);
@@ -516,26 +516,26 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 		p->printf ("0x%08"PFMT64x" ", aa+i);
 		for (j=0;j<16;j++) {
 			r_print_cursor (p, i+j, 1);
-			p->printf (B (a,b));
+			p->printf (BD (a,b));
 			r_print_cursor (p, i+j, 0);
 		}
 		p->printf (" ");
 		for (j=0;j<16;j++) {
 			r_print_cursor (p, i+j, 1);
-			p->printf ("%s", C (a, b));
+			p->printf ("%s", CD (a, b));
 			r_print_cursor (p, i+j, 0);
 		}
 		if (scndcol) {
 			p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
 			for (j=0;j<16;j++) {
 				r_print_cursor (p, i+j, 1);
-				p->printf (B (b, a));
+				p->printf (BD (b, a));
 				r_print_cursor (p, i+j, 0);
 			}
 			p->printf (" ");
 			for (j=0;j<16;j++) {
 				r_print_cursor (p, i+j, 1);
-				p->printf ("%s", C (b, a));
+				p->printf ("%s", CD (b, a));
 				r_print_cursor (p, i+j, 0);
 			}
 			p->printf ("\n");
