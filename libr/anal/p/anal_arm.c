@@ -49,20 +49,20 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	// TODO: handle 32bit instructions (branches are not correctly decoded //
 
 	/* CMP */
-	if (((ins & B(B1110,0,0,0)) == B(B0010,0,0,0) )
-                && (1 == (ins & B(1,B1000,0,0)) >> 11)) { // dp3
+	if (((ins & B4(B1110,0,0,0)) == B4(B0010,0,0,0) )
+                && (1 == (ins & B4(1,B1000,0,0)) >> 11)) { // dp3
 		op->type = R_ANAL_OP_TYPE_CMP;
 		return op->length;
 	}
-        if ( (ins & B(B1111,B1100,0,0)) == B(B0100,0,0,0) ) {
-                op_code = (ins & B(0,B0011,B1100,0)) >> 6;
+        if ( (ins & B4(B1111,B1100,0,0)) == B4(B0100,0,0,0) ) {
+                op_code = (ins & B4(0,B0011,B1100,0)) >> 6;
                 if (op_code == 8 || op_code == 10) { // dp5
 			op->type = R_ANAL_OP_TYPE_CMP;
 			return op->length;
 		}
 	}
-        if ( (ins & B(B1111,B1100,0,0)) == B(B0100,B0100,0,0) ) {
-                op_code = (ins & B(0,B0011,0,0)) >> 8; // dp8
+        if ( (ins & B4(B1111,B1100,0,0)) == B4(B0100,B0100,0,0) ) {
+                op_code = (ins & B4(0,B0011,0,0)) >> 8; // dp8
 		if (op_code== 1) {
 			op->type = R_ANAL_OP_TYPE_CMP;
 			return op->length;
@@ -71,50 +71,50 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (ins == 0xbf) {
 		// TODO: add support for more NOP instructions
 		op->type = R_ANAL_OP_TYPE_NOP;
-        } else if (((op_code = ((ins & B(B1111,B1000,0,0)) >> 11)) >= 12 && op_code <= 17 )) {
+        } else if (((op_code = ((ins & B4(B1111,B1000,0,0)) >> 11)) >= 12 && op_code <= 17 )) {
 		if (op_code%2)
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		else op->type = R_ANAL_OP_TYPE_STORE;
-        } else if ( (ins & B(B1111,0,0,0)) == B(B0101,0,0,0) ) {
-                op_code = (ins & B(0,B1110,0,0)) >> 9;
+        } else if ( (ins & B4(B1111,0,0,0)) == B4(B0101,0,0,0) ) {
+                op_code = (ins & B4(0,B1110,0,0)) >> 9;
 		if (op_code%2)
 			op->type = R_ANAL_OP_TYPE_LOAD;
 		else op->type = R_ANAL_OP_TYPE_STORE;
-	} else if ( (ins & B(B1111,0,0,0)) == B(B1101,0,0,0) ) {
+	} else if ( (ins & B4(B1111,0,0,0)) == B4(B1101,0,0,0) ) {
 		// BNE..
-		int delta = (ins & B(0,0,B1111,B1111));
+		int delta = (ins & B4(0,0,B1111,B1111));
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
-        } else if ( (ins & B(B1111,B1000,0,0)) == B(B1110,0,0,0) ) {
+        } else if ( (ins & B4(B1111,B1000,0,0)) == B4(B1110,0,0,0) ) {
 		// B
-		int delta = (ins & B(0,0,B1111,B1111));
+		int delta = (ins & B4(0,0,B1111,B1111));
 		op->type = R_ANAL_OP_TYPE_JMP;
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
 		op->eob = 1;
-        } else if ( (ins & B(B1111,B1111,0,0)) == B(B0100,B0111,0,0) ) {
+        } else if ( (ins & B4(B1111,B1111,0,0)) == B4(B0100,B0111,0,0) ) {
 		// BLX
 		op->type = R_ANAL_OP_TYPE_UCALL;
-		op->jump = addr+4+(ut32)((ins & B(0,0,B0111,B1000)) >> 3);
+		op->jump = addr+4+(ut32)((ins & B4(0,0,B0111,B1000)) >> 3);
 		op->fail = addr+4;
-        } else if ( (ins & B(B1111,B1000,0,0)) == B(B1111,0,0,0) ) {
+        } else if ( (ins & B4(B1111,B1000,0,0)) == B4(B1111,0,0,0) ) {
 		// BL The long branch with link, it's in 2 instructions:
 		// prefix: 11110[offset]
 		// suffix: 11111[offset] (11101[offset] for blx)
 		ut16 nextins = (ins32 & 0xFFFF0000) >> 16;
-		ut32 high = (ins & B(0, B0111, B1111, B1111)) << 12;
-		if (ins & B(0, B0100, 0, 0)) {
-			high |= B(B1111, B1000, 0, 0) << 16;
+		ut32 high = (ins & B4(0, B0111, B1111, B1111)) << 12;
+		if (ins & B4(0, B0100, 0, 0)) {
+			high |= B4(B1111, B1000, 0, 0) << 16;
 		}
-		int delta = high + ((nextins & B(0, B0111, B1111, B1111))*2);
+		int delta = high + ((nextins & B4(0, B0111, B1111, B1111))*2);
 		op->jump = (int)(addr+4+(delta));
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->fail = addr+4;
-        } else if ( (ins & B(B1111,B1111,0,0)) == B(B1011,B1110,0,0) ) {
+        } else if ( (ins & B4(B1111,B1111,0,0)) == B4(B1011,B1110,0,0) ) {
 		op->type = R_ANAL_OP_TYPE_TRAP;
 		op->val = (ut64)(ins>>8);
-        } else if ( (ins & B(B1111,B1111,0,0)) == B(B1101,B1111,0,0)) {
+        } else if ( (ins & B4(B1111,B1111,0,0)) == B4(B1101,B1111,0,0)) {
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = (ut64)(ins>>8);
 	}

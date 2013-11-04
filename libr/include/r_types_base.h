@@ -70,6 +70,6 @@
 #define B0011 3
 #define B0010 2
 #undef B
-#define B(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
+#define B4(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
 
 #endif

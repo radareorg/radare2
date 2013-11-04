@@ -7,7 +7,7 @@
 #include "mach0/mach0.h"
 
 static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = MACH0_(r_bin_mach0_new_buf) (arch->buf)))
+	if (!(arch->bin_obj = MACH0_(r_bin_mach0_new_buf) (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
@@ -101,12 +101,12 @@ static RList* symbols(RBinArch *arch) {
 }
 
 static RList* imports(RBinArch *arch) {
-	RList *ret = NULL;
-	RBinImport *ptr = NULL;
-	struct r_bin_mach0_import_t *imports = NULL;
 	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->bin_obj;
-	int i;
+	struct r_bin_mach0_import_t *imports = NULL;
 	const char *name, *type;
+	RBinImport *ptr = NULL;
+	RList *ret = NULL;
+	int i;
 
 	if (!(ret = r_list_new ()))
 		return NULL;
@@ -131,7 +131,6 @@ static RList* imports(RBinArch *arch) {
 		// Remove the extra underscore that every import seems to have in Mach-O.
 		if (*name == '_')
 			name++;
-
 		strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, type, R_BIN_SIZEOF_STRINGS);
@@ -166,8 +165,7 @@ static RList* relocs(RBinArch *arch) {
 		ptr->additive = 0;
 		if(bin->imports_by_ord && relocs[i].ord < bin->imports_by_ord_size)
 			ptr->import = bin->imports_by_ord[relocs[i].ord];
-		else
-			ptr->import = NULL;
+		else ptr->import = NULL;
 		ptr->addend = relocs[i].addend;
 		ptr->rva = relocs[i].addr;
 		ptr->offset = relocs[i].offset;
@@ -207,7 +205,8 @@ static RBinInfo* info(RBinArch *arch) {
 		free (str);
 	}
 	strncpy (ret->rclass, "mach0", R_BIN_SIZEOF_STRINGS);
-	strncpy (ret->os, MACH0_(r_bin_mach0_get_os) (arch->bin_obj), R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->os, MACH0_(r_bin_mach0_get_os) (arch->bin_obj),
+		R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->subsystem, "darwin", R_BIN_SIZEOF_STRINGS);
 	if ((str = MACH0_(r_bin_mach0_get_cputype) (arch->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
@@ -244,13 +243,13 @@ static int check(RBinArch *arch) {
 typedef struct r_bin_create_t {
 	int arch;
 	ut8 *code;
-	int codelen;
+	int clen;
 	ut8 *data;
-	int datalen;
+	int dlen;
 } RBinCreate;
 #endif
 
-static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
+static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, int dlen) {
 	ut32 filesize, codeva, datava;
 	ut32 ncmds, cmdsize, magiclen;
 	ut32 p_codefsz = 0, p_codeva = 0, p_codesz = 0, p_codepa = 0;
@@ -284,7 +283,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	}
 	D (2); // filetype (executable)
 
-	if (data && datalen>0) {
+	if (data && dlen>0) {
 		ncmds = 3;
 		cmdsize = 0;
 	} else {
@@ -327,7 +326,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	D (0); // reserved
 	D (0);
 
-	if (data && datalen>0) {
+	if (data && dlen>0) {
 		/* DATA SEGMENT */
 		D (1);   // cmd.LC_SEGMENT
 		D (124); // sizeof (cmd)
@@ -382,29 +381,29 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	cmdsize = buf->length - magiclen;
 
 	codeva = buf->length + baddr;
-	datava = buf->length + codelen + baddr;
+	datava = buf->length + clen + baddr;
 	W (p_entry, &codeva, 4); // set PC
 
 	/* fill header variables */
 	W (p_cmdsize, &cmdsize, 4);
-	filesize = magiclen + cmdsize + codelen + datalen;
+	filesize = magiclen + cmdsize + clen + dlen;
 	// TEXT SEGMENT //
 	W (p_codefsz, &filesize, 4);
 	W (p_codeva, &codeva, 4);
-	W (p_codesz, &codelen, 4);
+	W (p_codesz, &clen, 4);
 	p_tmp = codeva - baddr;
 	W (p_codepa, &p_tmp, 4);
 
-	B (code, codelen);
+	B (code, clen);
 
-	if (data && datalen>0) {
+	if (data && dlen>0) {
 		/* append data */
 		W (p_datafsz, &filesize, 4);
 		W (p_datava, &datava, 4);
-		W (p_datasz, &datalen, 4);
+		W (p_datasz, &dlen, 4);
 		p_tmp = datava - baddr;
 		W (p_datapa, &p_tmp, 4);
-		B (data, datalen);
+		B (data, dlen);
 	}
 
 	return buf;
