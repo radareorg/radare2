@@ -287,6 +287,13 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	struct linger linger = { 0 };
 
+#if __WINDOWS__
+	WSADATA wsadata;
+	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
+		eprintf ("Error creating socket.");
+		return R_FALSE;
+	}
+#endif
 	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
 		return R_FALSE;
 	linger.l_onoff = 1;
