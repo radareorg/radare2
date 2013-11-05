@@ -492,8 +492,20 @@ toro:
 					r_cons_strcat_justify (comment, mycols, ';');
 #else
 					infun = f && (f->addr != at);
-					comment = r_str_prefix_all (comment, infun?
-							"|  ;      ":"   ;      ");
+					if (infun) {
+						char str[64];
+						if (show_color)
+							strcpy (str, color_fline);
+						else str[0]=0;
+						strcat (str, core->cons->vline[LINE_VERT]);
+						if (show_color)
+							strcat (str, color_comment);
+						else str[0]=0;
+						strcat (str, "  ;      ");
+						comment = r_str_prefix_all (comment, str);
+					} else {
+						comment = r_str_prefix_all (comment, "   ;      ");
+					}
 					r_cons_strcat (comment);
 #endif
 					if (show_color) r_cons_strcat (Color_RESET);
