@@ -617,9 +617,9 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		if (!p) break;
 		off = (int)(size_t)(p-str);
 		scnd = strdup (p+klen);
-		slen += vlen - klen + 1;
+		slen += vlen - klen;
 		// HACK: this 32 avoids overwrites wtf
-		newstr = realloc (str, slen+klen+32);
+		newstr = realloc (str, slen+klen+1);
 		if (!newstr) {
 			eprintf ("realloc fail\n");
 			free (str);
