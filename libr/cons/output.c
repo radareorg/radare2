@@ -44,7 +44,6 @@ void w32_gotoxy(int x, int y) {
 }
 
 static int wrapline (const char *s, int len) {
-	const char *p = s;
 	int l, n = 0;
 	for (; n<len; ) {
 		l = r_str_len_utf8char (s+n, (len-n));
@@ -145,6 +144,54 @@ R_API int r_cons_w32_print(ut8 *ptr, int empty) {
 			continue;
 		} else 
 		if (esc == 2) {
+			{
+				int x, y;
+				char *ptr2 = NULL;
+				int i, state = 0;
+				for (i=0; ptr[i] && state>=0; i++) {
+					switch (state) {
+					case 0:
+						if (ptr[i]==';') {
+							y = atoi (ptr);
+							state = 1;
+							ptr2 = ptr+i+1;
+						} else 
+						if (ptr[i] >='0' && ptr[i]<='9') {
+							// ok
+						} else state = -1; // END FAIL
+						break;
+					case 1:
+						if (ptr[i]=='H') {
+							x = atoi (ptr2);
+							state = -2; // END OK
+						} else
+						if (ptr[i] >='0' && ptr[i]<='9') {
+							// ok
+						} else state = -1; // END FAIL
+						break;
+					}
+				}
+				if (state == -2) {
+					w32_gotoxy (x, y);
+					ptr += i;
+					str = ptr + 1;// + i-2;
+					continue;
+				}
+			}
+			if (ptr[0]=='0'&&ptr[1]==';'&&ptr[2]=='0') {
+				// \x1b[0;0H
+				/** clear screen if gotoxy **/
+				if (empty) {
+					// fill row here
+					fill_tail(cols, lines);
+				}
+				w32_gotoxy (0, 0);
+				lines = 0;
+				esc = 0;
+				ptr += 3;
+				str = ptr + 1;
+				continue;
+			} else
 			if (ptr[0]=='2'&&ptr[1]=='J') {
 				//fill_tail(cols, lines);
 				w32_clear (); //r_cons_clear ();
