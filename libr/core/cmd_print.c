@@ -962,19 +962,21 @@ static int cmd_print(void *data, const char *input) {
 		{
 		int malen = (core->blocksize*4)+1;
 		ut8 *buf = malloc (malen);
+		if (!buf) break;
 		memset (buf, 0, malen);
 		switch (input[1]) {
-		case 'e':
-			r_base64_encode (buf, core->block, len); //core->blocksize);
-			r_cons_printf ("%s\n", buf);
-			break;
 		case 'd':
 			if (r_base64_decode (buf, core->block, len))
 				r_cons_printf ("%s\n", buf);
 			else eprintf ("r_base64_decode: invalid stream\n");
 			break;
-		default:
+		case '?':
 			eprintf ("Usage: p6[ed] [len]     base 64 encode/decode\n");
+			break;
+		case 'e':
+		default:
+			r_base64_encode (buf, core->block, len); //core->blocksize);
+			r_cons_printf ("%s\n", buf);
 			break;
 		}
 		free (buf);

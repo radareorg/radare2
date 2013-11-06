@@ -214,13 +214,13 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	int ws, i, w = p->cols*0.7;
 	switch (lang) {
 	case '?':
-		eprintf ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n");
-		eprintf ("  pcs    -> string\n");
-		eprintf ("  pcj    -> json\n");
-		eprintf ("  pcp    -> python\n");
-		eprintf ("  pc     -> python\n");
-		eprintf ("  pcw    -> words (4 byte)\n");
-		eprintf ("  pcd    -> dwords (8 byte)\n");
+		eprintf ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n"
+		"  pc     C\n"
+		"  pcs    string\n"
+		"  pcj    json\n"
+		"  pcp    python\n"
+		"  pcw    words (4 byte)\n"
+		"  pcd    dwords (8 byte)\n");
 		break;
 	case 's':
 		p->printf ("\"");
