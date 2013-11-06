@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
 	int debug = 0;
 	int fullfile = 0;
 	ut64 baddr = 0;
-	ut64 seek = 0;
+	ut64 seek = UT64_MAX;
 	char *pfile = NULL, *file = NULL;
 	char *cmdfile[32];
 	const char *debugbackend = "native";
@@ -480,12 +480,10 @@ int main(int argc, char **argv) {
 		r_config_set (r.config, "cmd.vprompt", ".dr*");
 	}
 
-	if (seek) {
+	if (!debug && r_flag_get (r.flags, "entry0"))
+		r_core_cmd0 (&r, "s entry0");
+	if (seek != UT64_MAX)
 		r_core_seek (&r, seek, 1);
-	} else {
-		if (!debug && r_flag_get (r.flags, "entry0"))
-			r_core_cmd0 (&r, "s entry0");
-	}
 
 	if (fullfile) r_core_block_size (&r, r.file->size);
 
