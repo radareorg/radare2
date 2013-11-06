@@ -6,7 +6,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	const int COLS = 16;
 	const ut8 *buf = core->block;
-	//int len = core->blocksize;
 	ut64 addr = core->offset;
 	char *ebytes, *echars;
 	ut64 fend = UT64_MAX;
@@ -342,16 +341,19 @@ static int cmd_print(void *data, const char *input) {
 			}
 		}// else l = 0;
 	} else l = len;
+
 	if (len > core->blocksize)
 		len = core->blocksize;
 
-	n = core->blocksize_max;
-	i = (int)n;
-	if (i != n) i = 0;
-	if (i && l > i) {
-		eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ %s' instead?\n",
-				i, l, *input, input+2);
-		return R_FALSE;
+	if (input[0] != 'd' && input[0] != 'm' && input[0]!='a') {
+		n = core->blocksize_max;
+		i = (int)n;
+		if (i != n) i = 0;
+		if (i && l > i) {
+			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ %s' instead?\n",
+					i, l, *input, input+2);
+			return R_FALSE;
+		}
 	}
 
 	if (input[0] && input[0]!='Z' && input[1] == 'f') {
