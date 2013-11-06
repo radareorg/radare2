@@ -431,6 +431,8 @@ toro:
 						core->anal, refi->at,
 						R_ANAL_FCN_TYPE_FCN |
 						R_ANAL_FCN_TYPE_ROOT);
+#if 1
+// THAT'S OK
 					if (show_color) {
 						r_cons_printf ("%s%s "Color_RESET"%s%s"Color_RESET, color_fline,
 							((f&&f->type==R_ANAL_FCN_TYPE_FCN)&&f->addr==at)
@@ -439,6 +441,7 @@ toro:
 						r_cons_printf ("%s %s", ((f&&f->type==R_ANAL_FCN_TYPE_FCN)
 							&& f->addr==at)?" ":core->cons->vline[LINE_VERT], refline2);
 					}
+#endif
 					if (show_color) {
 						r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)"Color_RESET"\n",
 							pal_comment, refi->type==R_ANAL_REF_TYPE_CODE?"CODE (JMP)":
@@ -499,9 +502,14 @@ toro:
 						else str[0]=0;
 						strcat (str, core->cons->vline[LINE_VERT]);
 						if (show_color)
+							strcat (str, color_flow);
+// color refline
+						strcat (str, " ");
+						strcat (str, refline2);
+// color comment
+						if (show_color)
 							strcat (str, color_comment);
-						else str[0]=0;
-						strcat (str, "  ;      ");
+						strcat (str, ";  ");
 						comment = r_str_prefix_all (comment, str);
 					} else {
 						comment = r_str_prefix_all (comment, "   ;      ");
@@ -753,10 +761,10 @@ toro:
 			if (flag && (!f || (f && strcmp (f->name, flag->name)))) {
 				if (show_lines && refline) {
 					if (show_color) {
-						r_cons_printf ("%s%s"Color_RESET, color_flow, refline);
+						r_cons_printf ("%s%s"Color_RESET, color_flow, refline2);
 					} else r_cons_printf (refline);
 				}
-				if (show_offset) r_cons_printf ("; -- ");
+				if (show_offset) r_cons_printf (";-- ");
 				if (show_color) r_cons_strcat (color_flag);
 				if (show_functions) r_cons_printf ("%s:\n", flag->name);
 				else r_cons_printf ("%s:\n", flag->name);
