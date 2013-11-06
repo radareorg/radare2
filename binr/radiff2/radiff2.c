@@ -56,6 +56,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 }
 
 static RCore* opencore(const char *f) {
+	const ut64 baddr = 0;
 	RCore *c = r_core_new ();
 	r_config_set_i (c->config, "io.va", useva);
 	r_config_set_i (c->config, "anal.split", R_TRUE);
@@ -63,7 +64,7 @@ static RCore* opencore(const char *f) {
 		r_core_free (c);
 		return NULL;
 	}
-	r_core_bin_load (c, NULL);
+	r_core_bin_load (c, NULL, baddr);
 	// TODO: must enable io.va here if wanted .. r_config_set_i (c->config, "io.va", va);
 	return c;
 }

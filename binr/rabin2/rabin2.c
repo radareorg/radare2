@@ -31,7 +31,7 @@ static struct r_bin_t *bin = NULL;
 static char* output = NULL;
 static char* create = NULL;
 static int rad = R_FALSE;
-static ut64 gbaddr = 0LL;
+static ut64 baddr = 0LL;
 static char* file = NULL;
 static char *name = NULL;
 static int rw = R_FALSE;
@@ -48,7 +48,7 @@ static int rabin_show_help(int v) {
 		" -A              list archs\n"
 		" -a [arch]       set arch (x86, arm, .. or <arch>_<bits>)\n"
 		" -b [bits]       set bits (32, 64 ...)\n"
-		" -B [addr]       override baddr\n"
+		" -B [addr]       override base address (pie bins)\n"
 		" -c [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -C              list classes\n"
 		" -d              show debug/dwarf information\n"
@@ -372,7 +372,7 @@ int main(int argc, char **argv) {
 		case 'r': rad = R_TRUE; break;
 		case 'v': va = R_TRUE; break;
 		case 'L': r_bin_list (bin); return 1;
-		case 'B': gbaddr = r_num_math (NULL, optarg); break;
+		case 'B': baddr = r_num_math (NULL, optarg); break;
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
 		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
@@ -437,7 +437,8 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
-	if (!r_bin_load (bin, file, R_FALSE) && !r_bin_load (bin, file, R_TRUE)) {
+	if (!r_bin_load (bin, file, R_FALSE) && \
+		!r_bin_load (bin, file, R_TRUE)) {
 		eprintf ("r_bin: Cannot open '%s'\n", file);
 		return 1;
 	}
@@ -462,8 +463,8 @@ int main(int argc, char **argv) {
 		free (arch_name);
 	}
 
-	if (gbaddr != 0LL)
-		bin->cur.o->baddr = gbaddr;
+	if (baddr != 0LL)
+		bin->cur.o->baddr = baddr;
 
 	core.bin = bin;
 	filter.offset = at;
