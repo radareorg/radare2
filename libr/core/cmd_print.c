@@ -345,7 +345,7 @@ static int cmd_print(void *data, const char *input) {
 	if (len > core->blocksize)
 		len = core->blocksize;
 
-	n = r_config_get_i (core->config, "io.maxblk");
+	n = core->blocksize_max;
 	i = (int)n;
 	if (i != n) i = 0;
 	if (i && l > i) {
