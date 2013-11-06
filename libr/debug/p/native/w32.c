@@ -108,6 +108,31 @@ static void r_str_wtoc(char* d, const WCHAR* s) {
 	d[i] = 0;
 }
 
+static void w32dbg_SeDebugPrivilege() {
+	/////////////////////////////////////////////////////////
+	//   Note: Enabling SeDebugPrivilege adapted from sample
+	//     MSDN @ http://msdn.microsoft.com/en-us/library/aa446619%28VS.85%29.aspx
+	// Enable SeDebugPrivilege
+	TOKEN_PRIVILEGES tokenPriv;
+	HANDLE hToken = NULL;
+	LUID luidDebug;
+	if (OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES, &hToken) != FALSE) {
+		if (LookupPrivilegeValue (NULL, SE_DEBUG_NAME, &luidDebug) != FALSE) {
+			tokenPriv.PrivilegeCount = 1;
+			tokenPriv.Privileges[0].Luid = luidDebug;
+			tokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+			if (AdjustTokenPrivileges (hToken, FALSE, &tokenPriv, 0, NULL, NULL) != FALSE) {
+				// Always successful, even in the cases which lead to OpenProcess failure
+			//	eprintf ("Successfully changed token privileges.\n");
+				// XXX if we cant get the token nobody tells?? wtf
+			} else {
+				eprintf ("Failed to change token privileges 0x%x\n", (int)GetLastError());
+			}
+		}
+	}
+	CloseHandle (hToken);
+}
+
 static void print_lasterr(const char *str) {
 	/* code from MSDN, :? */
 	LPWSTR pMessage = L"%1!*.*s! %4 %5!*s!";
@@ -136,6 +161,9 @@ static void print_lasterr(const char *str) {
 static int w32_dbg_init() {
 	HANDLE lib;
 
+	/* escalate privs (required for win7/vista) */
+	w32dbg_SeDebugPrivilege ();
+	/* lookup function pointers for portability */
 	w32_detach = (BOOL WINAPI (*)(DWORD))
 		GetProcAddress (GetModuleHandle ("kernel32"),
 				"DebugActiveProcessStop");

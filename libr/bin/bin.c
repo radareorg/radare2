@@ -131,6 +131,9 @@ static RList* get_strings(RBinArch *a, int min) {
 				}
 			}
 		}
+	} else {
+		get_strings_range (a, ret, min,
+			0, a->size, 0);
 	}
 	return ret;
 }
