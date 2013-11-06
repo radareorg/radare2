@@ -193,7 +193,8 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		return R_TRUE;
 	}
 	r->file->obj = r_bin_get_object (r->bin);
-	r->file->obj->baddr = baddr;
+	if (baddr)
+		r->file->obj->baddr = baddr;
 
 	r_config_set_i (r->config, "io.va", 
 		(r->file->obj->info)? r->file->obj->info->has_va: 0);
