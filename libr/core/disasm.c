@@ -3,7 +3,7 @@
 #include "r_core.h"
 #include "r_cons.h"
 
-#define HASRETRY 0
+#define HASRETRY 1
 
 static const char* r_vline_a[] = {
 	"|", // LINE_VERT
@@ -321,10 +321,8 @@ toro:
 		}
 	}
 #endif
-	if (r_config_get_i (core->config, "scr.utf8"))
-		core->cons->vline = r_vline_u;
-	else
-		core->cons->vline = r_vline_a;
+	core->cons->vline = r_config_get_i (core->config, "scr.utf8")?
+		r_vline_u: r_vline_a;
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
@@ -1264,7 +1262,8 @@ toro:
 	}
 	r_cons_break_end ();
 #if HASRETRY
-	if (!cbytes && idx>=len) {// && (invbreak && !lastfail)) {
+	//if (!cbytes && idx>=len) {// && (invbreak && !lastfail)) {
+	if (!cbytes && lines<l) {
 	retry:
 		if (len<4) len = 4;
 		buf = nbuf = malloc (len);
