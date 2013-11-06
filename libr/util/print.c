@@ -218,6 +218,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		"  pc     C\n"
 		"  pcs    string\n"
 		"  pcj    json\n"
+		"  pcJ    javascript\n"
 		"  pcp    python\n"
 		"  pcw    words (4 byte)\n"
 		"  pcd    dwords (8 byte)\n");
@@ -228,6 +229,17 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 			p->printf ("\\x%02x", buf[i]);
 		}
 		p->printf ("\"\n");
+		break;
+	case 'J':
+		{
+		       ut8 *out = malloc (len*3);
+		       p->printf ("var buffer = new Buffer(\"");
+		       out[0] = 0;
+		       r_base64_encode (out, buf, len);
+		       p->printf ("%s", out);
+		       p->printf ("\", 'base64').toString('binary');\n");
+		       free (out);
+		}
 		break;
 	case 'j':
 		p->printf ("[");
