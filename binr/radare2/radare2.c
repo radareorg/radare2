@@ -73,7 +73,7 @@ static int main_help(int line) {
 		" -a [arch]    set asm.arch\n"
 		" -A           run 'aa' command to analyze all referenced code\n"
 		" -b [bits]    set asm.bits\n"
-		" -B [size]    initial block size\n"
+		" -B [baddr]   set base address for PIE binaries\n"
 		" -c 'cmd..'   execute radare command\n"
 		" -C           file is host:port (alias for -c+=http://%%s/cmd/)\n"
 		" -d           use 'file' as a program to debug\n"
@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 	int help = 0;
 	int debug = 0;
 	int fullfile = 0;
-	ut32 bsize = 0;
+	ut64 baddr = 0;
 	ut64 seek = 0;
 	char *pfile = NULL, *file = NULL;
 	char *cmdfile[32];
@@ -281,7 +281,7 @@ int main(int argc, char **argv) {
 		case 'a': asmarch = optarg; break;
 		case 'k': asmos = optarg; break;
 		case 'b': asmbits = optarg; break;
-		case 'B': bsize = (ut32) r_num_math (r.num, optarg); break;
+		case 'B': baddr = r_num_math (r.num, optarg); break;
 		case 's': seek = r_num_math (r.num, optarg); break;
 		case 'L': list_io_plugins (r.io); return 0;
 		default: return 1;
@@ -299,6 +299,7 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
+	r_config_set_i (r.config, "bin.baddr", baddr);
 	// DUP
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
@@ -347,7 +348,7 @@ int main(int argc, char **argv) {
 				if (optind<argc)
 					file = r_str_concat (file, " ");
 			}
-			if (!r_core_bin_load (&r, file)) {
+			if (!r_core_bin_load (&r, file, baddr)) {
 				RBinObject *obj = r_bin_get_object (r.bin);
 				if (obj && obj->info)
 					eprintf ("bits %d\n", obj->info->bits);
@@ -426,7 +427,7 @@ int main(int argc, char **argv) {
 			}
 			if (r.file && r.file->filename)
 				filepath = r.file->filename;
-			if (!r_core_bin_load (&r, filepath))
+			if (!r_core_bin_load (&r, filepath, baddr))
 				r_config_set (r.config, "io.va", "false");
 		}
 	}
@@ -487,7 +488,6 @@ int main(int argc, char **argv) {
 	}
 
 	if (fullfile) r_core_block_size (&r, r.file->size);
-	else if (bsize) r_core_block_size (&r, bsize);
 
 	r_core_seek (&r, r.offset, 1); // read current block
 

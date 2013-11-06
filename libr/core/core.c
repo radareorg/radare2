@@ -835,11 +835,12 @@ reaccept:
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
 					RCoreFile *file;
+					ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 					r_socket_read_block (c, ptr, cmd); //filename
 					ptr[cmd] = 0;
 					file = r_core_file_open (core, (const char *)ptr, R_IO_READ, 0); // XXX: write mode?
 					if (file) {
-						r_core_bin_load (core, NULL);
+						r_core_bin_load (core, NULL, baddr);
 						file->map = r_io_map_add (core->io, file->fd->fd, R_IO_READ, 0, 0, file->size);
 						pipefd = core->file->fd->fd;
 						eprintf ("(flags: %d) len: %d filename: '%s'\n",

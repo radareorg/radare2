@@ -477,6 +477,25 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 	return R_TRUE;
 }
 
+/* XXX: This is a hack to get PLT references in rabin2 -i */
+/* imp. is a prefix that can be rewritten by the symbol table */
+static ut64 impaddr(RBin *bin, int va, ut64 baddr, const char *name) {
+	RBinSymbol *symbol;
+	RList *symbols;
+	RListIter *iter;
+	if (!name) return R_FALSE;
+	if ((symbols = r_bin_get_symbols (bin)) == NULL)
+		return R_FALSE;
+	r_list_foreach (symbols, iter, symbol) {
+		if (strncmp (symbol->name, "imp.", 4))
+			continue;
+		if (!strcmp (symbol->name+4, name))
+			return va? get_vaddr (baddr, symbol->offset,
+				symbol->rva): symbol->offset;
+	}
+	return 0;
+}
+
 static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name) {
 	RBinImport *import;
 	RListIter *iter;
@@ -520,12 +539,14 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 			}
 		}*/
 	} else {
+		ut64 addr;
 		if (mode) r_cons_printf ("fs imports\n");
 		else r_cons_printf ("[Imports]\n");
 
 		r_list_foreach (imports, iter, import) {
 			if (name && strcmp (import->name, name))
 				continue;
+			addr = impaddr (r->bin, va, baddr, import->name);
 			if (mode) {
 				// TODO(eddyb) use the logic below for symbols that are imports.
 				/*r_name_filter (import->name, sizeof (import->name));
@@ -545,8 +566,9 @@ static int bin_imports (RCore *r, int mode, ut64 baddr, int va, const char *name
 							import->size, import->name);
 				r_cons_printf ("f imp.%s @ 0x%08"PFMT64x"\n",
 						import->name, va?baddr+import->rva:import->offset);*/
-			} else r_cons_printf ("ordinal=%03"PFMT64d" bind=%s type=%s name=%s\n",
-					import->ordinal, import->bind, import->type, import->name);
+			} else r_cons_printf ("ordinal=%03"PFMT64d" plt=0x%08"PFMT64x" bind=%s type=%s name=%s\n",
+					import->ordinal, addr,
+					import->bind, import->type, import->name);
 			i++;
 		}
 		if (!mode) r_cons_printf ("\n%i imports\n", i);

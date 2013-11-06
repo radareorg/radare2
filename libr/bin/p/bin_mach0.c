@@ -135,7 +135,7 @@ static RList* imports(RBinArch *arch) {
 		strncpy (ptr->name, name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, type, R_BIN_SIZEOF_STRINGS);
 		ptr->ordinal = imports[i].ord;
-		if(bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
+		if (bin->imports_by_ord && ptr->ordinal < bin->imports_by_ord_size)
 			bin->imports_by_ord[ptr->ordinal] = ptr;
 		r_list_append (ret, ptr);
 	}

@@ -86,7 +86,9 @@ static int cmd_info(void *data, const char *input) {
 
 	switch (*input) {
 	case 'o': r_core_bin_load (core, input[1]==' '?
-			input+1: core->file->filename); break;
+			input+1: core->file->filename,
+			r_config_get_i (core->config, "bin.baddr"));
+		break;
 #define RBININFO(x) r_core_bin_info(core,x,mode,va,NULL,offset)
 	case 'S': RBININFO (R_CORE_BIN_ACC_SECTIONS); break;
 	case 'h': RBININFO (R_CORE_BIN_ACC_FIELDS); break;

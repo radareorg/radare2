@@ -8,7 +8,7 @@ radare2 \- Advanced commandline hexadecimal editor, disassembler and debugger
 .Nm radare2
 .Op Fl a Ar arch
 .Op Fl b Ar bits
-.Op Fl B Ar blocksize
+.Op Fl B Ar baddr
 .Op Fl c Ar cmd
 .Op Fl e Ar k=v
 .Op Fl i Ar file
@@ -33,8 +33,8 @@ force asm.arch (x86, ppc, arm, mips, bf, java, ...)
 run 'aa' command before prompt or patch to analyze all referenced code
 .It Fl b Ar bits
 force asm.bits (16, 32, 64)
-.It Fl B Ar bsize
-Set block size
+.It Fl B Ar baddr
+Specify the base address to be used when loading a new binary. See 'e?bin.baddr'
 .It Fl c Ar cmd
 Execute the given command before giving prompt
 .It Fl d

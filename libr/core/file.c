@@ -137,7 +137,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	return ret;
 }
 
-R_API int r_core_bin_load(RCore *r, const char *file) {
+R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	int i, va = r->io->va || r->io->debug;
 	RListIter *iter;
 	const char *p;
@@ -193,6 +193,7 @@ R_API int r_core_bin_load(RCore *r, const char *file) {
 		return R_TRUE;
 	}
 	r->file->obj = r_bin_get_object (r->bin);
+	r->file->obj->baddr = baddr;
 
 	r_config_set_i (r->config, "io.va", 
 		(r->file->obj->info)? r->file->obj->info->has_va: 0);

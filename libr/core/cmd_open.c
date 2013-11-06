@@ -3,12 +3,12 @@
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
+	ut64 addr, baddr = r_config_get_i (core->config, "bin.baddr");
 	RIOMap *map = NULL;
 	RCoreFile *file;
 	RListIter *iter;
 	int num = -1;
 	int isn = 0;
-	ut64 addr;
 	char *ptr;
 
 	switch (*input) {
@@ -36,7 +36,7 @@ static int cmd_open(void *data, const char *input) {
 			if (file) {
 				// MUST CLEAN BEFORE LOADING
 				if (!isn)
-					r_core_bin_load (core, fn);
+					r_core_bin_load (core, fn, baddr);
 			} else eprintf ("Cannot open file '%s'\n", fn);
 		} else r_io_raise (core->io, num);
 		r_core_block_read (core, 0);
@@ -141,7 +141,7 @@ static int cmd_open(void *data, const char *input) {
 		r_core_init (core);
 		if (!r_core_file_open (core, input+2, R_IO_READ, 0))
 			eprintf ("Cannot open file\n");
-		if (!r_core_bin_load (core, NULL))
+		if (!r_core_bin_load (core, NULL, baddr))
 			r_config_set (core->config, "io.va", "false");
 		break;
 	case '?':
