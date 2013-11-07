@@ -66,6 +66,48 @@ static void r_core_visual_mark_seek(RCore *core, ut8 ch) {
 		r_core_seek (core, marks[ch], 1);
 }
 
+static void visual_help() {
+	r_cons_clear00 ();
+	r_cons_printf (
+		"Visual mode help:\n"
+	" ?        show this help or manpage in cursor mode\n"
+	" _        enter the hud\n"
+	" .        seek to program counter\n"
+	" /        in cursor mode search in current block\n"
+	" :cmd     run radare command\n"
+	" ;[-]cmt  add/remove comment\n"
+	" /*+-[]   change block size, [] = resize hex.cols\n"
+	" >||<     seek aligned to block size\n"
+	" i/a/A    (i)nsert hex, (a)ssemble code, visual (A)ssembler\n"
+	" b/B      toggle breakpoint / automatic block size\n"
+	" c/C      toggle (c)ursor and (C)olors\n"
+	" d[f?]    define function, data, code, ..\n"
+	" D        enter visual diff mode (set diff.from/to)\n"
+	" e        edit eval configuration variables\n"
+	" f/F      set/unset flag\n"
+	" gG       go seek to begin and end of file (0-$s)\n"
+	" hjkl     move around (or HJKL) (left-down-up-right)\n"
+	" mK/'K    mark/go to Key (any key)\n"
+	" M        walk the mounted filesystems\n"
+	" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
+	" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
+	" q        back to radare shell\n"
+	" R        randomize color palette (ecr)\n"
+	" sS       step / step over\n"
+	" t        track flags (browse symbols, functions..)\n"
+	" T        browse anal info and comments\n"
+	" v        visual code analysis menu\n"
+	" V/W      (V)iew graph using cmd.graph (agv?), open (W)ebUI\n"
+	" uU       undo/redo seek\n"
+	" x        show xrefs to seek between them\n"
+	" yY       copy and paste selection\n"
+	" z        toggle zoom mode\n"
+	);
+	r_cons_flush ();
+	r_cons_any_key ();
+	r_cons_clear00 ();
+}
+
 static void r_core_visual_mark(RCore *core, ut8 ch) {
 	if (!marks_init) {
 		int i;
@@ -247,6 +289,29 @@ R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
 	r_sys_usleep(90000);
 #endif
 	r_core_seek (core, addr, 1);
+}
+
+static int prevopsz (RCore *core, ut64 addr) {
+	const int delta = 32;
+	ut64 target = addr;
+	ut64 base = target-delta;
+	int len, ret, i;
+	ut8 buf[delta*2];
+	RAnalOp op;
+
+	r_core_read_at (core, base, buf, sizeof (buf));
+	for (i=0; i<sizeof (buf); i++) {
+		ret = r_anal_op (core->anal, &op, addr+i,
+			buf+i, sizeof (buf)-i);
+		if (!ret) continue;
+		len = op.length;
+		r_anal_op_fini (&op);
+		if (len<1) continue;
+		i += len-1;
+		if (target == base+i+1)
+			return len;
+	}
+	return 4;
 }
 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
@@ -551,6 +616,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			if (core->printidx == 1 || core->printidx == 2)
 				cols = r_asm_disassemble (core->assembler,
 					&op, core->block+cursor, 32);
+			if (cols<1) cols = 1;
 			cursor += cols;
 			ocursor = -1;
 			offscreen = (core->cons->rows-3)*cols;
@@ -572,6 +638,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		break;
 	case 'J':
 		if (curset) {
+			if (core->printidx == 1 || core->printidx == 2) {
+				cols = r_asm_disassemble (core->assembler,
+					&op, core->block+cursor, 32);
+				if (cols<1) cols = 1;
+			}
 			if (ocursor==-1) ocursor = cursor;
 			cursor += cols;
 			offscreen = (core->cons->rows-3)*cols;
@@ -585,20 +656,18 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'k':
 		if (curset) {
 			if (core->printidx == 1 || core->printidx == 2)
-				cols = 4;
+				cols = prevopsz (core, core->offset+cursor);
 			cursor -= cols;
 			ocursor = -1;
 			if (cursor<0) {
-				if (core->offset>=cols)
+				if (core->offset>=cols) {
 					r_core_seek (core, core->offset-cols, 1);
-				cursor += cols;
+					cursor += cols;
+				}
 			}
 		} else {
 			if (core->printidx == 1 || core->printidx == 2) {
-				cols = core->inc;
-				for (i = 0; i < R_CORE_ASMSTEPS; i++)
-					if (core->offset == core->asmsteps[i].offset)
-						cols = core->asmsteps[i].cols;
+				cols = prevopsz (core, core->offset);
 			}
 			if (core->offset >= cols)
 				r_core_seek (core, core->offset-cols, 1);
@@ -608,28 +677,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	case 'K':
 		if (curset) {
 			if (ocursor==-1) ocursor=cursor;
-			{
-				char *man = NULL;
-				/* check for manpage */
-				RAnalOp *op = r_core_anal_op (core, core->offset+cursor);
-				if (op) {
-					if (op->jump != UT64_MAX) {
-						RFlagItem *item = r_flag_get_i (core->flags, op->jump);
-						if (item) {
-							const char *ptr = r_str_lchr (item->name, '.');
-							if (ptr)
-								man = strdup (ptr+1);
-						}
-					}
-					r_anal_op_free (op);
-				}
-				if (man) {
-					r_cons_clear();
-					r_cons_flush();
-					r_sys_cmdf ("man %s", man);
-					break;
-				}
-			}
+			if (core->printidx == 1 || core->printidx == 2)
+				cols = prevopsz (core, core->offset+cursor);
 			cursor -= cols;
 			if (cursor<0) {
 				if (core->offset>=cols) {
@@ -870,44 +919,33 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		zoom = !zoom;
 		break;
 	case '?':
-		r_cons_clear00 ();
-		r_cons_printf (
-		"Visual mode help:\n"
-		" _        enter the hud\n"
-		" .        seek to program counter\n"
-		" /        in cursor mode search in current block\n"
-		" :cmd     run radare command\n"
-		" ;[-]cmt  add/remove comment\n"
-		" /*+-[]   change block size, [] = resize hex.cols\n"
-		" >||<     seek aligned to block size\n"
-		" i/a/A    (i)nsert hex, (a)ssemble code, visual (A)ssembler\n"
-		" b/B      toggle breakpoint / automatic block size\n"
-		" c/C      toggle (c)ursor and (C)olors\n"
-		" d[f?]    define function, data, code, ..\n"
-		" D        enter visual diff mode (set diff.from/to)\n"
-		" e        edit eval configuration variables\n"
-		" f/F      set/unset flag\n"
-		" gG       go seek to begin and end of file (0-$s)\n"
-		" hjkl     move around (or HJKL) (left-down-up-right)\n"
-		" mK/'K    mark/go to Key (any key)\n"
-		" M        walk the mounted filesystems\n"
-		" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
-		" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
-		" q        back to radare shell\n"
-		" R        randomize color palette (ecr)\n"
-		" sS       step / step over\n"
-		" t        track flags (browse symbols, functions..)\n"
-		" T        browse anal info and comments\n"
-		" v        visual code analysis menu\n"
-		" V/W      (V)iew graph using cmd.graph (agv?), open (W)ebUI\n"
-		" uU       undo/redo seek\n"
-		" x        show xrefs to seek between them\n"
-		" yY       copy and paste selection\n"
-		" z        toggle zoom mode\n"
-		);
-		r_cons_flush ();
-		r_cons_any_key ();
-		r_cons_clear00 ();
+		if (curset) {
+			char *man = NULL;
+			/* check for manpage */
+			RAnalOp *op = r_core_anal_op (core, core->offset+cursor);
+			if (op) {
+				if (op->jump != UT64_MAX) {
+					RFlagItem *item = r_flag_get_i (core->flags, op->jump);
+					if (item) {
+						const char *ptr = r_str_lchr (item->name, '.');
+						if (ptr)
+							man = strdup (ptr+1);
+					}
+				}
+				r_anal_op_free (op);
+			}
+			if (man) {
+				char *p = strstr (man, "INODE");
+				if (p) *p = 0;
+				r_cons_clear();
+				r_cons_flush();
+				r_sys_cmdf ("man %s", man);
+				free (man);
+				break;
+			}
+		} else {
+			visual_help();
+}
 		break;
 	case 0x1b:
 	case 'q':

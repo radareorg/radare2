@@ -594,7 +594,8 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_core_file_free (c->file);
 	c->file = NULL;
 	r_list_free (c->files);
-	r_list_free (c->watchers);
+	if (c->watchers != UT64_MAX)
+		r_list_free (c->watchers);
 	free (c->num);
 	r_cmd_free (c->rcmd);
 	r_anal_free (c->anal);

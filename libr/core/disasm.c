@@ -65,10 +65,8 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 
 // this is another random hack for reflines.. crappy stuff
 static char *filter_refline2(RCore *core, const char *str) {
-	char *p = r_str_replace (strdup (str), "|", core->cons->vline[LINE_VERT], 1);
-	p = r_str_replace (strdup (p), "`", core->cons->vline[LINE_VERT], 1);
+	char *p, *s = strdup (str);
 	char n = '|';
-	char *s = strdup (str);
 	for (p=s; *p; p++) {
 		switch (*p) {
 		case '`':
@@ -82,18 +80,13 @@ static char *filter_refline2(RCore *core, const char *str) {
 			break;
 		}
 	}
+	s = r_str_replace (s, "|", core->cons->vline[LINE_VERT], 1);
+	s = r_str_replace (s, "`", core->cons->vline[LINE_VERT], 1);
 	return s;
 }
 
 static char *filter_refline(RCore *core, const char *str) {
 	char *p, *s = strdup (str);
-	p = strstr (s, core->cons->vline[ARROW_RIGHT]);
-	if (p)
-		p = r_str_replace (strdup (p), core->cons->vline[ARROW_RIGHT], " ", 0);
-
-	p = strstr (s, core->cons->vline[ARROW_LEFT]);
-	if (p)
-		p = r_str_replace (strdup (p), core->cons->vline[ARROW_LEFT], " ", 0);
 
 	p = s;
 	p = r_str_replace (strdup (p), "`",
@@ -103,6 +96,13 @@ static char *filter_refline(RCore *core, const char *str) {
 	p = r_str_replace (strdup (p),
 		core->cons->vline[LINE_HORIZ],
 		core->cons->vline[LINE_VERT], 1); // "=" -> "|"
+	p = strstr (s, core->cons->vline[ARROW_RIGHT]);
+	if (p)
+		p = r_str_replace (strdup (p), core->cons->vline[ARROW_RIGHT], " ", 0);
+
+	p = strstr (s, core->cons->vline[ARROW_LEFT]);
+	if (p)
+		p = r_str_replace (strdup (p), core->cons->vline[ARROW_LEFT], " ", 0);
 	return s;
 }
 
@@ -769,12 +769,12 @@ toro:
 				if (show_color) {
 					r_cons_printf (Color_RESET"%s%s"Color_RESET, color_fline,
 						f ? pre : "  ");
-				} else
-					r_cons_printf (f ? pre : "  ");
+				} else r_cons_printf (f ? pre : "  ");
 			}
 		}
 		if (!linesright && show_lines && line) {
 			if (show_color) {
+// XXX line is too long wtf
 				r_cons_printf ("%s%s"Color_RESET, color_flow, line);
 			} else r_cons_printf (line);
 		}

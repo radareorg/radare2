@@ -101,7 +101,7 @@ static int main_help(int line) {
 		printf (
 		"Scripts:\n"
 		" system "R2_PREFIX"/share/radare2/radare2rc\n"
-		" user   ~/.radare2rc\n"
+		" user   ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc\n"
 		" file   ${filename}.r2\n"
 		"Environment:\n"
 		" RHOMEDIR     ~/.config/radare2\n"
@@ -433,6 +433,11 @@ int main(int argc, char **argv) {
 	}
 	if (run_rc) {
 		char *homerc = r_str_home (".radare2rc");
+		if (homerc) {
+			r_core_cmd_file (&r, homerc);
+			free (homerc);
+		}
+		homerc = r_str_home ("/.config/radare2/radare2rc");
 		if (homerc) {
 			r_core_cmd_file (&r, homerc);
 			free (homerc);

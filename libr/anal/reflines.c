@@ -95,7 +95,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 			str = r_str_concat (str, (ref->from>ref->to)? "." : "`");
 			ch = '-';
 		} else if (addr == ref->from) {
-			str = r_str_concat (str, (ref->from>ref->to)? "`" : "," );
+			str = r_str_concat (str, (ref->from>ref->to)? "`" : ",");
 			ch = '=';
 		} else if (ref->from < ref->to) {
 			if (addr > ref->from && addr < ref->to) {
@@ -118,32 +118,33 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 	//str = r_str_concat (str, (dir==1)?"-> ":(dir==2)?"=< ":"   ");
 	str = r_str_concat (str, (dir==1)? "-> " :(dir==2)? "=< " : "   ");
 	if (((RCore*)core)->anal->lineswidth>0) {
-		l = r_str_len_utf8 (str);
-		if (l > ((RCore*)core)->anal->lineswidth)
-			r_str_cpy (str, str + l - ((RCore*)core)->anal->lineswidth);
+		int lw = ((RCore*)core)->anal->lineswidth;
+		l = strlen (str);
+		if (l > lw) {
+			r_str_cpy (str, str + l - lw);
+		} else {
+			char pfx[128];
+			if (l >= lw) lw = 0; else lw -= l;
+			memset (pfx, ' ', sizeof (pfx));
+			if (lw>=sizeof (pfx)) lw = sizeof (pfx);
+			pfx[lw] = 0;
+			if (lw>0) str = r_str_prefix (str, pfx);
+		}
 	}
 
 	/* HACK */
 	if (((RCore*)core)->utf8 && ((RCore*)core)->cons->vline) {
-		RCons *cons = ((RCore*)core)->cons;
+		RCons *c = ((RCore*)core)->cons;
 		//str = r_str_replace (str, "=", "-", 1);
-		str = r_str_replace (str, "<", cons->vline[ARROW_LEFT], 1);
-		str = r_str_replace (str, ">", cons->vline[ARROW_RIGHT], 1);
-		str = r_str_replace (str, "|", cons->vline[LINE_VERT], 1);
-		str = r_str_replace (str, "=", cons->vline[LINE_HORIZ], 1);
-		str = r_str_replace (str, "-", cons->vline[LINE_HORIZ], 1);
+		str = r_str_replace (str, "<", c->vline[ARROW_LEFT], 1);
+		str = r_str_replace (str, ">", c->vline[ARROW_RIGHT], 1);
+		str = r_str_replace (str, "|", c->vline[LINE_VERT], 1);
+		str = r_str_replace (str, "=", c->vline[LINE_HORIZ], 1);
+		str = r_str_replace (str, "-", c->vline[LINE_HORIZ], 1);
 		//str = r_str_replace (str, ".", "\xe2\x94\x8c", 1);
-		str = r_str_replace (str, ",", cons->vline[LUP_CORNER], 1);
-		str = r_str_replace (str, ".", cons->vline[LUP_CORNER], 1);
-		str = r_str_replace (str, "`", cons->vline[LDWN_CORNER], 1);
-	}
-	if (((RCore*)core)->anal->lineswidth>0) {
-		char pfx[128];
-		int l = ((RCore*)core)->anal->lineswidth-r_str_len_utf8 (str);
-		memset (pfx, ' ', sizeof (pfx));
-		if (l>=sizeof(pfx)) l = sizeof (pfx)-1;
-		pfx[l] = 0;
-		str = r_str_prefix (str, pfx);
+		str = r_str_replace (str, ",", c->vline[LUP_CORNER], 1);
+		str = r_str_replace (str, ".", c->vline[LUP_CORNER], 1);
+		str = r_str_replace (str, "`", c->vline[LDWN_CORNER], 1);
 	}
 	return str;
 }

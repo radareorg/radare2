@@ -336,7 +336,12 @@ static int cmd_cmp(void *data, const char *input) {
 		" cf [file]      Compare contents of file at current seek\n"
 		" cg[o] [file]   Graphdiff current file and [file]\n"
 		" cw[us?] [...]  Compare memory watchers\n"
-		" cat  [file]    Show contents of file (see pwd, ls)\n");
+		" cat  [file]    Show contents of file (see pwd, ls)\n"
+		" cl|cls|clear   Clear screen\n");
+		break;
+	case 'l':
+		r_cons_clear ();
+		r_cons_gotoxy (0, 0);
 		break;
 	default:
 		eprintf ("Usage: c[?48cdDxfw] [argument]\n");
