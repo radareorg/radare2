@@ -360,7 +360,7 @@ toro:
 	/* reset jmp table if not a bad block */
 	if (buf[0] != 0xff) // hack
 		for (i=0; i<10; i++)
-			core->asmqjmps[counter] = UT64_MAX;
+			core->asmqjmps[i] = UT64_MAX;
 
 	oplen = 1;
 	r_cons_break (NULL, NULL);

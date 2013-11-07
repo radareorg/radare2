@@ -108,29 +108,39 @@ static void r_str_wtoc(char* d, const WCHAR* s) {
 	d[i] = 0;
 }
 
-static void w32dbg_SeDebugPrivilege() {
+static int w32dbg_SeDebugPrivilege() {
 	/////////////////////////////////////////////////////////
 	//   Note: Enabling SeDebugPrivilege adapted from sample
 	//     MSDN @ http://msdn.microsoft.com/en-us/library/aa446619%28VS.85%29.aspx
 	// Enable SeDebugPrivilege
+	int ret = R_TRUE;
 	TOKEN_PRIVILEGES tokenPriv;
 	HANDLE hToken = NULL;
 	LUID luidDebug;
-	if (OpenProcessToken (GetCurrentProcess (), TOKEN_ADJUST_PRIVILEGES, &hToken) != FALSE) {
-		if (LookupPrivilegeValue (NULL, SE_DEBUG_NAME, &luidDebug) != FALSE) {
-			tokenPriv.PrivilegeCount = 1;
-			tokenPriv.Privileges[0].Luid = luidDebug;
-			tokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-			if (AdjustTokenPrivileges (hToken, FALSE, &tokenPriv, 0, NULL, NULL) != FALSE) {
-				// Always successful, even in the cases which lead to OpenProcess failure
-			//	eprintf ("Successfully changed token privileges.\n");
-				// XXX if we cant get the token nobody tells?? wtf
-			} else {
-				eprintf ("Failed to change token privileges 0x%x\n", (int)GetLastError());
-			}
-		}
+	if (!OpenProcessToken (GetCurrentProcess (),
+			TOKEN_ADJUST_PRIVILEGES, &hToken))
+		return R_FALSE;
+		
+	if (!LookupPrivilegeValue (NULL, SE_DEBUG_NAME, &luidDebug)) {
+		CloseHandle (hToken);
+		return R_FALSE;
+	}
+
+	tokenPriv.PrivilegeCount = 1;
+	tokenPriv.Privileges[0].Luid = luidDebug;
+	tokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	if (AdjustTokenPrivileges (hToken, FALSE, &tokenPriv, 0, NULL, NULL) != FALSE) {
+		if (tokenPriv.Privileges[0].Attributes == SE_PRIVILEGE_ENABLED)
+			eprintf ("PRIV ENABLED\n");
+		// Always successful, even in the cases which lead to OpenProcess failure
+		//	eprintf ("Successfully changed token privileges.\n");
+		// XXX if we cant get the token nobody tells?? wtf
+	} else {
+		eprintf ("Failed to change token privileges 0x%x\n", (int)GetLastError());
+		ret = R_FALSE;
 	}
 	CloseHandle (hToken);
+	return ret;
 }
 
 static void print_lasterr(const char *str) {

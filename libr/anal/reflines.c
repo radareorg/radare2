@@ -115,8 +115,6 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 		if (wide)
 			str = r_str_concatch (str, (ch=='=' || ch=='-')? ch : ' ');
 	}
-	//str = r_str_concat (str, (dir==1)?"-> ":(dir==2)?"=< ":"   ");
-	str = r_str_concat (str, (dir==1)? "-> " :(dir==2)? "=< " : "   ");
 	if (((RCore*)core)->anal->lineswidth>0) {
 		int lw = ((RCore*)core)->anal->lineswidth;
 		l = strlen (str);
@@ -124,13 +122,15 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 			r_str_cpy (str, str + l - lw);
 		} else {
 			char pfx[128];
-			if (l >= lw) lw = 0; else lw -= l;
+			lw-=l;
 			memset (pfx, ' ', sizeof (pfx));
 			if (lw>=sizeof (pfx)) lw = sizeof (pfx);
 			pfx[lw] = 0;
 			if (lw>0) str = r_str_prefix (str, pfx);
 		}
 	}
+	str = r_str_concat (str, (dir==1)? "-> "
+		: (dir==2)? "=< " : "   ");
 
 	/* HACK */
 	if (((RCore*)core)->utf8 && ((RCore*)core)->cons->vline) {
