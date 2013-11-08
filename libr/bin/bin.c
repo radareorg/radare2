@@ -95,7 +95,7 @@ static RList* get_strings(RBinArch *a, int min) {
 		return NULL;
 	}
 	ret->free = free;
-	if (a->o->sections) {
+	if (a->o->sections && !a->rawstr) {
 		r_list_foreach (a->o->sections, iter, section) {
 			if (is_data_section (a, section)) {
 				count++;
