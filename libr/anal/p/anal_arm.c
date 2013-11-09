@@ -378,8 +378,6 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 		break;
 	case 0x91: // mov
 	case 0x52: // mov
-		op->type = R_ANAL_OP_TYPE_MOV;
-		break;
 	case 0x94: // bl A
 	case 0x97: // bl A
 		op->type = R_ANAL_OP_TYPE_CALL;
