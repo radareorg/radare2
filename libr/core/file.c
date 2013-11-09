@@ -143,6 +143,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	const char *p;
 	ut64 offset;
 	RIOMap *im;
+	int is_io_load = r && r->file && r->file->fd && r->file->fd->plugin;
 
 	if (file == NULL || !*file)
 		if (r->file)
@@ -151,13 +152,31 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		eprintf ("r_core_bin_load: no file specified\n");
 		return R_FALSE;
 	}
-	p = strstr (file, "://");
-	if (p) file = p+3;
-	while (*file==' ') file++;
+
+	// XXX - TODO determine if the following three lines are meaningful
+	// after adding an IO aware API to core_bin_load
+	//p = strstr (file, "://");
+	//if (p) file = p+3;
+	//while (*file==' ') file++;
+	// XXX - end of dead code -- deeso
+
 	/* TODO: fat bins are loaded multiple times, this is a problem that must be fixed . see '-->' marks. */
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
-        r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
-	if (r_bin_load (r->bin, file, R_FALSE)) { // --->
+    r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
+	if( is_io_load ) {
+		// XXX - May need to set r_config stuff in the basic bin.
+		// XXX - May need to handle additional extraction here as well 
+		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+		r_bin_io_load(r->bin, r->io, r->file->fd, R_FALSE); 
+
+		{ // Making sure the RBinObject gets set 
+			RBinObject *_obj = r_bin_get_object (r->bin);
+			if (_obj && _obj->info && _obj->info->bits) {
+				r_config_set_i (r->config, "asm.bits", _obj->info->bits);
+			}
+			if (_obj) _obj->baddr = baddr;
+		}
+	} else if(r_bin_load (r->bin, file, R_FALSE)) { // --->
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
 			RBinObject *o = r->bin->cur.o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
@@ -200,14 +219,13 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		(r->file->obj->info)? r->file->obj->info->has_va: 0);
 	offset = r_bin_get_offset (r->bin);
 	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
-	if (!strcmp (r->bin->cur.curplugin->name, "dex")) {
+	if (r->bin->cur.curplugin && !strcmp (r->bin->cur.curplugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
 	if (r_config_get_i (r->config, "file.analyze"))
 		r_core_cmd0 (r, "aa");
 	return R_TRUE;
 }
-
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loadaddr) {
 	const char *cp;
 	RCoreFile *fh;
@@ -232,20 +250,14 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 		return NULL;
 	}
 
-	fh = R_NEW (RCoreFile);
+	fh = malloc(sizeof(RCoreFile));
+	memset(fh, 0, sizeof(RCoreFile));
+
+	fh->uri = strdup(file);
+	
 	fh->fd = fd;
-	fh->map = NULL;
-	fh->uri = strdup (file); //fd->name);
-	fh->size = r_file_size (fh->uri);
-	if (!fh->size)
-		fh->size = r_io_size (r->io);
+	fh->size = r_io_desc_size(r->io, fh);
 	fh->filename = strdup (fd->name);
-	p = strstr (fh->filename, "://");
-	if (p != NULL) {
-		char *s = strdup (p+3);
-		free (fh->filename);
-		fh->filename = s;
-	}
 	fh->rwx = mode;
 	r->file = fh;
 	r->io->plugin = fd->plugin;
@@ -263,13 +275,38 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	return fh;
 }
 
+R_API RCoreFile * r_core_file_find_by_fd(RCore* core, int fd){
+	RCoreFile *result = NULL, *cf = NULL;
+	RListIter *iter;
+
+	if (!core || !core->files){
+		return result;
+	}
+
+	r_list_foreach(core->files, iter, cf){
+		if(cf && cf->fd->fd == fd){
+			result = cf;
+			break;
+		}
+	}
+	return cf;
+}
+
 R_API void r_core_file_free(RCoreFile *cf) {
-	if (!cf) return;
-	R_FREE (cf->uri);
-	R_FREE (cf->filename);
-	R_FREE (cf->map);
-	r_io_desc_free (cf->fd);
-	cf->fd = NULL;
+	if (cf){
+		if (cf->map) free(cf->map);
+		if (cf->filename) free(cf->filename);
+		if (cf->uri) free(cf->uri);
+		r_io_desc_free (cf->fd);
+		
+		cf->fd = NULL;
+		cf->map = NULL;
+		cf->filename = NULL;
+		cf->uri = NULL;
+		
+		//free(cf);
+	}
+	cf = NULL;
 }
 
 R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh) {
