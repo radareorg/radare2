@@ -6,7 +6,7 @@ rabin2 \- Binary program info extractor
 .Pp
 .Sh SYNOPSIS
 .Nm rabin2
-.Op Fl ACeisSMzIHlRrLxvVh
+.Op Fl ACeigsSMzIHlRrLxvVh
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl B Ar addr
@@ -37,6 +37,8 @@ List classes
 Show entrypoints for disk and on-memory
 .It Fl f Ar subbin
 Select sub-binary architecture. Useful for fat-mach0 binaries
+.It Fl g
+Same as -SMRevsiz (Show all possible information). See -r
 .It Fl i
 Show imports (symbols imported from libraries)
 .It Fl s
