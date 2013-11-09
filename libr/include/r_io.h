@@ -146,6 +146,7 @@ typedef struct r_io_plugin_t {
         int (*init)();
 	RIOUndo undo;
         struct r_debug_t *debug;
+        int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
         int (*system)(RIO *io, RIODesc *fd, const char *);
         RIODesc* (*open)(RIO *io, const char *, int rw, int mode);
         int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
@@ -322,6 +323,8 @@ R_API RIODesc *r_io_desc_get(RIO *io, int fd);
 R_API int r_io_desc_add(RIO *io, RIODesc *desc);
 R_API int r_io_desc_del(RIO *io, int fd);
 R_API RIODesc *r_io_desc_get(RIO *io, int fd);
+R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc);
+R_API ut64 r_io_fd_size(RIO *io, int fd);
 //R_API int r_io_desc_generate(RIO *io);
 
 /* buffer.c */
