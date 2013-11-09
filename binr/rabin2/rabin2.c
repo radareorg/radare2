@@ -54,6 +54,7 @@ static int rabin_show_help(int v) {
 		" -d              show debug/dwarf information\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
+		" -g              same as -SMRevsiz (show all info)\n" 
 		" -h              this help\n"
 		" -H              header fields\n"
 		" -i              imports (symbols imported from libraries)\n"
@@ -312,8 +313,24 @@ int main(int argc, char **argv) {
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |=x
-	while ((c = getopt (argc, argv, "jqAf:a:B:b:c:CdMm:n:N:@:isSIHelRwO:o:rvLhxzZ")) != -1) {
+	while ((c = getopt (argc, argv, "jgqAf:a:B:b:c:CdMm:n:N:@:isSIHelRwO:o:rvLhxzZ")) != -1) {
 		switch (c) {
+		case 'g':
+			set_action (ACTION_CLASSES);
+			set_action (ACTION_IMPORTS); 
+			set_action (ACTION_SYMBOLS); 
+			set_action (ACTION_SECTIONS); 
+			set_action (ACTION_STRINGS); 
+			set_action (ACTION_SIZE); 
+			set_action (ACTION_INFO); 
+			set_action (ACTION_FIELDS); 
+			set_action (ACTION_DWARF); 
+			set_action (ACTION_ENTRIES); 
+			set_action (ACTION_MAIN); 
+			set_action (ACTION_LIBS); 
+			set_action (ACTION_RELOCS); 
+			set_action (ACTION_EXTRACT); 
+			break;
 		case 'q': rad = R_CORE_BIN_SIMPLE; break;
 		case 'j': rad = R_CORE_BIN_JSON; break;
 		case 'A': set_action (ACTION_LISTARCHS); break;
