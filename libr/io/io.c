@@ -403,6 +403,11 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 	return ret;
 }
 
+R_API ut64 r_io_fd_size(RIO *io, int fd){
+	RIODesc *desc = r_io_desc_get(io, fd);
+	return r_io_desc_size(io, desc);
+}
+
 R_API ut64 r_io_size(RIO *io) {
 	int iova;
 	ut64 size, here;

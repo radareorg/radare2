@@ -1,0 +1,454 @@
+#!/bin/sh
+
+# GPL 3+ - Copyright (C) 2011-2012  pancake, Edd Barrett, Simon Ruderich
+
+[ -e tests.sh ] && . ./tests.sh || . ../tests.sh
+
+## "i" - get info about opened file
+
+NAME='i (malloc)'
+FILE=malloc://1025
+ARGS=
+CMDS='
+# malloc://1025 reports correct file size (bug report #54).
+i
+
+# All other i commands print nothing for malloc://.
+ia
+ia*
+ii
+ii*
+iI
+iI*
+ie
+ie*
+is
+is*
+iS
+iS*
+iz
+iz*
+'
+EXPECT='file	malloc://1025
+fd	42
+size	0x401
+mode	r--
+block	0x100
+uri	malloc://1025
+'
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd	[0-9][0-9]*/fd	42/"'
+run_test
+
+# Used by multiple tests.
+cmds_info='
+?e Basic information.
+i
+?e
+
+?e All information.
+ia
+ia*
+?e
+
+?e Imports.
+ii
+ii*
+?e
+
+?e Binary info.
+iI
+iI*
+?e
+
+?e Entrypoints.
+ie
+ie*
+?e
+
+?e Symbols.
+is
+is*
+?e
+
+?e Sections.
+iS
+iS*
+?e
+
+?e Strings.
+iz
+iz*
+'
+
+NAME='i (file x86)'
+FILE=../s/x86-simple
+ARGS=
+BROKEN=1
+CMDS="$cmds_info"
+EXPECT='Basic information.
+type	EXEC (Executable file)
+os	linux
+arch	Intel 80386
+bits	32
+endian	little
+file	../s/x86-simple
+fd	42
+size	0xfc
+mode	r--
+block	0x40
+uri	../s/x86-simple
+
+All information.
+[File info]
+File=../s/x86-simple
+Type=EXEC (Executable file)
+HasVA=true
+RootClass=elf
+Class=ELF32
+Arch=x86 32
+Machine=Intel 80386
+OS=linux
+Subsystem=linux
+Big endian=false
+Stripped=true
+Static=true
+Line_nums=false
+Local_syms=false
+Relocs=false
+RPath=NONE
+[Entrypoints]
+addr=0x08048060 off=0x00000060 baddr=0x08048000
+
+1 entrypoints
+[Imports]
+
+0 imports
+[Symbols]
+
+0 symbols
+[Sections]
+idx=00 addr=0x08048060 off=0x00000060 sz=18 vsz=18 perm=-r-x name=.text
+idx=01 addr=0x08048072 off=0x00000072 sz=17 vsz=17 perm=---- name=.shstrtab
+
+2 sections
+[Header fields]
+idx=00 addr=0x08048000 off=0x00000000 name=ehdr
+idx=01 addr=0x08048084 off=0x00000084 name=shoff
+idx=02 addr=0x08048034 off=0x00000034 name=phoff
+idx=03 addr=0x08048000 off=0x00000000 name=phdr_0
+
+4 fields
+[strings]
+
+0 strings
+e file.type=elf
+e cfg.bigendian=false
+e asm.os=linux
+e asm.arch=x86
+e anal.plugin=x86
+e asm.bits=32
+e asm.dwarf=true
+fs symbols
+f entry0 @ 0x08048060
+s entry0
+fs imports
+fs symbols
+fs sections
+S 0x00000060 0x08048060 0x00000012 0x00000012 .text 5
+f section..text 18 0x08048060
+f section_end..text 0 0x08048072
+CC [00] va=0x08048060 pa=0x00000060 sz=18 vsz=18 rwx=-r-x .text @ 0x08048060
+S 0x00000072 0x08048072 0x00000011 0x00000011 .shstrtab 0
+f section..shstrtab 17 0x08048072
+f section_end..shstrtab 0 0x08048083
+CC [01] va=0x08048072 pa=0x00000072 sz=17 vsz=17 rwx=---- .shstrtab @ 0x08048072
+fs header
+f header.ehdr @ 0x08048000
+[00] addr=0x08048000 off=0x00000000 name=ehdr
+f header.shoff @ 0x08048084
+[01] addr=0x08048084 off=0x00000084 name=shoff
+f header.phoff @ 0x08048034
+[02] addr=0x08048034 off=0x00000034 name=phoff
+f header.phdr_0 @ 0x08048000
+[03] addr=0x08048000 off=0x00000000 name=phdr_0
+S 0 0x8048000 0x0 0x0 ehdr rwx
+fs strings
+
+Imports.
+[Imports]
+
+0 imports
+fs imports
+
+Binary info.
+[File info]
+File=../s/x86-simple
+Type=EXEC (Executable file)
+HasVA=true
+RootClass=elf
+Class=ELF32
+Arch=x86 32
+Machine=Intel 80386
+OS=linux
+Subsystem=linux
+Big endian=false
+Stripped=true
+Static=true
+Line_nums=false
+Local_syms=false
+Relocs=false
+RPath=NONE
+e file.type=elf
+e cfg.bigendian=false
+e asm.os=linux
+e asm.arch=x86
+e anal.plugin=x86
+e asm.bits=32
+e asm.dwarf=true
+
+Entrypoints.
+[Entrypoints]
+addr=0x08048060 off=0x00000060 baddr=0x08048000
+
+1 entrypoints
+fs symbols
+f entry0 @ 0x08048060
+s entry0
+
+Symbols.
+[Symbols]
+
+0 symbols
+fs symbols
+
+Sections.
+[Sections]
+idx=00 addr=0x08048060 off=0x00000060 sz=18 vsz=18 perm=-r-x name=.text
+idx=01 addr=0x08048072 off=0x00000072 sz=17 vsz=17 perm=---- name=.shstrtab
+
+2 sections
+[Header fields]
+idx=00 addr=0x08048000 off=0x00000000 name=ehdr
+idx=01 addr=0x08048084 off=0x00000084 name=shoff
+idx=02 addr=0x08048034 off=0x00000034 name=phoff
+idx=03 addr=0x08048000 off=0x00000000 name=phdr_0
+
+4 fields
+fs sections
+S 0x00000060 0x08048060 0x00000012 0x00000012 .text 5
+f section..text 18 0x08048060
+f section_end..text 0 0x08048072
+CC [00] va=0x08048060 pa=0x00000060 sz=18 vsz=18 rwx=-r-x .text @ 0x08048060
+S 0x00000072 0x08048072 0x00000011 0x00000011 .shstrtab 0
+f section..shstrtab 17 0x08048072
+f section_end..shstrtab 0 0x08048083
+CC [01] va=0x08048072 pa=0x00000072 sz=17 vsz=17 rwx=---- .shstrtab @ 0x08048072
+fs header
+f header.ehdr @ 0x08048000
+[00] addr=0x08048000 off=0x00000000 name=ehdr
+f header.shoff @ 0x08048084
+[01] addr=0x08048084 off=0x00000084 name=shoff
+f header.phoff @ 0x08048034
+[02] addr=0x08048034 off=0x00000034 name=phoff
+f header.phdr_0 @ 0x08048000
+[03] addr=0x08048000 off=0x00000000 name=phdr_0
+S 0 0x8048000 0x0 0x0 ehdr rwx
+
+Strings.
+[strings]
+
+0 strings
+fs strings
+'
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd	[0-9][0-9]*/fd	42/;
+             s/^file	\/.*\.\.\/s\/x86-simple$/file	..\/s\/x86-simple/;
+             s/^File=\/.*\.\.\/s\/x86-simple$/File=..\/s\/x86-simple/"'
+run_test
+
+NAME='i (file x64)'
+BROKEN=1
+FILE=../s/x64-simple
+ARGS=
+CMDS="$cmds_info"
+EXPECT='Basic information.
+type	EXEC (Executable file)
+os	linux
+arch	AMD x86-64 architecture
+bits	64
+endian	little
+file	../s/x64-simple
+fd	42
+size	0x170
+mode	r--
+block	0x40
+uri	../s/x64-simple
+
+All information.
+[File info]
+File=../s/x64-simple
+Type=EXEC (Executable file)
+HasVA=true
+RootClass=elf
+Class=ELF64
+Arch=x86 64
+Machine=AMD x86-64 architecture
+OS=linux
+Subsystem=linux
+Big endian=false
+Stripped=true
+Static=true
+Line_nums=false
+Local_syms=false
+Relocs=false
+RPath=NONE
+[Entrypoints]
+addr=0x00400080 off=0x00000080 baddr=0x00400000
+
+1 entrypoints
+[Imports]
+
+0 imports
+[Symbols]
+
+0 symbols
+[Sections]
+idx=00 addr=0x00400080 off=0x00000080 sz=28 vsz=28 perm=-r-x name=.text
+idx=01 addr=0x0040009c off=0x0000009c sz=17 vsz=17 perm=---- name=.shstrtab
+
+2 sections
+[Header fields]
+idx=00 addr=0x00400000 off=0x00000000 name=ehdr
+idx=01 addr=0x004000b0 off=0x000000b0 name=shoff
+idx=02 addr=0x00400040 off=0x00000040 name=phoff
+idx=03 addr=0x00400000 off=0x00000000 name=phdr_0
+
+4 fields
+[strings]
+
+0 strings
+e file.type=elf
+e cfg.bigendian=false
+e asm.os=linux
+e asm.arch=x86
+e anal.plugin=x86
+e asm.bits=64
+e asm.dwarf=true
+fs symbols
+f entry0 @ 0x00400080
+s entry0
+fs imports
+fs symbols
+fs sections
+S 0x00000080 0x00400080 0x0000001c 0x0000001c .text 5
+f section..text 28 0x00400080
+f section_end..text 0 0x0040009c
+CC [00] va=0x00400080 pa=0x00000080 sz=28 vsz=28 rwx=-r-x .text @ 0x00400080
+S 0x0000009c 0x0040009c 0x00000011 0x00000011 .shstrtab 0
+f section..shstrtab 17 0x0040009c
+f section_end..shstrtab 0 0x004000ad
+CC [01] va=0x0040009c pa=0x0000009c sz=17 vsz=17 rwx=---- .shstrtab @ 0x0040009c
+fs header
+f header.ehdr @ 0x00400000
+[00] addr=0x00400000 off=0x00000000 name=ehdr
+f header.shoff @ 0x004000b0
+[01] addr=0x004000b0 off=0x000000b0 name=shoff
+f header.phoff @ 0x00400040
+[02] addr=0x00400040 off=0x00000040 name=phoff
+f header.phdr_0 @ 0x00400000
+[03] addr=0x00400000 off=0x00000000 name=phdr_0
+S 0 0x400000 0x0 0x0 ehdr rwx
+fs strings
+
+Imports.
+[Imports]
+
+0 imports
+fs imports
+
+Binary info.
+[File info]
+File=../s/x64-simple
+Type=EXEC (Executable file)
+HasVA=true
+RootClass=elf
+Class=ELF64
+Arch=x86 64
+Machine=AMD x86-64 architecture
+OS=linux
+Subsystem=linux
+Big endian=false
+Stripped=true
+Static=true
+Line_nums=false
+Local_syms=false
+Relocs=false
+RPath=NONE
+e file.type=elf
+e cfg.bigendian=false
+e asm.os=linux
+e asm.arch=x86
+e anal.plugin=x86
+e asm.bits=64
+e asm.dwarf=true
+
+Entrypoints.
+[Entrypoints]
+addr=0x00400080 off=0x00000080 baddr=0x00400000
+
+1 entrypoints
+fs symbols
+f entry0 @ 0x00400080
+s entry0
+
+Symbols.
+[Symbols]
+
+0 symbols
+fs symbols
+
+Sections.
+[Sections]
+idx=00 addr=0x00400080 off=0x00000080 sz=28 vsz=28 perm=-r-x name=.text
+idx=01 addr=0x0040009c off=0x0000009c sz=17 vsz=17 perm=---- name=.shstrtab
+
+2 sections
+[Header fields]
+idx=00 addr=0x00400000 off=0x00000000 name=ehdr
+idx=01 addr=0x004000b0 off=0x000000b0 name=shoff
+idx=02 addr=0x00400040 off=0x00000040 name=phoff
+idx=03 addr=0x00400000 off=0x00000000 name=phdr_0
+
+4 fields
+fs sections
+S 0x00000080 0x00400080 0x0000001c 0x0000001c .text 5
+f section..text 28 0x00400080
+f section_end..text 0 0x0040009c
+CC [00] va=0x00400080 pa=0x00000080 sz=28 vsz=28 rwx=-r-x .text @ 0x00400080
+S 0x0000009c 0x0040009c 0x00000011 0x00000011 .shstrtab 0
+f section..shstrtab 17 0x0040009c
+f section_end..shstrtab 0 0x004000ad
+CC [01] va=0x0040009c pa=0x0000009c sz=17 vsz=17 rwx=---- .shstrtab @ 0x0040009c
+fs header
+f header.ehdr @ 0x00400000
+[00] addr=0x00400000 off=0x00000000 name=ehdr
+f header.shoff @ 0x004000b0
+[01] addr=0x004000b0 off=0x000000b0 name=shoff
+f header.phoff @ 0x00400040
+[02] addr=0x00400040 off=0x00000040 name=phoff
+f header.phdr_0 @ 0x00400000
+[03] addr=0x00400000 off=0x00000000 name=phdr_0
+S 0 0x400000 0x0 0x0 ehdr rwx
+
+Strings.
+[strings]
+
+0 strings
+fs strings
+'
+# fd changes in each test, replace it with 42.
+FILTER='sed "s/^fd	[0-9][0-9]*/fd	42/;
+             s/^file	\/.*\.\.\/s\/x64-simple$/file	..\/s\/x64-simple/;
+             s/^File=\/.*\.\.\/s\/x64-simple$/File=..\/s\/x64-simple/"'
+run_test
