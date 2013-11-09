@@ -141,6 +141,7 @@ typedef struct r_core_t {
 	int utf8;
 	int vseek;
 	RList *watchers;
+	RList *scriptstack;
 } RCore;
 
 typedef struct r_core_cmpwatch_t {

@@ -65,7 +65,7 @@ static int var_cmd(RCore *core, const char *str) {
 		delta = atoi (str);
 		p = strchr (str, ' ');
 		if (p==NULL) {
-			var_help();
+			var_help ();
 			break;
 		}
 		// TODO: Improve parsing error handling

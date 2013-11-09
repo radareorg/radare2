@@ -560,7 +560,7 @@ toro:
 		}
 		if (pseudo) {
 			r_parse_parse (core->parser, opstr?
-				opstr:asmop.buf_asm, str);
+				opstr: asmop.buf_asm, str);
 			free (opstr);
 			opstr = strdup (str);
 		}

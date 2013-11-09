@@ -393,15 +393,14 @@ int main(int argc, char **argv) {
 		return 1;
 	//if (!has_project && run_anal) {
 #if USE_THREADS
-	if (run_anal) {
-		if (threaded) {
-			// XXX: if no rabin2 in path that may fail
-			rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
-					(debug||r.io->va)?"v":"", r.file->filename);
-			/* TODO: only load data if no project is used */
-			lock = r_th_lock_new ();
-			rabin_th = r_th_new (&rabin_delegate, lock, 0);
-		} //else rabin_delegate (NULL);
+	if (run_anal && threaded) {
+		// XXX: if no rabin2 in path that may fail
+		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
+				(debug||r.io->va)?"v":"", r.file->filename);
+		/* TODO: only load data if no project is used */
+		lock = r_th_lock_new ();
+		rabin_th = r_th_new (&rabin_delegate, lock, 0);
+		// rabin_delegate (NULL);
 	} // else eprintf ("Metadata loaded from 'file.project'\n");
 #endif
 	if (mapaddr)

@@ -317,7 +317,7 @@ R_API void r_cons_flush() {
 				&& I.buffer_len > 0
 				&& r_str_char_count (I.buffer, '\n') >= I.rows) {
 			I.buffer[I.buffer_len-1] = 0;
-			r_sys_cmd_str_full(I.pager, I.buffer, NULL, NULL, NULL);
+			r_sys_cmd_str_full (I.pager, I.buffer, NULL, NULL, NULL);
 			r_cons_reset ();
 
 		} else if (I.buffer_len > CONS_MAX_USER) {

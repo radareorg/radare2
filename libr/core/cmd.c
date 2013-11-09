@@ -297,7 +297,18 @@ static int cmd_quit(void *data, const char *input) {
 
 R_API int r_core_run_script (RCore *core, const char *file) {
 	int ret = R_FALSE;
+	RListIter *iter;
 	RLangPlugin *p;
+	char *name;
+
+	r_list_foreach (core->scriptstack, iter, name) {
+		if (!strcmp (file, name)) {
+			eprintf ("WARNING: ignored nested source: %s\n", file);
+			return R_FALSE;
+		}
+	}
+	r_list_push (core->scriptstack, strdup (file));
+
 	if (!strcmp (file, "-")) {
 		char *out = r_core_editor (core, NULL);
 		if (out) {
@@ -320,7 +331,9 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 		r_lang_use (core->lang, p->name);
 		return r_lang_run_file (core->lang, file);
 	}
-	return r_core_cmd_file (core, file);
+	ret = r_core_cmd_file (core, file);
+	free (r_list_pop (core->scriptstack));
+	return ret;
 }
 
 static int cmd_stdin(void *data, const char *input) {
