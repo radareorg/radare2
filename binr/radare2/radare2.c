@@ -441,6 +441,9 @@ int main(int argc, char **argv) {
 			r_core_cmd_file (&r, homerc);
 			free (homerc);
 		}
+		if (r_config_get_i (r.config, "file.analyze")) {
+			r_core_cmd0 (&r, "aa");
+		}
 	}
 	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
 	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
