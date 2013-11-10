@@ -19,7 +19,7 @@ static struct r_core_t r;
 static int verify_version(int show) {
 	int i, ret;
 	typedef const char* (*vc)();
-	const char *base = GIT_TAP;
+	const char *base = R2_GITTAP;
 	struct vcs_t {
 		const char *name;
 		vc callback;

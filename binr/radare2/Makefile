@@ -5,7 +5,7 @@ BINDEPS+=r_sign r_lang r_asm r_syscall r_db r_hash
 BINDEPS+=r_magic r_socket r_flags r_util r_egg r_crypto
 
 include ../rules.mk
-CFLAGS+=-DGIT_TAP=\"$(GIT_TAP)\"
+CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 
 sign:
 	ldid -Sradare2.xml radare2
