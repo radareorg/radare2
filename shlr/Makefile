@@ -2,7 +2,7 @@ include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
 HOST_CC?=gcc
-MODS=udis86 java tcc
+MODS=udis86 java tcc zip/zlib zip/zip
 URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
@@ -86,6 +86,7 @@ D=${DESTDIR}/${PREFIX}
 install:
 	mkdir -p ${D}/lib
 	cp -f tcc/libr_tcc* ${D}/lib
+	cp -f zip/libr_z* ${D}/lib
 
 install-symlink symstall:
 	mkdir -p ${D}/lib
@@ -94,3 +95,4 @@ install-symlink symstall:
 
 uninstall deinstall:
 	rm -f ${D}/lib/libr_tcc*
+	rm -f ${D}/lib/libr_z*
