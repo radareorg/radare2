@@ -293,6 +293,9 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		}
 	}
 
+	if (IS_LOAD (code[i])) {
+		op->type = R_ANAL_OP_TYPE_LOAD;
+	}
 	if  (
 (( ((code[i]&0xff)>=0x10 && (code[i]&0xff)<0x20)
 ) && ((code[i]&0xffffff00) == 0xe12fff00))

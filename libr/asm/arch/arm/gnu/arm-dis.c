@@ -42,6 +42,8 @@
 #define NUM_ELEM(a)     (sizeof (a) / sizeof (a)[0])
 #endif
 
+#define COMMENTS 1
+
 /* Cached mapping symbol state.  */
 enum map_type
 {
@@ -2038,6 +2040,7 @@ print_insn_coprocessor (bfd_vma pc,
 		      }
 		    if (rn == 15 && (PRE_BIT_SET || WRITEBACK_BIT_SET))
 		      {
+#if COMMENTS
 			func (stream, " ; ");
 			/* For unaligned PCs, apply off-by-alignment
 			   correction.  */
@@ -2045,6 +2048,7 @@ print_insn_coprocessor (bfd_vma pc,
 						  + info->bytes_per_chunk * 2
 						  - (pc & 3),
 				 		  info);
+#endif
 		      }
 		  }
 		  break;
@@ -2463,8 +2467,10 @@ print_insn_coprocessor (bfd_vma pc,
 	    func (stream, "%c", *c);
 	}
 
-      if (value_in_comment > 32 || value_in_comment < -16)
+#if COMMENTS
+      if (value_in_comment > 64 || value_in_comment < -16)
 	func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
+#endif
 
       if (is_unpredictable)
 	func (stream, UNPREDICTABLE_INSTRUCTION);
@@ -2519,8 +2525,10 @@ print_arm_address (bfd_vma pc, struct disassemble_info *info, long given)
 	  offset = pc + 8;
 	}
 
+#if COMMENTS
       func (stream, " ; ");
       info->print_address_func (offset, info);
+#endif
       offset = 0;
     }
   else
@@ -3904,9 +3912,11 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
 	      }
 	  }
 
-	if (value_in_comment > 32 || value_in_comment < -16) {
+#if 0
+	if (value_in_comment > 64|| value_in_comment < -16) {
 	  func (stream, " ; 0x%lx", value_in_comment);
 	}
+#endif
 	return;
       }
 
@@ -4177,8 +4187,10 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 
 		  if (Rn == 15)
 		    {
+#if COMMENTS
 		      func (stream, " ; ");
 		      info->print_address_func (((pc + 4) & ~3) + offset, info);
+#endif
 		    }
 		}
 	      skip:
@@ -4488,8 +4500,10 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 
 		    if ((given & (1 << 23)) == 0)
 		      offset = - offset;
+#if COMMENTS
 		    func (stream, " ; ");
 		    info->print_address_func ((pc & ~3) + 4 + offset, info);
+#endif
 		  }
 		break;
 
@@ -4498,8 +4512,10 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 	      }
 	  }
 
-	if (value_in_comment > 32 || value_in_comment < -16)
+#if COMMENTS
+	if (value_in_comment > 64 || value_in_comment < -16)
 	  func (stream, " ; 0x%lx", value_in_comment);
+#endif
 
 	if (is_unpredictable)
 	  func (stream, UNPREDICTABLE_INSTRUCTION);
