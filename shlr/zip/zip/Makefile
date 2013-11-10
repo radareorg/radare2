@@ -56,7 +56,7 @@ OFILES=libr_zip.a $(OBJS)
 
 #CFLAGS+=-g -ggdb -fPIC
 CFLAGS+=-fPIC
-CFLAGS+=-I../../libr/include
+CFLAGS+=-I../../libr/include -I../include/
 LDFLAGS+=-L../../libr/util -static -L../ -lz 
 
 CFLAGS+=-fPIC -Wall

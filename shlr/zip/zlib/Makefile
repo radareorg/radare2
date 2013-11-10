@@ -27,6 +27,7 @@ OBJS = adler32.o crc32.o deflate.o infback.o \
 OFILES= libr_z.a $(OBJS) 
 
 CFLAGS+=-fPIC -Wall
+CFLAGS+=-I../../libr/include -I../include/
 LDFLAGS=-shared
 LIBNAME=libr_z.${SOVER}
 
