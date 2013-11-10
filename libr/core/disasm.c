@@ -1127,8 +1127,8 @@ toro:
 				counter++;
 				if (counter<10) {
 					core->asmqjmps[counter] = analop.jump;
-					r_cons_printf (" [%d]", counter);
-				} else r_cons_strcat (" [?]");
+					r_cons_printf (" ;[%d]", counter);
+				} else r_cons_strcat (" ;[?]");
 				break;
 			}
 		}
