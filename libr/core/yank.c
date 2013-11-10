@@ -2,22 +2,25 @@
 
 #include "r_core.h"
 
-R_API void r_core_yank_set (RCore *core, const char *str) {
+R_API int r_core_yank_set (RCore *core, const char *str) {
 	free (core->yank_buf);
-	if (str) {
+	if (str && *str) {
 		core->yank_buf = (ut8*)strdup (str);
 		core->yank_off = core->offset;
 		core->yank_len = strlen (str);
-	} else {
-		core->yank_buf = NULL;
-		core->yank_len = 0;
+		return R_TRUE;
 	}
+	core->yank_buf = NULL;
+	core->yank_len = 0;
+	return R_FALSE;
 }
 
 R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	ut64 oldbsz = 0LL;
 	ut64 curseek = core->offset;
 	free (core->yank_buf);
+	if (len<0)
+		return R_FALSE;
 	core->yank_buf = (ut8 *)malloc (len);
 	if (addr != core->offset)
 		r_core_seek (core, addr, 1);
@@ -38,8 +41,8 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 }
 
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len) {
-	if (len == 0)
-		len = core->yank_len;
+	if (len<0) return R_FALSE;
+	if (len == 0) len = core->yank_len;
 	if (len > core->yank_len)
 		len = core->yank_len;
 	r_core_write_at (core, addr, core->yank_buf, len);
@@ -62,6 +65,8 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 		pos = r_num_math (core->num, str+1);
 		str[0]=' ';
 	}
+	if (len<1)
+		return R_FALSE;
 	if ((str == NULL) || (pos == -1) || (len == 0)) {
 		eprintf ("Usage: yt [len] [dst-addr]\n");
 		free (arg);
@@ -74,6 +79,10 @@ R_API int r_core_yank_to(RCore *core, const char *_arg) {
 	}
 #endif
 	buf = (ut8*)malloc (len);
+	if (!buf) {
+		free (arg);
+		return R_FALSE;
+	}
 	r_core_read_at (core, src, buf, len);
 	r_core_write_at (core, pos, buf, len);
 	free (buf);
