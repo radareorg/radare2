@@ -6,9 +6,9 @@ PYTHON2_CONFIG=python2.7-config
 PYTHON3_CONFIG=python3.2-config
 
 ifneq ($(shell bsdtar -h 2>/dev/null|grep bsdtar),)
-TAR=bsdtar czvf
+TAR=bsdtar cJvf
 else
-TAR=tar -czvf
+TAR=tar -cJvf
 endif
 
 W32PY="${HOME}/.wine/drive_c/Python27/"
@@ -95,7 +95,7 @@ dist:
 	CXXFILES=`cd .. ; find r2-bindings | grep -e cxx$$ -e py$$ | sed -e "s,r2-bindings/,$${PKG}/,"` ; \
 	cd .. && mv $${DIR} $${PKG} && \
 	echo $$FILES ; \
-	${TAR} $${PKG}.tar.gz $${FILES} $${CXXFILES} ; \
+	${TAR} $${PKG}.tar.xz $${FILES} $${CXXFILES} ; \
 	mv $${PKG} $${DIR}
 
 # TODO: valadoc

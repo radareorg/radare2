@@ -166,6 +166,7 @@ purge: purge-doc purge-dev
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
 
 dist:
+	-[ configure -nt config-user.mk ] && ./configure --prefix=${PREFIX}
 	git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
 	DIR=`basename $$PWD` ; \
 	FILES=`git ls-files | sed -e s,^,radare2-${VERSION}/,` ; \
