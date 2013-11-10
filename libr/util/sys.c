@@ -507,9 +507,13 @@ R_API const char *r_sys_arch_str(int arch) {
 	return "none";
 }
 
+#define USE_FORK 0
 R_API int r_sys_run(const ut8 *buf, int len) {
 	const int sz = 4096;
 	int pdelta, ret, (*cb)();
+#if USE_FORK
+	int st, pid;
+#endif
 // TODO: define R_SYS_ALIGN_FORWARD in r_util.h
 	ut8 *ptr, *p = malloc ((sz+len)<<1);
 	ptr = p;
@@ -525,7 +529,32 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	r_mem_protect (ptr, sz, "rx");
 	//r_mem_protect (ptr, sz, "rwx"); // try, ignore if fail
 	cb = (void*)ptr;
+#if USE_FORK
+#if __UNIX__
+	pid = fork ();
+	//pid = -1;
+#else
+	pid = -1;
+#endif
+	if (pid<0) {
+		return cb ();
+	} else if (!pid) {
+		ret = cb ();
+		exit (ret);
+		return ret;
+	}
+	st = 0;
+	waitpid (pid, &st, 0);
+	if (WIFSIGNALED (st)) {
+		int num = WTERMSIG(st);
+		eprintf ("Got signal %d\n", num);
+		ret = num;
+	} else {
+		ret = WEXITSTATUS (st);
+	}
+#else
 	ret = cb ();
+#endif
 	free (p);
 	return ret;
 }

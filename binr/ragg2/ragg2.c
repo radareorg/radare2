@@ -324,8 +324,7 @@ int main(int argc, char **argv) {
 			write (1, b->buf, b->length);
 		} else
 		if (show_execute) {
-			r_egg_run (egg);
-			return 0;
+			return r_egg_run (egg);
 		} else {
 			switch (*format) {
 			case 'r':

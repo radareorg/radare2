@@ -408,7 +408,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
 	RAsmCode *acode = NULL;
 	RAsmOp op;
-	ut64 off;
+	ut64 off, pc;
 	if (buf == NULL)
 		return NULL;
 	if (!(acode = r_asm_code_new ()))
@@ -462,23 +462,25 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			*ptr = '\0';
 	}
 
-	/* Stage 0-1: Parse labels*/
-	/* Stage 2: Assemble */
-	for (stage = 0; stage < 3; stage++) {
+	/* Stage 0-2: Parse labels*/
+	/* Stage 3: Assemble */
+// XXX: stages must be dinamic. until all equs have been resolved
+#define STAGES 5
+	pc = a->pc;
+	for (stage = 0; stage < STAGES; stage++) {
 		if (stage < 2 && !labels)
 			continue;
+		r_asm_set_pc (a, pc);
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
-			i <= ctr; i++, idx += ret) {
+				i <= ctr; i++, idx += ret) {
 			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE);
 			for (ptr_start = buf_token; *ptr_start &&
 				isseparator (*ptr_start); ptr_start++);
 			ptr = strchr (ptr_start, '#'); /* Comments */
 			if (ptr && !R_BETWEEN ('0', ptr[1], '9'))
 				*ptr = '\0';
-			if (stage == 2) {
-				r_asm_set_pc (a, a->pc + ret);
-				off = a->pc;
-			} else off +=ret;
+			r_asm_set_pc (a, a->pc + ret);
+			off = a->pc;
 			ret = 0;
 			if (!*ptr_start)
 				continue;
@@ -487,12 +489,12 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			if (labels) /* Labels */
 			if ((ptr = strchr (ptr_start, ':'))) {
 				char food[64];
-				if (stage != 2) {
+				//if (stage != 2) {
 					*ptr = 0;
 					snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
 // TODO: warning when redefined
 					r_asm_code_set_equ (acode, ptr_start, food);
-				}
+				//}
 				ptr_start = ptr + 1;
 			}
 			if (*ptr_start == '\0') {
@@ -583,7 +585,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					ret = r_asm_assemble (a, &op, ptr_start);
 				}
 			}
-			if (stage == 2) {
+			if (stage == STAGES-1) {
 				if (ret < 1) {
 					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
 					return r_asm_code_free (acode);
