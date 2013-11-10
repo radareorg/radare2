@@ -1594,6 +1594,10 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 	}
 }
 
+static int cmd_ox(void *data, const char *input) {
+	return r_core_cmdf ((RCore*)data, "s 0%s", input);
+}
+
 R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd = r_cmd_new ();
 	core->rcmd->macro.user = core;
@@ -1602,6 +1606,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	core->rcmd->nullcallback = r_core_cmd_nullcallback;
 	core->rcmd->macro.printf = (PrintfCallback)r_cons_printf;
 	r_cmd_set_data (core->rcmd, core);
+	r_cmd_add (core->rcmd, "0x",       "alias for px", &cmd_ox);
 	r_cmd_add (core->rcmd, "x",        "alias for px", &cmd_hexdump);
 	r_cmd_add (core->rcmd, "mount",    "mount filesystem", &cmd_mount);
 	r_cmd_add (core->rcmd, "analysis", "analysis", &cmd_anal);

@@ -479,7 +479,7 @@ static int cmd_help(void *data, const char *input) {
 		" P[osi?]               project management utilities\n"
 		" q [ret]               quit program with a return value\n"
 		" r[+- ][len]           resize file\n"
-		" s [addr]              seek to address\n"
+		" s [addr]              seek to address (also for '0x', '0x1' == 's 0x1')\n"
 		" S?[size] [vaddr]      io section manipulation information\n"
 		" V[vcmds]              enter visual mode (vcmds=visualvisual  keystrokes)\n"
 		" w[mode] [arg]         multiple write operations\n"
