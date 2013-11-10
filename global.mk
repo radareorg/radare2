@@ -9,6 +9,10 @@ LTOP:=$(TOP)/libr
 STOP:=$(TOP)/shlr
 BTOP:=$(TOP)/binr
 
+# added this so that we can just blast the 
+# dependency across the entire build -- deeso
+LDFLAGS+= -L$(STOP)/zip -lr_zip
+
 ifeq ($(MAKEFLAGS),s)
 SILENT=1
 else
