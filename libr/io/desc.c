@@ -12,6 +12,24 @@ R_API void r_io_desc_fini(RIO *io) {
 	r_list_free (io->desc);
 }
 
+R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc){
+	RIODesc *old = NULL;
+    	ut64 sz = -1;
+	
+	if (desc && io->fd != desc){
+		old = io->fd;
+		r_io_set_fd(io, desc);
+	}
+        
+	if (desc) sz = r_io_size(io);
+	
+	if(old){
+		r_io_set_fd(io, old);
+	}
+	return sz;
+}
+
+
 R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data) {
 	int i;
 	RIODesc *desc = R_NEW (RIODesc);
