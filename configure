@@ -36,7 +36,7 @@ while : ; do
 ENVWORDS="${ENVWORDS} $1_CPU $1_OS"
 STR=`eval "echo ${S}$1"`
 SPLIT_CPU="`echo "$STR" | cut -d - -f 1`"
-SPLIT_OS="`echo "$STR" | awk -F - '{if(NF==4){print $4}else{print $3}}'`"
+SPLIT_OS="`echo "$STR" | awk -F - '{print $(NF-1)}'`"
 eval "$1_CPU=\"$SPLIT_CPU\""
 eval "$1_OS=\"$SPLIT_OS\""
 shift
@@ -324,7 +324,7 @@ echo "ERROR: ${CC} cannot create executables" >&2 ;
 exit 1 ; fi
 printf "checking for dynamic library... "
 HAVE_LIB_DL=0
-for OS in linux gnu/kfreebsd syllable sunos darwin beos solaris ; do
+for OS in gnulinux linux gnu/kfreebsd syllable sunos darwin beos solaris ; do
 if [ "${HOST_OS}" = "${OS}" ]; then
 	HAVE_LIB_DL=1
 	break;
