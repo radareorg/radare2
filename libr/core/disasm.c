@@ -494,21 +494,19 @@ toro:
 #else
 					infun = f && (f->addr != at);
 					if (infun) {
-						char str[64];
+						char *str = strdup (show_color?color_fline: "");
+						str = r_str_concat (str, core->cons->vline[LINE_VERT]);
 						if (show_color)
-							strcpy (str, color_fline);
-						else str[0]=0;
-						strcat (str, core->cons->vline[LINE_VERT]);
-						if (show_color)
-							strcat (str, color_flow);
+							str = r_str_concat (str, color_flow);
 // color refline
-						strcat (str, " ");
-						strcat (str, refline2);
+						str = r_str_concat (str, " ");
+						str = r_str_concat (str, refline2);
 // color comment
 						if (show_color)
-							strcat (str, color_comment);
-						strcat (str, ";  ");
+							str = r_str_concat (str, color_comment);
+						str = r_str_concat (str, ";  ");
 						comment = r_str_prefix_all (comment, str);
+						free (str);
 					} else {
 						comment = r_str_prefix_all (comment, "   ;      ");
 					}
