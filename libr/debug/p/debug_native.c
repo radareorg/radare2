@@ -12,10 +12,12 @@
 #if DEBUGGER
 
 #if __UNIX__
-#include <errno.h>
-#include <sys/ptrace.h>
-#include <sys/wait.h>
-#include <signal.h>
+# include <errno.h>
+# if !defined (__HAIKU__)
+#  include <sys/ptrace.h>
+# endif
+# include <sys/wait.h>
+# include <signal.h>
 #endif
 
 static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig);

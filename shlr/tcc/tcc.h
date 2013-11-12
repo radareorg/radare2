@@ -96,7 +96,10 @@ typedef unsigned long long int uint64_t;
 #define LDOUBLE_ALIGN 4
 #define MAX_ALIGN 8
 #define PTR_SIZE 4
+
+#if !defined (__HAIKU__)
 typedef uint64_t addr_t;
+#endif
 
 /* parser debug */
 /* #define PARSE_DEBUG */
