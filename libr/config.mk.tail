@@ -90,6 +90,15 @@ else
 OSTYPE=gnulinux
 endif
 endif
+ifeq (${OSTYPE},openbsd)
+OSTYPE=bsd
+endif
+ifeq (${OSTYPE},netbsd)
+OSTYPE=bsd
+endif
+ifeq (${OSTYPE},freebsd)
+OSTYPE=bsd
+endif
 # Output
 ifeq (${OSTYPE},windows)
 CFLAGS+=-D__WINDOWS__=1
@@ -97,6 +106,13 @@ EXT_AR=lib
 EXT_SO=dll
 EXT_EXE=.exe
 TH_LIBS=
+endif
+ifeq (${OSTYPE},bsd)
+CFLAGS+=-D__UNIX__=1
+EXT_AR=a
+EXT_SO=so
+EXT_EXE=
+TH_LIBS=-lpthread
 endif
 ifeq (${OSTYPE},qnx)
 CFLAGS+=-D__UNIX__=1
