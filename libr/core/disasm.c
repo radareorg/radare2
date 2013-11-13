@@ -1350,6 +1350,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 }
 
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
+	int esil = r_config_get_i (core->config, "asm.esil");
 	int decode = r_config_get_i (core->config, "asm.decode");
 	const ut8 *buf = core->block;
 	int bs = core->blocksize;
@@ -1405,6 +1406,11 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		if (hint && hint->opcode) {
 			opstr = strdup (hint->opcode);
 		} else {
+			if (esil) {
+				r_anal_op (core->anal, &analop, at, buf+i, core->blocksize-i);
+				if (*analop.esil)
+					opstr = strdup (analop.esil);
+			} else
 			if (decode) {
 				r_anal_op (core->anal, &analop, at, buf+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);

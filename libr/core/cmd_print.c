@@ -278,6 +278,7 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 	int show_offset = r_config_get_i (core->config, "asm.offset");
 	int show_bytes = r_config_get_i (core->config, "asm.bytes");
 	int decode = r_config_get_i (core->config, "asm.decode");
+	int esil = r_config_get_i (core->config, "asm.esil");
 	const ut8 *buf = core->block;
 	int i, j, ret, err = 0;
 	RAsmOp asmop;
@@ -296,13 +297,17 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 		} else {
 			if (show_bytes)
 				r_cons_printf ("%16s  ", asmop.buf_hex);
-			if (decode) {
+			if (decode || esil) {
 				RAnalOp analop = {0};
 				char *tmpopstr, *opstr;
 				r_anal_op (core->anal, &analop, core->offset+i,
 					buf+i, core->blocksize-i);
 				tmpopstr = r_anal_op_to_string (core->anal, &analop);
-				opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
+				if (decode) {
+					opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
+				} else if (esil) {
+					opstr = strdup (analop.esil);
+				}
 				r_cons_printf ("%s\n", opstr);
 				free (opstr);
 			} else r_cons_printf ("%s\n", asmop.buf_asm);
