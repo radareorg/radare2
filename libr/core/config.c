@@ -565,6 +565,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.comments", "true", "Show comments in disassembly view");
 	SETPREF("asm.decode", "false", "Use code analysis as a disassembler");
 	SETPREF("asm.dwarf", "false", "Show dwarf comment at disassembly");
+	SETPREF("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF("asm.filter", "true", "Replace numbers in disassembly using flags containing a dot in the name in disassembly");
 	SETPREF("asm.flags", "true", "Show flags");
 	SETPREF("asm.lbytes", "true", "Align disasm bytes to left");

@@ -214,6 +214,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: per-function register state trace
 
 	// TODO: All those options must be print flags
+	int use_esil = r_config_get_i (core->config, "asm.esil");
 	int show_color = r_config_get_i (core->config, "scr.color");
 	int colorop = r_config_get_i (core->config, "scr.colorops");
 	//int show_utf8 = r_config_get_i (core->config, "scr.utf8");
@@ -587,7 +588,21 @@ toro:
 		r_anal_op_fini (&analop);
 		if (!lastfail)
 			r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
-		if (ret<1) analop.type = R_ANAL_OP_TYPE_ILL;
+		if (ret<1) {
+			*analop.esil = 0;
+			analop.type = R_ANAL_OP_TYPE_ILL;
+		}
+		if (use_esil) {
+			if (*analop.esil) {
+				free (opstr);
+				opstr = strdup (analop.esil);
+			} else {
+				free (opstr);
+				opstr = malloc (strlen (str)+2);
+				strcpy (opstr, ": ");
+				strcpy (opstr+2, str);
+			}
+		}
 		if (hint) {
 			if (hint->length) analop.length = hint->length;
 			if (hint->ptr) analop.ptr = hint->ptr;
