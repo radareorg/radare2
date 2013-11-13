@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <r_types.h>
+#include <r_util.h>
 #include <r_socket.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -483,7 +484,7 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 		if (ret<1) break;
 		if (ret == len)
 			return len;
-		usleep (100); // take breath, wtf
+		r_sys_usleep (100); // take breath, wtf
 		delta += ret;
 		len -= ret;
 	}

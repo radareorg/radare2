@@ -457,10 +457,11 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 			break;
 		}
 		if (core->print->col==2) {
-			strcpy (buf, "w ");
+			strcpy (buf, "\"w ");
 			r_line_set_prompt ("insert string: ");
-			if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) <0)
+			if (r_cons_fgets (buf+3, sizeof (buf)-4, 0, NULL) <0)
 				buf[0]='\0';
+			strcat (buf, "\"");
 		} else {
 			strcpy (buf, "wx ");
 			r_line_set_prompt ("insert hex: ");
