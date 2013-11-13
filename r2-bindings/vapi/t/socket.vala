@@ -10,13 +10,14 @@ public static void main(string[] args)
 	//unowned GLib.FileStream stdin = GLib.stdin;
 	//unowned GLib.FileStream stdout = GLib.stdout;
 
-	RSocket? fd = null;
+	bool ret = false;
+	RSocket? fd = new RSocket (0);
 	if (args.length>2)
-		fd = RSocket.connect(args[1], args[2].to_int(), 0);
-	else fd = RSocket.connect("radare.org", 80, 0);
+		ret = fd.connect (args[1], args[2], 0, 0);
+	else ret = fd.connect ("radare.org", "80", 0, 0);
+	//var ret = fd.connect ("localhost", "9999", 0, 0);
 
-	//var fd = RSocket.connect("localhost", 9999);
-	if (fd == null) {
+	if (!ret) {
 		printf("Cannot connect\n");
 		return;
 	}

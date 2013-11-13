@@ -27,7 +27,7 @@ class PyApp():
        # Preparamos el archivo
        file = "/tmp/elf-linux-x86-64" #usr/bin/tar"
        self.core.file_open(file, 0, 0)
-       self.core.bin_load(None)
+       self.core.bin_load(None, 0)
 
 app = PyApp()
 import time

@@ -24,9 +24,9 @@ public class RAsmExample
 		uint8 *buf = "\x83\xe4\xf0";
 		string buf2 = "jmp _foo;nop;nop;nop;_foo:push eax";
 		if (st.disassemble(out op, buf, 3) <1) {
-			stderr.printf("internal error\n");
+			stderr.printf ("internal error\n");
 		} else {
-			stdout.printf("disasm: %s\n", op.buf_asm);
+			stdout.printf ("disasm: %s\n", (string)op.buf_asm);
 		}
 		RAsm.Code? code = st.massemble(buf2);
 		if (code == null) {
@@ -35,10 +35,11 @@ public class RAsmExample
 			stdout.printf("asm: %s\n", code.buf_hex);
 		}
 
+/*
 		print ("arg0: %s\n", st.fastcall (0, 4));
 		print ("arg1: %s\n", st.fastcall (1, 4));
 		print ("arg2: %s\n", st.fastcall (2, 4));
-/*
+
 		stdout.printf("Enumerate fastcall arguments:\n");
 		for(int i=0;i<4;i++) {
 			stdout.printf(" - %s\n", st.fastcall(i, 4));

@@ -44,7 +44,7 @@ public static void main(string[] args) {
 	c = new RCore ();
 	if (c.file_open (file, 0) == null)
 		error ("Error: r_core cannot open the file");
-	c.bin_load (file);
+	c.bin_load (file, 0);
 	/* Enable va */
 	c.config.set ("io.va", "true");
 	/* Set minimal disasm */

@@ -31,7 +31,7 @@ core.config.set ("asm.bits", "32");
 
 f = core.file_open(path, False, 0)
 #core.bin_load (None)
-core.bin_load ("")
+core.bin_load ("", 0)
 
 # show entrypoint
 print ("Entrypoint : 0x%x"%(core.num.get ("entry0")))

@@ -179,11 +179,11 @@ class RagDiff2(gtk.Window):
 		self.c.config.set_i("io.va", 1)
 		self.c.config.set_i("anal.split", 1)
 		self.c.file_open(file_l, 0, 0)
-		self.c.bin_load(None)
+		self.c.bin_load(None, 0)
 		self.c2.config.set_i("io.va", 1)
 		self.c2.config.set_i("anal.split", 1)
 		self.c2.file_open(file_r, 0, 0)
-		self.c2.bin_load(None)
+		self.c2.bin_load(None, 0)
 		# Configure bindiffing
 		self.c.anal.diff_setup_i (False, -1, -1)
 		self.c2.anal.diff_setup_i (False, -1, -1)

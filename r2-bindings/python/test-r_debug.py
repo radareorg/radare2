@@ -33,7 +33,7 @@ core.config.set ("cfg.debug", "true")
 
 f = core.file_open(dbgpath, False, 0)
 #core.bin_load (None)
-core.bin_load (path)
+core.bin_load (path, 0)
 
 # show entrypoint
 print ("Entrypoint : 0x%x"%(core.num.get ("entry0")))

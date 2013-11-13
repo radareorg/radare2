@@ -4,8 +4,8 @@ void main(string[] args)
 {
 	var io = new Radare.RIO ();
 
-	int fd = io.open ("dbg:///bin/ls", 0, 0); //Io.Flags.READ, 0);
-	if (fd == -1)
+	RIODesc? f = io.open ("dbg:///bin/ls", 0, 0);
+	if (!f) //(io.open ("dbg:///bin/ls", 0, 0))<1)
 		critical("Cannot open file\n");
 	
 	uint8 buf[16];

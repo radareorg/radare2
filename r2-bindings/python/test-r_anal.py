@@ -2,7 +2,7 @@ from r2 import r_core
 
 rc = r_core.RCore()
 rc.file_open("/bin/ls", 0, 0)
-rc.bin_load("")
+rc.bin_load("", 0)
 
 rc.anal_all()
 funcs = rc.anal.get_fcns()

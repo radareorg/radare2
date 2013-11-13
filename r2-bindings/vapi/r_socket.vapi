@@ -3,12 +3,13 @@
 /* TODO: Add simpletype instead of int so, we can use it as an object */
 
 [SimpleType]
-[CCode (cname="int", cheader_filename="r_socket.h", cprefix="r_socket_")]
-public struct Radare.RSocket {
+[CCode (cname="int", cheader_filename="r_socket.h", cprefix="r_socket_", unref_function="")]
+public class Radare.RSocket {
+	public RSocket (int is_ssl);
 	[CCode (cname="r_socket_connect")]
-	public RSocket.connect(string host, int port);
+	public bool connect(string host, string port, int proto, int timeout);
 	[CCode (cname="r_socket_listen")]
-	public RSocket.listen(int port);
+	public bool listen(string port, string? certfile);
 
 	public bool ready(int secs, int usecs);
 	public int read(ref string buf, int len);
