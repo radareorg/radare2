@@ -62,7 +62,7 @@ core.config.set ("asm.bits", "32");
 
 core.file_open (file, 0, 0);
 
-core.bin_load (null);
+core.bin_load (null, 0);
 
 core.cmd0 ('? entry0')
 core.cmd0 ('pd @entry0')
@@ -73,7 +73,7 @@ core.config.set ("io.va", "true");
 //core.file_open (file, 0, 0);
 //print ("core->bin = "+core.config);
 core.bin.select_idx (0);
-core.bin_load (null);
+core.bin_load (null, 0);
 
 core.cmd0 ('? entry0')
 core.cmd0 ('pd @entry0')

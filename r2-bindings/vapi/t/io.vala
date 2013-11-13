@@ -1,11 +1,10 @@
 using Radare;
 
-void main(string[] args)
-{
+void main(string[] args) {
 	var io = new Radare.RIO ();
 
-	RIODesc? f = io.open ("dbg:///bin/ls", 0, 0);
-	if (!f) //(io.open ("dbg:///bin/ls", 0, 0))<1)
+	Radare.RIO.Desc? f = io.open ("dbg:///bin/ls", 0, 0);
+	if (f==null) //(io.open ("dbg:///bin/ls", 0, 0))<1)
 		critical("Cannot open file\n");
 	
 	uint8 buf[16];

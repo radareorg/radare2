@@ -8,7 +8,7 @@ var file = core.file_open(fileName, 0, 0);
 if(file == null)
 	console.error('Cannot open '+fileName), process.exit(1);
 
-//core.bin_load('test.js');
+//core.bin_load('test.js', 0);
 //core.seek(0, true); core.block_read(0);
 //core.cmd0('S 0x00000000 0x00000000 0x00013b30 0x00013b30 ehdr rwx');
 

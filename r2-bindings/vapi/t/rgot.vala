@@ -27,15 +27,16 @@ void main(string[] args) {
 		error ("Cannot open binary file\n");
 
 	uint64 baddr = bin.get_baddr();
-	int gotsize = 0, relpltsz = 0;
+	uint64 gotsize = 0, relpltsz = 0;
 	uint64 gotaddr = 0, relplt = 0;
 	
 	foreach (var sec in bin.get_sections ()) {
-		if (sec.name == ".got.plt") {
+		string name = (string)sec.name;
+		if (name == ".got.plt") {
 			gotaddr = sec.rva+baddr; // in memory offset
 			gotsize = sec.size;
 		} else
-		if (sec.name == ".rel.plt") {
+		if (name == ".rel.plt") {
 			relplt = sec.offset; // disk offset
 			relpltsz = sec.size;
 		}
@@ -43,7 +44,7 @@ void main(string[] args) {
 	if (relpltsz==0 || gotaddr==0)
 		error ("Cannot find .rel.plt\n");
 
-	var relpltp = RFile.slurp_range (file, relplt, relpltsz, out relpltsz);
+	var relpltp = RFile.slurp_range (file, relplt, (int)relpltsz, out relpltsz);
 
 	Rel *ptr = relpltp;
 	Rel *ptrend = (Rel*)(((uint8*)relpltp) + relpltsz);
@@ -60,6 +61,6 @@ void main(string[] args) {
 		}
 		if (got >= gotaddr && got <= gotaddr+gotsize)
 			print ("f got.%s @ 0x%08"+uint64.FORMAT_MODIFIER+"x\n", sym.name, got);
-		else stderr.printf ("Cannot resolve GOT address for import '%s'\n", sym.name);
+		else stderr.printf ("Cannot resolve GOT address for import '%s'\n", (string)sym.name);
 	}
 }
