@@ -30,6 +30,9 @@ R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc){
 }
 
 R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data) {
+	RETURN_IO_DESC_NEW(plugin, fd, name, flags, mode, data);
+}
+#if 0
 	int i;
 	RIODesc *desc = R_NEW (RIODesc);
 	if (!desc) return NULL;
@@ -51,7 +54,7 @@ R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int fl
 	} else desc->fd = fd;
 	desc->data = data;
 	return desc;
-}
+#endif
 
 R_API void r_io_desc_free(RIODesc *desc) {
 	if (!desc) return;

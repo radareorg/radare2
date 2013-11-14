@@ -1,6 +1,5 @@
 OBJ_GB=asm_gb.o
 
-
 STATIC_OBJ+=${OBJ_GB}
 TARGET_GB=asm_gb.${EXT_SO}
 

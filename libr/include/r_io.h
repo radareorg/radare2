@@ -194,6 +194,10 @@ typedef struct r_io_cache_t {
 		if (desc->name != NULL) { \
 			desc->plugin = fplugin; \
 			desc->flags = fflags; \
+			if (ffd == -2) { \
+				ut8 *p = (ut8 *)&(desc->fd); \
+				desc->fd = p[0]; \
+			} else \
 			if (ffd == -1) desc->fd = (int) (((size_t) desc) & 0xffffff); \
 			else desc->fd = ffd; \
 			desc->data = fdata; \
@@ -202,7 +206,7 @@ typedef struct r_io_cache_t {
 			desc = NULL; \
 		} \
 	} \
-	free (fname); \
+	/* free (fname); */ \
 	return desc; \
 }
 
