@@ -219,6 +219,19 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 	return R_FALSE;
 }
 
+
+R_API int r_asm_is_valid(RAsm *a, const char *name) {
+	char file[1024];
+	RAsmPlugin *h;
+	RListIter *iter;
+	r_list_foreach (a->plugins, iter, h) {
+		if (!strcmp (h->name, name)) {
+			return R_TRUE;
+		}
+	}
+	return R_FALSE;
+}
+
 // TODO: this can be optimized using r_str_hash()
 R_API int r_asm_use(RAsm *a, const char *name) {
 	char file[1024];
@@ -350,7 +363,7 @@ R_API RAsmCode* r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		return r_asm_code_free (acode);
 	memcpy (acode->buf, buf, len);
 	if (!(acode->buf_hex = malloc (2*len+1)))
-		return r_asm_code_free(acode);
+		return r_asm_code_free (acode);
 	r_hex_bin2str (buf, len, acode->buf_hex);
 	if (!(acode->buf_asm = malloc (4)))
 		return r_asm_code_free (acode);
