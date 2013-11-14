@@ -592,17 +592,6 @@ toro:
 			*analop.esil = 0;
 			analop.type = R_ANAL_OP_TYPE_ILL;
 		}
-		if (use_esil) {
-			if (*analop.esil) {
-				free (opstr);
-				opstr = strdup (analop.esil);
-			} else {
-				free (opstr);
-				opstr = malloc (strlen (str)+2);
-				strcpy (opstr, ": ");
-				strcpy (opstr+2, str);
-			}
-		}
 		if (hint) {
 			if (hint->length) analop.length = hint->length;
 			if (hint->ptr) analop.ptr = hint->ptr;
@@ -995,8 +984,7 @@ toro:
 			opstr = tmpopstr? tmpopstr: strdup (asmop.buf_asm);
 		}
 		if (hint && hint->opcode) {
-			if (opstr)
-				free (opstr);
+			free (opstr);
 			opstr = strdup (hint->opcode);
 		}
 		if (filter) {
@@ -1033,6 +1021,18 @@ toro:
 					opstr, strsub, sizeof (strsub));
 				free (opstr);
 				opstr = strdup (strsub);
+			}
+		}
+		if (use_esil) {
+			if (*analop.esil) {
+				free (opstr);
+				opstr = strdup (analop.esil);
+			} else {
+				char *p = malloc (strlen (opstr)+2);
+				strcpy (p, ": ");
+				strcpy (p+2, opstr);
+				free (opstr);
+				opstr = p;
 			}
 		}
 
