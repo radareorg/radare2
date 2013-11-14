@@ -97,7 +97,8 @@ static RIODesc *haret__open(struct r_io_t *io, const char *pathname, int rw, int
 			return NULL;
 		} else eprintf ("Connected to: %s at port %s\n", ptr, port);
 		haret_wait_until_prompt (s);
-		return r_io_desc_new (&r_io_plugin_haret, s->fd, pathname, rw, mode, (void*)s);
+		//return r_io_desc_new (&r_io_plugin_haret, s->fd, pathname, rw, mode, (void*)s);
+		RETURN_IO_DESC_NEW (&r_io_plugin_haret, s->fd, pathname, rw, mode, (void*)s);
 	}
 	return NULL;
 }

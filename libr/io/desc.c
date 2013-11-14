@@ -29,7 +29,6 @@ R_API ut64 r_io_desc_size(RIO *io, RIODesc *desc){
 	return sz;
 }
 
-
 R_API RIODesc *r_io_desc_new(RIOPlugin *plugin, int fd, const char *name, int flags, int mode, void *data) {
 	int i;
 	RIODesc *desc = R_NEW (RIODesc);

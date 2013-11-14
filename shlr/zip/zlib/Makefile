@@ -1,10 +1,17 @@
 include ../../../config-user.mk
+include ../../../libr/config.mk
 include ../../../mk/${COMPILER}.mk
 
 
+ifeq (${OSTYPE},windows)
+EXT_SO=dll
+SOVER=${EXT_SO}
+LDFLAGS+=-shared
+LDFLAGS_SHARED?=-fPIC -shared
+else
 ifeq (${OSTYPE},darwin)
-SOEXT=dylib
-SOVER=${SOEXT}
+EXT_SO=dylib
+SOVER=${EXT_SO}
 LDFLAGS+=-dynamic
 LDFLAGS_SHARED?=-fPIC -shared
 # ifeq (${ARCH},i386)
@@ -13,10 +20,11 @@ LDFLAGS_SHARED?=-fPIC -shared
 # endif
 else
 SOVERSION=0
-SOEXT=so
-SOVER=${SOEXT}
+EXT_SO=so
+SOVER=${EXT_SO}
 LDFLAGS_SHARED?=-fPIC -shared
-LDFLAGS_SHARED+=-Wl,-soname,libr_z.${SOEXT}
+LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
+endif
 endif
 
 OBJS = adler32.o crc32.o deflate.o infback.o \
@@ -31,6 +39,7 @@ CFLAGS+=-fPIC -Wall
 CFLAGS+=-I../../libr/include -I../include/
 #LDFLAGS+=-L../../../libr/util 
 LIBNAME=libr_z.${SOVER}
+LIBAR=libr_z.a
 
 all:  ${LIBNAME} libr_z.a
 
@@ -42,7 +51,7 @@ endif
 	cp ${LIBNAME} ../
 
 libr_z.a: ${OFILES}
-	${AR} q libr_z.a ${OFILES}
+	${CC_AR} ${OFILES}
 	${RANLIB} libr_z.a
 	cp libr_z.a ../
 

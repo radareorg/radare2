@@ -7,6 +7,7 @@ OBJS=${STATIC_OBJS}
 OBJS+=io.o plugin.o map.o section.o desc.o cache.o undo.o buffer.o
 
 CFLAGS+=-Wall -DCORELIB
+LDFLAGS+=$(STOP)/zip/librz.a
 
 include ../socket/deps.mk
 

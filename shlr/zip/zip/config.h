@@ -5,6 +5,9 @@
    */
 /* #undef HAVE_DECL_TZNAME */
 
+#define ftello ftell
+#define fseeko fseek
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
@@ -72,7 +75,9 @@
 #define HAVE_STRING_H 1
 
 /* Define to 1 if `tm_zone' is a member of `struct tm'. */
-#define HAVE_STRUCT_TM_TM_ZONE 1
+// #define HAVE_STRUCT_TM_TM_ZONE 1
+// doesnt exists on w32
+#undef HAVE_STRUCT_TM_TM_ZONE
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1

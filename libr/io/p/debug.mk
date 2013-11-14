@@ -24,4 +24,4 @@ endif
 
 ${TARGET_IODBG}: ${OBJ_IODBG}
 	${CC} $(call libname,io_debug) ${CFLAGS} ${LDFLAGS_LIB} \
-		${LINKFLAGS} ${LDFLAGS_LINKPATH}.. -L.. -lr_io ${OBJ_IODBG}
+		${LINKFLAGS} ${LDFLAGS_LINKPATH}.. ${OBJ_IODBG} -L.. -lr_io

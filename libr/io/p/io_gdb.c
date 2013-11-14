@@ -54,7 +54,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			free (riog);
 			return NULL;
 		}
+#if __WINDOWS__
+		// XXX: bypass lazylinking
+		RETURN_IO_DESC_NEW (&r_io_plugin_gdb, _fd->fd, file, rw, mode, riog);
+#else
 		return r_io_desc_new (&r_io_plugin_gdb, _fd->fd, file, rw, mode, riog);
+#endif
 	}
 	eprintf ("gdb.io.open: Cannot connect to host.\n");
 	return NULL;

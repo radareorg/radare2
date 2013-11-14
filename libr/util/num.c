@@ -288,7 +288,7 @@ R_API double r_num_get_float(struct r_num_t *num, const char *str) {
 R_API int r_num_to_bits (char *out, ut64 num) {
 	int size = 64, i;
 
-	if (num&0xff00000000) size = 64;
+	if (num>>32) size = 64;
 	else if (num&0xff000000) size = 32;
 	else if (num&0xff0000) size = 24;
 	else if (num&0xff00) size = 16;

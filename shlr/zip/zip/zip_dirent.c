@@ -578,6 +578,7 @@ _zip_dirent_torrent_normalize(struct zip_dirent *de)
     static struct tm torrenttime;
     static time_t last_mod = 0;
 
+#undef HAVE_STRUCT_TM_TM_ZONE
     if (last_mod == 0) {
 #ifdef HAVE_STRUCT_TM_TM_ZONE
 	time_t now;

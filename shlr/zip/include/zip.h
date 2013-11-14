@@ -36,15 +36,18 @@
 
 
 
-#ifndef ZIP_EXTERN
-#ifdef _WIN32
-#define ZIP_EXTERN __declspec(dllimport)
-#elif defined(__GNUC__) && __GNUC__ >= 4
-#define ZIP_EXTERN __attribute__ ((visibility ("default")))
-#else
-#define ZIP_EXTERN
+#if 0
+# ifndef ZIP_EXTERN
+#  ifdef _WIN32
+#   define ZIP_EXTERN __declspec(dllimport)
+#  elif defined(__GNUC__) && __GNUC__ >= 4
+#   define ZIP_EXTERN __attribute__ ((visibility ("default")))
+#  else
+#   define ZIP_EXTERN
+#  endif
+# endif
 #endif
-#endif
+#define ZIP_EXTERN extern
 
 #ifdef __cplusplus
 extern "C" {

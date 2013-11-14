@@ -80,6 +80,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 
         /* target dependencies */
 
+#if 0
 #if defined(MSDOS) || (defined(WINDOWS) && !defined(WIN32))
 #  define OS_CODE  0x00
 #  ifndef Z_SOLO
@@ -95,6 +96,7 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #      include <malloc.h>
 #    endif
 #  endif
+#endif
 #endif
 
 #ifdef AMIGA
