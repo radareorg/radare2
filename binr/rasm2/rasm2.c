@@ -330,7 +330,11 @@ int main(int argc, char *argv[]) {
 						length -= skip;
 					}
 				}
-				if (!bin || !dis) buf[strlen (buf)-1]='\0';
+				if (!bin || !dis) {
+					int buflen = strlen (buf);
+					if (buf[buflen]=='\n')
+						buf[buflen-1]='\0';
+				}
 				if (dis) ret = rasm_disasm (buf, offset,
 					length, a->bits, ascii, bin, dis-1);
 				else ret = rasm_asm (buf, offset, length, a->bits, bin);
