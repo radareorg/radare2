@@ -18,9 +18,11 @@ R_API int r_core_yank_set (RCore *core, const char *str) {
 R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	ut64 oldbsz = 0LL;
 	ut64 curseek = core->offset;
-	free (core->yank_buf);
-	if (len<0)
+	if (len<0) {
+		eprintf ("r_core_yank: cannot yank negative bytes\n");
 		return R_FALSE;
+	}
+	free (core->yank_buf);
 	core->yank_buf = (ut8 *)malloc (len);
 	if (addr != core->offset)
 		r_core_seek (core, addr, 1);
@@ -30,7 +32,7 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	} else
 	if (len > core->blocksize) {
 		oldbsz = core->blocksize;
-		r_core_block_size (core, len);
+		len = r_core_block_size (core, len);
 	}
 	memcpy (core->yank_buf, core->block, len);
 	core->yank_off = addr;
