@@ -6,7 +6,7 @@
 
 static int usage (int v) {
 	printf ("Usage: ragg2 [-FOLsrxvh] [-a arch] [-b bits] [-k os] [-o file] [-I /] [-i sc]\n"
-		"             [-e enc] [-B hex] [-c k=v] [-C file] [-dDw v] [-p pad] file|-\n");
+		"             [-e enc] [-B hex] [-c k=v] [-C file] [-dDw v] [-p pad] file|f.asm|-\n");
 	if (v) printf (
 	" -a [arch]       select architecture (x86, mips, arm)\n"
 	" -b [bits]       register size (32, 64, ..)\n"
@@ -67,9 +67,12 @@ static int create (const char *format, const char *arch, int bits, const ut8 *co
 	return 0;
 }
 
-int openfile (const char *f, int x) {
+static int openfile (const char *f, int x) {
 	int fd = open (f, O_RDWR|O_CREAT, 0644);
-	if (fd == -1) return -1;
+	if (fd == -1) {
+		fd = open (f, O_RDWR);
+		if (fd == -1) return -1;
+	}
 #if __UNIX__
 	if (x) fchmod (fd, 0755);
 #endif
@@ -78,7 +81,7 @@ int openfile (const char *f, int x) {
 	dup2 (fd, 1);
 	return fd;
 }
-#define ISEXEC (*format!='r')
+#define ISEXEC (fmt!='r')
 
 int main(int argc, char **argv) {
 	const char *file = NULL;
@@ -95,6 +98,7 @@ int main(int argc, char **argv) {
 	char *shellcode = NULL;
 	char *encoder = NULL;
 	int bits = 32;
+	int fmt = 0;
 	const char *ofile = NULL;
 	int ofileauto = 0;
 	RBuffer *b;
@@ -243,14 +247,20 @@ int main(int argc, char **argv) {
 				r_egg_load (egg, buf, 0);
 			}
 		} else {
-			if (!r_egg_include (egg, file, 0)) {
+			if (strstr (file, ".s") || strstr (file, ".asm"))
+				fmt = 'a';
+			else fmt = 0;
+			if (!r_egg_include (egg, file, fmt)) {
 				eprintf ("Cannot open '%s'\n", file);
 				goto fail;
 			}
 		}
 	}
 	if (!r_egg_compile (egg)) {
-		return 1;
+		if (!fmt) {
+			eprintf ("r_egg_compile: fail\n");
+			return 1;
+		}
 	}
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
@@ -320,13 +330,18 @@ int main(int argc, char **argv) {
 			goto fail;
 		}
 		r_egg_finalize (egg); // apply patches
+		if (show_execute)
+			return r_egg_run (egg);
+
 		if (show_raw) {
 			write (1, b->buf, b->length);
-		} else
-		if (show_execute) {
-			return r_egg_run (egg);
 		} else {
-			switch (*format) {
+			if (!format) {
+				eprintf ("No format specified wtf\n");
+				r_egg_free (egg);
+				return 1;
+			}
+			switch (*format) { //*format) {
 			case 'r':
 				if (show_hex) {
 					for (i=0; i<b->length; i++)
