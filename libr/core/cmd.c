@@ -790,8 +790,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int rep = atoi (cmd);
 	char *cmt, *colon, *icmd = strdup (cmd);
 	cmd = r_str_trim_head_tail (icmd);
-	if (*cmd && cmd[1] && !memcmp (cmd, "# ", 2))
+	if (*cmd && cmd[1] && !memcmp (cmd, "# ", 2)) {
+		free (icmd);
 		return 0;
+	}
 	cmt = *icmd ? strchr (icmd+1, '#'): NULL;
 	if (cmt && cmt[1]==' ')
 		*cmt = 0;
@@ -804,7 +806,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		while (*cmd>='0' && *cmd<='9')
 			cmd++;
 		// cannot repeat null cmd
-		if (!*cmd) return 0;
+		if (!*cmd) {
+			free (icmd);
+			return 0;
+		}
 	} 
 	if (rep<1) rep = 1;
 	while (rep-- && *cmd) {
