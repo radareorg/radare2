@@ -21,6 +21,5 @@ osxsign:
 ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm
 endif
-ifeq ($(OSTYPE),qnx)
-LDFLAGS+=-lsocket
-endif
+include ../../libr/socket/deps.mk
+include ../../shlr/zip/deps.mk

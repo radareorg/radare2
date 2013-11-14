@@ -8,6 +8,5 @@ include ../rules.mk
 ifeq ($(OSTYPE),android)
 LDFLAGS+=-lm
 endif
-ifeq ($(OSTYPE),qnx)
-LDFLAGS+=-lsocket
-endif
+include ../../libr/socket/deps.mk
+include ../../shlr/zip/deps.mk
