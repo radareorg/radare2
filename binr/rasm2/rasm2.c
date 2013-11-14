@@ -354,6 +354,8 @@ int main(int argc, char *argv[]) {
 				len -= skip;
 				buf[len] = 0;
 			}
+			if (!strncmp (buf, "0x", 2))
+				buf += 2;
 			ret = rasm_disasm (buf, offset, len,
 				a->bits, ascii, bin, dis-1);
 		} else ret = rasm_asm (argv[optind], offset, len, a->bits, bin);
