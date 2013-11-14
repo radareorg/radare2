@@ -14,7 +14,7 @@ w32:
 	LDFLAGS="-L${W32PY}/libs ${LDFLAGS}" \
 	CFLAGS="-Wl,--enable-auto-import -L../../radare2-w32-${VERSION} ${CFLAGS}" \
 	export CC CXX CFLAGS LDFLAGS ; \
-	${MAKE} CC=i486-mingw32-gcc CXX=i486-mingw32-g++ \
+	${MAKE} CC=${CC} CXX=${CXX}
 
 %.${SOEXT}: ../vapi/%.vapi
 ifeq (${LANG},cxx)

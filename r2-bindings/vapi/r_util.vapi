@@ -117,7 +117,7 @@ namespace Radare {
 		public void prepend(owned G foo);
 		public RListIter<G> iterator();
 		public RList();
-		public uint length();
+		public int length();
 		//public bool next();
 		public bool del_n(int n);
 		public bool get_top();
