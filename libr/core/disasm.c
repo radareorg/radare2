@@ -186,7 +186,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RAnalHint *hint = NULL;
 	const char *pal_comment = core->cons->pal.comment;
 	/* other */
-	int ret, idx = 0, i, j, k, lines, ostackptr = 0, stackptr = 0;
+	int ret, index, idx = 0, i, j, k, lines, ostackptr = 0, stackptr = 0;
 	char *line = NULL, *comment = NULL, *opstr, *osl = NULL; // old source line
 	int continueoninvbreak = (len == l) && invbreak;
 	char str[512], strsub[512];
@@ -304,6 +304,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	if (r_config_get_i (core->config, "asm.lineswide"))
 		linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	lines = 0;
+	index = 0;
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, addr+idx);
@@ -365,7 +366,7 @@ toro:
 
 	oplen = 1;
 	r_cons_break (NULL, NULL);
-	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, lines++) {
+	for (i=idx=ret=0; idx < len && lines < l; idx+=oplen,i++, index+=oplen,lines++) {
 		ut64 at = addr + idx;
 		if (r_cons_singleton ()->breaked)
 			break;
@@ -631,7 +632,7 @@ toro:
 						int memref = core->assembler->bits/8;
 						RFlagItem *item;
 						ut8 b[64];
-						ut64 ptr = idx+addr+src->delta+analop.length;
+						ut64 ptr = index+addr+src->delta+analop.length;
 						ut64 off = 0LL;
 						r_core_read_at (core, ptr, b, sizeof (b)); //memref);
 						off = r_mem_get_num (b, memref, 1);
@@ -857,7 +858,7 @@ toro:
 		}
 		/* show cursor */
 		{
-			int q = core->print->cur_enabled && cursor >= idx && cursor < (idx+oplen);
+			int q = core->print->cur_enabled && cursor >= index && cursor < (index+oplen);
 			void *p = r_bp_get (core->dbg->bp, at);
 			r_cons_printf (p&&q?"b*":p? "b ":q?"* ":"  ");
 		}
@@ -891,7 +892,7 @@ toro:
 					char *nstr;
 					p->cur_enabled = cursor!=-1;
 					//p->cur = cursor;
-					nstr = r_print_hexpair (p, str, idx);
+					nstr = r_print_hexpair (p, str, index);
 					free (str);
 					str = nstr;
 			//	}
