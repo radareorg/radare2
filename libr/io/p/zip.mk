@@ -15,11 +15,19 @@ else
 LINKFLAGS+=-L../../lib -lr_lib 
 LINKFLAGS+=-L../../util -lr_util
 LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io 
-LINKFLAGS+=-L../../../shlr/zip/ -lr_zip
+LINKFLAGS+=../../../shlr/zip/libr_zip.a
+# XXX libr_zip is not installed so it fails at runtime
+#LINKFLAGS+=-L../../../shlr/zip/ -lr_zip
 endif
+# TODO Merge!
+LDFLAGS+=$(LTOP)/../shlr/zip/libr_zip.a
+LDFLAGS+=$(LTOP)/../shlr/zip/libr_z.a
 
 ZIPOBJS=${OBJ_ZIP}
 
+# TODO: use make addprefix here
+#ZIPFILES=zip_add.o ...
+#ZIPOBJS+=$(addprefix ../../../shlr/zip/zip/, $ZIPFILES)
 ZIPOBJS+= ../../../shlr/zip/zip/zip_add.o ../../../shlr/zip/zip/zip_add_dir.o 
 ZIPOBJS+= ../../../shlr/zip/zip/zip_add_entry.o ../../../shlr/zip/zip/zip_close.o 
 ZIPOBJS+=../../../shlr/zip/zip/zip_delete.o ../../../shlr/zip/zip/zip_dir_add.o 
@@ -62,9 +70,6 @@ ZIPOBJS+=../../../shlr/zip/zip/zip_strerror.o ../../../shlr/zip/zip/zip_string.o
 ZIPOBJS+=../../../shlr/zip/zip/zip_unchange.o ../../../shlr/zip/zip/zip_unchange_all.o 
 ZIPOBJS+=../../../shlr/zip/zip/zip_unchange_archive.o ../../../shlr/zip/zip/zip_unchange_data.o 
 ZIPOBJS+=../../../shlr/zip/zip/zip_utf-8.o
-
-
-
 
 ${TARGET_ZIP}: ${OBJ_ZIP}
 	@echo ${LINKFLAGS}

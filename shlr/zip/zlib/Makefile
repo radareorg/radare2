@@ -7,10 +7,10 @@ SOEXT=dylib
 SOVER=${SOEXT}
 LDFLAGS+=-dynamic
 LDFLAGS_SHARED?=-fPIC -shared
- ifeq (${ARCH},i386)
+# ifeq (${ARCH},i386)
    #CC+=-arch i386 
-   CC+=-arch x86_64
- endif
+#   CC+=-arch x86_64
+# endif
 else
 SOVERSION=0
 SOEXT=so
@@ -24,7 +24,8 @@ OBJS = adler32.o crc32.o deflate.o infback.o \
 	zutil.o compress.o uncompr.o gzclose.o \
 	gzlib.o gzread.o gzwrite.o
 
-OFILES= libr_z.a $(OBJS) 
+#OFILES= libr_z.a $(OBJS) 
+OFILES= $(OBJS) 
 
 CFLAGS+=-fPIC -Wall
 CFLAGS+=-I../../libr/include -I../include/

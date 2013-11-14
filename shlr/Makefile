@@ -10,7 +10,7 @@ SDB_CONFIG=${PWD}/sdb-config.mk
 all: sdb/sdb
 	@for a in ${MODS} ; do \
 		echo ${MAKE} -C $$a ; \
-		${MAKE} -C $$a HAVE_VALA= ROOT=${PWD}/../ ; \
+		${MAKE} -C $$a HAVE_VALA= ROOT=${PWD}/../ CC="${CC}" ; \
 	done
 
 clean mrproper:
@@ -31,7 +31,6 @@ $(SDBLIB) sdb/sdb:
 		CC="${CC}" AR="${AR}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" libsdb.a
 	${RANLIB} sdb/src/libsdb.a
 	cp -f sdb/src/.sdb sdb/sdb
-
 
 .PHONY: sdb-sync sync-sdb sdbclean
 F=README.md config.mk src Makefile
@@ -86,7 +85,7 @@ D=${DESTDIR}/${PREFIX}
 install:
 	mkdir -p ${D}/lib
 	cp -f tcc/libr_tcc* ${D}/lib
-	cp -f zip/libr_z* ${D}/lib
+	#cp -f zip/libr_z* ${D}/lib
 
 install-symlink symstall:
 	mkdir -p ${D}/lib
@@ -95,4 +94,4 @@ install-symlink symstall:
 
 uninstall deinstall:
 	rm -f ${D}/lib/libr_tcc*
-	rm -f ${D}/lib/libr_z*
+	#rm -f ${D}/lib/libr_z*

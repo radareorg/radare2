@@ -2,7 +2,6 @@ include ../config.mk
 
 NAME=r_io
 DEPS=r_lib r_util r_socket r_cons
-LDFLAGS+= -lr_zip
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
 OBJS+=io.o plugin.o map.o section.o desc.o cache.o undo.o buffer.o
