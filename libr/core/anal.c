@@ -450,6 +450,7 @@ fcn->name = r_str_dup_printf ("fcn.%08"PFMT64x, at);
 						break;
 				if (i==nexti) {
 					// TODO: ensure next address is function after padding (nop or trap or wat)
+					r_cons_clear_line ();
 					eprintf ("FUNC 0x%08"PFMT64x" > 0x%08"PFMT64x"\r",
 							fcn->addr, fcn->addr + fcn->size);
 					next[nexti++] = fcn->addr + fcn->size;
