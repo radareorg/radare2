@@ -15,7 +15,7 @@ endif
 foo: all
 
 ALL_TARGETS=
-PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk shm.mk mach.mk w32dbg.mk procpid.mk haret.mk
+PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk shm.mk mach.mk w32dbg.mk procpid.mk haret.mk zip.mk
 #PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk mach.mk w32dbg.mk procpid.mk
 include ${PLUGINS}
 
