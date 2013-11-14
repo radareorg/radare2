@@ -12,47 +12,41 @@
 
 #define V if(verbose)
 
-
-
 static RBinJavaObj *BIN_OBJ = NULL;
 
 R_API void r_java_set_obj(RBinJavaObj *obj) {
 	// eprintf ("SET CP (%p) %d\n", cp, n);
 	BIN_OBJ = obj;
-
-
 }
-
-
 
 static char * java_resolve(int idx) {
 	// TODO XXX FIXME add a size parameter to the str when it is passed in
 	RBinJavaCPTypeObj *item = NULL, *item2 = NULL;
 	char *class_str = NULL, 
-		 *name_str = NULL, 
-		 *desc_str = NULL,
-		 *string_str = NULL, 
-		 *empty = "",
-		 *cp_name = NULL,
-		 *cp_name2 = NULL,
-		 *str = NULL;
+	     *name_str = NULL, 
+	     *desc_str = NULL,
+	     *string_str = NULL, 
+	     *empty = "",
+	     *cp_name = NULL,
+	     *cp_name2 = NULL,
+	     *str = NULL;
 
-   	int memory_alloc = 0;
+	int memory_alloc = 0;
 
 	if (BIN_OBJ && BIN_OBJ->cp_count < 1 ) {
 		//javasm_init(BIN_OBJ);
 		return NULL;
 	}
-	
+
 	item = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list(BIN_OBJ, idx);
-	
+
 	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
-	
+
 	if (!item){
 		str = malloc(512);
 		if (str)
 			snprintf (str,512,  "(%d) INVALID CP_OBJ", idx);		
-		
+
 		return str;
 	}
 
@@ -60,11 +54,11 @@ static char * java_resolve(int idx) {
 
 	if ( strcmp (cp_name, "Class") == 0 ){
 		item2 = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list(BIN_OBJ, idx);
-		
+
 		//str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, idx-1);
 		class_str = empty;
 		class_str = r_bin_java_get_item_name_from_bin_cp_list(BIN_OBJ, item);	
-		
+
 		if (!class_str)
 			class_str = empty;
 
@@ -77,103 +71,33 @@ static char * java_resolve(int idx) {
 			desc_str = empty;
 
 		memory_alloc = strlen(class_str) + strlen(name_str) + strlen(desc_str) + 3;
-		
+
 		if (memory_alloc)
 			str = malloc(memory_alloc);
-		
+
 		if (str)
 			snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-		
+
 		if (class_str != empty)
 			free(class_str);
-		
+
 		if (name_str != empty)
 			free(name_str);
 		if (desc_str != empty)
 			free(desc_str);
 
-	}else if ( strcmp (cp_name, "MethodRef") == 0 ||
-		 strcmp (cp_name, "FieldRef") == 0 || 
-		 strcmp (cp_name, "InterfaceMethodRef") == 0) {
-				
-		/*
-		 *  The MethodRef, FieldRef, and InterfaceMethodRef structures
-		 */
+	} else if ( strcmp (cp_name, "MethodRef") == 0 ||
+		strcmp (cp_name, "FieldRef") == 0 || 
+		strcmp (cp_name, "InterfaceMethodRef") == 0) {
 
-		class_str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, item->info.cp_method.class_idx);	
-		if (!class_str)
-			class_str = empty;
+			/*
+			 *  The MethodRef, FieldRef, and InterfaceMethodRef structures
+			 */
 
-		name_str = r_bin_java_get_item_name_from_bin_cp_list(BIN_OBJ, item);	
-		if (!name_str)
-			name_str = empty;
+			class_str = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, item->info.cp_method.class_idx);	
+			if (!class_str)
+				class_str = empty;
 
-		desc_str = r_bin_java_get_item_desc_from_bin_cp_list(BIN_OBJ, item);			
-		if (!desc_str)
-			desc_str = empty;
-
-		memory_alloc = strlen(class_str) + strlen(name_str) + strlen(desc_str) + 3;
-		
-		if (memory_alloc)
-			str = malloc(memory_alloc);
-		
-		if (str)
-			snprintf (str, memory_alloc, "%s/%s%s", class_str, name_str, desc_str);
-		
-		if (class_str != empty)
-			free(class_str);
-		if (name_str != empty)
-			free(name_str);
-		if (desc_str != empty)
-			free(desc_str);
-
-	} else if (strcmp (cp_name, "String") == 0) {
-		string_str = r_bin_java_get_utf8_from_bin_cp_list(BIN_OBJ, item->info.cp_string.string_idx); 
-		if(!string_str)
-			string_str = empty;
-
-		memory_alloc = strlen(string_str) + 4;
-		
-		if (memory_alloc)
-			str = malloc(memory_alloc);
-		
-		if (str){
-			snprintf (str, "\"%s\"", string_str);
-		}
-		
-		if (string_str != empty)
-			free(string_str);
-
-		
-	} else if (strcmp (cp_name, "Utf8") == 0) {
-		str = malloc(item->info.cp_utf8.length+3);
-		if (str){
-			snprintf (str, item->info.cp_utf8.length+3, "\"%s\"", item->info.cp_utf8.bytes);	
-		}
-	} else if (strcmp (cp_name, "Long") == 0) {
-		str = malloc(34);
-		if (str){
-			snprintf (str, 34, "0x%llx", rbin_java_raw_to_long (item->info.cp_long.bytes.raw,0));
-		}
-	} else if (strcmp (cp_name, "Double") == 0) {
-		str = malloc(1000);
-		if (str){
-			snprintf (str, 1000, "%f", rbin_java_raw_to_double (item->info.cp_double.bytes.raw,0));
-		}
-	} else if (strcmp (cp_name, "Integer") == 0) {
-		str = malloc(34);
-		if (str){
-			snprintf (str, 34, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw,0));
-		}
-	} else if (strcmp (cp_name, "Float") == 0) {
-		str = malloc(34);
-		if (str){
-			snprintf (str, 34, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw,0));
-		}
-	} else if (strcmp (cp_name, "NameAndType") == 0) {
-		str = malloc(64);
-		if (str){
-			
 			name_str = r_bin_java_get_item_name_from_bin_cp_list(BIN_OBJ, item);	
 			if (!name_str)
 				name_str = empty;
@@ -182,104 +106,169 @@ static char * java_resolve(int idx) {
 			if (!desc_str)
 				desc_str = empty;
 
-			memory_alloc = strlen(name_str) + strlen(desc_str) + 3;
-			
+			memory_alloc = strlen(class_str) + strlen(name_str) + strlen(desc_str) + 3;
+
 			if (memory_alloc)
 				str = malloc(memory_alloc);
-			
+
 			if (str)
-				snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-			
+				snprintf (str, memory_alloc, "%s/%s%s", class_str, name_str, desc_str);
+
+			if (class_str != empty)
+				free(class_str);
 			if (name_str != empty)
 				free(name_str);
 			if (desc_str != empty)
 				free(desc_str);
+
+		} else if (strcmp (cp_name, "String") == 0) {
+			string_str = r_bin_java_get_utf8_from_bin_cp_list(BIN_OBJ, item->info.cp_string.string_idx); 
+			if(!string_str)
+				string_str = empty;
+
+			memory_alloc = strlen (string_str) + 4;
+
+			if (memory_alloc)
+				str = malloc (memory_alloc);
+			if (str)
+				sprintf (str, "\"%s\"", string_str);
+			if (string_str != empty)
+				free(string_str);
+		} else if (strcmp (cp_name, "Utf8") == 0) {
+			str = malloc(item->info.cp_utf8.length+3);
+			if (str){
+				snprintf (str, item->info.cp_utf8.length+3, "\"%s\"", item->info.cp_utf8.bytes);	
+			}
+		} else if (strcmp (cp_name, "Long") == 0) {
+			str = malloc(34);
+			if (str){
+				snprintf (str, 34, "0x%llx", rbin_java_raw_to_long (item->info.cp_long.bytes.raw,0));
+			}
+		} else if (strcmp (cp_name, "Double") == 0) {
+			str = malloc(1000);
+			if (str){
+				snprintf (str, 1000, "%f", rbin_java_raw_to_double (item->info.cp_double.bytes.raw,0));
+			}
+		} else if (strcmp (cp_name, "Integer") == 0) {
+			str = malloc(34);
+			if (str){
+				snprintf (str, 34, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw,0));
+			}
+		} else if (strcmp (cp_name, "Float") == 0) {
+			str = malloc(34);
+			if (str){
+				snprintf (str, 34, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw,0));
+			}
+		} else if (strcmp (cp_name, "NameAndType") == 0) {
+			str = malloc(64);
+			if (str){
+
+				name_str = r_bin_java_get_item_name_from_bin_cp_list(BIN_OBJ, item);	
+				if (!name_str)
+					name_str = empty;
+
+				desc_str = r_bin_java_get_item_desc_from_bin_cp_list(BIN_OBJ, item);			
+				if (!desc_str)
+					desc_str = empty;
+
+				memory_alloc = strlen(name_str) + strlen(desc_str) + 3;
+
+				if (memory_alloc)
+					str = malloc(memory_alloc);
+
+				if (str)
+					snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
+
+				if (name_str != empty)
+					free(name_str);
+				if (desc_str != empty)
+					free(desc_str);
+			}
+		}  else{ 
+			str = malloc(16);
+			if (str){
+				snprintf (str, 16, "(null)");
+			}
 		}
-	}  else{ 
-		str = malloc(16);
-		if (str){
-			snprintf (str, 16, "(null)");
-		}
-	}
 	return str;
 }
 
 int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc(1024);
-	
+
 	switch (java_ops[idx].byte) {
-		case 0x12:
-		case 0x13:
-		case 0x14:
-			arg = java_resolve ((int)USHORT (bytes, 1));				
-			if(arg){
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
-				free(arg);
-			}else{
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, "\0");
-			}
-			return java_ops[idx].size;
-
-		case 0x99: // ifeq
-		case 0x9a: // ifne
-		case 0x9b: // iflt
-		case 0x9c: // ifge
-		case 0x9d: // ifgt
-		case 0x9e: // ifle
-		case 0x9f: // if_icmpeq
-		case 0xa0: // if_icmpne
-		case 0xa1: // if_icmplt
-		case 0xa2: // if_icmpge
-		case 0xa3: // if_icmpgt
-		case 0xa4: // if_icmple
-		case 0xa5: // if_acmpne
-		case 0xa6: // if_acmpne
-		case 0xa7: // goto
-		case 0xa8: // jsr
-			snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
-				addr+(int)(short)USHORT (bytes, 1));
-			return java_ops[idx].size;
-		
-		case 0xb2: // getstatic
-		case 0xb6: // invokevirtual
-			arg = java_resolve ((int)USHORT (bytes, 1));					
-			if(arg){
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
-				free(arg);
-			}else{
-				char test[2048];
-				RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
-			}
-			return java_ops[idx].size;
-
-		case 0xb7: // invokespecial
-			arg = java_resolve ((int)USHORT (bytes, 1));					
-			if(arg){
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
-				free(arg);
-			}else{
-				char test[2048];
-				RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
-			}
-			return java_ops[idx].size;
-
-		case 0xb8: // invokestatic
-		case 0xb9: // invokeinterface
-		case 0xba: // invokedynamic
-			arg = java_resolve ((int)USHORT (bytes, 1));					
-			if(arg){
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
-				free(arg);
-			}else{
-				char test[2048];
-				RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
-			}
-			return java_ops[idx].size;
-
+	case 0x12:
+	case 0x13:
+	case 0x14:
+		arg = java_resolve ((int)USHORT (bytes, 1));				
+		if(arg){
+			snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+			free(arg);
+		}else{
+			snprintf (output, outlen, "%s %s", java_ops[idx].name, "\0");
 		}
+		return java_ops[idx].size;
+
+	case 0x99: // ifeq
+	case 0x9a: // ifne
+	case 0x9b: // iflt
+	case 0x9c: // ifge
+	case 0x9d: // ifgt
+	case 0x9e: // ifle
+	case 0x9f: // if_icmpeq
+	case 0xa0: // if_icmpne
+	case 0xa1: // if_icmplt
+	case 0xa2: // if_icmpge
+	case 0xa3: // if_icmpgt
+	case 0xa4: // if_icmple
+	case 0xa5: // if_acmpne
+	case 0xa6: // if_acmpne
+	case 0xa7: // goto
+	case 0xa8: // jsr
+		snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
+			addr+(int)(short)USHORT (bytes, 1));
+		return java_ops[idx].size;
+
+	case 0xb2: // getstatic
+	case 0xb6: // invokevirtual
+		arg = java_resolve ((int)USHORT (bytes, 1));					
+		if(arg){
+			snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+			free(arg);
+		}else{
+			char test[2048];
+			//RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
+			snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
+		}
+		return java_ops[idx].size;
+
+	case 0xb7: // invokespecial
+		arg = java_resolve ((int)USHORT (bytes, 1));					
+		if(arg){
+			snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+			free(arg);
+		}else{
+			char test[2048];
+			//RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
+			snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
+		}
+		return java_ops[idx].size;
+
+	case 0xb8: // invokestatic
+	case 0xb9: // invokeinterface
+	case 0xba: // invokedynamic
+		arg = java_resolve ((int)USHORT (bytes, 1));					
+		if(arg){
+			snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+			free(arg);
+		}else{
+			char test[2048];
+			//RBinJavaCPTypeObj *itm = r_bin_java_get_name_from_bin_cp_list(BIN_OBJ, ((int)USHORT (bytes, 1)));
+			snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
+		}
+		return java_ops[idx].size;
+
+	}
 
 	/* process arguments */
 	switch (java_ops[idx].size) {
@@ -372,41 +361,41 @@ static int attributes_walk(FILE *fd, int sz2, int fields, int verbose) {
 				if (sz>0)
 					attributes_walk(fd, sz, fields, verbose);
 			} else
-			if (!strcmp(name, "LineNumberTable")) {
-				sz = (int)read_short(fd);
-				V printf("     Table Length: %d\n", sz);
-				for(k=0;k<sz;k++) {
-					fread(buf, 4, 1, fd);
-					V printf("     %2d: start_pc:    0x%04x\n", k, USHORT(buf, 0));
-					V printf("         line_number: %d\n", USHORT(buf, 2));
-				}
-			} else
-			if (!strcmp(name, "StackMapTable")) {
-				fread (buf, 2, 1, fd);
-				V printf("     StackMapTable: %d\n", USHORT(buf, 0));
-			} else
-			if (!strcmp (name, "LocalVariableTable")) {
-				int i;
-				ut32 lvtl = (ut32)read_short (fd);
-				for (i=0; i<lvtl; i++) {
-					int start_pc = start_pc = read_short (fd);
-					int length = length = read_short (fd);
-					int name_idx = name_idx = read_short (fd);
-					int desc_idx = desc_idx = read_short (fd);
-					int index = index = read_short (fd);
-				}
-			} else
-			if (!strcmp(name, "ConstantValue")) {
-				fread(buf, 2, 1, fd);
-	#if 0
-				printf("     Name Index: %d\n", USHORT(buf, 0)); // %s\n", USHORT(buf, 0), cp_items[USHORT(buf,0)-1].value);
-				printf("     AttributeLength: %d\n", UINT(buf, 2));
-	#endif
-				V printf("     ConstValueIndex: %d\n", USHORT(buf, 0));
-			} else {
-				fprintf (stderr, "** ERROR ** Unknown section '%s'\n", name);
-				return 1;
-			}
+				if (!strcmp(name, "LineNumberTable")) {
+					sz = (int)read_short(fd);
+					V printf("     Table Length: %d\n", sz);
+					for(k=0;k<sz;k++) {
+						fread(buf, 4, 1, fd);
+						V printf("     %2d: start_pc:    0x%04x\n", k, USHORT(buf, 0));
+						V printf("         line_number: %d\n", USHORT(buf, 2));
+					}
+				} else
+					if (!strcmp(name, "StackMapTable")) {
+						fread (buf, 2, 1, fd);
+						V printf("     StackMapTable: %d\n", USHORT(buf, 0));
+					} else
+						if (!strcmp (name, "LocalVariableTable")) {
+							int i;
+							ut32 lvtl = (ut32)read_short (fd);
+							for (i=0; i<lvtl; i++) {
+								int start_pc = start_pc = read_short (fd);
+								int length = length = read_short (fd);
+								int name_idx = name_idx = read_short (fd);
+								int desc_idx = desc_idx = read_short (fd);
+								int index = index = read_short (fd);
+							}
+						} else
+							if (!strcmp(name, "ConstantValue")) {
+								fread(buf, 2, 1, fd);
+#if 0
+								printf("     Name Index: %d\n", USHORT(buf, 0)); // %s\n", USHORT(buf, 0), cp_items[USHORT(buf,0)-1].value);
+								printf("     AttributeLength: %d\n", UINT(buf, 2));
+#endif
+								V printf("     ConstValueIndex: %d\n", USHORT(buf, 0));
+							} else {
+								fprintf (stderr, "** ERROR ** Unknown section '%s'\n", name);
+								return 1;
+							}
 		}
 	}
 	return 0;
@@ -448,7 +437,7 @@ int java_classdump(const char *file, int verbose) {
 		eprintf ("Oops. this is a Mach-O\n");
 		return 0;
 	}
-	
+
 	cf.cp_count--;
 	V printf ("ConstantPoolCount %d\n", cf.cp_count);
 	cp_items = malloc (sizeof (struct cp_item)*(cf.cp_count+1));
@@ -556,7 +545,7 @@ int java_classdump(const char *file, int verbose) {
 		for (i=0;i<sz;i++) {
 			fread(buf, 8, 1, fd);
 			check_eof(fd);
-			
+
 			V printf("%2d: Access Flags: %d\n", i, USHORT(buf, 0));
 			V printf("    Name Index: %d (%s)\n", USHORT(buf, 2), get_cp(USHORT(buf, 2)-1)->value);
 			V printf("    Descriptor Index: %d (%s)\n", USHORT(buf, 4), get_cp(USHORT(buf, 4)-1)->value);
