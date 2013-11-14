@@ -182,6 +182,7 @@ extern RAsmPlugin r_asm_plugin_rar;
 extern RAsmPlugin r_asm_plugin_dcpu16;
 extern RAsmPlugin r_asm_plugin_8051;
 extern RAsmPlugin r_asm_plugin_c55plus;
+extern RAsmPlugin r_asm_plugin_gb;
 #endif
 
 #ifdef __cplusplus
