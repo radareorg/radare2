@@ -343,7 +343,7 @@ static void add_cp_objs_to_sdb( RBinJavaObj *bin){
 
 	if ( key == NULL) return;
 
-	memset(key, 0, size);
+	memset (key, 0, size);
 	snprintf(key, size-1, "java.%s.cp_obj", class_name);
 
 	//sdb_alist(bin->kv, key);
@@ -562,13 +562,12 @@ static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_fla
 	ut16 i;
 	ut16 max_str_len = 0;
 
-	for (i = 0; access_flags[i].str != NULL; i++) {
-		if (flags & access_flags[i].value) {
+	for (i = 0; access_flags[i].str != NULL; i++)
+		if (flags & access_flags[i].value)
 			max_str_len += (strlen (access_flags[i].str) + 1);
-		}
-	}
+	max_str_len++;
 
-	outbuffer = (char *) malloc (max_str_len+1);
+	outbuffer = (char *) malloc (max_str_len);
 	if (outbuffer) {
 		memset (outbuffer, 0, max_str_len);
 		cur_pos = outbuffer;
@@ -582,7 +581,6 @@ static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_fla
 				cur_pos += len + 1;
 			} 
 		}
-		*(cur_pos-1) = 0;		
 	}
 	return outbuffer;
 }

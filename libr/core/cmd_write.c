@@ -243,8 +243,10 @@ static int cmd_write(void *data, const char *input) {
 		len = r_hex_str2bin (input+1, buf);
 		if (len != 0) {
 			if (len<0) len = -len+1;
-			b = core->block[len]&0xf;
-			b |= (buf[len]&0xf0);
+			if (len<core->blocksize) {
+				b = core->block[len]&0xf;
+				b |= (buf[len]&0xf0);
+			} else b = buf[len];
 			buf[len] = b;
 			r_core_write_at (core, core->offset, buf, len);
 			WSEEK (core, len);
