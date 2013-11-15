@@ -1,6 +1,5 @@
 OBJ_X86_UDIS86=anal_x86_udis.o
 SHARED_X86_UDIS86=../../shlr/udis86/decode.o
-SHARED_X86_UDIS86+=../../shlr/udis86/input.o
 SHARED_X86_UDIS86+=../../shlr/udis86/itab.o
 SHARED_X86_UDIS86+=../../shlr/udis86/syn-att.o
 SHARED_X86_UDIS86+=../../shlr/udis86/syn-intel.o

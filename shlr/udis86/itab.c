@@ -2,5120 +2,2766 @@
 #include "decode.h"
 
 #define GROUP(n) (0x8000 | (n))
+#define INVALID  0
 
-
-static const uint16_t ud_itab__1[] = {
-  /*  0 */           7,           0,
-};
-
-static const uint16_t ud_itab__2[] = {
-  /*  0 */           8,           0,
-};
-
-static const uint16_t ud_itab__3[] = {
-  /*  0 */          15,           0,
-};
-
-static const uint16_t ud_itab__6[] = {
-  /*  0 */          16,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__7[] = {
-  /*  0 */          17,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__8[] = {
-  /*  0 */          18,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__9[] = {
-  /*  0 */          19,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__10[] = {
-  /*  0 */          20,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__11[] = {
-  /*  0 */          21,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__5[] = {
-  /*  0 */    GROUP(6),    GROUP(7),    GROUP(8),    GROUP(9),
-  /*  4 */   GROUP(10),   GROUP(11),           0,           0,
-};
-
-static const uint16_t ud_itab__15[] = {
-  /*  0 */          22,           0,
-};
-
-static const uint16_t ud_itab__14[] = {
-  /*  0 */   GROUP(15),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__17[] = {
-  /*  0 */          23,           0,
-};
-
-static const uint16_t ud_itab__16[] = {
-  /*  0 */   GROUP(17),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__19[] = {
-  /*  0 */          24,           0,
-};
-
-static const uint16_t ud_itab__18[] = {
-  /*  0 */   GROUP(19),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__21[] = {
-  /*  0 */          25,           0,
-};
-
-static const uint16_t ud_itab__20[] = {
-  /*  0 */   GROUP(21),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__23[] = {
-  /*  0 */          26,           0,
-};
-
-static const uint16_t ud_itab__22[] = {
-  /*  0 */   GROUP(23),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__25[] = {
-  /*  0 */          27,           0,
-};
-
-static const uint16_t ud_itab__24[] = {
-  /*  0 */   GROUP(25),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__27[] = {
-  /*  0 */          28,           0,
-};
-
-static const uint16_t ud_itab__26[] = {
-  /*  0 */   GROUP(27),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__13[] = {
-  /*  0 */   GROUP(14),   GROUP(16),   GROUP(18),   GROUP(20),
-  /*  4 */   GROUP(22),           0,   GROUP(24),   GROUP(26),
-};
-
-static const uint16_t ud_itab__32[] = {
-  /*  0 */           0,          29,           0,
-};
-
-static const uint16_t ud_itab__31[] = {
-  /*  0 */           0,   GROUP(32),
-};
-
-static const uint16_t ud_itab__30[] = {
-  /*  0 */   GROUP(31),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__35[] = {
-  /*  0 */           0,          30,           0,
-};
-
-static const uint16_t ud_itab__34[] = {
-  /*  0 */           0,   GROUP(35),
-};
-
-static const uint16_t ud_itab__33[] = {
-  /*  0 */   GROUP(34),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__38[] = {
-  /*  0 */           0,          31,           0,
-};
-
-static const uint16_t ud_itab__37[] = {
-  /*  0 */           0,   GROUP(38),
-};
-
-static const uint16_t ud_itab__36[] = {
-  /*  0 */   GROUP(37),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__41[] = {
-  /*  0 */           0,          32,           0,
-};
-
-static const uint16_t ud_itab__40[] = {
-  /*  0 */           0,   GROUP(41),
-};
-
-static const uint16_t ud_itab__39[] = {
-  /*  0 */   GROUP(40),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__29[] = {
-  /*  0 */           0,   GROUP(30),   GROUP(33),   GROUP(36),
-  /*  4 */   GROUP(39),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__44[] = {
-  /*  0 */           0,          33,
-};
-
-static const uint16_t ud_itab__43[] = {
-  /*  0 */   GROUP(44),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__46[] = {
-  /*  0 */           0,          34,
-};
-
-static const uint16_t ud_itab__45[] = {
-  /*  0 */   GROUP(46),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__42[] = {
-  /*  0 */   GROUP(43),   GROUP(45),           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__49[] = {
-  /*  0 */           0,          35,
-};
-
-static const uint16_t ud_itab__48[] = {
-  /*  0 */   GROUP(49),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__51[] = {
-  /*  0 */           0,          36,
-};
-
-static const uint16_t ud_itab__50[] = {
-  /*  0 */   GROUP(51),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__47[] = {
-  /*  0 */   GROUP(48),   GROUP(50),           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__55[] = {
-  /*  0 */          37,           0,           0,
-};
-
-static const uint16_t ud_itab__54[] = {
-  /*  0 */           0,   GROUP(55),
-};
-
-static const uint16_t ud_itab__53[] = {
-  /*  0 */   GROUP(54),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__58[] = {
-  /*  0 */          38,           0,           0,
-};
-
-static const uint16_t ud_itab__57[] = {
-  /*  0 */           0,   GROUP(58),
-};
-
-static const uint16_t ud_itab__56[] = {
-  /*  0 */   GROUP(57),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__61[] = {
-  /*  0 */          39,           0,           0,
-};
-
-static const uint16_t ud_itab__60[] = {
-  /*  0 */           0,   GROUP(61),
-};
-
-static const uint16_t ud_itab__59[] = {
-  /*  0 */   GROUP(60),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__64[] = {
-  /*  0 */          40,           0,           0,
-};
-
-static const uint16_t ud_itab__63[] = {
-  /*  0 */           0,   GROUP(64),
-};
-
-static const uint16_t ud_itab__62[] = {
-  /*  0 */   GROUP(63),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__67[] = {
-  /*  0 */          41,           0,           0,
-};
-
-static const uint16_t ud_itab__66[] = {
-  /*  0 */           0,   GROUP(67),
-};
-
-static const uint16_t ud_itab__65[] = {
-  /*  0 */   GROUP(66),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__70[] = {
-  /*  0 */          42,           0,           0,
-};
-
-static const uint16_t ud_itab__69[] = {
-  /*  0 */           0,   GROUP(70),
-};
-
-static const uint16_t ud_itab__68[] = {
-  /*  0 */   GROUP(69),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__73[] = {
-  /*  0 */          43,           0,           0,
-};
-
-static const uint16_t ud_itab__72[] = {
-  /*  0 */           0,   GROUP(73),
-};
-
-static const uint16_t ud_itab__71[] = {
-  /*  0 */   GROUP(72),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__76[] = {
-  /*  0 */          44,           0,           0,
-};
-
-static const uint16_t ud_itab__75[] = {
-  /*  0 */           0,   GROUP(76),
-};
-
-static const uint16_t ud_itab__74[] = {
-  /*  0 */   GROUP(75),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__52[] = {
-  /*  0 */   GROUP(53),   GROUP(56),   GROUP(59),   GROUP(62),
-  /*  4 */   GROUP(65),   GROUP(68),   GROUP(71),   GROUP(74),
-};
-
-static const uint16_t ud_itab__78[] = {
-  /*  0 */           0,          45,
-};
-
-static const uint16_t ud_itab__77[] = {
-  /*  0 */   GROUP(78),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__80[] = {
-  /*  0 */           0,          46,
-};
-
-static const uint16_t ud_itab__79[] = {
-  /*  0 */   GROUP(80),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__83[] = {
-  /*  0 */           0,          47,
-};
-
-static const uint16_t ud_itab__82[] = {
-  /*  0 */   GROUP(83),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__86[] = {
-  /*  0 */          48,           0,           0,
-};
-
-static const uint16_t ud_itab__85[] = {
-  /*  0 */           0,   GROUP(86),
-};
-
-static const uint16_t ud_itab__84[] = {
-  /*  0 */   GROUP(85),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__81[] = {
-  /*  0 */   GROUP(82),   GROUP(84),           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__28[] = {
-  /*  0 */   GROUP(29),   GROUP(42),   GROUP(47),   GROUP(52),
-  /*  4 */   GROUP(77),           0,   GROUP(79),   GROUP(81),
-};
-
-static const uint16_t ud_itab__12[] = {
-  /*  0 */   GROUP(13),   GROUP(28),
-};
-
-static const uint16_t ud_itab__87[] = {
-  /*  0 */          49,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__88[] = {
-  /*  0 */          50,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__89[] = {
-  /*  0 */          51,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__90[] = {
-  /*  0 */          52,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__91[] = {
-  /*  0 */          53,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__92[] = {
-  /*  0 */          54,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__93[] = {
-  /*  0 */          55,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__94[] = {
-  /*  0 */          56,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__96[] = {
-  /*  0 */          57,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__97[] = {
-  /*  0 */          58,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__98[] = {
-  /*  0 */          59,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__99[] = {
-  /*  0 */          60,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__100[] = {
-  /*  0 */          61,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__101[] = {
-  /*  0 */          62,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__102[] = {
-  /*  0 */          63,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__103[] = {
-  /*  0 */          64,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__95[] = {
-  /*  0 */   GROUP(96),   GROUP(97),   GROUP(98),   GROUP(99),
-  /*  4 */  GROUP(100),  GROUP(101),  GROUP(102),  GROUP(103),
-};
-
-static const uint16_t ud_itab__104[] = {
-  /*  0 */          65,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__105[] = {
-  /*  0 */           0,           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-  /*  8 */           0,           0,           0,           0,
-  /*  c */          66,          67,           0,           0,
-  /* 10 */           0,           0,           0,           0,
-  /* 14 */           0,           0,           0,           0,
-  /* 18 */           0,           0,           0,           0,
-  /* 1c */          68,          69,           0,           0,
-  /* 20 */           0,           0,           0,           0,
-  /* 24 */           0,           0,           0,           0,
-  /* 28 */           0,           0,           0,           0,
-  /* 2c */           0,           0,           0,           0,
-  /* 30 */           0,           0,           0,           0,
-  /* 34 */           0,           0,           0,           0,
-  /* 38 */           0,           0,           0,           0,
-  /* 3c */           0,           0,           0,           0,
-  /* 40 */           0,           0,           0,           0,
-  /* 44 */           0,           0,           0,           0,
-  /* 48 */           0,           0,           0,           0,
-  /* 4c */           0,           0,           0,           0,
-  /* 50 */           0,           0,           0,           0,
-  /* 54 */           0,           0,           0,           0,
-  /* 58 */           0,           0,           0,           0,
-  /* 5c */           0,           0,           0,           0,
-  /* 60 */           0,           0,           0,           0,
-  /* 64 */           0,           0,           0,           0,
-  /* 68 */           0,           0,           0,           0,
-  /* 6c */           0,           0,           0,           0,
-  /* 70 */           0,           0,           0,           0,
-  /* 74 */           0,           0,           0,           0,
-  /* 78 */           0,           0,           0,           0,
-  /* 7c */           0,           0,           0,           0,
-  /* 80 */           0,           0,           0,           0,
-  /* 84 */           0,           0,           0,           0,
-  /* 88 */           0,           0,          70,           0,
-  /* 8c */           0,           0,          71,           0,
-  /* 90 */          72,           0,           0,           0,
-  /* 94 */          73,           0,          74,          75,
-  /* 98 */           0,           0,          76,           0,
-  /* 9c */           0,           0,          77,           0,
-  /* a0 */          78,           0,           0,           0,
-  /* a4 */          79,           0,          80,          81,
-  /* a8 */           0,           0,          82,           0,
-  /* ac */           0,           0,          83,           0,
-  /* b0 */          84,           0,           0,           0,
-  /* b4 */          85,           0,          86,          87,
-  /* b8 */           0,           0,           0,          88,
-  /* bc */           0,           0,           0,          89,
-  /* c0 */           0,           0,           0,           0,
-  /* c4 */           0,           0,           0,           0,
-  /* c8 */           0,           0,           0,           0,
-  /* cc */           0,           0,           0,           0,
-  /* d0 */           0,           0,           0,           0,
-  /* d4 */           0,           0,           0,           0,
-  /* d8 */           0,           0,           0,           0,
-  /* dc */           0,           0,           0,           0,
-  /* e0 */           0,           0,           0,           0,
-  /* e4 */           0,           0,           0,           0,
-  /* e8 */           0,           0,           0,           0,
-  /* ec */           0,           0,           0,           0,
-  /* f0 */           0,           0,           0,           0,
-  /* f4 */           0,           0,           0,           0,
-  /* f8 */           0,           0,           0,           0,
-  /* fc */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__106[] = {
-  /*  0 */          90,          91,          92,          93,
-};
-
-static const uint16_t ud_itab__107[] = {
-  /*  0 */          94,          95,          96,          97,
-};
-
-static const uint16_t ud_itab__110[] = {
-  /*  0 */          98,           0,
-};
-
-static const uint16_t ud_itab__111[] = {
-  /*  0 */          99,           0,
-};
-
-static const uint16_t ud_itab__112[] = {
-  /*  0 */         100,           0,
-};
-
-static const uint16_t ud_itab__113[] = {
-  /*  0 */         101,           0,
-};
-
-static const uint16_t ud_itab__109[] = {
-  /*  0 */  GROUP(110),  GROUP(111),  GROUP(112),  GROUP(113),
-};
-
-static const uint16_t ud_itab__115[] = {
-  /*  0 */           0,         102,
-};
-
-static const uint16_t ud_itab__116[] = {
-  /*  0 */           0,         103,
-};
-
-static const uint16_t ud_itab__117[] = {
-  /*  0 */           0,         104,
-};
-
-static const uint16_t ud_itab__114[] = {
-  /*  0 */  GROUP(115),  GROUP(116),  GROUP(117),           0,
-};
-
-static const uint16_t ud_itab__108[] = {
-  /*  0 */  GROUP(109),  GROUP(114),
-};
-
-static const uint16_t ud_itab__118[] = {
-  /*  0 */         105,           0,           0,         106,
-};
-
-static const uint16_t ud_itab__119[] = {
-  /*  0 */         107,           0,           0,         108,
-};
-
-static const uint16_t ud_itab__120[] = {
-  /*  0 */         109,           0,           0,         110,
-};
-
-static const uint16_t ud_itab__123[] = {
-  /*  0 */         111,           0,
-};
-
-static const uint16_t ud_itab__124[] = {
-  /*  0 */         112,           0,
-};
-
-static const uint16_t ud_itab__125[] = {
-  /*  0 */         113,           0,
-};
-
-static const uint16_t ud_itab__122[] = {
-  /*  0 */  GROUP(123),           0,  GROUP(124),  GROUP(125),
-};
-
-static const uint16_t ud_itab__127[] = {
-  /*  0 */           0,         114,
-};
-
-static const uint16_t ud_itab__128[] = {
-  /*  0 */           0,         115,
-};
-
-static const uint16_t ud_itab__126[] = {
-  /*  0 */  GROUP(127),           0,  GROUP(128),           0,
-};
-
-static const uint16_t ud_itab__121[] = {
-  /*  0 */  GROUP(122),  GROUP(126),
-};
-
-static const uint16_t ud_itab__129[] = {
-  /*  0 */         116,           0,           0,         117,
-};
-
-static const uint16_t ud_itab__131[] = {
-  /*  0 */         118,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__132[] = {
-  /*  0 */         119,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__133[] = {
-  /*  0 */         120,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__134[] = {
-  /*  0 */         121,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__130[] = {
-  /*  0 */  GROUP(131),  GROUP(132),  GROUP(133),  GROUP(134),
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__135[] = {
-  /*  0 */         122,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__136[] = {
-  /*  0 */         123,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__137[] = {
-  /*  0 */         124,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__138[] = {
-  /*  0 */         125,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__139[] = {
-  /*  0 */         126,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__140[] = {
-  /*  0 */         127,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__141[] = {
-  /*  0 */         128,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__142[] = {
-  /*  0 */         129,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__143[] = {
-  /*  0 */         130,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__144[] = {
-  /*  0 */         131,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__145[] = {
-  /*  0 */         132,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__146[] = {
-  /*  0 */         133,           0,           0,         134,
-};
-
-static const uint16_t ud_itab__147[] = {
-  /*  0 */         135,           0,           0,         136,
-};
-
-static const uint16_t ud_itab__148[] = {
-  /*  0 */         137,         138,         139,         140,
-};
-
-static const uint16_t ud_itab__149[] = {
-  /*  0 */         141,           0,           0,         142,
-};
-
-static const uint16_t ud_itab__150[] = {
-  /*  0 */         143,         144,         145,         146,
-};
-
-static const uint16_t ud_itab__151[] = {
-  /*  0 */         147,         148,         149,         150,
-};
-
-static const uint16_t ud_itab__152[] = {
-  /*  0 */         151,           0,           0,         152,
-};
-
-static const uint16_t ud_itab__153[] = {
-  /*  0 */         153,           0,           0,         154,
-};
-
-static const uint16_t ud_itab__154[] = {
-  /*  0 */         155,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__155[] = {
-  /*  0 */         156,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__156[] = {
-  /*  0 */         157,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__157[] = {
-  /*  0 */         158,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__160[] = {
-  /*  0 */           0,         160,           0,
-};
-
-static const uint16_t ud_itab__159[] = {
-  /*  0 */         159,  GROUP(160),
-};
-
-static const uint16_t ud_itab__158[] = {
-  /*  0 */  GROUP(159),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__163[] = {
-  /*  0 */           0,         162,           0,
-};
-
-static const uint16_t ud_itab__162[] = {
-  /*  0 */         161,  GROUP(163),
-};
-
-static const uint16_t ud_itab__161[] = {
-  /*  0 */  GROUP(162),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__164[] = {
-  /*  0 */         163,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__166[] = {
-  /*  0 */         164,           0,           0,         165,
-};
-
-static const uint16_t ud_itab__167[] = {
-  /*  0 */         166,           0,           0,         167,
-};
-
-static const uint16_t ud_itab__168[] = {
-  /*  0 */         168,           0,           0,         169,
-};
-
-static const uint16_t ud_itab__169[] = {
-  /*  0 */         170,           0,           0,         171,
-};
-
-static const uint16_t ud_itab__170[] = {
-  /*  0 */         172,           0,           0,         173,
-};
-
-static const uint16_t ud_itab__171[] = {
-  /*  0 */         174,           0,           0,         175,
-};
-
-static const uint16_t ud_itab__172[] = {
-  /*  0 */         176,           0,           0,         177,
-};
-
-static const uint16_t ud_itab__173[] = {
-  /*  0 */         178,           0,           0,         179,
-};
-
-static const uint16_t ud_itab__174[] = {
-  /*  0 */         180,           0,           0,         181,
-};
-
-static const uint16_t ud_itab__175[] = {
-  /*  0 */         182,           0,           0,         183,
-};
-
-static const uint16_t ud_itab__176[] = {
-  /*  0 */         184,           0,           0,         185,
-};
-
-static const uint16_t ud_itab__177[] = {
-  /*  0 */         186,           0,           0,         187,
-};
-
-static const uint16_t ud_itab__178[] = {
-  /*  0 */           0,           0,           0,         188,
-};
-
-static const uint16_t ud_itab__179[] = {
-  /*  0 */           0,           0,           0,         189,
-};
-
-static const uint16_t ud_itab__180[] = {
-  /*  0 */           0,           0,           0,         190,
-};
-
-static const uint16_t ud_itab__181[] = {
-  /*  0 */           0,           0,           0,         191,
-};
-
-static const uint16_t ud_itab__182[] = {
-  /*  0 */         192,           0,           0,         193,
-};
-
-static const uint16_t ud_itab__183[] = {
-  /*  0 */         194,           0,           0,         195,
-};
-
-static const uint16_t ud_itab__184[] = {
-  /*  0 */         196,           0,           0,         197,
-};
-
-static const uint16_t ud_itab__185[] = {
-  /*  0 */           0,           0,           0,         198,
-};
-
-static const uint16_t ud_itab__186[] = {
-  /*  0 */           0,           0,           0,         199,
-};
-
-static const uint16_t ud_itab__187[] = {
-  /*  0 */           0,           0,           0,         200,
-};
-
-static const uint16_t ud_itab__188[] = {
-  /*  0 */           0,           0,           0,         201,
-};
-
-static const uint16_t ud_itab__189[] = {
-  /*  0 */           0,           0,           0,         202,
-};
-
-static const uint16_t ud_itab__190[] = {
-  /*  0 */           0,           0,           0,         203,
-};
-
-static const uint16_t ud_itab__191[] = {
-  /*  0 */           0,           0,           0,         204,
-};
-
-static const uint16_t ud_itab__192[] = {
-  /*  0 */           0,           0,           0,         205,
-};
-
-static const uint16_t ud_itab__193[] = {
-  /*  0 */           0,           0,           0,         206,
-};
-
-static const uint16_t ud_itab__194[] = {
-  /*  0 */           0,           0,           0,         207,
-};
-
-static const uint16_t ud_itab__195[] = {
-  /*  0 */           0,           0,           0,         208,
-};
-
-static const uint16_t ud_itab__196[] = {
-  /*  0 */           0,           0,           0,         209,
-};
-
-static const uint16_t ud_itab__197[] = {
-  /*  0 */           0,           0,           0,         210,
-};
-
-static const uint16_t ud_itab__198[] = {
-  /*  0 */           0,           0,           0,         211,
-};
-
-static const uint16_t ud_itab__199[] = {
-  /*  0 */           0,           0,           0,         212,
-};
-
-static const uint16_t ud_itab__200[] = {
-  /*  0 */           0,           0,           0,         213,
-};
-
-static const uint16_t ud_itab__201[] = {
-  /*  0 */           0,           0,           0,         214,
-};
-
-static const uint16_t ud_itab__202[] = {
-  /*  0 */           0,           0,           0,         215,
-};
-
-static const uint16_t ud_itab__203[] = {
-  /*  0 */           0,           0,           0,         216,
-};
-
-static const uint16_t ud_itab__204[] = {
-  /*  0 */           0,           0,           0,         217,
-};
-
-static const uint16_t ud_itab__205[] = {
-  /*  0 */           0,           0,           0,         218,
-};
-
-static const uint16_t ud_itab__206[] = {
-  /*  0 */           0,           0,           0,         219,
-};
-
-static const uint16_t ud_itab__207[] = {
-  /*  0 */           0,           0,           0,         220,
-};
-
-static const uint16_t ud_itab__208[] = {
-  /*  0 */           0,           0,           0,         221,
-};
-
-static const uint16_t ud_itab__209[] = {
-  /*  0 */           0,           0,           0,         222,
-};
-
-static const uint16_t ud_itab__210[] = {
-  /*  0 */           0,           0,           0,         223,
-};
-
-static const uint16_t ud_itab__211[] = {
-  /*  0 */           0,           0,           0,         224,
-};
-
-static const uint16_t ud_itab__214[] = {
-  /*  0 */           0,         225,           0,
-};
-
-static const uint16_t ud_itab__213[] = {
-  /*  0 */           0,  GROUP(214),
-};
-
-static const uint16_t ud_itab__212[] = {
-  /*  0 */           0,           0,           0,  GROUP(213),
-};
-
-static const uint16_t ud_itab__217[] = {
-  /*  0 */           0,         226,           0,
-};
-
-static const uint16_t ud_itab__216[] = {
-  /*  0 */           0,  GROUP(217),
-};
-
-static const uint16_t ud_itab__215[] = {
-  /*  0 */           0,           0,           0,  GROUP(216),
-};
-
-static const uint16_t ud_itab__218[] = {
-  /*  0 */           0,           0,           0,         227,
-};
-
-static const uint16_t ud_itab__219[] = {
-  /*  0 */           0,           0,           0,         228,
-};
-
-static const uint16_t ud_itab__220[] = {
-  /*  0 */           0,           0,           0,         229,
-};
-
-static const uint16_t ud_itab__221[] = {
-  /*  0 */           0,           0,           0,         230,
-};
-
-static const uint16_t ud_itab__222[] = {
-  /*  0 */           0,           0,           0,         231,
-};
-
-static const uint16_t ud_itab__223[] = {
-  /*  0 */         232,         233,           0,           0,
-};
-
-static const uint16_t ud_itab__224[] = {
-  /*  0 */         234,         235,           0,           0,
-};
-
-static const uint16_t ud_itab__165[] = {
-  /*  0 */  GROUP(166),  GROUP(167),  GROUP(168),  GROUP(169),
-  /*  4 */  GROUP(170),  GROUP(171),  GROUP(172),  GROUP(173),
-  /*  8 */  GROUP(174),  GROUP(175),  GROUP(176),  GROUP(177),
-  /*  c */           0,           0,           0,           0,
-  /* 10 */  GROUP(178),           0,           0,           0,
-  /* 14 */  GROUP(179),  GROUP(180),           0,  GROUP(181),
-  /* 18 */           0,           0,           0,           0,
-  /* 1c */  GROUP(182),  GROUP(183),  GROUP(184),           0,
-  /* 20 */  GROUP(185),  GROUP(186),  GROUP(187),  GROUP(188),
-  /* 24 */  GROUP(189),  GROUP(190),           0,           0,
-  /* 28 */  GROUP(191),  GROUP(192),  GROUP(193),  GROUP(194),
-  /* 2c */           0,           0,           0,           0,
-  /* 30 */  GROUP(195),  GROUP(196),  GROUP(197),  GROUP(198),
-  /* 34 */  GROUP(199),  GROUP(200),           0,  GROUP(201),
-  /* 38 */  GROUP(202),  GROUP(203),  GROUP(204),  GROUP(205),
-  /* 3c */  GROUP(206),  GROUP(207),  GROUP(208),  GROUP(209),
-  /* 40 */  GROUP(210),  GROUP(211),           0,           0,
-  /* 44 */           0,           0,           0,           0,
-  /* 48 */           0,           0,           0,           0,
-  /* 4c */           0,           0,           0,           0,
-  /* 50 */           0,           0,           0,           0,
-  /* 54 */           0,           0,           0,           0,
-  /* 58 */           0,           0,           0,           0,
-  /* 5c */           0,           0,           0,           0,
-  /* 60 */           0,           0,           0,           0,
-  /* 64 */           0,           0,           0,           0,
-  /* 68 */           0,           0,           0,           0,
-  /* 6c */           0,           0,           0,           0,
-  /* 70 */           0,           0,           0,           0,
-  /* 74 */           0,           0,           0,           0,
-  /* 78 */           0,           0,           0,           0,
-  /* 7c */           0,           0,           0,           0,
-  /* 80 */  GROUP(212),  GROUP(215),           0,           0,
-  /* 84 */           0,           0,           0,           0,
-  /* 88 */           0,           0,           0,           0,
-  /* 8c */           0,           0,           0,           0,
-  /* 90 */           0,           0,           0,           0,
-  /* 94 */           0,           0,           0,           0,
-  /* 98 */           0,           0,           0,           0,
-  /* 9c */           0,           0,           0,           0,
-  /* a0 */           0,           0,           0,           0,
-  /* a4 */           0,           0,           0,           0,
-  /* a8 */           0,           0,           0,           0,
-  /* ac */           0,           0,           0,           0,
-  /* b0 */           0,           0,           0,           0,
-  /* b4 */           0,           0,           0,           0,
-  /* b8 */           0,           0,           0,           0,
-  /* bc */           0,           0,           0,           0,
-  /* c0 */           0,           0,           0,           0,
-  /* c4 */           0,           0,           0,           0,
-  /* c8 */           0,           0,           0,           0,
-  /* cc */           0,           0,           0,           0,
-  /* d0 */           0,           0,           0,           0,
-  /* d4 */           0,           0,           0,           0,
-  /* d8 */           0,           0,           0,  GROUP(218),
-  /* dc */  GROUP(219),  GROUP(220),  GROUP(221),  GROUP(222),
-  /* e0 */           0,           0,           0,           0,
-  /* e4 */           0,           0,           0,           0,
-  /* e8 */           0,           0,           0,           0,
-  /* ec */           0,           0,           0,           0,
-  /* f0 */  GROUP(223),  GROUP(224),           0,           0,
-  /* f4 */           0,           0,           0,           0,
-  /* f8 */           0,           0,           0,           0,
-  /* fc */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__226[] = {
-  /*  0 */           0,           0,           0,         236,
-};
-
-static const uint16_t ud_itab__227[] = {
-  /*  0 */           0,           0,           0,         237,
-};
-
-static const uint16_t ud_itab__228[] = {
-  /*  0 */           0,           0,           0,         238,
-};
-
-static const uint16_t ud_itab__229[] = {
-  /*  0 */           0,           0,           0,         239,
-};
-
-static const uint16_t ud_itab__230[] = {
-  /*  0 */           0,           0,           0,         240,
-};
-
-static const uint16_t ud_itab__231[] = {
-  /*  0 */           0,           0,           0,         241,
-};
-
-static const uint16_t ud_itab__232[] = {
-  /*  0 */           0,           0,           0,         242,
-};
-
-static const uint16_t ud_itab__233[] = {
-  /*  0 */         243,           0,           0,         244,
-};
-
-static const uint16_t ud_itab__234[] = {
-  /*  0 */           0,           0,           0,         245,
-};
-
-static const uint16_t ud_itab__235[] = {
-  /*  0 */           0,           0,           0,         246,
-};
-
-static const uint16_t ud_itab__237[] = {
-  /*  0 */         247,         248,         249,
-};
-
-static const uint16_t ud_itab__236[] = {
-  /*  0 */           0,           0,           0,  GROUP(237),
-};
-
-static const uint16_t ud_itab__238[] = {
-  /*  0 */           0,           0,           0,         250,
-};
-
-static const uint16_t ud_itab__239[] = {
-  /*  0 */           0,           0,           0,         251,
-};
-
-static const uint16_t ud_itab__240[] = {
-  /*  0 */           0,           0,           0,         252,
-};
-
-static const uint16_t ud_itab__242[] = {
-  /*  0 */         253,         254,         255,
-};
-
-static const uint16_t ud_itab__241[] = {
-  /*  0 */           0,           0,           0,  GROUP(242),
-};
-
-static const uint16_t ud_itab__243[] = {
-  /*  0 */           0,           0,           0,         256,
-};
-
-static const uint16_t ud_itab__244[] = {
-  /*  0 */           0,           0,           0,         257,
-};
-
-static const uint16_t ud_itab__245[] = {
-  /*  0 */           0,           0,           0,         258,
-};
-
-static const uint16_t ud_itab__246[] = {
-  /*  0 */           0,           0,           0,         259,
-};
-
-static const uint16_t ud_itab__247[] = {
-  /*  0 */           0,           0,           0,         260,
-};
-
-static const uint16_t ud_itab__248[] = {
-  /*  0 */           0,           0,           0,         261,
-};
-
-static const uint16_t ud_itab__249[] = {
-  /*  0 */           0,           0,           0,         262,
-};
-
-static const uint16_t ud_itab__250[] = {
-  /*  0 */           0,           0,           0,         263,
-};
-
-static const uint16_t ud_itab__251[] = {
-  /*  0 */           0,           0,           0,         264,
-};
-
-static const uint16_t ud_itab__225[] = {
-  /*  0 */           0,           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-  /*  8 */  GROUP(226),  GROUP(227),  GROUP(228),  GROUP(229),
-  /*  c */  GROUP(230),  GROUP(231),  GROUP(232),  GROUP(233),
-  /* 10 */           0,           0,           0,           0,
-  /* 14 */  GROUP(234),  GROUP(235),  GROUP(236),  GROUP(238),
-  /* 18 */           0,           0,           0,           0,
-  /* 1c */           0,           0,           0,           0,
-  /* 20 */  GROUP(239),  GROUP(240),  GROUP(241),           0,
-  /* 24 */           0,           0,           0,           0,
-  /* 28 */           0,           0,           0,           0,
-  /* 2c */           0,           0,           0,           0,
-  /* 30 */           0,           0,           0,           0,
-  /* 34 */           0,           0,           0,           0,
-  /* 38 */           0,           0,           0,           0,
-  /* 3c */           0,           0,           0,           0,
-  /* 40 */  GROUP(243),  GROUP(244),  GROUP(245),           0,
-  /* 44 */  GROUP(246),           0,           0,           0,
-  /* 48 */           0,           0,           0,           0,
-  /* 4c */           0,           0,           0,           0,
-  /* 50 */           0,           0,           0,           0,
-  /* 54 */           0,           0,           0,           0,
-  /* 58 */           0,           0,           0,           0,
-  /* 5c */           0,           0,           0,           0,
-  /* 60 */  GROUP(247),  GROUP(248),  GROUP(249),  GROUP(250),
-  /* 64 */           0,           0,           0,           0,
-  /* 68 */           0,           0,           0,           0,
-  /* 6c */           0,           0,           0,           0,
-  /* 70 */           0,           0,           0,           0,
-  /* 74 */           0,           0,           0,           0,
-  /* 78 */           0,           0,           0,           0,
-  /* 7c */           0,           0,           0,           0,
-  /* 80 */           0,           0,           0,           0,
-  /* 84 */           0,           0,           0,           0,
-  /* 88 */           0,           0,           0,           0,
-  /* 8c */           0,           0,           0,           0,
-  /* 90 */           0,           0,           0,           0,
-  /* 94 */           0,           0,           0,           0,
-  /* 98 */           0,           0,           0,           0,
-  /* 9c */           0,           0,           0,           0,
-  /* a0 */           0,           0,           0,           0,
-  /* a4 */           0,           0,           0,           0,
-  /* a8 */           0,           0,           0,           0,
-  /* ac */           0,           0,           0,           0,
-  /* b0 */           0,           0,           0,           0,
-  /* b4 */           0,           0,           0,           0,
-  /* b8 */           0,           0,           0,           0,
-  /* bc */           0,           0,           0,           0,
-  /* c0 */           0,           0,           0,           0,
-  /* c4 */           0,           0,           0,           0,
-  /* c8 */           0,           0,           0,           0,
-  /* cc */           0,           0,           0,           0,
-  /* d0 */           0,           0,           0,           0,
-  /* d4 */           0,           0,           0,           0,
-  /* d8 */           0,           0,           0,           0,
-  /* dc */           0,           0,           0,  GROUP(251),
-  /* e0 */           0,           0,           0,           0,
-  /* e4 */           0,           0,           0,           0,
-  /* e8 */           0,           0,           0,           0,
-  /* ec */           0,           0,           0,           0,
-  /* f0 */           0,           0,           0,           0,
-  /* f4 */           0,           0,           0,           0,
-  /* f8 */           0,           0,           0,           0,
-  /* fc */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__252[] = {
-  /*  0 */         265,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__253[] = {
-  /*  0 */         266,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__254[] = {
-  /*  0 */         267,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__255[] = {
-  /*  0 */         268,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__256[] = {
-  /*  0 */         269,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__257[] = {
-  /*  0 */         270,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__258[] = {
-  /*  0 */         271,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__259[] = {
-  /*  0 */         272,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__260[] = {
-  /*  0 */         273,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__261[] = {
-  /*  0 */         274,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__262[] = {
-  /*  0 */         275,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__263[] = {
-  /*  0 */         276,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__264[] = {
-  /*  0 */         277,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__265[] = {
-  /*  0 */         278,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__266[] = {
-  /*  0 */         279,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__267[] = {
-  /*  0 */         280,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__268[] = {
-  /*  0 */         281,           0,           0,         282,
-};
-
-static const uint16_t ud_itab__269[] = {
-  /*  0 */         283,         284,         285,         286,
-};
-
-static const uint16_t ud_itab__270[] = {
-  /*  0 */         287,           0,         288,           0,
-};
-
-static const uint16_t ud_itab__271[] = {
-  /*  0 */         289,           0,         290,           0,
-};
-
-static const uint16_t ud_itab__272[] = {
-  /*  0 */         291,           0,           0,         292,
-};
-
-static const uint16_t ud_itab__273[] = {
-  /*  0 */         293,           0,           0,         294,
-};
-
-static const uint16_t ud_itab__274[] = {
-  /*  0 */         295,           0,           0,         296,
-};
-
-static const uint16_t ud_itab__275[] = {
-  /*  0 */         297,           0,           0,         298,
-};
-
-static const uint16_t ud_itab__276[] = {
-  /*  0 */         299,         300,         301,         302,
-};
-
-static const uint16_t ud_itab__277[] = {
-  /*  0 */         303,         304,         305,         306,
-};
-
-static const uint16_t ud_itab__278[] = {
-  /*  0 */         307,         308,         309,         310,
-};
-
-static const uint16_t ud_itab__279[] = {
-  /*  0 */         311,           0,         312,         313,
-};
-
-static const uint16_t ud_itab__280[] = {
-  /*  0 */         314,         315,         316,         317,
-};
-
-static const uint16_t ud_itab__281[] = {
-  /*  0 */         318,         319,         320,         321,
-};
-
-static const uint16_t ud_itab__282[] = {
-  /*  0 */         322,         323,         324,         325,
-};
-
-static const uint16_t ud_itab__283[] = {
-  /*  0 */         326,         327,         328,         329,
-};
-
-static const uint16_t ud_itab__284[] = {
-  /*  0 */         330,           0,           0,         331,
-};
-
-static const uint16_t ud_itab__285[] = {
-  /*  0 */         332,           0,           0,         333,
-};
-
-static const uint16_t ud_itab__286[] = {
-  /*  0 */         334,           0,           0,         335,
-};
-
-static const uint16_t ud_itab__287[] = {
-  /*  0 */         336,           0,           0,         337,
-};
-
-static const uint16_t ud_itab__288[] = {
-  /*  0 */         338,           0,           0,         339,
-};
-
-static const uint16_t ud_itab__289[] = {
-  /*  0 */         340,           0,           0,         341,
-};
-
-static const uint16_t ud_itab__290[] = {
-  /*  0 */         342,           0,           0,         343,
-};
-
-static const uint16_t ud_itab__291[] = {
-  /*  0 */         344,           0,           0,         345,
-};
-
-static const uint16_t ud_itab__292[] = {
-  /*  0 */         346,           0,           0,         347,
-};
-
-static const uint16_t ud_itab__293[] = {
-  /*  0 */         348,           0,           0,         349,
-};
-
-static const uint16_t ud_itab__294[] = {
-  /*  0 */         350,           0,           0,         351,
-};
-
-static const uint16_t ud_itab__295[] = {
-  /*  0 */         352,           0,           0,         353,
-};
-
-static const uint16_t ud_itab__296[] = {
-  /*  0 */           0,           0,           0,         354,
-};
-
-static const uint16_t ud_itab__297[] = {
-  /*  0 */           0,           0,           0,         355,
-};
-
-static const uint16_t ud_itab__298[] = {
-  /*  0 */         356,           0,           0,         357,
-};
-
-static const uint16_t ud_itab__299[] = {
-  /*  0 */         358,           0,         359,         360,
-};
-
-static const uint16_t ud_itab__300[] = {
-  /*  0 */         361,         362,         363,         364,
-};
-
-static const uint16_t ud_itab__302[] = {
-  /*  0 */         365,           0,           0,         366,
-};
-
-static const uint16_t ud_itab__303[] = {
-  /*  0 */         367,           0,           0,         368,
-};
-
-static const uint16_t ud_itab__304[] = {
-  /*  0 */         369,           0,           0,         370,
-};
-
-static const uint16_t ud_itab__301[] = {
-  /*  0 */           0,           0,  GROUP(302),           0,
-  /*  4 */  GROUP(303),           0,  GROUP(304),           0,
-};
-
-static const uint16_t ud_itab__306[] = {
-  /*  0 */         371,           0,           0,         372,
-};
-
-static const uint16_t ud_itab__307[] = {
-  /*  0 */         373,           0,           0,         374,
-};
-
-static const uint16_t ud_itab__308[] = {
-  /*  0 */         375,           0,           0,         376,
-};
-
-static const uint16_t ud_itab__305[] = {
-  /*  0 */           0,           0,  GROUP(306),           0,
-  /*  4 */  GROUP(307),           0,  GROUP(308),           0,
-};
-
-static const uint16_t ud_itab__310[] = {
-  /*  0 */         377,           0,           0,         378,
-};
-
-static const uint16_t ud_itab__311[] = {
-  /*  0 */           0,           0,           0,         379,
-};
-
-static const uint16_t ud_itab__312[] = {
-  /*  0 */         380,           0,           0,         381,
-};
-
-static const uint16_t ud_itab__313[] = {
-  /*  0 */           0,           0,           0,         382,
-};
-
-static const uint16_t ud_itab__309[] = {
-  /*  0 */           0,           0,  GROUP(310),  GROUP(311),
-  /*  4 */           0,           0,  GROUP(312),  GROUP(313),
-};
-
-static const uint16_t ud_itab__314[] = {
-  /*  0 */         383,           0,           0,         384,
-};
-
-static const uint16_t ud_itab__315[] = {
-  /*  0 */         385,           0,           0,         386,
-};
-
-static const uint16_t ud_itab__316[] = {
-  /*  0 */         387,           0,           0,         388,
-};
-
-static const uint16_t ud_itab__317[] = {
-  /*  0 */         389,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__319[] = {
-  /*  0 */           0,         390,           0,
-};
-
-static const uint16_t ud_itab__318[] = {
-  /*  0 */  GROUP(319),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__321[] = {
-  /*  0 */           0,         391,           0,
-};
-
-static const uint16_t ud_itab__320[] = {
-  /*  0 */  GROUP(321),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__322[] = {
-  /*  0 */           0,         392,           0,         393,
-};
-
-static const uint16_t ud_itab__323[] = {
-  /*  0 */           0,         394,           0,         395,
-};
-
-static const uint16_t ud_itab__324[] = {
-  /*  0 */         396,           0,         397,         398,
-};
-
-static const uint16_t ud_itab__325[] = {
-  /*  0 */         399,           0,         400,         401,
-};
-
-static const uint16_t ud_itab__326[] = {
-  /*  0 */         402,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__327[] = {
-  /*  0 */         403,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__328[] = {
-  /*  0 */         404,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__329[] = {
-  /*  0 */         405,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__330[] = {
-  /*  0 */         406,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__331[] = {
-  /*  0 */         407,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__332[] = {
-  /*  0 */         408,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__333[] = {
-  /*  0 */         409,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__334[] = {
-  /*  0 */         410,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__335[] = {
-  /*  0 */         411,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__336[] = {
-  /*  0 */         412,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__337[] = {
-  /*  0 */         413,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__338[] = {
-  /*  0 */         414,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__339[] = {
-  /*  0 */         415,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__340[] = {
-  /*  0 */         416,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__341[] = {
-  /*  0 */         417,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__342[] = {
-  /*  0 */         418,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__343[] = {
-  /*  0 */         419,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__344[] = {
-  /*  0 */         420,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__345[] = {
-  /*  0 */         421,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__346[] = {
-  /*  0 */         422,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__347[] = {
-  /*  0 */         423,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__348[] = {
-  /*  0 */         424,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__349[] = {
-  /*  0 */         425,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__350[] = {
-  /*  0 */         426,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__351[] = {
-  /*  0 */         427,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__352[] = {
-  /*  0 */         428,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__353[] = {
-  /*  0 */         429,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__354[] = {
-  /*  0 */         430,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__355[] = {
-  /*  0 */         431,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__356[] = {
-  /*  0 */         432,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__357[] = {
-  /*  0 */         433,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__358[] = {
-  /*  0 */         434,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__359[] = {
-  /*  0 */         435,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__360[] = {
-  /*  0 */         436,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__361[] = {
-  /*  0 */         437,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__362[] = {
-  /*  0 */         438,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__363[] = {
-  /*  0 */         439,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__368[] = {
-  /*  0 */           0,         440,
-};
-
-static const uint16_t ud_itab__367[] = {
-  /*  0 */  GROUP(368),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__366[] = {
-  /*  0 */  GROUP(367),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__371[] = {
-  /*  0 */           0,         441,
-};
-
-static const uint16_t ud_itab__370[] = {
-  /*  0 */  GROUP(371),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__369[] = {
-  /*  0 */  GROUP(370),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__374[] = {
-  /*  0 */           0,         442,
-};
-
-static const uint16_t ud_itab__373[] = {
-  /*  0 */  GROUP(374),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__372[] = {
-  /*  0 */  GROUP(373),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__365[] = {
-  /*  0 */  GROUP(366),  GROUP(369),  GROUP(372),           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__364[] = {
-  /*  0 */           0,  GROUP(365),
-};
-
-static const uint16_t ud_itab__379[] = {
-  /*  0 */           0,         443,
-};
-
-static const uint16_t ud_itab__378[] = {
-  /*  0 */  GROUP(379),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__377[] = {
-  /*  0 */  GROUP(378),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__382[] = {
-  /*  0 */           0,         444,
-};
-
-static const uint16_t ud_itab__381[] = {
-  /*  0 */  GROUP(382),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__380[] = {
-  /*  0 */  GROUP(381),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__385[] = {
-  /*  0 */           0,         445,
-};
-
-static const uint16_t ud_itab__384[] = {
-  /*  0 */  GROUP(385),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__383[] = {
-  /*  0 */  GROUP(384),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__388[] = {
-  /*  0 */           0,         446,
-};
-
-static const uint16_t ud_itab__387[] = {
-  /*  0 */  GROUP(388),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__386[] = {
-  /*  0 */  GROUP(387),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__391[] = {
-  /*  0 */           0,         447,
-};
-
-static const uint16_t ud_itab__390[] = {
-  /*  0 */  GROUP(391),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__389[] = {
-  /*  0 */  GROUP(390),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__394[] = {
-  /*  0 */           0,         448,
-};
-
-static const uint16_t ud_itab__393[] = {
-  /*  0 */  GROUP(394),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__392[] = {
-  /*  0 */  GROUP(393),           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__376[] = {
-  /*  0 */  GROUP(377),  GROUP(380),  GROUP(383),  GROUP(386),
-  /*  4 */  GROUP(389),  GROUP(392),           0,           0,
-};
-
-static const uint16_t ud_itab__375[] = {
-  /*  0 */           0,  GROUP(376),
-};
-
-static const uint16_t ud_itab__395[] = {
-  /*  0 */         449,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__396[] = {
-  /*  0 */         450,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__397[] = {
-  /*  0 */         451,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__398[] = {
-  /*  0 */         452,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__399[] = {
-  /*  0 */         453,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__400[] = {
-  /*  0 */         454,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__404[] = {
-  /*  0 */         455,           0,
-};
-
-static const uint16_t ud_itab__403[] = {
-  /*  0 */  GROUP(404),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__406[] = {
-  /*  0 */         456,           0,
-};
-
-static const uint16_t ud_itab__405[] = {
-  /*  0 */  GROUP(406),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__408[] = {
-  /*  0 */         457,           0,
-};
-
-static const uint16_t ud_itab__407[] = {
-  /*  0 */  GROUP(408),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__410[] = {
-  /*  0 */         458,           0,
-};
-
-static const uint16_t ud_itab__409[] = {
-  /*  0 */  GROUP(410),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__412[] = {
-  /*  0 */         459,           0,
-};
-
-static const uint16_t ud_itab__411[] = {
-  /*  0 */  GROUP(412),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__414[] = {
-  /*  0 */         460,           0,
-};
-
-static const uint16_t ud_itab__413[] = {
-  /*  0 */  GROUP(414),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__416[] = {
-  /*  0 */         461,           0,
-};
-
-static const uint16_t ud_itab__415[] = {
-  /*  0 */  GROUP(416),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__402[] = {
-  /*  0 */  GROUP(403),  GROUP(405),  GROUP(407),  GROUP(409),
-  /*  4 */  GROUP(411),  GROUP(413),           0,  GROUP(415),
-};
-
-static const uint16_t ud_itab__420[] = {
-  /*  0 */           0,         462,
-};
-
-static const uint16_t ud_itab__419[] = {
-  /*  0 */  GROUP(420),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__422[] = {
-  /*  0 */           0,         463,
-};
-
-static const uint16_t ud_itab__421[] = {
-  /*  0 */  GROUP(422),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__424[] = {
-  /*  0 */           0,         464,
-};
-
-static const uint16_t ud_itab__423[] = {
-  /*  0 */  GROUP(424),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__426[] = {
-  /*  0 */           0,         465,
-};
-
-static const uint16_t ud_itab__425[] = {
-  /*  0 */  GROUP(426),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__428[] = {
-  /*  0 */           0,         466,
-};
-
-static const uint16_t ud_itab__427[] = {
-  /*  0 */  GROUP(428),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__430[] = {
-  /*  0 */           0,         467,
-};
-
-static const uint16_t ud_itab__429[] = {
-  /*  0 */  GROUP(430),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__432[] = {
-  /*  0 */           0,         468,
-};
-
-static const uint16_t ud_itab__431[] = {
-  /*  0 */  GROUP(432),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__434[] = {
-  /*  0 */           0,         469,
-};
-
-static const uint16_t ud_itab__433[] = {
-  /*  0 */  GROUP(434),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__418[] = {
-  /*  0 */  GROUP(419),  GROUP(421),  GROUP(423),  GROUP(425),
-  /*  4 */  GROUP(427),  GROUP(429),  GROUP(431),  GROUP(433),
-};
-
-static const uint16_t ud_itab__437[] = {
-  /*  0 */           0,         470,
-};
-
-static const uint16_t ud_itab__436[] = {
-  /*  0 */  GROUP(437),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__439[] = {
-  /*  0 */           0,         471,
-};
-
-static const uint16_t ud_itab__438[] = {
-  /*  0 */  GROUP(439),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__441[] = {
-  /*  0 */           0,         472,
-};
-
-static const uint16_t ud_itab__440[] = {
-  /*  0 */  GROUP(441),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__443[] = {
-  /*  0 */           0,         473,
-};
-
-static const uint16_t ud_itab__442[] = {
-  /*  0 */  GROUP(443),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__445[] = {
-  /*  0 */           0,         474,
-};
-
-static const uint16_t ud_itab__444[] = {
-  /*  0 */  GROUP(445),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__447[] = {
-  /*  0 */           0,         475,
-};
-
-static const uint16_t ud_itab__446[] = {
-  /*  0 */  GROUP(447),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__449[] = {
-  /*  0 */           0,         476,
-};
-
-static const uint16_t ud_itab__448[] = {
-  /*  0 */  GROUP(449),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__451[] = {
-  /*  0 */           0,         477,
-};
-
-static const uint16_t ud_itab__450[] = {
-  /*  0 */  GROUP(451),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__435[] = {
-  /*  0 */  GROUP(436),  GROUP(438),  GROUP(440),  GROUP(442),
-  /*  4 */  GROUP(444),  GROUP(446),  GROUP(448),  GROUP(450),
-};
-
-static const uint16_t ud_itab__454[] = {
-  /*  0 */           0,         478,
-};
-
-static const uint16_t ud_itab__453[] = {
-  /*  0 */  GROUP(454),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__456[] = {
-  /*  0 */           0,         479,
-};
-
-static const uint16_t ud_itab__455[] = {
-  /*  0 */  GROUP(456),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__458[] = {
-  /*  0 */           0,         480,
-};
-
-static const uint16_t ud_itab__457[] = {
-  /*  0 */  GROUP(458),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__460[] = {
-  /*  0 */           0,         481,
-};
-
-static const uint16_t ud_itab__459[] = {
-  /*  0 */  GROUP(460),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__462[] = {
-  /*  0 */           0,         482,
-};
-
-static const uint16_t ud_itab__461[] = {
-  /*  0 */  GROUP(462),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__464[] = {
-  /*  0 */           0,         483,
-};
-
-static const uint16_t ud_itab__463[] = {
-  /*  0 */  GROUP(464),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__466[] = {
-  /*  0 */           0,         484,
-};
-
-static const uint16_t ud_itab__465[] = {
-  /*  0 */  GROUP(466),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__468[] = {
-  /*  0 */           0,         485,
-};
-
-static const uint16_t ud_itab__467[] = {
-  /*  0 */  GROUP(468),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__452[] = {
-  /*  0 */  GROUP(453),  GROUP(455),  GROUP(457),  GROUP(459),
-  /*  4 */  GROUP(461),  GROUP(463),  GROUP(465),  GROUP(467),
-};
-
-static const uint16_t ud_itab__417[] = {
-  /*  0 */           0,           0,           0,           0,
-  /*  4 */           0,  GROUP(418),  GROUP(435),  GROUP(452),
-};
-
-static const uint16_t ud_itab__401[] = {
-  /*  0 */  GROUP(402),  GROUP(417),
-};
-
-static const uint16_t ud_itab__469[] = {
-  /*  0 */         486,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__470[] = {
-  /*  0 */         487,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__471[] = {
-  /*  0 */         488,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__472[] = {
-  /*  0 */         489,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__473[] = {
-  /*  0 */         490,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__474[] = {
-  /*  0 */         491,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__475[] = {
-  /*  0 */         492,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__476[] = {
-  /*  0 */         493,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__477[] = {
-  /*  0 */         494,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__478[] = {
-  /*  0 */           0,           0,         495,           0,
-};
-
-static const uint16_t ud_itab__480[] = {
-  /*  0 */         496,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__481[] = {
-  /*  0 */         497,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__482[] = {
-  /*  0 */         498,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__483[] = {
-  /*  0 */         499,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__479[] = {
-  /*  0 */           0,           0,           0,           0,
-  /*  4 */  GROUP(480),  GROUP(481),  GROUP(482),  GROUP(483),
-};
-
-static const uint16_t ud_itab__484[] = {
-  /*  0 */         500,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__485[] = {
-  /*  0 */         501,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__486[] = {
-  /*  0 */         502,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__487[] = {
-  /*  0 */         503,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__488[] = {
-  /*  0 */         504,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__489[] = {
-  /*  0 */         505,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__490[] = {
-  /*  0 */         506,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__491[] = {
-  /*  0 */         507,         508,         509,         510,
-};
-
-static const uint16_t ud_itab__492[] = {
-  /*  0 */         511,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__493[] = {
-  /*  0 */         512,           0,           0,         513,
-};
-
-static const uint16_t ud_itab__494[] = {
-  /*  0 */         514,           0,           0,         515,
-};
-
-static const uint16_t ud_itab__495[] = {
-  /*  0 */         516,           0,           0,         517,
-};
-
-static const uint16_t ud_itab__498[] = {
-  /*  0 */         518,         519,         520,
-};
-
-static const uint16_t ud_itab__497[] = {
-  /*  0 */  GROUP(498),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__500[] = {
-  /*  0 */           0,         521,           0,
-};
-
-static const uint16_t ud_itab__501[] = {
-  /*  0 */           0,         522,           0,
-};
-
-static const uint16_t ud_itab__502[] = {
-  /*  0 */           0,         523,           0,
-};
-
-static const uint16_t ud_itab__499[] = {
-  /*  0 */  GROUP(500),           0,  GROUP(501),  GROUP(502),
-};
-
-static const uint16_t ud_itab__504[] = {
-  /*  0 */           0,         524,           0,
-};
-
-static const uint16_t ud_itab__503[] = {
-  /*  0 */  GROUP(504),           0,           0,           0,
-};
-
-static const uint16_t ud_itab__496[] = {
-  /*  0 */           0,  GROUP(497),           0,           0,
-  /*  4 */           0,           0,  GROUP(499),  GROUP(503),
-};
-
-static const uint16_t ud_itab__505[] = {
-  /*  0 */         525,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__506[] = {
-  /*  0 */         526,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__507[] = {
-  /*  0 */         527,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__508[] = {
-  /*  0 */         528,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__509[] = {
-  /*  0 */         529,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__510[] = {
-  /*  0 */         530,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__511[] = {
-  /*  0 */         531,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__512[] = {
-  /*  0 */         532,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__513[] = {
-  /*  0 */           0,         533,           0,         534,
-};
-
-static const uint16_t ud_itab__514[] = {
-  /*  0 */         535,           0,           0,         536,
-};
-
-static const uint16_t ud_itab__515[] = {
-  /*  0 */         537,           0,           0,         538,
-};
-
-static const uint16_t ud_itab__516[] = {
-  /*  0 */         539,           0,           0,         540,
-};
-
-static const uint16_t ud_itab__517[] = {
-  /*  0 */         541,           0,           0,         542,
-};
-
-static const uint16_t ud_itab__518[] = {
-  /*  0 */         543,           0,           0,         544,
-};
-
-static const uint16_t ud_itab__519[] = {
-  /*  0 */           0,         545,         546,         547,
-};
-
-static const uint16_t ud_itab__520[] = {
-  /*  0 */         548,           0,           0,         549,
-};
-
-static const uint16_t ud_itab__521[] = {
-  /*  0 */         550,           0,           0,         551,
-};
-
-static const uint16_t ud_itab__522[] = {
-  /*  0 */         552,           0,           0,         553,
-};
-
-static const uint16_t ud_itab__523[] = {
-  /*  0 */         554,           0,           0,         555,
-};
-
-static const uint16_t ud_itab__524[] = {
-  /*  0 */         556,           0,           0,         557,
-};
-
-static const uint16_t ud_itab__525[] = {
-  /*  0 */         558,           0,           0,         559,
-};
-
-static const uint16_t ud_itab__526[] = {
-  /*  0 */         560,           0,           0,         561,
-};
-
-static const uint16_t ud_itab__527[] = {
-  /*  0 */         562,           0,           0,         563,
-};
-
-static const uint16_t ud_itab__528[] = {
-  /*  0 */         564,           0,           0,         565,
-};
-
-static const uint16_t ud_itab__529[] = {
-  /*  0 */         566,           0,           0,         567,
-};
-
-static const uint16_t ud_itab__530[] = {
-  /*  0 */         568,           0,           0,         569,
-};
-
-static const uint16_t ud_itab__531[] = {
-  /*  0 */         570,           0,           0,         571,
-};
-
-static const uint16_t ud_itab__532[] = {
-  /*  0 */         572,           0,           0,         573,
-};
-
-static const uint16_t ud_itab__533[] = {
-  /*  0 */         574,           0,           0,         575,
-};
-
-static const uint16_t ud_itab__534[] = {
-  /*  0 */         576,           0,           0,         577,
-};
-
-static const uint16_t ud_itab__535[] = {
-  /*  0 */           0,         578,         579,         580,
-};
-
-static const uint16_t ud_itab__536[] = {
-  /*  0 */         581,           0,           0,         582,
-};
-
-static const uint16_t ud_itab__537[] = {
-  /*  0 */         583,           0,           0,         584,
-};
-
-static const uint16_t ud_itab__538[] = {
-  /*  0 */         585,           0,           0,         586,
-};
-
-static const uint16_t ud_itab__539[] = {
-  /*  0 */         587,           0,           0,         588,
-};
-
-static const uint16_t ud_itab__540[] = {
-  /*  0 */         589,           0,           0,         590,
-};
-
-static const uint16_t ud_itab__541[] = {
-  /*  0 */         591,           0,           0,         592,
-};
-
-static const uint16_t ud_itab__542[] = {
-  /*  0 */         593,           0,           0,         594,
-};
-
-static const uint16_t ud_itab__543[] = {
-  /*  0 */         595,           0,           0,         596,
-};
-
-static const uint16_t ud_itab__544[] = {
-  /*  0 */         597,           0,           0,         598,
-};
-
-static const uint16_t ud_itab__545[] = {
-  /*  0 */           0,         599,           0,           0,
-};
-
-static const uint16_t ud_itab__546[] = {
-  /*  0 */         600,           0,           0,         601,
-};
-
-static const uint16_t ud_itab__547[] = {
-  /*  0 */         602,           0,           0,         603,
-};
-
-static const uint16_t ud_itab__548[] = {
-  /*  0 */         604,           0,           0,         605,
-};
-
-static const uint16_t ud_itab__549[] = {
-  /*  0 */         606,           0,           0,         607,
-};
-
-static const uint16_t ud_itab__550[] = {
-  /*  0 */         608,           0,           0,         609,
-};
-
-static const uint16_t ud_itab__551[] = {
-  /*  0 */         610,           0,           0,         611,
-};
-
-static const uint16_t ud_itab__554[] = {
-  /*  0 */           0,         612,
-};
-
-static const uint16_t ud_itab__555[] = {
-  /*  0 */           0,         613,
-};
-
-static const uint16_t ud_itab__553[] = {
-  /*  0 */  GROUP(554),           0,           0,  GROUP(555),
-};
-
-static const uint16_t ud_itab__552[] = {
-  /*  0 */           0,  GROUP(553),
-};
-
-static const uint16_t ud_itab__556[] = {
-  /*  0 */         614,           0,           0,         615,
-};
-
-static const uint16_t ud_itab__557[] = {
-  /*  0 */         616,           0,           0,         617,
-};
-
-static const uint16_t ud_itab__558[] = {
-  /*  0 */         618,           0,           0,         619,
-};
-
-static const uint16_t ud_itab__559[] = {
-  /*  0 */         620,           0,           0,         621,
-};
-
-static const uint16_t ud_itab__560[] = {
-  /*  0 */         622,           0,           0,         623,
-};
-
-static const uint16_t ud_itab__561[] = {
-  /*  0 */         624,           0,           0,         625,
-};
-
-static const uint16_t ud_itab__562[] = {
-  /*  0 */         626,           0,           0,         627,
-};
-
-static const uint16_t ud_itab__4[] = {
-  /*  0 */    GROUP(5),   GROUP(12),   GROUP(87),   GROUP(88),
-  /*  4 */           0,   GROUP(89),   GROUP(90),   GROUP(91),
-  /*  8 */   GROUP(92),   GROUP(93),           0,   GROUP(94),
-  /*  c */           0,   GROUP(95),  GROUP(104),  GROUP(105),
-  /* 10 */  GROUP(106),  GROUP(107),  GROUP(108),  GROUP(118),
-  /* 14 */  GROUP(119),  GROUP(120),  GROUP(121),  GROUP(129),
-  /* 18 */  GROUP(130),  GROUP(135),  GROUP(136),  GROUP(137),
-  /* 1c */  GROUP(138),  GROUP(139),  GROUP(140),  GROUP(141),
-  /* 20 */  GROUP(142),  GROUP(143),  GROUP(144),  GROUP(145),
-  /* 24 */           0,           0,           0,           0,
-  /* 28 */  GROUP(146),  GROUP(147),  GROUP(148),  GROUP(149),
-  /* 2c */  GROUP(150),  GROUP(151),  GROUP(152),  GROUP(153),
-  /* 30 */  GROUP(154),  GROUP(155),  GROUP(156),  GROUP(157),
-  /* 34 */  GROUP(158),  GROUP(161),           0,  GROUP(164),
-  /* 38 */  GROUP(165),           0,  GROUP(225),           0,
-  /* 3c */           0,           0,           0,           0,
-  /* 40 */  GROUP(252),  GROUP(253),  GROUP(254),  GROUP(255),
-  /* 44 */  GROUP(256),  GROUP(257),  GROUP(258),  GROUP(259),
-  /* 48 */  GROUP(260),  GROUP(261),  GROUP(262),  GROUP(263),
-  /* 4c */  GROUP(264),  GROUP(265),  GROUP(266),  GROUP(267),
-  /* 50 */  GROUP(268),  GROUP(269),  GROUP(270),  GROUP(271),
-  /* 54 */  GROUP(272),  GROUP(273),  GROUP(274),  GROUP(275),
-  /* 58 */  GROUP(276),  GROUP(277),  GROUP(278),  GROUP(279),
-  /* 5c */  GROUP(280),  GROUP(281),  GROUP(282),  GROUP(283),
-  /* 60 */  GROUP(284),  GROUP(285),  GROUP(286),  GROUP(287),
-  /* 64 */  GROUP(288),  GROUP(289),  GROUP(290),  GROUP(291),
-  /* 68 */  GROUP(292),  GROUP(293),  GROUP(294),  GROUP(295),
-  /* 6c */  GROUP(296),  GROUP(297),  GROUP(298),  GROUP(299),
-  /* 70 */  GROUP(300),  GROUP(301),  GROUP(305),  GROUP(309),
-  /* 74 */  GROUP(314),  GROUP(315),  GROUP(316),  GROUP(317),
-  /* 78 */  GROUP(318),  GROUP(320),           0,           0,
-  /* 7c */  GROUP(322),  GROUP(323),  GROUP(324),  GROUP(325),
-  /* 80 */  GROUP(326),  GROUP(327),  GROUP(328),  GROUP(329),
-  /* 84 */  GROUP(330),  GROUP(331),  GROUP(332),  GROUP(333),
-  /* 88 */  GROUP(334),  GROUP(335),  GROUP(336),  GROUP(337),
-  /* 8c */  GROUP(338),  GROUP(339),  GROUP(340),  GROUP(341),
-  /* 90 */  GROUP(342),  GROUP(343),  GROUP(344),  GROUP(345),
-  /* 94 */  GROUP(346),  GROUP(347),  GROUP(348),  GROUP(349),
-  /* 98 */  GROUP(350),  GROUP(351),  GROUP(352),  GROUP(353),
-  /* 9c */  GROUP(354),  GROUP(355),  GROUP(356),  GROUP(357),
-  /* a0 */  GROUP(358),  GROUP(359),  GROUP(360),  GROUP(361),
-  /* a4 */  GROUP(362),  GROUP(363),  GROUP(364),  GROUP(375),
-  /* a8 */  GROUP(395),  GROUP(396),  GROUP(397),  GROUP(398),
-  /* ac */  GROUP(399),  GROUP(400),  GROUP(401),  GROUP(469),
-  /* b0 */  GROUP(470),  GROUP(471),  GROUP(472),  GROUP(473),
-  /* b4 */  GROUP(474),  GROUP(475),  GROUP(476),  GROUP(477),
-  /* b8 */  GROUP(478),           0,  GROUP(479),  GROUP(484),
-  /* bc */  GROUP(485),  GROUP(486),  GROUP(487),  GROUP(488),
-  /* c0 */  GROUP(489),  GROUP(490),  GROUP(491),  GROUP(492),
-  /* c4 */  GROUP(493),  GROUP(494),  GROUP(495),  GROUP(496),
-  /* c8 */  GROUP(505),  GROUP(506),  GROUP(507),  GROUP(508),
-  /* cc */  GROUP(509),  GROUP(510),  GROUP(511),  GROUP(512),
-  /* d0 */  GROUP(513),  GROUP(514),  GROUP(515),  GROUP(516),
-  /* d4 */  GROUP(517),  GROUP(518),  GROUP(519),  GROUP(520),
-  /* d8 */  GROUP(521),  GROUP(522),  GROUP(523),  GROUP(524),
-  /* dc */  GROUP(525),  GROUP(526),  GROUP(527),  GROUP(528),
-  /* e0 */  GROUP(529),  GROUP(530),  GROUP(531),  GROUP(532),
-  /* e4 */  GROUP(533),  GROUP(534),  GROUP(535),  GROUP(536),
-  /* e8 */  GROUP(537),  GROUP(538),  GROUP(539),  GROUP(540),
-  /* ec */  GROUP(541),  GROUP(542),  GROUP(543),  GROUP(544),
-  /* f0 */  GROUP(545),  GROUP(546),  GROUP(547),  GROUP(548),
-  /* f4 */  GROUP(549),  GROUP(550),  GROUP(551),  GROUP(552),
-  /* f8 */  GROUP(556),  GROUP(557),  GROUP(558),  GROUP(559),
-  /* fc */  GROUP(560),  GROUP(561),  GROUP(562),           0,
-};
-
-static const uint16_t ud_itab__563[] = {
-  /*  0 */         634,           0,
-};
-
-static const uint16_t ud_itab__564[] = {
-  /*  0 */         635,           0,
-};
-
-static const uint16_t ud_itab__565[] = {
-  /*  0 */         642,           0,
-};
-
-static const uint16_t ud_itab__566[] = {
-  /*  0 */         643,           0,
-};
-
-static const uint16_t ud_itab__567[] = {
-  /*  0 */         650,           0,
-};
-
-static const uint16_t ud_itab__568[] = {
-  /*  0 */         657,           0,
-};
-
-static const uint16_t ud_itab__569[] = {
-  /*  0 */         664,           0,
-};
-
-static const uint16_t ud_itab__570[] = {
-  /*  0 */         671,           0,
-};
-
-static const uint16_t ud_itab__572[] = {
-  /*  0 */         704,           0,
-};
-
-static const uint16_t ud_itab__573[] = {
-  /*  0 */         705,           0,
-};
-
-static const uint16_t ud_itab__571[] = {
-  /*  0 */  GROUP(572),  GROUP(573),           0,
-};
-
-static const uint16_t ud_itab__575[] = {
-  /*  0 */         706,           0,
-};
-
-static const uint16_t ud_itab__576[] = {
-  /*  0 */         707,           0,
-};
-
-static const uint16_t ud_itab__574[] = {
-  /*  0 */  GROUP(575),  GROUP(576),           0,
-};
-
-static const uint16_t ud_itab__577[] = {
-  /*  0 */         708,           0,
-};
-
-static const uint16_t ud_itab__578[] = {
-  /*  0 */         709,         710,
-};
-
-static const uint16_t ud_itab__579[] = {
-  /*  0 */         716,         717,           0,
-};
-
-static const uint16_t ud_itab__580[] = {
-  /*  0 */         719,         720,           0,
-};
-
-static const uint16_t ud_itab__581[] = {
-  /*  0 */         737,         738,         739,         740,
-  /*  4 */         741,         742,         743,         744,
-};
-
-static const uint16_t ud_itab__582[] = {
-  /*  0 */         745,         746,         747,         748,
-  /*  4 */         749,         750,         751,         752,
-};
-
-static const uint16_t ud_itab__584[] = {
-  /*  0 */         753,           0,
-};
-
-static const uint16_t ud_itab__585[] = {
-  /*  0 */         754,           0,
-};
-
-static const uint16_t ud_itab__586[] = {
-  /*  0 */         755,           0,
-};
-
-static const uint16_t ud_itab__587[] = {
-  /*  0 */         756,           0,
-};
-
-static const uint16_t ud_itab__588[] = {
-  /*  0 */         757,           0,
-};
-
-static const uint16_t ud_itab__589[] = {
-  /*  0 */         758,           0,
-};
-
-static const uint16_t ud_itab__590[] = {
-  /*  0 */         759,           0,
-};
-
-static const uint16_t ud_itab__591[] = {
-  /*  0 */         760,           0,
-};
-
-static const uint16_t ud_itab__583[] = {
-  /*  0 */  GROUP(584),  GROUP(585),  GROUP(586),  GROUP(587),
-  /*  4 */  GROUP(588),  GROUP(589),  GROUP(590),  GROUP(591),
-};
-
-static const uint16_t ud_itab__592[] = {
-  /*  0 */         761,         762,         763,         764,
-  /*  4 */         765,         766,         767,         768,
-};
-
-static const uint16_t ud_itab__593[] = {
-  /*  0 */         780,           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__594[] = {
-  /*  0 */         789,         790,         791,
-};
-
-static const uint16_t ud_itab__595[] = {
-  /*  0 */         792,         793,         794,
-};
-
-static const uint16_t ud_itab__596[] = {
-  /*  0 */         795,           0,
-};
-
-static const uint16_t ud_itab__598[] = {
-  /*  0 */         797,         798,
-};
-
-static const uint16_t ud_itab__599[] = {
-  /*  0 */         799,         800,
-};
-
-static const uint16_t ud_itab__600[] = {
-  /*  0 */           0,         801,
-};
-
-static const uint16_t ud_itab__597[] = {
-  /*  0 */  GROUP(598),  GROUP(599),  GROUP(600),
-};
-
-static const uint16_t ud_itab__602[] = {
-  /*  0 */         802,           0,
-};
-
-static const uint16_t ud_itab__603[] = {
-  /*  0 */         803,         804,
-};
-
-static const uint16_t ud_itab__604[] = {
-  /*  0 */           0,         805,
-};
-
-static const uint16_t ud_itab__601[] = {
-  /*  0 */  GROUP(602),  GROUP(603),  GROUP(604),
-};
-
-static const uint16_t ud_itab__605[] = {
-  /*  0 */         813,         814,         815,
-};
-
-static const uint16_t ud_itab__606[] = {
-  /*  0 */         817,         818,         819,
-};
-
-static const uint16_t ud_itab__607[] = {
-  /*  0 */         823,         824,         825,
-};
-
-static const uint16_t ud_itab__608[] = {
-  /*  0 */         827,         828,         829,
-};
-
-static const uint16_t ud_itab__609[] = {
-  /*  0 */         831,         832,         833,
-};
-
-static const uint16_t ud_itab__610[] = {
-  /*  0 */         850,         851,         852,         853,
-  /*  4 */         854,         855,         856,         857,
-};
-
-static const uint16_t ud_itab__611[] = {
-  /*  0 */         858,         859,         860,         861,
-  /*  4 */         862,         863,         864,         865,
-};
-
-static const uint16_t ud_itab__612[] = {
-  /*  0 */         868,           0,
-};
-
-static const uint16_t ud_itab__613[] = {
-  /*  0 */         869,           0,
-};
-
-static const uint16_t ud_itab__614[] = {
-  /*  0 */         870,           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__615[] = {
-  /*  0 */         871,           0,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__616[] = {
-  /*  0 */         878,           0,
-};
-
-static const uint16_t ud_itab__617[] = {
-  /*  0 */         879,         880,         881,
-};
-
-static const uint16_t ud_itab__618[] = {
-  /*  0 */         882,         883,         884,         885,
-  /*  4 */         886,         887,         888,         889,
-};
-
-static const uint16_t ud_itab__619[] = {
-  /*  0 */         890,         891,         892,         893,
-  /*  4 */         894,         895,         896,         897,
-};
-
-static const uint16_t ud_itab__620[] = {
-  /*  0 */         898,         899,         900,         901,
-  /*  4 */         902,         903,         904,         905,
-};
-
-static const uint16_t ud_itab__621[] = {
-  /*  0 */         906,         907,         908,         909,
-  /*  4 */         910,         911,         912,         913,
-};
-
-static const uint16_t ud_itab__622[] = {
-  /*  0 */         914,           0,
-};
-
-static const uint16_t ud_itab__623[] = {
-  /*  0 */         915,           0,
-};
-
-static const uint16_t ud_itab__624[] = {
-  /*  0 */         916,           0,
-};
-
-static const uint16_t ud_itab__627[] = {
-  /*  0 */         918,           0,
-};
-
-static const uint16_t ud_itab__628[] = {
-  /*  0 */         919,           0,
-};
-
-static const uint16_t ud_itab__629[] = {
-  /*  0 */         920,           0,
-};
-
-static const uint16_t ud_itab__630[] = {
-  /*  0 */         921,           0,
-};
-
-static const uint16_t ud_itab__631[] = {
-  /*  0 */         922,           0,
-};
-
-static const uint16_t ud_itab__632[] = {
-  /*  0 */         923,           0,
-};
-
-static const uint16_t ud_itab__633[] = {
-  /*  0 */         924,           0,
-};
-
-static const uint16_t ud_itab__634[] = {
-  /*  0 */         925,           0,
-};
-
-static const uint16_t ud_itab__626[] = {
-  /*  0 */  GROUP(627),  GROUP(628),  GROUP(629),  GROUP(630),
-  /*  4 */  GROUP(631),  GROUP(632),  GROUP(633),  GROUP(634),
-};
-
-static const uint16_t ud_itab__636[] = {
-  /*  0 */           0,         926,
-};
-
-static const uint16_t ud_itab__637[] = {
-  /*  0 */           0,         927,
-};
-
-static const uint16_t ud_itab__638[] = {
-  /*  0 */           0,         928,
-};
-
-static const uint16_t ud_itab__639[] = {
-  /*  0 */           0,         929,
-};
-
-static const uint16_t ud_itab__640[] = {
-  /*  0 */           0,         930,
-};
-
-static const uint16_t ud_itab__641[] = {
-  /*  0 */           0,         931,
-};
-
-static const uint16_t ud_itab__642[] = {
-  /*  0 */           0,         932,
-};
-
-static const uint16_t ud_itab__643[] = {
-  /*  0 */           0,         933,
-};
-
-static const uint16_t ud_itab__644[] = {
-  /*  0 */           0,         934,
-};
-
-static const uint16_t ud_itab__645[] = {
-  /*  0 */           0,         935,
-};
-
-static const uint16_t ud_itab__646[] = {
-  /*  0 */           0,         936,
-};
-
-static const uint16_t ud_itab__647[] = {
-  /*  0 */           0,         937,
-};
-
-static const uint16_t ud_itab__648[] = {
-  /*  0 */           0,         938,
-};
-
-static const uint16_t ud_itab__649[] = {
-  /*  0 */           0,         939,
-};
-
-static const uint16_t ud_itab__650[] = {
-  /*  0 */           0,         940,
-};
-
-static const uint16_t ud_itab__651[] = {
-  /*  0 */           0,         941,
-};
-
-static const uint16_t ud_itab__652[] = {
-  /*  0 */           0,         942,
-};
-
-static const uint16_t ud_itab__653[] = {
-  /*  0 */           0,         943,
-};
-
-static const uint16_t ud_itab__654[] = {
-  /*  0 */           0,         944,
-};
-
-static const uint16_t ud_itab__655[] = {
-  /*  0 */           0,         945,
-};
-
-static const uint16_t ud_itab__656[] = {
-  /*  0 */           0,         946,
-};
-
-static const uint16_t ud_itab__657[] = {
-  /*  0 */           0,         947,
-};
-
-static const uint16_t ud_itab__658[] = {
-  /*  0 */           0,         948,
-};
-
-static const uint16_t ud_itab__659[] = {
-  /*  0 */           0,         949,
-};
-
-static const uint16_t ud_itab__660[] = {
-  /*  0 */           0,         950,
-};
-
-static const uint16_t ud_itab__661[] = {
-  /*  0 */           0,         951,
-};
-
-static const uint16_t ud_itab__662[] = {
-  /*  0 */           0,         952,
-};
-
-static const uint16_t ud_itab__663[] = {
-  /*  0 */           0,         953,
-};
-
-static const uint16_t ud_itab__664[] = {
-  /*  0 */           0,         954,
-};
-
-static const uint16_t ud_itab__665[] = {
-  /*  0 */           0,         955,
-};
-
-static const uint16_t ud_itab__666[] = {
-  /*  0 */           0,         956,
-};
-
-static const uint16_t ud_itab__667[] = {
-  /*  0 */           0,         957,
-};
-
-static const uint16_t ud_itab__668[] = {
-  /*  0 */           0,         958,
-};
-
-static const uint16_t ud_itab__669[] = {
-  /*  0 */           0,         959,
-};
-
-static const uint16_t ud_itab__670[] = {
-  /*  0 */           0,         960,
-};
-
-static const uint16_t ud_itab__671[] = {
-  /*  0 */           0,         961,
-};
-
-static const uint16_t ud_itab__672[] = {
-  /*  0 */           0,         962,
-};
-
-static const uint16_t ud_itab__673[] = {
-  /*  0 */           0,         963,
-};
-
-static const uint16_t ud_itab__674[] = {
-  /*  0 */           0,         964,
-};
-
-static const uint16_t ud_itab__675[] = {
-  /*  0 */           0,         965,
-};
-
-static const uint16_t ud_itab__676[] = {
-  /*  0 */           0,         966,
-};
-
-static const uint16_t ud_itab__677[] = {
-  /*  0 */           0,         967,
-};
-
-static const uint16_t ud_itab__678[] = {
-  /*  0 */           0,         968,
-};
-
-static const uint16_t ud_itab__679[] = {
-  /*  0 */           0,         969,
-};
-
-static const uint16_t ud_itab__680[] = {
-  /*  0 */           0,         970,
-};
-
-static const uint16_t ud_itab__681[] = {
-  /*  0 */           0,         971,
-};
-
-static const uint16_t ud_itab__682[] = {
-  /*  0 */           0,         972,
-};
-
-static const uint16_t ud_itab__683[] = {
-  /*  0 */           0,         973,
-};
-
-static const uint16_t ud_itab__684[] = {
-  /*  0 */           0,         974,
-};
-
-static const uint16_t ud_itab__685[] = {
-  /*  0 */           0,         975,
-};
-
-static const uint16_t ud_itab__686[] = {
-  /*  0 */           0,         976,
-};
-
-static const uint16_t ud_itab__687[] = {
-  /*  0 */           0,         977,
-};
-
-static const uint16_t ud_itab__688[] = {
-  /*  0 */           0,         978,
-};
-
-static const uint16_t ud_itab__689[] = {
-  /*  0 */           0,         979,
-};
-
-static const uint16_t ud_itab__690[] = {
-  /*  0 */           0,         980,
-};
-
-static const uint16_t ud_itab__691[] = {
-  /*  0 */           0,         981,
-};
-
-static const uint16_t ud_itab__692[] = {
-  /*  0 */           0,         982,
-};
-
-static const uint16_t ud_itab__693[] = {
-  /*  0 */           0,         983,
-};
-
-static const uint16_t ud_itab__694[] = {
-  /*  0 */           0,         984,
-};
-
-static const uint16_t ud_itab__695[] = {
-  /*  0 */           0,         985,
-};
-
-static const uint16_t ud_itab__696[] = {
-  /*  0 */           0,         986,
-};
-
-static const uint16_t ud_itab__697[] = {
-  /*  0 */           0,         987,
-};
-
-static const uint16_t ud_itab__698[] = {
-  /*  0 */           0,         988,
-};
-
-static const uint16_t ud_itab__699[] = {
-  /*  0 */           0,         989,
-};
-
-static const uint16_t ud_itab__635[] = {
-  /*  0 */  GROUP(636),  GROUP(637),  GROUP(638),  GROUP(639),
-  /*  4 */  GROUP(640),  GROUP(641),  GROUP(642),  GROUP(643),
-  /*  8 */  GROUP(644),  GROUP(645),  GROUP(646),  GROUP(647),
-  /*  c */  GROUP(648),  GROUP(649),  GROUP(650),  GROUP(651),
-  /* 10 */  GROUP(652),  GROUP(653),  GROUP(654),  GROUP(655),
-  /* 14 */  GROUP(656),  GROUP(657),  GROUP(658),  GROUP(659),
-  /* 18 */  GROUP(660),  GROUP(661),  GROUP(662),  GROUP(663),
-  /* 1c */  GROUP(664),  GROUP(665),  GROUP(666),  GROUP(667),
-  /* 20 */  GROUP(668),  GROUP(669),  GROUP(670),  GROUP(671),
-  /* 24 */  GROUP(672),  GROUP(673),  GROUP(674),  GROUP(675),
-  /* 28 */  GROUP(676),  GROUP(677),  GROUP(678),  GROUP(679),
-  /* 2c */  GROUP(680),  GROUP(681),  GROUP(682),  GROUP(683),
-  /* 30 */  GROUP(684),  GROUP(685),  GROUP(686),  GROUP(687),
-  /* 34 */  GROUP(688),  GROUP(689),  GROUP(690),  GROUP(691),
-  /* 38 */  GROUP(692),  GROUP(693),  GROUP(694),  GROUP(695),
-  /* 3c */  GROUP(696),  GROUP(697),  GROUP(698),  GROUP(699),
-};
-
-static const uint16_t ud_itab__625[] = {
-  /*  0 */  GROUP(626),  GROUP(635),
-};
-
-static const uint16_t ud_itab__702[] = {
-  /*  0 */         990,           0,
-};
-
-static const uint16_t ud_itab__703[] = {
-  /*  0 */         991,           0,
-};
-
-static const uint16_t ud_itab__704[] = {
-  /*  0 */         992,           0,
-};
-
-static const uint16_t ud_itab__705[] = {
-  /*  0 */         993,           0,
-};
-
-static const uint16_t ud_itab__706[] = {
-  /*  0 */         994,           0,
-};
-
-static const uint16_t ud_itab__707[] = {
-  /*  0 */         995,           0,
-};
-
-static const uint16_t ud_itab__708[] = {
-  /*  0 */         996,           0,
-};
-
-static const uint16_t ud_itab__701[] = {
-  /*  0 */  GROUP(702),           0,  GROUP(703),  GROUP(704),
-  /*  4 */  GROUP(705),  GROUP(706),  GROUP(707),  GROUP(708),
-};
-
-static const uint16_t ud_itab__710[] = {
-  /*  0 */           0,         997,
-};
-
-static const uint16_t ud_itab__711[] = {
-  /*  0 */           0,         998,
-};
-
-static const uint16_t ud_itab__712[] = {
-  /*  0 */           0,         999,
-};
-
-static const uint16_t ud_itab__713[] = {
-  /*  0 */           0,        1000,
-};
-
-static const uint16_t ud_itab__714[] = {
-  /*  0 */           0,        1001,
-};
-
-static const uint16_t ud_itab__715[] = {
-  /*  0 */           0,        1002,
-};
-
-static const uint16_t ud_itab__716[] = {
-  /*  0 */           0,        1003,
-};
-
-static const uint16_t ud_itab__717[] = {
-  /*  0 */           0,        1004,
-};
-
-static const uint16_t ud_itab__718[] = {
-  /*  0 */           0,        1005,
-};
-
-static const uint16_t ud_itab__719[] = {
-  /*  0 */           0,        1006,
-};
-
-static const uint16_t ud_itab__720[] = {
-  /*  0 */           0,        1007,
-};
-
-static const uint16_t ud_itab__721[] = {
-  /*  0 */           0,        1008,
-};
-
-static const uint16_t ud_itab__722[] = {
-  /*  0 */           0,        1009,
-};
-
-static const uint16_t ud_itab__723[] = {
-  /*  0 */           0,        1010,
-};
-
-static const uint16_t ud_itab__724[] = {
-  /*  0 */           0,        1011,
-};
-
-static const uint16_t ud_itab__725[] = {
-  /*  0 */           0,        1012,
-};
-
-static const uint16_t ud_itab__726[] = {
-  /*  0 */           0,        1013,
-};
-
-static const uint16_t ud_itab__727[] = {
-  /*  0 */           0,        1014,
-};
-
-static const uint16_t ud_itab__728[] = {
-  /*  0 */           0,        1015,
-};
-
-static const uint16_t ud_itab__729[] = {
-  /*  0 */           0,        1016,
-};
-
-static const uint16_t ud_itab__730[] = {
-  /*  0 */           0,        1017,
-};
-
-static const uint16_t ud_itab__731[] = {
-  /*  0 */           0,        1018,
-};
-
-static const uint16_t ud_itab__732[] = {
-  /*  0 */           0,        1019,
-};
-
-static const uint16_t ud_itab__733[] = {
-  /*  0 */           0,        1020,
-};
-
-static const uint16_t ud_itab__734[] = {
-  /*  0 */           0,        1021,
-};
-
-static const uint16_t ud_itab__735[] = {
-  /*  0 */           0,        1022,
-};
-
-static const uint16_t ud_itab__736[] = {
-  /*  0 */           0,        1023,
-};
-
-static const uint16_t ud_itab__737[] = {
-  /*  0 */           0,        1024,
-};
-
-static const uint16_t ud_itab__738[] = {
-  /*  0 */           0,        1025,
-};
-
-static const uint16_t ud_itab__739[] = {
-  /*  0 */           0,        1026,
-};
-
-static const uint16_t ud_itab__740[] = {
-  /*  0 */           0,        1027,
-};
-
-static const uint16_t ud_itab__741[] = {
-  /*  0 */           0,        1028,
-};
-
-static const uint16_t ud_itab__742[] = {
-  /*  0 */           0,        1029,
-};
-
-static const uint16_t ud_itab__743[] = {
-  /*  0 */           0,        1030,
-};
-
-static const uint16_t ud_itab__744[] = {
-  /*  0 */           0,        1031,
-};
-
-static const uint16_t ud_itab__745[] = {
-  /*  0 */           0,        1032,
-};
-
-static const uint16_t ud_itab__746[] = {
-  /*  0 */           0,        1033,
-};
-
-static const uint16_t ud_itab__747[] = {
-  /*  0 */           0,        1034,
-};
-
-static const uint16_t ud_itab__748[] = {
-  /*  0 */           0,        1035,
-};
-
-static const uint16_t ud_itab__749[] = {
-  /*  0 */           0,        1036,
-};
-
-static const uint16_t ud_itab__750[] = {
-  /*  0 */           0,        1037,
-};
-
-static const uint16_t ud_itab__751[] = {
-  /*  0 */           0,        1038,
-};
-
-static const uint16_t ud_itab__752[] = {
-  /*  0 */           0,        1039,
-};
-
-static const uint16_t ud_itab__753[] = {
-  /*  0 */           0,        1040,
-};
-
-static const uint16_t ud_itab__754[] = {
-  /*  0 */           0,        1041,
-};
-
-static const uint16_t ud_itab__755[] = {
-  /*  0 */           0,        1042,
-};
-
-static const uint16_t ud_itab__756[] = {
-  /*  0 */           0,        1043,
-};
-
-static const uint16_t ud_itab__757[] = {
-  /*  0 */           0,        1044,
-};
-
-static const uint16_t ud_itab__758[] = {
-  /*  0 */           0,        1045,
-};
-
-static const uint16_t ud_itab__759[] = {
-  /*  0 */           0,        1046,
-};
-
-static const uint16_t ud_itab__760[] = {
-  /*  0 */           0,        1047,
-};
-
-static const uint16_t ud_itab__761[] = {
-  /*  0 */           0,        1048,
-};
-
-static const uint16_t ud_itab__709[] = {
-  /*  0 */  GROUP(710),  GROUP(711),  GROUP(712),  GROUP(713),
-  /*  4 */  GROUP(714),  GROUP(715),  GROUP(716),  GROUP(717),
-  /*  8 */  GROUP(718),  GROUP(719),  GROUP(720),  GROUP(721),
-  /*  c */  GROUP(722),  GROUP(723),  GROUP(724),  GROUP(725),
-  /* 10 */  GROUP(726),           0,           0,           0,
-  /* 14 */           0,           0,           0,           0,
-  /* 18 */  GROUP(727),  GROUP(728),  GROUP(729),  GROUP(730),
-  /* 1c */  GROUP(731),  GROUP(732),  GROUP(733),  GROUP(734),
-  /* 20 */  GROUP(735),  GROUP(736),           0,           0,
-  /* 24 */  GROUP(737),  GROUP(738),           0,           0,
-  /* 28 */  GROUP(739),  GROUP(740),  GROUP(741),  GROUP(742),
-  /* 2c */  GROUP(743),  GROUP(744),  GROUP(745),           0,
-  /* 30 */  GROUP(746),  GROUP(747),  GROUP(748),  GROUP(749),
-  /* 34 */  GROUP(750),  GROUP(751),  GROUP(752),  GROUP(753),
-  /* 38 */  GROUP(754),  GROUP(755),  GROUP(756),  GROUP(757),
-  /* 3c */  GROUP(758),  GROUP(759),  GROUP(760),  GROUP(761),
-};
-
-static const uint16_t ud_itab__700[] = {
-  /*  0 */  GROUP(701),  GROUP(709),
-};
-
-static const uint16_t ud_itab__764[] = {
-  /*  0 */        1049,           0,
-};
-
-static const uint16_t ud_itab__765[] = {
-  /*  0 */        1050,           0,
-};
-
-static const uint16_t ud_itab__766[] = {
-  /*  0 */        1051,           0,
-};
-
-static const uint16_t ud_itab__767[] = {
-  /*  0 */        1052,           0,
-};
-
-static const uint16_t ud_itab__768[] = {
-  /*  0 */        1053,           0,
-};
-
-static const uint16_t ud_itab__769[] = {
-  /*  0 */        1054,           0,
-};
-
-static const uint16_t ud_itab__770[] = {
-  /*  0 */        1055,           0,
-};
-
-static const uint16_t ud_itab__771[] = {
-  /*  0 */        1056,           0,
-};
-
-static const uint16_t ud_itab__763[] = {
-  /*  0 */  GROUP(764),  GROUP(765),  GROUP(766),  GROUP(767),
-  /*  4 */  GROUP(768),  GROUP(769),  GROUP(770),  GROUP(771),
-};
-
-static const uint16_t ud_itab__773[] = {
-  /*  0 */           0,        1057,
-};
-
-static const uint16_t ud_itab__774[] = {
-  /*  0 */           0,        1058,
-};
-
-static const uint16_t ud_itab__775[] = {
-  /*  0 */           0,        1059,
-};
-
-static const uint16_t ud_itab__776[] = {
-  /*  0 */           0,        1060,
-};
-
-static const uint16_t ud_itab__777[] = {
-  /*  0 */           0,        1061,
-};
-
-static const uint16_t ud_itab__778[] = {
-  /*  0 */           0,        1062,
-};
-
-static const uint16_t ud_itab__779[] = {
-  /*  0 */           0,        1063,
-};
-
-static const uint16_t ud_itab__780[] = {
-  /*  0 */           0,        1064,
-};
-
-static const uint16_t ud_itab__781[] = {
-  /*  0 */           0,        1065,
-};
-
-static const uint16_t ud_itab__782[] = {
-  /*  0 */           0,        1066,
-};
-
-static const uint16_t ud_itab__783[] = {
-  /*  0 */           0,        1067,
-};
-
-static const uint16_t ud_itab__784[] = {
-  /*  0 */           0,        1068,
-};
-
-static const uint16_t ud_itab__785[] = {
-  /*  0 */           0,        1069,
-};
-
-static const uint16_t ud_itab__786[] = {
-  /*  0 */           0,        1070,
-};
-
-static const uint16_t ud_itab__787[] = {
-  /*  0 */           0,        1071,
-};
-
-static const uint16_t ud_itab__788[] = {
-  /*  0 */           0,        1072,
-};
-
-static const uint16_t ud_itab__789[] = {
-  /*  0 */           0,        1073,
-};
-
-static const uint16_t ud_itab__790[] = {
-  /*  0 */           0,        1074,
-};
-
-static const uint16_t ud_itab__791[] = {
-  /*  0 */           0,        1075,
-};
-
-static const uint16_t ud_itab__792[] = {
-  /*  0 */           0,        1076,
-};
-
-static const uint16_t ud_itab__793[] = {
-  /*  0 */           0,        1077,
-};
-
-static const uint16_t ud_itab__794[] = {
-  /*  0 */           0,        1078,
-};
-
-static const uint16_t ud_itab__795[] = {
-  /*  0 */           0,        1079,
-};
-
-static const uint16_t ud_itab__796[] = {
-  /*  0 */           0,        1080,
-};
-
-static const uint16_t ud_itab__797[] = {
-  /*  0 */           0,        1081,
-};
-
-static const uint16_t ud_itab__798[] = {
-  /*  0 */           0,        1082,
-};
-
-static const uint16_t ud_itab__799[] = {
-  /*  0 */           0,        1083,
-};
-
-static const uint16_t ud_itab__800[] = {
-  /*  0 */           0,        1084,
-};
-
-static const uint16_t ud_itab__801[] = {
-  /*  0 */           0,        1085,
-};
-
-static const uint16_t ud_itab__802[] = {
-  /*  0 */           0,        1086,
-};
-
-static const uint16_t ud_itab__803[] = {
-  /*  0 */           0,        1087,
-};
-
-static const uint16_t ud_itab__804[] = {
-  /*  0 */           0,        1088,
-};
-
-static const uint16_t ud_itab__805[] = {
-  /*  0 */           0,        1089,
-};
-
-static const uint16_t ud_itab__772[] = {
-  /*  0 */  GROUP(773),  GROUP(774),  GROUP(775),  GROUP(776),
-  /*  4 */  GROUP(777),  GROUP(778),  GROUP(779),  GROUP(780),
-  /*  8 */  GROUP(781),  GROUP(782),  GROUP(783),  GROUP(784),
-  /*  c */  GROUP(785),  GROUP(786),  GROUP(787),  GROUP(788),
-  /* 10 */  GROUP(789),  GROUP(790),  GROUP(791),  GROUP(792),
-  /* 14 */  GROUP(793),  GROUP(794),  GROUP(795),  GROUP(796),
-  /* 18 */  GROUP(797),  GROUP(798),  GROUP(799),  GROUP(800),
-  /* 1c */  GROUP(801),  GROUP(802),  GROUP(803),  GROUP(804),
-  /* 20 */           0,           0,           0,           0,
-  /* 24 */           0,           0,           0,           0,
-  /* 28 */           0,  GROUP(805),           0,           0,
-  /* 2c */           0,           0,           0,           0,
-  /* 30 */           0,           0,           0,           0,
-  /* 34 */           0,           0,           0,           0,
-  /* 38 */           0,           0,           0,           0,
-  /* 3c */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__762[] = {
-  /*  0 */  GROUP(763),  GROUP(772),
-};
-
-static const uint16_t ud_itab__808[] = {
-  /*  0 */        1090,           0,
-};
-
-static const uint16_t ud_itab__809[] = {
-  /*  0 */        1091,           0,
-};
-
-static const uint16_t ud_itab__810[] = {
-  /*  0 */        1092,           0,
-};
-
-static const uint16_t ud_itab__811[] = {
-  /*  0 */        1093,           0,
-};
-
-static const uint16_t ud_itab__812[] = {
-  /*  0 */        1094,           0,
-};
-
-static const uint16_t ud_itab__813[] = {
-  /*  0 */        1095,           0,
-};
-
-static const uint16_t ud_itab__807[] = {
-  /*  0 */  GROUP(808),  GROUP(809),  GROUP(810),  GROUP(811),
-  /*  4 */           0,  GROUP(812),           0,  GROUP(813),
-};
-
-static const uint16_t ud_itab__815[] = {
-  /*  0 */           0,        1096,
-};
-
-static const uint16_t ud_itab__816[] = {
-  /*  0 */           0,        1097,
-};
-
-static const uint16_t ud_itab__817[] = {
-  /*  0 */           0,        1098,
-};
-
-static const uint16_t ud_itab__818[] = {
-  /*  0 */           0,        1099,
-};
-
-static const uint16_t ud_itab__819[] = {
-  /*  0 */           0,        1100,
-};
-
-static const uint16_t ud_itab__820[] = {
-  /*  0 */           0,        1101,
-};
-
-static const uint16_t ud_itab__821[] = {
-  /*  0 */           0,        1102,
-};
-
-static const uint16_t ud_itab__822[] = {
-  /*  0 */           0,        1103,
-};
-
-static const uint16_t ud_itab__823[] = {
-  /*  0 */           0,        1104,
-};
-
-static const uint16_t ud_itab__824[] = {
-  /*  0 */           0,        1105,
-};
-
-static const uint16_t ud_itab__825[] = {
-  /*  0 */           0,        1106,
-};
-
-static const uint16_t ud_itab__826[] = {
-  /*  0 */           0,        1107,
-};
-
-static const uint16_t ud_itab__827[] = {
-  /*  0 */           0,        1108,
-};
-
-static const uint16_t ud_itab__828[] = {
-  /*  0 */           0,        1109,
-};
-
-static const uint16_t ud_itab__829[] = {
-  /*  0 */           0,        1110,
-};
-
-static const uint16_t ud_itab__830[] = {
-  /*  0 */           0,        1111,
-};
-
-static const uint16_t ud_itab__831[] = {
-  /*  0 */           0,        1112,
-};
-
-static const uint16_t ud_itab__832[] = {
-  /*  0 */           0,        1113,
-};
-
-static const uint16_t ud_itab__833[] = {
-  /*  0 */           0,        1114,
-};
-
-static const uint16_t ud_itab__834[] = {
-  /*  0 */           0,        1115,
-};
-
-static const uint16_t ud_itab__835[] = {
-  /*  0 */           0,        1116,
-};
-
-static const uint16_t ud_itab__836[] = {
-  /*  0 */           0,        1117,
-};
-
-static const uint16_t ud_itab__837[] = {
-  /*  0 */           0,        1118,
-};
-
-static const uint16_t ud_itab__838[] = {
-  /*  0 */           0,        1119,
-};
-
-static const uint16_t ud_itab__839[] = {
-  /*  0 */           0,        1120,
-};
-
-static const uint16_t ud_itab__840[] = {
-  /*  0 */           0,        1121,
-};
-
-static const uint16_t ud_itab__841[] = {
-  /*  0 */           0,        1122,
-};
-
-static const uint16_t ud_itab__842[] = {
-  /*  0 */           0,        1123,
-};
-
-static const uint16_t ud_itab__843[] = {
-  /*  0 */           0,        1124,
-};
-
-static const uint16_t ud_itab__844[] = {
-  /*  0 */           0,        1125,
-};
-
-static const uint16_t ud_itab__845[] = {
-  /*  0 */           0,        1126,
-};
-
-static const uint16_t ud_itab__846[] = {
-  /*  0 */           0,        1127,
-};
-
-static const uint16_t ud_itab__847[] = {
-  /*  0 */           0,        1128,
-};
-
-static const uint16_t ud_itab__848[] = {
-  /*  0 */           0,        1129,
-};
-
-static const uint16_t ud_itab__849[] = {
-  /*  0 */           0,        1130,
-};
-
-static const uint16_t ud_itab__850[] = {
-  /*  0 */           0,        1131,
-};
-
-static const uint16_t ud_itab__851[] = {
-  /*  0 */           0,        1132,
-};
-
-static const uint16_t ud_itab__852[] = {
-  /*  0 */           0,        1133,
-};
-
-static const uint16_t ud_itab__853[] = {
-  /*  0 */           0,        1134,
-};
-
-static const uint16_t ud_itab__854[] = {
-  /*  0 */           0,        1135,
-};
-
-static const uint16_t ud_itab__855[] = {
-  /*  0 */           0,        1136,
-};
-
-static const uint16_t ud_itab__856[] = {
-  /*  0 */           0,        1137,
-};
-
-static const uint16_t ud_itab__857[] = {
-  /*  0 */           0,        1138,
-};
-
-static const uint16_t ud_itab__858[] = {
-  /*  0 */           0,        1139,
-};
-
-static const uint16_t ud_itab__859[] = {
-  /*  0 */           0,        1140,
-};
-
-static const uint16_t ud_itab__860[] = {
-  /*  0 */           0,        1141,
-};
-
-static const uint16_t ud_itab__861[] = {
-  /*  0 */           0,        1142,
-};
-
-static const uint16_t ud_itab__862[] = {
-  /*  0 */           0,        1143,
-};
-
-static const uint16_t ud_itab__863[] = {
-  /*  0 */           0,        1144,
-};
-
-static const uint16_t ud_itab__864[] = {
-  /*  0 */           0,        1145,
-};
-
-static const uint16_t ud_itab__814[] = {
-  /*  0 */  GROUP(815),  GROUP(816),  GROUP(817),  GROUP(818),
-  /*  4 */  GROUP(819),  GROUP(820),  GROUP(821),  GROUP(822),
-  /*  8 */  GROUP(823),  GROUP(824),  GROUP(825),  GROUP(826),
-  /*  c */  GROUP(827),  GROUP(828),  GROUP(829),  GROUP(830),
-  /* 10 */  GROUP(831),  GROUP(832),  GROUP(833),  GROUP(834),
-  /* 14 */  GROUP(835),  GROUP(836),  GROUP(837),  GROUP(838),
-  /* 18 */  GROUP(839),  GROUP(840),  GROUP(841),  GROUP(842),
-  /* 1c */  GROUP(843),  GROUP(844),  GROUP(845),  GROUP(846),
-  /* 20 */           0,           0,  GROUP(847),  GROUP(848),
-  /* 24 */           0,           0,           0,           0,
-  /* 28 */  GROUP(849),  GROUP(850),  GROUP(851),  GROUP(852),
-  /* 2c */  GROUP(853),  GROUP(854),  GROUP(855),  GROUP(856),
-  /* 30 */  GROUP(857),  GROUP(858),  GROUP(859),  GROUP(860),
-  /* 34 */  GROUP(861),  GROUP(862),  GROUP(863),  GROUP(864),
-  /* 38 */           0,           0,           0,           0,
-  /* 3c */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__806[] = {
-  /*  0 */  GROUP(807),  GROUP(814),
-};
-
-static const uint16_t ud_itab__867[] = {
-  /*  0 */        1146,           0,
-};
-
-static const uint16_t ud_itab__868[] = {
-  /*  0 */        1147,           0,
-};
-
-static const uint16_t ud_itab__869[] = {
-  /*  0 */        1148,           0,
-};
-
-static const uint16_t ud_itab__870[] = {
-  /*  0 */        1149,           0,
-};
-
-static const uint16_t ud_itab__871[] = {
-  /*  0 */        1150,           0,
-};
-
-static const uint16_t ud_itab__872[] = {
-  /*  0 */        1151,           0,
-};
-
-static const uint16_t ud_itab__873[] = {
-  /*  0 */        1152,           0,
-};
-
-static const uint16_t ud_itab__874[] = {
-  /*  0 */        1153,           0,
-};
-
-static const uint16_t ud_itab__866[] = {
-  /*  0 */  GROUP(867),  GROUP(868),  GROUP(869),  GROUP(870),
-  /*  4 */  GROUP(871),  GROUP(872),  GROUP(873),  GROUP(874),
-};
-
-static const uint16_t ud_itab__876[] = {
-  /*  0 */           0,        1154,
-};
-
-static const uint16_t ud_itab__877[] = {
-  /*  0 */           0,        1155,
-};
-
-static const uint16_t ud_itab__878[] = {
-  /*  0 */           0,        1156,
-};
-
-static const uint16_t ud_itab__879[] = {
-  /*  0 */           0,        1157,
-};
-
-static const uint16_t ud_itab__880[] = {
-  /*  0 */           0,        1158,
-};
-
-static const uint16_t ud_itab__881[] = {
-  /*  0 */           0,        1159,
-};
-
-static const uint16_t ud_itab__882[] = {
-  /*  0 */           0,        1160,
-};
-
-static const uint16_t ud_itab__883[] = {
-  /*  0 */           0,        1161,
-};
-
-static const uint16_t ud_itab__884[] = {
-  /*  0 */           0,        1162,
-};
-
-static const uint16_t ud_itab__885[] = {
-  /*  0 */           0,        1163,
-};
-
-static const uint16_t ud_itab__886[] = {
-  /*  0 */           0,        1164,
-};
-
-static const uint16_t ud_itab__887[] = {
-  /*  0 */           0,        1165,
-};
-
-static const uint16_t ud_itab__888[] = {
-  /*  0 */           0,        1166,
-};
-
-static const uint16_t ud_itab__889[] = {
-  /*  0 */           0,        1167,
-};
-
-static const uint16_t ud_itab__890[] = {
-  /*  0 */           0,        1168,
-};
-
-static const uint16_t ud_itab__891[] = {
-  /*  0 */           0,        1169,
-};
-
-static const uint16_t ud_itab__892[] = {
-  /*  0 */           0,        1170,
-};
-
-static const uint16_t ud_itab__893[] = {
-  /*  0 */           0,        1171,
-};
-
-static const uint16_t ud_itab__894[] = {
-  /*  0 */           0,        1172,
-};
-
-static const uint16_t ud_itab__895[] = {
-  /*  0 */           0,        1173,
-};
-
-static const uint16_t ud_itab__896[] = {
-  /*  0 */           0,        1174,
-};
-
-static const uint16_t ud_itab__897[] = {
-  /*  0 */           0,        1175,
-};
-
-static const uint16_t ud_itab__898[] = {
-  /*  0 */           0,        1176,
-};
-
-static const uint16_t ud_itab__899[] = {
-  /*  0 */           0,        1177,
-};
-
-static const uint16_t ud_itab__900[] = {
-  /*  0 */           0,        1178,
-};
-
-static const uint16_t ud_itab__901[] = {
-  /*  0 */           0,        1179,
-};
-
-static const uint16_t ud_itab__902[] = {
-  /*  0 */           0,        1180,
-};
-
-static const uint16_t ud_itab__903[] = {
-  /*  0 */           0,        1181,
-};
-
-static const uint16_t ud_itab__904[] = {
-  /*  0 */           0,        1182,
-};
-
-static const uint16_t ud_itab__905[] = {
-  /*  0 */           0,        1183,
-};
-
-static const uint16_t ud_itab__906[] = {
-  /*  0 */           0,        1184,
-};
-
-static const uint16_t ud_itab__907[] = {
-  /*  0 */           0,        1185,
-};
-
-static const uint16_t ud_itab__908[] = {
-  /*  0 */           0,        1186,
-};
-
-static const uint16_t ud_itab__909[] = {
-  /*  0 */           0,        1187,
-};
-
-static const uint16_t ud_itab__910[] = {
-  /*  0 */           0,        1188,
-};
-
-static const uint16_t ud_itab__911[] = {
-  /*  0 */           0,        1189,
-};
-
-static const uint16_t ud_itab__912[] = {
-  /*  0 */           0,        1190,
-};
-
-static const uint16_t ud_itab__913[] = {
-  /*  0 */           0,        1191,
-};
-
-static const uint16_t ud_itab__914[] = {
-  /*  0 */           0,        1192,
-};
-
-static const uint16_t ud_itab__915[] = {
-  /*  0 */           0,        1193,
-};
-
-static const uint16_t ud_itab__916[] = {
-  /*  0 */           0,        1194,
-};
-
-static const uint16_t ud_itab__917[] = {
-  /*  0 */           0,        1195,
-};
-
-static const uint16_t ud_itab__918[] = {
-  /*  0 */           0,        1196,
-};
-
-static const uint16_t ud_itab__919[] = {
-  /*  0 */           0,        1197,
-};
-
-static const uint16_t ud_itab__920[] = {
-  /*  0 */           0,        1198,
-};
-
-static const uint16_t ud_itab__921[] = {
-  /*  0 */           0,        1199,
-};
-
-static const uint16_t ud_itab__922[] = {
-  /*  0 */           0,        1200,
-};
-
-static const uint16_t ud_itab__923[] = {
-  /*  0 */           0,        1201,
-};
-
-static const uint16_t ud_itab__924[] = {
-  /*  0 */           0,        1202,
-};
-
-static const uint16_t ud_itab__925[] = {
-  /*  0 */           0,        1203,
-};
-
-static const uint16_t ud_itab__926[] = {
-  /*  0 */           0,        1204,
-};
-
-static const uint16_t ud_itab__927[] = {
-  /*  0 */           0,        1205,
-};
-
-static const uint16_t ud_itab__928[] = {
-  /*  0 */           0,        1206,
-};
-
-static const uint16_t ud_itab__929[] = {
-  /*  0 */           0,        1207,
-};
-
-static const uint16_t ud_itab__930[] = {
-  /*  0 */           0,        1208,
-};
-
-static const uint16_t ud_itab__931[] = {
-  /*  0 */           0,        1209,
-};
-
-static const uint16_t ud_itab__932[] = {
-  /*  0 */           0,        1210,
-};
-
-static const uint16_t ud_itab__933[] = {
-  /*  0 */           0,        1211,
-};
-
-static const uint16_t ud_itab__934[] = {
-  /*  0 */           0,        1212,
-};
-
-static const uint16_t ud_itab__935[] = {
-  /*  0 */           0,        1213,
-};
-
-static const uint16_t ud_itab__936[] = {
-  /*  0 */           0,        1214,
-};
-
-static const uint16_t ud_itab__937[] = {
-  /*  0 */           0,        1215,
-};
-
-static const uint16_t ud_itab__938[] = {
-  /*  0 */           0,        1216,
-};
-
-static const uint16_t ud_itab__939[] = {
-  /*  0 */           0,        1217,
-};
-
-static const uint16_t ud_itab__875[] = {
-  /*  0 */  GROUP(876),  GROUP(877),  GROUP(878),  GROUP(879),
-  /*  4 */  GROUP(880),  GROUP(881),  GROUP(882),  GROUP(883),
-  /*  8 */  GROUP(884),  GROUP(885),  GROUP(886),  GROUP(887),
-  /*  c */  GROUP(888),  GROUP(889),  GROUP(890),  GROUP(891),
-  /* 10 */  GROUP(892),  GROUP(893),  GROUP(894),  GROUP(895),
-  /* 14 */  GROUP(896),  GROUP(897),  GROUP(898),  GROUP(899),
-  /* 18 */  GROUP(900),  GROUP(901),  GROUP(902),  GROUP(903),
-  /* 1c */  GROUP(904),  GROUP(905),  GROUP(906),  GROUP(907),
-  /* 20 */  GROUP(908),  GROUP(909),  GROUP(910),  GROUP(911),
-  /* 24 */  GROUP(912),  GROUP(913),  GROUP(914),  GROUP(915),
-  /* 28 */  GROUP(916),  GROUP(917),  GROUP(918),  GROUP(919),
-  /* 2c */  GROUP(920),  GROUP(921),  GROUP(922),  GROUP(923),
-  /* 30 */  GROUP(924),  GROUP(925),  GROUP(926),  GROUP(927),
-  /* 34 */  GROUP(928),  GROUP(929),  GROUP(930),  GROUP(931),
-  /* 38 */  GROUP(932),  GROUP(933),  GROUP(934),  GROUP(935),
-  /* 3c */  GROUP(936),  GROUP(937),  GROUP(938),  GROUP(939),
-};
-
-static const uint16_t ud_itab__865[] = {
-  /*  0 */  GROUP(866),  GROUP(875),
-};
-
-static const uint16_t ud_itab__942[] = {
-  /*  0 */        1218,           0,
-};
-
-static const uint16_t ud_itab__943[] = {
-  /*  0 */        1219,           0,
-};
-
-static const uint16_t ud_itab__944[] = {
-  /*  0 */        1220,           0,
-};
-
-static const uint16_t ud_itab__945[] = {
-  /*  0 */        1221,           0,
-};
-
-static const uint16_t ud_itab__946[] = {
-  /*  0 */        1222,           0,
-};
-
-static const uint16_t ud_itab__947[] = {
-  /*  0 */        1223,           0,
-};
-
-static const uint16_t ud_itab__948[] = {
-  /*  0 */        1224,           0,
-};
-
-static const uint16_t ud_itab__941[] = {
-  /*  0 */  GROUP(942),  GROUP(943),  GROUP(944),  GROUP(945),
-  /*  4 */  GROUP(946),           0,  GROUP(947),  GROUP(948),
-};
-
-static const uint16_t ud_itab__950[] = {
-  /*  0 */           0,        1225,
-};
-
-static const uint16_t ud_itab__951[] = {
-  /*  0 */           0,        1226,
-};
-
-static const uint16_t ud_itab__952[] = {
-  /*  0 */           0,        1227,
-};
-
-static const uint16_t ud_itab__953[] = {
-  /*  0 */           0,        1228,
-};
-
-static const uint16_t ud_itab__954[] = {
-  /*  0 */           0,        1229,
-};
-
-static const uint16_t ud_itab__955[] = {
-  /*  0 */           0,        1230,
-};
-
-static const uint16_t ud_itab__956[] = {
-  /*  0 */           0,        1231,
-};
-
-static const uint16_t ud_itab__957[] = {
-  /*  0 */           0,        1232,
-};
-
-static const uint16_t ud_itab__958[] = {
-  /*  0 */           0,        1233,
-};
-
-static const uint16_t ud_itab__959[] = {
-  /*  0 */           0,        1234,
-};
-
-static const uint16_t ud_itab__960[] = {
-  /*  0 */           0,        1235,
-};
-
-static const uint16_t ud_itab__961[] = {
-  /*  0 */           0,        1236,
-};
-
-static const uint16_t ud_itab__962[] = {
-  /*  0 */           0,        1237,
-};
-
-static const uint16_t ud_itab__963[] = {
-  /*  0 */           0,        1238,
-};
-
-static const uint16_t ud_itab__964[] = {
-  /*  0 */           0,        1239,
-};
-
-static const uint16_t ud_itab__965[] = {
-  /*  0 */           0,        1240,
-};
-
-static const uint16_t ud_itab__966[] = {
-  /*  0 */           0,        1241,
-};
-
-static const uint16_t ud_itab__967[] = {
-  /*  0 */           0,        1242,
-};
-
-static const uint16_t ud_itab__968[] = {
-  /*  0 */           0,        1243,
-};
-
-static const uint16_t ud_itab__969[] = {
-  /*  0 */           0,        1244,
-};
-
-static const uint16_t ud_itab__970[] = {
-  /*  0 */           0,        1245,
-};
-
-static const uint16_t ud_itab__971[] = {
-  /*  0 */           0,        1246,
-};
-
-static const uint16_t ud_itab__972[] = {
-  /*  0 */           0,        1247,
-};
-
-static const uint16_t ud_itab__973[] = {
-  /*  0 */           0,        1248,
-};
-
-static const uint16_t ud_itab__974[] = {
-  /*  0 */           0,        1249,
-};
-
-static const uint16_t ud_itab__975[] = {
-  /*  0 */           0,        1250,
-};
-
-static const uint16_t ud_itab__976[] = {
-  /*  0 */           0,        1251,
-};
-
-static const uint16_t ud_itab__977[] = {
-  /*  0 */           0,        1252,
-};
-
-static const uint16_t ud_itab__978[] = {
-  /*  0 */           0,        1253,
-};
-
-static const uint16_t ud_itab__979[] = {
-  /*  0 */           0,        1254,
-};
-
-static const uint16_t ud_itab__980[] = {
-  /*  0 */           0,        1255,
-};
-
-static const uint16_t ud_itab__981[] = {
-  /*  0 */           0,        1256,
-};
-
-static const uint16_t ud_itab__982[] = {
-  /*  0 */           0,        1257,
-};
-
-static const uint16_t ud_itab__983[] = {
-  /*  0 */           0,        1258,
-};
-
-static const uint16_t ud_itab__984[] = {
-  /*  0 */           0,        1259,
-};
-
-static const uint16_t ud_itab__985[] = {
-  /*  0 */           0,        1260,
-};
-
-static const uint16_t ud_itab__986[] = {
-  /*  0 */           0,        1261,
-};
-
-static const uint16_t ud_itab__987[] = {
-  /*  0 */           0,        1262,
-};
-
-static const uint16_t ud_itab__988[] = {
-  /*  0 */           0,        1263,
-};
-
-static const uint16_t ud_itab__989[] = {
-  /*  0 */           0,        1264,
-};
-
-static const uint16_t ud_itab__990[] = {
-  /*  0 */           0,        1265,
-};
-
-static const uint16_t ud_itab__991[] = {
-  /*  0 */           0,        1266,
-};
-
-static const uint16_t ud_itab__992[] = {
-  /*  0 */           0,        1267,
-};
-
-static const uint16_t ud_itab__993[] = {
-  /*  0 */           0,        1268,
-};
-
-static const uint16_t ud_itab__994[] = {
-  /*  0 */           0,        1269,
-};
-
-static const uint16_t ud_itab__995[] = {
-  /*  0 */           0,        1270,
-};
-
-static const uint16_t ud_itab__996[] = {
-  /*  0 */           0,        1271,
-};
-
-static const uint16_t ud_itab__997[] = {
-  /*  0 */           0,        1272,
-};
-
-static const uint16_t ud_itab__949[] = {
-  /*  0 */  GROUP(950),  GROUP(951),  GROUP(952),  GROUP(953),
-  /*  4 */  GROUP(954),  GROUP(955),  GROUP(956),  GROUP(957),
-  /*  8 */  GROUP(958),  GROUP(959),  GROUP(960),  GROUP(961),
-  /*  c */  GROUP(962),  GROUP(963),  GROUP(964),  GROUP(965),
-  /* 10 */  GROUP(966),  GROUP(967),  GROUP(968),  GROUP(969),
-  /* 14 */  GROUP(970),  GROUP(971),  GROUP(972),  GROUP(973),
-  /* 18 */  GROUP(974),  GROUP(975),  GROUP(976),  GROUP(977),
-  /* 1c */  GROUP(978),  GROUP(979),  GROUP(980),  GROUP(981),
-  /* 20 */  GROUP(982),  GROUP(983),  GROUP(984),  GROUP(985),
-  /* 24 */  GROUP(986),  GROUP(987),  GROUP(988),  GROUP(989),
-  /* 28 */  GROUP(990),  GROUP(991),  GROUP(992),  GROUP(993),
-  /* 2c */  GROUP(994),  GROUP(995),  GROUP(996),  GROUP(997),
-  /* 30 */           0,           0,           0,           0,
-  /* 34 */           0,           0,           0,           0,
-  /* 38 */           0,           0,           0,           0,
-  /* 3c */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__940[] = {
-  /*  0 */  GROUP(941),  GROUP(949),
-};
-
-static const uint16_t ud_itab__1000[] = {
-  /*  0 */        1273,           0,
-};
-
-static const uint16_t ud_itab__1001[] = {
-  /*  0 */        1274,           0,
-};
-
-static const uint16_t ud_itab__1002[] = {
-  /*  0 */        1275,           0,
-};
-
-static const uint16_t ud_itab__1003[] = {
-  /*  0 */        1276,           0,
-};
-
-static const uint16_t ud_itab__1004[] = {
-  /*  0 */        1277,           0,
-};
-
-static const uint16_t ud_itab__1005[] = {
-  /*  0 */        1278,           0,
-};
-
-static const uint16_t ud_itab__1006[] = {
-  /*  0 */        1279,           0,
-};
-
-static const uint16_t ud_itab__1007[] = {
-  /*  0 */        1280,           0,
-};
-
-static const uint16_t ud_itab__999[] = {
-  /*  0 */ GROUP(1000), GROUP(1001), GROUP(1002), GROUP(1003),
-  /*  4 */ GROUP(1004), GROUP(1005), GROUP(1006), GROUP(1007),
-};
-
-static const uint16_t ud_itab__1009[] = {
-  /*  0 */           0,        1281,
-};
-
-static const uint16_t ud_itab__1010[] = {
-  /*  0 */           0,        1282,
-};
-
-static const uint16_t ud_itab__1011[] = {
-  /*  0 */           0,        1283,
-};
-
-static const uint16_t ud_itab__1012[] = {
-  /*  0 */           0,        1284,
-};
-
-static const uint16_t ud_itab__1013[] = {
-  /*  0 */           0,        1285,
-};
-
-static const uint16_t ud_itab__1014[] = {
-  /*  0 */           0,        1286,
-};
-
-static const uint16_t ud_itab__1015[] = {
-  /*  0 */           0,        1287,
-};
-
-static const uint16_t ud_itab__1016[] = {
-  /*  0 */           0,        1288,
-};
-
-static const uint16_t ud_itab__1017[] = {
-  /*  0 */           0,        1289,
-};
-
-static const uint16_t ud_itab__1018[] = {
-  /*  0 */           0,        1290,
-};
-
-static const uint16_t ud_itab__1019[] = {
-  /*  0 */           0,        1291,
-};
-
-static const uint16_t ud_itab__1020[] = {
-  /*  0 */           0,        1292,
-};
-
-static const uint16_t ud_itab__1021[] = {
-  /*  0 */           0,        1293,
-};
-
-static const uint16_t ud_itab__1022[] = {
-  /*  0 */           0,        1294,
-};
-
-static const uint16_t ud_itab__1023[] = {
-  /*  0 */           0,        1295,
-};
-
-static const uint16_t ud_itab__1024[] = {
-  /*  0 */           0,        1296,
-};
-
-static const uint16_t ud_itab__1025[] = {
-  /*  0 */           0,        1297,
-};
-
-static const uint16_t ud_itab__1026[] = {
-  /*  0 */           0,        1298,
-};
-
-static const uint16_t ud_itab__1027[] = {
-  /*  0 */           0,        1299,
-};
-
-static const uint16_t ud_itab__1028[] = {
-  /*  0 */           0,        1300,
-};
-
-static const uint16_t ud_itab__1029[] = {
-  /*  0 */           0,        1301,
-};
-
-static const uint16_t ud_itab__1030[] = {
-  /*  0 */           0,        1302,
-};
-
-static const uint16_t ud_itab__1031[] = {
-  /*  0 */           0,        1303,
-};
-
-static const uint16_t ud_itab__1032[] = {
-  /*  0 */           0,        1304,
-};
-
-static const uint16_t ud_itab__1033[] = {
-  /*  0 */           0,        1305,
-};
-
-static const uint16_t ud_itab__1034[] = {
-  /*  0 */           0,        1306,
-};
-
-static const uint16_t ud_itab__1035[] = {
-  /*  0 */           0,        1307,
-};
-
-static const uint16_t ud_itab__1036[] = {
-  /*  0 */           0,        1308,
-};
-
-static const uint16_t ud_itab__1037[] = {
-  /*  0 */           0,        1309,
-};
-
-static const uint16_t ud_itab__1038[] = {
-  /*  0 */           0,        1310,
-};
-
-static const uint16_t ud_itab__1039[] = {
-  /*  0 */           0,        1311,
-};
-
-static const uint16_t ud_itab__1040[] = {
-  /*  0 */           0,        1312,
-};
-
-static const uint16_t ud_itab__1041[] = {
-  /*  0 */           0,        1313,
-};
-
-static const uint16_t ud_itab__1042[] = {
-  /*  0 */           0,        1314,
-};
-
-static const uint16_t ud_itab__1043[] = {
-  /*  0 */           0,        1315,
-};
-
-static const uint16_t ud_itab__1044[] = {
-  /*  0 */           0,        1316,
-};
-
-static const uint16_t ud_itab__1045[] = {
-  /*  0 */           0,        1317,
-};
-
-static const uint16_t ud_itab__1046[] = {
-  /*  0 */           0,        1318,
-};
-
-static const uint16_t ud_itab__1047[] = {
-  /*  0 */           0,        1319,
-};
-
-static const uint16_t ud_itab__1048[] = {
-  /*  0 */           0,        1320,
-};
-
-static const uint16_t ud_itab__1049[] = {
-  /*  0 */           0,        1321,
-};
-
-static const uint16_t ud_itab__1050[] = {
-  /*  0 */           0,        1322,
-};
-
-static const uint16_t ud_itab__1051[] = {
-  /*  0 */           0,        1323,
-};
-
-static const uint16_t ud_itab__1052[] = {
-  /*  0 */           0,        1324,
-};
-
-static const uint16_t ud_itab__1053[] = {
-  /*  0 */           0,        1325,
-};
-
-static const uint16_t ud_itab__1054[] = {
-  /*  0 */           0,        1326,
-};
-
-static const uint16_t ud_itab__1055[] = {
-  /*  0 */           0,        1327,
-};
-
-static const uint16_t ud_itab__1056[] = {
-  /*  0 */           0,        1328,
-};
-
-static const uint16_t ud_itab__1057[] = {
-  /*  0 */           0,        1329,
-};
-
-static const uint16_t ud_itab__1058[] = {
-  /*  0 */           0,        1330,
-};
-
-static const uint16_t ud_itab__1059[] = {
-  /*  0 */           0,        1331,
-};
-
-static const uint16_t ud_itab__1060[] = {
-  /*  0 */           0,        1332,
-};
-
-static const uint16_t ud_itab__1061[] = {
-  /*  0 */           0,        1333,
-};
-
-static const uint16_t ud_itab__1062[] = {
-  /*  0 */           0,        1334,
-};
-
-static const uint16_t ud_itab__1063[] = {
-  /*  0 */           0,        1335,
-};
-
-static const uint16_t ud_itab__1064[] = {
-  /*  0 */           0,        1336,
-};
-
-static const uint16_t ud_itab__1065[] = {
-  /*  0 */           0,        1337,
-};
-
-static const uint16_t ud_itab__1008[] = {
-  /*  0 */ GROUP(1009), GROUP(1010), GROUP(1011), GROUP(1012),
-  /*  4 */ GROUP(1013), GROUP(1014), GROUP(1015), GROUP(1016),
-  /*  8 */ GROUP(1017), GROUP(1018), GROUP(1019), GROUP(1020),
-  /*  c */ GROUP(1021), GROUP(1022), GROUP(1023), GROUP(1024),
-  /* 10 */ GROUP(1025), GROUP(1026), GROUP(1027), GROUP(1028),
-  /* 14 */ GROUP(1029), GROUP(1030), GROUP(1031), GROUP(1032),
-  /* 18 */           0, GROUP(1033),           0,           0,
-  /* 1c */           0,           0,           0,           0,
-  /* 20 */ GROUP(1034), GROUP(1035), GROUP(1036), GROUP(1037),
-  /* 24 */ GROUP(1038), GROUP(1039), GROUP(1040), GROUP(1041),
-  /* 28 */ GROUP(1042), GROUP(1043), GROUP(1044), GROUP(1045),
-  /* 2c */ GROUP(1046), GROUP(1047), GROUP(1048), GROUP(1049),
-  /* 30 */ GROUP(1050), GROUP(1051), GROUP(1052), GROUP(1053),
-  /* 34 */ GROUP(1054), GROUP(1055), GROUP(1056), GROUP(1057),
-  /* 38 */ GROUP(1058), GROUP(1059), GROUP(1060), GROUP(1061),
-  /* 3c */ GROUP(1062), GROUP(1063), GROUP(1064), GROUP(1065),
-};
-
-static const uint16_t ud_itab__998[] = {
-  /*  0 */  GROUP(999), GROUP(1008),
-};
-
-static const uint16_t ud_itab__1068[] = {
-  /*  0 */        1338,           0,
-};
-
-static const uint16_t ud_itab__1069[] = {
-  /*  0 */        1339,           0,
-};
-
-static const uint16_t ud_itab__1070[] = {
-  /*  0 */        1340,           0,
-};
-
-static const uint16_t ud_itab__1071[] = {
-  /*  0 */        1341,           0,
-};
-
-static const uint16_t ud_itab__1072[] = {
-  /*  0 */        1342,           0,
-};
-
-static const uint16_t ud_itab__1073[] = {
-  /*  0 */        1343,           0,
-};
-
-static const uint16_t ud_itab__1074[] = {
-  /*  0 */        1344,           0,
-};
-
-static const uint16_t ud_itab__1075[] = {
-  /*  0 */        1345,           0,
-};
-
-static const uint16_t ud_itab__1067[] = {
-  /*  0 */ GROUP(1068), GROUP(1069), GROUP(1070), GROUP(1071),
-  /*  4 */ GROUP(1072), GROUP(1073), GROUP(1074), GROUP(1075),
-};
-
-static const uint16_t ud_itab__1077[] = {
-  /*  0 */           0,        1346,
-};
-
-static const uint16_t ud_itab__1078[] = {
-  /*  0 */           0,        1347,
-};
-
-static const uint16_t ud_itab__1079[] = {
-  /*  0 */           0,        1348,
-};
-
-static const uint16_t ud_itab__1080[] = {
-  /*  0 */           0,        1349,
-};
-
-static const uint16_t ud_itab__1081[] = {
-  /*  0 */           0,        1350,
-};
-
-static const uint16_t ud_itab__1082[] = {
-  /*  0 */           0,        1351,
-};
-
-static const uint16_t ud_itab__1083[] = {
-  /*  0 */           0,        1352,
-};
-
-static const uint16_t ud_itab__1084[] = {
-  /*  0 */           0,        1353,
-};
-
-static const uint16_t ud_itab__1085[] = {
-  /*  0 */           0,        1354,
-};
-
-static const uint16_t ud_itab__1086[] = {
-  /*  0 */           0,        1355,
-};
-
-static const uint16_t ud_itab__1087[] = {
-  /*  0 */           0,        1356,
-};
-
-static const uint16_t ud_itab__1088[] = {
-  /*  0 */           0,        1357,
-};
-
-static const uint16_t ud_itab__1089[] = {
-  /*  0 */           0,        1358,
-};
-
-static const uint16_t ud_itab__1090[] = {
-  /*  0 */           0,        1359,
-};
-
-static const uint16_t ud_itab__1091[] = {
-  /*  0 */           0,        1360,
-};
-
-static const uint16_t ud_itab__1092[] = {
-  /*  0 */           0,        1361,
-};
-
-static const uint16_t ud_itab__1093[] = {
-  /*  0 */           0,        1362,
-};
-
-static const uint16_t ud_itab__1094[] = {
-  /*  0 */           0,        1363,
-};
-
-static const uint16_t ud_itab__1095[] = {
-  /*  0 */           0,        1364,
-};
-
-static const uint16_t ud_itab__1096[] = {
-  /*  0 */           0,        1365,
-};
-
-static const uint16_t ud_itab__1097[] = {
-  /*  0 */           0,        1366,
-};
-
-static const uint16_t ud_itab__1098[] = {
-  /*  0 */           0,        1367,
-};
-
-static const uint16_t ud_itab__1099[] = {
-  /*  0 */           0,        1368,
-};
-
-static const uint16_t ud_itab__1100[] = {
-  /*  0 */           0,        1369,
-};
-
-static const uint16_t ud_itab__1101[] = {
-  /*  0 */           0,        1370,
-};
-
-static const uint16_t ud_itab__1102[] = {
-  /*  0 */           0,        1371,
-};
-
-static const uint16_t ud_itab__1103[] = {
-  /*  0 */           0,        1372,
-};
-
-static const uint16_t ud_itab__1104[] = {
-  /*  0 */           0,        1373,
-};
-
-static const uint16_t ud_itab__1105[] = {
-  /*  0 */           0,        1374,
-};
-
-static const uint16_t ud_itab__1106[] = {
-  /*  0 */           0,        1375,
-};
-
-static const uint16_t ud_itab__1107[] = {
-  /*  0 */           0,        1376,
-};
-
-static const uint16_t ud_itab__1108[] = {
-  /*  0 */           0,        1377,
-};
-
-static const uint16_t ud_itab__1109[] = {
-  /*  0 */           0,        1378,
-};
-
-static const uint16_t ud_itab__1110[] = {
-  /*  0 */           0,        1379,
-};
-
-static const uint16_t ud_itab__1111[] = {
-  /*  0 */           0,        1380,
-};
-
-static const uint16_t ud_itab__1112[] = {
-  /*  0 */           0,        1381,
-};
-
-static const uint16_t ud_itab__1113[] = {
-  /*  0 */           0,        1382,
-};
-
-static const uint16_t ud_itab__1114[] = {
-  /*  0 */           0,        1383,
-};
-
-static const uint16_t ud_itab__1115[] = {
-  /*  0 */           0,        1384,
-};
-
-static const uint16_t ud_itab__1116[] = {
-  /*  0 */           0,        1385,
-};
-
-static const uint16_t ud_itab__1117[] = {
-  /*  0 */           0,        1386,
-};
-
-static const uint16_t ud_itab__1118[] = {
-  /*  0 */           0,        1387,
-};
-
-static const uint16_t ud_itab__1119[] = {
-  /*  0 */           0,        1388,
-};
-
-static const uint16_t ud_itab__1120[] = {
-  /*  0 */           0,        1389,
-};
-
-static const uint16_t ud_itab__1121[] = {
-  /*  0 */           0,        1390,
-};
-
-static const uint16_t ud_itab__1122[] = {
-  /*  0 */           0,        1391,
-};
-
-static const uint16_t ud_itab__1123[] = {
-  /*  0 */           0,        1392,
-};
-
-static const uint16_t ud_itab__1124[] = {
-  /*  0 */           0,        1393,
-};
-
-static const uint16_t ud_itab__1125[] = {
-  /*  0 */           0,        1394,
-};
-
-static const uint16_t ud_itab__1076[] = {
-  /*  0 */ GROUP(1077), GROUP(1078), GROUP(1079), GROUP(1080),
-  /*  4 */ GROUP(1081), GROUP(1082), GROUP(1083), GROUP(1084),
-  /*  8 */ GROUP(1085), GROUP(1086), GROUP(1087), GROUP(1088),
-  /*  c */ GROUP(1089), GROUP(1090), GROUP(1091), GROUP(1092),
-  /* 10 */ GROUP(1093), GROUP(1094), GROUP(1095), GROUP(1096),
-  /* 14 */ GROUP(1097), GROUP(1098), GROUP(1099), GROUP(1100),
-  /* 18 */ GROUP(1101), GROUP(1102), GROUP(1103), GROUP(1104),
-  /* 1c */ GROUP(1105), GROUP(1106), GROUP(1107), GROUP(1108),
-  /* 20 */ GROUP(1109),           0,           0,           0,
-  /* 24 */           0,           0,           0,           0,
-  /* 28 */ GROUP(1110), GROUP(1111), GROUP(1112), GROUP(1113),
-  /* 2c */ GROUP(1114), GROUP(1115), GROUP(1116), GROUP(1117),
-  /* 30 */ GROUP(1118), GROUP(1119), GROUP(1120), GROUP(1121),
-  /* 34 */ GROUP(1122), GROUP(1123), GROUP(1124), GROUP(1125),
-  /* 38 */           0,           0,           0,           0,
-  /* 3c */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__1066[] = {
-  /*  0 */ GROUP(1067), GROUP(1076),
-};
-
-static const uint16_t ud_itab__1126[] = {
-  /*  0 */        1398,        1399,        1400,
-};
-
-static const uint16_t ud_itab__1127[] = {
-  /*  0 */        1407,           0,
-};
-
-static const uint16_t ud_itab__1128[] = {
-  /*  0 */        1419,        1420,        1421,        1422,
-  /*  4 */        1423,        1424,        1425,        1426,
-};
-
-static const uint16_t ud_itab__1129[] = {
-  /*  0 */        1427,        1428,        1429,        1430,
-  /*  4 */        1431,        1432,        1433,        1434,
-};
-
-static const uint16_t ud_itab__1130[] = {
-  /*  0 */        1441,        1442,           0,           0,
-  /*  4 */           0,           0,           0,           0,
-};
-
-static const uint16_t ud_itab__1132[] = {
-  /*  0 */        1445,        1446,
-};
-
-static const uint16_t ud_itab__1131[] = {
-  /*  0 */        1443,        1444, GROUP(1132),        1447,
-  /*  4 */        1448,        1449,        1450,           0,
-};
 
 const uint16_t ud_itab__0[] = {
-  /*  0 */           1,           2,           3,           4,
-  /*  4 */           5,           6,    GROUP(1),    GROUP(2),
-  /*  8 */           9,          10,          11,          12,
-  /*  c */          13,          14,    GROUP(3),    GROUP(4),
-  /* 10 */         628,         629,         630,         631,
-  /* 14 */         632,         633,  GROUP(563),  GROUP(564),
-  /* 18 */         636,         637,         638,         639,
-  /* 1c */         640,         641,  GROUP(565),  GROUP(566),
-  /* 20 */         644,         645,         646,         647,
-  /* 24 */         648,         649,           0,  GROUP(567),
-  /* 28 */         651,         652,         653,         654,
-  /* 2c */         655,         656,           0,  GROUP(568),
-  /* 30 */         658,         659,         660,         661,
-  /* 34 */         662,         663,           0,  GROUP(569),
-  /* 38 */         665,         666,         667,         668,
-  /* 3c */         669,         670,           0,  GROUP(570),
-  /* 40 */         672,         673,         674,         675,
-  /* 44 */         676,         677,         678,         679,
-  /* 48 */         680,         681,         682,         683,
-  /* 4c */         684,         685,         686,         687,
-  /* 50 */         688,         689,         690,         691,
-  /* 54 */         692,         693,         694,         695,
-  /* 58 */         696,         697,         698,         699,
-  /* 5c */         700,         701,         702,         703,
-  /* 60 */  GROUP(571),  GROUP(574),  GROUP(577),  GROUP(578),
-  /* 64 */           0,           0,           0,           0,
-  /* 68 */         711,         712,         713,         714,
-  /* 6c */         715,  GROUP(579),         718,  GROUP(580),
-  /* 70 */         721,         722,         723,         724,
-  /* 74 */         725,         726,         727,         728,
-  /* 78 */         729,         730,         731,         732,
-  /* 7c */         733,         734,         735,         736,
-  /* 80 */  GROUP(581),  GROUP(582),  GROUP(583),  GROUP(592),
-  /* 84 */         769,         770,         771,         772,
-  /* 88 */         773,         774,         775,         776,
-  /* 8c */         777,         778,         779,  GROUP(593),
-  /* 90 */         781,         782,         783,         784,
-  /* 94 */         785,         786,         787,         788,
-  /* 98 */  GROUP(594),  GROUP(595),  GROUP(596),         796,
-  /* 9c */  GROUP(597),  GROUP(601),         806,         807,
-  /* a0 */         808,         809,         810,         811,
-  /* a4 */         812,  GROUP(605),         816,  GROUP(606),
-  /* a8 */         820,         821,         822,  GROUP(607),
-  /* ac */         826,  GROUP(608),         830,  GROUP(609),
+  /*  0 */          15,          16,          17,          18,
+  /*  4 */          19,          20,    GROUP(1),    GROUP(2),
+  /*  8 */         960,         961,         962,         963,
+  /*  c */         964,         965,    GROUP(3),    GROUP(4),
+  /* 10 */           5,           6,           7,           8,
+  /* 14 */           9,          10,  GROUP(284),  GROUP(285),
+  /* 18 */        1332,        1333,        1334,        1335,
+  /* 1c */        1336,        1337,  GROUP(286),  GROUP(287),
+  /* 20 */          49,          50,          51,          52,
+  /* 24 */          53,          54,     INVALID,  GROUP(288),
+  /* 28 */        1403,        1404,        1405,        1406,
+  /* 2c */        1407,        1408,     INVALID,  GROUP(289),
+  /* 30 */        1483,        1484,        1485,        1486,
+  /* 34 */        1487,        1488,     INVALID,  GROUP(290),
+  /* 38 */         100,         101,         102,         103,
+  /* 3c */         104,         105,     INVALID,  GROUP(291),
+  /* 40 */         695,         696,         697,         698,
+  /* 44 */         699,         700,         701,         702,
+  /* 48 */         175,         176,         177,         178,
+  /* 4c */         179,         180,         181,         182,
+  /* 50 */        1242,        1243,        1244,        1245,
+  /* 54 */        1246,        1247,        1248,        1249,
+  /* 58 */        1097,        1098,        1099,        1100,
+  /* 5c */        1101,        1102,        1103,        1104,
+  /* 60 */  GROUP(292),  GROUP(295),  GROUP(298),  GROUP(299),
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */        1250,         693,        1252,         694,
+  /* 6c */         705,  GROUP(300),         978,  GROUP(301),
+  /* 70 */         722,         724,         726,         728,
+  /* 74 */         730,         732,         734,         736,
+  /* 78 */         738,         740,         742,         744,
+  /* 7c */         746,         748,         750,         752,
+  /* 80 */  GROUP(302),  GROUP(303),  GROUP(304),  GROUP(313),
+  /* 84 */        1429,        1430,        1471,        1472,
+  /* 88 */         824,         825,         826,         827,
+  /* 8c */         828,         766,         829,  GROUP(314),
+  /* 90 */        1473,        1474,        1475,        1476,
+  /* 94 */        1477,        1478,        1479,        1480,
+  /* 98 */  GROUP(315),  GROUP(316),  GROUP(317),        1466,
+  /* 9c */  GROUP(318),  GROUP(322),        1306,         762,
+  /* a0 */         830,         831,         832,         833,
+  /* a4 */         918,  GROUP(326),         114,  GROUP(327),
+  /* a8 */        1431,        1432,        1398,  GROUP(328),
+  /* ac */         786,  GROUP(329),        1342,  GROUP(330),
   /* b0 */         834,         835,         836,         837,
   /* b4 */         838,         839,         840,         841,
   /* b8 */         842,         843,         844,         845,
   /* bc */         846,         847,         848,         849,
-  /* c0 */  GROUP(610),  GROUP(611),         866,         867,
-  /* c4 */  GROUP(612),  GROUP(613),  GROUP(614),  GROUP(615),
-  /* c8 */         872,         873,         874,         875,
-  /* cc */         876,         877,  GROUP(616),  GROUP(617),
-  /* d0 */  GROUP(618),  GROUP(619),  GROUP(620),  GROUP(621),
-  /* d4 */  GROUP(622),  GROUP(623),  GROUP(624),         917,
-  /* d8 */  GROUP(625),  GROUP(700),  GROUP(762),  GROUP(806),
-  /* dc */  GROUP(865),  GROUP(940),  GROUP(998), GROUP(1066),
-  /* e0 */        1395,        1396,        1397, GROUP(1126),
-  /* e4 */        1401,        1402,        1403,        1404,
-  /* e8 */        1405,        1406, GROUP(1127),        1408,
-  /* ec */        1409,        1410,        1411,        1412,
-  /* f0 */        1413,        1414,        1415,        1416,
-  /* f4 */        1417,        1418, GROUP(1128), GROUP(1129),
-  /* f8 */        1435,        1436,        1437,        1438,
-  /* fc */        1439,        1440, GROUP(1130), GROUP(1131),
+  /* c0 */  GROUP(331),  GROUP(332),        1297,        1298,
+  /* c4 */  GROUP(333),  GROUP(403),  GROUP(405),  GROUP(406),
+  /* c8 */         200,         772,        1299,        1300,
+  /* cc */         709,         710,  GROUP(407),  GROUP(408),
+  /* d0 */  GROUP(409),  GROUP(410),  GROUP(411),  GROUP(412),
+  /* d4 */  GROUP(413),  GROUP(414),  GROUP(415),        1482,
+  /* d8 */  GROUP(416),  GROUP(419),  GROUP(422),  GROUP(425),
+  /* dc */  GROUP(428),  GROUP(431),  GROUP(434),  GROUP(437),
+  /* e0 */         790,         791,         792,  GROUP(440),
+  /* e4 */         686,         687,         974,         975,
+  /* e8 */          72,         759,  GROUP(441),         761,
+  /* ec */         688,         689,         976,         977,
+  /* f0 */         785,         708,        1295,        1296,
+  /* f4 */         683,          83,  GROUP(442),  GROUP(443),
+  /* f8 */          77,        1391,          81,        1394,
+  /* fc */          78,        1392,  GROUP(444),  GROUP(445),
+};
+
+static const uint16_t ud_itab__1[] = {
+  /*  0 */        1236,     INVALID,
+};
+
+static const uint16_t ud_itab__2[] = {
+  /*  0 */        1092,     INVALID,
+};
+
+static const uint16_t ud_itab__3[] = {
+  /*  0 */        1237,     INVALID,
+};
+
+static const uint16_t ud_itab__4[] = {
+  /*  0 */    GROUP(5),    GROUP(6),         763,         793,
+  /*  4 */     INVALID,        1422,          82,        1427,
+  /*  8 */         712,        1467,     INVALID,        1440,
+  /*  c */     INVALID,   GROUP(27),         430,   GROUP(28),
+  /* 10 */   GROUP(29),   GROUP(30),   GROUP(31),   GROUP(34),
+  /* 14 */   GROUP(35),   GROUP(36),   GROUP(37),   GROUP(40),
+  /* 18 */   GROUP(41),         951,         952,         953,
+  /* 1c */         954,         955,         956,         957,
+  /* 20 */         850,         851,         852,         853,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */   GROUP(42),   GROUP(43),   GROUP(44),   GROUP(45),
+  /* 2c */   GROUP(46),   GROUP(47),   GROUP(48),   GROUP(49),
+  /* 30 */        1468,        1293,        1291,        1292,
+  /* 34 */   GROUP(50),   GROUP(52),     INVALID,        1510,
+  /* 38 */   GROUP(54),     INVALID,  GROUP(116),     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 40 */          84,          85,          86,          87,
+  /* 44 */          88,          89,          90,          91,
+  /* 48 */          92,          93,          94,          95,
+  /* 4c */          96,          97,          98,          99,
+  /* 50 */  GROUP(143),  GROUP(144),  GROUP(145),  GROUP(146),
+  /* 54 */  GROUP(147),  GROUP(148),  GROUP(149),  GROUP(150),
+  /* 58 */  GROUP(151),  GROUP(152),  GROUP(153),  GROUP(154),
+  /* 5c */  GROUP(155),  GROUP(156),  GROUP(157),  GROUP(158),
+  /* 60 */  GROUP(159),  GROUP(160),  GROUP(161),  GROUP(162),
+  /* 64 */  GROUP(163),  GROUP(164),  GROUP(165),  GROUP(166),
+  /* 68 */  GROUP(167),  GROUP(168),  GROUP(169),  GROUP(170),
+  /* 6c */  GROUP(171),  GROUP(172),  GROUP(173),  GROUP(176),
+  /* 70 */  GROUP(177),  GROUP(178),  GROUP(182),  GROUP(186),
+  /* 74 */  GROUP(191),  GROUP(192),  GROUP(193),         199,
+  /* 78 */  GROUP(194),  GROUP(195),     INVALID,     INVALID,
+  /* 7c */  GROUP(196),  GROUP(197),  GROUP(198),  GROUP(201),
+  /* 80 */         723,         725,         727,         729,
+  /* 84 */         731,         733,         735,         737,
+  /* 88 */         739,         741,         743,         745,
+  /* 8c */         747,         749,         751,         753,
+  /* 90 */        1346,        1347,        1348,        1349,
+  /* 94 */        1350,        1351,        1352,        1353,
+  /* 98 */        1354,        1355,        1356,        1357,
+  /* 9c */        1358,        1359,        1360,        1361,
+  /* a0 */        1241,        1096,         131,        1665,
+  /* a4 */        1371,        1372,  GROUP(202),  GROUP(207),
+  /* a8 */        1240,        1095,        1301,        1670,
+  /* ac */        1373,        1374,  GROUP(215),         690,
+  /* b0 */         122,         123,         771,        1668,
+  /* b4 */         768,         769,         936,         937,
+  /* b8 */  GROUP(221),     INVALID,  GROUP(222),        1666,
+  /* bc */        1654,        1655,         926,         927,
+  /* c0 */        1469,        1470,  GROUP(223),         900,
+  /* c4 */  GROUP(224),  GROUP(225),  GROUP(226),  GROUP(227),
+  /* c8 */        1656,        1657,        1658,        1659,
+  /* cc */        1660,        1661,        1662,        1663,
+  /* d0 */  GROUP(236),  GROUP(237),  GROUP(238),  GROUP(239),
+  /* d4 */  GROUP(240),  GROUP(241),  GROUP(242),  GROUP(243),
+  /* d8 */  GROUP(244),  GROUP(245),  GROUP(246),  GROUP(247),
+  /* dc */  GROUP(248),  GROUP(249),  GROUP(250),  GROUP(251),
+  /* e0 */  GROUP(252),  GROUP(253),  GROUP(254),  GROUP(255),
+  /* e4 */  GROUP(256),  GROUP(257),  GROUP(258),  GROUP(259),
+  /* e8 */  GROUP(260),  GROUP(261),  GROUP(262),  GROUP(263),
+  /* ec */  GROUP(264),  GROUP(265),  GROUP(266),  GROUP(267),
+  /* f0 */  GROUP(268),  GROUP(269),  GROUP(270),  GROUP(271),
+  /* f4 */  GROUP(272),  GROUP(273),  GROUP(274),  GROUP(275),
+  /* f8 */  GROUP(277),  GROUP(278),  GROUP(279),  GROUP(280),
+  /* fc */  GROUP(281),  GROUP(282),  GROUP(283),     INVALID,
+};
+
+static const uint16_t ud_itab__5[] = {
+  /*  0 */        1380,        1402,         782,         794,
+  /*  4 */        1449,        1450,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__6[] = {
+  /*  0 */    GROUP(7),    GROUP(8),
+};
+
+static const uint16_t ud_itab__7[] = {
+  /*  0 */        1370,        1379,         781,         770,
+  /*  4 */        1381,     INVALID,         783,         715,
+};
+
+static const uint16_t ud_itab__8[] = {
+  /*  0 */    GROUP(9),   GROUP(14),   GROUP(15),   GROUP(16),
+  /*  4 */        1382,     INVALID,         784,   GROUP(25),
+};
+
+static const uint16_t ud_itab__9[] = {
+  /*  0 */     INVALID,   GROUP(10),   GROUP(11),   GROUP(12),
+  /*  4 */   GROUP(13),     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__10[] = {
+  /*  0 */     INVALID,        1451,     INVALID,
+};
+
+static const uint16_t ud_itab__11[] = {
+  /*  0 */     INVALID,        1457,     INVALID,
+};
+
+static const uint16_t ud_itab__12[] = {
+  /*  0 */     INVALID,        1458,     INVALID,
+};
+
+static const uint16_t ud_itab__13[] = {
+  /*  0 */     INVALID,        1459,     INVALID,
+};
+
+static const uint16_t ud_itab__14[] = {
+  /*  0 */         820,         948,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__15[] = {
+  /*  0 */        1481,        1504,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__16[] = {
+  /*  0 */   GROUP(17),   GROUP(18),   GROUP(19),   GROUP(20),
+  /*  4 */   GROUP(21),   GROUP(22),   GROUP(23),   GROUP(24),
+};
+
+static const uint16_t ud_itab__17[] = {
+  /*  0 */        1462,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__18[] = {
+  /*  0 */        1463,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__19[] = {
+  /*  0 */        1464,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__20[] = {
+  /*  0 */        1465,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__21[] = {
+  /*  0 */        1393,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__22[] = {
+  /*  0 */          80,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__23[] = {
+  /*  0 */        1395,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__24[] = {
+  /*  0 */         716,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__25[] = {
+  /*  0 */        1421,   GROUP(26),     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__26[] = {
+  /*  0 */        1294,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__27[] = {
+  /*  0 */        1115,        1116,        1117,        1118,
+  /*  4 */        1119,        1120,        1121,        1122,
+};
+
+static const uint16_t ud_itab__28[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  c */        1212,        1213,     INVALID,     INVALID,
+  /* 10 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 14 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 1c */        1214,        1215,     INVALID,     INVALID,
+  /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 2c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 40 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 50 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 58 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 5c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 70 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,        1216,     INVALID,
+  /* 8c */     INVALID,     INVALID,        1217,     INVALID,
+  /* 90 */        1218,     INVALID,     INVALID,     INVALID,
+  /* 94 */        1219,     INVALID,        1220,        1221,
+  /* 98 */     INVALID,     INVALID,        1222,     INVALID,
+  /* 9c */     INVALID,     INVALID,        1223,     INVALID,
+  /* a0 */        1224,     INVALID,     INVALID,     INVALID,
+  /* a4 */        1225,     INVALID,        1226,        1227,
+  /* a8 */     INVALID,     INVALID,        1228,     INVALID,
+  /* ac */     INVALID,     INVALID,        1229,     INVALID,
+  /* b0 */        1230,     INVALID,     INVALID,     INVALID,
+  /* b4 */        1231,     INVALID,        1232,        1233,
+  /* b8 */     INVALID,     INVALID,     INVALID,        1234,
+  /* bc */     INVALID,     INVALID,     INVALID,        1235,
+  /* c0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* dc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__29[] = {
+  /*  0 */         932,         921,         924,         928,
+};
+
+static const uint16_t ud_itab__30[] = {
+  /*  0 */         934,         922,         925,         930,
+};
+
+static const uint16_t ud_itab__31[] = {
+  /*  0 */   GROUP(32),   GROUP(33),
+};
+
+static const uint16_t ud_itab__32[] = {
+  /*  0 */         888,        1558,        1566,         884,
+};
+
+static const uint16_t ud_itab__33[] = {
+  /*  0 */         892,        1556,        1564,     INVALID,
+};
+
+static const uint16_t ud_itab__34[] = {
+  /*  0 */         890,     INVALID,     INVALID,         886,
+};
+
+static const uint16_t ud_itab__35[] = {
+  /*  0 */        1445,     INVALID,     INVALID,        1447,
+};
+
+static const uint16_t ud_itab__36[] = {
+  /*  0 */        1443,     INVALID,     INVALID,        1441,
+};
+
+static const uint16_t ud_itab__37[] = {
+  /*  0 */   GROUP(38),   GROUP(39),
+};
+
+static const uint16_t ud_itab__38[] = {
+  /*  0 */         878,     INVALID,        1562,         874,
+};
+
+static const uint16_t ud_itab__39[] = {
+  /*  0 */         882,     INVALID,        1560,     INVALID,
+};
+
+static const uint16_t ud_itab__40[] = {
+  /*  0 */         880,     INVALID,     INVALID,         876,
+};
+
+static const uint16_t ud_itab__41[] = {
+  /*  0 */        1123,        1124,        1125,        1126,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__42[] = {
+  /*  0 */         858,     INVALID,     INVALID,         854,
+};
+
+static const uint16_t ud_itab__43[] = {
+  /*  0 */         860,     INVALID,     INVALID,         856,
+};
+
+static const uint16_t ud_itab__44[] = {
+  /*  0 */         141,         152,         154,         142,
+};
+
+static const uint16_t ud_itab__45[] = {
+  /*  0 */         903,     INVALID,     INVALID,         901,
+};
+
+static const uint16_t ud_itab__46[] = {
+  /*  0 */         165,         166,         168,         162,
+};
+
+static const uint16_t ud_itab__47[] = {
+  /*  0 */         147,         148,         158,         138,
+};
+
+static const uint16_t ud_itab__48[] = {
+  /*  0 */        1438,     INVALID,     INVALID,        1436,
+};
+
+static const uint16_t ud_itab__49[] = {
+  /*  0 */         129,     INVALID,     INVALID,         127,
+};
+
+static const uint16_t ud_itab__50[] = {
+  /*  0 */        1423,   GROUP(51),
+};
+
+static const uint16_t ud_itab__51[] = {
+  /*  0 */     INVALID,        1424,     INVALID,
+};
+
+static const uint16_t ud_itab__52[] = {
+  /*  0 */        1425,   GROUP(53),
+};
+
+static const uint16_t ud_itab__53[] = {
+  /*  0 */     INVALID,        1426,     INVALID,
+};
+
+static const uint16_t ud_itab__54[] = {
+  /*  0 */   GROUP(67),   GROUP(68),   GROUP(63),   GROUP(64),
+  /*  4 */   GROUP(65),   GROUP(66),   GROUP(86),   GROUP(90),
+  /*  8 */   GROUP(69),   GROUP(70),   GROUP(71),   GROUP(72),
+  /*  c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 10 */   GROUP(73),     INVALID,     INVALID,     INVALID,
+  /* 14 */   GROUP(75),   GROUP(76),     INVALID,   GROUP(77),
+  /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 1c */   GROUP(78),   GROUP(79),   GROUP(80),     INVALID,
+  /* 20 */   GROUP(81),   GROUP(82),   GROUP(83),   GROUP(84),
+  /* 24 */   GROUP(85),  GROUP(108),     INVALID,     INVALID,
+  /* 28 */   GROUP(87),   GROUP(88),   GROUP(89),   GROUP(74),
+  /* 2c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 30 */   GROUP(91),   GROUP(92),   GROUP(93),   GROUP(94),
+  /* 34 */   GROUP(95),   GROUP(96),     INVALID,   GROUP(97),
+  /* 38 */   GROUP(98),   GROUP(99),  GROUP(100),  GROUP(101),
+  /* 3c */  GROUP(102),  GROUP(103),  GROUP(104),  GROUP(105),
+  /* 40 */  GROUP(106),  GROUP(107),     INVALID,     INVALID,
+  /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 50 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 58 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 5c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 70 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 80 */   GROUP(55),   GROUP(59),     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 8c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 90 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 94 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 98 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 9c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ac */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d8 */     INVALID,     INVALID,     INVALID,  GROUP(109),
+  /* dc */  GROUP(110),  GROUP(111),  GROUP(112),  GROUP(113),
+  /* e0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f0 */  GROUP(114),  GROUP(115),     INVALID,     INVALID,
+  /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__55[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,   GROUP(56),
+};
+
+static const uint16_t ud_itab__56[] = {
+  /*  0 */   GROUP(57),   GROUP(58),
+};
+
+static const uint16_t ud_itab__57[] = {
+  /*  0 */     INVALID,         713,     INVALID,
+};
+
+static const uint16_t ud_itab__58[] = {
+  /*  0 */     INVALID,         714,     INVALID,
+};
+
+static const uint16_t ud_itab__59[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,   GROUP(60),
+};
+
+static const uint16_t ud_itab__60[] = {
+  /*  0 */   GROUP(61),   GROUP(62),
+};
+
+static const uint16_t ud_itab__61[] = {
+  /*  0 */     INVALID,         717,     INVALID,
+};
+
+static const uint16_t ud_itab__62[] = {
+  /*  0 */     INVALID,         718,     INVALID,
+};
+
+static const uint16_t ud_itab__63[] = {
+  /*  0 */        1583,     INVALID,     INVALID,        1584,
+};
+
+static const uint16_t ud_itab__64[] = {
+  /*  0 */        1586,     INVALID,     INVALID,        1587,
+};
+
+static const uint16_t ud_itab__65[] = {
+  /*  0 */        1589,     INVALID,     INVALID,        1590,
+};
+
+static const uint16_t ud_itab__66[] = {
+  /*  0 */        1592,     INVALID,     INVALID,        1593,
+};
+
+static const uint16_t ud_itab__67[] = {
+  /*  0 */        1577,     INVALID,     INVALID,        1578,
+};
+
+static const uint16_t ud_itab__68[] = {
+  /*  0 */        1580,     INVALID,     INVALID,        1581,
+};
+
+static const uint16_t ud_itab__69[] = {
+  /*  0 */        1601,     INVALID,     INVALID,        1602,
+};
+
+static const uint16_t ud_itab__70[] = {
+  /*  0 */        1607,     INVALID,     INVALID,        1608,
+};
+
+static const uint16_t ud_itab__71[] = {
+  /*  0 */        1604,     INVALID,     INVALID,        1605,
+};
+
+static const uint16_t ud_itab__72[] = {
+  /*  0 */        1610,     INVALID,     INVALID,        1611,
+};
+
+static const uint16_t ud_itab__73[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1616,
+};
+
+static const uint16_t ud_itab__74[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1678,
+};
+
+static const uint16_t ud_itab__75[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1652,
+};
+
+static const uint16_t ud_itab__76[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1651,
+};
+
+static const uint16_t ud_itab__77[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1706,
+};
+
+static const uint16_t ud_itab__78[] = {
+  /*  0 */        1568,     INVALID,     INVALID,        1569,
+};
+
+static const uint16_t ud_itab__79[] = {
+  /*  0 */        1571,     INVALID,     INVALID,        1572,
+};
+
+static const uint16_t ud_itab__80[] = {
+  /*  0 */        1574,     INVALID,     INVALID,        1575,
+};
+
+static const uint16_t ud_itab__81[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1680,
+};
+
+static const uint16_t ud_itab__82[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1682,
+};
+
+static const uint16_t ud_itab__83[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1684,
+};
+
+static const uint16_t ud_itab__84[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1686,
+};
+
+static const uint16_t ud_itab__85[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1688,
+};
+
+static const uint16_t ud_itab__86[] = {
+  /*  0 */        1595,     INVALID,     INVALID,        1596,
+};
+
+static const uint16_t ud_itab__87[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1617,
+};
+
+static const uint16_t ud_itab__88[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1703,
+};
+
+static const uint16_t ud_itab__89[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1676,
+};
+
+static const uint16_t ud_itab__90[] = {
+  /*  0 */        1598,     INVALID,     INVALID,        1599,
+};
+
+static const uint16_t ud_itab__91[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1691,
+};
+
+static const uint16_t ud_itab__92[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1693,
+};
+
+static const uint16_t ud_itab__93[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1695,
+};
+
+static const uint16_t ud_itab__94[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1697,
+};
+
+static const uint16_t ud_itab__95[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1699,
+};
+
+static const uint16_t ud_itab__96[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1701,
+};
+
+static const uint16_t ud_itab__97[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1712,
+};
+
+static const uint16_t ud_itab__98[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1619,
+};
+
+static const uint16_t ud_itab__99[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1621,
+};
+
+static const uint16_t ud_itab__100[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1623,
+};
+
+static const uint16_t ud_itab__101[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1625,
+};
+
+static const uint16_t ud_itab__102[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1627,
+};
+
+static const uint16_t ud_itab__103[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1629,
+};
+
+static const uint16_t ud_itab__104[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1633,
+};
+
+static const uint16_t ud_itab__105[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1631,
+};
+
+static const uint16_t ud_itab__106[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1635,
+};
+
+static const uint16_t ud_itab__107[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1637,
+};
+
+static const uint16_t ud_itab__108[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1690,
+};
+
+static const uint16_t ud_itab__109[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,          45,
+};
+
+static const uint16_t ud_itab__110[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,          41,
+};
+
+static const uint16_t ud_itab__111[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,          43,
+};
+
+static const uint16_t ud_itab__112[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,          37,
+};
+
+static const uint16_t ud_itab__113[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,          39,
+};
+
+static const uint16_t ud_itab__114[] = {
+  /*  0 */        1718,        1720,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__115[] = {
+  /*  0 */        1719,        1721,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__116[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  8 */  GROUP(117),  GROUP(118),  GROUP(119),  GROUP(120),
+  /*  c */  GROUP(121),  GROUP(122),  GROUP(123),  GROUP(124),
+  /* 10 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 14 */  GROUP(125),  GROUP(126),  GROUP(127),  GROUP(129),
+  /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 20 */  GROUP(130),  GROUP(131),  GROUP(132),     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 2c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 40 */  GROUP(134),  GROUP(135),  GROUP(136),     INVALID,
+  /* 44 */  GROUP(137),     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 50 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 58 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 5c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 60 */  GROUP(139),  GROUP(140),  GROUP(141),  GROUP(142),
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 70 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 8c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 90 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 94 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 98 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 9c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ac */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* dc */     INVALID,     INVALID,     INVALID,  GROUP(138),
+  /* e0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__117[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1639,
+};
+
+static const uint16_t ud_itab__118[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1641,
+};
+
+static const uint16_t ud_itab__119[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1643,
+};
+
+static const uint16_t ud_itab__120[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1645,
+};
+
+static const uint16_t ud_itab__121[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1649,
+};
+
+static const uint16_t ud_itab__122[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1647,
+};
+
+static const uint16_t ud_itab__123[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1672,
+};
+
+static const uint16_t ud_itab__124[] = {
+  /*  0 */        1613,     INVALID,     INVALID,        1614,
+};
+
+static const uint16_t ud_itab__125[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1041,
+};
+
+static const uint16_t ud_itab__126[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1052,
+};
+
+static const uint16_t ud_itab__127[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,  GROUP(128),
+};
+
+static const uint16_t ud_itab__128[] = {
+  /*  0 */        1043,        1045,        1047,
+};
+
+static const uint16_t ud_itab__129[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,         201,
+};
+
+static const uint16_t ud_itab__130[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1054,
+};
+
+static const uint16_t ud_itab__131[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1552,
+};
+
+static const uint16_t ud_itab__132[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,  GROUP(133),
+};
+
+static const uint16_t ud_itab__133[] = {
+  /*  0 */        1058,        1059,        1060,
+};
+
+static const uint16_t ud_itab__134[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,         197,
+};
+
+static const uint16_t ud_itab__135[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,         195,
+};
+
+static const uint16_t ud_itab__136[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1674,
+};
+
+static const uint16_t ud_itab__137[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1508,
+};
+
+static const uint16_t ud_itab__138[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,          47,
+};
+
+static const uint16_t ud_itab__139[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1710,
+};
+
+static const uint16_t ud_itab__140[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1708,
+};
+
+static const uint16_t ud_itab__141[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1716,
+};
+
+static const uint16_t ud_itab__142[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1714,
+};
+
+static const uint16_t ud_itab__143[] = {
+  /*  0 */         896,     INVALID,     INVALID,         894,
+};
+
+static const uint16_t ud_itab__144[] = {
+  /*  0 */        1383,        1387,        1389,        1385,
+};
+
+static const uint16_t ud_itab__145[] = {
+  /*  0 */        1302,     INVALID,        1304,     INVALID,
+};
+
+static const uint16_t ud_itab__146[] = {
+  /*  0 */        1287,     INVALID,        1289,     INVALID,
+};
+
+static const uint16_t ud_itab__147[] = {
+  /*  0 */          61,     INVALID,     INVALID,          59,
+};
+
+static const uint16_t ud_itab__148[] = {
+  /*  0 */          65,     INVALID,     INVALID,          63,
+};
+
+static const uint16_t ud_itab__149[] = {
+  /*  0 */         972,     INVALID,     INVALID,         970,
+};
+
+static const uint16_t ud_itab__150[] = {
+  /*  0 */        1495,     INVALID,     INVALID,        1493,
+};
+
+static const uint16_t ud_itab__151[] = {
+  /*  0 */          27,          29,          31,          25,
+};
+
+static const uint16_t ud_itab__152[] = {
+  /*  0 */         942,         944,         946,         940,
+};
+
+static const uint16_t ud_itab__153[] = {
+  /*  0 */         145,         150,         156,         139,
+};
+
+static const uint16_t ud_itab__154[] = {
+  /*  0 */         134,     INVALID,         163,         143,
+};
+
+static const uint16_t ud_itab__155[] = {
+  /*  0 */        1415,        1417,        1419,        1413,
+};
+
+static const uint16_t ud_itab__156[] = {
+  /*  0 */         814,         816,         818,         812,
+};
+
+static const uint16_t ud_itab__157[] = {
+  /*  0 */         189,         191,         193,         187,
+};
+
+static const uint16_t ud_itab__158[] = {
+  /*  0 */         798,         800,         802,         796,
+};
+
+static const uint16_t ud_itab__159[] = {
+  /*  0 */        1205,     INVALID,     INVALID,        1203,
+};
+
+static const uint16_t ud_itab__160[] = {
+  /*  0 */        1208,     INVALID,     INVALID,        1206,
+};
+
+static const uint16_t ud_itab__161[] = {
+  /*  0 */        1211,     INVALID,     INVALID,        1209,
+};
+
+static const uint16_t ud_itab__162[] = {
+  /*  0 */         983,     INVALID,     INVALID,         981,
+};
+
+static const uint16_t ud_itab__163[] = {
+  /*  0 */        1034,     INVALID,     INVALID,        1032,
+};
+
+static const uint16_t ud_itab__164[] = {
+  /*  0 */        1037,     INVALID,     INVALID,        1035,
+};
+
+static const uint16_t ud_itab__165[] = {
+  /*  0 */        1040,     INVALID,     INVALID,        1038,
+};
+
+static const uint16_t ud_itab__166[] = {
+  /*  0 */         989,     INVALID,     INVALID,         987,
+};
+
+static const uint16_t ud_itab__167[] = {
+  /*  0 */        1196,     INVALID,     INVALID,        1194,
+};
+
+static const uint16_t ud_itab__168[] = {
+  /*  0 */        1199,     INVALID,     INVALID,        1197,
+};
+
+static const uint16_t ud_itab__169[] = {
+  /*  0 */        1202,     INVALID,     INVALID,        1200,
+};
+
+static const uint16_t ud_itab__170[] = {
+  /*  0 */         986,     INVALID,     INVALID,         984,
+};
+
+static const uint16_t ud_itab__171[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1542,
+};
+
+static const uint16_t ud_itab__172[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1540,
+};
+
+static const uint16_t ud_itab__173[] = {
+  /*  0 */  GROUP(174),     INVALID,     INVALID,  GROUP(175),
+};
+
+static const uint16_t ud_itab__174[] = {
+  /*  0 */         862,         863,         906,
+};
+
+static const uint16_t ud_itab__175[] = {
+  /*  0 */         864,         866,         907,
+};
+
+static const uint16_t ud_itab__176[] = {
+  /*  0 */         916,     INVALID,        1518,        1513,
+};
+
+static const uint16_t ud_itab__177[] = {
+  /*  0 */        1130,        1532,        1530,        1534,
+};
+
+static const uint16_t ud_itab__178[] = {
+  /*  0 */     INVALID,     INVALID,  GROUP(179),     INVALID,
+  /*  4 */  GROUP(180),     INVALID,  GROUP(181),     INVALID,
+};
+
+static const uint16_t ud_itab__179[] = {
+  /*  0 */        1155,     INVALID,     INVALID,        1159,
+};
+
+static const uint16_t ud_itab__180[] = {
+  /*  0 */        1148,     INVALID,     INVALID,        1146,
+};
+
+static const uint16_t ud_itab__181[] = {
+  /*  0 */        1134,     INVALID,     INVALID,        1133,
+};
+
+static const uint16_t ud_itab__182[] = {
+  /*  0 */     INVALID,     INVALID,  GROUP(183),     INVALID,
+  /*  4 */  GROUP(184),     INVALID,  GROUP(185),     INVALID,
+};
+
+static const uint16_t ud_itab__183[] = {
+  /*  0 */        1161,     INVALID,     INVALID,        1165,
+};
+
+static const uint16_t ud_itab__184[] = {
+  /*  0 */        1149,     INVALID,     INVALID,        1153,
+};
+
+static const uint16_t ud_itab__185[] = {
+  /*  0 */        1138,     INVALID,     INVALID,        1137,
+};
+
+static const uint16_t ud_itab__186[] = {
+  /*  0 */     INVALID,     INVALID,  GROUP(187),  GROUP(188),
+  /*  4 */     INVALID,     INVALID,  GROUP(189),  GROUP(190),
+};
+
+static const uint16_t ud_itab__187[] = {
+  /*  0 */        1167,     INVALID,     INVALID,        1171,
+};
+
+static const uint16_t ud_itab__188[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1538,
+};
+
+static const uint16_t ud_itab__189[] = {
+  /*  0 */        1142,     INVALID,     INVALID,        1141,
+};
+
+static const uint16_t ud_itab__190[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1536,
+};
+
+static const uint16_t ud_itab__191[] = {
+  /*  0 */        1023,     INVALID,     INVALID,        1024,
+};
+
+static const uint16_t ud_itab__192[] = {
+  /*  0 */        1026,     INVALID,     INVALID,        1027,
+};
+
+static const uint16_t ud_itab__193[] = {
+  /*  0 */        1029,     INVALID,     INVALID,        1030,
+};
+
+static const uint16_t ud_itab__194[] = {
+  /*  0 */     INVALID,        1460,     INVALID,
+};
+
+static const uint16_t ud_itab__195[] = {
+  /*  0 */     INVALID,        1461,     INVALID,
+};
+
+static const uint16_t ud_itab__196[] = {
+  /*  0 */     INVALID,        1546,     INVALID,        1544,
+};
+
+static const uint16_t ud_itab__197[] = {
+  /*  0 */     INVALID,        1550,     INVALID,        1548,
+};
+
+static const uint16_t ud_itab__198[] = {
+  /*  0 */  GROUP(199),     INVALID,         912,  GROUP(200),
+};
+
+static const uint16_t ud_itab__199[] = {
+  /*  0 */         868,         869,         909,
+};
+
+static const uint16_t ud_itab__200[] = {
+  /*  0 */         870,         872,         910,
+};
+
+static const uint16_t ud_itab__201[] = {
+  /*  0 */         917,     INVALID,        1520,        1511,
+};
+
+static const uint16_t ud_itab__202[] = {
+  /*  0 */     INVALID,  GROUP(203),
+};
+
+static const uint16_t ud_itab__203[] = {
+  /*  0 */  GROUP(204),  GROUP(205),  GROUP(206),     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__204[] = {
+  /*  0 */         821,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__205[] = {
+  /*  0 */        1505,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__206[] = {
+  /*  0 */        1506,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__207[] = {
+  /*  0 */     INVALID,  GROUP(208),
+};
+
+static const uint16_t ud_itab__208[] = {
+  /*  0 */  GROUP(209),  GROUP(210),  GROUP(211),  GROUP(212),
+  /*  4 */  GROUP(213),  GROUP(214),     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__209[] = {
+  /*  0 */        1507,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__210[] = {
+  /*  0 */        1497,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__211[] = {
+  /*  0 */        1498,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__212[] = {
+  /*  0 */        1499,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__213[] = {
+  /*  0 */        1500,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__214[] = {
+  /*  0 */        1501,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__215[] = {
+  /*  0 */  GROUP(216),  GROUP(217),
+};
+
+static const uint16_t ud_itab__216[] = {
+  /*  0 */         679,         678,         764,        1396,
+  /*  4 */        1503,        1502,     INVALID,          79,
+};
+
+static const uint16_t ud_itab__217[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,  GROUP(218),  GROUP(219),  GROUP(220),
+};
+
+static const uint16_t ud_itab__218[] = {
+  /*  0 */         773,         774,         775,         776,
+  /*  4 */         777,         778,         779,         780,
+};
+
+static const uint16_t ud_itab__219[] = {
+  /*  0 */         804,         805,         806,         807,
+  /*  4 */         808,         809,         810,         811,
+};
+
+static const uint16_t ud_itab__220[] = {
+  /*  0 */        1362,        1363,        1364,        1365,
+  /*  4 */        1366,        1367,        1368,        1369,
+};
+
+static const uint16_t ud_itab__221[] = {
+  /*  0 */     INVALID,     INVALID,        1705,     INVALID,
+};
+
+static const uint16_t ud_itab__222[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */        1664,        1671,        1669,        1667,
+};
+
+static const uint16_t ud_itab__223[] = {
+  /*  0 */         112,         117,         120,         110,
+};
+
+static const uint16_t ud_itab__224[] = {
+  /*  0 */        1055,     INVALID,     INVALID,        1056,
+};
+
+static const uint16_t ud_itab__225[] = {
+  /*  0 */        1051,     INVALID,     INVALID,        1049,
+};
+
+static const uint16_t ud_itab__226[] = {
+  /*  0 */        1377,     INVALID,     INVALID,        1375,
+};
+
+static const uint16_t ud_itab__227[] = {
+  /*  0 */  GROUP(228),  GROUP(235),
+};
+
+static const uint16_t ud_itab__228[] = {
+  /*  0 */     INVALID,  GROUP(229),     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,  GROUP(230),  GROUP(234),
+};
+
+static const uint16_t ud_itab__229[] = {
+  /*  0 */         124,         125,         126,
+};
+
+static const uint16_t ud_itab__230[] = {
+  /*  0 */  GROUP(231),     INVALID,  GROUP(232),  GROUP(233),
+};
+
+static const uint16_t ud_itab__231[] = {
+  /*  0 */     INVALID,        1455,     INVALID,
+};
+
+static const uint16_t ud_itab__232[] = {
+  /*  0 */     INVALID,        1454,     INVALID,
+};
+
+static const uint16_t ud_itab__233[] = {
+  /*  0 */     INVALID,        1453,     INVALID,
+};
+
+static const uint16_t ud_itab__234[] = {
+  /*  0 */     INVALID,        1456,     INVALID,
+};
+
+static const uint16_t ud_itab__235[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,        1452,     INVALID,
+};
+
+static const uint16_t ud_itab__236[] = {
+  /*  0 */     INVALID,          35,     INVALID,          33,
+};
+
+static const uint16_t ud_itab__237[] = {
+  /*  0 */        1156,     INVALID,     INVALID,        1157,
+};
+
+static const uint16_t ud_itab__238[] = {
+  /*  0 */        1162,     INVALID,     INVALID,        1163,
+};
+
+static const uint16_t ud_itab__239[] = {
+  /*  0 */        1168,     INVALID,     INVALID,        1169,
+};
+
+static const uint16_t ud_itab__240[] = {
+  /*  0 */        1522,     INVALID,     INVALID,        1523,
+};
+
+static const uint16_t ud_itab__241[] = {
+  /*  0 */        1089,     INVALID,     INVALID,        1090,
+};
+
+static const uint16_t ud_itab__242[] = {
+  /*  0 */     INVALID,        1517,        1521,         914,
+};
+
+static const uint16_t ud_itab__243[] = {
+  /*  0 */        1082,     INVALID,     INVALID,        1080,
+};
+
+static const uint16_t ud_itab__244[] = {
+  /*  0 */        1188,     INVALID,     INVALID,        1189,
+};
+
+static const uint16_t ud_itab__245[] = {
+  /*  0 */        1191,     INVALID,     INVALID,        1192,
+};
+
+static const uint16_t ud_itab__246[] = {
+  /*  0 */        1079,     INVALID,     INVALID,        1077,
+};
+
+static const uint16_t ud_itab__247[] = {
+  /*  0 */        1013,     INVALID,     INVALID,        1011,
+};
+
+static const uint16_t ud_itab__248[] = {
+  /*  0 */        1005,     INVALID,     INVALID,        1006,
+};
+
+static const uint16_t ud_itab__249[] = {
+  /*  0 */        1008,     INVALID,     INVALID,        1009,
+};
+
+static const uint16_t ud_itab__250[] = {
+  /*  0 */        1071,     INVALID,     INVALID,        1072,
+};
+
+static const uint16_t ud_itab__251[] = {
+  /*  0 */        1016,     INVALID,     INVALID,        1014,
+};
+
+static const uint16_t ud_itab__252[] = {
+  /*  0 */        1019,     INVALID,     INVALID,        1017,
+};
+
+static const uint16_t ud_itab__253[] = {
+  /*  0 */        1143,     INVALID,     INVALID,        1144,
+};
+
+static const uint16_t ud_itab__254[] = {
+  /*  0 */        1152,     INVALID,     INVALID,        1150,
+};
+
+static const uint16_t ud_itab__255[] = {
+  /*  0 */        1022,     INVALID,     INVALID,        1020,
+};
+
+static const uint16_t ud_itab__256[] = {
+  /*  0 */        1083,     INVALID,     INVALID,        1084,
+};
+
+static const uint16_t ud_itab__257[] = {
+  /*  0 */        1088,     INVALID,     INVALID,        1086,
+};
+
+static const uint16_t ud_itab__258[] = {
+  /*  0 */     INVALID,         136,         132,         160,
+};
+
+static const uint16_t ud_itab__259[] = {
+  /*  0 */         905,     INVALID,     INVALID,         898,
+};
+
+static const uint16_t ud_itab__260[] = {
+  /*  0 */        1182,     INVALID,     INVALID,        1183,
+};
+
+static const uint16_t ud_itab__261[] = {
+  /*  0 */        1185,     INVALID,     INVALID,        1186,
+};
+
+static const uint16_t ud_itab__262[] = {
+  /*  0 */        1076,     INVALID,     INVALID,        1074,
+};
+
+static const uint16_t ud_itab__263[] = {
+  /*  0 */        1114,     INVALID,     INVALID,        1112,
+};
+
+static const uint16_t ud_itab__264[] = {
+  /*  0 */         999,     INVALID,     INVALID,        1000,
+};
+
+static const uint16_t ud_itab__265[] = {
+  /*  0 */        1002,     INVALID,     INVALID,        1003,
+};
+
+static const uint16_t ud_itab__266[] = {
+  /*  0 */        1070,     INVALID,     INVALID,        1068,
+};
+
+static const uint16_t ud_itab__267[] = {
+  /*  0 */        1262,     INVALID,     INVALID,        1260,
+};
+
+static const uint16_t ud_itab__268[] = {
+  /*  0 */     INVALID,        1554,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__269[] = {
+  /*  0 */        1132,     INVALID,     INVALID,        1131,
+};
+
+static const uint16_t ud_itab__270[] = {
+  /*  0 */        1136,     INVALID,     INVALID,        1135,
+};
+
+static const uint16_t ud_itab__271[] = {
+  /*  0 */        1140,     INVALID,     INVALID,        1139,
+};
+
+static const uint16_t ud_itab__272[] = {
+  /*  0 */        1528,     INVALID,     INVALID,        1529,
+};
+
+static const uint16_t ud_itab__273[] = {
+  /*  0 */        1065,     INVALID,     INVALID,        1066,
+};
+
+static const uint16_t ud_itab__274[] = {
+  /*  0 */        1129,     INVALID,     INVALID,        1127,
+};
+
+static const uint16_t ud_itab__275[] = {
+  /*  0 */     INVALID,  GROUP(276),
+};
+
+static const uint16_t ud_itab__276[] = {
+  /*  0 */         795,     INVALID,     INVALID,        1515,
+};
+
+static const uint16_t ud_itab__277[] = {
+  /*  0 */        1175,     INVALID,     INVALID,        1173,
+};
+
+static const uint16_t ud_itab__278[] = {
+  /*  0 */        1178,     INVALID,     INVALID,        1176,
+};
+
+static const uint16_t ud_itab__279[] = {
+  /*  0 */        1179,     INVALID,     INVALID,        1180,
+};
+
+static const uint16_t ud_itab__280[] = {
+  /*  0 */        1527,     INVALID,     INVALID,        1525,
+};
+
+static const uint16_t ud_itab__281[] = {
+  /*  0 */         992,     INVALID,     INVALID,         990,
+};
+
+static const uint16_t ud_itab__282[] = {
+  /*  0 */         993,     INVALID,     INVALID,         994,
+};
+
+static const uint16_t ud_itab__283[] = {
+  /*  0 */         996,     INVALID,     INVALID,         997,
+};
+
+static const uint16_t ud_itab__284[] = {
+  /*  0 */        1238,     INVALID,
+};
+
+static const uint16_t ud_itab__285[] = {
+  /*  0 */        1093,     INVALID,
+};
+
+static const uint16_t ud_itab__286[] = {
+  /*  0 */        1239,     INVALID,
+};
+
+static const uint16_t ud_itab__287[] = {
+  /*  0 */        1094,     INVALID,
+};
+
+static const uint16_t ud_itab__288[] = {
+  /*  0 */         173,     INVALID,
+};
+
+static const uint16_t ud_itab__289[] = {
+  /*  0 */         174,     INVALID,
+};
+
+static const uint16_t ud_itab__290[] = {
+  /*  0 */           1,     INVALID,
+};
+
+static const uint16_t ud_itab__291[] = {
+  /*  0 */           4,     INVALID,
+};
+
+static const uint16_t ud_itab__292[] = {
+  /*  0 */  GROUP(293),  GROUP(294),     INVALID,
+};
+
+static const uint16_t ud_itab__293[] = {
+  /*  0 */        1253,     INVALID,
+};
+
+static const uint16_t ud_itab__294[] = {
+  /*  0 */        1254,     INVALID,
+};
+
+static const uint16_t ud_itab__295[] = {
+  /*  0 */  GROUP(296),  GROUP(297),     INVALID,
+};
+
+static const uint16_t ud_itab__296[] = {
+  /*  0 */        1106,     INVALID,
+};
+
+static const uint16_t ud_itab__297[] = {
+  /*  0 */        1107,     INVALID,
+};
+
+static const uint16_t ud_itab__298[] = {
+  /*  0 */        1653,     INVALID,
+};
+
+static const uint16_t ud_itab__299[] = {
+  /*  0 */          67,          68,
+};
+
+static const uint16_t ud_itab__300[] = {
+  /*  0 */         706,         707,     INVALID,
+};
+
+static const uint16_t ud_itab__301[] = {
+  /*  0 */         979,         980,     INVALID,
+};
+
+static const uint16_t ud_itab__302[] = {
+  /*  0 */          21,         966,          11,        1338,
+  /*  4 */          55,        1409,        1489,         106,
+};
+
+static const uint16_t ud_itab__303[] = {
+  /*  0 */          23,         967,          13,        1339,
+  /*  4 */          57,        1410,        1490,         108,
+};
+
+static const uint16_t ud_itab__304[] = {
+  /*  0 */  GROUP(305),  GROUP(306),  GROUP(307),  GROUP(308),
+  /*  4 */  GROUP(309),  GROUP(310),  GROUP(311),  GROUP(312),
+};
+
+static const uint16_t ud_itab__305[] = {
+  /*  0 */          22,     INVALID,
+};
+
+static const uint16_t ud_itab__306[] = {
+  /*  0 */         968,     INVALID,
+};
+
+static const uint16_t ud_itab__307[] = {
+  /*  0 */          12,     INVALID,
+};
+
+static const uint16_t ud_itab__308[] = {
+  /*  0 */        1340,     INVALID,
+};
+
+static const uint16_t ud_itab__309[] = {
+  /*  0 */          56,     INVALID,
+};
+
+static const uint16_t ud_itab__310[] = {
+  /*  0 */        1411,     INVALID,
+};
+
+static const uint16_t ud_itab__311[] = {
+  /*  0 */        1491,     INVALID,
+};
+
+static const uint16_t ud_itab__312[] = {
+  /*  0 */         107,     INVALID,
+};
+
+static const uint16_t ud_itab__313[] = {
+  /*  0 */          24,         969,          14,        1341,
+  /*  4 */          58,        1412,        1492,         109,
+};
+
+static const uint16_t ud_itab__314[] = {
+  /*  0 */        1105,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__315[] = {
+  /*  0 */          74,          75,          76,
+};
+
+static const uint16_t ud_itab__316[] = {
+  /*  0 */         170,         171,         172,
+};
+
+static const uint16_t ud_itab__317[] = {
+  /*  0 */          73,     INVALID,
+};
+
+static const uint16_t ud_itab__318[] = {
+  /*  0 */  GROUP(319),  GROUP(320),  GROUP(321),
+};
+
+static const uint16_t ud_itab__319[] = {
+  /*  0 */        1255,        1256,
+};
+
+static const uint16_t ud_itab__320[] = {
+  /*  0 */        1257,        1258,
+};
+
+static const uint16_t ud_itab__321[] = {
+  /*  0 */     INVALID,        1259,
+};
+
+static const uint16_t ud_itab__322[] = {
+  /*  0 */  GROUP(323),  GROUP(324),  GROUP(325),
+};
+
+static const uint16_t ud_itab__323[] = {
+  /*  0 */        1108,     INVALID,
+};
+
+static const uint16_t ud_itab__324[] = {
+  /*  0 */        1109,        1110,
+};
+
+static const uint16_t ud_itab__325[] = {
+  /*  0 */     INVALID,        1111,
+};
+
+static const uint16_t ud_itab__326[] = {
+  /*  0 */         919,         920,         923,
+};
+
+static const uint16_t ud_itab__327[] = {
+  /*  0 */         115,         116,         119,
+};
+
+static const uint16_t ud_itab__328[] = {
+  /*  0 */        1399,        1400,        1401,
+};
+
+static const uint16_t ud_itab__329[] = {
+  /*  0 */         787,         788,         789,
+};
+
+static const uint16_t ud_itab__330[] = {
+  /*  0 */        1343,        1344,        1345,
+};
+
+static const uint16_t ud_itab__331[] = {
+  /*  0 */        1275,        1282,        1263,        1271,
+  /*  4 */        1323,        1330,        1314,        1309,
+};
+
+static const uint16_t ud_itab__332[] = {
+  /*  0 */        1280,        1283,        1264,        1270,
+  /*  4 */        1319,        1326,        1315,        1311,
+};
+
+static const uint16_t ud_itab__333[] = {
+  /*  0 */  GROUP(334),  GROUP(335),     INVALID,     INVALID,
+  /*  4 */     INVALID,  GROUP(341),  GROUP(357),  GROUP(369),
+  /*  8 */     INVALID,  GROUP(394),     INVALID,     INVALID,
+  /*  c */     INVALID,  GROUP(399),     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__334[] = {
+  /*  0 */         767,     INVALID,
+};
+
+static const uint16_t ud_itab__335[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 10 */         933,         935,  GROUP(336),         891,
+  /* 14 */        1446,        1444,  GROUP(337),         881,
+  /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */         859,         861,     INVALID,         904,
+  /* 2c */     INVALID,     INVALID,        1439,         130,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 40 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 50 */         897,        1384,        1303,        1288,
+  /* 54 */          62,          66,         973,        1496,
+  /* 58 */          28,         943,         146,         135,
+  /* 5c */        1416,         815,         190,         799,
+  /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 70 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 74 */     INVALID,     INVALID,     INVALID,  GROUP(340),
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 8c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 90 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 94 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 98 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 9c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ac */     INVALID,     INVALID,  GROUP(338),     INVALID,
+  /* b0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c0 */     INVALID,     INVALID,         113,     INVALID,
+  /* c4 */     INVALID,     INVALID,        1378,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* dc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__336[] = {
+  /*  0 */         889,         893,
+};
+
+static const uint16_t ud_itab__337[] = {
+  /*  0 */         879,         883,
+};
+
+static const uint16_t ud_itab__338[] = {
+  /*  0 */  GROUP(339),     INVALID,
+};
+
+static const uint16_t ud_itab__339[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1397,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__340[] = {
+  /*  0 */        1737,        1738,
+};
+
+static const uint16_t ud_itab__341[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 10 */         929,         931,  GROUP(342),         887,
+  /* 14 */        1448,        1442,  GROUP(343),         877,
+  /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */         855,         857,     INVALID,         902,
+  /* 2c */     INVALID,     INVALID,        1437,         128,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 40 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 50 */         895,        1386,     INVALID,     INVALID,
+  /* 54 */          60,          64,         971,        1494,
+  /* 58 */          26,         941,         140,         144,
+  /* 5c */        1414,         813,         188,         797,
+  /* 60 */        1204,        1207,        1210,         982,
+  /* 64 */        1033,        1036,        1039,         988,
+  /* 68 */        1195,        1198,        1201,         985,
+  /* 6c */        1543,        1541,  GROUP(344),        1514,
+  /* 70 */        1535,  GROUP(345),  GROUP(347),  GROUP(349),
+  /* 74 */        1025,        1028,        1031,     INVALID,
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */        1545,        1549,  GROUP(351),        1512,
+  /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 8c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 90 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 94 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 98 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 9c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ac */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c0 */     INVALID,     INVALID,         111,     INVALID,
+  /* c4 */        1057,        1050,        1376,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */          34,        1158,        1164,        1170,
+  /* d4 */        1524,        1091,         915,  GROUP(352),
+  /* d8 */        1190,        1193,        1078,        1012,
+  /* dc */        1007,        1010,        1073,        1015,
+  /* e0 */        1018,        1145,        1151,        1021,
+  /* e4 */        1085,        1087,         161,         899,
+  /* e8 */        1184,        1187,        1075,        1113,
+  /* ec */        1001,        1004,        1069,        1261,
+  /* f0 */     INVALID,  GROUP(353),  GROUP(354),  GROUP(355),
+  /* f4 */     INVALID,        1067,        1128,  GROUP(356),
+  /* f8 */        1174,        1177,        1181,        1526,
+  /* fc */         991,         995,         998,     INVALID,
+};
+
+static const uint16_t ud_itab__342[] = {
+  /*  0 */         885,     INVALID,
+};
+
+static const uint16_t ud_itab__343[] = {
+  /*  0 */         875,     INVALID,
+};
+
+static const uint16_t ud_itab__344[] = {
+  /*  0 */         865,         867,         908,
+};
+
+static const uint16_t ud_itab__345[] = {
+  /*  0 */     INVALID,     INVALID,        1160,     INVALID,
+  /*  4 */        1147,     INVALID,  GROUP(346),     INVALID,
+};
+
+static const uint16_t ud_itab__346[] = {
+  /*  0 */        1751,     INVALID,
+};
+
+static const uint16_t ud_itab__347[] = {
+  /*  0 */     INVALID,     INVALID,        1166,     INVALID,
+  /*  4 */        1154,     INVALID,  GROUP(348),     INVALID,
+};
+
+static const uint16_t ud_itab__348[] = {
+  /*  0 */        1753,     INVALID,
+};
+
+static const uint16_t ud_itab__349[] = {
+  /*  0 */     INVALID,     INVALID,        1172,        1539,
+  /*  4 */     INVALID,     INVALID,  GROUP(350),        1537,
+};
+
+static const uint16_t ud_itab__350[] = {
+  /*  0 */        1755,     INVALID,
+};
+
+static const uint16_t ud_itab__351[] = {
+  /*  0 */         871,         873,         911,
+};
+
+static const uint16_t ud_itab__352[] = {
+  /*  0 */        1081,     INVALID,
+};
+
+static const uint16_t ud_itab__353[] = {
+  /*  0 */        1750,     INVALID,
+};
+
+static const uint16_t ud_itab__354[] = {
+  /*  0 */        1752,     INVALID,
+};
+
+static const uint16_t ud_itab__355[] = {
+  /*  0 */        1754,     INVALID,
+};
+
+static const uint16_t ud_itab__356[] = {
+  /*  0 */     INVALID,        1516,
+};
+
+static const uint16_t ud_itab__357[] = {
+  /*  0 */        1579,        1582,        1585,        1588,
+  /*  4 */        1591,        1594,        1597,        1600,
+  /*  8 */        1603,        1609,        1606,        1612,
+  /*  c */  GROUP(358),  GROUP(359),  GROUP(360),  GROUP(361),
+  /* 10 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 14 */     INVALID,     INVALID,     INVALID,        1707,
+  /* 18 */  GROUP(362),  GROUP(363),     INVALID,     INVALID,
+  /* 1c */        1570,        1573,        1576,     INVALID,
+  /* 20 */        1681,        1683,        1685,        1687,
+  /* 24 */        1689,     INVALID,     INVALID,     INVALID,
+  /* 28 */        1618,        1704,        1677,        1679,
+  /* 2c */  GROUP(365),  GROUP(366),  GROUP(367),  GROUP(368),
+  /* 30 */        1692,        1694,        1696,        1698,
+  /* 34 */        1700,        1702,     INVALID,        1713,
+  /* 38 */        1620,        1622,        1624,        1626,
+  /* 3c */        1628,        1630,        1634,        1632,
+  /* 40 */        1636,        1638,     INVALID,     INVALID,
+  /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 50 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 58 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 5c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 70 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 8c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 90 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 94 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 98 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 9c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ac */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d8 */     INVALID,     INVALID,     INVALID,          46,
+  /* dc */          42,          44,          38,          40,
+  /* e0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__358[] = {
+  /*  0 */        1732,     INVALID,
+};
+
+static const uint16_t ud_itab__359[] = {
+  /*  0 */        1730,     INVALID,
+};
+
+static const uint16_t ud_itab__360[] = {
+  /*  0 */        1735,     INVALID,
+};
+
+static const uint16_t ud_itab__361[] = {
+  /*  0 */        1736,     INVALID,
+};
+
+static const uint16_t ud_itab__362[] = {
+  /*  0 */        1722,     INVALID,
+};
+
+static const uint16_t ud_itab__363[] = {
+  /*  0 */  GROUP(364),     INVALID,
+};
+
+static const uint16_t ud_itab__364[] = {
+  /*  0 */     INVALID,        1723,
+};
+
+static const uint16_t ud_itab__365[] = {
+  /*  0 */        1726,     INVALID,
+};
+
+static const uint16_t ud_itab__366[] = {
+  /*  0 */        1728,     INVALID,
+};
+
+static const uint16_t ud_itab__367[] = {
+  /*  0 */        1727,     INVALID,
+};
+
+static const uint16_t ud_itab__368[] = {
+  /*  0 */        1729,     INVALID,
+};
+
+static const uint16_t ud_itab__369[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */  GROUP(370),  GROUP(371),  GROUP(372),     INVALID,
+  /*  8 */        1640,        1642,        1644,        1646,
+  /*  c */        1650,        1648,        1673,        1615,
+  /* 10 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 14 */  GROUP(374),        1053,  GROUP(375),         202,
+  /* 18 */  GROUP(379),  GROUP(381),     INVALID,     INVALID,
+  /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 20 */  GROUP(383),        1553,  GROUP(385),     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 2c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 40 */         198,         196,        1675,     INVALID,
+  /* 44 */        1509,     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,  GROUP(391),  GROUP(392),
+  /* 4c */  GROUP(393),     INVALID,     INVALID,     INVALID,
+  /* 50 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 58 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 5c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 60 */        1711,        1709,        1717,        1715,
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 70 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 8c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 90 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 94 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 98 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 9c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ac */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* dc */     INVALID,     INVALID,     INVALID,          48,
+  /* e0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__370[] = {
+  /*  0 */        1733,     INVALID,
+};
+
+static const uint16_t ud_itab__371[] = {
+  /*  0 */        1731,     INVALID,
+};
+
+static const uint16_t ud_itab__372[] = {
+  /*  0 */  GROUP(373),     INVALID,
+};
+
+static const uint16_t ud_itab__373[] = {
+  /*  0 */     INVALID,        1734,
+};
+
+static const uint16_t ud_itab__374[] = {
+  /*  0 */        1042,     INVALID,
+};
+
+static const uint16_t ud_itab__375[] = {
+  /*  0 */  GROUP(376),  GROUP(377),  GROUP(378),
+};
+
+static const uint16_t ud_itab__376[] = {
+  /*  0 */        1044,     INVALID,
+};
+
+static const uint16_t ud_itab__377[] = {
+  /*  0 */        1046,     INVALID,
+};
+
+static const uint16_t ud_itab__378[] = {
+  /*  0 */     INVALID,        1048,
+};
+
+static const uint16_t ud_itab__379[] = {
+  /*  0 */  GROUP(380),     INVALID,
+};
+
+static const uint16_t ud_itab__380[] = {
+  /*  0 */     INVALID,        1725,
+};
+
+static const uint16_t ud_itab__381[] = {
+  /*  0 */  GROUP(382),     INVALID,
+};
+
+static const uint16_t ud_itab__382[] = {
+  /*  0 */     INVALID,        1724,
+};
+
+static const uint16_t ud_itab__383[] = {
+  /*  0 */  GROUP(384),     INVALID,
+};
+
+static const uint16_t ud_itab__384[] = {
+  /*  0 */        1061,     INVALID,
+};
+
+static const uint16_t ud_itab__385[] = {
+  /*  0 */  GROUP(386),  GROUP(388),
+};
+
+static const uint16_t ud_itab__386[] = {
+  /*  0 */  GROUP(387),     INVALID,
+};
+
+static const uint16_t ud_itab__387[] = {
+  /*  0 */        1062,     INVALID,
+};
+
+static const uint16_t ud_itab__388[] = {
+  /*  0 */  GROUP(389),  GROUP(390),
+};
+
+static const uint16_t ud_itab__389[] = {
+  /*  0 */        1063,     INVALID,
+};
+
+static const uint16_t ud_itab__390[] = {
+  /*  0 */        1064,     INVALID,
+};
+
+static const uint16_t ud_itab__391[] = {
+  /*  0 */        1740,     INVALID,
+};
+
+static const uint16_t ud_itab__392[] = {
+  /*  0 */        1739,     INVALID,
+};
+
+static const uint16_t ud_itab__393[] = {
+  /*  0 */        1749,     INVALID,
+};
+
+static const uint16_t ud_itab__394[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 10 */  GROUP(395),  GROUP(396),  GROUP(397),     INVALID,
+  /* 14 */     INVALID,     INVALID,  GROUP(398),     INVALID,
+  /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */     INVALID,     INVALID,         155,     INVALID,
+  /* 2c */         169,         159,     INVALID,     INVALID,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 40 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 50 */     INVALID,        1390,        1305,        1290,
+  /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 58 */          32,         947,         157,         164,
+  /* 5c */        1420,         819,         194,         803,
+  /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,        1519,
+  /* 70 */        1531,     INVALID,     INVALID,     INVALID,
+  /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */     INVALID,     INVALID,         913,     INVALID,
+  /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 8c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 90 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 94 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 98 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 9c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ac */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c0 */     INVALID,     INVALID,         121,     INVALID,
+  /* c4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* dc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e4 */     INVALID,     INVALID,         133,     INVALID,
+  /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__395[] = {
+  /*  0 */        1746,        1745,
+};
+
+static const uint16_t ud_itab__396[] = {
+  /*  0 */        1748,        1747,
+};
+
+static const uint16_t ud_itab__397[] = {
+  /*  0 */        1567,        1565,
+};
+
+static const uint16_t ud_itab__398[] = {
+  /*  0 */        1563,        1561,
+};
+
+static const uint16_t ud_itab__399[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /*  c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 10 */  GROUP(402),  GROUP(400),  GROUP(401),     INVALID,
+  /* 14 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */     INVALID,     INVALID,         153,     INVALID,
+  /* 2c */         167,         149,     INVALID,     INVALID,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 40 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 50 */     INVALID,        1388,     INVALID,     INVALID,
+  /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 58 */          30,         945,         151,     INVALID,
+  /* 5c */        1418,         817,         192,         801,
+  /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 70 */        1533,     INVALID,     INVALID,     INVALID,
+  /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 7c */        1547,        1551,     INVALID,     INVALID,
+  /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 8c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 90 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 94 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 98 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 9c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* a8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ac */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c0 */     INVALID,     INVALID,         118,     INVALID,
+  /* c4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d0 */          36,     INVALID,     INVALID,     INVALID,
+  /* d4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* d8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* dc */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e0 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* e4 */     INVALID,     INVALID,         137,     INVALID,
+  /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f0 */        1555,     INVALID,     INVALID,     INVALID,
+  /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__400[] = {
+  /*  0 */        1744,        1743,
+};
+
+static const uint16_t ud_itab__401[] = {
+  /*  0 */        1559,        1557,
+};
+
+static const uint16_t ud_itab__402[] = {
+  /*  0 */        1742,        1741,
+};
+
+static const uint16_t ud_itab__403[] = {
+  /*  0 */  GROUP(404),  GROUP(335),     INVALID,     INVALID,
+  /*  4 */     INVALID,  GROUP(341),  GROUP(357),  GROUP(369),
+  /*  8 */     INVALID,  GROUP(394),     INVALID,     INVALID,
+  /*  c */     INVALID,  GROUP(399),     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__404[] = {
+  /*  0 */         765,     INVALID,
+};
+
+static const uint16_t ud_itab__405[] = {
+  /*  0 */         822,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__406[] = {
+  /*  0 */         823,     INVALID,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__407[] = {
+  /*  0 */         711,     INVALID,
+};
+
+static const uint16_t ud_itab__408[] = {
+  /*  0 */         719,         720,         721,
+};
+
+static const uint16_t ud_itab__409[] = {
+  /*  0 */        1276,        1281,        1265,        1269,
+  /*  4 */        1322,        1329,        1316,        1310,
+};
+
+static const uint16_t ud_itab__410[] = {
+  /*  0 */        1277,        1284,        1268,        1272,
+  /*  4 */        1321,        1328,        1325,        1308,
+};
+
+static const uint16_t ud_itab__411[] = {
+  /*  0 */        1278,        1285,        1266,        1273,
+  /*  4 */        1320,        1327,        1317,        1312,
+};
+
+static const uint16_t ud_itab__412[] = {
+  /*  0 */        1279,        1286,        1267,        1274,
+  /*  4 */        1324,        1331,        1318,        1313,
+};
+
+static const uint16_t ud_itab__413[] = {
+  /*  0 */           3,     INVALID,
+};
+
+static const uint16_t ud_itab__414[] = {
+  /*  0 */           2,     INVALID,
+};
+
+static const uint16_t ud_itab__415[] = {
+  /*  0 */        1307,     INVALID,
+};
+
+static const uint16_t ud_itab__416[] = {
+  /*  0 */  GROUP(417),  GROUP(418),
+};
+
+static const uint16_t ud_itab__417[] = {
+  /*  0 */         206,         503,         307,         357,
+  /*  4 */         583,         626,         387,         413,
+};
+
+static const uint16_t ud_itab__418[] = {
+  /*  0 */         215,         216,         217,         218,
+  /*  4 */         219,         220,         221,         222,
+  /*  8 */         504,         505,         506,         507,
+  /*  c */         508,         509,         510,         511,
+  /* 10 */         309,         310,         311,         312,
+  /* 14 */         313,         314,         315,         316,
+  /* 18 */         359,         360,         361,         362,
+  /* 1c */         363,         364,         365,         366,
+  /* 20 */         585,         586,         587,         588,
+  /* 24 */         589,         590,         591,         592,
+  /* 28 */         610,         611,         612,         613,
+  /* 2c */         614,         615,         616,         617,
+  /* 30 */         388,         389,         390,         391,
+  /* 34 */         392,         393,         394,         395,
+  /* 38 */         414,         415,         416,         417,
+  /* 3c */         418,         419,         420,         421,
+};
+
+static const uint16_t ud_itab__419[] = {
+  /*  0 */  GROUP(420),  GROUP(421),
+};
+
+static const uint16_t ud_itab__420[] = {
+  /*  0 */         476,     INVALID,         569,         536,
+  /*  4 */         493,         492,         580,         579,
+};
+
+static const uint16_t ud_itab__421[] = {
+  /*  0 */         477,         478,         479,         480,
+  /*  4 */         481,         482,         483,         484,
+  /*  8 */         654,         655,         656,         657,
+  /*  c */         658,         659,         660,         661,
+  /* 10 */         522,     INVALID,     INVALID,     INVALID,
+  /* 14 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 18 */         545,         546,         547,         548,
+  /* 1c */         549,         550,         551,         552,
+  /* 20 */         233,         204,     INVALID,     INVALID,
+  /* 24 */         635,         653,     INVALID,     INVALID,
+  /* 28 */         485,         486,         487,         488,
+  /* 2c */         489,         490,         491,     INVALID,
+  /* 30 */         203,         681,         526,         523,
+  /* 34 */         680,         525,         377,         454,
+  /* 38 */         524,         682,         533,         532,
+  /* 3c */         527,         530,         531,         376,
+};
+
+static const uint16_t ud_itab__422[] = {
+  /*  0 */  GROUP(423),  GROUP(424),
+};
+
+static const uint16_t ud_itab__423[] = {
+  /*  0 */         456,         520,         448,         450,
+  /*  4 */         462,         464,         460,         458,
+};
+
+static const uint16_t ud_itab__424[] = {
+  /*  0 */         235,         236,         237,         238,
+  /*  4 */         239,         240,         241,         242,
+  /*  8 */         243,         244,         245,         246,
+  /*  c */         247,         248,         249,         250,
+  /* 10 */         251,         252,         253,         254,
+  /* 14 */         255,         256,         257,         258,
+  /* 18 */         259,         260,         261,         262,
+  /* 1c */         263,         264,         265,         266,
+  /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */     INVALID,         652,     INVALID,     INVALID,
+  /* 2c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__425[] = {
+  /*  0 */  GROUP(426),  GROUP(427),
+};
+
+static const uint16_t ud_itab__426[] = {
+  /*  0 */         453,         471,         467,         470,
+  /*  4 */     INVALID,         474,     INVALID,         534,
+};
+
+static const uint16_t ud_itab__427[] = {
+  /*  0 */         267,         268,         269,         270,
+  /*  4 */         271,         272,         273,         274,
+  /*  8 */         275,         276,         277,         278,
+  /*  c */         279,         280,         281,         282,
+  /* 10 */         283,         284,         285,         286,
+  /* 14 */         287,         288,         289,         290,
+  /* 18 */         291,         292,         293,         294,
+  /* 1c */         295,         296,         297,         298,
+  /* 20 */     INVALID,     INVALID,         234,         455,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */         299,         300,         301,         302,
+  /* 2c */         303,         304,         305,         306,
+  /* 30 */         333,         334,         335,         336,
+  /* 34 */         337,         338,         339,         340,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__428[] = {
+  /*  0 */  GROUP(429),  GROUP(430),
+};
+
+static const uint16_t ud_itab__429[] = {
+  /*  0 */         205,         494,         308,         358,
+  /*  4 */         584,         609,         378,         404,
+};
+
+static const uint16_t ud_itab__430[] = {
+  /*  0 */         207,         208,         209,         210,
+  /*  4 */         211,         212,         213,         214,
+  /*  8 */         495,         496,         497,         498,
+  /*  c */         499,         500,         501,         502,
+  /* 10 */         317,         318,         319,         320,
+  /* 14 */         321,         322,         323,         324,
+  /* 18 */         325,         326,         327,         328,
+  /* 1c */         329,         330,         331,         332,
+  /* 20 */         618,         619,         620,         621,
+  /* 24 */         622,         623,         624,         625,
+  /* 28 */         593,         594,         595,         596,
+  /* 2c */         597,         598,         599,         600,
+  /* 30 */         405,         406,         407,         408,
+  /* 34 */         409,         410,         411,         412,
+  /* 38 */         379,         380,         381,         382,
+  /* 3c */         383,         384,         385,         386,
+};
+
+static const uint16_t ud_itab__431[] = {
+  /*  0 */  GROUP(432),  GROUP(433),
+};
+
+static const uint16_t ud_itab__432[] = {
+  /*  0 */         475,         472,         570,         535,
+  /*  4 */         528,     INVALID,         529,         581,
+};
+
+static const uint16_t ud_itab__433[] = {
+  /*  0 */         431,         432,         433,         434,
+  /*  4 */         435,         436,         437,         438,
+  /*  8 */         662,         663,         664,         665,
+  /*  c */         666,         667,         668,         669,
+  /* 10 */         571,         572,         573,         574,
+  /* 14 */         575,         576,         577,         578,
+  /* 18 */         537,         538,         539,         540,
+  /* 1c */         541,         542,         543,         544,
+  /* 20 */         636,         637,         638,         639,
+  /* 24 */         640,         641,         642,         643,
+  /* 28 */         644,         645,         646,         647,
+  /* 2c */         648,         649,         650,         651,
+  /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__434[] = {
+  /*  0 */  GROUP(435),  GROUP(436),
+};
+
+static const uint16_t ud_itab__435[] = {
+  /*  0 */         457,         521,         447,         449,
+  /*  4 */         463,         465,         461,         459,
+};
+
+static const uint16_t ud_itab__436[] = {
+  /*  0 */         223,         224,         225,         226,
+  /*  4 */         227,         228,         229,         230,
+  /*  8 */         512,         513,         514,         515,
+  /*  c */         516,         517,         518,         519,
+  /* 10 */         367,         368,         369,         370,
+  /* 14 */         371,         372,         373,         374,
+  /* 18 */     INVALID,         375,     INVALID,     INVALID,
+  /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 20 */         627,         628,         629,         630,
+  /* 24 */         631,         632,         633,         634,
+  /* 28 */         601,         602,         603,         604,
+  /* 2c */         605,         606,         607,         608,
+  /* 30 */         422,         423,         424,         425,
+  /* 34 */         426,         427,         428,         429,
+  /* 38 */         396,         397,         398,         399,
+  /* 3c */         400,         401,         402,         403,
+};
+
+static const uint16_t ud_itab__437[] = {
+  /*  0 */  GROUP(438),  GROUP(439),
+};
+
+static const uint16_t ud_itab__438[] = {
+  /*  0 */         451,         473,         466,         468,
+  /*  4 */         231,         452,         232,         469,
+};
+
+static const uint16_t ud_itab__439[] = {
+  /*  0 */         439,         440,         441,         442,
+  /*  4 */         443,         444,         445,         446,
+  /*  8 */         670,         671,         672,         673,
+  /*  c */         674,         675,         676,         677,
+  /* 10 */         553,         554,         555,         556,
+  /* 14 */         557,         558,         559,         560,
+  /* 18 */         561,         562,         563,         564,
+  /* 1c */         565,         566,         567,         568,
+  /* 20 */         582,     INVALID,     INVALID,     INVALID,
+  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 28 */         341,         342,         343,         344,
+  /* 2c */         345,         346,         347,         348,
+  /* 30 */         349,         350,         351,         352,
+  /* 34 */         353,         354,         355,         356,
+  /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__440[] = {
+  /*  0 */         754,         755,         756,
+};
+
+static const uint16_t ud_itab__441[] = {
+  /*  0 */         760,     INVALID,
+};
+
+static const uint16_t ud_itab__442[] = {
+  /*  0 */        1428,        1433,         958,         949,
+  /*  4 */         938,         691,         186,         685,
+};
+
+static const uint16_t ud_itab__443[] = {
+  /*  0 */        1434,        1435,         959,         950,
+  /*  4 */         939,         692,         185,         684,
+};
+
+static const uint16_t ud_itab__444[] = {
+  /*  0 */         704,         183,     INVALID,     INVALID,
+  /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
+};
+
+static const uint16_t ud_itab__445[] = {
+  /*  0 */         703,         184,  GROUP(446),          71,
+  /*  4 */         757,         758,        1251,     INVALID,
+};
+
+static const uint16_t ud_itab__446[] = {
+  /*  0 */          69,          70,
 };
 
 
 struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
-    /* 000 */ { ud_itab__0, UD_TAB__OPC_TABLE, "table0" },
+    /* 000 */ { ud_itab__0, UD_TAB__OPC_TABLE, "opctbl" },
     /* 001 */ { ud_itab__1, UD_TAB__OPC_MODE, "/m" },
     /* 002 */ { ud_itab__2, UD_TAB__OPC_MODE, "/m" },
     /* 003 */ { ud_itab__3, UD_TAB__OPC_MODE, "/m" },
-    /* 004 */ { ud_itab__4, UD_TAB__OPC_TABLE, "0f" },
+    /* 004 */ { ud_itab__4, UD_TAB__OPC_TABLE, "opctbl" },
     /* 005 */ { ud_itab__5, UD_TAB__OPC_REG, "/reg" },
-    /* 006 */ { ud_itab__6, UD_TAB__OPC_SSE, "/sse" },
-    /* 007 */ { ud_itab__7, UD_TAB__OPC_SSE, "/sse" },
-    /* 008 */ { ud_itab__8, UD_TAB__OPC_SSE, "/sse" },
-    /* 009 */ { ud_itab__9, UD_TAB__OPC_SSE, "/sse" },
-    /* 010 */ { ud_itab__10, UD_TAB__OPC_SSE, "/sse" },
-    /* 011 */ { ud_itab__11, UD_TAB__OPC_SSE, "/sse" },
-    /* 012 */ { ud_itab__12, UD_TAB__OPC_MOD, "/mod" },
-    /* 013 */ { ud_itab__13, UD_TAB__OPC_REG, "/reg" },
-    /* 014 */ { ud_itab__14, UD_TAB__OPC_SSE, "/sse" },
-    /* 015 */ { ud_itab__15, UD_TAB__OPC_MOD, "/mod" },
-    /* 016 */ { ud_itab__16, UD_TAB__OPC_SSE, "/sse" },
-    /* 017 */ { ud_itab__17, UD_TAB__OPC_MOD, "/mod" },
-    /* 018 */ { ud_itab__18, UD_TAB__OPC_SSE, "/sse" },
-    /* 019 */ { ud_itab__19, UD_TAB__OPC_MOD, "/mod" },
-    /* 020 */ { ud_itab__20, UD_TAB__OPC_SSE, "/sse" },
-    /* 021 */ { ud_itab__21, UD_TAB__OPC_MOD, "/mod" },
-    /* 022 */ { ud_itab__22, UD_TAB__OPC_SSE, "/sse" },
-    /* 023 */ { ud_itab__23, UD_TAB__OPC_MOD, "/mod" },
-    /* 024 */ { ud_itab__24, UD_TAB__OPC_SSE, "/sse" },
-    /* 025 */ { ud_itab__25, UD_TAB__OPC_MOD, "/mod" },
-    /* 026 */ { ud_itab__26, UD_TAB__OPC_SSE, "/sse" },
-    /* 027 */ { ud_itab__27, UD_TAB__OPC_MOD, "/mod" },
-    /* 028 */ { ud_itab__28, UD_TAB__OPC_REG, "/reg" },
-    /* 029 */ { ud_itab__29, UD_TAB__OPC_RM, "/rm" },
+    /* 006 */ { ud_itab__6, UD_TAB__OPC_MOD, "/mod" },
+    /* 007 */ { ud_itab__7, UD_TAB__OPC_REG, "/reg" },
+    /* 008 */ { ud_itab__8, UD_TAB__OPC_REG, "/reg" },
+    /* 009 */ { ud_itab__9, UD_TAB__OPC_RM, "/rm" },
+    /* 010 */ { ud_itab__10, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 011 */ { ud_itab__11, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 012 */ { ud_itab__12, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 013 */ { ud_itab__13, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 014 */ { ud_itab__14, UD_TAB__OPC_RM, "/rm" },
+    /* 015 */ { ud_itab__15, UD_TAB__OPC_RM, "/rm" },
+    /* 016 */ { ud_itab__16, UD_TAB__OPC_RM, "/rm" },
+    /* 017 */ { ud_itab__17, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 018 */ { ud_itab__18, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 019 */ { ud_itab__19, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 020 */ { ud_itab__20, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 021 */ { ud_itab__21, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 022 */ { ud_itab__22, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 023 */ { ud_itab__23, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 024 */ { ud_itab__24, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 025 */ { ud_itab__25, UD_TAB__OPC_RM, "/rm" },
+    /* 026 */ { ud_itab__26, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 027 */ { ud_itab__27, UD_TAB__OPC_REG, "/reg" },
+    /* 028 */ { ud_itab__28, UD_TAB__OPC_3DNOW, "/3dnow" },
+    /* 029 */ { ud_itab__29, UD_TAB__OPC_SSE, "/sse" },
     /* 030 */ { ud_itab__30, UD_TAB__OPC_SSE, "/sse" },
     /* 031 */ { ud_itab__31, UD_TAB__OPC_MOD, "/mod" },
-    /* 032 */ { ud_itab__32, UD_TAB__OPC_VENDOR, "intel" },
+    /* 032 */ { ud_itab__32, UD_TAB__OPC_SSE, "/sse" },
     /* 033 */ { ud_itab__33, UD_TAB__OPC_SSE, "/sse" },
-    /* 034 */ { ud_itab__34, UD_TAB__OPC_MOD, "/mod" },
-    /* 035 */ { ud_itab__35, UD_TAB__OPC_VENDOR, "intel" },
+    /* 034 */ { ud_itab__34, UD_TAB__OPC_SSE, "/sse" },
+    /* 035 */ { ud_itab__35, UD_TAB__OPC_SSE, "/sse" },
     /* 036 */ { ud_itab__36, UD_TAB__OPC_SSE, "/sse" },
     /* 037 */ { ud_itab__37, UD_TAB__OPC_MOD, "/mod" },
-    /* 038 */ { ud_itab__38, UD_TAB__OPC_VENDOR, "intel" },
+    /* 038 */ { ud_itab__38, UD_TAB__OPC_SSE, "/sse" },
     /* 039 */ { ud_itab__39, UD_TAB__OPC_SSE, "/sse" },
-    /* 040 */ { ud_itab__40, UD_TAB__OPC_MOD, "/mod" },
-    /* 041 */ { ud_itab__41, UD_TAB__OPC_VENDOR, "intel" },
-    /* 042 */ { ud_itab__42, UD_TAB__OPC_RM, "/rm" },
+    /* 040 */ { ud_itab__40, UD_TAB__OPC_SSE, "/sse" },
+    /* 041 */ { ud_itab__41, UD_TAB__OPC_REG, "/reg" },
+    /* 042 */ { ud_itab__42, UD_TAB__OPC_SSE, "/sse" },
     /* 043 */ { ud_itab__43, UD_TAB__OPC_SSE, "/sse" },
-    /* 044 */ { ud_itab__44, UD_TAB__OPC_MOD, "/mod" },
+    /* 044 */ { ud_itab__44, UD_TAB__OPC_SSE, "/sse" },
     /* 045 */ { ud_itab__45, UD_TAB__OPC_SSE, "/sse" },
-    /* 046 */ { ud_itab__46, UD_TAB__OPC_MOD, "/mod" },
-    /* 047 */ { ud_itab__47, UD_TAB__OPC_RM, "/rm" },
+    /* 046 */ { ud_itab__46, UD_TAB__OPC_SSE, "/sse" },
+    /* 047 */ { ud_itab__47, UD_TAB__OPC_SSE, "/sse" },
     /* 048 */ { ud_itab__48, UD_TAB__OPC_SSE, "/sse" },
-    /* 049 */ { ud_itab__49, UD_TAB__OPC_MOD, "/mod" },
-    /* 050 */ { ud_itab__50, UD_TAB__OPC_SSE, "/sse" },
-    /* 051 */ { ud_itab__51, UD_TAB__OPC_MOD, "/mod" },
-    /* 052 */ { ud_itab__52, UD_TAB__OPC_RM, "/rm" },
-    /* 053 */ { ud_itab__53, UD_TAB__OPC_SSE, "/sse" },
-    /* 054 */ { ud_itab__54, UD_TAB__OPC_MOD, "/mod" },
-    /* 055 */ { ud_itab__55, UD_TAB__OPC_VENDOR, "amd" },
-    /* 056 */ { ud_itab__56, UD_TAB__OPC_SSE, "/sse" },
-    /* 057 */ { ud_itab__57, UD_TAB__OPC_MOD, "/mod" },
-    /* 058 */ { ud_itab__58, UD_TAB__OPC_VENDOR, "amd" },
+    /* 049 */ { ud_itab__49, UD_TAB__OPC_SSE, "/sse" },
+    /* 050 */ { ud_itab__50, UD_TAB__OPC_MODE, "/m" },
+    /* 051 */ { ud_itab__51, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 052 */ { ud_itab__52, UD_TAB__OPC_MODE, "/m" },
+    /* 053 */ { ud_itab__53, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 054 */ { ud_itab__54, UD_TAB__OPC_TABLE, "opctbl" },
+    /* 055 */ { ud_itab__55, UD_TAB__OPC_SSE, "/sse" },
+    /* 056 */ { ud_itab__56, UD_TAB__OPC_MODE, "/m" },
+    /* 057 */ { ud_itab__57, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 058 */ { ud_itab__58, UD_TAB__OPC_VENDOR, "/vendor" },
     /* 059 */ { ud_itab__59, UD_TAB__OPC_SSE, "/sse" },
-    /* 060 */ { ud_itab__60, UD_TAB__OPC_MOD, "/mod" },
-    /* 061 */ { ud_itab__61, UD_TAB__OPC_VENDOR, "amd" },
-    /* 062 */ { ud_itab__62, UD_TAB__OPC_SSE, "/sse" },
-    /* 063 */ { ud_itab__63, UD_TAB__OPC_MOD, "/mod" },
-    /* 064 */ { ud_itab__64, UD_TAB__OPC_VENDOR, "amd" },
+    /* 060 */ { ud_itab__60, UD_TAB__OPC_MODE, "/m" },
+    /* 061 */ { ud_itab__61, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 062 */ { ud_itab__62, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 063 */ { ud_itab__63, UD_TAB__OPC_SSE, "/sse" },
+    /* 064 */ { ud_itab__64, UD_TAB__OPC_SSE, "/sse" },
     /* 065 */ { ud_itab__65, UD_TAB__OPC_SSE, "/sse" },
-    /* 066 */ { ud_itab__66, UD_TAB__OPC_MOD, "/mod" },
-    /* 067 */ { ud_itab__67, UD_TAB__OPC_VENDOR, "amd" },
+    /* 066 */ { ud_itab__66, UD_TAB__OPC_SSE, "/sse" },
+    /* 067 */ { ud_itab__67, UD_TAB__OPC_SSE, "/sse" },
     /* 068 */ { ud_itab__68, UD_TAB__OPC_SSE, "/sse" },
-    /* 069 */ { ud_itab__69, UD_TAB__OPC_MOD, "/mod" },
-    /* 070 */ { ud_itab__70, UD_TAB__OPC_VENDOR, "amd" },
+    /* 069 */ { ud_itab__69, UD_TAB__OPC_SSE, "/sse" },
+    /* 070 */ { ud_itab__70, UD_TAB__OPC_SSE, "/sse" },
     /* 071 */ { ud_itab__71, UD_TAB__OPC_SSE, "/sse" },
-    /* 072 */ { ud_itab__72, UD_TAB__OPC_MOD, "/mod" },
-    /* 073 */ { ud_itab__73, UD_TAB__OPC_VENDOR, "amd" },
+    /* 072 */ { ud_itab__72, UD_TAB__OPC_SSE, "/sse" },
+    /* 073 */ { ud_itab__73, UD_TAB__OPC_SSE, "/sse" },
     /* 074 */ { ud_itab__74, UD_TAB__OPC_SSE, "/sse" },
-    /* 075 */ { ud_itab__75, UD_TAB__OPC_MOD, "/mod" },
-    /* 076 */ { ud_itab__76, UD_TAB__OPC_VENDOR, "amd" },
+    /* 075 */ { ud_itab__75, UD_TAB__OPC_SSE, "/sse" },
+    /* 076 */ { ud_itab__76, UD_TAB__OPC_SSE, "/sse" },
     /* 077 */ { ud_itab__77, UD_TAB__OPC_SSE, "/sse" },
-    /* 078 */ { ud_itab__78, UD_TAB__OPC_MOD, "/mod" },
+    /* 078 */ { ud_itab__78, UD_TAB__OPC_SSE, "/sse" },
     /* 079 */ { ud_itab__79, UD_TAB__OPC_SSE, "/sse" },
-    /* 080 */ { ud_itab__80, UD_TAB__OPC_MOD, "/mod" },
-    /* 081 */ { ud_itab__81, UD_TAB__OPC_RM, "/rm" },
+    /* 080 */ { ud_itab__80, UD_TAB__OPC_SSE, "/sse" },
+    /* 081 */ { ud_itab__81, UD_TAB__OPC_SSE, "/sse" },
     /* 082 */ { ud_itab__82, UD_TAB__OPC_SSE, "/sse" },
-    /* 083 */ { ud_itab__83, UD_TAB__OPC_MOD, "/mod" },
+    /* 083 */ { ud_itab__83, UD_TAB__OPC_SSE, "/sse" },
     /* 084 */ { ud_itab__84, UD_TAB__OPC_SSE, "/sse" },
-    /* 085 */ { ud_itab__85, UD_TAB__OPC_MOD, "/mod" },
-    /* 086 */ { ud_itab__86, UD_TAB__OPC_VENDOR, "amd" },
+    /* 085 */ { ud_itab__85, UD_TAB__OPC_SSE, "/sse" },
+    /* 086 */ { ud_itab__86, UD_TAB__OPC_SSE, "/sse" },
     /* 087 */ { ud_itab__87, UD_TAB__OPC_SSE, "/sse" },
     /* 088 */ { ud_itab__88, UD_TAB__OPC_SSE, "/sse" },
     /* 089 */ { ud_itab__89, UD_TAB__OPC_SSE, "/sse" },
@@ -5124,7 +2770,7 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
     /* 092 */ { ud_itab__92, UD_TAB__OPC_SSE, "/sse" },
     /* 093 */ { ud_itab__93, UD_TAB__OPC_SSE, "/sse" },
     /* 094 */ { ud_itab__94, UD_TAB__OPC_SSE, "/sse" },
-    /* 095 */ { ud_itab__95, UD_TAB__OPC_REG, "/reg" },
+    /* 095 */ { ud_itab__95, UD_TAB__OPC_SSE, "/sse" },
     /* 096 */ { ud_itab__96, UD_TAB__OPC_SSE, "/sse" },
     /* 097 */ { ud_itab__97, UD_TAB__OPC_SSE, "/sse" },
     /* 098 */ { ud_itab__98, UD_TAB__OPC_SSE, "/sse" },
@@ -5134,35 +2780,35 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
     /* 102 */ { ud_itab__102, UD_TAB__OPC_SSE, "/sse" },
     /* 103 */ { ud_itab__103, UD_TAB__OPC_SSE, "/sse" },
     /* 104 */ { ud_itab__104, UD_TAB__OPC_SSE, "/sse" },
-    /* 105 */ { ud_itab__105, UD_TAB__OPC_3DNOW, "/3dnow" },
+    /* 105 */ { ud_itab__105, UD_TAB__OPC_SSE, "/sse" },
     /* 106 */ { ud_itab__106, UD_TAB__OPC_SSE, "/sse" },
     /* 107 */ { ud_itab__107, UD_TAB__OPC_SSE, "/sse" },
-    /* 108 */ { ud_itab__108, UD_TAB__OPC_MOD, "/mod" },
+    /* 108 */ { ud_itab__108, UD_TAB__OPC_SSE, "/sse" },
     /* 109 */ { ud_itab__109, UD_TAB__OPC_SSE, "/sse" },
-    /* 110 */ { ud_itab__110, UD_TAB__OPC_MOD, "/mod" },
-    /* 111 */ { ud_itab__111, UD_TAB__OPC_MOD, "/mod" },
-    /* 112 */ { ud_itab__112, UD_TAB__OPC_MOD, "/mod" },
-    /* 113 */ { ud_itab__113, UD_TAB__OPC_MOD, "/mod" },
+    /* 110 */ { ud_itab__110, UD_TAB__OPC_SSE, "/sse" },
+    /* 111 */ { ud_itab__111, UD_TAB__OPC_SSE, "/sse" },
+    /* 112 */ { ud_itab__112, UD_TAB__OPC_SSE, "/sse" },
+    /* 113 */ { ud_itab__113, UD_TAB__OPC_SSE, "/sse" },
     /* 114 */ { ud_itab__114, UD_TAB__OPC_SSE, "/sse" },
-    /* 115 */ { ud_itab__115, UD_TAB__OPC_MOD, "/mod" },
-    /* 116 */ { ud_itab__116, UD_TAB__OPC_MOD, "/mod" },
-    /* 117 */ { ud_itab__117, UD_TAB__OPC_MOD, "/mod" },
+    /* 115 */ { ud_itab__115, UD_TAB__OPC_SSE, "/sse" },
+    /* 116 */ { ud_itab__116, UD_TAB__OPC_TABLE, "opctbl" },
+    /* 117 */ { ud_itab__117, UD_TAB__OPC_SSE, "/sse" },
     /* 118 */ { ud_itab__118, UD_TAB__OPC_SSE, "/sse" },
     /* 119 */ { ud_itab__119, UD_TAB__OPC_SSE, "/sse" },
     /* 120 */ { ud_itab__120, UD_TAB__OPC_SSE, "/sse" },
-    /* 121 */ { ud_itab__121, UD_TAB__OPC_MOD, "/mod" },
+    /* 121 */ { ud_itab__121, UD_TAB__OPC_SSE, "/sse" },
     /* 122 */ { ud_itab__122, UD_TAB__OPC_SSE, "/sse" },
-    /* 123 */ { ud_itab__123, UD_TAB__OPC_MOD, "/mod" },
-    /* 124 */ { ud_itab__124, UD_TAB__OPC_MOD, "/mod" },
-    /* 125 */ { ud_itab__125, UD_TAB__OPC_MOD, "/mod" },
+    /* 123 */ { ud_itab__123, UD_TAB__OPC_SSE, "/sse" },
+    /* 124 */ { ud_itab__124, UD_TAB__OPC_SSE, "/sse" },
+    /* 125 */ { ud_itab__125, UD_TAB__OPC_SSE, "/sse" },
     /* 126 */ { ud_itab__126, UD_TAB__OPC_SSE, "/sse" },
-    /* 127 */ { ud_itab__127, UD_TAB__OPC_MOD, "/mod" },
-    /* 128 */ { ud_itab__128, UD_TAB__OPC_MOD, "/mod" },
+    /* 127 */ { ud_itab__127, UD_TAB__OPC_SSE, "/sse" },
+    /* 128 */ { ud_itab__128, UD_TAB__OPC_OSIZE, "/o" },
     /* 129 */ { ud_itab__129, UD_TAB__OPC_SSE, "/sse" },
-    /* 130 */ { ud_itab__130, UD_TAB__OPC_REG, "/reg" },
+    /* 130 */ { ud_itab__130, UD_TAB__OPC_SSE, "/sse" },
     /* 131 */ { ud_itab__131, UD_TAB__OPC_SSE, "/sse" },
     /* 132 */ { ud_itab__132, UD_TAB__OPC_SSE, "/sse" },
-    /* 133 */ { ud_itab__133, UD_TAB__OPC_SSE, "/sse" },
+    /* 133 */ { ud_itab__133, UD_TAB__OPC_OSIZE, "/o" },
     /* 134 */ { ud_itab__134, UD_TAB__OPC_SSE, "/sse" },
     /* 135 */ { ud_itab__135, UD_TAB__OPC_SSE, "/sse" },
     /* 136 */ { ud_itab__136, UD_TAB__OPC_SSE, "/sse" },
@@ -5188,13 +2834,13 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
     /* 156 */ { ud_itab__156, UD_TAB__OPC_SSE, "/sse" },
     /* 157 */ { ud_itab__157, UD_TAB__OPC_SSE, "/sse" },
     /* 158 */ { ud_itab__158, UD_TAB__OPC_SSE, "/sse" },
-    /* 159 */ { ud_itab__159, UD_TAB__OPC_MODE, "/m" },
-    /* 160 */ { ud_itab__160, UD_TAB__OPC_VENDOR, "intel" },
+    /* 159 */ { ud_itab__159, UD_TAB__OPC_SSE, "/sse" },
+    /* 160 */ { ud_itab__160, UD_TAB__OPC_SSE, "/sse" },
     /* 161 */ { ud_itab__161, UD_TAB__OPC_SSE, "/sse" },
-    /* 162 */ { ud_itab__162, UD_TAB__OPC_MODE, "/m" },
-    /* 163 */ { ud_itab__163, UD_TAB__OPC_VENDOR, "intel" },
+    /* 162 */ { ud_itab__162, UD_TAB__OPC_SSE, "/sse" },
+    /* 163 */ { ud_itab__163, UD_TAB__OPC_SSE, "/sse" },
     /* 164 */ { ud_itab__164, UD_TAB__OPC_SSE, "/sse" },
-    /* 165 */ { ud_itab__165, UD_TAB__OPC_TABLE, "38" },
+    /* 165 */ { ud_itab__165, UD_TAB__OPC_SSE, "/sse" },
     /* 166 */ { ud_itab__166, UD_TAB__OPC_SSE, "/sse" },
     /* 167 */ { ud_itab__167, UD_TAB__OPC_SSE, "/sse" },
     /* 168 */ { ud_itab__168, UD_TAB__OPC_SSE, "/sse" },
@@ -5203,19 +2849,19 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
     /* 171 */ { ud_itab__171, UD_TAB__OPC_SSE, "/sse" },
     /* 172 */ { ud_itab__172, UD_TAB__OPC_SSE, "/sse" },
     /* 173 */ { ud_itab__173, UD_TAB__OPC_SSE, "/sse" },
-    /* 174 */ { ud_itab__174, UD_TAB__OPC_SSE, "/sse" },
-    /* 175 */ { ud_itab__175, UD_TAB__OPC_SSE, "/sse" },
+    /* 174 */ { ud_itab__174, UD_TAB__OPC_OSIZE, "/o" },
+    /* 175 */ { ud_itab__175, UD_TAB__OPC_OSIZE, "/o" },
     /* 176 */ { ud_itab__176, UD_TAB__OPC_SSE, "/sse" },
     /* 177 */ { ud_itab__177, UD_TAB__OPC_SSE, "/sse" },
-    /* 178 */ { ud_itab__178, UD_TAB__OPC_SSE, "/sse" },
+    /* 178 */ { ud_itab__178, UD_TAB__OPC_REG, "/reg" },
     /* 179 */ { ud_itab__179, UD_TAB__OPC_SSE, "/sse" },
     /* 180 */ { ud_itab__180, UD_TAB__OPC_SSE, "/sse" },
     /* 181 */ { ud_itab__181, UD_TAB__OPC_SSE, "/sse" },
-    /* 182 */ { ud_itab__182, UD_TAB__OPC_SSE, "/sse" },
+    /* 182 */ { ud_itab__182, UD_TAB__OPC_REG, "/reg" },
     /* 183 */ { ud_itab__183, UD_TAB__OPC_SSE, "/sse" },
     /* 184 */ { ud_itab__184, UD_TAB__OPC_SSE, "/sse" },
     /* 185 */ { ud_itab__185, UD_TAB__OPC_SSE, "/sse" },
-    /* 186 */ { ud_itab__186, UD_TAB__OPC_SSE, "/sse" },
+    /* 186 */ { ud_itab__186, UD_TAB__OPC_REG, "/reg" },
     /* 187 */ { ud_itab__187, UD_TAB__OPC_SSE, "/sse" },
     /* 188 */ { ud_itab__188, UD_TAB__OPC_SSE, "/sse" },
     /* 189 */ { ud_itab__189, UD_TAB__OPC_SSE, "/sse" },
@@ -5223,55 +2869,55 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
     /* 191 */ { ud_itab__191, UD_TAB__OPC_SSE, "/sse" },
     /* 192 */ { ud_itab__192, UD_TAB__OPC_SSE, "/sse" },
     /* 193 */ { ud_itab__193, UD_TAB__OPC_SSE, "/sse" },
-    /* 194 */ { ud_itab__194, UD_TAB__OPC_SSE, "/sse" },
-    /* 195 */ { ud_itab__195, UD_TAB__OPC_SSE, "/sse" },
+    /* 194 */ { ud_itab__194, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 195 */ { ud_itab__195, UD_TAB__OPC_VENDOR, "/vendor" },
     /* 196 */ { ud_itab__196, UD_TAB__OPC_SSE, "/sse" },
     /* 197 */ { ud_itab__197, UD_TAB__OPC_SSE, "/sse" },
     /* 198 */ { ud_itab__198, UD_TAB__OPC_SSE, "/sse" },
-    /* 199 */ { ud_itab__199, UD_TAB__OPC_SSE, "/sse" },
-    /* 200 */ { ud_itab__200, UD_TAB__OPC_SSE, "/sse" },
+    /* 199 */ { ud_itab__199, UD_TAB__OPC_OSIZE, "/o" },
+    /* 200 */ { ud_itab__200, UD_TAB__OPC_OSIZE, "/o" },
     /* 201 */ { ud_itab__201, UD_TAB__OPC_SSE, "/sse" },
-    /* 202 */ { ud_itab__202, UD_TAB__OPC_SSE, "/sse" },
-    /* 203 */ { ud_itab__203, UD_TAB__OPC_SSE, "/sse" },
-    /* 204 */ { ud_itab__204, UD_TAB__OPC_SSE, "/sse" },
-    /* 205 */ { ud_itab__205, UD_TAB__OPC_SSE, "/sse" },
-    /* 206 */ { ud_itab__206, UD_TAB__OPC_SSE, "/sse" },
-    /* 207 */ { ud_itab__207, UD_TAB__OPC_SSE, "/sse" },
-    /* 208 */ { ud_itab__208, UD_TAB__OPC_SSE, "/sse" },
-    /* 209 */ { ud_itab__209, UD_TAB__OPC_SSE, "/sse" },
-    /* 210 */ { ud_itab__210, UD_TAB__OPC_SSE, "/sse" },
-    /* 211 */ { ud_itab__211, UD_TAB__OPC_SSE, "/sse" },
-    /* 212 */ { ud_itab__212, UD_TAB__OPC_SSE, "/sse" },
-    /* 213 */ { ud_itab__213, UD_TAB__OPC_MODE, "/m" },
-    /* 214 */ { ud_itab__214, UD_TAB__OPC_VENDOR, "intel" },
-    /* 215 */ { ud_itab__215, UD_TAB__OPC_SSE, "/sse" },
-    /* 216 */ { ud_itab__216, UD_TAB__OPC_MODE, "/m" },
-    /* 217 */ { ud_itab__217, UD_TAB__OPC_VENDOR, "intel" },
-    /* 218 */ { ud_itab__218, UD_TAB__OPC_SSE, "/sse" },
-    /* 219 */ { ud_itab__219, UD_TAB__OPC_SSE, "/sse" },
-    /* 220 */ { ud_itab__220, UD_TAB__OPC_SSE, "/sse" },
+    /* 202 */ { ud_itab__202, UD_TAB__OPC_MOD, "/mod" },
+    /* 203 */ { ud_itab__203, UD_TAB__OPC_REG, "/reg" },
+    /* 204 */ { ud_itab__204, UD_TAB__OPC_RM, "/rm" },
+    /* 205 */ { ud_itab__205, UD_TAB__OPC_RM, "/rm" },
+    /* 206 */ { ud_itab__206, UD_TAB__OPC_RM, "/rm" },
+    /* 207 */ { ud_itab__207, UD_TAB__OPC_MOD, "/mod" },
+    /* 208 */ { ud_itab__208, UD_TAB__OPC_REG, "/reg" },
+    /* 209 */ { ud_itab__209, UD_TAB__OPC_RM, "/rm" },
+    /* 210 */ { ud_itab__210, UD_TAB__OPC_RM, "/rm" },
+    /* 211 */ { ud_itab__211, UD_TAB__OPC_RM, "/rm" },
+    /* 212 */ { ud_itab__212, UD_TAB__OPC_RM, "/rm" },
+    /* 213 */ { ud_itab__213, UD_TAB__OPC_RM, "/rm" },
+    /* 214 */ { ud_itab__214, UD_TAB__OPC_RM, "/rm" },
+    /* 215 */ { ud_itab__215, UD_TAB__OPC_MOD, "/mod" },
+    /* 216 */ { ud_itab__216, UD_TAB__OPC_REG, "/reg" },
+    /* 217 */ { ud_itab__217, UD_TAB__OPC_REG, "/reg" },
+    /* 218 */ { ud_itab__218, UD_TAB__OPC_RM, "/rm" },
+    /* 219 */ { ud_itab__219, UD_TAB__OPC_RM, "/rm" },
+    /* 220 */ { ud_itab__220, UD_TAB__OPC_RM, "/rm" },
     /* 221 */ { ud_itab__221, UD_TAB__OPC_SSE, "/sse" },
-    /* 222 */ { ud_itab__222, UD_TAB__OPC_SSE, "/sse" },
+    /* 222 */ { ud_itab__222, UD_TAB__OPC_REG, "/reg" },
     /* 223 */ { ud_itab__223, UD_TAB__OPC_SSE, "/sse" },
     /* 224 */ { ud_itab__224, UD_TAB__OPC_SSE, "/sse" },
-    /* 225 */ { ud_itab__225, UD_TAB__OPC_TABLE, "3a" },
+    /* 225 */ { ud_itab__225, UD_TAB__OPC_SSE, "/sse" },
     /* 226 */ { ud_itab__226, UD_TAB__OPC_SSE, "/sse" },
-    /* 227 */ { ud_itab__227, UD_TAB__OPC_SSE, "/sse" },
-    /* 228 */ { ud_itab__228, UD_TAB__OPC_SSE, "/sse" },
-    /* 229 */ { ud_itab__229, UD_TAB__OPC_SSE, "/sse" },
+    /* 227 */ { ud_itab__227, UD_TAB__OPC_MOD, "/mod" },
+    /* 228 */ { ud_itab__228, UD_TAB__OPC_REG, "/reg" },
+    /* 229 */ { ud_itab__229, UD_TAB__OPC_OSIZE, "/o" },
     /* 230 */ { ud_itab__230, UD_TAB__OPC_SSE, "/sse" },
-    /* 231 */ { ud_itab__231, UD_TAB__OPC_SSE, "/sse" },
-    /* 232 */ { ud_itab__232, UD_TAB__OPC_SSE, "/sse" },
-    /* 233 */ { ud_itab__233, UD_TAB__OPC_SSE, "/sse" },
-    /* 234 */ { ud_itab__234, UD_TAB__OPC_SSE, "/sse" },
-    /* 235 */ { ud_itab__235, UD_TAB__OPC_SSE, "/sse" },
+    /* 231 */ { ud_itab__231, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 232 */ { ud_itab__232, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 233 */ { ud_itab__233, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 234 */ { ud_itab__234, UD_TAB__OPC_VENDOR, "/vendor" },
+    /* 235 */ { ud_itab__235, UD_TAB__OPC_REG, "/reg" },
     /* 236 */ { ud_itab__236, UD_TAB__OPC_SSE, "/sse" },
-    /* 237 */ { ud_itab__237, UD_TAB__OPC_OSIZE, "/o" },
+    /* 237 */ { ud_itab__237, UD_TAB__OPC_SSE, "/sse" },
     /* 238 */ { ud_itab__238, UD_TAB__OPC_SSE, "/sse" },
     /* 239 */ { ud_itab__239, UD_TAB__OPC_SSE, "/sse" },
     /* 240 */ { ud_itab__240, UD_TAB__OPC_SSE, "/sse" },
     /* 241 */ { ud_itab__241, UD_TAB__OPC_SSE, "/sse" },
-    /* 242 */ { ud_itab__242, UD_TAB__OPC_OSIZE, "/o" },
+    /* 242 */ { ud_itab__242, UD_TAB__OPC_SSE, "/sse" },
     /* 243 */ { ud_itab__243, UD_TAB__OPC_SSE, "/sse" },
     /* 244 */ { ud_itab__244, UD_TAB__OPC_SSE, "/sse" },
     /* 245 */ { ud_itab__245, UD_TAB__OPC_SSE, "/sse" },
@@ -5304,7 +2950,7 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
     /* 272 */ { ud_itab__272, UD_TAB__OPC_SSE, "/sse" },
     /* 273 */ { ud_itab__273, UD_TAB__OPC_SSE, "/sse" },
     /* 274 */ { ud_itab__274, UD_TAB__OPC_SSE, "/sse" },
-    /* 275 */ { ud_itab__275, UD_TAB__OPC_SSE, "/sse" },
+    /* 275 */ { ud_itab__275, UD_TAB__OPC_MOD, "/mod" },
     /* 276 */ { ud_itab__276, UD_TAB__OPC_SSE, "/sse" },
     /* 277 */ { ud_itab__277, UD_TAB__OPC_SSE, "/sse" },
     /* 278 */ { ud_itab__278, UD_TAB__OPC_SSE, "/sse" },
@@ -5313,855 +2959,169 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
     /* 281 */ { ud_itab__281, UD_TAB__OPC_SSE, "/sse" },
     /* 282 */ { ud_itab__282, UD_TAB__OPC_SSE, "/sse" },
     /* 283 */ { ud_itab__283, UD_TAB__OPC_SSE, "/sse" },
-    /* 284 */ { ud_itab__284, UD_TAB__OPC_SSE, "/sse" },
-    /* 285 */ { ud_itab__285, UD_TAB__OPC_SSE, "/sse" },
-    /* 286 */ { ud_itab__286, UD_TAB__OPC_SSE, "/sse" },
-    /* 287 */ { ud_itab__287, UD_TAB__OPC_SSE, "/sse" },
-    /* 288 */ { ud_itab__288, UD_TAB__OPC_SSE, "/sse" },
-    /* 289 */ { ud_itab__289, UD_TAB__OPC_SSE, "/sse" },
-    /* 290 */ { ud_itab__290, UD_TAB__OPC_SSE, "/sse" },
-    /* 291 */ { ud_itab__291, UD_TAB__OPC_SSE, "/sse" },
-    /* 292 */ { ud_itab__292, UD_TAB__OPC_SSE, "/sse" },
-    /* 293 */ { ud_itab__293, UD_TAB__OPC_SSE, "/sse" },
-    /* 294 */ { ud_itab__294, UD_TAB__OPC_SSE, "/sse" },
-    /* 295 */ { ud_itab__295, UD_TAB__OPC_SSE, "/sse" },
-    /* 296 */ { ud_itab__296, UD_TAB__OPC_SSE, "/sse" },
-    /* 297 */ { ud_itab__297, UD_TAB__OPC_SSE, "/sse" },
-    /* 298 */ { ud_itab__298, UD_TAB__OPC_SSE, "/sse" },
-    /* 299 */ { ud_itab__299, UD_TAB__OPC_SSE, "/sse" },
-    /* 300 */ { ud_itab__300, UD_TAB__OPC_SSE, "/sse" },
-    /* 301 */ { ud_itab__301, UD_TAB__OPC_REG, "/reg" },
-    /* 302 */ { ud_itab__302, UD_TAB__OPC_SSE, "/sse" },
-    /* 303 */ { ud_itab__303, UD_TAB__OPC_SSE, "/sse" },
-    /* 304 */ { ud_itab__304, UD_TAB__OPC_SSE, "/sse" },
-    /* 305 */ { ud_itab__305, UD_TAB__OPC_REG, "/reg" },
-    /* 306 */ { ud_itab__306, UD_TAB__OPC_SSE, "/sse" },
-    /* 307 */ { ud_itab__307, UD_TAB__OPC_SSE, "/sse" },
-    /* 308 */ { ud_itab__308, UD_TAB__OPC_SSE, "/sse" },
-    /* 309 */ { ud_itab__309, UD_TAB__OPC_REG, "/reg" },
-    /* 310 */ { ud_itab__310, UD_TAB__OPC_SSE, "/sse" },
-    /* 311 */ { ud_itab__311, UD_TAB__OPC_SSE, "/sse" },
-    /* 312 */ { ud_itab__312, UD_TAB__OPC_SSE, "/sse" },
-    /* 313 */ { ud_itab__313, UD_TAB__OPC_SSE, "/sse" },
-    /* 314 */ { ud_itab__314, UD_TAB__OPC_SSE, "/sse" },
-    /* 315 */ { ud_itab__315, UD_TAB__OPC_SSE, "/sse" },
-    /* 316 */ { ud_itab__316, UD_TAB__OPC_SSE, "/sse" },
-    /* 317 */ { ud_itab__317, UD_TAB__OPC_SSE, "/sse" },
-    /* 318 */ { ud_itab__318, UD_TAB__OPC_SSE, "/sse" },
-    /* 319 */ { ud_itab__319, UD_TAB__OPC_VENDOR, "intel" },
-    /* 320 */ { ud_itab__320, UD_TAB__OPC_SSE, "/sse" },
-    /* 321 */ { ud_itab__321, UD_TAB__OPC_VENDOR, "intel" },
-    /* 322 */ { ud_itab__322, UD_TAB__OPC_SSE, "/sse" },
-    /* 323 */ { ud_itab__323, UD_TAB__OPC_SSE, "/sse" },
-    /* 324 */ { ud_itab__324, UD_TAB__OPC_SSE, "/sse" },
-    /* 325 */ { ud_itab__325, UD_TAB__OPC_SSE, "/sse" },
-    /* 326 */ { ud_itab__326, UD_TAB__OPC_SSE, "/sse" },
-    /* 327 */ { ud_itab__327, UD_TAB__OPC_SSE, "/sse" },
-    /* 328 */ { ud_itab__328, UD_TAB__OPC_SSE, "/sse" },
-    /* 329 */ { ud_itab__329, UD_TAB__OPC_SSE, "/sse" },
-    /* 330 */ { ud_itab__330, UD_TAB__OPC_SSE, "/sse" },
-    /* 331 */ { ud_itab__331, UD_TAB__OPC_SSE, "/sse" },
-    /* 332 */ { ud_itab__332, UD_TAB__OPC_SSE, "/sse" },
-    /* 333 */ { ud_itab__333, UD_TAB__OPC_SSE, "/sse" },
-    /* 334 */ { ud_itab__334, UD_TAB__OPC_SSE, "/sse" },
-    /* 335 */ { ud_itab__335, UD_TAB__OPC_SSE, "/sse" },
-    /* 336 */ { ud_itab__336, UD_TAB__OPC_SSE, "/sse" },
-    /* 337 */ { ud_itab__337, UD_TAB__OPC_SSE, "/sse" },
-    /* 338 */ { ud_itab__338, UD_TAB__OPC_SSE, "/sse" },
-    /* 339 */ { ud_itab__339, UD_TAB__OPC_SSE, "/sse" },
-    /* 340 */ { ud_itab__340, UD_TAB__OPC_SSE, "/sse" },
-    /* 341 */ { ud_itab__341, UD_TAB__OPC_SSE, "/sse" },
-    /* 342 */ { ud_itab__342, UD_TAB__OPC_SSE, "/sse" },
-    /* 343 */ { ud_itab__343, UD_TAB__OPC_SSE, "/sse" },
-    /* 344 */ { ud_itab__344, UD_TAB__OPC_SSE, "/sse" },
-    /* 345 */ { ud_itab__345, UD_TAB__OPC_SSE, "/sse" },
-    /* 346 */ { ud_itab__346, UD_TAB__OPC_SSE, "/sse" },
-    /* 347 */ { ud_itab__347, UD_TAB__OPC_SSE, "/sse" },
-    /* 348 */ { ud_itab__348, UD_TAB__OPC_SSE, "/sse" },
-    /* 349 */ { ud_itab__349, UD_TAB__OPC_SSE, "/sse" },
-    /* 350 */ { ud_itab__350, UD_TAB__OPC_SSE, "/sse" },
-    /* 351 */ { ud_itab__351, UD_TAB__OPC_SSE, "/sse" },
-    /* 352 */ { ud_itab__352, UD_TAB__OPC_SSE, "/sse" },
-    /* 353 */ { ud_itab__353, UD_TAB__OPC_SSE, "/sse" },
-    /* 354 */ { ud_itab__354, UD_TAB__OPC_SSE, "/sse" },
-    /* 355 */ { ud_itab__355, UD_TAB__OPC_SSE, "/sse" },
-    /* 356 */ { ud_itab__356, UD_TAB__OPC_SSE, "/sse" },
-    /* 357 */ { ud_itab__357, UD_TAB__OPC_SSE, "/sse" },
-    /* 358 */ { ud_itab__358, UD_TAB__OPC_SSE, "/sse" },
-    /* 359 */ { ud_itab__359, UD_TAB__OPC_SSE, "/sse" },
-    /* 360 */ { ud_itab__360, UD_TAB__OPC_SSE, "/sse" },
-    /* 361 */ { ud_itab__361, UD_TAB__OPC_SSE, "/sse" },
-    /* 362 */ { ud_itab__362, UD_TAB__OPC_SSE, "/sse" },
-    /* 363 */ { ud_itab__363, UD_TAB__OPC_SSE, "/sse" },
-    /* 364 */ { ud_itab__364, UD_TAB__OPC_MOD, "/mod" },
-    /* 365 */ { ud_itab__365, UD_TAB__OPC_REG, "/reg" },
-    /* 366 */ { ud_itab__366, UD_TAB__OPC_RM, "/rm" },
-    /* 367 */ { ud_itab__367, UD_TAB__OPC_SSE, "/sse" },
-    /* 368 */ { ud_itab__368, UD_TAB__OPC_MOD, "/mod" },
-    /* 369 */ { ud_itab__369, UD_TAB__OPC_RM, "/rm" },
-    /* 370 */ { ud_itab__370, UD_TAB__OPC_SSE, "/sse" },
-    /* 371 */ { ud_itab__371, UD_TAB__OPC_MOD, "/mod" },
-    /* 372 */ { ud_itab__372, UD_TAB__OPC_RM, "/rm" },
-    /* 373 */ { ud_itab__373, UD_TAB__OPC_SSE, "/sse" },
-    /* 374 */ { ud_itab__374, UD_TAB__OPC_MOD, "/mod" },
-    /* 375 */ { ud_itab__375, UD_TAB__OPC_MOD, "/mod" },
-    /* 376 */ { ud_itab__376, UD_TAB__OPC_REG, "/reg" },
-    /* 377 */ { ud_itab__377, UD_TAB__OPC_RM, "/rm" },
-    /* 378 */ { ud_itab__378, UD_TAB__OPC_SSE, "/sse" },
-    /* 379 */ { ud_itab__379, UD_TAB__OPC_MOD, "/mod" },
-    /* 380 */ { ud_itab__380, UD_TAB__OPC_RM, "/rm" },
-    /* 381 */ { ud_itab__381, UD_TAB__OPC_SSE, "/sse" },
-    /* 382 */ { ud_itab__382, UD_TAB__OPC_MOD, "/mod" },
-    /* 383 */ { ud_itab__383, UD_TAB__OPC_RM, "/rm" },
-    /* 384 */ { ud_itab__384, UD_TAB__OPC_SSE, "/sse" },
-    /* 385 */ { ud_itab__385, UD_TAB__OPC_MOD, "/mod" },
-    /* 386 */ { ud_itab__386, UD_TAB__OPC_RM, "/rm" },
-    /* 387 */ { ud_itab__387, UD_TAB__OPC_SSE, "/sse" },
-    /* 388 */ { ud_itab__388, UD_TAB__OPC_MOD, "/mod" },
-    /* 389 */ { ud_itab__389, UD_TAB__OPC_RM, "/rm" },
-    /* 390 */ { ud_itab__390, UD_TAB__OPC_SSE, "/sse" },
-    /* 391 */ { ud_itab__391, UD_TAB__OPC_MOD, "/mod" },
-    /* 392 */ { ud_itab__392, UD_TAB__OPC_RM, "/rm" },
-    /* 393 */ { ud_itab__393, UD_TAB__OPC_SSE, "/sse" },
-    /* 394 */ { ud_itab__394, UD_TAB__OPC_MOD, "/mod" },
-    /* 395 */ { ud_itab__395, UD_TAB__OPC_SSE, "/sse" },
-    /* 396 */ { ud_itab__396, UD_TAB__OPC_SSE, "/sse" },
-    /* 397 */ { ud_itab__397, UD_TAB__OPC_SSE, "/sse" },
-    /* 398 */ { ud_itab__398, UD_TAB__OPC_SSE, "/sse" },
-    /* 399 */ { ud_itab__399, UD_TAB__OPC_SSE, "/sse" },
-    /* 400 */ { ud_itab__400, UD_TAB__OPC_SSE, "/sse" },
+    /* 284 */ { ud_itab__284, UD_TAB__OPC_MODE, "/m" },
+    /* 285 */ { ud_itab__285, UD_TAB__OPC_MODE, "/m" },
+    /* 286 */ { ud_itab__286, UD_TAB__OPC_MODE, "/m" },
+    /* 287 */ { ud_itab__287, UD_TAB__OPC_MODE, "/m" },
+    /* 288 */ { ud_itab__288, UD_TAB__OPC_MODE, "/m" },
+    /* 289 */ { ud_itab__289, UD_TAB__OPC_MODE, "/m" },
+    /* 290 */ { ud_itab__290, UD_TAB__OPC_MODE, "/m" },
+    /* 291 */ { ud_itab__291, UD_TAB__OPC_MODE, "/m" },
+    /* 292 */ { ud_itab__292, UD_TAB__OPC_OSIZE, "/o" },
+    /* 293 */ { ud_itab__293, UD_TAB__OPC_MODE, "/m" },
+    /* 294 */ { ud_itab__294, UD_TAB__OPC_MODE, "/m" },
+    /* 295 */ { ud_itab__295, UD_TAB__OPC_OSIZE, "/o" },
+    /* 296 */ { ud_itab__296, UD_TAB__OPC_MODE, "/m" },
+    /* 297 */ { ud_itab__297, UD_TAB__OPC_MODE, "/m" },
+    /* 298 */ { ud_itab__298, UD_TAB__OPC_MODE, "/m" },
+    /* 299 */ { ud_itab__299, UD_TAB__OPC_MODE, "/m" },
+    /* 300 */ { ud_itab__300, UD_TAB__OPC_OSIZE, "/o" },
+    /* 301 */ { ud_itab__301, UD_TAB__OPC_OSIZE, "/o" },
+    /* 302 */ { ud_itab__302, UD_TAB__OPC_REG, "/reg" },
+    /* 303 */ { ud_itab__303, UD_TAB__OPC_REG, "/reg" },
+    /* 304 */ { ud_itab__304, UD_TAB__OPC_REG, "/reg" },
+    /* 305 */ { ud_itab__305, UD_TAB__OPC_MODE, "/m" },
+    /* 306 */ { ud_itab__306, UD_TAB__OPC_MODE, "/m" },
+    /* 307 */ { ud_itab__307, UD_TAB__OPC_MODE, "/m" },
+    /* 308 */ { ud_itab__308, UD_TAB__OPC_MODE, "/m" },
+    /* 309 */ { ud_itab__309, UD_TAB__OPC_MODE, "/m" },
+    /* 310 */ { ud_itab__310, UD_TAB__OPC_MODE, "/m" },
+    /* 311 */ { ud_itab__311, UD_TAB__OPC_MODE, "/m" },
+    /* 312 */ { ud_itab__312, UD_TAB__OPC_MODE, "/m" },
+    /* 313 */ { ud_itab__313, UD_TAB__OPC_REG, "/reg" },
+    /* 314 */ { ud_itab__314, UD_TAB__OPC_REG, "/reg" },
+    /* 315 */ { ud_itab__315, UD_TAB__OPC_OSIZE, "/o" },
+    /* 316 */ { ud_itab__316, UD_TAB__OPC_OSIZE, "/o" },
+    /* 317 */ { ud_itab__317, UD_TAB__OPC_MODE, "/m" },
+    /* 318 */ { ud_itab__318, UD_TAB__OPC_OSIZE, "/o" },
+    /* 319 */ { ud_itab__319, UD_TAB__OPC_MODE, "/m" },
+    /* 320 */ { ud_itab__320, UD_TAB__OPC_MODE, "/m" },
+    /* 321 */ { ud_itab__321, UD_TAB__OPC_MODE, "/m" },
+    /* 322 */ { ud_itab__322, UD_TAB__OPC_OSIZE, "/o" },
+    /* 323 */ { ud_itab__323, UD_TAB__OPC_MODE, "/m" },
+    /* 324 */ { ud_itab__324, UD_TAB__OPC_MODE, "/m" },
+    /* 325 */ { ud_itab__325, UD_TAB__OPC_MODE, "/m" },
+    /* 326 */ { ud_itab__326, UD_TAB__OPC_OSIZE, "/o" },
+    /* 327 */ { ud_itab__327, UD_TAB__OPC_OSIZE, "/o" },
+    /* 328 */ { ud_itab__328, UD_TAB__OPC_OSIZE, "/o" },
+    /* 329 */ { ud_itab__329, UD_TAB__OPC_OSIZE, "/o" },
+    /* 330 */ { ud_itab__330, UD_TAB__OPC_OSIZE, "/o" },
+    /* 331 */ { ud_itab__331, UD_TAB__OPC_REG, "/reg" },
+    /* 332 */ { ud_itab__332, UD_TAB__OPC_REG, "/reg" },
+    /* 333 */ { ud_itab__333, UD_TAB__OPC_VEX, "/vex" },
+    /* 334 */ { ud_itab__334, UD_TAB__OPC_MODE, "/m" },
+    /* 335 */ { ud_itab__335, UD_TAB__OPC_TABLE, "opctbl" },
+    /* 336 */ { ud_itab__336, UD_TAB__OPC_MOD, "/mod" },
+    /* 337 */ { ud_itab__337, UD_TAB__OPC_MOD, "/mod" },
+    /* 338 */ { ud_itab__338, UD_TAB__OPC_MOD, "/mod" },
+    /* 339 */ { ud_itab__339, UD_TAB__OPC_REG, "/reg" },
+    /* 340 */ { ud_itab__340, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 341 */ { ud_itab__341, UD_TAB__OPC_TABLE, "opctbl" },
+    /* 342 */ { ud_itab__342, UD_TAB__OPC_MOD, "/mod" },
+    /* 343 */ { ud_itab__343, UD_TAB__OPC_MOD, "/mod" },
+    /* 344 */ { ud_itab__344, UD_TAB__OPC_OSIZE, "/o" },
+    /* 345 */ { ud_itab__345, UD_TAB__OPC_REG, "/reg" },
+    /* 346 */ { ud_itab__346, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 347 */ { ud_itab__347, UD_TAB__OPC_REG, "/reg" },
+    /* 348 */ { ud_itab__348, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 349 */ { ud_itab__349, UD_TAB__OPC_REG, "/reg" },
+    /* 350 */ { ud_itab__350, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 351 */ { ud_itab__351, UD_TAB__OPC_OSIZE, "/o" },
+    /* 352 */ { ud_itab__352, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 353 */ { ud_itab__353, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 354 */ { ud_itab__354, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 355 */ { ud_itab__355, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 356 */ { ud_itab__356, UD_TAB__OPC_MOD, "/mod" },
+    /* 357 */ { ud_itab__357, UD_TAB__OPC_TABLE, "opctbl" },
+    /* 358 */ { ud_itab__358, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 359 */ { ud_itab__359, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 360 */ { ud_itab__360, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 361 */ { ud_itab__361, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 362 */ { ud_itab__362, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 363 */ { ud_itab__363, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 364 */ { ud_itab__364, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 365 */ { ud_itab__365, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 366 */ { ud_itab__366, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 367 */ { ud_itab__367, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 368 */ { ud_itab__368, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 369 */ { ud_itab__369, UD_TAB__OPC_TABLE, "opctbl" },
+    /* 370 */ { ud_itab__370, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 371 */ { ud_itab__371, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 372 */ { ud_itab__372, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 373 */ { ud_itab__373, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 374 */ { ud_itab__374, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 375 */ { ud_itab__375, UD_TAB__OPC_OSIZE, "/o" },
+    /* 376 */ { ud_itab__376, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 377 */ { ud_itab__377, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 378 */ { ud_itab__378, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 379 */ { ud_itab__379, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 380 */ { ud_itab__380, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 381 */ { ud_itab__381, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 382 */ { ud_itab__382, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 383 */ { ud_itab__383, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 384 */ { ud_itab__384, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 385 */ { ud_itab__385, UD_TAB__OPC_MODE, "/m" },
+    /* 386 */ { ud_itab__386, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 387 */ { ud_itab__387, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 388 */ { ud_itab__388, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 389 */ { ud_itab__389, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 390 */ { ud_itab__390, UD_TAB__OPC_VEX_L, "/vexl" },
+    /* 391 */ { ud_itab__391, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 392 */ { ud_itab__392, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 393 */ { ud_itab__393, UD_TAB__OPC_VEX_W, "/vexw" },
+    /* 394 */ { ud_itab__394, UD_TAB__OPC_TABLE, "opctbl" },
+    /* 395 */ { ud_itab__395, UD_TAB__OPC_MOD, "/mod" },
+    /* 396 */ { ud_itab__396, UD_TAB__OPC_MOD, "/mod" },
+    /* 397 */ { ud_itab__397, UD_TAB__OPC_MOD, "/mod" },
+    /* 398 */ { ud_itab__398, UD_TAB__OPC_MOD, "/mod" },
+    /* 399 */ { ud_itab__399, UD_TAB__OPC_TABLE, "opctbl" },
+    /* 400 */ { ud_itab__400, UD_TAB__OPC_MOD, "/mod" },
     /* 401 */ { ud_itab__401, UD_TAB__OPC_MOD, "/mod" },
-    /* 402 */ { ud_itab__402, UD_TAB__OPC_REG, "/reg" },
-    /* 403 */ { ud_itab__403, UD_TAB__OPC_SSE, "/sse" },
-    /* 404 */ { ud_itab__404, UD_TAB__OPC_MOD, "/mod" },
-    /* 405 */ { ud_itab__405, UD_TAB__OPC_SSE, "/sse" },
-    /* 406 */ { ud_itab__406, UD_TAB__OPC_MOD, "/mod" },
-    /* 407 */ { ud_itab__407, UD_TAB__OPC_SSE, "/sse" },
-    /* 408 */ { ud_itab__408, UD_TAB__OPC_MOD, "/mod" },
-    /* 409 */ { ud_itab__409, UD_TAB__OPC_SSE, "/sse" },
-    /* 410 */ { ud_itab__410, UD_TAB__OPC_MOD, "/mod" },
-    /* 411 */ { ud_itab__411, UD_TAB__OPC_SSE, "/sse" },
-    /* 412 */ { ud_itab__412, UD_TAB__OPC_MOD, "/mod" },
-    /* 413 */ { ud_itab__413, UD_TAB__OPC_SSE, "/sse" },
-    /* 414 */ { ud_itab__414, UD_TAB__OPC_MOD, "/mod" },
-    /* 415 */ { ud_itab__415, UD_TAB__OPC_SSE, "/sse" },
+    /* 402 */ { ud_itab__402, UD_TAB__OPC_MOD, "/mod" },
+    /* 403 */ { ud_itab__403, UD_TAB__OPC_VEX, "/vex" },
+    /* 404 */ { ud_itab__404, UD_TAB__OPC_MODE, "/m" },
+    /* 405 */ { ud_itab__405, UD_TAB__OPC_REG, "/reg" },
+    /* 406 */ { ud_itab__406, UD_TAB__OPC_REG, "/reg" },
+    /* 407 */ { ud_itab__407, UD_TAB__OPC_MODE, "/m" },
+    /* 408 */ { ud_itab__408, UD_TAB__OPC_OSIZE, "/o" },
+    /* 409 */ { ud_itab__409, UD_TAB__OPC_REG, "/reg" },
+    /* 410 */ { ud_itab__410, UD_TAB__OPC_REG, "/reg" },
+    /* 411 */ { ud_itab__411, UD_TAB__OPC_REG, "/reg" },
+    /* 412 */ { ud_itab__412, UD_TAB__OPC_REG, "/reg" },
+    /* 413 */ { ud_itab__413, UD_TAB__OPC_MODE, "/m" },
+    /* 414 */ { ud_itab__414, UD_TAB__OPC_MODE, "/m" },
+    /* 415 */ { ud_itab__415, UD_TAB__OPC_MODE, "/m" },
     /* 416 */ { ud_itab__416, UD_TAB__OPC_MOD, "/mod" },
     /* 417 */ { ud_itab__417, UD_TAB__OPC_REG, "/reg" },
-    /* 418 */ { ud_itab__418, UD_TAB__OPC_RM, "/rm" },
-    /* 419 */ { ud_itab__419, UD_TAB__OPC_SSE, "/sse" },
-    /* 420 */ { ud_itab__420, UD_TAB__OPC_MOD, "/mod" },
-    /* 421 */ { ud_itab__421, UD_TAB__OPC_SSE, "/sse" },
+    /* 418 */ { ud_itab__418, UD_TAB__OPC_X87, "/x87" },
+    /* 419 */ { ud_itab__419, UD_TAB__OPC_MOD, "/mod" },
+    /* 420 */ { ud_itab__420, UD_TAB__OPC_REG, "/reg" },
+    /* 421 */ { ud_itab__421, UD_TAB__OPC_X87, "/x87" },
     /* 422 */ { ud_itab__422, UD_TAB__OPC_MOD, "/mod" },
-    /* 423 */ { ud_itab__423, UD_TAB__OPC_SSE, "/sse" },
-    /* 424 */ { ud_itab__424, UD_TAB__OPC_MOD, "/mod" },
-    /* 425 */ { ud_itab__425, UD_TAB__OPC_SSE, "/sse" },
-    /* 426 */ { ud_itab__426, UD_TAB__OPC_MOD, "/mod" },
-    /* 427 */ { ud_itab__427, UD_TAB__OPC_SSE, "/sse" },
+    /* 423 */ { ud_itab__423, UD_TAB__OPC_REG, "/reg" },
+    /* 424 */ { ud_itab__424, UD_TAB__OPC_X87, "/x87" },
+    /* 425 */ { ud_itab__425, UD_TAB__OPC_MOD, "/mod" },
+    /* 426 */ { ud_itab__426, UD_TAB__OPC_REG, "/reg" },
+    /* 427 */ { ud_itab__427, UD_TAB__OPC_X87, "/x87" },
     /* 428 */ { ud_itab__428, UD_TAB__OPC_MOD, "/mod" },
-    /* 429 */ { ud_itab__429, UD_TAB__OPC_SSE, "/sse" },
-    /* 430 */ { ud_itab__430, UD_TAB__OPC_MOD, "/mod" },
-    /* 431 */ { ud_itab__431, UD_TAB__OPC_SSE, "/sse" },
-    /* 432 */ { ud_itab__432, UD_TAB__OPC_MOD, "/mod" },
-    /* 433 */ { ud_itab__433, UD_TAB__OPC_SSE, "/sse" },
+    /* 429 */ { ud_itab__429, UD_TAB__OPC_REG, "/reg" },
+    /* 430 */ { ud_itab__430, UD_TAB__OPC_X87, "/x87" },
+    /* 431 */ { ud_itab__431, UD_TAB__OPC_MOD, "/mod" },
+    /* 432 */ { ud_itab__432, UD_TAB__OPC_REG, "/reg" },
+    /* 433 */ { ud_itab__433, UD_TAB__OPC_X87, "/x87" },
     /* 434 */ { ud_itab__434, UD_TAB__OPC_MOD, "/mod" },
-    /* 435 */ { ud_itab__435, UD_TAB__OPC_RM, "/rm" },
-    /* 436 */ { ud_itab__436, UD_TAB__OPC_SSE, "/sse" },
+    /* 435 */ { ud_itab__435, UD_TAB__OPC_REG, "/reg" },
+    /* 436 */ { ud_itab__436, UD_TAB__OPC_X87, "/x87" },
     /* 437 */ { ud_itab__437, UD_TAB__OPC_MOD, "/mod" },
-    /* 438 */ { ud_itab__438, UD_TAB__OPC_SSE, "/sse" },
-    /* 439 */ { ud_itab__439, UD_TAB__OPC_MOD, "/mod" },
-    /* 440 */ { ud_itab__440, UD_TAB__OPC_SSE, "/sse" },
-    /* 441 */ { ud_itab__441, UD_TAB__OPC_MOD, "/mod" },
-    /* 442 */ { ud_itab__442, UD_TAB__OPC_SSE, "/sse" },
-    /* 443 */ { ud_itab__443, UD_TAB__OPC_MOD, "/mod" },
-    /* 444 */ { ud_itab__444, UD_TAB__OPC_SSE, "/sse" },
-    /* 445 */ { ud_itab__445, UD_TAB__OPC_MOD, "/mod" },
-    /* 446 */ { ud_itab__446, UD_TAB__OPC_SSE, "/sse" },
-    /* 447 */ { ud_itab__447, UD_TAB__OPC_MOD, "/mod" },
-    /* 448 */ { ud_itab__448, UD_TAB__OPC_SSE, "/sse" },
-    /* 449 */ { ud_itab__449, UD_TAB__OPC_MOD, "/mod" },
-    /* 450 */ { ud_itab__450, UD_TAB__OPC_SSE, "/sse" },
-    /* 451 */ { ud_itab__451, UD_TAB__OPC_MOD, "/mod" },
-    /* 452 */ { ud_itab__452, UD_TAB__OPC_RM, "/rm" },
-    /* 453 */ { ud_itab__453, UD_TAB__OPC_SSE, "/sse" },
-    /* 454 */ { ud_itab__454, UD_TAB__OPC_MOD, "/mod" },
-    /* 455 */ { ud_itab__455, UD_TAB__OPC_SSE, "/sse" },
-    /* 456 */ { ud_itab__456, UD_TAB__OPC_MOD, "/mod" },
-    /* 457 */ { ud_itab__457, UD_TAB__OPC_SSE, "/sse" },
-    /* 458 */ { ud_itab__458, UD_TAB__OPC_MOD, "/mod" },
-    /* 459 */ { ud_itab__459, UD_TAB__OPC_SSE, "/sse" },
-    /* 460 */ { ud_itab__460, UD_TAB__OPC_MOD, "/mod" },
-    /* 461 */ { ud_itab__461, UD_TAB__OPC_SSE, "/sse" },
-    /* 462 */ { ud_itab__462, UD_TAB__OPC_MOD, "/mod" },
-    /* 463 */ { ud_itab__463, UD_TAB__OPC_SSE, "/sse" },
-    /* 464 */ { ud_itab__464, UD_TAB__OPC_MOD, "/mod" },
-    /* 465 */ { ud_itab__465, UD_TAB__OPC_SSE, "/sse" },
-    /* 466 */ { ud_itab__466, UD_TAB__OPC_MOD, "/mod" },
-    /* 467 */ { ud_itab__467, UD_TAB__OPC_SSE, "/sse" },
-    /* 468 */ { ud_itab__468, UD_TAB__OPC_MOD, "/mod" },
-    /* 469 */ { ud_itab__469, UD_TAB__OPC_SSE, "/sse" },
-    /* 470 */ { ud_itab__470, UD_TAB__OPC_SSE, "/sse" },
-    /* 471 */ { ud_itab__471, UD_TAB__OPC_SSE, "/sse" },
-    /* 472 */ { ud_itab__472, UD_TAB__OPC_SSE, "/sse" },
-    /* 473 */ { ud_itab__473, UD_TAB__OPC_SSE, "/sse" },
-    /* 474 */ { ud_itab__474, UD_TAB__OPC_SSE, "/sse" },
-    /* 475 */ { ud_itab__475, UD_TAB__OPC_SSE, "/sse" },
-    /* 476 */ { ud_itab__476, UD_TAB__OPC_SSE, "/sse" },
-    /* 477 */ { ud_itab__477, UD_TAB__OPC_SSE, "/sse" },
-    /* 478 */ { ud_itab__478, UD_TAB__OPC_SSE, "/sse" },
-    /* 479 */ { ud_itab__479, UD_TAB__OPC_REG, "/reg" },
-    /* 480 */ { ud_itab__480, UD_TAB__OPC_SSE, "/sse" },
-    /* 481 */ { ud_itab__481, UD_TAB__OPC_SSE, "/sse" },
-    /* 482 */ { ud_itab__482, UD_TAB__OPC_SSE, "/sse" },
-    /* 483 */ { ud_itab__483, UD_TAB__OPC_SSE, "/sse" },
-    /* 484 */ { ud_itab__484, UD_TAB__OPC_SSE, "/sse" },
-    /* 485 */ { ud_itab__485, UD_TAB__OPC_SSE, "/sse" },
-    /* 486 */ { ud_itab__486, UD_TAB__OPC_SSE, "/sse" },
-    /* 487 */ { ud_itab__487, UD_TAB__OPC_SSE, "/sse" },
-    /* 488 */ { ud_itab__488, UD_TAB__OPC_SSE, "/sse" },
-    /* 489 */ { ud_itab__489, UD_TAB__OPC_SSE, "/sse" },
-    /* 490 */ { ud_itab__490, UD_TAB__OPC_SSE, "/sse" },
-    /* 491 */ { ud_itab__491, UD_TAB__OPC_SSE, "/sse" },
-    /* 492 */ { ud_itab__492, UD_TAB__OPC_SSE, "/sse" },
-    /* 493 */ { ud_itab__493, UD_TAB__OPC_SSE, "/sse" },
-    /* 494 */ { ud_itab__494, UD_TAB__OPC_SSE, "/sse" },
-    /* 495 */ { ud_itab__495, UD_TAB__OPC_SSE, "/sse" },
-    /* 496 */ { ud_itab__496, UD_TAB__OPC_REG, "/reg" },
-    /* 497 */ { ud_itab__497, UD_TAB__OPC_SSE, "/sse" },
-    /* 498 */ { ud_itab__498, UD_TAB__OPC_OSIZE, "/o" },
-    /* 499 */ { ud_itab__499, UD_TAB__OPC_SSE, "/sse" },
-    /* 500 */ { ud_itab__500, UD_TAB__OPC_VENDOR, "intel" },
-    /* 501 */ { ud_itab__501, UD_TAB__OPC_VENDOR, "intel" },
-    /* 502 */ { ud_itab__502, UD_TAB__OPC_VENDOR, "intel" },
-    /* 503 */ { ud_itab__503, UD_TAB__OPC_SSE, "/sse" },
-    /* 504 */ { ud_itab__504, UD_TAB__OPC_VENDOR, "intel" },
-    /* 505 */ { ud_itab__505, UD_TAB__OPC_SSE, "/sse" },
-    /* 506 */ { ud_itab__506, UD_TAB__OPC_SSE, "/sse" },
-    /* 507 */ { ud_itab__507, UD_TAB__OPC_SSE, "/sse" },
-    /* 508 */ { ud_itab__508, UD_TAB__OPC_SSE, "/sse" },
-    /* 509 */ { ud_itab__509, UD_TAB__OPC_SSE, "/sse" },
-    /* 510 */ { ud_itab__510, UD_TAB__OPC_SSE, "/sse" },
-    /* 511 */ { ud_itab__511, UD_TAB__OPC_SSE, "/sse" },
-    /* 512 */ { ud_itab__512, UD_TAB__OPC_SSE, "/sse" },
-    /* 513 */ { ud_itab__513, UD_TAB__OPC_SSE, "/sse" },
-    /* 514 */ { ud_itab__514, UD_TAB__OPC_SSE, "/sse" },
-    /* 515 */ { ud_itab__515, UD_TAB__OPC_SSE, "/sse" },
-    /* 516 */ { ud_itab__516, UD_TAB__OPC_SSE, "/sse" },
-    /* 517 */ { ud_itab__517, UD_TAB__OPC_SSE, "/sse" },
-    /* 518 */ { ud_itab__518, UD_TAB__OPC_SSE, "/sse" },
-    /* 519 */ { ud_itab__519, UD_TAB__OPC_SSE, "/sse" },
-    /* 520 */ { ud_itab__520, UD_TAB__OPC_SSE, "/sse" },
-    /* 521 */ { ud_itab__521, UD_TAB__OPC_SSE, "/sse" },
-    /* 522 */ { ud_itab__522, UD_TAB__OPC_SSE, "/sse" },
-    /* 523 */ { ud_itab__523, UD_TAB__OPC_SSE, "/sse" },
-    /* 524 */ { ud_itab__524, UD_TAB__OPC_SSE, "/sse" },
-    /* 525 */ { ud_itab__525, UD_TAB__OPC_SSE, "/sse" },
-    /* 526 */ { ud_itab__526, UD_TAB__OPC_SSE, "/sse" },
-    /* 527 */ { ud_itab__527, UD_TAB__OPC_SSE, "/sse" },
-    /* 528 */ { ud_itab__528, UD_TAB__OPC_SSE, "/sse" },
-    /* 529 */ { ud_itab__529, UD_TAB__OPC_SSE, "/sse" },
-    /* 530 */ { ud_itab__530, UD_TAB__OPC_SSE, "/sse" },
-    /* 531 */ { ud_itab__531, UD_TAB__OPC_SSE, "/sse" },
-    /* 532 */ { ud_itab__532, UD_TAB__OPC_SSE, "/sse" },
-    /* 533 */ { ud_itab__533, UD_TAB__OPC_SSE, "/sse" },
-    /* 534 */ { ud_itab__534, UD_TAB__OPC_SSE, "/sse" },
-    /* 535 */ { ud_itab__535, UD_TAB__OPC_SSE, "/sse" },
-    /* 536 */ { ud_itab__536, UD_TAB__OPC_SSE, "/sse" },
-    /* 537 */ { ud_itab__537, UD_TAB__OPC_SSE, "/sse" },
-    /* 538 */ { ud_itab__538, UD_TAB__OPC_SSE, "/sse" },
-    /* 539 */ { ud_itab__539, UD_TAB__OPC_SSE, "/sse" },
-    /* 540 */ { ud_itab__540, UD_TAB__OPC_SSE, "/sse" },
-    /* 541 */ { ud_itab__541, UD_TAB__OPC_SSE, "/sse" },
-    /* 542 */ { ud_itab__542, UD_TAB__OPC_SSE, "/sse" },
-    /* 543 */ { ud_itab__543, UD_TAB__OPC_SSE, "/sse" },
-    /* 544 */ { ud_itab__544, UD_TAB__OPC_SSE, "/sse" },
-    /* 545 */ { ud_itab__545, UD_TAB__OPC_SSE, "/sse" },
-    /* 546 */ { ud_itab__546, UD_TAB__OPC_SSE, "/sse" },
-    /* 547 */ { ud_itab__547, UD_TAB__OPC_SSE, "/sse" },
-    /* 548 */ { ud_itab__548, UD_TAB__OPC_SSE, "/sse" },
-    /* 549 */ { ud_itab__549, UD_TAB__OPC_SSE, "/sse" },
-    /* 550 */ { ud_itab__550, UD_TAB__OPC_SSE, "/sse" },
-    /* 551 */ { ud_itab__551, UD_TAB__OPC_SSE, "/sse" },
-    /* 552 */ { ud_itab__552, UD_TAB__OPC_MOD, "/mod" },
-    /* 553 */ { ud_itab__553, UD_TAB__OPC_SSE, "/sse" },
-    /* 554 */ { ud_itab__554, UD_TAB__OPC_MOD, "/mod" },
-    /* 555 */ { ud_itab__555, UD_TAB__OPC_MOD, "/mod" },
-    /* 556 */ { ud_itab__556, UD_TAB__OPC_SSE, "/sse" },
-    /* 557 */ { ud_itab__557, UD_TAB__OPC_SSE, "/sse" },
-    /* 558 */ { ud_itab__558, UD_TAB__OPC_SSE, "/sse" },
-    /* 559 */ { ud_itab__559, UD_TAB__OPC_SSE, "/sse" },
-    /* 560 */ { ud_itab__560, UD_TAB__OPC_SSE, "/sse" },
-    /* 561 */ { ud_itab__561, UD_TAB__OPC_SSE, "/sse" },
-    /* 562 */ { ud_itab__562, UD_TAB__OPC_SSE, "/sse" },
-    /* 563 */ { ud_itab__563, UD_TAB__OPC_MODE, "/m" },
-    /* 564 */ { ud_itab__564, UD_TAB__OPC_MODE, "/m" },
-    /* 565 */ { ud_itab__565, UD_TAB__OPC_MODE, "/m" },
-    /* 566 */ { ud_itab__566, UD_TAB__OPC_MODE, "/m" },
-    /* 567 */ { ud_itab__567, UD_TAB__OPC_MODE, "/m" },
-    /* 568 */ { ud_itab__568, UD_TAB__OPC_MODE, "/m" },
-    /* 569 */ { ud_itab__569, UD_TAB__OPC_MODE, "/m" },
-    /* 570 */ { ud_itab__570, UD_TAB__OPC_MODE, "/m" },
-    /* 571 */ { ud_itab__571, UD_TAB__OPC_OSIZE, "/o" },
-    /* 572 */ { ud_itab__572, UD_TAB__OPC_MODE, "/m" },
-    /* 573 */ { ud_itab__573, UD_TAB__OPC_MODE, "/m" },
-    /* 574 */ { ud_itab__574, UD_TAB__OPC_OSIZE, "/o" },
-    /* 575 */ { ud_itab__575, UD_TAB__OPC_MODE, "/m" },
-    /* 576 */ { ud_itab__576, UD_TAB__OPC_MODE, "/m" },
-    /* 577 */ { ud_itab__577, UD_TAB__OPC_MODE, "/m" },
-    /* 578 */ { ud_itab__578, UD_TAB__OPC_MODE, "/m" },
-    /* 579 */ { ud_itab__579, UD_TAB__OPC_OSIZE, "/o" },
-    /* 580 */ { ud_itab__580, UD_TAB__OPC_OSIZE, "/o" },
-    /* 581 */ { ud_itab__581, UD_TAB__OPC_REG, "/reg" },
-    /* 582 */ { ud_itab__582, UD_TAB__OPC_REG, "/reg" },
-    /* 583 */ { ud_itab__583, UD_TAB__OPC_REG, "/reg" },
-    /* 584 */ { ud_itab__584, UD_TAB__OPC_MODE, "/m" },
-    /* 585 */ { ud_itab__585, UD_TAB__OPC_MODE, "/m" },
-    /* 586 */ { ud_itab__586, UD_TAB__OPC_MODE, "/m" },
-    /* 587 */ { ud_itab__587, UD_TAB__OPC_MODE, "/m" },
-    /* 588 */ { ud_itab__588, UD_TAB__OPC_MODE, "/m" },
-    /* 589 */ { ud_itab__589, UD_TAB__OPC_MODE, "/m" },
-    /* 590 */ { ud_itab__590, UD_TAB__OPC_MODE, "/m" },
-    /* 591 */ { ud_itab__591, UD_TAB__OPC_MODE, "/m" },
-    /* 592 */ { ud_itab__592, UD_TAB__OPC_REG, "/reg" },
-    /* 593 */ { ud_itab__593, UD_TAB__OPC_REG, "/reg" },
-    /* 594 */ { ud_itab__594, UD_TAB__OPC_OSIZE, "/o" },
-    /* 595 */ { ud_itab__595, UD_TAB__OPC_OSIZE, "/o" },
-    /* 596 */ { ud_itab__596, UD_TAB__OPC_MODE, "/m" },
-    /* 597 */ { ud_itab__597, UD_TAB__OPC_OSIZE, "/o" },
-    /* 598 */ { ud_itab__598, UD_TAB__OPC_MODE, "/m" },
-    /* 599 */ { ud_itab__599, UD_TAB__OPC_MODE, "/m" },
-    /* 600 */ { ud_itab__600, UD_TAB__OPC_MODE, "/m" },
-    /* 601 */ { ud_itab__601, UD_TAB__OPC_OSIZE, "/o" },
-    /* 602 */ { ud_itab__602, UD_TAB__OPC_MODE, "/m" },
-    /* 603 */ { ud_itab__603, UD_TAB__OPC_MODE, "/m" },
-    /* 604 */ { ud_itab__604, UD_TAB__OPC_MODE, "/m" },
-    /* 605 */ { ud_itab__605, UD_TAB__OPC_OSIZE, "/o" },
-    /* 606 */ { ud_itab__606, UD_TAB__OPC_OSIZE, "/o" },
-    /* 607 */ { ud_itab__607, UD_TAB__OPC_OSIZE, "/o" },
-    /* 608 */ { ud_itab__608, UD_TAB__OPC_OSIZE, "/o" },
-    /* 609 */ { ud_itab__609, UD_TAB__OPC_OSIZE, "/o" },
-    /* 610 */ { ud_itab__610, UD_TAB__OPC_REG, "/reg" },
-    /* 611 */ { ud_itab__611, UD_TAB__OPC_REG, "/reg" },
-    /* 612 */ { ud_itab__612, UD_TAB__OPC_MODE, "/m" },
-    /* 613 */ { ud_itab__613, UD_TAB__OPC_MODE, "/m" },
-    /* 614 */ { ud_itab__614, UD_TAB__OPC_REG, "/reg" },
-    /* 615 */ { ud_itab__615, UD_TAB__OPC_REG, "/reg" },
-    /* 616 */ { ud_itab__616, UD_TAB__OPC_MODE, "/m" },
-    /* 617 */ { ud_itab__617, UD_TAB__OPC_OSIZE, "/o" },
-    /* 618 */ { ud_itab__618, UD_TAB__OPC_REG, "/reg" },
-    /* 619 */ { ud_itab__619, UD_TAB__OPC_REG, "/reg" },
-    /* 620 */ { ud_itab__620, UD_TAB__OPC_REG, "/reg" },
-    /* 621 */ { ud_itab__621, UD_TAB__OPC_REG, "/reg" },
-    /* 622 */ { ud_itab__622, UD_TAB__OPC_MODE, "/m" },
-    /* 623 */ { ud_itab__623, UD_TAB__OPC_MODE, "/m" },
-    /* 624 */ { ud_itab__624, UD_TAB__OPC_MODE, "/m" },
-    /* 625 */ { ud_itab__625, UD_TAB__OPC_MOD, "/mod" },
-    /* 626 */ { ud_itab__626, UD_TAB__OPC_REG, "/reg" },
-    /* 627 */ { ud_itab__627, UD_TAB__OPC_MOD, "/mod" },
-    /* 628 */ { ud_itab__628, UD_TAB__OPC_MOD, "/mod" },
-    /* 629 */ { ud_itab__629, UD_TAB__OPC_MOD, "/mod" },
-    /* 630 */ { ud_itab__630, UD_TAB__OPC_MOD, "/mod" },
-    /* 631 */ { ud_itab__631, UD_TAB__OPC_MOD, "/mod" },
-    /* 632 */ { ud_itab__632, UD_TAB__OPC_MOD, "/mod" },
-    /* 633 */ { ud_itab__633, UD_TAB__OPC_MOD, "/mod" },
-    /* 634 */ { ud_itab__634, UD_TAB__OPC_MOD, "/mod" },
-    /* 635 */ { ud_itab__635, UD_TAB__OPC_X87, "/x87" },
-    /* 636 */ { ud_itab__636, UD_TAB__OPC_MOD, "/mod" },
-    /* 637 */ { ud_itab__637, UD_TAB__OPC_MOD, "/mod" },
-    /* 638 */ { ud_itab__638, UD_TAB__OPC_MOD, "/mod" },
-    /* 639 */ { ud_itab__639, UD_TAB__OPC_MOD, "/mod" },
-    /* 640 */ { ud_itab__640, UD_TAB__OPC_MOD, "/mod" },
-    /* 641 */ { ud_itab__641, UD_TAB__OPC_MOD, "/mod" },
-    /* 642 */ { ud_itab__642, UD_TAB__OPC_MOD, "/mod" },
-    /* 643 */ { ud_itab__643, UD_TAB__OPC_MOD, "/mod" },
-    /* 644 */ { ud_itab__644, UD_TAB__OPC_MOD, "/mod" },
-    /* 645 */ { ud_itab__645, UD_TAB__OPC_MOD, "/mod" },
-    /* 646 */ { ud_itab__646, UD_TAB__OPC_MOD, "/mod" },
-    /* 647 */ { ud_itab__647, UD_TAB__OPC_MOD, "/mod" },
-    /* 648 */ { ud_itab__648, UD_TAB__OPC_MOD, "/mod" },
-    /* 649 */ { ud_itab__649, UD_TAB__OPC_MOD, "/mod" },
-    /* 650 */ { ud_itab__650, UD_TAB__OPC_MOD, "/mod" },
-    /* 651 */ { ud_itab__651, UD_TAB__OPC_MOD, "/mod" },
-    /* 652 */ { ud_itab__652, UD_TAB__OPC_MOD, "/mod" },
-    /* 653 */ { ud_itab__653, UD_TAB__OPC_MOD, "/mod" },
-    /* 654 */ { ud_itab__654, UD_TAB__OPC_MOD, "/mod" },
-    /* 655 */ { ud_itab__655, UD_TAB__OPC_MOD, "/mod" },
-    /* 656 */ { ud_itab__656, UD_TAB__OPC_MOD, "/mod" },
-    /* 657 */ { ud_itab__657, UD_TAB__OPC_MOD, "/mod" },
-    /* 658 */ { ud_itab__658, UD_TAB__OPC_MOD, "/mod" },
-    /* 659 */ { ud_itab__659, UD_TAB__OPC_MOD, "/mod" },
-    /* 660 */ { ud_itab__660, UD_TAB__OPC_MOD, "/mod" },
-    /* 661 */ { ud_itab__661, UD_TAB__OPC_MOD, "/mod" },
-    /* 662 */ { ud_itab__662, UD_TAB__OPC_MOD, "/mod" },
-    /* 663 */ { ud_itab__663, UD_TAB__OPC_MOD, "/mod" },
-    /* 664 */ { ud_itab__664, UD_TAB__OPC_MOD, "/mod" },
-    /* 665 */ { ud_itab__665, UD_TAB__OPC_MOD, "/mod" },
-    /* 666 */ { ud_itab__666, UD_TAB__OPC_MOD, "/mod" },
-    /* 667 */ { ud_itab__667, UD_TAB__OPC_MOD, "/mod" },
-    /* 668 */ { ud_itab__668, UD_TAB__OPC_MOD, "/mod" },
-    /* 669 */ { ud_itab__669, UD_TAB__OPC_MOD, "/mod" },
-    /* 670 */ { ud_itab__670, UD_TAB__OPC_MOD, "/mod" },
-    /* 671 */ { ud_itab__671, UD_TAB__OPC_MOD, "/mod" },
-    /* 672 */ { ud_itab__672, UD_TAB__OPC_MOD, "/mod" },
-    /* 673 */ { ud_itab__673, UD_TAB__OPC_MOD, "/mod" },
-    /* 674 */ { ud_itab__674, UD_TAB__OPC_MOD, "/mod" },
-    /* 675 */ { ud_itab__675, UD_TAB__OPC_MOD, "/mod" },
-    /* 676 */ { ud_itab__676, UD_TAB__OPC_MOD, "/mod" },
-    /* 677 */ { ud_itab__677, UD_TAB__OPC_MOD, "/mod" },
-    /* 678 */ { ud_itab__678, UD_TAB__OPC_MOD, "/mod" },
-    /* 679 */ { ud_itab__679, UD_TAB__OPC_MOD, "/mod" },
-    /* 680 */ { ud_itab__680, UD_TAB__OPC_MOD, "/mod" },
-    /* 681 */ { ud_itab__681, UD_TAB__OPC_MOD, "/mod" },
-    /* 682 */ { ud_itab__682, UD_TAB__OPC_MOD, "/mod" },
-    /* 683 */ { ud_itab__683, UD_TAB__OPC_MOD, "/mod" },
-    /* 684 */ { ud_itab__684, UD_TAB__OPC_MOD, "/mod" },
-    /* 685 */ { ud_itab__685, UD_TAB__OPC_MOD, "/mod" },
-    /* 686 */ { ud_itab__686, UD_TAB__OPC_MOD, "/mod" },
-    /* 687 */ { ud_itab__687, UD_TAB__OPC_MOD, "/mod" },
-    /* 688 */ { ud_itab__688, UD_TAB__OPC_MOD, "/mod" },
-    /* 689 */ { ud_itab__689, UD_TAB__OPC_MOD, "/mod" },
-    /* 690 */ { ud_itab__690, UD_TAB__OPC_MOD, "/mod" },
-    /* 691 */ { ud_itab__691, UD_TAB__OPC_MOD, "/mod" },
-    /* 692 */ { ud_itab__692, UD_TAB__OPC_MOD, "/mod" },
-    /* 693 */ { ud_itab__693, UD_TAB__OPC_MOD, "/mod" },
-    /* 694 */ { ud_itab__694, UD_TAB__OPC_MOD, "/mod" },
-    /* 695 */ { ud_itab__695, UD_TAB__OPC_MOD, "/mod" },
-    /* 696 */ { ud_itab__696, UD_TAB__OPC_MOD, "/mod" },
-    /* 697 */ { ud_itab__697, UD_TAB__OPC_MOD, "/mod" },
-    /* 698 */ { ud_itab__698, UD_TAB__OPC_MOD, "/mod" },
-    /* 699 */ { ud_itab__699, UD_TAB__OPC_MOD, "/mod" },
-    /* 700 */ { ud_itab__700, UD_TAB__OPC_MOD, "/mod" },
-    /* 701 */ { ud_itab__701, UD_TAB__OPC_REG, "/reg" },
-    /* 702 */ { ud_itab__702, UD_TAB__OPC_MOD, "/mod" },
-    /* 703 */ { ud_itab__703, UD_TAB__OPC_MOD, "/mod" },
-    /* 704 */ { ud_itab__704, UD_TAB__OPC_MOD, "/mod" },
-    /* 705 */ { ud_itab__705, UD_TAB__OPC_MOD, "/mod" },
-    /* 706 */ { ud_itab__706, UD_TAB__OPC_MOD, "/mod" },
-    /* 707 */ { ud_itab__707, UD_TAB__OPC_MOD, "/mod" },
-    /* 708 */ { ud_itab__708, UD_TAB__OPC_MOD, "/mod" },
-    /* 709 */ { ud_itab__709, UD_TAB__OPC_X87, "/x87" },
-    /* 710 */ { ud_itab__710, UD_TAB__OPC_MOD, "/mod" },
-    /* 711 */ { ud_itab__711, UD_TAB__OPC_MOD, "/mod" },
-    /* 712 */ { ud_itab__712, UD_TAB__OPC_MOD, "/mod" },
-    /* 713 */ { ud_itab__713, UD_TAB__OPC_MOD, "/mod" },
-    /* 714 */ { ud_itab__714, UD_TAB__OPC_MOD, "/mod" },
-    /* 715 */ { ud_itab__715, UD_TAB__OPC_MOD, "/mod" },
-    /* 716 */ { ud_itab__716, UD_TAB__OPC_MOD, "/mod" },
-    /* 717 */ { ud_itab__717, UD_TAB__OPC_MOD, "/mod" },
-    /* 718 */ { ud_itab__718, UD_TAB__OPC_MOD, "/mod" },
-    /* 719 */ { ud_itab__719, UD_TAB__OPC_MOD, "/mod" },
-    /* 720 */ { ud_itab__720, UD_TAB__OPC_MOD, "/mod" },
-    /* 721 */ { ud_itab__721, UD_TAB__OPC_MOD, "/mod" },
-    /* 722 */ { ud_itab__722, UD_TAB__OPC_MOD, "/mod" },
-    /* 723 */ { ud_itab__723, UD_TAB__OPC_MOD, "/mod" },
-    /* 724 */ { ud_itab__724, UD_TAB__OPC_MOD, "/mod" },
-    /* 725 */ { ud_itab__725, UD_TAB__OPC_MOD, "/mod" },
-    /* 726 */ { ud_itab__726, UD_TAB__OPC_MOD, "/mod" },
-    /* 727 */ { ud_itab__727, UD_TAB__OPC_MOD, "/mod" },
-    /* 728 */ { ud_itab__728, UD_TAB__OPC_MOD, "/mod" },
-    /* 729 */ { ud_itab__729, UD_TAB__OPC_MOD, "/mod" },
-    /* 730 */ { ud_itab__730, UD_TAB__OPC_MOD, "/mod" },
-    /* 731 */ { ud_itab__731, UD_TAB__OPC_MOD, "/mod" },
-    /* 732 */ { ud_itab__732, UD_TAB__OPC_MOD, "/mod" },
-    /* 733 */ { ud_itab__733, UD_TAB__OPC_MOD, "/mod" },
-    /* 734 */ { ud_itab__734, UD_TAB__OPC_MOD, "/mod" },
-    /* 735 */ { ud_itab__735, UD_TAB__OPC_MOD, "/mod" },
-    /* 736 */ { ud_itab__736, UD_TAB__OPC_MOD, "/mod" },
-    /* 737 */ { ud_itab__737, UD_TAB__OPC_MOD, "/mod" },
-    /* 738 */ { ud_itab__738, UD_TAB__OPC_MOD, "/mod" },
-    /* 739 */ { ud_itab__739, UD_TAB__OPC_MOD, "/mod" },
-    /* 740 */ { ud_itab__740, UD_TAB__OPC_MOD, "/mod" },
-    /* 741 */ { ud_itab__741, UD_TAB__OPC_MOD, "/mod" },
-    /* 742 */ { ud_itab__742, UD_TAB__OPC_MOD, "/mod" },
-    /* 743 */ { ud_itab__743, UD_TAB__OPC_MOD, "/mod" },
-    /* 744 */ { ud_itab__744, UD_TAB__OPC_MOD, "/mod" },
-    /* 745 */ { ud_itab__745, UD_TAB__OPC_MOD, "/mod" },
-    /* 746 */ { ud_itab__746, UD_TAB__OPC_MOD, "/mod" },
-    /* 747 */ { ud_itab__747, UD_TAB__OPC_MOD, "/mod" },
-    /* 748 */ { ud_itab__748, UD_TAB__OPC_MOD, "/mod" },
-    /* 749 */ { ud_itab__749, UD_TAB__OPC_MOD, "/mod" },
-    /* 750 */ { ud_itab__750, UD_TAB__OPC_MOD, "/mod" },
-    /* 751 */ { ud_itab__751, UD_TAB__OPC_MOD, "/mod" },
-    /* 752 */ { ud_itab__752, UD_TAB__OPC_MOD, "/mod" },
-    /* 753 */ { ud_itab__753, UD_TAB__OPC_MOD, "/mod" },
-    /* 754 */ { ud_itab__754, UD_TAB__OPC_MOD, "/mod" },
-    /* 755 */ { ud_itab__755, UD_TAB__OPC_MOD, "/mod" },
-    /* 756 */ { ud_itab__756, UD_TAB__OPC_MOD, "/mod" },
-    /* 757 */ { ud_itab__757, UD_TAB__OPC_MOD, "/mod" },
-    /* 758 */ { ud_itab__758, UD_TAB__OPC_MOD, "/mod" },
-    /* 759 */ { ud_itab__759, UD_TAB__OPC_MOD, "/mod" },
-    /* 760 */ { ud_itab__760, UD_TAB__OPC_MOD, "/mod" },
-    /* 761 */ { ud_itab__761, UD_TAB__OPC_MOD, "/mod" },
-    /* 762 */ { ud_itab__762, UD_TAB__OPC_MOD, "/mod" },
-    /* 763 */ { ud_itab__763, UD_TAB__OPC_REG, "/reg" },
-    /* 764 */ { ud_itab__764, UD_TAB__OPC_MOD, "/mod" },
-    /* 765 */ { ud_itab__765, UD_TAB__OPC_MOD, "/mod" },
-    /* 766 */ { ud_itab__766, UD_TAB__OPC_MOD, "/mod" },
-    /* 767 */ { ud_itab__767, UD_TAB__OPC_MOD, "/mod" },
-    /* 768 */ { ud_itab__768, UD_TAB__OPC_MOD, "/mod" },
-    /* 769 */ { ud_itab__769, UD_TAB__OPC_MOD, "/mod" },
-    /* 770 */ { ud_itab__770, UD_TAB__OPC_MOD, "/mod" },
-    /* 771 */ { ud_itab__771, UD_TAB__OPC_MOD, "/mod" },
-    /* 772 */ { ud_itab__772, UD_TAB__OPC_X87, "/x87" },
-    /* 773 */ { ud_itab__773, UD_TAB__OPC_MOD, "/mod" },
-    /* 774 */ { ud_itab__774, UD_TAB__OPC_MOD, "/mod" },
-    /* 775 */ { ud_itab__775, UD_TAB__OPC_MOD, "/mod" },
-    /* 776 */ { ud_itab__776, UD_TAB__OPC_MOD, "/mod" },
-    /* 777 */ { ud_itab__777, UD_TAB__OPC_MOD, "/mod" },
-    /* 778 */ { ud_itab__778, UD_TAB__OPC_MOD, "/mod" },
-    /* 779 */ { ud_itab__779, UD_TAB__OPC_MOD, "/mod" },
-    /* 780 */ { ud_itab__780, UD_TAB__OPC_MOD, "/mod" },
-    /* 781 */ { ud_itab__781, UD_TAB__OPC_MOD, "/mod" },
-    /* 782 */ { ud_itab__782, UD_TAB__OPC_MOD, "/mod" },
-    /* 783 */ { ud_itab__783, UD_TAB__OPC_MOD, "/mod" },
-    /* 784 */ { ud_itab__784, UD_TAB__OPC_MOD, "/mod" },
-    /* 785 */ { ud_itab__785, UD_TAB__OPC_MOD, "/mod" },
-    /* 786 */ { ud_itab__786, UD_TAB__OPC_MOD, "/mod" },
-    /* 787 */ { ud_itab__787, UD_TAB__OPC_MOD, "/mod" },
-    /* 788 */ { ud_itab__788, UD_TAB__OPC_MOD, "/mod" },
-    /* 789 */ { ud_itab__789, UD_TAB__OPC_MOD, "/mod" },
-    /* 790 */ { ud_itab__790, UD_TAB__OPC_MOD, "/mod" },
-    /* 791 */ { ud_itab__791, UD_TAB__OPC_MOD, "/mod" },
-    /* 792 */ { ud_itab__792, UD_TAB__OPC_MOD, "/mod" },
-    /* 793 */ { ud_itab__793, UD_TAB__OPC_MOD, "/mod" },
-    /* 794 */ { ud_itab__794, UD_TAB__OPC_MOD, "/mod" },
-    /* 795 */ { ud_itab__795, UD_TAB__OPC_MOD, "/mod" },
-    /* 796 */ { ud_itab__796, UD_TAB__OPC_MOD, "/mod" },
-    /* 797 */ { ud_itab__797, UD_TAB__OPC_MOD, "/mod" },
-    /* 798 */ { ud_itab__798, UD_TAB__OPC_MOD, "/mod" },
-    /* 799 */ { ud_itab__799, UD_TAB__OPC_MOD, "/mod" },
-    /* 800 */ { ud_itab__800, UD_TAB__OPC_MOD, "/mod" },
-    /* 801 */ { ud_itab__801, UD_TAB__OPC_MOD, "/mod" },
-    /* 802 */ { ud_itab__802, UD_TAB__OPC_MOD, "/mod" },
-    /* 803 */ { ud_itab__803, UD_TAB__OPC_MOD, "/mod" },
-    /* 804 */ { ud_itab__804, UD_TAB__OPC_MOD, "/mod" },
-    /* 805 */ { ud_itab__805, UD_TAB__OPC_MOD, "/mod" },
-    /* 806 */ { ud_itab__806, UD_TAB__OPC_MOD, "/mod" },
-    /* 807 */ { ud_itab__807, UD_TAB__OPC_REG, "/reg" },
-    /* 808 */ { ud_itab__808, UD_TAB__OPC_MOD, "/mod" },
-    /* 809 */ { ud_itab__809, UD_TAB__OPC_MOD, "/mod" },
-    /* 810 */ { ud_itab__810, UD_TAB__OPC_MOD, "/mod" },
-    /* 811 */ { ud_itab__811, UD_TAB__OPC_MOD, "/mod" },
-    /* 812 */ { ud_itab__812, UD_TAB__OPC_MOD, "/mod" },
-    /* 813 */ { ud_itab__813, UD_TAB__OPC_MOD, "/mod" },
-    /* 814 */ { ud_itab__814, UD_TAB__OPC_X87, "/x87" },
-    /* 815 */ { ud_itab__815, UD_TAB__OPC_MOD, "/mod" },
-    /* 816 */ { ud_itab__816, UD_TAB__OPC_MOD, "/mod" },
-    /* 817 */ { ud_itab__817, UD_TAB__OPC_MOD, "/mod" },
-    /* 818 */ { ud_itab__818, UD_TAB__OPC_MOD, "/mod" },
-    /* 819 */ { ud_itab__819, UD_TAB__OPC_MOD, "/mod" },
-    /* 820 */ { ud_itab__820, UD_TAB__OPC_MOD, "/mod" },
-    /* 821 */ { ud_itab__821, UD_TAB__OPC_MOD, "/mod" },
-    /* 822 */ { ud_itab__822, UD_TAB__OPC_MOD, "/mod" },
-    /* 823 */ { ud_itab__823, UD_TAB__OPC_MOD, "/mod" },
-    /* 824 */ { ud_itab__824, UD_TAB__OPC_MOD, "/mod" },
-    /* 825 */ { ud_itab__825, UD_TAB__OPC_MOD, "/mod" },
-    /* 826 */ { ud_itab__826, UD_TAB__OPC_MOD, "/mod" },
-    /* 827 */ { ud_itab__827, UD_TAB__OPC_MOD, "/mod" },
-    /* 828 */ { ud_itab__828, UD_TAB__OPC_MOD, "/mod" },
-    /* 829 */ { ud_itab__829, UD_TAB__OPC_MOD, "/mod" },
-    /* 830 */ { ud_itab__830, UD_TAB__OPC_MOD, "/mod" },
-    /* 831 */ { ud_itab__831, UD_TAB__OPC_MOD, "/mod" },
-    /* 832 */ { ud_itab__832, UD_TAB__OPC_MOD, "/mod" },
-    /* 833 */ { ud_itab__833, UD_TAB__OPC_MOD, "/mod" },
-    /* 834 */ { ud_itab__834, UD_TAB__OPC_MOD, "/mod" },
-    /* 835 */ { ud_itab__835, UD_TAB__OPC_MOD, "/mod" },
-    /* 836 */ { ud_itab__836, UD_TAB__OPC_MOD, "/mod" },
-    /* 837 */ { ud_itab__837, UD_TAB__OPC_MOD, "/mod" },
-    /* 838 */ { ud_itab__838, UD_TAB__OPC_MOD, "/mod" },
-    /* 839 */ { ud_itab__839, UD_TAB__OPC_MOD, "/mod" },
-    /* 840 */ { ud_itab__840, UD_TAB__OPC_MOD, "/mod" },
-    /* 841 */ { ud_itab__841, UD_TAB__OPC_MOD, "/mod" },
-    /* 842 */ { ud_itab__842, UD_TAB__OPC_MOD, "/mod" },
-    /* 843 */ { ud_itab__843, UD_TAB__OPC_MOD, "/mod" },
-    /* 844 */ { ud_itab__844, UD_TAB__OPC_MOD, "/mod" },
-    /* 845 */ { ud_itab__845, UD_TAB__OPC_MOD, "/mod" },
-    /* 846 */ { ud_itab__846, UD_TAB__OPC_MOD, "/mod" },
-    /* 847 */ { ud_itab__847, UD_TAB__OPC_MOD, "/mod" },
-    /* 848 */ { ud_itab__848, UD_TAB__OPC_MOD, "/mod" },
-    /* 849 */ { ud_itab__849, UD_TAB__OPC_MOD, "/mod" },
-    /* 850 */ { ud_itab__850, UD_TAB__OPC_MOD, "/mod" },
-    /* 851 */ { ud_itab__851, UD_TAB__OPC_MOD, "/mod" },
-    /* 852 */ { ud_itab__852, UD_TAB__OPC_MOD, "/mod" },
-    /* 853 */ { ud_itab__853, UD_TAB__OPC_MOD, "/mod" },
-    /* 854 */ { ud_itab__854, UD_TAB__OPC_MOD, "/mod" },
-    /* 855 */ { ud_itab__855, UD_TAB__OPC_MOD, "/mod" },
-    /* 856 */ { ud_itab__856, UD_TAB__OPC_MOD, "/mod" },
-    /* 857 */ { ud_itab__857, UD_TAB__OPC_MOD, "/mod" },
-    /* 858 */ { ud_itab__858, UD_TAB__OPC_MOD, "/mod" },
-    /* 859 */ { ud_itab__859, UD_TAB__OPC_MOD, "/mod" },
-    /* 860 */ { ud_itab__860, UD_TAB__OPC_MOD, "/mod" },
-    /* 861 */ { ud_itab__861, UD_TAB__OPC_MOD, "/mod" },
-    /* 862 */ { ud_itab__862, UD_TAB__OPC_MOD, "/mod" },
-    /* 863 */ { ud_itab__863, UD_TAB__OPC_MOD, "/mod" },
-    /* 864 */ { ud_itab__864, UD_TAB__OPC_MOD, "/mod" },
-    /* 865 */ { ud_itab__865, UD_TAB__OPC_MOD, "/mod" },
-    /* 866 */ { ud_itab__866, UD_TAB__OPC_REG, "/reg" },
-    /* 867 */ { ud_itab__867, UD_TAB__OPC_MOD, "/mod" },
-    /* 868 */ { ud_itab__868, UD_TAB__OPC_MOD, "/mod" },
-    /* 869 */ { ud_itab__869, UD_TAB__OPC_MOD, "/mod" },
-    /* 870 */ { ud_itab__870, UD_TAB__OPC_MOD, "/mod" },
-    /* 871 */ { ud_itab__871, UD_TAB__OPC_MOD, "/mod" },
-    /* 872 */ { ud_itab__872, UD_TAB__OPC_MOD, "/mod" },
-    /* 873 */ { ud_itab__873, UD_TAB__OPC_MOD, "/mod" },
-    /* 874 */ { ud_itab__874, UD_TAB__OPC_MOD, "/mod" },
-    /* 875 */ { ud_itab__875, UD_TAB__OPC_X87, "/x87" },
-    /* 876 */ { ud_itab__876, UD_TAB__OPC_MOD, "/mod" },
-    /* 877 */ { ud_itab__877, UD_TAB__OPC_MOD, "/mod" },
-    /* 878 */ { ud_itab__878, UD_TAB__OPC_MOD, "/mod" },
-    /* 879 */ { ud_itab__879, UD_TAB__OPC_MOD, "/mod" },
-    /* 880 */ { ud_itab__880, UD_TAB__OPC_MOD, "/mod" },
-    /* 881 */ { ud_itab__881, UD_TAB__OPC_MOD, "/mod" },
-    /* 882 */ { ud_itab__882, UD_TAB__OPC_MOD, "/mod" },
-    /* 883 */ { ud_itab__883, UD_TAB__OPC_MOD, "/mod" },
-    /* 884 */ { ud_itab__884, UD_TAB__OPC_MOD, "/mod" },
-    /* 885 */ { ud_itab__885, UD_TAB__OPC_MOD, "/mod" },
-    /* 886 */ { ud_itab__886, UD_TAB__OPC_MOD, "/mod" },
-    /* 887 */ { ud_itab__887, UD_TAB__OPC_MOD, "/mod" },
-    /* 888 */ { ud_itab__888, UD_TAB__OPC_MOD, "/mod" },
-    /* 889 */ { ud_itab__889, UD_TAB__OPC_MOD, "/mod" },
-    /* 890 */ { ud_itab__890, UD_TAB__OPC_MOD, "/mod" },
-    /* 891 */ { ud_itab__891, UD_TAB__OPC_MOD, "/mod" },
-    /* 892 */ { ud_itab__892, UD_TAB__OPC_MOD, "/mod" },
-    /* 893 */ { ud_itab__893, UD_TAB__OPC_MOD, "/mod" },
-    /* 894 */ { ud_itab__894, UD_TAB__OPC_MOD, "/mod" },
-    /* 895 */ { ud_itab__895, UD_TAB__OPC_MOD, "/mod" },
-    /* 896 */ { ud_itab__896, UD_TAB__OPC_MOD, "/mod" },
-    /* 897 */ { ud_itab__897, UD_TAB__OPC_MOD, "/mod" },
-    /* 898 */ { ud_itab__898, UD_TAB__OPC_MOD, "/mod" },
-    /* 899 */ { ud_itab__899, UD_TAB__OPC_MOD, "/mod" },
-    /* 900 */ { ud_itab__900, UD_TAB__OPC_MOD, "/mod" },
-    /* 901 */ { ud_itab__901, UD_TAB__OPC_MOD, "/mod" },
-    /* 902 */ { ud_itab__902, UD_TAB__OPC_MOD, "/mod" },
-    /* 903 */ { ud_itab__903, UD_TAB__OPC_MOD, "/mod" },
-    /* 904 */ { ud_itab__904, UD_TAB__OPC_MOD, "/mod" },
-    /* 905 */ { ud_itab__905, UD_TAB__OPC_MOD, "/mod" },
-    /* 906 */ { ud_itab__906, UD_TAB__OPC_MOD, "/mod" },
-    /* 907 */ { ud_itab__907, UD_TAB__OPC_MOD, "/mod" },
-    /* 908 */ { ud_itab__908, UD_TAB__OPC_MOD, "/mod" },
-    /* 909 */ { ud_itab__909, UD_TAB__OPC_MOD, "/mod" },
-    /* 910 */ { ud_itab__910, UD_TAB__OPC_MOD, "/mod" },
-    /* 911 */ { ud_itab__911, UD_TAB__OPC_MOD, "/mod" },
-    /* 912 */ { ud_itab__912, UD_TAB__OPC_MOD, "/mod" },
-    /* 913 */ { ud_itab__913, UD_TAB__OPC_MOD, "/mod" },
-    /* 914 */ { ud_itab__914, UD_TAB__OPC_MOD, "/mod" },
-    /* 915 */ { ud_itab__915, UD_TAB__OPC_MOD, "/mod" },
-    /* 916 */ { ud_itab__916, UD_TAB__OPC_MOD, "/mod" },
-    /* 917 */ { ud_itab__917, UD_TAB__OPC_MOD, "/mod" },
-    /* 918 */ { ud_itab__918, UD_TAB__OPC_MOD, "/mod" },
-    /* 919 */ { ud_itab__919, UD_TAB__OPC_MOD, "/mod" },
-    /* 920 */ { ud_itab__920, UD_TAB__OPC_MOD, "/mod" },
-    /* 921 */ { ud_itab__921, UD_TAB__OPC_MOD, "/mod" },
-    /* 922 */ { ud_itab__922, UD_TAB__OPC_MOD, "/mod" },
-    /* 923 */ { ud_itab__923, UD_TAB__OPC_MOD, "/mod" },
-    /* 924 */ { ud_itab__924, UD_TAB__OPC_MOD, "/mod" },
-    /* 925 */ { ud_itab__925, UD_TAB__OPC_MOD, "/mod" },
-    /* 926 */ { ud_itab__926, UD_TAB__OPC_MOD, "/mod" },
-    /* 927 */ { ud_itab__927, UD_TAB__OPC_MOD, "/mod" },
-    /* 928 */ { ud_itab__928, UD_TAB__OPC_MOD, "/mod" },
-    /* 929 */ { ud_itab__929, UD_TAB__OPC_MOD, "/mod" },
-    /* 930 */ { ud_itab__930, UD_TAB__OPC_MOD, "/mod" },
-    /* 931 */ { ud_itab__931, UD_TAB__OPC_MOD, "/mod" },
-    /* 932 */ { ud_itab__932, UD_TAB__OPC_MOD, "/mod" },
-    /* 933 */ { ud_itab__933, UD_TAB__OPC_MOD, "/mod" },
-    /* 934 */ { ud_itab__934, UD_TAB__OPC_MOD, "/mod" },
-    /* 935 */ { ud_itab__935, UD_TAB__OPC_MOD, "/mod" },
-    /* 936 */ { ud_itab__936, UD_TAB__OPC_MOD, "/mod" },
-    /* 937 */ { ud_itab__937, UD_TAB__OPC_MOD, "/mod" },
-    /* 938 */ { ud_itab__938, UD_TAB__OPC_MOD, "/mod" },
-    /* 939 */ { ud_itab__939, UD_TAB__OPC_MOD, "/mod" },
-    /* 940 */ { ud_itab__940, UD_TAB__OPC_MOD, "/mod" },
-    /* 941 */ { ud_itab__941, UD_TAB__OPC_REG, "/reg" },
-    /* 942 */ { ud_itab__942, UD_TAB__OPC_MOD, "/mod" },
-    /* 943 */ { ud_itab__943, UD_TAB__OPC_MOD, "/mod" },
-    /* 944 */ { ud_itab__944, UD_TAB__OPC_MOD, "/mod" },
-    /* 945 */ { ud_itab__945, UD_TAB__OPC_MOD, "/mod" },
-    /* 946 */ { ud_itab__946, UD_TAB__OPC_MOD, "/mod" },
-    /* 947 */ { ud_itab__947, UD_TAB__OPC_MOD, "/mod" },
-    /* 948 */ { ud_itab__948, UD_TAB__OPC_MOD, "/mod" },
-    /* 949 */ { ud_itab__949, UD_TAB__OPC_X87, "/x87" },
-    /* 950 */ { ud_itab__950, UD_TAB__OPC_MOD, "/mod" },
-    /* 951 */ { ud_itab__951, UD_TAB__OPC_MOD, "/mod" },
-    /* 952 */ { ud_itab__952, UD_TAB__OPC_MOD, "/mod" },
-    /* 953 */ { ud_itab__953, UD_TAB__OPC_MOD, "/mod" },
-    /* 954 */ { ud_itab__954, UD_TAB__OPC_MOD, "/mod" },
-    /* 955 */ { ud_itab__955, UD_TAB__OPC_MOD, "/mod" },
-    /* 956 */ { ud_itab__956, UD_TAB__OPC_MOD, "/mod" },
-    /* 957 */ { ud_itab__957, UD_TAB__OPC_MOD, "/mod" },
-    /* 958 */ { ud_itab__958, UD_TAB__OPC_MOD, "/mod" },
-    /* 959 */ { ud_itab__959, UD_TAB__OPC_MOD, "/mod" },
-    /* 960 */ { ud_itab__960, UD_TAB__OPC_MOD, "/mod" },
-    /* 961 */ { ud_itab__961, UD_TAB__OPC_MOD, "/mod" },
-    /* 962 */ { ud_itab__962, UD_TAB__OPC_MOD, "/mod" },
-    /* 963 */ { ud_itab__963, UD_TAB__OPC_MOD, "/mod" },
-    /* 964 */ { ud_itab__964, UD_TAB__OPC_MOD, "/mod" },
-    /* 965 */ { ud_itab__965, UD_TAB__OPC_MOD, "/mod" },
-    /* 966 */ { ud_itab__966, UD_TAB__OPC_MOD, "/mod" },
-    /* 967 */ { ud_itab__967, UD_TAB__OPC_MOD, "/mod" },
-    /* 968 */ { ud_itab__968, UD_TAB__OPC_MOD, "/mod" },
-    /* 969 */ { ud_itab__969, UD_TAB__OPC_MOD, "/mod" },
-    /* 970 */ { ud_itab__970, UD_TAB__OPC_MOD, "/mod" },
-    /* 971 */ { ud_itab__971, UD_TAB__OPC_MOD, "/mod" },
-    /* 972 */ { ud_itab__972, UD_TAB__OPC_MOD, "/mod" },
-    /* 973 */ { ud_itab__973, UD_TAB__OPC_MOD, "/mod" },
-    /* 974 */ { ud_itab__974, UD_TAB__OPC_MOD, "/mod" },
-    /* 975 */ { ud_itab__975, UD_TAB__OPC_MOD, "/mod" },
-    /* 976 */ { ud_itab__976, UD_TAB__OPC_MOD, "/mod" },
-    /* 977 */ { ud_itab__977, UD_TAB__OPC_MOD, "/mod" },
-    /* 978 */ { ud_itab__978, UD_TAB__OPC_MOD, "/mod" },
-    /* 979 */ { ud_itab__979, UD_TAB__OPC_MOD, "/mod" },
-    /* 980 */ { ud_itab__980, UD_TAB__OPC_MOD, "/mod" },
-    /* 981 */ { ud_itab__981, UD_TAB__OPC_MOD, "/mod" },
-    /* 982 */ { ud_itab__982, UD_TAB__OPC_MOD, "/mod" },
-    /* 983 */ { ud_itab__983, UD_TAB__OPC_MOD, "/mod" },
-    /* 984 */ { ud_itab__984, UD_TAB__OPC_MOD, "/mod" },
-    /* 985 */ { ud_itab__985, UD_TAB__OPC_MOD, "/mod" },
-    /* 986 */ { ud_itab__986, UD_TAB__OPC_MOD, "/mod" },
-    /* 987 */ { ud_itab__987, UD_TAB__OPC_MOD, "/mod" },
-    /* 988 */ { ud_itab__988, UD_TAB__OPC_MOD, "/mod" },
-    /* 989 */ { ud_itab__989, UD_TAB__OPC_MOD, "/mod" },
-    /* 990 */ { ud_itab__990, UD_TAB__OPC_MOD, "/mod" },
-    /* 991 */ { ud_itab__991, UD_TAB__OPC_MOD, "/mod" },
-    /* 992 */ { ud_itab__992, UD_TAB__OPC_MOD, "/mod" },
-    /* 993 */ { ud_itab__993, UD_TAB__OPC_MOD, "/mod" },
-    /* 994 */ { ud_itab__994, UD_TAB__OPC_MOD, "/mod" },
-    /* 995 */ { ud_itab__995, UD_TAB__OPC_MOD, "/mod" },
-    /* 996 */ { ud_itab__996, UD_TAB__OPC_MOD, "/mod" },
-    /* 997 */ { ud_itab__997, UD_TAB__OPC_MOD, "/mod" },
-    /* 998 */ { ud_itab__998, UD_TAB__OPC_MOD, "/mod" },
-    /* 999 */ { ud_itab__999, UD_TAB__OPC_REG, "/reg" },
-    /* 1000 */ { ud_itab__1000, UD_TAB__OPC_MOD, "/mod" },
-    /* 1001 */ { ud_itab__1001, UD_TAB__OPC_MOD, "/mod" },
-    /* 1002 */ { ud_itab__1002, UD_TAB__OPC_MOD, "/mod" },
-    /* 1003 */ { ud_itab__1003, UD_TAB__OPC_MOD, "/mod" },
-    /* 1004 */ { ud_itab__1004, UD_TAB__OPC_MOD, "/mod" },
-    /* 1005 */ { ud_itab__1005, UD_TAB__OPC_MOD, "/mod" },
-    /* 1006 */ { ud_itab__1006, UD_TAB__OPC_MOD, "/mod" },
-    /* 1007 */ { ud_itab__1007, UD_TAB__OPC_MOD, "/mod" },
-    /* 1008 */ { ud_itab__1008, UD_TAB__OPC_X87, "/x87" },
-    /* 1009 */ { ud_itab__1009, UD_TAB__OPC_MOD, "/mod" },
-    /* 1010 */ { ud_itab__1010, UD_TAB__OPC_MOD, "/mod" },
-    /* 1011 */ { ud_itab__1011, UD_TAB__OPC_MOD, "/mod" },
-    /* 1012 */ { ud_itab__1012, UD_TAB__OPC_MOD, "/mod" },
-    /* 1013 */ { ud_itab__1013, UD_TAB__OPC_MOD, "/mod" },
-    /* 1014 */ { ud_itab__1014, UD_TAB__OPC_MOD, "/mod" },
-    /* 1015 */ { ud_itab__1015, UD_TAB__OPC_MOD, "/mod" },
-    /* 1016 */ { ud_itab__1016, UD_TAB__OPC_MOD, "/mod" },
-    /* 1017 */ { ud_itab__1017, UD_TAB__OPC_MOD, "/mod" },
-    /* 1018 */ { ud_itab__1018, UD_TAB__OPC_MOD, "/mod" },
-    /* 1019 */ { ud_itab__1019, UD_TAB__OPC_MOD, "/mod" },
-    /* 1020 */ { ud_itab__1020, UD_TAB__OPC_MOD, "/mod" },
-    /* 1021 */ { ud_itab__1021, UD_TAB__OPC_MOD, "/mod" },
-    /* 1022 */ { ud_itab__1022, UD_TAB__OPC_MOD, "/mod" },
-    /* 1023 */ { ud_itab__1023, UD_TAB__OPC_MOD, "/mod" },
-    /* 1024 */ { ud_itab__1024, UD_TAB__OPC_MOD, "/mod" },
-    /* 1025 */ { ud_itab__1025, UD_TAB__OPC_MOD, "/mod" },
-    /* 1026 */ { ud_itab__1026, UD_TAB__OPC_MOD, "/mod" },
-    /* 1027 */ { ud_itab__1027, UD_TAB__OPC_MOD, "/mod" },
-    /* 1028 */ { ud_itab__1028, UD_TAB__OPC_MOD, "/mod" },
-    /* 1029 */ { ud_itab__1029, UD_TAB__OPC_MOD, "/mod" },
-    /* 1030 */ { ud_itab__1030, UD_TAB__OPC_MOD, "/mod" },
-    /* 1031 */ { ud_itab__1031, UD_TAB__OPC_MOD, "/mod" },
-    /* 1032 */ { ud_itab__1032, UD_TAB__OPC_MOD, "/mod" },
-    /* 1033 */ { ud_itab__1033, UD_TAB__OPC_MOD, "/mod" },
-    /* 1034 */ { ud_itab__1034, UD_TAB__OPC_MOD, "/mod" },
-    /* 1035 */ { ud_itab__1035, UD_TAB__OPC_MOD, "/mod" },
-    /* 1036 */ { ud_itab__1036, UD_TAB__OPC_MOD, "/mod" },
-    /* 1037 */ { ud_itab__1037, UD_TAB__OPC_MOD, "/mod" },
-    /* 1038 */ { ud_itab__1038, UD_TAB__OPC_MOD, "/mod" },
-    /* 1039 */ { ud_itab__1039, UD_TAB__OPC_MOD, "/mod" },
-    /* 1040 */ { ud_itab__1040, UD_TAB__OPC_MOD, "/mod" },
-    /* 1041 */ { ud_itab__1041, UD_TAB__OPC_MOD, "/mod" },
-    /* 1042 */ { ud_itab__1042, UD_TAB__OPC_MOD, "/mod" },
-    /* 1043 */ { ud_itab__1043, UD_TAB__OPC_MOD, "/mod" },
-    /* 1044 */ { ud_itab__1044, UD_TAB__OPC_MOD, "/mod" },
-    /* 1045 */ { ud_itab__1045, UD_TAB__OPC_MOD, "/mod" },
-    /* 1046 */ { ud_itab__1046, UD_TAB__OPC_MOD, "/mod" },
-    /* 1047 */ { ud_itab__1047, UD_TAB__OPC_MOD, "/mod" },
-    /* 1048 */ { ud_itab__1048, UD_TAB__OPC_MOD, "/mod" },
-    /* 1049 */ { ud_itab__1049, UD_TAB__OPC_MOD, "/mod" },
-    /* 1050 */ { ud_itab__1050, UD_TAB__OPC_MOD, "/mod" },
-    /* 1051 */ { ud_itab__1051, UD_TAB__OPC_MOD, "/mod" },
-    /* 1052 */ { ud_itab__1052, UD_TAB__OPC_MOD, "/mod" },
-    /* 1053 */ { ud_itab__1053, UD_TAB__OPC_MOD, "/mod" },
-    /* 1054 */ { ud_itab__1054, UD_TAB__OPC_MOD, "/mod" },
-    /* 1055 */ { ud_itab__1055, UD_TAB__OPC_MOD, "/mod" },
-    /* 1056 */ { ud_itab__1056, UD_TAB__OPC_MOD, "/mod" },
-    /* 1057 */ { ud_itab__1057, UD_TAB__OPC_MOD, "/mod" },
-    /* 1058 */ { ud_itab__1058, UD_TAB__OPC_MOD, "/mod" },
-    /* 1059 */ { ud_itab__1059, UD_TAB__OPC_MOD, "/mod" },
-    /* 1060 */ { ud_itab__1060, UD_TAB__OPC_MOD, "/mod" },
-    /* 1061 */ { ud_itab__1061, UD_TAB__OPC_MOD, "/mod" },
-    /* 1062 */ { ud_itab__1062, UD_TAB__OPC_MOD, "/mod" },
-    /* 1063 */ { ud_itab__1063, UD_TAB__OPC_MOD, "/mod" },
-    /* 1064 */ { ud_itab__1064, UD_TAB__OPC_MOD, "/mod" },
-    /* 1065 */ { ud_itab__1065, UD_TAB__OPC_MOD, "/mod" },
-    /* 1066 */ { ud_itab__1066, UD_TAB__OPC_MOD, "/mod" },
-    /* 1067 */ { ud_itab__1067, UD_TAB__OPC_REG, "/reg" },
-    /* 1068 */ { ud_itab__1068, UD_TAB__OPC_MOD, "/mod" },
-    /* 1069 */ { ud_itab__1069, UD_TAB__OPC_MOD, "/mod" },
-    /* 1070 */ { ud_itab__1070, UD_TAB__OPC_MOD, "/mod" },
-    /* 1071 */ { ud_itab__1071, UD_TAB__OPC_MOD, "/mod" },
-    /* 1072 */ { ud_itab__1072, UD_TAB__OPC_MOD, "/mod" },
-    /* 1073 */ { ud_itab__1073, UD_TAB__OPC_MOD, "/mod" },
-    /* 1074 */ { ud_itab__1074, UD_TAB__OPC_MOD, "/mod" },
-    /* 1075 */ { ud_itab__1075, UD_TAB__OPC_MOD, "/mod" },
-    /* 1076 */ { ud_itab__1076, UD_TAB__OPC_X87, "/x87" },
-    /* 1077 */ { ud_itab__1077, UD_TAB__OPC_MOD, "/mod" },
-    /* 1078 */ { ud_itab__1078, UD_TAB__OPC_MOD, "/mod" },
-    /* 1079 */ { ud_itab__1079, UD_TAB__OPC_MOD, "/mod" },
-    /* 1080 */ { ud_itab__1080, UD_TAB__OPC_MOD, "/mod" },
-    /* 1081 */ { ud_itab__1081, UD_TAB__OPC_MOD, "/mod" },
-    /* 1082 */ { ud_itab__1082, UD_TAB__OPC_MOD, "/mod" },
-    /* 1083 */ { ud_itab__1083, UD_TAB__OPC_MOD, "/mod" },
-    /* 1084 */ { ud_itab__1084, UD_TAB__OPC_MOD, "/mod" },
-    /* 1085 */ { ud_itab__1085, UD_TAB__OPC_MOD, "/mod" },
-    /* 1086 */ { ud_itab__1086, UD_TAB__OPC_MOD, "/mod" },
-    /* 1087 */ { ud_itab__1087, UD_TAB__OPC_MOD, "/mod" },
-    /* 1088 */ { ud_itab__1088, UD_TAB__OPC_MOD, "/mod" },
-    /* 1089 */ { ud_itab__1089, UD_TAB__OPC_MOD, "/mod" },
-    /* 1090 */ { ud_itab__1090, UD_TAB__OPC_MOD, "/mod" },
-    /* 1091 */ { ud_itab__1091, UD_TAB__OPC_MOD, "/mod" },
-    /* 1092 */ { ud_itab__1092, UD_TAB__OPC_MOD, "/mod" },
-    /* 1093 */ { ud_itab__1093, UD_TAB__OPC_MOD, "/mod" },
-    /* 1094 */ { ud_itab__1094, UD_TAB__OPC_MOD, "/mod" },
-    /* 1095 */ { ud_itab__1095, UD_TAB__OPC_MOD, "/mod" },
-    /* 1096 */ { ud_itab__1096, UD_TAB__OPC_MOD, "/mod" },
-    /* 1097 */ { ud_itab__1097, UD_TAB__OPC_MOD, "/mod" },
-    /* 1098 */ { ud_itab__1098, UD_TAB__OPC_MOD, "/mod" },
-    /* 1099 */ { ud_itab__1099, UD_TAB__OPC_MOD, "/mod" },
-    /* 1100 */ { ud_itab__1100, UD_TAB__OPC_MOD, "/mod" },
-    /* 1101 */ { ud_itab__1101, UD_TAB__OPC_MOD, "/mod" },
-    /* 1102 */ { ud_itab__1102, UD_TAB__OPC_MOD, "/mod" },
-    /* 1103 */ { ud_itab__1103, UD_TAB__OPC_MOD, "/mod" },
-    /* 1104 */ { ud_itab__1104, UD_TAB__OPC_MOD, "/mod" },
-    /* 1105 */ { ud_itab__1105, UD_TAB__OPC_MOD, "/mod" },
-    /* 1106 */ { ud_itab__1106, UD_TAB__OPC_MOD, "/mod" },
-    /* 1107 */ { ud_itab__1107, UD_TAB__OPC_MOD, "/mod" },
-    /* 1108 */ { ud_itab__1108, UD_TAB__OPC_MOD, "/mod" },
-    /* 1109 */ { ud_itab__1109, UD_TAB__OPC_MOD, "/mod" },
-    /* 1110 */ { ud_itab__1110, UD_TAB__OPC_MOD, "/mod" },
-    /* 1111 */ { ud_itab__1111, UD_TAB__OPC_MOD, "/mod" },
-    /* 1112 */ { ud_itab__1112, UD_TAB__OPC_MOD, "/mod" },
-    /* 1113 */ { ud_itab__1113, UD_TAB__OPC_MOD, "/mod" },
-    /* 1114 */ { ud_itab__1114, UD_TAB__OPC_MOD, "/mod" },
-    /* 1115 */ { ud_itab__1115, UD_TAB__OPC_MOD, "/mod" },
-    /* 1116 */ { ud_itab__1116, UD_TAB__OPC_MOD, "/mod" },
-    /* 1117 */ { ud_itab__1117, UD_TAB__OPC_MOD, "/mod" },
-    /* 1118 */ { ud_itab__1118, UD_TAB__OPC_MOD, "/mod" },
-    /* 1119 */ { ud_itab__1119, UD_TAB__OPC_MOD, "/mod" },
-    /* 1120 */ { ud_itab__1120, UD_TAB__OPC_MOD, "/mod" },
-    /* 1121 */ { ud_itab__1121, UD_TAB__OPC_MOD, "/mod" },
-    /* 1122 */ { ud_itab__1122, UD_TAB__OPC_MOD, "/mod" },
-    /* 1123 */ { ud_itab__1123, UD_TAB__OPC_MOD, "/mod" },
-    /* 1124 */ { ud_itab__1124, UD_TAB__OPC_MOD, "/mod" },
-    /* 1125 */ { ud_itab__1125, UD_TAB__OPC_MOD, "/mod" },
-    /* 1126 */ { ud_itab__1126, UD_TAB__OPC_ASIZE, "/a" },
-    /* 1127 */ { ud_itab__1127, UD_TAB__OPC_MODE, "/m" },
-    /* 1128 */ { ud_itab__1128, UD_TAB__OPC_REG, "/reg" },
-    /* 1129 */ { ud_itab__1129, UD_TAB__OPC_REG, "/reg" },
-    /* 1130 */ { ud_itab__1130, UD_TAB__OPC_REG, "/reg" },
-    /* 1131 */ { ud_itab__1131, UD_TAB__OPC_REG, "/reg" },
-    /* 1132 */ { ud_itab__1132, UD_TAB__OPC_MODE, "/m" },
+    /* 438 */ { ud_itab__438, UD_TAB__OPC_REG, "/reg" },
+    /* 439 */ { ud_itab__439, UD_TAB__OPC_X87, "/x87" },
+    /* 440 */ { ud_itab__440, UD_TAB__OPC_ASIZE, "/a" },
+    /* 441 */ { ud_itab__441, UD_TAB__OPC_MODE, "/m" },
+    /* 442 */ { ud_itab__442, UD_TAB__OPC_REG, "/reg" },
+    /* 443 */ { ud_itab__443, UD_TAB__OPC_REG, "/reg" },
+    /* 444 */ { ud_itab__444, UD_TAB__OPC_REG, "/reg" },
+    /* 445 */ { ud_itab__445, UD_TAB__OPC_REG, "/reg" },
+    /* 446 */ { ud_itab__446, UD_TAB__OPC_MODE, "/m" },
 };
 
 /* itab entry operand definitions (for readability) */
@@ -6196,6 +3156,9 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
 #define O_Gw      { OP_G,        SZ_W     }
 #define O_Gy      { OP_G,        SZ_Y     }
 #define O_Gz      { OP_G,        SZ_Z     }
+#define O_H       { OP_H,        SZ_X     }
+#define O_Hqq     { OP_H,        SZ_QQ    }
+#define O_Hx      { OP_H,        SZ_X     }
 #define O_I1      { OP_I1,       SZ_NA    }
 #define O_I3      { OP_I3,       SZ_NA    }
 #define O_Ib      { OP_I,        SZ_B     }
@@ -6205,6 +3168,8 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
 #define O_Jb      { OP_J,        SZ_B     }
 #define O_Jv      { OP_J,        SZ_V     }
 #define O_Jz      { OP_J,        SZ_Z     }
+#define O_L       { OP_L,        SZ_O     }
+#define O_Lx      { OP_L,        SZ_X     }
 #define O_M       { OP_M,        SZ_NA    }
 #define O_Mb      { OP_M,        SZ_B     }
 #define O_MbRd    { OP_MR,       SZ_BD    }
@@ -6212,6 +3177,7 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
 #define O_Md      { OP_M,        SZ_D     }
 #define O_MdRy    { OP_MR,       SZ_DY    }
 #define O_MdU     { OP_MU,       SZ_DO    }
+#define O_Mdq     { OP_M,        SZ_DQ    }
 #define O_Mo      { OP_M,        SZ_O     }
 #define O_Mq      { OP_M,        SZ_Q     }
 #define O_MqU     { OP_MU,       SZ_QO    }
@@ -6271,7 +3237,7 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
 #define O_R7w     { OP_R7,       SZ_W     }
 #define O_R7y     { OP_R7,       SZ_Y     }
 #define O_R7z     { OP_R7,       SZ_Z     }
-#define O_S       { OP_S,        SZ_NA    }
+#define O_S       { OP_S,        SZ_W     }
 #define O_SS      { OP_SS,       SZ_NA    }
 #define O_ST0     { OP_ST0,      SZ_NA    }
 #define O_ST1     { OP_ST1,      SZ_NA    }
@@ -6282,8 +3248,17 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
 #define O_ST6     { OP_ST6,      SZ_NA    }
 #define O_ST7     { OP_ST7,      SZ_NA    }
 #define O_U       { OP_U,        SZ_O     }
-#define O_V       { OP_V,        SZ_O     }
-#define O_W       { OP_W,        SZ_O     }
+#define O_Ux      { OP_U,        SZ_X     }
+#define O_V       { OP_V,        SZ_DQ    }
+#define O_Vdq     { OP_V,        SZ_DQ    }
+#define O_Vqq     { OP_V,        SZ_QQ    }
+#define O_Vsd     { OP_V,        SZ_Q     }
+#define O_Vx      { OP_V,        SZ_X     }
+#define O_W       { OP_W,        SZ_DQ    }
+#define O_Wdq     { OP_W,        SZ_DQ    }
+#define O_Wqq     { OP_W,        SZ_QQ    }
+#define O_Wsd     { OP_W,        SZ_Q     }
+#define O_Wx      { OP_W,        SZ_X     }
 #define O_eAX     { OP_eAX,      SZ_Z     }
 #define O_eCX     { OP_eCX,      SZ_Z     }
 #define O_eDX     { OP_eDX,      SZ_Z     }
@@ -6295,1466 +3270,1766 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
 #define O_sIz     { OP_sI,       SZ_Z     }
 
 struct ud_itab_entry ud_itab[] = {
-  /* 0000 */ { UD_Iinvalid, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0001 */ { UD_Iadd, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0002 */ { UD_Iadd, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0003 */ { UD_Iadd, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0004 */ { UD_Iadd, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0005 */ { UD_Iadd, O_AL, O_Ib, O_NONE, P_none },
-  /* 0006 */ { UD_Iadd, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0007 */ { UD_Ipush, O_ES, O_NONE, O_NONE, P_inv64 },
-  /* 0008 */ { UD_Ipop, O_ES, O_NONE, O_NONE, P_inv64 },
-  /* 0009 */ { UD_Ior, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0010 */ { UD_Ior, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0011 */ { UD_Ior, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0012 */ { UD_Ior, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0013 */ { UD_Ior, O_AL, O_Ib, O_NONE, P_none },
-  /* 0014 */ { UD_Ior, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0015 */ { UD_Ipush, O_CS, O_NONE, O_NONE, P_inv64 },
-  /* 0016 */ { UD_Isldt, O_MwRv, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0017 */ { UD_Istr, O_MwRv, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0018 */ { UD_Illdt, O_Ew, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0019 */ { UD_Iltr, O_Ew, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0020 */ { UD_Iverr, O_Ew, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0021 */ { UD_Iverw, O_Ew, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0022 */ { UD_Isgdt, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0023 */ { UD_Isidt, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0024 */ { UD_Ilgdt, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0025 */ { UD_Ilidt, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0026 */ { UD_Ismsw, O_MwRv, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0027 */ { UD_Ilmsw, O_Ew, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0028 */ { UD_Iinvlpg, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0029 */ { UD_Ivmcall, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0030 */ { UD_Ivmlaunch, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0031 */ { UD_Ivmresume, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0032 */ { UD_Ivmxoff, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0033 */ { UD_Imonitor, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0034 */ { UD_Imwait, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0035 */ { UD_Ixgetbv, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0036 */ { UD_Ixsetbv, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0037 */ { UD_Ivmrun, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0038 */ { UD_Ivmmcall, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0039 */ { UD_Ivmload, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0040 */ { UD_Ivmsave, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0041 */ { UD_Istgi, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0042 */ { UD_Iclgi, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0043 */ { UD_Iskinit, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0044 */ { UD_Iinvlpga, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0045 */ { UD_Ismsw, O_MwRv, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0046 */ { UD_Ilmsw, O_Ew, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0047 */ { UD_Iswapgs, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0048 */ { UD_Irdtscp, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0049 */ { UD_Ilar, O_Gv, O_Ew, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0050 */ { UD_Ilsl, O_Gv, O_Ew, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0051 */ { UD_Isyscall, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0052 */ { UD_Iclts, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0053 */ { UD_Isysret, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0054 */ { UD_Iinvd, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0055 */ { UD_Iwbinvd, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0056 */ { UD_Iud2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0057 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0058 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0059 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0060 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0061 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0062 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0063 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0064 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0065 */ { UD_Ifemms, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0066 */ { UD_Ipi2fw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0067 */ { UD_Ipi2fd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0068 */ { UD_Ipf2iw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0069 */ { UD_Ipf2id, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0070 */ { UD_Ipfnacc, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0071 */ { UD_Ipfpnacc, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0072 */ { UD_Ipfcmpge, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0073 */ { UD_Ipfmin, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0074 */ { UD_Ipfrcp, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0075 */ { UD_Ipfrsqrt, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0076 */ { UD_Ipfsub, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0077 */ { UD_Ipfadd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0078 */ { UD_Ipfcmpgt, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0079 */ { UD_Ipfmax, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0080 */ { UD_Ipfrcpit1, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0081 */ { UD_Ipfrsqit1, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0082 */ { UD_Ipfsubr, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0083 */ { UD_Ipfacc, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0084 */ { UD_Ipfcmpeq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0085 */ { UD_Ipfmul, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0086 */ { UD_Ipfrcpit2, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0087 */ { UD_Ipmulhrw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0088 */ { UD_Ipswapd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0089 */ { UD_Ipavgusb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0090 */ { UD_Imovups, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0091 */ { UD_Imovsd, O_V, O_W, O_NONE, P_str|P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0092 */ { UD_Imovss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0093 */ { UD_Imovupd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0094 */ { UD_Imovups, O_W, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0095 */ { UD_Imovsd, O_W, O_V, O_NONE, P_str|P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0096 */ { UD_Imovss, O_W, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0097 */ { UD_Imovupd, O_W, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0098 */ { UD_Imovlps, O_V, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0099 */ { UD_Imovddup, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0100 */ { UD_Imovsldup, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0101 */ { UD_Imovlpd, O_V, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0102 */ { UD_Imovhlps, O_V, O_U, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0103 */ { UD_Imovddup, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0104 */ { UD_Imovsldup, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0105 */ { UD_Imovlps, O_M, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0106 */ { UD_Imovlpd, O_M, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0107 */ { UD_Iunpcklps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0108 */ { UD_Iunpcklpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0109 */ { UD_Iunpckhps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0110 */ { UD_Iunpckhpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0111 */ { UD_Imovhps, O_V, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0112 */ { UD_Imovshdup, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0113 */ { UD_Imovhpd, O_V, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0114 */ { UD_Imovlhps, O_V, O_U, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0115 */ { UD_Imovshdup, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0116 */ { UD_Imovhps, O_M, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0117 */ { UD_Imovhpd, O_M, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0118 */ { UD_Iprefetchnta, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0119 */ { UD_Iprefetcht0, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0120 */ { UD_Iprefetcht1, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0121 */ { UD_Iprefetcht2, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0122 */ { UD_Inop, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0123 */ { UD_Inop, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0124 */ { UD_Inop, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0125 */ { UD_Inop, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0126 */ { UD_Inop, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0127 */ { UD_Inop, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0128 */ { UD_Inop, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0129 */ { UD_Imov, O_R, O_C, O_NONE, P_rexr|P_rexw|P_rexb },
-  /* 0130 */ { UD_Imov, O_R, O_D, O_NONE, P_rexr|P_rexw|P_rexb },
-  /* 0131 */ { UD_Imov, O_C, O_R, O_NONE, P_rexr|P_rexw|P_rexb },
-  /* 0132 */ { UD_Imov, O_D, O_R, O_NONE, P_rexr|P_rexw|P_rexb },
-  /* 0133 */ { UD_Imovaps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0134 */ { UD_Imovapd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0135 */ { UD_Imovaps, O_W, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0136 */ { UD_Imovapd, O_W, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0137 */ { UD_Icvtpi2ps, O_V, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0138 */ { UD_Icvtsi2sd, O_V, O_Ey, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0139 */ { UD_Icvtsi2ss, O_V, O_Ey, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0140 */ { UD_Icvtpi2pd, O_V, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0141 */ { UD_Imovntps, O_M, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0142 */ { UD_Imovntpd, O_M, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0143 */ { UD_Icvttps2pi, O_P, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0144 */ { UD_Icvttsd2si, O_Gy, O_W, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0145 */ { UD_Icvttss2si, O_Gy, O_W, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0146 */ { UD_Icvttpd2pi, O_P, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0147 */ { UD_Icvtps2pi, O_P, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0148 */ { UD_Icvtsd2si, O_Gy, O_W, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0149 */ { UD_Icvtss2si, O_Gy, O_W, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0150 */ { UD_Icvtpd2pi, O_P, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0151 */ { UD_Iucomiss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0152 */ { UD_Iucomisd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0153 */ { UD_Icomiss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0154 */ { UD_Icomisd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0155 */ { UD_Iwrmsr, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0156 */ { UD_Irdtsc, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0157 */ { UD_Irdmsr, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0158 */ { UD_Irdpmc, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0159 */ { UD_Isysenter, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0160 */ { UD_Isysenter, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0161 */ { UD_Isysexit, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0162 */ { UD_Isysexit, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0163 */ { UD_Igetsec, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0164 */ { UD_Ipshufb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0165 */ { UD_Ipshufb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0166 */ { UD_Iphaddw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0167 */ { UD_Iphaddw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0168 */ { UD_Iphaddd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0169 */ { UD_Iphaddd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0170 */ { UD_Iphaddsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0171 */ { UD_Iphaddsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0172 */ { UD_Ipmaddubsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0173 */ { UD_Ipmaddubsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0174 */ { UD_Iphsubw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0175 */ { UD_Iphsubw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0176 */ { UD_Iphsubd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0177 */ { UD_Iphsubd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0178 */ { UD_Iphsubsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0179 */ { UD_Iphsubsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0180 */ { UD_Ipsignb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0181 */ { UD_Ipsignb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0182 */ { UD_Ipsignw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0183 */ { UD_Ipsignw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0184 */ { UD_Ipsignd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0185 */ { UD_Ipsignd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0186 */ { UD_Ipmulhrsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0187 */ { UD_Ipmulhrsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0188 */ { UD_Ipblendvb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0189 */ { UD_Iblendvps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0190 */ { UD_Iblendvpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0191 */ { UD_Iptest, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0192 */ { UD_Ipabsb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0193 */ { UD_Ipabsb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0194 */ { UD_Ipabsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0195 */ { UD_Ipabsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0196 */ { UD_Ipabsd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0197 */ { UD_Ipabsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0198 */ { UD_Ipmovsxbw, O_V, O_MqU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0199 */ { UD_Ipmovsxbd, O_V, O_MdU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0200 */ { UD_Ipmovsxbq, O_V, O_MwU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0201 */ { UD_Ipmovsxwd, O_V, O_MqU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0202 */ { UD_Ipmovsxwq, O_V, O_MdU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0203 */ { UD_Ipmovsxdq, O_V, O_MqU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0204 */ { UD_Ipmuldq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0205 */ { UD_Ipcmpeqq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0206 */ { UD_Imovntdqa, O_V, O_Mo, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0207 */ { UD_Ipackusdw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0208 */ { UD_Ipmovzxbw, O_V, O_MqU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0209 */ { UD_Ipmovzxbd, O_V, O_MdU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0210 */ { UD_Ipmovzxbq, O_V, O_MwU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0211 */ { UD_Ipmovzxwd, O_V, O_MqU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0212 */ { UD_Ipmovzxwq, O_V, O_MdU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0213 */ { UD_Ipmovzxdq, O_V, O_MqU, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0214 */ { UD_Ipcmpgtq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0215 */ { UD_Ipminsb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0216 */ { UD_Ipminsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0217 */ { UD_Ipminuw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0218 */ { UD_Ipminud, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0219 */ { UD_Ipmaxsb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0220 */ { UD_Ipmaxsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0221 */ { UD_Ipmaxuw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0222 */ { UD_Ipmaxud, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0223 */ { UD_Ipmulld, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0224 */ { UD_Iphminposuw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0225 */ { UD_Iinvept, O_Gq, O_Mo, O_NONE, P_none },
-  /* 0226 */ { UD_Iinvvpid, O_Gq, O_Mo, O_NONE, P_none },
-  /* 0227 */ { UD_Iaesimc, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0228 */ { UD_Iaesenc, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0229 */ { UD_Iaesenclast, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0230 */ { UD_Iaesdec, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0231 */ { UD_Iaesdeclast, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0232 */ { UD_Imovbe, O_Gv, O_Mv, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0233 */ { UD_Icrc32, O_Gy, O_Eb, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0234 */ { UD_Imovbe, O_Mv, O_Gv, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0235 */ { UD_Icrc32, O_Gy, O_Ev, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0236 */ { UD_Iroundps, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0237 */ { UD_Iroundpd, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0238 */ { UD_Iroundss, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0239 */ { UD_Iroundsd, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0240 */ { UD_Iblendps, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0241 */ { UD_Iblendpd, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0242 */ { UD_Ipblendw, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0243 */ { UD_Ipalignr, O_P, O_Q, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0244 */ { UD_Ipalignr, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0245 */ { UD_Ipextrb, O_MbRv, O_V, O_Ib, P_aso|P_rexx|P_rexr|P_rexb|P_def64 },
-  /* 0246 */ { UD_Ipextrw, O_MwRd, O_V, O_Ib, P_aso|P_rexx|P_rexr|P_rexb },
-  /* 0247 */ { UD_Ipextrd, O_Ed, O_V, O_Ib, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
-  /* 0248 */ { UD_Ipextrd, O_Ed, O_V, O_Ib, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
-  /* 0249 */ { UD_Ipextrq, O_Eq, O_V, O_Ib, P_aso|P_rexr|P_rexw|P_rexb|P_def64 },
-  /* 0250 */ { UD_Iextractps, O_MdRy, O_V, O_Ib, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0251 */ { UD_Ipinsrb, O_V, O_MbRd, O_Ib, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0252 */ { UD_Iinsertps, O_V, O_Md, O_Ib, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0253 */ { UD_Ipinsrd, O_V, O_Ed, O_Ib, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0254 */ { UD_Ipinsrd, O_V, O_Ed, O_Ib, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0255 */ { UD_Ipinsrq, O_V, O_Eq, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0256 */ { UD_Idpps, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0257 */ { UD_Idppd, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0258 */ { UD_Impsadbw, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0259 */ { UD_Ipclmulqdq, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0260 */ { UD_Ipcmpestrm, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0261 */ { UD_Ipcmpestri, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0262 */ { UD_Ipcmpistrm, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0263 */ { UD_Ipcmpistri, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0264 */ { UD_Iaeskeygenassist, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0265 */ { UD_Icmovo, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0266 */ { UD_Icmovno, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0267 */ { UD_Icmovb, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0268 */ { UD_Icmovae, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0269 */ { UD_Icmovz, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0270 */ { UD_Icmovnz, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0271 */ { UD_Icmovbe, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0272 */ { UD_Icmova, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0273 */ { UD_Icmovs, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0274 */ { UD_Icmovns, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0275 */ { UD_Icmovp, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0276 */ { UD_Icmovnp, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0277 */ { UD_Icmovl, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0278 */ { UD_Icmovge, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0279 */ { UD_Icmovle, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0280 */ { UD_Icmovg, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0281 */ { UD_Imovmskps, O_Gd, O_U, O_NONE, P_oso|P_rexr|P_rexb },
-  /* 0282 */ { UD_Imovmskpd, O_Gd, O_U, O_NONE, P_oso|P_rexr|P_rexb },
-  /* 0283 */ { UD_Isqrtps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0284 */ { UD_Isqrtsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0285 */ { UD_Isqrtss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0286 */ { UD_Isqrtpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0287 */ { UD_Irsqrtps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0288 */ { UD_Irsqrtss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0289 */ { UD_Ircpps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0290 */ { UD_Ircpss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0291 */ { UD_Iandps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0292 */ { UD_Iandpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0293 */ { UD_Iandnps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0294 */ { UD_Iandnpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0295 */ { UD_Iorps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0296 */ { UD_Iorpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0297 */ { UD_Ixorps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0298 */ { UD_Ixorpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0299 */ { UD_Iaddps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0300 */ { UD_Iaddsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0301 */ { UD_Iaddss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0302 */ { UD_Iaddpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0303 */ { UD_Imulps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0304 */ { UD_Imulsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0305 */ { UD_Imulss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0306 */ { UD_Imulpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0307 */ { UD_Icvtps2pd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0308 */ { UD_Icvtsd2ss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0309 */ { UD_Icvtss2sd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0310 */ { UD_Icvtpd2ps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0311 */ { UD_Icvtdq2ps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0312 */ { UD_Icvttps2dq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0313 */ { UD_Icvtps2dq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0314 */ { UD_Isubps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0315 */ { UD_Isubsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0316 */ { UD_Isubss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0317 */ { UD_Isubpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0318 */ { UD_Iminps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0319 */ { UD_Iminsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0320 */ { UD_Iminss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0321 */ { UD_Iminpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0322 */ { UD_Idivps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0323 */ { UD_Idivsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0324 */ { UD_Idivss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0325 */ { UD_Idivpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0326 */ { UD_Imaxps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0327 */ { UD_Imaxsd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0328 */ { UD_Imaxss, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0329 */ { UD_Imaxpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0330 */ { UD_Ipunpcklbw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0331 */ { UD_Ipunpcklbw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0332 */ { UD_Ipunpcklwd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0333 */ { UD_Ipunpcklwd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0334 */ { UD_Ipunpckldq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0335 */ { UD_Ipunpckldq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0336 */ { UD_Ipacksswb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0337 */ { UD_Ipacksswb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0338 */ { UD_Ipcmpgtb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0339 */ { UD_Ipcmpgtb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0340 */ { UD_Ipcmpgtw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0341 */ { UD_Ipcmpgtw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0342 */ { UD_Ipcmpgtd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0343 */ { UD_Ipcmpgtd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0344 */ { UD_Ipackuswb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0345 */ { UD_Ipackuswb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0346 */ { UD_Ipunpckhbw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0347 */ { UD_Ipunpckhbw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0348 */ { UD_Ipunpckhwd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0349 */ { UD_Ipunpckhwd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0350 */ { UD_Ipunpckhdq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0351 */ { UD_Ipunpckhdq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0352 */ { UD_Ipackssdw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0353 */ { UD_Ipackssdw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0354 */ { UD_Ipunpcklqdq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0355 */ { UD_Ipunpckhqdq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0356 */ { UD_Imovd, O_P, O_Ey, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0357 */ { UD_Imovd, O_V, O_Ey, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0358 */ { UD_Imovq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0359 */ { UD_Imovdqu, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0360 */ { UD_Imovdqa, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0361 */ { UD_Ipshufw, O_P, O_Q, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0362 */ { UD_Ipshuflw, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0363 */ { UD_Ipshufhw, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0364 */ { UD_Ipshufd, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0365 */ { UD_Ipsrlw, O_N, O_Ib, O_NONE, P_none },
-  /* 0366 */ { UD_Ipsrlw, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0367 */ { UD_Ipsraw, O_N, O_Ib, O_NONE, P_none },
-  /* 0368 */ { UD_Ipsraw, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0369 */ { UD_Ipsllw, O_N, O_Ib, O_NONE, P_none },
-  /* 0370 */ { UD_Ipsllw, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0371 */ { UD_Ipsrld, O_N, O_Ib, O_NONE, P_none },
-  /* 0372 */ { UD_Ipsrld, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0373 */ { UD_Ipsrad, O_N, O_Ib, O_NONE, P_none },
-  /* 0374 */ { UD_Ipsrad, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0375 */ { UD_Ipslld, O_N, O_Ib, O_NONE, P_none },
-  /* 0376 */ { UD_Ipslld, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0377 */ { UD_Ipsrlq, O_N, O_Ib, O_NONE, P_none },
-  /* 0378 */ { UD_Ipsrlq, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0379 */ { UD_Ipsrldq, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0380 */ { UD_Ipsllq, O_N, O_Ib, O_NONE, P_none },
-  /* 0381 */ { UD_Ipsllq, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0382 */ { UD_Ipslldq, O_U, O_Ib, O_NONE, P_rexb },
-  /* 0383 */ { UD_Ipcmpeqb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0384 */ { UD_Ipcmpeqb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0385 */ { UD_Ipcmpeqw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0386 */ { UD_Ipcmpeqw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0387 */ { UD_Ipcmpeqd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0388 */ { UD_Ipcmpeqd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0389 */ { UD_Iemms, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0390 */ { UD_Ivmread, O_Ey, O_Gy, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 0391 */ { UD_Ivmwrite, O_Gy, O_Ey, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 0392 */ { UD_Ihaddps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0393 */ { UD_Ihaddpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0394 */ { UD_Ihsubps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0395 */ { UD_Ihsubpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0396 */ { UD_Imovd, O_Ey, O_P, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0397 */ { UD_Imovq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0398 */ { UD_Imovd, O_Ey, O_V, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0399 */ { UD_Imovq, O_Q, O_P, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0400 */ { UD_Imovdqu, O_W, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0401 */ { UD_Imovdqa, O_W, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0402 */ { UD_Ijo, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0403 */ { UD_Ijno, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0404 */ { UD_Ijb, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0405 */ { UD_Ijae, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0406 */ { UD_Ijz, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0407 */ { UD_Ijnz, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0408 */ { UD_Ijbe, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0409 */ { UD_Ija, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0410 */ { UD_Ijs, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0411 */ { UD_Ijns, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0412 */ { UD_Ijp, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0413 */ { UD_Ijnp, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0414 */ { UD_Ijl, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0415 */ { UD_Ijge, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0416 */ { UD_Ijle, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0417 */ { UD_Ijg, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0418 */ { UD_Iseto, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0419 */ { UD_Isetno, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0420 */ { UD_Isetb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0421 */ { UD_Isetae, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0422 */ { UD_Isetz, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0423 */ { UD_Isetnz, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0424 */ { UD_Isetbe, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0425 */ { UD_Iseta, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0426 */ { UD_Isets, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0427 */ { UD_Isetns, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0428 */ { UD_Isetp, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0429 */ { UD_Isetnp, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0430 */ { UD_Isetl, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0431 */ { UD_Isetge, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0432 */ { UD_Isetle, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0433 */ { UD_Isetg, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0434 */ { UD_Ipush, O_FS, O_NONE, O_NONE, P_none },
-  /* 0435 */ { UD_Ipop, O_FS, O_NONE, O_NONE, P_none },
-  /* 0436 */ { UD_Icpuid, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0437 */ { UD_Ibt, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0438 */ { UD_Ishld, O_Ev, O_Gv, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0439 */ { UD_Ishld, O_Ev, O_Gv, O_CL, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0440 */ { UD_Imontmul, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0441 */ { UD_Ixsha1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0442 */ { UD_Ixsha256, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0443 */ { UD_Ixstore, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0444 */ { UD_Ixcryptecb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0445 */ { UD_Ixcryptcbc, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0446 */ { UD_Ixcryptctr, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0447 */ { UD_Ixcryptcfb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0448 */ { UD_Ixcryptofb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0449 */ { UD_Ipush, O_GS, O_NONE, O_NONE, P_none },
-  /* 0450 */ { UD_Ipop, O_GS, O_NONE, O_NONE, P_none },
-  /* 0451 */ { UD_Irsm, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0452 */ { UD_Ibts, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0453 */ { UD_Ishrd, O_Ev, O_Gv, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0454 */ { UD_Ishrd, O_Ev, O_Gv, O_CL, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0455 */ { UD_Ifxsave, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0456 */ { UD_Ifxrstor, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0457 */ { UD_Ildmxcsr, O_Md, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0458 */ { UD_Istmxcsr, O_Md, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0459 */ { UD_Ixsave, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0460 */ { UD_Ixrstor, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0461 */ { UD_Iclflush, O_M, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0462 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0463 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0464 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0465 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0466 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0467 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0468 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0469 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0470 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0471 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0472 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0473 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0474 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0475 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0476 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0477 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0478 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0479 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0480 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0481 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0482 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0483 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0484 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0485 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0486 */ { UD_Iimul, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0487 */ { UD_Icmpxchg, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0488 */ { UD_Icmpxchg, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0489 */ { UD_Ilss, O_Gv, O_M, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0490 */ { UD_Ibtr, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0491 */ { UD_Ilfs, O_Gz, O_M, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0492 */ { UD_Ilgs, O_Gz, O_M, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0493 */ { UD_Imovzx, O_Gv, O_Eb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0494 */ { UD_Imovzx, O_Gy, O_Ew, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0495 */ { UD_Ipopcnt, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0496 */ { UD_Ibt, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0497 */ { UD_Ibts, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0498 */ { UD_Ibtr, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0499 */ { UD_Ibtc, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0500 */ { UD_Ibtc, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0501 */ { UD_Ibsf, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0502 */ { UD_Ibsr, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0503 */ { UD_Imovsx, O_Gv, O_Eb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0504 */ { UD_Imovsx, O_Gy, O_Ew, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0505 */ { UD_Ixadd, O_Eb, O_Gb, O_NONE, P_aso|P_oso|P_rexr|P_rexx|P_rexb },
-  /* 0506 */ { UD_Ixadd, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0507 */ { UD_Icmpps, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0508 */ { UD_Icmpsd, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0509 */ { UD_Icmpss, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0510 */ { UD_Icmppd, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0511 */ { UD_Imovnti, O_M, O_Gy, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0512 */ { UD_Ipinsrw, O_P, O_MwRy, O_Ib, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 0513 */ { UD_Ipinsrw, O_V, O_MwRy, O_Ib, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 0514 */ { UD_Ipextrw, O_Gd, O_N, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0515 */ { UD_Ipextrw, O_Gd, O_U, O_Ib, P_aso|P_rexr|P_rexb },
-  /* 0516 */ { UD_Ishufps, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0517 */ { UD_Ishufpd, O_V, O_W, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0518 */ { UD_Icmpxchg8b, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0519 */ { UD_Icmpxchg8b, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0520 */ { UD_Icmpxchg16b, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0521 */ { UD_Ivmptrld, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0522 */ { UD_Ivmxon, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0523 */ { UD_Ivmclear, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0524 */ { UD_Ivmptrst, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0525 */ { UD_Ibswap, O_R0y, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0526 */ { UD_Ibswap, O_R1y, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0527 */ { UD_Ibswap, O_R2y, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0528 */ { UD_Ibswap, O_R3y, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0529 */ { UD_Ibswap, O_R4y, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0530 */ { UD_Ibswap, O_R5y, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0531 */ { UD_Ibswap, O_R6y, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0532 */ { UD_Ibswap, O_R7y, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0533 */ { UD_Iaddsubps, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0534 */ { UD_Iaddsubpd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0535 */ { UD_Ipsrlw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0536 */ { UD_Ipsrlw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0537 */ { UD_Ipsrld, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0538 */ { UD_Ipsrld, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0539 */ { UD_Ipsrlq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0540 */ { UD_Ipsrlq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0541 */ { UD_Ipaddq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0542 */ { UD_Ipaddq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0543 */ { UD_Ipmullw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0544 */ { UD_Ipmullw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0545 */ { UD_Imovdq2q, O_P, O_U, O_NONE, P_aso|P_rexb },
-  /* 0546 */ { UD_Imovq2dq, O_V, O_N, O_NONE, P_aso|P_rexr },
-  /* 0547 */ { UD_Imovq, O_W, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0548 */ { UD_Ipmovmskb, O_Gd, O_N, O_NONE, P_oso|P_rexr|P_rexb },
-  /* 0549 */ { UD_Ipmovmskb, O_Gd, O_U, O_NONE, P_rexr|P_rexb },
-  /* 0550 */ { UD_Ipsubusb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0551 */ { UD_Ipsubusb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0552 */ { UD_Ipsubusw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0553 */ { UD_Ipsubusw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0554 */ { UD_Ipminub, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0555 */ { UD_Ipminub, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0556 */ { UD_Ipand, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0557 */ { UD_Ipand, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0558 */ { UD_Ipaddusb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0559 */ { UD_Ipaddusb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0560 */ { UD_Ipaddusw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0561 */ { UD_Ipaddusw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0562 */ { UD_Ipmaxub, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0563 */ { UD_Ipmaxub, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0564 */ { UD_Ipandn, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0565 */ { UD_Ipandn, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0566 */ { UD_Ipavgb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0567 */ { UD_Ipavgb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0568 */ { UD_Ipsraw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0569 */ { UD_Ipsraw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0570 */ { UD_Ipsrad, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0571 */ { UD_Ipsrad, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0572 */ { UD_Ipavgw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0573 */ { UD_Ipavgw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0574 */ { UD_Ipmulhuw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0575 */ { UD_Ipmulhuw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0576 */ { UD_Ipmulhw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0577 */ { UD_Ipmulhw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0578 */ { UD_Icvtpd2dq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0579 */ { UD_Icvtdq2pd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0580 */ { UD_Icvttpd2dq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0581 */ { UD_Imovntq, O_M, O_P, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0582 */ { UD_Imovntdq, O_M, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0583 */ { UD_Ipsubsb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0584 */ { UD_Ipsubsb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0585 */ { UD_Ipsubsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0586 */ { UD_Ipsubsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0587 */ { UD_Ipminsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0588 */ { UD_Ipminsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0589 */ { UD_Ipor, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0590 */ { UD_Ipor, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0591 */ { UD_Ipaddsb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0592 */ { UD_Ipaddsb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0593 */ { UD_Ipaddsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0594 */ { UD_Ipaddsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0595 */ { UD_Ipmaxsw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0596 */ { UD_Ipmaxsw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0597 */ { UD_Ipxor, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0598 */ { UD_Ipxor, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0599 */ { UD_Ilddqu, O_V, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0600 */ { UD_Ipsllw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0601 */ { UD_Ipsllw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0602 */ { UD_Ipslld, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0603 */ { UD_Ipslld, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0604 */ { UD_Ipsllq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0605 */ { UD_Ipsllq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0606 */ { UD_Ipmuludq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0607 */ { UD_Ipmuludq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0608 */ { UD_Ipmaddwd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0609 */ { UD_Ipmaddwd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0610 */ { UD_Ipsadbw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0611 */ { UD_Ipsadbw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0612 */ { UD_Imaskmovq, O_P, O_N, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0613 */ { UD_Imaskmovdqu, O_V, O_U, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0614 */ { UD_Ipsubb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0615 */ { UD_Ipsubb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0616 */ { UD_Ipsubw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0617 */ { UD_Ipsubw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0618 */ { UD_Ipsubd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0619 */ { UD_Ipsubd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0620 */ { UD_Ipsubq, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0621 */ { UD_Ipsubq, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0622 */ { UD_Ipaddb, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0623 */ { UD_Ipaddb, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0624 */ { UD_Ipaddw, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0625 */ { UD_Ipaddw, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0626 */ { UD_Ipaddd, O_P, O_Q, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0627 */ { UD_Ipaddd, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0628 */ { UD_Iadc, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0629 */ { UD_Iadc, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0630 */ { UD_Iadc, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0631 */ { UD_Iadc, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0632 */ { UD_Iadc, O_AL, O_Ib, O_NONE, P_none },
-  /* 0633 */ { UD_Iadc, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0634 */ { UD_Ipush, O_SS, O_NONE, O_NONE, P_inv64 },
-  /* 0635 */ { UD_Ipop, O_SS, O_NONE, O_NONE, P_inv64 },
-  /* 0636 */ { UD_Isbb, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0637 */ { UD_Isbb, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0638 */ { UD_Isbb, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0639 */ { UD_Isbb, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0640 */ { UD_Isbb, O_AL, O_Ib, O_NONE, P_none },
-  /* 0641 */ { UD_Isbb, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0642 */ { UD_Ipush, O_DS, O_NONE, O_NONE, P_inv64 },
-  /* 0643 */ { UD_Ipop, O_DS, O_NONE, O_NONE, P_inv64 },
-  /* 0644 */ { UD_Iand, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0645 */ { UD_Iand, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0646 */ { UD_Iand, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0647 */ { UD_Iand, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0648 */ { UD_Iand, O_AL, O_Ib, O_NONE, P_none },
-  /* 0649 */ { UD_Iand, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0650 */ { UD_Idaa, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 0651 */ { UD_Isub, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0652 */ { UD_Isub, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0653 */ { UD_Isub, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0654 */ { UD_Isub, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0655 */ { UD_Isub, O_AL, O_Ib, O_NONE, P_none },
-  /* 0656 */ { UD_Isub, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0657 */ { UD_Idas, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 0658 */ { UD_Ixor, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0659 */ { UD_Ixor, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0660 */ { UD_Ixor, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0661 */ { UD_Ixor, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0662 */ { UD_Ixor, O_AL, O_Ib, O_NONE, P_none },
-  /* 0663 */ { UD_Ixor, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0664 */ { UD_Iaaa, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0665 */ { UD_Icmp, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0666 */ { UD_Icmp, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0667 */ { UD_Icmp, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0668 */ { UD_Icmp, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0669 */ { UD_Icmp, O_AL, O_Ib, O_NONE, P_none },
-  /* 0670 */ { UD_Icmp, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0671 */ { UD_Iaas, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0672 */ { UD_Iinc, O_R0z, O_NONE, O_NONE, P_oso },
-  /* 0673 */ { UD_Iinc, O_R1z, O_NONE, O_NONE, P_oso },
-  /* 0674 */ { UD_Iinc, O_R2z, O_NONE, O_NONE, P_oso },
-  /* 0675 */ { UD_Iinc, O_R3z, O_NONE, O_NONE, P_oso },
-  /* 0676 */ { UD_Iinc, O_R4z, O_NONE, O_NONE, P_oso },
-  /* 0677 */ { UD_Iinc, O_R5z, O_NONE, O_NONE, P_oso },
-  /* 0678 */ { UD_Iinc, O_R6z, O_NONE, O_NONE, P_oso },
-  /* 0679 */ { UD_Iinc, O_R7z, O_NONE, O_NONE, P_oso },
-  /* 0680 */ { UD_Idec, O_R0z, O_NONE, O_NONE, P_oso },
-  /* 0681 */ { UD_Idec, O_R1z, O_NONE, O_NONE, P_oso },
-  /* 0682 */ { UD_Idec, O_R2z, O_NONE, O_NONE, P_oso },
-  /* 0683 */ { UD_Idec, O_R3z, O_NONE, O_NONE, P_oso },
-  /* 0684 */ { UD_Idec, O_R4z, O_NONE, O_NONE, P_oso },
-  /* 0685 */ { UD_Idec, O_R5z, O_NONE, O_NONE, P_oso },
-  /* 0686 */ { UD_Idec, O_R6z, O_NONE, O_NONE, P_oso },
-  /* 0687 */ { UD_Idec, O_R7z, O_NONE, O_NONE, P_oso },
-  /* 0688 */ { UD_Ipush, O_R0v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0689 */ { UD_Ipush, O_R1v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0690 */ { UD_Ipush, O_R2v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0691 */ { UD_Ipush, O_R3v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0692 */ { UD_Ipush, O_R4v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0693 */ { UD_Ipush, O_R5v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0694 */ { UD_Ipush, O_R6v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0695 */ { UD_Ipush, O_R7v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0696 */ { UD_Ipop, O_R0v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0697 */ { UD_Ipop, O_R1v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0698 */ { UD_Ipop, O_R2v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0699 */ { UD_Ipop, O_R3v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0700 */ { UD_Ipop, O_R4v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0701 */ { UD_Ipop, O_R5v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0702 */ { UD_Ipop, O_R6v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0703 */ { UD_Ipop, O_R7v, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 0704 */ { UD_Ipusha, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
-  /* 0705 */ { UD_Ipushad, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
-  /* 0706 */ { UD_Ipopa, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
-  /* 0707 */ { UD_Ipopad, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
-  /* 0708 */ { UD_Ibound, O_Gv, O_M, O_NONE, P_aso|P_oso },
-  /* 0709 */ { UD_Iarpl, O_Ew, O_Gw, O_NONE, P_aso },
-  /* 0710 */ { UD_Imovsxd, O_Gq, O_Ed, O_NONE, P_aso|P_oso|P_rexw|P_rexx|P_rexr|P_rexb },
-  /* 0711 */ { UD_Ipush, O_sIz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0712 */ { UD_Iimul, O_Gv, O_Ev, O_Iz, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0713 */ { UD_Ipush, O_sIb, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0714 */ { UD_Iimul, O_Gv, O_Ev, O_sIb, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0715 */ { UD_Iinsb, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0716 */ { UD_Iinsw, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
-  /* 0717 */ { UD_Iinsd, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
-  /* 0718 */ { UD_Ioutsb, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0719 */ { UD_Ioutsw, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
-  /* 0720 */ { UD_Ioutsd, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
-  /* 0721 */ { UD_Ijo, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0722 */ { UD_Ijno, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0723 */ { UD_Ijb, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0724 */ { UD_Ijae, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0725 */ { UD_Ijz, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0726 */ { UD_Ijnz, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0727 */ { UD_Ijbe, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0728 */ { UD_Ija, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0729 */ { UD_Ijs, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0730 */ { UD_Ijns, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0731 */ { UD_Ijp, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0732 */ { UD_Ijnp, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0733 */ { UD_Ijl, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0734 */ { UD_Ijge, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0735 */ { UD_Ijle, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0736 */ { UD_Ijg, O_Jb, O_NONE, O_NONE, P_none },
-  /* 0737 */ { UD_Iadd, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0738 */ { UD_Ior, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0739 */ { UD_Iadc, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0740 */ { UD_Isbb, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0741 */ { UD_Iand, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0742 */ { UD_Isub, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0743 */ { UD_Ixor, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0744 */ { UD_Icmp, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0745 */ { UD_Iadd, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0746 */ { UD_Ior, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0747 */ { UD_Iadc, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0748 */ { UD_Isbb, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0749 */ { UD_Iand, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0750 */ { UD_Isub, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0751 */ { UD_Ixor, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0752 */ { UD_Icmp, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0753 */ { UD_Iadd, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0754 */ { UD_Ior, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0755 */ { UD_Iadc, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0756 */ { UD_Isbb, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0757 */ { UD_Iand, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0758 */ { UD_Isub, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0759 */ { UD_Ixor, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0760 */ { UD_Icmp, O_Eb, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0761 */ { UD_Iadd, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0762 */ { UD_Ior, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0763 */ { UD_Iadc, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0764 */ { UD_Isbb, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0765 */ { UD_Iand, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0766 */ { UD_Isub, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0767 */ { UD_Ixor, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0768 */ { UD_Icmp, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0769 */ { UD_Itest, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0770 */ { UD_Itest, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0771 */ { UD_Ixchg, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0772 */ { UD_Ixchg, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0773 */ { UD_Imov, O_Eb, O_Gb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0774 */ { UD_Imov, O_Ev, O_Gv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0775 */ { UD_Imov, O_Gb, O_Eb, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0776 */ { UD_Imov, O_Gv, O_Ev, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0777 */ { UD_Imov, O_MwRv, O_S, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0778 */ { UD_Ilea, O_Gv, O_M, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0779 */ { UD_Imov, O_S, O_MwRv, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0780 */ { UD_Ipop, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 0781 */ { UD_Ixchg, O_R0v, O_rAX, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0782 */ { UD_Ixchg, O_R1v, O_rAX, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0783 */ { UD_Ixchg, O_R2v, O_rAX, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0784 */ { UD_Ixchg, O_R3v, O_rAX, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0785 */ { UD_Ixchg, O_R4v, O_rAX, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0786 */ { UD_Ixchg, O_R5v, O_rAX, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0787 */ { UD_Ixchg, O_R6v, O_rAX, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0788 */ { UD_Ixchg, O_R7v, O_rAX, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0789 */ { UD_Icbw, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0790 */ { UD_Icwde, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0791 */ { UD_Icdqe, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0792 */ { UD_Icwd, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0793 */ { UD_Icdq, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0794 */ { UD_Icqo, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0795 */ { UD_Icall, O_Av, O_NONE, O_NONE, P_oso },
-  /* 0796 */ { UD_Iwait, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0797 */ { UD_Ipushfw, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0798 */ { UD_Ipushfw, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
-  /* 0799 */ { UD_Ipushfd, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0800 */ { UD_Ipushfq, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
-  /* 0801 */ { UD_Ipushfq, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
-  /* 0802 */ { UD_Ipopfw, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0803 */ { UD_Ipopfd, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0804 */ { UD_Ipopfq, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0805 */ { UD_Ipopfq, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0806 */ { UD_Isahf, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0807 */ { UD_Ilahf, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0808 */ { UD_Imov, O_AL, O_Ob, O_NONE, P_none },
-  /* 0809 */ { UD_Imov, O_rAX, O_Ov, O_NONE, P_aso|P_oso|P_rexw },
-  /* 0810 */ { UD_Imov, O_Ob, O_AL, O_NONE, P_none },
-  /* 0811 */ { UD_Imov, O_Ov, O_rAX, O_NONE, P_aso|P_oso|P_rexw },
-  /* 0812 */ { UD_Imovsb, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0813 */ { UD_Imovsw, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0814 */ { UD_Imovsd, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0815 */ { UD_Imovsq, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0816 */ { UD_Icmpsb, O_NONE, O_NONE, O_NONE, P_strz|P_seg },
-  /* 0817 */ { UD_Icmpsw, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
-  /* 0818 */ { UD_Icmpsd, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
-  /* 0819 */ { UD_Icmpsq, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
-  /* 0820 */ { UD_Itest, O_AL, O_Ib, O_NONE, P_none },
-  /* 0821 */ { UD_Itest, O_rAX, O_sIz, O_NONE, P_oso|P_rexw },
-  /* 0822 */ { UD_Istosb, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0823 */ { UD_Istosw, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0824 */ { UD_Istosd, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0825 */ { UD_Istosq, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0826 */ { UD_Ilodsb, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0827 */ { UD_Ilodsw, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0828 */ { UD_Ilodsd, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0829 */ { UD_Ilodsq, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0830 */ { UD_Iscasb, O_NONE, O_NONE, O_NONE, P_strz },
-  /* 0831 */ { UD_Iscasw, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
-  /* 0832 */ { UD_Iscasd, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
-  /* 0833 */ { UD_Iscasq, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
-  /* 0834 */ { UD_Imov, O_R0b, O_Ib, O_NONE, P_rexb },
-  /* 0835 */ { UD_Imov, O_R1b, O_Ib, O_NONE, P_rexb },
-  /* 0836 */ { UD_Imov, O_R2b, O_Ib, O_NONE, P_rexb },
-  /* 0837 */ { UD_Imov, O_R3b, O_Ib, O_NONE, P_rexb },
-  /* 0838 */ { UD_Imov, O_R4b, O_Ib, O_NONE, P_rexb },
-  /* 0839 */ { UD_Imov, O_R5b, O_Ib, O_NONE, P_rexb },
-  /* 0840 */ { UD_Imov, O_R6b, O_Ib, O_NONE, P_rexb },
-  /* 0841 */ { UD_Imov, O_R7b, O_Ib, O_NONE, P_rexb },
-  /* 0842 */ { UD_Imov, O_R0v, O_Iv, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0843 */ { UD_Imov, O_R1v, O_Iv, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0844 */ { UD_Imov, O_R2v, O_Iv, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0845 */ { UD_Imov, O_R3v, O_Iv, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0846 */ { UD_Imov, O_R4v, O_Iv, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0847 */ { UD_Imov, O_R5v, O_Iv, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0848 */ { UD_Imov, O_R6v, O_Iv, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0849 */ { UD_Imov, O_R7v, O_Iv, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0850 */ { UD_Irol, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0851 */ { UD_Iror, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0852 */ { UD_Ircl, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0853 */ { UD_Ircr, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0854 */ { UD_Ishl, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0855 */ { UD_Ishr, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0856 */ { UD_Ishl, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0857 */ { UD_Isar, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0858 */ { UD_Irol, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0859 */ { UD_Iror, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0860 */ { UD_Ircl, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0861 */ { UD_Ircr, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0862 */ { UD_Ishl, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0863 */ { UD_Ishr, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0864 */ { UD_Ishl, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0865 */ { UD_Isar, O_Ev, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0866 */ { UD_Iret, O_Iw, O_NONE, O_NONE, P_none },
-  /* 0867 */ { UD_Iret, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0868 */ { UD_Iles, O_Gv, O_M, O_NONE, P_aso|P_oso },
-  /* 0869 */ { UD_Ilds, O_Gv, O_M, O_NONE, P_aso|P_oso },
-  /* 0870 */ { UD_Imov, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0871 */ { UD_Imov, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0872 */ { UD_Ienter, O_Iw, O_Ib, O_NONE, P_def64 },
-  /* 0873 */ { UD_Ileave, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0874 */ { UD_Iretf, O_Iw, O_NONE, O_NONE, P_none },
-  /* 0875 */ { UD_Iretf, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0876 */ { UD_Iint3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0877 */ { UD_Iint, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0878 */ { UD_Iinto, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 0879 */ { UD_Iiretw, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0880 */ { UD_Iiretd, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0881 */ { UD_Iiretq, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0882 */ { UD_Irol, O_Eb, O_I1, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0883 */ { UD_Iror, O_Eb, O_I1, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0884 */ { UD_Ircl, O_Eb, O_I1, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0885 */ { UD_Ircr, O_Eb, O_I1, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0886 */ { UD_Ishl, O_Eb, O_I1, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0887 */ { UD_Ishr, O_Eb, O_I1, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0888 */ { UD_Ishl, O_Eb, O_I1, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0889 */ { UD_Isar, O_Eb, O_I1, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0890 */ { UD_Irol, O_Ev, O_I1, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0891 */ { UD_Iror, O_Ev, O_I1, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0892 */ { UD_Ircl, O_Ev, O_I1, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0893 */ { UD_Ircr, O_Ev, O_I1, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0894 */ { UD_Ishl, O_Ev, O_I1, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0895 */ { UD_Ishr, O_Ev, O_I1, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0896 */ { UD_Ishl, O_Ev, O_I1, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0897 */ { UD_Isar, O_Ev, O_I1, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0898 */ { UD_Irol, O_Eb, O_CL, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0899 */ { UD_Iror, O_Eb, O_CL, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0900 */ { UD_Ircl, O_Eb, O_CL, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0901 */ { UD_Ircr, O_Eb, O_CL, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0902 */ { UD_Ishl, O_Eb, O_CL, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0903 */ { UD_Ishr, O_Eb, O_CL, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0904 */ { UD_Ishl, O_Eb, O_CL, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0905 */ { UD_Isar, O_Eb, O_CL, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0906 */ { UD_Irol, O_Ev, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0907 */ { UD_Iror, O_Ev, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0908 */ { UD_Ircl, O_Ev, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0909 */ { UD_Ircr, O_Ev, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0910 */ { UD_Ishl, O_Ev, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0911 */ { UD_Ishr, O_Ev, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0912 */ { UD_Ishl, O_Ev, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0913 */ { UD_Isar, O_Ev, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0914 */ { UD_Iaam, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0915 */ { UD_Iaad, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0916 */ { UD_Isalc, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 0917 */ { UD_Ixlatb, O_NONE, O_NONE, O_NONE, P_rexw|P_seg },
-  /* 0918 */ { UD_Ifadd, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0919 */ { UD_Ifmul, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0920 */ { UD_Ifcom, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0921 */ { UD_Ifcomp, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0922 */ { UD_Ifsub, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0923 */ { UD_Ifsubr, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0924 */ { UD_Ifdiv, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0925 */ { UD_Ifdivr, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0926 */ { UD_Ifadd, O_ST0, O_ST0, O_NONE, P_none },
-  /* 0927 */ { UD_Ifadd, O_ST0, O_ST1, O_NONE, P_none },
-  /* 0928 */ { UD_Ifadd, O_ST0, O_ST2, O_NONE, P_none },
-  /* 0929 */ { UD_Ifadd, O_ST0, O_ST3, O_NONE, P_none },
-  /* 0930 */ { UD_Ifadd, O_ST0, O_ST4, O_NONE, P_none },
-  /* 0931 */ { UD_Ifadd, O_ST0, O_ST5, O_NONE, P_none },
-  /* 0932 */ { UD_Ifadd, O_ST0, O_ST6, O_NONE, P_none },
-  /* 0933 */ { UD_Ifadd, O_ST0, O_ST7, O_NONE, P_none },
-  /* 0934 */ { UD_Ifmul, O_ST0, O_ST0, O_NONE, P_none },
-  /* 0935 */ { UD_Ifmul, O_ST0, O_ST1, O_NONE, P_none },
-  /* 0936 */ { UD_Ifmul, O_ST0, O_ST2, O_NONE, P_none },
-  /* 0937 */ { UD_Ifmul, O_ST0, O_ST3, O_NONE, P_none },
-  /* 0938 */ { UD_Ifmul, O_ST0, O_ST4, O_NONE, P_none },
-  /* 0939 */ { UD_Ifmul, O_ST0, O_ST5, O_NONE, P_none },
-  /* 0940 */ { UD_Ifmul, O_ST0, O_ST6, O_NONE, P_none },
-  /* 0941 */ { UD_Ifmul, O_ST0, O_ST7, O_NONE, P_none },
-  /* 0942 */ { UD_Ifcom, O_ST0, O_ST0, O_NONE, P_none },
-  /* 0943 */ { UD_Ifcom, O_ST0, O_ST1, O_NONE, P_none },
-  /* 0944 */ { UD_Ifcom, O_ST0, O_ST2, O_NONE, P_none },
-  /* 0945 */ { UD_Ifcom, O_ST0, O_ST3, O_NONE, P_none },
-  /* 0946 */ { UD_Ifcom, O_ST0, O_ST4, O_NONE, P_none },
-  /* 0947 */ { UD_Ifcom, O_ST0, O_ST5, O_NONE, P_none },
-  /* 0948 */ { UD_Ifcom, O_ST0, O_ST6, O_NONE, P_none },
-  /* 0949 */ { UD_Ifcom, O_ST0, O_ST7, O_NONE, P_none },
-  /* 0950 */ { UD_Ifcomp, O_ST0, O_ST0, O_NONE, P_none },
-  /* 0951 */ { UD_Ifcomp, O_ST0, O_ST1, O_NONE, P_none },
-  /* 0952 */ { UD_Ifcomp, O_ST0, O_ST2, O_NONE, P_none },
-  /* 0953 */ { UD_Ifcomp, O_ST0, O_ST3, O_NONE, P_none },
-  /* 0954 */ { UD_Ifcomp, O_ST0, O_ST4, O_NONE, P_none },
-  /* 0955 */ { UD_Ifcomp, O_ST0, O_ST5, O_NONE, P_none },
-  /* 0956 */ { UD_Ifcomp, O_ST0, O_ST6, O_NONE, P_none },
-  /* 0957 */ { UD_Ifcomp, O_ST0, O_ST7, O_NONE, P_none },
-  /* 0958 */ { UD_Ifsub, O_ST0, O_ST0, O_NONE, P_none },
-  /* 0959 */ { UD_Ifsub, O_ST0, O_ST1, O_NONE, P_none },
-  /* 0960 */ { UD_Ifsub, O_ST0, O_ST2, O_NONE, P_none },
-  /* 0961 */ { UD_Ifsub, O_ST0, O_ST3, O_NONE, P_none },
-  /* 0962 */ { UD_Ifsub, O_ST0, O_ST4, O_NONE, P_none },
-  /* 0963 */ { UD_Ifsub, O_ST0, O_ST5, O_NONE, P_none },
-  /* 0964 */ { UD_Ifsub, O_ST0, O_ST6, O_NONE, P_none },
-  /* 0965 */ { UD_Ifsub, O_ST0, O_ST7, O_NONE, P_none },
-  /* 0966 */ { UD_Ifsubr, O_ST0, O_ST0, O_NONE, P_none },
-  /* 0967 */ { UD_Ifsubr, O_ST0, O_ST1, O_NONE, P_none },
-  /* 0968 */ { UD_Ifsubr, O_ST0, O_ST2, O_NONE, P_none },
-  /* 0969 */ { UD_Ifsubr, O_ST0, O_ST3, O_NONE, P_none },
-  /* 0970 */ { UD_Ifsubr, O_ST0, O_ST4, O_NONE, P_none },
-  /* 0971 */ { UD_Ifsubr, O_ST0, O_ST5, O_NONE, P_none },
-  /* 0972 */ { UD_Ifsubr, O_ST0, O_ST6, O_NONE, P_none },
-  /* 0973 */ { UD_Ifsubr, O_ST0, O_ST7, O_NONE, P_none },
-  /* 0974 */ { UD_Ifdiv, O_ST0, O_ST0, O_NONE, P_none },
-  /* 0975 */ { UD_Ifdiv, O_ST0, O_ST1, O_NONE, P_none },
-  /* 0976 */ { UD_Ifdiv, O_ST0, O_ST2, O_NONE, P_none },
-  /* 0977 */ { UD_Ifdiv, O_ST0, O_ST3, O_NONE, P_none },
-  /* 0978 */ { UD_Ifdiv, O_ST0, O_ST4, O_NONE, P_none },
-  /* 0979 */ { UD_Ifdiv, O_ST0, O_ST5, O_NONE, P_none },
-  /* 0980 */ { UD_Ifdiv, O_ST0, O_ST6, O_NONE, P_none },
-  /* 0981 */ { UD_Ifdiv, O_ST0, O_ST7, O_NONE, P_none },
-  /* 0982 */ { UD_Ifdivr, O_ST0, O_ST0, O_NONE, P_none },
-  /* 0983 */ { UD_Ifdivr, O_ST0, O_ST1, O_NONE, P_none },
-  /* 0984 */ { UD_Ifdivr, O_ST0, O_ST2, O_NONE, P_none },
-  /* 0985 */ { UD_Ifdivr, O_ST0, O_ST3, O_NONE, P_none },
-  /* 0986 */ { UD_Ifdivr, O_ST0, O_ST4, O_NONE, P_none },
-  /* 0987 */ { UD_Ifdivr, O_ST0, O_ST5, O_NONE, P_none },
-  /* 0988 */ { UD_Ifdivr, O_ST0, O_ST6, O_NONE, P_none },
-  /* 0989 */ { UD_Ifdivr, O_ST0, O_ST7, O_NONE, P_none },
-  /* 0990 */ { UD_Ifld, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0991 */ { UD_Ifst, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0992 */ { UD_Ifstp, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0993 */ { UD_Ifldenv, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0994 */ { UD_Ifldcw, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0995 */ { UD_Ifnstenv, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0996 */ { UD_Ifnstcw, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0997 */ { UD_Ifld, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0998 */ { UD_Ifld, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0999 */ { UD_Ifld, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1000 */ { UD_Ifld, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1001 */ { UD_Ifld, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1002 */ { UD_Ifld, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1003 */ { UD_Ifld, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1004 */ { UD_Ifld, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1005 */ { UD_Ifxch, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1006 */ { UD_Ifxch, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1007 */ { UD_Ifxch, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1008 */ { UD_Ifxch, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1009 */ { UD_Ifxch, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1010 */ { UD_Ifxch, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1011 */ { UD_Ifxch, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1012 */ { UD_Ifxch, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1013 */ { UD_Ifnop, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1014 */ { UD_Ifstp1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1015 */ { UD_Ifstp1, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1016 */ { UD_Ifstp1, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1017 */ { UD_Ifstp1, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1018 */ { UD_Ifstp1, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1019 */ { UD_Ifstp1, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1020 */ { UD_Ifstp1, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1021 */ { UD_Ifstp1, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1022 */ { UD_Ifchs, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1023 */ { UD_Ifabs, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1024 */ { UD_Iftst, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1025 */ { UD_Ifxam, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1026 */ { UD_Ifld1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1027 */ { UD_Ifldl2t, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1028 */ { UD_Ifldl2e, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1029 */ { UD_Ifldpi, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1030 */ { UD_Ifldlg2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1031 */ { UD_Ifldln2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1032 */ { UD_Ifldz, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1033 */ { UD_If2xm1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1034 */ { UD_Ifyl2x, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1035 */ { UD_Ifptan, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1036 */ { UD_Ifpatan, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1037 */ { UD_Ifxtract, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1038 */ { UD_Ifprem1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1039 */ { UD_Ifdecstp, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1040 */ { UD_Ifincstp, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1041 */ { UD_Ifprem, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1042 */ { UD_Ifyl2xp1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1043 */ { UD_Ifsqrt, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1044 */ { UD_Ifsincos, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1045 */ { UD_Ifrndint, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1046 */ { UD_Ifscale, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1047 */ { UD_Ifsin, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1048 */ { UD_Ifcos, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1049 */ { UD_Ifiadd, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1050 */ { UD_Ifimul, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1051 */ { UD_Ificom, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1052 */ { UD_Ificomp, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1053 */ { UD_Ifisub, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1054 */ { UD_Ifisubr, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1055 */ { UD_Ifidiv, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1056 */ { UD_Ifidivr, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1057 */ { UD_Ifcmovb, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1058 */ { UD_Ifcmovb, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1059 */ { UD_Ifcmovb, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1060 */ { UD_Ifcmovb, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1061 */ { UD_Ifcmovb, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1062 */ { UD_Ifcmovb, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1063 */ { UD_Ifcmovb, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1064 */ { UD_Ifcmovb, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1065 */ { UD_Ifcmove, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1066 */ { UD_Ifcmove, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1067 */ { UD_Ifcmove, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1068 */ { UD_Ifcmove, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1069 */ { UD_Ifcmove, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1070 */ { UD_Ifcmove, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1071 */ { UD_Ifcmove, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1072 */ { UD_Ifcmove, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1073 */ { UD_Ifcmovbe, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1074 */ { UD_Ifcmovbe, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1075 */ { UD_Ifcmovbe, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1076 */ { UD_Ifcmovbe, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1077 */ { UD_Ifcmovbe, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1078 */ { UD_Ifcmovbe, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1079 */ { UD_Ifcmovbe, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1080 */ { UD_Ifcmovbe, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1081 */ { UD_Ifcmovu, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1082 */ { UD_Ifcmovu, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1083 */ { UD_Ifcmovu, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1084 */ { UD_Ifcmovu, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1085 */ { UD_Ifcmovu, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1086 */ { UD_Ifcmovu, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1087 */ { UD_Ifcmovu, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1088 */ { UD_Ifcmovu, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1089 */ { UD_Ifucompp, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1090 */ { UD_Ifild, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1091 */ { UD_Ifisttp, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1092 */ { UD_Ifist, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1093 */ { UD_Ifistp, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1094 */ { UD_Ifld, O_Mt, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1095 */ { UD_Ifstp, O_Mt, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1096 */ { UD_Ifcmovnb, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1097 */ { UD_Ifcmovnb, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1098 */ { UD_Ifcmovnb, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1099 */ { UD_Ifcmovnb, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1100 */ { UD_Ifcmovnb, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1101 */ { UD_Ifcmovnb, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1102 */ { UD_Ifcmovnb, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1103 */ { UD_Ifcmovnb, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1104 */ { UD_Ifcmovne, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1105 */ { UD_Ifcmovne, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1106 */ { UD_Ifcmovne, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1107 */ { UD_Ifcmovne, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1108 */ { UD_Ifcmovne, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1109 */ { UD_Ifcmovne, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1110 */ { UD_Ifcmovne, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1111 */ { UD_Ifcmovne, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1112 */ { UD_Ifcmovnbe, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1113 */ { UD_Ifcmovnbe, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1114 */ { UD_Ifcmovnbe, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1115 */ { UD_Ifcmovnbe, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1116 */ { UD_Ifcmovnbe, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1117 */ { UD_Ifcmovnbe, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1118 */ { UD_Ifcmovnbe, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1119 */ { UD_Ifcmovnbe, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1120 */ { UD_Ifcmovnu, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1121 */ { UD_Ifcmovnu, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1122 */ { UD_Ifcmovnu, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1123 */ { UD_Ifcmovnu, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1124 */ { UD_Ifcmovnu, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1125 */ { UD_Ifcmovnu, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1126 */ { UD_Ifcmovnu, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1127 */ { UD_Ifcmovnu, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1128 */ { UD_Ifclex, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1129 */ { UD_Ifninit, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1130 */ { UD_Ifucomi, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1131 */ { UD_Ifucomi, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1132 */ { UD_Ifucomi, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1133 */ { UD_Ifucomi, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1134 */ { UD_Ifucomi, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1135 */ { UD_Ifucomi, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1136 */ { UD_Ifucomi, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1137 */ { UD_Ifucomi, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1138 */ { UD_Ifcomi, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1139 */ { UD_Ifcomi, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1140 */ { UD_Ifcomi, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1141 */ { UD_Ifcomi, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1142 */ { UD_Ifcomi, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1143 */ { UD_Ifcomi, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1144 */ { UD_Ifcomi, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1145 */ { UD_Ifcomi, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1146 */ { UD_Ifadd, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1147 */ { UD_Ifmul, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1148 */ { UD_Ifcom, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1149 */ { UD_Ifcomp, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1150 */ { UD_Ifsub, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1151 */ { UD_Ifsubr, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1152 */ { UD_Ifdiv, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1153 */ { UD_Ifdivr, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1154 */ { UD_Ifadd, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1155 */ { UD_Ifadd, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1156 */ { UD_Ifadd, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1157 */ { UD_Ifadd, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1158 */ { UD_Ifadd, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1159 */ { UD_Ifadd, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1160 */ { UD_Ifadd, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1161 */ { UD_Ifadd, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1162 */ { UD_Ifmul, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1163 */ { UD_Ifmul, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1164 */ { UD_Ifmul, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1165 */ { UD_Ifmul, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1166 */ { UD_Ifmul, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1167 */ { UD_Ifmul, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1168 */ { UD_Ifmul, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1169 */ { UD_Ifmul, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1170 */ { UD_Ifcom2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1171 */ { UD_Ifcom2, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1172 */ { UD_Ifcom2, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1173 */ { UD_Ifcom2, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1174 */ { UD_Ifcom2, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1175 */ { UD_Ifcom2, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1176 */ { UD_Ifcom2, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1177 */ { UD_Ifcom2, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1178 */ { UD_Ifcomp3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1179 */ { UD_Ifcomp3, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1180 */ { UD_Ifcomp3, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1181 */ { UD_Ifcomp3, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1182 */ { UD_Ifcomp3, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1183 */ { UD_Ifcomp3, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1184 */ { UD_Ifcomp3, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1185 */ { UD_Ifcomp3, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1186 */ { UD_Ifsubr, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1187 */ { UD_Ifsubr, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1188 */ { UD_Ifsubr, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1189 */ { UD_Ifsubr, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1190 */ { UD_Ifsubr, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1191 */ { UD_Ifsubr, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1192 */ { UD_Ifsubr, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1193 */ { UD_Ifsubr, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1194 */ { UD_Ifsub, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1195 */ { UD_Ifsub, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1196 */ { UD_Ifsub, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1197 */ { UD_Ifsub, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1198 */ { UD_Ifsub, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1199 */ { UD_Ifsub, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1200 */ { UD_Ifsub, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1201 */ { UD_Ifsub, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1202 */ { UD_Ifdivr, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1203 */ { UD_Ifdivr, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1204 */ { UD_Ifdivr, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1205 */ { UD_Ifdivr, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1206 */ { UD_Ifdivr, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1207 */ { UD_Ifdivr, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1208 */ { UD_Ifdivr, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1209 */ { UD_Ifdivr, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1210 */ { UD_Ifdiv, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1211 */ { UD_Ifdiv, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1212 */ { UD_Ifdiv, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1213 */ { UD_Ifdiv, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1214 */ { UD_Ifdiv, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1215 */ { UD_Ifdiv, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1216 */ { UD_Ifdiv, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1217 */ { UD_Ifdiv, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1218 */ { UD_Ifld, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1219 */ { UD_Ifisttp, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1220 */ { UD_Ifst, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1221 */ { UD_Ifstp, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1222 */ { UD_Ifrstor, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1223 */ { UD_Ifnsave, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1224 */ { UD_Ifnstsw, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1225 */ { UD_Iffree, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1226 */ { UD_Iffree, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1227 */ { UD_Iffree, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1228 */ { UD_Iffree, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1229 */ { UD_Iffree, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1230 */ { UD_Iffree, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1231 */ { UD_Iffree, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1232 */ { UD_Iffree, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1233 */ { UD_Ifxch4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1234 */ { UD_Ifxch4, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1235 */ { UD_Ifxch4, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1236 */ { UD_Ifxch4, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1237 */ { UD_Ifxch4, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1238 */ { UD_Ifxch4, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1239 */ { UD_Ifxch4, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1240 */ { UD_Ifxch4, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1241 */ { UD_Ifst, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1242 */ { UD_Ifst, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1243 */ { UD_Ifst, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1244 */ { UD_Ifst, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1245 */ { UD_Ifst, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1246 */ { UD_Ifst, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1247 */ { UD_Ifst, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1248 */ { UD_Ifst, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1249 */ { UD_Ifstp, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1250 */ { UD_Ifstp, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1251 */ { UD_Ifstp, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1252 */ { UD_Ifstp, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1253 */ { UD_Ifstp, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1254 */ { UD_Ifstp, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1255 */ { UD_Ifstp, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1256 */ { UD_Ifstp, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1257 */ { UD_Ifucom, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1258 */ { UD_Ifucom, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1259 */ { UD_Ifucom, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1260 */ { UD_Ifucom, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1261 */ { UD_Ifucom, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1262 */ { UD_Ifucom, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1263 */ { UD_Ifucom, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1264 */ { UD_Ifucom, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1265 */ { UD_Ifucomp, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1266 */ { UD_Ifucomp, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1267 */ { UD_Ifucomp, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1268 */ { UD_Ifucomp, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1269 */ { UD_Ifucomp, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1270 */ { UD_Ifucomp, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1271 */ { UD_Ifucomp, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1272 */ { UD_Ifucomp, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1273 */ { UD_Ifiadd, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1274 */ { UD_Ifimul, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1275 */ { UD_Ificom, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1276 */ { UD_Ificomp, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1277 */ { UD_Ifisub, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1278 */ { UD_Ifisubr, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1279 */ { UD_Ifidiv, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1280 */ { UD_Ifidivr, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1281 */ { UD_Ifaddp, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1282 */ { UD_Ifaddp, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1283 */ { UD_Ifaddp, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1284 */ { UD_Ifaddp, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1285 */ { UD_Ifaddp, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1286 */ { UD_Ifaddp, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1287 */ { UD_Ifaddp, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1288 */ { UD_Ifaddp, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1289 */ { UD_Ifmulp, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1290 */ { UD_Ifmulp, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1291 */ { UD_Ifmulp, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1292 */ { UD_Ifmulp, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1293 */ { UD_Ifmulp, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1294 */ { UD_Ifmulp, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1295 */ { UD_Ifmulp, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1296 */ { UD_Ifmulp, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1297 */ { UD_Ifcomp5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1298 */ { UD_Ifcomp5, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1299 */ { UD_Ifcomp5, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1300 */ { UD_Ifcomp5, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1301 */ { UD_Ifcomp5, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1302 */ { UD_Ifcomp5, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1303 */ { UD_Ifcomp5, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1304 */ { UD_Ifcomp5, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1305 */ { UD_Ifcompp, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1306 */ { UD_Ifsubrp, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1307 */ { UD_Ifsubrp, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1308 */ { UD_Ifsubrp, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1309 */ { UD_Ifsubrp, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1310 */ { UD_Ifsubrp, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1311 */ { UD_Ifsubrp, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1312 */ { UD_Ifsubrp, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1313 */ { UD_Ifsubrp, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1314 */ { UD_Ifsubp, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1315 */ { UD_Ifsubp, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1316 */ { UD_Ifsubp, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1317 */ { UD_Ifsubp, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1318 */ { UD_Ifsubp, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1319 */ { UD_Ifsubp, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1320 */ { UD_Ifsubp, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1321 */ { UD_Ifsubp, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1322 */ { UD_Ifdivrp, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1323 */ { UD_Ifdivrp, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1324 */ { UD_Ifdivrp, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1325 */ { UD_Ifdivrp, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1326 */ { UD_Ifdivrp, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1327 */ { UD_Ifdivrp, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1328 */ { UD_Ifdivrp, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1329 */ { UD_Ifdivrp, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1330 */ { UD_Ifdivp, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1331 */ { UD_Ifdivp, O_ST1, O_ST0, O_NONE, P_none },
-  /* 1332 */ { UD_Ifdivp, O_ST2, O_ST0, O_NONE, P_none },
-  /* 1333 */ { UD_Ifdivp, O_ST3, O_ST0, O_NONE, P_none },
-  /* 1334 */ { UD_Ifdivp, O_ST4, O_ST0, O_NONE, P_none },
-  /* 1335 */ { UD_Ifdivp, O_ST5, O_ST0, O_NONE, P_none },
-  /* 1336 */ { UD_Ifdivp, O_ST6, O_ST0, O_NONE, P_none },
-  /* 1337 */ { UD_Ifdivp, O_ST7, O_ST0, O_NONE, P_none },
-  /* 1338 */ { UD_Ifild, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1339 */ { UD_Ifisttp, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1340 */ { UD_Ifist, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1341 */ { UD_Ifistp, O_Mw, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1342 */ { UD_Ifbld, O_Mt, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1343 */ { UD_Ifild, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1344 */ { UD_Ifbstp, O_Mt, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1345 */ { UD_Ifistp, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1346 */ { UD_Iffreep, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1347 */ { UD_Iffreep, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1348 */ { UD_Iffreep, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1349 */ { UD_Iffreep, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1350 */ { UD_Iffreep, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1351 */ { UD_Iffreep, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1352 */ { UD_Iffreep, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1353 */ { UD_Iffreep, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1354 */ { UD_Ifxch7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1355 */ { UD_Ifxch7, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1356 */ { UD_Ifxch7, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1357 */ { UD_Ifxch7, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1358 */ { UD_Ifxch7, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1359 */ { UD_Ifxch7, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1360 */ { UD_Ifxch7, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1361 */ { UD_Ifxch7, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1362 */ { UD_Ifstp8, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1363 */ { UD_Ifstp8, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1364 */ { UD_Ifstp8, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1365 */ { UD_Ifstp8, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1366 */ { UD_Ifstp8, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1367 */ { UD_Ifstp8, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1368 */ { UD_Ifstp8, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1369 */ { UD_Ifstp8, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1370 */ { UD_Ifstp9, O_ST0, O_NONE, O_NONE, P_none },
-  /* 1371 */ { UD_Ifstp9, O_ST1, O_NONE, O_NONE, P_none },
-  /* 1372 */ { UD_Ifstp9, O_ST2, O_NONE, O_NONE, P_none },
-  /* 1373 */ { UD_Ifstp9, O_ST3, O_NONE, O_NONE, P_none },
-  /* 1374 */ { UD_Ifstp9, O_ST4, O_NONE, O_NONE, P_none },
-  /* 1375 */ { UD_Ifstp9, O_ST5, O_NONE, O_NONE, P_none },
-  /* 1376 */ { UD_Ifstp9, O_ST6, O_NONE, O_NONE, P_none },
-  /* 1377 */ { UD_Ifstp9, O_ST7, O_NONE, O_NONE, P_none },
-  /* 1378 */ { UD_Ifnstsw, O_AX, O_NONE, O_NONE, P_none },
-  /* 1379 */ { UD_Ifucomip, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1380 */ { UD_Ifucomip, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1381 */ { UD_Ifucomip, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1382 */ { UD_Ifucomip, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1383 */ { UD_Ifucomip, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1384 */ { UD_Ifucomip, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1385 */ { UD_Ifucomip, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1386 */ { UD_Ifucomip, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1387 */ { UD_Ifcomip, O_ST0, O_ST0, O_NONE, P_none },
-  /* 1388 */ { UD_Ifcomip, O_ST0, O_ST1, O_NONE, P_none },
-  /* 1389 */ { UD_Ifcomip, O_ST0, O_ST2, O_NONE, P_none },
-  /* 1390 */ { UD_Ifcomip, O_ST0, O_ST3, O_NONE, P_none },
-  /* 1391 */ { UD_Ifcomip, O_ST0, O_ST4, O_NONE, P_none },
-  /* 1392 */ { UD_Ifcomip, O_ST0, O_ST5, O_NONE, P_none },
-  /* 1393 */ { UD_Ifcomip, O_ST0, O_ST6, O_NONE, P_none },
-  /* 1394 */ { UD_Ifcomip, O_ST0, O_ST7, O_NONE, P_none },
-  /* 1395 */ { UD_Iloopne, O_Jb, O_NONE, O_NONE, P_none },
-  /* 1396 */ { UD_Iloope, O_Jb, O_NONE, O_NONE, P_none },
-  /* 1397 */ { UD_Iloop, O_Jb, O_NONE, O_NONE, P_none },
-  /* 1398 */ { UD_Ijcxz, O_Jb, O_NONE, O_NONE, P_aso },
-  /* 1399 */ { UD_Ijecxz, O_Jb, O_NONE, O_NONE, P_aso },
-  /* 1400 */ { UD_Ijrcxz, O_Jb, O_NONE, O_NONE, P_aso },
-  /* 1401 */ { UD_Iin, O_AL, O_Ib, O_NONE, P_none },
-  /* 1402 */ { UD_Iin, O_eAX, O_Ib, O_NONE, P_oso },
-  /* 1403 */ { UD_Iout, O_Ib, O_AL, O_NONE, P_none },
-  /* 1404 */ { UD_Iout, O_Ib, O_eAX, O_NONE, P_oso },
-  /* 1405 */ { UD_Icall, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 1406 */ { UD_Ijmp, O_Jz, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 1407 */ { UD_Ijmp, O_Av, O_NONE, O_NONE, P_oso },
-  /* 1408 */ { UD_Ijmp, O_Jb, O_NONE, O_NONE, P_none },
-  /* 1409 */ { UD_Iin, O_AL, O_DX, O_NONE, P_none },
-  /* 1410 */ { UD_Iin, O_eAX, O_DX, O_NONE, P_oso },
-  /* 1411 */ { UD_Iout, O_DX, O_AL, O_NONE, P_none },
-  /* 1412 */ { UD_Iout, O_DX, O_eAX, O_NONE, P_oso },
-  /* 1413 */ { UD_Ilock, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1414 */ { UD_Iint1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1415 */ { UD_Irepne, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1416 */ { UD_Irep, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1417 */ { UD_Ihlt, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1418 */ { UD_Icmc, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1419 */ { UD_Itest, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1420 */ { UD_Itest, O_Eb, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1421 */ { UD_Inot, O_Eb, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1422 */ { UD_Ineg, O_Eb, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1423 */ { UD_Imul, O_Eb, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1424 */ { UD_Iimul, O_Eb, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1425 */ { UD_Idiv, O_Eb, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1426 */ { UD_Iidiv, O_Eb, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1427 */ { UD_Itest, O_Ev, O_sIz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1428 */ { UD_Itest, O_Ev, O_Iz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1429 */ { UD_Inot, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1430 */ { UD_Ineg, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1431 */ { UD_Imul, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1432 */ { UD_Iimul, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1433 */ { UD_Idiv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1434 */ { UD_Iidiv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1435 */ { UD_Iclc, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1436 */ { UD_Istc, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1437 */ { UD_Icli, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1438 */ { UD_Isti, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1439 */ { UD_Icld, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1440 */ { UD_Istd, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1441 */ { UD_Iinc, O_Eb, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1442 */ { UD_Idec, O_Eb, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1443 */ { UD_Iinc, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1444 */ { UD_Idec, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1445 */ { UD_Icall, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1446 */ { UD_Icall, O_Eq, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1447 */ { UD_Icall, O_Fv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1448 */ { UD_Ijmp, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1449 */ { UD_Ijmp, O_Fv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1450 */ { UD_Ipush, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 0000 */ { UD_Iinvalid, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0001 */ { UD_Iaaa, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0002 */ { UD_Iaad, O_Ib, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0003 */ { UD_Iaam, O_Ib, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0004 */ { UD_Iaas, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0005 */ { UD_Iadc, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0006 */ { UD_Iadc, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0007 */ { UD_Iadc, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0008 */ { UD_Iadc, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0009 */ { UD_Iadc, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 0010 */ { UD_Iadc, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0011 */ { UD_Iadc, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0012 */ { UD_Iadc, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
+  /* 0013 */ { UD_Iadc, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0014 */ { UD_Iadc, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0015 */ { UD_Iadd, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0016 */ { UD_Iadd, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0017 */ { UD_Iadd, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0018 */ { UD_Iadd, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0019 */ { UD_Iadd, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 0020 */ { UD_Iadd, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0021 */ { UD_Iadd, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0022 */ { UD_Iadd, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
+  /* 0023 */ { UD_Iadd, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0024 */ { UD_Iadd, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0025 */ { UD_Iaddpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0026 */ { UD_Ivaddpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0027 */ { UD_Iaddps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0028 */ { UD_Ivaddps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0029 */ { UD_Iaddsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0030 */ { UD_Ivaddsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0031 */ { UD_Iaddss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0032 */ { UD_Ivaddss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0033 */ { UD_Iaddsubpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0034 */ { UD_Ivaddsubpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0035 */ { UD_Iaddsubps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0036 */ { UD_Ivaddsubps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0037 */ { UD_Iaesdec, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0038 */ { UD_Ivaesdec, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0039 */ { UD_Iaesdeclast, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0040 */ { UD_Ivaesdeclast, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0041 */ { UD_Iaesenc, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0042 */ { UD_Ivaesenc, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0043 */ { UD_Iaesenclast, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0044 */ { UD_Ivaesenclast, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0045 */ { UD_Iaesimc, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0046 */ { UD_Ivaesimc, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0047 */ { UD_Iaeskeygenassist, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0048 */ { UD_Ivaeskeygenassist, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0049 */ { UD_Iand, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0050 */ { UD_Iand, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0051 */ { UD_Iand, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0052 */ { UD_Iand, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0053 */ { UD_Iand, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 0054 */ { UD_Iand, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0055 */ { UD_Iand, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0056 */ { UD_Iand, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
+  /* 0057 */ { UD_Iand, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0058 */ { UD_Iand, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0059 */ { UD_Iandpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0060 */ { UD_Ivandpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0061 */ { UD_Iandps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0062 */ { UD_Ivandps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0063 */ { UD_Iandnpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0064 */ { UD_Ivandnpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0065 */ { UD_Iandnps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0066 */ { UD_Ivandnps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0067 */ { UD_Iarpl, O_Ew, O_Gw, O_NONE, O_NONE, P_aso },
+  /* 0068 */ { UD_Imovsxd, O_Gq, O_Ed, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexx|P_rexr|P_rexb },
+  /* 0069 */ { UD_Icall, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0070 */ { UD_Icall, O_Eq, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 0071 */ { UD_Icall, O_Fv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0072 */ { UD_Icall, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0073 */ { UD_Icall, O_Av, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0074 */ { UD_Icbw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0075 */ { UD_Icwde, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0076 */ { UD_Icdqe, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0077 */ { UD_Iclc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0078 */ { UD_Icld, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0079 */ { UD_Iclflush, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0080 */ { UD_Iclgi, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0081 */ { UD_Icli, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0082 */ { UD_Iclts, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0083 */ { UD_Icmc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0084 */ { UD_Icmovo, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0085 */ { UD_Icmovno, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0086 */ { UD_Icmovb, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0087 */ { UD_Icmovae, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0088 */ { UD_Icmovz, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0089 */ { UD_Icmovnz, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0090 */ { UD_Icmovbe, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0091 */ { UD_Icmova, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0092 */ { UD_Icmovs, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0093 */ { UD_Icmovns, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0094 */ { UD_Icmovp, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0095 */ { UD_Icmovnp, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0096 */ { UD_Icmovl, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0097 */ { UD_Icmovge, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0098 */ { UD_Icmovle, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0099 */ { UD_Icmovg, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0100 */ { UD_Icmp, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0101 */ { UD_Icmp, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0102 */ { UD_Icmp, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0103 */ { UD_Icmp, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0104 */ { UD_Icmp, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 0105 */ { UD_Icmp, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0106 */ { UD_Icmp, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0107 */ { UD_Icmp, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
+  /* 0108 */ { UD_Icmp, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0109 */ { UD_Icmp, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0110 */ { UD_Icmppd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0111 */ { UD_Ivcmppd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0112 */ { UD_Icmpps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0113 */ { UD_Ivcmpps, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0114 */ { UD_Icmpsb, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_seg },
+  /* 0115 */ { UD_Icmpsw, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
+  /* 0116 */ { UD_Icmpsd, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
+  /* 0117 */ { UD_Icmpsd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0118 */ { UD_Ivcmpsd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0119 */ { UD_Icmpsq, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
+  /* 0120 */ { UD_Icmpss, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0121 */ { UD_Ivcmpss, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0122 */ { UD_Icmpxchg, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0123 */ { UD_Icmpxchg, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0124 */ { UD_Icmpxchg8b, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0125 */ { UD_Icmpxchg8b, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0126 */ { UD_Icmpxchg16b, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0127 */ { UD_Icomisd, O_Vsd, O_Wsd, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0128 */ { UD_Ivcomisd, O_Vsd, O_Wsd, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0129 */ { UD_Icomiss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0130 */ { UD_Ivcomiss, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0131 */ { UD_Icpuid, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0132 */ { UD_Icvtdq2pd, O_V, O_Wdq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0133 */ { UD_Ivcvtdq2pd, O_Vx, O_Wdq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0134 */ { UD_Icvtdq2ps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0135 */ { UD_Ivcvtdq2ps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0136 */ { UD_Icvtpd2dq, O_Vdq, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0137 */ { UD_Ivcvtpd2dq, O_Vdq, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0138 */ { UD_Icvtpd2pi, O_P, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0139 */ { UD_Icvtpd2ps, O_Vdq, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0140 */ { UD_Ivcvtpd2ps, O_Vdq, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0141 */ { UD_Icvtpi2ps, O_V, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0142 */ { UD_Icvtpi2pd, O_V, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0143 */ { UD_Icvtps2dq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0144 */ { UD_Ivcvtps2dq, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0145 */ { UD_Icvtps2pd, O_V, O_Wdq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0146 */ { UD_Ivcvtps2pd, O_Vx, O_Wdq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0147 */ { UD_Icvtps2pi, O_P, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0148 */ { UD_Icvtsd2si, O_Gy, O_MqU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0149 */ { UD_Ivcvtsd2si, O_Gy, O_MqU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0150 */ { UD_Icvtsd2ss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0151 */ { UD_Ivcvtsd2ss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0152 */ { UD_Icvtsi2sd, O_V, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0153 */ { UD_Ivcvtsi2sd, O_Vx, O_Hx, O_Ey, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0154 */ { UD_Icvtsi2ss, O_V, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0155 */ { UD_Ivcvtsi2ss, O_Vx, O_Hx, O_Ey, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0156 */ { UD_Icvtss2sd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0157 */ { UD_Ivcvtss2sd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0158 */ { UD_Icvtss2si, O_Gy, O_MdU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0159 */ { UD_Ivcvtss2si, O_Gy, O_MdU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0160 */ { UD_Icvttpd2dq, O_Vdq, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0161 */ { UD_Ivcvttpd2dq, O_Vdq, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0162 */ { UD_Icvttpd2pi, O_P, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0163 */ { UD_Icvttps2dq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0164 */ { UD_Ivcvttps2dq, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0165 */ { UD_Icvttps2pi, O_P, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0166 */ { UD_Icvttsd2si, O_Gy, O_MqU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0167 */ { UD_Ivcvttsd2si, O_Gy, O_MqU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0168 */ { UD_Icvttss2si, O_Gy, O_MdU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0169 */ { UD_Ivcvttss2si, O_Gy, O_MdU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0170 */ { UD_Icwd, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0171 */ { UD_Icdq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0172 */ { UD_Icqo, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0173 */ { UD_Idaa, O_NONE, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 0174 */ { UD_Idas, O_NONE, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 0175 */ { UD_Idec, O_R0z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0176 */ { UD_Idec, O_R1z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0177 */ { UD_Idec, O_R2z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0178 */ { UD_Idec, O_R3z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0179 */ { UD_Idec, O_R4z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0180 */ { UD_Idec, O_R5z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0181 */ { UD_Idec, O_R6z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0182 */ { UD_Idec, O_R7z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0183 */ { UD_Idec, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0184 */ { UD_Idec, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0185 */ { UD_Idiv, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0186 */ { UD_Idiv, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0187 */ { UD_Idivpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0188 */ { UD_Ivdivpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0189 */ { UD_Idivps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0190 */ { UD_Ivdivps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0191 */ { UD_Idivsd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0192 */ { UD_Ivdivsd, O_Vx, O_Hx, O_MqU, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0193 */ { UD_Idivss, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0194 */ { UD_Ivdivss, O_Vx, O_Hx, O_MdU, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0195 */ { UD_Idppd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0196 */ { UD_Ivdppd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0197 */ { UD_Idpps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0198 */ { UD_Ivdpps, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0199 */ { UD_Iemms, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0200 */ { UD_Ienter, O_Iw, O_Ib, O_NONE, O_NONE, P_def64 },
+  /* 0201 */ { UD_Iextractps, O_MdRy, O_V, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 0202 */ { UD_Ivextractps, O_MdRy, O_Vx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 0203 */ { UD_If2xm1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0204 */ { UD_Ifabs, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0205 */ { UD_Ifadd, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0206 */ { UD_Ifadd, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0207 */ { UD_Ifadd, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0208 */ { UD_Ifadd, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0209 */ { UD_Ifadd, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0210 */ { UD_Ifadd, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0211 */ { UD_Ifadd, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0212 */ { UD_Ifadd, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0213 */ { UD_Ifadd, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0214 */ { UD_Ifadd, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0215 */ { UD_Ifadd, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0216 */ { UD_Ifadd, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0217 */ { UD_Ifadd, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0218 */ { UD_Ifadd, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0219 */ { UD_Ifadd, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0220 */ { UD_Ifadd, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0221 */ { UD_Ifadd, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0222 */ { UD_Ifadd, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0223 */ { UD_Ifaddp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0224 */ { UD_Ifaddp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0225 */ { UD_Ifaddp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0226 */ { UD_Ifaddp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0227 */ { UD_Ifaddp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0228 */ { UD_Ifaddp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0229 */ { UD_Ifaddp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0230 */ { UD_Ifaddp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0231 */ { UD_Ifbld, O_Mt, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0232 */ { UD_Ifbstp, O_Mt, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0233 */ { UD_Ifchs, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0234 */ { UD_Ifclex, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0235 */ { UD_Ifcmovb, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0236 */ { UD_Ifcmovb, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0237 */ { UD_Ifcmovb, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0238 */ { UD_Ifcmovb, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0239 */ { UD_Ifcmovb, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0240 */ { UD_Ifcmovb, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0241 */ { UD_Ifcmovb, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0242 */ { UD_Ifcmovb, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0243 */ { UD_Ifcmove, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0244 */ { UD_Ifcmove, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0245 */ { UD_Ifcmove, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0246 */ { UD_Ifcmove, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0247 */ { UD_Ifcmove, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0248 */ { UD_Ifcmove, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0249 */ { UD_Ifcmove, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0250 */ { UD_Ifcmove, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0251 */ { UD_Ifcmovbe, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0252 */ { UD_Ifcmovbe, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0253 */ { UD_Ifcmovbe, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0254 */ { UD_Ifcmovbe, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0255 */ { UD_Ifcmovbe, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0256 */ { UD_Ifcmovbe, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0257 */ { UD_Ifcmovbe, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0258 */ { UD_Ifcmovbe, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0259 */ { UD_Ifcmovu, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0260 */ { UD_Ifcmovu, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0261 */ { UD_Ifcmovu, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0262 */ { UD_Ifcmovu, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0263 */ { UD_Ifcmovu, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0264 */ { UD_Ifcmovu, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0265 */ { UD_Ifcmovu, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0266 */ { UD_Ifcmovu, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0267 */ { UD_Ifcmovnb, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0268 */ { UD_Ifcmovnb, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0269 */ { UD_Ifcmovnb, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0270 */ { UD_Ifcmovnb, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0271 */ { UD_Ifcmovnb, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0272 */ { UD_Ifcmovnb, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0273 */ { UD_Ifcmovnb, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0274 */ { UD_Ifcmovnb, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0275 */ { UD_Ifcmovne, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0276 */ { UD_Ifcmovne, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0277 */ { UD_Ifcmovne, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0278 */ { UD_Ifcmovne, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0279 */ { UD_Ifcmovne, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0280 */ { UD_Ifcmovne, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0281 */ { UD_Ifcmovne, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0282 */ { UD_Ifcmovne, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0283 */ { UD_Ifcmovnbe, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0284 */ { UD_Ifcmovnbe, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0285 */ { UD_Ifcmovnbe, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0286 */ { UD_Ifcmovnbe, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0287 */ { UD_Ifcmovnbe, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0288 */ { UD_Ifcmovnbe, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0289 */ { UD_Ifcmovnbe, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0290 */ { UD_Ifcmovnbe, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0291 */ { UD_Ifcmovnu, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0292 */ { UD_Ifcmovnu, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0293 */ { UD_Ifcmovnu, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0294 */ { UD_Ifcmovnu, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0295 */ { UD_Ifcmovnu, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0296 */ { UD_Ifcmovnu, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0297 */ { UD_Ifcmovnu, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0298 */ { UD_Ifcmovnu, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0299 */ { UD_Ifucomi, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0300 */ { UD_Ifucomi, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0301 */ { UD_Ifucomi, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0302 */ { UD_Ifucomi, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0303 */ { UD_Ifucomi, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0304 */ { UD_Ifucomi, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0305 */ { UD_Ifucomi, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0306 */ { UD_Ifucomi, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0307 */ { UD_Ifcom, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0308 */ { UD_Ifcom, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0309 */ { UD_Ifcom, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0310 */ { UD_Ifcom, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0311 */ { UD_Ifcom, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0312 */ { UD_Ifcom, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0313 */ { UD_Ifcom, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0314 */ { UD_Ifcom, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0315 */ { UD_Ifcom, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0316 */ { UD_Ifcom, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0317 */ { UD_Ifcom2, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0318 */ { UD_Ifcom2, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0319 */ { UD_Ifcom2, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0320 */ { UD_Ifcom2, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0321 */ { UD_Ifcom2, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0322 */ { UD_Ifcom2, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0323 */ { UD_Ifcom2, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0324 */ { UD_Ifcom2, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0325 */ { UD_Ifcomp3, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0326 */ { UD_Ifcomp3, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0327 */ { UD_Ifcomp3, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0328 */ { UD_Ifcomp3, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0329 */ { UD_Ifcomp3, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0330 */ { UD_Ifcomp3, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0331 */ { UD_Ifcomp3, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0332 */ { UD_Ifcomp3, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0333 */ { UD_Ifcomi, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0334 */ { UD_Ifcomi, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0335 */ { UD_Ifcomi, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0336 */ { UD_Ifcomi, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0337 */ { UD_Ifcomi, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0338 */ { UD_Ifcomi, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0339 */ { UD_Ifcomi, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0340 */ { UD_Ifcomi, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0341 */ { UD_Ifucomip, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0342 */ { UD_Ifucomip, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0343 */ { UD_Ifucomip, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0344 */ { UD_Ifucomip, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0345 */ { UD_Ifucomip, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0346 */ { UD_Ifucomip, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0347 */ { UD_Ifucomip, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0348 */ { UD_Ifucomip, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0349 */ { UD_Ifcomip, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0350 */ { UD_Ifcomip, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0351 */ { UD_Ifcomip, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0352 */ { UD_Ifcomip, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0353 */ { UD_Ifcomip, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0354 */ { UD_Ifcomip, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0355 */ { UD_Ifcomip, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0356 */ { UD_Ifcomip, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0357 */ { UD_Ifcomp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0358 */ { UD_Ifcomp, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0359 */ { UD_Ifcomp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0360 */ { UD_Ifcomp, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0361 */ { UD_Ifcomp, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0362 */ { UD_Ifcomp, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0363 */ { UD_Ifcomp, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0364 */ { UD_Ifcomp, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0365 */ { UD_Ifcomp, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0366 */ { UD_Ifcomp, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0367 */ { UD_Ifcomp5, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0368 */ { UD_Ifcomp5, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0369 */ { UD_Ifcomp5, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0370 */ { UD_Ifcomp5, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0371 */ { UD_Ifcomp5, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0372 */ { UD_Ifcomp5, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0373 */ { UD_Ifcomp5, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0374 */ { UD_Ifcomp5, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0375 */ { UD_Ifcompp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0376 */ { UD_Ifcos, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0377 */ { UD_Ifdecstp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0378 */ { UD_Ifdiv, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0379 */ { UD_Ifdiv, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0380 */ { UD_Ifdiv, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0381 */ { UD_Ifdiv, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0382 */ { UD_Ifdiv, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0383 */ { UD_Ifdiv, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0384 */ { UD_Ifdiv, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0385 */ { UD_Ifdiv, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0386 */ { UD_Ifdiv, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0387 */ { UD_Ifdiv, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0388 */ { UD_Ifdiv, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0389 */ { UD_Ifdiv, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0390 */ { UD_Ifdiv, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0391 */ { UD_Ifdiv, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0392 */ { UD_Ifdiv, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0393 */ { UD_Ifdiv, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0394 */ { UD_Ifdiv, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0395 */ { UD_Ifdiv, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0396 */ { UD_Ifdivp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0397 */ { UD_Ifdivp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0398 */ { UD_Ifdivp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0399 */ { UD_Ifdivp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0400 */ { UD_Ifdivp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0401 */ { UD_Ifdivp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0402 */ { UD_Ifdivp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0403 */ { UD_Ifdivp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0404 */ { UD_Ifdivr, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0405 */ { UD_Ifdivr, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0406 */ { UD_Ifdivr, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0407 */ { UD_Ifdivr, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0408 */ { UD_Ifdivr, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0409 */ { UD_Ifdivr, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0410 */ { UD_Ifdivr, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0411 */ { UD_Ifdivr, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0412 */ { UD_Ifdivr, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0413 */ { UD_Ifdivr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0414 */ { UD_Ifdivr, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0415 */ { UD_Ifdivr, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0416 */ { UD_Ifdivr, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0417 */ { UD_Ifdivr, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0418 */ { UD_Ifdivr, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0419 */ { UD_Ifdivr, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0420 */ { UD_Ifdivr, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0421 */ { UD_Ifdivr, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0422 */ { UD_Ifdivrp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0423 */ { UD_Ifdivrp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0424 */ { UD_Ifdivrp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0425 */ { UD_Ifdivrp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0426 */ { UD_Ifdivrp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0427 */ { UD_Ifdivrp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0428 */ { UD_Ifdivrp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0429 */ { UD_Ifdivrp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0430 */ { UD_Ifemms, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0431 */ { UD_Iffree, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0432 */ { UD_Iffree, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0433 */ { UD_Iffree, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0434 */ { UD_Iffree, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0435 */ { UD_Iffree, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0436 */ { UD_Iffree, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0437 */ { UD_Iffree, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0438 */ { UD_Iffree, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0439 */ { UD_Iffreep, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0440 */ { UD_Iffreep, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0441 */ { UD_Iffreep, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0442 */ { UD_Iffreep, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0443 */ { UD_Iffreep, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0444 */ { UD_Iffreep, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0445 */ { UD_Iffreep, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0446 */ { UD_Iffreep, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0447 */ { UD_Ificom, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0448 */ { UD_Ificom, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0449 */ { UD_Ificomp, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0450 */ { UD_Ificomp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0451 */ { UD_Ifild, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0452 */ { UD_Ifild, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0453 */ { UD_Ifild, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0454 */ { UD_Ifincstp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0455 */ { UD_Ifninit, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0456 */ { UD_Ifiadd, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0457 */ { UD_Ifiadd, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0458 */ { UD_Ifidivr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0459 */ { UD_Ifidivr, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0460 */ { UD_Ifidiv, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0461 */ { UD_Ifidiv, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0462 */ { UD_Ifisub, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0463 */ { UD_Ifisub, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0464 */ { UD_Ifisubr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0465 */ { UD_Ifisubr, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0466 */ { UD_Ifist, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0467 */ { UD_Ifist, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0468 */ { UD_Ifistp, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0469 */ { UD_Ifistp, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0470 */ { UD_Ifistp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0471 */ { UD_Ifisttp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0472 */ { UD_Ifisttp, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0473 */ { UD_Ifisttp, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0474 */ { UD_Ifld, O_Mt, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0475 */ { UD_Ifld, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0476 */ { UD_Ifld, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0477 */ { UD_Ifld, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0478 */ { UD_Ifld, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0479 */ { UD_Ifld, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0480 */ { UD_Ifld, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0481 */ { UD_Ifld, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0482 */ { UD_Ifld, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0483 */ { UD_Ifld, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0484 */ { UD_Ifld, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0485 */ { UD_Ifld1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0486 */ { UD_Ifldl2t, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0487 */ { UD_Ifldl2e, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0488 */ { UD_Ifldpi, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0489 */ { UD_Ifldlg2, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0490 */ { UD_Ifldln2, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0491 */ { UD_Ifldz, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0492 */ { UD_Ifldcw, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0493 */ { UD_Ifldenv, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0494 */ { UD_Ifmul, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0495 */ { UD_Ifmul, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0496 */ { UD_Ifmul, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0497 */ { UD_Ifmul, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0498 */ { UD_Ifmul, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0499 */ { UD_Ifmul, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0500 */ { UD_Ifmul, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0501 */ { UD_Ifmul, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0502 */ { UD_Ifmul, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0503 */ { UD_Ifmul, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0504 */ { UD_Ifmul, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0505 */ { UD_Ifmul, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0506 */ { UD_Ifmul, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0507 */ { UD_Ifmul, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0508 */ { UD_Ifmul, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0509 */ { UD_Ifmul, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0510 */ { UD_Ifmul, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0511 */ { UD_Ifmul, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0512 */ { UD_Ifmulp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0513 */ { UD_Ifmulp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0514 */ { UD_Ifmulp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0515 */ { UD_Ifmulp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0516 */ { UD_Ifmulp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0517 */ { UD_Ifmulp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0518 */ { UD_Ifmulp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0519 */ { UD_Ifmulp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0520 */ { UD_Ifimul, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0521 */ { UD_Ifimul, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0522 */ { UD_Ifnop, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0523 */ { UD_Ifpatan, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0524 */ { UD_Ifprem, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0525 */ { UD_Ifprem1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0526 */ { UD_Ifptan, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0527 */ { UD_Ifrndint, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0528 */ { UD_Ifrstor, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0529 */ { UD_Ifnsave, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0530 */ { UD_Ifscale, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0531 */ { UD_Ifsin, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0532 */ { UD_Ifsincos, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0533 */ { UD_Ifsqrt, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0534 */ { UD_Ifstp, O_Mt, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0535 */ { UD_Ifstp, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0536 */ { UD_Ifstp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0537 */ { UD_Ifstp, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0538 */ { UD_Ifstp, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0539 */ { UD_Ifstp, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0540 */ { UD_Ifstp, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0541 */ { UD_Ifstp, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0542 */ { UD_Ifstp, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0543 */ { UD_Ifstp, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0544 */ { UD_Ifstp, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0545 */ { UD_Ifstp1, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0546 */ { UD_Ifstp1, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0547 */ { UD_Ifstp1, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0548 */ { UD_Ifstp1, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0549 */ { UD_Ifstp1, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0550 */ { UD_Ifstp1, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0551 */ { UD_Ifstp1, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0552 */ { UD_Ifstp1, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0553 */ { UD_Ifstp8, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0554 */ { UD_Ifstp8, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0555 */ { UD_Ifstp8, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0556 */ { UD_Ifstp8, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0557 */ { UD_Ifstp8, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0558 */ { UD_Ifstp8, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0559 */ { UD_Ifstp8, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0560 */ { UD_Ifstp8, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0561 */ { UD_Ifstp9, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0562 */ { UD_Ifstp9, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0563 */ { UD_Ifstp9, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0564 */ { UD_Ifstp9, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0565 */ { UD_Ifstp9, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0566 */ { UD_Ifstp9, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0567 */ { UD_Ifstp9, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0568 */ { UD_Ifstp9, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0569 */ { UD_Ifst, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0570 */ { UD_Ifst, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0571 */ { UD_Ifst, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0572 */ { UD_Ifst, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0573 */ { UD_Ifst, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0574 */ { UD_Ifst, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0575 */ { UD_Ifst, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0576 */ { UD_Ifst, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0577 */ { UD_Ifst, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0578 */ { UD_Ifst, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0579 */ { UD_Ifnstcw, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0580 */ { UD_Ifnstenv, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0581 */ { UD_Ifnstsw, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0582 */ { UD_Ifnstsw, O_AX, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0583 */ { UD_Ifsub, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0584 */ { UD_Ifsub, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0585 */ { UD_Ifsub, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0586 */ { UD_Ifsub, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0587 */ { UD_Ifsub, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0588 */ { UD_Ifsub, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0589 */ { UD_Ifsub, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0590 */ { UD_Ifsub, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0591 */ { UD_Ifsub, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0592 */ { UD_Ifsub, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0593 */ { UD_Ifsub, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0594 */ { UD_Ifsub, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0595 */ { UD_Ifsub, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0596 */ { UD_Ifsub, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0597 */ { UD_Ifsub, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0598 */ { UD_Ifsub, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0599 */ { UD_Ifsub, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0600 */ { UD_Ifsub, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0601 */ { UD_Ifsubp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0602 */ { UD_Ifsubp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0603 */ { UD_Ifsubp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0604 */ { UD_Ifsubp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0605 */ { UD_Ifsubp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0606 */ { UD_Ifsubp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0607 */ { UD_Ifsubp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0608 */ { UD_Ifsubp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0609 */ { UD_Ifsubr, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0610 */ { UD_Ifsubr, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0611 */ { UD_Ifsubr, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0612 */ { UD_Ifsubr, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0613 */ { UD_Ifsubr, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0614 */ { UD_Ifsubr, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0615 */ { UD_Ifsubr, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0616 */ { UD_Ifsubr, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0617 */ { UD_Ifsubr, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0618 */ { UD_Ifsubr, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0619 */ { UD_Ifsubr, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0620 */ { UD_Ifsubr, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0621 */ { UD_Ifsubr, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0622 */ { UD_Ifsubr, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0623 */ { UD_Ifsubr, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0624 */ { UD_Ifsubr, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0625 */ { UD_Ifsubr, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0626 */ { UD_Ifsubr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0627 */ { UD_Ifsubrp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0628 */ { UD_Ifsubrp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0629 */ { UD_Ifsubrp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0630 */ { UD_Ifsubrp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0631 */ { UD_Ifsubrp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0632 */ { UD_Ifsubrp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0633 */ { UD_Ifsubrp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0634 */ { UD_Ifsubrp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0635 */ { UD_Iftst, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0636 */ { UD_Ifucom, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0637 */ { UD_Ifucom, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0638 */ { UD_Ifucom, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0639 */ { UD_Ifucom, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0640 */ { UD_Ifucom, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0641 */ { UD_Ifucom, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0642 */ { UD_Ifucom, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0643 */ { UD_Ifucom, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0644 */ { UD_Ifucomp, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0645 */ { UD_Ifucomp, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0646 */ { UD_Ifucomp, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0647 */ { UD_Ifucomp, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0648 */ { UD_Ifucomp, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0649 */ { UD_Ifucomp, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0650 */ { UD_Ifucomp, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0651 */ { UD_Ifucomp, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0652 */ { UD_Ifucompp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0653 */ { UD_Ifxam, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0654 */ { UD_Ifxch, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
+  /* 0655 */ { UD_Ifxch, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
+  /* 0656 */ { UD_Ifxch, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
+  /* 0657 */ { UD_Ifxch, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
+  /* 0658 */ { UD_Ifxch, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
+  /* 0659 */ { UD_Ifxch, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
+  /* 0660 */ { UD_Ifxch, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
+  /* 0661 */ { UD_Ifxch, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
+  /* 0662 */ { UD_Ifxch4, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0663 */ { UD_Ifxch4, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0664 */ { UD_Ifxch4, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0665 */ { UD_Ifxch4, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0666 */ { UD_Ifxch4, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0667 */ { UD_Ifxch4, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0668 */ { UD_Ifxch4, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0669 */ { UD_Ifxch4, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0670 */ { UD_Ifxch7, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0671 */ { UD_Ifxch7, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0672 */ { UD_Ifxch7, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0673 */ { UD_Ifxch7, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0674 */ { UD_Ifxch7, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0675 */ { UD_Ifxch7, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0676 */ { UD_Ifxch7, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0677 */ { UD_Ifxch7, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0678 */ { UD_Ifxrstor, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0679 */ { UD_Ifxsave, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0680 */ { UD_Ifxtract, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0681 */ { UD_Ifyl2x, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0682 */ { UD_Ifyl2xp1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0683 */ { UD_Ihlt, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0684 */ { UD_Iidiv, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0685 */ { UD_Iidiv, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0686 */ { UD_Iin, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 0687 */ { UD_Iin, O_eAX, O_Ib, O_NONE, O_NONE, P_oso },
+  /* 0688 */ { UD_Iin, O_AL, O_DX, O_NONE, O_NONE, P_none },
+  /* 0689 */ { UD_Iin, O_eAX, O_DX, O_NONE, O_NONE, P_oso },
+  /* 0690 */ { UD_Iimul, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0691 */ { UD_Iimul, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0692 */ { UD_Iimul, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0693 */ { UD_Iimul, O_Gv, O_Ev, O_Iz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0694 */ { UD_Iimul, O_Gv, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0695 */ { UD_Iinc, O_R0z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0696 */ { UD_Iinc, O_R1z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0697 */ { UD_Iinc, O_R2z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0698 */ { UD_Iinc, O_R3z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0699 */ { UD_Iinc, O_R4z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0700 */ { UD_Iinc, O_R5z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0701 */ { UD_Iinc, O_R6z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0702 */ { UD_Iinc, O_R7z, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0703 */ { UD_Iinc, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0704 */ { UD_Iinc, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0705 */ { UD_Iinsb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
+  /* 0706 */ { UD_Iinsw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
+  /* 0707 */ { UD_Iinsd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
+  /* 0708 */ { UD_Iint1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0709 */ { UD_Iint3, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0710 */ { UD_Iint, O_Ib, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0711 */ { UD_Iinto, O_NONE, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 0712 */ { UD_Iinvd, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0713 */ { UD_Iinvept, O_Gd, O_Mo, O_NONE, O_NONE, P_none },
+  /* 0714 */ { UD_Iinvept, O_Gq, O_Mo, O_NONE, O_NONE, P_none },
+  /* 0715 */ { UD_Iinvlpg, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0716 */ { UD_Iinvlpga, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0717 */ { UD_Iinvvpid, O_Gd, O_Mo, O_NONE, O_NONE, P_none },
+  /* 0718 */ { UD_Iinvvpid, O_Gq, O_Mo, O_NONE, O_NONE, P_none },
+  /* 0719 */ { UD_Iiretw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0720 */ { UD_Iiretd, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0721 */ { UD_Iiretq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0722 */ { UD_Ijo, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0723 */ { UD_Ijo, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0724 */ { UD_Ijno, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0725 */ { UD_Ijno, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0726 */ { UD_Ijb, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0727 */ { UD_Ijb, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0728 */ { UD_Ijae, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0729 */ { UD_Ijae, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0730 */ { UD_Ijz, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0731 */ { UD_Ijz, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0732 */ { UD_Ijnz, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0733 */ { UD_Ijnz, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0734 */ { UD_Ijbe, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0735 */ { UD_Ijbe, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0736 */ { UD_Ija, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0737 */ { UD_Ija, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0738 */ { UD_Ijs, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0739 */ { UD_Ijs, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0740 */ { UD_Ijns, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0741 */ { UD_Ijns, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0742 */ { UD_Ijp, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0743 */ { UD_Ijp, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0744 */ { UD_Ijnp, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0745 */ { UD_Ijnp, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0746 */ { UD_Ijl, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0747 */ { UD_Ijl, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0748 */ { UD_Ijge, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0749 */ { UD_Ijge, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0750 */ { UD_Ijle, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0751 */ { UD_Ijle, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0752 */ { UD_Ijg, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0753 */ { UD_Ijg, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0754 */ { UD_Ijcxz, O_Jb, O_NONE, O_NONE, O_NONE, P_aso },
+  /* 0755 */ { UD_Ijecxz, O_Jb, O_NONE, O_NONE, O_NONE, P_aso },
+  /* 0756 */ { UD_Ijrcxz, O_Jb, O_NONE, O_NONE, O_NONE, P_aso },
+  /* 0757 */ { UD_Ijmp, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 0758 */ { UD_Ijmp, O_Fv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0759 */ { UD_Ijmp, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 0760 */ { UD_Ijmp, O_Av, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 0761 */ { UD_Ijmp, O_Jb, O_NONE, O_NONE, O_NONE, P_def64 },
+  /* 0762 */ { UD_Ilahf, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0763 */ { UD_Ilar, O_Gv, O_Ew, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0764 */ { UD_Ildmxcsr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0765 */ { UD_Ilds, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso },
+  /* 0766 */ { UD_Ilea, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0767 */ { UD_Iles, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso },
+  /* 0768 */ { UD_Ilfs, O_Gz, O_M, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0769 */ { UD_Ilgs, O_Gz, O_M, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0770 */ { UD_Ilidt, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0771 */ { UD_Ilss, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0772 */ { UD_Ileave, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0773 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0774 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0775 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0776 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0777 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0778 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0779 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0780 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0781 */ { UD_Ilgdt, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0782 */ { UD_Illdt, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0783 */ { UD_Ilmsw, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0784 */ { UD_Ilmsw, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0785 */ { UD_Ilock, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0786 */ { UD_Ilodsb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
+  /* 0787 */ { UD_Ilodsw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 0788 */ { UD_Ilodsd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 0789 */ { UD_Ilodsq, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 0790 */ { UD_Iloopne, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0791 */ { UD_Iloope, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0792 */ { UD_Iloop, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0793 */ { UD_Ilsl, O_Gv, O_Ew, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0794 */ { UD_Iltr, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0795 */ { UD_Imaskmovq, O_P, O_N, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0796 */ { UD_Imaxpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0797 */ { UD_Ivmaxpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0798 */ { UD_Imaxps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0799 */ { UD_Ivmaxps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0800 */ { UD_Imaxsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0801 */ { UD_Ivmaxsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0802 */ { UD_Imaxss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0803 */ { UD_Ivmaxss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0804 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0805 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0806 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0807 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0808 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0809 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0810 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0811 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0812 */ { UD_Iminpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0813 */ { UD_Ivminpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0814 */ { UD_Iminps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0815 */ { UD_Ivminps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0816 */ { UD_Iminsd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0817 */ { UD_Ivminsd, O_Vx, O_Hx, O_MqU, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0818 */ { UD_Iminss, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0819 */ { UD_Ivminss, O_Vx, O_Hx, O_MdU, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0820 */ { UD_Imonitor, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0821 */ { UD_Imontmul, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0822 */ { UD_Imov, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0823 */ { UD_Imov, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0824 */ { UD_Imov, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0825 */ { UD_Imov, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0826 */ { UD_Imov, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0827 */ { UD_Imov, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0828 */ { UD_Imov, O_MwRv, O_S, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0829 */ { UD_Imov, O_S, O_MwRv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0830 */ { UD_Imov, O_AL, O_Ob, O_NONE, O_NONE, P_none },
+  /* 0831 */ { UD_Imov, O_rAX, O_Ov, O_NONE, O_NONE, P_aso|P_oso|P_rexw },
+  /* 0832 */ { UD_Imov, O_Ob, O_AL, O_NONE, O_NONE, P_none },
+  /* 0833 */ { UD_Imov, O_Ov, O_rAX, O_NONE, O_NONE, P_aso|P_oso|P_rexw },
+  /* 0834 */ { UD_Imov, O_R0b, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 0835 */ { UD_Imov, O_R1b, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 0836 */ { UD_Imov, O_R2b, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 0837 */ { UD_Imov, O_R3b, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 0838 */ { UD_Imov, O_R4b, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 0839 */ { UD_Imov, O_R5b, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 0840 */ { UD_Imov, O_R6b, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 0841 */ { UD_Imov, O_R7b, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 0842 */ { UD_Imov, O_R0v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 0843 */ { UD_Imov, O_R1v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 0844 */ { UD_Imov, O_R2v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 0845 */ { UD_Imov, O_R3v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 0846 */ { UD_Imov, O_R4v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 0847 */ { UD_Imov, O_R5v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 0848 */ { UD_Imov, O_R6v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 0849 */ { UD_Imov, O_R7v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 0850 */ { UD_Imov, O_R, O_C, O_NONE, O_NONE, P_rexr|P_rexw|P_rexb },
+  /* 0851 */ { UD_Imov, O_R, O_D, O_NONE, O_NONE, P_rexr|P_rexw|P_rexb },
+  /* 0852 */ { UD_Imov, O_C, O_R, O_NONE, O_NONE, P_rexr|P_rexw|P_rexb },
+  /* 0853 */ { UD_Imov, O_D, O_R, O_NONE, O_NONE, P_rexr|P_rexw|P_rexb },
+  /* 0854 */ { UD_Imovapd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0855 */ { UD_Ivmovapd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0856 */ { UD_Imovapd, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0857 */ { UD_Ivmovapd, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0858 */ { UD_Imovaps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0859 */ { UD_Ivmovaps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0860 */ { UD_Imovaps, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0861 */ { UD_Ivmovaps, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0862 */ { UD_Imovd, O_P, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0863 */ { UD_Imovd, O_P, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0864 */ { UD_Imovd, O_V, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0865 */ { UD_Ivmovd, O_Vx, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0866 */ { UD_Imovd, O_V, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0867 */ { UD_Ivmovd, O_Vx, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0868 */ { UD_Imovd, O_Ey, O_P, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0869 */ { UD_Imovd, O_Ey, O_P, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0870 */ { UD_Imovd, O_Ey, O_V, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0871 */ { UD_Ivmovd, O_Ey, O_Vx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0872 */ { UD_Imovd, O_Ey, O_V, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0873 */ { UD_Ivmovd, O_Ey, O_Vx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0874 */ { UD_Imovhpd, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0875 */ { UD_Ivmovhpd, O_Vx, O_Hx, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0876 */ { UD_Imovhpd, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0877 */ { UD_Ivmovhpd, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0878 */ { UD_Imovhps, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0879 */ { UD_Ivmovhps, O_Vx, O_Hx, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0880 */ { UD_Imovhps, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0881 */ { UD_Ivmovhps, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0882 */ { UD_Imovlhps, O_V, O_U, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0883 */ { UD_Ivmovlhps, O_Vx, O_Hx, O_Ux, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0884 */ { UD_Imovlpd, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0885 */ { UD_Ivmovlpd, O_Vx, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0886 */ { UD_Imovlpd, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0887 */ { UD_Ivmovlpd, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0888 */ { UD_Imovlps, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0889 */ { UD_Ivmovlps, O_Vx, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0890 */ { UD_Imovlps, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0891 */ { UD_Ivmovlps, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0892 */ { UD_Imovhlps, O_V, O_U, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0893 */ { UD_Ivmovhlps, O_Vx, O_Ux, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0894 */ { UD_Imovmskpd, O_Gd, O_U, O_NONE, O_NONE, P_oso|P_rexr|P_rexb },
+  /* 0895 */ { UD_Ivmovmskpd, O_Gd, O_Ux, O_NONE, O_NONE, P_oso|P_rexr|P_rexb|P_vexl },
+  /* 0896 */ { UD_Imovmskps, O_Gd, O_U, O_NONE, O_NONE, P_oso|P_rexr|P_rexb },
+  /* 0897 */ { UD_Ivmovmskps, O_Gd, O_Ux, O_NONE, O_NONE, P_oso|P_rexr|P_rexb },
+  /* 0898 */ { UD_Imovntdq, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0899 */ { UD_Ivmovntdq, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0900 */ { UD_Imovnti, O_M, O_Gy, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0901 */ { UD_Imovntpd, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0902 */ { UD_Ivmovntpd, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0903 */ { UD_Imovntps, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0904 */ { UD_Ivmovntps, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0905 */ { UD_Imovntq, O_M, O_P, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0906 */ { UD_Imovq, O_P, O_Eq, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0907 */ { UD_Imovq, O_V, O_Eq, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0908 */ { UD_Ivmovq, O_Vx, O_Eq, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0909 */ { UD_Imovq, O_Eq, O_P, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0910 */ { UD_Imovq, O_Eq, O_V, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0911 */ { UD_Ivmovq, O_Eq, O_Vx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0912 */ { UD_Imovq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0913 */ { UD_Ivmovq, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0914 */ { UD_Imovq, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0915 */ { UD_Ivmovq, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0916 */ { UD_Imovq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0917 */ { UD_Imovq, O_Q, O_P, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0918 */ { UD_Imovsb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
+  /* 0919 */ { UD_Imovsw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 0920 */ { UD_Imovsd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 0921 */ { UD_Imovsd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0922 */ { UD_Imovsd, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0923 */ { UD_Imovsq, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 0924 */ { UD_Imovss, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0925 */ { UD_Imovss, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0926 */ { UD_Imovsx, O_Gv, O_Eb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0927 */ { UD_Imovsx, O_Gy, O_Ew, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0928 */ { UD_Imovupd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0929 */ { UD_Ivmovupd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0930 */ { UD_Imovupd, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0931 */ { UD_Ivmovupd, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0932 */ { UD_Imovups, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0933 */ { UD_Ivmovups, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0934 */ { UD_Imovups, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0935 */ { UD_Ivmovups, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0936 */ { UD_Imovzx, O_Gv, O_Eb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0937 */ { UD_Imovzx, O_Gy, O_Ew, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0938 */ { UD_Imul, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0939 */ { UD_Imul, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0940 */ { UD_Imulpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0941 */ { UD_Ivmulpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0942 */ { UD_Imulps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0943 */ { UD_Ivmulps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0944 */ { UD_Imulsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0945 */ { UD_Ivmulsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0946 */ { UD_Imulss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0947 */ { UD_Ivmulss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0948 */ { UD_Imwait, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 0949 */ { UD_Ineg, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0950 */ { UD_Ineg, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0951 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0952 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0953 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0954 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0955 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0956 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0957 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0958 */ { UD_Inot, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0959 */ { UD_Inot, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0960 */ { UD_Ior, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0961 */ { UD_Ior, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0962 */ { UD_Ior, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0963 */ { UD_Ior, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0964 */ { UD_Ior, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 0965 */ { UD_Ior, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 0966 */ { UD_Ior, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0967 */ { UD_Ior, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0968 */ { UD_Ior, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0969 */ { UD_Ior, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 0970 */ { UD_Iorpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0971 */ { UD_Ivorpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0972 */ { UD_Iorps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0973 */ { UD_Ivorps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0974 */ { UD_Iout, O_Ib, O_AL, O_NONE, O_NONE, P_none },
+  /* 0975 */ { UD_Iout, O_Ib, O_eAX, O_NONE, O_NONE, P_oso },
+  /* 0976 */ { UD_Iout, O_DX, O_AL, O_NONE, O_NONE, P_none },
+  /* 0977 */ { UD_Iout, O_DX, O_eAX, O_NONE, O_NONE, P_oso },
+  /* 0978 */ { UD_Ioutsb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
+  /* 0979 */ { UD_Ioutsw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
+  /* 0980 */ { UD_Ioutsd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
+  /* 0981 */ { UD_Ipacksswb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0982 */ { UD_Ivpacksswb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0983 */ { UD_Ipacksswb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0984 */ { UD_Ipackssdw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0985 */ { UD_Ivpackssdw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0986 */ { UD_Ipackssdw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0987 */ { UD_Ipackuswb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0988 */ { UD_Ivpackuswb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0989 */ { UD_Ipackuswb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0990 */ { UD_Ipaddb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0991 */ { UD_Ivpaddb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0992 */ { UD_Ipaddb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0993 */ { UD_Ipaddw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0994 */ { UD_Ipaddw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0995 */ { UD_Ivpaddw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0996 */ { UD_Ipaddd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0997 */ { UD_Ipaddd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0998 */ { UD_Ivpaddd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 0999 */ { UD_Ipaddsb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1000 */ { UD_Ipaddsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1001 */ { UD_Ivpaddsb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1002 */ { UD_Ipaddsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1003 */ { UD_Ipaddsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1004 */ { UD_Ivpaddsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1005 */ { UD_Ipaddusb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1006 */ { UD_Ipaddusb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1007 */ { UD_Ivpaddusb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1008 */ { UD_Ipaddusw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1009 */ { UD_Ipaddusw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1010 */ { UD_Ivpaddusw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1011 */ { UD_Ipand, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1012 */ { UD_Ivpand, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1013 */ { UD_Ipand, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1014 */ { UD_Ipandn, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1015 */ { UD_Ivpandn, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1016 */ { UD_Ipandn, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1017 */ { UD_Ipavgb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1018 */ { UD_Ivpavgb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1019 */ { UD_Ipavgb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1020 */ { UD_Ipavgw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1021 */ { UD_Ivpavgw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1022 */ { UD_Ipavgw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1023 */ { UD_Ipcmpeqb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1024 */ { UD_Ipcmpeqb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1025 */ { UD_Ivpcmpeqb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1026 */ { UD_Ipcmpeqw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1027 */ { UD_Ipcmpeqw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1028 */ { UD_Ivpcmpeqw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1029 */ { UD_Ipcmpeqd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1030 */ { UD_Ipcmpeqd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1031 */ { UD_Ivpcmpeqd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1032 */ { UD_Ipcmpgtb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1033 */ { UD_Ivpcmpgtb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1034 */ { UD_Ipcmpgtb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1035 */ { UD_Ipcmpgtw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1036 */ { UD_Ivpcmpgtw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1037 */ { UD_Ipcmpgtw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1038 */ { UD_Ipcmpgtd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1039 */ { UD_Ivpcmpgtd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1040 */ { UD_Ipcmpgtd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1041 */ { UD_Ipextrb, O_MbRv, O_V, O_Ib, O_NONE, P_aso|P_rexx|P_rexr|P_rexb|P_def64 },
+  /* 1042 */ { UD_Ivpextrb, O_MbRv, O_Vx, O_Ib, O_NONE, P_aso|P_rexx|P_rexr|P_rexb|P_def64 },
+  /* 1043 */ { UD_Ipextrd, O_Ed, O_V, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
+  /* 1044 */ { UD_Ivpextrd, O_Ed, O_Vx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
+  /* 1045 */ { UD_Ipextrd, O_Ed, O_V, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
+  /* 1046 */ { UD_Ivpextrd, O_Ed, O_Vx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
+  /* 1047 */ { UD_Ipextrq, O_Eq, O_V, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexb|P_def64 },
+  /* 1048 */ { UD_Ivpextrq, O_Eq, O_Vx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexb|P_def64 },
+  /* 1049 */ { UD_Ipextrw, O_Gd, O_U, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexb },
+  /* 1050 */ { UD_Ivpextrw, O_Gd, O_Ux, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexb },
+  /* 1051 */ { UD_Ipextrw, O_Gd, O_N, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1052 */ { UD_Ipextrw, O_MwRd, O_V, O_Ib, O_NONE, P_aso|P_rexw|P_rexx|P_rexr|P_rexb },
+  /* 1053 */ { UD_Ivpextrw, O_MwRd, O_Vx, O_Ib, O_NONE, P_aso|P_rexw|P_rexx|P_rexr|P_rexb },
+  /* 1054 */ { UD_Ipinsrb, O_V, O_MbRd, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1055 */ { UD_Ipinsrw, O_P, O_MwRy, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 1056 */ { UD_Ipinsrw, O_V, O_MwRy, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 1057 */ { UD_Ivpinsrw, O_Vx, O_MwRy, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 1058 */ { UD_Ipinsrd, O_V, O_Ed, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1059 */ { UD_Ipinsrd, O_V, O_Ed, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1060 */ { UD_Ipinsrq, O_V, O_Eq, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1061 */ { UD_Ivpinsrb, O_V, O_H, O_MbRd, O_Ib, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1062 */ { UD_Ivpinsrd, O_V, O_H, O_Ed, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1063 */ { UD_Ivpinsrd, O_V, O_H, O_Ed, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1064 */ { UD_Ivpinsrq, O_V, O_H, O_Eq, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1065 */ { UD_Ipmaddwd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1066 */ { UD_Ipmaddwd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1067 */ { UD_Ivpmaddwd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1068 */ { UD_Ipmaxsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1069 */ { UD_Ivpmaxsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1070 */ { UD_Ipmaxsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1071 */ { UD_Ipmaxub, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1072 */ { UD_Ipmaxub, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1073 */ { UD_Ivpmaxub, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1074 */ { UD_Ipminsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1075 */ { UD_Ivpminsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1076 */ { UD_Ipminsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1077 */ { UD_Ipminub, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1078 */ { UD_Ivpminub, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1079 */ { UD_Ipminub, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1080 */ { UD_Ipmovmskb, O_Gd, O_U, O_NONE, O_NONE, P_oso|P_rexr|P_rexw|P_rexb },
+  /* 1081 */ { UD_Ivpmovmskb, O_Gd, O_Ux, O_NONE, O_NONE, P_oso|P_rexr|P_rexw|P_rexb },
+  /* 1082 */ { UD_Ipmovmskb, O_Gd, O_N, O_NONE, O_NONE, P_oso|P_rexr|P_rexw|P_rexb },
+  /* 1083 */ { UD_Ipmulhuw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1084 */ { UD_Ipmulhuw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1085 */ { UD_Ivpmulhuw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1086 */ { UD_Ipmulhw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1087 */ { UD_Ivpmulhw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1088 */ { UD_Ipmulhw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1089 */ { UD_Ipmullw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1090 */ { UD_Ipmullw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1091 */ { UD_Ivpmullw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1092 */ { UD_Ipop, O_ES, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 1093 */ { UD_Ipop, O_SS, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 1094 */ { UD_Ipop, O_DS, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 1095 */ { UD_Ipop, O_GS, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1096 */ { UD_Ipop, O_FS, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1097 */ { UD_Ipop, O_R0v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1098 */ { UD_Ipop, O_R1v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1099 */ { UD_Ipop, O_R2v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1100 */ { UD_Ipop, O_R3v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1101 */ { UD_Ipop, O_R4v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1102 */ { UD_Ipop, O_R5v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1103 */ { UD_Ipop, O_R6v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1104 */ { UD_Ipop, O_R7v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1105 */ { UD_Ipop, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 1106 */ { UD_Ipopa, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
+  /* 1107 */ { UD_Ipopad, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
+  /* 1108 */ { UD_Ipopfw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 1109 */ { UD_Ipopfd, O_NONE, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 1110 */ { UD_Ipopfq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 1111 */ { UD_Ipopfq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 1112 */ { UD_Ipor, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1113 */ { UD_Ivpor, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1114 */ { UD_Ipor, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1115 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1116 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1117 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1118 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1119 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1120 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1121 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1122 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1123 */ { UD_Iprefetchnta, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1124 */ { UD_Iprefetcht0, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1125 */ { UD_Iprefetcht1, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1126 */ { UD_Iprefetcht2, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1127 */ { UD_Ipsadbw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1128 */ { UD_Ivpsadbw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1129 */ { UD_Ipsadbw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1130 */ { UD_Ipshufw, O_P, O_Q, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1131 */ { UD_Ipsllw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1132 */ { UD_Ipsllw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1133 */ { UD_Ipsllw, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1134 */ { UD_Ipsllw, O_N, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1135 */ { UD_Ipslld, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1136 */ { UD_Ipslld, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1137 */ { UD_Ipslld, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1138 */ { UD_Ipslld, O_N, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1139 */ { UD_Ipsllq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1140 */ { UD_Ipsllq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1141 */ { UD_Ipsllq, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1142 */ { UD_Ipsllq, O_N, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1143 */ { UD_Ipsraw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1144 */ { UD_Ipsraw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1145 */ { UD_Ivpsraw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1146 */ { UD_Ipsraw, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1147 */ { UD_Ivpsraw, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
+  /* 1148 */ { UD_Ipsraw, O_N, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1149 */ { UD_Ipsrad, O_N, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1150 */ { UD_Ipsrad, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1151 */ { UD_Ivpsrad, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1152 */ { UD_Ipsrad, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1153 */ { UD_Ipsrad, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1154 */ { UD_Ivpsrad, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
+  /* 1155 */ { UD_Ipsrlw, O_N, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1156 */ { UD_Ipsrlw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1157 */ { UD_Ipsrlw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1158 */ { UD_Ivpsrlw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1159 */ { UD_Ipsrlw, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1160 */ { UD_Ivpsrlw, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
+  /* 1161 */ { UD_Ipsrld, O_N, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1162 */ { UD_Ipsrld, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1163 */ { UD_Ipsrld, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1164 */ { UD_Ivpsrld, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1165 */ { UD_Ipsrld, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1166 */ { UD_Ivpsrld, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
+  /* 1167 */ { UD_Ipsrlq, O_N, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1168 */ { UD_Ipsrlq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1169 */ { UD_Ipsrlq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1170 */ { UD_Ivpsrlq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1171 */ { UD_Ipsrlq, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1172 */ { UD_Ivpsrlq, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
+  /* 1173 */ { UD_Ipsubb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1174 */ { UD_Ivpsubb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1175 */ { UD_Ipsubb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1176 */ { UD_Ipsubw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1177 */ { UD_Ivpsubw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1178 */ { UD_Ipsubw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1179 */ { UD_Ipsubd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1180 */ { UD_Ipsubd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1181 */ { UD_Ivpsubd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1182 */ { UD_Ipsubsb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1183 */ { UD_Ipsubsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1184 */ { UD_Ivpsubsb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1185 */ { UD_Ipsubsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1186 */ { UD_Ipsubsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1187 */ { UD_Ivpsubsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1188 */ { UD_Ipsubusb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1189 */ { UD_Ipsubusb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1190 */ { UD_Ivpsubusb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1191 */ { UD_Ipsubusw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1192 */ { UD_Ipsubusw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1193 */ { UD_Ivpsubusw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1194 */ { UD_Ipunpckhbw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1195 */ { UD_Ivpunpckhbw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1196 */ { UD_Ipunpckhbw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1197 */ { UD_Ipunpckhwd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1198 */ { UD_Ivpunpckhwd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1199 */ { UD_Ipunpckhwd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1200 */ { UD_Ipunpckhdq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1201 */ { UD_Ivpunpckhdq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1202 */ { UD_Ipunpckhdq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1203 */ { UD_Ipunpcklbw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1204 */ { UD_Ivpunpcklbw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1205 */ { UD_Ipunpcklbw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1206 */ { UD_Ipunpcklwd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1207 */ { UD_Ivpunpcklwd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1208 */ { UD_Ipunpcklwd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1209 */ { UD_Ipunpckldq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1210 */ { UD_Ivpunpckldq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1211 */ { UD_Ipunpckldq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1212 */ { UD_Ipi2fw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1213 */ { UD_Ipi2fd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1214 */ { UD_Ipf2iw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1215 */ { UD_Ipf2id, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1216 */ { UD_Ipfnacc, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1217 */ { UD_Ipfpnacc, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1218 */ { UD_Ipfcmpge, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1219 */ { UD_Ipfmin, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1220 */ { UD_Ipfrcp, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1221 */ { UD_Ipfrsqrt, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1222 */ { UD_Ipfsub, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1223 */ { UD_Ipfadd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1224 */ { UD_Ipfcmpgt, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1225 */ { UD_Ipfmax, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1226 */ { UD_Ipfrcpit1, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1227 */ { UD_Ipfrsqit1, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1228 */ { UD_Ipfsubr, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1229 */ { UD_Ipfacc, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1230 */ { UD_Ipfcmpeq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1231 */ { UD_Ipfmul, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1232 */ { UD_Ipfrcpit2, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1233 */ { UD_Ipmulhrw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1234 */ { UD_Ipswapd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1235 */ { UD_Ipavgusb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1236 */ { UD_Ipush, O_ES, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 1237 */ { UD_Ipush, O_CS, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 1238 */ { UD_Ipush, O_SS, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 1239 */ { UD_Ipush, O_DS, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 1240 */ { UD_Ipush, O_GS, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1241 */ { UD_Ipush, O_FS, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1242 */ { UD_Ipush, O_R0v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1243 */ { UD_Ipush, O_R1v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1244 */ { UD_Ipush, O_R2v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1245 */ { UD_Ipush, O_R3v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1246 */ { UD_Ipush, O_R4v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1247 */ { UD_Ipush, O_R5v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1248 */ { UD_Ipush, O_R6v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1249 */ { UD_Ipush, O_R7v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
+  /* 1250 */ { UD_Ipush, O_sIz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 1251 */ { UD_Ipush, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 1252 */ { UD_Ipush, O_sIb, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
+  /* 1253 */ { UD_Ipusha, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
+  /* 1254 */ { UD_Ipushad, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
+  /* 1255 */ { UD_Ipushfw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 1256 */ { UD_Ipushfw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
+  /* 1257 */ { UD_Ipushfd, O_NONE, O_NONE, O_NONE, O_NONE, P_oso },
+  /* 1258 */ { UD_Ipushfq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
+  /* 1259 */ { UD_Ipushfq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
+  /* 1260 */ { UD_Ipxor, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1261 */ { UD_Ivpxor, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1262 */ { UD_Ipxor, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1263 */ { UD_Ircl, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1264 */ { UD_Ircl, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1265 */ { UD_Ircl, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1266 */ { UD_Ircl, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1267 */ { UD_Ircl, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1268 */ { UD_Ircl, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1269 */ { UD_Ircr, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1270 */ { UD_Ircr, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1271 */ { UD_Ircr, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1272 */ { UD_Ircr, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1273 */ { UD_Ircr, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1274 */ { UD_Ircr, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1275 */ { UD_Irol, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1276 */ { UD_Irol, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1277 */ { UD_Irol, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1278 */ { UD_Irol, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1279 */ { UD_Irol, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1280 */ { UD_Irol, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1281 */ { UD_Iror, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1282 */ { UD_Iror, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1283 */ { UD_Iror, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1284 */ { UD_Iror, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1285 */ { UD_Iror, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1286 */ { UD_Iror, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1287 */ { UD_Ircpps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1288 */ { UD_Ivrcpps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1289 */ { UD_Ircpss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1290 */ { UD_Ivrcpss, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1291 */ { UD_Irdmsr, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1292 */ { UD_Irdpmc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1293 */ { UD_Irdtsc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1294 */ { UD_Irdtscp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1295 */ { UD_Irepne, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1296 */ { UD_Irep, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1297 */ { UD_Iret, O_Iw, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1298 */ { UD_Iret, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1299 */ { UD_Iretf, O_Iw, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1300 */ { UD_Iretf, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1301 */ { UD_Irsm, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1302 */ { UD_Irsqrtps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1303 */ { UD_Ivrsqrtps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1304 */ { UD_Irsqrtss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1305 */ { UD_Ivrsqrtss, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1306 */ { UD_Isahf, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1307 */ { UD_Isalc, O_NONE, O_NONE, O_NONE, O_NONE, P_inv64 },
+  /* 1308 */ { UD_Isar, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1309 */ { UD_Isar, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1310 */ { UD_Isar, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1311 */ { UD_Isar, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1312 */ { UD_Isar, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1313 */ { UD_Isar, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1314 */ { UD_Ishl, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1315 */ { UD_Ishl, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1316 */ { UD_Ishl, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1317 */ { UD_Ishl, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1318 */ { UD_Ishl, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1319 */ { UD_Ishl, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1320 */ { UD_Ishl, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1321 */ { UD_Ishl, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1322 */ { UD_Ishl, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1323 */ { UD_Ishl, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1324 */ { UD_Ishl, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1325 */ { UD_Ishl, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1326 */ { UD_Ishr, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1327 */ { UD_Ishr, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1328 */ { UD_Ishr, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1329 */ { UD_Ishr, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1330 */ { UD_Ishr, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1331 */ { UD_Ishr, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1332 */ { UD_Isbb, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1333 */ { UD_Isbb, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1334 */ { UD_Isbb, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1335 */ { UD_Isbb, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1336 */ { UD_Isbb, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1337 */ { UD_Isbb, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 1338 */ { UD_Isbb, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1339 */ { UD_Isbb, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1340 */ { UD_Isbb, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
+  /* 1341 */ { UD_Isbb, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1342 */ { UD_Iscasb, O_NONE, O_NONE, O_NONE, O_NONE, P_strz },
+  /* 1343 */ { UD_Iscasw, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
+  /* 1344 */ { UD_Iscasd, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
+  /* 1345 */ { UD_Iscasq, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
+  /* 1346 */ { UD_Iseto, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1347 */ { UD_Isetno, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1348 */ { UD_Isetb, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1349 */ { UD_Isetae, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1350 */ { UD_Isetz, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1351 */ { UD_Isetnz, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1352 */ { UD_Isetbe, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1353 */ { UD_Iseta, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1354 */ { UD_Isets, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1355 */ { UD_Isetns, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1356 */ { UD_Isetp, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1357 */ { UD_Isetnp, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1358 */ { UD_Isetl, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1359 */ { UD_Isetge, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1360 */ { UD_Isetle, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1361 */ { UD_Isetg, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1362 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1363 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1364 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1365 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1366 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1367 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1368 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1369 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1370 */ { UD_Isgdt, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1371 */ { UD_Ishld, O_Ev, O_Gv, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1372 */ { UD_Ishld, O_Ev, O_Gv, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1373 */ { UD_Ishrd, O_Ev, O_Gv, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1374 */ { UD_Ishrd, O_Ev, O_Gv, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1375 */ { UD_Ishufpd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1376 */ { UD_Ivshufpd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1377 */ { UD_Ishufps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1378 */ { UD_Ivshufps, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1379 */ { UD_Isidt, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1380 */ { UD_Isldt, O_MwRv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1381 */ { UD_Ismsw, O_MwRv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1382 */ { UD_Ismsw, O_MwRv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1383 */ { UD_Isqrtps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1384 */ { UD_Ivsqrtps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1385 */ { UD_Isqrtpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1386 */ { UD_Ivsqrtpd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1387 */ { UD_Isqrtsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1388 */ { UD_Ivsqrtsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1389 */ { UD_Isqrtss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1390 */ { UD_Ivsqrtss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1391 */ { UD_Istc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1392 */ { UD_Istd, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1393 */ { UD_Istgi, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1394 */ { UD_Isti, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1395 */ { UD_Iskinit, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1396 */ { UD_Istmxcsr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1397 */ { UD_Ivstmxcsr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1398 */ { UD_Istosb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
+  /* 1399 */ { UD_Istosw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 1400 */ { UD_Istosd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 1401 */ { UD_Istosq, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
+  /* 1402 */ { UD_Istr, O_MwRv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1403 */ { UD_Isub, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1404 */ { UD_Isub, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1405 */ { UD_Isub, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1406 */ { UD_Isub, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1407 */ { UD_Isub, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1408 */ { UD_Isub, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 1409 */ { UD_Isub, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1410 */ { UD_Isub, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1411 */ { UD_Isub, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
+  /* 1412 */ { UD_Isub, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1413 */ { UD_Isubpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1414 */ { UD_Ivsubpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1415 */ { UD_Isubps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1416 */ { UD_Ivsubps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1417 */ { UD_Isubsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1418 */ { UD_Ivsubsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1419 */ { UD_Isubss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1420 */ { UD_Ivsubss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1421 */ { UD_Iswapgs, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1422 */ { UD_Isyscall, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1423 */ { UD_Isysenter, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1424 */ { UD_Isysenter, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1425 */ { UD_Isysexit, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1426 */ { UD_Isysexit, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1427 */ { UD_Isysret, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1428 */ { UD_Itest, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1429 */ { UD_Itest, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1430 */ { UD_Itest, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1431 */ { UD_Itest, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1432 */ { UD_Itest, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 1433 */ { UD_Itest, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1434 */ { UD_Itest, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1435 */ { UD_Itest, O_Ev, O_Iz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1436 */ { UD_Iucomisd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1437 */ { UD_Ivucomisd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1438 */ { UD_Iucomiss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1439 */ { UD_Ivucomiss, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1440 */ { UD_Iud2, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1441 */ { UD_Iunpckhpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1442 */ { UD_Ivunpckhpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1443 */ { UD_Iunpckhps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1444 */ { UD_Ivunpckhps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1445 */ { UD_Iunpcklps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1446 */ { UD_Ivunpcklps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1447 */ { UD_Iunpcklpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1448 */ { UD_Ivunpcklpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1449 */ { UD_Iverr, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1450 */ { UD_Iverw, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1451 */ { UD_Ivmcall, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1452 */ { UD_Irdrand, O_R, O_NONE, O_NONE, O_NONE, P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1453 */ { UD_Ivmclear, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1454 */ { UD_Ivmxon, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1455 */ { UD_Ivmptrld, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1456 */ { UD_Ivmptrst, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1457 */ { UD_Ivmlaunch, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1458 */ { UD_Ivmresume, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1459 */ { UD_Ivmxoff, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1460 */ { UD_Ivmread, O_Ey, O_Gy, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 1461 */ { UD_Ivmwrite, O_Gy, O_Ey, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_def64 },
+  /* 1462 */ { UD_Ivmrun, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1463 */ { UD_Ivmmcall, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1464 */ { UD_Ivmload, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1465 */ { UD_Ivmsave, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1466 */ { UD_Iwait, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1467 */ { UD_Iwbinvd, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1468 */ { UD_Iwrmsr, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1469 */ { UD_Ixadd, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexx|P_rexb },
+  /* 1470 */ { UD_Ixadd, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1471 */ { UD_Ixchg, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1472 */ { UD_Ixchg, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1473 */ { UD_Ixchg, O_R0v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1474 */ { UD_Ixchg, O_R1v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1475 */ { UD_Ixchg, O_R2v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1476 */ { UD_Ixchg, O_R3v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1477 */ { UD_Ixchg, O_R4v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1478 */ { UD_Ixchg, O_R5v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1479 */ { UD_Ixchg, O_R6v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1480 */ { UD_Ixchg, O_R7v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1481 */ { UD_Ixgetbv, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1482 */ { UD_Ixlatb, O_NONE, O_NONE, O_NONE, O_NONE, P_rexw|P_seg },
+  /* 1483 */ { UD_Ixor, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1484 */ { UD_Ixor, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1485 */ { UD_Ixor, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1486 */ { UD_Ixor, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1487 */ { UD_Ixor, O_AL, O_Ib, O_NONE, O_NONE, P_none },
+  /* 1488 */ { UD_Ixor, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
+  /* 1489 */ { UD_Ixor, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1490 */ { UD_Ixor, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1491 */ { UD_Ixor, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
+  /* 1492 */ { UD_Ixor, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1493 */ { UD_Ixorpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1494 */ { UD_Ivxorpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1495 */ { UD_Ixorps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1496 */ { UD_Ivxorps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1497 */ { UD_Ixcryptecb, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1498 */ { UD_Ixcryptcbc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1499 */ { UD_Ixcryptctr, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1500 */ { UD_Ixcryptcfb, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1501 */ { UD_Ixcryptofb, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1502 */ { UD_Ixrstor, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1503 */ { UD_Ixsave, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1504 */ { UD_Ixsetbv, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1505 */ { UD_Ixsha1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1506 */ { UD_Ixsha256, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1507 */ { UD_Ixstore, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1508 */ { UD_Ipclmulqdq, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1509 */ { UD_Ivpclmulqdq, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1510 */ { UD_Igetsec, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1511 */ { UD_Imovdqa, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1512 */ { UD_Ivmovdqa, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1513 */ { UD_Imovdqa, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1514 */ { UD_Ivmovdqa, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1515 */ { UD_Imaskmovdqu, O_V, O_U, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1516 */ { UD_Ivmaskmovdqu, O_Vx, O_Ux, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1517 */ { UD_Imovdq2q, O_P, O_U, O_NONE, O_NONE, P_aso|P_rexb },
+  /* 1518 */ { UD_Imovdqu, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1519 */ { UD_Ivmovdqu, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1520 */ { UD_Imovdqu, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1521 */ { UD_Imovq2dq, O_V, O_N, O_NONE, O_NONE, P_aso|P_rexr },
+  /* 1522 */ { UD_Ipaddq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1523 */ { UD_Ipaddq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1524 */ { UD_Ivpaddq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1525 */ { UD_Ipsubq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1526 */ { UD_Ivpsubq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1527 */ { UD_Ipsubq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1528 */ { UD_Ipmuludq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1529 */ { UD_Ipmuludq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1530 */ { UD_Ipshufhw, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1531 */ { UD_Ivpshufhw, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1532 */ { UD_Ipshuflw, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1533 */ { UD_Ivpshuflw, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1534 */ { UD_Ipshufd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1535 */ { UD_Ivpshufd, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1536 */ { UD_Ipslldq, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1537 */ { UD_Ivpslldq, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
+  /* 1538 */ { UD_Ipsrldq, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
+  /* 1539 */ { UD_Ivpsrldq, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
+  /* 1540 */ { UD_Ipunpckhqdq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1541 */ { UD_Ivpunpckhqdq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1542 */ { UD_Ipunpcklqdq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1543 */ { UD_Ivpunpcklqdq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1544 */ { UD_Ihaddpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1545 */ { UD_Ivhaddpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1546 */ { UD_Ihaddps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1547 */ { UD_Ivhaddps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1548 */ { UD_Ihsubpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1549 */ { UD_Ivhsubpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1550 */ { UD_Ihsubps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1551 */ { UD_Ivhsubps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1552 */ { UD_Iinsertps, O_V, O_Md, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1553 */ { UD_Ivinsertps, O_Vx, O_Hx, O_Md, O_Ib, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1554 */ { UD_Ilddqu, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1555 */ { UD_Ivlddqu, O_Vx, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1556 */ { UD_Imovddup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1557 */ { UD_Ivmovddup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1558 */ { UD_Imovddup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1559 */ { UD_Ivmovddup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1560 */ { UD_Imovshdup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1561 */ { UD_Ivmovshdup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1562 */ { UD_Imovshdup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1563 */ { UD_Ivmovshdup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1564 */ { UD_Imovsldup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1565 */ { UD_Ivmovsldup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1566 */ { UD_Imovsldup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1567 */ { UD_Ivmovsldup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1568 */ { UD_Ipabsb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1569 */ { UD_Ipabsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1570 */ { UD_Ivpabsb, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1571 */ { UD_Ipabsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1572 */ { UD_Ipabsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1573 */ { UD_Ivpabsw, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1574 */ { UD_Ipabsd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1575 */ { UD_Ipabsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1576 */ { UD_Ivpabsd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1577 */ { UD_Ipshufb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1578 */ { UD_Ipshufb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1579 */ { UD_Ivpshufb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1580 */ { UD_Iphaddw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1581 */ { UD_Iphaddw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1582 */ { UD_Ivphaddw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1583 */ { UD_Iphaddd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1584 */ { UD_Iphaddd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1585 */ { UD_Ivphaddd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1586 */ { UD_Iphaddsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1587 */ { UD_Iphaddsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1588 */ { UD_Ivphaddsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1589 */ { UD_Ipmaddubsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1590 */ { UD_Ipmaddubsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1591 */ { UD_Ivpmaddubsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1592 */ { UD_Iphsubw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1593 */ { UD_Iphsubw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1594 */ { UD_Ivphsubw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1595 */ { UD_Iphsubd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1596 */ { UD_Iphsubd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1597 */ { UD_Ivphsubd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1598 */ { UD_Iphsubsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1599 */ { UD_Iphsubsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1600 */ { UD_Ivphsubsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1601 */ { UD_Ipsignb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1602 */ { UD_Ipsignb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1603 */ { UD_Ivpsignb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1604 */ { UD_Ipsignd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1605 */ { UD_Ipsignd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1606 */ { UD_Ivpsignd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1607 */ { UD_Ipsignw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1608 */ { UD_Ipsignw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1609 */ { UD_Ivpsignw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1610 */ { UD_Ipmulhrsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1611 */ { UD_Ipmulhrsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1612 */ { UD_Ivpmulhrsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1613 */ { UD_Ipalignr, O_P, O_Q, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1614 */ { UD_Ipalignr, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1615 */ { UD_Ivpalignr, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1616 */ { UD_Ipblendvb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1617 */ { UD_Ipmuldq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1618 */ { UD_Ivpmuldq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1619 */ { UD_Ipminsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1620 */ { UD_Ivpminsb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1621 */ { UD_Ipminsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1622 */ { UD_Ivpminsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1623 */ { UD_Ipminuw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1624 */ { UD_Ivpminuw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1625 */ { UD_Ipminud, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1626 */ { UD_Ivpminud, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1627 */ { UD_Ipmaxsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1628 */ { UD_Ivpmaxsb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1629 */ { UD_Ipmaxsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1630 */ { UD_Ivpmaxsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1631 */ { UD_Ipmaxud, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1632 */ { UD_Ivpmaxud, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1633 */ { UD_Ipmaxuw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1634 */ { UD_Ivpmaxuw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1635 */ { UD_Ipmulld, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1636 */ { UD_Ivpmulld, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1637 */ { UD_Iphminposuw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1638 */ { UD_Ivphminposuw, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1639 */ { UD_Iroundps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1640 */ { UD_Ivroundps, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1641 */ { UD_Iroundpd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1642 */ { UD_Ivroundpd, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1643 */ { UD_Iroundss, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1644 */ { UD_Ivroundss, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1645 */ { UD_Iroundsd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1646 */ { UD_Ivroundsd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1647 */ { UD_Iblendpd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1648 */ { UD_Ivblendpd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1649 */ { UD_Iblendps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1650 */ { UD_Ivblendps, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1651 */ { UD_Iblendvpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1652 */ { UD_Iblendvps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1653 */ { UD_Ibound, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso },
+  /* 1654 */ { UD_Ibsf, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1655 */ { UD_Ibsr, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1656 */ { UD_Ibswap, O_R0y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1657 */ { UD_Ibswap, O_R1y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1658 */ { UD_Ibswap, O_R2y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1659 */ { UD_Ibswap, O_R3y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1660 */ { UD_Ibswap, O_R4y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1661 */ { UD_Ibswap, O_R5y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1662 */ { UD_Ibswap, O_R6y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1663 */ { UD_Ibswap, O_R7y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
+  /* 1664 */ { UD_Ibt, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1665 */ { UD_Ibt, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1666 */ { UD_Ibtc, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1667 */ { UD_Ibtc, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1668 */ { UD_Ibtr, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1669 */ { UD_Ibtr, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1670 */ { UD_Ibts, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1671 */ { UD_Ibts, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
+  /* 1672 */ { UD_Ipblendw, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1673 */ { UD_Ivpblendw, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1674 */ { UD_Impsadbw, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1675 */ { UD_Ivmpsadbw, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1676 */ { UD_Imovntdqa, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1677 */ { UD_Ivmovntdqa, O_Vx, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl },
+  /* 1678 */ { UD_Ipackusdw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1679 */ { UD_Ivpackusdw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl },
+  /* 1680 */ { UD_Ipmovsxbw, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1681 */ { UD_Ivpmovsxbw, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1682 */ { UD_Ipmovsxbd, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1683 */ { UD_Ivpmovsxbd, O_Vx, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1684 */ { UD_Ipmovsxbq, O_V, O_MwU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1685 */ { UD_Ivpmovsxbq, O_Vx, O_MwU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1686 */ { UD_Ipmovsxwd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1687 */ { UD_Ivpmovsxwd, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1688 */ { UD_Ipmovsxwq, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1689 */ { UD_Ivpmovsxwq, O_Vx, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1690 */ { UD_Ipmovsxdq, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1691 */ { UD_Ipmovzxbw, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1692 */ { UD_Ivpmovzxbw, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1693 */ { UD_Ipmovzxbd, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1694 */ { UD_Ivpmovzxbd, O_Vx, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1695 */ { UD_Ipmovzxbq, O_V, O_MwU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1696 */ { UD_Ivpmovzxbq, O_Vx, O_MwU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1697 */ { UD_Ipmovzxwd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1698 */ { UD_Ivpmovzxwd, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1699 */ { UD_Ipmovzxwq, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1700 */ { UD_Ivpmovzxwq, O_Vx, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1701 */ { UD_Ipmovzxdq, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1702 */ { UD_Ivpmovzxdq, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1703 */ { UD_Ipcmpeqq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1704 */ { UD_Ivpcmpeqq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1705 */ { UD_Ipopcnt, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1706 */ { UD_Iptest, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1707 */ { UD_Ivptest, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl },
+  /* 1708 */ { UD_Ipcmpestri, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1709 */ { UD_Ivpcmpestri, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1710 */ { UD_Ipcmpestrm, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1711 */ { UD_Ivpcmpestrm, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1712 */ { UD_Ipcmpgtq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1713 */ { UD_Ivpcmpgtq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1714 */ { UD_Ipcmpistri, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1715 */ { UD_Ivpcmpistri, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1716 */ { UD_Ipcmpistrm, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1717 */ { UD_Ivpcmpistrm, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1718 */ { UD_Imovbe, O_Gv, O_Mv, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1719 */ { UD_Imovbe, O_Mv, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1720 */ { UD_Icrc32, O_Gy, O_Eb, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1721 */ { UD_Icrc32, O_Gy, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
+  /* 1722 */ { UD_Ivbroadcastss, O_V, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1723 */ { UD_Ivbroadcastsd, O_Vqq, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1724 */ { UD_Ivextractf128, O_Wdq, O_Vqq, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1725 */ { UD_Ivinsertf128, O_Vqq, O_Hqq, O_Wdq, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1726 */ { UD_Ivmaskmovps, O_V, O_H, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1727 */ { UD_Ivmaskmovps, O_M, O_H, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1728 */ { UD_Ivmaskmovpd, O_V, O_H, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1729 */ { UD_Ivmaskmovpd, O_M, O_H, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1730 */ { UD_Ivpermilpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1731 */ { UD_Ivpermilpd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1732 */ { UD_Ivpermilps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1733 */ { UD_Ivpermilps, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1734 */ { UD_Ivperm2f128, O_Vqq, O_Hqq, O_Wqq, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1735 */ { UD_Ivtestps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1736 */ { UD_Ivtestpd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1737 */ { UD_Ivzeroupper, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1738 */ { UD_Ivzeroall, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
+  /* 1739 */ { UD_Ivblendvpd, O_Vx, O_Hx, O_Wx, O_Lx, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1740 */ { UD_Ivblendvps, O_Vx, O_Hx, O_Wx, O_Lx, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
+  /* 1741 */ { UD_Ivmovsd, O_V, O_H, O_U, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1742 */ { UD_Ivmovsd, O_V, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1743 */ { UD_Ivmovsd, O_U, O_H, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1744 */ { UD_Ivmovsd, O_Mq, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1745 */ { UD_Ivmovss, O_V, O_H, O_U, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1746 */ { UD_Ivmovss, O_V, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1747 */ { UD_Ivmovss, O_U, O_H, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1748 */ { UD_Ivmovss, O_Md, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1749 */ { UD_Ivpblendvb, O_V, O_H, O_W, O_L, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1750 */ { UD_Ivpsllw, O_V, O_H, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1751 */ { UD_Ivpsllw, O_H, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1752 */ { UD_Ivpslld, O_V, O_H, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1753 */ { UD_Ivpslld, O_H, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1754 */ { UD_Ivpsllq, O_V, O_H, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 1755 */ { UD_Ivpsllq, O_H, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
 };
 
 
-const char * ud_mnemonics_str[] = {
-"invalid",
-    "3dnow",
-    "none",
-    "db",
-    "pause",
+const char* ud_mnemonics_str[] = {
     "aaa",
     "aad",
     "aam",
@@ -7765,13 +5040,24 @@ const char * ud_mnemonics_str[] = {
     "addps",
     "addsd",
     "addss",
+    "addsubpd",
+    "addsubps",
+    "aesdec",
+    "aesdeclast",
+    "aesenc",
+    "aesenclast",
+    "aesimc",
+    "aeskeygenassist",
     "and",
-    "andpd",
-    "andps",
     "andnpd",
     "andnps",
+    "andpd",
+    "andps",
     "arpl",
-    "movsxd",
+    "blendpd",
+    "blendps",
+    "blendvpd",
+    "blendvps",
     "bound",
     "bsf",
     "bsr",
@@ -7782,7 +5068,7 @@ const char * ud_mnemonics_str[] = {
     "bts",
     "call",
     "cbw",
-    "cwde",
+    "cdq",
     "cdqe",
     "clc",
     "cld",
@@ -7791,61 +5077,62 @@ const char * ud_mnemonics_str[] = {
     "cli",
     "clts",
     "cmc",
-    "cmovo",
-    "cmovno",
-    "cmovb",
-    "cmovae",
-    "cmovz",
-    "cmovnz",
-    "cmovbe",
     "cmova",
-    "cmovs",
-    "cmovns",
-    "cmovp",
-    "cmovnp",
-    "cmovl",
-    "cmovge",
-    "cmovle",
+    "cmovae",
+    "cmovb",
+    "cmovbe",
     "cmovg",
+    "cmovge",
+    "cmovl",
+    "cmovle",
+    "cmovno",
+    "cmovnp",
+    "cmovns",
+    "cmovnz",
+    "cmovo",
+    "cmovp",
+    "cmovs",
+    "cmovz",
     "cmp",
     "cmppd",
     "cmpps",
     "cmpsb",
-    "cmpsw",
     "cmpsd",
     "cmpsq",
     "cmpss",
+    "cmpsw",
     "cmpxchg",
-    "cmpxchg8b",
     "cmpxchg16b",
+    "cmpxchg8b",
     "comisd",
     "comiss",
     "cpuid",
+    "cqo",
+    "crc32",
     "cvtdq2pd",
     "cvtdq2ps",
     "cvtpd2dq",
     "cvtpd2pi",
     "cvtpd2ps",
-    "cvtpi2ps",
     "cvtpi2pd",
+    "cvtpi2ps",
     "cvtps2dq",
-    "cvtps2pi",
     "cvtps2pd",
+    "cvtps2pi",
     "cvtsd2si",
     "cvtsd2ss",
+    "cvtsi2sd",
     "cvtsi2ss",
-    "cvtss2si",
     "cvtss2sd",
-    "cvttpd2pi",
+    "cvtss2si",
     "cvttpd2dq",
+    "cvttpd2pi",
     "cvttps2dq",
     "cvttps2pi",
     "cvttsd2si",
-    "cvtsi2sd",
     "cvttss2si",
     "cwd",
-    "cdq",
-    "cqo",
+    "cwde",
     "daa",
     "das",
     "dec",
@@ -7854,8 +5141,11 @@ const char * ud_mnemonics_str[] = {
     "divps",
     "divsd",
     "divss",
+    "dppd",
+    "dpps",
     "emms",
     "enter",
+    "extractps",
     "f2xm1",
     "fabs",
     "fadd",
@@ -7865,21 +5155,19 @@ const char * ud_mnemonics_str[] = {
     "fchs",
     "fclex",
     "fcmovb",
-    "fcmove",
     "fcmovbe",
-    "fcmovu",
+    "fcmove",
     "fcmovnb",
-    "fcmovne",
     "fcmovnbe",
+    "fcmovne",
     "fcmovnu",
-    "fucomi",
+    "fcmovu",
     "fcom",
     "fcom2",
-    "fcomp3",
     "fcomi",
-    "fucomip",
     "fcomip",
     "fcomp",
+    "fcomp3",
     "fcomp5",
     "fcompp",
     "fcos",
@@ -7891,58 +5179,60 @@ const char * ud_mnemonics_str[] = {
     "femms",
     "ffree",
     "ffreep",
+    "fiadd",
     "ficom",
     "ficomp",
-    "fild",
-    "fincstp",
-    "fninit",
-    "fiadd",
-    "fidivr",
     "fidiv",
-    "fisub",
-    "fisubr",
+    "fidivr",
+    "fild",
+    "fimul",
+    "fincstp",
     "fist",
     "fistp",
     "fisttp",
+    "fisub",
+    "fisubr",
     "fld",
     "fld1",
-    "fldl2t",
-    "fldl2e",
-    "fldpi",
-    "fldlg2",
-    "fldln2",
-    "fldz",
     "fldcw",
     "fldenv",
+    "fldl2e",
+    "fldl2t",
+    "fldlg2",
+    "fldln2",
+    "fldpi",
+    "fldz",
     "fmul",
     "fmulp",
-    "fimul",
+    "fninit",
     "fnop",
+    "fnsave",
+    "fnstcw",
+    "fnstenv",
+    "fnstsw",
     "fpatan",
     "fprem",
     "fprem1",
     "fptan",
     "frndint",
     "frstor",
-    "fnsave",
     "fscale",
     "fsin",
     "fsincos",
     "fsqrt",
+    "fst",
     "fstp",
     "fstp1",
     "fstp8",
     "fstp9",
-    "fst",
-    "fnstcw",
-    "fnstenv",
-    "fnstsw",
     "fsub",
     "fsubp",
     "fsubr",
     "fsubrp",
     "ftst",
     "fucom",
+    "fucomi",
+    "fucomip",
     "fucomp",
     "fucompp",
     "fxam",
@@ -7954,72 +5244,79 @@ const char * ud_mnemonics_str[] = {
     "fxtract",
     "fyl2x",
     "fyl2xp1",
+    "getsec",
+    "haddpd",
+    "haddps",
     "hlt",
+    "hsubpd",
+    "hsubps",
     "idiv",
-    "in",
     "imul",
+    "in",
     "inc",
     "insb",
-    "insw",
     "insd",
+    "insertps",
+    "insw",
+    "int",
     "int1",
     "int3",
-    "int",
     "into",
     "invd",
     "invept",
     "invlpg",
     "invlpga",
     "invvpid",
-    "iretw",
     "iretd",
     "iretq",
-    "jo",
-    "jno",
-    "jb",
-    "jae",
-    "jz",
-    "jnz",
-    "jbe",
+    "iretw",
     "ja",
-    "js",
-    "jns",
-    "jp",
-    "jnp",
-    "jl",
-    "jge",
-    "jle",
-    "jg",
+    "jae",
+    "jb",
+    "jbe",
     "jcxz",
     "jecxz",
-    "jrcxz",
+    "jg",
+    "jge",
+    "jl",
+    "jle",
     "jmp",
+    "jno",
+    "jnp",
+    "jns",
+    "jnz",
+    "jo",
+    "jp",
+    "jrcxz",
+    "js",
+    "jz",
     "lahf",
     "lar",
     "lddqu",
     "ldmxcsr",
     "lds",
     "lea",
+    "leave",
     "les",
+    "lfence",
     "lfs",
+    "lgdt",
     "lgs",
     "lidt",
-    "lss",
-    "leave",
-    "lfence",
-    "lgdt",
     "lldt",
     "lmsw",
     "lock",
     "lodsb",
-    "lodsw",
     "lodsd",
     "lodsq",
-    "loopne",
-    "loope",
+    "lodsw",
     "loop",
+    "loope",
+    "loopne",
     "lsl",
+    "lss",
     "ltr",
+    "maskmovdqu",
     "maskmovq",
     "maxpd",
     "maxps",
@@ -8035,30 +5332,41 @@ const char * ud_mnemonics_str[] = {
     "mov",
     "movapd",
     "movaps",
+    "movbe",
     "movd",
+    "movddup",
+    "movdq2q",
+    "movdqa",
+    "movdqu",
+    "movhlps",
     "movhpd",
     "movhps",
     "movlhps",
     "movlpd",
     "movlps",
-    "movhlps",
     "movmskpd",
     "movmskps",
     "movntdq",
+    "movntdqa",
     "movnti",
     "movntpd",
     "movntps",
     "movntq",
     "movq",
+    "movq2dq",
     "movsb",
-    "movsw",
     "movsd",
+    "movshdup",
+    "movsldup",
     "movsq",
     "movss",
+    "movsw",
     "movsx",
+    "movsxd",
     "movupd",
     "movups",
     "movzx",
+    "mpsadbw",
     "mul",
     "mulpd",
     "mulps",
@@ -8073,51 +5381,122 @@ const char * ud_mnemonics_str[] = {
     "orps",
     "out",
     "outsb",
-    "outsw",
     "outsd",
-    "packsswb",
+    "outsw",
+    "pabsb",
+    "pabsd",
+    "pabsw",
     "packssdw",
+    "packsswb",
+    "packusdw",
     "packuswb",
     "paddb",
-    "paddw",
     "paddd",
+    "paddq",
     "paddsb",
     "paddsw",
     "paddusb",
     "paddusw",
+    "paddw",
+    "palignr",
     "pand",
     "pandn",
     "pavgb",
+    "pavgusb",
     "pavgw",
+    "pblendvb",
+    "pblendw",
+    "pclmulqdq",
     "pcmpeqb",
-    "pcmpeqw",
     "pcmpeqd",
+    "pcmpeqq",
+    "pcmpeqw",
+    "pcmpestri",
+    "pcmpestrm",
     "pcmpgtb",
-    "pcmpgtw",
     "pcmpgtd",
+    "pcmpgtq",
+    "pcmpgtw",
+    "pcmpistri",
+    "pcmpistrm",
     "pextrb",
     "pextrd",
     "pextrq",
     "pextrw",
+    "pf2id",
+    "pf2iw",
+    "pfacc",
+    "pfadd",
+    "pfcmpeq",
+    "pfcmpge",
+    "pfcmpgt",
+    "pfmax",
+    "pfmin",
+    "pfmul",
+    "pfnacc",
+    "pfpnacc",
+    "pfrcp",
+    "pfrcpit1",
+    "pfrcpit2",
+    "pfrsqit1",
+    "pfrsqrt",
+    "pfsub",
+    "pfsubr",
+    "phaddd",
+    "phaddsw",
+    "phaddw",
+    "phminposuw",
+    "phsubd",
+    "phsubsw",
+    "phsubw",
+    "pi2fd",
+    "pi2fw",
     "pinsrb",
-    "pinsrw",
     "pinsrd",
     "pinsrq",
+    "pinsrw",
+    "pmaddubsw",
     "pmaddwd",
+    "pmaxsb",
+    "pmaxsd",
     "pmaxsw",
     "pmaxub",
+    "pmaxud",
+    "pmaxuw",
+    "pminsb",
+    "pminsd",
     "pminsw",
     "pminub",
+    "pminud",
+    "pminuw",
     "pmovmskb",
+    "pmovsxbd",
+    "pmovsxbq",
+    "pmovsxbw",
+    "pmovsxdq",
+    "pmovsxwd",
+    "pmovsxwq",
+    "pmovzxbd",
+    "pmovzxbq",
+    "pmovzxbw",
+    "pmovzxdq",
+    "pmovzxwd",
+    "pmovzxwq",
+    "pmuldq",
+    "pmulhrsw",
+    "pmulhrw",
     "pmulhuw",
     "pmulhw",
+    "pmulld",
     "pmullw",
+    "pmuludq",
     "pop",
     "popa",
     "popad",
-    "popfw",
+    "popcnt",
     "popfd",
     "popfq",
+    "popfw",
     "por",
     "prefetch",
     "prefetchnta",
@@ -8125,125 +5504,120 @@ const char * ud_mnemonics_str[] = {
     "prefetcht1",
     "prefetcht2",
     "psadbw",
+    "pshufb",
+    "pshufd",
+    "pshufhw",
+    "pshuflw",
     "pshufw",
-    "psllw",
+    "psignb",
+    "psignd",
+    "psignw",
     "pslld",
+    "pslldq",
     "psllq",
-    "psraw",
+    "psllw",
     "psrad",
-    "psrlw",
+    "psraw",
     "psrld",
+    "psrldq",
     "psrlq",
+    "psrlw",
     "psubb",
-    "psubw",
     "psubd",
+    "psubq",
     "psubsb",
     "psubsw",
     "psubusb",
     "psubusw",
-    "punpckhbw",
-    "punpckhwd",
-    "punpckhdq",
-    "punpcklbw",
-    "punpcklwd",
-    "punpckldq",
-    "pi2fw",
-    "pi2fd",
-    "pf2iw",
-    "pf2id",
-    "pfnacc",
-    "pfpnacc",
-    "pfcmpge",
-    "pfmin",
-    "pfrcp",
-    "pfrsqrt",
-    "pfsub",
-    "pfadd",
-    "pfcmpgt",
-    "pfmax",
-    "pfrcpit1",
-    "pfrsqit1",
-    "pfsubr",
-    "pfacc",
-    "pfcmpeq",
-    "pfmul",
-    "pfrcpit2",
-    "pmulhrw",
+    "psubw",
     "pswapd",
-    "pavgusb",
+    "ptest",
+    "punpckhbw",
+    "punpckhdq",
+    "punpckhqdq",
+    "punpckhwd",
+    "punpcklbw",
+    "punpckldq",
+    "punpcklqdq",
+    "punpcklwd",
     "push",
     "pusha",
     "pushad",
-    "pushfw",
     "pushfd",
     "pushfq",
+    "pushfw",
     "pxor",
     "rcl",
-    "rcr",
-    "rol",
-    "ror",
     "rcpps",
     "rcpss",
+    "rcr",
     "rdmsr",
     "rdpmc",
+    "rdrand",
     "rdtsc",
     "rdtscp",
-    "repne",
     "rep",
+    "repne",
     "ret",
     "retf",
+    "rol",
+    "ror",
+    "roundpd",
+    "roundps",
+    "roundsd",
+    "roundss",
     "rsm",
     "rsqrtps",
     "rsqrtss",
     "sahf",
     "salc",
     "sar",
-    "shl",
-    "shr",
     "sbb",
     "scasb",
-    "scasw",
     "scasd",
     "scasq",
-    "seto",
-    "setno",
-    "setb",
-    "setae",
-    "setz",
-    "setnz",
-    "setbe",
+    "scasw",
     "seta",
-    "sets",
-    "setns",
-    "setp",
-    "setnp",
-    "setl",
-    "setge",
-    "setle",
+    "setae",
+    "setb",
+    "setbe",
     "setg",
+    "setge",
+    "setl",
+    "setle",
+    "setno",
+    "setnp",
+    "setns",
+    "setnz",
+    "seto",
+    "setp",
+    "sets",
+    "setz",
     "sfence",
     "sgdt",
+    "shl",
     "shld",
+    "shr",
     "shrd",
     "shufpd",
     "shufps",
     "sidt",
+    "skinit",
     "sldt",
     "smsw",
-    "sqrtps",
     "sqrtpd",
+    "sqrtps",
     "sqrtsd",
     "sqrtss",
     "stc",
     "std",
     "stgi",
     "sti",
-    "skinit",
     "stmxcsr",
     "stosb",
-    "stosw",
     "stosd",
     "stosq",
+    "stosw",
     "str",
     "sub",
     "subpd",
@@ -8261,141 +5635,303 @@ const char * ud_mnemonics_str[] = {
     "ud2",
     "unpckhpd",
     "unpckhps",
-    "unpcklps",
     "unpcklpd",
+    "unpcklps",
+    "vaddpd",
+    "vaddps",
+    "vaddsd",
+    "vaddss",
+    "vaddsubpd",
+    "vaddsubps",
+    "vaesdec",
+    "vaesdeclast",
+    "vaesenc",
+    "vaesenclast",
+    "vaesimc",
+    "vaeskeygenassist",
+    "vandnpd",
+    "vandnps",
+    "vandpd",
+    "vandps",
+    "vblendpd",
+    "vblendps",
+    "vblendvpd",
+    "vblendvps",
+    "vbroadcastsd",
+    "vbroadcastss",
+    "vcmppd",
+    "vcmpps",
+    "vcmpsd",
+    "vcmpss",
+    "vcomisd",
+    "vcomiss",
+    "vcvtdq2pd",
+    "vcvtdq2ps",
+    "vcvtpd2dq",
+    "vcvtpd2ps",
+    "vcvtps2dq",
+    "vcvtps2pd",
+    "vcvtsd2si",
+    "vcvtsd2ss",
+    "vcvtsi2sd",
+    "vcvtsi2ss",
+    "vcvtss2sd",
+    "vcvtss2si",
+    "vcvttpd2dq",
+    "vcvttps2dq",
+    "vcvttsd2si",
+    "vcvttss2si",
+    "vdivpd",
+    "vdivps",
+    "vdivsd",
+    "vdivss",
+    "vdppd",
+    "vdpps",
     "verr",
     "verw",
+    "vextractf128",
+    "vextractps",
+    "vhaddpd",
+    "vhaddps",
+    "vhsubpd",
+    "vhsubps",
+    "vinsertf128",
+    "vinsertps",
+    "vlddqu",
+    "vmaskmovdqu",
+    "vmaskmovpd",
+    "vmaskmovps",
+    "vmaxpd",
+    "vmaxps",
+    "vmaxsd",
+    "vmaxss",
     "vmcall",
     "vmclear",
-    "vmxon",
+    "vminpd",
+    "vminps",
+    "vminsd",
+    "vminss",
+    "vmlaunch",
+    "vmload",
+    "vmmcall",
+    "vmovapd",
+    "vmovaps",
+    "vmovd",
+    "vmovddup",
+    "vmovdqa",
+    "vmovdqu",
+    "vmovhlps",
+    "vmovhpd",
+    "vmovhps",
+    "vmovlhps",
+    "vmovlpd",
+    "vmovlps",
+    "vmovmskpd",
+    "vmovmskps",
+    "vmovntdq",
+    "vmovntdqa",
+    "vmovntpd",
+    "vmovntps",
+    "vmovq",
+    "vmovsd",
+    "vmovshdup",
+    "vmovsldup",
+    "vmovss",
+    "vmovupd",
+    "vmovups",
+    "vmpsadbw",
     "vmptrld",
     "vmptrst",
-    "vmlaunch",
-    "vmresume",
-    "vmxoff",
     "vmread",
-    "vmwrite",
+    "vmresume",
     "vmrun",
-    "vmmcall",
-    "vmload",
     "vmsave",
+    "vmulpd",
+    "vmulps",
+    "vmulsd",
+    "vmulss",
+    "vmwrite",
+    "vmxoff",
+    "vmxon",
+    "vorpd",
+    "vorps",
+    "vpabsb",
+    "vpabsd",
+    "vpabsw",
+    "vpackssdw",
+    "vpacksswb",
+    "vpackusdw",
+    "vpackuswb",
+    "vpaddb",
+    "vpaddd",
+    "vpaddq",
+    "vpaddsb",
+    "vpaddsw",
+    "vpaddusb",
+    "vpaddusw",
+    "vpaddw",
+    "vpalignr",
+    "vpand",
+    "vpandn",
+    "vpavgb",
+    "vpavgw",
+    "vpblendvb",
+    "vpblendw",
+    "vpclmulqdq",
+    "vpcmpeqb",
+    "vpcmpeqd",
+    "vpcmpeqq",
+    "vpcmpeqw",
+    "vpcmpestri",
+    "vpcmpestrm",
+    "vpcmpgtb",
+    "vpcmpgtd",
+    "vpcmpgtq",
+    "vpcmpgtw",
+    "vpcmpistri",
+    "vpcmpistrm",
+    "vperm2f128",
+    "vpermilpd",
+    "vpermilps",
+    "vpextrb",
+    "vpextrd",
+    "vpextrq",
+    "vpextrw",
+    "vphaddd",
+    "vphaddsw",
+    "vphaddw",
+    "vphminposuw",
+    "vphsubd",
+    "vphsubsw",
+    "vphsubw",
+    "vpinsrb",
+    "vpinsrd",
+    "vpinsrq",
+    "vpinsrw",
+    "vpmaddubsw",
+    "vpmaddwd",
+    "vpmaxsb",
+    "vpmaxsd",
+    "vpmaxsw",
+    "vpmaxub",
+    "vpmaxud",
+    "vpmaxuw",
+    "vpminsb",
+    "vpminsd",
+    "vpminsw",
+    "vpminub",
+    "vpminud",
+    "vpminuw",
+    "vpmovmskb",
+    "vpmovsxbd",
+    "vpmovsxbq",
+    "vpmovsxbw",
+    "vpmovsxwd",
+    "vpmovsxwq",
+    "vpmovzxbd",
+    "vpmovzxbq",
+    "vpmovzxbw",
+    "vpmovzxdq",
+    "vpmovzxwd",
+    "vpmovzxwq",
+    "vpmuldq",
+    "vpmulhrsw",
+    "vpmulhuw",
+    "vpmulhw",
+    "vpmulld",
+    "vpmullw",
+    "vpor",
+    "vpsadbw",
+    "vpshufb",
+    "vpshufd",
+    "vpshufhw",
+    "vpshuflw",
+    "vpsignb",
+    "vpsignd",
+    "vpsignw",
+    "vpslld",
+    "vpslldq",
+    "vpsllq",
+    "vpsllw",
+    "vpsrad",
+    "vpsraw",
+    "vpsrld",
+    "vpsrldq",
+    "vpsrlq",
+    "vpsrlw",
+    "vpsubb",
+    "vpsubd",
+    "vpsubq",
+    "vpsubsb",
+    "vpsubsw",
+    "vpsubusb",
+    "vpsubusw",
+    "vpsubw",
+    "vptest",
+    "vpunpckhbw",
+    "vpunpckhdq",
+    "vpunpckhqdq",
+    "vpunpckhwd",
+    "vpunpcklbw",
+    "vpunpckldq",
+    "vpunpcklqdq",
+    "vpunpcklwd",
+    "vpxor",
+    "vrcpps",
+    "vrcpss",
+    "vroundpd",
+    "vroundps",
+    "vroundsd",
+    "vroundss",
+    "vrsqrtps",
+    "vrsqrtss",
+    "vshufpd",
+    "vshufps",
+    "vsqrtpd",
+    "vsqrtps",
+    "vsqrtsd",
+    "vsqrtss",
+    "vstmxcsr",
+    "vsubpd",
+    "vsubps",
+    "vsubsd",
+    "vsubss",
+    "vtestpd",
+    "vtestps",
+    "vucomisd",
+    "vucomiss",
+    "vunpckhpd",
+    "vunpckhps",
+    "vunpcklpd",
+    "vunpcklps",
+    "vxorpd",
+    "vxorps",
+    "vzeroall",
+    "vzeroupper",
     "wait",
     "wbinvd",
     "wrmsr",
     "xadd",
     "xchg",
+    "xcryptcbc",
+    "xcryptcfb",
+    "xcryptctr",
+    "xcryptecb",
+    "xcryptofb",
     "xgetbv",
     "xlatb",
     "xor",
     "xorpd",
     "xorps",
-    "xcryptecb",
-    "xcryptcbc",
-    "xcryptctr",
-    "xcryptcfb",
-    "xcryptofb",
     "xrstor",
     "xsave",
     "xsetbv",
     "xsha1",
     "xsha256",
     "xstore",
-    "aesdec",
-    "aesdeclast",
-    "aesenc",
-    "aesenclast",
-    "aesimc",
-    "aeskeygenassist",
-    "pclmulqdq",
-    "getsec",
-    "movdqa",
-    "maskmovdqu",
-    "movdq2q",
-    "movdqu",
-    "movq2dq",
-    "paddq",
-    "psubq",
-    "pmuludq",
-    "pshufhw",
-    "pshuflw",
-    "pshufd",
-    "pslldq",
-    "psrldq",
-    "punpckhqdq",
-    "punpcklqdq",
-    "addsubpd",
-    "addsubps",
-    "haddpd",
-    "haddps",
-    "hsubpd",
-    "hsubps",
-    "movddup",
-    "movshdup",
-    "movsldup",
-    "pabsb",
-    "pabsw",
-    "pabsd",
-    "pshufb",
-    "phaddw",
-    "phaddd",
-    "phaddsw",
-    "pmaddubsw",
-    "phsubw",
-    "phsubd",
-    "phsubsw",
-    "psignb",
-    "psignd",
-    "psignw",
-    "pmulhrsw",
-    "palignr",
-    "pblendvb",
-    "pmuldq",
-    "pminsb",
-    "pminsd",
-    "pminuw",
-    "pminud",
-    "pmaxsb",
-    "pmaxsd",
-    "pmaxud",
-    "pmaxuw",
-    "pmulld",
-    "phminposuw",
-    "roundps",
-    "roundpd",
-    "roundss",
-    "roundsd",
-    "blendpd",
-    "pblendw",
-    "blendps",
-    "blendvpd",
-    "blendvps",
-    "dpps",
-    "dppd",
-    "mpsadbw",
-    "extractps",
-    "insertps",
-    "movntdqa",
-    "packusdw",
-    "pmovsxbw",
-    "pmovsxbd",
-    "pmovsxbq",
-    "pmovsxwd",
-    "pmovsxwq",
-    "pmovsxdq",
-    "pmovzxbw",
-    "pmovzxbd",
-    "pmovzxbq",
-    "pmovzxwd",
-    "pmovzxwq",
-    "pmovzxdq",
-    "pcmpeqq",
-    "popcnt",
-    "ptest",
-    "pcmpestri",
-    "pcmpestrm",
-    "pcmpgtq",
-    "pcmpistri",
-    "pcmpistrm",
-    "movbe",
-    "crc32"
+    "invalid",
+    "3dnow",
+    "none",
+    "db",
+    "pause"
 };

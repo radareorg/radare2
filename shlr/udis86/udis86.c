@@ -24,7 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "input.h"
+#include "udint.h"
 #include "extern.h"
 #include "decode.h"
 
@@ -34,8 +34,11 @@
 # endif
 #endif /* !__UD_STANDALONE__ */
 
+static void ud_inp_init(struct ud *u);
+
 /* =============================================================================
- * ud_init() - Initializes ud_t object.
+ * ud_init
+ *    Initializes ud_t object.
  * =============================================================================
  */
 extern void 
@@ -52,25 +55,29 @@ ud_init(struct ud* u)
   ud_set_asm_buffer(u, u->asm_buf_int, sizeof(u->asm_buf_int));
 }
 
+
 /* =============================================================================
- * ud_disassemble() - disassembles one instruction and returns the number of 
- * bytes disassembled. A zero means end of disassembly.
+ * ud_disassemble
+ *    Disassembles one instruction and returns the number of 
+ *    bytes disassembled. A zero means end of disassembly.
  * =============================================================================
  */
 extern unsigned int
 ud_disassemble(struct ud* u)
 {
-  if (ud_input_end(u))
-  return 0;
-
-  u->asm_buf[0] = 0;
- 
-  if (ud_decode(u) == 0)
-  return 0;
-  if (u->translator)
-  u->translator(u);
-  return ud_insn_len(u);
+  int len;
+  if (u->inp_end) {
+    return 0;
+  }
+  if ((len = ud_decode(u)) > 0) {
+    if (u->translator != NULL) {
+      u->asm_buf[0] = '\0';
+      u->translator(u);
+    }
+  }
+  return len;
 }
+
 
 /* =============================================================================
  * ud_set_mode() - Set Disassemly Mode.
@@ -157,11 +164,11 @@ ud_insn_hex(struct ud* u)
   u->insn_hexcode[0] = 0;
   if (!u->error) {
     unsigned int i;
-    unsigned char *src_ptr = inp_sess(u);
+    const unsigned char *src_ptr = ud_insn_ptr(u);
     char* src_hex;
     src_hex = (char*) u->insn_hexcode;
     /* for each byte used to decode instruction */
-    for (i = 0; i < u->inp_ctr && i < sizeof(u->insn_hexcode) / 2;
+    for (i = 0; i < ud_insn_len(u) && i < sizeof(u->insn_hexcode) / 2;
          ++i, ++src_ptr) {
       sprintf(src_hex, "%02x", *src_ptr & 0xFF);
       src_hex += 2;
@@ -172,17 +179,22 @@ ud_insn_hex(struct ud* u)
 
 
 /* =============================================================================
- * ud_insn_ptr() - Returns code disassembled.
+ * ud_insn_ptr
+ *    Returns a pointer to buffer containing the bytes that were
+ *    disassembled.
  * =============================================================================
  */
 extern const uint8_t* 
 ud_insn_ptr(const struct ud* u) 
 {
-  return u->inp_sess;
+  return (u->inp_buf == NULL) ? 
+            u->inp_sess : u->inp_buf + (u->inp_buf_index - u->inp_ctr);
 }
 
+
 /* =============================================================================
- * ud_insn_len() - Returns the count of bytes disassembled.
+ * ud_insn_len
+ *    Returns the count of bytes disassembled.
  * =============================================================================
  */
 extern unsigned int 
@@ -202,7 +214,7 @@ ud_insn_len(const struct ud* u)
 const struct ud_operand*
 ud_insn_opr(const struct ud *u, unsigned int n)
 {
-  if (n > 2 || u->operand[n].type == UD_NONE) {
+  if (n > 3 || u->operand[n].type == UD_NONE) {
     return NULL; 
   } else {
     return &u->operand[n];
@@ -299,6 +311,148 @@ ud_set_sym_resolver(struct ud *u, const char* (*resolver)(struct ud*,
   u->sym_resolver = resolver;
 }
 
-/*
-vim:set ts=2 sw=2 expandtab
-*/
+
+/* =============================================================================
+ * ud_insn_mnemonic
+ *    Return the current instruction mnemonic.
+ * =============================================================================
+ */
+enum ud_mnemonic_code
+ud_insn_mnemonic(const struct ud *u)
+{
+  return u->mnemonic;
+}
+
+
+/* =============================================================================
+ * ud_lookup_mnemonic
+ *    Looks up mnemonic code in the mnemonic string table.
+ *    Returns NULL if the mnemonic code is invalid.
+ * =============================================================================
+ */
+const char*
+ud_lookup_mnemonic(enum ud_mnemonic_code c)
+{
+  if (c < UD_MAX_MNEMONIC_CODE) {
+    return ud_mnemonics_str[c];
+  } else {
+    return NULL;
+  }
+}
+
+
+/* 
+ * ud_inp_init
+ *    Initializes the input system.
+ */
+static void
+ud_inp_init(struct ud *u)
+{
+  u->inp_hook      = NULL;
+  u->inp_buf       = NULL;
+  u->inp_buf_size  = 0;
+  u->inp_buf_index = 0;
+  u->inp_curr      = 0;
+  u->inp_ctr       = 0;
+  u->inp_end       = 0;
+  u->inp_peek      = UD_EOI;
+  UD_NON_STANDALONE(u->inp_file = NULL);
+}
+
+
+/* =============================================================================
+ * ud_inp_set_hook
+ *    Sets input hook.
+ * =============================================================================
+ */
+void 
+ud_set_input_hook(register struct ud* u, int (*hook)(struct ud*))
+{
+  ud_inp_init(u);
+  u->inp_hook = hook;
+}
+
+/* =============================================================================
+ * ud_inp_set_buffer
+ *    Set buffer as input.
+ * =============================================================================
+ */
+void 
+ud_set_input_buffer(register struct ud* u, const uint8_t* buf, size_t len)
+{
+  ud_inp_init(u);
+  u->inp_buf = buf;
+  u->inp_buf_size = len;
+  u->inp_buf_index = 0;
+}
+
+
+#ifndef __UD_STANDALONE__
+/* =============================================================================
+ * ud_input_set_file
+ *    Set FILE as input.
+ * =============================================================================
+ */
+static int 
+inp_file_hook(struct ud* u)
+{
+  return fgetc(u->inp_file);
+}
+
+void 
+ud_set_input_file(register struct ud* u, FILE* f)
+{
+  ud_inp_init(u);
+  u->inp_hook = inp_file_hook;
+  u->inp_file = f;
+}
+#endif /* __UD_STANDALONE__ */
+
+
+/* =============================================================================
+ * ud_input_skip
+ *    Skip n input bytes.
+ * ============================================================================
+ */
+void 
+ud_input_skip(struct ud* u, size_t n)
+{
+  if (u->inp_end) {
+    return;
+  }
+  if (u->inp_buf == NULL) {
+    while (n--) {
+      int c = u->inp_hook(u);
+      if (c == UD_EOI) {
+        goto eoi;
+      }
+    }
+    return;
+  } else {
+    if (n > u->inp_buf_size ||
+        u->inp_buf_index > u->inp_buf_size - n) {
+      u->inp_buf_index = u->inp_buf_size; 
+      goto eoi;
+    }
+    u->inp_buf_index += n; 
+    return;
+  }
+eoi:
+  u->inp_end = 1;
+  UDERR(u, "cannot skip, eoi received\b");
+  return;
+}
+
+
+/* =============================================================================
+ * ud_input_end
+ *    Returns non-zero on end-of-input.
+ * =============================================================================
+ */
+int
+ud_input_end(const struct ud *u)
+{
+  return u->inp_end;
+}
+
+/* vim:set ts=2 sw=2 expandtab */
