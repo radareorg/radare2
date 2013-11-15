@@ -253,14 +253,14 @@ static int cmd_yank(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"Usage: y[ptxy] [len] [[@]addr]\n"
-		" y            ; show yank buffer information (srcoff len bytes)\n"
-		" y 16         ; copy 16 bytes into clipboard\n"
-		" y 16 0x200   ; copy 16 bytes into clipboard from 0x200\n"
-		" y 16 @ 0x200 ; copy 16 bytes into clipboard from 0x200\n"
-		" yp           ; print contents of clipboard\n"
-		" yx           ; print contents of clipboard in hexadecimal\n"
-		" yt 64 0x200  ; copy 64 bytes from current seek to 0x200\n"
-		" yy 0x3344    ; paste clipboard\n");
+		" y             show yank buffer information (srcoff len bytes)\n"
+		" y 16          copy 16 bytes into clipboard\n"
+		" y 16 0x200    copy 16 bytes into clipboard from 0x200\n"
+		" y 16 @ 0x200  copy 16 bytes into clipboard from 0x200\n"
+		" yp            print contents of clipboard\n"
+		" yx            print contents of clipboard in hexadecimal\n"
+		" yt 64 0x200   copy 64 bytes from current seek to 0x200\n"
+		" yy 0x3344     paste clipboard\n");
 		break;
 	}
 	return R_TRUE;
@@ -273,10 +273,10 @@ static int cmd_quit(void *data, const char *input) {
 	case '?':
 		r_cons_printf (
 		"Usage: q[!] [retvalue]\n"
-		" q     ; quit program\n"
-		" q!    ; force quit (no questions)\n"
-		" q 1   ; quit with return value 1\n"
-		" q a-b ; quit with return value a-b\n");
+		" q      quit program\n"
+		" q!     force quit (no questions)\n"
+		" q 1    quit with return value 1\n"
+		" q a-b  quit with return value a-b\n");
 		break;
 	case ' ':
 	case '!':
@@ -397,14 +397,14 @@ static int cmd_interpret(void *data, const char *input) {
 	case '?':
 		r_cons_printf (
 		"Usage: . [file] | [!command] | [(macro)]\n"
-		" .                 ; repeat last command backward\n"
-		" ..                ; repeat last command forward (same as \\n)\n"
-		" .:8080            ; listen for commands on given tcp port\n"
-		" . foo.r2          ; interpret r2 script\n"
-		" .-                ; open cfg.editor and interpret tmp file\n"
-		" .!rabin -ri $FILE ; interpret output of command\n"
-		" .(foo 1 2 3)      ; run macro 'foo' with args 1, 2, 3\n"
-		" ./ ELF            ; interpret output of command /m ELF as r. commands\n");
+		" .                  repeat last command backward\n"
+		" ..                 repeat last command forward (same as \\n)\n"
+		" .:8080             listen for commands on given tcp port\n"
+		" . foo.r2           interpret r2 script\n"
+		" .-                 open cfg.editor and interpret tmp file\n"
+		" .!rabin -ri $FILE  interpret output of command\n"
+		" .(foo 1 2 3)       run macro 'foo' with args 1, 2, 3\n"
+		" ./ ELF             interpret output of command /m ELF as r. commands\n");
 		break;
 	default:
 		inp = strdup (input);
@@ -640,17 +640,17 @@ static int cmd_eval(void *data, const char *input) {
 		case 0:
 			r_cons_printf (
 			"Usage: e[?] [var[=value]]\n"
-			" e?             ; show this help\n"
-			" e?asm.bytes    ; show description\n"
-			" e??            ; list config vars with description\n"
-			" e              ; list config vars\n"
-			" e-             ; reset config vars\n"
-			" e*             ; dump config vars in r commands\n"
-			" e!a            ; invert the boolean value of 'a' var\n"
-			" er [key]       ; set config key as readonly. no way back\n"
-			" ec [k] [color] ; set color for given key (prompt, offset, ...)\n"
-			" e a            ; get value of var 'a'\n"
-			" e a=b          ; set var 'a' the 'b' value\n");
+			" e?              show this help\n"
+			" e?asm.bytes     show description\n"
+			" e??             list config vars with description\n"
+			" e               list config vars\n"
+			" e-              reset config vars\n"
+			" e*              dump config vars in r commands\n"
+			" e!a             invert the boolean value of 'a' var\n"
+			" er [key]        set config key as readonly. no way back\n"
+			" ec [k] [color]  set color for given key (prompt, offset, ...)\n"
+			" e a             get value of var 'a'\n"
+			" e a=b           set var 'a' the 'b' value\n");
 		}
 		break;
 	case 'r':
@@ -758,6 +758,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	radare_cmd = (char*)r_str_trim_head (radare_cmd);
 	shell_cmd = (char*)r_str_trim_head (shell_cmd);
 
+	signal (SIGPIPE, SIG_IGN);
 	stdout_fd = dup (1);
 	pipe (fds);
 	if (fork ()) {

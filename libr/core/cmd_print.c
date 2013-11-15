@@ -307,7 +307,7 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 					opstr = (tmpopstr)? tmpopstr: strdup (asmop.buf_asm);
 				} else if (esil) {
 					opstr = strdup (analop.esil);
-				}
+				} else opstr = strdup (asmop.buf_asm);
 				r_cons_printf ("%s\n", opstr);
 				free (opstr);
 			} else r_cons_printf ("%s\n", asmop.buf_asm);
