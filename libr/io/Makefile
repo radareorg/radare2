@@ -7,13 +7,15 @@ OBJS=${STATIC_OBJS}
 OBJS+=io.o plugin.o map.o section.o desc.o cache.o undo.o buffer.o
 
 CFLAGS+=-Wall -DCORELIB
-LDFLAGS+=$(STOP)/zip/librz.a
 
 include ../socket/deps.mk
+#include ../../shlr/zip/deps.mk
+LINK+=../../shlr/zip/zlib/*.o
+LINK+=../../shlr/zip/zip/*.o
 
 .PHONY: pre
 pre: libr_io.${EXT_SO} libr_io.${EXT_AR}
 	@${MAKE} -C p
 
 include ${STATIC_IO_PLUGINS}
-include $(TOP)/libr/rules.mk
+include $(LTOP)/rules.mk

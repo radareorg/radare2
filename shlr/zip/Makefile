@@ -5,13 +5,13 @@ include ../../mk/${COMPILER}.mk
 all: librz.a
 
 LIBAR=librz.a
-librz.a: libr_zip.a
+librz.a: zip/libr_zip.a
 	${CC_AR} zlib/*.o zip/*.o
 
-libr_zip.a: libr_z.a
+zip/libr_zip.a: zlib/libr_z.a
 	${MAKE} -C zip
 
-libr_z.a:
+zlib/libr_z.a:
 	${MAKE} -C zlib
 
 clean:

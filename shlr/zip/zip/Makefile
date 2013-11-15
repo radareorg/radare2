@@ -2,20 +2,29 @@ include ../../../config-user.mk
 include ../../../libr/config.mk
 include ../../../mk/${COMPILER}.mk
 
-## XXX this comes from config.mk?
+ifeq (${OSTYPE},windows)
+EXT_SO=dll
+CFLAGS+=-D_WIN32=1
+SOVER=${EXT_SO}
+LDFLAGS+=-shared
+LDFLAGS_SHARED?=-fPIC -shared
+else
 ifeq (${OSTYPE},darwin)
+EXT_SO=dylib
 SOVER=${EXT_SO}
 LDFLAGS+=-dynamic
 LDFLAGS_SHARED?=-fPIC -shared
- #ifeq (${ARCH},i386)
+# ifeq (${ARCH},i386)
    #CC+=-arch i386 
- #  CC+=-arch x86_64
- #endif
+#   CC+=-arch x86_64
+# endif
 else
 SOVERSION=0
+EXT_SO=so
 SOVER=${EXT_SO}
 LDFLAGS_SHARED?=-fPIC -shared
-LDFLAGS_SHARED+=-Wl,-soname,libr_zip.${EXT_SO}
+LDFLAGS_SHARED+=-Wl,-soname,libr_z.${EXT_SO}
+endif
 endif
 
 
@@ -54,32 +63,27 @@ OBJS=	zip_add.o zip_add_dir.o zip_add_entry.o \
 OFILES=$(OBJS)
 
 #CFLAGS+=-g -ggdb -fPIC
-CFLAGS+=-fPIC
 CFLAGS+=-I../../libr/include -I../include/
-CFLAGS+=-fPIC -Wall
+CFLAGS+=-fPIC
 LDFLAGS+=-L../../../libr/util 
-LINKFLAGS=../libr_z.a
+LINKFLAGS=../zlib/libr_z.a
 #LDFLAGS=-shared
 EXT_SO?=dylib
 LIBNAME=libr_zip.${SOVER}
 
-all: ${LIBNAME} libr_zip.a
+LIBAR=libr_zip.a
+
+all: ${LIBNAME} ${LIBAR}
 
 ${LIBNAME}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo LIB ${LIBNAME}
 endif
 	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS} ${LINKFLAGS}
-	cp -f ${LIBNAME} ../
 
-LIBAR=libr_zip.a
-
-libr_zip.a: ${OFILES}
+${LIBAR}: ${OFILES}
 	${CC_AR} ${OFILES}
-	${RANLIB} libr_zip.a
-	cp -f libr_zip.a ../
+	${RANLIB} ${LIBAR}
 
 clean:
 	rm -f ${LIBNAME} *.o *.a *.d *.${EXT_SO}
-	rm -f ../${LIBNAME} ../*.o ../*.a ../*.d ../*.${EXT_SO}
-

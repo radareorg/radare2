@@ -41,20 +41,17 @@ CFLAGS+=-I../../libr/include -I../include/
 LIBNAME=libr_z.${SOVER}
 LIBAR=libr_z.a
 
-all:  ${LIBNAME} libr_z.a
+all: ${LIBNAME} ${LIBAR}
 
 ${LIBNAME}: ${OBJS}
 ifneq ($(SILENT),)
 	@echo LIB ${LIBNAME}
 endif
 	${CC} ${LDFLAGS} $(LDFLAGS_SHARED) -o $@ ${OBJS}
-	cp ${LIBNAME} ../
 
 libr_z.a: ${OFILES}
 	${CC_AR} ${OFILES}
 	${RANLIB} libr_z.a
-	cp libr_z.a ../
 
 clean:
 	rm -f ${LIBNAME} *.o *.a *.d *.dylib *.so
-	rm -f ../${LIBNAME} ../*.o ../*.a ../*.d ../*.dylib ../*.so

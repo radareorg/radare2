@@ -305,6 +305,7 @@
 #  endif
 #endif
 
+#if 0
 #if defined(WINDOWS) || defined(WIN32)
    /* If building or using zlib as a DLL, define ZLIB_DLL.
     * This is not mandatory, but it offers a little performance increase.
@@ -336,6 +337,7 @@
 #      define ZEXPORTVA FAR CDECL
 #    endif
 #  endif
+#endif
 #endif
 
 #if defined (__BEOS__)

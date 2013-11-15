@@ -15,6 +15,7 @@ LINKFLAGS+=-L../../lib -lr_lib
 LINKFLAGS+=-L../../util -lr_util
 LINKFLAGS+=-L.. -L../../lib -lr_lib -lr_io 
 endif
+#LINKFLAGS+=../../../shlr/zip/librz.a
 
 ${TARGET_ZIP}: ${OBJ_ZIP}
 	${CC_LIB} $(call libname,io_zip) ${CFLAGS} -o ${TARGET_ZIP} ${OBJS} ${LINKFLAGS}
