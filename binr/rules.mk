@@ -27,6 +27,7 @@ LDFLAGS+=-lm
 endif
 endif
 LDFLAGS+=${DL_LIBS}
+LDFLAGS+=${LINK}
 
 #--------------------#
 # Rules for programs #
