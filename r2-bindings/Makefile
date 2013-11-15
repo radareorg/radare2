@@ -63,7 +63,7 @@ chect:
 check-w32:
 	if [ ! -d "${W32PY}/libs" ]; then \
 		wget http://www.python.org/ftp/python/2.7/python-2.7.msi ; \
-		msiexec /i python-2.7.msi ; \
+		msiexec /i python-2.7.msi /qn ; \
 	fi
 
 w32:
@@ -84,6 +84,8 @@ w32dist:
 	# Copy missing libraries
 	-cp -f ${SJLJ} ${DST}
 	-cp -f ${STDC} ${DST}
+	#Copying over libr_*.dll libs as bindings need them in same dir as .py	
+	for a in `find $$PWD/../libr -name libr*.dll | grep -e dll$$`; do cp $$a ${DST} ; done	
 	cd .. ; zip -r $(DSTNAME).zip $(DSTNAME)
 
 .PHONY: w32dist dist w32 check check-w32 vdoc vdoc_pkg
