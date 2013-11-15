@@ -27,6 +27,5 @@ make clean
 
 sudo make install-vapi
 
-#make python CC=i486-mingw32-gcc CXX=i486-mingw32-g++ || exit 1
 make w32 CC=$C CXX=$G || exit 1
 make w32dist
