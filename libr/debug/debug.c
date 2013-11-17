@@ -72,6 +72,7 @@ R_API struct r_debug_t *r_debug_free(struct r_debug_t *dbg) {
 	//r_bp_free(&dbg->bp);
 	//r_reg_free(&dbg->reg);
 	//r_debug_plugin_free();
+	r_debug_trace_free (dbg);
 	r_graph_free (dbg->graph);
 	free (dbg);
 	return NULL;
