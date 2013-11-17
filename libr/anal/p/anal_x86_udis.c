@@ -61,7 +61,7 @@ static const char* ud_reg_tab[] =
   "rip"
 };
 
-static int getarg(char *src, struct ud *u, int idx) {
+static int getarg(char *src, struct ud *u, st64 mask, int idx) {
 	ud_operand_t *op = &u->operand[idx];
 	st64 n;
 	src[0] = 0;
@@ -75,13 +75,13 @@ static int getarg(char *src, struct ud *u, int idx) {
 			n += u->pc;
 		}
 		if (n>=0 && n<256)
-			sprintf (src, "%"PFMT64d, n);
-		else sprintf (src, "0x%"PFMT64x, n);
+			sprintf (src, "%"PFMT64d, n & mask);
+		else sprintf (src, "0x%"PFMT64x, n & mask);
 		break;
 	case UD_OP_REG:
 		idx = op->base-UD_R_AL;
 		if (idx>=0 && idx<UD_REG_TAB_SIZE)
-			strcpy (src, ud_reg_tab[op->base - UD_R_AL]);
+			strcpy (src, ud_reg_tab[idx]);
 		break;
 	case UD_OP_MEM:
 		n = getval (op);
@@ -90,10 +90,26 @@ static int getarg(char *src, struct ud *u, int idx) {
 			idx = op->base-UD_R_AL;
 			if (idx>=0 && idx<UD_REG_TAB_SIZE) {
 				if (u->mnemonic == UD_Ilea)
-					sprintf (src, "%s+%d", ud_reg_tab[idx], 0);
-				else sprintf (src, "[%s+%d]", ud_reg_tab[idx], (int)n);
+					sprintf (src, "%s", ud_reg_tab[idx]);
+				else sprintf (src, "[%s", ud_reg_tab[idx]);
+
+                                src += strlen (src);
+                                if (op->index != UD_NONE) {
+                                        idx = op->index - UD_R_AL;
+                                        if (idx >= 0 && idx < UD_REG_TAB_SIZE)
+                                                sprintf (src, "+%d*%s", op->scale, ud_reg_tab[idx]);
+
+                                        src += strlen (src);
+                                }
+                                if (u->mnemonic == UD_Ilea)
+					sprintf (src, "%+d", 0);
+				else if (n >= -256 && n < 256)
+					sprintf (src, "%+d]", (int) n);
+				else
+					sprintf (src, "+0x%"PFMT64x"]", mask & n);
 			}
 		}
+                else sprintf (src, "[0x%"PFMT64x"]", n & mask);
 		break;
 	default:
 		break;
@@ -121,10 +137,11 @@ default:
 int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const char *pc = anal->bits==64? "rip": anal->bits==32? "eip": "ip";
 	const char *sp = anal->bits==64? "rsp": anal->bits==32? "esp": "sp";
+        const char *bp = anal->bits==64? "rbp": anal->bits==32? "ebp": "bp";
 	int oplen, regsz = 4;
 	char str[64], src[32], dst[32];
 	struct ud u;
-	ut64 n;
+	ut64 n, biggest;
 
 	switch (anal->bits) {
 	case 64: regsz = 8; break;
@@ -132,6 +149,8 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	default:
 	case 32: regsz = 4; break;
 	}
+
+	biggest  = (1LL << anal->bits) - 1;
 	ud_init (&u);
 	ud_set_pc (&u, addr);
 	ud_set_mode (&u, anal->bits);
@@ -147,69 +166,234 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	op->esil[0] = 0;
 	if (anal->decode) {
 		switch (u.mnemonic) {
-		case UD_Ijz: // TODO: carry flag
-			getarg (src, &u, 0);
-			sprintf (op->esil, "?zf,%s=%s", pc, src);
+                        /* FIXME: src should be named dst and vice-versa */
+                        /* Jump if [not] overflow */
+		case UD_Ijo:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?of,%s=%s", pc, src);
 			break;
-		case UD_Ijnz: // TODO: carry flag
-			getarg (src, &u, 0);
-			sprintf (op->esil, "?!zf,%s=%s", pc, src);
+		case UD_Ijno:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?!of,%s=%s", pc, src);
 			break;
-		case UD_Ijmp: // TODO: carry flag
-			getarg (src, &u, 0);
-			sprintf (op->esil, "%s=%s", pc, src);
+
+                        /* Jump if [not] below */
+		case UD_Ijb:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?cf,%s=%s", pc, src);
 			break;
-		case UD_Icall: // TODO: carry flag
-			getarg (src, &u, 0);
-			sprintf (op->esil, "%s-=%d,%d[%s]=%s,%s=%s",
+		case UD_Ijae:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?!cf,%s=%s", pc, src);
+			break;
+
+                        /* Jump if [not] equal */
+		case UD_Ijz:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?zf,%s=%s", pc, src);
+			break;
+		case UD_Ijnz:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?!zf,%s=%s", pc, src);
+			break;
+
+                        /* Jump if [not] above */
+		case UD_Ija:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?!cf&!zf,%s=%s", pc, src);
+			break;
+		case UD_Ijbe:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?cf&zf,%s=%s", pc, src);
+			break;
+
+                        /* Jump if [not] signed */
+		case UD_Ijs:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?sf,%s=%s", pc, src);
+			break;
+		case UD_Ijns:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?!sf,%s=%s", pc, src);
+			break;
+
+                        /* Jump if [not] parity */
+		case UD_Ijp:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?pf,%s=%s", pc, src);
+			break;
+		case UD_Ijnp: // TODO: carry flag
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?!pf,%s=%s", pc, src);
+			break;
+
+                        /* Jump if [not] lesser */
+		case UD_Ijl:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?sf^of,%s=%s", pc, src);
+			break;
+		case UD_Ijge: // TODO: carry flag
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?sf^!of,%s=%s", pc, src);
+			break;
+
+                        /* Jump if [not] greater */
+		case UD_Ijle:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?(sf^of)|zf,%s=%s", pc, src);
+			break;
+		case UD_Ijg: // TODO: carry flag
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?(sf^!of)&!zf,%s=%s", pc, src);
+			break;
+
+                        /* Jump if [re]cx == 0 */
+		case UD_Ijcxz:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?cx==0,%s=%s", pc, src);
+			break;
+		case UD_Ijecxz:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?ecx==0,%s=%s", pc, src);
+			break;
+                case UD_Ijrcxz:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "?rcx==0,%s=%s", pc, src);
+			break;
+		case UD_Ijmp:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "%s=%s", pc, src);
+			break;
+		case UD_Icall:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "%s-=%d,%d[%s]=%s,%s=%s",
 				sp, regsz, regsz, sp, pc, pc, src);
 			break;
-		case UD_Ishl: // TODO: carry flag
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s<<=%s", src, dst);
+		case UD_Ishl:
+                        /* TOTHINK: should we define a syntax for grouping instructions? */
+                        /* FIXME: this is not totally accurate. According to the Intel Software
+                           Developer's Manual, flags shall remain unchanged if the shift count
+                           is zero. */
+                        /* FIXME: this could be a good expression for this instruction:
+                           "cf=%s&(1<<%d-%s),%s<<=%s,zf=%s==0,sf=%s&0x%"PFMT64x"!=0
+                           However, the esil buffer is far from being that big. We need either make
+                           de esil buffer bigger, or make it dynamic */
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "cf=%s&(1<<%d-%s),%s<<=%s,zf=%s==0", src, regsz * 8, dst, src, dst, src);
 			break;
-		case UD_Ishr: // TODO: carry flag
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s>>=%s", src, dst);
+		case UD_Ishr:
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+                        snprintf (op->esil, sizeof (op->esil) - 3, "cf=%s&(1<<%s),%s>>=%s,zf=%s==0", src, dst, src, dst, src);
 			break;
-		case UD_Iadd: // TODO: carry flag
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s+=%s", src, dst);
+		case UD_Irol:
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "cf=%s&(1<<%d-%s),%s<<<=%s,zf=%s==0", src, regsz * 8, dst, src, dst, src);
 			break;
-		case UD_Isub: // TODO: below flag
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s-=%s", src, dst);
+		case UD_Iror:
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+                        snprintf (op->esil, sizeof (op->esil) - 3, "cf=%s&(1<<%s),%s>>>=%s,zf=%s==0", src, dst, src, dst, src);
 			break;
-		case UD_Iand:
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s&=%s", src, dst);
+		case UD_Iadd:
+                        /*
+                          OV = (!((SRC^DST) >> bits) & ((SRC + DST) ^ SRC) >> bits)
+                        */
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "cf=(%s+%s)<%s|(%s+%s)<%s,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", src, dst, src, src, dst, dst, src, dst, anal->bits - 1, src, dst, dst, anal->bits - 1, src, dst, src, src, anal->bits - 1);
+			break;
+                case UD_Iinc:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "of=(%s^(%s+1))>>%d,%s++,zf=%s==0,sf=%s>>%d", src, src, anal->bits - 1, src, src, src, anal->bits - 1);
+			break;
+		case UD_Isub:
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "cf=%s<%s,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s-=%s,zf=%s==0,sf=%s>>%d", src, dst, src, dst, anal->bits - 1, src, dst, dst, anal->bits - 1, src, dst, src, src, anal->bits - 1);
+			break;
+                case UD_Idec:
+			getarg (src, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "of=(%s^(%s-1))>>%d,%s--,zf=%s==0,sf=%s>>%d", src, src, anal->bits - 1, src, src, src, anal->bits - 1);
+			break;
+                case UD_Icmp:
+                        /* According to the ESIL wiki page, cmp translates to zf=eax?123, but this is not exactly
+                           what we want. Cmp does a lot of stuff in addition to setting zf to 0 or 1 */
+                        /* Also, the full description of CMP operation doesn't fit in op->esil */
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "cf=%s-%s>0x%"PFMT64x",zf=%s==%s", src, dst, biggest, src, dst);
+			break;
+                case UD_Iimul:
+                        /* FIXME: what happens with the one and three-operand forms? */
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "cf=%s>0x%"PFMT64x"&%s>0x%"PFMT64x",%s*=%s",
+                                 dst, biggest >> (anal->bits >> 1), src, biggest >> (anal->bits >> 1),
+                                 dst, src);
+			break;
+                case UD_Ixor:
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "%s^=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", src, dst, src, src, anal->bits - 1);
+			break;
+                case UD_Ior:
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "%s|=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", src, dst, src, src, anal->bits - 1);
+			break;
+                case UD_Iand:
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "%s&=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", src, dst, src, src, anal->bits - 1);
+			break;
+                case UD_Itest:
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "zf=%s&%s==0,sf=%s>>%d,cf=0,of=0", src, dst, src, anal->bits - 1);
 			break;
 		case UD_Isyscall:
 			strcpy (op->esil, "$");
 			break;
 		case UD_Iint:
 			n = getval (&u.operand[0]);
-			sprintf (op->esil, "$0x%"PFMT64x",%s+=%d", n, pc, oplen);
+			snprintf (op->esil, sizeof (op->esil) - 3, "$0x%"PFMT64x",%s+=%d", n, pc, oplen);
 			break;
 		case UD_Ilea:
 		case UD_Imov:
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s=%s,%s+=%d", src, dst, pc, oplen);
+			getarg (src, &u, biggest, 0);
+			getarg (dst, &u, biggest, 1);
+			snprintf (op->esil, sizeof (op->esil) - 3, "%s=%s,%s+=%d", src, dst, pc, oplen);
 			break;
 		case UD_Ipush:
-			getarg (str, &u, 0);
-			sprintf (op->esil, "%s-=%d,%d[%s]=%s,%s+=%d",
+			getarg (str, &u, biggest, 0);
+			snprintf (op->esil, sizeof (op->esil) - 3, "%s-=%d,%d[%s]=%s,%s+=%d",
 				sp, regsz, regsz, sp, str, pc, oplen);
 			break;
+                case UD_Ipop:
+                        getarg (dst, &u, biggest, 0);
+                        snprintf (op->esil, sizeof (op->esil) - 3, "%s=%d[%s],%s+=%d,%s+=%d",
+                                 dst, regsz, sp, sp, regsz, pc, oplen);
+                        break;
+                case UD_Ileave:
+                        getarg (dst, &u, biggest, 0);
+                        snprintf (op->esil, sizeof (op->esil) - 3, "%s=%s,%s=%d[%s],%s+=%d,%s+=%d",
+                                 sp, bp, dst, regsz, sp, sp, regsz, pc, oplen);
+                        break;
+                case UD_Iret:
+                        snprintf (op->esil, sizeof (op->esil) - 3, "%s=%d[%s],%s+=%d",
+                                 pc, regsz, sp, sp, regsz);
+                        break;
+                case UD_Inop:
+                        strcpy (op->esil, ",");
+                        break;
 		default:
 			break;
 		}
+                if (op->esil[sizeof (op->esil) - 5])
+                        strcpy (op->esil + sizeof (op->esil) - 4, "...");
 	}
 
 	switch (u.mnemonic) {
