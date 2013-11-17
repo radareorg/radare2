@@ -56,9 +56,16 @@ R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b) {
 }
 
 R_API RIO *r_io_free(RIO *io) {
+	struct list_head *pos, *n;
 	if (!io) return NULL;
 	/* TODO: properly free inner nfo */
 	/* TODO: memory leaks */
+	list_for_each_safe (pos, n, &io->io_list) {
+		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
+		R_FREE (il->plugin);
+		list_del (pos);
+		R_FREE (il);
+	}
 	r_list_free (io->sections);
 	r_list_free (io->maps);
 	r_cache_free (io->buffer);
