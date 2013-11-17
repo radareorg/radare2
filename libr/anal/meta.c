@@ -15,7 +15,6 @@ R_API RMeta *r_meta_new() {
 
 R_API void r_meta_free(RMeta *m) {
 	r_list_free (m->data);
-	/* TODO: memory leak */
 	free (m);
 }
 
