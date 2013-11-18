@@ -27,9 +27,14 @@ R_API RCmd *r_cmd_new () {
 }
 
 R_API RCmd *r_cmd_free(RCmd *cmd) {
+	int i;
 	if (!cmd) return NULL;
 	r_cmd_alias_free (cmd);
 	r_list_free (cmd->plist);
+	r_list_free (cmd->lcmds);
+	for (i=0;i<255;i++)
+		if (cmd->cmds[i])
+			R_FREE (cmd->cmds[i]);
 	free (cmd);
 	return NULL;
 }

@@ -19,7 +19,7 @@ R_API int r_cmd_plugin_init(struct r_cmd_t *cmd) {
 	int i;
 	RCmdPlugin *static_plugin;
 
-	cmd->plist = r_list_new ();
+	cmd->plist = r_list_newf (free);
 	for (i=0; cmd_static_plugins[i]; i++) {
 		static_plugin = R_NEW (RCmdPlugin);
 		memcpy (static_plugin, cmd_static_plugins[i], sizeof (RCmdPlugin));
