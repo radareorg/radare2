@@ -68,7 +68,9 @@ R_API RIO *r_io_free(RIO *io) {
 	}
 	r_list_free (io->sections);
 	r_list_free (io->maps);
+	r_list_free (io->undo.w_list);
 	r_cache_free (io->buffer);
+	r_list_free (io->cache);
 	r_io_desc_fini (io);
 	free (io);
 	return NULL;
