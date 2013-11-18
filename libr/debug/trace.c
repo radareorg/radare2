@@ -16,6 +16,7 @@ R_API void r_debug_trace_free (RDebug *dbg) {
 	if (dbg->trace == NULL)
 		return;
 	r_list_destroy (dbg->trace->traces);
+	free (dbg->trace->traces);
 	free (dbg->trace);
 	dbg->trace = NULL;
 }
