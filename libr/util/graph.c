@@ -86,6 +86,7 @@ R_API RGraph* r_graph_new () {
 R_API void r_graph_free (RGraph* t) {
 	r_list_free (t->nodes);
 	r_list_free (t->path);
+	r_lust_free (t->roots);
 	free (t);
 }
 
