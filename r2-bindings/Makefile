@@ -91,7 +91,7 @@ dist:
 	FILES=`git ls-files | sed -e s,^,r2-bindings-${VERSION}/,` ; \
 	CXXFILES=`cd .. ; find r2-bindings | grep -e cxx$$ -e py$$ | sed -e "s,r2-bindings/,$${PKG}/,"` ; \
 	cd .. && mv $${DIR} $${PKG} && \
-	echo $$FILES "dist.."; \
+	echo $$FILES ; \
 	${TAR} $${PKG}.tar.xz $${FILES} $${CXXFILES} ; \
 	mv $${PKG} $${DIR}
 
