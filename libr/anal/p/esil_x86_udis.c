@@ -7,7 +7,7 @@
 
 #include "udis86/types.h"
 #include "udis86/extern.h"
-#include "udis86/esil.h"
+#include "esil.h"
 
 
 UDIS86_ESIL (nop,   ",");
@@ -35,7 +35,7 @@ UDIS86_ESIL (call,  "%s-=%d,%d[%s]=%s,%s=%s", info->sp, info->regsz, info->regsz
 UDIS86_ESIL (shl,   "cf=%s&(1<<%d-%s),%s<<=%s,zf=%s==0", dst, info->regsz * 8, src, dst, src, dst);
 UDIS86_ESIL (rol,   "cf=%s&(1<<%s),%s>>=%s,zf=%s==0", dst, src, dst, src, dst);
 UDIS86_ESIL (ror,   "cf=%s&(1<<%d-%s),%s<<<=%s,zf=%s==0", dst, info->regsz * 8, src, dst, src, dst);
-UDIS86_ESIL (add,   "cf=(%s+%s)<%s|(%s+%s)<%s,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, dst, dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
+UDIS86_ESIL (add,   "cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
 UDIS86_ESIL (inc,   "of=(%s^(%s+1))>>%d,%s++,zf=%s==0,sf=%s>>%d", dst, dst, info->bits - 1, dst, dst, dst, info->bits - 1);
 UDIS86_ESIL (sub,   "cf=%s<%s,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s-=%s,zf=%s==0,sf=%s>>%d", dst, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
 UDIS86_ESIL (dec,   "of=(%s^(%s-1))>>%d,%s--,zf=%s==0,sf=%s>>%d", dst, dst, info->bits - 1, dst, dst, dst, info->bits - 1);
