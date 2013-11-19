@@ -56,7 +56,7 @@ supported.langs:
 	CC=${CC} CXX=${CXX} sh check-langs.sh force-all
 endif
 
-chect:
+check:
 	rm -f supported.langs
 	${MAKE} supported.langs
 
@@ -71,8 +71,6 @@ w32:
 
 DSTNAME=radare2-bindings-w32-$(VERSION)
 DST=../$(DSTNAME)/Python27/Lib/site-packages/r2
-SJLJ=/usr/i486-mingw32/bin/libgcc_s_sjlj-1.dll
-STDC=/usr/i486-mingw32/bin/libstdc++-6.dll
 
 w32dist:
 	rm -rf ../${DSTNAME}
@@ -81,9 +79,6 @@ w32dist:
 	cp -f python/r_*.py ${DST}
 	:> ${DST}/__init__.py
 	cd ${DST} ; for a in *.dll ; do mv $$a `echo $$a | sed -e s,dll,pyd,g` ; done
-	# Copy missing libraries
-	-cp -f ${SJLJ} ${DST}
-	-cp -f ${STDC} ${DST}
 	#Copying over libr_*.dll libs as bindings need them in same dir as .py	
 	for a in `find $$PWD/../libr -name libr*.dll | grep -e dll$$`; do cp $$a ${DST} ; done	
 	cd .. ; zip -r $(DSTNAME).zip $(DSTNAME)
@@ -96,7 +91,7 @@ dist:
 	FILES=`git ls-files | sed -e s,^,r2-bindings-${VERSION}/,` ; \
 	CXXFILES=`cd .. ; find r2-bindings | grep -e cxx$$ -e py$$ | sed -e "s,r2-bindings/,$${PKG}/,"` ; \
 	cd .. && mv $${DIR} $${PKG} && \
-	echo $$FILES ; \
+	echo $$FILES "dist.."; \
 	${TAR} $${PKG}.tar.xz $${FILES} $${CXXFILES} ; \
 	mv $${PKG} $${DIR}
 
