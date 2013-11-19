@@ -7,7 +7,7 @@
 
 #include "udis86/types.h"
 #include "udis86/extern.h"
-#include "udis86/esil.h"
+#include "esil.h"
 
 static st64 getval(ud_operand_t *op);
 // XXX Copypasta from udis
