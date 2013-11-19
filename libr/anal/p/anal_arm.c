@@ -93,10 +93,13 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->jump = addr+4+(delta<<1);
 		op->fail = addr+4;
 		op->eob = 1;
-        } else if ( (ins & B4(B1111,B1111,0,0)) == B4(B0100,B0111,0,0) ) {
+        } else if ( (ins & B4(B1111,B1111,B1000,0)) == B4(B0100,B0111,B1000,0) ) {
 		// BLX
 		op->type = R_ANAL_OP_TYPE_UCALL;
-		op->jump = addr+4+(ut32)((ins & B4(0,0,B0111,B1000)) >> 3);
+		op->fail = addr+4;
+        } else if ( (ins & B4(B1111,B1111,B1000,0)) == B4(B0100,B0111,0,0) ) {
+		// BX
+		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->fail = addr+4;
         } else if ( (ins & B4(B1111,B1000,0,0)) == B4(B1111,0,0,0) ) {
 		// BL The long branch with link, it's in 2 instructions:

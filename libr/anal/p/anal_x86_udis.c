@@ -7,6 +7,7 @@
 
 #include "udis86/types.h"
 #include "udis86/extern.h"
+#include "esil.h"
 
 static st64 getval(ud_operand_t *op);
 // XXX Copypasta from udis
@@ -61,7 +62,7 @@ static const char* ud_reg_tab[] =
   "rip"
 };
 
-static int getarg(char *src, struct ud *u, int idx) {
+static int getarg(char *src, struct ud *u, st64 mask, int idx) {
 	ud_operand_t *op = &u->operand[idx];
 	st64 n;
 	src[0] = 0;
@@ -75,13 +76,13 @@ static int getarg(char *src, struct ud *u, int idx) {
 			n += u->pc;
 		}
 		if (n>=0 && n<256)
-			sprintf (src, "%"PFMT64d, n);
-		else sprintf (src, "0x%"PFMT64x, n);
+			sprintf (src, "%"PFMT64d, n & mask);
+		else sprintf (src, "0x%"PFMT64x, n & mask);
 		break;
 	case UD_OP_REG:
 		idx = op->base-UD_R_AL;
 		if (idx>=0 && idx<UD_REG_TAB_SIZE)
-			strcpy (src, ud_reg_tab[op->base - UD_R_AL]);
+			strcpy (src, ud_reg_tab[idx]);
 		break;
 	case UD_OP_MEM:
 		n = getval (op);
@@ -90,10 +91,26 @@ static int getarg(char *src, struct ud *u, int idx) {
 			idx = op->base-UD_R_AL;
 			if (idx>=0 && idx<UD_REG_TAB_SIZE) {
 				if (u->mnemonic == UD_Ilea)
-					sprintf (src, "%s+%d", ud_reg_tab[idx], 0);
-				else sprintf (src, "[%s+%d]", ud_reg_tab[idx], (int)n);
+					sprintf (src, "%s", ud_reg_tab[idx]);
+				else sprintf (src, "[%s", ud_reg_tab[idx]);
+
+                                src += strlen (src);
+                                if (op->index != UD_NONE) {
+                                        idx = op->index - UD_R_AL;
+                                        if (idx >= 0 && idx < UD_REG_TAB_SIZE)
+                                                sprintf (src, "+%d*%s", op->scale, ud_reg_tab[idx]);
+
+                                        src += strlen (src);
+                                }
+                                if (u->mnemonic == UD_Ilea)
+					sprintf (src, "%+d", 0);
+				else if (n >= -256 && n < 256)
+					sprintf (src, "%+d]", (int) n);
+				else
+					sprintf (src, "+0x%"PFMT64x"]", mask & n);
 			}
 		}
+                else sprintf (src, "[0x%"PFMT64x"]", n & mask);
 		break;
 	default:
 		break;
@@ -121,17 +138,19 @@ default:
 int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const char *pc = anal->bits==64? "rip": anal->bits==32? "eip": "ip";
 	const char *sp = anal->bits==64? "rsp": anal->bits==32? "esp": "sp";
+        const char *bp = anal->bits==64? "rbp": anal->bits==32? "ebp": "bp";
 	int oplen, regsz = 4;
 	char str[64], src[32], dst[32];
 	struct ud u;
-	ut64 n;
-
 	switch (anal->bits) {
 	case 64: regsz = 8; break;
 	case 16: regsz = 2; break;
 	default:
 	case 32: regsz = 4; break;
 	}
+
+	UDis86Esil *handler;
+	UDis86OPInfo info = {0, anal->bits, (1LL << anal->bits) - 1, regsz, 0, pc, sp, bp};
 	ud_init (&u);
 	ud_set_pc (&u, addr);
 	ud_set_mode (&u, anal->bits);
@@ -145,72 +164,26 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	oplen = op->length = ud_insn_len (&u);
 
 	op->esil[0] = 0;
-	if (anal->decode) {
-		switch (u.mnemonic) {
-		case UD_Ijz: // TODO: carry flag
-			getarg (src, &u, 0);
-			sprintf (op->esil, "?zf,%s=%s", pc, src);
-			break;
-		case UD_Ijnz: // TODO: carry flag
-			getarg (src, &u, 0);
-			sprintf (op->esil, "?!zf,%s=%s", pc, src);
-			break;
-		case UD_Ijmp: // TODO: carry flag
-			getarg (src, &u, 0);
-			sprintf (op->esil, "%s=%s", pc, src);
-			break;
-		case UD_Icall: // TODO: carry flag
-			getarg (src, &u, 0);
-			sprintf (op->esil, "%s-=%d,%d[%s]=%s,%s=%s",
-				sp, regsz, regsz, sp, pc, pc, src);
-			break;
-		case UD_Ishl: // TODO: carry flag
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s<<=%s", src, dst);
-			break;
-		case UD_Ishr: // TODO: carry flag
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s>>=%s", src, dst);
-			break;
-		case UD_Iadd: // TODO: carry flag
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s+=%s", src, dst);
-			break;
-		case UD_Isub: // TODO: below flag
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s-=%s", src, dst);
-			break;
-		case UD_Iand:
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s&=%s", src, dst);
-			break;
-		case UD_Isyscall:
-			strcpy (op->esil, "$");
-			break;
-		case UD_Iint:
-			n = getval (&u.operand[0]);
-			sprintf (op->esil, "$0x%"PFMT64x",%s+=%d", n, pc, oplen);
-			break;
-		case UD_Ilea:
-		case UD_Imov:
-			getarg (src, &u, 0);
-			getarg (dst, &u, 1);
-			sprintf (op->esil, "%s=%s,%s+=%d", src, dst, pc, oplen);
-			break;
-		case UD_Ipush:
-			getarg (str, &u, 0);
-			sprintf (op->esil, "%s-=%d,%d[%s]=%s,%s+=%d",
-				sp, regsz, regsz, sp, str, pc, oplen);
-			break;
-		default:
-			break;
+	if (anal->decode)
+		if ((handler = udis86_esil_get_handler (u.mnemonic)) != NULL)
+		{
+			info.oplen = oplen;
+			if (handler->argc > 0)
+			{
+				info.n = getval (u.operand);
+				getarg (dst, &u, info.bitmask, 0);
+				if (handler->argc > 1)
+				{
+					getarg (src, &u, info.bitmask, 1);
+					if (handler->argc > 2)
+						getarg (str, &u, info.bitmask, 2);
+				}
+			}
+
+			handler->callback (&info, op, dst, src, str);
+			if (op->esil[sizeof (op->esil) - 5])
+				strcpy (op->esil + sizeof (op->esil) - 4, "...");
 		}
-	}
 
 	switch (u.mnemonic) {
 	case UD_Itest:

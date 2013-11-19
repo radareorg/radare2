@@ -92,7 +92,6 @@ static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode
 		}
 		if (mal->buf != NULL) {
 			RETURN_IO_DESC_NEW(&r_io_plugin_malloc, mal->fd, pathname, rw, mode,mal);
-
 			//return r_io_desc_new (&r_io_plugin_malloc, mal->fd, pathname, rw, mode, mal);
 		}
 		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9,

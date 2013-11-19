@@ -373,12 +373,41 @@ static int cmd_print(void *data, const char *input) {
 		len = core->blocksize;
 	switch (*input) {
 	case 'w':
-		{
-		char *cwd = r_sys_getdir ();
-		if (cwd) {
-			eprintf ("%s\n", cwd);
-			free (cwd);
-		}
+		if (input[1]=='n') {
+			int i, n = r_num_rand (10);
+			ut64 num, base = r_num_get (core->num, "entry0");
+			if (!base) base = 0x8048000;
+			eprintf ("[+] Analyzing code starting at 0x%08"PFMT64x"...\n", base);
+			r_sys_sleep (3);
+			eprintf ("[+] Looking for vulnerabilities...\n");
+			r_sys_sleep (3);
+			eprintf ("[+] Found %d bugs...\n", n);
+			for (i=0; i<n; i++) {
+				eprintf ("[+] Deeply analyzing bug %d at 0x%08"PFMT64x"...\n",
+					i, base+r_num_rand (0xffff));
+				r_sys_sleep (1);
+			}
+			eprintf ("[+] Finding ROP gadgets...\n");
+			n = r_num_rand (0x20);
+			num = base;
+			for (i=0; i<n; i++) {
+				num += r_num_rand (0xfff);
+				eprintf (" * 0x%08"PFMT64x" %d : %02x %02x ..\n",
+					num, r_num_rand (10),
+					r_num_rand (0xff), r_num_rand (0xff));
+				r_sys_sleep (r_num_rand (2));
+			}
+			eprintf ("[+] Cooking the shellcode...\n");
+			r_sys_sleep (4);
+			eprintf ("[+] Launching the exploit...\n");
+			r_sys_sleep (1);
+			r_sys_cmd ("sh");
+		} else {
+			char *cwd = r_sys_getdir ();
+			if (cwd) {
+				eprintf ("%s\n", cwd);
+				free (cwd);
+			}
 		}
 		break;
 	case 'v':

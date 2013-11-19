@@ -94,7 +94,8 @@ R_API void r_anal_free(RAnal *anal) {
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
 	r_list_free (anal->refs);
 	r_list_free (anal->types);
-	r_list_free (anal->meta->data);
+	r_list_free (anal->hints);
+	r_meta_free (anal->meta);
 	r_reg_free(anal->reg);
 	r_syscall_free(anal->syscall);
 	r_anal_op_free(anal->queued);

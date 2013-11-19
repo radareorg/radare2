@@ -101,8 +101,8 @@ R_API RLib *r_lib_new(const char *symname) {
 	RLib *lib = R_NEW (RLib);
 	if (lib) {
 		__has_debug = r_sys_getenv ("R_DEBUG")?R_TRUE:R_FALSE;
-		lib->handlers = r_list_new ();
-		lib->plugins = r_list_new ();
+		lib->handlers = r_list_newf (free);
+		lib->plugins = r_list_newf (free);
 		strncpy (lib->symname, symname, sizeof (lib->symname)-1);
 	}
 	return lib;
@@ -110,9 +110,9 @@ R_API RLib *r_lib_new(const char *symname) {
 
 R_API RLib *r_lib_free(RLib *lib) {
 	if (!lib) return NULL;
-	/* TODO: iterate over libraries and free them all */
-	/* TODO: iterate over handlers and free them all */
 	r_lib_close (lib, NULL);
+	r_list_free (lib->handlers);
+	r_list_free (lib->plugins);
 	free (lib);
 	return NULL;
 }
@@ -152,7 +152,6 @@ R_API R_API int r_lib_close(RLib *lib, const char *file) {
 			int ret = p->handler->destructor (p, p->handler->user, p->data);
 			free (p->file);
 			r_list_delete (lib->plugins, iter);
-			free (p);
 			return ret;
 		}
 	}
