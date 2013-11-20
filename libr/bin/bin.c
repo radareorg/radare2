@@ -711,6 +711,17 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 	return bin->cur.offset;
 }
 
+R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
+	RBinPlugin *cp = bin->cur.curplugin;
+	if(cp && cp->get_vaddr)
+	    return cp->get_vaddr (baddr, paddr, vaddr);
+
+	ut32 delta;
+	if (!baddr) return vaddr;
+ 	delta = (paddr & 0xfffff000) | (vaddr & 0xfff);
+	return baddr + delta;
+}
+
 R_API ut64 r_bin_get_size (RBin *bin) {
 	return bin->cur.o->size;
 }

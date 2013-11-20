@@ -2,13 +2,6 @@
 
 #include <r_core.h>
 
-static ut64 get_vaddr (ut64 baddr, ut64 paddr, ut64 vaddr) {
-	ut32 delta;
-	if (!baddr) return vaddr;
- 	delta = (paddr & 0xfffff000) | (vaddr & 0xfff);
-	return baddr + delta;
-}
-
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	char *p, *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
@@ -40,7 +33,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	if ((mode & R_CORE_BIN_JSON)) {
 		r_cons_printf ("[");
 		r_list_foreach (list, iter, string) {
-			ut64 addr = va? get_vaddr (baddr, string->rva,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, string->rva,
 				string->offset): string->offset;
 			q = strdup (string->string);
 			//r_name_filter (str, 128);
@@ -54,7 +47,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (list, iter, string) {
-			ut64 addr = va? get_vaddr (baddr, string->rva,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, string->rva,
 				string->offset): string->offset;
 			r_cons_printf ("%"PFMT64d" %d %s\n", 
 				addr, string->size, string->string);
@@ -323,7 +316,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 		r_cons_printf ("[");
 		r_list_foreach (entries, iter, entry) {
 			ut64 paddr = entry->offset;
-			ut64 vaddr = get_vaddr (baddr, paddr, entry->rva);
+			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->rva);
 			r_cons_printf ("%s%"PFMT64d,
 					iter->p?",":"",
 				va?vaddr: paddr);
@@ -333,14 +326,14 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 	if (mode & R_CORE_BIN_SIMPLE) {
 		r_list_foreach (entries, iter, entry) {
 			ut64 paddr = entry->offset;
-			ut64 vaddr = get_vaddr (baddr, paddr, entry->rva);
+			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->rva);
 			r_cons_printf ("0x%08"PFMT64x"\n", va?vaddr: paddr); 
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		r_list_foreach (entries, iter, entry) {
 			ut64 paddr = entry->offset;
-			ut64 vaddr = get_vaddr (baddr, paddr, entry->rva);
+			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->rva);
 			snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i++);
 			r_flag_set (r->flags, str, va? vaddr: paddr, 
 				r->blocksize, 0);
@@ -354,7 +347,7 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 
 		r_list_foreach (entries, iter, entry) {
 			ut64 paddr = entry->offset;
-			ut64 vaddr = get_vaddr (baddr, paddr, entry->rva);
+			ut64 vaddr = r_bin_get_vaddr (r->bin, baddr, paddr, entry->rva);
 			if (mode) {
 				r_cons_printf ("f entry%i @ 0x%08"PFMT64x"\n",
 					i, va?vaddr: paddr);
@@ -492,7 +485,7 @@ static ut64 impaddr(RBin *bin, int va, ut64 baddr, const char *name) {
 		if (strncmp (symbol->name, "imp.", 4))
 			continue;
 		if (!strcmp (symbol->name+4, name))
-			return va? get_vaddr (baddr, symbol->offset,
+			return va? r_bin_get_vaddr (bin, baddr, symbol->offset,
 				symbol->rva): symbol->offset;
 	}
 	return 0;
@@ -591,7 +584,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 addr = va? get_vaddr (baddr, symbol->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->offset,
 				symbol->rva): symbol->offset;
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"size\":%"PFMT64d","
@@ -602,7 +595,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 addr = va? get_vaddr (baddr, symbol->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->offset,
 				symbol->rva): symbol->offset;
 			char *name = strdup (symbol->name);
 			r_name_filter (name, 80);
@@ -615,7 +608,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 		char *name, *dname;
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 addr = va? get_vaddr (baddr, symbol->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->offset,
 				symbol->rva): symbol->offset;
 			name = strdup (symbol->name);
 			r_name_filter (name, 80);
@@ -640,7 +633,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 		}
 
 		r_list_foreach (symbols, iter, symbol) {
-			ut64 addr = va? get_vaddr (baddr, symbol->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->offset,
 				symbol->rva): symbol->offset;
 			if (name && strcmp (symbol->name, name))
 				continue;
@@ -690,7 +683,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (sections, iter, section) {
-			ut64 addr = va? get_vaddr (baddr, section->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->offset,
 				section->rva): section->offset;
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"size\":%"PFMT64d","
@@ -705,7 +698,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (sections, iter, section) {
-			ut64 addr = va? get_vaddr (baddr, section->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->offset,
 				section->rva): section->offset;
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x" %s %s\n",
 				addr, addr + section->size,
@@ -717,7 +710,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 		RBinInfo *info = r_bin_get_info (r->bin);
 		r_flag_space_set (r->flags, "sections");
 		r_list_foreach (sections, iter, section) {
-			ut64 addr = va? get_vaddr (baddr, section->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->offset,
 				section->rva): section->offset;
 			if (!secbase || (section->rva && section->rva <secbase)) // ??
 				secbase = section->rva;
@@ -760,7 +753,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 		if (!at) r_cons_printf (mode? "fs sections\n": "[Sections]\n");
 
 		r_list_foreach (sections, iter, section) {
-			ut64 addr = va? get_vaddr (baddr, section->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, section->offset,
 				section->rva): section->offset;
 			if (name && strcmp (section->name, name))
 				continue;
@@ -833,7 +826,7 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 	if (mode & R_CORE_BIN_JSON) {
 		r_cons_printf ("[");
 		r_list_foreach (fields, iter, field) {
-			ut64 addr = va? get_vaddr (baddr, field->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, field->offset,
 				field->rva): field->offset;
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"offset\":%"PFMT64d"}",
@@ -850,7 +843,7 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 		else r_cons_printf ("[Header fields]\n");
 
 		r_list_foreach (fields, iter, field) {
-			ut64 addr = va? get_vaddr (baddr, field->offset,
+			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, field->offset,
 				field->rva): field->offset;
 			if (mode) {
 				r_name_filter (field->name, sizeof (field->name));
