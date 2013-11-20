@@ -175,6 +175,7 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinArch *arch, int type, int idx);
+	ut64 (*get_vaddr)(ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	int minstrlen;
 } RBinPlugin;
@@ -329,10 +330,11 @@ R_API int r_bin_select_idx(RBin *bin, int idx);
 R_API void r_bin_list_archs(RBin *bin);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
+R_API ut64 r_bin_get_offset (RBin *bin);
+R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr);
 /* bin_meta.c */
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
 R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr);
-R_API ut64 r_bin_get_offset (RBin *bin);
 /* bin_write.c */
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
