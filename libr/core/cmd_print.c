@@ -788,7 +788,7 @@ static int cmd_print(void *data, const char *input) {
 		char *new_arch = NULL, *old_arch = NULL, *rest = NULL, *segoff = NULL;
 		ut32 new_bits = -1, old_bits = -1;
 		ut64 use_blocksize = -1;
-		ut8 pos = 0;
+		ut8 pos = 0, settings_changed = R_FALSE;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 
 
@@ -822,8 +822,10 @@ static int cmd_print(void *data, const char *input) {
 		if (new_arch == NULL) new_arch = strdup (old_arch);
 		if (new_bits == -1) new_bits = old_bits;
 
-		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits)
+		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits){
 			set_asm_configs (core, new_arch, new_bits, segoff);
+			settings_changed = R_TRUE;
+		}
 
 		switch (input[1]) {
 		case 'i': 
@@ -989,37 +991,38 @@ static int cmd_print(void *data, const char *input) {
 		}
 		//if (core->visual)
 		//	l = core->cons->rows-core->cons->lines;
-if (!processed_cmd) {
-		if (l<0) {
-			RList *bwdhits;
-			RListIter *iter;
-			RCoreAsmHit *hit;
-			ut8 *block = malloc (core->blocksize);
-			if (block) {
-				l = -l;
-				bwdhits = r_core_asm_bwdisassemble (core,
-					core->offset, l, core->blocksize);
-				if (bwdhits) {
-					r_list_foreach (bwdhits, iter, hit) {
-						r_core_read_at (core, hit->addr,
-							block, core->blocksize);
-						core->num->value = r_core_print_disasm (core->print,
-							core, hit->addr, block, core->blocksize, l, 0, 1);
-						r_cons_printf ("------\n");
+		if (!processed_cmd) {
+			if (l<0) {
+				RList *bwdhits;
+				RListIter *iter;
+				RCoreAsmHit *hit;
+				ut8 *block = malloc (core->blocksize);
+				if (block) {
+					l = -l;
+					bwdhits = r_core_asm_bwdisassemble (core,
+						core->offset, l, core->blocksize);
+					if (bwdhits) {
+						r_list_foreach (bwdhits, iter, hit) {
+							r_core_read_at (core, hit->addr,
+								block, core->blocksize);
+							core->num->value = r_core_print_disasm (core->print,
+								core, hit->addr, block, core->blocksize, l, 0, 1);
+							r_cons_printf ("------\n");
+						}
+						r_list_free (bwdhits);
 					}
-					r_list_free (bwdhits);
+					free (block);
 				}
-				free (block);
+			} else {
+				core->num->value = r_core_print_disasm (
+					core->print, core, core->offset,
+					core->block, len, l, 0, (*input=='D'));
 			}
-		} else {
-			core->num->value = r_core_print_disasm (
-				core->print, core, core->offset,
-				core->block, len, l, 0, (*input=='D'));
 		}
-}
 
-		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits)
-			set_asm_configs (core, new_arch, new_bits, segoff);
+		// change back asm setting is they were changed
+		if (settings_changed)
+			set_asm_configs (core, old_arch, old_bits, segoff);
 
 		free (old_arch);
 		free (new_arch);

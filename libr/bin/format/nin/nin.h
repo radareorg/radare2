@@ -103,41 +103,35 @@ const char *gb_card_type_str[]={
 };
 
 void gb_add_cardtype(char *type, ut8 cardcode){
-	strcat(type,"\ncard\t");
-	switch(cardcode){
+	strcat (type,"\ncard\t");
+	switch (cardcode){
 		case GB_TAMA5:
 		case GB_HUC3:
 		case GB_HUC1:
-			strcat(type,gb_card_type_str[cardcode-240]);
+			strcat (type,gb_card_type_str[cardcode-240]);
 			break;
 		case 0x15:
 		case 0x16:
 		case 0x17:
-			strcat(type,"XXX");
+			strcat (type,"XXX");
 			break;
 		default:
-			if(cardcode>GB_CAM){
-				strcat(type,"XXX");
+			if (cardcode>GB_CAM) {
+				strcat (type,"XXX");
 				return;
 			}
-			strcat(type,gb_card_type_str[cardcode]);
+			strcat (type,gb_card_type_str[cardcode]);
 			break;
 	}
 }
 
 void gb_get_gbtype(char *type, ut8 foo, ut8 bar){
-	if(foo==GB_SGB)
-	{
+	if (foo==GB_SGB) {
 		strcpy (type, "SuperGameboy-Rom");
-	}
-	else
-	{
-		if(bar==GB_GBC)
-		{
+	} else {
+		if (bar==GB_GBC) {
 			strcpy (type, "GameboyColor-Rom");
-		}
-		else
-		{
+		} else {
 			strcpy (type, "Gameboy-Rom");
 		}
 	}

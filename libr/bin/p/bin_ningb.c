@@ -16,7 +16,7 @@ static int load(RBinArch *arch) {
 }
 
 static int destroy(RBinArch *arch) {
-	r_buf_free (arch->buf);
+	if (arch->buf) r_buf_free (arch->buf);
 	arch->buf = NULL;
 	return R_TRUE;
 }
@@ -26,41 +26,49 @@ static ut64 baddr(RBinArch *arch) {
 }
 
 static RList* entries(RBinArch *arch) {
-        RList *ret;
-        RBinAddr *ptr = NULL;
+	RList *ret = r_list_new ();
+	RBinAddr *ptr = NULL;
 	ut8 init_jmp[4];
 
-	r_buf_read_at(arch->buf,0x100,init_jmp,4);
+	if (arch && arch->buf == NULL){
+		r_buf_read_at(arch->buf,0x100,init_jmp,4);
 
-        if (!(ret = r_list_new ()))
-                return NULL;
-        ret->free = free;
-        if (!(ptr = R_NEW (RBinAddr)))
-                return ret;
-        memset (ptr, '\0', sizeof (RBinAddr));
-        if(!init_jmp[1]==0xc3){						/* Function for this? */
-		ptr->offset = ptr->rva = 0x100;
+			if (!ret) return NULL;
+
+			ret->free = free;
+			if (!(ptr = R_NEW (RBinAddr)))
+				return ret;
+
+			memset (ptr, '\0', sizeof (RBinAddr));
+			if (!init_jmp[1]==0xc3){						/* Function for this? */
+				ptr->offset = ptr->rva = 0x100;
+			} else {
+				ptr->offset = ptr->rva = init_jmp[3]*0x100+init_jmp[2];
+			}
+
+		r_list_append (ret, ptr);
 	}
-	else
-	{
-		ptr->offset = ptr->rva = init_jmp[3]*0x100+init_jmp[2];
-	}
-	r_list_append (ret, ptr);
-        return ret;
+	return ret;
 }
 
 static RList* sections(RBinArch *arch){
 	ut8 banks;
-	RList *ret = NULL;
+	RList *ret = r_list_new();
 	RBinSection *rombank0 = NULL;
-	if(!(ret = r_list_new()))
+
+	if (!ret ) return NULL;
+
+	if (!arch || !arch->buf) {
+		free (ret);
 		return NULL;
+	} 
+
 	ret->free = free;
 
 	rombank0 = R_NEW0 (RBinSection);
-	strncpy(rombank0->name, "rombank0", R_BIN_SIZEOF_STRINGS);
+	strncpy (rombank0->name, "rombank0", R_BIN_SIZEOF_STRINGS);
 
-	r_buf_read_at(arch->buf,0x147,&banks,1);
+	r_buf_read_at (arch->buf,0x147,&banks,1);
 
 	rombank0->offset = 0;
 	rombank0->size = 0x4000;
@@ -86,30 +94,44 @@ static RList* sections(RBinArch *arch){
 
 static RBinInfo* info(RBinArch *arch) {
 	ut8 rom_header[76];
-        RBinInfo *ret = NULL;
-        if (!(ret = R_NEW (RBinInfo)))
-                return NULL;
-        memset (ret, '\0', sizeof (RBinInfo));
-        ret->lang = NULL;
-	r_buf_read_at(arch->buf,0x104,rom_header,76);
+	RBinInfo *ret = R_NEW (RBinInfo);
+
+	if (!ret)
+		return NULL;
+
+	if (!arch || !arch->buf) {
+		free (ret);
+		return NULL;
+	}
+
+	memset (ret, '\0', sizeof (RBinInfo));
+	ret->lang = NULL;
+	r_buf_read_at (arch->buf,0x104,rom_header,76);
 	strncpy (ret->file, &rom_header[48], 16);
-	gb_get_gbtype(ret->type,rom_header[66],rom_header[63]);
-	gb_add_cardtype(ret->type,rom_header[67]);			// XXX
+	gb_get_gbtype (ret->type,rom_header[66],rom_header[63]);
+	gb_add_cardtype (ret->type,rom_header[67]);			// XXX
 	strncpy (ret->machine, "Gameboy", sizeof (ret->machine)-1);
 	strncpy (ret->os, "any", sizeof (ret->os)-1);
 	strcpy (ret->arch, "gb");
 	ret->has_va = 1;
-        ret->bits = 8;
-        ret->big_endian = 0;
-        ret->dbg_info = 0;
-        return ret;
+	ret->bits = 8;
+	ret->big_endian = 0;
+	ret->dbg_info = 0;
+	return ret;
 }
 
 static int check(RBinArch *arch) {
 	ut8 lict[48];
-	r_buf_read_at(arch->buf,0x104,lict,48);
-	if(!memcmp(lict,lic,48)) return 1;
-        return 0;
+
+	if (!arch || !arch->buf)
+		return 0;
+
+	r_buf_read_at (arch->buf,0x104,lict,48);
+
+	if ( !memcmp (lict,lic,48))
+		return 1;
+
+	return 0;
 }
 
 
