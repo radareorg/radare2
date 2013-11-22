@@ -75,20 +75,7 @@ static int check(RBinArch *arch) {
 		ut16 major = (arch->buf->buf[8]<<8) | arch->buf->buf[7];
 		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
-		if (major>=45 && major<=55)
-			ret = R_TRUE;
-		// TODO: in case of failed trick attempt discard on known mach0 headers?
-#if 0
-		/* KNOWN MACH0 HEADERS TO DISCARD */
-		if (off > 0 && off+5 < arch->buf->length) {
-			const ut8 * pbuf = arch->buf->buf+off;
-			if (	!memcmp (pbuf, "\xce\xfa\xed\xfe", 4) ||
-				!memcmp (pbuf, "\xfe\xed\xfa\xce", 4) ||
-				!memcmp (pbuf, "\xfe\xed\xfa\xcf", 4) ||
-				!memcmp (pbuf, "\xcf\xfa\xed\xfe", 4))
-				ret = R_FALSE;
-		}
-#endif
+		ret = R_TRUE;
 	}
 	return ret;
 }
@@ -98,24 +85,7 @@ static int retdemangle(const char *str) {
 }
 
 static RBinAddr* binsym(RBinArch *arch, int sym) {
-	RBinAddr *ret = NULL;
-	switch (sym) {
-
-	// XXX - TODO implement the INIT FINI symbol requests 
-	case R_BIN_SYM_INIT:
-	case R_BIN_SYM_FINI:
-	case R_BIN_SYM_ENTRY:
-		if (!(ret = R_NEW0 (RBinAddr)))
-			return NULL;
-		ret->offset = r_bin_java_get_entrypoint (arch->bin_obj);
-		break;
-	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW0 (RBinAddr)))
-			return NULL;
-		ret->offset = ret->rva = r_bin_java_get_main (arch->bin_obj);
-		break;
-	}
-	return ret;
+	return r_bin_java_get_entrypoint(arch->bin_obj, sym);
 }
 
 static RList* lines(RBinArch *arch) {

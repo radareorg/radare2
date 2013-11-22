@@ -12,7 +12,9 @@ struct java_op {
 
 extern struct java_op java_ops[];
 
-static char * java_resolve(int idx);
+static char * java_resolve_with_space(int idx);
+static char * java_resolve_without_space(int idx);
+static char * java_resolve(int idx, ut8 space_bn_name_type);
 int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen);
 //int r_java_disasm(const ut8 *bytes, char *output, int len);
 unsigned short read_short(FILE *fd);
