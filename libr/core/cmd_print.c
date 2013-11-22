@@ -848,7 +848,7 @@ static int cmd_print(void *data, const char *input) {
 
 				if (buf) {
 					ut8 inst_len = 0;
-					for (i=0; i<use_blocksize+inst_len; i++ ) {
+					for (i=0; (i+inst_len)<use_blocksize; i++ ) {
 						pd_result = r_asm_disassemble (core->assembler, &asmop, buf+i, use_blocksize-i);
 
 						if (pd_result<1) {
@@ -989,6 +989,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		//if (core->visual)
 		//	l = core->cons->rows-core->cons->lines;
+if (!processed_cmd) {
 		if (l<0) {
 			RList *bwdhits;
 			RListIter *iter;
@@ -1015,6 +1016,7 @@ static int cmd_print(void *data, const char *input) {
 				core->print, core, core->offset,
 				core->block, len, l, 0, (*input=='D'));
 		}
+}
 
 		if (strcmp (new_arch, old_arch) != 0 || new_bits != old_bits)
 			set_asm_configs (core, new_arch, new_bits, segoff);
