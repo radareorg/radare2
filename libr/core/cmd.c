@@ -1072,7 +1072,7 @@ next2:
 	if (ptr) {
 		int oneline = 1;
 		if (ptr[1]=='`') {
-			strcpy (ptr, ptr+1);
+			memmove (ptr, ptr+1, strlen (ptr));
 			oneline = 0;
 		}
 		ptr2 = strchr (ptr+1, '`');
@@ -1086,7 +1086,7 @@ next2:
 				str = r_core_cmd_str_pipe (core, ptr+1);
 			} else 
 				str = r_core_cmd_str (core, ptr+1);
-			if (oneline)
+			if (oneline && str)
 				for (i=0; str[i]; i++)
 					if (str[i]=='\n')
 						str[i]=' ';

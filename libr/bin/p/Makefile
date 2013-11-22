@@ -8,7 +8,7 @@ foo: all
 ALL_TARGETS=
 FORMATS=any.mk elf.mk elf64.mk pe.mk pe64.mk te.mk mach0.mk
 FORMATS+=bios.mk mach064.mk fatmach0.mk dyldcache.mk java.mk
-FORMATS+=dex.mk fs.mk 
+FORMATS+=dex.mk fs.mk ningb.mk
 include $(FORMATS)
 
 all: ${ALL_TARGETS}
