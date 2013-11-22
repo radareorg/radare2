@@ -814,8 +814,8 @@ static int cmd_print(void *data, const char *input) {
 			use_blocksize = core->blocksize;
 		} else if (core->blocksize_max < use_blocksize) {
 
-			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ %d' instead?\n",
-						core->blocksize_max < use_blocksize, *input, use_blocksize);
+			eprintf ("This block size is too big (0x%02x<0x%02llx). Did you mean 'p%c @ 0x%02llx' instead?\n",
+						core->blocksize_max, use_blocksize, input[0], (int) use_blocksize);
 			return R_FALSE;
 		}
 
