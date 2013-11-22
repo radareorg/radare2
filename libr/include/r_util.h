@@ -407,6 +407,8 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...);
 R_API char *r_str_concatch(char *x, char y);
 R_API void r_str_case(char *str, int up);
 R_API void r_str_chop_path (char *s);
+R_API ut8 r_str_contains_macro(const char *input_value);
+R_API void r_str_truncate_cmd(char *string);
 
 R_API int r_str_glob (const char *str, const char *glob);
 R_API int r_str_binstr2bin(const char *str, ut8 *out, int outlen);

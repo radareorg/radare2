@@ -52,7 +52,7 @@ R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len) {
 }
 
 R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b) {
-	return r_io_write_at(io, b->base, b->buf, b->length);
+	return r_io_write_at (io, b->base, b->buf, b->length);
 }
 
 R_API RIO *r_io_free(RIO *io) {
@@ -347,6 +347,8 @@ R_API int r_io_write(struct r_io_t *io, const ut8 *buf, int len) {
 	}
 	if (ret == -1)
 		eprintf ("r_io_write: cannot write on fd %d\n", io->fd->fd);
+	else
+		io->off += ret;
 	if (data)
 		free (data);
 	return ret;
@@ -413,8 +415,8 @@ R_API ut64 r_io_seek(RIO *io, ut64 offset, int whence) {
 }
 
 R_API ut64 r_io_fd_size(RIO *io, int fd){
-	RIODesc *desc = r_io_desc_get(io, fd);
-	return r_io_desc_size(io, desc);
+	RIODesc *desc = r_io_desc_get (io, fd);
+	return r_io_desc_size (io, desc);
 }
 
 R_API ut64 r_io_size(RIO *io) {

@@ -8,7 +8,7 @@ static int cmd_write(void *data, const char *input) {
 	int wseek, i, size, len = strlen (input);
 	char *tmp, *str, *ostr;
 	RCore *core = (RCore *)data;
-	#define WSEEK(x,y) if(wseek)r_core_seek_delta(x,y)
+	#define WSEEK(x,y) if (wseek)r_core_seek_delta (x,y)
 	wseek = r_config_get_i (core->config, "cfg.wseek");
 	str = ostr = strdup (input+1);
 
@@ -176,7 +176,7 @@ static int cmd_write(void *data, const char *input) {
 			r_io_set_fd (core->io, core->file->fd);
 			r_io_write_at (core->io, core->offset, buf, size);
 			WSEEK (core, size);
-			free(buf);
+			free (buf);
 			r_core_block_read (core, 0);
 		} else eprintf ("Cannot open file '%s'\n", arg);
 		break;
@@ -322,7 +322,7 @@ static int cmd_write(void *data, const char *input) {
 		case '?':
 			break;
 		case '-':
-			r_io_set_write_mask(core->io, 0, 0);
+			r_io_set_write_mask (core->io, 0, 0);
 			eprintf ("Write mask disabled\n");
 			break;
 		case ' ':

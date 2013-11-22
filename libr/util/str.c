@@ -645,7 +645,7 @@ R_API char *r_str_clean(char *str) {
 	if (str != NULL) {
 		while (*str && iswhitechar (*str))
 			str++;
-		if ((len = strlen(str))>0)
+		if ((len = strlen (str)) > 0 )
 			for (ptr = str+len-1; ptr!=str; ptr = ptr - 1) {
 				if (iswhitechar (*ptr))
 					*ptr = '\0';
@@ -696,7 +696,7 @@ R_API int r_str_escape(char *buf) {
 
 R_API void r_str_sanitize(char *c) {
 	char *d = c;
-	if(d) for (; *d; c++, d++) {
+	if (d) for (; *d; c++, d++) {
 		switch (*d) {
 		case '`':
 		case '$':
@@ -964,10 +964,10 @@ R_API int r_str_len_utf8 (const char *s) {
 // TODO: if unix.. move to .h? static inline
 R_API const char *r_str_casestr(const char *a, const char *b) {
 #if __WINDOWS__ || defined(__QNX__)
-	size_t hay_len = strlen(a);
-	size_t needle_len = strlen(b);
+	size_t hay_len = strlen (a);
+	size_t needle_len = strlen (b);
 	while (hay_len >= needle_len) {
-		if (strncasecmp(a, b, needle_len) == 0)
+		if (strncasecmp (a, b, needle_len) == 0)
 			return (const char *) a;
 		a++;
 		hay_len--;
@@ -1181,3 +1181,41 @@ R_API char *r_str_prefix_all (char *s, const char *pfx) {
 	free (os);
 	return o;
 }
+
+
+R_API ut8 r_str_contains_macro(const char *input_value){
+	char *has_tilde = input_value ? strchr (input_value, '~') : NULL,
+		 *has_bang = input_value ? strchr (input_value, '!') : NULL,
+		 *has_brace = input_value ? (strchr (input_value, '[') || strchr (input_value, ']')) : NULL,
+		 *has_paren = input_value ? (strchr (input_value, '(') || strchr (input_value, ')')) : NULL,
+		 *has_cbrace = input_value ? (strchr (input_value, '{') || strchr (input_value, '}')) : NULL,
+		 *has_qmark = input_value ? strchr (input_value, '?') : NULL,
+		 *has_colon = input_value ? strchr (input_value, ':') : NULL,
+		 *has_at = input_value ? strchr (input_value, '@') : NULL;
+
+	return has_tilde || has_bang || has_brace || has_cbrace || has_qmark || has_paren || has_colon || has_at;
+}
+
+R_API void r_str_truncate_cmd(char *string){
+	ut32 pos = 0, done = 0;
+	if (string) {
+		ut32 sz = strlen (string);
+		for (pos = 0; pos < sz; pos++) {
+			switch (string[pos]) {
+				case '!':
+				case ':':
+				case ';':
+				case '@':
+				case '~':
+				case '(':
+				case '[':
+				case '{':
+				case '?':
+					string[pos] = '\0';
+					done = 1;
+			}
+			if (done) break;
+		}
+	}
+}
+
