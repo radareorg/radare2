@@ -787,9 +787,9 @@ static int cmd_print(void *data, const char *input) {
 		ut8 settings_changed = R_FALSE, bw_disassemble = R_FALSE;
 		char *new_arch;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
-		char *old_arch = strdup (r_config_get (core->config, "asm.arch"));
-		int segoff = r_config_get_i (core->config, "asm.segoff");
-		int old_bits = r_config_get_i (core->config, "asm.bits");
+		old_arch = strdup (r_config_get (core->config, "asm.arch"));
+		segoff = r_config_get (core->config, "asm.segoff");
+		old_bits = r_config_get_i (core->config, "asm.bits");
 		// XXX - this is necessay b/c radare will automatically
 		// swap flags if arch is x86 and bits == 16 see: __setsegoff in config.c
 

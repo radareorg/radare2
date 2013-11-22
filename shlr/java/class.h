@@ -660,9 +660,9 @@ typedef struct r_bin_java_attr_classes_t {
 	ut64 file_offset;
 	RBinJavaAttrInfo *clint_attr;
 	RBinJavaField *clint_field;
-	ut16 inner_class_info_idx;	     
-	ut16 outer_class_info_idx;	     
-	ut16 inner_name_idx;	     
+	ut16 inner_class_info_idx;		 
+	ut16 outer_class_info_idx;		 
+	ut16 inner_name_idx;		 
 	ut16 inner_class_access_flags;
 	ut64 size;
 } RBinJavaClassesAttribute;
@@ -744,7 +744,7 @@ typedef struct r_bin_java_obj_t {
 R_API RList* r_bin_java_get_sections(RBinJavaObj *bin);
 R_API RList* r_bin_java_get_fields(RBinJavaObj *bin);
 R_API char* r_bin_java_get_version(RBinJavaObj* bin);
-R_API ut64 r_bin_java_get_entrypoint(RBinJavaObj* bin);
+R_API RBinAddr * r_bin_java_get_entrypoint(RBinJavaObj* bin, int sym);
 R_API RList* r_bin_java_get_entrypoints(RBinJavaObj* bin);
 R_API ut64 r_bin_java_get_main(RBinJavaObj* bin);
 R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin);
@@ -1123,7 +1123,7 @@ R_API RBinClass* r_bin_java_allocate_r_bin_class();
 R_API RList *r_bin_java_get_classes(RBinJavaObj *bin);
 R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
 R_API RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
-
+R_API ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, char* method_name);
 
 
 R_API void debug_dump_all_cp_obj();
