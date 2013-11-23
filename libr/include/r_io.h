@@ -195,15 +195,11 @@ typedef struct r_io_cache_t {
 			desc->plugin = fplugin; \
 			desc->flags = fflags; \
 			if (ffd == -2) { \
-				int i; \
-				ut8 *p = (ut8 *)&(desc->fd); \
-				desc->fd = ((int) ((size_t) desc) & 0xffffff); \
-				desc->fd = p[0]; \
-				for (i=1; i<sizeof (desc->fd); i++) \
-					desc->fd ^= p[i]; \
+				desc->fd = ((size_t)desc)&0xffffff; \
 			} else \
-			if (ffd == -1) desc->fd = (int) (((size_t) desc) & 0xffffff); \
-			else desc->fd = ffd; \
+			if (ffd == -1) { \
+				desc->fd = ((size_t)&desc)&0xffffff; \
+			} else desc->fd = ffd; \
 			desc->data = fdata; \
 		} else { \
 			free (desc); \
