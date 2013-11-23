@@ -475,7 +475,18 @@ R_API int r_cons_get_size(int *rows) {
 	I.rows = 23;
 #elif __UNIX__
 	struct winsize win;
-	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
+	if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
+		if (win.ws_col==0) {
+			int fd = open ("/dev/tty", O_RDONLY);
+			if (fd != -1) {
+				if (ioctl (fd, TIOCGWINSZ, &win) != 0) {
+					I.columns = 80;
+					I.rows = 23;
+				}
+				close (fd);
+			}
+
+		}
 		I.columns = win.ws_col;
 		I.rows = win.ws_row-1;
 		if (I.heightfix)
