@@ -681,14 +681,14 @@ R_API int r_str_escape(char *buf) {
 			err |= hex2int (&ch,  buf[i+2]);
 			err |= hex2int (&ch2, buf[i+3]);
 			if (err) {
-				eprintf ("Incorrect hexadecimal characters for conversion.\n");
-				return 0;
+				eprintf ("Error: Non-hexadecimal chars in input.\n");
+				return 0; // -1?
 			}
 			buf[i] = (ch<<4)+ch2;
 			memmove (buf+i+1, buf+i+4, strlen (buf+i+4)+1);
 		} else {
 			eprintf ("'\\x' expected.\n");
-			return 0;
+			return 0; // -1?
 		}
 	}
 	return i;
@@ -746,7 +746,7 @@ R_API char *r_str_unscape(char *buf) {
 
 /* ansi helpers */
 R_API int r_str_ansi_len(const char *str) {
-	int ch, ch2, i=0, len = 0;
+	int ch, ch2, i=0, len = 0, sub = 0;
 	while (str[i]) {
 		ch = str[i];
 		ch2 = str[i+1];
@@ -759,10 +759,20 @@ R_API int r_str_ansi_len(const char *str) {
 			} else if (ch2 == '[') {
 				for (++i; str[i]&&str[i]!='J'&& str[i]!='m'&&str[i]!='H';i++);
 			}
-		} else len++;
+		} else {
+		len++;
+#if 0
+			int olen = strlen (str);
+			int ulen = r_str_len_utf8 (str);
+			if (olen != ulen) {
+				len += (olen-ulen);
+			} else len++;
+			//sub -= (r_str_len_utf8char (str+i, 4))-2;
+#endif
+		}//len++;
 		i++;
 	}
-	return len;
+	return len-sub;
 }
 
 // TODO: support wide char strings
@@ -1182,21 +1192,23 @@ R_API char *r_str_prefix_all (char *s, const char *pfx) {
 	return o;
 }
 
-
-R_API ut8 r_str_contains_macro(const char *input_value){
-	char *has_tilde = input_value ? strchr (input_value, '~') : NULL,
-		 *has_bang = input_value ? strchr (input_value, '!') : NULL,
-		 *has_brace = input_value ? (strchr (input_value, '[') || strchr (input_value, ']')) : NULL,
-		 *has_paren = input_value ? (strchr (input_value, '(') || strchr (input_value, ')')) : NULL,
-		 *has_cbrace = input_value ? (strchr (input_value, '{') || strchr (input_value, '}')) : NULL,
-		 *has_qmark = input_value ? strchr (input_value, '?') : NULL,
-		 *has_colon = input_value ? strchr (input_value, ':') : NULL,
+#define HASCH(x) strchr (input_value,x)
+#define CAST (void*)(size_t)
+R_API ut8 r_str_contains_macro(const char *input_value) {
+	char *has_tilde = input_value ? HASCH('~') : NULL,
+		 *has_bang = input_value ? HASCH('!') : NULL,
+		 *has_brace = input_value ? CAST(HASCH('[') || HASCH(']')) : NULL,
+		 *has_paren = input_value ? CAST(HASCH('(') || HASCH(')')) : NULL,
+		 *has_cbrace = input_value ? CAST(HASCH('{') || HASCH('}')) : NULL,
+		 *has_qmark = input_value ? HASCH('?') : NULL,
+		 *has_colon = input_value ? HASCH(':') : NULL,
 		 *has_at = input_value ? strchr (input_value, '@') : NULL;
 
-	return has_tilde || has_bang || has_brace || has_cbrace || has_qmark || has_paren || has_colon || has_at;
+	return has_tilde || has_bang || has_brace || has_cbrace || has_qmark \
+		|| has_paren || has_colon || has_at;
 }
 
-R_API void r_str_truncate_cmd(char *string){
+R_API void r_str_truncate_cmd(char *string) {
 	ut32 pos = 0, done = 0;
 	if (string) {
 		ut32 sz = strlen (string);
@@ -1218,4 +1230,3 @@ R_API void r_str_truncate_cmd(char *string){
 		}
 	}
 }
-
