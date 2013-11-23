@@ -241,9 +241,8 @@ R_API void r_cons_fill_line() {
 	char *p, white[1024];
 	int cols = I.columns-1;
 	if (cols<1) return;
-	if (cols>=sizeof (white)) {
-		p = malloc (cols+1);
-	} else p = white;
+	p = (cols>=sizeof (white))?
+		malloc (cols+1): white;
 	memset (p, ' ', cols);
 	p[cols] = 0;
 	r_cons_strcat (p);
@@ -368,7 +367,15 @@ R_API void r_cons_visual_write (char *buffer) {
 		int len = ((int)(size_t)(nl-ptr))+1;
 
 		*nl = 0;
-		alen = r_str_ansi_len (ptr);
+		//alen = r_str_ansi_len (ptr);
+// handle ansi chars
+		 {
+			int utf8len = r_str_len_utf8 (ptr);
+			int ansilen = r_str_ansi_len (ptr);
+			int diff = len-utf8len;
+			if (diff) diff--;
+			alen = ansilen - diff;
+		 }
 		*nl = '\n';
 
 		if (alen>cols) {
@@ -475,7 +482,18 @@ R_API int r_cons_get_size(int *rows) {
 	I.rows = 23;
 #elif __UNIX__
 	struct winsize win;
-	if (ioctl (1, TIOCGWINSZ, &win) == 0) {
+	if (isatty (1) && ioctl (1, TIOCGWINSZ, &win) == 0) {
+		if (win.ws_col==0) {
+			int fd = open ("/dev/tty", O_RDONLY);
+			if (fd != -1) {
+				if (ioctl (fd, TIOCGWINSZ, &win) != 0) {
+					I.columns = 80;
+					I.rows = 23;
+				}
+				close (fd);
+			}
+
+		}
 		I.columns = win.ws_col;
 		I.rows = win.ws_row-1;
 		if (I.heightfix)

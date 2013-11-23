@@ -83,7 +83,7 @@ static int __plugin_open(struct r_io_t *io, const char *pathname) {
 	);
 }
 
-static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
+static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname)) {
 		RIOMalloc *mal = R_NEW (RIOMalloc);
 		mal->fd = -2; /* causes r_io_desc_new() to set the correct fd */
@@ -105,8 +105,8 @@ static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode
 			}
 		}
 		if (mal->buf != NULL) {
-			RETURN_IO_DESC_NEW (&r_io_plugin_malloc, mal->fd, pathname, rw, mode,mal);
-			//return r_io_desc_new (&r_io_plugin_malloc, mal->fd, pathname, rw, mode, mal);
+			RETURN_IO_DESC_NEW (&r_io_plugin_malloc,
+				mal->fd, pathname, rw, mode,mal);
 		}
 		eprintf ("Cannot allocate (%s) %d bytes\n", pathname+9,
 			mal->size);
