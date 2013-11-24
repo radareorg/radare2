@@ -1,13 +1,14 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
 
+static int is_valid_input_num_value(RCore *core, char *input_value){
+	ut64 value = input_value ? r_num_math (core->num, input_value) : 0;
+	return !(value == 0 && input_value && *input_value == '0');
+}
 
 static ut64 get_input_num_value(RCore *core, char *input_value){
 
-	ut64 value = input_value ? r_num_math (core->num, input_value) : -1;
-	if (value == 0 && input_value && *input_value != '0')
-		value = -1;
-
+	ut64 value = input_value ? r_num_math (core->num, input_value) : 0;
 	return value;
 }
 
@@ -78,19 +79,19 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 	if (input_one && input_two && input_three) {
 		// <size> <arch> <bits>
-		*blocksize = get_input_num_value (core, input_one);
+		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
 		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
 		*bits = get_input_num_value (core, input_three);
 		result = R_TRUE;
 
 	} else if (input_one && input_two) {
 
-		*blocksize = get_input_num_value (core, input_one);
+		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
 
-		if (blocksize == -1) {
+		if (!is_valid_input_num_value(core, input_one) ) {
 			// input_one can only be one other thing
 			*asm_arch = r_asm_is_valid (core->assembler, input_one) ? strdup (input_one) : NULL;
-			*bits = get_input_num_value (core, input_two);
+			*bits = is_valid_input_num_value(core, input_two) ? get_input_num_value (core, input_two): -1;
 		} else {
 			if (r_str_contains_macro (input_two) ){
 				r_str_truncate_cmd (input_two);
@@ -101,8 +102,8 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 		result = R_TRUE;
 	} else if (input_one) {
 
-		*blocksize = get_input_num_value (core, input_one);
-		if (blocksize == -1) {
+		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
+		if (!is_valid_input_num_value(core, input_one) ) {
 			// input_one can only be one other thing
 			if (r_str_contains_macro (input_one) ){
 				r_str_truncate_cmd (input_one);
@@ -446,7 +447,7 @@ static int cmd_print(void *data, const char *input) {
 		if (p) {
 			l = (int) r_num_math (core->num, p+1);
 			/* except disasm and memoryfmt (pd, pm) */
-			if (input[0] != 'd' && input[0] != 'm' && input[0]!='a') {
+			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0]!='a') {
 				if (l>0) len = l;
 				if (l>tbs) {
 					if (!r_core_block_size (core, l)) {
@@ -788,7 +789,7 @@ static int cmd_print(void *data, const char *input) {
 		char *new_arch = NULL, *old_arch = NULL, *rest = NULL, *segoff = NULL;
 		ut32 new_bits = -1, old_bits = -1;
 		ut64 use_blocksize = -1;
-		ut8 pos = 0, settings_changed = R_FALSE;
+		ut8 pos = 0, settings_changed = R_FALSE, bw_disassemble;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 
 
@@ -810,13 +811,15 @@ static int cmd_print(void *data, const char *input) {
 			//return R_FALSE;
 		}
 
-		if (use_blocksize == -1) {
+		if (use_blocksize == 0) {
 			use_blocksize = core->blocksize;
-		} else if (core->blocksize_max < use_blocksize) {
+		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
 
 			eprintf ("This block size is too big (0x%02x<0x%02llx). Did you mean 'p%c @ 0x%02llx' instead?\n",
 						core->blocksize_max, use_blocksize, input[0], (int) use_blocksize);
 			return R_FALSE;
+		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize > -core->blocksize_max) {
+			bw_disassemble = R_TRUE;
 		}
 
 		if (new_arch == NULL) new_arch = strdup (old_arch);
@@ -991,16 +994,19 @@ static int cmd_print(void *data, const char *input) {
 		}
 		//if (core->visual)
 		//	l = core->cons->rows-core->cons->lines;
+eprintf("perfotming the backward analysis for (%d) bytes.\n", l);
+eprintf("perfotming the backward analysis for (%d) bytes.\n", use_blocksize);
 		if (!processed_cmd) {
-			if (l<0) {
+			if (bw_disassemble) {
+				eprintf("perfotming the backward analysis for (%d) bytes.\n", l);
 				RList *bwdhits;
 				RListIter *iter;
 				RCoreAsmHit *hit;
 				ut8 *block = malloc (core->blocksize);
 				if (block) {
-					l = -l;
+					int neg_use_blocksize = -(int) use_blocksize;
 					bwdhits = r_core_asm_bwdisassemble (core,
-						core->offset, l, core->blocksize);
+						core->offset, neg_use_blocksize, core->blocksize);
 					if (bwdhits) {
 						r_list_foreach (bwdhits, iter, hit) {
 							r_core_read_at (core, hit->addr,

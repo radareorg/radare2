@@ -4,6 +4,16 @@
 #include <r_core.h>
 #include <r_asm.h>
 
+static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
+	if (a->addr == b->addr)
+		return 0;
+	else if (a->addr < b->addr)
+		return -1;
+	// a->addr > b->addr
+	return 1;
+
+}
+
 R_API RCoreAsmHit *r_core_asm_hit_new() {
 	RCoreAsmHit *hit = R_NEW (RCoreAsmHit);
 	if (!hit) return NULL;
@@ -137,31 +147,189 @@ beach:
 }
 
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
-	RCoreAsmHit *hit;
+	RList *hits = r_core_asm_hit_list_new ();
+	RCoreAsmHit *hit = NULL;
 	RAsmOp op;
-	RList *hits = NULL;
-	ut8 *buf;
-	ut64 at;
-	int instrlen, ni, idx;
-
-	if (!(hits = r_core_asm_hit_list_new ()))
-		return NULL;
-	buf = (ut8 *)malloc (len);
-	if (!buf) {
-		r_list_destroy (hits);
+	ut8 *buf = (ut8 *)malloc (len);
+	
+	if (hits == NULL || buf == NULL ){
+		if (hits) r_list_destroy (hits);
+		if (buf) free (buf); 
 		return NULL;
 	}
+	
+
+	// XXX - hack in some basic adjustments, which assumes the 
+	// addres space will never be up in high values of 64bit space
+	// e.g. if addr == 0x19 and len == 78, then the above check will not
+	// so see need to fix that by letting the wrapparound happen 
+	// converting it to an and then adding it back to len
+	// this will give us the new buffer size (win!) 
+	//len = len + ((int) (addr-len));
+
 	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
 		r_list_destroy (hits);
 		free (buf);
-		return NULL;
+		return NULL;			
 	}
+
+	{
+		
+		ut64 next_instr_addr = addr,
+			 current_inst_addr = addr - 1,
+			 current_instr_len = 0;
+
+		//
+		// XXX - This is a heavy handed approach without a 
+		// 		 an appropriate btree or hash table for storing
+		//       hits, because are using:
+		//			1) Sorted RList with many inserts and searches
+		//			2) Pruning hits to find the most optimal
+		//				disassembly with backward + forward sweep
+
+		// greedy approach 
+		// 1) Consume previous bytes
+		// 1a) Instruction is invalid (incr current_inst_addr)
+		// 1b) Disasm is perfect 
+		// 1c) Disasm is underlap (disasm(current_inst_addr, next_instr_addr - current_inst_addr) short some bytes) 
+		// 1d) Disasm is overlap (disasm(current_inst_addr, next_instr_addr - current_inst_addr) over some bytes)
+
+		do {
+			if (r_cons_singleton ()->breaked) break;
+
+			// reset assembler
+			r_asm_set_pc (core->assembler, current_inst_addr);
+
+			current_instr_len = addr - current_inst_addr;
+			current_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_inst_addr, addr-current_instr_len);
+
+			if (strstr (op.buf_asm, "invalid")) {
+				// Disasm invalid
+				current_inst_addr--;
+			} else if (current_inst_addr + current_instr_len == next_instr_addr) {
+				// Disasm perfect
+				hit = r_core_asm_hit_new ();
+				hit->addr = current_inst_addr;
+				hit->len = current_instr_len;
+				hit->code = NULL;
+				r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
+			
+			} else if (current_inst_addr + current_instr_len < next_instr_addr) {
+				// Disasm underlap
+				// Simplicity consume the instruction, and 
+				// fill the next hits with a forward sweep
+				ut64 temp_instr_len = current_instr_len,
+					 temp_next_addr = current_inst_addr + current_instr_len;
+
+				hit = r_core_asm_hit_new ();
+				hit->addr = current_inst_addr;
+				hit->len = current_instr_len;
+				hit->code = NULL;
+				r_list_append (hits, hit);
+
+				r_asm_set_pc (core->assembler, temp_next_addr);
+
+				// forward sweep from current location
+				r_asm_set_pc (core->assembler, current_inst_addr);
+				while (temp_next_addr < next_instr_addr) {
+					
+					temp_instr_len = next_instr_addr - temp_next_addr; 
+					temp_instr_len = r_asm_disassemble (core->assembler, &op, buf+temp_next_addr, temp_instr_len);
+					
+					hit = r_core_asm_hit_new ();
+					hit->addr = temp_next_addr;
+					hit->len = temp_instr_len;
+					hit->code = NULL;
+					r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
+					temp_next_addr += temp_instr_len;
+				}
+
+				// done up until the current instruction
+				// so update
+				next_instr_addr = current_inst_addr;
+				// Disasm underlap end
+			} else if (current_inst_addr + current_instr_len > next_instr_addr) {
+				// Disasm overlap
+				// forward sweep to see if we find a perfect match,
+				// if so we remove all hits up to the perfect match
+				// and we reset all the hits
+				RCoreAsmHit dummy_value;
+				RListIter *stop_hit_iter = NULL;
+
+				ut64 temp_instr_len = current_instr_len,
+					 temp_next_addr = current_inst_addr + current_instr_len;
+				
+				memset (&dummy_value, 0, sizeof (RCoreAsmHit));
+				// 1) forward sweep to determine if this is the best fit
+				// set of instructions
+				r_asm_set_pc (core->assembler, current_inst_addr);
+				while (temp_next_addr < addr) {
+					
+					temp_instr_len = addr - temp_next_addr; 
+					temp_instr_len = r_asm_disassemble (core->assembler, &op, buf+temp_next_addr, temp_instr_len);
+					temp_next_addr += temp_instr_len;
+
+
+					// an optimization is to see if there is a hit
+					// and that hit is not an invalid operation
+					dummy_value.addr = temp_next_addr; 
+					stop_hit_iter = r_list_find (hits, &dummy_value, ((RListComparator)rcoreasm_address_comparator));
+					if (stop_hit_iter) {
+						break;
+					}
+				}
+
+				// 2) now we need to prune hits up to stop_hit_iter
+				// otherwise if stop_hit_iter == NULL we free all the hits upto addr
+				if (stop_hit_iter) {
+					RListIter *iter = NULL, *t_iter;
+					RCoreAsmHit *del_hit = NULL;
+					r_list_foreach_safe (hits, iter, t_iter, del_hit){
+						
+						// the list is sorted by assending address 
+						if ( del_hit == stop_hit_iter->data) break;
+						
+						if (del_hit) {
+							r_list_delete (hits, iter);
+						}
+					}
+				} else if (addr == temp_next_addr) {
+					r_list_purge (hits);
+				}
+
+				// 3) forward sweep again if we hit addr
+				if (temp_next_addr == addr || stop_hit_iter) {
+					ut64 tmp_end_addr = stop_hit_iter ? ((RCoreAsmHit *)stop_hit_iter->data)->addr : addr;
+
+					r_asm_set_pc (core->assembler, current_inst_addr);
+					while (temp_next_addr < tmp_end_addr) {
+						
+						temp_instr_len = tmp_end_addr - temp_next_addr; 
+						temp_instr_len = r_asm_disassemble (core->assembler, &op, buf+temp_next_addr, temp_instr_len);
+						
+						hit = r_core_asm_hit_new ();
+						hit->addr = temp_next_addr;
+						hit->len = temp_instr_len;
+						hit->code = NULL;
+						r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
+						temp_next_addr += temp_instr_len;
+					}
+					next_instr_addr = current_inst_addr;
+				}
+
+				current_inst_addr += 1;
+				// Disasm overlap end
+			}
+		} while (addr - current_inst_addr < len);
+	}
+
+	/*
 	for (idx = 1; idx < len; idx++) {
 		if (r_cons_singleton ()->breaked)
 			break;
 		at = addr - idx; ni = 1;
 		while (at < addr) {
-			r_asm_set_pc (core->assembler, at);
+			
 			//XXX HACK We need another way to detect invalid disasm!!
 			if (!(instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at)) || strstr (op.buf_asm, "invalid")) {
 				break;
@@ -182,7 +350,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
 				} else ni++;
 			}
 		}
-	}
+	}*/
 	r_asm_set_pc (core->assembler, addr);
 	free (buf);
 	return hits;

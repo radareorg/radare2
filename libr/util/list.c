@@ -365,6 +365,16 @@ R_API RListIter *r_list_contains (RList *list, void *p) {
 	return NULL;
 }
 
+R_API RListIter *r_list_find (RList *list, void *p, RListComparator cmp) {
+	void *q;
+	RListIter *iter;
+	r_list_foreach (list, iter, q) {
+		if (cmp (p, q))
+			return iter;
+	}
+	return NULL;
+}
+
 #if TEST
 
 // TODO: move into t/list.c
