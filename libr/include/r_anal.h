@@ -594,6 +594,7 @@ typedef struct r_anal_bb_t {
 	int returnbb;
 	int conditional;
 	int traced;
+	char *label;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
 #if R_ANAL_BB_HAS_OPS

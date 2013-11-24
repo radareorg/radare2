@@ -18,6 +18,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->cond = NULL;
 	bb->fingerprint = NULL;
 	bb->diff = r_anal_diff_new ();
+	bb->label = NULL;
 	return bb;
 }
 
@@ -35,6 +36,7 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 #endif
 	bb->fingerprint = NULL;
 	bb->cond = NULL;
+	if (bb->label) free(bb->label);
 	free (bb);
 }
 
