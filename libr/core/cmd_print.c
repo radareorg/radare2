@@ -984,13 +984,15 @@ static int cmd_print(void *data, const char *input) {
 				RCoreAsmHit *hit = NULL;
 				ut64 neg_use_blocksize = use_blocksize;
 				ut8 *buf = malloc(use_blocksize),
-					ignore_invalid = R_TRUE;
+					ignore_invalid = 1;
 				// if (bw_disassemble) neg_use_blocksize = -(int) use_blocksize;
 				// else neg_use_blocksize = use_blocksize;
 
-				if (*input == 'D')
+				if (*input == 'D'){
+					ignore_invalid = 0;
 					bwdhits = r_core_asm_back_sweep_disassemble_byte (core,
 						core->offset, neg_use_blocksize, core->blocksize, ignore_invalid);
+				}
 				else
 					bwdhits = r_core_asm_back_sweep_disassemble_instr (core,
 						core->offset, neg_use_blocksize, core->blocksize, ignore_invalid);

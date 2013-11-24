@@ -262,13 +262,17 @@ static RList *r_core_asm_back_sweep_disassemble (RCore *core, ut64 addr, int max
 			current_instr_len = next_instr_addr - current_instr_addr;
 			current_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, current_instr_len);
 
-			if (current_instr_len == 0) {
-				current_instr_len = 1;
-			}  else if (strstr (op.buf_asm, "invalid") && ignore_invalid) {
-				
-				if (count_instructions) hit_count ++;
-				else hit_count += current_instr_len;
-
+			if (current_instr_len == 0 || strstr (op.buf_asm, "invalid")) {
+				if (current_instr_len == 0) current_instr_len = 1;
+				if (!ignore_invalid) {
+					hit = r_core_asm_hit_new ();
+					hit->addr = current_instr_addr;
+					hit->len = current_instr_len;
+					hit->code = NULL;
+					r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
+					if (count_instructions) hit_count ++;
+					else hit_count += current_instr_len;					
+				}
 			} else if (current_instr_addr + current_instr_len == next_instr_addr) {
 				// Disasm perfect
 				hit = r_core_asm_hit_new ();
@@ -300,12 +304,23 @@ static RList *r_core_asm_back_sweep_disassemble (RCore *core, ut64 addr, int max
 					temp_instr_len = next_instr_addr - temp_instr_addr;
 					current_buf_pos = len - (addr - temp_instr_addr);
 					temp_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, temp_instr_len);
-					if (temp_instr_len == 0) {
-						temp_instr_len = 1;
-					}  else if (strstr (op.buf_asm, "invalid") && ignore_invalid) {
-						if (count_instructions) hit_count ++;
-						else hit_count += current_instr_len;
-					}  else {
+					
+					if (temp_instr_len == 0 || strstr (op.buf_asm, "invalid")) {
+						if (temp_instr_len == 0) 
+							temp_instr_len = 1;
+
+						if (!ignore_invalid) {
+							hit = r_core_asm_hit_new ();
+							hit->addr = temp_instr_addr;
+							hit->len = temp_instr_len;
+							hit->code = NULL;
+							r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
+							
+							if (count_instructions) hit_count ++;
+							else hit_count += temp_instr_len;					
+						}
+						// big difference is we do not update next instr addr here
+					} else {
 						hit = r_core_asm_hit_new ();
 						hit->addr = temp_instr_addr;
 						hit->len = temp_instr_len;
@@ -388,15 +403,22 @@ static RList *r_core_asm_back_sweep_disassemble (RCore *core, ut64 addr, int max
 						temp_instr_len = tmp_end_addr - temp_instr_addr;
 						current_buf_pos = len - (addr - temp_instr_addr);
 						temp_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, temp_instr_len);
-						if (temp_instr_len == 0) {
-							temp_instr_len = 1;
-						}  else if (strstr (op.buf_asm, "invalid") && ignore_invalid) {
+						if (temp_instr_len == 0 || strstr (op.buf_asm, "invalid")) {
+							if (temp_instr_len == 0) 
+								temp_instr_len = 1;
 
-							if (count_instructions) hit_count ++;
-							else hit_count += current_instr_len;
-
-
-						}  else {
+							if (!ignore_invalid) {
+								hit = r_core_asm_hit_new ();
+								hit->addr = temp_instr_addr;
+								hit->len = temp_instr_len;
+								hit->code = NULL;
+								r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
+								
+								if (count_instructions) hit_count ++;
+								else hit_count += temp_instr_len;					
+							}
+							// big difference is we do not update next instr addr here
+						} else {
 							hit = r_core_asm_hit_new ();
 							hit->addr = temp_instr_addr;
 							hit->len = temp_instr_len;
@@ -445,11 +467,11 @@ static RList *r_core_asm_back_sweep_disassemble (RCore *core, ut64 addr, int max
 }
 
 R_API RList *r_core_asm_back_sweep_disassemble_instr (RCore *core, ut64 addr, int count, int len, ut8 ignore_invalid){
-	ut8 count_instructions = R_TRUE;
+	ut8 count_instructions = 1;
 	return r_core_asm_back_sweep_disassemble(core, addr, count, len, count_instructions, ignore_invalid);
 }
 
 R_API RList *r_core_asm_back_sweep_disassemble_byte (RCore *core, ut64 addr, int count, int len, ut8 ignore_invalid){
-	ut8 count_instructions = R_FALSE;
+	ut8 count_instructions = 0;
 	return r_core_asm_back_sweep_disassemble(core, addr, count, len, count_instructions, ignore_invalid);
 }
