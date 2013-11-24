@@ -18,6 +18,7 @@ RListIter *r_list_iter_get_next(RListIter *list) {
 	return list->n;
 }
 void *r_list_iter_get_data(RListIter *list) {
+	if (list == NULL) return NULL;
 	return list->data;
 }
 
@@ -360,6 +361,16 @@ R_API RListIter *r_list_contains (RList *list, void *p) {
 	RListIter *iter;
 	r_list_foreach (list, iter, q) {
 		if (p == q)
+			return iter;
+	}
+	return NULL;
+}
+
+R_API RListIter *r_list_find (RList *list, void *p, RListComparator cmp) {
+	void *q;
+	RListIter *iter;
+	r_list_foreach (list, iter, q) {
+		if (cmp (p, q) == 0)
 			return iter;
 	}
 	return NULL;

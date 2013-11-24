@@ -1,13 +1,14 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
 
+static int is_valid_input_num_value(RCore *core, char *input_value){
+	ut64 value = input_value ? r_num_math (core->num, input_value) : 0;
+	return !(value == 0 && input_value && *input_value == '0');
+}
 
 static ut64 get_input_num_value(RCore *core, char *input_value){
 
-	ut64 value = input_value ? r_num_math (core->num, input_value) : -1;
-	if (value == 0 && input_value && *input_value != '0')
-		value = -1;
-
+	ut64 value = input_value ? r_num_math (core->num, input_value) : 0;
 	return value;
 }
 
@@ -19,14 +20,15 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set_i (core->config, "asm.segoff", segoff);
 }
 
-static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits, ut64 *addr) {
+
+static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits) {
 	// input: start of the input string e.g. after the command symbols have been consumed
 	// size: blocksize if present, otherwise -1
 	// asm_arch: asm_arch to interpret as if present and valid, otherwise NULL;
 	// bits: bits to use if present, otherwise -1
 
 	int result = R_FALSE;
-	char *input_one = NULL, *input_two = NULL, *input_three = NULL, *input_four = NULL;
+	ut8 *input_one = NULL, *input_two = NULL, *input_three = NULL;
 	char *str_clone = NULL,
 		 *ptr_str_clone = NULL,
 		 *trimmed_clone = NULL;
@@ -58,7 +60,6 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	// terminate input_three
 	if (ptr_str_clone && input_three) {
 		*ptr_str_clone = '\0';
-		input_four = (++ptr_str_clone); // XXX not used?
 		ptr_str_clone = strchr (input_three, ' ');
 	}
 
@@ -76,19 +77,19 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 	if (input_one && input_two && input_three) {
 		// <size> <arch> <bits>
-		*blocksize = get_input_num_value (core, input_one);
+		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
 		*asm_arch = r_asm_is_valid (core->assembler, input_two) ? strdup (input_two) : NULL;
 		*bits = get_input_num_value (core, input_three);
 		result = R_TRUE;
 
 	} else if (input_one && input_two) {
 
-		*blocksize = get_input_num_value (core, input_one);
+		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
 
-		if (*blocksize == -1) {
+		if (!is_valid_input_num_value(core, input_one) ) {
 			// input_one can only be one other thing
 			*asm_arch = r_asm_is_valid (core->assembler, input_one) ? strdup (input_one) : NULL;
-			*bits = get_input_num_value (core, input_two);
+			*bits = is_valid_input_num_value(core, input_two) ? get_input_num_value (core, input_two): -1;
 		} else {
 			if (r_str_contains_macro (input_two) ){
 				r_str_truncate_cmd (input_two);
@@ -99,8 +100,8 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 		result = R_TRUE;
 	} else if (input_one) {
 
-		*blocksize = get_input_num_value (core, input_one);
-		if (*blocksize == -1) {
+		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
+		if (!is_valid_input_num_value(core, input_one) ) {
 			// input_one can only be one other thing
 			if (r_str_contains_macro (input_one) ){
 				r_str_truncate_cmd (input_one);
@@ -444,7 +445,7 @@ static int cmd_print(void *data, const char *input) {
 		if (p) {
 			l = (int) r_num_math (core->num, p+1);
 			/* except disasm and memoryfmt (pd, pm) */
-			if (input[0] != 'd' && input[0] != 'm' && input[0]!='a') {
+			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' && input[0]!='a') {
 				if (l>0) len = l;
 				if (l>tbs) {
 					if (!r_core_block_size (core, l)) {
@@ -783,11 +784,11 @@ static int cmd_print(void *data, const char *input) {
 	case 'D':
 	case 'd':
 		{
-		char *new_arch = NULL;
-		ut64 rest = 0LL;
-		ut32 new_bits = -1;
-		ut64 use_blocksize = UT64_MAX;
-		ut8 pos = 0, settings_changed = R_FALSE;
+		ut64 current_offset = core->offset;
+		char *new_arch = NULL, *old_arch = NULL, *segoff = NULL;
+		ut32 new_bits = -1, old_bits = -1;
+		ut64 use_blocksize = core->blocksize;
+		ut8 pos = 0, settings_changed = R_FALSE, bw_disassemble = R_FALSE;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 		char *old_arch = strdup (r_config_get (core->config, "asm.arch"));
 		int segoff = r_config_get_i (core->config, "asm.segoff");
@@ -800,18 +801,19 @@ static int cmd_print(void *data, const char *input) {
 			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
 				if (input[pos] == ' ') break;
 
-		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits, &rest)) {
+		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits)) {
 			// XXX - print help message
 			//return R_FALSE;
 		}
 
-		if (use_blocksize == UT64_MAX) {
-			use_blocksize = core->blocksize;
-		} else if (core->blocksize_max < use_blocksize) {
-			eprintf ("This block size is too big (%i<%"PFMT64d
-				"). Did you mean 'p%c @ %"PFMT64d"' instead?\n",
-				core->blocksize_max, use_blocksize, *input, use_blocksize);
+		if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
+
+			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ 0x%08"PFMT64x"' instead?\n",
+						core->blocksize_max, use_blocksize, input[0], (int) use_blocksize);
 			return R_FALSE;
+		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize > -core->blocksize_max) {
+			bw_disassemble = R_TRUE;
+			use_blocksize = -use_blocksize;
 		}
 
 		if (new_arch == NULL) new_arch = strdup (old_arch);
@@ -830,7 +832,53 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'n':
 			processed_cmd = R_TRUE;
-			{
+			if (input[1] == 's') bw_disassemble = 1;
+			if (bw_disassemble) {
+				RList *bwdhits = NULL;
+				RListIter *iter = NULL;
+				RCoreAsmHit *hit = NULL;
+				ut64 neg_use_blocksize = use_blocksize;
+				ut8 *buf;
+				ut8 ignore_invalid = R_TRUE;
+
+				if (*input == 'D'){
+					ignore_invalid = R_FALSE;
+					bwdhits = r_core_asm_back_disassemble_byte (core,
+						core->offset, use_blocksize, -1, 0);
+				}
+				else
+					bwdhits = r_core_asm_back_disassemble_instr (core,
+						core->offset, use_blocksize, -1, 0);
+
+				if (bwdhits) {
+					int result = 0;
+					RAsmOp asmop;
+					memset(&asmop, 0, sizeof (RAnalOp));
+					buf = malloc (1024);
+
+					r_list_foreach (bwdhits, iter, hit) {
+						r_core_read_at (core, hit->addr, buf, hit->len);
+						result = r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+						if (result<1) {
+							ut8 *owallawalla = "????";
+							ut8 *hex_str = r_hex_bin2strdup(buf, hit->len);
+							if (hex_str == NULL) hex_str = owallawalla;
+							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  hit->addr, hex_str);
+							if (hex_str && hex_str != owallawalla) free(hex_str);
+						} else {
+							r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
+								hit->addr, asmop.buf_hex, asmop.buf_asm);
+						}
+					}
+
+					r_list_free (bwdhits);
+					free (buf);
+					pd_result = R_TRUE;
+				} else {
+					pd_result = R_FALSE;
+				}
+				pd_result = 0;
+			} else {
 				RAsmOp asmop;
 				ut8 *buf = core->block;
 
@@ -844,17 +892,31 @@ static int cmd_print(void *data, const char *input) {
 				}
 
 				if (buf) {
-					ut8 inst_len = 0;
-					for (i=0; (i+inst_len)<use_blocksize; i++ ) {
-						pd_result = r_asm_disassemble (core->assembler, &asmop, buf+i, use_blocksize-i);
+					ut8 hit_cnt = 0;
+					ut8 go_by_instr = input[0] == 'd';
+					ut32 pdn_offset = 0;
+					ut64 instr_cnt = 0;
 
-						if (pd_result<1) {
-							pd_result = 1;
-							r_cons_printf ("0x%08"PFMT64x" ???\n", core->offset+i);
+					int dresult = 0;
+
+					for (pdn_offset=0; pdn_offset < use_blocksize; ) {
+						dresult = r_asm_disassemble (core->assembler, &asmop, buf+pdn_offset, use_blocksize-pdn_offset);
+						if (dresult<1) {
+							ut8 *owallawalla = "????";
+							ut8 *hex_str = r_hex_bin2strdup(buf+pdn_offset, 1);
+							if (hex_str == NULL) hex_str = owallawalla;
+							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  core->offset+pdn_offset, hex_str);
+							pdn_offset += 1;
+							instr_cnt += asmop.inst_len;
+							if (hex_str && hex_str != owallawalla) free(hex_str);
+
 						} else {
 							r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
-								core->offset+i, asmop.buf_hex, asmop.buf_asm);
-							inst_len = asmop.inst_len;
+								core->offset+pdn_offset, asmop.buf_hex, asmop.buf_asm);
+							if (go_by_instr)
+								pdn_offset += asmop.inst_len;
+							else
+								pdn_offset += 1;
 						}
 					}
 					if (buf != core->block) free (buf);
@@ -980,38 +1042,71 @@ static int cmd_print(void *data, const char *input) {
 			"  pdr  : recursive disassemble across the function graph\n"
 			"  pdf  : disassemble function\n"
 			"  pdi  : like 'pi', with offset and bytes\n"
-			"  pdl  : show instruction sizes\n");
+			"  pdl  : show instruction sizes\n"
+			"  pds  : disassemble with back sweep (greedy disassembly backwards)\n");
 			pd_result = 0;
 		}
-		//if (core->visual)
-		//	l = core->cons->rows-core->cons->lines;
 		if (!processed_cmd) {
-			if (l<0) {
-				RList *bwdhits;
-				RListIter *iter;
-				RCoreAsmHit *hit;
-				ut8 *block = malloc (core->blocksize);
+			RList *hits;
+			RListIter *iter;
+			RCoreAsmHit *hit;
+			ut8 *block = malloc (core->blocksize);
+	
+			if (block && bw_disassemble) {
+
+				l = -l;
 				if (block) {
-					l = -l;
-					bwdhits = r_core_asm_bwdisassemble (core,
-						core->offset, l, core->blocksize);
-					if (bwdhits) {
-						r_list_foreach (bwdhits, iter, hit) {
-							r_core_read_at (core, hit->addr,
-								block, core->blocksize);
-							core->num->value = r_core_print_disasm (core->print,
-								core, hit->addr, block, core->blocksize, l, 0, 1);
-							r_cons_printf ("------\n");
-						}
-						r_list_free (bwdhits);
+					if (*input == 'D'){
+						hits = r_core_asm_back_disassemble_byte (core,
+							core->offset, core->blocksize, use_blocksize, 5);
+					} else {
+						hits = r_core_asm_back_disassemble_instr (core,
+							core->offset, core->blocksize, use_blocksize, 5);
 					}
-					free (block);
+					if (hits) {
+						r_list_foreach (hits, iter, hit) {
+							r_core_read_at (core, hit->addr,
+									block, core->blocksize);
+							if (*input == 'D') {
+								core->num->value = r_core_print_disasm (core->print,
+										core, hit->addr, block, core->blocksize, l, 0, 1);
+								r_cons_printf ("------\n");
+							} else {
+								core->num->value = r_core_print_disasm (core->print,
+										core, hit->addr, block, hit->len, l, 0, 1);
+							}
+						}
+					}
+					if (hits) r_list_free (hits);
 				}
-			} else {
-				core->num->value = r_core_print_disasm (
-					core->print, core, core->offset,
-					core->block, len, l, 0, (*input=='D'));
+			} else if (block){
+				ut64 idx = 0;
+				RAsmOp asmop;
+				ut32 disasm_len;
+				ut32 hit_cnt = 0;
+
+				for(i=0; i < use_blocksize; i++ ) {
+					ut64 addr = core->offset + idx;
+					r_core_read_at (core, addr,
+							block, core->blocksize);
+					if (*input == 'D') {
+						core->num->value = r_core_print_disasm (core->print,
+									core, addr, block, core->blocksize, l, 0, 1);
+						idx++;
+						r_cons_printf ("------\n");
+					} else {
+						RAsmOp _asmop;
+						ut32 disasm_len = r_asm_disassemble (core->assembler, &_asmop,  block,
+							core->blocksize);
+						if (disasm_len == 0) disasm_len++;
+						core->num->value = r_core_print_disasm (core->print,
+									core, addr, block, disasm_len, l, 0, 1);
+						idx+= disasm_len;
+					}
+				}
 			}
+			core->offset = current_offset;
+			if (block) free(block);
 		}
 
 		// change back asm setting is they were changed
