@@ -66,7 +66,9 @@ R_API int r_sandbox_open (const char *path, int mode, int perm) {
 #if __WINDOWS__
 	perm = 0;
 #endif
-	return open (path, mode, perm);
+	if (path)
+		return open (path, mode, perm);
+	return -1;
 }
 
 R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
@@ -76,7 +78,9 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 		if (!r_sandbox_check_path (path))
 			return NULL;
 	}
-	return fopen (path, mode);
+	if (path)
+		return fopen (path, mode);
+	return NULL;
 }
 
 R_API int r_sandbox_chdir (const char *path) {

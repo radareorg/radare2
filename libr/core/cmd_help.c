@@ -487,7 +487,7 @@ static int cmd_help(void *data, const char *input) {
 		" y [len] [off]         yank/paste bytes from/to memory\n"
 		" ?[??] [expr]          help or evaluate math expression\n"
 		" ?$?                   show available '$' variables\n"
-		" ?@?                   show help for '@' and '~' suffix\n"
+		" ?@?                   show help for '@' (seek) and '~' (grep) suffix (see ~??)\n"
 		);
 		break;
 	}

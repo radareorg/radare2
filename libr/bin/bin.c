@@ -146,6 +146,7 @@ R_API int r_bin_load_languages(RBin *bin) {
 		return R_BIN_NM_CXX;
 	return R_BIN_NM_NONE;
 }
+
 static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 
 	RBinArch *a = &bin->cur;
@@ -171,9 +172,6 @@ static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 	if (cp->classes) o->classes = cp->classes (a);
 	if (cp->lines) o->lines = cp->lines (a);
 	o->lang = r_bin_load_languages (bin);
-
-
-
 }
 
 R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
@@ -325,7 +323,6 @@ static void r_bin_free_items(RBin *bin) {
 	if (a->curplugin && a->curplugin->destroy)
 		a->curplugin->destroy (a);
 }
-
 
 static void r_bin_init(RBin *bin, int rawstr) {
 	RListIter *it;
@@ -695,10 +692,9 @@ R_API int r_bin_class_add_method (RBin *bin, const char *classname, const char *
 	if (c) {
 		r_list_append (c->methods, (void*)name);
 		return R_TRUE;
-	} else {
-		c = r_bin_class_new (bin, classname, NULL, 0);
-		r_list_append (c->methods, (void*)name);
 	}
+	c = r_bin_class_new (bin, classname, NULL, 0);
+	r_list_append (c->methods, (void*)name);
 	return R_FALSE;
 }
 
@@ -713,7 +709,7 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	RBinPlugin *cp = bin->cur.curplugin;
-	if(cp && cp->get_vaddr)
+	if (cp && cp->get_vaddr)
 	    return cp->get_vaddr (baddr, paddr, vaddr);
 
 	ut32 delta;

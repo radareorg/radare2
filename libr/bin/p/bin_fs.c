@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2013 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -15,9 +15,11 @@ static char *fsname(RBinArch *arch) {
 	for (i=0; fstypes[i].name; i++) {
 		RFSType *f = &fstypes[i];
 		len = R_MIN (f->buflen, sizeof (buf));
+		memset (buf, 0, sizeof (buf));
 		r_buf_read_at (arch->buf, f->bufoff, buf, len);
 		if ((f->buflen>0) && (len>=f->buflen)) {
-			if (!memcmp (buf, f->buf, f->buflen)) {
+			int min = R_MIN (f->buflen, sizeof (buf));
+			if (!memcmp (buf, f->buf, min)) {
 				ret = R_TRUE;
 				len = R_MIN (f->bytelen, sizeof (buf));
 				r_buf_read_at (arch->buf, f->byteoff, buf, len);
