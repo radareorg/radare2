@@ -21,15 +21,14 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, char * segoff){
 }
 
 
-static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits, ut64 *addr) {
+static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits) {
 	// input: start of the input string e.g. after the command symbols have been consumed
 	// size: blocksize if present, otherwise -1
 	// asm_arch: asm_arch to interpret as if present and valid, otherwise NULL;
 	// bits: bits to use if present, otherwise -1
 
 	int result = R_FALSE;
-	ut8 *input_one = NULL, *input_two = NULL, *input_three = NULL, *input_four = NULL;
-	ut8 str_cnt = 0;
+	ut8 *input_one = NULL, *input_two = NULL, *input_three = NULL;
 	char *str_clone = NULL,
 		 *ptr_str_clone = NULL,
 		 *trimmed_clone = NULL;
@@ -61,7 +60,6 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	// terminate input_three
 	if (ptr_str_clone && input_three) {
 		*ptr_str_clone = '\0';
-		input_four = (++ptr_str_clone);
 		ptr_str_clone = strchr (input_three, ' ');
 	}
 
@@ -786,10 +784,10 @@ static int cmd_print(void *data, const char *input) {
 	case 'D':
 	case 'd':
 		{
-		char *new_arch = NULL, *old_arch = NULL, *rest = NULL, *segoff = NULL;
+		char *new_arch = NULL, *old_arch = NULL, *segoff = NULL;
 		ut32 new_bits = -1, old_bits = -1;
 		ut64 use_blocksize = -1;
-		ut8 pos = 0, settings_changed = R_FALSE, bw_disassemble;
+		ut8 pos = 0, settings_changed = R_FALSE, bw_disassemble = R_FALSE;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 
 
@@ -806,7 +804,7 @@ static int cmd_print(void *data, const char *input) {
 		for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && pos < strlen (input); pos++)
 			if (input[pos] == ' ') break;
 
-		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits, &rest)) {
+		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits)) {
 			// XXX - print help message
 			//return R_FALSE;
 		}
@@ -815,11 +813,12 @@ static int cmd_print(void *data, const char *input) {
 			use_blocksize = core->blocksize;
 		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
 
-			eprintf ("This block size is too big (0x%02x<0x%02llx). Did you mean 'p%c @ 0x%02llx' instead?\n",
+			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ 0x%08"PFMT64x"' instead?\n",
 						core->blocksize_max, use_blocksize, input[0], (int) use_blocksize);
 			return R_FALSE;
 		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize > -core->blocksize_max) {
 			bw_disassemble = R_TRUE;
+			use_blocksize = -use_blocksize;
 		}
 
 		if (new_arch == NULL) new_arch = strdup (old_arch);
@@ -837,6 +836,9 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 			break;
 		case 'n':
+			if (bw_disassemble) {
+				eprintf("Use pds instead.\n");
+			}
 			processed_cmd = R_TRUE;
 			{
 				RAsmOp asmop;
@@ -974,6 +976,41 @@ static int cmd_print(void *data, const char *input) {
 				pd_result = 0;
 			}
 			break;
+		case 's':
+			processed_cmd = R_TRUE;
+			{
+				RList *bwdhits = NULL;
+				RListIter *iter = NULL;
+				RCoreAsmHit *hit = NULL;
+				ut64 neg_use_blocksize = use_blocksize;
+				ut8 *buf = malloc(use_blocksize),
+					ignore_invalid = R_TRUE;
+				// if (bw_disassemble) neg_use_blocksize = -(int) use_blocksize;
+				// else neg_use_blocksize = use_blocksize;
+
+				if (*input == 'D')
+					bwdhits = r_core_asm_back_sweep_disassemble_byte (core,
+						core->offset, neg_use_blocksize, core->blocksize, ignore_invalid);
+				else
+					bwdhits = r_core_asm_back_sweep_disassemble_instr (core,
+						core->offset, neg_use_blocksize, core->blocksize, ignore_invalid);
+
+				if (bwdhits) {
+					r_list_foreach (bwdhits, iter, hit) {
+						r_core_read_at (core, hit->addr, buf, neg_use_blocksize);
+						core->num->value = r_core_print_disasm (
+							core->print, core, hit->addr, 
+							buf, hit->len, 
+							1, 0, (*input=='D'));
+					}
+					r_list_free (bwdhits);
+					pd_result = R_TRUE;
+				} else {
+					pd_result = R_FALSE;
+				}
+				pd_result = 0;
+			}
+			break;
 		case 'j':
 			processed_cmd = R_TRUE;
 			r_core_print_disasm_json (core, core->offset,
@@ -989,30 +1026,26 @@ static int cmd_print(void *data, const char *input) {
 			"  pdr  : recursive disassemble across the function graph\n"
 			"  pdf  : disassemble function\n"
 			"  pdi  : like 'pi', with offset and bytes\n"
-			"  pdl  : show instruction sizes\n");
+			"  pdl  : show instruction sizes\n"
+			"  pds  : disassemble with back sweep (greedy disassembly backwards)\n");
 			pd_result = 0;
 		}
-		//if (core->visual)
-		//	l = core->cons->rows-core->cons->lines;
-eprintf("perfotming the backward analysis for (%d) bytes.\n", l);
-eprintf("perfotming the backward analysis for (%d) bytes.\n", use_blocksize);
 		if (!processed_cmd) {
 			if (bw_disassemble) {
-				eprintf("perfotming the backward analysis for (%d) bytes.\n", l);
 				RList *bwdhits;
 				RListIter *iter;
 				RCoreAsmHit *hit;
 				ut8 *block = malloc (core->blocksize);
 				if (block) {
-					int neg_use_blocksize = -(int) use_blocksize;
+					l = -l;
 					bwdhits = r_core_asm_bwdisassemble (core,
-						core->offset, neg_use_blocksize, core->blocksize);
+							core->offset, l, core->blocksize);
 					if (bwdhits) {
 						r_list_foreach (bwdhits, iter, hit) {
 							r_core_read_at (core, hit->addr,
-								block, core->blocksize);
+									block, core->blocksize);
 							core->num->value = r_core_print_disasm (core->print,
-								core, hit->addr, block, core->blocksize, l, 0, 1);
+									core, hit->addr, block, core->blocksize, l, 0, 1);
 							r_cons_printf ("------\n");
 						}
 						r_list_free (bwdhits);
@@ -1021,8 +1054,8 @@ eprintf("perfotming the backward analysis for (%d) bytes.\n", use_blocksize);
 				}
 			} else {
 				core->num->value = r_core_print_disasm (
-					core->print, core, core->offset,
-					core->block, len, l, 0, (*input=='D'));
+							core->print, core, core->offset,
+							core->block, len, l, 0, (*input=='D'));
 			}
 		}
 
