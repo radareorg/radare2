@@ -20,6 +20,7 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set_i (core->config, "asm.segoff", segoff);
 }
 
+
 static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits) {
 	// input: start of the input string e.g. after the command symbols have been consumed
 	// size: blocksize if present, otherwise -1
