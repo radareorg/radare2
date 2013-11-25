@@ -190,15 +190,11 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 		if (hint && hint->opcode)
 			r_cons_printf ("ophint: %s\n", hint->opcode);
 		r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
-		r_cons_printf ("bytes: ");
-		for (j=0; j<size; j++)
-			r_cons_printf ("%02x", buf[j]);
-		r_cons_newline ();
 		if (op.val != UT64_MAX)
 			r_cons_printf ("val: 0x%08"PFMT64x"\n", op.val);
 		if (op.ptr != UT64_MAX)
 			r_cons_printf ("ptr: 0x%08"PFMT64x"\n", op.ptr);
-		r_cons_printf ("size: %d\n", size);
+		r_cons_printf ("size: %d\n", (hint&&hint->length)?hint->length: op.length);
 		r_cons_printf ("type: %d (%s)\n", (int)op.type,
 			r_anal_optype_to_string (op.type)); // TODO: string
 		if (op.esil)
