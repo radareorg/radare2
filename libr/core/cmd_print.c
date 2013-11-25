@@ -11,14 +11,13 @@ static ut64 get_input_num_value(RCore *core, char *input_value){
 	return value;
 }
 
-static void set_asm_configs(RCore *core, char *arch, ut32 bits, char * segoff){
+static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
 	// XXX - this needs to be done here, because 
 	// if arch == x86 and bits == 16, segoff automatically changes
-	r_config_set (core->config, "asm.segoff", segoff);
+	r_config_set_i (core->config, "asm.segoff", segoff);
 }
-
 
 static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits, ut64 *addr) {
 	// input: start of the input string e.g. after the command symbols have been consumed
@@ -27,8 +26,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	// bits: bits to use if present, otherwise -1
 
 	int result = R_FALSE;
-	ut8 *input_one = NULL, *input_two = NULL, *input_three = NULL, *input_four = NULL;
-	ut8 str_cnt = 0;
+	char *input_one = NULL, *input_two = NULL, *input_three = NULL, *input_four = NULL;
 	char *str_clone = NULL,
 		 *ptr_str_clone = NULL,
 		 *trimmed_clone = NULL;
@@ -60,7 +58,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	// terminate input_three
 	if (ptr_str_clone && input_three) {
 		*ptr_str_clone = '\0';
-		input_four = (++ptr_str_clone);
+		input_four = (++ptr_str_clone); // XXX not used?
 		ptr_str_clone = strchr (input_three, ' ');
 	}
 
@@ -87,7 +85,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 		*blocksize = get_input_num_value (core, input_one);
 
-		if (blocksize == -1) {
+		if (*blocksize == -1) {
 			// input_one can only be one other thing
 			*asm_arch = r_asm_is_valid (core->assembler, input_one) ? strdup (input_one) : NULL;
 			*bits = get_input_num_value (core, input_two);
@@ -102,7 +100,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	} else if (input_one) {
 
 		*blocksize = get_input_num_value (core, input_one);
-		if (blocksize == -1) {
+		if (*blocksize == -1) {
 			// input_one can only be one other thing
 			if (r_str_contains_macro (input_one) ){
 				r_str_truncate_cmd (input_one);
@@ -785,21 +783,17 @@ static int cmd_print(void *data, const char *input) {
 	case 'D':
 	case 'd':
 		{
-		char *new_arch = NULL, *old_arch = NULL, *rest = NULL, *segoff = NULL;
-		ut32 new_bits = -1, old_bits = -1;
-		ut64 use_blocksize = -1;
+		char *new_arch = NULL;
+		ut64 rest = 0LL;
+		ut32 new_bits = -1;
+		ut64 use_blocksize = UT64_MAX;
 		ut8 pos = 0, settings_changed = R_FALSE;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
-
-
-		old_arch = r_config_get (core->config, "asm.arch");
-		old_arch = strdup (old_arch);
-
-		old_bits = r_config_get_i (core->config, "asm.bits");
+		char *old_arch = strdup (r_config_get (core->config, "asm.arch"));
+		int segoff = r_config_get_i (core->config, "asm.segoff");
+		int old_bits = r_config_get_i (core->config, "asm.bits");
 		// XXX - this is necessay b/c radare will automatically
 		// swap flags if arch is x86 and bits == 16 see: __setsegoff in config.c
-		segoff = r_config_get (core->config, "asm.segoff");
-		segoff = strdup (segoff);
 
 		// get to the space
 		for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && pos < strlen (input); pos++)
@@ -810,12 +804,12 @@ static int cmd_print(void *data, const char *input) {
 			//return R_FALSE;
 		}
 
-		if (use_blocksize == -1) {
+		if (use_blocksize == UT64_MAX) {
 			use_blocksize = core->blocksize;
 		} else if (core->blocksize_max < use_blocksize) {
-
-			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ %d' instead?\n",
-						core->blocksize_max < use_blocksize, *input, use_blocksize);
+			eprintf ("This block size is too big (%i<%"PFMT64d
+				"). Did you mean 'p%c @ %"PFMT64d"' instead?\n",
+				core->blocksize_max, use_blocksize, *input, use_blocksize);
 			return R_FALSE;
 		}
 
@@ -862,7 +856,6 @@ static int cmd_print(void *data, const char *input) {
 							inst_len = asmop.inst_len;
 						}
 					}
-
 					if (buf != core->block) free (buf);
 					pd_result = R_TRUE;
 				}
@@ -1026,7 +1019,6 @@ static int cmd_print(void *data, const char *input) {
 
 		free (old_arch);
 		free (new_arch);
-		free (segoff);
 
 		if (processed_cmd)
 			return pd_result;

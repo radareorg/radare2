@@ -188,8 +188,10 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	switch (u.mnemonic) {
 	case UD_Itest:
 	case UD_Icmp:
-	case UD_Isalc:
 		op->type = R_ANAL_OP_TYPE_CMP;
+		break;
+	case UD_Isalc: // ??
+		// al = cf
 		break;
 	case UD_Ixor:
 		op->type = R_ANAL_OP_TYPE_XOR;
@@ -200,6 +202,10 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	case UD_Iand:
 		op->type = R_ANAL_OP_TYPE_AND;
 		break;
+	case UD_Isar:
+		op->type = R_ANAL_OP_TYPE_SAR;
+		break;
+	// XXX: sal ?!?
 	case UD_Ishl:
 		op->type = R_ANAL_OP_TYPE_SHL;
 		break;
@@ -217,6 +223,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		break;
 	case UD_Iint:
 		op->type = R_ANAL_OP_TYPE_SWI;
+		op->val = u.operand[0].lval.uword;
 		break;
 	case UD_Ilea:
 	case UD_Imov:
@@ -231,6 +238,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		default:
 			op->type = R_ANAL_OP_TYPE_MOV;
+			op->ptr = getval (&u.operand[1]);
 			// XX
 			break;
 		}
@@ -291,6 +299,8 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 					op->stackptr = o;
 				}
 			}
+			if (u.operand[1].type != UD_OP_REG)
+				op->val = getval (&u.operand[1]);
 		}
 		op->stackptr = 4;
 		break;
