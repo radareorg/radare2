@@ -796,8 +796,9 @@ static int cmd_print(void *data, const char *input) {
 		// swap flags if arch is x86 and bits == 16 see: __setsegoff in config.c
 
 		// get to the space
-		for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && pos < strlen (input); pos++)
-			if (input[pos] == ' ') break;
+		if (input[0])
+			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
+				if (input[pos] == ' ') break;
 
 		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits, &rest)) {
 			// XXX - print help message
