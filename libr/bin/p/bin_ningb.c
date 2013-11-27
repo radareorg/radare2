@@ -58,7 +58,6 @@ static RList* sections(RBinArch *arch){
 	RBinSection *ram = NULL, *vram = NULL, *fram = NULL, *oam = NULL;					//Array for this
 
 	r_buf_read_at(arch->buf,0x148,&bank,1);
-	eprintf("%i\n",bank);
 	bank=gb_get_rombanks(bank);
 	RBinSection *rombank[bank];
 
