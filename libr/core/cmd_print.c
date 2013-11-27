@@ -786,7 +786,7 @@ static int cmd_print(void *data, const char *input) {
 		{
 		char *new_arch = NULL, *old_arch = NULL, *segoff = NULL;
 		ut32 new_bits = -1, old_bits = -1;
-		ut64 use_blocksize = -1;
+		ut64 use_blocksize = core->blocksize;
 		ut8 pos = 0, settings_changed = R_FALSE, bw_disassemble = R_FALSE;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 
@@ -809,9 +809,7 @@ static int cmd_print(void *data, const char *input) {
 			//return R_FALSE;
 		}
 
-		if (use_blocksize == 0) {
-			use_blocksize = core->blocksize;
-		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
+		if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
 
 			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ 0x%08"PFMT64x"' instead?\n",
 						core->blocksize_max, use_blocksize, input[0], (int) use_blocksize);
@@ -835,12 +833,60 @@ static int cmd_print(void *data, const char *input) {
 			pdi (core, l, len, (*input=='D')? len: core->blocksize);
 			pd_result = 0;
 			break;
+		case 's':
 		case 'n':
-			if (bw_disassemble) {
-				eprintf("Use pds instead.\n");
-			}
 			processed_cmd = R_TRUE;
-			{
+			if (input[1] == 's') bw_disassemble = 1;
+			if (bw_disassemble) {
+				RList *bwdhits = NULL;
+				RListIter *iter = NULL;
+				RCoreAsmHit *hit = NULL;
+				ut64 neg_use_blocksize = use_blocksize;
+				ut8 *buf;
+				ut8 ignore_invalid = R_TRUE;
+
+				if (*input == 'D'){
+					ignore_invalid = R_FALSE;
+					bwdhits = r_core_asm_back_sweep_disassemble_byte (core,
+						core->offset, use_blocksize, -1, ignore_invalid);
+				}
+				else
+					bwdhits = r_core_asm_back_sweep_disassemble_instr (core,
+						core->offset, use_blocksize, -1, ignore_invalid);
+
+				if (bwdhits) {
+					int result = 0;
+					RAsmOp asmop;
+					memset(&asmop, 0, sizeof (RAnalOp));
+					buf = malloc (1024);
+
+					r_list_foreach (bwdhits, iter, hit) {
+
+						r_core_read_at (core, hit->addr, buf, hit->len);
+
+						result = r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
+
+						if (result<1) {
+							ut8 *owallawalla = "????";
+							ut8 *hex_str = r_hex_bin2strdup(buf, hit->len);
+							if (hex_str == NULL) hex_str = owallawalla;
+							
+							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  hit->addr, hex_str);
+
+							if (hex_str && hex_str != owallawalla) free(hex_str);
+						} else {
+							r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
+								hit->addr, asmop.buf_hex, asmop.buf_asm);
+						}
+					}
+					r_list_free (bwdhits);
+					free (buf);
+					pd_result = R_TRUE;
+				} else {
+					pd_result = R_FALSE;
+				}
+				pd_result = 0;
+			} else {
 				RAsmOp asmop;
 				ut8 *buf = core->block;
 
@@ -854,17 +900,36 @@ static int cmd_print(void *data, const char *input) {
 				}
 
 				if (buf) {
-					ut8 inst_len = 0;
-					for (i=0; (i+inst_len)<use_blocksize; i++ ) {
-						pd_result = r_asm_disassemble (core->assembler, &asmop, buf+i, use_blocksize-i);
+					ut8 hit_cnt = 0;
+					ut8 go_by_instr = input[0] == 'd';
+					ut32 pdn_offset = 0;
+					ut64 instr_cnt = 0;
 
-						if (pd_result<1) {
-							pd_result = 1;
-							r_cons_printf ("0x%08"PFMT64x" ???\n", core->offset+i);
+					int dresult = 0;
+
+					for (pdn_offset=0; pdn_offset < use_blocksize; ) {
+						dresult = r_asm_disassemble (core->assembler, &asmop, buf+pdn_offset, use_blocksize-pdn_offset);
+
+						if (dresult<1) {
+							ut8 *owallawalla = "????";
+							ut8 *hex_str = r_hex_bin2strdup(buf+pdn_offset, 1);
+
+							if (hex_str == NULL) hex_str = owallawalla;
+
+							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  core->offset+pdn_offset, hex_str);
+							
+							pdn_offset += 1;
+							instr_cnt += asmop.inst_len;
+
+							if (hex_str && hex_str != owallawalla) free(hex_str);
 						} else {
 							r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
-								core->offset+i, asmop.buf_hex, asmop.buf_asm);
-							inst_len = asmop.inst_len;
+								core->offset+pdn_offset, asmop.buf_hex, asmop.buf_asm);
+							
+							if (go_by_instr)
+								pdn_offset += asmop.inst_len;
+							else
+								pdn_offset += 1;
 						}
 					}
 
@@ -976,43 +1041,6 @@ static int cmd_print(void *data, const char *input) {
 				pd_result = 0;
 			}
 			break;
-		case 's':
-			processed_cmd = R_TRUE;
-			{
-				RList *bwdhits = NULL;
-				RListIter *iter = NULL;
-				RCoreAsmHit *hit = NULL;
-				ut64 neg_use_blocksize = use_blocksize;
-				ut8 *buf = malloc(use_blocksize),
-					ignore_invalid = 1;
-				// if (bw_disassemble) neg_use_blocksize = -(int) use_blocksize;
-				// else neg_use_blocksize = use_blocksize;
-
-				if (*input == 'D'){
-					ignore_invalid = 0;
-					bwdhits = r_core_asm_back_sweep_disassemble_byte (core,
-						core->offset, neg_use_blocksize, core->blocksize, ignore_invalid);
-				}
-				else
-					bwdhits = r_core_asm_back_sweep_disassemble_instr (core,
-						core->offset, neg_use_blocksize, core->blocksize, ignore_invalid);
-
-				if (bwdhits) {
-					r_list_foreach (bwdhits, iter, hit) {
-						r_core_read_at (core, hit->addr, buf, neg_use_blocksize);
-						core->num->value = r_core_print_disasm (
-							core->print, core, hit->addr, 
-							buf, hit->len, 
-							1, 0, (*input=='D'));
-					}
-					r_list_free (bwdhits);
-					pd_result = R_TRUE;
-				} else {
-					pd_result = R_FALSE;
-				}
-				pd_result = 0;
-			}
-			break;
 		case 'j':
 			processed_cmd = R_TRUE;
 			r_core_print_disasm_json (core, core->offset,
@@ -1033,32 +1061,75 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 		}
 		if (!processed_cmd) {
-			if (bw_disassemble) {
-				RList *bwdhits;
-				RListIter *iter;
-				RCoreAsmHit *hit;
-				ut8 *block = malloc (core->blocksize);
+			RList *hits;
+			RListIter *iter;
+			RCoreAsmHit *hit;
+			ut8 *block = malloc (core->blocksize);
+	
+			if (block && bw_disassemble) {
+
+				l = -l;
 				if (block) {
-					l = -l;
-					bwdhits = r_core_asm_bwdisassemble (core,
-							core->offset, l, core->blocksize);
-					if (bwdhits) {
-						r_list_foreach (bwdhits, iter, hit) {
+					
+					if (*input == 'D'){
+						hits = r_core_asm_back_sweep_disassemble_byte (core,
+							core->offset, core->blocksize, use_blocksize, 20);
+					} else {
+						hits = r_core_asm_back_sweep_disassemble_instr (core,
+							core->offset, core->blocksize, use_blocksize, 20);
+					}
+					if (hits) {
+						r_list_foreach (hits, iter, hit) {
 							r_core_read_at (core, hit->addr,
 									block, core->blocksize);
-							core->num->value = r_core_print_disasm (core->print,
-									core, hit->addr, block, core->blocksize, l, 0, 1);
-							r_cons_printf ("------\n");
-						}
-						r_list_free (bwdhits);
+							
+							if (*input == 'D') {
+								core->num->value = r_core_print_disasm (core->print,
+										core, hit->addr, block, core->blocksize, l, 0, 1);
+								r_cons_printf ("------\n");
+
+							} else {
+								core->num->value = r_core_print_disasm (core->print,
+										core, hit->addr, block, hit->len, l, 0, 1);
+							}
+
+						}	
 					}
-					free (block);
+					if (hits) r_list_free (hits);
 				}
-			} else {
-				core->num->value = r_core_print_disasm (
-							core->print, core, core->offset,
-							core->block, len, l, 0, (*input=='D'));
+
+			} else if (block){
+				ut64 idx = 0;
+				RAsmOp asmop;
+				ut32 disasm_len;
+				ut32 hit_cnt = 0;
+
+				for(i=0; i < use_blocksize; i++ ) {
+					ut64 addr = core->offset + idx;
+					r_core_read_at (core, addr,
+							block, core->blocksize);
+					
+					if (*input == 'D') {
+						core->num->value = r_core_print_disasm (core->print,
+									core, addr, block, core->blocksize, l, 0, 1);
+
+						idx++;
+						r_cons_printf ("------\n");
+					} else {
+						RAsmOp _asmop;
+						ut32 disasm_len = r_asm_disassemble (core->assembler, &_asmop,  block,
+							core->blocksize);
+						
+						if (disasm_len == 0) disasm_len++;
+						core->num->value = r_core_print_disasm (core->print,
+									core, addr, block, disasm_len, l, 0, 1);
+						
+						idx+= disasm_len;
+					}
+					
+				}
 			}
+			if (block) free(block);
 		}
 
 		// change back asm setting is they were changed
