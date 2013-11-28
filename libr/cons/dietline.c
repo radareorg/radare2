@@ -720,10 +720,12 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				gcomp++;
 			if (I.buffer.index<I.buffer.length) {
 #if USE_UTF8
-				I.buffer.length += utflen;
-				for (i = I.buffer.length; i>I.buffer.index; i--)
-					I.buffer.data[i] = I.buffer.data[i-utflen];
-				memcpy (I.buffer.data+I.buffer.index, buf, utflen);
+				if ((I.buffer.length + utflen) < sizeof (I.buffer.data)) {
+					I.buffer.length += utflen;
+					for (i = I.buffer.length; i>I.buffer.index; i--)
+						I.buffer.data[i] = I.buffer.data[i-utflen];
+					memcpy (I.buffer.data+I.buffer.index, buf, utflen);
+				}
 #else
 				for (i = ++I.buffer.length; i>I.buffer.index; i--)
 					I.buffer.data[i] = I.buffer.data[i-1];
@@ -731,12 +733,10 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			} else {
 #if USE_UTF8
-				memcpy (I.buffer.data+I.buffer.length, buf, utflen);
-				I.buffer.length+=utflen;
-#if 0
-				if (I.buffer.length>(R_LINE_BUFSIZE-1))
-					I.buffer.length--;
-#endif
+				if ((I.buffer.length + utflen) < sizeof (I.buffer.data)) {
+					memcpy (I.buffer.data+I.buffer.length, buf, utflen);
+					I.buffer.length+=utflen;
+				}
 				I.buffer.data[I.buffer.length]='\0';
 #else
 				I.buffer.data[I.buffer.length]=buf[0];
@@ -772,7 +772,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				printf ("\r (reverse-i-search (%s)): %s\r", I.buffer.data, gcomp_line);
 			} else {
 				int chars = R_MAX (1, strlen (I.buffer.data)); // wtf?
-				int cols = R_MAX (1, columns - r_str_ansi_len (I.prompt)-2);
+				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt)-2);
 				/* print line */
 				printf ("\r%s", I.prompt);
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
@@ -781,8 +781,15 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				if (I.buffer.index>cols) {
 					printf ("< ");
 					i = I.buffer.index-cols;
-				} else i=0;
-				fwrite (I.buffer.data+i, 1, I.buffer.index, stdout);
+					if (i>sizeof (I.buffer.data)) {
+						i = sizeof(I.buffer.data)-1;
+						len = 1;
+					}
+				} else i = 0;
+				len = I.buffer.index;
+				if ((len+i)>I.buffer.length)
+					len = 1;
+				fwrite (I.buffer.data+i, 1, len, stdout);
 			}
 			fflush (stdout);
 		}
