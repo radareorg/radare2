@@ -30,23 +30,23 @@ enyo.kind ({
   goRename: function() {
    var msg = prompt ('New name?', '');
    if(msg)
-   r2.cmd("afr "+msg, function() {
-     r2ui.seek ("$$", true);
-   });
+     r2.cmd("afr "+msg, function() {
+       r2ui.seek ("$$", true);
+     });
   },
   goComment: function() {
    var msg = prompt ('Comment?', '');
    if(msg)
-   r2.cmd("CC "+msg, function() {
-     r2ui.seek ("$$", true);
-   });
+     r2.cmd("CC "+msg, function() {
+       r2ui.seek ("$$", true);
+     });
   },
   goFlag: function() {
    var msg = prompt ('Flag name?', '');
    if(msg)
-   r2.cmd("f "+msg, function() {
-     r2ui.seek ("$$", true);
-   });
+     r2.cmd("f "+msg, function() {
+       r2ui.seek ("$$", true);
+     });
   },
   goUnflag: function() {
    r2.cmd("f-$$", function() {
@@ -60,10 +60,10 @@ enyo.kind ({
   },
   goCopy: function() {
    var msg = prompt ('How many bytes?', '');
-   if(msg)
-   r2.cmd("y "+msg, function() {
-     r2ui.seek ("$$", true);
-   });
+   if(msg && msg>0)
+     r2.cmd("y "+msg, function() {
+       r2ui.seek ("$$", true);
+     });
   },
   goPaste: function() {
    r2.cmd("yy", function() {
