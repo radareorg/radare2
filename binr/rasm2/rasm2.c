@@ -158,6 +158,7 @@ static int __lib_asm_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
 static int __lib_asm_dt(struct r_lib_plugin_t *pl, void *p, void *u) { return R_TRUE; }
 
 int main(int argc, char *argv[]) {
+	const char *path;
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	char buf[R_ASM_BUFSIZE];
@@ -170,7 +171,10 @@ int main(int argc, char *argv[]) {
 	l = r_lib_new ("radare_plugin");
 	r_lib_add_handler (l, R_LIB_TYPE_ASM, "(dis)assembly plugins",
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
-	r_lib_opendir (l, r_sys_getenv ("LIBR_PLUGINS"));
+	path = r_sys_getenv ("LIBR_PLUGINS");
+	if (!path || !*path)
+		path = R2_PREFIX"/lib/radare2/last";
+	r_lib_opendir (l, path);
 
 	if (argc<2)
 		return rasm_show_help (0);

@@ -167,14 +167,14 @@ static int samefile(const char *a, const char *b) {
 
 	if (sa != NULL && sb != NULL) {
 		do {
-			ptr = strstr(sa, "//");
+			ptr = strstr (sa, "//");
 			if (ptr) {
 				len = strlen (ptr+1) + 1;
 				memmove (ptr, ptr+1, len);
 			}
 		} while (ptr);
 		do {
-			ptr = strstr(sb, "//");
+			ptr = strstr (sb, "//");
 			if (ptr) {
 				len = strlen (ptr+1) + 1;
 				memmove (ptr, ptr+1, len);
