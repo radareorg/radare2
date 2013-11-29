@@ -942,6 +942,7 @@ extern RAnalPlugin r_anal_plugin_z80;
 extern RAnalPlugin r_anal_plugin_i8080;
 extern RAnalPlugin r_anal_plugin_8051;
 extern RAnalPlugin r_anal_plugin_arc;
+extern RAnalPlugin r_anal_plugin_ebc;
 
 #ifdef __cplusplus
 }
