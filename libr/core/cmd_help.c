@@ -118,6 +118,14 @@ static int cmd_help(void *data, const char *input) {
 	case 'v':
 		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
 		switch (input[1]) {
+		case '?':
+			r_cons_printf ("Usage: ?v[id][ num]  # Show value\n"
+				" No argument shows $? value\n"
+				"?vi will show in decimal instead of hex\n");
+			break;
+		case '\0':
+			r_cons_printf ("%d\n", core->num->value);
+			break;
 		case 'i':
 			if (n>>32) r_cons_printf ("%"PFMT64d"\n", (st64)n);
 			else r_cons_printf ("%d\n", (st32)n);

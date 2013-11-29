@@ -881,7 +881,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 					while (*str=='>') str++;
 					while (IS_WHITESPACE (*str)) str++;
 					r_cons_flush ();
-					pipefd = r_cons_pipe_open (str, p[2]=='>');
+					pipefd = r_cons_pipe_open (str, 1, p[2]=='>');
 				}
 				line = strdup (cmd);
 				line = r_str_replace (line, "\\\"", "\"", R_TRUE);
@@ -1026,6 +1026,7 @@ next:
 	/* pipe console to file */
 	ptr = strchr (cmd, '>');
 	if (ptr) {
+		int fdn = 1;
 		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
 		int use_editor = R_FALSE;
 		//int scrint = r_cons_singleton()->is_interactive;
@@ -1036,13 +1037,18 @@ next:
 		/* r_cons_flush() handles interactive output (to the terminal)
 		 * differently (e.g. asking about too long output). This conflicts
 		 * with piping to a file. Disable it while piping. */
+		if (ptr>cmd) {
+			char *fdnum = ptr-1;
+			if (*fdnum >= '0' && *fdnum <= '9')
+				fdn = *fdnum - '0';
+		}
 		r_cons_set_interactive (R_FALSE);
 		if (!strcmp (str, "-")) {
 			use_editor = R_TRUE;
 			str = r_file_temp ("dumpedit");
 			r_config_set (core->config, "scr.color", "false");
 		}
-		pipefd = r_cons_pipe_open (str, ptr[1]=='>');
+		pipefd = r_cons_pipe_open (str, fdn, ptr[1]=='>');
 		if (pipefd != -1) {
 			if (!pipecolor)
 				r_config_set_i (core->config, "scr.color", 0);
@@ -1536,7 +1542,7 @@ R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
 	r_cons_reset ();
 	if (r_file_mkstemp ("cmd", &tmp)) {
 		char *_cmd = strdup (cmd);
-		int pipefd = r_cons_pipe_open (tmp, 0);
+		int pipefd = r_cons_pipe_open (tmp, 1, 0);
 		r_sandbox_disable (0);
 		r_core_cmd_subst (core, _cmd);
 		r_cons_flush ();
