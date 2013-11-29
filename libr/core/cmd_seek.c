@@ -169,9 +169,16 @@ static int cmd_seek(void *data, const char *input) {
 		case 'o':
 			{
 			RAnalOp op;
-			int ret = r_anal_op (core->anal, &op,
-				core->offset, core->block, core->blocksize);
-			r_core_seek_delta (core, ret);
+			int val, ret, i, n = r_num_math (core->num, input+1);
+			for (val=i=0; i<n; i++) {
+				ret = r_anal_op (core->anal, &op,
+						core->offset, core->block, core->blocksize);
+				if (ret<1) 
+					break;
+				r_core_seek_delta (core, ret);
+				val += ret;
+			}
+			core->num->value = val;
 			}
 			break;
 		case '?':
@@ -192,7 +199,7 @@ static int cmd_seek(void *data, const char *input) {
 			" s/x 9091   ; search for next occurrence of \\x90\\x91\n"
 			" sb         ; seek aligned to bb start\n"
 			//" sp [page]  ; seek page N (page = block)\n"
-			" so         ; seek to next opcode\n"
+			" so [num]   ; seek to N next opcode(s)\n"
 			" sf         ; seek to next function (f->addr+f->size)\n"
 			" sC str     ; seek to comment matching given string\n"
 			" sr pc      ; seek to register\n");

@@ -125,6 +125,33 @@ void gb_add_cardtype(char *type, ut8 cardcode){
 	}
 }
 
+int gb_get_rombanks(ut8 id){
+	switch (id){
+		case GB_ROM_BANKS_2:
+			return 2;
+		case GB_ROM_BANKS_4:
+			return 4;
+		case GB_ROM_BANKS_8:
+			return 8;
+		case GB_ROM_BANKS_16:
+			return 16;
+		case GB_ROM_BANKS_32:
+			return 32;
+		case GB_ROM_BANKS_64:
+			return 64;
+		case GB_ROM_BANKS_128:
+			return 128;
+		case GB_ROM_BANKS_72:
+			return 72;
+		case GB_ROM_BANKS_80:
+			return 80;
+		case GB_ROM_BANKS_96:
+			return 96;
+		}
+	return 2;
+}
+
+
 void gb_get_gbtype(char *type, ut8 foo, ut8 bar){
 	if (foo==GB_SGB) {
 		strcpy (type, "SuperGameboy-Rom");

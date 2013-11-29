@@ -1032,7 +1032,7 @@ reaccept:
 					//env_update();
 					//pipe_stdout_to_tmp_file((char*)&buf, (char*)ptr+5);
 					strcpy ((char*)buf, "/tmp/.out");
-					pipefd = r_cons_pipe_open ((const char *)buf, 0);
+					pipefd = r_cons_pipe_open ((const char *)buf, 1, 0);
 					//eprintf("SYSTEM(%s)\n", ptr+6);
 					system ((const char*)ptr+6);
 					r_cons_pipe_close (pipefd);

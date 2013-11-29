@@ -281,7 +281,7 @@ R_API int r_socket_port_by_name(const char *name) {
 	struct servent *p = getservbyname (name, "tcp");
 	if (p && p->s_port)
 		return ntohs (p->s_port);
-	return atoi (name);
+	return r_num_get (NULL, name);
 }
 
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {

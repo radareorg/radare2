@@ -12,14 +12,13 @@ static ut64 get_input_num_value(RCore *core, char *input_value){
 	return value;
 }
 
-static void set_asm_configs(RCore *core, char *arch, ut32 bits, char * segoff){
+static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set (core->config, "asm.arch", arch);
 	r_config_set_i (core->config, "asm.bits", bits);
 	// XXX - this needs to be done here, because 
 	// if arch == x86 and bits == 16, segoff automatically changes
-	r_config_set (core->config, "asm.segoff", segoff);
+	r_config_set_i (core->config, "asm.segoff", segoff);
 }
-
 
 static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits) {
 	// input: start of the input string e.g. after the command symbols have been consumed
@@ -784,25 +783,23 @@ static int cmd_print(void *data, const char *input) {
 	case 'D':
 	case 'd':
 		{
+		ut64 current_offset = core->offset;
 		char *new_arch = NULL, *old_arch = NULL, *segoff = NULL;
 		ut32 new_bits = -1, old_bits = -1;
 		ut64 use_blocksize = core->blocksize;
 		ut8 pos = 0, settings_changed = R_FALSE, bw_disassemble = R_FALSE;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 
-
-		old_arch = r_config_get (core->config, "asm.arch");
-		old_arch = strdup (old_arch);
-
+		old_arch = strdup (r_config_get (core->config, "asm.arch"));
+		segoff = r_config_get_i (core->config, "asm.segoff");
 		old_bits = r_config_get_i (core->config, "asm.bits");
 		// XXX - this is necessay b/c radare will automatically
 		// swap flags if arch is x86 and bits == 16 see: __setsegoff in config.c
-		segoff = r_config_get (core->config, "asm.segoff");
-		segoff = strdup (segoff);
 
 		// get to the space
-		for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && pos < strlen (input); pos++)
-			if (input[pos] == ' ') break;
+		if (input[0])
+			for (pos = 1; pos < R_BIN_SIZEOF_STRINGS && input[pos]; pos++)
+				if (input[pos] == ' ') break;
 
 		if (!process_input (core, input+pos, &use_blocksize, &new_arch, &new_bits)) {
 			// XXX - print help message
@@ -846,11 +843,11 @@ static int cmd_print(void *data, const char *input) {
 
 				if (*input == 'D'){
 					ignore_invalid = R_FALSE;
-					bwdhits = r_core_asm_back_sweep_disassemble_byte (core,
+					bwdhits = r_core_asm_back_disassemble_byte (core,
 						core->offset, use_blocksize, -1, 0);
 				}
 				else
-					bwdhits = r_core_asm_back_sweep_disassemble_instr (core,
+					bwdhits = r_core_asm_back_disassemble_instr (core,
 						core->offset, use_blocksize, -1, 0);
 
 				if (bwdhits) {
@@ -931,7 +928,6 @@ static int cmd_print(void *data, const char *input) {
 								pdn_offset += 1;
 						}
 					}
-
 					if (buf != core->block) free (buf);
 					pd_result = R_TRUE;
 				}
@@ -1056,7 +1052,8 @@ static int cmd_print(void *data, const char *input) {
 			"  pdf  : disassemble function\n"
 			"  pdi  : like 'pi', with offset and bytes\n"
 			"  pdl  : show instruction sizes\n"
-			"  pds  : disassemble with back sweep (greedy disassembly backwards)\n");
+			"  pdn  : disassemble opcodes in a fixed buffer starting at address to specified length\n"
+			);
 			pd_result = 0;
 		}
 		if (!processed_cmd) {
@@ -1071,11 +1068,11 @@ static int cmd_print(void *data, const char *input) {
 				if (block) {
 					
 					if (*input == 'D'){
-						hits = r_core_asm_back_sweep_disassemble_byte (core,
-							core->offset, core->blocksize, use_blocksize, 20);
+						hits = r_core_asm_back_disassemble_byte (core,
+							core->offset, core->blocksize, use_blocksize, 5);
 					} else {
-						hits = r_core_asm_back_sweep_disassemble_instr (core,
-							core->offset, core->blocksize, use_blocksize, 20);
+						hits = r_core_asm_back_disassemble_instr (core,
+							core->offset, core->blocksize, use_blocksize, 5);
 					}
 					if (hits) {
 						r_list_foreach (hits, iter, hit) {
@@ -1128,6 +1125,7 @@ static int cmd_print(void *data, const char *input) {
 					
 				}
 			}
+			core->offset = current_offset;
 			if (block) free(block);
 		}
 
@@ -1137,7 +1135,6 @@ static int cmd_print(void *data, const char *input) {
 
 		free (old_arch);
 		free (new_arch);
-		free (segoff);
 
 		if (processed_cmd)
 			return pd_result;

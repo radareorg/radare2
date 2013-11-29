@@ -258,8 +258,8 @@ static int cmd_write(void *data, const char *input) {
 					r_cons_printf ("wx %s\n", acode->buf_hex);
 				} else {
 					if (r_config_get_i (core->config, "scr.prompt"))
-					eprintf ("Written %d bytes (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
-					r_core_write_at (core, core->offset, acode->buf, acode->len);
+						eprintf ("Written %d bytes (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
+						r_core_write_at (core, core->offset, acode->buf, acode->len);
 					WSEEK (core, acode->len);
 					r_core_block_read (core, 0);
 				}

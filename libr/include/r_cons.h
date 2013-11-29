@@ -255,7 +255,7 @@ R_API void r_cons_break(void (*cb)(void *u), void *user);
 R_API void r_cons_break_end();
 
 /* pipe */
-R_API int r_cons_pipe_open(const char *file, int append);
+R_API int r_cons_pipe_open(const char *file, int fdn, int append);
 R_API void r_cons_pipe_close(int fd);
 
 #if __WINDOWS__

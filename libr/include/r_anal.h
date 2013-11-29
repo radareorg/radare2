@@ -413,16 +413,18 @@ enum {
 	R_ANAL_OP_TYPE_DIV   = 20,
 	R_ANAL_OP_TYPE_SHR   = 21,
 	R_ANAL_OP_TYPE_SHL   = 22,
-	R_ANAL_OP_TYPE_OR    = 23,
-	R_ANAL_OP_TYPE_AND   = 24,
-	R_ANAL_OP_TYPE_XOR   = 25,
-	R_ANAL_OP_TYPE_NOT   = 26,
-	R_ANAL_OP_TYPE_STORE = 27,  /* store from register to memory */
-	R_ANAL_OP_TYPE_LOAD  = 28,  /* load from memory to register */
-	R_ANAL_OP_TYPE_LEA   = 29,
-	R_ANAL_OP_TYPE_LEAVE = 30,
-	R_ANAL_OP_TYPE_ROR   = 31,
-	R_ANAL_OP_TYPE_ROL   = 32,
+	R_ANAL_OP_TYPE_SAL   = 23,
+	R_ANAL_OP_TYPE_SAR   = 24,
+	R_ANAL_OP_TYPE_OR    = 25,
+	R_ANAL_OP_TYPE_AND   = 26,
+	R_ANAL_OP_TYPE_XOR   = 27,
+	R_ANAL_OP_TYPE_NOT   = 28,
+	R_ANAL_OP_TYPE_STORE = 29,  /* store from register to memory */
+	R_ANAL_OP_TYPE_LOAD  = 30,  /* load from memory to register */
+	R_ANAL_OP_TYPE_LEA   = 31,
+	R_ANAL_OP_TYPE_LEAVE = 32,
+	R_ANAL_OP_TYPE_ROR   = 33,
+	R_ANAL_OP_TYPE_ROL   = 34,
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */

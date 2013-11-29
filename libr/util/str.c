@@ -243,6 +243,12 @@ R_API int r_str_word_set0(char *str) {
 	char *p;
 	if (!*str)
 		return 0;
+	for (i=0; str[i] && str[i+1]; i++) {
+		if (str[i]==' ' && str[i+1]==' ')
+			memmove (str+i, str+i+1, strlen (str+1)+1);
+	}
+	if (str[i]==' ')
+		str[i] = 0;
 	for (i=1, p=str; *p; p++) {
 		if (*p=='\"') {
 			if (quote) {

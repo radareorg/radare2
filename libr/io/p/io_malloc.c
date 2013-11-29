@@ -96,7 +96,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		} else {
 			mal->size = r_num_math (NULL, pathname+9);
 			mal->offset = 0;
-			if ((mal->size)>0) {
+			if (((int)(mal->size))>0) {
 				mal->buf = malloc (mal->size);
 				memset (mal->buf, '\0', mal->size);
 			} else {

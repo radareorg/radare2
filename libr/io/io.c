@@ -129,6 +129,8 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 
 static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
 	int fd;
+	if (r_file_is_directory (file))
+		return -1;
 #if __WINDOWS__
 	if (flags & R_IO_WRITE) {
 		fd = r_sandbox_open (file, O_BINARY | 1, 0);
