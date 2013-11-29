@@ -833,7 +833,6 @@ static int cmd_print(void *data, const char *input) {
 			pdi (core, l, len, (*input=='D')? len: core->blocksize);
 			pd_result = 0;
 			break;
-		case 's':
 		case 'n':
 			processed_cmd = R_TRUE;
 			if (input[1] == 's') bw_disassemble = 1;
@@ -848,11 +847,11 @@ static int cmd_print(void *data, const char *input) {
 				if (*input == 'D'){
 					ignore_invalid = R_FALSE;
 					bwdhits = r_core_asm_back_sweep_disassemble_byte (core,
-						core->offset, use_blocksize, -1, ignore_invalid);
+						core->offset, use_blocksize, -1, 0);
 				}
 				else
 					bwdhits = r_core_asm_back_sweep_disassemble_instr (core,
-						core->offset, use_blocksize, -1, ignore_invalid);
+						core->offset, use_blocksize, -1, 0);
 
 				if (bwdhits) {
 					int result = 0;
