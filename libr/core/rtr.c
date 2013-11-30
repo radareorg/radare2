@@ -357,7 +357,7 @@ R_API void r_core_rtr_list(RCore *core) {
 		
 R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	char *port, input[1024], *host = NULL, *file = NULL, *ptr = NULL, buf[1024];
-	int proto, i, timeout;
+	int proto, i, timeout, ret;
 	RSocket *fd;
 
 	timeout = r_config_get_i (core->config, "http.timeout");
@@ -459,7 +459,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			eprintf ("Error: Cannot connect to '%s' (%s)\n", host, port);
 			return;
 		}
-		eprintf ("Connected to: %s at port %s\n", host, port);
+		eprintf ("Connected to %s at port %s\n", host, port);
 		/* send */
 		buf[0] = RTR_RAP_OPEN;
 		buf[1] = 0;
@@ -477,7 +477,6 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		eprintf ("ok\n");
 		break;
 	case RTR_PROT_TCP:
-		// TODO: Use http.timeout here
 		if (!r_socket_connect_tcp (fd, host, port, timeout)) { //TODO: Use rap.ssl
 			core->num->value = 1;
 			eprintf("Error: Cannot connect to '%s' (%s)\n", host, port);
@@ -497,6 +496,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		break;
 	}
 
+	ret = core->num->value;
 	for (i = 0; i < RTR_MAX_HOSTS; i++)
 		if (!rtr_host[i].fd) {
 			rtr_host[i].proto = proto;
@@ -507,6 +507,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			rtr_n = i;
 			break;
 		}
+	core->num->value = ret;
 	//r_core_rtr_list (core);
 }
 
@@ -593,7 +594,6 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 
 	core->num->value = 0; // that's fine
 	if (!strlen (cmd)) {
-eprintf ("CHK FINE\n");
 		// just check if we can connect
 		r_socket_close (rtr_host[rtr_n].fd);
 		return;

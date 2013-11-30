@@ -302,7 +302,7 @@ R_API void r_line_autocomplete() {
 					min_common_len = j;
 				root = argv[i];
 			}
-			strcpy (p, root);
+			memmove (p, root, strlen (root)+1);
 			if (min_common_len<strlen (root))
 				p[min_common_len] = 0;
 			I.buffer.index = I.buffer.length = strlen (I.buffer.data);
@@ -506,7 +506,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				for (; i&&I.buffer.data[i]!=' '; i--);
 				if (!i) for (; i>0&&I.buffer.data[i]==' '; i--);
 				if (i>0) i++; else if (i<0) i=0;
-				strcpy (I.buffer.data+i, I.buffer.data+I.buffer.index);
+				//strcpy (I.buffer.data+i, I.buffer.data+I.buffer.index);
+				memmove (I.buffer.data+i, I.buffer.data+I.buffer.index, I.buffer.length-I.buffer.index+1);
 				I.buffer.length = strlen (I.buffer.data);
 				I.buffer.index = i;
 			}

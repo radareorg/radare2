@@ -83,15 +83,15 @@ static int cmd_log(void *data, const char *input) {
 	case '?':
 		r_cons_printf ("Usage: l[-][ num|msg]\n"
 			"  l new comment 0x80480\n"
+			"  l       list all log messages\n"
+			"  l*      list in radare commands\n"
 			"  ll      get last log message id\n"
+			"  ls      list files in current directory (see pwd, cd)\n"
+			"  lj      list in json format\n"
 			"  l-      delete all logs\n"
 			"  l-123   delete logs before 123\n"
 			"  l 123   list log from 123 \n"
-			"  l       list all log messages\n"
 			"  l 10 3  list 3 log messages starting from 10\n"
-			"  ls      list files in current directory (see pwd, cd)\n"
-			"  lj      list in json format\n"
-			"  l*      list in radare commands\n"
 		);
 		break;
 	case ' ':
@@ -538,6 +538,29 @@ static int cmd_eval(void *data, const char *input) {
 	char *p;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
+	case 'n': // env
+		if (!strchr (input, '=')) {
+			char *p = r_sys_getenv (input+strlen ("nv "));
+			if (p) {
+				r_cons_printf ("%s\n", p);
+				free (p);
+			} else {
+				extern char **environ;
+				char **e = environ;
+				while (*e) {
+					r_cons_printf ("%s\n", *e);
+					e++;
+				}
+			}
+		} else
+		if (input[2] == ' ') {
+			char *k = strdup (input+3);
+			char *v = strchr (k, '=');
+			*v++ = 0;
+			r_sys_setenv (k, v);
+			free (k);
+		}
+		return R_TRUE;
 	case 'x': // exit
 		return cmd_quit (data, "");
 	case '\0':
@@ -650,7 +673,8 @@ static int cmd_eval(void *data, const char *input) {
 			" er [key]        set config key as readonly. no way back\n"
 			" ec [k] [color]  set color for given key (prompt, offset, ...)\n"
 			" e a             get value of var 'a'\n"
-			" e a=b           set var 'a' the 'b' value\n");
+			" e a=b           set var 'a' the 'b' value\n"
+			" env [k[=v]]     get/set environment variable\n");
 		}
 		break;
 	case 'r':
@@ -815,7 +839,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	if (rep<1) rep = 1;
 	while (rep-- && *cmd) {
 		int ret = r_core_cmd_subst_i (core, cmd);
-		if (ret) {
+		if (ret && *cmd=='q') {//&& !colon) {
 			free (icmd);
 			return ret;
 		}
@@ -950,8 +974,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			if (!tick || (tick && tick > ptr)) {
 				*ptr = '\0';
 				cmd = r_str_clean (cmd);
+int value = core->num->value;
 				if (*cmd) r_core_cmd_pipe (core, cmd, ptr+1);
 				else r_io_system (core->io, ptr+1);
+core->num->value = value;
 				return 0;
 			}
 		}
@@ -1041,6 +1067,7 @@ next:
 			char *fdnum = ptr-1;
 			if (*fdnum >= '0' && *fdnum <= '9')
 				fdn = *fdnum - '0';
+			*fdnum = 0;
 		}
 		r_cons_set_interactive (R_FALSE);
 		if (!strcmp (str, "-")) {
@@ -1086,6 +1113,7 @@ next2:
 			eprintf ("parse: Missing backtick in expression.\n");
 			return -1;
 		} else {
+			int value = core->num->value;
 			*ptr = '\0';
 			*ptr2 = '\0';
 			if (ptr[1] == '!') {
@@ -1098,6 +1126,7 @@ next2:
 						str[i]=' ';
 			str = r_str_concat (str, ptr2+1);
 			cmd = r_str_concat (strdup (cmd), str);
+			core->num->value = value;
 			ret = r_core_cmd_subst (core, cmd);
 			free (cmd);
 			free (str);

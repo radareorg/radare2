@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2009-2012 - pancake */
+/* radare - LGPL - Copyright 2009-2013 - pancake */
 
 #include <r_cmd.h>
 #include <r_util.h>
 
+#define NCMDS (sizeof (cmd->cmds)/sizeof(*cmd->cmds))
 R_LIB_VERSION (r_cmd);
 
 R_API void r_cmd_alias_init(RCmd *cmd) {
@@ -16,7 +17,7 @@ R_API RCmd *r_cmd_new () {
 	RCmd *cmd = R_NEW (RCmd);
 	if (cmd) {
 		cmd->lcmds = r_list_new ();
-		for (i=0;i<255;i++)
+		for (i=0;i<NCMDS;i++)
 			cmd->cmds[i] = NULL;
 		cmd->nullcallback = cmd->data = NULL;
 	}
@@ -32,7 +33,7 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	r_cmd_alias_free (cmd);
 	r_list_free (cmd->plist);
 	r_list_free (cmd->lcmds);
-	for (i=0;i<255;i++)
+	for (i=0;i<NCMDS;i++)
 		if (cmd->cmds[i])
 			R_FREE (cmd->cmds[i]);
 	free (cmd);
