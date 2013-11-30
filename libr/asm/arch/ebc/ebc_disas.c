@@ -1,3 +1,5 @@
+/* radare - LGPL - 2013 Fedor Sakharov <fedor.sakharov@gmail.com> */
+
 #include <stdio.h>
 #include "ebc_disas.h"
 

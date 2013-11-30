@@ -1,3 +1,6 @@
+/* radare - LGPL - Copyright 2012-2013 - pancake
+	2013 - Fedor Sakharov <fedor.sakharov@gmail.com> */
+
 #include <stdio.h>
 #include <string.h>
 #include <r_types.h>
