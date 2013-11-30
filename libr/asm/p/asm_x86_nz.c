@@ -327,7 +327,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				if (p) {
 					*p = 0;
 					ut32 n = getnum (a, p+1);
-					ut8 *ptr = &n;
+					ut8 *ptr = (ut8*)&n;
 					arg1 = getreg (arg2+1);
 					data[l++] = 0x3b;
 					if (arg1 == 4) { // esp
@@ -806,9 +806,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				data[l++] = ptr[3];
 				return l;
 			}
-#if 0
-			if (a->bits==64) {
-eprintf ("--> \n");
+			// mov rax, 33
+			if (a->bits==64 && *arg == 'r') {
 				if (isnum (a, arg2)) {
 					data[l++] = 0x48;
 					data[l++] = 0xc7;
@@ -824,7 +823,6 @@ eprintf ("--> \n");
 				data[l++] = arg0 | (getreg (arg2)<<3) | pfx;
 				return l;
 			}
-#endif
 
 			if (isnum (a, arg2)) {
 				if (delta) {
