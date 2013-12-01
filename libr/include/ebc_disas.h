@@ -91,6 +91,6 @@ typedef struct ebc_command {
 	char operands[EBC_OPERANDS_MAXLEN];
 } ebc_command_t;
 
-int decode_command(const uint8_t *instr, ebc_command_t *cmd);
+int ebc_decode_command(const uint8_t *instr, ebc_command_t *cmd);
 
 #endif /* EBC_DISAS_H */
