@@ -159,7 +159,7 @@ beach:
 static void add_hit_to_hits(RList* hits, ut64 addr, ut64 len, ut8 is_valid) {
 	RCoreAsmHit *hit = r_core_asm_hit_new();
 	if (hit) {
-		IFDBG eprintf("*** Inserting instruction (valid?: %d): instr_addr: 0x%llx instr_len: %d\n", is_valid, addr, len );
+		IFDBG eprintf("*** Inserting instruction (valid?: %d): instr_addr: 0x%"PFMT64x" instr_len: %d\n", is_valid, addr, len );
 		hit->addr = addr;
 		hit->len = len;
 		hit->valid = is_valid;
@@ -188,7 +188,7 @@ static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
 	end_range =  hit->addr +  hit->len;
 	r_list_foreach_safe (hits, iter, iter_tmp, to_check_hit){
 		if (to_check_hit && is_hit_inrange(to_check_hit, start_range, end_range)) {
-			IFDBG eprintf ("Found hit that clashed (start: 0x%llx - end: 0x%llx ), 0x%llx len: %d (valid: %d 0x%llx - 0x%llx)\n", start_range, end_range, 
+			IFDBG eprintf ("Found hit that clashed (start: 0x%"PFMT64x" - end: 0x%"PFMT64x" ), 0x%"PFMT64x" len: %d (valid: %d 0x%"PFMT64x" - 0x%"PFMT64x")\n", start_range, end_range, 
 					to_check_hit->addr, to_check_hit->len, to_check_hit->valid, to_check_hit->addr, to_check_hit->addr+to_check_hit->len);
 			// XXX - could this be a valid decode instruction we are deleting?
 			r_list_delete (hits, iter);
@@ -229,7 +229,7 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 	r_asm_set_pc (core->assembler, current_instr_addr);
 	while ( tmp_current_buf_pos < len && temp_instr_addr < end_addr) {
 		temp_instr_len = len - tmp_current_buf_pos;
-		IFDBG eprintf("Current position: %d instr_addr: 0x%llx \n", tmp_current_buf_pos, temp_instr_addr);
+		IFDBG eprintf("Current position: %d instr_addr: 0x%"PFMT64x" \n", tmp_current_buf_pos, temp_instr_addr);
 		temp_instr_len = r_asm_disassemble (core->assembler, &op, buf+tmp_current_buf_pos, temp_instr_len);
 
 		if (temp_instr_len == 0){
@@ -425,7 +425,7 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 		// reset assembler
 		r_asm_set_pc (core->assembler, current_instr_addr);
 		current_instr_len = len - current_buf_pos + extra_padding ;		
-		IFDBG eprintf("current_buf_pos: 0x%llx, current_instr_len: %d\n", current_buf_pos, current_instr_len);
+		IFDBG eprintf("current_buf_pos: 0x%"PFMT64x", current_instr_len: %d\n", current_buf_pos, current_instr_len);
 		current_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, current_instr_len);
 		hit = r_core_asm_hit_new ();
 		hit->addr = current_instr_addr;
@@ -510,7 +510,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 
 		IFDBG {
 			ut32 byte_cnt =  current_instr_len ? current_instr_len : 1;
-			eprintf("current_instr_addr: 0x%llx, current_buf_pos: 0x%llx, current_instr_len: %d \n", current_instr_addr, current_buf_pos, current_instr_len);
+			eprintf("current_instr_addr: 0x%"PFMT64x", current_buf_pos: 0x%"PFMT64x", current_instr_len: %d \n", current_instr_addr, current_buf_pos, current_instr_len);
 
 			ut8 *hex_str = r_hex_bin2strdup(buf+current_buf_pos, byte_cnt);
 			eprintf("==== current_instr_bytes: %s ",hex_str);
@@ -537,7 +537,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
             // and they are lazy, since they purge the hit list 
             ut32 purge_results = 0;
 			ut8 is_valid = R_TRUE;
-			IFDBG eprintf(" handling underlap case: current_instr_addr: 0x%llx.\n", current_instr_addr);
+			IFDBG eprintf(" handling underlap case: current_instr_addr: 0x%"PFMT64x".\n", current_instr_addr);
 			purge_results =  prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, /* is_valid */ R_TRUE);
 			if (purge_results) {
 				handle_forward_disassemble(core, hits, buf, len, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr);

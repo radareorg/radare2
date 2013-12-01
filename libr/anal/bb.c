@@ -36,7 +36,7 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 #endif
 	bb->fingerprint = NULL;
 	bb->cond = NULL;
-	if (bb->label) free(bb->label);
+	free(bb->label);
 	free (bb);
 }
 
