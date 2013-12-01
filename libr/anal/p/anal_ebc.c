@@ -30,6 +30,17 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			unsigned jmpadr = buf[1];
 			op->jump = addr + 2 + (jmpadr * 2);
 			op->fail = addr + (jmpadr * 2);
+		} else {
+			if (TEST_BIT(buf[0], 7)) {
+				int32_t jmpaddr;
+				jmpaddr = *(int32_t*)(buf + 2);
+				if (TEST_BIT(buf[1], 4)) {
+					op->jump = addr + 6 + jmpaddr ;
+					op->fail = addr + 6 + jmpaddr;
+				} else {
+					op->jump = jmpaddr;
+				}
+			}
 		}
 	} else if ((opcode >= EBC_MOVBW && opcode <= EBC_MOVSND) ||
 			opcode == EBC_MOVQQ || opcode == EBC_MOVNW ||
