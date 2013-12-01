@@ -632,7 +632,9 @@ R_API char *r_asm_op_get_asm(RAsmOp *op) {
 }
 
 R_API int r_asm_op_get_size(RAsmOp *op) {
-	int len = op->inst_len - op->payload;
+	int len;
+	if (!op) return 0;
+	len = op->inst_len - op->payload;
 	if (len<1) len = 1;
 	return len;
 }

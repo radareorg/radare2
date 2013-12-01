@@ -27,7 +27,7 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 	// bits: bits to use if present, otherwise -1
 
 	int result = R_FALSE;
-	ut8 *input_one = NULL, *input_two = NULL, *input_three = NULL;
+	char *input_one = NULL, *input_two = NULL, *input_three = NULL;
 	char *str_clone = NULL,
 		 *ptr_str_clone = NULL,
 		 *trimmed_clone = NULL;
@@ -98,14 +98,11 @@ static int process_input(RCore *core, const char *input, ut64* blocksize, char *
 
 		result = R_TRUE;
 	} else if (input_one) {
-
-		*blocksize = is_valid_input_num_value(core, input_one) ? get_input_num_value (core, input_one): 0;
-		if (!is_valid_input_num_value(core, input_one) ) {
+		*blocksize = is_valid_input_num_value (core, input_one) ? get_input_num_value (core, input_one): 0;
+		if (!is_valid_input_num_value (core, input_one) ) {
 			// input_one can only be one other thing
-			if (r_str_contains_macro (input_one) ){
+			if (r_str_contains_macro (input_one))
 				r_str_truncate_cmd (input_one);
-			}
-
 			*asm_arch = r_asm_is_valid (core->assembler, input_one) ? strdup (input_one) : NULL;
 		}
 		result = R_TRUE;
@@ -784,10 +781,11 @@ static int cmd_print(void *data, const char *input) {
 	case 'd':
 		{
 		ut64 current_offset = core->offset;
-		char *new_arch = NULL, *old_arch = NULL, *segoff = NULL;
-		ut32 new_bits = -1, old_bits = -1;
+		ut32 new_bits = -1;
 		ut64 use_blocksize = core->blocksize;
-		ut8 pos = 0, settings_changed = R_FALSE, bw_disassemble = R_FALSE;
+		int pos = 0;
+		ut8 settings_changed = R_FALSE, bw_disassemble = R_FALSE;
+		char *new_arch;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 		char *old_arch = strdup (r_config_get (core->config, "asm.arch"));
 		int segoff = r_config_get_i (core->config, "asm.segoff");
@@ -804,11 +802,12 @@ static int cmd_print(void *data, const char *input) {
 			// XXX - print help message
 			//return R_FALSE;
 		}
+		if (!use_blocksize) 
+			use_blocksize = core->blocksize;
 
 		if (core->blocksize_max < use_blocksize && (int)use_blocksize < -core->blocksize_max) {
-
-			eprintf ("This block size is too big (%d<%d). Did you mean 'p%c @ 0x%08"PFMT64x"' instead?\n",
-						core->blocksize_max, use_blocksize, input[0], (int) use_blocksize);
+			eprintf ("This block size is too big (%"PFMT64d"<%"PFMT64d"). Did you mean 'p%c @ 0x%08"PFMT64x"' instead?\n",
+				(ut64)core->blocksize_max, (ut64)use_blocksize, input[0], (ut64) use_blocksize);
 			return R_FALSE;
 		} else if (core->blocksize_max < use_blocksize && (int)use_blocksize > -core->blocksize_max) {
 			bw_disassemble = R_TRUE;
@@ -836,7 +835,6 @@ static int cmd_print(void *data, const char *input) {
 				RList *bwdhits = NULL;
 				RListIter *iter = NULL;
 				RCoreAsmHit *hit = NULL;
-				ut64 neg_use_blocksize = use_blocksize;
 				ut8 *buf;
 				ut8 ignore_invalid = R_TRUE;
 
@@ -859,9 +857,9 @@ static int cmd_print(void *data, const char *input) {
 						r_core_read_at (core, hit->addr, buf, hit->len);
 						result = r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 						if (result<1) {
-							ut8 *owallawalla = "????";
-							ut8 *hex_str = r_hex_bin2strdup(buf, hit->len);
-							if (hex_str == NULL) hex_str = owallawalla;
+							const char *owallawalla = "????";
+							char *hex_str = r_hex_bin2strdup (buf, hit->len);
+							if (hex_str == NULL) hex_str = (char *)owallawalla;
 							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  hit->addr, hex_str);
 							if (hex_str && hex_str != owallawalla) free(hex_str);
 						} else {
@@ -891,7 +889,6 @@ static int cmd_print(void *data, const char *input) {
 				}
 
 				if (buf) {
-					ut8 hit_cnt = 0;
 					ut8 go_by_instr = input[0] == 'd';
 					ut32 pdn_offset = 0;
 					ut64 instr_cnt = 0;
@@ -901,21 +898,18 @@ static int cmd_print(void *data, const char *input) {
 					for (pdn_offset=0; pdn_offset < use_blocksize; ) {
 						dresult = r_asm_disassemble (core->assembler, &asmop, buf+pdn_offset, use_blocksize-pdn_offset);
 						if (dresult<1) {
-							ut8 *owallawalla = "????";
-							ut8 *hex_str = r_hex_bin2strdup(buf+pdn_offset, 1);
-							if (hex_str == NULL) hex_str = owallawalla;
+							const char *owallawalla = "????";
+							char *hex_str = r_hex_bin2strdup (buf+pdn_offset, 1);
+							if (hex_str == NULL) hex_str = (char*)owallawalla;
 							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  core->offset+pdn_offset, hex_str);
 							pdn_offset += 1;
 							instr_cnt += asmop.inst_len;
-							if (hex_str && hex_str != owallawalla) free(hex_str);
+							if (hex_str && hex_str != owallawalla) free (hex_str);
 
 						} else {
 							r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
 								core->offset+pdn_offset, asmop.buf_hex, asmop.buf_asm);
-							if (go_by_instr)
-								pdn_offset += asmop.inst_len;
-							else
-								pdn_offset += 1;
+							pdn_offset += (go_by_instr? asmop.inst_len: 1);
 						}
 					}
 					if (buf != core->block) free (buf);
@@ -1081,10 +1075,8 @@ static int cmd_print(void *data, const char *input) {
 			} else if (block){
 				ut64 idx = 0;
 				RAsmOp asmop;
-				ut32 disasm_len;
-				ut32 hit_cnt = 0;
 
-				for(i=0; i < use_blocksize; i++ ) {
+				for (i=0; i < use_blocksize; i++ ) {
 					ut64 addr = core->offset + idx;
 					r_core_read_at (core, addr,
 							block, core->blocksize);
@@ -1094,13 +1086,12 @@ static int cmd_print(void *data, const char *input) {
 						idx++;
 						r_cons_printf ("------\n");
 					} else {
-						RAsmOp _asmop;
-						ut32 disasm_len = r_asm_disassemble (core->assembler, &_asmop,  block,
+						ut32 disasm_len = r_asm_disassemble (core->assembler, &asmop,  block,
 							core->blocksize);
 						if (disasm_len == 0) disasm_len++;
 						core->num->value = r_core_print_disasm (core->print,
 									core, addr, block, disasm_len, l, 0, 1);
-						idx+= disasm_len;
+						idx += disasm_len;
 					}
 				}
 			}
