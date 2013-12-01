@@ -1,4 +1,4 @@
-/* radare - GPL3 - 2013 condret@runas-racer.com */
+/* radare - LGPL - Copyright 2013 - condret@runas-racer.com */
 
 #define GB_8BIT		1
 #define	GB_16BIT	2
