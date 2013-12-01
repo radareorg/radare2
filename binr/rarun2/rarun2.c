@@ -13,6 +13,7 @@
 
 #define NARGS (sizeof (_args)/sizeof(*_args))
 static char *_args[512] = {NULL};
+static char *_system = NULL;
 static char *_program = NULL;
 static char *_stdin = NULL;
 static char *_stdout = NULL;
@@ -88,6 +89,7 @@ static void parseline (char *b) {
 	if (*e=='$') e = r_sys_getenv (e);
 	if (e == NULL) return;
 	if (!strcmp (b, "program")) _args[0] = _program = strdup (e);
+	else if (!strcmp (b, "system")) _system = strdup (e);
 	else if (!strcmp (b, "connect")) _connect = strdup (e);
 	else if (!strcmp (b, "listen")) _listen = strdup (e);
 	else if (!strcmp (b, "stdout")) _stdout = strdup (e);
@@ -151,8 +153,8 @@ static void parseinput (char *s) {
 #endif
 
 static int runfile () {
-	if (!_program) {
-		printf ("No program rule defined\n");
+	if (!_program && !_system) {
+		printf ("No program or system rule defined\n");
 		return 1;
 	}
 	if (_stdin) {
@@ -255,6 +257,9 @@ static int runfile () {
 		eprintf ("timeout not supported for this platform\n");
 #endif
 	}
+	if (_system) {
+		exit (r_sys_cmd (_system));
+	}
 	if (!r_file_exists (_program)) {
 		eprintf ("rarun2: %s: file not found\n", _program);
 		return 1;
@@ -275,6 +280,7 @@ int main(int argc, char **argv) {
 			"# arg3=\"hello\\nworld\"\n"
 			"# arg4=:048490184058104849\n"
 			"# arg4=@arg.txt\n"
+			"# system=r2 -\n"
 			"setenv=FOO=BAR\n"
 			"# unsetenv=FOO\n"
 			"# envfile=environ.txt\n"
