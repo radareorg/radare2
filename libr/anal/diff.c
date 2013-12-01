@@ -157,7 +157,7 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 	r_list_foreach (fcns, iter, fcn) {
 		if (fcn->type != R_ANAL_FCN_TYPE_SYM || fcn->name == NULL)
 			continue;
-		r_list_foreach (fcns2, iter, fcn2) {
+		r_list_foreach (fcns2, iter2, fcn2) {
 			if (fcn2->type != R_ANAL_FCN_TYPE_SYM || fcn2->name == NULL ||
 				strcmp (fcn->name, fcn2->name))
 				continue;
