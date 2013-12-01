@@ -291,21 +291,21 @@ R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
 	r_core_seek (core, addr, 1);
 }
 
+#define OPDELTA 32
 static int prevopsz (RCore *core, ut64 addr) {
-	const int delta = 32;
 	ut64 target = addr;
-	ut64 base = target-delta;
+	ut64 base = target-OPDELTA;
 	int len, ret, i;
-	ut8 buf[delta*2];
+	ut8 buf[OPDELTA*2];
 	RAnalOp op;
 
 	r_core_read_at (core, base, buf, sizeof (buf));
 	for (i=0; i<sizeof (buf); i++) {
-		ret = r_anal_op (core->anal, &op, addr+i,
+		ret = r_anal_op (core->anal, &op, base+i,
 			buf+i, sizeof (buf)-i);
 		if (!ret) continue;
 		len = op.length;
-		r_anal_op_fini (&op);
+		r_anal_op_fini (&op); // XXX
 		if (len<1) continue;
 		i += len-1;
 		if (target == base+i+1)

@@ -70,7 +70,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	return op->length;
 }
 
-struct r_anal_plugin_t r_anal_plugin_avr = {
+RAnalPlugin r_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
 	.arch = R_SYS_ARCH_AVR,
@@ -87,7 +87,7 @@ struct r_anal_plugin_t r_anal_plugin_avr = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_avr
 };

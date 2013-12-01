@@ -27,10 +27,14 @@ R_API RList *r_anal_op_list_new() {
 }
 
 R_API void r_anal_op_fini(RAnalOp *op) {
-	if (op->src[0]) r_anal_value_free (op->src[0]);
-	if (op->src[1]) r_anal_value_free (op->src[1]);
-	if (op->src[2]) r_anal_value_free (op->src[2]);
-	if (op->dst) r_anal_value_free (op->dst);
+	r_anal_value_free (op->src[0]);
+	r_anal_value_free (op->src[1]);
+	r_anal_value_free (op->src[2]);
+	r_anal_value_free (op->dst);
+	op->src[0] = NULL;
+	op->src[1] = NULL;
+	op->src[2] = NULL;
+	op->dst = NULL;
 	free (op->mnemonic);
 	op->mnemonic = NULL;
 	//op->src[0] = op->src[1] = op->src[2] = op->dst = NULL;
@@ -45,6 +49,7 @@ R_API void r_anal_op_free(void *_op) {
 
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int ret = R_FALSE;
+	memset (op, 0, sizeof (RAnalOp));
 	if (len>0 && anal && op && anal->cur && anal->cur->op) {
 		ret = anal->cur->op (anal, op, addr, data, len);
 		if (ret<1) op->type = R_ANAL_OP_TYPE_ILL;
