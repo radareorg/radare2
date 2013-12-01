@@ -169,6 +169,9 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	case 0x6f: // ddiv
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
+	default:
+		op->type = R_ANAL_OP_TYPE_UNK;
+		break;
 	}
 	return sz;
 }

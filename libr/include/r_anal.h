@@ -585,6 +585,7 @@ typedef struct r_anal_cond_t {
 } RAnalCond;
 
 typedef struct r_anal_bb_t {
+	char *name;
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
@@ -594,6 +595,7 @@ typedef struct r_anal_bb_t {
 	int returnbb;
 	int conditional;
 	int traced;
+	char *label;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
 #if R_ANAL_BB_HAS_OPS
@@ -763,6 +765,7 @@ R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_fcn_count (RAnal *a, ut64 from, ut64 to);
+R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr); // default 20
 
 #if 0
 #define r_anal_fcn_get_refs(x) x->refs
