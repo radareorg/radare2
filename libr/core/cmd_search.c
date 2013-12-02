@@ -237,7 +237,7 @@ static ut64 findprevopsz(RCore *core, ut64 addr) {
 	return UT64_MAX;
 }
 
-static int r_core_search_rop (RCore *core, ut64 from, ut64 to, int opt) {
+static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 	ut8 *buf;
 	ut64 prev;
 	RAsmOp asmop;

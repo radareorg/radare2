@@ -390,7 +390,7 @@ default:
 		op->fail = addr + oplen;
 		break;
 	case UD_Ihlt:
-		op->type = R_ANAL_OP_TYPE_TRAP;
+		//op->type = R_ANAL_OP_TYPE_HALT;
 		break;
 	case UD_Iret:
 	case UD_Iretf:
