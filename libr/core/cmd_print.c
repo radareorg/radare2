@@ -830,7 +830,6 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'n':
 			processed_cmd = R_TRUE;
-			if (input[1] == 's') bw_disassemble = 1;
 			if (bw_disassemble) {
 				RList *bwdhits = NULL;
 				RListIter *iter = NULL;
@@ -1036,8 +1035,7 @@ static int cmd_print(void *data, const char *input) {
 			"  pdf  disassemble function\n"
 			"  pdi  like 'pi', with offset and bytes\n"
 			"  pdn  disassemble N bytes (like pdi)\n"
-			"  pdl  show instruction sizes\n"
-			"  pds  disassemble with back sweep (greedy disassembly backwards)\n");
+			"  pdl  show instruction sizes\n");
 			pd_result = 0;
 		}
 		if (!processed_cmd) {
@@ -1045,32 +1043,28 @@ static int cmd_print(void *data, const char *input) {
 			RListIter *iter;
 			RCoreAsmHit *hit;
 			ut8 *block = malloc (core->blocksize);
-	
+
+            if (*input == 'D' && bw_disassemble) {
+                l = -l;
+                core->offset -= use_blocksize;
+                bw_disassemble = R_FALSE;
+            }
+
 			if (block && bw_disassemble) {
 				l = -l;
 				if (block) {
-					if (*input == 'D'){
-						hits = r_core_asm_back_disassemble_byte (core,
+					hits = r_core_asm_back_disassemble_instr (core,
 							core->offset, core->blocksize, use_blocksize, 5);
-					} else {
-						hits = r_core_asm_back_disassemble_instr (core,
-							core->offset, core->blocksize, use_blocksize, 5);
-					}
 					if (hits) {
 						r_list_foreach (hits, iter, hit) {
 							r_core_read_at (core, hit->addr,
 									block, core->blocksize);
-							if (*input == 'D') {
-								core->num->value = r_core_print_disasm (core->print,
-										core, hit->addr, block, core->blocksize, l, 0, 1);
-								r_cons_printf ("------\n");
-							} else {
-								core->num->value = r_core_print_disasm (core->print,
+							core->num->value = r_core_print_disasm (core->print,
 										core, hit->addr, block, hit->len, l, 0, 1);
-							}
 						}
+						r_list_free (hits);
 					}
-					if (hits) r_list_free (hits);
+					
 				}
 			} else if (block){
 				ut64 idx = 0;
@@ -1091,11 +1085,7 @@ static int cmd_print(void *data, const char *input) {
 						}
 						break; 
 					} else {
-/*
-						ut32 disasm_len = r_asm_disassemble (core->assembler, &asmop,  block,
-							core->blocksize);
-						if (disasm_len == 0) disasm_len++;
-*/
+
 						core->num->value = r_core_print_disasm (core->print,
 								core, addr, block, l, l, 0, 0);
 						i += core->num->value-1; //disasm_len;
@@ -1103,11 +1093,11 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 			}
-			core->offset = current_offset;
 			if (block) free(block);
 		}
 
 		// change back asm setting is they were changed
+		core->offset = current_offset;
 		if (settings_changed)
 			set_asm_configs (core, old_arch, old_bits, segoff);
 
