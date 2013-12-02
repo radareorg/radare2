@@ -18,6 +18,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_avr = {
 	.name = "avr",
 	.arch = "avr",
+	.license = "BSD",
 	.bits = (int[]){ 16, 32, 0 },
 	.desc = "AVR Atmel disassembler",
 	.init = NULL,

@@ -24,6 +24,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 RAsmPlugin r_asm_plugin_rar = {
 	.name = "rar",
 	.arch = "rar",
+	.license = "LGPL3",
 	.bits = (int[]){ 1, 0 },
 	.desc = "RAR VM disassembly plugin",
 	.init = NULL,

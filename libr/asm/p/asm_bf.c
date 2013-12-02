@@ -157,6 +157,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_bf = {
 	.name = "bf",
 	.arch = "bf",
+	.license = "LGPL3",
 	.bits = (int[]){32,0},
 	.desc = "Brainfuck disassembly plugin",
 	.init = NULL,

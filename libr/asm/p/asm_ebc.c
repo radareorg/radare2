@@ -23,6 +23,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_ebc = {
 	.name = "ebc",
+	.license = "LGPL3",
 	.desc = "EFI Byte Code disassembly plugin",
 	.arch = "ebc",
 	.bits = (int[]){ 32, 64 },

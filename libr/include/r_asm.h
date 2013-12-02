@@ -106,6 +106,7 @@ typedef struct r_asm_plugin_t {
 	char *name;
 	char *arch;
 	char *desc;
+	char *license;
 // TODO: bits -> renamed to bitmask
 // use each bit to identify 4,8,16,32,64 bitsize it can be a mask, no need for pointers here
 	int *bits;

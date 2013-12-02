@@ -33,6 +33,7 @@ static int disassemble(RAsm *a, RAsmOp *aop, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_m68k = {
 	.name = "m68k",
 	.arch = "m68k",
+	.license = "BSD",
 	.bits = (int[]){ 32, 0 },
 	.desc = "Motorola 68000 disassembly plugin",
 	.init = NULL,

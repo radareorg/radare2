@@ -16,6 +16,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_c55plus = {
 	.name = "c55+",
+	.license = "LGPL3",
 	.desc = "c55+ disassembly plugin",
 	.arch = "c55+",
 	.bits = (int[]){ 32, 40 },

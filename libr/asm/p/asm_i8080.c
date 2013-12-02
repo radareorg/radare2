@@ -18,6 +18,7 @@ RAsmPlugin r_asm_plugin_i8080 = {
 	.name = "i8080",
 	.desc = "i8080 disassembler plugin",
 	.arch = "i8080",
+	.license = "BSD",
 	.bits = (int[]){ 8, 0 },
 	.init = NULL,
 	.fini = NULL,

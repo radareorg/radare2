@@ -23,6 +23,7 @@ RAsmPlugin r_asm_plugin_snes = {
 	.bits = (int[]){ 16, 8, 0 }, /* supported wordsizes */
 	.init = NULL,
 	.fini = NULL,
+	.license = "LGPL3",
 	.disassemble = &disassemble,
 	.modify = NULL,
 	.assemble = NULL,

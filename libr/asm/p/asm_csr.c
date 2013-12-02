@@ -36,6 +36,7 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 RAsmPlugin r_asm_plugin_csr = {
 	.name = "csr",
 	.arch = "csr",
+	.license = "PD",
 	.bits = (int[]){ 16, 0 },
 	.desc = "CSR disassembly plugin",
 	.init = NULL,

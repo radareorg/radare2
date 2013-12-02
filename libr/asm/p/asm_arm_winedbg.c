@@ -35,7 +35,8 @@ RAsmPlugin r_asm_plugin_arm_winedbg = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	.license = "LGPL2"
 };
 
 #ifndef CORELIB

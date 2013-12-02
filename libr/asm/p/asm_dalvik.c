@@ -413,6 +413,7 @@ static int init (void *user) {
 RAsmPlugin r_asm_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
+	.license = "LGPL3",
 	.desc = "Dalvik (Android VM) disassembly plugin",
 	.bits = (int[]){ 32, 64, 0 },
 	.init = &init,

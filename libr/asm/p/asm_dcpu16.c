@@ -27,6 +27,7 @@ RAsmPlugin r_asm_plugin_dcpu16 = {
 	.arch = "dpcu",
 	.bits = (int[]){ 16, 0 },
 	.desc = "DCPU16 assembler/disassembler",
+	.license = "PD",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

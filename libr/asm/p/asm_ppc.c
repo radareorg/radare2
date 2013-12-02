@@ -91,6 +91,7 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 RAsmPlugin r_asm_plugin_ppc = {
 	.name = "ppc",
 	.arch = "ppc",
+	.license = "GPL3",
 	.bits = (int[]){ 32, 64, 0 },
 	.desc = "PPC disassembly plugin",
 	.init = NULL,

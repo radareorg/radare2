@@ -65,6 +65,7 @@ RAsmPlugin r_asm_plugin_x86_as = {
 	.name = "x86.as",
 	.desc = "X86 assembler plugin using 'as' program",
 	.arch = "x86",
+	.license = "LGPL3",
 	// NOTE: 64bits is not supported on OSX's nasm :(
 	.bits = (int[]){ 16, 32, 64, 0 },
 	.init = NULL,

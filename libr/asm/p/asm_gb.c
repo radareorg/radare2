@@ -20,6 +20,7 @@ RAsmPlugin r_asm_plugin_gb = {
 	.name = "gb",
 	.desc = "GB disassembly plugin",
 	.arch = "z80",				//?
+	.license = "LGPL3",
 	.bits = (int[]){ 8, 0 }, /* supported wordsizes */
 	.init = NULL,
 	.fini = NULL,

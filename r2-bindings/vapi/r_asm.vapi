@@ -194,6 +194,10 @@ public class RAsm {
 		 */
 		public string desc;
 		/**
+		 * The license for the plugin.
+		 */
+		public string license;
+		/**
 		 * Supported bit sizes.
 		 * Warning, future releases will probably use a bitmask approach instead.
 		 */

@@ -93,7 +93,8 @@ RAsmPlugin r_asm_plugin_arc = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	.license = "GPL3"
 };
 
 #ifndef CORELIB

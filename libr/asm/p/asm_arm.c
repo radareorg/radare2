@@ -191,7 +191,8 @@ RAsmPlugin r_asm_plugin_arm = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = &assemble 
+	.assemble = &assemble,
+	.license = "GPL3"
 };
 
 #ifndef CORELIB

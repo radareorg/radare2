@@ -81,6 +81,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_sh = {
 	.name = "sh",
 	.arch = "sh",
+	.license = "GPL3",
 	.bits = (int[]){ 32, 0 },
 	.desc = "SH-4 disassembly plugin",
 	.init = NULL,

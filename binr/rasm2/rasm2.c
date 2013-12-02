@@ -17,11 +17,12 @@ static void r_asm_list(RAsm *a) {
 	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h) {
-		const char *feat = "---";
+		const char *feat = "--";
 		if (h->assemble && h->disassemble)  feat = "ad";
 		if (h->assemble && !h->disassemble) feat = "a_";
 		if (!h->assemble && h->disassemble) feat = "_d";
-		printf ("%s  %-11s  %s\n", feat, h->name, h->desc);
+		printf ("%s  %-11s  %s  (%s)\n", feat, h->name,
+			h->desc, h->license?h->license:"unknown");
 	}
 }
 

@@ -25,7 +25,8 @@ RAsmPlugin r_asm_plugin_8051 = {
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
-	.assemble = NULL
+	.assemble = NULL,
+	.license = "PD"
 };
 
 #ifndef CORELIB

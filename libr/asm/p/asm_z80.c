@@ -20,6 +20,7 @@ static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_z80 = {
 	.name = "z80",
+	.license = "GPL2 NON-COMMERCIAL",
 	.desc = "z80 assembler plugin",
 	.arch = "z80",
 	.bits = (int[]){ 8, 0 },

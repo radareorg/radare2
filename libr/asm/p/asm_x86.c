@@ -62,8 +62,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_x86 = {
 	.name = "x86",
-	.desc = "udis86 disassembly plugin",
+	.desc = "udis86 disassembler",
 	.arch = "x86",
+	.license = "BSD",
 	.bits = (int[]){ 16, 32, 64, 0 },
 	.init = NULL,
 	.fini = NULL,

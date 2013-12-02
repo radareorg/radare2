@@ -95,6 +95,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 RAsmPlugin r_asm_plugin_mips = {
 	.name = "mips",
 	.arch = "mips",
+	.license = "GPL3",
 	.bits = (int[]){ 64, 32, 0 },
 	.desc = "MIPS disassembly plugin",
 	.init = NULL,

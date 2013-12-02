@@ -21,6 +21,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_psosvm = {
 	.name = "psosvm",
 	.desc = "PSOS-VM disassembly plugin",
+	.license = "BSD",
 	.arch = "psosvm",
 	.bits = (int[]){ 8, 16, 0 },
 	.init = NULL,

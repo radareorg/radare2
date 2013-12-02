@@ -14,10 +14,10 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		"gas /dev/stdin -o /dev/stdout <<__\n"
 		"BITS %i\nORG 0x%"PFMT64x"\n%s\n__",
 		a->bits, a->pc, buf);
-	out = (ut8 *)r_sys_cmd_str(cmd, "", &len);
+	out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
 	if (out) {
-		memcpy(op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
-		free(out);
+		memcpy (op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
+		free (out);
 	}
 	op->inst_len = len;
 	return len;
@@ -25,6 +25,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 RAsmPlugin r_asm_plugin_x86_nasm = {
 	.name = "gas",
+	.license = "LGPL3",
 	.desc = "GNU Assembler plugin",
 	.arch = "x86", // XXX
 	.bits = (int[]){ 16, 32, 64, 0 },

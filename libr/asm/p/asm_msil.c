@@ -28,6 +28,7 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 RAsmPlugin r_asm_plugin_msil = {
 	.name = "msil",
 	.arch = "msil",
+	.license = "PD",
 	.bits = (int[]){ 16, 32, 64, 0 },
 	.desc = "MSIL disassembly plugin",
 	.init = NULL,
