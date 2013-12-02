@@ -418,9 +418,7 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 	if (offset == R_BUF_CUR )
 		offset = bin->b->cur;
 
-	method = (RBinJavaField *) malloc (sizeof (RBinJavaField));
-	if (method)
-		memset (method, 0, sizeof (RBinJavaField));
+	method = (RBinJavaField *) R_NEW0(RBinJavaField);
 
 	method->metas = (RBinJavaMetaInfo *) malloc (sizeof (RBinJavaMetaInfo));
 	if(method->metas)
@@ -505,9 +503,7 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, ut64 offset) {
 	if (offset == R_BUF_CUR )
 		offset = bin->b->cur;
 	
-	field = (RBinJavaField *) malloc (sizeof (RBinJavaField));
-	if (field)
-		memset (field, 0, sizeof (RBinJavaField));
+	field = (RBinJavaField *) R_NEW0(RBinJavaField);
 
 	field->metas = (RBinJavaMetaInfo *) malloc (sizeof (RBinJavaMetaInfo));
 	if(field->metas)
@@ -1472,7 +1468,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		if (fm_type->class_name) {
 			sym->classname = strdup (fm_type->class_name);
 		} else {
-			sym->classname = strdup ("");
+			sym->classname = strdup ("NONE");
 		}
 		
 		sym->offset = fm_type->file_offset;
