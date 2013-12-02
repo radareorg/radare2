@@ -1029,14 +1029,15 @@ static int cmd_print(void *data, const char *input) {
 			processed_cmd = R_TRUE;
 			eprintf ("Usage: pd[f|i|l] [len] [arch] [bits] @ [addr]\n"
 			//TODO: eprintf ("  pdr  : disassemble resume\n");
-			"  pda  : disassemble all possible opcodes (byte per byte)\n"
-			"  pdj  : disassemble to json\n"
-			"  pdb  : disassemble basic block\n"
-			"  pdr  : recursive disassemble across the function graph\n"
-			"  pdf  : disassemble function\n"
-			"  pdi  : like 'pi', with offset and bytes\n"
-			"  pdl  : show instruction sizes\n"
-			"  pds  : disassemble with back sweep (greedy disassembly backwards)\n");
+			"  pda  disassemble all possible opcodes (byte per byte)\n"
+			"  pdj  disassemble to json\n"
+			"  pdb  disassemble basic block\n"
+			"  pdr  recursive disassemble across the function graph\n"
+			"  pdf  disassemble function\n"
+			"  pdi  like 'pi', with offset and bytes\n"
+			"  pdn  disassemble N bytes (like pdi)\n"
+			"  pdl  show instruction sizes\n"
+			"  pds  disassemble with back sweep (greedy disassembly backwards)\n");
 			pd_result = 0;
 		}
 		if (!processed_cmd) {
@@ -1046,7 +1047,6 @@ static int cmd_print(void *data, const char *input) {
 			ut8 *block = malloc (core->blocksize);
 	
 			if (block && bw_disassemble) {
-
 				l = -l;
 				if (block) {
 					if (*input == 'D'){
@@ -1076,22 +1076,30 @@ static int cmd_print(void *data, const char *input) {
 				ut64 idx = 0;
 				RAsmOp asmop;
 
+// XXX: issue with small blocks
 				for (i=0; i < use_blocksize; i++ ) {
-					ut64 addr = core->offset + idx;
+					ut64 addr = core->offset + i;
 					r_core_read_at (core, addr,
 							block, core->blocksize);
 					if (*input == 'D') {
-						core->num->value = r_core_print_disasm (core->print,
-									core, addr, block, core->blocksize, l, 0, 1);
-						idx++;
-						r_cons_printf ("------\n");
+						// l must be smaller than blocksize
+						if (l>=core->blocksize) {
+							eprintf ("Invalid length\n");
+						} else {
+							core->num->value = r_core_print_disasm (core->print,
+								core, addr, block, l, l, 0, 1);
+						}
+						break; 
 					} else {
+/*
 						ut32 disasm_len = r_asm_disassemble (core->assembler, &asmop,  block,
 							core->blocksize);
 						if (disasm_len == 0) disasm_len++;
+*/
 						core->num->value = r_core_print_disasm (core->print,
-									core, addr, block, disasm_len, l, 0, 1);
-						idx += disasm_len;
+								core, addr, block, l, l, 0, 0);
+						i += core->num->value-1; //disasm_len;
+						break;
 					}
 				}
 			}
