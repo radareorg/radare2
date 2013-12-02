@@ -215,16 +215,26 @@ static ut64 findprevopsz(RCore *core, ut64 addr) {
 	RAnalOp aop;
 	ut8 buf[132];
 	ut64 base = addr - 120;
-	ut64 newaddr = UT64_MAX;
 	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i=0; i<16; i++) {
 		if (r_anal_op (core->anal, &aop, addr-i, buf+120-i, 16+i)) {
 			if (aop.length<1) break;
-			if (i == aop.length)
+			if (i == aop.length) {
+				switch (aop.type) {
+				case R_ANAL_OP_TYPE_ILL:
+				case R_ANAL_OP_TYPE_TRAP:
+				case R_ANAL_OP_TYPE_RET:
+				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_CJMP:
+				case R_ANAL_OP_TYPE_UJMP:
+				case R_ANAL_OP_TYPE_JMP:
+					return UT64_MAX;
+				}
 				return addr-i;
+			}
 		}
 	}
-	return newaddr;
+	return UT64_MAX;
 }
 
 static int r_core_search_rop (RCore *core, ut64 from, ut64 to, int opt) {
@@ -232,10 +242,11 @@ static int r_core_search_rop (RCore *core, ut64 from, ut64 to, int opt) {
 	ut64 prev;
 	RAsmOp asmop;
 	RAnalOp aop;
-	int i, delta = to-from;
-	if (delta<1) {
+	int roplen, i, delta = to-from;
+	ut64 ropat;
+	int oplen = 0;
+	if (delta<1)
 		return R_FALSE;
-	}
 	buf = malloc (delta);
 	r_io_read_at (core->io, from, buf, delta);
 	for (i=0; i<delta; i++) {
@@ -251,9 +262,14 @@ static int r_core_search_rop (RCore *core, ut64 from, ut64 to, int opt) {
 				if (prev != UT64_MAX) {
 					ut64 prev2 = findprevopsz (core, prev);
 					if (prev2 != UT64_MAX)
-						r_core_cmdf (core, "pd 3 @ 0x%"PFMT64x, prev2);
-					else r_core_cmdf (core, "pd 2 @ 0x%"PFMT64x, prev);
-				} else r_core_cmdf (core, "pd 1 @ 0x%"PFMT64x, from+i);
+						ropat = prev2;
+					else ropat = prev;
+				} else ropat = from+i; 
+				roplen = from - ropat + i + aop.length;
+				r_core_cmdf (core, "pD %d @ 0x%"PFMT64x, roplen, ropat);
+			//r_core_cmdf (core, "pd 1 @ 0x%"PFMT64x, from+i);
+			//			r_core_cmdf (core, "pd 3 @ 0x%"PFMT64x, prev2);
+			//		else r_core_cmdf (core, "pd 2 @ 0x%"PFMT64x, prev);
 				// show this and prev opcode
 				break;
 			}
@@ -316,10 +332,7 @@ c = 0;
 		goto reread;
 		break;
 	case 'R':
-		{
-		eprintf ("Search for ROP gadgets...\n");
 		r_core_search_rop (core, from, to, 0);
-		}
 		return R_TRUE;
 	case 'r':
 		if (input[1]==' ')
