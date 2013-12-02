@@ -419,6 +419,9 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 		offset = bin->b->cur;
 
 	method = (RBinJavaField *) malloc (sizeof (RBinJavaField));
+	if (method)
+		memset (method, 0, sizeof (RBinJavaField));
+
 	method->metas = (RBinJavaMetaInfo *) malloc (sizeof (RBinJavaMetaInfo));
 	if(method->metas)
 		memset (method->metas, 0, sizeof (RBinJavaMetaInfo));
@@ -444,6 +447,7 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 		snprintf ((char *) method->name, 20, "sym.method_%08x", method->metas->ord);
 		IFDBG eprintf ("r_bin_java_read_next_method: Unable to find the name for 0x%02x index.\n", method->name_idx);
 	}
+
 	idx = method->descriptor_idx;
 	item = r_bin_java_get_item_from_bin_cp_list (bin, idx);
 	method->descriptor = r_bin_java_get_utf8_from_bin_cp_list (bin, (ut32) method->descriptor_idx);
@@ -452,7 +456,6 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 		method->descriptor = r_str_dup (NULL, "NULL");
 		IFDBG eprintf ("r_bin_java_read_next_method: Unable to find the descriptor for 0x%02x index.\n", method->descriptor_idx);
 	}
-	
 
 	IFDBG eprintf ("Looking for a NameAndType CP with name_idx: %d descriptor_idx: %d\n", method->name_idx, method->descriptor_idx);
 	method->field_ref_cp_obj = r_bin_java_find_cp_ref_info_from_name_and_type (method->name_idx, method->descriptor_idx);
@@ -462,7 +465,7 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 		IFDBG eprintf ("Method class reference value: %d, which is: ord: %d, name: %s\n", method->field_ref_cp_obj->info.cp_method.class_idx, item->metas->ord, ((RBinJavaCPTypeMetas *) item->metas->type_info)->name);
 		method->class_name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, item);
 		IFDBG eprintf ("Method requesting ref_cp_obj the following which is: ord: %d, name: %s\n", method->field_ref_cp_obj->metas->ord, ((RBinJavaCPTypeMetas *) method->field_ref_cp_obj->metas->type_info)->name);
-		IFDBG eprintf ("MethodRef class name resolves to: %s\n", method->class_name);
+		eprintf ("MethodRef class name resolves to: %s\n", method->class_name);
 		if (method->class_name == NULL)
 			method->class_name = r_str_dup (NULL, "NULL");
 		
@@ -503,6 +506,9 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, ut64 offset) {
 		offset = bin->b->cur;
 	
 	field = (RBinJavaField *) malloc (sizeof (RBinJavaField));
+	if (field)
+		memset (field, 0, sizeof (RBinJavaField));
+
 	field->metas = (RBinJavaMetaInfo *) malloc (sizeof (RBinJavaMetaInfo));
 	if(field->metas)
 		memset (field->metas, 0, sizeof (RBinJavaMetaInfo));
@@ -521,20 +527,22 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, ut64 offset) {
 	field->name = r_bin_java_get_utf8_from_bin_cp_list (bin, field->name_idx);
 	if(field->name == NULL) {
 		field->name = r_str_dup (NULL, "NULL");
-		eprintf ("r_bin_java_read_next_field: Unable to find the name for %d index.\n", field->name_idx);
+		IFDBG eprintf ("r_bin_java_read_next_field: Unable to find the name for %d index.\n", field->name_idx);
 	}
 
 	field->descriptor = r_bin_java_get_utf8_from_bin_cp_list (bin, field->descriptor_idx);
 	if(field->descriptor == NULL) {
 		field->descriptor = r_str_dup (NULL, "NULL");
-		eprintf ("r_bin_java_read_next_field: Unable to find the descriptor for %d index.\n", field->descriptor_idx);
+		IFDBG eprintf ("r_bin_java_read_next_field: Unable to find the descriptor for %d index.\n", field->descriptor_idx);
 	}
 	
 	field->field_ref_cp_obj = r_bin_java_find_cp_ref_info_from_name_and_type (field->name_idx+1, field->descriptor_idx+1);
 	if (field->field_ref_cp_obj) {
 		field->class_name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, field->field_ref_cp_obj);
-		if (field->class_name == NULL)
+		if (field->class_name == NULL){
 			field->class_name = r_str_dup (NULL, "NULL");
+			IFDBG eprintf ("r_bin_java_read_next_field: Unable to find the classname for %s.\n", field->name);		
+		}
 
 	}
 
@@ -1460,7 +1468,12 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 	if (sym) {
 		strncpy (sym->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
 		strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
-		sym->classname = r_str_dup (NULL, fm_type->class_name);
+		
+		if (fm_type->class_name) {
+			sym->classname = strdup (fm_type->class_name);
+		} else {
+			sym->classname = strdup ("");
+		}
 		
 		sym->offset = fm_type->file_offset;
 		sym->rva = r_bin_java_get_method_code_offset (fm_type);
