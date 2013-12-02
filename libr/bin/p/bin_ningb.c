@@ -8,15 +8,21 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static int check(RBinArch *arch);
+static int check(RBinArch *arch) {
+	ut8 lict[48];
+	if (!arch || !arch->buf)
+		return 0;
+	r_buf_read_at (arch->buf, 0x104, lict,48);
+	return (!memcmp (lict, lic, 48))? 1: 0;
+}
 
 static int load(RBinArch *arch) {
-	if(check(arch)) return R_TRUE;
+	if (check (arch)) return R_TRUE;
 	return R_FALSE;
 }
 
 static int destroy(RBinArch *arch) {
-	if (arch->buf) r_buf_free (arch->buf);
+	r_buf_free (arch->buf);
 	arch->buf = NULL;
 	return R_TRUE;
 }
@@ -30,21 +36,22 @@ static RList* entries(RBinArch *arch) {
 	RBinAddr *ptr = NULL;
 	ut8 init_jmp[4];
 
-	if (arch && arch->buf == NULL){
-		r_buf_read_at(arch->buf,0x100,init_jmp,4);
+	if (arch && arch->buf != NULL) {
+		r_buf_read_at (arch->buf, 0x100, init_jmp,4);
+		if (!ret) {
+			return NULL;
+		}
 
-			if (!ret) return NULL;
+		ret->free = free;
+		if (!(ptr = R_NEW (RBinAddr)))
+			return ret;
 
-			ret->free = free;
-			if (!(ptr = R_NEW (RBinAddr)))
-				return ret;
-
-			memset (ptr, '\0', sizeof (RBinAddr));
-			if (!init_jmp[1]==0xc3){						/* Function for this? */
-				ptr->offset = ptr->rva = 0x100;
-			} else {
-				ptr->offset = ptr->rva = init_jmp[3]*0x100+init_jmp[2];
-			}
+		memset (ptr, '\0', sizeof (RBinAddr));
+		if (!init_jmp[1]==0xc3){						/* Function for this? */
+			ptr->offset = ptr->rva = 0x100;
+		} else {
+			ptr->offset = ptr->rva = init_jmp[3]*0x100+init_jmp[2];
+		}
 
 		r_list_append (ret, ptr);
 	}
@@ -137,7 +144,6 @@ static RList* sections(RBinArch *arch){
 	return ret;
 }
 
-
 static RBinInfo* info(RBinArch *arch) {
 	ut8 rom_header[76];
 	RBinInfo *ret = R_NEW (RBinInfo);
@@ -165,22 +171,6 @@ static RBinInfo* info(RBinArch *arch) {
 	ret->dbg_info = 0;
 	return ret;
 }
-
-static int check(RBinArch *arch) {
-	ut8 lict[48];
-
-	if (!arch || !arch->buf)
-		return 0;
-
-	r_buf_read_at (arch->buf,0x104,lict,48);
-
-	if ( !memcmp (lict,lic,48))
-		return 1;
-
-	return 0;
-}
-
-
 
 struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.name = "ningb",
