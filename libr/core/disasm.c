@@ -309,7 +309,6 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	if (buf[0] != 0xff) // hack
 		for (i=0; i<10; i++)
 			core->asmqjmps[i] = UT64_MAX;
-
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, addr+idx);
@@ -373,9 +372,7 @@ toro:
 
 		r_core_seek_archbits (core, at); // slow but safe
 		hint = r_core_hint_begin (core, hint, at);
-		if (!cbytes && idx>=l) {
-			break;
-		}
+		//if (!cbytes && idx>=l) { break; }
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
 			line = r_anal_reflines_str (core, at, linesopts);

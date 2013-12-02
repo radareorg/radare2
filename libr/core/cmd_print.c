@@ -1082,7 +1082,7 @@ static int cmd_print(void *data, const char *input) {
 					block = malloc (l*10);
 					r_core_read_at (core, addr, block, l*10); //core->blocksize);
 					core->num->value = r_core_print_disasm (core->print,
-						core, addr, block, l, l, 0, 0);
+						core, addr, block, l*10, l, 0, 0);
 				}
 			}
 			core->offset = current_offset;

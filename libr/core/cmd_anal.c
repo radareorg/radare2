@@ -216,7 +216,8 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 			r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
 
 		r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
-		r_cons_printf ("cond: %d\n", op.cond); // TODO: string
+		r_cons_printf ("cond: %d\n",
+			(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
 		r_cons_printf ("family: %d\n", op.family);
 		r_cons_printf ("\n");
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
