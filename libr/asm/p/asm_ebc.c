@@ -15,7 +15,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	ret = ebc_decode_command(buf, &cmd);
 
-	snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s\t%s", cmd.instr, cmd.operands);
+	snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
 
 	op->inst_len = ret;
 	return ret;
