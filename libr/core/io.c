@@ -61,7 +61,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 
 	// XXX we can work with config.block instead of dupping it
 	buf = (ut8 *)malloc (core->blocksize);
-	str = (char *)malloc (strlen (arg));
+	str = (char *)malloc (strlen (arg)+1);
 	if (buf == NULL || str == NULL)
 		goto beach;
 	memcpy (buf, core->block, core->blocksize);

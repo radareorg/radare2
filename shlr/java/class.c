@@ -950,9 +950,9 @@ R_API RBinJavaAttrInfo* r_bin_java_get_attr_from_field(RBinJavaField *field, R_B
 		rvalue: NULL or the first occurrence of attr_type after pos
 	
 	*/
-	RBinJavaAttrInfo *attr, *item;
+	RBinJavaAttrInfo *attr = NULL, *item;
 	RListIter *iter; 
-	ut32 i;
+	ut32 i = 0;
 
 	if (field) {
 		r_list_foreach (field->attributes, iter, item) {

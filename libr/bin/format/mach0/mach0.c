@@ -647,10 +647,10 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 
 	if (bin->dyld_info) {
 		ut8 *opcodes, *p, *end, type, rel_type;
-		int lib_ord, seg_idx, sym_ord = -1, wordsize;
+		int lib_ord, seg_idx = -1, sym_ord = -1, wordsize;
 		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;
-		ut64 addr;
+		ut64 addr = 0LL;
 
 		wordsize = MACH0_(r_bin_mach0_get_bits)(bin) / 8;
 #define CASE(T) case (T / 8): rel_type = R_BIN_RELOC_ ## T; break
@@ -808,7 +808,8 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 	if (bin->entry) {
 		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
 		entry->addr = bin->entry;
-	} 
+	}
+	entry->addr = 0LL;
 	if (!bin->entry || (entry->offset==0)) {
 		// XXX: section name doesnt matters at all.. just check for exec flags
 		for (i = 0; i < bin->nsects; i++) {
@@ -816,7 +817,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 				entry->offset = (ut64)bin->sects[i].offset;
 				entry->addr = (ut64)bin->sects[i].addr;
 				if (entry->addr==0) // workaround for object files
-					entry->addr=entry->offset;
+					entry->addr = entry->offset;
 				break;
 			}
 		}

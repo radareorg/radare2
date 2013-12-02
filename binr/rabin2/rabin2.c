@@ -427,7 +427,7 @@ int main(int argc, char **argv) {
 		if (p2) {
 			// has data
 			*p2++ = 0;
-			data = malloc (strlen (p2));
+			data = malloc (strlen (p2)+1);
 			datalen = r_hex_str2bin (p2, data);
 		} else {
 			data = NULL;

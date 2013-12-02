@@ -188,11 +188,14 @@ static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit){
 	end_range =  hit->addr +  hit->len;
 	r_list_foreach_safe (hits, iter, iter_tmp, to_check_hit){
 		if (to_check_hit && is_hit_inrange(to_check_hit, start_range, end_range)) {
-			IFDBG eprintf ("Found hit that clashed (start: 0x%"PFMT64x" - end: 0x%"PFMT64x" ), 0x%"PFMT64x" len: %d (valid: %d 0x%"PFMT64x" - 0x%"PFMT64x")\n", start_range, end_range, 
-					to_check_hit->addr, to_check_hit->len, to_check_hit->valid, to_check_hit->addr, to_check_hit->addr+to_check_hit->len);
+			IFDBG eprintf ("Found hit that clashed (start: 0x%"PFMT64x
+				" - end: 0x%"PFMT64x" ), 0x%"PFMT64x" len: %d (valid: %d 0x%"PFMT64x
+				" - 0x%"PFMT64x")\n", start_range, end_range, to_check_hit->addr,
+				to_check_hit->len, to_check_hit->valid, to_check_hit->addr,
+				to_check_hit->addr+to_check_hit->len);
 			// XXX - could this be a valid decode instruction we are deleting?
 			r_list_delete (hits, iter);
-			iter->data = NULL;
+			//iter->data = NULL;
 			to_check_hit = NULL;
 			result ++;
 		} 

@@ -1725,23 +1725,24 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 
 	if (write(fd, ar, sizeof(ar)) != (ssize_t)sizeof(ar)) {
 		file_error(ms, errno, "error writing `%s'", dbname);
-		goto out;
+		goto beach;
 	}
 
 	if (lseek(fd, (off_t)sizeof(struct r_magic), SEEK_SET)
 	    != sizeof(struct r_magic)) {
 		file_error(ms, errno, "error seeking `%s'", dbname);
-		goto out;
+		goto beach;
 	}
 
 	if (write(fd, *magicp, (sizeof(struct r_magic) * *nmagicp)) 
 	    != (ssize_t)(sizeof(struct r_magic) * *nmagicp)) {
 		file_error(ms, errno, "error writing `%s'", dbname);
-		goto out;
+		goto beach;
 	}
 
-	(void)close(fd);
 	rv = 0;
+beach:
+	(void)close(fd);
 out:
 	free(dbname);
 	return rv;

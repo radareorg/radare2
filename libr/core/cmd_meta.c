@@ -244,8 +244,8 @@ static int cmd_meta(void *data, const char *input) {
 					if (pattern && varsub)
 					for (i = 0; i < R_ANAL_VARSUBS; i++)
 						if (f->varsubs[i].pat[0] == '\0' || !strcmp (f->varsubs[i].pat, pattern)) {
-							strncpy (f->varsubs[i].pat, pattern, 1023);
-							strncpy (f->varsubs[i].sub, varsub, 1023);
+							strncpy (f->varsubs[i].pat, pattern, sizeof (f->varsubs[i].pat)-1);
+							strncpy (f->varsubs[i].sub, varsub, sizeof (f->varsubs[i].sub)-1);
 							break;
 						}
 				} else eprintf ("Error: Function not found\n");

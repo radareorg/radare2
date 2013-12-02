@@ -54,7 +54,7 @@ R_API int r_core_search_preludes(RCore *core) {
 	ut64 to = core->offset+0xffffff; // hacky!
 	// TODO: this is x86 only
 	if (prelude && *prelude) {
-		ut8 *kw = malloc (strlen (prelude));
+		ut8 *kw = malloc (strlen (prelude)+1);
 		int kwlen = r_hex_str2bin (prelude, kw);
 		ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 		free (kw);
@@ -244,7 +244,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 	RAnalOp aop;
 	int roplen, i, delta = to-from;
 	ut64 ropat;
-	int oplen = 0;
 	if (delta<1)
 		return R_FALSE;
 	buf = malloc (delta);
@@ -252,6 +251,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 	for (i=0; i<delta; i++) {
 		if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i)) {
 			int ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
+			if (ret>0)
 			switch (aop.type) {
 			case R_ANAL_OP_TYPE_TRAP:
 			case R_ANAL_OP_TYPE_RET:

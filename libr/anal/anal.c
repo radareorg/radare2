@@ -231,7 +231,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	int len;
 	ut8 *buf;
 	RAnalOp *op = R_NEW0 (RAnalOp);
-	buf = malloc (strlen (str));
+	buf = malloc (strlen (str)+1);
 	len = r_hex_str2bin (str, buf);
 	r_anal_op (anal, op, addr, buf, len);
 	return op;

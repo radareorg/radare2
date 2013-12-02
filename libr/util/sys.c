@@ -282,14 +282,14 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		if (pipe (sh_out)) {
 			close (sh_in[0]);
 			close (sh_in[1]);
+			close (sh_out[0]);
+			close (sh_out[1]);
 			return R_FALSE;
 		}
 	}
 	if (pipe (sh_err)) {
 		close (sh_in[0]);
 		close (sh_in[1]);
-		close (sh_out[0]);
-		close (sh_out[1]);
 		return R_FALSE;
 	}
 
@@ -589,7 +589,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 	int ret;
 	char buf[128], pathbuf[1024];
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
-	ret = readlink (buf, pathbuf, sizeof (pathbuf));
+	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
 	if (ret<1)
 		return NULL;
 	pathbuf[ret] = 0;

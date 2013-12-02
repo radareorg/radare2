@@ -204,7 +204,7 @@ static int cmd_cmp(void *data, const char *input) {
 			eprintf ("Usage: cx 001122'\n");
 			return 0;
 		}
-		buf = (ut8*)malloc (strlen (input+2));
+		buf = (ut8*)malloc (strlen (input+2)+1);
 		ret = r_hex_str2bin (input+2, buf);
 		if (ret<1) eprintf ("Cannot parse hexpair\n");
 		else radare_compare (core, core->block, buf, ret);

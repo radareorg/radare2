@@ -455,7 +455,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 		}
 	}
 	for (i = 0; i < j; i++) {
-		libs[i].name[PE_STRING_LENGTH] = '\0';
+		libs[i].name[PE_STRING_LENGTH-1] = '\0';
 		libs[i].last = 0;
 	}
 	libs[i].last = 1;
@@ -641,7 +641,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 	}
 	for (i = 0; i < sections_count; i++) {
 		memcpy (sections[i].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
+		sections[i].name[PE_IMAGE_SIZEOF_SHORT_NAME-1] = '\0';
 		sections[i].rva = shdr[i].VirtualAddress;
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].Misc.VirtualSize;

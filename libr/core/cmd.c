@@ -1156,6 +1156,7 @@ next2:
 		const char *offstr;
 		char *f, *ptr2 = strchr (ptr+1, '!');
 		int sz, len;
+		addr = 0LL;
 		tmpoff = core->offset;
 		tmpbsz = core->blocksize;
 
@@ -1185,7 +1186,7 @@ repeat_arroba:
 				break;
 			case '8':
 			case 'b':
-				buf = malloc (strlen (ptr+2));
+				buf = malloc (strlen (ptr+2)+1);
 				if (!buf) {
 					eprintf ("cannot allocate\n");
 					return R_FALSE;

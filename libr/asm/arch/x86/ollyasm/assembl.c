@@ -717,10 +717,10 @@ int Assemble(char *cmd,ulong ip,t_asmmodel *model,int attempt,
   nameend=asmcmd;
   strupr(sdata);
   // Prepare full mnemonic (including repeat prefix, if any).
-  if (rep==SCAN_REP) sprintf(name,"REP %s",sdata);
-  else if (rep==SCAN_REPE) sprintf(name,"REPE %s",sdata);
-  else if (rep==SCAN_REPNE) sprintf(name,"REPNE %s",sdata);
-  else strcpy(name,sdata);
+  if (rep==SCAN_REP) snprintf(name,sizeof(name)-1,"REP %s",sdata);
+  else if (rep==SCAN_REPE) snprintf(name,sizeof(name)-1,"REPE %s",sdata);
+  else if (rep==SCAN_REPNE) snprintf(name,sizeof(name)-1,"REPNE %s",sdata);
+  else strncpy(name,sdata, sizeof(name)-1);
   Scanasm(0);
   // Parse command operands (up to 3). Note: jump address is always the first
   // (and only) operand in actual command set.

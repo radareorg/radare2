@@ -109,6 +109,7 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 		return R_TRUE;
 	}
 	/* No _safe loop necessary because we break immediately after the delete. */
+	if (m)
 	r_list_foreach (m->data, iter, d) {
 		switch (d->type) {
 		case R_META_TYPE_CODE:

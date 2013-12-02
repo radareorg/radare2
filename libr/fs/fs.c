@@ -496,7 +496,7 @@ R_API char *r_fs_name (RFS *fs, ut64 offset) {
 
 	for (i=0; fstypes[i].name; i++) {
 		RFSType *f = &fstypes[i];
-		len = R_MIN (f->buflen, sizeof (buf));
+		len = R_MIN (f->buflen, sizeof (buf)-1);
 		fs->iob.read_at (fs->iob.io, offset + f->bufoff, buf, len);
 		if (f->buflen>0 && !memcmp (buf, f->buf, f->buflen)) {
 			ret = R_TRUE;
@@ -606,17 +606,18 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 				eprintf ("%s %s\n", r->path, r->p->name);
 			}
 		} else if (!memcmp (buf, "get ", 4)) {
+			char *s;
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
+			s = malloc (strlen (str) + strlen (input) + 2);
 			if (input[0] == '/') {
-				if (root)
-					strncpy (str, root, sizeof (str)-1);
-				else str[0] = 0;
-			} else strncpy (str, path, sizeof (str)-1);
-			strcat (str, "/");
-			strcat (str, input);
-			file = r_fs_open (fs, str);
+				if (root) strcpy (s, root);
+				else *s = 0;
+			} else strcpy (s, path);
+			strcat (s, "/");
+			strcat (s, input);
+			file = r_fs_open (fs, s);
 			if (file) {
 				r_fs_read (fs, file, 0, file->size);
 				r_file_dump (input, file->data, file->size);
@@ -625,9 +626,10 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			} else {
 				input -= 2; //OMFG!!!! O_O
 				memcpy (input, "./", 2);
-				if (!r_fs_dir_dump (fs, str, input))
+				if (!r_fs_dir_dump (fs, s, input))
 					printf ("Cannot open file\n");
 			}
+			free (s);
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
 			eprintf (
 			"Commands:\n"

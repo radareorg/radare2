@@ -261,10 +261,12 @@ R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	if (list) {
 		RFlagItem *item = r_list_get_top (list);
 		if (r_list_empty (list)) {
-			r_list_free (list);
+			//r_list_free (list);
 			r_hashtable64_remove (f->ht_name, hash);
+		} else {
+			r_hashtable64_remove (f->ht_name, hash);
+			r_list_delete_data (list, item);
 		}
-		r_list_delete_data (list, item);
 		if (!r_flag_item_set_name (item, name)) {
 			r_list_append (list, item);
 			return R_FALSE;

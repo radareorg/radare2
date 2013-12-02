@@ -291,7 +291,7 @@ static int cmd_anal(void *data, const char *input) {
 	case '8': // TODO: rename to 'ab'?
 		if (input[1]==' ') {
 			int len;
-			ut8 *buf = malloc (strlen (input));
+			ut8 *buf = malloc (strlen (input)+1);
 			len = r_hex_str2bin (input+2, buf);
 			if (len>0)
 				r_core_anal_bytes (core, buf, len, 0);

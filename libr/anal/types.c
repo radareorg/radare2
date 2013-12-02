@@ -77,6 +77,7 @@ R_API int r_anal_type_frame (RAnal *anal, ut64 addr, const char *type, const cha
 R_API int r_anal_type_frame_del (RAnal *anal, ut64 addr, const char *name) {
 	//"(-)frame.%08"PFMT64x"=%s", addr, name
 	//"frame.%08"PFMT64x".%s=", addr, name
+	return R_TRUE;
 }
 
 R_API int r_anal_type_link (RAnal *anal, const char *val, ut64 addr) {
