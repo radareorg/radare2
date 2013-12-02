@@ -1,7 +1,7 @@
 OBJ_EBC=anal_ebc.o
 
 STATIC_OBJ+=${OBJ_EBC}
-SHARED_OBJ+=../asm/arch/ebc/ebc_disas.o
+SHARED_OBJ+=${LTOP}/asm/arch/ebc/ebc_disas.o
 TARGET_EBC=anal_ebc.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_EBC}
