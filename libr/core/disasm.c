@@ -206,7 +206,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	int tries = 3;
 
 	opstr = NULL;
-	memset(str, 0, sizeof(str));
+	memset (str, 0, sizeof (str));
 
 	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
 	// TODO: import values from debugger is possible
@@ -373,8 +373,9 @@ toro:
 
 		r_core_seek_archbits (core, at); // slow but safe
 		hint = r_core_hint_begin (core, hint, at);
-		if (cbytes && idx>=l)
+		if (!cbytes && idx>=l) {
 			break;
+		}
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
 			line = r_anal_reflines_str (core, at, linesopts);
@@ -540,7 +541,7 @@ toro:
 			//	core->assembler->pc + ret, l, len);
 #if HASRETRY
 //eprintf ("~~~~~~LEN~~~~ %d %d %d\n", l, len, lines);
-			if (!cbytes && tries>0) { //1||l < len) {
+			if (!cbytes && tries>0) { //1||l < len)
 //eprintf ("~~~~~~~~~~~~~ %d %d\n", idx, core->blocksize);
 				addr = core->assembler->pc;
 				tries--;
@@ -1288,9 +1289,7 @@ toro:
 				goto toro;
 			}
 		}
-		//if (invbreak && lines<l) {
 		if (lines<l) {
-//eprintf ("RETR %d\n", );
 			addr += idx;
 			if (r_core_read_at (core, addr, buf, len) != len) {
 				//tries = -1;
@@ -1308,7 +1307,7 @@ toro:
 	r_anal_op_fini (&analop);
 	if (hint) r_anal_hint_free (hint);
 	free (osl);
-	return idx-lastfail;
+	return idx; //-lastfail;
 }
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {

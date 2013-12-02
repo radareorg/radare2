@@ -291,6 +291,27 @@ R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
 	r_core_seek (core, addr, 1);
 }
 
+static void setprintmode (RCore *core, int n) {
+	RAnalOp op;
+	if (n>0) {
+		core->printidx = R_ABS ((core->printidx+1)%NPF);
+	} else {
+		if (core->printidx)
+			core->printidx--;
+		else core->printidx = NPF-1;
+	}
+	switch (core->printidx) {
+	case 0:
+		core->inc = 16;
+		break;
+	case 1:
+	case 2:
+		core->inc = r_asm_disassemble (core->assembler,
+			&op, core->block, 32);
+		break;
+	}
+}
+
 #define OPDELTA 32
 static int prevopsz (RCore *core, ut64 addr) {
 	ut64 target = addr;
@@ -629,6 +650,8 @@ r_cons_gotoxy (1,1);
 		} else {
 			if (core->printidx == 1 || core->printidx == 2) {
 				cols = core->inc;
+				//cols = r_asm_disassemble (core->assembler,
+				//	&op, core->block+cursor, 32);
 				core->asmsteps[core->curasmstep].offset = core->offset+cols;
 				core->asmsteps[core->curasmstep].cols = cols;
 				if (core->curasmstep < R_CORE_ASMSTEPS-1)
@@ -738,12 +761,10 @@ r_cons_gotoxy (1,1);
 		}
 		break;
 	case 'p':
-		core->printidx = R_ABS ((core->printidx+1)%NPF);
+		setprintmode (core, 1);
 		break;
 	case 'P':
-		if (core->printidx)
-			core->printidx--;
-		else core->printidx = NPF-1;
+		setprintmode (core, -1);
 		break;
 	case 'm':
 		r_core_visual_mark (core, r_cons_readchar ());
