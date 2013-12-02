@@ -1,5 +1,28 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
+// XXX DUP
+#define OPDELTA 32
+static int prevopsz (RCore *core, ut64 addr) {
+	ut64 target = addr;
+	ut64 base = target-OPDELTA;
+	int len, ret, i;
+	ut8 buf[OPDELTA*2];
+	RAnalOp op;
+
+	r_core_read_at (core, base, buf, sizeof (buf));
+	for (i=0; i<sizeof (buf); i++) {
+		ret = r_anal_op (core->anal, &op, base+i,
+			buf+i, sizeof (buf)-i);
+		if (!ret) continue;
+		len = op.length;
+		r_anal_op_fini (&op); // XXX
+		if (len<1) continue;
+		i += len-1;
+		if (target == base+i+1)
+			return len;
+	}
+	return 4;
+}
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *cmd, *p;
@@ -170,6 +193,13 @@ static int cmd_seek(void *data, const char *input) {
 			{
 			RAnalOp op;
 			int val, ret, i, n = r_num_math (core->num, input+1);
+			if (n<0) {
+				int ret = prevopsz (core, n);
+				eprintf ("Neagg %d\n", ret);
+				ret = r_anal_op (core->anal, &op,
+						core->offset, core->block, core->blocksize);
+				val += ret;
+			} else
 			for (val=i=0; i<n; i++) {
 				ret = r_anal_op (core->anal, &op,
 						core->offset, core->block, core->blocksize);

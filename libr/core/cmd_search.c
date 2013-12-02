@@ -135,6 +135,7 @@ static int __cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return R_TRUE;
 }
 
+
 static int c = 0;
 static inline void print_search_progress(ut64 at, ut64 to, int n) {
 	if ((++c%64))
@@ -208,6 +209,60 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 	}
 }
 
+// TODO: handle more than one?
+static ut64 findprevopsz(RCore *core, ut64 addr) {
+	int i;
+	RAnalOp aop;
+	ut8 buf[132];
+	ut64 base = addr - 120;
+	ut64 newaddr = UT64_MAX;
+	r_io_read_at (core->io, base, buf, sizeof (buf));
+	for (i=0; i<16; i++) {
+		if (r_anal_op (core->anal, &aop, addr-i, buf+120-i, 16+i)) {
+			if (aop.length<1) break;
+			if (i == aop.length)
+				return addr-i;
+		}
+	}
+	return newaddr;
+}
+
+static int r_core_search_rop (RCore *core, ut64 from, ut64 to, int opt) {
+	ut8 *buf;
+	ut64 prev;
+	RAsmOp asmop;
+	RAnalOp aop;
+	int i, delta = to-from;
+	if (delta<1) {
+		return R_FALSE;
+	}
+	buf = malloc (delta);
+	r_io_read_at (core->io, from, buf, delta);
+	for (i=0; i<delta; i++) {
+		if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i)) {
+			int ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
+			switch (aop.type) {
+			case R_ANAL_OP_TYPE_TRAP:
+			case R_ANAL_OP_TYPE_RET:
+			case R_ANAL_OP_TYPE_UCALL:
+			case R_ANAL_OP_TYPE_UJMP:
+				r_cons_printf ("0x%08"PFMT64x"  %s\n", from+i, asmop.buf_asm);
+				prev = findprevopsz (core, from+i);
+				if (prev != UT64_MAX) {
+					ut64 prev2 = findprevopsz (core, prev);
+					if (prev2 != UT64_MAX)
+						r_core_cmdf (core, "pd 3 @ 0x%"PFMT64x, prev2);
+					else r_core_cmdf (core, "pd 2 @ 0x%"PFMT64x, prev);
+				} else r_core_cmdf (core, "pd 1 @ 0x%"PFMT64x, from+i);
+				// show this and prev opcode
+				break;
+			}
+			//eprintf ("%lld\n", aop.type);
+		}
+	}
+	return R_TRUE;
+}
+
 static int cmd_search(void *data, const char *input) {
 	int i, len, ret, dosearch = R_FALSE;
 	RCore *core = (RCore *)data;
@@ -260,6 +315,12 @@ c = 0;
 		inverse = R_TRUE;
 		goto reread;
 		break;
+	case 'R':
+		{
+		eprintf ("Search for ROP gadgets...\n");
+		r_core_search_rop (core, from, to, 0);
+		}
+		return R_TRUE;
 	case 'r':
 		if (input[1]==' ')
 			r_core_anal_search (core, from, to, r_num_math (core->num, input+2));
@@ -501,6 +562,7 @@ c = 0;
 		" /a jmp eax      ; assemble opcode and search its bytes\n"
 		" /A              ; search for AES expanded keys\n"
 		" /r sym.printf   ; analyze opcode reference an offset\n"
+		" /R              ; search for ROP gadgets\n"
 		" /m magicfile    ; search for matching magic file (use blocksize)\n"
 		" /p patternsize  ; search for pattern of given size\n"
 		" /z min max      ; search for strings of given size\n"

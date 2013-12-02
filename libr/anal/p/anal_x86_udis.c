@@ -22,8 +22,8 @@ static const char* ud_reg_tab[] =
 
   "ax",   "cx",   "dx",   "bx",
   "sp",   "bp",   "si",   "di",
-  "r8w",  "r9w",    "r10w",   "r11w",
-  "r12w", "r13w"  , "r14w",   "r15w",
+  "r8w",  "r9w",  "r10w",   "r11w",
+  "r12w", "r13w", "r14w",   "r15w",
 
   "eax",  "ecx",    "edx",    "ebx",
   "esp",  "ebp",    "esi",    "edi",
@@ -32,7 +32,7 @@ static const char* ud_reg_tab[] =
 
   "rax",  "rcx",    "rdx",    "rbx",
   "rsp",  "rbp",    "rsi",    "rdi",
-  "r8",   "r9",   "r10",    "r11",
+  "r8",   "r9",     "r10",    "r11",
   "r12",  "r13",    "r14",    "r15",
 
   "es",   "cs",   "ss",   "ds",
@@ -57,7 +57,7 @@ static const char* ud_reg_tab[] =
   "xmm0", "xmm1",   "xmm2",   "xmm3",
   "xmm4", "xmm5",   "xmm6",   "xmm7",
   "xmm8", "xmm9",   "xmm10",  "xmm11",
-  "xmm12",  "xmm13",  "xmm14",  "xmm15",
+  "xmm12","xmm13",  "xmm14",  "xmm15",
 
   "rip"
 };
@@ -186,6 +186,10 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		}
 
 	switch (u.mnemonic) {
+	case UD_Iinvalid:
+		oplen = op->length = -1;
+return -1;
+		break;
 	case UD_Itest:
 	case UD_Icmp:
 		op->type = R_ANAL_OP_TYPE_CMP;
