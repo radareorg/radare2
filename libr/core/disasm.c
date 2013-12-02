@@ -567,11 +567,12 @@ toro:
 		}
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
-		if (show_color && colorop)
-			colorize_opcode (asmop.buf_asm, color_reg, color_num);
 		if (atabs) {
 			int n, i = 0;
-			char *t, *b = asmop.buf_asm;
+			char *t, *b;
+			free (opstr);
+			opstr = b = malloc (strlen (asmop.buf_asm)*4);
+			strcpy (b, asmop.buf_asm);
 			for (; *b; b++, i++) {
 				if (*b!=' ') continue;
 				n = (12-i);
@@ -583,6 +584,8 @@ toro:
 				free (t);
 			}
 		}
+		if (show_color && colorop)
+			colorize_opcode (asmop.buf_asm, color_reg, color_num);
 		// TODO: store previous oplen in core->dec
 		if (core->inc == 0)
 			core->inc = oplen;
