@@ -305,6 +305,11 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 		linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	lines = 0;
 	index = 0;
+	/* reset jmp table if not a bad block */
+	if (buf[0] != 0xff) // hack
+		for (i=0; i<10; i++)
+			core->asmqjmps[i] = UT64_MAX;
+
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, addr+idx);
@@ -358,11 +363,6 @@ toro:
 		core->reflines2 = r_anal_reflines_get (core->anal,
 			addr, buf, len, -1, linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
-
-	/* reset jmp table if not a bad block */
-	if (buf[0] != 0xff) // hack
-		for (i=0; i<10; i++)
-			core->asmqjmps[i] = UT64_MAX;
 
 	oplen = 1;
 	r_cons_break (NULL, NULL);

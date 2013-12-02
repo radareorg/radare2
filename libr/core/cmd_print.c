@@ -1028,6 +1028,7 @@ static int cmd_print(void *data, const char *input) {
 		case '?':
 			processed_cmd = R_TRUE;
 			eprintf ("Usage: pd[f|i|l] [len] [arch] [bits] @ [addr]\n"
+			"NOTE: len parameter can be negative\n"
 			//TODO: eprintf ("  pdr  : disassemble resume\n");
 			"  pda  disassemble all possible opcodes (byte per byte)\n"
 			"  pdj  disassemble to json\n"
@@ -1041,70 +1042,51 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 		}
 		if (!processed_cmd) {
+			ut64 addr = core->offset;
 			RList *hits;
 			RListIter *iter;
 			RCoreAsmHit *hit;
-			ut8 *block = malloc (core->blocksize);
+			ut8 *block;
 	
-			if (block && bw_disassemble) {
+			if (bw_disassemble) {
+				block = malloc (core->blocksize);
 				l = -l;
 				if (block) {
 					if (*input == 'D'){
-						hits = r_core_asm_back_disassemble_byte (core,
-							core->offset, core->blocksize, use_blocksize, 5);
+						r_core_read_at (core, addr-l, block, core->blocksize);
+						core->num->value = r_core_print_disasm (core->print,
+							core, addr-l, block, core->blocksize, l, 0, 1);
 					} else {
 						hits = r_core_asm_back_disassemble_instr (core,
-							core->offset, core->blocksize, use_blocksize, 5);
-					}
-					if (hits) {
-						r_list_foreach (hits, iter, hit) {
-							r_core_read_at (core, hit->addr,
+							addr, core->blocksize, use_blocksize, 5);
+						if (hits) {
+							r_list_foreach (hits, iter, hit) {
+								r_core_read_at (core, hit->addr,
 									block, core->blocksize);
-							if (*input == 'D') {
 								core->num->value = r_core_print_disasm (core->print,
-										core, hit->addr, block, core->blocksize, l, 0, 1);
-								r_cons_printf ("------\n");
-							} else {
-								core->num->value = r_core_print_disasm (core->print,
-										core, hit->addr, block, hit->len, l, 0, 1);
+									core, hit->addr, block, hit->len, l, 0, 1);
 							}
 						}
+						r_list_free (hits);
 					}
-					if (hits) r_list_free (hits);
 				}
-			} else if (block){
+			} else {
 				ut64 idx = 0;
-				RAsmOp asmop;
-
-// XXX: issue with small blocks
-				for (i=0; i < use_blocksize; i++ ) {
-					ut64 addr = core->offset + i;
-					r_core_read_at (core, addr,
-							block, core->blocksize);
-					if (*input == 'D') {
-						// l must be smaller than blocksize
-						if (l>=core->blocksize) {
-							eprintf ("Invalid length\n");
-						} else {
-							core->num->value = r_core_print_disasm (core->print,
-								core, addr, block, l, l, 0, 1);
-						}
-						break; 
-					} else {
-/*
-						ut32 disasm_len = r_asm_disassemble (core->assembler, &asmop,  block,
-							core->blocksize);
-						if (disasm_len == 0) disasm_len++;
-*/
-						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block, l, l, 0, 0);
-						i += core->num->value-1; //disasm_len;
-						break;
-					}
+				// XXX: issue with small blocks
+				if (*input == 'D') {
+					block = malloc (l);
+					r_core_read_at (core, addr, block, l); //core->blocksize);
+					core->num->value = r_core_print_disasm (core->print,
+						core, addr, block, l, l, 0, 1);
+				} else {
+					block = malloc (l*10);
+					r_core_read_at (core, addr, block, l*10); //core->blocksize);
+					core->num->value = r_core_print_disasm (core->print,
+						core, addr, block, l, l, 0, 0);
 				}
 			}
 			core->offset = current_offset;
-			if (block) free(block);
+			free (block);
 		}
 
 		// change back asm setting is they were changed
