@@ -338,19 +338,20 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		RList *files = NULL;
 		RListIter *iter, *iter_tmp;
 		char *name;
-		eprintf("usage: zip:///path/to/archive//filepath\n");
-		eprintf("No file was given. Here's a dump to help you decide:\n");
+		//eprintf("usage: zip:///path/to/archive//filepath\n");
+		eprintf("\nFiles in archive contained in ('''):\n\n");
 		files = r_io_zip_get_files(zip_filename, 0, mode, rw );
 
 		if(files){
 			int i = 0;
 			r_list_foreach_safe(files, iter, iter_tmp, name){
-				eprintf("\t %d) %s\n", i++, name);
+				printf("%08s>| '''%s'''\n", " ", name);
 				free (name);
 				r_list_delete (files, iter);
 			}
 			r_list_free (files);
 		}
+		eprintf("\n", name);
 		return result;
 	}
 
