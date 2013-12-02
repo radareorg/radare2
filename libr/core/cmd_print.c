@@ -783,9 +783,9 @@ static int cmd_print(void *data, const char *input) {
 		ut64 current_offset = core->offset;
 		ut32 new_bits = -1;
 		ut64 use_blocksize = core->blocksize;
-		int pos = 0;
+		int segoff, old_bits, pos = 0;
 		ut8 settings_changed = R_FALSE, bw_disassemble = R_FALSE;
-		char *new_arch;
+		char *new_arch, *old_arch;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 		old_arch = strdup (r_config_get (core->config, "asm.arch"));
 		segoff = r_config_get (core->config, "asm.segoff");
