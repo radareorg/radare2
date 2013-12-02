@@ -207,20 +207,16 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 
 	memcpy(&rawstr, buf_bytes, 4);
 	bin->cur.file = strdup (desc->name);
-	bin->cur.buf = bin_buf;			
+	bin->cur.buf = r_buf_new();			
 	bin->cur.rawstr = rawstr;
 		
-	bin_buf = r_buf_new();
-	if (bin_buf) {	
-		r_buf_set_bytes(bin_buf, buf_bytes, sz);
+	
+	if (bin->cur.buf) {	
+		r_buf_set_bytes(bin->cur.buf, buf_bytes, sz);
 	}
 
 	if (buf_bytes)	free(buf_bytes);
 
-	//r_config_set_i (r->config, "bin.rawstr", rawstr);
-	bin->cur.file = strdup (desc->name);
-	bin->cur.buf = bin_buf;			
-	bin->cur.rawstr = rawstr;
 	// Here is the pertinent code from r_bin_init
 	// we can't call r_bin_init, because it will
 	// deref all work done previously by IO Plugin.
@@ -244,7 +240,7 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 
 		int i, minlen = bin->minstrlen;
 		RListIter *it;
-		RBinPlugin *any, *plugin, *cp = NULL;
+		RBinPlugin *any, *plugin;
 		RBinArch *a = &bin->cur;
 		RBinObject *o = a->o;
 		a->curplugin = NULL;
@@ -256,11 +252,9 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 				break;
 			}
 		}
-
-		a->buf = r_buf_new();
-		r_buf_set_bytes(a->buf, bin->cur.buf->buf, bin->cur.buf->length);
-
-		if (cp) set_bin_items(bin, cp);
+		
+		if (a->curplugin && a->curplugin->load && a->curplugin->load(a) )
+			set_bin_items(bin, a->curplugin);
 	}
 
 	return R_TRUE;

@@ -20,6 +20,7 @@ static void set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff){
 	r_config_set_i (core->config, "asm.segoff", segoff);
 }
 
+
 static int process_input(RCore *core, const char *input, ut64* blocksize, char **asm_arch, ut32 *bits) {
 	// input: start of the input string e.g. after the command symbols have been consumed
 	// size: blocksize if present, otherwise -1
@@ -782,7 +783,8 @@ static int cmd_print(void *data, const char *input) {
 		{
 		ut64 current_offset = core->offset;
 		ut32 new_bits = -1;
-		ut64 use_blocksize = core->blocksize;
+		ut64 use_blocksize = core->blocksize,
+			 saved_core_offset = core->offset;
 		int segoff, old_bits, pos = 0;
 		ut8 settings_changed = R_FALSE, bw_disassemble = R_FALSE;
 		char *new_arch, *old_arch;
@@ -1049,25 +1051,14 @@ static int cmd_print(void *data, const char *input) {
 			if (block && bw_disassemble) {
 				l = -l;
 				if (block) {
-					if (*input == 'D'){
-						hits = r_core_asm_back_disassemble_byte (core,
+					hits = r_core_asm_back_disassemble_instr (core,
 							core->offset, core->blocksize, use_blocksize, 5);
-					} else {
-						hits = r_core_asm_back_disassemble_instr (core,
-							core->offset, core->blocksize, use_blocksize, 5);
-					}
 					if (hits) {
 						r_list_foreach (hits, iter, hit) {
 							r_core_read_at (core, hit->addr,
 									block, core->blocksize);
-							if (*input == 'D') {
-								core->num->value = r_core_print_disasm (core->print,
-										core, hit->addr, block, core->blocksize, l, 0, 1);
-								r_cons_printf ("------\n");
-							} else {
-								core->num->value = r_core_print_disasm (core->print,
+							core->num->value = r_core_print_disasm (core->print,
 										core, hit->addr, block, hit->len, l, 0, 1);
-							}
 						}
 					}
 					if (hits) r_list_free (hits);
@@ -1108,6 +1099,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		// change back asm setting is they were changed
+		core->offset = saved_core_offset;
 		if (settings_changed)
 			set_asm_configs (core, old_arch, old_bits, segoff);
 
