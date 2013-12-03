@@ -1055,7 +1055,7 @@ static int cmd_print(void *data, const char *input) {
 					if (*input == 'D'){
 						r_core_read_at (core, addr-l, block, core->blocksize);
 						core->num->value = r_core_print_disasm (core->print,
-							core, addr-l, block, core->blocksize, l, 0, 1);
+							core, addr-l, block, R_MIN (l, core->blocksize), l, 0, 1);
 					} else {
 						hits = r_core_asm_back_disassemble_instr (core,
 							addr, core->blocksize, use_blocksize, 5);
