@@ -1,12 +1,15 @@
 /* radare - LGPL - Copyright 2013 - pancake */
 
-// STATIC/DYNAMIC STRINGS API
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
 
 R_API RStrBuf *r_strbuf_new() {
 	return R_NEW0 (RStrBuf);
+}
+
+R_API void r_strbuf_init(RStrBuf *sb) {
+	memset (sb, 0, sizeof (RStrBuf));
 }
 
 R_API void r_strbuf_set(RStrBuf *sb, const char *s) {
@@ -26,10 +29,13 @@ R_API void r_strbuf_append(RStrBuf *sb, const char *s) {
 	int l = strlen (s);
 	if ((sb->len+l+1)<sizeof (sb->buf)) {
 		strcpy (sb->buf+sb->len, s);
+		sb->ptr = NULL;
 	} else {
 		char *p = malloc (sb->len+l+1);
 		strcpy (p, sb->ptr?sb->ptr:sb->buf);
 		strcpy (p+sb->len, s);
+		free (sb->ptr);
+		sb->ptr = p;
 	}
 	sb->len += l;
 }
@@ -44,7 +50,11 @@ R_API char *r_strbuf_get(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_free(RStrBuf *sb) {
+	r_strbuf_fini (sb);
+	free (sb);
+}
+
+R_API void r_strbuf_fini(RStrBuf *sb) {
 	if (sb && sb->ptr)
 		free (sb->ptr);
-	free (sb);
 }
