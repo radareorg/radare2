@@ -192,7 +192,7 @@ static int cmd_seek(void *data, const char *input) {
 		case 'o':
 			{
 			RAnalOp op;
-			int val, ret, i, n = r_num_math (core->num, input+1);
+			int val=0, ret, i, n = r_num_math (core->num, input+1);
 			if (n<0) {
 				int ret = prevopsz (core, n);
 				eprintf ("Neagg %d\n", ret);

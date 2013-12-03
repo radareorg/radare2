@@ -10,7 +10,7 @@
 
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 	RAnalOp op, *_op;
-	char buf[128];
+	ut8 buf[128];
 	if (r_io_read_at (core->io, addr, buf, sizeof (buf))<1)
 		return NULL;
 	if (r_anal_op (core->anal, &op, addr, buf, sizeof (buf))<1)
@@ -711,7 +711,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, int rad) {
 			 || infun(fcn, addr) || !strcmp (fcn->name, input+1)) {
 			if (!rad) {
 				r_cons_printf ("#\n offset: 0x%08"PFMT64x"\n name: %s\n size: %"PFMT64d,
-						fcn->addr, fcn->name, fcn->size);
+						fcn->addr, fcn->name, (ut64)fcn->size);
 				r_cons_printf ("\n type: %s",
 						fcn->type==R_ANAL_FCN_TYPE_SYM?"sym":
 						fcn->type==R_ANAL_FCN_TYPE_IMP?"imp":"fcn");

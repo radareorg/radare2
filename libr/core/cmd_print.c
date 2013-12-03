@@ -788,7 +788,7 @@ static int cmd_print(void *data, const char *input) {
 		char *new_arch, *old_arch;
 		ut32 pd_result = R_FALSE, processed_cmd = R_FALSE;
 		old_arch = strdup (r_config_get (core->config, "asm.arch"));
-		segoff = r_config_get (core->config, "asm.segoff");
+		segoff = r_config_get_i (core->config, "asm.segoff");
 		old_bits = r_config_get_i (core->config, "asm.bits");
 		// XXX - this is necessay b/c radare will automatically
 		// swap flags if arch is x86 and bits == 16 see: __setsegoff in config.c
@@ -1071,7 +1071,6 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 			} else {
-				ut64 idx = 0;
 				// XXX: issue with small blocks
 				if (*input == 'D') {
 					block = malloc (l);
