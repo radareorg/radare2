@@ -253,6 +253,9 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 			}
 		}
 		
+		if (bin->minstrlen<=0 && a->curplugin && a->curplugin->minstrlen)
+			bin->minstrlen = a->curplugin->minstrlen;
+
 		if (a->curplugin && a->curplugin->load ) {
 			if ( a->curplugin->load(a) )
 				set_bin_items(bin, a->curplugin);
@@ -280,7 +283,7 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 		}
 	}
 	cp = a->curplugin;
-	if (minlen<0) {
+	if (minlen<=0) {
 		if (cp && cp->minstrlen) 
 			minlen = cp->minstrlen;
 		else minlen = -minlen;
