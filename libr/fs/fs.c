@@ -612,10 +612,12 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 				input++;
 			if (input[0] == '/') {
 				s = malloc (strlen (root) + strlen (input) + 2);
+				if (!s) goto beach;
 				if (root) strcpy (s, root);
 				else *s = 0;
 			} else {
 				s = malloc (strlen (path) + strlen (input) + 2);
+				if (!s) goto beach;
 				strcpy (s, path);
 			}
 			strcat (s, "/");
@@ -647,6 +649,7 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			);
 		} else eprintf ("Unknown command %s\n", buf);
 	}
+beach:
 	clearerr (stdin);
 	printf ("\n");
 	return R_TRUE;

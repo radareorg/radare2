@@ -885,53 +885,52 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			int pipefd = -1;
 			ut64 oseek = UT64_MAX;
 			char *line, *p = find_eoq (cmd);
-			if (p && *p) {
-				*p = 0;
-				// SKIPSPACES in p+1
-				while (IS_WHITESPACE (p[1])) p++;
-				if (p[1]=='@' || (p[1] && p[2]=='@')) {
-					char *q = strchr (p+1, '"');
-					if (q) *q = 0;
-					oseek = core->offset;
-					r_core_seek (core, r_num_math (
-						core->num, p+2), 1);
-					if (q) {
-						*p = '"';
-						p = q;
-					} else p = NULL;
-				}
-				if (p && *p && p[1]=='>') {
-					char *str = p+2;
-					while (*str=='>') str++;
-					while (IS_WHITESPACE (*str)) str++;
-					r_cons_flush ();
-					pipefd = r_cons_pipe_open (str, 1, p[2]=='>');
-				}
-				line = strdup (cmd);
-				line = r_str_replace (line, "\\\"", "\"", R_TRUE);
-				if (p && p[1]=='|') {
-					str = p+2;
-					while (IS_WHITESPACE (*str))str++;
-					r_core_cmd_pipe (core, cmd, str);
-				} else {
-					r_cmd_call (core->rcmd, line);
-				}
-				free (line);
-				if (oseek != UT64_MAX) {
-					r_core_seek (core, oseek, 1);
-					oseek = UT64_MAX;
-				}
-				if (pipefd >0) {//!= -1) {
-					r_cons_flush ();
-					r_cons_pipe_close (pipefd);
-				}
-				if (!p) break;
-				*p = '"';
-				cmd = p+1;
-			} else {
+			if (!p || !*p) {
 				eprintf ("Missing \" in (%s).", cmd);
 				return R_FALSE;
 			}
+			*p = 0;
+			// SKIPSPACES in p+1
+			while (IS_WHITESPACE (p[1])) p++;
+			if (p[1]=='@' || (p[1] && p[2]=='@')) {
+				char *q = strchr (p+1, '"');
+				if (q) *q = 0;
+				oseek = core->offset;
+				r_core_seek (core, r_num_math (
+					core->num, p+2), 1);
+				if (q) {
+					*p = '"';
+					p = q;
+				} else p = NULL;
+			}
+			if (p && *p && p[1]=='>') {
+				char *str = p+2;
+				while (*str=='>') str++;
+				while (IS_WHITESPACE (*str)) str++;
+				r_cons_flush ();
+				pipefd = r_cons_pipe_open (str, 1, p[2]=='>');
+			}
+			line = strdup (cmd);
+			line = r_str_replace (line, "\\\"", "\"", R_TRUE);
+			if (p && p[1]=='|') {
+				str = p+2;
+				while (IS_WHITESPACE (*str))str++;
+				r_core_cmd_pipe (core, cmd, str);
+			} else {
+				r_cmd_call (core->rcmd, line);
+			}
+			free (line);
+			if (oseek != UT64_MAX) {
+				r_core_seek (core, oseek, 1);
+				oseek = UT64_MAX;
+			}
+			if (pipefd != -1) {
+				r_cons_flush ();
+				r_cons_pipe_close (pipefd);
+			}
+			if (!p) break;
+			*p = '"';
+			cmd = p+1;
 		}
 		return R_TRUE;
 	case '(':
