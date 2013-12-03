@@ -395,7 +395,7 @@ int main(int argc, char **argv) {
 #if USE_THREADS
 	if (run_anal && threaded) {
 		// XXX: if no rabin2 in path that may fail
-		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
+		rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
 				(debug||r.io->va)?"v":"", r.file->filename);
 		/* TODO: only load data if no project is used */
 		lock = r_th_lock_new ();
