@@ -58,10 +58,10 @@ R_API char *r_file_abspath(const char *file) {
 		return r_str_home (file+2);
 #if __UNIX__
 	if (cwd && *file != '/')
-		ret = r_str_dup_printf ("%s/%s", cwd, file);
+		ret = r_str_newf ("%s/%s", cwd, file);
 #elif __WINDOWS__
 	if (cwd && !strchr (file, ':'))
-		ret = r_str_dup_printf ("%s\\%s", cwd, file);
+		ret = r_str_newf ("%s\\%s", cwd, file);
 #endif
 	free (cwd);
 // TODO: remove // and ./

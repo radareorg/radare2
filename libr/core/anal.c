@@ -361,7 +361,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	}
 fcn->addr = at;
 fcn->size = 0;
-fcn->name = r_str_dup_printf ("fcn.%08"PFMT64x, at);
+fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 	if (!(buf = malloc (ANALBS))) { //core->blocksize))) {
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
@@ -410,7 +410,7 @@ fcn->name = r_str_dup_printf ("fcn.%08"PFMT64x, at);
 			if (f) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name); // memleak here?
 			} else {
-				fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
+				fcn->name = r_str_newf ("%s.%08"PFMT64x,
 						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
 						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
 						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
@@ -507,7 +507,7 @@ error:
 #endif
 		if (!fcn->name) {
 			// XXX dupped code.
-			fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
+			fcn->name = r_str_newf ("%s.%08"PFMT64x,
 					fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
 					fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
 					fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);

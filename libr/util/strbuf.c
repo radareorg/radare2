@@ -25,6 +25,23 @@ R_API void r_strbuf_set(RStrBuf *sb, const char *s) {
 	sb->len = l;
 }
 
+R_API void r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
+	int ret;
+	char string[4096];
+	va_list ap;
+
+	va_start (ap, fmt);
+	ret = vsnprintf (string, sizeof (string), fmt, ap);
+	if (ret>=sizeof (string)) {
+		char *p = malloc (ret+2);
+		if (!p) return;
+		vsnprintf (p, ret+1, fmt, ap);
+		r_strbuf_set (sb, p);
+		free (p);
+	} else r_strbuf_set (sb, string);
+	va_end (ap);
+}
+
 R_API void r_strbuf_append(RStrBuf *sb, const char *s) {
 	int l = strlen (s);
 	if ((sb->len+l+1)<sizeof (sb->buf)) {

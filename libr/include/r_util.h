@@ -386,7 +386,6 @@ R_API int r_str_ccpy(char *dst, char *orig, int ch);
 R_API const char *r_str_get(const char *str);
 R_API char *r_str_ndup(const char *ptr, int len);
 R_API char *r_str_dup(char *ptr, const char *string);
-R_API char *r_str_dup_printf(const char *fmt, ...);
 R_API void *r_str_free(void *ptr);
 R_API int r_str_inject(char *begin, char *end, char *str, int maxlen);
 R_API int r_str_delta(char *p, char a, char b);
@@ -611,6 +610,7 @@ typedef struct {
 
 R_API RStrBuf *r_strbuf_new();
 R_API void r_strbuf_set(RStrBuf *sb, const char *s);
+R_API void r_strbuf_setf(RStrBuf *sb, const char *fmt, ...);
 R_API void r_strbuf_append(RStrBuf *sb, const char *s);
 R_API char *r_strbuf_get(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);

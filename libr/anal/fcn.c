@@ -217,11 +217,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_SET:
 			if (op.ptr > 0) {
-				varname = r_str_dup_printf ("arg_%x", op.ptr);
+				varname = r_str_newf ("arg_%x", op.ptr);
 				r_anal_var_add (anal, fcn, op.addr, op.ptr,
 						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 1);
 			} else {
-				varname = r_str_dup_printf ("local_%x", -op.ptr);
+				varname = r_str_newf ("local_%x", -op.ptr);
 				r_anal_var_add (anal, fcn, op.addr, -op.ptr,
 						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 1);
 			}
@@ -230,11 +230,11 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		// TODO: use fcn->stack to know our stackframe
 		case R_ANAL_STACK_GET:
 			if (op.ptr > 0) {
-				varname = r_str_dup_printf ("arg_%x", op.ptr);
+				varname = r_str_newf ("arg_%x", op.ptr);
 				r_anal_var_add (anal, fcn, op.addr, op.ptr,
 						R_ANAL_VAR_SCOPE_ARG|R_ANAL_VAR_DIR_IN, NULL, varname, 0);
 			} else {
-				varname = r_str_dup_printf ("local_%x", -op.ptr);
+				varname = r_str_newf ("local_%x", -op.ptr);
 				r_anal_var_add (anal, fcn, op.addr, -op.ptr,
 						R_ANAL_VAR_SCOPE_LOCAL|R_ANAL_VAR_DIR_NONE, NULL, varname, 0);
 			}

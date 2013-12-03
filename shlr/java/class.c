@@ -20,8 +20,6 @@
 
 #define IFDBG  if(0)
 
-
-
 // taken from LLVM Code Byte Swap
 // TODO: move into r_util
 static ut32 r_bin_java_swap_uint(ut32 x) {
@@ -1279,7 +1277,7 @@ static int javasm_init(RBinJavaObj *bin) {
 }
 
 R_API char* r_bin_java_get_version(RBinJavaObj* bin) {
-	return r_str_dup_printf ("0x%02x%02x 0x%02x%02x",
+	return r_str_newf ("0x%02x%02x 0x%02x%02x",
 			bin->cf.major[1],bin->cf.major[0],
 			bin->cf.minor[1],bin->cf.minor[0]);
 }

@@ -387,12 +387,18 @@ R_API char *r_str_new(char *str) {
 }
 
 R_API char *r_str_newf(const char *fmt, ...) {
-//TODO: use asprintf ?
+	int ret;
 	char string[1024];
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, sizeof (string), fmt, ap);
-	fmt = r_str_new (string);
+	ret = vsnprintf (string, sizeof (string), fmt, ap);
+	if (ret>=sizeof(string)) {
+		char *p = malloc (ret+2);
+		if (!p) return NULL;
+		vsnprintf (p, ret+1, fmt, ap);
+		fmt = r_str_new (p);
+		free (p);
+	} else fmt = r_str_new (string);
 	va_end (ap);
 	return (char*)fmt;
 }
@@ -518,23 +524,12 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 	return out;
 }
 
+// TODO: deprecate?
 R_API char *r_str_dup(char *ptr, const char *string) {
 	if (ptr) free (ptr);
 	if (!string) return NULL;
 	ptr = strdup (string);
 	return ptr;
-}
-
-// TODO: rename to r_str_dupfmt
-R_API char *r_str_dup_printf(const char *fmt, ...) {
-	char *ret;
-	va_list ap;
-	va_start (ap, fmt);
-	if ((ret = malloc (1024)) == NULL)
-		return NULL;
-	vsnprintf (ret, 1024, fmt, ap);
-	va_end (ap);
-	return ret;
 }
 
 R_API void r_str_writef(int fd, const char *fmt, ...) {
@@ -586,11 +581,18 @@ R_API char *r_str_concat(char *ptr, const char *string) {
 }
 
 R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
+	int ret;
 	char string[4096];
 	va_list ap;
 	va_start (ap, fmt);
-	vsnprintf (string, sizeof (string), fmt, ap);
-	ptr = r_str_concat (ptr, string);
+	ret = vsnprintf (string, sizeof (string), fmt, ap);
+	if (ret>=sizeof (string)) {
+		char *p = malloc (ret+2);
+		if (!p) return NULL;
+		vsnprintf (p, ret+1, fmt, ap);
+		ptr = r_str_concat (ptr, p);
+		free (p);
+	} else ptr = r_str_concat (ptr, string);
 	va_end (ap);
 	return ptr;
 }
