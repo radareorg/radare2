@@ -882,7 +882,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		break;
 	case '"':
 		for (cmd++; *cmd; ) {
-			int pipefd;
+			int pipefd = -1;
 			ut64 oseek = UT64_MAX;
 			char *line, *p = find_eoq (cmd);
 			if (p && *p) {

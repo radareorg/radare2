@@ -610,11 +610,14 @@ R_API int r_fs_prompt (RFS *fs, const char *root) {
 			input = buf+3;
 			while (input[0] == ' ')
 				input++;
-			s = malloc (strlen (str) + strlen (input) + 2);
 			if (input[0] == '/') {
+				s = malloc (strlen (root) + strlen (input) + 2);
 				if (root) strcpy (s, root);
 				else *s = 0;
-			} else strcpy (s, path);
+			} else {
+				s = malloc (strlen (path) + strlen (input) + 2);
+				strcpy (s, path);
+			}
 			strcat (s, "/");
 			strcat (s, input);
 			file = r_fs_open (fs, s);
