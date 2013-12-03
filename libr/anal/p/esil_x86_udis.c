@@ -52,21 +52,40 @@ UDIS86_ESIL (push,  "%s-=%d,%d[%s]=%s,%s+=%d", info->sp, info->regsz, info->regs
 UDIS86_ESIL (pop,   "%s=%d[%s],%s+=%d,%s+=%d", dst, info->regsz, info->sp, info->sp, info->regsz, info->pc, info->oplen);
 UDIS86_ESIL (leave, "%s=%s,%s=%d[%s],%s+=%d,%s+=%d", info->sp, info->bp, src, info->regsz, info->sp, info->sp, info->regsz, info->pc, info->oplen);
 UDIS86_ESIL (ret,   "%s=%d[%s],%s+=%d", info->pc, info->regsz, info->sp, info->sp, info->regsz);
+UDIS86_ESIL (xchg,  "%s^=%s,%s^=%s,%s^=%s", dst, src, src, dst, dst, src);
+UDIS86_ESIL (xadd,  "%s^=%s,%s^=%s,%s^=%s,cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, dst, src, dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
+UDIS86_ESIL (bt,    "cf=%s&(1<<%d)!=0", dst, (int) info->n);
+UDIS86_ESIL (btc,   "cf=%s&(1<<%d)!=0,%s^=(1<<%d)",  dst, (int) info->n, dst, (int) info->n);
+UDIS86_ESIL (bts,   "cf=%s&(1<<%d)!=0,%s|=(1<<%d)",  dst, (int) info->n, dst, (int) info->n);
+UDIS86_ESIL (btr,   "cf=%s&(1<<%d)!=0,%s&=!(1<<%d)", dst, (int) info->n, dst, (int) info->n);
+UDIS86_ESIL (clc,   "cf=0");
+UDIS86_ESIL (cli,   "if=0");
+UDIS86_ESIL (cld,   "df=0");
+UDIS86_ESIL (cmc,   "cf=!cf");
+UDIS86_ESIL (int3,  "$3");
+UDIS86_ESIL (into,  "?of,$4");
+UDIS86_ESIL (lahf,  "ah=%s", info->bits == 16 ? "flags" : (info->bits == 32 ? "eflags" : "rflags"));
+UDIS86_ESIL (loop,  "%s--,?%s==0,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
+UDIS86_ESIL (loope, "%s--,?%s==0|zf,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
+UDIS86_ESIL (loopne,"%s--,?%s==0|!zf,%s=%s", info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->bits == 16 ? "cx" : (info->bits == 32 ? "ecx" : "rcx"), info->pc, dst);
 
 #define OP(args, inst) [JOIN (UD_I, inst)] = {args, UDIS86_ESIL_HANDLER (inst)}
 
 /* This is the fastest way I can think about to implement this list of handlers */
 UDis86Esil udis86_esil_callback_table[904] =
 {
-	OP (0, nop),   OP (1, jo),   OP (1, jno),  OP (1, jb),     OP (1, jae),
-	OP (1, jz),    OP (1, jnz),  OP (1, ja),   OP (1, jbe),    OP (1, js),
-	OP (1, jns),   OP (1, jp),   OP (1, jnp),  OP (1, jl),     OP (1, jge),
-	OP (1, jle),   OP (1, jg),   OP (1, jcxz), OP (1, jecxz),  OP (1, jrcxz),
-	OP (1, jmp),   OP (1, call), OP (2, shl),  OP (2, rol),    OP (2, ror),
-	OP (2, add),   OP (1, inc),  OP (2, sub),  OP (1, dec),    OP (2, cmp),
-	OP (2, xor),   OP (2, or),   OP (2, and),  OP (2, test),   OP (0, syscall),
-	OP (1, int),   OP (2, lea),  OP (2, mov),  OP (1, push),   OP (1, pop),
-	OP (0, leave), OP (0, ret)
+	OP (0, nop),   OP (1, jo),    OP (1, jno),    OP (1, jb),     OP (1, jae),
+	OP (1, jz),    OP (1, jnz),   OP (1, ja),     OP (1, jbe),    OP (1, js),
+	OP (1, jns),   OP (1, jp),    OP (1, jnp),    OP (1, jl),     OP (1, jge),
+	OP (1, jle),   OP (1, jg),    OP (1, jcxz),   OP (1, jecxz),  OP (1, jrcxz),
+	OP (1, jmp),   OP (1, call),  OP (2, shl),    OP (2, rol),    OP (2, ror),
+	OP (2, add),   OP (1, inc),   OP (2, sub),    OP (1, dec),    OP (2, cmp),
+	OP (2, xor),   OP (2, or),    OP (2, and),    OP (2, test),   OP (0, syscall),
+	OP (1, int),   OP (2, lea),   OP (2, mov),    OP (1, push),   OP (1, pop),
+	OP (0, leave), OP (0, ret),   OP (2, xchg),   OP (2, xadd),   OP (2, bt),
+	OP (2, btc),   OP (2, bts),   OP (2, btr),    OP (0, clc),    OP (0, cli),
+	OP (0, cld),   OP (0, cmc),   OP (0, int3),   OP (0, into),   OP (0, lahf),
+	OP (1, loop),  OP (1, loope), OP (1, loopne)
 };
 
 UDis86Esil *
