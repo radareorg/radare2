@@ -1237,4 +1237,3 @@ R_API void r_str_truncate_cmd(char *string) {
 	}
 }
 
-// STATIC/DYNAMIC STRINGS API

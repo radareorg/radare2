@@ -602,6 +602,19 @@ R_API void r_strht_clear(RStrHT *s);
 R_API void r_strht_del(RStrHT *s, const char *key);
 R_API int r_is_heap (void *p);
 
+
+typedef struct {
+	int len;
+	char *ptr;
+	char buf[64];
+} RStrBuf;
+
+R_API RStrBuf *r_strbuf_new();
+R_API void r_strbuf_set(RStrBuf *sb, const char *s);
+R_API void r_strbuf_append(RStrBuf *sb, const char *s);
+R_API char *r_strbuf_get(RStrBuf *sb);
+R_API void r_strbuf_free(RStrBuf *sb);
+
 #ifdef __cplusplus
 }
 #endif
