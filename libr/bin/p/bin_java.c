@@ -10,7 +10,7 @@
 #define IFDBG  if(0)
 
 static int load(RBinArch *arch) {
-	return ((arch->bin_obj = r_bin_java_new_buf (arch->buf)))? 1: 0;
+	return ((arch->bin_obj = r_bin_java_new_buf (arch->buf)))? R_TRUE: R_FALSE;
 }
 
 static int destroy(RBinArch *arch) {

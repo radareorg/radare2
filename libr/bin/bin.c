@@ -253,8 +253,12 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 			}
 		}
 		
-		if (a->curplugin && a->curplugin->load && a->curplugin->load(a) )
-			set_bin_items(bin, a->curplugin);
+		if (a->curplugin && a->curplugin->load ) {
+			if ( a->curplugin->load(a) )
+				set_bin_items(bin, a->curplugin);
+			else 
+				return R_FALSE;
+		}
 	}
 
 	return R_TRUE;
