@@ -565,20 +565,25 @@ toro:
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
 		if (atabs) {
-			int n, i = 0;
+			int n, i = 0, comma = 0, word = 0;
 			char *t, *b;
 			free (opstr);
-			opstr = b = malloc (strlen (asmop.buf_asm)*4);
+			opstr = b = malloc (strlen (asmop.buf_asm)* (atabs+1)*4);
 			strcpy (b, asmop.buf_asm);
 			for (; *b; b++, i++) {
+				if (*b==',') comma = 1;
 				if (*b!=' ') continue;
-				n = (12-i);
+				if (word>0 && !comma) continue; //&& b[1]=='[') continue;
+				comma = 0;
+				n = (atabs-i);
 				t = strdup (b+1); //XXX slow!
 				if (n<1) n = 1;
 				memset (b, ' ', n);
 				b += n;
 				strcpy (b, t);
 				free (t);
+				i = 0;
+				word++;
 			}
 		}
 		if (show_color && colorop)

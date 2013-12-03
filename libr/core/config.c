@@ -580,7 +580,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax"); // DEPRECATED ?
 	SETPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETPREF("asm.stackptr", "false", "Show stack pointer at disassembly");
-	SETPREF("asm.tabs", "false", "Use tabs in disassembly");
+	SETI("asm.tabs", 0, "Use tabs in disassembly");
 	SETPREF("asm.trace", "true", "Show execution traces for each opcode");
 	SETPREF("asm.ucase", "false", "Use uppercase syntax at disassembly");
 	SETPREF("asm.varsub", "true", "Substitute variables in disassembly");
