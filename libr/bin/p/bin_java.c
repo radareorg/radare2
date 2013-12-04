@@ -27,9 +27,7 @@ static ut64 baddr(RBinArch *arch) {
 }
 
 static RList* classes(RBinArch *arch) {
-	RList *ret;
-	ret = r_bin_java_get_classes((struct r_bin_java_obj_t*)arch->bin_obj);
-	return ret;
+	return r_bin_java_get_classes((struct r_bin_java_obj_t*)arch->bin_obj);
 }
 
 static RList* symbols(RBinArch *arch) {
@@ -110,6 +108,11 @@ static RList* sections(RBinArch *arch) {
 static RList* fields(RBinArch *arch) {
 	return r_bin_java_get_fields (arch->bin_obj);
 }
+
+static RList* libs(RBinArch *arch) {
+	return r_bin_java_get_lib_names (arch->bin_obj);
+}
+
 struct r_bin_plugin_t r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
@@ -126,8 +129,8 @@ struct r_bin_plugin_t r_bin_plugin_java = {
 	.imports = NULL,
 	.strings = &strings,
 	.info = &info,
-	.fields = fields,
-	.libs = NULL,
+	.fields = NULL, //fields,
+	.libs = libs,
 	.relocs = NULL,
 	.meta = NULL,
 	.lines = &lines,
