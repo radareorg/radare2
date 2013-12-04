@@ -204,7 +204,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 #endif
 		int rt = b[1]&31;
 		int imm = (b[2]<<8)+b[3];
-		if (imm & 0x8000)
+		if (((optype >> 2) ^ 0x3) && (imm & 0x8000))
 			imm = 0 - (0x10000 - imm);
 		switch (optype) {
 		case 1: if (rt) { /* bgez */ } else { /* bltz */ }
