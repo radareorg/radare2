@@ -808,6 +808,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 	if (bin->entry) {
 		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
 		entry->addr = bin->entry;
+		return entry;
 	}
 	entry->addr = 0LL;
 	if (!bin->entry || (entry->offset==0)) {
