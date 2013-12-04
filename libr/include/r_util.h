@@ -334,6 +334,12 @@ R_API void r_base64_encode(ut8 *bout, const ut8 *bin, int len);
 R_API int r_base64_decode(ut8 *bout, const ut8 *bin, int len);
 
 /* strings */
+static inline void r_str_rmch (char *s, char ch) {
+	for (;*s; s++) {
+		if (*s==ch)
+			memmove (s, s+1, strlen (s));
+	}
+}
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
 R_API void r_str_unescape (char *s);
