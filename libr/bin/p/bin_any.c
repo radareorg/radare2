@@ -41,6 +41,7 @@ struct r_bin_plugin_t r_bin_plugin_any = {
 	.meta = NULL,
 	.create = NULL,
 	.write = NULL,
+	.minstrlen = 0,
 };
 
 #ifndef CORELIB

@@ -1519,35 +1519,88 @@ R_API RList* r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx) {
 				
 				field = r_bin_java_create_new_rbinfield_from_field (fm_type);
 				if (field) r_list_append (fields, field);
-
 			}
 		}
-
 	}
 	return fields; 
 }
 
-R_API RBinClass* r_bin_java_allocate_r_bin_class() {
-	RBinClass* class_ = R_NEW0 (RBinClass);
-	if (class_) {
-		//class_->methods = r_list_new ();
-		//class_->fields = r_list_new ();
+static  int is_class_interface(RBinJavaObj *bin, RBinJavaCPTypeObj *cp_obj) {
+	RListIter *iter;
+	RBinJavaInterfaceInfo *interface_obj;
+	int result = R_FALSE;
+	RBinJavaCPTypeObj *interface_cp_obj;
+	r_list_foreach(bin->interfaces_list, iter, interface_obj) {
+		if (interface_obj) {
+			result = cp_obj == interface_obj->cp_class;
+			if (result) break; 
+		}
 	}
-	return class_;
+	return result;
 }
+
+/*
+R_API RList * r_bin_java_get_interface_classes(RBinJavaObj * bin) {
+	RList *interfaces_names = r_list_new();
+	RListIter *iter;
+	RBinJavaInterfaceInfo *interface_obj;
+
+	r_list_foreach(bin->interfaces_list, iter, iinfo) {
+		RBinClass *class_ = R_NEW0 (RBinClass);
+		RBinJavaCPTypeObj *cp_obj = ; 
+
+		if (interface_obj && interface_obj->name) {
+			ut8 * name = strdup(interface_obj->name);
+			r_list_append(interfaces_names, name);
+		}
+	}
+	return interfaces_names;
+}
+*/
+
+R_API RList * r_bin_java_get_interface_names(RBinJavaObj * bin) {
+	RList *interfaces_names = r_list_new();
+	RListIter *iter;
+	RBinJavaInterfaceInfo *interface_obj;
+	r_list_foreach(bin->interfaces_list, iter, interface_obj) {
+		if (interface_obj && interface_obj->name) {
+			ut8 * name = strdup(interface_obj->name);
+			r_list_append(interfaces_names, name);
+		}
+	}
+	return interfaces_names;
+}
+
+R_API RList * r_bin_java_get_lib_names(RBinJavaObj * bin) {
+	RList *lib_names = r_list_new();
+	RListIter *iter;
+	RBinJavaCPTypeObj *cp_obj = NULL;
+
+	r_list_foreach (bin->cp_list, iter, cp_obj) {
+		if (cp_obj && 
+			cp_obj->tag == R_BIN_JAVA_CP_CLASS &&
+			(bin->cf2->this_class != cp_obj->info.cp_class.name_idx || !is_class_interface(bin, cp_obj) )) {
+			char * name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);
+			r_list_append (lib_names, name);
+		}
+	}
+	return lib_names;
+} 
 
 R_API RList* r_bin_java_get_classes(RBinJavaObj *bin) {
 	RBinSection* rclass = NULL;
 	RList *classes = r_list_new ();
 	RListIter *iter, *iter_tmp;
-	RBinJavaCPTypeObj *cp_obj = NULL;
+	RBinJavaCPTypeObj *cp_obj = NULL, 
+		*this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
+
 	ut32 idx = 0;
 	RBinClass *class_;
-	class_ = r_bin_java_allocate_r_bin_class ();
+	class_ = R_NEW0 (RBinClass);
 	class_->visibility = bin->cf2->access_flags;
 	class_->methods = r_bin_java_enum_class_methods (bin, bin->cf2->this_class);
 	class_->fields = r_bin_java_enum_class_fields (bin, bin->cf2->this_class);
-	class_->name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);
+	class_->name = r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
 	class_->super = r_bin_java_get_name_from_bin_cp_list (bin, bin->cf2->super_class);	
 	class_->index = (idx++);
 	r_list_append (classes, class_);
@@ -1555,9 +1608,8 @@ R_API RList* r_bin_java_get_classes(RBinJavaObj *bin) {
 	r_list_foreach_safe (bin->cp_list, iter, iter_tmp, cp_obj) {
 		if (cp_obj && 
 			cp_obj->tag == R_BIN_JAVA_CP_CLASS &&
-			bin->cf2->this_class != cp_obj->info.cp_class.name_idx) {
-			
-			class_ = r_bin_java_allocate_r_bin_class ();
+			(this_class_cp_obj != cp_obj && is_class_interface(bin, cp_obj) )) {
+			class_ = R_NEW0 (RBinClass);
 			class_->methods = r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
 			class_->fields = r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
 			class_->index = idx;
@@ -1660,7 +1712,6 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	r_bin_java_interfaces_list_free (bin);
 	// TODO: XXX if a class list of all inner classes
 	// are formed then this will need to be updated
-
 	if (bin->b) r_buf_free (bin->b);
 	if (bin->cf2) free (bin->cf2);	
 	bin->b = NULL;
