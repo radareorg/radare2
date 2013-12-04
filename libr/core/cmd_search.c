@@ -244,20 +244,23 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 	RAnalOp aop;
 	int roplen, i, delta = to-from;
 	ut64 ropat;
-	if (delta<1)
-		return R_FALSE;
+	if (delta<1) delta = from-to;
+	if (delta<1) return R_FALSE;
 	buf = malloc (delta);
 	r_io_read_at (core->io, from, buf, delta);
 	for (i=0; i<delta; i++) {
-		if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i)) {
-			int ret = r_asm_disassemble (core->assembler, &asmop, buf+i, delta-i);
+		if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i)>0) {
+			r_asm_set_pc (core->assembler, from+i);
+			int ret = r_asm_disassemble (core->assembler,
+				&asmop, buf+i, delta-i);
 			if (ret>0)
 			switch (aop.type) {
 			case R_ANAL_OP_TYPE_TRAP:
 			case R_ANAL_OP_TYPE_RET:
 			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_UJMP:
-				r_cons_printf ("0x%08"PFMT64x"  %s\n", from+i, asmop.buf_asm);
+				r_cons_printf ("0x%08"PFMT64x"  %s\n",
+					from+i, asmop.buf_asm);
 				prev = findprevopsz (core, from+i);
 				if (prev != UT64_MAX) {
 					ut64 prev2 = findprevopsz (core, prev);
@@ -266,14 +269,10 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 					else ropat = prev;
 				} else ropat = from+i; 
 				roplen = from - ropat + i + aop.length;
-				r_core_cmdf (core, "pD %d @ 0x%"PFMT64x, roplen, ropat);
-			//r_core_cmdf (core, "pd 1 @ 0x%"PFMT64x, from+i);
-			//			r_core_cmdf (core, "pd 3 @ 0x%"PFMT64x, prev2);
-			//		else r_core_cmdf (core, "pd 2 @ 0x%"PFMT64x, prev);
-				// show this and prev opcode
+				r_core_cmdf (core, "pD %d @ 0x%"PFMT64x,
+					roplen, ropat);
 				break;
 			}
-			//eprintf ("%lld\n", aop.type);
 		}
 	}
 	return R_TRUE;
