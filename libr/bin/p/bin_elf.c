@@ -559,6 +559,13 @@ static int size(RBinArch *arch) {
 	return off+len;
 }
 
+static ut64 get_elf_vaddr (ut64 baddr, ut64 paddr, ut64 vaddr) {
+	ut32 delta;
+	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
+	return baddr + vaddr;
+
+}
+
 struct r_bin_plugin_t r_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format r_bin plugin",
@@ -582,6 +589,7 @@ struct r_bin_plugin_t r_bin_plugin_elf = {
 	.meta = &r_bin_meta_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,
+	.get_vaddr = &get_elf_vaddr
 };
 
 #ifndef CORELIB
