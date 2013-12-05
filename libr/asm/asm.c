@@ -262,11 +262,8 @@ R_API int r_asm_set_subarch(RAsm *a, const char *name) {
 }
 
 static int has_bits(RAsmPlugin *h, int bits) {
-	int i;
-	if (h && h->bits)
-		for (i=0; h->bits[i]; i++)
-			if (bits == h->bits[i])
-				return R_TRUE;
+	if (h && h->bits && (bits & h->bits))
+		return R_TRUE;
 	return R_FALSE;
 }
 
@@ -277,7 +274,7 @@ R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
 
 R_API int r_asm_set_bits(RAsm *a, int bits) {
 	if (has_bits (a->cur, bits)) {
-		a->bits = bits;
+		a->bits = bits; // TODO : use OR? :)
 		return R_TRUE;
 	}
 	return R_FALSE;

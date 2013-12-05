@@ -146,6 +146,7 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 struct r_anal_plugin_t r_anal_plugin_z80 = {
 	.name = "z80",
 	.arch = R_SYS_ARCH_Z80,
+	.license = "LGPL3",
 	.bits = 16,
 	.desc = "Z80 CPU code analysis plugin",
 	.init = NULL,

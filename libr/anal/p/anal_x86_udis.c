@@ -188,7 +188,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	switch (u.mnemonic) {
 	case UD_Iinvalid:
 		oplen = op->length = -1;
-return -1;
+		return -1;
 		break;
 	case UD_Itest:
 	case UD_Icmp:
@@ -568,6 +568,7 @@ static int set_reg_profile(RAnal *anal) {
 struct r_anal_plugin_t r_anal_plugin_x86_udis = {
 	.name = "x86",
 	.desc = "X86 analysis plugin (udis86 backend)",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_X86,
 	.bits = 16|32|64,
 	.init = NULL,

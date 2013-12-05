@@ -73,6 +73,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 RAnalPlugin r_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_AVR,
 	.bits = 8|32,
 	.init = NULL,

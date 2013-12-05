@@ -25,7 +25,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_dcpu16 = {
 	.name = "dcpu16",
 	.arch = "dpcu",
-	.bits = (int[]){ 16, 0 },
+	.bits = 16,
 	.desc = "DCPU16 assembler/disassembler",
 	.license = "PD",
 	.init = NULL,

@@ -353,6 +353,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 struct r_anal_plugin_t r_anal_plugin_mips = {
 	.name = "mips",
 	.desc = "MIPS code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_MIPS,
 	.bits = 32,
 	.init = NULL,

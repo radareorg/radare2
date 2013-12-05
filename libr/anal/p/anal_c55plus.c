@@ -82,6 +82,7 @@ struct r_anal_plugin_t r_anal_plugin_c55plus = {
 	.name = "c55+",
 	.desc = "C55+ code analysis plugin",
 	.arch = R_SYS_ARCH_C55PLUS,
+	.license = "LGPL3",
 	.bits = 32 | 40,
 	.init = NULL,
 	.fini = NULL,

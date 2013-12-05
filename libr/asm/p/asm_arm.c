@@ -186,7 +186,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_arm = {
 	.name = "arm",
 	.arch = "arm",
-	.bits = (int[]){ 16, 32, 64, 0 },
+	.bits = 16|32|64,
 	.desc = "ARM disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

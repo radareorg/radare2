@@ -1085,9 +1085,10 @@ static int set_reg_profile(RAnal *anal) {
 				"drx	dr7	.32	28	0\n");
 }
 
-struct r_anal_plugin_t r_anal_plugin_x86_im = {
+RAnalPlugin r_anal_plugin_x86_im = {
 	.name = "x86.im86",
 	.desc = "X86 analysis plugin (x86im backend)",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_X86,
 	.bits = 16|32|64,
 	.init = NULL,

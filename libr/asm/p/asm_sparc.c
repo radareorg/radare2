@@ -79,7 +79,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_sparc = {
 	.name = "sparc",
 	.arch = "sparc",
-	.bits = (int[]){ 32, 64 },
+	.bits = 32|64,
 	.license = "GPL3",
 	.desc = "SPARC disassembly plugin",
 	.init = NULL,

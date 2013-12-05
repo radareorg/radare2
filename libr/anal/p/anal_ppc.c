@@ -139,6 +139,7 @@ static int set_reg_profile(RAnal *anal) {
 struct r_anal_plugin_t r_anal_plugin_ppc = {
 	.name = "ppc",
 	.desc = "PowerPC analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_PPC,
 	.bits = 32|64,
 	.init = NULL,

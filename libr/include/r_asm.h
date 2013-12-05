@@ -107,9 +107,7 @@ typedef struct r_asm_plugin_t {
 	char *arch;
 	char *desc;
 	char *license;
-// TODO: bits -> renamed to bitmask
-// use each bit to identify 4,8,16,32,64 bitsize it can be a mask, no need for pointers here
-	int *bits;
+	int bits;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, int len);

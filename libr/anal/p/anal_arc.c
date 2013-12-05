@@ -149,6 +149,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 struct r_anal_plugin_t r_anal_plugin_arc = {
 	.name = "arc",
 	.arch = R_SYS_ARCH_ARC,
+	.license = "LGPL3",
 	.bits = 16|32,
 	.desc = "ARC code analysis plugin",
 	.init = NULL,

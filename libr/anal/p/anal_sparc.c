@@ -696,9 +696,10 @@ static int set_reg_profile(RAnal *anal)
 }
 
 
-struct r_anal_plugin_t r_anal_plugin_sparc = {
+RAnalPlugin r_anal_plugin_sparc = {
 	.name = "sparc",
 	.desc = "SPARC analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_SPARC,
 	.bits = 32 | 64,
 	.init = NULL,

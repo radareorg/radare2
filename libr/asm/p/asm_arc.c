@@ -88,7 +88,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
-	.bits = (int[]){ 16, 32, 0 },
+	.bits = 16|32,
 	.desc = "ARC disassembler",
 	.init = NULL,
 	.fini = NULL,

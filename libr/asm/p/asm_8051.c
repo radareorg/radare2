@@ -20,7 +20,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 RAsmPlugin r_asm_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
-	.bits = (int[]){ 16, 0 },
+	.bits = 16,
 	.desc = "8051 assembler/disassembler",
 	.init = NULL,
 	.fini = NULL,

@@ -42,6 +42,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 struct r_anal_plugin_t r_anal_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_BF,
 	.bits = 32,
 	.init = NULL,
