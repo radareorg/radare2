@@ -586,7 +586,7 @@ static int cmd_eval(void *data, const char *input) {
 			"  ecr               set random palette\n"
 			"  ecs               show a colorful palette\n"
 			"  ecf dark|white    load white color scheme template\n"
-			"  ec prompt red     change coloro of prompt\n"
+			"  ec prompt red     change color of prompt\n"
 			"Available colors:\n"
 			"  rgb:000           24 bit hexadecimal rgb color\n"
 			"  red|green|blue|.  well known ansi colors\n"

@@ -104,20 +104,14 @@ static int cmd_info(void *data, const char *input) {
 	case 'c':
 	case 'C': RBININFO (R_CORE_BIN_ACC_CLASSES); break;
 	case 'a':
-		if (input[1]=='*') {
-			cmd_info (core, "I*");
-			cmd_info (core, "e*");
-			cmd_info (core, "i*");
-			cmd_info (core, "s*");
-			cmd_info (core, "S*");
-			cmd_info (core, "z*");
-		} else {
-			cmd_info (core, "I");
-			cmd_info (core, "e");
-			cmd_info (core, "i");
-			cmd_info (core, "s");
-			cmd_info (core, "S");
-			cmd_info (core, "z");
+		{
+			char *p, cmd[3], chars[] = "IeisSz";
+			for (p = chars; *p; p++) {
+				cmd[0] = *p;
+				cmd[1] = input[1];
+				cmd[2] = 0;
+				cmd_info (core, cmd);
+			}
 		}
 		break;
 	case '?':
