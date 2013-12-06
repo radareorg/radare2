@@ -2,6 +2,11 @@
 
 #include <r_core.h>
 
+R_API r_core_bin_refresh_strings(RCore *r) {
+	return r_bin_reset_strings (r->bin) != NULL; 
+}
+
+
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	char *p, *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
@@ -22,9 +27,9 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		}
 	}
 	minstr = r_config_get_i (r->config, "bin.minstr");
-	if (minstr>0) r->bin->minstrlen = minstr;
-	else r_config_set_i (r->config, "bin.minstr", r->bin->minstrlen);
-	if (r->bin->minstrlen==0) return -1;
+	//if (r->bin->minstrlen == 0 && minstr>0) r->bin->minstrlen = minstr;
+	//else if (r->bin->minstrlen > 0) r_config_set_i (r->config, "bin.minstr", r->bin->minstrlen);
+	if (r->bin->minstrlen <=0) return -1;
 
 	/* code */
 	if ((list = r_bin_get_strings (r->bin)) == NULL)
