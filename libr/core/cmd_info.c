@@ -76,6 +76,7 @@ static int cmd_info(void *data, const char *input) {
 	ut64 offset = r_bin_get_offset (core->bin);
 	int va = core->io->va || core->io->debug;
 	int mode = 0;
+	int newline = r_config_get_i (core->config, "scr.interactive");
 	if (input[0]) {
 		switch (input[1]) {
 		case '*': mode = R_CORE_BIN_RADARE; break;
@@ -89,7 +90,7 @@ static int cmd_info(void *data, const char *input) {
 			input+1: core->file->filename,
 			r_config_get_i (core->config, "bin.baddr"));
 		break;
-#define RBININFO(x) r_core_bin_info(core,x,mode,va,NULL,offset)
+#define RBININFO(x) r_core_bin_info(core,x,mode,va,NULL,offset); if (newline) r_cons_newline()
 	case 'S': RBININFO (R_CORE_BIN_ACC_SECTIONS); break;
 	case 'h': RBININFO (R_CORE_BIN_ACC_FIELDS); break;
 	case 'l': RBININFO (R_CORE_BIN_ACC_LIBS); break;
