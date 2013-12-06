@@ -166,7 +166,10 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	if( is_io_load ) {
 		// XXX - May need to handle additional extraction here as well 		
 		r_bin_io_load(r->bin, r->io, r->file->fd, R_FALSE); 
-
+		if ( r->bin->cur.curplugin && 
+			strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
+			r_config_set (r->config, "bin.rawstr", "true");
+		}
 		{ // Making sure the RBinObject gets set 
 			RBinObject *_obj = r_bin_get_object (r->bin);
 			

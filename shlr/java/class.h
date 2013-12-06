@@ -741,6 +741,8 @@ typedef struct r_bin_java_obj_t {
 	RList* attributes;
 } RBinJavaObj;
 
+R_API RList * r_bin_java_get_interface_names(RBinJavaObj * bin);
+R_API RList * r_bin_java_get_lib_names(RBinJavaObj * bin);
 R_API RList* r_bin_java_get_sections(RBinJavaObj *bin);
 R_API RList* r_bin_java_get_fields(RBinJavaObj *bin);
 R_API char* r_bin_java_get_version(RBinJavaObj* bin);

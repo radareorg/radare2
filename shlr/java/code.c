@@ -12,6 +12,7 @@
 
 #define V if (verbose)
 
+#define IFDBG if(0)
 
 
 static RBinJavaObj *BIN_OBJ = NULL;
@@ -51,7 +52,7 @@ static char * java_resolve(int idx, ut8 space_bn_name_type) {
 	item = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
 	
 	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
-	
+	IFDBG eprintf("java_resolve Resolved: (%d) %s\n", idx, cp_name);
 	if (!item) {
 		str = malloc (512);
 		if (str)
@@ -139,18 +140,22 @@ static char * java_resolve(int idx, ut8 space_bn_name_type) {
 
 	} else if (strcmp (cp_name, "String") == 0) {
 		string_str = r_bin_java_get_utf8_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx); 
+		str = NULL;
+
+		IFDBG eprintf("java_resolve String got: (%d) %s\n", item->info.cp_string.string_idx, string_str);
 		if (!string_str)
 			string_str = empty;
 
-		memory_alloc = strlen (string_str) + 4;
+		memory_alloc = strlen (string_str) + 3;
 		
 		if (memory_alloc)
 			str = malloc (memory_alloc);
+
 		
 		if (str) {
-			snprintf (str, "\"%s\"", string_str);
+			snprintf (str, memory_alloc, "\"%s\"", string_str);
 		}
-		
+		IFDBG eprintf("java_resolve String return: %s\n", str);
 		if (string_str != empty)
 			free (string_str);
 
@@ -299,6 +304,7 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 			arg = java_resolve_without_space ((int)USHORT (bytes, 1));					
 
 		case 0xb2: // getstatic
+		case 0xb3: // putstatic
 		case 0xb4: // getfield
 		case 0xb5: // putfield
 		case 0xbb: // new

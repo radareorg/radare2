@@ -26,7 +26,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 			return;
 	if (arch && arch->buf && (!to || to > arch->buf->length))
 		to = arch->buf->length;
-	if (to<1 || to > 0xf00000) {
+	if (to != 0 && (to<1 || to > 0xf00000)) {
 		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);
 		return;
 	}
@@ -246,14 +246,18 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 		a->curplugin = NULL;
 
 		r_list_foreach (bin->plugins, it, plugin) {
+			if (strncmp (plugin->name, "any", 5)==0) any = plugin;
 			if ((dummy && !strncmp (plugin->name, "any", 5)) ||
 				(!dummy && (plugin->check && plugin->check (a)))) {
 				a->curplugin = plugin;
 				break;
 			}
 		}
+
+		if (a->curplugin == NULL) 
+			a->curplugin = any;
 		
-		if (bin->minstrlen<=0 && a->curplugin && a->curplugin->minstrlen)
+		if (a->curplugin && a->curplugin->minstrlen)
 			bin->minstrlen = a->curplugin->minstrlen;
 
 		if (a->curplugin && a->curplugin->load ) {
