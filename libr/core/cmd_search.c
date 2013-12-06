@@ -218,8 +218,8 @@ static ut64 findprevopsz(RCore *core, ut64 addr) {
 	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i=0; i<16; i++) {
 		if (r_anal_op (core->anal, &aop, addr-i, buf+120-i, 16+i)) {
-			if (aop.length<1) break;
-			if (i == aop.length) {
+			if (aop.size<1) break;
+			if (i == aop.size) {
 				switch (aop.type) {
 				case R_ANAL_OP_TYPE_ILL:
 				case R_ANAL_OP_TYPE_TRAP:
@@ -268,7 +268,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 						ropat = prev2;
 					else ropat = prev;
 				} else ropat = from+i; 
-				roplen = from - ropat + i + aop.length;
+				roplen = from - ropat + i + aop.size;
 				r_core_cmdf (core, "pD %d @ 0x%"PFMT64x,
 					roplen, ropat);
 				break;

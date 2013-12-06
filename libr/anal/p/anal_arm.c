@@ -41,7 +41,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	arm_set_thumb(arminsn, R_TRUE);
 	arm_set_input_buffer(arminsn, data);
 	arm_set_pc(arminsn, addr);
-	op->length = arm_disasm_one_insn(arminsn);
+	op->size = arm_disasm_one_insn(arminsn);
 	op->jump = arminsn->jmp;
 	op->fail = arminsn->fail;
 	arm_free(arminsn);
@@ -52,20 +52,20 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	if (((ins & B4(B1110,0,0,0)) == B4(B0010,0,0,0) )
                 && (1 == (ins & B4(1,B1000,0,0)) >> 11)) { // dp3
 		op->type = R_ANAL_OP_TYPE_CMP;
-		return op->length;
+		return op->size;
 	}
         if ( (ins & B4(B1111,B1100,0,0)) == B4(B0100,0,0,0) ) {
                 op_code = (ins & B4(0,B0011,B1100,0)) >> 6;
                 if (op_code == 8 || op_code == 10) { // dp5
 			op->type = R_ANAL_OP_TYPE_CMP;
-			return op->length;
+			return op->size;
 		}
 	}
         if ( (ins & B4(B1111,B1100,0,0)) == B4(B0100,B0100,0,0) ) {
                 op_code = (ins & B4(0,B0011,0,0)) >> 8; // dp8
 		if (op_code== 1) {
 			op->type = R_ANAL_OP_TYPE_CMP;
-			return op->length;
+			return op->size;
 		}
 	}
 	if (ins == 0xbf) {
@@ -121,7 +121,7 @@ static int op_thumb(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = (ut64)(ins>>8);
 	}
-	return op->length;
+	return op->size;
 }
 
 #if 0
@@ -184,7 +184,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 #endif
 	if (anal->bits==16)
 		return op_thumb (anal, op, addr, data, len);
-	op->length = 4;
+	op->size = 4;
 #if 0
 	fprintf(stderr, "CODE %02x %02x %02x %02x\n",
 		codeA[0], codeA[1], codeA[2], codeA[3]);
@@ -348,7 +348,7 @@ if (
 	//op->jump = arminsn->jmp;
 	//op->fail = arminsn->fail;
 	arm_free(arminsn);
-	return op->length;
+	return op->size;
 }
 
 
@@ -364,7 +364,7 @@ static ut64 getaddr (ut64 addr, const ut8 *d) {
 static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) {
 	memset (op, 0, sizeof (RAnalOp));
 	if (d[3]==0) return -1; // invalid
-	op->length = 4;
+	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	if (d[0]==0xc0 && d[3]==0xd6) {
 		// defaults to x30 reg. but can be different
@@ -402,7 +402,7 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 		op->fail = addr+4;
 		break;
 	}
-	return op->length;
+	return op->size;
 }
 
 static int arm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {

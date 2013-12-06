@@ -14,7 +14,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	*op->buf_asm = 0;
 	if (!o.name) return 0; // invalid instruction
 	do8051disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
-	return (op->inst_len = o.length);
+	return (op->size = o.length);
 }
 
 RAsmPlugin r_asm_plugin_8051 = {

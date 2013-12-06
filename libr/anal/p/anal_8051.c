@@ -45,7 +45,7 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->jump = o.addr;
 		op->fail = addr+o.length;
 	}
-	return op->length = o.length;
+	return op->size = o.length;
 }
 
 struct r_anal_plugin_t r_anal_plugin_8051 = {

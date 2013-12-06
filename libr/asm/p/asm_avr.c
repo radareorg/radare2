@@ -12,7 +12,7 @@
 #include "../arch/avr/disasm.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	return op->inst_len = avrdis (op->buf_asm, a->pc, buf, len);
+	return op->size = avrdis (op->buf_asm, a->pc, buf, len);
 }
 
 RAsmPlugin r_asm_plugin_avr = {

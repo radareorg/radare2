@@ -9,7 +9,7 @@
 static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	if (op == NULL)
 		return 4;
-	op->length = 4;
+	op->size = 4;
 	switch(b[0] &0xf0) {
 	case 0xb0:
 		op->type = R_ANAL_OP_TYPE_CMP;
@@ -44,7 +44,7 @@ static int m68k_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		op->type = R_ANAL_OP_TYPE_UNK;
 		break;
 	}
-	return op->length;
+	return op->size;
 }
 
 struct r_anal_plugin_t r_anal_plugin_m68k = {

@@ -143,7 +143,7 @@ static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->type = R_ANAL_OP_TYPE_CALL;
 			break;
 	}
-	return op->length = ilen;
+	return op->size = ilen;
 }
 
 struct r_anal_plugin_t r_anal_plugin_i8080 = {

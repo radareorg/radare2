@@ -205,14 +205,14 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){
 	} 
 
 	//TODO Check missing insns, specially STC might be interesting 
-	return op->length;
+	return op->size;
 }
 
 static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->src[0] = anal_fill_ai_rg(anal,GET_SOURCE_REG(code));
 	op->dst = anal_fill_reg_disp_mem(anal,GET_TARGET_REG(code),code&0x0F,LONG_SIZE);
-	return op->length;
+	return op->size;
 }
 
 
@@ -246,7 +246,7 @@ static int first_nibble_is_2(RAnal* anal, RAnalOp* op, ut16 code){
 	}
 	//TODO Handle 'pushes' (mov Rm,@-Rn)
 	//TODO Handle CMP/STR ?? 
-	return op->length;
+	return op->size;
 }
 
 
@@ -261,7 +261,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code){
 		op->src[0] = anal_fill_ai_rg(anal,GET_SOURCE_REG(code));
 		op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 	}
-	return op->length;
+	return op->size;
 }
 
 static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code){
@@ -276,14 +276,14 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code){
 		op->eob = R_TRUE;
 	}
 	//TODO shifts + many system insns + CMP/P[L|Z]??
-	return op->length;
+	return op->size;
 }
 
 static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 	op->src[0] = anal_fill_reg_disp_mem(anal,GET_SOURCE_REG(code),code&0x0F,LONG_SIZE);
-	return op->length;
+	return op->size;
 }
 
 
@@ -306,7 +306,7 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code){
 		op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
 	}
 	//TODO neg(c) + MOV.L @Rm+,Rn 
-	return op->length;
+	return op->size;
 }
 
 
@@ -314,7 +314,7 @@ static int add_imm(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_ADD;
 	op->src[0] = anal_fill_im(anal, (st8)(code&0xFF)); //Casting to (st8) forces sign-extension.
 	op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
-	return op->length;
+	return op->size;
 }
 
 static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code){
@@ -335,14 +335,14 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code){
 		op->src[0] = anal_fill_reg_disp_mem(anal,GET_SOURCE_REG(code),code&0x0F,WORD_SIZE);
 	}
 	//TODO some movs + CMP/EQ??
-	return op->length;
+	return op->size;
 }
 
 static int movw_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->dst = anal_fill_ai_rg(anal, GET_TARGET_REG(code));
 	op->src[0] = anal_fill_reg_disp_mem(anal,PC_IDX,code&0xFF,WORD_SIZE);
-	return op->length;
+	return op->size;
 }
 
 static int bra(RAnal* anal, RAnalOp* op, ut16 code){
@@ -351,7 +351,7 @@ static int bra(RAnal* anal, RAnalOp* op, ut16 code){
 	op->delay = 1;
 	op->jump = disarm_12bit_offset(op,GET_BRA_OFFSET(code));
 	op->eob  = R_TRUE;
-	return op->length;
+	return op->size;
 }
 
 static int bsr(RAnal* anal, RAnalOp* op, ut16 code){
@@ -359,7 +359,7 @@ static int bsr(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_CALL;
 	op->jump = disarm_12bit_offset(op,GET_BRA_OFFSET(code));
 	op->delay = 1;
-	return op->length;
+	return op->size;
 }
 
 
@@ -385,27 +385,27 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code){
 		op->dst = anal_fill_ai_rg(anal,0); //Always R0
 	}
 	//TODO Logic insns referencing GBR
-	return op->length;
+	return op->size;
 }
 
 static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->src[0] = anal_pcrel_disp_mov(anal,op,code&0x0F);
 	op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code));
-	return op->length;
+	return op->size;
 }
 
 static int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_MOV;
 	op->dst = anal_fill_ai_rg(anal,GET_TARGET_REG(code)); 
 	op->src[0] = anal_fill_im(anal,(st8)(code & 0xFF));
-	return op->length;
+	return op->size;
 }
 
 static int fpu_insn(RAnal* anal, RAnalOp* op, ut16 code){
 	//Not interested on FPU stuff for now
 	op->family = R_ANAL_OP_FAMILY_FPU;
-	return op->length;
+	return op->size;
 }
 
 /* Table of routines for further analysis based on 1st nibble */
@@ -445,7 +445,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) 
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
 
-	op->length = 2;
+	op->size = 2;
 
 	ret =  first_nibble_decode[(b>>4) & 0x0F](anal,op,code);
 	return ret;

@@ -121,7 +121,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'j': return op.jump;
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref
-		case 'l': return op.length;
+		case 'l': return op.size;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;

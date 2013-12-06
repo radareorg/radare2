@@ -16,7 +16,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
-	op->length = sz;
+	op->size = sz;
 	op->nopcode = 1; // Necesary??
 
 	switch(data[0]) {

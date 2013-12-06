@@ -18,7 +18,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 // XXX: This is wrong, some opcodes are 32bit in thumb mode
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
 	Bitbuf b = {.out = op->buf, .bits = 0};
-	return op->inst_len = rarvm_assemble (&b, str);
+	return op->size = rarvm_assemble (&b, str);
 }
 
 RAsmPlugin r_asm_plugin_rar = {

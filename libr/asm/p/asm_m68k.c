@@ -25,9 +25,9 @@ static int disassemble(RAsm *a, RAsmOp *aop, const ut8 *buf, int len) {
 	dp.instr = bof;
 	M68k_Disassemble(&dp);
 	snprintf (aop->buf_asm, R_ASM_BUFSIZE, "%s %s", opcode, operands);
-	aop->inst_len = 4;
+	aop->size = 4;
 
-	return aop->inst_len;
+	return aop->size;
 }
 
 RAsmPlugin r_asm_plugin_m68k = {

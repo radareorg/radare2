@@ -909,7 +909,7 @@ static int cmd_print(void *data, const char *input) {
 						} else {
 							r_cons_printf ("0x%08"PFMT64x" %16s  %s\n",
 								core->offset+pdn_offset, asmop.buf_hex, asmop.buf_asm);
-							pdn_offset += (go_by_instr? asmop.inst_len: 1);
+							pdn_offset += (go_by_instr? asmop.size: 1);
 						}
 					}
 					if (buf != core->block) free (buf);

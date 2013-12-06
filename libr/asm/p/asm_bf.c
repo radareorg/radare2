@@ -66,7 +66,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (i<1) i=1; else i++;
 
 	free (buf_cp);
-	op->inst_len = i;
+	op->size = i;
 	return i;
 }
 

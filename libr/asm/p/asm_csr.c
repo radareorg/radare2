@@ -30,7 +30,7 @@ static int arch_csr_disasm(char *str, const unsigned char *buf, ut64 seek) {
 }
 static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	arch_csr_disasm (op->buf_asm, buf, a->pc);
-	return (op->inst_len=2);
+	return (op->size=2);
 }
 
 RAsmPlugin r_asm_plugin_csr = {

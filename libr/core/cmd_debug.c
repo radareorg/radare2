@@ -219,7 +219,7 @@ static void cmd_debug_backtrace (RCore *core, const char *input) {
 			// XXX Do asm.arch should define the max size of opcode?
 			r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
 			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf));
-		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.length));
+		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.size));
 		r_bp_traptrace_enable (core->dbg->bp, R_FALSE);
 	}
 }
@@ -959,7 +959,7 @@ static int cmd_debug(void *data, const char *input) {
 					eprintf ("Dont know how to skip this instruction\n");
 					break;
 				}
-				addr += aop.length;
+				addr += aop.size;
 			}
 			r_debug_reg_set (core->dbg, "pc", addr);
 			}

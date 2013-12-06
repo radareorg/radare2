@@ -16,7 +16,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 
         memset (op, 0, sizeof (RAnalOp));
         op->type = R_ANAL_OP_TYPE_UNK;
-	op->length = oplen;
+	op->size = oplen;
 	op->delay = 4;
 	op->esil[0] = 0;
 
@@ -347,7 +347,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		mul.s 	fd, fs, ft 	000010 	10000
 		sub.s 	fd, fs, ft 	000001 	10000 
 #endif
-	return op->length;
+	return op->size;
 }
 
 struct r_anal_plugin_t r_anal_plugin_mips = {

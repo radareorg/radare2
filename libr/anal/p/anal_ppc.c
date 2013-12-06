@@ -23,7 +23,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_bytes, int le
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = 0;
-	op->length = 4;
+	op->size = 4;
 
 	//eprintf("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
 
@@ -74,8 +74,8 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *_bytes, int le
 		op->eob = 1;
 		break;
 	}
-	op->length = 4;
-	return op->length;
+	op->size = 4;
+	return op->size;
 }
 
 static int set_reg_profile(RAnal *anal) {

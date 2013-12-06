@@ -554,7 +554,7 @@ typedef struct r_anal_op_t {
 	ut64 type;      /* type of opcode */
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
-	int length;     /* length in bytes of opcode */
+	int size;       /* size in bytes of opcode */
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) */
 	int family;     /* family of opcode */
 	int eob;        /* end of block (boolean) */

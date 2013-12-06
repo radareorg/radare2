@@ -10,8 +10,8 @@
 static int do_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	int dlen = i8080_disasm (buf, op->buf_asm, len);
 	if (dlen<0) dlen = 0;
-	op->inst_len = dlen;
-	return op->inst_len;
+	op->size = dlen;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_i8080 = {

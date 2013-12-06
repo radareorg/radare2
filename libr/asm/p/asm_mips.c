@@ -79,11 +79,11 @@ static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf,
 
 	op->buf_asm[0] = '\0';
 	if (a->big_endian)
-		op->inst_len = print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
-	else op->inst_len = print_insn_little_mips ((bfd_vma)Offset, &disasm_obj);
-	if (op->inst_len == -1)
+		op->size = print_insn_big_mips ((bfd_vma)Offset, &disasm_obj);
+	else op->size = print_insn_little_mips ((bfd_vma)Offset, &disasm_obj);
+	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-	return op->inst_len;
+	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {

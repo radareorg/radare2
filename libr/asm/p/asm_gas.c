@@ -19,7 +19,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		memcpy (op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
 		free (out);
 	}
-	op->inst_len = len;
+	op->size = len;
 	return len;
 }
 

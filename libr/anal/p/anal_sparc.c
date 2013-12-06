@@ -450,7 +450,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
   memset (op, 0, sizeof (RAnalOp));
   op->family = R_ANAL_OP_FAMILY_CPU;
   op->addr = addr;
-  op->length = sz;
+  op->size = sz;
   op->jump = op->fail = -1;
   op->ptr = op->val = -1;
 

@@ -720,9 +720,7 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 			if (ptr != NULL) {
 				RAnalOp *op = r_core_op_anal (core, addr);
 				if (op != NULL) {
-					//eprintf("at(0x%08"PFMT64x")=%d (%s)\n", addr, atoi(ptr+1), ptr+1);
-					//trace_set_times(addr, atoi(ptr+1));
-					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->length);
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
 					tp->count = atoi (ptr+1);
 					r_anal_trace_bb (core->anal, addr);
 					r_anal_op_free (op);

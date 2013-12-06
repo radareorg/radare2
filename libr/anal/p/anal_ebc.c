@@ -17,7 +17,7 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (op == NULL)
 		return 2;
 
-	ret = op->length = ebc_decode_command(buf, &cmd);
+	ret = op->size = ebc_decode_command(buf, &cmd);
 
 	if (ret < 0)
 		return ret;

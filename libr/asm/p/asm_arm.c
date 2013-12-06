@@ -159,16 +159,16 @@ oldcpucode = cpucode;
 		obj.disassembler_options = NULL;
 		/* is endianness ignored on 64bits? */
 		//r_mem_copyendian (bytes, buf, 4, !a->big_endian);
-		op->inst_len = print_insn_aarch64 ((bfd_vma)Offset, &obj);
+		op->size = print_insn_aarch64 ((bfd_vma)Offset, &obj);
 	} else {
 		obj.disassembler_options = options;
-		op->inst_len = obj.endian?
+		op->size = obj.endian?
 			print_insn_little_arm ((bfd_vma)Offset, &obj):
 			print_insn_big_arm ((bfd_vma)Offset, &obj);
 	}
-	if (op->inst_len == -1)
+	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-	return op->inst_len;
+	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {

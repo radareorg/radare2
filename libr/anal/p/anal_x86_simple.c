@@ -98,7 +98,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case 0xf4: // hlt
 		op->type   = R_ANAL_OP_TYPE_RET;
-		op->length = 1;
+		op->size = 1;
 		break;
 	case 0xc3: // ret
 	case 0xc2: // ret + 2 bytes
@@ -163,7 +163,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case 0x90:
 		op->type   = R_ANAL_OP_TYPE_NOP;
-		op->length = 1;
+		op->size = 1;
 		break;
 	case 0x0f: // 3 byte nop
 		//0fbe55ff        movsx edx, byte [ebp-0x1]
@@ -177,19 +177,19 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		} else
 		if (buf[1]>=0x18 && buf[1]<=0x1f) {
 			op->type = R_ANAL_OP_TYPE_NOP;
-			op->length = 3;
+			op->size = 3;
 		} else
 		if (buf[1]>=0x80 && buf[1]<=0x8f) {
 			op->type   = R_ANAL_OP_TYPE_CJMP;
 			op->jump   = addr+6+buf[2]+(buf[3]<<8)+(buf[4]<<16)+(buf[5]<<24);//((unsigned long)((buf+2))+6);
 			op->fail   = addr+6;
-			op->length = 6;
+			op->size = 6;
 			//op->eob    = 1;
 		} else
 		if (buf[1]>=0x40 && buf[1]<=0x4f) { /* Conditional MOV */
 			op->type = R_ANAL_OP_TYPE_MOV;
 			op->eob = 0;
-			op->length = 4;
+			op->size = 4;
 			return 4;
 		}
 		break;
@@ -199,7 +199,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
 	case 0xf1: // int1
-		op->length = 1;
+		op->size = 1;
 		op->val = 1;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		break;
@@ -214,13 +214,13 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->ptr = (st64)((int)buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24));//((unsigned long)((buf+2))+6);
 		break;
 	case 0xcd:
-		op->length = 2;
+		op->size = 2;
 		op->type = R_ANAL_OP_TYPE_SWI;
 		op->val = buf[1];
 		break;
 	case 0xe8: // call
 		op->type   = R_ANAL_OP_TYPE_CALL;
-		op->length = 5;
+		op->size = 5;
 		//op->jump   = addr+*ptr+5; //(unsigned long)((buf+1)+5);
 		op->jump = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
 		op->fail = addr+5;
@@ -229,7 +229,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case 0xe9: // jmp
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->length = 5;
+		op->size = 5;
 		//op->jump   = (unsigned long)((buf+1)+5);
 		op->jump = addr+5+buf[1]+(buf[2]<<8)+(buf[3]<<16)+(buf[4]<<24);//((unsigned long)((buf+2))+6);
 		op->fail = 0L;
@@ -237,7 +237,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case 0xeb: // short jmp 
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->length = 2;
+		op->size = 2;
 		op->jump = addr+((unsigned long)((char)buf[1])+2);
 		op->fail = 0L;
 		op->eob = 1;
@@ -245,7 +245,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 0xf2: // repnz
 	case 0xf3: // repz
 		op->type   = R_ANAL_OP_TYPE_REP;
-		//op->length = dislen((unsigned char *)&buf); //instLength(buf, 16, 0);
+		//op->size = dislen((unsigned char *)&buf); //instLength(buf, 16, 0);
 		op->jump   = 0L;
 		op->fail   = 0L;
 		break;
@@ -268,14 +268,14 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		} else
 		if (buf[1]>=0xd0 && buf[1]<=0xd7) {
 			op->type = R_ANAL_OP_TYPE_CALL;
-			op->length = 2;
+			op->size = 2;
 			op->eob    = 1;
 			//op->jump   = vm_arch_x86_regs[VM_X86_EAX+buf[1]-0xd0];
 			op->fail   = addr+2;
 		} else
 		if (buf[1]>=0xe0 && buf[1]<=0xe7) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
-			op->length = 2;
+			op->size = 2;
 			//op->jump   = vm_arch_x86_regs[VM_X86_EAX+buf[1]-0xd0];
 			op->eob    = 1;
 		}
@@ -307,14 +307,14 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 0x5e:
 	case 0x5f:
 		op->type = R_ANAL_OP_TYPE_POP;
-		op->length = 1;
+		op->size = 1;
 		op->stackptr = -4;
 		break;
 	case 0x2e: // 2e64796e jns 0xb770a4ab !!
 		if (buf[1]>=0x64 && buf[1]<=0x67) {
 			int ret = myop (anal, op, addr, buf+1, len-1);
 			op->jump++;
-			op->length++;
+			op->size++;
 			return ret;
 		}
 		break;
@@ -324,8 +324,8 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case 0x67:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr+3+buf[2]; //+(buf[2]<<8)+(buf[3]<<16); // XXX
-		op->length = 3;
-		op->fail = addr+op->length;
+		op->size = 3;
+		op->fail = addr+op->size;
 		//op->eob    = 1;
 		break;
 	case 0x68:
@@ -372,7 +372,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->src[1]->base = buf[2];
 			// 83f821  cmp eax, 0x21
 			op->type = R_ANAL_OP_TYPE_CMP;
-			op->length = 3;
+			op->size = 3;
 			}
 			break;
 		case 0xec:
@@ -463,7 +463,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		/* conditional jump */
 		if (buf[1]>=0x80&&buf[1]<=0x8F) {
 			op->type   = R_ANAL_OP_TYPE_CJMP;
-			op->length = 6;
+			op->size = 6;
 			op->jump   = (unsigned long)((buf+2)+6);
 			op->fail   = addr+6;
 			op->eob    = 1;
@@ -491,7 +491,7 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		/* conditional jump */
 		//if (buf[1]>=0x80&&buf[1]<=0x8F) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			op->length = 2;
+			op->size = 2;
 		//	op->jump   = (unsigned long)((buf+2)+6);
 			op->jump = addr+bo+2; //(unsigned long)((buf+1)+5);
 			op->fail = addr+2;
@@ -503,12 +503,12 @@ static int myop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		//op->type = R_ANAL_OP_TYPE_UNK;
 	}
 
-	//if (op->length == 0)
-	op->length = dislen ((unsigned char *)buf, 64); //instLength(buf, 16, 0);
-		//op->length = instLength(buf, 16, 0);
+	//if (op->size == 0)
+	op->size = dislen ((unsigned char *)buf, 64); //instLength(buf, 16, 0);
+		//op->size = instLength(buf, 16, 0);
 	if (!(op->jump>>33))
 		op->jump &= 0xFFFFFFFF; // XXX may break on 64 bits here
-	return op->length;
+	return op->size;
 }
 
 struct r_anal_plugin_t r_anal_plugin_x86_simple = {
