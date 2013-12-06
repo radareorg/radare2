@@ -540,6 +540,17 @@ static int cb_zoombyte(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_binminstr(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	if (core->bin) {
+		core->bin->minstrlen = node->i_value;
+		r_core_bin_refresh_strings(core);
+		return R_TRUE;
+	}
+	return R_TRUE;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -603,7 +614,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* bin */
 	SETI("bin.baddr", 0, "Set base address for loading binaries ('o')");
 	SETPREF("bin.dwarf", "false", "Load dwarf information on startup if available");
-	SETI("bin.minstr", 0, "Minimum string length for r_bin");
+	SETICB("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETPREF("bin.rawstr", "false", "Load strings from raw binaries");
 	SETPREF("bin.strings", "true", "Load strings from rbin on startup");
 
