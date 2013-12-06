@@ -12,7 +12,7 @@
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int dlen = snesDisass(op,buf,len);
 	if(dlen<0) dlen=0;
-	op->inst_len=dlen;
+	op->size=dlen;
 	return dlen;
 }
 

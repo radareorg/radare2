@@ -8,14 +8,14 @@
 #include "../arch/z80/z80.c"
 
 static int do_assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	return op->inst_len = z80asm (op->buf, buf);
+	return op->size = z80asm (op->buf, buf);
 }
 
 static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = z80dis (0, buf, op->buf_asm, len);
 	if (dlen<0) dlen = 0;
-	op->inst_len = dlen;
-	return op->inst_len;
+	op->size = dlen;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_z80 = {

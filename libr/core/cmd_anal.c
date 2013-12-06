@@ -185,7 +185,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 					core->offset+idx, buf[idx], buf[idx+1], buf[idx+2]);
 			break;
 		}
-		size = (hint&&hint->length)? hint->length: op.length;
+		size = (hint&&hint->length)? hint->length: op.size;
 		r_cons_printf ("opcode: %s\n", asmop.buf_asm);
 		if (hint && hint->opcode)
 			r_cons_printf ("ophint: %s\n", hint->opcode);

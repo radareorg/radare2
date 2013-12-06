@@ -340,7 +340,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 	if (op && ret > 0) {
 		r_hex_bin2str (op->buf, ret, op->buf_hex);
-		op->inst_len = ret;
+		op->size = ret;
 		op->buf_hex[ret*2] = 0;
 		strncpy (op->buf_asm, b, R_ASM_BUFSIZE);
 	}
@@ -631,7 +631,7 @@ R_API char *r_asm_op_get_asm(RAsmOp *op) {
 R_API int r_asm_op_get_size(RAsmOp *op) {
 	int len;
 	if (!op) return 0;
-	len = op->inst_len - op->payload;
+	len = op->size - op->payload;
 	if (len<1) len = 1;
 	return len;
 }

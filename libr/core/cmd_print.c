@@ -903,7 +903,7 @@ static int cmd_print(void *data, const char *input) {
 							if (hex_str == NULL) hex_str = (char*)owallawalla;
 							r_cons_printf ("0x%08"PFMT64x" %16s  <invalid>\n",  core->offset+pdn_offset, hex_str);
 							pdn_offset += 1;
-							instr_cnt += asmop.inst_len;
+							instr_cnt += asmop.size;
 							if (hex_str && hex_str != owallawalla) free (hex_str);
 
 						} else {

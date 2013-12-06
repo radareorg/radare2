@@ -8,14 +8,13 @@
 
 static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	psosvmasm_init();
-	op->inst_len = psosvm_disasm(buf, op->buf_asm);
-
-	return op->inst_len;
+	op->size = psosvm_disasm(buf, op->buf_asm);
+	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	op->inst_len = psosvm_assemble(op->buf, buf);
-	return op->inst_len;
+	op->size = psosvm_assemble(op->buf, buf);
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_psosvm = {

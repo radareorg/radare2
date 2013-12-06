@@ -276,7 +276,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	dbg->iob.read_at (dbg->iob.io, pc0, buf, sizeof (buf));
 	ret = r_anal_op (dbg->anal, &op, pc0, buf, sizeof (buf));
 //eprintf ("read from pc0 = 0x%llx\n", pc0);
-	pc1 = pc0 + op.length;
+	pc1 = pc0 + op.size;
 //eprintf ("oplen = %d\n", op.length);
 //eprintf ("breakpoint at pc1 = 0x%llx\n", pc1);
 	// XXX: Does not works for 'ret'
@@ -347,7 +347,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 		if (op.type & R_ANAL_OP_TYPE_CALL
 		   || op.type & R_ANAL_OP_TYPE_UCALL) {
-			ut64 bpaddr = pc + op.length;
+			ut64 bpaddr = pc + op.size;
 			r_bp_add_sw (dbg->bp, bpaddr, 1, R_BP_PROT_EXEC);
 			ret = r_debug_continue (dbg);
 			r_bp_del (dbg->bp, bpaddr);

@@ -38,7 +38,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	free (ipath);
 	free (opath);
 
-	op->inst_len = len;
+	op->size = len;
 	return len;
 }
 
