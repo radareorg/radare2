@@ -553,8 +553,8 @@ toro:
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
 		} else {
 			lastfail = 0;
-			oplen = (hint && hint->length)?
-				hint->length: r_asm_op_get_size (&asmop);
+			oplen = (hint && hint->size)?
+				hint->size: r_asm_op_get_size (&asmop);
 		}
 		if (pseudo) {
 			r_parse_parse (core->parser, opstr?
@@ -605,7 +605,7 @@ toro:
 			analop.type = R_ANAL_OP_TYPE_ILL;
 		}
 		if (hint) {
-			if (hint->length) analop.size = hint->length;
+			if (hint->size) analop.size = hint->size;
 			if (hint->ptr) analop.ptr = hint->ptr;
 		}
 		{
@@ -1411,8 +1411,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		ret = r_asm_disassemble (core->assembler,
 			&asmop, buf+i, core->blocksize-i);
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-		if (hint && hint->length)
-			ret = hint->length;
+		if (hint && hint->size)
+			ret = hint->size;
 		if (hint && hint->opcode) {
 			opstr = strdup (hint->opcode);
 		} else {

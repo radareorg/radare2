@@ -34,7 +34,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 	r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->from)
 			HINTCMD (arch, "aha %s");
 			HINTCMD (bits, "ahb %d");
-			HINTCMD (length, "ahl %d");
+			HINTCMD (size, "ahl %d");
 			HINTCMD (opcode, "aho %s");
 			HINTCMD (opcode, "ahs %s");
 			HINTCMD (opcode, "ahp %s");
@@ -44,7 +44,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 				count>0?",":"", hint->from, hint->to);
 			if (hint->arch) r_cons_printf (",\"arch\":\"%s\"", hint->arch); // XXX: arch must not contain strange chars
 			if (hint->bits) r_cons_printf (",\"bits\":%d", hint->bits);
-			if (hint->length) r_cons_printf (",\"length\":%d", hint->length);
+			if (hint->size) r_cons_printf (",\"size\":%d", hint->size);
 			if (hint->opcode) r_cons_printf (",\"opcode\":\"%s\"", hint->opcode);
 			if (hint->analstr) r_cons_printf (",\"analstr\":\"%s\"", hint->analstr);
 			if (hint->ptr) r_cons_printf (",\"ptr\":\"0x%"PFMT64x"x\"", hint->ptr);
@@ -54,7 +54,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 			r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->from, hint->to);
 			if (hint->arch) r_cons_printf (" arch='%s'", hint->arch);
 			if (hint->bits) r_cons_printf (" bits=%d", hint->bits);
-			if (hint->length) r_cons_printf (" length=%d", hint->length);
+			if (hint->size) r_cons_printf (" length=%d", hint->size);
 			if (hint->opcode) r_cons_printf (" opcode='%s'", hint->opcode);
 			if (hint->analstr) r_cons_printf (" analstr='%s'", hint->analstr);
 			r_cons_printf ("\n");
