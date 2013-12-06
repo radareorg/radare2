@@ -566,15 +566,20 @@ toro:
 			r_str_case (asmop.buf_asm, 1);
 		if (atabs) {
 			int n, i = 0, comma = 0, word = 0;
+			int brackets = 0;
 			char *t, *b;
 			free (opstr);
 			opstr = b = malloc (strlen (asmop.buf_asm)* (atabs+1)*4);
 			strcpy (b, asmop.buf_asm);
 			for (; *b; b++, i++) {
+				if (*b=='(' || *b=='[') brackets++;
+				if (*b==')' || *b==']') brackets--;
 				if (*b==',') comma = 1;
 				if (*b!=' ') continue;
 				if (word>0 && !comma) continue; //&& b[1]=='[') continue;
+				if (brackets>0) continue;
 				comma = 0;
+				brackets = 0;
 				n = (atabs-i);
 				t = strdup (b+1); //XXX slow!
 				if (n<1) n = 1;
