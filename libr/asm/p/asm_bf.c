@@ -66,7 +66,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (i<1) i=1; else i++;
 
 	free (buf_cp);
-	op->inst_len = i;
+	op->size = i;
 	return i;
 }
 
@@ -158,7 +158,7 @@ RAsmPlugin r_asm_plugin_bf = {
 	.name = "bf",
 	.arch = "bf",
 	.license = "LGPL3",
-	.bits = (int[]){32,0},
+	.bits = 32,
 	.desc = "Brainfuck disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

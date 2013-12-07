@@ -424,7 +424,7 @@ char* Elf_(r_bin_elf_get_data_encoding)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case ELFDATANONE: return strdup ("none");
 	case ELFDATA2LSB: return strdup ("2's complement, little endian");
 	case ELFDATA2MSB: return strdup ("2's complement, big endian");
-	default: return r_str_dup_printf ("<unknown: %x>", bin->ehdr.e_ident[EI_DATA]);
+	default: return r_str_newf ("<unknown: %x>", bin->ehdr.e_ident[EI_DATA]);
 	}
 }
 
@@ -539,7 +539,7 @@ char* Elf_(r_bin_elf_get_machine_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case EM_ARC_A5:      return strdup ("ARC Cores Tangent-A5");
 	case EM_XTENSA:      return strdup ("Tensilica Xtensa Architecture");
 	case EM_AARCH64:     return strdup ("ARM aarch64");
-	default:             return r_str_dup_printf ("<unknown>: 0x%x", bin->ehdr.e_machine);
+	default:             return r_str_newf ("<unknown>: 0x%x", bin->ehdr.e_machine);
 	}
 }
 
@@ -554,10 +554,10 @@ char* Elf_(r_bin_elf_get_file_type)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	}
 
 	if ((e_type >= ET_LOPROC) && (e_type <= ET_HIPROC))
-		return r_str_dup_printf ("Processor Specific: %x", e_type);
+		return r_str_newf ("Processor Specific: %x", e_type);
 	else if ((e_type >= ET_LOOS) && (e_type <= ET_HIOS))
-		return r_str_dup_printf ("OS Specific: %x", e_type);
-	else return r_str_dup_printf ("<unknown>: %x", e_type);
+		return r_str_newf ("OS Specific: %x", e_type);
+	else return r_str_newf ("<unknown>: %x", e_type);
 }
 
 char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin) {
@@ -565,7 +565,7 @@ char* Elf_(r_bin_elf_get_elf_class)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case ELFCLASSNONE: return strdup ("none");
 	case ELFCLASS32:   return strdup ("ELF32");
 	case ELFCLASS64:   return strdup ("ELF64");
-	default:           return r_str_dup_printf ("<unknown: %x>", bin->ehdr.e_ident[EI_CLASS]);
+	default:           return r_str_newf ("<unknown: %x>", bin->ehdr.e_ident[EI_CLASS]);
 	}
 }
 
@@ -625,7 +625,7 @@ char* Elf_(r_bin_elf_get_osabi_name)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	case ELFOSABI_MODESTO:    return strdup ("modesto");
 	case ELFOSABI_OPENBSD:    return strdup ("openbsd");
 	case ELFOSABI_STANDALONE: return strdup ("standalone");
-	default:                  return r_str_dup_printf ("<unknown: %x>", bin->ehdr.e_ident[EI_OSABI]);
+	default:                  return r_str_newf ("<unknown: %x>", bin->ehdr.e_ident[EI_OSABI]);
 	}
 #endif
 }

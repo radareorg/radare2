@@ -20,17 +20,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		arm_set_input_buffer (arminsn, buf);
 	}
-	op->inst_len = arm_disasm_one_insn (arminsn);
+	op->size = arm_disasm_one_insn (arminsn);
 	strncpy (op->buf_asm, arm_insn_asm (arminsn), R_ASM_BUFSIZE);
 	strncpy (op->buf_hex, arm_insn_hex (arminsn), R_ASM_BUFSIZE);
 	arm_free (arminsn);
-	return op->inst_len;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_arm_winedbg = {
 	.name = "arm.winedbg",
 	.arch = "arm",
-	.bits = (int[]){ 16, 32, 0 },
+	.bits = 16|32,
 	.desc = "ARM disassembly plugin (winedbg backend)",
 	.init = NULL,
 	.fini = NULL,

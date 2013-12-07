@@ -121,7 +121,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'j': return op.jump;
 		case 'f': return op.fail;
 		case 'm': return op.ptr; // memref
-		case 'l': return op.length;
+		case 'l': return op.size;
 		case 'b': return core->blocksize;
 		case 's': return core->file->size;
 		case 'w': return r_config_get_i (core->config, "asm.bits") / 8;
@@ -168,7 +168,7 @@ R_API RCore *r_core_new() {
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
 	"?", "?v",
-	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db", "db-",
+	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db ", "db-",
         "dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"ec","ecs",
 	"S",

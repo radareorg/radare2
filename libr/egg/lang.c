@@ -609,7 +609,7 @@ eprintf ("STACKTRAF %d\n", stackframe);
 	}
 	/* capture body */
 	if (c == '}') { /* XXX: repeated code!! */
-		if (CTX< 1) {
+		if (CTX< 2) {
 			inlinectr = 0;
 			rcc_context (egg, -1);
 			slurp = 0;

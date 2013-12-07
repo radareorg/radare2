@@ -17,11 +17,11 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 	highbyte = anal->big_endian? 1: 0;
 
 	if (((b[lowbyte]&0xf8) >0x38) && ((b[lowbyte]&0xf8) != 0x48)) {
-		op->length = 2;
+		op->size = 2;
 	} else {
-		op->length = 4;
+		op->size = 4;
 	}
-// some ops are 6 and others are 8 byte length
+// some ops are 6 and others are 8 byte size
 	op->fail = addr + 4;
 	//eprintf ("----> ST %x\n", subopcode);
 	//eprintf ("BC = 0x%x\n", basecode);
@@ -60,7 +60,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		break;
 	default:
 		/* This is 16 bit instruction */
-		op->length = 2;
+		op->size = 2;
 		op->fail = addr + 2;
 		basecode = (b[1] & 0xf8) >> 3;
 		switch (basecode) {
@@ -91,7 +91,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 		}
 		break;
 	}
-	return op->length;
+	return op->size;
 }
 
 static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
@@ -101,7 +101,7 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	/* ARCtangent A4 */
 	if (anal->bits == 16)
 		return arcompact_op (anal, op, addr, data, len);
-	op->length = 4;
+	op->size = 4;
 	op->fail = addr + 4;
 	ut8 basecode = (b[3] & 0xf8) >> 3;
 	switch (basecode) {
@@ -143,12 +143,13 @@ static int arc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	default:
 		break;
 	}
-	return op->length;
+	return op->size;
 }
 
 struct r_anal_plugin_t r_anal_plugin_arc = {
 	.name = "arc",
 	.arch = R_SYS_ARCH_ARC,
+	.license = "LGPL3",
 	.bits = 16|32,
 	.desc = "ARC code analysis plugin",
 	.init = NULL,

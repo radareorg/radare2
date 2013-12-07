@@ -553,8 +553,8 @@ toro:
 			sprintf (asmop.buf_hex, "%02x", buf[idx]);
 		} else {
 			lastfail = 0;
-			oplen = (hint && hint->length)?
-				hint->length: r_asm_op_get_size (&asmop);
+			oplen = (hint && hint->size)?
+				hint->size: r_asm_op_get_size (&asmop);
 		}
 		if (pseudo) {
 			r_parse_parse (core->parser, opstr?
@@ -565,20 +565,30 @@ toro:
 		if (acase)
 			r_str_case (asmop.buf_asm, 1);
 		if (atabs) {
-			int n, i = 0;
+			int n, i = 0, comma = 0, word = 0;
+			int brackets = 0;
 			char *t, *b;
 			free (opstr);
-			opstr = b = malloc (strlen (asmop.buf_asm)*4);
+			opstr = b = malloc (strlen (asmop.buf_asm)* (atabs+1)*4);
 			strcpy (b, asmop.buf_asm);
 			for (; *b; b++, i++) {
+				if (*b=='(' || *b=='[') brackets++;
+				if (*b==')' || *b==']') brackets--;
+				if (*b==',') comma = 1;
 				if (*b!=' ') continue;
-				n = (12-i);
+				if (word>0 && !comma) continue; //&& b[1]=='[') continue;
+				if (brackets>0) continue;
+				comma = 0;
+				brackets = 0;
+				n = (atabs-i);
 				t = strdup (b+1); //XXX slow!
 				if (n<1) n = 1;
 				memset (b, ' ', n);
 				b += n;
 				strcpy (b, t);
 				free (t);
+				i = 0;
+				word++;
 			}
 		}
 		if (show_color && colorop)
@@ -595,7 +605,7 @@ toro:
 			analop.type = R_ANAL_OP_TYPE_ILL;
 		}
 		if (hint) {
-			if (hint->length) analop.length = hint->length;
+			if (hint->size) analop.size = hint->size;
 			if (hint->ptr) analop.ptr = hint->ptr;
 		}
 		{
@@ -611,7 +621,7 @@ toro:
 						if (!strcmp (src->reg->name, pc)) {
 							RFlagItem *item;
 							ut8 b[8];
-							ut64 ptr = idx+addr+src->delta+analop.length;
+							ut64 ptr = idx+addr+src->delta+analop.size;
 							ut64 off = 0LL;
 							r_core_read_at (core, ptr, b, src->memref);
 							off = r_mem_get_num (b, src->memref, 1);
@@ -633,7 +643,7 @@ toro:
 						int memref = core->assembler->bits/8;
 						RFlagItem *item;
 						ut8 b[64];
-						ut64 ptr = index+addr+src->delta+analop.length;
+						ut64 ptr = index+addr+src->delta+analop.size;
 						ut64 off = 0LL;
 						r_core_read_at (core, ptr, b, sizeof (b)); //memref);
 						off = r_mem_get_num (b, memref, 1);
@@ -666,7 +676,7 @@ toro:
 		}
 		if (adistrick)
 			middle = r_anal_reflines_middle (core->anal,
-					core->reflines, at, analop.length);
+					core->reflines, at, analop.size);
 		/* XXX: This is really cpu consuming.. need to be fixed */
 		if (show_functions) {
 			//pre = "  ";
@@ -708,7 +718,7 @@ toro:
 
 						}
 					} else {
-						int corner = (f->size <= analop.length)? RDWN_CORNER: LINE_VERT;
+						int corner = (f->size <= analop.size)? RDWN_CORNER: LINE_VERT;
 						const char *fmt = show_color?
 							"%s%s "Color_RESET"%s(%s) %s"Color_RESET" %d\n":
 							"%s (%s) %s %d\n%s ";
@@ -733,7 +743,7 @@ toro:
 					pre = strdup (core->cons->vline[LINE_VERT]);
 					pre = r_str_concat (pre, " ");
 					stackptr = 0;
-				} else if (f->addr+f->size-analop.length == at) {
+				} else if (f->addr+f->size-analop.size== at) {
 					if (show_color) {
 						r_cons_printf ("%s%s "Color_RESET,
 							color_fline, core->cons->vline[RDWN_CORNER]);
@@ -751,7 +761,7 @@ toro:
 					pre = strdup (core->cons->vline[LINE_VERT]);
 					pre = r_str_concat (pre, " ");
 				} else f = NULL;
-				if (f && at == f->addr+f->size-analop.length) { // HACK
+				if (f && at == f->addr+f->size-analop.size) { // HACK
 					//pre = R_LINE_BOTTOM_DCORNER" ";
 					pre = strdup (core->cons->vline[RDWN_CORNER]);
 					pre = r_str_concat (pre, " ");
@@ -785,7 +795,7 @@ toro:
 		if (show_offset)
 			r_print_offset (core->print, at, (at==dest), show_offseg);
 		if (show_size)
-			r_cons_printf ("%d ", analop.length);
+			r_cons_printf ("%d ", analop.size);
 		if (show_trace) {
 			RDebugTracepoint *tp = r_debug_trace_get (core->dbg, at);
 			r_cons_printf ("%02x:%04x ", tp?tp->times:0, tp?tp->count:0);
@@ -1401,8 +1411,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		ret = r_asm_disassemble (core->assembler,
 			&asmop, buf+i, core->blocksize-i);
 		//r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
-		if (hint && hint->length)
-			ret = hint->length;
+		if (hint && hint->size)
+			ret = hint->size;
 		if (hint && hint->opcode) {
 			opstr = strdup (hint->opcode);
 		} else {

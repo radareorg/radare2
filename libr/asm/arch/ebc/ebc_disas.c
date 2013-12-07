@@ -127,7 +127,7 @@ static int decode_index64(const uint8_t *data, ebc_index_t *index) {
 static int decode_break(const uint8_t *bytes, ebc_command_t *cmd) {
 	int ret = 2;
 
-	snprintf(cmd->instr, EBC_INSTR_MAXLEN, instr_names[EBC_BREAK]);
+	strncpy (cmd->instr, instr_names[EBC_BREAK], sizeof (cmd->instr));
 	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%d", bytes[1]);
 
 	return ret;
@@ -153,7 +153,7 @@ static int decode_jmp(const uint8_t *bytes, ebc_command_t *cmd) {
 		snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "0x%lx", immed);
 	} else {
 		if ((bytes[1] & 0x7) != 0)
-			snprintf(op1, 32, "%sr%u ",
+			snprintf(op1, sizeof (op1), "%sr%u ",
 					TEST_BIT(bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
 
 		if (TEST_BIT(bytes[0], 7)) {
@@ -553,7 +553,6 @@ static int decode_mov_args(const uint8_t *bytes, ebc_command_t *cmd) {
 }
 
 static int decode_mov(const uint8_t *bytes, ebc_command_t *cmd) {
-	int ret;
 	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s",
 			instr_names[bytes[0] & EBC_OPCODE_MASK]);
 	return decode_mov_args(bytes, cmd);
@@ -871,7 +870,7 @@ static int decode_movi(const uint8_t *bytes, ebc_command_t *cmd)
 static int decode_movin(const uint8_t *bytes, ebc_command_t *cmd)
 {
 	int ret = 2;
-	char p1;
+	char p1 = 0;
 	char indx1[32] = {0};
 	char indx2[32] = {0};
 	char op1[32];

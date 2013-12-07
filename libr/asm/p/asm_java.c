@@ -19,13 +19,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			if (obj) r_java_set_obj (obj);
 		}
 	}
-	return op->inst_len = r_java_disasm (a->pc, buf,
+	return op->size = r_java_disasm (a->pc, buf,
 		op->buf_asm, sizeof (op->buf_asm));
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	// TODO: get class info from bin if possible
-	return op->inst_len = r_java_assemble (op->buf, buf);
+	return op->size = r_java_assemble (op->buf, buf);
 }
 
 RAsmPlugin r_asm_plugin_java = {
@@ -33,7 +33,7 @@ RAsmPlugin r_asm_plugin_java = {
 	.desc = "Java CLASS assembler/disassembler",
 	.arch = "java",
 	.license = "LGPL3",
-	.bits = (int[]){ 8, 32, 0 },
+	.bits = 32,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

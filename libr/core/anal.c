@@ -34,7 +34,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 	r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->from)
 			HINTCMD (arch, "aha %s");
 			HINTCMD (bits, "ahb %d");
-			HINTCMD (length, "ahl %d");
+			HINTCMD (size, "ahl %d");
 			HINTCMD (opcode, "aho %s");
 			HINTCMD (opcode, "ahs %s");
 			HINTCMD (opcode, "ahp %s");
@@ -44,7 +44,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 				count>0?",":"", hint->from, hint->to);
 			if (hint->arch) r_cons_printf (",\"arch\":\"%s\"", hint->arch); // XXX: arch must not contain strange chars
 			if (hint->bits) r_cons_printf (",\"bits\":%d", hint->bits);
-			if (hint->length) r_cons_printf (",\"length\":%d", hint->length);
+			if (hint->size) r_cons_printf (",\"size\":%d", hint->size);
 			if (hint->opcode) r_cons_printf (",\"opcode\":\"%s\"", hint->opcode);
 			if (hint->analstr) r_cons_printf (",\"analstr\":\"%s\"", hint->analstr);
 			if (hint->ptr) r_cons_printf (",\"ptr\":\"0x%"PFMT64x"x\"", hint->ptr);
@@ -54,7 +54,7 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 			r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->from, hint->to);
 			if (hint->arch) r_cons_printf (" arch='%s'", hint->arch);
 			if (hint->bits) r_cons_printf (" bits=%d", hint->bits);
-			if (hint->length) r_cons_printf (" length=%d", hint->length);
+			if (hint->size) r_cons_printf (" length=%d", hint->size);
 			if (hint->opcode) r_cons_printf (" opcode='%s'", hint->opcode);
 			if (hint->analstr) r_cons_printf (" analstr='%s'", hint->analstr);
 			r_cons_printf ("\n");
@@ -361,7 +361,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	}
 fcn->addr = at;
 fcn->size = 0;
-fcn->name = r_str_dup_printf ("fcn.%08"PFMT64x, at);
+fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 	if (!(buf = malloc (ANALBS))) { //core->blocksize))) {
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
@@ -410,7 +410,7 @@ fcn->name = r_str_dup_printf ("fcn.%08"PFMT64x, at);
 			if (f) { /* Check if it's already flagged */
 				fcn->name = strdup (f->name); // memleak here?
 			} else {
-				fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
+				fcn->name = r_str_newf ("%s.%08"PFMT64x,
 						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
 						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
 						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
@@ -507,7 +507,7 @@ error:
 #endif
 		if (!fcn->name) {
 			// XXX dupped code.
-			fcn->name = r_str_dup_printf ("%s.%08"PFMT64x,
+			fcn->name = r_str_newf ("%s.%08"PFMT64x,
 					fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
 					fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
 					fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);

@@ -14,7 +14,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 
 	if (op == NULL)
 		return 2;
-	op->length = 2;
+	op->size = 2;
 	if (*ins == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 	} else
@@ -67,12 +67,13 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		op->eob = R_TRUE;
 		//op->stackptr =
 	} else op->type = R_ANAL_OP_TYPE_UNK;
-	return op->length;
+	return op->size;
 }
 
 RAnalPlugin r_anal_plugin_avr = {
 	.name = "avr",
 	.desc = "AVR code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_AVR,
 	.bits = 8|32,
 	.init = NULL,

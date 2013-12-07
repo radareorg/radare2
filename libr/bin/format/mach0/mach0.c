@@ -808,6 +808,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 	if (bin->entry) {
 		entry->offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->entry);
 		entry->addr = bin->entry;
+		return entry;
 	}
 	entry->addr = 0LL;
 	if (!bin->entry || (entry->offset==0)) {
@@ -849,9 +850,9 @@ ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 
 char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 #if R_BIN_MACH064
-	return r_str_dup_printf ("MACH064");
+	return r_str_newf ("MACH064");
 #else
-	return r_str_dup_printf ("MACH0");
+	return r_str_newf ("MACH0");
 #endif
 }
 

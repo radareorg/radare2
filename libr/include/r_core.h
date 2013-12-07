@@ -276,6 +276,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 R_API int r_core_bin_load(RCore *core, const char *file, ut64 baddr);
 R_API int r_core_hash_load(RCore *core, const char *file);
 
+// XXX - this is kinda hacky, maybe there should be a way to 
+// refresh the bin environment without specific calls?
+R_API int r_core_bin_refresh_strings(RCore *core);
+
 /* gdiff.c */
 R_API int r_core_gdiff(RCore *core1, RCore *core2);
 

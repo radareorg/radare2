@@ -12,7 +12,7 @@
 static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, ut64 len) {
 	int dlen = gbDisass(r_op,buf,len);
 	if(dlen<0) dlen=0;
-	r_op->inst_len=dlen;
+	r_op->size=dlen;
 	return dlen;
 }
 
@@ -21,7 +21,7 @@ RAsmPlugin r_asm_plugin_gb = {
 	.desc = "GB disassembly plugin",
 	.arch = "z80",				//?
 	.license = "LGPL3",
-	.bits = (int[]){ 8, 0 }, /* supported wordsizes */
+	.bits = 8,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

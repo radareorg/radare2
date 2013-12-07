@@ -450,7 +450,7 @@ static int sparc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
   memset (op, 0, sizeof (RAnalOp));
   op->family = R_ANAL_OP_FAMILY_CPU;
   op->addr = addr;
-  op->length = sz;
+  op->size = sz;
   op->jump = op->fail = -1;
   op->ptr = op->val = -1;
 
@@ -696,9 +696,10 @@ static int set_reg_profile(RAnal *anal)
 }
 
 
-struct r_anal_plugin_t r_anal_plugin_sparc = {
+RAnalPlugin r_anal_plugin_sparc = {
 	.name = "sparc",
 	.desc = "SPARC analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_SPARC,
 	.bits = 32 | 64,
 	.init = NULL,

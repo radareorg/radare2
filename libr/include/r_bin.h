@@ -316,6 +316,7 @@ R_API void r_bin_class_add_field (RBin *bin, const char *classname, const char *
 
 R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va);
 R_API RList* r_bin_get_strings(RBin *bin);
+R_API RList* r_bin_reset_strings(RBin *bin);
 R_API RList* r_bin_get_symbols(RBin *bin);
 R_API int r_bin_is_big_endian (RBin *bin);
 R_API int r_bin_is_stripped (RBin *bin);

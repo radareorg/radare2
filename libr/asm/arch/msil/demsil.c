@@ -140,7 +140,7 @@ int GetSingleMSILInstr(const u8 *pMemory, ut32 MemorySize, DISASMSIL_OFFSET Code
 	//
 	demsil_get(pCurInstr, CurInstr, u8);
 
-	if (CurInstr >= 0x00 && CurInstr <= 0xE0)
+	if (CurInstr <= 0xE0)
 		goto getinstr;
 
 	//

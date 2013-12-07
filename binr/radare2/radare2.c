@@ -100,15 +100,15 @@ static int main_help(int line) {
 	if (line==2)
 		printf (
 		"Scripts:\n"
-		" system "R2_PREFIX"/share/radare2/radare2rc\n"
-		" user   ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc\n"
-		" file   ${filename}.r2\n"
+		" system   "R2_PREFIX"/share/radare2/radare2rc\n"
+		" user     ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc\n"
+		" file     ${filename}.r2\n"
 		"Environment:\n"
 		" RHOMEDIR     ~/.config/radare2\n"
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n"
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
-		" LIBR_PLUGINS path to plugins directory\n"
+		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/last\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		);
 	return 0;
@@ -395,7 +395,7 @@ int main(int argc, char **argv) {
 #if USE_THREADS
 	if (run_anal && threaded) {
 		// XXX: if no rabin2 in path that may fail
-		rabin_cmd = r_str_dup_printf ("rabin2 -rSIeMzisR%s %s",
+		rabin_cmd = r_str_newf ("rabin2 -rSIeMzisR%s %s",
 				(debug||r.io->va)?"v":"", r.file->filename);
 		/* TODO: only load data if no project is used */
 		lock = r_th_lock_new ();

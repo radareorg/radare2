@@ -69,17 +69,17 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			   : 0);
 
 	op->buf_asm[0]='\0';
-	op->inst_len = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
+	op->size = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
 
-	if (op->inst_len == -1)
+	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-	return op->inst_len;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_sparc = {
 	.name = "sparc",
 	.arch = "sparc",
-	.bits = (int[]){ 32, 64 },
+	.bits = 32|64,
 	.license = "GPL3",
 	.desc = "SPARC disassembly plugin",
 	.init = NULL,

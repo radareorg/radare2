@@ -807,7 +807,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				return l;
 			}
 			// mov rax, 33
-			if (a->bits==64 && *arg == 'r') {
+			if (a->bits==64 && *arg == 'r' && !argk) {
 				if (isnum (a, arg2)) {
 					data[l++] = 0x48;
 					data[l++] = 0xc7;
@@ -827,6 +827,8 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			if (isnum (a, arg2)) {
 				if (delta) {
 					int n = getnum (a, delta);
+					if (*arg != 'r' && a->bits==64)
+						data[l++] = 0x67;
 					data[l++] = 0xc7;
 					if (1||n>127 || n<-127) { // XXX
 						int reg = getreg (arg);
@@ -1020,7 +1022,7 @@ RAsmPlugin r_asm_plugin_x86_nz = {
 	.desc = "x86 assembler with non-zeros",
 	.license = "LGPL3",
 	.arch = "x86",
-	.bits = (int[]){ 32, 64, 0 },
+	.bits = 32|64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = NULL,

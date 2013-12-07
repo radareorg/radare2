@@ -22,14 +22,14 @@ static int arch_msil_disasm(char *str, const ut8 *buf, ut64 seek) {
 
 static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	arch_msil_disasm (op->buf_asm, buf, a->pc);
-	return (op->inst_len=2);
+	return (op->size=2);
 }
 
 RAsmPlugin r_asm_plugin_msil = {
 	.name = "msil",
 	.arch = "msil",
 	.license = "PD",
-	.bits = (int[]){ 16, 32, 64, 0 },
+	.bits = 16|32|64,
 	.desc = "MSIL disassembly plugin",
 	.init = NULL,
 	.fini = NULL,

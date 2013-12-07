@@ -25,9 +25,9 @@ R_API int r_core_hack(RCore *core, const char *op) {
 	if (!strcmp (op, "nop")) {
 		int nopsize = 1; // XXX x86 only
 		const char *nopcode = "90"; // XXX x86 only
-		int len = analop.length;
+		int len = analop.size;
 		if (len%nopsize) {
-			eprintf ("Invalid nopcode length\n");
+			eprintf ("Invalid nopcode size\n");
 			return R_FALSE;
 		}
 		r_cons_puts ("wx ");

@@ -14,13 +14,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	*op->buf_asm = 0;
 	if (!o.name) return 0; // invalid instruction
 	do8051disasm (o, a->pc, op->buf_asm, sizeof (op->buf_asm));
-	return (op->inst_len = o.length);
+	return (op->size = o.length);
 }
 
 RAsmPlugin r_asm_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
-	.bits = (int[]){ 16, 0 },
+	.bits = 16,
 	.desc = "8051 assembler/disassembler",
 	.init = NULL,
 	.fini = NULL,

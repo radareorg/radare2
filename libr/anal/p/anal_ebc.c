@@ -17,28 +17,40 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (op == NULL)
 		return 2;
 
-	ret = op->length = ebc_decode_command(buf, &cmd);
+	ret = op->size = ebc_decode_command(buf, &cmd);
 
 	if (ret < 0)
 		return ret;
 
 	if (opcode == EBC_JMP || opcode == EBC_JMP8) {
 		op->addr = addr;
-		op->type = R_ANAL_OP_TYPE_JMP;
 
 		if (opcode == EBC_JMP8) {
-			unsigned jmpadr = buf[1];
+			int jmpadr = (int8_t)buf[1];
 			op->jump = addr + 2 + (jmpadr * 2);
-			op->fail = addr + (jmpadr * 2);
-		} else {
+
 			if (TEST_BIT(buf[0], 7)) {
-				int32_t jmpaddr;
-				jmpaddr = *(int32_t*)(buf + 2);
-				if (TEST_BIT(buf[1], 4)) {
-					op->jump = addr + 6 + jmpaddr ;
-					op->fail = addr + 6 + jmpaddr;
+				op->type = R_ANAL_OP_TYPE_CJMP;
+			} else {
+				op->type = R_ANAL_OP_TYPE_JMP;
+			}
+		} else {
+			int32_t jmpaddr;
+			jmpaddr = *(int32_t*)(buf + 2);
+
+			if (TEST_BIT(buf[1], 4)) {
+				op->jump = addr + 6 + jmpaddr;
+			} else {
+				op->jump = jmpaddr;
+			}
+
+			if (buf[1] & 0x7) {
+				op->type = R_ANAL_OP_TYPE_UJMP;
+			} else {
+				if (TEST_BIT(buf[1], 7)) {
+					op->type = R_ANAL_OP_TYPE_CJMP;
 				} else {
-					op->jump = jmpaddr;
+					op->type = R_ANAL_OP_TYPE_JMP;
 				}
 			}
 		}
@@ -79,7 +91,8 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	} else if (opcode == EBC_CALL) {
 		int32_t addr_call;
 
-		if ((buf[1] & 0x7) == 0 && TEST_BIT(buf[0], 6) == 0) {
+		if ((buf[1] & 0x7) == 0 && TEST_BIT(buf[0], 6) == 0
+				&& TEST_BIT(buf[0], 7)) {
 			addr_call = *(int32_t*)(buf + 2);
 
 			if (TEST_BIT(buf[1], 4)) {
@@ -87,8 +100,10 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			} else {
 				op->jump = addr_call;
 			}
+			op->type = R_ANAL_OP_TYPE_CALL;
+		} else {
+			op->type = R_ANAL_OP_TYPE_UCALL;
 		}
-		op->type = R_ANAL_OP_TYPE_UCALL;
 
 	} else if (opcode == EBC_RET) {
 		op->type = R_ANAL_OP_TYPE_LEAVE;
@@ -102,6 +117,7 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 struct r_anal_plugin_t r_anal_plugin_ebc = {
 	.name = "ebc",
 	.desc = "EBC code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_EBC,
 	.bits = 64,
 	.init = NULL,

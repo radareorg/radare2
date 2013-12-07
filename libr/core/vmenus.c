@@ -1144,7 +1144,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	if (strstr (type, "opc")) {
 		RAnalOp aop;
 		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize))
-			next = core->offset + aop.length;
+			next = core->offset + aop.size;
 		else eprintf ("Invalid opcode\n");
 	} else
 	if (strstr (type, "fun")) {

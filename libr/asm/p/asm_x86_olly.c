@@ -12,10 +12,10 @@
 static int disassemble(struct r_asm_t *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	t_disasm disasm_obj;
 
-	op->inst_len = Disasm_olly(buf, len, a->pc, &disasm_obj, DISASM_FILE);
+	op->size = Disasm_olly(buf, len, a->pc, &disasm_obj, DISASM_FILE);
 	snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s", disasm_obj.result);
 
-	return op->inst_len;
+	return op->size;
 }
 
 static int assemble(struct r_asm_t *a, struct r_asm_op_t *op, const char *buf) {
@@ -34,10 +34,10 @@ static int assemble(struct r_asm_t *a, struct r_asm_op_t *op, const char *buf) {
 			}
 		}
 	}
-	op->inst_len = R_MAX (0, Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, op->buf_err));
-	if (op->inst_len > 0)
-		memcpy (op->buf, asm_obj.code, R_MIN(op->inst_len, R_ASM_BUFSIZE));
-	return op->inst_len;
+	op->size = R_MAX (0, Assemble((char*)buf, a->pc, &asm_obj, oattempt, oconstsize, op->buf_err));
+	if (op->size > 0)
+		memcpy (op->buf, asm_obj.code, R_MIN(op->size, R_ASM_BUFSIZE));
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_x86_olly = {
@@ -45,7 +45,7 @@ RAsmPlugin r_asm_plugin_x86_olly = {
 	.license = "GPL2",
 	.desc = "X86 disassembly plugin (olly engine)",
 	.arch = "x86",
-	.bits = (int[]){ 32, 0 },
+	.bits = 32,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

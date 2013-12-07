@@ -185,7 +185,7 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 					core->offset+idx, buf[idx], buf[idx+1], buf[idx+2]);
 			break;
 		}
-		size = (hint&&hint->length)? hint->length: op.length;
+		size = (hint&&hint->size)? hint->size: op.size;
 		r_cons_printf ("opcode: %s\n", asmop.buf_asm);
 		if (hint && hint->opcode)
 			r_cons_printf ("ophint: %s\n", hint->opcode);
@@ -720,9 +720,7 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 			if (ptr != NULL) {
 				RAnalOp *op = r_core_op_anal (core, addr);
 				if (op != NULL) {
-					//eprintf("at(0x%08"PFMT64x")=%d (%s)\n", addr, atoi(ptr+1), ptr+1);
-					//trace_set_times(addr, atoi(ptr+1));
-					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->length);
+					RDebugTracepoint *tp = r_debug_trace_add (core->dbg, addr, op->size);
 					tp->count = atoi (ptr+1);
 					r_anal_trace_bb (core->anal, addr);
 					r_anal_op_free (op);
@@ -915,9 +913,9 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 				" ahb 16 @ $$       # force 16bit for current instruction\n"
 				" ahc 0x804804      # override call/jump address\n"
 				" ahf 0x804840      # override fallback address for call\n"
-				" ahl 4             # set opcode size=4\n"
+				" ahs 4             # set opcode size=4\n"
 				" aho foo a0,33     # replace opcode string\n"
-				" ahs eax+=3        # set vm analysis string\n"
+				" ahe eax+=3        # set vm analysis string\n"
 			);
 			break;
 #if 0
@@ -974,7 +972,7 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 			r_anal_hint_set_fail (core->anal, core->offset,
 				r_num_math (core->num, input+2));
 			break;
-		case 'l': // set size (opcode length)
+		case 's': // set size (opcode length)
 			r_anal_hint_set_length (core->anal, core->offset,
 				1, atoi (input+2));
 			break;
@@ -982,8 +980,8 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 			r_anal_hint_set_opcode (core->anal, core->offset,
 				1, input+2);
 			break;
-		case 's': // set analysis string
-			r_anal_hint_set_analstr (core->anal, core->offset,
+		case 'e': // set ESIL string
+			r_anal_hint_set_esil (core->anal, core->offset,
 				1, input+2);
 			break;
 #if TODO

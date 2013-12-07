@@ -531,7 +531,7 @@ typedef struct r_anal_hint_t {
 	char *analstr;
 	ut64 jump;
 	ut64 fail;
-	int length;
+	int size;
 	int bits;
 } RAnalHint;
 
@@ -554,7 +554,7 @@ typedef struct r_anal_op_t {
 	ut64 type;      /* type of opcode */
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
-	int length;     /* length in bytes of opcode */
+	int size;       /* size in bytes of opcode */
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) */
 	int family;     /* family of opcode */
 	int eob;        /* end of block (boolean) */
@@ -660,6 +660,7 @@ typedef int (*RAnalDiffEvalCallback)(RAnal *anal);
 typedef struct r_anal_plugin_t {
 	char *name;
 	char *desc;
+	char *license;
 	int arch;
 	int bits;
 	int (*init)(void *user);
@@ -914,9 +915,9 @@ R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_fail (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_bits (RAnal *a, ut64 addr, int size, int bits);
 R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, int size, const char *arch);
-R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int size, int length);
+R_API void r_anal_hint_set_size (RAnal *a, ut64 addr, int size, int length);
 R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, int size, const char *str);
-R_API void r_anal_hint_set_analstr (RAnal *a, ut64 addr, int size, const char *str);
+R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, int size, const char *str);
 R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
 
 R_API int r_anal_esil_eval(RAnal *anal, const char *str);

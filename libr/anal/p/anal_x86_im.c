@@ -801,7 +801,7 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 	if (!memcmp ("\xf3\xc3", data, 2)) {
 		op->type = R_ANAL_OP_TYPE_RET;
-		return op->length = 2;
+		return op->size = 2;
 	}
 	ret = -1;
 	if (anal->bits==64)
@@ -924,10 +924,10 @@ static int x86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		else
 		if (io.id == X86IM_IO_ID_LEAVE) /* leave */
 			op->type = R_ANAL_OP_TYPE_LEAVE;
-		op->length = io.len;
+		op->size = io.len;
 		op->nopcode = io.opcode_count;
 	}
-	return op->length;
+	return op->size;
 }
 
 static int set_reg_profile(RAnal *anal) {
@@ -1085,9 +1085,10 @@ static int set_reg_profile(RAnal *anal) {
 				"drx	dr7	.32	28	0\n");
 }
 
-struct r_anal_plugin_t r_anal_plugin_x86_im = {
+RAnalPlugin r_anal_plugin_x86_im = {
 	.name = "x86.im86",
 	.desc = "X86 analysis plugin (x86im backend)",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_X86,
 	.bits = 16|32|64,
 	.init = NULL,

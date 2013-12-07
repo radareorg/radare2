@@ -40,7 +40,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
-	op->length = sz;
+	op->size= sz;
 
 	switch (data[0]) {
 	case 0xa9: // ret
@@ -179,6 +179,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 struct r_anal_plugin_t r_anal_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_JAVA,
 	.bits = 32,
 	.init = NULL,

@@ -16,7 +16,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
-	op->length = sz;
+	op->size = sz;
 	op->nopcode = 1; // Necesary??
 
 	switch(data[0]) {
@@ -179,6 +179,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 struct r_anal_plugin_t r_anal_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = R_SYS_ARCH_DALVIK,
+	.license = "LGPL3",
 	.bits = 32,
 	.desc = "Dalvik (Android VM) bytecode analysis plugin",
 	.init = NULL,

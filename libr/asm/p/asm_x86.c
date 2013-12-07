@@ -51,13 +51,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ud_set_input_buffer (&d, (uint8_t*) buf, len);
 	ud_set_pc (&d, a->pc);
 	ud_set_mode (&d, a->bits);
-	op->inst_len = ud_disassemble (&d);
+	op->size = ud_disassemble (&d);
 	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&d));
-	if (!op->inst_len || strstr (op->buf_asm, "invalid"))
-		op->inst_len = -1;
-	if (op->inst_len<1)
-		op->inst_len = -1;
-	return op->inst_len;
+	if (!op->size || strstr (op->buf_asm, "invalid"))
+		op->size = -1;
+	if (op->size<1)
+		op->size = -1;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_x86 = {
@@ -65,7 +65,7 @@ RAsmPlugin r_asm_plugin_x86 = {
 	.desc = "udis86 disassembler",
 	.arch = "x86",
 	.license = "BSD",
-	.bits = (int[]){ 16, 32, 64, 0 },
+	.bits = 16 | 32 | 64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

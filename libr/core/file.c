@@ -163,18 +163,27 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	/* TODO: fat bins are loaded multiple times, this is a problem that must be fixed . see '-->' marks. */
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
     r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
+    r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	if( is_io_load ) {
-		// XXX - May need to set r_config stuff in the basic bin.
-		// XXX - May need to handle additional extraction here as well 
-		r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+		// XXX - May need to handle additional extraction here as well 		
 		r_bin_io_load(r->bin, r->io, r->file->fd, R_FALSE); 
-
+		if ( r->bin->cur.curplugin && 
+			strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
+			// set use of raw strings
+			r_config_set (r->config, "bin.rawstr", "true");
+			// get bin.minstr
+			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+		}
 		{ // Making sure the RBinObject gets set 
 			RBinObject *_obj = r_bin_get_object (r->bin);
+			
 			if (_obj && _obj->info && _obj->info->bits) {
 				r_config_set_i (r->config, "asm.bits", _obj->info->bits);
+				r->file->obj = _obj;
 			}
 			if (_obj) _obj->baddr = baddr;
+
+			r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 		}
 	} else if(r_bin_load (r->bin, file, R_FALSE)) { // --->
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {

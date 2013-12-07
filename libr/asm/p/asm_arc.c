@@ -77,18 +77,18 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	op->buf_asm[0]='\0';
 	if (a->bits==16)
-		op->inst_len = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
-	else op->inst_len = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
+	else op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
 
-	if (op->inst_len == -1)
+	if (op->size == -1)
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-	return op->inst_len;
+	return op->size;
 }
 
 RAsmPlugin r_asm_plugin_arc = {
 	.name = "arc",
 	.arch = "arc",
-	.bits = (int[]){ 16, 32, 0 },
+	.bits = 16|32,
 	.desc = "ARC disassembler",
 	.init = NULL,
 	.fini = NULL,

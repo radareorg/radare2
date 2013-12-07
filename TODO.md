@@ -6,6 +6,7 @@
 
 0.9.8
 =====
+* Rename anal.plugin into anal.arch ??? to keep in sync with asm.arch
 * use __unused if available
 * rafind2 : add support for unicode/widestring search
 * .dr- # documented... but not working

@@ -24,7 +24,7 @@ static int c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	op->addr = addr;
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
-        op->length = ins_len;
+        op->size = ins_len;
 
 	if (ins_len >= 1 && *ins == 0x20) {
 		op->type = R_ANAL_OP_TYPE_NOP;
@@ -75,13 +75,14 @@ static int c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		op->type = R_ANAL_OP_TYPE_UNK;
 	}
 
-	return op->length;
+	return op->size;
 }
 
 struct r_anal_plugin_t r_anal_plugin_c55plus = {
 	.name = "c55+",
 	.desc = "C55+ code analysis plugin",
 	.arch = R_SYS_ARCH_C55PLUS,
+	.license = "LGPL3",
 	.bits = 32 | 40,
 	.init = NULL,
 	.fini = NULL,

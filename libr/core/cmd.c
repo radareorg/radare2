@@ -586,7 +586,7 @@ static int cmd_eval(void *data, const char *input) {
 			"  ecr               set random palette\n"
 			"  ecs               show a colorful palette\n"
 			"  ecf dark|white    load white color scheme template\n"
-			"  ec prompt red     change coloro of prompt\n"
+			"  ec prompt red     change color of prompt\n"
 			"Available colors:\n"
 			"  rgb:000           24 bit hexadecimal rgb color\n"
 			"  red|green|blue|.  well known ansi colors\n"
@@ -1509,7 +1509,7 @@ R_API int r_core_cmd_command(RCore *core, const char *command) {
 //TODO: Fix disasm loop is mandatory
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l) {
 	char *cmd, *ret = NULL;
-	cmd = r_str_dup_printf ("pd %i @ 0x%08"PFMT64x, l, addr);
+	cmd = r_str_newf ("pd %i @ 0x%08"PFMT64x, l, addr);
 	if (cmd) {
 		ret = r_core_cmd_str (core, cmd);
 		free (cmd);
@@ -1519,7 +1519,7 @@ R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l) {
 
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b) {
 	char *cmd, *ret = NULL;
-	cmd = r_str_dup_printf ("pD %i @ 0x%08"PFMT64x, b, addr);
+	cmd = r_str_newf ("pD %i @ 0x%08"PFMT64x, b, addr);
 	if (cmd) {
 		ret = r_core_cmd_str (core, cmd);
 		free (cmd);

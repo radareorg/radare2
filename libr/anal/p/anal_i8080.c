@@ -143,14 +143,15 @@ static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->type = R_ANAL_OP_TYPE_CALL;
 			break;
 	}
-	return op->length = ilen;
+	return op->size = ilen;
 }
 
 struct r_anal_plugin_t r_anal_plugin_i8080 = {
 	.name = "i8080",
+	.desc = "I8080 CPU code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_I8080,
 	.bits = 16,
-	.desc = "I8080 CPU code analysis plugin",
 	.init = NULL,
 	.fini = NULL,
 	.op = &i8080_op,

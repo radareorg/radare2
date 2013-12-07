@@ -12,10 +12,10 @@
 // ut64 for length here is overkill!
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len<2) return -1; // at least 2 bytes!
-	op->inst_len = dcpu16_disasm (op->buf_asm, (const ut16*)buf, len, NULL);
-	if (op->inst_len == -1)
+	op->size = dcpu16_disasm (op->buf_asm, (const ut16*)buf, len, NULL);
+	if (op->size == -1)
 		strcpy (op->buf_asm, " (data)");
-	return op->inst_len;
+	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
@@ -25,7 +25,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_dcpu16 = {
 	.name = "dcpu16",
 	.arch = "dpcu",
-	.bits = (int[]){ 16, 0 },
+	.bits = 16,
 	.desc = "DCPU16 assembler/disassembler",
 	.license = "PD",
 	.init = NULL,

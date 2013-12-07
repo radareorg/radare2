@@ -325,7 +325,7 @@ static int prevopsz (RCore *core, ut64 addr) {
 		ret = r_anal_op (core->anal, &op, base+i,
 			buf+i, sizeof (buf)-i);
 		if (!ret) continue;
-		len = op.length;
+		len = op.size;
 		r_anal_op_fini (&op); // XXX
 		if (len<1) continue;
 		i += len-1;

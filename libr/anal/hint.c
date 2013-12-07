@@ -42,7 +42,7 @@ R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, int size, const char *op
 	hint->opcode = strdup (opcode);
 }
 
-R_API void r_anal_hint_set_analstr (RAnal *a, ut64 addr, int size, const char *analstr) {
+R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, int size, const char *analstr) {
 	RAnalHint *hint = r_anal_hint_add (a, addr, size);
 	free (hint->analstr);
 	analstr = r_str_trim_head (analstr);
@@ -56,7 +56,7 @@ R_API void r_anal_hint_set_bits (RAnal *a, ut64 addr, int size, int bits) {
 
 R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int size, int length) {
 	RAnalHint *hint = r_anal_hint_add (a, addr, size);
-	hint->length = length;
+	hint->size = length;
 }
 
 R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from, int size) {
@@ -107,7 +107,7 @@ R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr) {
 			SETRETX(fail);
 			SETRETS(opcode);
 			SETRETS(analstr);
-			SETRET(length);
+			SETRET(size);
 		}
 	}
 	return res;

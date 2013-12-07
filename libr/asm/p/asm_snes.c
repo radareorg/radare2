@@ -12,7 +12,7 @@
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int dlen = snesDisass(op,buf,len);
 	if(dlen<0) dlen=0;
-	op->inst_len=dlen;
+	op->size=dlen;
 	return dlen;
 }
 
@@ -20,7 +20,7 @@ RAsmPlugin r_asm_plugin_snes = {
 	.name = "snes",
 	.desc = "SNES disassembly plugin",
 	.arch = "snes",
-	.bits = (int[]){ 16, 8, 0 }, /* supported wordsizes */
+	.bits = 8|16,
 	.init = NULL,
 	.fini = NULL,
 	.license = "LGPL3",

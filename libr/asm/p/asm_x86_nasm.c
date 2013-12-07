@@ -38,7 +38,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	free (ipath);
 	free (opath);
 
-	op->inst_len = len;
+	op->size = len;
 	return len;
 }
 
@@ -48,7 +48,7 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 	.license = "LGPL3",
 	.arch = "x86",
 	// NOTE: 64bits is not supported on OSX's nasm :(
-	.bits = (int[]){ 16, 32, 64, 0 },
+	.bits = 16|32|64,
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = NULL,

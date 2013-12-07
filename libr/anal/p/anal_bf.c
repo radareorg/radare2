@@ -10,7 +10,7 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (op == NULL)
 		return 1;
 	memset (op, 0, sizeof (RAnalOp));
-	op->length = 1;
+	op->size = 1;
 	op->esil[0] = 0;
 	switch (buf[0]) {
 	case '[': op->type = R_ANAL_OP_TYPE_CMP; break;
@@ -36,12 +36,13 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_TRAP; break;
 	default: op->type = R_ANAL_OP_TYPE_NOP; break;
 	}
-	return op->length;
+	return op->size;
 }
 
 struct r_anal_plugin_t r_anal_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck code analysis plugin",
+	.license = "LGPL3",
 	.arch = R_SYS_ARCH_BF,
 	.bits = 32,
 	.init = NULL,

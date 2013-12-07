@@ -21,12 +21,15 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	int i, matches = 0, ctr = 0;
 	RBinString *ptr = NULL;
 
+	if (min <= 0)
+		return;
+
 	if (!arch->rawstr)
 		if (!arch->curplugin || !arch->curplugin->info)
 			return;
 	if (arch && arch->buf && (!to || to > arch->buf->length))
 		to = arch->buf->length;
-	if (to<1 || to > 0xf00000) {
+	if (to != 0 && (to<1 || to > 0xf00000)) {
 		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);
 		return;
 	}
@@ -246,13 +249,20 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 		a->curplugin = NULL;
 
 		r_list_foreach (bin->plugins, it, plugin) {
+			if (strncmp (plugin->name, "any", 5)==0) any = plugin;
 			if ((dummy && !strncmp (plugin->name, "any", 5)) ||
 				(!dummy && (plugin->check && plugin->check (a)))) {
 				a->curplugin = plugin;
 				break;
 			}
 		}
+
+		if (a->curplugin == NULL) 
+			a->curplugin = any;
 		
+		if (a->curplugin && a->curplugin->minstrlen)
+			bin->minstrlen = a->curplugin->minstrlen;
+
 		if (a->curplugin && a->curplugin->load ) {
 			if ( a->curplugin->load(a) )
 				set_bin_items(bin, a->curplugin);
@@ -280,7 +290,7 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 		}
 	}
 	cp = a->curplugin;
-	if (minlen<0) {
+	if (minlen<=0) {
 		if (cp && cp->minstrlen) 
 			minlen = cp->minstrlen;
 		else minlen = -minlen;
@@ -483,6 +493,23 @@ R_API RBinSection* r_bin_get_section_at(RBin *bin, ut64 off, int va) {
 	}
 	return NULL;
 }
+
+R_API RList* r_bin_reset_strings(RBin *bin) {
+	RBinArch *a = &bin->cur;
+	RBinObject *o = a->o;
+	if (o->strings) {
+		r_list_destroy(o->strings);
+		bin->cur.o->strings = NULL;
+	}
+	
+	if (bin->minstrlen <= 0)
+		return NULL;
+
+	if (a->curplugin && a->curplugin->strings) o->strings = a->curplugin->strings (a);
+	else o->strings = get_strings (a, bin->minstrlen);
+	return o->strings;
+}
+
 
 R_API RList* r_bin_get_strings(RBin *bin) {
 	return bin->cur.o->strings;
