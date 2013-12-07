@@ -2,10 +2,9 @@
 
 #include <r_core.h>
 
-R_API r_core_bin_refresh_strings(RCore *r) {
-	return r_bin_reset_strings (r->bin) != NULL; 
+R_API int r_core_bin_refresh_strings(RCore *r) {
+	return r_bin_reset_strings (r->bin) ? R_TRUE: R_FALSE;
 }
-
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	char *p, *q, str[R_FLAG_NAME_SIZE];
@@ -153,7 +152,7 @@ static int bin_info (RCore *r, int mode) {
 		} else {
 			r_config_set (r->config, "asm.os", info->os);
 			r_config_set (r->config, "asm.arch", info->arch);
-			r_config_set (r->config, "anal.plugin", info->arch);
+			r_config_set (r->config, "anal.arch", info->arch);
 			snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
 			r_config_set (r->config, "asm.bits", str);
 			r_config_set (r->config, "asm.dwarf",
@@ -175,7 +174,7 @@ static int bin_info (RCore *r, int mode) {
 					"e cfg.bigendian=%s\n"
 					"e asm.os=%s\n"
 					"e asm.arch=%s\n"
-					"e anal.plugin=%s\n"
+					"e anal.arch=%s\n"
 					"e asm.bits=%i\n"
 					"e asm.dwarf=%s\n",
 					info->rclass, r_str_bool (info->big_endian), info->os,

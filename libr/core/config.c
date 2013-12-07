@@ -93,7 +93,7 @@ static int cb_analplugin(void *user, void *data) {
 	} else if (!r_anal_use (core->anal, node->value)) {
 		const char *aa = r_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value))
-			eprintf ("anal.plugin: cannot find '%s'\n", node->value);
+			eprintf ("anal.arch: cannot find '%s'\n", node->value);
 		return R_FALSE;
 	}
 	return R_TRUE;
@@ -119,11 +119,11 @@ static int cb_asmarch(void *user, void *data) {
 
 		r_config_set (core->config, "asm.parser", asmparser);
 	}
-	if (!r_config_set (core->config, "anal.plugin", node->value)) {
+	if (!r_config_set (core->config, "anal.arch", node->value)) {
 		char *p, *s = strdup (node->value);
 		p = strchr (s, '.');
 		if (p) *p = 0;
-		r_config_set (core->config, "anal.plugin", s);
+		r_config_set (core->config, "anal.arch", s);
 		free (s);
 	}
 	if (!r_syscall_setup (core->anal->syscall, node->value,
@@ -562,7 +562,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	SETI("anal.depth", 50, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
-	SETCB("anal.plugin", R_SYS_ARCH, &cb_analplugin, "Specify the anal plugin to use");
+	SETCB("anal.arch", R_SYS_ARCH, &cb_analplugin, "Specify the anal.arch to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
