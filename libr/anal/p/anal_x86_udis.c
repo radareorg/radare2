@@ -151,19 +151,23 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 	UDis86Esil *handler;
 	UDis86OPInfo info = {0, anal->bits, (1LL << anal->bits) - 1, regsz, 0, pc, sp, bp};
+	memset (op, '\0', sizeof (RAnalOp));
+	if ((op->esil = r_strbuf_new ()) == NULL)
+		return -1;
+	r_strbuf_init (op->esil);
+	op->addr = addr;
+	op->jump = op->fail = -1;
+	op->ptr = op->val = -1;
+
 	ud_init (&u);
 	ud_set_pc (&u, addr);
 	ud_set_mode (&u, anal->bits);
 	ud_set_syntax (&u, NULL);
 	ud_set_input_buffer (&u, data, len);
 	ud_disassemble (&u);
-	memset (op, '\0', sizeof (RAnalOp));
-	op->addr = addr;
-	op->jump = op->fail = -1;
-	op->ptr = op->val = -1;
-	oplen = op->size = ud_insn_len (&u);
 
-	op->esil[0] = 0;
+	oplen = op->size = ud_insn_len (&u);
+	
 	if (anal->decode)
 		if ((handler = udis86_esil_get_handler (u.mnemonic)) != NULL)
 		{
@@ -181,8 +185,6 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			}
 
 			handler->callback (&info, op, dst, src, str);
-			if (op->esil[sizeof (op->esil) - 5])
-				strcpy (op->esil + sizeof (op->esil) - 4, "...");
 		}
 
 	switch (u.mnemonic) {

@@ -571,7 +571,7 @@ value->val
 	ut64 val;     /* reference to value */ /* XXX signed? */
 	st64 stackptr;  /* stack pointer */
 	int refptr;
-	char esil[64];
+	RStrBuf *esil;
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	struct r_anal_op_t *next; // XXX deprecate

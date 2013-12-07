@@ -2,7 +2,7 @@
 #define _UDIS86_ESIL_H
 
 /* This may be useful for other architectures */
-#define esilprintf(op, fmt, arg...) snprintf (op->esil, sizeof (op->esil) - 3, fmt, ##arg)
+#define esilprintf(op, fmt, arg...) r_strbuf_setf (op->esil, fmt, ##arg)
 
 #define UDIS86_ESIL_ARGUMENTS const UDis86OPInfo *info, RAnalOp *op, const char *dst, const char *src, const char *src2
 

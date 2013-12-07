@@ -32,8 +32,8 @@ memset (buf, 0, sizeof (buf));
 eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
 	oplen = r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
 	if (oplen>0) {
-		if (op.esil) {
-			eprintf ("ESIL: %s\n", op.esil);
+		if (*R_STRBUF_SAFEGET (op.esil)) {
+			eprintf ("ESIL: %s\n", R_STRBUF_SAFEGET (op.esil));
 		}
 	}
 	eprintf ("TODO: ESIL STEP\n");

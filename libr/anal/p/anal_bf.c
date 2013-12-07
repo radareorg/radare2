@@ -9,26 +9,29 @@
 static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	if (op == NULL)
 		return 1;
-	memset (op, 0, sizeof (RAnalOp));
+	/* Ayeeee! What's inside op? Do we have an initialized RAnalOp? Are we going to have a leak here? :-( */
+	memset (op, 0, sizeof (RAnalOp)); /* We need to refactorize this. Something like r_anal_op_init would be more appropiate */
+	if ((op->esil = r_strbuf_new ()) == NULL)
+		return 1;
+	r_strbuf_init (op->esil);
 	op->size = 1;
-	op->esil[0] = 0;
 	switch (buf[0]) {
 	case '[': op->type = R_ANAL_OP_TYPE_CMP; break;
 	case ']': op->type = R_ANAL_OP_TYPE_UJMP; break;
 	case '>': op->type = R_ANAL_OP_TYPE_ADD;
-		strcpy (op->esil, "ptr++");
+		r_strbuf_set (op->esil, "ptr++");
 		break;
 	case '<': op->type = R_ANAL_OP_TYPE_SUB;
-		strcpy (op->esil, "ptr--");
+		r_strbuf_set (op->esil, "ptr--");
 		break;
 	case '+': op->type = R_ANAL_OP_TYPE_ADD;
-		strcpy (op->esil, "*ptr++");
+		r_strbuf_set (op->esil, "*ptr++");
 		break;
 	case '-': op->type = R_ANAL_OP_TYPE_SUB;
-		strcpy (op->esil, "*ptr--");
+		r_strbuf_set (op->esil, "*ptr--");
 		break;
 	case '.': op->type = R_ANAL_OP_TYPE_STORE;
-		strcpy (op->esil, "=*ptr");
+		r_strbuf_set (op->esil, "=*ptr");
 		break;
 	case ',': op->type = R_ANAL_OP_TYPE_LOAD; break;
 	case 0x00:
