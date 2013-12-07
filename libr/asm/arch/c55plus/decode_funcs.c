@@ -12,7 +12,7 @@ st8 *get_tc2_tc1(ut32 ins_bits) {
 		if (ins_bits != 1)
 			fprintf(stderr, "Invalid instruction TC2 or TC1 (%d)\n", ins_bits); return NULL;
 		res = "TC2";
-	} else res = "TC1";	
+	} else res = "TC1";
 	return strdup (res);
 }
 
@@ -46,7 +46,7 @@ st8 *get_trans_reg(ut32 ins_bits) {
 		break;
 
 	default:
-		fprintf(stderr, "Invalid transaction instruction 0x%x\n", ins_bits); 
+		fprintf(stderr, "Invalid transaction instruction 0x%x\n", ins_bits);
 	}
 	if(res != NULL)
 		res = strdup(res);
@@ -199,10 +199,7 @@ st8 *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 					} else {
 						sprintf(res, "*port(#0x%lx)",  (long int)idx);
 					}
-					
-					
 					break;
-
 
 				case 28:
 				case 29:
@@ -221,13 +218,10 @@ st8 *get_AR_regs_class2(ut32 ins_bits, ut32 *ret_len, ut32 ins_pos, ut32 idx) {
 						sprintf(res, "*(#0x%lx)", (long int)idx);
 					}
 
-
 					break;
-
 			}
 		}
-
-	} 
+	}
 
 	return res;
 }
@@ -640,279 +634,209 @@ st8 *get_status_regs_and_bits(st8 *reg_arg, int reg_bit)
 {
   st8 *res = NULL;
 
-  if(!strncmp(reg_arg, "ST0", 3)) { 
-  
+  if(!strncmp(reg_arg, "ST0", 3)) {
     switch(reg_bit) {
-
-      case 0:
-        res = "ST0_DP07";
-	break;
-
-      case 1:
-        res = "ST0_DP08";
-	break;
-
-      case 2:
-        res = "ST0_DP09";
-	break;
-
-      case 3:
-        res = "ST0_DP10";
-	break;
-
-      case 4:
-        res = "ST0_DP11";
-	break;
-
-      case 5:
-        res = "ST0_DP12";
-	break;
-
-      case 6:
-        res = "ST0_DP13";
-	break;
-
-      case 7:
-        res = "ST0_DP14";
-	break;
-
-      case 8:
-        res = "ST0_DP15";
-	break;
-
-      case 9:
-        res = "ST0_ACOV1";
-	break;
-
-      case 10:
-        res = "ST0_ACOV0";
-	break;
-
-      case 11:
-        res = "ST0_CARRY";
-	break;
-
-      case 12:
-        res = "ST0_TC2";
-	break;
-
-      case 13:
-        res = "ST0_TC1";
-	break;
-
-      case 14:
-        res = "ST0_ACOV3";
-	break;
-
-      case 15:
-        res = "ST0_ACOV2";
-	break;
-
+	case 0:
+		res = "ST0_DP07";
+		break;
+	case 1:
+		res = "ST0_DP08";
+		break;
+	case 2:
+		res = "ST0_DP09";
+		break;
+	case 3:
+		res = "ST0_DP10";
+		break;
+	case 4:
+		res = "ST0_DP11";
+		break;
+	case 5:
+		res = "ST0_DP12";
+		break;
+	case 6:
+		res = "ST0_DP13";
+		break;
+	case 7:
+		res = "ST0_DP14";
+		break;
+	case 8:
+		res = "ST0_DP15";
+		break;
+	case 9:
+		res = "ST0_ACOV1";
+		break;
+	case 10:
+		res = "ST0_ACOV0";
+		break;
+	case 11:
+		res = "ST0_CARRY";
+		break;
+	case 12:
+		res = "ST0_TC2";
+		break;
+	case 13:
+		res = "ST0_TC1";
+		break;
+	case 14:
+		res = "ST0_ACOV3";
+		break;
+	case 15:
+		res = "ST0_ACOV2";
+		break;
     }
-
   } else if(!strncmp(reg_arg, "ST1", 3)) {
-
-      switch(reg_bit) {
-
-        case 0:
-          res = "ST1_DR2_00";
-	  break;
-
-        case 1:
-          res =  "ST1_DR2_01";
-	  break;
-
-        case 2:
-          res = "ST1_DR2_02";
-	  break;
-
-        case 3:
-          res = "ST1_DR2_03";
-	  break;
-
-        case 4:
-          res = "ST1_DR2_04";
-	  break;
-
-        case 5:
-          res = "ST1_C54CM";
-	  break;
-
-        case 6:
-          res = "ST1_FRCT";
-	  break;
-
-        case 7:
-          res = "ST1_C16";
-	  break;
-
-        case 8:
-          res = "ST1_SXMD";
-	  break;
-
-        case 9:
-          res = "ST1_SATD";
-	  break;
-
-        case 10:
-          res = "ST1_M40";
-	  break;
-
-        case 11:
-          res = "ST1_INTM";
-	  break;
-
-        case 12:
-          res = "ST1_HM";
-	  break;
-
-        case 13:
-          res = "ST1_XF";
-	  break;
-
-        case 14:
-          res = "ST1_CPL";
-	  break;
-
-        case 15:
-          res = "ST1_BRAF";
-	  break;
-
+		switch(reg_bit) {
+		case 0:
+			res = "ST1_DR2_00";
+			break;
+		case 1:
+			res =  "ST1_DR2_01";
+			break;
+		case 2:
+			res = "ST1_DR2_02";
+			break;
+		case 3:
+			res = "ST1_DR2_03";
+			break;
+		case 4:
+			res = "ST1_DR2_04";
+			break;
+		case 5:
+			res = "ST1_C54CM";
+			break;
+		case 6:
+			res = "ST1_FRCT";
+			break;
+		case 7:
+			res = "ST1_C16";
+			break;
+		case 8:
+			res = "ST1_SXMD";
+			break;
+		case 9:
+			res = "ST1_SATD";
+			break;
+		case 10:
+			res = "ST1_M40";
+			break;
+		case 11:
+			res = "ST1_INTM";
+			break;
+		case 12:
+			res = "ST1_HM";
+			break;
+		case 13:
+			res = "ST1_XF";
+			break;
+		case 14:
+			res = "ST1_CPL";
+			break;
+		case 15:
+			res = "ST1_BRAF";
+			break;
       }
-
   } else if(!strncmp(reg_arg, "ST2", 3)) {
-
-       switch ( reg_bit ) {
-          case 0:
-            res = "ST2_AR0LC";
-	    break;
-
-          case 1:
-            res = "ST2_AR1LC";
-	    break;
-          case 2:
-            res = "ST2_AR2LC";
-	    break;
-
-          case 3:
-            res = "ST2_AR3LC";
-	    break;
-
-          case 4:
-            res = "ST2_AR4LC";
-	    break;
-
-          case 5:
-            res = "ST2_AR5LC";
-	    break;
-
-          case 6:
-            res = "ST2_AR6LC";
-	    break;
-
-          case 7:
-            res = "ST2_AR7LC";
-	    break;
-
-          case 8:
-            res = "ST2_CDPLC";
-	    break;
-
-          case 9:
-            res = "ST2_GOVF";
-	    break;
-
-          case 10:
-            res = "ST2_RDM";
-	    break;
-
-          case 11:
-            res = "ST2_EALLOW";
-	    break;
-
-          case 12:
-            res = "ST2_DBGM";
-	    break;
-
-          case 13:
-            res = "ST2_XCND";
-	    break;
-
-          case 14:
-            res = "ST2_XCNA";
-	    break;
-
-          case 15:
-            res = "ST2_ARMS";
-	    break;
-
+		switch ( reg_bit ) {
+		case 0:
+			res = "ST2_AR0LC";
+			break;
+		case 1:
+			res = "ST2_AR1LC";
+			break;
+		case 2:
+			res = "ST2_AR2LC";
+			break;
+		case 3:
+			res = "ST2_AR3LC";
+			break;
+		case 4:
+			res = "ST2_AR4LC";
+			break;
+		case 5:
+			res = "ST2_AR5LC";
+			break;
+		case 6:
+			res = "ST2_AR6LC";
+			break;
+		case 7:
+			res = "ST2_AR7LC";
+			break;
+		case 8:
+			res = "ST2_CDPLC";
+			break;
+		case 9:
+			res = "ST2_GOVF";
+			break;
+		case 10:
+			res = "ST2_RDM";
+			break;
+		case 11:
+			res = "ST2_EALLOW";
+			break;
+		case 12:
+			res = "ST2_DBGM";
+			break;
+		case 13:
+			res = "ST2_XCND";
+			break;
+		case 14:
+			res = "ST2_XCNA";
+			break;
+		case 15:
+			res = "ST2_ARMS";
+			break;
        }
-  } else if (!strncmp(reg_arg, "ST3", 3)) {  
-	  switch (reg_bit) {
-		  case 0:
-              res = "ST3_SST";
-	      break;
-
-            case 1:
-              res = "ST3_SMUL";
-	      break;
-
-            case 2:
-              res = "ST3_CLKOFF";
-	      break;
-
-            case 3:
-              res = "ST3_BPTR";
-	      break;
-
-            case 4:
-              res = "ST3_AVIS";
-	      break;
-
-            case 5:
-              res = "ST3_SATA";
-	      break;
-
-            case 6:
-              res = "ST3_MPNMC";
-	      break;
-
-            case 7:
-              res = "ST3_CBERR";
-	      break;
-
-            case 8:
-              res = "ST3_HOMP";
-	      break;
-
-            case 9:
-              res = "ST3_HOMR";
-	      break;
-
-            case 10:
-              res = "ST3_HOMX";
-	      break;
-
-            case 11:
-              res = "ST3_HOMY";
-	      break;
-
-            case 12:
-              res = "ST3_HINT";
-	      break;
-
-            case 13:
-              res = "ST3_CACLR";
-	      break;
-
-            case 14:
-              res = "ST3_CAEN";
-	      break;
-
-            case 15:
-              res = "ST3_CAFRZ";
-	      break;
-
+  } else if (!strncmp(reg_arg, "ST3", 3)) {
+		switch (reg_bit) {
+		case 0:
+			res = "ST3_SST";
+			break;
+		case 1:
+			res = "ST3_SMUL";
+			break;
+		case 2:
+			res = "ST3_CLKOFF";
+			break;
+		case 3:
+			res = "ST3_BPTR";
+			break;
+		case 4:
+			res = "ST3_AVIS";
+			break;
+		case 5:
+			res = "ST3_SATA";
+			break;
+		case 6:
+			res = "ST3_MPNMC";
+			break;
+		case 7:
+			res = "ST3_CBERR";
+			break;
+		case 8:
+			res = "ST3_HOMP";
+			break;
+		case 9:
+			res = "ST3_HOMR";
+			break;
+		case 10:
+			res = "ST3_HOMX";
+			break;
+		case 11:
+			res = "ST3_HOMY";
+			break;
+		case 12:
+			res = "ST3_HINT";
+			break;
+		case 13:
+			res = "ST3_CACLR";
+			break;
+		case 14:
+			res = "ST3_CAEN";
+			break;
+		case 15:
+			res = "ST3_CAFRZ";
+			break;
         }
   }
 
@@ -1026,7 +950,7 @@ st8 *get_opers(ut8 oper_byte)
   st8 *res;
   ut8 oper_type;
   st8 *reg_name;
-  
+
   res = NULL;
   switch (oper_byte) {
     case 0xE0u:
@@ -1152,32 +1076,27 @@ st8 *get_opers(ut8 oper_byte)
     default:
       oper_type = oper_byte >> 5;
       if (oper_type != 6 ) {
-      
+
         reg_name = get_reg_name_4(oper_byte & 0x1F);
         switch (oper_type)
         {
-          case 1u:
-            res = strcat_dup(reg_name, " != #0", 1);
-	    break;
-
-          case 0u:
-            res = strcat_dup(reg_name, " == #0", 1);
-	    break;
-
-          case 2u:
-            res =  strcat_dup(reg_name, " < #0", 1);
-	    break;
-
-          case 3u:
-            res =  strcat_dup(reg_name, " >= #0", 1);
-	    break;
-
-          case 4u:
-            res =  strcat_dup(reg_name, " > #0", 1);
-	    break;
-
-          case 5u:
-            res =  strcat_dup(reg_name, " <= #0", 1);
+		case 1u:
+			res = strcat_dup(reg_name, " != #0", 1);
+			break;
+		case 0u:
+			res = strcat_dup(reg_name, " == #0", 1);
+			break;
+		case 2u:
+			res =  strcat_dup(reg_name, " < #0", 1);
+			break;
+		case 3u:
+			res =  strcat_dup(reg_name, " >= #0", 1);
+			break;
+		case 4u:
+			res =  strcat_dup(reg_name, " > #0", 1);
+			break;
+		case 5u:
+			res =  strcat_dup(reg_name, " <= #0", 1);
         }
 
         return res;
@@ -1191,10 +1110,9 @@ st8 *get_opers(ut8 oper_byte)
 
         res = strcat_dup(reg_name, " != #0", 1);
 
-      } else {
-        res = strcat_dup(reg_name, " == #0", 1);
-
-      }
+		} else {
+			res = strcat_dup(reg_name, " == #0", 1);
+		}
     }
 
     return res;
