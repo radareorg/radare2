@@ -26,7 +26,7 @@ static int c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	op->ptr = op->val = -1;
         op->size = ins_len;
 
-	if (ins_len >= 1) {
+	if (ins_len = 1) {
 		if (*ins == 0x20) {
 			op->type = R_ANAL_OP_TYPE_NOP;
 		} else if (*ins == 0x21) {
