@@ -601,7 +601,10 @@ toro:
 		if (!lastfail)
 			r_anal_op (core->anal, &analop, at, buf+idx, (int)(len-idx));
 		if (ret<1) {
-			*analop.esil = 0;
+			if (analop.esil != NULL)
+				r_strbuf_free (analop.esil);
+			if ((analop.esil = r_strbuf_new ()) != NULL)
+				r_strbuf_init (analop.esil);
 			analop.type = R_ANAL_OP_TYPE_ILL;
 		}
 		if (hint) {
@@ -1036,11 +1039,11 @@ toro:
 			}
 		}
 		if (use_esil) {
-			if (*analop.esil) {
+			if (*R_STRBUF_SAFEGET (analop.esil)) {
 				free (opstr);
-				opstr = strdup (analop.esil);
+				opstr = strdup (R_STRBUF_SAFEGET (analop.esil));
 			} else {
-				char *p = malloc (strlen (opstr)+2);
+				char *p = malloc (strlen (opstr)+3); /* What's up '\0' ? */
 				strcpy (p, ": ");
 				strcpy (p+2, opstr);
 				free (opstr);
@@ -1418,8 +1421,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		} else {
 			if (esil) {
 				r_anal_op (core->anal, &analop, at, buf+i, core->blocksize-i);
-				if (*analop.esil)
-					opstr = strdup (analop.esil);
+				if (*R_STRBUF_SAFEGET (analop.esil))
+					opstr = strdup (R_STRBUF_SAFEGET (analop.esil));
 			} else
 			if (decode) {
 				r_anal_op (core->anal, &analop, at, buf+i, core->blocksize-i);
