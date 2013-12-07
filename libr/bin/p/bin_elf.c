@@ -110,8 +110,6 @@ static RList* sections(RBinArch *arch) {
 				ut64 align = phdr[i].p_align;
 				if (!align) align = 0x1000;
 				memsz = (int)(size_t)R_PTR_ALIGN_NEXT ((size_t)memsz, align);
-				/*paddr = (ut64)R_PTR_ALIGN ((ut64)paddr, align);
-				vaddr = (ut64)R_PTR_ALIGN ((ut64)vaddr, align);*/
 				vaddr -= obj->baddr; // yeah
 				if (!(ptr = R_NEW0 (RBinSection)))
 					return ret;
@@ -560,7 +558,6 @@ static int size(RBinArch *arch) {
 }
 
 static ut64 get_elf_vaddr (ut64 baddr, ut64 paddr, ut64 vaddr) {
-	ut32 delta;
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
 	return baddr + vaddr;
 
