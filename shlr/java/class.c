@@ -17,7 +17,8 @@
 #undef IFDBG
 #endif
 
-#define IFDBG  if(1)
+#define IFDBG  if(0)
+#define IFINT  if(0)
 
 // taken from LLVM Code Byte Swap
 // TODO: move into r_util
@@ -3256,8 +3257,10 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 		//copy_type_info_to_stack_frame_list_up_to_idx (p_frame->local_items, stack_frame->local_items, idx);
 		if (p_frame)
 			stack_frame->number_of_locals = p_frame->number_of_locals;
-		else
-			eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		else {
+			IFINT eprintf ("><?><\n");
+			IFDBG eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		}
 		IFDBG eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals Condition is untested, so there may be issues.\n");
 
 	}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1) {
@@ -3280,10 +3283,11 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 		//copy_type_info_to_stack_frame_list_up_to_idx (p_frame->local_items, stack_frame->local_items, idx);
 		if (p_frame)
 			stack_frame->number_of_locals = p_frame->number_of_locals;
-		else
-			eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		else {
+			IFDBG eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		}
 
-		eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals 1 Stack Element Condition is untested, so there may be issues.\n");
+		IFDBG eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals 1 Stack Element Condition is untested, so there may be issues.\n");
 
 	}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_CHOP) {
 		// 1. Calculate the max index we want to copy from the list of the 
@@ -3302,10 +3306,12 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 		//copy_type_info_to_stack_frame_list_up_to_idx (p_frame->local_items, stack_frame->local_items, idx);
 		if (p_frame)	
 			stack_frame->number_of_locals = p_frame->number_of_locals;
-		else
-			eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		else {
+			IFINT eprintf ("><?><\n");
+			IFDBG eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		}
 
-		eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Chop Condition is untested, so there may be issues.\n");
+		IFDBG eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Chop Condition is untested, so there may be issues.\n");
 
 	}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_SAME_FRAME_EXTENDED) {
 
@@ -3331,10 +3337,12 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 		//copy_type_info_to_stack_frame_list_up_to_idx (p_frame->local_items, stack_frame->local_items, idx);
 		if (p_frame)
 			stack_frame->number_of_locals = p_frame->number_of_locals;
-		else
-			eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		else {
+			IFINT eprintf ("><?><\n");
+			IFDBG eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		}
 
-		eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals Frame Stack 1 Extended Condition is untested, so there may be issues.\n");
+		IFDBG eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals Frame Stack 1 Extended Condition is untested, so there may be issues.\n");
 
 	}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_APPEND) {
 		IFDBG eprintf ("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_APPEND.\n");
@@ -3365,12 +3373,14 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 			r_list_append (stack_frame->local_items, (void *) stack_element);
 		}
 		IFDBG eprintf ("r_bin_java_stack_map_frame_new: Breaking out of loop");
-		eprintf("p_frame: 0x%08"PFMT64x"\n", p_frame);
+		IFDBG eprintf("p_frame: 0x%08"PFMT64x"\n", p_frame);
 		if (p_frame)
 			stack_frame->number_of_locals = p_frame->number_of_locals + k;
-		else
-			eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
-		eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals Frame Stack 1 Extended Condition is untested, so there may be issues.\n");
+		else {
+			IFINT eprintf ("><?><\n");
+			IFDBG eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
+		}
+		IFDBG eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals Frame Stack 1 Extended Condition is untested, so there may be issues.\n");
 	}else if(stack_frame->type == R_BIN_JAVA_STACK_FRAME_FULL_FRAME) {		
 		IFDBG eprintf ("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_FULL_FRAME.\n");
 
@@ -3578,9 +3588,6 @@ R_API RBinJavaAttrInfo* r_bin_java_stack_map_table_attr_new (ut8* buffer, ut64 s
 		if (stack_frame == NULL && R_BIN_JAVA_GLOBAL_BIN && R_BIN_JAVA_GLOBAL_BIN->current_code_attr){
 			IFDBG printf ("Setting an implicit frame at #%d @ 0x%08"PFMT64x"\n", i, buf_offset+offset);
 			stack_frame = R_BIN_JAVA_GLOBAL_BIN->current_code_attr->info.code_attr.implicit_frame;
-			if (!stack_frame) {
-				eprintf ("current_code_attr->info.code_attr.implicit_frame == NULL <?>");
-			}
 		}
 		
 
