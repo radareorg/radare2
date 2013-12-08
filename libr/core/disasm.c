@@ -1429,13 +1429,14 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 		}
 		if (ret<1) {
 			ret = err = 1;
+ret = analop.size;
 			r_cons_printf ("???\n");
 		} else {
 			r_cons_printf ("%s\n", opstr);
 			free (opstr);
 		}
 	}
-	if(oldbits) {
+	if (oldbits) {
 		r_config_set_i (core->config, "asm.bits", oldbits);
 		oldbits = 0;
 	}

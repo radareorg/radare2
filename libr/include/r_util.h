@@ -615,9 +615,9 @@ typedef struct {
 } RStrBuf;
 
 R_API RStrBuf *r_strbuf_new();
-R_API void r_strbuf_set(RStrBuf *sb, const char *s);
-R_API void r_strbuf_setf(RStrBuf *sb, const char *fmt, ...);
-R_API void r_strbuf_append(RStrBuf *sb, const char *s);
+R_API int r_strbuf_set(RStrBuf *sb, const char *s);
+R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...);
+R_API int r_strbuf_append(RStrBuf *sb, const char *s);
 R_API char *r_strbuf_get(RStrBuf *sb);
 R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
