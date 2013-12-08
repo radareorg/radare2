@@ -1057,15 +1057,23 @@ static int cmd_print(void *data, const char *input) {
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr-l, block, R_MIN (l, core->blocksize), l, 0, 1);
 					} else {
-						hits = r_core_asm_back_disassemble_instr (core,
-							addr, core->blocksize, use_blocksize, 5);
-						if (hits) {
+						ut32 len = core->blocksize; 
+						hits = r_core_asm_bwdisassemble(core, addr, l, core->blocksize);
+							//r_core_asm_back_disassemble_instr (core,
+							//addr, core->blocksize, use_blocksize, 5);
+						if (hits && r_list_length(hits) > 0) {
+							ut32 instr_run = 0;
+							ut64 start_addr = 0;
+
+							hit = r_list_get_n(hits, 0);
+							start_addr = hit->addr;
+
 							r_list_foreach (hits, iter, hit) {
-								r_core_read_at (core, hit->addr,
-									block, core->blocksize);
-								core->num->value = r_core_print_disasm (core->print,
-									core, hit->addr, block, hit->len, l, 0, 1);
+								instr_run +=  hit->len;
 							}
+							r_core_read_at (core, start_addr, block, instr_run);
+							core->num->value = r_core_print_disasm (core->print,
+									core, start_addr, block, instr_run, l, 0, 1);
 						}
 						r_list_free (hits);
 					}
@@ -1084,10 +1092,9 @@ static int cmd_print(void *data, const char *input) {
 						core, addr, block, l*10, l, 0, 0);
 				}
 			}
-			core->offset = current_offset;
 			free (block);
 		}
-
+		core->offset = current_offset;
 		// change back asm setting is they were changed
 		if (settings_changed)
 			set_asm_configs (core, old_arch, old_bits, segoff);

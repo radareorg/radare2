@@ -10,7 +10,7 @@ static RCoreAsmHit * find_addr(RList *hits, ut64 addr);
 static int prune_hits_in_hit_range(RList *hits, RCoreAsmHit *hit);
 static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range);
 static int is_addr_in_range(ut64 start, ut64 end, ut64 start_range, ut64 end_range);
-static void add_hit_to_hits(RList* hits, ut64 addr, ut64 len, ut8 is_valid);
+static void add_hit_to_sorted_hits(RList* hits, ut64 addr, ut64 len, ut8 is_valid);
 static int prune_hits_in_addr_range(RList *hits, ut64 addr, ut64 len, ut8 is_valid);
 
 static int rcoreasm_address_comparator(RCoreAsmHit *a, RCoreAsmHit *b){
@@ -156,7 +156,7 @@ beach:
 }
 
 
-static void add_hit_to_hits(RList* hits, ut64 addr, ut64 len, ut8 is_valid) {
+static void add_hit_to_sorted_hits(RList* hits, ut64 addr, ut64 len, ut8 is_valid) {
 	RCoreAsmHit *hit = r_core_asm_hit_new();
 	if (hit) {
 		IFDBG eprintf("*** Inserting instruction (valid?: %d): instr_addr: 0x%"PFMT64x" instr_len: %d\n", is_valid, addr, len );
@@ -165,6 +165,18 @@ static void add_hit_to_hits(RList* hits, ut64 addr, ut64 len, ut8 is_valid) {
 		hit->valid = is_valid;
 		hit->code = NULL;
 		r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
+	}
+}
+
+static void add_hit_to_hits(RList* hits, ut64 addr, ut64 len, ut8 is_valid) {
+	RCoreAsmHit *hit = r_core_asm_hit_new();
+	if (hit) {
+		IFDBG eprintf("*** Inserting instruction (valid?: %d): instr_addr: 0x%"PFMT64x" instr_len: %d\n", is_valid, addr, len );
+		hit->addr = addr;
+		hit->len = len;
+		hit->valid = is_valid;
+		hit->code = NULL;
+		r_list_append (hits, hit);
 	}
 }
 
@@ -247,11 +259,11 @@ static int handle_forward_disassemble(RCore* core, RList *hits, ut8* buf, ut64 l
 		end = temp_instr_addr + temp_instr_len;
 
 		if (!found_addr) {
-			add_hit_to_hits(hits, temp_instr_addr, temp_instr_len, is_valid);
+			add_hit_to_sorted_hits(hits, temp_instr_addr, temp_instr_len, is_valid);
 		} else if (is_valid && !found_addr->valid && is_addr_in_range(start, end, start_range, end_range )) {
 			ut32 prune_results = 0;
 			prune_results = prune_hits_in_addr_range(hits, temp_instr_addr, temp_instr_len, is_valid);
-			add_hit_to_hits(hit, temp_instr_addr, temp_instr_len, is_valid);
+			add_hit_to_sorted_hits(hit, temp_instr_addr, temp_instr_len, is_valid);
 
 			if (prune_results ) {
 				r_list_add_sorted (hits, hit, ((RListComparator)rcoreasm_address_comparator));
@@ -342,50 +354,61 @@ static int is_hit_inrange(RCoreAsmHit *hit, ut64 start_range, ut64 end_range){
 }
 
 R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len) {
-	RCoreAsmHit *hit;
+	RList *hits = r_core_asm_hit_list_new();
+	RCoreAsmHit dummy_value;
+	RCoreAsmHit *hit = NULL;
 	RAsmOp op;
-	RList *hits = NULL;
-	ut8 *buf;
-	ut64 at;
-	int instrlen, ni, idx;
+	ut8 *buf = (ut8 *)malloc (len);
+	ut64 instrlen = 0, 
+		 at = 0;
 
-	if (!(hits = r_core_asm_hit_list_new ())) return NULL;
-	buf = (ut8 *)malloc (len);
-	if (!buf) {
-		r_list_destroy (hits);
+	ut32 ni = 0,
+	 	 idx = 0,
+	 	 hit_count = 0;
+
+	memset (&dummy_value, 0, sizeof (RCoreAsmHit));
+
+	if (hits == NULL || buf == NULL ){
+		if (hits) r_list_destroy (hits);
+		if (buf) free (buf); 
 		return NULL;
 	}
+
 	if (r_io_read_at (core->io, addr-len, buf, len) != len) {
-		r_list_destroy (hits);
-		free (buf);
+		if (hits) r_list_destroy (hits);
+		if (buf) free (buf); 
 		return NULL;
 	}
+
 	for (idx = 1; idx < len; idx++) {
+		ut32 current_buf_pos;
 		if (r_cons_singleton ()->breaked) break;
-		at = addr - idx; ni = 1;
-		while (at < addr) {
+		at = addr - idx; hit_count = 0;
+		// XXX - buf here. at may be greater than addr if near boundary.
+
+		for (current_buf_pos = len - idx, hit_count = 0; 
+			current_buf_pos < len && hit_count <= n; 
+			current_buf_pos += instrlen, at += instrlen, hit_count++) {
 			r_asm_set_pc (core->assembler, at);
 			//XXX HACK We need another way to detect invalid disasm!!
 			if (!(instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at)) || strstr (op.buf_asm, "invalid")) {
 				break;
-			} else {
-				at += instrlen;
-				if (at == addr) {
-					if (ni == n) {
-						if (!(hit = r_core_asm_hit_new ())) {
-							r_list_destroy (hits);
-							free (buf);
-							return NULL;
-						}
-						hit->addr = addr-idx;
-						hit->len = idx;
-						hit->code = NULL;
-						r_list_append (hits, hit);
-					}
-				} else ni++;
-			}
+			} 
+		}
+		if (hit_count >= n) break;
+	}
+
+	if (hit_count == n) {
+		at = addr - idx;
+		hit_count = 0;
+		r_asm_set_pc (core->assembler, at);
+		for ( hit_count = 0; hit_count < n; hit_count++) {
+			instrlen = r_asm_disassemble (core->assembler, &op, buf+(len-(addr-at)), addr-at);
+			add_hit_to_hits(hits, at, instrlen, R_TRUE);
+			at += instrlen;
 		}
 	}
+
 	r_asm_set_pc (core->assembler, addr);
 	free (buf);
 	return hits;
@@ -529,7 +552,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 		// disassembly invalid
 		if (current_instr_len == 0 || strstr (op.buf_asm, "invalid")) {
 			if (current_instr_len == 0) current_instr_len = 1;
-			add_hit_to_hits(hits, current_instr_addr, current_instr_len, /* is_valid */ R_FALSE);
+			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, /* is_valid */ R_FALSE);
 			hit_count ++;
 			last_num_invalid ++;
 		// disassembly perfect
@@ -546,7 +569,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 				handle_forward_disassemble(core, hits, buf, len, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr);
 				hit_count = r_list_length(hits);
 			}
-			add_hit_to_hits(hits, current_instr_addr, current_instr_len, is_valid);
+			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
 			//handle_forward_disassemble(core, hits, buf, len, current_buf_pos+current_instr_len, current_instr_addr+current_instr_len, addr/*end_addr*/);
 			hit_count ++;	
 			next_buf_pos = current_buf_pos;  
@@ -556,7 +579,7 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			ut32 purge_results = 0;
 			ut8 is_valid = R_TRUE;
 			purge_results =  prune_hits_in_addr_range(hits, current_instr_addr, current_instr_len, /* is_valid */ R_TRUE);
-			add_hit_to_hits(hits, current_instr_addr, current_instr_len, is_valid);
+			add_hit_to_sorted_hits(hits, current_instr_addr, current_instr_len, is_valid);
 
 			if (hit_count < purge_results ) hit_count = 0; // WTF??
 			else hit_count -= purge_results;
