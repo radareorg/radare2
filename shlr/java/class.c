@@ -390,7 +390,7 @@ double rbin_java_raw_to_double(ut8* raw, ut64 offset) {
 
 R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) {
 	RBinJavaField *method;
-	RBinJavaAttrInfo* attr;
+	RBinJavaAttrInfo* attr = NULL;
 	ut32 i, idx;
 	ut8 buf[8];
 	RBinJavaCPTypeObj *item = NULL;
@@ -399,11 +399,15 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 		offset = bin->b->cur;
 
 	method = (RBinJavaField *) R_NEW0(RBinJavaField);
+	method->metas = (RBinJavaMetaInfo *) R_NEW0(RBinJavaMetaInfo);
 
-	method->metas = (RBinJavaMetaInfo *) malloc (sizeof (RBinJavaMetaInfo));
-	if(method->metas)
-		memset (method->metas, 0, sizeof (RBinJavaMetaInfo));
-
+	if (bin == NULL || method == NULL || method->metas == NULL) {
+		eprintf ("Unable to allocate memory for method or meta information\n");
+		if (method) free(method->metas);
+		free(method);
+		return NULL; 
+	}
+	
 	r_buf_read_at (bin->b, offset, (ut8*)buf, 8);
 	method->file_offset = offset;
 	method->flags = R_BIN_JAVA_USHORT (buf, 0);
@@ -413,7 +417,7 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 	method->attr_count = R_BIN_JAVA_USHORT (buf, 6);
 	method->attributes = r_list_new ();
 	method->type = R_BIN_JAVA_FIELD_TYPE_METHOD;
-	method->metas->ord = bin->method_idx;
+		method->metas->ord = bin->method_idx;
 
 	idx = method->name_idx;
 	item = r_bin_java_get_item_from_bin_cp_list (bin, idx);
@@ -480,11 +484,16 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, ut64 offset) {
 
 	if (offset == R_BUF_CUR )
 		offset = bin->b->cur;
+	
 	field = (RBinJavaField *) R_NEW0(RBinJavaField);
 
-	field->metas = (RBinJavaMetaInfo *) malloc (sizeof (RBinJavaMetaInfo));
-	if(field->metas)
-		memset (field->metas, 0, sizeof (RBinJavaMetaInfo));
+	field->metas = (RBinJavaMetaInfo *) R_NEW0(RBinJavaMetaInfo);
+	if (bin == NULL || field == NULL || field->metas == NULL) {
+		eprintf ("Unable to allocate memory for field or meta information\n");
+		if (field) free(field->metas);
+		free(field);
+		return NULL;
+	}
 
 	r_buf_read_at (bin->b, offset, (ut8*)buf, 8);
 	field->file_offset = offset;
@@ -918,9 +927,9 @@ R_API RBinJavaAttrInfo* r_bin_java_get_attr_from_field(RBinJavaField *field, R_B
 		Search through the Attribute list for the given type starting at position pos.
 		rvalue: NULL or the first occurrence of attr_type after pos
 	*/
-	RBinJavaAttrInfo *attr, *item;
+	RBinJavaAttrInfo *attr = NULL, *item;
 	RListIter *iter; 
-	ut32 i;
+	ut32 i = 0;
 
 	if (field) {
 		r_list_foreach (field->attributes, iter, item) {
