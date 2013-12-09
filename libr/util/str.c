@@ -384,19 +384,25 @@ R_API const char *r_str_chop_ro(const char *str) {
 }
 
 R_API char *r_str_new(char *str) {
+	if (!str) return NULL;
 	return strdup (str);
 }
 
 R_API char *r_str_newf(const char *fmt, ...) {
-	int ret;
-	char string[1024];
-	va_list ap;
+	int ret, ret2;
+	char *p, string[1024];
+	va_list ap, ap2;
 	va_start (ap, fmt);
-	ret = vsnprintf (string, sizeof (string), fmt, ap);
-	if (ret>=sizeof(string)) {
-		char *p = malloc (ret+2);
+	va_start (ap2, fmt);
+	ret = vsnprintf (string, sizeof (string)-1, fmt, ap);
+	if (ret<1 || ret>=sizeof (string)) {
+		p = malloc (ret+2);
 		if (!p) return NULL;
-		vsnprintf (p, ret+1, fmt, ap);
+		ret2 = vsnprintf (p, ret+1, fmt, ap2);
+		if (ret2<1 || ret2>ret+1) {
+			free (p);
+			return NULL;
+		}
 		fmt = r_str_new (p);
 		free (p);
 	} else fmt = r_str_new (string);
