@@ -68,6 +68,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 
 R_API int r_anal_reflines_middle(RAnal *a, RAnalRefline *list, ut64 addr, int len) {
 	struct list_head *pos;
+	if (list)
 	for (pos = (&(list->list))->next; pos != (&(list->list)); pos = pos->next) {
 		RAnalRefline *ref = list_entry (pos, RAnalRefline, list);
 		if ((ref->to> addr) && (ref->to < addr+len))
