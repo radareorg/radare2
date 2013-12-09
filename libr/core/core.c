@@ -607,6 +607,10 @@ R_API RCore *r_core_fini(RCore *c) {
 	//r_lang_free (c->lang); // XXX segfaults
 	r_debug_free (c->dbg);
 	r_config_free (c->config);
+	/* after r_config_free, the value of I.teefile is trashed */
+	/* rconfig doesnt knows how to deinitialize vars, so we
+	should probably need to add a r_config_free_payload callback */
+	r_cons_singleton()->teefile = NULL; // HACK
 	r_search_free (c->search);
 	r_sign_free (c->sign);
 	r_flag_free (c->flags);

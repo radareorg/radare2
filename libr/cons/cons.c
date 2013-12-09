@@ -141,6 +141,7 @@ R_API RCons *r_cons_new () {
 	I.line = r_line_new ();
 	I.event_interrupt = NULL;
 	I.blankline = R_TRUE;
+	I.teefile = NULL;
 	I.heightfix = 0;
 	I.widthfix = 0;
 	I.event_resize = NULL;

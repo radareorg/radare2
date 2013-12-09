@@ -3,6 +3,7 @@
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
 
