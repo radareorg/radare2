@@ -21,14 +21,10 @@ R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
 
 R_API void r_config_node_free (void *n) {
 	RConfigNode *node = (RConfigNode*)n;
-	if (!node)
-		return;
-	if (node->name)
-		free (node->name);
-	if (node->desc)
-		free (node->desc);
-	if (node->value)
-		free (node->value);
+	if (!node) return;
+	free (node->name);
+	free (node->desc);
+	free (node->value);
 	free (node);
 }
 
@@ -331,6 +327,7 @@ R_API RConfig *r_config_new(void *user) {
 
 R_API int r_config_free(RConfig *cfg) {
 	if (!cfg) return 0;
+	cfg->nodes->free = r_config_node_free; // damn
 	r_list_free (cfg->nodes);
 	r_hashtable_free (cfg->ht);
 	free (cfg);

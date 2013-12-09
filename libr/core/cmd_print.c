@@ -1057,10 +1057,7 @@ static int cmd_print(void *data, const char *input) {
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr-l, block, R_MIN (l, core->blocksize), l, 0, 1);
 					} else {
-						ut32 len = core->blocksize; 
-						hits = r_core_asm_bwdisassemble(core, addr, l, core->blocksize);
-							//r_core_asm_back_disassemble_instr (core,
-							//addr, core->blocksize, use_blocksize, 5);
+						hits = r_core_asm_bwdisassemble (core, addr, l, core->blocksize);
 						if (hits && r_list_length(hits) > 0) {
 							ut32 instr_run = 0;
 							ut64 start_addr = 0;

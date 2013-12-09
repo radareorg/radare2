@@ -241,11 +241,10 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 
 	{
 
-		int i, minlen = bin->minstrlen;
+		int minlen = bin->minstrlen;
 		RListIter *it;
 		RBinPlugin *any, *plugin;
 		RBinArch *a = &bin->cur;
-		RBinObject *o = a->o;
 		a->curplugin = NULL;
 
 		r_list_foreach (bin->plugins, it, plugin) {
@@ -275,7 +274,7 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 }
 
 R_API int r_bin_init_items(RBin *bin, int dummy) {
-	int i, minlen = bin->minstrlen;
+	int minlen = bin->minstrlen;
 	RListIter *it;
 	RBinPlugin *plugin, *cp;
 	RBinArch *a = &bin->cur;

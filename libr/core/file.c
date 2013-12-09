@@ -140,7 +140,6 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	int i, va = r->io->va || r->io->debug;
 	RListIter *iter;
-	const char *p;
 	ut64 offset;
 	RIOMap *im;
 	int is_io_load = r && r->file && r->file->fd && r->file->fd->plugin;
@@ -162,11 +161,11 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 
 	/* TODO: fat bins are loaded multiple times, this is a problem that must be fixed . see '-->' marks. */
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
-    r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
-    r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+	r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
+	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	if( is_io_load ) {
 		// XXX - May need to handle additional extraction here as well 		
-		r_bin_io_load(r->bin, r->io, r->file->fd, R_FALSE); 
+		r_bin_io_load (r->bin, r->io, r->file->fd, R_FALSE); 
 		if ( r->bin->cur.curplugin && 
 			strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
 			// set use of raw strings
@@ -185,7 +184,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 
 			r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 		}
-	} else if(r_bin_load (r->bin, file, R_FALSE)) { // --->
+	} else if (r_bin_load (r->bin, file, R_FALSE)) { // --->
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
 			RBinObject *o = r->bin->cur.o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
@@ -239,7 +238,6 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	const char *cp;
 	RCoreFile *fh;
 	RIODesc *fd;
-	char *p;
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
 		mode = 4|2;
@@ -265,7 +263,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh->uri = strdup(file);
 	
 	fh->fd = fd;
-	fh->size = r_io_desc_size(r->io, fh);
+	fh->size = r_io_desc_size (r->io, fd);
 	fh->filename = strdup (fd->name);
 	fh->rwx = mode;
 	r->file = fh;

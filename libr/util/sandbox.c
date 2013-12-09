@@ -54,6 +54,8 @@ R_API int r_sandbox_creat (const char *path, int mode) {
 }
 
 R_API int r_sandbox_open (const char *path, int mode, int perm) {
+	if (!path)
+		return -1;
 #if __WINDOWS__
 	mode |= O_BINARY;
 #endif
