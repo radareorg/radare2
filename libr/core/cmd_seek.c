@@ -193,9 +193,9 @@ static int cmd_seek(void *data, const char *input) {
 			{
 			RAnalOp op;
 			int val=0, ret, i, n = r_num_math (core->num, input+1);
+			if (n==0) n = 1;
 			if (n<0) {
 				int ret = prevopsz (core, n);
-				eprintf ("Neagg %d\n", ret);
 				ret = r_anal_op (core->anal, &op,
 						core->offset, core->block, core->blocksize);
 				val += ret;
@@ -211,6 +211,25 @@ static int cmd_seek(void *data, const char *input) {
 			core->num->value = val;
 			}
 			break;
+		case 'g':
+			{
+			RIOSection *s = r_io_section_get (core->io, 
+				r_io_section_vaddr_to_offset (core->io,
+				core->offset));
+			if (s) r_core_seek (core, s->vaddr, 1);
+			else r_core_seek (core, 0, 1);
+			}
+			break;
+		case 'G':
+			{
+			RIOSection *s = r_io_section_get (core->io, 
+				r_io_section_vaddr_to_offset (core->io,
+				core->offset));
+			// XXX: this +2 is a hack. must fix gap between sections
+			if (s) r_core_seek (core, s->vaddr+s->size+2, 1);
+			else r_core_seek (core, core->file->size, 1);
+			}
+			break;
 		case '?':
 			r_cons_printf (
 			"Usage: s[+-] [addr]\n"
@@ -222,6 +241,7 @@ static int cmd_seek(void *data, const char *input) {
 			" s--        ; seek blocksize bytes backward\n"
 			" s+ 512     ; seek 512 bytes forward\n"
 			" s- 512     ; seek 512 bytes backward\n"
+			" sg/sG      ; seek begin (sg) or end (sG) of section or file\n"
 			" s.hexoff   ; Seek honoring a base from core->offset\n"
 			" sa [[+-]a] [asz] ; seek asz (or bsize) aligned to addr\n"
 			" sn/sp      ; seek next/prev scr.nkey\n"

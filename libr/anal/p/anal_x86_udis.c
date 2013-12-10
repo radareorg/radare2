@@ -66,6 +66,8 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx) {
 	ud_operand_t *op = &u->operand[idx];
 	st64 n;
 	src[0] = 0;
+	if (!mask) mask = UT64_MAX;
+
 	switch (op->type) {
 	case UD_OP_PTR:
 	case UD_OP_CONST:
@@ -74,7 +76,6 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx) {
 		n = getval (op);
 		if (op->type == UD_OP_JIMM)
 			n += u->pc;
-		if (!mask) mask = UT64_MAX;
 		if (n>=0 && n<256)
 			sprintf (src, "%"PFMT64d, n & mask);
 		else sprintf (src, "0x%"PFMT64x, n & mask);
@@ -102,9 +103,10 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx) {
 
                                         src += strlen (src);
                                 }
-                                if (u->mnemonic == UD_Ilea)
-					sprintf (src, "%+d", 0);
-				else if (n >= -256 && n < 256)
+                                if (u->mnemonic == UD_Ilea) {
+					if (n>0) sprintf (src, "+%"PFMT64d, n);
+					else if (n<0) sprintf (src, "%"PFMT64d, n);
+				} else if (n >= -256 && n < 256)
 					sprintf (src, "%+d]", (int) n);
 				else
 					sprintf (src, "+0x%"PFMT64x"]", mask & n);
@@ -123,9 +125,10 @@ static st64 getval(ud_operand_t *op) {
 	switch (op->type) {
 	case UD_OP_PTR:
 		return (op->lval.ptr.seg<<4) | (op->lval.ptr.off & 0xFFFF);
-default:
-	break;
+	default:
+		break;
 	}
+	if (!bits) bits = 32;
 	switch (bits) {
 	case 8: return (char)op->lval.sbyte;
 	case 16: return (short) op->lval.uword;
