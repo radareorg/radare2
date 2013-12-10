@@ -365,16 +365,18 @@ static int r_bin_extract(RBin *bin, int idx) {
 	return R_TRUE;
 }
 
+#define R_NEW_COPY(x,y,z) x=malloc(sizeof(y));memcpy (x,z,sizeof(y))
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
 	RBinPlugin *plugin;
 	if (foo->init)
 		foo->init (bin->user);
-	r_list_foreach(bin->plugins, it, plugin) {
+	r_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp (plugin->name, foo->name))
 			return R_FALSE;
 	}
-	r_list_append(bin->plugins, foo);
+	R_NEW_COPY (plugin, RBinPlugin, foo);
+	r_list_append (bin->plugins, plugin);
 	return R_TRUE;
 }
 
@@ -556,10 +558,7 @@ R_API RBin* r_bin_new() {
 	bin->minstrlen = -2;
 	bin->cur.o = R_NEW0 (RBinObject);
 	for (i=0; bin_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RBinPlugin);
-		memcpy (static_plugin, bin_static_plugins[i],
-			sizeof (RBinPlugin));
-		r_bin_add (bin, static_plugin);
+		r_bin_add (bin, bin_static_plugins[i]); //static_plugin);
 	}
 	bin->binxtrs = r_list_new ();
 	bin->binxtrs->free = free;
