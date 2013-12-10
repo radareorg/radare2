@@ -34,10 +34,7 @@ static int gbDisass(RAsmOp *op, const ut8 *buf, ut64 len){
 			sprintf(op->buf_asm,"%s",gb_op[buf[0]].name);
 			break;
 		case GB_16BIT:
-			{
-				gb_opcode *cb=(gb_opcode *)gb_op[buf[0]].op16;
-				sprintf(op->buf_asm,"%s",cb[buf[1]].name);
-			}
+			sprintf(op->buf_asm,"%s %s",cb_ops[buf[1]/8],cb_regs[buf[1]%8]);
 			break;
 		case GB_8BIT+ARG_8:
 			sprintf(op->buf_asm,gb_op[buf[0]].name,buf[1]);
