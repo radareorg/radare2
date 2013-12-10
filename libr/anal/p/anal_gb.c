@@ -5,11 +5,10 @@
 /*
 	this file was based on anal_i8080.c
 
-	Todo(for Condret):	1. MOAR Meta-comments on Hardware-Access
-				2. Implement all MBC's and detect Bankswitches
-				3. Trace all Data copied to OAM and VRAM (and add a command for converting the OAM/VRAM to a pngfile,
+	Todo(for Condret):	1. Implement all MBC's and detect Bankswitches
+				2. Trace all Data copied to OAM and VRAM (and add a command for converting the OAM/VRAM to a pngfile,
 					so that we can produce snapshots of the gb-screen for tracing sprites)
-				4. Payloads for gameboy
+				3. Payloads for gameboy
 */
 
 
@@ -75,7 +74,26 @@ void meta_gb_hardware_cmt(RMeta *m, const ut8 hw, ut64 addr) {
 			break;
 		case 0x40:
 			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC");
-			break;			//TODO: MOAR
+			break;
+		case 0x41:
+			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - STAT");
+			break;
+		case 0x42:
+			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - Scroll y");
+			break;
+		case 0x43:
+			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - Scroll x");
+			break;
+		case 0x44:
+			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - y cord");
+			break;
+		case 0x45:
+			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - y cord cmp");
+			break;
+		case 0x46:
+			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "DMA");
+			break;
+
 	}
 }
 
@@ -433,6 +451,36 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 				case 7:
 					op->type = R_ANAL_OP_TYPE_ROR;
 					break;
+				case 8:
+				case 9:
+				case 10:
+				case 11:
+				case 12:
+				case 13:
+				case 14:
+				case 15:
+					op->type = R_ANAL_OP_TYPE_AND;
+					break;			//bit
+				case 16:
+				case 17:
+				case 18:
+				case 19:
+				case 20:
+				case 21:
+				case 22:
+				case 23:
+					op->type = R_ANAL_OP_TYPE_XOR;
+					break;			//set
+				case 24:
+				case 25:
+				case 26:
+				case 27:
+				case 28:
+				case 29:
+				case 30:
+				case 31:
+					op->type = R_ANAL_OP_TYPE_MOV;
+					break;			//res
 			}
 			break;
 	}
