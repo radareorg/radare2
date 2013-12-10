@@ -119,7 +119,7 @@ RIOPlugin r_io_plugin_gdb = {
         //void *plugin;
 	.name = "gdb",
         .desc = "Attach to gdbserver, 'qemu -s', gdb://localhost:1234", 
-	.license = "LGPL3",
+	.license = "GPL2",
         .open = __open,
         .close = __close,
 	.read = __read,
