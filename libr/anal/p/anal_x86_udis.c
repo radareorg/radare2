@@ -72,9 +72,9 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx) {
 	case UD_OP_JIMM:
 	case UD_OP_IMM:
 		n = getval (op);
-		if (op->type == UD_OP_JIMM) {
+		if (op->type == UD_OP_JIMM)
 			n += u->pc;
-		}
+		if (!mask) mask = UT64_MAX;
 		if (n>=0 && n<256)
 			sprintf (src, "%"PFMT64d, n & mask);
 		else sprintf (src, "0x%"PFMT64x, n & mask);
@@ -168,24 +168,19 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 
 	oplen = op->size = ud_insn_len (&u);
 	
-	if (anal->decode)
-		if ((handler = udis86_esil_get_handler (u.mnemonic)) != NULL)
-		{
-			info.oplen = oplen;
-			if (handler->argc > 0)
-			{
-				info.n = getval (u.operand);
-				getarg (dst, &u, info.bitmask, 0);
-				if (handler->argc > 1)
-				{
-					getarg (src, &u, info.bitmask, 1);
-					if (handler->argc > 2)
-						getarg (str, &u, info.bitmask, 2);
-				}
+	if (anal->decode && (handler = udis86_esil_get_handler (u.mnemonic))) {
+		info.oplen = oplen;
+		if (handler->argc > 0) {
+			info.n = getval (u.operand);
+			getarg (dst, &u, info.bitmask, 0);
+			if (handler->argc > 1) {
+				getarg (src, &u, info.bitmask, 1);
+				if (handler->argc > 2)
+					getarg (str, &u, info.bitmask, 2);
 			}
-
-			handler->callback (&info, op, dst, src, str);
 		}
+		handler->callback (&info, op, dst, src, str);
+	}
 
 	switch (u.mnemonic) {
 	case UD_Iinvalid:

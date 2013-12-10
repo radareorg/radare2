@@ -45,12 +45,12 @@ UDIS86_ESIL (or,    "%s|=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, i
 UDIS86_ESIL (and,   "%s&=%s,zf=%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, dst, info->bits - 1);
 UDIS86_ESIL (test,  "zf=%s&%s==0,sf=%s>>%d,cf=0,of=0", dst, src, dst, info->bits - 1);
 UDIS86_ESIL (syscall, "$");
-UDIS86_ESIL (int,   "$0x%"PFMT64x",%s+=%d", info->n, info->pc, info->oplen);
-UDIS86_ESIL (lea,   "%s=%s,%s+=%d", dst, src, info->pc, info->oplen);
-UDIS86_ESIL (mov,   "%s=%s,%s+=%d", dst, src, info->pc, info->oplen);
-UDIS86_ESIL (push,  "%s-=%d,%d[%s]=%s,%s+=%d", info->sp, info->regsz, info->regsz, info->sp, dst, info->pc, info->oplen);
-UDIS86_ESIL (pop,   "%s=%d[%s],%s+=%d,%s+=%d", dst, info->regsz, info->sp, info->sp, info->regsz, info->pc, info->oplen);
-UDIS86_ESIL (leave, "%s=%s,%s=%d[%s],%s+=%d,%s+=%d", info->sp, info->bp, src, info->regsz, info->sp, info->sp, info->regsz, info->pc, info->oplen);
+UDIS86_ESIL (int,   "$0x%"PFMT64x, info->n);
+UDIS86_ESIL (lea,   "%s=%s", dst, src);
+UDIS86_ESIL (mov,   "%s=%s", dst, src);
+UDIS86_ESIL (push,  "%s-=%d,%d[%s]=%s", info->sp, info->regsz, info->regsz, info->sp, dst);
+UDIS86_ESIL (pop,   "%s=%d[%s],%s+=%d", dst, info->regsz, info->sp, info->sp, info->regsz);
+UDIS86_ESIL (leave, "%s=%s,%s=%d[%s],%s+=%d", info->sp, info->bp, src, info->regsz, info->sp, info->sp, info->regsz);
 UDIS86_ESIL (ret,   "%s=%d[%s],%s+=%d", info->pc, info->regsz, info->sp, info->sp, info->regsz);
 UDIS86_ESIL (xchg,  "%s^=%s,%s^=%s,%s^=%s", dst, src, src, dst, dst, src);
 UDIS86_ESIL (xadd,  "%s^=%s,%s^=%s,%s^=%s,cf=%s<=-%s&%s!=0,of=!((%s^%s)>>%d)&(((%s+%s)^%s)>>%d),%s+=%s,zf=%s==0,sf=%s>>%d", dst, src, src, dst, dst, src, dst, src, src, dst, src, info->bits - 1, dst, src, src, info->bits - 1, dst, src, dst, dst, info->bits - 1);
