@@ -14,10 +14,7 @@ R_API RAnalOp *r_anal_op_new() {
 		op->fail = -1;
 		op->ptr = -1;
 		op->val = -1;
-		if ((op->esil = r_strbuf_new ()) == NULL) {
-			r_anal_op_free (op);
-			return NULL;
-		}
+		r_strbuf_init (&op->esil);
 		op->next = NULL;
 	}
 	return op;
@@ -34,8 +31,6 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);
 	r_anal_value_free (op->dst);
-	if (op->esil != NULL)
-		r_strbuf_free (op->esil);
 	op->src[0] = NULL;
 	op->src[1] = NULL;
 	op->src[2] = NULL;
@@ -70,11 +65,8 @@ R_API RAnalOp *r_anal_op_copy (RAnalOp *op) {
 	nop->src[1] = r_anal_value_copy (op->src[1]);
 	nop->src[2] = r_anal_value_copy (op->src[2]);
 	nop->dst = r_anal_value_copy (op->dst);
-	if ((nop->esil = r_strbuf_new ()) == NULL) {
-		r_anal_op_free (nop);
-		return NULL;
-	}
-	r_strbuf_set (nop->esil, r_strbuf_get (op->esil));
+	r_strbuf_init (&nop->esil);
+	r_strbuf_set (&nop->esil, r_strbuf_get (&op->esil));
 	return nop;
 }
 
@@ -185,7 +177,7 @@ R_API char *r_anal_optype_to_string(int t) {
 }
 
 R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op) {
-	return op->esil;
+	return r_strbuf_get (&op->esil);
 }
 
 // TODO: use esil here?

@@ -18,9 +18,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
         op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = oplen;
 	op->delay = 4;
-	if ((op->esil = r_strbuf_new ()) == NULL)
-		return oplen;
-	r_strbuf_init (op->esil);
+	r_strbuf_init (&op->esil);
 	//r_mem_copyendian ((ut8*)&opcode, b, 4, !anal->big_endian);
 	memcpy (&opcode, b, 4);
 
@@ -141,13 +139,13 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		case 2: // j
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = address;
-			r_strbuf_setf (op->esil, "pc=0x%08x", address);
+			r_strbuf_setf (&op->esil, "pc=0x%08x", address);
 			break;
 		case 3: // jal
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->jump = address;
 			op->fail = addr+8;
-			r_strbuf_setf (op->esil, "lr=pc+4,pc=0x%08x", address);
+			r_strbuf_setf (&op->esil, "lr=pc+4,pc=0x%08x", address);
 			break;
 		}
 		family = 'J';

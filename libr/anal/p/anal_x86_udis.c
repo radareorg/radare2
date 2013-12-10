@@ -155,9 +155,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	UDis86Esil *handler;
 	UDis86OPInfo info = {0, anal->bits, (1LL << anal->bits) - 1, regsz, 0, pc, sp, bp};
 	memset (op, '\0', sizeof (RAnalOp));
-	if ((op->esil = r_strbuf_new ()) == NULL)
-		return -1;
-	r_strbuf_init (op->esil);
+	r_strbuf_init (&op->esil);
 	op->addr = addr;
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;

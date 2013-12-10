@@ -179,22 +179,20 @@ static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 
 R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 	int rawstr = 0;
+	ut8* buf_bytes;
 	RBuffer *bin_buf = NULL;
 	ut64 start, end, 
 		 sz = -1, 
 		 offset = 0;
-	
-	ut8* buf_bytes;
 
-	if (!io || !io->plugin || !io->plugin->read || !io->plugin->lseek) {
+	if (!io || !io->plugin || !io->plugin->read || !io->plugin->lseek)
 		return R_FALSE;
-	} else if (!desc || !desc->fd) {
+	if (!desc || !desc->fd)
 		return R_FALSE;
-	}
 
 	buf_bytes = NULL;
-	end = io->plugin->lseek(io, desc, 0, SEEK_END);
-	start = io->plugin->lseek(io, desc, 0, SEEK_SET);
+	end = io->plugin->lseek (io, desc, 0, SEEK_END);
+	start = io->plugin->lseek (io, desc, 0, SEEK_SET);
 	sz = -1;
 	offset = 0;
 	
@@ -203,22 +201,19 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 	sz = end - start;
 	buf_bytes = malloc(sz);
 	
-	if (!buf_bytes || !io->plugin->read(io, desc, buf_bytes, sz)) {
-		free(buf_bytes);
+	if (!buf_bytes || !io->plugin->read (io, desc, buf_bytes, sz)) {
+		free (buf_bytes);
 		return R_FALSE;
 	}
 
-	memcpy(&rawstr, buf_bytes, 4);
+	memcpy (&rawstr, buf_bytes, 4);
 	bin->cur.file = strdup (desc->name);
-	bin->cur.buf = r_buf_new();			
+	bin->cur.buf = r_buf_new ();			
 	bin->cur.rawstr = rawstr;
 		
-	
-	if (bin->cur.buf) {	
-		r_buf_set_bytes(bin->cur.buf, buf_bytes, sz);
-	}
-
-	if (buf_bytes)	free(buf_bytes);
+	if (bin->cur.buf)
+		r_buf_set_bytes (bin->cur.buf, buf_bytes, sz);
+	free (buf_bytes);
 
 	// Here is the pertinent code from r_bin_init
 	// we can't call r_bin_init, because it will
@@ -262,11 +257,10 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 		if (a->curplugin && a->curplugin->minstrlen)
 			bin->minstrlen = a->curplugin->minstrlen;
 
-		if (a->curplugin && a->curplugin->load ) {
-			if ( a->curplugin->load(a) )
-				set_bin_items(bin, a->curplugin);
-			else 
+		if (a->curplugin && a->curplugin->load) {
+			if (! a->curplugin->load (a) )
 				return R_FALSE;
+			set_bin_items (bin, a->curplugin);
 		}
 	}
 
@@ -365,7 +359,6 @@ static int r_bin_extract(RBin *bin, int idx) {
 	return R_TRUE;
 }
 
-#define R_NEW_COPY(x,y,z) x=malloc(sizeof(y));memcpy (x,z,sizeof(y))
 R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 	RListIter *it;
 	RBinPlugin *plugin;
@@ -375,7 +368,8 @@ R_API int r_bin_add(RBin *bin, RBinPlugin *foo) {
 		if (!strcmp (plugin->name, foo->name))
 			return R_FALSE;
 	}
-	R_NEW_COPY (plugin, RBinPlugin, foo);
+	plugin = R_NEW0 (RBinPlugin);
+	memcpy (plugin, foo, sizeof (RBinPlugin));
 	r_list_append (bin->plugins, plugin);
 	return R_TRUE;
 }

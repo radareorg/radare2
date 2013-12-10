@@ -571,10 +571,10 @@ value->val
 	ut64 val;     /* reference to value */ /* XXX signed? */
 	st64 stackptr;  /* stack pointer */
 	int refptr;
-	RStrBuf *esil;
 	RAnalValue *src[3];
 	RAnalValue *dst;
 	struct r_anal_op_t *next; // XXX deprecate
+	RStrBuf esil;
 } RAnalOp;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
