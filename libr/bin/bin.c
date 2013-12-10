@@ -405,13 +405,15 @@ R_API void* r_bin_free(RBin *bin) {
 
 R_API int r_bin_list(RBin *bin) {
 	RListIter *it;
-	RBinXtrPlugin *plugin;
-	RBinXtrPlugin *xtr;
-	r_list_foreach (bin->plugins, it, plugin) {
-		printf ("bin  %-11s %s\n", plugin->name, plugin->desc);
+	RBinXtrPlugin *bp;
+	RBinXtrPlugin *bx;
+	r_list_foreach (bin->plugins, it, bp) {
+		printf ("bin  %-11s %s (%s)\n",
+			bp->name, bp->desc, bp->license);
 	}
-	r_list_foreach (bin->binxtrs, it, xtr) {
-		printf ("xtr  %-11s %s\n", xtr->name, xtr->desc);
+	r_list_foreach (bin->binxtrs, it, bx) {
+		printf ("xtr  %-11s %s (%s)\n", bx->name,
+			bx->desc, bx->license);
 	}
 	return R_FALSE;
 }

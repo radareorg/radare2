@@ -228,8 +228,9 @@ static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int 
 	return R_FALSE;
 }
 
-struct r_debug_plugin_t r_debug_plugin_gdb = {
+RDebugPlugin r_debug_plugin_gdb = {
 	.name = "gdb",
+	.license = "GPL2",
 	/* TODO: Add support for more architectures here */
 	.arch = R_SYS_ARCH_X86 | R_SYS_ARCH_ARM | R_SYS_ARCH_SH,
 	.bits = R_SYS_BITS_32,

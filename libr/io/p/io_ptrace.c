@@ -209,10 +209,10 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 }
 
 // TODO: rename ptrace to io_ptrace .. err io.ptrace ??
-struct r_io_plugin_t r_io_plugin_ptrace = {
-        //void *plugin;
+RIOPlugin r_io_plugin_ptrace = {
 	.name = "ptrace",
 	.desc = "ptrace and /proc/pid/mem (if available) io",
+	.license = "LGPL3",
 	.open = __open,
 	.close = __close,
 	.read = __read,

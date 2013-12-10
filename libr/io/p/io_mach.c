@@ -255,6 +255,7 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 struct r_io_plugin_t r_io_plugin_mach = {
 	.name = "mach",
         .desc = "mach debugger io plugin (mach://pid)",
+	.license = "LGPL3",
         .open = __open,
         .close = __close,
 	.read = __read,

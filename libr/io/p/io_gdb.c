@@ -115,10 +115,11 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	return -1;
 }
 
-struct r_io_plugin_t r_io_plugin_gdb = {
+RIOPlugin r_io_plugin_gdb = {
         //void *plugin;
 	.name = "gdb",
         .desc = "Attach to gdbserver, 'qemu -s', gdb://localhost:1234", 
+	.license = "LGPL3",
         .open = __open,
         .close = __close,
 	.read = __read,

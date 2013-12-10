@@ -331,6 +331,7 @@ static ut64 get_vaddr (ut64 baddr, ut64 paddr, ut64 vaddr) {
 struct r_bin_plugin_t r_bin_plugin_pe = {
 	.name = "pe",
 	.desc = "PE bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

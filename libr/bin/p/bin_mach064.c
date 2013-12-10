@@ -178,6 +178,7 @@ static RBinAddr* binsym(RBinArch *arch, int sym) {
 RBinPlugin r_bin_plugin_mach064 = {
 	.name = "mach064",
 	.desc = "mach064 bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

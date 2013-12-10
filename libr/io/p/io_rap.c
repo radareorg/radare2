@@ -288,9 +288,10 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	return i-j;
 }
 
-struct r_io_plugin_t r_io_plugin_rap = {
+RIOPlugin r_io_plugin_rap = {
 	.name = "rap",
 	.desc = "radare network protocol (rap://:port rap://host:port/file)",
+	.license = "LGPL3",
 	.listener = rap__listener,
 	.open = rap__open,
 	.close = rap__close,

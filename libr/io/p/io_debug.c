@@ -293,10 +293,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return NULL;
 }
 
-struct r_io_plugin_t r_io_plugin_debug = {
+RIOPlugin r_io_plugin_debug = {
         //void *plugin;
 	.name = "debug",
         .desc = "Debug a program or pid. dbg:///bin/ls, dbg://1388",
+	.license = "LGPL3",
         .open = __open,
         .plugin_open = __plugin_open,
 	.lseek = NULL,

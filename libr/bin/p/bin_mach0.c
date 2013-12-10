@@ -440,9 +440,10 @@ static int size(RBinArch *arch) {
 	return off+len;
 }
 
-struct r_bin_plugin_t r_bin_plugin_mach0 = {
+RBinPlugin r_bin_plugin_mach0 = {
 	.name = "mach0",
 	.desc = "mach0 bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

@@ -108,10 +108,10 @@ static int shm__init(RIO *io) {
 	return R_TRUE;
 }
 
-struct r_io_plugin_t r_io_plugin_shm = {
-        //void *plugin;
+RIOPlugin r_io_plugin_shm = {
 	.name = "shm",
         .desc = "shared memory resources (shm://key)",
+	.license = "LGPL3",
         .open = shm__open,
         .close = shm__close,
 	.read = shm__read,

@@ -121,13 +121,14 @@ static int haret__system(RIO *io, RIODesc *fd, const char *command) {
 	return 0;
 }
 
-static ut64 haret__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
-	return offset;
+static ut64 haret__lseek(RIO *io, RIODesc *fd, ut64 off, int whence) {
+	return off;
 }
 
-struct r_io_plugin_t r_io_plugin_haret = {
+RIOPlugin r_io_plugin_haret = {
 	.name = "haret",
 	.desc = "Attach to Haret WCE application (haret://host:port)",
+	.license = "LGPL3",
 	.system = haret__system,
 	.open = haret__open,
 	.read = haret__read,

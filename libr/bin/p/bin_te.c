@@ -131,9 +131,10 @@ static int check(RBinArch *arch) {
 	return R_FALSE;
 }
 
-struct r_bin_plugin_t r_bin_plugin_te = {
+RBinPlugin r_bin_plugin_te = {
 	.name = "te",
 	.desc = "TE bin plugin", // Terse Executable format
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

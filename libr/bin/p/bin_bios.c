@@ -96,6 +96,7 @@ static RList* entries(RBinArch *arch) {
 struct r_bin_plugin_t r_bin_plugin_bios = {
 	.name = "bios",
 	.desc = "filesystem bin plugin",
+	.license = "LGPL",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

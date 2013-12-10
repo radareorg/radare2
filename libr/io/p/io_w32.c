@@ -63,10 +63,10 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-struct r_io_plugin_t r_io_plugin_w32 = {
-        //void *plugin;
+RIOPlugin r_io_plugin_w32 = {
 	.name = "w32",
         .desc = "w32 API io",
+	.license = "LGPL3",
         .open = w32__open,
         .close = w32__close,
 	.read = w32__read,

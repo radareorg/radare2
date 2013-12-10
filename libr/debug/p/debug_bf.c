@@ -183,8 +183,9 @@ static int r_debug_bf_stop(RDebug *dbg) {
 	return R_TRUE;
 }
 
-struct r_debug_plugin_t r_debug_plugin_bf = {
+RDebugPlugin r_debug_plugin_bf = {
 	.name = "bf",
+	.license = "LGPL3",
 	/* TODO: Add support for more architectures here */
 	.arch = R_ASM_ARCH_BF,
 	.bits = R_SYS_BITS_32,

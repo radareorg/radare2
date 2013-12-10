@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare2 - LGPL - Copyright 2009-2013 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -200,6 +200,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 struct r_bin_plugin_t r_bin_plugin_p9 = {
 	.name = "p9",
 	.desc = "Plan9 bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

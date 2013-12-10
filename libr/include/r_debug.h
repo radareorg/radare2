@@ -174,6 +174,7 @@ typedef struct r_debug_desc_plugin_t {
 /* TODO: pass dbg and user data pointer everywhere */
 typedef struct r_debug_plugin_t {
 	const char *name;
+	const char *license;
 	//const char **archs; // MUST BE DEPREACTED!!!!
 	ut32 bits;
 	ut64 arch;

@@ -125,7 +125,8 @@ static void list_io_plugins(RIO *io) {
 		str[1] = il->plugin->write? 'w': '_';
 		str[2] = il->plugin->debug? 'd': '_';
 		str[3] = 0;
-		printf ("%s  %-11s %s\n", str, il->plugin->name, il->plugin->desc);
+		printf ("%s  %-11s %s (%s)\n", str, il->plugin->name,
+			il->plugin->desc, il->plugin->license);
 	}
 }
 

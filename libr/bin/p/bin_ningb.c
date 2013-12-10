@@ -1,6 +1,5 @@
 /* radare - GPL - 2013 - condret@runas-racer.com */
 
-
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -175,6 +174,7 @@ static RBinInfo* info(RBinArch *arch) {
 struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.name = "ningb",
 	.desc = "Gameboy format r_bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

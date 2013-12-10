@@ -156,10 +156,11 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 	return r_io_desc_new (&r_io_plugin_shm, rewf->fd, pathname, rw, mode, rewf);
 }
 
-struct r_io_plugin_t r_io_plugin_ewf = {
+RIOPlugin r_io_plugin_ewf = {
         //void *plugin;
 	.name = "ewf",
         .desc = "Forensic file formats (Encase, ..) (ewf://file, els://file)",
+	.license = "LGPL3",
         .open = ewf__open,
         .close = ewf__close,
 	.read = ewf__read,

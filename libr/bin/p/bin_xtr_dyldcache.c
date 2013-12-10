@@ -44,6 +44,7 @@ static int extract(RBin *bin, int idx) {
 struct r_bin_xtr_plugin_t r_bin_xtr_plugin_dyldcache = {
 	.name = "dyldcache",
 	.desc = "dyld cache bin extractor plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.check = &check,

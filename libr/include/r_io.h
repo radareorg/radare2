@@ -141,6 +141,7 @@ typedef struct r_io_plugin_t {
         void *plugin;
         char *name;
         char *desc;
+	char *license;
         void *widget;
 	int (*listener)(RIODesc *io);
         int (*init)();

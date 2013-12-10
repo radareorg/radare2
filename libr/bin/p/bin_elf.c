@@ -563,9 +563,10 @@ static ut64 get_elf_vaddr (ut64 baddr, ut64 paddr, ut64 vaddr) {
 
 }
 
-struct r_bin_plugin_t r_bin_plugin_elf = {
+RBinPlugin r_bin_plugin_elf = {
 	.name = "elf",
 	.desc = "ELF format r_bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 - nibble */
+/* radare - LGPL - Copyright 2009-2013 - nibble */
 
 #define R_BIN_ELF64 1
 #include "bin_elf.c"
@@ -94,9 +94,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-struct r_bin_plugin_t r_bin_plugin_elf64 = {
+RBinPlugin r_bin_plugin_elf64 = {
 	.name = "elf64",
 	.desc = "elf64 bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

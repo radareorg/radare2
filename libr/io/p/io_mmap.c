@@ -41,6 +41,7 @@ static int __close(RIODesc *fd) {
 struct r_io_plugin_t r_io_plugin_mmap = {
 	.name = "mmap",
         .desc = "open file using mmap://",
+	.license = "LGPL3",
         .open = __open,
         .close = __close,
 	.read = __read,

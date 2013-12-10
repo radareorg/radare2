@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2013 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -129,9 +129,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-struct r_bin_plugin_t r_bin_plugin_rar = {
+RBinPlugin r_bin_plugin_rar = {
 	.name = "rar",
 	.desc = "rarvm bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

@@ -91,9 +91,10 @@ static int check(RBinArch *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_fs = {
+RBinPlugin r_bin_plugin_fs = {
 	.name = "fs",
 	.desc = "filesystem bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

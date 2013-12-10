@@ -470,9 +470,10 @@ static int r_io_zip_plugin_open(RIO *io, const char *file) {
 	return (io && file) && (r_io_zip_check_uri(file));
 }
 
-struct r_io_plugin_t r_io_plugin_zip = {
+RIOPlugin r_io_plugin_zip = {
 	.name = "zip",
 	.desc = "Open zip files apk://foo.apk//MANIFEST or zip://foo.apk//theclass/fun.class, and show files with: zip://foo.apk/",
+	.license = "BSD",
 	.open = r_io_zip_open,
 	.write = r_io_zip_write,
 	.read = r_io_zip_read,

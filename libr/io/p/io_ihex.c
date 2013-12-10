@@ -109,7 +109,7 @@ static int __plugin_open(RIO *io, const char *pathname) {
   1 Byte count
   2 byte Address
   1 byte Record type (00 data 01 eof)
-  N byets Data
+  N bytes Data
   1 byte Checksum (sum 00)
 #endif
 
@@ -195,6 +195,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 RIOPlugin r_io_plugin_ihex = {
 	.name = "ihex",
         .desc = "Intel HEX file (ihex://eeproms.hex)",
+	.license = "LGPL",
         .open = __open,
         .close = __close,
 	.read = __read,

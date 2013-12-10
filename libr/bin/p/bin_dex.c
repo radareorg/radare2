@@ -587,6 +587,7 @@ static RList* sections(RBinArch *arch) {
 struct r_bin_plugin_t r_bin_plugin_dex = {
 	.name = "dex",
 	.desc = "dex format bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

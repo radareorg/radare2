@@ -90,9 +90,10 @@ static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode
 	return NULL;
 }
 
-struct r_io_plugin_t r_io_plugin_http = {
+RIOPlugin r_io_plugin_http = {
 	.name = "http",
         .desc = "http get (http://radare.org/)",
+	.license = "LGPL3",
         .open = __open,
         .close = __close,
 	.read = __read,

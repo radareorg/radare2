@@ -113,9 +113,10 @@ static RList* libs(RBinArch *arch) {
 	return r_bin_java_get_lib_names (arch->bin_obj);
 }
 
-struct r_bin_plugin_t r_bin_plugin_java = {
+RBinPlugin r_bin_plugin_java = {
 	.name = "java",
 	.desc = "java bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

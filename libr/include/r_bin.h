@@ -141,6 +141,7 @@ typedef struct r_bin_t {
 typedef struct r_bin_xtr_plugin_t {
 	char *name;
 	char *desc;
+	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*check)(RBin *bin);
@@ -153,6 +154,7 @@ typedef struct r_bin_xtr_plugin_t {
 typedef struct r_bin_plugin_t {
 	char *name;
 	char *desc;
+	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
 	int (*load)(RBinArch *arch);

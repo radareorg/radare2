@@ -63,6 +63,7 @@ static int extract(RBin *bin, int idx) {
 struct r_bin_xtr_plugin_t r_bin_xtr_plugin_fatmach0 = {
 	.name = "fatmach0",
 	.desc = "fat mach0 bin extractor plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.check = &check,

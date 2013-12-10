@@ -115,8 +115,9 @@ static int r_debug_esil_stop(RDebug *dbg) {
 	return R_TRUE;
 }
 
-struct r_debug_plugin_t r_debug_plugin_esil = {
+RDebugPlugin r_debug_plugin_esil = {
 	.name = "esil",
+	.license = "LGPL3",
 	/* TODO: Add support for more architectures here */
 	.arch = R_ASM_ARCH_BF,
 	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,

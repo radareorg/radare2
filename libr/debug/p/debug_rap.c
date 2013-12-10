@@ -64,8 +64,9 @@ static int r_debug_rap_breakpoint (void *user, int type, ut64 addr, int hw, int 
 	return R_FALSE;
 }
 
-struct r_debug_plugin_t r_debug_plugin_rap = {
+RDebugPlugin r_debug_plugin_rap = {
 	.name = "rap",
+	.license = "LGPL3",
 	/* TODO: Add support for more architectures here */
 	.arch = 0xff,
 	.bits = R_SYS_BITS_32,

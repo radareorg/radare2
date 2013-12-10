@@ -22,6 +22,7 @@ static ut64 baddr(RBinArch *arch) {
 struct r_bin_plugin_t r_bin_plugin_any = {
 	.name = "any",
 	.desc = "Dummy format r_bin plugin",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,

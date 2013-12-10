@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2013 - pancake */
 
 #include "r_io.h"
 #include "r_lib.h"
@@ -172,9 +172,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	return NULL;
 }
 
-struct r_io_plugin_t r_io_plugin_bfdbg = {
+RIOPlugin r_io_plugin_bfdbg = {
 	.name = "bfdbg",
         .desc = "BrainFuck Debugger (bfdbg://path/to/file)",
+	.license = "LGPL3",
         .open = __open,
         .close = __close,
 	.read = __read,

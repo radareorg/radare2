@@ -2518,6 +2518,7 @@ struct r_debug_desc_plugin_t r_debug_desc_plugin_native = {
 
 struct r_debug_plugin_t r_debug_plugin_native = {
 	.name = "native",
+	.license = "LGPL3",
 #if __i386__
 	.bits = R_SYS_BITS_32,
 	.arch = R_ASM_ARCH_X86,

@@ -51,7 +51,7 @@ static int check(RBinArch *arch) {
 	int i, is_bf = 0;
 	if (arch->buf) {
 		int max = R_MIN (16, arch->buf->length);
-		char *p = arch->buf->buf;
+		const char *p = (const char *)arch->buf->buf;
 		is_bf = 1;
 		for (i=0; i<max; i++) {
 			switch (p[i]) {
@@ -93,6 +93,7 @@ static RList* entries(RBinArch *arch) {
 struct r_bin_plugin_t r_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
+	.license = "LGPL3",
 	.init = NULL,
 	.fini = NULL,
 	.load = &load,
