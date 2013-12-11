@@ -25,6 +25,7 @@
 #include "r_bin.h"
 #include "r_hash.h"
 #include "r_socket.h"
+#include "r_util.h"
 #include "r_crypto.h"
 
 #ifdef __cplusplus

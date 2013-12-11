@@ -12,6 +12,9 @@
 #include <r_th.h>
 #include <dirent.h>
 #include <sys/time.h>
+#if __UNIX__
+#include <signal.h>
+#endif
 #ifdef HAVE_LIB_GMP
 #include <gmp.h>
 #endif
