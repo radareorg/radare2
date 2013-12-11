@@ -531,8 +531,9 @@ toro:
 		}
 		// TODO : line analysis must respect data types! shouldnt be interpreted as code
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+idx, len-idx);
+		oplen = asmop.size;
+		if (oplen<1) oplen = 1;
 		if (ret<1) { // XXX: move to r_asm_disassemble ()
-			oplen = 1;
 			ret = -1;
 			//eprintf ("** invalid opcode at 0x%08"PFMT64x" %d %d**\n",
 			//	core->assembler->pc + ret, l, len);
@@ -550,7 +551,7 @@ toro:
 #endif
 			lastfail = 1;
 			strcpy (asmop.buf_asm, "invalid");
-			sprintf (asmop.buf_hex, "%02x", buf[idx]);
+		//	sprintf (asmop.buf_hex, "%02x", buf[idx]);
 		} else {
 			lastfail = 0;
 			oplen = (hint && hint->size)?
@@ -1428,8 +1429,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 			} else opstr = strdup (asmop.buf_asm);
 		}
 		if (ret<1) {
-			ret = err = 1;
-ret = analop.size;
+			err = 1;
+			ret = asmop.size;
 			r_cons_printf ("???\n");
 		} else {
 			r_cons_printf ("%s\n", opstr);

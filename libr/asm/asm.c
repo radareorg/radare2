@@ -302,17 +302,20 @@ R_API int r_asm_set_pc(RAsm *a, ut64 pc) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int ret = op->payload = 0;
+	int oplen, ret = op->payload = 0;
+	op->size = 1;
 	if (a->cur && a->cur->disassemble)
 		ret = a->cur->disassemble (a, op, buf, len);
+	oplen = r_asm_op_get_size (op);
+	if (oplen>len) oplen = len;
+	if (oplen<1) oplen = 1;
 	if (ret > 0) {
-		int oplen = r_asm_op_get_size (op);
-		if (oplen>len) oplen = len;
 		if (a->ofilter)
 			r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
-		r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
-		r_hex_bin2str (buf, oplen, op->buf_hex);
+	//	r_hex_bin2str (buf, oplen, op->buf_hex);
 	} else ret = 0;
+	r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
+	r_hex_bin2str (buf, op->size, op->buf_hex);
 	return ret;
 }
 

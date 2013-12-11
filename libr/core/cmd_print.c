@@ -400,7 +400,9 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 		if (show_offset)
 			r_cons_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ret<1) {
-			ret = err = 1;
+			err = 1;
+			ret = asmop.size;
+			if (ret<1) ret = 1;
 			if (show_bytes)
 				r_cons_printf ("%14s%02x  ", "", buf[i]);
 			r_cons_printf ("%s\n", "???");
