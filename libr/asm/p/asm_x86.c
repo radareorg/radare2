@@ -44,6 +44,7 @@ static int modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	int opsize;
 	static ud_t d;
 	ud_init (&d);
 	ud_set_syntax (&d, (a->syntax==R_ASM_SYNTAX_ATT)?
@@ -53,11 +54,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	ud_set_mode (&d, a->bits);
 	op->size = ud_disassemble (&d);
 	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", ud_insn_asm (&d));
-	if (!op->size || strstr (op->buf_asm, "invalid"))
-		op->size = -1;
-	if (op->size<1)
-		op->size = -1;
-	return op->size;
+	opsize = op->size;
+	if (op->size<1 || strstr (op->buf_asm, "invalid"))
+		opsize = -1;
+	return opsize;
 }
 
 RAsmPlugin r_asm_plugin_x86 = {

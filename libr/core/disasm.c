@@ -1249,8 +1249,19 @@ toro:
 					r_cons_printf (" ; 0x%08"PFMT64x"\n", analop.ptr);
 			}
 		} else {
-			if (analop.ptr != UT64_MAX && analop.ptr)
-				r_cons_printf (" ; 0x%08"PFMT64x" ", analop.ptr);
+			if (analop.ptr != UT64_MAX && analop.ptr) {
+				char msg[32];
+				ut8 *b = buf+idx;
+				int bsz = len-idx;
+				const char *kind = r_anal_data_kind (core->anal, analop.ptr, buf, bsz);
+				if (kind && !strcmp (kind, "text")) {
+					*msg = '"';
+					snprintf (msg+1, sizeof (msg)-2, "%s", buf+idx);
+					strcat (msg, "\"");
+				}
+				// analyze if its string
+				r_cons_printf (" ; %s 0x%08"PFMT64x" ", msg, analop.ptr);
+			}
 		}
 		if (show_comments && show_comment_right && comment) {
 			int c = r_cons_get_column ();
