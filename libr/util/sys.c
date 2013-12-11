@@ -588,7 +588,11 @@ R_API char *r_sys_pid_to_path(int pid) {
 #else
 	int ret;
 	char buf[128], pathbuf[1024];
+#if __FreeBSD__
+	snprintf (buf, sizeof (buf), "/proc/%d/file", pid);
+#else
 	snprintf (buf, sizeof (buf), "/proc/%d/exe", pid);
+#endif
 	ret = readlink (buf, pathbuf, sizeof (pathbuf)-1);
 	if (ret<1)
 		return NULL;

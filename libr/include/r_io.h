@@ -192,7 +192,7 @@ typedef struct r_io_cache_t {
 	RIODesc *desc = R_NEW (RIODesc); \
 	if (desc != NULL) { \
 		desc->state = R_IO_DESC_TYPE_OPENED; \
-		desc->name = strdup (fname); \
+		desc->name = fname? strdup (fname): NULL; \
 		if (desc->name != NULL) { \
 			desc->plugin = fplugin; \
 			desc->flags = fflags; \

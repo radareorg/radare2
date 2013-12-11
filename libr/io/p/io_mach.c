@@ -182,8 +182,8 @@ static int debug_attach(int pid) {
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
+	RIODesc *ret = NULL;
 	RIOMach *riom;
-	RIODesc *ret;
 	char *pidpath;
 	int pid;
 	task_t task;
