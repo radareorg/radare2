@@ -1,4 +1,5 @@
-/* radare - LGPL - Copyright 2012 - pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2012 - pancake<nopcode.org> 
+				2013 - condret		*/
 
 #include <string.h>
 #include <r_types.h>
@@ -60,14 +61,24 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 			break;
 		case 0xc0:
 		case 0xc8:
-		case 0xc9:
 		case 0xd0:
 		case 0xd8:
 		case 0xe0:
 		case 0xe8:
 		case 0xf0:
 		case 0xf8:
+			op->type = R_ANAL_OP_TYPE_CRET;
+			break;
+		case 0xc9:
 			op->type = R_ANAL_OP_TYPE_RET;
+			break;
+		case 0xed:
+			switch(data[1]) {
+				case 0x45:	//retn
+				case 0x4d:	//reti
+					op->type = R_ANAL_OP_TYPE_RET;
+					break;
+			}
 			break;
 		case 0x05:
 		case 0x0b:
@@ -124,6 +135,47 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		case 0xfa:
 			op->type = R_ANAL_OP_TYPE_JMP; // jmpz
 			break;
+			
+		case 0xc7:				//rst 0
+			op->jump = 0x00;
+			op->fail = addr + ilen;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case 0xcf:				//rst 8
+			op->jump = 0x08;
+			op->fail = addr + ilen;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case 0xd7:				//rst 16
+			op->jump = 0x10;
+			op->fail = addr + ilen;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case 0xdf:				//rst 24
+			op->jump = 0x18;
+			op->fail = addr + ilen;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case 0xe7:				//rst 32
+			op->jump = 0x20;
+			op->fail = addr + ilen;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case 0xef:				//rst 40
+			op->jump = 0x28;
+			op->fail = addr + ilen;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case 0xf7:				//rst 48
+			op->jump = 0x30;
+			op->fail = addr + ilen;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
+		case 0xff:				//rst 56
+			op->jump = 0x38;
+			op->fail = addr + ilen;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;				// condret: i think that foo resets some regs, but i'm not sure
 
 		case 0xc4:
 		case 0xcc:
@@ -139,7 +191,7 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		case 0xfd:
 			op->type = R_ANAL_OP_TYPE_CALL;
 			break;
-		case 0xcb:
+		case 0xcb:			//the same as for gameboy
 			switch(data[1]/8)
 			{
 				case 0:
