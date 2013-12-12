@@ -185,7 +185,6 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		case 0xdd:
 		case 0xe4:
 		case 0xec:
-		case 0xed:
 		case 0xf4:
 		case 0xfc:
 		case 0xfd:
