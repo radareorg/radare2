@@ -374,7 +374,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->eob = 1;
 			break;
 		case 0x18:					// JR
-			op->jump = addr+data[1]-0x80;		//is this wrong?
+			op->jump = addr+(st8)data[1];
 			op->fail = addr+ilen;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
@@ -382,7 +382,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x28:
 		case 0x30:
 		case 0x38:					//JR cond
-			op->jump = addr+data[1]-0x80;		//is this wrong?
+			op->jump = addr+(st8)data[1];
 			op->fail = addr+ilen;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			break;
