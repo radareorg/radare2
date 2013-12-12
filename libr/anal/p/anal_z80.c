@@ -139,6 +139,53 @@ static int z80_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		case 0xfd:
 			op->type = R_ANAL_OP_TYPE_CALL;
 			break;
+		case 0xcb:
+			switch(data[1]/8)
+			{
+				case 0:
+				case 2:
+				case 4:
+				case 6:				//swap
+					op->type = R_ANAL_OP_TYPE_ROL;
+					break;
+				case 1:
+				case 3:
+				case 5:
+				case 7:
+					op->type = R_ANAL_OP_TYPE_ROR;
+					break;
+				case 8:
+				case 9:
+				case 10:
+				case 11:
+				case 12:
+				case 13:
+				case 14:
+				case 15:
+					op->type = R_ANAL_OP_TYPE_AND;
+					break;			//bit
+				case 16:
+				case 17:
+				case 18:
+				case 19:
+				case 20:
+				case 21:
+				case 22:
+				case 23:
+					op->type = R_ANAL_OP_TYPE_XOR;
+					break;			//set
+				case 24:
+				case 25:
+				case 26:
+				case 27:
+				case 28:
+				case 29:
+				case 30:
+				case 31:
+					op->type = R_ANAL_OP_TYPE_MOV;
+					break;			//res
+			}
+			break;
 	}
 	return op->size= ilen;
 }
