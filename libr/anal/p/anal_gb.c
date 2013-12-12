@@ -107,7 +107,9 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	switch (data[0])
 	{
 		case 0x00:
-		case 0x10:
+		case 0x10:				/*Think-about: auto-breakpoints for this
+								`-> the gb-cpu stops operating until an special interrupt(JOYPAD) occurs
+									^<- interrupts must be enabled for this, else it's handled as a nop*/
 			op->type = R_ANAL_OP_TYPE_NOP;
 			break;
 		case 0x01:
@@ -412,17 +414,54 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_CALL;
 			op->eob = 1;
 			break;
-		case 0xc7:
-		case 0xcf:
-		case 0xd7:
-		case 0xdf:
-		case 0xe7:
-		case 0xef:
-		case 0xf7:
-		case 0xff:
-			op->type = R_ANAL_OP_TYPE_TRAP;
-			op->eob = 1;
-			break;					// RST
+                case 0xc7:                                //rst 0
+                        op->jump = 0x00;
+                        op->fail = addr + ilen;
+                        op->eob = 1;
+                        op->type = R_ANAL_OP_TYPE_JMP;
+                        break;
+                case 0xcf:                                //rst 8
+                        op->jump = 0x08;
+                        op->fail = addr + ilen;
+                        op->eob = 1;
+                        op->type = R_ANAL_OP_TYPE_JMP;
+                        break;
+                case 0xd7:                                //rst 16
+                        op->jump = 0x10;
+                        op->fail = addr + ilen;
+                        op->eob = 1;
+                        op->type = R_ANAL_OP_TYPE_JMP;
+                        break;
+                case 0xdf:                                //rst 24
+                        op->jump = 0x18;
+                        op->fail = addr + ilen;
+                        op->eob = 1;
+                        op->type = R_ANAL_OP_TYPE_JMP;
+                        break;
+                case 0xe7:                                //rst 32
+                        op->jump = 0x20;
+                        op->fail = addr + ilen;
+                        op->eob = 1;
+                        op->type = R_ANAL_OP_TYPE_JMP;
+                        break;
+                case 0xef:                                //rst 40
+                        op->jump = 0x28;
+                        op->fail = addr + ilen;
+                        op->eob = 1;
+                        op->type = R_ANAL_OP_TYPE_JMP;
+                        break;
+                case 0xf7:                                //rst 48
+                        op->jump = 0x30;
+                        op->fail = addr + ilen;
+                        op->eob = 1;
+                        op->type = R_ANAL_OP_TYPE_JMP;
+                        break;
+                case 0xff:                                //rst 56
+                        op->jump = 0x38;
+                        op->fail = addr + ilen;
+                        op->eob = 1;
+                        op->type = R_ANAL_OP_TYPE_JMP;
+                        break;                                // condret: i think that foo resets some regs, but i'm not sure
 		case 0xd3:
 		case 0xdb:
 		case 0xdd:
