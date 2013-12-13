@@ -22,7 +22,7 @@ endif
 LANGS=
 # Experimental:
 # LANGS+=gir
-ALANGS=awk gir python ruby perl lua go java guile php5
+ALANGS=awk gir python ruby perl lua go java guile php5 ocaml
 .PHONY: ${ALANGS}
 
 define ADD_lang

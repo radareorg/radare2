@@ -64,14 +64,10 @@ if [ -n "${DISABLE}" ]; then
 fi
 
 mv supported.langs .sl
-cat .sl | sort | uniq > supported.langs
+sort -u .sl > supported.langs
 rm -f .sl
 
 echo "Supported langs:"
 cat supported.langs | sed -e 's,^, - ,'
-
-# check for python
-# check for perl
-:> langs.cfg
 
 exit 0
