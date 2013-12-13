@@ -60,7 +60,7 @@ ifneq ($(SAVED),)
 	mkdir -p .skip
 	cp $(SAVED) .skip
 endif
-	rm -f r_*.${SOEXT}
+	rm -f r_*.${SOEXT} _r_*.$(SOEXT)
 ifneq ($(SAVED),)
 	cd .skip ; cp * ..
 	rm -rf .skip

@@ -15,13 +15,13 @@ static aligned realspace[SPACE / ALIGNMENT];
 #define space ((char *) realspace)
 static unsigned int avail = SPACE; /* multiple of ALIGNMENT; 0<=avail<=SPACE */
 
-char *alloc(unsigned int n) {
+char *cdb_alloc(unsigned int n) {
 	n = ALIGNMENT + n - (n & (ALIGNMENT - 1)); /* XXX: could overflow */
 	if (n <= avail) { avail -= n; return space + avail; }
 	return (char*)malloc (n);
 }
 
-void alloc_free(void *x) {
+void cdb_alloc_free(void *x) {
 	if ((const char *)x >= space)
 		if ((const char*)x < space + SPACE)
 			return; /* XXX: assuming that pointers are flat */
@@ -116,7 +116,7 @@ int cdb_make_finish(struct cdb_make *c) {
 	u /= sizeof (struct cdb_hp);
 	if (memsize > u) return 0;
 
-	c->split = (struct cdb_hp *) alloc (memsize * sizeof (struct cdb_hp));
+	c->split = (struct cdb_hp *) cdb_alloc (memsize * sizeof (struct cdb_hp));
 	if (!c->split) return 0;
 
 	c->hash = c->split + c->numentries;
@@ -167,6 +167,6 @@ int cdb_make_finish(struct cdb_make *c) {
 		free (x);
 		x = n;
 	}
-	alloc_free (c->split);
+	cdb_alloc_free (c->split);
 	return buffer_putflush (&c->b, c->final, sizeof c->final);
 }

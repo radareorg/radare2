@@ -222,7 +222,7 @@ namespace Radare {
 			public int type;
 			public bool stackop;
 			public int cond;
-			public int length;
+			public int size;
 			public int nopcode;
 			public int family;
 			public bool eob;
@@ -234,10 +234,10 @@ namespace Radare {
 			public uint64 val;
 			public int64 stackptr;
 			public bool refptr;
-			public char esil[64];
-			//TODO public uint64 ref;
 			public Value src[3];
 			public Value dst;
+			// SWIG FAIL // public RStrBuf esil;
+			//TODO public uint64 ref;
 		}
 
 		public string op_to_string(Op op);

@@ -32,7 +32,7 @@ namespace Radare {
 		public static bool is_html;
 		public static bool eof();
 
-		public static int pipe_open (string file, bool append);
+		public static int pipe_open (string file, int fdn, bool append);
 		public static void pipe_close (int fd);
 
 		/* size of terminal */

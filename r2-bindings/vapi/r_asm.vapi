@@ -78,7 +78,7 @@ public class RAsm {
 		/**
 		 * The instruction length.
 		 */
-		public int inst_len;
+		public int size;
 		/**
 		 * The instruction payload.
 		 */
@@ -199,10 +199,8 @@ public class RAsm {
 		public string license;
 		/**
 		 * Supported bit sizes.
-		 * Warning, future releases will probably use a bitmask approach instead.
 		 */
-		[CCode (array_length = false)]
-		public int[] bits;
+		public int bits;
 		/**
 		 * The callback to be notified when the code is modified.
 		 */
