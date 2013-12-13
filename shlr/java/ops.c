@@ -54,7 +54,7 @@ struct java_op java_ops[] = {
 	{ "laload"          , 0x2f , 1 },
 	{ "faload"          , 0x30 , 1 },
 	{ "daload"          , 0x31 , 1 },
-	{ "UNDEFINED"          , 0x32 , 1 },
+	{ "aaload"          , 0x32 , 1 },
 	{ "baload"          , 0x33 , 1 },
 	{ "caload"          , 0x34 , 1 },
 	{ "saload"          , 0x35 , 1 },
