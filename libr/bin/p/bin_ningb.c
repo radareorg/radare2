@@ -46,7 +46,7 @@ static RList* entries(RBinArch *arch) {
 			return ret;
 
 		memset (ptr, '\0', sizeof (RBinAddr));
-		if (!init_jmp[1]==0xc3){						/* Function for this? */
+		if (!init_jmp[1]==0xc3) {
 			ptr->offset = ptr->rva = 0x100;
 		} else {
 			ptr->offset = ptr->rva = init_jmp[3]*0x100+init_jmp[2];
@@ -61,7 +61,6 @@ static RList* sections(RBinArch *arch){
 	ut8 bank;
 	int i;
 	RList *ret = r_list_new();
-	RBinSection *ram = NULL, *vram = NULL, *fram = NULL, *oam = NULL;					//Array for this
 
 	r_buf_read_at(arch->buf,0x148,&bank,1);
 	bank=gb_get_rombanks(bank);
@@ -77,65 +76,20 @@ static RList* sections(RBinArch *arch){
 	ret->free = free;
 
 	rombank[0] = R_NEW0 (RBinSection);
-	rombank[1] = R_NEW0 (RBinSection);					//for(i=0;...)
-	ram = R_NEW0 (RBinSection);
-	vram = R_NEW0 (RBinSection);
-	fram = R_NEW0 (RBinSection);
-	oam = R_NEW0 (RBinSection);
 	strncpy (rombank[0]->name, "rombank0", R_BIN_SIZEOF_STRINGS);
-	strncpy (rombank[1]->name, "rombank1", R_BIN_SIZEOF_STRINGS);
-	strncpy (vram->name, "vram", R_BIN_SIZEOF_STRINGS);
-	strncpy (ram->name, "ram", R_BIN_SIZEOF_STRINGS);
-	strncpy (oam->name, "oam", R_BIN_SIZEOF_STRINGS);
-	strncpy (fram->name, "fram", R_BIN_SIZEOF_STRINGS);
-
 	rombank[0]->offset = 0;
 	rombank[0]->size = 0x4000;
 	rombank[0]->vsize = 0x4000;
 	rombank[0]->rva = 0;
 	rombank[0]->srwx = r_str_rwx("rx");
 
-	rombank[1]->offset = 0x4000;
-	rombank[1]->size = 0x4000;
-	rombank[1]->vsize = 0x4000;
-	rombank[1]->rva = 0x4000;
-	rombank[1]->srwx = r_str_rwx("rx");
-
-	vram->offset = 0x8000;
-	vram->size = 0x2000;
-	vram->vsize = 0x2000;
-	vram->rva = 0x8000;
-	vram->srwx = r_str_rwx("rwx");
-
-	ram->offset = 0xc000;
-	ram->size = 0x2000;
-	ram->vsize = 0x2000;
-	ram->rva = 0xc000;
-	ram->srwx = r_str_rwx("rwx");
-
-	oam->offset = 0xFE00;
-	oam->size = 0xA0;
-	oam->vsize = 0xA0;
-	oam->rva = 0xFE00;
-	oam->srwx = r_str_rwx("rwx");
-
-	fram->offset = 0xff80;
-	fram->size = 0x80;
-	fram->vsize = 0x80;
-	fram->rva = 0xff80;
-	fram->srwx = r_str_rwx("rwx");
-
 	r_list_append(ret,rombank[0]);
-	r_list_append(ret,rombank[1]);
-	r_list_append(ret,vram);
-	r_list_append(ret,ram);
-	r_list_append(ret,oam);
-	r_list_append(ret,fram);
 
-	for (i=2;i<bank;i++) {
+	for (i=1;i<bank;i++) {
 		rombank[i] = R_NEW0 (RBinSection);
-		sprintf(rombank[i]->name,"rombank%i",i);
-		rombank[i]->offset = rombank[i]->rva = 0x8000+i*0x4000;
+		sprintf(rombank[i]->name,"rombank%02x",i);
+		rombank[i]->offset = i*0x4000;
+		rombank[i]->rva = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
 		rombank[i]->size = rombank[i]->vsize = 0x4000;
 		rombank[i]->srwx=r_str_rwx("rx");
 		r_list_append(ret,rombank[i]);
