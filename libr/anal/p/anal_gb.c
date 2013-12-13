@@ -9,6 +9,7 @@
 				2. Trace all Data copied to OAM and VRAM (and add a command for converting the OAM/VRAM to a pngfile,
 					so that we can produce snapshots of the gb-screen for tracing sprites)
 				3. Payloads for gameboy
+				4. Cleanup this code
 */
 
 
@@ -23,7 +24,7 @@ void meta_gb_hardware_cmt(RMeta *m, const ut8 hw, ut64 addr) {
 	switch(hw)
 	{
 		case 0:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "JOYPAD");
+			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "JOYPAD");				//Moar context for this (which Key is affected)
 			break;
 		case 1:
 			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "Serial tranfer data");
@@ -104,6 +105,9 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
+	op->size = ilen;
+	if(addr>0xffff && !(0x3fff<(addr%0x10000)<0x8000))	//anything else would cost 1,5 GB RAM, if you want to see a callgraph
+		return op->size;
 	switch (data[0])
 	{
 		case 0x00:
@@ -370,10 +374,17 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_POP;
 			break;
 		case 0xc3:
-			op->jump = (data[2]*0x100)+data[1];
-			op->fail = addr+ilen;
-			op->type = R_ANAL_OP_TYPE_JMP;
-			op->eob = 1;
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			if(((data[2]*0x100)+data[1])<0x8000){
+				if(((data[2]*0x100)+data[1])<0x4000) {
+					op->jump = (data[2]*0x100)+data[1];
+				} else {
+					op->jump = (data[2]*0x100)+data[1]+(addr/0x10000)*0x10000;	//inner-bank jumps
+				}
+				op->fail = addr+ilen;
+				op->type = R_ANAL_OP_TYPE_JMP;
+			}
+			op->eob=1;
 			break;
 		case 0x18:					// JR
 			op->jump = addr+(st8)data[1];
@@ -392,9 +403,16 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xca:
 		case 0xd2:
 		case 0xda:
-			op->jump = (data[2]*0x100)+data[1];
-			op->fail = addr+ilen;
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			if(((data[2]*0x100)+data[1])<0x8000){
+				if(((data[2]*0x100)+data[1])<0x4000) {
+					op->jump = (data[2]*0x100)+data[1];
+				} else {
+					op->jump = (data[2]*0x100)+data[1]+(addr/0x10000)*0x10000;	//inner-bank jumps
+				}
+				op->fail = addr+ilen;
+				op->type = R_ANAL_OP_TYPE_CJMP;
+			}
 			op->eob=1;
 			break;
 		case 0xe9:
@@ -409,10 +427,17 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xcd:
 		case 0xd4:
 		case 0xdc:
-			op->jump = (data[2]*0x100)+data[1];
-			op->fail = addr+3;
-			op->type = R_ANAL_OP_TYPE_CALL;
-			op->eob = 1;
+			op->type = R_ANAL_OP_TYPE_UCALL;
+			if(((data[2]*0x100)+data[1])<0x8000){
+				if(((data[2]*0x100)+data[1])<0x4000) {
+					op->jump = (data[2]*0x100)+data[1];
+				} else {
+					op->jump = (data[2]*0x100)+data[1]+(addr/0x10000)*0x10000;	//inner-bank calls
+				}
+				op->fail = addr+ilen;
+				op->type = R_ANAL_OP_TYPE_CALL;
+			}
+			op->eob=1;
 			break;
                 case 0xc7:                                //rst 0
                         op->jump = 0x00;
@@ -523,7 +548,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			}
 			break;
 	}
-	op->size = ilen;
 	return op->size;
 }
 
