@@ -40,7 +40,7 @@ File Formats:
 Operating Systems:
 
   Android, GNU/Linux, [Net|Free|Open]BSD, iOS,
-  OSX, QNX, w32, w64, Solaris, FirefoxOS
+  OSX, QNX, w32, w64, Solaris, Haiku, FirefoxOS
 
 Bindings:
 
