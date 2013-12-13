@@ -1387,7 +1387,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 			sym->classname = strdup ("NONE");
 		}
 
-		sym->offset = fm_type->file_offset;
+		sym->offset = r_bin_java_get_method_code_offset (fm_type);
 		sym->rva = r_bin_java_get_method_code_offset (fm_type);
 		sym->ordinal = fm_type->metas->ord;
 		sym->size = r_bin_java_get_method_code_size (fm_type);
@@ -2262,8 +2262,7 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 		return attr;
 
 	attr->type = R_BIN_JAVA_ATTR_TYPE_CODE_ATTR;
-	//r_buf_read_at (bin->b, offset, (ut8*)buf, 8);
-
+	
 	attr->info.code_attr.max_stack = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.code_attr.max_locals = R_BIN_JAVA_USHORT (buffer, offset);
@@ -2271,7 +2270,6 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	attr->info.code_attr.code_length = R_BIN_JAVA_UINT (buffer, offset);
 	offset += 4;
 	attr->info.code_attr.code_offset = buf_offset+offset;
-
 	attr->info.code_attr.code = (ut8* ) malloc (attr->info.code_attr.code_length);
 
 	if (attr->info.code_attr.code == NULL) {
@@ -2282,7 +2280,6 @@ R_API RBinJavaAttrInfo* r_bin_java_code_attr_new (ut8 *buffer, ut64 sz, ut64 buf
 	R_BIN_JAVA_GLOBAL_BIN->current_code_attr = attr;
 
 	memset (attr->info.code_attr.code, 0, attr->info.code_attr.code_length);
-	//r_buf_read_at (bin->b, bin->b->cur, attr->info.code_attr.code, attr->info.code_attr.code_length); // READ CODE
 	memcpy (attr->info.code_attr.code, buffer+offset, attr->info.code_attr.code_length);
 	offset += attr->info.code_attr.code_length; 
 
