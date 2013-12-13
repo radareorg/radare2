@@ -159,7 +159,7 @@ static int i8080_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			op->fail = addr + ilen;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
-		case 0xdf				 //rst 24
+		case 0xdf:				 //rst 24
 			op->jump = 0x18;
 			op->fail = addr + ilen;
 			op->type = R_ANAL_OP_TYPE_JMP;
