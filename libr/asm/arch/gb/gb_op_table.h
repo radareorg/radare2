@@ -4,8 +4,7 @@
 #define	GB_16BIT	2
 #define ARG_8		4
 #define	ARG_16		8
-#define GB_IO		16		/*	Most io (Joypad, Sound, Screen ...)
-						TODO: anal_gb.c */
+#define GB_IO		16		//	Most io (Joypad, Sound, Screen ...)
 
 
 typedef struct{
