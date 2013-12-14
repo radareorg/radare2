@@ -127,7 +127,7 @@ static int decode_index64(const uint8_t *data, ebc_index_t *index) {
 static int decode_break(const uint8_t *bytes, ebc_command_t *cmd) {
 	int ret = 2;
 
-	strncpy (cmd->instr, instr_names[EBC_BREAK], sizeof (cmd->instr));
+	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s", instr_names[EBC_BREAK]);
 	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%d", bytes[1]);
 
 	return ret;
@@ -798,6 +798,9 @@ static int decode_movi(const uint8_t *bytes, ebc_command_t *cmd)
 	unsigned long immed;
 
 	switch (bytes[0] >> 6) {
+		case 0:
+			ret = -1;
+			break;
 		case 1:
 			p2 = 'w';
 			break;
@@ -807,6 +810,10 @@ static int decode_movi(const uint8_t *bytes, ebc_command_t *cmd)
 		case 3:
 			p2 = 'q';
 			break;
+	}
+
+	if (ret < 0) {
+		return ret;
 	}
 
 	switch ((bytes[1] >> 4) & 0x3) {
@@ -878,6 +885,9 @@ static int decode_movin(const uint8_t *bytes, ebc_command_t *cmd)
 	ebc_index_t idx;
 
 	switch (bytes[0] >> 6) {
+		case 0:
+			ret = -1;
+			break;
 		case 1:
 			p1 = 'w';
 			break;
@@ -887,6 +897,10 @@ static int decode_movin(const uint8_t *bytes, ebc_command_t *cmd)
 		case 3:
 			p1 = 'q';
 			break;
+	}
+
+	if (ret < 0) {
+		return ret;
 	}
 
 	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%c",
@@ -938,6 +952,9 @@ static int decode_movrel(const uint8_t *bytes, ebc_command_t *cmd)
 	unsigned formathex;
 
 	switch (bytes[0] >> 6) {
+		case 0:
+			ret = -1;
+			break;
 		case 1:
 			p1 = 'w';
 			formathex = 4;
@@ -950,6 +967,10 @@ static int decode_movrel(const uint8_t *bytes, ebc_command_t *cmd)
 			p1 = 'q';
 			formathex = 16;
 			break;
+	}
+
+	if (ret < 0) {
+		return ret;
 	}
 
 	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%c",
