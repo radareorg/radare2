@@ -8,7 +8,7 @@
 
 static int lang_c_file(RLang *lang, const char *file) {
 	void *lib;
-	char *p, name[512], buf[512];
+	char *cc, *p, name[512], buf[512];
 
 	if (!strstr (file, ".c"))
 		sprintf (name, "%s.c", file);
@@ -18,12 +18,13 @@ static int lang_c_file(RLang *lang, const char *file) {
 		return R_FALSE;
 	}
 
-	if (system (buf) != 0)
-		return R_FALSE;
 	p = strstr (name, ".c"); if (p) *p=0;
-	// TODO: use CC environ if possible
-	snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s -o lib%s."R_LIB_EXT
-		" $(pkg-config --cflags --libs r_core)", file, name);
+	cc = r_sys_getenv ("CC");
+	if (!cc || !*cc)
+		cc = strdup ("gcc");
+	snprintf (buf, sizeof (buf), "%s -fPIC -shared %s -o lib%s."R_LIB_EXT
+		" $(pkg-config --cflags --libs r_core)", cc, file, name);
+	free (cc);
 	if (system (buf) != 0)
 		return R_FALSE;
 
@@ -50,7 +51,7 @@ static int lang_c_run(RLang *lang, const char *code, int len) {
 	if (fd) {
 		fputs ("#include <r_core.h>\n\nvoid entry(RCore *core) {\n", fd);
 		fputs (code, fd);
-		fputs (";\n}\n", fd);
+		fputs ("\n}\n", fd);
 		fclose (fd);
 		lang_c_file (lang, ".tmp.c");
 		r_file_rm (".tmp.c");
@@ -59,7 +60,7 @@ static int lang_c_run(RLang *lang, const char *code, int len) {
 }
 
 static struct r_lang_plugin_t r_lang_plugin_c = {
-	.name = "C",
+	.name = "c",
 	.ext = "c",
 	.desc = "C language extension",
 	.help = NULL,
