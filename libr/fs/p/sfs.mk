@@ -1,5 +1,5 @@
 OBJ_SFS=fs_sfs.o
-EXTRA=../p/grub/libgrubfs.a
+EXTRA=$(GRUB)
 CFLAGS+=-Igrub/include
 
 STATIC_OBJ+=${OBJ_SFS}

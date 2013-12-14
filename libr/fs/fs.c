@@ -4,7 +4,7 @@
 #include "../config.h"
 #include "types.h"
 #include <errno.h>
-#include "p/grub/include/grub/msdos_partition.h"
+#include "../../shlr/grub/include/grub/msdos_partition.h"
 
 R_LIB_VERSION(r_fs);
 
@@ -389,7 +389,7 @@ R_API RFSFile *r_fs_slurp(RFS* fs, const char *path) {
 }
 
 // TODO: move into grubfs
-#include "p/grub/include/grubfs.h"
+#include "../../shlr/grub/include/grubfs.h"
 RList *list = NULL;
 static int parhook (struct grub_disk *disk, struct grub_partition *par, void *closure) {
 	RFSPartition *p = r_fs_partition_new (r_list_length (list), par->start*512, 512*par->len);

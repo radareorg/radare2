@@ -1,5 +1,5 @@
 OBJ_UDF=fs_udf.o
-EXTRA=../p/grub/libgrubfs.a
+EXTRA=$(GRUB)
 CFLAGS+=-Igrub/include
 
 STATIC_OBJ+=${OBJ_UDF}

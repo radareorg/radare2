@@ -3,7 +3,8 @@ DEPS=r_lib r_util r_io
 CFLAGS+=-DCORELIB -Iarch/include -Iarch
 
 CFLAGS+=-Ip/grub/include
-LDFLAGS+=p/grub/libgrubfs.a
+SHLR=../../shlr/
+LDFLAGS+=$(SHLR)/grub/libgrubfs.a
 
 include ../config.mk
 
@@ -16,8 +17,8 @@ STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS} fs.o file.o 
 #p/grub/main.o
 
-p/grub/libgrubfs.a:
-	cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
+#p/grub/libgrubfs.a:
+#	cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
 
 pre: 
 	cd d && ${MAKE}
@@ -35,7 +36,7 @@ test:
 	gdb --args r2 -i test.rsc /tmp/test.fs.img
 
 plugins:
-	cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
+	#cd p/grub && ${MAKE} libgrubfs.a CC="${CC}"
 	cd p && ${MAKE} all
 
 include ../rules.mk

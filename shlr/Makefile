@@ -2,7 +2,7 @@ include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
 HOST_CC?=gcc
-MODS=udis86 java tcc zip
+MODS=udis86 java tcc zip grub
 URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk

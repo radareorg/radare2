@@ -1,5 +1,5 @@
 OBJ_NTFS=fs_ntfs.o
-EXTRA=../p/grub/libgrubfs.a
+EXTRA=$(GRUB)
 CFLAGS+=-Igrub/include
 
 STATIC_OBJ+=${OBJ_NTFS}

@@ -1,8 +1,8 @@
-include ../../../config.mk
+#include ../config.mk
 #CC?=gcc
 CC?=gcc
 #OSTYPE=$(shell uname -s)
-include ../../../../config-user.mk
+include ../../config-user.mk
 RANLIB?=ranlib
 ifeq (${OSTYPE},)
 all:
@@ -53,7 +53,7 @@ KERNFILES+=partmap/sunpc.c
 
 KERNOBJS=$(subst .c,.o,${KERNFILES})
 CFLAGS+=-Iinclude -fPIC 
-CFLAGS+=-I../../../include -DGRUB_TARGET_NO_MODULES
+CFLAGS+=-I../../libr/include -DGRUB_TARGET_NO_MODULES
 CFLAGS+=-g
 
 # This fixes a silly GNU gcc build problem in OSX - BLAME! :D
@@ -64,6 +64,7 @@ endif
 BIN=test${EXT_EXE}
 
 all: ${KERNOBJS}
+	${MAKE} libgrubfs.a
 
 ${BIN}: ${KERNOBJS} main.o
 	${CC} -o ${BIN} main.o ${CFLAGS} ${KERNOBJS}
