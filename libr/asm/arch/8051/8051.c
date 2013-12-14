@@ -203,7 +203,13 @@ static char *strdup_filter (const char *str, const ut8 *buf) {
 }
 
 R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
-	char *tmp, *eof, *out = str? str: malloc ((len=32));
+	char *tmp, *tmp2, *eof, *out;
+	if (str && len>10) {
+		out = str;
+	} else {
+		len = 32;
+		out = malloc (len);
+	}
 	switch (op.operand) {
 	case NONE: strcpy (out, op.name); break;
 	case ARG: 
@@ -222,14 +228,14 @@ R_AII char *do8051disasm(Op8051 op, ut32 addr, char *str, int len) {
 		if (eof) {
 			*eof = 0;
 			tmp = strdup_filter (out+1, (const ut8*)op.buf);
-			strcpy (out, eof+1);
+			tmp2 = strdup (eof+1);
+			strcpy (out, tmp2);
 			strcat (out, tmp);
 			free (tmp);
+			free (tmp2);
 		} else eprintf ("do8051disasm: Internal bug\n");
 	} else {
-		tmp = strdup_filter (out, (const ut8*)op.buf);
-		strcpy (out, tmp);
-		free (tmp);
+		out = strdup_filter (out, (const ut8*)op.buf);
 	}
 	return out;
 }
