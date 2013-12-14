@@ -1254,6 +1254,7 @@ toro:
 				ut8 *b = buf+idx;
 				int bsz = len-idx;
 				const char *kind = r_anal_data_kind (core->anal, analop.ptr, buf, bsz);
+				*msg = 0;
 				if (kind && !strcmp (kind, "text")) {
 					*msg = '"';
 					snprintf (msg+1, sizeof (msg)-2, "%s", buf+idx);
