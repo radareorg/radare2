@@ -31,4 +31,5 @@ if [ "$1" = "-n" ]; then
 fi
 
 ${PYCFG} $@ | sed -e 's/-arch [^\s]*//g' | \
+	sed 's, s ,,g' | \
 	sed s,-Wstrict-prototypes,,g 2>/dev/null

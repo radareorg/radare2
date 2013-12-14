@@ -6,6 +6,7 @@
 R_LIB_VERSION(r_lang);
 
 #include "p/vala.c" // hardcoded
+#include "p/c.c" // hardcoded
 
 
 RLang *__lang = NULL;
@@ -13,7 +14,6 @@ R_API void r_lang_plugin_free (RLangPlugin *p) {
 	if (p && p->fini)
 		p->fini (__lang);
 }
-
 
 R_API RLang *r_lang_new() {
 	RLang *lang = R_NEW (RLang);
@@ -23,6 +23,7 @@ R_API RLang *r_lang_new() {
 		lang->langs->free = (RListFree)r_lang_plugin_free;
 		lang->defs = r_list_new ();
 		lang->defs->free = (RListFree)r_lang_def_free;
+		r_lang_add (lang, &r_lang_plugin_c);
 		r_lang_add (lang, &r_lang_plugin_vala);
 	}
 	return lang;

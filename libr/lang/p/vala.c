@@ -1,13 +1,12 @@
-/* radare - LGPL - Copyright 2011-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2011-2013 pancake */
 /* vala extension for libr (radare2) */
-// TODO: add support for Genie
 // TODO: add cache directory (~/.r2/cache)
 
 #include "r_lib.h"
 #include "r_core.h"
 #include "r_lang.h"
 
-static int r_vala_file(RLang *lang, const char *file) {
+static int lang_vala_file(RLang *lang, const char *file) {
 	void *lib;
 	char *p, name[512], buf[512];
 	char *vapidir;
@@ -32,6 +31,7 @@ static int r_vala_file(RLang *lang, const char *file) {
 		return R_FALSE;
 	p = strstr (name, ".vala"); if (p) *p=0;
 	p = strstr (name, ".gs"); if (p) *p=0;
+	// TODO: use CC environ if possible
 	snprintf (buf, sizeof (buf), "gcc -fPIC -shared %s.c -o lib%s."R_LIB_EXT
 		" $(pkg-config --cflags --libs r_core gobject-2.0)", name, name);
 	if (system (buf) != 0)
@@ -52,19 +52,19 @@ static int r_vala_file(RLang *lang, const char *file) {
 	return 0;
 }
 
-static int init(void *user) {
+static int lang_vala_init(void *user) {
 	// TODO: check if "valac" is found in path
 	return R_TRUE;
 }
 
-static int vala_run(RLang *lang, const char *code, int len) {
+static int lang_vala_run(RLang *lang, const char *code, int len) {
 	FILE *fd = fopen (".tmp.vala", "w");
 	if (fd) {
 		fputs ("using Radare;\n\npublic static void entry(RCore core) {\n", fd);
 		fputs (code, fd);
 		fputs (";\n}\n", fd);
 		fclose (fd);
-		r_vala_file (lang, ".tmp.vala");
+		lang_vala_file (lang, ".tmp.vala");
 		r_file_rm (".tmp.vala");
 	} else eprintf ("Cannot open .tmp.vala\n");
 	return R_TRUE;
@@ -75,16 +75,9 @@ static struct r_lang_plugin_t r_lang_plugin_vala = {
 	.ext = "vala",
 	.desc = "VALA language extension",
 	.help = NULL,
-	.run = vala_run,
-	.init = (void*)init,
+	.run = lang_vala_run,
+	.init = (void*)lang_vala_init,
 	.fini = NULL,
-	.run_file = (void*)r_vala_file,
+	.run_file = (void*)lang_vala_file,
 	.set_argv = NULL,
 };
-
-#ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
-	.type = R_LIB_TYPE_LANG,
-	.data = &r_lang_plugin_vala,
-};
-#endif

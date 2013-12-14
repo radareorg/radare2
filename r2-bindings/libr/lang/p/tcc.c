@@ -1,12 +1,11 @@
-/* tcc extension for libr (radare2) */
+/* tcc extension for libr (radare2) - copyright pancake 2011-2013 */
 
 #include "r_lib.h"
 #include "r_lang.h"
 #include <libtcc.h>
 
 /* TODO: store the state globally or so.. */
-static int r_lang_tcc_run(struct r_lang_t *lang, const char *code, int len)
-{
+static int r_lang_tcc_run(struct r_lang_t *lang, const char *code, int len) {
 	TCCState *ts = tcc_new ();
 	/* TODO: set defined vars as global */
 	//list_for_each(lang->defs) {
