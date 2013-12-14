@@ -10,6 +10,8 @@ static int lang_c_file(RLang *lang, const char *file) {
 	void *lib;
 	char *cc, *p, name[512], buf[512];
 
+	if (strlen (file) > (sizeof(name)-10))
+		return R_FALSE;
 	if (!strstr (file, ".c"))
 		sprintf (name, "%s.c", file);
 	else strcpy (name, file);

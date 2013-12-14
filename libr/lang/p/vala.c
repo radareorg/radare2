@@ -11,6 +11,8 @@ static int lang_vala_file(RLang *lang, const char *file) {
 	char *p, name[512], buf[512];
 	char *vapidir;
 
+	if (strlen (file)>500)
+		return R_FALSE;
 	if (!strstr (file, ".vala"))
 		sprintf (name, "%s.vala", file);
 	else strcpy (name, file);

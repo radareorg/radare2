@@ -241,12 +241,15 @@ R_API int r_sys_crash_handler(const char *cmd) {
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__
 	static char envbuf[1024];
+	if (!key) return NULL;
 	envbuf[0] = 0;
 	GetEnvironmentVariable (key, (LPSTR)&envbuf, sizeof (envbuf));
 	// TODO: handle return value of GEV
 	return *envbuf? strdup (envbuf): NULL;
 #else
-	char *b = getenv (key);
+	char *b;
+	if (!key) return NULL;
+	b = getenv (key);
 	return b? strdup (b): NULL;
 #endif
 }
