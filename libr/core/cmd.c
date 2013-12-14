@@ -540,7 +540,10 @@ static int cmd_eval(void *data, const char *input) {
 	switch (input[0]) {
 	case 'n': // env
 		if (!strchr (input, '=')) {
-			char *p = r_sys_getenv (input+strlen ("nv "));
+			char *var, *p;
+			var = strchr (input, ' ');
+			if (var) while (*var==' ') var++;
+			p = r_sys_getenv (var);
 			if (p) {
 				r_cons_printf ("%s\n", p);
 				free (p);

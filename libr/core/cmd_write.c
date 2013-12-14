@@ -13,6 +13,19 @@ static int cmd_write(void *data, const char *input) {
 	str = ostr = strdup (input+1);
 
 	switch (*input) {
+	case 'h':
+		{
+		char *p = strchr (input, ' ');
+		if (p) {
+			while (*p==' ') p++;
+			p = r_file_path (p);
+			if (p) {
+				r_cons_printf ("%s\n", p);
+				free (p);
+			}
+		}
+		}
+		break;
 	case 'p':
 		if (input[1]=='-' || (input[1]==' '&&input[2]=='-')) {
 			const char *tmpfile = ".tmp";
@@ -480,6 +493,7 @@ static int cmd_write(void *data, const char *input) {
 		} else r_cons_printf (
 			"Usage: w[x] [str] [<file] [<<EOF] [@addr]\n"
 			" w foobar     write string 'foobar'\n"
+			" wh r2        whereis/which shell command\n"
 			" wr 10        write 10 random bytes\n"
 			" ww foobar    write wide string 'f\\x00o\\x00o\\x00b\\x00a\\x00r\\x00'\n"
 			" wa push ebp  write opcode, separated by ';' (use '\"' around the command)\n"
