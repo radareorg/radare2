@@ -4,8 +4,10 @@
 #include "r_util.h"
 #include <stdio.h>
 
-R_API RStrBuf *r_strbuf_new() {
-	return R_NEW0 (RStrBuf);
+R_API RStrBuf *r_strbuf_new(const char *str) {
+	RStrBuf *s = R_NEW0 (RStrBuf);
+	if (str) r_strbuf_set (s, str);
+	return s;
 }
 
 R_API void r_strbuf_init(RStrBuf *sb) {

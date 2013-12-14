@@ -16,9 +16,9 @@
 #define USE_MMAN 1
 #endif
 
-extern char *alloc(unsigned int n);
-extern void alloc_free(void*);
-extern int alloc_re(void);
+extern char *cdb_alloc(unsigned int n);
+extern void cdb_alloc_free(void*);
+extern int cdb_alloc_re(void);
 
 /* TODO THIS MUST GTFO! */
 int getkvlen(int fd, ut32 *klen, ut32 *vlen);

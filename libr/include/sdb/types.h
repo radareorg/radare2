@@ -27,7 +27,7 @@
 #define ut64 unsigned long long
 #define boolt int
 #define R_NEW(x) (x*)malloc(sizeof(x))
-#define R_ANEW(x) (x*)alloc(sizeof(x))
+#define R_ANEW(x) (x*)cdb_alloc(sizeof(x))
 #define UT32_MAX ((ut32)0xffffffff)
 #define UT64_MAX ((ut64)(0xffffffffffffffffLL))
 #endif
