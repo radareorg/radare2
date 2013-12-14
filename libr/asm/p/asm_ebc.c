@@ -11,13 +11,16 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret = 1;
-	ebc_command_t cmd;
+	ebc_command_t cmd = { {0}, {0} };
 
 	ret = ebc_decode_command(buf, &cmd);
 
-	if (cmd.operands && *cmd.operands)
-		snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
-	else snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s", cmd.instr);
+	if (cmd.operands[0]) {
+		snprintf(op->buf_asm, R_ASM_BUFSIZE,
+				"%s %s", cmd.instr, cmd.operands);
+	} else {
+		snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s", cmd.instr);
+	}
 
 	op->size = ret;
 	return ret;
