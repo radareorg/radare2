@@ -167,12 +167,15 @@ static void cmd_syscall_do(RCore *core, int num) {
 	r_cons_printf (")\n");
 }
 
-static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
+static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, int fmt) {
 	int ret, i, j, idx, size;
 	RAsmOp asmop;
 	RAnalOp op;
 	ut64 addr;
 	RAnalHint *hint;
+	if (fmt=='j') {
+		r_cons_printf ("[");
+	}
 	for (i=idx=ret=0; idx<len && (!nops|| (nops&&i<nops)); i++, idx+=ret) {
 		addr = core->offset+idx;
 // TODO: use more anal hints
@@ -186,42 +189,84 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops) {
 			break;
 		}
 		size = (hint&&hint->size)? hint->size: op.size;
-		r_cons_printf ("opcode: %s\n", asmop.buf_asm);
-		if (hint && hint->opcode)
-			r_cons_printf ("ophint: %s\n", hint->opcode);
-		r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
-		r_cons_printf ("bytes: ");
-		for (j=0; j<size; j++)
-			r_cons_printf ("%02x", buf[j]);
-		r_cons_newline ();
-		if (op.val != UT64_MAX)
-			r_cons_printf ("val: 0x%08"PFMT64x"\n", op.val);
-		if (op.ptr != UT64_MAX)
-			r_cons_printf ("ptr: 0x%08"PFMT64x"\n", op.ptr);
-		r_cons_printf ("size: %d\n", size);
-		r_cons_printf ("type: %d (%s)\n", (int)(op.type & 0xffff),
-			r_anal_optype_to_string (op.type)); // TODO: string
-		if (*R_STRBUF_SAFEGET (&op.esil))
-		  r_cons_printf ("esil: %s\n", R_STRBUF_SAFEGET (&op.esil));
-		r_cons_printf ("eob: %d\n", op.eob);
+		if (fmt =='j') {
+			r_cons_printf ("{\"opcode\": \"%s\",", asmop.buf_asm);
+			if (hint && hint->opcode)
+				r_cons_printf ("\"ophint\": \"%s\",", hint->opcode);
+			r_cons_printf ("\"addr\": %"PFMT64d",", core->offset+idx);
+			r_cons_printf ("\"bytes\": \"");
+			for (j=0; j<size; j++)
+				r_cons_printf ("%02x", buf[j]);
+			r_cons_printf("\",");
+			if (op.val != UT64_MAX)
+				r_cons_printf ("\"val\": %"PFMT64d",", op.val);
+			if (op.ptr != UT64_MAX)
+				r_cons_printf ("\"ptr\": %"PFMT64d",", op.ptr);
+			r_cons_printf ("\"size\": %d,", size);
+			r_cons_printf ("\"type\": \"%s\",",
+				r_anal_optype_to_string (op.type));
+			if (*R_STRBUF_SAFEGET (&op.esil))
+				r_cons_printf ("\"esil\": \"%s\",",
+					R_STRBUF_SAFEGET (&op.esil));
+			r_cons_printf ("\"eob\": %d,", op.eob);
 
-		if (hint && hint->jump != UT64_MAX)
-			op.jump = hint->jump;
-		if (op.jump != UT64_MAX)
-			r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
+			if (hint && hint->jump != UT64_MAX)
+				op.jump = hint->jump;
+			if (op.jump != UT64_MAX)
+				r_cons_printf ("\"jump\":%"PFMT64d",", op.jump);
+			if (hint && hint->fail != UT64_MAX)
+				op.fail = hint->fail;
+			if (op.fail != UT64_MAX)
+				r_cons_printf ("\"fail\":%"PFMT64d",", op.fail);
 
-		if (hint && hint->fail != UT64_MAX)
-			op.fail = hint->fail;
-		if (op.fail != UT64_MAX)
-			r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
+			r_cons_printf ("\"stack\":%d,", op.stackop); // TODO: string
+			r_cons_printf ("\"cond\":%d,",
+				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
+			r_cons_printf ("\"family\":%d}", op.family);
+		} else {
+			r_cons_printf ("opcode: %s\n", asmop.buf_asm);
+			if (hint && hint->opcode)
+				r_cons_printf ("ophint: %s\n", hint->opcode);
+			r_cons_printf ("addr: 0x%08"PFMT64x"\n", core->offset+idx);
+			r_cons_printf ("bytes: ");
+			for (j=0; j<size; j++)
+				r_cons_printf ("%02x", buf[j]);
+			r_cons_newline ();
+			if (op.val != UT64_MAX)
+				r_cons_printf ("val: 0x%08"PFMT64x"\n", op.val);
+			if (op.ptr != UT64_MAX)
+				r_cons_printf ("ptr: 0x%08"PFMT64x"\n", op.ptr);
+			r_cons_printf ("size: %d\n", size);
+			r_cons_printf ("type: %d (%s)\n", (int)(op.type & 0xffff),
+				r_anal_optype_to_string (op.type)); // TODO: string
+			if (*R_STRBUF_SAFEGET (&op.esil))
+				r_cons_printf ("esil: %s\n", R_STRBUF_SAFEGET (&op.esil));
+			r_cons_printf ("eob: %d\n", op.eob);
 
-		r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
-		r_cons_printf ("cond: %d\n",
-			(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
-		r_cons_printf ("family: %d\n", op.family);
-		r_cons_printf ("\n");
+			if (hint && hint->jump != UT64_MAX)
+				op.jump = hint->jump;
+			if (op.jump != UT64_MAX)
+				r_cons_printf ("jump: 0x%08"PFMT64x"\n", op.jump);
+
+			if (hint && hint->fail != UT64_MAX)
+				op.fail = hint->fail;
+			if (op.fail != UT64_MAX)
+				r_cons_printf ("fail: 0x%08"PFMT64x"\n", op.fail);
+
+			r_cons_printf ("stack: %d\n", op.stackop); // TODO: string
+			r_cons_printf ("cond: %d\n",
+				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);
+			r_cons_printf ("family: %d\n", op.family);
+		}
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
 		free (hint);
+		if (((idx+ret)<len) && (!nops||(i+1)<nops))
+			r_cons_printf (",");
+	}
+
+	if (fmt=='j') {
+		r_cons_printf ("]");
+		r_cons_newline ();
 	}
 }
 
@@ -294,7 +339,7 @@ static int cmd_anal(void *data, const char *input) {
 			ut8 *buf = malloc (strlen (input)+1);
 			len = r_hex_str2bin (input+2, buf);
 			if (len>0)
-				r_core_anal_bytes (core, buf, len, 0);
+				r_core_anal_bytes (core, buf, len, 0, 0);
 			free (buf);
 		} else eprintf ("Usage: ab [hexpair-bytes]\n");
 		break;
@@ -376,12 +421,28 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 		if (input[1] == '?') {
 			r_cons_printf (
 			"Usage: ao[e?] [len]\n"
-			" aoe      ; emulate opcode at current offset\n"
-			" aoe 4    ; emulate 4 opcodes starting at current offset\n"
-			" ao 5     ; display opcode analysis of 5 opcodes\n");
+			" aoj      display opcode analysis information in JSON\n"
+			" aoe      emulate opcode at current offset\n"
+			" aoe 4    emulate 4 opcodes starting at current offset\n"
+			" ao 5     display opcode analysis of 5 opcodes\n");
+		} else
+		if (input[1] == 'j') {
+			int count = 0;
+			if (input[2] && input[3]) {
+				l = (int) r_num_get (core->num, input+2);
+				if (l>0) count = l;
+				if (l>tbs) {
+					r_core_block_size (core, l*4);
+					//len = l;
+				}
+			} else {
+				len = l = core->blocksize;
+				count = 1;
+			}
+			r_core_anal_bytes (core, core->block, len, count, 'j');
 		} else
 		if (input[1] == 'e') {
-			eprintf ("TODO: r_anal_op_execute\n");
+			eprintf ("TODO: r_anal_op_execute: TODO: USE ESIL\n");
 		} else {
 			int count = 0;
 			if (input[0] && input[1]) {
@@ -395,7 +456,7 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 				len = l = core->blocksize;
 				count = 1;
 			}
-			r_core_anal_bytes (core, core->block, len, count);
+			r_core_anal_bytes (core, core->block, len, count, 0);
 		}
 		break;
 	case 'F':
