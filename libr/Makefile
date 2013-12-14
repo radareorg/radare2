@@ -122,9 +122,10 @@ install: install-includes install-pkgconfig
 	@for a in `find */p -perm -u+x -type f | grep -v exe | grep -v dll | grep ${EXT_SO}`; \
 	  do echo " ${LFX}/radare2/${VERSION}/$$a"; \
 	${INSTALL_DATA} $$a ${LFX}/radare2/${VERSION} ; done
-	@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
-	${INSTALL_DATA} lang/p/radare.* ${LFX}/radare2/${VERSION}
 	cd ${LFX}/radare2 ; ln -fs ${VERSION} last
+
+#@echo "lang/p/radare.* ${DESTDIR}/${PFX}/${LIBDIR}/radare2/${VERSION}"
+#${INSTALL_DATA} lang/p/radare.* ${LFX}/radare2/${VERSION}
 
 deinstall uninstall:
 	# libraries
