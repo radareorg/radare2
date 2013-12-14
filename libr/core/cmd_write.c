@@ -406,6 +406,16 @@ static int cmd_write(void *data, const char *input) {
 			r_core_block_read (core, 0);
 		}
 		break;
+
+    case 'h': // which
+        {
+            const char *cwd = r_sys_which (input + strlen("which"));
+            if (cwd) {
+                eprintf ("%s\n", cwd);
+                free (cwd);
+            }
+        }
+        break;
 	case 'o':
 		switch (input[1]) {
 			case 'a':
@@ -510,6 +520,7 @@ static int cmd_write(void *data, const char *input) {
 			" wF -|file    write contents of hexpairs file here\n"
 			" wp -|file    apply radare patch file. See wp? fmi\n"
 			" wt file [sz] write to file (from current seek, blocksize or sz bytes)\n"
+            " which        locate a command\n"
 			);
 			//TODO: add support for offset+seek
 			// " wf file o s ; write contents of file from optional offset 'o' and size 's'.\n"

@@ -600,3 +600,29 @@ R_API char *r_sys_pid_to_path(int pid) {
 	return strdup (pathbuf);
 #endif
 }
+
+R_API char* r_sys_which(const char *name){
+    char* path = NULL;
+    char* pathfragment = NULL;
+    int i=0, prev=0;
+    if ((path = getenv("PATH")) == NULL)
+        return NULL;
+    if ((pathfragment = (char*)malloc(strlen(path) + strlen(name)) + 1) == NULL)
+        return NULL;
+    while (path[i++]){
+        if (path[i] == ':'){
+            memcpy(pathfragment, path+prev, i-prev);
+#if __WINDOWS__
+            pathfragment[i-prev] = '\\';
+#else
+            pathfragment[i-prev] = '/';
+#endif
+            memcpy(pathfragment+i-prev+1, name, strlen(name)+1);
+            if (access(pathfragment, F_OK) != -1){
+                return strdup(pathfragment);
+            }
+            prev = i+1; // skip the path separator
+        }
+    }
+    return NULL;
+}
