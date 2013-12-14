@@ -701,6 +701,38 @@ static int cmd_visual(void *data, const char *input) {
 	return ret;
 }
 
+static int cmd_pointer(void *data, const char *input) {
+	int ret = R_TRUE;
+	char *str, *eq;
+	while (*input==' ') input++;
+	if (!*input || *input=='?') {
+		eprintf ("Usage: *<addr>[=[0x]value]\n");
+		eprintf (" *entry0=cc           # write trap in entrypoint\n");
+		eprintf (" *entry0+10=0x804800  # write value in delta address\n");
+		eprintf (" *entry0              # read byte at given address\n");
+		eprintf ("TODO: last command should honor asm.bits\n");
+		return ret;
+	}
+	str = strdup (input);
+	eq = strchr (str, '=');
+	if (eq) {
+		*eq++ = 0;
+		if (!strncmp (eq, "0x", 2)) {
+			ret = r_core_cmdf ((RCore*)data, "wv %s@%s", eq, str);
+		} else {
+			ret = r_core_cmdf ((RCore*)data, "wx %s@%s", eq, str);
+		}
+	} else {
+		ret = r_core_cmdf ((RCore*)data, "?v [%s]", input);
+	}
+	free (str);
+	return ret;
+}
+
+static int cmd_env(void *data, const char *input) {
+	return r_core_cmdf ((RCore*)data, "env %s", input);
+}
+
 static int cmd_system(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	ut64 n;
@@ -1671,6 +1703,8 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "yank",     "yank bytes", &cmd_yank);
 	r_cmd_add (core->rcmd, "resize",   "change file size", &cmd_resize);
 	r_cmd_add (core->rcmd, "Visual",   "enter visual mode", &cmd_visual);
+	r_cmd_add (core->rcmd, "*",        "pointer read/write", &cmd_pointer);
+	r_cmd_add (core->rcmd, "%",        "short version of 'env' command", &cmd_env);
 	r_cmd_add (core->rcmd, "!",        "run system command", &cmd_system);
 	r_cmd_add (core->rcmd, "=",        "io pipe", &cmd_rap);
 	r_cmd_add (core->rcmd, "#",        "calculate hash", &cmd_hash);

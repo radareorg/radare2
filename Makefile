@@ -101,7 +101,7 @@ install: install-doc install-man install-www
 	done
 	mkdir -p ${DLIBDIR}/radare2/${VERSION}/hud
 	cp -f doc/hud ${DLIBDIR}/radare2/${VERSION}/hud/main
-	cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
+	#cp ${PWD}/libr/lang/p/radare.lua ${DLIBDIR}/radare2/${VERSION}/radare.lua
 	sys/ldconfig.sh
 
 install-www:

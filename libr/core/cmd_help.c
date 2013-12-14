@@ -464,6 +464,8 @@ static int cmd_help(void *data, const char *input) {
 		"Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
 		"Append '?' to any char command to get detailed help\n"
 		"Prefix with number to repeat command N times (f.ex: 3x)\n"
+		" %%var=value            alias for 'env' command\n"
+		" *off[=[0x]value]      pointer read/write data/values (see ?v, wx, wv)\n"
 		" $alias=value          alias commands (simple macros)\n"
 		" (macro arg0 arg1)     manage scripting macros\n"
 		" .[ -|file|!sh|cmd]    interpret cparse, r2 or rlang file (see -?)\n"
