@@ -8,7 +8,7 @@
 #include <string.h>
 #include "gb_op_table.h"
 
-int gbOpLength(int gboptype){
+static int gbOpLength(int gboptype){
 	switch(gboptype)
 	{
 		case GB_8BIT:
