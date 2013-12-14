@@ -21,7 +21,7 @@ ifeq ($(WITHNONPIC),1)
 ## LDFLAGS+=$(addsuffix /lib${BINDEPS}.a,$(addprefix ../../libr/,$(subst r_,,$(BINDEPS))))
 LDFLAGS+=$(shell for a in ${BINDEPS} ; do b=`echo $$a |sed -e s,r_,,g`; echo ../../libr/$$b/lib$$a.a ; done )
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
-LDFLAGS+=../../libr/fs/p/grub/libgrubfs.a
+LDFLAGS+=../../shlr/grub/libgrubfs.a
 ifneq (${OSTYPE},haiku)
 LDFLAGS+=-lm
 endif
