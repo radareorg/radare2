@@ -31,6 +31,16 @@ static int cmd_hash(void *data, const char *input) {
 	}
 	if (input[0]=='!') {
 		const char *lang = input+1;
+		if (*lang=='/') {
+			char *ptr = lang+1;
+			while (*lang) {
+				if (*lang=='/')
+					ptr = lang+1;
+				lang++;
+			}
+			RLangPlugin *p = r_lang_get_by_extension (core->lang, ptr);
+			if (p && p->name) lang = p->name;
+		}
 		if (*lang==' ') {
 			RLangPlugin *p = r_lang_get_by_extension (core->lang, input+2);
 			if (p && p->name) lang = p->name;
