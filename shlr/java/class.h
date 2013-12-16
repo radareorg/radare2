@@ -493,6 +493,7 @@ typedef struct r_bin_java_fm_t {
 	char *name;
 	char *descriptor;
 	char *class_name;
+	char *flags_str;
 
 	ut64 file_offset;
 	R_BIN_JAVA_FIELD_TYPE type;
@@ -657,6 +658,7 @@ typedef struct r_bin_java_attr_t {
 
 typedef struct r_bin_java_attr_classes_t {
 	char *name;
+	char *flags_str;
 	ut64 file_offset;
 	RBinJavaAttrInfo *clint_attr;
 	RBinJavaField *clint_field;
@@ -676,6 +678,7 @@ typedef struct r_bin_java_classfile_t {
 
 typedef struct r_bin_java_classfile2_t {
 	ut16 access_flags;
+	char *flags_str;
 	ut16 this_class;
 	ut16 super_class;
 	RBinJavaField *this_class_entrypoint;
@@ -1109,6 +1112,7 @@ R_API ut64 r_bin_java_invokedynamic_cp_calc_size(RBinJavaCPTypeObj* obj);
 R_API RBinJavaStackMapFrame* r_bin_java_default_stack_frame();
 
 R_API RBinSymbol* r_bin_java_allocate_symbol();
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_field_with_access_flags(RBinJavaField *fm_type);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTypeObj *obj);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj);

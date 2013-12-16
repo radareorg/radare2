@@ -223,6 +223,9 @@ static char * java_resolve(int idx, ut8 space_bn_name_type) {
 
 int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
+	ut8 local_var = 0,
+		incr_by = 0;
+
 	
 	switch (java_ops[idx].byte) {
 
@@ -266,6 +269,13 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, "\0");
 			}
 			return java_ops[idx].size;
+
+		case 0x84: // iinc
+			local_var = bytes[1],
+				incr_by = bytes[2];
+			snprintf (output, outlen, "%s %d %d", java_ops[idx].name, local_var, incr_by);
+			return java_ops[idx].size;
+
 
 		case 0x99: // ifeq
 		case 0x9a: // ifne

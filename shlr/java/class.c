@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake 
+/* Apache - Copyright 2007-2013 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
 */
 
@@ -66,40 +66,41 @@ RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
 //static struct r_bin_java_cp_item_t cp_null_item = {0};
 
 static RBinJavaAccessFlags METHOD_ACCESS_FLAGS[] = {
-	{"Public", R_BIN_JAVA_METHOD_ACC_PUBLIC},
-	{"Private", R_BIN_JAVA_METHOD_ACC_PRIVATE},
-	{"Protected", R_BIN_JAVA_METHOD_ACC_PROTECTED},
-	{"Static", R_BIN_JAVA_METHOD_ACC_STATIC},
-
-	{"Final", R_BIN_JAVA_METHOD_ACC_FINAL},
-	{"Synchronized", R_BIN_JAVA_METHOD_ACC_SYNCHRONIZED},
-	{"Bridge", R_BIN_JAVA_METHOD_ACC_BRIDGE},
-	{"Var Args", R_BIN_JAVA_METHOD_ACC_VARARGS},
-	{"Native", R_BIN_JAVA_METHOD_ACC_NATIVE},
-	{"Interface", R_BIN_JAVA_METHOD_ACC_INTERFACE},
-	{"Abstract", R_BIN_JAVA_METHOD_ACC_ABSTRACT},
-	{"Strict", R_BIN_JAVA_METHOD_ACC_STRICT},
-	{"Synthetic", R_BIN_JAVA_METHOD_ACC_SYNTHETIC},
-	{"Annotation", R_BIN_JAVA_METHOD_ACC_ANNOTATION},
-	{"Enum", R_BIN_JAVA_METHOD_ACC_ENUM}
+	{"public", R_BIN_JAVA_METHOD_ACC_PUBLIC},
+	{"private", R_BIN_JAVA_METHOD_ACC_PRIVATE},
+	{"protected", R_BIN_JAVA_METHOD_ACC_PROTECTED},
+	{"static", R_BIN_JAVA_METHOD_ACC_STATIC},
+	{"final", R_BIN_JAVA_METHOD_ACC_FINAL},
+	{"synchronized", R_BIN_JAVA_METHOD_ACC_SYNCHRONIZED},
+	{"bridge", R_BIN_JAVA_METHOD_ACC_BRIDGE},
+	{"varargs", R_BIN_JAVA_METHOD_ACC_VARARGS},
+	{"native", R_BIN_JAVA_METHOD_ACC_NATIVE},
+	{"interface", R_BIN_JAVA_METHOD_ACC_INTERFACE},
+	{"abstract", R_BIN_JAVA_METHOD_ACC_ABSTRACT},
+	{"strict", R_BIN_JAVA_METHOD_ACC_STRICT},
+	{"synthetic", R_BIN_JAVA_METHOD_ACC_SYNTHETIC},
+	{"annotation", R_BIN_JAVA_METHOD_ACC_ANNOTATION},
+	{"enum", R_BIN_JAVA_METHOD_ACC_ENUM},
+	{NULL, 0}
 };
 
 static RBinJavaAccessFlags CLASS_ACCESS_FLAGS[] = {
-	{"Public", R_BIN_JAVA_CLASS_ACC_PUBLIC},
-	{"Private", R_BIN_JAVA_CLASS_ACC_PRIVATE},
-	{"Protected", R_BIN_JAVA_CLASS_ACC_PROTECTED},
-	{"Static", R_BIN_JAVA_CLASS_ACC_STATIC},
-	{"Final", R_BIN_JAVA_CLASS_ACC_FINAL},
-	{"Synchronized", R_BIN_JAVA_CLASS_ACC_SUPER},
-	{"Bridge", R_BIN_JAVA_CLASS_ACC_BRIDGE},
-	{"Var Args", R_BIN_JAVA_CLASS_ACC_VARARGS},
-	{"Native", R_BIN_JAVA_CLASS_ACC_NATIVE},
-	{"Interface", R_BIN_JAVA_CLASS_ACC_INTERFACE},
-	{"Abstract", R_BIN_JAVA_CLASS_ACC_ABSTRACT},
-	{"Strict", R_BIN_JAVA_CLASS_ACC_STRICT},
-	{"Synthetic", R_BIN_JAVA_CLASS_ACC_SYNTHETIC},
-	{"Annotation", R_BIN_JAVA_CLASS_ACC_ANNOTATION},
-	{"Enum", R_BIN_JAVA_CLASS_ACC_ENUM}
+	{"public", R_BIN_JAVA_CLASS_ACC_PUBLIC},
+	{"private", R_BIN_JAVA_CLASS_ACC_PRIVATE},
+	{"protected", R_BIN_JAVA_CLASS_ACC_PROTECTED},
+	{"static", R_BIN_JAVA_CLASS_ACC_STATIC},
+	{"final", R_BIN_JAVA_CLASS_ACC_FINAL},
+	{"synchronized", R_BIN_JAVA_CLASS_ACC_SUPER},
+	{"bridge", R_BIN_JAVA_CLASS_ACC_BRIDGE},
+	{"varargs", R_BIN_JAVA_CLASS_ACC_VARARGS},
+	{"native", R_BIN_JAVA_CLASS_ACC_NATIVE},
+	{"interface", R_BIN_JAVA_CLASS_ACC_INTERFACE},
+	{"abstract", R_BIN_JAVA_CLASS_ACC_ABSTRACT},
+	{"strict", R_BIN_JAVA_CLASS_ACC_STRICT},
+	{"synthetic", R_BIN_JAVA_CLASS_ACC_SYNTHETIC},
+	{"annotation", R_BIN_JAVA_CLASS_ACC_ANNOTATION},
+	{"enum", R_BIN_JAVA_CLASS_ACC_ENUM},
+	{NULL, 0}
 };
 
 static RBinJavaRefMetas R_BIN_JAVA_REF_METAS[] = {
@@ -253,6 +254,45 @@ static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 	{ "Synthetic", R_BIN_JAVA_ATTR_TYPE_SYNTHETIC_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[19]}, 
 	{ "Unknown", R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[20]} 
 };
+
+static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_flags) {	
+	char *outbuffer = NULL, *cur_pos = NULL;
+	ut16 i, str_pos = 0;
+	ut16 max_str_len = 0, str_len = 0;
+
+	for (i = 0; access_flags[i].str != NULL; i++) {
+		if (flags & access_flags[i].value) {
+			max_str_len += (strlen (access_flags[i].str) + 1);
+		}
+	}
+
+	outbuffer = (char *) malloc (max_str_len+1);
+	if (outbuffer) {
+		memset (outbuffer, 0, max_str_len);
+		cur_pos = outbuffer;
+
+		for (i = 0; access_flags[i].str != NULL; i++) {
+			if (flags & access_flags[i].value) {
+				ut8 len = strlen (access_flags[i].str);
+				const char *the_string = access_flags[i].str;
+				memcpy (cur_pos, the_string, len);
+				memcpy (cur_pos+len, " ", 1);
+				cur_pos += len + 1;
+			} 
+		}
+		*(cur_pos-1) = 0;		
+	}
+	return outbuffer;
+}
+
+static char * retrieve_method_access_string(ut16 flags) {
+	return retrieve_access_string (flags, METHOD_ACCESS_FLAGS);
+}
+
+static char * retrieve_class_method_access_string(ut16 flags) {
+	return retrieve_access_string (flags, CLASS_ACCESS_FLAGS);	
+}
+
 
 R_API void debug_dump_all_cp_rcons_obj(RBinJavaObj * BIN_OBJ) {
 	int idx = 0;
@@ -411,6 +451,7 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 	r_buf_read_at (bin->b, offset, (ut8*)buf, 8);
 	method->file_offset = offset;
 	method->flags = R_BIN_JAVA_USHORT (buf, 0);
+	method->flags_str = retrieve_method_access_string (method->flags);
 	// need to subtract 1 for the idx
 	method->name_idx = R_BIN_JAVA_USHORT (buf, 2);
 	method->descriptor_idx = R_BIN_JAVA_USHORT (buf, 4);
@@ -498,6 +539,7 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, ut64 offset) {
 	r_buf_read_at (bin->b, offset, (ut8*)buf, 8);
 	field->file_offset = offset;
 	field->flags = R_BIN_JAVA_USHORT (buf, 0);
+	field->flags_str = retrieve_method_access_string (field->flags);
 	field->name_idx = R_BIN_JAVA_USHORT (buf, 2);
 	field->descriptor_idx = R_BIN_JAVA_USHORT (buf, 4);
 	field->attr_count = R_BIN_JAVA_USHORT (buf, 6);
@@ -1080,6 +1122,8 @@ RBinJavaClass2* r_bin_java_read_class_file2(RBinJavaObj *bin, ut64 offset) {
 			ut16 super_class;
 		*/
 		cf2->this_class = r_bin_java_swap_ushort (cf2->this_class);
+		cf2->flags_str = retrieve_class_method_access_string(cf2->access_flags);
+		IFDBG eprintf("This class flags are: %s\n", cf2->flags_str);
 	}else{
 		eprintf ("r_bin_java_read_class_file2: Unable to allocate bytes for RBinJavaClass2");
 	}
@@ -1392,6 +1436,9 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		sym->ordinal = fm_type->metas->ord;
 		sym->size = r_bin_java_get_method_code_size (fm_type);
 		sym->visibility = fm_type->flags;
+		if (fm_type->flags_str){
+			strncpy (sym->visibility_str, fm_type->flags_str, R_BIN_SIZEOF_STRINGS);
+		}
 	}
 	return sym;
 }
@@ -1610,6 +1657,11 @@ R_API RList* r_bin_java_get_classes(RBinJavaObj *bin) {
 	RBinClass *class_;
 	class_ = R_NEW0 (RBinClass);
 	class_->visibility = bin->cf2->access_flags;
+
+	if (bin->cf2->flags_str) {
+		class_->visibility_str = strdup(bin->cf2->flags_str);
+	} 
+
 	class_->methods = r_bin_java_enum_class_methods (bin, bin->cf2->this_class);
 	class_->fields = r_bin_java_enum_class_fields (bin, bin->cf2->this_class);
 	class_->name = r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
@@ -1620,7 +1672,7 @@ R_API RList* r_bin_java_get_classes(RBinJavaObj *bin) {
 	r_list_foreach_safe (bin->cp_list, iter, iter_tmp, cp_obj) {
 		if (cp_obj && 
 			cp_obj->tag == R_BIN_JAVA_CP_CLASS &&
-			(this_class_cp_obj != cp_obj && is_class_interface(bin, cp_obj) )) {
+			(this_class_cp_obj != cp_obj && is_class_interface (bin, cp_obj) )) {
 			class_ = R_NEW0 (RBinClass);
 			class_->methods = r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
 			class_->fields = r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
@@ -1725,7 +1777,10 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	// TODO: XXX if a class list of all inner classes
 	// are formed then this will need to be updated
 	if (bin->b) r_buf_free (bin->b);
-	if (bin->cf2) free (bin->cf2);	
+	if (bin->cf2) {
+		free (bin->cf2->flags_str);
+		free (bin->cf2);
+	}	
 	bin->b = NULL;
 	R_BIN_JAVA_GLOBAL_BIN = NULL;
 	free (bin);
@@ -1792,10 +1847,9 @@ R_API void r_bin_java_methods_list_free (RBinJavaObj* bin) {
 		// Delete the attr entries
 		r_list_foreach_safe (bin->methods_list, iter, iter_tmp, method) {
 
-			if (method->descriptor)
-				free (method->descriptor);
-			if (method->name)
-				free (method->name);
+			free (method->descriptor);
+			free (method->name);
+			free (method->flags_str);
 
 			if (method->attributes) {
 				r_bin_java_free_attribute_list (method->attributes);
@@ -1830,10 +1884,9 @@ R_API void r_bin_java_fields_list_free (RBinJavaObj* bin) {
 		// Delete the attr entries
 		r_list_foreach_safe (bin->fields_list, iter, iter_tmp, field) {
 
-			if (field->descriptor)
-				free (field->descriptor);
-			if (field->name)
-				free (field->name);
+			free (field->descriptor);
+			free (field->name);
+			free (field->flags_str);
 
 			if (field->attributes) {
 				r_bin_java_free_attribute_list (field->attributes);	
@@ -2050,7 +2103,8 @@ R_API void r_bin_java_inner_classes_attr_free (RBinJavaAttrInfo *attr) {
 			// Delete the classes entries
 			r_list_foreach_safe (attr->info.inner_classes_attr.classes, iter, iter_tmp, icattr) {
 				if(icattr) {
-					if(icattr->name) free (icattr->name);
+					free (icattr->name);
+					free (icattr->flags_str);
 					free (icattr);
 				}
 				r_list_delete (attr->info.inner_classes_attr.classes, iter);
@@ -2567,6 +2621,7 @@ R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz,
 
 		icattr->inner_class_access_flags = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2; 
+		icattr->flags_str = retrieve_class_method_access_string(icattr->inner_class_access_flags);
 
 		icattr->file_offset = cur_location;
 		icattr->size = 8;
@@ -4322,7 +4377,7 @@ R_API void r_bin_java_print_classes_attr_summary(RBinJavaClassesAttribute *icatt
 	printf ("   Inner Classes Class Attribute Offset: 0x%08llx\n", icattr->file_offset);
 	printf ("   Inner Classes Class Attribute Class Name (%d): %s\n", icattr->inner_name_idx, icattr->name);
 	printf ("   Inner Classes Class Attribute Class inner_class_info_idx: %d\n", icattr->inner_class_info_idx);
-	printf ("   Inner Classes Class Attribute Class inner_class_access_flags: %d\n", icattr->inner_class_access_flags);
+	printf ("   Inner Classes Class Attribute Class inner_class_access_flags: 0x%02x %s\n", icattr->inner_class_access_flags, icattr->flags_str);
 	printf ("   Inner Classes Class Attribute Class outer_class_info_idx: %d\n", icattr->outer_class_info_idx);
 	printf ("   Inner Classes Class Field Information:\n");
 	r_bin_java_print_field_summary (icattr->clint_field);
@@ -4597,6 +4652,7 @@ R_API void r_bin_java_print_field_summary(RBinJavaField *field) {
 	printf ("	Access Flags: %d\n", field->flags);
 	printf ("	Name Index: %d (%s)\n", field->name_idx, field->name);
 	printf ("	Descriptor Index: %d (%s)\n", field->descriptor_idx, field->descriptor); 
+	printf ("	Access Flags: 0x%02x (%s)\n", field->flags, field->flags_str); 
 	printf ("	Field Attributes Count: %d\n", field->attr_count);
 	printf ("	Field Attributes:\n");
 	r_list_foreach_safe (field->attributes, iter, iter_tmp, attr) {
@@ -4617,6 +4673,7 @@ R_API void r_bin_java_print_method_summary(RBinJavaField *field) {
 	printf ("	Access Flags: %d\n", field->flags);
 	printf ("	Name Index: %d (%s)\n", field->name_idx, field->name);
 	printf ("	Descriptor Index: %d (%s)\n", field->descriptor_idx, field->descriptor); 
+	printf ("	Access Flags: 0x%02x (%s)\n", field->flags, field->flags_str); 
 	printf ("	Method Attributes Count: %d\n", field->attr_count);
 	printf ("	Method Attributes:\n");
 
