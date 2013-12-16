@@ -1769,7 +1769,10 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	// TODO: XXX if a class list of all inner classes
 	// are formed then this will need to be updated
 	if (bin->b) r_buf_free (bin->b);
-	if (bin->cf2) free (bin->cf2);	
+	if (bin->cf2) {
+		free (bin->cf2->flags_str);
+		free (bin->cf2);
+	}	
 	bin->b = NULL;
 	R_BIN_JAVA_GLOBAL_BIN = NULL;
 	free (bin);
