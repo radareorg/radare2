@@ -72,7 +72,7 @@ static gb_opcode gb_op[] = {
 	{"cpl"			,GB_8BIT},
 
 	{"jr nc, 0x%02x"	,GB_8BIT+ARG_8},		//0x30 //signed
-	{"ld sp, 0x%02x"	,GB_8BIT+ARG_8},		//signed
+	{"ld sp, 0x%04x"	,GB_8BIT+ARG_16},
 	{"ldd [hl], a"		,GB_8BIT},
 	{"inc sp"		,GB_8BIT},
 	{"inc [hl]"		,GB_8BIT},

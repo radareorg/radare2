@@ -15,88 +15,11 @@
 
 #include <string.h>
 #include <r_types.h>
-#include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
 #include "../../asm/arch/gb/gbdis.c"
-
-void meta_gb_hardware_cmt(RMeta *m, const ut8 hw, ut64 addr) {
-	switch(hw)
-	{
-		case 0:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "JOYPAD");				//Moar context for this (which Key is affected)
-			break;
-		case 1:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "Serial tranfer data");
-			break;
-		case 2:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "Serial tranfer data - Ctl");
-			break;
-		case 4:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "DIV");
-			break;
-		case 5:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "TIMA");
-			break;
-		case 6:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "TMA");
-			break;
-		case 7:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "TAC");
-			break;
-		case 0x0f:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "Interrupt Flag");			//TODO: save in sdb for halt
-			break;
-		case 0x10:
-		case 0x11:
-		case 0x12:
-		case 0x13:
-		case 0x14:
-		case 0x16:
-		case 0x17:
-		case 0x18:
-		case 0x19:
-		case 0x1a:
-		case 0x1b:
-		case 0x1c:
-		case 0x1d:
-		case 0x1e:
-		case 0x20:
-		case 0x21:
-		case 0x22:
-		case 0x23:
-		case 0x24:
-		case 0x25:
-		case 0x26:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "SOUND");
-			break;
-		case 0x30:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "Wave Pattern RAM/SOUND");
-			break;
-		case 0x40:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC");
-			break;
-		case 0x41:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - STAT");
-			break;
-		case 0x42:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - Scroll y");
-			break;
-		case 0x43:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - Scroll x");
-			break;
-		case 0x44:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - y cord");
-			break;
-		case 0x45:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "LCDC - y cord cmp");
-			break;
-		case 0x46:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "DMA");
-			break;
-
-	}
-}
+#include "../arch/gb/mbc.c"
+#include "../arch/gb/meta_gb_cmt.c"
 
 static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int ilen = gbOpLength(gb_op[data[0]].type);
@@ -106,7 +29,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = ilen;
-	if(addr>0xffff && !(0x3fff<(addr%0x10000)<0x8000))	//anything else would cost 1,5 GB RAM, if you want to see a callgraph
+	if(addr>0xffff && !(0x3fff<(addr%0x10000) && (addr%0x10000)<0x8000))
 		return op->size;
 	switch (data[0])
 	{
@@ -146,8 +69,10 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x3c:
 			op->type = R_ANAL_OP_TYPE_ADD;		// INC
 			break;
-		case 0x02:
 		case 0x08:
+		case 0xea:
+			gb_bankswitch_detect(anal->meta, anal->iob.io, addr, (data[2]*0x100)+data[1]);
+		case 0x02:
 		case 0x12:
 		case 0x22:
 		case 0x32:
@@ -201,7 +126,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0x75:
 		case 0x77:
 		case 0xe2:
-		case 0xea:
 			op->type = R_ANAL_OP_TYPE_STORE;	//LD
 			break;
 		case 0xe0:
