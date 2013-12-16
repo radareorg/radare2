@@ -1112,6 +1112,7 @@ R_API ut64 r_bin_java_invokedynamic_cp_calc_size(RBinJavaCPTypeObj* obj);
 R_API RBinJavaStackMapFrame* r_bin_java_default_stack_frame();
 
 R_API RBinSymbol* r_bin_java_allocate_symbol();
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_field_with_access_flags(RBinJavaField *fm_type);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTypeObj *obj);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj);

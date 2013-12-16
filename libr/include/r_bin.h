@@ -198,6 +198,7 @@ typedef struct r_bin_section_t {
 typedef struct r_bin_class_t {
 	char *name;
 	char *super;
+	char *visibility_str;
 	int index;
 	RList *methods; // <RBinSymbol>
 	RList *fields; // <RBinField>
@@ -215,6 +216,7 @@ typedef struct r_bin_symbol_t {
 	char forwarder[R_BIN_SIZEOF_STRINGS];
 	char bind[R_BIN_SIZEOF_STRINGS];
 	char type[R_BIN_SIZEOF_STRINGS];
+	char visibility_str[R_BIN_SIZEOF_STRINGS];
 	const char *classname;
 	ut64 rva;
 	ut64 offset;
