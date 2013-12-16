@@ -137,7 +137,8 @@ RBinPlugin r_bin_plugin_java = {
 	.lines = &lines,
 	.write = NULL,
 	.classes = classes,
-	.demangle_type = retdemangle
+	.demangle_type = retdemangle,
+	.minstrlen = 3
 };
 
 #ifndef CORELIB
