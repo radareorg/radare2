@@ -495,6 +495,6 @@ struct r_anal_plugin_t r_anal_plugin_gb = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_gb,
+	.data = &r_anal_plugin_gb
 };
 #endif
