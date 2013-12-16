@@ -285,8 +285,8 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 	cp = a->curplugin;
 	if (minlen<=0) {
 		if (cp && cp->minstrlen) 
-			minlen = cp->minstrlen;
-		else minlen = -minlen;
+			bin->minstrlen = cp->minstrlen;
+		else bin->minstrlen = -minlen;
 	}
 	if (!cp || !cp->load || !cp->load (a)) {
 		// already freed in format/pe/pe.c:r_bin_pe_free()
