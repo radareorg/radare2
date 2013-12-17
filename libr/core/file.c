@@ -137,6 +137,32 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd) {
 	return ret;
 }
 
+static ut64 get_base_from_maps(RCore *core, const char *file) {
+	RDebugMap *map;
+	RListIter *iter;
+	ut64 b = 0LL;
+	
+	r_debug_map_sync (core->dbg); // update process memory maps
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if ((map->perm & 5)==5) {
+			if (strstr (map->name, "copy/"))
+				return map->addr;
+			if (map->file) {
+				if (!strcmp (map->file, file)) // TODO: make this more flexible
+					return map->addr;
+				continue;
+			}
+			if (map->name) {
+				if (!strcmp (map->name, file)) // TODO: make this more flexible
+					return map->addr;
+				continue;
+			}
+			b = map->addr;
+		}
+	}
+	return b;
+}
+
 R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	int i, va = r->io->va || r->io->debug;
 	RListIter *iter;
@@ -163,11 +189,30 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
 	r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
-	if( is_io_load ) {
+	if (is_io_load) {
+		// DEBUGGER
+// Fix to select pid before trying to load the binary
+	if (r_config_get_i (r->config, "cfg.debug")) {
+		int newpid = -1;
+		if (r->file && r->file->fd)
+			newpid = r->file->fd->fd;
+		r_debug_select (r->dbg, newpid, newpid);
+	}
+		baddr = get_base_from_maps (r, file);
+		r_config_set_i (r->config, "bin.baddr", baddr);
+		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
+		r_bin_load (r->bin, file, R_FALSE);
+		r->file->obj = r_bin_get_object (r->bin);
+		if (baddr)
+			r->file->obj->baddr = baddr;
+		r_config_set_i (r->config, "io.va", 
+			(r->file->obj->info)? r->file->obj->info->has_va: 0);
+		offset = r_bin_get_offset (r->bin);
+#if 0
 		// XXX - May need to handle additional extraction here as well 		
 		r_bin_io_load (r->bin, r->io, r->file->fd, R_FALSE); 
 		if ( r->bin->cur.curplugin && 
-			strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
+				strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
 			// set use of raw strings
 			r_config_set (r->config, "bin.rawstr", "true");
 			// get bin.minstr
@@ -184,7 +229,10 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 
 			r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 		}
+#endif
+//r->file->fd->data = data;
 	} else if (r_bin_load (r->bin, file, R_FALSE)) { // --->
+		// HEXEDITOR
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
 			RBinObject *o = r->bin->cur.o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
@@ -257,11 +305,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 		return NULL;
 	}
 
-	fh = malloc(sizeof(RCoreFile));
-	memset(fh, 0, sizeof(RCoreFile));
-
-	fh->uri = strdup(file);
-	
+	fh = R_NEW0 (RCoreFile);
+	fh->uri = strdup (file);
 	fh->fd = fd;
 	fh->size = r_io_desc_size (r->io, fd);
 	fh->filename = strdup (fd->name);
@@ -286,12 +331,11 @@ R_API RCoreFile * r_core_file_find_by_fd(RCore* core, int fd){
 	RCoreFile *result = NULL, *cf = NULL;
 	RListIter *iter;
 
-	if (!core || !core->files){
+	if (!core || !core->files)
 		return result;
-	}
 
-	r_list_foreach(core->files, iter, cf){
-		if(cf && cf->fd->fd == fd){
+	r_list_foreach (core->files, iter, cf) {
+		if (cf && cf->fd->fd == fd) {
 			result = cf;
 			break;
 		}
@@ -300,7 +344,7 @@ R_API RCoreFile * r_core_file_find_by_fd(RCore* core, int fd){
 }
 
 R_API void r_core_file_free(RCoreFile *cf) {
-	if (cf){
+	if (cf) {
 		if (cf->map) free(cf->map);
 		if (cf->filename) free(cf->filename);
 		if (cf->uri) free(cf->uri);

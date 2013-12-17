@@ -67,6 +67,7 @@ R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm
 	map = R_NEW (RDebugMap);
 	if (map) {
 		map->name = strdup (name);
+		map->file = NULL;
 		map->addr = addr;
 		map->addr_end = addr_end;
 		map->size = addr_end-addr;

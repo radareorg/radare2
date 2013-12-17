@@ -1177,10 +1177,9 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	// TODO: setup arch/bits/os?
 	r_egg_load (core->egg, code, 0);
 	if (!r_egg_compile (core->egg))
-		eprintf ("Cannot compile.\n" );
-	if (!r_egg_assemble (core->egg)) {
+		eprintf ("Cannot compile.\n");
+	if (!r_egg_assemble (core->egg))
 		eprintf ("r_egg_assemble: invalid assembly\n");
-	}
 	if ((b = r_egg_get_bin (core->egg))) {
 		if (b->length>0) {
 			for (i=0; i<b->length; i++)

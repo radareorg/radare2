@@ -87,7 +87,7 @@ R_API void r_io_section_list(RIO *io, ut64 offset, int rad) {
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->offset,
 				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->rwx));
 		} else {
-			io->printf ("[%.2d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
+			io->printf ("[%02d] %c 0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%08"PFMT64x" vsz=%08"PFMT64x" %s",
 			s->id, (offset>=s->offset && offset<s->offset+s->size)?'*':'.',
 			s->offset, r_str_rwx_i (s->rwx), s->vaddr, s->size, s->vsize, s->name);

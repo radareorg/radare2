@@ -87,7 +87,7 @@ static int cmd_info(void *data, const char *input) {
 
 	switch (*input) {
 	case 'o': r_core_bin_load (core, input[1]==' '?
-			input+1: core->file->filename,
+			input+2: core->file->filename,
 			r_config_get_i (core->config, "bin.baddr"));
 		break;
 #define RBININFO(x) r_core_bin_info(core,x,mode,va,NULL,offset); if (newline) r_cons_newline()
@@ -123,7 +123,7 @@ static int cmd_info(void *data, const char *input) {
 		" 'j'   output in json\n"
 		" 'q'   simple quiet output\n"
 		"Actions:\n"
-		" io [file] ; load info from given file (or last opened)\n"
+		" io [file] ; load info from file (or last opened) use bin.baddr\n"
 		" ia        ; show all info (imports, exports, sections..)\n"
 		" ic        ; list classes\n"
 		" id        ; debug information (source lines)\n"

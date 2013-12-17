@@ -233,6 +233,11 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "pid")) {
+		if (!cmd[3]) {
+			int pid = RIOMACH_PID (fd->data);
+			eprintf ("%d\n", pid);
+			return 0;
+		}
 		int pid = atoi (cmd+4);
 		if (pid != 0) {
 			task_t task = pid_to_task (pid);
@@ -242,20 +247,18 @@ static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
 				riom->task = task;
 				return 0;
 			}
-			eprintf ("io_mach_system: Invalid pid\n");
-			return 1;
 		}
-		eprintf ("io_mach_system: Invalid pid\n");
+		eprintf ("io_mach_system: Invalid pid %d\n", pid);
 		return 1;
 	} else eprintf ("Try: '=!pid'\n");
-	return R_TRUE;
+	return 1;
 }
 
 // TODO: rename ptrace to io_mach .. err io.ptrace ??
-struct r_io_plugin_t r_io_plugin_mach = {
+RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
         .desc = "mach debugger io plugin (mach://pid)",
-	.license = "LGPL3",
+	.license = "LGPL",
         .open = __open,
         .close = __close,
 	.read = __read,
@@ -267,9 +270,10 @@ struct r_io_plugin_t r_io_plugin_mach = {
 };
 
 #else
-struct r_io_plugin_t r_io_plugin_mach = {
+RIOPlugin r_io_plugin_mach = {
 	.name = "mach",
-        .desc = "mach debug io (unsupported in this platform)"
+        .desc = "mach debug io (unsupported in this platform)",
+	.license = "LGPL"
 };
 #endif
 
