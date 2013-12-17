@@ -193,11 +193,10 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		// DEBUGGER
 // Fix to select pid before trying to load the binary
 	if (r_config_get_i (r->config, "cfg.debug")) {
-		int newpid = -1;
-		if (r->file && r->file->fd)
-			newpid = r->file->fd->fd;
-		r_debug_select (r->dbg, newpid, newpid);
-	}
+		if (r->file && r->file->fd) {
+			int newpid = r->file->fd->fd;
+			r_debug_select (r->dbg, newpid, newpid);
+		}
 		baddr = get_base_from_maps (r, file);
 		r_config_set_i (r->config, "bin.baddr", baddr);
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
@@ -208,7 +207,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		r_config_set_i (r->config, "io.va", 
 			(r->file->obj->info)? r->file->obj->info->has_va: 0);
 		offset = r_bin_get_offset (r->bin);
-#if 0
+	} else {
 		// XXX - May need to handle additional extraction here as well 		
 		r_bin_io_load (r->bin, r->io, r->file->fd, R_FALSE); 
 		if ( r->bin->cur.curplugin && 
@@ -229,7 +228,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 
 			r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 		}
-#endif
+}
 //r->file->fd->data = data;
 	} else if (r_bin_load (r->bin, file, R_FALSE)) { // --->
 		// HEXEDITOR
