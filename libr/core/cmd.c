@@ -765,7 +765,7 @@ static int cmd_system(void *data, const char *input) {
 		r_core_sysenv_help ();
 		break;
 	default:
-		n = r_num_math (core->num, input);
+		n = atoi (input);
 		if (*input=='0' || n>0) {
 			const char *cmd = r_line_hist_get (n);
 			if (cmd) r_core_cmd0 (core, cmd);
