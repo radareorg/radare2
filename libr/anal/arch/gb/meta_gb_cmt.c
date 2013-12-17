@@ -11,9 +11,9 @@ void meta_gb_bankswitch_cmt(RMeta *m, ut64 addr, ut16 ldarg, ut8 rmbc) {
 		r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "Bankswitch");
 }
 
-void gb_bankswitch_detect(RMeta *m, RIO *io, ut64 addr, ut16 ldarg) {
+void gb_bankswitch_detect(RMeta *m, RIOBind iob, ut64 addr, ut16 ldarg) {
 	ut8 rt;
-	r_io_read_at(io, 0x147, &rt, 1);									//xxx: it won't change
+	iob.read_at(iob.io, 0x147, &rt, 1);									//xxx: it won't change
 	switch(gb_mbc_resolve(rt)) {
 		case -1:
 			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "unknown MBC!!!");

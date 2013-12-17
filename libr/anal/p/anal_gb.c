@@ -71,7 +71,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0x08:
 		case 0xea:
-			gb_bankswitch_detect(anal->meta, anal->iob.io, addr, (data[2]*0x100)+data[1]);
+			gb_bankswitch_detect(anal->meta, anal->iob, addr, (data[2]*0x100)+data[1]);
 		case 0x02:
 		case 0x12:
 		case 0x22:
