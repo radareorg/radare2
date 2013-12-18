@@ -145,7 +145,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 	r_debug_map_sync (core->dbg); // update process memory maps
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if ((map->perm & 5)==5) {
-			if (strstr (map->name, "copy/"))
+			if (map->name && strstr (map->name, "copy/"))
 				return map->addr;
 			if (map->file) {
 				if (!strcmp (map->file, file)) // TODO: make this more flexible
@@ -166,7 +166,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	int i, va = r->io->va || r->io->debug;
 	RListIter *iter;
-	ut64 offset;
+	ut64 offset = 0;
 	RIOMap *im;
 	int is_io_load = r && r->file && r->file->fd && r->file->fd->plugin;
 
@@ -199,7 +199,8 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		}
 		baddr = get_base_from_maps (r, file);
 		r_config_set_i (r->config, "bin.baddr", baddr);
-		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
+		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
+			va, NULL, baddr);
 		r_bin_load (r->bin, file, R_FALSE);
 		r->file->obj = r_bin_get_object (r->bin);
 		if (baddr)
@@ -235,7 +236,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
 			RBinObject *o = r->bin->cur.o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
-					r->assembler->cur->arch, r->assembler->bits);
+				r->assembler->cur->arch, r->assembler->bits);
 			eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
 			for (i=0; i<r->bin->narch; i++) {
 				r_bin_select_idx (r->bin, i); // -->
@@ -247,7 +248,8 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 							r->bin->cur.offset);
 				} else eprintf ("No extract info found.\n");
 			}
-			r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL); // -->
+			r_bin_select (r->bin, r->assembler->cur->arch,
+				r->assembler->bits, NULL); // -->
 		}
 		/* Fix for fat bins */
 		r_list_foreach (r->io->maps, iter, im) {
