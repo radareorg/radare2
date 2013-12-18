@@ -32,7 +32,7 @@ static int cmd_hash(void *data, const char *input) {
 	if (input[0]=='!') {
 		const char *lang = input+1;
 		if (*lang=='/') {
-			char *ptr = lang+1;
+			const char *ptr = lang+1;
 			while (*lang) {
 				if (*lang=='/')
 					ptr = lang+1;

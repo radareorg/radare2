@@ -315,23 +315,23 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 			ret = r_core_cmd_lines (core, out);
 			free (out);
 		}
-		return ret;
-	}
-	if (r_parse_is_c_file (file)) {
+	} else if (r_parse_is_c_file (file)) {
 		char *out = r_parse_c_file (file);
 		if (out) {
 			r_cons_strcat (out);
 			sdb_query_lines (core->anal->sdb_types, out);
 			free (out);
 		}
-		return out? R_TRUE: R_FALSE;
+		ret = out? R_TRUE: R_FALSE;
+	} else {
+		p = r_lang_get_by_extension (core->lang, file);
+		if (p) {
+			r_lang_use (core->lang, p->name);
+			ret = r_lang_run_file (core->lang, file);
+		} else {
+			ret = r_core_cmd_file (core, file);
+		}
 	}
-	p = r_lang_get_by_extension (core->lang, file);
-	if (p) {
-		r_lang_use (core->lang, p->name);
-		return r_lang_run_file (core->lang, file);
-	}
-	ret = r_core_cmd_file (core, file);
 	free (r_list_pop (core->scriptstack));
 	return ret;
 }
