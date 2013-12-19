@@ -35,7 +35,8 @@ SDB_VISIBLE Sdb* sdb_new (const char *dir, int lock) {
 	}
 	s->fdump = -1;
 	s->ndump = NULL;
-	s->ns = ls_new ();
+	s->ns = ls_new (); // TODO: should be NULL
+	s->hooks = NULL;
 	s->ht = ht_new ();
 	s->lock = lock;
 	s->expire = 0LL;
@@ -58,6 +59,7 @@ SDB_VISIBLE void sdb_file (Sdb* s, const char *dir) {
 
 static void sdb_fini(Sdb* s, int donull) {
 	if (!s) return;
+	sdb_hook_free (s);
 	cdb_free (&s->db);
 	if (s->lock)
 		sdb_unlock (sdb_lockfile (s->dir));
@@ -242,11 +244,13 @@ SDB_VISIBLE int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 			kv->value = malloc (vl);
 			memcpy (kv->value, val, vl);
 		} else ht_remove_entry (s->ht, e);
+		sdb_hook_call (s, key, val);
 		return cas;
 	}
 	kv = sdb_kv_new (key, val);
 	kv->cas = nextcas ();
 	ht_insert (s->ht, hash, kv, NULL);
+	sdb_hook_call (s, key, val);
 	return kv->cas;
 }
 
@@ -537,4 +541,58 @@ SDB_VISIBLE int sdb_finish (Sdb* s) {
 SDB_VISIBLE void sdb_drop (Sdb* s) {
 	sdb_fini (s, 1);
 	unlink (s->dir);
+}
+
+
+SDB_VISIBLE int sdb_hook(Sdb* s, SdbHook cb, void* user) {
+	int i = 0;
+	SdbHook hook;
+	SdbListIter *iter;
+	if (s->hooks) {
+		ls_foreach (s->hooks, iter, hook) {
+			if (!(i%2) && (hook == cb))
+				return 0;
+			i++;
+		}
+	} else {
+		s->hooks = ls_new ();
+	}
+	ls_append (s->hooks, cb);
+	ls_append (s->hooks, user);
+	return 1;
+}
+
+SDB_VISIBLE int sdb_unhook(Sdb* s, SdbHook h) {
+	int i = 0;
+	SdbHook hook;
+	SdbListIter *iter, *iter2;
+	ls_foreach (s->hooks, iter, hook) {
+		if (!(i%2) && (hook == h)) {
+			iter2 = iter->n;
+			ls_delete (s->hooks, iter);
+			ls_delete (s->hooks, iter2);
+			return 1;
+		}
+		i++;
+	}
+	return 0;
+}
+
+SDB_VISIBLE int sdb_hook_call(Sdb *s, const char *k, const char *v) {
+	SdbHook hook;
+	SdbListIter *iter;
+	int i = 0;
+	ls_foreach (s->hooks, iter, hook) {
+		if (!(i%2) && k && iter->n) {
+			void *user = iter->n->data;
+			hook (user, k, v);
+		}
+		i++;
+	}
+	return i>>1;
+}
+
+SDB_VISIBLE void sdb_hook_free(Sdb *s) {
+	ls_free (s->hooks);
+	s->hooks = NULL;
 }

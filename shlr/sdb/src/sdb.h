@@ -63,6 +63,7 @@ typedef struct sdb_t {
 	char *ndump;
 	ut64 expire;
 	SdbList *ns;
+	SdbList *hooks;
 	SdbKv tmpkv;
 } Sdb;
 
@@ -172,6 +173,13 @@ int sdb_alength(Sdb* s, const char *key);
 int sdb_alist(Sdb* s, const char *key);
 const char *sdb_anext(const char *str);
 const char *sdb_aindex(const char *str, int idx);
+
+typedef void (*SdbHook)(void *user, const char *k, const char *v);
+
+int sdb_hook(Sdb* s, SdbHook cb, void* user);
+int sdb_unhook(Sdb* s, SdbHook h);
+int sdb_hook_call(Sdb *s, const char *k, const char *v);
+void sdb_hook_free(Sdb *s);
 
 #ifdef __cplusplus
 }
