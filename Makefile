@@ -1,6 +1,7 @@
 -include config-user.mk
 include global.mk
 
+R2R=radare2-regressions
 DLIBDIR=$(DESTDIR)/$(LIBDIR)
 R2BINS=$(shell cd binr ; echo r*2)
 DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
@@ -186,12 +187,12 @@ shot:
 		radare.org:/srv/http/radareorg/get/shot
 
 tests:
-	@if [ -d r2-regressions ]; then \
-		cd r2-regressions ; git clean -xdf ; git pull ; \
+	@if [ -d $(R2R) ]; then \
+		cd $(R2R) ; git clean -xdf ; git pull ; \
 	else \
-		git clone https://github.com/radare/r2-regressions.git ; \
+		git clone https://github.com/radare/$(R2R).git ; \
 	fi
-	cd r2-regressions ; ${MAKE}
+	cd $(R2R) ; ${MAKE}
 
 include ${MKPLUGINS}
 
