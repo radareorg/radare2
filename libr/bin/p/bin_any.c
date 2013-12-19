@@ -29,6 +29,7 @@ struct r_bin_plugin_t r_bin_plugin_any = {
 	.destroy = &destroy,
 	.check = NULL,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = NULL,
 	.entries = NULL,
 	.sections = NULL,

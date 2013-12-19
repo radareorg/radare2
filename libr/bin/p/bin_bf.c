@@ -100,6 +100,7 @@ struct r_bin_plugin_t r_bin_plugin_bf = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = NULL,
 	.entries = entries,
 	.sections = NULL,

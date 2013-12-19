@@ -208,6 +208,7 @@ struct r_bin_plugin_t r_bin_plugin_p9 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

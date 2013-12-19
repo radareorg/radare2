@@ -140,6 +140,7 @@ RBinPlugin r_bin_plugin_rar = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,

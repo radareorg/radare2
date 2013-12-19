@@ -323,7 +323,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static ut64 get_vaddr (ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_vaddr (RBinArch *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	if (!baddr) return vaddr;
 	return baddr + vaddr;
 }
@@ -338,6 +338,7 @@ struct r_bin_plugin_t r_bin_plugin_pe = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

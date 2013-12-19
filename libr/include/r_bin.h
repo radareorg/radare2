@@ -96,6 +96,7 @@ typedef struct r_bin_info_t {
 
 typedef struct r_bin_object_t {
 	ut64 baddr;
+	ut64 boffset;
 	int size;
 	RList/*<RBinSection>*/ *sections;
 	RList/*<RBinImport>*/ *imports;
@@ -162,6 +163,7 @@ typedef struct r_bin_plugin_t {
 	int (*destroy)(RBinArch *arch);
 	int (*check)(RBinArch *arch);
 	ut64 (*baddr)(RBinArch *arch);
+	ut64 (*boffset)(RBinArch *arch);
 	RBinAddr* (*binsym)(RBinArch *arch, int num);
 	RList* (*entries)(RBinArch *arch);
 	RList* (*sections)(RBinArch *arch);
@@ -178,7 +180,7 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinArch *arch, int type, int idx);
-	ut64 (*get_vaddr)(ut64 baddr, ut64 paddr, ut64 vaddr);
+	ut64 (*get_vaddr)(RBinArch *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	int minstrlen;
 } RBinPlugin;
@@ -294,6 +296,7 @@ R_API int r_bin_list(RBin *bin);
 R_API int r_bin_load(RBin *bin, const char *file, int dummy);
 R_API RBinObject *r_bin_get_object(RBin *bin);
 R_API ut64 r_bin_get_baddr(RBin *bin);
+R_API ut64 r_bin_get_boffset(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
 
 R_API char* r_bin_demangle(RBin *bin, const char *str);

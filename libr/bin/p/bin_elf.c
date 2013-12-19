@@ -22,6 +22,10 @@ static ut64 baddr(RBinArch *arch) {
 	return Elf_(r_bin_elf_get_baddr) (arch->bin_obj);
 }
 
+static ut64 boffset(RBinArch *arch) {
+	return Elf_(r_bin_elf_get_boffset) (arch->bin_obj);
+}
+
 static RBinAddr* binsym(RBinArch *arch, int sym) {
 	ut64 addr = 0LL;
 	RBinAddr *ret = NULL;
@@ -557,9 +561,10 @@ static int size(RBinArch *arch) {
 	return off+len;
 }
 
-static ut64 get_elf_vaddr (ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_elf_vaddr (RBinArch *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
-	return baddr + vaddr;
+	struct Elf_(r_bin_elf_obj_t)* obj = arch->bin_obj;
+	return obj->baddr - obj->boffset + vaddr;
 
 }
 
@@ -573,6 +578,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = &boffset,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,

@@ -157,6 +157,7 @@ static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 	int i, minlen = bin->minstrlen;
 
 	if (cp->baddr) o->baddr = cp->baddr (a);
+	if (cp->boffset) o->boffset = cp->boffset (a);
 	// XXX: no way to get info from xtr pluginz?
 	if (cp->size) o->size = cp->size (a);
 	if (cp->binsym)
@@ -436,6 +437,10 @@ R_API int r_bin_load(RBin *bin, const char *file, int dummy) {
 
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	return bin->cur.o->baddr;
+}
+
+R_API ut64 r_bin_get_boffset(RBin *bin) {
+	return bin->cur.o->boffset;
 }
 
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym) {
@@ -729,7 +734,7 @@ R_API ut64 r_bin_get_offset (RBin *bin) {
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	RBinPlugin *cp = bin->cur.curplugin;
 	if (cp && cp->get_vaddr)
-	    return cp->get_vaddr (baddr, paddr, vaddr);
+	    return cp->get_vaddr (&bin->cur, baddr, paddr, vaddr);
 
 	ut32 delta;
 	if (!baddr) return vaddr;

@@ -209,6 +209,7 @@ static int Elf_(r_bin_elf_init)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	bin->symbols_by_ord = NULL;
 
 	bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
+	bin->boffset = Elf_(r_bin_elf_get_boffset) (bin);
 
 	return R_TRUE;
 }
@@ -307,8 +308,21 @@ ut64 Elf_(r_bin_elf_get_baddr)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	/* hopefully.. the first PT_LOAD is base */
 	for (i = 0; i < bin->ehdr.e_phnum; i++)
 		if (bin->phdr[i].p_type == PT_LOAD)
-			return (ut64)(bin->phdr[i].p_vaddr -
-				bin->phdr[i].p_offset);
+			return (ut64)bin->phdr[i].p_vaddr;
+		//eprintf ("oh fuck .. cant find any valid ptload?\n");
+	return 0;
+}
+
+ut64 Elf_(r_bin_elf_get_boffset)(struct Elf_(r_bin_elf_obj_t) *bin) {
+	int i;
+	if (!bin->phdr) {
+		//eprintf ("r_bin_elf: canot get_baddr() because no phdr found\n");
+		return 0;
+	}
+	/* hopefully.. the first PT_LOAD is base */
+	for (i = 0; i < bin->ehdr.e_phnum; i++)
+		if (bin->phdr[i].p_type == PT_LOAD)
+			return (ut64) bin->phdr[i].p_offset;
 		//eprintf ("oh fuck .. cant find any valid ptload?\n");
 	return 0;
 }

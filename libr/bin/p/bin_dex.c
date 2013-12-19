@@ -594,6 +594,7 @@ struct r_bin_plugin_t r_bin_plugin_dex = {
 	.destroy = NULL,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = NULL,
 	.entries = entries,
 	.classes = classes,

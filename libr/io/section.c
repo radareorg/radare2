@@ -225,8 +225,10 @@ R_API ut64 r_io_section_vaddr_to_offset(RIO *io, ut64 vaddr) {
 
 	r_list_foreach (io->sections, iter, s) {
 		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->vsize) {
+			/* XXX: Do we need this hack?
 			if (s->vaddr == 0) // hack
 				return vaddr;
+			*/
 			return (vaddr - s->vaddr + s->offset);
 		}
 	}
@@ -238,8 +240,10 @@ R_API ut64 r_io_section_offset_to_vaddr(RIO *io, ut64 offset) {
 	RListIter *iter;
 	r_list_foreach (io->sections, iter, s) {
 		if (offset >= s->offset && offset < s->offset + s->size) {
+			/* XXX: Do we need this hack?
 			if (s->vaddr == 0) // hack
 				return offset;
+			*/
 			io->section = s;
 			return (s->vaddr + offset - s->offset);
 		}

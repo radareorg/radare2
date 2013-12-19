@@ -101,6 +101,7 @@ RBinPlugin r_bin_plugin_fs = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = NULL,
 	.entries = NULL,
 	.sections = NULL,

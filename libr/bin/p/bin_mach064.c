@@ -185,6 +185,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
+	.boffset = NULL,
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = &sections,
