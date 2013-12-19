@@ -190,6 +190,9 @@ static int cmd_help(void *data, const char *input) {
 		"  ~!mov         grep lines not matching 'mov'\n"
 		"  ~mov[0]       get first column of lines matching 'mov'\n"
 		"  ~mov:3[0]     get 1st column from the 4th line matching 'mov'\n"
+        "Misc:\n"
+        "  0             go to begining of file\n"
+        "  0x33          go to 0x33'\n"
 		);
 		return 0;
 	case '$':
@@ -497,7 +500,7 @@ static int cmd_help(void *data, const char *input) {
 		" y [len] [off]         yank/paste bytes from/to memory\n"
 		" ?[??] [expr]          help or evaluate math expression\n"
 		" ?$?                   show available '$' variables\n"
-		" ?@?                   show help for '@' (seek) and '~' (grep) suffix (see ~?""?)\n"
+		" ?@?                   show misc help for '@' (seek) and '~' (grep) suffix (see ~?""?)\n"
 		);
 		break;
 	}
