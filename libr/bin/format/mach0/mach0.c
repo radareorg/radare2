@@ -59,9 +59,11 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 		return R_FALSE;
 	}
 #if R_BIN_MACH064
-	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c4L4I":"2i16c4l4i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg],
+		bin->endian?"2I16c4L4I":"2i16c4l4i", 1);
 #else
-	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg], bin->endian?"2I16c8I":"2i16c8i", 1);
+	len = r_buf_fread_at (bin->b, off, (ut8*)&bin->segs[seg],
+		bin->endian?"2I16c8I":"2i16c8i", 1);
 #endif
 	if (len == -1) {
 		eprintf ("Error: read (seg)\n");
@@ -114,9 +116,11 @@ static int MACH0_(r_bin_mach0_parse_symtab)(struct MACH0_(r_bin_mach0_obj_t)* bi
 			return R_FALSE;
 		}
 #if R_BIN_MACH064
-		len = r_buf_fread_at(bin->b, st.symoff, (ut8*)bin->symtab, bin->endian?"I2cSL":"i2csl", bin->nsymtab);
+		len = r_buf_fread_at (bin->b, st.symoff, (ut8*)bin->symtab,
+			bin->endian?"I2cSL":"i2csl", bin->nsymtab);
 #else
-		len = r_buf_fread_at(bin->b, st.symoff, (ut8*)bin->symtab, bin->endian?"I2cSI":"i2csi", bin->nsymtab);
+		len = r_buf_fread_at (bin->b, st.symoff, (ut8*)bin->symtab,
+			bin->endian?"I2cSI":"i2csi", bin->nsymtab);
 #endif
 		if (len == -1) {
 			eprintf ("Error: read (nlist)\n");
@@ -141,7 +145,8 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 			perror ("malloc (toc)");
 			return R_FALSE;
 		}
-		len = r_buf_fread_at(bin->b, bin->dysymtab.tocoff, (ut8*)bin->toc, bin->endian?"2I":"2i", bin->ntoc);
+		len = r_buf_fread_at(bin->b, bin->dysymtab.tocoff,
+			(ut8*)bin->toc, bin->endian?"2I":"2i", bin->ntoc);
 		if (len == -1) {
 			eprintf ("Error: read (toc)\n");
 			R_FREE (bin->toc);
@@ -155,9 +160,11 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 			return R_FALSE;
 		}
 #if R_BIN_MACH064
-		len = r_buf_fread_at (bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"12IL":"12il", bin->nmodtab);
+		len = r_buf_fread_at (bin->b, bin->dysymtab.modtaboff,
+			(ut8*)bin->modtab, bin->endian?"12IL":"12il", bin->nmodtab);
 #else
-		len = r_buf_fread_at (bin->b, bin->dysymtab.modtaboff, (ut8*)bin->modtab, bin->endian?"13I":"13i", bin->nmodtab);
+		len = r_buf_fread_at (bin->b, bin->dysymtab.modtaboff,
+			(ut8*)bin->modtab, bin->endian?"13I":"13i", bin->nmodtab);
 #endif
 		if (len == -1) {
 			eprintf ("Error: read (modtab)\n");
@@ -184,7 +191,7 @@ static int MACH0_(r_bin_mach0_parse_dysymtab)(struct MACH0_(r_bin_mach0_obj_t)* 
 }
 
 static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bin, ut64 off) {
-	int len = r_buf_fread_at (bin->b, off, (ut8*)&bin->thread,
+	int type, len = r_buf_fread_at (bin->b, off, (ut8*)&bin->thread,
 		bin->endian?"4I":"4i", 1);
 	if (len == -1) {
 		eprintf ("Error: read (thread)\n");
@@ -193,33 +200,46 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:
-		if (bin->thread.flavor == X86_THREAD_STATE32) {
+		if (bin->thread.flavor == X86_THREAD_STATE32) type = CPU_TYPE_I386;
+		else if (bin->thread.flavor == X86_THREAD_STATE64) type = CPU_TYPE_X86_64;
+		else type = bin->hdr.cputype;
+
+		switch (type) {
+		case CPU_TYPE_I386:
 			if ((len = r_buf_fread_at (bin->b, off + sizeof(struct thread_command),
 				(ut8*)&bin->thread_state.x86_32, "16i", 1)) == -1) {
 				eprintf ("Error: read (thread state x86_32)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_32.eip;
-		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
+			sdb_setn (bin->kv, "mach0.entry", off+sizeof (struct thread_command) + 
+				r_offsetof (struct x86_thread_state32, eip), 0);
+			break;
+		case CPU_TYPE_X86_64:
 			if ((len = r_buf_fread_at (bin->b, off + sizeof (struct thread_command)+4,
 				(ut8*)&bin->thread_state.x86_64, "32l", 1)) == -1) {
 				eprintf ("Error: read (thread state x86_64)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_64.rip;
+			sdb_setn (bin->kv, "mach0.entry", off+sizeof(struct thread_command) + 
+				r_offsetof (struct x86_thread_state64, rip), 0);
+			break;
+		default:
+			eprintf ("Unknown type\n");
 		}
 		break;
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
 		if (bin->thread.flavor == X86_THREAD_STATE32) {
-			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+			if ((len = r_buf_fread_at (bin->b, off + sizeof(struct thread_command),
 				(ut8*)&bin->thread_state.ppc_32, bin->endian?"40I":"40i", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_32)\n");
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.ppc_32.srr0;
 		} else if (bin->thread.flavor == X86_THREAD_STATE64) {
-			if ((len = r_buf_fread_at(bin->b, off + sizeof(struct thread_command),
+			if ((len = r_buf_fread_at (bin->b, off + sizeof(struct thread_command),
 				(ut8*)&bin->thread_state.ppc_64, bin->endian?"34LI3LI":"34li3li", 1)) == -1) {
 				eprintf ("Error: read (thread state ppc_64)\n");
 				return R_FALSE;
@@ -406,9 +426,10 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file) {
 	return bin;
 }
 
-struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new_buf)(struct r_buf_t *buf) {
+struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new_buf)(RBuffer *buf) {
 	struct MACH0_(r_bin_mach0_obj_t) *bin = R_NEW0 (struct MACH0_(r_bin_mach0_obj_t));
 	if (!bin) return NULL;
+	bin->kv = sdb_new (NULL, 0);
 	bin->b = buf;
 	bin->size = buf->length;
 	if (!MACH0_(r_bin_mach0_init)(bin))
@@ -850,9 +871,9 @@ ut64 MACH0_(r_bin_mach0_get_baddr)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 
 char* MACH0_(r_bin_mach0_get_class)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 #if R_BIN_MACH064
-	return r_str_newf ("MACH064");
+	return r_str_new ("MACH064");
 #else
-	return r_str_newf ("MACH0");
+	return r_str_new ("MACH0");
 #endif
 }
 
@@ -896,6 +917,7 @@ char* MACH0_(r_bin_mach0_get_cputype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	}
 }
 
+// TODO: use const char* 
 char* MACH0_(r_bin_mach0_get_cpusubtype)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_VAX:

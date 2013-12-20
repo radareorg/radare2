@@ -9,6 +9,8 @@
 static int load(RBinArch *arch) {
 	if (!(arch->bin_obj = MACH0_(r_bin_mach0_new_buf) (arch->buf)))
 		return R_FALSE;
+	struct MACH0_(r_bin_mach0_obj_t) *mo = arch->bin_obj;
+	arch->o->kv = mo->kv;
 	return R_TRUE;
 }
 
@@ -163,7 +165,7 @@ static RList* relocs(RBinArch *arch) {
 			break;
 		ptr->type = relocs[i].type;
 		ptr->additive = 0;
-		if(bin->imports_by_ord && relocs[i].ord < bin->imports_by_ord_size)
+		if (bin->imports_by_ord && relocs[i].ord < bin->imports_by_ord_size)
 			ptr->import = bin->imports_by_ord[relocs[i].ord];
 		else ptr->import = NULL;
 		ptr->addend = relocs[i].addend;

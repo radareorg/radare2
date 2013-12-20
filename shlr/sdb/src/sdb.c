@@ -279,6 +279,7 @@ SDB_VISIBLE void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 SDB_VISIBLE void sdb_list (Sdb* s) {
 	SdbKv *kv;
 	SdbListIter *iter;
+	if (s && s->ht)
 	ls_foreach (s->ht->list, iter, kv) {
 		if (!kv->value || !*kv->value)
 			continue;

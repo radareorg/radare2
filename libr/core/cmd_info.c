@@ -73,10 +73,11 @@ static void r_core_file_info (RCore *core, int mode) {
 
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	int newline = r_config_get_i (core->config, "scr.interactive");
 	ut64 offset = r_bin_get_offset (core->bin);
 	int va = core->io->va || core->io->debug;
 	int mode = 0;
-	int newline = r_config_get_i (core->config, "scr.interactive");
+	Sdb *db;
 	if (input[0]) {
 		switch (input[1]) {
 		case '*': mode = R_CORE_BIN_RADARE; break;
@@ -86,6 +87,25 @@ static int cmd_info(void *data, const char *input) {
 	}
 
 	switch (*input) {
+	case 'k':
+		db = core->bin->cur.o->kv;
+eprintf ("db = %p\n", db);
+		switch (input[1]) {
+		case 'v':
+			sdb_query (db, input+3);
+			break;
+		case '.':
+		case ' ':
+			sdb_query (db, input+2);
+			break;
+		case '\0':
+			sdb_list (db);
+			break;
+		case '?':
+		default:
+			eprintf ("Usage: ik [sdb-query]\n");
+		}
+		break;
 	case 'o': r_core_bin_load (core, input[1]==' '?
 			input+2: core->file->filename,
 			r_config_get_i (core->config, "bin.baddr"));

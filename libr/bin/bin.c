@@ -151,7 +151,6 @@ R_API int r_bin_load_languages(RBin *bin) {
 }
 
 static void set_bin_items(RBin *bin, RBinPlugin *cp) {
-
 	RBinArch *a = &bin->cur;
 	RBinObject *o = a->o;
 	int i, minlen = bin->minstrlen;
@@ -181,7 +180,6 @@ static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 	int rawstr = 0;
 	ut8* buf_bytes;
-	RBuffer *bin_buf = NULL;
 	ut64 start, end, 
 		 sz = -1, 
 		 offset = 0;
@@ -236,8 +234,7 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 	}
 
 	{
-
-		int minlen = bin->minstrlen;
+		//int minlen = bin->minstrlen;
 		RListIter *it;
 		RBinPlugin *any, *plugin;
 		RBinArch *a = &bin->cur;
@@ -297,7 +294,7 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 		o->strings = get_strings (a, minlen);
 		return R_FALSE;
 	}
-	set_bin_items(bin, cp);
+	set_bin_items (bin, cp);
 	return R_TRUE;
 }
 
@@ -550,7 +547,6 @@ R_API int r_bin_has_dbg_relocs (RBin *bin) {
 
 R_API RBin* r_bin_new() {
 	int i;
-	RBinPlugin *static_plugin;
 	RBinXtrPlugin *static_xtr_plugin;
 	RBin *bin = R_NEW0 (RBin);
 	if (!bin) return NULL;

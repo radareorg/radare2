@@ -5,6 +5,7 @@
 
 #include <r_util.h>
 #include <r_types.h>
+#include <r_db.h>
 #include <r_io.h>
 #include <r_list.h>
 #include <r_bin_dwarf.h>
@@ -112,6 +113,7 @@ typedef struct r_bin_object_t {
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	int referenced;
 	int lang;
+	Sdb *kv;
 } RBinObject;
 
 // XXX: this is a copy of RBinObject

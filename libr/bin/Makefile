@@ -1,6 +1,9 @@
 include ../config.mk
 include ../../global.mk
 
+include ../db/build.mk
+LDFLAGS+=${DL_LIBS}
+
 NAME=r_bin
 DEPS=r_lib r_util
 
