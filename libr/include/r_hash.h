@@ -39,7 +39,10 @@ typedef struct _SHA512_CTX {
 } R_SHA512_CTX;
 typedef R_SHA512_CTX R_SHA384_CTX;
 
-typedef struct r_hash_t {
+/* Fix names conflict with ruby bindings */
+#define RHash struct r_hash_t
+
+struct r_hash_t {
 	R_MD5_CTX md5;
 	R_SHA_CTX sha1;
 	R_SHA256_CTX sha256;
@@ -47,7 +50,7 @@ typedef struct r_hash_t {
 	R_SHA512_CTX sha512;
 	int rst;
 	ut8 digest[128];
-} RHash;
+};
 
 typedef struct r_hash_seed_t {
 	int prefix;
