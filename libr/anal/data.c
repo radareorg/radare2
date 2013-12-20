@@ -117,7 +117,7 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 		len = strlen (p);
 	if (type == R_ANAL_DATA_TYPE_WIDE_STRING) {
 		/* TODO: add support for wide strings */
-		eprintf ("r_anal_data_new_string: wide string not supported yet\n");
+		//eprintf ("r_anal_data_new_string: wide string not supported yet\n");
 	} else {
 		ad->str = malloc (len+1);
 		memcpy (ad->str, p, len);

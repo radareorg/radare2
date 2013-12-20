@@ -2,6 +2,7 @@ include ../../config.mk
 
 CFLAGS=-I$(LTOP)/include -I$(LTOP)/bin/format/ -Wall -fPIC
 LDFLAGS+=-L$(LTOP)/util -lr_util
+SHLR=$(LTOP)/../shlr
 
 foo: all
 

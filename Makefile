@@ -22,9 +22,9 @@ PWD=$(shell pwd)
 
 all: plugins.cfg
 	${MAKE} -C libr/util
-	${MAKE} -C shlr
-	${MAKE} -C libr
-	${MAKE} -C binr
+	${MAKE} -j$(MAKE_JOBS) -C shlr
+	${MAKE} -j$(MAKE_JOBS) -C libr
+	${MAKE} -j$(MAKE_JOBS) -C binr
 
 plugins.cfg:
 	@if [ ! -e config-user.mk ]; then echo ; \

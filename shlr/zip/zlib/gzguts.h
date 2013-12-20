@@ -20,11 +20,9 @@
 
 #include <stdio.h>
 #include "zlib.h"
-#ifdef STDC
-#  include <string.h>
-#  include <stdlib.h>
-#  include <limits.h>
-#endif
+#include <string.h>
+#include <stdlib.h>
+#include <limits.h>
 #include <fcntl.h>
 
 #ifdef _WIN32

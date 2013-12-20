@@ -1,6 +1,7 @@
 # config.mk.tail
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+SHLR:=$(LIBR)/../shlr
 
 #include $(LIBR)/../config-user.mk
 include $(LIBR)/../global.mk

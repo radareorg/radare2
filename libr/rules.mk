@@ -37,9 +37,9 @@ endif
 
 all: ${LIBSO} ${LIBAR} ${EXTRA_TARGETS}
 ifneq ($(SILENT),)
-	@-if [ -f p/Makefile ]; then (cd p && ${MAKE} all) ; fi
+	@-if [ -f p/Makefile ]; then (cd p && ${MAKE}) ; fi
 else
-	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE} all) ; fi
+	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE}) ; fi
 endif
 
 ifeq ($(WITHPIC),1)
