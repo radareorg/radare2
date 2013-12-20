@@ -1,6 +1,7 @@
 #!/bin/sh
 cd `dirname $PWD/$0`/..
 
+sys/clone-r2-bindings.sh
 sys/install.sh
 make dist
 

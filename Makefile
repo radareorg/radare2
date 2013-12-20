@@ -2,6 +2,7 @@
 include global.mk
 
 R2R=radare2-regressions
+R2R_URL=$(shell doc/repo REGRESSIONS)
 DLIBDIR=$(DESTDIR)/$(LIBDIR)
 R2BINS=$(shell cd binr ; echo r*2)
 DATADIRS=libr/cons/d libr/asm/d libr/syscall/d libr/magic/d
@@ -33,7 +34,6 @@ plugins.cfg:
 w32:
 	sys/mingw32.sh
 
-.PHONY: depgraph.png
 depgraph.png:
 	cd libr ; perl depgraph.pl | dot -Tpng -odepgraph.png
 
@@ -190,11 +190,11 @@ tests:
 	@if [ -d $(R2R) ]; then \
 		cd $(R2R) ; git clean -xdf ; git pull ; \
 	else \
-		git clone https://github.com/radare/$(R2R).git ; \
+		git clone ${R2R_URL} $(R2R); \
 	fi
 	cd $(R2R) ; ${MAKE}
 
 include ${MKPLUGINS}
 
-.PHONY: all clean distclean mrproper install symstall uninstall deinstall dist shot pkgcfg
-.PHONY: r2-bindings r2-bindings-dist libr binr install-man w32dist tests
+.PHONY: all clean distclean mrproper install symstall uninstall deinstall
+.PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png

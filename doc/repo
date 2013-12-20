@@ -1,0 +1,8 @@
+#!/bin/sh
+R2=https://github.com/radare/radare2
+IRED=https://github.com/radare/ired
+EXTRAS=https://github.com/radare/radare2-extras
+CAPSTONE=https://github.com/radare/radare2-capstone
+BINDINGS=https://github.com/radare/radare2-bindings
+REGRESSIONS=https://github.com/radare/radare2-regressions
+[ -z "$1" ] && grep =h $0 | grep -v grep || eval echo \$$1

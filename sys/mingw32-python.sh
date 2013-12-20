@@ -1,5 +1,6 @@
 #!/bin/sh
 cd `dirname $PWD/$0`
+./clone-r2-bindings.sh
 cd ../r2-bindings
 if [ -x /usr/bin/i686-w64-mingw32-gcc ]; then
     C=i686-w64-mingw32-gcc

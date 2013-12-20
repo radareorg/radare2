@@ -1,7 +1,9 @@
 #!/bin/sh
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+cd `dirname $PWD/$0`
+./clone-r2-bindings.sh
+cd ..
 
 . ./sys/CONFIG
 echo =============
