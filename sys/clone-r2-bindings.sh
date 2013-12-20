@@ -1,7 +1,7 @@
 #!/bin/sh
 cd `dirname $PWD/$0`/..
-if [ -d r2-bindings ]; then
-	cd r2-bindings
+if [ -d radare2-bindings ]; then
+	cd radare2-bindings
 	git pull
 else
 	URL=`doc/repo BINDINGS`
@@ -9,5 +9,5 @@ else
 		echo "No BINDINGS URL in doc/repo"
 		exit 1
 	fi
-	git clone $URL r2-bindings
+	git clone $URL radare2-bindings
 fi

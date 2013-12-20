@@ -6,7 +6,7 @@ cd `dirname $PWD/$0`
 D=${PWD}/../prefix-install
 ./python.sh --no-install
 
-cd ../r2-bindings
+cd ../radare2-bindings
 P=`./configure --version|head -n 1|cut -d ' ' -f 1`
 sudo make install-vapi DESTDIR=$D
 cd python

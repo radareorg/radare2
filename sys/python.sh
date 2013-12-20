@@ -28,7 +28,7 @@ PYTHON_CONFIG="python${PYTHON_VERSION}-config"
 echo "Using PYTHON_CONFIG ${PYTHON_CONFIG}"
 echo
 
-cd r2-bindings
+cd radare2-bindings
 ./configure --prefix=${PREFIX} --enable=python || exit 1
 ${SUDO} make install-vapi DESTDIR=${DESTDIR} || exit 1
 cd python

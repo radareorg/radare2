@@ -19,7 +19,7 @@ else
 fi
 [ -n "${NOSUDO}" ] && SUDO=
 
-cd r2-bindings
+cd radare2-bindings
 ./configure --prefix=${PREFIX} --enable=lua || exit 1
 cd lua
 make clean
