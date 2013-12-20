@@ -354,7 +354,8 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 		case LC_DYLD_INFO:
 		case LC_DYLD_INFO_ONLY:
 			bin->dyld_info = malloc (sizeof(struct dyld_info_command));
-			if (r_buf_fread_at (bin->b, off, (ut8*)bin->dyld_info, bin->endian?"12I":"12i", 1) == -1) {
+			if (r_buf_fread_at (bin->b, off, (ut8*)bin->dyld_info,
+					bin->endian?"12I":"12i", 1) == -1) {
 				free (bin->dyld_info);
 				bin->dyld_info = NULL;
 				eprintf ("Error: read (LC_DYLD_INFO) at 0x%08"PFMT64x"\n", off);
@@ -832,6 +833,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		for (i = 0; i < bin->nsects; i++) {
 			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
 				entry->offset = (ut64)bin->sects[i].offset;
+				sdb_setn (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
 				if (entry->addr==0) // workaround for object files
 					entry->addr = entry->offset;
