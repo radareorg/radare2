@@ -223,8 +223,8 @@ static char * java_resolve(int idx, ut8 space_bn_name_type) {
 
 int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
-	ut8 local_var = 0,
-		incr_by = 0;
+	ut32 val_one = 0,
+		val_two = 0;
 
 	
 	switch (java_ops[idx].byte) {
@@ -271,9 +271,9 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 			return java_ops[idx].size;
 
 		case 0x84: // iinc
-			local_var = bytes[1],
-				incr_by = bytes[2];
-			snprintf (output, outlen, "%s %d %d", java_ops[idx].name, local_var, incr_by);
+			val_one = (ut32)bytes[1];
+			val_two = (ut32) bytes[2];
+			snprintf (output, outlen, "%s %d %d", java_ops[idx].name, val_one, val_two);
 			return java_ops[idx].size;
 
 
@@ -296,6 +296,19 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 			snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
 				addr+(int)(short)USHORT (bytes, 1));
 			return java_ops[idx].size;
+		// XXX - Figure out what constitutes the [<high>] value
+		case 0xab: // tableswitch
+		case 0xaa: // tableswitch
+			val_one = UINT(bytes,1);
+			val_two = (R_BIN_JAVA_UINT(bytes,5));
+			snprintf (output, outlen, "%s 0x%02x 0x%02x", java_ops[idx].name, val_one, val_two);
+			//return java_ops[idx].size;
+			return 9; 
+
+			snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
+				addr+(int)(short)USHORT (bytes, 1));
+			return java_ops[idx].size;
+
 
 		case 0xb6: // invokevirtual
 		case 0xb7: // invokespecial

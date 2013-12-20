@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake
+/* radare - Apache 2.0 - Copyright 2007-2013 - pancake
    class.h rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 
@@ -8,6 +8,7 @@
 #include <r_types.h>
 #include <r_list.h>
 #include <r_bin.h>
+#include <sdb.h>
 
 #define USHORT(x,y) ((ut16)(x[y+1]|(x[y]<<8)))
 #define UINT(x,y) ((ut32)((x[y]<<24)|(x[y+1]<<16)|(x[y+2]<<8)|x[y+3]))
@@ -742,6 +743,7 @@ typedef struct r_bin_java_obj_t {
 	RList* cp_list;
 	RList* interfaces_list;
 	RList* attributes;
+	Sdb *kv;
 } RBinJavaObj;
 
 R_API RList * r_bin_java_get_interface_names(RBinJavaObj * bin);
@@ -766,6 +768,7 @@ typedef struct  r_bin_java_object_allocs_t {
 	void (*delete_obj) (RBinJavaCPTypeObj *obj);
 	void (*print_summary) (RBinJavaCPTypeObj *obj);
 	ut64 (*calc_size) (RBinJavaCPTypeObj *obj);
+	ut64 (*stringify_obj) (RBinJavaCPTypeObj *obj);
 } RBinJavaCPTypeObjectAllocs;
 
 typedef struct  r_bin_java_attr_allocs_t {
@@ -941,6 +944,23 @@ R_API void r_bin_java_print_synthetic_attr_summary(RBinJavaAttrInfo *attr);
 R_API void r_bin_java_print_attr_summary(RBinJavaAttrInfo *attr);
 
 
+R_API char * r_bin_java_print_utf8_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_name_and_type_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_double_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_long_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_float_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_integer_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_string_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_classref_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_fieldref_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_methodref_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_interfacemethodref_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_unknown_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_null_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_methodtype_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_invokedynamic_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_methodhandle_cp_stringify(RBinJavaCPTypeObj* obj);
+R_API char * r_bin_java_print_class_cp_stringify(RBinJavaCPTypeObj* obj);
 
 R_API void r_bin_java_print_utf8_cp_summary(RBinJavaCPTypeObj* obj);
 R_API void r_bin_java_print_name_and_type_cp_summary(RBinJavaCPTypeObj* obj);

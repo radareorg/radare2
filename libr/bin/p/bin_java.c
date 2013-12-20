@@ -9,8 +9,21 @@
 
 #define IFDBG  if(0)
 
-static int load(RBinArch *arch) {
+/*static int load(RBinArch *arch) {
 	return ((arch->bin_obj = r_bin_java_new_buf (arch->buf)))? R_TRUE: R_FALSE;
+}*/
+
+static int load(RBinArch *arch) {
+	struct r_bin_java_obj_t* bin_obj = NULL;
+	int result = R_FALSE;
+
+	bin_obj = r_bin_java_new_buf (arch->buf);
+	if (bin_obj) {
+		arch->o->kv = bin_obj->kv;
+		arch->bin_obj = bin_obj;
+		result = R_TRUE;
+	}
+	return result;
 }
 
 static int destroy(RBinArch *arch) {

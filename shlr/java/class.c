@@ -1,4 +1,4 @@
-/* Apache - Copyright 2007-2013 - pancake and dso
+/* Apache 2.0 - Copyright 2007-2013 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
 */
 
@@ -12,6 +12,7 @@
 #include <r_util.h>
 #include <r_bin.h>
 #include <math.h>
+#include <sdb.h>
 
 #ifdef IFDBG
 #undef IFDBG
@@ -159,25 +160,25 @@ static RBinJavaStackMapFrameMetas R_BIN_JAVA_STACK_MAP_FRAME_METAS[] = {
 }; 
 
 static RBinJavaCPTypeObjectAllocs R_BIN_ALLOCS_CONSTANTS[]= {
-	{r_bin_java_do_nothing_new, r_bin_java_do_nothing_free, r_bin_java_print_null_cp_summary, r_bin_java_do_nothing_calc_size},
-	{r_bin_java_utf8_cp_new, r_bin_java_utf8_info_free, r_bin_java_print_utf8_cp_summary, r_bin_java_utf8_cp_calc_size},
-	{r_bin_java_unknown_cp_new, r_bin_java_default_free, r_bin_java_print_unknown_cp_summary, r_bin_java_unknown_cp_calc_size},
-	{r_bin_java_integer_cp_new, r_bin_java_default_free, r_bin_java_print_integer_cp_summary, r_bin_java_integer_cp_calc_size},
-	{r_bin_java_float_cp_new, r_bin_java_default_free, r_bin_java_print_float_cp_summary, r_bin_java_float_cp_calc_size},
-	{r_bin_java_long_cp_new, r_bin_java_default_free, r_bin_java_print_long_cp_summary, r_bin_java_long_cp_calc_size},
-	{r_bin_java_double_cp_new, r_bin_java_default_free, r_bin_java_print_double_cp_summary, r_bin_java_double_cp_calc_size},
-	{r_bin_java_class_cp_new, r_bin_java_default_free, r_bin_java_print_classref_cp_summary, r_bin_java_class_cp_calc_size},
-	{r_bin_java_string_cp_new, r_bin_java_default_free, r_bin_java_print_string_cp_summary, r_bin_java_string_cp_calc_size},
-	{r_bin_java_fieldref_cp_new, r_bin_java_default_free, r_bin_java_print_fieldref_cp_summary, r_bin_java_fieldref_cp_calc_size},
-	{r_bin_java_methodref_cp_new, r_bin_java_default_free, r_bin_java_print_methodref_cp_summary, r_bin_java_methodref_cp_calc_size},
-	{r_bin_java_interfacemethodref_cp_new, r_bin_java_default_free, r_bin_java_print_interfacemethodref_cp_summary, r_bin_java_interfacemethodref_cp_calc_size},
-	{r_bin_java_name_and_type_cp_new, r_bin_java_default_free, r_bin_java_print_name_and_type_cp_summary, r_bin_java_name_and_type_cp_calc_size},
-	{NULL, NULL, NULL, NULL},
-	{NULL, NULL, NULL, NULL},
-	{r_bin_java_methodhandle_cp_new, r_bin_java_default_free, r_bin_java_print_methodhandle_cp_summary, r_bin_java_methodhandle_cp_calc_size},
-	{r_bin_java_methodtype_cp_new, r_bin_java_default_free, r_bin_java_print_methodtype_cp_summary, r_bin_java_methodtype_cp_calc_size},
-	{NULL, NULL, NULL, NULL},
-	{r_bin_java_invokedynamic_cp_new, r_bin_java_default_free, r_bin_java_print_invokedynamic_cp_summary, r_bin_java_invokedynamic_cp_calc_size},
+	{r_bin_java_do_nothing_new, r_bin_java_do_nothing_free, r_bin_java_print_null_cp_summary, r_bin_java_do_nothing_calc_size, r_bin_java_print_null_cp_stringify},
+	{r_bin_java_utf8_cp_new, r_bin_java_utf8_info_free, r_bin_java_print_utf8_cp_summary, r_bin_java_utf8_cp_calc_size, r_bin_java_print_utf8_cp_stringify},
+	{r_bin_java_unknown_cp_new, r_bin_java_default_free, r_bin_java_print_unknown_cp_summary, r_bin_java_unknown_cp_calc_size, r_bin_java_print_unknown_cp_stringify},
+	{r_bin_java_integer_cp_new, r_bin_java_default_free, r_bin_java_print_integer_cp_summary, r_bin_java_integer_cp_calc_size, r_bin_java_print_integer_cp_stringify},
+	{r_bin_java_float_cp_new, r_bin_java_default_free, r_bin_java_print_float_cp_summary, r_bin_java_float_cp_calc_size, r_bin_java_print_float_cp_stringify},
+	{r_bin_java_long_cp_new, r_bin_java_default_free, r_bin_java_print_long_cp_summary, r_bin_java_long_cp_calc_size, r_bin_java_print_long_cp_stringify},
+	{r_bin_java_double_cp_new, r_bin_java_default_free, r_bin_java_print_double_cp_summary, r_bin_java_double_cp_calc_size, r_bin_java_print_double_cp_stringify},
+	{r_bin_java_class_cp_new, r_bin_java_default_free, r_bin_java_print_classref_cp_summary, r_bin_java_class_cp_calc_size, r_bin_java_print_classref_cp_stringify},
+	{r_bin_java_string_cp_new, r_bin_java_default_free, r_bin_java_print_string_cp_summary, r_bin_java_string_cp_calc_size, r_bin_java_print_string_cp_stringify},
+	{r_bin_java_fieldref_cp_new, r_bin_java_default_free, r_bin_java_print_fieldref_cp_summary, r_bin_java_fieldref_cp_calc_size, r_bin_java_print_fieldref_cp_stringify},
+	{r_bin_java_methodref_cp_new, r_bin_java_default_free, r_bin_java_print_methodref_cp_summary, r_bin_java_methodref_cp_calc_size, r_bin_java_print_methodref_cp_stringify},
+	{r_bin_java_interfacemethodref_cp_new, r_bin_java_default_free, r_bin_java_print_interfacemethodref_cp_summary, r_bin_java_interfacemethodref_cp_calc_size, r_bin_java_print_interfacemethodref_cp_stringify},
+	{r_bin_java_name_and_type_cp_new, r_bin_java_default_free, r_bin_java_print_name_and_type_cp_summary, r_bin_java_name_and_type_cp_calc_size, r_bin_java_print_name_and_type_cp_stringify},
+	{NULL, NULL, NULL, NULL, NULL},
+	{NULL, NULL, NULL, NULL, NULL},
+	{r_bin_java_methodhandle_cp_new, r_bin_java_default_free, r_bin_java_print_methodhandle_cp_summary, r_bin_java_methodhandle_cp_calc_size, r_bin_java_print_methodhandle_cp_stringify},
+	{r_bin_java_methodtype_cp_new, r_bin_java_default_free, r_bin_java_print_methodtype_cp_summary, r_bin_java_methodtype_cp_calc_size, r_bin_java_print_methodtype_cp_stringify},
+	{NULL, NULL, NULL, NULL, NULL},
+	{r_bin_java_invokedynamic_cp_new, r_bin_java_default_free, r_bin_java_print_invokedynamic_cp_summary, r_bin_java_invokedynamic_cp_calc_size, r_bin_java_print_invokedynamic_cp_stringify},
 };
 static RBinJavaCPTypeObj R_BIN_JAVA_NULL_TYPE;
 
@@ -254,6 +255,36 @@ static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 	{ "Synthetic", R_BIN_JAVA_ATTR_TYPE_SYNTHETIC_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[19]}, 
 	{ "Unknown", R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[20]} 
 };
+
+
+static void add_cp_obj_to_sdb( Sdb* sdb, char *class_name, RBinJavaCPTypeObj *cp_obj ){
+	ut32 size = strlen(class_name) + 13 + 5 + 1;
+	char *key = malloc(size);
+	char *value = NULL;
+	if (key) {
+		memset(key, 0, size);
+		snprintf(key, size-1, "java.%s.cp_obj.%d", class_name, cp_obj->metas->ord);
+		value = ( (RBinJavaCPTypeMetas *) cp_obj->metas->type_info)->allocs->stringify_obj (cp_obj);
+		sdb_set (sdb, key, value, 0);
+	}
+	
+	
+	
+}
+
+
+static void add_cp_objs_to_sdb( RBinJavaObj *bin){
+	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
+	char * class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
+	RBinJavaCPTypeObj *cp_obj = NULL;
+
+	ut32 idx = 0;
+	for (idx = 0; idx < bin->cp_count; idx++) {
+		cp_obj = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (bin, idx);
+		IFDBG eprintf("Adding %s.cp_obj.%d to the sdb.\n", class_name, cp_obj->metas->ord);
+		add_cp_obj_to_sdb(bin->kv, class_name, cp_obj);
+	}
+}
 
 static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_flags) {	
 	char *outbuffer = NULL, *cur_pos = NULL;
@@ -412,7 +443,7 @@ double rbin_java_raw_to_double(ut8* raw, ut64 offset) {
 			(bits & 0xfffffffffffffL) << 1 :
 			(bits & 0xfffffffffffffL) | 0x10000000000000L;
 	double result = 0.0;
-	IFDBG printf ("Convert Long to Double: %llx\n", bits);
+	IFDBG printf ("Convert Long to Double: %08"PFMT64x"\n", bits);
 	if (0x7ff0000000000000 == bits) {
 		result = INFINITY;
 	}else if (0xfff0000000000000 == bits) {
@@ -643,7 +674,7 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 
 	r_buf_read_at (bin->b, offset, &tag, 1);
 	if ( tag > R_BIN_JAVA_CP_METAS_SZ) {
-		eprintf ("Invalid tag '%d' at offset 0x%08llx\n", tag, (ut64)offset);
+		eprintf ("Invalid tag '%d' at offset 0x%08"PFMT64x"\n", tag, (ut64)offset);
 		java_obj = r_bin_java_unknown_cp_new (bin, &tag, 1);
 
 		if (java_obj != NULL && java_obj->metas != NULL) {
@@ -668,17 +699,17 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 
 	memset (buf, 0, buf_sz);
 	r_buf_read_at(bin->b, offset, (ut8*) buf, buf_sz);
-	IFDBG printf ("Parsed the tag '%d':%s and create object from offset 0x%08llx.\n",tag, R_BIN_JAVA_CP_METAS[tag].name, offset);
+	IFDBG printf ("Parsed the tag '%d':%s and create object from offset 0x%08"PFMT64x".\n",tag, R_BIN_JAVA_CP_METAS[tag].name, offset);
 	java_obj = (*java_constant_info->allocs->new_obj)(bin, buf, buf_sz);
 	if (java_obj != NULL && java_obj->metas != NULL) {
 		java_obj->file_offset = offset;
-		//IFDBG printf ("java_obj->file_offset = 0x%08llx.\n",java_obj->file_offset);
+		//IFDBG printf ("java_obj->file_offset = 0x%08"PFMT64x".\n",java_obj->file_offset);
 	}else if(java_obj == NULL) {
 		eprintf ("Unable to parse the tag '%d' and create valid object.\n",tag);
 	}else if(java_obj->metas == NULL) {
 		eprintf ("Unable to parse the tag '%d' and create valid object.\n",tag);		
 	}else{
-		eprintf ("Failed to set the java_obj->metas-file_offset for '%d' offset is(0x%08llx).\n",tag, offset);
+		eprintf ("Failed to set the java_obj->metas-file_offset for '%d' offset is(0x%08"PFMT64x").\n",tag, offset);
 	}
 
 	free (buf);
@@ -996,7 +1027,7 @@ R_API ut8* r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 offset, ut64 sz) {
 	memset (attr_buf, 0, sz);
 	r_buf_read_at (bin->b, offset, (ut8*)attr_buf, sz);
 	if (attr_buf == NULL) {
-		eprintf ("Unable to allocate enough bytes (0x%04llx) to read in the attribute.\n", sz);
+		eprintf ("Unable to allocate enough bytes (0x%04x) to read in the attribute.\n", sz);
 		return attr_buf;
 	}
 	return attr_buf;
@@ -1109,19 +1140,24 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr_from_buffer (ut8 *buffer, ut64
 }
 
 RBinJavaClass2* r_bin_java_read_class_file2(RBinJavaObj *bin, ut64 offset) {
-	RBinJavaClass2 *cf2 = (RBinJavaClass2 *) malloc (sizeof (RBinJavaClass2));
+	ut8 buf[6];
 
+	RBinJavaClass2 *cf2 = (RBinJavaClass2 *) malloc (sizeof (RBinJavaClass2));
+	
 	if (cf2) {
 		memset (cf2, 0, sizeof (RBinJavaClass2));
 		IFDBG printf ("\n0x%x Offset before reading the cf2 structure\n", bin->b->cur);
-		r_buf_read_at (bin->b, bin->b->cur, (ut8*)cf2, 3*sizeof (ut16));
+		r_buf_read_at (bin->b, bin->b->cur, buf, 6);
+
 		/*
 		Reading the following fields:
 			ut16 access_flags;
 			ut16 this_class;
 			ut16 super_class;
 		*/
-		cf2->this_class = r_bin_java_swap_ushort (cf2->this_class);
+		cf2->access_flags = R_BIN_JAVA_USHORT (buf, 0);
+		cf2->this_class = R_BIN_JAVA_USHORT (buf, 2);
+		cf2->super_class = R_BIN_JAVA_USHORT (buf, 4);
 		cf2->flags_str = retrieve_class_method_access_string(cf2->access_flags);
 		IFDBG eprintf("This class flags are: %s\n", cf2->flags_str);
 	}else{
@@ -1201,6 +1237,9 @@ static int javasm_init(RBinJavaObj *bin) {
 			r_list_append (bin->interfaces_list, interfaces_obj);			
 		}		
 	} 
+
+	add_cp_objs_to_sdb(bin);
+
 	bin->interfaces_size = bin->b->cur - bin->interfaces_offset;
 
 	bin->fields_count = r_bin_java_read_short (bin, bin->b->cur);
@@ -1766,6 +1805,9 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 
 R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	if (!bin) return NULL;
+
+	// XXX - need to free all keys and values
+	sdb_free (bin->kv);
 	// free up the constant pool list
 	r_bin_java_constant_pool_list_free (bin);
 	// free up the fields list
@@ -1790,6 +1832,7 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 R_API RBinJavaObj* r_bin_java_new (const char* file) {
 	ut8 *buf;
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
+	bin->kv = sdb_new (NULL, 0);
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) 
 		return r_bin_java_free (bin);
@@ -1805,6 +1848,7 @@ R_API RBinJavaObj* r_bin_java_new (const char* file) {
 R_API RBinJavaObj* r_bin_java_new_buf(RBuffer *buf) {
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	if (!bin) return NULL;
+	bin->kv = sdb_new (NULL, 0);
 	bin->b = buf;
 	bin->size = buf->length;
 	buf->cur = 0; // rewind
@@ -3492,7 +3536,7 @@ R_API RBinJavaStackMapFrame* r_bin_java_stack_map_frame_new (ut8* buffer, ut64 s
 
 		}
 	}
-	//IFDBG printf ("Created a stack frame at offset(0x%llx) of size: %d\n", buf_offset, stack_frame->size);//r_bin_java_print_stack_map_frame_summary(stack_frame);
+	//IFDBG printf ("Created a stack frame at offset(0x%08"PFMT64x") of size: %d\n", buf_offset, stack_frame->size);//r_bin_java_print_stack_map_frame_summary(stack_frame);
 	stack_frame->size = offset;
 	//IFDBG r_bin_java_print_stack_map_frame_summary(stack_frame);
 	return stack_frame;		
@@ -4237,7 +4281,7 @@ R_API void r_bin_java_print_source_debug_attr_summary(RBinJavaAttrInfo *attr) {
 		return;
 	}
 	printf ("Source Debug Extension Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Extension length: %d\n", attr->length);
 	printf ("   Source Debug Extension value: \n");
@@ -4254,7 +4298,7 @@ R_API void r_bin_java_print_unknown_attr_summary(RBinJavaAttrInfo *attr) {
 		return;
 	}
 	printf ("Unknown Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 
@@ -4265,7 +4309,7 @@ R_API void r_bin_java_print_code_exceptions_attr_summary(RBinJavaExceptionEntry 
 		return;
 	}
 	printf ("   Exception Table Entry Information\n");
-	printf ("	  offset:	 0x%08llx\n", exc_entry->file_offset);
+	printf ("	  offset:	 0x%08"PFMT64x"\n", exc_entry->file_offset);
 	printf ("	   catch_type: %d\n", exc_entry->catch_type);
 	printf ("	   start_pc:   0x%04x\n", exc_entry->start_pc);
 	printf ("	   end_pc:	 0x%04x\n", exc_entry->end_pc);
@@ -4283,7 +4327,7 @@ R_API void r_bin_java_print_code_attr_summary(RBinJavaAttrInfo *attr) {
 		return;
 	}
 	printf ("Code Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d, Attribute Count: %d\n", attr->length, attr->info.code_attr.attributes_count);
 	printf ("	  Max Stack: %d\n", attr->info.code_attr.max_stack);
@@ -4318,7 +4362,7 @@ R_API void r_bin_java_print_constant_value_attr_summary(RBinJavaAttrInfo *attr) 
 		return;
 	}
 	printf ("Constant Value Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	printf ("   ConstantValue Index: %d\n", attr->info.constant_value_attr.constantvalue_idx);
@@ -4331,7 +4375,7 @@ R_API void r_bin_java_print_deprecated_attr_summary(RBinJavaAttrInfo *attr) {
 		return;
 	}
 	printf ("Deperecated Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 }
@@ -4342,7 +4386,7 @@ R_API void r_bin_java_print_enclosing_methods_attr_summary(RBinJavaAttrInfo *att
 		return;
 	}
 	printf ("Enclosing Method Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	printf ("   Class Info Index : 0x%02x\n", attr->info.enclosing_method_attr.class_idx);
@@ -4359,7 +4403,7 @@ R_API void r_bin_java_print_exceptions_attr_summary(RBinJavaAttrInfo *attr) {
 		return;
 	}
 	printf ("Exceptions Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	for (i = 0; i < attr->length; i++) {
@@ -4374,7 +4418,7 @@ R_API void r_bin_java_print_classes_attr_summary(RBinJavaClassesAttribute *icatt
 		return;
 	}
 
-	printf ("   Inner Classes Class Attribute Offset: 0x%08llx\n", icattr->file_offset);
+	printf ("   Inner Classes Class Attribute Offset: 0x%08"PFMT64x"\n", icattr->file_offset);
 	printf ("   Inner Classes Class Attribute Class Name (%d): %s\n", icattr->inner_name_idx, icattr->name);
 	printf ("   Inner Classes Class Attribute Class inner_class_info_idx: %d\n", icattr->inner_class_info_idx);
 	printf ("   Inner Classes Class Attribute Class inner_class_access_flags: 0x%02x %s\n", icattr->inner_class_access_flags, icattr->flags_str);
@@ -4398,7 +4442,7 @@ R_API void r_bin_java_print_inner_classes_attr_summary(RBinJavaAttrInfo *attr) {
 	}
 
 	printf ("Inner Classes Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 
@@ -4413,7 +4457,7 @@ R_API void r_bin_java_print_line_number_attr_summary(RBinJavaLineNumberAttribute
 		eprintf ("Attempting to print an invalid RBinJavaLineNumberAttribute *.\n");
 		return;
 	}
-	printf ("   Line Number Attribute offset: 0x%08llx\n", lnattr->file_offset);
+	printf ("   Line Number Attribute offset: 0x%08"PFMT64x"\n", lnattr->file_offset);
 	printf ("   Line Number Attribute start_pc: %d\n", lnattr->start_pc);
 	printf ("   Line Number Attribute line_number: %d\n", lnattr->line_number);
 
@@ -4427,7 +4471,7 @@ R_API void r_bin_java_print_line_number_table_attr_summary(RBinJavaAttrInfo *att
 		return;
 	}
 	printf ("Line Number Table Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	r_list_foreach_safe (attr->info.line_number_table_attr.line_number_table, iter, iter_tmp, lnattr) {
@@ -4441,7 +4485,7 @@ R_API void r_bin_java_print_local_variable_attr_summary(RBinJavaLocalVariableAtt
 		eprintf ("Attempting to print an invalid RBinJavaLocalVariableAttribute *.\n");
 		return;
 	}
-	printf ("   Local Variable Attribute offset: 0x%08llx\n", lvattr->file_offset);
+	printf ("   Local Variable Attribute offset: 0x%08"PFMT64x"\n", lvattr->file_offset);
 	printf ("   Local Variable Attribute start_pc: %d\n", lvattr->start_pc);
 	printf ("   Local Variable Attribute length: %d\n", lvattr->length);
 	printf ("   Local Variable Attribute name_idx: %d\n", lvattr->name_idx);
@@ -4459,7 +4503,7 @@ R_API void r_bin_java_print_local_variable_table_attr_summary(RBinJavaAttrInfo *
 		return;
 	}
 	printf ("Local Variable Table Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	r_list_foreach_safe (attr->info.local_variable_table_attr.local_variable_table, iter, iter_tmp, lvattr) {
@@ -4472,7 +4516,7 @@ R_API void r_bin_java_print_local_variable_type_attr_summary(RBinJavaLocalVariab
 		eprintf ("Attempting to print an invalid RBinJavaLocalVariableTypeAttribute *.\n");
 		return;
 	}
-	printf ("   Local Variable Type Attribute offset: 0x%08llx\n", lvattr->file_offset);
+	printf ("   Local Variable Type Attribute offset: 0x%08"PFMT64x"\n", lvattr->file_offset);
 	printf ("   Local Variable Type Attribute start_pc: %d\n", lvattr->start_pc);
 	printf ("   Local Variable Type Attribute length: %d\n", lvattr->length);
 	printf ("   Local Variable Type Attribute name_idx: %d\n", lvattr->name_idx);
@@ -4489,7 +4533,7 @@ R_API void r_bin_java_print_local_variable_type_table_attr_summary(RBinJavaAttrI
 		return;
 	}
 	printf ("Local Variable Type Table Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	r_list_foreach_safe (attr->info.local_variable_type_table_attr.local_variable_table, iter, iter_tmp, lvtattr) {
@@ -4503,7 +4547,7 @@ R_API void r_bin_java_print_signature_attr_summary(RBinJavaAttrInfo *attr) {
 		return;
 	}
 	printf ("Signature Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	printf ("   Signature UTF8 Index: %d\n", attr->info.signature_attr.signature_idx);	
@@ -4516,7 +4560,7 @@ R_API void r_bin_java_print_source_code_file_attr_summary(RBinJavaAttrInfo *attr
 		return;
 	}
 	printf ("Source File Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	printf ("   Source File Index: %d\n", attr->info.source_file_attr.sourcefile_idx);	
@@ -4528,7 +4572,7 @@ R_API void r_bin_java_print_synthetic_attr_summary(RBinJavaAttrInfo *attr) {
 		return;
 	}
 	printf ("Synthetic Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	printf ("   Attribute Index: %d\n", attr->info.source_file_attr.sourcefile_idx);	
@@ -4545,7 +4589,7 @@ R_API void r_bin_java_print_stack_map_table_attr_summary(RBinJavaAttrInfo *attr)
 	}
 
 	printf ("StackMapTable Attribute information:\n");
-	printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
 	printf ("   StackMapTable Method Code Size: 0x%08x\n", attr->info.stack_map_table_attr.code_size);
@@ -4567,7 +4611,7 @@ R_API void r_bin_java_print_stack_map_append_frame_summary(RBinJavaStackMapFrame
 	RBinJavaVerificationObj *ver_obj;
 	printf ("Stack Map Frame Information\n");
 	printf ("	Tag Value = 0x%02x Name: %s\n", obj->tag, ((RBinJavaStackMapFrameMetas *) obj->metas->type_info)->name);
-	printf ("	Offset: 0x%08llx\n", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"\n", obj->file_offset);
 	printf ("	Local Variable Count = 0x%04x\n", obj->number_of_locals);	
 	printf ("	Local Variables:\n");	
 	ptrList = obj->local_items;
@@ -4593,7 +4637,7 @@ R_API void r_bin_java_print_stack_map_frame_summary(RBinJavaStackMapFrame *obj) 
 
 	printf ("Stack Map Frame Information\n");
 	printf ("	Tag Value = 0x%02x Name: %s\n", obj->tag, ((RBinJavaStackMapFrameMetas *) obj->metas->type_info)->name);
-	printf ("	Offset: 0x%08llx\n", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"\n", obj->file_offset);
 	printf ("	Local Variable Count = 0x%04x\n", obj->number_of_locals);	
 	printf ("	Stack Items Count = 0x%04x\n", obj->number_of_stack_items);	
 
@@ -4621,7 +4665,7 @@ R_API void r_bin_java_print_verification_info_summary(RBinJavaVerificationObj *o
 		tag_value = obj->tag;
 
 	printf ("Verification Information\n");
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	Tag Value = 0x%02x\n", obj->tag);
 	printf ("	Name = %s\n", R_BIN_JAVA_VERIFICATION_METAS[tag_value].name);	
 	if (obj->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
@@ -4648,7 +4692,7 @@ R_API void r_bin_java_print_field_summary(RBinJavaField *field) {
 	}*/
 
 	printf ("Field Summary Information:\n");
-	printf ("	File offset: 0x%08llx", field->file_offset);
+	printf ("	File offset: 0x%08"PFMT64x"", field->file_offset);
 	printf ("	Access Flags: %d\n", field->flags);
 	printf ("	Name Index: %d (%s)\n", field->name_idx, field->name);
 	printf ("	Descriptor Index: %d (%s)\n", field->descriptor_idx, field->descriptor); 
@@ -4669,7 +4713,7 @@ R_API void r_bin_java_print_method_summary(RBinJavaField *field) {
 	}
 
 	printf ("Method Summary Information:\n");
-	printf ("	File offset: 0x%08llx", field->file_offset);
+	printf ("	File offset: 0x%08"PFMT64x"", field->file_offset);
 	printf ("	Access Flags: %d\n", field->flags);
 	printf ("	Name Index: %d (%s)\n", field->name_idx, field->name);
 	printf ("	Descriptor Index: %d (%s)\n", field->descriptor_idx, field->descriptor); 
@@ -4693,7 +4737,7 @@ R_API void r_bin_java_print_interface_summary(ut16 idx) {//RBinJavaField *field)
 		return;
 	}
 	printf ("Interface Summary Information:\n");
-	printf ("	File offset: 0x%08llx", field->file_offset);
+	printf ("	File offset: 0x%08"PFMT64x"", field->file_offset);
 	printf ("	Access Flags: %d\n", field->flags);
 	printf ("	Name Index: %d (%s)\n", field->name_idx, field->name);
 	printf ("	Descriptor Index: %d (%s)\n", field->descriptor_idx, field->descriptor); 
@@ -4712,9 +4756,35 @@ R_API void r_bin_java_print_interfacemethodref_cp_summary(RBinJavaCPTypeObj* obj
 	}
 
 	printf ("InterfaceMethodRef ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	Class Index = %d\n", obj->info.cp_interface.class_idx);
 	printf ("	Name and type Index = %d\n", obj->info.cp_interface.name_and_type_idx);
+}
+
+R_API char * r_bin_java_print_interfacemethodref_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_interface.class_idx, obj->info.cp_interface.name_and_type_idx);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_interface.class_idx, obj->info.cp_interface.name_and_type_idx);
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_methodhandle_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4726,10 +4796,36 @@ R_API void r_bin_java_print_methodhandle_cp_summary(RBinJavaCPTypeObj* obj) {
 	ref_kind = obj->info.cp_method_handle.reference_kind;
 
 	printf ("MethodHandle ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	Reference Kind = (0x%02x) %s\n", ref_kind, R_BIN_JAVA_REF_METAS[ref_kind].name);
 	printf ("	Reference Index = %d\n", obj->info.cp_method_handle.reference_index);
 
+}
+
+R_API char * r_bin_java_print_methodhandle_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	ut8 ref_kind = ref_kind = obj->info.cp_method_handle.reference_kind;	
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%s.%d", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			R_BIN_JAVA_REF_METAS[ref_kind].name, obj->info.cp_method_handle.reference_index);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%s.%d", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					R_BIN_JAVA_REF_METAS[ref_kind].name, obj->info.cp_method_handle.reference_index);
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_methodtype_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4738,20 +4834,73 @@ R_API void r_bin_java_print_methodtype_cp_summary(RBinJavaCPTypeObj* obj) {
 		return;
 	}
 	printf ("MethodType ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	Descriptor Index = 0x%02x\n", obj->info.cp_method_type.descriptor_index);
 
 }
+
+R_API char * r_bin_java_print_methodtype_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_method_type.descriptor_index);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_method_type.descriptor_index);
+			}
+		}
+	}
+	return value;
+}
+
 R_API void r_bin_java_print_invokedynamic_cp_summary(RBinJavaCPTypeObj* obj) {
 	if(obj == NULL) {
 		eprintf ("Attempting to print an invalid RBinJavaCPTypeObj*  RBinJavaCPTypeInvokeDynamic.\n");
 		return;
 	}
 	printf ("InvokeDynamic ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	Bootstrap Method Attr Index = (0x%02x)\n", obj->info.cp_invoke_dynamic.bootstrap_method_attr_index);
 	printf ("	Bootstrap Name and Type Index = (0x%02x)\n", obj->info.cp_invoke_dynamic.name_and_type_index);
 
+}
+
+R_API char * r_bin_java_print_invokedynamic_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_invoke_dynamic.bootstrap_method_attr_index,
+			obj->info.cp_invoke_dynamic.name_and_type_index);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_invoke_dynamic.bootstrap_method_attr_index,
+					obj->info.cp_invoke_dynamic.name_and_type_index);
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_methodref_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4761,9 +4910,36 @@ R_API void r_bin_java_print_methodref_cp_summary(RBinJavaCPTypeObj* obj) {
 	}
 
 	printf ("MethodRef ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	Class Index = %d\n", obj->info.cp_method.class_idx);
 	printf ("	Name and type Index = %d\n", obj->info.cp_method.name_and_type_idx);
+}
+
+R_API char * r_bin_java_print_methodref_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_method.class_idx,
+			obj->info.cp_method.name_and_type_idx);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_method.class_idx,
+					obj->info.cp_method.name_and_type_idx);
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_fieldref_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4773,9 +4949,36 @@ R_API void r_bin_java_print_fieldref_cp_summary(RBinJavaCPTypeObj* obj) {
 	}
 
 	printf ("FieldRef ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	Class Index = %d\n", obj->info.cp_field.class_idx);
 	printf ("	Name and type Index = %d\n", obj->info.cp_field.name_and_type_idx);
+}
+
+R_API char * r_bin_java_print_fieldref_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_field.class_idx,
+			obj->info.cp_field.name_and_type_idx);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_field.class_idx,
+					obj->info.cp_field.name_and_type_idx);
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_classref_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4785,9 +4988,34 @@ R_API void r_bin_java_print_classref_cp_summary(RBinJavaCPTypeObj* obj) {
 	}
 
 	printf ("ClassRef ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	Name Index = %d\n", obj->info.cp_class.name_idx);
 
+}
+
+R_API char * r_bin_java_print_classref_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_class.name_idx);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_class.name_idx);
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_string_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4797,9 +5025,34 @@ R_API void r_bin_java_print_string_cp_summary(RBinJavaCPTypeObj* obj) {
 	}
 
 	printf ("String ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	String Index = %d\n", obj->info.cp_string.string_idx);
 
+}
+
+R_API char * r_bin_java_print_string_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_string.string_idx);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_string.string_idx);
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_integer_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4812,10 +5065,35 @@ R_API void r_bin_java_print_integer_cp_summary(RBinJavaCPTypeObj* obj) {
 	b = obj->info.cp_integer.bytes.raw;
 
 	printf ("Integer ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	bytes = %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]);
 	printf ("	integer = %d\n", R_BIN_JAVA_UINT (obj->info.cp_integer.bytes.raw, 0));
 
+}
+
+R_API char * r_bin_java_print_integer_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.0x%08x", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			R_BIN_JAVA_UINT (obj->info.cp_integer.bytes.raw, 0));
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.0x%08x", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					R_BIN_JAVA_UINT (obj->info.cp_integer.bytes.raw, 0));
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_float_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4828,9 +5106,34 @@ R_API void r_bin_java_print_float_cp_summary(RBinJavaCPTypeObj* obj) {
 	b = obj->info.cp_float.bytes.raw;
 
 	printf ("Float ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	bytes = %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]);
 	printf ("	float = %f\n", R_BIN_JAVA_FLOAT(obj->info.cp_float.bytes.raw, 0));
+}
+
+R_API char * r_bin_java_print_float_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%f", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			R_BIN_JAVA_FLOAT(obj->info.cp_float.bytes.raw, 0));
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%f", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					R_BIN_JAVA_FLOAT(obj->info.cp_float.bytes.raw, 0));
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_long_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4843,10 +5146,35 @@ R_API void r_bin_java_print_long_cp_summary(RBinJavaCPTypeObj* obj) {
 	b = obj->info.cp_long.bytes.raw;
 
 	printf ("Long ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	High-bytes = %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]);
 	printf ("	Low-bytes = %02x %02x %02x %02x\n", b[4], b[5], b[6], b[7]);
-	printf ("	long = %llx\n", rbin_java_raw_to_long(obj->info.cp_long.bytes.raw, 0));
+	printf ("	long = %08"PFMT64x"\n", rbin_java_raw_to_long(obj->info.cp_long.bytes.raw, 0));
+}
+
+R_API char * r_bin_java_print_long_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.0x%08"PFMT64x"", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			rbin_java_raw_to_long(obj->info.cp_long.bytes.raw, 0));
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.0x%08"PFMT64x"",
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					rbin_java_raw_to_long(obj->info.cp_long.bytes.raw, 0));
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_double_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4859,10 +5187,35 @@ R_API void r_bin_java_print_double_cp_summary(RBinJavaCPTypeObj* obj) {
 	b = obj->info.cp_double.bytes.raw;
 
 	printf ("Double ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	High-bytes = %02x %02x %02x %02x\n", b[0], b[1], b[2], b[3]);
 	printf ("	Low-bytes = %02x %02x %02x %02x\n", b[4], b[5], b[6], b[7]);
 	printf ("	double = %f\n", rbin_java_raw_to_double (obj->info.cp_double.bytes.raw, 0));
+}
+
+R_API char * r_bin_java_print_double_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%f", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			rbin_java_raw_to_double (obj->info.cp_double.bytes.raw, 0));
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%f", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					rbin_java_raw_to_double (obj->info.cp_double.bytes.raw, 0));
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_name_and_type_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4872,9 +5225,36 @@ R_API void r_bin_java_print_name_and_type_cp_summary(RBinJavaCPTypeObj* obj) {
 	}
 
 	printf ("Name_And_Type ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	name_idx = (%d)\n", obj->info.cp_name_and_type.name_idx);
 	printf ("	descriptor_idx = (%d)\n", obj->info.cp_name_and_type.descriptor_idx);
+}
+
+R_API char * r_bin_java_print_name_and_type_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	
+	char * value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%f", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_name_and_type.name_idx,
+			obj->info.cp_name_and_type.descriptor_idx);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%f", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_name_and_type.name_idx,
+					obj->info.cp_name_and_type.descriptor_idx);
+			}
+		}
+	}
+	return value;
 }
 
 R_API void r_bin_java_print_utf8_cp_summary(RBinJavaCPTypeObj* obj) {
@@ -4884,19 +5264,82 @@ R_API void r_bin_java_print_utf8_cp_summary(RBinJavaCPTypeObj* obj) {
 	}
 
 	printf ("UTF8 ConstantPool Type (%d) ", obj->metas->ord);
-	printf ("	Offset: 0x%08llx", obj->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", obj->file_offset);
 	printf ("	length = %d\n", obj->info.cp_utf8.length);
 	// XXX - TODO UTF8 Interpretation
 	printf ("	strlen(%lu) utf8 = %s\n", strlen ( (const char *) obj->info.cp_utf8.bytes) ,(char *) obj->info.cp_utf8.bytes);
 
 }
 
+R_API char * r_bin_java_print_utf8_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	char * utf8_str = r_hex_bin2strdup(obj->info.cp_utf8.bytes, obj->info.cp_utf8.length);
+	char * value = malloc(size + strlen(utf8_str));
+
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%s", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+			obj->info.cp_utf8.length,
+			utf8_str);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size + strlen(utf8_str));
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%s", 
+					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name, 
+					obj->info.cp_utf8.length,
+					utf8_str);
+			}
+		}
+	}
+	return value;
+}
+
 R_API void r_bin_java_print_null_cp_summary(RBinJavaCPTypeObj* obj) {
 	printf ("Unknown ConstantPool Type Tag: 0x%04x .\n", obj->tag);
 }
 
+R_API char * r_bin_java_print_null_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	char *value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name);
+		
+		if (consumed >= size-1) {
+			free(value);
+			size += size >> 1;
+			value = malloc(size);
+			if (value) {
+				memset(value, 0, size);
+				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s", 
+					obj->metas->ord, obj->file_offset, 
+					((RBinJavaCPTypeMetas *) obj->metas->type_info)->name);
+			}
+		}
+	}
+	return value;
+}
+
+
 R_API void r_bin_java_print_unknown_cp_summary(RBinJavaCPTypeObj* obj) {
 	printf ("NULL ConstantPool Type.\n");
+}
+
+R_API char * r_bin_java_print_unknown_cp_stringify(RBinJavaCPTypeObj* obj) {
+	ut32 size = 255, consumed = 0;
+	char *value = malloc(size);
+	if (value) {
+		memset(value, 0, size);
+		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s", 
+			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name);
+	}
+	return value;
 }
 
 R_API void r_bin_java_stack_frame_default_free (RBinJavaStackMapFrame *stack_frame) {
@@ -4944,7 +5387,7 @@ R_API void r_bin_java_print_element_pair_summary(RBinJavaElementValuePair *ev_pa
 		return;
 	}
 	printf ("Element Value Pair information:\n");
-	printf ("   EV Pair File Offset: 0x%08llx\n", ev_pair->file_offset);	
+	printf ("   EV Pair File Offset: 0x%08"PFMT64x"\n", ev_pair->file_offset);	
 	printf ("   EV Pair Element Name index: 0x%02x\n", ev_pair->element_name_idx);	
 	printf ("   EV Pair Element Name: %s\n", ev_pair->name);	
 	printf ("   EV Pair Element Value:\n");
@@ -4963,7 +5406,7 @@ R_API void r_bin_java_print_element_value_summary(RBinJavaElementValue *element_
 	}
 	name = ((RBinJavaElementValueMetas *)element_value->metas->type_info)->name;
 	printf ("Element Value information:\n");
-	printf ("   EV Pair File Offset: 0x%08llx\n", element_value->file_offset);
+	printf ("   EV Pair File Offset: 0x%08"PFMT64x"\n", element_value->file_offset);
 	printf ("   EV Value Type (%d): %s\n", element_value->tag, name );
 	switch(element_value->tag) {
 		case R_BIN_JAVA_EV_TAG_BYTE:
@@ -5494,7 +5937,7 @@ R_API void r_bin_java_print_bootstrap_method_argument_summary(RBinJavaBootStrapA
 	}
 
 	printf ("Bootstrap Method Argument Information:\n");
-	printf ("	Offset: 0x%08llx", bsm_arg->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", bsm_arg->file_offset);
 	printf ("	Name_And_Type Index = (0x%02x)\n", bsm_arg->argument_info_idx);
 	if (bsm_arg->argument_info_cp_obj) {
 		printf ("	Bootstrap Method Argument Type and Name Info:\n");
@@ -5513,7 +5956,7 @@ R_API void r_bin_java_print_bootstrap_method_summary(RBinJavaBootStrapMethod* bs
 	}
 
 	printf ("Bootstrap Method Information:\n");
-	printf ("	Offset: 0x%08llx", bsm->file_offset);
+	printf ("	Offset: 0x%08"PFMT64x"", bsm->file_offset);
 	printf ("	Method Reference Index = (0x%02x)\n", bsm->bootstrap_method_ref);
 	printf ("	Number of Method Arguments = (0x%02x)\n", bsm->num_bootstrap_arguments);
 	if (bsm->bootstrap_arguments) {
@@ -5606,7 +6049,7 @@ R_API void r_bin_java_print_bootstrap_methods_attr_summary(RBinJavaAttrInfo *att
 	}
 
 	printf ("Bootstrap Methods Attribute Information Information:\n");
-	printf ("	Attribute Offset: 0x%08llx", attr->file_offset);
+	printf ("	Attribute Offset: 0x%08"PFMT64x"", attr->file_offset);
 	printf ("	Length: 0x%08x", attr->length);
 	printf ("	Number of Method Arguments = (0x%02x)\n", attr->info.bootstrap_methods_attr.num_bootstrap_methods);
 
@@ -5723,7 +6166,7 @@ R_API RBinJavaAttrInfo* r_bin_java_bootstrap_methods_attr_new (ut8* buffer, ut64
 R_API void r_bin_java_print_annotation_default_attr_summary(RBinJavaAttrInfo *attr) {
 	if(attr && attr->type == R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR) {
 		printf ("Annotation Default Attribute Information:\n");
-		printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+		printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 		printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 		printf ("   Attribute length: %d\n", attr->length);
 		r_bin_java_print_element_value_summary ((attr->info.annotation_default_attr.default_value));
@@ -5916,7 +6359,7 @@ R_API void r_bin_java_rti_annotations_attr_free (RBinJavaAttrInfo *attr) {
 R_API void r_bin_java_print_rtv_annotations_attr_summary(RBinJavaAttrInfo *attr) {
 	if(attr && attr->type == R_BIN_JAVA_ATTR_TYPE_RUNTIME_VISIBLE_ANNOTATION_ATTR) {
 		printf ("Runtime Visible Annotations Attribute Information:\n");
-		printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+		printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 		printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 		printf ("   Attribute length: %d\n", attr->length);
 		r_bin_java_print_annotation_array_summary (&attr->info.annotation_array);
@@ -5925,7 +6368,7 @@ R_API void r_bin_java_print_rtv_annotations_attr_summary(RBinJavaAttrInfo *attr)
 R_API void r_bin_java_print_rti_annotations_attr_summary(RBinJavaAttrInfo *attr) {
 	if(attr && attr->type == R_BIN_JAVA_ATTR_TYPE_RUNTIME_INVISIBLE_ANNOTATION_ATTR) { 
 		printf ("Runtime Invisible Annotations Attribute Information:\n");
-		printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+		printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 		printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 		printf ("   Attribute length: %d\n", attr->length);
 		r_bin_java_print_annotation_array_summary (&attr->info.annotation_array);
@@ -6059,7 +6502,7 @@ R_API void r_bin_java_print_rtvp_annotations_attr_summary(RBinJavaAttrInfo *attr
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	if(attr && attr->type == R_BIN_JAVA_ATTR_TYPE_RUNTIME_VISIBLE_PARAMETER_ANNOTATION_ATTR) {
 		printf ("Runtime Visible Parameter Annotations Attribute Information:\n");
-		printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+		printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 		printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 		printf ("   Attribute length: %d\n", attr->length);
 		printf ("   Number of Runtime Invisible Parameters: %d\n", attr->info.rtvp_annotations_attr.num_parameters);
@@ -6073,7 +6516,7 @@ R_API void r_bin_java_print_rtip_annotations_attr_summary(RBinJavaAttrInfo *attr
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	if(attr && attr->type == R_BIN_JAVA_ATTR_TYPE_RUNTIME_INVISIBLE_PARAMETER_ANNOTATION_ATTR) {
 		printf ("Runtime Invisible Parameter Annotations Attribute Information:\n");
-		printf ("   Attribute Offset: 0x%08llx\n", attr->file_offset);	
+		printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);	
 		printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 		printf ("   Attribute length: %d\n", attr->length);
 		printf ("   Number of Runtime Invisible Parameters: %d\n", attr->info.rtip_annotations_attr.num_parameters);
