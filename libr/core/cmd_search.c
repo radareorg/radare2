@@ -237,7 +237,7 @@ static ut64 findprevopsz(RCore *core, ut64 addr) {
 	return UT64_MAX;
 }
 
-static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
+static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep) {
 	ut8 *buf;
 	ut64 prev;
 	RAsmOp asmop;
@@ -246,6 +246,7 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 	ut64 ropat;
 	if (delta<1) delta = from-to;
 	if (delta<1) return R_FALSE;
+	while (*grep==' ') grep++;
 	buf = malloc (delta);
 	r_io_read_at (core->io, from, buf, delta);
 	for (i=0; i<delta; i++) {
@@ -259,8 +260,6 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 			case R_ANAL_OP_TYPE_RET:
 			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_UJMP:
-				r_cons_printf ("0x%08"PFMT64x"  %s\n",
-					from+i, asmop.buf_asm);
 				prev = findprevopsz (core, from+i);
 				if (prev != UT64_MAX) {
 					ut64 prev2 = findprevopsz (core, prev);
@@ -269,8 +268,32 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt) {
 					else ropat = prev;
 				} else ropat = from+i; 
 				roplen = from - ropat + i + aop.size;
-				r_core_cmdf (core, "pD %d @ 0x%"PFMT64x,
-					roplen, ropat);
+				if (grep&&*grep) {
+					char cmd[32];
+					char *s;
+					int show_match = 0;
+
+					snprintf (cmd, sizeof (cmd), "pD %d @ 0x%"PFMT64x,
+						roplen, ropat);
+					// backup cons buffer
+					char *tmp = strdup (r_cons_singleton()->buffer);
+					s = r_core_cmd_str (core, cmd);
+					if (strstr (s, grep)) show_match = 1;
+					// restore cons buffer
+					r_cons_strcat (tmp);
+					free (tmp);
+					if (show_match) {
+						r_cons_printf ("0x%08"PFMT64x"  %s\n",
+							from+i, asmop.buf_asm);
+						r_cons_printf ("%s\n", s);
+					}
+					free (s);
+				} else {
+					r_cons_printf ("0x%08"PFMT64x"  %s\n",
+						from+i, asmop.buf_asm);
+					r_core_cmdf (core, "pD %d @ 0x%"PFMT64x,
+						roplen, ropat);
+				}
 				break;
 			}
 		}
@@ -331,7 +354,7 @@ c = 0;
 		goto reread;
 		break;
 	case 'R':
-		r_core_search_rop (core, from, to, 0);
+		r_core_search_rop (core, from, to, 0, input+1);
 		return R_TRUE;
 	case 'r':
 		if (input[1]==' ')
