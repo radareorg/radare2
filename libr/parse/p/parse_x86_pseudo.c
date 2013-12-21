@@ -38,10 +38,15 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ "je",   "je 1"},
 		{ "push", "push 1"},
 		{ "pop",  "pop 1"},
-		{ "ret",  "ret"},
 		{ NULL }
 	};
 
+	if (argc>2 && !strcmp (argv[0], "xor")) {
+		if (!strcmp (argv[1], argv[2])) {
+			argv[0] = "mov";
+			argv[2] = "0";
+		}
+	}
 	for (i=0; ops[i].op != NULL; i++) {
 		if (!strcmp (ops[i].op, argv[0])) {
 			if (newstr != NULL) {
