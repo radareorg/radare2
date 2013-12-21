@@ -1137,12 +1137,17 @@ next2:
 	/* sub commands */
 	ptr = strchr (cmd, '`');
 	if (ptr) {
+		int empty = 0;
 		int oneline = 1;
 		if (ptr[1]=='`') {
 			memmove (ptr, ptr+1, strlen (ptr));
 			oneline = 0;
+			empty = 1;
 		}
 		ptr2 = strchr (ptr+1, '`');
+		if (empty) {
+			/* do nothing */
+		} else
 		if (!ptr2) {
 			eprintf ("parse: Missing backtick in expression.\n");
 			return -1;
