@@ -13,6 +13,8 @@ void meta_gb_bankswitch_cmt(RMeta *m, ut64 addr, ut16 ldarg, ut8 rmbc) {
 
 void gb_bankswitch_detect(RMeta *m, RIOBind iob, ut64 addr, ut16 ldarg) {
 	ut8 rt;
+	if(addr > 0x3fff)
+		return;
 	iob.read_at(iob.io, 0x147, &rt, 1);									//xxx: it won't change
 	switch(gb_mbc_resolve(rt)) {
 		case -1:
