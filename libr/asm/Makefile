@@ -5,6 +5,7 @@ DEPS=r_lib r_util r_parse r_db r_syscall
 CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shlr
 
 include $(TOP)/libr/config.mk
+include ../db/build.mk
 
 .PHONY: all plugins
 

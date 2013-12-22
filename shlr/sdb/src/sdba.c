@@ -315,6 +315,7 @@ SDB_VISIBLE int sdb_apush(Sdb *s, const char *key, const char *val, ut32 cas) {
 		memcpy (newval, str, str_len);
 		newval[str_len] = SDB_RS;
 		memcpy (newval+str_len+1, val, val_len);
+		newval[str_len+val_len+1] = 0;
 		sdb_set (s, key, newval, cas);
 		free (newval);
 	} else {
@@ -324,12 +325,13 @@ SDB_VISIBLE int sdb_apush(Sdb *s, const char *key, const char *val, ut32 cas) {
 }
 
 SDB_VISIBLE char *sdb_apop(Sdb *s, const char *key, ut32 *cas) {
-	ut32 kas = *cas;
+	ut32 kas;
 	char *ret;
 	const char *str = sdb_getc (s, key, &kas);
 	int n = sdb_alen (str);
 	if (n<1) return NULL;
-// XXX cas is ignored
+	if (cas  && *cas != kas)
+		*cas = kas;
 	ret = strdup (str);
 	sdb_adel (s, key, n-1, kas);
 	return ret;
