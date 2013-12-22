@@ -10,8 +10,7 @@ DEPS=r_lib r_util
 .PHONY: pre
 
 pre: $(LIBSO) $(LIBAR)
-	@cd p && ${MAKE}
-	#@${MAKE} -C p all
+	$(MAKE) -C p
 
 CFLAGS+=-DCORELIB -Iformat -Imangling
 

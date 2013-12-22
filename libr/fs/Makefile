@@ -2,11 +2,11 @@ NAME=r_fs
 DEPS=r_lib r_util r_io
 CFLAGS+=-DCORELIB -Iarch/include -Iarch
 
-CFLAGS+=-Ip/grub/include
 SHLR=../../shlr/
-LDFLAGS+=$(SHLR)/grub/libgrubfs.a
 
 include ../config.mk
+CFLAGS+=-Ip/grub/include
+LDFLAGS+=$(SHLR)/grub/libgrubfs.a
 
 EXTRA_TARGETS=plugins
 foo:
