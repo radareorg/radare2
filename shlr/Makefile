@@ -2,6 +2,9 @@ include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
 HOST_CC?=gcc
+SHLR?=$(shell pwd)
+AR?=ar
+RANLIB?=ranlib
 MODS=sdb udis86 java tcc zip grub
 URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
@@ -10,7 +13,7 @@ SDB_CONFIG=${PWD}/sdb-config.mk
 all: sdb/sdb
 	@for a in ${MODS} ; do \
 		echo ${MAKE} -C $$a ; \
-		${MAKE} -C $$a HAVE_VALA= ROOT=${PWD}/../ CC="${CC}" ; \
+		${MAKE} -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 clean mrproper:

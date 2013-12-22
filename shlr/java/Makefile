@@ -1,5 +1,6 @@
 include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
+SHLR?=$(shell pwd)/..
 
 #CFLAGS+=-g -ggdb -fPIC
 CFLAGS+=-fPIC

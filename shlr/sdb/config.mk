@@ -25,7 +25,8 @@ AR?=${WCP}-ar
 CFLAGS_SHARED?=-fPIC
 EXEXT=.exe
 else
-CFLAGS_SHARED?=-fPIC -fvisibility=hidden
+CFLAGS_SHARED?=-fPIC 
+#-fvisibility=hidden
 CC?=gcc
 EXEXT=
 endif

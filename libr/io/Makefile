@@ -10,8 +10,9 @@ CFLAGS+=-Wall -DCORELIB
 
 include ../socket/deps.mk
 #include ../../shlr/zip/deps.mk
-LINK+=../../shlr/zip/zlib/*.o
-LINK+=../../shlr/zip/zip/*.o
+LINK+=$(SHLR)/zip/librz.a
+#LINK+=$(SHLR)/zip/zlib/*.o
+#LINK+=$(SHLR)/zip/zip/*.o
 
 .PHONY: pre
 pre: libr_io.${EXT_SO} libr_io.${EXT_AR}

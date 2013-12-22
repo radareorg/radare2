@@ -1,9 +1,10 @@
-#include ../config.mk
-#CC?=gcc
-CC?=gcc
-#OSTYPE=$(shell uname -s)
+LIBAR=libgrubfs.a
+
 include ../../config-user.mk
+CC?=gcc
+CC_AR?=ar q
 RANLIB?=ranlib
+OSTYPE?=$(shell uname -s)
 ifeq (${OSTYPE},)
 all:
 	echo LE FAIL
@@ -64,21 +65,20 @@ endif
 BIN=test${EXT_EXE}
 
 all: ${KERNOBJS}
-	${MAKE} libgrubfs.a
+	${MAKE} $(LIBAR)
 
 ${BIN}: ${KERNOBJS} main.o
 	${CC} -o ${BIN} main.o ${CFLAGS} ${KERNOBJS}
 
-lib: libgrubfs.a
+lib: $(LIBAR)
 
-libgrubfs.a: ${KERNOBJS}
-	rm -f libgrubfs.a
-	ar -q libgrubfs.a ${KERNOBJS}
-	${RANLIB} libgrubfs.a
+$(LIBAR): ${KERNOBJS}
+	rm -f $(LIBAR)
+	$(CC_AR) $(LIBAR) ${KERNOBJS}
+	${RANLIB} $(LIBAR)
 
 clean:
-	rm -f ${KERNOBJS} ${BIN} main.o
-	rm -f libgrubfs.a
+	rm -f ${KERNOBJS} ${BIN} main.o $(LIBAR)
 
 fs: /tmp/fs
 	@echo ======================

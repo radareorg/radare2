@@ -6,7 +6,7 @@ all: librz.a
 
 LIBAR=librz.a
 librz.a: zip/libr_zip.a
-	${CC_AR} zlib/*.o zip/*.o
+	${CC_AR} librz.a zlib/*.o zip/*.o
 
 zip/libr_zip.a: zlib/libr_z.a
 	${MAKE} -C zip
