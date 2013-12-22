@@ -1451,6 +1451,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 
 	if (cstr==NULL)
 		return R_FALSE;
+	if (*cstr == '|') {
+		// RAW COMMENT
+		return R_FALSE;
+	}
 	if (log && *cstr && *cstr!='.') {
 		free (core->lastcmd);
 		core->lastcmd = strdup (cstr);

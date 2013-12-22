@@ -643,11 +643,11 @@ static int cmd_print(void *data, const char *input) {
 	case '=':
 		switch (input[1]) {
 		case '?': // entropy
-			eprintf ("Usage: p=[bep?]\n");
-			eprintf (" p=   print bytes of current block in bars\n");
-			eprintf (" p=b  same as above\n");
-			eprintf (" p=e  same as above but with entropy\n");
-			eprintf (" p=p  print number of printable bytes for each filesize/blocksize\n");
+			eprintf ("|Usage: p=[bep?]\n"
+			"| p=   print bytes of current block in bars\n"
+			"| p=b  same as above\n"
+			"| p=e  same as above but with entropy\n"
+			"| p=p  print number of printable bytes for each filesize/blocksize\n");
 			break;
 		case 'e': // entropy
 			{
@@ -1029,18 +1029,18 @@ static int cmd_print(void *data, const char *input) {
 			pd_result = 0;
 		case '?':
 			processed_cmd = R_TRUE;
-			eprintf ("Usage: pd[f|i|l] [len] [arch] [bits] @ [addr]\n"
-			"NOTE: len parameter can be negative\n"
-			//TODO: eprintf ("  pdr  : disassemble resume\n");
-			"  pda  disassemble all possible opcodes (byte per byte)\n"
-			"  pdj  disassemble to json\n"
-			"  pdb  disassemble basic block\n"
-			"  pdr  recursive disassemble across the function graph\n"
-			"  pdf  disassemble function\n"
-			"  pdi  like 'pi', with offset and bytes\n"
-			"  pdn  disassemble N bytes (like pdi)\n"
-			"  pdl  show instruction sizes\n"
-			"  pds  disassemble with back sweep (greedy disassembly backwards)\n");
+			eprintf ("|Usage: pd[f|i|l] [len] [arch] [bits] @ [addr]\n"
+			"|NOTE: len parameter can be negative\n"
+			//TODO: eprintf ("|  pdr  : disassemble resume\n");
+			"|  pda  disassemble all possible opcodes (byte per byte)\n"
+			"|  pdj  disassemble to json\n"
+			"|  pdb  disassemble basic block\n"
+			"|  pdr  recursive disassemble across the function graph\n"
+			"|  pdf  disassemble function\n"
+			"|  pdi  like 'pi', with offset and bytes\n"
+			"|  pdn  disassemble N bytes (like pdi)\n"
+			"|  pdl  show instruction sizes\n"
+			"|  pds  disassemble with back sweep (greedy disassembly backwards)\n");
 			pd_result = 0;
 		}
 		if (!processed_cmd) {
@@ -1108,13 +1108,13 @@ static int cmd_print(void *data, const char *input) {
 	case 's':
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: ps[zpw] [N]\n"
-				" ps  = print string\n"
-				" psb = print strings in current block\n"
-				" psx = show string with scaped chars\n"
-				" psz = print zero terminated string\n"
-				" psp = print pascal string\n"
-				" psw = print wide string\n");
+			r_cons_printf ("|Usage: ps[zpw] [N]\n"
+				"| ps  = print string\n"
+				"| psb = print strings in current block\n"
+				"| psx = show string with scaped chars\n"
+				"| psz = print zero terminated string\n"
+				"| psp = print pascal string\n"
+				"| psw = print wide string\n");
 			break;
 		case 'x':
 			r_print_string (core->print, core->offset, core->block, len, 0);
@@ -1228,17 +1228,17 @@ static int cmd_print(void *data, const char *input) {
 			r_core_print_examine (core, input+2);
 			break;
 		case '?':
-			eprintf ("Usage: px[afoswqWqQ][f]\n"
-				" px     show hexdump\n"
-				" px/    same as x/ in gdb (help x)\n"
-				" pxa    show annotated hexdump\n"
-				" pxf    show hexdump of current function\n"
-				" pxo    show octal dump\n"
-				" pxq    show hexadecimal quad-words dump (64bit)\n"
-				" pxs    show hexadecimal in sparse mode\n"
-				" pxQ    same as above, but one per line\n"
-				" pxw    show hexadecimal words dump (32bit)\n"
-				" pxW    same as above, but one per line\n"
+			eprintf ("|Usage: px[afoswqWqQ][f]\n"
+				"| px     show hexdump\n"
+				"| px/    same as x/ in gdb (help x)\n"
+				"| pxa    show annotated hexdump\n"
+				"| pxf    show hexdump of current function\n"
+				"| pxo    show octal dump\n"
+				"| pxq    show hexadecimal quad-words dump (64bit)\n"
+				"| pxs    show hexadecimal in sparse mode\n"
+				"| pxQ    same as above, but one per line\n"
+				"| pxw    show hexadecimal words dump (32bit)\n"
+				"| pxW    same as above, but one per line\n"
 				);
 			break;
 		case 'a':
@@ -1564,32 +1564,32 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case '?':
 			r_cons_printf (
-			"Usage: pt[dn?]\n"
-			" pt      print unix time (32 bit cfg.big_endian)\n"
-			" ptd     print dos time (32 bit cfg.big_endian)\n"
-			" ptn     print ntfs time (64 bit !cfg.big_endian)\n"
-			" pt?     show help message\n");
+			"|Usage: pt[dn?]\n"
+			"| pt      print unix time (32 bit cfg.big_endian)\n"
+			"| ptd     print dos time (32 bit cfg.big_endian)\n"
+			"| ptn     print ntfs time (64 bit !cfg.big_endian)\n"
+			"| pt?     show help message\n");
 			break;
 		}
 		break;
 	case 'z':
 		if (input[1]=='?') {
 			r_cons_printf (
-			"Usage: pz [len]\n"
-			" print N bytes where each byte represents a block of filesize/N\n"
-			"Configuration:\n"
-			" zoom.maxsz : max size of block\n"
-			" zoom.from  : start address\n"
-			" zoom.to    : end address\n"
-			" zoom.byte  : specify how to calculate each byte\n"
-			"   p : number of printable chars\n"
-			"   f : count of flags in block\n"
-			"   s : strings in range\n"
-			"   0 : number of bytes with value '0'\n"
-			"   F : number of bytes with value 0xFF\n"
-			"   e : calculate entropy and expand to 0-255 range\n"
-			"   h : head (first byte value)\n"
-			"WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
+			"|Usage: pz [len]\n"
+			"| print N bytes where each byte represents a block of filesize/N\n"
+			"|Configuration:\n"
+			"| zoom.maxsz : max size of block\n"
+			"| zoom.from  : start address\n"
+			"| zoom.to    : end address\n"
+			"| zoom.byte  : specify how to calculate each byte\n"
+			"|   p : number of printable chars\n"
+			"|   f : count of flags in block\n"
+			"|   s : strings in range\n"
+			"|   0 : number of bytes with value '0'\n"
+			"|   F : number of bytes with value 0xFF\n"
+			"|   e : calculate entropy and expand to 0-255 range\n"
+			"|   h : head (first byte value)\n"
+			"|WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
 		} else {
 			char *oldzoom = NULL;
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
@@ -1621,26 +1621,26 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	default:
 		r_cons_printf (
-		"Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
-		" p=               show entropy bars of full file\n"
-		" p6[de] [len]     base64 decode/encode\n"
-		" p8 [len]         8bit hexpair list of bytes\n"
-		" pa[d] [hex|asm]  print code from hex or bytes of given data\n"
-		" p[bB] [len]      bitstream of N bytes\n"
-		" pc[p] [len]      output C (or python) format\n"
-		" p[dD][lf] [l]    disassemble N opcodes/bytes (see pd?)\n"
-		" pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expr>) \n"
-		" p[iI][df] [len]  print N instructions/bytes (f=func) (see pi? and pdi)\n"
-		" pm [magic]       print libmagic data (pm? for more information)\n"
-		" pr [len]         print N raw bytes\n"
-		" p[kK] [len]      print key in randomart (K is for mosaic)\n"
-		" ps[pwz] [len]    print pascal/wide/zero-terminated strings\n"
-		" pt[dn?] [len]    print different timestamps\n"
-		" pu[w] [len]      print N url encoded bytes (w=wide)\n"
-		" pv[jh] [mode]	   bar|json|histogram blocks (mode: e?search.in)\n"
-		" p[xX][owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
-		" pz [len]         print zoom view (see pz? for help)\n"
-		" pwd              display current working directory\n");
+		"|Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
+		"| p=               show entropy bars of full file\n"
+		"| p6[de] [len]     base64 decode/encode\n"
+		"| p8 [len]         8bit hexpair list of bytes\n"
+		"| pa[d] [hex|asm]  print code from hex or bytes of given data\n"
+		"| p[bB] [len]      bitstream of N bytes\n"
+		"| pc[p] [len]      output C (or python) format\n"
+		"| p[dD][lf] [l]    disassemble N opcodes/bytes (see pd?)\n"
+		"| pf[?|.nam] [fmt] print formatted data (pf.name, pf.name $<expr>) \n"
+		"| p[iI][df] [len]  print N instructions/bytes (f=func) (see pi? and pdi)\n"
+		"| pm [magic]       print libmagic data (pm? for more information)\n"
+		"| pr [len]         print N raw bytes\n"
+		"| p[kK] [len]      print key in randomart (K is for mosaic)\n"
+		"| ps[pwz] [len]    print pascal/wide/zero-terminated strings\n"
+		"| pt[dn?] [len]    print different timestamps\n"
+		"| pu[w] [len]      print N url encoded bytes (w=wide)\n"
+		"| pv[jh] [mode]	   bar|json|histogram blocks (mode: e?search.in)\n"
+		"| p[xX][owq] [len] hexdump of N bytes (o=octal, w=32bit, q=64bit)\n"
+		"| pz [len]         print zoom view (see pz? for help)\n"
+		"| pwd              display current working directory\n");
 		break;
 	}
 	if (tbs != core->blocksize)
