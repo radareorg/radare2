@@ -76,7 +76,7 @@ static RList* sections(RBinArch *arch){
 	ret->free = free;
 
 	rombank[0] = R_NEW0 (RBinSection);
-	strncpy (rombank[0]->name, "rombank0", R_BIN_SIZEOF_STRINGS);
+	strncpy (rombank[0]->name, "rombank00", R_BIN_SIZEOF_STRINGS);
 	rombank[0]->offset = 0;
 	rombank[0]->size = 0x4000;
 	rombank[0]->vsize = 0x4000;
