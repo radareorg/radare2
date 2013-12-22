@@ -144,6 +144,14 @@ static int cmd_open(void *data, const char *input) {
 		if (!r_core_bin_load (core, NULL, baddr))
 			r_config_set (core->config, "io.va", "false");
 		break;
+	case 'b':
+		// XXX: this will reload the bin using the buffer.
+		// An assumption is made that assumes there is an underlying
+		// plugin that will be used to load the bin (e.g. malloc://)
+		// TODO: Might be nice to reload a bin at a specified offset?
+		r_core_bin_reload (core, NULL, baddr);
+		r_core_block_read (core, 0);
+		break;
 	case '?':
 	default:
 		eprintf ("Usage: o[com- ] [file] ([offset])\n"
@@ -157,7 +165,8 @@ static int cmd_open(void *data, const char *input) {
 		" o+/bin/ls          open /bin/ls file in read-write mode\n"
 		" o /bin/ls 0x4000   map file at 0x4000\n"
 		" on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
-		" om[?]              create, list, remove IO maps\n");
+		" om[?]              create, list, remove IO maps\n"
+		" ob                 reload the buffer for analysis\n");
 		break;
 	}
 	return 0;
