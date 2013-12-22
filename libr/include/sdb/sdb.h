@@ -180,6 +180,8 @@ int sdb_hook(Sdb* s, SdbHook cb, void* user);
 int sdb_unhook(Sdb* s, SdbHook h);
 int sdb_hook_call(Sdb *s, const char *k, const char *v);
 void sdb_hook_free(Sdb *s);
+int sdb_apush(Sdb *s, const char *key, const char *val, ut32 cas);
+char *sdb_apop(Sdb *s, const char *key, ut32 *cas);
 
 #ifdef __cplusplus
 }

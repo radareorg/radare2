@@ -130,8 +130,11 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 				if (!out) return NULL;
 				wl = strlen (out);
 				if (wl>len) buf = malloc (wl+2);
-				for (i=0; out[i]; i++)
+				for (i=0; out[i]; i++) {
+					if (out[i+1])
 					buf[i] = out[i]==SDB_RS? '\n': out[i];
+					else buf[i] = out[i];
+				}
 				buf[i] = 0;
 				return buf;
 			}

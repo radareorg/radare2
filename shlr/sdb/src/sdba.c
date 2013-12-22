@@ -242,8 +242,12 @@ SDB_VISIBLE int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
 		else return 0;;
 	}
 	n = strchr (p, SDB_RS);
-	if (n) strcpy (p, n+1);
-	else *p = 0;
+	if (n) {
+		memmove (p, n+1, strlen (n+1)+1);
+	} else {
+		*p = 0;
+		p[1] = 0;
+	}
 	sdb_set (s, key, str, cas);
 	free (str);
 	return 1;
@@ -296,6 +300,39 @@ SDB_VISIBLE int sdb_alen(const char *str) {
 SDB_VISIBLE int sdb_alength(Sdb *s, const char *key) {
 	const char *str = sdb_getc (s, key, 0);
 	return sdb_alen (str);
+}
+
+SDB_VISIBLE int sdb_apush(Sdb *s, const char *key, const char *val, ut32 cas) {
+	ut32 kas = cas;
+	const char *str = sdb_getc (s, key, &kas);
+	if (cas && cas != kas)
+		return 0;
+	cas = kas;
+	if (str && *str) {
+		int str_len = strlen (str);
+		int val_len = strlen (val);
+		char *newval = malloc (str_len + val_len + 2);
+		memcpy (newval, str, str_len);
+		newval[str_len] = SDB_RS;
+		memcpy (newval+str_len+1, val, val_len);
+		sdb_set (s, key, newval, cas);
+		free (newval);
+	} else {
+		sdb_set (s, key, val, cas);
+	}
+	return 1;
+}
+
+SDB_VISIBLE char *sdb_apop(Sdb *s, const char *key, ut32 *cas) {
+	ut32 kas = *cas;
+	char *ret;
+	const char *str = sdb_getc (s, key, &kas);
+	int n = sdb_alen (str);
+	if (n<1) return NULL;
+// XXX cas is ignored
+	ret = strdup (str);
+	sdb_adel (s, key, n-1, kas);
+	return ret;
 }
 
 #if 0

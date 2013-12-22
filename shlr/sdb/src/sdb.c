@@ -517,6 +517,7 @@ SDB_VISIBLE int sdb_create (Sdb* s) {
 	return 1;
 }
 
+// TODO: rename function.
 SDB_VISIBLE int sdb_append (Sdb* s, const char *key, const char *val) {
 	struct cdb_make *c = &s->m;
 	if (!key || !val) return 0;
