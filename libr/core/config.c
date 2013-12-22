@@ -325,6 +325,12 @@ static int cb_fsview(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_cmddepth(void *user, void *data) {
+	int c = R_MAX (((RConfigNode*)data)->i_value, 0);
+	((RCore *)user)->cmd_depth = c;
+	return R_TRUE;
+}
+
 static int cb_hexcols(void *user, void *data) {
 	int c = R_MIN (128, R_MAX (((RConfigNode*)data)->i_value, 0));
 	((RCore *)user)->print->cols = c & ~1;
@@ -681,6 +687,7 @@ R_API int r_core_config_init(RCore *core) {
 					else
 						r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
+	SETICB("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF("cmd.bp", "", "Command to executed every breakpoint hit");
 	SETPREF("cmd.cprompt", "", "Column visual prompt commands");
 	SETPREF("cmd.hit", "", "Command to execute on every search hit");

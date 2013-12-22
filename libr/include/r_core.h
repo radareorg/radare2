@@ -143,6 +143,7 @@ typedef struct r_core_t {
 	int vseek;
 	RList *watchers;
 	RList *scriptstack;
+	int cmd_depth;
 } RCore;
 
 typedef struct r_core_cmpwatch_t {
