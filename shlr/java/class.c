@@ -256,34 +256,31 @@ static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 	{ "Unknown", R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[20]} 
 };
 
-
-static void add_cp_obj_to_sdb( Sdb* sdb, char *class_name, RBinJavaCPTypeObj *cp_obj ){
-	ut32 size = strlen(class_name) + 13 + 5 + 1;
-	char *key = malloc(size);
-	char *value = NULL;
-	if (key) {
-		memset(key, 0, size);
-		snprintf(key, size-1, "java.%s.cp_obj.%d", class_name, cp_obj->metas->ord);
-		value = ( (RBinJavaCPTypeMetas *) cp_obj->metas->type_info)->allocs->stringify_obj (cp_obj);
-		sdb_set (sdb, key, value, 0);
-	}
-	
-	
-	
-}
-
-
 static void add_cp_objs_to_sdb( RBinJavaObj *bin){
-	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
-	char * class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
-	RBinJavaCPTypeObj *cp_obj = NULL;
-
+	int size = 0xff;
 	ut32 idx = 0;
+	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class),
+					  *cp_obj = NULL;
+	char * class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj),
+		 * key = malloc(size),
+		 * value = NULL;
+	
+
+	if ( key == NULL) return;
+
+	memset(key, 0, size);
+	snprintf(key, size-1, "java.%s.cp_obj", class_name);
+
+	//sdb_alist(bin->kv, key);
 	for (idx = 0; idx < bin->cp_count; idx++) {
 		cp_obj = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (bin, idx);
 		IFDBG eprintf("Adding %s.cp_obj.%d to the sdb.\n", class_name, cp_obj->metas->ord);
-		add_cp_obj_to_sdb(bin->kv, class_name, cp_obj);
+		value = ( (RBinJavaCPTypeMetas *) cp_obj->metas->type_info)->allocs->stringify_obj (cp_obj);
+		//sdb_aset(bin->kv, key, idx, value, 0);
+		sdb_apush(bin->kv, key, value, 0);
+		free(value);
 	}
+	free(key);
 }
 
 static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_flags) {	
