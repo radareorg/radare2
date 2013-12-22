@@ -1,8 +1,7 @@
 /* radare - LGPL - Copyright 2012 - pancake<nopcode.org>
-			     2013 - condret		*/
+			     2013 - condret
 
 
-/*
 	this file was based on anal_i8080.c
 
 	Todo(for Condret):	1. Implement all MBC's and detect Bankswitches
@@ -17,11 +16,25 @@
 #include <r_types.h>
 #include <r_asm.h>
 #include <r_anal.h>
+#include <r_reg.h>
 #include "../../asm/arch/gb/gbdis.c"
 #include "../arch/gb/mbc.c"
 #include "../arch/gb/meta_gb_cmt.c"
+#include "../arch/gb/gb_makros.h"
 
-static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+static ut8 gb_op_calljump(RAnalOp *op, const ut8 *data, ut64 addr){
+	if(!GB_IS_RAM_DST(data[1],data[2])){
+		if(!GB_IS_VBANK_DST(data[1],data[2])) {
+			op->jump = GB_SOFTCAST(data[1],data[2]);
+		} else {
+			op->jump = GB_IB_DST(data[1],data[2],addr);
+		}
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
+static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len){
 	int ilen = gbOpLength(gb_op[data[0]].type);
 	if(ilen>len)
 		ilen=0;
@@ -29,8 +42,10 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = ilen;
-	if(addr>0xffff && !(0x3fff<(addr%0x10000) && (addr%0x10000)<0x8000))
+	if(GB_IS_VIRTUAL(addr) && !GB_IS_VBANK(addr)) {
+		op->type = R_ANAL_OP_TYPE_NOP;
 		return op->size;
+	}
 	switch (data[0])
 	{
 		case 0x00:
@@ -71,7 +86,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0x08:
 		case 0xea:
-			gb_bankswitch_detect(anal->meta, anal->iob, addr, (data[2]*0x100)+data[1]);
+			gb_bankswitch_detect(anal->meta, anal->iob, addr, GB_SOFTCAST(data[1],data[2]));
 		case 0x02:
 		case 0x12:
 		case 0x22:
@@ -298,16 +313,12 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_POP;
 			break;
 		case 0xc3:
-			op->type = R_ANAL_OP_TYPE_UJMP;
-			if(((data[2]*0x100)+data[1])<0x8000){
-				if(((data[2]*0x100)+data[1])<0x4000) {
-					op->jump = (data[2]*0x100)+data[1];
-				} else {
-					op->jump = (data[2]*0x100)+data[1]+(addr/0x10000)*0x10000;	//inner-bank jumps
-				}
-				op->fail = addr+ilen;
+			if(gb_op_calljump(op,data,addr)) {
 				op->type = R_ANAL_OP_TYPE_JMP;
+			} else {
+				op->type = R_ANAL_OP_TYPE_UJMP;
 			}
+			op->fail = addr+ilen;
 			op->eob=1;
 			break;
 		case 0x18:					// JR
@@ -327,16 +338,12 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xca:
 		case 0xd2:
 		case 0xda:
-			op->type = R_ANAL_OP_TYPE_UJMP;
-			if(((data[2]*0x100)+data[1])<0x8000){
-				if(((data[2]*0x100)+data[1])<0x4000) {
-					op->jump = (data[2]*0x100)+data[1];
-				} else {
-					op->jump = (data[2]*0x100)+data[1]+(addr/0x10000)*0x10000;	//inner-bank jumps
-				}
-				op->fail = addr+ilen;
+			if(gb_op_calljump(op,data,addr)) {
 				op->type = R_ANAL_OP_TYPE_CJMP;
+			} else {
+				op->type = R_ANAL_OP_TYPE_UJMP;
 			}
+			op->fail = addr+ilen;
 			op->eob=1;
 			break;
 		case 0xe9:
@@ -351,65 +358,61 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xcd:
 		case 0xd4:
 		case 0xdc:
-			op->type = R_ANAL_OP_TYPE_UCALL;
-			if(((data[2]*0x100)+data[1])<0x8000){
-				if(((data[2]*0x100)+data[1])<0x4000) {
-					op->jump = (data[2]*0x100)+data[1];
-				} else {
-					op->jump = (data[2]*0x100)+data[1]+(addr/0x10000)*0x10000;	//inner-bank calls
-				}
-				op->fail = addr+ilen;
+			if(gb_op_calljump(op,data,addr)) {
 				op->type = R_ANAL_OP_TYPE_CALL;
+			} else {
+				op->type = R_ANAL_OP_TYPE_UCALL;
 			}
+			op->fail = addr+ilen;
 			op->eob=1;
 			break;
                 case 0xc7:                                //rst 0
                         op->jump = 0x00;
                         op->fail = addr + ilen;
                         op->eob = 1;
-                        op->type = R_ANAL_OP_TYPE_JMP;
+                        op->type = R_ANAL_OP_TYPE_CALL;
                         break;
                 case 0xcf:                                //rst 8
                         op->jump = 0x08;
                         op->fail = addr + ilen;
                         op->eob = 1;
-                        op->type = R_ANAL_OP_TYPE_JMP;
+                        op->type = R_ANAL_OP_TYPE_CALL;
                         break;
                 case 0xd7:                                //rst 16
                         op->jump = 0x10;
                         op->fail = addr + ilen;
                         op->eob = 1;
-                        op->type = R_ANAL_OP_TYPE_JMP;
+                        op->type = R_ANAL_OP_TYPE_CALL;
                         break;
                 case 0xdf:                                //rst 24
                         op->jump = 0x18;
                         op->fail = addr + ilen;
                         op->eob = 1;
-                        op->type = R_ANAL_OP_TYPE_JMP;
+                        op->type = R_ANAL_OP_TYPE_CALL;
                         break;
                 case 0xe7:                                //rst 32
                         op->jump = 0x20;
                         op->fail = addr + ilen;
                         op->eob = 1;
-                        op->type = R_ANAL_OP_TYPE_JMP;
+                        op->type = R_ANAL_OP_TYPE_CALL;
                         break;
                 case 0xef:                                //rst 40
                         op->jump = 0x28;
                         op->fail = addr + ilen;
                         op->eob = 1;
-                        op->type = R_ANAL_OP_TYPE_JMP;
+                        op->type = R_ANAL_OP_TYPE_CALL;
                         break;
                 case 0xf7:                                //rst 48
                         op->jump = 0x30;
                         op->fail = addr + ilen;
                         op->eob = 1;
-                        op->type = R_ANAL_OP_TYPE_JMP;
+                        op->type = R_ANAL_OP_TYPE_CALL;
                         break;
                 case 0xff:                                //rst 56
                         op->jump = 0x38;
                         op->fail = addr + ilen;
                         op->eob = 1;
-                        op->type = R_ANAL_OP_TYPE_JMP;
+                        op->type = R_ANAL_OP_TYPE_CALL;
                         break;                                // condret: i think that foo resets some regs, but i'm not sure
 		case 0xd3:
 		case 0xdb:
@@ -475,6 +478,51 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	return op->size;
 }
 
+/*
+	The reg-profile below does not represent the real gameboy registers.
+		->There is no such thing like m, mpc or mbc. there is only pc.
+	m and mbc should make it easier to inspect the current mbc-state, because
+	the mbc can be seen as a register but it isn't. For the Gameboy the mbc is invisble.
+*/
+
+static int set_reg_profile(RAnal *anal) {
+	return r_reg_set_profile_string (anal->reg,
+			"=pc	mpc\n"
+			"=sp	sp\n"
+			"=a0	af\n"
+			"=a1	bc\n"
+			"=a2	de\n"
+			"=a3	hl\n"
+
+			"gpr	mpc	.32	0	0\n"
+			"gpr	m	.16	0	0\n"
+			"gpr	pc	.16	2	0\n"
+
+			"gpr	sp	.16	4	0\n"
+
+			"gpr	af	.16	6	0\n"
+			"gpr	a	.8	6	0\n"
+			"gpr	f	.8	7	0\n"
+			"flg	z	.1	.48	0\n"	//is this right?
+			"flg	n	.1	.49	0\n"
+			"flg	h	.1	.50	0\n"
+			"flg	c	.1	.51	0\n"
+
+			"gpr	bc	.16	8	0\n"
+			"gpr	b	.8	8	0\n"
+			"gpr	c	.8	9	0\n"
+
+			"gpr	de	.16	10	0\n"
+			"gpr	d	.8	10	0\n"
+			"gpr	e	.8	11	0\n"
+
+			"gpr	hl	.16	12	0\n"
+			"gpr	h	.8	12	0\n"
+			"gpr	l	.8	13	0\n"
+
+			"gpr	mbc	.16	14	0\n");
+}
+
 struct r_anal_plugin_t r_anal_plugin_gb = {
 	.name = "gb",
 	.desc = "Gameboy CPU code analysis plugin",
@@ -484,7 +532,7 @@ struct r_anal_plugin_t r_anal_plugin_gb = {
 	.init = NULL,
 	.fini = NULL,
 	.op = &gb_anop,
-	.set_reg_profile = NULL,				//TODO
+	.set_reg_profile = &set_reg_profile,
 	.fingerprint_bb = NULL,
 	.fingerprint_fcn = NULL,
 	.diff_bb = NULL,
