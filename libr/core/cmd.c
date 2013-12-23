@@ -81,17 +81,17 @@ static int cmd_log(void *data, const char *input) {
 		r_core_log_del (core, n);
 		break;
 	case '?':
-		r_cons_printf ("Usage: l[-][ num|msg]\n"
-			"  l new comment 0x80480\n"
-			"  l       list all log messages\n"
-			"  l*      list in radare commands\n"
-			"  ll      get last log message id\n"
-			"  ls      list files in current directory (see pwd, cd)\n"
-			"  lj      list in json format\n"
-			"  l-      delete all logs\n"
-			"  l-123   delete logs before 123\n"
-			"  l 123   list log from 123 \n"
-			"  l 10 3  list 3 log messages starting from 10\n"
+		r_cons_printf ("|Usage: l[-][ num|msg]\n"
+			"|  l new comment 0x80480\n"
+			"|  l       list all log messages\n"
+			"|  l*      list in radare commands\n"
+			"|  ll      get last log message id\n"
+			"|  ls      list files in current directory (see pwd, cd)\n"
+			"|  lj      list in json format\n"
+			"|  l-      delete all logs\n"
+			"|  l-123   delete logs before 123\n"
+			"|  l 123   list log from 123 \n"
+			"|  l 10 3  list 3 log messages starting from 10\n"
 		);
 		break;
 	case ' ':
@@ -125,13 +125,13 @@ static int cmd_alias(void *data, const char *input) {
 	char *p, *q, *buf;
 	RCore *core = (RCore *)data;
 	if (*input=='?') {
-		r_cons_printf ("Usage: -alias[=cmd] [args...]\n"
-			" $dis=af,pdf # create command -analyze to show function\n"
-			" $dis=       # undefine alias\n"
-			" $dis# execute the previously defined alias\n"
-			" $dis?       # show commands aliased by 'analyze'\n"
-			" $           # list all defined aliases\n"
-			" $*          # sas above, but using r2 commands\n");
+		r_cons_printf ("|Usage: -alias[=cmd] [args...]\n"
+			"| $dis=af,pdf # create command -analyze to show function\n"
+			"| $dis=       # undefine alias\n"
+			"| $dis# execute the previously defined alias\n"
+			"| $dis?       # show commands aliased by 'analyze'\n"
+			"| $           # list all defined aliases\n"
+			"| $*          # sas above, but using r2 commands\n");
 		return 0;
 	}
 	i = strlen (input);
@@ -252,15 +252,15 @@ static int cmd_yank(void *data, const char *input) {
 		break;
 	default:
 		r_cons_printf (
-		"Usage: y[ptxy] [len] [[@]addr]\n"
-		" y             show yank buffer information (srcoff len bytes)\n"
-		" y 16          copy 16 bytes into clipboard\n"
-		" y 16 0x200    copy 16 bytes into clipboard from 0x200\n"
-		" y 16 @ 0x200  copy 16 bytes into clipboard from 0x200\n"
-		" yp            print contents of clipboard\n"
-		" yx            print contents of clipboard in hexadecimal\n"
-		" yt 64 0x200   copy 64 bytes from current seek to 0x200\n"
-		" yy 0x3344     paste clipboard\n");
+		"|Usage: y[ptxy] [len] [[@]addr]\n"
+		"| y             show yank buffer information (srcoff len bytes)\n"
+		"| y 16          copy 16 bytes into clipboard\n"
+		"| y 16 0x200    copy 16 bytes into clipboard from 0x200\n"
+		"| y 16 @ 0x200  copy 16 bytes into clipboard from 0x200\n"
+		"| yp            print contents of clipboard\n"
+		"| yx            print contents of clipboard in hexadecimal\n"
+		"| yt 64 0x200   copy 64 bytes from current seek to 0x200\n"
+		"| yy 0x3344     paste clipboard\n");
 		break;
 	}
 	return R_TRUE;
@@ -272,11 +272,11 @@ static int cmd_quit(void *data, const char *input) {
 	switch (*input) {
 	case '?':
 		r_cons_printf (
-		"Usage: q[!] [retvalue]\n"
-		" q      quit program\n"
-		" q!     force quit (no questions)\n"
-		" q 1    quit with return value 1\n"
-		" q a-b  quit with return value a-b\n");
+		"|Usage: q[!] [retvalue]\n"
+		"| q      quit program\n"
+		"| q!     force quit (no questions)\n"
+		"| q 1    quit with return value 1\n"
+		"| q a-b  quit with return value a-b\n");
 		break;
 	case ' ':
 	case '!':
@@ -396,15 +396,15 @@ static int cmd_interpret(void *data, const char *input) {
 		break;
 	case '?':
 		r_cons_printf (
-		"Usage: . [file] | [!command] | [(macro)]\n"
-		" .                  repeat last command backward\n"
-		" ..                 repeat last command forward (same as \\n)\n"
-		" .:8080             listen for commands on given tcp port\n"
-		" . foo.r2           interpret r2 script\n"
-		" .-                 open cfg.editor and interpret tmp file\n"
-		" .!rabin -ri $FILE  interpret output of command\n"
-		" .(foo 1 2 3)       run macro 'foo' with args 1, 2, 3\n"
-		" ./ ELF             interpret output of command /m ELF as r. commands\n");
+		"|Usage: . [file] | [!command] | [(macro)]\n"
+		"| .                  repeat last command backward\n"
+		"| ..                 repeat last command forward (same as \\n)\n"
+		"| .:8080             listen for commands on given tcp port\n"
+		"| . foo.r2           interpret r2 script\n"
+		"| .-                 open cfg.editor and interpret tmp file\n"
+		"| .!rabin -ri $FILE  interpret output of command\n"
+		"| .(foo 1 2 3)       run macro 'foo' with args 1, 2, 3\n"
+		"| ./ ELF             interpret output of command /m ELF as r. commands\n");
 		break;
 	default:
 		inp = strdup (input);
@@ -463,14 +463,14 @@ static int cmd_bsize(void *data, const char *input) {
 		r_cons_printf ("0x%x\n", core->blocksize);
 		break;
 	case '?':
-		r_cons_printf ("Usage: b[f] [arg]\n"
-			" b         display current block size\n"
-			" b+3       increase blocksize by 3\n"
-			" b-16      decrement blocksize by 3\n"
-			" b 33      set block size to 33\n"
-			" b eip+4   numeric argument can be an expression\n"
-			" bf foo    set block size to flag size\n"
-			" bm 1M     set max block size\n");
+		r_cons_printf ("|Usage: b[f] [arg]\n"
+			"| b         display current block size\n"
+			"| b+3       increase blocksize by 3\n"
+			"| b-16      decrement blocksize by 3\n"
+			"| b 33      set block size to 33\n"
+			"| b eip+4   numeric argument can be an expression\n"
+			"| bf foo    set block size to flag size\n"
+			"| bm 1M     set max block size\n");
 		break;
 	default:
 		//input = r_str_clean(input);
@@ -503,11 +503,11 @@ static int cmd_resize(void *data, const char *input) {
 		case '\0':
 		case '?':
 			r_cons_printf (
-				"Usage: r[+-][ size]\n"
-				" r size    expand or truncate file to given size\n"
-				" r-num     remove num bytes, move following data down\n"
-				" r+num     insert num bytes, move following data up\n"
-				" rm [file] remove file\n");
+				"|Usage: r[+-][ size]\n"
+				"| r size    expand or truncate file to given size\n"
+				"| r-num     remove num bytes, move following data down\n"
+				"| r+num     insert num bytes, move following data up\n"
+				"| rm [file] remove file\n");
 			return R_TRUE;
 		default:
 			newsize = r_num_math (core->num, input);
@@ -582,21 +582,21 @@ static int cmd_eval(void *data, const char *input) {
 			r_cons_pal_init (NULL);
 			break;
 		case '?':
-			r_cons_printf ("Usage: ec[s?] [key][[=| ]fg] [bg]\n"
-			"  ec                list all color keys\n"
-			"  ec*       (TODO)  same as above, but using r2 commands\n"
-			"  ecd               set default palette\n"
-			"  ecr               set random palette\n"
-			"  ecs               show a colorful palette\n"
-			"  ecf dark|white    load white color scheme template\n"
-			"  ec prompt red     change color of prompt\n"
-			"Available colors:\n"
-			"  rgb:000           24 bit hexadecimal rgb color\n"
-			"  red|green|blue|.  well known ansi colors\n"
-			"See:\n"
-			"  e scr.rgbcolor    = true|false for 256 color cube\n"
-			"  e scr.truecolor   = true|false for 256*256*256 colors\n"
-			"  $DATADIR/radare2/cons ~/.config/radare2/cons ./\n");
+			r_cons_printf ("|Usage: ec[s?] [key][[=| ]fg] [bg]\n"
+			"|  ec                list all color keys\n"
+			"|  ec*       (TODO)  same as above, but using r2 commands\n"
+			"|  ecd               set default palette\n"
+			"|  ecr               set random palette\n"
+			"|  ecs               show a colorful palette\n"
+			"|  ecf dark|white    load white color scheme template\n"
+			"|  ec prompt red     change color of prompt\n"
+			"|Available colors:\n"
+			"|  rgb:000           24 bit hexadecimal rgb color\n"
+			"|  red|green|blue|.  well known ansi colors\n"
+			"|See:\n"
+			"|  e scr.rgbcolor    = true|false for 256 color cube\n"
+			"|  e scr.truecolor   = true|false for 256*256*256 colors\n"
+			"|  $DATADIR/radare2/cons ~/.config/radare2/cons ./\n");
 			break;
 		case 'f':
 			if (input[2] == ' ') {
@@ -665,19 +665,19 @@ static int cmd_eval(void *data, const char *input) {
 		default: r_config_list (core->config, input+1, 2); break;
 		case 0:
 			r_cons_printf (
-			"Usage: e[?] [var[=value]]\n"
-			" e?              show this help\n"
-			" e?asm.bytes     show description\n"
-			" e??             list config vars with description\n"
-			" e               list config vars\n"
-			" e-              reset config vars\n"
-			" e*              dump config vars in r commands\n"
-			" e!a             invert the boolean value of 'a' var\n"
-			" er [key]        set config key as readonly. no way back\n"
-			" ec [k] [color]  set color for given key (prompt, offset, ...)\n"
-			" e a             get value of var 'a'\n"
-			" e a=b           set var 'a' the 'b' value\n"
-			" env [k[=v]]     get/set environment variable\n");
+			"|Usage: e[?] [var[=value]]\n"
+			"| e?              show this help\n"
+			"| e?asm.bytes     show description\n"
+			"| e??             list config vars with description\n"
+			"| e               list config vars\n"
+			"| e-              reset config vars\n"
+			"| e*              dump config vars in r commands\n"
+			"| e!a             invert the boolean value of 'a' var\n"
+			"| er [key]        set config key as readonly. no way back\n"
+			"| ec [k] [color]  set color for given key (prompt, offset, ...)\n"
+			"| e a             get value of var 'a'\n"
+			"| e a=b           set var 'a' the 'b' value\n"
+			"| env [k[=v]]     get/set environment variable\n");
 		}
 		break;
 	case 'r':
@@ -709,11 +709,11 @@ static int cmd_pointer(void *data, const char *input) {
 	char *str, *eq;
 	while (*input==' ') input++;
 	if (!*input || *input=='?') {
-		eprintf ("Usage: *<addr>[=[0x]value]\n");
-		eprintf (" *entry0=cc           # write trap in entrypoint\n");
-		eprintf (" *entry0+10=0x804800  # write value in delta address\n");
-		eprintf (" *entry0              # read byte at given address\n");
-		eprintf ("TODO: last command should honor asm.bits\n");
+		eprintf ("|Usage: *<addr>[=[0x]value]\n"
+			"| *entry0=cc           # write trap in entrypoint\n"
+			"| *entry0+10=0x804800  # write value in delta address\n"
+			"| *entry0              # read byte at given address\n"
+			"|TODO: last command should honor asm.bits\n");
 		return ret;
 	}
 	str = strdup (input);
@@ -1327,12 +1327,12 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	switch (each[0]) {
 	case '?':
 		r_cons_printf (
-		"Foreach '@@' iterator command:\n"
-		" Repeat a command over a list of offsets.\n"
-		" x @@ sym.*          Run 'x' over all flags matching 'sym.' in current flagspace\n"
-		" x @@.file           \"\" over the offsets specified in the file (one offset per line)\n"
-		" x @@=off1 off2 ..   Manual list of offsets\n"
-		" x @@=`pdf~call[0]`  Run 'x' at every call offset of the current function\n");
+		"|Foreach '@@' iterator command:\n"
+		"| Repeat a command over a list of offsets.\n"
+		"| x @@ sym.*          Run 'x' over all flags matching 'sym.' in current flagspace\n"
+		"| x @@.file           \"\" over the offsets specified in the file (one offset per line)\n"
+		"| x @@=off1 off2 ..   Manual list of offsets\n"
+		"| x @@=`pdf~call[0]`  Run 'x' at every call offset of the current function\n");
 		break;
 	case '=':
 		/* foreach list of items */

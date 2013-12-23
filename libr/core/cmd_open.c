@@ -122,11 +122,11 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		default:
 		case '?':
-			r_cons_printf ("Usage: om[-] [arg]  # map opened files\n");
-			r_cons_printf ("om                  list all defined IO maps\n");
-			r_cons_printf ("om-0x10000          remove the map at given address\n");
-			r_cons_printf ("om fd addr [size]   create new io map\n");
-			r_cons_printf ("omr fd|0xADDR ADDR  relocate current map\n");
+			r_cons_printf ("|Usage: om[-] [arg]  # map opened files\n"
+				"| om                  list all defined IO maps\n"
+				"| om-0x10000          remove the map at given address\n"
+				"| om fd addr [size]   create new io map\n"
+				"| omr fd|0xADDR ADDR  relocate current map\n");
 			break;
 		}
 		r_core_block_read (core, 0);
@@ -146,18 +146,18 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '?':
 	default:
-		eprintf ("Usage: o[com- ] [file] ([offset])\n"
-		" o                  list opened files\n"
-		" oc [file]          open core file, like relaunching r2\n"
-		" oo                 reopen current file (kill+fork in debugger)\n"
-		" oo+                reopen current file in read-write\n"
-		" o 4                priorize io on fd 4 (bring to front)\n"
-		" o-1                close file index 1\n"
-		" o /bin/ls          open /bin/ls file in read-only\n"
-		" o+/bin/ls          open /bin/ls file in read-write mode\n"
-		" o /bin/ls 0x4000   map file at 0x4000\n"
-		" on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
-		" om[?]              create, list, remove IO maps\n");
+		eprintf ("|Usage: o[com- ] [file] ([offset])\n"
+		"| o                  list opened files\n"
+		"| oc [file]          open core file, like relaunching r2\n"
+		"| oo                 reopen current file (kill+fork in debugger)\n"
+		"| oo+                reopen current file in read-write\n"
+		"| o 4                priorize io on fd 4 (bring to front)\n"
+		"| o-1                close file index 1\n"
+		"| o /bin/ls          open /bin/ls file in read-only\n"
+		"| o+/bin/ls          open /bin/ls file in read-write mode\n"
+		"| o /bin/ls 0x4000   map file at 0x4000\n"
+		"| on /bin/ls 0x4000  map raw file at 0x4000 (no r_bin involved)\n"
+		"| om[?]              create, list, remove IO maps\n");
 		break;
 	}
 	return 0;
