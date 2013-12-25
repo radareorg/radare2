@@ -59,6 +59,11 @@ static const char* ud_reg_tab[] =
   "xmm8", "xmm9",   "xmm10",  "xmm11",
   "xmm12","xmm13",  "xmm14",  "xmm15",
 
+  "ymm0", "ymm1",   "ymm2",   "ymm3",
+  "ymm4", "ymm5",   "ymm6",   "ymm7",
+  "ymm8", "ymm9",   "ymm10",  "ymm11",
+  "ymm12","ymm13",  "ymm14",  "ymm15",
+
   "rip"
 };
 
@@ -111,12 +116,14 @@ static int getarg(char *src, struct ud *u, st64 mask, int idx) {
 				else
 					sprintf (src, "+0x%"PFMT64x"]", mask & n);
 			}
+			else sprintf (src, "[unknown_reg_%d]", idx); /* If UDis86 works properly, it will never reach this point. Only useful for debug purposes ("unknown reg" is clearer than an empty string, right?) */
 		}
                 else sprintf (src, "[0x%"PFMT64x"]", n & mask);
 		break;
 	default:
 		break;
 	}
+
 	return 0;
 }
 
