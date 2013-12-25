@@ -323,9 +323,6 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
 			}
 			return java_ops[idx].size;
-
-			arg = java_resolve_without_space ((int)USHORT (bytes, 1));					
-
 		case 0xb2: // getstatic
 		case 0xb3: // putstatic
 		case 0xb4: // getfield
