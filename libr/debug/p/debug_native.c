@@ -427,7 +427,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return 1;
 #else
 	//ut64 rip = r_debug_reg_get (dbg, "pc");
-	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, data);
+	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, (int)(size_t)data);
         return 0;
 #endif
 #elif __BSD__
@@ -1285,6 +1285,7 @@ static RDebugPid *darwin_get_pid(int pid) {
 	start_args = iter_args; //reset start position to beginning of cmdline
 	foo = 1;
 	*psname = 0;
+	psnamelen = 0;
 	while (iter_args < end_args && nargs > 0) {
 		if (*iter_args++ == '\0') {
 			int alen = strlen (curr_arg);
@@ -2304,33 +2305,28 @@ static void addr_to_string(struct sockaddr_storage *ss, char *buffer, int buflen
 	struct sockaddr_in *sin;
 	struct sockaddr_un *sun;
 
+	if (buflen>0)
 	switch (ss->ss_family) {
 	case AF_LOCAL:
 		sun = (struct sockaddr_un *)ss;
-		if (strlen (sun->sun_path) == 0)
-			strlcpy (buffer, "-", buflen);
-		else
-			strlcpy (buffer, sun->sun_path, buflen);
+		strncpy (buffer, (sun && *sun->sun_path)?
+			sun->sun_path: "-", buflen-1);
 		break;
-
 	case AF_INET:
 		sin = (struct sockaddr_in *)ss;
-		snprintf(buffer, buflen, "%s:%d", inet_ntoa(sin->sin_addr),
-		    ntohs(sin->sin_port));
+		snprintf (buffer, buflen, "%s:%d", inet_ntoa (sin->sin_addr),
+		    ntohs (sin->sin_port));
 		break;
-
 	case AF_INET6:
 		sin6 = (struct sockaddr_in6 *)ss;
 		if (inet_ntop (AF_INET6, &sin6->sin6_addr, buffer2,
 		    sizeof (buffer2)) != NULL)
 			snprintf (buffer, buflen, "%s.%d", buffer2,
 			    ntohs (sin6->sin6_port));
-		else
-			strlcpy (buffer, "-", sizeof(buffer));
+		else strcpy (buffer, "-");
 		break;
-
 	default:
-		strlcpy (buffer, "", buflen);
+		*buffer = 0;
 		break;
 	}
 }
@@ -2386,7 +2382,7 @@ static RList *r_debug_desc_native_list (int pid) {
 							addr_to_string (&kve->kf_sa_peer, path, sizeof (path));
 					} else {
 						addr_to_string (&kve->kf_sa_local, path, sizeof (path));
-						strlcat (path, " ", sizeof (path));
+						strcat (path, " ");
 						addr_to_string (&kve->kf_sa_peer, path + strlen (path),
 								sizeof (path));
 					}
