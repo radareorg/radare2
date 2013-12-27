@@ -572,6 +572,7 @@ int main(int argc, char **argv) {
 		r_cons_flush ();
 	}
 
+	r.num->value = 0;
 	if (patchfile) {
 		r_core_patch (&r, patchfile);
 	} else
@@ -595,7 +596,6 @@ int main(int argc, char **argv) {
 #else
 		r_core_prompt_loop (&r);
 #endif
-
 		if (debug) {
 			if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 				if (r_cons_yesno ('y', "Do you want to kill the process? (Y/n)"))

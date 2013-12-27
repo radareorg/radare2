@@ -24,7 +24,7 @@ static char *r_line_nullstr = "";
 static inline int is_valid_char (unsigned char ch) {
 	if (ch>=32 && ch<=127) return R_TRUE;
 	switch (ch) {
-	case 0: // wat
+	//case 0: // wat
 	case 1: // ^a
 	case 4: // ^d
 	case 5: // ^e
@@ -65,14 +65,15 @@ static int r_line_readchar_utf8(unsigned char *s, int slen) {
 	// TODO: add support for w32
 	int ret, len;
 	for (len = 0; len+2<slen; len++) {
+		s[len] = 0;
 		ret = read (0, s+len, 1);
 		if (ret==-1)
 			return 0;
 		if (s[len] < 28)
-			return 1;
+			return s[0]?1:0;
 		if (ret == 1) {
 			if (is_valid_char (s[len]))
-				return 1;
+				return s[0]?1:0;
 			if ((s[len] & 0xc0) != 0x80) continue;
 			if (len>0) break;
 		} else return 0;
