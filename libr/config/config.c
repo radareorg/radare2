@@ -31,6 +31,7 @@ R_API void r_config_node_free (void *n) {
 R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	RConfigNode *node;
 	RListIter *iter;
+	const char *sfx = "";
 	const char *pfx = "";
 	int len = 0;
 
@@ -40,12 +41,13 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	}
 	switch (rad) {
 	case 1:
-		pfx = "e ";
+		pfx = "\"e ";
+		sfx = "\"";
 	case 0:
 		r_list_foreach (cfg->nodes, iter, node) {
 			if (!str || (str && (!strncmp (str, node->name, len))))
-				cfg->printf ("%s%s = %s\n", pfx,
-					node->name, node->value);
+				cfg->printf ("%s%s = %s%s\n", pfx,
+					node->name, node->value, sfx);
 		}
 		break;
 	case 2:

@@ -158,7 +158,8 @@ static int cmd_meta(void *data, const char *input) {
 				free (comment);
 			}
 			break;
-		default: {
+		case ' ':
+		case '\0':
 			if (type!='z' && !input[1]) {
 				r_meta_list (core->anal->meta, input[0], 0);
 				break;
@@ -195,7 +196,9 @@ static int cmd_meta(void *data, const char *input) {
 			if (!r_meta_add (core->anal->meta, type, addr, addr_end, name))
 				free (t);
 			//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
-			}
+			break;
+		default:
+			eprintf ("Missing space after CC\n");
 			break;
 		}
 		break;

@@ -80,7 +80,7 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 		if (!r_sandbox_check_path (path))
 			return NULL;
 	}
-	if (path)
+	if (path && r_file_is_regular (path))
 		return fopen (path, mode);
 	return NULL;
 }

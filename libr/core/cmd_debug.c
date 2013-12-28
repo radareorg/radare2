@@ -163,20 +163,20 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 			(int) r_num_math (core->num, input+2));
 		break;
 	case '?':
-		r_cons_printf ("Usage: dp[=][pid]\n"
-			" dp      list current pid and childrens\n"
-			" dp 748  list children of pid\n"
-			" dp*     list all attachable pids\n"
-			" dpe     show path to executable\n"
-			" dpa 377 attach and select this pid\n"
-			" dp=748  select this pid\n"
-			" dpf     Attach to pid like file fd // HACK\n"
-			" dpn     Create new process (fork)\n"
-			" dpnt    Create new thread (clone)\n"
-			" dpt     List threads of current pid\n"
-			" dpt 74  List threads of given process\n"
-			" dpt=64  Attach to thread\n"
-			" dpk P S send signal S to P process id\n");
+		r_cons_printf ("|Usage: dp[=][pid]\n"
+			"| dp      list current pid and childrens\n"
+			"| dp 748  list children of pid\n"
+			"| dp*     list all attachable pids\n"
+			"| dpe     show path to executable\n"
+			"| dpa 377 attach and select this pid\n"
+			"| dp=748  select this pid\n"
+			"| dpf     Attach to pid like file fd // HACK\n"
+			"| dpn     Create new process (fork)\n"
+			"| dpnt    Create new thread (clone)\n"
+			"| dpt     List threads of current pid\n"
+			"| dpt 74  List threads of given process\n"
+			"| dpt=64  Attach to thread\n"
+			"| dpk P S send signal S to P process id\n");
 		break;
 	default:
 		eprintf ("selected: %d %d\n", core->dbg->pid, core->dbg->tid);
@@ -233,19 +233,19 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	switch (input[0]) {
 	case '?':
 		r_cons_printf (
-		"Usage: dm [size]\n"
-		" dm            List memory maps of target process\n"
-		" dmj           List memmaps in JSON format\n"
-		" dm*           Same as above but in radare commands\n"
-		" dm addr size  Allocate size bytes at addr (anywhere if addr is -1) in child process\n"
-		" dm-0x8048     Deallocate memory map of address 0x8048\n"
-		" dmp A S rwx   Change page at A with size S protection permissions\n"
-		" dmd [file]    Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
-		" dml file      Load contents of file into the current map region (see Sl)\n"
-		" dmi [addr|libname] [symname]   List symbols of target lib\n"
-		" dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
-		//" dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
-		"TODO: map files in process memory. (dmf file @ [addr])\n");
+		"|Usage: dm [size]\n"
+		"| dm            List memory maps of target process\n"
+		"| dmj           List memmaps in JSON format\n"
+		"| dm*           Same as above but in radare commands\n"
+		"| dm addr size  Allocate size bytes at addr (anywhere if addr is -1) in child process\n"
+		"| dm-0x8048     Deallocate memory map of address 0x8048\n"
+		"| dmp A S rwx   Change page at A with size S protection permissions\n"
+		"| dmd [file]    Dump current debug map region to a file (from-to.dmp) (see Sd)\n"
+		"| dml file      Load contents of file into the current map region (see Sl)\n"
+		"| dmi [addr|libname] [symname]   List symbols of target lib\n"
+		"| dmi* [addr|libname] [symname]  Same as above but in radare commands\n"
+		//"| dm rw- esp 9K  set 9KB of the stack as read+write (no exec)\n"
+		"|TODO: map files in process memory. (dmf file @ [addr])\n");
 		break;
 	case 'p':
 		if (input[1] == ' ') {
@@ -805,10 +805,10 @@ static int cmd_debug(void *data, const char *input) {
 	case 't':
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: dt[*] [tag]\n");
-			r_cons_printf ("  dtc  - trace call/ret\n");
-			r_cons_printf ("  dtg  - graph call/ret trace\n");
-			r_cons_printf ("  dtr  - reset traces (instruction//cals)\n");
+			r_cons_printf ("|Usage: dt[*] [tag]\n"
+			"|  dtc  - trace call/ret\n"
+			"|  dtg  - graph call/ret trace\n"
+			"|  dtr  - reset traces (instruction//cals)\n");
 			break;
 		case 'c':
 			if (r_debug_is_dead (core->dbg))
@@ -865,12 +865,12 @@ static int cmd_debug(void *data, const char *input) {
 			break;
 		case '?':
 		default:
-			r_cons_printf ("Usage: dd[*sdrw-?]\n"
-				" dd       list filedescriptors\n"
-				" dd*      list filedescriptors (in radare commands)\n"
-				" dd-1     close stdout fd\n"
-				" dd file  open and map that file into the UI\n"
-				" dd?      show this help\n");
+			r_cons_printf ("|Usage: dd[*sdrw-?]\n"
+				"| dd       list filedescriptors\n"
+				"| dd*      list filedescriptors (in radare commands)\n"
+				"| dd-1     close stdout fd\n"
+				"| dd file  open and map that file into the UI\n"
+				"| dd?      show this help\n");
 			break;
 		}
 		break;
@@ -879,17 +879,17 @@ static int cmd_debug(void *data, const char *input) {
 		if (times<1) times = 1;
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("Usage: ds[ol] [count]\n"
-				" ds          step one instruction\n"
-				" ds 4        step 4 instructions\n"
-				" dsf         step until end of frame\n"
-				" dsi [cond]  continue until condition matches\n"
-				" dsl         step one source line\n"
-				" dsl 40      step 40 source lines\n"
-				" dso 3       step over 3 instructions\n"
-				" dsp         step into program (skip libs)\n"
-				" dss 3       skip 3 step instructions\n"
-				" dsu addr    step until address\n"
+			r_cons_printf ("|Usage: ds[ol] [count]\n"
+				"| ds          step one instruction\n"
+				"| ds 4        step 4 instructions\n"
+				"| dsf         step until end of frame\n"
+				"| dsi [cond]  continue until condition matches\n"
+				"| dsl         step one source line\n"
+				"| dsl 40      step 40 source lines\n"
+				"| dso 3       step over 3 instructions\n"
+				"| dsp         step into program (skip libs)\n"
+				"| dss 3       skip 3 step instructions\n"
+				"| dsu addr    step until address\n"
 				);
 			break;
 		case 'i':
@@ -998,25 +998,25 @@ static int cmd_debug(void *data, const char *input) {
 		r_cons_break (static_debug_stop, core->dbg);
 		switch (input[1]) {
 		case '?':
-			eprintf("Usage: dc[?]  -- continue execution\n"
-				" dc?              show this help\n"
-				" dc               continue execution of all children\n"
-				" dcf              continue until fork (TODO)\n"
-				" dca [sym] [sym]. continue at every hit on any given symbol\n"
-				" dct [len]        traptrace from curseek to len, no argument to list\n"
-				" dcu [addr]       continue until address\n"
-				" dcu [addr] [end] continue until given address range\n"
-				" dco [num]        step over N instructions\n"
-				" dcp              continue until program code (mapped io section)\n"
-				" dcs [num]        continue until syscall\n"
-				" dcc              continue until call (use step into)\n"
-				" dcr              continue until ret (uses step over)\n"
-				" dck [sig] [pid]  continue sending kill 9 to process\n"
-				" dc [pid]         continue execution of pid\n"
-				" dc[-pid]         stop execution of pid\n"
-				"TODO: dcu/dcr needs dbg.untilover=true??\n"
-				"TODO: same for only user/libs side, to avoid steping into libs\n"
-				"TODO: support for threads?\n");
+			eprintf("|Usage: dc[?]  -- continue execution\n"
+				"| dc?              show this help\n"
+				"| dc               continue execution of all children\n"
+				"| dcf              continue until fork (TODO)\n"
+				"| dca [sym] [sym]. continue at every hit on any given symbol\n"
+				"| dct [len]        traptrace from curseek to len, no argument to list\n"
+				"| dcu [addr]       continue until address\n"
+				"| dcu [addr] [end] continue until given address range\n"
+				"| dco [num]        step over N instructions\n"
+				"| dcp              continue until program code (mapped io section)\n"
+				"| dcs [num]        continue until syscall\n"
+				"| dcc              continue until call (use step into)\n"
+				"| dcr              continue until ret (uses step over)\n"
+				"| dck [sig] [pid]  continue sending kill 9 to process\n"
+				"| dc [pid]         continue execution of pid\n"
+				"| dc[-pid]         stop execution of pid\n"
+				"|TODO: dcu/dcr needs dbg.untilover=true??\n"
+				"|TODO: same for only user/libs side, to avoid steping into libs\n"
+				"|TODO: support for threads?\n");
 			break;
 		case 'a':
 			eprintf ("TODO: dca\n");
@@ -1192,11 +1192,11 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			break;
 		default:
-			r_cons_printf ("Usage: di[asr] [arg| ...]\n"
-			" di 9090                           ; inject two x86 nops\n"
-			" \"dia mov eax,6;mov ebx,0;int 0x80\"  ; inject and restore state\n"
-			" dir 9090                          ; inject and restore state\n"
-			" dis write 1, 0x8048, 12           ; syscall injection (see gs)\n");
+			r_cons_printf ("|Usage: di[asr] [arg| ...]\n"
+			"| di 9090                           ; inject two x86 nops\n"
+			"| \"dia mov eax,6;mov ebx,0;int 0x80\"  ; inject and restore state\n"
+			"| dir 9090                          ; inject and restore state\n"
+			"| dis write 1, 0x8048, 12           ; syscall injection (see gs)\n");
 			break;
 		}
 		break;
@@ -1218,22 +1218,22 @@ static int cmd_debug(void *data, const char *input) {
 		r_core_debug_kill (core, input+1);
 		break;
 	default:
-		r_cons_printf ("Usage: d[sbhcrbo] [arg]\n"
-		" dh [handler]   list or set debugger handler\n"
-		" dH [handler]   transplant process to a new handler\n"
-		" dd             file descriptors (!fd in r1)\n"
-		" ds[ol] N       step, over, source line\n"
-		" do             open process (reload, alias for 'oo')\n"
-		" dk [sig][=act] list, send, get, set, signal handlers of child\n"
-		" di[s] [arg..]  inject code on running process and execute it (See gs)\n"
-		" dp[=*?t][pid]  list, attach to process or thread id\n"
-		" dc[?]          continue execution. dc? for more\n"
-		" dr[?]          cpu registers, dr? for extended help\n"
-		" db[?]          breakpoints\n"
-		" dbt            display backtrace\n"
-		" dt[?r] [tag]   display instruction traces (dtr=reset)\n"
-		" dm[?*]         show memory maps\n"
-		" dw [pid]       block prompt until pid dies\n");
+		r_cons_printf ("|Usage: d[sbhcrbo] [arg]\n"
+		"| dh [handler]   list or set debugger handler\n"
+		"| dH [handler]   transplant process to a new handler\n"
+		"| dd             file descriptors (!fd in r1)\n"
+		"| ds[ol] N       step, over, source line\n"
+		"| do             open process (reload, alias for 'oo')\n"
+		"| dk [sig][=act] list, send, get, set, signal handlers of child\n"
+		"| di[s] [arg..]  inject code on running process and execute it (See gs)\n"
+		"| dp[=*?t][pid]  list, attach to process or thread id\n"
+		"| dc[?]          continue execution. dc? for more\n"
+		"| dr[?]          cpu registers, dr? for extended help\n"
+		"| db[?]          breakpoints\n"
+		"| dbt            display backtrace\n"
+		"| dt[?r] [tag]   display instruction traces (dtr=reset)\n"
+		"| dm[?*]         show memory maps\n"
+		"| dw [pid]       block prompt until pid dies\n");
 		break;
 	}
 	if (follow>0) {

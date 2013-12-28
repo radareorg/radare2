@@ -19,8 +19,19 @@ R_API const char *r_file_basename (const char *path) {
 	return path;
 }
 
+R_API boolt r_file_is_regular(const char *str) {
+	struct stat buf = {0};
+	if (!str||!*str)
+		return R_FALSE;
+	if (stat (str, &buf)==-1)
+		return R_FALSE;
+	return ((S_IFREG & buf.st_mode))? R_TRUE: R_FALSE;
+}
+
 R_API boolt r_file_is_directory(const char *str) {
 	struct stat buf = {0};
+	if (!str||!*str)
+		return R_FALSE;
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
 	return ((S_IFDIR &buf.st_mode))? R_TRUE: R_FALSE;

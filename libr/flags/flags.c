@@ -72,8 +72,12 @@ R_API void r_flag_list(RFlag *f, int rad) {
 			continue;
 		if (rad) {
 			if (fs == -1 || flag->space != fs) {
+				const char *flagspace;
 				fs = flag->space;
-				r_cons_printf ("fs %s\n", r_flag_space_get_i (f, fs));
+				flagspace = r_flag_space_get_i (f, fs);
+				if (!flagspace || !*flagspace)
+					flagspace = "*";
+				r_cons_printf ("fs %s\n", flagspace);
 			}
 			r_cons_printf ("f %s %"PFMT64d" 0x%08"PFMT64x" %s\n",
 				flag->name, flag->size, flag->offset,

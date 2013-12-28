@@ -62,7 +62,7 @@ static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {
 		if (nc->curr_tok == RNCDIV) {
 			RNumCalcValue d = prim (num, nc, 1);
 			if (!d.d) {
-				error (num, nc, "divide by 0");
+				//error (num, nc, "divide by 0");
 				return d;
 			}
 			left = Ndiv (left, d);
