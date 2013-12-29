@@ -21,19 +21,26 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	int i, matches = 0, ctr = 0;
 	RBinString *ptr = NULL;
 
-	if (min <= 0)
-		return;
-
 	if (!arch->rawstr)
 		if (!arch->curplugin || !arch->curplugin->info)
 			return;
+	if (arch->curplugin && min==0) {
+		min = arch->curplugin->minstrlen;
+	}
+	if (min==0)
+		min = 4; // defaults
+	if (min <= 0)
+		return;
+
 	if (arch && arch->buf && (!to || to > arch->buf->length))
 		to = arch->buf->length;
 	if (to != 0 && (to<1 || to > 0xf00000)) {
 		eprintf ("WARNING: bin_strings buffer is too big at 0x%08"PFMT64x"\n", from);
 		return;
 	}
-	if (to == 0)
+	if (!arch->buf)
+		return;
+	if (to == 0 && arch->buf)
 		to = arch->buf->length;
 	if (arch->buf && arch->buf->buf)
 	for (i = from; i < to; i++) { 
@@ -497,14 +504,15 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 	RBinArch *a = &bin->cur;
 	RBinObject *o = a->o;
 	if (o->strings) {
-		r_list_destroy(o->strings);
+		r_list_destroy (o->strings);
 		bin->cur.o->strings = NULL;
 	}
 	
 	if (bin->minstrlen <= 0)
 		return NULL;
 
-	if (a->curplugin && a->curplugin->strings) o->strings = a->curplugin->strings (a);
+	if (a->curplugin && a->curplugin->strings)
+		o->strings = a->curplugin->strings (a);
 	else o->strings = get_strings (a, bin->minstrlen);
 	return o->strings;
 }

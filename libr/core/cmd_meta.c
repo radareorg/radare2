@@ -189,6 +189,9 @@ static int cmd_meta(void *data, const char *input) {
 						fi = r_flag_get_i (core->flags, addr);
 						if (fi) strncpy (name, fi->name, sizeof (name)-1);
 					}
+				} else if (n<1) {
+					eprintf ("Invalid length\n");
+					return R_FALSE;
 				}
 			}
 			if (!n) n++;

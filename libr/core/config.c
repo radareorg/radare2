@@ -550,8 +550,11 @@ static int cb_binminstr(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
-		core->bin->minstrlen = node->i_value;
-		r_core_bin_refresh_strings(core);
+		int v = node->i_value;
+		if (v<1) v = 4; // HACK
+		core->bin->minstrlen = v;
+	// TODO: Do not refresh if nothing changed (minstrlen ?)
+		r_core_bin_refresh_strings (core);
 		return R_TRUE;
 	}
 	return R_TRUE;

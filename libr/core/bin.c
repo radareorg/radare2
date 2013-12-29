@@ -28,7 +28,13 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	minstr = r_config_get_i (r->config, "bin.minstr");
 	//if (r->bin->minstrlen == 0 && minstr>0) r->bin->minstrlen = minstr;
 	//else if (r->bin->minstrlen > 0) r_config_set_i (r->config, "bin.minstr", r->bin->minstrlen);
-	if (r->bin->minstrlen <=0) return -1;
+	if (r->bin->minstrlen==0) {
+		r->bin->minstrlen = r->bin->cur.curplugin->minstrlen;
+		if (r->bin->minstrlen==0)
+			r->bin->minstrlen = 4;
+	}
+	if (r->bin->minstrlen <=0)
+		return -1;
 
 	/* code */
 	if ((list = r_bin_get_strings (r->bin)) == NULL)

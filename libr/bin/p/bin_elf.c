@@ -593,7 +593,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.meta = &r_bin_meta_elf,
 	.create = &create,
 	.write = &r_bin_write_elf,
-	.get_vaddr = &get_elf_vaddr
+	.get_vaddr = &get_elf_vaddr,
 };
 
 #ifndef CORELIB
