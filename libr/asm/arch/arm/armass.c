@@ -538,6 +538,22 @@ static int thumb_assemble(ArmOpcode *ao, const char *str) {
 	return 1;
 }
 
+static int findyz(int x, int *y, int *z) {
+        int i, j;
+        for (i=0;i<0xff; i++) {
+                for (j=0;j<0xf;j++) {
+                        int v = i<<j;
+                        if (v>x) continue;
+                        if (v==x) {
+                                *y = i;
+                                *z = 16-(j/2);
+                                return 1;
+                        }
+                }
+        }
+        return 0;
+}
+
 static int arm_assemble(ArmOpcode *ao, const char *str) {
 	int i, j, ret, reg, a, b;
 	for (i=0; ops[i].name; i++) {
@@ -640,15 +656,23 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				a = getreg (ao->a[0]);
 				b = getreg (ao->a[1]);
 				if (b == -1) {
+					ut16 numshift;
+					int y, z;
 					b = getnum (ao->a[1]);
-					if (b<0|| b>255) {
-						eprintf ("Parameter out of range (0-255)\n");
+					if (b>=0 && b<=0xff) {
+						ao->o = 0x50e3;
+						// TODO: if (b>255) -> automatic multiplier
+						ao->o |= (a<<8);
+						ao->o |= ((b&0xff)<<24);
+					} else
+					if (findyz (b, &y, &z)) {
+						ao->o = 0x50e3;
+						ao->o |= (y<<24);
+						ao->o |= (z<<16);
+					} else {
+						eprintf ("Parameter %d out of range (0-255)\n", (int)b);
 						return 0;
 					}
-					ao->o = 0x50e3;
-					// TODO: if (b>255) -> automatic multiplier
-					ao->o |= (a<<8);
-					ao->o |= ((b&0xff)<<24);
 				} else {
 					ao->o |= (a<<8);
 					ao->o |= (b<<24);

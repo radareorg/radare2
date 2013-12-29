@@ -162,6 +162,7 @@ purge-dev:
 purge: purge-doc purge-dev
 	for a in ${R2BINS} ; do rm -f ${DESTDIR}/${BINDIR}/$$a ; done
 	rm -f ${DESTDIR}/${BINDIR}/ragg2-cc
+	rm -f ${DESTDIR}/${BINDIR}/r2
 	rm -f ${DESTDIR}/${LIBDIR}/libr_*
 	rm -rf ${DESTDIR}/${LIBDIR}/radare2
 	rm -rf ${DESTDIR}/${INCLUDEDIR}/libr
