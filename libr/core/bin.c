@@ -83,7 +83,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		//r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
 		r_cons_break_end ();
 	} else {
-		r_cons_printf (mode?"fs strings\n": "[strings]\n");
+		if (mode) r_cons_printf ("fs strings\n"); //: "[strings]\n");
 		r_list_foreach (list, iter, string) {
 			section = r_bin_get_section_at (r->bin, string->offset, 0);
 			if (mode) {
@@ -99,7 +99,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				section?section->name:"unknown", string->string);
 			i++;
 		}
-		if (!mode) r_cons_printf ("\n%i strings\n", i);
+		//if (!mode) r_cons_printf ("\n%i strings\n", i);
 	}
 	return R_TRUE;
 }
