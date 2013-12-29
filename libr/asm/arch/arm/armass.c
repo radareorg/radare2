@@ -559,7 +559,7 @@ static int findyz(int x, int *y, int *z) {
 static int arm_assemble(ArmOpcode *ao, const char *str) {
 	int i, j, ret, reg, a, b;
 	for (i=0; ops[i].name; i++) {
-		if (!memcmp(ao->op, ops[i].name, strlen (ops[i].name))) {
+		if (!memcmp (ao->op, ops[i].name, strlen (ops[i].name))) {
 			ao->o = ops[i].code;
 			arm_opcode_cond (ao, strlen(ops[i].name));
 			if (ao->a[0] || ops[i].type == TYPE_BKP)
@@ -657,6 +657,8 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 					return 0;
 				break;
 			case TYPE_MOV:
+				if (!strcmp (ao->op, "movs"))
+					ao->o = 0xb0e1;
 				ao->o |= getreg (ao->a[0])<<20;
 				ret = getreg (ao->a[1]);
 				if (ret!=-1) ao->o |= ret<<24;
