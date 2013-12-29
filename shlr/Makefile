@@ -86,15 +86,15 @@ tcc-sync sync-tcc:
 
 D=${DESTDIR}/${PREFIX}
 install:
-	mkdir -p ${D}/lib
-	cp -f tcc/libr_tcc* ${D}/lib
+	#mkdir -p ${D}/lib
+	#cp -f tcc/libr_tcc* ${D}/lib
 	#cp -f zip/libr_z* ${D}/lib
 
 install-symlink symstall:
 	mkdir -p ${D}/lib
-	cd tcc ; for a in libr_tcc* ; do \
-		ln -fs `pwd`/$$a ${D}/lib/$$a ; done
+	#cd tcc ; for a in libr_tcc* ; do \
+	#	ln -fs `pwd`/$$a ${D}/lib/$$a ; done
 
 uninstall deinstall:
-	rm -f ${D}/lib/libr_tcc*
+	#rm -f ${D}/lib/libr_tcc*
 	#rm -f ${D}/lib/libr_z*
