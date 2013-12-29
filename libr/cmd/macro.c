@@ -47,6 +47,9 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	if (pbody) {
 		*pbody = '\0';
 		pbody++;
+	} else {
+		eprintf ("Invalid macro body\n");
+		return R_FALSE;
 	}
 
 	if (name[strlen (name)-1]==')') {
@@ -102,9 +105,12 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				pbody[lidx]='\0';
 		}
 		strncpy (macro->code, pbody, macro->codelen);
+		macro->code[macro->codelen] = 0;
 		//strcat (macro->code, ",");
+#if 0
 	} else {
-		int lbufp, codelen = 0;
+		int lbufp, codelen = 0, nl = 0;
+		eprintf ("Reading macro from stdin:\n");
 		for (;codelen<R_CMD_MAXLEN;) { // XXX input from mac->fd
 #if 0
 			if (stdin == r_cons_stdin_fd) {
@@ -114,6 +120,9 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 			fgets(buf, 1023, r_cons_stdin_fd);
 #endif
 			fgets (buf, sizeof (buf)-1, stdin);
+			if (*buf=='\n' && nl)
+				break;
+			nl = (*buf == '\n')?1:0;
 			if (*buf==')')
 				break;
 			for (bufp=buf;*bufp==' '||*bufp=='\t';bufp++);
@@ -129,6 +138,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 				codelen += lbufp;
 			}
 		}
+#endif
 	}
 	if (macro_update == 0)
 		r_list_append (mac->macros, macro);
