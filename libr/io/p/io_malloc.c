@@ -93,6 +93,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			mal->offset = 0;
 			memset (mal->buf, 0, mal->size);
 			mal->size = r_hex_str2bin (pathname+6, mal->buf);
+			if ((int)mal->size<1) {
+				free (mal->buf);
+				mal->buf = NULL;
+			}
 		} else {
 			mal->size = r_num_math (NULL, pathname+9);
 			mal->offset = 0;
