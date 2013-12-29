@@ -54,7 +54,7 @@ static gb_opcode gb_op[] = {
 	{"ld e, 0x%02x"		,GB_8BIT+ARG_8},
 	{"rra"			,GB_8BIT},
 
-	{"jr nz, 0x%02x"	,GB_8BIT+ARG_8},		//0x20 //signed
+	{"jr nZ, 0x%02x"	,GB_8BIT+ARG_8},		//0x20 //signed
 	{"ld hl, 0x%04x"	,GB_8BIT+ARG_16},
 	{"ldi [hl], a"		,GB_8BIT},
 	{"inc hl"		,GB_8BIT},
@@ -62,7 +62,7 @@ static gb_opcode gb_op[] = {
 	{"dec h"		,GB_8BIT},
 	{"ld h, 0x%02x"		,GB_8BIT+ARG_8},
 	{"daa"			,GB_8BIT},
-	{"jr z, 0x%02x"		,GB_8BIT+ARG_8},		//signed
+	{"jr Z, 0x%02x"		,GB_8BIT+ARG_8},		//signed
 	{"add hl, hl"		,GB_8BIT},
 	{"ldi a, [hl]"		,GB_8BIT},
 	{"dec hl"		,GB_8BIT},
@@ -71,7 +71,7 @@ static gb_opcode gb_op[] = {
 	{"ld l, 0x%02x"		,GB_8BIT+ARG_8},
 	{"cpl"			,GB_8BIT},
 
-	{"jr nc, 0x%02x"	,GB_8BIT+ARG_8},		//0x30 //signed
+	{"jr nC, 0x%02x"	,GB_8BIT+ARG_8},		//0x30 //signed
 	{"ld sp, 0x%04x"	,GB_8BIT+ARG_16},
 	{"ldd [hl], a"		,GB_8BIT},
 	{"inc sp"		,GB_8BIT},
@@ -79,7 +79,7 @@ static gb_opcode gb_op[] = {
 	{"dec [hl]"		,GB_8BIT},
 	{"ld [hl], 0x%02x"	,GB_8BIT+ARG_8},
 	{"scf"			,GB_8BIT},
-	{"jr c, 0x%02x"		,GB_8BIT+ARG_8},		//signed
+	{"jr C, 0x%02x"		,GB_8BIT+ARG_8},		//signed
 	{"add hl, sp"		,GB_8BIT},
 	{"ldd a, [hl]"		,GB_8BIT},
 	{"dec sp"		,GB_8BIT},
@@ -224,36 +224,36 @@ static gb_opcode gb_op[] = {
 	{"cp [hl]"		,GB_8BIT},
 	{"cp a"			,GB_8BIT},
 
-	{"ret nz"		,GB_8BIT},			//0xc0
+	{"ret nZ"		,GB_8BIT},			//0xc0
 	{"pop bc"		,GB_8BIT},
-	{"jp nz, 0x%04x"	,GB_8BIT+ARG_16},
+	{"jp nZ, 0x%04x"	,GB_8BIT+ARG_16},
 	{"jp 0x%04x"		,GB_8BIT+ARG_16},
-	{"call nz, 0x%04x"	,GB_8BIT+ARG_16},
+	{"call nZ, 0x%04x"	,GB_8BIT+ARG_16},
 	{"push bc"		,GB_8BIT},
 	{"add 0x%02x"		,GB_8BIT+ARG_8},
 	{"rst 0"		,GB_8BIT},
-	{"ret z"		,GB_8BIT},
+	{"ret Z"		,GB_8BIT},
 	{"ret"			,GB_8BIT},
-	{"jp z, 0x%04x"		,GB_8BIT+ARG_16},
+	{"jp Z, 0x%04x"		,GB_8BIT+ARG_16},
 	{""			,GB_16BIT},
-	{"call z, 0x%04x"	,GB_8BIT+ARG_16},
+	{"call Z, 0x%04x"	,GB_8BIT+ARG_16},
 	{"call 0x%04x"		,GB_8BIT+ARG_16},
 	{"adc 0x%02x"		,GB_8BIT+ARG_8},
 	{"rst 8"		,GB_8BIT},
 
 	{"ret nc"		,GB_8BIT},			//0xd0
 	{"pop de"		,GB_8BIT},
-	{"jp nc, 0x%04x"	,GB_8BIT+ARG_16},
+	{"jp nC, 0x%04x"	,GB_8BIT+ARG_16},
 	{"invalid"		,GB_8BIT},
-	{"call nc, 0x%04x"	,GB_8BIT+ARG_16},
+	{"call nC, 0x%04x"	,GB_8BIT+ARG_16},
 	{"push de"		,GB_8BIT},
 	{"sub 0x%02x"		,GB_8BIT+ARG_8},
 	{"rst 16"		,GB_8BIT},
-	{"ret c"		,GB_8BIT},
+	{"ret C"		,GB_8BIT},
 	{"reti"			,GB_8BIT},
-	{"jp c, 0x%04x"		,GB_8BIT+ARG_16},
+	{"jp C, 0x%04x"		,GB_8BIT+ARG_16},
 	{"invalid"		,GB_8BIT},
-	{"call c, 0x%04x"	,GB_8BIT+ARG_16},
+	{"call C, 0x%04x"	,GB_8BIT+ARG_16},
 	{"invalid"		,GB_8BIT},
 	{"sbc 0x%02x"		,GB_8BIT+ARG_8},
 	{"rst 24"		,GB_8BIT},
