@@ -33,6 +33,7 @@ enum {
 	TYPE_IMM = 8,
 	TYPE_MEM = 9,
 	TYPE_BKP = 10,
+	TYPE_SWP = 11,
 };
 
 // static const char *const arm_shift[] = {"lsl", "lsr", "asr", "ror"};
@@ -88,6 +89,7 @@ static ArmOp ops[] = {
 	{ "bic", 0x0, TYPE_ARI },
 
 	{ "cmp", 0x4001, TYPE_TST },
+	{ "swp", 0xe1, TYPE_SWP },
 	{ "cmn", 0x0, TYPE_TST },
 	{ "teq", 0x0, TYPE_TST },
 	{ "tst", 0xe1, TYPE_TST },
@@ -645,6 +647,14 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				ao->o |= (ret!=-1)? ret<<24 : 2 | getnum(ao->a[2])<<24;
 				if (ao->a[3])
 					ao->o |= getshift (ao->a[3]);
+				break;
+			case TYPE_SWP:
+				ao->o = 0xe1;
+				ao->o |= (getreg(ao->a[0])<<4)<<16;
+				ao->o |= (0x90+getreg(ao->a[1]))<<24;
+				ao->o |= (getreg(ao->a[2]+1))<<8;
+				if (0xff==((ao->o>>16)&0xff))
+					return 0;
 				break;
 			case TYPE_MOV:
 				ao->o |= getreg (ao->a[0])<<20;
