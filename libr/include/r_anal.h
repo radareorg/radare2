@@ -508,20 +508,20 @@ enum {
 };
 
 typedef struct r_anal_case_obj_t {
-    ut64 addr;
-    ut64 jump;
-    ut64 value;
-    ut32 cond; // TODO: treat like a regular condition
-    ut64 bb_ref_to;
-    ut64 bb_ref_from;
+	ut64 addr;
+	ut64 jump;
+	ut64 value;
+	ut32 cond; // TODO: treat like a regular condition
+	ut64 bb_ref_to;
+	ut64 bb_ref_from;
 } RAnalCaseOp;
 
 
 typedef struct r_anal_switch_obj_t {
-    ut64 addr;
-    ut64 min_val;
-    ut64 max_val;
-    RList *cases;
+	ut64 addr;
+	ut64 min_val;
+	ut64 max_val;
+	RList *cases;
 } RAnalSwitchOp;
 
 typedef struct r_anal_t {
