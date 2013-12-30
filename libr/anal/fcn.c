@@ -329,11 +329,18 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	if (fcn->addr == UT64_MAX)
-		fcn->addr = addr;
+	
 	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
-		R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
+			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;
+	
+	if (fcn->addr == UT64_MAX) fcn->addr = addr;
+
+	if (anal->cur && anal->cur->fcn){
+		int result = anal->cur->fcn(anal, fcn, addr, buf, len, reftype);
+		if (anal->cur->custom_fn_anal) return result;
+	}
+	
 	//if (len>16)
 	//	len -= 16; // XXX: hack to avoid buffer overflow by reading >64 bytes..
 	return fcn_recurse (anal, fcn, addr, buf, len, FCN_DEPTH);

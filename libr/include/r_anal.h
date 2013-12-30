@@ -425,6 +425,9 @@ enum {
 	R_ANAL_OP_TYPE_LEAVE = 32,
 	R_ANAL_OP_TYPE_ROR   = 33,
 	R_ANAL_OP_TYPE_ROL   = 34,
+	R_ANAL_OP_TYPE_XCHG  = 35,
+	R_ANAL_OP_TYPE_MOD   = 36,
+	R_ANAL_OP_TYPE_SWITCH = 37,
 };
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -470,7 +473,18 @@ typedef enum {
 	R_ANAL_BB_TYPE_BODY = 0x2,     /* conditional jump */
 	R_ANAL_BB_TYPE_LAST = 0x4,     /* ret */
 	R_ANAL_BB_TYPE_FOOT = 0x8,     /* unknown jump */
-	R_ANAL_BB_TYPE_SWITCH = 0x10   /* TODO: switch */
+	R_ANAL_BB_TYPE_SWITCH = 0x10,   /* TODO: switch */
+
+	R_ANAL_BB_TYPE_RET  = 0x0020,   /* return bb */
+	R_ANAL_BB_TYPE_JMP  = 0x0040,   /* jmp bb */
+	R_ANAL_BB_TYPE_COND = 0x0100,   /* conditional bb */
+	R_ANAL_BB_TYPE_CALL = 0x0200,
+	R_ANAL_BB_TYPE_CMP  = 0x0400,
+	R_ANAL_BB_TYPE_LD   = 0x0800,
+	R_ANAL_BB_TYPE_ST   = 0x1000,
+	R_ANAL_BB_TYPE_BINOP= 0x2000,
+	R_ANAL_BB_TYPE_TAIL = 0x8000,
+
 } _RAnalBlockType;
 
 enum {
@@ -492,6 +506,23 @@ enum {
 	R_ANAL_RET_NEW = -3,
 	R_ANAL_RET_END = -4
 };
+
+typedef struct r_anal_case_obj_t {
+    ut64 addr;
+    ut64 jump;
+    ut64 value;
+    ut32 cond; // TODO: treat like a regular condition
+    ut64 bb_ref_to;
+    ut64 bb_ref_from;
+} RAnalCaseOp;
+
+
+typedef struct r_anal_switch_obj_t {
+    ut64 addr;
+    ut64 min_val;
+    ut64 max_val;
+    RList *cases;
+} RAnalSwitchOp;
 
 typedef struct r_anal_t {
 	int bits;
@@ -552,6 +583,7 @@ typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
 	ut64 type;      /* type of opcode */
+	ut64 type2;    
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
 	int size;       /* size in bytes of opcode */
@@ -575,6 +607,7 @@ value->val
 	RAnalValue *dst;
 	struct r_anal_op_t *next; // XXX deprecate
 	RStrBuf esil;
+	RAnalSwitchOp *switch_op;
 } RAnalOp;
 
 #define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
@@ -584,13 +617,16 @@ typedef struct r_anal_cond_t {
 	RAnalValue *arg[2]; // filled by CMP opcode
 } RAnalCond;
 
+struct r_anal_bb_t;
 typedef struct r_anal_bb_t {
 	char *name;
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
+	int type2;
 	ut64 fail;
 	int type;
+	int type_ex;
 	int ninstr;
 	int returnbb;
 	int conditional;
@@ -602,6 +638,16 @@ typedef struct r_anal_bb_t {
 	RList *ops;
 #endif
 	RAnalCond *cond;
+	RAnalSwitchOp *switch_op;
+	ut8 op_bytes[30];
+	ut8 op_sz;
+	struct r_anal_bb_t *head;
+	struct r_anal_bb_t *tail;
+	struct r_anal_bb_t *next;
+	struct r_anal_bb_t *prev;
+	struct r_anal_bb_t *failbb;
+	struct r_anal_bb_t *jumpbb;
+	RList /*struct r_anal_bb_t*/ *cases;
 } RAnalBlock;
 
 typedef struct r_anal_var_access_t {
@@ -649,7 +695,22 @@ typedef struct r_anal_refline_t {
 	struct list_head list;
 } RAnalRefline;
 
+
+extern struct r_anal2_state_type_t; // this is declared in ranal2.h and its used allowing plugins to carry state over analysis
+
+typedef int (*RAnalCmdExt)(/* Rcore */void *core, RAnal *anal, const char* input);
+typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
+typedef int (*RAnal2Callback)(RAnal *a, struct r_anal2_state_type_t *state, ut64 addr);
+typedef RList *(*RAnal2AnalysisAlgorithm)(RAnal *a, struct r_anal2_state_type_t *state, ut64 addr);
+
+typedef RAnalOp * (*RAnalOpFromBuffer)      (RAnal *a, ut64 addr, const ut8* buf, ut64 len);
+typedef RAnalBlock * (*RAnalBbFromBuffer)   (RAnal *a, ut64 addr, const ut8* buf, ut64 len);
+typedef RAnalFunction * (*RAnalFnFromBuffer)(RAnal *a, ut64 addr, const ut8* buf, ut64 len);
+
 typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data, int len);
+typedef int (*RAnalBbCallback)(RAnal *a, RAnalBlock *bb, ut64 addr, const ut8 *data, int len);
+typedef int (*RAnalFnCallback)(RAnal *a, RAnalFunction *fcn, ut64 addr, const ut8 *data, int len, int reftype);
+
 typedef int (*RAnalRegProfCallback)(RAnal *a);
 typedef int (*RAnalFPBBCallback)(RAnal *a, RAnalBlock *bb);
 typedef int (*RAnalFPFcnCallback)(RAnal *a, RAnalFunction *fcn);
@@ -663,9 +724,60 @@ typedef struct r_anal_plugin_t {
 	char *license;
 	int arch;
 	int bits;
+	int fileformat_type;
+	int custom_fn_anal;
 	int (*init)(void *user);
 	int (*fini)(void *user);
+	
+	// legacy r_anal_functions
 	RAnalOpCallback op;
+	RAnalBbCallback bb;
+	RAnalFnCallback fcn;
+
+	// overide the default analysis function in r_core_anal_fcn
+	RAnalAnalyzeFunctions analyze_fns;
+
+	// parse elements from a buffer
+	RAnalOpFromBuffer op_from_buffer;
+	RAnalBbFromBuffer bb_from_buffer;
+	RAnalFnFromBuffer fn_from_buffer;
+
+	// analysis algorithm to use instead of the default
+	// r_anal2_recursive_decent when using perform_analysis from
+	// RAnal2 stuffs
+	RAnal2AnalysisAlgorithm analysis_algorithm;
+	// order in which these call backs are 
+	// used with the recursive descent disassembler
+	// analysis
+	// 0) Before performing any analysis is start, opportunity to do any pre analysis. 
+	// in the current function
+	RAnal2Callback pre_anal;
+	// 1) Before any ops are bbs are created
+	RAnal2Callback pre_anal_fn_cb;
+	// 2) Just Before an op is created. 
+	// if current_op is set in state, then an op in the main alg wont be processed 
+	RAnal2Callback pre_anal_op_cb;
+	// 3) After a op is created. 
+	// the current_op in state is used to fix-up the state of op before creating a bb 
+	RAnal2Callback post_anal_op_cb;
+	// 4) Before a bb is created. 
+	// if current_op is set in state, then an op in the main alg wont be processed 
+	RAnal2Callback pre_anal_bb_cb;
+	// 5) After a bb is created. 
+	// the current_bb in state is used to fix-up the state of before performing analysis 
+	// with the current bb 	
+	RAnal2Callback post_anal_bb_cb;
+	// 6) After processing is bb and cb is completed, opportunity to do any post analysis. 
+	// in the current function
+	RAnal2Callback post_anal_fn_cb;
+
+	// 6) After bb in a node is completed, opportunity to do any post analysis. 
+	// in the current function
+	RAnal2Callback post_anal;
+	
+	// command extension to directly call any analysis functions
+	RAnalCmdExt cmd_ext;
+
 	RAnalRegProfCallback set_reg_profile;
 	RAnalFPBBCallback fingerprint_bb;
 	RAnalFPFcnCallback fingerprint_fcn;
@@ -673,7 +785,9 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
 	struct list_head list;
+
 } RAnalPlugin;
+
 
 
 #ifdef R_API
@@ -922,6 +1036,13 @@ R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, int size, const char *str)
 R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
 
 R_API int r_anal_esil_eval(RAnal *anal, const char *str);
+
+
+/* switch.c APIs */
+R_API RAnalSwitchOp *r_anal_switch_op_new();
+R_API RAnalSwitchOp *r_anal_switch_op_init(ut64 addr, ut64 min_val, ut64 max_val);
+R_API void r_anal_switch_op_free(RAnalSwitchOp * swop);
+R_API RAnalCaseOp* r_anal_add_switch_op_case(RAnalSwitchOp * swop, ut64 addr, ut64 jump, ut64 value);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;

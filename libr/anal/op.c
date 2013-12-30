@@ -16,6 +16,7 @@ R_API RAnalOp *r_anal_op_new() {
 		op->val = -1;
 		r_strbuf_init (&op->esil);
 		op->next = NULL;
+		op->switch_op = NULL;
 	}
 	return op;
 }
@@ -31,6 +32,7 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);
 	r_anal_value_free (op->dst);
+	if (op->switch_op) r_anal_switch_op_free(op->switch_op);
 	op->src[0] = NULL;
 	op->src[1] = NULL;
 	op->src[2] = NULL;
