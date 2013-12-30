@@ -1608,7 +1608,7 @@ R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj
 
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {	
 		ut64 offset = r_bin_java_get_method_code_offset(fm_type),
-		     size = r_bin_java_get_method_code_size(fm_type);
+			 size = r_bin_java_get_method_code_size(fm_type);
 		
 		if ( addr >= offset && addr <= size + offset)
 			result = fm_type;
