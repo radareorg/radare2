@@ -66,22 +66,49 @@ RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
 // NOTE: must be initialized for safe use
 //static struct r_bin_java_cp_item_t cp_null_item = {0};
 
+static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
+	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC},
+	{"private", R_BIN_JAVA_FIELD_ACC_PRIVATE},
+	{"protected", R_BIN_JAVA_FIELD_ACC_PROTECTED},
+	{"static", R_BIN_JAVA_FIELD_ACC_STATIC},
+
+	{"final", R_BIN_JAVA_FIELD_ACC_FINAL},
+	{"undefined.0x0020", 0x0020},
+	{"volatile", R_BIN_JAVA_FIELD_ACC_VOLATILE},
+	{"transient", R_BIN_JAVA_FIELD_ACC_TRANSIENT},
+	
+	{"undefined.0x0100", 0x0100},
+	{"undefined.0x0200", 0x0200},
+	{"undefined.0x0400", 0x0400},
+	{"undefined.0x0800", 0x0800},
+	
+	{"synthetic", R_BIN_JAVA_FIELD_ACC_SYNTHETIC},
+	{"undefined.0x2000", 0x2000},
+	{"enum", R_BIN_JAVA_FIELD_ACC_ENUM},
+	{"undefined.0x8000", 0x8000},
+	{NULL, 0}
+};
+
 static RBinJavaAccessFlags METHOD_ACCESS_FLAGS[] = {
 	{"public", R_BIN_JAVA_METHOD_ACC_PUBLIC},
 	{"private", R_BIN_JAVA_METHOD_ACC_PRIVATE},
 	{"protected", R_BIN_JAVA_METHOD_ACC_PROTECTED},
 	{"static", R_BIN_JAVA_METHOD_ACC_STATIC},
+
 	{"final", R_BIN_JAVA_METHOD_ACC_FINAL},
 	{"synchronized", R_BIN_JAVA_METHOD_ACC_SYNCHRONIZED},
 	{"bridge", R_BIN_JAVA_METHOD_ACC_BRIDGE},
 	{"varargs", R_BIN_JAVA_METHOD_ACC_VARARGS},
+	
 	{"native", R_BIN_JAVA_METHOD_ACC_NATIVE},
 	{"interface", R_BIN_JAVA_METHOD_ACC_INTERFACE},
 	{"abstract", R_BIN_JAVA_METHOD_ACC_ABSTRACT},
 	{"strict", R_BIN_JAVA_METHOD_ACC_STRICT},
+	
 	{"synthetic", R_BIN_JAVA_METHOD_ACC_SYNTHETIC},
 	{"annotation", R_BIN_JAVA_METHOD_ACC_ANNOTATION},
 	{"enum", R_BIN_JAVA_METHOD_ACC_ENUM},
+	{"undefined.0x8000", 0x8000},
 	{NULL, 0}
 };
 
@@ -91,16 +118,20 @@ static RBinJavaAccessFlags CLASS_ACCESS_FLAGS[] = {
 	{"protected", R_BIN_JAVA_CLASS_ACC_PROTECTED},
 	{"static", R_BIN_JAVA_CLASS_ACC_STATIC},
 	{"final", R_BIN_JAVA_CLASS_ACC_FINAL},
+	
 	{"synchronized", R_BIN_JAVA_CLASS_ACC_SUPER},
 	{"bridge", R_BIN_JAVA_CLASS_ACC_BRIDGE},
 	{"varargs", R_BIN_JAVA_CLASS_ACC_VARARGS},
 	{"native", R_BIN_JAVA_CLASS_ACC_NATIVE},
+	
 	{"interface", R_BIN_JAVA_CLASS_ACC_INTERFACE},
 	{"abstract", R_BIN_JAVA_CLASS_ACC_ABSTRACT},
 	{"strict", R_BIN_JAVA_CLASS_ACC_STRICT},
+	
 	{"synthetic", R_BIN_JAVA_CLASS_ACC_SYNTHETIC},
 	{"annotation", R_BIN_JAVA_CLASS_ACC_ANNOTATION},
 	{"enum", R_BIN_JAVA_CLASS_ACC_ENUM},
+	{"undefined.0x8000", 0x8000},
 	{NULL, 0}
 };
 
@@ -257,6 +288,24 @@ static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 };
 
 static void add_cp_objs_to_sdb( RBinJavaObj *bin){
+	/*
+		Add Constant Pool Serialized Object to an Array
+		the key for this info is:
+		
+		Key: 
+			java.<classname>.cp_obj
+
+		Each Value varies by type:
+			In general its:
+				<ordinal>.<file_offset>.<type_name>.[type specific stuff]
+
+			Example:
+				UTF-8:  <ordinal>.<file_offset>.<type_name>.<strlen>.<hexlified(str)>
+				Integer: <ordinal>.<file_offset>.<type_name>.<abs(int)>
+				Long: <ordinal>.<file_offset>.<type_name>.abs(long)>
+				FieldRef/MethodRef: <ordinal>.<file_offset>.<type_name>.<class_idx>.<name_and_type_idx>
+	*/
+
 	int size = 0xff;
 	ut32 idx = 0;
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class),
@@ -276,11 +325,206 @@ static void add_cp_objs_to_sdb( RBinJavaObj *bin){
 		cp_obj = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (bin, idx);
 		IFDBG eprintf("Adding %s.cp_obj.%d to the sdb.\n", class_name, cp_obj->metas->ord);
 		value = ( (RBinJavaCPTypeMetas *) cp_obj->metas->type_info)->allocs->stringify_obj (cp_obj);
-		//sdb_aset(bin->kv, key, idx, value, 0);
 		sdb_apush(bin->kv, key, value, 0);
 		free(value);
 	}
 	free(key);
+}
+
+static void add_field_infos_to_sdb( RBinJavaObj *bin){
+	/*
+		*** Experimental and May Change ***
+		Add field information to an Array
+
+		the key for this info variable depenedent on addr, method ordinal, etc.
+
+		Key 1, mapping to method key:
+			java.<file_offset> = <field_key>
+		
+		
+		Key 3, method description
+			<field_key>.info = [<access str>, <class_name>, <name>, <signature>]
+		
+		key 4, method meta
+		<field_key>.meta = [<file_offset>, ?]
+
+	*/
+
+
+	RListIter *iter = NULL, *iter_tmp=NULL;
+	RBinJavaField *fm_type;
+	ut32 key_size = 255,
+		 value_buffer_size = 1024;
+	
+
+	char * field_key = malloc (key_size), 
+		 * field_key_value = malloc (key_size),
+		 * value_buffer = malloc (value_buffer_size);
+
+
+	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {	
+		ut32 bytes_written = 0;
+		ut64 field_offset = fm_type->file_offset;
+		
+		// generate method specific key & value
+		bytes_written = snprintf (field_key, key_size, "java.0x%04x",field_offset);
+		field_key[bytes_written] = 0;
+
+		bytes_written = snprintf (field_key_value, key_size, "java.0x%04x.field",field_offset);
+		field_key_value[bytes_written] = 0;
+
+		sdb_set (bin->kv, field_key, field_key_value, 0);
+
+		// generate info key, and place values in method info array
+		bytes_written = snprintf (field_key, key_size, "%s.info",field_key_value);
+		field_key[bytes_written] = 0;
+		
+		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->flags_str);
+		value_buffer[bytes_written] = 0;
+
+		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		
+		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
+		value_buffer[bytes_written] = 0;
+
+		sdb_apush (bin->kv, field_key, value_buffer, 0);
+
+		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
+		value_buffer[bytes_written] = 0;
+
+		sdb_apush (bin->kv, field_key, value_buffer, 0);
+
+		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
+		value_buffer[bytes_written] = 0;
+
+		sdb_apush (bin->kv, field_key, value_buffer, 0);
+
+		// generate info key, and place values in method info array
+		bytes_written = snprintf (field_key, key_size, "%s.meta",field_key_value);
+		field_key[bytes_written] = 0;
+
+		bytes_written = snprintf (value_buffer, value_buffer_size, "0x%04x", fm_type->file_offset);
+		value_buffer[bytes_written] = 0;
+
+		sdb_apush (bin->kv, field_key, value_buffer, 0);
+	}
+	free (field_key);
+	free (field_key_value);
+	free (value_buffer);
+}
+
+
+
+static void add_method_infos_to_sdb( RBinJavaObj *bin){
+	/*
+		*** Experimental and May Change ***
+		Add Mehtod information to an Array
+
+		the key for this info variable depenedent on addr, method ordinal, etc.
+
+		Key 1, mapping to method key:
+			java.<file_offset> = <method_key>
+		
+		Key 2, basic code information
+			<method_key>.code = [<addr>, <size>]
+		
+		Key 3, method description
+			<method_key>.info = [<access str>, <class_name>, <name>, <signature>,]
+		
+		key 4, method meta
+		<method_key>.meta = [<file_offset>, ?]
+
+		// TODO in key 3 add <class_name>?
+			e.g. <access str>.<name>.<signature>
+
+		Note: method name not used because of collisions with operator overloading
+			also take note that code offset and the method offset are not the same
+			values.
+	*/
+
+
+	RListIter *iter = NULL, *iter_tmp=NULL;
+	RBinJavaField *fm_type;
+	ut32 key_size = 255,
+		 value_buffer_size = 1024;
+	
+	char * method_key = malloc (key_size), 
+		 * method_key_value = malloc (key_size),
+		 * value_buffer = malloc (value_buffer_size);
+
+
+	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {	
+		ut64 code_offset = r_bin_java_get_method_code_offset (fm_type),
+			 code_size = r_bin_java_get_method_code_size (fm_type),
+			 method_offset = fm_type->file_offset;
+		ut32 bytes_written = 0;
+		
+		// generate method specific key & value
+		bytes_written = snprintf (method_key, key_size, "java.0x%04x",code_offset);
+		method_key[bytes_written] = 0;
+
+		bytes_written = snprintf (method_key_value, key_size, "java.0x%04x.method",method_offset);
+		method_key_value[bytes_written] = 0;
+		IFDBG eprintf("Adding %s to sdb_array: %s\n", method_key_value, method_key);
+
+		sdb_set (bin->kv, method_key, method_key_value, 0);
+
+		// generate code key and values
+		bytes_written = snprintf (method_key, key_size, "%s.code",method_key_value);
+		method_key[bytes_written] = 0;
+		
+		bytes_written = snprintf (value_buffer, value_buffer_size, "0x%04x",code_offset);
+		value_buffer[bytes_written] = 0;
+
+		sdb_apush (bin->kv, method_key, value_buffer, 0);
+		
+		bytes_written = snprintf (value_buffer, value_buffer_size, "0x%04x", code_size);
+		value_buffer[bytes_written] = 0;
+		
+		sdb_apush (bin->kv, method_key, value_buffer, 0);
+
+
+		// generate info key, and place values in method info array
+		bytes_written = snprintf (method_key, key_size, "%s.info",method_key_value);
+		method_key[bytes_written] = 0;
+		
+		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->flags_str);
+		value_buffer[bytes_written] = 0;
+		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
+
+		sdb_apush (bin->kv, method_key, value_buffer, 0);
+		
+		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
+		value_buffer[bytes_written] = 0;
+		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
+		
+		sdb_apush (bin->kv, method_key, value_buffer, 0);
+
+		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
+		value_buffer[bytes_written] = 0;
+		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
+
+		sdb_apush (bin->kv, method_key, value_buffer, 0);
+
+		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
+		value_buffer[bytes_written] = 0;
+		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
+		
+		sdb_apush (bin->kv, method_key, value_buffer, 0);
+
+		// generate info key, and place values in method info array
+		bytes_written = snprintf (method_key, key_size, "%s.meta",method_key_value);
+		method_key[bytes_written] = 0;
+		
+		bytes_written = snprintf (value_buffer, value_buffer_size, "0x%04x", fm_type->file_offset);
+		value_buffer[bytes_written] = 0;
+		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
+
+		sdb_apush (bin->kv, method_key, value_buffer, 0);
+	}
+	free (method_key);
+	free (method_key_value);
+	free (value_buffer);
 }
 
 static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_flags) {	
@@ -315,6 +559,10 @@ static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_fla
 
 static char * retrieve_method_access_string(ut16 flags) {
 	return retrieve_access_string (flags, METHOD_ACCESS_FLAGS);
+}
+
+static char * retrieve_field_access_string(ut16 flags) {
+	return retrieve_access_string (flags, FIELD_ACCESS_FLAGS);
 }
 
 static char * retrieve_class_method_access_string(ut16 flags) {
@@ -509,6 +757,7 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 
 	IFDBG eprintf ("Looking for a NameAndType CP with name_idx: %d descriptor_idx: %d\n", method->name_idx, method->descriptor_idx);
 	method->field_ref_cp_obj = r_bin_java_find_cp_ref_info_from_name_and_type (method->name_idx, method->descriptor_idx);
+
 	if (method->field_ref_cp_obj) {
 		IFDBG eprintf ("Found the obj.\n");
 		item = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, method->field_ref_cp_obj->info.cp_method.class_idx);
@@ -520,6 +769,10 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 			method->class_name = r_str_dup (NULL, "NULL");
 
 
+	} else {
+		// XXX - default to this class?
+		method->field_ref_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
+		method->class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, method->field_ref_cp_obj);		
 	}
 
 	IFDBG printf ("Parsing %s(%s)", method->name, method->descriptor);
@@ -567,7 +820,7 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, ut64 offset) {
 	r_buf_read_at (bin->b, offset, (ut8*)buf, 8);
 	field->file_offset = offset;
 	field->flags = R_BIN_JAVA_USHORT (buf, 0);
-	field->flags_str = retrieve_method_access_string (field->flags);
+	field->flags_str = retrieve_field_access_string (field->flags);
 	field->name_idx = R_BIN_JAVA_USHORT (buf, 2);
 	field->descriptor_idx = R_BIN_JAVA_USHORT (buf, 4);
 	field->attr_count = R_BIN_JAVA_USHORT (buf, 6);
@@ -608,6 +861,10 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, ut64 offset) {
 		if (field->class_name == NULL)
 			field->class_name = r_str_dup (NULL, "NULL");
 
+	}else {
+		// XXX - default to this class?
+		field->field_ref_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
+		field->class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, field->field_ref_cp_obj);		
 	}
 
 	IFDBG printf ("Parsing %s(%s)", field->name, field->descriptor);
@@ -1173,7 +1430,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	bin->lines.count = 0;
 	bin->cp_list = r_list_new ();
 	r_bin_java_get_java_null_cp ();
-
+	bin->kv = sdb_new (NULL, 0);
 	/* Initialize cp_null_item */
 	//cp_null_item.tag = -1;
 	//strncpy (cp_null_item.name, "(null)", sizeof (cp_null_item.name)-1);
@@ -1302,7 +1559,9 @@ static int javasm_init(RBinJavaObj *bin) {
 				r_list_append (bin->attributes, attr);
 		}
 	}
-	bin->methods_size = bin->b->cur - bin->methods_offset;	
+	bin->methods_size = bin->b->cur - bin->methods_offset;
+	add_method_infos_to_sdb(bin);
+	add_field_infos_to_sdb(bin);
 	return R_TRUE;
 }
 
@@ -1339,6 +1598,22 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 
 	}
 	return ret;
+}
+
+R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin,  ut64 addr) {
+	RListIter *iter = NULL, *iter_tmp=NULL;
+	RBinJavaField *fm_type, *result = NULL;
+
+	if (bin == NULL) bin = R_BIN_JAVA_GLOBAL_BIN;
+
+	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {	
+		ut64 offset = r_bin_java_get_method_code_offset(fm_type),
+		     size = r_bin_java_get_method_code_size(fm_type);
+		
+		if ( addr >= offset && addr <= size + offset)
+			result = fm_type;
+	}
+	return result;	
 }
 
 R_API RBinAddr * r_bin_java_get_entrypoint(RBinJavaObj* bin, int sym) {
@@ -1763,6 +2038,16 @@ RList* r_bin_java_get_fields(RBinJavaObj* bin) {
 	return fields;
 }
 
+R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin) {
+	
+	if (bin) {
+		return bin->methods_list;
+	} else if ( R_BIN_JAVA_GLOBAL_BIN) {
+		return R_BIN_JAVA_GLOBAL_BIN->methods_list;
+	} 
+	return NULL;
+}
+
 RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	RListIter *iter = NULL, *iter_tmp=NULL;
 	RList *symbols = r_list_new ();
@@ -1829,7 +2114,6 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 R_API RBinJavaObj* r_bin_java_new (const char* file) {
 	ut8 *buf;
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
-	bin->kv = sdb_new (NULL, 0);
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) 
 		return r_bin_java_free (bin);
@@ -1845,7 +2129,6 @@ R_API RBinJavaObj* r_bin_java_new (const char* file) {
 R_API RBinJavaObj* r_bin_java_new_buf(RBuffer *buf) {
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	if (!bin) return NULL;
-	bin->kv = sdb_new (NULL, 0);
 	bin->b = buf;
 	bin->size = buf->length;
 	buf->cur = 0; // rewind
