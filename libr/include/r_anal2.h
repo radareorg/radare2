@@ -40,141 +40,141 @@ enum {
 	R_ANAL2_ILL_OP  =-1,   /* illegal instruction // trap */
 	R_ANAL2_NULL_OP = 0,
 	R_ANAL2_NOP = 1, /* does nothing */	
-	R_ANAL2_STORE_OP  = 0x1 << 20,  // Load or Store memory operation
-	R_ANAL2_LOAD_OP   = 0x1 << 21,  // Load or Store memory operation
-	R_ANAL2_REG_OP	= 0x1 << 22,  // register operation
-	R_ANAL2_OBJ_OP	= 0x1 << 23,  // operates on an object
-	R_ANAL2_STACK_OP  = 0x1 << 25,  // stack based operation
-	R_ANAL2_BIN_OP	= 0x1 << 26,  // binary operation
-	R_ANAL2_CODE_OP   = 0x1 << 27,  // operates on code
-	R_ANAL2_DATA_OP   = 0x1 << 28,  // operates on data
-	R_ANAL2_UNK_OP  = 0x1 << 29,  /* unknown opcode type */
-	R_ANAL2_REP_OP  = 0x1 << 30,  /* repeats next instruction N times */
-	R_ANAL2_COND_OP = 0x1 << 31, 
+	R_ANAL2_STORE_OP  = 1 << 20,  // Load or Store memory operation
+	R_ANAL2_LOAD_OP   = 1 << 21,  // Load or Store memory operation
+	R_ANAL2_REG_OP	= 1 << 22,  // register operation
+	R_ANAL2_OBJ_OP	= 1 << 23,  // operates on an object
+	R_ANAL2_STACK_OP  = 1 << 25,  // stack based operation
+	R_ANAL2_BIN_OP	= 1 << 26,  // binary operation
+	R_ANAL2_CODE_OP   = 1 << 27,  // operates on code
+	R_ANAL2_DATA_OP   = 1 << 28,  // operates on data
+	R_ANAL2_UNK_OP  = 1 << 29,  /* unknown opcode type */
+	R_ANAL2_REP_OP  = 1 << 30,  /* repeats next instruction N times */
+	R_ANAL2_COND_OP = 1 << 31, 
 };
 
 enum {
 	R_ANAL2_TYPE_REF_NULL  = 0,
-	R_ANAL2_TYPE_UNK_REF   = 0x1 << 1, 
-	R_ANAL2_TYPE_REF	   = 0x1 << 2, 
-	R_ANAL2_TYPE_SIGNED	= 0x1 << 3,
-	R_ANAL2_TYPE_PRIM	  = 0x1 << 4, 
-	R_ANAL2_TYPE_CONST	 = 0x1 << 5,
-	R_ANAL2_TYPE_STATIC	= 0x1 << 6,
-	R_ANAL2_TYPE_VOLATILE  = 0x1 << 7,
-	R_ANAL2_TYPE_PUBLIC	= 0x1 << 8,
+	R_ANAL2_TYPE_UNK_REF   = 1 << 1, 
+	R_ANAL2_TYPE_REF	   = 1 << 2, 
+	R_ANAL2_TYPE_SIGNED	= 1 << 3,
+	R_ANAL2_TYPE_PRIM	  = 1 << 4, 
+	R_ANAL2_TYPE_CONST	 = 1 << 5,
+	R_ANAL2_TYPE_STATIC	= 1 << 6,
+	R_ANAL2_TYPE_VOLATILE  = 1 << 7,
+	R_ANAL2_TYPE_PUBLIC	= 1 << 8,
 
-	R_ANAL2_TYPE_BOOL   = 0x1 << 10,
-	R_ANAL2_TYPE_BYTE   = 0x1 << 11,
-	R_ANAL2_TYPE_SHORT  = 0x1 << 12,
-	R_ANAL2_TYPE_INT32  = 0x1 << 13,
-	R_ANAL2_TYPE_INT64  = 0x1 << 14, 
-	R_ANAL2_TYPE_FLOAT  = 0x1 << 15, 
-	R_ANAL2_TYPE_DOUBLE = 0x1 << 16, 
+	R_ANAL2_TYPE_BOOL   = 1 << 10,
+	R_ANAL2_TYPE_BYTE   = 1 << 11,
+	R_ANAL2_TYPE_SHORT  = 1 << 12,
+	R_ANAL2_TYPE_INT32  = 1 << 13,
+	R_ANAL2_TYPE_INT64  = 1 << 14, 
+	R_ANAL2_TYPE_FLOAT  = 1 << 15, 
+	R_ANAL2_TYPE_DOUBLE = 1 << 16, 
 };
 
 // code ops
 enum {
-	R_ANAL2_CODEOP_JMP	= 0x1 << 1  | R_ANAL2_CODE_OP,/* mandatory jump */
-	R_ANAL2_CODEOP_CALL   = 0x1 << 2  | R_ANAL2_CODE_OP,/* call to subroutine (branch+link) */
-	R_ANAL2_CODEOP_RET	= 0x1 << 3  | R_ANAL2_CODE_OP,/* returns from subrutine */
-	R_ANAL2_CODEOP_TRAP   = 0x1 << 4  | R_ANAL2_CODE_OP,/* it's a trap! */
-	R_ANAL2_CODEOP_SWI	= 0x1 << 5  | R_ANAL2_CODE_OP,/* syscall  software interrupt */
-	R_ANAL2_CODEOP_IO	 = 0x1 << 6  | R_ANAL2_CODE_OP,
-	R_ANAL2_CODEOP_LEAVE  = 0x1 << 7  | R_ANAL2_CODE_OP,
-	R_ANAL2_CODEOP_SWITCH = 0x1 << 8  | R_ANAL2_CODE_OP,
+	R_ANAL2_CODEOP_JMP	= 1 << 1  | R_ANAL2_CODE_OP,/* mandatory jump */
+	R_ANAL2_CODEOP_CALL   = 1 << 2  | R_ANAL2_CODE_OP,/* call to subroutine (branch+link) */
+	R_ANAL2_CODEOP_RET	= 1 << 3  | R_ANAL2_CODE_OP,/* returns from subrutine */
+	R_ANAL2_CODEOP_TRAP   = 1 << 4  | R_ANAL2_CODE_OP,/* it's a trap! */
+	R_ANAL2_CODEOP_SWI	= 1 << 5  | R_ANAL2_CODE_OP,/* syscall  software interrupt */
+	R_ANAL2_CODEOP_IO	 = 1 << 6  | R_ANAL2_CODE_OP,
+	R_ANAL2_CODEOP_LEAVE  = 1 << 7  | R_ANAL2_CODE_OP,
+	R_ANAL2_CODEOP_SWITCH = 1 << 8  | R_ANAL2_CODE_OP,
 	R_ANAL2_CODEOP_CJMP   = R_ANAL2_COND_OP | R_ANAL2_CODE_OP | R_ANAL2_CODEOP_JMP,
 	R_ANAL2_CODEOP_EOB	= R_ANAL2_CODEOP_JMP | R_ANAL2_CODEOP_RET | R_ANAL2_CODEOP_LEAVE | R_ANAL2_CODEOP_SWITCH,
 };
 
 enum {
 	// call return types
-	R_ANAL2_RET_TYPE_REF_NULL = 0x1 << 10,
-	R_ANAL2_RET_TYPE_REF	  = 0x1 << 11 ,
-	R_ANAL2_RET_TYPE_PRIM	 = 0x1 << 12 ,
-	R_ANAL2_RET_TYPE_CONST	= 0x1 << 13,
-	R_ANAL2_RET_TYPE_STATIC   = 0x1 << 14,
+	R_ANAL2_RET_TYPE_REF_NULL = 1 << 10,
+	R_ANAL2_RET_TYPE_REF	  = 1 << 11 ,
+	R_ANAL2_RET_TYPE_PRIM	 = 1 << 12 ,
+	R_ANAL2_RET_TYPE_CONST	= 1 << 13,
+	R_ANAL2_RET_TYPE_STATIC   = 1 << 14,
 };
 
 // jmp conditionals
 enum {
 	// TODO these should be mapped to some sort of 
 	// flags register
-	R_ANAL2_COND_EQ  = 0x1 << 11,
-	R_ANAL2_COND_NE  = 0x1 << 12,
-	R_ANAL2_COND_GE  = 0x1 << 13,
-	R_ANAL2_COND_GT  = 0x1 << 14,
-	R_ANAL2_COND_LE  = 0x1 << 15,
-	R_ANAL2_COND_LT  = 0x1 << 16,
-	R_ANAL2_COND_AL  = 0x1 << 17,
-	R_ANAL2_COND_NV  = 0x1 << 18,
-	R_ANAL2_COND_NULL  = 0x1 << 19,
+	R_ANAL2_COND_EQ  = 1 << 11,
+	R_ANAL2_COND_NE  = 1 << 12,
+	R_ANAL2_COND_GE  = 1 << 13,
+	R_ANAL2_COND_GT  = 1 << 14,
+	R_ANAL2_COND_LE  = 1 << 15,
+	R_ANAL2_COND_LT  = 1 << 16,
+	R_ANAL2_COND_AL  = 1 << 17,
+	R_ANAL2_COND_NV  = 1 << 18,
+	R_ANAL2_COND_NULL  = 1 << 19,
 };
 
 // bin ops
 enum {
-	R_ANAL2_BINOP_XCHG = 0x1 << 1 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_CMP  = 0x1 << 2  | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_ADD  = 0x1 << 3  | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_SUB  = 0x1 << 4  | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_MUL  = 0x1 << 6  | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_DIV  = 0x1 << 7  | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_SHR  = 0x1 << 8  | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_SHL  = 0x1 << 9  | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_SAL  = 0x1 << 10 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_SAR  = 0x1 << 11 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_OR   = 0x1 << 12 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_AND  = 0x1 << 14 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_XOR  = 0x1 << 15 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_NOT  = 0x1 << 16 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_MOD  = 0x1 << 17 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_ROR  = 0x1 << 18 | R_ANAL2_BIN_OP,
-	R_ANAL2_BINOP_ROL  = 0x1 << 19 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_XCHG = 1 << 1 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_CMP  = 1 << 2  | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_ADD  = 1 << 3  | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_SUB  = 1 << 4  | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_MUL  = 1 << 6  | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_DIV  = 1 << 7  | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_SHR  = 1 << 8  | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_SHL  = 1 << 9  | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_SAL  = 1 << 10 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_SAR  = 1 << 11 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_OR   = 1 << 12 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_AND  = 1 << 14 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_XOR  = 1 << 15 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_NOT  = 1 << 16 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_MOD  = 1 << 17 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_ROR  = 1 << 18 | R_ANAL2_BIN_OP,
+	R_ANAL2_BINOP_ROL  = 1 << 19 | R_ANAL2_BIN_OP,
 };
 
 // Object ops
 enum {
-	R_ANAL2_OBJOP_CAST  = 0x1 << 0 | R_ANAL2_OBJ_OP,
-	R_ANAL2_OBJOP_CHECK = 0x1 << 1 | R_ANAL2_OBJ_OP,
-	R_ANAL2_OBJOP_NEW   = 0x1 << 2 | R_ANAL2_OBJ_OP,
-	R_ANAL2_OBJOP_DEL   = 0x1 << 3 | R_ANAL2_OBJ_OP,
-	R_ANAL2_OBJOP_SIZE   = 0x1 << 3 | R_ANAL2_OBJ_OP,
+	R_ANAL2_OBJOP_CAST  = 1 << 0 | R_ANAL2_OBJ_OP,
+	R_ANAL2_OBJOP_CHECK = 1 << 1 | R_ANAL2_OBJ_OP,
+	R_ANAL2_OBJOP_NEW   = 1 << 2 | R_ANAL2_OBJ_OP,
+	R_ANAL2_OBJOP_DEL   = 1 << 3 | R_ANAL2_OBJ_OP,
+	R_ANAL2_OBJOP_SIZE   = 1 << 3 | R_ANAL2_OBJ_OP,
 };
 
 
 // Memory or Data Operations
 // Locations of item loaded (base of indirect)
 enum {
-	R_ANAL2_LDST_FROM_REF   =  0x1 << 1,
-	R_ANAL2_LDST_FROM_MEM   =  0x1 << 1,
+	R_ANAL2_LDST_FROM_REF   =  1 << 1,
+	R_ANAL2_LDST_FROM_MEM   =  1 << 1,
 
-	R_ANAL2_LDST_FROM_REG   =  0x1 << 2,
-	R_ANAL2_LDST_FROM_STACK =  0x1 << 3,
-	R_ANAL2_LDST_FROM_CONST =  0x1 << 4,
-	R_ANAL2_LDST_FROM_VAR   =  0x1 << 5,
+	R_ANAL2_LDST_FROM_REG   =  1 << 2,
+	R_ANAL2_LDST_FROM_STACK =  1 << 3,
+	R_ANAL2_LDST_FROM_CONST =  1 << 4,
+	R_ANAL2_LDST_FROM_VAR   =  1 << 5,
 
 	// If indirect load, where are we getting the indirection,
-	R_ANAL2_LDST_INDIRECT_REF  = 0x1 << 6,
-	R_ANAL2_LDST_INDIRECT_MEM  = 0x1 << 6,
+	R_ANAL2_LDST_INDIRECT_REF  = 1 << 6,
+	R_ANAL2_LDST_INDIRECT_MEM  = 1 << 6,
 
-	R_ANAL2_LDST_INDIRECT_REG   =  0x1 << 7,
-	R_ANAL2_LDST_INDIRECT_STACK =  0x1 << 8,
-	R_ANAL2_LDST_INDIRECT_IDX   =  0x1 << 9,
-	R_ANAL2_LDST_INDIRECT_VAR   =  0x1 << 10,
+	R_ANAL2_LDST_INDIRECT_REG   =  1 << 7,
+	R_ANAL2_LDST_INDIRECT_STACK =  1 << 8,
+	R_ANAL2_LDST_INDIRECT_IDX   =  1 << 9,
+	R_ANAL2_LDST_INDIRECT_VAR   =  1 << 10,
 
 	// Location to put the item,
-	R_ANAL2_LDST_TO_REF  = 0x1 << 11,
-	R_ANAL2_LDST_TO_MEM  = 0x1 << 11,
+	R_ANAL2_LDST_TO_REF  = 1 << 11,
+	R_ANAL2_LDST_TO_MEM  = 1 << 11,
 
-	R_ANAL2_LDST_TO_REG = 0x1 << 12,
-	R_ANAL2_LDST_TO_STACK =  0x1 << 13,
-	R_ANAL2_LDST_TO_VAR =    0x1 << 14,
+	R_ANAL2_LDST_TO_REG = 1 << 12,
+	R_ANAL2_LDST_TO_STACK =  1 << 13,
+	R_ANAL2_LDST_TO_VAR =    1 << 14,
 
 	// Stack, Memory, Register, Bss, Data ,
-	R_ANAL2_LDST_OP_PUSH  = 0x1 << 15  ,
-	R_ANAL2_LDST_OP_POP   = 0x1 << 16,
-	R_ANAL2_LDST_OP_MOV   = 0x1 << 17 ,
-	R_ANAL2_LDST_OP_EFF_ADDR   = 0x1 << 18,
+	R_ANAL2_LDST_OP_PUSH  = 1 << 15  ,
+	R_ANAL2_LDST_OP_POP   = 1 << 16,
+	R_ANAL2_LDST_OP_MOV   = 1 << 17 ,
+	R_ANAL2_LDST_OP_EFF_ADDR   = 1 << 18,
 };
 
 enum {
