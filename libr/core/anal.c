@@ -65,8 +65,8 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 }
 
 static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
-        int is_html = r_cons_singleton ()->is_html;
-        int is_json = opts & R_CORE_ANAL_JSON;
+	int is_html = r_cons_singleton ()->is_html;
+	int is_json = opts & R_CORE_ANAL_JSON;
 	char cmd[1024], file[1024], *cmdstr = NULL, *filestr = NULL, *str = NULL;
 	int i, j, line = 0, oline = 0, idx = 0;
 	ut64 at;
@@ -132,8 +132,8 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 }
 
 static void r_core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
-        int is_html = r_cons_singleton ()->is_html;
-        int is_json = opts & R_CORE_ANAL_JSON;
+	int is_html = r_cons_singleton ()->is_html;
+	int is_json = opts & R_CORE_ANAL_JSON;
 	struct r_anal_bb_t *bbi;
 	RListIter *iter;
 	int left = 300;
@@ -318,6 +318,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	int i, nexti = 0;
 	ut8 *buf;
 
+	if (core->anal->cur && core->anal->cur->analyze_fns) {
+		return  core->anal->cur->analyze_fns( core->anal, at, from, reftype, depth);
+	}
 	if (from != UT64_MAX && at == 0)
 		return R_FALSE;
 	//if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
@@ -558,7 +561,7 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 #define FMT_JS 2
 R_API void r_core_anal_refs(RCore *core, ut64 addr, int fmt) {
 	const char *font = r_config_get (core->config, "graph.font");
-        int is_html = r_cons_singleton ()->is_html;
+	int is_html = r_cons_singleton ()->is_html;
 	int first, first2, showhdr = 0;
 	RListIter *iter, *iter2;
 	const int hideempty = 1;
@@ -843,8 +846,8 @@ R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n) {
 
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	const char *font = r_config_get (core->config, "graph.font");
-        int is_html = r_cons_singleton ()->is_html;
-        int is_json = opts & R_CORE_ANAL_JSON;
+	int is_html = r_cons_singleton ()->is_html;
+	int is_json = opts & R_CORE_ANAL_JSON;
 	int reflines, bytes, dwarf;
 	RAnalFunction *fcni;
 	RListIter *iter;
@@ -1072,7 +1075,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 	int word = core->assembler->bits /8;
 	int endi = core->anal->big_endian;
 	char *str;
-        int i, j;
+		int i, j;
 
 	//if (addr != core->offset) {
 		buf = malloc (len);
@@ -1110,7 +1113,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 		}
 		free (str);
 		r_anal_data_free (d);
-        }
+		}
 	//if (addr != core->offset)
 		free (buf);
 	return R_TRUE;

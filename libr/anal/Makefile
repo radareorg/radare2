@@ -23,6 +23,7 @@ STATIC_OBJS=$(addprefix $(LTOP)/anal/p/,$(STATIC_OBJ))
 OBJLIBS=meta.o reflines.o ref.o op.o fcn.o bb.o var.o
 OBJLIBS+=cond.o value.o cc.o diff.o types.o fcnstore.o
 OBJLIBS+=hint.o vm.o anal.o data.o xrefs.o esil.o
+OBJLIBS+=anal2.o switch.o state.o
 
 OBJS=${STATIC_OBJS} ${OBJLIBS} ${CPARSE_OBJS}
 
