@@ -114,9 +114,20 @@ R_API RAnalOp * r_anal2_get_op(RAnal *anal, RAnalInfos *state, ut64 addr) {
 	// current_op set in a prior stage
 	if (current_op) return current_op;
 	IFDBG eprintf("r_anal2_get_op: Parsing op @ 0x%08x", addr);
-	if (!r_anal2_state_addr_is_valid(state, addr)) return NULL;
+	if (!r_anal2_state_addr_is_valid(state, addr) || 
+		anal->cur && (anal->cur->op == NULL && anal->cur->op_from_buffer == NULL) ) {
+		state->done = 1;
+		return NULL;
+	}
 	data = r_anal2_state_get_buf_by_addr(state, addr);
-	current_op = anal->cur->op_from_buffer (anal, addr, data,  r_anal2_state_get_len( state, addr) );
+	
+	if (anal->cur && anal->cur->op_from_buffer) {
+		current_op = anal->cur->op_from_buffer (anal, addr, data,  r_anal2_state_get_len( state, addr) );	
+	} else {
+		current_op = r_anal_op_new();
+		anal->cur->op (anal, current_op, addr, data,  r_anal2_state_get_len( state, addr) );	
+	}
+	
 	state->current_op = current_op;
 	return current_op;
 
