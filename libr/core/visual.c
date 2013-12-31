@@ -125,8 +125,9 @@ static void prompt_read (const char *p, char *buf, int buflen) {
 	showcursor (NULL, R_FALSE);
 }
 
-R_API void r_core_visual_prompt (RCore *core) {
+R_API int r_core_visual_prompt (RCore *core) {
 	char buf[1024];
+	int ret;
 	ut64 oseek = core->offset;
 #if __UNIX__
 	r_line_set_prompt (Color_RESET":> ");
@@ -135,12 +136,19 @@ R_API void r_core_visual_prompt (RCore *core) {
 #endif
 	showcursor (core, R_TRUE);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
-	r_line_hist_add (buf);
-	r_core_cmd (core, buf, 0);
-	r_cons_any_key ();
-	r_cons_clear00 ();
-	showcursor (core, R_FALSE);
+	if (*buf) {
+		r_line_hist_add (buf);
+		r_core_cmd (core, buf, 0);
+		r_cons_flush ();
+		ret = R_TRUE;
+	} else {
+		ret = R_FALSE;
+		//r_cons_any_key ();
+		r_cons_clear00 ();
+		showcursor (core, R_FALSE);
+	}
 	if (curset) r_core_seek (core, oseek, 1);
+	return ret;
 }
 
 static int visual_nkey(RCore *core, int ch) {
@@ -292,7 +300,7 @@ R_API void r_core_visual_seek_animation (RCore *core, ut64 addr) {
 }
 
 static void setprintmode (RCore *core, int n) {
-	RAnalOp op;
+	RAsmOp op;
 	if (n>0) {
 		core->printidx = R_ABS ((core->printidx+1)%NPF);
 	} else {
@@ -846,23 +854,22 @@ r_cons_gotoxy (1,1);
 	case 'N': r_core_seek_delta (core, 0-(int)core->blocksize); break;
 #endif
 	case ':':
-		{
+		eprintf ("Press <enter> to return to Visual mode.\n");
+		do {
 			ut64 addr = core->offset;
 			ut64 bsze = core->blocksize;
 			if (curset) {
 				if (ocursor != -1) {
 					r_core_block_size (core, cursor-ocursor);
 					r_core_seek (core, core->offset + ocursor, 1);
-				} else {
-					r_core_seek (core, core->offset + cursor, 1);
-				}
+				} else r_core_seek (core, core->offset + cursor, 1);
 			}
-			r_core_visual_prompt (core);
+			ret = r_core_visual_prompt (core);
 			if (curset) {
 				r_core_seek (core, addr, 1);
 				r_core_block_size (core, bsze);
 			}
-		}
+		} while (ret);
 		break;
 	case '_':
 		if (r_config_get_i (core->config, "hud.once"))
