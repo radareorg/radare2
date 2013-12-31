@@ -5,7 +5,7 @@
 //#include "json/json.h"
 #include "json/api.c"
 #include "json/js0n.c"
-#include "json/json.c"
+#include "json/path.c"
 #include "json/rangstr.c"
 
 static void __itoa(int value, char *string) {
