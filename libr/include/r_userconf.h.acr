@@ -24,8 +24,12 @@
 #define R2_VERSION "@VERSION@"
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@
+#ifndef HAVE_LIB_SSL
 #define HAVE_LIB_SSL @HAVE_OPENSSL@
+#endif
+#ifndef HAVE_LIB_EWF
 #define HAVE_LIB_EWF @HAVE_LIB_EWF@
+#endif
 
 #define R2_WWWROOT "@DATADIR@/radare2/@VERSION@/www"
 

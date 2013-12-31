@@ -1,0 +1,14 @@
+OBJS = buffer.c cache.c desc.c dummy.c io.c ;
+OBJS += map.c plugin.c section.c undo.c ;
+
+include plugins.jam ;
+
+lib r_io : $(OBJS) : <include>../include
+    <define>CORELIB
+    <library>../util 
+    <library>../lib
+    <library>../socket
+    <library>../cons
+<define>HAVE_LIB_EWF=0
+    $(EXTRA)
+;

@@ -1,0 +1,5 @@
+OBJS = lang.c ;
+
+lib r_lang : $(OBJS) : <include>../include <library>../util 
+    <library>../lib
+    <library>../cons ;

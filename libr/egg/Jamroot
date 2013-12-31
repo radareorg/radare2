@@ -1,10 +1,14 @@
-OBJS = egg.c lang.c ;
-OBJS += emit_x86.c ;
-OBJS += emit_arm.c ;
-OBJS += emit_x64.c ;
-OBJS += emit_trace.c ;
+OBJS = egg.c lang.c
+    emit_x86.c
+    emit_arm.c
+    emit_x64.c
+    emit_trace.c
+;
 
-lib r_egg : $(OBJS) : <include>../include
+lib r_egg : $(OBJS) :
+    <include>../include
+    <include>../../shlr/tcc
+    <library>../../shlr/tcc
     <library>../syscall
     <library>../db
     <library>../asm

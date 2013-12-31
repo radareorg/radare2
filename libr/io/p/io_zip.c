@@ -5,6 +5,7 @@
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_util.h>
+#include <r_cons.h>
 #include <zip.h>
 
 
