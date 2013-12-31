@@ -20,3 +20,6 @@ build-project crypto ;
 # build-project io ;
 # build-project lang ;
 build-project cmd ;
+build-project anal ;
+
+build-project parse ;
