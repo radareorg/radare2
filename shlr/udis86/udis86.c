@@ -28,11 +28,7 @@
 #include "extern.h"
 #include "decode.h"
 
-#if !defined(__UD_STANDALONE__)
-# if HAVE_STRING_H
 #  include <string.h>
-# endif
-#endif /* !__UD_STANDALONE__ */
 
 static void ud_inp_init(struct ud *u);
 

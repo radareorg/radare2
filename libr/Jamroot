@@ -1,0 +1,22 @@
+# Build all r2 libraries in order
+
+build-project util ;
+build-project hash ;
+
+build-project reg ;
+build-project cons ;
+build-project db ;
+build-project magic ;
+build-project lib ;
+build-project diff ;
+build-project bp ;
+build-project search ;
+build-project config ;
+build-project socket ;
+
+build-project syscall ;
+build-project flags ;
+build-project crypto ;
+# build-project io ;
+# build-project lang ;
+build-project cmd ;

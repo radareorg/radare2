@@ -1,0 +1,8 @@
+OBJS = cmd.c plugin.c macro.c ;
+OBJS += p/cmd_dummy.c ;
+
+lib r_cmd : $(OBJS) : <include>../include
+    <library>../util
+    <library>../lib
+    <library>../cons
+;

@@ -23,12 +23,12 @@ R_API void r_cmd_macro_init(RCmdMacro *mac) {
 R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 	struct r_cmd_macro_item_t *macro;
 	char *name, *args = NULL;
-	char buf[R_CMD_MAXLEN];
+	//char buf[R_CMD_MAXLEN];
 	RCmdMacroItem *m;
 	int macro_update;
 	RListIter *iter;
 	char *pbody;
-	char *bufp;
+	// char *bufp;
 	char *ptr;
 	int lidx;
 

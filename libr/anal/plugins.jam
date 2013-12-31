@@ -1,0 +1,97 @@
+# plugins
+OBJS += p/anal_8051.c ;
+OBJS += p/anal_bf.c ;
+OBJS += p/anal_i8080.c ;
+OBJS += p/anal_z80.c ;
+
+# udis86
+OBJS += p/anal_x86_udis.c ;
+OBJS += p/esil_x86_udis.c ;
+EXTRA =
+    <library>../../shlr/udis86 
+    <include>../../shlr/
+;
+
+# sparc
+OBJS += p/anal_sparc.c 
+    ../asm/arch/sparc/gnu/sparc-dis.c
+    ../asm/arch/sparc/gnu/sparc-opc.c
+;
+EXTRA += <include>../asm/arch/include ;
+
+# arm
+OBJS += p/anal_arm.c 
+    ../asm/arch/arm/gnu/arm-dis.c
+    ../asm/arch/arm/aarch64/aarch64-asm-2.c
+ #   ../asm/arch/arm/aarch64/aarch64-gen.c
+    ../asm/arch/arm/aarch64/aarch64-asm.c
+    ../asm/arch/arm/aarch64/aarch64-opc-2.c
+    ../asm/arch/arm/aarch64/aarch64-dis-2.c
+    ../asm/arch/arm/aarch64/aarch64-opc.c
+    ../asm/arch/arm/aarch64/aarch64-dis.c
+    ../asm/arch/arm/winedbg/be_arm.c
+;
+EXTRA +=
+    <include>../asm/arch/include
+    <include>../asm/arch/arm/aarch64/
+;
+
+# SH
+OBJS += p/anal_sh.c 
+    ../asm/arch/sh/gnu/sh-dis.c
+;
+
+# MIPS
+OBJS += p/anal_mips.c 
+    ../asm/arch/mips/gnu/mips-dis.c
+    ../asm/arch/mips/gnu/mips-opc.c
+    ../asm/arch/mips/gnu/mips16-opc.c
+;
+
+# PPC
+OBJS += p/anal_ppc.c 
+    ../asm/arch/ppc/gnu/ppc-dis.c
+    ../asm/arch/ppc/gnu/ppc-opc.c
+;
+
+# CSR
+OBJS += p/anal_csr.c 
+    ../asm/arch/csr/dis.c
+;
+
+# M68K
+OBJS += p/anal_m68k.c 
+    ../asm/arch/m68k/m68k_disasm/m68k_disasm.c
+;
+
+# AVR
+OBJS += p/anal_avr.c ;
+
+# ARC
+OBJS += p/anal_arc.c
+    ../asm/arch/arc/gnu/arc-dis.c
+    ../asm/arch/arc/gnu/arcompact-dis.c
+    ../asm/arch/arc/gnu/arc-ext.c
+    ../asm/arch/arc/gnu/arc-opc.c
+;
+
+# EBC
+OBJS += p/anal_ebc.c
+    ../asm/arch/ebc/ebc_disas.c
+;
+
+# Java
+OBJS += p/anal_java.c 
+    ../../shlr/java/ops.c
+;
+
+# C55PLUS
+OBJS += p/anal_c55plus.c 
+    ../asm/arch/c55plus/ins.c
+;
+
+# DALVIK
+OBJS += p/anal_dalvik.c ;
+
+# GB
+OBJS += p/anal_gb.c ;

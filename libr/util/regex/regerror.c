@@ -93,7 +93,7 @@ r_regex_error(int errcode, const RRegex *preg, char *errbuf, size_t errbuf_size)
 	
 		if (errcode&R_REGEX_ITOA) {
 			if (r->code != 0) {
-				(void) strlcpy(convbuf, r->name, sizeof (convbuf)-1);
+				(void) STRLCPY(convbuf, r->name, sizeof (convbuf)-1);
 			} else
 				(void)snprintf(convbuf, sizeof convbuf,
 				    "R_REGEX_0x%x", target);
@@ -103,7 +103,7 @@ r_regex_error(int errcode, const RRegex *preg, char *errbuf, size_t errbuf_size)
 
 	len = strlen(s) + 1;
 	if (errbuf_size > 0)
-		strlcpy(errbuf, s, errbuf_size);
+		STRLCPY(errbuf, s, errbuf_size);
 
 	return(len);
 }

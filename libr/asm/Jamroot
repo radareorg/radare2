@@ -1,0 +1,8 @@
+OBJS = asm.c code.c ;
+
+lib r_asm : $(OBJS) : <include>../include <library>../util 
+    <library>../lib
+    <library>../parse
+    <library>../syscall
+    <library>../db
+;

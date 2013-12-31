@@ -7,7 +7,7 @@
 #include <r_anal.h>
 
 /* DEPRECATE ?? */
-#include "arm/arm.h"
+#include "arm.h"
 #include "../asm/arch/arm/arm.h"
 #include "../asm/arch/arm/winedbg/be_arm.h"
 

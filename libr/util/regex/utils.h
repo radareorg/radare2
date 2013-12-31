@@ -41,7 +41,7 @@
 #define	INFINITY	(DUPMAX + 1)
 #define	NC		(CHAR_MAX - CHAR_MIN + 1)
 
-#define strlcpy(x,y,z) strncpy((x),(y),(z));(x)[(z)]=0;
+#define STRLCPY(x,y,z) strncpy((x),(y),(z));(x)[(z)]=0;
 
 /* switch off assertions (if not already off) if no REDEBUG */
 #ifndef REDEBUG
