@@ -28,6 +28,10 @@ typedef struct r_anal2_state_type_t {
 	RAnalBlock *current_bb;
 
 	ut8 done;
+	int anal_ret_val;
+	ut32 current_depth;
+	ut32 max_depth;
+
 	void *user_state;
 } RAnalInfos;
 
@@ -312,7 +316,7 @@ enum {
 
 // BB and OP 
 R_API ut64 r_anal2_map_anal2_to_anal_op_type(ut64 ranal2_op_type);
-R_API void r_anal2_bb_to_op(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op);
+R_API void r_anal2_op_to_bb(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op);
 R_API int r_anal2_is_op_type_eop(ut64 x);
 
 R_API ut32 r_anal2_map_anal2_to_anal_bb_type (ut64 ranal2_op_type);
@@ -350,6 +354,7 @@ R_API ut64 r_anal2_state_get_len (RAnalInfos *state, ut64 addr);
 R_API const ut8 * r_anal2_state_get_buf_by_addr (RAnalInfos *state, ut64 addr);
 R_API int r_anal2_state_addr_is_valid (RAnalInfos *state, ut64 addr);
 R_API void r_anal2_state_merge_bb_list (RAnalInfos *state, RList* bbs);
+R_API void r_anal2_state_set_depth(RAnalInfos *state, ut32 depth);
 
 // Type definitions to strings
 #define R_ANAL2_TYPE_REF_NULL_STR "null"

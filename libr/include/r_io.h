@@ -169,6 +169,8 @@ typedef struct r_io_list_t {
 typedef int (*RIOSetFd)(RIO *io, int fd);
 typedef int (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, int size);
 typedef int (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int size);
+typedef int (*RIOSize)(RIO *io);
+typedef ut64 (*RIOSeek)(RIO *io, ut64 offset, int whence);
 
 /* compile time dependency */
 typedef struct r_io_bind_t {
@@ -177,6 +179,8 @@ typedef struct r_io_bind_t {
 	RIOSetFd set_fd; // XXX : this is conceptually broken with the new RIODesc foo
 	RIOReadAt read_at;
 	RIOWriteAt write_at;
+	RIOSize size;
+	RIOSeek seek;
 } RIOBind;
 
 typedef struct r_io_cache_t {
@@ -252,6 +256,7 @@ R_API int r_io_resize(RIO *io, ut64 newsize);
 R_API int r_io_accept(RIO *io, int fd);
 R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 R_API int r_io_create (RIO *io, const char *file, int mode, int type);
+R_API int r_io_bind(RIO *io, RIOBind *bnd);
 
 /* io/cache.c */
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
@@ -262,9 +267,6 @@ R_API int r_io_cache_list(RIO *io, int rad);
 R_API void r_io_cache_reset(RIO *io, int set);
 R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len);
-
-/* io/bind.c */
-R_API int r_io_bind(RIO *io, RIOBind *bnd);
 
 /* io/map.c */
 R_API void r_io_map_init(RIO *io);

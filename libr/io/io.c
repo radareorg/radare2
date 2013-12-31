@@ -467,6 +467,8 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->init = R_TRUE;
 	bnd->read_at = r_io_read_at;
 	bnd->write_at = r_io_write_at;
+	bnd->size = r_io_size;
+	bnd->seek = r_io_seek;
 	return R_TRUE;
 }
 

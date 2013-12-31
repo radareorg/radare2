@@ -774,6 +774,8 @@ typedef struct r_anal_plugin_t {
 	// 6) After bb in a node is completed, opportunity to do any post analysis. 
 	// in the current function
 	RAnal2Callback post_anal;
+
+	RAnal2Callback revisit_bb_anal;
 	
 	// command extension to directly call any analysis functions
 	RAnalCmdExt cmd_ext;
