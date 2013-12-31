@@ -1,0 +1,7 @@
+OBJS = bp.c io.c plugin.c watch.c traptrace.c io.c ;
+OBJS += p/bp_arm.c p/bp_mips.c p/bp_sh.c ;
+OBJS += p/bp_bf.c p/bp_ppc.c p/bp_x86.c ;
+
+lib r_bp : $(OBJS) : 
+    <define>CORELIB
+    <include>. <include>../include <library>../util ;

@@ -36,7 +36,7 @@ $(SDBLIB) sdb/sdb:
 	cp -f sdb/src/.sdb sdb/sdb
 
 .PHONY: sdb-sync sync-sdb sdbclean
-F=README.md config.mk src Makefile
+F=README.md config.mk src Makefile Jamroot
 SYNCFILES=$(addprefix sdb.vc/,${F})
 I=../libr/include
 

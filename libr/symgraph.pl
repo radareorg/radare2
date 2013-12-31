@@ -13,7 +13,7 @@ dobin() {
 #	rabin2 -s ../binr/$1/$1 | cut -d = -f 8 > $t/b/$1.s
 }
 
-LIBS="anal asm bin bp cmd config cons crypto db debug diff flags hash io lang lib line meta parse print reg search sign socket syscall sysproxy th util vm core"
+LIBS="anal asm bin bp cmd config cons crypto db debug diff flags hash io lang lib line parse print reg search socket syscall sysproxy th util vm core"
 for a in $LIBS ; do
 	dolib ${a}
 done

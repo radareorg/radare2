@@ -135,7 +135,6 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_config.pc
 	pkgcfg/r_flags.pc
 	pkgcfg/r_syscall.pc
-	pkgcfg/r_sign.pc
 	pkgcfg/r_util.pc
 	pkgcfg/r_search.pc
 	pkgcfg/r_bp.pc

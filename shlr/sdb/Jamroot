@@ -1,0 +1,12 @@
+CFILES = src/buffer.c src/ht.c src/ls.c src/query.c src/sdbn.c ;
+CFILES += src/cdb.c src/json.c src/sdb.c src/util.c ;
+CFILES += src/cdb_make.c src/lock.c src/ns.c src/sdba.c ;
+
+#CFILES += src/json/api.c src/json/path.c src/json/rangstr.c ;
+#CFILES += src/json/js0n.c ; 
+
+lib sdb : $(CFILES) : <link>static <include>. ;
+
+# exe sdb : $(CFILES) src/main.c : <include>. ;
+
+ret = [ SHELL "echo '#define SDB_VERSION \"0.6.6\"' > src/sdb-version.h" ] ;

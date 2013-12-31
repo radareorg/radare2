@@ -24,8 +24,6 @@
 /* #define	HAVE_ZLIB_H	1	DO NOT ENABLE YET -- chl */
 /* #define	HAVE_LIBZ	1	DO NOT ENABLE YET -- ian */
 
-#define HAVE_STRTOUL
-#define HAVE_STRERROR
 #define HAVE_VSNPRINTF
 #define HAVE_SNPRINTF
 #define HAVE_STRTOF

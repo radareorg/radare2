@@ -953,3 +953,5 @@ extern RAnalPlugin r_anal_plugin_gb;
 
 #endif
 #endif
+
+#include <r_sign.h>

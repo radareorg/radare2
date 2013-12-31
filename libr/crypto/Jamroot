@@ -1,0 +1,4 @@
+OBJS = crypto.c ;
+OBJS += p/crypto_aes.c p/crypto_aes_algo.c ;
+
+lib r_crypto : $(OBJS) : <include>../include <library>../lib ;

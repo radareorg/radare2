@@ -1,0 +1,6 @@
+OBJS = flags.c sort.c spaces.c ;
+
+lib r_config : $(OBJS) :
+    <include>../include
+    <library>../util 
+    <library>../cons ;

@@ -1,0 +1,4 @@
+OBJS = cons.c pipe.c output.c grep.c canvas.c ;
+OBJS += line.c hud.c rgb.c input.c pal.c editor.c ;
+
+lib r_cons : $(OBJS) : <include>../include <library>../util ;
