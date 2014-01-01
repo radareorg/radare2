@@ -956,7 +956,7 @@ static int cmd_debug(void *data, const char *input) {
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
 				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
-					eprintf ("Dont know how to skip this instruction\n");
+					eprintf ("Don't know how to skip this instruction\n");
 					break;
 				}
 				addr += aop.size;

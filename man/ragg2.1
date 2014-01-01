@@ -1,4 +1,3 @@
-.Em
 .TH RAGG2 1
 .SH NAME
 ragg2 \- radare2 utility to run programs in exotic environments
@@ -80,7 +79,7 @@ execute (just-in-time)
   /* hello world in r_egg */
   write@syscall(4);
   exit@syscall(1);
-.Pp  
+.Pp
   main@global(128) {
     .var0 = "hi!\\n";
     write(1,.var0, 4);
@@ -110,4 +109,4 @@ execute (just-in-time)
 .Xr rasm2(1) ,
 .Sh AUTHORS
 .Pp
-pancake <pancake@nopcode.org>
+Written by pancake <pancake@nopcode.org>.
