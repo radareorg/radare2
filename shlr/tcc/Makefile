@@ -3,7 +3,7 @@ include ../../mk/${COMPILER}.mk
 OFILES=libtcc.o tccgen.o tccpp.o
 
 CFLAGS+=-fPIC -Wall
-LDFLAGS=-shared
+LDFLAGS+=-shared
 SOEXT?=dylib
 LIBNAME=libr_tcc.${SOEXT}
 
