@@ -57,6 +57,20 @@ typedef enum{
 }R_BIN_JAVA_METHOD_ACCESS;
 
 typedef enum{
+	R_BIN_JAVA_FIELD_ACC_PUBLIC= 0x0001,
+	R_BIN_JAVA_FIELD_ACC_PRIVATE = 0x0002,
+	R_BIN_JAVA_FIELD_ACC_PROTECTED = 0x0004,
+	R_BIN_JAVA_FIELD_ACC_STATIC = 0x0008,
+
+	R_BIN_JAVA_FIELD_ACC_FINAL = 0x0010,
+	R_BIN_JAVA_FIELD_ACC_VOLATILE = 0x0040,
+	R_BIN_JAVA_FIELD_ACC_TRANSIENT = 0x0080,
+
+	R_BIN_JAVA_FIELD_ACC_SYNTHETIC = 0x1000,
+	R_BIN_JAVA_FIELD_ACC_ENUM = 0x4000
+}R_BIN_JAVA_FIELD_ACCESS;
+
+typedef enum{
 	R_BIN_JAVA_CLASS_ACC_PUBLIC= 0x0001,
 	R_BIN_JAVA_CLASS_ACC_PRIVATE = 0x0002,
 	R_BIN_JAVA_CLASS_ACC_PROTECTED = 0x0004,
@@ -743,6 +757,10 @@ typedef struct r_bin_java_obj_t {
 	RList* cp_list;
 	RList* interfaces_list;
 	RList* attributes;
+
+	RList* functions;
+	RList* disassembly;
+
 	Sdb *kv;
 } RBinJavaObj;
 
@@ -1151,7 +1169,12 @@ R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
 R_API RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
 R_API ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, char* method_name);
 
+R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin,  ut64 addr);
+
+R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin);
 
 R_API void debug_dump_all_cp_obj();
+
+
 
 #endif

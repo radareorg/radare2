@@ -16,6 +16,7 @@ R_API RAnalOp *r_anal_op_new() {
 		op->val = -1;
 		r_strbuf_init (&op->esil);
 		op->next = NULL;
+		op->switch_op = NULL;
 	}
 	return op;
 }
@@ -31,6 +32,7 @@ R_API void r_anal_op_fini(RAnalOp *op) {
 	r_anal_value_free (op->src[1]);
 	r_anal_value_free (op->src[2]);
 	r_anal_value_free (op->dst);
+	if (op->switch_op) r_anal_switch_op_free(op->switch_op);
 	op->src[0] = NULL;
 	op->src[1] = NULL;
 	op->src[2] = NULL;
@@ -172,6 +174,11 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_LOAD  : return "load";
 	case R_ANAL_OP_TYPE_LEA   : return "lea";
 	case R_ANAL_OP_TYPE_LEAVE : return "leave";
+	case R_ANAL_OP_TYPE_ROR : return "ror";
+	case R_ANAL_OP_TYPE_ROL : return "rol";
+	case R_ANAL_OP_TYPE_XCHG : return "xchg";
+	case R_ANAL_OP_TYPE_MOD : return "mod";
+	case R_ANAL_OP_TYPE_SWITCH : return "switch";
 	}
 	return "undefined";
 }
@@ -274,6 +281,20 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_LEAVE:
 		memcpy (ret, "leave", 6);
 		break;
+	case R_ANAL_OP_TYPE_MOD:
+		if (a1 == NULL || !strcmp (a0, a1))
+			snprintf (ret, sizeof (ret), "%s \%= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s \% %s", r0, a0, a1);
+		break;
+	case R_ANAL_OP_TYPE_XCHG:
+		if (a1 == NULL || !strcmp (a0, a1))
+			snprintf (ret, sizeof (ret), "tmp = %s; %s = %s; %s = tmp", r0, r0, a0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
+		break;
+	case R_ANAL_OP_TYPE_ROL:
+	case R_ANAL_OP_TYPE_ROR:
+	case R_ANAL_OP_TYPE_SWITCH:
+		eprintf ("Command not implemented.\n");
 	default:
 		free (r0);
 		free (a0);

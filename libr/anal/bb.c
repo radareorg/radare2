@@ -11,6 +11,7 @@ R_API RAnalBlock *r_anal_bb_new() {
 	bb->addr = -1;
 	bb->jump = -1;
 	bb->fail = -1;
+	bb->switch_op = NULL;
 	bb->type = R_ANAL_BB_TYPE_NULL;
 #if R_ANAL_BB_HAS_OPS
 	bb->ops = r_anal_op_list_new ();
@@ -28,6 +29,10 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	free (bb->fingerprint);
 	if (bb->diff)
 		r_anal_diff_free (bb->diff);
+	
+	if (bb->switch_op) {
+		r_anal_switch_op_free(bb->switch_op);
+	}
 #if R_ANAL_BB_HAS_OPS
 	if (bb->ops)
 		r_list_free (bb->ops);

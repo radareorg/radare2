@@ -57,6 +57,28 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 				list2->index = index++;
 				list_add_tail (&(list2->list), &(list->list));
 				break;
+			case R_ANAL_OP_TYPE_SWITCH:
+				//if (!linesout && (op.jump > opc+len || op.jump < opc))
+				//	goto __next;
+				//if (op.jump == 0LL)
+				//	goto __next;
+				// add caseops
+				if (op.switch_op) {
+					RAnalCaseOp *caseop;
+					RListIter *iter;
+					r_list_foreach (op.switch_op->cases, iter, caseop) {
+						if (caseop) {
+							if (!linesout && (op.jump > opc+len || op.jump < opc))
+								continue;
+							list2 = R_NEW (RAnalRefline);
+							list2->from = op.switch_op->addr;
+							list2->to = caseop->jump;
+							list2->index = index++;
+							list_add_tail (&(list2->list), &(list->list));
+						}
+					}
+				}
+				break;
 			}
 		} else sz = 1;
 	__next:

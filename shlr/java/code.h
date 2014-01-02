@@ -4,11 +4,12 @@
 #include <r_types.h>
 #include "class.h"
 
-struct java_op {
-	char *name;
+typedef struct java_op {
+	const char *name;
 	unsigned char byte;
 	int size;
-};
+	ut64 op_type;
+} JavaOp;
 
 extern struct java_op java_ops[];
 
