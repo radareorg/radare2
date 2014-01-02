@@ -24,6 +24,6 @@ endif
 endif
 
 LDFLAGS+=${BN_LIBS}
-LDFLAGS=${TH_LIBS}
+LDFLAGS+=${TH_LIBS}
 
 include ../rules.mk

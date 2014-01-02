@@ -8,7 +8,7 @@ R_API void r_cons_grep_help() {
 "Usage: [command]~[modifier][word,word][[column][:line]\n"
 " modifiers\n"
 "   &  all words must match to grep the line\n"
-"   ^  words must be placed at the begining of line\n"
+"   ^  words must be placed at the beginning of line\n"
 "   !  negate grep\n"
 "   ?  count number of matching lines\n"
 " examples:\n"

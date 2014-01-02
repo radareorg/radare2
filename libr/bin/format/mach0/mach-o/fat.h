@@ -24,7 +24,7 @@
 #define _MACH_O_FAT_H_
 /*
  * This header file describes the structures of the file format for "fat"
- * architecture specific file (wrapper design).  At the begining of the file
+ * architecture specific file (wrapper design).  At the beginning of the file
  * there is one fat_header structure followed by a number of fat_arch
  * structures.  For each architecture in the file, specified by a pair of
  * cputype and cpusubtype, the fat_header describes the file offset, file
