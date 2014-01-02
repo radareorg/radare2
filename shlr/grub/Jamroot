@@ -1,0 +1,56 @@
+lib grubfs :
+    fs/affs.c
+    fs/afs.c
+    fs/afs_be.c
+    fs/befs.c
+    fs/befs_be.c
+    fs/btrfs.c
+    fs/cpio.c
+    fs/ext2.c
+    fs/fat.c
+    fs/fb.c
+    fs/fshelp.c
+    fs/hfs.c
+    fs/hfsplus.c
+    fs/iso9660.c
+    fs/jfs.c
+    fs/minix.c
+# fs/minix2.c
+    fs/nilfs2.c
+    fs/ntfs.c
+    fs/ntfscomp.c
+    fs/reiserfs.c
+    fs/sfs.c
+    fs/tar.c
+    fs/udf.c
+    fs/ufs.c
+    fs/ufs2.c
+    fs/xfs.c
+    grubfs.c
+    kern/device.c
+    kern/disk.c
+# kern/dl.c
+    kern/env.c
+    kern/err.c
+    kern/file.c
+    kern/fs.c
+    kern/list.c
+    kern/misc.c
+    kern/mm.c
+    kern/partition.c
+    kern/term.c
+    kern/time.c
+# main.c
+    # partmap/acorn.c
+    partmap/amiga.c
+    partmap/apple.c
+    partmap/bsdlabel.c
+    partmap/gpt.c
+    partmap/msdos.c
+    partmap/sun.c
+    partmap/sunpc.c
+:
+    <define>GRUB_TARGET_NO_MODULES
+    <include>../../libr/include/
+    <include>include/
+;

@@ -1,10 +1,107 @@
-OBJS = meta.c reflines.c ref.c op.c fcn.c bb.c var.c ;
-OBJS += cond.c value.c cc.c diff.c types.c fcnstore.c ;
-OBJS += hint.c vm.c anal.c data.c xrefs.c esil.c sign.c ;
+ANAL_OBJS = meta.c reflines.c ref.c op.c fcn.c bb.c var.c ;
+ANAL_OBJS += cond.c value.c cc.c diff.c types.c fcnstore.c ;
+ANAL_OBJS += hint.c vm.c anal.c data.c xrefs.c esil.c sign.c ;
 
-include plugins.jam ;
+# plugins
+ANAL_OBJS += p/anal_8051.c ;
+ANAL_OBJS += p/anal_bf.c ;
+ANAL_OBJS += p/anal_i8080.c ;
+ANAL_OBJS += p/anal_z80.c ;
 
-lib r_anal : $(OBJS) : <include>../include
+# udis86
+ANAL_OBJS += p/anal_x86_udis.c ;
+ANAL_OBJS += p/esil_x86_udis.c ;
+ANAL_EXTRA =
+    <library>../../shlr/udis86 
+    <include>../../shlr/
+;
+
+# sparc
+ANAL_OBJS += p/anal_sparc.c 
+    ../asm/arch/sparc/gnu/sparc-dis.c
+    ../asm/arch/sparc/gnu/sparc-opc.c
+;
+ANAL_EXTRA += <include>../asm/arch/include ;
+
+# arm
+ANAL_OBJS += p/anal_arm.c 
+    ../asm/arch/arm/gnu/arm-dis.c
+    ../asm/arch/arm/aarch64/aarch64-asm-2.c
+ #   ../asm/arch/arm/aarch64/aarch64-gen.c
+    ../asm/arch/arm/aarch64/aarch64-asm.c
+    ../asm/arch/arm/aarch64/aarch64-opc-2.c
+    ../asm/arch/arm/aarch64/aarch64-dis-2.c
+    ../asm/arch/arm/aarch64/aarch64-opc.c
+    ../asm/arch/arm/aarch64/aarch64-dis.c
+    ../asm/arch/arm/winedbg/be_arm.c
+;
+ANAL_EXTRA +=
+    <include>../asm/arch/include
+    <include>../asm/arch/arm/aarch64/
+;
+
+# SH
+ANAL_OBJS += p/anal_sh.c 
+    ../asm/arch/sh/gnu/sh-dis.c
+;
+
+# MIPS
+ANAL_OBJS += p/anal_mips.c 
+    ../asm/arch/mips/gnu/mips-dis.c
+    ../asm/arch/mips/gnu/mips-opc.c
+    ../asm/arch/mips/gnu/mips16-opc.c
+;
+
+# PPC
+ANAL_OBJS += p/anal_ppc.c 
+    ../asm/arch/ppc/gnu/ppc-dis.c
+    ../asm/arch/ppc/gnu/ppc-opc.c
+;
+
+# CSR
+ANAL_OBJS += p/anal_csr.c 
+    ../asm/arch/csr/dis.c
+;
+
+# M68K
+ANAL_OBJS += p/anal_m68k.c 
+    ../asm/arch/m68k/m68k_disasm/m68k_disasm.c
+;
+
+# AVR
+ANAL_OBJS += p/anal_avr.c ;
+
+# ARC
+ANAL_OBJS += p/anal_arc.c
+    ../asm/arch/arc/gnu/arc-dis.c
+    ../asm/arch/arc/gnu/arcompact-dis.c
+    ../asm/arch/arc/gnu/arc-ext.c
+    ../asm/arch/arc/gnu/arc-opc.c
+;
+
+# EBC
+ANAL_OBJS += p/anal_ebc.c
+    ../asm/arch/ebc/ebc_disas.c
+;
+
+# Java
+ANAL_OBJS += p/anal_java.c 
+    ../../shlr/java/ops.c
+;
+
+# C55PLUS
+ANAL_OBJS += p/anal_c55plus.c 
+    ../asm/arch/c55plus/ins.c
+;
+
+# DALVIK
+ANAL_OBJS += p/anal_dalvik.c ;
+
+# GB
+ANAL_OBJS += p/anal_gb.c ;
+
+lib r_anal : $(ANAL_OBJS) :
+    <include>../include
     <define>CORELIB
     <library>../util 
     <library>../lib
@@ -13,5 +110,5 @@ lib r_anal : $(OBJS) : <include>../include
     <library>../syscall
     <library>../db
     <library>../../shlr/sdb # XXX this should be implicit by ../db
-    $(EXTRA)
+    $(ANAL_EXTRA)
 ;

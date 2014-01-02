@@ -56,6 +56,7 @@ r2 -q - <<EOF
 ?e #define R_EGG_OS_W32 \`?h w32\`
 ?e #define R_EGG_OS_WINDOWS \`?h windows\`
 ?e #define R_EGG_OS_BEOS \`?h beos\`
+?e #define R_EGG_OS_FREEBSD \`?h freebsd\`
 EOF
 #endif
 #define R_EGG_OS_LINUX 0x5ca62a43
@@ -65,6 +66,7 @@ EOF
 #define R_EGG_OS_W32 0x0ad5fbb3
 #define R_EGG_OS_WINDOWS 0x05b7de9a
 #define R_EGG_OS_BEOS 0x506108be
+#define R_EGG_OS_FREEBSD 0x73a72944
 
 #if __APPLE__
 #define R_EGG_OS_DEFAULT R_EGG_OS_OSX

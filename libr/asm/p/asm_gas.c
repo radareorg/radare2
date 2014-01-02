@@ -23,7 +23,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	return len;
 }
 
-RAsmPlugin r_asm_plugin_x86_nasm = {
+RAsmPlugin r_asm_plugin_x86_gas = {
 	.name = "gas",
 	.license = "LGPL3",
 	.desc = "GNU Assembler plugin",
@@ -38,6 +38,6 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_gas
+	.data = &r_asm_plugin_x86_gas
 };
 #endif

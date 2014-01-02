@@ -1,0 +1,32 @@
+CORE_OBJS = core.c cmd.c file.c config.c visual.c io.c yank.c libs.c hack.c vasm.c ;
+CORE_OBJS += anal.c project.c gdiff.c asm.c rtr.c vmenus.c disasm.c patch.c bin.c log.c ;
+
+lib r_core : $(CORE_OBJS) :
+    <include>../include
+    <define>CORELIB
+    <library>../util
+    <library>../anal
+    <library>../lib
+    <library>../flags
+    <library>../asm
+    <library>../bin
+    <library>../debug
+    <library>../parse
+    <library>../bp
+    <library>../cons
+    <library>../reg
+    <library>../db
+    <library>../socket
+    <library>../syscall
+    <library>../search
+    <library>../cmd
+    <library>../lang
+    <library>../magic
+    <library>../hash
+    <library>../egg
+    <library>../config
+    <library>../fs
+    <library>../io
+    <library>../../shlr/sdb
+    $(CORE_EXTRA)
+;

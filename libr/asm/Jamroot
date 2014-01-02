@@ -1,8 +1,14 @@
-OBJS = asm.c code.c ;
+ASM_OBJS = asm.c code.c ;
 
-lib r_asm : $(OBJS) : <include>../include <library>../util 
+include plugins.jam ;
+
+lib r_asm : $(ASM_OBJS) :
+    <define>CORELIB
+    <include>../include
+    <library>../util 
     <library>../lib
     <library>../parse
     <library>../syscall
     <library>../db
+    $(ASM_EXTRA)
 ;

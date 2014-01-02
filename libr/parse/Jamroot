@@ -4,11 +4,16 @@ OBJS += p/parse_att2intel.c
     p/parse_mips_pseudo.c
     p/parse_mreplace.c
     p/parse_x86_pseudo.c
+p/parse_mreplace/mreplace.c
+p/parse_mreplace/mmemory.c
 ;
 
-lib r_parse : $(OBJS) : <include>../include
+lib r_parse : $(OBJS) :
+    <include>../include
+    <include>../../shlr/tcc
     <library>../flags
     <library>../lib
     <library>../anal
     <library>../util
+    <define>CORELIB
 ;

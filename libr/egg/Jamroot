@@ -1,15 +1,25 @@
-OBJS = egg.c lang.c
+EGG_OBJS = egg.c lang.c
     emit_x86.c
     emit_arm.c
     emit_x64.c
     emit_trace.c
 ;
+EGG_OBJS += 
+#    p/egg_bind.c
+    p/egg_cb.c
+    p/egg_exec.c
+#    p/egg_reverse.c
+#   p/egg_shya.c
+    p/egg_xor.c
+;
 
-lib r_egg : $(OBJS) :
+lib r_egg : $(EGG_OBJS) :
     <include>../include
-    <include>../../shlr/tcc
-    <library>../../shlr/tcc
     <library>../syscall
     <library>../db
     <library>../asm
-    <library>../util ;
+    <library>../util
+
+    <include>../../shlr/tcc
+    <library>../../shlr/tcc
+;

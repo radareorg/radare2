@@ -1,9 +1,9 @@
 # plugins
 
-OBJS +=
+IO_OBJS +=
     p/io_bfdbg.c
     p/io_debug.c
-# p/io_ewf.c
+ p/io_ewf.c
     p/io_gdb.c
     p/io_haret.c
     p/io_http.c
@@ -20,7 +20,7 @@ OBJS +=
     p/io_zip.c
 ;
 
-EXTRA +=
+IO_EXTRA +=
     <library>../../shlr/zip
     <include>../../shlr/zip/include
     <include>../debug/p/libgdbwrap/include
