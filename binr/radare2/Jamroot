@@ -25,3 +25,6 @@ exe radare2 : radare2.c :
     <library>../../libr/crypto
     <library>../../libr/egg
     <include>../../libr/include ;
+
+# alias install : install-bin ;
+# install install-bin : radare2 : <location>/usr/bin ;

@@ -1,6 +1,7 @@
 ANAL_OBJS = meta.c reflines.c ref.c op.c fcn.c bb.c var.c ;
 ANAL_OBJS += cond.c value.c cc.c diff.c types.c fcnstore.c ;
 ANAL_OBJS += hint.c vm.c anal.c data.c xrefs.c esil.c sign.c ;
+ANAL_OBJS += anal2.c state.c switch.c ;
 
 # plugins
 ANAL_OBJS += p/anal_8051.c ;
@@ -108,6 +109,7 @@ lib r_anal : $(ANAL_OBJS) :
     <library>../reg
     <library>../diff
     <library>../syscall
+    <library>../../shlr/java
     <library>../db
     <library>../../shlr/sdb # XXX this should be implicit by ../db
     $(ANAL_EXTRA)
