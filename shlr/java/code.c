@@ -2,17 +2,31 @@
 
 #include <r_types.h>
 #include <r_util.h>
+#include <r_list.h>
+#include <r_anal.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <r_list.h>
 #include "code.h"
 #include "class.h"
 
 #define V if (verbose)
 
 #define IFDBG if(0)
+
+volatile ut8 IN_SWITCH_OP = 0;
+typedef struct current_table_switch_t {
+	ut64 addr;
+	int def_jmp;
+	int min_val;
+	int max_val;
+	int cur_val;
+} CurrentTableSwitch;
+
+volatile CurrentTableSwitch SWITCH_OP;
+
 
 
 static RBinJavaObj *BIN_OBJ = NULL;
@@ -223,11 +237,23 @@ static char * java_resolve(int idx, ut8 space_bn_name_type) {
 
 int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
+	
 	ut32 val_one = 0,
 		val_two = 0;
 
+	ut8 op_byte = java_ops[idx].byte;
+
+	if (IN_SWITCH_OP) {
+		ut32 jmp = (ut32)(UINT (bytes, 0)) + SWITCH_OP.addr;
+		ut32 ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val; 
+		snprintf(output, outlen, "case %d: goto 0x%04x", ccase, jmp);
+		if ( ccase+1 > SWITCH_OP.max_val) IN_SWITCH_OP = 0;
+		SWITCH_OP.cur_val++;
+		return 4;
+	}
+
 	
-	switch (java_ops[idx].byte) {
+	switch (op_byte) {
 
 		case 0x10: // "bipush"
 			snprintf (output, outlen, "%s %d", java_ops[idx].name, (char) bytes[1]);
@@ -293,23 +319,27 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 		case 0xa6: // if_acmpne
 		case 0xa7: // goto
 		case 0xa8: // jsr
-			snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
+			snprintf (output, outlen, "%s 0x%04x", java_ops[idx].name,
 				addr+(int)(short)USHORT (bytes, 1));
 			return java_ops[idx].size;
 		// XXX - Figure out what constitutes the [<high>] value
 		case 0xab: // tableswitch
 		case 0xaa: // tableswitch
-			val_one = UINT(bytes,1);
-			val_two = (R_BIN_JAVA_UINT(bytes,5));
-			snprintf (output, outlen, "%s 0x%02x 0x%02x", java_ops[idx].name, val_one, val_two);
-			//return java_ops[idx].size;
-			return 9; 
-
-			snprintf (output, outlen, "%s 0x%08"PFMT64x, java_ops[idx].name,
-				addr+(int)(short)USHORT (bytes, 1));
-			return java_ops[idx].size;
-
-
+			{
+				// XXX - This is a hack, need a better approach to getting the 
+				// disassembly
+				ut8 sz = (4 - (addr+1) % 4) + (addr+1)  % 4;
+				memset(&SWITCH_OP, 0, sizeof (SWITCH_OP));
+				IN_SWITCH_OP = 1;
+				SWITCH_OP.addr = addr;
+				SWITCH_OP.def_jmp = (ut32)(UINT (bytes, sz));
+				SWITCH_OP.min_val = (ut32)(UINT (bytes, sz + 4));
+				SWITCH_OP.max_val = (ut32)(UINT (bytes, sz + 8));
+				sz += 12;
+				snprintf (output, outlen, "%s default: 0x%04x", java_ops[idx].name,
+					SWITCH_OP.def_jmp+addr);
+				return sz; 
+			}
 		case 0xb6: // invokevirtual
 		case 0xb7: // invokespecial
 		case 0xb8: // invokestatic
@@ -347,7 +377,7 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 		break;
 	case 2: snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
 		break;
-	case 3: snprintf (output, outlen, "%s 0x%x 0x%x", java_ops[idx].name, bytes[0], bytes[1]);
+	case 3: snprintf (output, outlen, "%s 0x%04x 0x%04x", java_ops[idx].name, bytes[0], bytes[1]);
 		break;
 	case 5: snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
 		break;

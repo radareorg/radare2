@@ -318,6 +318,9 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	int i, nexti = 0;
 	ut8 *buf;
 
+	if (core->anal->cur && core->anal->cur->analyze_fns) {
+		return  core->anal->cur->analyze_fns( core->anal, at, from, reftype, depth);
+	}
 	if (from != UT64_MAX && at == 0)
 		return R_FALSE;
 	//if ((at>>63) == 1 || at == UT64_MAX || depth < 0)
