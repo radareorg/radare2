@@ -425,7 +425,7 @@ ut64 extract_bin_op(ut64 ranal2_op_type) {
 		case R_ANAL2_BINOP_MUL: return R_ANAL_OP_TYPE_MUL;
 		case R_ANAL2_BINOP_DIV: return R_ANAL_OP_TYPE_DIV;
 		case R_ANAL2_BINOP_SHR: return R_ANAL_OP_TYPE_SHR;
-		case R_ANAL2_BINOP_SHL: return R_ANAL_OP_TYPE_SHR;
+		case R_ANAL2_BINOP_SHL: return R_ANAL_OP_TYPE_SHL;
 		case R_ANAL2_BINOP_SAL: return R_ANAL_OP_TYPE_SAL;
 		case R_ANAL2_BINOP_SAR: return R_ANAL_OP_TYPE_SAR;
 		case R_ANAL2_BINOP_OR : return R_ANAL_OP_TYPE_OR;

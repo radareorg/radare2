@@ -697,7 +697,33 @@ typedef struct r_anal_refline_t {
 } RAnalRefline;
 
 
-extern struct r_anal2_state_type_t; // this is declared in ranal2.h and its used allowing plugins to carry state over analysis
+typedef struct r_anal2_state_type_t {
+	ut64 start;
+	ut64 end;
+	const ut8* buffer;
+	ut64 len;
+
+	ut64 bytes_consumed;
+	ut64 last_addr;
+	ut64 current_addr;
+	ut64 next_addr;
+
+	RList *bbs;
+	RHashTable64 *ht;
+	ut64 ht_sz;
+
+	RAnalFunction *current_fcn;
+	RAnalOp *current_op;
+	RAnalBlock *current_bb;
+	RAnalBlock *current_bb_head;
+
+	ut8 done;
+	int anal_ret_val;
+	ut32 current_depth;
+	ut32 max_depth;
+
+	void *user_state;
+} RAnalInfos;
 
 typedef int (*RAnalCmdExt)(/* Rcore */void *core, RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
