@@ -1,0 +1,5 @@
+exe rahash2 : rahash2.c :
+    <library>../../libr/util
+    <library>../../libr/hash
+    <library>../../libr/io
+    <include>../../libr/include ;

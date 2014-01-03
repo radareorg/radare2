@@ -221,13 +221,11 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 
 
 R_API int r_asm_is_valid(RAsm *a, const char *name) {
-	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, name)) {
+		if (!strcmp (h->name, name))
 			return R_TRUE;
-		}
 	}
 	return R_FALSE;
 }
