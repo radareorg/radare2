@@ -53,36 +53,56 @@ R_API int r_sandbox_creat (const char *path, int mode) {
 	return creat (path, mode);
 }
 
+static char *expand_home(const char *p) {
+	if (*p=='~')
+		return r_str_home (p);
+	return strdup (p);
+}
+
 R_API int r_sandbox_open (const char *path, int mode, int perm) {
-	if (!path)
-		return -1;
+	int ret;
+	char *epath;
+	if (!path) return -1;
+	epath = expand_home (path);
 #if __WINDOWS__
 	mode |= O_BINARY;
 #endif
 	if (enabled) {
-		if (mode & O_CREAT) return -1;
-		if (mode & O_RDWR) return -1;
-		if (!r_sandbox_check_path (path))
+		if ((mode & O_CREAT)
+		|| (mode & O_RDWR)
+		|| (!r_sandbox_check_path (epath))) {
+			free (epath);
 			return -1;
+		}
 	}
 #if __WINDOWS__
 	perm = 0;
 #endif
-	if (path)
-		return open (path, mode, perm);
-	return -1;
+	ret = open (epath, mode, perm);
+	free (epath);
+	return ret;
 }
 
 R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
+	FILE *ret = NULL;
+	char *epath = NULL;
+	if (!path)
+		return NULL;
 	if (enabled) {
 		if (strchr (mode, 'w') || strchr (mode, 'a') || strchr (mode, '+'))
 			return NULL;
-		if (!r_sandbox_check_path (path))
+		epath = expand_home (path);
+		if (!r_sandbox_check_path (epath)) {
+			free (epath);
 			return NULL;
+		}
 	}
-	if (path && r_file_is_regular (path))
-		return fopen (path, mode);
-	return NULL;
+	if (!epath)
+		epath = expand_home (path);
+	if ((strchr (mode, 'w') || r_file_is_regular (epath)))
+		ret = fopen (epath, mode);
+	free (epath);
+	return ret;
 }
 
 R_API int r_sandbox_chdir (const char *path) {
