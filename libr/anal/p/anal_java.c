@@ -70,14 +70,14 @@ static int check_addr_less_start (RBinJavaField *method, ut64 addr) {
 
 
 static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalInfos *state, ut64 addr) {
-    RAnalBlock *current_head = state->current_bb_head;
-	if (current_head && state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
+    RAnalBlock *current_head = state && state->current_bb_head ? state->current_bb_head : NULL;
+	if (current_head && state->current_bb && 
+		state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
 		r_anal2_update_bb_cfg_head_tail (current_head, current_head, state->current_bb);
 		// XXX should i do this instead -> r_anal2_perform_post_anal_bb_cb (anal, state, addr+offset);
         state->done = 1;
 	}
-
-
+	return R_ANAL_RET_END;
 }
 
 static void java_recursive_descent(RAnal *anal, RAnalInfos *state, ut64 addr) {
@@ -250,6 +250,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 			state->done = 1;
 			result = R_ANAL_RET_END;
 			break;
+		default: break;
 	}
 	
 	state->current_depth--;
@@ -365,6 +366,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
 			state->done = 1;
 			result = R_ANAL_RET_END;
 			break;
+		default: break;
 	}
 	
 	state->current_depth--;
@@ -374,7 +376,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
 
 static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length  ) {
 	
-	char gen_name[1024];
+	char gen_name[1025];
 
 	RAnalInfos *state = NULL;
 	int result = R_ANAL_RET_ERROR;
@@ -410,14 +412,32 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 }
 
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJavaField *method) {
-	RBinJavaAttrInfo* code_attr = r_bin_java_get_method_code_attribute(method);
-	
-	ut64 code_length = code_attr->info.code_attr.code_length, 
-		 addr = code_attr->info.code_attr.code_offset;
-
+	RBinJavaAttrInfo* code_attr = method ? r_bin_java_get_method_code_attribute(method) : NULL;
+	ut8 * code_buf = NULL;
 	int result = R_FALSE;
 
-	ut8 * code_buf = malloc(code_length);
+	ut64 code_length = 0, 
+		 addr = -1;
+
+
+	if (code_attr == NULL) {
+		char gen_name[1025];	
+		snprintf(gen_name, 1024, "java.fcn.%08x", addr);
+		
+		fcn->name = strdup (gen_name);
+		fcn->dsc = strdup ("java.dsc.failed");
+		
+		fcn->size = code_length;
+		fcn->type = R_ANAL_FCN_TYPE_FCN;
+		fcn->addr = addr;
+
+		return R_ANAL_RET_ERROR;
+	}
+	
+	code_length = code_attr->info.code_attr.code_length;
+	addr = code_attr->info.code_attr.code_offset;
+
+	code_buf = malloc(code_length);
 	
 	anal->iob.read_at (anal->iob.io, addr, code_buf, code_length);
 	result = analyze_from_code_buffer ( anal, fcn, addr, code_buf, code_length);
@@ -508,7 +528,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	if (methods_list == NULL) return java_analyze_fns_from_buffer(anal, start, end, reftype, depth);
 	
 	r_list_foreach ( methods_list, iter, method ) {
-		if ( analyze_all || 
+		if ( method && analyze_all || 
 			(check_addr_less_start (method, end) || 
 			check_addr_in_code (method, end)) ) {
 
@@ -528,7 +548,6 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 
 static int java_fn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	RBinJavaField *method = r_bin_java_get_method_code_attribute_with_addr(NULL,  addr);
-	
 	if (method) return analyze_from_code_attr (anal, fcn, method);
 	return analyze_from_code_buffer (anal, fcn, addr, buf, len);
 }

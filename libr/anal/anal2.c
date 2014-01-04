@@ -122,6 +122,13 @@ R_API RAnalOp * r_anal2_get_op(RAnal *anal, RAnalInfos *state, ut64 addr) {
 	// current_op set in a prior stage
 	if (current_op) return current_op;
 	IFDBG eprintf("[==] r_anal2_get_op: Parsing op @ 0x%04x\n", addr);
+	
+	if (anal->cur == NULL || 
+		(anal->cur->op_from_buffer == NULL && anal->cur->op == NULL) ) {
+		return NULL;
+	}
+
+
 	if (!r_anal2_state_addr_is_valid(state, addr) || 
 		anal->cur && (anal->cur->op == NULL && anal->cur->op_from_buffer == NULL) ) {
 		state->done = 1;
@@ -129,12 +136,12 @@ R_API RAnalOp * r_anal2_get_op(RAnal *anal, RAnalInfos *state, ut64 addr) {
 	}
 	data = r_anal2_state_get_buf_by_addr(state, addr);
 	
-	if (anal->cur && anal->cur->op_from_buffer) {
+	if (anal->cur->op_from_buffer) {
 		current_op = anal->cur->op_from_buffer (anal, addr, data,  r_anal2_state_get_len( state, addr) );	
 	} else {
 		current_op = r_anal_op_new();
 		anal->cur->op (anal, current_op, addr, data,  r_anal2_state_get_len( state, addr) );	
-	}
+	} 
 	
 	state->current_op = current_op;
 	return current_op;
@@ -180,7 +187,7 @@ R_API void r_anal2_update_bb_cfg_head_tail( RAnalBlock *start, RAnalBlock * head
 		bb->tail = tail;
 	}
 
-	if (bb->next){ 
+	if (bb && bb->next){ 
 		bb->head = head;
 		bb->tail = tail;
 		do {
@@ -435,6 +442,7 @@ ut64 extract_bin_op(ut64 ranal2_op_type) {
 		case R_ANAL2_BINOP_MOD: return R_ANAL_OP_TYPE_MOD;
 		case R_ANAL2_BINOP_ROR: return R_ANAL_OP_TYPE_ROR;
 		case R_ANAL2_BINOP_ROL: return R_ANAL_OP_TYPE_ROL;
+		default: break;
 	}
 	return R_ANAL_OP_TYPE_UNK;
 }
