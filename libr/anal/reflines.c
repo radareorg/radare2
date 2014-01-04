@@ -126,19 +126,19 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 		} else if (ref->from < ref->to) {
 			if (addr > ref->from && addr < ref->to) {
 				if (ch=='-' || ch=='=')
-					r_buf_append_bytes (b, &ch, 1);
+					r_buf_append_bytes (b, (const ut8*)&ch, 1);
 				else r_buf_append_string (b, "|");
-			} else r_buf_append_bytes (b, &ch, 1);
+			} else r_buf_append_bytes (b, (const ut8*)&ch, 1);
 		} else {
 			if (addr < ref->from && addr > ref->to) {
 				if (ch=='-' || ch=='=')
-					r_buf_append_bytes (b, &ch, 1);
+					r_buf_append_bytes (b, (const ut8*)&ch, 1);
 				else r_buf_append_string (b, "|");
-			} else r_buf_append_bytes (b, &ch, 1);
+			} else r_buf_append_bytes (b, (const ut8*)&ch, 1);
 		}
-		if (wide) {
+		if (wide) {
 			char w = (ch=='=' || ch=='-')? ch : ' ';
-			r_buf_append_bytes (b, &w, 1);
+			r_buf_append_bytes (b, (const ut8*)&w, 1);
 		}
 	}
 	str = r_buf_free_to_string (b);
