@@ -295,6 +295,10 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_SWITCH:
 		eprintf ("Command not implemented.\n");
+		free (r0);
+		free (a0);
+		free (a1);
+		return NULL;
 	default:
 		free (r0);
 		free (a0);
