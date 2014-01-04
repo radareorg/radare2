@@ -233,3 +233,20 @@ R_API void r_buf_free(struct r_buf_t *b) {
 	r_buf_deinit (b);
 	free (b);
 }
+
+R_API int r_buf_append_string (RBuffer *b, const char *str) {
+	return r_buf_append_bytes (b, (const ut8*)str, strlen (str));
+}
+
+R_API char *r_buf_free_to_string (RBuffer *b) {
+	char *p;
+	if (!b) return NULL;
+	if (b->mmap) {
+		p = r_buf_to_string (b);
+	} else {
+		r_buf_append_bytes (b, (const ut8*)"", 1);
+		p = (char *)b->buf;
+	}
+	free (b);
+	return p;
+}

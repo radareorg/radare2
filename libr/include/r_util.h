@@ -260,6 +260,7 @@ R_API RBuffer *r_buf_file (const char *file);
 R_API RBuffer *r_buf_mmap (const char *file, int rw);
 R_API int r_buf_set_bits(RBuffer *b, int bitoff, int bitsize, ut64 value);
 R_API int r_buf_set_bytes(RBuffer *b, const ut8 *buf, int length);
+R_API int r_buf_append_string(RBuffer *b, const char *str);
 R_API int r_buf_append_buf(RBuffer *b, RBuffer *a);
 R_API int r_buf_append_bytes(RBuffer *b, const ut8 *buf, int length);
 R_API int r_buf_append_nbytes(RBuffer *b, int length);
@@ -274,6 +275,7 @@ R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
 R_API int r_buf_fwrite_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API void r_buf_free(RBuffer *b);
+R_API char *r_buf_free_to_string (RBuffer *b);
 
 R_API ut64 r_mem_get_num(const ut8 *b, int size, int endian);
 

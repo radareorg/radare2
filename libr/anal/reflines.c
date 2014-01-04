@@ -102,6 +102,7 @@ R_API int r_anal_reflines_middle(RAnal *a, RAnalRefline *list, ut64 addr, int le
 // TODO: move into another file
 // TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
+	RBuffer *b;
 	int l, linestyle = opts & R_ANAL_REFLINE_TYPE_STYLE;
 	int dir = 0, wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
 	char ch = ' ', *str = NULL;
@@ -109,35 +110,38 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 	RAnalRefline *ref, *list = ((RCore*)core)->reflines;
 
 	if (!list) return NULL;
-	str = r_str_concat (str, " ");
+
+	b = r_buf_new ();
+	r_buf_append_string (b, " ");
 	for (pos = linestyle?(&(list->list))->next:(&(list->list))->prev;
 		pos != (&(list->list)); pos = linestyle?pos->next:pos->prev) {
 		ref = list_entry (pos, RAnalRefline, list);
 		dir = (addr == ref->to)? 1: (addr == ref->from)? 2: dir;
 		if (addr == ref->to) {
-			str = r_str_concat (str, (ref->from>ref->to)? "." : "`");
+			r_buf_append_string (b, (ref->from>ref->to)? "." : "`");
 			ch = '-';
 		} else if (addr == ref->from) {
-			str = r_str_concat (str, (ref->from>ref->to)? "`" : ",");
+			r_buf_append_string (b, (ref->from>ref->to)? "`" : ",");
 			ch = '=';
 		} else if (ref->from < ref->to) {
 			if (addr > ref->from && addr < ref->to) {
 				if (ch=='-' || ch=='=')
-					str = r_str_concatch (str, ch);
-				//else str = r_str_concat (str, ((RCore*)core)->cons->vline[LINE_VERT]);
-				else str = r_str_concatch (str, '|');
-			} else str = r_str_concatch (str, ch);
+					r_buf_append_bytes (b, &ch, 1);
+				else r_buf_append_string (b, "|");
+			} else r_buf_append_bytes (b, &ch, 1);
 		} else {
 			if (addr < ref->from && addr > ref->to) {
 				if (ch=='-' || ch=='=')
-					str = r_str_concatch (str, ch);
-				//else str = r_str_concat (str, ((RCore*)core)->cons->vline[LINE_VERT]);
-				else str = r_str_concatch (str, '|');
-			} else str = r_str_concatch (str, ch);
+					r_buf_append_bytes (b, &ch, 1);
+				else r_buf_append_string (b, "|");
+			} else r_buf_append_bytes (b, &ch, 1);
 		}
-		if (wide)
-			str = r_str_concatch (str, (ch=='=' || ch=='-')? ch : ' ');
+		if (wide) {
+			char w = (ch=='=' || ch=='-')? ch : ' ';
+			r_buf_append_bytes (b, &w, 1);
+		}
 	}
+	str = r_buf_free_to_string (b);
 	if (((RCore*)core)->anal->lineswidth>0) {
 		int lw = ((RCore*)core)->anal->lineswidth;
 		l = strlen (str);
