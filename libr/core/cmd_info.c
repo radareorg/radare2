@@ -1,5 +1,4 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
-
 static void r_core_file_info (RCore *core, int mode) {
 	const char *fn = NULL;
 	int dbg = r_config_get_i (core->config, "cfg.debug");
@@ -87,6 +86,17 @@ static int cmd_info(void *data, const char *input) {
 	}
 
 	switch (*input) {
+	case 'b':
+		{	
+		ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+		// XXX: this will reload the bin using the buffer.
+		// An assumption is made that assumes there is an underlying
+		// plugin that will be used to load the bin (e.g. malloc://)
+		// TODO: Might be nice to reload a bin at a specified offset?
+		r_core_bin_reload (core, NULL, baddr);
+		r_core_block_read (core, 0);
+		}
+		break;
 	case 'k':
 		db = core->bin->cur.o->kv;
 eprintf ("db = %p\n", db);
@@ -157,6 +167,7 @@ eprintf ("db = %p\n", db);
 		"| iS          sections\n"
 		"| ir/iR       relocs\n"
 		"| iz          strings\n"
+		"| ib          reload the current buffer for setting of the bin (use once only)\n"
 		);
 		break;
 	case '*': mode = R_CORE_BIN_RADARE;
