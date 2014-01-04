@@ -256,7 +256,7 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
 	init_file_tables ();
 
 	if (!fn) fn = getenv ("MAGIC");
-	if (!fn) fn = MAGIC;
+	if (!fn) fn = MAGICFILE;
 
 	if ((mfn = strdup (fn)) == NULL) {
 		file_oomem (ms, strlen (fn));
