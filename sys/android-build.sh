@@ -102,8 +102,8 @@ rm -rf ${PWD}/${D}/${PREFIX}/bin/*
 # use busybox style symlinkz
 HERE=${PWD}
 cd binr/blob
-make STATIC_BUILD=1
-make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}"
+make STATIC_BUILD=1 || exit 1
+make install PREFIX="${PREFIX}" DESTDIR="${HERE}/${D}" || exit 1
 cd ../..
 
 chmod +x ${PWD}/${D}/${PREFIX}/bin/*
