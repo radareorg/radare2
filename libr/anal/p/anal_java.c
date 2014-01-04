@@ -139,7 +139,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 	ut64 addr = 0;
 	int result = 0;
 	if (bb == NULL) {
-		eprintf("Error: unable to handle basic block @ 0x%08x\n", addr);
+		eprintf("Error: unable to handle basic block @ 0x%08"PFMT64x"\n", addr);
 		return R_ANAL_RET_ERROR;
 	} else if (state->max_depth <= state->current_depth) {
 		return R_ANAL_RET_ERROR;
@@ -147,13 +147,13 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 
 	state->current_depth++;
 	addr = bb->addr;
-	IFDBG eprintf("Handling a control flow change @ 0x%04x.\n", addr);
+	IFDBG eprintf("Handling a control flow change @ 0x%04"PFMT64x".\n", addr);
 	ut32 control_type = r_anal2_map_anal2_to_anal_op_type (bb->type2);
 
 	// XXX - transition to type2 control flow condtions
 	switch (control_type) {
 		case R_ANAL_OP_TYPE_CALL:
-			IFDBG eprintf(" - Handling a call @ 0x%04x.\n", addr);
+			IFDBG eprintf(" - Handling a call @ 0x%04"PFMT64x".\n", addr);
 			r_anal_fcn_xref_add (anal, state->current_fcn, bb->addr, bb->jump, 
 				control_type == R_ANAL_OP_TYPE_CALL? R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE);
 			result = R_ANAL_RET_ERROR;
@@ -161,7 +161,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 		case R_ANAL_OP_TYPE_JMP:
 			{
 				RList * jmp_list;
-				IFDBG eprintf(" - Handling a jmp @ 0x%04x to 0x%04x.\n", addr, bb->jump);
+				IFDBG eprintf(" - Handling a jmp @ 0x%04"PFMT64x" to 0x%04"PFMT64x".\n", addr, bb->jump);
 				
 				// visited some other time				
 				if (r_anal2_state_search_bb (state, bb->jump) == NULL) {
@@ -172,7 +172,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 				}
 
 				if (state->done == 1) {
-					IFDBG eprintf(" Looks like this jmp (bb @ 0x%04x) found a return.\n", addr);
+					IFDBG eprintf(" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 				}
 				result = R_ANAL_RET_END;
 
@@ -182,8 +182,8 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 			{
 				RList *jmp_list;
 				ut8 encountered_stop = 0;
-				IFDBG eprintf(" - Handling an cjmp @ 0x%04x jmp to 0x%04x and fail to 0x%04x.\n", addr, bb->jump, bb->fail);
-				IFDBG eprintf(" - Handling jmp to 0x%04x.\n", bb->jump);
+				IFDBG eprintf(" - Handling an cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
+				IFDBG eprintf(" - Handling jmp to 0x%04"PFMT64x".\n", bb->jump);
 				// visited some other time				
 				if (r_anal2_state_search_bb (state, bb->jump) == NULL) {
 					jmp_list = r_anal2_perform_analysis ( anal, state, bb->jump );	
@@ -193,7 +193,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 				}
 
 				if (state->done == 1) {
-					IFDBG eprintf(" Looks like this jmp (bb @ 0x%04x) found a return.\n", addr);
+					IFDBG eprintf(" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 					state->done = 0;
 					encountered_stop = 1;
 				}
@@ -205,11 +205,11 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 					bb->jumpbb = r_anal2_state_search_bb (state, bb->jump);
 				}
 
-				IFDBG eprintf(" - Handling an cjmp @ 0x%04x jmp to 0x%04x and fail to 0x%04x.\n", addr, bb->jump, bb->fail);
-				IFDBG eprintf(" - Handling fail to 0x%04x.\n", bb->fail);
+				IFDBG eprintf(" - Handling an cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
+				IFDBG eprintf(" - Handling fail to 0x%04"PFMT64x".\n", bb->fail);
 				// r_anal2_state_merge_bb_list (state, fail_list);
 				if (state->done == 1) {
-					IFDBG eprintf(" Looks like this fail (bb @ 0x%04x) found a return.\n", addr);
+					IFDBG eprintf(" Looks like this fail (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 				}
 
 				result = R_ANAL_RET_END;
@@ -219,7 +219,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 		
 		case R_ANAL_OP_TYPE_SWITCH:
 		{	
-			IFDBG eprintf(" - Handling an switch @ 0x%04x.\n", addr);
+			IFDBG eprintf(" - Handling an switch @ 0x%04"PFMT64x".\n", addr);
 			if (bb->switch_op) {
 				RAnalCaseOp *caseop;
 				RListIter *iter;
@@ -230,7 +230,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 						if (r_anal2_state_addr_is_valid(state, caseop->jump) ) {
 							jmp_list = r_anal2_perform_analysis ( anal, state, caseop->jump );
 							if (state->done == 1) {
-								IFDBG eprintf(" Looks like this jmp (bb @ 0x%04x) found a return.\n", addr);
+								IFDBG eprintf(" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 								state->done = 0;
 								encountered_stop = 1;
 							}
@@ -246,7 +246,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
-			IFDBG eprintf(" - Handling an ret @ 0x%04x.\n", addr);
+			IFDBG eprintf(" - Handling an ret @ 0x%04"PFMT64x".\n", addr);
 			state->done = 1;
 			result = R_ANAL_RET_END;
 			break;
@@ -275,7 +275,7 @@ static int java_post_anal_linear_sweep(RAnal *anal, RAnalInfos *state) {
 		r_list_del_n (nodes->cfg_node_addrs, 0);
 		if (naddr && r_anal2_state_search_bb(state, *naddr) == NULL) {
 			ut64 list_length = 0;
-			IFDBG eprintf(" - Visiting 0x%04x for analysis.\n", *naddr);
+			IFDBG eprintf(" - Visiting 0x%04"PFMT64x" for analysis.\n", *naddr);
 			jmp_list = r_anal2_perform_analysis ( anal, state, *naddr );
 			list_length = r_list_length (jmp_list);
 			if ( list_length > 0) {
@@ -304,7 +304,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
 	ut64 addr = 0;
 	int result = 0;
 	if (bb == NULL) {
-		eprintf("Error: unable to handle basic block @ 0x%08x\n", addr);
+		eprintf("Error: unable to handle basic block @ 0x%08"PFMT64x"\n", addr);
 		return R_ANAL_RET_ERROR;
 	} else if (state->max_depth <= state->current_depth) {
 		return R_ANAL_RET_ERROR;
@@ -312,13 +312,13 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
 
 	state->current_depth++;
 	addr = bb->addr;
-	IFDBG eprintf("Handling a control flow change @ 0x%04x.\n", addr);
+	IFDBG eprintf("Handling a control flow change @ 0x%04"PFMT64x".\n", addr);
 	ut32 control_type = r_anal2_map_anal2_to_anal_op_type (bb->type2);
 
 	// XXX - transition to type2 control flow condtions
 	switch (control_type) {
 		case R_ANAL_OP_TYPE_CALL:
-			IFDBG eprintf(" - Handling a call @ 0x%04x\n", addr);
+			IFDBG eprintf(" - Handling a call @ 0x%04"PFMT64x"\n", addr);
 			r_anal_fcn_xref_add (anal, state->current_fcn, bb->addr, bb->jump, 
 				control_type == R_ANAL_OP_TYPE_CALL? R_ANAL_REF_TYPE_CALL : R_ANAL_REF_TYPE_CODE);
 			result = R_ANAL_RET_ERROR;
@@ -326,18 +326,18 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
 		case R_ANAL_OP_TYPE_JMP:
 			naddr = malloc(sizeof(ut64));
 			*naddr = bb->jump;
-			IFDBG eprintf(" - Handling a jmp @ 0x%04x, adding for future visit\n", addr);
+			IFDBG eprintf(" - Handling a jmp @ 0x%04"PFMT64x", adding for future visit\n", addr);
 			r_list_append(nodes->cfg_node_addrs, naddr);
 			result = R_ANAL_RET_END;
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			naddr = malloc(sizeof(ut64));
 			*naddr = bb->jump;
-			IFDBG eprintf(" - Handling a bb->jump @ 0x%04x, adding 0x%04x for future visit\n", addr, *naddr);
+			IFDBG eprintf(" - Handling a bb->jump @ 0x%04"PFMT64x", adding 0x%04"PFMT64x" for future visit\n", addr, *naddr);
 			r_list_append(nodes->cfg_node_addrs, naddr);
 			naddr = malloc(sizeof(ut64));
 			*naddr = bb->fail;
-			IFDBG eprintf(" - Handling a bb->fail @ 0x%04x, adding 0x%04x for future visit\n", addr, *naddr);
+			IFDBG eprintf(" - Handling a bb->fail @ 0x%04"PFMT64x", adding 0x%04"PFMT64x" for future visit\n", addr, *naddr);
 			r_list_append(nodes->cfg_node_addrs, naddr);
 			result = R_ANAL_RET_END;
 			break;
@@ -346,13 +346,13 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
 				RAnalCaseOp *caseop;
 				RListIter *iter;
 				RList *jmp_list = NULL;
-				IFDBG eprintf(" - Handling a switch_op @ 0x%04x:\n", addr);
+				IFDBG eprintf(" - Handling a switch_op @ 0x%04"PFMT64x":\n", addr);
 				r_list_foreach (bb->switch_op->cases, iter, caseop) {
 					ut64 * naddr;
 					if (caseop) {
 						naddr = malloc(sizeof(ut64));
 						*naddr = caseop->jump;
-						IFDBG ("Adding 0x%04x for future visit\n", *naddr);
+						IFDBG ("Adding 0x%04"PFMT64x" for future visit\n", *naddr);
 						r_list_append(nodes->cfg_node_addrs, caseop->jump);
 					}
 				}
@@ -362,7 +362,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RET:
-			IFDBG eprintf(" - Handling an ret @ 0x%04x.\n", addr);
+			IFDBG eprintf(" - Handling an ret @ 0x%04"PFMT64x".\n", addr);
 			state->done = 1;
 			result = R_ANAL_RET_END;
 			break;
@@ -384,7 +384,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 
 	free(fcn->name);
 	free(fcn->dsc);
-	snprintf(gen_name, 1024, "java.fcn.%08x", addr);
+	snprintf(gen_name, 1024, "java.fcn.%08"PFMT64x"", addr);
 	
 	fcn->name = strdup (gen_name);
 	fcn->dsc = strdup ("java.dsc.unknown");
@@ -422,7 +422,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJa
 
 	if (code_attr == NULL) {
 		char gen_name[1025];	
-		snprintf(gen_name, 1024, "java.fcn.%08x", addr);
+		snprintf(gen_name, 1024, "java.fcn.%08"PFMT64x"", addr);
 		
 		fcn->name = strdup (gen_name);
 		fcn->dsc = strdup ("java.dsc.failed");
@@ -459,12 +459,12 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalInfos *state) {
 	r_list_free(fcn->bbs);
 	fcn->bbs = r_anal_bb_list_new();
 
-	IFDBG eprintf("analyze_method: Parsing fcn %s @ 0x%08x, %d bytes\n", fcn->name, fcn->addr, fcn->size);
+	IFDBG eprintf("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n", fcn->name, fcn->addr, fcn->size);
 	
 	state->current_fcn = fcn;
 	r_anal2_perform_analysis (anal, state, fcn->addr);
     bytes_consumed = state->bytes_consumed;
-	IFDBG eprintf("analyze_method: Completed Parsing fcn %s @ 0x%08x, consumed %d bytes\n", fcn->name, fcn->addr, bytes_consumed);
+	IFDBG eprintf("analyze_method: Completed Parsing fcn %s @ 0x%08"PFMT64x", consumed %d bytes\n", fcn->name, fcn->addr, bytes_consumed);
 	
 	return state->anal_ret_val;
 }
@@ -500,7 +500,7 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 		RAnalFunction *fcn = r_anal_fcn_new ();
 		result = analyze_from_code_buffer ( anal, fcn, addr, buffer+offset, length );
 		if (result == R_ANAL_RET_ERROR) {
-			eprintf ("Failed to parse java fn: %s @ 0x%04x\n", fcn->name, fcn->addr);
+			eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
 			// XXX - TO Stop or not to Stop ??
 			break;
 		}
@@ -528,14 +528,14 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	if (methods_list == NULL) return java_analyze_fns_from_buffer(anal, start, end, reftype, depth);
 	
 	r_list_foreach ( methods_list, iter, method ) {
-		if ( method && analyze_all || 
+		if ( (method && analyze_all) || 
 			(check_addr_less_start (method, end) || 
 			check_addr_in_code (method, end)) ) {
 
 			RAnalFunction *fcn = r_anal_fcn_new ();
 			result = analyze_from_code_attr ( anal, fcn, method );
 			if (result == R_ANAL_RET_ERROR) {
-				eprintf ("Failed to parse java fn: %s @ 0x%04x\n", fcn->name, fcn->addr);
+				eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
 				// XXX - TO Stop or not to Stop ??
 			}
 			//r_listrange_add (anal->fcnstore, fcn);
@@ -569,7 +569,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		
 		RAnalCaseOp *caseop = NULL;
 		IFDBG {
-			eprintf("Handling tableswitch op @ 0x%04x\n", addr);
+			eprintf("Handling tableswitch op @ 0x%04"PFMT64x"\n", addr);
 			eprintf("default_jump @ 0x%04x ", default_loc);
 			eprintf("min_val: %d max_val: %d\n", min_val, max_val);
 		}
@@ -611,7 +611,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->eob = r_anal2_is_op_type_eop(op->type2);
 	IFDBG {
 		char *ot_str = r_anal_optype_to_string(op->type);
-		eprintf ("op_type2: %s @ 0x%04x 0x%08x op_type: (0x%02x) %s.\n", java_ops[op_byte].name, addr, op->type2, op->type,  ot_str);
+		eprintf ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.\n", java_ops[op_byte].name, addr, op->type2, op->type,  ot_str);
 		//eprintf ("op_eob: 0x%02x.\n", op->eob);	
 		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
 	}
@@ -619,10 +619,10 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	if ( op->type == R_ANAL_OP_TYPE_CJMP ) {
 		op->jump = addr + (int)(short)(USHORT (data, 1));
 		op->fail = addr + sz;
-		IFDBG eprintf ("%s jmpto 0x%04x  failto 0x%04x.\n", java_ops[op_byte].name, op->jump, op->fail);
+		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x".\n", java_ops[op_byte].name, op->jump, op->fail);
 	} else if ( op->type  == R_ANAL_OP_TYPE_JMP ) {
 		op->jump = addr + (int)(short)(USHORT (data, 1));
-		IFDBG eprintf ("%s jmpto 0x%04x.\n", java_ops[op_byte].name, op->jump);
+		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", java_ops[op_byte].name, op->jump);
 	} else if ( (op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
 		//op->jump = addr + (int)(short)(USHORT (data, 1));
 		//op->fail = addr + sz;
