@@ -723,7 +723,7 @@ typedef struct r_anal_state_type_t {
 	ut32 max_depth;
 
 	void *user_state;
-} RAnalInfos;
+} RAnalState;
 
 typedef int (*RAnalCmdExt)(/* Rcore */void *core, RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
@@ -1068,27 +1068,26 @@ R_API int r_anal_esil_eval(RAnal *anal, const char *str);
 
 
 /* switch.c APIs */
-R_API RAnalSwitchOp *r_anal_switch_op_new();
-R_API RAnalSwitchOp *r_anal_switch_op_init(ut64 addr, ut64 min_val, ut64 max_val);
+R_API RAnalSwitchOp * r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val);
 R_API void r_anal_switch_op_free(RAnalSwitchOp * swop);
 R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut64 jump, ut64 value);
 
 /* 
- * RAnalInfos maintains state during analysis.
+ * RAnalState maintains state during analysis.
  * there are standard values current_fcn, current_op, current_bb, addr, 
  * data buffer, etc. but there is also a void * for user defined structures
  * that can be updated during the callbacks.
  */
-R_API RAnalInfos * r_anal_state_new (ut64 start, ut8* buffer, ut64 len);
-R_API void r_anal_state_insert_bb (RAnalInfos* state, RAnalBlock *bb);
-R_API int r_anal_state_need_rehash (RAnalInfos* state, RAnalBlock *bb);
-R_API RAnalBlock * r_anal_state_search_bb (RAnalInfos* state, ut64 addr);
-R_API void r_anal_state_free (RAnalInfos * state);
-R_API ut64 r_anal_state_get_len (RAnalInfos *state, ut64 addr);
-R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalInfos *state, ut64 addr);
-R_API int r_anal_state_addr_is_valid (RAnalInfos *state, ut64 addr);
-R_API void r_anal_state_merge_bb_list (RAnalInfos *state, RList* bbs);
-R_API void r_anal_state_set_depth(RAnalInfos *state, ut32 depth);
+R_API RAnalState * r_anal_state_new (ut64 start, ut8* buffer, ut64 len);
+R_API void r_anal_state_insert_bb (RAnalState* state, RAnalBlock *bb);
+R_API int r_anal_state_need_rehash (RAnalState* state, RAnalBlock *bb);
+R_API RAnalBlock * r_anal_state_search_bb (RAnalState* state, ut64 addr);
+R_API void r_anal_state_free (RAnalState * state);
+R_API ut64 r_anal_state_get_len (RAnalState *state, ut64 addr);
+R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalState *state, ut64 addr);
+R_API int r_anal_state_addr_is_valid (RAnalState *state, ut64 addr);
+R_API void r_anal_state_merge_bb_list (RAnalState *state, RList* bbs);
+R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth);
 
 
 /* plugin pointers */

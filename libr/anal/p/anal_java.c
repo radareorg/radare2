@@ -464,7 +464,7 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	state->current_fcn = fcn;
 	r_anal_ex_perform_analysis (anal, state, fcn->addr);
     bytes_consumed = state->bytes_consumed;
-	IFDBG eprintf("analyze_method: Completed Parsing fcn %s @ 0x%08"PFMT64x", consumed %d bytes\n", fcn->name, fcn->addr, bytes_consumed);
+	IFDBG eprintf("analyze_method: Completed Parsing fcn %s @ 0x%08"PFMT64x", consumed %d"PFMT64d" bytes\n", fcn->name, fcn->addr, bytes_consumed);
 	
 	return state->anal_ret_val;
 }
@@ -565,7 +565,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		ut32 default_loc = (ut32)(UINT (data, pos)),
 			 cur_case = 0;
 		
-		op->switch_op = r_anal_switch_op_init (addr, min_val, default_loc);
+		op->switch_op = r_anal_switch_op_new (addr, min_val, default_loc);
 		
 		RAnalCaseOp *caseop = NULL;
 		IFDBG {
@@ -586,6 +586,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		}
 	}
 	op->size = pos;
+	return op->size;
 }
 static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	unsigned int i;

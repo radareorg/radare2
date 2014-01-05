@@ -105,7 +105,8 @@ R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op) {
 	RAnalCaseOp *caseop = NULL;
 
 	if ( op->switch_op ) {
-		bb->switch_op = r_anal_switch_op_init (op->switch_op->addr, 
+		
+		bb->switch_op = r_anal_switch_op_new (op->switch_op->addr, 
 											op->switch_op->min_val, 
 											op->switch_op->max_val);
 
