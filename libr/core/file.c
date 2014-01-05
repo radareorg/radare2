@@ -167,7 +167,7 @@ R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baddr) {
 		r_bin_free (r->bin);
 		r->bin = r_bin_new ();
 		r_bin_set_user_ptr (r->bin, r);
-		r_core_bin_load (r, file, baddr);
+		return r_core_bin_load (r, file, baddr);
 }
 
 R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
