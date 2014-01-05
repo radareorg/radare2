@@ -624,7 +624,7 @@ typedef struct r_anal_bb_t {
 	ut64 addr;
 	ut64 size;
 	ut64 jump;
-	int type2;
+	ut64 type2;
 	ut64 fail;
 	int type;
 	int type_ex;
@@ -697,7 +697,7 @@ typedef struct r_anal_refline_t {
 } RAnalRefline;
 
 
-typedef struct r_anal2_state_type_t {
+typedef struct r_anal_state_type_t {
 	ut64 start;
 	ut64 end;
 	const ut8* buffer;
@@ -727,8 +727,8 @@ typedef struct r_anal2_state_type_t {
 
 typedef int (*RAnalCmdExt)(/* Rcore */void *core, RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
-typedef int (*RAnal2Callback)(RAnal *a, struct r_anal2_state_type_t *state, ut64 addr);
-typedef RList *(*RAnal2AnalysisAlgorithm)(RAnal *a, struct r_anal2_state_type_t *state, ut64 addr);
+typedef int (*RAnalExCallback)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
+typedef RList *(*RAnalExAnalysisAlgorithm)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
 
 typedef RAnalOp * (*RAnalOpFromBuffer)      (RAnal *a, ut64 addr, const ut8* buf, ut64 len);
 typedef RAnalBlock * (*RAnalBbFromBuffer)   (RAnal *a, ut64 addr, const ut8* buf, ut64 len);
@@ -770,39 +770,39 @@ typedef struct r_anal_plugin_t {
 	RAnalFnFromBuffer fn_from_buffer;
 
 	// analysis algorithm to use instead of the default
-	// r_anal2_recursive_decent when using perform_analysis from
-	// RAnal2 stuffs
-	RAnal2AnalysisAlgorithm analysis_algorithm;
+	// r_anal_ex_recursive_decent when using perform_analysis from
+	// RAnalEx stuffs
+	RAnalExAnalysisAlgorithm analysis_algorithm;
 	// order in which these call backs are 
 	// used with the recursive descent disassembler
 	// analysis
 	// 0) Before performing any analysis is start, opportunity to do any pre analysis. 
 	// in the current function
-	RAnal2Callback pre_anal;
+	RAnalExCallback pre_anal;
 	// 1) Before any ops are bbs are created
-	RAnal2Callback pre_anal_fn_cb;
+	RAnalExCallback pre_anal_fn_cb;
 	// 2) Just Before an op is created. 
 	// if current_op is set in state, then an op in the main alg wont be processed 
-	RAnal2Callback pre_anal_op_cb;
+	RAnalExCallback pre_anal_op_cb;
 	// 3) After a op is created. 
 	// the current_op in state is used to fix-up the state of op before creating a bb 
-	RAnal2Callback post_anal_op_cb;
+	RAnalExCallback post_anal_op_cb;
 	// 4) Before a bb is created. 
 	// if current_op is set in state, then an op in the main alg wont be processed 
-	RAnal2Callback pre_anal_bb_cb;
+	RAnalExCallback pre_anal_bb_cb;
 	// 5) After a bb is created. 
 	// the current_bb in state is used to fix-up the state of before performing analysis 
 	// with the current bb 	
-	RAnal2Callback post_anal_bb_cb;
+	RAnalExCallback post_anal_bb_cb;
 	// 6) After processing is bb and cb is completed, opportunity to do any post analysis. 
 	// in the current function
-	RAnal2Callback post_anal_fn_cb;
+	RAnalExCallback post_anal_fn_cb;
 
 	// 6) After bb in a node is completed, opportunity to do any post analysis. 
 	// in the current function
-	RAnal2Callback post_anal;
+	RAnalExCallback post_anal;
 
-	RAnal2Callback revisit_bb_anal;
+	RAnalExCallback revisit_bb_anal;
 	
 	// command extension to directly call any analysis functions
 	RAnalCmdExt cmd_ext;
@@ -1071,7 +1071,25 @@ R_API int r_anal_esil_eval(RAnal *anal, const char *str);
 R_API RAnalSwitchOp *r_anal_switch_op_new();
 R_API RAnalSwitchOp *r_anal_switch_op_init(ut64 addr, ut64 min_val, ut64 max_val);
 R_API void r_anal_switch_op_free(RAnalSwitchOp * swop);
-R_API RAnalCaseOp* r_anal_add_switch_op_case(RAnalSwitchOp * swop, ut64 addr, ut64 jump, ut64 value);
+R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut64 jump, ut64 value);
+
+/* 
+ * RAnalInfos maintains state during analysis.
+ * there are standard values current_fcn, current_op, current_bb, addr, 
+ * data buffer, etc. but there is also a void * for user defined structures
+ * that can be updated during the callbacks.
+ */
+R_API RAnalInfos * r_anal_state_new (ut64 start, ut8* buffer, ut64 len);
+R_API void r_anal_state_insert_bb (RAnalInfos* state, RAnalBlock *bb);
+R_API int r_anal_state_need_rehash (RAnalInfos* state, RAnalBlock *bb);
+R_API RAnalBlock * r_anal_state_search_bb (RAnalInfos* state, ut64 addr);
+R_API void r_anal_state_free (RAnalInfos * state);
+R_API ut64 r_anal_state_get_len (RAnalInfos *state, ut64 addr);
+R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalInfos *state, ut64 addr);
+R_API int r_anal_state_addr_is_valid (RAnalInfos *state, ut64 addr);
+R_API void r_anal_state_merge_bb_list (RAnalInfos *state, RList* bbs);
+R_API void r_anal_state_set_depth(RAnalInfos *state, ut32 depth);
+
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;

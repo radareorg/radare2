@@ -7,7 +7,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include <r_anal2.h>
+#include <r_anal_ex.h>
 
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/class.h"
@@ -16,7 +16,7 @@
 #define IFINT  if(0)
 
 
-typedef struct r_anal2_java_lin_sweep {
+typedef struct r_anal_ex_java_lin_sweep {
 	RList *cfg_node_addrs;
 }RAnalJavaLinearSweep;
 
@@ -73,8 +73,8 @@ static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalInfos *state
     RAnalBlock *current_head = state && state->current_bb_head ? state->current_bb_head : NULL;
 	if (current_head && state->current_bb && 
 		state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
-		r_anal2_update_bb_cfg_head_tail (current_head, current_head, state->current_bb);
-		// XXX should i do this instead -> r_anal2_perform_post_anal_bb_cb (anal, state, addr+offset);
+		r_anal_ex_update_bb_cfg_head_tail (current_head, current_head, state->current_bb);
+		// XXX should i do this instead -> r_anal_ex_perform_post_anal_bb_cb (anal, state, addr+offset);
         state->done = 1;
 	}
 	return R_ANAL_RET_END;
@@ -84,49 +84,49 @@ static void java_recursive_descent(RAnal *anal, RAnalInfos *state, ut64 addr) {
 	RAnalBlock *bb = state->current_bb;
 	RAnalBlock *current_head = state->current_bb_head;
 	if (current_head && state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
-		r_anal2_update_bb_cfg_head_tail (current_head, current_head, state->current_bb);
+		r_anal_ex_update_bb_cfg_head_tail (current_head, current_head, state->current_bb);
 	} 
 
 	// basic filter for handling the different type of operations
 	// depending on flags some may be called more than once
-	// if (bb->type2 & R_ANAL2_ILL_OP)   handle_bb_ill_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_COND_OP)  handle_bb_cond_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_UNK_OP)   handle_bb_unknown_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_NULL_OP)  handle_bb_null_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_NOP_OP)   handle_bb_nop_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_REP_OP)   handle_bb_rep_op (anal, state);
-	// if (bb->type2 & R_ANAL2_STORE_OP) handle_bb_store_op (anal, state);
-	// if (bb->type2 & R_ANAL2_LOAD_OP)  handle_bb_load_op (anal, state
-	// if (bb->type2 & R_ANAL2_REG_OP)   handle_bb_reg_op (anal, state);
-	// if (bb->type2 & R_ANAL2_OBJ_OP)   handle_bb_obj_op (anal, state);
-	// if (bb->type2 & R_ANAL2_STACK_OP) handle_bb_stack_op (anal, state);
-	// if (bb->type2 & R_ANAL2_BIN_OP)   handle_bb_bin_op (anal, state);
-	if (bb->type2 & R_ANAL2_CODE_OP)  handle_bb_cf_recursive_descent (anal, state);
-	// if (bb->type2 & R_ANAL2_DATA_OP)  handle_bb_data_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_ILL_OP)   handle_bb_ill_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_COND_OP)  handle_bb_cond_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_UNK_OP)   handle_bb_unknown_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_NULL_OP)  handle_bb_null_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_NOP_OP)   handle_bb_nop_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_REP_OP)   handle_bb_rep_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_STORE_OP) handle_bb_store_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_LOAD_OP)  handle_bb_load_op (anal, state
+	// if (bb->type2 & R_ANAL_EX_REG_OP)   handle_bb_reg_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_OBJ_OP)   handle_bb_obj_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_STACK_OP) handle_bb_stack_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_BIN_OP)   handle_bb_bin_op (anal, state);
+	if (bb->type2 & R_ANAL_EX_CODE_OP)  handle_bb_cf_recursive_descent (anal, state);
+	// if (bb->type2 & R_ANAL_EX_DATA_OP)  handle_bb_data_op (anal, state);
 }
 
 static void java_linear_sweep(RAnal *anal, RAnalInfos *state, ut64 addr) {
 	RAnalBlock *bb = state->current_bb;
 	if (state->current_bb_head && state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
-		//r_anal2_update_bb_cfg_head_tail (state->current_bb_head, state->current_bb_head, state->current_bb);
+		//r_anal_ex_update_bb_cfg_head_tail (state->current_bb_head, state->current_bb_head, state->current_bb);
 	} 
 
 	// basic filter for handling the different type of operations
 	// depending on flags some may be called more than once
-	// if (bb->type2 & R_ANAL2_ILL_OP)   handle_bb_ill_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_COND_OP)  handle_bb_cond_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_UNK_OP)   handle_bb_unknown_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_NULL_OP)  handle_bb_null_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_NOP_OP)   handle_bb_nop_op (anal, state); 
-	// if (bb->type2 & R_ANAL2_REP_OP)   handle_bb_rep_op (anal, state);
-	// if (bb->type2 & R_ANAL2_STORE_OP) handle_bb_store_op (anal, state);
-	// if (bb->type2 & R_ANAL2_LOAD_OP)  handle_bb_load_op (anal, state
-	// if (bb->type2 & R_ANAL2_REG_OP)   handle_bb_reg_op (anal, state);
-	// if (bb->type2 & R_ANAL2_OBJ_OP)   handle_bb_obj_op (anal, state);
-	// if (bb->type2 & R_ANAL2_STACK_OP) handle_bb_stack_op (anal, state);
-	// if (bb->type2 & R_ANAL2_BIN_OP)   handle_bb_bin_op (anal, state);
-	if (bb->type2 & R_ANAL2_CODE_OP)  handle_bb_cf_linear_sweep (anal, state);
-	// if (bb->type2 & R_ANAL2_DATA_OP)  handle_bb_data_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_ILL_OP)   handle_bb_ill_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_COND_OP)  handle_bb_cond_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_UNK_OP)   handle_bb_unknown_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_NULL_OP)  handle_bb_null_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_NOP_OP)   handle_bb_nop_op (anal, state); 
+	// if (bb->type2 & R_ANAL_EX_REP_OP)   handle_bb_rep_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_STORE_OP) handle_bb_store_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_LOAD_OP)  handle_bb_load_op (anal, state
+	// if (bb->type2 & R_ANAL_EX_REG_OP)   handle_bb_reg_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_OBJ_OP)   handle_bb_obj_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_STACK_OP) handle_bb_stack_op (anal, state);
+	// if (bb->type2 & R_ANAL_EX_BIN_OP)   handle_bb_bin_op (anal, state);
+	if (bb->type2 & R_ANAL_EX_CODE_OP)  handle_bb_cf_linear_sweep (anal, state);
+	// if (bb->type2 & R_ANAL_EX_DATA_OP)  handle_bb_data_op (anal, state);
 }
 
 static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
@@ -148,7 +148,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 	state->current_depth++;
 	addr = bb->addr;
 	IFDBG eprintf("Handling a control flow change @ 0x%04"PFMT64x".\n", addr);
-	ut32 control_type = r_anal2_map_anal2_to_anal_op_type (bb->type2);
+	ut32 control_type = r_anal_ex_map_anal_ex_to_anal_op_type (bb->type2);
 
 	// XXX - transition to type2 control flow condtions
 	switch (control_type) {
@@ -164,11 +164,11 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 				IFDBG eprintf(" - Handling a jmp @ 0x%04"PFMT64x" to 0x%04"PFMT64x".\n", addr, bb->jump);
 				
 				// visited some other time				
-				if (r_anal2_state_search_bb (state, bb->jump) == NULL) {
-					jmp_list = r_anal2_perform_analysis ( anal, state, bb->jump );	
+				if (r_anal_state_search_bb (state, bb->jump) == NULL) {
+					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );	
 					bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
 				} else {
-					bb->jumpbb = r_anal2_state_search_bb (state, bb->jump);
+					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
 				}
 
 				if (state->done == 1) {
@@ -185,11 +185,11 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 				IFDBG eprintf(" - Handling an cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
 				IFDBG eprintf(" - Handling jmp to 0x%04"PFMT64x".\n", bb->jump);
 				// visited some other time				
-				if (r_anal2_state_search_bb (state, bb->jump) == NULL) {
-					jmp_list = r_anal2_perform_analysis ( anal, state, bb->jump );	
+				if (r_anal_state_search_bb (state, bb->jump) == NULL) {
+					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );	
 					bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
 				} else {
-					bb->jumpbb = r_anal2_state_search_bb (state, bb->jump);
+					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
 				}
 
 				if (state->done == 1) {
@@ -198,16 +198,16 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 					encountered_stop = 1;
 				}
 				
-				if (r_anal2_state_search_bb (state, bb->fail) == NULL) {
-					jmp_list = r_anal2_perform_analysis ( anal, state, bb->fail );	
+				if (r_anal_state_search_bb (state, bb->fail) == NULL) {
+					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );	
 					bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
 				} else {
-					bb->jumpbb = r_anal2_state_search_bb (state, bb->jump);
+					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
 				}
 
 				IFDBG eprintf(" - Handling an cjmp @ 0x%04"PFMT64x" jmp to 0x%04"PFMT64x" and fail to 0x%04"PFMT64x".\n", addr, bb->jump, bb->fail);
 				IFDBG eprintf(" - Handling fail to 0x%04"PFMT64x".\n", bb->fail);
-				// r_anal2_state_merge_bb_list (state, fail_list);
+				// r_anal_state_merge_bb_list (state, fail_list);
 				if (state->done == 1) {
 					IFDBG eprintf(" Looks like this fail (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 				}
@@ -227,8 +227,8 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 				ut8 encountered_stop = 0;
 				r_list_foreach (bb->switch_op->cases, iter, caseop) {
 					if (caseop) {
-						if (r_anal2_state_addr_is_valid(state, caseop->jump) ) {
-							jmp_list = r_anal2_perform_analysis ( anal, state, caseop->jump );
+						if (r_anal_state_addr_is_valid(state, caseop->jump) ) {
+							jmp_list = r_anal_ex_perform_analysis ( anal, state, caseop->jump );
 							if (state->done == 1) {
 								IFDBG eprintf(" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 								state->done = 0;
@@ -273,10 +273,10 @@ static int java_post_anal_linear_sweep(RAnal *anal, RAnalInfos *state) {
 	while (r_list_length (nodes->cfg_node_addrs) > 0) {
 		naddr = r_list_get_n (nodes->cfg_node_addrs, 0);
 		r_list_del_n (nodes->cfg_node_addrs, 0);
-		if (naddr && r_anal2_state_search_bb(state, *naddr) == NULL) {
+		if (naddr && r_anal_state_search_bb(state, *naddr) == NULL) {
 			ut64 list_length = 0;
 			IFDBG eprintf(" - Visiting 0x%04"PFMT64x" for analysis.\n", *naddr);
-			jmp_list = r_anal2_perform_analysis ( anal, state, *naddr );
+			jmp_list = r_anal_ex_perform_analysis ( anal, state, *naddr );
 			list_length = r_list_length (jmp_list);
 			if ( list_length > 0) {
 				IFDBG eprintf(" - Found %d more basic blocks missed on the initial pass.\n", *naddr);
@@ -313,7 +313,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
 	state->current_depth++;
 	addr = bb->addr;
 	IFDBG eprintf("Handling a control flow change @ 0x%04"PFMT64x".\n", addr);
-	ut32 control_type = r_anal2_map_anal2_to_anal_op_type (bb->type2);
+	ut32 control_type = r_anal_ex_map_anal_ex_to_anal_op_type (bb->type2);
 
 	// XXX - transition to type2 control flow condtions
 	switch (control_type) {
@@ -393,7 +393,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	fcn->type = R_ANAL_FCN_TYPE_FCN;
 	fcn->addr = addr;
 
-	state = r_anal2_state_new(addr, code_buf, code_length);
+	state = r_anal_state_new(addr, code_buf, code_length);
 	nodes = R_NEW0(RAnalJavaLinearSweep);
 	nodes->cfg_node_addrs = r_list_new();
 	nodes->cfg_node_addrs->free = free;
@@ -406,7 +406,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	
 	r_list_free(nodes->cfg_node_addrs);
 	free(nodes);
-	r_anal2_state_free(state);
+	r_anal_state_free(state);
 	
 	return result;
 }
@@ -462,7 +462,7 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalInfos *state) {
 	IFDBG eprintf("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n", fcn->name, fcn->addr, fcn->size);
 	
 	state->current_fcn = fcn;
-	r_anal2_perform_analysis (anal, state, fcn->addr);
+	r_anal_ex_perform_analysis (anal, state, fcn->addr);
     bytes_consumed = state->bytes_consumed;
 	IFDBG eprintf("analyze_method: Completed Parsing fcn %s @ 0x%08"PFMT64x", consumed %d bytes\n", fcn->name, fcn->addr, bytes_consumed);
 	
@@ -575,12 +575,12 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		}
 		pos += 12;
 		
-		//caseop = r_anal_add_switch_op_case(op->switch_op, addr+default_loc, -1, addr+offset);
+		//caseop = r_anal_switch_op_add_case(op->switch_op, addr+default_loc, -1, addr+offset);
 		for (cur_case = 0; cur_case <= max_val - min_val; pos+=4, cur_case++) {
 			//ut32 value = (ut32)(UINT (data, pos));
 			ut32 offset = (ut32)(R_BIN_JAVA_UINT (data, pos));
 			IFDBG eprintf ("offset value: 0x%04x, interpretted addr case: %d offset: 0x%04x\n", offset, cur_case+min_val, addr+offset);
-			caseop = r_anal_add_switch_op_case(op->switch_op, addr+pos, cur_case+min_val, addr+offset);
+			caseop = r_anal_switch_op_add_case(op->switch_op, addr+pos, cur_case+min_val, addr+offset);
 			caseop->bb_ref_to = addr+offset;
 			caseop->bb_ref_from = addr; // TODO figure this one out
 		}
@@ -606,9 +606,9 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->addr = addr;
 	op->size= sz;
 	op->type2 = java_ops[op_byte].op_type;
-	op->type = r_anal2_map_anal2_to_anal_op_type (op->type2); 
+	op->type = r_anal_ex_map_anal_ex_to_anal_op_type (op->type2); 
 	
-	op->eob = r_anal2_is_op_type_eop(op->type2);
+	op->eob = r_anal_ex_is_op_type_eop(op->type2);
 	IFDBG {
 		char *ot_str = r_anal_optype_to_string(op->type);
 		eprintf ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.\n", java_ops[op_byte].name, addr, op->type2, op->type,  ot_str);
@@ -720,25 +720,25 @@ struct r_lib_struct_t radare_plugin = {
 };
 #endif
 /*
-static void r_anal2_handle_bb_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op);
-static void r_anal2_handle_control_flow(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
-static void r_anal2_handle_binary_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
-static void r_anal2_handle_case_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
-static void r_anal2_handle_call(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
-static void r_anal2_handle_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb, ut64 jump_to);
+static void r_anal_ex_handle_bb_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op);
+static void r_anal_ex_handle_control_flow(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
+static void r_anal_ex_handle_binary_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
+static void r_anal_ex_handle_case_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
+static void r_anal_ex_handle_call(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
+static void r_anal_ex_handle_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb, ut64 jump_to);
 
 
 
-R_API void r_anal2_handle_binary_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb) {
-	r_anal2_handle_jump( anal, state, current_bb, current_bb->jump );
-	r_anal2_handle_jump( anal, state, current_bb, current_bb->fail );
+R_API void r_anal_ex_handle_binary_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb) {
+	r_anal_ex_handle_jump( anal, state, current_bb, current_bb->jump );
+	r_anal_ex_handle_jump( anal, state, current_bb, current_bb->fail );
 }
 
-R_API void r_anal2_handle_case_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb ) {
+R_API void r_anal_ex_handle_case_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb ) {
 	// TODO parse switch caseops
 	// for each caseop in the bb->switch_op {
 	//	  ut64 jmp_addr = caseop->jump
-	//	  r_anal2_handle_jump( anal, state, current_bb, jumpaddr );
+	//	  r_anal_ex_handle_jump( anal, state, current_bb, jumpaddr );
 	//	  if ( jmp_list ){
 	//		  i = 0
 	//		  // merge results
@@ -748,14 +748,14 @@ R_API void r_anal2_handle_case_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* 
 	// }
 }
 
-R_API void r_anal2_handle_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb, ut64 jump_to) {
+R_API void r_anal_ex_handle_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb, ut64 jump_to) {
 	RList * jmp_list = recursive_descent_jmp( anal, state, current_bb, jump_to );
 	if ( jmp_list ){
-		r_anal2_state_merge_bb_list (state, jmp_list);
+		r_anal_state_merge_bb_list (state, jmp_list);
 	}
 }
 
-R_API void r_anal2_handle_call(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb) {
+R_API void r_anal_ex_handle_call(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb) {
 	RList * caller_list = recursive_descent_jmp( anal, state, current_bb, 0/*jump_to* / );
 	if ( caller_list ){
 		// TODO merge results
@@ -764,14 +764,14 @@ R_API void r_anal2_handle_call(RAnal *anal, RAnalInfos *state, RAnalBlock* curre
 	}
 }
 
-R_API void r_anal2_handle_control_flow(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb ) {
+R_API void r_anal_ex_handle_control_flow(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb ) {
 		
 	if ( current_bb->type | R_ANAL_BB_TYPE_JMP )		 
-		r_anal2_handle_binary_jump(anal, state, current_bb);
+		r_anal_ex_handle_binary_jump(anal, state, current_bb);
 	else if ( current_bb->type | R_ANAL_BB_TYPE_SWITCH )
-		r_anal2_handle_case_jump(anal, state, current_bb);
+		r_anal_ex_handle_case_jump(anal, state, current_bb);
 	else if ( current_bb->type | R_ANAL_BB_TYPE_CALL )
-		r_anal2_handle_call(anal, state, current_bb);
+		r_anal_ex_handle_call(anal, state, current_bb);
 }
 
 R_API RList * recursive_descent_jmp( RAnal *anal, RAnalInfos *state, RAnalBlock *current_bb, ut64 jmp_addr ) {
@@ -789,149 +789,149 @@ R_API RList * recursive_descent_jmp( RAnal *anal, RAnalInfos *state, RAnalBlock 
 }
 
 /*
-static void r_anal2_handle_bb_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op){
-	if (bb->type2 & R_ANAL2_ILL_OP) {
+static void r_anal_ex_handle_bb_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op){
+	if (bb->type2 & R_ANAL_EX_ILL_OP) {
 		if (anal->cur && anal->cur->bb_ill_op) {
 			 anal->cur->bb_ill_op (anal, state, bb, op); 
 			 return;
 		}
 	}
-	if (bb->type2 & R_ANAL2_COND_OP) {
+	if (bb->type2 & R_ANAL_EX_COND_OP) {
 		if (anal->cur && anal->cur->bb_cond_op) {
 			anal->cur->bb_cond_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_UNK_OP) {
+	if (bb->type2 & R_ANAL_EX_UNK_OP) {
 		if (anal->cur && anal->cur->bb_unknown_op) {
 			 anal->cur->bb_unknown_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_NULL_OP) {
+	if (bb->type2 & R_ANAL_EX_NULL_OP) {
 		if (anal->cur && anal->cur->bb_null_op) {
 			anal->cur->bb_null_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_NOP_OP) {
+	if (bb->type2 & R_ANAL_EX_NOP_OP) {
 		if (anal->cur && anal->cur->bb_nop_op) {
 			anal->cur->bb_nop_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_REP_OP) {
+	if (bb->type2 & R_ANAL_EX_REP_OP) {
 		if (anal->cur && anal->cur->bb_rep_op) {
 			anal->cur->bb_rep_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_STORE_OP) {
+	if (bb->type2 & R_ANAL_EX_STORE_OP) {
 		if (anal->cur && anal->cur->bb_store_op) {
 			anal->cur->bb_store_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_LOAD_OP) {
+	if (bb->type2 & R_ANAL_EX_LOAD_OP) {
 		if (anal->cur && anal->cur->bb_load_op) {
 			anal->cur->bb_load_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_REG_OP) {
+	if (bb->type2 & R_ANAL_EX_REG_OP) {
 		if (anal->cur && anal->cur->bb_reg_op) {
 			anal->cur->bb_reg_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_OBJ_OP) {
+	if (bb->type2 & R_ANAL_EX_OBJ_OP) {
 		if (anal->cur && anal->cur->bb_obj_op) {
 			anal->cur->bb_obj_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_STACK_OP) {
+	if (bb->type2 & R_ANAL_EX_STACK_OP) {
 		if (anal->cur && anal->cur->bb_stack_op) {
 			anal->cur->bb_stack_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_BIN_OP) {
+	if (bb->type2 & R_ANAL_EX_BIN_OP) {
 		if (anal->cur && anal->cur->bb_bin_op) {
 			anal->cur->bb_bin_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_CODE_OP) {
+	if (bb->type2 & R_ANAL_EX_CODE_OP) {
 		if (anal->cur && anal->cur->bb_code_op) {
 			anal->cur->bb_code_op (anal, state, bb, op); 
 		}
 	}
-	if (bb->type2 & R_ANAL2_DATA_OP) {
+	if (bb->type2 & R_ANAL_EX_DATA_OP) {
 		if (anal->cur && anal->cur->bb_data_op) {
 			anal->cur->bb_data_op (anal, state, bb, op); 
 		}
 	}
 }
 
-static void r_anal2_handle_fn_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op){
+static void r_anal_ex_handle_fn_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op){
     
-    if (bb->type2 & R_ANAL2_ILL_OP) {
+    if (bb->type2 & R_ANAL_EX_ILL_OP) {
         if (anal->cur && anal->cur->bb_ill_op) {
              anal->cur->bb_ill_op (anal, state, bb, op); 
              return;
         }
     }
-    if (bb->type2 & R_ANAL2_COND_OP) {
+    if (bb->type2 & R_ANAL_EX_COND_OP) {
         if (anal->cur && anal->cur->bb_cond_op) {
             anal->cur->bb_cond_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_UNK_OP) {
+    if (bb->type2 & R_ANAL_EX_UNK_OP) {
         if (anal->cur && anal->cur->bb_unknown_op) {
              anal->cur->bb_unknown_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_NULL_OP) {
+    if (bb->type2 & R_ANAL_EX_NULL_OP) {
         if (anal->cur && anal->cur->bb_null_op) {
             anal->cur->bb_null_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_NOP_OP) {
+    if (bb->type2 & R_ANAL_EX_NOP_OP) {
         if (anal->cur && anal->cur->bb_nop_op) {
             anal->cur->bb_nop_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_REP_OP) {
+    if (bb->type2 & R_ANAL_EX_REP_OP) {
         if (anal->cur && anal->cur->bb_rep_op) {
             anal->cur->bb_rep_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_STORE_OP) {
+    if (bb->type2 & R_ANAL_EX_STORE_OP) {
         if (anal->cur && anal->cur->bb_store_op) {
             anal->cur->bb_store_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_LOAD_OP) {
+    if (bb->type2 & R_ANAL_EX_LOAD_OP) {
         if (anal->cur && anal->cur->bb_load_op) {
             anal->cur->bb_load_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_REG_OP) {
+    if (bb->type2 & R_ANAL_EX_REG_OP) {
         if (anal->cur && anal->cur->bb_reg_op) {
             anal->cur->bb_reg_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_OBJ_OP) {
+    if (bb->type2 & R_ANAL_EX_OBJ_OP) {
         if (anal->cur && anal->cur->bb_obj_op) {
             anal->cur->bb_obj_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_STACK_OP) {
+    if (bb->type2 & R_ANAL_EX_STACK_OP) {
         if (anal->cur && anal->cur->bb_stack_op) {
             anal->cur->bb_stack_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_BIN_OP) {
+    if (bb->type2 & R_ANAL_EX_BIN_OP) {
         if (anal->cur && anal->cur->bb_bin_op) {
             anal->cur->bb_bin_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_CODE_OP) {
+    if (bb->type2 & R_ANAL_EX_CODE_OP) {
         if (anal->cur && anal->cur->bb_code_op) {
             anal->cur->bb_code_op (anal, state, bb, op); 
         }
     }
-    if (bb->type2 & R_ANAL2_DATA_OP) {
+    if (bb->type2 & R_ANAL_EX_DATA_OP) {
         if (anal->cur && anal->cur->bb_data_op) {
             anal->cur->bb_data_op (anal, state, bb, op); 
         }
