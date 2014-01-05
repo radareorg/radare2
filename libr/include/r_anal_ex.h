@@ -5,9 +5,9 @@
 #define _INCLUDE_R_ANAL_EX_H_
 
 enum {
-	R_ANAL_EXEC_FMT,
-	R_ANAL_DATA_FMT,
-	R_ANAL_MIXED_FMT,
+	R_ANAL_EX_FMT_EXEC,
+	R_ANAL_EX_FMT_DATA,
+	R_ANAL_EX_FMT_MIXED,
 };
 
 typedef struct r_anal_ex_op_to_str_t {
@@ -117,7 +117,7 @@ enum {
 	R_ANAL_EX_OBJOP_CHECK = 1 << 1 | R_ANAL_EX_OBJ_OP,
 	R_ANAL_EX_OBJOP_NEW   = 1 << 2 | R_ANAL_EX_OBJ_OP,
 	R_ANAL_EX_OBJOP_DEL   = 1 << 3 | R_ANAL_EX_OBJ_OP,
-	R_ANAL_EX_OBJOP_SIZE   = 1 << 3 | R_ANAL_EX_OBJ_OP,
+	R_ANAL_EX_OBJOP_SIZE   = 1 << 4 | R_ANAL_EX_OBJ_OP,
 };
 
 

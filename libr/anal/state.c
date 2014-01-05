@@ -8,8 +8,8 @@
 
 #define IFDBG if(0)
 
-R_API RAnalInfos * r_anal_state_new (ut64 start, ut8* buffer, ut64 len) {
-	RAnalInfos *state = R_NEW0 (RAnalInfos);
+R_API RAnalState * r_anal_state_new (ut64 start, ut8* buffer, ut64 len) {
+	RAnalState *state = R_NEW0 (RAnalState);
 	state->start = start;
 	state->end = start + len;
 	state->buffer = buffer;
@@ -26,11 +26,11 @@ R_API RAnalInfos * r_anal_state_new (ut64 start, ut8* buffer, ut64 len) {
 	return state;
 }
 
-R_API void r_anal_state_set_depth(RAnalInfos *state, ut32 depth) {
+R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth) {
 	state->current_depth = depth;
 }
 
-R_API void r_anal_state_insert_bb (RAnalInfos* state, RAnalBlock *bb) {
+R_API void r_anal_state_insert_bb (RAnalState* state, RAnalBlock *bb) {
 	/*if (r_anal_state_need_rehash (state, bb)) {
 		// XXX - do i ever need to rehash the hashtable?
 		//state->ht_sz <<= 1;
@@ -55,7 +55,7 @@ R_API void r_anal_state_insert_bb (RAnalInfos* state, RAnalBlock *bb) {
 	}
 }
 /*
-R_API int r_anal_state_need_rehash (RAnalInfos* state, RAnalBlock *bb) {
+R_API int r_anal_state_need_rehash (RAnalState* state, RAnalBlock *bb) {
 	/*
 	 *   Return 0 if no rehash is needed, otherwise return 1
 	 * /
@@ -68,7 +68,7 @@ R_API int r_anal_state_need_rehash (RAnalInfos* state, RAnalBlock *bb) {
 	return 0;
 }
 */
-R_API RAnalBlock * r_anal_state_search_bb (RAnalInfos* state, ut64 addr) {
+R_API RAnalBlock * r_anal_state_search_bb (RAnalState* state, ut64 addr) {
 	/*
 	 *   Return 0 if no rehash is needed, otherwise return 1
 	 */
@@ -76,13 +76,13 @@ R_API RAnalBlock * r_anal_state_search_bb (RAnalInfos* state, ut64 addr) {
 	return tmp_bb;
 }
 
-R_API void r_anal_state_free (RAnalInfos * state) {
+R_API void r_anal_state_free (RAnalState * state) {
 	r_list_free(state->bbs);
 	r_hashtable64_free(state->ht);
 	free(state);
 }
 
-R_API ut64 r_anal_state_get_len (RAnalInfos *state, ut64 addr) {
+R_API ut64 r_anal_state_get_len (RAnalState *state, ut64 addr) {
 	ut64 result = 0;
 	if (r_anal_state_addr_is_valid (state, addr)) {
 		result = state->len - (addr - state->start);
@@ -90,7 +90,7 @@ R_API ut64 r_anal_state_get_len (RAnalInfos *state, ut64 addr) {
 	return result;
 }
 
-R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalInfos *state, ut64 addr) {
+R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalState *state, ut64 addr) {
 	if (r_anal_state_addr_is_valid (state, addr)) {
 		ut64 offset = addr - state->start;
 		return state->buffer+offset;
@@ -98,7 +98,7 @@ R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalInfos *state, ut64 addr) {
 	return NULL;
 }
 
-R_API int r_anal_state_addr_is_valid (RAnalInfos *state, ut64 addr) {
+R_API int r_anal_state_addr_is_valid (RAnalState *state, ut64 addr) {
 	int result = R_FALSE;
 	if (addr < state->end  && addr >= state->start) {
 		result = R_TRUE;
@@ -106,7 +106,7 @@ R_API int r_anal_state_addr_is_valid (RAnalInfos *state, ut64 addr) {
 	return result;
 }
 
-R_API void r_anal_state_merge_bb_list (RAnalInfos *state, RList* bbs) {
+R_API void r_anal_state_merge_bb_list (RAnalState *state, RList* bbs) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (bbs, iter, bb) {

@@ -22,32 +22,32 @@ typedef struct r_anal_ex_java_lin_sweep {
 
 static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length);
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJavaField *method);
-static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalInfos *state);
+static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state);
 
 static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len);
 //static int java_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype);
 //static int java_fn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype);
 
-static void java_recursive_descent(RAnal *anal, RAnalInfos *state, ut64 addr);
-static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state);
+static void java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr);
+static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state);
 
-static void java_linear_sweep(RAnal *anal, RAnalInfos *state, ut64 addr);
-static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state);
-static int java_post_anal_linear_sweep(RAnal *anal, RAnalInfos *state);
+static void java_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr);
+static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state);
+static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state);
 
 
 
 static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int depth);
 
-static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalInfos *state, ut64 addr);
-static RAnalBlock * java_bb_from_buffer(RAnal *anal, RAnalInfos *state, ut64 addr);
-static RAnalFunction * java_fn_from_buffer(RAnal *anal, RAnalInfos *state, ut64 addr);
+static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
+static RAnalBlock * java_bb_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
+static RAnalFunction * java_fn_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
 
 static int check_addr_in_code (RBinJavaField *method, ut64 addr);
 static int check_addr_less_end (RBinJavaField *method, ut64 addr);
 static int check_addr_less_start (RBinJavaField *method, ut64 addr);
 
-static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalInfos *state, ut64 addr);
+static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr);
 
 static int check_addr_less_end (RBinJavaField *method, ut64 addr) {
 	ut64 end = r_bin_java_get_method_code_size (method);
@@ -69,7 +69,7 @@ static int check_addr_less_start (RBinJavaField *method, ut64 addr) {
 }
 
 
-static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
     RAnalBlock *current_head = state && state->current_bb_head ? state->current_bb_head : NULL;
 	if (current_head && state->current_bb && 
 		state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
@@ -80,7 +80,7 @@ static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalInfos *state
 	return R_ANAL_RET_END;
 }
 
-static void java_recursive_descent(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalBlock *bb = state->current_bb;
 	RAnalBlock *current_head = state->current_bb_head;
 	if (current_head && state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
@@ -105,7 +105,7 @@ static void java_recursive_descent(RAnal *anal, RAnalInfos *state, ut64 addr) {
 	// if (bb->type2 & R_ANAL_EX_DATA_OP)  handle_bb_data_op (anal, state);
 }
 
-static void java_linear_sweep(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void java_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalBlock *bb = state->current_bb;
 	if (state->current_bb_head && state->current_bb->type & R_ANAL_BB_TYPE_TAIL) {
 		//r_anal_ex_update_bb_cfg_head_tail (state->current_bb_head, state->current_bb_head, state->current_bb);
@@ -129,7 +129,7 @@ static void java_linear_sweep(RAnal *anal, RAnalInfos *state, ut64 addr) {
 	// if (bb->type2 & R_ANAL_EX_DATA_OP)  handle_bb_data_op (anal, state);
 }
 
-static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
+static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 
 	ut32 ranal_control_type = -1;
 	RAnalFunction *fcn = state->current_fcn;
@@ -257,7 +257,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalInfos *state) {
 	return result;
 }
 
-static int java_post_anal_linear_sweep(RAnal *anal, RAnalInfos *state) {
+static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state) {
 	RAnalJavaLinearSweep *nodes = state->user_state;
 	RAnalCaseOp *caseop;
 	RListIter *iter;
@@ -288,7 +288,7 @@ static int java_post_anal_linear_sweep(RAnal *anal, RAnalInfos *state) {
 }
 
 
-static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalInfos *state) {
+static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 	ut64 * naddr;
 	ut32 ranal_control_type = -1;
 	RAnalFunction *fcn = state->current_fcn;
@@ -378,7 +378,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	
 	char gen_name[1025];
 
-	RAnalInfos *state = NULL;
+	RAnalState *state = NULL;
 	int result = R_ANAL_RET_ERROR;
 	RAnalJavaLinearSweep *nodes;
 
@@ -452,7 +452,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJa
 	return result;
 }
 
-static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalInfos *state) {
+static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	ut64 bytes_consumed = 0;
 	int result = R_ANAL_RET_ERROR;
 	// deallocate niceties
@@ -638,7 +638,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	return op->size;
 }
 
-static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) {
 	
 	RAnalOp *op = r_anal_op_new();
 	/* get opcode size */
@@ -720,21 +720,21 @@ struct r_lib_struct_t radare_plugin = {
 };
 #endif
 /*
-static void r_anal_ex_handle_bb_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op);
-static void r_anal_ex_handle_control_flow(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
-static void r_anal_ex_handle_binary_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
-static void r_anal_ex_handle_case_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
-static void r_anal_ex_handle_call(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb);
-static void r_anal_ex_handle_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb, ut64 jump_to);
+static void r_anal_ex_handle_bb_cases(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op);
+static void r_anal_ex_handle_control_flow(RAnal *anal, RAnalState *state, RAnalBlock* current_bb);
+static void r_anal_ex_handle_binary_jump(RAnal *anal, RAnalState *state, RAnalBlock* current_bb);
+static void r_anal_ex_handle_case_jump(RAnal *anal, RAnalState *state, RAnalBlock* current_bb);
+static void r_anal_ex_handle_call(RAnal *anal, RAnalState *state, RAnalBlock* current_bb);
+static void r_anal_ex_handle_jump(RAnal *anal, RAnalState *state, RAnalBlock* current_bb, ut64 jump_to);
 
 
 
-R_API void r_anal_ex_handle_binary_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb) {
+R_API void r_anal_ex_handle_binary_jump(RAnal *anal, RAnalState *state, RAnalBlock* current_bb) {
 	r_anal_ex_handle_jump( anal, state, current_bb, current_bb->jump );
 	r_anal_ex_handle_jump( anal, state, current_bb, current_bb->fail );
 }
 
-R_API void r_anal_ex_handle_case_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb ) {
+R_API void r_anal_ex_handle_case_jump(RAnal *anal, RAnalState *state, RAnalBlock* current_bb ) {
 	// TODO parse switch caseops
 	// for each caseop in the bb->switch_op {
 	//	  ut64 jmp_addr = caseop->jump
@@ -748,14 +748,14 @@ R_API void r_anal_ex_handle_case_jump(RAnal *anal, RAnalInfos *state, RAnalBlock
 	// }
 }
 
-R_API void r_anal_ex_handle_jump(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb, ut64 jump_to) {
+R_API void r_anal_ex_handle_jump(RAnal *anal, RAnalState *state, RAnalBlock* current_bb, ut64 jump_to) {
 	RList * jmp_list = recursive_descent_jmp( anal, state, current_bb, jump_to );
 	if ( jmp_list ){
 		r_anal_state_merge_bb_list (state, jmp_list);
 	}
 }
 
-R_API void r_anal_ex_handle_call(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb) {
+R_API void r_anal_ex_handle_call(RAnal *anal, RAnalState *state, RAnalBlock* current_bb) {
 	RList * caller_list = recursive_descent_jmp( anal, state, current_bb, 0/*jump_to* / );
 	if ( caller_list ){
 		// TODO merge results
@@ -764,7 +764,7 @@ R_API void r_anal_ex_handle_call(RAnal *anal, RAnalInfos *state, RAnalBlock* cur
 	}
 }
 
-R_API void r_anal_ex_handle_control_flow(RAnal *anal, RAnalInfos *state, RAnalBlock* current_bb ) {
+R_API void r_anal_ex_handle_control_flow(RAnal *anal, RAnalState *state, RAnalBlock* current_bb ) {
 		
 	if ( current_bb->type | R_ANAL_BB_TYPE_JMP )		 
 		r_anal_ex_handle_binary_jump(anal, state, current_bb);
@@ -774,7 +774,7 @@ R_API void r_anal_ex_handle_control_flow(RAnal *anal, RAnalInfos *state, RAnalBl
 		r_anal_ex_handle_call(anal, state, current_bb);
 }
 
-R_API RList * recursive_descent_jmp( RAnal *anal, RAnalInfos *state, RAnalBlock *current_bb, ut64 jmp_addr ) {
+R_API RList * recursive_descent_jmp( RAnal *anal, RAnalState *state, RAnalBlock *current_bb, ut64 jmp_addr ) {
 	ut64 jmp_len = 0;
 	RList *jmp_list = NULL;
 	// jmp and recurse through the bb
@@ -789,7 +789,7 @@ R_API RList * recursive_descent_jmp( RAnal *anal, RAnalInfos *state, RAnalBlock 
 }
 
 /*
-static void r_anal_ex_handle_bb_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op){
+static void r_anal_ex_handle_bb_cases(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op){
 	if (bb->type2 & R_ANAL_EX_ILL_OP) {
 		if (anal->cur && anal->cur->bb_ill_op) {
 			 anal->cur->bb_ill_op (anal, state, bb, op); 
@@ -863,7 +863,7 @@ static void r_anal_ex_handle_bb_cases(RAnal *anal, RAnalInfos *state, RAnalBlock
 	}
 }
 
-static void r_anal_ex_handle_fn_cases(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op){
+static void r_anal_ex_handle_fn_cases(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op){
     
     if (bb->type2 & R_ANAL_EX_ILL_OP) {
         if (anal->cur && anal->cur->bb_ill_op) {
