@@ -1,7 +1,6 @@
 /* radare - Apache 2.0 - Copyright 2013 - Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_anal.h>
-#include <r_anal2.h>
 #include <r_util.h>
 #include <r_list.h>
 #include <r_io.h>
@@ -9,7 +8,7 @@
 
 #define IFDBG if(0)
 
-R_API RAnalInfos * r_anal2_state_new (ut64 start, ut8* buffer, ut64 len) {
+R_API RAnalInfos * r_anal_state_new (ut64 start, ut8* buffer, ut64 len) {
 	RAnalInfos *state = R_NEW0 (RAnalInfos);
 	state->start = start;
 	state->end = start + len;
@@ -27,18 +26,18 @@ R_API RAnalInfos * r_anal2_state_new (ut64 start, ut8* buffer, ut64 len) {
 	return state;
 }
 
-R_API void r_anal2_state_set_depth(RAnalInfos *state, ut32 depth) {
+R_API void r_anal_state_set_depth(RAnalInfos *state, ut32 depth) {
 	state->current_depth = depth;
 }
 
-R_API void r_anal2_state_insert_bb (RAnalInfos* state, RAnalBlock *bb) {
-	/*if (r_anal2_state_need_rehash (state, bb)) {
+R_API void r_anal_state_insert_bb (RAnalInfos* state, RAnalBlock *bb) {
+	/*if (r_anal_state_need_rehash (state, bb)) {
 		// XXX - do i ever need to rehash the hashtable?
 		//state->ht_sz <<= 1;
 		//r_hashtable64_rehash(state->ht, state->ht_sz);
 	}*/
 
-	if (r_anal2_state_search_bb (state, bb->addr) == NULL &&
+	if (r_anal_state_search_bb (state, bb->addr) == NULL &&
 		state->current_fcn) {
 		RHashTable64Entry *hte ;
 		RAnalBlock *tmp_bb;
@@ -56,7 +55,7 @@ R_API void r_anal2_state_insert_bb (RAnalInfos* state, RAnalBlock *bb) {
 	}
 }
 /*
-R_API int r_anal2_state_need_rehash (RAnalInfos* state, RAnalBlock *bb) {
+R_API int r_anal_state_need_rehash (RAnalInfos* state, RAnalBlock *bb) {
 	/*
 	 *   Return 0 if no rehash is needed, otherwise return 1
 	 * /
@@ -69,7 +68,7 @@ R_API int r_anal2_state_need_rehash (RAnalInfos* state, RAnalBlock *bb) {
 	return 0;
 }
 */
-R_API RAnalBlock * r_anal2_state_search_bb (RAnalInfos* state, ut64 addr) {
+R_API RAnalBlock * r_anal_state_search_bb (RAnalInfos* state, ut64 addr) {
 	/*
 	 *   Return 0 if no rehash is needed, otherwise return 1
 	 */
@@ -77,29 +76,29 @@ R_API RAnalBlock * r_anal2_state_search_bb (RAnalInfos* state, ut64 addr) {
 	return tmp_bb;
 }
 
-R_API void r_anal2_state_free (RAnalInfos * state) {
+R_API void r_anal_state_free (RAnalInfos * state) {
 	r_list_free(state->bbs);
 	r_hashtable64_free(state->ht);
 	free(state);
 }
 
-R_API ut64 r_anal2_state_get_len (RAnalInfos *state, ut64 addr) {
+R_API ut64 r_anal_state_get_len (RAnalInfos *state, ut64 addr) {
 	ut64 result = 0;
-	if (r_anal2_state_addr_is_valid (state, addr)) {
+	if (r_anal_state_addr_is_valid (state, addr)) {
 		result = state->len - (addr - state->start);
 	}
 	return result;
 }
 
-R_API const ut8 * r_anal2_state_get_buf_by_addr (RAnalInfos *state, ut64 addr) {
-	if (r_anal2_state_addr_is_valid (state, addr)) {
+R_API const ut8 * r_anal_state_get_buf_by_addr (RAnalInfos *state, ut64 addr) {
+	if (r_anal_state_addr_is_valid (state, addr)) {
 		ut64 offset = addr - state->start;
 		return state->buffer+offset;
 	}
 	return NULL;
 }
 
-R_API int r_anal2_state_addr_is_valid (RAnalInfos *state, ut64 addr) {
+R_API int r_anal_state_addr_is_valid (RAnalInfos *state, ut64 addr) {
 	int result = R_FALSE;
 	if (addr < state->end  && addr >= state->start) {
 		result = R_TRUE;
@@ -107,11 +106,11 @@ R_API int r_anal2_state_addr_is_valid (RAnalInfos *state, ut64 addr) {
 	return result;
 }
 
-R_API void r_anal2_state_merge_bb_list (RAnalInfos *state, RList* bbs) {
+R_API void r_anal_state_merge_bb_list (RAnalInfos *state, RList* bbs) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (bbs, iter, bb) {
 		IFDBG eprintf ("Inserting bb fron 0x%04x\n", bb->addr);
-		r_anal2_state_insert_bb (state, bb);
+		r_anal_state_insert_bb (state, bb);
 	}
 }
