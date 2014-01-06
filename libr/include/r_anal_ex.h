@@ -5,9 +5,9 @@
 #define _INCLUDE_R_ANAL_EX_H_
 
 enum {
-	R_ANAL_EXEC_FMT,
-	R_ANAL_DATA_FMT,
-	R_ANAL_MIXED_FMT,
+	R_ANAL_EX_FMT_EXEC,
+	R_ANAL_EX_FMT_DATA,
+	R_ANAL_EX_FMT_MIXED,
 };
 
 typedef struct r_anal_ex_op_to_str_t {
@@ -117,7 +117,7 @@ enum {
 	R_ANAL_EX_OBJOP_CHECK = 1 << 1 | R_ANAL_EX_OBJ_OP,
 	R_ANAL_EX_OBJOP_NEW   = 1 << 2 | R_ANAL_EX_OBJ_OP,
 	R_ANAL_EX_OBJOP_DEL   = 1 << 3 | R_ANAL_EX_OBJ_OP,
-	R_ANAL_EX_OBJOP_SIZE   = 1 << 3 | R_ANAL_EX_OBJ_OP,
+	R_ANAL_EX_OBJOP_SIZE   = 1 << 4 | R_ANAL_EX_OBJ_OP,
 };
 
 
@@ -291,7 +291,7 @@ enum {
 
 // BB and OP 
 R_API ut64 r_anal_ex_map_anal_ex_to_anal_op_type(ut64 ranal2_op_type);
-R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op);
+R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op);
 R_API int r_anal_ex_is_op_type_eop(ut64 x);
 
 R_API ut32 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type);
@@ -300,13 +300,13 @@ R_API ut32 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type);
  * is present, then that will be the algorithm used for analyzing the code 
  * or data
  */
-R_API RList * r_anal_ex_analyze( RAnal *anal, RAnalInfos *state, ut64 addr);
-R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalInfos *state, ut64 addr);
+R_API RList * r_anal_ex_analyze( RAnal *anal, RAnalState *state, ut64 addr);
+R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 addr);
 
 // BB and OP handling
 R_API void r_anal_ex_update_bb_cfg_head_tail( RAnalBlock *start, RAnalBlock * head, RAnalBlock * tail );
-R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalInfos *state, ut64 addr);
-R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalInfos *state, ut64 addr);
+R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr);
+R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr);
 R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op);
 
 // used to perform comparisons on BB to determine if BB are in same body

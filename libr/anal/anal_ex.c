@@ -10,17 +10,17 @@
 #define IFDBG if(0)
 
 
-static void r_anal_ex_perform_pre_anal(RAnal *anal, RAnalInfos *state, ut64 addr);
-static void r_anal_ex_perform_pre_anal_op_cb(RAnal *anal, RAnalInfos *state, ut64 addr);
-static void r_anal_ex_perform_pre_anal_bb_cb(RAnal *anal, RAnalInfos *state, ut64 addr);
-static void r_anal_ex_perform_pre_anal_fn_cb(RAnal *anal, RAnalInfos *state, ut64 addr);
+static void r_anal_ex_perform_pre_anal(RAnal *anal, RAnalState *state, ut64 addr);
+static void r_anal_ex_perform_pre_anal_op_cb(RAnal *anal, RAnalState *state, ut64 addr);
+static void r_anal_ex_perform_pre_anal_bb_cb(RAnal *anal, RAnalState *state, ut64 addr);
+static void r_anal_ex_perform_pre_anal_fn_cb(RAnal *anal, RAnalState *state, ut64 addr);
 
-static void r_anal_ex_perform_post_anal(RAnal *anal, RAnalInfos *state, ut64 addr);
-static void r_anal_ex_perform_post_anal_op_cb(RAnal *anal, RAnalInfos *state, ut64 addr);
-static void r_anal_ex_perform_post_anal_bb_cb(RAnal *anal, RAnalInfos *state, ut64 addr);
-static void r_anal_ex_perform_post_anal_fn_cb(RAnal *anal, RAnalInfos *state, ut64 addr);
+static void r_anal_ex_perform_post_anal(RAnal *anal, RAnalState *state, ut64 addr);
+static void r_anal_ex_perform_post_anal_op_cb(RAnal *anal, RAnalState *state, ut64 addr);
+static void r_anal_ex_perform_post_anal_bb_cb(RAnal *anal, RAnalState *state, ut64 addr);
+static void r_anal_ex_perform_post_anal_fn_cb(RAnal *anal, RAnalState *state, ut64 addr);
 
-static void r_anal_ex_perform_revisit_bb_cb(RAnal *anal, RAnalInfos *state, ut64 addr);
+static void r_anal_ex_perform_revisit_bb_cb(RAnal *anal, RAnalState *state, ut64 addr);
 
 ut64 extract_code_op(ut64 ranal2_op_type);
 ut64 extract_load_store_op(ut64 ranal2_op_type);
@@ -28,55 +28,55 @@ ut64 extract_unknown_op(ut64 ranal2_op_type);
 ut64 extract_bin_op(ut64 ranal2_op_type);
 
 
-static void r_anal_ex_perform_pre_anal(RAnal *anal, RAnalInfos *state, ut64 addr) {    
+static void r_anal_ex_perform_pre_anal(RAnal *anal, RAnalState *state, ut64 addr) {    
     if (anal->cur && anal->cur->pre_anal) {
 		anal->cur->pre_anal (anal, state, addr);
 	}
 }
 
-static void r_anal_ex_perform_pre_anal_op_cb(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void r_anal_ex_perform_pre_anal_op_cb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal->cur && anal->cur->pre_anal_op_cb) {
 		anal->cur->pre_anal_op_cb (anal, state, addr);
 	}
 }
 
-static void r_anal_ex_perform_pre_anal_bb_cb(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void r_anal_ex_perform_pre_anal_bb_cb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal->cur && anal->cur->pre_anal_bb_cb) {
 		anal->cur->pre_anal_bb_cb (anal, state, addr);
 	}
 }
 
-static void r_anal_ex_perform_pre_anal_fn_cb(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void r_anal_ex_perform_pre_anal_fn_cb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal->cur && anal->cur->pre_anal_fn_cb) {
 		anal->cur->pre_anal_fn_cb (anal, state, addr);
 	}
 }
 
-static void r_anal_ex_perform_post_anal_op_cb(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void r_anal_ex_perform_post_anal_op_cb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal->cur && anal->cur->post_anal_op_cb) {
 		anal->cur->post_anal_op_cb (anal, state, addr);
 	}
 }
 
-static void r_anal_ex_perform_post_anal_bb_cb(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void r_anal_ex_perform_post_anal_bb_cb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal->cur && anal->cur->post_anal_bb_cb) {
 		anal->cur->post_anal_bb_cb (anal, state, addr);
 	}
 }
 
-static void r_anal_ex_perform_post_anal_fn_cb(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void r_anal_ex_perform_post_anal_fn_cb(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal->cur && anal->cur->post_anal_fn_cb) {
 		anal->cur->post_anal_fn_cb (anal, state, addr);
 	}
 }
 
-static void r_anal_ex_perform_post_anal(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void r_anal_ex_perform_post_anal(RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal->cur && anal->cur->post_anal) {
 		anal->cur->post_anal (anal, state, addr);
 	}
 }
 
-static void r_anal_ex_perform_revisit_bb_cb(RAnal *anal, RAnalInfos *state, ut64 addr) {
+static void r_anal_ex_perform_revisit_bb_cb(RAnal *anal, RAnalState *state, ut64 addr) {
     if (anal->cur && anal->cur->revisit_bb_anal) {
         anal->cur->revisit_bb_anal (anal, state, addr);
     }
@@ -105,7 +105,8 @@ R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op) {
 	RAnalCaseOp *caseop = NULL;
 
 	if ( op->switch_op ) {
-		bb->switch_op = r_anal_switch_op_init (op->switch_op->addr, 
+		
+		bb->switch_op = r_anal_switch_op_new (op->switch_op->addr, 
 											op->switch_op->min_val, 
 											op->switch_op->max_val);
 
@@ -116,7 +117,7 @@ R_API void r_anal_ex_clone_op_switch_to_bb (RAnalBlock *bb, RAnalOp *op) {
 	}
 }
 
-R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalInfos *state, ut64 addr) {
+R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalOp *current_op = state->current_op;
 	const ut8 * data;
 	// current_op set in a prior stage
@@ -148,7 +149,7 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalInfos *state, ut64 addr) {
 
 }
 
-R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalInfos *state, ut64 addr) {
+R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalBlock *current_bb = state->current_bb;
 	RAnalOp *op = state->current_op;
     static ut64 test = 0; 
@@ -199,14 +200,14 @@ R_API void r_anal_ex_update_bb_cfg_head_tail( RAnalBlock *start, RAnalBlock * he
 	}
 }
 
-R_API RList * r_anal_ex_perform_analysis( RAnal *anal, RAnalInfos *state, ut64 addr) {
+R_API RList * r_anal_ex_perform_analysis( RAnal *anal, RAnalState *state, ut64 addr) {
 	if (anal->cur && anal->cur->analysis_algorithm)
 		return anal->cur->analysis_algorithm (anal, state, addr);
 
 	return r_anal_ex_analysis_driver (anal, state, addr);
 }
 
-R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalInfos *state, ut64 addr ) {
+R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 addr ) {
 	ut64 bytes_consumed = 0, 
 		 len = r_anal_state_get_len (state, addr);
 
@@ -300,7 +301,7 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalInfos *state, ut64 ad
 	return bb_list;
 }
 
-R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalInfos *state, RAnalBlock *bb, RAnalOp *op) {
+R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op) {
 	ut64 cnd_jmp = (R_ANAL_EX_COND_OP | R_ANAL_EX_CODEOP_JMP);
 	bb->addr = op->addr;
 	bb->size = op->size;
