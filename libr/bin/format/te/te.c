@@ -280,7 +280,7 @@ struct r_bin_te_section_t* r_bin_te_get_sections(struct r_bin_te_obj_t* bin) {
 	}
 	for (i = 0; i < sections_count; i++) {
 		memcpy (sections[i].name, shdr[i].Name, TE_IMAGE_SIZEOF_NAME);
-		sections[i].name[TE_IMAGE_SIZEOF_NAME] = '\0';
+		sections[i].name[TE_IMAGE_SIZEOF_NAME - 1] = '\0';
 		sections[i].rva = shdr[i].VirtualAddress - r_bin_te_get_stripped_delta(bin);
 		sections[i].size = shdr[i].SizeOfRawData;
 		sections[i].vsize = shdr[i].VirtualSize;
