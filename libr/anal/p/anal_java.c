@@ -166,7 +166,8 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 				// visited some other time				
 				if (r_anal_state_search_bb (state, bb->jump) == NULL) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );	
-					bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
+					if (jmp_list)
+						bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
 				}
@@ -187,7 +188,8 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 				// visited some other time				
 				if (r_anal_state_search_bb (state, bb->jump) == NULL) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );	
-					bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
+					if (jmp_list)
+						bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
 				}
@@ -200,7 +202,8 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 				
 				if (r_anal_state_search_bb (state, bb->fail) == NULL) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );	
-					bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
+					if (jmp_list)
+						bb->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
 				}
@@ -229,6 +232,8 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					if (caseop) {
 						if (r_anal_state_addr_is_valid(state, caseop->jump) ) {
 							jmp_list = r_anal_ex_perform_analysis ( anal, state, caseop->jump );
+							if (jmp_list)
+								caseop->jumpbb = (RAnalBlock *) r_list_get_n(jmp_list, 0);
 							if (state->done == 1) {
 								IFDBG eprintf(" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 								state->done = 0;
@@ -454,6 +459,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJa
 
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	ut64 bytes_consumed = 0;
+	RList *bbs = NULL;
 	int result = R_ANAL_RET_ERROR;
 	// deallocate niceties
 	r_list_free(fcn->bbs);
@@ -462,9 +468,10 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	IFDBG eprintf("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n", fcn->name, fcn->addr, fcn->size);
 	
 	state->current_fcn = fcn;
-	r_anal_ex_perform_analysis (anal, state, fcn->addr);
+	// Not a resource leak.  Basic blocks should be stored in the state->fcn
+	bbs = r_anal_ex_perform_analysis (anal, state, fcn->addr);
     bytes_consumed = state->bytes_consumed;
-	IFDBG eprintf("analyze_method: Completed Parsing fcn %s @ 0x%08"PFMT64x", consumed %d"PFMT64d" bytes\n", fcn->name, fcn->addr, bytes_consumed);
+	IFDBG eprintf("analyze_method: Completed Parsing fcn %s @ 0x%08"PFMT64x", consumed %"PFMT64d" bytes\n", fcn->name, fcn->addr, bytes_consumed);
 	
 	return state->anal_ret_val;
 }

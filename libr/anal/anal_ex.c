@@ -122,7 +122,7 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
 	const ut8 * data;
 	// current_op set in a prior stage
 	if (current_op) return current_op;
-	IFDBG eprintf("[==] r_anal_ex_get_op: Parsing op @ 0x%04x\n", addr);
+	IFDBG eprintf("[==] r_anal_ex_get_op: Parsing op @ 0x%04"PFMT64x"\n", addr);
 	
 	if (anal->cur == NULL || 
 		(anal->cur->op_from_buffer == NULL && anal->cur->op == NULL) ) {
@@ -156,7 +156,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
 
 	// current_bb set before in a pre-analysis stage.
 	if (current_bb) return current_bb;
-	IFDBG eprintf("[==] r_anal_ex_get_bb: Parsing op @ 0x%04x\n", addr);
+	IFDBG eprintf("[==] r_anal_ex_get_bb: Parsing op @ 0x%04"PFMT64x"\n", addr);
 
 	if (r_anal_state_addr_is_valid(state, addr) && op == NULL)
 		op = r_anal_ex_get_op(anal, state, addr);
@@ -175,7 +175,7 @@ R_API RAnalBlock * r_anal_ex_get_bb(RAnal *anal, RAnalState *state, ut64 addr) {
     state->next_addr = addr + current_bb->op_sz;
     current_bb->op_sz = state->current_op->size;
     test += current_bb->op_sz;
-    IFDBG eprintf("[==] r_anal_ex_get_bb: op size @ 0x%04x seen 0x%04x\n", state->current_op->size, test);
+    IFDBG eprintf("[==] r_anal_ex_get_bb: op size @ 0x%04x seen 0x%04"PFMT64x"\n", state->current_op->size, test);
 
 	return current_bb;
 }
@@ -288,7 +288,7 @@ R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 ad
 		
 		state->current_op = NULL;
 		state->current_bb = NULL;
-		IFDBG eprintf ("[=*=] Bytes consumed overall: %d locally: %d of %d\n", state->bytes_consumed, bytes_consumed, len);
+		IFDBG eprintf ("[=*=] Bytes consumed overall: %"PFMT64d" locally: %"PFMT64d" of %"PFMT64d"\n", state->bytes_consumed, bytes_consumed, len);
 	}
 	
 	
