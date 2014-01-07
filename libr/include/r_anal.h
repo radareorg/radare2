@@ -643,6 +643,7 @@ typedef struct r_anal_bb_t {
 	RAnalSwitchOp *switch_op;
 	ut8 *op_bytes;
 	ut8 op_sz;
+	ut64 eflags;
 	struct r_anal_bb_t *head;
 	struct r_anal_bb_t *tail;
 	struct r_anal_bb_t *next;
