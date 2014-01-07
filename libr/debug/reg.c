@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_debug.h>
 #include <r_cons.h>
@@ -97,7 +97,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad) {
 						char *str = r_reg_get_bvalue (dbg->reg, item);
 						int len = strlen (str);
 						strcpy (whites, "        ");
-						if (len>9)len=9;
+						if (len>9) len=9;
 						else len = 9-len;
 						whites[len] = 0;
 						dbg->printf (" %s = %s%s", item->name,

@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <list.h>
+
 R_LIB_VERSION_HEADER(r_reg);
 
 enum {
@@ -29,6 +30,26 @@ enum {
 	R_REG_NAME_A3,
 	R_REG_NAME_LAST,
 };
+
+// TODO: use enum here?
+#define R_REG_COND_EQ 0
+#define R_REG_COND_NE 1
+#define R_REG_COND_CF 2
+#define R_REG_COND_CARRY 2
+#define R_REG_COND_NEG 3
+#define R_REG_COND_NEGATIVE 3
+#define R_REG_COND_OF 4
+#define R_REG_COND_OVERFLOW 4
+// unsigned
+#define R_REG_COND_HI 5
+#define R_REG_COND_HE 6
+#define R_REG_COND_LO 7
+#define R_REG_COND_LOE 8
+// signed
+#define R_REG_COND_GE 9
+#define R_REG_COND_GT 10
+#define R_REG_COND_LT 11
+#define R_REG_COND_LE 12
 
 typedef struct r_reg_item_t {
 	char *name;
@@ -58,6 +79,15 @@ typedef struct r_reg_t {
 	int iters;
 } RReg;
 
+typedef struct r_reg_flags_t {
+	int s; // sign, negative number (msb)
+	int z; // zero
+	int a; // half-carry adjust (if carry happens at nibble level)
+	int c; // carry
+	int o; // overflow
+	int p; // parity (lsb)
+} RRegFlags;
+
 
 #ifdef R_API
 R_API void r_reg_free(RReg *reg);
@@ -75,6 +105,11 @@ R_API RList *r_reg_get_list(RReg *reg, int type);
 /* XXX: dupped ?? */
 R_API int r_reg_type_by_name(const char *str);
 R_API int r_reg_get_name_idx(const char *type);
+
+R_API RRegItem* r_reg_cond_get (RReg *reg, const char *name);
+R_API int r_reg_cond_get_value (RReg *r, const char *name);
+R_API int r_reg_cond_bits (RReg *r, int type, RRegFlags *f);
+R_API int r_reg_cond (RReg *r, int type);
 
 /* value */
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item);

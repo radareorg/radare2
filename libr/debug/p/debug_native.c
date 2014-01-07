@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -406,7 +406,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	unsigned int inferior_thread_count = 0;
 
 // XXX: detach is noncontrollable continue
-        ptrace(PT_DETACH, pid, 0, 0);
+        ptrace (PT_DETACH, pid, 0, 0);
 #if 0
 	ptrace (PT_THUPDATE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
 	ptrace (PT_CONTINUE, pid, (void*)(size_t)1, 0); // 0 = send no signal TODO !! implement somewhere else
@@ -851,15 +851,16 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	xss	.32	160	0\n"
 	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
 	"gpr	flags	.16	144	0\n"
-	"flg	carry	.1	.1152	0\n"
-	"flg	flag_p	.1	.1153	0\n"
-	"flg	flag_a	.1	.1154	0\n"
-	"flg	zero	.1	.1155	0\n"
-	"flg	sign	.1	.1156	0\n"
-	"flg	flag_t	.1	.1157	0\n"
-	"flg	flag_i	.1	.1158	0\n"
-	"flg	flag_d	.1	.1159	0\n"
-	"flg	flag_o	.1	.1160	0\n"
+// TODO: rename to 'cf', 'zf', 'of' ...
+	"flg	cf	.1	.1152	0	carry\n"
+	"flg	pf	.1	.1153	0	parity\n"
+	"flg	af	.1	.1154	0	adjust\n"
+	"flg	zf	.1	.1155	0	zero\n"
+	"flg	sf	.1	.1156	0	sign\n"
+	"flg	tf	.1	.1157	0	trap\n"
+	"flg	if	.1	.1158	0	interrupt\n"
+	"flg	df	.1	.1159	0	direction\n"
+	"flg	of	.1	.1160	0	overflow\n"
 	"flg	flag_r	.1	.1161	0\n"
  	"drx	dr0	.32	0	0\n"
  	"drx	dr1	.32	4	0\n"
@@ -1010,8 +1011,20 @@ ut32 cpsr -- program status
 	"=a3	r3\n"
 	"gpr	lr	.32	56	0\n" // r14
 	"gpr	pc	.32	60	0\n" // r15
-	"gpr	cprsr	.32	64	0\n" // r16
-
+	"gpr	cpsr	.32	64	0\n" // r16
+	"flg	nf	.1	.512	0	sign\n" // msb bit of last op
+	"flg	zf	.1	.513	0	zero\n" // set if last op is 0
+/*
+A carry occurs:
+    if the result of an addition is greater than or equal to 232
+    if the result of a subtraction is positive or zero
+    as the result of an inline barrel shifter operation in a move or logical instruction.
+*/
+	"flg	cf	.1	.514	0	carry\n" // set if last op carries
+/*
+Overflow occurs if the result of an add, subtract, or compare is greater than or equal to 231, or less than -231.
+*/
+	"flg	vf	.1	.515	0	overflow\n" // set if overflows
 	"gpr	r0	.32	0	0\n"
 	"gpr	r1	.32	4	0\n"
 	"gpr	r2	.32	8	0\n"
@@ -1083,6 +1096,15 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	r15	.64	128	0\n"
 	"gpr	rip	.64	136	0\n"
 	"gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
+	"flg	cf	.1	1152	0	carry\n" //
+	"flg	pf	.1	1153	0	parity\n"
+	"flg	af	.1	1154	0	adjust\n"
+	"flg	zf	.1	1155	0	zero\n" //
+	"flg	sf	.1	1156	0	sign\n" //
+	"flg	tf	.1	1157	0	trap\n"
+	"flg	if	.1	1158	0	interrupt\n"
+	"flg	df	.1	1159	0	direction\n"
+	"flg	of	.1	1160	0	overflow\n" //
 	"seg	cs	.64	144	0\n"
 	"seg	fs	.64	152	0\n"
 	"seg	gs	.64	160	0\n"
@@ -1173,7 +1195,7 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	rsp	.64	160	0\n"
 	"seg	ss	.64	168	0\n"
 	);
-#elif __arm__
+#elif __arm__ && __linux__
 	return strdup (
 	"=pc	r15\n"
 	"=sp	r14\n" // XXX
@@ -1183,6 +1205,11 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"=a3	r3\n"
 	"gpr	lr	.32	56	0\n" // r14
 	"gpr	pc	.32	60	0\n" // r15
+	"gpr	cpsr	.32	64	0\n" // r16
+	"flg	nf	.1	.512	0	sign\n" // msb bit of last op
+	"flg	zf	.1	.513	0	zero\n" // set if last op is 0
+	"flg	cf	.1	.514	0	carry\n" // set if last op carries
+	"flg	vf	.1	.515	0	overflow\n" // set if overflows
 
 	"gpr	r0	.32	0	0\n"
 	"gpr	r1	.32	4	0\n"
