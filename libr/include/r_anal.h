@@ -514,6 +514,7 @@ typedef struct r_anal_case_obj_t {
 	ut32 cond; // TODO: treat like a regular condition
 	ut64 bb_ref_to;
 	ut64 bb_ref_from;
+	struct r_anal_bb_t *jumpbb;
 } RAnalCaseOp;
 
 
