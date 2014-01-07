@@ -152,7 +152,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 			lw-=l;
 			memset (pfx, ' ', sizeof (pfx));
 			if (lw>=sizeof (pfx)) lw = sizeof (pfx);
-			pfx[lw] = 0;
+			pfx[lw - 1] = 0;
 			if (lw>0) str = r_str_prefix (str, pfx);
 		}
 	}
