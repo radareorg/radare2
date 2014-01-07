@@ -29,7 +29,8 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	free (bb->fingerprint);
 	if (bb->diff)
 		r_anal_diff_free (bb->diff);
-	
+	if (bb->op_bytes)
+		free(bb->op_bytes);
 	if (bb->switch_op) {
 		r_anal_switch_op_free(bb->switch_op);
 	}
