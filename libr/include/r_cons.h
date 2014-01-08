@@ -137,6 +137,7 @@ typedef struct r_cons_t {
 	int widthfix;
 	int heightfix;
 	int truecolor; // 0 = ansi, 1 = rgb 256), 2 = truecolor (16M)
+	int null; // if set, does not show anything
 	RConsPalette pal;
 	struct r_line_t *line;
 	const char **vline;

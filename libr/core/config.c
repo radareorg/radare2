@@ -272,6 +272,13 @@ static int cb_cmdrepeat(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_scrnull(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cons->null = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_color(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -772,6 +779,7 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "scr.rgbcolor", "Use RGB colors (no available on windows)");
 	SETCB("scr.truecolor", "false", &cb_truecolor, "Manage color palette (0: ansi 16, 1: 256, 2: 16M)");
 	SETCB("scr.color", (core->print->flags&R_PRINT_FLAGS_COLOR)?"true":"false", &cb_color, "Enable/Disable colors");
+	SETCB("scr.null", "false", &cb_scrnull, "if set shows no output (disable console)");
 #if 0
 	{
 		const char *val;

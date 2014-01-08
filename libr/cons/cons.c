@@ -160,6 +160,7 @@ R_API RCons *r_cons_new () {
 	I.buffer_len = 0;
 	r_cons_get_size (NULL);
 	I.num = NULL;
+	I.null = 0;
 #if EMSCRIPTEN
 	/* do nothing here :? */
 #elif __UNIX__
@@ -310,6 +311,10 @@ R_API void r_cons_flush() {
 	const char *tee = I.teefile;
 	if (I.noflush)
 		return;
+	if (I.null) {
+		r_cons_reset ();
+		return;
+	}
 	r_cons_filter ();
 	if (I.is_interactive) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
@@ -345,12 +350,14 @@ R_API void r_cons_flush() {
 R_API void r_cons_visual_flush() {
 	if (I.noflush)
 		return;
+	if (!I.null) {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__
-	r_cons_w32_print ((ut8*)I.buffer, 1);
+		r_cons_w32_print ((ut8*)I.buffer, 1);
 #else
-	r_cons_visual_write (I.buffer);
+		r_cons_visual_write (I.buffer);
 #endif
+	}
 	r_cons_reset ();
 	return;
 }
@@ -362,6 +369,8 @@ R_API void r_cons_visual_write (char *buffer) {
 	const char *endptr;
 	char *nl, *ptr = buffer;
 
+	if (I.null)
+		return;
 	memset (&white, ' ', sizeof (white));
 
 	while ((nl = strchr (ptr, '\n'))) {
@@ -419,6 +428,7 @@ R_API void r_cons_printf(const char *format, ...) {
 	size_t size, written;
 	va_list ap;
 
+	if (I.null) return;
 	if (strchr (format, '%')) {
 		palloc (MOAR);
 		size = I.buffer_sz-I.buffer_len; /* remaining space in I.buffer */
@@ -447,7 +457,7 @@ R_API int r_cons_get_column() {
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API void r_cons_memcat(const char *str, int len) {
-	if (str && len>0) {
+	if (str && len>0 && !I.null) {
 		palloc (len+1);
 		memcpy (I.buffer+I.buffer_len, str, len);
 		I.buffer_len += len;
@@ -456,6 +466,7 @@ R_API void r_cons_memcat(const char *str, int len) {
 }
 
 R_API void r_cons_memset(char ch, int len) {
+	if (I.null) return;
 	if (len>0) {
 		palloc (len+1);
 		memset (I.buffer+I.buffer_len, ch, len+1);
@@ -465,14 +476,15 @@ R_API void r_cons_memset(char ch, int len) {
 
 R_API void r_cons_strcat(const char *str) {
 	int len;
-	if (!str) return;
+	if (!str||I.null) return;
 	len = strlen (str);
 	if (len>0)
 		r_cons_memcat (str, len);
 }
 
 R_API void r_cons_newline() {
-	r_cons_strcat ("\n");
+	if (!I.null)
+		r_cons_strcat ("\n");
 	//if (I.is_html) r_cons_strcat ("<br />\n");
 	//else r_cons_strcat ("\n");
 }
