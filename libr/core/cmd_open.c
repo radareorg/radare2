@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
@@ -146,7 +146,7 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case '?':
 	default:
-		eprintf ("|Usage: o[com- ] [file] ([offset])\n"
+		r_cons_printf ("|Usage: o[com- ] [file] ([offset])\n"
 		"| o                  list opened files\n"
 		"| oc [file]          open core file, like relaunching r2\n"
 		"| oo                 reopen current file (kill+fork in debugger)\n"

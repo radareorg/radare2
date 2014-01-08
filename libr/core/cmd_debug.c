@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static void dot_r_graph_traverse(RCore *core, RGraph *t) {
 	RGraphNode *n, *n2;
@@ -396,11 +396,11 @@ static int cmd_debug_map(RCore *core, const char *input) {
 }
 
 static void cmd_debug_reg(RCore *core, const char *str) {
+	int size, i, type = R_REG_TYPE_GPR;
+	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	struct r_reg_item_t *r;
 	const char *name;
 	char *arg;
-	int size, i, type = R_REG_TYPE_GPR;
-	int bits = (core->dbg->bits & R_SYS_BITS_64)? 64: 32;
 	switch (str[0]) {
 	case '?':
 		if (str[1]) {
@@ -412,26 +412,27 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			r_cons_printf ("0x%08"PFMT64x"\n", off); 
 			//r_reg_get_value (core->dbg->reg, r));
 		} else
-		eprintf ("Usage: dr[*] [type] [size] - get/set registers\n"
-			" dr         show 'gpr' registers\n"
-			" dr all     show all registers\n"
-			" dr flg 1   show flag registers ('flg' is type, see drt)\n"
-			" dr 16      show 16 bit registers\n"
-			" dr 32      show 32 bit registers\n"
-			" dr eax=33  set register value. eax = 33\n"
-			" dr?        display this help message\n"
-			" drs?       stack register states\n"
-			" drt        show all register types\n"
-			" drn [pc]   get register name for pc,sp,bp,a0-3\n"
-			" drd        show only different registers\n"
-			" dro        show previous (old) values of registers\n"
-			" dr=        show registers in columns\n"
-			" dr?eax     show value of eax register\n"
-			" .dr*       include common register values in flags\n"
-			" .dr-       unflag all registers\n"
-			" drp [file] load register metadata file\n"
-			" drp        display current register profile\n"
-			" drb [type] display hexdump of gpr arena (WIP)\n");
+		r_cons_printf ("|Usage: dr[*] [type] [size] - get/set registers\n"
+			"| dr         show 'gpr' registers\n"
+			"| dr all     show all registers\n"
+			"| dr flg 1   show flag registers ('flg' is type, see drt)\n"
+			"| dr 16      show 16 bit registers\n"
+			"| dr 32      show 32 bit registers\n"
+			"| dr eax=33  set register value. eax = 33\n"
+			"| dr?        display this help message\n"
+			"| drs?       stack register states\n"
+			"| drt        show all register types\n"
+			"| drn [pc]   get regname for pc,sp,bp,a0-3,zf,cf,of,sg\n"
+			"| drc [name] related to conditional flag registers\n"
+			"| drd        show only different registers\n"
+			"| dro        show previous (old) values of registers\n"
+			"| dr=        show registers in columns\n"
+			"| dr?eax     show value of eax register\n"
+			"| .dr*       include common register values in flags\n"
+			"| .dr-       unflag all registers\n"
+			"| drp [file] load register metadata file\n"
+			"| drp        display current register profile\n"
+			"| drb [type] display hexdump of gpr arena (WIP)\n");
 		// TODO: 'drs' to swap register arenas and display old register valuez
 		break;
 	case 'b':
@@ -440,6 +441,51 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		const ut8 *buf = r_reg_get_bytes (core->dbg->reg, R_REG_TYPE_GPR, &len);
 		//r_print_hexdump (core->print, 0LL, buf, len, 16, 16);
 		r_print_hexdump (core->print, 0LL, buf, len, 32, 4);
+		}
+		break;
+	case 'c':
+// TODO: set flag values with drc zf=1
+		{
+		RRegItem *r;
+		const char *name = str+1;
+		while (*name==' ') name++;
+		if (*name && name[1]) {
+			r = r_reg_cond_get (core->dbg->reg, name);
+			if (r) {
+				r_cons_printf ("%s\n", r->name);
+			} else {
+				int id = r_reg_cond_from_string (name);
+				RRegFlags* rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+				if (rf) {
+					int o = r_reg_cond_bits (core->dbg->reg, id, rf);
+					core->num->value = o;
+					// ORLY?
+					r_cons_printf ("%d\n", o);
+free (rf);
+				} else eprintf ("unknown conditional or flag register\n");
+			}
+		} else {
+			RRegFlags *rf = r_reg_cond_retrieve (core->dbg->reg, NULL);
+			if (rf) {
+				r_cons_printf ("| s:%d z:%d c:%d o:%d p:%d\n",
+					rf->s, rf->z, rf->c, rf->o, rf->p);
+				if (*name=='=') {
+					for (i=0; i<R_REG_COND_LAST; i++) {
+						r_cons_printf ("%s:%d ",
+							r_reg_cond_to_string (i),
+							r_reg_cond_bits (core->dbg->reg, i, rf));
+					}
+					r_cons_newline ();
+				} else {
+					for (i=0; i<R_REG_COND_LAST; i++) {
+						r_cons_printf ("%d %s\n",
+							r_reg_cond_bits (core->dbg->reg, i, rf),
+							r_reg_cond_to_string (i));
+					}
+				}
+				free (rf);
+			}
+		}
 		}
 		break;
 	case 's':
@@ -459,7 +505,8 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 				"drs    list register stack\n");
 			break;
 		default:
-			r_cons_printf ("%d\n", r_list_length (core->dbg->reg->regset[0].pool));
+			r_cons_printf ("%d\n", r_list_length (
+				core->dbg->reg->regset[0].pool));
 			break;
 		}
 		break;
@@ -480,7 +527,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		name = r_reg_get_name (core->dbg->reg, r_reg_get_name_idx (str+2));
 		if (name && *name)
 			r_cons_printf ("%s\n", name);
-		else eprintf ("Oops. try dn [pc|sp|bp|a0|a1|a2|a3]\n");
+		else eprintf ("Oops. try drn [pc|sp|bp|a0|a1|a2|a3|zf|sf|nf|of]\n");
 		break;
 	case 'd':
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, bits, 3); // XXX detect which one is current usage

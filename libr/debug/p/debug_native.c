@@ -510,6 +510,15 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	gs	.32	140	0\n"
 	"seg	fs	.32	144	0\n"
 	"gpr	eflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	cf	.1	.1536	0	carry\n"
+	"gpr	pf	.1	.1538	0	parity\n"
+	"gpr	af	.1	.1540	0	adjust\n"
+	"gpr	zf	.1	.1542	0	zero\n"
+	"gpr	sf	.1	.1543	0	sign\n"
+	"gpr	tf	.1	.1544	0	trap\n"
+	"gpr	if	.1	.1545	0	interrupt\n"
+	"gpr	df	.1	.1546	0	direction\n"
+	"gpr	of	.1	.1547	0	overflow\n"
 	"seg	ss	.32	200	0\n"
 	/* +512 bytes for maximum supoprted extension extended registers */
 	);
@@ -547,7 +556,18 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	ds	.32	152	0\n"
 	"seg	gs	.32	140	0\n"
 	"seg	fs	.32	144	0\n"
-	"gpr	rflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	flags	.16	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	eflags	.32	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	rflags	.64	192	0	c1p.a.zstido.n.rv\n" // XXX must be flg
+	"gpr	cf	.1	.1536	0	carry\n"
+	"gpr	pf	.1	.1538	0	parity\n"
+	"gpr	af	.1	.1540	0	adjust\n"
+	"gpr	zf	.1	.1542	0	zero\n"
+	"gpr	sf	.1	.1543	0	sign\n"
+	"gpr	tf	.1	.1544	0	trap\n"
+	"gpr	if	.1	.1545	0	interrupt\n"
+	"gpr	df	.1	.1546	0	direction\n"
+	"gpr	of	.1	.1547	0	overflow\n"
 	"seg	ss	.32	200	0\n"
 	/* +512 bytes for maximum supoprted extension extended registers */
 	);
@@ -672,6 +692,15 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	eip	.32	32	0\n"
 	"gpr	ip	.16	32	0\n"
 	"gpr	eflags	.32	36	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.288	0	carry\n"
+	"gpr	pf	.1	.290	0	parity\n"
+	"gpr	af	.1	.292	0	adjust\n"
+	"gpr	zf	.1	.294	0	zero\n"
+	"gpr	sf	.1	.295	0	sign\n"
+	"gpr	tf	.1	.296	0	trap\n"
+	"gpr	if	.1	.297	0	interrupt\n"
+	"gpr	df	.1	.298	0	direction\n"
+	"gpr	of	.1	.299	0	overflow\n"
 	"seg	cs	.32	40	0\n"
 	"seg	ss	.32	44	0\n"
 	"seg	ds	.32	48	0\n"
@@ -721,6 +750,17 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	ip	.16	52	0\n"
 	"seg	cs	.32	56	0\n"
 	"gpr	eflags	.32	60	0	c1p.a.zstido.n.rv\n"
+
+	"gpr	cf	.1	.480	0	carry\n"
+	"gpr	pf	.1	.482	0	parity\n"
+	"gpr	af	.1	.484	0	adjust\n"
+	"gpr	zf	.1	.486	0	zero\n"
+	"gpr	sf	.1	.487	0	sign\n"
+	"gpr	tf	.1	.488	0	trap\n"
+	"gpr	if	.1	.489	0	interrupt\n"
+	"gpr	df	.1	.490	0	direction\n"
+	"gpr	of	.1	.491	0	overflow\n"
+
 	"gpr	esp	.32	64	0\n"
 	"gpr	sp	.16	64	0\n"
 	"seg	ss	.32	68	0\n"
@@ -817,6 +857,10 @@ if (dbg->bits & R_SYS_BITS_32) {
  	"=a1	ebx\n"
  	"=a2	ecx\n"
  	"=a3	edi\n"
+ 	"=zf	zf\n"
+ 	"=sf	sf\n"
+ 	"=of	of\n"
+ 	"=cf	cf\n"
 	"gpr	eip	.32	128	0\n"
 	"gpr	ip	.16	128	0\n"
 	"gpr	oeax	.32	120	0\n"
@@ -849,19 +893,18 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	xcs	.32	136	0\n"
 	"seg	cs	.16	136	0\n"
 	"seg	xss	.32	160	0\n"
-	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
 	"gpr	flags	.16	144	0\n"
-// TODO: rename to 'cf', 'zf', 'of' ...
-	"flg	cf	.1	.1152	0	carry\n"
-	"flg	pf	.1	.1153	0	parity\n"
-	"flg	af	.1	.1154	0	adjust\n"
-	"flg	zf	.1	.1155	0	zero\n"
-	"flg	sf	.1	.1156	0	sign\n"
-	"flg	tf	.1	.1157	0	trap\n"
-	"flg	if	.1	.1158	0	interrupt\n"
-	"flg	df	.1	.1159	0	direction\n"
-	"flg	of	.1	.1160	0	overflow\n"
-	"flg	flag_r	.1	.1161	0\n"
+	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
+	"gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.1152	0	carry\n"
+	"gpr	pf	.1	.1154	0	parity\n"
+	"gpr	af	.1	.1156	0	adjust\n"
+	"gpr	zf	.1	.1158	0	zero\n"
+	"gpr	sf	.1	.1159	0	sign\n"
+	"gpr	tf	.1	.1160	0	trap\n"
+	"gpr	if	.1	.1161	0	interrupt\n"
+	"gpr	df	.1	.1162	0	direction\n"
+	"gpr	of	.1	.1163	0	overflow\n"
  	"drx	dr0	.32	0	0\n"
  	"drx	dr1	.32	4	0\n"
  	"drx	dr2	.32	8	0\n"
@@ -910,16 +953,15 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	xss	.32	52	0\n"
 	"gpr	eflags	.32	56	0	c1p.a.zstido.n.rv\n"
 	"gpr	flags	.16	56	0\n"
-	"flg	carry	.1	.448	0\n"
-	"flg	flag_p	.1	.449	0\n"
-	"flg	flag_a	.1	.450	0\n"
-	"flg	zero	.1	.451	0\n"
-	"flg	sign	.1	.452	0\n"
-	"flg	flag_t	.1	.453	0\n"
-	"flg	flag_i	.1	.454	0\n"
-	"flg	flag_d	.1	.455	0\n"
-	"flg	flag_o	.1	.456	0\n"
-	"flg	flag_r	.1	.457	0\n"
+	"gpr	cf	.1	.448	0	carry\n"
+	"gpr	pf	.1	.450	0	parity\n"
+	"gpr	af	.1	.452	0	adjust\n"
+	"gpr	zf	.1	.454	0	zero\n"
+	"gpr	sf	.1	.455	0	sign\n"
+	"gpr	tf	.1	.456	0	trap\n"
+	"gpr	if	.1	.457	0	interrupt\n"
+	"gpr	df	.1	.458	0	direction\n"
+	"gpr	of	.1	.459	0	overflow\n"
 	"drx	dr0	.32	0	0\n"
 	"drx	dr1	.32	4	0\n"
 	"drx	dr2	.32	8	0\n"
@@ -975,8 +1017,17 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	oeax	.64	120	0\n"
 	"gpr	rip	.64	128	0\n"
 	"seg	cs	.64	136	0\n"
-	//"flg	eflags	.64	144	0\n"
 	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.1152	0	carry\n"
+	"gpr	pf	.1	.1154	0	parity\n"
+	"gpr	af	.1	.1156	0	adjust\n"
+	"gpr	zf	.1	.1158	0	zero\n"
+	"gpr	sf	.1	.1159	0	sign\n"
+	"gpr	tf	.1	.1160	0	trap\n"
+	"gpr	if	.1	.1161	0	interrupt\n"
+	"gpr	df	.1	.1162	0	direction\n"
+	"gpr	of	.1	.1163	0	overflow\n"
+
 	"gpr	rsp	.64	152	0\n"
 	"seg	ss	.64	160	0\n"
 	"seg	fs_base	.64	168	0\n"
@@ -1009,22 +1060,26 @@ ut32 cpsr -- program status
 	"=a1	r1\n"
 	"=a2	r2\n"
 	"=a3	r3\n"
+ 	"=zf	zf\n"
+ 	"=sf	nf\n"
+ 	"=of	vf\n"
+ 	"=cf	cf\n"
 	"gpr	lr	.32	56	0\n" // r14
 	"gpr	pc	.32	60	0\n" // r15
 	"gpr	cpsr	.32	64	0\n" // r16
-	"flg	nf	.1	.512	0	sign\n" // msb bit of last op
-	"flg	zf	.1	.513	0	zero\n" // set if last op is 0
+	"gpr	nf	.1	.512	0	sign\n" // msb bit of last op
+	"gpr	zf	.1	.513	0	zero\n" // set if last op is 0
 /*
 A carry occurs:
     if the result of an addition is greater than or equal to 232
     if the result of a subtraction is positive or zero
     as the result of an inline barrel shifter operation in a move or logical instruction.
 */
-	"flg	cf	.1	.514	0	carry\n" // set if last op carries
+	"gpr	cf	.1	.514	0	carry\n" // set if last op carries
 /*
 Overflow occurs if the result of an add, subtract, or compare is greater than or equal to 231, or less than -231.
 */
-	"flg	vf	.1	.515	0	overflow\n" // set if overflows
+	"gpr	vf	.1	.515	0	overflow\n" // set if overflows
 	"gpr	r0	.32	0	0\n"
 	"gpr	r1	.32	4	0\n"
 	"gpr	r2	.32	8	0\n"
@@ -1052,6 +1107,10 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"=a1	ebx\n"
 	"=a2	ecx\n"
 	"=a3	edi\n"
+	"=zf	zf\n"
+	"=of	of\n"
+	"=sf	sf\n"
+	"=cf	cf\n"
 	"gpr	eax	.32	0	0\n"
 	"gpr	ebx	.32	4	0\n"
 	"gpr	ecx	.32	8	0\n"
@@ -1062,6 +1121,15 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	esp	.32	28	0\n"
 	"seg	ss	.32	32	0\n"
 	"gpr	eflags	.32	36	0	c1p.a.zstido.n.rv\n"
+	"gpr	cf	.1	.288	0	carry\n"
+	"gpr	pf	.1	.290	0	parity\n"
+	"gpr	af	.1	.292	0	adjust\n"
+	"gpr	zf	.1	.294	0	zero\n"
+	"gpr	sf	.1	.295	0	sign\n"
+	"gpr	tf	.1	.296	0	trap\n"
+	"gpr	if	.1	.297	0	interrupt\n"
+	"gpr	df	.1	.298	0	direction\n"
+	"gpr	of	.1	.299	0	overflow\n"
 	"gpr	eip	.32	40	0\n"
 	"seg	cs	.32	44	0\n"
 	"seg	ds	.32	48	0\n"
@@ -1078,6 +1146,10 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"=a1	rbx\n"
 	"=a2	rcx\n"
 	"=a3	rdx\n"
+	"=zf	zf\n"
+	"=of	of\n"
+	"=sf	sf\n"
+	"=cf	cf\n"
 	"gpr	rax	.64	8	0\n"
 	"gpr	rbx	.64	16	0\n"
 	"gpr	rcx	.64	24	0\n"
@@ -1095,16 +1167,17 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	r14	.64	120	0\n"
 	"gpr	r15	.64	128	0\n"
 	"gpr	rip	.64	136	0\n"
+	"gpr	eflags	.32	144	0	c1p.a.zstido.n.rv\n"
 	"gpr	rflags	.64	144	0	c1p.a.zstido.n.rv\n"
-	"flg	cf	.1	1152	0	carry\n" //
-	"flg	pf	.1	1153	0	parity\n"
-	"flg	af	.1	1154	0	adjust\n"
-	"flg	zf	.1	1155	0	zero\n" //
-	"flg	sf	.1	1156	0	sign\n" //
-	"flg	tf	.1	1157	0	trap\n"
-	"flg	if	.1	1158	0	interrupt\n"
-	"flg	df	.1	1159	0	direction\n"
-	"flg	of	.1	1160	0	overflow\n" //
+	"gpr	cf	.1	.1152	0	carry\n"
+	"gpr	pf	.1	.1154	0	parity\n"
+	"gpr	af	.1	.1156	0	adjust\n"
+	"gpr	zf	.1	.1158	0	zero\n"
+	"gpr	sf	.1	.1159	0	sign\n"
+	"gpr	tf	.1	.1160	0	trap\n"
+	"gpr	if	.1	.1161	0	interrupt\n"
+	"gpr	df	.1	.1162	0	direction\n"
+	"gpr	of	.1	.1163	0	overflow\n"
 	"seg	cs	.64	144	0\n"
 	"seg	fs	.64	152	0\n"
 	"seg	gs	.64	160	0\n"
@@ -1203,13 +1276,17 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"=a1	r1\n"
 	"=a2	r2\n"
 	"=a3	r3\n"
+ 	"=zf	zf\n"
+ 	"=sf	nf\n"
+ 	"=of	vf\n"
+ 	"=cf	cf\n"
 	"gpr	lr	.32	56	0\n" // r14
 	"gpr	pc	.32	60	0\n" // r15
 	"gpr	cpsr	.32	64	0\n" // r16
-	"flg	nf	.1	.512	0	sign\n" // msb bit of last op
-	"flg	zf	.1	.513	0	zero\n" // set if last op is 0
-	"flg	cf	.1	.514	0	carry\n" // set if last op carries
-	"flg	vf	.1	.515	0	overflow\n" // set if overflows
+	"gpr	nf	.1	.512	0	sign\n" // msb bit of last op
+	"gpr	zf	.1	.513	0	zero\n" // set if last op is 0
+	"gpr	cf	.1	.514	0	carry\n" // set if last op carries
+	"gpr	vf	.1	.515	0	overflow\n" // set if overflows
 
 	"gpr	r0	.32	0	0\n"
 	"gpr	r1	.32	4	0\n"
@@ -2375,13 +2452,13 @@ static RList *r_debug_desc_native_list (int pid) {
 	mib[2] = KERN_PROC_FILEDESC;
 	mib[3] = pid;
 
-	if (sysctl(mib, 4, NULL, &len, NULL, 0) != 0)
+	if (sysctl (mib, 4, NULL, &len, NULL, 0) != 0)
 		return NULL;
 	len = len * 4 / 3;
 	buf = malloc(len);
 	if (buf == NULL)
 		return (NULL);
-	if (sysctl(mib, 4, buf, &len, NULL, 0) != 0) {
+	if (sysctl (mib, 4, buf, &len, NULL, 0) != 0) {
 		free (buf);
 		return NULL;
 	}

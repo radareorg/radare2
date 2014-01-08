@@ -1,4 +1,4 @@
-/* Apache 2.0 - Copyright 2007-2013 - pancake and dso
+/* Apache 2.0 - Copyright 2007-2014 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
 */
 
@@ -324,11 +324,15 @@ static void add_cp_objs_to_sdb( RBinJavaObj *bin){
 	for (idx = 0; idx < bin->cp_count; idx++) {
 		cp_obj = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (bin, idx);
 		IFDBG eprintf("Adding %s.cp_obj.%d to the sdb.\n", class_name, cp_obj->metas->ord);
-		value = ( (RBinJavaCPTypeMetas *) cp_obj->metas->type_info)->allocs->stringify_obj (cp_obj);
-		sdb_apush(bin->kv, key, value, 0);
-		free(value);
+		if (cp_obj) {
+			value = ( (RBinJavaCPTypeMetas *)
+				cp_obj->metas->type_info)->
+					allocs->stringify_obj (cp_obj);
+			sdb_apush (bin->kv, key, value, 0);
+			free (value);
+		}
 	}
-	free(key);
+	free (key);
 }
 
 static void add_field_infos_to_sdb( RBinJavaObj *bin){
@@ -939,7 +943,8 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 
 	java_constant_info = &R_BIN_JAVA_CP_METAS[tag];
 	if (java_constant_info->tag == 0 || java_constant_info->tag == 2 ) {
-		java_obj->file_offset = offset;
+		if (java_obj)
+			java_obj->file_offset = offset;
 		return java_obj;
 	}
 	buf_sz += java_constant_info->len;

@@ -24,10 +24,16 @@ enum {
 	R_REG_NAME_SP, // stack pointer
 	R_REG_NAME_SR, // status register
 	R_REG_NAME_BP, // base pointer
+	/* args */
 	R_REG_NAME_A0, // arguments
 	R_REG_NAME_A1,
 	R_REG_NAME_A2,
 	R_REG_NAME_A3,
+	/* flags */
+	R_REG_NAME_ZF,
+	R_REG_NAME_SF,
+	R_REG_NAME_CF,
+	R_REG_NAME_OF,
 	R_REG_NAME_LAST,
 };
 
@@ -50,6 +56,8 @@ enum {
 #define R_REG_COND_GT 10
 #define R_REG_COND_LT 11
 #define R_REG_COND_LE 12
+#define R_REG_COND_LAST 13
+
 
 typedef struct r_reg_item_t {
 	char *name;
@@ -109,6 +117,7 @@ R_API int r_reg_get_name_idx(const char *type);
 R_API RRegItem* r_reg_cond_get (RReg *reg, const char *name);
 R_API int r_reg_cond_get_value (RReg *r, const char *name);
 R_API int r_reg_cond_bits (RReg *r, int type, RRegFlags *f);
+R_API RRegFlags *r_reg_cond_retrieve (RReg *r, RRegFlags *);
 R_API int r_reg_cond (RReg *r, int type);
 
 /* value */
@@ -131,6 +140,8 @@ R_API void r_reg_arena_swap(RReg *reg, int copy);
 R_API int r_reg_arena_push(RReg *reg);
 R_API void r_reg_arena_pop(RReg *reg);
 R_API ut64 r_reg_cmp(RReg *reg, RRegItem *item);
+R_API const char *r_reg_cond_to_string (int n);
+R_API int r_reg_cond_from_string(const char *str);
 #endif
 
 #endif

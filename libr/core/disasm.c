@@ -1251,7 +1251,6 @@ toro:
 		} else {
 			if (analop.ptr != UT64_MAX && analop.ptr) {
 				char msg[32];
-				ut8 *b = buf+idx;
 				int bsz = len-idx;
 				const char *kind = r_anal_data_kind (core->anal, analop.ptr, buf, bsz);
 				*msg = 0;
@@ -1260,7 +1259,6 @@ toro:
 					snprintf (msg+1, sizeof (msg)-2, "%s", buf+idx);
 					strcat (msg, "\"");
 				}
-				// analyze if its string
 				r_cons_printf (" ; %s 0x%08"PFMT64x" ", msg, analop.ptr);
 			}
 		}

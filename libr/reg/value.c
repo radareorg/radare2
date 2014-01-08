@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2012 pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -6,20 +6,40 @@
 /* XXX: reg get can be accessed using the print_format stuff */
 // This is the same as r_buf_set_bits, arenas can be r_buf
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
-	struct r_reg_set_t *regset;
+	RRegSet *regset;
 	ut32 v32;
 	ut16 v16;
 	ut8 v8;
 	int off;
 	ut64 ret = 0LL;
-	if (reg == NULL || item == NULL)
+	if (!reg || !item)
 		return 0LL;
 	off = BITS2BYTES (item->offset);
 	regset = &reg->regset[item->type];
-	if (item)
+#if 0
+	eprintf ("GET sz=%d off %d  off = %d %d\n",
+		item->size, off, item->offset, (item->offset/8));
+#endif
 	switch (item->size) {
 	case 1:
-		ret = (regset->arena->bytes[item->offset/8] & (1<<(item->offset%8)))?1:0;
+		ret = (regset->arena->bytes[item->offset/8] & \
+			(1<<(item->offset%8)))?1:0;
+#if 0
+off=144;
+eprintf ("..... %d  : %02x %02x %02x %02x\n",
+off,
+		(regset->arena->bytes[off]),
+		(regset->arena->bytes[off+1]),
+		(regset->arena->bytes[off+2]),
+		(regset->arena->bytes[off+3]));
+eprintf ("%d   :   %02x %02x %02x %02x\n",
+	(int)(item->offset/8),
+		(regset->arena->bytes[item->offset/8]),
+		(regset->arena->bytes[1+(item->offset/8)]),
+		(regset->arena->bytes[2+(item->offset/8)]),
+		(regset->arena->bytes[3+(item->offset/8)]));
+#endif
+
 		break;
 	case 8:
 		memcpy (&v8, regset->arena->bytes+off, 1);
@@ -30,6 +50,14 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		ret = v16;
 		break;
 	case 32:
+#if 0
+eprintf ("%d  : %02x %02x %02x %02x\n",
+off,
+		(regset->arena->bytes[off]),
+		(regset->arena->bytes[off+1]),
+		(regset->arena->bytes[off+2]),
+		(regset->arena->bytes[off+3]));
+#endif
 		memcpy (&v32, regset->arena->bytes+off, 4);
 		ret = v32;
 		break;
@@ -57,7 +85,7 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	case 32: v32 = (ut32)value; src = (ut8*)&v32; break;
 	case 16: v16 = (ut16)value; src = (ut8*)&v16; break;
 	case 8:  v8  = (ut8)value;  src = (ut8*)&v8;  break;
-	case 1: 
+	case 1:
 		if (value) {
 			ut8 * buf = reg->regset[item->type].arena->bytes + (item->offset/8);
 			int bit = (item->offset%8);
