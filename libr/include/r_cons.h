@@ -114,6 +114,8 @@ typedef struct r_cons_t {
 	int columns;
 	int force_rows;
 	int force_columns;
+	int fix_rows;
+	int fix_columns;
 	int breaked;
 	int noflush;
 	FILE *fdin; // FILE? and then int ??
@@ -134,8 +136,6 @@ typedef struct r_cons_t {
 	 * current window. If NULL or "" no pager is used. */
 	char *pager;
 	int blankline;
-	int widthfix;
-	int heightfix;
 	int truecolor; // 0 = ansi, 1 = rgb 256), 2 = truecolor (16M)
 	int null; // if set, does not show anything
 	RConsPalette pal;

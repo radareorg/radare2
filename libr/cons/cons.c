@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include <r_cons.h>
 #include <stdio.h>
@@ -142,15 +142,15 @@ R_API RCons *r_cons_new () {
 	I.event_interrupt = NULL;
 	I.blankline = R_TRUE;
 	I.teefile = NULL;
-	I.heightfix = 0;
-	I.widthfix = 0;
+	I.fix_columns = 0;
+	I.fix_rows = 0;
+	I.force_rows = 0;
+	I.force_columns = 0;
 	I.event_resize = NULL;
 	I.data = NULL;
 	I.event_data = NULL;
 	I.is_interactive = R_TRUE;
 	I.noflush = R_FALSE;
-	I.force_rows = 0;
-	I.force_columns = 0;
 	I.fdin = stdin;
 	I.fdout = 1;
 	I.breaked = R_FALSE;
@@ -406,12 +406,15 @@ R_API void r_cons_visual_write (char *buffer) {
 					r_cons_write (white, w);
 				}
 			}
+#if 1
 			// TRICK to empty columns.. maybe buggy in w32
 			if (r_mem_mem ((const ut8*)ptr, len, (const ut8*)"\x1b[0;0H", 6)) {
 				lines = I.rows;
 				r_cons_write (ptr, len);
 			}
+#endif
 		}
+//r_cons_write ("\r\n", 2);
 		lines--; // do not use last line
 		ptr = nl+1;
 	}
@@ -509,8 +512,6 @@ R_API int r_cons_get_size(int *rows) {
 		}
 		I.columns = win.ws_col;
 		I.rows = win.ws_row-1;
-		if (I.heightfix)
-			I.rows--;
 	} else {
 		I.columns = 80;
 		I.rows = 23;
@@ -528,9 +529,10 @@ R_API int r_cons_get_size(int *rows) {
 #endif
 	if (rows)
 		*rows = I.rows;
-	if (I.widthfix) I.columns--;
 	if (I.force_columns) I.columns = I.force_columns;
 	if (I.force_rows) I.rows = I.force_rows;
+	if (I.fix_columns) I.columns += I.fix_columns;
+	if (I.fix_rows) I.rows += I.fix_rows;
 	return I.columns;
 }
 

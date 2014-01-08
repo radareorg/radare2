@@ -302,15 +302,21 @@ static int cb_dbgbackend(void *user, void *data) {
 	return R_TRUE;
 }
 
-static int cb_fixheight(void *user, void *data) {
+static int cb_fixrows(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->heightfix = node->i_value;
+	r_cons_singleton ()->fix_rows = node->i_value;
 	return R_TRUE;
 }
 
-static int cb_fixwidth(void *user, void *data) {
+static int cb_fixcolumns(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton ()->widthfix = node->i_value;
+	r_cons_singleton ()->fix_columns = node->i_value;
+	return R_TRUE;
+}
+
+static int cb_rows(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->force_rows = node->i_value;
 	return R_TRUE;
 }
 
@@ -759,9 +765,10 @@ R_API int r_core_config_init(RCore *core) {
 	r_config_desc (cfg, "scr.fgets", "Use fgets instead of dietline for prompt input");
 	SETPREF("scr.colorops", "true", "Colorize in numbers/registers in opcodes");
 	SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
-	SETCB("scr.columns", "0", &cb_scrcolumns, "Set the columns number");
-	SETCB("scr.fixheight", "false", &cb_fixheight, "Workaround for Linux TTY");
-	SETCB("scr.fixwidth", "false", &cb_fixwidth, "Workaround for Prompt iOS ssh client");
+	SETICB("scr.columns", 0, &cb_scrcolumns, "Set the columns number");
+	SETICB("scr.rows", 0, &cb_rows, "Force specific console rows (height)");
+	SETICB("scr.fix_rows", 0, &cb_fixrows, "Workaround for Linux TTY");
+	SETICB("scr.fix_columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS ssh client");
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interractive mode");
 	SETCB("scr.html", "false", &cb_scrhtml, "If enabled disassembly uses HTML syntax");
 	SETCB("scr.nkey", "hit", &cb_scrnkey, "Select the seek mode in visual");
