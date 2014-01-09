@@ -15,11 +15,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	RBin *b = a->binb.bin;
 	if (b->cur.curplugin) {
 		if (!strcmp (b->cur.curplugin->name, "java")) { // XXX slow
-			obj = b->cur.bin_obj; //o; 
-			if (obj) r_java_set_obj (obj);
+			obj = b->cur.bin_obj; //o;
+			//eprintf("Handling: %s disasm.\n", b->cur.file);
 		}
 	}
-	return op->size = r_java_disasm (a->pc, buf,
+	return op->size = r_java_disasm (obj, a->pc, buf,
 		op->buf_asm, sizeof (op->buf_asm));
 }
 

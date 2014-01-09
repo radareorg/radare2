@@ -654,7 +654,7 @@ eprintf ("XXX: This command conflicts with 'ar'\n");
 			break;
 		default:
 			r_core_anal_fcn (core, core->offset, -1, R_ANAL_REF_TYPE_NULL,
-					r_config_get_i (core->config, "anal.depth"));
+			r_config_get_i (core->config, "anal.depth"));
 		}
 		break;
 	case 'g':
@@ -991,7 +991,7 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
   } else if (hint_bits) {
    r_config_set_i (core->config, "asm.bits", hint_bits);
    hint_bits = 0;
-  } 
+  }
   if (hint->arch)
    r_config_set (core->config, "asm.arch", hint->arch);
   if (hint->length)
@@ -1078,7 +1078,7 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 	default:
 		r_cons_printf (
 		"Usage: a[?adfFghoprsx]\n"
-		" a8 [hexpairs]    ; analyze bytes\n" 
+		" a8 [hexpairs]    ; analyze bytes\n"
 		" aa               ; analyze all (fcns + bbs)\n"
 		" ad               ; analyze data trampoline (wip)\n"
 		" ad [from] [to]   ; analyze data pointers to (from-to)\n"

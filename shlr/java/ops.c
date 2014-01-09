@@ -25,17 +25,17 @@ struct java_op java_ops[] = {
 
 	{ "bipush"         , 0x10, 2, R_ANAL_EX_LOAD_OP | R_ANAL_EX_STACK_OP | R_ANAL_EX_LDST_OP_PUSH},
 	{ "sipush"         , 0x11, 3, R_ANAL_EX_LOAD_OP | R_ANAL_EX_STACK_OP | R_ANAL_EX_LDST_OP_PUSH},
-	
+
 	{ "ldc"            , 0x12, 2, R_ANAL_EX_LDST_LOAD_FROM_CONST_INDIRECT_TO_STACK},
 	{ "ldc_w"          , 0x13, 3, R_ANAL_EX_LDST_LOAD_FROM_CONST_INDIRECT_TO_STACK},
 	{ "ldc2_w"         , 0x14, 3, R_ANAL_EX_LDST_LOAD_FROM_CONST_INDIRECT_TO_STACK},
-	
+
 	{ "iload"          , 0x15, 2, R_ANAL_EX_LDST_LOAD_FROM_VAR_INDIRECT_TO_STACK},
 	{ "lload"          , 0x16, 2, R_ANAL_EX_LDST_LOAD_FROM_VAR_INDIRECT_TO_STACK},
 	{ "fload"          , 0x17, 2, R_ANAL_EX_LDST_LOAD_FROM_VAR_INDIRECT_TO_STACK},
 	{ "dload"          , 0x18, 2, R_ANAL_EX_LDST_LOAD_FROM_VAR_INDIRECT_TO_STACK},
 	{ "aload"          , 0x19, 2, R_ANAL_EX_LDST_LOAD_FROM_VAR_INDIRECT_TO_STACK_REF},
-	
+
 	{ "iload_0"        , 0x1a, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "iload_1"        , 0x1b, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "iload_2"        , 0x1c, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
@@ -45,17 +45,17 @@ struct java_op java_ops[] = {
 	{ "lload_1"        , 0x1f, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "lload_2"        , 0x20, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "lload_3"        , 0x21, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
-	
+
 	{ "fload_0"        , 0x22, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "fload_1"        , 0x23, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "fload_2"        , 0x24, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "fload_3"        , 0x25, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
-	
+
 	{ "dload_0"        , 0x26, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "dload_1"        , 0x27, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "dload_2"        , 0x28, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
 	{ "dload_3"        , 0x29, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK},
-	
+
 	{ "aload_0"        , 0x2a, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK_REF},
 	{ "aload_1"        , 0x2b, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK_REF},
 	{ "aload_2"        , 0x2c, 1, R_ANAL_EX_LDST_LOAD_FROM_VAR_TO_STACK_REF},
@@ -69,38 +69,38 @@ struct java_op java_ops[] = {
 	{ "baload"         , 0x33, 1, R_ANAL_EX_LDST_LOAD_FROM_REF_INDIRECT_TO_STACK},
 	{ "caload"         , 0x34, 1, R_ANAL_EX_LDST_LOAD_FROM_REF_INDIRECT_TO_STACK},
 	{ "saload"         , 0x35, 1, R_ANAL_EX_LDST_LOAD_FROM_REF_INDIRECT_TO_STACK},
-	
+
 	{ "istore"        , 0x36,  1, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
 	{ "lstore"         , 0x37, 2, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
 	{ "fstore"         , 0x38, 2, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
 	{ "dstore"         , 0x39, 2, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
 	{ "astore"         , 0x3a, 2, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR_REF},
-	
+
 	{ "istore_0"       , 0x3b, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "istore_1"       , 0x3c, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "istore_2"       , 0x3d, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "istore_3"       , 0x3e, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
-	
+
 	{ "lstore_0"       , 0x3f, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "lstore_1"       , 0x40, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "lstore_2"       , 0x41, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "lstore_3"       , 0x42, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
-	
+
 	{ "fstore_0"       , 0x43, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "fstore_1"       , 0x44, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "fstore_2"       , 0x45, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "fstore_3"       , 0x46, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
-	
+
 	{ "dstore_0"       , 0x47, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "dstore_1"       , 0x48, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "dstore_2"       , 0x49, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
 	{ "dstore_3"       , 0x4a, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR},
-	
+
 	{ "astore_0"       , 0x4b, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR_REF},
 	{ "astore_1"       , 0x4c, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR_REF},
 	{ "astore_2"       , 0x4d, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR_REF},
 	{ "astore_3"       , 0x4e, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_TO_VAR_REF},
-	
+
 	{ "iastore"        , 0x4f, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_REF},
 	{ "lastore"        , 0x50, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_REF},
 	{ "fastore"        , 0x51, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_REF},
@@ -109,7 +109,7 @@ struct java_op java_ops[] = {
 	{ "bastore"        , 0x54, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_REF},
 	{ "castore"        , 0x55, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_REF},
 	{ "sastore"        , 0x56, 1, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_REF},
-	
+
 	{ "pop"            , 0x57, 1, R_ANAL_EX_STORE_OP | R_ANAL_EX_STACK_OP | R_ANAL_EX_LDST_OP_POP},
 	{ "pop2"           , 0x58, 1, R_ANAL_EX_STORE_OP | R_ANAL_EX_STACK_OP | R_ANAL_EX_LDST_OP_POP  | R_ANAL_EX_REP_OP},
 	{ "dup"            , 0x59, 1, R_ANAL_EX_LOAD_OP | R_ANAL_EX_STACK_OP | R_ANAL_EX_LDST_OP_PUSH | R_ANAL_EX_REP_OP},
@@ -118,9 +118,9 @@ struct java_op java_ops[] = {
 	{ "dup2"           , 0x5c, 1, R_ANAL_EX_LOAD_OP | R_ANAL_EX_STACK_OP | R_ANAL_EX_LDST_OP_PUSH | R_ANAL_EX_REP_OP},
 	{ "dup2_x1"        , 0x5d, 1, R_ANAL_EX_LOAD_OP | R_ANAL_EX_STACK_OP | R_ANAL_EX_LDST_OP_PUSH | R_ANAL_EX_REP_OP},
 	{ "dup2_x2"        , 0x5e, 1, R_ANAL_EX_LOAD_OP | R_ANAL_EX_STACK_OP | R_ANAL_EX_LDST_OP_PUSH | R_ANAL_EX_REP_OP},
-	
+
 	{ "swap"           , 0x5f, 1, R_ANAL_EX_BINOP_XCHG},
-	
+
 	{ "iadd"           , 0x60, 1, R_ANAL_EX_BINOP_ADD},
 	{ "ladd"           , 0x61, 1, R_ANAL_EX_BINOP_ADD},
 	{ "fadd"           , 0x62, 1, R_ANAL_EX_BINOP_ADD},
@@ -130,45 +130,45 @@ struct java_op java_ops[] = {
 	{ "lsub"           , 0x65, 1, R_ANAL_EX_BINOP_SUB},
 	{ "fsub"           , 0x66, 1, R_ANAL_EX_BINOP_SUB},
 	{ "dsub"           , 0x67, 1, R_ANAL_EX_BINOP_SUB},
-	
+
 	{ "imul"           , 0x68, 1, R_ANAL_EX_BINOP_MUL},
 	{ "lmul"           , 0x69, 1, R_ANAL_EX_BINOP_MUL},
 	{ "fmul"           , 0x6a, 1, R_ANAL_EX_BINOP_MUL},
 	{ "dmul"           , 0x6b, 1, R_ANAL_EX_BINOP_MUL},
-	
+
 	{ "idiv"           , 0x6c, 1, R_ANAL_EX_BINOP_DIV},
 	{ "ldiv"           , 0x6d, 1, R_ANAL_EX_BINOP_DIV},
 	{ "fdiv"           , 0x6e, 1, R_ANAL_EX_BINOP_DIV},
 	{ "ddiv"           , 0x6f, 1, R_ANAL_EX_BINOP_DIV},
-	
+
 	{ "irem"           , 0x70, 1, R_ANAL_EX_BINOP_MOD},
 	{ "lrem"           , 0x71, 1, R_ANAL_EX_BINOP_MOD},
 	{ "frem"           , 0x72, 1, R_ANAL_EX_BINOP_MOD},
 	{ "drem"           , 0x73, 1, R_ANAL_EX_BINOP_MOD},
-	
+
 	{ "ineg"           , 0x74, 1, R_ANAL_EX_BINOP_NOT},
 	{ "lneg"           , 0x75, 1, R_ANAL_EX_BINOP_NOT},
 	{ "fneg"           , 0x76, 1, R_ANAL_EX_BINOP_NOT},
 	{ "dneg"           , 0x77, 1, R_ANAL_EX_BINOP_NOT},
-	
+
 	{ "ishl"           , 0x78, 1, R_ANAL_EX_BINOP_SHL},
 	{ "lshl"           , 0x79, 1, R_ANAL_EX_BINOP_SHL},
 	{ "ishr"           , 0x7a, 1, R_ANAL_EX_BINOP_SHR},
 	{ "lshr"           , 0x7b, 1, R_ANAL_EX_BINOP_SHR},
 	{ "iushr"          , 0x7c, 1, R_ANAL_EX_BINOP_SHR},
 	{ "lushr"          , 0x7d, 1, R_ANAL_EX_BINOP_SHR},
-	
+
 	{ "iand"           , 0x7e, 1, R_ANAL_EX_BINOP_AND},
 	{ "land"           , 0x7f, 1, R_ANAL_EX_BINOP_AND},
-	
+
 	{ "ior"            , 0x80, 1, R_ANAL_EX_BINOP_OR},
 	{ "lor"            , 0x81, 1, R_ANAL_EX_BINOP_OR},
-	
+
 	{ "ixor"           , 0x82, 1, R_ANAL_EX_BINOP_XOR},
 	{ "lxor"           , 0x83, 1, R_ANAL_EX_BINOP_XOR},
-	
+
 	{ "iinc"           , 0x84, 3, R_ANAL_EX_BINOP_ADD},
-	
+
 	{ "i2l"            , 0x85, 1, R_ANAL_EX_OBJOP_CAST | R_ANAL_EX_OBJ_OP},
 	{ "i2f"            , 0x86, 1, R_ANAL_EX_OBJOP_CAST | R_ANAL_EX_OBJ_OP},
 	{ "i2d"            , 0x87, 1, R_ANAL_EX_OBJOP_CAST | R_ANAL_EX_OBJ_OP},
@@ -190,7 +190,7 @@ struct java_op java_ops[] = {
 	{ "fcmpg"          , 0x96, 1, R_ANAL_EX_BINOP_CMP},
 	{ "dcmpl"          , 0x97, 1, R_ANAL_EX_BINOP_CMP},
 	{ "dcmpg"          , 0x98, 1, R_ANAL_EX_BINOP_CMP},
-	
+
 	{ "ifeq"           , 0x99, 3, R_ANAL_EX_CODEOP_CJMP | R_ANAL_EX_COND_EQ},
 	{ "ifne"           , 0x9a, 3, R_ANAL_EX_CODEOP_CJMP | R_ANAL_EX_COND_NE},
 	{ "iflt"           , 0x9b, 3, R_ANAL_EX_CODEOP_CJMP | R_ANAL_EX_COND_LT},
@@ -208,7 +208,7 @@ struct java_op java_ops[] = {
 	{ "goto"           , 0xa7, 3, R_ANAL_EX_CODEOP_JMP},
 	{ "jsr"            , 0xa8, 3, R_ANAL_EX_CODEOP_CALL},
 	{ "ret"            , 0xa9, 2, R_ANAL_EX_CODEOP_RET},
-	
+
 	{ "tableswitch"    , 0xaa, 1, R_ANAL_EX_CODEOP_SWITCH},
 	{ "lookupswitch"   , 0xab, 1, R_ANAL_EX_CODEOP_SWITCH},
 

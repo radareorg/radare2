@@ -46,7 +46,6 @@ static RList* classes(RBinArch *arch) {
 }
 
 static RList* symbols(RBinArch *arch) {
-	IFDBG debug_dump_all_cp_obj((struct r_bin_java_obj_t*)arch->bin_obj);
 	return r_bin_java_get_symbols ((struct r_bin_java_obj_t*)arch->bin_obj);
 }
 
@@ -85,7 +84,6 @@ static int check(RBinArch *arch) {
 
 	if (arch && arch->buf && arch->buf->buf && arch->buf->length>10)
 	if (!memcmp (arch->buf->buf, "\xca\xfe\xba\xbe", 4)) {
-		ut16 major = (arch->buf->buf[8]<<8) | arch->buf->buf[7];
 		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
 		ret = R_TRUE;

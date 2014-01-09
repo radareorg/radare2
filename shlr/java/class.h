@@ -98,8 +98,8 @@ typedef struct {
 } RBinJavaAccessFlags;
 
 typedef enum{
-	R_BIN_JAVA_REF_UNKNOWN = 0, 
-	R_BIN_JAVA_REF_GETFIELD = 1, 
+	R_BIN_JAVA_REF_UNKNOWN = 0,
+	R_BIN_JAVA_REF_GETFIELD = 1,
 	R_BIN_JAVA_REF_GETSTATIC = 2,
 	R_BIN_JAVA_REF_PUTFIELD = 3,
 	R_BIN_JAVA_REF_PUTSTATIC = 4,
@@ -112,11 +112,11 @@ typedef enum{
 
 
 typedef enum{
-	R_BIN_JAVA_CP_NULL = 0, 
+	R_BIN_JAVA_CP_NULL = 0,
 	R_BIN_JAVA_CP_UTF8 = 1,
 	R_BIN_JAVA_CP_UNKNOWN = 2,
 	R_BIN_JAVA_CP_INTEGER = 3,
-	R_BIN_JAVA_CP_FLOAT = 4, 
+	R_BIN_JAVA_CP_FLOAT = 4,
 	R_BIN_JAVA_CP_LONG = 5,
 	R_BIN_JAVA_CP_DOUBLE = 6,
 	R_BIN_JAVA_CP_CLASS = 7,
@@ -135,13 +135,13 @@ typedef enum{
 
 typedef enum{
 	R_BIN_JAVA_STACK_FRAME_IMPLICIT = 0,
-	R_BIN_JAVA_STACK_FRAME_SAME, 
+	R_BIN_JAVA_STACK_FRAME_SAME,
 	R_BIN_JAVA_STACK_FRAME_SAME_LOCALS_1,
 	R_BIN_JAVA_STACK_FRAME_CHOP,
 	R_BIN_JAVA_STACK_FRAME_SAME_FRAME_EXTENDED,
 	R_BIN_JAVA_STACK_FRAME_APPEND,
 	R_BIN_JAVA_STACK_FRAME_FULL_FRAME,
-	R_BIN_JAVA_STACK_FRAME_RESERVED	
+	R_BIN_JAVA_STACK_FRAME_RESERVED
 }R_BIN_JAVA_STACK_FRAME_TYPE;
 
 
@@ -155,8 +155,8 @@ typedef enum {
 	R_BIN_JAVA_ATTR_TYPE_EXCEPTIONS_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_INNER_CLASSES_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_LINE_NUMBER_TABLE_ATTR,
-	R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TABLE_ATTR,	
-	R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TYPE_TABLE_ATTR,	
+	R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TABLE_ATTR,
+	R_BIN_JAVA_ATTR_TYPE_LOCAL_VARIABLE_TYPE_TABLE_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_RUNTIME_INVISIBLE_ANNOTATION_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_RUNTIME_INVISIBLE_PARAMETER_ANNOTATION_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_RUNTIME_VISIBLE_ANNOTATION_ATTR,
@@ -300,7 +300,7 @@ typedef struct  r_bin_java_cp_object_t {
 		RBinJavaCPTypeClass cp_class;
 		RBinJavaCPTypeMethodRef cp_method;
 		RBinJavaCPTypeFieldRef cp_field;
-		RBinJavaCPTypeInterfaceMethodRef cp_interface;	
+		RBinJavaCPTypeInterfaceMethodRef cp_interface;
 
 		RBinJavaCPTypeString cp_string;
 		RBinJavaCPTypeInteger cp_integer;
@@ -335,7 +335,7 @@ typedef struct r_bin_java_stack_map_frame_t { // attribute StackMap
 	RList* local_items;
 	ut32 number_of_stack_items;
 	// list of verification objects;
-	RList* stack_items;	
+	RList* stack_items;
 
 }RBinJavaStackMapFrame;
 
@@ -344,7 +344,7 @@ typedef struct r_bin_java_source_debugging_extension_attr_t {
 }RBinJavaSourceDebugExtensionAttr;
 
 
-typedef struct r_bin_java_enclosing_method_attr_t { 
+typedef struct r_bin_java_enclosing_method_attr_t {
 	ut16 class_idx;
 	ut16 method_idx;
 	char *class_name;
@@ -352,7 +352,7 @@ typedef struct r_bin_java_enclosing_method_attr_t {
 	char *method_descriptor;
 }RBinJavaEnclosingMethodAttr;
 
-typedef struct r_bin_java_boot_strap_arg_t{   
+typedef struct r_bin_java_boot_strap_arg_t{
 	ut64 file_offset;
 	ut64 size;
 	ut16 argument_info_idx;
@@ -360,7 +360,7 @@ typedef struct r_bin_java_boot_strap_arg_t{
 	RBinJavaCPTypeObj *argument_info_cp_obj;
 } RBinJavaBootStrapArgument;
 
-typedef struct r_bin_java_boot_strap_method_t{   
+typedef struct r_bin_java_boot_strap_method_t{
 	ut64 file_offset;
 	ut64 size;
 	ut16 bootstrap_method_ref;
@@ -370,7 +370,7 @@ typedef struct r_bin_java_boot_strap_method_t{
 } RBinJavaBootStrapMethod;
 
 
-typedef struct r_bin_java_boot_strap_methods_t{ 
+typedef struct r_bin_java_boot_strap_methods_t{
 	ut16 num_bootstrap_methods;
 	RList *bootstrap_methods;
 }RBinJavaBootstrapMethodsAttr;
@@ -436,7 +436,7 @@ typedef enum {
 typedef struct r_bin_java_element_value_t {
 	RBinJavaMetaInfo *metas;
 	ut64 size;
-	ut8 tag; 
+	ut8 tag;
 	ut64 file_offset;
 	union {
 		RBinJavaConstValue const_value;
@@ -457,26 +457,26 @@ typedef struct r_bin_java_element_value_pair_t{
 
 
 
-typedef struct r_bin_java_annotations_attr_t { 
+typedef struct r_bin_java_annotations_attr_t {
 	ut64 size;
 	ut16 num_annotations;
-	RList *annotations;	
+	RList *annotations;
 }RBinJavaAnnotationsArray;
 
 typedef RBinJavaAnnotationsArray RBinJavaRuntimeVisibleAnnotationsAttr;
 typedef RBinJavaAnnotationsArray RBinJavaRuntimeInvisibleAnnotationsAttr;
 typedef RBinJavaAnnotationsArray RBinJavaRuntimeParameterAnnotationsArray;
 
-typedef struct r_bin_java_parameter_annotation_attr_t { 
+typedef struct r_bin_java_parameter_annotation_attr_t {
 	ut8 num_parameters;
 	// RBinJavaRuntimeParameterAnnotationsArray
-	RList *parameter_annotations;	
+	RList *parameter_annotations;
 }RBinJavaRuntimeVisibleParameterAnnotationsAttr;
 
 typedef RBinJavaRuntimeVisibleParameterAnnotationsAttr RBinJavaRuntimeInvisibleParameterAnnotationsAttr;
 
-typedef struct r_bin_java_parameter_annotations_attr_t { 
-	RBinJavaElementValue *default_value;	
+typedef struct r_bin_java_parameter_annotations_attr_t {
+	RBinJavaElementValue *default_value;
 } RBinJavaAnnotationDefaultAttr;
 
 typedef struct r_bin_java_stack_map_table_attr_t { // attribute StackMap
@@ -590,10 +590,10 @@ typedef struct r_bin_java_line_number_table_t{
 typedef struct r_bin_java_attr_linenum_t {
 	ut64 file_offset;
 	ut16 line_number_table_length;
-	RList* line_number_table; // RBinJavaLineNumberTable*	
+	RList* line_number_table; // RBinJavaLineNumberTable*
 }RBinJavaLineNumberTableAttribute;
 
-typedef struct r_bin_java_attr_localvariabletype_t{  
+typedef struct r_bin_java_attr_localvariabletype_t{
 	char *name;
 	char *signature;
 
@@ -608,12 +608,12 @@ typedef struct r_bin_java_attr_localvariabletype_t{
 
 typedef struct r_bin_java_attr_localvariable_type_table_t {
 	ut16 table_length;
-	RList* local_variable_table; // RBinJavaLocalVariable	
+	RList* local_variable_table; // RBinJavaLocalVariable
 }RBinJavaLocalVariableTypeTableAttribute;
 
 
 
-typedef struct r_bin_java_attr_localvariable_t{  
+typedef struct r_bin_java_attr_localvariable_t{
 	char *name;
 	char *descriptor;
 
@@ -629,7 +629,7 @@ typedef struct r_bin_java_attr_localvariable_t{
 
 typedef struct r_bin_java_attr_localvariable_table_t {
 	ut16 table_length;
-	RList* local_variable_table; // RBinJavaLocalVariable	
+	RList* local_variable_table; // RBinJavaLocalVariable
 }RBinJavaLocalVariableTableAttribute;
 
 typedef struct r_bin_java_attr_t {
@@ -637,7 +637,7 @@ typedef struct r_bin_java_attr_t {
 	ut64 pos;
 	ut64 size;
 	char *name;
-	ut64 file_offset; 
+	ut64 file_offset;
 	RBinJavaMetaInfo *metas;
 	int type;
 	ut16 name_idx; //	ut16 attribute_name_idx;
@@ -677,9 +677,9 @@ typedef struct r_bin_java_attr_classes_t {
 	ut64 file_offset;
 	RBinJavaAttrInfo *clint_attr;
 	RBinJavaField *clint_field;
-	ut16 inner_class_info_idx;		 
-	ut16 outer_class_info_idx;		 
-	ut16 inner_name_idx;		 
+	ut16 inner_class_info_idx;
+	ut16 outer_class_info_idx;
+	ut16 inner_name_idx;
 	ut16 inner_class_access_flags;
 	ut64 size;
 } RBinJavaClassesAttribute;
@@ -725,7 +725,7 @@ typedef struct r_bin_java_obj_t {
 	RBinJavaLines lines;
 	struct r_buf_t* b;
 
-	// These state variables are used for parsing the appropriate number of bytes 
+	// These state variables are used for parsing the appropriate number of bytes
 	// when readin uoffset, ustack, ulocalvar values
 	ut8 ulocalvar_sz;
 	ut8 ustack_sz;
@@ -848,11 +848,9 @@ typedef struct{
 
 typedef struct{
 	char* name;
-	ut8 tag;	
+	ut8 tag;
 } RBinJavaRefMetas;
 
-
-R_API static int javasm_init(RBinJavaObj *bin);
 
 R_API ut8* r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 offset, ut64 sz);
 R_API char* r_bin_java_get_name_from_cp_item_list(RList *cp_list, ut64 idx);
@@ -1172,10 +1170,7 @@ R_API ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, const char* method_na
 R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin,  ut64 addr);
 
 R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin);
-
-R_API void debug_dump_all_cp_obj();
-
-R_API RBinJavaObj* r_bin_java_get_bin_obj(const char *name);
+R_API const RBinJavaObj* r_bin_java_get_bin_obj(const char *name);
 R_API int r_bin_java_update_file (const char *key, RBinJavaObj *bin_obj);
 
 #endif

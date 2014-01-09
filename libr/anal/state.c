@@ -31,43 +31,22 @@ R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth) {
 }
 
 R_API void r_anal_state_insert_bb (RAnalState* state, RAnalBlock *bb) {
-	/*if (r_anal_state_need_rehash (state, bb)) {
-		// XXX - do i ever need to rehash the hashtable?
-		//state->ht_sz <<= 1;
-		//r_hashtable64_rehash(state->ht, state->ht_sz);
-	}*/
-
 	if (r_anal_state_search_bb (state, bb->addr) == NULL &&
 		state->current_fcn) {
-		RHashTable64Entry *hte ;
 		RAnalBlock *tmp_bb;
-		IFDBG eprintf ("Inserting bb 0x%04x into hash table\n", bb->addr);
+		IFDBG eprintf ("Inserting bb 0x%04"PFMT64x" into hash table\n", bb->addr);
 		r_list_append(state->current_fcn->bbs, bb);
         state->bytes_consumed += state->current_bb->op_sz;
-		IFDBG eprintf ("[--] Consumed 0x%02x bytes, for a total of 0x%02x\n", state->current_bb->op_sz, state->bytes_consumed);
+		IFDBG eprintf ("[--] Consumed 0x%02x bytes, for a total of 0x%02x\n", (short )state->current_bb->op_sz, (short) state->bytes_consumed);
 		if (r_hashtable64_insert(state->ht, bb->addr, bb)) {
-			IFDBG eprintf ("Inserted bb 0x%04x successfully inserted into hashtable\n", bb->addr);
+			IFDBG eprintf ("Inserted bb 0x%04"PFMT64x" successfully inserted into hashtable\n", bb->addr);
 		}
 		IFDBG {
 			tmp_bb = r_hashtable64_lookup(state->ht, bb->addr);
-			IFDBG eprintf ("Inserted bb 0x%04x matches one in hash table: %02x.\n", bb->addr, bb->addr == tmp_bb->addr);
+			IFDBG eprintf ("Inserted bb 0x%04"PFMT64x" matches one in hash table: %02x.\n", bb->addr, bb->addr == tmp_bb->addr);
 		}
 	}
 }
-/*
-R_API int r_anal_state_need_rehash (RAnalState* state, RAnalBlock *bb) {
-	/*
-	 *   Return 0 if no rehash is needed, otherwise return 1
-	 * /
-	
-	RAnalBlock *tmp_bb = r_hashtable64_lookup(state->ht, bb->addr);
-
-	if (tmp_bb == NULL || tmp_bb->addr != bb->addr) {
-		return 1; 
-	}
-	return 0;
-}
-*/
 R_API RAnalBlock * r_anal_state_search_bb (RAnalState* state, ut64 addr) {
 	/*
 	 *   Return 0 if no rehash is needed, otherwise return 1
@@ -110,7 +89,7 @@ R_API void r_anal_state_merge_bb_list (RAnalState *state, RList* bbs) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (bbs, iter, bb) {
-		IFDBG eprintf ("Inserting bb fron 0x%04x\n", bb->addr);
+		IFDBG eprintf ("Inserting bb fron 0x%04"PFMT64x"\n", bb->addr);
 		r_anal_state_insert_bb (state, bb);
 	}
 }

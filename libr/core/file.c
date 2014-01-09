@@ -141,7 +141,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 	RDebugMap *map;
 	RListIter *iter;
 	ut64 b = 0LL;
-	
+
 	r_debug_map_sync (core->dbg); // update process memory maps
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if ((map->perm & 5)==5) {
@@ -164,10 +164,14 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 }
 
 R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baddr) {
-		r_bin_free (r->bin);
-		r->bin = r_bin_new ();
-		r_bin_set_user_ptr (r->bin, r);
-		return r_core_bin_load (r, file, baddr);
+	int result = 0;
+	r_bin_free (r->bin);
+	r->bin = NULL;
+	r->bin = r_bin_new ();
+	r_bin_set_user_ptr (r->bin, r);
+	result = r_core_bin_load (r, file, baddr);
+	r_bin_bind (r->bin, &(r->assembler->binb));
+	return result;
 }
 
 R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
@@ -212,28 +216,31 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		r->file->obj = r_bin_get_object (r->bin);
 		if (baddr)
 			r->file->obj->baddr = baddr;
-		r_config_set_i (r->config, "io.va", 
+		r_config_set_i (r->config, "io.va",
 			(r->file->obj->info)? r->file->obj->info->has_va: 0);
 		offset = r_bin_get_offset (r->bin);
 	} else {
-		// XXX - May need to handle additional extraction here as well 		
-		r_bin_io_load (r->bin, r->io, r->file->fd, R_FALSE); 
-		if ( r->bin->cur.curplugin && 
+		// XXX - May need to handle additional extraction here as well
+		r_bin_io_load (r->bin, r->io, r->file->fd, R_FALSE);
+		if ( r->bin->cur.curplugin &&
 				strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
 			// set use of raw strings
 			r_config_set (r->config, "bin.rawstr", "true");
 			// get bin.minstr
 			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 		}
-		{ // Making sure the RBinObject gets set 
+		{ // Making sure the RBinObject gets set
 			RBinObject *_obj = r_bin_get_object (r->bin);
-			
+
 			if (_obj && _obj->info && _obj->info->bits) {
 				r_config_set_i (r->config, "asm.bits", _obj->info->bits);
 				r->file->obj = _obj;
 			}
 			if (_obj) _obj->baddr = baddr;
 
+            if (r_asm_is_valid (r->assembler, r->bin->cur.curplugin->name) ) {
+                r_asm_use (r->assembler, r->bin->cur.curplugin->name);
+            }
 			r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 		}
 }
@@ -248,7 +255,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 			for (i=0; i<r->bin->narch; i++) {
 				r_bin_select_idx (r->bin, i); // -->
 				if (o->info) {
-					eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n", 
+					eprintf ("  $ r2 -a %s -b %d %s  # 0x%08"PFMT64x"\n",
 							o->info->arch,
 							o->info->bits,
 							r->bin->file,
@@ -279,7 +286,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	if (baddr)
 		r->file->obj->baddr = baddr;
 
-	r_config_set_i (r->config, "io.va", 
+	r_config_set_i (r->config, "io.va",
 		(r->file->obj->info)? r->file->obj->info->has_va: 0);
 	offset = r_bin_get_offset (r->bin);
 	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
@@ -357,12 +364,12 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		if (cf->filename) free(cf->filename);
 		if (cf->uri) free(cf->uri);
 		r_io_desc_free (cf->fd);
-		
+
 		cf->fd = NULL;
 		cf->map = NULL;
 		cf->filename = NULL;
 		cf->uri = NULL;
-		
+
 		//free(cf);
 	}
 	cf = NULL;
