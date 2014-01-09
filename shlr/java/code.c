@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -16,7 +16,7 @@
 
 #define IFDBG if(0)
 
-volatile ut8 IN_SWITCH_OP = 0;
+static ut8 IN_SWITCH_OP = 0;
 typedef struct current_table_switch_t {
 	ut64 addr;
 	int def_jmp;
@@ -25,10 +25,7 @@ typedef struct current_table_switch_t {
 	int cur_val;
 } CurrentTableSwitch;
 
-volatile CurrentTableSwitch SWITCH_OP;
-
-
-
+static CurrentTableSwitch SWITCH_OP;
 static RBinJavaObj *BIN_OBJ = NULL;
 
 R_API void r_java_set_obj(RBinJavaObj *obj) {
@@ -65,9 +62,10 @@ static char * java_resolve(int idx, ut8 space_bn_name_type) {
 	
 	item = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
 	
-	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
-	IFDBG eprintf("java_resolve Resolved: (%d) %s\n", idx, cp_name);
-	if (!item) {
+	if (item) {
+		cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
+		IFDBG eprintf("java_resolve Resolved: (%d) %s\n", idx, cp_name);
+	} else {
 		str = malloc (512);
 		if (str)
 			snprintf (str,512,  "(%d) INVALID CP_OBJ", idx);		
@@ -319,7 +317,7 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 		case 0xa6: // if_acmpne
 		case 0xa7: // goto
 		case 0xa8: // jsr
-			snprintf (output, outlen, "%s 0x%04x", java_ops[idx].name,
+			snprintf (output, outlen, "%s 0x%04"PFMT64x, java_ops[idx].name,
 				addr+(int)(short)USHORT (bytes, 1));
 			return java_ops[idx].size;
 		// XXX - Figure out what constitutes the [<high>] value
@@ -336,7 +334,7 @@ int java_print_opcode(ut64 addr, int idx, const ut8 *bytes, char *output, int ou
 				SWITCH_OP.min_val = (ut32)(UINT (bytes, sz + 4));
 				SWITCH_OP.max_val = (ut32)(UINT (bytes, sz + 8));
 				sz += 12;
-				snprintf (output, outlen, "%s default: 0x%04x", java_ops[idx].name,
+				snprintf (output, outlen, "%s default: 0x%04"PFMT64x, java_ops[idx].name,
 					SWITCH_OP.def_jmp+addr);
 				return sz; 
 			}

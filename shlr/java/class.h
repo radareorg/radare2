@@ -786,7 +786,7 @@ typedef struct  r_bin_java_object_allocs_t {
 	void (*delete_obj) (RBinJavaCPTypeObj *obj);
 	void (*print_summary) (RBinJavaCPTypeObj *obj);
 	ut64 (*calc_size) (RBinJavaCPTypeObj *obj);
-	ut64 (*stringify_obj) (RBinJavaCPTypeObj *obj);
+	char* (*stringify_obj) (RBinJavaCPTypeObj *obj);
 } RBinJavaCPTypeObjectAllocs;
 
 typedef struct  r_bin_java_attr_allocs_t {
@@ -924,7 +924,7 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(RBinJavaField *method);
 
 
-R_API RBinJavaAttrMetas* r_bin_java_get_attr_type_by_name(ut8 *name);
+R_API RBinJavaAttrMetas* r_bin_java_get_attr_type_by_name(const char *name);
 
 
 R_API RBinJavaCPTypeObj* r_bin_java_get_java_null_cp();
@@ -1167,7 +1167,7 @@ R_API RBinClass* r_bin_java_allocate_r_bin_class();
 R_API RList *r_bin_java_get_classes(RBinJavaObj *bin);
 R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
 R_API RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
-R_API ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, char* method_name);
+R_API ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, const char* method_name);
 
 R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin,  ut64 addr);
 
@@ -1175,7 +1175,7 @@ R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin);
 
 R_API void debug_dump_all_cp_obj();
 
-R_API RBinJavaField * r_bin_java_get_bin_obj(char *name);
-R_API int r_bin_java_update_file (char *key, RBinJavaObj *bin_obj);
+R_API RBinJavaObj* r_bin_java_get_bin_obj(const char *name);
+R_API int r_bin_java_update_file (const char *key, RBinJavaObj *bin_obj);
 
 #endif
