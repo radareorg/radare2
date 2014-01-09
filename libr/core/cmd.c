@@ -1157,8 +1157,9 @@ next2:
 			*ptr2 = '\0';
 			if (ptr[1] == '!') {
 				str = r_core_cmd_str_pipe (core, ptr+1);
-			} else 
+			} else {
 				str = r_core_cmd_str (core, ptr+1);
+			}
 			if (oneline && str)
 				for (i=0; str[i]; i++)
 					if (str[i]=='\n')
@@ -1475,8 +1476,13 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 
 	if (log) r_line_hist_add (cstr);
 
+//eprintf ("DEPTH %d (%s)\n", core->cmd_depth, cstr);
 	if (core->cmd_depth<1) {
-		eprintf ("r_core_cmd: That was too deep...\n");
+		eprintf ("r_core_cmd: That was too deep (%s)...\n", cmd);
+		free (ocmd);
+		free (core->oobi);
+		core->oobi = NULL;
+		core->oobi_len = 0;
 		return 0;
 	}
 	core->cmd_depth --;
@@ -1492,7 +1498,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		rcmd = ptr+1;
 	}
 	core->cmd_depth ++;
-
 	free (ocmd);
 	free (core->oobi);
 	core->oobi = NULL;
@@ -1666,7 +1671,9 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 }
 
 R_API void r_core_cmd_repeat(RCore *core, int next) {
-	// Alias for ".."
+	// Fix for backtickbug px`~`
+	if (core->cmd_depth+1<R_CORE_CMD_DEPTH)
+		return;
 	if (core->lastcmd)
 	switch (*core->lastcmd) {
 	case 'd': // debug

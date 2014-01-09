@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
 
+
 #ifndef _INCLUDE_R_CORE_H_
 #define _INCLUDE_R_CORE_H_
 
@@ -54,6 +55,8 @@ R_LIB_VERSION_HEADER(r_core);
 #define RTR_RAP_REPLY  0x80
 
 #define RTR_MAX_HOSTS 255
+
+#define R_CORE_CMD_DEPTH 10
 
 typedef struct r_core_rtr_host_t {
 	int proto;
