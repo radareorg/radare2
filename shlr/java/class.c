@@ -21,6 +21,23 @@
 #define IFDBG  if(0)
 #define IFINT  if(0)
 
+static const Sdb *get_sdb_bin_objs();
+static int add_sdb_bin_obj(char *key, RBinJavaObj *bin_obj);
+static RBinJavaObj * get_sdb_bin_obj(char * name);
+static int del_sdb_bin_obj(char * name);
+static ut32 r_bin_java_swap_uint(ut32 x);
+static ut16 r_bin_java_swap_ushort(ut16 x);
+static ut32 r_bin_java_read_int(RBinJavaObj *bin, ut64 offset);
+static const char * r_bin_java_get_this_class_name(RBinJavaObj *bin);
+static void add_cp_objs_to_sdb( RBinJavaObj *bin);
+static void add_cp_objs_to_sdb( RBinJavaObj *bin);
+static void add_field_infos_to_sdb( RBinJavaObj *bin);
+static void add_method_infos_to_sdb( RBinJavaObj *bin);
+static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_flags);
+static char * retrieve_method_access_string(ut16 flags);
+static char * retrieve_field_access_string(ut16 flags);
+static char * retrieve_class_method_access_string(ut16 flags);
+
 // taken from LLVM Code Byte Swap
 // TODO: move into r_util
 static ut32 r_bin_java_swap_uint(ut32 x) {
@@ -62,9 +79,14 @@ static ut16 r_bin_java_read_short_from_buffer(ut8 *buffer, ut64 offset) {
 }
 
 volatile ut8 R_BIN_JAVA_NULL_TYPE_INITTED = 0;
-RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
+// XXX - this is a global variable used while parsing the class file
+// if multi-threaded class parsing is enabled, this variable needs to
+// be guarded with a lock.
+volatile RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
 // NOTE: must be initialized for safe use
 //static struct r_bin_java_cp_item_t cp_null_item = {0};
+Sdb *BIN_OBJS_ADDRS;
+
 
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC},
@@ -287,6 +309,10 @@ static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 	{ "Unknown", R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[20]} 
 };
 
+static const char * r_bin_java_get_this_class_name(RBinJavaObj *bin) {
+	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
+	return r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
+}
 static void add_cp_objs_to_sdb( RBinJavaObj *bin){
 	/*
 		Add Constant Pool Serialized Object to an Array
@@ -606,6 +632,55 @@ R_API void debug_dump_all_cp_obj(RBinJavaObj * BIN_OBJ) {
 		}
 	}
 }
+
+
+const Sdb *get_sdb_bin_objs(){
+	if (BIN_OBJS_ADDRS == NULL){
+		BIN_OBJS_ADDRS = sdb_new(NULL, 0);
+	}
+	return BIN_OBJS_ADDRS;
+}
+
+R_API int r_bin_java_update_file (char *key, RBinJavaObj *bin_obj) {
+	del_sdb_bin_obj(key);	
+	bin_obj->file = key;
+	return add_sdb_bin_obj (key, bin_obj); 
+}
+static int add_sdb_bin_obj(char *key, RBinJavaObj *bin_obj){
+	int result = R_FALSE;
+	Sdb* bin_objs_addrs = get_sdb_bin_objs();
+	char addr_buf[100] = {0};
+	if (key && bin_obj && bin_objs_addrs) {
+		sdb_itoa((ut64)bin_obj,  addr_buf);
+		IFDBG eprintf("Adding %s:%s to the bin_objs db\n", key, addr_buf);
+		sdb_set (bin_objs_addrs, key, addr_buf, 0); 
+		result = R_TRUE;
+	}
+	return result;
+}
+
+static RBinJavaObj * get_sdb_bin_obj(char * name){
+	Sdb* bin_objs_addrs = get_sdb_bin_objs ();
+	RBinJavaObj *bin_obj = NULL;
+	IFDBG eprintf("Retrieving %s to the bin_objs db\n", name);
+	if (name && bin_objs_addrs) {
+		char * addr_buf = sdb_get (bin_objs_addrs, name, 0);
+		IFDBG eprintf("Found %s == %s bin_objs db\n", name, addr_buf);
+		bin_obj = (RBinJavaObj *) sdb_atoi(addr_buf);
+		if (addr_buf) free(addr_buf);
+	}   
+	return bin_obj;
+}
+
+static int del_sdb_bin_obj(char * name){
+	int result = R_FALSE;
+	Sdb* bin_objs_addrs = get_sdb_bin_objs ();
+	if (bin_objs_addrs && name && sdb_exists (bin_objs_addrs, name)) {
+		result = sdb_remove (bin_objs_addrs, name, 0);
+	}   
+	return result;
+}
+
 
 R_API RBinJavaCPTypeObj* r_bin_java_get_java_null_cp() {
 	if(R_BIN_JAVA_NULL_TYPE_INITTED)
@@ -1567,6 +1642,8 @@ static int javasm_init(RBinJavaObj *bin) {
 	bin->methods_size = bin->b->cur - bin->methods_offset;
 	add_method_infos_to_sdb(bin);
 	add_field_infos_to_sdb(bin);
+	add_sdb_bin_obj (r_bin_java_get_this_class_name (bin), bin);
+	add_sdb_bin_obj (bin->file, bin);
 	return R_TRUE;
 }
 
@@ -1605,12 +1682,20 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 	return ret;
 }
 
+
+R_API RBinJavaField * r_bin_java_get_bin_obj(char *name) {
+	return get_sdb_bin_obj (name);
+}
 R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin,  ut64 addr) {
 	RListIter *iter = NULL, *iter_tmp=NULL;
 	RBinJavaField *fm_type, *result = NULL;
 
-	if (bin == NULL) bin = R_BIN_JAVA_GLOBAL_BIN;
-
+	if (bin == NULL && R_BIN_JAVA_GLOBAL_BIN) bin = R_BIN_JAVA_GLOBAL_BIN;
+	else {
+		eprintf("Attempting to analyse function when the R_BIN_JAVA_GLOBAL_BIN has not been set.\n");
+		return NULL;
+	}
+	
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {	
 		ut64 offset = r_bin_java_get_method_code_offset(fm_type),
 			 size = r_bin_java_get_method_code_size(fm_type);
@@ -1962,6 +2047,7 @@ R_API RList * r_bin_java_get_lib_names(RBinJavaObj * bin) {
 	return lib_names;
 } 
 
+
 R_API RList* r_bin_java_get_classes(RBinJavaObj *bin) {
 	RBinSection* rclass = NULL;
 	RList *classes = r_list_new ();
@@ -2095,6 +2181,8 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 
 	// XXX - need to free all keys and values
 	sdb_free (bin->kv);
+	del_sdb_bin_obj (r_bin_java_get_this_class_name (bin));
+	del_sdb_bin_obj (bin->file);
 	// free up the constant pool list
 	r_bin_java_constant_pool_list_free (bin);
 	// free up the fields list

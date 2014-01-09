@@ -389,11 +389,10 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 
 	free(fcn->name);
 	free(fcn->dsc);
-	snprintf(gen_name, 1024, "java.fcn.%08"PFMT64x"", addr);
+	snprintf(gen_name, 1024, "sym.%08"PFMT64x"", addr);
 	
 	fcn->name = strdup (gen_name);
-	fcn->dsc = strdup ("java.dsc.unknown");
-	
+	fcn->dsc = strdup ("unknown");
 	fcn->size = code_length;
 	fcn->type = R_ANAL_FCN_TYPE_FCN;
 	fcn->addr = addr;
@@ -412,6 +411,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	r_list_free(nodes->cfg_node_addrs);
 	free(nodes);
 	r_anal_state_free(state);
+	IFDBG eprintf("Completed analysing code from buffer, name: %s, desc: %s", fcn->name, fcn->dsc);
 	
 	return result;
 }
@@ -419,6 +419,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJavaField *method) {
 	RBinJavaAttrInfo* code_attr = method ? r_bin_java_get_method_code_attribute(method) : NULL;
 	ut8 * code_buf = NULL;
+    char * name_buf = NULL;
 	int result = R_FALSE;
 
 	ut64 code_length = 0, 
@@ -427,10 +428,10 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJa
 
 	if (code_attr == NULL) {
 		char gen_name[1025];	
-		snprintf(gen_name, 1024, "java.fcn.%08"PFMT64x"", addr);
+		snprintf(gen_name, 1024, "sym.%08"PFMT64x"", addr);
 		
 		fcn->name = strdup (gen_name);
-		fcn->dsc = strdup ("java.dsc.failed");
+		fcn->dsc = strdup ("unknown");
 		
 		fcn->size = code_length;
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
@@ -448,11 +449,18 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJa
 	result = analyze_from_code_buffer ( anal, fcn, addr, code_buf, code_length);
 	
 	free(code_buf);
-	free(fcn->name);
+    
+    name_buf = (char *) malloc(strlen(method->name) + 5);
+    if (name_buf){
+        sprintf(name_buf, "sym.%s", method->name);
+	    free(fcn->name);
+	    fcn->name = strdup (name_buf);
+        free(name_buf);
+    }
+    
 	free(fcn->dsc);
-
-	fcn->name = strdup (method->name);
-	fcn->dsc = strdup (method->descriptor);
+    fcn->dsc = strdup (method->descriptor);
+	IFDBG eprintf("Completed analysing code from attr, name: %s, desc: %s", fcn->name, fcn->dsc);
 	
 	return result;
 }
@@ -523,7 +531,8 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 
 static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int depth) {
 	//anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
-	const RList *methods_list = r_bin_java_get_methods_list (NULL);
+    RBinJavaObj *bin = r_bin_java_get_bin_obj(anal->iob.io->fd->name);
+	const RList *methods_list = bin ? r_bin_java_get_methods_list (bin) : NULL;
 	RListIter *iter;
 	RBinJavaField *method = NULL;
 	ut8 analyze_all = 0;
@@ -531,7 +540,8 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	int result = R_ANAL_RET_ERROR;
 
 	if (end == UT64_MAX) analyze_all = 1;
-	
+	IFDBG eprintf("Analyzing java functions for %s\n", anal->iob.io->fd->name);
+    IFDBG eprintf("Analyzing functions.  Analysing from buffer? %d\n", methods_list == NULL);
 	if (methods_list == NULL) return java_analyze_fns_from_buffer(anal, start, end, reftype, depth);
 	
 	r_list_foreach ( methods_list, iter, method ) {
@@ -554,7 +564,11 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 }
 
 static int java_fn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	RBinJavaField *method = r_bin_java_get_method_code_attribute_with_addr(NULL,  addr);
+	// XXX - this may clash with malloc:// uris because the file name is
+    // malloc://**
+    RBinJavaObj *bin = r_bin_java_get_bin_obj(anal->iob.io->fd->name);
+    RBinJavaField *method = bin ? r_bin_java_get_method_code_attribute_with_addr(bin,  addr) : NULL;
+	IFDBG eprintf("Analyzing java functions for %s\n", anal->iob.io->fd->name);
 	if (method) return analyze_from_code_attr (anal, fcn, method);
 	return analyze_from_code_buffer (anal, fcn, addr, buf, len);
 }

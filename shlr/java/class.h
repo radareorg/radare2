@@ -1175,6 +1175,7 @@ R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin);
 
 R_API void debug_dump_all_cp_obj();
 
-
+R_API RBinJavaField * r_bin_java_get_bin_obj(char *name);
+R_API int r_bin_java_update_file (char *key, RBinJavaObj *bin_obj);
 
 #endif

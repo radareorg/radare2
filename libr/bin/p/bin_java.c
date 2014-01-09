@@ -21,6 +21,8 @@ static int load(RBinArch *arch) {
 	if (bin_obj) {
 		arch->o->kv = bin_obj->kv;
 		arch->bin_obj = bin_obj;
+		if (arch->file)
+			r_bin_java_update_file(arch->file, bin_obj);
 		result = R_TRUE;
 	}
 	return result;
