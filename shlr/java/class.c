@@ -238,7 +238,7 @@ static RBinJavaCPTypeObj R_BIN_JAVA_NULL_TYPE;
 static ut8 R_BIN_JAVA_CP_METAS_SZ = 12;
 static RBinJavaCPTypeMetas R_BIN_JAVA_CP_METAS[] = {
 	// Each field has a name pointer and a tag field
-	{ "(null)", R_BIN_JAVA_CP_NULL, 0,  &R_BIN_ALLOCS_CONSTANTS[0] },
+	{ "NULL", R_BIN_JAVA_CP_NULL, 0,  &R_BIN_ALLOCS_CONSTANTS[0] },
 	{ "Utf8", R_BIN_JAVA_CP_UTF8, 3,  &R_BIN_ALLOCS_CONSTANTS[1] }, // 2 bytes = length, N bytes string (containts a pointer in the field)
 	{ "Unknown", R_BIN_JAVA_CP_UNKNOWN, 0,  &R_BIN_ALLOCS_CONSTANTS[2] },
 	{ "Integer", R_BIN_JAVA_CP_INTEGER, 5,  &R_BIN_ALLOCS_CONSTANTS[3] }, // 4 bytes
