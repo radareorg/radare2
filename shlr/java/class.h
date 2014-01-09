@@ -921,7 +921,7 @@ R_API void r_bin_java_do_nothing_free(RBinJavaCPTypeObj *obj);
 R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, ut64 offset);
 R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bin, ut64 offset);
 
-R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(RBinJavaField *method);
+R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(const RBinJavaField *method);
 
 
 R_API RBinJavaAttrMetas* r_bin_java_get_attr_type_by_name(const char *name);

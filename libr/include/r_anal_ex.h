@@ -302,6 +302,7 @@ R_API ut32 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type);
  */
 R_API RList * r_anal_ex_analyze( RAnal *anal, RAnalState *state, ut64 addr);
 R_API RList * r_anal_ex_analysis_driver( RAnal *anal, RAnalState *state, ut64 addr);
+R_API RList * r_anal_ex_perform_analysis( RAnal *anal, RAnalState *state, ut64 addr);
 
 // BB and OP handling
 R_API void r_anal_ex_update_bb_cfg_head_tail( RAnalBlock *start, RAnalBlock * head, RAnalBlock * tail );
