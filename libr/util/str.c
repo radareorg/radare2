@@ -986,9 +986,9 @@ R_API int r_str_len_utf8 (const char *s) {
 	return j;
 }
 
-// TODO: if unix.. move to .h? static inline
 R_API const char *r_str_casestr(const char *a, const char *b) {
-#if __WINDOWS__ || defined(__QNX__)
+	// That's a GNUism that works in many places.. but we dont want it
+	// return strcasestr (a, b);
 	size_t hay_len = strlen (a);
 	size_t needle_len = strlen (b);
 	while (hay_len >= needle_len) {
@@ -998,9 +998,6 @@ R_API const char *r_str_casestr(const char *a, const char *b) {
 		hay_len--;
 	}
 	return NULL;
-#else
-	return strcasestr (a, b);
-#endif
 }
 
 R_API int r_str_write (int fd, const char *b) {

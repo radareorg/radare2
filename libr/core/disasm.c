@@ -1162,6 +1162,7 @@ toro:
 			if (show_functions) {
 				char tmp[128];
 				char *ccstr = r_anal_cc_to_string (core->anal, &cc);
+				tmp[0] = 0;
 				if (ccstr) {
 					RFlagItem *flag = r_flag_get_at (core->flags, cc.jump);
 					if (flag && ccstr) {
