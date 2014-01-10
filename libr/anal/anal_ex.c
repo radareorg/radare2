@@ -131,7 +131,7 @@ R_API RAnalOp * r_anal_ex_get_op(RAnal *anal, RAnalState *state, ut64 addr) {
 
 
 	if (!r_anal_state_addr_is_valid(state, addr) ||
-		anal->cur && (anal->cur->op == NULL && anal->cur->op_from_buffer == NULL) ) {
+		(anal->cur && (anal->cur->op == NULL && anal->cur->op_from_buffer == NULL))) {
 		state->done = 1;
 		return NULL;
 	}

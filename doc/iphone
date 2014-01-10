@@ -27,6 +27,7 @@ Compilation
 ===========
   export CC=gcc
   export CFLAGS=-I/var/include
+  export CPPFLAGS=-I/var/include
   ./configure --prefix=/usr --with-ostype=darwin
   make
   make symstall
