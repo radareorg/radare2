@@ -534,11 +534,11 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 	}
 
 	key_size += strlen(class_name);
-	value_buffer_size += strlen(class_name);
+	value_buffer_size += strlen (class_name);
 
 	method_key = malloc (key_size);
-	value_buffer = malloc (key_size);
-	method_key_value = malloc(key_size);
+	value_buffer = malloc (value_buffer_size);
+	method_key_value = malloc (key_size);
 
 	snprintf (method_key, key_size, "%s.methods", class_name);
 	method_key[key_size-1] = 0;
@@ -579,7 +579,6 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, method_key, value_buffer, 0);
-
 
 		// generate info key, and place values in method info array
 		bytes_written = snprintf (method_key, key_size, "%s.info", method_key_value);
