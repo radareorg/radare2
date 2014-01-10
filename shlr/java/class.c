@@ -352,7 +352,7 @@ static void add_cp_objs_to_sdb( RBinJavaObj *bin){
 	}
 
 	// 4 - format, 8 number, 1 null byte, 7 "unknown"
-	key_buf_size = class_name ? strlen(class_name) + 4 + 8 + 1: 7 + 4 + 8 + 1;
+	key_buf_size = strlen(class_name) + 4 + 8 + 1;
 
 	key = malloc(key_buf_size);
 	if ( key == NULL) return;
@@ -523,7 +523,7 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 
 	char * method_key = NULL,
 		 * method_key_value = NULL,
-		 * value_buffer = malloc (value_buffer_size);
+		 * value_buffer = NULL;
 
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
 	char * class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
