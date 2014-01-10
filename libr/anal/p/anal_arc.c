@@ -8,7 +8,7 @@
 
 static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	const ut8 *b = (ut8 *)data;
-	ut8 subopcode = ((b[1]&0xf)>>2) << 1;
+	//ut8 subopcode = ((b[1]&0xf)>>2) << 1;
 	ut8 basecode = (b[3] & 0xf8) >> 3;
 	int lowbyte, highbyte;
 

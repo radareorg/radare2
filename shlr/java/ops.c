@@ -303,3 +303,4 @@ struct java_op java_ops[] = {
 	{ "impdep1"        , 0xfe, 1, R_ANAL_EX_ILL_OP},
 	{ "impdep2"        , 0xff, 1, R_ANAL_EX_ILL_OP},
 };
+

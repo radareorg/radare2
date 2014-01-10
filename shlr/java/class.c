@@ -700,12 +700,13 @@ static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	int result = R_FALSE;
 	Sdb* bin_objs_addrs = get_sdb_bin_objs ();
 	char value[1024] = {0};
-	sdb_itoa ((ut64)bin_obj,  value);
+	sdb_itoa ((ut64)(size_t)bin_obj,  value);
 	if (key && bin_obj && bin_objs_addrs) {
 		IFDBG eprintf ("Adding %s:%s to the bin_objs db\n", key, value);
 		sdb_set (bin_objs_addrs, key, value, 0);
 		result = R_TRUE;
-   }
+	}
+	return result;
 }
 
 R_API int r_bin_java_update_file (const char *key, RBinJavaObj *bin_obj) {
@@ -720,7 +721,8 @@ static RBinJavaObj * get_sdb_bin_obj(const char * name){
 	IFDBG eprintf("Retrieving %s to the bin_objs db\n", name);
 	if (name && bin_objs_addrs) {
 		size_t value = (size_t) sdb_getn (bin_objs_addrs, name, 0);
-		IFDBG eprintf("Found %s == %"PFMT64x" bin_objs db\n", name, value);
+		IFDBG eprintf("Found %s == %"PFMT64x" bin_objs db\n",
+			name, (ut64)value);
 		if (value !=0 && value != (size_t)-1) {
 			bin_obj = (RBinJavaObj *) value;
 		}
@@ -819,17 +821,17 @@ double rbin_java_raw_to_double(ut8* raw, ut64 offset) {
 	int s = ((bits >> 63) == 0) ? 1 : -1;
 	int e = (int)((bits >> 52) & 0x7ffL);
 	long m = (e == 0) ?
-			(bits & 0xfffffffffffffL) << 1 :
-			(bits & 0xfffffffffffffL) | 0x10000000000000L;
+			(bits & 0xfffffffffffffLL) << 1 :
+			(bits & 0xfffffffffffffLL) | 0x10000000000000LL;
 	double result = 0.0;
 	IFDBG printf ("Convert Long to Double: %08"PFMT64x"\n", bits);
-	if (0x7ff0000000000000 == bits) {
+	if (0x7ff0000000000000LL == bits) {
 		result = INFINITY;
-	}else if (0xfff0000000000000 == bits) {
+	}else if (0xfff0000000000000LL == bits) {
 		result = -INFINITY;
-	}else if (0x7ff0000000000001 <= bits && bits <= 0x7fffffffffffffffL  ) {
+	}else if (0x7ff0000000000001LL <= bits && bits <= 0x7fffffffffffffffLL  ) {
 		result = NAN;
-	}else if (0xfff0000000000001 <= bits && bits <= 0xffffffffffffffffL  ) {
+	}else if (0xfff0000000000001LL <= bits && bits <= 0xffffffffffffffffLL  ) {
 		result = NAN;
 	}else{
 		result = s* m* my_pow (2, e-1075);//XXXX TODO Get double to work correctly here
