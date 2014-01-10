@@ -1727,13 +1727,18 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 
 	ret->free = free;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
-		addr = R_NEW (RBinAddr);
-		if (addr) {
-			memset (addr, 0, sizeof (RBinAddr));
-			addr->rva = addr->offset = r_bin_java_get_method_code_offset (fm_type);;
+		
+		if (strcmp (fm_type->name, "main") == 0 ||
+			strcmp (fm_type->name, "<init>") == 0 ||
+			strcmp (fm_type->name, "<clinit>") == 0 ||
+			strstr (fm_type->flags_str, "static") != 0 ) {
+			addr = R_NEW (RBinAddr);
+			if (addr) {
+				memset (addr, 0, sizeof (RBinAddr));
+				addr->rva = addr->offset = r_bin_java_get_method_code_offset (fm_type);;
+			}
+			r_list_append (ret, addr);
 		}
-		r_list_append (ret, addr);
-
 	}
 	return ret;
 }

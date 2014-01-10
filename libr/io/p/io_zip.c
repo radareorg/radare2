@@ -67,6 +67,7 @@ static int r_io_zip_flush_file(RIOZipFileObj *zip_file_obj);
 static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count);
 static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 static int r_io_zip_close(RIODesc *desc);
+static char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx, ut32 flags, int mode, int rw);
 
 static int r_io_zip_init(RIO *io) {
 	return R_TRUE;
@@ -265,7 +266,6 @@ void r_io_zip_free_zipfileobj(RIOZipFileObj *zipFileObj) {
 static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *result = NULL;
 	RIOZipFileObj *zipFileObj = NULL;
-
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
 	if (!r_io_zip_plugin_open (io, file)) {
 		return result;
@@ -281,18 +281,29 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		}
 		*zip_filename++ = 0;
 
-		filename_in_zipfile = strstr(zip_filename, "//");
-		if (filename_in_zipfile && filename_in_zipfile[2]) {
+		// check for // for file in the archive
+		if ( (filename_in_zipfile = strstr(zip_filename, "//")) && 
+			 filename_in_zipfile[2]) {
 			// null terminating uri to filename here.
 			*filename_in_zipfile++ = 0;
 			*filename_in_zipfile++ = 0;
+			filename_in_zipfile = strdup (filename_in_zipfile);
+		// check for :: index
+		} else if ((filename_in_zipfile = strstr (zip_filename, "::")) && 
+			 		filename_in_zipfile[2]) {
+			// null terminating uri to filename here.
+			*filename_in_zipfile++ = 0;
+			*filename_in_zipfile++ = 0;
+			filename_in_zipfile = r_io_zip_get_by_file_idx(zip_filename, filename_in_zipfile, ZIP_CREATE, mode, rw); 
 		}
 	}
+
+
 
 	if (!zip_filename) {// && !filename_in_zipfile) {
 		if (zip_uri)
 			free(zip_uri);
-		eprintf("usage: zip:///path/to/archive//filepath\n");
+		eprintf("usage: zip:///path/to/archive//filepath\nusage: zip:///path/to/archive::[number]\n");
 		eprintf("Archive was not found.\n");
 
 		return result;
@@ -308,14 +319,15 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		files = r_io_zip_get_files(zip_filename, 0, mode, rw );
 
 		if (files) {
-			int i = 0;
+			ut32 i = 0;
 			r_list_foreach_safe(files, iter, iter_tmp, name) {
 				// XXX - io->printf does not flush
 				// io->printf("%s\n", name);
-				r_cons_printf("%s\n", name);
+				r_cons_printf("%d %s\n", i, name);
 				r_cons_flush ();
 				free (name);
 				r_list_delete (files, iter);
+				i++;
 			}
 			r_list_free (files);
 		}
@@ -325,6 +337,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	//eprintf("After parsing the given uri: %s\n", file);		
 	//eprintf("Zip filename the given uri: %s\n", zip_filename);
 	//eprintf("File in the zip: %s\n", filename_in_zipfile);
+
 	zipFileObj = r_io_zip_alloc_zipfileobj (zip_filename,
 		filename_in_zipfile, ZIP_CREATE, mode, rw);
 	if (zipFileObj && zipFileObj->entry == -1)
@@ -341,8 +354,9 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		free (zipFileObj);
 	}	
 	free (zip_uri);
+	free (filename_in_zipfile);
 	return result;
-	}
+}
 
 
 static ut64 r_io_zip_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
@@ -413,7 +427,52 @@ static int r_io_zip_close(RIODesc *fd) {
 	return 0;
 }
 
+char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx, ut32 flags, int mode, int rw) {
+	ut64 i, num_entries;
+	char *filename = NULL;
+	ut32 file_idx = -1;
+	struct zip_stat sb;
+	struct zip * zipArch = r_io_zip_open_archive (archivename, flags, mode, rw);  
+	RIOZipFileObj *zipFileObj = NULL;
+	
+	if (!idx || !zipArch) {
+		if (zipArch) zip_close (zipArch);
+		return filename;
+	}
+
+	num_entries = zip_get_num_files (zipArch);
+
+	// filename starts with ::
+	
+	file_idx = atoi (idx);
+
+	if (file_idx == 0 && idx[0] != '0') {
+		if (zipArch) zip_close (zipArch);
+		return filename;
+	} else if (file_idx >= num_entries) {
+		if (zipArch) zip_close (zipArch);
+		return filename;		
+	}
+
+	for (i=0; i < num_entries; i++) {
+		zip_stat_init (&sb );
+		zip_stat_index (zipArch, i, 0, &sb );	
+		//eprintf("Comparing %s == %s = %d\n", sb.name, filename, strcmp(sb.name, filename));
+		// filename starts with ::[number]
+		if (file_idx == i) {
+			filename = strdup (sb.name);
+			break;
+		}
+	}
+	if (zipArch) zip_close (zipArch);
+	return filename;
+}
+
 RIOZipFileObj* r_io_zip_alloc_zipfileobj(const char *archivename, const char *filename, ut32 flags, int mode, int rw) {
+	/*
+
+		The file can be a file in the archive or ::[num].
+	*/
 	ut64 i, num_entries;
 	struct zip_stat sb;
 	struct zip * zipArch = r_io_zip_open_archive(archivename, flags, mode, rw);  
@@ -422,16 +481,16 @@ RIOZipFileObj* r_io_zip_alloc_zipfileobj(const char *archivename, const char *fi
 		return zipFileObj;
 	num_entries = zip_get_num_files(zipArch);
 
-	for (i=0; i < num_entries; i++) {
+	if (!zipFileObj) {
+		for (i=0; i < num_entries; i++) {
 
-		zip_stat_init(&sb );
-		zip_stat_index(zipArch, i, 0, &sb );	
-		//eprintf("Comparing %s == %s = %d\n", sb.name, filename, strcmp(sb.name, filename));
-		if (strcmp(sb.name, filename) == 0) {
-
-			zipFileObj = r_io_zip_create_new_file(archivename, filename, &sb, flags, mode, rw);
-			r_io_zip_slurp_file(zipFileObj);
-			break;
+			zip_stat_init(&sb );
+			zip_stat_index(zipArch, i, 0, &sb );	
+			if (strcmp(sb.name, filename) == 0) {
+				zipFileObj = r_io_zip_create_new_file(archivename, filename, &sb, flags, mode, rw);
+				r_io_zip_slurp_file(zipFileObj);
+				break;
+			}
 		}
 	}
 
