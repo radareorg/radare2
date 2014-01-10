@@ -11,6 +11,7 @@
 #include <r_list.h>
 #include <r_util.h>
 #include <r_syscall.h>
+#include <r_bin.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -553,6 +554,7 @@ typedef struct r_anal_t {
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	PrintfCallback printf;
+	RBinBind binb; // Set only from core when an analysis plugin is called.
 } RAnal;
 
 typedef struct r_anal_hint_t {

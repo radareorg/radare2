@@ -762,6 +762,7 @@ typedef struct r_bin_java_obj_t {
 	RList* disassembly;
 
 	Sdb *kv;
+	Sdb *AllJavaBinObjs;
 } RBinJavaObj;
 
 R_API RList * r_bin_java_get_interface_names(RBinJavaObj * bin);

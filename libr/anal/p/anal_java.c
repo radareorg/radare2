@@ -34,7 +34,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state);
 static int java_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr);
 static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state);
 static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr);
-
+const RBinJavaObj * get_java_bin_obj(RAnal *anal);
 
 
 static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int depth);
@@ -48,6 +48,13 @@ static int check_addr_less_end (RBinJavaField *method, ut64 addr);
 static int check_addr_less_start (RBinJavaField *method, ut64 addr);
 
 static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr);
+
+const RBinJavaObj * get_java_bin_obj(RAnal *anal) {
+	RBin *b = anal->binb.bin;
+	ut8 is_java = (b && b->cur.curplugin && strcmp (b->cur.curplugin->name, "java") == 0) ? 1 : 0;
+	return is_java ? b->cur.bin_obj : NULL;
+}
+
 
 static int check_addr_less_end (RBinJavaField *method, ut64 addr) {
 	ut64 end = r_bin_java_get_method_code_size (method);
@@ -522,9 +529,10 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 }
 
 
+
 static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int depth) {
 	//anal->iob.read_at (anal->iob.io, op.jump, bbuf, sizeof (bbuf));
-	const RBinJavaObj *bin = r_bin_java_get_bin_obj(anal->iob.io->fd->name);
+	const RBinJavaObj *bin = get_java_bin_obj (anal);
 	const RList *methods_list = bin ? r_bin_java_get_methods_list (bin) : NULL;
 
 	RListIter *iter;
@@ -560,7 +568,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 static int java_fn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	// XXX - this may clash with malloc:// uris because the file name is
 	// malloc://**
-	const RBinJavaObj *bin = r_bin_java_get_bin_obj(anal->iob.io->fd->name);
+	const RBinJavaObj *bin = get_java_bin_obj (anal);
 	RBinJavaField *method = bin ? r_bin_java_get_method_code_attribute_with_addr(bin,  addr) : NULL;
 	IFDBG eprintf("Analyzing java functions for %s\n", anal->iob.io->fd->name);
 	if (method) return analyze_from_code_attr (anal, fcn, method);

@@ -1565,6 +1565,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	bin->cp_list = r_list_new ();
 	r_bin_java_get_java_null_cp ();
 	bin->kv = sdb_new (NULL, 0);
+	bin->AllJavaBinObjs = get_sdb_bin_objs();
 	/* Initialize cp_null_item */
 	//cp_null_item.tag = -1;
 	//strncpy (cp_null_item.name, "(null)", sizeof (cp_null_item.name)-1);
