@@ -194,8 +194,16 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str) {
 		mi->type = type;
 		mi->from = from;
 		mi->to = to;
-		mi->str = (str&&*str)? strdup (str): NULL;
-		r_list_append (m->meta, mi);
+		if (str && *str) {
+			if (strnlen (str, 80)>78) {
+				mi->str = malloc (80);
+				memcpy (mi->str, str, 78);
+				mi->str[78] = 0;
+			} else {
+				mi->str = strdup (str);
+				r_list_append (m->meta, mi);
+			}
+		} else mi->str = NULL;
 		break;
 	default:
 		eprintf ("r_meta_add: Unsupported type '%c'\n", type);

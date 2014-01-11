@@ -119,12 +119,15 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 ut64 drx_get(drxt *drx, int n, int *rwx, int *len, int *global, int *enabled) {
 	int ret = I386_DR_GET_RW_LEN (drx[DR_CONTROL], n);
 	if (global) *global = I386_DR_IS_LOCAL_ENABLED (drx[7], n);
-	if (len) switch ((ret&0x3)<<2) {
+	if (len) {
+		switch ((ret&3)<<2) {
 		case DR_LEN_1: *len = 1; break;
 		case DR_LEN_2: *len = 2; break;
 		case DR_LEN_4: *len = 4; break;
 		case DR_LEN_8: *len = 8; break;
+		default: *len = 0; break;
 		}
+	}
 	if (enabled) *enabled = I386_DR_IS_ENABLED (drx[7], n);
 	if (rwx) *rwx = ret & 0x3;
 	return (ut64)drx[n];
@@ -143,7 +146,7 @@ void drx_list(drxt *drx) {
 	int i, rwx, len, g, en;
 	for(i=0; i<4; i++) {
 		addr = drx_get (drx, i, &rwx, &len, &g, &en);
-		printf ("%c dr%d %c%c 0x%08llx %d\n",
+		printf ("%c dr%d %c%c 0x%08"PFMT64x" %d\n",
 			en?'*':'-', i, g?'G':'L',
 			(rwx==DR_RW_READ)?'r':
 			(rwx==DR_RW_WRITE)?'w':
