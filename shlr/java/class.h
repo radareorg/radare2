@@ -24,7 +24,6 @@
 //#define R_BIN_JAVA_DOUBLE(x,y) ((double)RBIN_JAVA_LONG(x,y))
 //#define R_BIN_JAVA_SWAPUSHORT(x) ((ut16)((x<<8)|((x>>8)&0x00FF)))
 
-
 // Intentionally not R_API
 void copy_type_info_to_stack_frame_list(RList *type_list, RList *sf_list);
 void copy_type_info_to_stack_frame_list_up_to_idx(RList *type_list, RList *sf_list, ut64 idx);
@@ -712,7 +711,6 @@ typedef struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
 	RBinJavaClass2* cf2;
 
-
 	ut32 cp_offset, cp_size, cp_count;
 	ut32 fields_offset, fields_size, fields_count;
 	ut32 interfaces_offset, interfaces_size, interfaces_count;
@@ -720,6 +718,8 @@ typedef struct r_bin_java_obj_t {
 	ut32 classes_offset, classes_size, classes_count;
 	ut32 attributes_offset, attributes_size, attributes_count;
 
+	ut64 loadaddr; // load address that is used to calc actual offset
+				// when multiple bins are loaded at once
 	int size;
 	const char* file;
 	RBinJavaLines lines;
@@ -763,6 +763,7 @@ typedef struct r_bin_java_obj_t {
 
 	Sdb *kv;
 	Sdb *AllJavaBinObjs;
+	ut32 id;
 } RBinJavaObj;
 
 R_API RList * r_bin_java_get_interface_names(RBinJavaObj * bin);
@@ -776,8 +777,8 @@ R_API ut64 r_bin_java_get_main(RBinJavaObj* bin);
 R_API RList* r_bin_java_get_symbols(RBinJavaObj* bin);
 R_API RList* r_bin_java_get_strings(RBinJavaObj* bin);
 R_API void* r_bin_java_free(RBinJavaObj* bin);
-R_API RBinJavaObj* r_bin_java_new(const char* file);
-R_API RBinJavaObj* r_bin_java_new_buf(struct r_buf_t* buf);
+R_API RBinJavaObj* r_bin_java_new(const char* file, ut64 baddr, Sdb * kv);
+R_API RBinJavaObj* r_bin_java_new_buf(struct r_buf_t* buf, ut64 baddr, Sdb * kv);
 
 
 
@@ -1150,9 +1151,9 @@ R_API RBinJavaStackMapFrame* r_bin_java_default_stack_frame();
 
 R_API RBinSymbol* r_bin_java_allocate_symbol();
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_field_with_access_flags(RBinJavaField *fm_type);
-R_API RBinSymbol* r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx);
-R_API RBinSymbol* r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTypeObj *obj);
-R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj);
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_cp_idx(ut32 cp_idx, ut64 baddr);
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTypeObj *obj, ut64 baddr);
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, ut64 baddr);
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_method(RBinJavaField *fm_type);
 
 R_API ut64 r_bin_java_get_method_code_offset(RBinJavaField *fm_type);
@@ -1168,10 +1169,15 @@ R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
 R_API RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
 R_API ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, const char* method_name);
 
-R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin,  ut64 addr);
+R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin, ut64 addr);
 
 R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin);
 R_API const RBinJavaObj* r_bin_java_get_bin_obj(const char *name);
 R_API int r_bin_java_update_file (const char *key, RBinJavaObj *bin_obj);
+R_API RBinJavaObj * r_bin_java_get_sdb_bin_obj(const char * filename);
+R_API RList * r_bin_java_get_bin_obj_list();
+R_API RList* r_bin_java_get_bin_obj_list_thru_obj(RBinJavaObj *bin_obj);
+R_API char * r_bin_java_get_this_class_name(RBinJavaObj *bin_obj);
+R_API char * r_bin_java_build_obj_key (RBinJavaObj *bin);
 
 #endif

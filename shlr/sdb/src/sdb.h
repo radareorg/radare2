@@ -36,7 +36,7 @@ extern "C" {
 
 // todo. store last used
 // todo. sync?
-// todo. 
+// todo.
 typedef struct sdb_ns_t {
 	ut32 hash;
 	struct sdb_t *sdb;
@@ -68,6 +68,7 @@ typedef struct sdb_t {
 } Sdb;
 
 Sdb* sdb_new (const char *dir, int lock);
+int sdb_init (Sdb* sdb, const char *dir, int lock);
 void sdb_free (Sdb* s);
 void sdb_drop (Sdb* s);
 void sdb_file (Sdb* s, const char *dir);

@@ -145,56 +145,48 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 	r_debug_map_sync (core->dbg); // update process memory maps
 	r_list_foreach (core->dbg->maps, iter, map) {
 		if ((map->perm & 5)==5) {
-			if (map->name && strstr (map->name, "copy/"))
-				return map->addr;
-			if (map->file) {
-				if (!strcmp (map->file, file)) // TODO: make this more flexible
-					return map->addr;
-				continue;
-			}
-			if (map->name) {
-				if (!strcmp (map->name, file)) // TODO: make this more flexible
-					return map->addr;
-				continue;
-			}
-			b = map->addr;
+			// TODO: make this more flexible
+			// XXX - why "copy/" here?
+			if (map->name && strstr (map->name, "copy/")) return map->addr;
+			if (map->file && !strcmp (map->file, file)) return map->addr;
+			if (map->name && !strcmp (map->name, file)) return map->addr;
+			// XXX - Commented out, as this could unexpected results
+			//b = map->addr;
 		}
 	}
 	return b;
 }
 
-R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baddr) {
+R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
 	r_bin_free (r->bin);
 	r->bin = NULL;
 	r->bin = r_bin_new ();
 	r_bin_set_user_ptr (r->bin, r);
-	result = r_core_bin_load (r, file, baddr);
+	result = r_core_bin_load (r, file, baseaddr);
 	r_bin_bind (r->bin, &(r->assembler->binb));
 	return result;
 }
 
 R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	int i, va = r->io->va || r->io->debug;
+	ut64 loadaddr;
 	RListIter *iter;
 	ut64 offset = 0;
 	RIOMap *im;
 	int is_io_load = r && r->file && r->file->fd && r->file->fd->plugin;
 
-	if (file == NULL || !*file)
-		if (r->file)
-			file = r->file->filename;
+	if ( (file == NULL || !*file) && r->file)
+		file = r->file->filename;
+
 	if (!file) {
 		eprintf ("r_core_bin_load: no file specified\n");
 		return R_FALSE;
 	}
 
-	// XXX - TODO determine if the following three lines are meaningful
-	// after adding an IO aware API to core_bin_load
-	//p = strstr (file, "://");
-	//if (p) file = p+3;
-	//while (*file==' ') file++;
-	// XXX - end of dead code -- deeso
+	if (r->file && r->file->map) {
+		loadaddr = r->file->map->from;
+	}
 
 	/* TODO: fat bins are loaded multiple times, this is a problem that must be fixed . see '-->' marks. */
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
@@ -202,35 +194,36 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	if (is_io_load) {
 		// DEBUGGER
-// Fix to select pid before trying to load the binary
-	if (r_config_get_i (r->config, "cfg.debug")) {
-		if (r->file && r->file->fd) {
-			int newpid = r->file->fd->fd;
-			r_debug_select (r->dbg, newpid, newpid);
-		}
-		baddr = get_base_from_maps (r, file);
-		r_config_set_i (r->config, "bin.baddr", baddr);
-		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
-			va, NULL, baddr);
-		r_bin_load (r->bin, file, R_FALSE);
-		r->file->obj = r_bin_get_object (r->bin);
-		if (baddr)
-			r->file->obj->baddr = baddr;
-		r_config_set_i (r->config, "io.va",
-			(r->file->obj->info)? r->file->obj->info->has_va: 0);
-		offset = r_bin_get_offset (r->bin);
-	} else {
-		// XXX - May need to handle additional extraction here as well
-		r_bin_io_load (r->bin, r->io, r->file->fd, R_FALSE);
-		if ( r->bin->cur.curplugin &&
-				strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
-			// set use of raw strings
-			r_config_set (r->config, "bin.rawstr", "true");
-			// get bin.minstr
-			r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
-		}
-		{ // Making sure the RBinObject gets set
-			RBinObject *_obj = r_bin_get_object (r->bin);
+		// Fix to select pid before trying to load the binary
+		if (r_config_get_i (r->config, "cfg.debug")) {
+			if (r->file && r->file->fd) {
+				int newpid = r->file->fd->fd;
+				r_debug_select (r->dbg, newpid, newpid);
+			}
+			baddr = get_base_from_maps (r, file);
+			r_config_set_i (r->config, "bin.baddr", baddr);
+			r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
+				va, NULL, baddr);
+			r_bin_load (r->bin, file, baddr, loadaddr, R_FALSE);
+			r->file->obj = r_bin_get_object (r->bin);
+			if (baddr)
+				r->file->obj->baddr = baddr;
+			r_config_set_i (r->config, "io.va",
+				(r->file->obj->info)? r->file->obj->info->has_va: 0);
+			offset = r_bin_get_offset (r->bin);
+		} else {
+			// XXX - May need to handle additional extraction here as well
+			RBinObject *_obj = NULL;
+			r_bin_io_load (r->bin, r->io, r->file->fd, baddr, loadaddr, R_FALSE);
+			if ( r->bin->cur.curplugin &&
+					strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
+				// set use of raw strings
+				r_config_set (r->config, "bin.rawstr", "true");
+				// get bin.minstr
+				r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+			}
+			// Making sure the RBinObject gets set
+			_obj = r_bin_get_object (r->bin);
 
 			if (_obj && _obj->info && _obj->info->bits) {
 				r_config_set_i (r->config, "asm.bits", _obj->info->bits);
@@ -238,14 +231,12 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 			}
 			if (_obj) _obj->baddr = baddr;
 
-            if (r_asm_is_valid (r->assembler, r->bin->cur.curplugin->name) ) {
-                r_asm_use (r->assembler, r->bin->cur.curplugin->name);
-            }
+			if (r_asm_is_valid (r->assembler, r->bin->cur.curplugin->name) ) {
+				r_asm_use (r->assembler, r->bin->cur.curplugin->name);
+			}
 			r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 		}
-}
-//r->file->fd->data = data;
-	} else if (r_bin_load (r->bin, file, R_FALSE)) { // --->
+	} else if (r_bin_load (r->bin, file, baddr, loadaddr, R_FALSE)) { // --->
 		// HEXEDITOR
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
 			RBinObject *o = r->bin->cur.o;
@@ -272,7 +263,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 				im->to = im->from + r->bin->cur.size;
 			}
 		}
-	} else if (!r_bin_load (r->bin, file, R_TRUE)) {
+	} else if (!r_bin_load (r->bin, file, baddr, loadaddr, R_TRUE)) {
 		return R_FALSE;
 	}
 	if (!r->file) {

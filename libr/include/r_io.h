@@ -169,7 +169,7 @@ typedef struct r_io_list_t {
 typedef int (*RIOSetFd)(RIO *io, int fd);
 typedef int (*RIOReadAt)(RIO *io, ut64 addr, ut8 *buf, int size);
 typedef int (*RIOWriteAt)(RIO *io, ut64 addr, const ut8 *buf, int size);
-typedef int (*RIOSize)(RIO *io);
+typedef ut64 (*RIOSize)(RIO *io);
 typedef ut64 (*RIOSeek)(RIO *io, ut64 offset, int whence);
 
 /* compile time dependency */

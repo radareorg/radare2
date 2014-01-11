@@ -54,7 +54,7 @@ static int rabin_show_help(int v) {
 		" -d              show debug/dwarf information\n"
 		" -e              entrypoint\n"
 		" -f [str]        select sub-bin named str\n"
-		" -g              same as -SMRevsiz (show all info)\n" 
+		" -g              same as -SMRevsiz (show all info)\n"
 		" -h              this help\n"
 		" -H              header fields\n"
 		" -i              imports (symbols imported from libraries)\n"
@@ -454,8 +454,8 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 
-	if (!r_bin_load (bin, file, R_FALSE) && \
-		!r_bin_load (bin, file, R_TRUE)) {
+	if (!r_bin_load (bin, file, 0, 0, R_FALSE) && \
+		!r_bin_load (bin, file, 0, 0, R_TRUE)) {
 		eprintf ("r_bin: Cannot open '%s'\n", file);
 		return 1;
 	}

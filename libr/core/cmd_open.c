@@ -72,7 +72,6 @@ static int cmd_open(void *data, const char *input) {
 					map->from = new;
 					map->to = new+diff;
 				} else eprintf ("Cannot find any map here\n");
-				
 			}
 			}
 			break;

@@ -21,15 +21,10 @@
 #define IFDBG  if(0)
 #define IFINT  if(0)
 
-static Sdb *get_sdb_bin_objs();
-static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
-static RBinJavaObj * get_sdb_bin_obj(const char * name);
-static int del_sdb_bin_obj(const char * name);
 static ut32 r_bin_java_swap_uint(ut32 x);
 static ut16 r_bin_java_swap_ushort(ut16 x);
 static ut32 r_bin_java_read_int(RBinJavaObj *bin, ut64 offset);
-static const char * r_bin_java_get_this_class_name(RBinJavaObj *bin);
-static void add_cp_objs_to_sdb( RBinJavaObj *bin);
+//static const char * r_bin_java_get_this_class_name(RBinJavaObj *bin);
 static void add_cp_objs_to_sdb( RBinJavaObj *bin);
 static void add_field_infos_to_sdb( RBinJavaObj *bin);
 static void add_method_infos_to_sdb( RBinJavaObj *bin);
@@ -37,7 +32,7 @@ static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_fla
 static char * retrieve_method_access_string(ut16 flags);
 static char * retrieve_field_access_string(ut16 flags);
 static char * retrieve_class_method_access_string(ut16 flags);
-static int javasm_init(RBinJavaObj *bin);
+static int javasm_init(RBinJavaObj *bin, ut64 baddr, Sdb *kv);
 
 
 // taken from LLVM Code Byte Swap
@@ -68,26 +63,11 @@ static ut16 r_bin_java_read_short(RBinJavaObj *bin, ut64 offset) {
 	return r_bin_java_swap_ushort (sh);
 }
 
-static ut32 r_bin_java_read_int_from_buffer(ut8 *buffer, ut64 offset) {
-	ut32 sh = 0;
-	memcpy ((ut8 *)&sh, buffer, 4);
-	return r_bin_java_swap_uint (sh);
-}
-
-static ut16 r_bin_java_read_short_from_buffer(ut8 *buffer, ut64 offset) {
-	ut16 sh = 0;
-	memcpy ((ut8 *)&sh, buffer, 2);
-	return r_bin_java_swap_ushort (sh);
-}
-
 static ut8 R_BIN_JAVA_NULL_TYPE_INITTED = 0;
 // XXX - this is a global variable used while parsing the class file
 // if multi-threaded class parsing is enabled, this variable needs to
 // be guarded with a lock.
 static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
-// NOTE: must be initialized for safe use
-//static struct r_bin_java_cp_item_t cp_null_item = {0};
-static Sdb *BIN_OBJS_ADDRS = NULL;
 
 
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
@@ -311,7 +291,7 @@ static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 	{ "Unknown", R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[20]}
 };
 
-static const char * r_bin_java_get_this_class_name(RBinJavaObj *bin) {
+R_API char * r_bin_java_get_this_class_name(RBinJavaObj *bin) {
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
 	return r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
 }
@@ -333,8 +313,6 @@ static void add_cp_objs_to_sdb( RBinJavaObj *bin){
 				Long: <ordinal>.<file_offset>.<type_name>.abs(long)>
 				FieldRef/MethodRef: <ordinal>.<file_offset>.<type_name>.<class_idx>.<name_and_type_idx>
 	*/
-
-	int size = 0xff;
 	ut32 idx = 0, free_class_name = 1;
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class),
 					  *cp_obj = NULL;
@@ -436,44 +414,43 @@ static void add_field_infos_to_sdb( RBinJavaObj *bin){
 
 	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
 		char number_buffer[50];
-		ut64 file_offset = fm_type->file_offset;
+		ut64 file_offset = fm_type->file_offset + bin->loadaddr;
 		snprintf (number_buffer, 50, "0x%04"PFMT64x, file_offset);
 		sdb_apush (bin->kv, field_key, number_buffer, 0);
 	}
 
 	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
-		ut32 bytes_written = 0;
-		ut64 field_offset = fm_type->file_offset;
+		ut64 field_offset = fm_type->file_offset + bin->loadaddr;
 
 		// generate method specific key & value
-		bytes_written = snprintf (field_key, key_size, "%s.0x%04"PFMT64x, class_name, field_offset);
+		snprintf (field_key, key_size, "%s.0x%04"PFMT64x, class_name, field_offset);
 		field_key[key_size-1] = 0;
 
-		bytes_written = snprintf (field_key_value, key_size, "%s.0x%04"PFMT64x".field", class_name, field_offset);
+		snprintf (field_key_value, key_size, "%s.0x%04"PFMT64x".field", class_name, field_offset);
 		field_key_value[key_size-1] = 0;
 
 		sdb_set (bin->kv, field_key, field_key_value, 0);
 
 		// generate info key, and place values in method info array
-		bytes_written = snprintf (field_key, key_size, "%s.info",field_key_value);
+		snprintf (field_key, key_size, "%s.info",field_key_value);
 		field_key[key_size-1] = 0;
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->flags_str);
+		snprintf (value_buffer, value_buffer_size, "%s", fm_type->flags_str);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, field_key, value_buffer, 0);
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
+		snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, field_key, value_buffer, 0);
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
+		snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, field_key, value_buffer, 0);
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
+		snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, field_key, value_buffer, 0);
@@ -527,6 +504,7 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
 	char * class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
+	ut64 baddr = bin->loadaddr;
 
 	if (class_name == NULL) {
 		class_name = "unknown";
@@ -545,64 +523,63 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
 		char number_buffer[50];
-		ut64 file_offset = fm_type->file_offset;
+		ut64 file_offset = fm_type->file_offset + baddr;
 		snprintf (number_buffer, 50, "0x%04"PFMT64x, file_offset);
 		sdb_apush (bin->kv, method_key, number_buffer, 0);
 	}
 
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
-		ut64 code_offset = r_bin_java_get_method_code_offset (fm_type),
+		ut64 code_offset = r_bin_java_get_method_code_offset (fm_type) + baddr,
 			 code_size = r_bin_java_get_method_code_size (fm_type),
-			 method_offset = fm_type->file_offset;
-		ut32 bytes_written = 0;
+			 method_offset = fm_type->file_offset + baddr;
 
 		// generate method specific key & value
-		bytes_written = snprintf (method_key, key_size, "%s.0x%04"PFMT64x, class_name, code_offset);
+		snprintf (method_key, key_size, "%s.0x%04"PFMT64x, class_name, code_offset);
 		method_key[key_size-1] = 0;
 
-		bytes_written = snprintf (method_key_value, key_size, "%s.0x%04"PFMT64x".method", class_name, method_offset);
+		snprintf (method_key_value, key_size, "%s.0x%04"PFMT64x".method", class_name, method_offset);
 		method_key_value[key_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", method_key_value, method_key);
 
 		sdb_set (bin->kv, method_key, method_key_value, 0);
 
 		// generate code key and values
-		bytes_written = snprintf (method_key, key_size, "%s.code",method_key_value);
+		snprintf (method_key, key_size, "%s.code",method_key_value);
 		method_key[key_size-1] = 0;
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "0x%04"PFMT64x, code_offset);
+		snprintf (value_buffer, value_buffer_size, "0x%04"PFMT64x, code_offset);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, method_key, value_buffer, 0);
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "0x%04"PFMT64x, code_size);
+		snprintf (value_buffer, value_buffer_size, "0x%04"PFMT64x, code_size);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, method_key, value_buffer, 0);
 
 		// generate info key, and place values in method info array
-		bytes_written = snprintf (method_key, key_size, "%s.info", method_key_value);
+		snprintf (method_key, key_size, "%s.info", method_key_value);
 		method_key[key_size-1] = 0;
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->flags_str);
+		snprintf (value_buffer, value_buffer_size, "%s", fm_type->flags_str);
 		value_buffer[value_buffer_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
 
 		sdb_apush (bin->kv, method_key, value_buffer, 0);
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
+		snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
 		value_buffer[value_buffer_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
 
 		sdb_apush (bin->kv, method_key, value_buffer, 0);
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
+		snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
 		value_buffer[value_buffer_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
 
 		sdb_apush (bin->kv, method_key, value_buffer, 0);
 
-		bytes_written = snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
+		snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
 		value_buffer[value_buffer_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
 
@@ -689,53 +666,32 @@ R_API void debug_dump_all_cp_obj(RBinJavaObj * BIN_OBJ) {
 	}
 }
 
-static Sdb *get_sdb_bin_objs(){
-	if (BIN_OBJS_ADDRS == NULL)
-		BIN_OBJS_ADDRS = sdb_new(NULL, 0);
-	return BIN_OBJS_ADDRS;
-}
+R_API char * r_bin_java_build_obj_key (RBinJavaObj *bin) {
+	char * jvcname = NULL;
+	char * cname = r_bin_java_get_this_class_name (bin);
+	ut32 class_name_len = cname ? strlen(cname) : strlen("_unknown_");
+	jvcname = malloc(class_name_len + 8+30);
 
-static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
-	int result = R_FALSE;
-	Sdb* bin_objs_addrs = get_sdb_bin_objs ();
-	char value[1024] = {0};
-	sdb_itoa ((ut64)(size_t)bin_obj,  value);
-	if (key && bin_obj && bin_objs_addrs) {
-		IFDBG eprintf ("Adding %s:%s to the bin_objs db\n", key, value);
-		sdb_set (bin_objs_addrs, key, value, 0);
-		result = R_TRUE;
+	if (cname) {
+		snprintf(jvcname, class_name_len + 30, "%d.%s.class", bin->id, cname);
+		free(cname);
+	} else {
+		snprintf(jvcname, class_name_len + 30, "%d._unknown_.class", bin->id);
 	}
-	return result;
+	return jvcname;
 }
 
-R_API int r_bin_java_update_file (const char *key, RBinJavaObj *bin_obj) {
-	del_sdb_bin_obj(key);
-	bin_obj->file = key;
-	return add_sdb_bin_obj (key, bin_obj);
-}
-
-static RBinJavaObj * get_sdb_bin_obj(const char * name){
-	Sdb* bin_objs_addrs = get_sdb_bin_objs ();
+int sdb_iterate_build_list(void *user, const char *k, const char *v) {
+	RList *bin_objs_list = (RList *)  user;
+	size_t value = (size_t) sdb_atoi (v);
 	RBinJavaObj *bin_obj = NULL;
-	IFDBG eprintf("Retrieving %s to the bin_objs db\n", name);
-	if (name && bin_objs_addrs) {
-		size_t value = (size_t) sdb_getn (bin_objs_addrs, name, 0);
-		IFDBG eprintf("Found %s == %"PFMT64x" bin_objs db\n",
-			name, (ut64)value);
-		if (value !=0 && value != (size_t)-1) {
-			bin_obj = (RBinJavaObj *) value;
-		}
-	}
-	return bin_obj;
-}
+	IFDBG eprintf("Found %s == %"PFMT64x" bin_objs db\n", k, (ut64)value);
 
-static int del_sdb_bin_obj(const char * name){
-	int result = R_FALSE;
-	Sdb* bin_objs_addrs = get_sdb_bin_objs ();
-	if (bin_objs_addrs && name) {
-		result = sdb_remove (bin_objs_addrs, name, 0);
+	if (value !=0 && value != (size_t)-1) {
+		bin_obj = (RBinJavaObj *) value;
+		r_list_append ( bin_objs_list, bin_obj);
 	}
-	return result;
+	return R_TRUE;
 }
 
 R_API RBinJavaCPTypeObj* r_bin_java_get_java_null_cp() {
@@ -914,7 +870,7 @@ R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) 
 
 	if (method->attr_count > 0) {
 		for (i=0; i<method->attr_count; i++) {
-			attr = r_bin_java_read_next_attr (bin, bin->b->cur);
+			attr = r_bin_java_read_next_attr (bin, R_BUF_CUR);
 			if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
 				// This is necessary for determing the appropriate number of bytes when readin
 				// uoffset, ustack, ulocalvar values
@@ -1005,7 +961,7 @@ R_API RBinJavaField* r_bin_java_read_next_field(RBinJavaObj *bin, ut64 offset) {
 	IFDBG printf ("Parsing %s(%s)", field->name, field->descriptor);
 	if (field->attr_count > 0) {
 		for (i=0; i< field->attr_count ; i++) {
-			attr = r_bin_java_read_next_attr(bin, bin->b->cur);
+			attr = r_bin_java_read_next_attr(bin, R_BUF_CUR);
 			if ((r_bin_java_get_attr_type_by_name(attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
 				// This is necessary for determing the appropriate number of bytes when readin
 				// uoffset, ustack, ulocalvar values
@@ -1284,9 +1240,6 @@ R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJava
 		@param obj object to look up the name for
 		@rvalue ut8* (user frees) or NULL
 	*/
-
-	ut32 idx = 0;
-
 	if(obj == NULL || cp_list == NULL)
 		return NULL;
 
@@ -1299,7 +1252,6 @@ R_API char* r_bin_java_get_item_name_from_cp_item_list (RList *cp_list, RBinJava
 		case R_BIN_JAVA_CP_FIELDREF:
 		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
 		case R_BIN_JAVA_CP_METHODREF:
-			idx = obj->info.cp_method.name_and_type_idx;
 			obj = r_bin_java_get_item_from_cp_item_list (cp_list, obj->info.cp_method.name_and_type_idx);
 			return r_bin_java_get_item_name_from_cp_item_list (cp_list, obj);
 		default:
@@ -1330,9 +1282,6 @@ R_API char* r_bin_java_get_item_desc_from_cp_item_list (RList *cp_list, RBinJava
 
 		@rvalue ut8* (user frees) or NULL
 	*/
-
-	ut32 idx = 0;
-
 	if(obj == NULL || cp_list == NULL)
 		return NULL;
 
@@ -1343,7 +1292,6 @@ R_API char* r_bin_java_get_item_desc_from_cp_item_list (RList *cp_list, RBinJava
 		case R_BIN_JAVA_CP_FIELDREF:
 		case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
 		case R_BIN_JAVA_CP_METHODREF:
-			idx = obj->info.cp_method.name_and_type_idx;
 			obj = r_bin_java_get_item_from_cp_item_list (cp_list, obj->info.cp_method.name_and_type_idx);
 			return r_bin_java_get_item_desc_from_cp_item_list (cp_list, obj);
 		default:
@@ -1491,8 +1439,9 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, ut64 buf_off
 	attr = r_bin_java_read_next_attr_from_buffer (buffer, sz, buf_offset);
 
 	if (attr) {// advance the cursor to the correct place
+		ut64 old_cur = bin->b->cur;
 		bin->b->cur = (buf_offset + sz);
-		IFDBG eprintf ("Advancing the cursor to 0x%d\n", bin->b->cur);
+		//IFDBG eprintf ("==+== Advancing the cursor from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", old_cur, bin->b->cur);
 	}
 	return attr;
 }
@@ -1536,7 +1485,7 @@ RBinJavaClass2* r_bin_java_read_class_file2(RBinJavaObj *bin, ut64 offset) {
 	if (cf2) {
 		memset (cf2, 0, sizeof (RBinJavaClass2));
 		IFDBG printf ("\n0x%x Offset before reading the cf2 structure\n", bin->b->cur);
-		r_buf_read_at (bin->b, bin->b->cur, buf, 6);
+		r_buf_read_at (bin->b, R_BUF_CUR, buf, 6);
 
 		/*
 		Reading the following fields:
@@ -1555,7 +1504,7 @@ RBinJavaClass2* r_bin_java_read_class_file2(RBinJavaObj *bin, ut64 offset) {
 	return cf2;
 }
 
-static int javasm_init(RBinJavaObj *bin) {
+static int javasm_init(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv) {
 	RBinJavaField *method, *field;
 	RBinJavaInterfaceInfo *interfaces_obj;
 	RBinJavaCPTypeObj *obj;
@@ -1563,17 +1512,21 @@ static int javasm_init(RBinJavaObj *bin) {
 	/* Initialize structs */
 	R_BIN_JAVA_GLOBAL_BIN = bin;
 	bin->lines.count = 0;
+	bin->loadaddr = loadaddr;
 	bin->cp_list = r_list_new ();
 	r_bin_java_get_java_null_cp ();
-	bin->kv = sdb_new (NULL, 0);
-	bin->AllJavaBinObjs = get_sdb_bin_objs();
+	srand(time(NULL));
+	bin->id = rand();
+	bin->kv = kv ? kv : sdb_new(NULL, 0);
+	// \/ this gets assigned by the plugin: see libr/bin/p/bin_java.c:load
+	bin->AllJavaBinObjs = NULL;
 	/* Initialize cp_null_item */
 	//cp_null_item.tag = -1;
 	//strncpy (cp_null_item.name, "(null)", sizeof (cp_null_item.name)-1);
 	//cp_null_item.value = strdup ("(null)"); // strdup memleak wtf
 
 	/* start parsing */
-	r_buf_read_at (bin->b, bin->b->cur, (ut8*)&bin->cf, 10);
+	r_buf_read_at (bin->b, R_BUF_CUR, (ut8*)&bin->cf, 10);
 	if (memcmp (bin->cf.cafebabe, "\xCA\xFE\xBA\xBE", 4)) {
 		eprintf ("javasm_init: Invalid header (%02x %02x %02x %02x)\n",
 				bin->cf.cafebabe[0], bin->cf.cafebabe[1],
@@ -1590,7 +1543,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	bin->cp_offset = bin->b->cur;
 	r_list_append (bin->cp_list, r_bin_java_get_java_null_cp ());
 	for (ord=1,bin->cp_idx=0; bin->cp_idx < bin->cp_count; ord++, bin->cp_idx++) {
-		obj = r_bin_java_read_next_constant_pool_item (bin, bin->b->cur);
+		obj = r_bin_java_read_next_constant_pool_item (bin, R_BUF_CUR);
 		if (obj) {
 			//IFDBG printf ("SUCCESS Read ConstantPoolItem %d\n", i);
 			obj->metas->ord = ord;
@@ -1608,7 +1561,7 @@ static int javasm_init(RBinJavaObj *bin) {
 
 	}
 	bin->cp_size = bin->b->cur - bin->cp_offset;
-	bin->cf2 = r_bin_java_read_class_file2 (bin, bin->b->cur);
+	bin->cf2 = r_bin_java_read_class_file2 (bin, R_BUF_CUR);
 	if (bin->cf2 == NULL) {
 		eprintf ("Unable to read the class file info: bin->cf2 is NULL Failing?\n");
 		return R_FALSE;
@@ -1616,14 +1569,14 @@ static int javasm_init(RBinJavaObj *bin) {
 
 	IFDBG printf ("0x%x Access flags: 0x%04x\n", bin->b->cur, bin->cf2->access_flags);
 	IFDBG printf ("This class: %d\n", bin->cf2->this_class);
-	bin->interfaces_count = r_bin_java_read_short (bin, bin->b->cur);
+	bin->interfaces_count = r_bin_java_read_short (bin, R_BUF_CUR);
 	bin->interfaces_list = r_list_new ();
 
 	IFDBG printf ("Interfaces count: %d\n", bin->interfaces_count);
 	bin->interfaces_offset = bin->b->cur;
 	if ( bin->interfaces_count > 0 ) {
 		for (i = 0; i < bin->interfaces_count; i++) {
-			interfaces_obj = r_bin_java_read_next_interface_item (bin, bin->b->cur);
+			interfaces_obj = r_bin_java_read_next_interface_item (bin, R_BUF_CUR);
 			r_list_append (bin->interfaces_list, interfaces_obj);
 		}
 	}
@@ -1632,14 +1585,14 @@ static int javasm_init(RBinJavaObj *bin) {
 
 	bin->interfaces_size = bin->b->cur - bin->interfaces_offset;
 
-	bin->fields_count = r_bin_java_read_short (bin, bin->b->cur);
+	bin->fields_count = r_bin_java_read_short (bin, R_BUF_CUR);
 	bin->fields_list = r_list_new ();
 
 	bin->fields_offset = bin->b->cur;
 	IFDBG printf ("Fields count: %d\n", bin->fields_count);
 	if (bin->fields_count > 0) {
 		for (i = 0; i < bin->fields_count; i++, bin->field_idx++) {
-			field = r_bin_java_read_next_field (bin, bin->b->cur);
+			field = r_bin_java_read_next_field (bin, R_BUF_CUR);
 			if (obj) {
 				r_list_append (bin->fields_list, field);
 				IFDBG r_bin_java_print_field_summary(field);
@@ -1650,7 +1603,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	}
 	bin->fields_size = bin->b->cur - bin->fields_offset;
 	bin->methods_offset = bin->b->cur;
-	bin->methods_count = r_bin_java_read_short (bin,bin->b->cur);
+	bin->methods_count = r_bin_java_read_short (bin,R_BUF_CUR);
 	bin->methods_list = r_list_new ();
 
 	IFDBG printf ("Methods count: %d\n", bin->methods_count);
@@ -1660,7 +1613,7 @@ static int javasm_init(RBinJavaObj *bin) {
 	bin->entrypoint_code_attr = NULL;
 	if (bin->methods_count > 0) {
 		for (i=0; i<bin->methods_count; i++, bin->method_idx++) {
-			method = r_bin_java_read_next_method (bin, bin->b->cur);
+			method = r_bin_java_read_next_method (bin, R_BUF_CUR);
 			if (method) {
 				r_list_append (bin->methods_list, method);
 			}
@@ -1686,11 +1639,11 @@ static int javasm_init(RBinJavaObj *bin) {
 	}
 	bin->methods_size = bin->b->cur - bin->methods_offset;
 	bin->attributes_offset = bin->b->cur;
-	bin->attributes_count = r_bin_java_read_short (bin,bin->b->cur);
+	bin->attributes_count = r_bin_java_read_short (bin,R_BUF_CUR);
 
 	if (bin->attributes_count > 0) {
 		for ( i=0; i<bin->attributes_count; i++,bin->attributes_idx++) {
-			RBinJavaAttrInfo* attr = r_bin_java_read_next_attr (bin, bin->b->cur);
+			RBinJavaAttrInfo* attr = r_bin_java_read_next_attr (bin, R_BUF_CUR);
 			if (attr)
 				r_list_append (bin->attributes, attr);
 		}
@@ -1698,8 +1651,6 @@ static int javasm_init(RBinJavaObj *bin) {
 	bin->methods_size = bin->b->cur - bin->methods_offset;
 	add_method_infos_to_sdb(bin);
 	add_field_infos_to_sdb(bin);
-	add_sdb_bin_obj (r_bin_java_get_this_class_name (bin), bin);
-	add_sdb_bin_obj (bin->file, bin);
 	return R_TRUE;
 }
 
@@ -1711,7 +1662,7 @@ R_API char* r_bin_java_get_version(RBinJavaObj* bin) {
 
 R_API ut64 r_bin_java_get_main(RBinJavaObj* bin) {
 	if (bin->main_code_attr) {
-		return bin->main_code_attr->info.code_attr.code_offset;
+		return bin->main_code_attr->info.code_attr.code_offset + bin->loadaddr;
 	}
 	return 0;
 }
@@ -1727,7 +1678,6 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 
 	ret->free = free;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
-		
 		if (strcmp (fm_type->name, "main") == 0 ||
 			strcmp (fm_type->name, "<init>") == 0 ||
 			strcmp (fm_type->name, "<clinit>") == 0 ||
@@ -1735,7 +1685,7 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 			addr = R_NEW (RBinAddr);
 			if (addr) {
 				memset (addr, 0, sizeof (RBinAddr));
-				addr->rva = addr->offset = r_bin_java_get_method_code_offset (fm_type);;
+				addr->rva = addr->offset = r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
 			}
 			r_list_append (ret, addr);
 		}
@@ -1743,11 +1693,18 @@ R_API RList * r_bin_java_get_entrypoints(RBinJavaObj* bin) {
 	return ret;
 }
 
-R_API const RBinJavaObj* r_bin_java_get_bin_obj(const char *name) {
-	return get_sdb_bin_obj (name);
+R_API RList* r_bin_java_get_bin_obj_list_thru_obj(RBinJavaObj *bin_obj) {
+	Sdb * sdb = bin_obj ? bin_obj->AllJavaBinObjs : NULL;
+	if (bin_obj == NULL || sdb == NULL) {
+		return NULL;
+	}
+	RList *the_list = r_list_new();
+	if (sdb == NULL || the_list == NULL) return NULL;
+	sdb_foreach (sdb, sdb_iterate_build_list, (void *) the_list);
+	return the_list;
 }
 
-R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin,  ut64 addr) {
+R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin, ut64 addr) {
 	RListIter *iter = NULL, *iter_tmp=NULL;
 	RBinJavaField *fm_type, *result = NULL;
 
@@ -1758,7 +1715,7 @@ R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj
 	}
 
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
-		ut64 offset = r_bin_java_get_method_code_offset(fm_type),
+		ut64 offset = r_bin_java_get_method_code_offset(fm_type) + bin->loadaddr,
 			 size = r_bin_java_get_method_code_size(fm_type);
 
 		if ( addr >= offset && addr <= size + offset)
@@ -1770,9 +1727,10 @@ R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj
 R_API RBinAddr * r_bin_java_get_entrypoint(RBinJavaObj* bin, int sym) {
 	RBinAddr *ret = NULL;
 
-	ret = R_NEW (RBinAddr);
+	ret = R_NEW0 (RBinAddr);
 	if (!ret)
 		return NULL;
+	ret->offset = -1;
 	switch (sym) {
 		case R_BIN_SYM_ENTRY:
 		case R_BIN_SYM_INIT:
@@ -1794,7 +1752,7 @@ R_API RBinAddr * r_bin_java_get_entrypoint(RBinJavaObj* bin, int sym) {
 		default:
 			ret->offset = -1;
 	}
-
+	if (ret->offset != -1) ret->offset += bin->loadaddr;
 	return ret;
 }
 
@@ -1833,7 +1791,7 @@ R_API ut64 r_bin_java_find_method_offset(RBinJavaObj *bin, const char* method_na
 	ut64 offset = -1;
 	r_list_foreach_safe (bin->methods_list, attr_iter, attr_iter_tmp, method) {
 		if(method && !strcmp ( (const char *) method->name, method_name) ) {
-			offset = r_bin_java_get_method_code_offset (method);
+			offset = r_bin_java_get_method_code_offset (method) + bin->loadaddr;
 			break;
 		}
 	}
@@ -1861,18 +1819,18 @@ RBinField* r_bin_java_allocate_rbinfield() {
 	return t;
 }
 
-R_API RBinField* r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_type) {
+R_API RBinField* r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_type, ut64 baddr) {
 	RBinField *field = r_bin_java_allocate_rbinfield ();
 
 	if (field) {
 		strncpy (field->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
-		field->offset = fm_type->file_offset;
+		field->offset = fm_type->file_offset + baddr;
 		field->visibility = fm_type->flags;
 	}
 	return field;
 }
 
-R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type) {
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type, ut64 baddr) {
 	RBinSymbol *sym = r_bin_java_allocate_symbol ();
 	if (fm_type == NULL || fm_type->field_ref_cp_obj == NULL || fm_type->field_ref_cp_obj == &R_BIN_JAVA_NULL_TYPE) {
 		free (sym);
@@ -1885,11 +1843,11 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		if (fm_type->class_name) {
 			sym->classname = strdup (fm_type->class_name);
 		} else {
-			sym->classname = strdup ("NONE");
+			sym->classname = NULL;//strdup ("NONE");
 		}
 
-		sym->offset = r_bin_java_get_method_code_offset (fm_type);
-		sym->rva = r_bin_java_get_method_code_offset (fm_type);
+		sym->offset = r_bin_java_get_method_code_offset (fm_type) + baddr;
+		sym->rva = r_bin_java_get_method_code_offset (fm_type) + baddr;
 		sym->ordinal = fm_type->metas->ord;
 		sym->size = r_bin_java_get_method_code_size (fm_type);
 		sym->visibility = fm_type->flags;
@@ -1900,7 +1858,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 	return sym;
 }
 
-R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj) {
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, ut64 baddr) {
 	RBinSymbol *sym = r_bin_java_allocate_symbol ();
 	char *class_name, *name, *type_name;
 
@@ -1933,8 +1891,8 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj) 
 		if (class_name)
 			sym->classname = class_name;
 
-		sym->offset = obj->file_offset;
-		sym->rva = obj->file_offset;
+		sym->offset = obj->file_offset + baddr;
+		sym->rva = obj->file_offset + baddr;
 		sym->ordinal = obj->metas->ord;
 		sym->size = 0;
 	}
@@ -1951,13 +1909,14 @@ R_API RBinSection* r_bin_java_allocate_section() {
 R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 	RBinSection* section = NULL;
 	RList *sections = r_list_new ();
+	ut64 baddr = bin->loadaddr;
 
 	if (bin->cp_count > 0) {
 		section = r_bin_java_allocate_section ();
 		if(section) {
 			strcpy (section->name, "constant_pool");
 			section->size = bin->cp_size;
-			section->offset = bin->cp_offset;
+			section->offset = bin->cp_offset + baddr;
 			section->srwx = 0;
 			r_list_append (sections, section);
 		}
@@ -1968,7 +1927,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		if(section) {
 			strcpy (section->name, "fields");
 			section->size = bin->fields_size;
-			section->offset = bin->fields_offset;
+			section->offset = bin->fields_offset + baddr;
 			section->srwx = 0;
 			r_list_append (sections, section);
 		}
@@ -1979,7 +1938,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		if(section) {
 			strcpy (section->name, "methods");
 			section->size = bin->methods_size;
-			section->offset = bin->methods_offset;
+			section->offset = bin->methods_offset + baddr;
 			section->srwx = 0;
 			r_list_append (sections, section);
 		}
@@ -1990,7 +1949,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		if(section) {
 			strcpy (section->name, "interfaces");
 			section->size = bin->interfaces_size;
-			section->offset = bin->interfaces_offset;
+			section->offset = bin->interfaces_offset + baddr;
 			section->srwx = 0;
 			r_list_append (sections, section);
 		}
@@ -2002,7 +1961,7 @@ R_API RList* r_bin_java_get_sections(RBinJavaObj *bin) {
 		if(section) {
 			strcpy (section->name, "attributes");
 			section->size = bin->attributes_size;
-			section->offset = bin->attributes_offset;
+			section->offset = bin->attributes_offset + baddr;
 			r_list_append (sections, section);
 		}
 		section = NULL;
@@ -2019,7 +1978,7 @@ R_API RList* r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
 		if (fm_type && fm_type->field_ref_cp_obj && \
 		fm_type->field_ref_cp_obj->metas->ord == class_idx) {
 			sym = r_bin_java_create_new_symbol_from_ref (
-				fm_type->field_ref_cp_obj);
+				fm_type->field_ref_cp_obj, bin->loadaddr);
 			if (sym) r_list_append (methods, sym);
 		}
 	}
@@ -2035,7 +1994,7 @@ R_API RList* r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx) {
 		if (fm_type) {
 			if (fm_type && fm_type->field_ref_cp_obj
 				&& fm_type->field_ref_cp_obj->metas->ord == class_idx) {
-				field = r_bin_java_create_new_rbinfield_from_field (fm_type);
+				field = r_bin_java_create_new_rbinfield_from_field (fm_type, bin->loadaddr);
 				if (field) r_list_append (fields, field);
 			}
 		}
@@ -2143,14 +2102,14 @@ R_API RList* r_bin_java_get_classes(RBinJavaObj *bin) {
 	return classes;
 }
 
-R_API RBinSymbol* r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTypeObj *obj) {
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_invoke_dynamic(RBinJavaCPTypeObj *obj, ut64 baddr) {
 	RBinSymbol *sym = NULL;
 	if (obj == NULL || (obj->tag != R_BIN_JAVA_CP_INVOKEDYNAMIC))
 		return sym;
-	return r_bin_java_create_new_symbol_from_cp_idx (obj->info.cp_invoke_dynamic.name_and_type_index);
+	return r_bin_java_create_new_symbol_from_cp_idx (obj->info.cp_invoke_dynamic.name_and_type_index, baddr);
 }
 
-R_API RBinSymbol* r_bin_java_create_new_symbol_from_cp_idx (ut32 cp_idx) {
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_cp_idx (ut32 cp_idx, ut64 baddr) {
 	RBinSymbol *sym = NULL;
 	RBinJavaCPTypeObj *obj = r_bin_java_get_item_from_bin_cp_list (
 		R_BIN_JAVA_GLOBAL_BIN, cp_idx);
@@ -2159,10 +2118,10 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_cp_idx (ut32 cp_idx) {
 	case R_BIN_JAVA_CP_METHODREF:
 	case R_BIN_JAVA_CP_FIELDREF:
 	case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
-		sym = r_bin_java_create_new_symbol_from_ref (obj);
+		sym = r_bin_java_create_new_symbol_from_ref (obj, baddr);
 		break;
 	case R_BIN_JAVA_CP_INVOKEDYNAMIC:
-		sym = r_bin_java_create_new_symbol_from_invoke_dynamic (obj);
+		sym = r_bin_java_create_new_symbol_from_invoke_dynamic (obj, baddr);
 		break;
 	default:
 		break;
@@ -2177,7 +2136,7 @@ RList* r_bin_java_get_fields(RBinJavaObj* bin) {
 	RBinJavaField *fm_type;
 
 	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
-		field = r_bin_java_create_new_rbinfield_from_field (fm_type);
+		field = r_bin_java_create_new_rbinfield_from_field (fm_type, bin->loadaddr);
 		if(field) {
 			r_list_append (fields, field);
 		}
@@ -2203,7 +2162,7 @@ RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 
 	sym = NULL;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
-		sym = r_bin_java_create_new_symbol_from_field (fm_type);
+		sym = r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr);
 		if(sym) {
 			r_list_append (symbols, (void *) sym);
 		}
@@ -2221,7 +2180,7 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8) {
 			str = (RBinString *) R_NEW0(RBinString);
 			if(str) {
-				str->offset = cp_obj->file_offset;
+				str->offset = cp_obj->file_offset + bin->loadaddr;
 				str->ordinal = cp_obj->metas->ord;
 				str->size = cp_obj->info.cp_utf8.length;
 				strncpy ((char *) str->string, (const char *) cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
@@ -2233,11 +2192,19 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin) {
 }
 
 R_API void* r_bin_java_free (RBinJavaObj* bin) {
+	char * bin_obj_key = NULL;
 	if (!bin) return NULL;
-	// XXX - need to free all keys and values
-	del_sdb_bin_obj (r_bin_java_get_this_class_name (bin));
-	del_sdb_bin_obj (bin->file);
-	sdb_free (bin->kv);
+
+	// Delete the bin object from the data base.
+	bin_obj_key = r_bin_java_build_obj_key(bin);
+	sdb_remove (bin->AllJavaBinObjs, bin_obj_key, 0);
+	free(bin_obj_key);
+
+	// XXX - Need to remove all keys belonging to this class from
+	// the share meta information sdb.
+	// TODO e.g. iterate over bin->kv and delete all obj, func, etc. keys
+	//sdb_free (bin->kv);
+
 	// free up the constant pool list
 	r_bin_java_constant_pool_list_free (bin);
 	// free up the fields list
@@ -2255,11 +2222,12 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	}
 	bin->b = NULL;
 	R_BIN_JAVA_GLOBAL_BIN = NULL;
+	free (bin->file);
 	free (bin);
 	return NULL;
 }
 
-R_API RBinJavaObj* r_bin_java_new (const char* file) {
+R_API RBinJavaObj* r_bin_java_new (const char* file, ut64 baddr, Sdb * kv) {
 	ut8 *buf;
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	bin->file = file;
@@ -2269,18 +2237,18 @@ R_API RBinJavaObj* r_bin_java_new (const char* file) {
 	if (!r_buf_set_bytes (bin->b, buf, bin->size))
 		return r_bin_java_free (bin);
 	free (buf);
-	if (!javasm_init (bin))
+	if (!javasm_init (bin, baddr, kv))
 		return r_bin_java_free (bin);
 	return bin;
 }
 
-R_API RBinJavaObj* r_bin_java_new_buf(RBuffer *buf) {
+R_API RBinJavaObj* r_bin_java_new_buf(RBuffer *buf, ut64 baddr, Sdb * kv) {
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	if (!bin) return NULL;
 	bin->b = buf;
 	bin->size = buf->length;
 	buf->cur = 0; // rewind
-	if (!javasm_init (bin))
+	if (!javasm_init (bin, baddr, kv))
 		return r_bin_java_free (bin);
 	return bin;
 }

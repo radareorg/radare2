@@ -278,11 +278,11 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len);
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 
-R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baddr);
-R_API int r_core_bin_load(RCore *core, const char *file, ut64 baddr);
+R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
+R_API int r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_hash_load(RCore *core, const char *file);
 
-// XXX - this is kinda hacky, maybe there should be a way to 
+// XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
 R_API int r_core_bin_refresh_strings(RCore *core);
 

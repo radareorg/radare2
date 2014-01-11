@@ -147,9 +147,9 @@ int r_io_zip_slurp_file(RIOZipFileObj *zip_file_obj) {
 	struct zip_file *zFile = NULL;
 	int result = R_FALSE;
 	struct zip * zipArch = r_io_zip_open_archive(zip_file_obj->archivename, zip_file_obj->flags, zip_file_obj->mode, zip_file_obj->rw);
-	struct zip_stat sb; 
+	struct zip_stat sb;
 	//eprintf("Slurping file");
-	if (zip_file_obj && zip_file_obj->entry != -1) {
+	if (zipArch && zip_file_obj && zip_file_obj->entry != -1) {
 
 		zFile = zip_fopen_index(zipArch, zip_file_obj->entry, 0);
 		if (!zip_file_obj->b) {
@@ -162,7 +162,7 @@ int r_io_zip_slurp_file(RIOZipFileObj *zip_file_obj) {
 			ut8 *buf = malloc(sb.size);
 			memset(buf, 0, sb.size);
 
-			if (buf) {			
+			if (buf) {
 				zip_fread(zFile, buf, sb.size);
 				r_buf_set_bytes(zip_file_obj->b, buf, sb.size);
 				zip_file_obj->opened = 1;

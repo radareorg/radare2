@@ -67,6 +67,9 @@ typedef struct sdb_t {
 	SdbKv tmpkv;
 } Sdb;
 
+
+// return 0 on successful initialization and 1 on failure
+int sdb_init (Sdb *s, const char *dir, int lock);
 Sdb* sdb_new (const char *dir, int lock);
 void sdb_free (Sdb* s);
 void sdb_drop (Sdb* s);

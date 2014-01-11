@@ -43,7 +43,7 @@ static void get_strings_range(RBinArch *arch, RList *list, int min, ut64 from, u
 	if (to == 0 && arch->buf)
 		to = arch->buf->length;
 	if (arch->buf && arch->buf->buf)
-	for (i = from; i < to; i++) { 
+	for (i = from; i < to; i++) {
 		if ((IS_PRINTABLE (arch->buf->buf[i])) && \
 				matches < R_BIN_SIZEOF_STRINGS-1) {
 			str[matches] = arch->buf->buf[i];
@@ -115,7 +115,7 @@ static RList* get_strings(RBinArch *a, int min) {
 					section->offset+section->size,
 					section->rva);
 			}
-		}	
+		}
 		if (r_list_empty (a->o->sections)) {
 			int i, next = 0, from = 0, funn = 0, to = 0;
 			ut8 *buf = a->buf->buf;
@@ -184,12 +184,17 @@ static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 	o->lang = r_bin_load_languages (bin);
 }
 
-R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
+R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int dummy) {
 	int rawstr = 0;
 	ut8* buf_bytes;
-	ut64 start, end, 
-		 sz = -1, 
+	ut64 start, end,
+		 sz = -1,
 		 offset = 0;
+
+	RListIter *it;
+	RBinXtrPlugin *xtr;
+	RBinPlugin *any, *plugin;
+	RBinArch *a;
 
 	if (!io || !io->plugin || !io->plugin->read || !io->plugin->lseek)
 		return R_FALSE;
@@ -201,22 +206,23 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 	start = io->plugin->lseek (io, desc, 0, SEEK_SET);
 	sz = -1;
 	offset = 0;
-	
+
 	if (end == -1 || start == -1) return R_FALSE;
 
 	sz = end - start;
 	buf_bytes = malloc(sz);
-	
+
 	if (!buf_bytes || !io->plugin->read (io, desc, buf_bytes, sz)) {
 		free (buf_bytes);
 		return R_FALSE;
 	}
 
 	memcpy (&rawstr, buf_bytes, 4);
+
 	bin->cur.file = strdup (desc->name);
-	bin->cur.buf = r_buf_new ();			
+	bin->cur.buf = r_buf_new ();
 	bin->cur.rawstr = rawstr;
-		
+
 	if (bin->cur.buf)
 		r_buf_set_bytes (bin->cur.buf, buf_bytes, sz);
 	free (buf_bytes);
@@ -224,49 +230,45 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy) {
 	// Here is the pertinent code from r_bin_init
 	// we can't call r_bin_init, because it will
 	// deref all work done previously by IO Plugin.
-	{
-		RListIter *it;
-		RBinXtrPlugin *xtr;
-		bin->cur.o = R_NEW0 (RBinObject);
-		memset (bin->cur.o, 0, sizeof (RBinObject));
-		bin->curxtr = NULL;
-		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr->check && xtr->check (bin)) {
-				bin->curxtr = xtr;
-				break;
-			}
+	bin->cur.o = R_NEW0 (RBinObject);
+	memset (bin->cur.o, 0, sizeof (RBinObject));
+
+	// XXX - probably not the best mechanism but its better
+	bin->cur.o->loadaddr = loadaddr;
+	bin->cur.o->baddr = baseaddr;
+
+	r_list_foreach (bin->binxtrs, it, xtr) {
+		if (xtr->check && xtr->check (bin)) {
+			bin->curxtr = xtr;
+			break;
 		}
-		if (bin->curxtr && bin->curxtr->load)
-			bin->curxtr->load (bin);
+	}
+	if (bin->curxtr && bin->curxtr->load)
+		bin->curxtr->load (bin);
+
+	a = &bin->cur;
+	//int minlen = bin->minstrlen;
+	a->curplugin = NULL;
+
+	r_list_foreach (bin->plugins, it, plugin) {
+		if (strncmp (plugin->name, "any", 5)==0) any = plugin;
+		if ((dummy && !strncmp (plugin->name, "any", 5)) ||
+			(!dummy && (plugin->check && plugin->check (a)))) {
+			a->curplugin = plugin;
+			break;
+		}
 	}
 
-	{
-		//int minlen = bin->minstrlen;
-		RListIter *it;
-		RBinPlugin *any, *plugin;
-		RBinArch *a = &bin->cur;
-		a->curplugin = NULL;
+	if (a->curplugin == NULL)
+		a->curplugin = any;
 
-		r_list_foreach (bin->plugins, it, plugin) {
-			if (strncmp (plugin->name, "any", 5)==0) any = plugin;
-			if ((dummy && !strncmp (plugin->name, "any", 5)) ||
-				(!dummy && (plugin->check && plugin->check (a)))) {
-				a->curplugin = plugin;
-				break;
-			}
-		}
+	if (a->curplugin && a->curplugin->minstrlen)
+		bin->minstrlen = a->curplugin->minstrlen;
 
-		if (a->curplugin == NULL) 
-			a->curplugin = any;
-		
-		if (a->curplugin && a->curplugin->minstrlen)
-			bin->minstrlen = a->curplugin->minstrlen;
-
-		if (a->curplugin && a->curplugin->load) {
-			if (! a->curplugin->load (a) )
-				return R_FALSE;
-			set_bin_items (bin, a->curplugin);
-		}
+	if (a->curplugin && a->curplugin->load) {
+		if (! a->curplugin->load (a) )
+			return R_FALSE;
+		set_bin_items (bin, a->curplugin);
 	}
 
 	return R_TRUE;
@@ -289,7 +291,7 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 	}
 	cp = a->curplugin;
 	if (minlen<=0) {
-		if (cp && cp->minstrlen) 
+		if (cp && cp->minstrlen)
 			bin->minstrlen = cp->minstrlen;
 		else bin->minstrlen = -minlen;
 	}
@@ -330,7 +332,7 @@ static void r_bin_free_items(RBin *bin) {
 		a->curplugin->destroy (a);
 }
 
-static void r_bin_init(RBin *bin, int rawstr) {
+static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr) {
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
@@ -342,6 +344,10 @@ static void r_bin_init(RBin *bin, int rawstr) {
 	memset (&bin->cur, 0, sizeof (bin->cur));
 	bin->cur.o = R_NEW0 (RBinObject);
 	memset (bin->cur.o, 0, sizeof (RBinObject));
+
+	bin->cur.o->loadaddr = loadaddr;
+	bin->cur.o->baddr = baseaddr;
+
 	bin->curxtr = NULL;
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (xtr->check && xtr->check (bin)) {
@@ -423,14 +429,14 @@ R_API int r_bin_list(RBin *bin) {
 	return R_FALSE;
 }
 
-R_API int r_bin_load(RBin *bin, const char *file, int dummy) {
+R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int dummy) {
 	if (!bin || !file)
 		return R_FALSE;
 	bin->file = r_file_abspath (file);
-	r_bin_init (bin, bin->cur.rawstr);
-	
+	r_bin_init (bin, bin->cur.rawstr, baseaddr, loadaddr);
+
 	bin->narch = r_bin_extract (bin, 0);
-	
+
 	if (bin->narch == 0)
 		return R_FALSE;
 	/* FIXME: temporary hack to fix malloc:// */
@@ -507,7 +513,7 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 		r_list_destroy (o->strings);
 		bin->cur.o->strings = NULL;
 	}
-	
+
 	if (bin->minstrlen <= 0)
 		return NULL;
 
@@ -626,7 +632,7 @@ R_API void r_bin_list_archs(RBin *bin) {
 	for (i = 0; i < bin->narch; i++)
 		if (r_bin_select_idx (bin, i)) {
 			RBinInfo *info = bin->cur.o->info;
-			printf ("%03i 0x%08"PFMT64x" %d %s_%i %s %s\n", i, 
+			printf ("%03i 0x%08"PFMT64x" %d %s_%i %s %s\n", i,
 				bin->cur.offset, bin->cur.size, info->arch,
 				info->bits, info->machine, bin->cur.file);
 		} else eprintf ("%03i 0x%08"PFMT64x" %d unknown_0\n", i,

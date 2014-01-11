@@ -2,6 +2,7 @@
 
 #include <r_core.h>
 
+
 R_API int r_core_bin_refresh_strings(RCore *r) {
 	return r_bin_reset_strings (r->bin) ? R_TRUE: R_FALSE;
 }
@@ -615,17 +616,30 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
-		char *name, *dname;
+		char *name, *dname, *cname;
+		ut8 cname_greater_than_15;
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (symbols, iter, symbol) {
 			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->offset,
 				symbol->rva): symbol->offset;
 			name = strdup (symbol->name);
+			cname = symbol->classname ? strdup(symbol->classname) : NULL;
+			// XXX - may want a configuration variable here for class and name lengths.
+			// XXX - need something to handle overloaded symbols (e.g. methods)
+			// void add (int i, int j);
+			// void add (float i, int j);
 			r_name_filter (name, 80);
-			snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
-			if (!strncmp (symbol->type,"OBJECT", 6))
-				r_meta_add (r->anal->meta, R_META_TYPE_DATA, addr,
-						addr + symbol->size, name);
+			if (cname) {
+				r_name_filter (cname, 50);
+				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, name);
+			} else {
+				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
+			}
+
+			if (!strncmp (symbol->type, "OBJECT", 6))
+					r_meta_add (r->anal->meta, R_META_TYPE_DATA, addr,
+                                            addr + symbol->size, name);
+
 			r_flag_set (r->flags, str, addr, symbol->size, 0);
 			dname = r_bin_demangle (r->bin, symbol->name);
 			if (dname) {
@@ -634,6 +648,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 				free (dname);
 			}
 			free (name);
+			free (cname);
 			//r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
 		}
 	} else {

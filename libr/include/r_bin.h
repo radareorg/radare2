@@ -97,6 +97,7 @@ typedef struct r_bin_info_t {
 
 typedef struct r_bin_object_t {
 	ut64 baddr;
+	ut64 loadaddr;
 	ut64 boffset;
 	int size;
 	RList/*<RBinSection>*/ *sections;
@@ -127,6 +128,7 @@ typedef struct r_bin_arch_t {
 	RBinObject *o;
 	void *bin_obj; // internal pointer used by formats
 	struct r_bin_plugin_t *curplugin;
+	ut64 loadaddr;
 } RBinArch;
 
 typedef struct r_bin_t {
@@ -185,6 +187,7 @@ typedef struct r_bin_plugin_t {
 	ut64 (*get_vaddr)(RBinArch *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	int minstrlen;
+	void *user;
 } RBinPlugin;
 
 typedef struct r_bin_section_t {
@@ -295,7 +298,7 @@ R_API int r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API int r_bin_list(RBin *bin);
-R_API int r_bin_load(RBin *bin, const char *file, int dummy);
+R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int dummy);
 R_API RBinObject *r_bin_get_object(RBin *bin);
 R_API ut64 r_bin_get_baddr(RBin *bin);
 R_API ut64 r_bin_get_boffset(RBin *bin);
@@ -335,7 +338,7 @@ R_API int r_bin_has_dbg_linenums (RBin *bin);
 R_API int r_bin_has_dbg_syms (RBin *bin);
 R_API int r_bin_has_dbg_relocs (RBin *bin);
 R_API RBin* r_bin_new();
-R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, int dummy);
+R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int dummy);
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select_idx(RBin *bin, int idx);
