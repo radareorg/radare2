@@ -87,7 +87,7 @@ static int cmd_info(void *data, const char *input) {
 
 	switch (*input) {
 	case 'b':
-		{	
+		{
 		ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 		// XXX: this will reload the bin using the buffer.
 		// An assumption is made that assumes there is an underlying
@@ -99,7 +99,7 @@ static int cmd_info(void *data, const char *input) {
 		break;
 	case 'k':
 		db = core->bin->cur.o->kv;
-eprintf ("db = %p\n", db);
+		//:eprintf ("db = %p\n", db);
 		switch (input[1]) {
 		case 'v':
 			sdb_query (db, input+3);
