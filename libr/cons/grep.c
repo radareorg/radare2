@@ -47,7 +47,7 @@ R_API void r_cons_grep(const char *str) {
 		case '?': str++; cons->grep.counter = 1;
 			if (*str=='?') {
 				r_cons_grep_help ();
-                return;
+				return;
 			}
 			break;
 		default: goto while_end;

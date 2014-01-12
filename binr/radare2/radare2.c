@@ -350,7 +350,7 @@ int main(int argc, char **argv, char **envp) {
 			optind++;
 			file = r_str_concat (file, ptr);
 			if (optind <argc)
-				strcat (file, " ");
+				file = r_str_concat (file, " ");
 			while (optind < argc) {
 				file = r_str_concat (file, argv[optind]);
 				optind++;
