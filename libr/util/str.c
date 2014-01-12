@@ -244,8 +244,10 @@ R_API int r_str_word_set0(char *str) {
 	if (!str || !*str)
 		return 0;
 	for (i=0; str[i] && str[i+1]; i++) {
-		if (str[i]==' ' && str[i+1]==' ')
-			memmove (str+i, str+i+1, strlen (str+1)+1);
+		if (str[i]==' ' && str[i+1]==' ') {
+			int len = strlen (str+i+1)+1;
+			memmove (str+i, str+i+1, len);
+		}
 	}
 	if (str[i]==' ')
 		str[i] = 0;
@@ -532,9 +534,12 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 
 // TODO: deprecate?
 R_API char *r_str_dup(char *ptr, const char *string) {
+	int len;
 	if (ptr) free (ptr);
 	if (!string) return NULL;
-	ptr = strdup (string);
+	len = strlen (string)+1;
+	ptr = malloc (len+1);
+	memcpy (ptr, string, len);
 	return ptr;
 }
 

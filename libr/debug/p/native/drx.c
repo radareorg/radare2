@@ -144,7 +144,8 @@ int drx_next(drxt *drx) {
 void drx_list(drxt *drx) {
 	ut64 addr;
 	int i, rwx, len, g, en;
-	for(i=0; i<4; i++) {
+	for(i=0; i<7; i++) {
+		rwx = len = g = en = 0;
 		addr = drx_get (drx, i, &rwx, &len, &g, &en);
 		printf ("%c dr%d %c%c 0x%08"PFMT64x" %d\n",
 			en?'*':'-', i, g?'G':'L',

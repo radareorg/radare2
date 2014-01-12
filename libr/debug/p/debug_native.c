@@ -2622,14 +2622,15 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 	regs[2] = r_reg_getv (R, "dr2");
 	regs[3] = r_reg_getv (R, "dr3");
 /*
+	RESERVED
 	regs[4] = r_reg_getv (R, "dr4");
 	regs[5] = r_reg_getv (R, "dr5");
-	regs[6] = r_reg_getv (R, "dr6");
 */
+	regs[6] = r_reg_getv (R, "dr6");
 	regs[7] = r_reg_getv (R, "dr7");
 
 	if (sz == 0) {
-		drx_list (regs);
+		drx_list (&regs);
 		return R_FALSE;
 	} else
 	if (sz<0) {
