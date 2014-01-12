@@ -6,14 +6,22 @@
 
 R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 	ut8 buf[4096]; // XXX hacky!
-	int size, ret = R_FALSE;
+	int next, size, ret = R_FALSE;
 	if (!dbg || !dbg->reg || dbg->pid == -1)
 		return R_FALSE;
+	if (type == -1) {
+		type = R_REG_TYPE_GPR;
+		next = R_REG_TYPE_DRX;
+	} else next = 0;
+		type = R_REG_TYPE_DRX;
+		next = 0; //R_REG_TYPE_DRX;
+repeat:
 	if (write) {
 		if (dbg && dbg->h && dbg->h->reg_write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, type, &size);
 			if (!dbg->h->reg_write (dbg, type, buf, sizeof (buf)))
 				eprintf ("r_debug_reg: error writing registers\n");
+			else ret = R_TRUE;
 		} //else eprintf ("r_debug_reg: cannot set registers\n");
 	} else {
 		/* read registers from debugger backend to dbg->regs */
@@ -25,6 +33,15 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 				ret = r_reg_set_bytes (dbg->reg, type, buf, size);
 			}
 		} //else eprintf ("r_debug_reg: cannot read registers\n");
+	}
+	if (next) {
+		type = next;
+		switch (next) {
+		case R_REG_TYPE_FPU: next = R_REG_TYPE_DRX; break;
+		case R_REG_TYPE_DRX: next = 0; break;
+		default: next = 0; break;
+		}
+		goto repeat;
 	}
 	return ret;
 }

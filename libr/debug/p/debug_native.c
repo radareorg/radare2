@@ -915,12 +915,24 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	if	.1	.1161	0	interrupt\n"
 	"gpr	df	.1	.1162	0	direction\n"
 	"gpr	of	.1	.1163	0	overflow\n"
+#if 0
  	"drx	dr0	.64	0	0\n"
  	"drx	dr1	.64	8	0\n"
  	"drx	dr2	.64	16	0\n"
  	"drx	dr3	.64	24	0\n"
- 	"drx	dr4	.64	32	0\n"
- 	"drx	dr7	.64	40	0\n"
+	// dr4 32
+	// dr5 40
+ 	"drx	dr6	.64	48	0\n"
+ 	"drx	dr7	.64	56	0\n"
+#endif
+	"drx	dr0	.32	0	0\n"
+	"drx	dr1	.32	4	0\n"
+	"drx	dr2	.32	8	0\n"
+	"drx	dr3	.32	12	0\n"
+	//"drx	dr4	.32	16	0\n"
+	//"drx	dr5	.32	20	0\n"
+	"drx	dr6	.32	24	0\n"
+	"drx	dr7	.32	28	0\n"
 	);
 #else
 	// 32bit host debugging 32bit target
@@ -1053,8 +1065,10 @@ if (dbg->bits & R_SYS_BITS_32) {
  	"drx	dr1	.64	8	0\n"
  	"drx	dr2	.64	16	0\n"
  	"drx	dr3	.64	24	0\n"
- 	"drx	dr4	.64	32	0\n"
- 	"drx	dr7	.64	40	0\n"
+	// dr4 32
+	// dr5 40
+ 	"drx	dr6	.64	48	0\n"
+ 	"drx	dr7	.64	56	0\n"
 	);
 }
 #elif (defined(__arm64__) || __arm__) && __APPLE__
@@ -1852,24 +1866,17 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		// XXX: maybe the register map is not correct, must review
 	}
 #elif __linux__
-#ifdef __ANDROID__
-		return R_TRUE;
-#else
 	{
 		int i;
-		for (i=0; i<7; i++) { // DR0-DR7
-			ret = ptrace (PTRACE_PEEKUSER, pid, r_offsetof (
+		for (i=0; i<8; i++) { // DR0-DR7
+			if (i==4 || i == 5) continue;
+			long ret = ptrace (PTRACE_PEEKUSER, pid, r_offsetof (
 				struct user, u_debugreg[i]), 0);
-			if (ret != 0) {
-				perror("ptrace");
-				//		return R_FALSE;
-			} else {
-				memcpy (buf+(i*4), &ret, 4);
-			}
+eprintf ("PEEK %d = %x\n", i, ret);
+			memcpy (buf+(i*sizeof(ret)), &ret, sizeof(ret));
 		}
 		return sizeof (R_DEBUG_REG_T);
 	}
-#endif
 #endif
 #endif
 		return R_TRUE;
@@ -1939,12 +1946,16 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #ifndef __ANDROID__
 		{
 		int i;
-		ut32 *val = (ut32 *)buf;
-		for (i=0; i<7; i++) { // DR0-DR7
-			ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
-				struct user, u_debugreg[i]), *(val+i));
-			//if (ret != 0)
-			//	return R_FALSE;
+		long *val = (long*)buf;
+		for (i=0; i<8; i++) { // DR0-DR7
+			if (i==4 || i == 5) continue;
+			long ret = ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
+				struct user, u_debugreg[i]), val[i]); //*(val+i));
+			if (ret != 0) {
+				eprintf ("ptrace error for dr %d\n", i);
+				perror("ptrace");
+				//return R_FALSE;
+			}
 		}
 		}
 		return sizeof (R_DEBUG_REG_T);
@@ -2630,27 +2641,21 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 	regs[7] = r_reg_getv (R, "dr7");
 
 	if (sz == 0) {
-		drx_list (&regs);
+		drx_list ((drxt*)&regs);
 		return R_FALSE;
-	} else
-	if (sz<0) {
-		// remove
-		drx_set (regs, n, addr, -1, 0, 0);
-		r_reg_setv (R, "dr0", regs[0]);
-		r_reg_setv (R, "dr1", regs[1]);
-		r_reg_setv (R, "dr2", regs[2]);
-		r_reg_setv (R, "dr3", regs[3]);
-		r_reg_setv (R, "dr7", regs[7]);
-		return R_FALSE;
-	} else {
-		drx_set (regs, n, addr, sz, rwx, g);
-		r_reg_setv (R, "dr0", regs[0]);
-		r_reg_setv (R, "dr1", regs[1]);
-		r_reg_setv (R, "dr2", regs[2]);
-		r_reg_setv (R, "dr3", regs[3]);
-		r_reg_setv (R, "dr7", regs[7]);
-		return R_TRUE;
 	}
+	if (sz<0) { // remove
+		drx_set (&regs, n, addr, -1, 0, 0);
+	} else {
+		drx_set (&regs, n, addr, sz, rwx, g);
+	}
+	r_reg_setv (R, "dr0", regs[0]);
+	r_reg_setv (R, "dr1", regs[1]);
+	r_reg_setv (R, "dr2", regs[2]);
+	r_reg_setv (R, "dr3", regs[3]);
+	r_reg_setv (R, "dr6", regs[6]);
+	r_reg_setv (R, "dr7", regs[7]);
+	return R_TRUE;
 #else
 	eprintf ("drx: Unsupported platform\n");
 #endif

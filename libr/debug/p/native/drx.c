@@ -1,7 +1,7 @@
 #include <r_types.h>
 
 /* -------------------- drx.h ------------------- */
-#define DRXN 7
+#define DRXN 8
 #define DR_STATUS 6
 #define DR_CONTROL 7
 
@@ -86,20 +86,12 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	if (rwx<0 || rwx>3)
 		rwx = 0; // defaults to X
 	switch (len) {
-	case 1:
-		len = 0;
-		break;
-	case 2:
-		len = 1<<2;
-		break;
-	case 4:
-		len = 3<<2;
-		break;
-	case 8:
-		len = 2<<2; // AMD64 only
-		break;
+	case 1: len = 0; break;
+	case 2: len = 1<<2; break;
+	case 4: len = 3<<2; break;
+	case 8: len = 2<<2; break; // AMD64 only
 	default:
-		eprintf ("Invalid DRX length\n");
+		eprintf ("Invalid DRX length (%d) must be 1, 2, 4, 8 bytes\n", len);
 		return R_FALSE;
 	}
 	I386_DR_SET_RW_LEN (control, n, len|rwx);
@@ -113,6 +105,7 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
   	control &= I386_DR_CONTROL_MASK;
 	drx[n] = addr;
 	drx[DR_CONTROL] = control;
+eprintf ("SET 7 %x\n", control);
 	return R_TRUE;
 }
 
@@ -144,7 +137,9 @@ int drx_next(drxt *drx) {
 void drx_list(drxt *drx) {
 	ut64 addr;
 	int i, rwx, len, g, en;
-	for(i=0; i<7; i++) {
+	for (i=0; i<8; i++) {
+		if (i==4 || i == 5) 
+			continue;
 		rwx = len = g = en = 0;
 		addr = drx_get (drx, i, &rwx, &len, &g, &en);
 		printf ("%c dr%d %c%c 0x%08"PFMT64x" %d\n",

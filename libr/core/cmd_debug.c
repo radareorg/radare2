@@ -508,10 +508,16 @@ free (rf);
 				off = r_num_math (core->num, ARG(1));
 				len = (int)r_num_math (core->num, ARG(2));
 				rwx = (char)r_str_rwx (ARG(3));
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
-				r_debug_drx_set (core->dbg, n, off, len, rwx, 0);
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_TRUE);
-			} else eprintf ("Usage: drx N [address] [length] [rwx]\n");
+				if (len== -1) {
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
+					r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_TRUE);
+				} else {
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
+					r_debug_drx_set (core->dbg, n, off, len, rwx, 0);
+					r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_TRUE);
+				}
+			} else eprintf ("|Usage: drx N [address] [length] [rwx]\n");
 			free (s);
 			} break;
 		case '\0':
@@ -596,13 +602,13 @@ free (rf);
 		arg = strchr (str+1, '=');
 		if (arg) {
 			*arg = 0;
-			r = r_reg_get (core->dbg->reg, str+1, R_REG_TYPE_GPR);
+			r = r_reg_get (core->dbg->reg, str+1, -1); //R_REG_TYPE_GPR);
 			if (r) {
 				r_cons_printf ("0x%08"PFMT64x" ->", str,
 					r_reg_get_value (core->dbg->reg, r));
 				r_reg_set_value (core->dbg->reg, r,
 					r_num_math (core->num, arg+1));
-				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_TRUE);
+				r_debug_reg_sync (core->dbg, -1, R_TRUE);
 				r_cons_printf ("0x%08"PFMT64x"\n",
 					r_reg_get_value (core->dbg->reg, r));
 			} else eprintf ("Unknown register '%s'\n", str+1);
