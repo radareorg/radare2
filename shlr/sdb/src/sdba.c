@@ -249,7 +249,10 @@ SDB_VISIBLE int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
 	for (i = 0; i<idx; i++) {
 		n = strchr (p, SDB_RS);
 		if (n) p = n+1;
-		else return 0;;
+		else {
+            free (str);
+            return 0;
+        }
 	}
 	n = strchr (p, SDB_RS);
 	if (n) {

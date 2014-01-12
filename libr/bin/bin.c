@@ -369,8 +369,8 @@ static void r_bin_file_free (RBinFile *a) {
 		r_buf_free (a->buf);
 
 	free (a->file);
-	memset (a, 0, sizeof(RBinFile));
-	free (a);
+	memset (a, 0, sizeof (RBinFile));
+	//free (a);
 
 	//bin->cur = r_list_get_n (bin->binfiles, 0);
 	//if (bin->cur) r_bin_bind (bin, bin->cur);

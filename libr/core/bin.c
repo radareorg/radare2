@@ -486,7 +486,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			r_list_foreach (relocs, iter, reloc) {
 				r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=%s",
 					baddr+reloc->rva, reloc->offset, bin_reloc_type_name (reloc));
-				if (reloc->import)
+				if (reloc->import && reloc->import->name)
 					r_cons_printf (" %s", reloc->import->name);
 				if (reloc->addend) {
 					if (reloc->import && reloc->addend > 0)

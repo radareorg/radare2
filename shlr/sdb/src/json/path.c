@@ -30,8 +30,8 @@ rep:
 	s->f = ++s->t;
 	if (s->p[s->t] == stop)
 		s->f = ++s->t;
-		if (!s->p[s->t])
-			return 0;
+    if (!s->p[s->t])
+        return 0;
 	while (s->p[s->t] != stop) {
 		if (!s->p[s->t]) {
 			s->next = 0;
