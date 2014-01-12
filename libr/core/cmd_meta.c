@@ -190,7 +190,7 @@ static int cmd_meta(void *data, const char *input) {
 						if (fi) strncpy (name, fi->name, sizeof (name)-1);
 					}
 				} else if (n<1) {
-					eprintf ("Invalid length\n");
+					eprintf ("Invalid length %d\n", n);
 					return R_FALSE;
 				}
 			}

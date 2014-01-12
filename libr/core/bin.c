@@ -714,9 +714,17 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 						free (mn);
 					}
 					r_name_filter (symbol->name, sizeof (symbol->name));
-					if (!strncmp (symbol->type,"OBJECT", 6))
-						r_cons_printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
-								symbol->size, addr);
+					if (!strncmp (symbol->type,"OBJECT", 6)) {
+						if (symbol->size == 0) {
+							symbol->size = strlen (symbol->name);
+							r_cons_printf ("Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
+									symbol->size, addr);
+						} else
+						if (symbol->size>0) {
+							r_cons_printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
+									symbol->size, addr);
+						} else eprintf ("Wrong symbol '%s' have size %d\n", symbol->name, symbol->size);
+					}
 					r_cons_printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size, addr);
 				} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ord=%03"PFMT64d" "
