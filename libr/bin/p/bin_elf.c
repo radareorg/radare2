@@ -183,6 +183,7 @@ static RList* symbols(RBinArch *arch) {
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
+		ptr->classname = 0;
 		ptr->rva = symbol[i].offset + base;
 		ptr->offset = symbol[i].offset + base;
 		ptr->size = symbol[i].size;
