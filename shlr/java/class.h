@@ -315,7 +315,7 @@ typedef struct  r_bin_java_cp_object_t {
 	} info;
 	char* name;
 	ut8* value;
-
+	ut64 loadaddr;
 } RBinJavaCPTypeObj;
 
 typedef struct r_bin_java_stack_map_frame_t { // attribute StackMap
@@ -641,6 +641,7 @@ typedef struct r_bin_java_attr_t {
 	int type;
 	ut16 name_idx; //	ut16 attribute_name_idx;
 	ut32 length;   //ut16 attribute_length;
+	ut64 loadaddr;
 	union {
 		RBinJavaAnnotationDefaultAttr annotation_default_attr;
 		RBinJavaBootstrapMethodsAttr bootstrap_methods_attr;

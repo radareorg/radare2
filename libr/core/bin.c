@@ -630,17 +630,34 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 			// void add (float i, int j);
 			r_name_filter (name, 80);
 			if (cname) {
+				RFlagItem *flag_item = NULL;
+				char * comment = NULL;
 				r_name_filter (cname, 50);
+				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
+				// check for a duplicate name sym.[name]
+				flag_item = r_flag_get (r->flags, str);
+				if (flag_item != NULL && (flag_item->offset - r->flags->base) == addr) {
+					comment = flag_item->comment ? strdup(flag_item->comment) : NULL;
+					r_flag_unset (r->flags, str, flag_item );
+					flag_item = NULL;
+				}
+				// set the new sym.[cname].[name] with comment
 				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s.%s", cname, name);
+				r_flag_set (r->flags, str, addr, symbol->size, 0);
+				if (comment) {
+					flag_item = r_flag_get (r->flags, str);
+					r_flag_item_set_comment (flag_item, comment);
+					free(comment);
+				}
 			} else {
 				snprintf (str, R_FLAG_NAME_SIZE, "sym.%s", name);
+				r_flag_set (r->flags, str, addr, symbol->size, 0);
 			}
 
 			if (!strncmp (symbol->type, "OBJECT", 6))
 					r_meta_add (r->anal->meta, R_META_TYPE_DATA, addr,
                                             addr + symbol->size, name);
 
-			r_flag_set (r->flags, str, addr, symbol->size, 0);
 			dname = r_bin_demangle (r->bin, symbol->name);
 			if (dname) {
 				r_meta_add (r->anal->meta, R_META_TYPE_COMMENT,

@@ -1024,6 +1024,7 @@ R_API RBinJavaCPTypeObj* r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 
 		if (java_obj != NULL && java_obj->metas != NULL) {
 			java_obj->file_offset = offset;
+			java_obj->loadaddr = bin->loadaddr;
 		}
 		return java_obj;
 	}
@@ -5160,7 +5161,7 @@ R_API char * r_bin_java_print_interfacemethodref_cp_stringify(RBinJavaCPTypeObj*
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_interface.class_idx, obj->info.cp_interface.name_and_type_idx);
 
 		if (consumed >= size-1) {
@@ -5170,7 +5171,7 @@ R_API char * r_bin_java_print_interfacemethodref_cp_stringify(RBinJavaCPTypeObj*
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_interface.class_idx, obj->info.cp_interface.name_and_type_idx);
 			}
 		}
@@ -5201,7 +5202,7 @@ R_API char * r_bin_java_print_methodhandle_cp_stringify(RBinJavaCPTypeObj* obj) 
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%s.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			R_BIN_JAVA_REF_METAS[ref_kind].name, obj->info.cp_method_handle.reference_index);
 
 		if (consumed >= size-1) {
@@ -5211,7 +5212,7 @@ R_API char * r_bin_java_print_methodhandle_cp_stringify(RBinJavaCPTypeObj* obj) 
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%s.%d",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					R_BIN_JAVA_REF_METAS[ref_kind].name, obj->info.cp_method_handle.reference_index);
 			}
 		}
@@ -5237,7 +5238,7 @@ R_API char * r_bin_java_print_methodtype_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_method_type.descriptor_index);
 
 		if (consumed >= size-1) {
@@ -5247,7 +5248,7 @@ R_API char * r_bin_java_print_methodtype_cp_stringify(RBinJavaCPTypeObj* obj) {
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_method_type.descriptor_index);
 			}
 		}
@@ -5274,7 +5275,7 @@ R_API char * r_bin_java_print_invokedynamic_cp_stringify(RBinJavaCPTypeObj* obj)
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_invoke_dynamic.bootstrap_method_attr_index,
 			obj->info.cp_invoke_dynamic.name_and_type_index);
 
@@ -5285,7 +5286,7 @@ R_API char * r_bin_java_print_invokedynamic_cp_stringify(RBinJavaCPTypeObj* obj)
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_invoke_dynamic.bootstrap_method_attr_index,
 					obj->info.cp_invoke_dynamic.name_and_type_index);
 			}
@@ -5313,7 +5314,7 @@ R_API char * r_bin_java_print_methodref_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_method.class_idx,
 			obj->info.cp_method.name_and_type_idx);
 
@@ -5324,7 +5325,7 @@ R_API char * r_bin_java_print_methodref_cp_stringify(RBinJavaCPTypeObj* obj) {
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_method.class_idx,
 					obj->info.cp_method.name_and_type_idx);
 			}
@@ -5352,7 +5353,7 @@ R_API char * r_bin_java_print_fieldref_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_field.class_idx,
 			obj->info.cp_field.name_and_type_idx);
 
@@ -5363,7 +5364,7 @@ R_API char * r_bin_java_print_fieldref_cp_stringify(RBinJavaCPTypeObj* obj) {
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_field.class_idx,
 					obj->info.cp_field.name_and_type_idx);
 			}
@@ -5391,7 +5392,7 @@ R_API char * r_bin_java_print_classref_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_class.name_idx);
 
 		if (consumed >= size-1) {
@@ -5401,7 +5402,7 @@ R_API char * r_bin_java_print_classref_cp_stringify(RBinJavaCPTypeObj* obj) {
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_class.name_idx);
 			}
 		}
@@ -5428,7 +5429,7 @@ R_API char * r_bin_java_print_string_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_string.string_idx);
 
 		if (consumed >= size-1) {
@@ -5470,7 +5471,7 @@ R_API char * r_bin_java_print_integer_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.0x%08x",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			R_BIN_JAVA_UINT (obj->info.cp_integer.bytes.raw, 0));
 
 		if (consumed >= size-1) {
@@ -5480,7 +5481,7 @@ R_API char * r_bin_java_print_integer_cp_stringify(RBinJavaCPTypeObj* obj) {
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.0x%08x",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					R_BIN_JAVA_UINT (obj->info.cp_integer.bytes.raw, 0));
 			}
 		}
@@ -5510,7 +5511,7 @@ R_API char * r_bin_java_print_float_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%f",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			R_BIN_JAVA_FLOAT(obj->info.cp_float.bytes.raw, 0));
 
 		if (consumed >= size-1) {
@@ -5520,7 +5521,7 @@ R_API char * r_bin_java_print_float_cp_stringify(RBinJavaCPTypeObj* obj) {
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%f",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					R_BIN_JAVA_FLOAT(obj->info.cp_float.bytes.raw, 0));
 			}
 		}
@@ -5636,7 +5637,7 @@ R_API char * r_bin_java_print_name_and_type_cp_stringify(RBinJavaCPTypeObj* obj)
 	if (value) {
 		memset (value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_name_and_type.name_idx,
 			obj->info.cp_name_and_type.descriptor_idx);
 
@@ -5647,7 +5648,7 @@ R_API char * r_bin_java_print_name_and_type_cp_stringify(RBinJavaCPTypeObj* obj)
 			if (value) {
 				memset (value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%d",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_name_and_type.name_idx,
 					obj->info.cp_name_and_type.descriptor_idx);
 			}
@@ -5678,7 +5679,7 @@ R_API char * r_bin_java_print_utf8_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%s",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 			obj->info.cp_utf8.length,
 			utf8_str);
 
@@ -5689,7 +5690,7 @@ R_API char * r_bin_java_print_utf8_cp_stringify(RBinJavaCPTypeObj* obj) {
 			if (value) {
 				memset(value, 0, size);
 				consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s.%d.%s",
-					obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
+					obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name,
 					obj->info.cp_utf8.length,
 					utf8_str);
 			}
@@ -5709,7 +5710,7 @@ R_API char * r_bin_java_print_null_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name);
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name);
 
 		if (consumed >= size-1) {
 			free(value);
@@ -5737,7 +5738,7 @@ R_API char * r_bin_java_print_unknown_cp_stringify(RBinJavaCPTypeObj* obj) {
 	if (value) {
 		memset(value, 0, size);
 		consumed = snprintf(value, size, "%d.0x%04"PFMT64x".%s",
-			obj->metas->ord, obj->file_offset, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name);
+			obj->metas->ord, obj->file_offset + obj->loadaddr, ((RBinJavaCPTypeMetas *) obj->metas->type_info)->name);
 	}
 	return value;
 }
