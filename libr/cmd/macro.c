@@ -49,6 +49,7 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		pbody++;
 	} else {
 		eprintf ("Invalid macro body\n");
+		free (name);
 		return R_FALSE;
 	}
 
