@@ -686,9 +686,10 @@ static void *gdbwrap_writememory(gdbwrap_t *desc, la32 linaddr, void *value, uns
 	uint8_t packetsize;
 	char *rec, *packet = malloc(bytes + MSG_BUF);
 
-	if (!desc || !value)
+	if (!desc || !value) {
 		free (packet);
 		return NULL;
+	}
 	snprintf(packet, MSG_BUF, "%s%x%s%x%s", GDBWRAP_MEMWRITE,
 			linaddr, GDBWRAP_SEP_COMMA, bytes, GDBWRAP_SEP_COLON);
 	packetsize = strlen(packet);
