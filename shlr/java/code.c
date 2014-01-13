@@ -155,20 +155,24 @@ static char * java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name_type
 			free (desc_str);
 
 	} else if (strcmp (cp_name, "String") == 0) {
+		ut32 length = r_bin_java_get_utf8_len_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		string_str = r_bin_java_get_utf8_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
 		str = NULL;
 
 		IFDBG eprintf("java_resolve String got: (%d) %s\n", item->info.cp_string.string_idx, string_str);
-		if (!string_str)
+		if (!string_str) {
 			string_str = empty;
+			length = strlen (empty);
+		}
 
-		memory_alloc = strlen (string_str) + 3;
+		memory_alloc = length + 3;
 
 		if (memory_alloc)
 			str = malloc (memory_alloc);
 
 
 		if (str) {
+			//r_name_filter(string_str, length);
 			snprintf (str, memory_alloc, "\"%s\"", string_str);
 		}
 		IFDBG eprintf("java_resolve String return: %s\n", str);
@@ -259,9 +263,11 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 
 		case 0x10: // "bipush"
 			snprintf (output, outlen, "%s %d", java_ops[idx].name, (char) bytes[1]);
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 		case 0x11:
 			snprintf (output, outlen, "%s %d", java_ops[idx].name, (int)USHORT (bytes, 1));
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 
 	    case 0x15: // "iload"
@@ -276,6 +282,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 		case 0xbc: // "newarray"
 	    case 0xa9: // ret <var-num>
 			snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 
 		case 0x12: // ldc
@@ -286,6 +293,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 			}else {
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, "\0");
 			}
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 		case 0x13:
 		case 0x14:
@@ -296,12 +304,14 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 			}else {
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, "\0");
 			}
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 
 		case 0x84: // iinc
 			val_one = (ut32)bytes[1];
 			val_two = (ut32) bytes[2];
 			snprintf (output, outlen, "%s %d %d", java_ops[idx].name, val_one, val_two);
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 
 
@@ -323,6 +333,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 		case 0xa8: // jsr
 			snprintf (output, outlen, "%s 0x%04"PFMT64x, java_ops[idx].name,
 				addr+(int)(short)USHORT (bytes, 1));
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 		// XXX - Figure out what constitutes the [<high>] value
 		case 0xab: // tableswitch
@@ -354,6 +365,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 			}else {
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
 			}
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 		case 0xb2: // getstatic
 		case 0xb3: // putstatic
@@ -370,6 +382,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 			}else {
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
 			}
+			output[outlen-1] = 0;
 			return java_ops[idx].size;
 		}
 

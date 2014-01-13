@@ -1113,6 +1113,20 @@ R_API char* r_bin_java_get_utf8_from_bin_cp_list (RBinJavaObj *bin, ut64 idx) {
 	return r_bin_java_get_utf8_from_cp_item_list (bin->cp_list, idx);
 }
 
+R_API ut32 r_bin_java_get_utf8_len_from_bin_cp_list (RBinJavaObj *bin, ut64 idx) {
+	/*
+		Search through the Constant Pool list for the given CP Index.
+		If the idx not found by directly going to the list index,
+		the list will be walked and then the IDX will be checked.
+
+		rvalue: new char* for caller to free.
+	*/
+	if (bin == NULL)
+		return NULL;
+
+	return r_bin_java_get_utf8_len_from_cp_item_list (bin->cp_list, idx);
+}
+
 R_API char* r_bin_java_get_name_from_bin_cp_list(RBinJavaObj *bin, ut64 idx) {
 	/*
 		Search through the Constant Pool list for the given CP Index.
@@ -1203,13 +1217,51 @@ R_API char* r_bin_java_get_utf8_from_cp_item_list(RList *cp_list, ut64 idx) {
 
 	item = (RBinJavaCPTypeObj *) r_list_get_n (cp_list, idx);
 	if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
-		value = r_str_dup (NULL, (const char *) item->info.cp_utf8.bytes);
+		ut32 len = item->info.cp_utf8.length+1;
+		value = malloc (len);
+		memcpy (value, item->info.cp_utf8.bytes, len-1);
+		value[len-1] = 0;
 	}
 
 	if (value == NULL) {
 		r_list_foreach (cp_list, iter, item ) {
 			if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
-				value = r_str_dup (NULL, (const char *) item->info.cp_utf8.bytes);
+				ut32 len = item->info.cp_utf8.length+1;
+				value = malloc (len);
+				memcpy (value, item->info.cp_utf8.bytes, len-1);
+				value[len-1] = 0;
+				break;
+			}
+		}
+	}
+
+	return value;
+}
+
+R_API ut32 r_bin_java_get_utf8_len_from_cp_item_list(RList *cp_list, ut64 idx) {
+	/*
+		Search through the Constant Pool list for the given CP Index.
+		If the idx not found by directly going to the list index,
+		the list will be walked and then the IDX will be checked.
+
+		rvalue: new ut32 .
+	*/
+
+	ut32 value = -1;
+	RListIter *iter;
+	RBinJavaCPTypeObj *item = NULL;
+	if (cp_list == NULL)
+		return NULL;
+
+	item = (RBinJavaCPTypeObj *) r_list_get_n (cp_list, idx);
+	if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
+		value = item->info.cp_utf8.length;
+	}
+
+	if (value == -1) {
+		r_list_foreach (cp_list, iter, item ) {
+			if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
+				value = item->info.cp_utf8.length;
 				break;
 			}
 		}
