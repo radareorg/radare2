@@ -58,6 +58,7 @@ static int cmd_flag(void *data, const char *input) {
 	case 'b':
 		switch (input[1]) {
 		case ' ':
+			free(str);
 			str = strdup (input+2);
 			ptr = strchr (str, ' ');
 			if (ptr) {
