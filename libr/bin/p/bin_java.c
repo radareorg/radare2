@@ -10,17 +10,16 @@
 #define IFDBG  if(0)
 
 static ut8 BIN_OBJS_ADDRS_INITTED = 0;
-static Sdb BIN_OBJS_ADDRS;
+static Sdb *BIN_OBJS_ADDRS = NULL;
 
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
 static  int init(void *user) {
-	IFDBG eprintf ("Calling plugin init = %d.\n", BIN_OBJS_ADDRS_INITTED);
-	if (BIN_OBJS_ADDRS_INITTED == 0) {
+	IFDBG eprintf ("Calling plugin init = %d.\n", BIN_OBJS_ADDRS?1:0);
+	if (!BIN_OBJS_ADDRS) {
 		IFDBG eprintf ("plugin BIN_OBJS_ADDRS beeing initted.\n");
-		BIN_OBJS_ADDRS_INITTED = 1;
-		sdb_init (&BIN_OBJS_ADDRS, NULL, 0);
+		BIN_OBJS_ADDRS = sdb_new (NULL, 0);
 	} else {
 		IFDBG eprintf ("plugin BIN_OBJS_ADDRS already initted.\n");
 	}
@@ -29,12 +28,11 @@ static  int init(void *user) {
 
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	int result = R_FALSE;
-	Sdb* bin_objs_addrs = &BIN_OBJS_ADDRS;
 	char value[1024] = {0};
 	sdb_itoa ((ut64)(size_t)bin_obj,  value);
-	if (key && bin_obj && bin_objs_addrs) {
+	if (key && bin_obj && BIN_OBJS_ADDRS) {
 		IFDBG eprintf ("Adding %s:%s to the bin_objs db\n", key, value);
-		sdb_set (bin_objs_addrs, key, value, 0);
+		sdb_set (BIN_OBJS_ADDRS, key, value, 0);
 		result = R_TRUE;
 	}
 	return result;
@@ -83,6 +81,7 @@ static int load(RBinArch *arch) {
 
 static int destroy(RBinArch *arch) {
 	r_bin_java_free ((struct r_bin_java_obj_t*)arch->bin_obj);
+	sdb_free (BIN_OBJS_ADDRS);
 	return R_TRUE;
 }
 
