@@ -646,7 +646,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 				r_flag_set (r->flags, str, addr, symbol->size, 0);
 				if (comment) {
 					flag_item = r_flag_get (r->flags, str);
-					r_flag_item_set_comment (flag_item, comment);
+					if (flag_item) r_flag_item_set_comment (flag_item, comment);
 					free(comment);
 				}
 			} else {

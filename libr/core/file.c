@@ -170,7 +170,7 @@ R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 
 R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	int i, va = r->io->va || r->io->debug;
-	ut64 loadaddr;
+	ut64 loadaddr = 0;
 	RListIter *iter;
 	ut64 offset = 0;
 	RIOMap *im;

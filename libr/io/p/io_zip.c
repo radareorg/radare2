@@ -138,10 +138,14 @@ int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 	int res = R_FALSE;
 	struct zip_stat sb;
 	struct zip_file *zFile = NULL;
-	struct zip * zipArch = r_io_zip_open_archive (
+	struct zip * zipArch ;
+
+	if (!zfo) return res;
+	zipArch = r_io_zip_open_archive (
 		zfo->archivename, zfo->flags,
 		zfo->mode, zfo->rw);
 	//eprintf("Slurping file");
+
 	if (zipArch && zfo && zfo->entry != -1) {
 		zFile = zip_fopen_index (zipArch, zfo->entry, 0);
 		if (!zfo->b)
@@ -189,7 +193,11 @@ RList * r_io_zip_get_files(char *archivename, ut32 flags, int mode, int rw) {
 
 int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 	int res = R_FALSE;
-	struct zip * zipArch = r_io_zip_open_archive (
+	struct zip * zipArch;
+
+	if (!zfo) return res;
+
+	zipArch = r_io_zip_open_archive (
 		zfo->archivename, zfo->flags, zfo->mode, zfo->rw);
 	if (!zipArch)
 		return res;
@@ -218,7 +226,6 @@ void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo) {
 	free (zfo->password);
 	r_buf_free (zfo->b);
 	free (zfo);
-	memset (zfo, 0, sizeof (RIOZipFileObj));
 }
 
 // Below this line are the r_io_zip plugin APIs
