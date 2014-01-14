@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -58,7 +58,7 @@ static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
 }
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
-	int fd;
+	int ret, fd;
 	ut64 addr = io->off;
 	if (!desc || !desc->data)
 		return -1;
@@ -66,7 +66,9 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	fd = RIOPTRACE_FD (desc);
 	if (fd != -1) {
 		lseek (fd, addr, SEEK_SET);
-		return read (fd, buf, len);
+		ret = read (fd, buf, len);
+		// Workaround for the buggy Debian Wheeze's /proc/pid/mem
+		if (ret != -1) return ret;
 	}
 	return debug_os_read_at (RIOPTRACE_PID (desc), (ut32*)buf, len, addr);
 }
