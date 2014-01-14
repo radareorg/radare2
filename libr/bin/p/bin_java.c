@@ -1,5 +1,5 @@
 
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -43,7 +43,7 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
 	if (bin) {
 		jvcname = r_bin_java_build_obj_key (bin);
 		add_sdb_bin_obj (jvcname, bin);
-		free(jvcname);
+		free (jvcname);
 	}
 }
 
@@ -82,6 +82,7 @@ static int load(RBinArch *arch) {
 static int destroy(RBinArch *arch) {
 	r_bin_java_free ((struct r_bin_java_obj_t*)arch->bin_obj);
 	sdb_free (BIN_OBJS_ADDRS);
+	BIN_OBJS_ADDRS = NULL;
 	return R_TRUE;
 }
 
