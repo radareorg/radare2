@@ -291,7 +291,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
 				free (arg);
 			}else {
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, "\0");
+				snprintf (output, outlen, "%s #%d", java_ops[idx].name, USHORT (bytes, 1));
 			}
 			output[outlen-1] = 0;
 			return java_ops[idx].size;
@@ -302,7 +302,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
 				free (arg);
 			}else {
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, "\0");
+				snprintf (output, outlen, "%s #%d", java_ops[idx].name, USHORT (bytes, 1));
 			}
 			output[outlen-1] = 0;
 			return java_ops[idx].size;
@@ -363,7 +363,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
 				free (arg);
 			}else {
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
+				snprintf (output, outlen, "%s #%d", java_ops[idx].name, USHORT (bytes, 1) );
 			}
 			output[outlen-1] = 0;
 			return java_ops[idx].size;
@@ -380,7 +380,7 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
 				free (arg);
 			}else {
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, "WTF?!?" );
+				snprintf (output, outlen, "%s #%d", java_ops[idx].name, USHORT (bytes, 1) );
 			}
 			output[outlen-1] = 0;
 			return java_ops[idx].size;
