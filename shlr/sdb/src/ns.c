@@ -5,10 +5,13 @@
 SDB_VISIBLE void sdb_ns_free(Sdb *s) {
 	SdbNs *ns;
 	SdbListIter *it;
+	// TODO: Implement ls_foreach_safe
 	ls_foreach (s->ns, it, ns) {
+		SdbListIter next = { .n = it->n };
 		sdb_ns_free (ns->sdb);
 		sdb_free (ns->sdb);
-		ls_delete (s->ns, it);
+		ls_delete (s->ns, it); // free (it)
+		it = &next;
 	}
 }
 

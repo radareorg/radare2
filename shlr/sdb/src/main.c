@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2014 - pancake */
 
 #include <signal.h>
 #include <stdio.h>
@@ -23,44 +23,6 @@ static char *stdin_gets() {
 	if (feof (stdin)) return NULL;
 	buf[strlen (buf)-1] = 0;
 	return strdup (buf);
-#if 0
-	static char *previn = NULL;
-        int n, l=0, size = 128; // increase for performance
-        char *p, *tmp, *in = malloc (128);
-	for (;;) {
-		if (previn) {
-			strcpy (in, previn);
-			n = strlen (previn);
-			free (previn);
-			previn = NULL;
-		} else {
-			n = read (0, in+l, size);
-			if (n <1) {
-				free (in);
-				return NULL;
-			}
-		}
-		p = strchr (in+l, '\n');
-		if (p) {
-			free (previn);
-			previn = strdup (p+1);
-			n = (int)(size_t)(p-in+l);
-			l += n+1;
-			break;
-		}
-                l += n;
-                if (n!=size) break;
-		if (in[l-1]=='\n') break;
-                tmp = realloc (in, l+1);
-		if (!tmp) {
-			free (in);
-			return NULL;
-		}
-		in = tmp;
-        }
-        in[l>0?l-1:0] = 0;
-        return in;
-#endif
 }
 
 #if USE_MMAN
@@ -106,18 +68,12 @@ static void createdb(const char *f) {
 }
 
 static void showusage(int o) {
-	printf ("usage: sdb [-fhv] [-|db] [-=]|[-+][(idx)key[?path|=value] ..]\n");
+	printf ("usage: sdb [-hv] [-|db] [<script]|[-=]|[-+][(idx)key[?path|=value] ..]\n");
 	exit (o);
 }
 
 static void showversion(void) {
 	printf ("sdb "SDB_VERSION"\n");
-	exit (0);
-}
-
-static void showfeatures(void) {
-	// TODO lock
-	printf ("ns json array\n");
 	exit (0);
 }
 
@@ -128,7 +84,6 @@ int main(int argc, const char **argv) {
 	if (argc<2) showusage (1);
 	if (!strcmp (argv[1], "-v")) showversion ();
 	if (!strcmp (argv[1], "-h")) showusage (0);
-	if (!strcmp (argv[1], "-f")) showfeatures ();
 	if (!strcmp (argv[1], "-")) {
 		argv[1] = "";
 		if (argc == 2) {
@@ -145,14 +100,16 @@ int main(int argc, const char **argv) {
 	if (!strcmp (argv[2], "="))
 		createdb (argv[1]);
 	else if (!strcmp (argv[2], "-")) {
-		if ((s = sdb_new (argv[1], 0)))
+		if ((s = sdb_new (argv[1], 0))) {
 			for (;(line = stdin_gets ());) {
 				save = sdb_query (s, line);
 				free (line);
 			}
-	} else if ((s = sdb_new (argv[1], 0)))
+		}
+	} else if ((s = sdb_new (argv[1], 0))) {
 		for (i=2; i<argc; i++)
 			save = sdb_query (s, argv[i]);
+	}
 	terminate (0);
 	return 0;
 }

@@ -75,12 +75,14 @@ int json_foreach(const char *s, JSONCallback cb UNUSED) {
 #endif
 
 int json_walk (const char *s) {
-	int i, len, ret;
 	unsigned short *res;
-	len = strlen (s);
-	res = malloc (len);
+	int i, ret, len = strlen (s);
+	res = malloc (len+1);
 	ret = js0n ((const unsigned char *)s, len, res);
-	if (!ret) return 0;
+	if (!ret) {
+		free (res);
+		return 0;
+	}
 	if (*s=='[' || *s=='{') {
 		for (i=0; res[i]; i+=2) {
 			printf ("%d %.*s\n", i, res[i+1], s+res[i]);
@@ -91,6 +93,7 @@ int json_walk (const char *s) {
 			printf ("%.*s\n", res[i+3], s+res[i+2]);
 		}
 	}
+	free (res);
 	return 1;
 }
 
@@ -103,7 +106,7 @@ Rangstr json_find (const char *s, Rangstr *rs) {
 
 	if (!s) return rangstr_null ();
 	len = strlen (s);
-	res = (len<RESFIXSZ)? resfix: malloc (len);
+	res = (len<RESFIXSZ)? resfix: malloc (len+1);
 	ret = js0n ((const unsigned char *)s, len, res);
 #define PFREE(x) if (x&&x!=resfix) free (x)
 	if (ret>0) {

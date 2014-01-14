@@ -14,6 +14,10 @@ ifneq (${HAVE_VALA},)
 	cd ${VALADIR}/types && ${MAKE}
 endif
 
+.PHONY: test
+test:
+	${MAKE} -C test
+
 src/sdb-version.h:
 	echo '#define SDB_VERSION "${SDBVER}"' > src/sdb-version.h
 

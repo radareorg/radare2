@@ -7,6 +7,6 @@ CFILES += src/cdb_make.c src/lock.c src/ns.c src/sdba.c ;
 
 lib sdb : $(CFILES) : <link>static <include>. ;
 
-# exe sdb : $(CFILES) src/main.c : <include>. ;
+exe sdb : $(CFILES) src/main.c : <include>. ;
 
 ret = [ SHELL "echo '#define SDB_VERSION \"0.6.6\"' > src/sdb-version.h" ] ;

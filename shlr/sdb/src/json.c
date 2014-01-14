@@ -169,7 +169,7 @@ SDB_VISIBLE char *sdb_json_indent(const char *s) {
 SDB_VISIBLE char *sdb_json_unindent(const char *s) {
 	int instr = 0;
 	int len = strlen (s);
-	char *o, *O = malloc (len);
+	char *o, *O = malloc (len+1);
 	if (!O) return NULL;
 	memset (O, 0, len);
 	for (o=O; *s; s++) {

@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2014 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -19,10 +19,12 @@ static inline int nextcas() {
 	return cas++;
 }
 
-SDB_VISIBLE int sdb_init (Sdb *s, const char *dir, int lock) {
-	if (s == NULL) return 1;
-	if (lock && !sdb_lock (sdb_lockfile (dir))) return 1;
-	memset (s, 0, sizeof(Sdb));
+// TODO: use mmap instead of read.. much faster!
+SDB_VISIBLE Sdb* sdb_new (const char *dir, int lock) {
+	Sdb* s;
+	if (lock && !sdb_lock (sdb_lockfile (dir)))
+		return NULL;
+	s = malloc (sizeof (Sdb));
 	if (dir && *dir) {
 		s->dir = strdup (dir);
 		s->fd = open (dir, O_RDONLY|O_BINARY);
@@ -43,12 +45,6 @@ SDB_VISIBLE int sdb_init (Sdb *s, const char *dir, int lock) {
 	// if open fails ignore
 	cdb_init (&s->db, s->fd);
 	cdb_findstart (&s->db);
-	return 0;
-}
-// TODO: use mmap instead of read.. much faster!
-SDB_VISIBLE Sdb* sdb_new (const char *dir, int lock) {
-	Sdb* s = malloc (sizeof(Sdb));
-	sdb_init (s, dir, lock);
 	return s;
 }
 
@@ -178,6 +174,24 @@ SDB_VISIBLE char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
 
 SDB_VISIBLE int sdb_remove (Sdb* s, const char *key, ut32 cas) {
 	return key? sdb_set (s, key, "", cas): 0;
+}
+
+SDB_VISIBLE int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas) {
+	int ret, kl, vl;
+	const char *p;
+	char *o;
+	if (!s || !key || !*key || !value || !*value)
+		return 0;
+	p = sdb_getc (s, key, 0);
+	if (!p) return sdb_set (s, key, value, cas);
+	kl = strlen (p);
+	vl = strlen (value);
+	o = malloc (kl+vl+1);
+	memcpy (o, p, kl);
+	memcpy (o+kl, value, vl+1);
+	ret = sdb_set (s, key, o, cas);
+	free (o);
+	return ret;
 }
 
 // set if not defined
@@ -402,19 +416,19 @@ SDB_VISIBLE int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
 }
 
 SDB_VISIBLE ut64 sdb_now () {
-	struct timeval now;
-	gettimeofday (&now, NULL);
+        struct timeval now;
+        gettimeofday (&now, NULL);
 	return now.tv_sec;
 }
 
 SDB_VISIBLE ut64 sdb_unow () {
 	ut64 x;
-	struct timeval now;
-	gettimeofday (&now, NULL);
+        struct timeval now;
+        gettimeofday (&now, NULL);
 	x = now.tv_sec;
 	x <<= 32;
 	x += now.tv_usec;
-	return x;
+        return x;
 }
 
 static ut64 parse_expire (ut64 e) {
@@ -484,19 +498,19 @@ SDB_VISIBLE void sdb_flush(Sdb* s) {
 #endif
 
 static int r_sys_rmkdir(char *dir) {
-	char *path = dir, *ptr = path;
-	if (*ptr==DIRSEP) ptr++;
-	while ((ptr = strchr (ptr, DIRSEP))) {
-	*ptr = 0;
-	if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-	fprintf (stderr, "r_sys_rmkdir: fail %s\n", dir);
-	free (path);
-	return 0;
-	}
-	*ptr = DIRSEP;
-	ptr++;
-	}
-	return 1;
+        char *path = dir, *ptr = path;
+        if (*ptr==DIRSEP) ptr++;
+        while ((ptr = strchr (ptr, DIRSEP))) {
+                *ptr = 0;
+                if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
+                        fprintf (stderr, "r_sys_rmkdir: fail %s\n", dir);
+                        free (path);
+                        return 0;
+                }
+                *ptr = DIRSEP;
+                ptr++;
+        }
+        return 1;
 }
 
 /* sdb-create api */

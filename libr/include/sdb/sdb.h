@@ -67,9 +67,6 @@ typedef struct sdb_t {
 	SdbKv tmpkv;
 } Sdb;
 
-
-// return 0 on successful initialization and 1 on failure
-int sdb_init (Sdb *s, const char *dir, int lock);
 Sdb* sdb_new (const char *dir, int lock);
 void sdb_free (Sdb* s);
 void sdb_drop (Sdb* s);
@@ -81,12 +78,14 @@ int sdb_queryf (Sdb* s, const char *fmt, ...);
 int sdb_query_lines (Sdb *s, const char *cmd);
 char *sdb_querys (Sdb* s, char *buf, size_t len, const char *cmd);
 char *sdb_querysf (Sdb* s, char *buf, size_t buflen, const char *fmt, ...);
+SDB_VISIBLE int sdb_query_file(Sdb *s, const char* file);
 int sdb_exists (Sdb*, const char *key);
 int sdb_nexists (Sdb*, const char *key);
 int sdb_remove (Sdb*, const char *key, ut32 cas);
 char *sdb_get (Sdb*, const char *key, ut32 *cas);
 const char *sdb_getc (Sdb*, const char *key, ut32 *cas);
 int sdb_set (Sdb*, const char *key, const char *data, ut32 cas);
+int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
 int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas);
 void sdb_list(Sdb*);
 int sdb_sync (Sdb*);
