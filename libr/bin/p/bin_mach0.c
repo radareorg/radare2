@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -82,7 +82,7 @@ static RList* symbols(RBinArch *arch) {
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
 		if (!symbols[i].name[0] || symbols[i].addr<100) continue;
-		if (!(ptr = R_NEW (RBinSymbol)))
+		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		strncpy (ptr->name, (char*)symbols[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);

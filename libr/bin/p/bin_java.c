@@ -9,7 +9,6 @@
 
 #define IFDBG  if(0)
 
-static ut8 BIN_OBJS_ADDRS_INITTED = 0;
 static Sdb *BIN_OBJS_ADDRS = NULL;
 
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
@@ -54,7 +53,7 @@ static int load(RBinArch *arch) {
 	if (bin_obj) {
 		if (arch->o->kv == NULL) arch->o->kv = bin_obj->kv;
 		arch->bin_obj = bin_obj;
-		bin_obj->AllJavaBinObjs = &BIN_OBJS_ADDRS;
+		bin_obj->AllJavaBinObjs = BIN_OBJS_ADDRS;
 		// XXX - /\ this is a hack, but (one way but) necessary to get access to
 		// the object addrs from anal. If only global variables are used,
 		// they get "lost" somehow after they are initialized and go out of

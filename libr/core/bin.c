@@ -617,7 +617,7 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
 		char *name, *dname, *cname;
-		ut8 cname_greater_than_15;
+		//ut8 cname_greater_than_15;
 		r_flag_space_set (r->flags, "symbols");
 		r_list_foreach (symbols, iter, symbol) {
 			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, symbol->offset,

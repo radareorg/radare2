@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -177,13 +177,12 @@ static RList* symbols(RBinArch *arch) {
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (arch->bin_obj, R_BIN_ELF_SYMBOLS)))
 		return ret;
 	for (i = 0; !symbol[i].last; i++) {
-		if (!(ptr = R_NEW (RBinSymbol)))
+		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		strncpy (ptr->name, symbol[i].name, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->bind, symbol[i].bind, R_BIN_SIZEOF_STRINGS);
 		strncpy (ptr->type, symbol[i].type, R_BIN_SIZEOF_STRINGS);
-		ptr->classname = 0;
 		ptr->rva = symbol[i].offset + base;
 		ptr->offset = symbol[i].offset + base;
 		ptr->size = symbol[i].size;
@@ -199,7 +198,7 @@ static RList* symbols(RBinArch *arch) {
 	for (i = 0; !symbol[i].last; i++) {
 		if (!symbol[i].size)
 			continue;
-		if (!(ptr = R_NEW (RBinSymbol)))
+		if (!(ptr = R_NEW0 (RBinSymbol)))
 			break;
 		// TODO(eddyb) make a better distinction between imports and other symbols.
 		snprintf (ptr->name, R_BIN_SIZEOF_STRINGS, "imp.%s", symbol[i].name);
