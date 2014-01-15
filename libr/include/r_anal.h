@@ -729,7 +729,7 @@ typedef struct r_anal_state_type_t {
 	void *user_state;
 } RAnalState;
 
-typedef int (*RAnalCmdExt)(/* Rcore */void *core, RAnal *anal, const char* input);
+typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
 typedef int (*RAnalExCallback)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);
 typedef RList *(*RAnalExAnalysisAlgorithm)(RAnal *a, struct r_anal_state_type_t *state, ut64 addr);

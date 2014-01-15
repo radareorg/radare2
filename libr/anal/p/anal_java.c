@@ -8,6 +8,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include <r_anal_ex.h>
+#include <r_cons.h>
 
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/class.h"
@@ -20,6 +21,13 @@ typedef struct r_anal_ex_java_lin_sweep {
 	RList *cfg_node_addrs;
 }RAnalJavaLinearSweep;
 
+static int java_print_all_definitions( RAnal *anal );
+static int java_print_class_definitions( RBinJavaObj *obj );
+static int java_print_field_definitions( RBinJavaObj *obj );
+static int java_print_method_definitions( RBinJavaObj *obj );
+static int java_print_import_definitions( RBinJavaObj *obj );
+
+static int java_cmd_ext(RAnal *anal, const char* input);
 static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length);
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJavaField *method, ut64 loadaddr);
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state);
@@ -709,6 +717,136 @@ static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) 
 
 }
 
+static int java_print_method_definitions ( RBinJavaObj *obj ) {
+	RList * the_list = r_bin_java_get_method_definitions (obj),
+			* off_list = r_bin_java_get_method_offsets (obj);
+	char * str = NULL;
+	RListIter *iter;
+	ut32 idx = 0, end = r_list_length (the_list);
+
+	while (idx < end) {
+		ut64 *addr = r_list_get_n (off_list, idx);
+		str = r_list_get_n (the_list, idx);
+		eprintf("%s; // @0x%04"PFMT64x"\n", str, *addr);
+		idx++;
+	}
+
+	r_list_free(the_list);
+	r_list_free(off_list);
+	return 0;
+}
+
+static int java_print_field_definitions ( RBinJavaObj *obj ) {
+	RList * the_list = r_bin_java_get_field_definitions (obj),
+			* off_list = r_bin_java_get_field_offsets (obj);
+	char * str = NULL;
+	RListIter *iter;
+	ut32 idx = 0, end = r_list_length (the_list);
+
+	while (idx < end) {
+		ut64 *addr = r_list_get_n (off_list, idx);
+		str = r_list_get_n (the_list, idx);
+		eprintf("%s; // @0x%04"PFMT64x"\n", str, *addr);
+		idx++;
+	}
+
+	r_list_free(the_list);
+	r_list_free(off_list);
+	return 0;
+}
+
+static int java_print_import_definitions ( RBinJavaObj *obj ) {
+	RList * the_list = r_bin_java_get_import_definitions (obj);
+	char * str = NULL;
+	RListIter *iter;
+	r_list_foreach (the_list, iter, str) {
+		eprintf("import %s;\n", str);
+	}
+	r_list_free(the_list);
+	return 0;
+}
+
+static int java_print_all_definitions( RAnal *anal ) {
+	RList * obj_list  = get_java_bin_obj_list (anal);
+	RListIter *iter;
+	RBinJavaObj *obj;
+
+	if (!obj_list) return 1;
+	r_list_foreach (obj_list, iter, obj) {
+		java_print_class_definitions (obj);
+	}
+	return 0;
+}
+static int java_print_class_definitions( RBinJavaObj *obj ) {
+	RList * the_fields = r_bin_java_get_field_definitions (obj),
+			* the_methods = r_bin_java_get_method_definitions (obj),
+			* the_imports = r_bin_java_get_import_definitions (obj),
+			* the_moffsets = r_bin_java_get_method_offsets (obj),
+			* the_foffsets = r_bin_java_get_field_offsets (obj);
+
+	char * class_name = r_bin_java_get_this_class_name(obj),
+		 * str = NULL;
+
+	java_print_import_definitions (obj);
+	eprintf ("\nclass %s { // @0x%04"PFMT64x"\n", class_name, obj->loadaddr);
+
+	if (the_fields && the_foffsets && r_list_length (the_fields) > 0) {
+		eprintf ("\n\t// Fields defined in the class\n");
+		ut32 idx = 0, end = r_list_length (the_fields);
+
+		while (idx < end) {
+			ut64 *addr = r_list_get_n (the_foffsets, idx);
+			str = r_list_get_n (the_fields, idx);
+			eprintf("\t%s; // @0x%04"PFMT64x"\n", str, *addr);
+			idx++;
+		}
+	}
+
+	if (the_methods && the_moffsets && r_list_length (the_methods) > 0) {
+		eprintf ("\n\t// Methods defined in the class\n");
+		ut32 idx = 0, end = r_list_length (the_methods);
+
+		while (idx < end) {
+			ut64 *addr = r_list_get_n (the_moffsets, idx);
+			str = r_list_get_n (the_methods, idx);
+			eprintf("\t%s; // @0x%04"PFMT64x"\n", str, *addr);
+			idx++;
+		}
+	}
+	eprintf ("}\n");
+
+	r_list_free (the_imports);
+	r_list_free (the_fields);
+	r_list_free (the_methods);
+	r_list_free (the_foffsets);
+	r_list_free (the_moffsets);
+
+	free(class_name);
+	return 0;
+}
+
+
+static int java_cmd_ext(RAnal *anal, const char* input) {
+	RBinJavaObj *obj = get_java_bin_obj (anal);
+
+	if (!obj) {
+		eprintf ("Execute \"af\" to set the current bin, and this will bind the current bin\n");
+	}
+	switch (*input) {
+		case 'p':
+			switch (*(input+1)) {
+				case 'm': return java_print_method_definitions (obj);
+				case 'f': return java_print_field_definitions (obj);
+				case 'i': return java_print_import_definitions (obj);
+				case 'c': return java_print_class_definitions (obj);
+				case 'a': return java_print_all_definitions (anal);
+				default: break;
+			}
+		default: eprintf("Command not supported"); break;
+	}
+	return 0;
+}
+
 struct r_anal_plugin_t r_anal_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode analysis plugin",
@@ -729,6 +867,7 @@ struct r_anal_plugin_t r_anal_plugin_java = {
 	.op_from_buffer = NULL,
 	.bb_from_buffer = NULL,
 	.fn_from_buffer = NULL,
+	.cmd_ext = java_cmd_ext,
 
 
 	.set_reg_profile = NULL,
@@ -769,6 +908,8 @@ struct r_anal_plugin_t r_anal_plugin_java_ls = {
 	.diff_bb = NULL,
 	.diff_fcn = NULL,
 	.diff_eval = NULL,
+
+	.cmd_ext = java_cmd_ext,
 
 };
 

@@ -722,7 +722,7 @@ typedef struct r_bin_java_obj_t {
 	ut64 loadaddr; // load address that is used to calc actual offset
 				// when multiple bins are loaded at once
 	int size;
-	const char* file;
+	char* file;
 	RBinJavaLines lines;
 	struct r_buf_t* b;
 
@@ -1182,5 +1182,16 @@ R_API RList * r_bin_java_get_bin_obj_list();
 R_API RList* r_bin_java_get_bin_obj_list_thru_obj(RBinJavaObj *bin_obj);
 R_API char * r_bin_java_get_this_class_name(RBinJavaObj *bin_obj);
 R_API char * r_bin_java_build_obj_key (RBinJavaObj *bin);
+
+R_API RList * r_bin_java_extract_type_values( char *arg_str);
+R_API int r_bin_java_extract_reference_name(const char * input_str, char ** ref_str, ut8 array_cnt);
+
+R_API RList * r_bin_java_get_method_definitions(RBinJavaObj *bin);
+R_API char * r_bin_java_get_method_definition(RBinJavaField *fm_type);
+R_API RList * r_bin_java_get_field_definitions(RBinJavaObj *bin);
+R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type);
+R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin);
+R_API RList * r_bin_java_get_field_offsets(RBinJavaObj *bin);
+R_API RList * r_bin_java_get_method_offsets(RBinJavaObj *bin);
 
 #endif

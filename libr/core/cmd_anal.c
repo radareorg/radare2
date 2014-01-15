@@ -1075,6 +1075,11 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 			break;
 		}
 		break;
+	case '!':
+		//eprintf("Trying analysis command extension.\n");
+		if (core->anal && core->anal->cur && core->anal->cur->cmd_ext)
+			return core->anal->cur->cmd_ext (core->anal, input+1);
+		else r_cons_printf ("No plugins for this analysis plugin\n");
 	default:
 		r_cons_printf (
 		"Usage: a[?adfFghoprsx]\n"
