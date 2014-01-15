@@ -1191,4 +1191,7 @@ R_API char * r_bin_java_get_method_definition(RBinJavaField *fm_type);
 R_API RList * r_bin_java_get_field_definitions(RBinJavaObj *bin);
 R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type);
 R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin);
+R_API RList * r_bin_java_get_field_offsets(RBinJavaObj *bin);
+R_API RList * r_bin_java_get_method_offsets(RBinJavaObj *bin);
+
 #endif

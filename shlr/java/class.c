@@ -291,6 +291,39 @@ static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 	{ "Unknown", R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[20]}
 };
 
+R_API RList * r_bin_java_get_field_offsets(RBinJavaObj *bin) {
+	RBinJavaField *fm_type = NULL;
+	RList *the_list = r_list_new ();
+	RListIter *iter = NULL, *desc_iter;
+	ut64 *paddr = NULL;
+
+	if (!bin) return the_list;
+	the_list->free = free;
+	r_list_foreach ( bin->fields_list, iter, fm_type) {
+		paddr = malloc (sizeof(ut64));
+		*paddr = fm_type->file_offset + bin->loadaddr;
+		//eprintf ("Field def: %s, %s, %s, %s\n", fm_type->name, fm_type->descriptor, fm_type->flags_str, field_def);
+		r_list_append(the_list, paddr);
+	}
+	return the_list;
+}
+
+R_API RList * r_bin_java_get_method_offsets(RBinJavaObj *bin) {
+	RBinJavaField *fm_type = NULL;
+	RList *the_list = r_list_new ();
+	RListIter *iter = NULL, *desc_iter;
+	ut64 *paddr = NULL;
+
+	if (!bin) return the_list;
+	the_list->free = free;
+	r_list_foreach ( bin->methods_list, iter, fm_type) {
+		paddr = malloc (sizeof(ut64));
+		*paddr = fm_type->file_offset + bin->loadaddr;
+		r_list_append(the_list, paddr);
+	}
+	return the_list;
+}
+
 R_API RList * r_bin_java_get_field_definitions(RBinJavaObj *bin) {
 	RBinJavaField *fm_type = NULL;
 	RList *the_list = r_list_new ();
@@ -2546,7 +2579,7 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	return NULL;
 }
 
-R_API RBinJavaObj* r_bin_java_new (const char* file, ut64 baddr, Sdb * kv) {
+R_API RBinJavaObj* r_bin_java_new (const char* file, ut64 loadaddr, Sdb * kv) {
 	ut8 *buf;
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	bin->file = strdup (file);
@@ -2556,18 +2589,18 @@ R_API RBinJavaObj* r_bin_java_new (const char* file, ut64 baddr, Sdb * kv) {
 	if (!r_buf_set_bytes (bin->b, buf, bin->size))
 		return r_bin_java_free (bin);
 	free (buf);
-	if (!javasm_init (bin, baddr, kv))
+	if (!javasm_init (bin, loadaddr, kv))
 		return r_bin_java_free (bin);
 	return bin;
 }
 
-R_API RBinJavaObj* r_bin_java_new_buf(RBuffer *buf, ut64 baddr, Sdb * kv) {
+R_API RBinJavaObj* r_bin_java_new_buf(RBuffer *buf, ut64 loadaddr, Sdb * kv) {
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
 	if (!bin) return NULL;
 	bin->b = buf;
 	bin->size = buf->length;
 	buf->cur = 0; // rewind
-	if (!javasm_init (bin, baddr, kv))
+	if (!javasm_init (bin, loadaddr, kv))
 		return r_bin_java_free (bin);
 	return bin;
 }
