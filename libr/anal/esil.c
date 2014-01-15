@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -29,6 +29,10 @@ int 0x80        $0x80
 
 static int token(char c) {
 	switch (c) {
+	case '(': // open scope
+		return 5;
+	case ')': // close scope
+		return 6;
 	case '$': // syscall
 	case '@': // repeat if condition matches
 	case '?': // conditional
@@ -79,7 +83,6 @@ static int r_anal_esil (RAnalEsil *c, const char *str) {
 	}
 	tkns[tknsi++] = 0;
 	buf[bufi] = 0;
-
 	return c->iterate (c, buf, tkns);
 }
 
@@ -122,7 +125,7 @@ static ut64 esil_get (RAnalEsil *e, const char *s) {
 	return r_num_get (NULL, s);
 }
 
-#define OPUSH(x) r_list_push(c->opstack,x)
+#define OPUSH(x) r_list_push (c->opstack,x)
 #define PUSH(x) r_list_push (c->stack,(void*)x)
 #define OPOP() r_list_pop (c->opstack)
 #define POP() r_list_pop (c->stack)
@@ -173,7 +176,7 @@ eprintf (";; -> this means that we have to resolve before accessing memory %d\n"
 		ut64 n = esil_get (c, p) * esil_get (c, q);
 		char *ns = malloc (32); // XXX memleak
 		sprintf (ns, "0x%"PFMT64x, n);
-		PUSH(ns);
+		PUSH (ns);
 		eprintf (";;; %s %s\n", p, q);
 		eprintf (";;; *EQUAL! (%s)\n", ns);
 	}
@@ -201,6 +204,7 @@ static int emulate (RAnalEsil *c, char *buf, int *tkns) {
 	for (i=0; tkns[i]; i+=2) {
 		TOKEN_GET (type, str);
 		eprintf ("(%d) (%s)\n", type, str);
+
 		switch (type) {
 		// case 0 handled in for conditional
 		case 1: /* special command */
@@ -282,6 +286,24 @@ eprintf ("STACK POINTER %d\n", curstack);
 		case 4:
 			esil_commit (c, op);
 			op = NULL;
+			break;
+		case 5:
+// newcontext();
+			//esil_push_scope (c);
+			eprintf ("OPEN SCOPE\n");
+			break;
+		case 6:
+			{
+			//char *res = esil_pop_scope (c);
+			// if scope > 0 : 
+			//PUSH (res);
+			esil_commit (c, op);
+			// free (res);
+			// commit()
+			// closecontext()
+			// push result
+			eprintf ("CLOSE SCOPE\n");
+			}
 			break;
 		}
 		dungeon:

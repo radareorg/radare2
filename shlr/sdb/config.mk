@@ -7,6 +7,8 @@ CFLAGS_STD?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700
 #CFLAGS+=-Wno-initializer-overrides
 CFLAGS+=${CFLAGS_STD}
 
+# Hack to fix clang warnings
+CFLAGS+=$(shell gcc -v 2>&1 | grep -q LLVM && echo '-Wno-initializer-overrides')
 CFLAGS+=-Wall
 #CFLAGS+=-O3
 #CFLAGS+=-ggdb -g -Wall -O0

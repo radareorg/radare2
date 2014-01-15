@@ -64,7 +64,7 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 	// cmd = val
 	// cmd is key and val is value
 
-	if (*cmd == '<') {
+	if (*cmd == '.') {
 		sdb_query_file (s, cmd+1);
 	} else
 	if (*cmd == '+' || *cmd == '-') {
@@ -73,7 +73,10 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 		if (val) {
 			d = sdb_atoi (val);
 			if (d) {
-				sdb_inc (s, cmd+1, d, 0);
+				if (*cmd=='+')
+					sdb_inc (s, cmd+1, d, 0);
+				else
+					sdb_dec (s, cmd+1, d, 0);
 			} else {
 				sdb_concat (s, cmd+1, val, 0);
 			}
@@ -228,9 +231,9 @@ SDB_VISIBLE int sdb_query_lines (Sdb *s, const char *cmd) {
 }
 
 static char *slurp(const char *file) {
+	int ret, fd = open (file, O_RDONLY);
 	char *text;
 	long sz;
-	int fd = open (file, O_RDONLY);
 	if (fd == -1)
 		return NULL;
 	sz = lseek (fd, 0, SEEK_END);
@@ -240,9 +243,13 @@ static char *slurp(const char *file) {
 	text = malloc (sz+1);
 	if (!text) {
 		close (fd);
+		return NULL;
 	}
-	read (fd, text, sz);
-	text[sz] = 0;
+	ret = read (fd, text, sz);
+	if (ret != sz) {
+		free (text);
+		text = NULL;
+	} else text[sz] = 0;
 	close (fd);
 	return text;
 }

@@ -1,13 +1,14 @@
-/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2014 - pancake */
 
 #include "sdb.h"
 
 SDB_VISIBLE void sdb_ns_free(Sdb *s) {
-	SdbNs *ns;
+	SdbListIter next;
 	SdbListIter *it;
-	// TODO: Implement ls_foreach_safe
+	SdbNs *ns;
+	// TODO: Implement and use ls_foreach_safe
 	ls_foreach (s->ns, it, ns) {
-		SdbListIter next = { .n = it->n };
+		next.n = it->n;
 		sdb_ns_free (ns->sdb);
 		sdb_free (ns->sdb);
 		ls_delete (s->ns, it); // free (it)
