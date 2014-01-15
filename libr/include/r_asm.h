@@ -185,7 +185,7 @@ extern RAsmPlugin r_asm_plugin_c55plus;
 extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_snes;
 extern RAsmPlugin r_asm_plugin_ebc;
-extern RAsmPlugin r_asm_plugin_nios;
+extern RAsmPlugin r_asm_plugin_nios2;
 #endif
 
 #ifdef __cplusplus
