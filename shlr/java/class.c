@@ -11,6 +11,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include <r_bin.h>
+#include <r_cons.h>
 #include <math.h>
 #include <sdb.h>
 
@@ -33,7 +34,7 @@ static char * retrieve_method_access_string(ut16 flags);
 static char * retrieve_field_access_string(ut16 flags);
 static char * retrieve_class_method_access_string(ut16 flags);
 static int javasm_init(RBinJavaObj *bin, ut64 baddr, Sdb *kv);
-
+static int extract_type_value (char *arg_str, char **output);
 
 // taken from LLVM Code Byte Swap
 // TODO: move into r_util
@@ -68,7 +69,6 @@ static ut8 R_BIN_JAVA_NULL_TYPE_INITTED = 0;
 // if multi-threaded class parsing is enabled, this variable needs to
 // be guarded with a lock.
 static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
-
 
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
 	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC},
@@ -290,6 +290,275 @@ static RBinJavaAttrMetas RBIN_JAVA_ATTRS_METAS[] = {
 	{ "Synthetic", R_BIN_JAVA_ATTR_TYPE_SYNTHETIC_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[19]},
 	{ "Unknown", R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR, &RBIN_JAVA_ATTRS_ALLOCS[20]}
 };
+
+R_API RList * r_bin_java_get_field_definitions(RBinJavaObj *bin) {
+	RBinJavaField *fm_type = NULL;
+	RList *the_list = r_list_new ();
+	RListIter *iter = NULL, *desc_iter;
+
+	if (!bin) return the_list;
+
+	r_list_foreach ( bin->fields_list, iter, fm_type) {
+		char *field_def = r_bin_java_get_field_definition (fm_type);
+		//eprintf ("Field def: %s, %s, %s, %s\n", fm_type->name, fm_type->descriptor, fm_type->flags_str, field_def);
+		r_list_append(the_list, field_def);
+	}
+	return the_list;
+}
+
+R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin) {
+
+	RList *the_list = r_bin_java_get_lib_names (bin);
+	RListIter *iter = NULL;
+	char *new_str;
+
+	if (!bin || !the_list) return the_list;
+
+	r_list_foreach ( the_list, iter, new_str) {
+		if (!new_str) continue;
+		while ( *new_str ) {
+			if (*new_str == '/') *new_str = '.';
+			new_str ++;
+		}
+	}
+	return the_list;
+}
+
+
+R_API RList * r_bin_java_get_method_definitions(RBinJavaObj *bin) {
+	RBinJavaField *fm_type = NULL;
+	RList *the_list = r_list_new ();
+	RListIter *iter = NULL, *desc_iter;
+
+	if (!bin) return the_list;
+
+	r_list_foreach ( bin->methods_list, iter, fm_type) {
+		char *method_proto = r_bin_java_get_method_definition (fm_type);
+		//eprintf ("Method prototype: %s\n", method_proto);
+		r_list_append(the_list, method_proto);
+	}
+	return the_list;
+}
+
+R_API char * r_bin_java_get_method_definition(RBinJavaField *fm_type) {
+	RList *the_list = NULL;
+	RListIter *iter = NULL, *desc_iter;
+	char *str = NULL, *r_value = NULL, *prototype = NULL;
+	ut32 list_length = 0;
+	ut32 prototype_len = 0, idx = 0, bytes_written = 0;
+
+	prototype_len += strlen(fm_type->flags_str) + 1;
+	prototype_len += strlen(fm_type->name) + 1;
+
+	the_list = r_bin_java_extract_type_values (fm_type->descriptor);
+	r_list_foreach (the_list, desc_iter, str) {
+		prototype_len += strlen(str);
+		if (str && *str != '(' && *str != ')') {
+			prototype_len += strlen(str) + 2; // for ", "
+		}
+		//if (str && *str == ')') break;
+	}
+
+	list_length = r_list_length(the_list);
+	r_value = r_list_get_n( the_list, list_length-1);
+	prototype = malloc(prototype_len + 2);
+
+	bytes_written = snprintf(prototype, prototype_len, "%s %s %s", fm_type->flags_str, r_value, fm_type->name );
+
+
+	for (idx = 0; list_length > 0 && idx < list_length-1; idx++) {
+
+		ut8 *tstr = r_list_get_n( the_list, idx),
+			*nstr = r_list_get_n( the_list, idx+1);
+
+		if (tstr) {
+			bytes_written += snprintf(prototype+bytes_written, prototype_len-bytes_written, "%s", tstr );
+			if (*tstr == '(' ) {}
+			else if ( *nstr == ')' ) { }
+			else if ( *tstr == ')' ) { }
+			else {
+				bytes_written += snprintf(prototype+bytes_written, prototype_len-bytes_written, ", " );
+			}
+		}
+	}
+	r_list_free (the_list);
+	return prototype;
+}
+
+R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type) {
+	char *prototype = NULL, *desc = NULL;
+	ut32 prototype_len = 0;
+
+	extract_type_value (fm_type->descriptor, &desc);
+
+	prototype_len += strlen(fm_type->flags_str) + 1;
+	prototype_len += strlen(fm_type->name) + 1;
+	prototype_len += strlen(desc) + 1;
+
+	prototype = malloc(prototype_len + 1);
+	//eprintf ("Field descriptor: %s\n", fm_type->descriptor);
+	if (desc) {
+		snprintf(prototype, prototype_len, "%s %s %s", fm_type->flags_str,
+					desc, fm_type->name );
+	} else {
+		snprintf(prototype, prototype_len, "%s UNKNOWN %s", fm_type->flags_str, fm_type->name );
+	}
+	return prototype;
+}
+
+R_API int r_bin_java_extract_reference_name (const char * input_str, char ** ref_str, ut8 array_cnt) {
+
+	char *new_str = NULL;
+	ut32 str_len = array_cnt ? (array_cnt+1) * 2: 0 ;
+
+	const char *str_pos = input_str;
+
+	int consumed = 0, len = 0;
+
+	if (!str_pos || *str_pos != 'L' || !*str_pos) {
+		return -1;
+	}
+
+	consumed ++;
+	str_pos ++;
+
+	while (*str_pos && *str_pos != ';') {
+		str_pos++;
+		len++;
+		consumed++;
+	}
+
+	str_pos = input_str+1;
+
+	if (*ref_str) free (*ref_str);
+
+	str_len += len;
+	*ref_str = malloc (str_len+1);
+
+	new_str = *ref_str;
+	memcpy (new_str, input_str+1, str_len);
+	new_str[str_len] = 0;
+
+	while ( *new_str ) {
+		if (*new_str == '/') *new_str = '.';
+		new_str ++;
+	}
+
+	return len+2;
+}
+
+R_API void r_bin_java_print_prototypes (RBinJavaObj *bin) {
+	RList * the_list = r_bin_java_get_method_definitions (bin);
+	char * str = NULL;
+	RListIter *iter;
+	r_list_foreach (the_list, iter, str) {
+		eprintf("%s;\n", str);
+	}
+}
+
+static char * get_type_value_str ( const char *arg_str, ut8 array_cnt) {
+
+	ut32 str_len = array_cnt ? (array_cnt+1) * 2 + strlen (arg_str): strlen (arg_str) ;
+	char *str = malloc (str_len + 1);
+
+	ut32 bytes_written = snprintf (str, str_len+1, "%s", arg_str);
+	while (array_cnt > 0) {
+		bytes_written = snprintf (str+bytes_written, str_len - bytes_written, "[]");
+		array_cnt --;
+	}
+	return str;
+}
+
+static int extract_type_value (char *arg_str, char **output) {
+	ut8 found_one = 0, array_cnt = 0;
+	ut32 len = 0, consumed = 0;
+	char *str = NULL;
+
+	if (*output) free(output);
+
+	while (arg_str && *arg_str && !found_one) {
+		// handle the end of an object
+		switch (*arg_str) {
+			case 'V':
+				len = 1;
+				str = get_type_value_str ( "void", array_cnt);
+				break;
+			case 'J':
+				len = 1;
+				str = get_type_value_str ("long", array_cnt);
+				array_cnt = 0;
+				break;
+			case 'I':
+				len = 1;
+				str = get_type_value_str ("int", array_cnt);
+				array_cnt = 0;
+				break;
+			case 'D':
+				len = 1;
+				str = get_type_value_str ("double", array_cnt);
+				array_cnt = 0;
+				break;
+			case 'F':
+				len = 1;
+				str = get_type_value_str ("float", array_cnt);
+				array_cnt = 0;
+				break;
+			case 'B':
+				len = 1;
+				str = get_type_value_str ("byte", array_cnt);
+				array_cnt = 0;
+				break;
+			case 'C':
+				len = 1;
+				str = get_type_value_str ("char", array_cnt);
+				array_cnt = 0;
+				break;
+			case 'Z':
+				len = 1;
+				str = get_type_value_str ("boolean", array_cnt);
+				array_cnt = 0;
+				break;
+			case '[': len = 1; array_cnt ++; break;
+			case 'L':
+				len = r_bin_java_extract_reference_name (arg_str, &str, array_cnt);
+				array_cnt = 0;
+				break;
+			case '(': len = 1; str = strdup ("("); break;
+			case ')': len = 1; str = strdup (")"); break;
+			default : break;
+		}
+		consumed += len;
+		arg_str += len;
+		if (str) {
+			*output = str;
+			break;
+		}
+	}
+	return consumed;
+}
+
+R_API RList * r_bin_java_extract_type_values( char *arg_str) {
+
+	RList *list_args = r_list_new ();
+
+	char *str = NULL, *str_cur_pos = NULL;
+	ut32 len = 0;
+	ut8 array_cnt = 0;
+
+	if (!arg_str) return list_args;
+
+	str_cur_pos = arg_str;
+	list_args->free = free;
+
+	while (str_cur_pos && *str_cur_pos) {
+		// handle the end of an object
+		len = extract_type_value (str_cur_pos, &str);
+		str_cur_pos += len;
+		r_list_append (list_args, str);
+		str = NULL;
+	}
+	return list_args;
+}
 
 R_API char * r_bin_java_get_this_class_name(RBinJavaObj *bin) {
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
@@ -1123,7 +1392,7 @@ R_API ut32 r_bin_java_get_utf8_len_from_bin_cp_list (RBinJavaObj *bin, ut64 idx)
 		rvalue: new char* for caller to free.
 	*/
 	if (bin == NULL)
-		return NULL;
+		return 0;
 
 	return r_bin_java_get_utf8_len_from_cp_item_list (bin->cp_list, idx);
 }
@@ -1251,8 +1520,7 @@ R_API ut32 r_bin_java_get_utf8_len_from_cp_item_list(RList *cp_list, ut64 idx) {
 	ut32 value = -1;
 	RListIter *iter;
 	RBinJavaCPTypeObj *item = NULL;
-	if (cp_list == NULL)
-		return NULL;
+	if (cp_list == NULL) return 0;
 
 	item = (RBinJavaCPTypeObj *) r_list_get_n (cp_list, idx);
 	if (item && (item->tag == R_BIN_JAVA_CP_UTF8) && item->metas->ord == idx) {
@@ -1492,9 +1760,7 @@ R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, ut64 buf_off
 	attr = r_bin_java_read_next_attr_from_buffer (buffer, sz, buf_offset);
 
 	if (attr) {// advance the cursor to the correct place
-		ut64 old_cur = bin->b->cur;
 		bin->b->cur = (buf_offset + sz);
-		//IFDBG eprintf ("==+== Advancing the cursor from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", old_cur, bin->b->cur);
 	}
 	return attr;
 }
@@ -2283,7 +2549,7 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 R_API RBinJavaObj* r_bin_java_new (const char* file, ut64 baddr, Sdb * kv) {
 	ut8 *buf;
 	RBinJavaObj *bin = R_NEW0 (RBinJavaObj);
-	bin->file = file;
+	bin->file = strdup (file);
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size)))
 		return r_bin_java_free (bin);
 	bin->b = r_buf_new ();
