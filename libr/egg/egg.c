@@ -238,7 +238,6 @@ R_API int r_egg_assemble(REgg *egg) {
 	free (code);
 	ret = (asmcode != NULL);
 	r_asm_code_free (asmcode);
-	r_asm_code_free (asmcode);
 	return ret;
 }
 
