@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 pancake */
+/* radare - LGPL - Copyright 2007-2014 pancake */
 
 #include "r_hash.h"
 #include "r_util.h"
@@ -115,7 +115,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	const char* ptr = name_lowercase;
 	ut64 bits = R_HASH_NONE;
 
-	for (j=0;name[j] && j<sizeof (name_lowercase); j++)
+	for (j=0;name[j] && j<sizeof (name_lowercase)-1; j++)
 		name_lowercase[j] = tolower (name[j]);
 	name_lowercase[j] = 0;
 

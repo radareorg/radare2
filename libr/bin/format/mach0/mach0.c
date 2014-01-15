@@ -801,7 +801,7 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 		int j;
 		if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
 			return NULL;
-		if (!(relocs = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
+		if (!(relocs = malloc((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_reloc_t))))
 			return NULL;
 		for (j = 0; j < bin->dysymtab.nundefsym; j++)
 			if (MACH0_(r_bin_mach0_parse_import_ptr)(bin, &relocs[i], bin->dysymtab.iundefsym + j)) {

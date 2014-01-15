@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2014 - nibble */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -21,8 +21,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		arm_set_input_buffer (arminsn, buf);
 	}
 	op->size = arm_disasm_one_insn (arminsn);
-	strncpy (op->buf_asm, arm_insn_asm (arminsn), R_ASM_BUFSIZE);
-	strncpy (op->buf_hex, arm_insn_hex (arminsn), R_ASM_BUFSIZE);
+	strncpy (op->buf_asm, arm_insn_asm (arminsn), R_ASM_BUFSIZE-1);
+	strncpy (op->buf_hex, arm_insn_hex (arminsn), R_ASM_BUFSIZE-1);
 	arm_free (arminsn);
 	return op->size;
 }

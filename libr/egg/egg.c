@@ -205,10 +205,10 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 }
 
 R_API int r_egg_assemble(REgg *egg) {
+	RAsmCode *asmcode = NULL;
+	char *code = NULL;
+	int ret = R_FALSE;
 	if (egg->emit == &emit_x86 || egg->emit == &emit_x64) {
-		RAsmCode *asmcode;
-		char *code;
-		//rasm2
 		r_asm_use (egg->rasm, "x86.nz");
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, 0);
@@ -221,13 +221,8 @@ R_API int r_egg_assemble(REgg *egg) {
 				r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
 			// LEAK r_asm_code_free (asmcode);
 		} else eprintf ("fail assembling\n");
-		free (code);
-		return (asmcode != NULL);
 	} else
 	if (egg->emit == &emit_arm) {
-		RAsmCode *asmcode;
-		char *code;
-		//rasm2
 		r_asm_use (egg->rasm, "arm");
 		r_asm_set_bits (egg->rasm, egg->bits);
 		r_asm_set_big_endian (egg->rasm, egg->endian); // XXX
@@ -239,10 +234,12 @@ R_API int r_egg_assemble(REgg *egg) {
 			r_buf_append_bytes (egg->bin, asmcode->buf, asmcode->len);
 			// LEAK r_asm_code_free (asmcode);
 		}
-		free (code);
-		return (asmcode != NULL);
 	}
-	return R_FALSE;
+	free (code);
+	ret = (asmcode != NULL);
+	r_asm_code_free (asmcode);
+	r_asm_code_free (asmcode);
+	return ret;
 }
 
 R_API int r_egg_compile(REgg *egg) {

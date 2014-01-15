@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_print.h>
@@ -97,7 +97,7 @@ R_API int r_meta_del(RMeta *m, int type, ut64 from, ut64 size, const char *str) 
 
 R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 	RMetaItem *d;
-	RListIter *iter;
+	RListIter *iter, next;
 	int ret = R_FALSE;
 
 	if (from == 0LL && to == UT64_MAX) {
@@ -111,6 +111,7 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 	/* No _safe loop necessary because we break immediately after the delete. */
 	if (m)
 	r_list_foreach (m->data, iter, d) {
+		next.n = iter->n;
 		switch (d->type) {
 		case R_META_TYPE_CODE:
 		case R_META_TYPE_DATA:
@@ -140,6 +141,7 @@ R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to) {
 			}
 			break;
 		}
+		iter = &next;
 	}
 	return ret;
 }
