@@ -114,6 +114,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				free (bptr);
 				return ret;
 			}
+			free(bptr);
 			break;
 		case 'c': return r_cons_get_size (NULL);
 		case 'r': { int rows; r_cons_get_size (&rows); return rows; }
@@ -1070,6 +1071,7 @@ reaccept:
 						free (out);
 						ptr = NULL;
 					}
+					free (out);
 					}
 					//unlink((char*)buf);
 				}
@@ -1090,6 +1092,8 @@ reaccept:
 			default:
 				eprintf ("unknown command 0x%02x\n", cmd);
 				r_socket_close (c);
+				free (ptr);
+				ptr = NULL;
 				return -1;
 			}
 		}

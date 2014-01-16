@@ -479,6 +479,7 @@ static RList* classes (RBinArch *arch) {
 		free (name);
 }
 	}
+	free (name);
 	return ret;
 }
 
