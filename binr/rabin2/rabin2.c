@@ -160,9 +160,13 @@ static int rabin_dump_symbols(int len) {
 		else if (symbol->size == 0 && olen == 0)
 			len = 32;
 		else len = olen;
-
-		if (!(buf = malloc (len)) || !(ret = malloc (len*2+1)))
+		if (!(buf = malloc (len))) {
 			return R_FALSE;
+		}
+		if (!(ret = malloc (len*2+1))) {
+			free (buf);
+			return R_FALSE;
+		}
 		r_buf_read_at (bin->cur.buf, symbol->offset, buf, len);
 		r_hex_bin2str (buf, len, ret);
 		printf ("%s %s\n", symbol->name, ret);
