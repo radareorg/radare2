@@ -193,8 +193,11 @@ int main(int argc, char **argv) {
 	if (r_sys_getenv ("R_DEBUG"))
 		r_sys_crash_handler ("gdb --pid %d");
 
-	if (argc<2)
+	if (argc<2) {
+		r_list_free(cmds);
+		r_list_free(evals);
 		return main_help (1);
+	}
 	if (argc==2 && !strcmp (argv[1], "-p")) {
 		char *path = r_str_home (R2_HOMEDIR"/rdb/");
 		DIR *d = r_sandbox_opendir (path);
@@ -285,7 +288,10 @@ int main(int argc, char **argv) {
 		case 'B': baddr = r_num_math (r.num, optarg); break;
 		case 's': seek = r_num_math (r.num, optarg); break;
 		case 'L': list_io_plugins (r.io); return 0;
-		default: return 1;
+		default: 
+			r_list_free (evals);
+			r_list_free (cmds);
+		return 1;
 		}
 	}
 	if (help>1) return main_help (2);
