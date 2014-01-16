@@ -177,6 +177,7 @@ R_API char *r_bin_demangle_objc(RBin *bin, const char *sym) {
 	}
 	free (clas);
 	free (args);
+	free (name);
 	return ret;
 }
 
