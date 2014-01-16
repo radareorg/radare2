@@ -371,6 +371,7 @@ R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name) {
 				if (cons->breaked) {
 					eprintf ("Interrupted at (%s)\n", ptr);
 					if (end) *end = '\n';
+					free (str);
 					return R_FALSE;
 				}
 				r_cons_flush ();
