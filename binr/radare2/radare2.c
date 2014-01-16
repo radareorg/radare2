@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
 		default: 
 			r_list_free (evals);
 			r_list_free (cmds);
-		return 1;
+			return 1;
 		}
 	}
 	if (help>1) return main_help (2);
