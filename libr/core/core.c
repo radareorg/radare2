@@ -737,10 +737,12 @@ R_API int r_core_block_size(RCore *core, int bsize) {
 }
 
 R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
-	int inc = (times>=0)?1:-1;
-	int diff = core->offset%align;
+	int diff, inc = (times>=0)?1:-1;
 	ut64 seek = core->offset;
-	
+
+	if (!align)
+		return R_FALSE;
+	diff = core->offset%align;
 	if (times == 0)
 		diff = -diff;
 	else if (diff) {
