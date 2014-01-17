@@ -3,6 +3,7 @@
 #include <r_egg.h>
 #include <r_bin.h>
 #include <getopt.c>
+#include "../blob/version.c"
 
 static int usage (int v) {
 	printf ("Usage: ragg2 [-FOLsrxvh] [-a arch] [-b bits] [-k os] [-o file] [-I /] [-i sc]\n"
@@ -223,8 +224,7 @@ int main(int argc, char **argv) {
 		case 'h':
 			return usage (1);
 		case 'v':
-			printf ("ragg2 "R2_VERSION" "R2_INCDIR"/sflib\n");
-			return 0;
+            return blob_version ("ragg2");
 		default:
 			return 1;
 		}

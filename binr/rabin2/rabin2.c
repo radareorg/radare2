@@ -397,7 +397,6 @@ int main(int argc, char **argv) {
 		case '@': at = r_num_math (NULL, optarg); break;
 		case 'n': name = optarg; break;
 		case 'N': bin->minstrlen = r_num_math (NULL, optarg); break;
-		//case 'V': return blob_version ("rabin2");
 		case 'h': return rabin_show_help (1);
 		default: action |= ACTION_HELP;
 		}

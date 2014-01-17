@@ -2,6 +2,7 @@
 
 #include <r_diff.h>
 #include <r_core.h>
+#include "../blob/version.c"
 
 enum {
 	MODE_DIFF,
@@ -161,8 +162,7 @@ int main(int argc, char **argv) {
 //			mode = MODE_LOCS;
 //			break;
 		case 'v':
-			printf ("radiff2 v"R2_VERSION"\n");
-			return 0;
+            return blob_version ("radiff2");
 		default:
 			return show_help (0);
 		}
