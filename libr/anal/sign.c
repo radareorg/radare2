@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_sign.h>
 #include <r_anal.h>
@@ -32,7 +32,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 	if (!name || !arg || !anal)
 		return R_FALSE;
 
-	if (!(si = R_NEW (RSignItem)))
+	if (!(si = R_NEW0 (RSignItem)))
 		return R_FALSE;
 	si->type = type;
 	snprintf (si->name, sizeof (si->name), "%s.%c.%s",
