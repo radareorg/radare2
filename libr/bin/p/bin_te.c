@@ -8,18 +8,18 @@
 #include "te/te.h"
 
 static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = r_bin_te_new_buf (arch->buf)))
+	if(!(arch->o->bin_obj = r_bin_te_new_buf (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
 
 static int destroy(RBinArch *arch) {
-	r_bin_te_free ((struct r_bin_te_obj_t*)arch->bin_obj);
+	r_bin_te_free ((struct r_bin_te_obj_t*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
 static ut64 baddr(RBinArch *arch) {
-	return r_bin_te_get_image_base (arch->bin_obj);
+	return r_bin_te_get_image_base (arch->o->bin_obj);
 }
 
 static RBinAddr* binsym(RBinArch *arch, int type) {
@@ -29,7 +29,7 @@ static RBinAddr* binsym(RBinArch *arch, int type) {
 		if (!(ret = R_NEW (RBinAddr)))
 			return NULL;
 		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = r_bin_te_get_main_offset (arch->bin_obj);
+		ret->offset = ret->rva = r_bin_te_get_main_offset (arch->o->bin_obj);
 		break;
 	}
 	return ret;
@@ -43,7 +43,7 @@ static RList* entries(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(entry = r_bin_te_get_entrypoint (arch->bin_obj)))
+	if (!(entry = r_bin_te_get_entrypoint (arch->o->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW (RBinAddr))) {
 		ptr->offset = entry->offset;
@@ -63,7 +63,7 @@ static RList* sections(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = r_bin_te_get_sections(arch->bin_obj)))
+	if (!(sections = r_bin_te_get_sections(arch->o->bin_obj)))
 		return NULL;
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
@@ -105,24 +105,24 @@ static RBinInfo* info(RBinArch *arch) {
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->bclass, "TE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rclass, "te", R_BIN_SIZEOF_STRINGS);
-	if ((str = r_bin_te_get_os (arch->bin_obj))) {
+	if ((str = r_bin_te_get_os (arch->o->bin_obj))) {
 		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = r_bin_te_get_arch (arch->bin_obj))) {
+	if ((str = r_bin_te_get_arch (arch->o->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = r_bin_te_get_machine (arch->bin_obj))) {
+	if ((str = r_bin_te_get_machine (arch->o->bin_obj))) {
 		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = r_bin_te_get_subsystem (arch->bin_obj))) {
+	if ((str = r_bin_te_get_subsystem (arch->o->bin_obj))) {
 		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
 	strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
-	ret->bits = r_bin_te_get_bits (arch->bin_obj);
+	ret->bits = r_bin_te_get_bits (arch->o->bin_obj);
 	ret->big_endian = 1;
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;

@@ -14,7 +14,7 @@ static int load(RBinArch *arch) {
 }
 
 static int destroy(RBinArch *arch) {
-	//r_bin_bios_free ((struct r_bin_bios_obj_t*)arch->bin_obj);
+	//r_bin_bios_free ((struct r_bin_bios_obj_t*)arch->o->bin_obj);
 	return R_TRUE;
 }
 

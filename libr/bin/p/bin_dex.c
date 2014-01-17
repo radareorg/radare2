@@ -17,8 +17,8 @@
 #endif
 
 static int load(RBinArch *arch) {
-	arch->bin_obj = r_bin_dex_new_buf (arch->buf);
-	return arch->bin_obj ? R_TRUE: R_FALSE;
+	arch->o->bin_obj = r_bin_dex_new_buf (arch->buf);
+	return arch->o->bin_obj ? R_TRUE: R_FALSE;
 }
 
 static ut64 baddr(RBinArch *arch) {
@@ -95,7 +95,7 @@ static RBinInfo *info(RBinArch *arch) {
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->type, "DEX CLASS", R_BIN_SIZEOF_STRINGS);
 	ret->has_va = R_FALSE;
-	version = r_bin_dex_get_version (arch->bin_obj);
+	version = r_bin_dex_get_version (arch->o->bin_obj);
 	strncpy (ret->bclass, version, R_BIN_SIZEOF_STRINGS);
 	free (version);
 	strncpy (ret->rclass, "class", R_BIN_SIZEOF_STRINGS);
@@ -141,7 +141,7 @@ static RBinInfo *info(RBinArch *arch) {
 }
 
 static RList* strings (RBinArch *arch) {
-	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
+	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
 	RBinString *ptr = NULL;
 	RList *ret = NULL;
 	int i, len;
@@ -372,13 +372,13 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 }
 
 static RList* imports (RBinArch *arch) {
-	RBinDexObj *bin = (RBinDexObj*) arch->bin_obj;
+	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
 	if (bin->imports_list)
 		return bin->imports_list;
 	dex_loadcode (arch, bin);
 	return bin->imports_list;
 #if 0
-	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
+	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
 	int i;
 	RList *ret = NULL;
 	RBinImport *ptr;
@@ -423,7 +423,7 @@ free (methodname);
 #endif
 }
 static RList* methods (RBinArch *arch) {
-	RBinDexObj *bin = (RBinDexObj*) arch->bin_obj;
+	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
 	if (bin->methods_list)
 		return bin->methods_list;
 	dex_loadcode (arch, bin);
@@ -435,7 +435,7 @@ static void __r_bin_class_free(RBinClass *p) {
 }
 
 static RList* classes (RBinArch *arch) {
-	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->bin_obj;
+	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
 	struct dex_class_t entry;
 	RList *ret = NULL;
 	RBinClass *class;
@@ -485,7 +485,7 @@ static RList* classes (RBinArch *arch) {
 
 static RList* entries(RBinArch *arch) {
 	RListIter *iter;
-	RBinDexObj *bin = (RBinDexObj*) arch->bin_obj;
+	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	RBinSymbol *m;
@@ -504,7 +504,7 @@ static RList* entries(RBinArch *arch) {
 
 //TODO
 static int getoffset (RBinArch *arch, int type, int idx) {
-	struct r_bin_dex_obj_t *dex = arch->bin_obj;
+	struct r_bin_dex_obj_t *dex = arch->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
 		if (dex->header.method_size > idx)
@@ -531,7 +531,7 @@ static int getoffset (RBinArch *arch, int type, int idx) {
 }
 
 static RList* sections(RBinArch *arch) {
-	struct r_bin_dex_obj_t *bin = arch->bin_obj;
+	struct r_bin_dex_obj_t *bin = arch->o->bin_obj;
 	RList *ml = methods (arch);
 	RBinSection *ptr = NULL;
 	int ns, fsymsz = 0;
