@@ -115,6 +115,7 @@ typedef struct r_bin_object_t {
 	int referenced;
 	int lang;
 	Sdb *kv;
+	void *bin_obj; // internal pointer used by formats
 } RBinObject;
 
 // XXX: this is a copy of RBinObject
@@ -126,7 +127,6 @@ typedef struct r_bin_arch_t {
 	int rawstr;
 	ut64 offset;
 	RBinObject *o;
-	void *bin_obj; // internal pointer used by formats
 	struct r_bin_plugin_t *curplugin;
 	ut64 loadaddr;
 } RBinArch;

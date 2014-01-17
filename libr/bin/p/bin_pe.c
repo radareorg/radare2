@@ -7,18 +7,18 @@
 #include "pe/pe.h"
 
 static int load(RBinArch *arch) {
-	if(!(arch->bin_obj = PE_(r_bin_pe_new_buf) (arch->buf)))
+	if(!(arch->o->bin_obj = PE_(r_bin_pe_new_buf) (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
 
 static int destroy(RBinArch *arch) {
-	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)arch->bin_obj);
+	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
 static ut64 baddr(RBinArch *arch) {
-	return PE_(r_bin_pe_get_image_base) (arch->bin_obj);
+	return PE_(r_bin_pe_get_image_base) (arch->o->bin_obj);
 }
 
 static RBinAddr* binsym(RBinArch *arch, int type) {
@@ -28,7 +28,7 @@ static RBinAddr* binsym(RBinArch *arch, int type) {
 		if (!(ret = R_NEW (RBinAddr)))
 			return NULL;
 		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = PE_(r_bin_pe_get_main_offset) (arch->bin_obj);
+		ret->offset = ret->rva = PE_(r_bin_pe_get_main_offset) (arch->o->bin_obj);
 		break;
 	}
 	return ret;
@@ -42,7 +42,7 @@ static RList* entries(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->bin_obj)))
+	if (!(entry = PE_(r_bin_pe_get_entrypoint) (arch->o->bin_obj)))
 		return ret;
 	if ((ptr = R_NEW (RBinAddr))) {
 		ptr->offset = entry->offset;
@@ -62,7 +62,7 @@ static RList* sections(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(sections = PE_(r_bin_pe_get_sections)(arch->bin_obj)))
+	if (!(sections = PE_(r_bin_pe_get_sections)(arch->o->bin_obj)))
 		return NULL;
 	for (i = 0; !sections[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSection)))
@@ -96,7 +96,7 @@ static RList* symbols(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(symbols = PE_(r_bin_pe_get_exports)(arch->bin_obj)))
+	if (!(symbols = PE_(r_bin_pe_get_exports)(arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !symbols[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinSymbol)))
@@ -138,9 +138,9 @@ static RList* imports(RBinArch *arch) {
 	ret->free = free;
 	relocs->free = free;
 
-	((struct PE_(r_bin_pe_obj_t)*)arch->bin_obj)->relocs = relocs;
+	((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs = relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports)(arch->bin_obj)))
+	if (!(imports = PE_(r_bin_pe_get_imports)(arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW (RBinImport)))
@@ -176,7 +176,7 @@ static RList* imports(RBinArch *arch) {
 }
 
 static RList* relocs(RBinArch *arch) {
-	return ((struct PE_(r_bin_pe_obj_t)*)arch->bin_obj)->relocs;
+	return ((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs;
 }
 
 static RList* libs(RBinArch *arch) {
@@ -188,7 +188,7 @@ static RList* libs(RBinArch *arch) {
 	if (!(ret = r_list_new ()))
 		return NULL;
 	ret->free = free;
-	if (!(libs = PE_(r_bin_pe_get_libs)(arch->bin_obj)))
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
 		return ret;
 	for (i = 0; !libs[i].last; i++) {
 		ptr = strdup (libs[i].name);
@@ -204,41 +204,41 @@ static RBinInfo* info(RBinArch *arch) {
 	if (!ret) return NULL;
 	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
 	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
-	if ((str = PE_(r_bin_pe_get_class) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_class) (arch->o->bin_obj))) {
 		strncpy (ret->bclass, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
 	strncpy (ret->rclass, "pe", R_BIN_SIZEOF_STRINGS);
-	if ((str = PE_(r_bin_pe_get_os) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_os) (arch->o->bin_obj))) {
 		strncpy (ret->os, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = PE_(r_bin_pe_get_arch) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_arch) (arch->o->bin_obj))) {
 		strncpy (ret->arch, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = PE_(r_bin_pe_get_machine) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_machine) (arch->o->bin_obj))) {
 		strncpy (ret->machine, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if ((str = PE_(r_bin_pe_get_subsystem) (arch->bin_obj))) {
+	if ((str = PE_(r_bin_pe_get_subsystem) (arch->o->bin_obj))) {
 		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
 	}
-	if (PE_(r_bin_pe_is_dll) (arch->bin_obj))
+	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
 		strncpy (ret->type, "DLL (Dynamic Link Library)", R_BIN_SIZEOF_STRINGS);
 	else strncpy (ret->type, "EXEC (Executable file)", R_BIN_SIZEOF_STRINGS);
-	ret->bits = PE_(r_bin_pe_get_bits) (arch->bin_obj);
-	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->bin_obj);
+	ret->bits = PE_(r_bin_pe_get_bits) (arch->o->bin_obj);
+	ret->big_endian = PE_(r_bin_pe_is_big_endian) (arch->o->bin_obj);
 	ret->dbg_info = 0;
 	ret->has_va = R_TRUE;
-	if (!PE_(r_bin_pe_is_stripped_debug) (arch->bin_obj))
+	if (!PE_(r_bin_pe_is_stripped_debug) (arch->o->bin_obj))
 		ret->dbg_info |= 0x01;
-	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->bin_obj))
+	if (PE_(r_bin_pe_is_stripped_line_nums) (arch->o->bin_obj))
 		ret->dbg_info |= 0x04;
-	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->bin_obj))
+	if (PE_(r_bin_pe_is_stripped_local_syms) (arch->o->bin_obj))
 		ret->dbg_info |= 0x08;
-	if (PE_(r_bin_pe_is_stripped_relocs) (arch->bin_obj))
+	if (PE_(r_bin_pe_is_stripped_relocs) (arch->o->bin_obj))
 		ret->dbg_info |= 0x10;
 	return ret;
 }

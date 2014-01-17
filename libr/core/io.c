@@ -264,6 +264,10 @@ R_API int r_core_block_read(RCore *core, int next) {
 		if (!core->io->va)
 			return -1;
 	}
+	if (core->bin) {
+		//r_bin_bind (core->bin, &(core->assembler->binb));
+		//r_bin_bind (core->bin, &(core->anal->binb));
+	}
 	return (int)r_io_read (core->io, core->block, core->blocksize);
 }
 
