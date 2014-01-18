@@ -1005,7 +1005,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		char *ptr2 = strchr (cmd, '`');
 		if (!ptr2 || (ptr2 && ptr2>ptr)) {
 			if (!tick || (tick && tick > ptr)) {
-eprintf ("nOt tICK\n");
 				*ptr = '\0';
 				cmd = r_str_clean (cmd);
 int value = core->num->value;
