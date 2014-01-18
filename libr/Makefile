@@ -108,7 +108,7 @@ install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${LFX}
-	@for a in `find * -type f | grep -e '\.${EXT_SO}$$' | grep -Ev '(lib|parse)/t/' | grep lib | grep -v /p/` ; do \
+	@for a in `find * -type f | grep -e '\.${EXT_SO}$$' | grep -Ev '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/` ; do \
 	  b=`echo $$a|cut -d / -f 2`; \
 	  echo " ${LFX}/$$b.${LIBVERSION}"; \
 	  ${INSTALL_LIB} $$a ${LFX}/$$b.${LIBVERSION} ; \
