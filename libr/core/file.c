@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_core.h>
 
@@ -231,6 +231,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 			}
 			if (_obj) _obj->baddr = baddr;
 
+			if (r->bin->cur.curplugin)
 			if (r_asm_is_valid (r->assembler, r->bin->cur.curplugin->name) ) {
 				r_asm_use (r->assembler, r->bin->cur.curplugin->name);
 			}
