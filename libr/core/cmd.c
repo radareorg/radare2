@@ -901,7 +901,7 @@ static char *find_eoq (char *p) {
 static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	const char *quotestr = "`";
 	const char *tick = NULL;
-	char *ptr, *ptr2, *str;
+	char *ptr, *ptr2, *str = NULL;
 	char *arroba = NULL;
 	int i, ret, pipefd;
 	int usemyblock = 0;
