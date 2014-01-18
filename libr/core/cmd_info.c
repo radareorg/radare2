@@ -70,12 +70,26 @@ static void r_core_file_info (RCore *core, int mode) {
 	}
 }
 
+static void cmd_info_bin(RCore *core, ut64 offset, int va, int mode) {
+	if (core->file) {
+		if (mode == R_CORE_BIN_JSON)
+			r_cons_printf ("{\"bin\":");
+		r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
+			mode, va, NULL, offset);
+		if (mode == R_CORE_BIN_JSON)
+			r_cons_printf (",\"core\":");
+		r_core_file_info (core, mode);
+		if (mode == R_CORE_BIN_JSON)
+			r_cons_printf ("}\n");
+	} else eprintf ("No selected file\n");
+}
+
 static int cmd_info(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	int newline = r_config_get_i (core->config, "scr.interactive");
 	ut64 offset = r_bin_get_offset (core->bin);
 	int va = core->io->va || core->io->debug;
-	int mode = R_CORE_BIN_SIMPLE;
+	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
 	Sdb *db;
 	if (input[0]) {
@@ -97,6 +111,8 @@ static int cmd_info(void *data, const char *input) {
 	}
 	if (is_array)
 		r_cons_printf ("{");
+	if (!*input)
+		cmd_info_bin (core, offset, va, mode);
 	while (*input) {
 		switch (*input) {
 		case 'b':
@@ -154,7 +170,6 @@ static int cmd_info(void *data, const char *input) {
 		case 'C': RBININFO ("classes",R_CORE_BIN_ACC_CLASSES); break;
 		case 'a':
 			{
-				char *p, cmd[3], chars[] = "IeisSz";
 				switch (mode) {
 				case R_CORE_BIN_RADARE: cmd_info (core, "i*IiesSz"); break;
 				case R_CORE_BIN_JSON: cmd_info (core, "ijIiesSz"); break;
@@ -195,17 +210,7 @@ static int cmd_info(void *data, const char *input) {
 			mode = R_CORE_BIN_JSON;
 			break;
 		default:
-			if (core->file) {
-				if (mode == R_CORE_BIN_JSON)
-					r_cons_printf ("{\"bin\":");
-				r_core_bin_info (core, R_CORE_BIN_ACC_INFO,
-					mode, va, NULL, offset);
-				if (mode == R_CORE_BIN_JSON)
-					r_cons_printf (",\"core\":");
-				r_core_file_info (core, mode);
-				if (mode == R_CORE_BIN_JSON)
-					r_cons_printf ("}\n");
-			} else eprintf ("No selected file\n");
+			cmd_info_bin (core, offset, va, mode);
 		}
 		input++;
 	}
