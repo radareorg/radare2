@@ -1,3 +1,0 @@
-OBJS = lib.c ;
-
-lib r_lib : $(OBJS) : <include>../include <library>../util ;

@@ -548,8 +548,7 @@ static int cmd_eval(void *data, const char *input) {
 				r_cons_printf ("%s\n", p);
 				free (p);
 			} else {
-				extern char **environ;
-				char **e = environ;
+				char **e = r_sys_get_environ ();
 				while (*e) {
 					r_cons_printf ("%s\n", *e);
 					e++;

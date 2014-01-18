@@ -1044,6 +1044,16 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"drx	dr7	.32	28	0\n"
 	);
 }
+#elif defined(__arm64__) && __APPLE__
+#if 0
+        ut32 bvr[16];
+        ut32 bcr[16];
+        ut32 wvr[16];
+        ut32 wcr[16];
+#endif
+	return strdup (
+	
+	);
 #elif __arm__ && __APPLE__
 #if 0
 ut32 r[13]
@@ -1052,6 +1062,16 @@ ut32 lr -- r14
 ut32 pc -- r15
 ut32 cpsr -- program status
 --> ut32[17]
+#endif
+#if 0
+// TODO: add
+MMX: NEON
+	ut128 v[32] // or 16 in arm32
+	ut32 fpsr;
+	ut32 fpcr;
+VFP: FPU
+	ut32 r[64]
+	ut32 fpscr
 #endif
 	return strdup (
 	"=pc	r15\n"

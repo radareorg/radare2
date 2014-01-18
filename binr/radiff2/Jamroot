@@ -1,6 +1,5 @@
 exe radiff2 : radiff2.c :
     <library>../../libr/util
-    <library>../../libr/lib
     <library>../../libr/config
     <library>../../libr/diff
     <library>../../libr/anal

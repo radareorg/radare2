@@ -603,3 +603,18 @@ R_API char *r_sys_pid_to_path(int pid) {
 	return strdup (pathbuf);
 #endif
 }
+
+static char** env = NULL;
+
+R_API char **r_sys_get_environ () {
+	// return environ if available??
+	if (!env) {
+		env = r_lib_dl_sym (NULL, "environ");
+eprintf ("SET %p\n", env);
+}
+	return env;
+}
+
+R_API void r_sys_set_environ (char **e) {
+	env = e;
+}

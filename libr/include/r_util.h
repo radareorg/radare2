@@ -630,6 +630,9 @@ R_API void r_strbuf_free(RStrBuf *sb);
 R_API void r_strbuf_fini(RStrBuf *sb);
 R_API void r_strbuf_init(RStrBuf *sb);
 
+R_API char **r_sys_get_environ ();
+R_API void r_sys_set_environ (char **e);
+
 #ifdef __cplusplus
 }
 #endif

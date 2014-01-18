@@ -10,7 +10,6 @@ exe radare2 : radare2.c :
     <library>../../libr/asm
     <library>../../libr/bin
     <library>../../libr/flags
-    <library>../../libr/lib
     <library>../../libr/db
     <library>../../libr/cons
     <library>../../libr/parse

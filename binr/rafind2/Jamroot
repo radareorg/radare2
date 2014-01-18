@@ -1,6 +1,5 @@
 exe rafind2 : rafind2.c :
     <library>../../libr/util
-    <library>../../libr/lib
     <library>../../libr/search
     <library>../../libr/cons
     <library>../../libr/socket

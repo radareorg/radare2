@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #define USE_THREADS 1
 
@@ -119,7 +119,7 @@ static void list_io_plugins(RIO *io) {
 	char str[4];
 	struct list_head *pos;
 	list_for_each_prev (pos, &io->io_list) {
-		struct r_io_list_t *il = list_entry(pos, struct r_io_list_t, list);
+		RIOList *il = list_entry (pos, RIOList, list);
 		// read, write, debug, proxy
 		str[0] = 'r';
 		str[1] = il->plugin->write? 'w': '_';
@@ -155,7 +155,7 @@ static int rabin_delegate(RThread *th) {
 }
 #endif
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv, char **envp) {
 #if USE_THREADS
 	RThreadLock *lock = NULL;
 	RThread *rabin_th = NULL;
@@ -189,6 +189,8 @@ int main(int argc, char **argv) {
 	RList *cmds = r_list_new ();
 	RList *evals = r_list_new ();
 	int cmdfilei = 0;
+
+	r_sys_set_environ (envp);
 
 	if (r_sys_getenv ("R_DEBUG"))
 		r_sys_crash_handler ("gdb --pid %d");
