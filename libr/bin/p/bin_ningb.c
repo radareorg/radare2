@@ -7,7 +7,7 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	ut8 lict[48];
 	if (!arch || !arch->buf)
 		return 0;
@@ -15,22 +15,22 @@ static int check(RBinArch *arch) {
 	return (!memcmp (lict, lic, 48))? 1: 0;
 }
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if (check (arch)) return R_TRUE;
 	return R_FALSE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	r_buf_free (arch->buf);
 	arch->buf = NULL;
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0LL;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = NULL;
 	ut8 init_jmp[4];
@@ -57,7 +57,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch){
+static RList* sections(RBinFile *arch){
 	ut8 bank;
 	int i;
 	RList *ret = r_list_new();
@@ -97,7 +97,7 @@ static RList* sections(RBinArch *arch){
 	return ret;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	ut8 rom_header[76];
 	RBinInfo *ret = R_NEW (RBinInfo);
 

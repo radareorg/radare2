@@ -188,8 +188,8 @@ R_API int r_bin_demangle_type (const char *str) {
 
 R_API char *r_bin_demangle (RBin *bin, const char *str) {
 	int type;
-	if (bin && bin->cur.curplugin && bin->cur.curplugin->demangle_type)
-		type = bin->cur.curplugin->demangle_type (str);
+	if (bin && bin->cur->curplugin && bin->cur->curplugin->demangle_type)
+		type = bin->cur->curplugin->demangle_type (str);
 	else type = r_bin_demangle_type (str);
 	switch (type) {
 	case R_BIN_NM_JAVA: return r_bin_demangle_java (str);

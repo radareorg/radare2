@@ -59,8 +59,8 @@ static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state
 
 static const RBinJavaObj * get_java_bin_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
-	ut8 is_java = (b && b->cur.curplugin && strcmp (b->cur.curplugin->name, "java") == 0) ? 1 : 0;
-	return is_java ? b->cur.o->bin_obj : NULL;
+	ut8 is_java = (b && b->cur->curplugin && strcmp (b->cur->curplugin->name, "java") == 0) ? 1 : 0;
+	return is_java ? b->cur->o->bin_obj : NULL;
 }
 
 static RList * get_java_bin_obj_list(RAnal *anal) {

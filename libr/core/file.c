@@ -159,12 +159,7 @@ static ut64 get_base_from_maps(RCore *core, const char *file) {
 
 R_API int r_core_bin_reload(RCore *r, const char *file, ut64 baseaddr) {
 	int result = 0;
-	r_bin_free (r->bin);
-	r->bin = NULL;
-	r->bin = r_bin_new ();
-	r_bin_set_user_ptr (r->bin, r);
 	result = r_core_bin_load (r, file, baseaddr);
-	r_bin_bind (r->bin, &(r->assembler->binb));
 	return result;
 }
 
@@ -187,10 +182,12 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	if (r->file && r->file->map) {
 		loadaddr = r->file->map->from;
 	}
-
 	/* TODO: fat bins are loaded multiple times, this is a problem that must be fixed . see '-->' marks. */
 	/* r_bin_select, r_bin_select_idx and r_bin_load end up loading the bin */
-	r->bin->cur.rawstr = r_config_get_i (r->config, "bin.rawstr");
+
+	//if (!r->bin->cur) r->bin->cur = R_NEW0 (RBinFile);
+	//r->bin->cur->rawstr = r_config_get_i (r->config, "bin.rawstr");
+
 	r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
 	if (is_io_load) {
 		// DEBUGGER
@@ -205,42 +202,48 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 			r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
 				va, NULL, baddr);
 			r_bin_load (r->bin, file, baddr, loadaddr, R_FALSE);
-			r->file->obj = r_bin_get_object (r->bin);
-			if (baddr)
-				r->file->obj->baddr = baddr;
+			//r->file->binfile = r->bin->cur;//r_bin_get_object (r->bin);
+			if (baddr) {
+				r->bin->cur->baddr = baddr;
+				//r->file->binfile = r->bin->cur;
+			}
 			r_config_set_i (r->config, "io.va",
-				(r->file->obj->info)? r->file->obj->info->has_va: 0);
+				(r->bin->cur->o->info)? r->bin->cur->o->info->has_va: 0);
 			offset = r_bin_get_offset (r->bin);
 		} else {
 			// XXX - May need to handle additional extraction here as well
 			RBinObject *_obj = NULL;
+			r_io_set_fd (r->io, r->file->fd);
 			r_bin_io_load (r->bin, r->io, r->file->fd, baddr, loadaddr, R_FALSE);
-			if ( r->bin->cur.curplugin &&
-					strncmp (r->bin->cur.curplugin->name, "any", 5)==0 ) {
+			if ( r->bin->cur->curplugin &&
+					strncmp (r->bin->cur->curplugin->name, "any", 5)==0 ) {
 				// set use of raw strings
 				r_config_set (r->config, "bin.rawstr", "true");
 				// get bin.minstr
 				r->bin->minstrlen = r_config_get_i (r->config, "bin.minstr");
+			} else {
+				r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 			}
 			// Making sure the RBinObject gets set
-			_obj = r_bin_get_object (r->bin);
+			_obj = r->bin->cur->o;//r_bin_get_object (r->bin);
 
 			if (_obj && _obj->info && _obj->info->bits) {
 				r_config_set_i (r->config, "asm.bits", _obj->info->bits);
-				r->file->obj = _obj;
+				//r->file->binfile = r->bin->cur;
 			}
 			if (_obj) _obj->baddr = baddr;
 
-			if (r->bin->cur.curplugin)
-			if (r_asm_is_valid (r->assembler, r->bin->cur.curplugin->name) ) {
-				r_asm_use (r->assembler, r->bin->cur.curplugin->name);
+			if (r->bin->cur && r->bin->cur->curplugin &&
+				r_asm_is_valid (r->assembler, r->bin->cur->curplugin->name) ) {
+
+				r_asm_use (r->assembler, r->bin->cur->curplugin->name);
+				r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 			}
-			r_bin_select (r->bin, r->assembler->cur->arch, r->assembler->bits, NULL);
 		}
 	} else if (r_bin_load (r->bin, file, baddr, loadaddr, R_FALSE)) { // --->
 		// HEXEDITOR
 		if (r->bin->narch>1 && r_config_get_i (r->config, "scr.prompt")) {
-			RBinObject *o = r->bin->cur.o;
+			RBinObject *o = r->bin->cur->o;
 			eprintf ("NOTE: Fat binary found. Selected sub-bin is: -a %s -b %d\n",
 				r->assembler->cur->arch, r->assembler->bits);
 			eprintf ("NOTE: Use -a and -b to select sub binary in fat binary\n");
@@ -251,7 +254,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 							o->info->arch,
 							o->info->bits,
 							r->bin->file,
-							r->bin->cur.offset);
+							r->bin->cur->offset);
 				} else eprintf ("No extract info found.\n");
 			}
 			r_bin_select (r->bin, r->assembler->cur->arch,
@@ -259,9 +262,9 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		}
 		/* Fix for fat bins */
 		r_list_foreach (r->io->maps, iter, im) {
-			if (r->bin->cur.size > 0) {
-				im->delta = r->bin->cur.offset;
-				im->to = im->from + r->bin->cur.size;
+			if (r->bin->cur->size > 0) {
+				im->delta = r->bin->cur->offset;
+				im->to = im->from + r->bin->cur->size;
 			}
 		}
 	} else if (!r_bin_load (r->bin, file, baddr, loadaddr, R_TRUE)) {
@@ -274,18 +277,20 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		}
 		return R_TRUE;
 	}
-	r->file->obj = r_bin_get_object (r->bin);
-	if (baddr)
-		r->file->obj->baddr = baddr;
+	//r->file->binfile = r->bin->cur;//r_bin_get_object (r->bin);
+	if (baddr) r->bin->cur->baddr = baddr;
+	if (r->file && r->bin->cur) r->bin->cur->fd = r->file->fd->fd;
+	if (r->bin) r_core_bin_bind (r);
 
 	r_config_set_i (r->config, "io.va",
-		(r->file->obj->info)? r->file->obj->info->has_va: 0);
+		(r->bin->cur->o->info)? r->bin->cur->o->info->has_va: 0);
 	offset = r_bin_get_offset (r->bin);
 	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
-	if (r->bin->cur.curplugin && !strcmp (r->bin->cur.curplugin->name, "dex")) {
+
+	if (r->bin->cur->curplugin && !strcmp (r->bin->cur->curplugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
 	}
-	if (r->bin) r_bin_bind(r->bin, &(r->anal->binb));
+
 	if (r_config_get_i (r->config, "file.analyze"))
 		r_core_cmd0 (r, "aa");
 	return R_TRUE;
@@ -353,7 +358,8 @@ R_API RCoreFile * r_core_file_find_by_fd(RCore* core, int fd){
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	if (cf) {
-		if (cf->map) free(cf->map);
+		// double free libr/io/io.c:70 performs free
+		//if (cf->map) free(cf->map);
 		if (cf->filename) free(cf->filename);
 		if (cf->uri) free(cf->uri);
 		r_io_desc_free (cf->fd);

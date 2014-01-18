@@ -917,8 +917,8 @@ static int r_core_anal_followptr(RCore *core, ut64 at, ut64 ptr, ut64 ref, int c
 	}
 	if (depth < 1)
 		return R_FALSE;
-	if (core->bin && core->bin->cur.o && core->bin->cur.o->info) {
-		endian = core->bin->cur.o->info->big_endian;
+	if (core->bin && core->bin->cur->o && core->bin->cur->o->info) {
+		endian = core->bin->cur->o->info->big_endian;
 	} else endian = CPU_ENDIAN;
 	wordsize = (int)(core->anal->bits/8);
 	if ((dataptr = r_io_read_i (core->io, ptr, wordsize, endian)) == -1)

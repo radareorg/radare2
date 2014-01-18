@@ -81,7 +81,7 @@ typedef struct r_core_file_t {
 	int rwx;
 	int dbg;
 	RIODesc *fd;
-	RBinObject *obj;
+	RBinBind *binb;
 } RCoreFile;
 
 #define R_CORE_ASMSTEPS 128
@@ -147,6 +147,7 @@ typedef struct r_core_t {
 	RList *watchers;
 	RList *scriptstack;
 	int cmd_depth;
+	ut8 switch_file_view;
 } RCore;
 
 typedef struct r_core_cmpwatch_t {
@@ -278,6 +279,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len);
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 
+R_API void r_core_bin_bind(RCore *core);
+R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd);
 R_API int r_core_bin_reload(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
 R_API int r_core_hash_load(RCore *core, const char *file);
@@ -375,6 +378,7 @@ R_API RCoreLog *r_core_log_new ();
 R_API int r_core_log_list(RCore *core, int n, int count, char fmt);
 R_API void r_core_log_add(RCore *core, const char *msg);
 R_API void r_core_log_del(RCore *core, int n);
+
 
 /* anal stats */
 

@@ -255,7 +255,12 @@ R_API int r_core_block_read(RCore *core, int next) {
 		memset (core->block, 0xff, core->blocksize);
 		return -1;
 	}
-	r_io_set_fd (core->io, core->file->fd);
+	r_io_set_fdn (core->io, core->io->raised);
+	if (core->switch_file_view) {
+		r_core_bin_set_by_fd (core, core->io->raised);
+		core->switch_file_view = 0;
+	}
+
 	off = r_io_seek (core->io, core->offset+((next)?core->blocksize:0),
 		R_IO_SEEK_SET);
 	if (off == UT64_MAX) {
@@ -263,10 +268,6 @@ R_API int r_core_block_read(RCore *core, int next) {
 // TODO: do continuation in io
 		if (!core->io->va)
 			return -1;
-	}
-	if (core->bin) {
-		//r_bin_bind (core->bin, &(core->assembler->binb));
-		//r_bin_bind (core->bin, &(core->anal->binb));
 	}
 	return (int)r_io_read (core->io, core->block, core->blocksize);
 }

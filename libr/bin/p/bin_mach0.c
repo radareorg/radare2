@@ -6,7 +6,7 @@
 #include <r_bin.h>
 #include "mach0/mach0.h"
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if (!(arch->o->bin_obj = MACH0_(r_bin_mach0_new_buf) (arch->buf)))
 		return R_FALSE;
 	struct MACH0_(r_bin_mach0_obj_t) *mo = arch->o->bin_obj;
@@ -14,16 +14,16 @@ static int load(RBinArch *arch) {
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	MACH0_(r_bin_mach0_free) (arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return MACH0_(r_bin_mach0_get_baddr) (arch->o->bin_obj);
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	struct r_bin_mach0_addr_t *entry = NULL;
@@ -42,7 +42,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_mach0_section_t *sections = NULL;
@@ -70,7 +70,7 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	struct r_bin_mach0_symbol_t *symbols = NULL;
 	RList *ret = r_list_new ();
 	RBinSymbol *ptr = NULL;
@@ -102,7 +102,7 @@ static RList* symbols(RBinArch *arch) {
 	return ret;
 }
 
-static RList* imports(RBinArch *arch) {
+static RList* imports(RBinFile *arch) {
 	struct MACH0_(r_bin_mach0_obj_t) *bin = arch->o->bin_obj;
 	struct r_bin_mach0_import_t *imports = NULL;
 	const char *name, *type;
@@ -145,7 +145,7 @@ static RList* imports(RBinArch *arch) {
 	return ret;
 }
 
-static RList* relocs(RBinArch *arch) {
+static RList* relocs(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	struct r_bin_mach0_reloc_t *relocs = NULL;
@@ -177,7 +177,7 @@ static RList* relocs(RBinArch *arch) {
 	return ret;
 }
 
-static RList* libs(RBinArch *arch) {
+static RList* libs(RBinFile *arch) {
 	int i;
 	char *ptr = NULL;
 	struct r_bin_mach0_lib_t *libs;
@@ -194,7 +194,7 @@ static RList* libs(RBinArch *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
@@ -232,7 +232,7 @@ static RBinInfo* info(RBinArch *arch) {
 }
 
 #if !R_BIN_MACH064
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf) {
 		if (!memcmp (arch->buf->buf, "\xce\xfa\xed\xfe", 4) ||
 			!memcmp (arch->buf->buf, "\xfe\xed\xfa\xce", 4))
@@ -258,10 +258,10 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	ut32 p_datafsz = 0, p_datava = 0, p_datasz = 0, p_datapa = 0;
 	ut32 p_cmdsize = 0, p_entry = 0, p_tmp = 0;
 	ut32 baddr = 0x1000;
-	int is_arm = !strcmp (bin->cur.o->info->arch, "arm");
+	int is_arm = !strcmp (bin->cur->o->info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
 #ifndef R_BIN_MACH064
-	if (bin->cur.o->info->bits == 64) {
+	if (bin->cur->o->info->bits == 64) {
 		eprintf ("TODO: Please use mach064 instead of mach0\n");
 		return NULL;
 	}
@@ -411,7 +411,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	return buf;
 }
 
-static RBinAddr* binsym(RBinArch *arch, int sym) {
+static RBinAddr* binsym(RBinFile *arch, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
@@ -425,7 +425,7 @@ static RBinAddr* binsym(RBinArch *arch, int sym) {
 	return ret;
 }
 
-static int size(RBinArch *arch) {
+static int size(RBinFile *arch) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!arch->o->sections) {
