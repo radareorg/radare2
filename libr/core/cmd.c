@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
 #include <r_core.h>
 #include <r_anal.h>
@@ -549,7 +549,7 @@ static int cmd_eval(void *data, const char *input) {
 				free (p);
 			} else {
 				char **e = r_sys_get_environ ();
-				while (*e) {
+				while (e && *e) {
 					r_cons_printf ("%s\n", *e);
 					e++;
 				}

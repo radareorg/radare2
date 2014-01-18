@@ -1,5 +1,5 @@
 NAME=r_fs
-DEPS=r_lib r_util r_io
+DEPS=r_util r_io
 CFLAGS+=-DCORELIB -Iarch/include -Iarch
 
 SHLR=../../shlr/

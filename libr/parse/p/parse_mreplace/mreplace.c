@@ -123,7 +123,7 @@ char *mreplace(char *string, char *se,char *rep) {
 				temp->address,offset);
 #endif
 		}
-		if(offset<0) offset=-offset;
+	// it is unsigned!	if(offset<0) offset=-offset;
 		if(*string && strlen(string+pm[0].rm_eo)) {
 			string+=pm[0].rm_eo;
 			status = regexec(&re, string, nmatch, pm, 0);

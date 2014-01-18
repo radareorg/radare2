@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #ifndef _INCLUDE_UTIL_R_
 #define _INCLUDE_UTIL_R_
@@ -10,6 +10,7 @@
 #include <r_flist.h> // radare fixed pointer array iterators
 #include <list.h> // kernel linked list
 #include <r_th.h>
+#include <r_lib.h>
 #include <dirent.h>
 #include <sys/time.h>
 #if __UNIX__

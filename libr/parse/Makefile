@@ -1,5 +1,5 @@
 NAME=r_parse
-DEPS=r_lib r_flags r_util r_anal
+DEPS=r_flags r_util r_anal
 
 include ../config.mk
 LINK=$(STOP)/tcc/libr_tcc.a
