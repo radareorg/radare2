@@ -1,0 +1,45 @@
+
+a {
+	color: black;
+}
+a:hover {
+	color: white;
+}
+html, body {
+	overflow:hidden;
+}
+iframe {
+	width:100%;
+	border: 1px solid black;
+}
+.frame {
+	font-family: monospace;
+	border: 1px solid black;
+	height:100%;
+	background-color:#506070;
+	color: #e0d0c0;
+}
+.frame_title {
+	background-color:black;
+	color:white;
+	padding-top:5px;
+	top:0px;
+	height:20px;
+	font-family: monospace;
+	width:100%;
+}
+.canvas {
+	padding-top:3px;
+	width:100%;
+	height:100%;
+	background-color:blue;
+	border-top:5px;
+	font-size:14px;
+	font-family:monospace;
+}
+h2 {
+	padding:0px;
+color:black;
+border:0px;
+margin:10px;
+}
