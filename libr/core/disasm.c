@@ -5,8 +5,8 @@
 
 #define HASRETRY 1
 
-#define USE_REFACTORED 0
-#define USE_OLD 1
+#define USE_REFACTORED 1
+#define USE_OLD 0
 
 static const char* r_vline_a[] = {
 	"|", // LINE_VERT
