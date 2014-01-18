@@ -997,7 +997,7 @@ R_API RAnalCond *r_anal_cond_new_from_string(const char *str);
 
 /* reflines.c */
 R_API RAnalRefline *r_anal_reflines_get(RAnal *anal,
-	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
+	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
 R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
 

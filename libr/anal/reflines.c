@@ -1,12 +1,11 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
-//#include <r_anal.h>
 #include <r_core.h>
 #include <r_util.h>
 #include <r_cons.h>
 
 R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
-	ut64 addr, ut8 *buf, ut64 len, int nlines, int linesout, int linescall)
+	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall)
 {
 	RAnalRefline *list2, *list = R_NEW (RAnalRefline);
 	RAnalOp op = {0};

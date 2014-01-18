@@ -1235,7 +1235,8 @@ static int cmd_debug(void *data, const char *input) {
 			{
 			ut8 bytes[4096];
 			int bytes_len = r_hex_str2bin (input+2, bytes);
-			r_debug_execute (core->dbg, bytes, bytes_len, 0);
+			if (bytes_len>0)
+				r_debug_execute (core->dbg, bytes, bytes_len, 0);
 			}
 			break;
 		default:

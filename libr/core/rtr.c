@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2013 - pancake, nibble */
+/* radare - Copyright 2009-2014 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -534,9 +534,10 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 }
 
 R_API void r_core_rtr_session(RCore *core, const char *input) {
-	char prompt[32], buf[4096];
+	char prompt[64], buf[4096];
 	int fd;
 
+	prompt[0] = 0;
 	if (input[0] >= '0' && input[0] <= '9') {
 		fd = r_num_math (core->num, input);
 		for (rtr_n = 0; rtr_host[rtr_n].fd->fd != fd \

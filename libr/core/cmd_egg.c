@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static void cmd_egg_option (REgg *egg, const char *key, const char *input) {
 	if (input[1]!=' ') {
@@ -126,6 +126,7 @@ static int cmd_egg(void *data, const char *input) {
 					free (o);
 				}
 			}
+			free (oa);
 			break;
 		case '\0':
 			// list

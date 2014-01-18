@@ -555,11 +555,14 @@ static int cmd_eval(void *data, const char *input) {
 				}
 			}
 		} else
-		if (input[2] == ' ') {
-			char *k = strdup (input+3);
-			char *v = strchr (k, '=');
-			*v++ = 0;
-			r_sys_setenv (k, v);
+		if (strlen (input)>3) {
+			char *v, *k = strdup (input+3);
+			if (!k) break;
+			v = strchr (k, '=');
+			if (v) {
+				*v++ = 0;
+				r_sys_setenv (k, v);
+			}
 			free (k);
 		}
 		return R_TRUE;
@@ -818,22 +821,25 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 
 	signal (SIGPIPE, SIG_IGN);
 	stdout_fd = dup (1);
-	pipe (fds);
-	if (fork ()) {
-		dup2 (fds[1], 1);
-		close (fds[1]);
-		close (fds[0]);
-		r_core_cmd (core, radare_cmd, 0);
-		r_cons_flush ();
-		close (1);
-		wait (&ret);
-		dup2 (stdout_fd, 1);
-		close (stdout_fd);
-	} else {
-		close (fds[1]);
-		dup2 (fds[0], 0);
-		//dup2 (1, 2); // stderr goes to stdout
-		r_sandbox_system (shell_cmd, 0);
+	if (stdout_fd != -1) {
+		pipe (fds);
+		if (fork ()) {
+			dup2 (fds[1], 1);
+			close (fds[1]);
+			close (fds[0]);
+			r_core_cmd (core, radare_cmd, 0);
+			r_cons_flush ();
+			close (1);
+			wait (&ret);
+			dup2 (stdout_fd, 1);
+			close (stdout_fd);
+		} else {
+			close (fds[1]);
+			dup2 (fds[0], 0);
+			//dup2 (1, 2); // stderr goes to stdout
+			r_sandbox_system (shell_cmd, 0);
+			close (stdout_fd);
+		}
 	}
 #else
 #warning r_core_cmd_pipe UNIMPLEMENTED FOR THIS PLATFORM
@@ -846,47 +852,40 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
-	int rep = atoi (cmd);
+	int ret = 0, rep = atoi (cmd);
 	char *cmt, *colon, *icmd = strdup (cmd);
 	cmd = r_str_trim_head_tail (icmd);
-	if (*cmd && cmd[1] && !memcmp (cmd, "# ", 2)) {
-		free (icmd);
-		return 0;
-	}
+	if (!icmd || !strncmp (cmd, "# ", 2))
+		goto beach;
 	cmt = *icmd ? strchr (icmd+1, '#'): NULL;
 	if (cmt && cmt[1]==' ')
 		*cmt = 0;
 	if (*cmd != '"') {
-		colon = strchr (icmd, ';');
-		if (colon)
+		if ((colon = strchr (icmd, ';')))
 			*colon = 0;
 	} else colon = NULL;
 	if (rep>0) {
 		while (*cmd>='0' && *cmd<='9')
 			cmd++;
-		// cannot repeat null cmd
-		if (!*cmd) {
-			free (icmd);
-			return 0;
-		}
+		// do not repeat null cmd
+		if (!*cmd) goto beach;
 	} 
 	if (rep<1) rep = 1;
 	while (rep-- && *cmd) {
-		int ret = r_core_cmd_subst_i (core, cmd);
-		if (ret && *cmd=='q') {//&& !colon) {
-			free (icmd);
-			return ret;
-		}
+		ret = r_core_cmd_subst_i (core, cmd);
+		if (ret && *cmd=='q')
+			goto beach;
 	}
 	if (colon && colon[1]) {
 		for (++colon; *colon==';'; colon++);
 		r_core_cmd_subst (core, colon);
 	} else {
-		if (icmd && !*icmd)
+		if (!*icmd)
 			r_core_cmd_nullcallback (core);
 	}
+beach:
 	free (icmd);
-	return 0;
+	return ret;
 }
 
 static char *find_eoq (char *p) {
@@ -906,6 +905,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	int i, ret, pipefd;
 	int usemyblock = 0;
 
+	if (!cmd) return 0;
 	cmd = r_str_trim_head_tail (cmd);
 
 	/* quoted / raw command */
@@ -938,7 +938,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 				} else p = NULL;
 			}
 			if (p && *p && p[1]=='>') {
-				char *str = p+2;
+				str = p+2;
 				while (*str=='>') str++;
 				while (IS_WHITESPACE (*str)) str++;
 				r_cons_flush ();
@@ -948,7 +948,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 			line = r_str_replace (line, "\\\"", "\"", R_TRUE);
 			if (p && p[1]=='|') {
 				str = p+2;
-				while (IS_WHITESPACE (*str))str++;
+				while (IS_WHITESPACE (*str)) str++;
 				r_core_cmd_pipe (core, cmd, str);
 			} else {
 				r_cmd_call (core->rcmd, line);
@@ -1005,6 +1005,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 		char *ptr2 = strchr (cmd, '`');
 		if (!ptr2 || (ptr2 && ptr2>ptr)) {
 			if (!tick || (tick && tick > ptr)) {
+eprintf ("nOt tICK\n");
 				*ptr = '\0';
 				cmd = r_str_clean (cmd);
 int value = core->num->value;
@@ -1118,9 +1119,8 @@ next:
 			r_cons_pipe_close (pipefd);
 		}
 		r_cons_set_last_interactive ();
-		if (!pipecolor) {
+		if (!pipecolor)
 			r_config_set_i (core->config, "scr.color", ocolor);
-		}
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
 			if (editor && *editor)

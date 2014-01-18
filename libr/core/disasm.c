@@ -494,25 +494,40 @@ static char *filter_refline2(RCore *core, const char *str) {
 }
 
 static char *filter_refline(RCore *core, const char *str) {
-	char *p, *s = strdup (str);
+        char *p, *s = strdup (str);
 
+        p = s;
+        p = r_str_replace (strdup (p), "`",
+                core->cons->vline[LINE_VERT], 1); // "`" -> "|"
+        p = r_str_replace (strdup (p),
+                core->cons->vline[LINE_HORIZ], " ", 1); // "-" -> " "
+        p = r_str_replace (strdup (p),
+                core->cons->vline[LINE_HORIZ],
+                core->cons->vline[LINE_VERT], 1); // "=" -> "|"
+        p = strstr (s, core->cons->vline[ARROW_RIGHT]);
+        if (p)
+                p = r_str_replace (strdup (p), core->cons->vline[ARROW_RIGHT], " ", 0);
+
+        p = strstr (s, core->cons->vline[ARROW_LEFT]);
+        if (p)
+                p = r_str_replace (strdup (p), core->cons->vline[ARROW_LEFT], " ", 0);
+        return s;
+}
+#if 0
+static char *filter_refline(RCore *core, const char *str) {
+	char *p, *s = strdup (str);
 	p = s;
 	p = r_str_replace (strdup (p), "`",
 		core->cons->vline[LINE_VERT], 1); // "`" -> "|"
-	p = r_str_replace (strdup (p),
-		core->cons->vline[LINE_HORIZ], " ", 1); // "-" -> " "
-	p = r_str_replace (strdup (p),
-		core->cons->vline[LINE_HORIZ],
-		core->cons->vline[LINE_VERT], 1); // "=" -> "|"
-	p = strstr (s, core->cons->vline[ARROW_RIGHT]);
-	if (p)
-		p = r_str_replace (strdup (p), core->cons->vline[ARROW_RIGHT], " ", 0);
-
-	p = strstr (s, core->cons->vline[ARROW_LEFT]);
-	if (p)
-		p = r_str_replace (strdup (p), core->cons->vline[ARROW_LEFT], " ", 0);
-	return s;
+	p = r_str_replace (p, core->cons->vline[LINE_HORIZ], " ", 1); // "-" -> " "
+	p = r_str_replace (p, core->cons->vline[LINE_HORIZ], core->cons->vline[LINE_VERT], 1); // "=" -> "|"
+	s = strstr (p, core->cons->vline[ARROW_RIGHT]);
+	if (s) p = r_str_replace (p, core->cons->vline[ARROW_RIGHT], " ", 0);
+	s = strstr (p, core->cons->vline[ARROW_LEFT]);
+	if (s) p = r_str_replace (p, core->cons->vline[ARROW_LEFT], " ", 0);
+	return p;
 }
+#endif
 
 static void colorize_opcode (char *p, const char *reg, const char *num) {
 	int i, j, k, is_mod, is_arg = 0;
@@ -1994,11 +2009,15 @@ toro:
 		r_asm_set_pc (core->assembler, at);
 		if (show_lines) {
 			line = r_anal_reflines_str (core, at, linesopts);
+			free (refline);
 			refline = filter_refline (core, line);
+			free (refline2);
 			refline2 = filter_refline2 (core, refline);
 		} else {
 			line = NULL;
+			free (refline);
 			refline = strdup ("");
+			free (refline2);
 			refline2 = strdup ("");
 		}
 

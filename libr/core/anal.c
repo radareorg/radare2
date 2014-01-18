@@ -1062,7 +1062,10 @@ R_API void r_core_anal_setup_enviroment (RCore *core) {
 	RListIter *iter;
 	RConfigNode *kv;
 	r_list_foreach (core->config->nodes, iter, kv) {
-		strcpy (key, kv->name); // XXX: overflow
+		int kvlen = strlen (kv->name);
+		if (kvlen>=sizeof (key))
+			return;
+		strcpy (key, kv->name);
 		r_str_case (key, 1);
 		r_str_replace_char (key, '.', '_');
 #define RANAL_PARSE_STRING_ONLY 1
@@ -1073,9 +1076,7 @@ R_API void r_core_anal_setup_enviroment (RCore *core) {
 			r_anal_type_define_i (core->anal, key, kv->i_value);
 		} else if (kv->flags & CN_BOOL) {
 			r_anal_type_define (core->anal, key, kv->i_value? "": NULL);
-		} else {
-			r_anal_type_define (core->anal, key, kv->value);
-		}
+		} else r_anal_type_define (core->anal, key, kv->value);
 #endif
 	}
 	r_anal_type_header (core->anal, str);
