@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -69,7 +69,10 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad) {
 }
 
 static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print) {
-	int dlen = r_hash_calculate (ctx, hash, buf, len);
+	int dlen;
+	if (len<1)
+		return 0;
+	dlen = r_hash_calculate (ctx, hash, buf, len);
 	if (!dlen) return 0;
 	if (!print) return 1;
 	if (hash == R_HASH_ENTROPY) {
@@ -133,7 +136,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					r_io_read_at (io, j, buf, bsize);
 					do_hash_internal (ctx,
 						hashbit, buf, ((j+bsize)<fsize)?
-						bsize: (fsize-j), rad, 0);
+						bsize: (bsize>j)?(fsize-j):0, rad, 0);
 				}
 				if (s.buf && !s.prefix) {
 					do_hash_internal (ctx,
@@ -221,7 +224,12 @@ int main(int argc, char **argv) {
 	while ((c = getopt (argc, argv, "rva:i:S:s:b:nBhf:t:kLq")) != -1) {
 		switch (c) {
 		case 'q': quiet = 1; break;
-		case 'i': iterations = atoi (optarg); break;
+		case 'i': iterations = atoi (optarg);
+			if (iterations<1) {
+				eprintf ("error: -i argument must be positive\n");
+				return 1;
+			}
+			break;
 		case 'S': seed = optarg; break;
 		case 'n': numblocks = 1; break;
 		case 'L': algolist (); return 0;

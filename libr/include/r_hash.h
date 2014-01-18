@@ -95,19 +95,19 @@ R_API RHash *r_hash_new(int rst, int flags);
 R_API void r_hash_free(RHash *ctx);
 
 /* methods */
-R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, ut32 len);
-R_API ut8 *r_hash_do_xxhash(RHash *ctx, const ut8 *input, ut32 len);
+R_API ut8 *r_hash_do_md4(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len);
+R_API ut8 *r_hash_do_xxhash(RHash *ctx, const ut8 *input, int len);
 
 /* static methods */
 R_API const char *r_hash_name(ut64 bit);
 R_API ut64 r_hash_name_to_bits(const char *name);
 R_API int r_hash_size(int bit);
-R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *input, ut32 len);
+R_API int r_hash_calculate(RHash *ctx, int algobit, const ut8 *input, int len);
 
 /* checksums */
 /* XXX : crc16 should use 0 as arg0 by default */
