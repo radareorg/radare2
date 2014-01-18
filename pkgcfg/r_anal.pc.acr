@@ -7,5 +7,5 @@ Name: r_anal
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lr_anal -lr_util -lr_db -lr_lib -lr_reg -lr_syscall -lr_diff
+Libs: -L${libdir} -lr_anal -lr_util -lr_db -lr_reg -lr_syscall -lr_diff
 Cflags: -I${includedir}/libr

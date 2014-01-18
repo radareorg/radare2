@@ -7,5 +7,5 @@ Name: r_io
 Description: radare foundation libraries
 Version: @VERSION@
 Requires:
-Libs: -L${libdir} -lr_io -lr_lib -lr_util -lr_socket -lr_cons
+Libs: -L${libdir} -lr_io -lr_util -lr_socket -lr_cons
 Cflags: -I${includedir}/libr

@@ -42,9 +42,9 @@ Usage
 	export DYLD_LIBRARY_PATH=${R2DIR}/lib
 	r2 ...
 
-ARM7 SDK
-========
-From comstar
+Building with the ARMv7 SDK
+===========================
+From coolstar repo we get the ios toolchain
 
 	apt-get coreutils install wget inetutils
 	apt-get install basename git make expat 
