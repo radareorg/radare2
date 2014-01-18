@@ -1114,6 +1114,7 @@ void handle_instruction_mov_lea (RCore *core, RDisasmState *disasm_state, int id
 			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 			RAnalValue *dst = disasm_state->analop.dst;
 			if (dst && dst->reg && !strcmp (src->reg->name, pc)) {
+				int index = 0;
 				int memref = core->assembler->bits/8;
 				RFlagItem *item;
 				ut8 b[64];
@@ -3034,7 +3035,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	if (hint) r_anal_hint_free (hint);
 	return 0;
 }
-#endif
+#endif // USE_OLD
 
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	RAsmOp asmop;
@@ -3074,8 +3075,3 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	r_cons_printf ("]");
 	return R_TRUE;
 }
-
-
-
-
-
