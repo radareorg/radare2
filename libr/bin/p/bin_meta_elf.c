@@ -4,7 +4,7 @@
 #include <r_bin.h>
 
 // TODO: use proper dwarf api here.. or deprecate
-static int get_line(RBinArch *arch, ut64 addr, char *file, int len, int *line) {
+static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
 	char *p, *out = r_sys_cmd_strf ("addr2line -e '%s' 0x%08"PFMT64x"", arch->file, addr);
 	if (out == NULL || *out=='?')
 		return R_FALSE;

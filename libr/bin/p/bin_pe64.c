@@ -3,7 +3,7 @@
 #define R_BIN_PE64 1
 #include "bin_pe.c"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	int idx, ret = R_FALSE;
 	if (!arch || !arch->buf || !arch->buf->buf)
 		return R_FALSE;

@@ -302,8 +302,8 @@ RBinSection *getsection(RBin *a, const char *sn) {
 	RListIter *iter;
 	RBinSection *section;
 
-	if (a->cur.o->sections) {
-		r_list_foreach (a->cur.o->sections, iter, section) {
+	if (a->cur->o->sections) {
+		r_list_foreach (a->cur->o->sections, iter, section) {
 			if (strstr (section->name, sn))
 				return section;
 		}
@@ -318,7 +318,7 @@ R_API int r_bin_dwarf_parse_info(RBin *a) {
 	if (section) {
 		len = section->size;
 		buf = malloc (len);
-		r_buf_read_at (a->cur.buf, section->offset, buf, len);
+		r_buf_read_at (a->cur->buf, section->offset, buf, len);
 		ret = r_bin_dwarf_parse_info_raw (buf);
 		free (buf);
 		return ret;
@@ -334,7 +334,7 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a) {
 		RList *list = r_list_new ();
 		len = section->size;
 		buf = malloc (len);
-		r_buf_read_at (a->cur.buf, section->offset, buf, len);
+		r_buf_read_at (a->cur->buf, section->offset, buf, len);
 		r_bin_dwarf_parse_line_raw (buf, len, list);
 		free (buf);
 		return list;

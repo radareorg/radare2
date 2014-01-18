@@ -5,27 +5,27 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static int check(RBinArch *arch);
+static int check(RBinFile *arch);
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if (check (arch))
 		return R_TRUE;
 	return R_FALSE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
-static RList *strings(RBinArch *arch) {
+static RList *strings(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW (RBinInfo)))
 		return NULL;
@@ -47,7 +47,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	int i, is_bf = 0;
 	if (arch->buf) {
 		int max = R_MIN (16, arch->buf->length);
@@ -75,7 +75,7 @@ static int check(RBinArch *arch) {
 	return is_bf;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 

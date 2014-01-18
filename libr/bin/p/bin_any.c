@@ -5,17 +5,17 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	r_buf_free (arch->buf);
 	arch->buf = NULL;
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0LL;
 }
 

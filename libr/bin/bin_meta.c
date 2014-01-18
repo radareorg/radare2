@@ -4,13 +4,13 @@
 #include <r_bin.h>
 
 R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line) {
-	RBinObject *o = bin->cur.o;
-	RBinPlugin *cp = bin->cur.curplugin;
+	RBinObject *o = bin->cur->o;
+	RBinPlugin *cp = bin->cur->curplugin;
 	if (cp && cp->meta) {
 		// XXX quick hack to not show lines out of opened bin
-		if (addr >= o->baddr && addr < (o->baddr+bin->cur.size))
+		if (addr >= o->baddr && addr < (o->baddr+bin->cur->size))
 			if (cp->meta->get_line)
-				return cp->meta->get_line (&bin->cur, addr, file, len, line);
+				return cp->meta->get_line (bin->cur, addr, file, len, line);
 	}
 	return R_FALSE;
 }

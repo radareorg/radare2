@@ -2,6 +2,24 @@
 
 #include <r_core.h>
 
+R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
+	RListIter *iter;
+	RBinFile *binfile = NULL, *tmp_binfile;
+
+	r_list_foreach (core->bin->binfiles, iter, tmp_binfile) {
+		if (tmp_binfile && tmp_binfile->fd == bin_fd) {
+			core->bin->cur = tmp_binfile;
+			break;
+		}
+	}
+	r_core_bin_bind (core);
+}
+
+R_API void r_core_bin_bind (RCore *core) {
+	r_bin_bind (core->bin, &(core->anal->binb));
+	r_bin_bind (core->bin, &(core->assembler->binb));
+	r_bin_bind (core->bin, &(core->file->binb));
+}
 
 R_API int r_core_bin_refresh_strings(RCore *r) {
 	return r_bin_reset_strings (r->bin) ? R_TRUE: R_FALSE;
@@ -18,8 +36,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 
 	if (!(hasstr = r_config_get_i (r->config, "bin.strings")))
 		return 0;
-	if (!r->bin->cur.curplugin) return 0;
-	if (!r->bin->cur.curplugin->info) {
+	if (!r->bin->cur->curplugin) return 0;
+	if (!r->bin->cur->curplugin->info) {
 		if (!r_config_get_i (r->config, "bin.rawstr")) {
 			eprintf ("WARN: Use '-e bin.rawstr=true' or 'rabin2 -zz'"
 				" to find strings on unknown file types\n");
@@ -30,7 +48,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	//if (r->bin->minstrlen == 0 && minstr>0) r->bin->minstrlen = minstr;
 	//else if (r->bin->minstrlen > 0) r_config_set_i (r->config, "bin.minstr", r->bin->minstrlen);
 	if (r->bin->minstrlen==0) {
-		r->bin->minstrlen = r->bin->cur.curplugin->minstrlen;
+		r->bin->minstrlen = r->bin->cur->curplugin->minstrlen;
 		if (r->bin->minstrlen==0)
 			r->bin->minstrlen = 4;
 	}
@@ -229,8 +247,8 @@ static int bin_info (RCore *r, int mode) {
 				ut64 hash = r_hash_name_to_bits (h->type);
 				RHash *rh = r_hash_new (R_TRUE, hash);
 				len = r_hash_calculate (rh, hash, (const ut8*)
-					r->bin->cur.buf->buf+h->from, h->to);
-				//ut8 *p = r->bin->cur.buf+h->addr;
+					r->bin->cur->buf->buf+h->from, h->to);
+				//ut8 *p = r->bin->cur->buf+h->addr;
 				if (len<1) eprintf ("Invaild wtf\n");
 				r_hash_free (rh);
 
@@ -249,8 +267,8 @@ static int bin_dwarf (RCore *core, int mode) {
         RListIter *iter;
         RList *list = NULL;
 
-	if (core->bin && core->bin->cur.curplugin && core->bin->cur.curplugin->lines) {
-		list = core->bin->cur.curplugin->lines (&core->bin->cur);
+	if (core->bin && core->bin->cur->curplugin && core->bin->cur->curplugin->lines) {
+		list = core->bin->cur->curplugin->lines (core->bin->cur);
 	} else {
 		// TODO: complete and speed-up support for dwarf
 		if (r_config_get_i (core->config, "bin.dwarf")) {
@@ -860,7 +878,7 @@ static int bin_fields (RCore *r, int mode, ut64 baddr, int va) {
 	RListIter *iter;
 	RBinField *field;
 	int i = 0;
-	ut64 size = r->bin->cur.size;
+	ut64 size = r->bin->cur->size;
 
 	if ((fields = r_bin_get_fields (r->bin)) == NULL)
 		return R_FALSE;

@@ -595,8 +595,8 @@ R_API RCore *r_core_fini(RCore *c) {
 	/* TODO: it leaks as shit */
 	r_io_free (c->io);
 	r_pair_free (c->kv);
-	r_core_file_free (c->file);
-	c->file = NULL;
+	//r_core_file_free (c->file);
+	//c->file = NULL;
 	r_list_free (c->files);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);

@@ -6,9 +6,9 @@
 #include <r_bin.h>
 #include "../../fs/types.h"
 
-static int check(RBinArch *arch);
+static int check(RBinFile *arch);
 
-static char *fsname(RBinArch *arch) {
+static char *fsname(RBinFile *arch) {
 	ut8 buf[1024];
 	int i, j, len, ret = R_FALSE;
 
@@ -36,27 +36,27 @@ static char *fsname(RBinArch *arch) {
 	return NULL;
 }
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if (check (arch))
 		return R_TRUE;
 	return R_FALSE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	//r_bin_fs_free ((struct r_bin_fs_obj_t*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
 /* accelerate binary load */
-static RList *strings(RBinArch *arch) {
+static RList *strings(RBinFile *arch) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	char *p;
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW (RBinInfo)))
@@ -81,7 +81,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	char *p;
 	int ret;
 

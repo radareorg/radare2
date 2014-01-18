@@ -6,22 +6,22 @@
 #include <r_bin.h>
 #include "pe/pe.h"
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if(!(arch->o->bin_obj = PE_(r_bin_pe_new_buf) (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	PE_(r_bin_pe_free) ((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return PE_(r_bin_pe_get_image_base) (arch->o->bin_obj);
 }
 
-static RBinAddr* binsym(RBinArch *arch, int type) {
+static RBinAddr* binsym(RBinFile *arch, int type) {
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
@@ -34,7 +34,7 @@ static RBinAddr* binsym(RBinArch *arch, int type) {
 	return ret;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
 	struct r_bin_pe_addr_t *entry = NULL;
@@ -53,7 +53,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_pe_section_t *sections = NULL;
@@ -87,7 +87,7 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	struct r_bin_pe_export_t *symbols = NULL;
@@ -125,7 +125,7 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RList* imports(RBinArch *arch) {
+static RList* imports(RBinFile *arch) {
 	RList *ret = NULL, *relocs = NULL;
 	RBinImport *ptr = NULL;
 	RBinReloc *rel = NULL;
@@ -175,11 +175,11 @@ static RList* imports(RBinArch *arch) {
 	return ret;
 }
 
-static RList* relocs(RBinArch *arch) {
+static RList* relocs(RBinFile *arch) {
 	return ((struct PE_(r_bin_pe_obj_t)*)arch->o->bin_obj)->relocs;
 }
 
-static RList* libs(RBinArch *arch) {
+static RList* libs(RBinFile *arch) {
 	RList *ret = NULL;
 	char *ptr = NULL;
 	struct r_bin_pe_lib_t *libs = NULL;
@@ -198,7 +198,7 @@ static RList* libs(RBinArch *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
@@ -244,7 +244,7 @@ static RBinInfo* info(RBinArch *arch) {
 }
 
 #if !R_BIN_PE64
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	int idx, ret = R_FALSE;
 	if (!arch || !arch->buf || !arch->buf->buf)
 		return R_FALSE;
@@ -323,7 +323,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static ut64 get_vaddr (RBinArch *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	if (!baddr) return vaddr;
 	return baddr + vaddr;
 }

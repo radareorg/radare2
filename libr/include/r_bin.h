@@ -119,28 +119,31 @@ typedef struct r_bin_object_t {
 } RBinObject;
 
 // XXX: this is a copy of RBinObject
-// TODO: rename RBinArch to RBinFile
+// TODO: rename RBinFile to RBinFile
 typedef struct r_bin_arch_t {
 	RBuffer *buf;
 	char *file;
 	int size;
 	int rawstr;
 	ut64 offset;
+	ut64 baddr;
 	RBinObject *o;
-	struct r_bin_plugin_t *curplugin;
+	RBinObject *xtr_obj;
 	ut64 loadaddr;
-} RBinArch;
+	ut64 fd;
+	struct r_bin_xtr_plugin_t *curxtr;
+	struct r_bin_plugin_t *curplugin;
+} RBinFile;
 
 typedef struct r_bin_t {
-	char *file;
-	RBinArch cur;
+	const char *file;
+	RBinFile *cur;
 	int narch;
 	void *user;
-	void *bin_obj;
 	int minstrlen;
-	struct r_bin_xtr_plugin_t *curxtr;
 	RList *plugins;
 	RList *binxtrs;
+	RList *binfiles;
 } RBin;
 
 typedef struct r_bin_xtr_plugin_t {
@@ -162,29 +165,29 @@ typedef struct r_bin_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	int (*load)(RBinArch *arch);
-	int (*size)(RBinArch *bin);
-	int (*destroy)(RBinArch *arch);
-	int (*check)(RBinArch *arch);
-	ut64 (*baddr)(RBinArch *arch);
-	ut64 (*boffset)(RBinArch *arch);
-	RBinAddr* (*binsym)(RBinArch *arch, int num);
-	RList* (*entries)(RBinArch *arch);
-	RList* (*sections)(RBinArch *arch);
-	RList* (*lines)(RBinArch *arch);
-	RList* (*symbols)(RBinArch *arch);
-	RList* (*imports)(RBinArch *arch);
-	RList* (*strings)(RBinArch *arch);
-	RBinInfo* (*info)(RBinArch *arch);
-	RList* (*fields)(RBinArch *arch);
-	RList* (*libs)(RBinArch *arch);
-	RList* (*relocs)(RBinArch *arch);
-	RList* (*classes)(RBinArch *arch);
+	int (*load)(RBinFile *arch);
+	int (*size)(RBinFile *bin);
+	int (*destroy)(RBinFile *arch);
+	int (*check)(RBinFile *arch);
+	ut64 (*baddr)(RBinFile *arch);
+	ut64 (*boffset)(RBinFile *arch);
+	RBinAddr* (*binsym)(RBinFile *arch, int num);
+	RList* (*entries)(RBinFile *arch);
+	RList* (*sections)(RBinFile *arch);
+	RList* (*lines)(RBinFile *arch);
+	RList* (*symbols)(RBinFile *arch);
+	RList* (*imports)(RBinFile *arch);
+	RList* (*strings)(RBinFile *arch);
+	RBinInfo* (*info)(RBinFile *arch);
+	RList* (*fields)(RBinFile *arch);
+	RList* (*libs)(RBinFile *arch);
+	RList* (*relocs)(RBinFile *arch);
+	RList* (*classes)(RBinFile *arch);
 	int (*demangle_type)(const char *str);
 	struct r_bin_meta_t *meta;
 	struct r_bin_write_t *write;
-	int (*get_offset)(RBinArch *arch, int type, int idx);
-	ut64 (*get_vaddr)(RBinArch *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
+	int (*get_offset)(RBinFile *arch, int type, int idx);
+	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	int minstrlen;
 	void *user;
@@ -267,12 +270,12 @@ typedef struct r_bin_field_t {
 } RBinField;
 
 typedef struct r_bin_meta_t {
-	int (*get_line)(RBinArch *arch, ut64 addr, char *file, int len, int *line);
+	int (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line);
 } RBinMeta;
 
 typedef struct r_bin_write_t {
-	ut64 (*scn_resize)(RBinArch *arch, const char *name, ut64 size);
-	int (*rpath_del)(RBinArch *arch);
+	ut64 (*scn_resize)(RBinFile *arch, const char *name, ut64 size);
+	int (*rpath_del)(RBinFile *arch);
 } RBinWrite;
 
 // TODO: deprecate r_bin_is_big_endian
