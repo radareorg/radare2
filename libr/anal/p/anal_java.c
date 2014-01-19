@@ -831,6 +831,7 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 
 	if (!obj) {
 		eprintf ("Execute \"af\" to set the current bin, and this will bind the current bin\n");
+		return -1;
 	}
 	switch (*input) {
 		case 'p':
@@ -842,6 +843,7 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 				case 'a': return java_print_all_definitions (anal);
 				default: break;
 			}
+			break;
 		default: eprintf("Command not supported"); break;
 	}
 	return 0;

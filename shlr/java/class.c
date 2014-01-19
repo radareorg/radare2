@@ -348,7 +348,7 @@ R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin) {
 	if (!bin || !the_list) return the_list;
 
 	r_list_foreach ( the_list, iter, new_str) {
-		if (!new_str) continue;
+		if (new_str == NULL) continue;
 		while ( *new_str ) {
 			if (*new_str == '/') *new_str = '.';
 			new_str ++;
@@ -487,6 +487,7 @@ R_API void r_bin_java_print_prototypes (RBinJavaObj *bin) {
 	r_list_foreach (the_list, iter, str) {
 		eprintf("%s;\n", str);
 	}
+	r_list_free (the_list);
 }
 
 static char * get_type_value_str ( const char *arg_str, ut8 array_cnt) {
@@ -507,7 +508,7 @@ static int extract_type_value (char *arg_str, char **output) {
 	ut32 len = 0, consumed = 0;
 	char *str = NULL;
 
-	if (*output) free(output);
+	if (output && *output && *output != NULL) free(*output);
 
 	while (arg_str && *arg_str && !found_one) {
 		// handle the end of an object
