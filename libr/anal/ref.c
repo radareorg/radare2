@@ -29,7 +29,7 @@ R_API void r_anal_ref_free(void *ref) {
 R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
 #if USE_NEW_REFS
 	const char *types = type=='c'?"jmp":
-		type=='C'?"call": "data";
+		type=='C'?"call": type=='s'?"string": "data";
 	r_anal_xrefs_set (anal, types, at, addr);
 #else
 	RAnalRef *ref = NULL, *refi;

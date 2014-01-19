@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake, dso */
 
 #include "r_core.h"
 #include "r_cons.h"
@@ -642,7 +642,8 @@ static void handle_show_xrefs (RCore *core, RDisasmState *disasm_state) {
 						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
 						fun?fun->name:"unk");
 				} else {
-					r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
+					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)\n",
+						disasm_state->pal_comment,
 						refi->type=='c'?"CODE (JMP)":
 						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
 						fun?fun->name: "unk");
@@ -885,7 +886,7 @@ static void handle_show_flags_option(RCore *core, RDisasmState *disasm_state) {
 			if (disasm_state->show_color) r_cons_strcat (disasm_state->color_flag);
 			if (disasm_state->show_functions) r_cons_printf ("%s:\n", flag->name);
 			else r_cons_printf ("%s:\n", flag->name);
-			handle_set_pre (disasm_state, "  ");
+			//handle_set_pre (disasm_state, "  ");
 			if (disasm_state->show_color) {
 				r_cons_printf (Color_RESET"%s%s"Color_RESET, disasm_state->color_fline,
 					f ? disasm_state->pre : "  ");

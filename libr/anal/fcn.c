@@ -66,7 +66,7 @@ R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 	ref->at = at; // from
 	ref->addr = addr; // to
 	ref->type = type;
-	r_anal_xrefs_set (anal, type=='d'?"data":"code", addr, at);
+	r_anal_xrefs_set (anal, type=='s'?"string":type=='d'?"data":"code", addr, at);
 	// TODO: ensure we are not dupping xrefs
 	r_list_append (fcn->refs, ref);
 	return R_TRUE;
@@ -89,9 +89,8 @@ R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 
 R_API int r_anal_fcn_local_add (RAnal *anal, RAnalFunction *fcn, ut64 addr, const char *name) {
 	RAnalFcnLocal *l = R_NEW0 (RAnalFcnLocal);
-	if (!fcn || !anal) {
+	if (!fcn || !anal)
 		return R_FALSE;
-	}
 	l->addr = addr;
 	l->name = strdup (name);
 	// TODO: do not allow duplicate locals!
@@ -243,9 +242,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		}
 		if (op.ptr && op.ptr != UT64_MAX) {
 			// swapped parameters wtf //
-			if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
+			//if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
+			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, 'd')) {
 				r_anal_op_fini (&op);
-				FITFCNSZ();
+				FITFCNSZ ();
 				return R_ANAL_RET_ERROR;
 			}
 		}
@@ -329,7 +329,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
-	
 	fcn->size = 0;
 	fcn->type = (reftype==R_ANAL_REF_TYPE_CODE)?
 			R_ANAL_FCN_TYPE_LOC: R_ANAL_FCN_TYPE_FCN;

@@ -269,6 +269,7 @@ R_API const char *r_meta_type_to_string(int type) {
 	case R_META_TYPE_DATA: return "Cd";
 	case R_META_TYPE_STRING: return "Cs";
 	case R_META_TYPE_FORMAT: return "Cf";
+	case R_META_TYPE_MAGIC: return "Cm";
 	case R_META_TYPE_COMMENT: return "CC";
 	}
 	return "(...)";

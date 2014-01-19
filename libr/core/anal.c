@@ -365,8 +365,10 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 				ref->addr = from;
 				ref->at = at;
 				ref->type = reftype;
-				if (reftype == 'd') // XXX HACK TO AVOID INVALID REFS
+				if (reftype == 'd') {
+					// XXX HACK TO AVOID INVALID REFS
 					r_list_append (fcni->xrefs, ref);
+				}
 #endif
 			}
 			return R_TRUE;
@@ -478,11 +480,14 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 				if (refi->addr != UT64_MAX) {
 					switch (refi->type) {
 					case 'd':
+#if 0
 						// check if destination is in text. and analyze!
+						// commented because it doesnt seems to work in all conditions
 						if (iscodesection (core, refi->at)) {
 							//refi->type = 'c';
 							r_core_anal_fcn (core, refi->at, refi->addr, 0, depth-1);
 						}
+#endif
 						break;
 					case R_ANAL_REF_TYPE_CODE:
 					case R_ANAL_REF_TYPE_CALL:
@@ -1084,6 +1089,7 @@ R_API void r_core_anal_setup_enviroment (RCore *core) {
 }
 
 R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
+	RAnalData *d;
 	ut64 dstaddr = 0LL;
 	ut8 *buf = core->block;
 	int len = core->blocksize;
@@ -1106,8 +1112,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 			//eprintf ("load next %d\n", len);
 			continue;
 		}
-		RAnalData *d = r_anal_data (core->anal, addr+i,
-			buf+i, len-i);
+		d = r_anal_data (core->anal, addr+i, buf+i, len-i);
 		str = r_anal_data_to_string (d);
 		r_cons_printf ("%s\n", str);
 	
@@ -1116,8 +1121,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth) {
 			r_cons_printf ("`- ");
 			dstaddr = r_mem_get_num (buf+i, word, !endi);
 			if (depth>0)
-				r_core_anal_data (core,
-					dstaddr, 1, depth-1);
+				r_core_anal_data (core, dstaddr, 1, depth-1);
 			i += word;
 			break;
 		case R_ANAL_DATA_TYPE_STRING:
