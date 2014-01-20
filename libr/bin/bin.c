@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
 // TODO: dlopen library and show address
 
@@ -487,7 +487,7 @@ R_API void* r_bin_free(RBin *bin) {
 	if (!bin) return NULL;
 	//r_bin_free_items (bin);
 	r_bin_free_bin_files (bin);
-	if (bin->cur->curxtr && bin->cur->curxtr->destroy)
+	if (bin->cur && bin->cur->curxtr && bin->cur->curxtr->destroy)
 		bin->cur->curxtr->destroy (bin);
 	r_list_free (bin->binxtrs);
 	r_list_free (bin->plugins);
@@ -750,9 +750,11 @@ static const char *getname (RBin *bin, int off) {
 }
 
 R_API void r_bin_bind (RBin *bin, RBinBind *b) {
-	b->bin = bin;
-	b->get_offset = getoffset;
-	b->get_name = getname;
+	if (b) {
+		b->bin = bin;
+		b->get_offset = getoffset;
+		b->get_name = getname;
+	}
 }
 
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {

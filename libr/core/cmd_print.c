@@ -1246,6 +1246,7 @@ static int cmd_print(void *data, const char *input) {
 				"| px     show hexdump\n"
 				"| px/    same as x/ in gdb (help x)\n"
 				"| pxa    show annotated hexdump\n"
+				"| pxe    emoji hexdump! :)\n"
 				"| pxf    show hexdump of current function\n"
 				"| pxo    show octal dump\n"
 				"| pxq    show hexadecimal quad-words dump (64bit)\n"

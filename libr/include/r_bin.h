@@ -120,7 +120,7 @@ typedef struct r_bin_object_t {
 
 // XXX: this is a copy of RBinObject
 // TODO: rename RBinFile to RBinFile
-typedef struct r_bin_arch_t {
+typedef struct r_bin_file_t {
 	RBuffer *buf;
 	char *file;
 	int size;
