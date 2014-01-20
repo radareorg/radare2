@@ -85,7 +85,7 @@ R_API int r_meta_del(RMeta *m, int type, ut64 from, ut64 size, const char *str) 
 		if (d->type == type || type == R_META_TYPE_ANY) {
 			if (str && d->str && !strstr (d->str, str))
 				continue;
-			if (size==UT64_MAX || (from+size >= d->from && from <= d->to+size)) {
+			if (size==UT64_MAX || (from+size >= d->from && from <= d->to-size)) {
 				free (d->str);
 				r_list_delete (m->data, iter);
 				ret++;
@@ -219,7 +219,7 @@ R_API RMetaItem *r_meta_find(RMeta *m, ut64 off, int type, int where) {
 					it = d;
 				break;
 			case R_META_WHERE_HERE:
-				if (off>=d->from && (!off || (off<d->to)))
+				if (!off || ((off>=d->from) && (off<d->to)))
 					it = d;
 				break;
 			case R_META_WHERE_NEXT:
@@ -313,9 +313,13 @@ static void printmetaitem(RMeta *m, RMetaItem *d, int rad) {
 		case 1:
 		case '*':
 		default:
-			m->printf ("\"%s %s\" @ 0x%08"PFMT64x"\n",
-				r_meta_type_to_string (d->type), pstr, d->from);
-				// (int)(d->to-d->from), 
+			if (d->type == 'C') {
+				m->printf ("\"%s %s\" @ 0x%08"PFMT64x"\n",
+					r_meta_type_to_string (d->type), pstr, d->from);
+			} else {
+				m->printf ("%s %d 0x%08"PFMT64x" # %s\n",
+					r_meta_type_to_string (d->type), d->size, d->from, pstr);
+			}
 			break;
 		}
 		free (str);

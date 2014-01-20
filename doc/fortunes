@@ -66,7 +66,6 @@ Find cp850 strings with 'e cfg.encoding=cp850' and '/s'
 Enhace your graphs by increasing the size of the block and graph.depth eval variable
 Control the height of the terminal on serial consoles with e scr.height
 Use e file.id=true and e file.flag=true in your ~/.radarerc to get symbols, strings, .. when loading
-Disassemble unsupported architectures with external objdump defined in e asm.objdump. Use 'pd' command.
 Emulate the base address of a file with e file.baddr
 Dump the class header information with 'javasm -c <file.class>'. Plugind by radare if file.id=true
 Use gradare if you prefer simple frontend for gui users
@@ -197,3 +196,4 @@ Sharing your latest session in Facebook...
 This should be documented, since it's not that obvious
 It's working! Look at the door!
 This is an unacceptable milion year dungeon.
+The Hard ROP Cafe
