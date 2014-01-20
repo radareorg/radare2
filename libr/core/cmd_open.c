@@ -38,7 +38,18 @@ static int cmd_open(void *data, const char *input) {
 				if (!isn)
 					r_core_bin_load (core, fn, baddr);
 			} else eprintf ("Cannot open file '%s'\n", fn);
-		} else r_io_raise (core->io, num);
+		} else {
+			RListIter *iter = NULL;
+			RCoreFile *f;
+			core->switch_file_view = 0;
+			r_list_foreach (core->files, iter, f) {
+				if (f->fd->fd == num) {
+					r_io_raise (core->io, num);
+					core->switch_file_view = 1;
+					break;
+				}
+			}
+		}
 		r_core_block_read (core, 0);
 		break;
 	case '-':

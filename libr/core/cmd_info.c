@@ -45,12 +45,12 @@ static void r_core_file_info (RCore *core, int mode) {
 			core->file->rwx | dbg));
 		r_cons_printf (",\"block\":%d", core->blocksize);
 		r_cons_printf (",\"uri\":\"%s\"", core->file->uri);
-		if (core->bin->curxtr)
+		if (core->bin->cur->curxtr)
 			r_cons_printf (",\"packet\":\"%s\"",
-				core->bin->curxtr->name);
-		if (core->bin->curxtr)
+				core->bin->cur->curxtr->name);
+		if (core->bin->cur->curxtr)
 			r_cons_printf (",\"format\":\"%s\"",
-				core->bin->cur.curplugin->name);
+				core->bin->cur->curplugin->name);
 		r_cons_printf ("}");
 	} else {
 		//r_cons_printf ("# Core file info\n");
@@ -61,12 +61,12 @@ static void r_core_file_info (RCore *core, int mode) {
 		r_cons_printf ("mode\t%s\n", r_str_rwx_i (core->file->rwx | dbg));
 		r_cons_printf ("block\t0x%x\n", core->blocksize);
 		r_cons_printf ("uri\t%s\n", core->file->uri);
-		if (core->bin->curxtr)
+		if (core->bin->cur->curxtr)
 			r_cons_printf ("packet\t%s\n",
-				core->bin->curxtr->name);
-		if (core->bin->curxtr)
+				core->bin->cur->curxtr->name);
+		if (core->bin->cur->curxtr)
 			r_cons_printf ("format\t%s\n",
-				core->bin->cur.curplugin->name);
+				core->bin->cur->curplugin->name);
 	}
 }
 
@@ -92,13 +92,6 @@ static int cmd_info(void *data, const char *input) {
 	int mode = 0; //R_CORE_BIN_SIMPLE;
 	int is_array = 0;
 	Sdb *db;
-	if (input[0]) {
-		switch (input[1]) {
-		case '*': mode = R_CORE_BIN_RADARE; break;
-		case 'j': mode = R_CORE_BIN_JSON; break;
-		case 'q': mode = R_CORE_BIN_SIMPLE; break;
-		}
-	}
 
 	if (strchr (input, '*'))
 		mode = R_CORE_BIN_RADARE;
@@ -127,7 +120,7 @@ static int cmd_info(void *data, const char *input) {
 			}
 			break;
 		case 'k':
-			db = core->bin->cur.o->kv;
+			db = core->bin->cur->o->kv;
 			//:eprintf ("db = %p\n", db);
 			switch (input[1]) {
 			case 'v':

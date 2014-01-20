@@ -7,22 +7,22 @@
 #include "te/te_specs.h"
 #include "te/te.h"
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if(!(arch->o->bin_obj = r_bin_te_new_buf (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	r_bin_te_free ((struct r_bin_te_obj_t*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return r_bin_te_get_image_base (arch->o->bin_obj);
 }
 
-static RBinAddr* binsym(RBinArch *arch, int type) {
+static RBinAddr* binsym(RBinFile *arch, int type) {
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
@@ -35,7 +35,7 @@ static RBinAddr* binsym(RBinArch *arch, int type) {
 	return ret;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList* ret;
 	RBinAddr *ptr = NULL;
 	struct r_bin_te_addr_t *entry = NULL;
@@ -54,7 +54,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_te_section_t *sections = NULL;
@@ -97,7 +97,7 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	char *str;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) return NULL;
@@ -129,7 +129,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\x56\x5a", 2))
 		return R_TRUE;

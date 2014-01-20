@@ -16,12 +16,12 @@
 #define dprintf if (0)eprintf
 #endif
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	arch->o->bin_obj = r_bin_dex_new_buf (arch->buf);
 	return arch->o->bin_obj ? R_TRUE: R_FALSE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
@@ -65,7 +65,7 @@ static char *flagname (const char *class, const char *method) {
 	return str;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (!arch->buf || !arch->buf->buf)
 		return R_FALSE;
 	// Non-extended opcode dex file
@@ -86,7 +86,7 @@ static int check(RBinArch *arch) {
 	return R_FALSE;
 }
 
-static RBinInfo *info(RBinArch *arch) {
+static RBinInfo *info(RBinFile *arch) {
 	char *version;
 	RBinHash *h;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
@@ -140,7 +140,7 @@ static RBinInfo *info(RBinArch *arch) {
 	return ret;
 }
 
-static RList* strings (RBinArch *arch) {
+static RList* strings (RBinFile *arch) {
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
 	RBinString *ptr = NULL;
 	RList *ret = NULL;
@@ -235,7 +235,7 @@ static char *dex_class_super_name (RBinDexObj *bin, RBinDexClass *c) {
 }
 
 
-static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
+static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 	int *methods;
 	int i, j;
 	char *name;
@@ -371,7 +371,7 @@ static int dex_loadcode(RBinArch *arch, RBinDexObj *bin) {
 	return R_TRUE;
 }
 
-static RList* imports (RBinArch *arch) {
+static RList* imports (RBinFile *arch) {
 	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
 	if (bin->imports_list)
 		return bin->imports_list;
@@ -422,7 +422,7 @@ free (methodname);
 	return ret;
 #endif
 }
-static RList* methods (RBinArch *arch) {
+static RList* methods (RBinFile *arch) {
 	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
 	if (bin->methods_list)
 		return bin->methods_list;
@@ -434,7 +434,7 @@ static void __r_bin_class_free(RBinClass *p) {
 	r_bin_class_free (p);
 }
 
-static RList* classes (RBinArch *arch) {
+static RList* classes (RBinFile *arch) {
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *) arch->o->bin_obj;
 	struct dex_class_t entry;
 	RList *ret = NULL;
@@ -483,7 +483,7 @@ static RList* classes (RBinArch *arch) {
 	return ret;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RListIter *iter;
 	RBinDexObj *bin = (RBinDexObj*) arch->o->bin_obj;
 	RList *ret = r_list_new ();
@@ -503,7 +503,7 @@ static RList* entries(RBinArch *arch) {
 }
 
 //TODO
-static int getoffset (RBinArch *arch, int type, int idx) {
+static int getoffset (RBinFile *arch, int type, int idx) {
 	struct r_bin_dex_obj_t *dex = arch->o->bin_obj;
 	switch (type) {
 	case 'm': // methods
@@ -530,7 +530,7 @@ static int getoffset (RBinArch *arch, int type, int idx) {
 	return -1;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	struct r_bin_dex_obj_t *bin = arch->o->bin_obj;
 	RList *ml = methods (arch);
 	RBinSection *ptr = NULL;

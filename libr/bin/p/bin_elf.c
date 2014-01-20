@@ -7,26 +7,26 @@
 #include <r_bin.h>
 #include "elf/elf.h"
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	if (!(arch->o->bin_obj = Elf_(r_bin_elf_new_buf) (arch->buf)))
 		return R_FALSE;
 	return R_TRUE;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	Elf_(r_bin_elf_free) ((struct Elf_(r_bin_elf_obj_t)*)arch->o->bin_obj);
 	return R_TRUE;
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return Elf_(r_bin_elf_get_baddr) (arch->o->bin_obj);
 }
 
-static ut64 boffset(RBinArch *arch) {
+static ut64 boffset(RBinFile *arch) {
 	return Elf_(r_bin_elf_get_boffset) (arch->o->bin_obj);
 }
 
-static RBinAddr* binsym(RBinArch *arch, int sym) {
+static RBinAddr* binsym(RBinFile *arch, int sym) {
 	ut64 addr = 0LL;
 	RBinAddr *ret = NULL;
 	switch (sym) {
@@ -48,7 +48,7 @@ static RBinAddr* binsym(RBinArch *arch, int sym) {
 	return ret;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
@@ -63,7 +63,7 @@ static RList* entries(RBinArch *arch) {
 	return ret;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	struct r_bin_elf_section_t *section = NULL;
@@ -147,7 +147,7 @@ static RList* sections(RBinArch *arch) {
 	return ret;
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinSymbol *ptr = NULL;
 	ut64 base = 0;
@@ -218,7 +218,7 @@ static RList* symbols(RBinArch *arch) {
 	return ret;
 }
 
-static RList* imports(RBinArch *arch) {
+static RList* imports(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinImport *ptr = NULL;
 	struct r_bin_elf_symbol_t *import = NULL;
@@ -245,7 +245,7 @@ static RList* imports(RBinArch *arch) {
 	return ret;
 }
 
-static RList* libs(RBinArch *arch) {
+static RList* libs(RBinFile *arch) {
 	RList *ret = NULL;
 	char *ptr = NULL;
 	struct r_bin_elf_lib_t *libs = NULL;
@@ -347,7 +347,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	return 0;
 }
 
-static RList* relocs(RBinArch *arch) {
+static RList* relocs(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	RBinElfReloc *relocs = NULL;
@@ -371,7 +371,7 @@ static RList* relocs(RBinArch *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	char *str;
 
@@ -421,7 +421,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static RList* fields(RBinArch *arch) {
+static RList* fields(RBinFile *arch) {
 	RList *ret = NULL;
 	RBinField *ptr = NULL;
 	struct r_bin_elf_field_t *field = NULL;
@@ -445,7 +445,7 @@ static RList* fields(RBinArch *arch) {
 }
 
 #if !R_BIN_ELF64
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 	//if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46\x01", 5))
 	if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46", 4) && arch->buf->buf[4] != 2)
@@ -463,7 +463,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	ut16 ehdrsz, phdrsz;
 	ut32 p_vaddr, p_paddr, p_fs, p_fs2;
 	ut32 baddr;
-	int is_arm = !strcmp (bin->cur.o->info->arch, "arm");
+	int is_arm = !strcmp (bin->cur->o->info->arch, "arm");
 	RBuffer *buf = r_buf_new ();
 	// XXX: hardcoded
 	if (is_arm) baddr = 0x40000;
@@ -544,7 +544,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static int size(RBinArch *arch) {
+static int size(RBinFile *arch) {
 	ut64 off = 0;
 	ut64 len = 0;
 	if (!arch->o->sections) {
@@ -561,7 +561,7 @@ static int size(RBinArch *arch) {
 	return off+len;
 }
 
-static ut64 get_elf_vaddr (RBinArch *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
+static ut64 get_elf_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
 	struct Elf_(r_bin_elf_obj_t)* obj = arch->o->bin_obj;
 	return obj->baddr - obj->boffset + vaddr;

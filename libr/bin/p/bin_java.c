@@ -46,7 +46,7 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin) {
 	}
 }
 
-static int load(RBinArch *arch) {
+static int load(RBinFile *arch) {
 	struct r_bin_java_obj_t* bin_obj = NULL;
 	int result = R_FALSE;
 	bin_obj = r_bin_java_new_buf (arch->buf, arch->o->loadaddr, arch->o->kv);
@@ -78,34 +78,34 @@ static int load(RBinArch *arch) {
 	return result;
 }
 
-static int destroy(RBinArch *arch) {
+static int destroy(RBinFile *arch) {
 	r_bin_java_free ((struct r_bin_java_obj_t*)arch->o->bin_obj);
 	sdb_free (BIN_OBJS_ADDRS);
 	BIN_OBJS_ADDRS = NULL;
 	return R_TRUE;
 }
 
-static RList* entries(RBinArch *arch) {
+static RList* entries(RBinFile *arch) {
 	return r_bin_java_get_entrypoints (arch->o->bin_obj);
 }
 
-static ut64 baddr(RBinArch *arch) {
+static ut64 baddr(RBinFile *arch) {
 	return 0;
 }
 
-static RList* classes(RBinArch *arch) {
+static RList* classes(RBinFile *arch) {
 	return r_bin_java_get_classes((struct r_bin_java_obj_t*)arch->o->bin_obj);
 }
 
-static RList* symbols(RBinArch *arch) {
+static RList* symbols(RBinFile *arch) {
 	return r_bin_java_get_symbols ((struct r_bin_java_obj_t*)arch->o->bin_obj);
 }
 
-static RList* strings(RBinArch *arch) {
+static RList* strings(RBinFile *arch) {
 	return r_bin_java_get_strings((struct r_bin_java_obj_t*)arch->o->bin_obj);
 }
 
-static RBinInfo* info(RBinArch *arch) {
+static RBinInfo* info(RBinFile *arch) {
 	RBinInfo *ret = NULL;
 	char *version;
 
@@ -131,7 +131,7 @@ static RBinInfo* info(RBinArch *arch) {
 	return ret;
 }
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	int off, ret = R_FALSE;
 
 	if (arch && arch->buf && arch->buf->buf && arch->buf->length>10)
@@ -147,13 +147,13 @@ static int retdemangle(const char *str) {
 	return R_BIN_NM_JAVA;
 }
 
-static RBinAddr* binsym(RBinArch *arch, int sym) {
+static RBinAddr* binsym(RBinFile *arch, int sym) {
 	return r_bin_java_get_entrypoint(arch->o->bin_obj, sym);
 }
 
-static RList* lines(RBinArch *arch) {
+static RList* lines(RBinFile *arch) {
 	int i;
-	char *file = strdup (arch->file);
+	char *file = arch->file ? strdup (arch->file) : strdup ("");
 	RList *list = r_list_new ();
 
 	RBinJavaObj *b = arch->o->bin_obj;
@@ -167,15 +167,15 @@ static RList* lines(RBinArch *arch) {
 	return list;
 }
 
-static RList* sections(RBinArch *arch) {
+static RList* sections(RBinFile *arch) {
 	return r_bin_java_get_sections (arch->o->bin_obj);
 }
 
-static RList* fields(RBinArch *arch) {
+static RList* fields(RBinFile *arch) {
 	return r_bin_java_get_fields (arch->o->bin_obj);
 }
 
-static RList* libs(RBinArch *arch) {
+static RList* libs(RBinFile *arch) {
 	return r_bin_java_get_lib_names (arch->o->bin_obj);
 }
 

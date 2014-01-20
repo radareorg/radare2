@@ -3,7 +3,7 @@
 #define R_BIN_MACH064 1
 #include "bin_mach0.c"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\xfe\xed\xfa\xcf", 4) ||
 		!memcmp (arch->buf->buf, "\xcf\xfa\xed\xfe", 4))
@@ -160,7 +160,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static RBinAddr* binsym(RBinArch *arch, int sym) {
+static RBinAddr* binsym(RBinFile *arch, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {

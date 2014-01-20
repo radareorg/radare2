@@ -19,23 +19,23 @@ static int check(RBin *bin) {
 
 // TODO: destroy must be void?
 static int destroy(RBin *bin) {
-	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t*)bin->bin_obj);
+	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t*)bin->cur->xtr_obj);
 	return R_TRUE;
 }
 
 static int load(RBin *bin) {
-	return ((bin->bin_obj = r_bin_dyldcache_new (bin->file)))? R_TRUE: R_FALSE;
+	return ((bin->cur->xtr_obj = r_bin_dyldcache_new (bin->file)))? R_TRUE: R_FALSE;
 }
 
 static int extract(RBin *bin, int idx) {
 	int nlib = 0;
 	struct r_bin_dyldcache_lib_t *lib = r_bin_dyldcache_extract (
-		(struct r_bin_dyldcache_obj_t*)bin->bin_obj, idx, &nlib);
+		(struct r_bin_dyldcache_obj_t*)bin->cur->xtr_obj, idx, &nlib);
 	if (lib) {
-		bin->cur.file = strdup (lib->path);
-		bin->cur.offset = lib->offset;
-		bin->cur.buf = lib->b;
-		bin->cur.size = lib->size;
+		bin->cur->file = strdup (lib->path);
+		bin->cur->offset = lib->offset;
+		bin->cur->buf = lib->b;
+		bin->cur->size = lib->size;
 		free (lib);
 	}
 	return nlib;

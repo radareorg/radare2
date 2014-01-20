@@ -3,7 +3,7 @@
 #define R_BIN_ELF64 1
 #include "bin_elf.c"
 
-static int check(RBinArch *arch) {
+static int check(RBinFile *arch) {
 	if (arch && arch->buf && arch->buf->buf)
 	if (!memcmp (arch->buf->buf, "\x7F\x45\x4c\x46\x02", 5))
 		return R_TRUE;
