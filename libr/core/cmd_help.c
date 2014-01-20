@@ -494,6 +494,7 @@ static int cmd_help(void *data, const char *input) {
 		"| r[+- ][len]           resize file\n"
 		"| s [addr]              seek to address (also for '0x', '0x1' == 's 0x1')\n"
 		"| S?[size] [vaddr]      io section manipulation information\n"
+		"| t[-odfsl] [arg]       cparse types management\n"
 		"| V[vcmds]              enter visual mode (vcmds=visualvisual  keystrokes)\n"
 		"| w[mode] [arg]         multiple write operations\n"
 		"| x [len]               alias for 'px' (print hexadecimal)\n"
