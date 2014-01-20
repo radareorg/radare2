@@ -34,7 +34,9 @@ R_API boolt r_file_is_directory(const char *str) {
 		return R_FALSE;
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
-	return ((S_IFDIR &buf.st_mode))? R_TRUE: R_FALSE;
+	if ((S_IFBLK & buf.st_mode))
+		return R_FALSE;
+	return ((S_IFDIR & buf.st_mode))? R_TRUE: R_FALSE;
 }
 
 R_API boolt r_file_fexists(const char *fmt, ...) {
