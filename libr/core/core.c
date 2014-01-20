@@ -597,7 +597,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_pair_free (c->kv);
 	//r_core_file_free (c->file);
 	//c->file = NULL;
-	r_list_free (c->files);
+	// XXX segfaults r_list_free (c->files);
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	free (c->num);

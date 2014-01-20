@@ -295,6 +295,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		r_core_cmd0 (r, "aa");
 	return R_TRUE;
 }
+
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loadaddr) {
 	const char *cp;
 	RCoreFile *fh;
@@ -360,8 +361,8 @@ R_API void r_core_file_free(RCoreFile *cf) {
 	if (cf) {
 		// double free libr/io/io.c:70 performs free
 		//if (cf->map) free(cf->map);
-		if (cf->filename) free(cf->filename);
-		if (cf->uri) free(cf->uri);
+		free (cf->filename);
+		free (cf->uri);
 		r_io_desc_free (cf->fd);
 
 		cf->fd = NULL;
