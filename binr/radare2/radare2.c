@@ -108,7 +108,7 @@ static int main_help(int line) {
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n"
 		" MAGICPATH    "R_MAGIC_PATH"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
-		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/last\n"
+		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		);
 	return 0;
