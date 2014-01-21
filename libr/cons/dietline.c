@@ -238,13 +238,15 @@ R_API int r_line_hist_save(const char *file) {
 			*p = R_SYS_DIR[0];
 		}
 		fd = fopen (path, "w");
-		if (fd != NULL && I.history.data) {
-			for (i=0; i<I.history.index; i++) {
-				fputs (I.history.data[i], fd);
-				fputs ("\n", fd);
-			}
-			fclose (fd);
-			ret = R_TRUE;
+		if (fd != NULL) {
+			if (I.history.data) {
+				for (i=0; i<I.history.index; i++) {
+					fputs (I.history.data[i], fd);
+					fputs ("\n", fd);
+				}
+				fclose (fd);
+				ret = R_TRUE;
+			} else fclose (fd);
 		}
 	}
 	free (path);
