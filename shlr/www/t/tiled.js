@@ -172,6 +172,55 @@ f.obj.style.zIndex = 99999+this.ctr2++;
 		}
 	}
 
+	this.other_frame = function (dir) {
+		if (!this.curframe)
+			return;
+		switch (dir) {
+		case 'up':
+			var col = +this.curframe[1];
+			var row = +this.curframe[2];
+			if (row>0) {
+				row--;
+				var f = this.frames[col][row];
+				this.select_frame (f.name);
+				this.curframe = [f,col,row];
+				this.run();
+			}
+			break;
+		case 'down':
+			var col = +this.curframe[1];
+			var row = +this.curframe[2];
+			if (row<=this.frames[col].length) {
+				row++;
+				var f = this.frames[col][row];
+				this.select_frame (f.name);
+				this.curframe = [f,col,row];
+				this.run();
+			}
+			break;
+		case 'left':
+			var col = +this.curframe[1];
+			if (col>0) {
+				col--;
+				var f = this.frames[col][0];
+				this.select_frame (f.name);
+				this.curframe = [f,col,0];
+				this.run();
+			}
+			break;
+		case 'right':
+			var col = +this.curframe[1];
+			if (col<this.frames.length) {
+				col++;
+				var f = this.frames[col][0];
+				this.select_frame (f.name);
+				this.curframe = [f,col,0];
+				this.run();
+			}
+			break;
+		}
+	}
+
 	this.select_frame = function (name) {
 		var ret = undefined;
 		if (!name && this.curframe) {
@@ -263,6 +312,9 @@ this.tile ();
 	}
 	this.del_frame = function (name) {
 		var prev = undefined;
+		if (!name && this.curframe) {
+			name = this.curframe[0].name;
+		}
 		for (var col in this.frames) {
 			for (var row in this.frames[col]) {
 				var x = this.frames[col][row];
