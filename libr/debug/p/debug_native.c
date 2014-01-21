@@ -104,6 +104,12 @@ static int r_debug_handle_signals (RDebug *dbg) {
 #define R_DEBUG_STATE_SZ PPC_THREAD_STATE_COUNT
 #elif __arm
 #include <mach/arm/thread_status.h>
+#ifndef ARM_THREAD_STATE
+#define ARM_THREAD_STATE                1
+#endif
+#ifndef ARM_THREAD_STATE64
+#define ARM_THREAD_STATE64              6
+#endif
 #define R_DEBUG_REG_T arm_thread_state_t
 #define R_DEBUG_STATE_T ARM_THREAD_STATE
 #define R_DEBUG_STATE_SZ ARM_THREAD_STATE_COUNT
@@ -119,7 +125,10 @@ typedef union {
 	ut32 x32[16];
 } R_DEBUG_REG_T;
 
+// APPLE
 #define R_DEBUG_STATE_T XXX
+
+
 //(dbg->bits==64)?x86_THREAD_STATE:_STRUCT_X86_THREAD_STATE32
 //#define R_DEBUG_REG_T _STRUCT_X86_THREAD_STATE64
 #define R_DEBUG_STATE_SZ ((dbg->bits==R_SYS_BITS_64)?168:64)
