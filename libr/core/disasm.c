@@ -640,8 +640,7 @@ static void handle_show_xrefs (RCore *core, RDisasmState *ds) {
 						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
 						fun?fun->name:"unk");
 				} else {
-					r_cons_printf ("%s; %s XREF from 0x%08"PFMT64x" (%s)\n",
-						ds->pal_comment,
+					r_cons_printf ("; %s XREF from 0x%08"PFMT64x" (%s)\n",
 						refi->type=='c'?"CODE (JMP)":
 						refi->type=='C'?"CODE (CALL)":"DATA", refi->at,
 						fun?fun->name: "unk");
@@ -710,7 +709,9 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 							r_cons_printf (ds->pre); //"| "
 						}
 						if (ds->show_lines && ds->refline) {
-							r_cons_printf ("%s%s"Color_RESET, ds->color_flow, ds->refline);
+							if (ds->show_color) {
+								r_cons_printf ("%s%s"Color_RESET, ds->color_flow, ds->refline);
+							} else r_cons_strcat (ds->refline);
 						}
 						if (ds->show_offset)
 							r_cons_printf ("; -- ");
