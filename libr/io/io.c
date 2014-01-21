@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include "r_io.h"
 #include "r_util.h"
 #include <stdio.h>
 
-R_LIB_VERSION(r_io);
+R_LIB_VERSION (r_io);
 
 // TODO: R_API int r_io_fetch(struct r_io_t *io, ut8 *buf, int len)
 //  --- check for EXEC perms in section (use cached read to accelerate)
@@ -24,12 +24,12 @@ R_API RIO *r_io_new() {
 	io->plugin = NULL;
 	io->raised = -1;
 	io->off = 0;
-	r_io_cache_init (io);
 	r_io_map_init (io);
-	r_io_section_init (io);
-	r_io_plugin_init (io);
 	r_io_desc_init (io);
 	r_io_undo_init (io);
+	r_io_cache_init (io);
+	r_io_plugin_init (io);
+	r_io_section_init (io);
 	return io;
 }
 
@@ -43,7 +43,7 @@ R_API int r_io_is_listener(RIO *io) {
 	return R_FALSE;
 }
 
-R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len) {
+R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
 	RBuffer *b = R_NEW (RBuffer);
 	b->buf = malloc (len);
 	len = r_io_read_at (io, addr, b->buf, len);
@@ -51,7 +51,7 @@ R_API RBuffer *r_io_read_buf(struct r_io_t *io, ut64 addr, int len) {
 	return b;
 }
 
-R_API int r_io_write_buf(struct r_io_t *io, struct r_buf_t *b) {
+R_API int r_io_write_buf(RIO *io, struct r_buf_t *b) {
 	return r_io_write_at (io, b->base, b->buf, b->length);
 }
 

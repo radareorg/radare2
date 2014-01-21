@@ -59,8 +59,10 @@ static int __close(RIODesc *fd) {
 	return 0;
 }
 
-static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 	ut64 r_offset = offset;
+	if (!fd->data)
+		return offset;
 	switch (whence) {
 	case SEEK_SET:
 		r_offset = (offset <= RIOMALLOC_SZ (fd)) ? offset : RIOMALLOC_SZ (fd);

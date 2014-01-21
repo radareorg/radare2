@@ -1,14 +1,14 @@
-/* radare - LGPL - Copyright 2011-2013 - earada, pancake */
+/* radare - LGPL - Copyright 2011-2014 - earada, pancake */
 
 #include <r_core.h>
 
 R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 	RListIter *iter;
-	RBinFile *binfile = NULL, *tmp_binfile;
+	RBinFile *bf;
 
-	r_list_foreach (core->bin->binfiles, iter, tmp_binfile) {
-		if (tmp_binfile && tmp_binfile->fd == bin_fd) {
-			core->bin->cur = tmp_binfile;
+	r_list_foreach (core->bin->binfiles, iter, bf) {
+		if (bf && bf->fd == bin_fd) {
+			core->bin->cur = bf;
 			break;
 		}
 	}

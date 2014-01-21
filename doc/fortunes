@@ -38,7 +38,7 @@ Assemble opcodes with the 'a' and 'A' keys in visual mode which are hooks for th
 Find expanded AES keys in memory with /a command
 Find wide-char strings with /w <string> command
 Enable ascii-art jump lines in disassembly with asm.lines. asm.linesout and asm.linestyle may interest you too
-Control the signal handlers of the child process with the '!signal' command
+Control the signal handlers of the child process with the 'dk' command
 Get a free shell with 'rasc -i x86.linux.binsh -X'
 Interpret your own radare scripts with '. <path-to-your-script>'. Similar to the bash source alias command.
 Most of commands accept an '?' as suffix. Use it to understand how they work :)

@@ -363,14 +363,14 @@ R_API void r_core_file_free(RCoreFile *cf) {
 		//if (cf->map) free(cf->map);
 		free (cf->filename);
 		free (cf->uri);
+// XXX: already done by someone else :)
 		r_io_desc_free (cf->fd);
-
 		cf->fd = NULL;
 		cf->map = NULL;
 		cf->filename = NULL;
 		cf->uri = NULL;
-
-		free(cf);
+// XXX avoid segfault
+//		free (cf);
 	}
 	cf = NULL;
 }
@@ -417,8 +417,11 @@ R_API int r_core_file_close_fd(RCore *core, int fd) {
 		if (file->fd->fd == fd) {
 			r_io_close (core->io, file->fd);
 			r_list_delete (core->files, iter);
+			//r_io_raise (core->io, fd);
+#if 0
 			if (r_list_empty (core->files))
 				core->file = NULL;
+#endif
 			return R_TRUE;
 		}
 	}
