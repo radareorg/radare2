@@ -9,12 +9,13 @@
 static int check(RBin *bin) {
 	int size, ret = R_FALSE;
 	ut8 *filebuf = (ut8*)r_file_slurp_range (bin->file, 0, 4, &size);
-	if (filebuf && size == 4) {
-		if (!memcmp (filebuf, "\x64\x79\x6c\x64", 4))
-			ret = R_TRUE;
-		free (filebuf);
+	if (filebuf){
+		if (size == 4) {
+			if (!memcmp (filebuf, "\x64\x79\x6c\x64", 4))
+				ret = R_TRUE;
+			free (filebuf);
+		} else free (filebuf);
 	}
-	free (filebuf);
 	return ret;
 }
 
