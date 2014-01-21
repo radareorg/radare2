@@ -14,6 +14,7 @@ static int check(RBin *bin) {
 			ret = R_TRUE;
 		free (filebuf);
 	}
+	free (filebuf);
 	return ret;
 }
 
