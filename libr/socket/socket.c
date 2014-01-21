@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2013 - pancake */
+/* radare - LGPL - Copyright 2006-2014 - pancake */
 
 #include <errno.h>
 #include <r_types.h>
@@ -219,7 +219,7 @@ R_API int r_socket_connect (RSocket *s, const char *host, const char *port, int 
 		}
 		freeaddrinfo (res);
 		if (rp == NULL) {
-			eprintf ("Could not resolve address\n");
+			eprintf ("Could not resolve address '%s'\n", host);
 			return R_FALSE;
 		}
 	}

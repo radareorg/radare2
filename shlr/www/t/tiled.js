@@ -30,7 +30,29 @@ var Tiled = function(id) {
 			this.curframe[0].mh = set;
 		}
 	}
-	this.update_frames = function () {
+this.ctr2 = 0;
+	this.tile = function () {
+		if (this.maximize && this.curframe) {
+			var mtop = topmargin;
+			var left = 0;
+			var width = w;
+			var height = h-mtop;
+
+			var f = this.curframe[0];
+			f.obj.style.position = 'absolute';
+			f.obj.style.top = mtop;
+			f.obj.style.left = left;
+// always on top.. or hide all the frames
+f.obj.style.zIndex = 99999+this.ctr2++;
+			// TODO: add proportions
+			f.obj.style.width = width;
+			f.obj.style.height = height;
+			//f.obj.style.backgroundColor = "green";
+//f.obj.innerHTML =" FUCK";
+			if (f.update)
+				f.update (f.obj);
+			return;
+		}
 			function getmaxh (self,col) {
 				if (self.frames[col]) {
 					for (var row in self.frames[col]) {
@@ -143,7 +165,7 @@ var Tiled = function(id) {
 			}
 			for (var i = 0; i<d.length; i++)
 				this.frames.push (d[i]);
-			this.update_frames ();
+			this.tile ();
 			break;
 		case 'left':
 			break;
@@ -155,6 +177,7 @@ var Tiled = function(id) {
 		if (!name && this.curframe) {
 			name = this.curframe[0].name;
 		}
+		this.oldframe = this.curframe;
 		for (var col in this.frames) {
 			for (var row in this.frames[col]) {
 				var f = this.frames[col][row];
@@ -170,7 +193,7 @@ f.mw = false;
 				}
 			}
 		}
-this.update_frames ();
+this.tile ();
 		return ret;
 	}
 	this.new_frame = function(name, body, update, pos) {
@@ -179,10 +202,13 @@ this.update_frames ();
 			var obj_title = document.createElement ('div');
 			obj_title.className = 'frame_title';
 			obj_title.id = 'frame_'+name;
+			var d = document.createElement ('div');
+			d.style.backgroundColor = '#d0a090';
 			var a = document.createElement ('a');
 			a.innerHTML = name;
 			a.href='#';
-			obj_title.appendChild (a);
+			d.appendChild (a);
+			obj_title.appendChild (d);
 			(function(self,name) {
 				 a.onclick = function() {
 					 //alert ("clicked "+name);
@@ -241,6 +267,10 @@ this.update_frames ();
 			for (var row in this.frames[col]) {
 				var x = this.frames[col][row];
 				if (x.name==name) { 
+					if (x != this.curframe[0])
+						return;
+					if (this.curframe[0] != this.oldframe[0])
+						return;
 					if (this.frames[col].length>1) {
 						// remove row
 						var a = this.frames[col].splice (row).slice (1);
@@ -263,16 +293,13 @@ this.update_frames ();
 						// select next frame
 					}
 					this.select_frame (prev);
-					//this.update_frames ();
+					//this.tile ();
 					return x;
 				}
 				prev = x.name;
 			}
 		}
-		this.update_frames ();
-	}
-	this.tile = function () {
-		// TODO
+		this.tile ();
 	}
 	this.run = function () {
 		this.update_size ();
@@ -282,6 +309,6 @@ this.update_frames ();
 		obj.style.width = w;
 		obj.style.height = h;
 		obj.style.backgroundColor = '#a0a0a0';
-		this.update_frames();
+		this.tile ();
 	}
 }
