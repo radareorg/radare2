@@ -330,6 +330,7 @@ static int remove_bin_file_by_binfile (RBin *bin, RBinFile * binfile) {
 		if (tmp_binfile == binfile) {
 			r_list_delete (bin->binfiles, iter);
 			found_bin = R_TRUE;
+			break;
 		}
 	}
 	return found_bin;
@@ -359,7 +360,7 @@ static void r_bin_file_free (RBinFile *a) {
 	free (o->info);
 	o->info = NULL;
 
-	if (o->binsym)
+	if (o->binsym != NULL)
 		for (i=0; i<R_BIN_SYM_LAST; i++){
 			free (o->binsym[i]);
 			o->binsym[i] = NULL;

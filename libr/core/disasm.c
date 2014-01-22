@@ -1719,7 +1719,7 @@ toro:
 }
 
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
-	RDisasmState *ds = R_NEW0 (RDisasmState);
+	RDisasmState *ds = NULL;
 	const ut8 *buf = core->block;
 	int bs = core->blocksize;
 	int i, j, ret, err = 0;

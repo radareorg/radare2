@@ -203,7 +203,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 				va, NULL, baddr);
 			r_bin_load (r->bin, file, baddr, loadaddr, R_FALSE);
 			//r->file->binfile = r->bin->cur;//r_bin_get_object (r->bin);
-			if (baddr) {
+			if (baddr && r->bin->cur) {
 				r->bin->cur->baddr = baddr;
 				//r->file->binfile = r->bin->cur;
 			}

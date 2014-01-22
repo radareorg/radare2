@@ -508,7 +508,12 @@ static int extract_type_value (char *arg_str, char **output) {
 	ut32 len = 0, consumed = 0;
 	char *str = NULL;
 
-	if (output && *output && *output != NULL) free(*output);
+	if (output == NULL) {
+		return 0;
+	}else if (output && *output && *output != NULL) {
+		free(*output);
+		*output = NULL;
+	}
 
 	while (arg_str && *arg_str && !found_one) {
 		// handle the end of an object
@@ -1077,7 +1082,7 @@ R_API double my_pow(ut64 base, int exp) {
 	    if (exp & 1) result *= base;
 	    exp >>= 1;
 	    base *= base;
-	    IFDBG eprintf ("Result: %d, base: %"PFMT64d", exp: %d\n", result, base, exp);
+	    IFDBG eprintf ("Result: %"PFMT64d", base: %"PFMT64d", exp: %d\n", result, base, exp);
 	}
 	if(flag==0) return 1.0*result;
 	return (1.0/result);

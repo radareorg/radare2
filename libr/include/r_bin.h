@@ -128,7 +128,7 @@ typedef struct r_bin_file_t {
 	ut64 offset;
 	ut64 baddr;
 	RBinObject *o;
-	RBinObject *xtr_obj;
+	void *xtr_obj;
 	ut64 loadaddr;
 	ut64 fd;
 	struct r_bin_xtr_plugin_t *curxtr;
