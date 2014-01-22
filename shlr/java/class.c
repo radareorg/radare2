@@ -1066,12 +1066,21 @@ R_API ut64 rbin_java_raw_to_long(ut8* raw, ut64 offset) {
 // yanked from careercup, because i am lazy:
 // 1) dont want to figure out how make radare use math library
 // 2) dont feel like figuring it out when google does it in O(1).
-R_API double my_pow(double a,int b) {
-   if(b==0) return 1;
-   if(b==1) return a;
-   double temp=my_pow (a,b/2);
-   temp=temp*temp;
-   return ((b%2==0)? temp : temp*a);
+R_API double my_pow(ut64 base, int exp) {
+	ut8 flag=0;
+	ut64 result = 1;
+	if(exp < 0) {
+		flag = 1;
+		exp *= -1;
+	}
+	while (exp) {
+	    if (exp & 1) result *= base;
+	    exp >>= 1;
+	    base *= base;
+	    IFDBG eprintf ("Result: %d, base: %"PFMT64d", exp: %d\n", result, base, exp);
+	}
+	if(flag==0) return 1.0*result;
+	return (1.0/result);
 }
 
 double rbin_java_raw_to_double(ut8* raw, ut64 offset) {
@@ -1082,7 +1091,7 @@ double rbin_java_raw_to_double(ut8* raw, ut64 offset) {
 			(bits & 0xfffffffffffffLL) << 1 :
 			(bits & 0xfffffffffffffLL) | 0x10000000000000LL;
 	double result = 0.0;
-	IFDBG printf ("Convert Long to Double: %08"PFMT64x"\n", bits);
+	IFDBG eprintf ("Convert Long to Double: %08"PFMT64x"\n", bits);
 	if (0x7ff0000000000000LL == bits) {
 		result = INFINITY;
 	}else if (0xfff0000000000000LL == bits) {
@@ -1093,7 +1102,9 @@ double rbin_java_raw_to_double(ut8* raw, ut64 offset) {
 		result = NAN;
 	}else{
 		result = s* m* my_pow (2, e-1075);//XXXX TODO Get double to work correctly here
-		IFDBG printf ("Convert Long to Double s: %d, m: 0x%08lx, e: 0x%08x, result: %f\n", s, m, e, result);
+		IFDBG eprintf ("	High-bytes = %02x %02x %02x %02x\n", raw[0], raw[1], raw[2], raw[3]);
+		IFDBG eprintf ("	Low-bytes = %02x %02x %02x %02x\n", raw[4], raw[5], raw[6], raw[7]);
+		IFDBG eprintf ("Convert Long to Double s: %d, m: 0x%08lx, e: 0x%08x, result: %f\n", s, m, e, result);
 	}
 	return result;
 }
