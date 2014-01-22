@@ -70,7 +70,7 @@ struct java_op java_ops[] = {
 	{ "caload"         , 0x34, 1, R_ANAL_EX_LDST_LOAD_FROM_REF_INDIRECT_TO_STACK},
 	{ "saload"         , 0x35, 1, R_ANAL_EX_LDST_LOAD_FROM_REF_INDIRECT_TO_STACK},
 
-	{ "istore"        , 0x36,  1, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
+	{ "istore"        , 0x36,  2, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
 	{ "lstore"         , 0x37, 2, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
 	{ "fstore"         , 0x38, 2, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
 	{ "dstore"         , 0x39, 2, R_ANAL_EX_LDST_STORE_FROM_STACK_INDIRECT_TO_VAR},
