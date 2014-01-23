@@ -87,6 +87,82 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	return list;
 }
 
+R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn, 
+    int nlines, int linesout, int linescall) {
+	RAnalRefline *list2, *list = R_NEW (RAnalRefline);
+	RAnalOp op = {0};
+	RAnalBlock *bb;
+	RListIter *bb_iter;
+	ut64 addr = fcn->addr,
+			opc = addr,
+			len = 0;
+	int sz = 0, index = 0, idx = 0;
+
+	INIT_LIST_HEAD (&(list->list));
+
+	/* analyze code block */
+	r_list_foreach (fcn->bbs, bb_iter, bb) {
+		addr = bb->addr;
+		if (nlines != -1 && --nlines == 0)
+				break;
+		idx += bb->size;
+		if (bb->size > 0) {
+			/* store data */
+			switch (bb->type) {
+			case R_ANAL_OP_TYPE_CALL:
+				if (!linescall)
+					break;
+			case R_ANAL_OP_TYPE_CJMP:
+				// handle fail case and fall through
+				if (!linesout)// && (op.jump > opc+len || op.jump < opc))
+					continue;
+				if (op.jump == 0LL)
+					continue;
+				list2 = R_NEW (RAnalRefline);
+				list2->from = addr;
+				list2->to = bb->fail;
+				list2->index = index++;
+				list_add_tail (&(list2->list), &(list->list));
+			case R_ANAL_OP_TYPE_JMP:
+				if (!linesout)// && (op.jump > opc+len || op.jump < opc))
+					continue;
+				if (op.jump == 0LL)
+					continue;
+				list2 = R_NEW (RAnalRefline);
+				list2->from = addr;
+				list2->to = bb->jump;
+				list2->index = index++;
+				list_add_tail (&(list2->list), &(list->list));
+				break;
+			case R_ANAL_OP_TYPE_SWITCH:
+				//if (!linesout && (op.jump > opc+len || op.jump < opc))
+				//	  goto __next;
+				//if (op.jump == 0LL)
+				//	  goto __next;
+				// add caseops
+				if (op.switch_op) {
+					RAnalCaseOp *caseop;
+					RListIter *iter;
+					r_list_foreach (op.switch_op->cases, iter, caseop) {
+						if (caseop) {
+							if (!linesout)// && (op.jump > opc+len || op.jump < pc))
+								continue;
+							list2 = R_NEW (RAnalRefline);
+							list2->from = op.switch_op->addr;
+							list2->to = caseop->jump;
+							list2->index = index++;
+							list_add_tail (&(list2->list), &(list->list));
+						}
+					}
+				}
+				break;
+			}
+		} else sz = 1;
+	}
+	r_anal_op_fini (&op);
+	return list;
+}
+
 R_API int r_anal_reflines_middle(RAnal *a, RAnalRefline *list, ut64 addr, int len) {
 	struct list_head *pos;
 	if (list)
