@@ -35,7 +35,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_io_sundo_push (core->io, core->offset);
 				r_core_seek (core, off, 1);
 			}// else eprintf ("cfg.debug is false\n");
-		} else eprintf ("Usage: 'sr pc' ; seek to register\n");
+		} else eprintf ("|Usage| 'sr pc' seek to program counter register\n");
 	} else
 	if (*input) {
 		const char *inputnum = strchr (input+1, ' ');
@@ -232,28 +232,28 @@ static int cmd_seek(void *data, const char *input) {
 			break;
 		case '?':
 			r_cons_printf (
-			"Usage: s[+-] [addr]\n"
-            " s                 print current address\n"
-			" s 0x320           seek to this address\n"
-			" s-                undo seek\n"
-			" s+                redo seek\n"
-			" s*                list undo seek history\n"
-			" s++               seek blocksize bytes forward\n"
-			" s--               seek blocksize bytes backward\n"
-			" s+ 512            seek 512 bytes forward\n"
-			" s- 512            seek 512 bytes backward\n"
-			" sg/sG             seek begin (sg) or end (sG) of section or file\n"
-			" s.hexoff          Seek honoring a base from core->offset\n"
-			" sa [[+-]a] [asz]  seek asz (or bsize) aligned to addr\n"
-			" sn/sp             seek next/prev scr.nkey\n"
-			" s/ DATA           search for next occurrence of 'DATA'\n"
-			" s/x 9091          search for next occurrence of \\x90\\x91\n"
-			" sb                seek aligned to bb start\n"
-			//" sp [page]  seek page N (page = block)\n"
-			" so [num]          seek to N next opcode(s)\n"
-			" sf                seek to next function (f->addr+f->size)\n"
-			" sC str            seek to comment matching given string\n"
-			" sr pc             seek to register\n");
+			"|Usage: s[+-] [addr]\n"
+			"| s                 print current address\n"
+			"| s 0x320           seek to this address\n"
+			"| s-                undo seek\n"
+			"| s+                redo seek\n"
+			"| s*                list undo seek history\n"
+			"| s++               seek blocksize bytes forward\n"
+			"| s--               seek blocksize bytes backward\n"
+			"| s+ 512            seek 512 bytes forward\n"
+			"| s- 512            seek 512 bytes backward\n"
+			"| sg/sG             seek begin (sg) or end (sG) of section or file\n"
+			"| s.hexoff          Seek honoring a base from core->offset\n"
+			"| sa [[+-]a] [asz]  seek asz (or bsize) aligned to addr\n"
+			"| sn/sp             seek next/prev scr.nkey\n"
+			"| s/ DATA           search for next occurrence of 'DATA'\n"
+			"| s/x 9091          search for next occurrence of \\x90\\x91\n"
+			"| sb                seek aligned to bb start\n"
+			//"| sp [page]  seek page N (page = block)\n"
+			"| so [num]          seek to N next opcode(s)\n"
+			"| sf                seek to next function (f->addr+f->size)\n"
+			"| sC str            seek to comment matching given string\n"
+			"| sr pc             seek to register\n");
 			break;
 		}
 	} else r_cons_printf ("0x%"PFMT64x"\n", core->offset);

@@ -1489,7 +1489,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		if (ptr) *ptr = '\0';
 		ret = r_core_cmd_subst (core, rcmd);
 		if (ret == -1) {
-			eprintf ("Error running command '%s'\n", rcmd);
+			eprintf ("|ERROR| Invalid command '%s'\n", rcmd);
 			break;
 		}
 		if (!ptr) break;
@@ -1658,7 +1658,7 @@ R_API char *r_core_cmd_str(RCore *core, const char *cmd) {
 	char *retstr = NULL;
 	r_cons_reset ();
 	if (r_core_cmd (core, cmd, 0) == -1) {
-		eprintf ("Invalid command: %s\n", cmd);
+		//eprintf ("Invalid command: %s\n", cmd);
 		return NULL;
 	}
 	r_cons_filter ();

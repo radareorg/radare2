@@ -1,21 +1,21 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake, Anton Kochkov */
 
 static void show_help() {
-	eprintf ("Usage: t[-LCvsdfm?] [...]\n"
-	" t                      list all loaded types\n"
-	" t*                     list types info in r2 commands\n"
-	" t- [name]              delete type by its name.\n"
-	" t-*                    remove all types\n"
-	//". Use t-! to open $EDITOR\n"
-	" t [type]               show given type in 'pf' syntax\n"
-	//" to                     list of opened files\n"
-	" to [path]              load types from C header file\n"
-	" to -                   open cfg.editor to load types\n"
-	" td int foo(int a)      parse oneliner type definition\n"
-	" td-foo                 undefine type 'foo'\n"
-	" tf addr                view linked type at given address\n"
-	" ts k=v k=v @ link.addr set fields at given linked type\n"
-	" tl [type] ([addr])     show show / link type to a address\n");
+	eprintf ("|Usage: t[-LCvsdfm?] [...]\n"
+	"| t                      list all loaded types\n"
+	"| t*                     list types info in r2 commands\n"
+	"| t- [name]              delete type by its name.\n"
+	"| t-*                    remove all types\n"
+	//"|. Use t-! to open $EDITOR\n"
+	"| t [type]               show given type in 'pf' syntax\n"
+	//"| to                     list of opened files\n"
+	"| to [path]              load types from C header file\n"
+	"| to -                   open cfg.editor to load types\n"
+	"| td int foo(int a)      parse oneliner type definition\n"
+	"| td-foo                 undefine type 'foo'\n"
+	"| tf addr                view linked type at given address\n"
+	"| ts k=v k=v @ link.addr set fields at given linked type\n"
+	"| tl [type] ([addr])     show show / link type to a address\n");
 }
 
 static int sdbforcb (void *p, const char *k, const char *v) {

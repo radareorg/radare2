@@ -590,8 +590,9 @@ int main(int argc, char **argv, char **envp) {
 			if (r_core_prompt (&r, R_FALSE)<1)
 				break;
 			if (lock) r_th_lock_enter (lock);
-			if ((ret = r_core_prompt_exec (&r))==-1)
-				eprintf ("Invalid command\n");
+			if ((ret = r_core_prompt_exec (&r))==-1) {
+			//	eprintf ("Invalid command\n");
+			}
 			if (lock) r_th_lock_leave (lock);
 			if (rabin_th && !r_th_wait_async (rabin_th)) {
 				eprintf ("rabin thread end \n");

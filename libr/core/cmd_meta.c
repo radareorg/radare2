@@ -278,7 +278,7 @@ static int cmd_meta(void *data, const char *input) {
 		"| CCa[-at]|[at] [text]    add/remove comment at given address\n"
 		"| Cv[-] offset reg name   add var substitution\n"
 		"| Cs[-] [size] [[addr]]   add string\n"
-		"| Ch[-] [size]            hide data\n"
+		"| Ch[-] [size] [@addr]    hide data\n"
 		"| Cd[-] [size]            hexdump data\n"
 		"| Cf[-] [sz] [fmt..]      format memory (see pf?)\n"
 		"| Cm[-] [sz] [fmt..]      magic parse (see pm?)\n");
