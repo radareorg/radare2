@@ -1,5 +1,5 @@
 /* radare - LGPL - Copyright 2009-2013 - pancake */
-
+//#include <r_anal_ex.h>
 
 static int is_valid_input_num_value(RCore *core, char *input_value){
 	ut64 value = input_value ? r_num_math (core->num, input_value) : 0;
@@ -839,7 +839,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		switch (input[1]) {
-		case 'i': 
+		case 'i':
 			processed_cmd = R_TRUE;
 			pdi (core, l, len, (*input=='D')? len: core->blocksize);
 			pd_result = 0;
@@ -973,8 +973,18 @@ static int cmd_print(void *data, const char *input) {
 						if (b->size > f->size) b->size = f->size;
 					}
 					// TODO: sort by addr
+					//r_list_sort (f->bbs, &r_anal_ex_bb_address_comparator);
 					r_list_foreach (f->bbs, iter, b) {
 						r_core_cmdf (core, "pD %"PFMT64d" @0x%"PFMT64x, b->size, b->addr);
+						/*switch (control_type) {
+							case R_ANAL_OP_TYPE_CALL:
+								break;
+							case R_ANAL_OP_TYPE_JMP:
+								break;
+							case R_ANAL_OP_TYPE_CJMP:
+								break;
+							case R_ANAL_OP_TYPE_SWITCH:
+						}*/
 						if (b->jump != UT64_MAX)
 							r_cons_printf ("-[true]-> 0x%08"PFMT64x"\n", b->jump);
 						if (b->fail != UT64_MAX)
@@ -1008,6 +1018,9 @@ static int cmd_print(void *data, const char *input) {
 				RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
+						//RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes
+					core->num->value = r_core_print_fcn_disasm (core->print, core, f->addr, 9999, 0, 2);
+					/*
 					ut8 *block = malloc (f->size+1);
 					if (block) {
 						r_core_read_at (core, f->addr, block, f->size);
@@ -1016,7 +1029,7 @@ static int cmd_print(void *data, const char *input) {
 							f->size, 9999, 0, 2);
 						free (block);
 						pd_result = 0;
-					}
+					}*/
 				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
 			}
 			l = 0;
