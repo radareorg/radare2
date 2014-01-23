@@ -18,7 +18,7 @@ static  int init(void *user) {
 	IFDBG eprintf ("Calling plugin init = %d.\n", BIN_OBJS_ADDRS?1:0);
 	if (!BIN_OBJS_ADDRS) {
 		IFDBG eprintf ("plugin BIN_OBJS_ADDRS beeing initted.\n");
-		BIN_OBJS_ADDRS = sdb_new (NULL, 0);
+		BIN_OBJS_ADDRS = sdb_new ("bin.java", NULL, 0);
 	} else {
 		IFDBG eprintf ("plugin BIN_OBJS_ADDRS already initted.\n");
 	}

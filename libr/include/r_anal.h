@@ -684,7 +684,8 @@ typedef enum {
 	R_ANAL_REF_TYPE_NULL = 0,
 	R_ANAL_REF_TYPE_CODE = 'c', // code ref
 	R_ANAL_REF_TYPE_CALL = 'C', // code ref (call)
-	R_ANAL_REF_TYPE_DATA = 'd'  // mem ref
+	R_ANAL_REF_TYPE_DATA = 'd', // mem ref
+	R_ANAL_REF_TYPE_STRING='s'  // string ref
 } RAnalRefType;
 
 typedef struct r_anal_ref_t {

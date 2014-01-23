@@ -49,7 +49,7 @@ R_API RAnal *r_anal_new() {
 	memset (anal, 0, sizeof (RAnal));
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
-	anal->sdb_types = sdb_new (NULL, 0);
+	anal->sdb_types = sdb_new (NULL, NULL, 0);
 	anal->meta = r_meta_new ();
 	anal->meta->printf = anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);

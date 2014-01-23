@@ -1,5 +1,7 @@
 /* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
 
+// TODO: Use SDB
+
 #include <r_anal.h>
 #include <r_print.h>
 
@@ -350,10 +352,12 @@ R_API char *r_anal_meta_bar (RAnal *anal, ut64 from, ut64 to, int blocks) {
 
 	if (blocks<1 || from > to)
 		return NULL;
+#if 0
 	if (from == to && from == 0) {
 		// autodetect min and max here
 	//	from = 
 	}
+#endif
 	blocksize = (to-from)/blocks;
 	res = malloc (blocks*4); //blocksize*5);// use realloc here
 	for (i=0; i< blocks; i++) {

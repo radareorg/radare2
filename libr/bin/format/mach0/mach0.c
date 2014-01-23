@@ -425,7 +425,7 @@ struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new)(const char* file) {
 struct MACH0_(r_bin_mach0_obj_t)* MACH0_(r_bin_mach0_new_buf)(RBuffer *buf) {
 	struct MACH0_(r_bin_mach0_obj_t) *bin = R_NEW0 (struct MACH0_(r_bin_mach0_obj_t));
 	if (!bin) return NULL;
-	bin->kv = sdb_new (NULL, 0);
+	bin->kv = sdb_new (NULL, "bin.mach0", 0);
 	bin->b = buf;
 	bin->size = buf->length;
 	if (!MACH0_(r_bin_mach0_init)(bin))

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2014 - pancake */
 
 #include <r_debug.h>
 
@@ -53,7 +53,7 @@ static struct {
 R_API void r_debug_signal_init(RDebug *dbg) {
 	int i;
 	// XXX
-	DB = sdb_new (NULL, 0);
+	DB = sdb_new (NULL, "signals", 0);
 	for (i=0; signals[i].k; i++) {
 		sdb_set (DB, signals[i].k, signals[i].v, 0);
 		sdb_set (DB, signals[i].v, signals[i].k, 0);

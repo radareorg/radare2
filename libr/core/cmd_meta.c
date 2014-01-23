@@ -51,7 +51,7 @@ static int cmd_meta(void *data, const char *input) {
 						line = r_file_slurp_line (f, num, 0);
 					}
 					if (!line) {
-						eprintf ("Cannot slurp file\n");
+						eprintf ("Cannot slurp file '%s'\n", input+2);
 						return R_FALSE;
 					}
 				}
@@ -269,19 +269,19 @@ static int cmd_meta(void *data, const char *input) {
 	case '\0':
 	case '?':
 		r_cons_strcat (
-		"Usage: C[-LCvsdfm?] [...]\n"
-		" C*                     # List meta info in r2 commands\n"
-		" C- [len] [@][ addr]    # delete metadata at given address range\n"
-		" CL[-] [addr]           # show 'code line' information (bininfo)\n"
-		" Cl  file:line [addr]   # add comment with line information\n"
-		" CC[-] [comment-text]   # add/remove comment. Use CC! to edit with $EDITOR\n"
-		" CCa[-at]|[at] [text]   # add/remove comment at given address\n"
-		" Cv[-] offset reg name  # add var substitution\n"
-		" Cs[-] [size] [[addr]]  # add string\n"
-		" Ch[-] [size]           # hide data\n"
-		" Cd[-] [size]           # hexdump data\n"
-		" Cf[-] [sz] [fmt..]     # format memory (see pf?)\n"
-		" Cm[-] [sz] [fmt..]     # magic parse (see pm?)\n");
+		"|Usage: C[-LCvsdfm?] [...]\n"
+		"| C*                              List meta info in r2 commands\n"
+		"| C- [len] [@][ addr]             delete metadata at given address range\n"
+		"| CL[-] [addr|file:line [addr] ]  show 'code line' information (bininfo)\n"
+		"| Cl  file:line [addr]            add comment with line information\n"
+		"| CC[-] [comment-text]    add/remove comment. Use CC! to edit with $EDITOR\n"
+		"| CCa[-at]|[at] [text]    add/remove comment at given address\n"
+		"| Cv[-] offset reg name   add var substitution\n"
+		"| Cs[-] [size] [[addr]]   add string\n"
+		"| Ch[-] [size]            hide data\n"
+		"| Cd[-] [size]            hexdump data\n"
+		"| Cf[-] [sz] [fmt..]      format memory (see pf?)\n"
+		"| Cm[-] [sz] [fmt..]      magic parse (see pm?)\n");
 		break;
 	case 'F':
 		f = r_anal_fcn_find (core->anal, core->offset,

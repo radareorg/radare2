@@ -10,7 +10,7 @@ R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
 	path = r_str_home (db);
 	//eprintf ("Open (%s)\n", path);
 	sdb_free (DB);
-	DB = sdb_new (path, 0);
+	DB = sdb_new (path, "xrefs", 0);
 	sdb_aset (DB, "types", -1, "code"SDB_SS"data", 0);
 	free (db);
 }
@@ -76,7 +76,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr) {
 
 R_API void r_anal_xrefs_init (RAnal *anal) {
 	DB = NULL;
-	DB = sdb_new (NULL, 0); // TODO
+	DB = sdb_new (NULL, "xrefs", 0); // TODO
 	sdb_aadd (DB, "types", -1, "code"SDB_SS"data", 0);
 #if 0
 	//...

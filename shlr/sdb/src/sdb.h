@@ -33,14 +33,11 @@ extern "C" {
 
 #define SDB_RS '\x1e'
 #define SDB_SS "\x1e"
+#define SDB_MAX_PATH 256
 
 // todo. store last used
 // todo. sync?
 // todo. 
-typedef struct sdb_ns_t {
-	ut32 hash;
-	struct sdb_t *sdb;
-} SdbNs;
 
 #define SDB_KSZ 0xff
 
@@ -52,7 +49,8 @@ typedef struct sdb_kv {
 } SdbKv;
 
 typedef struct sdb_t {
-	char *dir;
+	char *dir; // path+file
+	char *name;
 	int fd;
 	int lock;
 	struct cdb db;
@@ -67,7 +65,12 @@ typedef struct sdb_t {
 	SdbKv tmpkv;
 } Sdb;
 
-Sdb* sdb_new (const char *dir, int lock);
+typedef struct sdb_ns_t {
+	ut32 hash;
+	Sdb *sdb;
+} SdbNs;
+
+Sdb* sdb_new (const char *path, const char *file, int lock);
 void sdb_free (Sdb* s);
 void sdb_drop (Sdb* s);
 void sdb_file (Sdb* s, const char *dir);
@@ -176,8 +179,9 @@ int sdb_alist(Sdb* s, const char *key);
 const char *sdb_anext(const char *str);
 const char *sdb_aindex(const char *str, int idx);
 
-typedef void (*SdbHook)(void *user, const char *k, const char *v);
+typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
 
+void sdb_global_hook(SdbHook hook, void *user);
 int sdb_hook(Sdb* s, SdbHook cb, void* user);
 int sdb_unhook(Sdb* s, SdbHook h);
 int sdb_hook_call(Sdb *s, const char *k, const char *v);

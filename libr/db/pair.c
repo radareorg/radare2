@@ -47,7 +47,7 @@ R_API int r_pair_load(RPair *p, const char *f) {
 R_API RPair *r_pair_new () {
 	RPair *p = R_NEW0 (RPair);
 	p->file = NULL;
-	p->sdb = sdb_new (NULL, 0);
+	p->sdb = sdb_new (NULL, NULL, 0);
 	p->ht = r_hashtable_new ();
 	p->dbs = r_list_new ();
 	p->dbs->free = (RListFree)sdb_free;
@@ -57,7 +57,7 @@ R_API RPair *r_pair_new () {
 R_API RPair *r_pair_new_from_file (const char *file) {
 	RPair *p = r_pair_new ();
 	p->file = strdup (file);
-	p->sdb = sdb_new (file, 0);
+	p->sdb = sdb_new (NULL, file, 0);
 	return p;
 }
 
@@ -92,7 +92,7 @@ static Sdb *pair_sdb_new(RPair *p, const char *dom, ut32 hdom) {
 		r_sys_rmkdir (p->dir);
 		r_sys_chdir (p->dir);
 	}
-	sdb = sdb_new (dom, 0);
+	sdb = sdb_new (NULL, dom, 0);
 	if (old) {
 		r_sys_chdir (old);
 		free (old);

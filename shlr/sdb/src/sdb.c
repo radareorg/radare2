@@ -19,8 +19,16 @@ static inline int nextcas() {
 	return cas++;
 }
 
+static SdbHook global_hook = NULL;
+static void* global_user = NULL;
+
+SDB_VISIBLE void sdb_global_hook(SdbHook hook, void *user) {
+	global_hook = hook;
+	global_user = user;
+}
+
 // TODO: use mmap instead of read.. much faster!
-SDB_VISIBLE Sdb* sdb_new (const char *dir, int lock) {
+SDB_VISIBLE Sdb* sdb_new (const char *dir, const char *name, int lock) {
 	Sdb* s;
 	if (lock && !sdb_lock (sdb_lockfile (dir)))
 		return NULL;
@@ -33,6 +41,7 @@ SDB_VISIBLE Sdb* sdb_new (const char *dir, int lock) {
 		s->dir = NULL;
 		s->fd = -1;
 	}
+	s->name = (name&&*name)? strdup (name): NULL;
 	s->fdump = -1;
 	s->ndump = NULL;
 	s->ns = ls_new (); // TODO: should be NULL
@@ -43,11 +52,16 @@ SDB_VISIBLE Sdb* sdb_new (const char *dir, int lock) {
 	s->tmpkv.value = NULL;
 	//s->ht->list->free = (SdbListFree)sdb_kv_free;
 	// if open fails ignore
+	if (global_hook) {
+		sdb_hook (s, global_hook, global_user);
+	}
+
 	cdb_init (&s->db, s->fd);
 	cdb_findstart (&s->db);
 	return s;
 }
 
+// XXX: this is wrong. stuff not stored in memory is lost
 SDB_VISIBLE void sdb_file (Sdb* s, const char *dir) {
 	if (s->lock)
 		sdb_unlock (sdb_lockfile (s->dir));
@@ -563,7 +577,6 @@ SDB_VISIBLE void sdb_drop (Sdb* s) {
 	unlink (s->dir);
 }
 
-
 SDB_VISIBLE int sdb_hook(Sdb* s, SdbHook cb, void* user) {
 	int i = 0;
 	SdbHook hook;
@@ -599,13 +612,13 @@ SDB_VISIBLE int sdb_unhook(Sdb* s, SdbHook h) {
 }
 
 SDB_VISIBLE int sdb_hook_call(Sdb *s, const char *k, const char *v) {
-	SdbHook hook;
 	SdbListIter *iter;
+	SdbHook hook;
 	int i = 0;
 	ls_foreach (s->hooks, iter, hook) {
 		if (!(i%2) && k && iter->n) {
-			void *user = iter->n->data;
-			hook (user, k, v);
+			void *u = iter->n->data;
+			hook (s, u, k, v);
 		}
 		i++;
 	}
