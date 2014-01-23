@@ -1037,7 +1037,7 @@ static void handle_adistrick_comments (RCore *core, RDisasmState *ds) {
 
 static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, int len, int idx) {
 	// TODO: implement ranged meta find (if not at the begging of function..
-	RMetaItem *mi = r_meta_find (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
+	RAnalMetaItem *mi = r_meta_find (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 	char *out = NULL;
 	int hexlen;
 	int delta;
@@ -1430,7 +1430,7 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 	}
 }
 static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 ) {
-	RMetaItem *mi2 = r_meta_find (core->anal, word8, R_META_TYPE_ANY, R_META_WHERE_HERE);
+	RAnalMetaItem *mi2 = r_meta_find (core->anal, word8, R_META_TYPE_ANY, R_META_WHERE_HERE);
 	if (mi2) {
 		switch (mi2->type) {
 		case R_META_TYPE_STRING:

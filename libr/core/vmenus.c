@@ -265,7 +265,7 @@ R_API int r_core_visual_comments (RCore *core) {
 	int found = 0;
 	ut64 from = 0, size = 0;
 	RListIter *iter;
-	RMetaItem *d;
+	RAnalMetaItem *d;
 
 // XXX: mode is always 0, remove useless code
 	for (;;) {

@@ -64,7 +64,7 @@ static int cmd_seek(void *data, const char *input) {
 			if (input[1]==' ') {
 				int n = 0;
 				RListIter *iter;
-				RMetaItem *d, *item = NULL;
+				RAnalMetaItem *d, *item = NULL;
 				/* seek to comment */
 				r_list_foreach (core->anal->meta, iter, d) {
 					if (d->type == R_META_TYPE_COMMENT) {

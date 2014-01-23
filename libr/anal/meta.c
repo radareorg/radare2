@@ -15,7 +15,7 @@ R_API void r_meta_fini(RAnal *a) {
 }
 
 R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to) {
-	RMetaItem *d;
+	RAnalMetaItem *d;
 	RListIter *iter;
 	int count = 0;
 
@@ -28,7 +28,7 @@ R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to) {
 }
 
 R_API int r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s) {
-	RMetaItem *mi = r_meta_find (m, addr, type, R_META_WHERE_HERE);
+	RAnalMetaItem *mi = r_meta_find (m, addr, type, R_META_WHERE_HERE);
 	if (mi) {
 		free (mi->str);
 		mi->str = strdup (s);
@@ -41,7 +41,7 @@ R_API int r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s) {
 R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr) {
 	char *str = NULL;
 	RListIter *iter;
-	RMetaItem *d;
+	RAnalMetaItem *d;
 
 	switch (type) {
 	case R_META_TYPE_COMMENT:
@@ -75,7 +75,7 @@ R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr) {
 R_API int r_meta_del(RAnal *a, int type, ut64 from, ut64 size, const char *str) {
 	int ret = 0;
 	RListIter *iter, *iter_tmp;
-	RMetaItem *d;
+	RAnalMetaItem *d;
 
 	r_list_foreach_safe (a->meta, iter, iter_tmp, d) {
 		if (d->type == type || type == R_META_TYPE_ANY) {
@@ -92,7 +92,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 from, ut64 size, const char *str) 
 }
 
 R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
-	RMetaItem *d;
+	RAnalMetaItem *d;
 	RListIter *iter, next;
 	int ret = R_FALSE;
 
@@ -146,20 +146,20 @@ R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
 }
 
 R_API void r_meta_item_free(void *_item) {
-	RMetaItem *item = _item;
+	RAnalMetaItem *item = _item;
 	free (item);
 }
 
-R_API RMetaItem *r_meta_item_new(int type) {
-	RMetaItem *mi = R_NEW (RMetaItem);
-	memset (mi, 0, sizeof (RMetaItem));
+R_API RAnalMetaItem *r_meta_item_new(int type) {
+	RAnalMetaItem *mi = R_NEW (RAnalMetaItem);
+	memset (mi, 0, sizeof (RAnalMetaItem));
 	mi->type = type;
 	return mi;
 }
 
 // TODO: This is ultraslow. must accelerate with hashtables
 R_API int r_meta_comment_check (RAnal *m, const char *s, ut64 addr) {
-	RMetaItem *d;
+	RAnalMetaItem *d;
 	RListIter *iter;
 
 	r_list_foreach (m->meta, iter, d) {
@@ -173,7 +173,7 @@ R_API int r_meta_comment_check (RAnal *m, const char *s, ut64 addr) {
 }
 
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str) {
-	RMetaItem *mi;
+	RAnalMetaItem *mi;
 	if (to<from)
 		to = from+to;
 
@@ -207,8 +207,8 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str) {
 }
 
 /* snippet from data.c */
-R_API RMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where) {
-	RMetaItem *d, *it = NULL;
+R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where) {
+	RAnalMetaItem *d, *it = NULL;
 	RListIter *iter;
 	r_list_foreach (m->meta, iter, d) {
 		if (d->type == type || type == R_META_TYPE_ANY) {
@@ -291,7 +291,7 @@ struct r_range_t *r_meta_ranges(RAnal *m)
 }
 #endif
 
-static void printmetaitem(RAnal *m, RMetaItem *d, int rad) {
+static void printmetaitem(RAnal *m, RAnalMetaItem *d, int rad) {
 	char *pstr, *str = r_str_unscape (d->str);
 	if (str) {
 		if (d->type=='s' && !*str)
@@ -329,7 +329,7 @@ static void printmetaitem(RAnal *m, RMetaItem *d, int rad) {
 R_API int r_meta_list(RAnal *m, int type, int rad) {
 	int count = 0;
 	RListIter *iter;
-	RMetaItem *d;
+	RAnalMetaItem *d;
 	if (rad=='j') m->printf ("[");
 	r_list_foreach (m->meta, iter, d) {
 		if (d->type == type || type == R_META_TYPE_ANY) {

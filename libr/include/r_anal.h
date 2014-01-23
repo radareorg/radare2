@@ -41,7 +41,7 @@ typedef struct r_anal_meta_item_t {
 	ut64 size;
 	int type;
 	char *str;
-} RMetaItem;
+} RAnalMetaItem;
 
 /* CPARSE stuff */
 
@@ -1036,12 +1036,12 @@ R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
 R_API int r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s);
 R_API int r_meta_del(RAnal *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 size, const char *str);
-R_API RMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
+R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API int r_meta_list(RAnal *m, int type, int rad);
 R_API void r_meta_item_free(void *_item);
-R_API RMetaItem *r_meta_item_new(int type);
+R_API RAnalMetaItem *r_meta_item_new(int type);
 
 R_API int r_anal_fcn_xref_add (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type);
 R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 addr, int type);
