@@ -474,6 +474,7 @@ typedef enum {
 	R_ANAL_BB_TYPE_RET  = 0x0020,   /* return bb */
 	R_ANAL_BB_TYPE_JMP  = 0x0040,   /* jmp bb */
 	R_ANAL_BB_TYPE_COND = 0x0100,   /* conditional bb */
+	R_ANAL_BB_TYPE_CJMP = R_ANAL_BB_TYPE_COND | R_ANAL_BB_TYPE_JMP,
 	R_ANAL_BB_TYPE_CALL = 0x0200,
 	R_ANAL_BB_TYPE_CMP  = 0x0400,
 	R_ANAL_BB_TYPE_LD   = 0x0800,
@@ -583,7 +584,7 @@ typedef struct r_anal_op_t {
 	char *mnemonic; /* mnemonic */
 	ut64 addr;      /* address */
 	ut64 type;      /* type of opcode */
-	ut64 type2;    
+	ut64 type2;
 	int stackop;    /* operation on stack? */
 	int cond;       /* condition type */
 	int size;       /* size in bytes of opcode */
@@ -997,7 +998,8 @@ R_API RAnalRefline *r_anal_reflines_get(RAnal *anal,
 	ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall);
 R_API int r_anal_reflines_middle(RAnal *anal, RAnalRefline *list, ut64 addr, int len);
 R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts);
-
+R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn, 
+    int nlines, int linesout, int linescall);
 /* TODO move to r_core */
 R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, ut64 addr);
 R_API void r_anal_var_list(RAnal *anal, RAnalFunction *fcn, ut64 addr, int delta);

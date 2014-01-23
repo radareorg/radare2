@@ -321,8 +321,8 @@ R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RA
 	r_anal_ex_clone_op_switch_to_bb (bb, op);
 }
 
-R_API ut32 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type) {
-	ut32 bb_type = 0;
+R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type) {
+	ut64 bb_type = 0;
 	ut64 conditional = R_ANAL_EX_COND_OP & ranal2_op_type ? R_ANAL_OP_TYPE_COND : 0;
 	ut64 code_op_val = ranal2_op_type & (R_ANAL_EX_CODE_OP | 0x1FF);
 

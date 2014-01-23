@@ -172,7 +172,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 	state->current_depth++;
 	addr = bb->addr;
 	IFDBG eprintf ("Handling a control flow change @ 0x%04"PFMT64x".\n", addr);
-	ut32 control_type = r_anal_ex_map_anal_ex_to_anal_op_type (bb->type2);
+	ut64 control_type = r_anal_ex_map_anal_ex_to_anal_op_type (bb->type2);
 
 	// XXX - transition to type2 control flow condtions
 	switch (control_type) {

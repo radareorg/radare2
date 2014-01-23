@@ -18,7 +18,7 @@ typedef struct r_anal_ex_op_to_str_t {
 enum {
 	R_ANAL_EX_ILL_OP  =-1,   /* illegal instruction // trap */
 	R_ANAL_EX_NULL_OP = 0,
-	R_ANAL_EX_NOP = 1, /* does nothing */	
+	R_ANAL_EX_NOP = 1, /* does nothing */
 	R_ANAL_EX_STORE_OP  = 1 << 20,  // Load or Store memory operation
 	R_ANAL_EX_LOAD_OP   = 1 << 21,  // Load or Store memory operation
 	R_ANAL_EX_REG_OP	= 1 << 22,  // register operation
@@ -294,7 +294,7 @@ R_API ut64 r_anal_ex_map_anal_ex_to_anal_op_type(ut64 ranal2_op_type);
 R_API void r_anal_ex_op_to_bb(RAnal *anal, RAnalState *state, RAnalBlock *bb, RAnalOp *op);
 R_API int r_anal_ex_is_op_type_eop(ut64 x);
 
-R_API ut32 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type);
+R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type);
 
 /* by default performs recursive descent, but is anal->analysis_algorithm
  * is present, then that will be the algorithm used for analyzing the code 
