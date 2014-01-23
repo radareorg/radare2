@@ -47,9 +47,9 @@ static RList * get_java_bin_obj_list(RAnal *anal);
 
 static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int depth);
 
-static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
-static RAnalBlock * java_bb_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
-static RAnalFunction * java_fn_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
+//static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
+//static RAnalBlock * java_bb_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
+//static RAnalFunction * java_fn_from_buffer(RAnal *anal, RAnalState *state, ut64 addr);
 
 static int check_addr_in_code (RBinJavaField *method, ut64 addr);
 static int check_addr_less_end (RBinJavaField *method, ut64 addr);
@@ -64,7 +64,7 @@ static const RBinJavaObj * get_java_bin_obj(RAnal *anal) {
 }
 
 static RList * get_java_bin_obj_list(RAnal *anal) {
-	const RBinJavaObj *bin_obj = get_java_bin_obj(anal);
+	RBinJavaObj *bin_obj = (RBinJavaObj * )get_java_bin_obj(anal);
 	// See libr/bin/p/bin_java.c to see what is happening here.  The original intention
 	// was to use a shared global db variable from shlr/java/class.c, but the
 	// BIN_OBJS_ADDRS variable kept getting corrupted on Mac, so I (deeso) switched the
@@ -581,7 +581,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 
 	r_list_foreach (bin_objs_list, bin_obs_iter, bin) {
 		// loop over all bin object that are loaded
-		methods_list = r_bin_java_get_methods_list (bin);
+		methods_list = (RList *) r_bin_java_get_methods_list (bin);
 		if (methods_list) {
 			ut64 loadaddr = bin->loadaddr;
 			const char * bin_name = bin && bin->file ? bin->file : anal->iob.io->fd->name;
@@ -609,16 +609,16 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	return result;
 }
 
-static int java_fn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
+/*static int java_fn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	// XXX - this may clash with malloc:// uris because the file name is
-	// malloc://**
-	const RBinJavaObj *bin = get_java_bin_obj (anal);
+	// malloc:// **
+	RBinJavaObj *bin = (RBinJavaObj *) get_java_bin_obj (anal);
 	RBinJavaField *method = bin ? r_bin_java_get_method_code_attribute_with_addr (bin,  addr) : NULL;
 	ut64 loadaddr = bin ? bin->loadaddr : 0;
 	IFDBG eprintf ("Analyzing java functions for %s\n", anal->iob.io->fd->name);
 	if (method) return analyze_from_code_attr (anal, fcn, method, loadaddr);
 	return analyze_from_code_buffer (anal, fcn, addr, buf, len);
-}
+}*/
 
 static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut8 op_byte = data[0];
@@ -705,23 +705,22 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	//IFDBG eprintf ("%s\n", output);
 	return op->size;
 }
-
+/*
 static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) {
 
 	RAnalOp *op = r_anal_op_new ();
-	/* get opcode size */
+	//  get opcode size 
 	if (op == NULL) return 0;
 	memset (op, '\0', sizeof (RAnalOp));
 	java_op (anal, op, addr, state->buffer, state->len - (addr - state->start) );
 	return op;
 
 }
-
+*/
 static int java_print_method_definitions ( RBinJavaObj *obj ) {
 	RList * the_list = r_bin_java_get_method_definitions (obj),
 			* off_list = r_bin_java_get_method_offsets (obj);
 	char * str = NULL;
-	RListIter *iter;
 	ut32 idx = 0, end = r_list_length (the_list);
 
 	while (idx < end) {
@@ -740,7 +739,6 @@ static int java_print_field_definitions ( RBinJavaObj *obj ) {
 	RList * the_list = r_bin_java_get_field_definitions (obj),
 			* off_list = r_bin_java_get_field_offsets (obj);
 	char * str = NULL;
-	RListIter *iter;
 	ut32 idx = 0, end = r_list_length (the_list);
 
 	while (idx < end) {
@@ -827,7 +825,7 @@ static int java_print_class_definitions( RBinJavaObj *obj ) {
 
 
 static int java_cmd_ext(RAnal *anal, const char* input) {
-	RBinJavaObj *obj = get_java_bin_obj (anal);
+	RBinJavaObj *obj = (RBinJavaObj *) get_java_bin_obj (anal);
 
 	if (!obj) {
 		eprintf ("Execute \"af\" to set the current bin, and this will bind the current bin\n");

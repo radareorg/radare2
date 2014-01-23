@@ -9,8 +9,8 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 {
 	RAnalRefline *list2, *list = R_NEW (RAnalRefline);
 	RAnalOp op = {0};
-	ut8 *ptr = buf;
-	ut8 *end = buf + len;
+	const ut8 *ptr = buf;
+	const ut8 *end = buf + len;
 	ut64 opc = addr;
 	int sz = 0, index = 0;
 

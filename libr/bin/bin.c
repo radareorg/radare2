@@ -245,7 +245,7 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 	bin->cur->o->baddr = baseaddr;
 
 	r_list_foreach (bin->binxtrs, it, xtr) {
-		if (xtr->check && xtr->check (bin->cur)) {
+		if (xtr->check && xtr->check (bin)) {
 			bin->cur->curxtr = xtr;
 			break;
 		}
