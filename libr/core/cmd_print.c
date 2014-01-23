@@ -149,7 +149,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			note[j] = NULL;
 			lnote[j] = 0;
 			// collect comments
-			comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, addr+j);
+			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr+j);
 			if (comment) {
 				comment = r_str_prefix_all (comment, "  ; ");
 				r_cons_strcat (comment);

@@ -144,7 +144,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_STORE;	//LD
 			break;
 		case 0xe0:
-			meta_gb_hardware_cmt(anal->meta, data[1], addr);
+			meta_gb_hardware_cmt(anal, data[1], addr);
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 0x78:
@@ -172,7 +172,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 0xf0:
-			meta_gb_hardware_cmt(anal->meta, data[1], addr);
+			meta_gb_hardware_cmt(anal, data[1], addr);
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 0x09:

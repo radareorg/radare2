@@ -115,7 +115,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 			f[i], (IS_PRINTABLE(f[i]))?f[i]:' ',
 			d[i], (IS_PRINTABLE(d[i]))?d[i]:' ');
 	}
-	eprintf ("Compare %d/%d equal bytes\n", eq, len);
+	eprintf ("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq/len)*100);
 	return len-eq;
 }
 

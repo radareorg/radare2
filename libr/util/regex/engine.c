@@ -690,7 +690,7 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 		/* next character */
 		lastc = c;
 		c = (p == m->endp) ? OUT : *p;
-		if (EQ(st, fresh))
+		if (st==fresh)
 			coldp = p;
 
 		/* is there an EOL and/or BOL between lastc and c? */
@@ -744,8 +744,7 @@ fast(struct match *m, char *start, char *stop, sopno startst, sopno stopst)
 	m->coldp = coldp;
 	if (ISSET(st, stopst))
 		return(p+1);
-	else
-		return(NULL);
+	return NULL;
 }
 
 /*

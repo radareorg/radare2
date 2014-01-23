@@ -9,10 +9,10 @@
 #include <r_lib.h>
 #include "../arch/gb/gbdis.c"
 
-static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, ut64 len) {
+static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
 	int dlen = gbDisass(r_op,buf,len);
 	if(dlen<0) dlen=0;
-	r_op->size=dlen;
+	r_op->size = dlen;
 	return dlen;
 }
 

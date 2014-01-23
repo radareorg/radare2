@@ -93,7 +93,7 @@ R_API int r_core_project_save(RCore *core, const char *file) {
 		r_io_section_list (core->io, core->offset, 1);
 		r_cons_flush ();
 		r_str_write (fd, "# meta\n");
-		r_meta_list (core->anal->meta, R_META_TYPE_ANY, 1);
+		r_meta_list (core->anal, R_META_TYPE_ANY, 1);
 		r_cons_flush ();
 		 {
 			char buf[1024];
