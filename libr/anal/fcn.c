@@ -240,7 +240,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			free (varname);
 			break;
 		}
-		if (op.ptr && op.ptr != UT64_MAX) {
+		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf //
 			//if (!r_anal_fcn_xref_add (anal, fcn, op.ptr, op.addr, 'd')) {
 			if (!r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, 'd')) {

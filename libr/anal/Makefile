@@ -7,7 +7,6 @@ CFLAGS*=HAVE_CPARSE=$(HAVE_CPARSE)
 CFLAGS+=-DCORELIB -Iarch -I$(TOP)/shlr
 
 LDFLAGS+=${BN_LIBS}
-include ../db/build.mk
 
 .PHONY: pre libs ${EXTRA_CLEAN}
 

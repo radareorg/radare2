@@ -9,7 +9,6 @@ DEPS+=r_reg r_search r_syscall r_diff r_socket r_fs r_magic
 OBJS=core.o cmd.o file.o config.o visual.o io.o yank.o libs.o hack.o vasm.o
 OBJS+=anal.o project.o gdiff.o asm.o rtr.o vmenus.o disasm.o patch.o bin.o log.o
 
-include ../db/build.mk
 LDFLAGS+=${DL_LIBS}
 
 ifeq ($(shell uname),OpenBSD)
