@@ -18,7 +18,7 @@ typedef struct r_anal_ex_op_to_str_t {
 enum {
 	R_ANAL_EX_ILL_OP  =-1,   /* illegal instruction // trap */
 	R_ANAL_EX_NULL_OP = 0,
-	R_ANAL_EX_NOP = 1, /* does nothing */	
+	R_ANAL_EX_NOP = 1, /* does nothing */
 	R_ANAL_EX_STORE_OP  = 1 << 20,  // Load or Store memory operation
 	R_ANAL_EX_LOAD_OP   = 1 << 21,  // Load or Store memory operation
 	R_ANAL_EX_REG_OP	= 1 << 22,  // register operation

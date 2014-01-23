@@ -170,6 +170,10 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx);
 
 
 
+static int cmpaddr (void *_a, void *_b) {
+	RAnalBlock *a = _a, *b = _b;
+	return (a->addr > b->addr);
+}
 
 static void handle_add_show_color ( RCore *core, RDisasmState *ds) {
 	if (ds->show_color) {
@@ -347,6 +351,18 @@ void handle_reflines_init (RCore *core, RDisasmState *ds) {
 		core->reflines2 = r_anal_reflines_get (core->anal,
 			ds->addr, ds->buf, ds->len, -1,
 			ds->linesout, 1);
+	} else core->reflines = core->reflines2 = NULL;
+}
+
+void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fcn, ut8* buf) {
+	if (ds->show_lines) {
+			// TODO: make anal->reflines implicit
+			free (core->reflines); // TODO: leak
+			free (core->reflines2); // TODO: leak
+			core->reflines = r_anal_reflines_fcn_get (core->anal,
+					fcn, -1, ds->linesout, ds->show_linescall);
+			core->reflines2 = r_anal_reflines_fcn_get (core->anal,
+					fcn, -1, ds->linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
 
 }
@@ -1848,4 +1864,180 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	}
 	r_cons_printf ("]");
 	return R_TRUE;
+}
+
+R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {
+	/* other */
+	//void *old_user = core->anal->user;
+	RAnalFunction *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL),
+					*f = fcn;
+	ut32 cur_buf_sz = fcn->size+1;
+	ut8 *buf = malloc (cur_buf_sz);
+	ut32 len = fcn->size;
+	int ret, idx = 0, i;
+	int continueoninvbreak = (fcn->size == l) && invbreak;
+	RListIter *bb_iter;
+	RAnalBlock *bb = NULL;
+	RDisasmState *ds;
+	RList *bb_list = r_list_new();
+	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
+	// TODO: import values from debugger is possible
+	// TODO: allow to get those register snapshots from traces
+	// TODO: per-function register state trace
+	idx = 0;
+	memset (buf, 0, cur_buf_sz);
+
+	// TODO: All those ds must be print flags
+	ds = handle_init_ds (core);
+	ds->cbytes = cbytes;
+	ds->p = p;
+	ds->l = l;
+	ds->buf = buf;
+	ds->len = fcn->size;
+	ds->addr = fcn->addr;
+
+	r_list_foreach (fcn->bbs, bb_iter, bb) {
+		r_list_add_sorted (bb_list, bb, cmpaddr);
+	}
+	// Premptively read the bb data locs for ref lines
+	r_list_foreach (bb_list, bb_iter, bb) {
+			if (idx >= cur_buf_sz) break;
+			r_core_read_at (core, bb->addr, buf+idx, bb->size);
+			//ret = r_asm_disassemble (core->assembler, &ds->asmop, buf+idx, bb->size);
+			//if (ret > 0) eprintf ("%s\n",ds->asmop.buf_asm);
+			idx += bb->size;
+	}
+
+	handle_reflines_fcn_init (core, ds, fcn, buf);
+	core->inc = 0;
+
+	core->cons->vline = r_config_get_i (core->config, "scr.utf8")?
+			r_vline_u: r_vline_a;
+
+	r_cons_break (NULL, NULL);
+	i = 0;
+	idx = 0;
+	r_asm_set_pc (core->assembler, bb->addr);
+	r_list_foreach (bb_list, bb_iter, bb) {
+		ut32 bb_size_consumed = 0;
+		// internal loop to consume bb that contain case-like operations
+		do {
+			if (ds->lines >= ds->l) break;
+			if (r_cons_singleton ()->breaked)
+					break;
+
+			ds->at = bb->addr;
+			len = bb->size;
+
+			if (bb->size > cur_buf_sz) {
+					free(buf);
+					cur_buf_sz = bb->size;
+					buf = malloc (cur_buf_sz);
+					ds->buf = buf;
+			}
+			//r_core_read_at (core, ds->addr, buf, bb->size);
+			handle_update_ref_lines (core, ds);
+			/* show type links */
+			r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
+
+			handle_show_xrefs (core, ds);
+			handle_show_comments_right (core, ds);
+			// XXX - Bug because if the bb->size is something like a case statemenet
+			// e.g. the bytes are not all completely disassembled, it will throw off
+			// the reference lines.  There needs to be a loop that consumes all the
+			// bytes and produces the right disassembly.
+			ret = perform_disassembly (core, ds, buf+idx, bb->size);
+			handle_atabs_option (core, ds);
+			handle_colorize_opcode (core, ds);
+			// TODO: store previous oplen in core->dec
+			if (core->inc == 0)
+					core->inc = ds->oplen;
+
+			r_anal_op_fini (&ds->analop);
+
+			if (!ds->lastfail)
+					r_anal_op (core->anal, &ds->analop, bb->addr, buf+idx, bb->size);
+
+			if (ret<1) {
+					r_strbuf_init (&ds->analop.esil);
+					ds->analop.type = R_ANAL_OP_TYPE_ILL;
+			}
+
+			handle_instruction_mov_lea (core, ds, idx);
+			handle_control_flow_comments (core, ds);
+			handle_adistrick_comments (core, ds);
+			/* XXX: This is really cpu consuming.. need to be fixed */
+			handle_show_functions (core, ds);
+			handle_show_flags_option (core, ds);
+			handle_print_lines_left (core, ds);
+			handle_print_offset (core, ds);
+			handle_print_op_size (core, ds);
+			handle_print_trace (core, ds);
+			handle_print_stackptr (core, ds);
+			ret  = handle_print_meta_infos (core, ds, buf,len, idx);
+			if (ds->mi_found) {
+					ds->mi_found = 0;
+					continue;
+			}
+			/* show cursor */
+			handle_print_show_cursor (core, ds);
+			handle_print_show_bytes (core, ds);
+			handle_print_lines_right (core, ds);
+			handle_add_show_color (core, ds);
+			handle_build_op_str (core, ds);
+			handle_print_opstr (core, ds);
+			handle_print_fcn_name (core, ds);
+			handle_print_color_reset( core, ds);
+			handle_print_dwarf (core, ds);
+			ret = handle_print_middle (core, ds, ret );
+			handle_print_asmop_payload (core, ds);
+			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
+					RAsmOp ao; /* disassemble for the vm .. */
+					int os = core->assembler->syntax;
+					r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
+					r_asm_disassemble (core->assembler, &ao, buf+idx, bb->size);
+					r_asm_set_syntax (core->assembler, os);
+			}
+			handle_print_core_vmode (core, ds);
+			handle_print_cc_update (core, ds);
+			handle_print_op_push_info (core, ds);
+			/*if (ds->analop.refptr) {
+					handle_print_refptr (core, ds);
+			} else {
+					handle_print_ptr (core, ds, bb->size, idx);
+			}*/
+			handle_print_comments_right (core, ds);
+			if ( !(ds->show_comments &&
+					  ds->show_comment_right &&
+					  ds->show_comment_right &&
+					  ds->comment))
+					r_cons_newline ();
+
+			if (ds->line) {
+					free (ds->line);
+					free (ds->refline);
+					free (ds->refline2);
+					ds->line = ds->refline = ds->refline2 = NULL;
+			}
+			free (ds->opstr);
+			bb_size_consumed += ds->oplen;
+			ds->index += ds->oplen;
+			ds->lines++;
+			ds->opstr = NULL;
+		} while (bb_size_consumed <= bb->size);
+		i++;
+		idx += bb->size;
+	}
+	free (buf);
+	r_cons_break_end ();
+
+
+	if (ds->oldbits) {
+			r_config_set_i (core->config, "asm.bits", ds->oldbits);
+			ds->oldbits = 0;
+	}
+	r_anal_op_fini (&ds->analop);
+	handle_deinit_ds (core, ds);
+	r_list_free (bb_list);
+	return idx; //-ds->lastfail;
 }
