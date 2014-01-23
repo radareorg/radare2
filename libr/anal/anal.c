@@ -50,8 +50,9 @@ R_API RAnal *r_anal_new() {
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
 	anal->sdb_types = sdb_new (NULL, NULL, 0);
-	anal->meta = r_meta_new ();
-	anal->meta->printf = anal->printf = (PrintfCallback) printf;
+	anal->sdb_meta = NULL; // TODO : implement sdb_meta
+	r_meta_init (anal);
+	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
 	anal->diff_ops = 0;
@@ -95,7 +96,7 @@ R_API void r_anal_free(RAnal *anal) {
 	r_list_free (anal->refs);
 	r_list_free (anal->types);
 	r_list_free (anal->hints);
-	r_meta_free (anal->meta);
+	r_meta_fini (anal);
 	r_reg_free(anal->reg);
 	r_syscall_free(anal->syscall);
 	r_anal_op_free(anal->queued);

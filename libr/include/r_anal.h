@@ -35,18 +35,13 @@ R_LIB_VERSION_HEADER(r_anal);
 #define VERBOSE_ANAL if(0)
 
 /* meta */
-typedef struct r_meta_item_t {
+typedef struct r_anal_meta_item_t {
 	ut64 from;
 	ut64 to;
 	ut64 size;
 	int type;
 	char *str;
 } RMetaItem;
-
-typedef struct r_meta_t {
-	RList *data; // TODO: rename to 'list'
-	PrintfCallback printf;
-} RMeta;
 
 /* CPARSE stuff */
 
@@ -537,7 +532,7 @@ typedef struct r_anal_t {
 	RListRange *fcnstore;
 	RList *refs;
 	RList *vartypes;
-	RMeta *meta;
+	RList *meta;
 	RReg *reg;
 	RSyscall *syscall;
 	struct r_anal_op_t *queued;
@@ -553,6 +548,7 @@ typedef struct r_anal_t {
 	RList *hints; // XXX use better data structure here (slist?)
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
+	Sdb *sdb_meta; // TODO: Future r_meta api 
 	PrintfCallback printf;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 } RAnal;
@@ -1034,17 +1030,16 @@ R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, i
 R_API void r_anal_data_free (RAnalData *d);
 R_API char *r_anal_data_to_string (RAnalData *d);
 
-R_API RMeta *r_meta_new();
-R_API void r_meta_free(RMeta *m);
-R_API int r_meta_count(RMeta *m, int type, ut64 from, ut64 to);
-R_API char *r_meta_get_string(RMeta *m, int type, ut64 addr);
-R_API int r_meta_set_string(RMeta *m, int type, ut64 addr, const char *s);
-R_API int r_meta_del(RMeta *m, int type, ut64 from, ut64 size, const char *str);
-R_API int r_meta_add(RMeta *m, int type, ut64 from, ut64 size, const char *str);
-R_API RMetaItem *r_meta_find(RMeta *m, ut64 off, int type, int where);
-R_API int r_meta_cleanup(RMeta *m, ut64 from, ut64 to);
+R_API void r_meta_free(RAnal *m);
+R_API int r_meta_count(RAnal *m, int type, ut64 from, ut64 to);
+R_API char *r_meta_get_string(RAnal *m, int type, ut64 addr);
+R_API int r_meta_set_string(RAnal *m, int type, ut64 addr, const char *s);
+R_API int r_meta_del(RAnal *m, int type, ut64 from, ut64 size, const char *str);
+R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 size, const char *str);
+R_API RMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
+R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
-R_API int r_meta_list(RMeta *m, int type, int rad);
+R_API int r_meta_list(RAnal *m, int type, int rad);
 R_API void r_meta_item_free(void *_item);
 R_API RMetaItem *r_meta_item_new(int type);
 

@@ -276,7 +276,7 @@ R_API int r_core_visual_comments (RCore *core) {
 		i = 0;
 		found = 0;
 		mode = 0;
-		r_list_foreach (core->anal->meta->data, iter, d) {
+		r_list_foreach (core->anal->meta, iter, d) {
 			str = r_str_unscape (d->str);
 			if (str) {
 				if (d->type=='s') /* Ignore strings, there are in trackflags */
@@ -338,7 +338,7 @@ R_API int r_core_visual_comments (RCore *core) {
 			break;
 		case 'd':
 			if (mode == 0) {
-				if (p) r_meta_del (core->anal->meta, R_META_TYPE_ANY, from, size, p);
+				if (p) r_meta_del (core->anal, R_META_TYPE_ANY, from, size, p);
 			} else {
 				r_anal_fcn_del_locs (core->anal, from);
 				r_anal_fcn_del (core->anal, from);
@@ -1244,7 +1244,7 @@ R_API void r_core_visual_define (RCore *core) {
 			strcpy (name, "str.");
 			strncpy (name+4, (const char *)p+ntotal, n);
 			r_flag_set (core->flags, name, off, n, 0);
-			r_meta_add (core->anal->meta, R_META_TYPE_STRING,
+			r_meta_add (core->anal, R_META_TYPE_STRING,
 				off+ntotal, off+n+ntotal, (const char *)p+ntotal);
 			free (name);
 			if (n<2) break;
@@ -1258,22 +1258,22 @@ R_API void r_core_visual_define (RCore *core) {
 		strcpy (name, "str.");
 		strncpy (name+4, (const char *)p, n);
 		r_flag_set (core->flags, name, off, n, 0);
-		r_meta_add (core->anal->meta, R_META_TYPE_STRING, off, off+n, (const char *)p);
+		r_meta_add (core->anal, R_META_TYPE_STRING, off, off+n, (const char *)p);
 		free (name);
 		break;
 	case 'd': // TODO: check
-		r_meta_cleanup (core->anal->meta, off, off+plen);
-		r_meta_add (core->anal->meta, R_META_TYPE_DATA, off, off+plen, "");
+		r_meta_cleanup (core->anal, off, off+plen);
+		r_meta_add (core->anal, R_META_TYPE_DATA, off, off+plen, "");
 		break;
 	case 'c': // TODO: check
-		r_meta_cleanup (core->anal->meta, off, off+plen);
-		r_meta_add (core->anal->meta, R_META_TYPE_CODE, off, off+plen, "");
+		r_meta_cleanup (core->anal, off, off+plen);
+		r_meta_add (core->anal, R_META_TYPE_CODE, off, off+plen, "");
 		break;
 	case 'u':
 		r_flag_unset_i (core->flags, off, NULL);
 		f = r_anal_fcn_find (core->anal, off, 0);
 		r_anal_fcn_del_locs (core->anal, off);
-		if (f) r_meta_del (core->anal->meta, R_META_TYPE_ANY, off, f->size, "");
+		if (f) r_meta_del (core->anal, R_META_TYPE_ANY, off, f->size, "");
 		r_anal_fcn_del (core->anal, off);
 		break;
 	case 'f':

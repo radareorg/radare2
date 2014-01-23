@@ -1169,7 +1169,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut
 		piece = (F->addr-from)/step;
 		as->block[piece].functions++;
 	}
-	r_list_foreach (core->anal->meta->data, iter, m) {
+	r_list_foreach (core->anal->meta, iter, m) {
 		if (m->from< from) continue;
 		if (m->from> to) continue;
 		piece = (m->from-from)/step;

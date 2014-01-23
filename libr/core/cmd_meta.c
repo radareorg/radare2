@@ -15,7 +15,7 @@ static int cmd_meta(void *data, const char *input) {
 	switch (*input) {
 	case 'j':
 	case '*':
-		r_meta_list (core->anal->meta, R_META_TYPE_ANY, *input);
+		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
 		break;
 	case 'l':
 		// XXX: this should be moved to CL?
@@ -101,7 +101,7 @@ static int cmd_meta(void *data, const char *input) {
 			if (input[2]=='-') {
 				if (input[3]) {
 					addr = r_num_math (core->num, input+3);
-					r_meta_del (core->anal->meta,
+					r_meta_del (core->anal,
 						R_META_TYPE_COMMENT,
 						addr, 1, NULL);
 				} else eprintf ("Usage: CCa-[address]\n");
@@ -111,7 +111,7 @@ static int cmd_meta(void *data, const char *input) {
 			addr = r_num_math (core->num, s);
 			// Comment at
 			if (p) {
-				r_meta_add (core->anal->meta,
+				r_meta_add (core->anal,
 					R_META_TYPE_COMMENT,
 					addr, addr+1, p);
 			} else eprintf ("Usage: CCa [address] [comment]\n");
@@ -130,29 +130,29 @@ static int cmd_meta(void *data, const char *input) {
 		case '-':
 			switch (input[2]) {
 			case '*':
-				core->num->value = r_meta_del (core->anal->meta,
+				core->num->value = r_meta_del (core->anal,
 					input[0], 0, UT64_MAX, NULL);
 				break;
 			case ' ':
 				addr = r_num_math (core->num, input+3);
 			default:
-				core->num->value = r_meta_del (core->anal->meta,
+				core->num->value = r_meta_del (core->anal,
 					input[0], addr, 1, NULL);
 				break;
 			}
 			break;
 		case '*':
-			r_meta_list (core->anal->meta, input[0], 1);
+			r_meta_list (core->anal, input[0], 1);
 			break;
 		case '!':
 			{
 				char *out, *comment = r_meta_get_string (
-					core->anal->meta, R_META_TYPE_COMMENT, addr);
+					core->anal, R_META_TYPE_COMMENT, addr);
 				out = r_core_editor (core, comment);
 				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
 				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1, NULL);
-				r_meta_set_string (core->anal->meta,
+				r_meta_set_string (core->anal,
 					R_META_TYPE_COMMENT, addr, out);
 				free (out);
 				free (comment);
@@ -161,7 +161,7 @@ static int cmd_meta(void *data, const char *input) {
 		case ' ':
 		case '\0':
 			if (type!='z' && !input[1]) {
-				r_meta_list (core->anal->meta, input[0], 0);
+				r_meta_list (core->anal, input[0], 0);
 				break;
 			}
 			t = strdup (input+2);
@@ -196,7 +196,7 @@ static int cmd_meta(void *data, const char *input) {
 			}
 			if (!n) n++;
 			addr_end = addr + n;
-			if (!r_meta_add (core->anal->meta, type, addr, addr_end, name))
+			if (!r_meta_add (core->anal, type, addr, addr_end, name))
 				free (t);
 			//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 			break;
@@ -263,8 +263,8 @@ static int cmd_meta(void *data, const char *input) {
 	case '-':
 		if (input[1]!='*') {
 			i = r_num_math (core->num, input+((input[1]==' ')?2:1));
-			r_meta_del (core->anal->meta, R_META_TYPE_ANY, core->offset, i, "");
-		} else r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
+			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i, "");
+		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
 		break;
 	case '\0':
 	case '?':

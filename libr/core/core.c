@@ -534,7 +534,6 @@ R_API int r_core_init(RCore *core) {
 	core->assembler->syscall = core->anal->syscall; // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->printf = (void *) r_cons_printf;
-	core->anal->meta->printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
 	core->parser->anal = core->anal;
 	r_parse_set_user_ptr (core->parser, core);

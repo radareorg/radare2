@@ -90,7 +90,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			if (r_cons_singleton()->breaked) break;
 			/* Jump the withespaces before the string */
 			for (i=0; *(string->string+i)==' '; i++);
-			r_meta_add (r->anal->meta, R_META_TYPE_STRING,
+			r_meta_add (r->anal, R_META_TYPE_STRING,
 				va?baddr+string->rva:string->offset,
 				(va?baddr+string->rva:string->offset)+string->size, string->string+i);
 			r_name_filter (string->string, 128);
@@ -673,12 +673,12 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 			}
 
 			if (!strncmp (symbol->type, "OBJECT", 6))
-					r_meta_add (r->anal->meta, R_META_TYPE_DATA, addr,
+					r_meta_add (r->anal, R_META_TYPE_DATA, addr,
                                             addr + symbol->size, name);
 
 			dname = r_bin_demangle (r->bin, symbol->name);
 			if (dname) {
-				r_meta_add (r->anal->meta, R_META_TYPE_COMMENT,
+				r_meta_add (r->anal, R_META_TYPE_COMMENT,
 						addr, symbol->size, dname);
 				free (dname);
 			}
@@ -796,7 +796,7 @@ static int bin_sections (RCore *r, int mode, ut64 baddr, int va, ut64 at, const 
 					R_BIN_SCN_WRITABLE (section->srwx)?'w':'-',
 					R_BIN_SCN_EXECUTABLE (section->srwx)?'x':'-',
 					section->name);
-			r_meta_add (r->anal->meta, R_META_TYPE_COMMENT, addr, addr, str);
+			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 		}
 		// H -> Header fields
 		if (0) {
