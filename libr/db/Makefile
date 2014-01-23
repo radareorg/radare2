@@ -26,7 +26,7 @@ SDB_OBJS+=util.o
 SDBOBJS=$(addprefix ${SDBPATH},${SDB_OBJS})
 
 #OBJS+=${SDBOBJS}
-LDFLAGS+=${SDBPATH}/*.o
+LINK+=${SDBPATH}/*.o
 
 CFLAGS+=-I${SDBPATH}/src
 pre: ${SDBLIB}
