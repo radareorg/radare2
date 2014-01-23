@@ -489,7 +489,7 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 						}
 #endif
 						if (iscodesection (core, refi->at)) {
-							eprintf ("Probably function at 0x%08"PFMT64x"\n", refi->at);
+							//eprintf ("Probably function at 0x%08"PFMT64x"\n", refi->at);
 						}
 						break;
 					case R_ANAL_REF_TYPE_CODE:
