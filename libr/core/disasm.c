@@ -804,7 +804,7 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 	if (ds->show_comments) {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 		RFlagItem *item = r_flag_get_i (core->flags, ds->at);
-		ds->comment = r_meta_get_string (core->anal->meta, R_META_TYPE_COMMENT, ds->at);
+		ds->comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 		if (!ds->comment && item && item->comment) {
 			ds->ocomment = item->comment;
 			ds->comment = strdup (item->comment);
@@ -1037,7 +1037,7 @@ static void handle_adistrick_comments (RCore *core, RDisasmState *ds) {
 
 static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, int len, int idx) {
 	// TODO: implement ranged meta find (if not at the begging of function..
-	RMetaItem *mi = r_meta_find (core->anal->meta, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
+	RMetaItem *mi = r_meta_find (core->anal, ds->at, R_META_TYPE_ANY, R_META_WHERE_HERE);
 	char *out = NULL;
 	int hexlen;
 	int delta;
@@ -1430,7 +1430,7 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 	}
 }
 static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 ) {
-	RMetaItem *mi2 = r_meta_find (core->anal->meta, word8, R_META_TYPE_ANY, R_META_WHERE_HERE);
+	RMetaItem *mi2 = r_meta_find (core->anal, word8, R_META_TYPE_ANY, R_META_WHERE_HERE);
 	if (mi2) {
 		switch (mi2->type) {
 		case R_META_TYPE_STRING:
@@ -1448,7 +1448,7 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 			break;
 		} 
 	} else {
-		mi2 = r_meta_find (core->anal->meta, (ut64)ds->analop.ptr,
+		mi2 = r_meta_find (core->anal, (ut64)ds->analop.ptr,
 			R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (mi2) {
 			char *str = r_str_unscape (mi2->str);
