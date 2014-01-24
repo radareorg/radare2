@@ -126,11 +126,11 @@ int prot = VM_PROT_READ | VM_PROT_EXECUTE;
 	return len;
 }
 
-static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
+static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	return mach_write_at ((RIOMach*)fd->data, buf, len, io->off);
 }
 
-static int __plugin_open(struct r_io_t *io, const char *file, ut8 many) {
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return (!memcmp (file, "attach://", 9) || !memcmp (file, "mach://", 7));
 }
 
@@ -187,7 +187,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char *pidpath;
 	int pid;
 	task_t task;
-	if (!__plugin_open (io, file))
+	if (!__plugin_open (io, file, 0))
 		return NULL;
  	pid = atoi (file+(file[0]=='a'?9:7));
 	if (pid<1)
@@ -218,7 +218,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	return ret;
 }
 
-static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
@@ -228,7 +228,7 @@ static int __close(RIODesc *fd) {
 	return ptrace (PT_DETACH, pid, 0, 0);
 }
 
-static int __system(struct r_io_t *io, RIODesc *fd, const char *cmd) {
+static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 	RIOMach *riom = (RIOMach*)fd->data;
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */

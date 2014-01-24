@@ -46,7 +46,7 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
 	return w32dbg_write_at (fd->data, buf, len, io->off);
 }
 
-static int __plugin_open(struct r_io_t *io, const char *file, ut8 many) {
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	if (!memcmp (file, "attach://", 9))
 		return R_TRUE;
 	return (!memcmp (file, "w32dbg://", 9))? R_TRUE: R_FALSE;
@@ -61,7 +61,7 @@ static int __attach (RIOW32Dbg *dbg) {
 }
 
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
-	if (__plugin_open (io, file)) {
+	if (__plugin_open (io, file, 0)) {
 		char *pidpath;
 		RIOW32Dbg *dbg = R_NEW (RIOW32Dbg);
 		if (dbg == NULL)
