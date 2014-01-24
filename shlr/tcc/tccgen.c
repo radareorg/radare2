@@ -2259,7 +2259,8 @@ static void init_putz(CType *t, unsigned long c, int size)
 static void decl_initializer(CType *type, unsigned long c,
                              int first, int size_only)
 {
-    int index, array_length, n, no_oblock, nb, parlevel, parlevel1, i;
+    long long index;
+    int array_length, n, no_oblock, nb, parlevel, parlevel1, i;
     int size1, align1, expr_type;
     Sym *s, *f;
     CType *t1;

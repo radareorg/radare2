@@ -97,7 +97,7 @@ ud_syn_rel_target(struct ud *u, struct ud_operand *opr)
   case 16: {
     int delta = (opr->lval.sword & trunc_mask);
     if ((u->pc + delta)>0xffff)
-      return (u->pc & 0xf0000) + (u->pc+delta&0xffff);
+      return (u->pc & 0xf0000) + (u->pc+(delta&0xffff));
     return (u->pc + delta);
     }
   case 32: return (u->pc + opr->lval.sdword) & trunc_mask;
