@@ -116,7 +116,7 @@ static void close_pidmem(RIOPtrace *iop) {
 	}
 }
 
-static int __plugin_open(struct r_io_t *io, const char *file) {
+static int __plugin_open(struct r_io_t *io, const char *file, ut8 many) {
 	if (!memcmp (file, "ptrace://", 9))
 		return R_TRUE;
 	if (!memcmp (file, "attach://", 9))
@@ -127,7 +127,7 @@ static int __plugin_open(struct r_io_t *io, const char *file) {
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
 	char *pidpath;
 	int ret = -1;
-	if (__plugin_open (io, file)) {
+	if (__plugin_open (io, file,0)) {
 		int pid = atoi (file+9);
 		ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
 		if (file[0]=='p')  //ptrace

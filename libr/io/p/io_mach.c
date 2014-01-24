@@ -130,7 +130,7 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
 	return mach_write_at ((RIOMach*)fd->data, buf, len, io->off);
 }
 
-static int __plugin_open(struct r_io_t *io, const char *file) {
+static int __plugin_open(struct r_io_t *io, const char *file, ut8 many) {
 	return (!memcmp (file, "attach://", 9) || !memcmp (file, "mach://", 7));
 }
 

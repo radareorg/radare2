@@ -40,15 +40,15 @@ R_API int r_io_plugin_init(RIO *io) {
 	return R_TRUE;
 }
 
-R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename) {
-	struct list_head *pos;
+R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, ut8 many) {
+	struct list_head *pos = NULL;
 	list_for_each_prev (pos, &io->io_list) {
 		struct r_io_list_t *il = list_entry (pos, struct r_io_list_t, list);
 		if (il->plugin == NULL)
 			continue;
 		if (il->plugin->plugin_open == NULL)
 			continue;
-		if (il->plugin->plugin_open (io, filename))
+		if (il->plugin->plugin_open (io, filename, many))
 			return il->plugin;
 	}
 	return NULL;

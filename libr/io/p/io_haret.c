@@ -68,7 +68,7 @@ static int haret__close(RIODesc *fd) {
 	return r_socket_close (HARET_FD (fd));
 }
 
-static int haret__plugin_open(struct r_io_t *io, const char *pathname) {
+static int haret__plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 	return (!memcmp (pathname, "haret://", 8));
 }
 
@@ -77,7 +77,7 @@ static RIODesc *haret__open(struct r_io_t *io, const char *pathname, int rw, int
 	RSocket *s;
 
 	strncpy (buf, pathname, sizeof (buf)-1);
-	if (haret__plugin_open (io, pathname)) {
+	if (haret__plugin_open (io, pathname, 0)) {
 		ptr = buf + 8;
 		if (!(port = strchr (ptr, ':'))) {
 			eprintf ("haret: wrong url\n");

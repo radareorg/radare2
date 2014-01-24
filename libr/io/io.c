@@ -103,7 +103,7 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 	RIODesc *desc = NULL;
 	char *uri = strdup (_uri);
 	for (;;) {
-		plugin = r_io_plugin_resolve (io, uri);
+		plugin = r_io_plugin_resolve (io, uri, 0);
 		if (plugin && plugin->open) {
 			desc = plugin->open (io, uri, flags, mode);
 			if (io->redirect) {
@@ -125,6 +125,39 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 	io->plugin = iop;
 	free (uri);
 	return desc;
+}
+
+static inline RList *__getioplugin_many(RIO *io, const char *_uri, int flags, int mode) {
+	RIOPlugin *plugin, *iop = NULL;
+	RList *list_fds = NULL;
+	RListIter *iter;
+	RIODesc *desc;
+	char *uri = strdup (_uri);
+	for (;;) {
+		// resolve
+		plugin = r_io_plugin_resolve (io, uri, 1);
+		if (plugin && plugin->open_many) {
+			// open
+			list_fds = plugin->open_many (io, uri, flags, mode);
+			if (io->redirect) {
+				free (uri);
+				uri = strdup (io->redirect);
+				r_io_redirect (io, NULL);
+				continue;
+			}
+		}
+		break;
+	}
+
+	if (!list_fds) return NULL;
+
+	r_list_foreach (list_fds, iter, desc) {
+		if (desc) r_io_desc_add (io, desc);
+	}
+
+	io->plugin = iop;
+	free (uri);
+	return list_fds;
 }
 
 static int __io_posix_open (RIO *io, const char *file, int flags, int mode) {
@@ -163,6 +196,23 @@ R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode) {
 		r_io_set_fd (io, desc);
 	}
 	return desc;
+}
+
+R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode) {
+	RIODesc *desc;
+	RListIter *desc_iter = NULL;
+	int fd;
+	RList *list_fds = __getioplugin_many (io, file, flags, mode);
+
+	if (!list_fds) return NULL;
+	if (io->redirect) return NULL;
+
+	r_list_foreach (list_fds, desc_iter, desc) {
+		fd = -1;
+		if (desc) fd = desc->fd;
+		if (fd >= 0) r_io_desc_add (io, desc);
+	}
+	return list_fds;
 }
 
 R_API int r_io_set_fd(RIO *io, RIODesc *fd) {

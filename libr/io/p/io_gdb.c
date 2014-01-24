@@ -19,7 +19,7 @@ typedef struct {
 #define RIOGDB_IS_VALID(x) (x && x->plugin==&r_io_plugin_gdb && x->data)
 #define NUM_REGS 28
 
-static int __plugin_open(RIO *io, const char *file) {
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return (!memcmp (file, "gdb://", 6));
 }
 
@@ -27,7 +27,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char host[128], *port, *p;
 	RSocket *_fd;
 	RIOGdb *riog;
-	if (!__plugin_open (io, file))
+	if (!__plugin_open (io, file, 0))
 		return NULL;
 	strncpy (host, file+6, sizeof (host)-1);
 	port = strchr (host , ':');

@@ -138,26 +138,27 @@ typedef struct r_io_t {
 } RIO;
 
 typedef struct r_io_plugin_t {
-        void *plugin;
-        char *name;
-        char *desc;
+	void *plugin;
+	char *name;
+	char *desc;
 	char *license;
-        void *widget;
+	void *widget;
 	int (*listener)(RIODesc *io);
-        int (*init)();
+	int (*init)();
 	RIOUndo undo;
-        struct r_debug_t *debug;
-        int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
-        int (*system)(RIO *io, RIODesc *fd, const char *);
-        RIODesc* (*open)(RIO *io, const char *, int rw, int mode);
-        int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
-        ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
-        int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
-        int (*close)(RIODesc *desc);
-        int (*resize)(RIO *io, RIODesc *fd, ut64 size);
-        int (*accept)(RIO *io, RIODesc *desc, int fd);
-        int (*create)(RIO *io, const char *file, int mode, int type);
-        int (*plugin_open)(RIO *io, const char *);
+	struct r_debug_t *debug;
+	int (*is_file_opened)(RIO *io, RIODesc *fd, const char *);
+	int (*system)(RIO *io, RIODesc *fd, const char *);
+	RIODesc* (*open)(RIO *io, const char *, int rw, int mode);
+	RList* /*RIODesc* */ (*open_many)(RIO *io, const char *, int rw, int mode);
+	int (*read)(RIO *io, RIODesc *fd, ut8 *buf, int count);
+	ut64 (*lseek)(RIO *io, RIODesc *fd, ut64 offset, int whence);
+	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
+	int (*close)(RIODesc *desc);
+	int (*resize)(RIO *io, RIODesc *fd, ut64 size);
+	int (*accept)(RIO *io, RIODesc *desc, int fd);
+	int (*create)(RIO *io, const char *file, int mode, int type);
+	int (*plugin_open)(RIO *io, const char *, ut8 many);
 } RIOPlugin;
 
 typedef struct r_io_list_t {
@@ -231,12 +232,13 @@ R_API int r_io_plugin_add(RIO *io, RIOPlugin *plugin);
 R_API int r_io_plugin_list(RIO *io);
 R_API int r_io_is_listener(RIO *io);
 // TODO: _del ??
-R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename);
+R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, ut8 many);
 R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd);
 
 /* io/io.c */
 R_API int r_io_set_write_mask(RIO *io, const ut8 *buf, int len);
 R_API RIODesc *r_io_open(RIO *io, const char *file, int flags, int mode);
+R_API RList *r_io_open_many(RIO *io, const char *file, int flags, int mode);
 R_API RIODesc *r_io_open_as(RIO *io, const char *urihandler, const char *file, int flags, int mode);
 R_API int r_io_redirect(RIO *io, const char *file);
 R_API int r_io_set_fd(RIO *io, RIODesc *fd);

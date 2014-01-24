@@ -26,10 +26,17 @@ typedef struct r_io_zip_uri_const_t {
 } RIOZipConstURI;
 
 static RIOZipConstURI ZIP_URIS[] = {
-	 {"zip://", 6},
-	 {"apk://", 6},
-	 {"jar://", 6},
-	 {NULL, 0}
+	{"zip://", 6},
+	{"apk://", 6},
+	{"jar://", 6},
+	{NULL, 0}
+};
+
+static RIOZipConstURI ZIP_ALL_URIS[] = {
+	{"zipall://", 9},
+	{"apkall://", 9},
+	{"jarall://", 9},
+	{NULL, 0}
 };
 
 typedef struct r_io_zfo_t {
@@ -57,7 +64,7 @@ RList *r_io_zip_get_files(char *archivename, ut32 flags, int mode, int rw);
 RIOZipFileObj * r_io_zip_create_new_file(const char *archivename, const char *filename, struct zip_stat *sb, ut32 flags, int mode, int rw);
 RIOZipFileObj *r_io_zip_alloc_zipfileobj(const char *archive_name, const char *filename, ut32 flags, int mode, int rw);
 static int r_io_zip_init();
-static int r_io_zip_plugin_open(RIO *io, const char *file);
+static int r_io_zip_plugin_open(RIO *io, const char *file, ut8 many);
 static int r_io_zip_has_uri_substr(const char *file);
 static int r_io_zip_check_uri(const char *file);
 static int r_io_zip_flush_file(RIOZipFileObj *zfo);
@@ -66,6 +73,8 @@ static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 static int r_io_zip_close(RIODesc *desc);
 static char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx, ut32 flags, int mode, int rw);
 static RIODesc * r_io_zip_open(RIO *io, const char *file, int rw, int mode);
+static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode);
+static int r_io_zip_check_uri_many(const char *file);
 
 static int r_io_zip_init(RIO *io) {
 	return R_TRUE;
@@ -77,10 +86,24 @@ static int r_io_zip_has_uri_substr(const char *file) {
 
 static int r_io_zip_check_uri(const char *file) {
 	int res = R_FALSE;
-	int i = 0;	
+	int i = 0;
 	if (r_io_zip_has_uri_substr (file)) {
 		for (i = 0; ZIP_URIS[i].name != NULL; i++) {
 			if (!memcmp (file, ZIP_URIS[i].name, ZIP_URIS[i].len) && file[ZIP_URIS[i].len]) {
+				res = R_TRUE;
+				break;
+			}
+		}
+	}
+	return res;
+}
+
+static int r_io_zip_check_uri_many(const char *file) {
+	int res = R_FALSE;
+	int i = 0;
+	if (r_io_zip_has_uri_substr (file)) {
+		for (i = 0; ZIP_ALL_URIS[i].name != NULL; i++) {
+			if (!memcmp (file, ZIP_ALL_URIS[i].name, ZIP_ALL_URIS[i].len) && file[ZIP_ALL_URIS[i].len]) {
 				res = R_TRUE;
 				break;
 			}
@@ -171,12 +194,13 @@ int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 RList * r_io_zip_get_files(char *archivename, ut32 flags, int mode, int rw) {
 	ut64 num_entries = 0, i = 0;
 	struct zip *zipArch = r_io_zip_open_archive (archivename, flags, mode, rw);
-	RList *files = NULL; 
+	RList *files = NULL;
 	struct zip_stat sb;
 	char *name;
 	//eprintf("Slurping file");
 	if (zipArch) {
 		files = r_list_new ();
+		files->free = free;
 		num_entries = zip_get_num_files (zipArch);
 
 		for (i=0; i < num_entries; i++) {
@@ -229,12 +253,72 @@ void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo) {
 }
 
 // Below this line are the r_io_zip plugin APIs
+static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
+	RList *list_fds = NULL;
+	RListIter *iter;
+	RList *filenames = NULL;
+	RIODesc *res = NULL;
+	RIOZipFileObj *zfo = NULL;
+	char *filename_in_zipfile, *zip_filename = NULL, *zip_uri;
+
+	if (!r_io_zip_plugin_open (io, file, 1))
+		return list_fds;
+
+
+	list_fds = r_list_new ();
+	zip_uri = strdup (file);
+	// 1) Tokenize to the '//' and find the base file directory ('/')
+	zip_filename = strstr(zip_uri, "//");
+	if (zip_filename && zip_filename[2]) {
+		if (zip_filename[0] && zip_filename[0] == '/' &&
+			zip_filename[1] && zip_filename[1] == '/' ) {
+			*zip_filename++ = 0;
+		}
+		*zip_filename++ = 0;
+	} else {
+		free (zip_uri);
+		return NULL;
+	}
+
+	filenames = r_io_zip_get_files(zip_filename, 0, mode, rw );
+
+	if (!filenames) {
+		free (zip_uri);
+		return NULL;
+	}
+
+	list_fds = r_list_new ();
+	r_list_foreach (filenames, iter, filename_in_zipfile) {
+		size_t v = strlen (filename_in_zipfile);
+
+		if (filename_in_zipfile[v-1] == '/') continue;
+
+
+		zfo = r_io_zip_alloc_zipfileobj (zip_filename,
+			filename_in_zipfile, ZIP_CREATE, mode, rw);
+
+
+		if (zfo && zfo->entry == -1)
+			eprintf ("Warning: File did not exist, creating a new one.\n");
+
+		if (zfo) {
+			zfo->io_backref = io;
+			res = r_io_desc_new (&r_io_plugin_zip, zfo->fd,
+				zfo->name, rw, mode, zfo);
+		}
+		r_list_append (list_fds, res);
+	}
+
+	free(zip_uri);
+	r_list_free (filenames);
+	return list_fds;
+}
 static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	RIODesc *res = NULL;
 	RIOZipFileObj *zfo = NULL;
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
 
-	if (!r_io_zip_plugin_open (io, file))
+	if (!r_io_zip_plugin_open (io, file, 0))
 		return res;
 	zip_uri = strdup (file);
 	// 1) Tokenize to the '//' and find the base file directory ('/')
@@ -242,19 +326,19 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	if (zip_filename && zip_filename[2]) {
 		if (zip_filename[0] && zip_filename[0] == '/' &&
 			zip_filename[1] && zip_filename[1] == '/' ) {
-			*zip_filename++ = 0;	
+			*zip_filename++ = 0;
 		}
 		*zip_filename++ = 0;
 
 		// check for // for file in the archive
-		if ( (filename_in_zipfile = strstr(zip_filename, "//")) && 
+		if ( (filename_in_zipfile = strstr(zip_filename, "//")) &&
 			 filename_in_zipfile[2]) {
 			// null terminating uri to filename here.
 			*filename_in_zipfile++ = 0;
 			*filename_in_zipfile++ = 0;
 			filename_in_zipfile = strdup (filename_in_zipfile);
 		// check for :: index
-		} else if ((filename_in_zipfile = strstr (zip_filename, "::")) && 
+		} else if ((filename_in_zipfile = strstr (zip_filename, "::")) &&
 			 		filename_in_zipfile[2]) {
 			// null terminating uri to filename here.
 			*filename_in_zipfile++ = 0;
@@ -289,8 +373,6 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 				// io->printf("%s\n", name);
 				r_cons_printf ("%d %s\n", i, name);
 				r_cons_flush ();
-				free (name);
-				r_list_delete (files, iter);
 				i++;
 			}
 			r_list_free (files);
@@ -298,7 +380,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		eprintf ("\n");
 		return res;
 	}
-	//eprintf("After parsing the given uri: %s\n", file);		
+	//eprintf("After parsing the given uri: %s\n", file);
 	//eprintf("Zip filename the given uri: %s\n", zip_filename);
 	//eprintf("File in the zip: %s\n", filename_in_zipfile);
 
@@ -317,7 +399,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		eprintf ("Failed to open the archive %s and file %s\n",
 			zip_filename, filename_in_zipfile);
 		free (zfo);
-	}	
+	}
 	free (zip_uri);
 	free (filename_in_zipfile);
 	return res;
@@ -408,7 +490,7 @@ char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx, ut32 
 
 	for (i=0; i < num_entries; i++) {
 		zip_stat_init (&sb);
-		zip_stat_index (zipArch, i, 0, &sb );	
+		zip_stat_index (zipArch, i, 0, &sb );
 		//eprintf("Comparing %s == %s = %d\n", sb.name, filename, strcmp(sb.name, filename));
 		// filename starts with ::[number]
 		if (file_idx == i) {
@@ -425,7 +507,7 @@ RIOZipFileObj* r_io_zip_alloc_zipfileobj(const char *archivename, const char *fi
 	RIOZipFileObj *zfo = NULL;
 	ut64 i, num_entries;
 	struct zip_stat sb;
-	struct zip *zipArch = r_io_zip_open_archive (archivename, flags, mode, rw);  
+	struct zip *zipArch = r_io_zip_open_archive (archivename, flags, mode, rw);
 	if (!zipArch) return NULL;
 	num_entries = zip_get_num_files (zipArch);
 
@@ -462,15 +544,18 @@ RIOZipFileObj *r_io_zip_create_new_file(const char *archivename, const char *fil
 	return zfo;
 }
 
-static int r_io_zip_plugin_open(RIO *io, const char *file) {	
+static int r_io_zip_plugin_open(RIO *io, const char *file, ut8 many) {
+	if (many) return (io && file) && (r_io_zip_check_uri_many (file));
 	return (io && file) && (r_io_zip_check_uri (file));
 }
 
+
 RIOPlugin r_io_plugin_zip = {
 	.name = "zip",
-	.desc = "Open zip files apk://foo.apk//MANIFEST or zip://foo.apk//theclass/fun.class, and show files with: zip://foo.apk/",
+	.desc = "Open zip files apk://foo.apk//MANIFEST or zip://foo.apk//theclass/fun.class, show files with: zip://foo.apk/, open all files with zipall://",
 	.license = "BSD",
 	.open = r_io_zip_open,
+	.open_many = r_io_zip_open_many,
 	.write = r_io_zip_write,
 	.read = r_io_zip_read,
 	.close = r_io_zip_close,

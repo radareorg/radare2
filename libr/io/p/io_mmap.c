@@ -4,7 +4,7 @@
 #include <r_io.h>
 #include <r_lib.h>
 
-static int __plugin_open(RIO *io, const char *file) {
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	return (!memcmp (file, "mmap://", 7));
 }
 

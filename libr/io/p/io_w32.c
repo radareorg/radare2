@@ -39,7 +39,7 @@ static ut64 w32__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
         return (!whence)?offset:whence==1?io->off+offset:UT64_MAX;
 }
 
-static int w32__plugin_open(RIO *io, const char *pathname) {
+static int w32__plugin_open(RIO *io, const char *pathname, ut8 many) {
 	return (!memcmp (pathname, "w32://", 6));
 }
 

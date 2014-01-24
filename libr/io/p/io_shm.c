@@ -74,7 +74,7 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return io->off;
 }
 
-static int shm__plugin_open(RIO *io, const char *pathname) {
+static int shm__plugin_open(RIO *io, const char *pathname, ut8 many) {
 	return (!memcmp (pathname, "shm://", 6));
 }
 

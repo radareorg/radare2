@@ -117,7 +117,7 @@ static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) 
 	return offset;
 }
 
-static int rap__plugin_open(struct r_io_t *io, const char *pathname) {
+static int rap__plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 	return (!memcmp (pathname,"rap://",6))||(!memcmp (pathname,"raps://",7));
 }
 
@@ -129,7 +129,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 	char buf[1024];
 	int i, p, listenmode, is_ssl;
 
-	if (!rap__plugin_open (io, pathname))
+	if (!rap__plugin_open (io, pathname,0))
 		return NULL;
 	is_ssl = (!memcmp (pathname, "raps://", 7));
 	ptr = pathname + (is_ssl? 7: 6);
