@@ -354,7 +354,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 			else snprintf (out, 32, "%s", e->regs (egg, atoi (str+4)));
 		} else {
 			ret = str; /* TODO: show error, invalid var name? */
-			eprintf ("FUCKED UP\n");
+			eprintf ("Something is really wrong\n");
 		}
 	} else if (*str=='"' || *str=='\'') {
 		int mustfilter = *str=='"';

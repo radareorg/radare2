@@ -1621,7 +1621,7 @@ toro:
 		handle_print_op_size (core, ds);
 		handle_print_trace (core, ds);
 		handle_print_stackptr (core, ds);
-		ret  = handle_print_meta_infos (core, ds, buf,len, idx);
+		ret = handle_print_meta_infos (core, ds, buf,len, idx);
 		if (ds->mi_found) {
 			ds->mi_found = 0;
 			continue;
@@ -1822,7 +1822,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 		r_asm_set_pc (core->assembler, at);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+i, len-i+5);
 		if (ret<1) {
-			r_cons_printf ("%s{", i>0? ",": "");
+			r_cons_printf (i>0? ",{": "{");
 			r_cons_printf ("\"offset\":%"PFMT64d, at);
 			r_cons_printf (",\"size\":1,\"type\":\"invalid\"}");
 			i++;
@@ -1831,7 +1831,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 		r_anal_op (core->anal, &analop, at, buf+i, len-i+5);
 
 		oplen = r_asm_op_get_size (&asmop);
-		r_cons_printf ("%s{", i>0? ",": "");
+		r_cons_printf (i>0? ",{": "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
 		r_cons_printf (",\"size\":%d", oplen);
 		r_cons_printf (",\"opcode\":\"%s\"", asmop.buf_asm);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include "r_cons.h"
 #include "r_print.h"
@@ -488,17 +488,17 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 }
 
 static const char *getbytediff (char *fmt, ut8 a, ut8 b) {
-	if (a>b) sprintf (fmt, Color_GREEN"%02x"Color_RESET, a);
-	else if (b>a) sprintf (fmt, Color_RED"%02x"Color_RESET, a);
-	else sprintf (fmt, "%02x", a);
+	if (a==b) sprintf (fmt, Color_GREEN"%02x"Color_RESET, a);
+	else sprintf (fmt, Color_RED"%02x"Color_RESET, a);
+	// else sprintf (fmt, "%02x", a);
 	return fmt;
 }
 
 static const char *getchardiff (char *fmt, ut8 a, ut8 b) {
 	char ch = IS_PRINTABLE (a)? a: '.';
-	if (a>b) sprintf (fmt, Color_GREEN"%c"Color_RESET, ch);
-	else if (b>a) sprintf (fmt, Color_RED"%c"Color_RESET, ch);
-	else { fmt[0] = ch; fmt[1]=0; }
+	if (a==b) sprintf (fmt, Color_GREEN"%c"Color_RESET, ch);
+	else sprintf (fmt, Color_RED"%c"Color_RESET, ch);
+	//else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
 
@@ -518,34 +518,34 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 	ut8 *a, *b;
 	char linediff, fmt[64];
 	// TODO: add non-colorized support
-	int i, j;
-	a = M (_a, len);
-	if (!a) return;
-	b = M (_b, len);
-	if (!b) { free (a); return; }
+	int i, j, min;
+	a = M (_a, len); if (!a) return;
+	b = M (_b, len); if (!b) { free (a); return; }
 	for (i =0 ; i<len; i+=16) {
-		linediff = (memcmp (a+i, b+i, 16))?'!':'|';
+		min = R_MIN (16, len-i);
+		linediff = (memcmp (a+i, b+i, min))?'!':'|';
 		p->printf ("0x%08"PFMT64x" ", aa+i);
-		for (j=0;j<16;j++) {
+		for (j=0; j<min; j++) {
 			r_print_cursor (p, i+j, 1);
-			p->printf (BD (a,b));
+//p->printf ("(%d=%02x|%02x)", i+j, a[i+j],b[i+j]);
+			p->printf (BD (a, b));
 			r_print_cursor (p, i+j, 0);
 		}
 		p->printf (" ");
-		for (j=0;j<16;j++) {
+		for (j=0;j<min;j++) {
 			r_print_cursor (p, i+j, 1);
 			p->printf ("%s", CD (a, b));
 			r_print_cursor (p, i+j, 0);
 		}
 		if (scndcol) {
 			p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
-			for (j=0;j<16;j++) {
+			for (j=0;j<min;j++) {
 				r_print_cursor (p, i+j, 1);
 				p->printf (BD (b, a));
 				r_print_cursor (p, i+j, 0);
 			}
 			p->printf (" ");
-			for (j=0;j<16;j++) {
+			for (j=0; j<min; j++) {
 				r_print_cursor (p, i+j, 1);
 				p->printf ("%s", CD (b, a));
 				r_print_cursor (p, i+j, 0);

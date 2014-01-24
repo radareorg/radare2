@@ -880,6 +880,8 @@ static int cmd_anal(void *data, const char *input) {
 		case '*':
 			r_core_anal_ref_list (core, input[1]);
 			break;
+		case 'C':
+		case 'c':
 		case 'd':
 		case ' ':
 			{
@@ -896,9 +898,7 @@ static int cmd_anal(void *data, const char *input) {
 			default:
 				return R_FALSE;
 			}
-			r_anal_ref_add (core->anal, addr, at,
-				input[1]=='d'? R_ANAL_REF_TYPE_DATA:
-				R_ANAL_REF_TYPE_CODE);
+			r_anal_ref_add (core->anal, addr, at, input[1]);
 			free (ptr);
 			}
 			break;
@@ -907,6 +907,8 @@ static int cmd_anal(void *data, const char *input) {
 			r_cons_printf (
 			"|Usage: ar[?d-l*]   # see also 'afr?'\n"
 			"| ar addr [at]    Add code ref pointing to addr (at is curseek)\n"
+			"| arc addr [at]   Add code jmp ref // unused?\n"
+			"| arC addr [at]   Add code call ref\n"
 			"| ard addr [at]   Add data ref\n"
 			"| arj             List refs in json format\n"
 			"| ar- [at]        Clean all refs (or refs from addr)\n"

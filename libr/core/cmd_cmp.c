@@ -103,6 +103,37 @@ R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr) {
 }
 /** **/
 
+static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
+	int color = B_IS_SET (core->print->flags, R_PRINT_FLAGS_COLOR);
+	int i, min, inc = 16;
+	ut8 *f, *d;
+	if (len<1)
+		return R_FALSE;
+	f = malloc (len);
+	d = malloc (len);
+	r_io_read_at (core->io, of, f, len);
+	r_io_read_at (core->io, od, d, len);
+	int headers = B_IS_SET (core->print->flags, R_PRINT_FLAGS_HEADER);
+	if (headers)
+		B_UNSET (core->print->flags, R_PRINT_FLAGS_HEADER);
+	core->print->flags = R_PRINT_FLAGS_COLOR;
+	for (i=0; i<len; i+=inc) {
+		min = R_MIN (16, (len-i));
+		if (!memcmp (f+i, d+i, min)) {
+			r_cons_printf ("  ");
+			r_print_hexdiff (core->print, of+i, f+i, of+i, f+i, min, 0);
+		} else {
+			r_cons_printf ("- ");
+			r_print_hexdiff (core->print, of+i, f+i, od+i, d+i, min, 0);
+			r_cons_printf ("+ ");
+			r_print_hexdiff (core->print, od+i, d+i, of+i, f+i, min, 0);
+		}
+	}
+	if (headers)
+		B_SET (core->print->flags, R_PRINT_FLAGS_HEADER);
+	return R_TRUE;
+}
+
 static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len) {
 	int i, eq = 0;
 	for (i=0; i<len; i++) {
@@ -322,6 +353,13 @@ static int cmd_cmp(void *data, const char *input) {
 		r_core_free (core2);
 		}
 		break;
+	case 'u':
+		 {
+			ut64 off = r_num_math (core->num, input+1);
+			radare_compare_unified (core, core->offset, off,
+				core->blocksize);
+		 }
+		break;
 	case '?':
 		r_cons_strcat (
 		"Usage: c[?dfx] [argument]\n"
@@ -335,6 +373,7 @@ static int cmd_cmp(void *data, const char *input) {
 		" cX [addr]      Like 'cc' but using hexdiff output\n"
 		" cf [file]      Compare contents of file at current seek\n"
 		" cg[o] [file]   Graphdiff current file and [file]\n"
+		" cu [addr] @at  Compare memory hexdumps of $$ and dst in unified diff\n"
 		" cw[us?] [...]  Compare memory watchers\n"
 		" cat  [file]    Show contents of file (see pwd, ls)\n"
 		" cl|cls|clear   Clear screen\n");
