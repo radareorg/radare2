@@ -94,7 +94,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __plugin_open(RIO *io, const char *pathname) {
+static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
 	return (!memcmp (pathname, "ihex://", 7));
 }
 
@@ -167,7 +167,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int ret;
 	RIOMalloc *mal;
 	char *str;
-	if (__plugin_open (io, pathname)) {
+	if (__plugin_open (io, pathname, 0)) {
 		str = r_file_slurp (pathname+7, NULL);
 		if (!str) return NULL;
 		mal = R_NEW (RIOMalloc);

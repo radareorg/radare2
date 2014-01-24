@@ -260,7 +260,7 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 }
 #endif
 
-static int __plugin_open(RIO *io, const char *file) {
+static int __plugin_open(RIO *io, const char *file, ut8 many) {
 	if (!memcmp (file, "dbg://", 6) && file[6])
 		return R_TRUE;
 	return R_FALSE;
@@ -268,7 +268,7 @@ static int __plugin_open(RIO *io, const char *file) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
-	if (__plugin_open (io, file)) {
+	if (__plugin_open (io, file,  0)) {
 		int pid = atoi (file+6);
 		if (pid == 0) {
 			pid = fork_and_ptraceme (io->bits, file+6);

@@ -60,7 +60,7 @@ static ut64 ewf__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return (ut64)-1;
 }
 
-static int ewf__plugin_open(RIO *io, const char *pathname) {
+static int ewf__plugin_open(RIO *io, const char *pathname, ut8 many) {
 	if ((!memcmp (pathname, "ewf://", 6))
 	||  (!memcmp (pathname, "els://", 6)))
 		return R_TRUE;

@@ -59,7 +59,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __plugin_open(struct r_io_t *io, const char *pathname) {
+static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 	return (!memcmp (pathname, "http://", 7));
 }
 
@@ -70,7 +70,7 @@ static inline int getmalfd (RIOMalloc *mal) {
 static RIODesc *__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
 	char *out;
 	int rlen, code;
-	if (__plugin_open (io, pathname)) {
+	if (__plugin_open (io, pathname,0)) {
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		out = r_socket_http_get (pathname, &code, &rlen);
 		if (!out || rlen<1)

@@ -296,6 +296,46 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	return R_TRUE;
 }
 
+R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut64 loadaddr) {
+	RList *list_fds = NULL;
+	list_fds = r_io_open_many (r->io, file, mode, 0644);
+	RCoreFile *fh, *top_file = NULL;
+	RIODesc *fd;
+	RListIter *fd_iter;
+	ut64 current_loadaddr = loadaddr, offset = 0;
+	const char *cp = NULL;
+
+	if (!list_fds) return NULL;
+
+	r_list_foreach (list_fds, fd_iter, fd) {
+		fh = R_NEW0 (RCoreFile);
+		if (!top_file) top_file = fh;
+		fh->uri = strdup (file);
+		fh->fd = fd;
+		fh->size = r_io_desc_size (r->io, fd);
+		fh->filename = strdup (fd->name);
+		fh->rwx = mode;
+		r->file = fh;
+		r->io->plugin = fd->plugin;
+		fh->size = r_io_size (r->io);
+		// XXX - load addr should be at a set offset
+		fh->map = r_io_map_add (r->io, fh->fd->fd, mode, 0, current_loadaddr, fh->size);
+		// XXX - how much padding b/n files?: 1024 + remainder??
+		offset = (current_loadaddr + fh->size) + (1024 - (current_loadaddr + fh->size) % 1024) + 1024;
+		current_loadaddr += offset;
+		r_list_append (r->files, fh);
+	}
+	if (!top_file) return top_file;
+	cp = r_config_get (r->config, "cmd.open");
+	if (cp && *cp) r_core_cmd (r, cp, 0);
+
+	r_config_set (r->config, "file.path", top_file->filename);
+	r_config_set_i (r->config, "zoom.to", loadaddr+top_file->size);
+
+	r_core_block_read (r, 0);
+	return top_file;
+}
+
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loadaddr) {
 	const char *cp;
 	RCoreFile *fh;
@@ -306,6 +346,11 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	fd = r_io_open (r->io, file, mode, 0644);
+	if (fd == NULL) {
+		// XXX - make this an actual option somewhere?
+		fh = r_core_file_open_many (r, file, mode, loadaddr);
+		if (fh) return fh;
+	}
 	if (fd == NULL) {
 		if (mode & 2) {
 			if (!r_io_create (r->io, file, 0644, 0))

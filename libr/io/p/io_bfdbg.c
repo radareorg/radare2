@@ -136,7 +136,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return offset;
 }
 
-static int __plugin_open(RIO *io, const char *pathname) {
+static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
 	return (!memcmp (pathname, "bfdbg://", 8));
 }
 
@@ -147,7 +147,7 @@ static inline int getmalfd (RIOBfdbg *mal) {
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	char *out;
 	int rlen;
-	if (__plugin_open (io, pathname)) {
+	if (__plugin_open (io, pathname, 0)) {
 		RIOBind iob;
 		RIOBfdbg *mal = R_NEW (RIOBfdbg);
 		r_io_bind (io, &iob);
