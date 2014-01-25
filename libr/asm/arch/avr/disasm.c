@@ -18,7 +18,7 @@ int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
 	ins.opcode = (buf[1]<<8) | buf[0] |
 		(buf[2]<<16) | (buf[3]<<24);
 	if (disassembleInstruction (&dins, ins)) {
-		fprintf (stderr, "FAIL\n");
+		strcpy (out, "invalid");
 		return -1;
 	}
 	if (AVR_Long_Instruction) {
@@ -28,7 +28,7 @@ int avrdis (char *out, ut64 addr, cut8 *buf, int len) {
 //			(buf[3]<<24) | (buf[2]<<16) | \
 			//(buf[1]<<8) | (buf[0]);
 		if (disassembleInstruction (&dins, ins)) {
-			fprintf (stderr, "FAIL\n");
+			strcpy (out, "invalid");
 			return -1;
 		}
 		printDisassembledInstruction (out, dins, opt);

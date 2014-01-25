@@ -37,6 +37,8 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			//anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
 			op->jump = *k*2;
 		} else {
+			op->size = 0;
+			return -1;
 			return op->size;
 		}
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
