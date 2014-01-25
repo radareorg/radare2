@@ -24,12 +24,21 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (buf[1]>=0x18 && buf[1]<=0x1b) { // hacky
 		op->type = R_ANAL_OP_TYPE_SUB;
 	} else
-	if (((buf[1] & 0xfe) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
+	//if (((buf[1] & 0x94) == 0x94) && ((buf[0] & 0x0e)==0x0e)) {
+	if (!memcmp (buf, "\x0e\x94", 2)) {
 		op->addr = addr;
 		op->type = R_ANAL_OP_TYPE_CALL; // call (absolute)
 		op->fail = (op->addr)+4;
-		anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
-		op->jump = *k*2;
+// override even if len<4 wtf
+		len = 4;
+		if (len>3) {
+			memcpy (kbuf, buf+2, 2);
+			op->size = 4;
+			//anal->iob.read_at (anal->iob.io, addr+2, kbuf, 2);
+			op->jump = *k*2;
+		} else {
+			return op->size;
+		}
 		//eprintf("addr: %x inst: %x dest: %x fail:%x\n", op->addr, *ins, op->jump, op->fail);
 	} else
 	if ((buf[1] & 0xf0) == 0xd0) {
@@ -75,7 +84,7 @@ RAnalPlugin r_anal_plugin_avr = {
 	.desc = "AVR code analysis plugin",
 	.license = "LGPL3",
 	.arch = R_SYS_ARCH_AVR,
-	.bits = 8|32,
+	.bits = 16|32,
 	.init = NULL,
 	.fini = NULL,
 	.op = &avr_op,
