@@ -259,6 +259,7 @@ R_API int r_io_accept(RIO *io, int fd);
 R_API int r_io_shift(RIO *io, ut64 start, ut64 end, st64 move);
 R_API int r_io_create (RIO *io, const char *file, int mode, int type);
 R_API int r_io_bind(RIO *io, RIOBind *bnd);
+R_API void r_io_sort_maps (RIO *io);
 
 /* io/cache.c */
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to);
@@ -281,6 +282,10 @@ R_API int r_io_map(RIO *io, const char *file, ut64 offset);
 R_API ut64 r_io_map_select(RIO *io, ut64 off);
 //R_API int r_io_map_read_rest(RIO *io, ut64 off, ut8 *buf, ut64 len);
 R_API RIOMap *r_io_map_resolve(RIO *io, int fd);
+R_API int r_io_map_sort (void *a, void *b);
+R_API RIOMap * r_io_map_add_next_available (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 align);
+R_API RIOMap * r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
+R_API RList * r_io_get_maps_in_range (RIO *io, ut64 addr, ut64 endaddr);
 
 /* io/section.c */
 R_API void r_io_section_init(RIO *io);

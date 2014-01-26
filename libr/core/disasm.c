@@ -1973,7 +1973,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			ret  = handle_print_meta_infos (core, ds, buf,len, idx);
 			if (ds->mi_found) {
 				ds->mi_found = 0;
-				continue;
+				//continue;
 			}
 			/* show cursor */
 			handle_print_show_cursor (core, ds);

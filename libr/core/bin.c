@@ -4,21 +4,25 @@
 
 R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 	RListIter *iter;
-	RBinFile *bf;
+	RBinFile *bf = NULL;
 
 	r_list_foreach (core->bin->binfiles, iter, bf) {
 		if (bf && bf->fd == bin_fd) {
 			core->bin->cur = bf;
 			break;
 		}
+		bf = NULL;
 	}
-	r_core_bin_bind (core);
+	if (bf) r_core_bin_bind (core);
 }
 
 R_API void r_core_bin_bind (RCore *core) {
-	r_bin_bind (core->bin, &(core->anal->binb));
-	r_bin_bind (core->bin, &(core->assembler->binb));
-	r_bin_bind (core->bin, &(core->file->binb));
+
+	if (core->bin) {
+		r_bin_bind (core->bin, &(core->anal->binb));
+		r_bin_bind (core->bin, &(core->assembler->binb));
+		r_bin_bind (core->bin, &(core->file->binb));
+	}
 }
 
 R_API int r_core_bin_refresh_strings(RCore *r) {

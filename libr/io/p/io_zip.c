@@ -262,10 +262,9 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 	char *filename_in_zipfile, *zip_filename = NULL, *zip_uri;
 
 	if (!r_io_zip_plugin_open (io, file, 1))
-		return list_fds;
+		return NULL;
 
 
-	list_fds = r_list_new ();
 	zip_uri = strdup (file);
 	// 1) Tokenize to the '//' and find the base file directory ('/')
 	zip_filename = strstr(zip_uri, "//");

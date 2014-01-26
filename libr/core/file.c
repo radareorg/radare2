@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_core.h>
+#include <stdlib.h>
 
 R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 	if (newsize==0 && core->file)
@@ -296,20 +297,86 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 	return R_TRUE;
 }
 
+R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, ut64 loadaddr) {
+	const char  *loadmethod = r_config_get (core->config, "file.loadmethod");
+	RIOMap *map = r_io_map_add (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
+	char *suppress_warning = r_config_get (core->config, "file.suppress_warnings");
+
+	if (map) return map;
+
+	r_io_sort_maps (core->io);
+
+	if (!map && !strcmp (loadmethod, "overwrite")) {
+		/*ut64 total_buf_size = 0, idx = 0;
+		ut64 addr = loadaddr, endaddr = loadaddr + fh->size;
+		ut8 *buffer = NULL;
+		RHashTable64 ht = NULL;
+		RListIter *iter, *t_iter;
+		// XXX - this will take some work, walk all maps in the range of
+		// the current RCoreFile
+		// XXX - this does not handle if from > to.
+		// 2) Create a new mapping of total size of fh or all fd enumerate (which ever is greater)
+		// 3) copy old fds into map, close all old fds, map new 
+		RList * maps = r_io_get_maps_in_range (addr, endaddr);
+		// 1) Count bytes, enumerate fds (if more than one, we will just fail)
+		r_list_foreach (maps, iter, map) {
+			ut64 bytes = (map->from < map->to)? map->from - map->to: -map->from - map->to;
+			total_buf_size += bytes;
+		}
+		total_buf_size = total_buf_size > fh->size ? total_buf_size : fh->size;
+
+		// Allocate buffer and copy bytes;
+		buffer = malloc(total_buf_size);
+		r_list_foreach (maps, iter, map) {
+			ut64 bytes = (map->from < map->to)? map->from - map->to: -map->from - map->to;
+			r_core_read_at (core, loadaddr+offset, buffer+offset, bytes);
+			offset += bytes;
+		}
+
+		ht = r_hashtable64_new();
+		ht->free = free;
+
+		r_list_foreach_safe (maps, iter, map) {
+
+			r_core_read_at (core, loadaddr+offset, buffer+offset, bytes);
+			offset += bytes;
+		}
+		*/
+	} else if (!map && !strcmp (loadmethod, "append")) {
+		ut64 load_align = r_config_get_i (core->config, "file.loadalign");
+		map = r_io_map_add_next_available (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size, load_align);
+		if (map && !strcmp (suppress_warning, "false") ){
+			eprintf ("Unable to load specified file at current mapping: 0x%08"PFMT64x",", loadaddr);
+			eprintf (" but loading at 0x%08"PFMT64x".\n", map->from);
+		}
+	}
+	// implicit "fail" here
+	if (!map && !strcmp (suppress_warning, "false"))
+		eprintf ("Unable to load specified file at current mapping: 0x%08"PFMT64x"\n", loadaddr);
+	return map;
+}
+
+
 R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut64 loadaddr) {
 	RList *list_fds = NULL;
 	list_fds = r_io_open_many (r->io, file, mode, 0644);
 	RCoreFile *fh, *top_file = NULL;
 	RIODesc *fd;
 	RListIter *fd_iter;
-	ut64 current_loadaddr = loadaddr, offset = 0;
+	ut64 current_loadaddr = loadaddr;
+	char *suppress_warning = r_config_get (r->config, "file.suppress_warnings");
+
 	const char *cp = NULL;
+	char *loadmethod = NULL;
+
+	cp = r_config_get (r->config, "file.loadmethod");
+	if (cp) loadmethod = strdup (cp);
+	r_config_set (r->config, "file.loadmethod", "append");
 
 	if (!list_fds) return NULL;
 
 	r_list_foreach (list_fds, fd_iter, fd) {
 		fh = R_NEW0 (RCoreFile);
-		if (!top_file) top_file = fh;
 		fh->uri = strdup (file);
 		fh->fd = fd;
 		fh->size = r_io_desc_size (r->io, fd);
@@ -319,10 +386,21 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 		r->io->plugin = fd->plugin;
 		fh->size = r_io_size (r->io);
 		// XXX - load addr should be at a set offset
-		fh->map = r_io_map_add (r->io, fh->fd->fd, mode, 0, current_loadaddr, fh->size);
-		// XXX - how much padding b/n files?: 1024 + remainder??
-		offset = (current_loadaddr + fh->size) + (1024 - (current_loadaddr + fh->size) % 1024) + 1024;
-		current_loadaddr += offset;
+		fh->map = r_core_file_get_next_map (r, fh, mode, current_loadaddr);
+
+		if (!fh->map) {
+			r_core_file_free(fh);
+			if (!strcmp (suppress_warning, "false"))
+				eprintf("Unable to load file due to failed mapping.\n");
+			continue;
+		}
+
+		current_loadaddr = fh->map->to;
+		if (!top_file) {
+			top_file = fh;
+			// check load addr to make sure its still valid
+			loadaddr = fh && fh->map ? fh->map->from: loadaddr;
+		}
 		r_list_append (r->files, fh);
 	}
 	if (!top_file) return top_file;
@@ -331,8 +409,9 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 
 	r_config_set (r->config, "file.path", top_file->filename);
 	r_config_set_i (r->config, "zoom.to", loadaddr+top_file->size);
+	if (loadmethod) r_config_set (r->config, "file.loadmethod", loadmethod);
+	free (loadmethod);
 
-	r_core_block_read (r, 0);
 	return top_file;
 }
 
@@ -340,6 +419,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	const char *cp;
 	RCoreFile *fh;
 	RIODesc *fd;
+	char *suppress_warning = r_config_get (r->config, "file.suppress_warnings");
+
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
 		mode = 4|2;
@@ -370,19 +451,26 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh->size = r_io_desc_size (r->io, fd);
 	fh->filename = strdup (fd->name);
 	fh->rwx = mode;
-	r->file = fh;
-	r->io->plugin = fd->plugin;
 	fh->size = r_io_size (r->io);
-	r_list_append (r->files, fh);
 
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp)
 		r_core_cmd (r, cp, 0);
 	r_config_set (r->config, "file.path", file);
-	r_config_set_i (r->config, "zoom.to", loadaddr+fh->size);
-	fh->map = r_io_map_add (r->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
+	fh->map = r_core_file_get_next_map (r, fh, mode, loadaddr);
+	if (!fh->map) {
+		r_core_file_free(fh);
+		if (!strcmp (suppress_warning, "false"))
+			eprintf("Unable to load file due to failed mapping.\n");
+		return NULL;
+	}
+	// check load addr to make sure its still valid
+	r_list_append (r->files, fh);
+	r->file = fh;
+	r->io->plugin = fd->plugin;
 
-	r_core_block_read (r, 0);
+	loadaddr = fh && fh->map ? fh->map->from: loadaddr;
+	r_config_set_i (r->config, "zoom.to", loadaddr+fh->size);
 	return fh;
 }
 

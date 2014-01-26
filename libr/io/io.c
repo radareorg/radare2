@@ -116,8 +116,9 @@ static inline RIODesc *__getioplugin(RIO *io, const char *_uri, int flags, int m
 				r_io_desc_add (io, desc);
 				if (desc->fd != -1)
 					r_io_plugin_open (io, desc->fd, plugin);
-				if (desc != io->fd)
-					iop = plugin;
+				if (desc != io->fd) {
+					r_io_set_fd (io, desc);
+				}
 			}
 		}
 		break;
@@ -225,7 +226,7 @@ R_API int r_io_set_fd(RIO *io, RIODesc *fd) {
 }
 
 R_API int r_io_set_fdn(RIO *io, int fd) {
-	if (fd != -1 && io->fd != NULL && fd != io->fd->fd) {
+	if (fd != -1 && io->fd && fd != io->fd->fd) {
 		RIODesc *desc = r_io_desc_get (io, fd);
 		if (!desc)
 			return R_FALSE;
@@ -562,3 +563,8 @@ R_API int r_io_create (RIO *io, const char *file, int mode, int type) {
 		return r_sys_mkdir (file);
 	return r_sandbox_creat (file, mode)? R_FALSE: R_TRUE;
 }
+
+R_API void r_io_sort_maps (RIO *io) {
+	r_list_sort (io->maps, (RListComparator) r_io_map_sort);
+}
+
