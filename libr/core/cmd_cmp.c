@@ -205,6 +205,7 @@ static int cmd_cmp(void *data, const char *input) {
 	ut16 v16;
 	ut32 v32;
 	ut64 v64;
+	ut64 val = UT64_MAX;
 
 	switch (*input) {
 	case 'a':
@@ -225,7 +226,7 @@ static int cmd_cmp(void *data, const char *input) {
 		cmd_cmp_watcher (core, input+1);
 		break;
 	case ' ':
-		radare_compare (core, core->block, (ut8*)input+1, strlen (input+1)+1);
+		val = radare_compare (core, core->block, (ut8*)input+1, strlen (input+1)+1);
 		break;
 	case 'x':
 		if (input[1]!=' ') {
@@ -235,14 +236,14 @@ static int cmd_cmp(void *data, const char *input) {
 		buf = (ut8*)malloc (strlen (input+2)+1);
 		ret = r_hex_str2bin (input+2, buf);
 		if (ret<1) eprintf ("Cannot parse hexpair\n");
-		else radare_compare (core, core->block, buf, ret);
+		else val = radare_compare (core, core->block, buf, ret);
 		free (buf);
 		break;
 	case 'X':
 		buf = malloc (core->blocksize);
 		ret = r_io_read_at (core->io, r_num_math (core->num, input+1),
 			buf, core->blocksize);
-		radare_compare (core, core->block, buf, ret);
+		val = radare_compare (core, core->block, buf, ret);
 		free (buf);
 		break;
 	case 'f':
@@ -258,7 +259,7 @@ static int cmd_cmp(void *data, const char *input) {
 		buf = (ut8 *)malloc (core->blocksize);
 		fread (buf, 1, core->blocksize, fd);
 		fclose (fd);
-		radare_compare (core, core->block, buf, core->blocksize);
+		val = radare_compare (core, core->block, buf, core->blocksize);
 		free (buf);
 		break;
 	case 'd':
@@ -268,15 +269,15 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case '2':
 		v16 = (ut16) r_num_math (core->num, input+1);
-		radare_compare (core, core->block, (ut8*)&v16, sizeof (v16));
+		val = radare_compare (core, core->block, (ut8*)&v16, sizeof (v16));
 		break;
 	case '4':
 		v32 = (ut32) r_num_math (core->num, input+1);
-		radare_compare (core, core->block, (ut8*)&v32, sizeof (v32));
+		val = radare_compare (core, core->block, (ut8*)&v32, sizeof (v32));
 		break;
 	case '8':
 		v64 = (ut64) r_num_math (core->num, input+1);
-		radare_compare (core, core->block, (ut8*)&v64, sizeof (v64));
+		val = radare_compare (core, core->block, (ut8*)&v64, sizeof (v64));
 		break;
 #if 0
 	case 'c':
@@ -387,6 +388,8 @@ static int cmd_cmp(void *data, const char *input) {
 	default:
 		eprintf ("|Usage: c[?48cdDxfw] [argument]\n");
 	}
+	if (val != UT64_MAX)
+		core->num->value = val;
 	return 0;
 }
 

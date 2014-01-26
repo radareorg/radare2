@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_core.h>
 #include <r_socket.h>
@@ -168,7 +168,7 @@ R_API RCore *r_core_new() {
 /*-----------------------------------*/
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
-	"?", "?v", "whereis", "which", "ls", "pwd",
+	"?", "?v", "whereis", "which", "ls", "pwd", "cat",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db ", "db-",
         "dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"ec","ecs",
@@ -229,7 +229,10 @@ static int autocomplete(RLine *line) {
 		if ((!memcmp (line->buffer.data, "o ", 2)) ||
 		     !memcmp (line->buffer.data, ". ", 2) ||
 		     !memcmp (line->buffer.data, "wf ", 3) ||
+		     !memcmp (line->buffer.data, "ls ", 3) ||
+		     !memcmp (line->buffer.data, "ls -l ", 5) ||
 		     !memcmp (line->buffer.data, "wF ", 3) ||
+		     !memcmp (line->buffer.data, "cat ", 4) ||
 		     !memcmp (line->buffer.data, "wt ", 3) ||
 		     !memcmp (line->buffer.data, "wp ", 3) ||
 		     !memcmp (line->buffer.data, "tf ", 3) ||

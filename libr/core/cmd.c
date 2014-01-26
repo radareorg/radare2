@@ -101,13 +101,45 @@ static int cmd_log(void *data, const char *input) {
 		}
 	case 's':
 		{
+		const char *path = ".";
 		char *name;
+		int i = 5, minusl = 0;
 		RListIter *iter;
-		RList *files = r_sys_dir (".");
-		r_list_foreach (files, iter, name) {
-			r_cons_printf ("%s%s\n", name,
-				r_file_is_directory (name)? "/":"");
+		RList *files;
+		char *dir;
+		if (input[1]==' ') {
+			if (!memcmp (input+2, "-l", 2)) {
+				if (input[3]) {
+					minusl = 1;
+					path = input+4;
+					while (*path==' ') path++;
+					if (!*path) path = ".";
+				}
+			} else path = input+2;
 		}
+		files = r_sys_dir (path);
+		dir = r_str_concat (strdup (path), "/");
+		r_list_foreach (files, iter, name) {
+			char *n = r_str_concat (strdup (dir), name);
+			if (!n) break;
+			if (*n) {
+char *nn;
+					if (r_file_is_directory (n)) {
+						nn = r_str_concat (name, "/");
+					} else {
+						nn = NULL;
+					}
+				if (minusl) {
+// TODO: Implement more real info in ls -l
+					int sz = r_file_size (n);
+					r_cons_printf ("-rw-r--r--  1  0:0  %-8d  %s\n", sz, nn);
+				} else {
+					r_cons_printf ("%18s%s", nn, ((i++)%4)?"  ":"\n");
+				}
+			}
+			free (n);
+		}
+		free (dir);
 		r_list_free (files);
 		}
 		break;
