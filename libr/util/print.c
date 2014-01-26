@@ -488,16 +488,20 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 }
 
 static const char *getbytediff (char *fmt, ut8 a, ut8 b) {
-	if (a==b) sprintf (fmt, Color_GREEN"%02x"Color_RESET, a);
-	else sprintf (fmt, Color_RED"%02x"Color_RESET, a);
+	if (*fmt) {
+		if (a==b) sprintf (fmt, Color_GREEN"%02x"Color_RESET, a);
+		else sprintf (fmt, Color_RED"%02x"Color_RESET, a);
+	} else sprintf (fmt, "%02x", a);
 	// else sprintf (fmt, "%02x", a);
 	return fmt;
 }
 
 static const char *getchardiff (char *fmt, ut8 a, ut8 b) {
 	char ch = IS_PRINTABLE (a)? a: '.';
-	if (a==b) sprintf (fmt, Color_GREEN"%c"Color_RESET, ch);
-	else sprintf (fmt, Color_RED"%c"Color_RESET, ch);
+	if (*fmt) {
+		if (a==b) sprintf (fmt, Color_GREEN"%c"Color_RESET, ch);
+		else sprintf (fmt, Color_RED"%c"Color_RESET, ch);
+	} else sprintf (fmt, "%c", ch);
 	//else { fmt[0] = ch; fmt[1]=0; }
 	return fmt;
 }
@@ -517,7 +521,7 @@ static ut8 *M(const ut8 *b, int len) {
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8 *_b, int len, int scndcol) {
 	ut8 *a, *b;
 	char linediff, fmt[64];
-	// TODO: add non-colorized support
+	int color = p->flags & R_PRINT_FLAGS_COLOR;
 	int i, j, min;
 	a = M (_a, len); if (!a) return;
 	b = M (_b, len); if (!b) { free (a); return; }
@@ -526,13 +530,14 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 		linediff = (memcmp (a+i, b+i, min))?'!':'|';
 		p->printf ("0x%08"PFMT64x" ", aa+i);
 		for (j=0; j<min; j++) {
+			*fmt = color; 
 			r_print_cursor (p, i+j, 1);
-//p->printf ("(%d=%02x|%02x)", i+j, a[i+j],b[i+j]);
 			p->printf (BD (a, b));
 			r_print_cursor (p, i+j, 0);
 		}
 		p->printf (" ");
 		for (j=0;j<min;j++) {
+			*fmt = color; 
 			r_print_cursor (p, i+j, 1);
 			p->printf ("%s", CD (a, b));
 			r_print_cursor (p, i+j, 0);
@@ -540,12 +545,14 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 		if (scndcol) {
 			p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
 			for (j=0;j<min;j++) {
+				*fmt = color; 
 				r_print_cursor (p, i+j, 1);
 				p->printf (BD (b, a));
 				r_print_cursor (p, i+j, 0);
 			}
 			p->printf (" ");
 			for (j=0; j<min; j++) {
+				*fmt = color; 
 				r_print_cursor (p, i+j, 1);
 				p->printf ("%s", CD (b, a));
 				r_print_cursor (p, i+j, 0);

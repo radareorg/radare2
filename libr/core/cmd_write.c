@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 /* TODO: simplify using r_write */
 static int cmd_write(void *data, const char *input) {
@@ -42,6 +42,60 @@ static int cmd_write(void *data, const char *input) {
 		} else {
 			eprintf ("Usage: wp [-|r2patch-file]\n"
 			         "TODO: rapatch format documentation here\n");
+		}
+		break;
+	case 'u':
+		// TODO: implement it in an API RCore.write_unified_hexpatch() is ETOOLONG
+		if (input[1]==' ') {
+			char *data = r_file_slurp (input+2, NULL);
+			if (data) {
+				char sign = ' ';
+				int line = 0, offs = 0, hexa = 0;
+				int newline = 1;
+				for (i=0; data[i]; i++) {
+					switch (data[i]) {
+					case '+':
+						if (newline)
+							sign = 1;
+						break;
+					case '-':
+						if (newline) {
+							sign = 0;
+							offs = i + ((data[i+1]==' ')?2:1);
+						}
+						break;
+					case ' ':
+						data[i] = 0;
+						if (sign) {
+							if (!line) line = i+1;
+							else
+							if (!hexa) hexa = i+1;
+						}
+						break;
+					case '\r':
+						break;
+					case '\n':
+						newline = 1;
+						if (sign == -1) {
+							offs = 0;
+							line = 0;
+							hexa = 0;
+						} else if (sign) {
+							if (offs && hexa) {
+								r_cons_printf ("wx %s @ %s\n", data+hexa, data+offs);
+							} else eprintf ("food\n");
+							offs = 0;
+							line = 0;
+						} else hexa = 0;
+						sign = -1;
+						continue;
+					}
+					newline = 0;
+				}
+				free (data);
+			}
+		} else {
+			eprintf ("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
 		}
 		break;
 	case 'r':

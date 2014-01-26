@@ -31,6 +31,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.xrefs", "true");
 		r_config_set (cfg, "asm.functions", "true");
 		r_config_set (cfg, "scr.color", "true");
+		r_config_set (cfg, "asm.syntax", "intel");
 	} else if (!strcmp(profile, "compact")) {
 		asm_profile (cfg, "simple");
 		r_config_set (cfg, "asm.lines", "true");
@@ -38,6 +39,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "scr.color", "false");
 	} else if (!strcmp(profile, "gas")) {
 		asm_profile (cfg, "default");
+		r_config_set (cfg, "asm.syntax", "att");
 		r_config_set (cfg, "asm.lines", "false");
 		r_config_set (cfg, "asm.comments", "false");
 		r_config_set (cfg, "asm.trace", "false");

@@ -7,6 +7,7 @@ rasm2 \- radare2 assembler and disassembler tool
 .Op Fl dDfBCLevw
 .Op Fl F Ar in:out
 .Op Fl o Ar offset
+.Op Fl O Ar ofile
 .Op Fl a Ar arch
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
@@ -48,6 +49,8 @@ Ignore/skip N bytes from the beginning of the input buffer
 List supported asm plugins
 .It Fl o Ar offset
 Offset of the opcode to assemble (default is 0)
+.It Fl O Ar ofile
+output to file, for example 'rasm2 \-BF a a.asm'
 .It Fl s Ar syntax
 Select syntax output (intel, att)
 .It Fl w

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 R_API void r_core_cmpwatch_free (RCoreCmpWatcher *w) {
 	free (w->ndata);
@@ -101,10 +101,8 @@ R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr) {
 	}
 	return ret;
 }
-/** **/
 
 static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
-	int color = B_IS_SET (core->print->flags, R_PRINT_FLAGS_COLOR);
 	int i, min, inc = 16;
 	ut8 *f, *d;
 	if (len<1)
@@ -116,7 +114,6 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 	int headers = B_IS_SET (core->print->flags, R_PRINT_FLAGS_HEADER);
 	if (headers)
 		B_UNSET (core->print->flags, R_PRINT_FLAGS_HEADER);
-	core->print->flags = R_PRINT_FLAGS_COLOR;
 	for (i=0; i<len; i+=inc) {
 		min = R_MIN (16, (len-i));
 		if (!memcmp (f+i, d+i, min)) {
@@ -354,36 +351,41 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		break;
 	case 'u':
-		 {
+		if (input[1] == ' ') {
 			ut64 off = r_num_math (core->num, input+1);
 			radare_compare_unified (core, core->offset, off,
 				core->blocksize);
-		 }
+		} else {
+			r_cons_strcat (
+			"|Usage: cu [offset]  # creates a unified hex patch\n"
+			"|  cu $$+1 > p       # compare current seek and +1\n"
+			"|  wu p              # apply unified hex patch\n");
+		}
 		break;
 	case '?':
 		r_cons_strcat (
-		"Usage: c[?dfx] [argument]\n"
-		" c  [string]    Compares a plain with escaped chars string\n"
-		" cc [at] [(at)] Compares in two hexdump columns of block size\n"
-		//" cc [offset]   Code bindiff current block against offset\n"
-		" c4 [value]     Compare a doubleword from a math expression\n"
-		//" cD [file]     Like above, but using radiff -b\n");
-		" c8 [value]     Compare a quadword from a math expression\n"
-		" cx [hexpair]   Compare hexpair string\n"
-		" cX [addr]      Like 'cc' but using hexdiff output\n"
-		" cf [file]      Compare contents of file at current seek\n"
-		" cg[o] [file]   Graphdiff current file and [file]\n"
-		" cu [addr] @at  Compare memory hexdumps of $$ and dst in unified diff\n"
-		" cw[us?] [...]  Compare memory watchers\n"
-		" cat  [file]    Show contents of file (see pwd, ls)\n"
-		" cl|cls|clear   Clear screen\n");
+		"|Usage: c[?dfx] [argument]\n"
+		"| c  [string]    Compares a plain with escaped chars string\n"
+		"| cc [at] [(at)] Compares in two hexdump columns of block size\n"
+		//"| cc [offset]   Code bindiff current block against offset\n"
+		"| c4 [value]     Compare a doubleword from a math expression\n"
+		//"| cD [file]     Like above, but using radiff -b\n");
+		"| c8 [value]     Compare a quadword from a math expression\n"
+		"| cx [hexpair]   Compare hexpair string\n"
+		"| cX [addr]      Like 'cc' but using hexdiff output\n"
+		"| cf [file]      Compare contents of file at current seek\n"
+		"| cg[o] [file]   Graphdiff current file and [file]\n"
+		"| cu [addr] @at  Compare memory hexdumps of $$ and dst in unified diff\n"
+		"| cw[us?] [...]  Compare memory watchers\n"
+		"| cat  [file]    Show contents of file (see pwd, ls)\n"
+		"| cl|cls|clear   Clear screen\n");
 		break;
 	case 'l':
 		r_cons_clear ();
 		r_cons_gotoxy (0, 0);
 		break;
 	default:
-		eprintf ("Usage: c[?48cdDxfw] [argument]\n");
+		eprintf ("|Usage: c[?48cdDxfw] [argument]\n");
 	}
 	return 0;
 }
