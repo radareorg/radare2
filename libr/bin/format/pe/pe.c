@@ -438,6 +438,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			if (r_buf_read_at(bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Name),
 					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 				eprintf("Error: read (libs - import dirs)\n");
+				free (libs);
 				return NULL;
 			}
 			if (PE_(r_bin_pe_rva_to_offset)(bin, bin->import_directory[i].Characteristics) == 0 &&
@@ -450,6 +451,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t) *bin) {
 			if (r_buf_read_at (bin->b, PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].Name),
 					(ut8*)libs[j].name, PE_STRING_LENGTH) == -1) {
 				eprintf("Error: read (libs - delay import dirs)\n");
+				free (libs);
 				return NULL;
 			}
 			if (PE_(r_bin_pe_rva_to_offset)(bin, bin->delay_import_directory[i].DelayImportNameTable) == 0 &&
