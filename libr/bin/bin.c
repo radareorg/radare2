@@ -486,14 +486,13 @@ R_API int r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 
 R_API void* r_bin_free(RBin *bin) {
 	if (!bin) return NULL;
-	//r_bin_free_items (bin);
-	r_bin_free_bin_files (bin);
+	bin->file = NULL;
+	//r_bin_free_bin_files (bin);
+	r_list_free (bin->binfiles);
 	if (bin->cur && bin->cur->curxtr && bin->cur->curxtr->destroy)
 		bin->cur->curxtr->destroy (bin);
 	r_list_free (bin->binxtrs);
 	r_list_free (bin->plugins);
-	r_list_free (bin->binfiles);
-	//free (bin->file);
 	free (bin);
 	return NULL;
 }
@@ -663,6 +662,7 @@ R_API RBin* r_bin_new() {
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->o = R_NEW0 (RBinObject);
 	bin->binfiles = r_list_new();
+	bin->binfiles->free = r_bin_file_free;
 	for (i=0; bin_static_plugins[i]; i++) {
 		r_bin_add (bin, bin_static_plugins[i]); //static_plugin);
 	}

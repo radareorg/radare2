@@ -2566,7 +2566,10 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 
 	// Delete the bin object from the data base.
 	bin_obj_key = r_bin_java_build_obj_key(bin);
-	sdb_remove (bin->AllJavaBinObjs, bin_obj_key, 0);
+	if (bin->AllJavaBinObjs && sdb_exists (bin->AllJavaBinObjs, bin_obj_key)) {
+		sdb_remove (bin->AllJavaBinObjs, bin_obj_key, 0);
+	}
+
 	free (bin_obj_key);
 
 	// XXX - Need to remove all keys belonging to this class from

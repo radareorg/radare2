@@ -300,7 +300,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, ut64 loadaddr) {
 	const char  *loadmethod = r_config_get (core->config, "file.loadmethod");
 	RIOMap *map = r_io_map_add (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
-	char *suppress_warning = r_config_get (core->config, "file.suppress_warnings");
+	const char *suppress_warning = r_config_get (core->config, "file.suppress_warnings");
 
 	if (map) return map;
 
@@ -364,16 +364,20 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 	RIODesc *fd;
 	RListIter *fd_iter;
 	ut64 current_loadaddr = loadaddr;
-	char *suppress_warning = r_config_get (r->config, "file.suppress_warnings");
+	const char *suppress_warning = r_config_get (r->config, "file.suppress_warnings");
 
 	const char *cp = NULL;
 	char *loadmethod = NULL;
 
+
+	if (!list_fds || r_list_length (list_fds) == 0 ) {
+		r_list_free (list_fds);
+		return NULL;
+	}
+
 	cp = r_config_get (r->config, "file.loadmethod");
 	if (cp) loadmethod = strdup (cp);
 	r_config_set (r->config, "file.loadmethod", "append");
-
-	if (!list_fds) return NULL;
 
 	r_list_foreach (list_fds, fd_iter, fd) {
 		fh = R_NEW0 (RCoreFile);
@@ -402,6 +406,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 			loadaddr = fh && fh->map ? fh->map->from: loadaddr;
 		}
 		r_list_append (r->files, fh);
+		r_core_bin_load(r, fh->filename, fh->map->from);
 	}
 	if (!top_file) return top_file;
 	cp = r_config_get (r->config, "cmd.open");
@@ -419,7 +424,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	const char *cp;
 	RCoreFile *fh;
 	RIODesc *fd;
-	char *suppress_warning = r_config_get (r->config, "file.suppress_warnings");
+	const char *suppress_warning = r_config_get (r->config, "file.suppress_warnings");
 
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";
