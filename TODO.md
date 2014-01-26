@@ -6,13 +6,12 @@
 
 0.9.8
 =====
-* Rename anal.plugin into anal.arch ??? to keep in sync with asm.arch
-* use __unused if available
+--> add test * pdr doesnt works well with antidisasm tricks
+* option to disable aslr in rarun2?
 * rafind2 : add support for unicode/widestring search
 * .dr- # documented... but not working
 * libr/debug/p/drx.c <- not used .. debug must have a hw reg api for drx and gpio
 * ah -> add hint to define calls that do not return
-* pdr doesnt works well with antidisasm tricks, wtf
 * continue execution until condition happen (reg, mem, ..)
 * rabin2 -x should not work on non-fatmach0 files
 * foldable stuff .. was in r1..redo?
@@ -30,10 +29,6 @@
 * refactor vmenus.c -> refresh function must be redefined for each menu
 // show hints for
     0x100005eca     ff2540130000     jmp qword [rip+0x1340] [1]             
-* bar for cursor?
-* p= show entropy of current block
-  - show number of occurrences for each byte
-  - maybe in 'ad' command, analyze data
 * highlight search hits in hexdump
 * Implement debugger backtrace properly
 * p7 : 7bit encoding (sms)

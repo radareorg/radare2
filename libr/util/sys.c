@@ -366,14 +366,11 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			return R_FALSE;
 		}
 
-		if (output) {
-			*output = outputptr;
-		} else if (outputptr) {
-			free(outputptr);
-		}
+		if (output) *output = outputptr;
+		else free (outputptr);
 		return R_TRUE;
 	}
-	free(outputptr);
+	free (outputptr);
 	return R_FALSE;
 }
 #elif __WINDOWS__

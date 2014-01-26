@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -44,6 +44,7 @@ static int rasm_show_help(int v) {
 		" -l [len]     Input/Output length\n"
 		" -L           List supported asm plugins\n"
 		" -o [offset]  Set start address for code (default 0)\n"
+		" -O [file]    Output file name (rasm2 -Bf a.asm -O a)\n"
 		" -s [syntax]  Select syntax (intel, att)\n"
 		" -B           Binary input/output (-l is mandatory for binary input)\n"
 		" -v           Show version information\n"
@@ -165,7 +166,7 @@ int main(int argc, char *argv[]) {
 	char buf[R_ASM_BUFSIZE];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL;
 	ut64 offset = 0;
-	int dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
+	int fd =-1, dis = 0, ascii = 0, bin = 0, ret = 0, bits = 32, c, whatsop = 0;
 	ut64 len = 0, idx = 0, skip = 0;
 
 	a = r_asm_new ();
@@ -182,7 +183,7 @@ int main(int argc, char *argv[]) {
 
 	r_asm_use (a, R_SYS_ARCH);
 	r_asm_set_big_endian (a, R_FALSE);
-	while ((c = getopt (argc, argv, "i:k:DCc:eva:b:s:do:Bl:hLf:F:w")) != -1) {
+	while ((c = getopt (argc, argv, "i:k:DCc:eva:b:s:do:Bl:hLf:F:wO:")) != -1) {
 		switch (c) {
 		case 'k':
 			kernel = optarg;
@@ -218,6 +219,11 @@ int main(int argc, char *argv[]) {
 			break;
 		case 'o':
 			offset = r_num_math (NULL, optarg);
+			break;
+		case 'O':
+			fd = open (optarg, O_TRUNC|O_RDWR|O_CREAT, 0644);
+			if (fd != -1)
+				dup2 (fd, 1);
 			break;
 		case 'B':
 			bin = 1;
@@ -345,7 +351,7 @@ int main(int argc, char *argv[]) {
 				else ret = rasm_asm (buf, offset, length, a->bits, bin);
 				idx += ret;
 				offset += ret;
-				if (!ret) return 0;
+				if (!ret) goto beach;
 			} while (!len || idx<length);
 			return idx;
 		}
@@ -365,7 +371,10 @@ int main(int argc, char *argv[]) {
 				a->bits, ascii, bin, dis-1);
 		} else ret = rasm_asm (argv[optind], offset, len, a->bits, bin);
 		if (!ret) eprintf ("invalid\n");
-		return !ret;
+		ret = !!!ret;
 	}
-	return 0;
+beach:
+	if (fd != -1)
+		close (fd);
+	return ret;
 }

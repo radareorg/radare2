@@ -299,12 +299,12 @@ R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 		return R_FALSE;
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
-	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (const char *)&linger, sizeof (linger));
+	setsockopt (s->fd, SOL_SOCKET, SO_LINGER, (void*)&linger, sizeof (linger));
 	{ // fix close after write bug //
 	int x = 1500;
-	setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (const char *)&x, sizeof (int));
+	setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void*)&x, sizeof (int));
 	}
-	setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+	setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof optval);
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;
 	s->sa.sin_addr.s_addr = htonl (s->local? INADDR_LOOPBACK: INADDR_ANY);

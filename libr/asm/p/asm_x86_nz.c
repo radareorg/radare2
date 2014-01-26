@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2013 - pancake */
+/* Copyright (C) 2008-2014 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -920,11 +920,11 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					return -1;
 				}
 			} else {
-				st64 dst = getnum (a, arg) - offset;
+				st64 dst = getnum (a, arg); // - offset;
 				ut32 addr = dst;
 				ut8 *ptr = (ut8 *)&addr;
 
-				if (dst+offset == 0 && *arg != '0') {
+				if (dst == 0 && *arg != '0') {
 					data[l++] = '\xff';
 					data[l] = getreg (arg) | 0xe0;
 					if (data[l] != 0xff)
@@ -942,7 +942,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				if (dst>-0x80 && dst<0x7f) {
 					/* relative byte address */
 					data[l++] = 0xeb;
-					data[l++] = (char)(addr-offset-2);
+					data[l++] = (char)(dst-2);
 					return l;
 				} else {
 					/* absolute address */
