@@ -1869,13 +1869,11 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {
 	/* other */
 	//void *old_user = core->anal->user;
-	RAnalFunction *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL),
-					*f = fcn;
+	RAnalFunction *fcn = r_anal_fcn_find (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	ut32 cur_buf_sz = fcn->size+1;
 	ut8 *buf = malloc (cur_buf_sz);
 	ut32 len = fcn->size;
 	int ret, idx = 0, i;
-	int continueoninvbreak = (fcn->size == l) && invbreak;
 	RListIter *bb_iter;
 	RAnalBlock *bb = NULL;
 	RDisasmState *ds;
@@ -2038,5 +2036,5 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	r_anal_op_fini (&ds->analop);
 	handle_deinit_ds (core, ds);
 	r_list_free (bb_list);
-	return idx; //-ds->lastfail;
+	return idx;
 }

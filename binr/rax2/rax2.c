@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include <r_util.h>
 #include <r_print.h>
@@ -149,14 +149,16 @@ static int rax (char *str, int len, int last) {
 	if (flags & 1) { // -s
 		ut64 n = ((strlen (str))>>1)+1;
 		buf = malloc (n);
-		memset (buf, '\0', n);
-		n = r_hex_str2bin (str, (ut8*)buf);
-		fwrite (buf, n, 1, stdout);
+		if (buf) {
+			memset (buf, '\0', n);
+			n = r_hex_str2bin (str, (ut8*)buf);
+			if (n>0) fwrite (buf, n, 1, stdout);
 #if __EMSCRIPTEN__
-		puts ("");
+			puts ("");
 #endif
-		fflush (stdout);
-		free (buf);
+			fflush (stdout);
+			free (buf);
+		}
 		return R_TRUE;
 	}
 	if (flags & 4) { // -S
@@ -169,9 +171,8 @@ static int rax (char *str, int len, int last) {
 		int i, len;
 		ut8 buf[4096];
 		len = r_str_binstr2bin (str, buf, sizeof (buf));
-		if (len>0)
-			for (i=0; i<len; i++)
-				printf ("%c", buf[i]);
+		for (i=0; i<len; i++)
+			printf ("%c", buf[i]);
 		return R_TRUE;
 	}
 	if (flags & 1024) {
@@ -231,7 +232,6 @@ static int rax (char *str, int len, int last) {
 	return R_TRUE;
 }
 
-
 static int use_stdin () {
 	static char buf[STDIN_BUFFER_SIZE];
 	int l, sflag = (flags & 4);
@@ -250,7 +250,7 @@ static int use_stdin () {
 		if (!rax (buf, l, 0)) break;
 		l = 0;
 	}
-	if(l>0)
+	if (l>0)
 		rax (buf, l, 0);
 	return 0;
 }

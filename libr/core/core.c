@@ -278,8 +278,10 @@ static int autocomplete(RLine *line) {
 						snprintf (buf, sizeof (buf), "%s%s%s",
 							path, strlen (path)>1?"/":"", str);
 						tmp_argv[i++] = strdup (buf);
-						if (i==TMP_ARGV_SZ)
+						if (i==TMP_ARGV_SZ) {
+							i--;
 							break;
+						}
 					}
 				}
 				r_list_free (list);
@@ -292,13 +294,14 @@ static int autocomplete(RLine *line) {
 		} else
 		if((!memcmp (line->buffer.data, ".(", 2))  ||
 		   (!memcmp (line->buffer.data, "(-", 2))) {
-			const char *str = line->buffer.data+2;
+			const char *str = line->buffer.data;
 			RCmdMacroItem *item;
 			char buf[1024];
 			int n, i = 0;
 
 			n = line->buffer.length-2;
-			if (!strchr (str, ' ')) {
+			if (str && !strchr (str+2, ' ')) {
+				str += 2;
 				r_list_foreach (core->rcmd->macro.macros, iter, item) {
 					char *p = item->name;
 					if (!str || !*str || !memcmp (str, p, n)) {
@@ -1034,7 +1037,7 @@ reaccept:
 				r_socket_read_block (c, buf, 4);
 				r_mem_copyendian ((ut8*)&i, buf, 4, !LE);
 				if (i>0&&i<RMT_MAX) {
-					ptr = (ut8 *) malloc (i+6);
+					ptr = (ut8 *) malloc (i+7);
 					if (!ptr) return R_FALSE;
 					ptr[5]='!';
 					r_socket_read_block (c, ptr+6, i);
@@ -1048,19 +1051,21 @@ reaccept:
 					r_cons_pipe_close (pipefd);
 					{
 						FILE *fd = r_sandbox_fopen((char*)buf, "r");
-						 i = 0;
-						if (fd == NULL) {
-							eprintf("Cannot open tmpfile\n");
-							i = -1;
-						} else {
+						i = 0;
+						if (fd) {
 							fseek (fd, 0, SEEK_END);
 							i = ftell (fd);
 							fseek (fd, 0, SEEK_SET);
 							free (ptr);
-							ptr = (ut8 *) malloc (i+5);
-							fread (ptr+5, i, 1, fd);
-							ptr[i+5]='\0';
+							if (i>0) {
+								ptr = (ut8 *) malloc (i+5);
+								fread (ptr+5, i, 1, fd);
+								ptr[i+5]='\0';
+							}
 							fclose (fd);
+						} else {
+							eprintf ("Cannot open tmpfile\n");
+							i = -1;
 						}
 					}
 					{
@@ -1070,7 +1075,6 @@ reaccept:
 					ptr = (ut8 *) malloc (i+5);
 					if (ptr) {
 						memcpy (ptr+5, out, i);
-						free (out);
 						ptr = NULL;
 					}
 					free (out);

@@ -210,14 +210,21 @@ R_API void r_core_get_boundaries (RCore *core, const char *mode, ut64 *from, ut6
 }
 
 // TODO: handle more than one?
-static ut64 findprevopsz(RCore *core, ut64 addr) {
+static ut64 findprevopsz(RCore *core, ut64 addr, ut8 *buf, int idx) {
 	int i;
+	int K = 32;
 	RAnalOp aop;
-	ut8 buf[132];
-	ut64 base = addr - 120;
-	r_io_read_at (core->io, base, buf, sizeof (buf));
+	//ut8 buf[132];
+	ut64 base = addr - K;
+
+	K = R_MIN (idx, K);
+	buf += idx;
+	buf -= K;
+
+	//r_io_read_at (core->io, base, buf, sizeof (buf));
+///	r_core_read_at (core, base, buf, sizeof (buf));
 	for (i=0; i<16; i++) {
-		if (r_anal_op (core->anal, &aop, addr-i, buf+120-i, 16+i)) {
+		if (r_anal_op (core->anal, &aop, base+K-i, buf+K-i, 32-i)) {
 			if (aop.size<1) break;
 			if (i == aop.size) {
 				switch (aop.type) {
@@ -228,6 +235,7 @@ static ut64 findprevopsz(RCore *core, ut64 addr) {
 				case R_ANAL_OP_TYPE_CJMP:
 				case R_ANAL_OP_TYPE_UJMP:
 				case R_ANAL_OP_TYPE_JMP:
+				case R_ANAL_OP_TYPE_CALL:
 					return UT64_MAX;
 				}
 				return addr-i;
@@ -238,21 +246,27 @@ static ut64 findprevopsz(RCore *core, ut64 addr) {
 }
 
 static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const char *grep) {
-	ut8 *buf;
-	ut64 prev;
+	int ret, roplen, i, delta = to-from, end = 0;
+	ut64 prev, ropat;
 	RAsmOp asmop;
 	RAnalOp aop;
-	int roplen, i, delta = to-from;
-	ut64 ropat;
+	ut8 *buf;
+
 	if (delta<1) delta = from-to;
 	if (delta<1) return R_FALSE;
 	while (*grep==' ') grep++;
 	buf = malloc (delta);
-	r_io_read_at (core->io, from, buf, delta);
+
 	for (i=0; i<delta; i++) {
+		if (i>=end) {
+			r_core_read_at (core, from+i, buf+i, R_MIN (delta, 4096));
+			end = i+2048;
+		}
+		if ((delta-i)<16)
+			break;
 		if (r_anal_op (core->anal, &aop, from+i, buf+i, delta-i)>0) {
 			r_asm_set_pc (core->assembler, from+i);
-			int ret = r_asm_disassemble (core->assembler,
+			ret = r_asm_disassemble (core->assembler,
 				&asmop, buf+i, delta-i);
 			if (ret>0)
 			switch (aop.type) {
@@ -260,23 +274,24 @@ static int r_core_search_rop(RCore *core, ut64 from, ut64 to, int opt, const cha
 			case R_ANAL_OP_TYPE_RET:
 			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_UJMP:
-				prev = findprevopsz (core, from+i);
+				prev = findprevopsz (core, from+i, buf, i);
 				if (prev != UT64_MAX) {
-					ut64 prev2 = findprevopsz (core, prev);
-					if (prev2 != UT64_MAX)
+					int j = i- (from+i-prev);
+					ut64 prev2 = findprevopsz (core, prev, buf, j);
+					if (prev2 != UT64_MAX) {
 						ropat = prev2;
-					else ropat = prev;
+					} else ropat = prev;
 				} else ropat = from+i; 
 				roplen = from - ropat + i + aop.size;
-				if (grep&&*grep) {
-					char cmd[32];
-					char *s;
+				if (grep && *grep) {
+					char *tmp, *s, cmd[32];
 					int show_match = 0;
 
-					snprintf (cmd, sizeof (cmd), "pD %d @ 0x%"PFMT64x,
+					snprintf (cmd, sizeof (cmd),
+						"pD %d @ 0x%"PFMT64x,
 						roplen, ropat);
 					// backup cons buffer
-					char *tmp = strdup (r_cons_singleton()->buffer);
+					tmp = strdup (r_cons_singleton ()->buffer);
 					s = r_core_cmd_str (core, cmd);
 					if (strstr (s, grep)) show_match = 1;
 					// restore cons buffer
@@ -352,6 +367,16 @@ c = 0;
 		input++;
 		inverse = R_TRUE;
 		goto reread;
+		break;
+	case 'P':
+		 {
+		// print the offset of the Previous opcode
+		char buf[64];
+		ut64 off = core->offset;
+		r_core_read_at (core, off-16, buf, 32);
+		off = findprevopsz (core, off, buf, 16);
+		r_cons_printf ("0x%08llx\n", off);
+		 }
 		break;
 	case 'R':
 		r_core_search_rop (core, from, to, 0, input+1);
@@ -583,27 +608,28 @@ c = 0;
 	default:
 		r_cons_printf (
 		"|Usage: /[amx/] [arg]\n"
-		"| / foo\\x00       ; search for string 'foo\\0'\n"
-		"| /w foo          ; search for wide string 'f\\0o\\0o\\0'\n"
-		"| /! ff           ; search for first occurrence not matching\n"
-		"| /i foo          ; search for string 'foo' ignoring case\n"
-		"| /e /E.F/i       ; match regular expression\n"
-		"| /x ff0033       ; search for hex string\n"
-		"| /x ff..33       ; search for hex string ignoring some nibbles\n"
-		"| /x ff43 ffd0    ; search for hexpair with mask\n"
-		"| /d 101112       ; search for a deltified sequence of bytes\n"
-		"| /!x 00          ; inverse hexa search (find first byte != 0x00)\n"
-		"| /c jmp [esp]    ; search for asm code (see search.asmstr)\n"
-		"| /a jmp eax      ; assemble opcode and search its bytes\n"
-		"| /A              ; search for AES expanded keys\n"
-		"| /r sym.printf   ; analyze opcode reference an offset\n"
-		"| /R              ; search for ROP gadgets\n"
-		"| /m magicfile    ; search for matching magic file (use blocksize)\n"
-		"| /p patternsize  ; search for pattern of given size\n"
-		"| /z min max      ; search for strings of given size\n"
-		"| /v[?248] num    ; look for a asm.bigendian 32bit value\n"
-		"| //              ; repeat last search\n"
-		"| ./ hello        ; search 'hello string' and import flags\n"
+		"| / foo\\x00       search for string 'foo\\0'\n"
+		"| /w foo          search for wide string 'f\\0o\\0o\\0'\n"
+		"| /! ff           search for first occurrence not matching\n"
+		"| /i foo          search for string 'foo' ignoring case\n"
+		"| /e /E.F/i       match regular expression\n"
+		"| /x ff0033       search for hex string\n"
+		"| /x ff..33       search for hex string ignoring some nibbles\n"
+		"| /x ff43 ffd0    search for hexpair with mask\n"
+		"| /d 101112       search for a deltified sequence of bytes\n"
+		"| /!x 00          inverse hexa search (find first byte != 0x00)\n"
+		"| /c jmp [esp]    search for asm code (see search.asmstr)\n"
+		"| /a jmp eax      assemble opcode and search its bytes\n"
+		"| /A              search for AES expanded keys\n"
+		"| /r sym.printf   analyze opcode reference an offset\n"
+		"| /R              search for ROP gadgets\n"
+		"| /P              show offset of previous instruction\n"
+		"| /m magicfile    search for matching magic file (use blocksize)\n"
+		"| /p patternsize  search for pattern of given size\n"
+		"| /z min max      search for strings of given size\n"
+		"| /v[?248] num    look for a asm.bigendian 32bit value\n"
+		"| //              repeat last search\n"
+		"| ./ hello        search 'hello string' and import flags\n"
 		"|Configuration:\n"
 		"| e cmd.hit = x         ; command to execute on every search hit\n"
 		"| e search.distance = 0 ; search string distance\n"
