@@ -139,13 +139,13 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 addr) {
 	RListIter *iter;
 
 	r_list_foreach (io->maps, iter, im) {
-		if (map && map->fd == io->fd->fd) {
+		if (map->fd == io->fd->fd) {
 			map = im;
 			break;
 		}
 	}
 
-	if (map) {
+	if (im) {
 		return r_io_seek (io, addr, R_IO_SEEK_SET);
 	}
 	return -1;

@@ -381,6 +381,11 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 
 	r_list_foreach (list_fds, fd_iter, fd) {
 		fh = R_NEW0 (RCoreFile);
+
+		if (!fh) {
+			eprintf ("file.c:r_core_many failed to allocate new RCoreFile.\n");
+			break;
+		}
 		fh->uri = strdup (file);
 		fh->fd = fd;
 		fh->size = r_io_desc_size (r->io, fd);
@@ -403,17 +408,20 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 		if (!top_file) {
 			top_file = fh;
 			// check load addr to make sure its still valid
-			loadaddr = fh && fh->map ? fh->map->from: loadaddr;
+			loadaddr =  top_file->map->from;
 		}
 		r_list_append (r->files, fh);
 		r_core_bin_load(r, fh->filename, fh->map->from);
 	}
-	if (!top_file) return top_file;
+	if (!top_file) {
+		free (loadmethod);
+		return top_file;
+	}
 	cp = r_config_get (r->config, "cmd.open");
 	if (cp && *cp) r_core_cmd (r, cp, 0);
 
 	r_config_set (r->config, "file.path", top_file->filename);
-	r_config_set_i (r->config, "zoom.to", loadaddr+top_file->size);
+	r_config_set_i (r->config, "zoom.to", top_file->map->from+top_file->size);
 	if (loadmethod) r_config_set (r->config, "file.loadmethod", loadmethod);
 	free (loadmethod);
 
@@ -451,6 +459,11 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	}
 
 	fh = R_NEW0 (RCoreFile);
+	if (!fh) {
+		eprintf ("file.c:r_core_open failed to allocate RCoreFile.\n");
+		//r_io_close (r->io, fd);
+		return NULL;
+	}
 	fh->uri = strdup (file);
 	fh->fd = fd;
 	fh->size = r_io_desc_size (r->io, fd);
@@ -465,6 +478,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	fh->map = r_core_file_get_next_map (r, fh, mode, loadaddr);
 	if (!fh->map) {
 		r_core_file_free(fh);
+		fh = NULL;
 		if (!strcmp (suppress_warning, "false"))
 			eprintf("Unable to load file due to failed mapping.\n");
 		return NULL;
@@ -474,8 +488,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	r->file = fh;
 	r->io->plugin = fd->plugin;
 
-	loadaddr = fh && fh->map ? fh->map->from: loadaddr;
-	r_config_set_i (r->config, "zoom.to", loadaddr+fh->size);
+	r_config_set_i (r->config, "zoom.to", fh->map->from+fh->size);
 	return fh;
 }
 

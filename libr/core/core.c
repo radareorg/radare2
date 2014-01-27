@@ -1057,6 +1057,7 @@ reaccept:
 							i = ftell (fd);
 							fseek (fd, 0, SEEK_SET);
 							free (ptr);
+							ptr = NULL; // potential use after free if i == 0
 							if (i>0) {
 								ptr = (ut8 *) malloc (i+5);
 								fread (ptr+5, i, 1, fd);
@@ -1075,7 +1076,6 @@ reaccept:
 					ptr = (ut8 *) malloc (i+5);
 					if (ptr) {
 						memcpy (ptr+5, out, i);
-						ptr = NULL;
 					}
 					free (out);
 					}

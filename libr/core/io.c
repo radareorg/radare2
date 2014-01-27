@@ -251,7 +251,7 @@ R_API int r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 
 static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 	RListIter *iter;
-	RCoreFile *file;
+	RCoreFile *file = NULL;
 
 	r_list_foreach (core->files, iter, file) {
 		if (file && file->fd){
@@ -265,7 +265,7 @@ static RCoreFile * r_core_file_set_first_valid(RCore *core) {
 
 static RCoreFile * r_core_file_set_by_fd(RCore *core, int fd) {
 	RListIter *iter;
-	RCoreFile *file;
+	RCoreFile *file = NULL;
 
 	r_list_foreach (core->files, iter, file) {
 		if (file && file->fd && file->fd->fd == fd){
