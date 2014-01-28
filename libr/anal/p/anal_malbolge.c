@@ -16,14 +16,14 @@ static int mal_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 				break;
 			case 39:
 				op->type = R_ANAL_OP_TYPE_ROR;
-				op->type2 = R_ANAL_OP_TYPE_LOAD;
+//				op->type2 = R_ANAL_OP_TYPE_LOAD;
 				break;
 			case 40:
 				op->type = R_ANAL_OP_TYPE_LOAD;
 				break;
 			case 62:
 				op->type = R_ANAL_OP_TYPE_XOR;
-				op->type2 = R_ANAL_OP_TYPE_LOAD;
+//				op->type2 = R_ANAL_OP_TYPE_LOAD;
 				break;
 			case 81:
 				op->type = R_ANAL_OP_TYPE_TRAP;
