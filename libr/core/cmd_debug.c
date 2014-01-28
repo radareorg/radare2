@@ -488,6 +488,40 @@ free (rf);
 		}
 		}
 		break;
+	case 'x':
+		switch (str[1]) {
+		case '-':
+			r_debug_drx_unset (core->dbg, atoi (str+2));
+			break;
+		case ' ': {
+			char *s = strdup (str+2);
+			char sl, n, rwx, *p;
+			int len;
+			ut64 off;
+
+			sl = r_str_word_set0 (s);
+			if (sl == 4) {
+#define ARG(x) r_str_word_get0(s,x)
+				n = (char)r_num_math (core->num, ARG(0));
+				off = r_num_math (core->num, ARG(1));
+				len = (int)r_num_math (core->num, ARG(2));
+				rwx = (char)r_str_rwx (ARG(3));
+			r_debug_drx_set (core->dbg, n, off, len, rwx);
+			} else eprintf ("Usage: drx N [address] [length] [rwx]\n");
+			free (s);
+			} break;
+		case '\0':
+			r_debug_drx_list (core->dbg);
+			break;
+		default:
+			r_cons_printf (
+				"|Usage: drx[-] [N A L RWX]\n"
+				"| drx             list all (x86?) hardware breakpoints\n"
+				"| drx N A L RWX   set drN to Address with Length and perms\n"
+				"| drx-N           clear drN hw breakpoint\n");
+			break;
+		}
+		break;
 	case 's':
 		switch (str[1]) {
 		case '-':

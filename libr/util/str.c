@@ -239,10 +239,9 @@ R_API int r_str_split(char *str, char ch) {
 }
 
 R_API int r_str_word_set0(char *str) {
-	int quote = 0;
-	int i;
+	int i, quote = 0;
 	char *p;
-	if (!*str)
+	if (!str || !*str)
 		return 0;
 	for (i=0; str[i] && str[i+1]; i++) {
 		if (str[i]==' ' && str[i+1]==' ')

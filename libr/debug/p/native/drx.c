@@ -114,6 +114,7 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
   	control &= I386_DR_CONTROL_MASK;
 	drx[n] = addr;
 	drx[DR_CONTROL] = control;
+	return R_TRUE;
 }
 
 ut64 drx_get(drxt *drx, int n, int *rwx, int *len, int *global, int *enabled) {
@@ -144,7 +145,7 @@ void drx_list(drxt *drx) {
 	for(i=0; i<4; i++) {
 		addr = drx_get (drx, i, &rwx, &len, &g, &en);
 		printf ("%c dr%d %c%c 0x%08llx %d\n",
-			en?'*':'-', i, g?'g':'l',
+			en?'*':'-', i, g?'G':'L',
 			(rwx==DR_RW_READ)?'r':
 			(rwx==DR_RW_WRITE)?'w':
 			(rwx==DR_RW_EXECUTE)?'x':
@@ -164,7 +165,7 @@ void drx_enable(drxt *r, int n, int enabled) {
 
 #if MAIN
 int main() {
-	drxt regs[DRXN];
+	drxt regs[DRXN+1];
 	drx_init (regs);
 	drx_set (regs, 1, 0x8048123, 1, DR_RW_EXECUTE, 0);
 	drx_set (regs, 0, 0x8048123, 4, DR_RW_READ, 1);

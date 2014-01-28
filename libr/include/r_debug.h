@@ -209,6 +209,7 @@ typedef struct r_debug_plugin_t {
 	int (*map_dealloc)(RDebug *dbg, ut64 addr, int size);
 	int (*map_protect)(RDebug *dbg, ut64 addr, int size, int perms);
 	int (*init)(RDebug *dbg);
+	int (*drx)(RDebug *dbg, int n, ut64 addr, int size, int rwx, int g);
 	RDebugDescPlugin desc;
 	// TODO: use RList here
 	struct list_head list;

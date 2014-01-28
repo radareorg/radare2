@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#include "native/drx.c" // x86 specific
 
 #if DEBUGGER
 
@@ -2509,6 +2510,50 @@ static int drx_del(RDebug *dbg, ut64 addr, int rwx) {
 }
 #endif
 
+static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g) {
+#if __i386__ || __x86_64__
+	drxt regs[8];
+
+	// sync drx regs
+	regs[0] = r_reg_getv (dbg, "dr0");
+	regs[1] = r_reg_getv (dbg, "dr1");
+	regs[2] = r_reg_getv (dbg, "dr2");
+	regs[3] = r_reg_getv (dbg, "dr3");
+/*
+	regs[4] = r_reg_getv (dbg, "dr4");
+	regs[5] = r_reg_getv (dbg, "dr5");
+	regs[6] = r_reg_getv (dbg, "dr6");
+*/
+	regs[7] = r_reg_getv (dbg, "dr7");
+
+	if (sz == 0) {
+		drx_list (regs);
+		return R_FALSE;
+	} else
+	if (sz<0) {
+		// remove
+		drx_set (regs, n, addr, -1, 0, 0);
+		r_reg_setv (dbg, "dr0", regs[0]);
+		r_reg_setv (dbg, "dr1", regs[1]);
+		r_reg_setv (dbg, "dr2", regs[2]);
+		r_reg_setv (dbg, "dr3", regs[3]);
+		r_reg_setv (dbg, "dr7", regs[7]);
+		return R_FALSE;
+	} else {
+		drx_set (regs, n, addr, sz, rwx, g);
+		r_reg_setv (dbg, "dr0", regs[0]);
+		r_reg_setv (dbg, "dr1", regs[1]);
+		r_reg_setv (dbg, "dr2", regs[2]);
+		r_reg_setv (dbg, "dr3", regs[3]);
+		r_reg_setv (dbg, "dr7", regs[7]);
+		return R_TRUE;
+	}
+#else
+	eprintf ("drx: Unsupported platform\n");
+#endif
+	return R_FALSE;
+}
+
 static int r_debug_native_bp(void *user, int add, ut64 addr, int hw, int rwx) {
 #if __i386__ || __x86_64__
 	RDebug *dbg = user;
@@ -2785,6 +2830,7 @@ struct r_debug_plugin_t r_debug_plugin_native = {
 	.map_get = r_debug_native_map_get,
 	.map_protect = r_debug_native_map_protect,
 	.breakpoint = r_debug_native_bp,
+	.drx = r_debug_native_drx,
 };
 
 #ifndef CORELIB

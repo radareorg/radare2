@@ -481,7 +481,6 @@ typedef enum {
 	R_ANAL_BB_TYPE_ST   = 0x1000,
 	R_ANAL_BB_TYPE_BINOP= 0x2000,
 	R_ANAL_BB_TYPE_TAIL = 0x8000,
-
 } _RAnalBlockType;
 
 enum {
@@ -697,7 +696,6 @@ typedef struct r_anal_refline_t {
 	int index;
 	struct list_head list;
 } RAnalRefline;
-
 
 typedef struct r_anal_state_type_t {
 	ut64 start;
