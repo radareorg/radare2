@@ -405,7 +405,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 	case '?':
 		if (str[1]) {
 			ut64 off;
-			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, R_FALSE);
+			r_debug_reg_sync (core->dbg, -1, 0); //R_REG_TYPE_GPR, R_FALSE);
 			off = r_debug_reg_get (core->dbg, str+1);
 	//		r = r_reg_get (core->dbg->reg, str+1, 0);
 	//		if (r == NULL) eprintf ("Unknown register (%s)\n", str+1);
@@ -491,7 +491,9 @@ free (rf);
 	case 'x':
 		switch (str[1]) {
 		case '-':
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
 			r_debug_drx_unset (core->dbg, atoi (str+2));
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_TRUE);
 			break;
 		case ' ': {
 			char *s = strdup (str+2);
@@ -506,7 +508,9 @@ free (rf);
 				off = r_num_math (core->num, ARG(1));
 				len = (int)r_num_math (core->num, ARG(2));
 				rwx = (char)r_str_rwx (ARG(3));
-			r_debug_drx_set (core->dbg, n, off, len, rwx);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
+				r_debug_drx_set (core->dbg, n, off, len, rwx, 0);
+				r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_TRUE);
 			} else eprintf ("Usage: drx N [address] [length] [rwx]\n");
 			free (s);
 			} break;

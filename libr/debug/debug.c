@@ -518,3 +518,20 @@ R_API int r_debug_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 		return dbg->h->map_protect (dbg, addr, size, perms);
 	return R_FALSE;
 }
+
+R_API void r_debug_drx_list (RDebug *dbg) {
+	if (dbg && dbg->h && dbg->h->drx)
+		dbg->h->drx (dbg, 0, 0, 0, 0, 0);
+}
+
+R_API int r_debug_drx_set (RDebug *dbg, int idx, ut64 addr, int len, int rwx, int g) {
+	if (dbg && dbg->h && dbg->h->drx)
+		return dbg->h->drx (dbg, idx, addr, len, rwx, g);
+	return R_FALSE;
+}
+
+R_API int r_debug_drx_unset (RDebug *dbg, int idx) {
+	if (dbg && dbg->h && dbg->h->drx)
+		return dbg->h->drx (dbg, idx, 0, -1, 0, 0);
+	return R_FALSE;
+}

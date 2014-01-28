@@ -37,9 +37,8 @@
 #define DR_STATUS       6       /* Index of debug status register (DR6).  */
 #define DR_CONTROL      7       /* Index of debug control register (DR7). */
 
-// is ut64 on 64 bitz ?
-//#define drxt ut64
-#define drxt ut32
+// 32 for 32bits and 64 for 64bits
+#define drxt size_t
 
 #define DR_LEN_1 (0<<2) /* 1-byte region watch or breakpoint.  */
 #define DR_LEN_2 (1<<2) /* 2-byte region watch.  */

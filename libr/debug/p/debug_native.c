@@ -1244,6 +1244,12 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	df	.1	.298	0	direction\n"
 	"gpr	of	.1	.299	0	overflow\n"
 	"gpr	eip	.32	40	0\n"
+	"drx	dr0	.32	0	0\n"
+	"drx	dr1	.32	4	0\n"
+	"drx	dr2	.32	8	0\n"
+	"drx	dr3	.32	12	0\n"
+	"drx	dr6	.32	24	0\n"
+	"drx	dr7	.32	28	0\n"
 	"seg	cs	.32	44	0\n"
 	"seg	ds	.32	48	0\n"
 	"seg	es	.32	52	0\n"
@@ -1294,14 +1300,13 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	cs	.64	144	0\n"
 	"seg	fs	.64	152	0\n"
 	"seg	gs	.64	160	0\n"
-#if 0
-	"drx	dr0	.32	0	0\n"
-	"drx	dr1	.32	4	0\n"
-	"drx	dr2	.32	8	0\n"
-	"drx	dr3	.32	12	0\n"
-	"drx	dr6	.32	24	0\n"
-	"drx	dr7	.32	28	0\n"
-#endif
+
+	"drx	dr0	.64	0	0\n"
+	"drx	dr1	.64	8	0\n"
+	"drx	dr2	.64	16	0\n"
+	"drx	dr3	.64	24	0\n"
+	"drx	dr6	.64	32	0\n"
+	"drx	dr7	.64	40	0\n"
 	);
 } else {
 	eprintf ("invalid bit size\n");
@@ -1783,12 +1788,31 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		}
 // XXX: kinda spaguetti coz multi-arch
 #if __i386__ || __x86_64__
-		if (dbg->bits== R_SYS_BITS_64) {
-			ret = thread_get_state (inferior_threads[tid],
-				x86_THREAD_STATE, (thread_state_t) regs, &gp_count);
-		} else {
-			ret = thread_get_state (inferior_threads[tid],
-				i386_THREAD_STATE, (thread_state_t) regs, &gp_count);
+		switch (type) {
+		case R_REG_TYPE_SEG:
+		case R_REG_TYPE_FLG:
+		case R_REG_TYPE_GPR:
+			if (dbg->bits== R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					x86_THREAD_STATE, (thread_state_t) regs,
+					&gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					i386_THREAD_STATE, (thread_state_t) regs,
+					&gp_count);
+			}
+			break;
+		case R_REG_TYPE_DRX:
+			if (dbg->bits== R_SYS_BITS_64) {
+				ret = thread_get_state (inferior_threads[tid],
+					x86_DEBUG_STATE64, (x86_debug_state64_t*)
+					regs, &gp_count);
+			} else {
+				ret = thread_get_state (inferior_threads[tid],
+					x86_DEBUG_STATE32, (x86_debug_state32_t*)
+					regs, &gp_count);
+			}
+			break;
 		}
 #elif __arm__ || __arm64__
 		if (dbg->bits==R_SYS_BITS_64) {
@@ -1919,6 +1943,62 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 #else
 		return R_FALSE;
 #endif
+#elif __APPLE__
+		int ret; 
+		thread_array_t inferior_threads = NULL;
+		unsigned int inferior_thread_count = 0;
+		R_DEBUG_REG_T *regs = (R_DEBUG_REG_T*)buf;
+		unsigned int gp_count = R_DEBUG_STATE_SZ;
+
+		ret = task_threads (pid_to_task (dbg->pid),
+			&inferior_threads, &inferior_thread_count);
+		if (ret != KERN_SUCCESS) {
+			eprintf ("debug_getregs\n");
+			return R_FALSE;
+		}
+
+		/* TODO: thread cannot be selected */
+		if (inferior_thread_count>0) {
+			gp_count = ((dbg->bits == R_SYS_BITS_64))? 44:16;
+			// XXX: kinda spaguetti coz multi-arch
+			int tid = inferior_threads[0];
+#if __i386__ || __x86_64__
+			switch (type) {
+			case R_REG_TYPE_DRX:
+				if (dbg->bits== R_SYS_BITS_64) {
+					ret = thread_set_state (inferior_threads[tid],
+						x86_DEBUG_STATE64, (x86_debug_state64_t*)
+						regs, &gp_count);
+				} else {
+					ret = thread_set_state (inferior_threads[tid],
+						x86_DEBUG_STATE32, (x86_debug_state32_t*)
+						regs, &gp_count);
+				}
+				break;
+			default:
+				if (dbg->bits == R_SYS_BITS_64) {
+					ret = thread_set_state (tid, x86_THREAD_STATE,
+						(thread_state_t) regs, gp_count);
+				} else {
+					ret = thread_set_state (tid, i386_THREAD_STATE,
+						(thread_state_t) regs, gp_count);
+				}
+			}
+#else
+			ret = thread_set_state (inferior_threads[tid],
+					R_DEBUG_STATE_T, (thread_state_t) regs, &gp_count);
+#endif
+//if (thread_set_state (inferior_threads[0], R_DEBUG_STATE_T, (thread_state_t) regs, gp_count) != KERN_SUCCESS) {
+		if (ret != KERN_SUCCESS) {
+			eprintf ("debug_setregs: Failed to set thread %d %d.error (%x). (%s)\n",
+					(int)dbg->pid, pid_to_task (dbg->pid), (int)ret,
+					MACH_ERROR_STRING (ret));
+			perror ("thread_set_state");
+			return R_FALSE;
+		}
+		} else eprintf ("There are no threads!\n");
+		return sizeof (R_DEBUG_REG_T);
+		
 #else
 		eprintf ("TODO: add support for write DRX registers\n");
 		return R_FALSE;
@@ -1966,12 +2046,26 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			// XXX: kinda spaguetti coz multi-arch
 			int tid = inferior_threads[0];
 #if __i386__ || __x86_64__
-			if (dbg->bits == R_SYS_BITS_64) {
-				ret = thread_set_state (tid, x86_THREAD_STATE,
+			switch (type) {
+			case R_REG_TYPE_DRX:
+				if (dbg->bits== R_SYS_BITS_64) {
+					ret = thread_get_state (inferior_threads[tid],
+						x86_DEBUG_STATE64, (x86_debug_state64_t*)
+					regs, &gp_count);
+				} else {
+					ret = thread_get_state (inferior_threads[tid],
+						x86_DEBUG_STATE32, (x86_debug_state32_t*)
+					regs, &gp_count);
+				}
+				break;
+			default:
+				if (dbg->bits == R_SYS_BITS_64) {
+					ret = thread_set_state (tid, x86_THREAD_STATE,
 						(thread_state_t) regs, gp_count);
-			} else {
-				ret = thread_set_state (tid, i386_THREAD_STATE,
+				} else {
+					ret = thread_set_state (tid, i386_THREAD_STATE,
 						(thread_state_t) regs, gp_count);
+				}
 			}
 #else
 			ret = thread_set_state (inferior_threads[tid],
@@ -2515,16 +2609,17 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 	drxt regs[8];
 
 	// sync drx regs
-	regs[0] = r_reg_getv (dbg, "dr0");
-	regs[1] = r_reg_getv (dbg, "dr1");
-	regs[2] = r_reg_getv (dbg, "dr2");
-	regs[3] = r_reg_getv (dbg, "dr3");
+#define R dbg->reg
+	regs[0] = r_reg_getv (R, "dr0");
+	regs[1] = r_reg_getv (R, "dr1");
+	regs[2] = r_reg_getv (R, "dr2");
+	regs[3] = r_reg_getv (R, "dr3");
 /*
-	regs[4] = r_reg_getv (dbg, "dr4");
-	regs[5] = r_reg_getv (dbg, "dr5");
-	regs[6] = r_reg_getv (dbg, "dr6");
+	regs[4] = r_reg_getv (R, "dr4");
+	regs[5] = r_reg_getv (R, "dr5");
+	regs[6] = r_reg_getv (R, "dr6");
 */
-	regs[7] = r_reg_getv (dbg, "dr7");
+	regs[7] = r_reg_getv (R, "dr7");
 
 	if (sz == 0) {
 		drx_list (regs);
@@ -2533,19 +2628,19 @@ static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, in
 	if (sz<0) {
 		// remove
 		drx_set (regs, n, addr, -1, 0, 0);
-		r_reg_setv (dbg, "dr0", regs[0]);
-		r_reg_setv (dbg, "dr1", regs[1]);
-		r_reg_setv (dbg, "dr2", regs[2]);
-		r_reg_setv (dbg, "dr3", regs[3]);
-		r_reg_setv (dbg, "dr7", regs[7]);
+		r_reg_setv (R, "dr0", regs[0]);
+		r_reg_setv (R, "dr1", regs[1]);
+		r_reg_setv (R, "dr2", regs[2]);
+		r_reg_setv (R, "dr3", regs[3]);
+		r_reg_setv (R, "dr7", regs[7]);
 		return R_FALSE;
 	} else {
 		drx_set (regs, n, addr, sz, rwx, g);
-		r_reg_setv (dbg, "dr0", regs[0]);
-		r_reg_setv (dbg, "dr1", regs[1]);
-		r_reg_setv (dbg, "dr2", regs[2]);
-		r_reg_setv (dbg, "dr3", regs[3]);
-		r_reg_setv (dbg, "dr7", regs[7]);
+		r_reg_setv (R, "dr0", regs[0]);
+		r_reg_setv (R, "dr1", regs[1]);
+		r_reg_setv (R, "dr2", regs[2]);
+		r_reg_setv (R, "dr3", regs[3]);
+		r_reg_setv (R, "dr7", regs[7]);
 		return R_TRUE;
 	}
 #else
