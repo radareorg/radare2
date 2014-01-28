@@ -186,6 +186,7 @@ extern RAsmPlugin r_asm_plugin_gb;
 extern RAsmPlugin r_asm_plugin_snes;
 extern RAsmPlugin r_asm_plugin_ebc;
 extern RAsmPlugin r_asm_plugin_nios2;
+extern RAsmPlugin r_asm_plugin_malbolge;
 #endif
 
 #ifdef __cplusplus
