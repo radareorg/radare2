@@ -598,10 +598,14 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 			case TYPE_BRA:
 				if ((ret = getreg (ao->a[0])) == -1) {
 					// TODO: control if branch out of range
-					ret = (getnum(ao->a[0])-ao->off-8)/4;
+					ret = (getnum(ao->a[0])-(int)ao->off-8)/4;
+					if (ret >= 0x00800000 || ret < (int)0xff800000) {
+						printf("Branch into out of range\n");
+						return 0;
+					}
+					ao->o |= ((ret>>16)&0xff)<<8;
 					ao->o |= ((ret>>8)&0xff)<<16;
 					ao->o |= ((ret)&0xff)<<24;
-					if (ret<0) ao->o |= (0xff<<8); // MAKE IT NEGATIVE!
 				} else {
 					printf("This branch does not accept reg as arg\n");
 					return 0;
