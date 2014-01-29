@@ -858,9 +858,7 @@ static int cmd_print(void *data, const char *input) {
 					ignore_invalid = R_FALSE;
 					bwdhits = r_core_asm_back_disassemble_byte (core,
 						core->offset, use_blocksize, -1, 0);
-				}
-				else
-					bwdhits = r_core_asm_back_disassemble_instr (core,
+				} else bwdhits = r_core_asm_back_disassemble_instr (core,
 						core->offset, use_blocksize, -1, 0);
 
 				if (bwdhits) {
@@ -940,7 +938,7 @@ static int cmd_print(void *data, const char *input) {
 				int ret, err = 0;
 				ut8 *buf = core->block;
 				if (l<1) l = len;
-				if (l>=core->blocksize) {
+				if (l>core->blocksize) {
 					buf = malloc (l+1);
 					r_core_read_at (core, core->offset, buf, l);
 				}
@@ -1116,7 +1114,9 @@ static int cmd_print(void *data, const char *input) {
 						core, addr, block, l, l, 0, 1);
 				} else {
 					block = malloc (l*10);
+					if (l>core->blocksize)
 					r_core_read_at (core, addr, block, l*10); //core->blocksize);
+					else memcpy (block, core->block, core->blocksize);
 					core->num->value = r_core_print_disasm (core->print,
 						core, addr, block, l*10, l, 0, 0);
 				}

@@ -291,10 +291,8 @@ R_API int r_bin_init_items(RBin *bin, int dummy) {
 	RBinObject *o = a->o = R_NEW0 (RBinObject);
 
 	bin->cur->file = strdup (bin->file);
-
 	a->buf = r_buf_mmap (bin->cur->file, 0);
 	a->size = a->buf ? a->buf->length: 0;
-
 	a->curplugin = NULL;
 
 	r_list_foreach (bin->plugins, it, plugin) {
@@ -405,8 +403,7 @@ static void r_bin_free_items(RBin *bin) {
 		}
 	if (a->curplugin && a->curplugin->destroy)
 		a->curplugin->destroy (a);
-	
-	else if (a->buf) free (a->buf);
+	else free (a->buf);
 
 	free (a->file);
 	memset (a, 0, sizeof(RBinFile));

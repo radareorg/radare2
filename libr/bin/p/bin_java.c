@@ -1,4 +1,3 @@
-
 /* radare - LGPL - Copyright 2009-2014 - pancake, nibble, Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com> */
 
 #include <r_types.h>
@@ -138,6 +137,7 @@ static int check(RBinFile *arch) {
 	if (!memcmp (arch->buf->buf, "\xca\xfe\xba\xbe", 4)) {
 		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+		// TODO: FIND __TEXT
 		ret = R_TRUE;
 	}
 	return ret;

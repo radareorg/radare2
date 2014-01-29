@@ -446,13 +446,14 @@ static int prot2perm (int x) {
 struct r_bin_mach0_section_t* MACH0_(r_bin_mach0_get_sections)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct r_bin_mach0_section_t *sections;
 	char segname[17], sectname[17];
-	int i, j;
+	int i, j, to;
 
 	if (!bin->sects)
 		return NULL;
+	to = R_MIN (bin->nsects, 128); // limit number of sections here to avoid fuzzed bins
 	if (!(sections = malloc ((bin->nsects + 1) * sizeof (struct r_bin_mach0_section_t))))
 		return NULL;
-	for (i = 0; i<bin->nsects; i++) {
+	for (i = 0; i<to; i++) {
 		sections[i].offset = (ut64)bin->sects[i].offset;
 		sections[i].addr = (ut64)bin->sects[i].addr;
 		sections[i].size = (ut64)bin->sects[i].size;
