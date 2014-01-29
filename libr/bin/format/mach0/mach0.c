@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2014 - nibble, pancake */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -525,11 +525,16 @@ static int MACH0_(r_bin_mach0_parse_import_stub)(struct MACH0_(r_bin_mach0_obj_t
 struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	const char *symstr;
 	struct r_bin_mach0_symbol_t *symbols;
-	int from, to, i, j, s, stridx;
+	int from, to, i, j, s, stridx, symbols_size;
 
 	if (!bin->symtab || !bin->symstr)
 		return NULL;
-	if (!(symbols = malloc ((bin->dysymtab.nextdefsym + bin->dysymtab.nlocalsym + bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_symbol_t))))
+	symbols_size = (bin->dysymtab.nextdefsym + \
+			bin->dysymtab.nlocalsym + \
+			bin->dysymtab.nundefsym + 1) * \
+			sizeof (struct r_bin_mach0_symbol_t);
+
+	if (!(symbols = malloc (symbols_size)))
 		return NULL;
 	for (s = j = 0; s < 2; s++) {
 		if (s == 0) {
@@ -538,6 +543,13 @@ struct r_bin_mach0_symbol_t* MACH0_(r_bin_mach0_get_symbols)(struct MACH0_(r_bin
 		} else {
 			from = bin->dysymtab.ilocalsym;
 			to = from + bin->dysymtab.nlocalsym;
+		}
+		from = R_MIN (R_MAX (0, from), symbols_size/sizeof(struct r_bin_mach0_symbol_t));
+		to = R_MIN (to , symbols_size/sizeof(struct r_bin_mach0_symbol_t));
+		if (to>0x40000) {
+			eprintf ("WARNING: corrupted mach0 header: symbol table is too big\n");
+			free (symbols);
+			return NULL;
 		}
 		for (i = from; i < to; i++, j++) {
 			symbols[j].offset = MACH0_(r_bin_mach0_addr_to_offset)(bin, bin->symtab[i].n_value);
@@ -602,7 +614,7 @@ static int MACH0_(r_bin_mach0_parse_import_ptr)(struct MACH0_(r_bin_mach0_obj_t)
 
 struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin_mach0_obj_t)* bin) {
 	struct r_bin_mach0_import_t *imports;
-	int i, j, stridx;
+	int i, j, idx, stridx;
 	const char *symstr;
 
 	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
@@ -610,7 +622,13 @@ struct r_bin_mach0_import_t* MACH0_(r_bin_mach0_get_imports)(struct MACH0_(r_bin
 	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof(struct r_bin_mach0_import_t))))
 		return NULL;
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
-		stridx = bin->symtab[bin->dysymtab.iundefsym + i].n_un.n_strx;
+		idx = bin->dysymtab.iundefsym +i;
+		if (idx<0 || idx>bin->nsymtab) {
+			eprintf ("WARNING: Imports index out of bounds. Ignoring relocs\n");
+			free (imports);
+			return NULL;
+		}
+		stridx = bin->symtab[idx].n_un.n_strx;
 		if (stridx >= 0 && stridx < bin->symstrlen)
 			symstr = (char *)bin->symstr + stridx;
 		else symstr = "";
