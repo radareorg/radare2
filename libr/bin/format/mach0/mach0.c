@@ -72,6 +72,10 @@ static int MACH0_(r_bin_mach0_parse_seg)(struct MACH0_(r_bin_mach0_obj_t)* bin, 
 	if (bin->segs[seg].nsects > 0) {
 		sect = bin->nsects;
 		bin->nsects += bin->segs[seg].nsects;
+		if (bin->nsects > 128) {
+			eprintf ("WARNING: mach0 header contains too many sections. Wrapping to 128\n");
+			bin->nsects = 128;
+		}
 		if (!(bin->sects = realloc (bin->sects, bin->nsects * sizeof (struct MACH0_(section))))) {
 			perror ("realloc (sects)");
 			return R_FALSE;
