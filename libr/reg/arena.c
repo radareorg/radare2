@@ -171,6 +171,7 @@ R_API int r_reg_arena_set(RReg *reg, int n, int copy) {
 				// XXX This is critical!
 				return R_FALSE;
 			}
+			memset (o->bytes, '\x00', o->size);
 		}
 		if (copy)
 			r_reg_set_bytes (reg, i, o->bytes, a->size);

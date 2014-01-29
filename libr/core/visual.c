@@ -345,8 +345,9 @@ static int prevopsz (RCore *core, ut64 addr) {
 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
+	ut64 offset = core->offset;
 	char buf[4096];
-	int i, ret, offscreen, cols = core->print->cols;
+	int i, ret, offscreen, cols = core->print->cols, delta = 0;
 	ch = r_cons_arrow_to_hjkl (ch);
 	ch = visual_nkey (core, ch);
 	if (ch<2) return 1;
@@ -355,8 +356,8 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	if (ch>='0'&& ch<='9') {
 		ut64 off = core->asmqjmps[ch-'0'];
 		if (off != UT64_MAX) {
-			int delta = R_ABS ((st64)off-(st64)core->offset);
-			r_io_sundo_push (core->io, core->offset);
+			int delta = R_ABS ((st64)off-(st64)offset);
+			r_io_sundo_push (core->io, offset);
 			if (curset && delta<100) {
 				cursor = delta;
 			} else {
@@ -379,7 +380,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		if (f == t && f == 0) {
 			core->print->col = core->print->col==1? 2: 1;
 		} else {
-			ut64 delta = core->offset - f;
+			ut64 delta = offset - f;
 			r_core_seek (core, t+delta, 1);
 			r_config_set_i (core->config, "diff.from", t);
 			r_config_set_i (core->config, "diff.to", f);
@@ -492,14 +493,21 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 				buf[0]='\0';
 			strcat (buf, "\"");
 		} else {
-			strcpy (buf, "wx ");
 			r_line_set_prompt ("insert hex: ");
-			if (r_cons_fgets (buf+3, sizeof (buf)-4, 0, NULL) <0)
+			if (ocursor != -1) {
+				int bs = R_ABS (cursor-ocursor)+1;
+				core->blocksize = bs;
+				strcpy (buf, "wow ");
+				delta = R_MIN (cursor, ocursor);
+			} else {
+				strcpy (buf, "wx ");
+			}
+			if (r_cons_fgets (buf+strlen (buf), sizeof (buf)-strlen (buf), 0, NULL) <0)
 				buf[0]='\0';
 		}
-		if (curset) r_core_seek (core, core->offset + cursor, 0);
+		if (curset) r_core_seek (core, core->offset + delta, 0);
 		r_core_cmd (core, buf, 1);
-		if (curset) r_core_seek (core, core->offset - cursor, 1);
+		if (curset) r_core_seek (core, offset, 1);
 		r_cons_set_raw (1);
 		showcursor (core, R_FALSE);
 		break;
