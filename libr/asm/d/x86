@@ -525,6 +525,7 @@ roundss=round scalar single-fp values
 rsm=resume from system management mode
 rsqrtps=compute recipr. of square roots of packed single-fp values
 rsqrtss=compute recipr. of square root of scalar single-fp value
+rtdsc=read time-stamp counter into edx:eax
 sahf=store ah into flags
 sal=arithmetic left shift
 salc=set al if carry
