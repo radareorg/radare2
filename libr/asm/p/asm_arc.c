@@ -12,13 +12,14 @@
 
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
+static int buf_len = 0;
 static unsigned char bytes[32];
 
 static int arc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
 	int delta = (memaddr - Offset);
 	if (delta<0) return -1; // disable backward reads
 	if ((delta+length)>sizeof (bytes)) return -1;
-	memcpy (myaddr, bytes+delta, length);
+	memcpy (myaddr, bytes+delta, R_MIN (buf_len, length));
 	return 0;
 }
 
@@ -56,16 +57,17 @@ int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
-	if (len<4) return -1;
+	if (len<2) return -1;
 	buf_global = op->buf_asm;
 	Offset = a->pc;
 	if (len>sizeof (bytes))
 		len = sizeof (bytes);
 	memcpy (bytes, buf, len); // TODO handle compact
-
+	buf_len = len;
 	/* prepare disassembler */
 	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = bytes;
+	disasm_obj.buffer_length = len;
 	disasm_obj.read_memory_func = &arc_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
