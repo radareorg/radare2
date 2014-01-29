@@ -1106,17 +1106,21 @@ static int cmd_print(void *data, const char *input) {
 					}
 				}
 			} else {
+				const int bs = core->blocksize;
 				// XXX: issue with small blocks
 				if (*input == 'D') {
 					block = malloc (l);
-					r_core_read_at (core, addr, block, l); //core->blocksize);
+					if (l>core->blocksize) {
+						r_core_read_at (core, addr, block, l); //core->blocksize);
+					} else {
+						memcpy (block, core->block, l);
+					}
 					core->num->value = r_core_print_disasm (core->print,
 						core, addr, block, l, l, 0, 1);
 				} else {
-					block = malloc (l*10);
-					if (l>core->blocksize)
-					r_core_read_at (core, addr, block, l*10); //core->blocksize);
-					else memcpy (block, core->block, core->blocksize);
+					block = malloc (R_MAX(l*10, bs));
+					memcpy (block, core->block, bs);
+					r_core_read_at (core, addr+bs, block+bs, (l*10)-bs); //core->blocksize);
 					core->num->value = r_core_print_disasm (core->print,
 						core, addr, block, l*10, l, 0, 0);
 				}
