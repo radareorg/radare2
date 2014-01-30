@@ -14,6 +14,9 @@ all: ${BIN}
 	${MAKE} static
 	${MAKE} shared
 
+install:
+	$(MAKE) -C .. install
+
 sdb-version.h:
 	cd .. ; ${MAKE} src/sdb-version.h
 

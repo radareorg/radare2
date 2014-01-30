@@ -36,13 +36,20 @@ static void syncronize(int sig UNUSED) {
 }
 #endif
 
-static int sdb_dump (const char *db) {
-	char *k, *v;
+static int sdb_dump (const char *db, int qf) {
+	char *k, *v, *p;
 	Sdb *s = sdb_new (NULL, db, 0);
 	if (!s) return 1;
 	sdb_dump_begin (s);
 	while (sdb_dump_dupnext (s, &k, &v)) {
-		printf ("%s=%s\n", k, v);
+		if (qf && strchr (v, SDB_RS)) {
+			for (p=v; *p; p++)
+				if (*p==SDB_RS)
+					*p = ',';
+			printf ("[]%s=%s\n", k, v);
+		} else {
+			printf ("%s=%s\n", k, v);
+		}
 		free (k);
 		free (v);
 	}
@@ -68,7 +75,7 @@ static void createdb(const char *f) {
 }
 
 static void showusage(int o) {
-	printf ("usage: sdb [-hv] [-|db] [<script]|[-=]|[-+][(idx)key[?path|=value] ..]\n");
+	printf ("usage: sdb [-hv] [-|db] []|[<script]|[-=]|[-+][(idx)key[?path|=value] ..]\n");
 	exit (o);
 }
 
@@ -92,12 +99,14 @@ int main(int argc, const char **argv) {
 		}
 	}
 	if (argc == 2)
-		return sdb_dump (argv[1]);
+		return sdb_dump (argv[1], 0);
 #if USE_MMAN
 	signal (SIGINT, terminate);
 	signal (SIGHUP, syncronize);
 #endif
-	if (!strcmp (argv[2], "="))
+	if (!strcmp (argv[2], "[]")) {
+		return sdb_dump (argv[1], 1);
+	} if (!strcmp (argv[2], "="))
 		createdb (argv[1]);
 	else if (!strcmp (argv[2], "-")) {
 		if ((s = sdb_new (NULL, argv[1], 0))) {

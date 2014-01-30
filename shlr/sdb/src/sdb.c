@@ -60,10 +60,8 @@ SDB_VISIBLE Sdb* sdb_new (const char *path, const char *name, int lock) {
 	s->tmpkv.value = NULL;
 	//s->ht->list->free = (SdbListFree)sdb_kv_free;
 	// if open fails ignore
-	if (global_hook) {
+	if (global_hook)
 		sdb_hook (s, global_hook, global_user);
-	}
-
 	cdb_init (&s->db, s->fd);
 	cdb_findstart (&s->db);
 	return s;
