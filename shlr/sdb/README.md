@@ -52,7 +52,7 @@ Let's create a database!
 
 Using arrays (>=0.6):
 
-	$ sdb - '()list=1,2' '(0)list' '(0)list=foo' '()list' '(+1)list=bar'
+	$ sdb - '[]list=1,2' '[0]list' '[0]list=foo' '[]list' '[+1]list=bar'
 	1
 	foo
 	2

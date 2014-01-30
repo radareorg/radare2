@@ -43,10 +43,10 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 	}
 	if (!len || !buf) buf = malloc ((len=64));
 	ask = strchr (cmd, '?');
-	if (*cmd == '(') {
-		char *tp = strchr (cmd, ')');
+	if (*cmd == '[') {
+		char *tp = strchr (cmd, ']');
 		if (!tp) {
-			fprintf (stderr, "Missing ')'.\n");
+			fprintf (stderr, "Missing ']'.\n");
 			return NULL;
 		}
 		*tp++ = 0;
@@ -97,7 +97,8 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 			}
 			return buf;
 		}
-	} else if (*cmd == '(') {
+	} else if (*cmd == '[') {
+		// [?] - count elements of array
 		if (cmd[1]=='?') {
 			// if (!eq) { ...
 			alength = sdb_alength (s, p);
@@ -109,14 +110,19 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 			return buf;
 		}
 		if (cmd[1]=='+'||cmd[1]=='-') {
-			/* (+)foo=bla (-)foo=bla */
-			if (!cmd[2] || cmd[2] ==')') {
+			// [+]foo        remove first element */
+			// [+]foo=bar    PUSH */
+			// [-]foo        POP */
+			// [-]foo=xx     POP  (=xx ignored) */
+			if (!cmd[2] || cmd[2] ==']') {
 				// insert
 				if (eq) {
 					if (cmd[1]=='+') {
 						if (sdb_agetv (s, p, val, 0)== -1)
 							sdb_aset (s, p, -1, val, 0);
-					} else sdb_adels (s, p, val, 0);
+					} else {
+						sdb_adels (s, p, val, 0);
+					}
 					return NULL;
 				} else {
 					char *ret;
@@ -125,7 +131,7 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 						ret = sdb_aget (s, p, 0, 0);
 						// (+)foo :: remove first element
 						sdb_adel (s, p, 0, 0);
-					} else {
+					} else { // POP
 						ret = sdb_aget (s, p, -1, 0);
 						// (-)foo :: remove last element
 						sdb_adel (s, p, -1, 0);

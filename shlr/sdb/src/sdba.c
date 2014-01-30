@@ -1,4 +1,4 @@
-/* sdb - LGPLv3 - Copyright 2011-2013 - pancake */
+/* sdb - LGPLv3 - Copyright 2011-2014 - pancake */
 
 #include "sdb.h"
 
@@ -255,6 +255,8 @@ SDB_VISIBLE int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
 	if (n) {
 		memmove (p, n+1, strlen (n+1)+1);
 	} else {
+		if (p != str)
+			p--; // remove tailing SDB_RS
 		*p = 0;
 		p[1] = 0;
 	}

@@ -49,7 +49,8 @@ typedef struct sdb_kv {
 } SdbKv;
 
 typedef struct sdb_t {
-	char *dir; // path+file
+	char *dir; // path+name
+	char *path;
 	char *name;
 	int fd;
 	int lock;

@@ -30,7 +30,7 @@ static void syncronize(int sig UNUSED) {
 	// TODO: must be in sdb_sync() or wat?
 	Sdb *n;
 	sdb_sync (s);
-	n = sdb_new (s->dir, s->name, s->lock);
+	n = sdb_new (s->path, s->name, s->lock);
 	sdb_free (s);
 	s = n;
 }
@@ -52,7 +52,7 @@ static int sdb_dump (const char *db) {
 
 static void createdb(const char *f) {
 	char *line, *eq;
-	s = sdb_new (f, f, 0);
+	s = sdb_new (NULL, f, 0);
 	if (!sdb_create (s)) {
 		printf ("Cannot create database\n");
 		exit (1);

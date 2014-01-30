@@ -43,9 +43,11 @@ SDB_VISIBLE Sdb* sdb_new (const char *path, const char *name, int lock) {
 		s->fd = open (s->dir, O_RDONLY|O_BINARY);
 		// if (s->fd == -1) // must fail if we cant open for write in sync
 		s->name = strdup (name);
+		s->path = path? strdup (path): NULL;
 	} else {
 		s->dir = NULL;
 		s->name = NULL;
+		s->path = NULL;
 		s->fd = -1;
 	}
 	s->fdump = -1;

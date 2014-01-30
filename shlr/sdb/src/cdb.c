@@ -100,9 +100,7 @@ int cdb_findnext(struct cdb *c, ut32 u, const char *key, unsigned int len) {
 		}
 		ut32_unpack (buf, &c->hpos);
 		c->khash = u;
-		u >>= 8;
-		u %= c->hslots;
-		u <<= 3;
+		u = ((u>>8)%c->hslots)<<3;
 		c->kpos = c->hpos + u;
 	}
 
