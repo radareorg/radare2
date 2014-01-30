@@ -28,20 +28,26 @@ SDB_VISIBLE void sdb_global_hook(SdbHook hook, void *user) {
 }
 
 // TODO: use mmap instead of read.. much faster!
-SDB_VISIBLE Sdb* sdb_new (const char *dir, const char *name, int lock) {
+SDB_VISIBLE Sdb* sdb_new (const char *path, const char *name, int lock) {
 	Sdb* s;
-	if (lock && !sdb_lock (sdb_lockfile (dir)))
-		return NULL;
 	s = malloc (sizeof (Sdb));
-	if (dir && *dir) {
-		s->dir = strdup (dir);
-		s->fd = open (dir, O_RDONLY|O_BINARY);
+	if (name && *name) {
+		if (path && *path) {
+			s->dir = malloc (strlen (path) + strlen (name)+2);
+			strcpy (s->dir, path);
+			strcat (s->dir, "/");
+			strcat (s->dir, name);
+		} else s->dir = strdup (name);
+		if (lock && !sdb_lock (sdb_lockfile (s->dir)))
+			return NULL;
+		s->fd = open (s->dir, O_RDONLY|O_BINARY);
 		// if (s->fd == -1) // must fail if we cant open for write in sync
+		s->name = strdup (name);
 	} else {
 		s->dir = NULL;
+		s->name = NULL;
 		s->fd = -1;
 	}
-	s->name = (name&&*name)? strdup (name): NULL;
 	s->fdump = -1;
 	s->ndump = NULL;
 	s->ns = ls_new (); // TODO: should be NULL

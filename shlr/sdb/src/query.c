@@ -119,14 +119,18 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 					} else sdb_adels (s, p, val, 0);
 					return NULL;
 				} else {
+					char *ret;
 					if (cmd[1]=='+') {
+// XXX: this is a little strange syntax to remove an item
+						ret = sdb_aget (s, p, 0, 0);
 						// (+)foo :: remove first element
 						sdb_adel (s, p, 0, 0);
 					} else {
+						char *ret = sdb_aget (s, p, -1, 0);
 						// (-)foo :: remove last element
 						sdb_adel (s, p, -1, 0);
 					}
-					return NULL;
+					return ret;
 				}
 			} else {
 				// get/set specific element in array
@@ -149,7 +153,13 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 				char *q, *out = strdup (val);
 				// TODO: define new printable separator character
 				for (q=out; *q; q++) if (*q==',') *q = SDB_RS;
-				ok = sdb_set (s, p, out, 0);
+				if (cmd[1]) {
+					int idx = atoi (cmd+1);
+					ok = sdb_aset (s, p, idx, val, 0);
+// TODO: handle when idx > sdb_alen
+				} else {
+					ok = sdb_set (s, p, out, 0);
+				}
 				free (out);
 				if (ok) {
 					*buf = 0;
