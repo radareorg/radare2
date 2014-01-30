@@ -3,6 +3,7 @@
 #include <getopt.c>
 #include <r_core.h>
 #include <signal.h>
+#include "../blob/version.c"
 
 
 #if __WINDOWS__
@@ -19,7 +20,8 @@ static int usage (int v) {
 	"  -d       run in daemon mode (background)\n"
 	"  -h       show this help message\n"
 	"  -s       run in sandbox mode\n"
-	"  -p 8392  specify listening port (defaults to 8080)\n");
+	"  -p 8392  specify listening port (defaults to 8080)\n"
+    "  -v       show version information\n");
 	return !!!v;
 }
 
@@ -49,6 +51,8 @@ int main(int argc, char **argv) {
 		case 'p':
 			port = optarg;
 			break;
+        case 'v':
+            return blob_version ("ragent2");
 		}
 	}
 	if (optind != argc)

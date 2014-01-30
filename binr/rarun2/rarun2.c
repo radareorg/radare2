@@ -11,6 +11,8 @@
 #include <signal.h>
 #endif
 
+#include "../blob/version.c"
+
 #define NARGS (sizeof (_args)/sizeof(*_args))
 static char *_args[512] = {NULL};
 static char *_system = NULL;
@@ -302,8 +304,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	if (!strcmp (argv[1], "-v")) {
-		printf ("rarun2 "R2_VERSION"\n");
-		return 0;
+		return blob_version ("rabin2");
 	}
 	file = argv[1];
 	if (*file && !strchr (file, '=')) {

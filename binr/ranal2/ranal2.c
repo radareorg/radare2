@@ -3,6 +3,7 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <getopt.c>
+#include "../blob/version.c"
 
 /* anal callback */
 static int __lib_anal_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
@@ -101,6 +102,7 @@ static int usage() {
 			" -l [len]     Input length\n"
 			" -L           List supported analysis plugins\n"
 			" -o [offset]  Offset where this opcode is suposed to be\n"
+            "  -v          Show version information\n"
 			" If the last argument is '-' reads from stdin\n");
 	return 1;
 }
@@ -141,6 +143,8 @@ int main(int argc, char **argv) {
 		case 'o':
 			offset = r_num_math (NULL, optarg);
 			break;
+        case 'v':
+            return blob_version ("ranal2");
 		}
 	}
 	if (!argv[optind] || (bin && !len))

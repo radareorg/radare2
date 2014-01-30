@@ -11,6 +11,7 @@
 #include <r_cons.h>
 #include <r_lib.h>
 #include <r_io.h>
+#include "../blob/version.c"
 
 static struct r_io_t *io;
 static RIODesc *fd = NULL;
@@ -181,8 +182,7 @@ int main(int argc, char **argv) {
 			pr = r_print_new ();
 			break;
 		case 'v':
-			printf ("rafind2 v"R2_VERSION"\n");
-			return 0;
+            return blob_version ("rafind2");
 		case 'h':
 			return show_help(argv[0], 0);
 		case 'z':
