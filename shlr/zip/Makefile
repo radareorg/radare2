@@ -2,6 +2,11 @@ include ../../config-user.mk
 include ../../libr/config.mk
 include ../../mk/${COMPILER}.mk
 
+ifeq ($(USE_LIB_ZIP),1)
+all:
+	rm -f librz.a
+else
+
 all: librz.a
 
 LIBAR=librz.a
@@ -18,3 +23,4 @@ clean:
 	${MAKE} -C zlib clean
 	${MAKE} -C zip clean
 	rm -f *.a *.${EXT_SO}
+endif

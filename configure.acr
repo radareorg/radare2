@@ -21,6 +21,22 @@ IFAND HAVE_LIB_MAGIC USE_MAGIC {
 	LIBMAGIC = -lr_magic ;
 }
 
+CHKLIB z
+CHKLIB zip
+ARG_WITH USE_ZIP syszip force to use system's libzip and zlib ;
+IFAND HAVE_LIB_Z USE_ZIP {
+	IF HAVE_LIB_ZIP {
+		USE_LIB_ZIP = 1 ;
+		LIBZIP = -lz -lzip ;
+	}{
+		USE_LIB_ZIP = 0 ;
+		LIBZIP = -lrz ; (( static linking to shlr/zip ))
+	}
+}{
+	USE_LIB_ZIP = 0 ;
+	LIBZIP = -lrz ; (( static linking to shlr/zip ))
+}
+
 CHKLIB ewf
 PKGCFG EWF_CFLAGS EWF_LDFLAGS libewf
 ARG_WITHOUT HAVE_EWF ewf disable EWF dependency ;
@@ -111,7 +127,7 @@ IFEQ LIBVERSION xxx ; {
 }
 
 REPORT PREFIX HAVE_LIB_EWF HAVE_LIB_GMP HAVE_OPENSSL
-	VERSION USE_LIB_MAGIC DEBUGGER CC USERCC
+	VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC
 	USEROSTYPE LIL_ENDIAN LIBVERSION ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))

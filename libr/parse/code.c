@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include "r_util.h"
 #include "r_types.h"
@@ -41,7 +41,6 @@ R_API char *r_parse_c_string(const char *code) {
 }
 
 R_API int r_parse_is_c_file (const char *file) {
-
 	const char *ext = r_str_lchr (file, '.');
 	if (ext) {
 		ext = ext+1;
