@@ -126,7 +126,7 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 						// (+)foo :: remove first element
 						sdb_adel (s, p, 0, 0);
 					} else {
-						char *ret = sdb_aget (s, p, -1, 0);
+						ret = sdb_aget (s, p, -1, 0);
 						// (-)foo :: remove last element
 						sdb_adel (s, p, -1, 0);
 					}
