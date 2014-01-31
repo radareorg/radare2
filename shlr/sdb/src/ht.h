@@ -1,6 +1,8 @@
 #include "ls.h"
 #include "types.h"
 
+void (*HtKvFreeFunc)(void *);
+
 /** ht **/
 typedef struct ht_entry_t {
 	SdbListIter *iter;
@@ -19,7 +21,7 @@ typedef struct ht_t {
 	ut32 deleted_entries;
 } SdbHash;
 
-SdbHash* ht_new(void);
+SdbHash* ht_new(SdbListFree f);
 void ht_free(SdbHash *ht);
 //void ht_set(SdbHash *ht, ut32 hash, void *data);
 SdbHashEntry* ht_search(SdbHash *ht, ut32 hash);

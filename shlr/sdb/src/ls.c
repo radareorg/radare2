@@ -51,8 +51,8 @@ R_API void ls_destroy (SdbList *list) {
 
 R_API void ls_free (SdbList *list) {
 	if (!list) return;
-	list->free = NULL;
 	ls_destroy (list);
+	list->free = NULL;
 	free (list);
 }
 

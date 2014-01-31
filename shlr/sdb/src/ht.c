@@ -134,11 +134,12 @@ rehash = 1;
 rehash = 0;
 }
 
-SdbHash* ht_new(void) {
+SdbHash* ht_new(SdbListFree f) {
 	SdbHash *ht = R_NEW (SdbHash);
 	if (!ht) return NULL;
 	// TODO: use slices here
 	ht->list = ls_new ();
+	ht->list->free = f;
 	ht->size = hash_sizes[0].size;
 	ht->table = calloc (ht->size, sizeof (*ht->table));
 	if (!ht->table) {

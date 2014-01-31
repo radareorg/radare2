@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - pancake */
+/* radare - LGPL - Copyright 2008-2014 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -138,15 +138,15 @@ R_API ut64 r_io_map_select_current_fd(RIO *io, ut64 addr) {
 	RIOMap *im = NULL, *map = NULL;
 	RListIter *iter;
 
-	r_list_foreach (io->maps, iter, im) {
-		if (map->fd == io->fd->fd) {
-			map = im;
-			break;
+	if (io && io->fd && io->fd->fd) {
+		r_list_foreach (io->maps, iter, im) {
+			if (map->fd == io->fd->fd) {
+				map = im;
+				break;
+			}
 		}
-	}
-
-	if (im) {
-		return r_io_seek (io, addr, R_IO_SEEK_SET);
+		if (im)
+			return r_io_seek (io, addr, R_IO_SEEK_SET);
 	}
 	return -1;
 }
