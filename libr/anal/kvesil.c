@@ -4,6 +4,8 @@
 
 static const char *chstr(int ch) {
 	switch (ch) {
+	case '!': return "not";
+	case '[': return "mem";
 	case '=': return "set";
 	case '+': return "add";
 	case '-': return "sub";
@@ -24,13 +26,14 @@ R_API char *r_anal_esil_to_sdb(char *str) {
 #define TOK_OP(x) (x>>24)
 #define TOK_ARG(x) str+(x&0xffffff)
 	char *p = str;
-	int tok[32], i = 0, t = 0; 
+	int tok[4096], i = 0, t = 0;
 	tok[0] = 0;
 	for (i=0; p[i]; i++) {
 		char ch = p[i];
 		switch (ch) {
 		case '[': // TODO
 		case ']': // TODO
+		case '!':
 		case ',':
 		case ';':
 		case '(':
@@ -55,6 +58,7 @@ R_API char *r_anal_esil_to_sdb(char *str) {
 		int top = 0;
 		int level = 0;
 		int stack[32];
+		int store = 0;
 		stack[0] = 0;
 		for (i=0; i<t; i++) {
 			char op = TOK_OP(tok[i]);
@@ -62,6 +66,8 @@ R_API char *r_anal_esil_to_sdb(char *str) {
 			switch (op) {
 			case ',':
 			case ';':
+				idx = 0;
+				stack[0] = 0;
 				level = 0;
 				a = TOK_ARG (tok[i]);
 				continue;
@@ -88,13 +94,32 @@ R_API char *r_anal_esil_to_sdb(char *str) {
 				}
 				top = stack[level];
 				continue;
+			default:
+				if ( TOK_OP(tok[i+1]) == '=') {
+			//		printf ("TODO: %c= syntax sugar not yet supported\n", op);
+					//printf ("[]%d=%s,%s,&%d\n", idx, "str", a, idx);
+a="&0";
+					store = 0;
+					continue;
+				}
 			}
+			if (store) {
+				if (op=='=') {
+eprintf ("SET\n");
+					op='[';
+				}
+				store = 0;
+			}
+			//if (!a || (!*a) || *a==' ')
+			//if (*a==' ') a ="8"; // for mem ref only
 			if (*b) printf ("[]%d=%s,%s,%s\n", idx, chstr (op), a, b);
 			else   printf ("[]%d=%s,%s,&%d\n", idx, chstr (op), a, idx+1);
 			a = b;
 			stack[level] = top = idx;
 			if (i>0) {
-				printf ("[2]%d=&%d\n", stack[level]-1, idx);
+				int sl = stack[level];
+				if (sl>0) 
+					printf ("[2]%d=&%d\n", sl-1, idx);
 				stack[level] = top = idx;
 			}
 			idx++;

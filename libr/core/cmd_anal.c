@@ -619,11 +619,12 @@ static int cmd_anal(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_cons_printf (
 			"Usage: ao[e?] [len]\n"
-			" aoj      display opcode analysis information in JSON\n"
-			" aoe      emulate opcode at current offset\n"
-			" aos      show sdb representation of esil expression\n"
-			" aoe 4    emulate 4 opcodes starting at current offset\n"
-			" ao 5     display opcode analysis of 5 opcodes\n");
+			" aoj        display opcode analysis information in JSON\n"
+			" aoe        emulate opcode at current offset\n"
+			" aos        show sdb representation of esil expression\n"
+			" aos [esil] show sdb representation of esil expression\n"
+			" aoe 4      emulate 4 opcodes starting at current offset\n"
+			" ao 5       display opcode analysis of 5 opcodes\n");
 		} else
 		if (input[1] == 'j') {
 			int count = 0;
@@ -641,14 +642,24 @@ static int cmd_anal(void *data, const char *input) {
 			r_core_anal_bytes (core, core->block, len, count, 'j');
 		} else
 		if (input[1]=='s') {
-			RAnalOp *op = r_core_op_anal (core, addr);
-			if (op != NULL) {
-				char *esil = strdup (R_STRBUF_SAFEGET (&op->esil));
+			if (input[2]==' ') {
+				char *esil = strdup (input+2);
 				char *o = r_anal_esil_to_sdb (esil);
 				// do stuff
-				free (esil);
+				if (o&&*o) r_cons_printf ("%s\n", o);
 				free (o);
-				r_anal_op_free (op);
+				free (esil);
+			} else {
+				RAnalOp *op = r_core_op_anal (core, addr);
+				if (op != NULL) {
+					char *esil = strdup (R_STRBUF_SAFEGET (&op->esil));
+					char *o = r_anal_esil_to_sdb (esil);
+					if (o&&*o) r_cons_printf ("%s\n", o);
+					// do stuff
+					free (esil);
+					free (o);
+					r_anal_op_free (op);
+				}
 			}
 		} else
 		if (input[1] == 'e') {
