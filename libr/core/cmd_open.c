@@ -4,7 +4,7 @@ static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
 	ut64 addr, baddr = r_config_get_i (core->config, "bin.baddr");
-	char *suppress_warning = r_config_get (core->config, "file.suppress_warnings");
+	int nowarn = r_config_get_i (core->config, "file.nowarn");
 	RIOMap *map = NULL;
 	RCoreFile *file;
 	RListIter *iter;
@@ -38,7 +38,7 @@ static int cmd_open(void *data, const char *input) {
 				// MUST CLEAN BEFORE LOADING
 				if (!isn)
 					r_core_bin_load (core, fn, baddr);
-			} else if (!strcmp (suppress_warning, "false")) {
+			} else if (!nowarn) {
 				eprintf ("Cannot open file '%s'\n", fn);
 			}
 		} else {

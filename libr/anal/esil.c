@@ -325,8 +325,8 @@ static ut64 num(struct r_anal_esil_t *c, const char *str) {
 	return r_num_get (NULL, str);
 }
 
-#define C(x) r_anal_esil(&c,x)
 
+#define C(x) r_anal_esil(&c,x)
 #ifdef MAIN
 int main() {
 	RAnalEsil c = {

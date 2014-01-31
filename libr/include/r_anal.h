@@ -882,6 +882,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 R_API const char *r_anal_op_to_esil_string(RAnal *anal, RAnalOp *op);
+R_API char *r_anal_esil_to_sdb(char *str);
 
 /* fcn.c */
 R_API RAnalFunction *r_anal_fcn_new();

@@ -300,7 +300,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, ut64 loadaddr) {
 	const char  *loadmethod = r_config_get (core->config, "file.loadmethod");
 	RIOMap *map = r_io_map_add (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
-	const char *suppress_warning = r_config_get (core->config, "file.suppress_warnings");
+	const char *suppress_warning = r_config_get (core->config, "file.nowarn");
 
 	if (map) return map;
 
@@ -364,7 +364,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 	RIODesc *fd;
 	RListIter *fd_iter;
 	ut64 current_loadaddr = loadaddr;
-	const char *suppress_warning = r_config_get (r->config, "file.suppress_warnings");
+	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 
 	const char *cp = NULL;
 	char *loadmethod = NULL;
@@ -432,7 +432,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	const char *cp;
 	RCoreFile *fh;
 	RIODesc *fd;
-	const char *suppress_warning = r_config_get (r->config, "file.suppress_warnings");
+	const char *suppress_warning = r_config_get (r->config, "file.nowarn");
 
 	if (!strcmp (file, "-")) {
 		file = "malloc://512";

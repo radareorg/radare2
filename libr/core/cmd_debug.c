@@ -497,7 +497,7 @@ free (rf);
 			break;
 		case ' ': {
 			char *s = strdup (str+2);
-			char sl, n, rwx, *p;
+			char sl, n, rwx;
 			int len;
 			ut64 off;
 

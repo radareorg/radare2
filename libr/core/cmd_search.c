@@ -371,7 +371,7 @@ c = 0;
 	case 'P':
 		 {
 		// print the offset of the Previous opcode
-		char buf[64];
+		ut8 buf[64];
 		ut64 off = core->offset;
 		r_core_read_at (core, off-16, buf, 32);
 		off = findprevopsz (core, off, buf, 16);

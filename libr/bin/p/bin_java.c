@@ -8,18 +8,18 @@
 
 #define IFDBG  if(0)
 
-static Sdb *BIN_OBJS_ADDRS = NULL;
+static Sdb *DB = NULL;
 
 static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
 static  int init(void *user) {
-	IFDBG eprintf ("Calling plugin init = %d.\n", BIN_OBJS_ADDRS?1:0);
-	if (!BIN_OBJS_ADDRS) {
-		IFDBG eprintf ("plugin BIN_OBJS_ADDRS beeing initted.\n");
-		BIN_OBJS_ADDRS = sdb_new ("bin.java", NULL, 0);
+	IFDBG eprintf ("Calling plugin init = %d.\n", DB?1:0);
+	if (!DB) {
+		IFDBG eprintf ("plugin DB beeing initted.\n");
+		DB = sdb_new ("bin.java", NULL, 0);
 	} else {
-		IFDBG eprintf ("plugin BIN_OBJS_ADDRS already initted.\n");
+		IFDBG eprintf ("plugin DB already initted.\n");
 	}
 	return 0;
 }
@@ -28,9 +28,9 @@ static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	int result = R_FALSE;
 	char value[1024] = {0};
 	sdb_itoa ((ut64)(size_t)bin_obj,  value);
-	if (key && bin_obj && BIN_OBJS_ADDRS) {
+	if (key && bin_obj && DB) {
 		IFDBG eprintf ("Adding %s:%s to the bin_objs db\n", key, value);
-		sdb_set (BIN_OBJS_ADDRS, key, value, 0);
+		sdb_set (DB, key, value, 0);
 		result = R_TRUE;
 	}
 	return result;
@@ -52,19 +52,19 @@ static int load(RBinFile *arch) {
 	if (bin_obj) {
 		if (arch->o->kv == NULL) arch->o->kv = bin_obj->kv;
 		arch->o->bin_obj = bin_obj;
-		bin_obj->AllJavaBinObjs = BIN_OBJS_ADDRS;
+		bin_obj->AllJavaBinObjs = DB;
 		// XXX - /\ this is a hack, but (one way but) necessary to get access to
 		// the object addrs from anal. If only global variables are used,
 		// they get "lost" somehow after they are initialized and go out of
 		// scope.
 		//
 		// There are several points of indirection, but here is the gist:
-		//	  1) RAnal->(through RBinBind) RBin->RBinJavaObj->BIN_OBJS_ADDRS
+		//	  1) RAnal->(through RBinBind) RBin->RBinJavaObj->DB
 		//
 		// The purpose is to ensure that information about a give class file
 		// can be grabbed at any time from RAnal.  This was tried with global
-		// variables, but failed when attempting to access the BIN_OBJS_ADDRS
-		// in the class.c scope.  Once BIN_OBJS_ADDRS  was moved here, it is initialized
+		// variables, but failed when attempting to access the DB
+		// in the class.c scope.  Once DB  was moved here, it is initialized
 		// once here and assigned to each of the other RBinJavaObjs.
 		//
 		// Now, the RAnal component of radare can get to each of the
@@ -79,8 +79,8 @@ static int load(RBinFile *arch) {
 
 static int destroy(RBinFile *arch) {
 	r_bin_java_free ((struct r_bin_java_obj_t*)arch->o->bin_obj);
-	sdb_free (BIN_OBJS_ADDRS);
-	BIN_OBJS_ADDRS = NULL;
+	sdb_free (DB);
+	DB = NULL;
 	return R_TRUE;
 }
 

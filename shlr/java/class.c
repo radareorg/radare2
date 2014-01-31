@@ -1021,27 +1021,27 @@ R_API RBinJavaCPTypeObj* r_bin_java_get_java_null_cp() {
 
 R_API RBinJavaElementValueMetas* r_bin_java_get_ev_meta_from_tag(ut8 tag) {
 	ut16 i = 0;
-	RBinJavaElementValueMetas *result = &R_BIN_JAVA_ELEMENT_VALUE_METAS[13];
+	RBinJavaElementValueMetas *res = &R_BIN_JAVA_ELEMENT_VALUE_METAS[13];
 	for (i = 0; i < R_BIN_JAVA_ELEMENT_VALUE_METAS_SZ; i++ ) {
 		if (tag == R_BIN_JAVA_ELEMENT_VALUE_METAS[i].tag) {
-			result = &R_BIN_JAVA_ELEMENT_VALUE_METAS[i];
+			res = &R_BIN_JAVA_ELEMENT_VALUE_METAS[i];
 			break;
 		}
 	}
-	return result;
+	return res;
 }
 
 R_API RBinJavaCPTypeMetas* r_bin_java_get_cp_meta_from_tag(ut8 tag) {
 	ut16 i = 0;
 	// set default to unknown.
-	RBinJavaCPTypeMetas *result = &R_BIN_JAVA_CP_METAS[2];
+	RBinJavaCPTypeMetas *res = &R_BIN_JAVA_CP_METAS[2];
 	for (i = 0; i < R_BIN_JAVA_CP_METAS_SZ; i++ ) {
 		if (tag == R_BIN_JAVA_CP_METAS[i].tag) {
-			result = &R_BIN_JAVA_CP_METAS[i];
+			res = &R_BIN_JAVA_CP_METAS[i];
 			break;
 		}
 	}
-	return result;
+	return res;
 }
 
 void deinit_java_type_null() {
@@ -1049,19 +1049,19 @@ void deinit_java_type_null() {
 }
 
 R_API ut8 r_bin_java_quick_check(ut8 expected_tag, ut8 actual_tag, ut32 actual_len, const char* name) {
-	ut8 result = 0;
+	ut8 res = 0;
 	if (expected_tag > R_BIN_JAVA_CP_METAS_SZ) {
 		eprintf ("Invalid tag '%d' expected 0x%02x for %s.\n",actual_tag, expected_tag, name);
-		result = 1;
+		res = 1;
 	}else if (expected_tag != actual_tag) {
 		eprintf ("Invalid tag '%d' expected 0x%02x for %s.\n",actual_tag, expected_tag, name);
-		result = 1;
+		res = 1;
 	}else if (actual_len < R_BIN_JAVA_CP_METAS[expected_tag].len) {
 		eprintf ("Unable to parse '%d' expected sz=0x%02x got 0x%02x for %s.\n",
 				actual_tag, R_BIN_JAVA_CP_METAS[expected_tag].len, actual_len, name);
-		result = 2;
+		res = 2;
 	}
-	return result;
+	return res;
 }
 
 R_API ut64 rbin_java_raw_to_long(ut8* raw, ut64 offset) {
@@ -1073,19 +1073,19 @@ R_API ut64 rbin_java_raw_to_long(ut8* raw, ut64 offset) {
 // 2) dont feel like figuring it out when google does it in O(1).
 R_API double my_pow(ut64 base, int exp) {
 	ut8 flag=0;
-	ut64 result = 1;
+	ut64 res = 1;
 	if(exp < 0) {
 		flag = 1;
 		exp *= -1;
 	}
 	while (exp) {
-	    if (exp & 1) result *= base;
+	    if (exp & 1) res *= base;
 	    exp >>= 1;
 	    base *= base;
-	    IFDBG eprintf ("Result: %"PFMT64d", base: %"PFMT64d", exp: %d\n", result, base, exp);
+	    IFDBG eprintf ("Result: %"PFMT64d", base: %"PFMT64d", exp: %d\n", res, base, exp);
 	}
-	if(flag==0) return 1.0*result;
-	return (1.0/result);
+	if(flag==0) return 1.0*res;
+	return (1.0/res);
 }
 
 double rbin_java_raw_to_double(ut8* raw, ut64 offset) {
@@ -1095,23 +1095,23 @@ double rbin_java_raw_to_double(ut8* raw, ut64 offset) {
 	long m = (e == 0) ?
 			(bits & 0xfffffffffffffLL) << 1 :
 			(bits & 0xfffffffffffffLL) | 0x10000000000000LL;
-	double result = 0.0;
+	double res = 0.0;
 	IFDBG eprintf ("Convert Long to Double: %08"PFMT64x"\n", bits);
 	if (0x7ff0000000000000LL == bits) {
-		result = INFINITY;
+		res = INFINITY;
 	}else if (0xfff0000000000000LL == bits) {
-		result = -INFINITY;
+		res = -INFINITY;
 	}else if (0x7ff0000000000001LL <= bits && bits <= 0x7fffffffffffffffLL  ) {
-		result = NAN;
+		res = NAN;
 	}else if (0xfff0000000000001LL <= bits && bits <= 0xffffffffffffffffLL  ) {
-		result = NAN;
+		res = NAN;
 	}else{
-		result = s* m* my_pow (2, e-1075);//XXXX TODO Get double to work correctly here
+		res = s* m* my_pow (2, e-1075);//XXXX TODO Get double to work correctly here
 		IFDBG eprintf ("	High-bytes = %02x %02x %02x %02x\n", raw[0], raw[1], raw[2], raw[3]);
 		IFDBG eprintf ("	Low-bytes = %02x %02x %02x %02x\n", raw[4], raw[5], raw[6], raw[7]);
-		IFDBG eprintf ("Convert Long to Double s: %d, m: 0x%08lx, e: 0x%08x, result: %f\n", s, m, e, result);
+		IFDBG eprintf ("Convert Long to Double s: %d, m: 0x%08lx, e: 0x%08x, res: %f\n", s, m, e, res);
 	}
-	return result;
+	return res;
 }
 
 R_API RBinJavaField* r_bin_java_read_next_method(RBinJavaObj *bin, ut64 offset) {
@@ -1690,18 +1690,18 @@ R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(const RBinJavaField
 
 		rvalue: RBinJavaAttrInfo* if found otherwise NULL.
 	*/
-	RBinJavaAttrInfo *result = NULL, *attr = NULL;
+	RBinJavaAttrInfo *res = NULL, *attr = NULL;
 	RListIter *iter;
 	if (method) {
 		r_list_foreach (method->attributes, iter, attr ) {
 			if (attr && (attr->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) ) {
-				result = attr;
+				res = attr;
 				break;
 			}
 		}
 	}
 
-	return result;
+	return res;
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_get_attr_from_field(RBinJavaField *field, R_BIN_JAVA_ATTR_TYPE attr_type, ut32 pos ) {
@@ -1781,15 +1781,15 @@ R_API RBinJavaAttrInfo* r_bin_java_default_attr_new(ut8* buffer, ut64 sz, ut64 b
 }
 
 RBinJavaAttrMetas* r_bin_java_get_attr_type_by_name(const char *name) {
-	RBinJavaAttrMetas* result = &RBIN_JAVA_ATTRS_METAS[R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR];
+	RBinJavaAttrMetas* res = &RBIN_JAVA_ATTRS_METAS[R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR];
 	ut32 i = 0;
 	for (i = 0; i < RBIN_JAVA_ATTRS_METAS_SZ; i++) {
 		if (strcmp ( (const char *) name, RBIN_JAVA_ATTRS_METAS[i].name) == 0) {
-			result = &RBIN_JAVA_ATTRS_METAS[i];
+			res = &RBIN_JAVA_ATTRS_METAS[i];
 			break;
 		}
 	}
-	return result;
+	return res;
 }
 
 R_API RBinJavaAttrInfo* r_bin_java_read_next_attr(RBinJavaObj *bin, ut64 buf_offset) {
@@ -2075,7 +2075,7 @@ R_API RList* r_bin_java_get_bin_obj_list_thru_obj(RBinJavaObj *bin_obj) {
 
 R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj *bin, ut64 addr) {
 	RListIter *iter = NULL, *iter_tmp=NULL;
-	RBinJavaField *fm_type, *result = NULL;
+	RBinJavaField *fm_type, *res = NULL;
 
 	if (bin == NULL && R_BIN_JAVA_GLOBAL_BIN) bin = R_BIN_JAVA_GLOBAL_BIN;
 	else {
@@ -2088,9 +2088,9 @@ R_API RBinJavaField * r_bin_java_get_method_code_attribute_with_addr(RBinJavaObj
 			 size = r_bin_java_get_method_code_size(fm_type);
 
 		if ( addr >= offset && addr <= size + offset)
-			result = fm_type;
+			res = fm_type;
 	}
-	return result;
+	return res;
 }
 
 R_API RBinAddr * r_bin_java_get_entrypoint(RBinJavaObj* bin, int sym) {
@@ -2374,14 +2374,14 @@ R_API RList* r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx) {
 static  int is_class_interface(RBinJavaObj *bin, RBinJavaCPTypeObj *cp_obj) {
 	RListIter *iter;
 	RBinJavaInterfaceInfo *interface_obj;
-	int result = R_FALSE;
+	int res = R_FALSE;
 	r_list_foreach(bin->interfaces_list, iter, interface_obj) {
 		if (interface_obj) {
-			result = cp_obj == interface_obj->cp_class;
-			if (result) break;
+			res = cp_obj == interface_obj->cp_class;
+			if (res) break;
 		}
 	}
-	return result;
+	return res;
 }
 
 /*
@@ -7229,47 +7229,47 @@ R_API void r_bin_java_print_rtip_annotations_attr_summary(RBinJavaAttrInfo *attr
 
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(ut16 name_idx, ut16 descriptor_idx) {
 	RListIter *iter, *iter_tmp;
-	RBinJavaCPTypeObj *result= NULL, *obj = NULL;
+	RBinJavaCPTypeObj *res= NULL, *obj = NULL;
 	IFDBG eprintf ("Looking for name_idx: %d and descriptor_idx: %d\n", name_idx, descriptor_idx);
 	r_list_foreach_safe (R_BIN_JAVA_GLOBAL_BIN->cp_list, iter, iter_tmp, obj) {
 		if(obj && obj->tag == R_BIN_JAVA_CP_NAMEANDTYPE) {
 			IFDBG eprintf ("RBinJavaCPTypeNameAndType has name_idx: %d and descriptor_idx: %d\n", obj->info.cp_name_and_type.name_idx, obj->info.cp_name_and_type.descriptor_idx);
 			if (obj->info.cp_name_and_type.name_idx == name_idx &&
 				obj->info.cp_name_and_type.descriptor_idx == descriptor_idx) {
-				result = obj;
+				res = obj;
 				break;
 			}
 
 		}
 	}
-	return result;
+	return res;
 }
 
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info_from_name_and_type (ut16 name_idx, ut16 descriptor_idx) {
-	RBinJavaCPTypeObj *result= NULL,
+	RBinJavaCPTypeObj *res= NULL,
 					   *obj = r_bin_java_find_cp_name_and_type_info (name_idx, descriptor_idx);
 	if(obj)
-		result = r_bin_java_find_cp_ref_info (obj->metas->ord);
-	return result;
+		res = r_bin_java_find_cp_ref_info (obj->metas->ord);
+	return res;
 }
 
 R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(ut16 name_and_type_idx) {
 	RListIter *iter, *iter_tmp;
-	RBinJavaCPTypeObj *result= NULL, *obj = NULL;
+	RBinJavaCPTypeObj *res= NULL, *obj = NULL;
 
 	r_list_foreach_safe (R_BIN_JAVA_GLOBAL_BIN->cp_list, iter, iter_tmp, obj) {
-		if(obj == NULL) {
+		if (obj == NULL) {
 			continue;
 		} else if (obj->tag == R_BIN_JAVA_CP_FIELDREF &&
 				obj->info.cp_field.name_and_type_idx == name_and_type_idx) {
-			result = obj;
+			res = obj;
 			break;
 
 		} else if (obj->tag == R_BIN_JAVA_CP_METHODREF &&
 				obj->info.cp_method.name_and_type_idx == name_and_type_idx) {
-			result = obj;
+			res = obj;
 			break;
 		}
 	}
-	return result;
+	return res;
 }

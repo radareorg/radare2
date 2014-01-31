@@ -835,7 +835,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("file.type", "", "Type of current file");
 	SETPREF("file.loadmethod", "fail", "What to do when load addresses overlap: fail, overwrite, or append (next available)");
 	SETI("file.loadalign", 1024, "Alignment of load addresses");
-	SETPREF("file.suppress_warnings", "false", "Suppress file loading warning messages");
+	SETPREF("file.nowarn", "false", "Suppress file loading warning messages");
 	/* magic */
 	SETI("magic.depth", 100, "Recursivity depth in magic description strings");
 

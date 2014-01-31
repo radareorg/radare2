@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #if 1
 /* TODO: Move into cmd_anal() */
@@ -611,8 +611,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'e':
 		if (input[1] == 'r') {
 			r_debug_reg_list (core->dbg, 0, 0, 0);
-		} else
-		if (input[1] == ' ') {
+		} else if (input[1] == ' ') {
 			r_anal_esil_eval (core->anal, input+2);
 		} else eprintf ("Usage: ae [esil]  # wip. analyze esil. (evaluable string intermediate language)\n");
 		break;
@@ -622,6 +621,7 @@ static int cmd_anal(void *data, const char *input) {
 			"Usage: ao[e?] [len]\n"
 			" aoj      display opcode analysis information in JSON\n"
 			" aoe      emulate opcode at current offset\n"
+			" aos      show sdb representation of esil expression\n"
 			" aoe 4    emulate 4 opcodes starting at current offset\n"
 			" ao 5     display opcode analysis of 5 opcodes\n");
 		} else
@@ -639,6 +639,17 @@ static int cmd_anal(void *data, const char *input) {
 				count = 1;
 			}
 			r_core_anal_bytes (core, core->block, len, count, 'j');
+		} else
+		if (input[1]=='s') {
+			RAnalOp *op = r_core_op_anal (core, addr);
+			if (op != NULL) {
+				char *esil = strdup (R_STRBUF_SAFEGET (&op->esil));
+				char *o = r_anal_esil_to_sdb (esil);
+				// do stuff
+				free (esil);
+				free (o);
+				r_anal_op_free (op);
+			}
 		} else
 		if (input[1] == 'e') {
 			eprintf ("TODO: r_anal_op_execute: TODO: USE ESIL\n");
