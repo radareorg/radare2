@@ -46,7 +46,7 @@ static RList* entries(RBinFile *arch) {
 			return ret;
 
 		memset (ptr, '\0', sizeof (RBinAddr));
-		if (!init_jmp[1]==0xc3) {
+		if (!(init_jmp[1]==0xc3)) {
 			ptr->offset = ptr->rva = 0x100;
 		} else {
 			ptr->offset = ptr->rva = init_jmp[3]*0x100+init_jmp[2];
