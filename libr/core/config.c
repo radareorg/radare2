@@ -579,7 +579,7 @@ static int cb_binminstr(void *user, void *data) {
 R_API int r_core_config_init(RCore *core) {
 	int i;
 	char buf[128], *p, *tmpdir;
-	RConfig *cfg = cfg = core->config = r_config_new (core);
+	RConfig *cfg = core->config = r_config_new (core);
 	cfg->printf = r_cons_printf;
 	cfg->num = core->num;
 
