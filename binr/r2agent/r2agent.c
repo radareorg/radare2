@@ -69,7 +69,10 @@ int main(int argc, char **argv) {
 	}
 	
 	eprintf ("http://localhost:%d/\n", s->port);
-	r_sandbox_enable (dosandbox);
+	if (r_sandbox_enable (dosandbox)) {
+		eprintf ("sandbox: connect disabled\n");
+		return 1;
+	}
 	while (!r_cons_singleton ()->breaked) {
 		char *result_heap = NULL;
 		const char *result = page_index;

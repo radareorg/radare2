@@ -212,7 +212,7 @@ int dcpu16_assemble (ut8* out, const char* unoline) {
 	// uberflow!
 	clean_line (line, unoline);
 	
-	if (!*line) return 0;
+	if (!(*line)) return 0;
 	if (!strlen (line)<4) return 0;
 	param = line + 3; /* Cut off first 3 characters */
 	
