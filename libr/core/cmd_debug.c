@@ -515,6 +515,7 @@ free (rf);
 			free (s);
 			} break;
 		case '\0':
+			r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, R_FALSE);
 			r_debug_drx_list (core->dbg);
 			break;
 		default:

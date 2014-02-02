@@ -42,12 +42,16 @@ eprintf ("%d   :   %02x %02x %02x %02x\n",
 
 		break;
 	case 8:
-		memcpy (&v8, regset->arena->bytes+off, 1);
-		ret = v8;
+		if (regset->arena->size-off-1>=0) {
+			memcpy (&v8, regset->arena->bytes+off, 1);
+			ret = v8;
+		}
 		break;
 	case 16:
-		memcpy (&v16, regset->arena->bytes+off, 2);
-		ret = v16;
+		if (regset->arena->size-off-2>=0) {
+			memcpy (&v16, regset->arena->bytes+off, 2);
+			ret = v16;
+		}
 		break;
 	case 32:
 #if 0
@@ -58,8 +62,10 @@ off,
 		(regset->arena->bytes[off+2]),
 		(regset->arena->bytes[off+3]));
 #endif
-		memcpy (&v32, regset->arena->bytes+off, 4);
-		ret = v32;
+		if (regset->arena->size-off-4>=0) {
+			memcpy (&v32, regset->arena->bytes+off, 4);
+			ret = v32;
+		}
 		break;
 	case 64:
 		memcpy (&ret, regset->arena->bytes+off, 8);
@@ -102,9 +108,12 @@ R_API int r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return R_FALSE;
 	}
-	r_mem_copybits (reg->regset[item->type].arena->bytes+
-		BITS2BYTES (item->offset), src, item->size);
-	return R_TRUE;
+	if (reg->regset[item->type].arena->size-item->offset-item->size>=0) {
+		r_mem_copybits (reg->regset[item->type].arena->bytes+
+				BITS2BYTES (item->offset), src, item->size);
+		return R_TRUE;
+	}
+	return R_FALSE;
 }
 
 R_API char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {

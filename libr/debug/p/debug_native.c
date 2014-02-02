@@ -915,9 +915,12 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"gpr	if	.1	.1161	0	interrupt\n"
 	"gpr	df	.1	.1162	0	direction\n"
 	"gpr	of	.1	.1163	0	overflow\n"
- 	"drx	dr0	.32	0	0\n"
- 	"drx	dr1	.32	4	0\n"
- 	"drx	dr2	.32	8	0\n"
+ 	"drx	dr0	.64	0	0\n"
+ 	"drx	dr1	.64	8	0\n"
+ 	"drx	dr2	.64	16	0\n"
+ 	"drx	dr3	.64	24	0\n"
+ 	"drx	dr4	.64	32	0\n"
+ 	"drx	dr7	.64	40	0\n"
 	);
 #else
 	// 32bit host debugging 32bit target
@@ -1046,12 +1049,12 @@ if (dbg->bits & R_SYS_BITS_32) {
 	"seg	es	.64	192	0\n"
 	"seg	fs	.64	200	0\n"
 	"seg	gs	.64	208	0\n"
-	"drx	dr0	.32	0	0\n"
-	"drx	dr1	.32	4	0\n"
-	"drx	dr2	.32	8	0\n"
-	"drx	dr3	.32	12	0\n"
-	"drx	dr6	.32	24	0\n"
-	"drx	dr7	.32	28	0\n"
+ 	"drx	dr0	.64	0	0\n"
+ 	"drx	dr1	.64	8	0\n"
+ 	"drx	dr2	.64	16	0\n"
+ 	"drx	dr3	.64	24	0\n"
+ 	"drx	dr4	.64	32	0\n"
+ 	"drx	dr7	.64	40	0\n"
 	);
 }
 #elif (defined(__arm64__) || __arm__) && __APPLE__
@@ -1857,10 +1860,14 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		for (i=0; i<7; i++) { // DR0-DR7
 			ret = ptrace (PTRACE_PEEKUSER, pid, r_offsetof (
 				struct user, u_debugreg[i]), 0);
-			if (ret != 0)
-				return R_FALSE;
-			memcpy (buf+(i*4), &ret, 4);
+			if (ret != 0) {
+				perror("ptrace");
+				//		return R_FALSE;
+			} else {
+				memcpy (buf+(i*4), &ret, 4);
+			}
 		}
+		return sizeof (R_DEBUG_REG_T);
 	}
 #endif
 #endif
@@ -1940,6 +1947,7 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 			//	return R_FALSE;
 		}
 		}
+		return sizeof (R_DEBUG_REG_T);
 #else
 		return R_FALSE;
 #endif
@@ -1998,7 +2006,6 @@ static int r_debug_native_reg_write(RDebug *dbg, int type, const ut8* buf, int s
 		}
 		} else eprintf ("There are no threads!\n");
 		return sizeof (R_DEBUG_REG_T);
-		
 #else
 		eprintf ("TODO: add support for write DRX registers\n");
 		return R_FALSE;
@@ -2369,9 +2376,9 @@ static RList *r_debug_native_map_get(RDebug *dbg) {
 		if (pos_c) strncpy (path, pos_c, sizeof (path)-1);
 		else path[0]='\0';
 #else
-		char null[16];
+		char null[64]; // XXX: this can overflow
 		sscanf (line, "%s %s %s %s %s %s",
-			&region[2], perms,  null, null, null, path);
+			&region[2], perms, null, null, null, path);
 
 		pos_c = strchr (&region[2], '-');
 		if (!pos_c)
@@ -2606,7 +2613,7 @@ static int drx_del(RDebug *dbg, ut64 addr, int rwx) {
 
 static int r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g) {
 #if __i386__ || __x86_64__
-	drxt regs[8];
+	drxt regs[8] = {0};
 
 	// sync drx regs
 #define R dbg->reg
