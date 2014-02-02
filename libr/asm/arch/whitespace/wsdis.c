@@ -2,6 +2,10 @@
 #include <r_asm.h>
 #include <string.h>
 
+#ifndef WS_API
+#define WS_API
+#endif
+
 enum {
 	WS_OP_UNK = 0,
 	WS_OP_NOP,
@@ -47,7 +51,7 @@ static int get_ws_suf_optype(ut8 *buf, int len)
 	return WS_OP_UNK;
 }
 
-int get_ws_optype(ut8 *buf, int len)
+WS_API int get_ws_optype(ut8 *buf, int len)
 {
 	ut8 *ptr;
 	if(get_ws_pref_optype(buf, len) == WS_OP_PREF) {
@@ -59,7 +63,7 @@ int get_ws_optype(ut8 *buf, int len)
 	return get_ws_pref_optype(buf, len);
 }
 
-ut8 *get_ws_next_token(ut8 *buf, int len)
+WS_API ut8 *get_ws_next_token(ut8 *buf, int len)
 {
 	ut8 *ret;
 	ret = buf;
@@ -101,7 +105,7 @@ static st32 get_ws_val(ut8 *buf, int len)
 	return ret;
 }
 
-int test_ws_token_exist(ut8 *buf, ut8 token, int len)
+WS_API int test_ws_token_exist(ut8 *buf, ut8 token, int len)
 {
 	ut8 *ptr;
 	ptr = get_ws_next_token(buf, len);
@@ -114,7 +118,7 @@ int test_ws_token_exist(ut8 *buf, ut8 token, int len)
 	return -1;
 }
 
-int wsdis(RAsmOp *op, ut8 *buf, int len)
+WS_API int wsdis(RAsmOp *op, ut8 *buf, int len)
 {
 	ut8 *ptr;
 	ptr = buf;

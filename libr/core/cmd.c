@@ -936,7 +936,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd) {
 	const char *tick = NULL;
 	char *ptr, *ptr2, *str;
 	char *arroba = NULL;
-	int i, ret, pipefd;
+	int i, ret = 0, pipefd;
 	int usemyblock = 0;
 
 	if (!cmd) return 0;

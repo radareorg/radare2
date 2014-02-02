@@ -5,6 +5,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 #include <r_lib.h>
+#define WS_API static
 #include "../../asm/arch/whitespace/wsdis.c"
 
 

@@ -4,6 +4,7 @@
 #include <r_util.h>
 #include <r_asm.h>
 #include <r_lib.h>
+#define WS_API static
 #include "../arch/whitespace/wsdis.c"
 
 int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
