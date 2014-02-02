@@ -13,7 +13,7 @@ enum {
 	WS_OP_IO
 };
 
-static int get_ws_pref_optype(ut8 *buf, ut64 len)
+static int get_ws_pref_optype(ut8 *buf, int len)
 {
 	if(len) {
 		switch(buf[0]) {
@@ -30,7 +30,7 @@ static int get_ws_pref_optype(ut8 *buf, ut64 len)
 	return WS_OP_UNK;
 }
 
-static int get_ws_suf_optype(ut8 *buf, ut64 len)
+static int get_ws_suf_optype(ut8 *buf, int len)
 {
 	if(len) {
 		switch(buf[0]) {
@@ -47,7 +47,7 @@ static int get_ws_suf_optype(ut8 *buf, ut64 len)
 	return WS_OP_UNK;
 }
 
-int get_ws_optype(ut8 *buf, ut64 len)
+int get_ws_optype(ut8 *buf, int len)
 {
 	ut8 *ptr;
 	if(get_ws_pref_optype(buf, len) == WS_OP_PREF) {
@@ -59,7 +59,7 @@ int get_ws_optype(ut8 *buf, ut64 len)
 	return get_ws_pref_optype(buf, len);
 }
 
-ut8 *get_ws_next_token(ut8 *buf, ut64 len)
+ut8 *get_ws_next_token(ut8 *buf, int len)
 {
 	ut8 *ret;
 	ret = buf;
@@ -75,7 +75,33 @@ ut8 *get_ws_next_token(ut8 *buf, ut64 len)
 	return NULL;
 }
 
-int test_ws_token_exist(ut8 *buf, ut8 token, ut64 len)
+static st32 get_ws_val(ut8 *buf, int len)
+{
+	ut8 sig;
+	ut8 *tok;
+	int i, ret;
+	ret = 0;
+	tok = get_ws_next_token(buf, len);
+	sig = (*tok == '\t');
+	len = len - (tok - buf) -1;
+	for(i=0; i<30; i++) {						//XXX : conceptually wrong
+		tok++;
+		tok = get_ws_next_token(tok, len);
+		if(!tok || *tok == 10) {
+			if(sig)
+				return ret * (-1);
+			return ret;
+		}
+		ret = (ret << 1);
+		ret = ret + (*tok == '\t');
+		len = len - (tok - buf) -1;
+	}
+	if(sig)
+		return ret * (-1);
+	return ret;
+}
+
+int test_ws_token_exist(ut8 *buf, ut8 token, int len)
 {
 	ut8 *ptr;
 	ptr = get_ws_next_token(buf, len);
@@ -88,7 +114,7 @@ int test_ws_token_exist(ut8 *buf, ut8 token, ut64 len)
 	return -1;
 }
 
-int wsdis(RAsmOp *op, ut8 *buf, ut64 len)
+int wsdis(RAsmOp *op, ut8 *buf, int len)
 {
 	ut8 *ptr;
 	ptr = buf;
@@ -107,6 +133,7 @@ int wsdis(RAsmOp *op, ut8 *buf, ut64 len)
 					if(-1 == test_ws_token_exist(get_ws_next_token(ptr, len - 1), 10, len - 1))
 						return op->size = 0;
 					sprintf(op->buf_asm, "push");
+					sprintf(&op->buf_asm[4], " %d", get_ws_val(ptr + 1, len - 1));
 					return op->size = test_ws_token_exist(ptr - 1, 10, len) + 1;
 				case 10:
 					ptr = get_ws_next_token(ptr, len -1) + 1;
@@ -146,6 +173,8 @@ int wsdis(RAsmOp *op, ut8 *buf, ut64 len)
 						op->buf_asm[0] = '\0';							//XXX
 						return op->size = 0;
 					}
+					if(strlen(op->buf_asm) < 6)
+						sprintf(&op->buf_asm[strlen(op->buf_asm)], " %d", get_ws_val(ptr, len - (ptr - buf) - 1));
 					return op->size = test_ws_token_exist(ptr, 10, len - (ptr - buf) -1) + ptr - buf + 1;	//+1?
 			}
 		case WS_OP_HEAP:
@@ -280,6 +309,8 @@ int wsdis(RAsmOp *op, ut8 *buf, ut64 len)
 						op->buf_asm[0] = '\0';
 						return op->size = 0;
 					}
+					if(strlen(op->buf_asm) == 2)
+						sprintf(&op->buf_asm[2], " %d", get_ws_val(ptr, len - (ptr- buf) -1));
 					return op->size = ptr - buf + test_ws_token_exist(ptr, 10, len - (ptr - buf)) + 1;
 				case ' ':
 					ptr++;
@@ -302,6 +333,7 @@ int wsdis(RAsmOp *op, ut8 *buf, ut64 len)
 						op->buf_asm[0] = '\0';
 						return op->size = 0;
 					}
+					sprintf(&op->buf_asm[strlen(op->buf_asm)], " %d", get_ws_val(ptr, len - (ptr - buf) -1));
 					return op->size = ptr - buf + test_ws_token_exist(ptr, 10, len - (ptr - buf)) + 1;
 			}
 	}
