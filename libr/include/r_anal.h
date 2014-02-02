@@ -1116,7 +1116,7 @@ extern RAnalPlugin r_anal_plugin_ebc;
 extern RAnalPlugin r_anal_plugin_gb;
 extern RAnalPlugin r_anal_plugin_nios2;
 extern RAnalPlugin r_anal_plugin_malbolge;
-
+extern RAnalPlugin r_anal_plugin_ws;
 #ifdef __cplusplus
 }
 #endif

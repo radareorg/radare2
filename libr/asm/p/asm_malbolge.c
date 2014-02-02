@@ -17,13 +17,13 @@ static int mal_dis(RAsmOp *op, ut64 c, ut8 *buf, ut64 len)
 				sprintf(op->buf_asm, "in a");
 				break;
 			case 39:
-				sprintf(op->buf_asm, "rotr [d],\tmov a, [d]");
+				sprintf(op->buf_asm, "rotr [d], mov a, [d]");
 				break;
 			case 40:
 				sprintf(op->buf_asm, "mov d, [d]");
 				break;
 			case 62:
-				sprintf(op->buf_asm, "crz [d], a,\tmov a, [d]");
+				sprintf(op->buf_asm, "crz [d], a, mov a, [d]");
 				break;
 			case 81:
 				sprintf(op->buf_asm, "end");
