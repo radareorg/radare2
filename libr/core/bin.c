@@ -342,6 +342,9 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *entry = NULL;
 	int i = 0;
 
+	ut64 obaddr = r_config_get_i (r->config, "bin.baddr");
+	baddr = baddr == 0 && obaddr > 0? obaddr: baddr;
+
 	if ((entries = r_bin_get_entries (r->bin)) == NULL)
 		return R_FALSE;
 
@@ -1038,6 +1041,8 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 	int ret = R_TRUE;
 	const char *name = NULL;
 	ut64 at = 0;
+	// XXX - shouldn't we read the baddr from the bin.  In the past, the offset parameter was used
+	// as the source for the base address 
 	ut64 baddr = r_bin_get_baddr (core->bin);
 
 	if (filter && filter->offset)
