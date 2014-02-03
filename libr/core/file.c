@@ -281,10 +281,9 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 
 	r_config_set_i (r->config, "io.va",
 		(r->bin->cur->o->info)? r->bin->cur->o->info->has_va: 0);
-	// XXX - this needs to be fixed (offset is ignored), r_core_bin_info gets 
-	// the base address information directly from the binary now.
 	offset = r_bin_get_offset (r->bin);
-	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, offset);
+	// XXX - should this be offset, base address, or base address + offset. (referring to the last argument) 
+	r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, r_bin_get_baddr(r->bin));
 
 	if (r->bin->cur->curplugin && !strcmp (r->bin->cur->curplugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `#sha1 $s-32 @32` @12 ; wx `#adler32 $s-12 @12` @8)\"\n");
