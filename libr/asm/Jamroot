@@ -7,6 +7,9 @@ ASM_OBJS += arch/x86/ollyasm/asmserv.c arch/x86/ollyasm/assembl.c arch/x86/ollya
 ASM_OBJS += arch/c55plus/c55plus.c arch/c55plus/decode.c arch/c55plus/decode_funcs.c ;
 ASM_OBJS += arch/c55plus/hashtable.c arch/c55plus/hashvector.c arch/c55plus/ins.c arch/c55plus/utils.c ;
 
+# TMS320
+ASM_OBJS += arch/tms320/tms320_dasm.c ;
+
 # ARC
 ASM_OBJS += arch/arc/gnu/arc-dis.c ;
 ASM_OBJS += arch/arc/gnu/arc-ext.c ;
