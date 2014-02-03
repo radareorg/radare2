@@ -204,9 +204,6 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 			r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET,
 				va, NULL, baddr);
 			r_bin_load (r->bin, file, baddr, loadaddr, R_FALSE);
-			if (baddr && r->bin->cur) {
-				r->bin->cur->baddr = baddr;
-			}
 			r_config_set_i (r->config, "io.va",
 				(r->bin->cur->o->info)? r->bin->cur->o->info->has_va: 0);
 			offset = r_bin_get_offset (r->bin);
@@ -278,7 +275,7 @@ R_API int r_core_bin_load(RCore *r, const char *file, ut64 baddr) {
 		return R_TRUE;
 	}
 	//r->file->binfile = r->bin->cur;//r_bin_get_object (r->bin);
-	if (baddr) r->bin->cur->baddr = baddr;
+	if (baddr) r_bin_set_baddr(r->bin, baddr);
 	if (r->file && r->bin->cur) r->bin->cur->fd = r->file->fd->fd;
 	if (r->bin) r_core_bin_bind (r);
 

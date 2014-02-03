@@ -126,7 +126,6 @@ typedef struct r_bin_file_t {
 	int size;
 	int rawstr;
 	ut64 offset;
-	ut64 baddr;
 	RBinObject *o;
 	void *xtr_obj;
 	ut64 loadaddr;
