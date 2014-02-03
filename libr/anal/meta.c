@@ -178,18 +178,17 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str) {
 		to = from+to;
 
 	switch (type) {
+	case R_META_TYPE_COMMENT:
+		if (r_meta_comment_check (m, str, from))
+			return R_FALSE;
 	case R_META_TYPE_HIDE:
 	case R_META_TYPE_CODE:
 	case R_META_TYPE_DATA:
 	case R_META_TYPE_STRING:
 	case R_META_TYPE_FORMAT:
-		/* we should remove overlapped types and so on.. */
-		//r_meta_cleanup (m, from, to);
-	case R_META_TYPE_COMMENT:
-		if (type == R_META_TYPE_COMMENT)
-			if (r_meta_comment_check (m, str, from))
-				return R_FALSE;
+		//r_meta_cleanup (m, from, to); /* remove overlapped stuff? */
 		mi = r_meta_item_new (type);
+		if (!mi) return R_FALSE;
 		mi->size = to-from;
 		mi->type = type;
 		mi->from = from;
@@ -201,15 +200,15 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str) {
 				mi->str[78] = 0;
 			} else {
 				mi->str = strdup (str);
-				r_list_append (m->meta, mi);
 			}
 		} else mi->str = NULL;
+		r_list_append (m->meta, mi);
 		break;
 	default:
 		eprintf ("r_meta_add: Unsupported type '%c'\n", type);
 		return R_FALSE;
 	}
-	if (mi->type == R_META_TYPE_FORMAT)
+	if (mi && mi->type == R_META_TYPE_FORMAT)
 		mi->size = r_print_format_length (mi->str);
 	return R_TRUE;
 }
