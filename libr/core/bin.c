@@ -342,9 +342,6 @@ static int bin_entry (RCore *r, int mode, ut64 baddr, int va) {
 	RBinAddr *entry = NULL;
 	int i = 0;
 
-	ut64 obaddr = r_config_get_i (r->config, "bin.baddr");
-	baddr = baddr == 0 && obaddr > 0? obaddr: baddr;
-
 	if ((entries = r_bin_get_entries (r->bin)) == NULL)
 		return R_FALSE;
 

@@ -543,7 +543,6 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 		bin->cur->o->baddr = baddr;
 		// XXX - update all the infos?
 	}
-
 }
 
 R_API ut64 r_bin_get_boffset(RBin *bin) {
