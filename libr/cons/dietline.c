@@ -354,13 +354,13 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if USE_UTF8
 	int utflen;
 #endif
-	int ch, i; /* grep completion */
-	char *tmp_ed_cmd, prev;
+	int ch, i=0; /* grep completion */
+	char *tmp_ed_cmd, prev = 0;
 
 	I.buffer.index = I.buffer.length = 0;
 	if (I.contents) {
-		// XXX. control overflow
-		strcpy (I.buffer.data, I.contents);
+		strncpy (I.buffer.data, I.contents, R_LINE_BUFSIZE-1);
+        I.buffer.data[R_LINE_BUFSIZE-1] = '\0'; 
 		I.buffer.index = I.buffer.length = strlen (I.contents);
 	} else {
 		I.buffer.data[0] = '\0';
@@ -441,8 +441,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					I.buffer.length = strlen (tmp_ed_cmd);
 					if (I.buffer.length < R_LINE_BUFSIZE) {
 						I.buffer.index = I.buffer.length;
-						// XXX may overflow here
-						strcpy (I.buffer.data, tmp_ed_cmd);
+						strncpy (I.buffer.data, tmp_ed_cmd, R_LINE_BUFSIZE-1);
+                        I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
 					} else I.buffer.length -= strlen (tmp_ed_cmd);
 					free (tmp_ed_cmd);
 				}
@@ -701,8 +701,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 13:
 			if (gcomp && I.buffer.length>0) {
-				// XXX overflow
-				strcpy (I.buffer.data, gcomp_line);
+				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE-1);
+                I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
 				I.buffer.length = strlen (gcomp_line);
 			}
 			gcomp_idx = gcomp = 0;

@@ -384,8 +384,7 @@ static int getbytes(int fd, char *b, int len) {
 SDB_VISIBLE void sdb_dump_begin (Sdb* s) {
 	if (s->fd != -1) {
 		seek_set (s->fd, 0);
-		pos = 2048;
-		seek_set (s->fd, 2048);
+		seek_set (s->fd, (pos=2048));
 	} else pos = 0;
 }
 
@@ -393,7 +392,8 @@ SDB_VISIBLE SdbKv *sdb_dump_next (Sdb* s) {
 	char *k = NULL, *v = NULL;
 	if (!sdb_dump_dupnext (s, &k, &v))
 		return NULL;
-	strcpy (s->tmpkv.key, k); // no overflow here?
+	strncpy (s->tmpkv.key, k, SDB_KSZ-1);
+	s->tmpkv.key[SDB_KSZ-1] = '\0';
 	free (k);
 	free (s->tmpkv.value);
 	s->tmpkv.value = v;
