@@ -354,7 +354,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if USE_UTF8
 	int utflen;
 #endif
-	int ch, i; /* grep completion */
+	int ch, i=0; /* grep completion */
 	char *tmp_ed_cmd, prev = 0;
 
 	I.buffer.index = I.buffer.length = 0;
