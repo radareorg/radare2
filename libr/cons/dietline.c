@@ -359,8 +359,8 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 
 	I.buffer.index = I.buffer.length = 0;
 	if (I.contents) {
-		// XXX. control overflow
-		strcpy (I.buffer.data, I.contents);
+		strncpy (I.buffer.data, I.contents, R_LINE_BUFSIZE-1);
+        I.buffer.data[R_LINE_BUFSIZE-1] = '\0'; 
 		I.buffer.index = I.buffer.length = strlen (I.contents);
 	} else {
 		I.buffer.data[0] = '\0';
