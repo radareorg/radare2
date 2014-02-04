@@ -1866,17 +1866,20 @@ eprintf ("++ EFL = 0x%08x  %d\n", ctx.EFlags, r_offsetof (CONTEXT, EFlags));
 		// XXX: maybe the register map is not correct, must review
 	}
 #elif __linux__
+#ifndef __ANDROID__
 	{
 		int i;
 		for (i=0; i<8; i++) { // DR0-DR7
 			if (i==4 || i == 5) continue;
 			long ret = ptrace (PTRACE_PEEKUSER, pid, r_offsetof (
 				struct user, u_debugreg[i]), 0);
-eprintf ("PEEK %d = %x\n", i, ret);
 			memcpy (buf+(i*sizeof(ret)), &ret, sizeof(ret));
 		}
 		return sizeof (R_DEBUG_REG_T);
 	}
+#else
+#warning Android X86 does not support DRX
+#endif
 #endif
 #endif
 		return R_TRUE;

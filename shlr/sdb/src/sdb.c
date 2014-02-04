@@ -523,23 +523,17 @@ SDB_VISIBLE void sdb_flush(Sdb* s) {
 static int r_sys_rmkdir(char *dir) {
         char *ptr, *path;
 	ptr = path = dir;
-printf ("MAKE DIR\n");
         if (*ptr==DIRSEP) ptr++;
-printf ("2 MAKE DIR (%s)\n", ptr);
         while ((ptr = strchr (ptr, DIRSEP))) {
                 *ptr = 0;
-printf ("2.2 pene\n");
                 if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
                         fprintf (stderr, "r_sys_rmkdir: fail %s\n", dir);
-printf ("2.4 pene\n");
                         free (path);
                         return 0;
                 }
-printf ("2.8 pene\n");
                 *ptr = DIRSEP;
                 ptr++;
         }
-printf ("3 SOPA\n");
         return 1;
 }
 

@@ -486,7 +486,7 @@ static int bin_relocs (RCore *r, int mode, ut64 baddr, int va) {
 			r_list_foreach (relocs, iter, reloc) {
 				r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" type=%s",
 					baddr+reloc->rva, reloc->offset, bin_reloc_type_name (reloc));
-				if (reloc->import && reloc->import->name)
+				if (reloc->import && reloc->import->name[0])
 					r_cons_printf (" %s", reloc->import->name);
 				if (reloc->addend) {
 					if (reloc->import && reloc->addend > 0)
@@ -723,7 +723,8 @@ static int bin_symbols (RCore *r, int mode, ut64 baddr, int va, ut64 at, const c
 						if (symbol->size>0) {
 							r_cons_printf ("Cd %"PFMT64d" @ 0x%08"PFMT64x"\n",
 									symbol->size, addr);
-						} else eprintf ("Wrong symbol '%s' have size %d\n", symbol->name, symbol->size);
+						} else eprintf ("Wrong symbol '%s' have size %"PFMT64d"\n",
+								symbol->name, symbol->size);
 					}
 					r_cons_printf ("f sym.%s %"PFMT64d" 0x%08"PFMT64x"\n",
 							symbol->name, symbol->size, addr);
