@@ -524,6 +524,7 @@ error:
 	if (fcn) {
 		if (fcn->size == 0 || fcn->addr == UT64_MAX) {
 			r_anal_fcn_free (fcn);
+			fcn = NULL;
 		} else {
 		// TODO: mark this function as not properly analyzed
 #if 0
@@ -549,11 +550,12 @@ error:
 				r_anal_fcn_free (fcn);
 #endif
 		}
-		if (has_next) {
+		if (fcn && has_next) {
 			next_append (fcn->addr+fcn->size);
 			for (i=0; i<nexti; i++) {
 				if (!next[i]) continue;
-				r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
+				r_core_anal_fcn (core, next[i],
+					next[i], 0, depth-1);
 			}
 			free (next);
 		}
