@@ -276,8 +276,14 @@ static int bin_dwarf (RCore *core, int mode) {
 	} else {
 		// TODO: complete and speed-up support for dwarf
 		if (r_config_get_i (core->config, "bin.dwarf")) {
-			r_bin_dwarf_parse_info (core->bin);
+			RBinDwarfDebugAbbrev *da;
+			da = r_bin_dwarf_parse_abbrev (core->bin);
+			r_bin_dwarf_parse_info (da, core->bin);
+			r_bin_dwarf_parse_aranges (core->bin);
 			list = r_bin_dwarf_parse_line (core->bin);
+
+			r_bin_dwarf_free_debug_abbrev(da);
+			free(da);
 		}
 	}
 	if (!list) return R_FALSE;
