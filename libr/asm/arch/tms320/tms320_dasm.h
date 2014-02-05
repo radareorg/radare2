@@ -108,6 +108,8 @@ struct tms320_instruction_head {
  * TMS320 dasm instance
  */
 
+
+
 typedef struct {
 	insn_head_t		* head;
 	insn_item_t		* insn;
@@ -118,8 +120,11 @@ typedef struct {
 		ut64		opcode64;
 	};
 
+#define TMS320_S_INVAL		0x01
+	ut8			status;
 	ut8			length;
 	char			syntax[1024];
+
 
 #define def_field(name, size)			\
 	unsigned int bf_##name##_valid:1;	\
@@ -194,8 +199,12 @@ typedef struct {
 
 	} f;
 
-	RHashTable	* map;
-	RHashTable	* map_e;
+	RHashTable		* map;
+	RHashTable		* map_e;
+
+#define TMS320_F_CPU_C54X	0x0000001
+#define TMS320_F_CPU_C55X	0x0000002
+	ut32			features;
 } tms320_dasm_t;;
 
 #define field_valid(d, name)		\
