@@ -40,7 +40,7 @@ struct {const char* name; ut64 bit;} const static arch_bit_array[] = {
     {"mips", R_SYS_ARCH_MIPS},
     {"sparc", R_SYS_ARCH_SPARC},
     {"csr", R_SYS_ARCH_CSR},
-    {"c55+", R_SYS_ARCH_C55PLUS},
+    {"tms320", R_SYS_ARCH_TMS320},
     {"msil", R_SYS_ARCH_MSIL},
     {"objd", R_SYS_ARCH_OBJD},
     {"bf", R_SYS_ARCH_BF},

@@ -1095,7 +1095,7 @@ R_API void r_anal_state_set_depth(RAnalState *state, ut32 depth);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_csr;
-extern RAnalPlugin r_anal_plugin_c55plus;
+extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_avr;
 extern RAnalPlugin r_anal_plugin_arm;
 extern RAnalPlugin r_anal_plugin_x86;
