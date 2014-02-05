@@ -13,16 +13,28 @@ static struct r_lib_t *l;
 static struct r_asm_t *a;
 static int coutput = R_FALSE;
 
-static void r_asm_list(RAsm *a) {
+static void rasm2_list(RAsm *a, const char *arch) {
+	int i;
 	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h) {
-		const char *feat = "--";
-		if (h->assemble && h->disassemble)  feat = "ad";
-		if (h->assemble && !h->disassemble) feat = "a_";
-		if (!h->assemble && h->disassemble) feat = "_d";
-		printf ("%s  %-11s  %s  (%s)\n", feat, h->name,
-			h->desc, h->license?h->license:"unknown");
+		if (arch) {
+			if (h->cpus && !strcmp (arch, h->name)) {
+				char *c = strdup (h->cpus);
+				int n = r_str_split (c, ',');
+				for (i=0;i<n;i++)
+					printf ("%s\n", r_str_word_get0(c, i));
+				free (c);
+				break;
+			}
+		} else {
+			const char *feat = "--";
+			if (h->assemble && h->disassemble)  feat = "ad";
+			if (h->assemble && !h->disassemble) feat = "a_";
+			if (!h->assemble && h->disassemble) feat = "_d";
+			printf ("%s  %-11s  %s  (%s)\n", feat, h->name,
+				h->desc, h->license?h->license:"unknown");
+		}
 	}
 }
 
@@ -175,7 +187,7 @@ int main(int argc, char *argv[]) {
 		&__lib_asm_cb, &__lib_asm_dt, NULL);
 	path = r_sys_getenv ("LIBR_PLUGINS");
 	if (!path || !*path)
-		path = R2_PREFIX"/lib/radare2/last";
+		path = R2_PREFIX"/lib/radare2/"R2_VERSION;
 	r_lib_opendir (l, path);
 
 	if (argc<2)
@@ -235,7 +247,7 @@ int main(int argc, char *argv[]) {
 			len = r_num_math (NULL, optarg);
 			break;
 		case 'L':
-			r_asm_list (a);
+			rasm2_list (a, argv[optind]);
 			exit (1);
 		case 'e':
 			r_asm_set_big_endian (a, !!!a->big_endian);

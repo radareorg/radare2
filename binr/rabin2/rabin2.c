@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -306,14 +306,14 @@ int main(int argc, char **argv) {
 	bin = core.bin;
 	l = r_lib_new ("radare_plugin");
 	r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
-					   &__lib_bin_cb, &__lib_bin_dt, NULL);
+			   &__lib_bin_cb, &__lib_bin_dt, NULL);
 	r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
-					   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
+			   &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
 
 	/* load plugins everywhere */
 	r_lib_opendir (l, getenv ("LIBR_PLUGINS"));
 	r_lib_opendir (l, homeplugindir);
-	r_lib_opendir (l, LIBDIR"/radare2/");
+	r_lib_opendir (l, LIBDIR"/radare2/"R2_VERSION);
 
 #define is_active(x) (action&x)
 #define set_action(x) actions++; action |=x

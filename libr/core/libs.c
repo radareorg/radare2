@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include "r_core.h"
 
@@ -53,7 +53,7 @@ R_API int r_core_loadlibs(struct r_core_t *core) {
 	r_lib_opendir (core->lib, getenv (R_LIB_ENV));
 	// !!!! // r_lib_opendir (core->lib, ".");
 	r_lib_opendir (core->lib, homeplugindir);
-	r_lib_opendir (core->lib, R2_LIBDIR"/radare2/last");
+	r_lib_opendir (core->lib, R2_LIBDIR"/radare2/"R2_VERSION);
 	free (homeplugindir);
 	return R_TRUE;
 }

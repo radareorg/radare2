@@ -105,6 +105,7 @@ typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 typedef struct r_asm_plugin_t {
 	char *name;
 	char *arch;
+	char *cpus;
 	char *desc;
 	char *license;
 	int bits;
