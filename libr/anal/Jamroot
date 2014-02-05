@@ -90,9 +90,9 @@ ANAL_OBJS += p/anal_java.c
     ../../shlr/java/ops.c
 ;
 
-# C55PLUS
-ANAL_OBJS += p/anal_c55plus.c 
-    ../asm/arch/c55plus/ins.c
+# TMS320
+ANAL_OBJS += p/anal_tms320.c
+    ../asm/arch/tms320/tms320_dasm.c
 ;
 
 # DALVIK

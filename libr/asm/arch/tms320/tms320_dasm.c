@@ -20,6 +20,8 @@
 #include "tms320_p.h"
 #include "tms320_dasm.h"
 
+#include "c55plus/c55plus.h"
+
 /*
  * TMS320 disassembly engine implementation
  */
@@ -957,7 +959,7 @@ insn_head_t * lookup_insn_head(tms320_dasm_t * dasm)
 
 	/* handle some exceptions */
 
-	if (dasm->features & TMS320_F_CPU_C55X)
+	if (tms320_f_get_cpu(dasm) == TMS320_F_CPU_C55X)
 		e_list = c55x_e_list;
 
 	while (e_list && (e_list[0] && e_list[1])) {
@@ -1001,11 +1003,13 @@ int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 {
 	init_dasm(dasm, stream, len);
 
-	if (lookup_insn_head(dasm)) {
-		if (decode_insn_head(dasm)) {
+	if (tms320_f_get_cpu(dasm) != TMS320_F_CPU_C55PLUS) {
+		if (lookup_insn_head(dasm) && decode_insn_head(dasm)) {
 			if (dasm->length > len)
 				dasm->status |= TMS320_S_INVAL;
 		}
+	} else {
+		c55plus_disassemble(dasm, stream, len);
 	}
 
 	return dasm->status & TMS320_S_INVAL ? 0 : dasm->length;
@@ -1032,7 +1036,7 @@ int tms320_dasm_init(tms320_dasm_t * dasm)
 	for (i = 0; i < ARRAY_SIZE(c55x_list_e); i++)
 		ht_(insert)(dasm->map_e, c55x_list_e[i].byte, &c55x_list_e[i]);
 
-	dasm->features |= TMS320_F_CPU_C55X;
+	tms320_f_set_cpu(dasm, TMS320_F_CPU_C55X);
 
 	return 0;
 }
