@@ -86,7 +86,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 	return R_TRUE;
 }
 
-static int cb_analplugin(void *user, void *data) {
+static int cb_analarch(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (*node->value == '?') {
@@ -98,6 +98,13 @@ static int cb_analplugin(void *user, void *data) {
 			eprintf ("anal.arch: cannot find '%s'\n", node->value);
 		return R_FALSE;
 	}
+	return R_TRUE;
+}
+
+static int cb_analcpu(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	r_anal_set_cpu (core->anal, node->value);
 	return R_TRUE;
 }
 
@@ -586,7 +593,8 @@ R_API int r_core_config_init(RCore *core) {
 	/* anal */
 	SETI("anal.depth", 50, "Max depth at code analysis"); // XXX: warn if depth is > 50 .. can be problematic
 	SETPREF("anal.hasnext", "true", "Continue analysis after each function");
-	SETCB("anal.arch", R_SYS_ARCH, &cb_analplugin, "Specify the anal.arch to use");
+	SETCB("anal.arch", R_SYS_ARCH, &cb_analarch, "Specify the anal.arch to use");
+	SETCB("anal.cpu", R_SYS_ARCH, &cb_analcpu, "Specify the anal.cpu to use");
 	SETPREF("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis.");
 	SETI("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
