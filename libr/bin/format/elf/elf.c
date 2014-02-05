@@ -287,6 +287,7 @@ static ut64 Elf_(get_import_addr)(struct Elf_(r_bin_elf_obj_t) *bin, int sym) {
 				if (r_buf_read_at (bin->b, rel[k].r_offset-got_addr+got_offset,
 							(ut8*)&plt_sym_addr, sizeof (Elf_(Addr))) == -1) {
 					eprintf ("Warning: read (got)\n");
+                    free (rel);
 					return UT64_MAX;
 				}
 				free (rel);
@@ -733,10 +734,12 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 			}
 			if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)strtab, bin->strtab_section->sh_size) == -1) {
 				eprintf ("Warning: read (syms strtab)\n");
+                free (strtab);
 				return NULL;
 			}
 			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) { // LEAKS
 				perror ("malloc (syms)");
+                free (strtab);
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
@@ -748,6 +751,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 #endif
 					nsym) == -1) {
 				eprintf ("Warning: read (sym)\n");
+                free (sym);
+                free (strtab);
 				return NULL;
 			}
 		}
@@ -778,12 +783,16 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 
 		if ((rel = (Elf_(Rela)*)malloc ((int)(bin->shdr[i].sh_size / tsize) * sizeof (Elf_(Rela)))) == NULL) {
 			perror ("malloc (rel)");
+            free (sym);
+            free (strtab);
 			return NULL;
 		}
 		for (j = nrel = 0; j < bin->shdr[i].sh_size; j += tsize, nrel++) {
 			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[nrel], rel_fmt, 1) == -1) {
 				eprintf ("Warning: read (rel)\n");
 				free(rel);
+                free (strtab);
+                free (sym);
 				return NULL;
 			}
 			if (tsize < sizeof (Elf_(Rela)))
@@ -792,6 +801,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		if ((ret = (struct r_bin_elf_reloc_t *)malloc ((nrel+1) * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
 			perror ("malloc (reloc)");
 			free(rel);
+            free (sym);
+            free (strtab);
 			return NULL;
 		}
 		j = 0;
@@ -808,6 +819,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		break;
 	}
 	free(rel);
+    free (strtab);
+    free (sym);
 	return ret;
 }
 
@@ -1013,6 +1026,7 @@ if (
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name > strtab_section->sh_size) {
 					perror ("index out of strtab range\n");
+                    free (ret);
 					return NULL;
 				}
 				len = __strnlen (&strtab[sym[k].st_name], ELF_STRING_LENGTH-1);
