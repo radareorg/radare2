@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011 - pancake<nopcode.org>, Roc Vallès <vallesroc@gmail.com> */
+/* radare - LGPL - Copyright 2014 - montekki */
 
 #include <string.h>
 #include <r_types.h>
