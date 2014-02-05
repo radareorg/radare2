@@ -27,9 +27,9 @@ radare2 is portable.
 
 Architectures:
 
-  8051, arm, arc, avr, bf, c55+, csr, dcpu16,
-  dalvik, i8080, mips, m68k, mips, msil, sh,
-  sparc, rar, powerpc, i386, x86-64
+  8051, arm, arc, avr, bf, tms320 (c54x, c55x, c55+),
+  csr, dcpu16, dalvik, i8080, mips, m68k, mips, msil,
+  sh, sparc, rar, powerpc, i386, x86-64
 
 File Formats:
 
