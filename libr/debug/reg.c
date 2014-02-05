@@ -13,8 +13,6 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 		type = R_REG_TYPE_GPR;
 		next = R_REG_TYPE_DRX;
 	} else next = 0;
-		type = R_REG_TYPE_DRX;
-		next = 0; //R_REG_TYPE_DRX;
 repeat:
 	if (write) {
 		if (dbg && dbg->h && dbg->h->reg_write) {
