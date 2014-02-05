@@ -37,7 +37,8 @@ bts=bit test and set
 call=calls a subroutine, push eip into the stack (esp)
 callf=call procedure
 cbw=convert byte to word
-cdq=convert doubleword to quadword
+cdq=sign extends eax into edx (convert doubleword to quadword)
+cdqe=sign extend eax into rax (added with x86-64)
 clc=clear carry flag
 cld=clear direction flag
 clflush=flush cache line
@@ -66,6 +67,7 @@ cmpps=compare packed single-fp values
 cmps=compare string operands
 cmpsb=cmp DS:[SI], ES:[edi] (esi++, edi++)
 cmpsd=compare scalar double-fp values
+cmpsq=compare string quadword (added with x86-64)
 cmpss=compare scalar single-fp values
 cmpxchg16b=compare and exchange bytes
 cmpxchg8b=compare and exchange bytes
@@ -240,6 +242,7 @@ invlpg=invalidate tlb entry
 invvpid=invalidate translations based on vpid
 iret=return from interrupt
 iretd=interrupt return
+iretq=interrupt return (64 bit)
 jb=jump short if below/not above or equal/carry (cf=1)
 jbe=jump short if below or equal/not above (cf=1 and zf=1)
 jcxz=jump short if ecx register is 0
@@ -282,6 +285,7 @@ lock=instruction prefix to setup the LOCK pin
 lods=load string
 lodsb=Load string byte
 lodsw=Load string word
+lodsq=Load string quadword (added with x86-64)
 loop=decrement count; jump short if ecx!=0
 loopnz=decrement count; jump short if ecx!=0 and zf=0
 loopz=decrement count; jump short if ecx!=0 and zf=1
@@ -440,6 +444,7 @@ popad=pop all general-purpose registers
 popcnt=bit population count
 popf=pop stack into flags register
 popfd=pop stack into eflags register
+popfq=pop stack into rflags register
 por=bitwise logical or
 prefetchnta=prefetch data into caches
 prefetcht0=prefetch data into caches
@@ -485,6 +490,7 @@ pusha=push all general-purpose registers
 pushad=push all general-purpose registers
 pushf=push flags register onto the stack
 pushfd=push eflags register onto the stack
+pushfq=push rflags register onto the stack
 pxor=logical exclusive or
 rcl=rotate bits left (with CF)
 rcpps=compute reciprocals of packed single-fp values
@@ -571,6 +577,7 @@ sti=set interrupt flag
 stmxcsr=store mxcsr register state
 stos=store string
 stosb=store string
+stosq=store string quadword (added with x86_64)
 str=store task register
 sub=substract src and dst, stores result on dst
 subpd=subtract packed double-fp values
