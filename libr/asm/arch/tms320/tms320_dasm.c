@@ -343,8 +343,6 @@ const char * get_freg_str(ut8 key, char * str)
 
 const char * get_swap_str(ut8 key, char * str)
 {
-	strcpy(str, "invalid");
-
 	switch (key) {
 	case 0: return "SWAP AC0, AC2";
 	case 1: return "SWAP AC1, AC3";
@@ -365,7 +363,7 @@ const char * get_swap_str(ut8 key, char * str)
 	case 56: return "SWAP AR0, AR1";
 	}
 
-	return str;
+	return "invalid";
 }
 
 const char * get_relop_str(ut8 key, char * str)
@@ -379,8 +377,6 @@ const char * get_relop_str(ut8 key, char * str)
 
 const char * get_cond_str(ut8 key, char * str)
 {
-	strcpy(str, "reserved");
-
 	/* 000 FSSS ... 101 FSSS */
 	if ((key >> 4) >= 0 && (key >> 4) <= 5) {
 		static const char * op[6] = { "==", "!=", "<", "<=", ">", ">=" };
@@ -424,7 +420,7 @@ const char * get_cond_str(ut8 key, char * str)
 	case 0x7F: return "!TC1 ^ !TC2";
 	}
 
-	return str;
+	return "invalid";
 }
 
 const char * get_v_str(ut8 key, char * str)
@@ -456,9 +452,8 @@ const char * get_cmem_str(ut8 key, char * str)
 
 const char * get_smem_str(ut8 key, char * str)
 {
-	strcpy(str, "invalid");
-
 	// direct memory
+
 	if ((key & 0x01) == 0) {
 #ifdef IDA_COMPATIBLE_MODE
 		sprintf(str, "*SP(#%Xh)", key >> 1);
@@ -529,13 +524,12 @@ const char * get_smem_str(ut8 key, char * str)
 	case 0x1F: return "*(ARn - T0B)";
 	}
 
-	return str;
+	return "invalid";
 }
 
 const char * get_mmm_str(ut8 key, char * str)
 {
 	switch (key & 7) {
-	default:
 	case 0x00: return "*ARn";
 	case 0x01: return "*ARn+";
 	case 0x02: return "*ARn−";
@@ -554,6 +548,8 @@ const char * get_mmm_str(ut8 key, char * str)
 		//	C54CM:1 => *ARn(AR0)
 	case 0x07: return "*ARn(T0)";
 	};
+
+	return "invalid";
 }
 
 /*
@@ -919,6 +915,11 @@ insn_item_t * decode_insn(tms320_dasm_t * dasm)
 
 	substitute(dasm->syntax, "  ", "%s", " ");	// spaces
 
+	// validate decoded insn
+
+	if (strstr(dasm->syntax, "invalid"))
+		dasm->status |= TMS320_S_INVAL;
+
 	return dasm->insn;
 }
 
@@ -941,25 +942,30 @@ insn_item_t * decode_insn_head(tms320_dasm_t * dasm)
 	return NULL;
 }
 
+static ut8 c55x_e_list[] = {
+	0xF8, 0x60,	/* 0110 0lll */
+	0xF0, 0xA0,	/* 1010 FDDD */
+	0xFC, 0xB0,	/* 1011 00DD */
+	0xF0, 0xC0,	/* 1100 FSSS */
+	0xFC, 0xBC,	/* 1011 11SS */
+	0x00, 0x00,
+};
+
 insn_head_t * lookup_insn_head(tms320_dasm_t * dasm)
 {
-	int i = 0;
-
-	static ut8 e_list[] = {
-		0xF8, 0x60,	/* 0110 0lll */
-		0xF0, 0xA0,	/* 1010 FDDD */
-		0xFC, 0xB0,	/* 1011 00DD */
-		0xF0, 0xC0,	/* 1100 FSSS */
-		0xFC, 0xBC,	/* 1011 11SS */
-	};
+	ut8 * e_list = NULL;
 
 	/* handle some exceptions */
 
-	for (i = 0; i < ARRAY_SIZE(e_list); i += 2) {
-		if ((dasm->opcode & e_list[i]) == e_list[i + 1]) {
-			dasm->head = ht_(lookup)(dasm->map, e_list[i + 1]);
+	if (dasm->features & TMS320_F_CPU_C55X)
+		e_list = c55x_e_list;
+
+	while (e_list && (e_list[0] && e_list[1])) {
+		if ((dasm->opcode & e_list[0]) == e_list[1]) {
+			dasm->head = ht_(lookup)(dasm->map, e_list[1]);
 			break;
 		}
+		e_list += 2;
 	}
 
 	if (!dasm->head) {
@@ -978,6 +984,9 @@ static void init_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 	strcpy(dasm->syntax, "invalid");
 	memcpy(dasm->stream, stream, min(sizeof(dasm->stream), len));
 
+	dasm->status = 0;
+	dasm->length = 0;
+
 	memset(&dasm->f, 0, sizeof(dasm->f));
 
 	dasm->head = NULL;
@@ -994,12 +1003,12 @@ int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 
 	if (lookup_insn_head(dasm)) {
 		if (decode_insn_head(dasm)) {
-			if (dasm->length <= len)
-				return dasm->length;
+			if (dasm->length > len)
+				dasm->status |= TMS320_S_INVAL;
 		}
 	}
 
-	return 0;
+	return dasm->status & TMS320_S_INVAL ? 0 : dasm->length;
 }
 
 static insn_head_t c55x_list[] = {
@@ -1022,6 +1031,8 @@ int tms320_dasm_init(tms320_dasm_t * dasm)
 
 	for (i = 0; i < ARRAY_SIZE(c55x_list_e); i++)
 		ht_(insert)(dasm->map_e, c55x_list_e[i].byte, &c55x_list_e[i]);
+
+	dasm->features |= TMS320_F_CPU_C55X;
 
 	return 0;
 }
