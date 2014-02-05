@@ -7,6 +7,9 @@
 #include <r_types.h>
 #include <r_lib.h>
 
-int c55plus_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
+#include "../tms320_p.h"
+#include "../tms320_dasm.h"
+
+extern int c55plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len);
 
 #endif

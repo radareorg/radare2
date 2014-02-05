@@ -3,10 +3,6 @@ ASM_OBJS = asm.c code.c ;
 # X86 OLLY
 ASM_OBJS += arch/x86/ollyasm/asmserv.c arch/x86/ollyasm/assembl.c arch/x86/ollyasm/disasm.c ;
 
-# C55plus
-ASM_OBJS += arch/c55plus/c55plus.c arch/c55plus/decode.c arch/c55plus/decode_funcs.c ;
-ASM_OBJS += arch/c55plus/hashtable.c arch/c55plus/hashvector.c arch/c55plus/ins.c arch/c55plus/utils.c ;
-
 # TMS320
 ASM_OBJS += arch/tms320/tms320_dasm.c ;
 
@@ -38,7 +34,7 @@ ASM_OBJS += arch/arm/aarch64/aarch64-opc-2.c ;
 ASM_OBJS += arch/arm/aarch64/aarch64-opc.c ;
 ASM_EXTRA += <include>arch/arm/aarch64/ ;
 
-ASM_OBJS += p/asm_8051.c p/asm_c55plus.c p/asm_gb.c p/asm_ppc.c p/asm_x86.c ;
+ASM_OBJS += p/asm_8051.c p/asm_tms320.c p/asm_gb.c p/asm_ppc.c p/asm_x86.c ;
 ASM_OBJS += p/asm_arc.c p/asm_csr.c p/asm_i8080.c p/asm_x86_as.c ;
 ASM_OBJS += p/asm_arm.c p/asm_dalvik.c p/asm_java.c p/asm_rar.c p/asm_x86_nasm.c ;
 ASM_OBJS += p/asm_arm_winedbg.c	p/asm_dcpu16.c p/asm_m68k.c p/asm_sh.c p/asm_x86_nz.c ;

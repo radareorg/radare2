@@ -8,7 +8,7 @@
 
 ut32 get_ins_len(ut8 opcode);
 
-static int c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+int tms320_c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut16 *ins = (ut16*)buf;
 	ut32 ins_len;
 
@@ -89,27 +89,3 @@ static int c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 
 	return op->size;
 }
-
-struct r_anal_plugin_t r_anal_plugin_c55plus = {
-	.name = "c55+",
-	.desc = "C55+ code analysis plugin",
-	.arch = R_SYS_ARCH_C55PLUS,
-	.license = "LGPL3",
-	.bits = 32 | 40,
-	.init = NULL,
-	.fini = NULL,
-	.op = &c55plus_op,
-	.set_reg_profile = NULL,
-	.fingerprint_bb = NULL,
-	.fingerprint_fcn = NULL,
-	.diff_bb = NULL,
-	.diff_fcn = NULL,
-	.diff_eval = NULL
-};
-
-#ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_c55plus
-};
-#endif

@@ -204,6 +204,7 @@ typedef struct {
 
 #define TMS320_F_CPU_C54X	0x0000001
 #define TMS320_F_CPU_C55X	0x0000002
+#define TMS320_F_CPU_C55PLUS	0x0000003
 #define TMS320_F_CPU_MASK	0x00000FF
 	ut32			features;
 #define tms320_f_get_cpu(d)	((d)->features & TMS320_F_CPU_MASK)
