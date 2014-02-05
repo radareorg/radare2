@@ -523,6 +523,7 @@ typedef struct r_anal_switch_obj_t {
 } RAnalSwitchOp;
 
 typedef struct r_anal_t {
+	char *cpu;
 	int bits;
 	int lineswidth; // wtf
 	int big_endian;
@@ -857,6 +858,7 @@ R_API int r_anal_list(RAnal *anal);
 R_API int r_anal_use(RAnal *anal, const char *name);
 R_API int r_anal_set_reg_profile(RAnal *anal);
 R_API int r_anal_set_bits(RAnal *anal, int bits);
+R_API void r_anal_set_cpu(RAnal *anal, const char *cpu);
 R_API int r_anal_set_big_endian(RAnal *anal, int boolean);
 R_API char *r_anal_strmask (RAnal *anal, const char *data);
 R_API void r_anal_trace_bb(RAnal *anal, ut64 addr);
