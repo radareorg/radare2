@@ -18,11 +18,11 @@ static tms320_dasm_t engine = { };
 
 static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 {
-	if (a->cpu && strcasecmp(a->cpu, "C54X") == 0)
+	if (a->cpu && strcasecmp(a->cpu, "c54x") == 0)
 		tms320_f_set_cpu(&engine, TMS320_F_CPU_C54X);
-	if (a->cpu && strcasecmp(a->cpu, "C55X") == 0)
+	if (a->cpu && strcasecmp(a->cpu, "c55x") == 0)
 		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55X);
-	if (a->cpu && strcasecmp(a->cpu, "C55PLUS") == 0)
+	if (a->cpu && strcasecmp(a->cpu, "c55x+") == 0)
 		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55PLUS);
 
 	op->size = tms320_dasm(&engine, buf, len);

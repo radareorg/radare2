@@ -32,11 +32,11 @@ int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len)
 {
 	anal_op_t aop = tms320_c55x_op;
 
-	if (anal->cpu && strcasecmp(anal->cpu, "C54X") == 0)
+	if (anal->cpu && strcasecmp(anal->cpu, "c54x") == 0)
 		aop = tms320_c54x_op;
-	if (anal->cpu && strcasecmp(anal->cpu, "C55X") == 0)
+	if (anal->cpu && strcasecmp(anal->cpu, "c55x") == 0)
 		aop = tms320_c55x_op;
-	if (anal->cpu && strcasecmp(anal->cpu, "C55PLUS") == 0)
+	if (anal->cpu && strcasecmp(anal->cpu, "c55x+") == 0)
 		aop = tms320_c55plus_op;
 
 	return aop(anal, op, addr, buf, len);
