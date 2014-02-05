@@ -16,25 +16,19 @@
 
 static tms320_dasm_t engine = { };
 
-static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int ret = 1;
-
-	ret = tms320_dasm(&engine, buf, len);
-
-	snprintf(op->buf_asm, R_ASM_BUFSIZE, \
-		 "%s", ret < 0 ? "invalid" : engine.syntax);
-
-	return (op->size = ret);
-}
-
-static int tms320_set_subarch(RAsm *a, const char * name)
+static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 {
-	if (strcmp(name, "C55X") == 0) {
-		fprintf(stderr, "C55X requested\n");
-		return 1;
-	}
+	if (a->cpu && strcasecmp(a->cpu, "C54X") == 0)
+		tms320_f_set_cpu(&engine, TMS320_F_CPU_C54X);
+	if (a->cpu && strcasecmp(a->cpu, "C55X") == 0)
+		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55X);
+	if (a->cpu && strcasecmp(a->cpu, "C55PLUS") == 0)
+		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55PLUS);
 
-	return 0;
+	op->size = tms320_dasm(&engine, buf, len);
+	snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s", op->size ? engine.syntax : "invalid");
+
+	return op->size;
 }
 
 static int tms320_init(void * user)
@@ -56,7 +50,6 @@ RAsmPlugin r_asm_plugin_tms320 = {
 	.init = tms320_init,
 	.fini = tms320_fini,
 	.disassemble = tms320_disassemble,
-	.set_subarch = tms320_set_subarch,
 };
 
 #ifndef CORELIB

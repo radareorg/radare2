@@ -47,6 +47,7 @@ R_API RAnal *r_anal_new() {
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
 	memset (anal, 0, sizeof (RAnal));
+	anal->cpu = NULL;
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
 	anal->sdb_types = sdb_new (NULL, NULL, 0);
@@ -90,6 +91,7 @@ R_API RAnal *r_anal_new() {
 R_API void r_anal_free(RAnal *anal) {
 	if (!anal) return;
 	/* TODO: Free anals here */
+	free(anal->cpu);
 	anal->fcns->free = r_anal_fcn_free;
 	r_list_free (anal->fcns);
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
@@ -155,6 +157,11 @@ R_API int r_anal_set_bits(RAnal *anal, int bits) {
 		return R_TRUE;
 	}
 	return R_FALSE;
+}
+
+R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
+	free(anal->cpu);
+	anal->cpu = cpu ? strdup(cpu) : NULL;
 }
 
 R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
