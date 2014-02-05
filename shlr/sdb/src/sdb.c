@@ -393,7 +393,8 @@ SDB_VISIBLE SdbKv *sdb_dump_next (Sdb* s) {
 	char *k = NULL, *v = NULL;
 	if (!sdb_dump_dupnext (s, &k, &v))
 		return NULL;
-	strcpy (s->tmpkv.key, k); // no overflow here?
+	strncpy (s->tmpkv.key, k, SDB_KSZ-1);
+    s->tmpkv.key[SBD_KSZ-1] = '\0';
 	free (k);
 	free (s->tmpkv.value);
 	s->tmpkv.value = v;
