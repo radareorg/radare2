@@ -40,8 +40,19 @@ static void do_hash_seed(const char *seed) {
 	}
 }
 
-static void do_hash_print(RHash *ctx, int hash, int dlen, int rad) {
+static void do_hash_hexprint (const ut8 *c, int len, int ule) {
 	int i;
+	if (ule) {
+		for (i=len-1; i>=0; i--)
+			printf ("%02x", c[i]);
+	} else {
+		for (i=0; i<len; i++)
+			printf ("%02x", c[i]);
+	}
+	printf ("\n");
+}
+
+static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = r_hash_name (hash);
@@ -50,15 +61,11 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad) {
 		if (!quiet)
 			printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %s: ",
 				from, to, hname);
-		for (i=0; i<dlen; i++)
-			printf ("%02x", c[i]);
-		printf ("\n");
+		do_hash_hexprint (c, dlen, ule);
 		break;
 	case 1:
 		printf ("e file.%s=", hname);
-		for (i=0; i<dlen; i++)
-			printf ("%02x", c[i]);
-		printf ("\n");
+		do_hash_hexprint (c, dlen, ule);
 		break;
 	default:
 		o = r_print_randomart (c, dlen, from);
@@ -68,7 +75,7 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad) {
 	}
 }
 
-static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print) {
+static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int rad, int print, int le) {
 	int dlen;
 	if (len<1)
 		return 0;
@@ -88,13 +95,13 @@ static int do_hash_internal(RHash *ctx, int hash, const ut8 *buf, int len, int r
 	} else {
 		if (iterations>0)
 			r_hash_do_spice (ctx, hash, iterations, _s);
-		do_hash_print (ctx, hash, dlen, rad);
+		do_hash_print (ctx, hash, dlen, rad, le);
 	}
 	return 1;
 }
 
 
-static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int rad) {
+static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int rad, int ule) {
 	ut64 j, fsize, algobit = r_hash_name_to_bits (algo);
 	RHash *ctx;
 	ut8 *buf;
@@ -130,24 +137,24 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				r_hash_do_begin (ctx, i);
 				if (s.buf && s.prefix) {
 					do_hash_internal (ctx,
-						hashbit, s.buf, s.len, rad, 0);
+						hashbit, s.buf, s.len, rad, 0, ule);
 				}
 				for (j=from; j<to; j+=bsize) {
 					r_io_read_at (io, j, buf, bsize);
-					do_hash_internal (ctx,
-						hashbit, buf, ((j+bsize)<fsize)?
-						bsize: (bsize>j)?(fsize-j):0, rad, 0);
+					do_hash_internal (ctx, hashbit, buf,
+						((j+bsize)<fsize)?  bsize:
+						(bsize>j)?(fsize-j):0, rad, 0, ule);
 				}
 				if (s.buf && !s.prefix) {
-					do_hash_internal (ctx,
-						hashbit, s.buf, s.len, rad, 0);
+					do_hash_internal (ctx, hashbit, s.buf,
+						s.len, rad, 0, ule);
 				}
 				r_hash_do_end (ctx, i);
 				if (iterations>0)
 					r_hash_do_spice (ctx, i, iterations, _s);
 				if (!quiet)
 					printf ("%s: ", file);
-				do_hash_print (ctx, i, dlen, rad);
+				do_hash_print (ctx, i, dlen, rad, ule);
 			}
 		}
 		if (_s)
@@ -169,7 +176,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					r_io_read_at (io, j, buf, bsize);
 					from = j;
 					to = j+bsize;
-					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1);
+					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
 				}
 				from = ofrom;
 				to = oto;
@@ -188,6 +195,7 @@ static int do_help(int line) {
 	" -a algo     comma separated list of algorithms (default is 'sha256')\n"
 	" -b bsize    specify the size of the block (instead of full file)\n"
 	" -B          show per-block hash\n"
+	" -e          swap endian (use little endian)\n"
 	" -f from     start hashing at given address\n"
 	" -i num      repeat hash N iterations\n"
 	" -S seed     use given seed (hexa or s:string) use ^ to prefix\n"
@@ -213,7 +221,7 @@ static void algolist() {
 }
 
 int main(int argc, char **argv) {
-	int i, ret, c, rad = 0, quit = 0, bsize = 0, numblocks = 0;
+	int i, ret, c, rad = 0, quit = 0, bsize = 0, numblocks = 0, ule = 0;
 	const char *algo = "sha256"; /* default hashing algorithm */
 	const char *seed = NULL;
 	char *hashstr = NULL;
@@ -221,7 +229,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "rva:i:S:s:b:nBhf:t:kLq")) != -1) {
+	while ((c = getopt (argc, argv, "rvea:i:S:s:b:nBhf:t:kLq")) != -1) {
 		switch (c) {
 		case 'q': quiet = 1; break;
 		case 'i': iterations = atoi (optarg);
@@ -233,6 +241,7 @@ int main(int argc, char **argv) {
 		case 'S': seed = optarg; break;
 		case 'n': numblocks = 1; break;
 		case 'L': algolist (); return 0;
+		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
 		case 'a': algo = optarg; break;
@@ -276,7 +285,7 @@ int main(int argc, char **argv) {
 				from = 0;
 				to = strsz;
 				do_hash_internal (ctx, hashbit,
-					(const ut8*)str, strsz, rad, 1);
+					(const ut8*)str, strsz, rad, 1, ule);
 				r_hash_free (ctx);
 				quit = R_TRUE;
 			}
@@ -308,7 +317,7 @@ int main(int argc, char **argv) {
 			eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
 			return 1;
 		}
-		ret |= do_hash (argv[i], algo, io, bsize, rad);
+		ret |= do_hash (argv[i], algo, io, bsize, rad, ule);
 		r_io_free (io);
 	}
 	return ret;
