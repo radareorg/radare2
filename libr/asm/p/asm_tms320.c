@@ -23,7 +23,7 @@ static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 	if (a->cpu && strcasecmp(a->cpu, "c55x") == 0)
 		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55X);
 	if (a->cpu && strcasecmp(a->cpu, "c55x+") == 0)
-		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55PLUS);
+		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55X_PLUS);
 
 	op->size = tms320_dasm(&engine, buf, len);
 	snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s", op->size ? engine.syntax : "invalid");

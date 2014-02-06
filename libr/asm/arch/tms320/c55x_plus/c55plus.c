@@ -17,7 +17,7 @@
 extern ut8 *ins_buff;
 extern ut32 ins_buff_len;
 
-int c55plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len) {
+int c55x_plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len) {
 	unsigned int next_ins_pos;
 	char *ins_decoded;
 	size_t i, ins_decoded_len;

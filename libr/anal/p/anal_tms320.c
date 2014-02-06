@@ -14,7 +14,7 @@ typedef int (* anal_op_t)(RAnal *, RAnalOp *, ut64, ut8 *, int);
 
 int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
-int tms320_c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
+int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len);
 
 int tms320_c54x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 {
@@ -37,7 +37,7 @@ int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len)
 	if (anal->cpu && strcasecmp(anal->cpu, "c55x") == 0)
 		aop = tms320_c55x_op;
 	if (anal->cpu && strcasecmp(anal->cpu, "c55x+") == 0)
-		aop = tms320_c55plus_op;
+		aop = tms320_c55x_plus_op;
 
 	return aop(anal, op, addr, buf, len);
 }
