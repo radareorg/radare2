@@ -46,16 +46,20 @@ dist:
 	rm -rf sdb-${SDBVER}
 
 install-dirs:
-	mkdir -p ${MANDIR} ${PFX}/lib/pkgconfig ${PFX}/bin 
-	mkdir -p ${PFX}/share/vala/vapi ${PFX}/include/sdb
+	$(INSTALL_DIR) ${MANDIR} ${PFX}/lib/pkgconfig ${PFX}/bin 
+	$(INSTALL_DIR) ${PFX}/share/vala/vapi ${PFX}/include/sdb
 
-INCFILES= src/sdb.h src/sdb-version.h src/cdb.h src/ht.h src/types.h
+INCFILES=src/sdb.h src/sdb-version.h src/cdb.h src/ht.h src/types.h
 INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h
 
 install: install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${MANDIR}
 	$(INSTALL_LIB) src/libsdb.${SOEXT} ${PFX}/lib
-	$(INSTALL_LIB) src/libsdb.${SOVER} ${PFX}/lib
+	-if [ "$(SOEXT)" != "$(SOVER)" ]; then \
+	cd $(PFX)/lib ; \
+	mv libsdb.$(SOEXT) libsdb.$(SOVER) ; \
+	ln -s libsdb.$(SOVER) libsdb.$(SOEXT) ; \
+fi
 	$(INSTALL_DATA) $(INCFILES) ${PFX}/include/sdb
 	$(INSTALL_PROGRAM) src/sdb ${PFX}/bin
 	$(INSTALL_DATA) memcache/libmcsdb.a ${PFX}/lib

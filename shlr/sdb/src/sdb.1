@@ -1,4 +1,4 @@
-.Dd Mar 30, 2013
+.Dd Feb 5, 2014
 .Dt SDB 1
 .Os
 .Sh NAME
@@ -6,17 +6,15 @@
 .Nd simple key-value database with json and arrays
 .Sh SYNOPSIS
 .Nm sdb
-.Op Fl fhv
-.Ar db
+.Op Fl hv
+.Ar -|db
 .Ar -=
-.Ar [expr ..]
+.Ar [<script|expr ..]
 .Sh DESCRIPTION
 SDB is a simple disk and memory string-based key-value database. It is based on CDB and uses
 .Bl -tag -width Fl
 .It Fl h
 Show help message
-.It Fl f
-Show features string
 .It Fl v
 Show version
 .El

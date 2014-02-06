@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include "sdb.h"
 
-SDB_VISIBLE int sdb_queryf (Sdb *s, const char *fmt, ...) {
+SDB_API int sdb_queryf (Sdb *s, const char *fmt, ...) {
         char string[4096];
         int ret;
         va_list ap;
@@ -19,7 +19,7 @@ SDB_VISIBLE int sdb_queryf (Sdb *s, const char *fmt, ...) {
         return ret;
 }
 
-SDB_VISIBLE char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
+SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ...) {
         char string[4096];
         char *ret;
         va_list ap;
@@ -31,7 +31,7 @@ SDB_VISIBLE char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt
 }
 
 // XXX: cmd is reused
-SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
+SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 	const char *p, *q, *val = NULL;
 	char *eq, *ask;
 	int i, d, ok, w, alength;
@@ -224,7 +224,7 @@ SDB_VISIBLE char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 	return NULL;
 }
 
-SDB_VISIBLE int sdb_query (Sdb *s, const char *cmd) {
+SDB_API int sdb_query (Sdb *s, const char *cmd) {
 	char buf[1024], *out = sdb_querys (s, buf, sizeof (buf), cmd);
 	if (!out) return 0;
 	if (*out) puts (out);
@@ -232,7 +232,7 @@ SDB_VISIBLE int sdb_query (Sdb *s, const char *cmd) {
 	return 1;
 }
 
-SDB_VISIBLE int sdb_query_lines (Sdb *s, const char *cmd) {
+SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {
 	char *o, *p, *op = strdup (cmd);
 	if (!s || !op) return 0;
 	p = op;
@@ -270,7 +270,7 @@ static char *slurp(const char *file) {
 	return text;
 }
 
-SDB_VISIBLE int sdb_query_file(Sdb *s, const char* file) {
+SDB_API int sdb_query_file(Sdb *s, const char* file) {
 	char *txt = slurp (file);
 	int ret = sdb_query_lines (s, txt);
 	free (txt);

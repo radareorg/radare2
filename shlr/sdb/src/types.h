@@ -7,6 +7,22 @@
 #include <string.h>
 #include <unistd.h>
 
+#if defined(__GNUC__)
+#define SDB_API __attribute__((visibility("default")))
+#else
+#define SDB_API
+#endif
+
+#if __WIN32__ || __CYGWIN__ || MINGW32
+#undef __WINDOWS__
+#define __WINDOWS__ 1
+#include <windows.h>
+#define DIRSEP '\\'
+#else
+#define DIRSEP '/'
+#endif
+
+
 #ifndef UNUSED
 #ifdef __GNUC__
 #define UNUSED	__attribute__((__unused__))

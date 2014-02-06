@@ -15,11 +15,11 @@ static char *sdb_aindex_nc(char *str, int idx) {
 	return NULL;
 }
 
-SDB_VISIBLE const char *sdb_anext(const char *str) {
+SDB_API const char *sdb_anext(const char *str) {
 	return str+strlen (str)+1;
 }
 
-SDB_VISIBLE char *sdb_astring(char *str, int *hasnext) {
+SDB_API char *sdb_astring(char *str, int *hasnext) {
 	int nxt = 0;
 	char *p = strchr (str, SDB_RS);
 	if (p) { *p = 0; nxt = 1; }
@@ -27,7 +27,7 @@ SDB_VISIBLE char *sdb_astring(char *str, int *hasnext) {
 	return str;
 }
 
-SDB_VISIBLE ut64 sdb_agetn(Sdb *s, const char *key, int idx, ut32 *cas) {
+SDB_API ut64 sdb_agetn(Sdb *s, const char *key, int idx, ut32 *cas) {
 	const char *str = sdb_getc (s, key, cas);
 	const char *n, *p = str;
 	int i;
@@ -43,7 +43,7 @@ SDB_VISIBLE ut64 sdb_agetn(Sdb *s, const char *key, int idx, ut32 *cas) {
 	return sdb_atoi (p);
 }
 
-SDB_VISIBLE char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
+SDB_API char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
 	const char *str = sdb_getc (s, key, cas);
 	const char *p = str;
 	char *o, *n;
@@ -80,13 +80,13 @@ SDB_VISIBLE char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
 	return o;
 }
 
-SDB_VISIBLE int sdb_ainsn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
+SDB_API int sdb_ainsn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[64];
 	return sdb_ains (s, key, idx, sdb_itoa (val, valstr), cas);
 }
 
 // TODO: done, but there's room for improvement
-SDB_VISIBLE int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
+SDB_API int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 	const char *str = sdb_getc (s, key, 0);
 	int lnstr, lstr, lval, ret;
 	char *x, *ptr;
@@ -122,12 +122,12 @@ SDB_VISIBLE int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32
 	return ret;
 }
 
-SDB_VISIBLE int sdb_asetn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
+SDB_API int sdb_asetn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[64];
 	return sdb_aset (s, key, idx, sdb_itoa (val, valstr), cas);
 }
 
-SDB_VISIBLE int sdb_aaddn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
+SDB_API int sdb_aaddn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[64];
 	sdb_itoa (val, valstr);
 	if (sdb_aexists (s, key, valstr))
@@ -135,7 +135,7 @@ SDB_VISIBLE int sdb_aaddn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) 
 	return sdb_aadd (s, key, idx, valstr, cas);
 }
 
-SDB_VISIBLE int sdb_aadd(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
+SDB_API int sdb_aadd(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 /*
 	if (sdb_exists (s, key))
 		return 0;
@@ -146,7 +146,7 @@ SDB_VISIBLE int sdb_aadd(Sdb *s, const char *key, int idx, const char *val, ut32
 	return sdb_aset (s, key, idx, val, cas);
 }
 
-SDB_VISIBLE int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
+SDB_API int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
 	char *nstr, *ptr;
 	const char *usr, *str = sdb_getc (s, key, 0);
 	int lval, len, ret = 0;
@@ -171,7 +171,7 @@ SDB_VISIBLE int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32
 	return ret;
 }
 
-SDB_VISIBLE int sdb_adeln(Sdb *s, const char *key, ut64 val, ut32 cas) {
+SDB_API int sdb_adeln(Sdb *s, const char *key, ut64 val, ut32 cas) {
 	const char *str = sdb_getc (s, key, 0);
 	const char *n, *p = str;
 	ut64 num;
@@ -204,7 +204,7 @@ static int astrcmp (const char *a, const char *b) {
 }
 
 /* array value index */
-SDB_VISIBLE int sdb_agetv(Sdb *s, const char *key, const char *val, ut32 cas) {
+SDB_API int sdb_agetv(Sdb *s, const char *key, const char *val, ut32 cas) {
 	const char *str = sdb_getc (s, key, 0);
 	const char *n, *p = str;
 	int idx;
@@ -219,7 +219,7 @@ SDB_VISIBLE int sdb_agetv(Sdb *s, const char *key, const char *val, ut32 cas) {
 	return -1;
 }
 
-SDB_VISIBLE int sdb_adels(Sdb *s, const char *key, const char *val, ut32 cas) {
+SDB_API int sdb_adels(Sdb *s, const char *key, const char *val, ut32 cas) {
 	const char *str = sdb_getc (s, key, 0);
 	const char *n, *p = str;
 	int idx;
@@ -234,7 +234,7 @@ SDB_VISIBLE int sdb_adels(Sdb *s, const char *key, const char *val, ut32 cas) {
 	return 0;
 }
 
-SDB_VISIBLE int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
+SDB_API int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
 	int i;
 	char *p, *n, *str = sdb_get (s, key, 0);
 	p = str;
@@ -268,7 +268,7 @@ SDB_VISIBLE int sdb_adel(Sdb *s, const char *key, int idx, ut32 cas) {
 	return 1;
 }
 
-SDB_VISIBLE const char *sdb_aindex(const char *str, int idx) {
+SDB_API const char *sdb_aindex(const char *str, int idx) {
 	int len = 0;
 	const char *n, *p = str;
 	for (len=0; ; len++) {
@@ -281,7 +281,7 @@ SDB_VISIBLE const char *sdb_aindex(const char *str, int idx) {
 	return NULL;
 }
 
-SDB_VISIBLE int sdb_aexists(Sdb *s, const char *key, const char *val) {
+SDB_API int sdb_aexists(Sdb *s, const char *key, const char *val) {
 	int found = 0, hasnext = 1;
 	char *list = sdb_get (s, key, 0);
 	char *ptr = list;
@@ -299,7 +299,7 @@ SDB_VISIBLE int sdb_aexists(Sdb *s, const char *key, const char *val) {
 }
 
 // TODO: make static inline?
-SDB_VISIBLE int sdb_alen(const char *str) {
+SDB_API int sdb_alen(const char *str) {
 	int len = 1;
 	const char *n, *p = str;
 	if (!p|| !*p) return 0;
@@ -312,12 +312,12 @@ SDB_VISIBLE int sdb_alen(const char *str) {
 	return len;
 }
 
-SDB_VISIBLE int sdb_alength(Sdb *s, const char *key) {
+SDB_API int sdb_alength(Sdb *s, const char *key) {
 	const char *str = sdb_getc (s, key, 0);
 	return sdb_alen (str);
 }
 
-SDB_VISIBLE int sdb_apush(Sdb *s, const char *key, const char *val, ut32 cas) {
+SDB_API int sdb_apush(Sdb *s, const char *key, const char *val, ut32 cas) {
 	ut32 kas = cas;
 	const char *str = sdb_getc (s, key, &kas);
 	if (cas && cas != kas)
@@ -339,7 +339,7 @@ SDB_VISIBLE int sdb_apush(Sdb *s, const char *key, const char *val, ut32 cas) {
 	return 1;
 }
 
-SDB_VISIBLE char *sdb_apop(Sdb *s, const char *key, ut32 *cas) {
+SDB_API char *sdb_apop(Sdb *s, const char *key, ut32 *cas) {
 	ut32 kas;
 	char *ret;
 	const char *str = sdb_getc (s, key, &kas);
@@ -354,7 +354,7 @@ SDB_VISIBLE char *sdb_apop(Sdb *s, const char *key, ut32 *cas) {
 
 #if 0
 // XXX: totally unefficient. do not use, replace SDB_RS for '\n' may be enought
-SDB_VISIBLE int sdb_alist(Sdb *s, const char *key) {
+SDB_API int sdb_alist(Sdb *s, const char *key) {
 	int len = 0, hasnext = 1;
 	char *list = sdb_get (s, key, 0);
 	char *ptr = list;

@@ -2,7 +2,7 @@
 
 #include "sdb.h"
 
-SDB_VISIBLE void sdb_ns_free(Sdb *s) {
+SDB_API void sdb_ns_free(Sdb *s) {
 	SdbListIter next;
 	SdbListIter *it;
 	SdbNs *ns;
@@ -34,7 +34,7 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 	return ns;
 }
 
-SDB_VISIBLE Sdb *sdb_ns(Sdb *s, const char *name) {
+SDB_API Sdb *sdb_ns(Sdb *s, const char *name) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ut32 hash = sdb_hashstr (name);
@@ -47,7 +47,7 @@ SDB_VISIBLE Sdb *sdb_ns(Sdb *s, const char *name) {
 	return ns->sdb;
 }
 
-SDB_VISIBLE void sdb_ns_sync (Sdb *s) {
+SDB_API void sdb_ns_sync (Sdb *s) {
 	SdbNs *ns;
 	SdbListIter *it;
 	ls_foreach (s->ns, it, ns) {

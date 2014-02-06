@@ -22,13 +22,13 @@ static inline int nextcas() {
 static SdbHook global_hook = NULL;
 static void* global_user = NULL;
 
-SDB_VISIBLE void sdb_global_hook(SdbHook hook, void *user) {
+SDB_API void sdb_global_hook(SdbHook hook, void *user) {
 	global_hook = hook;
 	global_user = user;
 }
 
 // TODO: use mmap instead of read.. much faster!
-SDB_VISIBLE Sdb* sdb_new (const char *path, const char *name, int lock) {
+SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	Sdb* s;
 	s = malloc (sizeof (Sdb));
 	if (name && *name) {
@@ -71,7 +71,7 @@ SDB_VISIBLE Sdb* sdb_new (const char *path, const char *name, int lock) {
 }
 
 // XXX: this is wrong. stuff not stored in memory is lost
-SDB_VISIBLE void sdb_file (Sdb* s, const char *dir) {
+SDB_API void sdb_file (Sdb* s, const char *dir) {
 	if (s->lock)
 		sdb_unlock (sdb_lockfile (s->dir));
 	free (s->dir);
@@ -104,12 +104,12 @@ static void sdb_fini(Sdb* s, int donull) {
 	}
 }
 
-SDB_VISIBLE void sdb_free (Sdb* s) {
+SDB_API void sdb_free (Sdb* s) {
 	sdb_fini (s, 0);
 	free (s);
 }
 
-SDB_VISIBLE const char *sdb_getc (Sdb* s, const char *key, ut32 *cas) {
+SDB_API const char *sdb_getc (Sdb* s, const char *key, ut32 *cas) {
 	ut32 hash, pos, len, keylen;
 	SdbKv *kv;
 	ut64 now = 0LL;
@@ -149,7 +149,7 @@ SDB_VISIBLE const char *sdb_getc (Sdb* s, const char *key, ut32 *cas) {
 	return s->db.map+pos;
 }
 
-SDB_VISIBLE char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
+SDB_API char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
 	char *buf;
 	ut32 hash, pos, len, keylen;
 	SdbKv *kv;
@@ -195,11 +195,11 @@ SDB_VISIBLE char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
 	return buf;
 }
 
-SDB_VISIBLE int sdb_remove (Sdb* s, const char *key, ut32 cas) {
+SDB_API int sdb_remove (Sdb* s, const char *key, ut32 cas) {
 	return key? sdb_set (s, key, "", cas): 0;
 }
 
-SDB_VISIBLE int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas) {
+SDB_API int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas) {
 	int ret, kl, vl;
 	const char *p;
 	char *o;
@@ -218,13 +218,13 @@ SDB_VISIBLE int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas)
 }
 
 // set if not defined
-SDB_VISIBLE int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas) {
+SDB_API int sdb_add (Sdb* s, const char *key, const char *val, ut32 cas) {
 	if (sdb_exists (s, key))
 		return 0;
 	return sdb_set (s, key, val, cas);
 }
 
-SDB_VISIBLE int sdb_exists (Sdb* s, const char *key) {
+SDB_API int sdb_exists (Sdb* s, const char *key) {
 	char ch;
 	SdbKv *kv;
 	int klen = strlen (key);
@@ -242,7 +242,7 @@ SDB_VISIBLE int sdb_exists (Sdb* s, const char *key) {
 	return 0;
 }
 
-SDB_VISIBLE void sdb_reset (Sdb* s) {
+SDB_API void sdb_reset (Sdb* s) {
 	ht_free (s->ht);
 	s->ht = ht_new ((SdbListFree)sdb_kv_free);
 }
@@ -259,12 +259,12 @@ SdbKv* sdb_kv_new (const char *k, const char *v) {
 	return kv;
 }
 
-SDB_VISIBLE void sdb_kv_free (SdbKv *kv) {
+SDB_API void sdb_kv_free (SdbKv *kv) {
 	free (kv->value);
 	free (kv);
 }
 
-SDB_VISIBLE int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
+SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	SdbHashEntry *e;
 	SdbKv *kv;
 	ut32 hash, klen;
@@ -295,7 +295,7 @@ SDB_VISIBLE int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	return kv->cas;
 }
 
-SDB_VISIBLE void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
+SDB_API void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 	SdbKv *kv;
 	SdbListIter *iter;
 	ls_foreach (s->ht->list, iter, kv) {
@@ -317,7 +317,7 @@ SDB_VISIBLE void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 }
 
 // TODO: reuse sdb_foreach
-SDB_VISIBLE void sdb_list (Sdb* s) {
+SDB_API void sdb_list (Sdb* s) {
 	SdbKv *kv;
 	SdbListIter *iter;
 	if (s && s->ht)
@@ -335,7 +335,7 @@ SDB_VISIBLE void sdb_list (Sdb* s) {
 	}
 }
 
-SDB_VISIBLE int sdb_sync (Sdb* s) {
+SDB_API int sdb_sync (Sdb* s) {
 	SdbListIter it, *iter;
 	char *k, *v;
 	SdbKv *kv;
@@ -381,14 +381,14 @@ static int getbytes(int fd, char *b, int len) {
 	return len;
 }
 
-SDB_VISIBLE void sdb_dump_begin (Sdb* s) {
+SDB_API void sdb_dump_begin (Sdb* s) {
 	if (s->fd != -1) {
 		seek_set (s->fd, 0);
 		seek_set (s->fd, (pos=2048));
 	} else pos = 0;
 }
 
-SDB_VISIBLE SdbKv *sdb_dump_next (Sdb* s) {
+SDB_API SdbKv *sdb_dump_next (Sdb* s) {
 	char *k = NULL, *v = NULL;
 	if (!sdb_dump_dupnext (s, &k, &v))
 		return NULL;
@@ -400,7 +400,7 @@ SDB_VISIBLE SdbKv *sdb_dump_next (Sdb* s) {
 	return &s->tmpkv;
 }
 
-SDB_VISIBLE int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
+SDB_API int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
 	ut32 vlen, klen;
 	if (s->fd==-1 || !getkvlen (s->fd, &klen, &vlen))
 		return 0;
@@ -438,13 +438,13 @@ SDB_VISIBLE int sdb_dump_dupnext (Sdb* s, char **key, char **value) {
 	return 1;
 }
 
-SDB_VISIBLE ut64 sdb_now () {
+SDB_API ut64 sdb_now () {
         struct timeval now;
         gettimeofday (&now, NULL);
 	return now.tv_sec;
 }
 
-SDB_VISIBLE ut64 sdb_unow () {
+SDB_API ut64 sdb_unow () {
 	ut64 x;
         struct timeval now;
         gettimeofday (&now, NULL);
@@ -460,7 +460,7 @@ static ut64 parse_expire (ut64 e) {
 	return e;
 }
 
-SDB_VISIBLE int sdb_expire(Sdb* s, const char *key, ut64 expire) {
+SDB_API int sdb_expire(Sdb* s, const char *key, ut64 expire) {
 	char *buf;
 	ut32 hash, pos, len;
 	SdbKv *kv;
@@ -493,20 +493,13 @@ SDB_VISIBLE int sdb_expire(Sdb* s, const char *key, ut64 expire) {
 	return sdb_expire (s, key, expire); // recursive
 }
 
-SDB_VISIBLE ut64 sdb_get_expire(Sdb* s, const char *key) {
+SDB_API ut64 sdb_get_expire(Sdb* s, const char *key) {
 	SdbKv *kv;
 	ut32 hash = sdb_hash (key, 0);
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
 	if (kv && *kv->value)
 		return kv->expire;
 	return 0LL;
-}
-
-SDB_VISIBLE void sdb_flush(Sdb* s) {
-	ht_free (s->ht);
-	s->ht = ht_new ((SdbListFree)sdb_kv_free);
-	close (s->fd);
-	s->fd = -1;
 }
 
 #if __WINDOWS__
@@ -538,7 +531,7 @@ static int r_sys_rmkdir(char *dir) {
 }
 
 /* sdb-create api */
-SDB_VISIBLE int sdb_create (Sdb* s) {
+SDB_API int sdb_create (Sdb* s) {
 	int nlen;
 	char *str;
 	if (!s || !s->dir || s->fdump != -1) return 0; // cannot re-create
@@ -560,7 +553,7 @@ SDB_VISIBLE int sdb_create (Sdb* s) {
 }
 
 // TODO: rename function.
-SDB_VISIBLE int sdb_append (Sdb* s, const char *key, const char *val) {
+SDB_API int sdb_append (Sdb* s, const char *key, const char *val) {
 	struct cdb_make *c = &s->m;
 	if (!key || !val) return 0;
 	//if (!*val) return 0; //undefine variable if no value
@@ -568,7 +561,7 @@ SDB_VISIBLE int sdb_append (Sdb* s, const char *key, const char *val) {
 }
 
 #define IFRET(x) if(x)ret=0
-SDB_VISIBLE int sdb_finish (Sdb* s) {
+SDB_API int sdb_finish (Sdb* s) {
 	int ret = 1;
 	IFRET (!cdb_make_finish (&s->m));
 #if USE_MMAN
@@ -582,12 +575,12 @@ SDB_VISIBLE int sdb_finish (Sdb* s) {
 	return ret;
 }
 
-SDB_VISIBLE void sdb_drop (Sdb* s) {
+SDB_API void sdb_drop (Sdb* s) {
 	sdb_fini (s, 1);
 	unlink (s->dir);
 }
 
-SDB_VISIBLE int sdb_hook(Sdb* s, SdbHook cb, void* user) {
+SDB_API int sdb_hook(Sdb* s, SdbHook cb, void* user) {
 	int i = 0;
 	SdbHook hook;
 	SdbListIter *iter;
@@ -605,7 +598,7 @@ SDB_VISIBLE int sdb_hook(Sdb* s, SdbHook cb, void* user) {
 	return 1;
 }
 
-SDB_VISIBLE int sdb_unhook(Sdb* s, SdbHook h) {
+SDB_API int sdb_unhook(Sdb* s, SdbHook h) {
 	int i = 0;
 	SdbHook hook;
 	SdbListIter *iter, *iter2;
@@ -621,7 +614,7 @@ SDB_VISIBLE int sdb_unhook(Sdb* s, SdbHook h) {
 	return 0;
 }
 
-SDB_VISIBLE int sdb_hook_call(Sdb *s, const char *k, const char *v) {
+SDB_API int sdb_hook_call(Sdb *s, const char *k, const char *v) {
 	SdbListIter *iter;
 	SdbHook hook;
 	int i = 0;
@@ -635,7 +628,7 @@ SDB_VISIBLE int sdb_hook_call(Sdb *s, const char *k, const char *v) {
 	return i>>1;
 }
 
-SDB_VISIBLE void sdb_hook_free(Sdb *s) {
+SDB_API void sdb_hook_free(Sdb *s) {
 	ls_free (s->hooks);
 	s->hooks = NULL;
 }

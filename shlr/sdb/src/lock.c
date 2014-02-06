@@ -11,7 +11,7 @@
 
 static char buf[128];
 
-SDB_VISIBLE const char *sdb_lockfile(const char *f) {
+SDB_API const char *sdb_lockfile(const char *f) {
 	size_t len;
 	if (!f || !*f)
 		return NULL;
@@ -23,7 +23,7 @@ SDB_VISIBLE const char *sdb_lockfile(const char *f) {
 	return buf;
 }
 
-SDB_VISIBLE int sdb_lock(const char *s) {
+SDB_API int sdb_lock(const char *s) {
 	int ret;
 	if (!s) return 0;
 	ret = open (s, O_CREAT | O_TRUNC | O_WRONLY | O_EXCL, 0644);
@@ -33,7 +33,7 @@ SDB_VISIBLE int sdb_lock(const char *s) {
 	return 1;
 }
 
-SDB_VISIBLE void sdb_lock_wait(const char *s UNUSED) {
+SDB_API void sdb_lock_wait(const char *s UNUSED) {
 	// TODO use flock() here
  	while (!sdb_lock (s)) {
 #if WINDOWS
@@ -45,7 +45,7 @@ SDB_VISIBLE void sdb_lock_wait(const char *s UNUSED) {
  	}
 }
 
-SDB_VISIBLE void sdb_unlock(const char *s) {
+SDB_API void sdb_unlock(const char *s) {
 	//flock (fd, LOCK_UN);
 	unlink (s);
 }

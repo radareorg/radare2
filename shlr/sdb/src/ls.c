@@ -3,7 +3,7 @@
 #include <string.h>
 #include "ls.h"
 
-R_API SdbList *ls_new() {
+SDB_API SdbList *ls_new() {
 	SdbList *list = R_NEW (SdbList);
 	list->head = NULL;
 	list->tail = NULL;
@@ -12,7 +12,7 @@ R_API SdbList *ls_new() {
 	return list;
 }
 
-R_API void ls_delete (SdbList *list, SdbListIter *iter) {
+SDB_API void ls_delete (SdbList *list, SdbListIter *iter) {
 	if (iter==NULL) {
 		printf ("ls_delete: null iter?\n");
 		return;
@@ -26,14 +26,14 @@ R_API void ls_delete (SdbList *list, SdbListIter *iter) {
 	list->length--;
 }
 
-R_API void ls_split_iter (SdbList *list, SdbListIter *iter) {
+SDB_API void ls_split_iter (SdbList *list, SdbListIter *iter) {
 	if (list->head == iter) list->head = iter->n;
 	if (list->tail == iter) list->tail = iter->p;
 	if (iter->p) iter->p->n = iter->n;
 	if (iter->n) iter->n->p = iter->p;
 }
 
-R_API void ls_destroy (SdbList *list) {
+SDB_API void ls_destroy (SdbList *list) {
 	SdbListIter *it;
 	if (list) {
 		it = list->head;
@@ -49,7 +49,7 @@ R_API void ls_destroy (SdbList *list) {
 	//free (list);
 }
 
-R_API void ls_free (SdbList *list) {
+SDB_API void ls_free (SdbList *list) {
 	if (!list) return;
 	ls_destroy (list);
 	list->free = NULL;
@@ -57,7 +57,7 @@ R_API void ls_free (SdbList *list) {
 }
 
 // XXX: Too slow?
-R_API SdbListIter *ls_append(SdbList *list, void *data) {
+SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
 	SdbListIter *it = R_NEW (SdbListIter);
 	if (list->tail)
 		list->tail->n = it;
@@ -71,7 +71,7 @@ R_API SdbListIter *ls_append(SdbList *list, void *data) {
 	return it;
 }
 
-R_API SdbListIter *ls_prepend(SdbList *list, void *data) {
+SDB_API SdbListIter *ls_prepend(SdbList *list, void *data) {
 	SdbListIter *new = R_NEW (SdbListIter);
 	if (list->head)
 		list->head->p = new;

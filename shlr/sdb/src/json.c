@@ -32,7 +32,7 @@ static void __itoa(int value, char *string) {
 	*ptr = 0;
 }
 
-SDB_VISIBLE char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
+SDB_API char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	Rangstr rs;
 	char *u, *v = sdb_get (s, k, cas);
 	if (!v) return NULL;
@@ -42,19 +42,19 @@ SDB_VISIBLE char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas)
 	return u;
 }
 
-SDB_VISIBLE int sdb_json_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
+SDB_API int sdb_json_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
 	int cur = sdb_json_geti (s, k, p);
 	sdb_json_seti (s, k, p, cur+n, cas);
 	return cur+n;
 }
 
-SDB_VISIBLE int sdb_json_dec(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
+SDB_API int sdb_json_dec(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
 	int cur = sdb_json_geti (s, k, p);
 	sdb_json_seti (s, k, p, cur-n, cas);
 	return cur-n;
 }
 
-SDB_VISIBLE int sdb_json_geti (Sdb *s, const char *k, const char *p) {
+SDB_API int sdb_json_geti (Sdb *s, const char *k, const char *p) {
 	char *v = sdb_get (s, k, 0); // XXX cas
 	if (v) {
 		Rangstr rs = json_get (v, p);
@@ -63,13 +63,13 @@ SDB_VISIBLE int sdb_json_geti (Sdb *s, const char *k, const char *p) {
 	return 0;
 }
 
-SDB_VISIBLE int sdb_json_seti (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
+SDB_API int sdb_json_seti (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
 	char str[64];
 	__itoa (v, str);
 	return sdb_json_set (s, k, p, str, cas);
 }
 
-SDB_VISIBLE int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
+SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {
 	const char *beg[3];
 	const char *end[3];
 	int l, idx, len[3];
@@ -118,7 +118,7 @@ SDB_VISIBLE int sdb_json_set (Sdb *s, const char *k, const char *p, const char *
 	return 1;
 }
 
-SDB_VISIBLE char *sdb_json_indent(const char *s) {
+SDB_API char *sdb_json_indent(const char *s) {
 	int indent = 0;
 	int i, instr = 0;
 	char *o, *O = malloc (strlen (s)*2);
@@ -166,7 +166,7 @@ SDB_VISIBLE char *sdb_json_indent(const char *s) {
 	return O;
 }
 
-SDB_VISIBLE char *sdb_json_unindent(const char *s) {
+SDB_API char *sdb_json_unindent(const char *s) {
 	int instr = 0;
 	int len = strlen (s);
 	char *o, *O = malloc (len+1);
@@ -194,7 +194,7 @@ SDB_VISIBLE char *sdb_json_unindent(const char *s) {
 	return O;
 }
 
-SDB_VISIBLE const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
+SDB_API const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...) {
 	va_list ap;
 	char *arg_s, *x, tmp[128];
 	float arg_f;
