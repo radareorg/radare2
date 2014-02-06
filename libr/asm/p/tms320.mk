@@ -3,13 +3,13 @@ OBJ_TMS320+=../arch/tms320/tms320_dasm.o
 
 # looks ugly as radare2 build system is terrible
 
-OBJ_TMS320+=../arch/tms320/c55plus/c55plus.o \
-	    ../arch/tms320/c55plus/decode.o \
-	    ../arch/tms320/c55plus/decode_funcs.o \
-	    ../arch/tms320/c55plus/hashtable.o \
-	    ../arch/tms320/c55plus/hashvector.o \
-	    ../arch/tms320/c55plus/ins.o \
-	    ../arch/tms320/c55plus/utils.o
+OBJ_TMS320+=../arch/tms320/c55x_plus/c55plus.o \
+	    ../arch/tms320/c55x_plus/decode.o \
+	    ../arch/tms320/c55x_plus/decode_funcs.o \
+	    ../arch/tms320/c55x_plus/hashtable.o \
+	    ../arch/tms320/c55x_plus/hashvector.o \
+	    ../arch/tms320/c55x_plus/ins.o \
+	    ../arch/tms320/c55x_plus/utils.o
 
 STATIC_OBJ+=${OBJ_TMS320}
 TARGET_TMS320=asm_tms320.${EXT_SO}

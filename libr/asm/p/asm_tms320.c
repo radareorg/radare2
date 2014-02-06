@@ -23,7 +23,7 @@ static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 	if (a->cpu && strcasecmp(a->cpu, "c55x") == 0)
 		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55X);
 	if (a->cpu && strcasecmp(a->cpu, "c55x+") == 0)
-		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55PLUS);
+		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55X_PLUS);
 
 	op->size = tms320_dasm(&engine, buf, len);
 	snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s", op->size ? engine.syntax : "invalid");
@@ -44,9 +44,10 @@ static int tms320_fini(void * user)
 RAsmPlugin r_asm_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
+	.cpus = "c54x,c55x,c55x+",
 	.desc = "TMS320 DSP family disassembly plugin",
 	.license = "LGPLv3",
-	.bits = 32|64,
+	.bits = 32,
 	.init = tms320_init,
 	.fini = tms320_fini,
 	.disassemble = tms320_disassemble,

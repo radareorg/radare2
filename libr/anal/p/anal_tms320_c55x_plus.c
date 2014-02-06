@@ -8,7 +8,7 @@
 
 ut32 get_ins_len(ut8 opcode);
 
-int tms320_c55plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+int tms320_c55x_plus_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut16 *ins = (ut16*)buf;
 	ut32 ins_len;
 
