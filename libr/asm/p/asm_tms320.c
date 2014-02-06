@@ -44,6 +44,7 @@ static int tms320_fini(void * user)
 RAsmPlugin r_asm_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
+	.cpus = "c54x,c55x,c55x+",
 	.desc = "TMS320 DSP family disassembly plugin",
 	.license = "LGPLv3",
 	.bits = 32|64,
