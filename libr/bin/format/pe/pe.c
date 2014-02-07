@@ -325,16 +325,16 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 	names_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfNames);
 	ordinals_offset = PE_(r_bin_pe_rva_to_offset)(bin, bin->export_directory->AddressOfOrdinals);
 	for (i = 0; i < bin->export_directory->NumberOfNames; i++) {
-		if (r_buf_read_at (bin->b, functions_offset + i * sizeof(PE_VWord), (ut8*)&function_rva, sizeof(PE_VWord)) == -1) {
-			eprintf ("Error: read (function rva)\n");
+		if (r_buf_read_at(bin->b, names_offset + i * sizeof(PE_VWord), (ut8*)&name_rva, sizeof(PE_VWord)) == -1) {
+			eprintf ("Error: read (name rva)\n");
 			return NULL;
 		}
 		if (r_buf_read_at(bin->b, ordinals_offset + i * sizeof(PE_Word), (ut8*)&function_ordinal, sizeof(PE_Word)) == -1) {
 			eprintf ("Error: read (function ordinal)\n");
 			return NULL;
 		}
-		if (r_buf_read_at(bin->b, names_offset + i * sizeof(PE_VWord), (ut8*)&name_rva, sizeof(PE_VWord)) == -1) {
-			eprintf ("Error: read (name rva)\n");
+		if (r_buf_read_at (bin->b, functions_offset + function_ordinal * sizeof(PE_VWord), (ut8*)&function_rva, sizeof(PE_VWord)) == -1) {
+			eprintf ("Error: read (function rva)\n");
 			return NULL;
 		}
 		name_offset = PE_(r_bin_pe_rva_to_offset)(bin, name_rva);
