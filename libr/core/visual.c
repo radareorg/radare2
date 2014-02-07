@@ -1146,6 +1146,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			r_core_cmd (core, cmdprompt, 0);
 		r_core_visual_refresh (core);
 		ch = r_cons_readchar ();
+		if (ch==-1 || ch==4) break; // error or eof
 	} while (r_core_visual_cmd (core, ch));
 
 	if (color)
