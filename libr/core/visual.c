@@ -102,6 +102,7 @@ static void visual_help() {
 	" x        show xrefs to seek between them\n"
 	" yY       copy and paste selection\n"
 	" z        toggle zoom mode\n"
+	" Enter    follow address of jump/call\n"
 	);
 	r_cons_flush ();
 	r_cons_any_key ();
