@@ -916,11 +916,6 @@ insn_item_t * decode_insn(tms320_dasm_t * dasm)
 
 	substitute(dasm->syntax, "  ", "%s", " ");	// spaces
 
-	// validate decoded insn
-
-	if (strstr(dasm->syntax, "invalid"))
-		dasm->status |= TMS320_S_INVAL;
-
 	return dasm->insn;
 }
 
@@ -1011,7 +1006,13 @@ int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 		c55x_plus_disassemble(dasm, stream, len);
 	}
 
-	return dasm->status & TMS320_S_INVAL ? 0 : dasm->length;
+	if (strstr(dasm->syntax, "invalid"))
+		dasm->status |= TMS320_S_INVAL;
+
+	if (dasm->status & TMS320_S_INVAL)
+		strcpy(dasm->syntax, "invalid"), dasm->length = 1;
+
+	return dasm->length;
 }
 
 static insn_head_t c55x_list[] = {
