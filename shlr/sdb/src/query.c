@@ -221,6 +221,7 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 			}
 		}
 	}
+    free (buf);
 	return NULL;
 }
 
@@ -234,7 +235,11 @@ SDB_API int sdb_query (Sdb *s, const char *cmd) {
 
 SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {
 	char *o, *p, *op = strdup (cmd);
-	if (!s || !op) return 0;
+    if (!op) return 0;
+	if (!s) {
+        free (op);
+        return 0;
+    }
 	p = op;
 	do {
 		o = strchr (p, '\n');
@@ -253,8 +258,10 @@ static char *slurp(const char *file) {
 	if (fd == -1)
 		return NULL;
 	sz = lseek (fd, 0, SEEK_END);
-	if (sz<0)
+	if (sz<0){
+         close (fd);
 		return NULL;
+    }
 	lseek (fd, 0, SEEK_SET);
 	text = malloc (sz+1);
 	if (!text) {
