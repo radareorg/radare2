@@ -379,8 +379,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 						r_core_visual_seek_animation(core, op->jump);
 					}
 				}
-			}
-			r_anal_op_free (op);
+				r_anal_op_free (op);
 		}
 		break;
 	case 90: // shift+tab
