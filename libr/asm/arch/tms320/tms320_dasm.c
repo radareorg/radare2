@@ -380,7 +380,7 @@ const char * get_relop_str(ut8 key, char * str)
 const char * get_cond_str(ut8 key, char * str)
 {
 	/* 000 FSSS ... 101 FSSS */
-	if ((key >> 4) >= 0 && (key >> 4) <= 5) {
+	if ((key >> 4) <= 5) {
 		static const char * op[6] = { "==", "!=", "<", "<=", ">", ">=" };
 		sprintf(str, "%s %s #0", get_freg_str(key & 15, NULL), op[(key >> 4) & 7]);
 		return str;
@@ -532,6 +532,7 @@ const char * get_smem_str(ut8 key, char * str)
 const char * get_mmm_str(ut8 key, char * str)
 {
 	switch (key & 7) {
+	default:
 	case 0x00: return "*ARn";
 	case 0x01: return "*ARn+";
 	case 0x02: return "*ARn−";
@@ -550,8 +551,6 @@ const char * get_mmm_str(ut8 key, char * str)
 		//	C54CM:1 => *ARn(AR0)
 	case 0x07: return "*ARn(T0)";
 	};
-
-	return "invalid";
 }
 
 /*
@@ -917,11 +916,6 @@ insn_item_t * decode_insn(tms320_dasm_t * dasm)
 
 	substitute(dasm->syntax, "  ", "%s", " ");	// spaces
 
-	// validate decoded insn
-
-	if (strstr(dasm->syntax, "invalid"))
-		dasm->status |= TMS320_S_INVAL;
-
 	return dasm->insn;
 }
 
@@ -1012,7 +1006,13 @@ int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 		c55x_plus_disassemble(dasm, stream, len);
 	}
 
-	return dasm->status & TMS320_S_INVAL ? 0 : dasm->length;
+	if (strstr(dasm->syntax, "invalid"))
+		dasm->status |= TMS320_S_INVAL;
+
+	if (dasm->status & TMS320_S_INVAL)
+		strcpy(dasm->syntax, "invalid"), dasm->length = 1;
+
+	return dasm->length;
 }
 
 static insn_head_t c55x_list[] = {
