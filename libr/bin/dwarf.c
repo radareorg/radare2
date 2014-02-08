@@ -761,6 +761,7 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	size_t i;
 
+	if (!da) return;
 	for (i = 0; i < da->length; i++)
 		free(da->decls[i].specs);
 

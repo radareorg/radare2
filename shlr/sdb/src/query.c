@@ -32,21 +32,26 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
 
 // XXX: cmd is reused
 SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
+	int i, d, ok, w, alength, bufset = 0;
 	const char *p, *q, *val = NULL;
 	char *eq, *ask;
-	int i, d, ok, w, alength;
 	ut64 n;
 	if (!s) return NULL;
 	if (cmd == NULL) {
 		cmd = buf;
 		buf = NULL;
 	}
-	if (!len || !buf) buf = malloc ((len=64));
+	if (!len || !buf) {
+		bufset = 1;
+		buf = malloc ((len=64));
+	}
 	ask = strchr (cmd, '?');
 	if (*cmd == '[') {
 		char *tp = strchr (cmd, ']');
 		if (!tp) {
 			fprintf (stderr, "Missing ']'.\n");
+			if (bufset)
+				free (buf);
 			return NULL;
 		}
 		*tp++ = 0;
@@ -66,7 +71,9 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 
 	if (*cmd == '.') {
 		sdb_query_file (s, cmd+1);
-		return buf;
+		if (bufset)
+			free (buf);
+		return NULL;
 	} else
 	if (*cmd == '+' || *cmd == '-') {
 		d = 1;
@@ -202,7 +209,11 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 				*ask++ = 0;
 				ok = sdb_json_set (s, cmd, ask, val, 0);
 			} else ok = sdb_set (s, cmd, val, 0);
-			if (!ok) return NULL;
+			if (!ok) {
+				if (bufset)
+					free (buf);
+				return NULL;
+			}
 			*buf = 0;
 			return buf;
 		} else {
@@ -223,7 +234,8 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 			}
 		}
 	}
-    free (buf);
+	if (bufset)
+		free (buf);
 	return NULL;
 }
 

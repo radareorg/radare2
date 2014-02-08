@@ -99,6 +99,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		}
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
+		if (ch==-1||ch==4) return R_FALSE;
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case 'J': option += 10; break;
@@ -518,6 +519,8 @@ R_API void r_core_visual_config(RCore *core) {
 			r_core_cmd (core, "pd 5", 0);
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
+		if (ch==4||ch==-1)
+			return;
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
 		switch (ch) {
@@ -1037,6 +1040,12 @@ R_API void r_core_visual_anal(RCore *core) {
 	for (;;) {
 		r_core_visual_anal_refresh (core);
 		ch = r_cons_readchar ();
+		if (ch==4||ch==-1) {
+			if (level==0)
+				goto beach;
+			level--;
+			continue;
+		}
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case '?':
@@ -1060,7 +1069,7 @@ R_API void r_core_visual_anal(RCore *core) {
 		case 'a':
 			switch (level) {
 			case 0:
-eprintf ("TODO: Add new function manually\n");
+				eprintf ("TODO: Add new function manually\n");
 /*
 				r_cons_show_cursor (R_TRUE);
 				r_cons_set_raw (R_FALSE);
