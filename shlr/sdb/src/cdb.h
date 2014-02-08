@@ -21,7 +21,7 @@ extern void cdb_alloc_free(void*);
 extern int cdb_alloc_re(void);
 
 /* TODO THIS MUST GTFO! */
-int getkvlen(int fd, ut32 *klen, ut32 *vlen);
+int cdb_getkvlen(int fd, ut32 *klen, ut32 *vlen);
 #define CDB_HASHSTART 5381
 
 struct cdb {

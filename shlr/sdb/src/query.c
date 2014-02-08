@@ -66,6 +66,7 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 
 	if (*cmd == '.') {
 		sdb_query_file (s, cmd+1);
+		return buf;
 	} else
 	if (*cmd == '+' || *cmd == '-') {
 		d = 1;
@@ -95,8 +96,8 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 				buf = malloc (0xff);
 				snprintf (buf, 0xff, "%"ULLFMT"d", n);
 			}
-			return buf;
 		}
+		return buf;
 	} else if (*cmd == '[') {
 		// [?] - count elements of array
 		if (cmd[1]=='?') {
@@ -171,6 +172,7 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 					*buf = 0;
 					return buf;
 				}
+				return NULL;
 			} else {
 				/* (3)foo */
 				const char *out = sdb_getc (s, p, 0);

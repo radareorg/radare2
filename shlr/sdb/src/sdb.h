@@ -117,7 +117,7 @@ ut32 sdb_hash (const char *key, int klen);
 
 /* json api */
 char *sdb_json_get (Sdb* s, const char *key, const char *p, ut32 *cas);
-int sdb_json_geti (Sdb* s, const char *k, const char *p);
+int sdb_json_geti (Sdb* s, const char *k, const char *p, ut32 *cas);
 int sdb_json_seti (Sdb* s, const char *k, const char *p, int v, ut32 cas);
 int sdb_json_set (Sdb* s, const char *k, const char *p, const char *v, ut32 cas);
 

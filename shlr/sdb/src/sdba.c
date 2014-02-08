@@ -136,11 +136,6 @@ SDB_API int sdb_aaddn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 }
 
 SDB_API int sdb_aadd(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
-/*
-	if (sdb_exists (s, key))
-		return 0;
-*/
-// TODO: use agetv here ?
 	if (sdb_aexists (s, key, val))
 		return 0;
 	return sdb_aset (s, key, idx, val, cas);
@@ -296,20 +291,6 @@ SDB_API int sdb_aexists(Sdb *s, const char *key, const char *val) {
 	}
 	free (list);
 	return found;
-}
-
-// TODO: make static inline?
-SDB_API int sdb_alen(const char *str) {
-	int len = 1;
-	const char *n, *p = str;
-	if (!p|| !*p) return 0;
-	for (len=0; ; len++) {
-		n = strchr (p, SDB_RS);
-		if (!n) break;
-		p = n+1;
-	}
-	if (*p) len++;
-	return len;
 }
 
 SDB_API int sdb_alength(Sdb *s, const char *key) {

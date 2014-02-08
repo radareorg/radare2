@@ -25,7 +25,7 @@ R_API boolt r_file_is_regular(const char *str) {
 		return R_FALSE;
 	if (stat (str, &buf)==-1)
 		return R_FALSE;
-	return ((S_IFREG & buf.st_mode))? R_TRUE: R_FALSE;
+	return ((S_IFREG & buf.st_mode)==S_IFREG)? R_TRUE: R_FALSE;
 }
 
 R_API boolt r_file_is_directory(const char *str) {

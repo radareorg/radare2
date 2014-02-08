@@ -12,7 +12,8 @@ static Sdb *s = NULL;
 
 static void terminate(int sig UNUSED) {
 	if (!s) return;
-	if (save) sdb_sync (s);
+	if (save && !sdb_sync (s))
+		exit (1);
 	sdb_free (s);
 	exit (0);
 }
@@ -57,12 +58,12 @@ static int sdb_dump (const char *db, int qf) {
 	return 0;
 }
 
-static void createdb(const char *f) {
+static int createdb(const char *f) {
 	char *line, *eq;
 	s = sdb_new (NULL, f, 0);
-	if (!sdb_create (s)) {
-		printf ("Cannot create database\n");
-		exit (1);
+	if (!s || !sdb_create (s)) {
+		fprintf (stderr, "Cannot create database\n");
+		return 1;
 	}
 	for (;(line = stdin_gets ());) {
 		if ((eq = strchr (line, '='))) {
@@ -72,6 +73,7 @@ static void createdb(const char *f) {
 		free (line);
 	}
 	sdb_finish (s);
+	return 0;
 }
 
 static void showusage(int o) {
@@ -107,7 +109,7 @@ int main(int argc, const char **argv) {
 	if (!strcmp (argv[2], "[]")) {
 		return sdb_dump (argv[1], 1);
 	} if (!strcmp (argv[2], "="))
-		createdb (argv[1]);
+		return createdb (argv[1]);
 	else if (!strcmp (argv[2], "-")) {
 		if ((s = sdb_new (NULL, argv[1], 0))) {
 			for (;(line = stdin_gets ());) {
@@ -115,7 +117,9 @@ int main(int argc, const char **argv) {
 				free (line);
 			}
 		}
-	} else if ((s = sdb_new (NULL, argv[1], 0))) {
+	} else {
+		s = sdb_new (NULL, argv[1], 0);
+		if (!s) return 1;
 		for (i=2; i<argc; i++)
 			save = sdb_query (s, argv[i]);
 	}

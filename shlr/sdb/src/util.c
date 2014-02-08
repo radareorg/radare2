@@ -1,6 +1,7 @@
 /* sdb - LGPLv3 - Copyright 2011-2014 - pancake */
 
 #include "sdb.h"
+#include <sys/time.h>
 
 // assert sdb_hash("hi", 2) == sdb_hash("hi", 0)
 SDB_API ut32 sdb_hash(const char *s, int len) {
@@ -45,4 +46,34 @@ SDB_API ut64 sdb_atoi(const char *s) {
 	if (!strncmp (s, "0x", 2))
 		return strtoull (s+2, &p, 16);
 	return strtoull (s, &p, 10);
+}
+
+// TODO: find better name for it
+SDB_API int sdb_alen(const char *str) {
+	int len = 1;
+	const char *n, *p = str;
+	if (!p|| !*p) return 0;
+	for (len=0; ; len++) {
+		n = strchr (p, SDB_RS);
+		if (!n) break;
+		p = n+1;
+	}
+	if (*p) len++;
+	return len;
+}
+
+SDB_API ut64 sdb_now () {
+        struct timeval now;
+        gettimeofday (&now, NULL);
+	return now.tv_sec;
+}
+
+SDB_API ut64 sdb_unow () {
+	ut64 x;
+        struct timeval now;
+        gettimeofday (&now, NULL);
+	x = now.tv_sec;
+	x <<= 32;
+	x += now.tv_usec;
+        return x;
 }

@@ -1,10 +1,12 @@
-/* sdb - LGPLv3 - Copyright 2007-2013 - pancake */
+/* sdb - LGPLv3 - Copyright 2007-2014 - pancake */
 
 #include <string.h>
 #include "ls.h"
 
 SDB_API SdbList *ls_new() {
 	SdbList *list = R_NEW (SdbList);
+	if (!list)
+		return NULL;
 	list->head = NULL;
 	list->tail = NULL;
 	list->free = free; // HACK
@@ -14,7 +16,7 @@ SDB_API SdbList *ls_new() {
 
 SDB_API void ls_delete (SdbList *list, SdbListIter *iter) {
 	if (iter==NULL) {
-		printf ("ls_delete: null iter?\n");
+		fprintf (stderr, "ls_delete: null iter?\n");
 		return;
 	}
 	ls_split_iter (list, iter);
@@ -41,12 +43,10 @@ SDB_API void ls_destroy (SdbList *list) {
 			SdbListIter *next = it->n;
 			ls_delete (list, it);
 			it = next;
-		//	free (it);
 		}
 		list->head = list->tail = NULL;
 		list->length = 0;
 	}
-	//free (list);
 }
 
 SDB_API void ls_free (SdbList *list) {
@@ -56,9 +56,13 @@ SDB_API void ls_free (SdbList *list) {
 	free (list);
 }
 
-// XXX: Too slow?
 SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
-	SdbListIter *it = R_NEW (SdbListIter);
+	SdbListIter *it;
+	if (!list)
+		return NULL;
+	it = R_NEW (SdbListIter);
+	if (!it)
+		return NULL;
 	if (list->tail)
 		list->tail->n = it;
 	it->data = data;
@@ -72,15 +76,16 @@ SDB_API SdbListIter *ls_append(SdbList *list, void *data) {
 }
 
 SDB_API SdbListIter *ls_prepend(SdbList *list, void *data) {
-	SdbListIter *new = R_NEW (SdbListIter);
+	SdbListIter *it = R_NEW (SdbListIter);
+	if (!it) return NULL;
 	if (list->head)
-		list->head->p = new;
-	new->data = data;
-	new->n = list->head;
-	new->p = NULL;
-	list->head = new;
+		list->head->p = it;
+	it->data = data;
+	it->n = list->head;
+	it->p = NULL;
+	list->head = it;
 	if (list->tail == NULL)
-		list->tail = new;
+		list->tail = it;
 	list->length++;
-	return new;
+	return it;
 }
