@@ -39,6 +39,7 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.relocs = &relocs,
 	.meta = NULL,
 	.write = NULL,
+	.get_vaddr = &get_vaddr,
 };
 
 #ifndef CORELIB
