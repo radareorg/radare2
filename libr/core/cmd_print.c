@@ -1407,6 +1407,13 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		break;
+	case '2':
+		if (input[2] == '?')
+			r_cons_printf(	"Usage: p2 [number of bytes representing tiles]\n"
+					"NOTE: Only full tiles will be printed\n");
+		else
+			r_print_2bpp_tiles(core->print, core->block, len/16);
+		break;
 	case '6':
 		{
 		int malen = (core->blocksize*4)+1;
@@ -1658,6 +1665,7 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_printf (
 		"|Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
 		"| p=               show entropy bars of full file\n"
+		"| p2 [len]         8x8 2bpp-tiles\n"
 		"| p6[de] [len]     base64 decode/encode\n"
 		"| p8 [len]         8bit hexpair list of bytes\n"
 		"| pa[ed] [hex|asm] assemble (pa) or disasm (pad) or esil (pae) from hexpairs\n"

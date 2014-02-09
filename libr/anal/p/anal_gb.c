@@ -18,34 +18,31 @@
 #include <r_anal.h>
 #include <r_reg.h>
 #include "../../asm/arch/gb/gbdis.c"
-#include "../arch/gb/mbc.c"
 #include "../arch/gb/meta_gb_cmt.c"
 #include "../arch/gb/gb_makros.h"
 
-static ut8 gb_op_calljump(RAnalOp *op, const ut8 *data, ut64 addr){
-	if(!GB_IS_RAM_DST(data[1],data[2])){
-		if(!GB_IS_VBANK_DST(data[1],data[2])) {
-			op->jump = GB_SOFTCAST(data[1],data[2]);
-		} else {
-			op->jump = GB_IB_DST(data[1],data[2],addr);
-		}
-		return R_TRUE;
+static ut8 gb_op_calljump(RAnal *a, RAnalOp *op, const ut8 *data, ut64 addr){
+	if (GB_IS_RAM_DST (data[1],data[2])) {
+		op->jump = GB_SOFTCAST (data[1], data[2]);
+		r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "--> unpredictable");
+		return R_FALSE;
 	}
-	return R_FALSE;
+	if (!GB_IS_VBANK_DST (data[1], data[2]))
+		op->jump = GB_SOFTCAST(data[1], data[2]);
+	else
+		op->jump = GB_IB_DST (data[1], data[2], addr);
+	return R_TRUE;
 }
 
 static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len){
-	int ilen = gbOpLength(gb_op[data[0]].type);
-	if(ilen>len)
+	int ilen = gbOpLength (gb_op[data[0]].type);
+	if (ilen > len)
 		ilen=0;
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = ilen;
-	if(GB_IS_VIRTUAL(addr) && !GB_IS_VBANK(addr)) {
-		op->type = R_ANAL_OP_TYPE_NOP;
-		return op->size;
-	}
+	op->nopcode = 1;
 	switch (data[0])
 	{
 		case 0x00:
@@ -86,7 +83,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case 0x08:
 		case 0xea:
-			gb_bankswitch_detect (anal, anal->iob, addr, GB_SOFTCAST(data[1],data[2]));
+			meta_gb_bankswitch_cmt (anal, addr, GB_SOFTCAST (data[1], data[2]));
 		case 0x02:
 		case 0x12:
 		case 0x22:
@@ -144,7 +141,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_STORE;	//LD
 			break;
 		case 0xe0:
-			meta_gb_hardware_cmt(anal, data[1], addr);
+			meta_gb_hardware_cmt (anal, data[1], addr);
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 0x78:
@@ -172,7 +169,7 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 0xf0:
-			meta_gb_hardware_cmt(anal, data[1], addr);
+			meta_gb_hardware_cmt (anal, data[1], addr);
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 0x09:
@@ -304,61 +301,68 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xd5:
 		case 0xe5:
 		case 0xf5:
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = 2;
 			op->type = R_ANAL_OP_TYPE_PUSH;
 			break;
 		case 0xc1:
 		case 0xd1:
 		case 0xe1:
 		case 0xf1:
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -2;
 			op->type = R_ANAL_OP_TYPE_POP;
 			break;
 		case 0xc3:
-			if(gb_op_calljump(op,data,addr)) {
+			if( gb_op_calljump (anal, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_JMP;
 			} else {
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->eob = 1;
 			}
 			op->fail = addr+ilen;
-			op->eob=1;
 			break;
 		case 0x18:					// JR
-			op->jump = addr+ilen+(st8)data[1];
-			op->fail = addr+ilen;
+			op->jump = addr + ilen + (st8)data[1];
+			op->fail = addr + ilen;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
 		case 0x20:
 		case 0x28:
 		case 0x30:
 		case 0x38:					//JR cond
-			op->jump = addr+ilen+(st8)data[1];
-			op->fail = addr+ilen;
+			op->jump = addr + ilen + (st8)data[1];
+			op->fail = addr + ilen;
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			break;
 		case 0xc2:
 		case 0xca:
 		case 0xd2:
 		case 0xda:
-			if(gb_op_calljump(op,data,addr)) {
+			if( gb_op_calljump (anal, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_CJMP;
 			} else {
 				op->type = R_ANAL_OP_TYPE_UJMP;
+				op->eob = 1;
 			}
 			op->fail = addr+ilen;
-			op->eob=1;
 			break;
 		case 0xe9:
-		case 0x76:					/*
-								DAH-FUCK: halts must be handled as jumps:
-								http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf (page 20)
-								*/
 			op->type = R_ANAL_OP_TYPE_UJMP;
+			break;
+		case 0x76:
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->eob = 1;				//halt migth wait for interrupts
+			op->fail = addr + ilen;
+			if(len > 1)
+				op->jump = addr + gbOpLength (gb_op[data[1]].type) + ilen;
 			break;
 		case 0xc4:
 		case 0xcc:
 		case 0xcd:
 		case 0xd4:
 		case 0xdc:
-			if(gb_op_calljump(op,data,addr)) {
+			if( gb_op_calljump (anal, op, data, addr)) {
 				op->type = R_ANAL_OP_TYPE_CALL;
 			} else {
 				op->type = R_ANAL_OP_TYPE_UCALL;
@@ -426,9 +430,9 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case 0xfd:
 			op->type = R_ANAL_OP_TYPE_ILL;
 			break;
-
 		case 0xcb:
-			switch(data[1]/8)
+			op->nopcode = 2;
+			switch (data[1]/8)
 			{
 				case 0:
 				case 2:
@@ -473,7 +477,6 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 					op->type = R_ANAL_OP_TYPE_MOV;
 					break;			//res
 			}
-			break;
 	}
 	return op->size;
 }
@@ -487,40 +490,43 @@ static int gb_anop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 
 static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg,
-			"=pc	mpc\n"
-			"=sp	sp\n"
-			"=a0	af\n"
-			"=a1	bc\n"
-			"=a2	de\n"
-			"=a3	hl\n"
+		"=pc	mpc\n"
+		"=sp	sp\n"
+		"=a0	af\n"
+		"=a1	bc\n"
+		"=a2	de\n"
+		"=a3	hl\n"
 
-			"gpr	mpc	.32	0	0\n"
-			"gpr	m	.16	0	0\n"
-			"gpr	pc	.16	2	0\n"
+		"gpr	mpc	.32	0	0\n"
+		"gpr	pc	.16	0	0\n"
+		"gpr	m	.16	2	0\n"
 
-			"gpr	sp	.16	4	0\n"
+		"gpr	sp	.16	4	0\n"
 
-			"gpr	af	.16	6	0\n"
-			"gpr	a	.8	6	0\n"
-			"gpr	f	.8	7	0\n"
-			"flg	z	.1	.48	0\n"	//is this right?
-			"flg	n	.1	.49	0\n"
-			"flg	h	.1	.50	0\n"
-			"flg	c	.1	.51	0\n"
+		"gpr	af	.16	6	0\n"
+		"gpr	f	.8	6	0\n"
+		"gpr	a	.8	7	0\n"
+		"gpr	Z	.1	.55	0\n"
+		"gpr	N	.1	.54	0\n"
+		"gpr	H	.1	.53	0\n"
+		"gpr	C	.1	.52	0\n"
 
-			"gpr	bc	.16	8	0\n"
-			"gpr	b	.8	8	0\n"
-			"gpr	c	.8	9	0\n"
+		"gpr	bc	.16	8	0\n"
+		"gpr	c	.8	8	0\n"
+		"gpr	b	.8	9	0\n"
 
-			"gpr	de	.16	10	0\n"
-			"gpr	d	.8	10	0\n"
-			"gpr	e	.8	11	0\n"
+		"gpr	de	.16	10	0\n"
+		"gpr	e	.8	10	0\n"
+		"gpr	d	.8	11	0\n"
 
-			"gpr	hl	.16	12	0\n"
-			"gpr	h	.8	12	0\n"
-			"gpr	l	.8	13	0\n"
+		"gpr	hl	.16	12	0\n"
+		"gpr	l	.8	12	0\n"
+		"gpr	h	.8	13	0\n"
 
-			"gpr	mbc	.16	14	0\n");
+		"gpr	mbcrom	.16	14	0\n"
+		"gpr	mbcram	.16	16	0\n"
+
+		"gpr	ime	.1	18	0\n");
 }
 
 struct r_anal_plugin_t r_anal_plugin_gb = {
