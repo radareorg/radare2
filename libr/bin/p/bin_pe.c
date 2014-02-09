@@ -243,6 +243,11 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
+static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
+	if (!baddr) return vaddr;
+	return baddr + vaddr;
+}
+
 #if !R_BIN_PE64
 static int check(RBinFile *arch) {
 	int idx, ret = R_FALSE;
@@ -329,11 +334,6 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		B (data, datalen);
 	}
 	return buf;
-}
-
-static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	if (!baddr) return vaddr;
-	return baddr + vaddr;
 }
 
 struct r_bin_plugin_t r_bin_plugin_pe = {
