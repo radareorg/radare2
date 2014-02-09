@@ -172,6 +172,7 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			ret = c->callback (cmd->data, input+1);
 		else ret = -1;
 	}
+	if(( ret > 0)) /* somehow avoid segfault for mentioned buf in #issue 594 */
 	return ret;
 }
 
