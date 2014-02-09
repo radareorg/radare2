@@ -30,28 +30,38 @@ static ut64 baddr(RBinFile *arch) {
 	return 0LL;
 }
 
-static RList* entries(RBinFile *arch) {
+static RBinAddr* binsym(RBinFile *arch, int type)
+{
+	if(type == R_BIN_SYM_MAIN && arch && arch->buf) {
+		RBinAddr *ret = NULL;
+		if(!(ret = R_NEW(RBinAddr)))
+			return NULL;
+		ut8 init_jmp[4];
+		r_buf_read_at (arch->buf, 0x100, init_jmp, 4);
+		memset(ret, '\0', sizeof(RBinAddr));
+		if(init_jmp[1] == 0xc3) {
+			ret->offset = ret->rva = init_jmp[3]*0x100 + init_jmp[2];
+			return ret;
+		}
+		free(ret);
+		return NULL;
+	}
+	return NULL;
+}
+
+static RList* entries(RBinFile *arch)
+{
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = NULL;
-	ut8 init_jmp[4];
 
 	if (arch && arch->buf != NULL) {
-		r_buf_read_at (arch->buf, 0x100, init_jmp,4);
-		if (!ret) {
+		if (!ret)
 			return NULL;
-		}
-
 		ret->free = free;
 		if (!(ptr = R_NEW (RBinAddr)))
 			return ret;
-
 		memset (ptr, '\0', sizeof (RBinAddr));
-		if (!(init_jmp[1]==0xc3)) {
-			ptr->offset = ptr->rva = 0x100;
-		} else {
-			ptr->offset = ptr->rva = init_jmp[3]*0x100+init_jmp[2];
-		}
-
+		ptr->offset = ptr->rva = 0x100;
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -97,6 +107,69 @@ static RList* sections(RBinFile *arch){
 	return ret;
 }
 
+static RList* symbols(RBinFile *arch)
+{
+	RList *ret = NULL;
+	RBinSymbol *ptr[13];
+	int i;
+	if(!(ret = r_list_new()))
+		return NULL;
+	ret->free = free;
+
+	for(i=0; i<8; i++)
+	{
+		if(!(ptr[i] = R_NEW(RBinSymbol)))
+			return NULL;
+		snprintf(ptr[i]->name, R_BIN_SIZEOF_STRINGS, "rst_%i", i*8);
+		ptr[i]->offset = ptr[i]->rva = i*8;
+		ptr[i]->size = 1;
+		ptr[i]->ordinal = i;
+		r_list_append (ret, ptr[i]);
+	}
+
+	if(!(ptr[8] = R_NEW(RBinSymbol)))
+		return ret;
+	strncpy(ptr[8]->name, "Interrupt_Vblank", R_BIN_SIZEOF_STRINGS);
+	ptr[8]->offset = ptr[8]->rva = 64;
+	ptr[8]->size = 1;
+	ptr[8]->ordinal = 8;
+	r_list_append (ret, ptr[8]);
+
+	if(!(ptr[9] = R_NEW(RBinSymbol)))
+		return ret;
+	strncpy(ptr[9]->name, "Interrupt_LCDC-Status", R_BIN_SIZEOF_STRINGS);
+	ptr[9]->offset = ptr[9]->rva = 72;
+	ptr[9]->size = 1;
+	ptr[9]->ordinal = 9;
+	r_list_append (ret, ptr[9]);
+
+	if(!(ptr[10] = R_NEW(RBinSymbol)))
+		return ret;
+	strncpy(ptr[10]->name, "Interrupt_Timer-Overflow", R_BIN_SIZEOF_STRINGS);
+	ptr[10]->offset = ptr[10]->rva = 80;
+	ptr[10]->size = 1;
+	ptr[10]->ordinal = 10;
+	r_list_append (ret, ptr[10]);
+
+	if(!(ptr[11] = R_NEW(RBinSymbol)))
+		return ret;
+	strncpy(ptr[11]->name, "Interrupt_Serial-Transfere", R_BIN_SIZEOF_STRINGS);
+	ptr[11]->offset = ptr[11]->rva = 88;
+	ptr[11]->size = 1;
+	ptr[11]->ordinal = 11;
+	r_list_append (ret, ptr[11]);
+
+	if(!(ptr[12] = R_NEW(RBinSymbol)))
+		return ret;
+	strncpy(ptr[12]->name, "Interrupt_Joypad", R_BIN_SIZEOF_STRINGS);
+	ptr[12]->offset = ptr[12]->rva = 96;
+	ptr[12]->size = 1;
+	ptr[12]->ordinal = 12;
+	r_list_append (ret, ptr[12]);
+
+	return ret;
+}
+
 static RBinInfo* info(RBinFile *arch) {
 	ut8 rom_header[76];
 	RBinInfo *ret = R_NEW (RBinInfo);
@@ -136,10 +209,10 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.check = &check,
 	.baddr = &baddr,
 	.boffset = NULL,
-	.binsym = NULL,
+	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = NULL,
+	.symbols = &symbols,
 	.imports = NULL,
 	.strings = NULL,
 	.info = &info,
