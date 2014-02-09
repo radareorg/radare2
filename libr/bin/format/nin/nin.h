@@ -92,7 +92,6 @@ const char *gb_card_type_str[]={
 	"HUC1",
 	"XXX",			//mbc4?
 	"XXX",
-	"XXX",
 	"ROM+MBC5",
 	"ROM+MBC5+RAM",
 	"ROM+MBC5+RAM+BAT",
