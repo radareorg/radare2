@@ -194,7 +194,7 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str) {
 		mi->from = from;
 		mi->to = to;
 		if (str && *str) {
-			if (strnlen (str, 80)>78) {
+			if (r_str_nlen (str, 80)>78) {
 				mi->str = malloc (80);
 				memcpy (mi->str, str, 78);
 				mi->str[78] = 0;
