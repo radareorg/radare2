@@ -53,6 +53,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.trace", "false");
 		r_config_set (cfg, "asm.bytes", "false");
 		r_config_set (cfg, "asm.stackptr", "false");
+		r_config_set (cfg, "asm.cycles", "false");
 	} else if (!strcmp (profile, "graph")) {
 		asm_profile (cfg, "default");
 		r_config_set (cfg, "asm.bytes", "false");
@@ -82,6 +83,7 @@ static int asm_profile(RConfig *cfg, const char *profile) {
 		r_config_set (cfg, "asm.flags", "false");
 		r_config_set (cfg, "asm.xrefs", "false");
 		r_config_set (cfg, "asm.stackptr", "false");
+		r_config_set (cfg, "asm.cycles", "false");
 	}
 	return R_TRUE;
 }
@@ -623,6 +625,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("asm.pseudo", "false", "Enable pseudo syntax"); // DEPRECATED ?
 	SETPREF("asm.size", "false", "Show size of opcodes in disassembly (pd)");
 	SETPREF("asm.stackptr", "false", "Show stack pointer at disassembly");
+	SETPREF("asm.cycles", "false", "Show cpu-cycles taken by instruction at disassembly");
 	SETI("asm.tabs", 0, "Use tabs in disassembly");
 	SETPREF("asm.trace", "true", "Show execution traces for each opcode");
 	SETPREF("asm.ucase", "false", "Use uppercase syntax at disassembly");
