@@ -435,6 +435,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		return r_asm_code_free (acode);
 	lbuf = strdup (buf);
 
+
 	/* accept ';' as comments when input is multiline */
 	{
 		char *nl = strchr (lbuf, '\n');
@@ -492,6 +493,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		r_asm_set_pc (a, pc);
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 				i <= ctr; i++, idx += ret) {
+			memset (buf_token, 0, R_ASM_BUFSIZE);
 			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE);
 			for (ptr_start = buf_token; *ptr_start &&
 				isseparator (*ptr_start); ptr_start++);
