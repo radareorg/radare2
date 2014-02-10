@@ -57,6 +57,7 @@ typedef struct r_disam_options_t {
 	int show_bytes;
 	int show_comments;
 	int show_cmtflgrefs;
+	int show_cycles;
 	int show_stackptr;
 	int show_xrefs;
 	int show_functions;
@@ -144,6 +145,7 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 static void handle_control_flow_comments (RCore * core, RDisasmState *ds);
 static void handle_print_lines_right (RCore *core, RDisasmState *ds);
 static void handle_print_lines_left (RCore *core, RDisasmState *ds);
+static void handle_print_cycles(RCore *core, RDisasmState *ds);
 static void handle_print_stackptr (RCore *core, RDisasmState *ds);
 static void handle_print_offset (RCore *core, RDisasmState *ds );
 static void handle_print_op_size (RCore *core, RDisasmState *ds);
@@ -270,6 +272,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
+	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
@@ -1008,6 +1011,11 @@ static void handle_print_lines_left (RCore *core, RDisasmState *ds){
 	}
 }
 
+static void handle_print_cycles (RCore *core, RDisasmState *ds) {
+	if (ds->show_cycles)
+		r_cons_printf ("%3d ", ds->analop.cycles);
+}
+
 static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
 	if (ds->show_stackptr) {
 		r_cons_printf ("%3d%s", ds->stackptr,
@@ -1636,6 +1644,7 @@ toro:
 		handle_print_offset (core, ds);
 		handle_print_op_size (core, ds);
 		handle_print_trace (core, ds);
+		handle_print_cycles (core, ds);
 		handle_print_stackptr (core, ds);
 		ret = handle_print_meta_infos (core, ds, buf,len, idx);
 		if (ds->mi_found) {
