@@ -1151,7 +1151,8 @@ R_API char *r_core_editor (RCore *core, const char *str) {
 		r_cons_editor (name);
 	} else r_sys_cmdf ("%s '%s'", editor, name);
 	ret = r_file_slurp (name, &len);
-	ret[len-1] = 0; // chop
+	if (ret[len - 1] == '\n')
+		ret[len-1] = 0; // chop
 	r_file_rm (name);
 	free (name);
 	return ret;

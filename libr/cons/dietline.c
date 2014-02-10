@@ -442,7 +442,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					if (I.buffer.length < R_LINE_BUFSIZE) {
 						I.buffer.index = I.buffer.length;
 						strncpy (I.buffer.data, tmp_ed_cmd, R_LINE_BUFSIZE-1);
-                        I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
+						I.buffer.data[R_LINE_BUFSIZE-1] = '\0';
 					} else I.buffer.length -= strlen (tmp_ed_cmd);
 					free (tmp_ed_cmd);
 				}
