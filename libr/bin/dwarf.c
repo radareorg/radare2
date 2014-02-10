@@ -587,14 +587,14 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len)
 
 	size_t offset = segment_size + address_size * 2;
 
-	buf += (((uint64_t) buf / offset) + 1) * offset - ((uint64_t)buf);
+	buf += (((ut64) buf / offset) + 1) * offset - ((ut64)buf);
 
 	while (buf - obuf < len) {
-		uint64_t adr, length;
+		ut64 adr, length;
 
-		adr = *(uint64_t*)buf;
+		adr = *(ut64*)buf;
 		buf += 8;
-		length = *(uint64_t*)buf;
+		length = *(ut64*)buf;
 		buf += 8;
 
 		printf("length 0x%llx address 0x%llx\n", length, adr);
