@@ -8,7 +8,7 @@ CFLAGS+=-DLIL_ENDIAN=1
 foo: all
 
 ALL_TARGETS=
-PLUGS=dummy.mk 2bpp.mk
+PLUGS=dummy.mk
 include $(PLUGS)
 
 all: ${ALL_TARGETS}
