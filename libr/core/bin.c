@@ -17,12 +17,10 @@ R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 }
 
 R_API void r_core_bin_bind (RCore *core) {
-
-	if (core->bin) {
-		r_bin_bind (core->bin, &(core->anal->binb));
-		r_bin_bind (core->bin, &(core->assembler->binb));
-		r_bin_bind (core->bin, &(core->file->binb));
-	}
+	if (!core->bin) return;
+	r_bin_bind (core->bin, &(core->anal->binb));
+	r_bin_bind (core->bin, &(core->assembler->binb));
+	r_bin_bind (core->bin, &(core->file->binb));
 }
 
 R_API int r_core_bin_refresh_strings(RCore *r) {
@@ -36,7 +34,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	RBinString *string;
 	RListIter *iter;
 	RList *list;
-	int i = 0;
+	int size, i = 0;
 
 	if (!(hasstr = r_config_get_i (r->config, "bin.strings")))
 		return 0;
@@ -70,10 +68,14 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				string->offset): string->offset;
 			q = strdup (string->string);
 			//r_name_filter (str, 128);
-			for (p=q; *p; p++) if(*p=='"')*p='\'';
+			for (p=q; *p; p++) if (*p=='"')*p='\'';
+			size = string->size;
+			if (string->type == 'W')
+				size *= 2;
 			r_cons_printf ("%s{\"offset\":%"PFMT64d
-				",\"length\":%d,\"string\":\"%s\"}", 
-				iter->p? ",": "", addr, string->size, q);
+				",\"length\":%d,\"type\":\"%s\",\"string\":\"%s\"}", 
+				iter->p? ",": "", addr, size,
+				string->type=='W'?"wide":"ascii", q);
 			free (q);
 		}
 		r_cons_printf ("]");
