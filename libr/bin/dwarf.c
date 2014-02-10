@@ -450,6 +450,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(const ut8 *obuf, size_t len,
 			fprintf(f, "Advance PC by constant %lld to 0x%llx\n",
 				op_advance, regs->address);
 		}
+		break;
 	case DW_LNS_fixed_advance_pc:
 		operand = READ (buf, ut16);
 		regs->address += operand;
@@ -749,7 +750,7 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 			attr_form = da->decls[i].specs[j].attr_form;
 			if (attr_name && attr_form &&
 				attr_name <= DW_AT_vtable_elem_location &&
-				attr_form <= DW_TAG_volatile_type) {
+				attr_form <= DW_FORM_indirect) {
 					fprintf(f, "    %s %s\n",
 						dwarf_attr_encodings[attr_name],
 						dwarf_attr_form_encodings[attr_form]);
@@ -853,7 +854,11 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f)
 		fprintf (f, "(indirect string, offset: 0x%llx): ",
 				val->encoding.str_struct.offset);
 	case DW_FORM_string:
-		fprintf (f, "%s", val->encoding.str_struct.string);
+		if (val->encoding.str_struct.string) {
+			fprintf (f, "%s", val->encoding.str_struct.string);
+		} else {
+			fprintf (f, "No string found");
+		}
 		break;
 	case DW_FORM_flag:
 		fprintf (f, "%u", val->encoding.flag);
@@ -1027,10 +1032,13 @@ static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf,
 
 	case DW_FORM_strp:
 		value->encoding.str_struct.offset = READ (buf, ut32);
-		if (value->encoding.str_struct.offset < debug_str_len) {
+		if (debug_str && value->encoding.str_struct.offset
+				< debug_str_len) {
 			value->encoding.str_struct.string = strdup (
 				(const char *)(debug_str +
 					value->encoding.str_struct.offset));
+		} else {
+			value->encoding.str_struct.string = NULL;
 		}
 		break;
 
@@ -1236,7 +1244,7 @@ RBinSection *getsection(RBin *a, const char *sn) {
 
 R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a) {
 	ut8 *buf, *debug_str_buf = 0;
-	int len, debug_str_len, ret;
+	int len, debug_str_len = 0, ret;
 	RBinSection *debug_str;
 	RBinSection *section = getsection (a, "debug_info");
 	if (section) {
@@ -1298,7 +1306,7 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a) {
 	ut8 *buf;
 	size_t len;
 	RBinSection *section = getsection (a, "debug_abbrev");
-	RBinDwarfDebugAbbrev *da;
+	RBinDwarfDebugAbbrev *da = NULL;
 
 	if (section) {
 		len = section->size;
