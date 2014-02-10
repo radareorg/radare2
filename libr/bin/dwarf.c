@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2014 - pancake, Fedor Sakharov */
 
 #define D0 if(1)
 #define D1 if(1)
@@ -545,10 +545,10 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 
 R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len)
 {
-	uint32_t length = *(uint32_t*)obuf;
-	uint16_t version;
-	uint32_t debug_info_offset;
-	uint8_t address_size, segment_size;
+	ut32 length = *(ut32*)obuf;
+	ut16 version;
+	ut32 debug_info_offset;
+	ut8 address_size, segment_size;
 	const ut8 *buf = obuf;
 
 	printf("parse_aranges\n");
@@ -561,25 +561,25 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len)
 		buf += 4;
 	}
 
-	version = *(uint16_t*)buf;
+	version = *(ut16*)buf;
 
 	buf += 2;
 
 	printf("Version %d\n", version);
 
-	debug_info_offset = *(uint32_t*)buf;
+	debug_info_offset = *(ut32*)buf;
 
 	printf("Debug info offset %d\n", debug_info_offset);
 
 	buf += 4;
 
-	address_size = *(uint8_t*)buf;
+	address_size = *(ut8*)buf;
 
 	printf("address size %d\n", (int)address_size);
 
 	buf += 1;
 
-	segment_size = *(uint8_t*)buf;
+	segment_size = *(ut8*)buf;
 
 	printf("segment size %d\n", (int)segment_size);
 
