@@ -744,3 +744,38 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size) {
 		p->printf ("\n");
 	}
 }
+
+R_API void r_print_2bpp_row(RPrint *p, ut8 *buf)
+{
+	int i, c = 0;
+	char *color;
+	for (i=0; i<8; i++) {
+		if (buf[1] & ((1<<7)>>i) ) c = 2;
+		if (buf[0] & ((1<<7)>>i) ) c++;
+		switch (c) {
+			case 0:
+				color = Color_BGWHITE;
+			break;
+			case 1:
+				color = Color_BGRED;
+			break;
+			case 2:
+				color = Color_BGBLUE;
+			break;
+			case 3:
+				color = Color_BGBLACK;
+		}
+		p->printf("%s  ", color);
+		c = 0;
+	}
+}
+
+R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles)
+{
+	int i, r;
+	for(i=0; i<8; i++) {
+		for(r=0; r<tiles; r++)
+			r_print_2bpp_row(p, buf + 2*i + r*16);
+		p->printf(Color_RESET"\n");
+	}
+}
