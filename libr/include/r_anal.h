@@ -589,6 +589,7 @@ typedef struct r_anal_op_t {
 	int cond;       /* condition type */
 	int size;       /* size in bytes of opcode */
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) */
+	int cycles;	/* cpu-cycles taken by instruction */
 	int family;     /* family of opcode */
 	int eob;        /* end of block (boolean) */
 	/* Run N instructions before executing the current one */
