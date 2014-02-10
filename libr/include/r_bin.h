@@ -258,8 +258,9 @@ typedef struct r_bin_string_t {
 	ut64 rva;
 	ut64 offset;
 	ut64 ordinal;
-	ut64 size;
-	char type; // Ascii Wide ...
+	int size; // size of buffer containing the string in bytes
+	int length; // length of string in chars
+	char type; // Ascii Wide cp850 utf8 ...
 } RBinString;
 
 typedef struct r_bin_field_t {

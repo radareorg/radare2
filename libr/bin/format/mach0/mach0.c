@@ -495,7 +495,7 @@ static int MACH0_(r_bin_mach0_parse_import_stub)(struct MACH0_(r_bin_mach0_obj_t
 	symbol->name[0] = '\0';
 	for (i = 0; i < bin->nsects; i++) {
 		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS &&
-			bin->sects[i].reserved1 >= 0 && bin->sects[i].reserved2 > 0) {
+				bin->sects[i].reserved2 > 0) {
 			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
 			for (j = 0; j < nsyms; j++) {
 				if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
@@ -596,8 +596,7 @@ static int MACH0_(r_bin_mach0_parse_import_ptr)(struct MACH0_(r_bin_mach0_obj_t)
 #undef CASE
 
 	for (i = 0; i < bin->nsects; i++) {
-		if ((bin->sects[i].flags & SECTION_TYPE) == stype &&
-			bin->sects[i].reserved1 >= 0) {
+		if ((bin->sects[i].flags & SECTION_TYPE) == stype) {
 			for (j=0, sym=-1; bin->sects[i].reserved1+j < bin->nindirectsyms; j++)
 				if (idx == bin->indirectsyms[bin->sects[i].reserved1 + j]) {
 					sym = j;

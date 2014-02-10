@@ -84,6 +84,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			}
 			//HACK if (scnrva) ptr->rva = ptr->offset-from+scnrva; else ptr->rva = ptr->offset;
 			ptr->size = matches+1;
+			ptr->length = ptr->size << ((type=='W')? 1:0);
 			ptr->type = type;
 			type = 'A';
 			ptr->ordinal = ctr;
@@ -671,7 +672,7 @@ R_API RBin* r_bin_new() {
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->o = R_NEW0 (RBinObject);
 	bin->binfiles = r_list_new();
-	bin->binfiles->free = r_bin_file_free;
+	bin->binfiles->free = (RListFree)r_bin_file_free;
 	for (i=0; bin_static_plugins[i]; i++) {
 		r_bin_add (bin, bin_static_plugins[i]); //static_plugin);
 	}

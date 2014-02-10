@@ -34,7 +34,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	RBinString *string;
 	RListIter *iter;
 	RList *list;
-	int size, i = 0;
+	int i = 0;
 
 	if (!(hasstr = r_config_get_i (r->config, "bin.strings")))
 		return 0;
@@ -68,13 +68,12 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				string->offset): string->offset;
 			q = strdup (string->string);
 			//r_name_filter (str, 128);
-			for (p=q; *p; p++) if (*p=='"')*p='\'';
-			size = string->size;
-			if (string->type == 'W')
-				size *= 2;
+			for (p=q; *p; p++) if (*p=='"') *p = '\'';
 			r_cons_printf ("%s{\"offset\":%"PFMT64d
-				",\"length\":%d,\"type\":\"%s\",\"string\":\"%s\"}", 
-				iter->p? ",": "", addr, size,
+				",\"length\":%d,\"size\":%d,"
+				"\"type\":\"%s\",\"string\":\"%s\"}", 
+				iter->p? ",": "", addr,
+				string->length, string->size,
 				string->type=='W'?"wide":"ascii", q);
 			free (q);
 		}
@@ -82,11 +81,10 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 	} else
 	if ((mode & R_CORE_BIN_SIMPLE)) {
 		r_list_foreach (list, iter, string) {
-			int size = (string->type == 'W')? string->size*2: string->size;
 			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, string->rva,
 				string->offset): string->offset;
-			r_cons_printf ("%"PFMT64d" %d %s\n", 
-				addr, size, string->string);
+			r_cons_printf ("%"PFMT64d" %d %d %s\n", 
+				addr, string->size, string->length, string->string);
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
@@ -100,7 +98,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			for (i=0; *(string->string+i)==' '; i++);
 			r_meta_add (r->anal, R_META_TYPE_STRING,
 				va?baddr+string->rva:string->offset,
-				(va?baddr+string->rva:string->offset)+size, string->string+i);
+				(va?baddr+string->rva:string->offset)+string->size,
+				string->string+i);
 			r_name_filter (string->string, 128);
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string);
 			r_flag_set (r->flags, str,
@@ -121,10 +120,11 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
 					string->string, size, va?baddr+string->rva:string->offset,
 					string->size, va?baddr+string->rva:string->offset);
-			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-				"sz=%"PFMT64d" section=%s type=%c string=%s\n",
+			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x
+				" ordinal=%03"PFMT64d" "
+				"sz=%d len=%d section=%s type=%c string=%s\n",
 				baddr+string->rva, string->offset,
-				string->ordinal, size,
+				string->ordinal, string->size, string->length,
 				section?section->name:"unknown",
 				string->type, string->string);
 			i++;

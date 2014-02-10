@@ -183,7 +183,7 @@ static RBinInfo* info(RBinFile *arch) {
 	memset (ret, '\0', sizeof (RBinInfo));
 	ret->lang = NULL;
 	r_buf_read_at (arch->buf,0x104,rom_header,76);
-	strncpy (ret->file, &rom_header[48], 16);
+	strncpy (ret->file, (const char*)&rom_header[48], 16);
 	gb_get_gbtype (ret->type,rom_header[66],rom_header[63]);
 	gb_add_cardtype (ret->type,rom_header[67]);			// XXX
 	strncpy (ret->machine, "Gameboy", sizeof (ret->machine)-1);

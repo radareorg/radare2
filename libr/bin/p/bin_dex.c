@@ -192,10 +192,11 @@ static inline ut32 getmethodoffset (struct r_bin_dex_obj_t *bin, int n, ut32 *si
 
 static char *get_string (struct r_bin_dex_obj_t *bin, int idx) {
 	const ut8 buf[128], *buf2;
-	int len, uleblen;
+	ut64 len;
+	int uleblen;
 	r_buf_read_at (bin->b, bin->strings[idx], (ut8*)&buf, 8);
 	len = dex_read_uleb128 (buf);
-	buf2 = r_uleb128 (buf, (ut32*) &len);
+	buf2 = r_uleb128 (buf, &len);
 	uleblen = (size_t)(buf2 - buf);
 	// XXX what about 0 length strings?
 	if (len>0 && len < R_BIN_SIZEOF_STRINGS) {
@@ -270,34 +271,34 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 		p = r_buf_get_at (arch->buf, c->class_data_offset, NULL);
 		/* data header */
 		{
-			ut32 SF, IF, DM, VM;
+			ut64 SF, IF, DM, VM;
 			p = r_uleb128 (p, &SF);
 			p = r_uleb128 (p, &IF);
 			p = r_uleb128 (p, &DM);
 			p = r_uleb128 (p, &VM);
-			dprintf ("  static fields: %d\n", SF);
+			dprintf ("  static fields: %u\n", (ut32)SF);
 			/* static fields */
 			for (j=0; j<SF; j++) {
-				ut32 FI, FA;
+				ut64 FI, FA;
 				p = r_uleb128 (p, &FI);
 				p = r_uleb128 (p, &FA);
-				dprintf ("    field_idx: %d\n", FI);
-				dprintf ("    field access_flags: %d\n", FA);
+				dprintf ("    field_idx: %u\n", (ut32)FI);
+				dprintf ("    field access_flags: %u\n", (ut32)FA);
 			}
 			/* instance fields */
-			dprintf ("  instance fields: %d\n", IF);
+			dprintf ("  instance fields: %u\n", (ut32)IF);
 			for (j=0; j<IF; j++) {
-				ut32 FI, FA;
+				ut64 FI, FA;
 				p = r_uleb128 (p, &FI);
 				p = r_uleb128 (p, &FA);
-				dprintf ("    field_idx: %d,\n", FI);
-				dprintf ("    field access_flags: %d,\n", FA);
+				dprintf ("    field_idx: %u,\n", (ut32)FI);
+				dprintf ("    field access_flags: %u,\n", (ut32)FA);
 			}
 			/* direct methods */
-			dprintf ("  direct methods: %d\n", DM);
+			dprintf ("  direct methods: %u\n", (ut32)DM);
 			for (j=0; j<DM; j++) {
 				char *method_name, *flag_name;
-				ut32 MI, MA, MC;
+				ut64 MI, MA, MC;
 				p = r_uleb128 (p, &MI);
 				p = r_uleb128 (p, &MA);
 				p = r_uleb128 (p, &MC);
@@ -307,14 +308,14 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				if (MC>0 && bin->code_to<MC) bin->code_to = MC;
 
 				method_name = dex_method_name (bin, MI);
-				dprintf ("METHOD NAME %d\n", MI);
+				dprintf ("METHOD NAME %u\n", (ut32)MI);
 				if (!method_name) method_name = strdup ("unknown");
 				flag_name = flagname (class_name, method_name);
-				dprintf ("f %s @ 0x%x\n", flag_name, MC);
+				dprintf ("f %s @ 0x%x\n", flag_name, (ut32)MC);
 				dprintf ("    { name: %s,\n", method_name);
-				dprintf ("      idx: %d,\n", MI);
-				dprintf ("      access_flags: 0x%x,\n", MA);
-				dprintf ("      code_offset: 0x%x },\n", MC);
+				dprintf ("      idx: %u,\n", (ut32)MI);
+				dprintf ("      access_flags: 0x%x,\n", (ut32)MA);
+				dprintf ("      code_offset: 0x%x },\n", (ut32)MC);
 				/* add symbol */
 				{
 					RBinSymbol *sym = R_NEW0 (RBinSymbol);
@@ -327,9 +328,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 				free (flag_name);
 			}
 			/* virtual methods */
-			dprintf ("  virtual methods: %d\n", VM);
+			dprintf ("  virtual methods: %u\n", (ut32)VM);
 			for (j=0; j<VM; j++) {
-				ut32 MI, MA, MC;
+				ut64 MI, MA, MC;
 				p = r_uleb128 (p, &MI);
 				p = r_uleb128 (p, &MA);
 				p = r_uleb128 (p, &MC);
@@ -340,9 +341,9 @@ static int dex_loadcode(RBinFile *arch, RBinDexObj *bin) {
 
 				name = dex_method_name (bin, MI);
 				dprintf ("    method name: %s\n", name);
-				dprintf ("    method_idx: %d\n", MI);
-				dprintf ("    method access_flags: %d\n", MA);
-				dprintf ("    method code_offset: %d\n", MC);
+				dprintf ("    method_idx: %u\n", (ut32)MI);
+				dprintf ("    method access_flags: %u\n", (ut32)MA);
+				dprintf ("    method code_offset: %u\n", (ut32)MC);
 				free (name);
 			}
 		}
@@ -458,7 +459,7 @@ static RList* classes (RBinFile *arch) {
 			dprintf ("error malloc string length %d\n", len);
 			break;
 		}
-		if ((entry.source_file>bin->header.strings_size) || (entry.source_file<0))
+		if (entry.source_file>bin->header.strings_size)
 			continue;
 		r_buf_read_at (bin->b, bin->strings[entry.source_file],
 				(ut8*)name, len);
