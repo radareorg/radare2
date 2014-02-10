@@ -116,10 +116,11 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 					string->string, string->size, va?baddr+string->rva:string->offset,
 					string->size, va?baddr+string->rva:string->offset);
 			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-				"sz=%"PFMT64d" section=%s string=%s\n",
+				"sz=%"PFMT64d" section=%s type=%c string=%s\n",
 				baddr+string->rva, string->offset,
 				string->ordinal, string->size,
-				section?section->name:"unknown", string->string);
+				section?section->name:"unknown",
+				string->type, string->string);
 			i++;
 		}
 		//if (!mode) r_cons_printf ("\n%i strings\n", i);

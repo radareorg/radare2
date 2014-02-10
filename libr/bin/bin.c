@@ -29,6 +29,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	char str[R_BIN_SIZEOF_STRINGS];
 	int i, matches = 0, ctr = 0;
 	RBinString *ptr = NULL;
+	char type = 'A';
 
 	if (!arch->rawstr)
 		if (!arch->curplugin || !arch->curplugin->info)
@@ -58,9 +59,12 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			str[matches] = arch->buf->buf[i];
 			/* add support for wide char strings */
 			if (arch->buf->buf[i+1]==0) {
-				if (IS_PRINTABLE (arch->buf->buf[i+2]))
-					if (arch->buf->buf[i+3]==0)
+				if (IS_PRINTABLE (arch->buf->buf[i+2])) {
+					if (arch->buf->buf[i+3]==0) {
 						i++;
+						type = 'W';
+					}
+				}
 			}
 			matches++;
 			continue;
@@ -80,6 +84,8 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			}
 			//HACK if (scnrva) ptr->rva = ptr->offset-from+scnrva; else ptr->rva = ptr->offset;
 			ptr->size = matches+1;
+			ptr->type = type;
+			type = 'A';
 			ptr->ordinal = ctr;
 			// copying so many bytes here..
 			memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
@@ -618,7 +624,6 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 	else o->strings = get_strings (a, bin->minstrlen);
 	return o->strings;
 }
-
 
 R_API RList* r_bin_get_strings(RBin *bin) {
 	return bin->cur->o->strings;
