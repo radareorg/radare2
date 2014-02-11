@@ -74,6 +74,18 @@ static int cmd_log(void *data, const char *input) {
 	int n = atoi (input2);
 	int n2 = arg? atoi (arg+1): 0;
 	switch (*input) {
+	case 'e': // shell: less
+		{
+		char *p = strchr (input, ' ');
+		if (p) {
+			char *b = r_file_slurp (p+1, NULL);
+			if (b) {
+				r_cons_less_str (b);
+				free (b);
+			} else eprintf ("File not found\n");
+		} else eprintf ("Usage: less [filename]\n");
+		}
+		break;
 	case 'l':
 		r_cons_printf ("%d\n", core->log->last-1);
 		break;
