@@ -5,6 +5,14 @@
 
 #include <errno.h>
 
+#define DWARF_DUMP 0
+
+#if DWARF_DUMP
+#define DBGFD stdout
+#else
+#define DBGFD NULL
+#endif
+
 #include <r_bin.h>
 #include <r_bin_dwarf.h>
 
@@ -13,6 +21,8 @@
 #define R_BIN_DWARF_INFO 1
 
 #define READ(x,y) *((y*)x); x += sizeof (y)
+
+static const char *dwarf_filename = NULL;
 
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_array_type] = "DW_TAG_array_type",
@@ -297,11 +307,14 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 	case DW_LNE_end_sequence:
 		regs->end_sequence = DWARF_TRUE;
 
+#if 0
 		if (list) {
 			RBinDwarfRow *row = R_NEW (RBinDwarfRow);
 			r_bin_dwarf_line_new (row, regs->address,
 					hdr->file_names[0].name, regs->line);
+			r_list_append (list, row);
 		}
+#endif
 
 		if (f) {
 			fprintf(f, "End of Sequence\n");
@@ -349,8 +362,10 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 	return buf;
 }
 
-static const ut8* r_bin_dwarf_parse_spec_opcode(const ut8 *obuf, size_t len,
-		const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs,
+static const ut8* r_bin_dwarf_parse_spec_opcode(
+		const ut8 *obuf, size_t len,
+		const RBinDwarfLNPHeader *hdr,
+		RBinDwarfSMRegisters *regs,
 		ut8 opcode, RList *list, FILE *f)
 {
 	const ut8 *buf;
@@ -367,6 +382,13 @@ static const ut8* r_bin_dwarf_parse_spec_opcode(const ut8 *obuf, size_t len,
 		fprintf(f, "advance Address by %lld to %llx and Line by %d to %lld\n",
 			advance_adr, regs->address, hdr->line_base +
 			(adj_opcode % hdr->line_range), regs->line);
+	}
+
+	if (list) {
+		RBinDwarfRow *row = R_NEW (RBinDwarfRow);
+		r_bin_dwarf_line_new (row, regs->address,
+			hdr->file_names[0].name, regs->line);
+		r_list_append (list, row);
 	}
 
 	regs->basic_block = DWARF_FALSE;
@@ -393,11 +415,14 @@ static const ut8* r_bin_dwarf_parse_std_opcode(const ut8 *obuf, size_t len,
 		if (f) {
 			fprintf(f, "Copy\n");
 		}
+#if 0
 		if (list) {
 			RBinDwarfRow *row = R_NEW (RBinDwarfRow);
 			r_bin_dwarf_line_new (row, regs->address,
 					hdr->file_names[0].name, regs->line);
+			r_list_append (list, row);
 		}
+#endif
 		regs->basic_block = DWARF_FALSE;
 		break;
 	case DW_LNS_advance_pc:
@@ -543,7 +568,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	return 0;
 }
 
-R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len)
+R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f)
 {
 	ut32 length = *(ut32*)obuf;
 	ut16 version;
@@ -551,8 +576,10 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len)
 	ut8 address_size, segment_size;
 	const ut8 *buf = obuf;
 
+if (f) {
 	printf("parse_aranges\n");
 	printf("length 0x%x\n", length);
+}
 
 	if (length >= 0xfffffff0) {
 		buf += 4;
@@ -565,23 +592,27 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len)
 
 	buf += 2;
 
+	if (f)
 	printf("Version %d\n", version);
 
 	debug_info_offset = *(ut32*)buf;
 
-	printf("Debug info offset %d\n", debug_info_offset);
+	if (f)
+	fprintf(f, "Debug info offset %d\n", debug_info_offset);
 
 	buf += 4;
 
 	address_size = *(ut8*)buf;
 
-	printf("address size %d\n", (int)address_size);
+	if (f)
+	fprintf(f, "address size %d\n", (int)address_size);
 
 	buf += 1;
 
 	segment_size = *(ut8*)buf;
 
-	printf("segment size %d\n", (int)segment_size);
+	if (f)
+	fprintf(f, "segment size %d\n", (int)segment_size);
 
 	buf += 1;
 
@@ -597,6 +628,7 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len)
 		length = *(ut64*)buf;
 		buf += 8;
 
+		if (f)
 		printf("length 0x%llx address 0x%llx\n", length, adr);
 	}
 
@@ -738,6 +770,8 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 	size_t i, j;
 	ut64 attr_name, attr_form;
 
+eprintf ("F = %p\n", f);
+	if (!f) return;
 	for (i = 0; i < da->length; i++) {
 		fprintf(f, "Abbreviation Code %lld ", da->decls[i].code);
 		fprintf(f, "Tag %s ", dwarf_tag_name_encodings[da->decls[i].tag]);
@@ -888,6 +922,7 @@ static void r_bin_dwarf_dump_debug_info (FILE *f, const RBinDwarfDebugInfo *inf)
 	size_t i, j, k;
 	RBinDwarfDIE *dies;
 	RBinDwarfAttrValue *values;
+	if (!f) return;
 
 	for (i = 0; i < inf->length; i++) {
 		fprintf(f, "  Compilation Unit @ offset 0x%llx:\n", inf->comp_units [i].offset);
@@ -956,7 +991,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value (const ut8 *obuf,
 			value->encoding.address = READ (buf, ut64);
 			break;
 		default:
-			fprintf(stderr, "DWARF: Unexpected pointer size: %u\n",
+			eprintf("DWARF: Unexpected pointer size: %u\n",
 					(unsigned)hdr->pointer_size);
 			return NULL;
 		}
@@ -1144,7 +1179,7 @@ R_API int r_bin_dwarf_parse_info_raw(RBinDwarfDebugAbbrev *da,
 		inf->comp_units[curr_unit].hdr.version = READ (buf, ut16);
 
 		if (inf->comp_units[curr_unit].hdr.version != 2) {
-			fprintf(stderr, "DWARF: version %d is yet not supported\n",
+			eprintf("DWARF: version %d is yet not supported\n",
 					inf->comp_units[curr_unit].hdr.version);
 
 			return -1;
@@ -1169,7 +1204,7 @@ R_API int r_bin_dwarf_parse_info_raw(RBinDwarfDebugAbbrev *da,
 		curr_unit++;
 	}
 
-	r_bin_dwarf_dump_debug_info (stdout, inf);
+	r_bin_dwarf_dump_debug_info (NULL, inf);
 	r_bin_dwarf_free_debug_info (inf);
 
 	return 0;
@@ -1224,7 +1259,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf,
 		da->length++;
 	}
 
-	dump_r_bin_dwarf_debug_abbrev(stdout, da);
+	dump_r_bin_dwarf_debug_abbrev(NULL, da);
 
 	return da;
 }
@@ -1275,13 +1310,13 @@ R_API RList *r_bin_dwarf_parse_line(RBin *a) {
 	int len;
 	RBinSection *section = getsection (a, "debug_line");
 	if (section) {
-		//RList *list = r_list_new ();
+		RList *list = r_list_new ();
 		len = section->size;
 		buf = malloc (len);
 		r_buf_read_at (a->cur->buf, section->offset, buf, len);
-		r_bin_dwarf_parse_line_raw2 (a, buf, len, NULL, stdout);
+		r_bin_dwarf_parse_line_raw2 (a, buf, len, list, DBGFD);
 		free (buf);
-		return NULL;
+		return list;
 	}
 	return NULL;
 }
@@ -1295,7 +1330,7 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a) {
 		len = section->size;
 		buf = malloc (len);
 		r_buf_read_at (a->cur->buf, section->offset, buf, len);
-		r_bin_dwarf_parse_aranges_raw (buf, len);
+		r_bin_dwarf_parse_aranges_raw (buf, len, DBGFD);
 		free(buf);
 	}
 
