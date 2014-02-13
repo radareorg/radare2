@@ -98,6 +98,7 @@ R_API RFlagItem *r_flag_get(RFlag *f, const char *name) {
 
 
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
+// TODO: this is buggy, do not use, must rewrite in sdb
 	RFlagItem *oitem = NULL;
 	RFlagItem *item = NULL;
 	RList *list = r_hashtable64_lookup (f->ht_off, off);

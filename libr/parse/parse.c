@@ -127,8 +127,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len) {
 		}
 		if (f) {
 			flag = r_flag_get_i2 (f, off);
+			if (!flag)
+				flag = r_flag_get_i (f, off);
 			if (isvalidflag (flag)) {
-
 				if (p->notin_flagspace != -1) {
 					if (p->flagspace == flag->space)
 						continue;
