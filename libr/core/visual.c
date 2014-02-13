@@ -103,6 +103,7 @@ static void visual_help() {
 	" x        show xrefs to seek between them\n"
 	" yY       copy and paste selection\n"
 	" z        toggle zoom mode\n"
+	" Enter    follow address of jump/call\n"
 	);
 	r_cons_flush ();
 	r_cons_any_key ();
@@ -378,6 +379,20 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 	} else
 	switch (ch) {
+	case 0x0d:
+		{
+			RAnalOp *op = r_core_anal_op (core, core->offset+cursor);
+			if (op) {
+				if (op->type == R_ANAL_OP_TYPE_JMP	|| 
+						op->type == R_ANAL_OP_TYPE_CJMP || 
+						op->type == R_ANAL_OP_TYPE_CALL) {
+						r_io_sundo_push (core->io, offset);
+						r_core_visual_seek_animation(core, op->jump);
+					}
+				}
+				r_anal_op_free (op);
+		}
+		break;
 	case 90: // shift+tab
 		if (!strcmp (printfmt[0], "x"))
 			printfmt[0] = "pxa";
