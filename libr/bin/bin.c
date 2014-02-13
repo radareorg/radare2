@@ -13,6 +13,7 @@
 
 R_LIB_VERSION(r_bin);
 
+#define DB a->db;
 #define RBINLISTFREE(x) if(x){r_list_free(x);x=NULL;}
 
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
@@ -34,9 +35,8 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	if (!arch->rawstr)
 		if (!arch->curplugin || !arch->curplugin->info)
 			return;
-	if (arch->curplugin && min==0) {
+	if (arch->curplugin && min==0)
 		min = arch->curplugin->minstrlen;
-	}
 	if (min==0)
 		min = 4; // defaults
 	if (min <= 0)
@@ -78,7 +78,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			str[matches] = '\0';
 			ptr->offset = i-matches;
 			if (scnrva) {
-				ptr->rva = (ptr->offset-from+scnrva);
+				ptr->rva = (ptr->offset+scnrva-from);
 			} else {
 				ptr->rva = ptr->offset;
 			}
@@ -93,6 +93,7 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
 			//r_name_filter (ptr->string, R_BIN_SIZEOF_STRINGS-1);
 			r_list_append (list, ptr);
+			//if (!sdb_add (DB, 
 			ctr++;
 		}
 		matches = 0;
@@ -107,7 +108,7 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 		return 1;
 #define X 1
 #define ROW (4|2)
-	if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) )
+	if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) && s->size>0 )
 		return 1;
 	return 0;
 }
@@ -382,7 +383,6 @@ static void r_bin_file_free (RBinFile *a) {
 	//bin->cur = r_list_get_n (bin->binfiles, 0);
 	//if (bin->cur) r_bin_bind (bin, bin->cur);
 }
-
 
 // XXX - This is called on everytime a new bin created
 

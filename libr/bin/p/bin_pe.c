@@ -22,13 +22,15 @@ static ut64 baddr(RBinFile *arch) {
 }
 
 static RBinAddr* binsym(RBinFile *arch, int type) {
+	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr)))
+		addr = PE_(r_bin_pe_get_main_offset) (arch->o->bin_obj);
+		if (!addr) return NULL;
+		if (!(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = PE_(r_bin_pe_get_main_offset) (arch->o->bin_obj);
+		ret->offset = ret->rva = addr;
 		break;
 	}
 	return ret;
