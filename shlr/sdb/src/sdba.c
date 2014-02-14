@@ -167,11 +167,11 @@ SDB_API int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas
 }
 
 SDB_API int sdb_adeln(Sdb *s, const char *key, ut64 val, ut32 cas) {
-	const char *str = sdb_getc (s, key, 0);
-	const char *n, *p = str;
+	const char *n, *p, *str = sdb_getc (s, key, 0);
+	int idx = 0;
 	ut64 num;
-	int idx;
-	for (idx=0; ; idx++) {
+	if (!str) return 0;
+	for (p=str; ; idx++) {
 		num = sdb_atoi (p);
 		if (num == val)
 			return sdb_adel (s, key, idx, cas);
