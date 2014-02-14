@@ -393,6 +393,13 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 	int i, j, ret, err = 0;
 	RAsmOp asmop;
 	if (l==0) l = len;
+
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, core->offset);
+	}
+
 	for (i=j=0; j<len && j<l && i<ilen; i+=ret, j++) {
 		r_asm_set_pc (core->assembler, core->offset+i);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+i,

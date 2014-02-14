@@ -349,10 +349,10 @@ void handle_reflines_init (RCore *core, RDisasmState *ds) {
 		free (core->reflines); // TODO: leak
 		free (core->reflines2); // TODO: leak
 		core->reflines = r_anal_reflines_get (core->anal,
-			ds->addr, ds->buf, ds->len, -1,
+			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, ds->show_linescall);
 		core->reflines2 = r_anal_reflines_get (core->anal,
-			ds->addr, ds->buf, ds->len, -1,
+			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
 }
@@ -1510,6 +1510,12 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
 
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, addr);
+	}
+
 	// TODO: All those ds must be print flags
 	ds = handle_init_ds (core);
 	ds->cbytes = cbytes;
@@ -1751,6 +1757,12 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	RAnalFunction *f;
 	char *tmpopstr;
 
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, core->offset);
+	}
+
 	ds = handle_init_ds (core);
 	ds->len = len;
 	ds->l = l;
@@ -1841,6 +1853,12 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	RAnalOp analop;
 	int i, oplen, ret;
 	r_cons_printf ("[");
+
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, addr);
+	}
 	// TODO: add support for anal hints
 	for (i=0; i<len;) {
 		ut64 at = addr +i;
@@ -1893,6 +1911,12 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	// TODO: per-function register state trace
 	idx = 0;
 	memset (buf, 0, cur_buf_sz);
+
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, addr);
+	}
 
 	// TODO: All those ds must be print flags
 	ds = handle_init_ds (core);

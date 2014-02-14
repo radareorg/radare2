@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "code.h"
 
-struct java_op java_ops[] = {
+struct java_op JAVA_OPS[] = {
 	{ "nop"            , 0x00, 1, R_ANAL_EX_NOP},
 
 	{ "aconst_null"    , 0x01, 1, R_ANAL_EX_LDST_LOAD_FROM_CONST_REF_TO_STACK},

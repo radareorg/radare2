@@ -21,6 +21,11 @@ typedef struct r_anal_ex_java_lin_sweep {
 	RList *cfg_node_addrs;
 }RAnalJavaLinearSweep;
 
+ut64 METHOD_START = 0;
+
+
+static int java_reset_counter (RAnal *anal, ut64 addr);
+static int java_new_method (ut64 addr);
 static int java_print_all_definitions( RAnal *anal );
 static int java_print_class_definitions( RBinJavaObj *obj );
 static int java_print_field_definitions( RBinJavaObj *obj );
@@ -93,6 +98,17 @@ static int check_addr_less_start (RBinJavaField *method, ut64 addr) {
 	return R_FALSE;
 }
 
+
+static int java_new_method (ut64 method_start) {
+	METHOD_START = method_start;
+	// reset the current bytes consumed counter
+	r_java_new_method ();
+	return 0;
+}
+
+static ut64 java_get_method_start () {
+	return METHOD_START;
+}
 
 static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalBlock *current_head = state && state->current_bb_head ? state->current_bb_head : NULL;
@@ -200,7 +216,6 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 				}
 				result = R_ANAL_RET_END;
-
 			}
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
@@ -502,8 +517,8 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	r_list_free (fcn->bbs);
 	fcn->bbs = r_anal_bb_list_new ();
 
-	IFDBG eprintf ("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n", fcn->name, fcn->addr, fcn->size);
-
+	IFDBG eprintf ("analyze_method: Parsing fcn %s @ 0x%08"PFMT64x", %d bytes\n", fcn->name, fcn->addr, fcn->size);	
+	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
 	// Not a resource leak.  Basic blocks should be stored in the state->fcn
 	bbs = r_anal_ex_perform_analysis (anal, state, fcn->addr);
@@ -622,8 +637,9 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 
 static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	ut8 op_byte = data[0];
-	ut8 padding = (4 - (addr+1) % 4);
-	ut32 pos = padding + (addr+1)  % 4;
+	ut64 offset = addr - java_get_method_start ();
+	ut8 pos = (offset+1)%4 ? 1 + 4 - (offset+1)%4 : 1;
+
 
 	if (op_byte == 0xaa) {
 		// handle a table switch condition
@@ -638,7 +654,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		RAnalCaseOp *caseop = NULL;
 		IFDBG {
 			eprintf ("Handling tableswitch op @ 0x%04"PFMT64x"\n", addr);
-			eprintf ("default_jump @ 0x%04x ", default_loc);
+			eprintf ("default_jump @ 0x%04x ", default_loc+addr);
 			eprintf ("min_val: %d max_val: %d\n", min_val, max_val);
 		}
 		pos += 12;
@@ -662,24 +678,28 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	/* get opcode size */
 	//ut8 op_byte = data[0];
 	ut8 op_byte = data[0];
-	sz = java_ops[op_byte].size;
+	sz = JAVA_OPS[op_byte].size;
 	if (op == NULL)	return sz;
 
 	memset (op, '\0', sizeof (RAnalOp));
 
 	IFDBG {
 		//eprintf ("Extracting op from buffer (%d bytes) @ 0x%04x\n", len, addr);
-		//eprintf ("Parsing op: (0x%02x) %s.\n", op_byte, java_ops[op_byte].name);
+		//eprintf ("Parsing op: (0x%02x) %s.\n", op_byte, JAVA_OPS[op_byte].name);
 	}
 	op->addr = addr;
 	op->size= sz;
-	op->type2 = java_ops[op_byte].op_type;
+	op->type2 = JAVA_OPS[op_byte].op_type;
 	op->type = r_anal_ex_map_anal_ex_to_anal_op_type (op->type2);
+	// handle lookup and table switch offsets
+	if (op_byte == 0xaa || op_byte == 0xab) {
+		java_switch_op (anal, op, addr, data, len);
+	}
 
 	op->eob = r_anal_ex_is_op_type_eop (op->type2);
 	IFDBG {
 		char *ot_str = r_anal_optype_to_string (op->type);
-		eprintf ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.\n", java_ops[op_byte].name, addr, op->type2, op->type,  ot_str);
+		eprintf ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s.\n", JAVA_OPS[op_byte].name, addr, op->type2, op->type,  ot_str);
 		//eprintf ("op_eob: 0x%02x.\n", op->eob);
 		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
 	}
@@ -687,20 +707,16 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	if ( op->type == R_ANAL_OP_TYPE_CJMP ) {
 		op->jump = addr + (int)(short)(USHORT (data, 1));
 		op->fail = addr + sz;
-		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x".\n", java_ops[op_byte].name, op->jump, op->fail);
+		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	} else if ( op->type  == R_ANAL_OP_TYPE_JMP ) {
 		op->jump = addr + (int)(short)(USHORT (data, 1));
-		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", java_ops[op_byte].name, op->jump);
+		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump);
 	} else if ( (op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
 		//op->jump = addr + (int)(short)(USHORT (data, 1));
 		//op->fail = addr + sz;
-		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", java_ops[op_byte].name, op->jump, op->fail);
+		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}
 
-	// handle lookup and table switch offsets
-	if (op_byte == 0xaa || op_byte == 0xab) {
-		java_switch_op (anal, op, addr, data, len);
-	}
 	//r_java_disasm(addr, data, output, outlen);
 	//IFDBG eprintf ("%s\n", output);
 	return op->size;
@@ -832,6 +848,10 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 		return -1;
 	}
 	switch (*input) {
+		case 'c':
+			// reset bytes counter for case operations
+			r_java_new_method ();
+			break;
 		case 'p':
 			switch (*(input+1)) {
 				case 'm': return java_print_method_definitions (obj);
@@ -847,6 +867,13 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 	return 0;
 }
 
+static int java_reset_counter (RAnal *anal, ut64 start_addr ) {
+	IFDBG eprintf ("Setting the new METHOD_START to 0x%08"PFMT64x" was 0x%08"PFMT64x"\n", start_addr, METHOD_START);
+	METHOD_START = start_addr;
+	r_java_new_method ();
+	return R_TRUE;
+}
+
 struct r_anal_plugin_t r_anal_plugin_java = {
 	.name = "java",
 	.desc = "Java bytecode analysis plugin",
@@ -857,6 +884,7 @@ struct r_anal_plugin_t r_anal_plugin_java = {
 	.fini = NULL,
 	.custom_fn_anal = 1,
 
+	.reset_counter = java_reset_counter,
 	.analyze_fns = java_analyze_fns,
 	.post_anal_bb_cb = java_recursive_descent,
 	.revisit_bb_anal = java_revisit_bb_anal_recursive_descent,

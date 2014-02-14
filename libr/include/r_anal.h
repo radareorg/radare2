@@ -757,7 +757,7 @@ typedef struct r_anal_plugin_t {
 	int custom_fn_anal;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	
+	int (*reset_counter) (RAnal *anal, ut64 start_addr);
 	// legacy r_anal_functions
 	RAnalOpCallback op;
 	RAnalBbCallback bb;

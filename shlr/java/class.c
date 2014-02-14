@@ -3219,9 +3219,9 @@ R_API RBinJavaAttrInfo* r_bin_java_signature_attr_new (ut8 *buffer, ut64 sz, ut6
 		// TODO eprintf allocation fail
 		return attr;
 	}
-	attr->type = R_BIN_JAVA_ATTR_TYPE_SOURCE_FILE_ATTR;
-	attr->info.source_file_attr.sourcefile_idx = R_BIN_JAVA_USHORT (buffer, offset);
-	offset += 2;
+	attr->type = R_BIN_JAVA_ATTR_TYPE_SIGNATURE_ATTR;
+	//attr->info.source_file_attr.sourcefile_idx = R_BIN_JAVA_USHORT (buffer, offset);
+	//offset += 2;
 
 	attr->info.signature_attr.signature_idx = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
@@ -3383,11 +3383,15 @@ R_API RBinJavaAttrInfo* r_bin_java_inner_classes_attr_new (ut8* buffer, ut64 sz,
 		icattr->file_offset = cur_location;
 		icattr->size = 8;
 
-		icattr->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_name_idx);
+		icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_name_idx));
+
 		if(icattr->name == NULL) {
 			icattr->name = r_str_dup (NULL, "NULL");
 			eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
 		}
+
+		IFDBG eprintf ("r_bin_java_inner_classes_attr: Inner class name %d is %s.\n", icattr->inner_name_idx, icattr->name);
+
 
 		r_list_append (attr->info.inner_classes_attr.classes, (void *) icattr);
 
