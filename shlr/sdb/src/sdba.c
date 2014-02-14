@@ -28,18 +28,18 @@ SDB_API char *sdb_astring(char *str, int *hasnext) {
 }
 
 SDB_API ut64 sdb_agetn(Sdb *s, const char *key, int idx, ut32 *cas) {
-	const char *str = sdb_getc (s, key, cas);
-	const char *n, *p = str;
+	const char *str, *n, *p;
 	int i;
-	if (!str || !*str) return UT64_MAX;
+	p = str = sdb_getc (s, key, cas);
+	if (!str || !*str)
+		return 0LL;
 	if (idx==0)
 		return sdb_atoi (str);
 	for (i=0; i<idx; i++) {
 		n = strchr (p, SDB_RS);
-		if (!n) return UT64_MAX;
+		if (!n) return 0LL;
 		p = n+1;
 	}
-	if (!p) return UT64_MAX;
 	return sdb_atoi (p);
 }
 

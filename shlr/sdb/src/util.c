@@ -43,6 +43,8 @@ SDB_API char *sdb_itoa(ut64 n, char *s) {
 
 SDB_API ut64 sdb_atoi(const char *s) {
 	char *p;
+	if (!s)
+		return 0LL;
 	if (!strncmp (s, "0x", 2))
 		return strtoull (s+2, &p, 16);
 	return strtoull (s, &p, 10);
