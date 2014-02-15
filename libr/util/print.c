@@ -543,7 +543,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* _a, ut64 ba, const ut8
 			r_print_cursor (p, i+j, 0);
 		}
 		if (scndcol) {
-			p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
+			p->printf (" %c 0x%08"PFMT64x" ", linediff, ba+i);
 			for (j=0;j<min;j++) {
 				*fmt = color; 
 				r_print_cursor (p, i+j, 1);

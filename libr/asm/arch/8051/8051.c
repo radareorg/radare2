@@ -7,7 +7,7 @@ http://www.keil.com/support/man/docs/is51/is51_opcodes.htm
 
 The classic 8051 provides 4 register banks of 8 registers each.
 These register banks are mapped into the DATA memory area at
-address 0 – 0x1F. In addition the CPU provides a 8-bit A
+address 0 - 0x1F. In addition the CPU provides a 8-bit A
 (accumulator) and B register and a 16-bit DPTR (data pointer)
 for addressing XDATA and CODE memory. These registers are also
 mapped into the SFR space as special function registers.
@@ -139,9 +139,9 @@ R_AII Op8051 do8051struct(const ut8 *buf, int len) {
 	case 0xc3: return _{ "clr c", 1, NONE };
 	case 0xd3: return _{ "setb c", 1, NONE };
 
-	case 0xe0: return _{ "movx a, @dptr", 1, NONE };
-	case 0xe2: return _{ "movx a, @r0", 1, NONE };
-	case 0xe3: return _{ "movx a, @r1", 1, NONE };
+	case 0xe0: return _{ "movx a, @dptr", 1, NONE };
+	case 0xe2: return _{ "movx a, @r0", 1, NONE };
+	case 0xe3: return _{ "movx a, @r1", 1, NONE };
 	case 0xf0: return _{ "movx @dptr, a", 1, NONE };
 	case 0xf2: return _{ "movx @r0, a", 1, NONE };
 	case 0xf3: return _{ "movx @r1, a", 1, NONE };

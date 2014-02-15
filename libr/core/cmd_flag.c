@@ -49,7 +49,7 @@ static int cmd_flag(void *data, const char *input) {
 			ret = r_flag_relocate (core->flags, from, mask, to);
 			eprintf ("Relocated %d flags\n", ret);
 		} else {
-			eprintf ("Usage: fR [from] [to] ([mask])\n");
+			eprintf ("Usage: fR [from] [to] ([mask])\n");
 			eprintf ("Example to relocate PIE flags on debugger:\n"
 				" > fR entry0 `dm~:1[1]`\n");
 		}
