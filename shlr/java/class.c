@@ -19,7 +19,7 @@
 #undef IFDBG
 #endif
 
-#define IFDBG  if(1)
+#define IFDBG  if(0)
 #define IFINT  if(0)
 
 static ut32 r_bin_java_swap_uint(ut32 x);
