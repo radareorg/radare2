@@ -19,7 +19,7 @@
 #undef IFDBG
 #endif
 
-#define IFDBG  if(0)
+#define IFDBG  if(1)
 #define IFINT  if(0)
 
 static ut32 r_bin_java_swap_uint(ut32 x);
@@ -713,7 +713,7 @@ static void add_field_infos_to_sdb( RBinJavaObj *bin){
 
 
 	field_key = malloc (key_size);
-	value_buffer = malloc (key_size);
+	value_buffer = malloc (value_buffer_size);
 	field_key_value = malloc(key_size);
 
 
@@ -724,6 +724,7 @@ static void add_field_infos_to_sdb( RBinJavaObj *bin){
 		char number_buffer[50];
 		ut64 file_offset = fm_type->file_offset + bin->loadaddr;
 		snprintf (number_buffer, 50, "0x%04"PFMT64x, file_offset);
+		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, number_buffer);
 		sdb_apush (bin->kv, field_key, number_buffer, 0);
 	}
 
@@ -738,7 +739,7 @@ static void add_field_infos_to_sdb( RBinJavaObj *bin){
 		field_key_value[key_size-1] = 0;
 
 		sdb_set (bin->kv, field_key, field_key_value, 0);
-
+		IFDBG eprintf ("Inserting: %s = %s\n", field_key, field_key_value);
 		// generate info key, and place values in method info array
 		snprintf (field_key, key_size, "%s.info",field_key_value);
 		field_key[key_size-1] = 0;
@@ -747,21 +748,25 @@ static void add_field_infos_to_sdb( RBinJavaObj *bin){
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, value_buffer);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, value_buffer);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, value_buffer);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
 		value_buffer[value_buffer_size-1] = 0;
 
 		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, value_buffer);
 
 	}
 	free (field_key);
@@ -5121,7 +5126,7 @@ R_API void r_bin_java_print_exceptions_attr_summary(RBinJavaAttrInfo *attr) {
 	printf ("   Attribute Offset: 0x%08"PFMT64x"\n", attr->file_offset);
 	printf ("   Attribute Name Index: %d (%s)\n", attr->name_idx, attr->name);
 	printf ("   Attribute length: %d\n", attr->length);
-	for (i = 0; i < attr->length; i++) {
+	for (i = 0; i < attr->info.exceptions_attr.number_of_exceptions; i++) {
 		printf ("   Exceptions Attribute Index[%d]: %d\n", i, attr->info.exceptions_attr.exception_idx_table[i]);
 	}
 
