@@ -1,5 +1,6 @@
 OBJ_JAVA=anal_java.o
 SHARED_JAVA+=../../shlr/java/ops.o
+SHARED_JAVA+=../../shlr/java/code.o
 SHARED_JAVA+=../../shlr/java/class.o
 SHARED2_JAVA=$(addprefix ../,${SHARED_JAVA})
 OBJ_JAVA+=${SHARED2_JAVA}

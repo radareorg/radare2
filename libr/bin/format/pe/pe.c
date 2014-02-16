@@ -148,7 +148,8 @@ static int PE_(r_bin_pe_init_hdr)(struct PE_(r_bin_pe_obj_t)* bin) {
 }
 
 static int PE_(r_bin_pe_init_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
-	int sections_size = sizeof(PE_(image_section_header)) * bin->nt_headers->file_header.NumberOfSections;
+	int sections_size = sizeof (PE_(image_section_header)) *
+		bin->nt_headers->file_header.NumberOfSections;
 	if (sections_size > bin->size) {
 		eprintf ("Invalid NumberOfSections value\n");
 		return R_FALSE;
@@ -187,7 +188,7 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			perror("malloc (import directory)");
 			return R_FALSE;
 		}
-		if (r_buf_read_at(bin->b, import_dir_offset, (ut8*)bin->import_directory, import_dir_size) == -1) {
+		if (r_buf_read_at (bin->b, import_dir_offset, (ut8*)bin->import_directory, import_dir_size) == -1) {
 			eprintf("Error: read (import directory)\n");
 			return R_FALSE;
 		}
@@ -197,9 +198,9 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 			perror("malloc (delay import directory)");
 			return R_FALSE;
 		}
-		if (r_buf_read_at(bin->b, delay_import_dir_offset,
+		if (r_buf_read_at (bin->b, delay_import_dir_offset,
 				(ut8*)bin->delay_import_directory, delay_import_dir_size) == -1) {
-			eprintf("Error: read (delay import directory)\n");
+			eprintf ("Error: read (delay import directory)\n");
 			return R_FALSE;
 		}
 	}
@@ -207,12 +208,89 @@ static int PE_(r_bin_pe_init_imports)(struct PE_(r_bin_pe_obj_t) *bin) {
 }
 
 static int PE_(r_bin_pe_init_exports)(struct PE_(r_bin_pe_obj_t) *bin) {
+	int i;
 	PE_(image_data_directory) *data_dir_export = \
 		&bin->nt_headers->optional_header.DataDirectory[PE_IMAGE_DIRECTORY_ENTRY_EXPORT];
 	PE_DWord export_dir_offset = PE_(r_bin_pe_rva_to_offset)(bin, data_dir_export->VirtualAddress);
 
+#if 0
+	// STAB PARSER
+	{
+	ut8 *stab = NULL;
+	int stab_sz = 0;
+	ut8 *stabst = NULL;
+	int n, stabst_sz = 0;
+
+	struct r_bin_pe_section_t* sections = PE_(r_bin_pe_get_sections)(bin);
+	for (i = 0; i < bin->nt_headers->file_header.NumberOfSections; i++) {
+		if (!strcmp (sections[i].name, ".stab")) {
+			stab = malloc ( ( stab_sz = sections[i].size ) );
+			r_buf_read_at (bin->b, sections[i].offset, stab, stab_sz);
+		}
+		if (!strcmp (sections[i].name, ".stabst")) {
+			stabst_sz = sections[i].size;
+			eprintf ("Stab String Table found\n");
+			stabst = malloc (sections[i].size); 
+			r_buf_read_at (bin->b, sections[i].offset, stabst, stabst_sz);
+		}
+	}
+	if (stab && stabst) {
+		__attribute__ ((packed))
+		struct stab_item {
+#if R_BIN_PE64
+			ut64 n_strx; /* index into string table of name */
+#else
+			ut32 n_strx; /* index into string table of name */
+#endif
+			ut8 n_type;         /* type of symbol */
+			ut8 n_other;        /* misc info (usually empty) */
+			ut16 n_desc;        /* description field */
+#if R_BIN_PE64
+			ut64 n_value;    /* value of symbol (bfd_vma) */
+#else
+			ut32 n_value;    /* value of symbol (bfd_vma) */
+#endif
+		};
+eprintf ("SIZE IS %d\n", sizeof (struct stab_item));
+		ut8 *p = stab;
+		struct stab_item *si = p;
+#if 0
+	struct internal_nlist {
+		ut32 n_strx; /* index into string table of name */
+		ut8 n_type;         /* type of symbol */
+		ut8 n_other;        /* misc info (usually empty) */
+		ut16 n_desc;        /* description field */
+		ut32 n_value;    /* value of symbol (bfd_vma) */
+	};
+#endif
+n = 0;
+i = 0;
+#define getstring(x) (x<stabst_sz)?stabst+x:"???"
+		while (i<stab_sz) {
+printf ("%d vs %d\n", i, stab_sz);
+if (si->n_strx>0) {
+	printf ("%d stridx = 0x%x\n", n, si->n_strx);
+	printf ("%d string = %s\n", n, getstring (si->n_strx));
+	printf ("%d type   = 0x%x\n", n, si->n_type);
+	printf ("%d value  = 0x%llx\n", n, (ut64)si->n_value);
+}
+			i += 12; //sizeof (struct stab_item);
+			si = stab + i;
+			n++;
+		}
+		
+		// TODO  : iterate over all stab elements
+	} else {
+		// you failed //
+	}
+	free (stab);
+	free (stabst);
+	free (sections);
+	}
+#endif
+
 	if (export_dir_offset == 0) {
-		eprintf ("Warning: Cannot find the offset of the export directory\n");
+//		eprintf ("Warning: Cannot find the offset of the export directory\n");
 		return R_FALSE;
 	}
 	//sdb_setn (DB, "hdr.exports_directory", export_dir_offset);
@@ -631,7 +709,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 	PE_(image_section_header) *shdr = bin->section_header;
 	int i, sections_count = bin->nt_headers->file_header.NumberOfSections;
 
-	if ((sections = malloc((sections_count + 1) * sizeof(struct r_bin_pe_section_t))) == NULL) {
+	if ((sections = malloc ((sections_count + 1) * sizeof (struct r_bin_pe_section_t))) == NULL) {
 		perror ("malloc (sections)");
 		return NULL;
 	}

@@ -223,9 +223,7 @@ R_API void r_buf_deinit(RBuffer *b) {
 	if (b->mmap) {
 		r_file_mmap_free (b->mmap);
 		b->mmap = NULL;
-	} else {
-		free (b->buf);
-	}
+	} else free (b->buf);
 }
 
 R_API void r_buf_free(struct r_buf_t *b) {
