@@ -20,7 +20,7 @@ typedef struct {
 #define NUM_REGS 28
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return (!memcmp (file, "gdb://", 6));
+	return (!strcmp (file, "gdb://"));
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {

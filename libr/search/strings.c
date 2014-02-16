@@ -52,7 +52,7 @@ static int is_encoded(int encoding, unsigned char c) {
 	return 0;
 }
 
-R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, size_t len) {
 	RSearch *s = (RSearch *)_s;
 	const int enc = 0; // hardcoded
 	int i = 0;
@@ -71,14 +71,14 @@ R_API int r_search_strings_update(void *_s, ut64 from, const ut8 *buf, int len) 
 				matches++;
 		} else {
 			/* wide char check \x??\x00\x??\x00 */
-			if (matches && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
+			if (matches && (i+2 < len) && buf[i+2]=='\0' && buf[i]=='\0' && buf[i+1]!='\0') {
 				widechar = 1;
 				return 1; // widechar
 			}
 			/* check if the length fits on our request */
 			if (matches >= s->string_min && (s->string_max == 0 || matches <= s->string_max)) {
 				str[matches] = '\0';
-				int len = strlen(str);
+				size_t len = strlen(str);
 				if (len>2) {
 					kw->count++;
 					if (widechar) {
@@ -148,7 +148,7 @@ R_API int r_search_strings_update_char(const ut8 *buf, int min, int max, int enc
 				printf("f %s @ 0x%08x\n", msg, (unsigned int)offset-matches);
 			} else {
 				if ((!match) || (match && strstr(str, match)) ){
-					int len = strlen(str);
+					size_t len = strlen(str);
 					if (len>2) {
 						if (widechar) {
 							ut64 off = offset-(len*2)+1;

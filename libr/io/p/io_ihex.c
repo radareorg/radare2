@@ -95,7 +95,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __plugin_open(RIO *io, const char *pathname, ut8 many) {
-	return (!memcmp (pathname, "ihex://", 7));
+	return (!strcmp (pathname, "ihex://"));
 }
 
 #if 0

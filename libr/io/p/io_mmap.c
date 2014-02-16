@@ -5,7 +5,7 @@
 #include <r_lib.h>
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return (!memcmp (file, "mmap://", 7));
+	return (!strcmp (file, "mmap://"));
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {

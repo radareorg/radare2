@@ -99,7 +99,7 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, size_t len) {
 	RListIter *iter;
 	unsigned char pch = 0;
 	int i, j, count = 0;
@@ -139,7 +139,7 @@ R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len)
 // TODO: move into a plugin */
 // TODO: This algorithm can be simplified by just using a non-distance search
 // ... split this algorithm in two for performance
-R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, size_t len) {
 	RListIter *iter;
 	int i, j, hit, count = 0;
 	RSearch *s = (RSearch*)_s;
@@ -228,7 +228,7 @@ R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *us
 }
 
 /* TODO: initialize update callback in _init or begin... */
-R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len) {
+R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, size_t len) {
 	int ret = -1;
 	if (s->update != NULL) {
 		ret = s->update (s, *from, buf, len);
@@ -242,7 +242,7 @@ R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len) {
 	return ret;
 }
 
-R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
+R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, size_t len) {
 	return r_search_update (s, &from, buf, len);
 }
 
@@ -254,7 +254,7 @@ static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
 	return R_TRUE;
 }
 
-R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len) {
+R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, size_t len) {
 	RList *ret = r_list_new ();
 	r_search_set_callback (s, listcb, ret);
 	r_search_update (s, &addr, buf, len);

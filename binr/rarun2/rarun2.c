@@ -315,8 +315,10 @@ int main(int argc, char **argv) {
 		for (;;) {
 			fgets (buf, sizeof (buf)-1, fd);
 			if (feof (fd)) break;
-			buf[strlen (buf)-1] = 0;
-			parseline (buf);
+			if(strlen(buf)) {
+				buf[strlen (buf)-1] = 0;
+				parseline (buf);
+			}
 		}
 		fclose (fd);
 	} else {

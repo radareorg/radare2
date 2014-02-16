@@ -60,7 +60,7 @@ static ut64 __lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
-	return (!memcmp (pathname, "http://", 7));
+	return (!strcmp (pathname, "http://"));
 }
 
 static inline int getmalfd (RIOMalloc *mal) {
