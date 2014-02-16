@@ -1230,6 +1230,7 @@ decode_opcode(struct ud *u)
 unsigned int
 ud_decode(struct ud *u)
 {
+  int i = 0;
   inp_start(u);
   clear_insn(u);
   u->le = &ud_lookup_table_list[0];
@@ -1254,7 +1255,7 @@ ud_decode(struct ud *u)
       u->pfx_seg = 0;
 
   /* Retrieve some information about operands. */
-  for (int i=0; i<4; i++) {
+  for (i=0; i<4; i++) {
     struct ud_operand *op = &u->operand[i];
     switch (op->type) {
       case UD_OP_REG:   op->signed_lval = 0; break;
