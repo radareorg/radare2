@@ -128,6 +128,41 @@ enum ud_type
   UD_OP_JIMM, UD_OP_CONST
 };
 
+enum ud_eflag_state
+{
+  UD_FLAG_UNCHANGED,
+  UD_FLAG_TESTED,
+  UD_FLAG_MODIFIED,
+  UD_FLAG_RESET,
+  UD_FLAG_SET,
+  UD_FLAG_UNDEFINED,
+  UD_FLAG_PRIOR
+};
+
+enum ud_operand_access
+{
+  UD_OP_ACCESS_READ = 1,
+  UD_OP_ACCESS_WRITE = 2
+};
+
+/* This structure describes the state of the EFLAGS register
+ * once an instruction has been executed.
+ */
+struct ud_eflags
+{
+    enum ud_eflag_state of_state;
+    enum ud_eflag_state sf_state;
+    enum ud_eflag_state zf_state;
+    enum ud_eflag_state af_state;
+    enum ud_eflag_state pf_state;
+    enum ud_eflag_state cf_state;
+    enum ud_eflag_state tf_state;
+    enum ud_eflag_state if_state;
+    enum ud_eflag_state df_state;
+    enum ud_eflag_state nt_state;
+    enum ud_eflag_state rf_state;
+};
+
 #include "itab.h"
 
 union ud_lval {
@@ -157,6 +192,8 @@ struct ud_operand {
   uint8_t         scale;  
   uint8_t         offset;
   union ud_lval   lval;
+  uint8_t         signed_lval;
+  uint8_t         access;
   /*
    * internal use only
    */
@@ -225,6 +262,7 @@ struct ud
   uint8_t   br_near;
   uint8_t   have_modrm;
   uint8_t   modrm;
+  uint8_t   modrm_offset;
   uint8_t   vex_op;
   uint8_t   vex_b1;
   uint8_t   vex_b2;

@@ -94,6 +94,12 @@ extern LIBUDIS86_DLLEXTERN enum ud_mnemonic_code ud_insn_mnemonic(const struct u
 
 extern LIBUDIS86_DLLEXTERN const char* ud_lookup_mnemonic(enum ud_mnemonic_code c);
 
+extern LIBUDIS86_DLLEXTERN const struct ud_eflags* ud_lookup_eflags(struct ud *u);
+
+extern LIBUDIS86_DLLEXTERN const enum ud_type* ud_lookup_implicit_reg_used_list(struct ud *u);
+
+extern LIBUDIS86_DLLEXTERN const enum ud_type* ud_lookup_implicit_reg_defined_list(struct ud *u);
+
 extern LIBUDIS86_DLLEXTERN void ud_set_user_opaque_data(struct ud*, void*);
 
 extern LIBUDIS86_DLLEXTERN void* ud_get_user_opaque_data(const struct ud*);

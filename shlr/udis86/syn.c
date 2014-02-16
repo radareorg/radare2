@@ -91,15 +91,10 @@ const char* ud_reg_tab[] =
 uint64_t
 ud_syn_rel_target(struct ud *u, struct ud_operand *opr)
 {
-  uint64_t trunc_mask = 0xffffffffffffffffull >> (64 - u->opr_mode);
+  const uint64_t trunc_mask = 0xffffffffffffffffull >> (64 - u->opr_mode);
   switch (opr->size) {
   case 8 : return (u->pc + opr->lval.sbyte)  & trunc_mask;
-  case 16: {
-    int delta = (opr->lval.sword & trunc_mask);
-    if ((u->pc + delta)>0xffff)
-      return (u->pc & 0xf0000) + ((u->pc+delta)&0xffff);
-    return (u->pc + delta);
-    }
+  case 16: return (u->pc + opr->lval.sword)  & trunc_mask;
   case 32: return (u->pc + opr->lval.sdword) & trunc_mask;
   default: UD_ASSERT(!"invalid relative offset size.");
     return 0ull;
