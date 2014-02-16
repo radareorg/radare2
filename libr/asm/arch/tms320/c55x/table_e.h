@@ -691,7 +691,7 @@
 		.i_list = NULL,
 		.m_list = NULL,
 		.f_list = (insn_flag_t []) { INSN_FLAG(0,E), INSN_FLAG(8,FDDD), INSN_FLAG(12,k4),  LIST_END },
-		.syntax = INSN_SYNTAX(MOV –k4, dst),
+		.syntax = INSN_SYNTAX(MOV -k4, dst),
 	},
 },
 {
@@ -733,7 +733,7 @@
 				.i_list = NULL,
 				.m_list = (insn_mask_t []) { INSN_MASK(12,1,0), INSN_MASK(14,2,1),  LIST_END },
 				.f_list = (insn_flag_t []) { INSN_FLAG(0,E), INSN_FLAG(8,FDDD),  LIST_END },
-				.syntax = INSN_SYNTAX(SFTS dst, #−1),
+				.syntax = INSN_SYNTAX(SFTS dst, #-1),
 			},
 			{
 				// 01x1FDDD0100010E
@@ -971,7 +971,7 @@
 				.i_list = NULL,
 				.m_list = (insn_mask_t []) { INSN_MASK(8,3,1),  LIST_END },
 				.f_list = (insn_flag_t []) { INSN_FLAG(0,E), INSN_FLAG(12,FDDD),  LIST_END },
-				.syntax = INSN_SYNTAX(SFTL dst, #−1),
+				.syntax = INSN_SYNTAX(SFTL dst, #-1),
 			},
 			{
 				// FDDDx0100101000E

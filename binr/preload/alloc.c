@@ -10,7 +10,7 @@
 #include <string.h>
 
 #if USE_MALLOC
-R_API void r_initmem(char *p, size_t s) { }
+R_API void r_initmem(char *p, size_t s) { }
 R_API void* r_malloc(size_t s) { return malloc (s); }
 R_API void r_free(void *p) { free (s); }
 #else
