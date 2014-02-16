@@ -261,7 +261,7 @@ static int fork_and_ptraceme(int bits, const char *cmd) {
 #endif
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	if (!memcmp (file, "dbg://", 6) && file[6])
+	if (!strcmp (file, "dbg://") && file[6])
 		return R_TRUE;
 	return R_FALSE;
 }

@@ -48,7 +48,7 @@ static int self_in_section(ut64 addr, int *left, int *perm) {
 }
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return (!memcmp (file, "self://", 7));
+	return (!strcmp (file, "self://"));
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {

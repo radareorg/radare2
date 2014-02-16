@@ -51,7 +51,7 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
 }
 
 static int __plugin_open(struct r_io_t *io, const char *file, ut8 many) {
-	return (!memcmp (file, "procpid://", 10));
+	return (!strcmp (file, "procpid://"));
 }
 
 static RIODesc *__open(struct r_io_t *io, const char *file, int rw, int mode) {
