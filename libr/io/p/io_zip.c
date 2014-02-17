@@ -225,20 +225,21 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 		zfo->archivename, zfo->flags, zfo->mode, zfo->rw);
 	if (!zipArch)
 		return res;
-	if (zfo) {
-		struct zip_source *s = zip_source_buffer (zipArch, zfo->b, zfo->b->length, 0);
-		if (s && zfo->entry != -1) {
-			if (zip_replace(zipArch, zfo->entry, s) == 0)
-				res = R_TRUE;
-		} else if (s && zfo->name) {
-			if (zip_add (zipArch, zfo->name, s) == 0) {
-				zfo->entry = zip_name_locate (zipArch, zfo->name, 0);
-				res = R_TRUE;
-			}
+
+	struct zip_source *s = zip_source_buffer (zipArch, zfo->b->buf, zfo->b->length, 0);
+	if (s && zfo->entry != -1) {
+		if (zip_replace(zipArch, zfo->entry, s) == 0) {
+			res = R_TRUE;
 		}
-		if (s) zip_source_free (s);
+	} else if (s && zfo->name) {
+		if (zip_add (zipArch, zfo->name, s) == 0) {
+			zfo->entry = zip_name_locate (zipArch, zfo->name, 0);
+			res = R_TRUE;
+		}
 	}
+	// s (zip_source) is freed when the archive is closed, i think - dso
 	zip_close (zipArch);
+	//if (res) zip_source_free (s);
 	return res;
 }
 
@@ -445,13 +446,18 @@ static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOZipFileObj *zfo;
+	int ret = 0;
 	if (fd == NULL || fd->data == NULL || buf == NULL)
 		return -1;
 	zfo = fd->data;
 	if (zfo->b->length < io->off)
 		io->off = zfo->b->length;
 	zfo->modified = 1;
-	return r_buf_write_at (zfo->b, io->off, buf, count);
+	ret = r_buf_write_at (zfo->b, io->off, buf, count);
+	// XXX - Implement a flush of some sort, but until then, lets
+	// just write through
+	r_io_zip_flush_file (zfo);
+	return ret;
 }
 
 static int r_io_zip_close(RIODesc *fd) {
