@@ -1512,7 +1512,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+	if (core->anal->cur && core->anal->cur->reset_counter	) {
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 
@@ -1759,7 +1759,7 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+	if (core->anal->cur && core->anal->cur->reset_counter	) {
 		core->anal->cur->reset_counter (core->anal, core->offset);
 	}
 
@@ -1914,7 +1914,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+	if (core->anal->cur && core->anal->cur->reset_counter	) {
 		core->anal->cur->reset_counter (core->anal, addr);
 	}
 

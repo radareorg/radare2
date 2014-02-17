@@ -654,7 +654,7 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 		RAnalCaseOp *caseop = NULL;
 		IFDBG {
 			eprintf ("Handling tableswitch op @ 0x%04"PFMT64x"\n", addr);
-			eprintf ("default_jump @ 0x%04x ", default_loc+addr);
+			eprintf ("default_jump @ 0x%04"PFMT64x"\n", default_loc+addr);
 			eprintf ("min_val: %d max_val: %d\n", min_val, max_val);
 		}
 		pos += 12;
