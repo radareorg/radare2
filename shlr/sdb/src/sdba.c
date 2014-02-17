@@ -150,7 +150,8 @@ SDB_API int sdb_aset(Sdb *s, const char *key, int idx, const char *val, ut32 cas
 	len = sdb_alen (str);
 	if (idx<0 || idx>len) // append
 		return sdb_ains (s, key, -1, val, cas);
-	nstr = strdup (str);
+	nstr = malloc (strlen (str)+strlen (val)+2);
+	strcpy (nstr, str);
 	ptr = sdb_aindex_nc (nstr, idx);
 	if (ptr) {
 		lval = strlen (val);

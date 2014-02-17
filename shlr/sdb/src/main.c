@@ -77,7 +77,7 @@ static int createdb(const char *f) {
 }
 
 static void showusage(int o) {
-	printf ("usage: sdb [-hv] [-|db] []|[<script]|[-=]|[-+][(idx)key[?path|=value] ..]\n");
+	printf ("usage: sdb [-hv] [-|db] []|[.script]|[-=]|[-+][(idx)key[:jsonpath|=value] ..]\n");
 	exit (o);
 }
 

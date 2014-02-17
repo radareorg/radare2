@@ -3,6 +3,36 @@
 #include "sdb.h"
 #include <sys/time.h>
 
+SDB_API int sdb_check_value(const char *s) {
+	if (*s=='$') return 0;
+	for (; *s; s++) {
+		switch (*s) {
+		case ';':
+			return 0;
+		}
+	}
+	return 1;
+}
+
+SDB_API int sdb_check_key(const char *s) {
+	if (!*s)
+		return 0;
+	for (; *s; s++) {
+		switch (*s) {
+		case '+':
+		case '-':
+		case '=':
+		case '[':
+		case ']':
+		case ':':
+		case '$': // eval value of given key
+		case ';':
+			return 0;
+		}
+	}
+	return 1;
+}
+
 // assert sdb_hash("hi", 2) == sdb_hash("hi", 0)
 SDB_API ut32 sdb_hash(const char *s, int len) {
 	ut32 h = CDB_HASHSTART;

@@ -275,6 +275,8 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	ut32 hash, klen;
 	if (!s || !key)
 		return 0;
+	if (!sdb_check_key (key))
+		return 0;
 	if (!val) val = "";
 	klen = strlen (key)+1;
 	hash = sdb_hash (key, klen);
