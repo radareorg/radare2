@@ -94,6 +94,7 @@ typedef enum{
 typedef struct {
 	char *str;
 	ut16 value;
+	ut8 len;
 } RBinJavaAccessFlags;
 
 typedef enum{
@@ -1193,5 +1194,9 @@ R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type);
 R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin);
 R_API RList * r_bin_java_get_field_offsets(RBinJavaObj *bin);
 R_API RList * r_bin_java_get_method_offsets(RBinJavaObj *bin);
+
+R_API ut16 r_bin_java_calculate_method_access_value(const char * access_flags_str);
+R_API ut16 r_bin_java_calculate_field_access_value(const char * access_flags_str);
+R_API ut16 r_bin_java_calculate_class_access_value(const char * access_flags_str);
 
 #endif

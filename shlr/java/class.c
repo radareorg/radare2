@@ -33,6 +33,7 @@ static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_fla
 static char * retrieve_method_access_string(ut16 flags);
 static char * retrieve_field_access_string(ut16 flags);
 static char * retrieve_class_method_access_string(ut16 flags);
+static ut16 calculate_access_value(const char * access_flags_str, RBinJavaAccessFlags *access_flags);
 static int javasm_init(RBinJavaObj *bin, ut64 baddr, Sdb *kv);
 static int extract_type_value (char *arg_str, char **output);
 
@@ -71,72 +72,73 @@ static ut8 R_BIN_JAVA_NULL_TYPE_INITTED = 0;
 static RBinJavaObj* R_BIN_JAVA_GLOBAL_BIN = NULL;
 
 static RBinJavaAccessFlags FIELD_ACCESS_FLAGS[] = {
-	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC},
-	{"private", R_BIN_JAVA_FIELD_ACC_PRIVATE},
-	{"protected", R_BIN_JAVA_FIELD_ACC_PROTECTED},
-	{"static", R_BIN_JAVA_FIELD_ACC_STATIC},
+	{"public", R_BIN_JAVA_FIELD_ACC_PUBLIC, 6},
+	{"private", R_BIN_JAVA_FIELD_ACC_PRIVATE, 7},
+	{"protected", R_BIN_JAVA_FIELD_ACC_PROTECTED, 9},
+	{"static", R_BIN_JAVA_FIELD_ACC_STATIC, 6},
 
-	{"final", R_BIN_JAVA_FIELD_ACC_FINAL},
-	{"undefined.0x0020", 0x0020},
-	{"volatile", R_BIN_JAVA_FIELD_ACC_VOLATILE},
-	{"transient", R_BIN_JAVA_FIELD_ACC_TRANSIENT},
+	{"final", R_BIN_JAVA_FIELD_ACC_FINAL, 5},
+	{"undefined.0x0020", 0x0020, 16},
+	{"volatile", R_BIN_JAVA_FIELD_ACC_VOLATILE, 8},
+	{"transient", R_BIN_JAVA_FIELD_ACC_TRANSIENT, 9},
 
-	{"undefined.0x0100", 0x0100},
-	{"undefined.0x0200", 0x0200},
-	{"undefined.0x0400", 0x0400},
-	{"undefined.0x0800", 0x0800},
+	{"undefined.0x0100", 0x0100, 16},
+	{"undefined.0x0200", 0x0200, 16},
+	{"undefined.0x0400", 0x0400, 16},
+	{"undefined.0x0800", 0x0800, 16},
 
-	{"synthetic", R_BIN_JAVA_FIELD_ACC_SYNTHETIC},
-	{"undefined.0x2000", 0x2000},
-	{"enum", R_BIN_JAVA_FIELD_ACC_ENUM},
-	{"undefined.0x8000", 0x8000},
-	{NULL, 0}
+	{"synthetic", R_BIN_JAVA_FIELD_ACC_SYNTHETIC, 9},
+	{"undefined.0x2000", 0x2000, 16},
+	{"enum", R_BIN_JAVA_FIELD_ACC_ENUM, 16},
+	{"undefined.0x8000", 0x8000, 16},
+	{NULL, 0, 0}
 };
 
 static RBinJavaAccessFlags METHOD_ACCESS_FLAGS[] = {
-	{"public", R_BIN_JAVA_METHOD_ACC_PUBLIC},
-	{"private", R_BIN_JAVA_METHOD_ACC_PRIVATE},
-	{"protected", R_BIN_JAVA_METHOD_ACC_PROTECTED},
-	{"static", R_BIN_JAVA_METHOD_ACC_STATIC},
+	{"public", R_BIN_JAVA_METHOD_ACC_PUBLIC, 6},
+	{"private", R_BIN_JAVA_METHOD_ACC_PRIVATE, 7},
+	{"protected", R_BIN_JAVA_METHOD_ACC_PROTECTED, 9},
+	{"static", R_BIN_JAVA_METHOD_ACC_STATIC, 6},
 
-	{"final", R_BIN_JAVA_METHOD_ACC_FINAL},
-	{"synchronized", R_BIN_JAVA_METHOD_ACC_SYNCHRONIZED},
-	{"bridge", R_BIN_JAVA_METHOD_ACC_BRIDGE},
-	{"varargs", R_BIN_JAVA_METHOD_ACC_VARARGS},
+	{"final", R_BIN_JAVA_METHOD_ACC_FINAL, 5},
+	{"synchronized", R_BIN_JAVA_METHOD_ACC_SYNCHRONIZED, 12},
+	{"bridge", R_BIN_JAVA_METHOD_ACC_BRIDGE, 6},
+	{"varargs", R_BIN_JAVA_METHOD_ACC_VARARGS, 7},
 
-	{"native", R_BIN_JAVA_METHOD_ACC_NATIVE},
-	{"interface", R_BIN_JAVA_METHOD_ACC_INTERFACE},
-	{"abstract", R_BIN_JAVA_METHOD_ACC_ABSTRACT},
-	{"strict", R_BIN_JAVA_METHOD_ACC_STRICT},
+	{"native", R_BIN_JAVA_METHOD_ACC_NATIVE, 6},
+	{"interface", R_BIN_JAVA_METHOD_ACC_INTERFACE, 9},
+	{"abstract", R_BIN_JAVA_METHOD_ACC_ABSTRACT, 8},
+	{"strict", R_BIN_JAVA_METHOD_ACC_STRICT, 6},
 
-	{"synthetic", R_BIN_JAVA_METHOD_ACC_SYNTHETIC},
-	{"annotation", R_BIN_JAVA_METHOD_ACC_ANNOTATION},
-	{"enum", R_BIN_JAVA_METHOD_ACC_ENUM},
-	{"undefined.0x8000", 0x8000},
-	{NULL, 0}
+	{"synthetic", R_BIN_JAVA_METHOD_ACC_SYNTHETIC, 9},
+	{"annotation", R_BIN_JAVA_METHOD_ACC_ANNOTATION, 10},
+	{"enum", R_BIN_JAVA_METHOD_ACC_ENUM, 4},
+	{"undefined.0x8000", 0x8000, 16},
+	{NULL, 0, 0}
 };
 
+// XXX - Fix these there are some incorrect ongs
 static RBinJavaAccessFlags CLASS_ACCESS_FLAGS[] = {
-	{"public", R_BIN_JAVA_CLASS_ACC_PUBLIC},
-	{"private", R_BIN_JAVA_CLASS_ACC_PRIVATE},
-	{"protected", R_BIN_JAVA_CLASS_ACC_PROTECTED},
-	{"static", R_BIN_JAVA_CLASS_ACC_STATIC},
-	{"final", R_BIN_JAVA_CLASS_ACC_FINAL},
+	{"public", R_BIN_JAVA_CLASS_ACC_PUBLIC, 6},
+	{"undefined.0x0002", 0x0002, 16},
+	{"undefined.0x0004", 0x0004, 16},
+	{"undefined.0x0008", 0x0008, 16},
+	{"final", R_BIN_JAVA_CLASS_ACC_FINAL, 5},
 
-	{"synchronized", R_BIN_JAVA_CLASS_ACC_SUPER},
-	{"bridge", R_BIN_JAVA_CLASS_ACC_BRIDGE},
-	{"varargs", R_BIN_JAVA_CLASS_ACC_VARARGS},
-	{"native", R_BIN_JAVA_CLASS_ACC_NATIVE},
+	{"super", R_BIN_JAVA_CLASS_ACC_SUPER, 5},
+	{"undefined.0x0040", 0x0040, 16},
+	{"undefined.0x0080", 0x0080, 16},
+	{"undefined.0x0100", 0x0100, 16},
 
-	{"interface", R_BIN_JAVA_CLASS_ACC_INTERFACE},
-	{"abstract", R_BIN_JAVA_CLASS_ACC_ABSTRACT},
-	{"strict", R_BIN_JAVA_CLASS_ACC_STRICT},
+	{"interface", R_BIN_JAVA_CLASS_ACC_INTERFACE, 9},
+	{"abstract", R_BIN_JAVA_CLASS_ACC_ABSTRACT, 8},
+	{"undefined.0x0800", 0x0800, 16},
 
-	{"synthetic", R_BIN_JAVA_CLASS_ACC_SYNTHETIC},
-	{"annotation", R_BIN_JAVA_CLASS_ACC_ANNOTATION},
-	{"enum", R_BIN_JAVA_CLASS_ACC_ENUM},
-	{"undefined.0x8000", 0x8000},
-	{NULL, 0}
+	{"synthetic", R_BIN_JAVA_CLASS_ACC_SYNTHETIC, 9},
+	{"annotation", R_BIN_JAVA_CLASS_ACC_ANNOTATION, 10},
+	{"enum", R_BIN_JAVA_CLASS_ACC_ENUM, 4},
+	{"undefined.0x8000", 0x8000, 16},
+	{NULL, 0, 0}
 };
 
 static RBinJavaRefMetas R_BIN_JAVA_REF_METAS[] = {
@@ -902,6 +904,52 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 	free (method_key_value);
 	free (value_buffer);
 	if (free_class_name) free (class_name);
+}
+
+static ut16 calculate_access_value(const char * access_flags_str, RBinJavaAccessFlags *access_flags){
+	ut16 result = 0;
+	ut16 size = strlen(access_flags_str) + 1;
+	char *p_flags, *my_flags = malloc (size);
+	RBinJavaAccessFlags *iter = NULL;
+
+	if (size < 5 ||!my_flags) {
+		free (my_flags);
+		return result;
+	}
+
+	memcpy (my_flags, access_flags_str, size);
+
+	p_flags = strtok (my_flags, " ");
+
+
+	while (p_flags && access_flags) {
+		int idx = 0;
+		if (!p_flags) continue;
+
+		do {
+			iter = &access_flags[idx];
+			if (!iter || !iter->str) continue;
+
+			if (iter->len > 0 && iter->len != 16) {
+				if (!strncmp (iter->str, p_flags, iter->len))
+					result |= iter->value;
+			}
+			idx++;
+		}while (access_flags[idx].str != NULL);
+
+		p_flags = strtok (NULL," ");
+	}
+	free (my_flags);
+	return result;
+}
+R_API ut16 r_bin_java_calculate_method_access_value(const char * access_flags_str){
+	return calculate_access_value (access_flags_str, METHOD_ACCESS_FLAGS);
+}
+R_API ut16 r_bin_java_calculate_field_access_value(const char * access_flags_str){
+	return calculate_access_value (access_flags_str, FIELD_ACCESS_FLAGS);
+}
+R_API ut16 r_bin_java_calculate_class_access_value(const char * access_flags_str){
+	return calculate_access_value (access_flags_str, CLASS_ACCESS_FLAGS);
 }
 
 static char * retrieve_access_string(ut16 flags, RBinJavaAccessFlags *access_flags) {

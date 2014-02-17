@@ -32,6 +32,11 @@ static int java_print_field_definitions( RBinJavaObj *obj );
 static int java_print_method_definitions( RBinJavaObj *obj );
 static int java_print_import_definitions( RBinJavaObj *obj );
 
+static int java_print_class_access_flags_value( const char * flags );
+static int java_print_field_access_flags_value( const char * flags );
+static int java_print_method_access_flags_value( const char * flags );
+
+
 static int java_cmd_ext(RAnal *anal, const char* input);
 static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length);
 static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJavaField *method, ut64 loadaddr);
@@ -839,6 +844,23 @@ static int java_print_class_definitions( RBinJavaObj *obj ) {
 	return 0;
 }
 
+static int java_print_class_access_flags_value( const char * flags ){
+	ut16 result = r_bin_java_calculate_class_access_value (flags);
+	eprintf ("Access Value for %s = 0x%04x\n", flags, result);
+	return 0;
+}
+static int java_print_field_access_flags_value( const char * flags ){
+	ut16 result = r_bin_java_calculate_field_access_value (flags);
+	eprintf ("Access Value for %s = 0x%04x\n", flags,  result);
+	return 0;
+}
+static int java_print_method_access_flags_value( const char * flags ){
+	ut16 result = r_bin_java_calculate_method_access_value (flags);
+	eprintf ("Access Value for %s = 0x%04x\n", flags,  result);
+	return 0;
+}
+
+
 
 static int java_cmd_ext(RAnal *anal, const char* input) {
 	RBinJavaObj *obj = (RBinJavaObj *) get_java_bin_obj (anal);
@@ -859,6 +881,14 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 				case 'i': return java_print_import_definitions (obj);
 				case 'c': return java_print_class_definitions (obj);
 				case 'a': return java_print_all_definitions (anal);
+				default: break;
+			}
+			break;
+		case 'f':
+			switch (*(input+1)) {
+				case 'm': return java_print_method_access_flags_value (input+2);
+				case 'f': return java_print_field_access_flags_value (input+2);
+				case 'c': return java_print_class_access_flags_value (input+2);
 				default: break;
 			}
 			break;
