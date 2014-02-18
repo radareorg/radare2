@@ -34,9 +34,9 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
 #define out_concat(x) if (x) { char *o =(void*)realloc((void*)out, 2+strlen(x)+(out?strlen(out):0)); if (o) { if (out) strcat (out, "\n"); else *o=0; out=o; strcat (out, x); } }
 
 SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
-	int i, d, ok, w, alength, bufset = 0;
+	int i, d, ok, w, alength, bufset = 0, is_ref = 0;
 	const char *p, *q, *val = NULL;
-	char *eq, *tmp, *json, *next, *out = NULL;
+	char *eq, *tmp, *json, *next, *quot, *out = NULL;
 	ut64 n;
 	if (!s) return NULL;
 	if (!len || !buf) {
@@ -48,7 +48,41 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 		buf = NULL;
 	}
 repeat:
-	next = strchr (cmd, ';');
+	p = cmd;
+	eq = strchr (p, '=');
+	is_ref = 0;
+	if (eq) {
+		*eq++ = 0;
+		if (*eq=='$') {
+			val = sdb_getc (s, eq+1, 0);
+			is_ref = 1; // protect readonly buffer from being processed
+		} else val = eq;
+	} else val = NULL;
+	//if (!val) val = eq;
+	if (!is_ref && val && *val == '"') {
+		val++;
+		// TODO: escape \" too
+		quot = val;
+next_quote:
+		quot = strchr (quot, '"');
+		if (quot) {
+			quot--;
+			if (*quot=='\\') {
+				memmove (quot, quot+1, strlen (quot));
+				quot += 2;
+				goto next_quote;
+			}
+			quot++;
+			*quot++ = 0; // crash on read only mem!!
+		} else {
+			eprintf ("Missing quote\n");
+			return NULL;
+		}
+		next = strchr (quot, ';');
+	} else {
+		quot = NULL;
+		next = strchr (val?val:cmd, ';');
+	}
 	if (next) *next = 0;
 	json = strchr (cmd, ':');
 	if (*cmd == '[') {
@@ -60,30 +94,26 @@ repeat:
 		*tp++ = 0;
 		p = (const char *)tp;
 	} else p = cmd;
-	eq = strchr (p, '=');
-	if (eq) {
-		*eq++ = 0;
-		if (*eq=='$')
-			val = sdb_getc (s, eq+1, 0);
-	}
-	if (!val) val = eq;
 	if (*cmd=='$')
 		cmd = sdb_getc (s, cmd+1, 0);
 	// cmd = val
 	// cmd is key and val is value
-
 	if (*cmd == '.') {
-		if (!sdb_query_file (s, cmd+1)) {
-			fprintf (stderr, "sdb: Cannot open '%s'\n", cmd+1);
-			goto failure;
+		if (s->options & SDB_OPTION_FS) {
+			if (!sdb_query_file (s, cmd+1)) {
+				fprintf (stderr, "sdb: cannot open '%s'\n", cmd+1);
+				goto failure;
+			}
+		} else {
+			fprintf (stderr, "sdb: filesystem access disabled in config\n");
 		}
 	} else
 	if (*cmd == '+' || *cmd == '-') {
 		d = 1;
 		*buf = 0;
 		if (val) {
-			d = sdb_atoi (val);
-			if (d) {
+			if (sdb_isnum (val)) {
+				d = sdb_atoi (val);
 				if (*cmd=='+')
 					sdb_inc (s, cmd+1, d, 0);
 				else

@@ -21,6 +21,12 @@ extern "C" {
 #define SDB_SS "\x1e"
 #define SDB_MAX_PATH 256
 
+#define SDB_OPTION_NONE 0
+#define SDB_OPTION_ALL 0xff
+#define SDB_OPTION_SYNC 1
+#define SDB_OPTION_NOSTAMP 2
+#define SDB_OPTION_FS 4
+
 // todo. store last used
 // todo. sync?
 // todo. 
@@ -47,6 +53,8 @@ typedef struct sdb_t {
 	int fdump;
 	char *ndump;
 	ut64 expire;
+	ut64 last; // timestamp of last change
+	int options;
 	SdbList *ns;
 	SdbList *hooks;
 	SdbKv tmpkv;
@@ -58,10 +66,12 @@ typedef struct sdb_ns_t {
 } SdbNs;
 
 Sdb* sdb_new (const char *path, const char *file, int lock);
+void sdb_config(Sdb *s, int options);
 void sdb_free (Sdb* s);
 void sdb_drop (Sdb* s);
 void sdb_file (Sdb* s, const char *dir);
 void sdb_reset (Sdb* s);
+void sdb_setup (Sdb* s, int options);
 
 int sdb_query (Sdb* s, const char *cmd);
 int sdb_queryf (Sdb* s, const char *fmt, ...);
@@ -177,6 +187,7 @@ char *sdb_apop(Sdb *s, const char *key, ut32 *cas);
 /* Util.c */
 int sdb_check_value(const char *s);
 int sdb_check_key(const char *s);
+SDB_API int sdb_isnum (const char *s);
 
 #ifdef __cplusplus
 }

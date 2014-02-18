@@ -15,7 +15,7 @@ SDB_API ut64 sdb_getn(Sdb *s, const char *key, ut32 *cas) {
 	ut64 n;
 	char *p;
 	const char *v = sdb_getc (s, key, cas);
-	if (!v) return 0LL;
+	if (!v || *v=='-') return 0LL;
 	n = (!strncmp (v, "0x", 2))?
 		strtoull (v+2, &p, 16):
 		strtoull (v, &p, 10);

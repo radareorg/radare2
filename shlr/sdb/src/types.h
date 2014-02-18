@@ -6,6 +6,10 @@
 #include <string.h>
 #include <unistd.h>
 
+
+#undef eprintf
+#define eprintf(x,y...) fprintf(stderr,x,##y)
+
 #if defined(__GNUC__)
 #define SDB_API __attribute__((visibility("default")))
 #else

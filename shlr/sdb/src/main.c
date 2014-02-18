@@ -32,17 +32,23 @@ static void syncronize(int sig UNUSED) {
 	Sdb *n;
 	sdb_sync (s);
 	n = sdb_new (s->path, s->name, s->lock);
-	sdb_free (s);
-	s = n;
+	if (n) {
+		sdb_config (n, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
+		sdb_free (s);
+		s = n;
+	}
 }
 #endif
 
 static int sdb_dump (const char *db, int qf) {
-	char *k, *v, *p;
+	char *k, *v;
 	Sdb *s = sdb_new (NULL, db, 0);
 	if (!s) return 1;
+	sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 	sdb_dump_begin (s);
 	while (sdb_dump_dupnext (s, &k, &v)) {
+		printf ("%s=%s\n", k, v);
+#if 0
 		if (qf && strchr (v, SDB_RS)) {
 			for (p=v; *p; p++)
 				if (*p==SDB_RS)
@@ -51,6 +57,7 @@ static int sdb_dump (const char *db, int qf) {
 		} else {
 			printf ("%s=%s\n", k, v);
 		}
+#endif
 		free (k);
 		free (v);
 	}
@@ -65,6 +72,7 @@ static int createdb(const char *f) {
 		fprintf (stderr, "Cannot create database\n");
 		return 1;
 	}
+	sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 	for (;(line = stdin_gets ());) {
 		if ((eq = strchr (line, '='))) {
 			*eq = 0;
@@ -112,6 +120,7 @@ int main(int argc, const char **argv) {
 		return createdb (argv[1]);
 	else if (!strcmp (argv[2], "-")) {
 		if ((s = sdb_new (NULL, argv[1], 0))) {
+			sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 			for (;(line = stdin_gets ());) {
 				save = sdb_query (s, line);
 				free (line);
@@ -120,6 +129,7 @@ int main(int argc, const char **argv) {
 	} else {
 		s = sdb_new (NULL, argv[1], 0);
 		if (!s) return 1;
+		sdb_config (s, SDB_OPTION_FS | SDB_OPTION_NOSTAMP);
 		for (i=2; i<argc; i++)
 			save = sdb_query (s, argv[i]);
 	}

@@ -46,14 +46,19 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 				goto fail;
 		s->fd = open (s->dir, O_RDONLY|O_BINARY);
 		// if (s->fd == -1) // must fail if we cant open for write in sync
+		if (s->fd != -1)
+			s->last = st.st_mtime;
+		else s->last = sdb_now ();
 		s->name = strdup (name);
 		s->path = path? strdup (path): NULL;
 	} else {
 		s->dir = NULL;
+		s->last = sdb_now ();
 		s->name = NULL;
 		s->path = NULL;
 		s->fd = -1;
 	}
+	s->options = 0;
 	s->fdump = -1;
 	s->ndump = NULL;
 	s->ns = ls_new (); // TODO: should be NULL
@@ -278,6 +283,8 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	if (!sdb_check_key (key))
 		return 0;
 	if (!val) val = "";
+	if (!sdb_check_value (val))
+		return 0;
 	klen = strlen (key)+1;
 	hash = sdb_hash (key, klen);
 	cdb_findstart (&s->db);
@@ -612,6 +619,8 @@ SDB_API int sdb_hook_call(Sdb *s, const char *k, const char *v) {
 	SdbListIter *iter;
 	SdbHook hook;
 	int i = 0;
+	if (s->last)
+		s->last = sdb_now ();
 	ls_foreach (s->hooks, iter, hook) {
 		if (!(i%2) && k && iter->n) {
 			void *u = iter->n->data;
@@ -625,4 +634,18 @@ SDB_API int sdb_hook_call(Sdb *s, const char *k, const char *v) {
 SDB_API void sdb_hook_free(Sdb *s) {
 	ls_free (s->hooks);
 	s->hooks = NULL;
+}
+
+SDB_API void sdb_config(Sdb *s, int options) {
+	s->options = options;
+	if (options & SDB_OPTION_SYNC) {
+		// sync on every query
+	}
+	if (options & SDB_OPTION_NOSTAMP) {
+		// sync on every query
+		s->last = 0LL;
+	}
+	if (options & SDB_OPTION_FS) {
+		// have access to fs (handle '.' or not in query)
+	}
 }
