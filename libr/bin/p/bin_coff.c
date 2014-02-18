@@ -168,7 +168,7 @@ static int check(RBinFile *arch)
 		if (coff_supported_arch(arch->buf->buf))
 			return R_TRUE;
 	}
-	return R_TRUE;
+	return R_FALSE;
 }
 
 RBinPlugin r_bin_plugin_coff = {

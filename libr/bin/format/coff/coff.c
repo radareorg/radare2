@@ -8,14 +8,14 @@ int coff_supported_arch(const ut8 *buf)
 	int ret;
 
 	switch (arch) {
-	case 0x8300:
+	case IMAGE_FILE_MACHINE_H8300:
 		ret = R_TRUE;
 		break;
 	default:
 		ret = R_FALSE;
 	}
 
-	return R_TRUE;
+	return ret;
 }
 
 static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
