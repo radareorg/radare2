@@ -28,14 +28,10 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
 			sizeof(ut16), obj->endian);
 	offset += sizeof(ut16);
 
-	printf("machine 0x%x\n", obj->hdr.machine);
-
 	r_mem_copyendian((ut8*)&(obj->hdr.sections_num), obj->b->buf + offset,
 			sizeof(ut16), obj->endian);
 
 	offset += sizeof(ut16);
-
-	printf("sections num %x\n", obj->hdr.sections_num);
 
 	r_mem_copyendian((ut8*)&obj->hdr.timestamp, obj->b->buf + offset,
 			sizeof(ut32), obj->endian);
@@ -52,7 +48,6 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
 	r_mem_copyendian((ut8*)&(obj->hdr.opt_hdr_size), obj->b->buf + offset,
 			sizeof(ut16), obj->endian);
 	offset += sizeof(ut16);
-	printf("opt hdr size %u\n", obj->hdr.opt_hdr_size);
 
 	r_mem_copyendian((ut8*)&(obj->hdr.flags), obj->b->buf + offset,
 			sizeof(ut16), obj->endian);
@@ -62,7 +57,49 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
 
 static int r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj)
 {
-	return R_TRUE;
+	size_t offset = 20;
+
+	r_mem_copyendian((ut8*)&(obj->opt_hdr.magic), obj->b->buf + offset,
+			sizeof(ut16), obj->endian);
+
+	offset += sizeof(ut16);
+
+	r_mem_copyendian((ut8*)&(obj->opt_hdr.major_linker_version),
+			obj->b->buf + offset, sizeof(ut8), obj->endian);
+
+	offset += sizeof(ut8);
+
+	r_mem_copyendian((ut8*)&(obj->opt_hdr.minor_linker_version),
+			obj->b->buf + offset, sizeof(ut8), obj->endian);
+
+	offset += sizeof(ut8);
+
+	r_mem_copyendian((ut8*)&(obj->opt_hdr.size_of_code),
+			obj->b->buf + offset, sizeof(ut32), obj->endian);
+
+	offset += sizeof(ut32);
+
+	r_mem_copyendian((ut8*)&(obj->opt_hdr.size_of_init_data),
+			obj->b->buf + offset, sizeof(ut32), obj->endian);
+
+	offset += sizeof(ut32);
+
+	r_mem_copyendian((ut8*)&(obj->opt_hdr.size_of_uninit_data),
+			obj->b->buf + offset, sizeof(ut32), obj->endian);
+
+	offset += sizeof(ut32);
+
+	r_mem_copyendian((ut8*)&(obj->opt_hdr.entry_point),
+			obj->b->buf + offset, sizeof(ut32), obj->endian);
+
+	offset += sizeof(ut32);
+
+	r_mem_copyendian((ut8*)&(obj->opt_hdr.base_of_code),
+			obj->b->buf + offset, sizeof(ut32), obj->endian);
+
+	offset += sizeof(ut32);
+
+	return 0;
 }
 
 static int r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj)
@@ -74,7 +111,6 @@ static int r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj)
 
 	for (i = 0; i < obj->hdr.sections_num; i++) {
 		strncpy(obj->scn_hdrs[i].name, (char*)(obj->b->buf + offset), 8);
-		printf("section name %s\n", obj->scn_hdrs[i].name);
 
 		offset += 8;
 		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].virtual_size),
@@ -85,8 +121,6 @@ static int r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj)
 		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].virtual_addr),
 				obj->b->buf + offset, sizeof(ut32), obj->endian);
 
-		printf("virtial addr %x\n", obj->scn_hdrs[i].virtual_addr);
-
 		offset += sizeof(ut32);
 
 		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].raw_data_size),
@@ -96,8 +130,6 @@ static int r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj)
 
 		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].raw_data_pointer),
 				obj->b->buf + offset, sizeof(ut32), obj->endian);
-
-		printf("raw_data_pointer %x\n", obj->scn_hdrs[i].raw_data_pointer);
 
 		offset += sizeof(ut32);
 
@@ -159,8 +191,35 @@ static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj)
 			offset += sizeof(ut32);
 		}
 
-		offset += 10;
-//		printf ("symbol %s\n", obj->symbols[i].name);
+		r_mem_copyendian((ut8*)&(obj->symbols[i].value),
+				obj->b->buf + offset,
+				sizeof(ut32), obj->endian);
+
+		offset += sizeof(ut32);
+
+		r_mem_copyendian((ut8*)&(obj->symbols[i].scn_num),
+				obj->b->buf + offset,
+				sizeof(ut16), obj->endian);
+
+		offset += sizeof(ut16);
+
+		r_mem_copyendian((ut8*)&(obj->symbols[i].type),
+				obj->b->buf + offset,
+				sizeof(ut16), obj->endian);
+
+		offset += sizeof(ut16);
+
+		r_mem_copyendian((ut8*)&(obj->symbols[i].storage_class),
+				obj->b->buf + offset,
+				sizeof(ut8), obj->endian);
+
+		offset += sizeof(ut8);
+
+		r_mem_copyendian((ut8*)&(obj->symbols[i].aux_sym_num),
+				obj->b->buf + offset,
+				sizeof(ut8), obj->endian);
+
+		offset += sizeof(ut8);
 	}
 }
 
