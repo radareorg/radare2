@@ -131,7 +131,8 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 }
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return (!memcmp (file, "attach://", 9) || !memcmp (file, "mach://", 7));
+	return (!strncmp (file, "attach://", 9) \
+		|| !strncmp (file, "mach://", 7));
 }
 
 //static task_t inferior_task = 0;

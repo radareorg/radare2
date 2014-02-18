@@ -69,7 +69,7 @@ static int haret__close(RIODesc *fd) {
 }
 
 static int haret__plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
-	return (!memcmp (pathname, "haret://", 8));
+	return (!strncmp (pathname, "haret://", 8));
 }
 
 static RIODesc *haret__open(struct r_io_t *io, const char *pathname, int rw, int mode) {

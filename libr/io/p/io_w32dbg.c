@@ -47,9 +47,9 @@ static int __write(struct r_io_t *io, RIODesc *fd, const ut8 *buf, int len) {
 }
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	if (!memcmp (file, "attach://", 9))
+	if (!strncmp (file, "attach://", 9))
 		return R_TRUE;
-	return (!memcmp (file, "w32dbg://", 9))? R_TRUE: R_FALSE;
+	return (!strncmp (file, "w32dbg://", 9))? R_TRUE: R_FALSE;
 }
 
 static int __attach (RIOW32Dbg *dbg) {
