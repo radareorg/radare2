@@ -1305,15 +1305,24 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 }
 
 static void handle_print_core_vmode (RCore *core, RDisasmState *ds) {
+	int i;
 	if (core->vmode) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			ds->counter++;
-			if (ds->counter<10) {
-				core->asmqjmps[ds->counter] = ds->analop.jump;
-				r_cons_printf (" ;[%d]", ds->counter);
+			if (ds->counter<9) {
+				int found = 0;
+				for (i=0; i<ds->counter+1; i++) {
+					if (core->asmqjmps[i] == ds->analop.jump) {
+						found = 1;
+						break;
+					}
+				}
+				if (!found)
+					i = ++ds->counter;
+				core->asmqjmps[i] = ds->analop.jump;
+				r_cons_printf (" ;[%d]", i);
 			} else r_cons_strcat (" ;[?]");
 			break;
 		}
@@ -1528,11 +1537,10 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	handle_reflines_init (core, ds);
 	core->inc = 0;
 	/* reset jmp table if not a bad block */
+	ds->counter = 0;
 	if (buf[0] != 0xff) // hack
 		for (i=0; i<10; i++)
 			core->asmqjmps[i] = UT64_MAX;
-
-
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, ds->addr+idx);
