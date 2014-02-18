@@ -26,11 +26,11 @@ static  int init(void *user) {
 
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	int result = R_FALSE;
-	char value[1024] = {0};
-	sdb_itoa ((ut64)(size_t)bin_obj,  value);
+	char *addr, value[1024] = {0};
+	addr = sdb_itoa ((ut64)(size_t)bin_obj,  value, 16);
 	if (key && bin_obj && DB) {
-		IFDBG eprintf ("Adding %s:%s to the bin_objs db\n", key, value);
-		sdb_set (DB, key, value, 0);
+		IFDBG eprintf ("Adding %s:%s to the bin_objs db\n", key, addr);
+		sdb_set (DB, key, addr, 0);
 		result = R_TRUE;
 	}
 	return result;
