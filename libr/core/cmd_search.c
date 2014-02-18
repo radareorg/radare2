@@ -658,7 +658,6 @@ static int cmd_search(void *data, const char *input) {
 		"| /z min max      search for strings of given size\n"
 		"| /v[?248] num    look for a asm.bigendian 32bit value\n"
 		"| //              repeat last search\n"
-		"| ./ hello        search 'hello string' and import flags\n"
 		"| /b              search backwards\n"
 		"|Configuration:\n"
 		"| e cmd.hit = x         ; command to execute on every search hit\n"
