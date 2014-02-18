@@ -31,6 +31,7 @@ static int java_print_class_definitions( RBinJavaObj *obj );
 static int java_print_field_definitions( RBinJavaObj *obj );
 static int java_print_method_definitions( RBinJavaObj *obj );
 static int java_print_import_definitions( RBinJavaObj *obj );
+static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj);
 
 static int java_print_class_access_flags_value( const char * flags );
 static int java_print_field_access_flags_value( const char * flags );
@@ -601,6 +602,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 
 	r_list_foreach (bin_objs_list, bin_obs_iter, bin) {
 		// loop over all bin object that are loaded
+		java_update_anal_types (anal, bin);
 		methods_list = (RList *) r_bin_java_get_methods_list (bin);
 		if (methods_list) {
 			ut64 loadaddr = bin->loadaddr;
@@ -860,6 +862,21 @@ static int java_print_method_access_flags_value( const char * flags ){
 	return 0;
 }
 
+static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj) {
+	Sdb *D = anal->sdb_types;
+	if (D && bin_obj) {
+		RListIter *iter;
+		char *str;
+		RList * the_list = r_bin_java_extract_all_bin_type_values (bin_obj);
+		if (the_list) {
+			r_list_foreach (the_list, iter, str) {
+				IFDBG eprintf ("Adding type: %s to known types.\n", str);
+				if (str) sdb_set (D, str, "type", 0);
+			}
+			r_list_free (the_list);
+		}
+	}
+}
 
 
 static int java_cmd_ext(RAnal *anal, const char* input) {
@@ -873,6 +890,12 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 		case 'c':
 			// reset bytes counter for case operations
 			r_java_new_method ();
+			break;
+		case 'u':
+			switch (*(input+1)) {
+				case 't': {java_update_anal_types (anal, obj); return R_TRUE;}
+				default: break;
+			}
 			break;
 		case 'p':
 			switch (*(input+1)) {

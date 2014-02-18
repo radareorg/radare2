@@ -1186,6 +1186,7 @@ R_API char * r_bin_java_build_obj_key (RBinJavaObj *bin);
 
 R_API RList * r_bin_java_extract_type_values( char *arg_str);
 R_API int r_bin_java_extract_reference_name(const char * input_str, char ** ref_str, ut8 array_cnt);
+R_API RList * r_bin_java_extract_all_bin_type_values( RBinJavaObj * bin_obj);
 
 R_API RList * r_bin_java_get_method_definitions(RBinJavaObj *bin);
 R_API char * r_bin_java_get_method_definition(RBinJavaField *fm_type);

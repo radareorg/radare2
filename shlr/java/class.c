@@ -601,6 +601,35 @@ R_API RList * r_bin_java_extract_type_values( char *arg_str) {
 	return list_args;
 }
 
+R_API RList * r_bin_java_extract_all_bin_type_values( RBinJavaObj * bin_obj) {
+	RListIter *fm_type_iter;
+	RList *all_types = r_list_new ();
+	RBinJavaField *fm_type;
+
+	// get all field types
+	r_list_foreach (bin_obj->fields_list, fm_type_iter, fm_type) {
+		char *desc;
+		extract_type_value (fm_type->descriptor, &desc);
+		IFDBG eprintf ("Adding field type: %s\n", desc);
+		r_list_append (all_types, desc);
+	}
+
+	// get all method types
+	r_list_foreach (bin_obj->methods_list, fm_type_iter, fm_type) {
+		RList * the_list = r_bin_java_extract_type_values (fm_type->descriptor);
+		RListIter *desc_iter;
+		char *str;
+		r_list_foreach (the_list, desc_iter, str) {
+			if (str && *str != '(' && *str != ')') {
+				r_list_append (all_types, strdup(str));
+				IFDBG eprintf ("Adding method type: %s\n", str);
+			}
+		}
+		r_list_free (the_list);
+	}
+	return all_types;
+}
+
 R_API char * r_bin_java_get_this_class_name(RBinJavaObj *bin) {
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list(bin, bin->cf2->this_class);
 	return r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
@@ -920,7 +949,6 @@ static ut16 calculate_access_value(const char * access_flags_str, RBinJavaAccess
 	memcpy (my_flags, access_flags_str, size);
 
 	p_flags = strtok (my_flags, " ");
-
 
 	while (p_flags && access_flags) {
 		int idx = 0;
