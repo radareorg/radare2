@@ -105,7 +105,7 @@ SdbKv *sdb_dump_next (Sdb* s);
 int sdb_dump_dupnext (Sdb* s, char **key, char **value);
 
 /* numeric */
-char *sdb_itoa(ut64 n, char *s);
+char *sdb_itoa(ut64 n, char *s, int base);
 ut64 sdb_atoi(const char *s);
 ut64 sdb_getn (Sdb* s, const char *key, ut32 *cas);
 int sdb_setn (Sdb* s, const char *key, ut64 v, ut32 cas);
@@ -187,7 +187,8 @@ char *sdb_apop(Sdb *s, const char *key, ut32 *cas);
 /* Util.c */
 int sdb_check_value(const char *s);
 int sdb_check_key(const char *s);
-SDB_API int sdb_isnum (const char *s);
+int sdb_isnum (const char *s);
+int sdb_numbase (const char *s);
 
 #ifdef __cplusplus
 }

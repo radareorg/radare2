@@ -24,9 +24,10 @@ SDB_API ut64 sdb_getn(Sdb *s, const char *key, ut32 *cas) {
 }
 
 SDB_API int sdb_setn(Sdb *s, const char *key, ut64 v, ut32 cas) {
-	char b[128];
-	sdb_itoa (v, b);
-	return sdb_set (s, key, b, cas);
+	char *val, b[128];
+	int numbase = sdb_numbase (sdb_getc (s, key, NULL));
+	val = sdb_itoa (v, b, numbase);
+	return sdb_set (s, key, val, cas);
 }
 
 SDB_API ut64 sdb_inc(Sdb *s, const char *key, ut64 n2, ut32 cas) {

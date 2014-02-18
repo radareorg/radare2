@@ -122,6 +122,7 @@ next_quote:
 				sdb_concat (s, cmd+1, val, 0);
 			}
 		} else {
+			int base = sdb_numbase (sdb_getc (s, cmd+1, 0));
 			if (json) {
 				*json = 0;
 				if (*cmd=='+') n = sdb_json_inc (s, cmd+1, json+1, d, 0);
@@ -131,10 +132,19 @@ next_quote:
 				if (*cmd=='+') n = sdb_inc (s, cmd+1, d, 0);
 				else n = sdb_dec (s, cmd+1, d, 0);
 			}
-			w = snprintf (buf, len-1, "%"ULLFMT"d", n);
-			if (w<0 || (size_t)w>len) {
-				buf = malloc (0xff);
-				snprintf (buf, 0xff, "%"ULLFMT"d", n);
+			// TODO: keep base here
+			if (base==16) {
+				w = snprintf (buf, len-1, "0x%"ULLFMT"x", n);
+				if (w<0 || (size_t)w>len) {
+					buf = malloc (0xff);
+					snprintf (buf, 0xff, "0x%"ULLFMT"x", n);
+				}
+			} else {
+				w = snprintf (buf, len-1, "%"ULLFMT"d", n);
+				if (w<0 || (size_t)w>len) {
+					buf = malloc (0xff);
+					snprintf (buf, 0xff, "%"ULLFMT"d", n);
+				}
 			}
 		}
 		return buf;

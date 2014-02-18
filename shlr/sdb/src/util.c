@@ -54,25 +54,30 @@ SDB_API ut32 sdb_hash(const char *s, int len) {
 	return h;
 }
 
-/* TODO: find algorithm without strrev */
-/* TODO: try to avoid the use of heap */
-static void __strrev(char *s, int len) {
-	int i, j = len -1;
-	for (i=0; i<j; i++, j--) {
-		char c = s[i];
-		s[i] = s[j];
-		s[j] = c;
+SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
+	int i = 63; 
+	if (!s) s = malloc(65);
+	s[63] = '\0';
+	if (*s=='-') {
+		memcpy (s, "0", 2);
+		return s;
 	}
-}
-
-SDB_API char *sdb_itoa(ut64 n, char *s) {
-	int i = 0;
-	if (!s) s = malloc (64);
-	do s[i++] = n % 10 + '0';
-	while ((n /= 10) > 0);
-	s[i] = '\0';
-	__strrev (s, i);
-	return s;
+	memset (s, 0, 65);
+	if (base==16) {
+		static const char* lookup = "0123456789abcdef";
+		do {
+			s[i--] = lookup[(n % 16)];
+			if (i==0) break;
+		} while(n/=16); 
+		s[i--] = 'x';
+		s[i--] = '0';
+	} else {
+		do {
+			s[i--] = (n % 10) + '0';
+			if (i==0) break;
+		} while(n/=10); 
+	}
+	return s+i+1;
 }
 
 SDB_API ut64 sdb_atoi(const char *s) {
@@ -120,4 +125,12 @@ SDB_API int sdb_isnum (const char *s) {
 	if (*s>='0' && *s<='9')
 		return 1;
 	return 0;
+}
+
+SDB_API int sdb_numbase (const char *s) {
+	if (!s) return 10;
+	if (!strncmp (s, "0x", 2))
+		return 16;
+	if (*s=='0' && s[1]) return 8;
+	return 10;
 }

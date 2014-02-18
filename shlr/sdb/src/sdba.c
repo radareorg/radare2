@@ -82,7 +82,7 @@ SDB_API char *sdb_aget(Sdb *s, const char *key, int idx, ut32 *cas) {
 
 SDB_API int sdb_ainsn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[64];
-	return sdb_ains (s, key, idx, sdb_itoa (val, valstr), cas);
+	return sdb_ains (s, key, idx, sdb_itoa (val, valstr, 10), cas);
 }
 
 // TODO: done, but there's room for improvement
@@ -124,15 +124,14 @@ SDB_API int sdb_ains(Sdb *s, const char *key, int idx, const char *val, ut32 cas
 
 SDB_API int sdb_asetn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[64];
-	return sdb_aset (s, key, idx, sdb_itoa (val, valstr), cas);
+	return sdb_aset (s, key, idx, sdb_itoa (val, valstr, 10), cas);
 }
 
 SDB_API int sdb_aaddn(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
-	char valstr[64];
-	sdb_itoa (val, valstr);
-	if (sdb_aexists (s, key, valstr))
+	char valstr[64], *vs = sdb_itoa (val, valstr, 10);
+	if (sdb_aexists (s, key, vs))
 		return 0;
-	return sdb_aadd (s, key, idx, valstr, cas);
+	return sdb_aadd (s, key, idx, vs, cas);
 }
 
 SDB_API int sdb_aadd(Sdb *s, const char *key, int idx, const char *val, ut32 cas) {
