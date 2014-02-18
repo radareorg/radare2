@@ -322,15 +322,15 @@ static int cmd_search(void *data, const char *input) {
 	int aes_search = R_FALSE;
 	int ignorecase = R_FALSE;
 	int inverse = R_FALSE;
-	ut64 at, from, to;
+	ut64 at, from = 0, to = 0;
 	const char *mode;
-	char *inp;
+	char *inp, bckwrds = R_FALSE, do_bckwrd_srch = R_FALSE;
 	ut64 n64, __from, __to;
 	ut32 n32;
 	ut16 n16;
 	ut8 *buf;
 
-c = 0;
+	c = 0;
 	__from = r_config_get_i (core->config, "search.from");
 	__to = r_config_get_i (core->config, "search.to");
 
@@ -340,10 +340,17 @@ c = 0;
 
 	if (__from != UT64_MAX) from = __from;
 	if (__to != UT64_MAX) to = __to;
+	/*
+	  this introduces a bug until we implement backwards search
+	  for all search types
 	if (__to < __from) {
 		eprintf ("Invalid search range. Check 'e search.{from|to}'\n");
 		return R_FALSE;
 	}
+	since the backward search will be implemented soon I'm not gonna stick 
+	checks for every case in switch // jjdredd
+	remove when everything is done
+	*/
 
 	core->search->align = r_config_get_i (core->config, "search.align");
 	searchflags = r_config_get_i (core->config, "search.flags");
@@ -361,11 +368,33 @@ c = 0;
 	if (from == 0LL) from = core->offset;
 	if (to == 0LL) to = UT32_MAX; // XXX?
 
+	/* we don't really care what's bigger bc there's a flag for backward search
+	   from now on 'from' and 'to' represent only the search boundaries, not 
+	   search direction */ 
+	__from = R_MIN(from, to);
+	to = R_MAX(from, to);
+	from = __from;
+	core->search->bckwrds = R_FALSE;
+
 	reread:
 	switch (*input) {
 	case '!':
 		input++;
 		inverse = R_TRUE;
+		goto reread;
+		break;
+	case 'b':
+		if (*(++input) == '?'){
+			eprintf ("Usage: /b<command> [value] backward search, see '/?'\n");
+			return R_TRUE;
+		}
+		core->search->bckwrds = bckwrds = do_bckwrd_srch = R_TRUE;
+		/* if backward search and __to wasn't specified 
+		   search from the beginning */
+		if ((unsigned int)to ==  UT32_MAX){
+			to = from;
+			from = 0;
+		}
 		goto reread;
 		break;
 	case 'P':
@@ -630,6 +659,7 @@ c = 0;
 		"| /v[?248] num    look for a asm.bigendian 32bit value\n"
 		"| //              repeat last search\n"
 		"| ./ hello        search 'hello string' and import flags\n"
+		"| /b              search backwards\n"
 		"|Configuration:\n"
 		"| e cmd.hit = x         ; command to execute on every search hit\n"
 		"| e search.distance = 0 ; search string distance\n"
@@ -666,7 +696,15 @@ c = 0;
 			cmdhit = r_config_get (core->config, "cmd.hit");
 			r_cons_break (NULL, NULL);
 			// XXX required? imho nor_io_set_fd (core->io, core->file->fd);
-			for (at = from; at < to; at += core->blocksize) {
+			if (bckwrds){
+				if (to < from + core->blocksize){
+					at = from;
+					do_bckwrd_srch = R_FALSE;
+				}else at = to - core->blocksize;
+			}else at = from;
+			 /* bckwrds = false -> normal search -> must be at < to
+				bckwrds search -> check later */ 
+			for (; ( !bckwrds && at < to ) ||  bckwrds ;) {
 				print_search_progress (at, to, searchhits);
 				if (r_cons_singleton ()->breaked) {
 					eprintf ("\n\n");
@@ -698,6 +736,14 @@ c = 0;
 					//eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
 					break;
 				}
+				if (bckwrds){
+					if (!do_bckwrd_srch) break;
+					if (at > from + core->blocksize) at -= core->blocksize;
+					else{
+						do_bckwrd_srch = R_FALSE;
+						at = from;
+					}
+				}else at += core->blocksize;
 			}
 			print_search_progress (at, to, searchhits);
 			r_cons_break_end ();
