@@ -43,5 +43,6 @@ struct r_bin_coff_obj {
 
 int coff_supported_arch(const ut8 *buf);
 struct r_bin_coff_obj* r_bin_coff_new_buf(struct r_buf_t *buf);
+void r_bin_coff_free(struct r_bin_coff_obj *obj);
 
 #endif /* COFF_H */

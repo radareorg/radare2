@@ -110,6 +110,8 @@ static RList *symbols(RBinFile *arch)
 		ptr->ordinal = 0;
 
 		r_list_append (ret, ptr);
+
+		i += obj->symbols[i].aux_sym_num;
 	}
 
 	return ret;
@@ -134,6 +136,13 @@ static RBinInfo *info(RBinFile *arch)
 {
 	RBinInfo *ret = R_NEW0(RBinInfo);
 	ret->has_va = 1;
+	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
+
+	strncpy (ret->file, arch->file, R_BIN_SIZEOF_STRINGS);
+	strncpy (ret->rpath, "NONE", R_BIN_SIZEOF_STRINGS);
+	ret->big_endian = obj->endian;
+	ret->dbg_info = 0;
+
 	return ret;
 }
 

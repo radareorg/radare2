@@ -221,6 +221,8 @@ static int r_bin_coff_init_symtable(struct r_bin_coff_obj *obj)
 
 		offset += sizeof(ut8);
 	}
+
+	return 0;
 }
 
 static int r_bin_coff_init(struct r_bin_coff_obj *obj, struct r_buf_t *buf)
@@ -239,6 +241,13 @@ static int r_bin_coff_init(struct r_bin_coff_obj *obj, struct r_buf_t *buf)
 
 void r_bin_coff_free(struct r_bin_coff_obj *obj)
 {
+	if (obj->scn_hdrs)
+		free(obj->scn_hdrs);
+
+	if (obj->symbols)
+		free(obj->symbols);
+
+	free(obj);
 }
 
 struct r_bin_coff_obj* r_bin_coff_new_buf(struct r_buf_t *buf)
