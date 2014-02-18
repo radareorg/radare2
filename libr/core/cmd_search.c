@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 static int preludecnt = 0;
 static int searchflags = 0;
@@ -328,6 +328,7 @@ static int cmd_search(void *data, const char *input) {
 	ut64 n64, __from, __to;
 	ut32 n32;
 	ut16 n16;
+	ut8 n8;
 	ut8 *buf;
 
 	c = 0;
@@ -467,21 +468,32 @@ static int cmd_search(void *data, const char *input) {
 			r_config_get_i (core->config, "search.distance"));
 		switch (input[1]) {
 		case '?':
-			eprintf ("Usage: /v[2|4|8] [value]\n");
+			eprintf ("Usage: /v[1|2|4|8] [value]   # obeys cfg.bigendian\n");
 			return R_TRUE;
 		case '8':
 			n64 = r_num_math (core->num, input+2);
+			r_mem_copyendian ((ut8*)&n64, (const ut8*)&n64,
+				8, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n64, 8, NULL, 0, NULL));
 			break;
+		case '1':
+			n8 = (ut8)r_num_math (core->num, input+2);
+			r_search_kw_add (core->search,
+				r_search_keyword_new ((const ut8*)&n8, 1, NULL, 0, NULL));
+			break;
 		case '2':
 			n16 = (ut16)r_num_math (core->num, input+2);
+			r_mem_copyendian ((ut8*)&n16, (ut8*)&n16,
+				2, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n16, 2, NULL, 0, NULL));
 			break;
 		default: // default size
 		case '4':
-			n32 = (ut32)r_num_math (core->num, input+1);
+			n32 = (ut32)r_num_math (core->num, input+2);
+			r_mem_copyendian ((ut8*)&n32, (const ut8*)&n32,
+				4, !core->assembler->big_endian);
 			r_search_kw_add (core->search,
 				r_search_keyword_new ((const ut8*)&n32, 4, NULL, 0, NULL));
 			break;
