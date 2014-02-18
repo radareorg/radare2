@@ -31,6 +31,13 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->args = NULL;
 	fcn->locs = NULL;
 	fcn->locals = NULL;
+
+	fcn->sdb_vars = sdb_new (NULL, NULL, 0);
+	fcn->sdb_refs = sdb_new (NULL, NULL, 0);
+	fcn->sdb_args = sdb_new (NULL, NULL, 0);
+	fcn->sdb_locals = sdb_new (NULL, NULL, 0);
+	fcn->sdb_ret = sdb_new (NULL, NULL, 0);
+
 	return fcn;
 }
 
@@ -56,6 +63,13 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
 	free (fcn->args);
+
+	// XXX - TODO free everything in the sdb then the sdb
+	//sdb_free (fcn->sdb_vars);
+	//sdb_free (fcn->sdb_refs);
+	//sdb_free (fcn->sdb_args);
+	//sdb_free (fcn->sdb_locals);
+
 	free (fcn);
 }
 

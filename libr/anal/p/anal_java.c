@@ -32,6 +32,7 @@ static int java_print_field_definitions( RBinJavaObj *obj );
 static int java_print_method_definitions( RBinJavaObj *obj );
 static int java_print_import_definitions( RBinJavaObj *obj );
 static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj);
+static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method);
 
 static int java_print_class_access_flags_value( const char * flags );
 static int java_print_field_access_flags_value( const char * flags );
@@ -617,6 +618,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 					check_addr_in_code (method, end)) ) {
 
 					RAnalFunction *fcn = r_anal_fcn_new ();
+					java_set_function_prototype (anal, fcn, method);
 					result = analyze_from_code_attr ( anal, fcn, method, loadaddr );
 					if (result == R_ANAL_RET_ERROR) {
 						eprintf ("Failed to parse java fn: %s @ 0x%04"PFMT64x"\n", fcn->name, fcn->addr);
@@ -860,6 +862,60 @@ static int java_print_method_access_flags_value( const char * flags ){
 	ut16 result = r_bin_java_calculate_method_access_value (flags);
 	eprintf ("Access Value for %s = 0x%04x\n", flags,  result);
 	return 0;
+}
+
+static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method) {
+
+	RList *the_list = r_bin_java_extract_type_values (method->descriptor);
+	Sdb *D = anal->sdb_types,
+		*A = fcn->sdb_args,
+		*R = fcn->sdb_ret;
+
+	char *type_fmt = "arg.%d.type",
+	     *namek_fmt = "arg.%d.name",
+	     *namev_fmt = "localvar_%d";
+
+	char  key_buf[1024], value_buf [512];
+	if (D && A && R) {
+		RListIter *iter;
+		char *str;
+		RList * the_list = r_bin_java_extract_type_values (method->descriptor);
+		if (the_list) {
+			ut8 start = 0, stop = 0;
+			int idx = 0;
+			r_list_foreach (the_list, iter, str) {
+				IFDBG eprintf ("Adding type: %s to known types.\n", str);
+				if (str && *str == '('){
+					start = 1;
+					continue;
+				}
+
+				if (str && start && *str != ')') {
+					// set type
+					snprintf (key_buf, 1024, type_fmt, idx);
+					sdb_set (A, str, key_buf, 0);
+					sdb_set (D, str, "type", 0);
+					// set value
+					snprintf (key_buf, 1024, namek_fmt, idx);
+					snprintf (value_buf, 1024, namev_fmt, idx);
+					sdb_set (A, value_buf, key_buf, 0);
+					idx ++;
+				}
+				if (str && start && *str == ')') {
+					stop == 1;
+					continue;
+				}
+
+				if (str && start && stop){
+					sdb_set (R, str, "ret.type", 0);
+					sdb_set (D, str, "type", 0);
+				}
+			}
+			r_list_free (the_list);
+		}
+	}
+
+
 }
 
 static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj) {

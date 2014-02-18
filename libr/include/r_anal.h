@@ -331,6 +331,12 @@ typedef struct r_anal_type_function_t {
 	RList *vars;
 	RList *refs;
 	RList *xrefs;
+
+	Sdb *sdb_vars;
+	Sdb *sdb_refs;
+	Sdb *sdb_args;
+	Sdb *sdb_locals;
+	Sdb *sdb_ret;
 } RAnalFunction;
 
 struct r_anal_type_t {
