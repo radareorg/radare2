@@ -143,6 +143,27 @@ static RBinInfo *info(RBinFile *arch)
 	ret->big_endian = obj->endian;
 	ret->dbg_info = 0;
 
+	switch (obj->hdr.machine) {
+	case IMAGE_FILE_MACHINE_I386:
+		strncpy(ret->machine, "i386", R_BIN_SIZEOF_STRINGS);
+		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
+		ret->bits = 32;
+		break;
+	case IMAGE_FILE_MACHINE_AMD64:
+		strncpy(ret->machine, "AMD 64", R_BIN_SIZEOF_STRINGS);
+		strncpy(ret->arch, "x86", R_BIN_SIZEOF_STRINGS);
+		ret->bits = 64;
+		break;
+	case IMAGE_FILE_MACHINE_H8300:
+		strncpy(ret->machine, "H8300", R_BIN_SIZEOF_STRINGS);
+		strncpy(ret->arch, "h8300", R_BIN_SIZEOF_STRINGS);
+		ret->bits = 16;
+		break;
+	default:
+
+		strncpy(ret->machine, "unknown", R_BIN_SIZEOF_STRINGS);
+	}
+
 	return ret;
 }
 

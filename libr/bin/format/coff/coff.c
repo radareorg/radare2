@@ -8,6 +8,8 @@ int coff_supported_arch(const ut8 *buf)
 	int ret;
 
 	switch (arch) {
+	case IMAGE_FILE_MACHINE_AMD64:
+	case IMAGE_FILE_MACHINE_I386:
 	case IMAGE_FILE_MACHINE_H8300:
 		ret = R_TRUE;
 		break;
@@ -22,10 +24,17 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
 {
 	size_t offset = 0;
 
-	obj->endian = !LIL_ENDIAN;
 
-	r_mem_copyendian((ut8*)&(obj->hdr.machine), obj->b->buf,
-			sizeof(ut16), obj->endian);
+	obj->hdr.machine = *(ut16*)obj->b->buf;
+
+	switch(obj->hdr.machine) {
+		case IMAGE_FILE_MACHINE_H8300:
+			obj->endian = !LIL_ENDIAN;
+			break;
+		default:
+			obj->endian = LIL_ENDIAN;
+	}
+
 	offset += sizeof(ut16);
 
 	r_mem_copyendian((ut8*)&(obj->hdr.sections_num), obj->b->buf + offset,
@@ -58,6 +67,9 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
 static int r_bin_coff_init_opt_hdr(struct r_bin_coff_obj *obj)
 {
 	size_t offset = 20;
+
+	if (obj->hdr.opt_hdr_size == 0)
+		return 0;
 
 	r_mem_copyendian((ut8*)&(obj->opt_hdr.magic), obj->b->buf + offset,
 			sizeof(ut16), obj->endian);
