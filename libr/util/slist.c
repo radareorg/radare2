@@ -42,7 +42,7 @@ R_API RSList *r_slist_add (RSList *s, void *data, ut64 from, ut64 to) {
 	item->data = data;
 	r_list_append (s->list, item); // item must be alloacted by slices
 	// find slot
-	slot = r_slist_get_slot(s, from);
+	slot = r_slist_get_slot (s, from);
 	if (slot<0) {
 		//r_slist_optimize ();
 		return NULL;

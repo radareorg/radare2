@@ -307,7 +307,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			// TODO table of non-instructions in __text
 			break;
 		case LC_RPATH:
-			eprintf ("--->\n");
+			//eprintf ("--->\n");
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
