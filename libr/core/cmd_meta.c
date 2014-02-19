@@ -223,6 +223,7 @@ eprintf ("-- %s\n", buf);
 		}
 		break;
 	case 'v':
+#if USE_VARSUBS
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("Usage: Cv[-*][ off reg name] \n");
@@ -277,6 +278,9 @@ eprintf ("-- %s\n", buf);
 			}
 		break;
 		}
+#else
+		eprintf ("TODO: varsubs has been disabled because it needs to be sdbized\n");
+#endif
 	case '-':
 		if (input[1]!='*') {
 			i = r_num_math (core->num, input+((input[1]==' ')?2:1));

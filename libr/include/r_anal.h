@@ -3,6 +3,8 @@
 #ifndef _INCLUDE_R_ANAL_H_
 #define _INCLUDE_R_ANAL_H_
 
+#define USE_VARSUBS 0
+
 #include <r_types.h>
 #include <list.h>
 #include <r_db.h>
@@ -322,7 +324,9 @@ typedef struct r_anal_type_function_t {
 	int nargs; // Function arguments counter
 	int depth;
 	RAnalType *args; // list of arguments
+#if USE_VARSUBS
 	RAnalVarSub varsubs[R_ANAL_VARSUBS];
+#endif
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
 	RList *locs; // list of local variables
