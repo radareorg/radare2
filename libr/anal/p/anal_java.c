@@ -952,6 +952,38 @@ static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj) {
 	}
 }
 
+static int java_resolve_cp_idx (RAnal *anal, char * idxs) {
+	RBinJavaObj *obj = get_java_bin_obj (anal);
+	char *str = NULL;
+	ut16 idx = atoi (idxs); // XXX - Bug more checking needed
+	if (obj && idx){
+		str = r_bin_java_resolve_without_space (obj, idx);
+		eprintf ("%s\n", str);
+	}
+	return R_TRUE;
+}
+
+static int java_resolve_cp_type (RAnal *anal, char * idxs) {
+	RBinJavaObj *obj = get_java_bin_obj (anal);
+	char *str = NULL;
+	ut16 idx = atoi (idxs); // XXX - Bug more checking needed
+	if (obj && idx){
+		str = r_bin_java_resolve_cp_idx_type (obj, idx);
+		eprintf ("%s\n", str);
+	}
+	return R_TRUE;
+}
+
+static int java_resolve_cp_idx_b64 (RAnal *anal, char * idxs) {
+	RBinJavaObj *obj = get_java_bin_obj (anal);
+	char *str = NULL;
+	ut16 idx = atoi (idxs); // XXX - Bug more checking needed
+	if (obj && idx){
+		str = r_bin_java_resolve_b64_encode(obj, idx) ;
+		eprintf ("%s\n", str);
+	}
+	return R_TRUE;
+}
 
 static int java_cmd_ext(RAnal *anal, const char* input) {
 	RBinJavaObj *obj = (RBinJavaObj *) get_java_bin_obj (anal);
@@ -986,6 +1018,14 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 				case 'm': return java_print_method_access_flags_value (input+2);
 				case 'f': return java_print_field_access_flags_value (input+2);
 				case 'c': return java_print_class_access_flags_value (input+2);
+				default: break;
+			}
+			break;
+		case 'r':
+			switch (*(input+1)) {
+				case 't': return java_resolve_cp_type (anal, input+2);
+				case 'c': return java_resolve_cp_idx (anal, input+2);
+				case 'e': return java_resolve_cp_idx_b64 (anal, input+2);
 				default: break;
 			}
 			break;
