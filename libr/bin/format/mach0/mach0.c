@@ -212,7 +212,7 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_32.eip;
-			sdb_setn (bin->kv, "mach0.entry", off+sizeof (struct thread_command) + 
+			sdb_num_set (bin->kv, "mach0.entry", off+sizeof (struct thread_command) + 
 				r_offsetof (struct x86_thread_state32, eip), 0);
 			break;
 		case X86_THREAD_STATE64:
@@ -222,7 +222,7 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_64.rip;
-			sdb_setn (bin->kv, "mach0.entry", off+sizeof(struct thread_command) + 
+			sdb_num_set (bin->kv, "mach0.entry", off+sizeof(struct thread_command) + 
 				r_offsetof (struct x86_thread_state64, rip), 0);
 			break;
 		//default: eprintf ("Unknown type\n");
@@ -855,7 +855,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		for (i = 0; i < bin->nsects; i++) {
 			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
 				entry->offset = (ut64)bin->sects[i].offset;
-				sdb_setn (bin->kv, "mach0.entry", entry->offset, 0);
+				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
 				if (entry->addr==0) // workaround for object files
 					entry->addr = entry->offset;

@@ -7,30 +7,6 @@
 #include "json/path.c"
 #include "json/rangstr.c"
 
-static void __itoa(int value, char *string) {
-	int i, sign, count = 0;
-	char buf[64];
-	char *temp = buf;
-	char *ptr = string;
-
-	temp[0] = string[0] = 0;
-	if ((sign = value) < 0) {
-		value = -value;
-		count++;
-	}
-	do {
-		*temp++ = value % 10 + '0';
-		count++;
-	} while ((value /= 10)>0);
-	if (sign < 0)
-		*temp++ = '-';
-	*temp-- = '\0';
-	/* reverse string */
-	for (i = 0; i < count; i++, temp--, ptr++)
-		*ptr = *temp;
-	*ptr = 0;
-}
-
 SDB_API char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	Rangstr rs;
 	char *u, *v = sdb_get (s, k, cas);
@@ -41,25 +17,25 @@ SDB_API char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	return u;
 }
 
-SDB_API int sdb_json_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
+SDB_API int sdb_json_num_inc(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
 	ut32 c;
-	int cur = sdb_json_geti (s, k, p, &c);
+	int cur = sdb_json_num_get (s, k, p, &c);
 	if (cas && c != cas)
 		return 0;
-	sdb_json_seti (s, k, p, cur+n, cas);
+	sdb_json_num_set (s, k, p, cur+n, cas);
 	return cur+n;
 }
 
-SDB_API int sdb_json_dec(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
+SDB_API int sdb_json_num_dec(Sdb *s, const char *k, const char *p, int n, ut32 cas) {
 	ut32 c;
-	int cur = sdb_json_geti (s, k, p, &c);
+	int cur = sdb_json_num_get (s, k, p, &c);
 	if (cas && c != cas)
 		return 0;
-	sdb_json_seti (s, k, p, cur-n, cas);
+	sdb_json_num_set (s, k, p, cur-n, cas);
 	return cur-n;
 }
 
-SDB_API int sdb_json_geti (Sdb *s, const char *k, const char *p, ut32 *cas) {
+SDB_API int sdb_json_num_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	char *v = sdb_get (s, k, cas);
 	if (v) {
 		Rangstr rs = json_get (v, p);
@@ -68,10 +44,10 @@ SDB_API int sdb_json_geti (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	return 0;
 }
 
-SDB_API int sdb_json_seti (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
-	char str[64];
-	__itoa (v, str);
-	return sdb_json_set (s, k, p, str, cas);
+SDB_API int sdb_json_num_set (Sdb *s, const char *k, const char *p, int v, ut32 cas) {
+	char *_str, str[64];
+	_str = sdb_itoa (v, str, 10);
+	return sdb_json_set (s, k, p, _str, cas);
 }
 
 SDB_API int sdb_json_set (Sdb *s, const char *k, const char *p, const char *v, ut32 cas) {

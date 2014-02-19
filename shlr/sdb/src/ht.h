@@ -28,5 +28,5 @@ SdbHashEntry* ht_search(SdbHash *ht, ut32 hash);
 void *ht_lookup(SdbHash *ht, ut32 hash);
 void ht_set(SdbHash *ht, ut32 hash, void *data);
 int ht_insert(SdbHash *ht, ut32 hash, void *data, SdbListIter *iter);
-void ht_remove(SdbHash *ht, ut32 hash);
-void ht_remove_entry(SdbHash *ht, SdbHashEntry *entry);
+void ht_del(SdbHash *ht, ut32 hash);
+void ht_del_entry(SdbHash *ht, SdbHashEntry *entry);

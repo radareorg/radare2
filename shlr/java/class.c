@@ -756,7 +756,7 @@ static void add_field_infos_to_sdb( RBinJavaObj *bin){
 		ut64 file_offset = fm_type->file_offset + bin->loadaddr;
 		snprintf (number_buffer, 50, "0x%04"PFMT64x, file_offset);
 		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, number_buffer);
-		sdb_apush (bin->kv, field_key, number_buffer, 0);
+		sdb_array_push (bin->kv, field_key, number_buffer, 0);
 	}
 
 	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
@@ -778,25 +778,25 @@ static void add_field_infos_to_sdb( RBinJavaObj *bin){
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->flags_str);
 		value_buffer[value_buffer_size-1] = 0;
 
-		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		sdb_array_push (bin->kv, field_key, value_buffer, 0);
 		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, value_buffer);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
 		value_buffer[value_buffer_size-1] = 0;
 
-		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		sdb_array_push (bin->kv, field_key, value_buffer, 0);
 		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, value_buffer);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
 		value_buffer[value_buffer_size-1] = 0;
 
-		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		sdb_array_push (bin->kv, field_key, value_buffer, 0);
 		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, value_buffer);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
 		value_buffer[value_buffer_size-1] = 0;
 
-		sdb_apush (bin->kv, field_key, value_buffer, 0);
+		sdb_array_push (bin->kv, field_key, value_buffer, 0);
 		IFDBG eprintf ("Inserting: []%s = %s\n", field_key, value_buffer);
 
 	}
@@ -869,7 +869,7 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 		char number_buffer[50];
 		ut64 file_offset = fm_type->file_offset + baddr;
 		snprintf (number_buffer, 50, "0x%04"PFMT64x, file_offset);
-		sdb_apush (bin->kv, method_key, number_buffer, 0);
+		sdb_array_push (bin->kv, method_key, number_buffer, 0);
 	}
 
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
@@ -894,12 +894,12 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 		snprintf (value_buffer, value_buffer_size, "0x%04"PFMT64x, code_offset);
 		value_buffer[value_buffer_size-1] = 0;
 
-		sdb_apush (bin->kv, method_key, value_buffer, 0);
+		sdb_array_push (bin->kv, method_key, value_buffer, 0);
 
 		snprintf (value_buffer, value_buffer_size, "0x%04"PFMT64x, code_size);
 		value_buffer[value_buffer_size-1] = 0;
 
-		sdb_apush (bin->kv, method_key, value_buffer, 0);
+		sdb_array_push (bin->kv, method_key, value_buffer, 0);
 
 		// generate info key, and place values in method info array
 		snprintf (method_key, key_size, "%s.info", method_key_value);
@@ -909,25 +909,25 @@ static void add_method_infos_to_sdb( RBinJavaObj *bin){
 		value_buffer[value_buffer_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
 
-		sdb_apush (bin->kv, method_key, value_buffer, 0);
+		sdb_array_push (bin->kv, method_key, value_buffer, 0);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->class_name);
 		value_buffer[value_buffer_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
 
-		sdb_apush (bin->kv, method_key, value_buffer, 0);
+		sdb_array_push (bin->kv, method_key, value_buffer, 0);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->name);
 		value_buffer[value_buffer_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
 
-		sdb_apush (bin->kv, method_key, value_buffer, 0);
+		sdb_array_push (bin->kv, method_key, value_buffer, 0);
 
 		snprintf (value_buffer, value_buffer_size, "%s", fm_type->descriptor);
 		value_buffer[value_buffer_size-1] = 0;
 		IFDBG eprintf("Adding %s to sdb_array: %s\n", value_buffer, method_key);
 
-		sdb_apush (bin->kv, method_key, value_buffer, 0);
+		sdb_array_push (bin->kv, method_key, value_buffer, 0);
 	}
 	free (method_key);
 	free (method_key_value);
@@ -2648,7 +2648,7 @@ R_API void* r_bin_java_free (RBinJavaObj* bin) {
 	// Delete the bin object from the data base.
 	bin_obj_key = r_bin_java_build_obj_key(bin);
 	if (bin->AllJavaBinObjs && sdb_exists (bin->AllJavaBinObjs, bin_obj_key)) {
-		sdb_remove (bin->AllJavaBinObjs, bin_obj_key, 0);
+		sdb_unset (bin->AllJavaBinObjs, bin_obj_key, 0);
 	}
 
 	free (bin_obj_key);

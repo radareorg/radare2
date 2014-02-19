@@ -68,7 +68,7 @@ static int sdb_dump (const char *db, int qf) {
 static int createdb(const char *f) {
 	char *line, *eq;
 	s = sdb_new (NULL, f, 0);
-	if (!s || !sdb_create (s)) {
+	if (!s || !sdb_disk_create (s)) {
 		fprintf (stderr, "Cannot create database\n");
 		return 1;
 	}
@@ -76,11 +76,11 @@ static int createdb(const char *f) {
 	for (;(line = stdin_gets ());) {
 		if ((eq = strchr (line, '='))) {
 			*eq = 0;
-			sdb_append (s, line, eq+1);
+			sdb_disk_insert (s, line, eq+1);
 		}
 		free (line);
 	}
-	sdb_finish (s);
+	sdb_disk_finish (s);
 	return 0;
 }
 
