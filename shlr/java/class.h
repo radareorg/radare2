@@ -1199,5 +1199,10 @@ R_API RList * r_bin_java_get_method_offsets(RBinJavaObj *bin);
 R_API ut16 r_bin_java_calculate_method_access_value(const char * access_flags_str);
 R_API ut16 r_bin_java_calculate_field_access_value(const char * access_flags_str);
 R_API ut16 r_bin_java_calculate_class_access_value(const char * access_flags_str);
+R_API char * r_bin_java_resolve(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
+R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
+R_API char * r_bin_java_resolve_without_space(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * r_bin_java_resolve_cp_idx_type(RBinJavaObj *BIN_OBJ, int idx);
+
 
 #endif

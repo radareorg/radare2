@@ -16,6 +16,24 @@
 #define IFDBG  if(0)
 #define IFINT  if(0)
 
+struct r_anal_java_access_t;
+
+typedef struct r_anal_java_access_t {
+	char *method;
+	ut64 addr;
+	ut64 value;
+	ut64 op_type;
+	struct r_anal_java_access_t *next;
+	struct r_anal_java_access_t *previous;
+} RAnalJavaAccess;
+
+typedef struct r_anal_java_local_var_t {
+	char *name;
+	char *type;
+	RList *writes;
+	RList *reads;
+	RList *binops;
+} RAnalJavaLocalVar;
 
 typedef struct r_anal_ex_java_lin_sweep {
 	RList *cfg_node_addrs;
