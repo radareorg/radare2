@@ -608,7 +608,7 @@ R_API RList * r_bin_java_extract_all_bin_type_values( RBinJavaObj * bin_obj) {
 
 	// get all field types
 	r_list_foreach (bin_obj->fields_list, fm_type_iter, fm_type) {
-		char *desc;
+		char *desc = NULL;
 		extract_type_value (fm_type->descriptor, &desc);
 		IFDBG eprintf ("Adding field type: %s\n", desc);
 		r_list_append (all_types, desc);
