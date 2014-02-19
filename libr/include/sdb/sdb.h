@@ -164,7 +164,7 @@ int sdb_array_del (Sdb* s, const char *key, int n, ut32 cas);
 int sdb_array_del_num (Sdb* s, const char *key, ut64 val, ut32 cas);
 int sdb_array_del_str (Sdb *s, const char *key, const char *val, ut32 cas);
 // helpers
-char *sdb_astring(char *str, int *hasnext);
+char *sdb_array_string(char *str, int *hasnext);
 int sdb_alen(const char *str);
 int sdb_array_len(Sdb* s, const char *key);
 int sdb_array_list(Sdb* s, const char *key);
