@@ -267,7 +267,10 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case 'P': patchfile = optarg; break;
 		case 'c': r_list_append (cmds, optarg); break;
-		case 'i': cmdfile[cmdfilei++] = optarg; break;
+		case 'i':
+			if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
+				cmdfile[cmdfilei++] = optarg;
+			break;
 		case 'l': r_lib_open (r.lib, optarg); break;
 #if DEBUGGER
 		case 'd': debug = 1; break;
