@@ -55,11 +55,12 @@ SDB_API ut32 sdb_hash(const char *s, int len) {
 }
 
 SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
-	int i = 63; 
+	int i = 62;
 	if (!s) {
-		s = malloc(65);
-		memset (s, 0, 65);
-	} else s[63] = '\0';
+		s = malloc (64);
+		memset (s, 0, 64);
+	}
+	s[63] = '\0';
 	if (base==16) {
 		static const char* lookup = "0123456789abcdef";
 		do {
@@ -72,7 +73,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 		do {
 			s[i--] = (n % 10) + '0';
 			if (i==0) break;
-		} while(n/=10); 
+		} while (n/=10); 
 	}
 	return s+i+1;
 }

@@ -18,6 +18,7 @@ extern "C" {
 
 //#define SDB_RS '\x1e'
 #define SDB_RS ','
+#define SDB_SS ","
 #define SDB_MAX_PATH 256
 
 #define SDB_OPTION_NONE 0

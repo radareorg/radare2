@@ -70,7 +70,6 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 		if (!n) return NULL;
 		p = n+1;
 	}
-	if (!p) return NULL;
 	n = strchr (p, SDB_RS);
 	if (!n) return strdup (p);
 	len = n-p;
@@ -115,10 +114,12 @@ SDB_API int sdb_array_ins(Sdb *s, const char *key, int idx, const char *val, ut3
 			x[lnstr+lval+1] = SDB_RS;
 			memcpy (x+lval+2+lnstr, ptr, strlen (ptr)+1);
 			ret = 1;
-		} else ret = 0;
+		} else {
+			free (nstr);
+			free (x);
+			return 0;
+		}
 		free (nstr);
-		free (x);
-		return ret;
 	}
 	ret = sdb_set (s, key, x, cas);
 	free (x);
