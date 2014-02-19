@@ -44,13 +44,23 @@ R_API void r_core_syscmd_ls(const char *input) {
 					int uid = 0;
 					int gid = 0;
 					int perm = isdir? 0755: 0644;
-					if (stat (nn, &sb) != -1) {
+					int fch = '-';
+					if (lstat (n, &sb) != -1) {
+						ut32 ifmt = sb.st_mode & S_IFMT;
 						uid = sb.st_uid;
 						gid = sb.st_gid;
 						perm = sb.st_mode & 0777;
+						if (isdir) fch = 'd'; else
+						switch (ifmt) {
+						case S_IFCHR: fch = 'c'; break;
+						case S_IFBLK: fch = 'b'; break;
+						case S_IFLNK: fch = 'l'; break;
+						case S_IFIFO: fch = 'p'; break;
+						case S_IFSOCK: fch = 's'; break;
+						}
 					}
-					r_cons_printf ("%c%s%s%s  1 %4d:%-4d\t%-8d\t%s\n", 
-						isdir?'d':'-',
+					r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-8d  %s\n", 
+						isdir?'d':fch,
 						r_str_rwx_i (perm>>6),
 						r_str_rwx_i ((perm>>3)&7),
 						r_str_rwx_i (perm&7),
