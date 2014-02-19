@@ -45,12 +45,14 @@ R_API void r_core_syscmd_ls(const char *input) {
 					int gid = 0;
 					int perm = isdir? 0755: 0644;
 					int fch = '-';
+#if __UNIX__
 					if (lstat (n, &sb) != -1) {
 						ut32 ifmt = sb.st_mode & S_IFMT;
 						uid = sb.st_uid;
 						gid = sb.st_gid;
 						perm = sb.st_mode & 0777;
-						if (isdir) fch = 'd'; else
+						if (isdir) fch = 'd';
+						else
 						switch (ifmt) {
 						case S_IFCHR: fch = 'c'; break;
 						case S_IFBLK: fch = 'b'; break;
@@ -59,6 +61,9 @@ R_API void r_core_syscmd_ls(const char *input) {
 						case S_IFSOCK: fch = 's'; break;
 						}
 					}
+#else
+					fch = isdir? 'd': '-';
+#endif
 					r_cons_printf ("%c%s%s%s  1 %4d:%-4d  %-8d  %s\n", 
 						isdir?'d':fch,
 						r_str_rwx_i (perm>>6),
