@@ -886,54 +886,50 @@ static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJa
 
 	RList *the_list = r_bin_java_extract_type_values (method->descriptor);
 	Sdb *D = anal->sdb_types,
-		*A = fcn->sdb_args,
-		*R = fcn->sdb_ret;
+		*A = fcn->sdb_args;
 
 	char *type_fmt = "arg.%d.type",
-	     *namek_fmt = "arg.%d.name",
+	     *namek_fmt = "var.%d.name",
 	     *namev_fmt = "localvar_%d";
 
-	char  key_buf[1024], value_buf [512];
-	if (D && A && R) {
-		RListIter *iter;
-		char *str;
-		RList * the_list = r_bin_java_extract_type_values (method->descriptor);
-		if (the_list) {
-			ut8 start = 0, stop = 0;
-			int idx = 0;
-			r_list_foreach (the_list, iter, str) {
-				IFDBG eprintf ("Adding type: %s to known types.\n", str);
-				if (str && *str == '('){
-					start = 1;
-					continue;
-				}
+	char  key_buf[1024], value_buf [1024];
+	RListIter *iter;
+	char *str;
 
-				if (str && start && *str != ')') {
-					// set type
-					snprintf (key_buf, 1024, type_fmt, idx);
-					sdb_set (A, str, key_buf, 0);
-					sdb_set (D, str, "type", 0);
-					// set value
-					snprintf (key_buf, 1024, namek_fmt, idx);
-					snprintf (value_buf, 1024, namev_fmt, idx);
-					sdb_set (A, value_buf, key_buf, 0);
-					idx ++;
-				}
-				if (str && start && *str == ')') {
-					stop == 1;
-					continue;
-				}
-
-				if (str && start && stop){
-					sdb_set (R, str, "ret.type", 0);
-					sdb_set (D, str, "type", 0);
-				}
+	if (the_list) {
+		ut8 start = 0, stop = 0;
+		int idx = 0;
+		r_list_foreach (the_list, iter, str) {
+			IFDBG eprintf ("Adding type: %s to known types.\n", str);
+			if (str && *str == '('){
+				start = 1;
+				continue;
 			}
-			r_list_free (the_list);
+
+			if (str && start && *str != ')') {
+				// set type
+				// set arg type
+				snprintf (key_buf, 1024, type_fmt, idx);
+				sdb_set (A, str, key_buf, 0);
+				sdb_set (D, str, "type", 0);
+				// set value
+				snprintf (key_buf, 1024, namek_fmt, idx);
+				snprintf (value_buf, 1024, namev_fmt, idx);
+				sdb_set (A, value_buf, key_buf, 0);
+				idx ++;
+			}
+			if (start && str && *str == ')') {
+				stop = 1;
+				continue;
+			}
+
+			if ( (start & stop & 1) && str ){
+				sdb_set (A, str, "ret.type", 0);
+				sdb_set (D, str, "type", 0);
+			}
 		}
+		r_list_free (the_list);
 	}
-
-
 }
 
 static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj) {
@@ -947,8 +943,8 @@ static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj) {
 				IFDBG eprintf ("Adding type: %s to known types.\n", str);
 				if (str) sdb_set (D, str, "type", 0);
 			}
-			r_list_free (the_list);
 		}
+		r_list_free (the_list);
 	}
 }
 

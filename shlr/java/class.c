@@ -952,7 +952,6 @@ static ut16 calculate_access_value(const char * access_flags_str, RBinJavaAccess
 
 	while (p_flags && access_flags) {
 		int idx = 0;
-		if (!p_flags) continue;
 
 		do {
 			iter = &access_flags[idx];
@@ -7567,37 +7566,33 @@ R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 			str = out;
 		}
 	} else if (strcmp (cp_name, "NameAndType") == 0) {
-		str = malloc (64);
-		if (str) {
+		name_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
+		if (!name_str)
+			name_str = empty;
 
-			name_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
-			if (!name_str)
-				name_str = empty;
+		desc_str = r_bin_java_get_item_desc_from_bin_cp_list (BIN_OBJ, item);
+		if (!desc_str)
+			desc_str = empty;
 
-			desc_str = r_bin_java_get_item_desc_from_bin_cp_list (BIN_OBJ, item);
-			if (!desc_str)
-				desc_str = empty;
+		memory_alloc = strlen (name_str) + strlen (desc_str) + 3;
 
-			memory_alloc = strlen (name_str) + strlen (desc_str) + 3;
+		if (memory_alloc)
+			str = malloc (memory_alloc);
 
-			if (memory_alloc)
-				str = malloc (memory_alloc);
+		if (str && !space_bn_name_type)
+			snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
+		else if (str && space_bn_name_type)
+			snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
 
-			if (str && !space_bn_name_type)
-				snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-			else if (str && space_bn_name_type)
-				snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
+		if (name_str != empty)
+			free (name_str);
+		if (desc_str != empty)
+			free (desc_str);
 
-			if (name_str != empty)
-				free (name_str);
-			if (desc_str != empty)
-				free (desc_str);
-
-			out = malloc (memory_alloc);
-			r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
-			free (str);
-			str = out;
-		}
+		out = malloc (memory_alloc);
+		r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
+		free (str);
+		str = out;
 	}  else {
 		str = malloc (16);
 		if (str) {
@@ -7776,32 +7771,29 @@ R_API char * r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name
 			snprintf (str, 34, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw,0));
 		}
 	} else if (strcmp (cp_name, "NameAndType") == 0) {
-		str = malloc (64);
-		if (str) {
+		name_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
+		if (!name_str)
+			name_str = empty;
 
-			name_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
-			if (!name_str)
-				name_str = empty;
+		desc_str = r_bin_java_get_item_desc_from_bin_cp_list (BIN_OBJ, item);
+		if (!desc_str)
+			desc_str = empty;
 
-			desc_str = r_bin_java_get_item_desc_from_bin_cp_list (BIN_OBJ, item);
-			if (!desc_str)
-				desc_str = empty;
+		memory_alloc = strlen (name_str) + strlen (desc_str) + 3;
 
-			memory_alloc = strlen (name_str) + strlen (desc_str) + 3;
+		if (memory_alloc)
+			str = malloc (memory_alloc);
 
-			if (memory_alloc)
-				str = malloc (memory_alloc);
+		if (str && !space_bn_name_type)
+			snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
+		else if (str && space_bn_name_type)
+			snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
 
-			if (str && !space_bn_name_type)
-				snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-			else if (str && space_bn_name_type)
-				snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
+		if (name_str != empty)
+			free (name_str);
+		if (desc_str != empty)
+			free (desc_str);
 
-			if (name_str != empty)
-				free (name_str);
-			if (desc_str != empty)
-				free (desc_str);
-		}
 	}  else {
 		str = malloc (16);
 		if (str) {
