@@ -263,15 +263,22 @@ int main(int argc, char **argv, char **envp) {
 		case 'N': run_rc = 0; break;
 		case 'p':
 			if (*optarg == '-') {
-				// TODO: handle error when removing project
 				char *path, repath[128];
 				snprintf (repath, sizeof (repath),
 					R2_HOMEDIR"/rdb/%s.d", optarg+1);
 				path = r_str_home (repath);
 				if (r_file_exists (path)) {
-					r_file_rmrf (path);
+					if (r_file_rmrf (path) == R_FALSE) {
+                        eprintf ("Unable to recursively remove %s\n", path);
+                        free (path);
+                        return 1;
+                    }
 					path [strlen (path)-2] = 0;
-					r_file_rm (path);
+					if (r_file_rm (path) == R_FALSE) {
+                        eprintf ("Unable to remove %s\n", path);
+                        free (path);
+                        return 1;
+                    }
 					free (path);
 					return 0;
 				} 
