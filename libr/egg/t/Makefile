@@ -9,7 +9,7 @@ TESTS+=fun5 fun6
 
 include ../../config.mk
 
-BINDEPS=r_egg r_asm r_parse r_syscall r_db r_util r_lib
+BINDEPS=r_egg r_asm r_parse r_syscall r_db r_util
 BIN=test
 OBJ=test.o
 
