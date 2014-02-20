@@ -32,7 +32,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->locs = NULL;
 	fcn->locals = NULL;
 
-	fcn->sdb_vars = sdb_new (NULL, NULL, 0);
+	fcn->sdb_vars = NULL; //sdb_new (NULL, NULL, 0);
 	fcn->sdb_refs = sdb_new (NULL, NULL, 0);
 	fcn->sdb_args = sdb_new (NULL, NULL, 0);
 	fcn->sdb_locals = sdb_new (NULL, NULL, 0);
