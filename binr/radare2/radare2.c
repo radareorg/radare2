@@ -80,7 +80,7 @@ static int main_help(int line) {
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
 		" -f           block size = file size\n"
-		" -h, -hh      show help message, -hh for long\n");
+		" -h, -hh      show help message, -hh for long\n"
 		" -i [file]    run script file\n"
 		" -k [kernel]  set asm.os variable for asm and anal\n"
 		" -l [lib]     load plugin file\n"
@@ -97,7 +97,7 @@ static int main_help(int line) {
 		" -t           load rabin2 info in thread\n"
 #endif
 		" -v, -V       show radare2 version (-V show lib versions)\n"
-		" -w           open file in write mode\n"
+		" -w           open file in write mode\n");
 	if (line==2)
 		printf (
 		"Scripts:\n"
