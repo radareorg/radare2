@@ -90,6 +90,7 @@ static int main_help(int line) {
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
+        " -S           start r2 in sanbox mode\n"
 		" -m [addr]    map file at given address\n"
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
@@ -175,6 +176,7 @@ int main(int argc, char **argv, char **envp) {
 	int help = 0;
 	int debug = 0;
 	int fullfile = 0;
+    int sandbox = 0;
 	ut64 baddr = 0;
 	ut64 seek = UT64_MAX;
 	char *pfile = NULL, *file = NULL;
@@ -220,7 +222,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 	r_core_init (&r);
-	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vV"
+	while ((c = getopt (argc, argv, "ACwfhm:e:nk:Ndqs:p:b:B:a:Lui:l:P:c:D:vV:S"
 #if USE_THREADS
 "t"
 #endif
@@ -292,6 +294,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'b': asmbits = optarg; break;
 		case 'B': baddr = r_num_math (r.num, optarg); break;
 		case 's': seek = r_num_math (r.num, optarg); break;
+        case 'S': sandbox = 1; break;
 		case 'L': list_io_plugins (r.io); return 0;
 		default: 
 			r_list_free (evals);
@@ -582,6 +585,7 @@ int main(int argc, char **argv, char **envp) {
 		r_core_cmd0 (&r, "aa");
 		r_cons_flush ();
 	}
+    if (sandbox)r_config_set (r.config, "cfg.sandbox", "true");
 
 	r.num->value = 0;
 	if (patchfile) {
