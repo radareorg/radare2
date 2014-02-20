@@ -76,6 +76,9 @@ next_quote:
 			*quot++ = 0; // crash on read only mem!!
 		} else {
 			eprintf ("Missing quote\n");
+			*eq++ = 0;
+			if (bufset)
+				free (buf);
 			return NULL;
 		}
 		next = strchr (quot, ';');
@@ -320,6 +323,7 @@ next_quote:
 		cmd = next+1;
 		goto repeat;
 	}
+	if (eq) *--eq = '=';
 failure:
 	if (bufset)
 		free (buf);
@@ -328,10 +332,12 @@ failure:
 
 SDB_API int sdb_query (Sdb *s, const char *cmd) {
 	char buf[1024], *out = sdb_querys (s, buf, sizeof (buf), cmd);
-	if (!out) return 0;
-	if (*out) puts (out);
-	if (out != buf) free (out);
-	return 1;
+	if (out) {
+		if (*out) puts (out);
+		if (out != buf)
+			free (out);
+	} 
+	return strchr (cmd, '=')? 1: 0;
 }
 
 SDB_API int sdb_query_lines (Sdb *s, const char *cmd) {

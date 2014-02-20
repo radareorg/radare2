@@ -85,7 +85,7 @@ static int createdb(const char *f) {
 }
 
 static void showusage(int o) {
-	printf ("usage: sdb [-hv] [-|db] []|[.script]|[-=]|[-+][(idx)key[:jsonpath|=value] ..]\n");
+	printf ("usage: sdb [-hv|-d A B] [-|db] []|[.file]|[-=]|[-+][(idx)key[:json|=value] ..]\n");
 	exit (o);
 }
 
@@ -94,11 +94,42 @@ static void showversion(void) {
 	exit (0);
 }
 
+static int dbdiff (const char *a, const char *b) {
+	int n = 0;
+	char *k, *v;
+	const char *v2;
+	Sdb *A = sdb_new (NULL, a, 0);
+	Sdb *B = sdb_new (NULL, b, 0);
+	sdb_dump_begin (A);
+	while (sdb_dump_dupnext (A, &k, &v)) {
+		v2 = sdb_const_get (B, k, 0);
+		if (!v2) {
+			printf ("%s=\n", k);
+			n = 1;
+		}
+	}
+	sdb_dump_begin (B);
+	while (sdb_dump_dupnext (B, &k, &v)) {
+		if (!v || !*v) continue;
+		v2 = sdb_const_get (A, k, 0);
+		if (!v2 || strcmp (v, v2)) {
+			printf ("%s=%s\n", k, v2);
+			n = 1;
+		}
+	}
+	return n;
+}
+
 int main(int argc, const char **argv) {
 	char *line;
 	int i;
 
 	if (argc<2) showusage (1);
+	if (!strcmp (argv[1], "-d")) {
+		if (argc == 4)
+			return dbdiff (argv[2], argv[3]);
+		showusage(0);
+	} else
 	if (!strcmp (argv[1], "-v")) showversion ();
 	if (!strcmp (argv[1], "-h")) showusage (0);
 	if (!strcmp (argv[1], "-")) {
