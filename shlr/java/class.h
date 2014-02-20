@@ -1203,6 +1203,7 @@ R_API char * r_bin_java_resolve(RBinJavaObj *obj, int idx, ut8 space_bn_name_typ
 R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
 R_API char * r_bin_java_resolve_without_space(RBinJavaObj *BIN_OBJ, int idx);
 R_API char * r_bin_java_resolve_cp_idx_type(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx);
 
 
 #endif

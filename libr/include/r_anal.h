@@ -335,12 +335,6 @@ typedef struct r_anal_type_function_t {
 	RList *vars;
 	RList *refs;
 	RList *xrefs;
-
-	Sdb *sdb_vars;
-	Sdb *sdb_refs;
-	Sdb *sdb_args;
-	Sdb *sdb_locals;
-	Sdb *sdb_ret;
 } RAnalFunction;
 
 struct r_anal_type_t {
@@ -562,6 +556,12 @@ typedef struct r_anal_t {
 	Sdb *sdb_meta; // TODO: Future r_meta api 
 	PrintfCallback printf;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
+//moved from RAnalFcn
+	Sdb *sdb_vars;
+	Sdb *sdb_refs;
+	Sdb *sdb_args;
+	Sdb *sdb_locals;
+	Sdb *sdb_ret;
 } RAnal;
 
 typedef struct r_anal_hint_t {

@@ -693,6 +693,10 @@ r_cons_gotoxy (1,1);
 			}
 		} else {
 			if (core->printidx == 1 || core->printidx == 2) {
+				cols = r_asm_disassemble (core->assembler,
+					&op, core->block+cursor, 32);
+				if (cols<1) cols = 1;
+#if 0
 				cols = core->inc;
 				//cols = r_asm_disassemble (core->assembler,
 				//	&op, core->block+cursor, 32);
@@ -701,6 +705,7 @@ r_cons_gotoxy (1,1);
 				if (core->curasmstep < R_CORE_ASMSTEPS-1)
 					core->curasmstep++;
 				else core->curasmstep = 0;
+#endif
 			}
 			r_core_seek (core, core->offset+cols, 1);
 		}
@@ -881,10 +886,16 @@ r_cons_gotoxy (1,1);
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case '.':
-		if (r_debug_reg_get (core->dbg, "pc") != 0) {
-			r_core_cmd (core, "sr pc", 0);
+		if (curset) {
+			r_core_seek (core, core->offset+cursor, 1);
+			cursor = 0;
 		} else {
-			r_core_cmd (core, "s entry0", 0);
+			if (r_debug_reg_get (core->dbg, "pc") != 0) {
+				r_core_cmd (core, "sr pc", 0);
+			} else {
+				r_core_seek (core, r_num_get (core->num, "entry0"), 1);
+				//r_core_cmd (core, "s entry0", 0);
+			}
 		}
 		break;
 #if 0

@@ -59,7 +59,7 @@ static int java_print_method_access_flags_value( const char * flags );
 
 static int java_cmd_ext(RAnal *anal, const char* input);
 static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr, const ut8 *code_buf, ut64 code_length);
-static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJavaField *method, ut64 loadaddr);
+static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method, ut64 loadaddr);
 static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state);
 
 static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len);
@@ -72,7 +72,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state);
 static int java_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr);
 static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state);
 static int java_post_anal_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr);
-static const RBinJavaObj * get_java_bin_obj(RAnal *anal);
+static RBinJavaObj * get_java_bin_obj(RAnal *anal);
 static RList * get_java_bin_obj_list(RAnal *anal);
 
 static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int depth);
@@ -87,7 +87,7 @@ static int check_addr_less_start (RBinJavaField *method, ut64 addr);
 
 static int java_revisit_bb_anal_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr);
 
-static const RBinJavaObj * get_java_bin_obj(RAnal *anal) {
+static RBinJavaObj * get_java_bin_obj(RAnal *anal) {
 	RBin *b = anal->binb.bin;
 	ut8 is_java = (b && b->cur->curplugin && strcmp (b->cur->curplugin->name, "java") == 0) ? 1 : 0;
 	return is_java ? b->cur->o->bin_obj : NULL;
@@ -475,7 +475,7 @@ static int analyze_from_code_buffer ( RAnal *anal, RAnalFunction *fcn, ut64 addr
 	return result;
 }
 
-static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, const RBinJavaField *method, ut64 loadaddr) {
+static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method, ut64 loadaddr) {
 	RBinJavaAttrInfo* code_attr = method ? r_bin_java_get_method_code_attribute(method) : NULL;
 	ut8 * code_buf = NULL;
 	char * name_buf = NULL;
@@ -883,14 +883,12 @@ static int java_print_method_access_flags_value( const char * flags ){
 }
 
 static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJavaField *method) {
-
 	RList *the_list = r_bin_java_extract_type_values (method->descriptor);
-	Sdb *D = anal->sdb_types,
-		*A = fcn->sdb_args;
-
-	char *type_fmt = "arg.%d.type",
-	     *namek_fmt = "var.%d.name",
-	     *namev_fmt = "localvar_%d";
+	Sdb *D = anal->sdb_types;
+	Sdb *A = anal->sdb_args;
+	const char *type_fmt = "%08"PFMT64x".arg.%d.type",
+	     *namek_fmt = "%08"PFMT64x".var.%d.name",
+	     *namev_fmt = "%08"PFMT64x"local.%d";
 
 	char  key_buf[1024], value_buf [1024];
 	RListIter *iter;
@@ -909,12 +907,12 @@ static void java_set_function_prototype (RAnal *anal, RAnalFunction *fcn, RBinJa
 			if (str && start && *str != ')') {
 				// set type
 				// set arg type
-				snprintf (key_buf, 1024, type_fmt, idx);
+				snprintf (key_buf, sizeof(key_buf)-1, type_fmt, (ut64)fcn->addr, idx);
 				sdb_set (A, str, key_buf, 0);
 				sdb_set (D, str, "type", 0);
 				// set value
-				snprintf (key_buf, 1024, namek_fmt, idx);
-				snprintf (value_buf, 1024, namev_fmt, idx);
+				snprintf (key_buf, sizeof(key_buf)-1, namek_fmt, fcn->addr, idx);
+				snprintf (value_buf, sizeof(value_buf)-1, namev_fmt, fcn->addr, idx);
 				sdb_set (A, value_buf, key_buf, 0);
 				idx ++;
 			}
@@ -948,7 +946,7 @@ static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj) {
 	}
 }
 
-static int java_resolve_cp_idx (RAnal *anal, char * idxs) {
+static int java_resolve_cp_idx (RAnal *anal, const char * idxs) {
 	RBinJavaObj *obj = get_java_bin_obj (anal);
 	char *str = NULL;
 	ut16 idx = atoi (idxs); // XXX - Bug more checking needed
@@ -959,7 +957,7 @@ static int java_resolve_cp_idx (RAnal *anal, char * idxs) {
 	return R_TRUE;
 }
 
-static int java_resolve_cp_type (RAnal *anal, char * idxs) {
+static int java_resolve_cp_type (RAnal *anal, const char * idxs) {
 	RBinJavaObj *obj = get_java_bin_obj (anal);
 	char *str = NULL;
 	ut16 idx = atoi (idxs); // XXX - Bug more checking needed
@@ -970,12 +968,12 @@ static int java_resolve_cp_type (RAnal *anal, char * idxs) {
 	return R_TRUE;
 }
 
-static int java_resolve_cp_idx_b64 (RAnal *anal, char * idxs) {
+static int java_resolve_cp_idx_b64 (RAnal *anal, const char * idxs) {
 	RBinJavaObj *obj = get_java_bin_obj (anal);
 	char *str = NULL;
 	ut16 idx = atoi (idxs); // XXX - Bug more checking needed
 	if (obj && idx){
-		str = r_bin_java_resolve_b64_encode(obj, idx) ;
+		str = r_bin_java_resolve_b64_encode (obj, idx) ;
 		eprintf ("%s\n", str);
 	}
 	return R_TRUE;

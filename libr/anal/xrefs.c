@@ -119,11 +119,11 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		break;
 	case 'j':
 		anal->printf ("{");
-		sdb_foreach (DB, xrefs_list_cb_json, anal);
+		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_json, anal);
 		anal->printf ("}\n");
 		break;
 	default:
-		sdb_foreach (DB, xrefs_list_cb_plain, anal);
+		sdb_foreach (DB, (SdbForeachCallback)xrefs_list_cb_plain, anal);
 		break;
 	}
 }

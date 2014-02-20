@@ -47,6 +47,11 @@ R_API RAnal *r_anal_new() {
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
 	memset (anal, 0, sizeof (RAnal));
+	anal->sdb_vars = sdb_new (NULL, NULL, 0);
+	anal->sdb_refs = sdb_new (NULL, NULL, 0);
+	anal->sdb_args = sdb_new (NULL, NULL, 0);
+	anal->sdb_ret = sdb_new (NULL, NULL, 0);
+	anal->sdb_locals = sdb_new (NULL, NULL, 0);
 	anal->cpu = NULL;
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
@@ -88,22 +93,28 @@ R_API RAnal *r_anal_new() {
 	return anal;
 }
 
-R_API void r_anal_free(RAnal *anal) {
-	if (!anal) return;
+R_API void r_anal_free(RAnal *a) {
+	if (!a) return;
 	/* TODO: Free anals here */
-	free(anal->cpu);
-	anal->fcns->free = r_anal_fcn_free;
-	r_list_free (anal->fcns);
+	free (a->cpu);
+	a->fcns->free = r_anal_fcn_free;
+	r_list_free (a->fcns);
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
-	r_list_free (anal->refs);
-	r_list_free (anal->types);
-	r_list_free (anal->hints);
-	r_meta_fini (anal);
-	r_reg_free(anal->reg);
-	r_syscall_free(anal->syscall);
-	r_anal_op_free(anal->queued);
+	r_list_free (a->refs);
+	r_list_free (a->types);
+	r_list_free (a->hints);
+	r_meta_fini (a);
+	r_reg_free(a->reg);
+	r_syscall_free (a->syscall);
+	r_anal_op_free (a->queued);
+
+	sdb_free (a->sdb_vars);
+	sdb_free (a->sdb_refs);
+	sdb_free (a->sdb_args);
+	sdb_free (a->sdb_locals);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
-	free (anal);
+
+	free (a);
 }
 
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
