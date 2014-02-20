@@ -32,6 +32,7 @@ static RBinAddr *binsym(RBinFile *arch, int sym)
 
 static RList *entries(RBinFile *arch)
 {
+	size_t i;
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)arch->o->bin_obj;
@@ -46,7 +47,19 @@ static RList *entries(RBinFile *arch)
 
 	memset (ptr, '\0', sizeof (RBinAddr));
 
-	ptr->offset = ptr->rva = obj->opt_hdr.entry_point;
+	if (obj->hdr.opt_hdr_size) {
+		ptr->offset = ptr->rva = obj->opt_hdr.entry_point;
+	} else {
+		for (i = 0; i < obj->hdr.sections_num; i++) {
+			if (!strcmp(obj->scn_hdrs[i].name, ".text")) {
+				ptr->offset = obj->scn_hdrs[i].virtual_addr;
+				ptr->rva = obj->scn_hdrs[i].virtual_addr;
+				break;
+			}
+		}
+	}
+
+	printf("offset %x rva %x\n", ptr->offset, ptr->rva);
 
 	r_list_append(ret, ptr);
 
@@ -160,7 +173,6 @@ static RBinInfo *info(RBinFile *arch)
 		ret->bits = 16;
 		break;
 	default:
-
 		strncpy(ret->machine, "unknown", R_BIN_SIZEOF_STRINGS);
 	}
 
