@@ -486,9 +486,9 @@ int main(int argc, char **argv, char **envp) {
 		{
 			const char *bep = r_config_get (r.config, "dbg.bep");
 			if (bep) {
-				if (!strcmp (bep, "loader"))
+				if (!strcmp (bep, "loader")) {
 					/* do nothing here */
-				else if (!strcmp (bep, "entry"))
+				} else if (!strcmp (bep, "entry"))
 					r_core_cmd (&r, "dcu entry0", 0);
 			    else
                     r_core_cmdf (&r, "dcu %s", bep);
