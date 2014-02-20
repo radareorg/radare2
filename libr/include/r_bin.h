@@ -384,6 +384,7 @@ extern RBinPlugin r_bin_plugin_dex;
 extern RBinPlugin r_bin_plugin_dummy;
 extern RBinPlugin r_bin_plugin_rar;
 extern RBinPlugin r_bin_plugin_ningb;
+extern RBinPlugin r_bin_plugin_coff;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 
