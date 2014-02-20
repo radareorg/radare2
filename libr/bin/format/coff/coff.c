@@ -61,13 +61,14 @@ static int r_bin_coff_init_hdr(struct r_bin_coff_obj *obj)
 	r_mem_copyendian((ut8*)&(obj->hdr.flags), obj->b->buf + offset,
 			sizeof(ut16), obj->endian);
 
+       	if (obj->hdr.flags & IMAGE_FLAGS_TI_F_LITTLE) {
+		obj->endian = LIL_ENDIAN;
+	}
 	offset += sizeof(ut16);
 
 	if (obj->hdr.machine == IMAGE_FILE_TI_COFF) {
 		r_mem_copyendian((ut8*)&(obj->hdr.target_id), obj->b->buf + offset,
 			sizeof(ut16), obj->endian);
-
-		printf("%x\n", obj->hdr.target_id);
 	}
 
 	return R_TRUE;
@@ -180,6 +181,7 @@ static int r_bin_coff_init_scn_hdr(struct r_bin_coff_obj *obj)
 
 		r_mem_copyendian((ut8*)&(obj->scn_hdrs[i].flags),
 				obj->b->buf + offset, sizeof(ut32), obj->endian);
+
 
 		offset += sizeof(ut32);
 	}

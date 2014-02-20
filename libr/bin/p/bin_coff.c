@@ -59,8 +59,6 @@ static RList *entries(RBinFile *arch)
 		}
 	}
 
-	printf("offset %x rva %x\n", ptr->offset, ptr->rva);
-
 	r_list_append(ret, ptr);
 
 	return ret;
