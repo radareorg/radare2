@@ -321,10 +321,6 @@ int main(int argc, char **argv, char **envp) {
 	}
 
 	r_config_set_i (r.config, "bin.baddr", baddr);
-	// DUP
-	if (asmarch) r_config_set (r.config, "asm.arch", asmarch);
-	if (asmbits) r_config_set (r.config, "asm.bits", asmbits);
-	if (asmos) r_config_set (r.config, "asm.bits", asmos);
 
 	if (debug) {
 		r_config_set (r.config, "search.in", "raw"); // implicit?
@@ -490,17 +486,12 @@ int main(int argc, char **argv, char **envp) {
 		{
 			const char *bep = r_config_get (r.config, "dbg.bep");
 			if (bep) {
-				// TODO: add support for init, fini, ..
-				// TODO: maybe use "dcu %s".printf (bep);
-				if (!strcmp (bep, "loader")) {
+				if (!strcmp (bep, "loader"))
 					/* do nothing here */
-				} else
-				if (!strcmp (bep, "main")) {
-					r_core_cmd (&r, "dcu main", 0);
-				} else
-				if (!strcmp (bep, "entry")) {
+				else if (!strcmp (bep, "entry"))
 					r_core_cmd (&r, "dcu entry0", 0);
-				}
+			    else
+                    r_core_cmdf (&r, "dcu %s", bep);
 			}
 		}
 		r_core_cmd (&r, "sr pc", 0);
