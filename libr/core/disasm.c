@@ -1767,9 +1767,8 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal->cur && core->anal->cur->reset_counter	) {
+	if (core->anal->cur && core->anal->cur->reset_counter)
 		core->anal->cur->reset_counter (core->anal, core->offset);
-	}
 
 	ds = handle_init_ds (core);
 	ds->len = len;
@@ -1991,7 +1990,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			r_anal_op_fini (&ds->analop);
 
 			if (!ds->lastfail)
-				r_anal_op (core->anal, &ds->analop, ds->at+bb_size_consumed, buf+idx, len-bb_size_consumed);
+				r_anal_op (core->anal, &ds->analop,
+					ds->at+bb_size_consumed, buf+idx,
+					len-bb_size_consumed);
 
 			if (ret<1) {
 				r_strbuf_init (&ds->analop.esil);
@@ -2009,7 +2010,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_op_size (core, ds);
 			handle_print_trace (core, ds);
 			handle_print_stackptr (core, ds);
-			ret  = handle_print_meta_infos (core, ds, buf,len, idx);
+			ret = handle_print_meta_infos (core, ds, buf, len, idx);
 			if (ds->mi_found) {
 				ds->mi_found = 0;
 				//continue;
@@ -2022,15 +2023,17 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_build_op_str (core, ds);
 			handle_print_opstr (core, ds);
 			handle_print_fcn_name (core, ds);
-			handle_print_color_reset( core, ds);
+			handle_print_color_reset (core, ds);
 			handle_print_dwarf (core, ds);
 			ret = handle_print_middle (core, ds, ret );
 			handle_print_asmop_payload (core, ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
-				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf+idx, len-bb_size_consumed);
+				r_asm_set_syntax (core->assembler,
+					R_ASM_SYNTAX_INTEL);
+				r_asm_disassemble (core->assembler, &ao,
+					buf+idx, len-bb_size_consumed);
 				r_asm_set_syntax (core->assembler, os);
 			}
 			handle_print_core_vmode (core, ds);
@@ -2071,8 +2074,8 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 
 	if (ds->oldbits) {
-			r_config_set_i (core->config, "asm.bits", ds->oldbits);
-			ds->oldbits = 0;
+		r_config_set_i (core->config, "asm.bits", ds->oldbits);
+		ds->oldbits = 0;
 	}
 	r_anal_op_fini (&ds->analop);
 	handle_deinit_ds (core, ds);

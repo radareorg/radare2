@@ -7596,7 +7596,7 @@ R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 	}  else {
 		str = malloc (16);
 		if (str) {
-			r_base64_encode (str, "(null)", 16);
+			r_base64_encode ((ut8*)str, (const ut8*)"(null)", 16);
 		}
 	}
 	return str;

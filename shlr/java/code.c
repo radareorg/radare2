@@ -87,8 +87,8 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 	}
 
 	IFDBG {
-		r_cons_printf ("Handling the following opcode %s expects: %d bytes\n", JAVA_OPS[idx].name, JAVA_OPS[idx].size);
-		r_cons_flush();
+		eprintf ("Handling the following opcode %s expects: %d bytes\n",
+			JAVA_OPS[idx].name, JAVA_OPS[idx].size);
 	}
 	switch (op_byte) {
 

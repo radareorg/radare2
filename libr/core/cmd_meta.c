@@ -9,7 +9,6 @@ static int cmd_meta(void *data, const char *input) {
 	int i, ret, line = 0;
 	ut64 addr_end = 0LL;
 	RAnalFunction *f;
-	RListIter *iter;
 	char file[1024];
 
 	switch (*input) {

@@ -22,8 +22,6 @@
 
 #define READ(x,y) *((y*)x); x += sizeof (y)
 
-static const char *dwarf_filename = NULL;
-
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_array_type] = "DW_TAG_array_type",
 	[DW_TAG_class_type] = "DW_TAG_class_type",

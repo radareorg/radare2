@@ -170,6 +170,8 @@ int sdb_array_len(Sdb* s, const char *key);
 int sdb_array_list(Sdb* s, const char *key);
 const char *sdb_array_next(const char *str);
 const char *sdb_array_index(const char *str, int idx);
+int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas);
+char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas);
 
 typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
 
@@ -178,8 +180,6 @@ int sdb_hook(Sdb* s, SdbHook cb, void* user);
 int sdb_unhook(Sdb* s, SdbHook h);
 int sdb_hook_call(Sdb *s, const char *k, const char *v);
 void sdb_hook_free(Sdb *s);
-int sdb_apush(Sdb *s, const char *key, const char *val, ut32 cas);
-char *sdb_apop(Sdb *s, const char *key, ut32 *cas);
 /* Util.c */
 int sdb_check_value (const char *s);
 int sdb_check_key (const char *s);
