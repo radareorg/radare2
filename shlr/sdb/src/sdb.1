@@ -1,4 +1,4 @@
-.Dd Feb 5, 2014
+.Dd Feb 17, 2014
 .Dt SDB 1
 .Os
 .Sh NAME
@@ -9,7 +9,7 @@
 .Op Fl hv
 .Ar -|db
 .Ar -=
-.Ar [<script|expr ..]
+.Ar [.script|expr ..]
 .Sh DESCRIPTION
 SDB is a simple disk and memory string-based key-value database. It is based on CDB and uses
 .Bl -tag -width Fl
@@ -35,19 +35,19 @@ a=hello b=world a b    # hello world
 .Pp
 a=1 +a -a              # 2 1     ; key inc/dec
 .Pp
-a={"a":122} a?a=O a    # {"a":0} ; json set
+a={"a":122} a:a=O a    # {"a":0} ; json set
 .Pp
-a={"foo":122} +a?foo   # 123     ; json increment
+a={"foo":122} +a:foo   # 123     ; json increment
 .Pp
-()a=1,2,3,4,5 (?)a     # 5       ; count array
+[]a=1,2,3,4,5 [?]a     # 5       ; count array
 .Pp
-()a=1,2,3,4,5 (0)a     # 1       ; get element
+[]a=1,2,3,4,5 [0]a     # 1       ; get element
 .Pp
-()a=1,2 (0)a=X a       # X2      ; replace
+[]a=1,2 [0]a=X a       # X2      ; replace
 .Pp
-()a=1,2 (+0)a=0 a      # 012     ; prepend
+[]a=1,2 [+0]a=0 a      # 012     ; prepend
 .Pp
-()a=1,2 (-1)a=3 a      # 123     ; append
+[]a=1,2 [-1]a=3 a      # 123     ; append
 .Pp
 .Sh AUTHORS
 .Pp

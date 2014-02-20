@@ -94,6 +94,7 @@ typedef enum{
 typedef struct {
 	char *str;
 	ut16 value;
+	ut8 len;
 } RBinJavaAccessFlags;
 
 typedef enum{
@@ -1185,6 +1186,7 @@ R_API char * r_bin_java_build_obj_key (RBinJavaObj *bin);
 
 R_API RList * r_bin_java_extract_type_values( char *arg_str);
 R_API int r_bin_java_extract_reference_name(const char * input_str, char ** ref_str, ut8 array_cnt);
+R_API RList * r_bin_java_extract_all_bin_type_values( RBinJavaObj * bin_obj);
 
 R_API RList * r_bin_java_get_method_definitions(RBinJavaObj *bin);
 R_API char * r_bin_java_get_method_definition(RBinJavaField *fm_type);
@@ -1193,5 +1195,15 @@ R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type);
 R_API RList * r_bin_java_get_import_definitions(RBinJavaObj *bin);
 R_API RList * r_bin_java_get_field_offsets(RBinJavaObj *bin);
 R_API RList * r_bin_java_get_method_offsets(RBinJavaObj *bin);
+
+R_API ut16 r_bin_java_calculate_method_access_value(const char * access_flags_str);
+R_API ut16 r_bin_java_calculate_field_access_value(const char * access_flags_str);
+R_API ut16 r_bin_java_calculate_class_access_value(const char * access_flags_str);
+R_API char * r_bin_java_resolve(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
+R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
+R_API char * r_bin_java_resolve_without_space(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * r_bin_java_resolve_cp_idx_type(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx);
+
 
 #endif

@@ -22,13 +22,15 @@ static ut64 baddr(RBinFile *arch) {
 }
 
 static RBinAddr* binsym(RBinFile *arch, int type) {
+	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (type) {
 	case R_BIN_SYM_MAIN:
-		if (!(ret = R_NEW (RBinAddr)))
+		addr = PE_(r_bin_pe_get_main_offset) (arch->o->bin_obj);
+		if (!addr) return NULL;
+		if (!(ret = R_NEW0 (RBinAddr)))
 			return NULL;
-		memset (ret, '\0', sizeof (RBinAddr));
-		ret->offset = ret->rva = PE_(r_bin_pe_get_main_offset) (arch->o->bin_obj);
+		ret->offset = ret->rva = addr;
 		break;
 	}
 	return ret;
@@ -243,6 +245,11 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
+static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
+	if (!baddr) return vaddr;
+	return baddr + vaddr;
+}
+
 #if !R_BIN_PE64
 static int check(RBinFile *arch) {
 	int idx, ret = R_FALSE;
@@ -329,11 +336,6 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 		B (data, datalen);
 	}
 	return buf;
-}
-
-static ut64 get_vaddr (RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr) {
-	if (!baddr) return vaddr;
-	return baddr + vaddr;
 }
 
 struct r_bin_plugin_t r_bin_plugin_pe = {

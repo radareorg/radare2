@@ -146,27 +146,27 @@ typedef union {
 #define R_DEBUG_STATE_SZ x86_THREAD_STATE_COUNT
 #if 0
 ut64[21]
-        __uint64_t      rax;
-        __uint64_t      rbx;
-        __uint64_t      rcx;
-        __uint64_t      rdx;
-        __uint64_t      rdi;
-        __uint64_t      rsi;
-        __uint64_t      rbp;
-        __uint64_t      rsp;
-        __uint64_t      r8;
-        __uint64_t      r9;
-        __uint64_t      r10;
-        __uint64_t      r11;
-        __uint64_t      r12;
-        __uint64_t      r13;
-        __uint64_t      r14;
-        __uint64_t      r15;
-        __uint64_t      rip;
-        __uint64_t      rflags;
-        __uint64_t      cs;
-        __uint64_t      fs;
-        __uint64_t      gs;
+        __ut64      rax;
+        __ut64      rbx;
+        __ut64      rcx;
+        __ut64      rdx;
+        __ut64      rdi;
+        __ut64      rsi;
+        __ut64      rbp;
+        __ut64      rsp;
+        __ut64      r8;
+        __ut64      r9;
+        __ut64      r10;
+        __ut64      r11;
+        __ut64      r12;
+        __ut64      r13;
+        __ut64      r14;
+        __ut64      r15;
+        __ut64      rip;
+        __ut64      rflags;
+        __ut64      cs;
+        __ut64      fs;
+        __ut64      gs;
 21*8
 #endif
 #else
@@ -1075,11 +1075,11 @@ if (dbg->bits & R_SYS_BITS_32) {
 // arm64 aarch64
 if (dbg->bits & R_SYS_BITS_64) {
 #if 0
-        __uint64_t    __x[29];  /* General purpose registers x0-x28 */
-        __uint64_t    __fp;             /* Frame pointer x29 */
-        __uint64_t    __lr;             /* Link register x30 */
-        __uint64_t    __sp;             /* Stack pointer x31 */
-        __uint64_t    __pc;             /* Program counter */
+        __ut64    __x[29];  /* General purpose registers x0-x28 */
+        __ut64    __fp;             /* Frame pointer x29 */
+        __ut64    __lr;             /* Link register x30 */
+        __ut64    __sp;             /* Stack pointer x31 */
+        __ut64    __pc;             /* Program counter */
         __uint32_t    __cpsr;   /* Current program status register */
 #endif
 	return strdup (

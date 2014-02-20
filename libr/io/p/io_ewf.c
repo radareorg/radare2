@@ -61,8 +61,8 @@ static ut64 ewf__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int ewf__plugin_open(RIO *io, const char *pathname, ut8 many) {
-	if ((!memcmp (pathname, "ewf://", 6))
-	||  (!memcmp (pathname, "els://", 6)))
+	if ((!strncmp (pathname, "ewf://", 6))
+	||  (!strncmp (pathname, "els://", 6)))
 		return R_TRUE;
 	return R_FALSE;
 }
@@ -86,7 +86,7 @@ static RIODesc *ewf__open(RIO *io, const char *pathname, int rw, int mode) {
 	uint8_t format;
 	int i;
 
-	if (!memcmp (pathname, "els://", 6)) {
+	if (!strncmp (pathname, "els://", 6)) {
 		FILE *fd = r_sandbox_fopen (pathname+6, "r");
 		ut64 len;
 		char *buf;

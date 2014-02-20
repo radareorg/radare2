@@ -11,12 +11,14 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	RAnalOp op = {0};
 	const ut8 *ptr = buf;
 	const ut8 *end = buf + len;
+	ut64 bytes_consumed = 0;
 	ut64 opc = addr;
 	int sz = 0, index = 0;
 
 	INIT_LIST_HEAD (&(list->list));
 
-	end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
+	//end -= 8; // XXX Fix some segfaults when r_anal backends are buggy
+	if (ptr != (end - 8)) end -= 8;
 	/* analyze code block */
 	while (ptr<end) {
 		if (nlines != -1 && --nlines == 0)
@@ -87,9 +89,10 @@ R_API struct r_anal_refline_t *r_anal_reflines_get(struct r_anal_t *anal,
 	return list;
 }
 
-R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn, 
-    int nlines, int linesout, int linescall) {
-	RAnalRefline *list2, *list = R_NEW (RAnalRefline);
+R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, RAnalFunction *fcn,
+    int nlines, int linesout, int linescall)
+{
+	RAnalRefline *list2, *list = R_NEW0 (RAnalRefline);
 	RAnalBlock *bb;
 	RListIter *bb_iter;
 
@@ -119,7 +122,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 		if ( (control_type & R_ANAL_BB_TYPE_CJMP) == R_ANAL_BB_TYPE_CJMP) {
 			// dont need to continue here is opc+len exceed function scope
 			if (linesout && bb->fail > 0LL && bb->fail != bb->addr + len) {
-				list2 = R_NEW (RAnalRefline);
+				list2 = R_NEW0 (RAnalRefline);
 				list2->from = bb->addr;
 				list2->to = bb->fail;
 				list2->index = index++;
@@ -130,7 +133,7 @@ R_API struct r_anal_refline_t *r_anal_reflines_fcn_get( struct r_anal_t *anal, R
 			if (!linesout || bb->jump == 0LL || bb->jump == bb->addr + len)
 				continue;
 
-			list2 = R_NEW (RAnalRefline);
+			list2 = R_NEW0 (RAnalRefline);
 			list2->from = bb->addr;
 			list2->to = bb->jump;
 			list2->index = index++;

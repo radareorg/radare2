@@ -168,7 +168,7 @@ R_API RCore *r_core_new() {
 /*-----------------------------------*/
 #define CMDS (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
-	"?", "?v", "whereis", "which", "ls", "pwd", "cat",
+	"?", "?v", "whereis", "which", "ls", "pwd", "cat", "less",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm", "db ", "db-",
         "dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"ec","ecs",
@@ -233,6 +233,7 @@ static int autocomplete(RLine *line) {
 		     !memcmp (line->buffer.data, "ls -l ", 5) ||
 		     !memcmp (line->buffer.data, "wF ", 3) ||
 		     !memcmp (line->buffer.data, "cat ", 4) ||
+		     !memcmp (line->buffer.data, "less ", 5) ||
 		     !memcmp (line->buffer.data, "wt ", 3) ||
 		     !memcmp (line->buffer.data, "wp ", 3) ||
 		     !memcmp (line->buffer.data, "tf ", 3) ||
@@ -244,7 +245,8 @@ static int autocomplete(RLine *line) {
 			int n = 0, i = 0;
 			RList *list;
 			int sdelta = (line->buffer.data[1]==' ')? 2:
-				(line->buffer.data[2]==' ')? 3:4;
+				(line->buffer.data[2]==' ')? 3: 
+				(line->buffer.data[3]==' ')? 4: 5;
 			path = line->buffer.data[sdelta]?
 				strdup (line->buffer.data+sdelta):
 				r_sys_getdir ();
@@ -1151,7 +1153,8 @@ R_API char *r_core_editor (RCore *core, const char *str) {
 		r_cons_editor (name);
 	} else r_sys_cmdf ("%s '%s'", editor, name);
 	ret = r_file_slurp (name, &len);
-	ret[len-1] = 0; // chop
+	if (ret[len - 1] == '\n')
+		ret[len-1] = 0; // chop
 	r_file_rm (name);
 	free (name);
 	return ret;

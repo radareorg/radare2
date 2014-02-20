@@ -40,7 +40,7 @@ static ut64 w32__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int w32__plugin_open(RIO *io, const char *pathname, ut8 many) {
-	return (!memcmp (pathname, "w32://", 6));
+	return (!strncmp (pathname, "w32://", 6));
 }
 
 static inline int getw32fd (RIOW32 *w32) {
@@ -48,7 +48,7 @@ static inline int getw32fd (RIOW32 *w32) {
 }
 
 static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (!memcmp (pathname, "w32://", 6)) {
+	if (!strncmp (pathname, "w32://", 6)) {
 		RIOW32 *w32 = R_NEW (RIOW32);
 		const char *filename= pathname+6;
 		w32->hnd = CreateFile (filename,

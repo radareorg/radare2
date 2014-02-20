@@ -15,8 +15,8 @@ UDIS86_ESIL (jo,    "?of,%s=%s", info->pc, dst);
 UDIS86_ESIL (jno,   "?!of,%s=%s", info->pc, dst);
 UDIS86_ESIL (jb,    "?cf,%s=%s", info->pc, dst);
 UDIS86_ESIL (jae,   "?cf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jz,    "?zf,%s=%s", info->pc, dst);
-UDIS86_ESIL (jnz,   "?!zf,%s=%s", info->pc, dst);
+UDIS86_ESIL (je,    "?zf,%s=%s", info->pc, dst);
+UDIS86_ESIL (jne,   "?!zf,%s=%s", info->pc, dst);
 UDIS86_ESIL (ja,    "?!cf&!zf,%s=%s", info->pc, dst);
 UDIS86_ESIL (jbe,   "?cf&zf,%s=%s", info->pc, dst);
 UDIS86_ESIL (js,    "?sf,%s=%s", info->pc, dst);
@@ -75,7 +75,7 @@ UDIS86_ESIL (loopne,"%s--,?%s==0|!zf,%s=%s", info->bits == 16 ? "cx" : (info->bi
 UDis86Esil udis86_esil_callback_table[904] =
 {
 	OP (0, nop),   OP (1, jo),    OP (1, jno),    OP (1, jb),     OP (1, jae),
-	OP (1, jz),    OP (1, jnz),   OP (1, ja),     OP (1, jbe),    OP (1, js),
+	OP (1, je),    OP (1, jne),   OP (1, ja),     OP (1, jbe),    OP (1, js),
 	OP (1, jns),   OP (1, jp),    OP (1, jnp),    OP (1, jl),     OP (1, jge),
 	OP (1, jle),   OP (1, jg),    OP (1, jcxz),   OP (1, jecxz),  OP (1, jrcxz),
 	OP (1, jmp),   OP (1, call),  OP (2, shl),    OP (2, rol),    OP (2, ror),

@@ -415,7 +415,7 @@ R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
 }
 
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
-	int labels = 0, stage, ret, idx, ctr, i, j, linenum = 0;
+	int labels = 0, num, stage, ret, idx, ctr, i, j, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL,
 		 *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
 	RAsmCode *acode = NULL;
@@ -435,6 +435,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		return r_asm_code_free (acode);
 	lbuf = strdup (buf);
 
+
 	/* accept ';' as comments when input is multiline */
 	{
 		char *nl = strchr (lbuf, '\n');
@@ -452,13 +453,20 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	}
 	if (a->syscall) {
 		char val[32];
-		char *p = strstr (lbuf, "$sys.");
-		if (p) {
-			char *aa = strdup (p);
-			int num = r_syscall_get_num (a->syscall, aa+5);
-			snprintf (val, sizeof (val), "%d", num);
-			lbuf = r_str_replace (lbuf, aa, val, 1);
-			free (aa);
+		char *aa, *p = strstr (lbuf, "$sys.");
+		while (p) {
+			char *sp = (char*)r_str_closer_chr (p, " \n\r#");
+			if (sp) {
+				char osp = *sp;
+				*sp = 0;
+				aa = strdup (p);
+				*sp = osp;
+				num = r_syscall_get_num (a->syscall, aa+5);
+				snprintf (val, sizeof (val), "%d", num);
+				lbuf = r_str_replace (lbuf, aa, val, 1);
+				free (aa);
+			}
+			p = strstr (p+5, "$sys.");
 		}
 	}
 
@@ -485,6 +493,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		r_asm_set_pc (a, pc);
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 				i <= ctr; i++, idx += ret) {
+			memset (buf_token, 0, R_ASM_BUFSIZE);
 			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE);
 			for (ptr_start = buf_token; *ptr_start &&
 				isseparator (*ptr_start); ptr_start++);
@@ -539,6 +548,10 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					ret = r_asm_pseudo_bits (a, ptr+6);
 				else if (!strncmp (ptr, ".fill ", 6))
 					ret = r_asm_pseudo_fill (&op, ptr+6);
+				else if (!strncmp (ptr, ".kernel ", 8))
+					r_syscall_setup (a->syscall, a->cur->arch, ptr+8, a->bits);
+				else if (!strncmp (ptr, ".os ", 4))
+					r_syscall_setup (a->syscall, a->cur->arch, ptr+4, a->bits);
 				else if (!strncmp (ptr, ".hex ", 5))
 					ret = r_asm_pseudo_hex (&op, ptr+5);
 				else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7))

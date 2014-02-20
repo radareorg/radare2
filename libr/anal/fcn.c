@@ -56,6 +56,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
 	free (fcn->args);
+
 	free (fcn);
 }
 

@@ -47,7 +47,8 @@ static int step_until(RCore *core, ut64 addr) {
 static int step_until_eof(RCore *core) {
 	ut64 off, now = r_debug_reg_get (core->dbg, "sp");
 	do {
-		r_debug_step (core->dbg, 1);
+		if (!r_debug_step (core->dbg, 1))
+			break;
 		if (checkbpcallback (core)) {
 			eprintf ("Interrupted by a breakpoint\n");
 			break;

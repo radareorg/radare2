@@ -524,7 +524,7 @@ R_API void r_core_file_free(RCoreFile *cf) {
 }
 
 R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh) {
-	int ret = r_io_close (r->io, fh->fd);
+	int ret = (fh&&r)? r_io_close (r->io, fh->fd): 0;
 	// TODO: free fh->obj
 	//r_list_delete (fh);
 	//list_del (&(fh->list));

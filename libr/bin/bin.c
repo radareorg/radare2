@@ -13,6 +13,7 @@
 
 R_LIB_VERSION(r_bin);
 
+#define DB a->db;
 #define RBINLISTFREE(x) if(x){r_list_free(x);x=NULL;}
 
 static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS };
@@ -29,13 +30,13 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 	char str[R_BIN_SIZEOF_STRINGS];
 	int i, matches = 0, ctr = 0;
 	RBinString *ptr = NULL;
+	char type = 'A';
 
 	if (!arch->rawstr)
 		if (!arch->curplugin || !arch->curplugin->info)
 			return;
-	if (arch->curplugin && min==0) {
+	if (arch->curplugin && min==0)
 		min = arch->curplugin->minstrlen;
-	}
 	if (min==0)
 		min = 4; // defaults
 	if (min <= 0)
@@ -58,9 +59,12 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			str[matches] = arch->buf->buf[i];
 			/* add support for wide char strings */
 			if (arch->buf->buf[i+1]==0) {
-				if (IS_PRINTABLE (arch->buf->buf[i+2]))
-					if (arch->buf->buf[i+3]==0)
+				if (IS_PRINTABLE (arch->buf->buf[i+2])) {
+					if (arch->buf->buf[i+3]==0) {
 						i++;
+						type = 'W';
+					}
+				}
 			}
 			matches++;
 			continue;
@@ -74,18 +78,22 @@ static void get_strings_range(RBinFile *arch, RList *list, int min, ut64 from, u
 			str[matches] = '\0';
 			ptr->offset = i-matches;
 			if (scnrva) {
-				ptr->rva = (ptr->offset-from+scnrva);
+				ptr->rva = (ptr->offset+scnrva-from);
 			} else {
 				ptr->rva = ptr->offset;
 			}
 			//HACK if (scnrva) ptr->rva = ptr->offset-from+scnrva; else ptr->rva = ptr->offset;
 			ptr->size = matches+1;
+			ptr->length = ptr->size << ((type=='W')? 1:0);
+			ptr->type = type;
+			type = 'A';
 			ptr->ordinal = ctr;
 			// copying so many bytes here..
 			memcpy (ptr->string, str, R_BIN_SIZEOF_STRINGS);
 			ptr->string[R_BIN_SIZEOF_STRINGS-1] = '\0';
 			//r_name_filter (ptr->string, R_BIN_SIZEOF_STRINGS-1);
 			r_list_append (list, ptr);
+			//if (!sdb_add (DB, 
 			ctr++;
 		}
 		matches = 0;
@@ -100,7 +108,7 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 		return 1;
 #define X 1
 #define ROW (4|2)
-	if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) )
+	if (strstr (o->info->bclass, "PE") && s->srwx & ROW && !(s->srwx&X) && s->size>0 )
 		return 1;
 	return 0;
 }
@@ -376,7 +384,6 @@ static void r_bin_file_free (RBinFile *a) {
 	//if (bin->cur) r_bin_bind (bin, bin->cur);
 }
 
-
 // XXX - This is called on everytime a new bin created
 
 static void r_bin_free_items(RBin *bin) {
@@ -569,7 +576,8 @@ R_API RList* r_bin_get_imports(RBin *bin) {
 }
 
 R_API RBinInfo* r_bin_get_info(RBin *bin) {
-	if (!bin->cur->buf) return NULL;
+	if (!bin || !bin->cur || !bin->cur->buf)
+		return NULL;
 	return bin->cur->o->info;
 }
 
@@ -619,7 +627,6 @@ R_API RList* r_bin_reset_strings(RBin *bin) {
 	return o->strings;
 }
 
-
 R_API RList* r_bin_get_strings(RBin *bin) {
 	return bin->cur->o->strings;
 }
@@ -666,7 +673,7 @@ R_API RBin* r_bin_new() {
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->o = R_NEW0 (RBinObject);
 	bin->binfiles = r_list_new();
-	bin->binfiles->free = r_bin_file_free;
+	bin->binfiles->free = (RListFree)r_bin_file_free;
 	for (i=0; bin_static_plugins[i]; i++) {
 		r_bin_add (bin, bin_static_plugins[i]); //static_plugin);
 	}

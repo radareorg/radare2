@@ -314,18 +314,24 @@ static int iscodesection(RCore *core, ut64 addr) {
 
 // XXX: This function takes sometimes forever
 R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+	int has_next = r_config_get_i (core->config, "anal.hasnext");
 	RListIter *iter, *iter2;
 	int buflen, fcnlen = 0;
 	RAnalFunction *fcn = NULL, *fcni;
 	RAnalRef *ref = NULL, *refi;
 	ut64 *next = NULL;
+#	define next_append(x) {\
+		next = realloc (next, sizeof (ut64)*(1+nexti)); \
+		next[nexti] = (x); \
+		nexti++; \
+	}
 	int i, nexti = 0;
 	ut8 *buf;
 
 	if (core->anal->cur && core->anal->cur->analyze_fns) {
 		int result = R_ANAL_RET_ERROR;
-		r_bin_bind(core->bin, &(core->anal->binb));
-		result = core->anal->cur->analyze_fns( core->anal, at, from, reftype, depth);
+		r_bin_bind (core->bin, &(core->anal->binb));
+		result = core->anal->cur->analyze_fns (core->anal, at, from, reftype, depth);
 		// do this to prevent stale usage and catch others who are using it
 		//memset(&core->anal->binb, 0, sizeof(RBinBind));
 		r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -385,9 +391,6 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 		eprintf ("Error: malloc (buf)\n");
 		goto error;
 	}
-#define MAXNEXT 1032 // TODO: make it relocatable
-	if (r_config_get_i (core->config, "anal.hasnext"))
-		next = R_NEWS0 (ut64, MAXNEXT);
 
 	//eprintf ("FUNC 0x%08"PFMT64x"\n", at+fcnlen);
 	do {
@@ -460,8 +463,7 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 			}
 			// XXX: this looks weird
 			r_anal_fcn_insert (core->anal, fcn);
-#if 1
-			if (next && nexti<MAXNEXT) {
+			if (has_next) {
 				int i;
 				ut64 addr = fcn->addr + fcn->size;
 				for (i=0; i<nexti; i++)
@@ -472,10 +474,9 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 					r_cons_clear_line ();
 					eprintf ("FUNC 0x%08"PFMT64x" > 0x%08"PFMT64x"\r",
 							fcn->addr, fcn->addr + fcn->size);
-					next[nexti++] = fcn->addr + fcn->size;
+					next_append (fcn->addr+fcn->size);
 				}
 			}
-#endif
 			r_list_foreach (fcn->refs, iter, refi) {
 				if (refi->addr != UT64_MAX) {
 					switch (refi->type) {
@@ -507,7 +508,7 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 	} while (fcnlen != R_ANAL_RET_END);
 	free (buf);
 
-	if (next) {
+	if (has_next) {
 		for (i=0; i<nexti; i++) {
 			if (!next[i]) continue;
 			r_core_anal_fcn (core, next[i], from, 0, depth-1);
@@ -522,35 +523,34 @@ error:
 	if (fcn) {
 		if (fcn->size == 0 || fcn->addr == UT64_MAX) {
 			r_anal_fcn_free (fcn);
-			return R_FALSE;
-		}
+		} else {
 		// TODO: mark this function as not properly analyzed
 #if 0
-		eprintf ("Analysis of function 0x%08"PFMT64x
-			" has failed at 0x%08"PFMT64x"\n",
-			fcn->addr, fcn->addr+fcn->size);
+			eprintf ("Analysis of function 0x%08"PFMT64x
+				" has failed at 0x%08"PFMT64x"\n",
+				fcn->addr, fcn->addr+fcn->size);
 #endif
-		if (!fcn->name) {
-			// XXX dupped code.
-			fcn->name = r_str_newf ("%s.%08"PFMT64x,
-					fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
-					fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
-					fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
-			/* Add flag */
-			r_flag_space_set (core->flags, "functions");
-			r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
-		}
-		r_anal_fcn_insert (core->anal, fcn);
+			if (!fcn->name) {
+				// XXX dupped code.
+				fcn->name = r_str_newf ("%s.%08"PFMT64x,
+						fcn->type == R_ANAL_FCN_TYPE_LOC? "loc":
+						fcn->type == R_ANAL_FCN_TYPE_SYM? "sym":
+						fcn->type == R_ANAL_FCN_TYPE_IMP? "imp": "fcn", at);
+				/* Add flag */
+				r_flag_space_set (core->flags, "functions");
+				r_flag_set (core->flags, fcn->name, at, fcn->size, 0);
+			}
+			r_anal_fcn_insert (core->anal, fcn);
 #if 0
-		// unlink from list to avoid double free later when we call r_anal_free()
-		r_list_unlink (core->anal->fcns, fcn);
-		if (core->anal->fcns->free == NULL)
-			r_anal_fcn_free (fcn);
+			// unlink from list to avoid double free later when we call r_anal_free()
+			r_list_unlink (core->anal->fcns, fcn);
+			if (core->anal->fcns->free == NULL)
+				r_anal_fcn_free (fcn);
 #endif
+		}
 	}
-	if (next) {
-		if (nexti<MAXNEXT)
-			next[nexti++] = fcn->addr + fcn->size;
+	if (has_next) {
+		next_append (fcn->addr+fcn->size);
 		for (i=0; i<nexti; i++) {
 			if (!next[i]) continue;
 			r_core_anal_fcn (core, next[i], next[i], 0, depth-1);

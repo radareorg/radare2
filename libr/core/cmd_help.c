@@ -119,7 +119,7 @@ static int cmd_help(void *data, const char *input) {
 		n = (input[1] != '\0') ? r_num_math (core->num, input+2) : 0;
 		switch (input[1]) {
 		case '?':
-			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
+			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
 				"| No argument shows $? value\n"
 				"|?vi will show in decimal instead of hex\n");
 			break;

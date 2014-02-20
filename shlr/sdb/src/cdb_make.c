@@ -159,7 +159,7 @@ int cdb_make_finish(struct cdb_make *c) {
 	}
 
 	if (!buffer_flush (&c->b)) return 0;
-	if (!seek_begin (c->fd)) return 0;
+	if (!seek_set (c->fd, 0)) return 0;
 
 	// free chills
 	for (x = c->head; x;) {

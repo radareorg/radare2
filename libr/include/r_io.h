@@ -366,6 +366,7 @@ extern RIOPlugin r_io_plugin_ewf;
 extern RIOPlugin r_io_plugin_zip;
 extern RIOPlugin r_io_plugin_mmap;
 extern RIOPlugin r_io_plugin_ihex;
+extern RIOPlugin r_io_plugin_self;
 #endif
 
 #ifdef __cplusplus

@@ -212,7 +212,7 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_32.eip;
-			sdb_setn (bin->kv, "mach0.entry", off+sizeof (struct thread_command) + 
+			sdb_num_set (bin->kv, "mach0.entry", off+sizeof (struct thread_command) + 
 				r_offsetof (struct x86_thread_state32, eip), 0);
 			break;
 		case X86_THREAD_STATE64:
@@ -222,7 +222,7 @@ static int MACH0_(r_bin_mach0_parse_thread)(struct MACH0_(r_bin_mach0_obj_t)* bi
 				return R_FALSE;
 			}
 			bin->entry = bin->thread_state.x86_64.rip;
-			sdb_setn (bin->kv, "mach0.entry", off+sizeof(struct thread_command) + 
+			sdb_num_set (bin->kv, "mach0.entry", off+sizeof(struct thread_command) + 
 				r_offsetof (struct x86_thread_state64, rip), 0);
 			break;
 		//default: eprintf ("Unknown type\n");
@@ -307,7 +307,7 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 			// TODO table of non-instructions in __text
 			break;
 		case LC_RPATH:
-			eprintf ("--->\n");
+			//eprintf ("--->\n");
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
@@ -495,7 +495,7 @@ static int MACH0_(r_bin_mach0_parse_import_stub)(struct MACH0_(r_bin_mach0_obj_t
 	symbol->name[0] = '\0';
 	for (i = 0; i < bin->nsects; i++) {
 		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS &&
-			bin->sects[i].reserved1 >= 0 && bin->sects[i].reserved2 > 0) {
+				bin->sects[i].reserved2 > 0) {
 			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
 			for (j = 0; j < nsyms; j++) {
 				if (bin->sects[i].reserved1 + j >= bin->nindirectsyms)
@@ -596,8 +596,7 @@ static int MACH0_(r_bin_mach0_parse_import_ptr)(struct MACH0_(r_bin_mach0_obj_t)
 #undef CASE
 
 	for (i = 0; i < bin->nsects; i++) {
-		if ((bin->sects[i].flags & SECTION_TYPE) == stype &&
-			bin->sects[i].reserved1 >= 0) {
+		if ((bin->sects[i].flags & SECTION_TYPE) == stype) {
 			for (j=0, sym=-1; bin->sects[i].reserved1+j < bin->nindirectsyms; j++)
 				if (idx == bin->indirectsyms[bin->sects[i].reserved1 + j]) {
 					sym = j;
@@ -856,7 +855,7 @@ struct r_bin_mach0_addr_t* MACH0_(r_bin_mach0_get_entrypoint)(struct MACH0_(r_bi
 		for (i = 0; i < bin->nsects; i++) {
 			if (!memcmp (bin->sects[i].sectname, "__text", 6)) {
 				entry->offset = (ut64)bin->sects[i].offset;
-				sdb_setn (bin->kv, "mach0.entry", entry->offset, 0);
+				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
 				if (entry->addr==0) // workaround for object files
 					entry->addr = entry->offset;

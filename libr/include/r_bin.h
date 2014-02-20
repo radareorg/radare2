@@ -132,6 +132,7 @@ typedef struct r_bin_file_t {
 	ut64 fd;
 	struct r_bin_xtr_plugin_t *curxtr;
 	struct r_bin_plugin_t *curplugin;
+	Sdb *db;
 } RBinFile;
 
 typedef struct r_bin_t {
@@ -258,7 +259,9 @@ typedef struct r_bin_string_t {
 	ut64 rva;
 	ut64 offset;
 	ut64 ordinal;
-	ut64 size;
+	int size; // size of buffer containing the string in bytes
+	int length; // length of string in chars
+	char type; // Ascii Wide cp850 utf8 ...
 } RBinString;
 
 typedef struct r_bin_field_t {
@@ -357,8 +360,10 @@ R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);
 R_API int r_bin_wr_output(RBin *bin, const char *filename);
-R_API int r_bin_dwarf_parse_info(RBin *a);
+R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a);
 R_API RList *r_bin_dwarf_parse_line(RBin *a);
+R_API RList *r_bin_dwarf_parse_aranges(RBin *a);
+R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;
@@ -379,6 +384,7 @@ extern RBinPlugin r_bin_plugin_dex;
 extern RBinPlugin r_bin_plugin_dummy;
 extern RBinPlugin r_bin_plugin_rar;
 extern RBinPlugin r_bin_plugin_ningb;
+extern RBinPlugin r_bin_plugin_coff;
 extern RBinXtrPlugin r_bin_xtr_plugin_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_dyldcache;
 

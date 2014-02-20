@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 pancake */
+/* radare - LGPL - Copyright 2010-2014 pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -20,7 +20,7 @@ typedef struct {
 #define NUM_REGS 28
 
 static int __plugin_open(RIO *io, const char *file, ut8 many) {
-	return (!memcmp (file, "gdb://", 6));
+	return (!strncmp (file, "gdb://", 6));
 }
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {

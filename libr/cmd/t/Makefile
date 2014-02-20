@@ -1,5 +1,5 @@
 BIN=test
 OBJ=test.o
-BINDEPS=r_cmd r_util r_lib
+BINDEPS=r_cmd r_util
 
 include ../../rules.mk

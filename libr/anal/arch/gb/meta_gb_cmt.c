@@ -2,28 +2,12 @@
 
 #include <r_io.h>
 #include <r_anal.h>
-#include "mbc.h"
 
-void meta_gb_bankswitch_cmt(RAnal *a, ut64 addr, ut16 ldarg, ut8 rmbc) {
-	if(rmbc>4)												//todo
-		return;
-	if(mbc[rmbc-1].from<ldarg && ldarg<mbc[rmbc-1].to)
+void meta_gb_bankswitch_cmt(RAnal *a, ut64 addr, ut16 ldarg) {
+	if(0x1fff <ldarg && ldarg < 0x4000 && addr < 0x4000)
 		r_meta_set_string (a, R_META_TYPE_COMMENT, addr, "Bankswitch");
-}
-
-void gb_bankswitch_detect(RAnal *m, RIOBind iob, ut64 addr, ut16 ldarg) {
-	ut8 rt;
-	if(addr > 0x3fff)
-		return;
-	iob.read_at(iob.io, 0x147, &rt, 1);									//xxx: it won't change
-	switch(gb_mbc_resolve(rt)) {
-		case -1:
-			r_meta_set_string(m, R_META_TYPE_COMMENT, addr, "unknown MBC!!!");
-		case 0:
-			return;
-		default:
-			meta_gb_bankswitch_cmt(m, addr, ldarg, (ut8)gb_mbc_resolve(rt));
-	}
+	if(0x6000 > ldarg && ldarg > 0x3fff)
+		r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Ramswitch");
 }
 
 void meta_gb_hardware_cmt(RAnal *a, const ut8 hw, ut64 addr) {
@@ -51,7 +35,7 @@ void meta_gb_hardware_cmt(RAnal *a, const ut8 hw, ut64 addr) {
 			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "TAC");
 			break;
 		case 0x0f:
-			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Interrupt Flag");			//TODO: save in sdb for halt
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Interrupt Flag");
 			break;
 		case 0x10:
 		case 0x11:
@@ -100,6 +84,8 @@ void meta_gb_hardware_cmt(RAnal *a, const ut8 hw, ut64 addr) {
 		case 0x46:
 			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "DMA");
 			break;
+		case 0xff:
+			r_meta_set_string(a, R_META_TYPE_COMMENT, addr, "Interrupt Enable Flag");
 
 	}
 }

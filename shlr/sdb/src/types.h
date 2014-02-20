@@ -1,11 +1,14 @@
-#ifndef UINT32_H
-#define UINT32_H
+#ifndef _INCLUDE_TYPES_H_
+#define _INCLUDE_TYPES_H_
 
 #include <sys/types.h>
-
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+
+#undef eprintf
+#define eprintf(x,y...) fprintf(stderr,x,##y)
 
 #if defined(__GNUC__)
 #define SDB_API __attribute__((visibility("default")))
@@ -21,7 +24,6 @@
 #else
 #define DIRSEP '/'
 #endif
-
 
 #ifndef UNUSED
 #ifdef __GNUC__
@@ -50,17 +52,9 @@
 
 #include "config.h"
 
-#define SET 0 /* sigh */
-#define CUR 1 /* sigh */
-#define seek_cur(fd) (lseek((fd), 0, CUR))
-#define seek_begin(fd) (seek_set ((fd), (off_t) 0))
 static inline int seek_set(int fd, off_t pos) {
-	return (fd==-1 || lseek (fd, (off_t) pos, SET) == -1)? 0:1;
+	return (fd==-1 || lseek (fd, (off_t) pos, SEEK_SET) == -1)? 0:1;
 }
-
-#define byte_equal(s,n,t) (!byte_diff((s),(n),(t)))
-#define byte_copy(d,l,s) memcpy(d,s,l)
-#define byte_diff(d,l,s) memcmp(d,s,l)
 
 static inline void ut32_pack(char s[4], ut32 u) {
 	s[0] = u & 255;

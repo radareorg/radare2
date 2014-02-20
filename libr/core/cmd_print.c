@@ -393,6 +393,13 @@ static int pdi(RCore *core, int l, int len, int ilen) {
 	int i, j, ret, err = 0;
 	RAsmOp asmop;
 	if (l==0) l = len;
+
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, core->offset);
+	}
+
 	for (i=j=0; j<len && j<l && i<ilen; i+=ret, j++) {
 		r_asm_set_pc (core->assembler, core->offset+i);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf+i,
@@ -1407,6 +1414,13 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		break;
+	case '2':
+		if (input[2] == '?')
+			r_cons_printf(	"Usage: p2 [number of bytes representing tiles]\n"
+					"NOTE: Only full tiles will be printed\n");
+		else
+			r_print_2bpp_tiles(core->print, core->block, len/16);
+		break;
 	case '6':
 		{
 		int malen = (core->blocksize*4)+1;
@@ -1658,6 +1672,7 @@ static int cmd_print(void *data, const char *input) {
 		r_cons_printf (
 		"|Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
 		"| p=               show entropy bars of full file\n"
+		"| p2 [len]         8x8 2bpp-tiles\n"
 		"| p6[de] [len]     base64 decode/encode\n"
 		"| p8 [len]         8bit hexpair list of bytes\n"
 		"| pa[ed] [hex|asm] assemble (pa) or disasm (pad) or esil (pae) from hexpairs\n"

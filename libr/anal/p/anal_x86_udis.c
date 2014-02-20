@@ -358,8 +358,8 @@ default:
 			}
 		}
 		break;
-	case UD_Ijz:
-	case UD_Ijnz:
+	case UD_Ije:
+	case UD_Ijne:
 	case UD_Ijb:
 	case UD_Ijbe:
 	case UD_Ija:

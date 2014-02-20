@@ -1,7 +1,7 @@
 .TH RADIFF2 1
 .SH NAME
 radiff2 \- unified binary diffing utility
-.Dd Nov 11, 2013
+.Dd Feb 18, 2014
 .Pp
 .Sh SYNOPSIS
 .Nm radiff2
@@ -17,7 +17,7 @@ radiff2 implements many binary diffing algorithms for data and code.
 .It Fl c
 Count number of differences.
 .It Fl C
-Graphdiff code instead of data
+Code diffing using graphdiff algorithm. Output columns are: file-a-address, percentatge of most similar function in B file | file-b-address.
 .It Fl O
 Do code diffing with all bytes instead of just the fixed opcode bytes
 .It Fl t Ar 0\-100

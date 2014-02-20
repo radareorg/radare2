@@ -83,7 +83,7 @@ static const struct {
 };
 
 #define entry_is_free(x) (!x || !x->data)
-#define entry_is_deleted(x) (x->data==&deleted_data)
+#define entry_is_deleted(x) x->data==&deleted_data
 #define entry_is_present(x) (x->data && x->data != &deleted_data)
 
 /**
@@ -220,13 +220,11 @@ int ht_insert(SdbHash *ht, ut32 hash, void *data, SdbListIter *iter) {
 	return 0;
 }
 
-void ht_remove_entry(SdbHash *ht, SdbHashEntry *entry) {
+void ht_del_entry(SdbHash *ht, SdbHashEntry *entry) {
 	if (!entry)
 		return;
 	if (!rehash && entry->iter) {
-	// XXX: ls_delete not working wtf
-		ls_delete (ht->list, entry->iter);
-		//free (entry->iter);
+		ls_del (ht->list, entry->iter);
 		entry->iter = NULL;
 	}
 	entry->data = (void *) &deleted_data;

@@ -74,6 +74,18 @@ static int cmd_log(void *data, const char *input) {
 	int n = atoi (input2);
 	int n2 = arg? atoi (arg+1): 0;
 	switch (*input) {
+	case 'e': // shell: less
+		{
+		char *p = strchr (input, ' ');
+		if (p) {
+			char *b = r_file_slurp (p+1, NULL);
+			if (b) {
+				r_cons_less_str (b);
+				free (b);
+			} else eprintf ("File not found\n");
+		} else eprintf ("Usage: less [filename]\n");
+		}
+		break;
 	case 'l':
 		r_cons_printf ("%d\n", core->log->last-1);
 		break;
@@ -100,50 +112,7 @@ static int cmd_log(void *data, const char *input) {
 			break;
 		}
 	case 's':
-		{
-		const char *path = ".";
-		char *name;
-		int i = 5, minusl = 0;
-		RListIter *iter;
-		RList *files;
-		char *dir;
-		if (input[1]==' ') {
-			if (!memcmp (input+2, "-l", 2)) {
-				if (input[3]) {
-					minusl = 1;
-					path = input+4;
-					while (*path==' ') path++;
-					if (!*path) path = ".";
-				}
-			} else path = input+2;
-		}
-		files = r_sys_dir (path);
-
-		dir = r_str_concat (strdup (path), "/");
-		r_list_foreach (files, iter, name) {
-			char *n = r_str_concat (strdup (dir), name);
-			if (!n) break;
-			if (*n) {
-				char *nn;
-				if (r_file_is_directory (n)) {
-					nn = r_str_concat (strdup (name), "/");
-				} else {
-					nn = strdup (name);
-				}
-				if (minusl) {
-					// TODO: Implement more real info in ls -l
-					int sz = r_file_size (n);
-					r_cons_printf ("-rw-r--r--  1  0:0  %-8d  %s\n", sz, nn);
-				} else {
-					r_cons_printf ("%18s%s", nn, ((i++)%4)?"  ":"\n");
-				}
-				free (nn);
-			}
-			free (n);
-		}
-		free (dir);
-		r_list_free (files);
-		}
+		r_core_syscmd_ls (input);
 		break;
 	case 'j':
 	case '*':
@@ -1457,7 +1426,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						r_core_seek (core, flag->offset, 1);
 						//r_cons_printf ("# @@ 0x%08"PFMT64x" (%s)\n", core->offset, flag->name);
 					//	r_cons_printf ("0x%08"PFMT64x" %s\n", core->offset, flag->name);
-						eprintf ("# 0x%08"PFMT64x": %s\n", flag->offset, cmd);
+						eprintf ("# 0x%08"PFMT64x": %s\n", flag->offset, cmd);
 						r_core_cmd (core, cmd, 0);
 					}
 				}

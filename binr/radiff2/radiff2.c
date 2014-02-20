@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -74,7 +74,7 @@ static int show_help(int v) {
 	if (v) printf (
 //		"  -l        diff lines of text\n"
 		"  -c         count of changes\n"
-		"  -C         graphdiff code\n"
+		"  -C         graphdiff code (columns: off-A, match-ratio, off-B)\n"
 		"  -d         use delta diffing\n"
 		"  -g [sym]   graph diff of given symbol\n"
 		"  -O         code diffing with opcode bytes only\n"

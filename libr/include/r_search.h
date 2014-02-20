@@ -69,6 +69,7 @@ typedef struct r_search_t {
 	RSearchUpdate update;
 	RList *kws; // TODO: Use r_search_kw_new ()
 	RIOBind iob;
+	char bckwrds;
 } RSearch;
 
 #ifdef R_API

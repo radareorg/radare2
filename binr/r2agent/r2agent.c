@@ -14,7 +14,7 @@ int main() {
 #include "index.h"
 
 static int usage (int v) {
-	printf ("Usage: r2agent [-adhs] [-p port]\n"
+	printf ("Usage: r2agent [-adhs] [-p port]\n"
 	"  -a       listen for everyone (localhost by default)\n"
 	"  -d       run in daemon mode (background)\n"
 	"  -h       show this help message\n"

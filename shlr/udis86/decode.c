@@ -313,6 +313,7 @@ modrm(struct ud * u)
 {
     if ( !u->have_modrm ) {
         u->modrm = inp_next( u );
+        u->modrm_offset = (uint8_t) (u->inp_ctr - 1);
         u->have_modrm = 1;
     }
     return u->modrm;
@@ -1229,6 +1230,7 @@ decode_opcode(struct ud *u)
 unsigned int
 ud_decode(struct ud *u)
 {
+  int i = 0;
   inp_start(u);
   clear_insn(u);
   u->le = &ud_lookup_table_list[0];
@@ -1244,13 +1246,32 @@ ud_decode(struct ud *u)
     u->mnemonic = u->itab_entry->mnemonic;
   } 
 
-    /* maybe this stray segment override byte
-     * should be spewed out?
-     */
-    if ( !P_SEG( u->itab_entry->prefix ) && 
-            u->operand[0].type != UD_OP_MEM &&
-            u->operand[1].type != UD_OP_MEM )
-        u->pfx_seg = 0;
+  /* maybe this stray segment override byte
+   * should be spewed out?
+   */
+  if ( !P_SEG( u->itab_entry->prefix ) && 
+          u->operand[0].type != UD_OP_MEM &&
+          u->operand[1].type != UD_OP_MEM )
+      u->pfx_seg = 0;
+
+  /* Retrieve some information about operands. */
+  for (i=0; i<4; i++) {
+    struct ud_operand *op = &u->operand[i];
+    switch (op->type) {
+      case UD_OP_REG:   op->signed_lval = 0; break;
+      case UD_OP_MEM:   op->signed_lval = 0; break;
+      case UD_OP_IMM:   op->signed_lval = (op->_oprcode == OP_sI ? 1 : 0); break;
+      case UD_OP_JIMM:  op->signed_lval = 1; break;
+      case UD_OP_PTR:   op->signed_lval = 0; break;
+      case UD_OP_CONST: op->signed_lval = 0; break;
+      default: break;
+    }
+  }
+
+  u->operand[0].access = u->itab_entry->operand1_access;
+  u->operand[1].access = u->itab_entry->operand2_access;
+  u->operand[2].access = UD_OP_ACCESS_READ;
+  u->operand[3].access = UD_OP_ACCESS_READ;
 
   u->insn_offset = u->pc; /* set offset of instruction */
   u->asm_buf_fill = 0;   /* set translation buffer index to 0 */

@@ -9,7 +9,6 @@ static int cmd_meta(void *data, const char *input) {
 	int i, ret, line = 0;
 	ut64 addr_end = 0LL;
 	RAnalFunction *f;
-	RListIter *iter;
 	char file[1024];
 
 	switch (*input) {
@@ -41,9 +40,9 @@ static int cmd_meta(void *data, const char *input) {
 			f = strdup (input +2);
 			p = strchr (f, ':');
 			if (p) {
-				*p=0;
+				*p = 0;
 				num = atoi (p+1);
-				line = r_file_slurp_line (input+2, num, 0);
+				line = r_file_slurp_line (f, num, 0);
 				if (!line) {
 					const char *dirsrc = r_config_get (core->config, "dir.source");
 					if (dirsrc && *dirsrc) {
@@ -51,10 +50,26 @@ static int cmd_meta(void *data, const char *input) {
 						line = r_file_slurp_line (f, num, 0);
 					}
 					if (!line) {
-						eprintf ("Cannot slurp file '%s'\n", input+2);
+						eprintf ("Cannot slurp file '%s'\n", f);
 						return R_FALSE;
 					}
 				}
+// filter_line
+char *a;
+for (a=line; *a; a++) {
+	switch (*a) {
+	case '%':
+	case '(':
+	case ')':
+	case '~':
+	case '|':
+	case '#':
+	case ';':
+	case '"':
+		*a = '_';
+		break;
+	}
+}
 				p = strchr (p+1, ' ');
 				if (p) {
 					snprintf (buf, sizeof (buf), "CC %s:%d %s @ %s",
@@ -63,10 +78,11 @@ static int cmd_meta(void *data, const char *input) {
 					snprintf (buf, sizeof (buf), "\"CC %s:%d %s\"",
 						f, num, line);
 				}
+eprintf ("-- %s\n", buf);
 				r_core_cmd0 (core, buf);
 				free (line);
 				free (f);
-			}
+			} else eprintf ("Usage: Cl [file:line] [address]\n");
 		}
 		break;
 	case 'L': // debug information of current offset
@@ -206,6 +222,7 @@ static int cmd_meta(void *data, const char *input) {
 		}
 		break;
 	case 'v':
+#if USE_VARSUBS
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("Usage: Cv[-*][ off reg name] \n");
@@ -260,6 +277,9 @@ static int cmd_meta(void *data, const char *input) {
 			}
 		break;
 		}
+#else
+		eprintf ("TODO: varsubs has been disabled because it needs to be sdbized\n");
+#endif
 	case '-':
 		if (input[1]!='*') {
 			i = r_num_math (core->num, input+((input[1]==' ')?2:1));

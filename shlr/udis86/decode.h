@@ -162,7 +162,7 @@ Mx_reg_size(ud_operand_size_t size)
 struct ud_itab_entry_operand 
 {
   enum ud_operand_code type;
-  ud_operand_size_t size;
+  ud_operand_size_t    size;
 };
 
 
@@ -176,7 +176,12 @@ struct ud_itab_entry
   struct ud_itab_entry_operand  operand2;
   struct ud_itab_entry_operand  operand3;
   struct ud_itab_entry_operand  operand4;
+  uint8_t                       operand1_access;
+  uint8_t                       operand2_access;
   uint32_t                      prefix;
+  struct ud_eflags              eflags;
+  enum ud_type                  implicit_register_uses[32];
+  enum ud_type                  implicit_register_defs[32];
 };
 
 struct ud_lookup_table_list_entry {

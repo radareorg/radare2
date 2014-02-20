@@ -16,9 +16,10 @@
 
 #define IFDBG if(0)
 
-static char * java_resolve_with_space(RBinJavaObj *obj, int idx);
-static char * java_resolve_without_space(RBinJavaObj *obj, int idx);
-static char * java_resolve(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
+static void init_switch_op ();
+static int enter_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen );
+static int update_bytes_consumed (int sz);
+static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen );
 
 static ut8 IN_SWITCH_OP = 0;
 typedef struct current_table_switch_t {
@@ -30,216 +31,48 @@ typedef struct current_table_switch_t {
 } CurrentTableSwitch;
 
 static CurrentTableSwitch SWITCH_OP;
+ut64 BYTES_CONSUMED = 0;
 //static RBinJavaObj *BIN_OBJ = NULL;
 
-R_API void r_java_set_obj(RBinJavaObj *obj) {
-	// eprintf ("SET CP (%p) %d\n", cp, n);
-	//BIN_OBJ = obj;
+static void init_switch_op () {
+	memset (&SWITCH_OP, 0, sizeof(SWITCH_OP));
 }
 
-static char * java_resolve_with_space(RBinJavaObj *obj, int idx) {
-	return java_resolve(obj, idx, 1);
+static int enter_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen ) {
+	ut8 idx = bytes[0];
+	IN_SWITCH_OP = 1;
+	ut8 sz = (BYTES_CONSUMED+1) % 4 ? 1 + 4 - (BYTES_CONSUMED+1) % 4: 1; // + (BYTES_CONSUMED+1)  % 4;
+	ut8 sz2 = (4 - (addr+1) % 4) + (addr+1)  % 4;
+	IFDBG eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04x\n", sz2, sz);
+	init_switch_op ();
+	IN_SWITCH_OP = 1;
+	SWITCH_OP.addr = addr;
+	SWITCH_OP.def_jmp = (ut32)(UINT (bytes, sz));
+	SWITCH_OP.min_val = (ut32)(UINT (bytes, sz + 4));
+	SWITCH_OP.max_val = (ut32)(UINT (bytes, sz + 8));
+	sz += 12;
+	snprintf (output, outlen, "%s default: 0x%04"PFMT64x, JAVA_OPS[idx].name,
+		SWITCH_OP.def_jmp+SWITCH_OP.addr);
+	return update_bytes_consumed(sz);
 }
 
-static char * java_resolve_without_space(RBinJavaObj *obj, int idx) {
-	return java_resolve(obj, idx, 0);
+static int update_bytes_consumed (int sz) {
+	BYTES_CONSUMED += sz;
+	return sz;
 }
 
-static char * java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name_type) {
-	// TODO XXX FIXME add a size parameter to the str when it is passed in
-	RBinJavaCPTypeObj *item = NULL, *item2 = NULL;
-	char *class_str = NULL,
-		 *name_str = NULL,
-		 *desc_str = NULL,
-		 *string_str = NULL,
-		 *empty = "",
-		 *cp_name = NULL,
-		 *cp_name2 = NULL,
-		 *str = NULL;
+static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int outlen ) {
+	int sz = 4;
+	ut32 jmp = (ut32)(UINT (bytes, 0)) + SWITCH_OP.addr;
+	ut32 ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
+	snprintf(output, outlen, "case %d: goto 0x%04x", ccase, jmp);
+	SWITCH_OP.cur_val++;
 
-   	int memory_alloc = 0;
+	if ( ccase+1 > SWITCH_OP.max_val) IN_SWITCH_OP = 0;
 
-	if (BIN_OBJ && BIN_OBJ->cp_count < 1 ) {
-		//javasm_init(BIN_OBJ);
-		return NULL;
-	}
-
-	item = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
-
-	if (item) {
-		cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
-		IFDBG eprintf("java_resolve Resolved: (%d) %s\n", idx, cp_name);
-	} else {
-		str = malloc (512);
-		if (str)
-			snprintf (str,512,  "(%d) INVALID CP_OBJ", idx);
-
-		return str;
-	}
-
-	cp_name = ((RBinJavaCPTypeMetas *) item->metas->type_info)->name;
-
-	if ( strcmp (cp_name, "Class") == 0 ) {
-		item2 = (RBinJavaCPTypeObj *) r_bin_java_get_item_from_bin_cp_list (BIN_OBJ, idx);
-
-		//str = r_bin_java_get_name_from_bin_cp_list (BIN_OBJ, idx-1);
-		class_str = empty;
-		class_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
-
-		if (!class_str)
-			class_str = empty;
-
-		name_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item2);
-		if (!name_str)
-			name_str = empty;
-
-		desc_str = r_bin_java_get_item_desc_from_bin_cp_list (BIN_OBJ, item2);
-		if (!desc_str)
-			desc_str = empty;
-
-		memory_alloc = strlen (class_str) + strlen (name_str) + strlen (desc_str) + 3;
-
-		if (memory_alloc)
-			str = malloc (memory_alloc);
-
-		if (str && !space_bn_name_type)
-			snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-		else if (str && space_bn_name_type)
-			snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
-
-
-		if (class_str != empty)
-			free (class_str);
-
-		if (name_str != empty)
-			free (name_str);
-		if (desc_str != empty)
-			free (desc_str);
-
-	}else if ( strcmp (cp_name, "MethodRef") == 0 ||
-		 strcmp (cp_name, "FieldRef") == 0 ||
-		 strcmp (cp_name, "InterfaceMethodRef") == 0) {
-
-		/*
-		 *  The MethodRef, FieldRef, and InterfaceMethodRef structures
-		 */
-
-		class_str = r_bin_java_get_name_from_bin_cp_list (BIN_OBJ, item->info.cp_method.class_idx);
-		if (!class_str)
-			class_str = empty;
-
-		name_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
-		if (!name_str)
-			name_str = empty;
-
-		desc_str = r_bin_java_get_item_desc_from_bin_cp_list (BIN_OBJ, item);
-		if (!desc_str)
-			desc_str = empty;
-
-		memory_alloc = strlen (class_str) + strlen (name_str) + strlen (desc_str) + 3;
-
-		if (memory_alloc)
-			str = malloc (memory_alloc);
-
-		if (str && !space_bn_name_type)
-			snprintf (str, memory_alloc, "%s/%s%s", class_str, name_str, desc_str);
-		else if (str && space_bn_name_type)
-			snprintf (str, memory_alloc, "%s/%s %s", class_str, name_str, desc_str);
-
-
-		if (class_str != empty)
-			free (class_str);
-		if (name_str != empty)
-			free (name_str);
-		if (desc_str != empty)
-			free (desc_str);
-
-	} else if (strcmp (cp_name, "String") == 0) {
-		ut32 length = r_bin_java_get_utf8_len_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
-		string_str = r_bin_java_get_utf8_from_bin_cp_list (BIN_OBJ, item->info.cp_string.string_idx);
-		str = NULL;
-
-		IFDBG eprintf("java_resolve String got: (%d) %s\n", item->info.cp_string.string_idx, string_str);
-		if (!string_str) {
-			string_str = empty;
-			length = strlen (empty);
-		}
-
-		memory_alloc = length + 3;
-
-		if (memory_alloc)
-			str = malloc (memory_alloc);
-
-
-		if (str) {
-			//r_name_filter(string_str, length);
-			snprintf (str, memory_alloc, "\"%s\"", string_str);
-		}
-		IFDBG eprintf("java_resolve String return: %s\n", str);
-		if (string_str != empty)
-			free (string_str);
-
-
-	} else if (strcmp (cp_name, "Utf8") == 0) {
-		str = malloc (item->info.cp_utf8.length+3);
-		if (str) {
-			snprintf (str, item->info.cp_utf8.length+3, "\"%s\"", item->info.cp_utf8.bytes);
-		}
-	} else if (strcmp (cp_name, "Long") == 0) {
-		str = malloc (34);
-		if (str) {
-			snprintf (str, 34, "0x%llx", rbin_java_raw_to_long (item->info.cp_long.bytes.raw,0));
-		}
-	} else if (strcmp (cp_name, "Double") == 0) {
-		str = malloc (1000);
-		if (str) {
-			snprintf (str, 1000, "%f", rbin_java_raw_to_double (item->info.cp_double.bytes.raw,0));
-		}
-	} else if (strcmp (cp_name, "Integer") == 0) {
-		str = malloc (34);
-		if (str) {
-			snprintf (str, 34, "0x%08x", R_BIN_JAVA_UINT (item->info.cp_integer.bytes.raw,0));
-		}
-	} else if (strcmp (cp_name, "Float") == 0) {
-		str = malloc (34);
-		if (str) {
-			snprintf (str, 34, "%f", R_BIN_JAVA_FLOAT (item->info.cp_float.bytes.raw,0));
-		}
-	} else if (strcmp (cp_name, "NameAndType") == 0) {
-		str = malloc (64);
-		if (str) {
-
-			name_str = r_bin_java_get_item_name_from_bin_cp_list (BIN_OBJ, item);
-			if (!name_str)
-				name_str = empty;
-
-			desc_str = r_bin_java_get_item_desc_from_bin_cp_list (BIN_OBJ, item);
-			if (!desc_str)
-				desc_str = empty;
-
-			memory_alloc = strlen (name_str) + strlen (desc_str) + 3;
-
-			if (memory_alloc)
-				str = malloc (memory_alloc);
-
-			if (str && !space_bn_name_type)
-				snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-			else if (str && space_bn_name_type)
-				snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
-
-			if (name_str != empty)
-				free (name_str);
-			if (desc_str != empty)
-				free (desc_str);
-		}
-	}  else {
-		str = malloc (16);
-		if (str) {
-			snprintf (str, 16, "(null)");
-		}
-	}
-	return str;
+	return update_bytes_consumed(sz);
 }
+
 
 int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
@@ -247,28 +80,26 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 	ut32 val_one = 0,
 		val_two = 0;
 
-	ut8 op_byte = java_ops[idx].byte;
+	ut8 op_byte = JAVA_OPS[idx].byte;
 
 	if (IN_SWITCH_OP) {
-		ut32 jmp = (ut32)(UINT (bytes, 0)) + SWITCH_OP.addr;
-		ut32 ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
-		snprintf(output, outlen, "case %d: goto 0x%04x", ccase, jmp);
-		if ( ccase+1 > SWITCH_OP.max_val) IN_SWITCH_OP = 0;
-		SWITCH_OP.cur_val++;
-		return 4;
+		return handle_switch_op (addr, bytes, output, outlen );
 	}
 
-
+	IFDBG {
+		eprintf ("Handling the following opcode %s expects: %d bytes\n",
+			JAVA_OPS[idx].name, JAVA_OPS[idx].size);
+	}
 	switch (op_byte) {
 
 		case 0x10: // "bipush"
-			snprintf (output, outlen, "%s %d", java_ops[idx].name, (char) bytes[1]);
+			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, (char) bytes[1]);
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 		case 0x11:
-			snprintf (output, outlen, "%s %d", java_ops[idx].name, (int)USHORT (bytes, 1));
+			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, (int)USHORT (bytes, 1));
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 
 	    case 0x15: // "iload"
 		case 0x16: // "lload"
@@ -281,38 +112,38 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 		case 0x3a: // "astore"
 		case 0xbc: // "newarray"
 	    case 0xa9: // ret <var-num>
-			snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
+			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 
 		case 0x12: // ldc
-			arg = java_resolve_without_space (obj, (ut16)bytes[1]);
+			arg = r_bin_java_resolve_without_space (obj, (ut16)bytes[1]);
 			if (arg) {
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			}else {
-				snprintf (output, outlen, "%s #%d", java_ops[idx].name, USHORT (bytes, 1));
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 			}
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 		case 0x13:
 		case 0x14:
-			arg = java_resolve_without_space (obj, (int)USHORT (bytes, 1));
+			arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
 			if (arg) {
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			}else {
-				snprintf (output, outlen, "%s #%d", java_ops[idx].name, USHORT (bytes, 1));
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 			}
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 
 		case 0x84: // iinc
 			val_one = (ut32)bytes[1];
 			val_two = (ut32) bytes[2];
-			snprintf (output, outlen, "%s %d %d", java_ops[idx].name, val_one, val_two);
+			snprintf (output, outlen, "%s %d %d", JAVA_OPS[idx].name, val_one, val_two);
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 
 
 		case 0x99: // ifeq
@@ -331,42 +162,28 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 		case 0xa6: // if_acmpne
 		case 0xa7: // goto
 		case 0xa8: // jsr
-			snprintf (output, outlen, "%s 0x%04"PFMT64x, java_ops[idx].name,
+			snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name,
 				addr+(int)(short)USHORT (bytes, 1));
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 		// XXX - Figure out what constitutes the [<high>] value
 		case 0xab: // tableswitch
 		case 0xaa: // tableswitch
-			{
-				// XXX - This is a hack, need a better approach to getting the
-				// disassembly
-				ut8 sz = (4 - (addr+1) % 4) + (addr+1)  % 4;
-				memset(&SWITCH_OP, 0, sizeof (SWITCH_OP));
-				IN_SWITCH_OP = 1;
-				SWITCH_OP.addr = addr;
-				SWITCH_OP.def_jmp = (ut32)(UINT (bytes, sz));
-				SWITCH_OP.min_val = (ut32)(UINT (bytes, sz + 4));
-				SWITCH_OP.max_val = (ut32)(UINT (bytes, sz + 8));
-				sz += 12;
-				snprintf (output, outlen, "%s default: 0x%04"PFMT64x, java_ops[idx].name,
-					SWITCH_OP.def_jmp+addr);
-				return sz;
-			}
+			return enter_switch_op (addr, bytes, output, outlen);
 		case 0xb6: // invokevirtual
 		case 0xb7: // invokespecial
 		case 0xb8: // invokestatic
 		case 0xb9: // invokeinterface
 		case 0xba: // invokedynamic
-			arg = java_resolve_without_space (obj, (int)USHORT (bytes, 1));
+			arg = r_bin_java_resolve_without_space (obj, (int)USHORT (bytes, 1));
 			if (arg) {
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			}else {
-				snprintf (output, outlen, "%s #%d", java_ops[idx].name, USHORT (bytes, 1) );
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
 			}
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 		case 0xb2: // getstatic
 		case 0xb3: // putstatic
 		case 0xb4: // getfield
@@ -375,30 +192,41 @@ int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, ch
 		case 0xbd: // anewarray
 		case 0xc0: // checkcast
 		case 0xc1: // instance of
-			arg = java_resolve_with_space (obj, (int)USHORT (bytes, 1));
+			arg = r_bin_java_resolve_with_space (obj, (int)USHORT (bytes, 1));
 			if (arg) {
-				snprintf (output, outlen, "%s %s", java_ops[idx].name, arg);
+				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			}else {
-				snprintf (output, outlen, "%s #%d", java_ops[idx].name, USHORT (bytes, 1) );
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
 			}
 			output[outlen-1] = 0;
-			return java_ops[idx].size;
+			return update_bytes_consumed (JAVA_OPS[idx].size);
 		}
 
 	/* process arguments */
-	switch (java_ops[idx].size) {
-	case 1: snprintf (output, outlen, "%s", java_ops[idx].name);
+	switch (JAVA_OPS[idx].size) {
+	case 1: snprintf (output, outlen, "%s", JAVA_OPS[idx].name);
 		break;
-	case 2: snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
+	case 2: snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
 		break;
-	case 3: snprintf (output, outlen, "%s 0x%04x 0x%04x", java_ops[idx].name, bytes[0], bytes[1]);
+	case 3: snprintf (output, outlen, "%s 0x%04x 0x%04x", JAVA_OPS[idx].name, bytes[0], bytes[1]);
 		break;
-	case 5: snprintf (output, outlen, "%s %d", java_ops[idx].name, bytes[1]);
+	case 5: snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
 		break;
 	}
 
-	return java_ops[idx].size;
+	return update_bytes_consumed (JAVA_OPS[idx].size);
+}
+
+R_API void r_java_new_method () {
+	IN_SWITCH_OP = 0;
+	init_switch_op ();
+	BYTES_CONSUMED = 0;
+}
+
+R_API void r_java_set_obj(RBinJavaObj *obj) {
+	// eprintf ("SET CP (%p) %d\n", cp, n);
+	//BIN_OBJ = obj;
 }
 
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, char *output, int outlen) {
@@ -412,10 +240,10 @@ R_API int r_java_assemble(ut8 *bytes, const char *string) {
 	int i;
 
 	sscanf (string, "%s %d %d %d %d", name, &a, &b, &c, &d);
-	for (i = 0; java_ops[i].name != NULL; i++)
-		if (!strcmp (name, java_ops[i].name)) {
-			bytes[0] = java_ops[i].byte;
-			switch (java_ops[i].size) {
+	for (i = 0; JAVA_OPS[i].name != NULL; i++)
+		if (!strcmp (name, JAVA_OPS[i].name)) {
+			bytes[0] = JAVA_OPS[i].byte;
+			switch (JAVA_OPS[i].size) {
 			case 2: bytes[1] = a; break;
 			case 3: bytes[1] = a; bytes[2] = b; break;
 			case 5: bytes[1] = a;
@@ -424,7 +252,7 @@ R_API int r_java_assemble(ut8 *bytes, const char *string) {
 				bytes[4] = d;
 				break;
 			}
-			return java_ops[i].size;
+			return JAVA_OPS[i].size;
 		}
 	return 0;
 }

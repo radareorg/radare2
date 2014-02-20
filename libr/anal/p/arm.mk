@@ -4,9 +4,6 @@ STATIC_OBJ+=${OBJ_ARM}
 TARGET_ARM=anal_arm.${EXT_SO}
 
 ALL_TARGETS+=${TARGET_ARM}
-#LDFLAGS+=-L$(TOP)/libr/lib -lr_lib
-#LDFLAGS+=-L$(TOP)/libr/syscall -lr_syscall
-#LDFLAGS+=-L$(TOP)/libr/diff -lr_diff
 CFLAGS +=-I../asm/arch/include
 
 ${TARGET_ARM}: ${OBJ_ARM}

@@ -32,12 +32,12 @@ int buffer_flush(buffer *s) {
 int buffer_putalign(buffer *s, const char *buf, ut32 len) {
 	ut32 n;
 	while (len > (n = s->n - s->p)) {
-		byte_copy (s->x + s->p, n, buf);
+		memcpy (s->x + s->p, buf, n);
 		s->p += n; buf += n; len -= n;
 		if (!buffer_flush (s)) return 0;
 	}
 	/* now len <= s->n - s->p */
-	byte_copy (s->x + s->p, len, buf);
+	memcpy (s->x + s->p, buf, len);
 	s->p += len;
 	return 1;
 }

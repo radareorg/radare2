@@ -66,7 +66,7 @@ static int siglistcb (void *p, const char *k, const char *v) {
 	static char key[32] = "cfg.";
 	if (atoi (k)>0) {
 		strcpy (key+4, k);
-		opt = sdb_getn (DB, key, 0);
+		opt = sdb_num_get (DB, key, 0);
 		if (opt) {
 			r_cons_printf ("%s %s", k, v);
 			if (opt & R_DBG_SIGNAL_CONT)
@@ -92,7 +92,7 @@ R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame) {
 	r_str_case (name, R_TRUE);
 	if (strncmp (name, "SIG", 3))
 		name = r_str_prefix (name, "SIG");
-	ret = (int)sdb_getn (DB, name, 0);
+	ret = (int)sdb_num_get (DB, name, 0);
 	free (name);
 	return ret;
 }
@@ -100,7 +100,7 @@ R_API int r_debug_signal_resolve(RDebug *dbg, const char *signame) {
 R_API const char *r_debug_signal_resolve_i(RDebug *dbg, int signum) {
 	char k[32];
 	snprintf (k, sizeof (k), "%d", signum);
-	return sdb_getc (DB, k, 0);
+	return sdb_const_get (DB, k, 0);
 }
 
 R_API int r_debug_signal_send(RDebug *dbg, int num) {
@@ -114,7 +114,7 @@ R_API void r_debug_signal_setup(RDebug *dbg, int num, int opt) {
 R_API int r_debug_signal_what(RDebug *dbg, int num) {
 	char k[32];
 	snprintf (k, sizeof (k), "cfg.%d", num);
-	return sdb_getn (DB, k, 0);
+	return sdb_num_get (DB, k, 0);
 }
 
 R_API int r_debug_signal_set(RDebug *dbg, int num, ut64 addr) {

@@ -1,6 +1,6 @@
-/* radare - LGPL - 2013 Fedor Sakharov <fedor.sakharov@gmail.com> */
+/* radare - LGPL - 2013-2014 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
-#include <stdio.h>
+#include <r_types.h>
 #include "ebc_disas.h"
 
 static const char *instr_names[] = {
@@ -83,12 +83,12 @@ typedef struct ebc_index {
 	enum { EBC_INDEX16, EBC_INDEX32, EBC_INDEX64 } type;
 	enum { EBC_INDEX_PLUS = 0, EBC_INDEX_MINUS } sign;
 	uint8_t a_width;
-	uint32_t c;
-	uint32_t n;
+	ut32 c;
+	ut32 n;
 } ebc_index_t;
 
 static int decode_index16(const uint8_t *data, ebc_index_t *index) {
-	uint16_t tmp = *(uint16_t*)data;
+	ut16 tmp = *(ut16*)data;
 
 	index->type = EBC_INDEX16;
 	index->sign = tmp & 0x8000 ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
@@ -100,7 +100,7 @@ static int decode_index16(const uint8_t *data, ebc_index_t *index) {
 }
 
 static int decode_index32(const uint8_t *data, ebc_index_t *index) {
-	uint32_t tmp = *(uint32_t*)data;
+	ut32 tmp = *(ut32*)data;
 
 	index->type = EBC_INDEX32;
 	index->sign = tmp & EBC_NTH_BIT(31) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
@@ -113,7 +113,7 @@ static int decode_index32(const uint8_t *data, ebc_index_t *index) {
 }
 
 static int decode_index64(const uint8_t *data, ebc_index_t *index) {
-	uint64_t tmp = *(uint64_t*)data;
+	ut64 tmp = *(ut64*)data;
 
 	index->type = EBC_INDEX64;
 	index->sign = tmp & EBC_NTH_BIT(63) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
@@ -147,7 +147,7 @@ static int decode_jmp(const uint8_t *bytes, ebc_command_t *cmd) {
 			TEST_BIT(bytes[1], 7) ? TEST_BIT(bytes[1], 6) ? "cs" : "cc" : "");
 
 	if (TEST_BIT(bytes[0], 6)){
-		immed = *(uint64_t*)(bytes + 2);
+		immed = *(ut64*)(bytes + 2);
 		bits = 64;
 		ret = 10;
 		snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "0x%lx", immed);
@@ -202,7 +202,7 @@ static int decode_call(const uint8_t *bytes, ebc_command_t *cmd) {
 	int ret;
 	short bits = 32;
 	uint8_t op1 = bytes[1] & 0x7;
-	uint32_t i1;
+	ut32 i1;
 	unsigned long i2;
 
 	if (!TEST_BIT (bytes[0], 6)) {
@@ -213,7 +213,7 @@ static int decode_call(const uint8_t *bytes, ebc_command_t *cmd) {
 			//operand 1 indirect
 			if (TEST_BIT (bytes[0], 7)) {
 				// immediate data is present
-				i1 = *(uint32_t*)(bytes + 2);
+				i1 = *(ut32*)(bytes + 2);
 				// TODO: if operand is indirect immediate data is index
 				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
 						"@r%d(0x%x)", op1, i1);
@@ -226,7 +226,7 @@ static int decode_call(const uint8_t *bytes, ebc_command_t *cmd) {
 			//operand 1 direct
 			if (TEST_BIT (bytes[0], 7)) {
 				// immediate data present
-				i1 = *(uint32_t*)(bytes + 2);
+				i1 = *(ut32*)(bytes + 2);
 				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
 						"r%d(0x%x)", op1, i1);
 				ret = 6;
@@ -239,7 +239,7 @@ static int decode_call(const uint8_t *bytes, ebc_command_t *cmd) {
 	} else {
 		bits = 64;
 		ret = 10;
-		i2 = *(uint64_t*)&bytes[2];
+		i2 = *(ut64*)&bytes[2];
 		snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
 				"0x%lx", i2);
 	}
@@ -260,7 +260,7 @@ static int decode_cmp(const uint8_t *bytes, ebc_command_t *cmd) {
 	int ret = 2;
 	int op1, op2;
 	char sign;
-	uint16_t immed;
+	ut16 immed;
 	ebc_index_t idx;
 
 	op1 = bytes[1] & 0x07;
@@ -275,7 +275,7 @@ static int decode_cmp(const uint8_t *bytes, ebc_command_t *cmd) {
 					"r%d, @r%d (%c%d, %c%d)",
 					op1, op2, sign ,idx.n, sign, idx.c);
 		} else {
-			immed = *(uint16_t*)&bytes[2];
+			immed = *(ut16*)&bytes[2];
 			snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
 					"r%d, r%d %d", op1, op2, immed);
 		}
@@ -332,7 +332,7 @@ static int decode_neg(const uint8_t *bytes, ebc_command_t *cmd) {
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	unsigned op1, op2;
 	char index[32] = {0};
-	uint16_t immed;
+	ut16 immed;
 
 	snprintf(cmd->instr, EBC_INSTR_MAXLEN, "%s%u", instr_names[EBC_NEG],
 			bits);
@@ -350,7 +350,7 @@ static int decode_neg(const uint8_t *bytes, ebc_command_t *cmd) {
 					idx.sign ? '+' : '-', idx.n,
 					idx.sign ? '+' : '-', idx.c);
 		} else {
-			immed = *(uint16_t*)&bytes[2];
+			immed = *(ut16*)&bytes[2];
 			snprintf(index, 32, "(%u)", immed);
 		}
 	}
@@ -368,7 +368,7 @@ static int decode_add(const uint8_t *bytes, ebc_command_t *cmd)
 	unsigned bits = TEST_BIT (bytes[0], 6)? 64: 32;
 	unsigned op1, op2;
 	char index[32] = {0};
-	uint16_t immed;
+	ut16 immed;
 
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%u", instr_names[EBC_ADD],
 			bits);
@@ -385,7 +385,7 @@ static int decode_add(const uint8_t *bytes, ebc_command_t *cmd)
 			snprintf(index, sizeof (index),
 				" (%c%d, %c%d)", sign, idx.n, sign, idx.c);
 		} else {
-			immed = *(uint16_t*)&bytes[2];
+			immed = *(ut16*)&bytes[2];
 			snprintf (index, sizeof (index), "(%u)", immed);
 		}
 	}
@@ -665,7 +665,7 @@ static int decode_push_pop(const uint8_t *bytes, ebc_command_t *cmd) {
 					op1c, sign, idx.n, sign, idx.c);
 
 		} else {
-			uint16_t immed = *(uint16_t*)(bytes + 2);
+			ut16 immed = *(ut16*)(bytes + 2);
 
 			snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%s %u",
 					op1c, immed);
@@ -707,11 +707,11 @@ static int decode_cmpi(const uint8_t *bytes, ebc_command_t *cmd) {
 	}
 
 	if (TEST_BIT(bytes[0], 7)) {
-		uint32_t im = *(uint32_t*)(bytes + ret);
+		ut32 im = *(ut32*)(bytes + ret);
 		snprintf (immed, sizeof (immed), "%u", im);
 		ret += 4;
 	} else {
-		uint16_t im = *(uint16_t*)(bytes + ret);
+		ut16 im = *(ut16*)(bytes + ret);
 		snprintf (immed, sizeof (immed), "%u", im);
 		ret += 2;
 	}
@@ -847,22 +847,22 @@ static int decode_movi(const uint8_t *bytes, ebc_command_t *cmd)
 	}
 
 	switch (p2) {
-		uint16_t i1;
-		uint32_t i2;
-		uint64_t i3;
+		ut16 i1;
+		ut32 i2;
+		ut64 i3;
 
 		case 'w':
-			i1 = *(uint16_t*)(bytes + ret);
+			i1 = *(ut16*)(bytes + ret);
 			immed = (unsigned long)i1;
 			ret += 2;
 			break;
 		case 'd':
-			i2 = *(uint32_t*)(bytes + ret);
+			i2 = *(ut32*)(bytes + ret);
 			immed = (unsigned long)i2;
 			ret += 4;
 			break;
 		case 'q':
-			i3 = *(uint64_t*)(bytes + ret);
+			i3 = *(ut64*)(bytes + ret);
 			immed = i3;
 			ret += 8;
 			break;
@@ -990,21 +990,21 @@ static int decode_movrel(const uint8_t *bytes, ebc_command_t *cmd)
 	}
 
 	switch (p1) {
-		uint16_t v16;
-		uint32_t v32;
-		uint64_t v64;
+		ut16 v16;
+		ut32 v32;
+		ut64 v64;
 		case 'w':
-			v16 = *(uint16_t*)(bytes + 2);
+			v16 = *(ut16*)(bytes + 2);
 			immed = v16;
 			ret += 2;
 			break;
 		case 'd':
-			v32 = *(uint32_t*)(bytes + 2);
+			v32 = *(ut32*)(bytes + 2);
 			immed = v32;
 			ret += 4;
 			break;
 		case 'q':
-			v64 = *(uint64_t*)(bytes + 2);
+			v64 = *(ut64*)(bytes + 2);
 			immed = v64;
 			ret += 8;
 			break;

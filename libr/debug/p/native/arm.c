@@ -24,7 +24,7 @@ Flags
 
 	// signed
 	GE = NV || nv          ((n&&v) || (!n&&!v))
-	GT = NzV || nzv        ((n&&!z&&v) || (!n&&!z&&!v))
+	GT = NzV || nzv        ((n&&!z&&v) || (!n&&!z&&!v))
 	LT = Nv || nV          ((n&&!v)|| (!n&&v))
 	LE = Z || Nv || nV     z || (n&&!v) || (!n && v)
 

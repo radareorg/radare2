@@ -90,6 +90,7 @@ static void visual_help() {
 	" mK/'K    mark/go to Key (any key)\n"
 	" M        walk the mounted filesystems\n"
 	" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
+	" o        go/seek to given offset\n"
 	" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
 	" q        back to radare shell\n"
 	" R        randomize color palette (ecr)\n"
@@ -343,6 +344,15 @@ static int prevopsz (RCore *core, ut64 addr) {
 	}
 	return 4;
 }
+static void visual_offset (RCore *core) {
+	char buf[256];
+	r_line_set_prompt ("[offset]> ");
+	strcpy (buf, "s ");
+	if (r_cons_fgets (buf+2, sizeof (buf)-3, 0, NULL) >0) {
+		if (buf[2]=='.')buf[1]='.';
+		r_core_cmd0 (core, buf);
+	}
+}
 
 R_API int r_core_visual_cmd(RCore *core, int ch) {
 	RAsmOp op;
@@ -422,6 +432,9 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		}
 		showcursor (core, R_FALSE);
 		r_cons_set_raw (R_TRUE);
+		break;
+	case 'o':
+		visual_offset (core);
 		break;
 	case 'A':
 		{ int oc = curset;
@@ -680,6 +693,10 @@ r_cons_gotoxy (1,1);
 			}
 		} else {
 			if (core->printidx == 1 || core->printidx == 2) {
+				cols = r_asm_disassemble (core->assembler,
+					&op, core->block+cursor, 32);
+				if (cols<1) cols = 1;
+#if 0
 				cols = core->inc;
 				//cols = r_asm_disassemble (core->assembler,
 				//	&op, core->block+cursor, 32);
@@ -688,6 +705,7 @@ r_cons_gotoxy (1,1);
 				if (core->curasmstep < R_CORE_ASMSTEPS-1)
 					core->curasmstep++;
 				else core->curasmstep = 0;
+#endif
 			}
 			r_core_seek (core, core->offset+cols, 1);
 		}
@@ -771,16 +789,18 @@ r_cons_gotoxy (1,1);
 		break;
 #endif
 	case 's':
-		if (curset) {
-			// dcu 0xaddr
-			char xxx[128];
-			snprintf (xxx, sizeof (xxx), "dcu 0x%08"PFMT64x, core->offset + cursor);
-			r_core_cmd (core, xxx, 0);
-			curset = 0;
-		} else {
-			r_core_cmd (core, "ds", 0);
-			r_core_cmd (core, ".dr*", 0);
-		}
+		if (r_config_get_i (core->config, "cfg.debug")) {
+			if (curset) {
+				// dcu 0xaddr
+				char xxx[128];
+				snprintf (xxx, sizeof (xxx), "dcu 0x%08"PFMT64x, core->offset + cursor);
+				r_core_cmd (core, xxx, 0);
+				curset = 0;
+			} else {
+				r_core_cmd (core, "ds", 0);
+				r_core_cmd (core, ".dr*", 0);
+			}
+		} else visual_offset (core);
 		break;
 	case 'S':
 		if (curset) {
@@ -866,10 +886,16 @@ r_cons_gotoxy (1,1);
 		r_io_sundo_push (core->io, core->offset);
 		break;
 	case '.':
-		if (r_debug_reg_get (core->dbg, "pc") != 0) {
-			r_core_cmd (core, "sr pc", 0);
+		if (curset) {
+			r_core_seek (core, core->offset+cursor, 1);
+			cursor = 0;
 		} else {
-			r_core_cmd (core, "s entry0", 0);
+			if (r_debug_reg_get (core->dbg, "pc") != 0) {
+				r_core_cmd (core, "sr pc", 0);
+			} else {
+				r_core_seek (core, r_num_get (core->num, "entry0"), 1);
+				//r_core_cmd (core, "s entry0", 0);
+			}
 		}
 		break;
 #if 0
@@ -1161,6 +1187,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 			r_core_cmd (core, cmdprompt, 0);
 		r_core_visual_refresh (core);
 		ch = r_cons_readchar ();
+		if (ch==-1 || ch==4) break; // error or eof
 	} while (r_core_visual_cmd (core, ch));
 
 	if (color)

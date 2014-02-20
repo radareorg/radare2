@@ -57,6 +57,7 @@ typedef struct r_disam_options_t {
 	int show_bytes;
 	int show_comments;
 	int show_cmtflgrefs;
+	int show_cycles;
 	int show_stackptr;
 	int show_xrefs;
 	int show_functions;
@@ -144,6 +145,7 @@ static int perform_disassembly(RCore *core, RDisasmState *ds, ut8 *buf, int len)
 static void handle_control_flow_comments (RCore * core, RDisasmState *ds);
 static void handle_print_lines_right (RCore *core, RDisasmState *ds);
 static void handle_print_lines_left (RCore *core, RDisasmState *ds);
+static void handle_print_cycles(RCore *core, RDisasmState *ds);
 static void handle_print_stackptr (RCore *core, RDisasmState *ds);
 static void handle_print_offset (RCore *core, RDisasmState *ds );
 static void handle_print_op_size (RCore *core, RDisasmState *ds);
@@ -270,6 +272,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_cmtflgrefs = r_config_get_i (core->config, "asm.cmtflgrefs");
+	ds->show_cycles = r_config_get_i (core->config, "asm.cycles");
 	ds->show_stackptr = r_config_get_i (core->config, "asm.stackptr");
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
@@ -346,10 +349,10 @@ void handle_reflines_init (RCore *core, RDisasmState *ds) {
 		free (core->reflines); // TODO: leak
 		free (core->reflines2); // TODO: leak
 		core->reflines = r_anal_reflines_get (core->anal,
-			ds->addr, ds->buf, ds->len, -1,
+			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, ds->show_linescall);
 		core->reflines2 = r_anal_reflines_get (core->anal,
-			ds->addr, ds->buf, ds->len, -1,
+			ds->addr, ds->buf, ds->len, ds->l,
 			ds->linesout, 1);
 	} else core->reflines = core->reflines2 = NULL;
 }
@@ -1008,6 +1011,11 @@ static void handle_print_lines_left (RCore *core, RDisasmState *ds){
 	}
 }
 
+static void handle_print_cycles (RCore *core, RDisasmState *ds) {
+	if (ds->show_cycles)
+		r_cons_printf ("%3d ", ds->analop.cycles);
+}
+
 static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
 	if (ds->show_stackptr) {
 		r_cons_printf ("%3d%s", ds->stackptr,
@@ -1297,15 +1305,24 @@ static void handle_print_fcn_name (RCore * core, RDisasmState *ds) {
 }
 
 static void handle_print_core_vmode (RCore *core, RDisasmState *ds) {
+	int i;
 	if (core->vmode) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
-			ds->counter++;
-			if (ds->counter<10) {
-				core->asmqjmps[ds->counter] = ds->analop.jump;
-				r_cons_printf (" ;[%d]", ds->counter);
+			if (ds->counter<9) {
+				int found = 0;
+				for (i=0; i<ds->counter+1; i++) {
+					if (core->asmqjmps[i] == ds->analop.jump) {
+						found = 1;
+						break;
+					}
+				}
+				if (!found)
+					i = ++ds->counter;
+				core->asmqjmps[i] = ds->analop.jump;
+				r_cons_printf (" ;[%d]", i);
 			} else r_cons_strcat (" ;[?]");
 			break;
 		}
@@ -1502,6 +1519,12 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	// TODO: allow to get those register snapshots from traces
 	// TODO: per-function register state trace
 
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, addr);
+	}
+
 	// TODO: All those ds must be print flags
 	ds = handle_init_ds (core);
 	ds->cbytes = cbytes;
@@ -1514,11 +1537,10 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	handle_reflines_init (core, ds);
 	core->inc = 0;
 	/* reset jmp table if not a bad block */
+	ds->counter = 0;
 	if (buf[0] != 0xff) // hack
 		for (i=0; i<10; i++)
 			core->asmqjmps[i] = UT64_MAX;
-
-
 toro:
 	// uhm... is this necesary? imho can be removed
 	r_asm_set_pc (core->assembler, ds->addr+idx);
@@ -1636,6 +1658,7 @@ toro:
 		handle_print_offset (core, ds);
 		handle_print_op_size (core, ds);
 		handle_print_trace (core, ds);
+		handle_print_cycles (core, ds);
 		handle_print_stackptr (core, ds);
 		ret = handle_print_meta_infos (core, ds, buf,len, idx);
 		if (ds->mi_found) {
@@ -1742,6 +1765,11 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 	RAnalFunction *f;
 	char *tmpopstr;
 
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal->cur && core->anal->cur->reset_counter)
+		core->anal->cur->reset_counter (core->anal, core->offset);
+
 	ds = handle_init_ds (core);
 	ds->len = len;
 	ds->l = l;
@@ -1832,6 +1860,12 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len) {
 	RAnalOp analop;
 	int i, oplen, ret;
 	r_cons_printf ("[");
+
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal && core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, addr);
+	}
 	// TODO: add support for anal hints
 	for (i=0; i<len;) {
 		ut64 at = addr +i;
@@ -1884,6 +1918,12 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	// TODO: per-function register state trace
 	idx = 0;
 	memset (buf, 0, cur_buf_sz);
+
+	// XXX - is there a better way to reset a the analysis counter so that
+	// when code is disassembled, it can actually find the correct offsets
+	if (core->anal->cur && core->anal->cur->reset_counter	) {
+		core->anal->cur->reset_counter (core->anal, addr);
+	}
 
 	// TODO: All those ds must be print flags
 	ds = handle_init_ds (core);
@@ -1950,7 +1990,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			r_anal_op_fini (&ds->analop);
 
 			if (!ds->lastfail)
-				r_anal_op (core->anal, &ds->analop, ds->at+bb_size_consumed, buf+idx, len-bb_size_consumed);
+				r_anal_op (core->anal, &ds->analop,
+					ds->at+bb_size_consumed, buf+idx,
+					len-bb_size_consumed);
 
 			if (ret<1) {
 				r_strbuf_init (&ds->analop.esil);
@@ -1968,7 +2010,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_op_size (core, ds);
 			handle_print_trace (core, ds);
 			handle_print_stackptr (core, ds);
-			ret  = handle_print_meta_infos (core, ds, buf,len, idx);
+			ret = handle_print_meta_infos (core, ds, buf, len, idx);
 			if (ds->mi_found) {
 				ds->mi_found = 0;
 				//continue;
@@ -1981,15 +2023,17 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_build_op_str (core, ds);
 			handle_print_opstr (core, ds);
 			handle_print_fcn_name (core, ds);
-			handle_print_color_reset( core, ds);
+			handle_print_color_reset (core, ds);
 			handle_print_dwarf (core, ds);
 			ret = handle_print_middle (core, ds, ret );
 			handle_print_asmop_payload (core, ds);
 			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
-				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf+idx, len-bb_size_consumed);
+				r_asm_set_syntax (core->assembler,
+					R_ASM_SYNTAX_INTEL);
+				r_asm_disassemble (core->assembler, &ao,
+					buf+idx, len-bb_size_consumed);
 				r_asm_set_syntax (core->assembler, os);
 			}
 			handle_print_core_vmode (core, ds);
@@ -2030,8 +2074,8 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 
 	if (ds->oldbits) {
-			r_config_set_i (core->config, "asm.bits", ds->oldbits);
-			ds->oldbits = 0;
+		r_config_set_i (core->config, "asm.bits", ds->oldbits);
+		ds->oldbits = 0;
 	}
 	r_anal_op_fini (&ds->analop);
 	handle_deinit_ds (core, ds);

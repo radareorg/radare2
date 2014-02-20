@@ -81,7 +81,7 @@ R_API void r_pair_delete (RPair *p, const char *name) {
 	hdom = r_str_hash (dom);
 	sdb = r_hashtable_lookup (p->ht, hdom);
 	if (sdb)
-		sdb_remove (sdb, key, 0);
+		sdb_unset (sdb, key, 0);
 }
 
 static Sdb *pair_sdb_new(RPair *p, const char *dom, ut32 hdom) {

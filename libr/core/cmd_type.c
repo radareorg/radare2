@@ -159,7 +159,7 @@ static int cmd_type(void *data, const char *input) {
 				addr = r_num_math (core->num, input+1);
 			} else addr = core->offset;
 			snprintf (key, sizeof (key), "link.%"PFMT64x, addr);
-			type = sdb_getc (core->anal->sdb_types, key, 0);
+			type = sdb_const_get (core->anal->sdb_types, key, 0);
 			fmt = r_anal_type_format (core->anal, type);
 			if (fmt) {
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, addr);

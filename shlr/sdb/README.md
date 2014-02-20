@@ -1,4 +1,4 @@
-SDB (simple database)
+SDB (string database)
 =====================
 
 sdb is a simple string key/value database based on djb's cdb

@@ -3,6 +3,8 @@
 #ifndef _INCLUDE_R_ANAL_H_
 #define _INCLUDE_R_ANAL_H_
 
+#define USE_VARSUBS 0
+
 #include <r_types.h>
 #include <list.h>
 #include <r_db.h>
@@ -322,7 +324,9 @@ typedef struct r_anal_type_function_t {
 	int nargs; // Function arguments counter
 	int depth;
 	RAnalType *args; // list of arguments
+#if USE_VARSUBS
 	RAnalVarSub varsubs[R_ANAL_VARSUBS];
+#endif
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	RAnalDiff *diff;
 	RList *locs; // list of local variables
@@ -552,6 +556,12 @@ typedef struct r_anal_t {
 	Sdb *sdb_meta; // TODO: Future r_meta api 
 	PrintfCallback printf;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
+//moved from RAnalFcn
+	Sdb *sdb_vars;
+	Sdb *sdb_refs;
+	Sdb *sdb_args;
+	Sdb *sdb_locals;
+	Sdb *sdb_ret;
 } RAnal;
 
 typedef struct r_anal_hint_t {
@@ -589,6 +599,7 @@ typedef struct r_anal_op_t {
 	int cond;       /* condition type */
 	int size;       /* size in bytes of opcode */
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) */
+	int cycles;	/* cpu-cycles taken by instruction */
 	int family;     /* family of opcode */
 	int eob;        /* end of block (boolean) */
 	/* Run N instructions before executing the current one */
@@ -756,7 +767,7 @@ typedef struct r_anal_plugin_t {
 	int custom_fn_anal;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-	
+	int (*reset_counter) (RAnal *anal, ut64 start_addr);
 	// legacy r_anal_functions
 	RAnalOpCallback op;
 	RAnalBbCallback bb;

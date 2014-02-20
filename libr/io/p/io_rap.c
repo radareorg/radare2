@@ -118,7 +118,8 @@ static ut64 rap__lseek(struct r_io_t *io, RIODesc *fd, ut64 offset, int whence) 
 }
 
 static int rap__plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
-	return (!memcmp (pathname,"rap://",6))||(!memcmp (pathname,"raps://",7));
+	return (!strncmp (pathname,"rap://",6)) \
+		|| (!strncmp (pathname,"raps://",7));
 }
 
 static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int mode) {
@@ -131,7 +132,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 
 	if (!rap__plugin_open (io, pathname,0))
 		return NULL;
-	is_ssl = (!memcmp (pathname, "raps://", 7));
+	is_ssl = (!strncmp (pathname, "raps://", 7));
 	ptr = pathname + (is_ssl? 7: 6);
 	if (!(port = strchr (ptr, ':'))) {
 		eprintf ("rap: wrong uri\n");

@@ -32,15 +32,22 @@ R_API void r_cons_grep(const char *str) {
 	cons->grep.neg = 0;
 	cons->grep.amp = 0;
 	cons->grep.end = 0;
+	cons->grep.less = 0;
+	cons->grep.line = -1;
 	cons->grep.begin = 0;
+	cons->grep.counter = 0;
 	cons->grep.nstrings = 0;
 	cons->grep.tokenfrom = 0;
 	cons->grep.tokento = ST32_MAX;
-	cons->grep.line = -1;
-	cons->grep.counter = cons->grep.neg = 0;
 
 	while (*str) {
 		switch (*str) {
+		case '.':
+			if (str[1]=='.') {
+				cons->grep.less = 1;
+				return;
+			}
+			break;
 		case '&': str++; cons->grep.amp = 1; break;
 		case '^': str++; cons->grep.begin = 1;  break;
 		case '!': str++; cons->grep.neg = 1; break;
@@ -122,6 +129,17 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	char *tline, *tbuf, *p, *out, *in = buf;
 	int ret, buffer_len = 0, l = 0, tl = 0;
 
+	if (cons->grep.less) {
+		cons->grep.less = 0;
+		r_cons_less (buf);
+		buf[0] = 0;
+		cons->buffer_len = 0;
+		if (cons->buffer)
+			cons->buffer[0] = 0;
+		free (cons->buffer);
+		cons->buffer = NULL;
+		return 0;
+	}
 	if (!cons->buffer) {
 		cons->buffer_len = len+20;
 		cons->buffer = malloc (cons->buffer_len);

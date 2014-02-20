@@ -350,6 +350,7 @@ static inline void r_str_rmch (char *s, char ch) {
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
 R_API void r_str_unescape (char *s);
+R_API const char *r_str_closer_chr (const char *b, const char *s);
 R_API int r_str_len_utf8 (const char *s);
 R_API int r_str_len_utf8char (const char *s, int left);
 R_API void r_str_filter_zeroline(char *str, int len);
@@ -550,8 +551,8 @@ R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
 #endif
 
 /* uleb */
-R_API const ut8 *r_uleb128 (const ut8 *data, ut32 *v);
-R_API const ut8 *r_leb128 (const ut8 *data, st32 *v);
+R_API const ut8 *r_uleb128 (const ut8 *data, ut64 *v);
+R_API const ut8 *r_leb128 (const ut8 *data, st64 *v);
 #endif
 
 /* constr */

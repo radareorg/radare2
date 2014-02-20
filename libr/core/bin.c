@@ -17,12 +17,10 @@ R_API void r_core_bin_set_by_fd (RCore *core, ut64 bin_fd) {
 }
 
 R_API void r_core_bin_bind (RCore *core) {
-
-	if (core->bin) {
-		r_bin_bind (core->bin, &(core->anal->binb));
-		r_bin_bind (core->bin, &(core->assembler->binb));
-		r_bin_bind (core->bin, &(core->file->binb));
-	}
+	if (!core->bin) return;
+	r_bin_bind (core->bin, &(core->anal->binb));
+	r_bin_bind (core->bin, &(core->assembler->binb));
+	r_bin_bind (core->bin, &(core->file->binb));
 }
 
 R_API int r_core_bin_refresh_strings(RCore *r) {
@@ -70,10 +68,13 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 				string->offset): string->offset;
 			q = strdup (string->string);
 			//r_name_filter (str, 128);
-			for (p=q; *p; p++) if(*p=='"')*p='\'';
+			for (p=q; *p; p++) if (*p=='"') *p = '\'';
 			r_cons_printf ("%s{\"offset\":%"PFMT64d
-				",\"length\":%d,\"string\":\"%s\"}", 
-				iter->p? ",": "", addr, string->size, q);
+				",\"length\":%d,\"size\":%d,"
+				"\"type\":\"%s\",\"string\":\"%s\"}", 
+				iter->p? ",": "", addr,
+				string->length, string->size,
+				string->type=='W'?"wide":"ascii", q);
 			free (q);
 		}
 		r_cons_printf ("]");
@@ -82,8 +83,8 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		r_list_foreach (list, iter, string) {
 			ut64 addr = va? r_bin_get_vaddr (r->bin, baddr, string->rva,
 				string->offset): string->offset;
-			r_cons_printf ("%"PFMT64d" %d %s\n", 
-				addr, string->size, string->string);
+			r_cons_printf ("%"PFMT64d" %d %d %s\n", 
+				addr, string->size, string->length, string->string);
 		}
 	} else
 	if ((mode & R_CORE_BIN_SET)) {
@@ -91,17 +92,19 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 			r_flag_space_set (r->flags, "strings");
 		r_cons_break (NULL, NULL);
 		r_list_foreach (list, iter, string) {
+			int size = (string->type == 'W')? string->size*2: string->size;
 			if (r_cons_singleton()->breaked) break;
 			/* Jump the withespaces before the string */
 			for (i=0; *(string->string+i)==' '; i++);
 			r_meta_add (r->anal, R_META_TYPE_STRING,
 				va?baddr+string->rva:string->offset,
-				(va?baddr+string->rva:string->offset)+string->size, string->string+i);
+				(va?baddr+string->rva:string->offset)+string->size,
+				string->string+i);
 			r_name_filter (string->string, 128);
 			snprintf (str, R_FLAG_NAME_SIZE, "str.%s", string->string);
 			r_flag_set (r->flags, str,
 				va? baddr+string->rva:string->offset,
-				string->size, 0);
+				size, 0);
 		}
 		//r_meta_cleanup (r->anal->meta, 0LL, UT64_MAX);
 		r_cons_break_end ();
@@ -109,17 +112,21 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		if (mode) r_cons_printf ("fs strings\n"); //: "[strings]\n");
 		r_list_foreach (list, iter, string) {
 			section = r_bin_get_section_at (r->bin, string->offset, 0);
+			int size = (string->type == 'W')? string->size*2: string->size;
+// XXX string ->size is length! not size!!
 			if (mode) {
 				r_name_filter (string->string, sizeof (string->string));
 				r_cons_printf ("f str.%s %"PFMT64d" @ 0x%08"PFMT64x"\n"
 					"Cs %"PFMT64d" @ 0x%08"PFMT64x"\n",
-					string->string, string->size, va?baddr+string->rva:string->offset,
+					string->string, size, va?baddr+string->rva:string->offset,
 					string->size, va?baddr+string->rva:string->offset);
-			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x" ordinal=%03"PFMT64d" "
-				"sz=%"PFMT64d" section=%s string=%s\n",
+			} else r_cons_printf ("addr=0x%08"PFMT64x" off=0x%08"PFMT64x
+				" ordinal=%03"PFMT64d" "
+				"sz=%d len=%d section=%s type=%c string=%s\n",
 				baddr+string->rva, string->offset,
-				string->ordinal, string->size,
-				section?section->name:"unknown", string->string);
+				string->ordinal, string->size, string->length,
+				section?section->name:"unknown",
+				string->type, string->string);
 			i++;
 		}
 		//if (!mode) r_cons_printf ("\n%i strings\n", i);
@@ -276,8 +283,14 @@ static int bin_dwarf (RCore *core, int mode) {
 	} else {
 		// TODO: complete and speed-up support for dwarf
 		if (r_config_get_i (core->config, "bin.dwarf")) {
-			r_bin_dwarf_parse_info (core->bin);
+			RBinDwarfDebugAbbrev *da;
+			da = r_bin_dwarf_parse_abbrev (core->bin);
+			r_bin_dwarf_parse_info (da, core->bin);
+			r_bin_dwarf_parse_aranges (core->bin);
 			list = r_bin_dwarf_parse_line (core->bin);
+
+			r_bin_dwarf_free_debug_abbrev(da);
+			free(da);
 		}
 	}
 	if (!list) return R_FALSE;

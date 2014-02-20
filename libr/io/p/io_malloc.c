@@ -80,8 +80,8 @@ static ut64 __lseek(RIO* io, RIODesc *fd, ut64 offset, int whence) {
 
 static int __plugin_open(struct r_io_t *io, const char *pathname, ut8 many) {
 	return (
-		(!memcmp (pathname, "malloc://", 9)) ||
-		(!memcmp (pathname, "hex://", 6))
+		(!strncmp (pathname, "malloc://", 9)) ||
+		(!strncmp (pathname, "hex://", 6))
 	);
 }
 

@@ -1,7 +1,7 @@
 include ../../../global.mk
 include $(LTOP)/config.mk
 
-BINDEPS=r_lib r_bin r_flags r_util r_cons
+BINDEPS=r_bin r_flags r_util r_cons
 CFLAGS+=-DLIBDIR=\"${LIBDIR}\"
 
 all: test_meta${EXT_EXE} rpathdel${EXT_EXE} test_create${EXT_EXE}

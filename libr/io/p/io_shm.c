@@ -75,7 +75,7 @@ static ut64 shm__lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int shm__plugin_open(RIO *io, const char *pathname, ut8 many) {
-	return (!memcmp (pathname, "shm://", 6));
+	return (!strncmp (pathname, "shm://", 6));
 }
 
 static inline int getshmid (const char *str) {
@@ -87,7 +87,7 @@ static inline int getshmfd (RIOShm *shm) {
 }
 
 static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
-	if (!memcmp (pathname, "shm://", 6)) {
+	if (!strncmp (pathname, "shm://", 6)) {
 		RIOShm *shm = R_NEW (RIOShm);
 		const char *ptr = pathname+6;
 		shm->id = getshmid (ptr);

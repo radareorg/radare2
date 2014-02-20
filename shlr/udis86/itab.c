@@ -8,97 +8,97 @@
 const uint16_t ud_itab__0[] = {
   /*  0 */          15,          16,          17,          18,
   /*  4 */          19,          20,    GROUP(1),    GROUP(2),
-  /*  8 */         960,         961,         962,         963,
-  /*  c */         964,         965,    GROUP(3),    GROUP(4),
+  /*  8 */         964,         965,         966,         967,
+  /*  c */         968,         969,    GROUP(3),    GROUP(4),
   /* 10 */           5,           6,           7,           8,
   /* 14 */           9,          10,  GROUP(284),  GROUP(285),
-  /* 18 */        1332,        1333,        1334,        1335,
-  /* 1c */        1336,        1337,  GROUP(286),  GROUP(287),
+  /* 18 */        1336,        1337,        1338,        1339,
+  /* 1c */        1340,        1341,  GROUP(286),  GROUP(287),
   /* 20 */          49,          50,          51,          52,
   /* 24 */          53,          54,     INVALID,  GROUP(288),
-  /* 28 */        1403,        1404,        1405,        1406,
-  /* 2c */        1407,        1408,     INVALID,  GROUP(289),
-  /* 30 */        1483,        1484,        1485,        1486,
-  /* 34 */        1487,        1488,     INVALID,  GROUP(290),
+  /* 28 */        1407,        1408,        1409,        1410,
+  /* 2c */        1411,        1412,     INVALID,  GROUP(289),
+  /* 30 */        1487,        1488,        1489,        1490,
+  /* 34 */        1491,        1492,     INVALID,  GROUP(290),
   /* 38 */         100,         101,         102,         103,
   /* 3c */         104,         105,     INVALID,  GROUP(291),
-  /* 40 */         695,         696,         697,         698,
-  /* 44 */         699,         700,         701,         702,
+  /* 40 */         699,         700,         701,         702,
+  /* 44 */         703,         704,         705,         706,
   /* 48 */         175,         176,         177,         178,
   /* 4c */         179,         180,         181,         182,
-  /* 50 */        1242,        1243,        1244,        1245,
-  /* 54 */        1246,        1247,        1248,        1249,
-  /* 58 */        1097,        1098,        1099,        1100,
-  /* 5c */        1101,        1102,        1103,        1104,
+  /* 50 */        1246,        1247,        1248,        1249,
+  /* 54 */        1250,        1251,        1252,        1253,
+  /* 58 */        1101,        1102,        1103,        1104,
+  /* 5c */        1105,        1106,        1107,        1108,
   /* 60 */  GROUP(292),  GROUP(295),  GROUP(298),  GROUP(299),
   /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 68 */        1250,         693,        1252,         694,
-  /* 6c */         705,  GROUP(300),         978,  GROUP(301),
-  /* 70 */         722,         724,         726,         728,
-  /* 74 */         730,         732,         734,         736,
-  /* 78 */         738,         740,         742,         744,
-  /* 7c */         746,         748,         750,         752,
+  /* 68 */        1254,         697,        1256,         698,
+  /* 6c */         709,  GROUP(300),         982,  GROUP(301),
+  /* 70 */         726,         728,         730,         732,
+  /* 74 */         734,         736,         738,         740,
+  /* 78 */         742,         744,         746,         748,
+  /* 7c */         750,         752,         754,         756,
   /* 80 */  GROUP(302),  GROUP(303),  GROUP(304),  GROUP(313),
-  /* 84 */        1429,        1430,        1471,        1472,
-  /* 88 */         824,         825,         826,         827,
-  /* 8c */         828,         766,         829,  GROUP(314),
-  /* 90 */        1473,        1474,        1475,        1476,
-  /* 94 */        1477,        1478,        1479,        1480,
-  /* 98 */  GROUP(315),  GROUP(316),  GROUP(317),        1466,
-  /* 9c */  GROUP(318),  GROUP(322),        1306,         762,
-  /* a0 */         830,         831,         832,         833,
-  /* a4 */         918,  GROUP(326),         114,  GROUP(327),
-  /* a8 */        1431,        1432,        1398,  GROUP(328),
-  /* ac */         786,  GROUP(329),        1342,  GROUP(330),
-  /* b0 */         834,         835,         836,         837,
-  /* b4 */         838,         839,         840,         841,
-  /* b8 */         842,         843,         844,         845,
-  /* bc */         846,         847,         848,         849,
-  /* c0 */  GROUP(331),  GROUP(332),        1297,        1298,
+  /* 84 */        1433,        1434,        1475,        1476,
+  /* 88 */         828,         829,         830,         831,
+  /* 8c */         832,         770,         833,  GROUP(314),
+  /* 90 */        1477,        1478,        1479,        1480,
+  /* 94 */        1481,        1482,        1483,        1484,
+  /* 98 */  GROUP(315),  GROUP(316),  GROUP(317),        1470,
+  /* 9c */  GROUP(318),  GROUP(322),        1310,         766,
+  /* a0 */         834,         835,         836,         837,
+  /* a4 */         922,  GROUP(326),         114,  GROUP(327),
+  /* a8 */        1435,        1436,        1402,  GROUP(328),
+  /* ac */         790,  GROUP(329),        1346,  GROUP(330),
+  /* b0 */         838,         839,         840,         841,
+  /* b4 */         842,         843,         844,         845,
+  /* b8 */         846,         847,         848,         849,
+  /* bc */         850,         851,         852,         853,
+  /* c0 */  GROUP(331),  GROUP(332),        1301,        1302,
   /* c4 */  GROUP(333),  GROUP(403),  GROUP(405),  GROUP(406),
-  /* c8 */         200,         772,        1299,        1300,
-  /* cc */         709,         710,  GROUP(407),  GROUP(408),
+  /* c8 */         200,         776,        1303,        1304,
+  /* cc */         713,         714,  GROUP(407),  GROUP(408),
   /* d0 */  GROUP(409),  GROUP(410),  GROUP(411),  GROUP(412),
-  /* d4 */  GROUP(413),  GROUP(414),  GROUP(415),        1482,
+  /* d4 */  GROUP(413),  GROUP(414),  GROUP(415),        1486,
   /* d8 */  GROUP(416),  GROUP(419),  GROUP(422),  GROUP(425),
   /* dc */  GROUP(428),  GROUP(431),  GROUP(434),  GROUP(437),
-  /* e0 */         790,         791,         792,  GROUP(440),
-  /* e4 */         686,         687,         974,         975,
-  /* e8 */          72,         759,  GROUP(441),         761,
-  /* ec */         688,         689,         976,         977,
-  /* f0 */         785,         708,        1295,        1296,
-  /* f4 */         683,          83,  GROUP(442),  GROUP(443),
-  /* f8 */          77,        1391,          81,        1394,
-  /* fc */          78,        1392,  GROUP(444),  GROUP(445),
+  /* e0 */         794,         795,         796,  GROUP(440),
+  /* e4 */         690,         691,         978,         979,
+  /* e8 */          72,         763,  GROUP(441),         765,
+  /* ec */         692,         693,         980,         981,
+  /* f0 */         789,         712,        1299,        1300,
+  /* f4 */         687,          83,  GROUP(442),  GROUP(443),
+  /* f8 */          77,        1395,          81,        1398,
+  /* fc */          78,        1396,  GROUP(444),  GROUP(445),
 };
 
 static const uint16_t ud_itab__1[] = {
-  /*  0 */        1236,     INVALID,
+  /*  0 */        1240,     INVALID,
 };
 
 static const uint16_t ud_itab__2[] = {
-  /*  0 */        1092,     INVALID,
+  /*  0 */        1096,     INVALID,
 };
 
 static const uint16_t ud_itab__3[] = {
-  /*  0 */        1237,     INVALID,
+  /*  0 */        1241,     INVALID,
 };
 
 static const uint16_t ud_itab__4[] = {
-  /*  0 */    GROUP(5),    GROUP(6),         763,         793,
-  /*  4 */     INVALID,        1422,          82,        1427,
-  /*  8 */         712,        1467,     INVALID,        1440,
+  /*  0 */    GROUP(5),    GROUP(6),         767,         797,
+  /*  4 */     INVALID,        1426,          82,        1431,
+  /*  8 */         716,        1471,     INVALID,        1444,
   /*  c */     INVALID,   GROUP(27),         430,   GROUP(28),
   /* 10 */   GROUP(29),   GROUP(30),   GROUP(31),   GROUP(34),
   /* 14 */   GROUP(35),   GROUP(36),   GROUP(37),   GROUP(40),
-  /* 18 */   GROUP(41),         951,         952,         953,
-  /* 1c */         954,         955,         956,         957,
-  /* 20 */         850,         851,         852,         853,
+  /* 18 */   GROUP(41),         955,         956,         957,
+  /* 1c */         958,         959,         960,         961,
+  /* 20 */         854,         855,         856,         857,
   /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 28 */   GROUP(42),   GROUP(43),   GROUP(44),   GROUP(45),
   /* 2c */   GROUP(46),   GROUP(47),   GROUP(48),   GROUP(49),
-  /* 30 */        1468,        1293,        1291,        1292,
-  /* 34 */   GROUP(50),   GROUP(52),     INVALID,        1510,
+  /* 30 */        1472,        1297,        1295,        1296,
+  /* 34 */   GROUP(50),   GROUP(52),     INVALID,        1514,
   /* 38 */   GROUP(54),     INVALID,  GROUP(116),     INVALID,
   /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 40 */          84,          85,          86,          87,
@@ -117,26 +117,26 @@ static const uint16_t ud_itab__4[] = {
   /* 74 */  GROUP(191),  GROUP(192),  GROUP(193),         199,
   /* 78 */  GROUP(194),  GROUP(195),     INVALID,     INVALID,
   /* 7c */  GROUP(196),  GROUP(197),  GROUP(198),  GROUP(201),
-  /* 80 */         723,         725,         727,         729,
-  /* 84 */         731,         733,         735,         737,
-  /* 88 */         739,         741,         743,         745,
-  /* 8c */         747,         749,         751,         753,
-  /* 90 */        1346,        1347,        1348,        1349,
-  /* 94 */        1350,        1351,        1352,        1353,
-  /* 98 */        1354,        1355,        1356,        1357,
-  /* 9c */        1358,        1359,        1360,        1361,
-  /* a0 */        1241,        1096,         131,        1665,
-  /* a4 */        1371,        1372,  GROUP(202),  GROUP(207),
-  /* a8 */        1240,        1095,        1301,        1670,
-  /* ac */        1373,        1374,  GROUP(215),         690,
-  /* b0 */         122,         123,         771,        1668,
-  /* b4 */         768,         769,         936,         937,
-  /* b8 */  GROUP(221),     INVALID,  GROUP(222),        1666,
-  /* bc */        1654,        1655,         926,         927,
-  /* c0 */        1469,        1470,  GROUP(223),         900,
+  /* 80 */         727,         729,         731,         733,
+  /* 84 */         735,         737,         739,         741,
+  /* 88 */         743,         745,         747,         749,
+  /* 8c */         751,         753,         755,         757,
+  /* 90 */        1350,        1351,        1352,        1353,
+  /* 94 */        1354,        1355,        1356,        1357,
+  /* 98 */        1358,        1359,        1360,        1361,
+  /* 9c */        1362,        1363,        1364,        1365,
+  /* a0 */        1245,        1100,         131,        1669,
+  /* a4 */        1375,        1376,  GROUP(202),  GROUP(207),
+  /* a8 */        1244,        1099,        1305,        1674,
+  /* ac */        1377,        1378,  GROUP(215),         694,
+  /* b0 */         122,         123,         775,        1672,
+  /* b4 */         772,         773,         940,         941,
+  /* b8 */  GROUP(221),     INVALID,  GROUP(222),        1670,
+  /* bc */        1658,        1659,         930,         931,
+  /* c0 */        1473,        1474,  GROUP(223),         904,
   /* c4 */  GROUP(224),  GROUP(225),  GROUP(226),  GROUP(227),
-  /* c8 */        1656,        1657,        1658,        1659,
-  /* cc */        1660,        1661,        1662,        1663,
+  /* c8 */        1660,        1661,        1662,        1663,
+  /* cc */        1664,        1665,        1666,        1667,
   /* d0 */  GROUP(236),  GROUP(237),  GROUP(238),  GROUP(239),
   /* d4 */  GROUP(240),  GROUP(241),  GROUP(242),  GROUP(243),
   /* d8 */  GROUP(244),  GROUP(245),  GROUP(246),  GROUP(247),
@@ -152,8 +152,8 @@ static const uint16_t ud_itab__4[] = {
 };
 
 static const uint16_t ud_itab__5[] = {
-  /*  0 */        1380,        1402,         782,         794,
-  /*  4 */        1449,        1450,     INVALID,     INVALID,
+  /*  0 */        1384,        1406,         786,         798,
+  /*  4 */        1453,        1454,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__6[] = {
@@ -161,13 +161,13 @@ static const uint16_t ud_itab__6[] = {
 };
 
 static const uint16_t ud_itab__7[] = {
-  /*  0 */        1370,        1379,         781,         770,
-  /*  4 */        1381,     INVALID,         783,         715,
+  /*  0 */        1374,        1383,         785,         774,
+  /*  4 */        1385,     INVALID,         787,         719,
 };
 
 static const uint16_t ud_itab__8[] = {
   /*  0 */    GROUP(9),   GROUP(14),   GROUP(15),   GROUP(16),
-  /*  4 */        1382,     INVALID,         784,   GROUP(25),
+  /*  4 */        1386,     INVALID,         788,   GROUP(25),
 };
 
 static const uint16_t ud_itab__9[] = {
@@ -176,28 +176,28 @@ static const uint16_t ud_itab__9[] = {
 };
 
 static const uint16_t ud_itab__10[] = {
-  /*  0 */     INVALID,        1451,     INVALID,
+  /*  0 */     INVALID,        1455,     INVALID,
 };
 
 static const uint16_t ud_itab__11[] = {
-  /*  0 */     INVALID,        1457,     INVALID,
+  /*  0 */     INVALID,        1461,     INVALID,
 };
 
 static const uint16_t ud_itab__12[] = {
-  /*  0 */     INVALID,        1458,     INVALID,
+  /*  0 */     INVALID,        1462,     INVALID,
 };
 
 static const uint16_t ud_itab__13[] = {
-  /*  0 */     INVALID,        1459,     INVALID,
+  /*  0 */     INVALID,        1463,     INVALID,
 };
 
 static const uint16_t ud_itab__14[] = {
-  /*  0 */         820,         948,     INVALID,     INVALID,
+  /*  0 */         824,         952,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__15[] = {
-  /*  0 */        1481,        1504,     INVALID,     INVALID,
+  /*  0 */        1485,        1508,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
@@ -207,23 +207,23 @@ static const uint16_t ud_itab__16[] = {
 };
 
 static const uint16_t ud_itab__17[] = {
-  /*  0 */        1462,     INVALID,     INVALID,
+  /*  0 */        1466,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__18[] = {
-  /*  0 */        1463,     INVALID,     INVALID,
+  /*  0 */        1467,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__19[] = {
-  /*  0 */        1464,     INVALID,     INVALID,
+  /*  0 */        1468,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__20[] = {
-  /*  0 */        1465,     INVALID,     INVALID,
+  /*  0 */        1469,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__21[] = {
-  /*  0 */        1393,     INVALID,     INVALID,
+  /*  0 */        1397,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__22[] = {
@@ -231,36 +231,36 @@ static const uint16_t ud_itab__22[] = {
 };
 
 static const uint16_t ud_itab__23[] = {
-  /*  0 */        1395,     INVALID,     INVALID,
+  /*  0 */        1399,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__24[] = {
-  /*  0 */         716,     INVALID,     INVALID,
+  /*  0 */         720,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__25[] = {
-  /*  0 */        1421,   GROUP(26),     INVALID,     INVALID,
+  /*  0 */        1425,   GROUP(26),     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__26[] = {
-  /*  0 */        1294,     INVALID,     INVALID,
+  /*  0 */        1298,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__27[] = {
-  /*  0 */        1115,        1116,        1117,        1118,
-  /*  4 */        1119,        1120,        1121,        1122,
+  /*  0 */        1119,        1120,        1121,        1122,
+  /*  4 */        1123,        1124,        1125,        1126,
 };
 
 static const uint16_t ud_itab__28[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
   /*  8 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /*  c */        1212,        1213,     INVALID,     INVALID,
+  /*  c */        1216,        1217,     INVALID,     INVALID,
   /* 10 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 14 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 1c */        1214,        1215,     INVALID,     INVALID,
+  /* 1c */        1218,        1219,     INVALID,     INVALID,
   /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 28 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -287,20 +287,20 @@ static const uint16_t ud_itab__28[] = {
   /* 7c */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 88 */     INVALID,     INVALID,        1216,     INVALID,
-  /* 8c */     INVALID,     INVALID,        1217,     INVALID,
-  /* 90 */        1218,     INVALID,     INVALID,     INVALID,
-  /* 94 */        1219,     INVALID,        1220,        1221,
-  /* 98 */     INVALID,     INVALID,        1222,     INVALID,
-  /* 9c */     INVALID,     INVALID,        1223,     INVALID,
-  /* a0 */        1224,     INVALID,     INVALID,     INVALID,
-  /* a4 */        1225,     INVALID,        1226,        1227,
-  /* a8 */     INVALID,     INVALID,        1228,     INVALID,
-  /* ac */     INVALID,     INVALID,        1229,     INVALID,
-  /* b0 */        1230,     INVALID,     INVALID,     INVALID,
-  /* b4 */        1231,     INVALID,        1232,        1233,
-  /* b8 */     INVALID,     INVALID,     INVALID,        1234,
-  /* bc */     INVALID,     INVALID,     INVALID,        1235,
+  /* 88 */     INVALID,     INVALID,        1220,     INVALID,
+  /* 8c */     INVALID,     INVALID,        1221,     INVALID,
+  /* 90 */        1222,     INVALID,     INVALID,     INVALID,
+  /* 94 */        1223,     INVALID,        1224,        1225,
+  /* 98 */     INVALID,     INVALID,        1226,     INVALID,
+  /* 9c */     INVALID,     INVALID,        1227,     INVALID,
+  /* a0 */        1228,     INVALID,     INVALID,     INVALID,
+  /* a4 */        1229,     INVALID,        1230,        1231,
+  /* a8 */     INVALID,     INVALID,        1232,     INVALID,
+  /* ac */     INVALID,     INVALID,        1233,     INVALID,
+  /* b0 */        1234,     INVALID,     INVALID,     INVALID,
+  /* b4 */        1235,     INVALID,        1236,        1237,
+  /* b8 */     INVALID,     INVALID,     INVALID,        1238,
+  /* bc */     INVALID,     INVALID,     INVALID,        1239,
   /* c0 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* c4 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -320,11 +320,11 @@ static const uint16_t ud_itab__28[] = {
 };
 
 static const uint16_t ud_itab__29[] = {
-  /*  0 */         932,         921,         924,         928,
+  /*  0 */         936,         925,         928,         932,
 };
 
 static const uint16_t ud_itab__30[] = {
-  /*  0 */         934,         922,         925,         930,
+  /*  0 */         938,         926,         929,         934,
 };
 
 static const uint16_t ud_itab__31[] = {
@@ -332,23 +332,23 @@ static const uint16_t ud_itab__31[] = {
 };
 
 static const uint16_t ud_itab__32[] = {
-  /*  0 */         888,        1558,        1566,         884,
+  /*  0 */         892,        1562,        1570,         888,
 };
 
 static const uint16_t ud_itab__33[] = {
-  /*  0 */         892,        1556,        1564,     INVALID,
+  /*  0 */         896,        1560,        1568,     INVALID,
 };
 
 static const uint16_t ud_itab__34[] = {
-  /*  0 */         890,     INVALID,     INVALID,         886,
+  /*  0 */         894,     INVALID,     INVALID,         890,
 };
 
 static const uint16_t ud_itab__35[] = {
-  /*  0 */        1445,     INVALID,     INVALID,        1447,
+  /*  0 */        1449,     INVALID,     INVALID,        1451,
 };
 
 static const uint16_t ud_itab__36[] = {
-  /*  0 */        1443,     INVALID,     INVALID,        1441,
+  /*  0 */        1447,     INVALID,     INVALID,        1445,
 };
 
 static const uint16_t ud_itab__37[] = {
@@ -356,28 +356,28 @@ static const uint16_t ud_itab__37[] = {
 };
 
 static const uint16_t ud_itab__38[] = {
-  /*  0 */         878,     INVALID,        1562,         874,
+  /*  0 */         882,     INVALID,        1566,         878,
 };
 
 static const uint16_t ud_itab__39[] = {
-  /*  0 */         882,     INVALID,        1560,     INVALID,
+  /*  0 */         886,     INVALID,        1564,     INVALID,
 };
 
 static const uint16_t ud_itab__40[] = {
-  /*  0 */         880,     INVALID,     INVALID,         876,
+  /*  0 */         884,     INVALID,     INVALID,         880,
 };
 
 static const uint16_t ud_itab__41[] = {
-  /*  0 */        1123,        1124,        1125,        1126,
+  /*  0 */        1127,        1128,        1129,        1130,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__42[] = {
-  /*  0 */         858,     INVALID,     INVALID,         854,
+  /*  0 */         862,     INVALID,     INVALID,         858,
 };
 
 static const uint16_t ud_itab__43[] = {
-  /*  0 */         860,     INVALID,     INVALID,         856,
+  /*  0 */         864,     INVALID,     INVALID,         860,
 };
 
 static const uint16_t ud_itab__44[] = {
@@ -385,7 +385,7 @@ static const uint16_t ud_itab__44[] = {
 };
 
 static const uint16_t ud_itab__45[] = {
-  /*  0 */         903,     INVALID,     INVALID,         901,
+  /*  0 */         907,     INVALID,     INVALID,         905,
 };
 
 static const uint16_t ud_itab__46[] = {
@@ -397,7 +397,7 @@ static const uint16_t ud_itab__47[] = {
 };
 
 static const uint16_t ud_itab__48[] = {
-  /*  0 */        1438,     INVALID,     INVALID,        1436,
+  /*  0 */        1442,     INVALID,     INVALID,        1440,
 };
 
 static const uint16_t ud_itab__49[] = {
@@ -405,19 +405,19 @@ static const uint16_t ud_itab__49[] = {
 };
 
 static const uint16_t ud_itab__50[] = {
-  /*  0 */        1423,   GROUP(51),
+  /*  0 */        1427,   GROUP(51),
 };
 
 static const uint16_t ud_itab__51[] = {
-  /*  0 */     INVALID,        1424,     INVALID,
+  /*  0 */     INVALID,        1428,     INVALID,
 };
 
 static const uint16_t ud_itab__52[] = {
-  /*  0 */        1425,   GROUP(53),
+  /*  0 */        1429,   GROUP(53),
 };
 
 static const uint16_t ud_itab__53[] = {
-  /*  0 */     INVALID,        1426,     INVALID,
+  /*  0 */     INVALID,        1430,     INVALID,
 };
 
 static const uint16_t ud_itab__54[] = {
@@ -496,11 +496,11 @@ static const uint16_t ud_itab__56[] = {
 };
 
 static const uint16_t ud_itab__57[] = {
-  /*  0 */     INVALID,         713,     INVALID,
+  /*  0 */     INVALID,         717,     INVALID,
 };
 
 static const uint16_t ud_itab__58[] = {
-  /*  0 */     INVALID,         714,     INVALID,
+  /*  0 */     INVALID,         718,     INVALID,
 };
 
 static const uint16_t ud_itab__59[] = {
@@ -512,195 +512,195 @@ static const uint16_t ud_itab__60[] = {
 };
 
 static const uint16_t ud_itab__61[] = {
-  /*  0 */     INVALID,         717,     INVALID,
+  /*  0 */     INVALID,         721,     INVALID,
 };
 
 static const uint16_t ud_itab__62[] = {
-  /*  0 */     INVALID,         718,     INVALID,
+  /*  0 */     INVALID,         722,     INVALID,
 };
 
 static const uint16_t ud_itab__63[] = {
-  /*  0 */        1583,     INVALID,     INVALID,        1584,
+  /*  0 */        1587,     INVALID,     INVALID,        1588,
 };
 
 static const uint16_t ud_itab__64[] = {
-  /*  0 */        1586,     INVALID,     INVALID,        1587,
+  /*  0 */        1590,     INVALID,     INVALID,        1591,
 };
 
 static const uint16_t ud_itab__65[] = {
-  /*  0 */        1589,     INVALID,     INVALID,        1590,
+  /*  0 */        1593,     INVALID,     INVALID,        1594,
 };
 
 static const uint16_t ud_itab__66[] = {
-  /*  0 */        1592,     INVALID,     INVALID,        1593,
+  /*  0 */        1596,     INVALID,     INVALID,        1597,
 };
 
 static const uint16_t ud_itab__67[] = {
-  /*  0 */        1577,     INVALID,     INVALID,        1578,
+  /*  0 */        1581,     INVALID,     INVALID,        1582,
 };
 
 static const uint16_t ud_itab__68[] = {
-  /*  0 */        1580,     INVALID,     INVALID,        1581,
+  /*  0 */        1584,     INVALID,     INVALID,        1585,
 };
 
 static const uint16_t ud_itab__69[] = {
-  /*  0 */        1601,     INVALID,     INVALID,        1602,
+  /*  0 */        1605,     INVALID,     INVALID,        1606,
 };
 
 static const uint16_t ud_itab__70[] = {
-  /*  0 */        1607,     INVALID,     INVALID,        1608,
+  /*  0 */        1611,     INVALID,     INVALID,        1612,
 };
 
 static const uint16_t ud_itab__71[] = {
-  /*  0 */        1604,     INVALID,     INVALID,        1605,
+  /*  0 */        1608,     INVALID,     INVALID,        1609,
 };
 
 static const uint16_t ud_itab__72[] = {
-  /*  0 */        1610,     INVALID,     INVALID,        1611,
+  /*  0 */        1614,     INVALID,     INVALID,        1615,
 };
 
 static const uint16_t ud_itab__73[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1616,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1620,
 };
 
 static const uint16_t ud_itab__74[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1678,
-};
-
-static const uint16_t ud_itab__75[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1652,
-};
-
-static const uint16_t ud_itab__76[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1651,
-};
-
-static const uint16_t ud_itab__77[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1706,
-};
-
-static const uint16_t ud_itab__78[] = {
-  /*  0 */        1568,     INVALID,     INVALID,        1569,
-};
-
-static const uint16_t ud_itab__79[] = {
-  /*  0 */        1571,     INVALID,     INVALID,        1572,
-};
-
-static const uint16_t ud_itab__80[] = {
-  /*  0 */        1574,     INVALID,     INVALID,        1575,
-};
-
-static const uint16_t ud_itab__81[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1680,
-};
-
-static const uint16_t ud_itab__82[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1682,
 };
 
-static const uint16_t ud_itab__83[] = {
+static const uint16_t ud_itab__75[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1656,
+};
+
+static const uint16_t ud_itab__76[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1655,
+};
+
+static const uint16_t ud_itab__77[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1710,
+};
+
+static const uint16_t ud_itab__78[] = {
+  /*  0 */        1572,     INVALID,     INVALID,        1573,
+};
+
+static const uint16_t ud_itab__79[] = {
+  /*  0 */        1575,     INVALID,     INVALID,        1576,
+};
+
+static const uint16_t ud_itab__80[] = {
+  /*  0 */        1578,     INVALID,     INVALID,        1579,
+};
+
+static const uint16_t ud_itab__81[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1684,
 };
 
-static const uint16_t ud_itab__84[] = {
+static const uint16_t ud_itab__82[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1686,
 };
 
-static const uint16_t ud_itab__85[] = {
+static const uint16_t ud_itab__83[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1688,
 };
 
+static const uint16_t ud_itab__84[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1690,
+};
+
+static const uint16_t ud_itab__85[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1692,
+};
+
 static const uint16_t ud_itab__86[] = {
-  /*  0 */        1595,     INVALID,     INVALID,        1596,
+  /*  0 */        1599,     INVALID,     INVALID,        1600,
 };
 
 static const uint16_t ud_itab__87[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1617,
-};
-
-static const uint16_t ud_itab__88[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1703,
-};
-
-static const uint16_t ud_itab__89[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1676,
-};
-
-static const uint16_t ud_itab__90[] = {
-  /*  0 */        1598,     INVALID,     INVALID,        1599,
-};
-
-static const uint16_t ud_itab__91[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1691,
-};
-
-static const uint16_t ud_itab__92[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1693,
-};
-
-static const uint16_t ud_itab__93[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1695,
-};
-
-static const uint16_t ud_itab__94[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1697,
-};
-
-static const uint16_t ud_itab__95[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1699,
-};
-
-static const uint16_t ud_itab__96[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1701,
-};
-
-static const uint16_t ud_itab__97[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1712,
-};
-
-static const uint16_t ud_itab__98[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1619,
-};
-
-static const uint16_t ud_itab__99[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1621,
 };
 
-static const uint16_t ud_itab__100[] = {
+static const uint16_t ud_itab__88[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1707,
+};
+
+static const uint16_t ud_itab__89[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1680,
+};
+
+static const uint16_t ud_itab__90[] = {
+  /*  0 */        1602,     INVALID,     INVALID,        1603,
+};
+
+static const uint16_t ud_itab__91[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1695,
+};
+
+static const uint16_t ud_itab__92[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1697,
+};
+
+static const uint16_t ud_itab__93[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1699,
+};
+
+static const uint16_t ud_itab__94[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1701,
+};
+
+static const uint16_t ud_itab__95[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1703,
+};
+
+static const uint16_t ud_itab__96[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1705,
+};
+
+static const uint16_t ud_itab__97[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1716,
+};
+
+static const uint16_t ud_itab__98[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1623,
 };
 
-static const uint16_t ud_itab__101[] = {
+static const uint16_t ud_itab__99[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1625,
 };
 
-static const uint16_t ud_itab__102[] = {
+static const uint16_t ud_itab__100[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1627,
 };
 
-static const uint16_t ud_itab__103[] = {
+static const uint16_t ud_itab__101[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1629,
 };
 
-static const uint16_t ud_itab__104[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1633,
-};
-
-static const uint16_t ud_itab__105[] = {
+static const uint16_t ud_itab__102[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1631,
 };
 
-static const uint16_t ud_itab__106[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1635,
+static const uint16_t ud_itab__103[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1633,
 };
 
-static const uint16_t ud_itab__107[] = {
+static const uint16_t ud_itab__104[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1637,
 };
 
+static const uint16_t ud_itab__105[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1635,
+};
+
+static const uint16_t ud_itab__106[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1639,
+};
+
+static const uint16_t ud_itab__107[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1641,
+};
+
 static const uint16_t ud_itab__108[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1690,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1694,
 };
 
 static const uint16_t ud_itab__109[] = {
@@ -724,11 +724,11 @@ static const uint16_t ud_itab__113[] = {
 };
 
 static const uint16_t ud_itab__114[] = {
-  /*  0 */        1718,        1720,     INVALID,     INVALID,
+  /*  0 */        1722,        1724,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__115[] = {
-  /*  0 */        1719,        1721,     INVALID,     INVALID,
+  /*  0 */        1723,        1725,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__116[] = {
@@ -799,43 +799,43 @@ static const uint16_t ud_itab__116[] = {
 };
 
 static const uint16_t ud_itab__117[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1639,
-};
-
-static const uint16_t ud_itab__118[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1641,
-};
-
-static const uint16_t ud_itab__119[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1643,
 };
 
-static const uint16_t ud_itab__120[] = {
+static const uint16_t ud_itab__118[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1645,
 };
 
-static const uint16_t ud_itab__121[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1649,
-};
-
-static const uint16_t ud_itab__122[] = {
+static const uint16_t ud_itab__119[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1647,
 };
 
+static const uint16_t ud_itab__120[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1649,
+};
+
+static const uint16_t ud_itab__121[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1653,
+};
+
+static const uint16_t ud_itab__122[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1651,
+};
+
 static const uint16_t ud_itab__123[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1672,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1676,
 };
 
 static const uint16_t ud_itab__124[] = {
-  /*  0 */        1613,     INVALID,     INVALID,        1614,
+  /*  0 */        1617,     INVALID,     INVALID,        1618,
 };
 
 static const uint16_t ud_itab__125[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1041,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1045,
 };
 
 static const uint16_t ud_itab__126[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1052,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1056,
 };
 
 static const uint16_t ud_itab__127[] = {
@@ -843,7 +843,7 @@ static const uint16_t ud_itab__127[] = {
 };
 
 static const uint16_t ud_itab__128[] = {
-  /*  0 */        1043,        1045,        1047,
+  /*  0 */        1047,        1049,        1051,
 };
 
 static const uint16_t ud_itab__129[] = {
@@ -851,11 +851,11 @@ static const uint16_t ud_itab__129[] = {
 };
 
 static const uint16_t ud_itab__130[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1054,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1058,
 };
 
 static const uint16_t ud_itab__131[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1552,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1556,
 };
 
 static const uint16_t ud_itab__132[] = {
@@ -863,7 +863,7 @@ static const uint16_t ud_itab__132[] = {
 };
 
 static const uint16_t ud_itab__133[] = {
-  /*  0 */        1058,        1059,        1060,
+  /*  0 */        1062,        1063,        1064,
 };
 
 static const uint16_t ud_itab__134[] = {
@@ -875,11 +875,11 @@ static const uint16_t ud_itab__135[] = {
 };
 
 static const uint16_t ud_itab__136[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1674,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1678,
 };
 
 static const uint16_t ud_itab__137[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1508,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1512,
 };
 
 static const uint16_t ud_itab__138[] = {
@@ -887,35 +887,35 @@ static const uint16_t ud_itab__138[] = {
 };
 
 static const uint16_t ud_itab__139[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1710,
-};
-
-static const uint16_t ud_itab__140[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1708,
-};
-
-static const uint16_t ud_itab__141[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1716,
-};
-
-static const uint16_t ud_itab__142[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,        1714,
 };
 
+static const uint16_t ud_itab__140[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1712,
+};
+
+static const uint16_t ud_itab__141[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1720,
+};
+
+static const uint16_t ud_itab__142[] = {
+  /*  0 */     INVALID,     INVALID,     INVALID,        1718,
+};
+
 static const uint16_t ud_itab__143[] = {
-  /*  0 */         896,     INVALID,     INVALID,         894,
+  /*  0 */         900,     INVALID,     INVALID,         898,
 };
 
 static const uint16_t ud_itab__144[] = {
-  /*  0 */        1383,        1387,        1389,        1385,
+  /*  0 */        1387,        1391,        1393,        1389,
 };
 
 static const uint16_t ud_itab__145[] = {
-  /*  0 */        1302,     INVALID,        1304,     INVALID,
+  /*  0 */        1306,     INVALID,        1308,     INVALID,
 };
 
 static const uint16_t ud_itab__146[] = {
-  /*  0 */        1287,     INVALID,        1289,     INVALID,
+  /*  0 */        1291,     INVALID,        1293,     INVALID,
 };
 
 static const uint16_t ud_itab__147[] = {
@@ -927,11 +927,11 @@ static const uint16_t ud_itab__148[] = {
 };
 
 static const uint16_t ud_itab__149[] = {
-  /*  0 */         972,     INVALID,     INVALID,         970,
+  /*  0 */         976,     INVALID,     INVALID,         974,
 };
 
 static const uint16_t ud_itab__150[] = {
-  /*  0 */        1495,     INVALID,     INVALID,        1493,
+  /*  0 */        1499,     INVALID,     INVALID,        1497,
 };
 
 static const uint16_t ud_itab__151[] = {
@@ -939,7 +939,7 @@ static const uint16_t ud_itab__151[] = {
 };
 
 static const uint16_t ud_itab__152[] = {
-  /*  0 */         942,         944,         946,         940,
+  /*  0 */         946,         948,         950,         944,
 };
 
 static const uint16_t ud_itab__153[] = {
@@ -951,11 +951,11 @@ static const uint16_t ud_itab__154[] = {
 };
 
 static const uint16_t ud_itab__155[] = {
-  /*  0 */        1415,        1417,        1419,        1413,
+  /*  0 */        1419,        1421,        1423,        1417,
 };
 
 static const uint16_t ud_itab__156[] = {
-  /*  0 */         814,         816,         818,         812,
+  /*  0 */         818,         820,         822,         816,
 };
 
 static const uint16_t ud_itab__157[] = {
@@ -963,63 +963,63 @@ static const uint16_t ud_itab__157[] = {
 };
 
 static const uint16_t ud_itab__158[] = {
-  /*  0 */         798,         800,         802,         796,
+  /*  0 */         802,         804,         806,         800,
 };
 
 static const uint16_t ud_itab__159[] = {
-  /*  0 */        1205,     INVALID,     INVALID,        1203,
+  /*  0 */        1209,     INVALID,     INVALID,        1207,
 };
 
 static const uint16_t ud_itab__160[] = {
-  /*  0 */        1208,     INVALID,     INVALID,        1206,
+  /*  0 */        1212,     INVALID,     INVALID,        1210,
 };
 
 static const uint16_t ud_itab__161[] = {
-  /*  0 */        1211,     INVALID,     INVALID,        1209,
+  /*  0 */        1215,     INVALID,     INVALID,        1213,
 };
 
 static const uint16_t ud_itab__162[] = {
-  /*  0 */         983,     INVALID,     INVALID,         981,
+  /*  0 */         987,     INVALID,     INVALID,         985,
 };
 
 static const uint16_t ud_itab__163[] = {
-  /*  0 */        1034,     INVALID,     INVALID,        1032,
+  /*  0 */        1038,     INVALID,     INVALID,        1036,
 };
 
 static const uint16_t ud_itab__164[] = {
-  /*  0 */        1037,     INVALID,     INVALID,        1035,
+  /*  0 */        1041,     INVALID,     INVALID,        1039,
 };
 
 static const uint16_t ud_itab__165[] = {
-  /*  0 */        1040,     INVALID,     INVALID,        1038,
+  /*  0 */        1044,     INVALID,     INVALID,        1042,
 };
 
 static const uint16_t ud_itab__166[] = {
-  /*  0 */         989,     INVALID,     INVALID,         987,
+  /*  0 */         993,     INVALID,     INVALID,         991,
 };
 
 static const uint16_t ud_itab__167[] = {
-  /*  0 */        1196,     INVALID,     INVALID,        1194,
+  /*  0 */        1200,     INVALID,     INVALID,        1198,
 };
 
 static const uint16_t ud_itab__168[] = {
-  /*  0 */        1199,     INVALID,     INVALID,        1197,
+  /*  0 */        1203,     INVALID,     INVALID,        1201,
 };
 
 static const uint16_t ud_itab__169[] = {
-  /*  0 */        1202,     INVALID,     INVALID,        1200,
+  /*  0 */        1206,     INVALID,     INVALID,        1204,
 };
 
 static const uint16_t ud_itab__170[] = {
-  /*  0 */         986,     INVALID,     INVALID,         984,
+  /*  0 */         990,     INVALID,     INVALID,         988,
 };
 
 static const uint16_t ud_itab__171[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1542,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1546,
 };
 
 static const uint16_t ud_itab__172[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1540,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1544,
 };
 
 static const uint16_t ud_itab__173[] = {
@@ -1027,19 +1027,19 @@ static const uint16_t ud_itab__173[] = {
 };
 
 static const uint16_t ud_itab__174[] = {
-  /*  0 */         862,         863,         906,
+  /*  0 */         866,         867,         910,
 };
 
 static const uint16_t ud_itab__175[] = {
-  /*  0 */         864,         866,         907,
+  /*  0 */         868,         870,         911,
 };
 
 static const uint16_t ud_itab__176[] = {
-  /*  0 */         916,     INVALID,        1518,        1513,
+  /*  0 */         920,     INVALID,        1522,        1517,
 };
 
 static const uint16_t ud_itab__177[] = {
-  /*  0 */        1130,        1532,        1530,        1534,
+  /*  0 */        1134,        1536,        1534,        1538,
 };
 
 static const uint16_t ud_itab__178[] = {
@@ -1048,15 +1048,15 @@ static const uint16_t ud_itab__178[] = {
 };
 
 static const uint16_t ud_itab__179[] = {
-  /*  0 */        1155,     INVALID,     INVALID,        1159,
+  /*  0 */        1159,     INVALID,     INVALID,        1163,
 };
 
 static const uint16_t ud_itab__180[] = {
-  /*  0 */        1148,     INVALID,     INVALID,        1146,
+  /*  0 */        1152,     INVALID,     INVALID,        1150,
 };
 
 static const uint16_t ud_itab__181[] = {
-  /*  0 */        1134,     INVALID,     INVALID,        1133,
+  /*  0 */        1138,     INVALID,     INVALID,        1137,
 };
 
 static const uint16_t ud_itab__182[] = {
@@ -1065,15 +1065,15 @@ static const uint16_t ud_itab__182[] = {
 };
 
 static const uint16_t ud_itab__183[] = {
-  /*  0 */        1161,     INVALID,     INVALID,        1165,
+  /*  0 */        1165,     INVALID,     INVALID,        1169,
 };
 
 static const uint16_t ud_itab__184[] = {
-  /*  0 */        1149,     INVALID,     INVALID,        1153,
+  /*  0 */        1153,     INVALID,     INVALID,        1157,
 };
 
 static const uint16_t ud_itab__185[] = {
-  /*  0 */        1138,     INVALID,     INVALID,        1137,
+  /*  0 */        1142,     INVALID,     INVALID,        1141,
 };
 
 static const uint16_t ud_itab__186[] = {
@@ -1082,63 +1082,63 @@ static const uint16_t ud_itab__186[] = {
 };
 
 static const uint16_t ud_itab__187[] = {
-  /*  0 */        1167,     INVALID,     INVALID,        1171,
+  /*  0 */        1171,     INVALID,     INVALID,        1175,
 };
 
 static const uint16_t ud_itab__188[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1538,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1542,
 };
 
 static const uint16_t ud_itab__189[] = {
-  /*  0 */        1142,     INVALID,     INVALID,        1141,
+  /*  0 */        1146,     INVALID,     INVALID,        1145,
 };
 
 static const uint16_t ud_itab__190[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1536,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1540,
 };
 
 static const uint16_t ud_itab__191[] = {
-  /*  0 */        1023,     INVALID,     INVALID,        1024,
+  /*  0 */        1027,     INVALID,     INVALID,        1028,
 };
 
 static const uint16_t ud_itab__192[] = {
-  /*  0 */        1026,     INVALID,     INVALID,        1027,
+  /*  0 */        1030,     INVALID,     INVALID,        1031,
 };
 
 static const uint16_t ud_itab__193[] = {
-  /*  0 */        1029,     INVALID,     INVALID,        1030,
+  /*  0 */        1033,     INVALID,     INVALID,        1034,
 };
 
 static const uint16_t ud_itab__194[] = {
-  /*  0 */     INVALID,        1460,     INVALID,
+  /*  0 */     INVALID,        1464,     INVALID,
 };
 
 static const uint16_t ud_itab__195[] = {
-  /*  0 */     INVALID,        1461,     INVALID,
+  /*  0 */     INVALID,        1465,     INVALID,
 };
 
 static const uint16_t ud_itab__196[] = {
-  /*  0 */     INVALID,        1546,     INVALID,        1544,
-};
-
-static const uint16_t ud_itab__197[] = {
   /*  0 */     INVALID,        1550,     INVALID,        1548,
 };
 
+static const uint16_t ud_itab__197[] = {
+  /*  0 */     INVALID,        1554,     INVALID,        1552,
+};
+
 static const uint16_t ud_itab__198[] = {
-  /*  0 */  GROUP(199),     INVALID,         912,  GROUP(200),
+  /*  0 */  GROUP(199),     INVALID,         916,  GROUP(200),
 };
 
 static const uint16_t ud_itab__199[] = {
-  /*  0 */         868,         869,         909,
+  /*  0 */         872,         873,         913,
 };
 
 static const uint16_t ud_itab__200[] = {
-  /*  0 */         870,         872,         910,
+  /*  0 */         874,         876,         914,
 };
 
 static const uint16_t ud_itab__201[] = {
-  /*  0 */         917,     INVALID,        1520,        1511,
+  /*  0 */         921,     INVALID,        1524,        1515,
 };
 
 static const uint16_t ud_itab__202[] = {
@@ -1151,17 +1151,17 @@ static const uint16_t ud_itab__203[] = {
 };
 
 static const uint16_t ud_itab__204[] = {
-  /*  0 */         821,     INVALID,     INVALID,     INVALID,
+  /*  0 */         825,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__205[] = {
-  /*  0 */        1505,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1509,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__206[] = {
-  /*  0 */        1506,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1510,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
@@ -1175,32 +1175,32 @@ static const uint16_t ud_itab__208[] = {
 };
 
 static const uint16_t ud_itab__209[] = {
-  /*  0 */        1507,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1511,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__210[] = {
-  /*  0 */        1497,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1501,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__211[] = {
-  /*  0 */        1498,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1502,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__212[] = {
-  /*  0 */        1499,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1503,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__213[] = {
-  /*  0 */        1500,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1504,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__214[] = {
-  /*  0 */        1501,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1505,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
@@ -1209,8 +1209,8 @@ static const uint16_t ud_itab__215[] = {
 };
 
 static const uint16_t ud_itab__216[] = {
-  /*  0 */         679,         678,         764,        1396,
-  /*  4 */        1503,        1502,     INVALID,          79,
+  /*  0 */         683,         682,         768,        1400,
+  /*  4 */        1507,        1506,     INVALID,          79,
 };
 
 static const uint16_t ud_itab__217[] = {
@@ -1219,27 +1219,27 @@ static const uint16_t ud_itab__217[] = {
 };
 
 static const uint16_t ud_itab__218[] = {
-  /*  0 */         773,         774,         775,         776,
-  /*  4 */         777,         778,         779,         780,
+  /*  0 */         777,         778,         779,         780,
+  /*  4 */         781,         782,         783,         784,
 };
 
 static const uint16_t ud_itab__219[] = {
-  /*  0 */         804,         805,         806,         807,
-  /*  4 */         808,         809,         810,         811,
+  /*  0 */         808,         809,         810,         811,
+  /*  4 */         812,         813,         814,         815,
 };
 
 static const uint16_t ud_itab__220[] = {
-  /*  0 */        1362,        1363,        1364,        1365,
-  /*  4 */        1366,        1367,        1368,        1369,
+  /*  0 */        1366,        1367,        1368,        1369,
+  /*  4 */        1370,        1371,        1372,        1373,
 };
 
 static const uint16_t ud_itab__221[] = {
-  /*  0 */     INVALID,     INVALID,        1705,     INVALID,
+  /*  0 */     INVALID,     INVALID,        1709,     INVALID,
 };
 
 static const uint16_t ud_itab__222[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /*  4 */        1664,        1671,        1669,        1667,
+  /*  4 */        1668,        1675,        1673,        1671,
 };
 
 static const uint16_t ud_itab__223[] = {
@@ -1247,15 +1247,15 @@ static const uint16_t ud_itab__223[] = {
 };
 
 static const uint16_t ud_itab__224[] = {
-  /*  0 */        1055,     INVALID,     INVALID,        1056,
+  /*  0 */        1059,     INVALID,     INVALID,        1060,
 };
 
 static const uint16_t ud_itab__225[] = {
-  /*  0 */        1051,     INVALID,     INVALID,        1049,
+  /*  0 */        1055,     INVALID,     INVALID,        1053,
 };
 
 static const uint16_t ud_itab__226[] = {
-  /*  0 */        1377,     INVALID,     INVALID,        1375,
+  /*  0 */        1381,     INVALID,     INVALID,        1379,
 };
 
 static const uint16_t ud_itab__227[] = {
@@ -1276,24 +1276,24 @@ static const uint16_t ud_itab__230[] = {
 };
 
 static const uint16_t ud_itab__231[] = {
-  /*  0 */     INVALID,        1455,     INVALID,
+  /*  0 */     INVALID,        1459,     INVALID,
 };
 
 static const uint16_t ud_itab__232[] = {
-  /*  0 */     INVALID,        1454,     INVALID,
+  /*  0 */     INVALID,        1458,     INVALID,
 };
 
 static const uint16_t ud_itab__233[] = {
-  /*  0 */     INVALID,        1453,     INVALID,
+  /*  0 */     INVALID,        1457,     INVALID,
 };
 
 static const uint16_t ud_itab__234[] = {
-  /*  0 */     INVALID,        1456,     INVALID,
+  /*  0 */     INVALID,        1460,     INVALID,
 };
 
 static const uint16_t ud_itab__235[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /*  4 */     INVALID,     INVALID,        1452,     INVALID,
+  /*  4 */     INVALID,     INVALID,        1456,     INVALID,
 };
 
 static const uint16_t ud_itab__236[] = {
@@ -1301,87 +1301,87 @@ static const uint16_t ud_itab__236[] = {
 };
 
 static const uint16_t ud_itab__237[] = {
-  /*  0 */        1156,     INVALID,     INVALID,        1157,
+  /*  0 */        1160,     INVALID,     INVALID,        1161,
 };
 
 static const uint16_t ud_itab__238[] = {
-  /*  0 */        1162,     INVALID,     INVALID,        1163,
+  /*  0 */        1166,     INVALID,     INVALID,        1167,
 };
 
 static const uint16_t ud_itab__239[] = {
-  /*  0 */        1168,     INVALID,     INVALID,        1169,
+  /*  0 */        1172,     INVALID,     INVALID,        1173,
 };
 
 static const uint16_t ud_itab__240[] = {
-  /*  0 */        1522,     INVALID,     INVALID,        1523,
+  /*  0 */        1526,     INVALID,     INVALID,        1527,
 };
 
 static const uint16_t ud_itab__241[] = {
-  /*  0 */        1089,     INVALID,     INVALID,        1090,
+  /*  0 */        1093,     INVALID,     INVALID,        1094,
 };
 
 static const uint16_t ud_itab__242[] = {
-  /*  0 */     INVALID,        1517,        1521,         914,
+  /*  0 */     INVALID,        1521,        1525,         918,
 };
 
 static const uint16_t ud_itab__243[] = {
-  /*  0 */        1082,     INVALID,     INVALID,        1080,
+  /*  0 */        1086,     INVALID,     INVALID,        1084,
 };
 
 static const uint16_t ud_itab__244[] = {
-  /*  0 */        1188,     INVALID,     INVALID,        1189,
+  /*  0 */        1192,     INVALID,     INVALID,        1193,
 };
 
 static const uint16_t ud_itab__245[] = {
-  /*  0 */        1191,     INVALID,     INVALID,        1192,
+  /*  0 */        1195,     INVALID,     INVALID,        1196,
 };
 
 static const uint16_t ud_itab__246[] = {
-  /*  0 */        1079,     INVALID,     INVALID,        1077,
+  /*  0 */        1083,     INVALID,     INVALID,        1081,
 };
 
 static const uint16_t ud_itab__247[] = {
-  /*  0 */        1013,     INVALID,     INVALID,        1011,
+  /*  0 */        1017,     INVALID,     INVALID,        1015,
 };
 
 static const uint16_t ud_itab__248[] = {
-  /*  0 */        1005,     INVALID,     INVALID,        1006,
+  /*  0 */        1009,     INVALID,     INVALID,        1010,
 };
 
 static const uint16_t ud_itab__249[] = {
-  /*  0 */        1008,     INVALID,     INVALID,        1009,
+  /*  0 */        1012,     INVALID,     INVALID,        1013,
 };
 
 static const uint16_t ud_itab__250[] = {
-  /*  0 */        1071,     INVALID,     INVALID,        1072,
+  /*  0 */        1075,     INVALID,     INVALID,        1076,
 };
 
 static const uint16_t ud_itab__251[] = {
-  /*  0 */        1016,     INVALID,     INVALID,        1014,
+  /*  0 */        1020,     INVALID,     INVALID,        1018,
 };
 
 static const uint16_t ud_itab__252[] = {
-  /*  0 */        1019,     INVALID,     INVALID,        1017,
+  /*  0 */        1023,     INVALID,     INVALID,        1021,
 };
 
 static const uint16_t ud_itab__253[] = {
-  /*  0 */        1143,     INVALID,     INVALID,        1144,
+  /*  0 */        1147,     INVALID,     INVALID,        1148,
 };
 
 static const uint16_t ud_itab__254[] = {
-  /*  0 */        1152,     INVALID,     INVALID,        1150,
+  /*  0 */        1156,     INVALID,     INVALID,        1154,
 };
 
 static const uint16_t ud_itab__255[] = {
-  /*  0 */        1022,     INVALID,     INVALID,        1020,
+  /*  0 */        1026,     INVALID,     INVALID,        1024,
 };
 
 static const uint16_t ud_itab__256[] = {
-  /*  0 */        1083,     INVALID,     INVALID,        1084,
+  /*  0 */        1087,     INVALID,     INVALID,        1088,
 };
 
 static const uint16_t ud_itab__257[] = {
-  /*  0 */        1088,     INVALID,     INVALID,        1086,
+  /*  0 */        1092,     INVALID,     INVALID,        1090,
 };
 
 static const uint16_t ud_itab__258[] = {
@@ -1389,67 +1389,67 @@ static const uint16_t ud_itab__258[] = {
 };
 
 static const uint16_t ud_itab__259[] = {
-  /*  0 */         905,     INVALID,     INVALID,         898,
+  /*  0 */         909,     INVALID,     INVALID,         902,
 };
 
 static const uint16_t ud_itab__260[] = {
-  /*  0 */        1182,     INVALID,     INVALID,        1183,
+  /*  0 */        1186,     INVALID,     INVALID,        1187,
 };
 
 static const uint16_t ud_itab__261[] = {
-  /*  0 */        1185,     INVALID,     INVALID,        1186,
+  /*  0 */        1189,     INVALID,     INVALID,        1190,
 };
 
 static const uint16_t ud_itab__262[] = {
-  /*  0 */        1076,     INVALID,     INVALID,        1074,
+  /*  0 */        1080,     INVALID,     INVALID,        1078,
 };
 
 static const uint16_t ud_itab__263[] = {
-  /*  0 */        1114,     INVALID,     INVALID,        1112,
+  /*  0 */        1118,     INVALID,     INVALID,        1116,
 };
 
 static const uint16_t ud_itab__264[] = {
-  /*  0 */         999,     INVALID,     INVALID,        1000,
+  /*  0 */        1003,     INVALID,     INVALID,        1004,
 };
 
 static const uint16_t ud_itab__265[] = {
-  /*  0 */        1002,     INVALID,     INVALID,        1003,
+  /*  0 */        1006,     INVALID,     INVALID,        1007,
 };
 
 static const uint16_t ud_itab__266[] = {
-  /*  0 */        1070,     INVALID,     INVALID,        1068,
+  /*  0 */        1074,     INVALID,     INVALID,        1072,
 };
 
 static const uint16_t ud_itab__267[] = {
-  /*  0 */        1262,     INVALID,     INVALID,        1260,
+  /*  0 */        1266,     INVALID,     INVALID,        1264,
 };
 
 static const uint16_t ud_itab__268[] = {
-  /*  0 */     INVALID,        1554,     INVALID,     INVALID,
+  /*  0 */     INVALID,        1558,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__269[] = {
-  /*  0 */        1132,     INVALID,     INVALID,        1131,
-};
-
-static const uint16_t ud_itab__270[] = {
   /*  0 */        1136,     INVALID,     INVALID,        1135,
 };
 
-static const uint16_t ud_itab__271[] = {
+static const uint16_t ud_itab__270[] = {
   /*  0 */        1140,     INVALID,     INVALID,        1139,
 };
 
+static const uint16_t ud_itab__271[] = {
+  /*  0 */        1144,     INVALID,     INVALID,        1143,
+};
+
 static const uint16_t ud_itab__272[] = {
-  /*  0 */        1528,     INVALID,     INVALID,        1529,
+  /*  0 */        1532,     INVALID,     INVALID,        1533,
 };
 
 static const uint16_t ud_itab__273[] = {
-  /*  0 */        1065,     INVALID,     INVALID,        1066,
+  /*  0 */        1069,     INVALID,     INVALID,        1070,
 };
 
 static const uint16_t ud_itab__274[] = {
-  /*  0 */        1129,     INVALID,     INVALID,        1127,
+  /*  0 */        1133,     INVALID,     INVALID,        1131,
 };
 
 static const uint16_t ud_itab__275[] = {
@@ -1457,51 +1457,51 @@ static const uint16_t ud_itab__275[] = {
 };
 
 static const uint16_t ud_itab__276[] = {
-  /*  0 */         795,     INVALID,     INVALID,        1515,
+  /*  0 */         799,     INVALID,     INVALID,        1519,
 };
 
 static const uint16_t ud_itab__277[] = {
-  /*  0 */        1175,     INVALID,     INVALID,        1173,
+  /*  0 */        1179,     INVALID,     INVALID,        1177,
 };
 
 static const uint16_t ud_itab__278[] = {
-  /*  0 */        1178,     INVALID,     INVALID,        1176,
+  /*  0 */        1182,     INVALID,     INVALID,        1180,
 };
 
 static const uint16_t ud_itab__279[] = {
-  /*  0 */        1179,     INVALID,     INVALID,        1180,
+  /*  0 */        1183,     INVALID,     INVALID,        1184,
 };
 
 static const uint16_t ud_itab__280[] = {
-  /*  0 */        1527,     INVALID,     INVALID,        1525,
+  /*  0 */        1531,     INVALID,     INVALID,        1529,
 };
 
 static const uint16_t ud_itab__281[] = {
-  /*  0 */         992,     INVALID,     INVALID,         990,
+  /*  0 */         996,     INVALID,     INVALID,         994,
 };
 
 static const uint16_t ud_itab__282[] = {
-  /*  0 */         993,     INVALID,     INVALID,         994,
+  /*  0 */         997,     INVALID,     INVALID,         998,
 };
 
 static const uint16_t ud_itab__283[] = {
-  /*  0 */         996,     INVALID,     INVALID,         997,
+  /*  0 */        1000,     INVALID,     INVALID,        1001,
 };
 
 static const uint16_t ud_itab__284[] = {
-  /*  0 */        1238,     INVALID,
+  /*  0 */        1242,     INVALID,
 };
 
 static const uint16_t ud_itab__285[] = {
-  /*  0 */        1093,     INVALID,
+  /*  0 */        1097,     INVALID,
 };
 
 static const uint16_t ud_itab__286[] = {
-  /*  0 */        1239,     INVALID,
+  /*  0 */        1243,     INVALID,
 };
 
 static const uint16_t ud_itab__287[] = {
-  /*  0 */        1094,     INVALID,
+  /*  0 */        1098,     INVALID,
 };
 
 static const uint16_t ud_itab__288[] = {
@@ -1525,11 +1525,11 @@ static const uint16_t ud_itab__292[] = {
 };
 
 static const uint16_t ud_itab__293[] = {
-  /*  0 */        1253,     INVALID,
+  /*  0 */        1257,     INVALID,
 };
 
 static const uint16_t ud_itab__294[] = {
-  /*  0 */        1254,     INVALID,
+  /*  0 */        1258,     INVALID,
 };
 
 static const uint16_t ud_itab__295[] = {
@@ -1537,15 +1537,15 @@ static const uint16_t ud_itab__295[] = {
 };
 
 static const uint16_t ud_itab__296[] = {
-  /*  0 */        1106,     INVALID,
+  /*  0 */        1110,     INVALID,
 };
 
 static const uint16_t ud_itab__297[] = {
-  /*  0 */        1107,     INVALID,
+  /*  0 */        1111,     INVALID,
 };
 
 static const uint16_t ud_itab__298[] = {
-  /*  0 */        1653,     INVALID,
+  /*  0 */        1657,     INVALID,
 };
 
 static const uint16_t ud_itab__299[] = {
@@ -1553,21 +1553,21 @@ static const uint16_t ud_itab__299[] = {
 };
 
 static const uint16_t ud_itab__300[] = {
-  /*  0 */         706,         707,     INVALID,
+  /*  0 */         710,         711,     INVALID,
 };
 
 static const uint16_t ud_itab__301[] = {
-  /*  0 */         979,         980,     INVALID,
+  /*  0 */         983,         984,     INVALID,
 };
 
 static const uint16_t ud_itab__302[] = {
-  /*  0 */          21,         966,          11,        1338,
-  /*  4 */          55,        1409,        1489,         106,
+  /*  0 */          21,         970,          11,        1342,
+  /*  4 */          55,        1413,        1493,         106,
 };
 
 static const uint16_t ud_itab__303[] = {
-  /*  0 */          23,         967,          13,        1339,
-  /*  4 */          57,        1410,        1490,         108,
+  /*  0 */          23,         971,          13,        1343,
+  /*  4 */          57,        1414,        1494,         108,
 };
 
 static const uint16_t ud_itab__304[] = {
@@ -1580,7 +1580,7 @@ static const uint16_t ud_itab__305[] = {
 };
 
 static const uint16_t ud_itab__306[] = {
-  /*  0 */         968,     INVALID,
+  /*  0 */         972,     INVALID,
 };
 
 static const uint16_t ud_itab__307[] = {
@@ -1588,7 +1588,7 @@ static const uint16_t ud_itab__307[] = {
 };
 
 static const uint16_t ud_itab__308[] = {
-  /*  0 */        1340,     INVALID,
+  /*  0 */        1344,     INVALID,
 };
 
 static const uint16_t ud_itab__309[] = {
@@ -1596,11 +1596,11 @@ static const uint16_t ud_itab__309[] = {
 };
 
 static const uint16_t ud_itab__310[] = {
-  /*  0 */        1411,     INVALID,
+  /*  0 */        1415,     INVALID,
 };
 
 static const uint16_t ud_itab__311[] = {
-  /*  0 */        1491,     INVALID,
+  /*  0 */        1495,     INVALID,
 };
 
 static const uint16_t ud_itab__312[] = {
@@ -1608,12 +1608,12 @@ static const uint16_t ud_itab__312[] = {
 };
 
 static const uint16_t ud_itab__313[] = {
-  /*  0 */          24,         969,          14,        1341,
-  /*  4 */          58,        1412,        1492,         109,
+  /*  0 */          24,         973,          14,        1345,
+  /*  4 */          58,        1416,        1496,         109,
 };
 
 static const uint16_t ud_itab__314[] = {
-  /*  0 */        1105,     INVALID,     INVALID,     INVALID,
+  /*  0 */        1109,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
@@ -1634,15 +1634,15 @@ static const uint16_t ud_itab__318[] = {
 };
 
 static const uint16_t ud_itab__319[] = {
-  /*  0 */        1255,        1256,
+  /*  0 */        1259,        1260,
 };
 
 static const uint16_t ud_itab__320[] = {
-  /*  0 */        1257,        1258,
+  /*  0 */        1261,        1262,
 };
 
 static const uint16_t ud_itab__321[] = {
-  /*  0 */     INVALID,        1259,
+  /*  0 */     INVALID,        1263,
 };
 
 static const uint16_t ud_itab__322[] = {
@@ -1650,19 +1650,19 @@ static const uint16_t ud_itab__322[] = {
 };
 
 static const uint16_t ud_itab__323[] = {
-  /*  0 */        1108,     INVALID,
+  /*  0 */        1112,     INVALID,
 };
 
 static const uint16_t ud_itab__324[] = {
-  /*  0 */        1109,        1110,
+  /*  0 */        1113,        1114,
 };
 
 static const uint16_t ud_itab__325[] = {
-  /*  0 */     INVALID,        1111,
+  /*  0 */     INVALID,        1115,
 };
 
 static const uint16_t ud_itab__326[] = {
-  /*  0 */         919,         920,         923,
+  /*  0 */         923,         924,         927,
 };
 
 static const uint16_t ud_itab__327[] = {
@@ -1670,25 +1670,25 @@ static const uint16_t ud_itab__327[] = {
 };
 
 static const uint16_t ud_itab__328[] = {
-  /*  0 */        1399,        1400,        1401,
+  /*  0 */        1403,        1404,        1405,
 };
 
 static const uint16_t ud_itab__329[] = {
-  /*  0 */         787,         788,         789,
+  /*  0 */         791,         792,         793,
 };
 
 static const uint16_t ud_itab__330[] = {
-  /*  0 */        1343,        1344,        1345,
+  /*  0 */        1347,        1348,        1349,
 };
 
 static const uint16_t ud_itab__331[] = {
-  /*  0 */        1275,        1282,        1263,        1271,
-  /*  4 */        1323,        1330,        1314,        1309,
+  /*  0 */        1279,        1286,        1267,        1275,
+  /*  4 */        1327,        1334,        1318,        1313,
 };
 
 static const uint16_t ud_itab__332[] = {
-  /*  0 */        1280,        1283,        1264,        1270,
-  /*  4 */        1319,        1326,        1315,        1311,
+  /*  0 */        1284,        1287,        1268,        1274,
+  /*  4 */        1323,        1330,        1319,        1315,
 };
 
 static const uint16_t ud_itab__333[] = {
@@ -1699,7 +1699,7 @@ static const uint16_t ud_itab__333[] = {
 };
 
 static const uint16_t ud_itab__334[] = {
-  /*  0 */         767,     INVALID,
+  /*  0 */         771,     INVALID,
 };
 
 static const uint16_t ud_itab__335[] = {
@@ -1707,14 +1707,14 @@ static const uint16_t ud_itab__335[] = {
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
   /*  8 */     INVALID,     INVALID,     INVALID,     INVALID,
   /*  c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 10 */         933,         935,  GROUP(336),         891,
-  /* 14 */        1446,        1444,  GROUP(337),         881,
+  /* 10 */         937,         939,  GROUP(336),         895,
+  /* 14 */        1450,        1448,  GROUP(337),         885,
   /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 28 */         859,         861,     INVALID,         904,
-  /* 2c */     INVALID,     INVALID,        1439,         130,
+  /* 28 */         863,         865,     INVALID,         908,
+  /* 2c */     INVALID,     INVALID,        1443,         130,
   /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -1723,10 +1723,10 @@ static const uint16_t ud_itab__335[] = {
   /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 50 */         897,        1384,        1303,        1288,
-  /* 54 */          62,          66,         973,        1496,
-  /* 58 */          28,         943,         146,         135,
-  /* 5c */        1416,         815,         190,         799,
+  /* 50 */         901,        1388,        1307,        1292,
+  /* 54 */          62,          66,         977,        1500,
+  /* 58 */          28,         947,         146,         135,
+  /* 5c */        1420,         819,         190,         803,
   /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -1752,7 +1752,7 @@ static const uint16_t ud_itab__335[] = {
   /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
   /* c0 */     INVALID,     INVALID,         113,     INVALID,
-  /* c4 */     INVALID,     INVALID,        1378,     INVALID,
+  /* c4 */     INVALID,     INVALID,        1382,     INVALID,
   /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
   /* d0 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -1770,11 +1770,11 @@ static const uint16_t ud_itab__335[] = {
 };
 
 static const uint16_t ud_itab__336[] = {
-  /*  0 */         889,         893,
+  /*  0 */         893,         897,
 };
 
 static const uint16_t ud_itab__337[] = {
-  /*  0 */         879,         883,
+  /*  0 */         883,         887,
 };
 
 static const uint16_t ud_itab__338[] = {
@@ -1782,12 +1782,12 @@ static const uint16_t ud_itab__338[] = {
 };
 
 static const uint16_t ud_itab__339[] = {
-  /*  0 */     INVALID,     INVALID,     INVALID,        1397,
+  /*  0 */     INVALID,     INVALID,     INVALID,        1401,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__340[] = {
-  /*  0 */        1737,        1738,
+  /*  0 */        1741,        1742,
 };
 
 static const uint16_t ud_itab__341[] = {
@@ -1795,14 +1795,14 @@ static const uint16_t ud_itab__341[] = {
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
   /*  8 */     INVALID,     INVALID,     INVALID,     INVALID,
   /*  c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 10 */         929,         931,  GROUP(342),         887,
-  /* 14 */        1448,        1442,  GROUP(343),         877,
+  /* 10 */         933,         935,  GROUP(342),         891,
+  /* 14 */        1452,        1446,  GROUP(343),         881,
   /* 18 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 28 */         855,         857,     INVALID,         902,
-  /* 2c */     INVALID,     INVALID,        1437,         128,
+  /* 28 */         859,         861,     INVALID,         906,
+  /* 2c */     INVALID,     INVALID,        1441,         128,
   /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -1811,18 +1811,18 @@ static const uint16_t ud_itab__341[] = {
   /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 50 */         895,        1386,     INVALID,     INVALID,
-  /* 54 */          60,          64,         971,        1494,
-  /* 58 */          26,         941,         140,         144,
-  /* 5c */        1414,         813,         188,         797,
-  /* 60 */        1204,        1207,        1210,         982,
-  /* 64 */        1033,        1036,        1039,         988,
-  /* 68 */        1195,        1198,        1201,         985,
-  /* 6c */        1543,        1541,  GROUP(344),        1514,
-  /* 70 */        1535,  GROUP(345),  GROUP(347),  GROUP(349),
-  /* 74 */        1025,        1028,        1031,     INVALID,
+  /* 50 */         899,        1390,     INVALID,     INVALID,
+  /* 54 */          60,          64,         975,        1498,
+  /* 58 */          26,         945,         140,         144,
+  /* 5c */        1418,         817,         188,         801,
+  /* 60 */        1208,        1211,        1214,         986,
+  /* 64 */        1037,        1040,        1043,         992,
+  /* 68 */        1199,        1202,        1205,         989,
+  /* 6c */        1547,        1545,  GROUP(344),        1518,
+  /* 70 */        1539,  GROUP(345),  GROUP(347),  GROUP(349),
+  /* 74 */        1029,        1032,        1035,     INVALID,
   /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 7c */        1545,        1549,  GROUP(351),        1512,
+  /* 7c */        1549,        1553,  GROUP(351),        1516,
   /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -1840,104 +1840,104 @@ static const uint16_t ud_itab__341[] = {
   /* b8 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* bc */     INVALID,     INVALID,     INVALID,     INVALID,
   /* c0 */     INVALID,     INVALID,         111,     INVALID,
-  /* c4 */        1057,        1050,        1376,     INVALID,
+  /* c4 */        1061,        1054,        1380,     INVALID,
   /* c8 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* cc */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* d0 */          34,        1158,        1164,        1170,
-  /* d4 */        1524,        1091,         915,  GROUP(352),
-  /* d8 */        1190,        1193,        1078,        1012,
-  /* dc */        1007,        1010,        1073,        1015,
-  /* e0 */        1018,        1145,        1151,        1021,
-  /* e4 */        1085,        1087,         161,         899,
-  /* e8 */        1184,        1187,        1075,        1113,
-  /* ec */        1001,        1004,        1069,        1261,
+  /* d0 */          34,        1162,        1168,        1174,
+  /* d4 */        1528,        1095,         919,  GROUP(352),
+  /* d8 */        1194,        1197,        1082,        1016,
+  /* dc */        1011,        1014,        1077,        1019,
+  /* e0 */        1022,        1149,        1155,        1025,
+  /* e4 */        1089,        1091,         161,         903,
+  /* e8 */        1188,        1191,        1079,        1117,
+  /* ec */        1005,        1008,        1073,        1265,
   /* f0 */     INVALID,  GROUP(353),  GROUP(354),  GROUP(355),
-  /* f4 */     INVALID,        1067,        1128,  GROUP(356),
-  /* f8 */        1174,        1177,        1181,        1526,
-  /* fc */         991,         995,         998,     INVALID,
+  /* f4 */     INVALID,        1071,        1132,  GROUP(356),
+  /* f8 */        1178,        1181,        1185,        1530,
+  /* fc */         995,         999,        1002,     INVALID,
 };
 
 static const uint16_t ud_itab__342[] = {
-  /*  0 */         885,     INVALID,
+  /*  0 */         889,     INVALID,
 };
 
 static const uint16_t ud_itab__343[] = {
-  /*  0 */         875,     INVALID,
+  /*  0 */         879,     INVALID,
 };
 
 static const uint16_t ud_itab__344[] = {
-  /*  0 */         865,         867,         908,
+  /*  0 */         869,         871,         912,
 };
 
 static const uint16_t ud_itab__345[] = {
-  /*  0 */     INVALID,     INVALID,        1160,     INVALID,
-  /*  4 */        1147,     INVALID,  GROUP(346),     INVALID,
+  /*  0 */     INVALID,     INVALID,        1164,     INVALID,
+  /*  4 */        1151,     INVALID,  GROUP(346),     INVALID,
 };
 
 static const uint16_t ud_itab__346[] = {
-  /*  0 */        1751,     INVALID,
-};
-
-static const uint16_t ud_itab__347[] = {
-  /*  0 */     INVALID,     INVALID,        1166,     INVALID,
-  /*  4 */        1154,     INVALID,  GROUP(348),     INVALID,
-};
-
-static const uint16_t ud_itab__348[] = {
-  /*  0 */        1753,     INVALID,
-};
-
-static const uint16_t ud_itab__349[] = {
-  /*  0 */     INVALID,     INVALID,        1172,        1539,
-  /*  4 */     INVALID,     INVALID,  GROUP(350),        1537,
-};
-
-static const uint16_t ud_itab__350[] = {
   /*  0 */        1755,     INVALID,
 };
 
+static const uint16_t ud_itab__347[] = {
+  /*  0 */     INVALID,     INVALID,        1170,     INVALID,
+  /*  4 */        1158,     INVALID,  GROUP(348),     INVALID,
+};
+
+static const uint16_t ud_itab__348[] = {
+  /*  0 */        1757,     INVALID,
+};
+
+static const uint16_t ud_itab__349[] = {
+  /*  0 */     INVALID,     INVALID,        1176,        1543,
+  /*  4 */     INVALID,     INVALID,  GROUP(350),        1541,
+};
+
+static const uint16_t ud_itab__350[] = {
+  /*  0 */        1759,     INVALID,
+};
+
 static const uint16_t ud_itab__351[] = {
-  /*  0 */         871,         873,         911,
+  /*  0 */         875,         877,         915,
 };
 
 static const uint16_t ud_itab__352[] = {
-  /*  0 */        1081,     INVALID,
+  /*  0 */        1085,     INVALID,
 };
 
 static const uint16_t ud_itab__353[] = {
-  /*  0 */        1750,     INVALID,
-};
-
-static const uint16_t ud_itab__354[] = {
-  /*  0 */        1752,     INVALID,
-};
-
-static const uint16_t ud_itab__355[] = {
   /*  0 */        1754,     INVALID,
 };
 
+static const uint16_t ud_itab__354[] = {
+  /*  0 */        1756,     INVALID,
+};
+
+static const uint16_t ud_itab__355[] = {
+  /*  0 */        1758,     INVALID,
+};
+
 static const uint16_t ud_itab__356[] = {
-  /*  0 */     INVALID,        1516,
+  /*  0 */     INVALID,        1520,
 };
 
 static const uint16_t ud_itab__357[] = {
-  /*  0 */        1579,        1582,        1585,        1588,
-  /*  4 */        1591,        1594,        1597,        1600,
-  /*  8 */        1603,        1609,        1606,        1612,
+  /*  0 */        1583,        1586,        1589,        1592,
+  /*  4 */        1595,        1598,        1601,        1604,
+  /*  8 */        1607,        1613,        1610,        1616,
   /*  c */  GROUP(358),  GROUP(359),  GROUP(360),  GROUP(361),
   /* 10 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 14 */     INVALID,     INVALID,     INVALID,        1707,
+  /* 14 */     INVALID,     INVALID,     INVALID,        1711,
   /* 18 */  GROUP(362),  GROUP(363),     INVALID,     INVALID,
-  /* 1c */        1570,        1573,        1576,     INVALID,
-  /* 20 */        1681,        1683,        1685,        1687,
-  /* 24 */        1689,     INVALID,     INVALID,     INVALID,
-  /* 28 */        1618,        1704,        1677,        1679,
+  /* 1c */        1574,        1577,        1580,     INVALID,
+  /* 20 */        1685,        1687,        1689,        1691,
+  /* 24 */        1693,     INVALID,     INVALID,     INVALID,
+  /* 28 */        1622,        1708,        1681,        1683,
   /* 2c */  GROUP(365),  GROUP(366),  GROUP(367),  GROUP(368),
-  /* 30 */        1692,        1694,        1696,        1698,
-  /* 34 */        1700,        1702,     INVALID,        1713,
-  /* 38 */        1620,        1622,        1624,        1626,
-  /* 3c */        1628,        1630,        1634,        1632,
-  /* 40 */        1636,        1638,     INVALID,     INVALID,
+  /* 30 */        1696,        1698,        1700,        1702,
+  /* 34 */        1704,        1706,     INVALID,        1717,
+  /* 38 */        1624,        1626,        1628,        1630,
+  /* 3c */        1632,        1634,        1638,        1636,
+  /* 40 */        1640,        1642,     INVALID,     INVALID,
   /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -1988,23 +1988,23 @@ static const uint16_t ud_itab__357[] = {
 };
 
 static const uint16_t ud_itab__358[] = {
-  /*  0 */        1732,     INVALID,
-};
-
-static const uint16_t ud_itab__359[] = {
-  /*  0 */        1730,     INVALID,
-};
-
-static const uint16_t ud_itab__360[] = {
-  /*  0 */        1735,     INVALID,
-};
-
-static const uint16_t ud_itab__361[] = {
   /*  0 */        1736,     INVALID,
 };
 
+static const uint16_t ud_itab__359[] = {
+  /*  0 */        1734,     INVALID,
+};
+
+static const uint16_t ud_itab__360[] = {
+  /*  0 */        1739,     INVALID,
+};
+
+static const uint16_t ud_itab__361[] = {
+  /*  0 */        1740,     INVALID,
+};
+
 static const uint16_t ud_itab__362[] = {
-  /*  0 */        1722,     INVALID,
+  /*  0 */        1726,     INVALID,
 };
 
 static const uint16_t ud_itab__363[] = {
@@ -2012,35 +2012,35 @@ static const uint16_t ud_itab__363[] = {
 };
 
 static const uint16_t ud_itab__364[] = {
-  /*  0 */     INVALID,        1723,
+  /*  0 */     INVALID,        1727,
 };
 
 static const uint16_t ud_itab__365[] = {
-  /*  0 */        1726,     INVALID,
+  /*  0 */        1730,     INVALID,
 };
 
 static const uint16_t ud_itab__366[] = {
-  /*  0 */        1728,     INVALID,
+  /*  0 */        1732,     INVALID,
 };
 
 static const uint16_t ud_itab__367[] = {
-  /*  0 */        1727,     INVALID,
+  /*  0 */        1731,     INVALID,
 };
 
 static const uint16_t ud_itab__368[] = {
-  /*  0 */        1729,     INVALID,
+  /*  0 */        1733,     INVALID,
 };
 
 static const uint16_t ud_itab__369[] = {
   /*  0 */     INVALID,     INVALID,     INVALID,     INVALID,
   /*  4 */  GROUP(370),  GROUP(371),  GROUP(372),     INVALID,
-  /*  8 */        1640,        1642,        1644,        1646,
-  /*  c */        1650,        1648,        1673,        1615,
+  /*  8 */        1644,        1646,        1648,        1650,
+  /*  c */        1654,        1652,        1677,        1619,
   /* 10 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 14 */  GROUP(374),        1053,  GROUP(375),         202,
+  /* 14 */  GROUP(374),        1057,  GROUP(375),         202,
   /* 18 */  GROUP(379),  GROUP(381),     INVALID,     INVALID,
   /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 20 */  GROUP(383),        1553,  GROUP(385),     INVALID,
+  /* 20 */  GROUP(383),        1557,  GROUP(385),     INVALID,
   /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 28 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 2c */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -2048,15 +2048,15 @@ static const uint16_t ud_itab__369[] = {
   /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 3c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 40 */         198,         196,        1675,     INVALID,
-  /* 44 */        1509,     INVALID,     INVALID,     INVALID,
+  /* 40 */         198,         196,        1679,     INVALID,
+  /* 44 */        1513,     INVALID,     INVALID,     INVALID,
   /* 48 */     INVALID,     INVALID,  GROUP(391),  GROUP(392),
   /* 4c */  GROUP(393),     INVALID,     INVALID,     INVALID,
   /* 50 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 58 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 5c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 60 */        1711,        1709,        1717,        1715,
+  /* 60 */        1715,        1713,        1721,        1719,
   /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -2099,11 +2099,11 @@ static const uint16_t ud_itab__369[] = {
 };
 
 static const uint16_t ud_itab__370[] = {
-  /*  0 */        1733,     INVALID,
+  /*  0 */        1737,     INVALID,
 };
 
 static const uint16_t ud_itab__371[] = {
-  /*  0 */        1731,     INVALID,
+  /*  0 */        1735,     INVALID,
 };
 
 static const uint16_t ud_itab__372[] = {
@@ -2111,11 +2111,11 @@ static const uint16_t ud_itab__372[] = {
 };
 
 static const uint16_t ud_itab__373[] = {
-  /*  0 */     INVALID,        1734,
+  /*  0 */     INVALID,        1738,
 };
 
 static const uint16_t ud_itab__374[] = {
-  /*  0 */        1042,     INVALID,
+  /*  0 */        1046,     INVALID,
 };
 
 static const uint16_t ud_itab__375[] = {
@@ -2123,15 +2123,15 @@ static const uint16_t ud_itab__375[] = {
 };
 
 static const uint16_t ud_itab__376[] = {
-  /*  0 */        1044,     INVALID,
+  /*  0 */        1048,     INVALID,
 };
 
 static const uint16_t ud_itab__377[] = {
-  /*  0 */        1046,     INVALID,
+  /*  0 */        1050,     INVALID,
 };
 
 static const uint16_t ud_itab__378[] = {
-  /*  0 */     INVALID,        1048,
+  /*  0 */     INVALID,        1052,
 };
 
 static const uint16_t ud_itab__379[] = {
@@ -2139,7 +2139,7 @@ static const uint16_t ud_itab__379[] = {
 };
 
 static const uint16_t ud_itab__380[] = {
-  /*  0 */     INVALID,        1725,
+  /*  0 */     INVALID,        1729,
 };
 
 static const uint16_t ud_itab__381[] = {
@@ -2147,7 +2147,7 @@ static const uint16_t ud_itab__381[] = {
 };
 
 static const uint16_t ud_itab__382[] = {
-  /*  0 */     INVALID,        1724,
+  /*  0 */     INVALID,        1728,
 };
 
 static const uint16_t ud_itab__383[] = {
@@ -2155,7 +2155,7 @@ static const uint16_t ud_itab__383[] = {
 };
 
 static const uint16_t ud_itab__384[] = {
-  /*  0 */        1061,     INVALID,
+  /*  0 */        1065,     INVALID,
 };
 
 static const uint16_t ud_itab__385[] = {
@@ -2167,7 +2167,7 @@ static const uint16_t ud_itab__386[] = {
 };
 
 static const uint16_t ud_itab__387[] = {
-  /*  0 */        1062,     INVALID,
+  /*  0 */        1066,     INVALID,
 };
 
 static const uint16_t ud_itab__388[] = {
@@ -2175,23 +2175,23 @@ static const uint16_t ud_itab__388[] = {
 };
 
 static const uint16_t ud_itab__389[] = {
-  /*  0 */        1063,     INVALID,
+  /*  0 */        1067,     INVALID,
 };
 
 static const uint16_t ud_itab__390[] = {
-  /*  0 */        1064,     INVALID,
+  /*  0 */        1068,     INVALID,
 };
 
 static const uint16_t ud_itab__391[] = {
-  /*  0 */        1740,     INVALID,
+  /*  0 */        1744,     INVALID,
 };
 
 static const uint16_t ud_itab__392[] = {
-  /*  0 */        1739,     INVALID,
+  /*  0 */        1743,     INVALID,
 };
 
 static const uint16_t ud_itab__393[] = {
-  /*  0 */        1749,     INVALID,
+  /*  0 */        1753,     INVALID,
 };
 
 static const uint16_t ud_itab__394[] = {
@@ -2215,18 +2215,18 @@ static const uint16_t ud_itab__394[] = {
   /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 50 */     INVALID,        1390,        1305,        1290,
+  /* 50 */     INVALID,        1394,        1309,        1294,
   /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 58 */          32,         947,         157,         164,
-  /* 5c */        1420,         819,         194,         803,
+  /* 58 */          32,         951,         157,         164,
+  /* 5c */        1424,         823,         194,         807,
   /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 6c */     INVALID,     INVALID,     INVALID,        1519,
-  /* 70 */        1531,     INVALID,     INVALID,     INVALID,
+  /* 6c */     INVALID,     INVALID,     INVALID,        1523,
+  /* 70 */        1535,     INVALID,     INVALID,     INVALID,
   /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 7c */     INVALID,     INVALID,         913,     INVALID,
+  /* 7c */     INVALID,     INVALID,         917,     INVALID,
   /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -2262,19 +2262,19 @@ static const uint16_t ud_itab__394[] = {
 };
 
 static const uint16_t ud_itab__395[] = {
-  /*  0 */        1746,        1745,
+  /*  0 */        1750,        1749,
 };
 
 static const uint16_t ud_itab__396[] = {
-  /*  0 */        1748,        1747,
+  /*  0 */        1752,        1751,
 };
 
 static const uint16_t ud_itab__397[] = {
-  /*  0 */        1567,        1565,
+  /*  0 */        1571,        1569,
 };
 
 static const uint16_t ud_itab__398[] = {
-  /*  0 */        1563,        1561,
+  /*  0 */        1567,        1565,
 };
 
 static const uint16_t ud_itab__399[] = {
@@ -2298,18 +2298,18 @@ static const uint16_t ud_itab__399[] = {
   /* 44 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 48 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 4c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 50 */     INVALID,        1388,     INVALID,     INVALID,
+  /* 50 */     INVALID,        1392,     INVALID,     INVALID,
   /* 54 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 58 */          30,         945,         151,     INVALID,
-  /* 5c */        1418,         817,         192,         801,
+  /* 58 */          30,         949,         151,     INVALID,
+  /* 5c */        1422,         821,         192,         805,
   /* 60 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 64 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 68 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 6c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 70 */        1533,     INVALID,     INVALID,     INVALID,
+  /* 70 */        1537,     INVALID,     INVALID,     INVALID,
   /* 74 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 78 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 7c */        1547,        1551,     INVALID,     INVALID,
+  /* 7c */        1551,        1555,     INVALID,     INVALID,
   /* 80 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 84 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 88 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -2338,22 +2338,22 @@ static const uint16_t ud_itab__399[] = {
   /* e4 */     INVALID,     INVALID,         137,     INVALID,
   /* e8 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* ec */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* f0 */        1555,     INVALID,     INVALID,     INVALID,
+  /* f0 */        1559,     INVALID,     INVALID,     INVALID,
   /* f4 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* f8 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* fc */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__400[] = {
-  /*  0 */        1744,        1743,
+  /*  0 */        1748,        1747,
 };
 
 static const uint16_t ud_itab__401[] = {
-  /*  0 */        1559,        1557,
+  /*  0 */        1563,        1561,
 };
 
 static const uint16_t ud_itab__402[] = {
-  /*  0 */        1742,        1741,
+  /*  0 */        1746,        1745,
 };
 
 static const uint16_t ud_itab__403[] = {
@@ -2364,45 +2364,45 @@ static const uint16_t ud_itab__403[] = {
 };
 
 static const uint16_t ud_itab__404[] = {
-  /*  0 */         765,     INVALID,
+  /*  0 */         769,     INVALID,
 };
 
 static const uint16_t ud_itab__405[] = {
-  /*  0 */         822,     INVALID,     INVALID,     INVALID,
+  /*  0 */         826,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__406[] = {
-  /*  0 */         823,     INVALID,     INVALID,     INVALID,
+  /*  0 */         827,     INVALID,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__407[] = {
-  /*  0 */         711,     INVALID,
+  /*  0 */         715,     INVALID,
 };
 
 static const uint16_t ud_itab__408[] = {
-  /*  0 */         719,         720,         721,
+  /*  0 */         723,         724,         725,
 };
 
 static const uint16_t ud_itab__409[] = {
-  /*  0 */        1276,        1281,        1265,        1269,
-  /*  4 */        1322,        1329,        1316,        1310,
+  /*  0 */        1280,        1285,        1269,        1273,
+  /*  4 */        1326,        1333,        1320,        1314,
 };
 
 static const uint16_t ud_itab__410[] = {
-  /*  0 */        1277,        1284,        1268,        1272,
-  /*  4 */        1321,        1328,        1325,        1308,
+  /*  0 */        1281,        1288,        1272,        1276,
+  /*  4 */        1325,        1332,        1329,        1312,
 };
 
 static const uint16_t ud_itab__411[] = {
-  /*  0 */        1278,        1285,        1266,        1273,
-  /*  4 */        1320,        1327,        1317,        1312,
+  /*  0 */        1282,        1289,        1270,        1277,
+  /*  4 */        1324,        1331,        1321,        1316,
 };
 
 static const uint16_t ud_itab__412[] = {
-  /*  0 */        1279,        1286,        1267,        1274,
-  /*  4 */        1324,        1331,        1318,        1313,
+  /*  0 */        1283,        1290,        1271,        1278,
+  /*  4 */        1328,        1335,        1322,        1317,
 };
 
 static const uint16_t ud_itab__413[] = {
@@ -2414,7 +2414,7 @@ static const uint16_t ud_itab__414[] = {
 };
 
 static const uint16_t ud_itab__415[] = {
-  /*  0 */        1307,     INVALID,
+  /*  0 */        1311,     INVALID,
 };
 
 static const uint16_t ud_itab__416[] = {
@@ -2423,7 +2423,7 @@ static const uint16_t ud_itab__416[] = {
 
 static const uint16_t ud_itab__417[] = {
   /*  0 */         206,         503,         307,         357,
-  /*  4 */         583,         626,         387,         413,
+  /*  4 */         587,         630,         387,         413,
 };
 
 static const uint16_t ud_itab__418[] = {
@@ -2435,10 +2435,10 @@ static const uint16_t ud_itab__418[] = {
   /* 14 */         313,         314,         315,         316,
   /* 18 */         359,         360,         361,         362,
   /* 1c */         363,         364,         365,         366,
-  /* 20 */         585,         586,         587,         588,
-  /* 24 */         589,         590,         591,         592,
-  /* 28 */         610,         611,         612,         613,
-  /* 2c */         614,         615,         616,         617,
+  /* 20 */         589,         590,         591,         592,
+  /* 24 */         593,         594,         595,         596,
+  /* 28 */         614,         615,         616,         617,
+  /* 2c */         618,         619,         620,         621,
   /* 30 */         388,         389,         390,         391,
   /* 34 */         392,         393,         394,         395,
   /* 38 */         414,         415,         416,         417,
@@ -2450,27 +2450,27 @@ static const uint16_t ud_itab__419[] = {
 };
 
 static const uint16_t ud_itab__420[] = {
-  /*  0 */         476,     INVALID,         569,         536,
-  /*  4 */         493,         492,         580,         579,
+  /*  0 */         476,     INVALID,         573,         540,
+  /*  4 */         493,         492,         584,         583,
 };
 
 static const uint16_t ud_itab__421[] = {
   /*  0 */         477,         478,         479,         480,
   /*  4 */         481,         482,         483,         484,
-  /*  8 */         654,         655,         656,         657,
-  /*  c */         658,         659,         660,         661,
+  /*  8 */         658,         659,         660,         661,
+  /*  c */         662,         663,         664,         665,
   /* 10 */         522,     INVALID,     INVALID,     INVALID,
   /* 14 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 18 */         545,         546,         547,         548,
-  /* 1c */         549,         550,         551,         552,
+  /* 18 */         549,         550,         551,         552,
+  /* 1c */         553,         554,         555,         556,
   /* 20 */         233,         204,     INVALID,     INVALID,
-  /* 24 */         635,         653,     INVALID,     INVALID,
+  /* 24 */         639,         657,     INVALID,     INVALID,
   /* 28 */         485,         486,         487,         488,
   /* 2c */         489,         490,         491,     INVALID,
-  /* 30 */         203,         681,         526,         523,
-  /* 34 */         680,         525,         377,         454,
-  /* 38 */         524,         682,         533,         532,
-  /* 3c */         527,         530,         531,         376,
+  /* 30 */         203,         685,         529,         526,
+  /* 34 */         684,         528,         377,         454,
+  /* 38 */         527,         686,         537,         536,
+  /* 3c */         530,         534,         535,         376,
 };
 
 static const uint16_t ud_itab__422[] = {
@@ -2493,7 +2493,7 @@ static const uint16_t ud_itab__424[] = {
   /* 1c */         263,         264,         265,         266,
   /* 20 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 28 */     INVALID,         652,     INVALID,     INVALID,
+  /* 28 */     INVALID,         656,     INVALID,     INVALID,
   /* 2c */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -2507,7 +2507,7 @@ static const uint16_t ud_itab__425[] = {
 
 static const uint16_t ud_itab__426[] = {
   /*  0 */         453,         471,         467,         470,
-  /*  4 */     INVALID,         474,     INVALID,         534,
+  /*  4 */     INVALID,         474,     INVALID,         538,
 };
 
 static const uint16_t ud_itab__427[] = {
@@ -2519,8 +2519,8 @@ static const uint16_t ud_itab__427[] = {
   /* 14 */         287,         288,         289,         290,
   /* 18 */         291,         292,         293,         294,
   /* 1c */         295,         296,         297,         298,
-  /* 20 */     INVALID,     INVALID,         234,         455,
-  /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
+  /* 20 */         524,         523,         234,         455,
+  /* 24 */         525,         532,     INVALID,     INVALID,
   /* 28 */         299,         300,         301,         302,
   /* 2c */         303,         304,         305,         306,
   /* 30 */         333,         334,         335,         336,
@@ -2535,7 +2535,7 @@ static const uint16_t ud_itab__428[] = {
 
 static const uint16_t ud_itab__429[] = {
   /*  0 */         205,         494,         308,         358,
-  /*  4 */         584,         609,         378,         404,
+  /*  4 */         588,         613,         378,         404,
 };
 
 static const uint16_t ud_itab__430[] = {
@@ -2547,10 +2547,10 @@ static const uint16_t ud_itab__430[] = {
   /* 14 */         321,         322,         323,         324,
   /* 18 */         325,         326,         327,         328,
   /* 1c */         329,         330,         331,         332,
-  /* 20 */         618,         619,         620,         621,
-  /* 24 */         622,         623,         624,         625,
-  /* 28 */         593,         594,         595,         596,
-  /* 2c */         597,         598,         599,         600,
+  /* 20 */         622,         623,         624,         625,
+  /* 24 */         626,         627,         628,         629,
+  /* 28 */         597,         598,         599,         600,
+  /* 2c */         601,         602,         603,         604,
   /* 30 */         405,         406,         407,         408,
   /* 34 */         409,         410,         411,         412,
   /* 38 */         379,         380,         381,         382,
@@ -2562,23 +2562,23 @@ static const uint16_t ud_itab__431[] = {
 };
 
 static const uint16_t ud_itab__432[] = {
-  /*  0 */         475,         472,         570,         535,
-  /*  4 */         528,     INVALID,         529,         581,
+  /*  0 */         475,         472,         574,         539,
+  /*  4 */         531,     INVALID,         533,         585,
 };
 
 static const uint16_t ud_itab__433[] = {
   /*  0 */         431,         432,         433,         434,
   /*  4 */         435,         436,         437,         438,
-  /*  8 */         662,         663,         664,         665,
-  /*  c */         666,         667,         668,         669,
-  /* 10 */         571,         572,         573,         574,
-  /* 14 */         575,         576,         577,         578,
-  /* 18 */         537,         538,         539,         540,
-  /* 1c */         541,         542,         543,         544,
-  /* 20 */         636,         637,         638,         639,
-  /* 24 */         640,         641,         642,         643,
-  /* 28 */         644,         645,         646,         647,
-  /* 2c */         648,         649,         650,         651,
+  /*  8 */         666,         667,         668,         669,
+  /*  c */         670,         671,         672,         673,
+  /* 10 */         575,         576,         577,         578,
+  /* 14 */         579,         580,         581,         582,
+  /* 18 */         541,         542,         543,         544,
+  /* 1c */         545,         546,         547,         548,
+  /* 20 */         640,         641,         642,         643,
+  /* 24 */         644,         645,         646,         647,
+  /* 28 */         648,         649,         650,         651,
+  /* 2c */         652,         653,         654,         655,
   /* 30 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 34 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 38 */     INVALID,     INVALID,     INVALID,     INVALID,
@@ -2603,10 +2603,10 @@ static const uint16_t ud_itab__436[] = {
   /* 14 */         371,         372,         373,         374,
   /* 18 */     INVALID,         375,     INVALID,     INVALID,
   /* 1c */     INVALID,     INVALID,     INVALID,     INVALID,
-  /* 20 */         627,         628,         629,         630,
-  /* 24 */         631,         632,         633,         634,
-  /* 28 */         601,         602,         603,         604,
-  /* 2c */         605,         606,         607,         608,
+  /* 20 */         631,         632,         633,         634,
+  /* 24 */         635,         636,         637,         638,
+  /* 28 */         605,         606,         607,         608,
+  /* 2c */         609,         610,         611,         612,
   /* 30 */         422,         423,         424,         425,
   /* 34 */         426,         427,         428,         429,
   /* 38 */         396,         397,         398,         399,
@@ -2625,13 +2625,13 @@ static const uint16_t ud_itab__438[] = {
 static const uint16_t ud_itab__439[] = {
   /*  0 */         439,         440,         441,         442,
   /*  4 */         443,         444,         445,         446,
-  /*  8 */         670,         671,         672,         673,
-  /*  c */         674,         675,         676,         677,
-  /* 10 */         553,         554,         555,         556,
-  /* 14 */         557,         558,         559,         560,
-  /* 18 */         561,         562,         563,         564,
-  /* 1c */         565,         566,         567,         568,
-  /* 20 */         582,     INVALID,     INVALID,     INVALID,
+  /*  8 */         674,         675,         676,         677,
+  /*  c */         678,         679,         680,         681,
+  /* 10 */         557,         558,         559,         560,
+  /* 14 */         561,         562,         563,         564,
+  /* 18 */         565,         566,         567,         568,
+  /* 1c */         569,         570,         571,         572,
+  /* 20 */         586,     INVALID,     INVALID,     INVALID,
   /* 24 */     INVALID,     INVALID,     INVALID,     INVALID,
   /* 28 */         341,         342,         343,         344,
   /* 2c */         345,         346,         347,         348,
@@ -2642,31 +2642,31 @@ static const uint16_t ud_itab__439[] = {
 };
 
 static const uint16_t ud_itab__440[] = {
-  /*  0 */         754,         755,         756,
+  /*  0 */         758,         759,         760,
 };
 
 static const uint16_t ud_itab__441[] = {
-  /*  0 */         760,     INVALID,
+  /*  0 */         764,     INVALID,
 };
 
 static const uint16_t ud_itab__442[] = {
-  /*  0 */        1428,        1433,         958,         949,
-  /*  4 */         938,         691,         186,         685,
+  /*  0 */        1432,        1437,         962,         953,
+  /*  4 */         942,         695,         186,         689,
 };
 
 static const uint16_t ud_itab__443[] = {
-  /*  0 */        1434,        1435,         959,         950,
-  /*  4 */         939,         692,         185,         684,
+  /*  0 */        1438,        1439,         963,         954,
+  /*  4 */         943,         696,         185,         688,
 };
 
 static const uint16_t ud_itab__444[] = {
-  /*  0 */         704,         183,     INVALID,     INVALID,
+  /*  0 */         708,         183,     INVALID,     INVALID,
   /*  4 */     INVALID,     INVALID,     INVALID,     INVALID,
 };
 
 static const uint16_t ud_itab__445[] = {
-  /*  0 */         703,         184,  GROUP(446),          71,
-  /*  4 */         757,         758,        1251,     INVALID,
+  /*  0 */         707,         184,  GROUP(446),          71,
+  /*  4 */         761,         762,        1255,     INVALID,
 };
 
 static const uint16_t ud_itab__446[] = {
@@ -3270,1762 +3270,1766 @@ struct ud_lookup_table_list_entry ud_lookup_table_list[] = {
 #define O_sIz     { OP_sI,       SZ_Z     }
 
 struct ud_itab_entry ud_itab[] = {
-  /* 0000 */ { UD_Iinvalid, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0001 */ { UD_Iaaa, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0002 */ { UD_Iaad, O_Ib, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0003 */ { UD_Iaam, O_Ib, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0004 */ { UD_Iaas, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0005 */ { UD_Iadc, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0006 */ { UD_Iadc, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0007 */ { UD_Iadc, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0008 */ { UD_Iadc, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0009 */ { UD_Iadc, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0010 */ { UD_Iadc, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0011 */ { UD_Iadc, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0012 */ { UD_Iadc, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0013 */ { UD_Iadc, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0014 */ { UD_Iadc, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0015 */ { UD_Iadd, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0016 */ { UD_Iadd, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0017 */ { UD_Iadd, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0018 */ { UD_Iadd, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0019 */ { UD_Iadd, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0020 */ { UD_Iadd, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0021 */ { UD_Iadd, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0022 */ { UD_Iadd, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0023 */ { UD_Iadd, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0024 */ { UD_Iadd, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0025 */ { UD_Iaddpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0026 */ { UD_Ivaddpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0027 */ { UD_Iaddps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0028 */ { UD_Ivaddps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0029 */ { UD_Iaddsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0030 */ { UD_Ivaddsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0031 */ { UD_Iaddss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0032 */ { UD_Ivaddss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0033 */ { UD_Iaddsubpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0034 */ { UD_Ivaddsubpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0035 */ { UD_Iaddsubps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0036 */ { UD_Ivaddsubps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0037 */ { UD_Iaesdec, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0038 */ { UD_Ivaesdec, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0039 */ { UD_Iaesdeclast, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0040 */ { UD_Ivaesdeclast, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0041 */ { UD_Iaesenc, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0042 */ { UD_Ivaesenc, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0043 */ { UD_Iaesenclast, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0044 */ { UD_Ivaesenclast, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0045 */ { UD_Iaesimc, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0046 */ { UD_Ivaesimc, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0047 */ { UD_Iaeskeygenassist, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0048 */ { UD_Ivaeskeygenassist, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0049 */ { UD_Iand, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0050 */ { UD_Iand, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0051 */ { UD_Iand, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0052 */ { UD_Iand, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0053 */ { UD_Iand, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0054 */ { UD_Iand, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0055 */ { UD_Iand, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0056 */ { UD_Iand, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0057 */ { UD_Iand, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0058 */ { UD_Iand, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0059 */ { UD_Iandpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0060 */ { UD_Ivandpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0061 */ { UD_Iandps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0062 */ { UD_Ivandps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0063 */ { UD_Iandnpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0064 */ { UD_Ivandnpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0065 */ { UD_Iandnps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0066 */ { UD_Ivandnps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0067 */ { UD_Iarpl, O_Ew, O_Gw, O_NONE, O_NONE, P_aso },
-  /* 0068 */ { UD_Imovsxd, O_Gq, O_Ed, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexx|P_rexr|P_rexb },
-  /* 0069 */ { UD_Icall, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0070 */ { UD_Icall, O_Eq, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 0071 */ { UD_Icall, O_Fv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0072 */ { UD_Icall, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0073 */ { UD_Icall, O_Av, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0074 */ { UD_Icbw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0075 */ { UD_Icwde, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0076 */ { UD_Icdqe, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0077 */ { UD_Iclc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0078 */ { UD_Icld, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0079 */ { UD_Iclflush, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0080 */ { UD_Iclgi, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0081 */ { UD_Icli, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0082 */ { UD_Iclts, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0083 */ { UD_Icmc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0084 */ { UD_Icmovo, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0085 */ { UD_Icmovno, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0086 */ { UD_Icmovb, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0087 */ { UD_Icmovae, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0088 */ { UD_Icmovz, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0089 */ { UD_Icmovnz, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0090 */ { UD_Icmovbe, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0091 */ { UD_Icmova, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0092 */ { UD_Icmovs, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0093 */ { UD_Icmovns, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0094 */ { UD_Icmovp, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0095 */ { UD_Icmovnp, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0096 */ { UD_Icmovl, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0097 */ { UD_Icmovge, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0098 */ { UD_Icmovle, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0099 */ { UD_Icmovg, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0100 */ { UD_Icmp, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0101 */ { UD_Icmp, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0102 */ { UD_Icmp, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0103 */ { UD_Icmp, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0104 */ { UD_Icmp, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0105 */ { UD_Icmp, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0106 */ { UD_Icmp, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0107 */ { UD_Icmp, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 0108 */ { UD_Icmp, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0109 */ { UD_Icmp, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0110 */ { UD_Icmppd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0111 */ { UD_Ivcmppd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0112 */ { UD_Icmpps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0113 */ { UD_Ivcmpps, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0114 */ { UD_Icmpsb, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_seg },
-  /* 0115 */ { UD_Icmpsw, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
-  /* 0116 */ { UD_Icmpsd, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
-  /* 0117 */ { UD_Icmpsd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0118 */ { UD_Ivcmpsd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0119 */ { UD_Icmpsq, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw|P_seg },
-  /* 0120 */ { UD_Icmpss, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0121 */ { UD_Ivcmpss, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0122 */ { UD_Icmpxchg, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0123 */ { UD_Icmpxchg, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0124 */ { UD_Icmpxchg8b, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0125 */ { UD_Icmpxchg8b, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0126 */ { UD_Icmpxchg16b, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0127 */ { UD_Icomisd, O_Vsd, O_Wsd, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0128 */ { UD_Ivcomisd, O_Vsd, O_Wsd, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0129 */ { UD_Icomiss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0130 */ { UD_Ivcomiss, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0131 */ { UD_Icpuid, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0132 */ { UD_Icvtdq2pd, O_V, O_Wdq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0133 */ { UD_Ivcvtdq2pd, O_Vx, O_Wdq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0134 */ { UD_Icvtdq2ps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0135 */ { UD_Ivcvtdq2ps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0136 */ { UD_Icvtpd2dq, O_Vdq, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0137 */ { UD_Ivcvtpd2dq, O_Vdq, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0138 */ { UD_Icvtpd2pi, O_P, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0139 */ { UD_Icvtpd2ps, O_Vdq, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0140 */ { UD_Ivcvtpd2ps, O_Vdq, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0141 */ { UD_Icvtpi2ps, O_V, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0142 */ { UD_Icvtpi2pd, O_V, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0143 */ { UD_Icvtps2dq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0144 */ { UD_Ivcvtps2dq, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0145 */ { UD_Icvtps2pd, O_V, O_Wdq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0146 */ { UD_Ivcvtps2pd, O_Vx, O_Wdq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0147 */ { UD_Icvtps2pi, O_P, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0148 */ { UD_Icvtsd2si, O_Gy, O_MqU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0149 */ { UD_Ivcvtsd2si, O_Gy, O_MqU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0150 */ { UD_Icvtsd2ss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0151 */ { UD_Ivcvtsd2ss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0152 */ { UD_Icvtsi2sd, O_V, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0153 */ { UD_Ivcvtsi2sd, O_Vx, O_Hx, O_Ey, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0154 */ { UD_Icvtsi2ss, O_V, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0155 */ { UD_Ivcvtsi2ss, O_Vx, O_Hx, O_Ey, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0156 */ { UD_Icvtss2sd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0157 */ { UD_Ivcvtss2sd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0158 */ { UD_Icvtss2si, O_Gy, O_MdU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0159 */ { UD_Ivcvtss2si, O_Gy, O_MdU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0160 */ { UD_Icvttpd2dq, O_Vdq, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0161 */ { UD_Ivcvttpd2dq, O_Vdq, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0162 */ { UD_Icvttpd2pi, O_P, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0163 */ { UD_Icvttps2dq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0164 */ { UD_Ivcvttps2dq, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0165 */ { UD_Icvttps2pi, O_P, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0166 */ { UD_Icvttsd2si, O_Gy, O_MqU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0167 */ { UD_Ivcvttsd2si, O_Gy, O_MqU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0168 */ { UD_Icvttss2si, O_Gy, O_MdU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0169 */ { UD_Ivcvttss2si, O_Gy, O_MdU, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0170 */ { UD_Icwd, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0171 */ { UD_Icdq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0172 */ { UD_Icqo, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0173 */ { UD_Idaa, O_NONE, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 0174 */ { UD_Idas, O_NONE, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 0175 */ { UD_Idec, O_R0z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0176 */ { UD_Idec, O_R1z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0177 */ { UD_Idec, O_R2z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0178 */ { UD_Idec, O_R3z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0179 */ { UD_Idec, O_R4z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0180 */ { UD_Idec, O_R5z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0181 */ { UD_Idec, O_R6z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0182 */ { UD_Idec, O_R7z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0183 */ { UD_Idec, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0184 */ { UD_Idec, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0185 */ { UD_Idiv, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0186 */ { UD_Idiv, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0187 */ { UD_Idivpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0188 */ { UD_Ivdivpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0189 */ { UD_Idivps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0190 */ { UD_Ivdivps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0191 */ { UD_Idivsd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0192 */ { UD_Ivdivsd, O_Vx, O_Hx, O_MqU, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0193 */ { UD_Idivss, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0194 */ { UD_Ivdivss, O_Vx, O_Hx, O_MdU, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0195 */ { UD_Idppd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0196 */ { UD_Ivdppd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0197 */ { UD_Idpps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0198 */ { UD_Ivdpps, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0199 */ { UD_Iemms, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0200 */ { UD_Ienter, O_Iw, O_Ib, O_NONE, O_NONE, P_def64 },
-  /* 0201 */ { UD_Iextractps, O_MdRy, O_V, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0202 */ { UD_Ivextractps, O_MdRy, O_Vx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 0203 */ { UD_If2xm1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0204 */ { UD_Ifabs, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0205 */ { UD_Ifadd, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0206 */ { UD_Ifadd, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0207 */ { UD_Ifadd, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0208 */ { UD_Ifadd, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0209 */ { UD_Ifadd, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0210 */ { UD_Ifadd, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0211 */ { UD_Ifadd, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0212 */ { UD_Ifadd, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0213 */ { UD_Ifadd, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0214 */ { UD_Ifadd, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0215 */ { UD_Ifadd, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0216 */ { UD_Ifadd, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0217 */ { UD_Ifadd, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0218 */ { UD_Ifadd, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0219 */ { UD_Ifadd, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0220 */ { UD_Ifadd, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0221 */ { UD_Ifadd, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0222 */ { UD_Ifadd, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0223 */ { UD_Ifaddp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0224 */ { UD_Ifaddp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0225 */ { UD_Ifaddp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0226 */ { UD_Ifaddp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0227 */ { UD_Ifaddp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0228 */ { UD_Ifaddp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0229 */ { UD_Ifaddp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0230 */ { UD_Ifaddp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0231 */ { UD_Ifbld, O_Mt, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0232 */ { UD_Ifbstp, O_Mt, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0233 */ { UD_Ifchs, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0234 */ { UD_Ifclex, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0235 */ { UD_Ifcmovb, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0236 */ { UD_Ifcmovb, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0237 */ { UD_Ifcmovb, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0238 */ { UD_Ifcmovb, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0239 */ { UD_Ifcmovb, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0240 */ { UD_Ifcmovb, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0241 */ { UD_Ifcmovb, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0242 */ { UD_Ifcmovb, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0243 */ { UD_Ifcmove, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0244 */ { UD_Ifcmove, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0245 */ { UD_Ifcmove, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0246 */ { UD_Ifcmove, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0247 */ { UD_Ifcmove, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0248 */ { UD_Ifcmove, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0249 */ { UD_Ifcmove, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0250 */ { UD_Ifcmove, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0251 */ { UD_Ifcmovbe, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0252 */ { UD_Ifcmovbe, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0253 */ { UD_Ifcmovbe, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0254 */ { UD_Ifcmovbe, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0255 */ { UD_Ifcmovbe, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0256 */ { UD_Ifcmovbe, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0257 */ { UD_Ifcmovbe, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0258 */ { UD_Ifcmovbe, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0259 */ { UD_Ifcmovu, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0260 */ { UD_Ifcmovu, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0261 */ { UD_Ifcmovu, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0262 */ { UD_Ifcmovu, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0263 */ { UD_Ifcmovu, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0264 */ { UD_Ifcmovu, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0265 */ { UD_Ifcmovu, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0266 */ { UD_Ifcmovu, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0267 */ { UD_Ifcmovnb, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0268 */ { UD_Ifcmovnb, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0269 */ { UD_Ifcmovnb, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0270 */ { UD_Ifcmovnb, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0271 */ { UD_Ifcmovnb, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0272 */ { UD_Ifcmovnb, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0273 */ { UD_Ifcmovnb, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0274 */ { UD_Ifcmovnb, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0275 */ { UD_Ifcmovne, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0276 */ { UD_Ifcmovne, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0277 */ { UD_Ifcmovne, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0278 */ { UD_Ifcmovne, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0279 */ { UD_Ifcmovne, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0280 */ { UD_Ifcmovne, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0281 */ { UD_Ifcmovne, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0282 */ { UD_Ifcmovne, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0283 */ { UD_Ifcmovnbe, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0284 */ { UD_Ifcmovnbe, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0285 */ { UD_Ifcmovnbe, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0286 */ { UD_Ifcmovnbe, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0287 */ { UD_Ifcmovnbe, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0288 */ { UD_Ifcmovnbe, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0289 */ { UD_Ifcmovnbe, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0290 */ { UD_Ifcmovnbe, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0291 */ { UD_Ifcmovnu, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0292 */ { UD_Ifcmovnu, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0293 */ { UD_Ifcmovnu, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0294 */ { UD_Ifcmovnu, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0295 */ { UD_Ifcmovnu, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0296 */ { UD_Ifcmovnu, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0297 */ { UD_Ifcmovnu, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0298 */ { UD_Ifcmovnu, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0299 */ { UD_Ifucomi, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0300 */ { UD_Ifucomi, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0301 */ { UD_Ifucomi, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0302 */ { UD_Ifucomi, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0303 */ { UD_Ifucomi, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0304 */ { UD_Ifucomi, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0305 */ { UD_Ifucomi, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0306 */ { UD_Ifucomi, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0307 */ { UD_Ifcom, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0308 */ { UD_Ifcom, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0309 */ { UD_Ifcom, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0310 */ { UD_Ifcom, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0311 */ { UD_Ifcom, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0312 */ { UD_Ifcom, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0313 */ { UD_Ifcom, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0314 */ { UD_Ifcom, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0315 */ { UD_Ifcom, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0316 */ { UD_Ifcom, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0317 */ { UD_Ifcom2, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0318 */ { UD_Ifcom2, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0319 */ { UD_Ifcom2, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0320 */ { UD_Ifcom2, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0321 */ { UD_Ifcom2, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0322 */ { UD_Ifcom2, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0323 */ { UD_Ifcom2, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0324 */ { UD_Ifcom2, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0325 */ { UD_Ifcomp3, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0326 */ { UD_Ifcomp3, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0327 */ { UD_Ifcomp3, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0328 */ { UD_Ifcomp3, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0329 */ { UD_Ifcomp3, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0330 */ { UD_Ifcomp3, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0331 */ { UD_Ifcomp3, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0332 */ { UD_Ifcomp3, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0333 */ { UD_Ifcomi, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0334 */ { UD_Ifcomi, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0335 */ { UD_Ifcomi, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0336 */ { UD_Ifcomi, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0337 */ { UD_Ifcomi, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0338 */ { UD_Ifcomi, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0339 */ { UD_Ifcomi, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0340 */ { UD_Ifcomi, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0341 */ { UD_Ifucomip, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0342 */ { UD_Ifucomip, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0343 */ { UD_Ifucomip, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0344 */ { UD_Ifucomip, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0345 */ { UD_Ifucomip, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0346 */ { UD_Ifucomip, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0347 */ { UD_Ifucomip, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0348 */ { UD_Ifucomip, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0349 */ { UD_Ifcomip, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0350 */ { UD_Ifcomip, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0351 */ { UD_Ifcomip, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0352 */ { UD_Ifcomip, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0353 */ { UD_Ifcomip, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0354 */ { UD_Ifcomip, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0355 */ { UD_Ifcomip, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0356 */ { UD_Ifcomip, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0357 */ { UD_Ifcomp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0358 */ { UD_Ifcomp, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0359 */ { UD_Ifcomp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0360 */ { UD_Ifcomp, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0361 */ { UD_Ifcomp, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0362 */ { UD_Ifcomp, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0363 */ { UD_Ifcomp, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0364 */ { UD_Ifcomp, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0365 */ { UD_Ifcomp, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0366 */ { UD_Ifcomp, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0367 */ { UD_Ifcomp5, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0368 */ { UD_Ifcomp5, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0369 */ { UD_Ifcomp5, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0370 */ { UD_Ifcomp5, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0371 */ { UD_Ifcomp5, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0372 */ { UD_Ifcomp5, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0373 */ { UD_Ifcomp5, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0374 */ { UD_Ifcomp5, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0375 */ { UD_Ifcompp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0376 */ { UD_Ifcos, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0377 */ { UD_Ifdecstp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0378 */ { UD_Ifdiv, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0379 */ { UD_Ifdiv, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0380 */ { UD_Ifdiv, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0381 */ { UD_Ifdiv, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0382 */ { UD_Ifdiv, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0383 */ { UD_Ifdiv, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0384 */ { UD_Ifdiv, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0385 */ { UD_Ifdiv, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0386 */ { UD_Ifdiv, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0387 */ { UD_Ifdiv, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0388 */ { UD_Ifdiv, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0389 */ { UD_Ifdiv, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0390 */ { UD_Ifdiv, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0391 */ { UD_Ifdiv, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0392 */ { UD_Ifdiv, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0393 */ { UD_Ifdiv, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0394 */ { UD_Ifdiv, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0395 */ { UD_Ifdiv, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0396 */ { UD_Ifdivp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0397 */ { UD_Ifdivp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0398 */ { UD_Ifdivp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0399 */ { UD_Ifdivp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0400 */ { UD_Ifdivp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0401 */ { UD_Ifdivp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0402 */ { UD_Ifdivp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0403 */ { UD_Ifdivp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0404 */ { UD_Ifdivr, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0405 */ { UD_Ifdivr, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0406 */ { UD_Ifdivr, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0407 */ { UD_Ifdivr, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0408 */ { UD_Ifdivr, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0409 */ { UD_Ifdivr, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0410 */ { UD_Ifdivr, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0411 */ { UD_Ifdivr, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0412 */ { UD_Ifdivr, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0413 */ { UD_Ifdivr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0414 */ { UD_Ifdivr, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0415 */ { UD_Ifdivr, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0416 */ { UD_Ifdivr, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0417 */ { UD_Ifdivr, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0418 */ { UD_Ifdivr, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0419 */ { UD_Ifdivr, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0420 */ { UD_Ifdivr, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0421 */ { UD_Ifdivr, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0422 */ { UD_Ifdivrp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0423 */ { UD_Ifdivrp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0424 */ { UD_Ifdivrp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0425 */ { UD_Ifdivrp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0426 */ { UD_Ifdivrp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0427 */ { UD_Ifdivrp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0428 */ { UD_Ifdivrp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0429 */ { UD_Ifdivrp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0430 */ { UD_Ifemms, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0431 */ { UD_Iffree, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0432 */ { UD_Iffree, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0433 */ { UD_Iffree, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0434 */ { UD_Iffree, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0435 */ { UD_Iffree, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0436 */ { UD_Iffree, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0437 */ { UD_Iffree, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0438 */ { UD_Iffree, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0439 */ { UD_Iffreep, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0440 */ { UD_Iffreep, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0441 */ { UD_Iffreep, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0442 */ { UD_Iffreep, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0443 */ { UD_Iffreep, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0444 */ { UD_Iffreep, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0445 */ { UD_Iffreep, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0446 */ { UD_Iffreep, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0447 */ { UD_Ificom, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0448 */ { UD_Ificom, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0449 */ { UD_Ificomp, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0450 */ { UD_Ificomp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0451 */ { UD_Ifild, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0452 */ { UD_Ifild, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0453 */ { UD_Ifild, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0454 */ { UD_Ifincstp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0455 */ { UD_Ifninit, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0456 */ { UD_Ifiadd, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0457 */ { UD_Ifiadd, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0458 */ { UD_Ifidivr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0459 */ { UD_Ifidivr, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0460 */ { UD_Ifidiv, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0461 */ { UD_Ifidiv, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0462 */ { UD_Ifisub, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0463 */ { UD_Ifisub, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0464 */ { UD_Ifisubr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0465 */ { UD_Ifisubr, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0466 */ { UD_Ifist, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0467 */ { UD_Ifist, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0468 */ { UD_Ifistp, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0469 */ { UD_Ifistp, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0470 */ { UD_Ifistp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0471 */ { UD_Ifisttp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0472 */ { UD_Ifisttp, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0473 */ { UD_Ifisttp, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0474 */ { UD_Ifld, O_Mt, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0475 */ { UD_Ifld, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0476 */ { UD_Ifld, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0477 */ { UD_Ifld, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0478 */ { UD_Ifld, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0479 */ { UD_Ifld, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0480 */ { UD_Ifld, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0481 */ { UD_Ifld, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0482 */ { UD_Ifld, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0483 */ { UD_Ifld, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0484 */ { UD_Ifld, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0485 */ { UD_Ifld1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0486 */ { UD_Ifldl2t, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0487 */ { UD_Ifldl2e, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0488 */ { UD_Ifldpi, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0489 */ { UD_Ifldlg2, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0490 */ { UD_Ifldln2, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0491 */ { UD_Ifldz, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0492 */ { UD_Ifldcw, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0493 */ { UD_Ifldenv, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0494 */ { UD_Ifmul, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0495 */ { UD_Ifmul, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0496 */ { UD_Ifmul, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0497 */ { UD_Ifmul, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0498 */ { UD_Ifmul, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0499 */ { UD_Ifmul, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0500 */ { UD_Ifmul, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0501 */ { UD_Ifmul, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0502 */ { UD_Ifmul, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0503 */ { UD_Ifmul, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0504 */ { UD_Ifmul, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0505 */ { UD_Ifmul, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0506 */ { UD_Ifmul, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0507 */ { UD_Ifmul, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0508 */ { UD_Ifmul, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0509 */ { UD_Ifmul, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0510 */ { UD_Ifmul, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0511 */ { UD_Ifmul, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0512 */ { UD_Ifmulp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0513 */ { UD_Ifmulp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0514 */ { UD_Ifmulp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0515 */ { UD_Ifmulp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0516 */ { UD_Ifmulp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0517 */ { UD_Ifmulp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0518 */ { UD_Ifmulp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0519 */ { UD_Ifmulp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0520 */ { UD_Ifimul, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0521 */ { UD_Ifimul, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0522 */ { UD_Ifnop, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0523 */ { UD_Ifpatan, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0524 */ { UD_Ifprem, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0525 */ { UD_Ifprem1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0526 */ { UD_Ifptan, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0527 */ { UD_Ifrndint, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0528 */ { UD_Ifrstor, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0529 */ { UD_Ifnsave, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0530 */ { UD_Ifscale, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0531 */ { UD_Ifsin, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0532 */ { UD_Ifsincos, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0533 */ { UD_Ifsqrt, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0534 */ { UD_Ifstp, O_Mt, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0535 */ { UD_Ifstp, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0536 */ { UD_Ifstp, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0537 */ { UD_Ifstp, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0538 */ { UD_Ifstp, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0539 */ { UD_Ifstp, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0540 */ { UD_Ifstp, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0541 */ { UD_Ifstp, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0542 */ { UD_Ifstp, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0543 */ { UD_Ifstp, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0544 */ { UD_Ifstp, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0545 */ { UD_Ifstp1, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0546 */ { UD_Ifstp1, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0547 */ { UD_Ifstp1, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0548 */ { UD_Ifstp1, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0549 */ { UD_Ifstp1, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0550 */ { UD_Ifstp1, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0551 */ { UD_Ifstp1, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0552 */ { UD_Ifstp1, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0553 */ { UD_Ifstp8, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0554 */ { UD_Ifstp8, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0555 */ { UD_Ifstp8, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0556 */ { UD_Ifstp8, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0557 */ { UD_Ifstp8, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0558 */ { UD_Ifstp8, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0559 */ { UD_Ifstp8, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0560 */ { UD_Ifstp8, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0561 */ { UD_Ifstp9, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0562 */ { UD_Ifstp9, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0563 */ { UD_Ifstp9, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0564 */ { UD_Ifstp9, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0565 */ { UD_Ifstp9, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0566 */ { UD_Ifstp9, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0567 */ { UD_Ifstp9, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0568 */ { UD_Ifstp9, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0569 */ { UD_Ifst, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0570 */ { UD_Ifst, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0571 */ { UD_Ifst, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0572 */ { UD_Ifst, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0573 */ { UD_Ifst, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0574 */ { UD_Ifst, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0575 */ { UD_Ifst, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0576 */ { UD_Ifst, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0577 */ { UD_Ifst, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0578 */ { UD_Ifst, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0579 */ { UD_Ifnstcw, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0580 */ { UD_Ifnstenv, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0581 */ { UD_Ifnstsw, O_Mw, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0582 */ { UD_Ifnstsw, O_AX, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0583 */ { UD_Ifsub, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0584 */ { UD_Ifsub, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0585 */ { UD_Ifsub, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0586 */ { UD_Ifsub, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0587 */ { UD_Ifsub, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0588 */ { UD_Ifsub, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0589 */ { UD_Ifsub, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0590 */ { UD_Ifsub, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0591 */ { UD_Ifsub, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0592 */ { UD_Ifsub, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0593 */ { UD_Ifsub, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0594 */ { UD_Ifsub, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0595 */ { UD_Ifsub, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0596 */ { UD_Ifsub, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0597 */ { UD_Ifsub, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0598 */ { UD_Ifsub, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0599 */ { UD_Ifsub, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0600 */ { UD_Ifsub, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0601 */ { UD_Ifsubp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0602 */ { UD_Ifsubp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0603 */ { UD_Ifsubp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0604 */ { UD_Ifsubp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0605 */ { UD_Ifsubp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0606 */ { UD_Ifsubp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0607 */ { UD_Ifsubp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0608 */ { UD_Ifsubp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0609 */ { UD_Ifsubr, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0610 */ { UD_Ifsubr, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0611 */ { UD_Ifsubr, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0612 */ { UD_Ifsubr, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0613 */ { UD_Ifsubr, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0614 */ { UD_Ifsubr, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0615 */ { UD_Ifsubr, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0616 */ { UD_Ifsubr, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0617 */ { UD_Ifsubr, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0618 */ { UD_Ifsubr, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0619 */ { UD_Ifsubr, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0620 */ { UD_Ifsubr, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0621 */ { UD_Ifsubr, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0622 */ { UD_Ifsubr, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0623 */ { UD_Ifsubr, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0624 */ { UD_Ifsubr, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0625 */ { UD_Ifsubr, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0626 */ { UD_Ifsubr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0627 */ { UD_Ifsubrp, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0628 */ { UD_Ifsubrp, O_ST1, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0629 */ { UD_Ifsubrp, O_ST2, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0630 */ { UD_Ifsubrp, O_ST3, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0631 */ { UD_Ifsubrp, O_ST4, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0632 */ { UD_Ifsubrp, O_ST5, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0633 */ { UD_Ifsubrp, O_ST6, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0634 */ { UD_Ifsubrp, O_ST7, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0635 */ { UD_Iftst, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0636 */ { UD_Ifucom, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0637 */ { UD_Ifucom, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0638 */ { UD_Ifucom, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0639 */ { UD_Ifucom, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0640 */ { UD_Ifucom, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0641 */ { UD_Ifucom, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0642 */ { UD_Ifucom, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0643 */ { UD_Ifucom, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0644 */ { UD_Ifucomp, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0645 */ { UD_Ifucomp, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0646 */ { UD_Ifucomp, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0647 */ { UD_Ifucomp, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0648 */ { UD_Ifucomp, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0649 */ { UD_Ifucomp, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0650 */ { UD_Ifucomp, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0651 */ { UD_Ifucomp, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0652 */ { UD_Ifucompp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0653 */ { UD_Ifxam, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0654 */ { UD_Ifxch, O_ST0, O_ST0, O_NONE, O_NONE, P_none },
-  /* 0655 */ { UD_Ifxch, O_ST0, O_ST1, O_NONE, O_NONE, P_none },
-  /* 0656 */ { UD_Ifxch, O_ST0, O_ST2, O_NONE, O_NONE, P_none },
-  /* 0657 */ { UD_Ifxch, O_ST0, O_ST3, O_NONE, O_NONE, P_none },
-  /* 0658 */ { UD_Ifxch, O_ST0, O_ST4, O_NONE, O_NONE, P_none },
-  /* 0659 */ { UD_Ifxch, O_ST0, O_ST5, O_NONE, O_NONE, P_none },
-  /* 0660 */ { UD_Ifxch, O_ST0, O_ST6, O_NONE, O_NONE, P_none },
-  /* 0661 */ { UD_Ifxch, O_ST0, O_ST7, O_NONE, O_NONE, P_none },
-  /* 0662 */ { UD_Ifxch4, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0663 */ { UD_Ifxch4, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0664 */ { UD_Ifxch4, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0665 */ { UD_Ifxch4, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0666 */ { UD_Ifxch4, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0667 */ { UD_Ifxch4, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0668 */ { UD_Ifxch4, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0669 */ { UD_Ifxch4, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0670 */ { UD_Ifxch7, O_ST0, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0671 */ { UD_Ifxch7, O_ST1, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0672 */ { UD_Ifxch7, O_ST2, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0673 */ { UD_Ifxch7, O_ST3, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0674 */ { UD_Ifxch7, O_ST4, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0675 */ { UD_Ifxch7, O_ST5, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0676 */ { UD_Ifxch7, O_ST6, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0677 */ { UD_Ifxch7, O_ST7, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0678 */ { UD_Ifxrstor, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0679 */ { UD_Ifxsave, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0680 */ { UD_Ifxtract, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0681 */ { UD_Ifyl2x, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0682 */ { UD_Ifyl2xp1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0683 */ { UD_Ihlt, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0684 */ { UD_Iidiv, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0685 */ { UD_Iidiv, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0686 */ { UD_Iin, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0687 */ { UD_Iin, O_eAX, O_Ib, O_NONE, O_NONE, P_oso },
-  /* 0688 */ { UD_Iin, O_AL, O_DX, O_NONE, O_NONE, P_none },
-  /* 0689 */ { UD_Iin, O_eAX, O_DX, O_NONE, O_NONE, P_oso },
-  /* 0690 */ { UD_Iimul, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0691 */ { UD_Iimul, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0692 */ { UD_Iimul, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0693 */ { UD_Iimul, O_Gv, O_Ev, O_Iz, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0694 */ { UD_Iimul, O_Gv, O_Ev, O_sIb, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0695 */ { UD_Iinc, O_R0z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0696 */ { UD_Iinc, O_R1z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0697 */ { UD_Iinc, O_R2z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0698 */ { UD_Iinc, O_R3z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0699 */ { UD_Iinc, O_R4z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0700 */ { UD_Iinc, O_R5z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0701 */ { UD_Iinc, O_R6z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0702 */ { UD_Iinc, O_R7z, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0703 */ { UD_Iinc, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0704 */ { UD_Iinc, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0705 */ { UD_Iinsb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0706 */ { UD_Iinsw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
-  /* 0707 */ { UD_Iinsd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
-  /* 0708 */ { UD_Iint1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0709 */ { UD_Iint3, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0710 */ { UD_Iint, O_Ib, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0711 */ { UD_Iinto, O_NONE, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 0712 */ { UD_Iinvd, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0713 */ { UD_Iinvept, O_Gd, O_Mo, O_NONE, O_NONE, P_none },
-  /* 0714 */ { UD_Iinvept, O_Gq, O_Mo, O_NONE, O_NONE, P_none },
-  /* 0715 */ { UD_Iinvlpg, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0716 */ { UD_Iinvlpga, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0717 */ { UD_Iinvvpid, O_Gd, O_Mo, O_NONE, O_NONE, P_none },
-  /* 0718 */ { UD_Iinvvpid, O_Gq, O_Mo, O_NONE, O_NONE, P_none },
-  /* 0719 */ { UD_Iiretw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0720 */ { UD_Iiretd, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0721 */ { UD_Iiretq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0722 */ { UD_Ijo, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0723 */ { UD_Ijo, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0724 */ { UD_Ijno, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0725 */ { UD_Ijno, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0726 */ { UD_Ijb, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0727 */ { UD_Ijb, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0728 */ { UD_Ijae, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0729 */ { UD_Ijae, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0730 */ { UD_Ijz, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0731 */ { UD_Ijz, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0732 */ { UD_Ijnz, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0733 */ { UD_Ijnz, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0734 */ { UD_Ijbe, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0735 */ { UD_Ijbe, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0736 */ { UD_Ija, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0737 */ { UD_Ija, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0738 */ { UD_Ijs, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0739 */ { UD_Ijs, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0740 */ { UD_Ijns, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0741 */ { UD_Ijns, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0742 */ { UD_Ijp, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0743 */ { UD_Ijp, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0744 */ { UD_Ijnp, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0745 */ { UD_Ijnp, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0746 */ { UD_Ijl, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0747 */ { UD_Ijl, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0748 */ { UD_Ijge, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0749 */ { UD_Ijge, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0750 */ { UD_Ijle, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0751 */ { UD_Ijle, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0752 */ { UD_Ijg, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0753 */ { UD_Ijg, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0754 */ { UD_Ijcxz, O_Jb, O_NONE, O_NONE, O_NONE, P_aso },
-  /* 0755 */ { UD_Ijecxz, O_Jb, O_NONE, O_NONE, O_NONE, P_aso },
-  /* 0756 */ { UD_Ijrcxz, O_Jb, O_NONE, O_NONE, O_NONE, P_aso },
-  /* 0757 */ { UD_Ijmp, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 0758 */ { UD_Ijmp, O_Fv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0759 */ { UD_Ijmp, O_Jz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 0760 */ { UD_Ijmp, O_Av, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 0761 */ { UD_Ijmp, O_Jb, O_NONE, O_NONE, O_NONE, P_def64 },
-  /* 0762 */ { UD_Ilahf, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0763 */ { UD_Ilar, O_Gv, O_Ew, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0764 */ { UD_Ildmxcsr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0765 */ { UD_Ilds, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso },
-  /* 0766 */ { UD_Ilea, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0767 */ { UD_Iles, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso },
-  /* 0768 */ { UD_Ilfs, O_Gz, O_M, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0769 */ { UD_Ilgs, O_Gz, O_M, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0770 */ { UD_Ilidt, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0771 */ { UD_Ilss, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0772 */ { UD_Ileave, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0773 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0774 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0775 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0776 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0777 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0778 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0779 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0780 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0781 */ { UD_Ilgdt, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0782 */ { UD_Illdt, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0783 */ { UD_Ilmsw, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0784 */ { UD_Ilmsw, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0785 */ { UD_Ilock, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0786 */ { UD_Ilodsb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0787 */ { UD_Ilodsw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0788 */ { UD_Ilodsd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0789 */ { UD_Ilodsq, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0790 */ { UD_Iloopne, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0791 */ { UD_Iloope, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0792 */ { UD_Iloop, O_Jb, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0793 */ { UD_Ilsl, O_Gv, O_Ew, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0794 */ { UD_Iltr, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0795 */ { UD_Imaskmovq, O_P, O_N, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0796 */ { UD_Imaxpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0797 */ { UD_Ivmaxpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0798 */ { UD_Imaxps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0799 */ { UD_Ivmaxps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0800 */ { UD_Imaxsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0801 */ { UD_Ivmaxsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0802 */ { UD_Imaxss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0803 */ { UD_Ivmaxss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0804 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0805 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0806 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0807 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0808 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0809 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0810 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0811 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0812 */ { UD_Iminpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0813 */ { UD_Ivminpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0814 */ { UD_Iminps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0815 */ { UD_Ivminps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0816 */ { UD_Iminsd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0817 */ { UD_Ivminsd, O_Vx, O_Hx, O_MqU, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0818 */ { UD_Iminss, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0819 */ { UD_Ivminss, O_Vx, O_Hx, O_MdU, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0820 */ { UD_Imonitor, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0821 */ { UD_Imontmul, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0822 */ { UD_Imov, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0823 */ { UD_Imov, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0824 */ { UD_Imov, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0825 */ { UD_Imov, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0826 */ { UD_Imov, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0827 */ { UD_Imov, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0828 */ { UD_Imov, O_MwRv, O_S, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0829 */ { UD_Imov, O_S, O_MwRv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0830 */ { UD_Imov, O_AL, O_Ob, O_NONE, O_NONE, P_none },
-  /* 0831 */ { UD_Imov, O_rAX, O_Ov, O_NONE, O_NONE, P_aso|P_oso|P_rexw },
-  /* 0832 */ { UD_Imov, O_Ob, O_AL, O_NONE, O_NONE, P_none },
-  /* 0833 */ { UD_Imov, O_Ov, O_rAX, O_NONE, O_NONE, P_aso|P_oso|P_rexw },
-  /* 0834 */ { UD_Imov, O_R0b, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 0835 */ { UD_Imov, O_R1b, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 0836 */ { UD_Imov, O_R2b, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 0837 */ { UD_Imov, O_R3b, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 0838 */ { UD_Imov, O_R4b, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 0839 */ { UD_Imov, O_R5b, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 0840 */ { UD_Imov, O_R6b, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 0841 */ { UD_Imov, O_R7b, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 0842 */ { UD_Imov, O_R0v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0843 */ { UD_Imov, O_R1v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0844 */ { UD_Imov, O_R2v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0845 */ { UD_Imov, O_R3v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0846 */ { UD_Imov, O_R4v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0847 */ { UD_Imov, O_R5v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0848 */ { UD_Imov, O_R6v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0849 */ { UD_Imov, O_R7v, O_Iv, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 0850 */ { UD_Imov, O_R, O_C, O_NONE, O_NONE, P_rexr|P_rexw|P_rexb },
-  /* 0851 */ { UD_Imov, O_R, O_D, O_NONE, O_NONE, P_rexr|P_rexw|P_rexb },
-  /* 0852 */ { UD_Imov, O_C, O_R, O_NONE, O_NONE, P_rexr|P_rexw|P_rexb },
-  /* 0853 */ { UD_Imov, O_D, O_R, O_NONE, O_NONE, P_rexr|P_rexw|P_rexb },
-  /* 0854 */ { UD_Imovapd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0855 */ { UD_Ivmovapd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0856 */ { UD_Imovapd, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0857 */ { UD_Ivmovapd, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0858 */ { UD_Imovaps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0859 */ { UD_Ivmovaps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0860 */ { UD_Imovaps, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0861 */ { UD_Ivmovaps, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0862 */ { UD_Imovd, O_P, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0863 */ { UD_Imovd, O_P, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0864 */ { UD_Imovd, O_V, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0865 */ { UD_Ivmovd, O_Vx, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0866 */ { UD_Imovd, O_V, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0867 */ { UD_Ivmovd, O_Vx, O_Ey, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0868 */ { UD_Imovd, O_Ey, O_P, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0869 */ { UD_Imovd, O_Ey, O_P, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0870 */ { UD_Imovd, O_Ey, O_V, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0871 */ { UD_Ivmovd, O_Ey, O_Vx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0872 */ { UD_Imovd, O_Ey, O_V, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0873 */ { UD_Ivmovd, O_Ey, O_Vx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0874 */ { UD_Imovhpd, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0875 */ { UD_Ivmovhpd, O_Vx, O_Hx, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0876 */ { UD_Imovhpd, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0877 */ { UD_Ivmovhpd, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0878 */ { UD_Imovhps, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0879 */ { UD_Ivmovhps, O_Vx, O_Hx, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0880 */ { UD_Imovhps, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0881 */ { UD_Ivmovhps, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0882 */ { UD_Imovlhps, O_V, O_U, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0883 */ { UD_Ivmovlhps, O_Vx, O_Hx, O_Ux, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0884 */ { UD_Imovlpd, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0885 */ { UD_Ivmovlpd, O_Vx, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0886 */ { UD_Imovlpd, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0887 */ { UD_Ivmovlpd, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0888 */ { UD_Imovlps, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0889 */ { UD_Ivmovlps, O_Vx, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0890 */ { UD_Imovlps, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0891 */ { UD_Ivmovlps, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0892 */ { UD_Imovhlps, O_V, O_U, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0893 */ { UD_Ivmovhlps, O_Vx, O_Ux, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0894 */ { UD_Imovmskpd, O_Gd, O_U, O_NONE, O_NONE, P_oso|P_rexr|P_rexb },
-  /* 0895 */ { UD_Ivmovmskpd, O_Gd, O_Ux, O_NONE, O_NONE, P_oso|P_rexr|P_rexb|P_vexl },
-  /* 0896 */ { UD_Imovmskps, O_Gd, O_U, O_NONE, O_NONE, P_oso|P_rexr|P_rexb },
-  /* 0897 */ { UD_Ivmovmskps, O_Gd, O_Ux, O_NONE, O_NONE, P_oso|P_rexr|P_rexb },
-  /* 0898 */ { UD_Imovntdq, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0899 */ { UD_Ivmovntdq, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0900 */ { UD_Imovnti, O_M, O_Gy, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0901 */ { UD_Imovntpd, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0902 */ { UD_Ivmovntpd, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0903 */ { UD_Imovntps, O_M, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0904 */ { UD_Ivmovntps, O_M, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0905 */ { UD_Imovntq, O_M, O_P, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0906 */ { UD_Imovq, O_P, O_Eq, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0907 */ { UD_Imovq, O_V, O_Eq, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0908 */ { UD_Ivmovq, O_Vx, O_Eq, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0909 */ { UD_Imovq, O_Eq, O_P, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0910 */ { UD_Imovq, O_Eq, O_V, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0911 */ { UD_Ivmovq, O_Eq, O_Vx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0912 */ { UD_Imovq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0913 */ { UD_Ivmovq, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0914 */ { UD_Imovq, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0915 */ { UD_Ivmovq, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0916 */ { UD_Imovq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0917 */ { UD_Imovq, O_Q, O_P, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0918 */ { UD_Imovsb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0919 */ { UD_Imovsw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0920 */ { UD_Imovsd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0921 */ { UD_Imovsd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0922 */ { UD_Imovsd, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0923 */ { UD_Imovsq, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 0924 */ { UD_Imovss, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0925 */ { UD_Imovss, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0926 */ { UD_Imovsx, O_Gv, O_Eb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0927 */ { UD_Imovsx, O_Gy, O_Ew, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0928 */ { UD_Imovupd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0929 */ { UD_Ivmovupd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0930 */ { UD_Imovupd, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0931 */ { UD_Ivmovupd, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0932 */ { UD_Imovups, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0933 */ { UD_Ivmovups, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0934 */ { UD_Imovups, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0935 */ { UD_Ivmovups, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0936 */ { UD_Imovzx, O_Gv, O_Eb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0937 */ { UD_Imovzx, O_Gy, O_Ew, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0938 */ { UD_Imul, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0939 */ { UD_Imul, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0940 */ { UD_Imulpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0941 */ { UD_Ivmulpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0942 */ { UD_Imulps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0943 */ { UD_Ivmulps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0944 */ { UD_Imulsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0945 */ { UD_Ivmulsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0946 */ { UD_Imulss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0947 */ { UD_Ivmulss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0948 */ { UD_Imwait, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 0949 */ { UD_Ineg, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0950 */ { UD_Ineg, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0951 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0952 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0953 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0954 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0955 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0956 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0957 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0958 */ { UD_Inot, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0959 */ { UD_Inot, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0960 */ { UD_Ior, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0961 */ { UD_Ior, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0962 */ { UD_Ior, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0963 */ { UD_Ior, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0964 */ { UD_Ior, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 0965 */ { UD_Ior, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 0966 */ { UD_Ior, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0967 */ { UD_Ior, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0968 */ { UD_Ior, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0969 */ { UD_Ior, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 0970 */ { UD_Iorpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0971 */ { UD_Ivorpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0972 */ { UD_Iorps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0973 */ { UD_Ivorps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0974 */ { UD_Iout, O_Ib, O_AL, O_NONE, O_NONE, P_none },
-  /* 0975 */ { UD_Iout, O_Ib, O_eAX, O_NONE, O_NONE, P_oso },
-  /* 0976 */ { UD_Iout, O_DX, O_AL, O_NONE, O_NONE, P_none },
-  /* 0977 */ { UD_Iout, O_DX, O_eAX, O_NONE, O_NONE, P_oso },
-  /* 0978 */ { UD_Ioutsb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 0979 */ { UD_Ioutsw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
-  /* 0980 */ { UD_Ioutsd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_oso|P_seg },
-  /* 0981 */ { UD_Ipacksswb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0982 */ { UD_Ivpacksswb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0983 */ { UD_Ipacksswb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0984 */ { UD_Ipackssdw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0985 */ { UD_Ivpackssdw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0986 */ { UD_Ipackssdw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0987 */ { UD_Ipackuswb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0988 */ { UD_Ivpackuswb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0989 */ { UD_Ipackuswb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0990 */ { UD_Ipaddb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0991 */ { UD_Ivpaddb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0992 */ { UD_Ipaddb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0993 */ { UD_Ipaddw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0994 */ { UD_Ipaddw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0995 */ { UD_Ivpaddw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0996 */ { UD_Ipaddd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0997 */ { UD_Ipaddd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 0998 */ { UD_Ivpaddd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 0999 */ { UD_Ipaddsb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1000 */ { UD_Ipaddsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1001 */ { UD_Ivpaddsb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1002 */ { UD_Ipaddsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1003 */ { UD_Ipaddsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1004 */ { UD_Ivpaddsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1005 */ { UD_Ipaddusb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1006 */ { UD_Ipaddusb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1007 */ { UD_Ivpaddusb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1008 */ { UD_Ipaddusw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1009 */ { UD_Ipaddusw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1010 */ { UD_Ivpaddusw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1011 */ { UD_Ipand, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1012 */ { UD_Ivpand, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1013 */ { UD_Ipand, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1014 */ { UD_Ipandn, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1015 */ { UD_Ivpandn, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1016 */ { UD_Ipandn, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1017 */ { UD_Ipavgb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1018 */ { UD_Ivpavgb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1019 */ { UD_Ipavgb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1020 */ { UD_Ipavgw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1021 */ { UD_Ivpavgw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1022 */ { UD_Ipavgw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1023 */ { UD_Ipcmpeqb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1024 */ { UD_Ipcmpeqb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1025 */ { UD_Ivpcmpeqb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1026 */ { UD_Ipcmpeqw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1027 */ { UD_Ipcmpeqw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1028 */ { UD_Ivpcmpeqw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1029 */ { UD_Ipcmpeqd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1030 */ { UD_Ipcmpeqd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1031 */ { UD_Ivpcmpeqd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1032 */ { UD_Ipcmpgtb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1033 */ { UD_Ivpcmpgtb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1034 */ { UD_Ipcmpgtb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1035 */ { UD_Ipcmpgtw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1036 */ { UD_Ivpcmpgtw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1037 */ { UD_Ipcmpgtw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1038 */ { UD_Ipcmpgtd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1039 */ { UD_Ivpcmpgtd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1040 */ { UD_Ipcmpgtd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1041 */ { UD_Ipextrb, O_MbRv, O_V, O_Ib, O_NONE, P_aso|P_rexx|P_rexr|P_rexb|P_def64 },
-  /* 1042 */ { UD_Ivpextrb, O_MbRv, O_Vx, O_Ib, O_NONE, P_aso|P_rexx|P_rexr|P_rexb|P_def64 },
-  /* 1043 */ { UD_Ipextrd, O_Ed, O_V, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
-  /* 1044 */ { UD_Ivpextrd, O_Ed, O_Vx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
-  /* 1045 */ { UD_Ipextrd, O_Ed, O_V, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
-  /* 1046 */ { UD_Ivpextrd, O_Ed, O_Vx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexw|P_rexb },
-  /* 1047 */ { UD_Ipextrq, O_Eq, O_V, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexb|P_def64 },
-  /* 1048 */ { UD_Ivpextrq, O_Eq, O_Vx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexb|P_def64 },
-  /* 1049 */ { UD_Ipextrw, O_Gd, O_U, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexb },
-  /* 1050 */ { UD_Ivpextrw, O_Gd, O_Ux, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexb },
-  /* 1051 */ { UD_Ipextrw, O_Gd, O_N, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1052 */ { UD_Ipextrw, O_MwRd, O_V, O_Ib, O_NONE, P_aso|P_rexw|P_rexx|P_rexr|P_rexb },
-  /* 1053 */ { UD_Ivpextrw, O_MwRd, O_Vx, O_Ib, O_NONE, P_aso|P_rexw|P_rexx|P_rexr|P_rexb },
-  /* 1054 */ { UD_Ipinsrb, O_V, O_MbRd, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1055 */ { UD_Ipinsrw, O_P, O_MwRy, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1056 */ { UD_Ipinsrw, O_V, O_MwRy, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1057 */ { UD_Ivpinsrw, O_Vx, O_MwRy, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1058 */ { UD_Ipinsrd, O_V, O_Ed, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1059 */ { UD_Ipinsrd, O_V, O_Ed, O_Ib, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1060 */ { UD_Ipinsrq, O_V, O_Eq, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1061 */ { UD_Ivpinsrb, O_V, O_H, O_MbRd, O_Ib, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1062 */ { UD_Ivpinsrd, O_V, O_H, O_Ed, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1063 */ { UD_Ivpinsrd, O_V, O_H, O_Ed, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1064 */ { UD_Ivpinsrq, O_V, O_H, O_Eq, O_Ib, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1065 */ { UD_Ipmaddwd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1066 */ { UD_Ipmaddwd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1067 */ { UD_Ivpmaddwd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1068 */ { UD_Ipmaxsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1069 */ { UD_Ivpmaxsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1070 */ { UD_Ipmaxsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1071 */ { UD_Ipmaxub, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1072 */ { UD_Ipmaxub, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1073 */ { UD_Ivpmaxub, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1074 */ { UD_Ipminsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1075 */ { UD_Ivpminsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1076 */ { UD_Ipminsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1077 */ { UD_Ipminub, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1078 */ { UD_Ivpminub, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1079 */ { UD_Ipminub, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1080 */ { UD_Ipmovmskb, O_Gd, O_U, O_NONE, O_NONE, P_oso|P_rexr|P_rexw|P_rexb },
-  /* 1081 */ { UD_Ivpmovmskb, O_Gd, O_Ux, O_NONE, O_NONE, P_oso|P_rexr|P_rexw|P_rexb },
-  /* 1082 */ { UD_Ipmovmskb, O_Gd, O_N, O_NONE, O_NONE, P_oso|P_rexr|P_rexw|P_rexb },
-  /* 1083 */ { UD_Ipmulhuw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1084 */ { UD_Ipmulhuw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1085 */ { UD_Ivpmulhuw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1086 */ { UD_Ipmulhw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1087 */ { UD_Ivpmulhw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1088 */ { UD_Ipmulhw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1089 */ { UD_Ipmullw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1090 */ { UD_Ipmullw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1091 */ { UD_Ivpmullw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1092 */ { UD_Ipop, O_ES, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 1093 */ { UD_Ipop, O_SS, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 1094 */ { UD_Ipop, O_DS, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 1095 */ { UD_Ipop, O_GS, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1096 */ { UD_Ipop, O_FS, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1097 */ { UD_Ipop, O_R0v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1098 */ { UD_Ipop, O_R1v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1099 */ { UD_Ipop, O_R2v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1100 */ { UD_Ipop, O_R3v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1101 */ { UD_Ipop, O_R4v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1102 */ { UD_Ipop, O_R5v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1103 */ { UD_Ipop, O_R6v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1104 */ { UD_Ipop, O_R7v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1105 */ { UD_Ipop, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1106 */ { UD_Ipopa, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
-  /* 1107 */ { UD_Ipopad, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
-  /* 1108 */ { UD_Ipopfw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 1109 */ { UD_Ipopfd, O_NONE, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 1110 */ { UD_Ipopfq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 1111 */ { UD_Ipopfq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 1112 */ { UD_Ipor, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1113 */ { UD_Ivpor, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1114 */ { UD_Ipor, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1115 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1116 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1117 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1118 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1119 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1120 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1121 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1122 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1123 */ { UD_Iprefetchnta, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1124 */ { UD_Iprefetcht0, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1125 */ { UD_Iprefetcht1, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1126 */ { UD_Iprefetcht2, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1127 */ { UD_Ipsadbw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1128 */ { UD_Ivpsadbw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1129 */ { UD_Ipsadbw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1130 */ { UD_Ipshufw, O_P, O_Q, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1131 */ { UD_Ipsllw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1132 */ { UD_Ipsllw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1133 */ { UD_Ipsllw, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1134 */ { UD_Ipsllw, O_N, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1135 */ { UD_Ipslld, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1136 */ { UD_Ipslld, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1137 */ { UD_Ipslld, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1138 */ { UD_Ipslld, O_N, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1139 */ { UD_Ipsllq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1140 */ { UD_Ipsllq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1141 */ { UD_Ipsllq, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1142 */ { UD_Ipsllq, O_N, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1143 */ { UD_Ipsraw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1144 */ { UD_Ipsraw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1145 */ { UD_Ivpsraw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1146 */ { UD_Ipsraw, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1147 */ { UD_Ivpsraw, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
-  /* 1148 */ { UD_Ipsraw, O_N, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1149 */ { UD_Ipsrad, O_N, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1150 */ { UD_Ipsrad, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1151 */ { UD_Ivpsrad, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1152 */ { UD_Ipsrad, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1153 */ { UD_Ipsrad, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1154 */ { UD_Ivpsrad, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
-  /* 1155 */ { UD_Ipsrlw, O_N, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1156 */ { UD_Ipsrlw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1157 */ { UD_Ipsrlw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1158 */ { UD_Ivpsrlw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1159 */ { UD_Ipsrlw, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1160 */ { UD_Ivpsrlw, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
-  /* 1161 */ { UD_Ipsrld, O_N, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1162 */ { UD_Ipsrld, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1163 */ { UD_Ipsrld, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1164 */ { UD_Ivpsrld, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1165 */ { UD_Ipsrld, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1166 */ { UD_Ivpsrld, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
-  /* 1167 */ { UD_Ipsrlq, O_N, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1168 */ { UD_Ipsrlq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1169 */ { UD_Ipsrlq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1170 */ { UD_Ivpsrlq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1171 */ { UD_Ipsrlq, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1172 */ { UD_Ivpsrlq, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
-  /* 1173 */ { UD_Ipsubb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1174 */ { UD_Ivpsubb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1175 */ { UD_Ipsubb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1176 */ { UD_Ipsubw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1177 */ { UD_Ivpsubw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1178 */ { UD_Ipsubw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1179 */ { UD_Ipsubd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1180 */ { UD_Ipsubd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1181 */ { UD_Ivpsubd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1182 */ { UD_Ipsubsb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1183 */ { UD_Ipsubsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1184 */ { UD_Ivpsubsb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1185 */ { UD_Ipsubsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1186 */ { UD_Ipsubsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1187 */ { UD_Ivpsubsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1188 */ { UD_Ipsubusb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1189 */ { UD_Ipsubusb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1190 */ { UD_Ivpsubusb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1191 */ { UD_Ipsubusw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1192 */ { UD_Ipsubusw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1193 */ { UD_Ivpsubusw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1194 */ { UD_Ipunpckhbw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1195 */ { UD_Ivpunpckhbw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1196 */ { UD_Ipunpckhbw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1197 */ { UD_Ipunpckhwd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1198 */ { UD_Ivpunpckhwd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1199 */ { UD_Ipunpckhwd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1200 */ { UD_Ipunpckhdq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1201 */ { UD_Ivpunpckhdq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1202 */ { UD_Ipunpckhdq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1203 */ { UD_Ipunpcklbw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1204 */ { UD_Ivpunpcklbw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1205 */ { UD_Ipunpcklbw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1206 */ { UD_Ipunpcklwd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1207 */ { UD_Ivpunpcklwd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1208 */ { UD_Ipunpcklwd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1209 */ { UD_Ipunpckldq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1210 */ { UD_Ivpunpckldq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1211 */ { UD_Ipunpckldq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1212 */ { UD_Ipi2fw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1213 */ { UD_Ipi2fd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1214 */ { UD_Ipf2iw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1215 */ { UD_Ipf2id, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1216 */ { UD_Ipfnacc, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1217 */ { UD_Ipfpnacc, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1218 */ { UD_Ipfcmpge, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1219 */ { UD_Ipfmin, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1220 */ { UD_Ipfrcp, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1221 */ { UD_Ipfrsqrt, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1222 */ { UD_Ipfsub, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1223 */ { UD_Ipfadd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1224 */ { UD_Ipfcmpgt, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1225 */ { UD_Ipfmax, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1226 */ { UD_Ipfrcpit1, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1227 */ { UD_Ipfrsqit1, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1228 */ { UD_Ipfsubr, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1229 */ { UD_Ipfacc, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1230 */ { UD_Ipfcmpeq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1231 */ { UD_Ipfmul, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1232 */ { UD_Ipfrcpit2, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1233 */ { UD_Ipmulhrw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1234 */ { UD_Ipswapd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1235 */ { UD_Ipavgusb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1236 */ { UD_Ipush, O_ES, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 1237 */ { UD_Ipush, O_CS, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 1238 */ { UD_Ipush, O_SS, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 1239 */ { UD_Ipush, O_DS, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 1240 */ { UD_Ipush, O_GS, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1241 */ { UD_Ipush, O_FS, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1242 */ { UD_Ipush, O_R0v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1243 */ { UD_Ipush, O_R1v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1244 */ { UD_Ipush, O_R2v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1245 */ { UD_Ipush, O_R3v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1246 */ { UD_Ipush, O_R4v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1247 */ { UD_Ipush, O_R5v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1248 */ { UD_Ipush, O_R6v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1249 */ { UD_Ipush, O_R7v, O_NONE, O_NONE, O_NONE, P_oso|P_rexb|P_def64 },
-  /* 1250 */ { UD_Ipush, O_sIz, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 1251 */ { UD_Ipush, O_Ev, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1252 */ { UD_Ipush, O_sIb, O_NONE, O_NONE, O_NONE, P_oso|P_def64 },
-  /* 1253 */ { UD_Ipusha, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
-  /* 1254 */ { UD_Ipushad, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_inv64 },
-  /* 1255 */ { UD_Ipushfw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 1256 */ { UD_Ipushfw, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
-  /* 1257 */ { UD_Ipushfd, O_NONE, O_NONE, O_NONE, O_NONE, P_oso },
-  /* 1258 */ { UD_Ipushfq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
-  /* 1259 */ { UD_Ipushfq, O_NONE, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_def64 },
-  /* 1260 */ { UD_Ipxor, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1261 */ { UD_Ivpxor, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1262 */ { UD_Ipxor, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1263 */ { UD_Ircl, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1264 */ { UD_Ircl, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1265 */ { UD_Ircl, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1266 */ { UD_Ircl, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1267 */ { UD_Ircl, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1268 */ { UD_Ircl, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1269 */ { UD_Ircr, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1270 */ { UD_Ircr, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1271 */ { UD_Ircr, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1272 */ { UD_Ircr, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1273 */ { UD_Ircr, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1274 */ { UD_Ircr, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1275 */ { UD_Irol, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1276 */ { UD_Irol, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1277 */ { UD_Irol, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1278 */ { UD_Irol, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1279 */ { UD_Irol, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1280 */ { UD_Irol, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1281 */ { UD_Iror, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1282 */ { UD_Iror, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1283 */ { UD_Iror, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1284 */ { UD_Iror, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1285 */ { UD_Iror, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1286 */ { UD_Iror, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1287 */ { UD_Ircpps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1288 */ { UD_Ivrcpps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1289 */ { UD_Ircpss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1290 */ { UD_Ivrcpss, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1291 */ { UD_Irdmsr, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1292 */ { UD_Irdpmc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1293 */ { UD_Irdtsc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1294 */ { UD_Irdtscp, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1295 */ { UD_Irepne, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1296 */ { UD_Irep, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1297 */ { UD_Iret, O_Iw, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1298 */ { UD_Iret, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1299 */ { UD_Iretf, O_Iw, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1300 */ { UD_Iretf, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1301 */ { UD_Irsm, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1302 */ { UD_Irsqrtps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1303 */ { UD_Ivrsqrtps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1304 */ { UD_Irsqrtss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1305 */ { UD_Ivrsqrtss, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1306 */ { UD_Isahf, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1307 */ { UD_Isalc, O_NONE, O_NONE, O_NONE, O_NONE, P_inv64 },
-  /* 1308 */ { UD_Isar, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1309 */ { UD_Isar, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1310 */ { UD_Isar, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1311 */ { UD_Isar, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1312 */ { UD_Isar, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1313 */ { UD_Isar, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1314 */ { UD_Ishl, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1315 */ { UD_Ishl, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1316 */ { UD_Ishl, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1317 */ { UD_Ishl, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1318 */ { UD_Ishl, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1319 */ { UD_Ishl, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1320 */ { UD_Ishl, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1321 */ { UD_Ishl, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1322 */ { UD_Ishl, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1323 */ { UD_Ishl, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1324 */ { UD_Ishl, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1325 */ { UD_Ishl, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1326 */ { UD_Ishr, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1327 */ { UD_Ishr, O_Eb, O_CL, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1328 */ { UD_Ishr, O_Ev, O_I1, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1329 */ { UD_Ishr, O_Eb, O_I1, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1330 */ { UD_Ishr, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1331 */ { UD_Ishr, O_Ev, O_CL, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1332 */ { UD_Isbb, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1333 */ { UD_Isbb, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1334 */ { UD_Isbb, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1335 */ { UD_Isbb, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1336 */ { UD_Isbb, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1337 */ { UD_Isbb, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 1338 */ { UD_Isbb, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1339 */ { UD_Isbb, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1340 */ { UD_Isbb, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 1341 */ { UD_Isbb, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1342 */ { UD_Iscasb, O_NONE, O_NONE, O_NONE, O_NONE, P_strz },
-  /* 1343 */ { UD_Iscasw, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
-  /* 1344 */ { UD_Iscasd, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
-  /* 1345 */ { UD_Iscasq, O_NONE, O_NONE, O_NONE, O_NONE, P_strz|P_oso|P_rexw },
-  /* 1346 */ { UD_Iseto, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1347 */ { UD_Isetno, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1348 */ { UD_Isetb, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1349 */ { UD_Isetae, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1350 */ { UD_Isetz, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1351 */ { UD_Isetnz, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1352 */ { UD_Isetbe, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1353 */ { UD_Iseta, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1354 */ { UD_Isets, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1355 */ { UD_Isetns, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1356 */ { UD_Isetp, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1357 */ { UD_Isetnp, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1358 */ { UD_Isetl, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1359 */ { UD_Isetge, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1360 */ { UD_Isetle, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1361 */ { UD_Isetg, O_Eb, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1362 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1363 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1364 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1365 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1366 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1367 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1368 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1369 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1370 */ { UD_Isgdt, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1371 */ { UD_Ishld, O_Ev, O_Gv, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1372 */ { UD_Ishld, O_Ev, O_Gv, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1373 */ { UD_Ishrd, O_Ev, O_Gv, O_Ib, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1374 */ { UD_Ishrd, O_Ev, O_Gv, O_CL, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1375 */ { UD_Ishufpd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1376 */ { UD_Ivshufpd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1377 */ { UD_Ishufps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1378 */ { UD_Ivshufps, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1379 */ { UD_Isidt, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1380 */ { UD_Isldt, O_MwRv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1381 */ { UD_Ismsw, O_MwRv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1382 */ { UD_Ismsw, O_MwRv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1383 */ { UD_Isqrtps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1384 */ { UD_Ivsqrtps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1385 */ { UD_Isqrtpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1386 */ { UD_Ivsqrtpd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1387 */ { UD_Isqrtsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1388 */ { UD_Ivsqrtsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1389 */ { UD_Isqrtss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1390 */ { UD_Ivsqrtss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1391 */ { UD_Istc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1392 */ { UD_Istd, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1393 */ { UD_Istgi, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1394 */ { UD_Isti, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1395 */ { UD_Iskinit, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1396 */ { UD_Istmxcsr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1397 */ { UD_Ivstmxcsr, O_Md, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1398 */ { UD_Istosb, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg },
-  /* 1399 */ { UD_Istosw, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 1400 */ { UD_Istosd, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 1401 */ { UD_Istosq, O_NONE, O_NONE, O_NONE, O_NONE, P_str|P_seg|P_oso|P_rexw },
-  /* 1402 */ { UD_Istr, O_MwRv, O_NONE, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1403 */ { UD_Isub, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1404 */ { UD_Isub, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1405 */ { UD_Isub, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1406 */ { UD_Isub, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1407 */ { UD_Isub, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1408 */ { UD_Isub, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 1409 */ { UD_Isub, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1410 */ { UD_Isub, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1411 */ { UD_Isub, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 1412 */ { UD_Isub, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1413 */ { UD_Isubpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1414 */ { UD_Ivsubpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1415 */ { UD_Isubps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1416 */ { UD_Ivsubps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1417 */ { UD_Isubsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1418 */ { UD_Ivsubsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1419 */ { UD_Isubss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1420 */ { UD_Ivsubss, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1421 */ { UD_Iswapgs, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1422 */ { UD_Isyscall, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1423 */ { UD_Isysenter, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1424 */ { UD_Isysenter, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1425 */ { UD_Isysexit, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1426 */ { UD_Isysexit, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1427 */ { UD_Isysret, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1428 */ { UD_Itest, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1429 */ { UD_Itest, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1430 */ { UD_Itest, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1431 */ { UD_Itest, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1432 */ { UD_Itest, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 1433 */ { UD_Itest, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1434 */ { UD_Itest, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1435 */ { UD_Itest, O_Ev, O_Iz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1436 */ { UD_Iucomisd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1437 */ { UD_Ivucomisd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1438 */ { UD_Iucomiss, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1439 */ { UD_Ivucomiss, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1440 */ { UD_Iud2, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1441 */ { UD_Iunpckhpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1442 */ { UD_Ivunpckhpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1443 */ { UD_Iunpckhps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1444 */ { UD_Ivunpckhps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1445 */ { UD_Iunpcklps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1446 */ { UD_Ivunpcklps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1447 */ { UD_Iunpcklpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1448 */ { UD_Ivunpcklpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1449 */ { UD_Iverr, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1450 */ { UD_Iverw, O_Ew, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1451 */ { UD_Ivmcall, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1452 */ { UD_Irdrand, O_R, O_NONE, O_NONE, O_NONE, P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1453 */ { UD_Ivmclear, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1454 */ { UD_Ivmxon, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1455 */ { UD_Ivmptrld, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1456 */ { UD_Ivmptrst, O_Mq, O_NONE, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1457 */ { UD_Ivmlaunch, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1458 */ { UD_Ivmresume, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1459 */ { UD_Ivmxoff, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1460 */ { UD_Ivmread, O_Ey, O_Gy, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1461 */ { UD_Ivmwrite, O_Gy, O_Ey, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_def64 },
-  /* 1462 */ { UD_Ivmrun, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1463 */ { UD_Ivmmcall, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1464 */ { UD_Ivmload, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1465 */ { UD_Ivmsave, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1466 */ { UD_Iwait, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1467 */ { UD_Iwbinvd, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1468 */ { UD_Iwrmsr, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1469 */ { UD_Ixadd, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexx|P_rexb },
-  /* 1470 */ { UD_Ixadd, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1471 */ { UD_Ixchg, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1472 */ { UD_Ixchg, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1473 */ { UD_Ixchg, O_R0v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1474 */ { UD_Ixchg, O_R1v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1475 */ { UD_Ixchg, O_R2v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1476 */ { UD_Ixchg, O_R3v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1477 */ { UD_Ixchg, O_R4v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1478 */ { UD_Ixchg, O_R5v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1479 */ { UD_Ixchg, O_R6v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1480 */ { UD_Ixchg, O_R7v, O_rAX, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1481 */ { UD_Ixgetbv, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1482 */ { UD_Ixlatb, O_NONE, O_NONE, O_NONE, O_NONE, P_rexw|P_seg },
-  /* 1483 */ { UD_Ixor, O_Eb, O_Gb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1484 */ { UD_Ixor, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1485 */ { UD_Ixor, O_Gb, O_Eb, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1486 */ { UD_Ixor, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1487 */ { UD_Ixor, O_AL, O_Ib, O_NONE, O_NONE, P_none },
-  /* 1488 */ { UD_Ixor, O_rAX, O_sIz, O_NONE, O_NONE, P_oso|P_rexw },
-  /* 1489 */ { UD_Ixor, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1490 */ { UD_Ixor, O_Ev, O_sIz, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1491 */ { UD_Ixor, O_Eb, O_Ib, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_inv64 },
-  /* 1492 */ { UD_Ixor, O_Ev, O_sIb, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1493 */ { UD_Ixorpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1494 */ { UD_Ivxorpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1495 */ { UD_Ixorps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1496 */ { UD_Ivxorps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1497 */ { UD_Ixcryptecb, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1498 */ { UD_Ixcryptcbc, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1499 */ { UD_Ixcryptctr, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1500 */ { UD_Ixcryptcfb, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1501 */ { UD_Ixcryptofb, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1502 */ { UD_Ixrstor, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1503 */ { UD_Ixsave, O_M, O_NONE, O_NONE, O_NONE, P_aso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1504 */ { UD_Ixsetbv, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1505 */ { UD_Ixsha1, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1506 */ { UD_Ixsha256, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1507 */ { UD_Ixstore, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1508 */ { UD_Ipclmulqdq, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1509 */ { UD_Ivpclmulqdq, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1510 */ { UD_Igetsec, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1511 */ { UD_Imovdqa, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1512 */ { UD_Ivmovdqa, O_Wx, O_Vx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1513 */ { UD_Imovdqa, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1514 */ { UD_Ivmovdqa, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1515 */ { UD_Imaskmovdqu, O_V, O_U, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1516 */ { UD_Ivmaskmovdqu, O_Vx, O_Ux, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1517 */ { UD_Imovdq2q, O_P, O_U, O_NONE, O_NONE, P_aso|P_rexb },
-  /* 1518 */ { UD_Imovdqu, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1519 */ { UD_Ivmovdqu, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1520 */ { UD_Imovdqu, O_W, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1521 */ { UD_Imovq2dq, O_V, O_N, O_NONE, O_NONE, P_aso|P_rexr },
-  /* 1522 */ { UD_Ipaddq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1523 */ { UD_Ipaddq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1524 */ { UD_Ivpaddq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1525 */ { UD_Ipsubq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1526 */ { UD_Ivpsubq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1527 */ { UD_Ipsubq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1528 */ { UD_Ipmuludq, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1529 */ { UD_Ipmuludq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1530 */ { UD_Ipshufhw, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1531 */ { UD_Ivpshufhw, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1532 */ { UD_Ipshuflw, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1533 */ { UD_Ivpshuflw, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1534 */ { UD_Ipshufd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1535 */ { UD_Ivpshufd, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1536 */ { UD_Ipslldq, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1537 */ { UD_Ivpslldq, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
-  /* 1538 */ { UD_Ipsrldq, O_U, O_Ib, O_NONE, O_NONE, P_rexb },
-  /* 1539 */ { UD_Ivpsrldq, O_Hx, O_Ux, O_Ib, O_NONE, P_rexb },
-  /* 1540 */ { UD_Ipunpckhqdq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1541 */ { UD_Ivpunpckhqdq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1542 */ { UD_Ipunpcklqdq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1543 */ { UD_Ivpunpcklqdq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1544 */ { UD_Ihaddpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1545 */ { UD_Ivhaddpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1546 */ { UD_Ihaddps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1547 */ { UD_Ivhaddps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1548 */ { UD_Ihsubpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1549 */ { UD_Ivhsubpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1550 */ { UD_Ihsubps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1551 */ { UD_Ivhsubps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1552 */ { UD_Iinsertps, O_V, O_Md, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1553 */ { UD_Ivinsertps, O_Vx, O_Hx, O_Md, O_Ib, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1554 */ { UD_Ilddqu, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1555 */ { UD_Ivlddqu, O_Vx, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1556 */ { UD_Imovddup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1557 */ { UD_Ivmovddup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1558 */ { UD_Imovddup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1559 */ { UD_Ivmovddup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1560 */ { UD_Imovshdup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1561 */ { UD_Ivmovshdup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1562 */ { UD_Imovshdup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1563 */ { UD_Ivmovshdup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1564 */ { UD_Imovsldup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1565 */ { UD_Ivmovsldup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1566 */ { UD_Imovsldup, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1567 */ { UD_Ivmovsldup, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1568 */ { UD_Ipabsb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1569 */ { UD_Ipabsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1570 */ { UD_Ivpabsb, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1571 */ { UD_Ipabsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1572 */ { UD_Ipabsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1573 */ { UD_Ivpabsw, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1574 */ { UD_Ipabsd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1575 */ { UD_Ipabsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1576 */ { UD_Ivpabsd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1577 */ { UD_Ipshufb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1578 */ { UD_Ipshufb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1579 */ { UD_Ivpshufb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1580 */ { UD_Iphaddw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1581 */ { UD_Iphaddw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1582 */ { UD_Ivphaddw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1583 */ { UD_Iphaddd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1584 */ { UD_Iphaddd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1585 */ { UD_Ivphaddd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1586 */ { UD_Iphaddsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1587 */ { UD_Iphaddsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1588 */ { UD_Ivphaddsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1589 */ { UD_Ipmaddubsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1590 */ { UD_Ipmaddubsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1591 */ { UD_Ivpmaddubsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1592 */ { UD_Iphsubw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1593 */ { UD_Iphsubw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1594 */ { UD_Ivphsubw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1595 */ { UD_Iphsubd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1596 */ { UD_Iphsubd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1597 */ { UD_Ivphsubd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1598 */ { UD_Iphsubsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1599 */ { UD_Iphsubsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1600 */ { UD_Ivphsubsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1601 */ { UD_Ipsignb, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1602 */ { UD_Ipsignb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1603 */ { UD_Ivpsignb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1604 */ { UD_Ipsignd, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1605 */ { UD_Ipsignd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1606 */ { UD_Ivpsignd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1607 */ { UD_Ipsignw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1608 */ { UD_Ipsignw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1609 */ { UD_Ivpsignw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1610 */ { UD_Ipmulhrsw, O_P, O_Q, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1611 */ { UD_Ipmulhrsw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1612 */ { UD_Ivpmulhrsw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1613 */ { UD_Ipalignr, O_P, O_Q, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1614 */ { UD_Ipalignr, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1615 */ { UD_Ivpalignr, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1616 */ { UD_Ipblendvb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1617 */ { UD_Ipmuldq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1618 */ { UD_Ivpmuldq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1619 */ { UD_Ipminsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1620 */ { UD_Ivpminsb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1621 */ { UD_Ipminsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1622 */ { UD_Ivpminsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1623 */ { UD_Ipminuw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1624 */ { UD_Ivpminuw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1625 */ { UD_Ipminud, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1626 */ { UD_Ivpminud, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1627 */ { UD_Ipmaxsb, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1628 */ { UD_Ivpmaxsb, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1629 */ { UD_Ipmaxsd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1630 */ { UD_Ivpmaxsd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1631 */ { UD_Ipmaxud, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1632 */ { UD_Ivpmaxud, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1633 */ { UD_Ipmaxuw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1634 */ { UD_Ivpmaxuw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1635 */ { UD_Ipmulld, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1636 */ { UD_Ivpmulld, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1637 */ { UD_Iphminposuw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1638 */ { UD_Ivphminposuw, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1639 */ { UD_Iroundps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1640 */ { UD_Ivroundps, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1641 */ { UD_Iroundpd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1642 */ { UD_Ivroundpd, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1643 */ { UD_Iroundss, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1644 */ { UD_Ivroundss, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1645 */ { UD_Iroundsd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1646 */ { UD_Ivroundsd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1647 */ { UD_Iblendpd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1648 */ { UD_Ivblendpd, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1649 */ { UD_Iblendps, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1650 */ { UD_Ivblendps, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1651 */ { UD_Iblendvpd, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1652 */ { UD_Iblendvps, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1653 */ { UD_Ibound, O_Gv, O_M, O_NONE, O_NONE, P_aso|P_oso },
-  /* 1654 */ { UD_Ibsf, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1655 */ { UD_Ibsr, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1656 */ { UD_Ibswap, O_R0y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1657 */ { UD_Ibswap, O_R1y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1658 */ { UD_Ibswap, O_R2y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1659 */ { UD_Ibswap, O_R3y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1660 */ { UD_Ibswap, O_R4y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1661 */ { UD_Ibswap, O_R5y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1662 */ { UD_Ibswap, O_R6y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1663 */ { UD_Ibswap, O_R7y, O_NONE, O_NONE, O_NONE, P_oso|P_rexw|P_rexb },
-  /* 1664 */ { UD_Ibt, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1665 */ { UD_Ibt, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1666 */ { UD_Ibtc, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1667 */ { UD_Ibtc, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1668 */ { UD_Ibtr, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1669 */ { UD_Ibtr, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1670 */ { UD_Ibts, O_Ev, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1671 */ { UD_Ibts, O_Ev, O_Ib, O_NONE, O_NONE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb },
-  /* 1672 */ { UD_Ipblendw, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1673 */ { UD_Ivpblendw, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1674 */ { UD_Impsadbw, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1675 */ { UD_Ivmpsadbw, O_Vx, O_Hx, O_Wx, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1676 */ { UD_Imovntdqa, O_V, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1677 */ { UD_Ivmovntdqa, O_Vx, O_M, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl },
-  /* 1678 */ { UD_Ipackusdw, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1679 */ { UD_Ivpackusdw, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl },
-  /* 1680 */ { UD_Ipmovsxbw, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1681 */ { UD_Ivpmovsxbw, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1682 */ { UD_Ipmovsxbd, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1683 */ { UD_Ivpmovsxbd, O_Vx, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1684 */ { UD_Ipmovsxbq, O_V, O_MwU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1685 */ { UD_Ivpmovsxbq, O_Vx, O_MwU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1686 */ { UD_Ipmovsxwd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1687 */ { UD_Ivpmovsxwd, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1688 */ { UD_Ipmovsxwq, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1689 */ { UD_Ivpmovsxwq, O_Vx, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1690 */ { UD_Ipmovsxdq, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1691 */ { UD_Ipmovzxbw, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1692 */ { UD_Ivpmovzxbw, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1693 */ { UD_Ipmovzxbd, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1694 */ { UD_Ivpmovzxbd, O_Vx, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1695 */ { UD_Ipmovzxbq, O_V, O_MwU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1696 */ { UD_Ivpmovzxbq, O_Vx, O_MwU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1697 */ { UD_Ipmovzxwd, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1698 */ { UD_Ivpmovzxwd, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1699 */ { UD_Ipmovzxwq, O_V, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1700 */ { UD_Ivpmovzxwq, O_Vx, O_MdU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1701 */ { UD_Ipmovzxdq, O_V, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1702 */ { UD_Ivpmovzxdq, O_Vx, O_MqU, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1703 */ { UD_Ipcmpeqq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1704 */ { UD_Ivpcmpeqq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1705 */ { UD_Ipopcnt, O_Gv, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1706 */ { UD_Iptest, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1707 */ { UD_Ivptest, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl },
-  /* 1708 */ { UD_Ipcmpestri, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1709 */ { UD_Ivpcmpestri, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1710 */ { UD_Ipcmpestrm, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1711 */ { UD_Ivpcmpestrm, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1712 */ { UD_Ipcmpgtq, O_V, O_W, O_NONE, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1713 */ { UD_Ivpcmpgtq, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1714 */ { UD_Ipcmpistri, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1715 */ { UD_Ivpcmpistri, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1716 */ { UD_Ipcmpistrm, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1717 */ { UD_Ivpcmpistrm, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1718 */ { UD_Imovbe, O_Gv, O_Mv, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1719 */ { UD_Imovbe, O_Mv, O_Gv, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1720 */ { UD_Icrc32, O_Gy, O_Eb, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1721 */ { UD_Icrc32, O_Gy, O_Ev, O_NONE, O_NONE, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb },
-  /* 1722 */ { UD_Ivbroadcastss, O_V, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1723 */ { UD_Ivbroadcastsd, O_Vqq, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1724 */ { UD_Ivextractf128, O_Wdq, O_Vqq, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1725 */ { UD_Ivinsertf128, O_Vqq, O_Hqq, O_Wdq, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1726 */ { UD_Ivmaskmovps, O_V, O_H, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1727 */ { UD_Ivmaskmovps, O_M, O_H, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1728 */ { UD_Ivmaskmovpd, O_V, O_H, O_M, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1729 */ { UD_Ivmaskmovpd, O_M, O_H, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1730 */ { UD_Ivpermilpd, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1731 */ { UD_Ivpermilpd, O_V, O_W, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1732 */ { UD_Ivpermilps, O_Vx, O_Hx, O_Wx, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1733 */ { UD_Ivpermilps, O_Vx, O_Wx, O_Ib, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1734 */ { UD_Ivperm2f128, O_Vqq, O_Hqq, O_Wqq, O_Ib, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1735 */ { UD_Ivtestps, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1736 */ { UD_Ivtestpd, O_Vx, O_Wx, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1737 */ { UD_Ivzeroupper, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1738 */ { UD_Ivzeroall, O_NONE, O_NONE, O_NONE, O_NONE, P_none },
-  /* 1739 */ { UD_Ivblendvpd, O_Vx, O_Hx, O_Wx, O_Lx, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1740 */ { UD_Ivblendvps, O_Vx, O_Hx, O_Wx, O_Lx, P_aso|P_rexr|P_rexx|P_rexb|P_vexl },
-  /* 1741 */ { UD_Ivmovsd, O_V, O_H, O_U, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1742 */ { UD_Ivmovsd, O_V, O_Mq, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1743 */ { UD_Ivmovsd, O_U, O_H, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1744 */ { UD_Ivmovsd, O_Mq, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1745 */ { UD_Ivmovss, O_V, O_H, O_U, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1746 */ { UD_Ivmovss, O_V, O_Md, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1747 */ { UD_Ivmovss, O_U, O_H, O_V, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1748 */ { UD_Ivmovss, O_Md, O_V, O_NONE, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1749 */ { UD_Ivpblendvb, O_V, O_H, O_W, O_L, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1750 */ { UD_Ivpsllw, O_V, O_H, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1751 */ { UD_Ivpsllw, O_H, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1752 */ { UD_Ivpslld, O_V, O_H, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1753 */ { UD_Ivpslld, O_H, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1754 */ { UD_Ivpsllq, O_V, O_H, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
-  /* 1755 */ { UD_Ivpsllq, O_H, O_V, O_W, O_NONE, P_aso|P_rexr|P_rexx|P_rexb },
+  /* 0000 */ { UD_Iinvalid, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0001 */ { UD_Iaaa, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_NONE}, {UD_R_AL, UD_NONE} },
+  /* 0002 */ { UD_Iaad, O_Ib, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_NONE}, {UD_R_AX, UD_NONE} },
+  /* 0003 */ { UD_Iaam, O_Ib, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_NONE}, {UD_R_AX, UD_NONE} },
+  /* 0004 */ { UD_Iaas, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_NONE}, {UD_R_AL, UD_NONE} },
+  /* 0005 */ { UD_Iadc, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0006 */ { UD_Iadc, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0007 */ { UD_Iadc, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0008 */ { UD_Iadc, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0009 */ { UD_Iadc, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0010 */ { UD_Iadc, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0011 */ { UD_Iadc, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0012 */ { UD_Iadc, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_inv64, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0013 */ { UD_Iadc, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0014 */ { UD_Iadc, O_Ev, O_sIb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0015 */ { UD_Iadd, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0016 */ { UD_Iadd, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0017 */ { UD_Iadd, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0018 */ { UD_Iadd, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0019 */ { UD_Iadd, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0020 */ { UD_Iadd, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0021 */ { UD_Iadd, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0022 */ { UD_Iadd, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_inv64, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0023 */ { UD_Iadd, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0024 */ { UD_Iadd, O_Ev, O_sIb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0025 */ { UD_Iaddpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0026 */ { UD_Ivaddpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0027 */ { UD_Iaddps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0028 */ { UD_Ivaddps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0029 */ { UD_Iaddsd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0030 */ { UD_Ivaddsd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0031 */ { UD_Iaddss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0032 */ { UD_Ivaddss, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0033 */ { UD_Iaddsubpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0034 */ { UD_Ivaddsubpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0035 */ { UD_Iaddsubps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0036 */ { UD_Ivaddsubps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0037 */ { UD_Iaesdec, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0038 */ { UD_Ivaesdec, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0039 */ { UD_Iaesdeclast, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0040 */ { UD_Ivaesdeclast, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0041 */ { UD_Iaesenc, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0042 */ { UD_Ivaesenc, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0043 */ { UD_Iaesenclast, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0044 */ { UD_Ivaesenclast, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0045 */ { UD_Iaesimc, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0046 */ { UD_Ivaesimc, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0047 */ { UD_Iaeskeygenassist, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0048 */ { UD_Ivaeskeygenassist, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0049 */ { UD_Iand, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0050 */ { UD_Iand, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0051 */ { UD_Iand, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0052 */ { UD_Iand, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0053 */ { UD_Iand, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0054 */ { UD_Iand, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0055 */ { UD_Iand, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0056 */ { UD_Iand, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_inv64, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0057 */ { UD_Iand, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0058 */ { UD_Iand, O_Ev, O_sIb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0059 */ { UD_Iandpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0060 */ { UD_Ivandpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0061 */ { UD_Iandps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0062 */ { UD_Ivandps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0063 */ { UD_Iandnpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0064 */ { UD_Ivandnpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0065 */ { UD_Iandnps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0066 */ { UD_Ivandnps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0067 */ { UD_Iarpl, O_Ew, O_Gw, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0068 */ { UD_Imovsxd, O_Gq, O_Ed, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexx|P_rexr|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0069 */ { UD_Icall, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 0070 */ { UD_Icall, O_Eq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 0071 */ { UD_Icall, O_Fv, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 0072 */ { UD_Icall, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 0073 */ { UD_Icall, O_Av, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 0074 */ { UD_Icbw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_NONE}, {UD_R_AX, UD_NONE} },
+  /* 0075 */ { UD_Icwde, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_NONE}, {UD_R_EAX, UD_NONE} },
+  /* 0076 */ { UD_Icdqe, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_NONE}, {UD_R_RAX, UD_NONE} },
+  /* 0077 */ { UD_Iclc, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0078 */ { UD_Icld, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0079 */ { UD_Iclflush, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0080 */ { UD_Iclgi, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0081 */ { UD_Icli, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0082 */ { UD_Iclts, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_CR0, UD_NONE}, {UD_R_CR0, UD_NONE} },
+  /* 0083 */ { UD_Icmc, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0084 */ { UD_Icmovo, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0085 */ { UD_Icmovno, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0086 */ { UD_Icmovb, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0087 */ { UD_Icmovae, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0088 */ { UD_Icmove, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0089 */ { UD_Icmovne, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0090 */ { UD_Icmovbe, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0091 */ { UD_Icmova, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0092 */ { UD_Icmovs, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0093 */ { UD_Icmovns, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0094 */ { UD_Icmovp, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0095 */ { UD_Icmovnp, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0096 */ { UD_Icmovl, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0097 */ { UD_Icmovge, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0098 */ { UD_Icmovle, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0099 */ { UD_Icmovg, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0100 */ { UD_Icmp, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0101 */ { UD_Icmp, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0102 */ { UD_Icmp, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0103 */ { UD_Icmp, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0104 */ { UD_Icmp, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0105 */ { UD_Icmp, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0106 */ { UD_Icmp, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0107 */ { UD_Icmp, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_inv64, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0108 */ { UD_Icmp, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0109 */ { UD_Icmp, O_Ev, O_sIb, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0110 */ { UD_Icmppd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0111 */ { UD_Ivcmppd, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0112 */ { UD_Icmpps, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0113 */ { UD_Ivcmpps, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0114 */ { UD_Icmpsb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_strz|P_seg, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 0115 */ { UD_Icmpsw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_strz|P_oso|P_rexw|P_seg, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 0116 */ { UD_Icmpsd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_strz|P_oso|P_rexw|P_seg, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 0117 */ { UD_Icmpsd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0118 */ { UD_Ivcmpsd, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0119 */ { UD_Icmpsq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_strz|P_oso|P_rexw|P_seg, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 0120 */ { UD_Icmpss, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0121 */ { UD_Ivcmpss, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0122 */ { UD_Icmpxchg, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_NONE}, {UD_R_RAX, UD_NONE} },
+  /* 0123 */ { UD_Icmpxchg, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_NONE}, {UD_R_RAX, UD_NONE} },
+  /* 0124 */ { UD_Icmpxchg8b, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_R_RDX, UD_NONE}, {UD_R_RAX, UD_R_RDX, UD_NONE} },
+  /* 0125 */ { UD_Icmpxchg8b, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_R_RDX, UD_NONE}, {UD_R_RAX, UD_R_RDX, UD_NONE} },
+  /* 0126 */ { UD_Icmpxchg16b, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_R_RDX, UD_NONE}, {UD_R_RAX, UD_R_RDX, UD_NONE} },
+  /* 0127 */ { UD_Icomisd, O_Vsd, O_Wsd, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0128 */ { UD_Ivcomisd, O_Vsd, O_Wsd, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0129 */ { UD_Icomiss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0130 */ { UD_Ivcomiss, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0131 */ { UD_Icpuid, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_NONE}, {UD_R_EAX, UD_R_EBX, UD_R_ECX, UD_R_EDX, UD_NONE} },
+  /* 0132 */ { UD_Icvtdq2pd, O_V, O_Wdq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0133 */ { UD_Ivcvtdq2pd, O_Vx, O_Wdq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0134 */ { UD_Icvtdq2ps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0135 */ { UD_Ivcvtdq2ps, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0136 */ { UD_Icvtpd2dq, O_Vdq, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0137 */ { UD_Ivcvtpd2dq, O_Vdq, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0138 */ { UD_Icvtpd2pi, O_P, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0139 */ { UD_Icvtpd2ps, O_Vdq, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0140 */ { UD_Ivcvtpd2ps, O_Vdq, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0141 */ { UD_Icvtpi2ps, O_V, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0142 */ { UD_Icvtpi2pd, O_V, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0143 */ { UD_Icvtps2dq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0144 */ { UD_Ivcvtps2dq, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0145 */ { UD_Icvtps2pd, O_V, O_Wdq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0146 */ { UD_Ivcvtps2pd, O_Vx, O_Wdq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0147 */ { UD_Icvtps2pi, O_P, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0148 */ { UD_Icvtsd2si, O_Gy, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0149 */ { UD_Ivcvtsd2si, O_Gy, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0150 */ { UD_Icvtsd2ss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0151 */ { UD_Ivcvtsd2ss, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0152 */ { UD_Icvtsi2sd, O_V, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0153 */ { UD_Ivcvtsi2sd, O_Vx, O_Hx, O_Ey, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0154 */ { UD_Icvtsi2ss, O_V, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0155 */ { UD_Ivcvtsi2ss, O_Vx, O_Hx, O_Ey, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0156 */ { UD_Icvtss2sd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0157 */ { UD_Ivcvtss2sd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0158 */ { UD_Icvtss2si, O_Gy, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0159 */ { UD_Ivcvtss2si, O_Gy, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0160 */ { UD_Icvttpd2dq, O_Vdq, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0161 */ { UD_Ivcvttpd2dq, O_Vdq, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0162 */ { UD_Icvttpd2pi, O_P, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0163 */ { UD_Icvttps2dq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0164 */ { UD_Ivcvttps2dq, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0165 */ { UD_Icvttps2pi, O_P, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0166 */ { UD_Icvttsd2si, O_Gy, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0167 */ { UD_Ivcvttsd2si, O_Gy, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0168 */ { UD_Icvttss2si, O_Gy, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0169 */ { UD_Ivcvttss2si, O_Gy, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0170 */ { UD_Icwd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_NONE}, {UD_R_AX, UD_R_DX, UD_NONE} },
+  /* 0171 */ { UD_Icdq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_NONE}, {UD_R_EAX, UD_R_EDX, UD_NONE} },
+  /* 0172 */ { UD_Icqo, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_NONE}, {UD_R_RAX, UD_R_RDX, UD_NONE} },
+  /* 0173 */ { UD_Idaa, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_NONE}, {UD_R_AL, UD_NONE} },
+  /* 0174 */ { UD_Idas, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_NONE}, {UD_R_AL, UD_NONE} },
+  /* 0175 */ { UD_Idec, O_R0z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0176 */ { UD_Idec, O_R1z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0177 */ { UD_Idec, O_R2z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0178 */ { UD_Idec, O_R3z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0179 */ { UD_Idec, O_R4z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0180 */ { UD_Idec, O_R5z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0181 */ { UD_Idec, O_R6z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0182 */ { UD_Idec, O_R7z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0183 */ { UD_Idec, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0184 */ { UD_Idec, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0185 */ { UD_Idiv, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_R_DX, UD_NONE}, {UD_R_AX, UD_R_DX, UD_NONE} },
+  /* 0186 */ { UD_Idiv, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_NONE}, {UD_R_AX, UD_NONE} },
+  /* 0187 */ { UD_Idivpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0188 */ { UD_Ivdivpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0189 */ { UD_Idivps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0190 */ { UD_Ivdivps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0191 */ { UD_Idivsd, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0192 */ { UD_Ivdivsd, O_Vx, O_Hx, O_MqU, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0193 */ { UD_Idivss, O_V, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0194 */ { UD_Ivdivss, O_Vx, O_Hx, O_MdU, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0195 */ { UD_Idppd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0196 */ { UD_Ivdppd, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0197 */ { UD_Idpps, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0198 */ { UD_Ivdpps, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0199 */ { UD_Iemms, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0200 */ { UD_Ienter, O_Iw, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0201 */ { UD_Iextractps, O_MdRy, O_V, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0202 */ { UD_Ivextractps, O_MdRy, O_Vx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0203 */ { UD_If2xm1, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_ST0, UD_NONE}, {UD_R_ST0, UD_NONE} },
+  /* 0204 */ { UD_Ifabs, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_ST0, UD_NONE}, {UD_R_ST0, UD_NONE} },
+  /* 0205 */ { UD_Ifadd, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0206 */ { UD_Ifadd, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0207 */ { UD_Ifadd, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0208 */ { UD_Ifadd, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0209 */ { UD_Ifadd, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0210 */ { UD_Ifadd, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0211 */ { UD_Ifadd, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0212 */ { UD_Ifadd, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0213 */ { UD_Ifadd, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0214 */ { UD_Ifadd, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0215 */ { UD_Ifadd, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0216 */ { UD_Ifadd, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0217 */ { UD_Ifadd, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0218 */ { UD_Ifadd, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0219 */ { UD_Ifadd, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0220 */ { UD_Ifadd, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0221 */ { UD_Ifadd, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0222 */ { UD_Ifadd, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0223 */ { UD_Ifaddp, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0224 */ { UD_Ifaddp, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0225 */ { UD_Ifaddp, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0226 */ { UD_Ifaddp, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0227 */ { UD_Ifaddp, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0228 */ { UD_Ifaddp, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0229 */ { UD_Ifaddp, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0230 */ { UD_Ifaddp, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0231 */ { UD_Ifbld, O_Mt, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0232 */ { UD_Ifbstp, O_Mt, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0233 */ { UD_Ifchs, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0234 */ { UD_Ifclex, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0235 */ { UD_Ifcmovb, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0236 */ { UD_Ifcmovb, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0237 */ { UD_Ifcmovb, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0238 */ { UD_Ifcmovb, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0239 */ { UD_Ifcmovb, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0240 */ { UD_Ifcmovb, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0241 */ { UD_Ifcmovb, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0242 */ { UD_Ifcmovb, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0243 */ { UD_Ifcmove, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0244 */ { UD_Ifcmove, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0245 */ { UD_Ifcmove, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0246 */ { UD_Ifcmove, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0247 */ { UD_Ifcmove, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0248 */ { UD_Ifcmove, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0249 */ { UD_Ifcmove, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0250 */ { UD_Ifcmove, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0251 */ { UD_Ifcmovbe, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0252 */ { UD_Ifcmovbe, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0253 */ { UD_Ifcmovbe, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0254 */ { UD_Ifcmovbe, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0255 */ { UD_Ifcmovbe, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0256 */ { UD_Ifcmovbe, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0257 */ { UD_Ifcmovbe, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0258 */ { UD_Ifcmovbe, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0259 */ { UD_Ifcmovu, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0260 */ { UD_Ifcmovu, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0261 */ { UD_Ifcmovu, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0262 */ { UD_Ifcmovu, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0263 */ { UD_Ifcmovu, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0264 */ { UD_Ifcmovu, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0265 */ { UD_Ifcmovu, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0266 */ { UD_Ifcmovu, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0267 */ { UD_Ifcmovnb, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0268 */ { UD_Ifcmovnb, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0269 */ { UD_Ifcmovnb, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0270 */ { UD_Ifcmovnb, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0271 */ { UD_Ifcmovnb, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0272 */ { UD_Ifcmovnb, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0273 */ { UD_Ifcmovnb, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0274 */ { UD_Ifcmovnb, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0275 */ { UD_Ifcmovne, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0276 */ { UD_Ifcmovne, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0277 */ { UD_Ifcmovne, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0278 */ { UD_Ifcmovne, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0279 */ { UD_Ifcmovne, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0280 */ { UD_Ifcmovne, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0281 */ { UD_Ifcmovne, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0282 */ { UD_Ifcmovne, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0283 */ { UD_Ifcmovnbe, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0284 */ { UD_Ifcmovnbe, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0285 */ { UD_Ifcmovnbe, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0286 */ { UD_Ifcmovnbe, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0287 */ { UD_Ifcmovnbe, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0288 */ { UD_Ifcmovnbe, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0289 */ { UD_Ifcmovnbe, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0290 */ { UD_Ifcmovnbe, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0291 */ { UD_Ifcmovnu, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0292 */ { UD_Ifcmovnu, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0293 */ { UD_Ifcmovnu, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0294 */ { UD_Ifcmovnu, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0295 */ { UD_Ifcmovnu, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0296 */ { UD_Ifcmovnu, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0297 */ { UD_Ifcmovnu, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0298 */ { UD_Ifcmovnu, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0299 */ { UD_Ifucomi, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0300 */ { UD_Ifucomi, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0301 */ { UD_Ifucomi, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0302 */ { UD_Ifucomi, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0303 */ { UD_Ifucomi, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0304 */ { UD_Ifucomi, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0305 */ { UD_Ifucomi, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0306 */ { UD_Ifucomi, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0307 */ { UD_Ifcom, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0308 */ { UD_Ifcom, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0309 */ { UD_Ifcom, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0310 */ { UD_Ifcom, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0311 */ { UD_Ifcom, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0312 */ { UD_Ifcom, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0313 */ { UD_Ifcom, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0314 */ { UD_Ifcom, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0315 */ { UD_Ifcom, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0316 */ { UD_Ifcom, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0317 */ { UD_Ifcom2, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0318 */ { UD_Ifcom2, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0319 */ { UD_Ifcom2, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0320 */ { UD_Ifcom2, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0321 */ { UD_Ifcom2, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0322 */ { UD_Ifcom2, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0323 */ { UD_Ifcom2, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0324 */ { UD_Ifcom2, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0325 */ { UD_Ifcomp3, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0326 */ { UD_Ifcomp3, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0327 */ { UD_Ifcomp3, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0328 */ { UD_Ifcomp3, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0329 */ { UD_Ifcomp3, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0330 */ { UD_Ifcomp3, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0331 */ { UD_Ifcomp3, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0332 */ { UD_Ifcomp3, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0333 */ { UD_Ifcomi, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0334 */ { UD_Ifcomi, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0335 */ { UD_Ifcomi, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0336 */ { UD_Ifcomi, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0337 */ { UD_Ifcomi, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0338 */ { UD_Ifcomi, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0339 */ { UD_Ifcomi, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0340 */ { UD_Ifcomi, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0341 */ { UD_Ifucomip, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0342 */ { UD_Ifucomip, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0343 */ { UD_Ifucomip, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0344 */ { UD_Ifucomip, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0345 */ { UD_Ifucomip, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0346 */ { UD_Ifucomip, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0347 */ { UD_Ifucomip, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0348 */ { UD_Ifucomip, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0349 */ { UD_Ifcomip, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0350 */ { UD_Ifcomip, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0351 */ { UD_Ifcomip, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0352 */ { UD_Ifcomip, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0353 */ { UD_Ifcomip, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0354 */ { UD_Ifcomip, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0355 */ { UD_Ifcomip, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0356 */ { UD_Ifcomip, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0357 */ { UD_Ifcomp, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0358 */ { UD_Ifcomp, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0359 */ { UD_Ifcomp, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0360 */ { UD_Ifcomp, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0361 */ { UD_Ifcomp, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0362 */ { UD_Ifcomp, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0363 */ { UD_Ifcomp, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0364 */ { UD_Ifcomp, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0365 */ { UD_Ifcomp, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0366 */ { UD_Ifcomp, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0367 */ { UD_Ifcomp5, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0368 */ { UD_Ifcomp5, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0369 */ { UD_Ifcomp5, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0370 */ { UD_Ifcomp5, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0371 */ { UD_Ifcomp5, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0372 */ { UD_Ifcomp5, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0373 */ { UD_Ifcomp5, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0374 */ { UD_Ifcomp5, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0375 */ { UD_Ifcompp, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0376 */ { UD_Ifcos, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0377 */ { UD_Ifdecstp, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0378 */ { UD_Ifdiv, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0379 */ { UD_Ifdiv, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0380 */ { UD_Ifdiv, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0381 */ { UD_Ifdiv, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0382 */ { UD_Ifdiv, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0383 */ { UD_Ifdiv, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0384 */ { UD_Ifdiv, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0385 */ { UD_Ifdiv, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0386 */ { UD_Ifdiv, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0387 */ { UD_Ifdiv, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0388 */ { UD_Ifdiv, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0389 */ { UD_Ifdiv, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0390 */ { UD_Ifdiv, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0391 */ { UD_Ifdiv, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0392 */ { UD_Ifdiv, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0393 */ { UD_Ifdiv, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0394 */ { UD_Ifdiv, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0395 */ { UD_Ifdiv, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0396 */ { UD_Ifdivp, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0397 */ { UD_Ifdivp, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0398 */ { UD_Ifdivp, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0399 */ { UD_Ifdivp, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0400 */ { UD_Ifdivp, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0401 */ { UD_Ifdivp, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0402 */ { UD_Ifdivp, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0403 */ { UD_Ifdivp, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0404 */ { UD_Ifdivr, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0405 */ { UD_Ifdivr, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0406 */ { UD_Ifdivr, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0407 */ { UD_Ifdivr, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0408 */ { UD_Ifdivr, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0409 */ { UD_Ifdivr, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0410 */ { UD_Ifdivr, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0411 */ { UD_Ifdivr, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0412 */ { UD_Ifdivr, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0413 */ { UD_Ifdivr, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0414 */ { UD_Ifdivr, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0415 */ { UD_Ifdivr, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0416 */ { UD_Ifdivr, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0417 */ { UD_Ifdivr, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0418 */ { UD_Ifdivr, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0419 */ { UD_Ifdivr, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0420 */ { UD_Ifdivr, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0421 */ { UD_Ifdivr, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0422 */ { UD_Ifdivrp, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0423 */ { UD_Ifdivrp, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0424 */ { UD_Ifdivrp, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0425 */ { UD_Ifdivrp, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0426 */ { UD_Ifdivrp, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0427 */ { UD_Ifdivrp, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0428 */ { UD_Ifdivrp, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0429 */ { UD_Ifdivrp, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0430 */ { UD_Ifemms, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0431 */ { UD_Iffree, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0432 */ { UD_Iffree, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0433 */ { UD_Iffree, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0434 */ { UD_Iffree, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0435 */ { UD_Iffree, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0436 */ { UD_Iffree, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0437 */ { UD_Iffree, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0438 */ { UD_Iffree, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0439 */ { UD_Iffreep, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0440 */ { UD_Iffreep, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0441 */ { UD_Iffreep, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0442 */ { UD_Iffreep, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0443 */ { UD_Iffreep, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0444 */ { UD_Iffreep, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0445 */ { UD_Iffreep, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0446 */ { UD_Iffreep, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0447 */ { UD_Ificom, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0448 */ { UD_Ificom, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0449 */ { UD_Ificomp, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0450 */ { UD_Ificomp, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0451 */ { UD_Ifild, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0452 */ { UD_Ifild, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0453 */ { UD_Ifild, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0454 */ { UD_Ifincstp, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0455 */ { UD_Ifninit, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0456 */ { UD_Ifiadd, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0457 */ { UD_Ifiadd, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0458 */ { UD_Ifidivr, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0459 */ { UD_Ifidivr, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0460 */ { UD_Ifidiv, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0461 */ { UD_Ifidiv, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0462 */ { UD_Ifisub, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0463 */ { UD_Ifisub, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0464 */ { UD_Ifisubr, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0465 */ { UD_Ifisubr, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0466 */ { UD_Ifist, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0467 */ { UD_Ifist, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0468 */ { UD_Ifistp, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0469 */ { UD_Ifistp, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0470 */ { UD_Ifistp, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0471 */ { UD_Ifisttp, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0472 */ { UD_Ifisttp, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0473 */ { UD_Ifisttp, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0474 */ { UD_Ifld, O_Mt, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0475 */ { UD_Ifld, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0476 */ { UD_Ifld, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0477 */ { UD_Ifld, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0478 */ { UD_Ifld, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0479 */ { UD_Ifld, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0480 */ { UD_Ifld, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0481 */ { UD_Ifld, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0482 */ { UD_Ifld, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0483 */ { UD_Ifld, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0484 */ { UD_Ifld, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0485 */ { UD_Ifld1, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0486 */ { UD_Ifldl2t, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0487 */ { UD_Ifldl2e, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0488 */ { UD_Ifldpi, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0489 */ { UD_Ifldlg2, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0490 */ { UD_Ifldln2, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0491 */ { UD_Ifldz, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0492 */ { UD_Ifldcw, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0493 */ { UD_Ifldenv, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0494 */ { UD_Ifmul, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0495 */ { UD_Ifmul, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0496 */ { UD_Ifmul, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0497 */ { UD_Ifmul, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0498 */ { UD_Ifmul, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0499 */ { UD_Ifmul, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0500 */ { UD_Ifmul, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0501 */ { UD_Ifmul, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0502 */ { UD_Ifmul, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0503 */ { UD_Ifmul, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0504 */ { UD_Ifmul, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0505 */ { UD_Ifmul, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0506 */ { UD_Ifmul, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0507 */ { UD_Ifmul, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0508 */ { UD_Ifmul, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0509 */ { UD_Ifmul, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0510 */ { UD_Ifmul, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0511 */ { UD_Ifmul, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0512 */ { UD_Ifmulp, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0513 */ { UD_Ifmulp, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0514 */ { UD_Ifmulp, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0515 */ { UD_Ifmulp, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0516 */ { UD_Ifmulp, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0517 */ { UD_Ifmulp, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0518 */ { UD_Ifmulp, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0519 */ { UD_Ifmulp, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0520 */ { UD_Ifimul, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0521 */ { UD_Ifimul, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0522 */ { UD_Ifnop, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0523 */ { UD_Ifndisi, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0524 */ { UD_Ifneni, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0525 */ { UD_Ifnsetpm, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0526 */ { UD_Ifpatan, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0527 */ { UD_Ifprem, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0528 */ { UD_Ifprem1, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0529 */ { UD_Ifptan, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0530 */ { UD_Ifrndint, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0531 */ { UD_Ifrstor, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0532 */ { UD_Ifrstpm, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0533 */ { UD_Ifnsave, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0534 */ { UD_Ifscale, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0535 */ { UD_Ifsin, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0536 */ { UD_Ifsincos, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0537 */ { UD_Ifsqrt, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0538 */ { UD_Ifstp, O_Mt, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0539 */ { UD_Ifstp, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0540 */ { UD_Ifstp, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0541 */ { UD_Ifstp, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0542 */ { UD_Ifstp, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0543 */ { UD_Ifstp, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0544 */ { UD_Ifstp, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0545 */ { UD_Ifstp, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0546 */ { UD_Ifstp, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0547 */ { UD_Ifstp, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0548 */ { UD_Ifstp, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0549 */ { UD_Ifstp1, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0550 */ { UD_Ifstp1, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0551 */ { UD_Ifstp1, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0552 */ { UD_Ifstp1, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0553 */ { UD_Ifstp1, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0554 */ { UD_Ifstp1, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0555 */ { UD_Ifstp1, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0556 */ { UD_Ifstp1, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0557 */ { UD_Ifstp8, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0558 */ { UD_Ifstp8, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0559 */ { UD_Ifstp8, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0560 */ { UD_Ifstp8, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0561 */ { UD_Ifstp8, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0562 */ { UD_Ifstp8, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0563 */ { UD_Ifstp8, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0564 */ { UD_Ifstp8, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0565 */ { UD_Ifstp9, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0566 */ { UD_Ifstp9, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0567 */ { UD_Ifstp9, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0568 */ { UD_Ifstp9, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0569 */ { UD_Ifstp9, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0570 */ { UD_Ifstp9, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0571 */ { UD_Ifstp9, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0572 */ { UD_Ifstp9, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0573 */ { UD_Ifst, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0574 */ { UD_Ifst, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0575 */ { UD_Ifst, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0576 */ { UD_Ifst, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0577 */ { UD_Ifst, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0578 */ { UD_Ifst, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0579 */ { UD_Ifst, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0580 */ { UD_Ifst, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0581 */ { UD_Ifst, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0582 */ { UD_Ifst, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0583 */ { UD_Ifnstcw, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0584 */ { UD_Ifnstenv, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0585 */ { UD_Ifnstsw, O_Mw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0586 */ { UD_Ifnstsw, O_AX, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0587 */ { UD_Ifsub, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0588 */ { UD_Ifsub, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0589 */ { UD_Ifsub, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0590 */ { UD_Ifsub, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0591 */ { UD_Ifsub, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0592 */ { UD_Ifsub, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0593 */ { UD_Ifsub, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0594 */ { UD_Ifsub, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0595 */ { UD_Ifsub, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0596 */ { UD_Ifsub, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0597 */ { UD_Ifsub, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0598 */ { UD_Ifsub, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0599 */ { UD_Ifsub, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0600 */ { UD_Ifsub, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0601 */ { UD_Ifsub, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0602 */ { UD_Ifsub, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0603 */ { UD_Ifsub, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0604 */ { UD_Ifsub, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0605 */ { UD_Ifsubp, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0606 */ { UD_Ifsubp, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0607 */ { UD_Ifsubp, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0608 */ { UD_Ifsubp, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0609 */ { UD_Ifsubp, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0610 */ { UD_Ifsubp, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0611 */ { UD_Ifsubp, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0612 */ { UD_Ifsubp, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0613 */ { UD_Ifsubr, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0614 */ { UD_Ifsubr, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0615 */ { UD_Ifsubr, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0616 */ { UD_Ifsubr, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0617 */ { UD_Ifsubr, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0618 */ { UD_Ifsubr, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0619 */ { UD_Ifsubr, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0620 */ { UD_Ifsubr, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0621 */ { UD_Ifsubr, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0622 */ { UD_Ifsubr, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0623 */ { UD_Ifsubr, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0624 */ { UD_Ifsubr, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0625 */ { UD_Ifsubr, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0626 */ { UD_Ifsubr, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0627 */ { UD_Ifsubr, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0628 */ { UD_Ifsubr, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0629 */ { UD_Ifsubr, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0630 */ { UD_Ifsubr, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0631 */ { UD_Ifsubrp, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0632 */ { UD_Ifsubrp, O_ST1, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0633 */ { UD_Ifsubrp, O_ST2, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0634 */ { UD_Ifsubrp, O_ST3, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0635 */ { UD_Ifsubrp, O_ST4, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0636 */ { UD_Ifsubrp, O_ST5, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0637 */ { UD_Ifsubrp, O_ST6, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0638 */ { UD_Ifsubrp, O_ST7, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0639 */ { UD_Iftst, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0640 */ { UD_Ifucom, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0641 */ { UD_Ifucom, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0642 */ { UD_Ifucom, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0643 */ { UD_Ifucom, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0644 */ { UD_Ifucom, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0645 */ { UD_Ifucom, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0646 */ { UD_Ifucom, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0647 */ { UD_Ifucom, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0648 */ { UD_Ifucomp, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0649 */ { UD_Ifucomp, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0650 */ { UD_Ifucomp, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0651 */ { UD_Ifucomp, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0652 */ { UD_Ifucomp, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0653 */ { UD_Ifucomp, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0654 */ { UD_Ifucomp, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0655 */ { UD_Ifucomp, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0656 */ { UD_Ifucompp, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0657 */ { UD_Ifxam, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0658 */ { UD_Ifxch, O_ST0, O_ST0, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0659 */ { UD_Ifxch, O_ST0, O_ST1, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0660 */ { UD_Ifxch, O_ST0, O_ST2, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0661 */ { UD_Ifxch, O_ST0, O_ST3, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0662 */ { UD_Ifxch, O_ST0, O_ST4, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0663 */ { UD_Ifxch, O_ST0, O_ST5, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0664 */ { UD_Ifxch, O_ST0, O_ST6, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0665 */ { UD_Ifxch, O_ST0, O_ST7, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0666 */ { UD_Ifxch4, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0667 */ { UD_Ifxch4, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0668 */ { UD_Ifxch4, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0669 */ { UD_Ifxch4, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0670 */ { UD_Ifxch4, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0671 */ { UD_Ifxch4, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0672 */ { UD_Ifxch4, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0673 */ { UD_Ifxch4, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0674 */ { UD_Ifxch7, O_ST0, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0675 */ { UD_Ifxch7, O_ST1, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0676 */ { UD_Ifxch7, O_ST2, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0677 */ { UD_Ifxch7, O_ST3, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0678 */ { UD_Ifxch7, O_ST4, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0679 */ { UD_Ifxch7, O_ST5, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0680 */ { UD_Ifxch7, O_ST6, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0681 */ { UD_Ifxch7, O_ST7, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0682 */ { UD_Ifxrstor, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0683 */ { UD_Ifxsave, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0684 */ { UD_Ifxtract, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0685 */ { UD_Ifyl2x, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0686 */ { UD_Ifyl2xp1, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0687 */ { UD_Ihlt, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0688 */ { UD_Iidiv, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_R_RDX, UD_NONE}, {UD_R_RAX, UD_R_RDX, UD_NONE} },
+  /* 0689 */ { UD_Iidiv, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_NONE}, {UD_R_RAX, UD_NONE} },
+  /* 0690 */ { UD_Iin, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0691 */ { UD_Iin, O_eAX, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0692 */ { UD_Iin, O_AL, O_DX, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0693 */ { UD_Iin, O_eAX, O_DX, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0694 */ { UD_Iimul, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0695 */ { UD_Iimul, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_NONE}, {UD_R_AX, UD_NONE} },
+  /* 0696 */ { UD_Iimul, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_NONE}, {UD_R_RAX, UD_R_RDX, UD_NONE} },
+  /* 0697 */ { UD_Iimul, O_Gv, O_Ev, O_Iz, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0698 */ { UD_Iimul, O_Gv, O_Ev, O_sIb, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0699 */ { UD_Iinc, O_R0z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0700 */ { UD_Iinc, O_R1z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0701 */ { UD_Iinc, O_R2z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0702 */ { UD_Iinc, O_R3z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0703 */ { UD_Iinc, O_R4z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0704 */ { UD_Iinc, O_R5z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0705 */ { UD_Iinc, O_R6z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0706 */ { UD_Iinc, O_R7z, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0707 */ { UD_Iinc, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0708 */ { UD_Iinc, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0709 */ { UD_Iinsb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_DX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 0710 */ { UD_Iinsw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_oso|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_DX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 0711 */ { UD_Iinsd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_oso|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_DX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 0712 */ { UD_Iint1, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0713 */ { UD_Iint3, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0714 */ { UD_Iint, O_Ib, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0715 */ { UD_Iinto, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_RESET, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0716 */ { UD_Iinvd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0717 */ { UD_Iinvept, O_Gd, O_Mo, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0718 */ { UD_Iinvept, O_Gq, O_Mo, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0719 */ { UD_Iinvlpg, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0720 */ { UD_Iinvlpga, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0721 */ { UD_Iinvvpid, O_Gd, O_Mo, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0722 */ { UD_Iinvvpid, O_Gq, O_Mo, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0723 */ { UD_Iiretw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_TESTED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0724 */ { UD_Iiretd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_TESTED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0725 */ { UD_Iiretq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_TESTED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0726 */ { UD_Ijo, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0727 */ { UD_Ijo, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0728 */ { UD_Ijno, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0729 */ { UD_Ijno, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0730 */ { UD_Ijb, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0731 */ { UD_Ijb, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0732 */ { UD_Ijae, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0733 */ { UD_Ijae, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0734 */ { UD_Ije, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0735 */ { UD_Ije, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0736 */ { UD_Ijne, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0737 */ { UD_Ijne, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0738 */ { UD_Ijbe, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0739 */ { UD_Ijbe, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0740 */ { UD_Ija, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0741 */ { UD_Ija, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0742 */ { UD_Ijs, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0743 */ { UD_Ijs, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0744 */ { UD_Ijns, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0745 */ { UD_Ijns, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0746 */ { UD_Ijp, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0747 */ { UD_Ijp, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0748 */ { UD_Ijnp, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0749 */ { UD_Ijnp, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0750 */ { UD_Ijl, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0751 */ { UD_Ijl, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0752 */ { UD_Ijge, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0753 */ { UD_Ijge, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0754 */ { UD_Ijle, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0755 */ { UD_Ijle, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0756 */ { UD_Ijg, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0757 */ { UD_Ijg, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0758 */ { UD_Ijcxz, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0759 */ { UD_Ijecxz, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0760 */ { UD_Ijrcxz, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0761 */ { UD_Ijmp, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0762 */ { UD_Ijmp, O_Fv, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0763 */ { UD_Ijmp, O_Jz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0764 */ { UD_Ijmp, O_Av, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0765 */ { UD_Ijmp, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 0766 */ { UD_Ilahf, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_AH, UD_NONE} },
+  /* 0767 */ { UD_Ilar, O_Gv, O_Ew, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0768 */ { UD_Ildmxcsr, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0769 */ { UD_Ilds, O_Gv, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0770 */ { UD_Ilea, O_Gv, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0771 */ { UD_Iles, O_Gv, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_ES, UD_NONE}, {UD_NONE} },
+  /* 0772 */ { UD_Ilfs, O_Gz, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_FS, UD_NONE}, {UD_NONE} },
+  /* 0773 */ { UD_Ilgs, O_Gz, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_FS, UD_NONE}, {UD_NONE} },
+  /* 0774 */ { UD_Ilidt, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0775 */ { UD_Ilss, O_Gv, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_SS, UD_NONE}, {UD_NONE} },
+  /* 0776 */ { UD_Ileave, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RBP, UD_NONE}, {UD_R_RBP, UD_R_RSP, UD_NONE} },
+  /* 0777 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0778 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0779 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0780 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0781 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0782 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0783 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0784 */ { UD_Ilfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0785 */ { UD_Ilgdt, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0786 */ { UD_Illdt, O_Ew, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0787 */ { UD_Ilmsw, O_Ew, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_CR0, UD_NONE} },
+  /* 0788 */ { UD_Ilmsw, O_Ew, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_CR0, UD_NONE} },
+  /* 0789 */ { UD_Ilock, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0790 */ { UD_Ilodsb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_AL, UD_R_RSI, UD_NONE} },
+  /* 0791 */ { UD_Ilodsw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_AX, UD_R_RSI, UD_NONE} },
+  /* 0792 */ { UD_Ilodsd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_EAX, UD_R_RSI, UD_NONE} },
+  /* 0793 */ { UD_Ilodsq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RAX, UD_R_RSI, UD_NONE} },
+  /* 0794 */ { UD_Iloopne, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0795 */ { UD_Iloope, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0796 */ { UD_Iloop, O_Jb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0797 */ { UD_Ilsl, O_Gv, O_Ew, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0798 */ { UD_Iltr, O_Ew, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0799 */ { UD_Imaskmovq, O_P, O_N, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RDI, UD_NONE}, {UD_NONE} },
+  /* 0800 */ { UD_Imaxpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0801 */ { UD_Ivmaxpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0802 */ { UD_Imaxps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0803 */ { UD_Ivmaxps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0804 */ { UD_Imaxsd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0805 */ { UD_Ivmaxsd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0806 */ { UD_Imaxss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0807 */ { UD_Ivmaxss, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0808 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0809 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0810 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0811 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0812 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0813 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0814 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0815 */ { UD_Imfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0816 */ { UD_Iminpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0817 */ { UD_Ivminpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0818 */ { UD_Iminps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0819 */ { UD_Ivminps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0820 */ { UD_Iminsd, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0821 */ { UD_Ivminsd, O_Vx, O_Hx, O_MqU, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0822 */ { UD_Iminss, O_V, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0823 */ { UD_Ivminss, O_Vx, O_Hx, O_MdU, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0824 */ { UD_Imonitor, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_R_RDX, UD_NONE}, {UD_NONE} },
+  /* 0825 */ { UD_Imontmul, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0826 */ { UD_Imov, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0827 */ { UD_Imov, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0828 */ { UD_Imov, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0829 */ { UD_Imov, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0830 */ { UD_Imov, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0831 */ { UD_Imov, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0832 */ { UD_Imov, O_MwRv, O_S, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0833 */ { UD_Imov, O_S, O_MwRv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0834 */ { UD_Imov, O_AL, O_Ob, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0835 */ { UD_Imov, O_rAX, O_Ov, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0836 */ { UD_Imov, O_Ob, O_AL, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0837 */ { UD_Imov, O_Ov, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0838 */ { UD_Imov, O_R0b, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0839 */ { UD_Imov, O_R1b, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0840 */ { UD_Imov, O_R2b, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0841 */ { UD_Imov, O_R3b, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0842 */ { UD_Imov, O_R4b, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0843 */ { UD_Imov, O_R5b, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0844 */ { UD_Imov, O_R6b, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0845 */ { UD_Imov, O_R7b, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0846 */ { UD_Imov, O_R0v, O_Iv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0847 */ { UD_Imov, O_R1v, O_Iv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0848 */ { UD_Imov, O_R2v, O_Iv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0849 */ { UD_Imov, O_R3v, O_Iv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0850 */ { UD_Imov, O_R4v, O_Iv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0851 */ { UD_Imov, O_R5v, O_Iv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0852 */ { UD_Imov, O_R6v, O_Iv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0853 */ { UD_Imov, O_R7v, O_Iv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0854 */ { UD_Imov, O_R, O_C, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexr|P_rexw|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0855 */ { UD_Imov, O_R, O_D, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexr|P_rexw|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0856 */ { UD_Imov, O_C, O_R, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexr|P_rexw|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0857 */ { UD_Imov, O_D, O_R, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexr|P_rexw|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0858 */ { UD_Imovapd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0859 */ { UD_Ivmovapd, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0860 */ { UD_Imovapd, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0861 */ { UD_Ivmovapd, O_Wx, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0862 */ { UD_Imovaps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0863 */ { UD_Ivmovaps, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0864 */ { UD_Imovaps, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0865 */ { UD_Ivmovaps, O_Wx, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0866 */ { UD_Imovd, O_P, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0867 */ { UD_Imovd, O_P, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0868 */ { UD_Imovd, O_V, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0869 */ { UD_Ivmovd, O_Vx, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0870 */ { UD_Imovd, O_V, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0871 */ { UD_Ivmovd, O_Vx, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0872 */ { UD_Imovd, O_Ey, O_P, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0873 */ { UD_Imovd, O_Ey, O_P, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0874 */ { UD_Imovd, O_Ey, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0875 */ { UD_Ivmovd, O_Ey, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0876 */ { UD_Imovd, O_Ey, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0877 */ { UD_Ivmovd, O_Ey, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0878 */ { UD_Imovhpd, O_V, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0879 */ { UD_Ivmovhpd, O_Vx, O_Hx, O_M, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0880 */ { UD_Imovhpd, O_M, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0881 */ { UD_Ivmovhpd, O_M, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0882 */ { UD_Imovhps, O_V, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0883 */ { UD_Ivmovhps, O_Vx, O_Hx, O_M, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0884 */ { UD_Imovhps, O_M, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0885 */ { UD_Ivmovhps, O_M, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0886 */ { UD_Imovlhps, O_V, O_U, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0887 */ { UD_Ivmovlhps, O_Vx, O_Hx, O_Ux, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0888 */ { UD_Imovlpd, O_V, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0889 */ { UD_Ivmovlpd, O_Vx, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0890 */ { UD_Imovlpd, O_M, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0891 */ { UD_Ivmovlpd, O_M, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0892 */ { UD_Imovlps, O_V, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0893 */ { UD_Ivmovlps, O_Vx, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0894 */ { UD_Imovlps, O_M, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0895 */ { UD_Ivmovlps, O_M, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0896 */ { UD_Imovhlps, O_V, O_U, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0897 */ { UD_Ivmovhlps, O_Vx, O_Ux, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0898 */ { UD_Imovmskpd, O_Gd, O_U, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexr|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0899 */ { UD_Ivmovmskpd, O_Gd, O_Ux, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexr|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0900 */ { UD_Imovmskps, O_Gd, O_U, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexr|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0901 */ { UD_Ivmovmskps, O_Gd, O_Ux, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexr|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0902 */ { UD_Imovntdq, O_M, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0903 */ { UD_Ivmovntdq, O_M, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0904 */ { UD_Imovnti, O_M, O_Gy, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0905 */ { UD_Imovntpd, O_M, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0906 */ { UD_Ivmovntpd, O_M, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0907 */ { UD_Imovntps, O_M, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0908 */ { UD_Ivmovntps, O_M, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0909 */ { UD_Imovntq, O_M, O_P, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0910 */ { UD_Imovq, O_P, O_Eq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0911 */ { UD_Imovq, O_V, O_Eq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0912 */ { UD_Ivmovq, O_Vx, O_Eq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0913 */ { UD_Imovq, O_Eq, O_P, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0914 */ { UD_Imovq, O_Eq, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0915 */ { UD_Ivmovq, O_Eq, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0916 */ { UD_Imovq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0917 */ { UD_Ivmovq, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0918 */ { UD_Imovq, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0919 */ { UD_Ivmovq, O_Wx, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0920 */ { UD_Imovq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0921 */ { UD_Imovq, O_Q, O_P, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0922 */ { UD_Imovsb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_str|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0923 */ { UD_Imovsw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0924 */ { UD_Imovsd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0925 */ { UD_Imovsd, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0926 */ { UD_Imovsd, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0927 */ { UD_Imovsq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0928 */ { UD_Imovss, O_V, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0929 */ { UD_Imovss, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0930 */ { UD_Imovsx, O_Gv, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0931 */ { UD_Imovsx, O_Gy, O_Ew, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0932 */ { UD_Imovupd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0933 */ { UD_Ivmovupd, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0934 */ { UD_Imovupd, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0935 */ { UD_Ivmovupd, O_Wx, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0936 */ { UD_Imovups, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0937 */ { UD_Ivmovups, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0938 */ { UD_Imovups, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0939 */ { UD_Ivmovups, O_Wx, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0940 */ { UD_Imovzx, O_Gv, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0941 */ { UD_Imovzx, O_Gy, O_Ew, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0942 */ { UD_Imul, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_NONE}, {UD_R_AX, UD_NONE} },
+  /* 0943 */ { UD_Imul, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_NONE}, {UD_R_RAX, UD_R_RDX, UD_NONE} },
+  /* 0944 */ { UD_Imulpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0945 */ { UD_Ivmulpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0946 */ { UD_Imulps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0947 */ { UD_Ivmulps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0948 */ { UD_Imulsd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0949 */ { UD_Ivmulsd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0950 */ { UD_Imulss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0951 */ { UD_Ivmulss, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0952 */ { UD_Imwait, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0953 */ { UD_Ineg, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0954 */ { UD_Ineg, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0955 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0956 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0957 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0958 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0959 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0960 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0961 */ { UD_Inop, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0962 */ { UD_Inot, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0963 */ { UD_Inot, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0964 */ { UD_Ior, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0965 */ { UD_Ior, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0966 */ { UD_Ior, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0967 */ { UD_Ior, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0968 */ { UD_Ior, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0969 */ { UD_Ior, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0970 */ { UD_Ior, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0971 */ { UD_Ior, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0972 */ { UD_Ior, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0973 */ { UD_Ior, O_Ev, O_sIb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0974 */ { UD_Iorpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0975 */ { UD_Ivorpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0976 */ { UD_Iorps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0977 */ { UD_Ivorps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0978 */ { UD_Iout, O_Ib, O_AL, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0979 */ { UD_Iout, O_Ib, O_eAX, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0980 */ { UD_Iout, O_DX, O_AL, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0981 */ { UD_Iout, O_DX, O_eAX, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0982 */ { UD_Ioutsb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0983 */ { UD_Ioutsw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_oso|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0984 */ { UD_Ioutsd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_oso|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSI, UD_NONE}, {UD_R_RSI, UD_NONE} },
+  /* 0985 */ { UD_Ipacksswb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0986 */ { UD_Ivpacksswb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0987 */ { UD_Ipacksswb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0988 */ { UD_Ipackssdw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0989 */ { UD_Ivpackssdw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0990 */ { UD_Ipackssdw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0991 */ { UD_Ipackuswb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0992 */ { UD_Ivpackuswb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0993 */ { UD_Ipackuswb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0994 */ { UD_Ipaddb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0995 */ { UD_Ivpaddb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0996 */ { UD_Ipaddb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0997 */ { UD_Ipaddw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0998 */ { UD_Ipaddw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 0999 */ { UD_Ivpaddw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1000 */ { UD_Ipaddd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1001 */ { UD_Ipaddd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1002 */ { UD_Ivpaddd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1003 */ { UD_Ipaddsb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1004 */ { UD_Ipaddsb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1005 */ { UD_Ivpaddsb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1006 */ { UD_Ipaddsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1007 */ { UD_Ipaddsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1008 */ { UD_Ivpaddsw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1009 */ { UD_Ipaddusb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1010 */ { UD_Ipaddusb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1011 */ { UD_Ivpaddusb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1012 */ { UD_Ipaddusw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1013 */ { UD_Ipaddusw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1014 */ { UD_Ivpaddusw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1015 */ { UD_Ipand, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1016 */ { UD_Ivpand, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1017 */ { UD_Ipand, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1018 */ { UD_Ipandn, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1019 */ { UD_Ivpandn, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1020 */ { UD_Ipandn, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1021 */ { UD_Ipavgb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1022 */ { UD_Ivpavgb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1023 */ { UD_Ipavgb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1024 */ { UD_Ipavgw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1025 */ { UD_Ivpavgw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1026 */ { UD_Ipavgw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1027 */ { UD_Ipcmpeqb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1028 */ { UD_Ipcmpeqb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1029 */ { UD_Ivpcmpeqb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1030 */ { UD_Ipcmpeqw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1031 */ { UD_Ipcmpeqw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1032 */ { UD_Ivpcmpeqw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1033 */ { UD_Ipcmpeqd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1034 */ { UD_Ipcmpeqd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1035 */ { UD_Ivpcmpeqd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1036 */ { UD_Ipcmpgtb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1037 */ { UD_Ivpcmpgtb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1038 */ { UD_Ipcmpgtb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1039 */ { UD_Ipcmpgtw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1040 */ { UD_Ivpcmpgtw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1041 */ { UD_Ipcmpgtw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1042 */ { UD_Ipcmpgtd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1043 */ { UD_Ivpcmpgtd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1044 */ { UD_Ipcmpgtd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1045 */ { UD_Ipextrb, O_MbRv, O_V, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexx|P_rexr|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1046 */ { UD_Ivpextrb, O_MbRv, O_Vx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexx|P_rexr|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1047 */ { UD_Ipextrd, O_Ed, O_V, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1048 */ { UD_Ivpextrd, O_Ed, O_Vx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1049 */ { UD_Ipextrd, O_Ed, O_V, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1050 */ { UD_Ivpextrd, O_Ed, O_Vx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1051 */ { UD_Ipextrq, O_Eq, O_V, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1052 */ { UD_Ivpextrq, O_Eq, O_Vx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1053 */ { UD_Ipextrw, O_Gd, O_U, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1054 */ { UD_Ivpextrw, O_Gd, O_Ux, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1055 */ { UD_Ipextrw, O_Gd, O_N, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1056 */ { UD_Ipextrw, O_MwRd, O_V, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexx|P_rexr|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1057 */ { UD_Ivpextrw, O_MwRd, O_Vx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexx|P_rexr|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1058 */ { UD_Ipinsrb, O_V, O_MbRd, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1059 */ { UD_Ipinsrw, O_P, O_MwRy, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1060 */ { UD_Ipinsrw, O_V, O_MwRy, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1061 */ { UD_Ivpinsrw, O_Vx, O_MwRy, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1062 */ { UD_Ipinsrd, O_V, O_Ed, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1063 */ { UD_Ipinsrd, O_V, O_Ed, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1064 */ { UD_Ipinsrq, O_V, O_Eq, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1065 */ { UD_Ivpinsrb, O_V, O_H, O_MbRd, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1066 */ { UD_Ivpinsrd, O_V, O_H, O_Ed, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1067 */ { UD_Ivpinsrd, O_V, O_H, O_Ed, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1068 */ { UD_Ivpinsrq, O_V, O_H, O_Eq, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1069 */ { UD_Ipmaddwd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1070 */ { UD_Ipmaddwd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1071 */ { UD_Ivpmaddwd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1072 */ { UD_Ipmaxsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1073 */ { UD_Ivpmaxsw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1074 */ { UD_Ipmaxsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1075 */ { UD_Ipmaxub, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1076 */ { UD_Ipmaxub, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1077 */ { UD_Ivpmaxub, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1078 */ { UD_Ipminsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1079 */ { UD_Ivpminsw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1080 */ { UD_Ipminsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1081 */ { UD_Ipminub, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1082 */ { UD_Ivpminub, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1083 */ { UD_Ipminub, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1084 */ { UD_Ipmovmskb, O_Gd, O_U, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexr|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1085 */ { UD_Ivpmovmskb, O_Gd, O_Ux, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexr|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1086 */ { UD_Ipmovmskb, O_Gd, O_N, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexr|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1087 */ { UD_Ipmulhuw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1088 */ { UD_Ipmulhuw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1089 */ { UD_Ivpmulhuw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1090 */ { UD_Ipmulhw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1091 */ { UD_Ivpmulhw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1092 */ { UD_Ipmulhw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1093 */ { UD_Ipmullw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1094 */ { UD_Ipmullw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1095 */ { UD_Ivpmullw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1096 */ { UD_Ipop, O_ES, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1097 */ { UD_Ipop, O_SS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1098 */ { UD_Ipop, O_DS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1099 */ { UD_Ipop, O_GS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1100 */ { UD_Ipop, O_FS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1101 */ { UD_Ipop, O_R0v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1102 */ { UD_Ipop, O_R1v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1103 */ { UD_Ipop, O_R2v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1104 */ { UD_Ipop, O_R3v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1105 */ { UD_Ipop, O_R4v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1106 */ { UD_Ipop, O_R5v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1107 */ { UD_Ipop, O_R6v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1108 */ { UD_Ipop, O_R7v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1109 */ { UD_Ipop, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1110 */ { UD_Ipopa, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_DI, UD_R_SI, UD_R_BP, UD_R_BX, UD_R_DX, UD_R_CX, UD_R_AX, UD_R_RBP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1111 */ { UD_Ipopad, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EDI, UD_R_ESI, UD_R_EBP, UD_R_EBX, UD_R_EDX, UD_R_ECX, UD_R_EAX, UD_R_RBP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1112 */ { UD_Ipopfw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1113 */ { UD_Ipopfd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1114 */ { UD_Ipopfq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1115 */ { UD_Ipopfq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1116 */ { UD_Ipor, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1117 */ { UD_Ivpor, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1118 */ { UD_Ipor, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1119 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1120 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1121 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1122 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1123 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1124 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1125 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1126 */ { UD_Iprefetch, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1127 */ { UD_Iprefetchnta, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1128 */ { UD_Iprefetcht0, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1129 */ { UD_Iprefetcht1, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1130 */ { UD_Iprefetcht2, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1131 */ { UD_Ipsadbw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1132 */ { UD_Ivpsadbw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1133 */ { UD_Ipsadbw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1134 */ { UD_Ipshufw, O_P, O_Q, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1135 */ { UD_Ipsllw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1136 */ { UD_Ipsllw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1137 */ { UD_Ipsllw, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1138 */ { UD_Ipsllw, O_N, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1139 */ { UD_Ipslld, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1140 */ { UD_Ipslld, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1141 */ { UD_Ipslld, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1142 */ { UD_Ipslld, O_N, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1143 */ { UD_Ipsllq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1144 */ { UD_Ipsllq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1145 */ { UD_Ipsllq, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1146 */ { UD_Ipsllq, O_N, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1147 */ { UD_Ipsraw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1148 */ { UD_Ipsraw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1149 */ { UD_Ivpsraw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1150 */ { UD_Ipsraw, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1151 */ { UD_Ivpsraw, O_Hx, O_Ux, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1152 */ { UD_Ipsraw, O_N, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1153 */ { UD_Ipsrad, O_N, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1154 */ { UD_Ipsrad, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1155 */ { UD_Ivpsrad, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1156 */ { UD_Ipsrad, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1157 */ { UD_Ipsrad, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1158 */ { UD_Ivpsrad, O_Hx, O_Ux, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1159 */ { UD_Ipsrlw, O_N, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1160 */ { UD_Ipsrlw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1161 */ { UD_Ipsrlw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1162 */ { UD_Ivpsrlw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1163 */ { UD_Ipsrlw, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1164 */ { UD_Ivpsrlw, O_Hx, O_Ux, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1165 */ { UD_Ipsrld, O_N, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1166 */ { UD_Ipsrld, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1167 */ { UD_Ipsrld, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1168 */ { UD_Ivpsrld, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1169 */ { UD_Ipsrld, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1170 */ { UD_Ivpsrld, O_Hx, O_Ux, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1171 */ { UD_Ipsrlq, O_N, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1172 */ { UD_Ipsrlq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1173 */ { UD_Ipsrlq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1174 */ { UD_Ivpsrlq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1175 */ { UD_Ipsrlq, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1176 */ { UD_Ivpsrlq, O_Hx, O_Ux, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1177 */ { UD_Ipsubb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1178 */ { UD_Ivpsubb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1179 */ { UD_Ipsubb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1180 */ { UD_Ipsubw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1181 */ { UD_Ivpsubw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1182 */ { UD_Ipsubw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1183 */ { UD_Ipsubd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1184 */ { UD_Ipsubd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1185 */ { UD_Ivpsubd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1186 */ { UD_Ipsubsb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1187 */ { UD_Ipsubsb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1188 */ { UD_Ivpsubsb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1189 */ { UD_Ipsubsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1190 */ { UD_Ipsubsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1191 */ { UD_Ivpsubsw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1192 */ { UD_Ipsubusb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1193 */ { UD_Ipsubusb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1194 */ { UD_Ivpsubusb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1195 */ { UD_Ipsubusw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1196 */ { UD_Ipsubusw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1197 */ { UD_Ivpsubusw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1198 */ { UD_Ipunpckhbw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1199 */ { UD_Ivpunpckhbw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1200 */ { UD_Ipunpckhbw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1201 */ { UD_Ipunpckhwd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1202 */ { UD_Ivpunpckhwd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1203 */ { UD_Ipunpckhwd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1204 */ { UD_Ipunpckhdq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1205 */ { UD_Ivpunpckhdq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1206 */ { UD_Ipunpckhdq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1207 */ { UD_Ipunpcklbw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1208 */ { UD_Ivpunpcklbw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1209 */ { UD_Ipunpcklbw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1210 */ { UD_Ipunpcklwd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1211 */ { UD_Ivpunpcklwd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1212 */ { UD_Ipunpcklwd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1213 */ { UD_Ipunpckldq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1214 */ { UD_Ivpunpckldq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1215 */ { UD_Ipunpckldq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1216 */ { UD_Ipi2fw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1217 */ { UD_Ipi2fd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1218 */ { UD_Ipf2iw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1219 */ { UD_Ipf2id, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1220 */ { UD_Ipfnacc, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1221 */ { UD_Ipfpnacc, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1222 */ { UD_Ipfcmpge, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1223 */ { UD_Ipfmin, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1224 */ { UD_Ipfrcp, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1225 */ { UD_Ipfrsqrt, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1226 */ { UD_Ipfsub, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1227 */ { UD_Ipfadd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1228 */ { UD_Ipfcmpgt, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1229 */ { UD_Ipfmax, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1230 */ { UD_Ipfrcpit1, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1231 */ { UD_Ipfrsqit1, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1232 */ { UD_Ipfsubr, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1233 */ { UD_Ipfacc, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1234 */ { UD_Ipfcmpeq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1235 */ { UD_Ipfmul, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1236 */ { UD_Ipfrcpit2, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1237 */ { UD_Ipmulhrw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1238 */ { UD_Ipswapd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1239 */ { UD_Ipavgusb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1240 */ { UD_Ipush, O_ES, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1241 */ { UD_Ipush, O_CS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1242 */ { UD_Ipush, O_SS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1243 */ { UD_Ipush, O_DS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1244 */ { UD_Ipush, O_GS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1245 */ { UD_Ipush, O_FS, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1246 */ { UD_Ipush, O_R0v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1247 */ { UD_Ipush, O_R1v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1248 */ { UD_Ipush, O_R2v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1249 */ { UD_Ipush, O_R3v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1250 */ { UD_Ipush, O_R4v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1251 */ { UD_Ipush, O_R5v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1252 */ { UD_Ipush, O_R6v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1253 */ { UD_Ipush, O_R7v, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1254 */ { UD_Ipush, O_sIz, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1255 */ { UD_Ipush, O_Ev, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1256 */ { UD_Ipush, O_sIb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1257 */ { UD_Ipusha, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_R_CX, UD_R_DX, UD_R_BX, UD_R_BP, UD_R_SI, UD_R_DI, UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1258 */ { UD_Ipushad, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_ECX, UD_R_EDX, UD_R_EBX, UD_R_EBP, UD_R_ESI, UD_R_EDI, UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1259 */ { UD_Ipushfw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1260 */ { UD_Ipushfw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1261 */ { UD_Ipushfd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1262 */ { UD_Ipushfq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1263 */ { UD_Ipushfq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_NONE} },
+  /* 1264 */ { UD_Ipxor, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1265 */ { UD_Ivpxor, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1266 */ { UD_Ipxor, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1267 */ { UD_Ircl, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1268 */ { UD_Ircl, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1269 */ { UD_Ircl, O_Eb, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1270 */ { UD_Ircl, O_Eb, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1271 */ { UD_Ircl, O_Ev, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1272 */ { UD_Ircl, O_Ev, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1273 */ { UD_Ircr, O_Eb, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1274 */ { UD_Ircr, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1275 */ { UD_Ircr, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1276 */ { UD_Ircr, O_Ev, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1277 */ { UD_Ircr, O_Eb, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1278 */ { UD_Ircr, O_Ev, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1279 */ { UD_Irol, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1280 */ { UD_Irol, O_Eb, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1281 */ { UD_Irol, O_Ev, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1282 */ { UD_Irol, O_Eb, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1283 */ { UD_Irol, O_Ev, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1284 */ { UD_Irol, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1285 */ { UD_Iror, O_Eb, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1286 */ { UD_Iror, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1287 */ { UD_Iror, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1288 */ { UD_Iror, O_Ev, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1289 */ { UD_Iror, O_Eb, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1290 */ { UD_Iror, O_Ev, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1291 */ { UD_Ircpps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1292 */ { UD_Ivrcpps, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1293 */ { UD_Ircpss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1294 */ { UD_Ivrcpss, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1295 */ { UD_Irdmsr, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_ECX, UD_NONE}, {UD_R_RDX, UD_R_RAX, UD_NONE} },
+  /* 1296 */ { UD_Irdpmc, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_ECX, UD_NONE}, {UD_R_RDX, UD_R_RAX, UD_NONE} },
+  /* 1297 */ { UD_Irdtsc, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RDX, UD_R_RAX, UD_NONE} },
+  /* 1298 */ { UD_Irdtscp, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_ECX, UD_R_EDX, UD_R_EAX, UD_NONE} },
+  /* 1299 */ { UD_Irepne, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RCX, UD_NONE}, {UD_R_RCX, UD_NONE} },
+  /* 1300 */ { UD_Irep, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RCX, UD_NONE}, {UD_R_RCX, UD_NONE} },
+  /* 1301 */ { UD_Iret, O_Iw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 1302 */ { UD_Iret, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 1303 */ { UD_Iretf, O_Iw, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 1304 */ { UD_Iretf, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RSP, UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 1305 */ { UD_Irsm, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED}, {UD_NONE}, {UD_NONE} },
+  /* 1306 */ { UD_Irsqrtps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1307 */ { UD_Ivrsqrtps, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1308 */ { UD_Irsqrtss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1309 */ { UD_Ivrsqrtss, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1310 */ { UD_Isahf, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_PRIOR, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AH, UD_NONE}, {UD_NONE} },
+  /* 1311 */ { UD_Isalc, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_inv64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1312 */ { UD_Isar, O_Ev, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1313 */ { UD_Isar, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1314 */ { UD_Isar, O_Eb, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1315 */ { UD_Isar, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1316 */ { UD_Isar, O_Eb, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1317 */ { UD_Isar, O_Ev, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1318 */ { UD_Ishl, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1319 */ { UD_Ishl, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1320 */ { UD_Ishl, O_Eb, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1321 */ { UD_Ishl, O_Eb, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1322 */ { UD_Ishl, O_Ev, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1323 */ { UD_Ishl, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1324 */ { UD_Ishl, O_Eb, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1325 */ { UD_Ishl, O_Ev, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1326 */ { UD_Ishl, O_Eb, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1327 */ { UD_Ishl, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1328 */ { UD_Ishl, O_Ev, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1329 */ { UD_Ishl, O_Ev, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1330 */ { UD_Ishr, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1331 */ { UD_Ishr, O_Eb, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1332 */ { UD_Ishr, O_Ev, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1333 */ { UD_Ishr, O_Eb, O_I1, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1334 */ { UD_Ishr, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1335 */ { UD_Ishr, O_Ev, O_CL, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1336 */ { UD_Isbb, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1337 */ { UD_Isbb, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1338 */ { UD_Isbb, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1339 */ { UD_Isbb, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1340 */ { UD_Isbb, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_NONE}, {UD_R_AL, UD_NONE} },
+  /* 1341 */ { UD_Isbb, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_NONE}, {UD_R_EAX, UD_NONE} },
+  /* 1342 */ { UD_Isbb, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1343 */ { UD_Isbb, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1344 */ { UD_Isbb, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_inv64, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1345 */ { UD_Isbb, O_Ev, O_sIb, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1346 */ { UD_Iscasb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_strz, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 1347 */ { UD_Iscasw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_strz|P_oso|P_rexw, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 1348 */ { UD_Iscasd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_strz|P_oso|P_rexw, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 1349 */ { UD_Iscasq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_strz|P_oso|P_rexw, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 1350 */ { UD_Iseto, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1351 */ { UD_Isetno, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1352 */ { UD_Isetb, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1353 */ { UD_Isetae, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1354 */ { UD_Isete, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1355 */ { UD_Isetne, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1356 */ { UD_Isetbe, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1357 */ { UD_Iseta, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1358 */ { UD_Isets, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1359 */ { UD_Isetns, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1360 */ { UD_Isetp, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1361 */ { UD_Isetnp, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1362 */ { UD_Isetl, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1363 */ { UD_Isetge, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1364 */ { UD_Isetle, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1365 */ { UD_Isetg, O_Eb, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_TESTED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1366 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1367 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1368 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1369 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1370 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1371 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1372 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1373 */ { UD_Isfence, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1374 */ { UD_Isgdt, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1375 */ { UD_Ishld, O_Ev, O_Gv, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1376 */ { UD_Ishld, O_Ev, O_Gv, O_CL, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1377 */ { UD_Ishrd, O_Ev, O_Gv, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1378 */ { UD_Ishrd, O_Ev, O_Gv, O_CL, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1379 */ { UD_Ishufpd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1380 */ { UD_Ivshufpd, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1381 */ { UD_Ishufps, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1382 */ { UD_Ivshufps, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1383 */ { UD_Isidt, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1384 */ { UD_Isldt, O_MwRv, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1385 */ { UD_Ismsw, O_MwRv, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1386 */ { UD_Ismsw, O_MwRv, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1387 */ { UD_Isqrtps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1388 */ { UD_Ivsqrtps, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1389 */ { UD_Isqrtpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1390 */ { UD_Ivsqrtpd, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1391 */ { UD_Isqrtsd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1392 */ { UD_Ivsqrtsd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1393 */ { UD_Isqrtss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1394 */ { UD_Ivsqrtss, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1395 */ { UD_Istc, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_SET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1396 */ { UD_Istd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_SET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1397 */ { UD_Istgi, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1398 */ { UD_Isti, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_SET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1399 */ { UD_Iskinit, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_RAX, UD_R_RBX, UD_R_RCX, UD_R_RDX, UD_R_RSI, UD_R_RDI, UD_R_RBP, UD_R_RSP, UD_R_CR0, UD_NONE} },
+  /* 1400 */ { UD_Istmxcsr, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1401 */ { UD_Ivstmxcsr, O_Md, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1402 */ { UD_Istosb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 1403 */ { UD_Istosw, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 1404 */ { UD_Istosd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 1405 */ { UD_Istosq, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_str|P_seg|P_oso|P_rexw, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RAX, UD_R_RDI, UD_NONE}, {UD_R_RDI, UD_NONE} },
+  /* 1406 */ { UD_Istr, O_MwRv, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1407 */ { UD_Isub, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1408 */ { UD_Isub, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1409 */ { UD_Isub, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1410 */ { UD_Isub, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1411 */ { UD_Isub, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1412 */ { UD_Isub, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1413 */ { UD_Isub, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1414 */ { UD_Isub, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1415 */ { UD_Isub, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_inv64, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1416 */ { UD_Isub, O_Ev, O_sIb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1417 */ { UD_Isubpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1418 */ { UD_Ivsubpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1419 */ { UD_Isubps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1420 */ { UD_Ivsubps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1421 */ { UD_Isubsd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1422 */ { UD_Ivsubsd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1423 */ { UD_Isubss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1424 */ { UD_Ivsubss, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1425 */ { UD_Iswapgs, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_GS, UD_NONE} },
+  /* 1426 */ { UD_Isyscall, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED}, {UD_R_RIP, UD_NONE}, {UD_R_RCX, UD_R_R11, UD_R_RIP, UD_NONE} },
+  /* 1427 */ { UD_Isysenter, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED}, {UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 1428 */ { UD_Isysenter, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED}, {UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 1429 */ { UD_Isysexit, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED}, {UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 1430 */ { UD_Isysexit, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED}, {UD_NONE}, {UD_R_RSP, UD_R_RIP, UD_NONE} },
+  /* 1431 */ { UD_Isysret, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED}, {UD_R_RCX, UD_NONE}, {UD_R_RIP, UD_NONE} },
+  /* 1432 */ { UD_Itest, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1433 */ { UD_Itest, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1434 */ { UD_Itest, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1435 */ { UD_Itest, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1436 */ { UD_Itest, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1437 */ { UD_Itest, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1438 */ { UD_Itest, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1439 */ { UD_Itest, O_Ev, O_Iz, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1440 */ { UD_Iucomisd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1441 */ { UD_Ivucomisd, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1442 */ { UD_Iucomiss, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1443 */ { UD_Ivucomiss, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1444 */ { UD_Iud2, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1445 */ { UD_Iunpckhpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1446 */ { UD_Ivunpckhpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1447 */ { UD_Iunpckhps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1448 */ { UD_Ivunpckhps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1449 */ { UD_Iunpcklps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1450 */ { UD_Ivunpcklps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1451 */ { UD_Iunpcklpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1452 */ { UD_Ivunpcklpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1453 */ { UD_Iverr, O_Ew, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1454 */ { UD_Iverw, O_Ew, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1455 */ { UD_Ivmcall, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1456 */ { UD_Irdrand, O_R, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1457 */ { UD_Ivmclear, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1458 */ { UD_Ivmxon, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1459 */ { UD_Ivmptrld, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1460 */ { UD_Ivmptrst, O_Mq, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1461 */ { UD_Ivmlaunch, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1462 */ { UD_Ivmresume, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1463 */ { UD_Ivmxoff, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1464 */ { UD_Ivmread, O_Ey, O_Gy, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1465 */ { UD_Ivmwrite, O_Gy, O_Ey, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_def64, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1466 */ { UD_Ivmrun, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1467 */ { UD_Ivmmcall, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1468 */ { UD_Ivmload, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1469 */ { UD_Ivmsave, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1470 */ { UD_Iwait, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1471 */ { UD_Iwbinvd, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1472 */ { UD_Iwrmsr, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EDX, UD_R_EAX, UD_NONE}, {UD_NONE} },
+  /* 1473 */ { UD_Ixadd, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_WRITE, P_aso|P_oso|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1474 */ { UD_Ixadd, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_WRITE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1475 */ { UD_Ixchg, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1476 */ { UD_Ixchg, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1477 */ { UD_Ixchg, O_R0v, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1478 */ { UD_Ixchg, O_R1v, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1479 */ { UD_Ixchg, O_R2v, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1480 */ { UD_Ixchg, O_R3v, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1481 */ { UD_Ixchg, O_R4v, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1482 */ { UD_Ixchg, O_R5v, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1483 */ { UD_Ixchg, O_R6v, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1484 */ { UD_Ixchg, O_R7v, O_rAX, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1485 */ { UD_Ixgetbv, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_ECX, UD_NONE}, {UD_R_EDX, UD_R_EAX, UD_NONE} },
+  /* 1486 */ { UD_Ixlatb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_rexw|P_seg, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_AL, UD_R_EBX, UD_NONE}, {UD_R_AL, UD_NONE} },
+  /* 1487 */ { UD_Ixor, O_Eb, O_Gb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1488 */ { UD_Ixor, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1489 */ { UD_Ixor, O_Gb, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1490 */ { UD_Ixor, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1491 */ { UD_Ixor, O_AL, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_none, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1492 */ { UD_Ixor, O_rAX, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1493 */ { UD_Ixor, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1494 */ { UD_Ixor, O_Ev, O_sIz, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1495 */ { UD_Ixor, O_Eb, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_inv64, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1496 */ { UD_Ixor, O_Ev, O_sIb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1497 */ { UD_Ixorpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1498 */ { UD_Ivxorpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1499 */ { UD_Ixorps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1500 */ { UD_Ivxorps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1501 */ { UD_Ixcryptecb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_EDX, UD_R_EBX, UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 1502 */ { UD_Ixcryptcbc, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_EDX, UD_R_EBX, UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 1503 */ { UD_Ixcryptctr, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_EDX, UD_R_EBX, UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 1504 */ { UD_Ixcryptcfb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_EDX, UD_R_EBX, UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 1505 */ { UD_Ixcryptofb, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_EDX, UD_R_EBX, UD_R_RSI, UD_R_RDI, UD_NONE}, {UD_R_RSI, UD_R_RDI, UD_NONE} },
+  /* 1506 */ { UD_Ixrstor, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EDX, UD_R_EAX, UD_NONE}, {UD_NONE} },
+  /* 1507 */ { UD_Ixsave, O_M, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_EDX, UD_R_EAX, UD_NONE} },
+  /* 1508 */ { UD_Ixsetbv, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EDX, UD_R_EAX, UD_NONE}, {UD_NONE} },
+  /* 1509 */ { UD_Ixsha1, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_ESI, UD_R_EDI, UD_NONE}, {UD_R_EAX, UD_R_ESI, UD_R_EDI, UD_NONE} },
+  /* 1510 */ { UD_Ixsha256, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EAX, UD_R_ESI, UD_R_EDI, UD_NONE}, {UD_R_EAX, UD_R_ESI, UD_R_EDI, UD_NONE} },
+  /* 1511 */ { UD_Ixstore, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_EDX, UD_R_EDI, UD_NONE}, {UD_R_EAX, UD_R_EDI, UD_NONE} },
+  /* 1512 */ { UD_Ipclmulqdq, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1513 */ { UD_Ivpclmulqdq, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1514 */ { UD_Igetsec, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1515 */ { UD_Imovdqa, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1516 */ { UD_Ivmovdqa, O_Wx, O_Vx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1517 */ { UD_Imovdqa, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1518 */ { UD_Ivmovdqa, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1519 */ { UD_Imaskmovdqu, O_V, O_U, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RDI, UD_NONE}, {UD_NONE} },
+  /* 1520 */ { UD_Ivmaskmovdqu, O_Vx, O_Ux, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_R_RDI, UD_NONE}, {UD_NONE} },
+  /* 1521 */ { UD_Imovdq2q, O_P, O_U, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1522 */ { UD_Imovdqu, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1523 */ { UD_Ivmovdqu, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1524 */ { UD_Imovdqu, O_W, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1525 */ { UD_Imovq2dq, O_V, O_N, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1526 */ { UD_Ipaddq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1527 */ { UD_Ipaddq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1528 */ { UD_Ivpaddq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1529 */ { UD_Ipsubq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1530 */ { UD_Ivpsubq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1531 */ { UD_Ipsubq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1532 */ { UD_Ipmuludq, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1533 */ { UD_Ipmuludq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1534 */ { UD_Ipshufhw, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1535 */ { UD_Ivpshufhw, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1536 */ { UD_Ipshuflw, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1537 */ { UD_Ivpshuflw, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1538 */ { UD_Ipshufd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1539 */ { UD_Ivpshufd, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1540 */ { UD_Ipslldq, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1541 */ { UD_Ivpslldq, O_Hx, O_Ux, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1542 */ { UD_Ipsrldq, O_U, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1543 */ { UD_Ivpsrldq, O_Hx, O_Ux, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1544 */ { UD_Ipunpckhqdq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1545 */ { UD_Ivpunpckhqdq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1546 */ { UD_Ipunpcklqdq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1547 */ { UD_Ivpunpcklqdq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1548 */ { UD_Ihaddpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1549 */ { UD_Ivhaddpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1550 */ { UD_Ihaddps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1551 */ { UD_Ivhaddps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1552 */ { UD_Ihsubpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1553 */ { UD_Ivhsubpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1554 */ { UD_Ihsubps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1555 */ { UD_Ivhsubps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1556 */ { UD_Iinsertps, O_V, O_Md, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1557 */ { UD_Ivinsertps, O_Vx, O_Hx, O_Md, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1558 */ { UD_Ilddqu, O_V, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1559 */ { UD_Ivlddqu, O_Vx, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1560 */ { UD_Imovddup, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1561 */ { UD_Ivmovddup, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1562 */ { UD_Imovddup, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1563 */ { UD_Ivmovddup, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1564 */ { UD_Imovshdup, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1565 */ { UD_Ivmovshdup, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1566 */ { UD_Imovshdup, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1567 */ { UD_Ivmovshdup, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1568 */ { UD_Imovsldup, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1569 */ { UD_Ivmovsldup, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1570 */ { UD_Imovsldup, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1571 */ { UD_Ivmovsldup, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1572 */ { UD_Ipabsb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1573 */ { UD_Ipabsb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1574 */ { UD_Ivpabsb, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1575 */ { UD_Ipabsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1576 */ { UD_Ipabsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1577 */ { UD_Ivpabsw, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1578 */ { UD_Ipabsd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1579 */ { UD_Ipabsd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1580 */ { UD_Ivpabsd, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1581 */ { UD_Ipshufb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1582 */ { UD_Ipshufb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1583 */ { UD_Ivpshufb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1584 */ { UD_Iphaddw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1585 */ { UD_Iphaddw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1586 */ { UD_Ivphaddw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1587 */ { UD_Iphaddd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1588 */ { UD_Iphaddd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1589 */ { UD_Ivphaddd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1590 */ { UD_Iphaddsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1591 */ { UD_Iphaddsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1592 */ { UD_Ivphaddsw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1593 */ { UD_Ipmaddubsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1594 */ { UD_Ipmaddubsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1595 */ { UD_Ivpmaddubsw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1596 */ { UD_Iphsubw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1597 */ { UD_Iphsubw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1598 */ { UD_Ivphsubw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1599 */ { UD_Iphsubd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1600 */ { UD_Iphsubd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1601 */ { UD_Ivphsubd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1602 */ { UD_Iphsubsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1603 */ { UD_Iphsubsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1604 */ { UD_Ivphsubsw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1605 */ { UD_Ipsignb, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1606 */ { UD_Ipsignb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1607 */ { UD_Ivpsignb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1608 */ { UD_Ipsignd, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1609 */ { UD_Ipsignd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1610 */ { UD_Ivpsignd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1611 */ { UD_Ipsignw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1612 */ { UD_Ipsignw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1613 */ { UD_Ivpsignw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1614 */ { UD_Ipmulhrsw, O_P, O_Q, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1615 */ { UD_Ipmulhrsw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1616 */ { UD_Ivpmulhrsw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1617 */ { UD_Ipalignr, O_P, O_Q, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1618 */ { UD_Ipalignr, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1619 */ { UD_Ivpalignr, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1620 */ { UD_Ipblendvb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1621 */ { UD_Ipmuldq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1622 */ { UD_Ivpmuldq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1623 */ { UD_Ipminsb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1624 */ { UD_Ivpminsb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1625 */ { UD_Ipminsd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1626 */ { UD_Ivpminsd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1627 */ { UD_Ipminuw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1628 */ { UD_Ivpminuw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1629 */ { UD_Ipminud, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1630 */ { UD_Ivpminud, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1631 */ { UD_Ipmaxsb, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1632 */ { UD_Ivpmaxsb, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1633 */ { UD_Ipmaxsd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1634 */ { UD_Ivpmaxsd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1635 */ { UD_Ipmaxud, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1636 */ { UD_Ivpmaxud, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1637 */ { UD_Ipmaxuw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1638 */ { UD_Ivpmaxuw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1639 */ { UD_Ipmulld, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1640 */ { UD_Ivpmulld, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1641 */ { UD_Iphminposuw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1642 */ { UD_Ivphminposuw, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1643 */ { UD_Iroundps, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1644 */ { UD_Ivroundps, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1645 */ { UD_Iroundpd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1646 */ { UD_Ivroundpd, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1647 */ { UD_Iroundss, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1648 */ { UD_Ivroundss, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1649 */ { UD_Iroundsd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1650 */ { UD_Ivroundsd, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1651 */ { UD_Iblendpd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1652 */ { UD_Ivblendpd, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1653 */ { UD_Iblendps, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1654 */ { UD_Ivblendps, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1655 */ { UD_Iblendvpd, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1656 */ { UD_Iblendvps, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1657 */ { UD_Ibound, O_Gv, O_M, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1658 */ { UD_Ibsf, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1659 */ { UD_Ibsr, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1660 */ { UD_Ibswap, O_R0y, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1661 */ { UD_Ibswap, O_R1y, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1662 */ { UD_Ibswap, O_R2y, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1663 */ { UD_Ibswap, O_R3y, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1664 */ { UD_Ibswap, O_R4y, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1665 */ { UD_Ibswap, O_R5y, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1666 */ { UD_Ibswap, O_R6y, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1667 */ { UD_Ibswap, O_R7y, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_oso|P_rexw|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1668 */ { UD_Ibt, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1669 */ { UD_Ibt, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1670 */ { UD_Ibtc, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1671 */ { UD_Ibtc, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1672 */ { UD_Ibtr, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1673 */ { UD_Ibtr, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1674 */ { UD_Ibts, O_Ev, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1675 */ { UD_Ibts, O_Ev, O_Ib, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexw|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_UNDEFINED, UD_FLAG_MODIFIED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1676 */ { UD_Ipblendw, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1677 */ { UD_Ivpblendw, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1678 */ { UD_Impsadbw, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1679 */ { UD_Ivmpsadbw, O_Vx, O_Hx, O_Wx, O_Ib, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1680 */ { UD_Imovntdqa, O_V, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1681 */ { UD_Ivmovntdqa, O_Vx, O_M, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1682 */ { UD_Ipackusdw, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1683 */ { UD_Ivpackusdw, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1684 */ { UD_Ipmovsxbw, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1685 */ { UD_Ivpmovsxbw, O_Vx, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1686 */ { UD_Ipmovsxbd, O_V, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1687 */ { UD_Ivpmovsxbd, O_Vx, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1688 */ { UD_Ipmovsxbq, O_V, O_MwU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1689 */ { UD_Ivpmovsxbq, O_Vx, O_MwU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1690 */ { UD_Ipmovsxwd, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1691 */ { UD_Ivpmovsxwd, O_Vx, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1692 */ { UD_Ipmovsxwq, O_V, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1693 */ { UD_Ivpmovsxwq, O_Vx, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1694 */ { UD_Ipmovsxdq, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1695 */ { UD_Ipmovzxbw, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1696 */ { UD_Ivpmovzxbw, O_Vx, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1697 */ { UD_Ipmovzxbd, O_V, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1698 */ { UD_Ivpmovzxbd, O_Vx, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1699 */ { UD_Ipmovzxbq, O_V, O_MwU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1700 */ { UD_Ivpmovzxbq, O_Vx, O_MwU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1701 */ { UD_Ipmovzxwd, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1702 */ { UD_Ivpmovzxwd, O_Vx, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1703 */ { UD_Ipmovzxwq, O_V, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1704 */ { UD_Ivpmovzxwq, O_Vx, O_MdU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1705 */ { UD_Ipmovzxdq, O_V, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1706 */ { UD_Ivpmovzxdq, O_Vx, O_MqU, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1707 */ { UD_Ipcmpeqq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1708 */ { UD_Ivpcmpeqq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1709 */ { UD_Ipopcnt, O_Gv, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_MODIFIED, UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_RESET, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1710 */ { UD_Iptest, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1711 */ { UD_Ivptest, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1712 */ { UD_Ipcmpestri, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1713 */ { UD_Ivpcmpestri, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1714 */ { UD_Ipcmpestrm, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1715 */ { UD_Ivpcmpestrm, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1716 */ { UD_Ipcmpgtq, O_V, O_W, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1717 */ { UD_Ivpcmpgtq, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1718 */ { UD_Ipcmpistri, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1719 */ { UD_Ivpcmpistri, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1720 */ { UD_Ipcmpistrm, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1721 */ { UD_Ivpcmpistrm, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1722 */ { UD_Imovbe, O_Gv, O_Mv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1723 */ { UD_Imovbe, O_Mv, O_Gv, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1724 */ { UD_Icrc32, O_Gy, O_Eb, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1725 */ { UD_Icrc32, O_Gy, O_Ev, O_NONE, O_NONE, UD_OP_ACCESS_READ | UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_oso|P_rexr|P_rexw|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1726 */ { UD_Ivbroadcastss, O_V, O_Md, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1727 */ { UD_Ivbroadcastsd, O_Vqq, O_Mq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1728 */ { UD_Ivextractf128, O_Wdq, O_Vqq, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1729 */ { UD_Ivinsertf128, O_Vqq, O_Hqq, O_Wdq, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1730 */ { UD_Ivmaskmovps, O_V, O_H, O_M, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1731 */ { UD_Ivmaskmovps, O_M, O_H, O_V, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1732 */ { UD_Ivmaskmovpd, O_V, O_H, O_M, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1733 */ { UD_Ivmaskmovpd, O_M, O_H, O_V, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1734 */ { UD_Ivpermilpd, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1735 */ { UD_Ivpermilpd, O_V, O_W, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1736 */ { UD_Ivpermilps, O_Vx, O_Hx, O_Wx, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1737 */ { UD_Ivpermilps, O_Vx, O_Wx, O_Ib, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1738 */ { UD_Ivperm2f128, O_Vqq, O_Hqq, O_Wqq, O_Ib, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1739 */ { UD_Ivtestps, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1740 */ { UD_Ivtestpd, O_Vx, O_Wx, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1741 */ { UD_Ivzeroupper, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_YMM0, UD_R_YMM1, UD_R_YMM2, UD_R_YMM3, UD_R_YMM4, UD_R_YMM5, UD_R_YMM6, UD_R_YMM7, UD_R_YMM8, UD_R_YMM9, UD_R_YMM10, UD_R_YMM11, UD_R_YMM12, UD_R_YMM13, UD_R_YMM14, UD_R_YMM15, UD_NONE} },
+  /* 1742 */ { UD_Ivzeroall, O_NONE, O_NONE, O_NONE, O_NONE, UD_OP_ACCESS_READ, UD_OP_ACCESS_READ, P_none, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_R_YMM0, UD_R_YMM1, UD_R_YMM2, UD_R_YMM3, UD_R_YMM4, UD_R_YMM5, UD_R_YMM6, UD_R_YMM7, UD_R_YMM8, UD_R_YMM9, UD_R_YMM10, UD_R_YMM11, UD_R_YMM12, UD_R_YMM13, UD_R_YMM14, UD_R_YMM15, UD_NONE} },
+  /* 1743 */ { UD_Ivblendvpd, O_Vx, O_Hx, O_Wx, O_Lx, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1744 */ { UD_Ivblendvps, O_Vx, O_Hx, O_Wx, O_Lx, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb|P_vexl, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1745 */ { UD_Ivmovsd, O_V, O_H, O_U, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1746 */ { UD_Ivmovsd, O_V, O_Mq, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1747 */ { UD_Ivmovsd, O_U, O_H, O_V, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1748 */ { UD_Ivmovsd, O_Mq, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1749 */ { UD_Ivmovss, O_V, O_H, O_U, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1750 */ { UD_Ivmovss, O_V, O_Md, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1751 */ { UD_Ivmovss, O_U, O_H, O_V, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1752 */ { UD_Ivmovss, O_Md, O_V, O_NONE, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1753 */ { UD_Ivpblendvb, O_V, O_H, O_W, O_L, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1754 */ { UD_Ivpsllw, O_V, O_H, O_W, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1755 */ { UD_Ivpsllw, O_H, O_V, O_W, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1756 */ { UD_Ivpslld, O_V, O_H, O_W, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1757 */ { UD_Ivpslld, O_H, O_V, O_W, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1758 */ { UD_Ivpsllq, O_V, O_H, O_W, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
+  /* 1759 */ { UD_Ivpsllq, O_H, O_V, O_W, O_NONE, UD_OP_ACCESS_WRITE, UD_OP_ACCESS_READ, P_aso|P_rexr|P_rexx|P_rexb, {UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED, UD_FLAG_UNCHANGED}, {UD_NONE}, {UD_NONE} },
 };
 
 
@@ -5081,18 +5085,18 @@ const char* ud_mnemonics_str[] = {
     "cmovae",
     "cmovb",
     "cmovbe",
+    "cmove",
     "cmovg",
     "cmovge",
     "cmovl",
     "cmovle",
+    "cmovne",
     "cmovno",
     "cmovnp",
     "cmovns",
-    "cmovnz",
     "cmovo",
     "cmovp",
     "cmovs",
-    "cmovz",
     "cmp",
     "cmppd",
     "cmpps",
@@ -5204,9 +5208,12 @@ const char* ud_mnemonics_str[] = {
     "fldz",
     "fmul",
     "fmulp",
+    "fndisi",
+    "fneni",
     "fninit",
     "fnop",
     "fnsave",
+    "fnsetpm",
     "fnstcw",
     "fnstenv",
     "fnstsw",
@@ -5216,6 +5223,7 @@ const char* ud_mnemonics_str[] = {
     "fptan",
     "frndint",
     "frstor",
+    "frstpm",
     "fscale",
     "fsin",
     "fsincos",
@@ -5275,21 +5283,21 @@ const char* ud_mnemonics_str[] = {
     "jb",
     "jbe",
     "jcxz",
+    "je",
     "jecxz",
     "jg",
     "jge",
     "jl",
     "jle",
     "jmp",
+    "jne",
     "jno",
     "jnp",
     "jns",
-    "jnz",
     "jo",
     "jp",
     "jrcxz",
     "js",
-    "jz",
     "lahf",
     "lar",
     "lddqu",
@@ -5581,18 +5589,18 @@ const char* ud_mnemonics_str[] = {
     "setae",
     "setb",
     "setbe",
+    "sete",
     "setg",
     "setge",
     "setl",
     "setle",
+    "setne",
     "setno",
     "setnp",
     "setns",
-    "setnz",
     "seto",
     "setp",
     "sets",
-    "setz",
     "sfence",
     "sgdt",
     "shl",

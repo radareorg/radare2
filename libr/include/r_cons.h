@@ -46,6 +46,7 @@ typedef struct r_cons_grep_t {
 	int nstrings;
 	char *str;
 	int counter;
+	int less;
 	int line;
 	int tokenfrom;
 	int tokento;
@@ -289,6 +290,8 @@ R_API void r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline();
 R_API void r_cons_filter();
 R_API void r_cons_flush();
+R_API void r_cons_less_str(const char *str);
+R_API void r_cons_less();
 R_API void r_cons_memset(char ch, int len);
 R_API void r_cons_visual_flush();
 R_API void r_cons_visual_write (char *buffer);
