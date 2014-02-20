@@ -80,10 +80,12 @@ static int main_help(int line) {
 		" -D [backend] enable debug mode (e cfg.debug=true)\n"
 		" -e k=v       evaluate config var\n"
 		" -f           block size = file size\n"
+		" -h, -hh      show help message, -hh for long\n");
 		" -i [file]    run script file\n"
 		" -k [kernel]  set asm.os variable for asm and anal\n"
 		" -l [lib]     load plugin file\n"
 		" -L           list supported IO plugins\n"
+		" -m [addr]    map file at given address\n"
 		" -n           disable analysis\n"
 		" -N           disable user settings\n"
 		" -q           quiet mode (no prompt) and quit after -i\n"
@@ -91,13 +93,11 @@ static int main_help(int line) {
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
         " -S           start r2 in sanbox mode\n"
-		" -m [addr]    map file at given address\n"
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
 		" -v, -V       show radare2 version (-V show lib versions)\n"
 		" -w           open file in write mode\n"
-		" -h, -hh      show help message, -hh for long\n");
 	if (line==2)
 		printf (
 		"Scripts:\n"
@@ -167,15 +167,15 @@ int main(int argc, char **argv, char **envp) {
 	const char *patchfile = NULL;
 	const char *prj = NULL;
 	//int threaded = R_FALSE;
-	int has_project = R_FALSE;
- 	int ret, i, c, perms = R_IO_READ;
-	int do_connect = 0;
+	int debug = 0;
 	int do_analysis = 0;
+	int do_connect = 0;
+	int fullfile = 0;
+	int has_project = R_FALSE;
+	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
-	int help = 0;
-	int debug = 0;
-	int fullfile = 0;
+ 	int ret, i, c, perms = R_IO_READ;
     int sandbox = 0;
 	ut64 baddr = 0;
 	ut64 seek = UT64_MAX;
@@ -228,27 +228,39 @@ int main(int argc, char **argv, char **envp) {
 #endif
 			))!=-1) {
 		switch (c) {
+		case 'a': asmarch = optarg; break;
 		case 'A':
 			do_analysis = R_TRUE;
 			break;
+		case 'b': asmbits = optarg; break;
+		case 'B': baddr = r_num_math (r.num, optarg); break;
+		case 'c': r_list_append (cmds, optarg); break;
 		case 'C':
 			do_connect = R_TRUE;
 			break;
-#if USE_THREADS
-		case 't':
-			threaded = R_TRUE;
-			break;
+#if DEBUGGER
+		case 'd': debug = 1; break;
+#else
+		case 'd': eprintf ("Sorry. No compiler backend available.\n"); return 1;
 #endif
 		case 'D':
 			debug = 2;
 			debugbackend = optarg;
 			break;
-		case 'm': mapaddr = r_num_math (r.num, optarg); break;
-		case 'q':
-			r_config_set (r.config, "scr.interactive", "false");
-			r_config_set (r.config, "scr.prompt", "false");
-			quiet = R_TRUE;
+		case 'e': r_config_eval (r.config, optarg); 
+			  r_list_append (evals, optarg); break;
+		case 'f': fullfile = 1; break;
+        case 'h': help++; break;
+		case 'i':
+			if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
+				cmdfile[cmdfilei++] = optarg;
 			break;
+		case 'k': asmos = optarg; break;
+		case 'l': r_lib_open (r.lib, optarg); break;
+		case 'L': list_io_plugins (r.io); return 0;
+		case 'm': mapaddr = r_num_math (r.num, optarg); break;
+		case 'n': run_anal = 0; break;
+		case 'N': run_rc = 0; break;
 		case 'p':
 			if (*optarg == '-') {
 				// TODO: handle error when removing project
@@ -267,35 +279,22 @@ int main(int argc, char **argv, char **envp) {
 				return 1;
 			} else r_config_set (r.config, "file.project", optarg);
 			break;
-		case 'P': patchfile = optarg; break;
-		case 'c': r_list_append (cmds, optarg); break;
-		case 'i':
-			if (cmdfilei+1 < (sizeof (cmdfile)/sizeof (*cmdfile)))
-				cmdfile[cmdfilei++] = optarg;
+        case 'P': patchfile = optarg; break;
+		case 'q':
+			r_config_set (r.config, "scr.interactive", "false");
+			r_config_set (r.config, "scr.prompt", "false");
+			quiet = R_TRUE;
 			break;
-		case 'l': r_lib_open (r.lib, optarg); break;
-#if DEBUGGER
-		case 'd': debug = 1; break;
-#else
-		case 'd': eprintf ("Sorry. No compiler backend available.\n"); return 1;
-#endif
-		case 'e': r_config_eval (r.config, optarg); 
-			  r_list_append (evals, optarg); break;
-		case 'H':
-		case 'h': help++; break;
-		case 'f': fullfile = 1; break;
-		case 'n': run_anal = 0; break;
-		case 'N': run_rc = 0; break;
-		case 'V': return verify_version (1);
-		case 'v': verify_version(0); return blob_version ("radare2");
-		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
-		case 'a': asmarch = optarg; break;
-		case 'k': asmos = optarg; break;
-		case 'b': asmbits = optarg; break;
-		case 'B': baddr = r_num_math (r.num, optarg); break;
 		case 's': seek = r_num_math (r.num, optarg); break;
         case 'S': sandbox = 1; break;
-		case 'L': list_io_plugins (r.io); return 0;
+#if USE_THREADS
+		case 't':
+			threaded = R_TRUE;
+			break;
+#endif
+		case 'v': verify_version(0); return blob_version ("radare2");
+		case 'V': return verify_version (1);
+		case 'w': perms = R_IO_READ | R_IO_WRITE; break;
 		default: 
 			r_list_free (evals);
 			r_list_free (cmds);
