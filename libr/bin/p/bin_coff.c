@@ -172,6 +172,22 @@ static RBinInfo *info(RBinFile *arch)
 		strncpy(ret->arch, "h8300", R_BIN_SIZEOF_STRINGS);
 		ret->bits = 16;
 		break;
+
+	case IMAGE_FILE_TI_COFF:
+		if (obj->hdr.target_id == IMAGE_FILE_MACHINE_TMS320C54) {
+			strncpy(ret->machine, "c54x", R_BIN_SIZEOF_STRINGS);
+			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
+			ret->bits = 32;
+		} else if (obj->hdr.target_id == IMAGE_FILE_MACHINE_TMS320C55) {
+			strncpy(ret->machine, "c55x", R_BIN_SIZEOF_STRINGS);
+			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
+			ret->bits = 32;
+		} else if (obj->hdr.target_id == IMAGE_FILE_MACHINE_TMS320C55PLUS) {
+			strncpy(ret->machine, "c55x+", R_BIN_SIZEOF_STRINGS);
+			strncpy(ret->arch, "tms320", R_BIN_SIZEOF_STRINGS);
+			ret->bits = 32;
+		}
+		break;
 	default:
 		strncpy(ret->machine, "unknown", R_BIN_SIZEOF_STRINGS);
 	}
