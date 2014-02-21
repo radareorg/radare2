@@ -1,8 +1,0 @@
-/* This code has been leeched from the ERESI project */
-
-This is a hacked/stripped-down version of the original libgdbwrap from eresi.
-
-gdbserver 0.0.0.0:9999 /bin/ls
-./client 127.0.0.1 9999
-
-type make sync to keep in sync with eresi
