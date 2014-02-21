@@ -162,7 +162,6 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	UDis86Esil *handler;
 	UDis86OPInfo info = {0, anal->bits, (1LL << anal->bits) - 1, regsz, 0, pc, sp, bp};
 	memset (op, '\0', sizeof (RAnalOp));
-	r_strbuf_init (&op->esil);
 	op->addr = addr;
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
@@ -175,7 +174,7 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 	ud_disassemble (&u);
 
 	oplen = op->size = ud_insn_len (&u);
-	
+	r_strbuf_init (&op->esil);
 	if (anal->decode && (handler = udis86_esil_get_handler (u.mnemonic))) {
 		info.oplen = oplen;
 		if (handler->argc > 0) {
@@ -189,7 +188,6 @@ int x86_udis86_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len)
 		}
 		handler->callback (&info, op, dst, src, str);
 	}
-
 	switch (u.mnemonic) {
 	case UD_Iinvalid:
 		oplen = op->size = -1;

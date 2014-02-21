@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -46,14 +46,13 @@ R_API RAnal *r_anal_new() {
 	RAnalPlugin *static_plugin;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!anal) return NULL;
-	memset (anal, 0, sizeof (RAnal));
+	anal->cpu = NULL;
+	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_vars = sdb_new (NULL, NULL, 0);
 	anal->sdb_refs = sdb_new (NULL, NULL, 0);
 	anal->sdb_args = sdb_new (NULL, NULL, 0);
 	anal->sdb_ret = sdb_new (NULL, NULL, 0);
 	anal->sdb_locals = sdb_new (NULL, NULL, 0);
-	anal->cpu = NULL;
-	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb_xrefs = NULL;
 	anal->sdb_types = sdb_new (NULL, NULL, 0);
 	anal->sdb_meta = NULL; // TODO : implement sdb_meta
@@ -113,7 +112,6 @@ R_API void r_anal_free(RAnal *a) {
 	sdb_free (a->sdb_args);
 	sdb_free (a->sdb_locals);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
-
 	free (a);
 }
 
@@ -171,8 +169,8 @@ R_API int r_anal_set_bits(RAnal *anal, int bits) {
 }
 
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
-	free(anal->cpu);
-	anal->cpu = cpu ? strdup(cpu) : NULL;
+	free (anal->cpu);
+	anal->cpu = cpu ? strdup (cpu) : NULL;
 }
 
 R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {

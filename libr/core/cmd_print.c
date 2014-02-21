@@ -1090,7 +1090,7 @@ static int cmd_print(void *data, const char *input) {
 			RList *hits;
 			RListIter *iter;
 			RCoreAsmHit *hit;
-			ut8 *block;
+			ut8 *block = NULL;
 	
 			if (bw_disassemble) {
 				block = malloc (core->blocksize);
@@ -1102,7 +1102,7 @@ static int cmd_print(void *data, const char *input) {
 							core, addr-l, block, R_MIN (l, core->blocksize), l, 0, 1);
 					} else {
 						hits = r_core_asm_bwdisassemble (core, addr, l, core->blocksize);
-						if (hits && r_list_length(hits) > 0) {
+						if (hits && r_list_length (hits) > 0) {
 							ut32 instr_run = 0;
 							ut64 start_addr = 0;
 

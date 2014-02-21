@@ -42,11 +42,12 @@ static int is_invalid (const ut8 *buf, int size) {
 }
 
 static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
+	ut64 n;
 	ut8 buf2[32];
 	int ret;
 	if (size > sizeof (buf2))
 		size = sizeof (buf2);
-	ut64 n = r_mem_get_num (buf, size, endian);
+	n = r_mem_get_num (buf, size, endian);
 	if (!n) return 1; // null pointer
 
 	// optimization to ignore very low and very high pointers
@@ -72,8 +73,7 @@ static int is_bin(const ut8 *buf) {
 
 // XXX: optimize by removing all strlens here
 R_API char *r_anal_data_to_string (RAnalData *d) {
-	int i, idx;
-	int mallocsz = 256;
+	int i, idx, mallocsz = 256;
 	ut32 n32 = (ut32)d->ptr;
 	char *line = malloc (mallocsz);
 	snprintf (line, mallocsz, "0x%08"PFMT64x"  ", d->addr);
@@ -143,8 +143,8 @@ R_API RAnalData *r_anal_data_new_string (ut64 addr, const char *p, int len, int 
 R_API RAnalData *r_anal_data_new (ut64 addr, int type, ut64 n, const ut8 *buf, int len) {
 	RAnalData *ad = R_NEW0 (RAnalData);
 	ad->buf = (ut8*) &(ad->sbuf);
-	if (buf) memcpy (ad->buf, buf, 8);
-	else memset (ad->buf, 0, 8);
+	memset (ad->buf, 0, 8);
+	if (buf) memcpy (ad->buf, buf, R_MIN(8, len));
 	ad->addr = addr;
 	ad->type = type;
 	ad->str = NULL;
