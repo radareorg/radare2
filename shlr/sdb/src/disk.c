@@ -50,7 +50,7 @@ SDB_API int sdb_disk_create (Sdb* s) {
 	strcpy (str+nlen, ".tmp");
 	s->fdump = open (str, O_BINARY|O_RDWR|O_CREAT|O_TRUNC, 0644);
 	if (s->fdump == -1) {
-		fprintf (stderr, "sdb: Cannot open '%s' for writing.\n", str);
+		eprintf ("sdb: Cannot open '%s' for writing.\n", str);
 		free (str);
 		return 0;
 	}

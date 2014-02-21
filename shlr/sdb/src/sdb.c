@@ -124,7 +124,7 @@ SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
 	if (cas) *cas = 0;
 	if (!s||!key) return NULL;
 	keylen = strlen (key)+1;
-	hash = sdb_hash (key, keylen);
+	hash = sdb_hash (key, keylen-1);
 
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
@@ -164,7 +164,7 @@ SDB_API char *sdb_get (Sdb* s, const char *key, ut32 *cas) {
 	if (cas) *cas = 0;
 	if (!s || !key) return NULL;
 	keylen = strlen (key)+1;
-	hash = sdb_hash (key, keylen);
+	hash = sdb_hash (key, keylen-1);
 
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
@@ -280,7 +280,7 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	if (!sdb_check_value (val))
 		return 0;
 	klen = strlen (key)+1;
-	hash = sdb_hash (key, klen);
+	hash = sdb_hash (key, klen-1);
 	cdb_findstart (&s->db);
 	e = ht_search (s->ht, hash);
 	if (e) {
@@ -312,16 +312,7 @@ SDB_API void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 	ls_foreach (s->ht->list, iter, kv) {
 		if (!kv->value || !*kv->value)
 			continue;
-		if (strchr (kv->value, SDB_RS)) {
-			char *o, *p = strdup (kv->value);
-			for (o=p; *o; o++) if (*o==SDB_RS) *o = ',';
-			o = malloc (strlen (kv->key)+3);
-			memcpy (o, "()", 2);
-			strcpy (o+2, kv->key);
-			cb (user, o, p);
-			free (o);
-			free (p);
-		} else cb (user, kv->key, kv->value);
+		cb (user, kv->key, kv->value);
 	}
 }
 
@@ -334,12 +325,7 @@ SDB_API void sdb_list (Sdb* s) {
 	ls_foreach (s->ht->list, iter, kv) {
 		if (!kv->value || !*kv->value)
 			continue;
-		if (strchr (kv->value, SDB_RS)) {
-			char *o, *p = strdup (kv->value);
-			for (o=p; *o; o++) if (*o==SDB_RS) *o = ',';
-			printf ("()%s=%s\n", kv->key, p);
-			free (p);
-		} else printf ("%s=%s\n", kv->key, kv->value);
+		printf ("%s=\"%s\"\n", kv->key, kv->value);
 	}
 }
 
