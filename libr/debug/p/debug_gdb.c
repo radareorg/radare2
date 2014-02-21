@@ -2,88 +2,82 @@
 
 #include <r_asm.h>
 #include <r_debug.h>
-#include "libgdbwrap/include/gdbwrapper.h"
-#include "libgdbwrap/gdbwrapper.c"
+#include <libgdbr.h>
 
-/* XXX: hacky copypasta from io/p/io_gdb */
 typedef struct {
-        RSocket *fd;
-        gdbwrap_t *desc;
+	libgdbr_t desc;
 } RIOGdb;
-#define RIOGDB_FD(x) (((RIOGdb*)(x))->fd)
-#define RIOGDB_DESC(x) (((RIOGdb*)(x->data))->desc)
-#define RIOGDB_IS_VALID(x) (x && x->plugin==&r_io_plugin_gdb && x->data)
-#define NUM_REGS 28
 
 #define UNKNOWN -1
 #define UNSUPPORTED 0
 #define SUPPORTED 1
 
-/* TODO: The IO stuff must be communicated with the r_dbg */
-/* a transplant sometimes requires to change the IO */
-/* so, for here, we need r_io_plugin_gdb */
-/* TODO: rename to gdbwrap? */
-static gdbwrap_t *desc = NULL;
+static libgdbr_t *desc = NULL;
 static int support_sw_bp = UNKNOWN; 
 static int support_hw_bp = UNKNOWN;
 
+
 static int r_debug_gdb_step(RDebug *dbg) {
-	gdbwrap_stepi (desc);
+	gdbr_step(desc, -1); // TODO handle thread specific step?
 	return R_TRUE;
 }
+
 
 static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
-	gdbwrap_readgenreg (desc);
-	if (!desc)
-		return R_FALSE;
-	gdbwrap_getreg_buffer (desc, buf, desc->reg_size*desc->num_registers);
-	return desc->num_registers*desc->reg_size;
+	gdbr_read_registers(desc);
+	memcpy(buf, desc->data, desc->data_len);
+	return desc->data_len;
 }
+
+
+static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
+	//TODO
+	return NULL;
+}
+
 
 static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	gdbwrap_setreg_buffer (desc, buf, desc->reg_size*desc->num_registers);
-	gdbwrap_shipallreg (desc);
-	return R_TRUE; // XXX Error check	
-}
-
-static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
-	gdbwrap_continue (desc);
+	//gdbr_write_bin_registers(desc, buf); //TODO...
 	return R_TRUE;
 }
+
+
+static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
+	gdbr_continue(desc, -1);
+	return R_TRUE;
+}
+
 
 static int r_debug_gdb_wait(RDebug *dbg, int pid) {
 	/* do nothing */
 	return R_TRUE;
 }
 
+
+
 static int r_debug_gdb_attach(RDebug *dbg, int pid) {
-// XXX TODO PID must be a socket here !!1
 	RIODesc *d = dbg->iob.io->fd;
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
 			support_sw_bp = UNKNOWN;
 			support_hw_bp = UNKNOWN;
-			if (( desc = g->desc ))
+			if (( desc = &g->desc ))
 			switch (dbg->arch) {
 			case R_SYS_ARCH_X86:
-				//TODO Support x86_64
-				//9 32bit regs for x86
-				desc->num_registers = 9;
-				desc->reg_size = 4;
+				if ( dbg->bits == R_SYS_BITS_32) {
+					gdbr_set_architecture(&g->desc, X86_32);
+				} else {
+					gdbr_set_architecture(&g->desc, X86_64);
+				}
 				break;
 			case R_SYS_ARCH_SH:
-				//28 32bit regs for sh4
-				desc->num_registers = 28;
-				desc->reg_size = 4;
+				// TODO
 				break;
 			case R_SYS_ARCH_ARM:
-				//TODO Check ARM stubs and fill in
-				desc->num_registers = 25;
-				desc->reg_size = 4;
+				// TODO
 				break;
 			}
-			//eprintf ("SUCCESS: gdb attach with inferior gdb rio worked\n");
 		} else {
 			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
 		}
@@ -91,26 +85,123 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	return R_TRUE;
 }
 
+
 static int r_debug_gdb_detach(int pid) {
-// XXX TODO PID must be a socket here !!1
-//	close (pid);
-	//XXX Maybe we should continue here?
+	gdbr_disconnect(desc);
 	return R_TRUE;
 }
+
 
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = dbg->arch;
 	switch (arch) {
 	case R_SYS_ARCH_X86:
-	case R_SYS_ARCH_ARM:
-	case R_SYS_ARCH_SH:
-		break;
-	default:
-		arch = r_sys_arch_id (R_SYS_ARCH);
-		break;
-	}
-	switch (arch) {
-	case R_SYS_ARCH_X86:
+		if ( dbg->bits == R_SYS_BITS_32) {
+			return strdup (
+				"gpr	eax	.32	0	0\n"
+				"gpr	ecx	.32	4	0\n"
+				"gpr	edx	.32	8	0\n"
+				"gpr	ebx	.32	12	0\n"
+				"gpr	esp	.32	16	0\n"
+				"gpr	ebp	.32	20	0\n"
+				"gpr	esi	.32	24	0\n"
+				"gpr	edi	.32	28	0\n"
+				"gpr	eip	.32	32	0\n"
+				"gpr	eflags	.32	36	0\n"
+				"seg	cs	.32	40	0\n"
+				"seg	ss	.32	44	0\n"
+				"seg	ds	.32	48	0\n"
+				"seg	es	.32	52	0\n"
+				"seg	fs	.32	56	0\n"
+				"seg	gs	.32	60	0\n"
+				"gpr	st0	.80	64	0\n"
+				"gpr	st1	.80	74	0\n"
+				"gpr	st2	.80	84	0\n"
+				"gpr	st3	.80	94	0\n"
+				"gpr	st4	.80	104	0\n"
+				"gpr	st5	.80	114	0\n"
+				"gpr	st6	.80	124	0\n"
+				"gpr	st7	.80	134	0\n"
+				"gpr	fctrl	.32	144	0\n"
+				"gpr	fstat	.32	148	0\n"
+				"gpr	ftag	.32	152	0\n"
+				"gpr	fiseg	.32	156	0\n"
+				"gpr	fioff	.32	160	0\n"
+				"gpr	foseg	.32	164	0\n"
+				"gpr	fooff	.32	168	0\n"
+				"gpr	fop	.32	172	0\n"
+				"gpr	xmm0	.128	176	0\n"
+				"gpr	xmm1	.128	192	0\n"
+				"gpr	xmm2	.128	208	0\n"
+				"gpr	xmm3	.128	224	0\n"
+				"gpr	xmm4	.128	240	0\n"
+				"gpr	xmm5	.128	256	0\n"
+				"gpr	xmm6	.128	272	0\n"
+				"gpr	xmm7	.128	288	0\n"
+				"gpr	mxcsr	.32	304	0\n"
+				);
+		} 
+		else if ( dbg->bits == R_SYS_BITS_64) {
+			return strdup (
+				"gpr	rax	.64	0	0\n"
+				"gpr	rbx	.64	8	0\n"
+				"gpr	rcx	.64	16	0\n"
+				"gpr	rdx	.64	24	0\n"
+				"gpr	rsi	.64	32	0\n"
+				"gpr	rdi	.64	40	0\n"
+				"gpr	rbp	.64	48	0\n"
+				"gpr	rsp	.64	56	0\n"
+				"gpr	r8	.64	64	0\n"
+				"gpr	r9	.64	72	0\n"
+				"gpr	r10	.64	80	0\n"
+				"gpr	r11	.64	88	0\n"
+				"gpr	r12	.64	96	0\n"
+				"gpr	r13	.64	104	0\n"
+				"gpr	r14	.64	112	0\n"
+				"gpr	r15	.64	120	0\n"
+				"gpr	rip	.64	128	0\n"
+				"gpr	eflags	.32	136	0\n"
+				"seg	cs	.32	140	0\n"
+				"seg	ss	.32	144	0\n"
+				"seg	ds	.32	148	0\n"
+				"seg	es	.32	152	0\n"
+				"seg	fs	.32	156	0\n"
+				"seg	gs	.32	160	0\n"
+				"gpr	st0	.80	164	0\n"
+				"gpr	st1	.80	174	0\n"
+				"gpr	st2	.80	184	0\n"
+				"gpr	st3	.80	194	0\n"
+				"gpr	st4	.80	204	0\n"
+				"gpr	st5	.80	214	0\n"
+				"gpr	st6	.80	224	0\n"
+				"gpr	st7	.80	234	0\n"
+				"gpr	fctrl	.32	244	0\n"
+				"gpr	fstat	.32	248	0\n"
+				"gpr	ftag	.32	252	0\n"
+				"gpr	fiseg	.32	256	0\n"
+				"gpr	fioff	.32	260	0\n"
+				"gpr	foseg	.32	264	0\n"
+				"gpr	fooff	.32	268	0\n"
+				"gpr	fop	.32	272	0\n"
+				"gpr	xmm0	.128	276	0\n"
+				"gpr	xmm1	.128	292	0\n"
+				"gpr	xmm2	.128	308	0\n"
+				"gpr	xmm3	.128	324	0\n"
+				"gpr	xmm4	.128	340	0\n"
+				"gpr	xmm5	.128	356	0\n"
+				"gpr	xmm6	.128	372	0\n"
+				"gpr	xmm7	.128	388	0\n"
+				"gpr	xmm8	.128	404	0\n"
+				"gpr	xmm9	.128	420	0\n"
+				"gpr	xmm10	.128	436	0\n"
+				"gpr	xmm11	.128	452	0\n"
+				"gpr	xmm12	.128	468	0\n"
+				"gpr	xmm13	.128	484	0\n"
+				"gpr	xmm14	.128	500	0\n"
+				"gpr	xmm15	.128	516	0\n"
+				"gpr	mxcsr	.32	532	0\n"
+					);
+		}
 		return strdup (
 		"=pc	eip\n"
 		"=sp	esp\n"
@@ -205,35 +296,18 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
-	if (hw && support_hw_bp!=UNSUPPORTED) {
-		//TODO Implement gdb hw breakpoint
-		support_hw_bp = UNSUPPORTED;
-		return R_FALSE;
-	}
 
-	if (!hw && support_sw_bp!=UNSUPPORTED){
-		if(!type && gdbwrap_simplesetbp(desc,addr)){
-			support_sw_bp = SUPPORTED;
-			return R_TRUE;
-		} else if (type) {
-			gdbwrap_simpledelbp(desc,addr);
-			return R_TRUE;
-		} else {
-			support_sw_bp = UNSUPPORTED;
-			return R_FALSE;
-		}
-		return support_sw_bp;
-	}
+static int r_debug_gdb_breakpoint (void *user, int type, ut64 addr, int hw, int rwx){
+	// TODO
 	return R_FALSE;
 }
 
-RDebugPlugin r_debug_plugin_gdb = {
+
+struct r_debug_plugin_t r_debug_plugin_gdb = {
 	.name = "gdb",
-	.license = "GPL2",
 	/* TODO: Add support for more architectures here */
 	.arch = R_SYS_ARCH_X86 | R_SYS_ARCH_ARM | R_SYS_ARCH_SH,
-	.bits = R_SYS_BITS_32,
+	.bits = R_SYS_BITS_32 | R_SYS_BITS_64,
 	.init = NULL,
 	.step = r_debug_gdb_step,
 	.cont = r_debug_gdb_continue,
@@ -245,7 +319,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.threads = NULL,
 	.kill = NULL,
 	.frames = NULL,
-	.map_get = NULL,
+	.map_get = r_debug_gdb_map_get,
 	.breakpoint = &r_debug_gdb_breakpoint,
 	.reg_read = &r_debug_gdb_reg_read,
 	.reg_write = &r_debug_gdb_reg_write,
@@ -253,6 +327,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	//.bp_write = &r_debug_gdb_bp_write,
 	//.bp_read = &r_debug_gdb_bp_read,
 };
+
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
