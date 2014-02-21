@@ -1132,6 +1132,7 @@ extern RAnalPlugin r_anal_plugin_gb;
 extern RAnalPlugin r_anal_plugin_nios2;
 extern RAnalPlugin r_anal_plugin_malbolge;
 extern RAnalPlugin r_anal_plugin_ws;
+extern RAnalPlugin r_anal_plugin_h8300;
 #ifdef __cplusplus
 }
 #endif

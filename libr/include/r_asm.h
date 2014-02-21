@@ -190,6 +190,7 @@ extern RAsmPlugin r_asm_plugin_nios2;
 extern RAsmPlugin r_asm_plugin_malbolge;
 extern RAsmPlugin r_asm_plugin_ws;
 extern RAsmPlugin r_asm_plugin_6502;
+extern RAsmPlugin r_asm_plugin_h8300;
 #endif
 
 #ifdef __cplusplus
