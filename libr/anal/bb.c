@@ -1,16 +1,15 @@
-/* radare - LGPL - Copyright 2010-2012 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2014 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
 #include <r_list.h>
 
 R_API RAnalBlock *r_anal_bb_new() {
-	RAnalBlock *bb = R_NEW (RAnalBlock);
+	RAnalBlock *bb = R_NEW0 (RAnalBlock);
 	if (!bb) return NULL;
-	memset (bb, 0, sizeof (RAnalBlock));
-	bb->addr = -1;
-	bb->jump = -1;
-	bb->fail = -1;
+	bb->addr = UT64_MAX;
+	bb->jump = UT64_MAX;
+	bb->fail = UT64_MAX;
 	bb->switch_op = NULL;
 	bb->type = R_ANAL_BB_TYPE_NULL;
 #if R_ANAL_BB_HAS_OPS
@@ -27,18 +26,19 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 	if (!bb) return;
 	r_anal_cond_free (bb->cond);
 	free (bb->fingerprint);
-	if (bb->diff)
+	if (bb->diff) {
 		r_anal_diff_free (bb->diff);
+		bb->diff = NULL;
+	}
 	if (bb->op_bytes)
-		free(bb->op_bytes);
+		free (bb->op_bytes);
 	if (bb->switch_op) {
-		r_anal_switch_op_free(bb->switch_op);
+		r_anal_switch_op_free (bb->switch_op);
 	}
 #if R_ANAL_BB_HAS_OPS
 	if (bb->ops)
 		r_list_free (bb->ops);
 	bb->ops = NULL;
-	bb->diff = NULL;
 #endif
 	bb->fingerprint = NULL;
 	bb->cond = NULL;

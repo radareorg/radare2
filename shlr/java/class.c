@@ -1964,8 +1964,7 @@ static int javasm_init(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv) {
 	bin->loadaddr = loadaddr;
 	bin->cp_list = r_list_new ();
 	r_bin_java_get_java_null_cp ();
-	srand(time(NULL));
-	bin->id = rand();
+	bin->id = r_num_rand (UT32_MAX);
 	bin->kv = kv ? kv : sdb_new(NULL, NULL, 0);
 	// \/ this gets assigned by the plugin: see libr/bin/p/bin_java.c:load
 	bin->AllJavaBinObjs = NULL;

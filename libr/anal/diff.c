@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2013 - nibble<.ds@gmail.com>, pancake<nopcode.org> */
+/* radare - LGPL - Copyright 2010-2014 - nibble, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -16,8 +16,10 @@ R_API RAnalDiff *r_anal_diff_new() {
 }
 
 R_API void* r_anal_diff_free(RAnalDiff *diff) {
-	if (diff && diff->name)
+	if (diff && diff->name) {
 		free (diff->name);
+		diff->name = NULL;
+	}
 	free (diff);
 	return NULL;
 }
