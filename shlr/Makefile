@@ -10,7 +10,7 @@ URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
-all: sdb/sdb
+all: sdb/sdb libgdbr
 	@for a in ${MODS} ; do \
 		echo ${MAKE} -C $$a ; \
 		${MAKE} -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -39,6 +39,10 @@ $(SDBLIB) sdb/sdb:
 F=README.md config.mk src Makefile Jamroot
 SYNCFILES=$(addprefix sdb.vc/,${F})
 I=../libr/include
+
+libgdbr:
+	cd gdb ; $(MAKE) clean
+	cd gdb ; $(MAKE) lib
 
 sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
