@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 //#include <r_anal_ex.h>
 
 static int is_valid_input_num_value(RCore *core, char *input_value){
@@ -483,8 +483,12 @@ static int cmd_print(void *data, const char *input) {
 	if (input[0] && input[0]!='Z' && input[1] == 'f') {
 		RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 				R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
-		if (f) len = f->size;
-		else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+		if (f) {
+			len = f->size;
+		} else {
+			eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+			return R_FALSE;
+		}
 	}
 	ptr = core->block;
 	core->num->value = len;
@@ -1038,7 +1042,10 @@ static int cmd_print(void *data, const char *input) {
 						pd_result = 0;
 					}
 #endif
-				} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+				} else {
+					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
+					processed_cmd = R_TRUE;
+				}
 			}
 			l = 0;
 			break;
