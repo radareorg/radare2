@@ -185,6 +185,8 @@ int sdb_check_value (const char *s);
 int sdb_check_key (const char *s);
 int sdb_isnum (const char *s);
 int sdb_num_base (const char *s);
+int sdb_bool_set(Sdb *db, const char *str, int v, ut32 cas);
+int sdb_bool_get(Sdb *db, const char *str, ut32 *cas);
 
 #ifdef __cplusplus
 }
