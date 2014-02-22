@@ -320,13 +320,13 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	RAnalFunction *fcn = NULL, *fcni;
 	RAnalRef *ref = NULL, *refi;
 	ut64 *next = NULL;
+	int i, nexti = 0;
+	ut8 *buf;
 #	define next_append(x) {\
 		next = realloc (next, sizeof (ut64)*(1+nexti)); \
 		next[nexti] = (x); \
 		nexti++; \
 	}
-	int i, nexti = 0;
-	ut8 *buf;
 
 	if (core->anal->cur && core->anal->cur->analyze_fns) {
 		int result = R_ANAL_RET_ERROR;
@@ -548,14 +548,14 @@ error:
 				r_anal_fcn_free (fcn);
 #endif
 		}
-	}
-	if (has_next) {
-		next_append (fcn->addr+fcn->size);
-		for (i=0; i<nexti; i++) {
-			if (!next[i]) continue;
-			r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
+		if (has_next) {
+			next_append (fcn->addr+fcn->size);
+			for (i=0; i<nexti; i++) {
+				if (!next[i]) continue;
+				r_core_anal_fcn (core, next[i], next[i], 0, depth-1);
+			}
+			free (next);
 		}
-		free (next);
 	}
 	return R_FALSE;
 }

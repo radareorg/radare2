@@ -58,7 +58,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 		}
 	}
 	delta = addr - b->base;
-	op = R_NEW (RAsmOp);
+	op = R_NEW0 (RAsmOp);
 	r_asm_set_pc (core->assembler, addr);
 	if (r_asm_disassemble (core->assembler, op, b->buf+delta, b->length)<1) {
 		free (op);
