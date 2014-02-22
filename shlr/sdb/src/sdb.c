@@ -325,7 +325,7 @@ SDB_API void sdb_list (Sdb* s) {
 	ls_foreach (s->ht->list, iter, kv) {
 		if (!kv->value || !*kv->value)
 			continue;
-		printf ("%s=\"%s\"\n", kv->key, kv->value);
+		printf ("%s=%s\n", kv->key, kv->value);
 	}
 }
 
