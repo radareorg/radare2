@@ -1161,6 +1161,11 @@ next2:
 			} else {
 				str = r_core_cmd_str (core, ptr+1);
 			}
+			// ignore contents if first char is pipe or comment
+			if (*str=='|' || *str=='*') {
+				free (str);
+				return ret;
+			}
 			if (oneline && str)
 				for (i=0; str[i]; i++)
 					if (str[i]=='\n')
