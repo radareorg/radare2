@@ -203,7 +203,7 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (1);
 	}
 	if (argc==2 && !strcmp (argv[1], "-p")) {
-		char *path = r_str_home (R2_HOMEDIR"/rdb/");
+		char *path = r_str_home (R2_HOMEDIR"/projects/");
 		DIR *d = r_sandbox_opendir (path);
 		if (d) {
 			for (;;) {
@@ -265,7 +265,7 @@ int main(int argc, char **argv, char **envp) {
 			if (*optarg == '-') {
 				char *path, repath[128];
 				snprintf (repath, sizeof (repath),
-					R2_HOMEDIR"/rdb/%s.d", optarg+1);
+					R2_HOMEDIR"/projects/%s.d", optarg+1);
 				path = r_str_home (repath);
 				if (r_file_exists (path)) {
 					if (r_file_rmrf (path) == R_FALSE) {

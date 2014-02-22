@@ -684,7 +684,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.plugins", R2_LIBDIR"/radare2/"R2_VERSION"/", "Path to plugin files to be loaded at startup");
 	SETPREF("dir.source", "", "Path to find source files");
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
-	SETPREF("dir.projects", "~/"R2_HOMEDIR"/rdb", "Default path for projects");
+	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 
 	/* debug */
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
