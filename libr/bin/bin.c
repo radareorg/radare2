@@ -429,7 +429,6 @@ static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr) {
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->file = strdup (bin->file);
 	bin->cur->o = R_NEW0 (RBinObject);
-
 	bin->cur->o->loadaddr = loadaddr;
 	bin->cur->o->baddr = baseaddr;
 
@@ -446,11 +445,12 @@ static void r_bin_init(RBin *bin, int rawstr, ut64 baseaddr, ut64 loadaddr) {
 }
 
 static int r_bin_extract(RBin *bin, int idx) {
+	if (!bin || !bin->cur)
+		return R_FALSE;
 	if (bin->cur->curxtr && bin->cur->curxtr->extract)
 		return bin->cur->curxtr->extract (bin, idx);
 	if (!bin->file)
 		return R_FALSE;
-
 	bin->cur->file = strdup (bin->file);
 	bin->cur->buf = r_buf_mmap (bin->file, 0);
 	return R_TRUE;
@@ -727,9 +727,13 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) 
 }
 
 R_API int r_bin_select_idx(RBin *bin, int idx) {
-	r_bin_free_items (bin);
-	if (r_bin_extract (bin, idx))
-		return r_bin_init_items (bin, R_FALSE);
+	if (bin && bin->cur) {
+		if (bin->narch>1) {
+			r_bin_free_items (bin);
+			if (r_bin_extract (bin, idx))
+				return r_bin_init_items (bin, R_FALSE);
+		}
+	}
 	return R_FALSE;
 }
 
