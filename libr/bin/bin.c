@@ -528,7 +528,6 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	r_bin_init (bin, bin->cur->rawstr, baseaddr, loadaddr);
 
 	bin->narch = r_bin_extract (bin, 0);
-
 	if (bin->narch == 0)
 		return R_FALSE;
 	/* FIXME: temporary hack to fix malloc:// */
@@ -728,11 +727,12 @@ R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name) 
 
 R_API int r_bin_select_idx(RBin *bin, int idx) {
 	if (bin && bin->cur) {
-		if (bin->narch>1) {
-			r_bin_free_items (bin);
+		r_bin_free_items (bin);
+		if (bin->cur->curxtr && bin->cur->curxtr->extract) {
 			if (r_bin_extract (bin, idx))
 				return r_bin_init_items (bin, R_FALSE);
 		}
+		return r_bin_init_items (bin, R_FALSE);
 	}
 	return R_FALSE;
 }
