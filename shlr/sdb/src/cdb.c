@@ -11,6 +11,7 @@
 /* XXX: this code must be rewritten . too slow */
 int cdb_getkvlen(int fd, ut32 *klen, ut32 *vlen) {
 	ut8 buf[4];
+	*klen = *vlen = 0;
 	if (fd == -1 || read (fd, buf, 4) != 4)
 		return 0;
 	*klen = (ut32)buf[0];

@@ -327,12 +327,14 @@ SDB_API int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
 SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
 	ut32 kas;
 	char *ret;
-	const char *str = sdb_const_get (s, key, &kas);
+	const char *end, *str = sdb_const_get (s, key, &kas);
 	int n = sdb_alen (str);
 	if (n<1) return NULL;
 	if (cas  && *cas != kas)
 		*cas = kas;
-	ret = strdup (str);
+	for (end=str+strlen(str)-1;end>str && *end!=SDB_RS;end--);
+	if (*end==SDB_RS) end++;
+	ret = strdup (end);
 	sdb_array_del (s, key, n-1, kas);
 	return ret;
 }
