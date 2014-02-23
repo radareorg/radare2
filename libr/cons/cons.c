@@ -623,3 +623,8 @@ R_API void r_cons_set_interactive(int x) {
 R_API void r_cons_set_last_interactive() {
 	r_cons_singleton ()->is_interactive = lasti;
 }
+
+R_API void r_cons_set_title(const char *str) {
+	r_cons_printf ("\x1b]0;%s\007", str);
+	
+}
