@@ -1163,8 +1163,9 @@ next2:
 			}
 			// ignore contents if first char is pipe or comment
 			if (*str=='|' || *str=='*') {
+				eprintf ("r_core_cmd_subst_i: invalid backticked command\n");
 				free (str);
-				return ret;
+				return -1;
 			}
 			if (oneline && str)
 				for (i=0; str[i]; i++)
