@@ -1172,7 +1172,7 @@ R_API int r_print_format_length (const char *fmt) {
 			case 'd': i += 4; break;
 			case 'x': i += 4; break;
 			case 'w':
-			case '1': i + =2; break;
+			case '1': i += 2; break;
 			case 'z': // XXX unsupported
 			case 'Z': // zero terminated wide string
 				break;
