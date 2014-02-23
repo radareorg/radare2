@@ -416,6 +416,7 @@ static int cmd_interpret(void *data, const char *input) {
 		ptr = str = r_core_cmd_str (core, inp);
 		if (filter) *filter = '~';
 		r_cons_break (NULL, NULL);
+		if (ptr)
 		for (;;) {
 			if (r_cons_singleton()->breaked) break;
 			eol = strchr (ptr, '\n');
