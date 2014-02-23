@@ -204,7 +204,7 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case ' ':
 		/* write string */
-		len = r_str_escape (str);
+		len = r_str_unescape (str);
 		r_core_write_at (core, core->offset, (const ut8*)str, len);
 #if 0
 		r_io_set_fd (core->io, core->file->fd);

@@ -531,7 +531,7 @@ static int cmd_search(void *data, const char *input) {
 		if (ignorecase)
 			for (i=1; inp[i]; i++)
 				inp[i] = tolower (inp[i]);
-		len = r_str_escape (inp);
+		len = r_str_unescape (inp);
 		eprintf ("Searching %d bytes from 0x%08"PFMT64x" to 0x%08"PFMT64x": ", len, from, to);
 		for (i=0; i<len; i++) eprintf ("%02x ", (ut8)inp[i]);
 		eprintf ("\n");

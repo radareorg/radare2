@@ -24,7 +24,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 		input[len] = 0;
 	if (*input=='"')
 		input++;
-	len = r_str_escape (input)+zero;
+	len = r_str_unescape (input)+zero;
 	r_hex_bin2str ((ut8*)input, len, op->buf_hex);
 	strncpy ((char*)op->buf, input, R_ASM_BUFSIZE);
 	return len;

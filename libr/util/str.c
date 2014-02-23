@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -674,7 +674,7 @@ R_API char *r_str_clean(char *str) {
 	return str;
 }
 
-R_API int r_str_escape(char *buf) {
+R_API int r_str_unescape(char *buf) {
 	unsigned char ch = 0, ch2 = 0;
 	int err = 0;
 	int i;
@@ -735,7 +735,7 @@ R_API void r_str_sanitize(char *c) {
 	}
 }
 
-R_API char *r_str_unscape(char *buf) {
+R_API char *r_str_escape(const char *buf) {
 	char *ptr, *ret;
 	int len;
 	if (!buf) return NULL;
@@ -756,7 +756,12 @@ R_API char *r_str_unscape(char *buf) {
 		} else
 		if (IS_PRINTABLE (*buf)) {
 			*ptr = *buf;
-		} else break;
+		} else {
+			ut8 ch = *buf;
+			*ptr++ = '\\';
+			*ptr++ = '0'+(ch>>4);
+			*ptr = '0'+(ch&0xf);
+		}
 	}
 	*ptr = 0;
 	r_str_sanitize (ret);
@@ -1167,7 +1172,7 @@ R_API int r_print_format_length (const char *fmt) {
 			case 'd': i += 4; break;
 			case 'x': i += 4; break;
 			case 'w':
-			case '1': i+=2; break;
+			case '1': i + =2; break;
 			case 'z': // XXX unsupported
 			case 'Z': // zero terminated wide string
 				break;

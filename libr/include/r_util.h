@@ -349,7 +349,6 @@ static inline void r_str_rmch (char *s, char ch) {
 }
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_rchr(const char *base, const char *p, int ch);
-R_API void r_str_unescape (char *s);
 R_API const char *r_str_closer_chr (const char *b, const char *s);
 R_API int r_str_len_utf8 (const char *s);
 R_API int r_str_len_utf8char (const char *s, int left);
@@ -407,8 +406,8 @@ R_API void r_str_filter(char *str, int len);
 
 R_API int r_str_re_match(const char *str, const char *reg);
 R_API int r_str_re_replace(const char *str, const char *reg, const char *sub);
-R_API int r_str_escape(char *buf);
-R_API char *r_str_unscape(char *buf);
+R_API int r_str_unescape(char *buf);
+R_API char *r_str_escape(const char *buf);
 R_API void r_str_uri_decode(char *buf);
 R_API char *r_str_uri_encode (const char *buf);
 R_API char *r_str_home(const char *str);

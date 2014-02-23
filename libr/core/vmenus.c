@@ -278,7 +278,7 @@ R_API int r_core_visual_comments (RCore *core) {
 		found = 0;
 		mode = 0;
 		r_list_foreach (core->anal->meta, iter, d) {
-			str = r_str_unscape (d->str);
+			str = r_str_escape (d->str);
 			if (str) {
 				if (d->type=='s') /* Ignore strings, there are in trackflags */
 					continue;

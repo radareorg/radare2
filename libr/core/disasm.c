@@ -1070,7 +1070,7 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 	if (mi) {
 		switch (mi->type) {
 		case R_META_TYPE_STRING:
-			out = r_str_unscape (mi->str);
+			out = r_str_escape (mi->str);
 			if (ds->show_color)
 				r_cons_printf ("    .string "Color_YELLOW"\"%s\""
 					Color_RESET" ; len=%"PFMT64d"\n", out, mi->size);
@@ -1467,7 +1467,7 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 	if (mi2) {
 		switch (mi2->type) {
 		case R_META_TYPE_STRING:
-			{ char *str = r_str_unscape (mi2->str);
+			{ char *str = r_str_escape (mi2->str);
 			r_cons_printf (" (at=0x%08"PFMT64x") (len=%"PFMT64d
 				") \"%s\" ", word8, mi2->size, str);
 			free (str);
@@ -1484,7 +1484,7 @@ static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 
 		mi2 = r_meta_find (core->anal, (ut64)ds->analop.ptr,
 			R_META_TYPE_ANY, R_META_WHERE_HERE);
 		if (mi2) {
-			char *str = r_str_unscape (mi2->str);
+			char *str = r_str_escape (mi2->str);
 			r_cons_printf (" \"%s\" @ 0x%08"PFMT64x":%"PFMT64d,
 					str, ds->analop.ptr, mi2->size);
 			free (str);
