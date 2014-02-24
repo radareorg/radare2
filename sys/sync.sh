@@ -1,8 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
-git remote | grep upstream &> /dev/null
-if [ $? -ne 0 ]; then
-	git remote add upstream https://github.com/radare/radare2.git
+if ! git remote | grep upstream > /dev/null
+then 
+    git remote add upstream https://github.com/radare/radare2.git
 fi
-git fetch upstream
-git rebase --onto master upstream/master
+test -d radare2 && git fetch upstream && git rebase --onto master upstream/master
