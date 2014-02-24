@@ -1441,7 +1441,7 @@ static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 		*msg = 0;
 		if (kind && !strcmp (kind, "text")) {
 			*msg = '"';
-			snprintf (msg+1, sizeof (msg)-2, "%s", ds->buf+idx);
+			snprintf (msg+1, sizeof (msg)-2, "%d", idx); //ds->buf+idx);
 			strcat (msg, "\"");
 		}
 		r_cons_printf (" ; %s 0x%08"PFMT64x" ", msg, ds->analop.ptr);

@@ -12,10 +12,15 @@ static int is_string (const ut8 *buf, int size, int *len) {
 	for (i=0; i<size; i++) {
 		if (!buf[i] && i>MINLEN) {
 			*len = i;
-			return 1;
+			return i?1:0;
 		}
-		if (buf[i]==10||buf[i]==13)
+		if (buf[i]<32 || buf[i]>127) {
+			// not ascii text
+			return 0;
+		}
+		if (buf[i]==10||buf[i]==13||buf[i]==9) {
 			continue;
+		}
 		if (!IS_PRINTABLE (buf[i])) {
 			*len = i;
 			return 0;
@@ -192,7 +197,7 @@ R_API const char *r_anal_data_kind (RAnal *anal, ut64 addr, const ut8 *buf, int 
 	int i, j;
 	RAnalData *data;
 	int word = anal->bits /8;
-	for (i = j = 0; i<len ; j++ ) {
+	for (i = j = 0; i<len; j++) {
 		data = r_anal_data (anal, addr+i, buf+i, len-i);
 		switch (data->type) {
 		case R_ANAL_DATA_TYPE_INVALID:

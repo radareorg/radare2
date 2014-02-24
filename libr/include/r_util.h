@@ -121,6 +121,7 @@ typedef enum {
 	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
 	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/',
 	//RNCXOR='^', RNCOR='|', RNCAND='&',
+	RNCNEG='~',
 	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')'
 } RNumCalcToken;
 

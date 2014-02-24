@@ -101,7 +101,8 @@ static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 		}
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
 		r_cons_flush ();
-		snprintf (cmd, sizeof (cmd), "pD %"PFMT64d" @ 0x%08"PFMT64x"", bb->size, bb->addr);
+		snprintf (cmd, sizeof (cmd), "pD %"PFMT64d" @ 0x%08"PFMT64x,
+			bb->size, bb->addr);
 		cmdstr = r_core_cmd_str (core, cmd);
 	}
 	if (cmdstr) {
