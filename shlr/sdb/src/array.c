@@ -151,7 +151,7 @@ SDB_API int sdb_array_set(Sdb *s, const char *key, int idx, const char *val, ut3
 	if (!str || !*str)
 		return sdb_set (s, key, val, cas);
 	len = sdb_alen (str);
-	if (idx<0 || idx>len) // append
+	if (idx<0 || idx>=len) // append
 		return sdb_array_ins (s, key, -1, val, cas);
 	nstr = malloc (strlen (str)+strlen (val)+2);
 	strcpy (nstr, str);
@@ -326,34 +326,18 @@ SDB_API int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
 
 SDB_API char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas) {
 	ut32 kas;
-	char *ret;
-	const char *end, *str = sdb_const_get (s, key, &kas);
-	int n = sdb_alen (str);
-	if (n<1) return NULL;
-	if (cas  && *cas != kas)
+	char *ret, *end, *str = sdb_get (s, key, &kas);
+	if (!str || !*str) {
+		free (str);
+		return NULL;
+	}
+	if (cas && *cas != kas)
 		*cas = kas;
-	for (end=str+strlen(str)-1;end>str && *end!=SDB_RS;end--);
-	if (*end==SDB_RS) end++;
+	for (end = str+strlen(str)-1;
+		end>str && *end!=SDB_RS; end--);
+	if (*end==SDB_RS) *end++ = 0;
 	ret = strdup (end);
-	sdb_array_del (s, key, n-1, kas);
+	sdb_set (s, key, str, 0);
+	free (str);
 	return ret;
 }
-
-#if 0
-// XXX: totally unefficient. do not use, replace SDB_RS for '\n' may be enought
-SDB_API int sdb_alist(Sdb *s, const char *key) {
-	int len = 0, hasnext = 1;
-	char *list = sdb_get (s, key, 0);
-	char *ptr = list;
-	hasnext = list && *list;
-	while (hasnext) {
-		char *str = sdb_astring (ptr, &hasnext);
-		// TODO: use callback instead of printf
-		printf ("%s\n", str);
-		ptr = (char *)sdb_array_next (str);
-		len++;
-	}
-	free (list);
-	return len;
-}
-#endif

@@ -340,7 +340,7 @@ typedef struct r_anal_type_function_t {
 struct r_anal_type_t {
 	char *name;
 	ut32 size;
-	int type;
+	ut32 type;
 	union {
 		RAnalTypeVar *v;
 		RAnalTypePtr *p;
