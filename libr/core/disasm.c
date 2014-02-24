@@ -343,7 +343,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	return ds;
 }
 
-void handle_reflines_init (RCore *core, RDisasmState *ds) {
+static void handle_reflines_init (RCore *core, RDisasmState *ds) {
 	if (ds->show_lines) {
 		// TODO: make anal->reflines implicit
 		free (core->reflines); // TODO: leak
@@ -357,7 +357,7 @@ void handle_reflines_init (RCore *core, RDisasmState *ds) {
 	} else core->reflines = core->reflines2 = NULL;
 }
 
-void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fcn, ut8* buf) {
+static void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fcn, ut8* buf) {
 	if (ds->show_lines) {
 			// TODO: make anal->reflines implicit
 			free (core->reflines); // TODO: leak
@@ -370,7 +370,7 @@ void handle_reflines_fcn_init (RCore *core, RDisasmState *ds,  RAnalFunction *fc
 
 }
 
-void handle_deinit_ds (RCore *core, RDisasmState *ds) {
+static void handle_deinit_ds (RCore *core, RDisasmState *ds) {
 	if (!ds) return;
 	if (core && ds->oldbits) {
 		r_config_set_i (core->config, "asm.bits", ds->oldbits);
@@ -701,7 +701,7 @@ static void handle_atabs_option(RCore *core, RDisasmState *ds) {
 	}
 }
 
-void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
+static void handle_print_show_cursor (RCore *core, RDisasmState *ds) {
 	int q = core->print->cur_enabled && 
 		ds->cursor >= ds->index && 
 		ds->cursor < (ds->index+ds->asmop.size);
@@ -1127,7 +1127,7 @@ static int handle_print_meta_infos (RCore * core, RDisasmState *ds, ut8* buf, in
 	return ret;
 }
 
-void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) {
+static void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) {
 	RAnalValue *src;
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -1178,11 +1178,11 @@ void handle_instruction_mov_lea (RCore *core, RDisasmState *ds, int idx) {
 	}
 }
 
-void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
+static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 	if (ds->show_bytes) {
-		int j,k;
-		char *str = NULL, pad[64];
+		char *nstr, *str = NULL, pad[64];
 		char extra[64];
+		int j,k;
 		strcpy (extra, " ");
 		RFlagItem *flag = NULL;
 		if (!flag) {
@@ -1206,7 +1206,6 @@ void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 				*pad = 0;
 			}
 		//	if (ds->show_color) {
-				char *nstr;
 				ds->p->cur_enabled = ds->cursor!=-1;
 				//ds->p->cur = ds->cursor;
 				nstr = r_print_hexpair (ds->p, str, ds->index);
@@ -1433,11 +1432,12 @@ static int handle_read_refptr (RCore *core, RDisasmState *ds, ut64 *word8, ut32 
 	return ret;
 }
 
-void static handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
+static void handle_print_ptr (RCore *core, RDisasmState *ds, int len, int idx) {
 	if (ds->analop.ptr != UT64_MAX && ds->analop.ptr) {
 		char msg[32];
 		int bsz = len - idx;
-		const char *kind = r_anal_data_kind (core->anal, ds->analop.ptr, 	ds->buf, bsz);
+		const char *kind = r_anal_data_kind (core->anal,
+			ds->analop.ptr,	ds->buf, bsz);
 		*msg = 0;
 		if (kind && !strcmp (kind, "text")) {
 			*msg = '"';
@@ -1463,7 +1463,8 @@ static void handle_print_comments_right (RCore *core, RDisasmState *ds) {
 	}
 }
 static void handle_print_refptr_meta_infos (RCore *core, RDisasmState *ds, ut64 word8 ) {
-	RAnalMetaItem *mi2 = r_meta_find (core->anal, word8, R_META_TYPE_ANY, R_META_WHERE_HERE);
+	RAnalMetaItem *mi2 = r_meta_find (core->anal, word8,
+		R_META_TYPE_ANY, R_META_WHERE_HERE);
 	if (mi2) {
 		switch (mi2->type) {
 		case R_META_TYPE_STRING:
@@ -1521,9 +1522,8 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 
 	// XXX - is there a better way to reset a the analysis counter so that
 	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal->cur && core->anal->cur->reset_counter	) {
+	if (core->anal->cur && core->anal->cur->reset_counter)
 		core->anal->cur->reset_counter (core->anal, addr);
-	}
 
 	// TODO: All those ds must be print flags
 	ds = handle_init_ds (core);
@@ -1587,7 +1587,8 @@ toro:
 	}
 
 	r_cons_break (NULL, NULL);
-	for (i=idx=ret=0; idx < len && ds->lines < ds->l; idx+=ds->oplen,i++, ds->index+=ds->oplen,ds->lines++) {
+	for (i=idx=ret=0; idx < len && ds->lines < ds->l;
+			idx+=ds->oplen,i++, ds->index+=ds->oplen,ds->lines++) {
 		ds->at = ds->addr + idx;
 		if (r_cons_singleton ()->breaked)
 			break;

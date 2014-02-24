@@ -315,7 +315,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else ret = 0;
 	r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
 	*op->buf_hex = 0;
-	r_hex_bin2str (buf, op->size, op->buf_hex);
+	r_hex_bin2str (buf, oplen, op->buf_hex);
 	return ret;
 }
 
