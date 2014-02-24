@@ -788,7 +788,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Set the columns number");
 	SETICB("scr.rows", 0, &cb_rows, "Force specific console rows (height)");
-	SETCB("scr.fps", "", &cb_fps, "Show FPS indicator in Visual");
+	SETCB("scr.fps", "false", &cb_fps, "Show FPS indicator in Visual");
 	SETICB("scr.fix_rows", 0, &cb_fixrows, "Workaround for Linux TTY");
 	SETICB("scr.fix_columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS ssh client");
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interractive mode");
