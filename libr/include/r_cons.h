@@ -112,6 +112,7 @@ typedef struct r_cons_t {
 	int is_interactive;
 	int lines;
 	int rows;
+	int fps;
 	int columns;
 	int force_rows;
 	int force_columns;
