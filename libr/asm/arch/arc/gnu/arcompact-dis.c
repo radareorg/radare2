@@ -281,7 +281,6 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 
 #define add_target(x) 	(state->targets[state->tcnt++] = (x))
 
-static char comment_prefix[] = " ; ";
 static short int enable_simd = 0;
 static short int enable_insn_stream = 0;
 
@@ -534,29 +533,6 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 
 }
 
-static void
-write_comments_(struct arcDisState *state, int shimm, int is_limm, long limm_value)
-{
-  if (state->commentBuffer != 0)
-    {
-      int i;
-      if (is_limm)
-	{
-	  const char *name = post_address(state, limm_value+shimm);
-	  if (*name != 0) WRITE_COMMENT(name);
-	}
-      for(i = 0; i < state->commNum; i++)
-	{
-	  if (i == 0) strcpy(state->commentBuffer, comment_prefix);
-	  else  strcat(state->commentBuffer, ", ");
-	  strncat(state->commentBuffer, state->comm[i], sizeof(state->commentBuffer));
-	}
-    }
-}
-
-#define write_comments2(x)	write_comments_(state, x, is_limm, limm_value)
-#define write_comments()	write_comments2(0)
-
 static const char *condName[] =
 {
   /* 0..15. */
@@ -735,9 +711,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
   state->tcnt = 0;
   state->acnt = 0;
   state->flow = noflow;
-
-  if (state->commentBuffer)
-    state->commentBuffer[0] = '\0';
 
   /* Find the match for the opcode. Once the major opcode category is
    * identified, get the subopcode to determine the exact instruction.
@@ -2491,7 +2464,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       WRITE_FORMAT_COMMA_x(C);
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldA, fieldB, fieldC);
-      write_comments();
       break;
 
     case 1:
@@ -2515,7 +2487,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       WRITE_FORMAT_COMMA_x(C);
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC);
-      write_comments();
       break;
 
     case 2:
@@ -2575,7 +2546,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         WRITE_NOP_COMMENT();
         my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC);
       }
-      write_comments();
       break;
 
     case 3:
@@ -2605,7 +2575,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       write_instr_name();
       WRITE_FORMAT_x(C);
       my_sprintf(state, state->operandBuffer, formatString, fieldC);
-      write_comments();
       break;
 
     case 4:
@@ -2664,7 +2633,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       else
 	my_sprintf(state, state->operandBuffer, formatString,
 		   post_address(state, fieldC));
-      write_comments();
       break;
 
     case 5:
@@ -2730,7 +2698,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       WRITE_FORMAT_COMMA_x_RB(C);
       my_sprintf(state, state->operandBuffer, formatString, fieldA, fieldB, fieldC);
-      write_comments();
       break;
 
     case 6:
@@ -2784,7 +2751,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  WRITE_FORMAT_COMMA_x_RB(C);
 	}
       my_sprintf(state, state->operandBuffer, formatString, fieldA, fieldB, fieldC);
-      write_comments();
       break;
 
     case 7:
@@ -2826,7 +2792,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         WRITE_FORMAT_COMMA_x_RB(A);
       }
       my_sprintf(state, state->operandBuffer, formatString, fieldC, fieldB, fieldA);
-      write_comments2(fieldA);
       break;
 
     case 8:
@@ -2863,7 +2828,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       WRITE_FORMAT_x(C);
       WRITE_FORMAT_RB();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC);
-      write_comments();
       break;
 
     case 9:
@@ -2893,7 +2857,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       strcat(formatString, ",%s"); /* address/label name */
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC, post_address(state, fieldA));
-      write_comments();
       break;
 
     case 10:
@@ -2920,7 +2883,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       WRITE_FORMAT_x(C);
       WRITE_FORMAT_RB();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC);
-      write_comments();
       break;
 
     case 11:
@@ -2948,7 +2910,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldCisReg = 0;
       strcat(formatString, "%s"); /* address/label name */
       my_sprintf(state, state->operandBuffer, formatString, post_address(state, fieldC));
-      write_comments();
       break;
 
     case 12:
@@ -3045,7 +3006,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       strcat(formatString, "%s"); /* address/label name */
       my_sprintf(state, state->operandBuffer, formatString, post_address(state, fieldA));
-      write_comments();
       break;
 
     case 14:
@@ -3326,7 +3286,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       strcat(formatString, "%s"); /* address/label name */
       my_sprintf(state, state->operandBuffer, formatString, post_address(state, fieldA));
-      write_comments();
       break;
 
     case 25:
@@ -3350,7 +3309,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       strcat(formatString, ",%s"); /* address/label name */
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldA, post_address(state, fieldC));
-      write_comments();
       break;
 
     case 26:
@@ -3403,7 +3361,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       WRITE_FORMAT_RB();
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldC, fieldB, fieldA);
-      write_comments();
       break;
 
     case 29:
@@ -3422,7 +3379,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       WRITE_FORMAT_COMMA_x(A);
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC, fieldA);
-      write_comments();
       break;
 
     case 30:
@@ -3439,7 +3395,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       WRITE_FORMAT_COMMA_x(C);
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC);
-      write_comments();
       break;
 
     case 31:
@@ -3528,7 +3483,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
     WRITE_NOP_COMMENT();
     my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC);
-    write_comments();
     break;
 
   case 35:

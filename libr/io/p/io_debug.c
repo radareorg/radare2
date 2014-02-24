@@ -1,13 +1,14 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_debug.h> /* only used for BSD PTRACE redefinitions */
 
-#define r_io_redirect(io,file) \
-	free (io->redirect); \
-	io->redirect = file? strdup (file): NULL
+static void my_io_redirect (RIO *io, const char *file) {
+	free (io->redirect);
+	io->redirect = file? strdup (file): NULL;
+}
 
 #if __linux__ ||  __APPLE__ || __WINDOWS__ || \
 	__NetBSD__ || __KFBSD__ || __OpenBSD__
@@ -282,14 +283,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			// TODO: use io_procpid here? faster or what?
 			sprintf (uri, "ptrace://%d", pid);
 #endif
-			r_io_redirect (io, uri);
+			my_io_redirect (io, uri);
 		} else {
 			sprintf (uri, "attach://%d", pid);
-			r_io_redirect (io, uri);
+			my_io_redirect (io, uri);
 		}
 		return NULL;
 	}
-	r_io_redirect (io, NULL);
+	my_io_redirect (io, NULL);
 	return NULL;
 }
 
