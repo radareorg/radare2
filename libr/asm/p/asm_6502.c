@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake
+/* radare - LGPL - Copyright 2012-2014 - pancake
 	2014 - condret					*/
 
 // copypasta from asm_gb.c
@@ -18,7 +18,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 
 RAsmPlugin r_asm_plugin_6502 = {
 	.name = "6502",
-	.desc = "6502/NES disassembly plugin",
+	.desc = "6502/NES/C64/T-1000 CPU",
 	.arch = "6502",
 	.bits = 8|16,
 	.init = NULL,

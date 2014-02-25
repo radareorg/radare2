@@ -1,7 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake
-	2013 - condret					*/
-
-// copypasta from asm_gb.c
+/* radare - LGPL - Copyright 2012-2014 - condret, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,14 +8,14 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	int dlen = snesDisass(op,buf,len);
-	if(dlen<0) dlen=0;
-	op->size=dlen;
+	if (dlen<0) dlen=0;
+	op->size = dlen;
 	return dlen;
 }
 
 RAsmPlugin r_asm_plugin_snes = {
 	.name = "snes",
-	.desc = "SNES disassembly plugin",
+	.desc = "SuperNES CPU",
 	.arch = "snes",
 	.bits = 8|16,
 	.init = NULL,

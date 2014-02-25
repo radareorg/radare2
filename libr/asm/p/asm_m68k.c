@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2009-2013 - nibble */
+/* radare - GPL3 - Copyright 2009-2014 - nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +35,7 @@ RAsmPlugin r_asm_plugin_m68k = {
 	.arch = "m68k",
 	.license = "BSD",
 	.bits = 32,
-	.desc = "Motorola 68000 disassembly plugin",
+	.desc = "Motorola 68000",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2014 - nibble */
 
 #include <stdio.h>
 #include <r_types.h>
@@ -38,7 +38,7 @@ RAsmPlugin r_asm_plugin_csr = {
 	.arch = "csr",
 	.license = "PD",
 	.bits = 16,
-	.desc = "CSR disassembly plugin",
+	.desc = "Cambridge Silicon Radio (CSR)",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

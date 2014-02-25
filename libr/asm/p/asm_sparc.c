@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2014 - nibble */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -81,7 +81,7 @@ RAsmPlugin r_asm_plugin_sparc = {
 	.arch = "sparc",
 	.bits = 32|64,
 	.license = "GPL3",
-	.desc = "SPARC disassembly plugin",
+	.desc = "Scalable Processor Architecture",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

@@ -19,7 +19,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 RAsmPlugin r_asm_plugin_psosvm = {
 	.name = "psosvm",
-	.desc = "PSOS-VM disassembly plugin",
+	.desc = "Smartcard PSOS Virtual Machine",
 	.license = "BSD",
 	.arch = "psosvm",
 	.bits = 8|16,

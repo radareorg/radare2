@@ -10,13 +10,10 @@
 
 static int arch_msil_disasm(char *str, const ut8 *buf, ut64 seek) {
     ut32 n;
-
     DISASMSIL_OFFSET CodeBase = seek;
     ILOPCODE_STRUCT ilopar[8];
-    DisasMSIL(buf, 16, CodeBase, ilopar, 8, &n);
-
-    sprintf(str,"%s",ilopar[0].Mnemonic);
-
+    DisasMSIL (buf, 16, CodeBase, ilopar, 8, &n);
+    sprintf (str,"%s",ilopar[0].Mnemonic);
     return 0;
 }
 
@@ -30,7 +27,7 @@ RAsmPlugin r_asm_plugin_msil = {
 	.arch = "msil",
 	.license = "PD",
 	.bits = 16|32|64,
-	.desc = "MSIL disassembly plugin",
+	.desc = ".NET Microsoft Intermediate Language",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

@@ -3,8 +3,7 @@
 #include <r_lib.h>
 #include <string.h>
 
-static int mal_dis(RAsmOp *op, ut64 c, ut8 *buf, ut64 len)
-{
+static int mal_dis(RAsmOp *op, ut64 c, ut8 *buf, ut64 len) {
 	if(len) {
 		switch ((buf[0]+c)%94) {
 			case 4:
@@ -36,15 +35,13 @@ static int mal_dis(RAsmOp *op, ut64 c, ut8 *buf, ut64 len)
 	return R_FALSE;
 }
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len)
-{
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
 	return op->size = mal_dis(op, a->pc, buf, len);
 }
 
-
 RAsmPlugin r_asm_plugin_malbolge = {
 	.name = "malbolge",
-	.desc = "Malbolge disassembler plugin",
+	.desc = "Malbolge Ternary VM",
 	.arch = "malbolge",
 	.license = "LGPL3",
 	.bits = 32,

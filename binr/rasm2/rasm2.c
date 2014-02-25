@@ -15,6 +15,7 @@ static int coutput = R_FALSE;
 
 static void rasm2_list(RAsm *a, const char *arch) {
 	int i;
+	char bits[32];
 	RAsmPlugin *h;
 	RListIter *iter;
 	r_list_foreach (a->plugins, iter, h) {
@@ -23,17 +24,23 @@ static void rasm2_list(RAsm *a, const char *arch) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
 				for (i=0;i<n;i++)
-					printf ("%s\n", r_str_word_get0(c, i));
+					printf ("%s\n", r_str_word_get0 (c, i));
 				free (c);
 				break;
 			}
 		} else {
+			bits[0] = 0;
+			if (h->bits&8) strcat (bits, "8 ");
+			if (h->bits&16) strcat (bits, "16 ");
+			if (h->bits&32) strcat (bits, "32 ");
+			if (h->bits&64) strcat (bits, "64 ");
 			const char *feat = "--";
 			if (h->assemble && h->disassemble)  feat = "ad";
 			if (h->assemble && !h->disassemble) feat = "a_";
 			if (!h->assemble && h->disassemble) feat = "_d";
-			printf ("%s  %-11s  %s  (%s)\n", feat, h->name,
-				h->desc, h->license?h->license:"unknown");
+			printf ("%s  %-9s  %-11s %-7s %s\n", feat, bits,
+				h->name,
+				h->license?h->license:"unknown", h->desc);
 		}
 	}
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - condret	*/
+/* radare - LGPL - Copyright 2014 - condret */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,7 +13,7 @@ int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_ws = {
 	.name = "ws",
-	.desc = "Whitespace disassembly plugin",
+	.desc = "Whitespace esotheric VM",
 	.arch = "whitespace",
 	.license = "LGPL3",
 	.bits = 32,

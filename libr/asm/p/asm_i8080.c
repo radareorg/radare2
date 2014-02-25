@@ -16,7 +16,7 @@ static int do_disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int le
 
 RAsmPlugin r_asm_plugin_i8080 = {
 	.name = "i8080",
-	.desc = "i8080 disassembler plugin",
+	.desc = "Intel 8080 CPU",
 	.arch = "i8080",
 	.license = "BSD",
 	.bits = 8,

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble */
+/* radare - LGPL - Copyright 2009-2014 - nibble */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -93,7 +93,7 @@ RAsmPlugin r_asm_plugin_ppc = {
 	.arch = "ppc",
 	.license = "GPL3",
 	.bits = 32|64,
-	.desc = "PPC disassembly plugin",
+	.desc = "PowerPC",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

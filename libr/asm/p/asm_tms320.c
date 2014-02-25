@@ -16,36 +16,31 @@
 
 static tms320_dasm_t engine = { };
 
-static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
-{
+static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->cpu && strcasecmp(a->cpu, "c54x") == 0)
 		tms320_f_set_cpu(&engine, TMS320_F_CPU_C54X);
 	if (a->cpu && strcasecmp(a->cpu, "c55x") == 0)
 		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55X);
 	if (a->cpu && strcasecmp(a->cpu, "c55x+") == 0)
 		tms320_f_set_cpu(&engine, TMS320_F_CPU_C55X_PLUS);
-
-	op->size = tms320_dasm(&engine, buf, len);
-	snprintf(op->buf_asm, R_ASM_BUFSIZE, "%s", engine.syntax);
-
+	op->size = tms320_dasm (&engine, buf, len);
+	snprintf (op->buf_asm, R_ASM_BUFSIZE-1, "%s", engine.syntax);
 	return op->size;
 }
 
-static int tms320_init(void * user)
-{
-	return tms320_dasm_init(&engine);
+static int tms320_init(void * user) {
+	return tms320_dasm_init (&engine);
 }
 
-static int tms320_fini(void * user)
-{
-	return tms320_dasm_fini(&engine);
+static int tms320_fini(void * user) {
+	return tms320_dasm_fini (&engine);
 }
 
 RAsmPlugin r_asm_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
 	.cpus = "c54x,c55x,c55x+",
-	.desc = "TMS320 DSP family disassembly plugin",
+	.desc = "TMS320 DSP family",
 	.license = "LGPLv3",
 	.bits = 32,
 	.init = tms320_init,

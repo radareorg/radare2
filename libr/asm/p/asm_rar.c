@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012 - pancake */
+/* radare - LGPL - Copyright 2012-2014 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -26,7 +26,7 @@ RAsmPlugin r_asm_plugin_rar = {
 	.arch = "rar",
 	.license = "LGPL3",
 	.bits = 1,
-	.desc = "RAR VM disassembly plugin",
+	.desc = "RAR VM",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

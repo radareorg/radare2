@@ -26,7 +26,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 RAsmPlugin r_asm_plugin_x86_gas = {
 	.name = "gas",
 	.license = "LGPL3",
-	.desc = "GNU Assembler plugin",
+	.desc = "GNU Assembler (gas)",
 	.arch = "x86", // XXX
 	.bits = 16|32|64,
 	.init = NULL,

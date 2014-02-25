@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -30,7 +30,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 RAsmPlugin r_asm_plugin_java = {
 	.name = "java",
-	.desc = "Java CLASS assembler/disassembler",
+	.desc = "Java bytecode",
 	.arch = "java",
 	.license = "Apache",
 	.bits = 32,
