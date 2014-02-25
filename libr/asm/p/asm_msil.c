@@ -1,4 +1,4 @@
-/* radare - GPL3 - Copyright 2011 capi_x <capi_x@badchecksum.net> */
+/* radare - GPL3 - Copyright 2011-2014 - capi_x, pancake */
 
 #include <stdio.h>
 
@@ -9,17 +9,17 @@
 #include "msil/demsil.c"
 
 static int arch_msil_disasm(char *str, const ut8 *buf, ut64 seek) {
-    ut32 n;
-    DISASMSIL_OFFSET CodeBase = seek;
-    ILOPCODE_STRUCT ilopar[8];
-    DisasMSIL (buf, 16, CodeBase, ilopar, 8, &n);
-    sprintf (str,"%s",ilopar[0].Mnemonic);
-    return 0;
+	ut32 n;
+	int o; 
+	DISASMSIL_OFFSET CodeBase = seek;
+	ILOPCODE_STRUCT ilopar[8];
+	o = DisasMSIL (buf, 16, CodeBase, ilopar, 8, &n);
+	sprintf (str,"%s", ilopar[0].Mnemonic);
+	return o;
 }
 
-static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
-	arch_msil_disasm (op->buf_asm, buf, a->pc);
-	return (op->size=2);
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	return (op->size = arch_msil_disasm (op->buf_asm, buf, a->pc));
 }
 
 RAsmPlugin r_asm_plugin_msil = {
