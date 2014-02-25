@@ -277,6 +277,7 @@ static RDisasmState * handle_init_ds (RCore * core) {
 	ds->show_xrefs = r_config_get_i (core->config, "asm.xrefs");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
+	core->print->bytespace = r_config_get_i (core->config, "asm.bytespace");
 	ds->cursor = 0;
 	ds->nb = 0;
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmtright");
@@ -1195,7 +1196,13 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 				}
 				*extra = 0;
 			}
-			k = ds->nb-r_str_ansi_len (str);
+			ds->p->cur_enabled = (ds->cursor != -1);
+			nstr = r_print_hexpair (ds->p, str, ds->index);
+			if (ds->p->bytespace) {
+				k = (ds->nb+ (ds->nb/2)) - r_str_ansi_len (nstr);
+			} else {
+				k = ds->nb - r_str_ansi_len (nstr);
+			}
 			if (k<0) k = 0;
 			for (j=0; j<k; j++)
 				pad[j] = ' ';
@@ -1205,13 +1212,8 @@ static void handle_print_show_bytes (RCore * core, RDisasmState *ds) {
 				strcpy (extra, pad);
 				*pad = 0;
 			}
-		//	if (ds->show_color) {
-				ds->p->cur_enabled = ds->cursor!=-1;
-				//ds->p->cur = ds->cursor;
-				nstr = r_print_hexpair (ds->p, str, ds->index);
-				free (str);
-				str = nstr;
-		//	}
+			free (str);
+			str = nstr;
 		} else {
 			str = strdup (flag->name);
 			k = ds->nb-strlen (str)-2;

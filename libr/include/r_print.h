@@ -50,6 +50,7 @@ typedef struct r_print_t {
 	int addrmod;
 	int col;
 	int stride;
+	int bytespace;
 	RPrintZoom *zoom;
 	RPrintNameCallback offname;
 	RStrHT *formats;

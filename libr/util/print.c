@@ -33,6 +33,7 @@ R_API RPrint *r_print_new() {
 	p->oprintf = nullprinter;
 	p->bits = 32;
 	p->stride = 0;
+	p->bytespace = 0;
 	p->interrupt = 0;
 	p->big_endian = CPU_ENDIAN;
 	p->col = 0;
@@ -126,6 +127,7 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 	char *d, *dst = (char *)malloc ((strlen (str)+2)*32);
 	int colors = p->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_0x00, *color_0x7f, *color_0xff, *color_text, *color_other;
+	int bs = p->bytespace;
 	/* XXX That's hacky as shit.. but partially works O:) */
 	/* TODO: Use r_print_set_cursor for win support */
 	int cur = R_MIN (p->cur, p->ocur);
@@ -177,6 +179,10 @@ R_API char *r_print_hexpair(RPrint *p, const char *str, int n) {
 			memcat (d, lastcol);
 		}
 		memcpy (d, s, 2);
+		if (bs) {
+			memcpy (d+2, " ",1);
+			d++;
+		}
 	}
 	if (colors || p->cur_enabled)
 		memcpy (d, Color_RESET, strlen (Color_RESET)+1);

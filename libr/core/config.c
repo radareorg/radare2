@@ -643,6 +643,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB("asm.syntax", "intel", &cb_asmsyntax, "Select assembly syntax");
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
+	SETPREF("asm.bytespace", "false", "Separate hex bytes with a whitespace");
 	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
 	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.functions", "true", "Show functions in disassembly");
