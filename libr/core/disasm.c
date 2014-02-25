@@ -211,6 +211,7 @@ static void handle_add_show_color ( RCore *core, RDisasmState *ds) {
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_CCALL:
 			r_cons_strcat (ds->color_call);
 			break;
 		case R_ANAL_OP_TYPE_SWI:
@@ -1013,8 +1014,11 @@ static void handle_print_lines_left (RCore *core, RDisasmState *ds){
 }
 
 static void handle_print_cycles (RCore *core, RDisasmState *ds) {
-	if (ds->show_cycles)
-		r_cons_printf ("%3d ", ds->analop.cycles);
+	if (ds->show_cycles) {
+		if (!ds->analop.failcycles)
+			r_cons_printf ("%3d     ", ds->analop.cycles);
+		else	r_cons_printf ("%3d %3d ", ds->analop.cycles, ds->analop.failcycles);
+	}
 }
 
 static void handle_print_stackptr (RCore *core, RDisasmState *ds) {
@@ -2012,6 +2016,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			handle_print_offset (core, ds);
 			handle_print_op_size (core, ds);
 			handle_print_trace (core, ds);
+			handle_print_cycles (core, ds);
 			handle_print_stackptr (core, ds);
 			ret = handle_print_meta_infos (core, ds, buf, len, idx);
 			if (ds->mi_found) {
