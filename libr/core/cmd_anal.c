@@ -219,6 +219,9 @@ static void r_core_anal_bytes (RCore *core, const ut8 *buf, int len, int nops, i
 			if (op.fail != UT64_MAX)
 				r_cons_printf ("\"fail\":%"PFMT64d",", op.fail);
 
+			r_cons_printf ("cycles: %d\n", op.cycles);
+			if (op.failcycles)
+				r_cons_printf ("failcycles: %d\n", op.failcycles);
 			r_cons_printf ("\"stack\":%d,", op.stackop); // TODO: string
 			r_cons_printf ("\"cond\":%d,",
 				(op.type &R_ANAL_OP_TYPE_COND)?1: op.cond);

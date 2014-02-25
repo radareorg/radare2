@@ -394,8 +394,9 @@ enum {
 	R_ANAL_OP_TYPE_CJMP  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
 	R_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
 	R_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
-	R_ANAL_OP_TYPE_RET   = 5, /* returns from subrutine */
-	R_ANAL_OP_TYPE_CRET  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_RET, /* returns from subrutine */
+	R_ANAL_OP_TYPE_CCALL = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL, /* conditional call to subroutine */
+	R_ANAL_OP_TYPE_RET   = 5, /* returns from subroutine */
+	R_ANAL_OP_TYPE_CRET  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_RET, /* conditional return from subroutine */
 	R_ANAL_OP_TYPE_ILL   = 6,  /* illegal instruction // trap */
 	R_ANAL_OP_TYPE_UNK   = 7, /* unknown opcode type */
 	R_ANAL_OP_TYPE_NOP   = 8, /* does nothing */
@@ -600,6 +601,7 @@ typedef struct r_anal_op_t {
 	int size;       /* size in bytes of opcode */
 	int nopcode;    /* number of bytes representing the opcode (not the arguments) */
 	int cycles;	/* cpu-cycles taken by instruction */
+	int failcycles;	/* conditional cpu-cycles */
 	int family;     /* family of opcode */
 	int eob;        /* end of block (boolean) */
 	/* Run N instructions before executing the current one */

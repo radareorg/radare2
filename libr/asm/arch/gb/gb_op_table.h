@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - condret@runas-racer.com */
+/* radare - LGPL - Copyright 2013 - 2014 - condret@runas-racer.com */
 
 #define GB_8BIT		1
 #define	GB_16BIT	2
@@ -241,7 +241,7 @@ static gb_opcode gb_op[] = {
 	{"adc 0x%02x"		,GB_8BIT+ARG_8},
 	{"rst 8"		,GB_8BIT},
 
-	{"ret nc"		,GB_8BIT},			//0xd0
+	{"ret nC"		,GB_8BIT},			//0xd0
 	{"pop de"		,GB_8BIT},
 	{"jp nC, 0x%04x"	,GB_8BIT+ARG_16},
 	{"invalid"		,GB_8BIT},
