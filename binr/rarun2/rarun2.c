@@ -55,7 +55,7 @@ static char *getstr(const char *src) {
 				len--;
 				if (ret[len]=='"') {
 					ret[len] = 0;
-					r_str_escape (ret);
+					r_str_unescape (ret);
 					return ret;
 				} else eprintf ("Missing \"\n");
 			}
@@ -76,8 +76,7 @@ static char *getstr(const char *src) {
 			return NULL;
 		}
 	}
-	ret = strdup (src);
-	r_str_escape (ret);
+	r_str_unescape ((ret = strdup (src)));
 	return ret;
 }
 

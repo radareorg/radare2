@@ -248,7 +248,6 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   char *bp;
   const char *p;
   int size, leading_zero, regMap[2];
-  long auxNum;
   va_list ap;
 
   va_start (ap, format);
@@ -256,7 +255,6 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   bp = buf;
   *bp = 0;
   p = format;
-  auxNum = -1;
   regMap[0] = 0;
   regMap[1] = 0;
 
@@ -1081,7 +1079,6 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
   struct arcDisState s;		/* ARC Disassembler state.  */
   void *stream = info->stream; 	/* Output stream.  */
   fprintf_ftype func = info->fprintf_func;
-  int bytes;
 
   memset (&s, 0, sizeof(struct arcDisState));
 
@@ -1111,7 +1108,7 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
   s.instName = _instName;
 
   /* Disassemble.  */
-  bytes = dsmOneArcInst (address, (void *)& s);
+  dsmOneArcInst (address, (void *)&s);
 
   /* Display the disassembly instruction.  */
 /*

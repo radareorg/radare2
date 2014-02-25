@@ -526,7 +526,7 @@ static int cmd_write(void *data, const char *input) {
 	case 's':
 		{
 			ut8 ulen;
-			len = r_str_escape (str+1);
+			len = r_str_unescape (str+1);
 			if (len>255) {
 				eprintf ("Too large\n");
 			} else {

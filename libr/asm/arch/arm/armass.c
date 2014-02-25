@@ -672,7 +672,6 @@ static int arm_assemble(ArmOpcode *ao, const char *str) {
 				a = getreg (ao->a[0]);
 				b = getreg (ao->a[1]);
 				if (b == -1) {
-					ut16 numshift;
 					int y, z;
 					b = getnum (ao->a[1]);
 					if (b>=0 && b<=0xff) {
