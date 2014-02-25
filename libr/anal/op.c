@@ -247,6 +247,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 			else snprintf (ret, sizeof (ret), "if (unk) 0x%"PFMT64x"()", op->jump);
 		}
 		}
+		break;
 	case R_ANAL_OP_TYPE_ADD:
 		if (a1 == NULL || !strcmp (a0, a1))
 			snprintf (ret, sizeof (ret), "%s += %s", r0, a0);
