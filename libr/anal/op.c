@@ -148,8 +148,10 @@ R_API char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_CJMP  : return "cjmp";
 	case R_ANAL_OP_TYPE_CALL  : return "call";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
+	case R_ANAL_OP_TYPE_CCALL : return "ccall";
 	case R_ANAL_OP_TYPE_REP   : return "rep";
 	case R_ANAL_OP_TYPE_RET   : return "ret";
+	case R_ANAL_OP_TYPE_CRET  : return "cret";
 	case R_ANAL_OP_TYPE_ILL   : return "ill";
 	case R_ANAL_OP_TYPE_UNK   : return "unk";
 	case R_ANAL_OP_TYPE_NOP   : return "nop";
@@ -231,6 +233,20 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		if (f) snprintf (ret, sizeof (ret), "%s()", f->name);
 		else  snprintf (ret, sizeof (ret), "0x%"PFMT64x"()", op->jump);
 		break;
+	case R_ANAL_OP_TYPE_CCALL:
+		f = r_anal_fcn_find (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
+		{
+		RAnalBlock *bb = r_anal_bb_from_offset (anal, op->addr);
+		if (bb) {
+			cstr = r_anal_cond_to_string (bb->cond);
+			if (f) snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
+			else snprintf (ret, sizeof (ret), "if (%s) 0x%"PFMT64x"()", cstr, op->jump);
+			free (cstr);
+		} else {
+			if (f) snprintf (ret, sizeof (ret), "if (unk) %s()", f->name);
+			else snprintf (ret, sizeof (ret), "if (unk) 0x%"PFMT64x"()", op->jump);
+		}
+		}
 	case R_ANAL_OP_TYPE_ADD:
 		if (a1 == NULL || !strcmp (a0, a1))
 			snprintf (ret, sizeof (ret), "%s += %s", r0, a0);
@@ -277,6 +293,16 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_RET:
 		memcpy (ret, "ret", 4);
+		break;
+	case R_ANAL_OP_TYPE_CRET:
+		{
+		RAnalBlock *bb = r_anal_bb_from_offset (anal, op->addr);
+		if (bb) {
+			cstr = r_anal_cond_to_string (bb->cond);
+			snprintf (ret, sizeof (ret), "if (%s) ret", cstr);
+			free (cstr);
+		} else memcpy (ret, "if (unk) ret", 13);
+		}
 		break;
 	case R_ANAL_OP_TYPE_LEAVE:
 		memcpy (ret, "leave", 6);
