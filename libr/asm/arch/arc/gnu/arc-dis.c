@@ -180,8 +180,6 @@ typedef enum
 
 #define add_target(x)	(state->targets[state->tcnt++] = (x))
 
-static char comment_prefix[] = " ; ";
-
 static const char *
 core_reg_name (struct arcDisState * state, int val)
 {
@@ -250,7 +248,6 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   char *bp;
   const char *p;
   int size, leading_zero, regMap[2];
-  long auxNum;
   va_list ap;
 
   va_start (ap, format);
@@ -258,7 +255,6 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   bp = buf;
   *bp = 0;
   p = format;
-  auxNum = -1;
   regMap[0] = 0;
   regMap[1] = 0;
 
@@ -408,38 +404,6 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
   va_end (ap);
 }
 
-static void
-write_comments_(struct arcDisState * state,
-		int shimm,
-		int is_limm,
-		long limm_value)
-{
-  if (state->commentBuffer != 0)
-    {
-      int i;
-
-      if (is_limm)
-	{
-	  const char *name = post_address (state, limm_value + shimm);
-
-	  if (*name != 0)
-	    WRITE_COMMENT (name);
-	}
-      for (i = 0; i < state->commNum; i++)
-	{
-	  if (i == 0)
-	    strcpy (state->commentBuffer, comment_prefix);
-	  else
-	    strcat (state->commentBuffer, ", ");
-	  strncat (state->commentBuffer, state->comm[i],
-		   sizeof (state->commentBuffer));
-	}
-    }
-}
-
-#define write_comments2(x) write_comments_ (state, x, is_limm, limm_value)
-#define write_comments()   write_comments2 (0)
-
 static const char *condName[] =
 {
   /* 0..15.  */
@@ -556,9 +520,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
   state->acnt = 0;
   state->flow = noflow;
   ignoreFirstOpd = 0;
-
-  if (state->commentBuffer)
-    state->commentBuffer[0] = '\0';
 
   switch (state->_opcode)
     {
@@ -798,7 +759,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	  arc_sprintf (state, state->operandBuffer, formatString,
 		      fieldB, fieldC);
 	}
-      write_comments ();
       break;
 
     case CLASS_A4_OP3_GENERAL:
@@ -820,7 +780,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	  WRITE_FORMAT_x (B);
 	  arc_sprintf (state, state->operandBuffer, formatString, fieldB);
 	}
-      write_comments ();
       break;
 
     case CLASS_A4_FLAG:
@@ -831,7 +790,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       write_instr_name ();
       WRITE_FORMAT_x (B);
       arc_sprintf (state, state->operandBuffer, formatString, fieldB);
-      write_comments ();
       break;
 
     case CLASS_A4_BRANCH:
@@ -855,7 +813,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       strcat (formatString, "%s"); /* Address/label name.  */
       arc_sprintf (state, state->operandBuffer, formatString,
 		  post_address (state, fieldA));
-      write_comments ();
       break;
 
     case CLASS_A4_JC:
@@ -901,7 +858,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       else
 	arc_sprintf (state, state->operandBuffer, formatString,
 		    post_address (state, fieldB), fieldA);
-      write_comments ();
       break;
 
     case CLASS_A4_LD0:
@@ -938,7 +894,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       WRITE_FORMAT_x_RB (C);
       arc_sprintf (state, state->operandBuffer, formatString,
 		  fieldA, fieldB, fieldC);
-      write_comments ();
       break;
 
     case CLASS_A4_LD1:
@@ -984,7 +939,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	}
       arc_sprintf (state, state->operandBuffer, formatString,
 		  fieldA, fieldB, fieldC);
-      write_comments ();
       break;
 
     case CLASS_A4_ST:
@@ -1030,7 +984,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
 	}
       arc_sprintf (state, state->operandBuffer, formatString,
 		  fieldC, fieldB, fieldA);
-      write_comments2 (fieldA);
       break;
 
     case CLASS_A4_SR:
@@ -1045,7 +998,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       WRITE_FORMAT_x (B);
       WRITE_FORMAT_RB ();
       arc_sprintf (state, state->operandBuffer, formatString, fieldC, fieldB);
-      write_comments ();
       break;
 
     case CLASS_A4_OP3_SUBOPC3F:
@@ -1065,7 +1017,6 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       WRITE_FORMAT_x (B);
       WRITE_FORMAT_RB ();
       arc_sprintf (state, state->operandBuffer, formatString, fieldA, fieldB);
-      write_comments ();
       break;
 
     default:
@@ -1128,7 +1079,6 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
   struct arcDisState s;		/* ARC Disassembler state.  */
   void *stream = info->stream; 	/* Output stream.  */
   fprintf_ftype func = info->fprintf_func;
-  int bytes;
 
   memset (&s, 0, sizeof(struct arcDisState));
 
@@ -1158,7 +1108,7 @@ ARCTangent_decodeInstr (bfd_vma address, disassemble_info *info)
   s.instName = _instName;
 
   /* Disassemble.  */
-  bytes = dsmOneArcInst (address, (void *)& s);
+  dsmOneArcInst (address, (void *)&s);
 
   /* Display the disassembly instruction.  */
 /*

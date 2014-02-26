@@ -58,7 +58,7 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 		}
 	}
 	delta = addr - b->base;
-	op = R_NEW (RAsmOp);
+	op = R_NEW0 (RAsmOp);
 	r_asm_set_pc (core->assembler, addr);
 	if (r_asm_disassemble (core->assembler, op, b->buf+delta, b->length)<1) {
 		free (op);
@@ -416,6 +416,7 @@ static int cmd_interpret(void *data, const char *input) {
 		ptr = str = r_core_cmd_str (core, inp);
 		if (filter) *filter = '~';
 		r_cons_break (NULL, NULL);
+		if (ptr)
 		for (;;) {
 			if (r_cons_singleton()->breaked) break;
 			eol = strchr (ptr, '\n');
@@ -1160,6 +1161,14 @@ next2:
 				str = r_core_cmd_str_pipe (core, ptr+1);
 			} else {
 				str = r_core_cmd_str (core, ptr+1);
+			}
+			if (!str)
+				return -1;
+			// ignore contents if first char is pipe or comment
+			if (*str=='|' || *str=='*') {
+				eprintf ("r_core_cmd_subst_i: invalid backticked command\n");
+				free (str);
+				return -1;
 			}
 			if (oneline && str)
 				for (i=0; str[i]; i++)

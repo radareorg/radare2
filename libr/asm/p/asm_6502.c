@@ -1,22 +1,25 @@
-/* radare - LGPL - Copyright 2012-2014 - condret, pancake */
+/* radare - LGPL - Copyright 2012-2014 - pancake
+	2014 - condret					*/
+
+// copypasta from asm_gb.c
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
 #include <r_lib.h>
-#include "../arch/snes/snesdis.c"
+#include "../arch/6502/6502dis.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, ut64 len) {
-	int dlen = snesDisass(op,buf,len);
-	if (dlen<0) dlen=0;
-	op->size = dlen;
+	int dlen = _6502Disass (op,buf,len);
+	if(dlen<0) dlen=0;
+	op->size=dlen;
 	return dlen;
 }
 
-RAsmPlugin r_asm_plugin_snes = {
-	.name = "snes",
-	.desc = "SuperNES CPU",
-	.arch = "snes",
+RAsmPlugin r_asm_plugin_6502 = {
+	.name = "6502",
+	.desc = "6502/NES/C64/T-1000 CPU",
+	.arch = "6502",
 	.bits = 8|16,
 	.init = NULL,
 	.fini = NULL,
@@ -29,6 +32,6 @@ RAsmPlugin r_asm_plugin_snes = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_snes
+	.data = &r_asm_plugin_6502
 };
 #endif

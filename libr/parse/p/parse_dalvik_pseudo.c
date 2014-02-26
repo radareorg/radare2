@@ -275,11 +275,11 @@ static int assemble(RParse *p, char *data, char *str) {
 }
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
+#if USE_VARSUBS
 	char *ptr, *ptr2;
 	int i;
 
 	strncpy (str, data, len);
-#if USE_VARSUBS
 	for (i = 0; i < R_ANAL_VARSUBS; i++)
 		if (f->varsubs[i].pat[0] != '\0' && f->varsubs[i].sub[0] != '\0' &&
 			(ptr = strstr (data, f->varsubs[i].pat))) {
@@ -289,6 +289,7 @@ static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
 		}
 	return R_TRUE;
 #else
+	strncpy (str, data, len);
 	return R_FALSE;
 #endif
 }

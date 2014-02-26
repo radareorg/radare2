@@ -299,7 +299,7 @@ struct r_range_t *r_meta_ranges(RAnal *m)
 #endif
 
 static void printmetaitem(RAnal *m, RAnalMetaItem *d, int rad) {
-	char *pstr, *str = r_str_unscape (d->str);
+	char *pstr, *str = r_str_escape (d->str);
 	if (str) {
 		if (d->type=='s' && !*str)
 			return;

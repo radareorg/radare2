@@ -1019,7 +1019,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 RAsmPlugin r_asm_plugin_x86_nz = {
 	.name = "x86.nz",
-	.desc = "x86 assembler with non-zeros",
+	.desc = "x86 handmade assembler",
 	.license = "LGPL3",
 	.arch = "x86",
 	.bits = 32|64,

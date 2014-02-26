@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2013-2014 - batchdrake */
 
 #include <r_lib.h>
 #include <r_types.h>
@@ -72,27 +72,23 @@ UDIS86_ESIL (loopne,"%s--,?%s==0|!zf,%s=%s", info->bits == 16 ? "cx" : (info->bi
 #define OP(args, inst) [JOIN (UD_I, inst)] = {args, UDIS86_ESIL_HANDLER (inst)}
 
 /* This is the fastest way I can think about to implement this list of handlers */
-UDis86Esil udis86_esil_callback_table[904] =
-{
-	OP (0, nop),   OP (1, jo),    OP (1, jno),    OP (1, jb),     OP (1, jae),
-	OP (1, je),    OP (1, jne),   OP (1, ja),     OP (1, jbe),    OP (1, js),
-	OP (1, jns),   OP (1, jp),    OP (1, jnp),    OP (1, jl),     OP (1, jge),
-	OP (1, jle),   OP (1, jg),    OP (1, jcxz),   OP (1, jecxz),  OP (1, jrcxz),
-	OP (1, jmp),   OP (1, call),  OP (2, shl),    OP (2, rol),    OP (2, ror),
-	OP (2, add),   OP (1, inc),   OP (2, sub),    OP (1, dec),    OP (2, cmp),
-	OP (2, xor),   OP (2, or),    OP (2, and),    OP (2, test),   OP (0, syscall),
-	OP (1, int),   OP (2, lea),   OP (2, mov),    OP (1, push),   OP (1, pop),
-	OP (0, leave), OP (0, ret),   OP (2, xchg),   OP (2, xadd),   OP (2, bt),
-	OP (2, btc),   OP (2, bts),   OP (2, btr),    OP (0, clc),    OP (0, cli),
-	OP (0, cld),   OP (0, cmc),   OP (0, int3),   OP (0, into),   OP (0, lahf),
-	OP (1, loop),  OP (1, loope), OP (1, loopne)
+UDis86Esil udis86_esil_callback_table[ UD_MAX_MNEMONIC_CODE ] = {
+	OP (0, nop),  OP (1, jo),   OP (1, jno), OP (1, jb),   OP (1, jae),
+	OP (1, je),   OP (1, jne),  OP (1, ja),  OP (1, jbe),  OP (1, js),
+	OP (1, jns),  OP (1, jp),   OP (1, jnp), OP (1, jl),   OP (1, jge),
+	OP (1, jle),  OP (1, jg),   OP (1, jcxz),OP (1, jecxz),OP (1, jrcxz),
+	OP (1, jmp),  OP (1, call), OP (2, shl), OP (2, rol),  OP (2, ror),
+	OP (2, add),  OP (1, inc),  OP (2, sub), OP (1, dec),  OP (2, cmp),
+	OP (2, xor),  OP (2, or),   OP (2, and), OP (2, test), OP (0, syscall),
+	OP (1, int),  OP (2, lea),  OP (2, mov), OP (1, push), OP (1, pop),
+	OP (0, leave),OP (0, ret),  OP (2, xchg),OP (2, xadd), OP (2, bt),
+	OP (2, btc),  OP (2, bts),  OP (2, btr), OP (0, clc),  OP (0, cli),
+	OP (0, cld),  OP (0, cmc),  OP (0, int3),OP (0, into), OP (0, lahf),
+	OP (1, loop), OP (1, loope),OP (1, loopne)
 };
 
-UDis86Esil *
-udis86_esil_get_handler (enum ud_mnemonic_code code)
-{
+UDis86Esil * udis86_esil_get_handler (enum ud_mnemonic_code code) {
 	if (udis86_esil_callback_table[code].callback == NULL)
 		return NULL;
-
 	return udis86_esil_callback_table + code;
 }

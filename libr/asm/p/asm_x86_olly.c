@@ -43,7 +43,7 @@ static int assemble(struct r_asm_t *a, struct r_asm_op_t *op, const char *buf) {
 RAsmPlugin r_asm_plugin_x86_olly = {
 	.name = "x86.olly",
 	.license = "GPL2",
-	.desc = "X86 disassembly plugin (olly engine)",
+	.desc = "OllyDBG X86 disassembler",
 	.arch = "x86",
 	.bits = 32,
 	.init = NULL,

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2013 - pancake
+/* radare - LGPL - Copyright 2012-2014 - pancake
 	2013 - condret					*/
 
 // fork of asm_z80.c
@@ -18,8 +18,8 @@ static int disassemble(RAsm *a, RAsmOp *r_op, const ut8 *buf, int len) {
 
 RAsmPlugin r_asm_plugin_gb = {
 	.name = "gb",
-	.desc = "GB disassembly plugin",
-	.arch = "z80",				//?
+	.desc = "GameBoy(TM) (z80-like)",
+	.arch = "z80",
 	.license = "LGPL3",
 	.bits = 8,
 	.init = NULL,

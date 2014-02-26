@@ -132,11 +132,16 @@ static RBinInfo* info(RBinFile *arch) {
 
 static int check(RBinFile *arch) {
 	int off, ret = R_FALSE;
+	int version = 0;
 
 	if (arch && arch->buf && arch->buf->buf && arch->buf->length>10)
 	if (!memcmp (arch->buf->buf, "\xca\xfe\xba\xbe", 4)) {
 		memcpy (&off, arch->buf->buf+4*sizeof(int), sizeof(int));
+		version = arch->buf->buf[6] | (arch->buf->buf[7] <<8);
+		if (version <1024) // IT's A MACH0!
+			return R_FALSE;
 		r_mem_copyendian ((ut8*)&off, (ut8*)&off, sizeof(int), !LIL_ENDIAN);
+		//eprintf ("VERSION = %d\n", version);
 		// TODO: FIND __TEXT
 		ret = R_TRUE;
 	}

@@ -112,6 +112,7 @@ typedef struct r_cons_t {
 	int is_interactive;
 	int lines;
 	int rows;
+	int fps;
 	int columns;
 	int force_rows;
 	int force_columns;
@@ -340,6 +341,7 @@ R_API void r_cons_set_cup(int enable);
 R_API void r_cons_column(int c);
 R_API int r_cons_get_column (void);
 R_API char *r_cons_message(const char *msg);
+R_API void r_cons_set_title(const char *str);
 #endif
 
 /* r_line */

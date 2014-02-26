@@ -1,7 +1,7 @@
 .TH RADARE2 1
 .SH NAME
 radare2 \- Advanced commandline hexadecimal editor, disassembler and debugger
-.Dd Nov 11, 2013
+.Dd Feb 21, 2014
 .Pp
 .Sh SYNOPSIS
 .Nm radare2
@@ -64,6 +64,8 @@ Set project file
 Apply rapatch file and quit
 .It Fl s Ar addr
 Start seeking at this address
+.It Fl S
+Enable sandboxed mode (same as \-e cfg.sandbox=true)
 .It Fl t
 Get binary information using a thread
 .It Fl v

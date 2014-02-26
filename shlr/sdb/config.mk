@@ -1,7 +1,7 @@
 DESTDIR?=
 PREFIX?=/usr
 
-SDBVER=0.8.rc1
+SDBVER=0.8.0.rc2
 
 INSTALL?=install
 

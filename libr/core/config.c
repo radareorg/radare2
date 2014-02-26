@@ -426,6 +426,12 @@ static int cb_pager(void *user, void *data) {
 	return R_TRUE;
 }
 
+static int cb_fps(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->fps = node->i_value;
+	return R_TRUE;
+}
+
 static int cb_rgbcolors(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	RCore *core = (RCore *) user;
@@ -637,6 +643,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
 	SETCB("asm.syntax", "intel", &cb_asmsyntax, "Select assembly syntax");
 	SETI("asm.nbytes", 6, "Number of bytes for each opcode at disassembly");
+	SETPREF("asm.bytespace", "false", "Separate hex bytes with a whitespace");
 	SETICB("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
 	SETICB("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETPREF("asm.functions", "true", "Show functions in disassembly");
@@ -684,7 +691,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF("dir.plugins", R2_LIBDIR"/radare2/"R2_VERSION"/", "Path to plugin files to be loaded at startup");
 	SETPREF("dir.source", "", "Path to find source files");
 	SETPREF("dir.types", "/usr/include", "Default path to look for cparse type files");
-	SETPREF("dir.projects", "~/"R2_HOMEDIR"/rdb", "Default path for projects");
+	SETPREF("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
 
 	/* debug */
 	SETCB("dbg.backend", "native", &cb_dbgbackend, "Select the debugger backend");
@@ -782,6 +789,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI("scr.colpos", 80, "Column position of cmd.cprompt in visual");
 	SETICB("scr.columns", 0, &cb_scrcolumns, "Set the columns number");
 	SETICB("scr.rows", 0, &cb_rows, "Force specific console rows (height)");
+	SETCB("scr.fps", "false", &cb_fps, "Show FPS indicator in Visual");
 	SETICB("scr.fix_rows", 0, &cb_fixrows, "Workaround for Linux TTY");
 	SETICB("scr.fix_columns", 0, &cb_fixcolumns, "Workaround for Prompt iOS ssh client");
 	SETCB("scr.interactive", "true", &cb_scrint, "Start in interractive mode");

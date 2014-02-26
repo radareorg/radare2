@@ -12,7 +12,7 @@ R_API ut64 r_core_file_resize(struct r_core_t *core, ut64 newsize) {
 // TODO: add support for args
 R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	char *path;
-	ut64 addr = 0; // XXX ? check file->map ?
+	ut64 ofrom, addr = 0; // XXX ? check file->map ?
 	RCoreFile *file, *ofile = core->file;
 	int newpid, ret = R_FALSE;
 	if (r_sandbox_enable (0)) {
@@ -28,17 +28,25 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 	path = strdup (core->file->uri);
 	if (r_config_get_i (core->config, "cfg.debug"))
 		r_debug_kill (core->dbg, 0, R_FALSE, 9); // KILL
+
+	// HACK: move last mapped address to higher place
+	ofrom = ofile->map->from;
+	ofile->map->from = UT64_MAX;
+
+	// r_core_file_close (core, ofile);
 	file = r_core_file_open (core, path, perm, addr);
 	if (file) {
 		eprintf ("File %s reopened in %s mode\n", path,
 			perm&R_IO_WRITE?"read-write": "read-only");
 		ret = R_TRUE;
 		// close old file
-		//r_core_file_close (core, core->file);
-		r_core_file_close_fd (core, newpid);
+		r_core_file_close (core, ofile);
+		r_io_set_fdn (core->io, file->fd->fd);
 		core->file = file;
 	} else {
-		eprintf ("Oops. Cannot reopen file.\n");
+		// lower it down back
+		ofile->map->from = ofrom;
+		eprintf ("r_core_file_reopen: Cannot reopen file.\n");
 		core->file = ofile; // XXX: not necessary?
 	}
 	// TODO: in debugger must select new PID
@@ -47,7 +55,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm) {
 			newpid = core->file->fd->fd;
 		r_debug_select (core->dbg, newpid, newpid);
 	}
-	r_core_block_read (core, 0);
+	r_core_block_read (core, 1);
 	free (path);
 	return ret;
 }
@@ -299,6 +307,7 @@ R_API RIOMap *r_core_file_get_next_map (RCore *core, RCoreFile * fh, int mode, u
 	RIOMap *map = r_io_map_add (core->io, fh->fd->fd, mode, 0, loadaddr, fh->size);
 	const char *suppress_warning = r_config_get (core->config, "file.nowarn");
 
+// XXX: wtf. that should be always true, so the rest is useless
 	if (map) return map;
 
 	r_io_sort_maps (core->io);
@@ -366,7 +375,6 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 	const char *cp = NULL;
 	char *loadmethod = NULL;
 
-
 	if (!list_fds || r_list_length (list_fds) == 0 ) {
 		r_list_free (list_fds);
 		return NULL;
@@ -408,7 +416,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int mode, ut6
 			loadaddr =  top_file->map->from;
 		}
 		r_list_append (r->files, fh);
-		r_core_bin_load(r, fh->filename, fh->map->from);
+		r_core_bin_load (r, fh->filename, fh->map->from);
 	}
 	if (!top_file) {
 		free (loadmethod);
@@ -474,7 +482,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int mode, ut64 loa
 	r_config_set (r->config, "file.path", file);
 	fh->map = r_core_file_get_next_map (r, fh, mode, loadaddr);
 	if (!fh->map) {
-		r_core_file_free(fh);
+		r_core_file_free (fh);
 		fh = NULL;
 		if (!strcmp (suppress_warning, "false"))
 			eprintf("Unable to load file due to failed mapping.\n");
@@ -523,12 +531,10 @@ R_API void r_core_file_free(RCoreFile *cf) {
 	cf = NULL;
 }
 
-R_API int r_core_file_close(struct r_core_t *r, struct r_core_file_t *fh) {
+R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 	int ret = (fh&&r)? r_io_close (r->io, fh->fd): 0;
 	// TODO: free fh->obj
-	//r_list_delete (fh);
-	//list_del (&(fh->list));
-	// TODO: set previous opened file as current one
+	r_list_delete_data (r->files, fh);
 	return ret;
 }
 

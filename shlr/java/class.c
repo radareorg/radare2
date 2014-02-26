@@ -1964,8 +1964,7 @@ static int javasm_init(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv) {
 	bin->loadaddr = loadaddr;
 	bin->cp_list = r_list_new ();
 	r_bin_java_get_java_null_cp ();
-	srand(time(NULL));
-	bin->id = rand();
+	bin->id = r_num_rand (UT32_MAX);
 	bin->kv = kv ? kv : sdb_new(NULL, NULL, 0);
 	// \/ this gets assigned by the plugin: see libr/bin/p/bin_java.c:load
 	bin->AllJavaBinObjs = NULL;
@@ -7385,7 +7384,6 @@ R_API RBinJavaCPTypeObj *r_bin_java_find_cp_ref_info(ut16 name_and_type_idx) {
 
 R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 	RBinJavaCPTypeObj *item = NULL, *item2 = NULL;
-	ut8 space_bn_name_type = 0;
 	char *class_str = NULL,
 		 *name_str = NULL,
 		 *desc_str = NULL,
@@ -7434,18 +7432,14 @@ R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 
 		memory_alloc = strlen (class_str) + strlen (name_str) + strlen (desc_str) + 3;
 
-		if (memory_alloc)
+		if (memory_alloc) {
 			str = malloc (memory_alloc);
-
-		if (str && !space_bn_name_type)
 			snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-		else if (str && space_bn_name_type)
-			snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
-
-		out = malloc(memory_alloc);
-		r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
-		free (str);
-		str = out;
+			out = malloc(memory_alloc);
+			r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
+			free (str);
+			str = out;
+		}
 
 		if (class_str != empty)
 			free (class_str);
@@ -7477,16 +7471,14 @@ R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 
 		memory_alloc = strlen (class_str) + strlen (name_str) + strlen (desc_str) + 3;
 
-		if (memory_alloc)
+		if (memory_alloc) {
 			str = malloc (memory_alloc);
-
-		snprintf (str, memory_alloc, "%s/%s%s", class_str, name_str, desc_str);
-
-		out = malloc(memory_alloc);
-		r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
-		free (str);
-		str = out;
-
+			snprintf (str, memory_alloc, "%s/%s%s", class_str, name_str, desc_str);
+			out = malloc(memory_alloc);
+			r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
+			free (str);
+			str = out;
+		}
 
 		if (class_str != empty)
 			free (class_str);
@@ -7508,22 +7500,20 @@ R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 
 		memory_alloc = length + 3;
 
-		if (memory_alloc)
+		if (memory_alloc) {
 			str = malloc (memory_alloc);
-
-
-		if (str) {
-			//r_name_filter(string_str, length);
 			snprintf (str, memory_alloc, "\"%s\"", string_str);
+			out = malloc(memory_alloc);
+			r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
+			free (str);
+			str = out;
 		}
+
+
 		IFDBG eprintf("java_resolve String return: %s\n", str);
 		if (string_str != empty)
 			free (string_str);
 
-		out = malloc(memory_alloc);
-		r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
-		free (str);
-		str = out;
 
 	} else if (strcmp (cp_name, "Utf8") == 0) {
 		str = malloc(item->info.cp_utf8.length+3);
@@ -7576,27 +7566,25 @@ R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx) {
 
 		memory_alloc = strlen (name_str) + strlen (desc_str) + 3;
 
-		if (memory_alloc)
+		if (memory_alloc) {
 			str = malloc (memory_alloc);
-
-		if (str && !space_bn_name_type)
-			snprintf (str, memory_alloc, "%s%s", name_str, desc_str);
-		else if (str && space_bn_name_type)
 			snprintf (str, memory_alloc, "%s %s", name_str, desc_str);
+			out = malloc (memory_alloc);
+			r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
+			free (str);
+			str = out;
+		}
+
 
 		if (name_str != empty)
 			free (name_str);
 		if (desc_str != empty)
 			free (desc_str);
 
-		out = malloc (memory_alloc);
-		r_base64_encode ((ut8 *)out, (const ut8 *)str, memory_alloc);
-		free (str);
-		str = out;
 	}  else {
 		str = malloc (16);
 		if (str) {
-			r_base64_encode ((ut8*)str, (const ut8*)"(null)", 16);
+			r_base64_encode ((ut8*)str, (const ut8*)"(null)", 6);
 		}
 	}
 	return str;
@@ -7732,14 +7720,11 @@ R_API char * r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 space_bn_name
 
 		memory_alloc = length + 3;
 
-		if (memory_alloc)
+		if (memory_alloc) {
 			str = malloc (memory_alloc);
-
-
-		if (str) {
-			//r_name_filter(string_str, length);
 			snprintf (str, memory_alloc, "\"%s\"", string_str);
 		}
+
 		IFDBG eprintf("java_resolve String return: %s\n", str);
 		if (string_str != empty)
 			free (string_str);

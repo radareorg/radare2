@@ -953,6 +953,7 @@ static int java_resolve_cp_idx (RAnal *anal, const char * idxs) {
 	if (obj && idx){
 		str = r_bin_java_resolve_without_space (obj, idx);
 		eprintf ("%s\n", str);
+		free (str);
 	}
 	return R_TRUE;
 }
@@ -964,6 +965,7 @@ static int java_resolve_cp_type (RAnal *anal, const char * idxs) {
 	if (obj && idx){
 		str = r_bin_java_resolve_cp_idx_type (obj, idx);
 		eprintf ("%s\n", str);
+		free (str);
 	}
 	return R_TRUE;
 }
@@ -975,6 +977,7 @@ static int java_resolve_cp_idx_b64 (RAnal *anal, const char * idxs) {
 	if (obj && idx){
 		str = r_bin_java_resolve_b64_encode (obj, idx) ;
 		eprintf ("%s\n", str);
+		free (str);
 	}
 	return R_TRUE;
 }

@@ -111,12 +111,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -c}
- PKGNAME='radare2' ; VERSION='0.9.7.rc2' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='0.9.7.rc3' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
                 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-0.9.7.rc2 to adapt to many kinds of systems.
+'configure' configures radare2-0.9.7.rc3 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -197,7 +197,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-0.9.7.rc2 configuration script done with acr v0.9.9.
+echo "radare2-0.9.7.rc3 configuration script done with acr v0.9.9.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <youterm.com>."
 exit 0
@@ -221,7 +221,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   0.9.7.rc2"
+echo "VERSION:   0.9.7.rc3"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic"
@@ -325,7 +325,7 @@ if [ "${CROSSBUILD}" = 1 ]; then
  (command -v ${HOST}-${CC} >/dev/null 2>&1)
  if [ $? = 0 ]; then CC="${HOST}-${CC}"; fi
 fi
-echo "main(){}" > test.c
+echo "int main(int argc, char **argv){return 0;}" > test.c
  (exec ${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} test.c >/dev/null 2>&1)
 if [ $? = 0 ]; then echo ${CC}; else
  echo no ; HAVE_LANG_C=0
@@ -367,7 +367,7 @@ _REQUIRED=$3
 _CHKLIB_NAME=$2
 _CHKLIB_LIBS=$(echo "-l${_CHKLIB_NAME}" | sed 's,\+, -l,g')
 printf "checking for lib${_CHKLIB_NAME} ... "
-echo "main(){ }" > test.c
+echo "int main(int ac, char **av){return 0;}" > test.c
 eval ${S}${COMPILER} ${CFLAGS} ${CPPFLAGS} ${CXXFLAGS} ${LDFLAGS} ${_CHKLIB_LIBS} test.c >/dev/null 2>&1
 if [ $? = 0 ]; then
 	eval ${VAR}=1

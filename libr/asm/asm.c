@@ -24,7 +24,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 		input[len] = 0;
 	if (*input=='"')
 		input++;
-	len = r_str_escape (input)+zero;
+	len = r_str_unescape (input)+zero;
 	r_hex_bin2str ((ut8*)input, len, op->buf_hex);
 	strncpy ((char*)op->buf, input, R_ASM_BUFSIZE);
 	return len;
@@ -314,7 +314,8 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	//	r_hex_bin2str (buf, oplen, op->buf_hex);
 	} else ret = 0;
 	r_mem_copyendian (op->buf, buf, oplen, !a->big_endian);
-	r_hex_bin2str (buf, op->size, op->buf_hex);
+	*op->buf_hex = 0;
+	r_hex_bin2str (buf, oplen, op->buf_hex);
 	return ret;
 }
 

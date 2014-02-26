@@ -140,6 +140,7 @@ static void resize (int sig) {
 R_API RCons *r_cons_new () {
 	I.line = r_line_new ();
 	I.event_interrupt = NULL;
+	I.fps = 0;
 	I.blankline = R_TRUE;
 	I.teefile = NULL;
 	I.fix_columns = 0;
@@ -359,6 +360,19 @@ R_API void r_cons_visual_flush() {
 #endif
 	}
 	r_cons_reset ();
+	if (I.fps) {
+		int w = r_cons_get_size (NULL);
+		int fps = 0;
+		static ut64 prev = 0LL; //r_sys_now ();
+		fps = 0;
+		if (prev) {
+			ut64 now = r_sys_now ();
+			ut64 diff = now-prev;
+			fps = (diff<1000000)? (1000000/diff): 0;
+			prev = now;
+		} else prev = r_sys_now ();
+		eprintf ("\x1b[0;%dH[%d FPS] \n", w-10, fps);
+	}
 	return;
 }
 
@@ -622,4 +636,9 @@ R_API void r_cons_set_interactive(int x) {
 
 R_API void r_cons_set_last_interactive() {
 	r_cons_singleton ()->is_interactive = lasti;
+}
+
+R_API void r_cons_set_title(const char *str) {
+	r_cons_printf ("\x1b]0;%s\007", str);
+	
 }

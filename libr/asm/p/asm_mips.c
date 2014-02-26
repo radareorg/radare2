@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2014 - pancake, nibble */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -97,7 +97,7 @@ RAsmPlugin r_asm_plugin_mips = {
 	.arch = "mips",
 	.license = "GPL3",
 	.bits = 32|64,
-	.desc = "MIPS disassembly plugin",
+	.desc = "MIPS CPU",
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,

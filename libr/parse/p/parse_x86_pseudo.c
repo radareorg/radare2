@@ -163,10 +163,10 @@ static inline int issegoff (const char *w) {
 
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {
-	int i;
-	char *ptr, *ptr2;
 	strncpy (str, data, len);
 #if USE_VARSUBS
+	int i;
+	char *ptr, *ptr2;
 	for (i = 0; i < R_ANAL_VARSUBS; i++)
 		if (f->varsubs[i].pat[0] != '\0' && \
 			f->varsubs[i].sub[0] != '\0' && \

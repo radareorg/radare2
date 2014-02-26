@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - earada, pancake */
+/* radare - LGPL - Copyright 2009-2014 - earada, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -414,7 +414,7 @@ RAsmPlugin r_asm_plugin_dalvik = {
 	.name = "dalvik",
 	.arch = "dalvik",
 	.license = "LGPL3",
-	.desc = "Dalvik (Android VM) disassembly plugin",
+	.desc = "AndroidVM Dalvik",
 	.bits = 32|64,
 	.init = &init,
 	.fini = NULL,

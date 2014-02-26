@@ -61,8 +61,8 @@ R_API ut64 r_sys_now(void) {
 	struct timeval now;
 	gettimeofday (&now, NULL);
 	ret = now.tv_sec;
-	ret <<= 32;
-	ret += now.tv_usec;
+	ret <<= 20;
+	ret |= now.tv_usec;
 	//(sizeof (now.tv_sec) == 4
 	return ret;
 }
@@ -362,7 +362,9 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		close (sh_in[1]);
 		waitpid (pid, &status, 0);
 		if (status != 0) {
-			eprintf ("%s: command '%s' returned !0\n", __func__, cmd);
+			char *escmd = r_str_escape (cmd);
+			eprintf ("%s: failed command '%s'\n", __func__, escmd);
+			free (escmd);
 			return R_FALSE;
 		}
 
