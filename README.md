@@ -27,25 +27,25 @@ radare2 is portable.
 
 Architectures:
 
-  8051, arm, arc, avr, bf, tms320 (c54x, c55x, c55+),
-  csr, dcpu16, dalvik, i8080, mips, m68k, mips, msil,
-  sh, sparc, rar, powerpc, i386, x86-64
+  6502, 8051, arm, arc, avr, bf, tms320 (c54x, c55x, c55+), gameboy
+  csr, dcpu16, dalvik, i8080, mips, m68k, mips, msil, snes, nios II,
+  sh, sparc, rar, powerpc, i386, x86-64, H8/300, malbolge, T8200
 
 File Formats:
 
-  bios, dex, elf, elf64, filesystem, java,
-  fatmach0, mach0, mach0-64, MZ, PE, PE+,
-  TE, plan9, dyldcache
+  bios, dex, elf, elf64, filesystem, java, fatmach0, mach0,
+  mach0-64, MZ, PE, PE+, TE, COFF, plan9, bios, dyldcache,
+  Gameboy ROMs
 
 Operating Systems:
 
-  Android, GNU/Linux, [Net|Free|Open]BSD, iOS,
-  OSX, QNX, w32, w64, Solaris, Haiku, FirefoxOS
+  Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
+  w64, Solaris, Haiku, FirefoxOS
 
 Bindings:
 
-  Vala/Genie, Python, NodeJS, LUA, Go, Perl,
-  Guile, php5, newlisp, Ruby, Java, ...
+  Vala/Genie, Python (2, 3), NodeJS, LUA, Go, Perl,
+  Guile, php5, newlisp, Ruby, Java, OCAML, ...
 
 # Dependencies
 
