@@ -182,9 +182,9 @@ static RList* relocs(RBinFile *arch) {
 }
 
 static RList* libs(RBinFile *arch) {
+	struct r_bin_pe_lib_t *libs = NULL;
 	RList *ret = NULL;
 	char *ptr = NULL;
-	struct r_bin_pe_lib_t *libs = NULL;
 	int i;
 
 	if (!(ret = r_list_new ()))
@@ -198,6 +198,21 @@ static RList* libs(RBinFile *arch) {
 	}
 	free (libs);
 	return ret;
+}
+
+static int is_dot_net(RBinFile *arch) {
+	struct r_bin_pe_lib_t *libs = NULL;
+	int i;
+	if (!(libs = PE_(r_bin_pe_get_libs)(arch->o->bin_obj)))
+		return R_FALSE;
+	for (i = 0; !libs[i].last; i++) {
+		if (!strcmp (libs[i].name, "mscoree.dll")) {
+			free (libs);
+			return R_TRUE;
+		}
+	}
+	free (libs);
+	return R_FALSE;
 }
 
 static RBinInfo* info(RBinFile *arch) {
@@ -226,6 +241,9 @@ static RBinInfo* info(RBinFile *arch) {
 	if ((str = PE_(r_bin_pe_get_subsystem) (arch->o->bin_obj))) {
 		strncpy (ret->subsystem, str, R_BIN_SIZEOF_STRINGS);
 		free (str);
+	}
+	if (is_dot_net (arch)) {
+		ret->lang = "msil";
 	}
 	if (PE_(r_bin_pe_is_dll) (arch->o->bin_obj))
 		strncpy (ret->type, "DLL (Dynamic Link Library)", R_BIN_SIZEOF_STRINGS);
