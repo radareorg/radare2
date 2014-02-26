@@ -688,6 +688,7 @@ R_API void r_core_visual_mounts (RCore *core) {
 
 		/* Ask for option */
 		ch = r_cons_readchar ();
+		if (ch==-1||ch==4) return;
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 			case 'l':
@@ -751,8 +752,10 @@ R_API void r_core_visual_mounts (RCore *core) {
 
 				} else if (mode == 3) {
 					fsroot = r_list_get_n (core->fs->roots, option);
-					root = strdup (fsroot->path);
-					strncpy (path, root, sizeof (path)-1);
+					if (fsroot) {
+						root = strdup (fsroot->path);
+						strncpy (path, root, sizeof (path)-1);
+					}
 					mode = 2;
 				}
 				dir = partition = option = 0;
@@ -792,6 +795,9 @@ R_API void r_core_visual_mounts (RCore *core) {
 				break;
 			case 'h':
 				if (mode == 2) {
+					if (!root) {
+						mode = 0;
+					} else 
 					if (strcmp (path, root)) {
 						strcat (path, "/..");
 						r_str_chop_path (path);
