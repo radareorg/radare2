@@ -1,4 +1,4 @@
-/* ported to C by pancake for r2 in 2012-2013 */
+/* ported to C by pancake for r2 in 2012-2014 */
 // TODO: integrate floating point support
 // TODO: do not use global variables
 /*
@@ -20,6 +20,10 @@ static inline RNumCalcValue Nsetf(double v) { RNumCalcValue n; n.d = v; n.n = (u
 static inline RNumCalcValue Naddf(RNumCalcValue n, double v) { n.d += v; n.n += (ut64)v; return n; }
 static inline RNumCalcValue Naddi(RNumCalcValue n, ut64 v) { n.d += (double)v; n.n += v; return n; }
 static inline RNumCalcValue Nsubi(RNumCalcValue n, ut64 v) { n.d -= (double)v; n.n -= v; return n; }
+static inline RNumCalcValue Nneg(RNumCalcValue n) { n.n = ~n.n; return n; }
+static inline RNumCalcValue Norr(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n |= v.n; return n; }
+static inline RNumCalcValue Nxor(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n ^= v.n; return n; }
+static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; n.n &= v.n; return n; }
 static inline RNumCalcValue Nadd(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n += v.n; return n; }
 static inline RNumCalcValue Nsub(RNumCalcValue n, RNumCalcValue v) { n.d -= v.d; n.n -= v.n; return n; }
 static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) { n.d *= v.d; n.n *= v.n; return n; }
@@ -44,11 +48,15 @@ static void error(RNum *num, RNumCalc *nc, const char *s) {
 static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 	RNumCalcValue left = term (num, nc, get);
 	for (;;) {
-		if (nc->curr_tok == RNCPLUS)
-			left = Nadd (left, term (num, nc, 1));
-		else if (nc->curr_tok == RNCMINUS)
-			left = Nsub (left, term (num, nc, 1));
-		else break;
+		switch (nc->curr_tok) {
+		case RNCPLUS: left = Nadd (left, term (num, nc, 1)); break;
+		case RNCMINUS: left = Nsub (left, term (num, nc, 1)); break;
+		case RNCXOR: left = Nxor (left, term (num, nc, 1)); break;
+		case RNCORR: left = Norr (left, term (num, nc, 1)); break;
+		case RNCAND: left = Nand (left, term (num, nc, 1)); break;
+		default:
+			return left;
+		}
 	}
 	return left;
 }
@@ -89,8 +97,13 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 		if (nc->curr_tok == RNCINC) Naddi (v, 1);
 		if (nc->curr_tok == RNCDEC) Nsubi (v, 1);
 		return v;
+	case RNCNEG:
+		v = nc->number_value;
+		get_token (num, nc);
+		return Nneg (nc->number_value); //prim (num, nc, 1), 1);
 	case RNCINC: return Naddi (prim (num, nc, 1), 1);
 	case RNCDEC: return Naddi (prim (num, nc, 1), -1);
+	case RNCORR: return Norr (v, prim (num, nc, 1));
 	case RNCMINUS: return Nsub (v, prim (num, nc, 1));
 	case RNCLEFTP:
 		v = expr (num, nc, 1);
@@ -200,18 +213,28 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			return nc->curr_tok = RNCINC;
 		cin_putback (num, nc, c);
 		return nc->curr_tok = (RNumCalcToken) ch;
+	// negate hack
+	case '~':
+		if (cin_get (num, nc, &c) && c == '-')
+			return nc->curr_tok = RNCNEG;
+		cin_putback (num, nc, c);
+		return nc->curr_tok = (RNumCalcToken) ch;
+	// negative number
 	case '-':
 		if (cin_get (num, nc, &c) && c == '-')
 			return nc->curr_tok = RNCDEC;
 		cin_putback (num, nc, c);
 		return nc->curr_tok = (RNumCalcToken) ch;
+	case '^':
+	case '&':
+	case '|':
 	case '*':
 	case '/':
 	case '(':
 	case ')':
 	case '=':
 		return nc->curr_tok = (RNumCalcToken) ch;
-	case '0':case '1': case '2': case '3': case '4':
+	case '0': case '1': case '2': case '3': case '4':
 	case '5': case '6': case '7': case '8': case '9':
 	case '.':
 		cin_putback (num, nc, ch);
@@ -247,10 +270,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 			}
 			nc->string_value[i] = 0;
 			cin_putback (num, nc, ch);
-
 			return nc->curr_tok = RNCNAME;
-}
-		//}
+		}
 		error (num, nc, "bad token");
 		return nc->curr_tok = RNCPRINT;
 	}
