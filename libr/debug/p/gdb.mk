@@ -1,7 +1,9 @@
 #include ../../config.mk
 #BINDEPS=r_reg r_bp r_util r_io r_anal
 
-CFLAGS+=-Ip/libgdbwrap/include
+CFLAGS+=-I$(SHLR)/gdb/include/
+LIB_PATH=$(SHRL)/gdb/
+
 ifeq (${OSTYPE},windows)
 LDFLAGS+=-lwsock32
 endif
@@ -20,10 +22,6 @@ LDFLAGS+=-L$(LTOP)/bp -lr_bp
 LDFLAGS+=-L$(LTOP)/io -lr_io
 
 OBJ_GDB=debug_gdb.o 
-#libgdbwrap/gdbwrapper.o
-
-#libgdbwrap/gdbwrapper.o:
-#	${CC} -c ${CFLAGS} ${LDFLAGS} -o p/libgdbwrap/gdbwrapper.o p/libgdbwrap/gdbwrapper.c
 
 STATIC_OBJ+=${OBJ_GDB}
 TARGET_GDB=debug_gdb.${EXT_SO}
