@@ -119,7 +119,7 @@ typedef struct {
 
 typedef enum {
 	RNCNAME, RNCNUMBER, RNCEND, RNCINC, RNCDEC,
-	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/',
+	RNCPLUS='+', RNCMINUS='-', RNCMUL='*', RNCDIV='/', RNCMOD='%',
 	//RNCXOR='^', RNCOR='|', RNCAND='&',
 	RNCNEG='~', RNCAND='&', RNCORR='|', RNCXOR='^',
 	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')'

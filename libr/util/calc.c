@@ -27,6 +27,11 @@ static inline RNumCalcValue Nand(RNumCalcValue n, RNumCalcValue v) { n.d = v.d; 
 static inline RNumCalcValue Nadd(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n += v.n; return n; }
 static inline RNumCalcValue Nsub(RNumCalcValue n, RNumCalcValue v) { n.d -= v.d; n.n -= v.n; return n; }
 static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) { n.d *= v.d; n.n *= v.n; return n; }
+static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
+	if (v.d) n.d = (n.d - (n.d/v.d)); else n.d = 0;
+	if (v.n) n.n %= v.n; else n.n = 0;
+	return n;
+}
 static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
 	if (v.d) n.d /= v.d; else n.d = 0;
 	if (v.n) n.n /= v.n; else n.n = 0;
@@ -66,6 +71,14 @@ static RNumCalcValue term(RNum *num, RNumCalc *nc, int get) {
 	for (;;) {
 		if (nc->curr_tok == RNCMUL) {
 			left = Nmul (left, prim (num, nc, 1));
+		} else
+		if (nc->curr_tok == RNCMOD) {
+			RNumCalcValue d = prim (num, nc, 1);
+			if (!d.d) {
+				//error (num, nc, "divide by 0");
+				return d;
+			}
+			left = Nmod (left, d);
 		} else
 		if (nc->curr_tok == RNCDIV) {
 			RNumCalcValue d = prim (num, nc, 1);
@@ -111,7 +124,10 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 			get_token (num, nc);
 		else error (num, nc, " ')' expected");
 	case RNCEND:
+	case RNCXOR:
+	case RNCAND:
 	case RNCPLUS:
+	case RNCMOD:
 	case RNCMUL:
 	case RNCDIV:
 	case RNCPRINT:
@@ -229,6 +245,7 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case '&':
 	case '|':
 	case '*':
+	case '%':
 	case '/':
 	case '(':
 	case ')':
