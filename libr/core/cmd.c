@@ -1186,7 +1186,8 @@ next2:
 	// TODO must honor " and `
 
 	/* grep the content */
-	ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
+	if (*cmd!='?')
+		ptr = (char *)r_str_lastbut (cmd, '~', quotestr);
 	if (*cmd!='.' && ptr) {
 		*ptr = '\0';
 		ptr++;
