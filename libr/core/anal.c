@@ -944,9 +944,11 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 	int ret, i, count = 0;
 	RAnalOp op = {0};
 	ut64 at;
+	char bckwrds, do_bckwrd_srch;
 	// TODO: get current section range here or gtfo
 	// ???
 	// XXX must read bytes correctly
+	do_bckwrd_srch = bckwrds = core->search->bckwrds;
 	if (buf==NULL)
 		return -1;
 	r_io_set_fd (core->io, core->file->fd);
@@ -954,14 +956,22 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 		eprintf ("Null reference search is not supported\n");
 	else
 	if (core->blocksize>OPSZ) {
-		for (at = from; at < to; at += core->blocksize - OPSZ) {
+		if(bckwrds){
+			if(from + core->blocksize > to){
+				at = from;
+				do_bckwrd_srch = R_FALSE;
+			}else at = to - core->blocksize;
+		}else at = from;
+		for (; (!bckwrds && at < to) || bckwrds; ) {
 			if (r_cons_singleton ()->breaked)
 				break;
 			// TODO: this can be probably enhaced
 			ret = r_io_read_at (core->io, at, buf, core->blocksize);
 			if (ret != core->blocksize)
 				break;
-			for (i=0; i<core->blocksize-OPSZ; i++) {
+			for (i = bckwrds ? (core->blocksize-OPSZ - 1) : 0; 
+			     (!bckwrds && i < core->blocksize-OPSZ) || (bckwrds && i > 0); 
+			     bckwrds ? i-- : i++) {
 				r_anal_op_fini (&op);
 				if (!r_anal_op (core->anal, &op, at+i, buf+i, core->blocksize-i))
 					continue;
@@ -983,6 +993,14 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref) {
 					}
 				}
 			}
+			if(bckwrds){
+				if(!do_bckwrd_srch) break;
+				if(at > from + core->blocksize - OPSZ) at -= core->blocksize;
+				else{
+					do_bckwrd_srch = R_FALSE;
+					at = from;
+				}
+			}else at += core->blocksize - OPSZ;
 		}
 	} else eprintf ("error: block size too small\n");
 	free (buf);
