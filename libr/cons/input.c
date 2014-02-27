@@ -115,6 +115,17 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 			case 'B': ch='j'; break; // down
 			case 'C': ch='l'; break; // right
 			case 'D': ch='h'; break; // left
+			case 'M': // Mouse events
+				ch = r_cons_readchar ();
+				/* Skip the x/y coordinates */
+				(void)r_cons_readchar();
+				(void)r_cons_readchar();
+
+				/* Grab wheel events only */
+				if (ch >= 64 + 32)
+					ch = "jk"[(ch - (64 + 32))&1];
+				else
+					ch = 0;
 			}
 			break;
 		}

@@ -1163,6 +1163,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	core->cons->event_resize = \
 		(RConsEvent)r_core_visual_refresh;
 	r_cons_show_cursor (R_FALSE);
+	r_cons_enable_mouse (R_TRUE);
 
 	// disable tee in cons
 	teefile = r_cons_singleton ()->teefile;
@@ -1190,6 +1191,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 		if (ch==-1 || ch==4) break; // error or eof
 	} while (r_core_visual_cmd (core, ch));
 
+	r_cons_enable_mouse (R_FALSE);
 	if (color)
 		r_cons_printf (Color_RESET);
 	r_config_set_i (core->config, "scr.color", color);

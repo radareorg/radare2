@@ -137,6 +137,18 @@ static void resize (int sig) {
 }
 #endif
 
+// http://invisible-island.net/xterm/ctlseqs/ctlseqs.txt
+R_API void r_cons_enable_mouse (const int enable)
+{
+    if (enable) {
+        r_cons_printf("\x1B[?1001s");
+        r_cons_printf("\x1B[?1000h");
+    } else {
+        r_cons_printf("\x1B[?1000l");
+        r_cons_printf("\x1B[?1001r");
+    }
+}
+
 R_API RCons *r_cons_new () {
 	I.line = r_line_new ();
 	I.event_interrupt = NULL;
