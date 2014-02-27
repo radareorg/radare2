@@ -28,36 +28,44 @@ R_API int r_core_bin_refresh_strings(RCore *r) {
 }
 
 static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
+#define MINSTR 4
 	char *p, *q, str[R_FLAG_NAME_SIZE];
 	RBinSection *section;
-	int hasstr, minstr;
+	int hasstr, minstr, rawstr;
 	RBinString *string;
 	RListIter *iter;
 	RList *list;
 	int i = 0;
+	minstr = r_config_get_i (r->config, "bin.minstr");
+	rawstr = r_config_get_i (r->config, "bin.rawstr");
+	r->bin->cur->rawstr = rawstr;
 
 	if (!(hasstr = r_config_get_i (r->config, "bin.strings")))
 		return 0;
 	if (!r->bin->cur->curplugin) return 0;
 	if (!r->bin->cur->curplugin->info) {
-		if (!r_config_get_i (r->config, "bin.rawstr")) {
+		if (!rawstr) {
 			eprintf ("WARN: Use '-e bin.rawstr=true' or 'rabin2 -zz'"
 				" to find strings on unknown file types\n");
-			return 0;
+			return R_FALSE;
 		}
 	}
-	minstr = r_config_get_i (r->config, "bin.minstr");
 	//if (r->bin->minstrlen == 0 && minstr>0) r->bin->minstrlen = minstr;
 	//else if (r->bin->minstrlen > 0) r_config_set_i (r->config, "bin.minstr", r->bin->minstrlen);
 	if (r->bin->minstrlen==0) {
 		r->bin->minstrlen = r->bin->cur->curplugin->minstrlen;
 		if (r->bin->minstrlen==0)
-			r->bin->minstrlen = 4;
+			r->bin->minstrlen = MINSTR;
 	}
-	if (r->bin->minstrlen <=0)
-		return -1;
+	if (minstr || r->bin->minstrlen <=0) {
+		r->bin->minstrlen = R_MIN (minstr, MINSTR);
+		//return R_FALSE;
+	}
 
 	/* code */
+	if (rawstr) {
+		// TODO: search in whole file, ignoring sections
+	}
 	if ((list = r_bin_get_strings (r->bin)) == NULL)
 		return R_FALSE;
 

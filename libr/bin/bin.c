@@ -222,21 +222,21 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 	sz = -1;
 	offset = 0;
 
-	if (end == -1 || start == -1) return R_FALSE;
+	if (end == -1 || start == -1)
+		return R_FALSE;
 
 	sz = end - start;
-	buf_bytes = malloc(sz);
+	buf_bytes = malloc (sz);
 
 	if (!buf_bytes || !desc->plugin->read (io, desc, buf_bytes, sz)) {
 		free (buf_bytes);
 		return R_FALSE;
 	}
 
-	memcpy (&rawstr, buf_bytes, 4);
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->file = strdup (desc->name);
 	bin->cur->buf = r_buf_new ();
-	bin->cur->rawstr = rawstr;
+	bin->cur->rawstr = NULL;
 	bin->file = desc->name;
 
 	if (bin->cur->buf)
@@ -286,7 +286,7 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 		set_bin_items (bin, a->curplugin);
 	}
 
-	bin->cur->o->referenced += 1;
+	bin->cur->o->referenced ++;
 	r_list_append (bin->binfiles, bin->cur);
 	return R_TRUE;
 }
