@@ -56,8 +56,8 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 			break;
 		}
 		len = strlen (data)+1;
-		si->bytes = (ut8 *)malloc (len);
-		si->mask = (ut8 *)malloc (len);
+		si->bytes = (ut8 *)malloc (R_MAX (len, 4));
+		si->mask = (ut8 *)malloc (R_MAX (len, 4));
 		if (si->bytes == NULL || si->mask == NULL) {
 			eprintf ("Cannot malloc\n");
 			free (si->mask);
