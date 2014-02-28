@@ -55,7 +55,7 @@ R_API int r_sign_add(RSign *sig, RAnal *anal, int type, const char *name, const 
 			free (si);
 			break;
 		}
-		len = strlen (data)+1;
+		len = strlen (data)+4; // \xf0
 		si->bytes = (ut8 *)malloc (R_MAX (len, 4));
 		si->mask = (ut8 *)malloc (R_MAX (len, 4));
 		if (si->bytes == NULL || si->mask == NULL) {
