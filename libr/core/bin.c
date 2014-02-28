@@ -57,7 +57,7 @@ static int bin_strings (RCore *r, int mode, ut64 baddr, int va) {
 		if (r->bin->minstrlen==0)
 			r->bin->minstrlen = MINSTR;
 	}
-	if (minstr || r->bin->minstrlen <=0) {
+	if (minstr>0 || r->bin->minstrlen <=0) {
 		r->bin->minstrlen = R_MIN (minstr, MINSTR);
 		//return R_FALSE;
 	}
