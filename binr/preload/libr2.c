@@ -8,6 +8,7 @@ static void sigusr1(int s) {
 	r_core_file_close (core, fd);
 }
 
+#if __UNIX__
 static void _libwrap_init() __attribute__ ((constructor));
 static void _libwrap_init() {
 	signal (SIGUSR1, sigusr1);
@@ -17,3 +18,4 @@ static void _libwrap_init() {
 	// TODO: maybe reopen every time a signal is spawned to reload memory regions information
 	// TODO: open io_self
 }
+#endif
