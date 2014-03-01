@@ -28,7 +28,10 @@ endif
 endif
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${LINK}
-
+ifeq ($(ISLIB),1)
+BEXE=$(BIN).$(EXT_SO)
+LDFLAGS+=-shared
+endif
 #--------------------#
 # Rules for programs #
 #--------------------#

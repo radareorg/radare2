@@ -1,25 +1,15 @@
-include ../../libr/config.mk
+BIN=libr2
+ISLIB=1
+BINDEPS=r_core r_parse r_search r_cons r_config r_cmd
+BINDEPS+=r_bin r_debug r_anal r_diff r_reg r_bp r_io
+BINDEPS+=r_lang r_asm r_syscall r_db r_hash r_crypto
+BINDEPS+=r_magic r_socket r_flags r_util r_egg r_fs
 
-all: libr2.$(EXT_SO)
+include ../rules.mk
+CFLAGS+=-DR2_GITTAP=\"$(GIT_TAP)\"
 
-libr2.$(EXT_SO): libr2.c
-	$(CC) -shared -fPIC libr2.c -o libr2.$(EXT_SO) \
-		`pkg-config --cflags --libs r_core`
-
-test:
-	rarun2 preload=libr2.$(EXT_SO) program=/bin/cat
-
-.PHONY: alloc
-alloc:
-	$(CC) -o alloc alloc.c -D__MAIN__
-	./alloc
-
-traps:
-	@for a in *.asm ; do \
-		printf "$$a\t" ; \
-		rasm2 -f $$a ; \
-	done ; true
-
-clean:
-	rm -f libr2.dylib alloc
-
+ifeq ($(OSTYPE),android)
+LDFLAGS+=${DL_LIBS} -lm
+endif
+include ../../libr/socket/deps.mk
+include ../../shlr/zip/deps.mk
