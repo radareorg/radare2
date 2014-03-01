@@ -57,7 +57,7 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 }
 
 R_API int r_hex_str2bin(const char *in, ut8 *out) {
-	unsigned int len = 0, j = 0;
+	int len = 0, j = 0;
 	const char *ptr;
 	ut8 c = 0, d = 0;
 
@@ -122,7 +122,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 		}
 		if (r_hex_to_byte (&c, ptr[0])) {
 			//eprintf("binstr: Invalid hexa string at %d ('0x%02x') (%s).\n", (int)(ptr-in), ptr[0], in);
-			return -1;
+			return len;
 		}
 		c |= d;
 		if (j++ == 0) c <<= 4;
@@ -142,7 +142,7 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	memcpy (out, in, ilen);
 	for (ptr=out; *ptr; ptr++) if (*ptr=='.') *ptr = '0';
 	len = r_hex_str2bin ((char*)out, out);
-	if (len<0) { has_nibble = 1; len =-len; }
+	if (len<0) { has_nibble = 1; len = -len; }
 	if (len != -1) {
 		memcpy (mask, in, ilen);
 		if (has_nibble)
