@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2013 - pancake */
+/* radare - LGPL - Copyright 2007-2014 - pancake */
 /* dietline is a lightweight and portable library similar to GNU readline */
 
 #include <r_cons.h>
@@ -315,8 +315,7 @@ R_API void r_line_autocomplete() {
 	/* show options */
 	if (opt>1 && I.echo) {
 		const int sep = 3;
-		int col = 10;
-		int slen;
+		int slen, col = 10;
 		printf ("%s%s\n", I.prompt, I.buffer.data);
 		for (i=0; i<argc && argv[i]; i++) {
 			int l = strlen (argv[i]);

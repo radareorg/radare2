@@ -140,6 +140,7 @@ typedef struct r_cons_t {
 	int blankline;
 	int truecolor; // 0 = ansi, 1 = rgb 256), 2 = truecolor (16M)
 	int null; // if set, does not show anything
+	int mouse;
 	RConsPalette pal;
 	struct r_line_t *line;
 	const char **vline;
@@ -342,7 +343,7 @@ R_API void r_cons_column(int c);
 R_API int r_cons_get_column (void);
 R_API char *r_cons_message(const char *msg);
 R_API void r_cons_set_title(const char *str);
-R_API void r_cons_enable_mouse(const int enable);
+R_API int r_cons_enable_mouse(const int enable);
 #endif
 
 /* r_line */

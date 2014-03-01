@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2012 - pancake */
+/* radare - LGPL - Copyright 2011-2014 - pancake */
 
 // TODO: implement the rap API in r_socket ?
 #include "r_io.h"
@@ -196,7 +196,7 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		r_socket_flush (rap_fd);
 		// read
 		eprintf ("waiting... ");
-buf[0] = 0;
+		buf[0] = 0;
 		r_socket_read_block (rap_fd, (ut8*)buf, 5);
 		if (buf[0] != (char)(RMT_OPEN|RMT_REPLY)) {
 			eprintf ("rap: Expecting OPEN|REPLY packet. got %02x\n", buf[0]);
@@ -250,7 +250,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	} else
 		op = RMT_CMD;
 	buf[0] = op;
-	i = strlen (command);
+	i = strlen (command)+1;
 	if (i>RMT_MAX) {
 		eprintf ("Command too long\n");
 		return -1;
@@ -272,14 +272,20 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	if (i == -1)
 		return -1;
 	ret = 0;
-	if (i>RMT_MAX) {
-		ret = i-RMT_MAX;
-		i = RMT_MAX;
-	}
 	ptr = (char *)malloc (i);
 	if (ptr) {
-		r_socket_read_block (s, (ut8*)ptr, i);
-		j = write (1, ptr, i);
+		int ir, tr = 0;
+		do {
+			ir = r_socket_read_block (s, (ut8*)ptr+tr, i-tr);
+			if (ir>0) tr += ir;
+			else break;
+		} while (tr<i);
+		// TODO: use io->printf() with support for \x00
+		ptr[i] = 0;
+		if (io->printf) {
+			io->printf ("%s", ptr);
+			j = i;
+		} else j = write (1, ptr, i);
 		free (ptr);
 	}
 	/* Clean */

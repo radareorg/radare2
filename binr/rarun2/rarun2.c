@@ -1,4 +1,4 @@
-/* radare2 - Copyleft 2011-2013 - pancake */
+/* radare2 - Copyleft 2011-2014 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,6 +21,7 @@ static char *_stderr = NULL;
 static char *_chgdir = NULL;
 static char *_chroot = NULL;
 static char *_preload = NULL;
+static int _r2preload = 0;
 static char *_setuid = NULL;
 static char *_seteuid = NULL;
 static char *_setgid = NULL;
@@ -100,6 +101,8 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "chdir")) _chgdir = strdup (e);
 	else if (!strcmp (b, "chroot")) _chroot = strdup (e);
 	else if (!strcmp (b, "preload")) _preload = strdup (e);
+	else if (!strcmp (b, "r2preload")) _r2preload = \
+		(strcmp (e, "yes")? (strcmp (e, "true")? (strcmp (e, "1")? 0: 1): 1): 1);
 	else if (!strcmp (b, "setuid")) _setuid = strdup (e);
 	else if (!strcmp (b, "seteuid")) _seteuid = strdup (e);
 	else if (!strcmp (b, "setgid")) _setgid = strdup (e);
@@ -231,6 +234,12 @@ static int runfile () {
 		write (f2[1], _input, strlen (_input));
 	}
 #endif
+	if (_r2preload) {
+		if (_preload) {
+			eprintf ("WARNING: Only one library can be opened at a time\n");
+		}
+		_preload = R2_LIBDIR"/libr2.dylib";
+	}
 	if (_preload) {
 #if __APPLE__
 		// 10.6

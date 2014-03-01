@@ -967,7 +967,8 @@ reaccept:
 				{
 				char bufr[8], *bufw = NULL;
 				char *cmd = NULL, *cmd_output = NULL;
-				int i, cmd_len = 0;
+				ut32 cmd_len = 0;
+				int i;
 
 				/* read */
 				r_socket_read_block (c, (ut8*)&bufr, 4);
@@ -983,15 +984,16 @@ reaccept:
 					} else eprintf ("rap: cannot malloc\n");
 				} else eprintf ("rap: invalid length '%d'\n", i);
 				/* write */
-				if (cmd_output)
-					cmd_len = strlen(cmd_output) + 1;
-				else {
-					cmd_output = strdup("");
+				if (cmd_output) {
+					cmd_len = strlen (cmd_output) + 1;
+				} else {
+					cmd_output = strdup ("");
 					cmd_len = 0; 
 				}
 				bufw = malloc (cmd_len + 5);
 				bufw[0] = RMT_CMD | RMT_REPLY;
-				r_mem_copyendian ((ut8*)bufw+1, (ut8 *)&cmd_len, 4, !LE);
+				r_mem_copyendian ((ut8*)bufw+1,
+					(ut8 *)&cmd_len, 4, !LE);
 				memcpy (bufw+5, cmd_output, cmd_len);
 				r_socket_write (c, bufw, cmd_len+5);
 				r_socket_flush (c);

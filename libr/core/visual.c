@@ -14,8 +14,11 @@ static int autoblocksize = 1;
 static int obs = 0;
 
 static void showcursor(RCore *core, int x) {
-	if (core && core->vmode)
+	if (core && core->vmode) {
 		r_cons_show_cursor (x);
+		r_cons_enable_mouse (!!!x);
+	} else r_cons_enable_mouse (R_FALSE);
+	r_cons_flush ();
 }
 
 // XXX: use core->print->cur_enabled instead of curset/cursor/ocursor
@@ -381,6 +384,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 	switch (ch) {
 	case 0x0d:
 		{
+			r_cons_enable_mouse (R_TRUE);
 			RAnalOp *op = r_core_anal_op (core, core->offset+cursor);
 			if (op) {
 				if (op->type == R_ANAL_OP_TYPE_JMP	|| 
@@ -462,6 +466,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		int range, min, max;
 		char name[256], *n;
 		r_line_set_prompt ("flag name: ");
+		showcursor (core, R_TRUE);
 		if (r_cons_fgets (name, sizeof (name), 0, NULL) >=0 && *name) {
 			n = r_str_chop (name);
 			if (*name=='-') {
@@ -479,6 +484,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					core->offset + min, range, 1);
 			}
 		} }
+showcursor (core, R_FALSE);
 		break;
 	case 'F':
 		r_flag_unset_i (core->flags, core->offset + cursor, NULL);
@@ -563,7 +569,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 		RAnalFunction *fun;
 
 		if ((xrefs = r_anal_xref_get (core->anal, core->offset))) {
-r_cons_gotoxy (1,1);
+			r_cons_gotoxy (1, 1);
 			r_cons_printf ("[GOTO XREF]> \n");
 			if (r_list_empty (xrefs)) {
 				r_cons_printf ("\tNo XREF found at 0x%"PFMT64x"\n", core->offset);
@@ -584,10 +590,8 @@ r_cons_gotoxy (1,1);
 		ch = r_cons_readchar ();
 		if (ch >= '0' && ch <= '9') {
 			refi = r_list_get_n (xrefs, ch-0x30);
-			if (refi) {
-				sprintf (buf, "s 0x%"PFMT64x, refi->at);
-				r_core_cmd (core, buf, 0);
-			}
+			if (refi)
+				r_core_cmdf (core, "s 0x%"PFMT64x, refi->at);
 		}
 		if (xrefs)
 			r_list_free (xrefs);

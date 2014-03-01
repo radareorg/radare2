@@ -1,8 +1,12 @@
 include ../../libr/config.mk
 
-all:
+all: libr2.$(EXT_SO)
+
+libr2.$(EXT_SO): libr2.c
 	$(CC) -shared -fPIC libr2.c -o libr2.$(EXT_SO) \
 		`pkg-config --cflags --libs r_core`
+
+test:
 	rarun2 preload=libr2.$(EXT_SO) program=/bin/cat
 
 .PHONY: alloc

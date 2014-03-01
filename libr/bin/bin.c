@@ -219,13 +219,14 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 	buf_bytes = NULL;
 	end = desc->plugin->lseek (io, desc, 0, SEEK_END);
 	start = desc->plugin->lseek (io, desc, 0, SEEK_SET);
-	sz = -1;
 	offset = 0;
 
-	if (end == -1 || start == -1)
+	if (end == UT64_MAX || start == UT64_MAX)
 		return R_FALSE;
 
 	sz = end - start;
+	if (sz>(64*1024*1024)) // too big, probably wrong
+		return R_FALSE;
 	buf_bytes = malloc (sz);
 
 	if (!buf_bytes || !desc->plugin->read (io, desc, buf_bytes, sz)) {

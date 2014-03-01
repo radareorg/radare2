@@ -120,12 +120,18 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				/* Skip the x/y coordinates */
 				(void)r_cons_readchar();
 				(void)r_cons_readchar();
-
-				/* Grab wheel events only */
-				if (ch >= 64 + 32)
-					ch = "jk"[(ch - (64 + 32))&1];
-				else
+				if (ch==0x20) {
+					// click
+					r_cons_enable_mouse (R_FALSE);
 					ch = 0;
+					//r_cons_enable_mouse (R_TRUE);
+				} else
+				if (ch >= 64 + 32) {
+					/* Grab wheel events only */
+					ch = "kj"[(ch - (64 + 32))&1];
+				} else {
+					ch = 0;
+				}
 			}
 			break;
 		}
@@ -133,17 +139,22 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	return ch;
 }
 
+
 // XXX no control for max length here?!?!
 R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
+#define RETURN(x) { ret=x; goto beach; }
 	RCons *cons = r_cons_singleton ();
-	int color = cons->pal.input && *cons->pal.input;
+	int ret = 0, color = cons->pal.input && *cons->pal.input;
+	int mouse = r_cons_enable_mouse (R_FALSE);
+	r_cons_enable_mouse (R_FALSE);
+	r_cons_flush ();
 	if (cons->user_fgets)
-		return cons->user_fgets (buf, len);
+		RETURN (cons->user_fgets (buf, len));
 	*buf = '\0';
 	fflush (cons->fdin);
 	if (color) {
 		const char *p = cons->pal.input;
-		int len = p? strlen (p):0;
+		int len = p? strlen (p): 0;
 		if (len>0)
 			fwrite (p, len, 1, stdout);
 		fflush (stdout);
@@ -153,15 +164,18 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 			printf (Color_RESET);
 			fflush (stdout);
 		}
-		return -1;
+		RETURN (-1);
 	}
 	if (feof (cons->fdin)) {
 		if (color) printf (Color_RESET);
-		return -2;
+		RETURN (-2);
 	}
 	buf[strlen (buf)-1] = '\0';
 	if (color) printf (Color_RESET);
-	return strlen (buf);
+	ret = strlen (buf);
+beach:
+	r_cons_enable_mouse (mouse);
+	return ret;
 }
 
 R_API void r_cons_any_key() {

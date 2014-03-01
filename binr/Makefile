@@ -1,7 +1,7 @@
 include ../global.mk
 BTOP=$(shell pwd)
 
-.PHONY: all clean install install-symlink deinstall uninstall mrproper
+.PHONY: all clean install install-symlink deinstall uninstall mrproper preload
 
 PFX=${DESTDIR}/${PREFIX}
 BFX=${DESTDIR}/${BINDIR}
@@ -9,8 +9,11 @@ LFX=${DESTDIR}/${LIBDIR}
 
 BINS=rax2 rasm2 rabin2 rahash2 radiff2 radare2 rafind2 rarun2 ragg2 r2agent
 
-all:
+all: preload
 	@for a in ${BINS} ; do (cd $$a && ${MAKE} all) || exit 1; done
+
+preload:
+	$(MAKE) -C preload
 
 install:
 	mkdir -p ${BFX}
