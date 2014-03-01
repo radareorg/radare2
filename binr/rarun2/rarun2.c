@@ -238,7 +238,7 @@ static int runfile () {
 		if (_preload) {
 			eprintf ("WARNING: Only one library can be opened at a time\n");
 		}
-		_preload = R2_LIBDIR"/libr2.dylib";
+		_preload = R2_LIBDIR"/libr2."R_LIB_EXT;
 	}
 	if (_preload) {
 #if __APPLE__
