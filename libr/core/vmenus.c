@@ -1221,18 +1221,21 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 }
 
 R_API void r_core_visual_define (RCore *core) {
-	int cur = R_MIN (core->print->cur, core->print->ocur);
 	int plen = core->blocksize;
 	ut64 off = core->offset;
 	int n, ch, ntotal = 0;
 	ut8 *p = core->block;
 	RAnalFunction *f;
 	char *name;
-
 	if (core->print->cur_enabled) {
+		int cur = core->print->cur;
+		if (core->print->ocur != -1) {
+			plen = R_ABS (core->print->cur- core->print->ocur)+1;
+			if (core->print->ocur<cur)
+				cur = core->print->ocur;
+		}
 		off += cur;
 		p += cur;
-		plen = R_ABS (core->print->cur- core->print->ocur)+1;
 	}
 	r_cons_printf ("Define current block as:\n"
 		" r  - rename function\n"
@@ -1296,10 +1299,14 @@ R_API void r_core_visual_define (RCore *core) {
 			int funsize = 0;
 			int depth = r_config_get_i (core->config, "anal.depth");
 			if (core->print->cur_enabled) {
-				funsize = 1+ R_ABS (core->print->cur - core->print->ocur);
+				if (core->print->ocur != -1) {
+					funsize = 1+ R_ABS (core->print->cur - core->print->ocur);
+				}
 				depth = 0;
 			}
-			r_cons_break (NULL,NULL);
+			r_cons_break (NULL, NULL);
+eprintf ("ANAL AT 0x%llx\n", off);
+sleep (3);
 			r_core_anal_fcn (core, off, UT64_MAX,
 				R_ANAL_REF_TYPE_NULL, depth);
 			r_cons_break_end ();
