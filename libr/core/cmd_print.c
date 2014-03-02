@@ -442,7 +442,7 @@ static int cmd_print(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	ut8 *ptr = core->block;
 	RCoreAnalStats *as;
-	ut64 n;
+	ut64 n, nbsz, obsz, fsz;
 
 	l = len = core->blocksize;
 	if (input[0] && input[1]) {
@@ -652,9 +652,19 @@ static int cmd_print(void *data, const char *input) {
 		r_core_anal_stats_free (as);
 		break;
 	case '=':
+		nbsz = r_num_get (core->num, *input?input[1]?input+2:input+1:input);
+		fsz = core->file? core->file->size: 0;
+		if (nbsz) {
+			nbsz = fsz / nbsz;
+			obsz = core->blocksize;
+			r_core_block_size (core, nbsz);
+		} else {
+			nbsz = core->blocksize;
+			obsz = 0LL;
+		}
 		switch (input[1]) {
 		case '?': // bars
-			eprintf ("|Usage: p=[bep?]\n"
+			eprintf ("|Usage: p=[bep?] [num-of-blocks]\n"
 			"| p=   print bytes of current block in bars\n"
 			"| p=b  same as above\n"
 			"| p=e  print entropy for each filesize/blocksize\n"
@@ -664,62 +674,58 @@ static int cmd_print(void *data, const char *input) {
 			{
 			ut8 *p;
 			int psz, i = 0;
-			int fsz = core->file?core->file->size:0;
 
-			psz = fsz / core->blocksize;
+			psz = fsz / nbsz;
 			ptr = malloc (psz);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
 				return R_FALSE;
 			}
-			eprintf ("block = %d * %d\n", core->blocksize, psz);
+			eprintf ("block = %d * %d\n", (int)nbsz, psz);
 			p = malloc (core->blocksize);
 			if (!p) {
 				eprintf ("Error: failed to malloc memory");
 				return R_FALSE;
 			}
 			for (i=0; i<psz; i++) {
-				r_core_read_at (core, i*core->blocksize, p, core->blocksize);
+				r_core_read_at (core, i*nbsz, p, nbsz);
 				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, core->blocksize));
 			}
 			free (p);
 			r_print_fill (core->print, ptr, psz);
-			if (ptr != core->block) {
+			if (ptr != core->block)
 				free (ptr);
-			}
 			}
 			break;
 		case 'p': // printable chars
 			{
 			ut8 *p;
 			int psz, i = 0, j, k;
-			int fsz = core->file?core->file->size:0;
 
-			psz = fsz / core->blocksize;
+			psz = fsz / nbsz;
 			ptr = malloc (psz);
 			if (!ptr) {
 				eprintf ("Error: failed to malloc memory");
 				return R_FALSE;
 			}
-			eprintf ("block = %d * %d\n", core->blocksize, psz);
+			eprintf ("block = %d * %d\n", (int)nbsz, (int)psz);
 			p = malloc (core->blocksize);
 			if (!p) {
 				eprintf ("Error: failed to malloc memory");
 				return R_FALSE;
 			}
 			for (i=0; i<psz; i++) {
-				r_core_read_at (core, i*core->blocksize, p, core->blocksize);
-				for (j=k=0; j<core->blocksize; j++) {
+				r_core_read_at (core, i*nbsz, p, nbsz);
+				for (j=k=0; j<nbsz; j++) {
 					if (IS_PRINTABLE (p[j]))
 						k++;
 				}
-				ptr[i] = 256 * k / core->blocksize;
+				ptr[i] = 256 * k / nbsz;
 			}
 			free (p);
 			r_print_fill (core->print, ptr, psz);
-			if (ptr != core->block) {
+			if (ptr != core->block)
 				free (ptr);
-			}
 			}
 			break;
 		case 'b': // bytes
@@ -729,6 +735,8 @@ static int cmd_print(void *data, const char *input) {
 				free (ptr);
 			}
 		}
+		if (nbsz)
+			r_core_block_size (core, obsz);
 		break;
 	case 'a':
 		if (input[1]=='e') {
@@ -1698,7 +1706,7 @@ static int cmd_print(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"|Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
-		"| p=[bep?]         show entropy/printable chars/chars bars\n"
+		"| p=[bep?] [blks]  show entropy/printable chars/chars bars\n"
 		"| p2 [len]         8x8 2bpp-tiles\n"
 		"| p6[de] [len]     base64 decode/encode\n"
 		"| p8 [len]         8bit hexpair list of bytes\n"
