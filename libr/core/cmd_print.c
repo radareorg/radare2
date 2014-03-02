@@ -653,11 +653,11 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '=':
 		switch (input[1]) {
-		case '?': // entropy
+		case '?': // bars
 			eprintf ("|Usage: p=[bep?]\n"
 			"| p=   print bytes of current block in bars\n"
 			"| p=b  same as above\n"
-			"| p=e  same as above but with entropy\n"
+			"| p=e  print entropy for each filesize/blocksize\n"
 			"| p=p  print number of printable bytes for each filesize/blocksize\n");
 			break;
 		case 'e': // entropy
@@ -665,24 +665,20 @@ static int cmd_print(void *data, const char *input) {
 			ut8 *p;
 			int psz, i = 0;
 			int fsz = core->file?core->file->size:0;
-			int nbsz, obsz = core->blocksize;
 
-			nbsz = r_num_get (core->num, input+2);
-			if (nbsz>0) r_core_block_size (core, nbsz);
 			psz = fsz / core->blocksize;
-			ptr = malloc (core->blocksize);
+			ptr = malloc (psz);
 			eprintf ("block = %d * %d\n", core->blocksize, psz);
-			p = malloc (psz);
-			for (i=0; i<core->blocksize; i++) {
-				r_core_read_at (core, i*psz, p, psz);
-				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, psz));
+			p = malloc (core->blocksize);
+			for (i=0; i<psz; i++) {
+				r_core_read_at (core, i*core->blocksize, p, core->blocksize);
+				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, core->blocksize));
 			}
 			free (p);
-			r_print_fill (core->print, ptr, core->blocksize);
+			r_print_fill (core->print, ptr, psz);
 			if (ptr != core->block) {
 				free (ptr);
 			}
-			if (nbsz>0) r_core_block_size (core, obsz);
 			}
 			break;
 		case 'p': // printable chars
@@ -690,39 +686,32 @@ static int cmd_print(void *data, const char *input) {
 			ut8 *p;
 			int psz, i = 0, j, k;
 			int fsz = core->file?core->file->size:0;
-			psz = fsz/core->blocksize;
-			ptr = malloc (core->blocksize);
-			p = malloc (psz);
-			for (i=0; i<core->blocksize; i++) {
-				r_core_read_at (core, i*psz, p, psz);
-				for (j=k=0; j<psz; j++) {
+
+			psz = fsz / core->blocksize;
+			ptr = malloc (psz);
+			eprintf ("block = %d * %d\n", core->blocksize, psz);
+			p = malloc (core->blocksize);
+			for (i=0; i<psz; i++) {
+				r_core_read_at (core, i*core->blocksize, p, core->blocksize);
+				for (j=k=0; j<core->blocksize; j++) {
 					if (IS_PRINTABLE (p[j]))
 						k++;
 				}
-				ptr[i] = k;
+				ptr[i] = 256 * k / core->blocksize;
 			}
 			free (p);
-			r_print_fill (core->print, ptr, core->blocksize);
+			r_print_fill (core->print, ptr, psz);
 			if (ptr != core->block) {
 				free (ptr);
 			}
 			}
 			break;
-		case 'b':
+		case 'b': // bytes
 		case '\0':
 			r_print_fill (core->print, ptr, core->blocksize);
 			if (ptr != core->block) {
 				free (ptr);
 			}
-#if 0
-			int bsize = 512;
-			/* TODO: Reimplement using API */
-			char *out = r_sys_cmd_strf ("rahash2 -a entropy -b %d '%s'", bsize, core->file->filename);
-			if (out) {
-				r_cons_strcat (out);
-				free (out);
-			}
-#endif
 		}
 		break;
 	case 'a':
@@ -1693,7 +1682,7 @@ static int cmd_print(void *data, const char *input) {
 	default:
 		r_cons_printf (
 		"|Usage: p[=68abcdDfiImrstuxz] [arg|len]\n"
-		"| p=               show entropy bars of full file\n"
+		"| p=[bep?]         show entropy/printable chars/chars bars\n"
 		"| p2 [len]         8x8 2bpp-tiles\n"
 		"| p6[de] [len]     base64 decode/encode\n"
 		"| p8 [len]         8bit hexpair list of bytes\n"
