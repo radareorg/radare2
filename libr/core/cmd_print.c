@@ -229,7 +229,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		}
 		// show comments and flags
 		if (marks>0) {
-			r_cons_strcat ("            ");
+			r_cons_strcat ("              ");
 			memset (out, ' ', sizeof (out));
 			out[sizeof (out)-1] = 0;
 			for (j=0; j<COLS; j++) {

@@ -2,13 +2,13 @@
 
 #include "r_core.h"
 
-#define NPF 5
+#define NPF 6
 static int blocksize = 0;
 static void r_core_visual_refresh (RCore *core);
 static const char *printfmt[] = {
 	"x", "pd $r",
 	"f tmp;sr sp;pxw 64;dr=;s-;s tmp;f-tmp;pd $r",
-	"pxw", "pc"
+	"pxw", "pc", "pxa"
 };
 static int autoblocksize = 1;
 static int obs = 0;
