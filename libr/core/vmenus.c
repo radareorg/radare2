@@ -1305,8 +1305,6 @@ R_API void r_core_visual_define (RCore *core) {
 				depth = 0;
 			}
 			r_cons_break (NULL, NULL);
-eprintf ("ANAL AT 0x%llx\n", off);
-sleep (3);
 			r_core_anal_fcn (core, off, UT64_MAX,
 				R_ANAL_REF_TYPE_NULL, depth);
 			r_cons_break_end ();
