@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -15,7 +15,9 @@ R_API void r_strbuf_init(RStrBuf *sb) {
 }
 
 R_API int r_strbuf_set(RStrBuf *sb, const char *s) {
-	int l = strlen (s);
+	int l;
+	if (!sb || !s) return R_FALSE;
+	l = strlen (s);
 	if (l>=sizeof (sb->buf)) {
 		char *ptr = malloc (l+1);
 		if (!ptr)
