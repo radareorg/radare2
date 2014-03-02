@@ -1250,7 +1250,7 @@ R_API void r_core_visual_define (RCore *core) {
 
 	switch (ch) {
 	case 'r':
-		r_core_cmd0 (core, "?i new function name;afr `?y`");
+		r_core_cmd0 (core, "?i new function name;afn `?y`");
 		break;
 	case 'S':
 		do {
