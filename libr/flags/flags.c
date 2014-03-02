@@ -399,6 +399,15 @@ R_API int r_flag_relocate (RFlag *f, ut64 off, ut64 off_mask, ut64 to) {
 	return n;
 }
 
+R_API int r_flag_move (RFlag *f, ut64 at, ut64 to) {
+	RFlagItem *item = r_flag_get_i (f, at);
+	if (item) {
+		r_flag_set (f, item->name, to, item->size, 0);
+		return R_TRUE;
+	}
+	return R_FALSE;
+}
+
 #ifdef MYTEST
 int main () {
 	RFlagItem *i;

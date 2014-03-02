@@ -665,15 +665,24 @@ static int cmd_print(void *data, const char *input) {
 			ut8 *p;
 			int psz, i = 0;
 			int fsz = core->file?core->file->size:0;
+			int nbsz, obsz = core->blocksize;
+
+			nbsz = r_num_get (core->num, input+2);
+			if (nbsz>0) r_core_block_size (core, nbsz);
 			psz = fsz / core->blocksize;
 			ptr = malloc (core->blocksize);
-			eprintf ("offset = num * %d\n", psz);
+			eprintf ("block = %d * %d\n", core->blocksize, psz);
 			p = malloc (psz);
 			for (i=0; i<core->blocksize; i++) {
 				r_core_read_at (core, i*psz, p, psz);
 				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, psz));
 			}
 			free (p);
+			r_print_fill (core->print, ptr, core->blocksize);
+			if (ptr != core->block) {
+				free (ptr);
+			}
+			if (nbsz>0) r_core_block_size (core, obsz);
 			}
 			break;
 		case 'p': // printable chars
@@ -693,12 +702,18 @@ static int cmd_print(void *data, const char *input) {
 				ptr[i] = k;
 			}
 			free (p);
+			r_print_fill (core->print, ptr, core->blocksize);
+			if (ptr != core->block) {
+				free (ptr);
+			}
 			}
 			break;
-		}
-		r_print_fill (core->print, ptr, core->blocksize);
-		if (ptr != core->block) {
-			free (ptr);
+		case 'b':
+		case '\0':
+			r_print_fill (core->print, ptr, core->blocksize);
+			if (ptr != core->block) {
+				free (ptr);
+			}
 #if 0
 			int bsize = 512;
 			/* TODO: Reimplement using API */

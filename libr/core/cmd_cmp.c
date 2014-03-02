@@ -379,11 +379,23 @@ static int cmd_cmp(void *data, const char *input) {
 		"| cu [addr] @at  Compare memory hexdumps of $$ and dst in unified diff\n"
 		"| cw[us?] [...]  Compare memory watchers\n"
 		"| cat  [file]    Show contents of file (see pwd, ls)\n"
-		"| cl|cls|clear   Clear screen\n");
+		"| cl|cls|clear   Clear screen, (clear0 to goto 0, 0 only)\n");
 		break;
 	case 'l':
-		r_cons_clear ();
+		if (strchr (input, 'f')) {
+			r_cons_flush();
+		} else
+		if (!strchr (input, '0')) {
+			r_cons_clear ();
+#if 0
+write (1, "\x1b[2J", 4);
+write (1, "\x1b[0;0H", 6);
+write (1, "\x1b[0m", 4);
+#endif
+//r_cons_clear();
+		}
 		r_cons_gotoxy (0, 0);
+//		r_cons_flush ();
 		break;
 	default:
 		eprintf ("|Usage: c[?48cdDxfw] [argument]\n");

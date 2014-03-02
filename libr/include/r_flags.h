@@ -70,6 +70,7 @@ R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off);
 R_API int r_flag_relocate (RFlag *f, ut64 off, ut64 off_mask, ut64 to);
+R_API int r_flag_move (RFlag *f, ut64 at, ut64 to);
 
 /* spaces */
 R_API int r_flag_space_get(RFlag *f, const char *name);

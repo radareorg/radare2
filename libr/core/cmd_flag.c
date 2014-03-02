@@ -29,6 +29,9 @@ static int cmd_flag(void *data, const char *input) {
 	case '=':
 		flagbars (core);
 		break;
+	case 'm':
+		r_flag_move (core->flags, core->offset, r_num_math (core->num, input+1));
+		break;
 	case '2':
 		r_flag_get_i2 (core->flags, r_num_math (core->num, input+1));
 		break;
@@ -339,6 +342,7 @@ static int cmd_flag(void *data, const char *input) {
 		" f-@addr          ; remove flag at address expression\n"
 		" f. fname         ; list all local labels for the given function\n"
 		" fd addr          ; return flag+delta\n"
+		" fm addr          ; move flag at current offset to new address\n"
 		//" fc [name] [cmt]  ; set execution command for a specific flag\n"
 		" fC [name] [cmt]  ; set comment for given flag\n"
 		" fr [old] [[new]] ; rename flag (if no new flag current seek one is used)\n"
