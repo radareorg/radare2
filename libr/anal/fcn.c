@@ -51,7 +51,11 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	r_list_free (fcn->xrefs);
 	r_list_free (fcn->vars);
 	r_list_free (fcn->locs);
+#if 0
+	// XXX: some shared basic blocks make it crash. 
+	// TODO: fix it with sdb
 	r_list_free (fcn->bbs);
+#endif
 	r_list_free (fcn->locals);
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
@@ -347,18 +351,14 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 
 // TODO: need to implement r_anal_fcn_remove(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
-	// avoid dups
-
-	RAnalFunction *f = r_anal_fcn_find (anal, fcn->addr, R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *f = r_anal_fcn_find (anal, fcn->addr,
+		R_ANAL_FCN_TYPE_ROOT);
 	if (f) return R_FALSE;
-//eprintf ("ADDDD 0x%llx\n", fcn->addr);
 #if USE_NEW_FCN_STORE
 	r_listrange_add (anal->fcnstore, fcn);
 	// HUH? store it here .. for backweird compatibility
-	r_list_append (anal->fcns, fcn);
-#else
-	r_list_append (anal->fcns, fcn);
 #endif
+	r_list_append (anal->fcns, fcn);
 	return R_TRUE;
 }
 
@@ -387,7 +387,8 @@ R_API int r_anal_fcn_add(RAnal *anal, ut64 addr, ut64 size, const char *name, in
 
 R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 	RListIter *iter, *iter2;
-	RAnalFunction *fcn, *f = r_anal_fcn_find (anal, addr, R_ANAL_FCN_TYPE_ROOT);
+	RAnalFunction *fcn, *f = r_anal_fcn_find (anal, addr,
+		R_ANAL_FCN_TYPE_ROOT);
 #if USE_NEW_FCN_STORE
 #warning TODO: r_anal_fcn_del_locs not implemented for newstore
 #endif

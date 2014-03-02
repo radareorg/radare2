@@ -96,6 +96,7 @@ R_API void r_anal_free(RAnal *a) {
 	if (!a) return;
 	/* TODO: Free anals here */
 	free (a->cpu);
+	a->cpu = NULL;
 	a->fcns->free = r_anal_fcn_free;
 	r_list_free (a->fcns);
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
