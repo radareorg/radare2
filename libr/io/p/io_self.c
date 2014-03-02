@@ -29,7 +29,7 @@ typedef struct {
 } RIOSelfSection;
 
 static RIOSelfSection self_sections[1024];
-static int self_sections_count;
+static int self_sections_count = 0;
 
 static int self_in_section(ut64 addr, int *left, int *perm) {
 	int i;
@@ -68,11 +68,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		pid, file, rw, mode, NULL);
 #elif __linux__
 	char *pos_c;
+	int i, l, perm;
 	char null[64];
 	char path[1024], line[1024];
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path)-1, "/proc/%d/maps", pid);
-	FILE *fd = fopen (file, "r");
+	FILE *fd = fopen (path, "r");
 	if (!fd) 
 		return NULL;
 
@@ -83,11 +84,17 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			break;
 		path[0]='\0';
 		sscanf (line, "%s %s %s %s %s %s",
-			&region[2], perms, null, null, null, path);
-		pos_c = strchr (&region[2], '-');
-		if (pos_c) strncpy (path, pos_c, sizeof (path)-1);
-		else path[0] = 0;
-		int i, perm = 0;
+			region+2, perms, null, null, null, path);
+		memcpy (region, "0x", 2);
+		pos_c = strchr (region+2, '-');
+		if (pos_c) {
+			*pos_c++ = 0;
+			memcpy (region2, "0x", 2);
+			l = strlen (pos_c);
+			memcpy (region2+2, pos_c, l);
+			region2[2+l] = 0;
+		}
+		perm = 0;
 		for (i = 0; perms[i] && i < 4; i++)
 			switch (perms[i]) {
 			case 'r': perm |= R_IO_READ; break;
@@ -96,6 +103,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			}
 		self_sections[self_sections_count].from = r_num_get (NULL, region);
 		self_sections[self_sections_count].to = r_num_get (NULL, region2);
+
 		self_sections[self_sections_count].perm = perm;
 		self_sections_count++;
 		r_num_get (NULL, region2);

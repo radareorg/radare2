@@ -145,7 +145,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 
 R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed) {
 	ut8 buf[1024];
-	int i, len, dlen, hlen = r_hash_size (algo);
+	int i, len, hlen = r_hash_size (algo);
 	for (i = 0; i< loops; i++) {
 		if (seed) {
 			if (seed->prefix) {
@@ -160,6 +160,6 @@ R_API void r_hash_do_spice(RHash *ctx, int algo, int loops, RHashSeed *seed) {
 			memcpy (buf, ctx->digest, hlen);
 			len = hlen;
 		}
-		dlen = r_hash_calculate (ctx, algo, buf, len);
+		(void)r_hash_calculate (ctx, algo, buf, len);
 	}
 }
