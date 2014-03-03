@@ -403,7 +403,9 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #if USE_UTF8
 		utflen = r_line_readchar_utf8 (
 			(ut8*)buf, sizeof (buf));
-		if (utflen <1) return NULL;
+		if (utflen <1) {
+			return NULL;
+		}
 		buf[utflen] = 0;
 #else
 		ch = r_line_readchar ();

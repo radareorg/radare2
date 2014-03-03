@@ -148,8 +148,9 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	int mouse = r_cons_enable_mouse (R_FALSE);
 	r_cons_enable_mouse (R_FALSE);
 	r_cons_flush ();
-	if (cons->user_fgets)
+	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (buf, len));
+	}
 	*buf = '\0';
 	fflush (cons->fdin);
 	if (color) {

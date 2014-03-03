@@ -102,12 +102,12 @@ R_API RSocket *r_socket_new (int is_ssl) {
 	signal (SIGPIPE, SIG_IGN);
 #endif
 	s->local = 0;
+	s->fd = -1;
 #if HAVE_LIB_SSL
 	if (is_ssl) {
 		s->sfd = NULL;
 		s->ctx = NULL;
 		s->bio = NULL;
-		s->fd = -1;
 		if (!SSL_library_init ()) {
 			r_socket_free (s);
 			return NULL;
@@ -287,7 +287,8 @@ R_API int r_socket_port_by_name(const char *name) {
 R_API int r_socket_listen (RSocket *s, const char *port, const char *certfile) {
 	int optval = 1;
 	struct linger linger = { 0 };
-
+	if (r_sandbox_enable (0))
+		return R_FALSE;
 #if __WINDOWS__
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {

@@ -363,7 +363,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 	timeout = r_config_get_i (core->config, "http.timeout");
 	strncpy (input, _input, sizeof (input)-4);
 	/* Parse uri */
-	if ((ptr = strstr(input, "tcp://"))) {
+	if ((ptr = strstr (input, "tcp://"))) {
 		proto = RTR_PROT_TCP;
 		host = ptr+6;
 	} else if ((ptr = strstr(input, "http://"))) {

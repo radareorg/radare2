@@ -426,7 +426,7 @@ R_API int r_core_fgets(char *buf, int len) {
 	rli->completion.run = autocomplete;
 	ptr = r_line_readline (); //CMDS, radare_argv);
 	if (ptr == NULL)
-		return -2;
+		return -1;
 	strncpy (buf, ptr, len);
 	//free(ptr); // XXX leak
 	return strlen (buf)+1;
@@ -699,10 +699,12 @@ R_API int r_core_prompt(RCore *r, int sync) {
 	}
 	r_line_set_prompt (prompt);
 	ret = r_cons_fgets (line, sizeof (line), 0, NULL);
-	if (ret == -2) return R_CORE_CMD_EXIT;
-	if (ret == -1) return R_FALSE;
+	if (ret == -2) return R_CORE_CMD_EXIT; // ^D
+	if (ret == -1) return R_FALSE; // FD READ ERROR
 	r->num->value = rnv;
-	if (sync) return r_core_prompt_exec (r);
+	if (sync) {
+		return r_core_prompt_exec (r);
+	}
 	free (r->cmdqueue);
 	r->cmdqueue = strdup (line);
 	return R_TRUE;

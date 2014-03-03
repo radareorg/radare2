@@ -574,15 +574,16 @@ int main(int argc, char **argv, char **envp) {
 	r_list_free (cmds);
 /////
 	if (r_config_get_i (r.config, "scr.prompt"))
-	if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
-		r_core_cmd (&r, "fo", 0);
-		r_cons_flush ();
-	}
+		if (run_rc && r_config_get_i (r.config, "cfg.fortunes")) {
+			r_core_cmd (&r, "fo", 0);
+			r_cons_flush ();
+		}
 	if (do_analysis) {
 		r_core_cmd0 (&r, "aa");
 		r_cons_flush ();
 	}
-    if (sandbox)r_config_set (r.config, "cfg.sandbox", "true");
+	if (sandbox)
+		r_config_set (r.config, "cfg.sandbox", "true");
 
 	r.num->value = 0;
 	if (patchfile) {
@@ -591,10 +592,14 @@ int main(int argc, char **argv, char **envp) {
 	for (;;) {
 #if USE_THREADS
 		do { 
-			if (r_core_prompt (&r, R_FALSE)<1)
+			int err = r_core_prompt (&r, R_FALSE);
+			if (err<1) {
+				// handle ^D
 				break;
+			}
 			if (lock) r_th_lock_enter (lock);
 			if ((ret = r_core_prompt_exec (&r))==-1) {
+				break;
 			//	eprintf ("Invalid command\n");
 			}
 			if (lock) r_th_lock_leave (lock);
