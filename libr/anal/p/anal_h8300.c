@@ -187,6 +187,7 @@ static int h8300_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	case H8300_BLE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + 2 + (st8)(buf[1]);
+		op->fail = addr + 2;
 		break;
 	default:
 		op->type = R_ANAL_OP_TYPE_UNK;
