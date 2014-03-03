@@ -1,30 +1,34 @@
-CC				= gcc
-LIBNAME		= libgdbr
-MAJOR			= 0
-MINOR			= 1
-CFLAGS		= -Wall -g -O0 -ggdb # -std=gnu11
-LD				= gcc
-LDFLAGS		= -L /usr/lib	-L /usr/local/lib
+include ../../libr/config.mk
+EDITOR?=vim
+CC?=gcc
+AR?=ar
+LIBNAME=libgdbr
+LIBFILE=$(LIBNAME).$(EXT_SO)
+MAJOR=0
+MINOR=1
+#CFLAGS=-Wall -g -O0 -ggdb # -std=gnu11
+LD=$(CC)
+LDFLAGS=-L /usr/lib -L /usr/local/lib
 
 # Test variables
-TEST_D		= $(PWD)/test
-BIN				= $(PWD)/bin
-UNIT_TEST = $(TEST_D)/unit.c
-CLIENT		= $(TEST_D)/client.c
+TEST_D= $(PWD)/test
+BIN=$(PWD)/bin
+UNIT_TEST=$(TEST_D)/unit.c
+CLIENT=$(TEST_D)/client.c
 
-PWD				= .
-TEST			= $(PWD)/test
-LIB				= $(PWD)/lib
-INCLUDES 	= -I $(PWD)/include
+PWD=$(shell pwd)
+TEST=$(PWD)/test
+LIB=$(PWD)/lib
+INCLUDES=-I $(PWD)/include
 
 TEST_INCLUDES += $(INCLUDES) -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include
 
-SRC_D			= $(PWD)/src
-SRC_C			= $(wildcard $(SRC_D)/*.c)
-SRC_O			= $(SRC_C:.c=.o)
+SRC_D=$(PWD)/src
+SRC_C=$(wildcard $(SRC_D)/*.c)
+SRC_O=$(SRC_C:.c=.o)
 
-TEST_C		= $(wildcard $(TEST_D)/*.c)
-TEST_O		= $(TEST_C:.c=.o)
+TEST_C=$(wildcard $(TEST_D)/*.c)
+TEST_O=$(TEST_C:.c=.o)
 
 
 $(SRC_O): %.o : %.c
@@ -37,8 +41,9 @@ prepare:
 	mkdir -p $(LIB)
 
 lib: prepare $(SRC_O)
-	$(LD) -shared -Wl,-soname,$(LIBNAME).so -o $(LIB)/$(LIBNAME).so $(SRC_O)
-	ar rvs $(LIB)/$(LIBNAME).a $(SRC_O)
+	#$(LD) -shared -Wl,-soname,$(LIBNAME).so -o $(LIB)/$(LIBNAME).so $(SRC_O)
+	$(LD) -shared -o $(LIB)/$(LIBFILE) $(SRC_O)
+	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
 
 clean:
 	-rm $(SRC_O)
@@ -56,13 +61,13 @@ client: lib
 	$(LD) $(TEST_D)/client.o -o $(TEST_D)/client -L$(LIB) -lgdbr
 
 run_test: client
-	LD_LIBRARY_PATH=./lib ./test/client
+	rarun2 libpath=./lib program=./test/client
 
 gdb_test: client
-	LD_LIBRARY_PATH=./lib gdb ./test/client
+	rarun2 libpath=./lib system="gdb ./test/client"
 
 valgrind_test: client
-	LD_LIBRARY_PATH=./lib valgrind --track-origins=yes -v --leak-check=full ./test/client
+	rarun2 libpath=./lib system="valgrind --track-origins=yes -v --leak-check=full ./test/client"
 
 edit:
-	vim -c "args **/*.h **/*.c"
+	$(EDITOR) -c "args **/*.h **/*.c"
