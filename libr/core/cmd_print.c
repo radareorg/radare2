@@ -1055,6 +1055,7 @@ static int cmd_print(void *data, const char *input) {
 				RAnalFunction *f = r_anal_fcn_find (core->anal, core->offset,
 						R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 				if (f) {
+#if 0
 #if 1
 // funsize = sum(bb)
 					core->num->value = r_core_print_fcn_disasm (core->print, core, f->addr, 9999, 0, 2);
@@ -1069,6 +1070,10 @@ static int cmd_print(void *data, const char *input) {
 						free (block);
 						pd_result = 0;
 					}
+#endif
+#else
+					r_core_cmdf (core, "pD %d @ 0x%08llx", f->size, f->addr); 
+					pd_result = 0;
 #endif
 				} else {
 					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", core->offset);
