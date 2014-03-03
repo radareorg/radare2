@@ -2,10 +2,9 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include "r_types.h"
+
 #include <stdint.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

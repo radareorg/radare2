@@ -6,12 +6,14 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/socket.h>
 #include "libgdbr.h"
 #include <stdio.h>
+#if __WINDOWS__
+#include <windows.h>
+#include <winsock.h>
+#endif
 
-typedef struct parsing_object_t
-{
+typedef struct parsing_object_t {
 	char* buffer;
 	ssize_t length;
 	int start;
@@ -20,7 +22,6 @@ typedef struct parsing_object_t
 	uint8_t checksum;
 	int acks;
 } parsing_object_t;
-
 
 int parse_packet(libgdbr_t* instance, int data_offset);
 /*!

@@ -2,13 +2,17 @@ include ../../libr/config.mk
 EDITOR?=vim
 CC?=gcc
 AR?=ar
+RANLIB?=ranlib
 LIBNAME=libgdbr
 LIBFILE=$(LIBNAME).$(EXT_SO)
+CFLAGS+=-I$(LIBR)/include
 MAJOR=0
 MINOR=1
 #CFLAGS=-Wall -g -O0 -ggdb # -std=gnu11
 LD=$(CC)
 LDFLAGS=-L /usr/lib -L /usr/local/lib
+#OSTYPE=windows
+include ../../libr/socket/deps.mk
 
 # Test variables
 TEST_D= $(PWD)/test
@@ -17,8 +21,8 @@ UNIT_TEST=$(TEST_D)/unit.c
 CLIENT=$(TEST_D)/client.c
 
 PWD=$(shell pwd)
-TEST=$(PWD)/test
-LIB=$(PWD)/lib
+TEST=test
+LIB=lib
 INCLUDES=-I $(PWD)/include
 
 TEST_INCLUDES += $(INCLUDES) -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include
@@ -42,12 +46,14 @@ prepare:
 
 lib: prepare $(SRC_O)
 	#$(LD) -shared -Wl,-soname,$(LIBNAME).so -o $(LIB)/$(LIBNAME).so $(SRC_O)
-	$(LD) -shared -o $(LIB)/$(LIBFILE) $(SRC_O)
+	$(LD) -shared -o $(LIB)/$(LIBFILE) $(SRC_O) $(LDFLAGS)
 	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
+	# required for solaris and w32
+	$(RANLIB) $(LIB)/$(LIBNAME).a
 
 clean:
-	-rm $(SRC_O)
-	-rm $(LIB)/*
+	-rm -f $(SRC_O)
+	-rm -rf lib
 
 unit: lib 
 	$(CC) $(CFLAGS) $(TEST_INCLUDES) -c $(UNIT_TEST) -o $(TEST_D)/unit.o

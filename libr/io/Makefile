@@ -15,6 +15,8 @@ LINK+=$(LIBZIP)
 else
 LINK+=$(SHLR)/zip/librz.a
 endif
+
+LINK+=$(SHLR)/gdb/lib/libgdbr.a
 #LINK+=$(SHLR)/zip/zlib/*.o
 #LINK+=$(SHLR)/zip/zip/*.o
 

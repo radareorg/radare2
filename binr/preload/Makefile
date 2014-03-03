@@ -13,3 +13,6 @@ LDFLAGS+=${DL_LIBS} -lm
 endif
 include ../../libr/socket/deps.mk
 include ../../shlr/zip/deps.mk
+
+clean::
+	rm -f $(BIN).$(EXT_SO)

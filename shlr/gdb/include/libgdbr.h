@@ -4,6 +4,14 @@
 
 #include <stdint.h>
 #include <unistd.h>
+#if __UNIX__
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#elif __WINDOWS__
+#include <windows.h>
+#include <winsock.h>
+#endif
 
 #include "arch.h"
 
