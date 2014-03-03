@@ -16,7 +16,7 @@ else
 LINK+=$(SHLR)/zip/librz.a
 endif
 
-LINK+=$(SHLR)/gdb/lib/libgdbr.a
+include $(SHLR)/gdb/deps.mk
 #LINK+=$(SHLR)/zip/zlib/*.o
 #LINK+=$(SHLR)/zip/zip/*.o
 

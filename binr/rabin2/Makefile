@@ -7,3 +7,4 @@ BINDEPS+=r_search r_syscall r_diff r_socket r_fs r_magic r_util
 include ../rules.mk
 include ../../libr/socket/deps.mk
 include ../../shlr/zip/deps.mk
+include ../../shlr/gdb/deps.mk
