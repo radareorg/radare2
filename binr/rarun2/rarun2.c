@@ -20,6 +20,7 @@ static char *_stdout = NULL;
 static char *_stderr = NULL;
 static char *_chgdir = NULL;
 static char *_chroot = NULL;
+static char *_libpath = NULL;
 static char *_preload = NULL;
 static int _r2preload = 0;
 static char *_setuid = NULL;
@@ -100,6 +101,7 @@ static void parseline (char *b) {
 	else if (!strcmp (b, "input")) _input = strdup (e);
 	else if (!strcmp (b, "chdir")) _chgdir = strdup (e);
 	else if (!strcmp (b, "chroot")) _chroot = strdup (e);
+	else if (!strcmp (b, "libpath")) _libpath = strdup (e);
 	else if (!strcmp (b, "preload")) _preload = strdup (e);
 	else if (!strcmp (b, "r2preload")) _r2preload = \
 		(strcmp (e, "yes")? (strcmp (e, "true")? (strcmp (e, "1")? 0: 1): 1): 1);
@@ -240,6 +242,15 @@ static int runfile () {
 		}
 		_preload = R2_LIBDIR"/libr2."R_LIB_EXT;
 	}
+	if (_libpath) {
+#if __WINDOWS__
+		eprintf ("rarun2: libpath unsupported for this platform\n");
+#elif __APPLE__
+		r_sys_setenv ("DYLD_LIBRARY_PATH", _libpath);
+#else
+		r_sys_setenv ("LD_LIBRARY_PATH", _libpath);
+#endif
+	}
 	if (_preload) {
 #if __APPLE__
 		// 10.6
@@ -302,6 +313,8 @@ int main(int argc, char **argv) {
 			"# input=input.txt\n"
 			"# chdir=/\n"
 			"# chroot=/mnt/chroot\n"
+			"# libpath=$PWD:/tmp/lib\n"
+			"# r2preload=yes\n"
 			"# preload=/lib/libfoo.so\n"
 			"# setuid=2000\n"
 			"# seteuid=2000\n"
