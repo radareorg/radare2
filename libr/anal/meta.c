@@ -1,6 +1,16 @@
 /* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
 
 // TODO: rename to r_anal_meta_get() ??
+#if 0
+    TODO
+    ====
+    - handle sync to synchronize all the data on disk.
+    - actually listing only works in memory
+    - array_add doesnt needs index, right?
+    - remove unused arguments from r_meta_find (where ???)
+    - implement r_meta_find
+#endif
+
 #define USE_ANAL_SDB 1
 #include <r_anal.h>
 #include <r_print.h>
@@ -169,7 +179,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 		} else {
 			snprintf (key, sizeof (key)-1, "meta.%c", type);
 			dtr = sdb_get (DB, key, 0);
-			for (p = dtr; p; p = s) {
+			for (p = dtr; p; p=sdb_array_next (s)) {
 				s = sdb_array_string (p, &nxt);
 				snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x,
 					type, sdb_atoi (s));
@@ -214,7 +224,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 
 R_API int r_meta_cleanup(RAnal *a, ut64 from, ut64 to) {
 #if USE_ANAL_SDB
-	eprintf ("TODO: Implement r_meta_cleanup for SDB\n");
+	r_meta_del (a, R_META_TYPE_ANY, from, (to-from), NULL);
 #else
 	RAnalMetaItem *d;
 	RListIter *iter, next;
@@ -316,8 +326,10 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str) {
 #if USE_ANAL_SDB
 #define DB m->sdb_meta
 	char *e_str, key[100], val[2048];
-	if (from>=to)
+	if (from>to)
 		return R_FALSE;
+	if (from == to)
+		to = from+1;
 	/* set entry */
 	e_str = sdb_encode ((const void*)str, 0);
 	snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, from);
@@ -377,9 +389,9 @@ R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 to, const char *str) {
 #endif
 }
 
-/* snippet from data.c */
 R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where) {
 #if USE_ANAL_SDB
+#define DB m->sdb_meta
 	static RAnalMetaItem it = {0};
 	// XXX: return allocated item? wtf
 	if (where != R_META_WHERE_HERE) {
@@ -390,6 +402,7 @@ R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where) {
 	if (type == R_META_TYPE_ANY) {
 		char key [100];
 		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, off);
+sdb_const_get (DB, key, 0);
 	} else {
 	//	snprintf (key, sizeof (key)-1, "meta.
 	}
