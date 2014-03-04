@@ -31,10 +31,13 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
 }
 
 // XXX: cmd is reused
-#define out_concat(x) if (x) { char *o =(void*)realloc((void*)out, 2+strlen(x)+(out?strlen(out):0)); if (o) { if (out) strcat (out, "\n"); else *o=0; out=o; strcat (out, x); } }
+#define out_concat(x) if (x) { \
+	char *o =(void*)realloc((void*)out, 2+strlen(x)+(out?strlen(out):0)); \
+	if (o) { if (out) strcat (out, "\n"); else *o=0; out=o; strcat (out, x); } \
+}
 
 SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
-	int i, d, ok, w, alength, bufset = 0, is_ref = 0;
+	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
 	char *eq, *tmp, *json, *next, *quot, *out = NULL;
 	const char *p, *q, *val = NULL;
 	ut64 n;
@@ -49,6 +52,11 @@ SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
 	}
 repeat:
 	p = cmd;
+	if (*p=='%') {
+		encode = 1;
+		cmd++;
+		p++;
+	}
 	eq = strchr (p, '=');
 	is_ref = 0;
 	if (eq) {
@@ -92,7 +100,7 @@ next_quote:
 		char *tp = strchr (cmd, ']');
 		if (!tp) {
 			fprintf (stderr, "Missing ']'.\n");
-			goto failure;
+			goto fail;
 		}
 		*tp++ = 0;
 		p = (const char *)tp;
@@ -105,7 +113,7 @@ next_quote:
 		if (s->options & SDB_OPTION_FS) {
 			if (!sdb_query_file (s, cmd+1)) {
 				fprintf (stderr, "sdb: cannot open '%s'\n", cmd+1);
-				goto failure;
+				goto fail;
 			}
 		} else {
 			fprintf (stderr, "sdb: filesystem access disabled in config\n");
@@ -205,15 +213,30 @@ next_quote:
 					/* [+3]foo=bla */
 					if (i<0) {
 						char *tmp = sdb_array_get (s, p, -i, NULL);
-						ok = 0;
-						out_concat (tmp);
-						sdb_array_del (s, p, -i, 0);
-						free (tmp);
+						if (tmp) {
+							if (encode) {
+								char *newtmp = (void*)sdb_decode (tmp, NULL);
+								if (!newtmp)
+									goto fail;
+								free (tmp);
+								tmp = newtmp;
+							}
+							ok = 0;
+							out_concat (tmp);
+							sdb_array_del (s, p, -i, 0);
+							free (tmp);
+						} else goto fail;
 					} else {
+						if (encode)
+							val = sdb_encode ((const ut8*)val, 0);
 						ok = cmd[1]? ((cmd[1]=='+')?
 							sdb_array_ins (s, p, i, val, 0):
 							sdb_array_set (s, p, i, val, 0)
 							): sdb_array_del (s, p, i, 0);
+						if (encode) {
+							free ((void*)val);
+							val = NULL;
+						}
 					}
 					if (ok) *buf = 0;
 					else buf = NULL;
@@ -244,17 +267,19 @@ next_quote:
 		} else {
 			if (eq) {
 				/* [3]foo=bla */
-				char *q, *sval = strdup (val);
-				// TODO: define new printable separator character
-				for (q=sval; *q; q++) if (*q==',') *q = SDB_RS;
+				char *sval = (char*)val;
+				if (encode) {
+					sval = sdb_encode ((const ut8*)val, 0);
+				}
 				if (cmd[1]) {
 					int idx = atoi (cmd+1);
-					ok = sdb_array_set (s, p, idx, val, 0);
+					ok = sdb_array_set (s, p, idx, sval, 0);
 // TODO: handle when idx > sdb_alen
 				} else {
 					ok = sdb_set (s, p, sval, 0);
 				}
-				free (sval);
+				if (encode)
+					free (sval);
 				if (ok) {
 					*buf = 0;
 					return buf;
@@ -265,9 +290,16 @@ next_quote:
 				size_t wl;
 				if (cmd[1]) {
 					i = atoi (cmd+1);
-					tmp = sdb_array_get (s, p, i, NULL);
-					out_concat (tmp);
-					free (tmp);
+					buf = sdb_array_get (s, p, i, NULL);
+					bufset = 1;
+					if (encode) {
+						char *newbuf = (void*)sdb_decode (buf, NULL);
+						if (newbuf) {
+							free (buf);
+							buf = newbuf;
+						}
+					}
+					out_concat (buf);
 				} else {
 					if (!sval) return NULL;
 					wl = strlen (sval);
@@ -281,6 +313,13 @@ next_quote:
 						else buf[i] = sval[i];
 					}
 					buf[i] = 0;
+					if (encode) {
+						char *newbuf = (void*)sdb_decode (buf, NULL);
+						if (newbuf) {
+							free (buf);
+							buf = newbuf;
+						}
+					}
 					out_concat (buf);
 				}
 			}
@@ -289,13 +328,19 @@ next_quote:
 		if (eq) {
 			// 1 0 kvpath=value
 			// 1 1 kvpath:jspath=value
+			if (encode)
+				val = sdb_encode ((const ut8*)val, 0);
 			if (json>eq) json = NULL;
 			if (json) {
 				*json++ = 0;
 				ok = sdb_json_set (s, cmd, json, val, 0);
 			} else ok = sdb_set (s, cmd, val, 0);
+			if (encode) {
+				free ((void*)val);
+				val = NULL;
+			}
 			if (!ok)
-				goto failure;
+				goto fail;
 		} else {
 			// 0 1 kvpath?jspath
 			// 0 0 kvpath
@@ -303,13 +348,24 @@ next_quote:
 				*json++ = 0;
 				// TODO: not optimized to reuse 'buf'
 				if ((tmp = sdb_json_get (s, cmd, json, 0))) {
+					if (encode) {
+						char *newtmp = (void*)sdb_decode (tmp, NULL);
+						if (!newtmp)
+							goto fail;
+						free (tmp);
+						tmp = newtmp;
+					}
 					out_concat (tmp);
 					free (tmp);
 				}
 			} else {
 				// sdbget
 				if ((q = sdb_const_get (s, cmd, 0))) {
+					if (encode)
+						q = (void*)sdb_decode (q, NULL);
 					out_concat (q);
+					if (encode)
+						free ((void*)q);
 				}
 			}
 		}
@@ -324,7 +380,7 @@ next_quote:
 		goto repeat;
 	}
 	if (eq) *--eq = '=';
-failure:
+fail:
 	if (bufset)
 		free (buf);
 	return out;

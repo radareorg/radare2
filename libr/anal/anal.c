@@ -55,7 +55,7 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_locals = sdb_new (NULL, NULL, 0);
 	anal->sdb_xrefs = NULL;
 	anal->sdb_types = sdb_new (NULL, NULL, 0);
-	anal->sdb_meta = NULL; // TODO : implement sdb_meta
+	anal->sdb_meta = sdb_new (NULL, NULL, 0);
 	r_meta_init (anal);
 	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);

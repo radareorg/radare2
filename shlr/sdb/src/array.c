@@ -81,7 +81,8 @@ SDB_API char *sdb_array_get(Sdb *s, const char *key, int idx, ut32 *cas) {
 
 SDB_API int sdb_array_ins_num(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[64];
-	return sdb_array_ins (s, key, idx, sdb_itoa (val, valstr, 10), cas);
+	return sdb_array_ins (s, key, idx,
+		sdb_itoa (val, valstr, SDB_NUM_BASE), cas);
 }
 
 // TODO: done, but there's room for improvement
@@ -128,11 +129,12 @@ SDB_API int sdb_array_ins(Sdb *s, const char *key, int idx, const char *val, ut3
 
 SDB_API int sdb_array_set_num(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
 	char valstr[64];
-	return sdb_array_set (s, key, idx, sdb_itoa (val, valstr, 10), cas);
+	return sdb_array_set (s, key, idx,
+		sdb_itoa (val, valstr, SDB_NUM_BASE), cas);
 }
 
 SDB_API int sdb_array_add_num(Sdb *s, const char *key, int idx, ut64 val, ut32 cas) {
-	char valstr[64], *vs = sdb_itoa (val, valstr, 10);
+	char valstr[64], *vs = sdb_itoa (val, valstr, SDB_NUM_BASE);
 	if (sdb_array_exists (s, key, vs))
 		return 0;
 	return sdb_array_add (s, key, idx, vs, cas);
@@ -278,6 +280,12 @@ SDB_API const char *sdb_array_index(const char *str, int idx) {
 		else break;
 	}
 	return NULL;
+}
+
+SDB_API int sdb_array_exists_num(Sdb *s, const char *key, ut64 num) {
+	char val[64];
+	char *nval = sdb_itoa (num, val, SDB_NUM_BASE);
+	return sdb_array_exists (s, key, nval);
 }
 
 SDB_API int sdb_array_exists(Sdb *s, const char *key, const char *val) {

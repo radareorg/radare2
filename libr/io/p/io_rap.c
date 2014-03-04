@@ -206,7 +206,6 @@ static RIODesc *rap__open(struct r_io_t *io, const char *pathname, int rw, int m
 		}
 		r_mem_copyendian ((ut8 *)&i, (ut8*)buf+1, 4, ENDIAN);
 		if (i>0) eprintf ("ok\n");
-
 #if 0
 		/* Read meta info */
 		r_socket_read (rap_fd, (ut8 *)&buf, 4);
@@ -272,7 +271,7 @@ static int rap__system(RIO *io, RIODesc *fd, const char *command) {
 	if (i == -1)
 		return -1;
 	ret = 0;
-	ptr = (char *)malloc (i);
+	ptr = (char *)malloc (i+1);
 	if (ptr) {
 		int ir, tr = 0;
 		do {
