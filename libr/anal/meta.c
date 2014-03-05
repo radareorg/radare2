@@ -194,10 +194,12 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 	meta_inrange_del (a, addr, size);
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, addr);
 	ptr = sdb_const_get (DB, key, 0);
-	for (i=0; ptr[i]; i++) {
-		if (ptr[i] != SDB_RS) {
-			snprintf (key2, sizeof (key2)-1, "meta.%c.0x%"PFMT64x, ptr[i], addr);
-			sdb_unset (DB, key2, 0);
+	if (ptr) {
+		for (i=0; ptr[i]; i++) {
+			if (ptr[i] != SDB_RS) {
+				snprintf (key2, sizeof (key2)-1, "meta.%c.0x%"PFMT64x, ptr[i], addr);
+				sdb_unset (DB, key2, 0);
+			}
 		}
 	}
 	sdb_unset (DB, key, 0);

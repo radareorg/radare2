@@ -466,9 +466,16 @@ static int __disasm(void *_core, ut64 addr) {
 	return len;
 }
 
+static void update_sdb(RCore *core) {
+	// TODO: sdb_hook should work across namespaces?
+	// HOOK!
+	sdb_ns_set (core->sdb, "anal", core->anal->sdb);
+}
+
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
+	core->sdb = sdb_new (NULL, NULL, 0);
 	core->config = NULL;
 	core->print = r_print_new ();
 	core->http_up = R_FALSE;
@@ -594,6 +601,7 @@ R_API int r_core_init(RCore *core) {
 	if (R_SYS_BITS & R_SYS_BITS_32)
 		r_config_set_i (core->config, "asm.bits", 32);
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
+	update_sdb (core);
 	return 0;
 }
 

@@ -48,6 +48,9 @@ R_API RAnal *r_anal_new() {
 	if (!anal) return NULL;
 	anal->cpu = NULL;
 	anal->decode = R_TRUE; // slow slow if not used
+	anal->sdb = sdb_new (NULL, NULL, 0);
+	anal->sdb_meta = sdb_ns (anal->sdb, "meta");
+
 	anal->sdb_vars = sdb_new (NULL, NULL, 0);
 	anal->sdb_refs = sdb_new (NULL, NULL, 0);
 	anal->sdb_args = sdb_new (NULL, NULL, 0);
@@ -55,7 +58,7 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_locals = sdb_new (NULL, NULL, 0);
 	anal->sdb_xrefs = NULL;
 	anal->sdb_types = sdb_new (NULL, NULL, 0);
-	anal->sdb_meta = sdb_new (NULL, NULL, 0);
+	anal->sdb_hint = sdb_new (NULL, NULL, 0);
 	r_meta_init (anal);
 	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);

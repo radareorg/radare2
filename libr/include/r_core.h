@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - pancake */
+/* radare - LGPL - Copyright 2009-2014 - pancake */
 
 
 #ifndef _INCLUDE_R_CORE_H_
@@ -148,6 +148,7 @@ typedef struct r_core_t {
 	RList *scriptstack;
 	int cmd_depth;
 	ut8 switch_file_view;
+	Sdb *sdb;
 } RCore;
 
 typedef struct r_core_cmpwatch_t {

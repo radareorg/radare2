@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake, xvilka */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake, xvilka */
 
 #ifndef _INCLUDE_R_ANAL_H_
 #define _INCLUDE_R_ANAL_H_
@@ -558,11 +558,13 @@ typedef struct r_anal_t {
 	PrintfCallback printf;
 	RBinBind binb; // Set only from core when an analysis plugin is called.
 //moved from RAnalFcn
+	Sdb *sdb; // root
 	Sdb *sdb_vars;
 	Sdb *sdb_refs;
 	Sdb *sdb_args;
 	Sdb *sdb_locals;
 	Sdb *sdb_ret;
+	Sdb *sdb_hint;
 } RAnal;
 
 typedef struct r_anal_hint_t {

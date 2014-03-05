@@ -33,13 +33,41 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
 // XXX: cmd is reused
 #define out_concat(x) if (x) { \
 	char *o =(void*)realloc((void*)out, 2+strlen(x)+(out?strlen(out):0)); \
-	if (o) { if (out) strcat (out, "\n"); else *o=0; out=o; strcat (out, x); } \
+	if (o) { if (*o) strcat (o, "\n"); else *o=0; out=o; strcat (o, x); } \
 }
 
-SDB_API char *sdb_querys (Sdb *s, char *buf, size_t len, const char *cmd) {
+typedef struct {
+	char **out;
+	int encode;
+} ForeachListUser;
+
+static int foreach_list_cb(void *user, const char *k, const char *v) {
+	ForeachListUser *rlu = user;
+	char *line, *out;
+	int klen, vlen;
+	ut8 *v2 = NULL;
+	out = *rlu->out;
+	klen = strlen (k);
+	if (rlu->encode) {
+		v2 = sdb_decode (v, NULL);
+		if (v2) v = (const char *)v2;
+	}
+	vlen = strlen (v);
+	line = malloc (klen + vlen + 2);
+	memcpy (line, k, klen);
+	line[klen] = '=';
+	memcpy (line+klen+1, v, vlen+1);
+	out_concat (line);
+	*(rlu->out) = out;
+	free (v2);
+	return 0;
+}
+
+SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
 	int i, d, ok, w, alength, bufset = 0, is_ref = 0, encode = 0;
-	char *eq, *tmp, *json, *next, *quot, *out = NULL;
+	char *eq, *tmp, *json, *next, *quot, *arroba, *out = NULL;
 	const char *p, *q, *val = NULL;
+	Sdb *s = r;
 	ut64 n;
 	if (!s) return NULL;
 	if (!len || !buf) {
@@ -95,6 +123,34 @@ next_quote:
 		next = strchr (val?val:cmd, ';');
 	}
 	if (next) *next = 0;
+	arroba = strchr (cmd, '@');
+	if (arroba) {
+	next_arroba:
+		*arroba = 0;
+		s = sdb_ns (s, cmd);
+		if (!s) {
+			eprintf ("Cant find namespace %s\n", cmd);
+			return NULL;
+		}
+		cmd = arroba+1;
+		arroba = strchr (cmd, '@');
+		if (arroba)
+			goto next_arroba;
+	}
+	if (!strcmp (cmd, "**")) {
+		SdbListIter *it;
+		SdbNs *ns;
+		// list namespaces
+		ls_foreach (s->ns, it, ns) {
+			out_concat (ns->name);
+		}
+		return out;
+	}
+	if (!strcmp (cmd, "*")) {
+		ForeachListUser user = { &out, encode };
+		sdb_foreach (s, foreach_list_cb, &user);
+		return out;
+	}
 	json = strchr (cmd, ':');
 	if (*cmd == '[') {
 		char *tp = strchr (cmd, ']');

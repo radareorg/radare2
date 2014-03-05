@@ -59,6 +59,7 @@ typedef struct sdb_t {
 } Sdb;
 
 typedef struct sdb_ns_t {
+	char *name;
 	ut32 hash;
 	Sdb *sdb;
 } SdbNs;
@@ -149,6 +150,7 @@ Sdb* sdb_ns (Sdb *s, const char *name);
 void sdb_ns_init (Sdb* s);
 void sdb_ns_free (Sdb* s);
 void sdb_ns_sync (Sdb* s);
+int sdb_ns_set (Sdb *s, const char *name, Sdb *r);
 
 // array
 int sdb_array_exists (Sdb* s, const char *key, const char *val);

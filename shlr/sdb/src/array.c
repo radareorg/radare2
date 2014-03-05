@@ -248,12 +248,12 @@ SDB_API int sdb_array_del(Sdb *s, const char *key, int idx, ut32 cas) {
 		if (idx) idx--;
 	}
 	for (i = 0; i<idx; i++) {
-		n = strchr (p, SDB_RS);
-		if (n) p = n+1;
-		else {
-            free (str);
-            return 0;
-        }
+		if ( (n = strchr (p, SDB_RS)) ) {
+			p = n+1;
+		} else {
+			free (str);
+			return 0;
+		}
 	}
 	n = strchr (p, SDB_RS);
 	if (n) {

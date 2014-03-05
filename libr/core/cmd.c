@@ -437,6 +437,46 @@ static int cmd_interpret(void *data, const char *input) {
 	return 0;
 }
 
+static int cmd_kuery(void *data, const char *input) {
+	char buf[1024], *out;
+	RCore *core = (RCore*)data;
+	const char *sp, *p = "[sdb]> ";
+	const int buflen = sizeof (buf)-1;
+	Sdb *s;
+
+	if (*input=='?') {
+		eprintf ("Usage: k [db] [query]    # sdb query prompt\n");
+		eprintf (" k anal  --> meta@*\n");
+		eprintf ("TODO:\n");
+		eprintf (" k anal*meta*   : s = sdb_ns (sdb_ns(s, 'anal'), 'meta')\n");
+		return 0;
+	}
+	eprintf ("query (%s)\n", input+1);
+
+	sp = strchr (input+1, ' ');
+	if (sp) {
+		char *inp = strdup (input);
+		inp [(size_t)(sp-input)] = 0;
+		s = sdb_ns (core->sdb, inp+1);
+		out = sdb_querys (s, NULL, 0, sp+1);
+		if (out) r_cons_printf ("%s\n", out);
+		free (inp);
+		return 0;
+	}
+	s = sdb_ns (core->sdb, input+1);
+	eprintf ("NS (%s) (%p)\n", input+1, s);
+
+	for (;;) {
+		r_line_set_prompt (p);
+		if (r_cons_fgets (buf, buflen, 0, NULL)<1)
+			break;
+		if (!*buf) break;
+		out = sdb_querys (s, NULL, 0, buf);
+		if (out) r_cons_printf ("%s\n", out);
+	}
+	return 0;
+}
+
 static int cmd_bsize(void *data, const char *input) {
 	ut64 n;
 	RFlagItem *flag;
@@ -1729,6 +1769,7 @@ R_API void r_core_cmd_init(RCore *core) {
 	r_cmd_add (core->rcmd, "zign",     "zignatures", &cmd_zign);
 	r_cmd_add (core->rcmd, "Section",  "setup section io information", &cmd_section);
 	r_cmd_add (core->rcmd, "bsize",    "change block size", &cmd_bsize);
+	r_cmd_add (core->rcmd, "kuery",    "perform sdb query", &cmd_kuery);
 	r_cmd_add (core->rcmd, "eval",     "evaluate configuration variable", &cmd_eval);
 	r_cmd_add (core->rcmd, "print",    "print current block", &cmd_print);
 	r_cmd_add (core->rcmd, "write",    "write bytes", &cmd_write);
