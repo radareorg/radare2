@@ -59,7 +59,7 @@ SDB_API char *sdb_encode(const ut8 *bin, int len) {
 		len = strlen ((const char *)bin)+1;
 	if (len==0)
 		return strdup ("");
-	out = malloc (len+8);
+	out = malloc (len*2);
 	if (!out)
 		return NULL;
 	memset (out, 0, len+8);
@@ -70,7 +70,9 @@ SDB_API char *sdb_encode(const ut8 *bin, int len) {
 SDB_API ut8 *sdb_decode (const char *in, int *len) {
 	ut8 *out;
 	int olen, ilen = strlen (in);
-	out = malloc (ilen+8);
+	if (ilen<1)
+		return NULL;
+	out = malloc (ilen*2);
 	if (!out)
 		return NULL;
 	memset (out, 0, ilen+8);

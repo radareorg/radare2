@@ -16,6 +16,11 @@ extern "C" {
 #include "cdb_make.h"
 #include "sdb-version.h"
 
+#undef R_MAX
+#define R_MAX(x,y) (((x)>(y))?(x):(y))
+#undef r_offsetof
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+
 //#define SDB_RS '\x1e'
 #define SDB_RS ','
 #define SDB_SS ","
@@ -194,9 +199,15 @@ int sdb_bool_get(Sdb *db, const char *str, ut32 *cas);
 
 // base64
 ut8 *sdb_decode (const char *in, int *len);
-SDB_API char *sdb_encode(const ut8 *bin, int len);
-SDB_API void sdb_encode_raw(char *bout, const ut8 *bin, int len);
-SDB_API int sdb_decode_raw(ut8 *bout, const char *bin, int len);
+char *sdb_encode(const ut8 *bin, int len);
+void sdb_encode_raw(char *bout, const ut8 *bin, int len);
+int sdb_decode_raw(ut8 *bout, const char *bin, int len);
+
+// binfmt
+int sdb_fmt_init (void *p, const char *fmt);
+void sdb_fmt_free (void *p, const char *fmt);
+int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru);
+char *sdb_fmt_tostr(void *stru, const char *fmt);
 
 #ifdef __cplusplus
 }
