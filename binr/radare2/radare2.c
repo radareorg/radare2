@@ -92,7 +92,7 @@ static int main_help(int line) {
 		" -p [prj]     set project file\n"
 		" -P [file]    apply rapatch file and quit\n"
 		" -s [addr]    initial seek\n"
-        " -S           start r2 in sanbox mode\n"
+		" -S           start r2 in sanbox mode\n"
 #if USE_THREADS
 		" -t           load rabin2 info in thread\n"
 #endif
@@ -598,10 +598,9 @@ int main(int argc, char **argv, char **envp) {
 				break;
 			}
 			if (lock) r_th_lock_enter (lock);
-			if ((ret = r_core_prompt_exec (&r))==-1) {
+			/* -1 means invalid command, -2 means quit prompt loop */
+			if ((ret = r_core_prompt_exec (&r))==-2)
 				break;
-			//	eprintf ("Invalid command\n");
-			}
 			if (lock) r_th_lock_leave (lock);
 			if (rabin_th && !r_th_wait_async (rabin_th)) {
 				eprintf ("rabin thread end \n");
