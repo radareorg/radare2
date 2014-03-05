@@ -728,18 +728,20 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 	for (i = 0, nsym = 0; i < bin->ehdr.e_shnum; i++)
 		if (bin->shdr[i].sh_type == (bin->ehdr.e_type == ET_REL ? SHT_SYMTAB : SHT_DYNSYM)) {
 			bin->strtab_section = &bin->shdr[bin->shdr[i].sh_link];
-			if ((strtab = (char *)malloc (8+bin->strtab_section->sh_size)) == NULL) {
+			tsize = bin->strtab_section? bin->strtab_section->sh_size: 0;
+			if (!tsize) continue;
+			if ((strtab = (char *)malloc (8+tsize)) == NULL) {
 				perror ("malloc (syms strtab)");
 				return NULL;
 			}
-			if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)strtab, bin->strtab_section->sh_size) == -1) {
+			if (r_buf_read_at (bin->b, bin->strtab_section->sh_offset, (ut8*)strtab, tsize) == -1) {
 				eprintf ("Warning: read (syms strtab)\n");
-                free (strtab);
+				free (strtab);
 				return NULL;
 			}
 			if ((sym = (Elf_(Sym) *)malloc (1+bin->shdr[i].sh_size)) == NULL) { // LEAKS
 				perror ("malloc (syms)");
-                free (strtab);
+				free (strtab);
 				return NULL;
 			}
 			nsym = (int)(bin->shdr[i].sh_size/sizeof (Elf_(Sym)));
@@ -751,8 +753,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 #endif
 					nsym) == -1) {
 				eprintf ("Warning: read (sym)\n");
-                free (sym);
-                free (strtab);
+				free (sym);
+				free (strtab);
 				return NULL;
 			}
 		}
@@ -783,16 +785,16 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 
 		if ((rel = (Elf_(Rela)*)malloc ((int)(bin->shdr[i].sh_size / tsize) * sizeof (Elf_(Rela)))) == NULL) {
 			perror ("malloc (rel)");
-            free (sym);
-            free (strtab);
+			free (sym);
+			free (strtab);
 			return NULL;
 		}
 		for (j = nrel = 0; j < bin->shdr[i].sh_size; j += tsize, nrel++) {
 			if (r_buf_fread_at (bin->b, bin->shdr[i].sh_offset + j, (ut8*)&rel[nrel], rel_fmt, 1) == -1) {
 				eprintf ("Warning: read (rel)\n");
 				free(rel);
-                free (strtab);
-                free (sym);
+				free (strtab);
+				free (sym);
 				return NULL;
 			}
 			if (tsize < sizeof (Elf_(Rela)))
@@ -801,8 +803,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		if ((ret = (struct r_bin_elf_reloc_t *)malloc ((nrel+1) * sizeof (struct r_bin_elf_reloc_t))) == NULL) {
 			perror ("malloc (reloc)");
 			free(rel);
-            free (sym);
-            free (strtab);
+			free (sym);
+			free (strtab);
 			return NULL;
 		}
 		j = 0;
@@ -819,8 +821,8 @@ struct r_bin_elf_reloc_t* Elf_(r_bin_elf_get_relocs)(struct Elf_(r_bin_elf_obj_t
 		break;
 	}
 	free(rel);
-    free (strtab);
-    free (sym);
+	free (strtab);
+	free (sym);
 	return ret;
 }
 
@@ -889,7 +891,7 @@ struct r_bin_elf_lib_t* Elf_(r_bin_elf_get_libs)(struct Elf_(r_bin_elf_obj_t) *b
 
 struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	struct r_bin_elf_section_t *ret = NULL;
-        char unknown_s[20], invalid_s[20];
+	char unknown_s[20], invalid_s[20];
 	int i, nidx, unknown_c=0, invalid_c=0;
 
 	if ((ret = malloc ((bin->ehdr.e_shnum + 1) * sizeof (struct r_bin_elf_section_t))) == NULL)
@@ -901,27 +903,27 @@ struct r_bin_elf_section_t* Elf_(r_bin_elf_get_sections)(struct Elf_(r_bin_elf_o
 		}
 		ret[i].offset = bin->shdr[i].sh_offset;
 		ret[i].rva = bin->shdr[i].sh_addr > bin->baddr?
-			bin->shdr[i].sh_addr-bin->baddr: bin->shdr[i].sh_addr;
+		bin->shdr[i].sh_addr-bin->baddr: bin->shdr[i].sh_addr;
 		ret[i].size = bin->shdr[i].sh_size;
 		ret[i].align = bin->shdr[i].sh_addralign;
 		ret[i].flags = bin->shdr[i].sh_flags;
 		//memset (ret[i].name, 0, sizeof (ret[i].name));
 		nidx = bin->shdr[i].sh_name;
 		if (nidx<0 || !bin->shstrtab_section ||
-                    !bin->shstrtab_section->sh_size || nidx > bin->shstrtab_section->sh_size) {
-                        snprintf(invalid_s, sizeof(invalid_s)-4, "invalid%d", invalid_c);
-                        strncpy (ret[i].name, invalid_s, sizeof (ret[i].name)-4);
-                        invalid_c++;
-                }
+			!bin->shstrtab_section->sh_size || nidx > bin->shstrtab_section->sh_size) {
+			snprintf(invalid_s, sizeof(invalid_s)-4, "invalid%d", invalid_c);
+			strncpy (ret[i].name, invalid_s, sizeof (ret[i].name)-4);
+			invalid_c++;
+		}
 		else {
-                    if (bin->shstrtab && bin->shstrtab_size > bin->shdr[i].sh_name && bin->shdr[i].sh_name > 0)
-                        strncpy (ret[i].name, &bin->shstrtab[bin->shdr[i].sh_name], sizeof (ret[i].name)-4);
-                    else {
-                        snprintf(unknown_s, sizeof(unknown_s)-4, "unknown%d", unknown_c);
-                        strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
-                        unknown_c++;
-                    }
-                }
+			if (bin->shstrtab && bin->shstrtab_size > bin->shdr[i].sh_name && bin->shdr[i].sh_name > 0)
+				strncpy (ret[i].name, &bin->shstrtab[bin->shdr[i].sh_name], sizeof (ret[i].name)-4);
+			else {
+				snprintf(unknown_s, sizeof(unknown_s)-4, "unknown%d", unknown_c);
+				strncpy (ret[i].name, unknown_s, sizeof (ret[i].name)-4);
+				unknown_c++;
+			}
+		}
 		ret[i].name[sizeof (ret[i].name)-2] = 0;
 		ret[i].last = 0;
 	}

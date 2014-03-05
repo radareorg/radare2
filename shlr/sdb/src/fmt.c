@@ -2,49 +2,41 @@
 
 #include "sdb.h"
 
-// SLOW CONCAT
-#define out_concat(x) if (x) { \
-	char *o =(void*)realloc((void*)out, 2+strlen(x)+(out?strlen(out):0)); \
-	if (o) { if (*o) strcat (o, ","); out=o; strcat (o, x); } \
+// XXX SLOW CONCAT
+#define concat(x) if (x) { \
+	int size = 2+strlen(x)+(out?strlen(out)+4:0); \
+	if (out) { char *o = realloc (out, size); \
+		if (o) { strcat (o, ","); strcat (o, x); out = o; } \
+	} else out = strdup (x); \
 }
 
-SDB_API char *sdb_fmt_tostr(void *stru, const char *fmt) {
-	const char *num;
-	char *out = NULL;
-	ut8 *p = stru;
-	char buf[128];
+SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
+	char buf[128], *e_str, *out = NULL;
 	int n, len = 0;
 
 	for (; *fmt; fmt++) {
 		n = 4;
 		switch (*fmt) {
 		case 'b':
-			num = sdb_itoa ((ut64)*((ut8*)(p+len)), buf, 10);
-			out_concat (num);
+			concat (sdb_itoa ((ut64)*((ut8*)(p+len)), buf, 10));
 			break;
-		case 'h': 
-			num = sdb_itoa ((ut64)*((short*)(p+len)), buf, 10);
-			out_concat (num);
+		case 'h':
+			concat (sdb_itoa ((ut64)*((short*)(p+len)), buf, 10));
 			break;
 		case 'd':
-			num = sdb_itoa ((ut64)*((int*)(p+len)), buf, 10);
-			out_concat (num);
+			concat (sdb_itoa ((ut64)*((int*)(p+len)), buf, 10));
 			break;
 		case 'q':
-			num = sdb_itoa (*((ut64*)(p+len)), buf, 10);
-			out_concat (num);
+			concat (sdb_itoa (*((ut64*)(p+len)), buf, 10));
 			n = 8;
 			break;
 		case 's':
-			{
-			char *e_str = sdb_encode ((const ut8*)*((char**)(p+len)), 0);
-			out_concat (e_str);
+			e_str = sdb_encode ((const ut8*)*((char**)(p+len)), 0);
+			concat (e_str);
 			free (e_str);
-			}
 			break;
 		case 'p':
-			num = sdb_itoa ((ut64)*((size_t*)(p+len)), buf, 16);
-			out_concat (num);
+			concat (sdb_itoa ((ut64)*((size_t*)(p+len)), buf, 16));
 			n = sizeof (size_t);
 			break;
 		}
@@ -56,7 +48,7 @@ SDB_API char *sdb_fmt_tostr(void *stru, const char *fmt) {
 // TODO: return false if array length != fmt length
 SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 	int nxt, n, idx = 0;
-	char *str, *ptr, *word;
+	char *str, *ptr, *word, *e_str;
 	str = ptr = strdup (_str);
 	for (; *fmt; fmt++) {
 		word = sdb_array_string (ptr, &nxt);
@@ -64,30 +56,41 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 			break;
 		n = 4; // ALIGN
 		switch (*fmt) {
+		case 'b': *((ut8*)(stru + idx)) = (ut8)sdb_atoi (word); break;
+		case 'd': *((int*)(stru + idx)) = (int)sdb_atoi (word); break;
 		case 'q': *((ut64*)(stru + idx)) = sdb_atoi (word); n=8; break;
 		case 'h': *((short*)(stru + idx)) = (short)sdb_atoi (word); break;
-		case 'd': *((int*)(stru + idx)) = (int)sdb_atoi (word); break;
 		case 's':
-			{
-			ut8 *e_str = sdb_decode (word, 0);
-			if (!e_str) e_str = (ut8*)word;
-			*((char**)(stru + idx)) = (char*)e_str;
-			}
+			e_str = (char*)sdb_decode (word, 0);
+			*((char**)(stru + idx)) = (char*)strdup (e_str?e_str:word);
+			free (e_str);
 			break;
 		case 'p': *((void**)(stru + idx)) = (void*)(size_t)sdb_atoi (word);
 			break;
-		default: eprintf ("WTF\n"); break;
 		}
 		idx += R_MAX(sizeof (void*), n); // align
 		if (!nxt)
 			break;
 		ptr = (char*)sdb_array_next (word);
 	}
+	free (str);
 	return 1;
 }
 
-SDB_API void sdb_fmt_free (void *p, const char *fmt) {
-	// TODO: free() 's' and memset the rest
+SDB_API void sdb_fmt_free (void *stru, const char *fmt) {
+	int n, len = 0;
+	for (; *fmt; fmt++) {
+		n = 4;
+		switch (*fmt) {
+		case 'p': // TODO: leak or wat
+		case 'b':
+		case 'h':
+		case 'd': break;
+		case 'q': n = 8; break;
+		case 's': free ((void*)*((char**)(stru+len))); break;
+		}
+		len += R_MAX (sizeof (void*), n); // align
+	}
 }
 
 SDB_API int sdb_fmt_init (void *p, const char *fmt) {
@@ -109,7 +112,7 @@ SDB_API int sdb_fmt_init (void *p, const char *fmt) {
 
 #if 0
 main() {
-	#define STRUCT_PERSON_FORMAT "ds"
+	#define STRUCT_PERSON_FORMAT "dsqd"
 	#define STRUCT_PERSON_SIZE sizeof (struct Person)
 	typedef struct person {
 		int foo;
@@ -130,6 +133,6 @@ main() {
 		eprintf ("== %s\n", o);
 		free (o);
 	}
-	sdb_fmt_free (&p, "ds");
+	sdb_fmt_free (&p, "dsqd");
 }
 #endif
