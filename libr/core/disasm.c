@@ -495,6 +495,11 @@ static char *filter_refline2(RCore *core, const char *str) {
 	char *p, *s = strdup (str);
 	char n = '|';
 	for (p=s; *p; p++) {
+		if (!strncmp(p, core->cons->vline[LINE_VERT],
+					strlen(core->cons->vline[LINE_VERT]))) {
+			p += strlen(core->cons->vline[LINE_VERT]) - 1;
+			continue;
+		}
 		switch (*p) {
 		case '`':
 		case '|':
@@ -754,8 +759,8 @@ static void handle_show_functions (RCore *core, RDisasmState *ds) {
 						r_cons_printf ("%s%s "Color_RESET,
 							ds->color_fline, core->cons->vline[LINE_VERT]); // |
 					} else {
-						r_cons_printf ("%s %s %d\n| ", core->cons->vline[LINE_CROSS],
-							f->name, f->size); // |-
+						r_cons_printf ("%s %s %d\n%s ", core->cons->vline[LINE_CROSS],
+							f->name, f->size, core->cons->vline[LINE_VERT]); // |-
 
 					}
 				} else {
