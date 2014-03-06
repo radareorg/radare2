@@ -33,7 +33,7 @@ SDB_API char *sdb_querysf (Sdb *s, char *buf, size_t buflen, const char *fmt, ..
 #define out_concat(x) if (x) { \
 	int size = 2+strlen(x)+(out?strlen(out)+4:0); \
 	if (out) { char *o = realloc (out, size); \
-		if (o) { strcat (o, ","); strcat (o, x); out = o; } \
+		if (o) { strcat (o, "\n"); strcat (o, x); out = o; } \
 	} else out = strdup (x); \
 }
 
@@ -479,9 +479,9 @@ static char *slurp(const char *file) {
 		return NULL;
 	sz = lseek (fd, 0, SEEK_END);
 	if (sz<0){
-         close (fd);
+		close (fd);
 		return NULL;
-    }
+	}
 	lseek (fd, 0, SEEK_SET);
 	text = malloc (sz+1);
 	if (!text) {

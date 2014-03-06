@@ -1,6 +1,6 @@
-CFILES = src/buffer.c src/ht.c src/ls.c src/query.c src/sdbn.c ;
-CFILES += src/cdb.c src/json.c src/sdb.c src/util.c ;
-CFILES += src/cdb_make.c src/lock.c src/ns.c src/sdba.c ;
+CFILES = src/buffer.c src/ht.c src/ls.c src/query.c src/num.c ;
+CFILES += src/cdb.c src/json.c src/sdb.c src/util.c src/base64.c ;
+CFILES += src/cdb_make.c src/lock.c src/ns.c src/array.c ;
 
 #CFILES += src/json/api.c src/json/path.c src/json/rangstr.c ;
 #CFILES += src/json/js0n.c ; 

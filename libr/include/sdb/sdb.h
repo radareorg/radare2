@@ -179,7 +179,6 @@ char *sdb_array_string(char *str, char **next);
 int sdb_alen(const char *str);
 int sdb_array_len(Sdb* s, const char *key);
 int sdb_array_list(Sdb* s, const char *key);
-const char *sdb_array_next(const char *str);
 const char *sdb_array_index(const char *str, int idx);
 int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas);
 char *sdb_array_pop(Sdb *s, const char *key, ut32 *cas);

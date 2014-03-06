@@ -124,7 +124,7 @@ SDB_API const char *sdb_const_get (Sdb* s, const char *key, ut32 *cas) {
 	if (cas) *cas = 0;
 	if (!s||!key) return NULL;
 	keylen = strlen (key)+1;
-	hash = sdb_hash (key, keylen-1);
+	hash = sdb_hash (key, 0); //keylen-1);
 
 	/* search in memory */
 	kv = (SdbKv*)ht_lookup (s->ht, hash);
@@ -308,7 +308,21 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 
 SDB_API void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 	SdbListIter *iter;
+	char *k, *v;
 	SdbKv *kv;
+	sdb_dump_begin (s);
+	while (sdb_dump_dupnext (s, &k, &v)) {
+		ut32 hash = sdb_hash (k, 0);
+		SdbHashEntry *hte = ht_search (s->ht, hash);
+		if (hte) {
+			kv = (SdbKv*)hte->data;
+			if (!*kv->value) {
+				// deleted = 1;
+				continue;
+			}
+			cb (user, kv->key, kv->value);
+		} else cb (user, k, v);
+	}
 	ls_foreach (s->ht->list, iter, kv) {
 		if (!kv->value || !*kv->value)
 			continue;
@@ -316,7 +330,7 @@ SDB_API void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 	}
 }
 
-// TODO: reuse sdb_foreach
+// TODO: reuse sdb_foreach DEPRECATE WTF NOT READING THE CDB?
 SDB_API void sdb_list (Sdb* s) {
 	SdbListIter *iter;
 	SdbKv *kv;
@@ -336,6 +350,7 @@ SDB_API int sdb_sync (Sdb* s) {
 
 	if (!sdb_disk_create (s))
 		return 0;
+// TODO: use sdb_foreach here
 	sdb_dump_begin (s);
 	while (sdb_dump_dupnext (s, &k, &v)) {
 		ut32 hash = sdb_hash (k, 0);

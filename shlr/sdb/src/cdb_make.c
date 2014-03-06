@@ -86,7 +86,7 @@ int cdb_make_add(struct cdb_make *c,const char *key,unsigned int keylen,const ch
 	if (!cdb_make_addbegin (c, keylen, datalen)) return 0;
 	if (!buffer_putalign (&c->b, key, keylen)) return 0;
 	if (!buffer_putalign (&c->b, data, datalen)) return 0;
-	return cdb_make_addend (c, keylen, datalen, sdb_hash (key, keylen));
+	return cdb_make_addend (c, keylen, datalen, sdb_hash (key, keylen-1));
 }
 
 int cdb_make_finish(struct cdb_make *c) {
