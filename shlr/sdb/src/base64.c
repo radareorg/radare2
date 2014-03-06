@@ -13,7 +13,7 @@ static const char cd64[]="|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$
 static void b64_encode(const ut8 in[3], char out[4], int len) {
 	if (len<1) return;
 	out[0] = cb64[ in[0] >> 2 ];
-	out[1] = cb64[ ((in[0] & 0x03) << 4) | (len>1)?((in[1] & 0xf0) >> 4):0 ];
+	out[1] = cb64[ ((in[0] & 0x03) << 4) | ((len>1)?((in[1] & 0xf0) >> 4):0) ];
 	out[2] = (len > 1 ? cb64[ ((in[1] & 0x0f) << 2) | ((in[2] & 0xc0) >> 6) ] : '=');
 	out[3] = (len > 2 ? cb64[ in[2] & 0x3f ] : '=');
 }
@@ -27,8 +27,7 @@ static int b64_decode(const char in[4], ut8 out[3]) {
 		if (v[i]=='$') {
 			len = i-1;
 			break;
-		}
-		v[i]-=62;
+		} else v[i]-=62;
 	}
 	out[0] = v[0] << 2 | v[1] >> 4;
 	out[1] = v[1] << 4 | v[2] >> 2;
