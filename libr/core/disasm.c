@@ -877,7 +877,7 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 				r_cons_strcat (ds->comment);
 #endif
 				if (ds->show_color) handle_print_color_reset(core, ds);
-				if (!strchr (ds->comment, '\n')) r_cons_newline ();
+				r_cons_newline ();
 				free (ds->comment);
 				ds->comment = NULL;
 
