@@ -158,6 +158,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 #define eprintf(x,y...) fprintf(stderr,x,##y)
 
+#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+
+#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
 #define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
 #define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
 #define R_MAX(x,y) (((x)>(y))?(x):(y))

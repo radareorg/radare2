@@ -20,11 +20,10 @@ SDB_API const char *sdb_array_next(const char *str) {
 }
 
 // TODO: nxt can be a pointer to the string, not a bool and we can get ird of array_next()
-SDB_API char *sdb_array_string(char *str, int *hasnext) {
-	int nxt = 0;
-	char *p = strchr (str, SDB_RS);
-	if (p) { *p = 0; nxt = 1; }
-	if (hasnext) *hasnext = nxt;
+SDB_API char *sdb_array_string(char *str, char **next) {
+	char *nxt, *p = strchr (str, SDB_RS);
+	if (p) { *p = 0; nxt = p+1; } else nxt = NULL;
+	if (next) *next = nxt;
 	return str;
 }
 
@@ -290,17 +289,18 @@ SDB_API int sdb_array_exists_num(Sdb *s, const char *key, ut64 num) {
 }
 
 SDB_API int sdb_array_exists(Sdb *s, const char *key, const char *val) {
-	int found = 0, hasnext = 1;
+	int found = 0;
 	char *list = sdb_get (s, key, 0);
-	char *ptr = list;
-	hasnext = list && *list;
-	while (hasnext) {
-		char *str = sdb_array_string (ptr, &hasnext);
-		if (!strcmp (str, val)) {
-			found = 1;
-			break;
-		}
-		ptr = (char *)sdb_array_next (str);
+	char *next, *ptr = list;
+	if (list && *list) {
+		do {
+			char *str = sdb_array_string (ptr, &next);
+			if (!strcmp (str, val)) {
+				found = 1;
+				break;
+			}
+			ptr = next;
+		} while (next);
 	}
 	free (list);
 	return found;

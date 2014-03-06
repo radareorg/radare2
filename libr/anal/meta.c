@@ -168,9 +168,9 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 #if USE_ANAL_SDB
 #undef DB
 #define DB a->sdb_meta
-	int i, nxt;
-	char key[100], key2[100], *dtr, *s, *p;
+	char key[100], key2[100], *dtr, *s, *p, *next;
 	const char *ptr;
+	int i;
 	if (size == UT64_MAX) {
 		// FULL CLEANUP
 		// XXX: this thing ignores the type
@@ -179,13 +179,14 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 		} else {
 			snprintf (key, sizeof (key)-1, "meta.%c", type);
 			dtr = sdb_get (DB, key, 0);
-			for (p = dtr; p; p=sdb_array_next (s)) {
-				s = sdb_array_string (p, &nxt);
-				snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x,
+			for (p = dtr; p; p = next) {
+				s = sdb_array_string (p, &next);
+				snprintf (key, sizeof (key)-1,
+					"meta.%c.0x%"PFMT64x,
 					type, sdb_atoi (s));
 				eprintf ("--> %s\n", key);
 				sdb_unset (DB, key, 0);
-				if (!nxt) break;
+				if (!next) break;
 			}
 			free (dtr);
 		}
@@ -197,7 +198,8 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size, const char *str) 
 	if (ptr) {
 		for (i=0; ptr[i]; i++) {
 			if (ptr[i] != SDB_RS) {
-				snprintf (key2, sizeof (key2)-1, "meta.%c.0x%"PFMT64x, ptr[i], addr);
+				snprintf (key2, sizeof (key2)-1,
+					"meta.%c.0x%"PFMT64x, ptr[i], addr);
 				sdb_unset (DB, key2, 0);
 			}
 		}

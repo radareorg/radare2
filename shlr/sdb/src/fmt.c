@@ -47,11 +47,11 @@ SDB_API char *sdb_fmt_tostr(void *p, const char *fmt) {
 
 // TODO: return false if array length != fmt length
 SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
-	int nxt, n, idx = 0;
-	char *str, *ptr, *word, *e_str;
+	int n, idx = 0;
+	char *next, *str, *ptr, *word, *e_str;
 	str = ptr = strdup (_str);
 	for (; *fmt; fmt++) {
-		word = sdb_array_string (ptr, &nxt);
+		word = sdb_array_string (ptr, &next);
 		if (!word || !*word)
 			break;
 		n = 4; // ALIGN
@@ -69,9 +69,9 @@ SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru) {
 			break;
 		}
 		idx += R_MAX(sizeof (void*), n); // align
-		if (!nxt)
+		if (!next)
 			break;
-		ptr = (char*)sdb_array_next (word);
+		ptr = next;
 	}
 	free (str);
 	return 1;
@@ -108,31 +108,3 @@ SDB_API int sdb_fmt_init (void *p, const char *fmt) {
 	if (p) memset (p, 0, len);
 	return len;
 }
-
-
-#if 0
-main() {
-	#define STRUCT_PERSON_FORMAT "dsqd"
-	#define STRUCT_PERSON_SIZE sizeof (struct Person)
-	typedef struct person {
-		int foo;
-		char *str;
-		ut64 fin;
-		int end;
-	} Person;
-
-	Person p;
-
-	sdb_fmt_init (&p, "dsqd");
-	sdb_fmt_tobin ("123,bar,321,1", "dsqd", &p);
-	eprintf ("--> %d,%s\n", p.foo, p.str);
-	eprintf ("--> %lld,%d\n", p.fin, p.end);
-
-	{
-		char *o = sdb_fmt_tostr (&p, "dsqd");
-		eprintf ("== %s\n", o);
-		free (o);
-	}
-	sdb_fmt_free (&p, "dsqd");
-}
-#endif

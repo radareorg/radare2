@@ -39,20 +39,21 @@ R_API RList *r_anal_xrefs_deln (RAnal *anal, const char *type, ut64 from, ut64 t
 }
 
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const char *type, ut64 addr) {
-	char *s, *str, *ptr, key[256];
+	char *next, *s, *str, *ptr, key[256];
 	RAnalRef *ref = NULL;
-	int hasnext = 1;
 	snprintf (key, sizeof (key), "%s.%s.0x%"PFMT64x, kind, type, addr);
 	str = sdb_get (DB, key, 0);
 	if (!str) return R_FALSE;
-	for (ptr=str; hasnext; ptr = (char *)sdb_array_next (s)) {
-		s = sdb_array_string (ptr, &hasnext);
+	for (ptr=str; ; ptr = next) {
+		s = sdb_array_string (ptr, &next);
 		if (!(ref = r_anal_ref_new ()))
 			return R_FALSE;
 		ref->addr = addr;
 		ref->at = r_num_get (NULL, s);
 		ref->type = (!strcmp (type, "code"))?'C':'d'; // XXX
 		r_list_append (list, ref);
+		if (!next)
+			break;
 	}
 	free (str);
 	return R_TRUE;

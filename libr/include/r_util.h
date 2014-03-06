@@ -325,8 +325,6 @@ R_API void r_num_irand();
 R_API ut16 r_num_ntohs (ut16 foo);
 
 /* TODO ..use as uppercase maybe? they are macros! */
-#define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
-#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
 #define strnull(x) (!x||!*x)
 #define iswhitechar(x) ((x)==' '||(x)=='\t'||(x)=='\n'||(x)=='\r')
 #define iswhitespace(x) ((x)==' '||(x)=='\t')
@@ -614,7 +612,6 @@ R_API int r_strht_set(RStrHT *s, const char *key, const char *val);
 R_API void r_strht_clear(RStrHT *s);
 R_API void r_strht_del(RStrHT *s, const char *key);
 R_API int r_is_heap (void *p);
-
 
 typedef struct {
 	int len;

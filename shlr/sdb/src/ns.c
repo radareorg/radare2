@@ -2,6 +2,17 @@
 
 #include "sdb.h"
 
+SDB_API void sdb_ns_lock(Sdb *s, int lock, int depth) {
+	SdbListIter *it;
+	SdbNs *ns;
+	s->ns_lock = lock;
+	if (depth) { // handles -1 as infinite
+		ls_foreach (s->ns, it, ns) {
+			sdb_ns_lock (ns->sdb, lock, depth-1);
+		}
+	}
+}
+
 SDB_API void sdb_ns_free(Sdb *s) {
 	SdbListIter next;
 	SdbListIter *it;
@@ -44,9 +55,11 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	ls_foreach (s->ns, it, ns) {
 		if (ns->hash == hash) {
 			ns->sdb = r;
-			return 0;
+			return 1;
 		}
 	}
+	if (s->ns_lock)
+		return 0;
 	ns = malloc (sizeof (SdbNs));
 	ns->name = strdup (name);
 	ns->hash = hash;
@@ -63,6 +76,8 @@ SDB_API Sdb *sdb_ns(Sdb *s, const char *name) {
 		if (ns->hash == hash)
 			return ns->sdb;
 	}
+	if (s->ns_lock)
+		return 0;
 	ns = sdb_ns_new (s, name, hash);
 	ls_append (s->ns, ns);
 	return ns->sdb;

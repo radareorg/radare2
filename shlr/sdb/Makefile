@@ -4,7 +4,9 @@ VALADIR=bindings/vala
 PWD=$(shell pwd)
 PFX=${DESTDIR}${PREFIX}
 HGFILES=`find sdb-${SDBVER} -type f | grep -v hg | grep -v swp`
+VAPIDIR=$(PFX)/share/vala/vapi/
 MANDIR=${PFX}/share/man/man1
+MKDIR=mkdir
 
 all: src/sdb-version.h
 	${MAKE} -C src
@@ -107,10 +109,11 @@ symstall: install-dirs
 	ln -fs ${PWD}/bindings/vala/sdb.pc ${PFX}/lib/pkgconfig
 	ln -fs ${PWD}/bindings/vala/mcsdb.pc ${PFX}/lib/pkgconfig
 ifneq (${HAVE_VALA},)
-	ln -fs ${PWD}/vala/sdb.vapi ${PFX}/share/vala/vapi
-	ln -fs ${PWD}/vala/mcsdb.vapi ${PFX}/share/vala/vapi
-	ln -fs ${PWD}/vala/sdb.vapi ${PFX}/share/vala/vapi
-	ln -fs ${PWD}/vala/mcsdb.vapi ${PFX}/share/vala/vapi
+	$(MKDIR) -p $(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/sdb.vapi $(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/mcsdb.vapi $(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/sdb.vapi $(VAPIDIR)
+	ln -fs ${PWD}/bindings/vala/mcsdb.vapi $(VAPIDIR)
 	cd ${VALADIR}/types && ${MAKE} symstall PFX=${PFX}
 endif
 

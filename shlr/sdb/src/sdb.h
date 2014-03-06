@@ -58,6 +58,7 @@ typedef struct sdb_t {
 	ut64 expire;
 	ut64 last; // timestamp of last change
 	int options;
+	int ns_lock; // TODO: merge into options?
 	SdbList *ns;
 	SdbList *hooks;
 	SdbKv tmpkv;
@@ -154,6 +155,7 @@ const char *sdb_json_format(SdbJsonString* s, const char *fmt, ...);
 Sdb* sdb_ns (Sdb *s, const char *name);
 void sdb_ns_init (Sdb* s);
 void sdb_ns_free (Sdb* s);
+void sdb_ns_lock(Sdb *s, int lock, int depth);
 void sdb_ns_sync (Sdb* s);
 int sdb_ns_set (Sdb *s, const char *name, Sdb *r);
 
@@ -173,7 +175,7 @@ int sdb_array_del (Sdb* s, const char *key, int n, ut32 cas);
 int sdb_array_del_num (Sdb* s, const char *key, ut64 val, ut32 cas);
 int sdb_array_del_str (Sdb *s, const char *key, const char *val, ut32 cas);
 // helpers
-char *sdb_array_string(char *str, int *hasnext);
+char *sdb_array_string(char *str, char **next);
 int sdb_alen(const char *str);
 int sdb_array_len(Sdb* s, const char *key);
 int sdb_array_list(Sdb* s, const char *key);
