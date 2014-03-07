@@ -8,6 +8,10 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
+// HACK to fix capstone-android-mips build
+#undef mips
+#define mips mips
+
 #ifdef __HAIKU__
 # define __UNIX__ 1
 #endif

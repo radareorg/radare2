@@ -18,7 +18,7 @@ void** r_flist_get(void **x) {
 #if 1
 #define r_flist_t void**
 #define RFList void**
-#define r_flist_rewind(it) for (; it!=*it; it--); it++
+#define r_flist_rewind(it) for (; it!=*it; it--) {} it++
 #define r_flist_next(it) *it!=0
 #define r_flist_get(it) *(it++)
 #define r_flist_iterator(x) x

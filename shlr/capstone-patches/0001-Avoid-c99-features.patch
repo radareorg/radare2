@@ -1,0 +1,52 @@
+diff --git a/MathExtras.h b/MathExtras.h
+index 78150c8..484faf4 100644
+--- a/MathExtras.h
++++ b/MathExtras.h
+@@ -87,7 +87,7 @@ static inline bool isPowerOf2_32(uint32_t Value) {
+ /// bit.  Ex. CountLeadingZeros_32(0x00F000FF) == 8.
+ /// Returns 32 if the word is zero.
+ static inline unsigned CountLeadingZeros_32(uint32_t Value) {
+-	unsigned Count; // result
++	unsigned Shift, Count; // result
+ #if __GNUC__ >= 4
+ 	// PowerPC is defined for __builtin_clz(0)
+ #if !defined(__ppc__) && !defined(__ppc64__)
+@@ -98,7 +98,7 @@ static inline unsigned CountLeadingZeros_32(uint32_t Value) {
+ 	if (!Value) return 32;
+ 	Count = 0;
+ 	// bisection method for count leading zeros
+-	for (unsigned Shift = 32 >> 1; Shift; Shift >>= 1) {
++	for (Shift = 32 >> 1; Shift; Shift >>= 1) {
+ 		uint32_t Tmp = Value >> Shift;
+ 		if (Tmp) {
+ 			Value = Tmp;
+@@ -123,7 +123,7 @@ static inline unsigned CountLeadingOnes_32(uint32_t Value) {
+ /// one bit (64 bit edition.)
+ /// Returns 64 if the word is zero.
+ static inline unsigned CountLeadingZeros_64(uint64_t Value) {
+-	unsigned Count; // result
++	unsigned Shift, Count; // result
+ #if __GNUC__ >= 4
+ 	// PowerPC is defined for __builtin_clzll(0)
+ #if !defined(__ppc__) && !defined(__ppc64__)
+@@ -137,7 +137,7 @@ static inline unsigned CountLeadingZeros_64(uint64_t Value) {
+ 		if (!Value) return 64;
+ 		Count = 0;
+ 		// bisection method for count leading zeros
+-		for (unsigned Shift = 64 >> 1; Shift; Shift >>= 1) {
++		for (Shift = 64 >> 1; Shift; Shift >>= 1) {
+ 			uint64_t Tmp = Value >> Shift;
+ 			if (Tmp) {
+ 				Value = Tmp;
+@@ -242,7 +242,7 @@ static inline unsigned CountPopulation_32(uint32_t Value) {
+ #else
+ 	uint32_t v = Value - ((Value >> 1) & 0x55555555);
+ 	v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+-	return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
++	return (((v + (v >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
+ #endif
+ }
+ 
+-- 
+1.8.5.3
+

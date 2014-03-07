@@ -41,6 +41,7 @@ LDFLAGS+=../../libr/util/libr_util.a
 LDFLAGS+=../../libr/socket/libr_socket.a
 # extra libs #
 LDFLAGS+=../../shlr/grub/libgrubfs.a
+LDFLAGS+=../../shlr/capstone/libcapstone.a
 LDFLAGS+=../../shlr/sdb/src/libsdb.a
 LDFLAGS+=../../shlr/zip/librz.a
 LDFLAGS+=../../shlr/gdb/lib/libgdbr.a

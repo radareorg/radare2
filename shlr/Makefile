@@ -1,10 +1,13 @@
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
+CS_VER=2.1
+CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
 CS_URL=https://github.com/aquynh/capstone.git
 CS_UPD=20140307
 CS_BRA=next
 CS_TIP=c76d8d03ba32cd9ab81266a99011220009c720d6
+MAKE_JOBS?=1
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr
 
@@ -111,12 +114,15 @@ uninstall deinstall:
 	#rm -f ${D}/lib/libr_tcc*
 	#rm -f ${D}/lib/libr_z*
 
+
+ifeq ($(CS_TAR),)
 capstone:
 	$(MAKE) capstone-sync
-	$(MAKE) $(MAKEFLAGS) capstone-build
+	$(MAKE) -j$(MAKE_JOBS) capstone-build
 
 capstone-build: capstone
-	cd capstone ; $(MAKE) $(MAKEFLAGS) all CC="$(CC)"
+	cd capstone && CFLAGS="-Dmips=mips" $(CFLAGS) \
+		$(MAKE) -j$(MAKE_JOBS) libcapstone.a AR_EXT=a CC="$(CC)" 
 
 capstone-sync:
 	if [ -d capstone ]; then \
@@ -127,3 +133,19 @@ capstone-sync:
 	cd capstone ; \
 		git co $(CS_BRA) ; \
 		git reset --hard $(CS_TIP)
+else
+capstone-build: capstone
+	cd capstone && CFLAGS="-Dmips=mips $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+		$(MAKE) -j$(MAKE_JOBS) CC="$(CC)" AR_EXT=a libcapstone.a
+
+capstone-sync: capstone
+
+capstone: capstone-$(CS_VER).tar.gz
+	tar xzvf capstone-$(CS_VER).tar.gz
+	rm -rf capstone
+	mv capstone-$(CS_VER) capstone
+	cd capstone ; for a in ../capstone-patches/* ; do patch -p1 < $$a ; done
+
+capstone-$(CS_VER).tar.gz:
+	wget -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
+endif

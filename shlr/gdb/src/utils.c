@@ -1,4 +1,4 @@
-#include "r_util.h"
+#include "r_types.h"
 #include "utils.h"
 
 // XXX: most of those functions are already implemented in r_util. reuse!
@@ -19,11 +19,11 @@ uint8_t cmd_checksum(const char* command) {
 
 
 /**
- * Converts str to ut64
+ * Converts str to uint64_t
  */
-ut64 unpack_uint64(char *buff, int len) {
+uint64_t unpack_uint64(char *buff, int len) {
 	int nibble;
-	ut64 retval = 0;
+	uint64_t retval = 0;
 	while (len) {
 		nibble = hex2int(*buff++);
 		retval |= nibble;
@@ -36,10 +36,10 @@ ut64 unpack_uint64(char *buff, int len) {
 
 /**
  * Changed byte order and
- * converts the value into ut64
+ * converts the value into uint64_t
  */
-ut64 unpack_uint64_co(char* buff, int len) {
-	ut64 result = 0;
+uint64_t unpack_uint64_co(char* buff, int len) {
+	uint64_t result = 0;
 	int i;
 	for (i = len - 2; i >= 0; i-=2) {
 		result |= unpack_uint64(&buff[i], 2);
@@ -80,7 +80,7 @@ char hex2char(char* hex) {
 }
 
 
-int unpack_hex(char* src, ut64 len, char* dst) {
+int unpack_hex(char* src, uint64_t len, char* dst) {
 	int i = 0;
 	while (i < (len / 2)) {
 		int val = hex2int(src[(i*2)]);
@@ -93,7 +93,7 @@ int unpack_hex(char* src, ut64 len, char* dst) {
 }
 
 
-int pack_hex(char* src, ut64 len, char* dst) {
+int pack_hex(char* src, uint64_t len, char* dst) {
 	int i = 0;
 	int x = 0;
 	while (i < (len*2)) {
@@ -106,12 +106,12 @@ int pack_hex(char* src, ut64 len, char* dst) {
 }
 
 
-void hexdump(void* ptr, ut64 len, ut64 offset) {
+void hexdump(void* ptr, uint64_t len, uint64_t offset) {
 	unsigned char* data = (unsigned char*)ptr;
 	int x = 0;
 	char hex[49], *p;
 	char txt[17], *c;
-	ut64 curr_offset;
+	uint64_t curr_offset;
 	while (x < len) {
 		p = hex;
 		c = txt;

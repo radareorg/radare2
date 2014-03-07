@@ -66,7 +66,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, int len, const char
 	char namefmt[8];
 	ut8 *buf, buffer[256];
 
-	nargs = endian = i = j = 0;
+	nexti = nargs = endian = i = j = 0;
 
 	if (len<1) return 0;
 	buf = malloc (len);
