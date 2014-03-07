@@ -298,6 +298,7 @@ R_API int r_core_block_read(RCore *core, int next) {
 		if (!core->io->va)
 			return -1;
 	}
+	core->io->off = off;
 	return (int)r_io_read (core->io, core->block, core->blocksize);
 }
 
