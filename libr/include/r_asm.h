@@ -95,7 +95,7 @@ typedef struct r_asm_t {
 	RBinBind binb;
 	RParse *ifilter;
 	RParse *ofilter;
-	RPair *pair;
+	Sdb *pair;
 	RSyscall *syscall;
 	RNum *num;
 } RAsm;

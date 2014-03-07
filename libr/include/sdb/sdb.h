@@ -96,7 +96,7 @@ int sdb_sync (Sdb*);
 void sdb_kv_free (SdbKv *kv);
 
 typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
-void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);
+int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user);
 
 /* create db */
 int sdb_disk_create (Sdb* s);

@@ -437,21 +437,54 @@ static int cmd_interpret(void *data, const char *input) {
 	return 0;
 }
 
+static int callback_foreach_kv (void *user, const char *k, const char *v) {
+	r_cons_printf ("%s=%s\n", k, v);
+	return 1;
+}
+
 static int cmd_kuery(void *data, const char *input) {
 	char buf[1024], *out;
 	RCore *core = (RCore*)data;
 	const char *sp, *p = "[sdb]> ";
 	const int buflen = sizeof (buf)-1;
-	Sdb *s;
+	Sdb *s = core->sdb;
 
-	if (*input=='?') {
-		eprintf ("Usage: k [db] [query]    # sdb query prompt\n");
-		eprintf (" k anal  --> meta@*\n");
-		eprintf ("TODO:\n");
-		eprintf (" k anal*meta*   : s = sdb_ns (sdb_ns(s, 'anal'), 'meta')\n");
-		return 0;
+	switch (input[0]) {
+	case ' ':
+		out = sdb_querys (s, NULL, 0, input+1);
+		if (out) r_cons_printf ("%s\n", out);
+		free (out);
+		break;
+	//case 's': r_pair_save (s, input+3); break;
+	//case 'l': r_pair_load (sdb, input+3); break;
+	case '\0':
+		sdb_foreach (s, callback_foreach_kv, NULL);
+		break;
+	// TODO: add command to list all namespaces // sdb_ns_foreach ?
+	case 's':
+		if (input[1]==' ')
+			s = sdb_ns (s, input+2);
+		if (!s) s = core->sdb;
+		for (;;) {
+			r_line_set_prompt (p);
+			if (r_cons_fgets (buf, buflen, 0, NULL)<1)
+				break;
+			if (!*buf) break;
+			out = sdb_querys (s, NULL, 0, buf);
+			if (out) r_cons_printf ("%s\n", out);
+		}
+		break;
+	case '?':
+		eprintf ("|Usage: k [key[=value]]\n"
+			"| k foo=bar   # set value\n"
+			"| k foo       # show value\n"
+			"| k           # list keys\n"
+			"| ks [ns]     # enter the sdb query shell\n"
+			//"| kl ha.sdb   # load keyvalue from ha.sdb\n"
+			//"| ks ha.sdb   # save keyvalue to ha.sdb\n"
+		);
+		break;
 	}
-	eprintf ("query (%s)\n", input+1);
 
 	sp = strchr (input+1, ' ');
 	if (sp) {
@@ -462,17 +495,6 @@ static int cmd_kuery(void *data, const char *input) {
 		if (out) r_cons_printf ("%s\n", out);
 		free (inp);
 		return 0;
-	}
-	s = sdb_ns (core->sdb, input+1);
-	eprintf ("NS (%s) (%p)\n", input+1, s);
-
-	for (;;) {
-		r_line_set_prompt (p);
-		if (r_cons_fgets (buf, buflen, 0, NULL)<1)
-			break;
-		if (!*buf) break;
-		out = sdb_querys (s, NULL, 0, buf);
-		if (out) r_cons_printf ("%s\n", out);
 	}
 	return 0;
 }

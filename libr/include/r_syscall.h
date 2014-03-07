@@ -34,12 +34,15 @@ typedef struct r_syscall_port_t {
 
 typedef struct r_syscall_t {
 	FILE *fd;
-	// TODO char *arch;
-	// TODO char *os;
+	// memoization
+	char *arch;
+	char *os;
+	int bits;
+	// database
 	RSyscallRegs *regs;
 	RSyscallItem *sysptr;
 	RSyscallPort *sysport;
-	RPair *syspair;
+	Sdb *db;
 	// TODO: deprecate
 	PrintfCallback printf;
 } RSyscall;

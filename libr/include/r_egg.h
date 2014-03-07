@@ -35,7 +35,7 @@ typedef struct r_egg_t {
 	//RList *shellcodes; // XXX is plugins nao?
 	RAsm *rasm;
 	RSyscall *syscall;
-	RPair *pair;
+	Sdb *db;
 	RList *plugins;
 	RList *patches; // <RBuffer>
 	struct r_egg_emit_t *emit;

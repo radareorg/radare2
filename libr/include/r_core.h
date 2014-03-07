@@ -108,7 +108,6 @@ typedef struct r_core_t {
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
 	RCons *cons;
-	RPair *kv;
 	RIO *io;
 	RCoreFile *file;
 	RList *files;

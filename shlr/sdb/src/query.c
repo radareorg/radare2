@@ -61,7 +61,7 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	out_concat (line);
 	*(rlu->out) = out;
 	free (v2);
-	return 0;
+	return 1;
 }
 
 SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
@@ -80,6 +80,12 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *cmd) {
 		buf = NULL;
 	}
 repeat:
+	s = r;
+	eq = NULL;
+	quot = NULL;
+	json = NULL;
+	encode = 0;
+	is_ref = 0;
 	p = cmd;
 	if (*p=='%') {
 		encode = 1;
@@ -87,7 +93,6 @@ repeat:
 		p++;
 	}
 	eq = strchr (p, '=');
-	is_ref = 0;
 	if (eq) {
 		*eq++ = 0;
 		if (*eq=='$') {
@@ -337,10 +342,7 @@ next_quote:
 				}
 				if (encode)
 					free (sval);
-				if (ok) {
-					*buf = 0;
-					return buf;
-				}
+				if (ok) *buf = 0;
 			} else {
 				/* [3]foo */
 				const char *sval = sdb_const_get (s, p, 0);
@@ -396,8 +398,9 @@ next_quote:
 				free ((void*)val);
 				val = NULL;
 			}
-			if (!ok)
+			if (!ok) {
 				goto fail;
+			}
 		} else {
 			// 0 1 kvpath?jspath
 			// 0 0 kvpath

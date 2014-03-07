@@ -3,11 +3,12 @@ include ../config.mk
 NAME=r_db
 DEPS=r_util
 
-OBJS=db.o table.o pair.o
+OBJS=db.o table.o
 
 SDBPATH=../../shlr/sdb/src/
 SDBLIB=${SDBPATH}/libsdb.a
 EXTRA_TARGETS+=${SDBLIB}
+
 SDB_OBJS=
 SDB_OBJS+=buffer.o
 SDB_OBJS+=cdb.o

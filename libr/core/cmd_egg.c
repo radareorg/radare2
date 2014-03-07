@@ -130,7 +130,8 @@ static int cmd_egg(void *data, const char *input) {
 			break;
 		case '\0':
 			// list
-			r_pair_list (egg->pair,NULL);
+			// r_pair_list (egg->pair,NULL);
+eprintf ("TODO: list options\n");
 			eprintf ("list options\n");
 			break;
 		default:

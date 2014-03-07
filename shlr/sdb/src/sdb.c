@@ -306,7 +306,7 @@ SDB_API int sdb_set (Sdb* s, const char *key, const char *val, ut32 cas) {
 	return kv->cas;
 }
 
-SDB_API void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
+SDB_API int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 	SdbListIter *iter;
 	char *k, *v;
 	SdbKv *kv;
@@ -320,14 +320,20 @@ SDB_API void sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 				// deleted = 1;
 				continue;
 			}
-			cb (user, kv->key, kv->value);
-		} else cb (user, k, v);
+			if (!cb (user, kv->key, kv->value))
+				return 0;
+		} else {
+			if (!cb (user, k, v))
+				return 0;
+		}
 	}
 	ls_foreach (s->ht->list, iter, kv) {
 		if (!kv->value || !*kv->value)
 			continue;
-		cb (user, kv->key, kv->value);
+		if (!cb (user, kv->key, kv->value))
+			return 0;
 	}
+	return 1;
 }
 
 // TODO: reuse sdb_foreach DEPRECATE WTF NOT READING THE CDB?

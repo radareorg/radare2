@@ -184,7 +184,7 @@ R_API void r_asm_free(RAsm *a) {
 	if (!a) return;
 	free (a->cpu);
 	// TODO: any memory leak here?
-	r_pair_free (a->pair);
+	sdb_free (a->pair);
 	a->pair = NULL;
 	// XXX: segfault, plugins cannot be freed
 	if (a->plugins) {
@@ -241,13 +241,13 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 				//const char *dop = r_config_get (core->config, "dir.opcodes");
 				// TODO: allow configurable path for sdb files
 				snprintf (file, sizeof (file), R_ASM_OPCODES_PATH"/%s.sdb", h->arch);
-				r_pair_free (a->pair);
-				a->pair = r_pair_new_from_file (file);
+				sdb_free (a->pair);
+				a->pair = sdb_new (NULL, file, 0);
 			}
 			a->cur = h;
 			return R_TRUE;
 		}
-	r_pair_free (a->pair);
+	sdb_free (a->pair);
 	a->pair = NULL;
 	return R_FALSE;
 }
@@ -660,6 +660,6 @@ R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
 
 R_API char *r_asm_describe(RAsm *a, const char* str) {
 	if (a->pair)
-		return r_pair_get (a->pair, str);
+		return sdb_get (a->pair, str, 0);
 	return NULL;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2013 - pancake */
+/* radare - LGPL - Copyright 2011-2014 - pancake */
 
 #include <r_egg.h>
 #include "../config.h"
@@ -25,7 +25,7 @@ R_API REgg *r_egg_new () {
 	egg->rasm = r_asm_new ();
 	egg->bits = 0;
 	egg->endian = 0;
-	egg->pair = r_pair_new ();
+	egg->db = sdb_new (NULL, NULL, 0);
 	egg->patches = r_list_new ();
 	egg->patches->free = (RListFree)r_buf_free;
 	egg->plugins = r_list_new ();
@@ -64,7 +64,7 @@ R_API void r_egg_free (REgg *egg) {
 	r_list_free(egg->list);
 	r_asm_free (egg->rasm);
 	r_syscall_free (egg->syscall);
-	r_pair_free(egg->pair);
+	sdb_free (egg->db);
 	r_list_free (egg->plugins);
 	r_list_free (egg->patches);
 	free (egg);
@@ -354,11 +354,11 @@ R_API void r_egg_fill(REgg *egg, int pos, int type, int argc, int length) {
 }
 
 R_API void r_egg_option_set(REgg *egg, const char *key, const char *val) {
-	return r_pair_set (egg->pair, key, val);
+	sdb_set (egg->db, key, val, 0);
 }
 
 R_API char *r_egg_option_get(REgg *egg, const char *key) {
-	return r_pair_get (egg->pair, key);
+	return sdb_get (egg->db, key, NULL);
 }
 
 R_API int r_egg_shellcode(REgg *egg, const char *name) {

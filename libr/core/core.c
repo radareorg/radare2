@@ -470,12 +470,13 @@ static void update_sdb(RCore *core) {
 	// TODO: sdb_hook should work across namespaces?
 	// HOOK!
 	sdb_ns_set (core->sdb, "anal", core->anal->sdb);
+	//sdb_ns_set (core->sdb, "syscall", core->assembler->syscall->syspair);
 }
 
 R_API int r_core_init(RCore *core) {
 	static int singleton = R_TRUE;
 	core->cmd_depth = R_CORE_CMD_DEPTH+1;
-	core->sdb = sdb_new (NULL, NULL, 0);
+	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->config = NULL;
 	core->print = r_print_new ();
 	core->http_up = R_FALSE;
@@ -506,8 +507,6 @@ R_API int r_core_init(RCore *core) {
 	core->yank_buf = NULL;
 	core->yank_len = 0;
 	core->yank_off = 0LL;
-	//core->kv = r_pair_new ();
-	core->kv = r_pair_new_from_file ("r2kv.sdb");
 	core->num = r_num_new (&num_callback, core);
 	//core->num->callback = &num_callback;
 	//core->num->userptr = core;
@@ -609,7 +608,9 @@ R_API RCore *r_core_fini(RCore *c) {
 	if (!c) return NULL;
 	/* TODO: it leaks as shit */
 	r_io_free (c->io);
-	r_pair_free (c->kv);
+	// TODO: sync or not? sdb_sync (c->sdb);
+	// TODO: sync all dbs?
+	sdb_free (c->sdb);
 	//r_core_file_free (c->file);
 	//c->file = NULL;
 	r_list_free (c->files);
