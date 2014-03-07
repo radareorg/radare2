@@ -16,7 +16,7 @@ void handle_escape(parsing_object_t* current) {
 
 void handle_chk(parsing_object_t* current) {
 	if (current->position >= current->length) return;
-	char checksum[2];
+	char checksum[3];
 	checksum[0] = get_next_token(current);
 	checksum[1] = get_next_token(current);
 	checksum[2] = '\0';

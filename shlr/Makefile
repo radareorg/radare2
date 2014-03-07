@@ -1,6 +1,13 @@
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
+CS_URL=https://github.com/aquynh/capstone.git
+CS_UPD=20140307
+CS_BRA=next
+CS_TIP=c76d8d03ba32cd9ab81266a99011220009c720d6
+
+.PHONY: capstone-sync capstone-build all clean mrproper libgdbr
+
 HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
@@ -10,13 +17,15 @@ URL=git://github.com/radare/sdb
 PWD=$(shell pwd)
 SDB_CONFIG=${PWD}/sdb-config.mk
 
-all: sdb/sdb libgdbr
+all: sdb/sdb libgdbr capstone-build
 	@for a in ${MODS} ; do \
 		echo ${MAKE} -C $$a ; \
 		${MAKE} -C $$a RANLIB="$(RANLIB)" CC_AR="$(CC_AR)" HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
 	done
 
 clean mrproper:
+	-cd capstone ; $(MAKE) clean
+	cd gdb ; $(MAKE) clean
 	rm -f sdb/src/.sdb sdb/sdb
 	cd sdb ; ${MAKE} clean
 	@for a in ${MODS} ; do ${MAKE} -C $$a clean ; done
@@ -41,8 +50,7 @@ SYNCFILES=$(addprefix sdb.vc/,${F})
 I=../libr/include
 
 libgdbr:
-	cd gdb ; $(MAKE) clean
-	cd gdb ; $(MAKE) lib
+	cd gdb ; $(MAKE) all
 
 sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
@@ -102,3 +110,20 @@ install-symlink symstall:
 uninstall deinstall:
 	#rm -f ${D}/lib/libr_tcc*
 	#rm -f ${D}/lib/libr_z*
+
+capstone:
+	$(MAKE) capstone-sync
+	$(MAKE) $(MAKEFLAGS) capstone-build
+
+capstone-build: capstone
+	cd capstone ; $(MAKE) $(MAKEFLAGS) all CC="$(CC)"
+
+capstone-sync:
+	if [ -d capstone ]; then \
+		( cd capstone ; git pull ) ; \
+	else \
+		git clone $(CS_URL) ; \
+	fi
+	cd capstone ; \
+		git co $(CS_BRA) ; \
+		git reset --hard $(CS_TIP)

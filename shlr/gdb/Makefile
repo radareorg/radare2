@@ -6,6 +6,7 @@ RANLIB?=ranlib
 LIBNAME=libgdbr
 LIBFILE=$(LIBNAME).$(EXT_SO)
 CFLAGS+=-I$(LIBR)/include
+CFLAGS+=-Iinclude
 MAJOR=0
 MINOR=1
 #CFLAGS=-Wall -g -O0 -ggdb # -std=gnu11
@@ -23,29 +24,29 @@ CLIENT=$(TEST_D)/client.c
 PWD=$(shell pwd)
 TEST=test
 LIB=lib
-INCLUDES=-I $(PWD)/include
 
 TEST_INCLUDES += $(INCLUDES) -I/usr/include/glib-2.0 -I/usr/lib64/glib-2.0/include
 
-SRC_D=$(PWD)/src
+SRC_D=src
 SRC_C=$(wildcard $(SRC_D)/*.c)
 SRC_O=$(SRC_C:.c=.o)
 
 TEST_C=$(wildcard $(TEST_D)/*.c)
 TEST_O=$(TEST_C:.c=.o)
 
+all: $(LIB)/$(LIBNAME).a
+#	make
 
-$(SRC_O): %.o : %.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c -fPIC $< -o $@
-
-all: make
 default: make
 
 prepare:
 	mkdir -p $(LIB)
 
-lib: prepare $(SRC_O)
-	#$(LD) -shared -Wl,-soname,$(LIBNAME).so -o $(LIB)/$(LIBNAME).so $(SRC_O)
+#$(LD) -shared -Wl,-soname,$(LIBNAME).so -o $(LIB)/$(LIBNAME).so $(SRC_O)
+$(LIB):
+	mkdir -p $(LIB)
+
+$(LIB)/$(LIBNAME).a: $(LIB) $(SRC_O)
 	$(LD) -shared -o $(LIB)/$(LIBFILE) $(SRC_O) $(LDFLAGS)
 	$(AR) rvs $(LIB)/$(LIBNAME).a $(SRC_O)
 	# required for solaris and w32
