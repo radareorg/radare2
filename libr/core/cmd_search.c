@@ -759,7 +759,7 @@ static int cmd_search(void *data, const char *input) {
 			print_search_progress (at, to, searchhits);
 			r_cons_break_end ();
 			free (buf);
-			//r_cons_clear_line ();
+			r_cons_clear_line (1);
 			if (searchflags && searchcount>0) {
 				eprintf ("hits: %d  %s%d_0 .. %s%d_%d\n",
 					searchhits,

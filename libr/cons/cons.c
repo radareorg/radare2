@@ -271,18 +271,18 @@ R_API void r_cons_fill_line() {
 	if (white != p) free (p);
 }
 
-R_API void r_cons_clear_line() {
+R_API void r_cons_clear_line(int std_err) {
 #if __WINDOWS__
 	char white[1024];
 	memset (&white, ' ', sizeof (white));
 	if (I.columns<sizeof (white))
 		white[I.columns-1] = 0;
 	else white[sizeof (white)-1] = 0; // HACK
-	printf ("\r%s\r", white);
+	fprintf (std_err? stderr:stdout, "\r%s\r", white);
 #else
-	printf ("\x1b[0K\r");
+	fprintf (std_err? stderr: stdout,"\x1b[0K\r");
 #endif
-	fflush (stdout);
+	fflush (std_err? stderr: stdout);
 }
 
 R_API void r_cons_clear00() {

@@ -376,7 +376,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	r_cons_set_raw (1);
 
 	if (I.echo) {
-		r_cons_clear_line ();
+		r_cons_clear_line (0);
 		printf ("\x1b[0K\r%s%s", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
@@ -413,7 +413,7 @@ R_API char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		buf[0] = ch;
 #endif
 		if (I.echo)
-			r_cons_clear_line();
+			r_cons_clear_line (0);
 		columns = r_cons_get_size (NULL)-2;
 		if (columns<1)
 			columns = 40;
