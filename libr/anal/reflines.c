@@ -240,6 +240,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 		//str = r_str_replace (str, "=", "-", 1);
 		str = r_str_replace (str, "<", c->vline[ARROW_LEFT], 1);
 		str = r_str_replace (str, ">", c->vline[ARROW_RIGHT], 1);
+		str = r_str_replace (str, "!", c->vline[LINE_UP], 1);
 		str = r_str_replace (str, "|", c->vline[LINE_VERT], 1);
 		str = r_str_replace (str, "=", c->vline[LINE_HORIZ], 1);
 		str = r_str_replace (str, "-", c->vline[LINE_HORIZ], 1);

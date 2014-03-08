@@ -241,6 +241,7 @@ enum {
 #define LINE_HORIZ 6
 #define LUP_CORNER 7
 #define LDWN_CORNER 8
+#define LINE_UP 9
 
 
 #ifdef R_API

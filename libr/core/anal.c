@@ -472,7 +472,8 @@ fcn->name = r_str_newf ("fcn.%08"PFMT64x, at);
 						break;
 				if (i==nexti) {
 					// TODO: ensure next address is function after padding (nop or trap or wat)
-					r_cons_clear_line ();
+// XXX noisy for test cases because we want to clear the stderr
+					//r_cons_clear_line ();
 					eprintf ("FUNC 0x%08"PFMT64x" > 0x%08"PFMT64x"\r",
 							fcn->addr, fcn->addr + fcn->size);
 					next_append (fcn->addr+fcn->size);

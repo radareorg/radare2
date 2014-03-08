@@ -404,9 +404,10 @@ R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where) {
 	}
 	//char *range = get_in_range (off);
 	if (type == R_META_TYPE_ANY) {
-		char key [100];
+		char *p, key [100];
 		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, off);
-sdb_const_get (DB, key, 0);
+		p = sdb_const_get (DB, key, 0);
+// XXX: TODO unimplemented. see core/disasm.c:1070
 	} else {
 	//	snprintf (key, sizeof (key)-1, "meta.
 	}
