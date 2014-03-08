@@ -42,7 +42,10 @@ R_API int r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret>=sizeof (string)) {
 		char *p = malloc (ret+2);
-		if (!p) return R_FALSE;
+		if (!p) {
+			va_end (ap);
+			return R_FALSE;
+		}
 		vsnprintf (p, ret+1, fmt, ap);
 		ret = r_strbuf_set (sb, p);
 		free (p);

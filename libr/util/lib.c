@@ -30,7 +30,7 @@ R_LIB_VERSION(r_lib);
 /* XXX : this must be registered in runtime */
 static const char *r_lib_types[] = {
 	"io", "dbg", "lang", "asm", "anal", "parse", "bin", //"bininfo", 
-	"bp", "syscall", "fastcall", "crypto", "cmd", NULL
+	"bp", "syscall", "fastcall", "crypto", "cmd", "egg", NULL
 };
 
 static int __has_debug = 0;
@@ -99,8 +99,13 @@ R_API char *r_lib_path(const char *libname) {
 
 R_API RLib *r_lib_new(const char *symname) {
 	RLib *lib = R_NEW (RLib);
+	char *env_debug;
 	if (lib) {
-		__has_debug = r_sys_getenv ("R_DEBUG")?R_TRUE:R_FALSE;
+		env_debug = r_sys_getenv ("R_DEBUG");
+		__has_debug = env_debug ? R_TRUE : R_FALSE;
+		if (env_debug) {
+			free (env_debug);
+		}
 		lib->handlers = r_list_newf (free);
 		lib->plugins = r_list_newf (free);
 		strncpy (lib->symname, symname, sizeof (lib->symname)-1);
