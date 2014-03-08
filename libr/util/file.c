@@ -146,8 +146,10 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	sz = ftell (fd);
 	fseek (fd, 0, SEEK_SET);
 	ret = (ut8*)malloc ((sz>>1)+1);
-	if (!ret)
+	if (!ret) {
+		fclose (fd);
 		return NULL;
+	}
 	for (;;) {
 		if (fscanf (fd, " #%*[^\n]") == 1)
 			continue;
@@ -158,6 +160,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 		if (feof (fd))
 			break;
 		free (ret);
+		fclose (fd);
 		return NULL;
 	}
 
@@ -169,16 +172,26 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 
 R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 	char *ret;
+	size_t read_items;
 	FILE *fd = r_sandbox_fopen (str, "rb");
 	if (fd == NULL)
 		return NULL;
 	// XXX handle out of bound reads (eof)
-	fseek (fd, off, SEEK_SET);
+	if (fseek (fd, off, SEEK_SET) < 0) {
+		fclose (fd);
+		return NULL;
+	}
 	ret = (char *)malloc (sz+1);
 	if (ret != NULL) {
 		if (osz)
 			*osz = (int)(size_t)fread (ret, 1, sz, fd);
-		else fread (ret, 1, sz, fd);
+		else {
+			read_items = fread (ret, 1, sz, fd);
+			if (!read_items) {
+				fclose (fd);
+				return ret;
+			}
+		}
 		ret[sz] = '\0';
 	}
 	fclose (fd);
@@ -287,7 +300,9 @@ R_API boolt r_file_rmrf(const char *file) {
         char *nfile = strdup (file);
         nfile[ strlen (nfile)-1 ] = '_';
         nfile[ strlen (nfile)-2 ] = '_';
-        rename (file, nfile);
+        if (rename (file, nfile)) {
+		return R_FALSE;
+	}
         eprintf ("mv %s %s\n", file, nfile);
         free (nfile);
         return R_TRUE;
@@ -404,6 +419,11 @@ R_API RMmap *r_file_mmap (const char *file, boolt rw, ut64 base) {
 	m->rw = rw;
 	m->fd = fd;
 	m->len = lseek (fd, (off_t)0, SEEK_END);
+	if (m->len == (off_t)-1) {
+		close (fd);
+		R_FREE (m);
+		return NULL;
+	}
 #if __UNIX__
 	m->buf = mmap (NULL, m->len,
 		rw?PROT_READ|PROT_WRITE:PROT_READ,
@@ -478,13 +498,16 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	int h;
 	char *path = r_file_tmpdir ();
 	char name[1024];
+	mode_t mask;
 #if __WINDOWS__
 	if (GetTempFileName (path, prefix, 0, name))
 		h = r_sandbox_open (name, O_RDWR|O_EXCL|O_BINARY, 0644);
 	else h = -1;
 #else
 	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
+	mask = umask(S_IRUSR | S_IWUSR | S_IXUSR);
 	h = mkstemp (name);
+	umask(mask);
 #endif
 	if (oname) *oname = (h!=-1)? strdup (name): NULL;
 	free (path);
