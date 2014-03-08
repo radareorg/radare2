@@ -505,7 +505,7 @@ R_API int r_file_mkstemp (const char *prefix, char **oname) {
 	else h = -1;
 #else
 	snprintf (name, sizeof (name), "%s/%sXXXXXX", path, prefix);
-	mask = umask(S_IRUSR | S_IWUSR | S_IXUSR);
+	mask = umask(S_IWGRP | S_IWOTH);
 	h = mkstemp (name);
 	umask(mask);
 #endif
