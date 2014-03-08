@@ -846,12 +846,8 @@ static void handle_show_comments_right (RCore *core, RDisasmState *ds) {
 			if (ds->show_comment_right_default)
 			if (ds->ocols+maxclen < core->cons->columns) {
 				if (ds->comment && *ds->comment && strlen (ds->comment)<maxclen) {
-					char *p = strchr (ds->comment, '\n');
-					if (p) {
-						linelen = p-ds->comment;
-						if (!strchr (p+1, '\n')) // more than one line?
-							ds->show_comment_right = 1;
-					}
+					if (!strchr (ds->comment, '\n')) // more than one line?
+						ds->show_comment_right = 1;
 				}
 			}
 			if (!ds->show_comment_right) {
