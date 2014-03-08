@@ -28,7 +28,11 @@ endif
 ifeq (${OSTYPE},gnulinux)
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}.${LIBVERSION}
 else
+ifeq (${OSTYPE},darwin)
+LIBNAME=${LDFLAGS_SONAME}${LIB}.${LIBVERSION}.${EXT_SO}
+else
 LIBNAME=${LDFLAGS_SONAME}${LIBSO}
+endif
 endif
 
 ifeq (${OSTYPE},haiku)
