@@ -8,7 +8,13 @@ include $(TOP)/libr/config.mk
 
 .PHONY: all plugins
 
+EXTRA_CLEAN=doclean
+
 all: plugins
+
+doclean:
+	@cd d && ${MAKE} clean
+	@cd p && ${MAKE} all
 
 plugins: ${LIBSO} ${LIBAR}
 	@cd d && ${MAKE}
