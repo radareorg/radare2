@@ -93,6 +93,7 @@ R_API RList *r_sys_dir(const char *path) {
 			return list;
 		}
 	}
+	closedir (dir);
 	return NULL;
 }
 
@@ -344,6 +345,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				outputptr = r_str_concat (outputptr, buffer);
 			} else if (FD_ISSET (sh_err[0], &rfds) && sterr) {
 				if (read (sh_err[0], buffer, sizeof (buffer)-1) == 0) break;
+				buffer[sizeof(buffer) - 1] - '\0';
 				*sterr = r_str_concat (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				bytes = write (sh_in[1], inputptr, strlen (inputptr));
@@ -372,7 +374,6 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		else free (outputptr);
 		return R_TRUE;
 	}
-	free (outputptr);
 	return R_FALSE;
 }
 #elif __WINDOWS__
