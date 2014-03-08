@@ -175,8 +175,19 @@ else
 ifeq (${OSTYPE},windows)
 libname=-shared -o $1.${EXT_SO}
 else
+ifeq (${OSTYPE},darwin)
+libname=-shared -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${LIBVERSION}.${EXT_SO}
+else
 libname=-shared -o $1.${EXT_SO} ${LDFLAGS_SONAME}$1.${EXT_SO}.${LIBVERSION}
 endif
+endif
+endif
+
+libpath-to-name = $(word 2,$(subst /, ,$(1)))
+ifeq ($(OSTYPE),darwin)
+libpath-to-name-version = $(subst ${EXT_SO},${LIBVERSION}.${EXT_SO},$(call libpath-to-name,$(1)))
+else
+libpath-to-name-version = $(call lib-name,$(1)).${LIBVERSION}
 endif
 
 # -- singleton

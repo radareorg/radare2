@@ -108,12 +108,11 @@ install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} ${LFX}
-	@for a in `find * -type f | grep -e '\.${EXT_SO}$$' | grep -Ev '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/` ; do \
-	  b=`echo $$a|cut -d / -f 2`; \
-	  echo " ${LFX}/$$b.${LIBVERSION}"; \
-	  ${INSTALL_LIB} $$a ${LFX}/$$b.${LIBVERSION} ; \
-	  ( cd ${LFX} ; ln -fs $$b.${LIBVERSION} $$b ) ; \
-	done
+	@$(foreach lib,$(shell find * -type f | grep -e '\.${EXT_SO}$$' | grep -Ev '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
+	  echo " ${LFX}/$(call libpath-to-name-version,$(lib))"; \
+	  ${INSTALL_LIB} $(lib) ${LFX}/$(call libpath-to-name-version,$(lib)); \
+	  ( cd ${LFX} ; ln -fs $(call libpath-to-name-version,$(lib)) $(call libpath-to-name,$(lib)) ) ; \
+	)
 	# object archives
 	@for a in `find * -type f | grep -e '\.a$$' | grep -v fs/p` ; do \
 	  echo " ${LFX}/$$a"; ${INSTALL_DATA} $$a ${LFX} ; done
