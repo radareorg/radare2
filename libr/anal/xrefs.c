@@ -85,7 +85,7 @@ R_API void r_anal_xrefs_init (RAnal *anal) {
 #endif
 }
 
-static void xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
+static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
 	ut64 dst, src = r_num_get (NULL, v);
 	if (!strncmp (k, "ref.", 4)) {
 		char *p = strchr (k+4, '.');
@@ -94,9 +94,10 @@ static void xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
 			anal->printf ("ar 0x%"PFMT64x" 0x%"PFMT64x"\n", src, dst);
 		}
 	}
+	return 1;
 }
 
-static void xrefs_list_cb_json(RAnal *anal, const char *k, const char *v) {
+static int xrefs_list_cb_json(RAnal *anal, const char *k, const char *v) {
 	ut64 dst, src = r_num_get (NULL, v);
 	if (!strncmp (k, "ref.", 4) && (strlen (k)>8)) {
 		char *p = strchr (k+4, '.');
@@ -106,10 +107,12 @@ static void xrefs_list_cb_json(RAnal *anal, const char *k, const char *v) {
 			anal->printf ("%"PFMT64d":%"PFMT64d",", src, dst);
 		}
 	}
+	return 1;
 }
 
-static void xrefs_list_cb_plain(RAnal *anal, const char *k, const char *v) {
+static int xrefs_list_cb_plain(RAnal *anal, const char *k, const char *v) {
 	anal->printf ("%s=%s\n", k, v);
+	return 1;
 }
 
 R_API void r_anal_xrefs_list(RAnal *anal, int rad) {

@@ -273,11 +273,7 @@ ST_FUNC char *get_tok_str(int v, CValue *cv)
     case TOK_CLLONG:
     case TOK_CULLONG:
         /* XXX: not quite exact, but only useful for testing  */
-#ifdef _WIN32
-        sprintf(p, "%u", (unsigned)cv->ull);
-#else
-        sprintf(p, "%Lu", cv->ull);
-#endif
+        sprintf(p, "%"PFMT64u, cv->ull);
         break;
     case TOK_LCHAR:
         cstr_ccat(&cstr_buf, 'L');

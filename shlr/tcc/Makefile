@@ -2,6 +2,7 @@ include ../../config-user.mk
 include ../../mk/${COMPILER}.mk
 OFILES=libtcc.o tccgen.o tccpp.o
 
+CFLAGS+=-I../../libr/include
 CFLAGS+=-fPIC -Wall
 LDFLAGS+=-shared
 ifeq ($(OSNAME),darwin)

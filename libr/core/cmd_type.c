@@ -20,7 +20,7 @@ static void show_help() {
 
 static int sdbforcb (void *p, const char *k, const char *v) {
 	r_cons_printf ("%s=%s\n", k, v);
-	return 0;
+	return 1;
 }
 
 static int cmd_type(void *data, const char *input) {

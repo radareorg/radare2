@@ -524,9 +524,9 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 	RAnalMetaUserItem *ui = user;
 	RAnalMetaItem it;
 	if (strlen (k)<8)
-		return R_FALSE;
+		return 1;
 	if (k[6]!='.')
-		return R_FALSE;
+		return 1;
 	it.type = k[5];
 	it.size = sdb_atoi (v);
 	it.from = sdb_atoi (k+7);
@@ -536,7 +536,7 @@ static int meta_print_item(void *user, const char *k, const char *v) {
 		it.str = (char *)sdb_decode ((const char*)it.str+1, 0);
 	printmetaitem (ui->anal, &it, ui->rad);
 	free (it.str);
-	return R_TRUE;
+	return 1;
 }
 #endif
 
