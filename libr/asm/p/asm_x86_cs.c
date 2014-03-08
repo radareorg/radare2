@@ -98,9 +98,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (insn->size>0) {
 			op->size = insn->size;
 			if (insn->op_str) {
+				char *ptrstr;
 				snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
 					insn->mnemonic, insn->op_str[0]?" ":"",
 					insn->op_str);
+				ptrstr = strstr (op->buf_asm, "ptr ");
+				if (ptrstr) {
+					memmove (ptrstr, ptrstr+4, strlen (ptrstr+4)+1);
+				}
 			} else {
 				eprintf ("op_str is null wtf\n");
 			}
