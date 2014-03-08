@@ -141,6 +141,7 @@ static void recurse(const char *path, int rec, int (*fn)(const char *,int)) {
         cwd = agetcwd();
         if (chdir (path) == -1) {
                 eprintf ("chdir %s:", path);
+		closedir (dp);
 		free (cwd);
 		return;
 	}

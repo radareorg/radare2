@@ -37,7 +37,7 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 	if (p != NULL && len >= sizeof(t)) {
 		r_mem_copyendian ((ut8*)&t, buf, sizeof(time_t), p->big_endian);
 		// "%d:%m:%Y %H:%M:%S %z",
-		if (p->datefmt && p->datefmt[0]) {
+		if (p->datefmt[0]) {
 			time = (const struct tm*)gmtime((const time_t*)&t);
 			if (time) {
 				ret = strftime (s, sizeof (s), p->datefmt, time);

@@ -301,7 +301,7 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	blen = stralen - ((alen + strlen (p))+1);
 	if (blen<0) blen = 0;
 	nlen = alen+blen+strlen (newstr);
-	out = malloc (nlen);
+	out = malloc (nlen + 2);
 	if (alen>0)
 		memcpy (out, stra, alen);
 	memcpy (out+alen, newstr, strlen (newstr)+1);
@@ -406,11 +406,14 @@ R_API char *r_str_newf(const char *fmt, ...) {
 		ret2 = vsnprintf (p, ret+1, fmt, ap2);
 		if (ret2<1 || ret2>ret+1) {
 			free (p);
+			va_end (ap2);
+			va_end (ap);
 			return NULL;
 		}
 		fmt = r_str_new (p);
 		free (p);
 	} else fmt = r_str_new (string);
+	va_end (ap2);
 	va_end (ap);
 	return (char*)fmt;
 }
@@ -581,6 +584,8 @@ R_API char *r_str_prefix(char *ptr, const char *string) {
 // TODO: use vararg here?
 R_API char *r_str_concat(char *ptr, const char *string) {
 	int slen, plen;
+	if (!string && !ptr)
+		return NULL;
 	if (!string && ptr)
 		return ptr;
 	if (string && !ptr)
@@ -603,7 +608,10 @@ R_API char *r_str_concatf(char *ptr, const char *fmt, ...) {
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret>=sizeof (string)) {
 		char *p = malloc (ret+2);
-		if (!p) return NULL;
+		if (!p) {
+			va_end (ap);
+			return NULL;
+		}
 		vsnprintf (p, ret+1, fmt, ap);
 		ptr = r_str_concat (ptr, p);
 		free (p);
@@ -966,7 +974,7 @@ R_API const char *r_str_lastbut (const char *s, char ch, const char *but) {
 		return NULL;
 	}
 	for (p=s; *p; p++) {
-		isbut = but? strchr (but, *p): NULL;
+		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int)(size_t)(isbut-but);
 			_b = R_BIT_CHK (b, idx)?

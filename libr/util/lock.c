@@ -20,7 +20,6 @@ R_API struct r_th_lock_t *r_th_lock_new() {
 
 R_API int r_th_lock_wait(struct r_th_lock_t *thl) {
 #if HAVE_PTHREAD
-	r_th_lock_enter (thl);
 	r_th_lock_enter (thl); // locks here
 	r_th_lock_leave (thl); // releases previous mutex
 #elif __WIN32__
