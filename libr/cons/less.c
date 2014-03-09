@@ -54,9 +54,11 @@ R_API void r_cons_less_str(const char *str) {
 		case 'g': from = 0; break;
 		case 'G': from = lines_count-1-h; break;
 		case 'q': ui = 0; break;
+		case '\r':
+		case '\n':
 		case 'j': from++; break;
 		case 'J': from+=h; break;
-		case 'k': if (from>0) from--;
+		case 'k': if (from>0) from--; break;
 		case 'K': from = (from>=h)? from-=h: 0;
 			break;
 		}
