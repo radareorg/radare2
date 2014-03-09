@@ -183,12 +183,14 @@ endif
 endif
 endif
 
-libpath-to-name = $(word 2,$(subst /, ,$(1)))
 ifeq ($(OSTYPE),darwin)
-libpath-to-name-version = $(subst ${EXT_SO},${LIBVERSION}.${EXT_SO},$(call libpath-to-name,$(1)))
+libname-version = $(subst ${EXT_SO},$(2).${EXT_SO},$(1))
 else
-libpath-to-name-version = $(call lib-name,$(1)).${LIBVERSION}
+libname-version = $(1).$(2)
 endif
+
+libpath-to-name = $(word 2,$(subst /, ,$(1)))
+libpath-to-name-version = $(call libname-version,$(call libpath-to-name,$(1)),$(2))
 
 # -- singleton
 endif
