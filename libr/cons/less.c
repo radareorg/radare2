@@ -41,6 +41,7 @@ R_API void r_cons_less_str(const char *str) {
 	r_cons_set_raw (R_TRUE);
 	r_cons_show_cursor (R_FALSE);
 	r_cons_reset ();
+	h = 0;
 	while (ui) {
 		w = r_cons_get_size (&h);
 		to = R_MIN (lines_count, from+h);
@@ -59,7 +60,7 @@ R_API void r_cons_less_str(const char *str) {
 		case 'j': from++; break;
 		case 'J': from+=h; break;
 		case 'k': if (from>0) from--; break;
-		case 'K': from = (from>=h)? from-=h: 0;
+		case 'K': from = (from>=h)? from-h: 0;
 			break;
 		}
 	}
