@@ -27,10 +27,10 @@ all: sdb/sdb libgdbr capstone-build
 	done
 
 clean mrproper:
-	-cd capstone ; $(MAKE) clean
-	cd gdb ; $(MAKE) clean
+	-cd capstone && $(MAKE) clean
+	cd gdb && $(MAKE) clean
 	rm -f sdb/src/.sdb sdb/sdb
-	cd sdb ; ${MAKE} clean
+	cd sdb && ${MAKE} clean
 	@for a in ${MODS} ; do ${MAKE} -C $$a clean ; done
 
 $(SDBLIB) sdb/sdb:
