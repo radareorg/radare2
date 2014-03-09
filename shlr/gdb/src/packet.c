@@ -1,52 +1,51 @@
+/* libgdbr - LGPL - Copyright 2014 - defragger */
+
 #include "packet.h"
 
-
-char get_next_token(parsing_object_t* current) {
-	return current->buffer[current->position++];
+char get_next_token(parsing_object_t* po) {
+	return po->buffer[po->position++];
 }
 
-
-void handle_escape(parsing_object_t* current) {
-	if (current->position >= current->length) return;
-	char token = get_next_token(current);
-	if (token == '}') handle_data(current);
-	else handle_escape(current);
+void handle_escape(parsing_object_t* po) {
+	char token;
+	if (po->position >= po->length) return;
+	token = get_next_token (po);
+	if (token == '}') handle_data (po);
+	else handle_escape (po);
 }
 
-
-void handle_chk(parsing_object_t* current) {
-	if (current->position >= current->length) return;
+void handle_chk(parsing_object_t* po) {
 	char checksum[3];
-	checksum[0] = get_next_token(current);
-	checksum[1] = get_next_token(current);
+	if (po->position >= po->length) return;
+	checksum[0] = get_next_token(po);
+	checksum[1] = get_next_token(po);
 	checksum[2] = '\0';
-	current->checksum = (uint8_t) strtol(checksum, NULL, 16);
+	po->checksum = (uint8_t) strtol(checksum, NULL, 16);
 }
 
-
-void handle_data(parsing_object_t* current) {
-	if (current->position >= current->length) return;
-	char token = get_next_token(current);
+void handle_data(parsing_object_t* po) {
+	char token;
+	if (po->position >= po->length) return;
+	token = get_next_token(po);
 	if (token == '#') {
-		current->end = current->position - 1; // subtract 2 cause of # itself and the incremented position after getNextToken
-		handle_chk(current);
-	}
-	else if	(token == '{') handle_escape(current);
-	else handle_data(current);
+		po->end = po->position - 1; // subtract 2 cause of # itself and the incremented position after getNextToken
+		handle_chk(po);
+	} else if (token == '{') {
+		handle_escape(po);
+	} else handle_data(po);
 }
 
-
-void handle_packet(parsing_object_t* current) {
-	if(current->position >= current->length) return;
-
-	char token = get_next_token(current);
+void handle_packet(parsing_object_t* po) {
+	char token;
+	if(po->position >= po->length) return;
+	token = get_next_token(po);
 	if (token == '$') {
-		current->start = current->position;
-		handle_data(current);
+		po->start = po->position;
+		handle_data(po);
 	}
 	else if	(token == '+') {
-		current->acks++;
-		handle_packet(current);
+		po->acks++;
+		handle_packet(po);
 	}
 }
 
@@ -76,71 +75,61 @@ int unpack_data(char* dst, char* src, uint64_t len) {
 	return ret_len;
 }
 
-
-int parse_packet(libgdbr_t* instance, int data_offset) {
+int parse_packet(libgdbr_t* g, int data_offset) {
+	int runlength;
+	uint64_t po_size, target_pos = 0;
 	parsing_object_t new;
-	memset(&new, 0, sizeof(parsing_object_t));
-	new.length = instance->read_len;
-	new.buffer = instance->read_buff;
-	uint64_t target_pos = 0;
-	while(new.position < new.length) {
-		handle_packet(&new);
+	memset (&new, 0, sizeof (parsing_object_t));
+	new.length = g->read_len;
+	new.buffer = g->read_buff;
+	while (new.position < new.length) {
+		handle_packet (&new);
 		new.start += data_offset;
-		uint64_t current_size = new.end - new.start;
-		//if ( instance->data_max <= (instance->data_len + current_size)) {
-		//	instance->data = realloc(instance->data, instance->data_len + current_size + 1);
-		//	instance->data_len += current_size;
-		//	instance->data_max += current_size;
-		//}
-		int runlength = unpack_data(instance->data + target_pos, new.buffer + new.start, current_size);
-		//memcpy(instance->data + target_pos , new.buffer + new.start, current_size);
-		target_pos += current_size + runlength;
+		po_size = new.end - new.start;
+		runlength = unpack_data (g->data + target_pos,
+			new.buffer + new.start, po_size);
+		target_pos += po_size + runlength;
 	}
-	instance->data_len = target_pos; // setting the resulting length
-	instance->read_len = 0; // reset the read_buf len
+	g->data_len = target_pos; // setting the resulting length
+	g->read_len = 0; // reset the read_buf len
 	return 0;
 }
 
-
-int send_packet(libgdbr_t* instance) {
-	if (!instance) {
+int send_packet(libgdbr_t* g) {
+	if (!g) {
 		// TODO corect error handling here
 		printf("Initialize libgdbr_t first\n");
 		return -1;
 	}
-	int ret = send(instance->fd, instance->send_buff, instance->send_len, 0);
-	return ret;
+	return send (g->fd, g->send_buff, g->send_len, 0);
 }
 
-
-int read_packet(libgdbr_t* instance) {
-	if (!instance) {
+int read_packet(libgdbr_t* g) {
+	int ret = 0;
+	int po_size = 0;
+	fd_set readset;
+	int result = 1;
+	struct timeval tv;
+	if (!g) {
 		// TODO correct error handling here
-		printf("Initialize libgdbr_t first\n");
+		fprintf (stderr, "Initialize libgdbr_t first\n");
 		return -1;
 	}
-	int ret = 0;
-	int current_size = 0;
-	fd_set readset;
-	struct timeval tv;
 	tv.tv_sec = 0;
 	tv.tv_usec = 100*1000;
-	int result = 1;
 	while (result > 0) {
-		FD_ZERO(&readset);
-		FD_SET(instance->fd, &readset);
-		result = select(instance->fd + 1, &readset, NULL, NULL, &tv);
+		FD_ZERO (&readset);
+		FD_SET (g->fd, &readset);
+		result = select (g->fd + 1, &readset, NULL, NULL, &tv);
 		if (result > 0) {
-			if (FD_ISSET(instance->fd, &readset)) {
-				//if ( instance->read_len <= (current_size + instance->max_read_size)) {
-				//	instance->read_buff = realloc(instance->read_buff, instance->read_len + instance->read_size);
-				//	instance->read_max += instance->read_max;
-				//}
-				ret = recv(instance->fd, (instance->read_buff + current_size), (instance->read_max - current_size), 0);
-				current_size += ret;
+			if (FD_ISSET (g->fd, &readset)) {
+				ret = recv (g->fd, (g->read_buff + \
+					po_size), (g->read_max - \
+					po_size), 0);
+				po_size += ret;
 			}
 		}
 	}
-	instance->read_len = current_size;
-	return current_size;
+	g->read_len = po_size;
+	return po_size;
 }

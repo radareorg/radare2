@@ -1,3 +1,5 @@
+/* libgdbr - LGPL - Copyright 2014 - defragger */
+
 #include "r_types.h"
 #include "utils.h"
 
@@ -11,12 +13,11 @@
  */
 uint8_t cmd_checksum(const char* command) {
 	uint8_t sum = 0;
-	while(*command != '\0') {
+	while (*command != '\0') {
 		sum += *command++;	
 	}
 	return sum;
 }
-
 
 /**
  * Converts str to uint64_t
@@ -33,7 +34,6 @@ uint64_t unpack_uint64(char *buff, int len) {
 	return retval;
 }
 
-
 /**
  * Changed byte order and
  * converts the value into uint64_t
@@ -48,7 +48,6 @@ uint64_t unpack_uint64_co(char* buff, int len) {
 	return result;
 }
 
-
 /**
  * Converts a given hex character into its int value
  * @returns value of hex or -1 on error
@@ -60,7 +59,6 @@ int hex2int(int ch) {
 	return -1;
 }
 
-
 /**
  * Converts a given nibble (4bit) into its hex representation
  * @returns hex char or -1 on error
@@ -71,14 +69,12 @@ int int2hex(int i) {
 	return -1;
 }
 
-
 char hex2char(char* hex) {
 	uint8_t result = hex2int((int)hex[0]);
 	result <<= 4;
 	result |= hex2int(hex[1]);
 	return (char) result;
 }
-
 
 int unpack_hex(char* src, uint64_t len, char* dst) {
 	int i = 0;
@@ -92,7 +88,6 @@ int unpack_hex(char* src, uint64_t len, char* dst) {
 	return len;
 }
 
-
 int pack_hex(char* src, uint64_t len, char* dst) {
 	int i = 0;
 	int x = 0;
@@ -104,7 +99,6 @@ int pack_hex(char* src, uint64_t len, char* dst) {
 	dst[i] = '\0';
 	return (len/2);
 }
-
 
 void hexdump(void* ptr, uint64_t len, uint64_t offset) {
 	unsigned char* data = (unsigned char*)ptr;
