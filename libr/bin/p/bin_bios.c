@@ -114,7 +114,7 @@ struct r_bin_plugin_t r_bin_plugin_bios = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.demangle_type = NULL
 };

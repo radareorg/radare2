@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2014 - nibble, pancake */
 
 #ifndef _INCLUDE_R_BIN_H_
 #define _INCLUDE_R_BIN_H_
@@ -184,7 +184,7 @@ typedef struct r_bin_plugin_t {
 	RList* (*relocs)(RBinFile *arch);
 	RList* (*classes)(RBinFile *arch);
 	int (*demangle_type)(const char *str);
-	struct r_bin_meta_t *meta;
+	struct r_bin_dbginfo_t *dbginfo;
 	struct r_bin_write_t *write;
 	int (*get_offset)(RBinFile *arch, int type, int idx);
 	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
@@ -271,9 +271,9 @@ typedef struct r_bin_field_t {
 	ut32 visibility;
 } RBinField;
 
-typedef struct r_bin_meta_t {
+typedef struct r_bin_dbginfo_t {
 	int (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line);
-} RBinMeta;
+} RBinDbgInfo;
 
 typedef struct r_bin_write_t {
 	ut64 (*scn_resize)(RBinFile *arch, const char *name, ut64 size);
@@ -353,9 +353,10 @@ R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 R_API ut64 r_bin_get_offset (RBin *bin);
 R_API ut64 r_bin_get_vaddr (RBin *bin, ut64 baddr, ut64 paddr, ut64 vaddr);
-/* bin_meta.c */
-R_API int r_bin_meta_get_line(RBin *bin, ut64 addr, char *file, int len, int *line);
-R_API char *r_bin_meta_get_source_line(RBin *bin, ut64 addr);
+/* dbginfo.c */
+R_API int r_bin_addr2line(RBin *bin, ut64 addr, char *file, int len, int *line);
+R_API char *r_bin_addr2text(RBin *bin, ut64 addr);
+R_API char *r_bin_addr2fileline(RBin *bin, ut64 addr);
 /* bin_write.c */
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API int r_bin_wr_rpath_del(RBin *bin);

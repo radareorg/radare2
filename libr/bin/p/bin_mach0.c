@@ -121,7 +121,7 @@ static RList* imports(RBinFile *arch) {
 		name = imports[i].name;
 		type = "FUNC";
 
-		// Objective-C class and metaclass imports.
+		// Objective-C class and dbginfoclass imports.
 		if (!strncmp (name, "_OBJC_CLASS_$", strlen ("_OBJC_CLASS_$"))) {
 			name += strlen ("_OBJC_CLASS_$");
 			type = "OBJC_CLASS";
@@ -464,7 +464,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
 };

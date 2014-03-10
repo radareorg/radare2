@@ -10,7 +10,7 @@ static int check(RBinFile *arch) {
 	return R_FALSE;
 }
 
-extern struct r_bin_meta_t r_bin_meta_elf64;
+extern struct r_bin_dbginfo_t r_bin_dbginfo_elf64;
 extern struct r_bin_write_t r_bin_write_elf64;
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
@@ -115,7 +115,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.fields = &fields,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = &r_bin_meta_elf64,
+	.dbginfo = &r_bin_dbginfo_elf64,
 	.create = &create,
 	.write = &r_bin_write_elf64,
 };

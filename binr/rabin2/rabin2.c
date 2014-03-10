@@ -262,7 +262,7 @@ static int rabin_do_operation(const char *op) {
 
 static int rabin_show_srcline(ut64 at) {
 	char *srcline;
-	if ((srcline = r_bin_meta_get_source_line (bin, at))) {
+	if ((srcline = r_bin_addr2text (bin, at))) {
 		printf ("%s\n", srcline);
 		free (srcline);
 		return R_TRUE;

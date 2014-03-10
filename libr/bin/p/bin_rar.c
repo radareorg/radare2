@@ -150,7 +150,7 @@ RBinPlugin r_bin_plugin_rar = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
 };

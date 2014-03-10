@@ -69,7 +69,7 @@ static int step_line(RCore *core, int times) {
 	}
 	file[0] = 0;
 	file2[0] = 0;
-	if (r_bin_meta_get_line (core->bin, off, file, sizeof (file), &line)) {
+	if (r_bin_addr2line (core->bin, off, file, sizeof (file), &line)) {
 		eprintf ("--> 0x%08"PFMT64x" %s : %d\n", off, file, line);
 		eprintf ("--> %s\n", r_file_slurp_line (file, line, 0));
 		find_meta = R_FALSE;
@@ -84,7 +84,7 @@ static int step_line(RCore *core, int times) {
 			break;
 		}
 		off = r_debug_reg_get (core->dbg, "pc");
-		if (!r_bin_meta_get_line (core->bin, off, file2, sizeof (file2), &line2)) {
+		if (!r_bin_addr2line (core->bin, off, file2, sizeof (file2), &line2)) {
 			if (find_meta)
 				continue;
 			eprintf ("Cannot retrieve dwarf info at 0x%08"PFMT64x"\n", off);

@@ -196,7 +196,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = &create,
 };

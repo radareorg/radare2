@@ -19,7 +19,7 @@ static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
 }
 
 #if !R_BIN_ELF64
-struct r_bin_meta_t r_bin_meta_elf = {
+struct r_bin_dbginfo_t r_bin_dbginfo_elf = {
 	.get_line = &get_line,
 };
 #endif

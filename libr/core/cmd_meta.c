@@ -28,7 +28,7 @@ static int cmd_meta(void *data, const char *input) {
 				if (input[1]==' ')
 					offset = r_num_math (core->num, input+2);
 				else offset = core->offset;
-				sl = r_bin_meta_get_source_line (core->bin, offset);
+				sl = r_bin_addr2text (core->bin, offset);
 				if (sl) {
 					r_cons_printf ("%s\n", sl);
 					free (sl);
@@ -86,7 +86,7 @@ eprintf ("-- %s\n", buf);
 		}
 		break;
 	case 'L': // debug information of current offset
-		ret = r_bin_meta_get_line (core->bin, core->offset, file,
+		ret = r_bin_addr2line (core->bin, core->offset, file,
 			sizeof (file)-1, &line);
 		if (ret) {
 			r_cons_printf ("file %s\nline %d\n", file, line);

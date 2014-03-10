@@ -197,7 +197,7 @@ RBinPlugin r_bin_plugin_mz = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.create = NULL,
 };

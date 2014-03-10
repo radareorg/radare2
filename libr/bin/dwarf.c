@@ -801,8 +801,7 @@ R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	free (da->decls);
 }
 
-static void r_bin_dwarf_free_attr_value (RBinDwarfAttrValue *val)
-{
+static void r_bin_dwarf_free_attr_value (RBinDwarfAttrValue *val) {
 	switch (val->form) {
 	case DW_FORM_strp:
 	case DW_FORM_string:
@@ -823,8 +822,7 @@ static void r_bin_dwarf_free_attr_value (RBinDwarfAttrValue *val)
 	};
 }
 
-static void r_bin_dwarf_free_die (RBinDwarfDIE *die)
-{
+static void r_bin_dwarf_free_die (RBinDwarfDIE *die) {
 	size_t i;
 
 	for (i = 0; i < die->length; i++) {
@@ -915,8 +913,7 @@ static void r_bin_dwarf_dump_attr_value(const RBinDwarfAttrValue *val, FILE *f)
 	};
 }
 
-static void r_bin_dwarf_dump_debug_info (FILE *f, const RBinDwarfDebugInfo *inf)
-{
+static void r_bin_dwarf_dump_debug_info (FILE *f, const RBinDwarfDebugInfo *inf) {
 	size_t i, j, k;
 	RBinDwarfDIE *dies;
 	RBinDwarfAttrValue *values;
@@ -1208,9 +1205,7 @@ R_API int r_bin_dwarf_parse_info_raw(RBinDwarfDebugAbbrev *da,
 	return 0;
 }
 
-static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf,
-		size_t len)
-{
+static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_t len) {
 	const ut8 *buf = obuf, *buf_end = obuf + len;
 	ut64 tmp, spec1, spec2, offset;
 	ut8 has_children;

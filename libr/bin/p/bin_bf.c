@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -111,7 +111,7 @@ struct r_bin_plugin_t r_bin_plugin_bf = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.demangle_type = NULL
 };

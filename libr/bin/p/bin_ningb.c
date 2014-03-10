@@ -217,7 +217,7 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 	.fields = NULL,
 	.libs = NULL,
 	.relocs = NULL,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.create = NULL,
 	.write = NULL,
 };

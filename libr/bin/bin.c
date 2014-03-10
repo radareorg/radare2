@@ -202,7 +202,6 @@ static void set_bin_items(RBin *bin, RBinPlugin *cp) {
 }
 
 R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 loadaddr, int dummy) {
-	int rawstr = 0;
 	ut8* buf_bytes;
 	ut64 start, end,
 		 sz = -1,
@@ -237,7 +236,7 @@ R_API int r_bin_io_load(RBin *bin, RIO *io, RIODesc *desc, ut64 baseaddr, ut64 l
 	bin->cur = R_NEW0 (RBinFile);
 	bin->cur->file = strdup (desc->name);
 	bin->cur->buf = r_buf_new ();
-	bin->cur->rawstr = NULL;
+	bin->cur->rawstr = 0;
 	bin->file = desc->name;
 
 	if (bin->cur->buf)
@@ -343,6 +342,7 @@ static int remove_bin_file_by_binfile (RBin *bin, RBinFile * binfile) {
 	return found_bin;
 }
 
+#if 0
 static void r_bin_free_bin_files (RBin *bin) {
 	RListIter *iter, *t_iter;
 	RBinFile *a;
@@ -351,6 +351,7 @@ static void r_bin_free_bin_files (RBin *bin) {
 		r_list_delete(bin->binfiles,iter);
 	}
 }
+#endif
 
 static void r_bin_file_free (RBinFile *a) {
 	int i;

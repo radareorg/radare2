@@ -37,7 +37,7 @@ struct r_bin_plugin_t r_bin_plugin_pe64 = {
 	.fields = NULL,
 	.libs = &libs,
 	.relocs = &relocs,
-	.meta = NULL,
+	.dbginfo = NULL,
 	.write = NULL,
 	.get_vaddr = &get_vaddr,
 };

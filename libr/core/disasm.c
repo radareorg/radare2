@@ -1415,7 +1415,7 @@ static void handle_print_cc_update (RCore *core, RDisasmState *ds) {
 
 static void handle_print_dwarf (RCore *core, RDisasmState *ds) {
 	if (ds->show_dwarf) {
-		ds->sl = r_bin_meta_get_source_line (core->bin, ds->at);
+		ds->sl = r_bin_addr2text (core->bin, ds->at);
 		int len = strlen (ds->opstr);
 		if (len<30) len = 30-len;
 		if (ds->sl) {
