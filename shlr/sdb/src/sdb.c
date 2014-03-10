@@ -315,6 +315,8 @@ SDB_API int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 		ut32 hash = sdb_hash (k, 0);
 		SdbHashEntry *hte = ht_search (s->ht, hash);
 		if (hte) {
+			free (k);
+			free (v);
 			kv = (SdbKv*)hte->data;
 			if (!*kv->value) {
 				// deleted = 1;
@@ -323,9 +325,14 @@ SDB_API int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 			if (!cb (user, kv->key, kv->value))
 				return 0;
 		} else {
-			if (!cb (user, k, v))
+			if (!cb (user, k, v)) {
+				free (k);
+				free (v);
 				return 0;
+			}
 		}
+		free (k);
+		free (v);
 	}
 	ls_foreach (s->ht->list, iter, kv) {
 		if (!kv->value || !*kv->value)

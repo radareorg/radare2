@@ -47,6 +47,7 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	char *line, *out;
 	int klen, vlen;
 	ut8 *v2 = NULL;
+	if (!rlu) return 0;
 	out = *rlu->out;
 	klen = strlen (k);
 	if (rlu->encode) {
@@ -61,6 +62,7 @@ static int foreach_list_cb(void *user, const char *k, const char *v) {
 	out_concat (line);
 	*(rlu->out) = out;
 	free (v2);
+	free (line);
 	return 1;
 }
 
@@ -360,7 +362,7 @@ next_quote:
 					}
 					out_concat (buf);
 				} else {
-					if (!sval) return NULL;
+					if (!sval) goto fail;
 					wl = strlen (sval);
 					if (wl>len) {
 						buf = malloc (wl+2);

@@ -42,8 +42,9 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 		memcpy (dir+dir_len+1, name, name_len);
 	}
 	ns = malloc (sizeof (SdbNs));
+	if (!ns) return NULL;
 	ns->hash = hash;
-	ns->name = strdup (name);
+	ns->name = name? strdup (name): NULL;
 	ns->sdb = sdb_new (dir, name, 0);
 	return ns;
 }
