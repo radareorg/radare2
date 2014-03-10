@@ -752,7 +752,7 @@ R_API char *r_str_escape(const char *buf) {
 	int len;
 	if (!buf) return NULL;
 	len = strlen (buf);
-	ptr = ret = malloc (1+len*2);
+	ptr = ret = malloc (1+len*3);
 	if (ptr == NULL)
 		return NULL;
 	for (; *buf; buf++, ptr++) {
