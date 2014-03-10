@@ -247,6 +247,10 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 }
 
 SDB_API void sdb_reset (Sdb* s) {
+	/* disable disk cache */
+	close (s->fd);
+	s->fd = -1;
+	/* empty memory hashtable */
 	ht_free (s->ht);
 	s->ht = ht_new ((SdbListFree)sdb_kv_free);
 }
@@ -393,7 +397,7 @@ SDB_API int sdb_sync (Sdb* s) {
 		}
 	}
 	sdb_disk_finish (s);
-	return 0;
+	return 1;
 }
 
 // TODO: optimize: do not use syscalls here

@@ -78,8 +78,9 @@ SDB_API Sdb *sdb_ns(Sdb *s, const char *name) {
 			return ns->sdb;
 	}
 	if (s->ns_lock)
-		return 0;
+		return NULL;
 	ns = sdb_ns_new (s, name, hash);
+	if (!ns) return NULL;
 	ls_append (s->ns, ns);
 	return ns->sdb;
 }
