@@ -113,11 +113,15 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				break;
 			case X86_INS_CALL:
 			case X86_INS_LCALL:
-				op->type = R_ANAL_OP_TYPE_CALL;
-				// TODO: what if UCALL?
-				// TODO: use imm_size
-				op->jump = insn->detail->x86.operands[0].imm;
-				op->fail = addr+op->size;
+				if (insn->detail->x86.operands[0].type==X86_OP_IMM) {
+					op->type = R_ANAL_OP_TYPE_CALL;
+					// TODO: what if UCALL?
+					// TODO: use imm_size
+					op->jump = insn->detail->x86.operands[0].imm;
+					op->fail = addr+op->size;
+				} else {
+					op->type = R_ANAL_OP_TYPE_UCALL;
+				}
 				break;
 			case X86_INS_JMP:
 			case X86_INS_LJMP:

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2013 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
 
 #include <r_lib.h>
 #include <r_types.h>
@@ -382,6 +382,7 @@ default:
 		op->type = R_ANAL_OP_TYPE_CALL;
 		switch (u.operand[0].type) {
 		case UD_OP_REG:
+			op->type = R_ANAL_OP_TYPE_UCALL;
 			op->jump = 0; // EAX, EBX, ... use anal->reg
 			break;
 		case UD_OP_IMM:
