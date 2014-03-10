@@ -47,6 +47,7 @@ R_API void r_cons_grep(const char *str) {
 				cons->grep.less = 1;
 				return;
 			}
+			str++;
 			break;
 		case '&': str++; cons->grep.amp = 1; break;
 		case '^': str++; cons->grep.begin = 1;  break;
