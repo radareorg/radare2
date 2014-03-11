@@ -157,6 +157,13 @@ static int ihex2bin(ut8 *mem, char *str) {
 			break;
 		case 1: // EOF
 			ptr = NULL;
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			ptr = strchr(ptr + 1, ':');
+			break;
 		}
 	} while (ptr);
 
