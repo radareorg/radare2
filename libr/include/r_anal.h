@@ -1065,6 +1065,7 @@ R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 
 /* hints */
 //R_API void r_anal_hint_list (RAnal *anal, int mode);
+R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_del (RAnal *anal, ut64 addr, int size);
 R_API void r_anal_hint_clear (RAnal *a);
 R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from);

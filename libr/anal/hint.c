@@ -77,16 +77,11 @@ R_API void r_anal_hint_free (RAnalHint *h) {
 	free (h);
 }
 
-R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
-	char *r, *s, *nxt, key[128];
-	RAnalHint *hint;
+R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
+	char *r, *nxt;
 	int token = 0;
-
-	setf (key, "hint.0x%"PFMT64x, addr);
-	s = sdb_get (DB, key, 0);
-	if (!s) return NULL;
-
-	hint = R_NEW0 (RAnalHint);
+	RAnalHint *hint = R_NEW0 (RAnalHint);
+	char *s = strdup (str);
 	hint->addr = addr;
 	for (r = s; ; r = nxt) {
 		r = sdb_array_string (r, &nxt);
@@ -106,5 +101,18 @@ R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
 		if (!nxt)
 			break;
 	}
+	return hint;
+}
+
+R_API RAnalHint *r_anal_hint_get(RAnal *a, ut64 addr) {
+	char key[128];
+	const char *s;
+	RAnalHint *hint;
+
+	setf (key, "hint.0x%"PFMT64x, addr);
+	s = sdb_const_get (DB, key, 0);
+	if (!s) return NULL;
+	hint = r_anal_hint_from_string (a, addr, s);
+	free (s);
 	return hint;
 }

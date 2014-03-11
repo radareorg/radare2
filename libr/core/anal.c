@@ -22,17 +22,23 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 }
 
 typedef struct {
+	RAnal *a;
 	int mode;
 	int count;
 } HintListState;
 
-static int cb(void *p, const char *a, const char *b) {
+static int cb(void *p, const char *k, const char *v) {
+	RAnalHint *hint;
 	HintListState *hls = p;
+
+	hint = r_anal_hint_from_string (hls->a, sdb_atoi (k+5), v);
 // TODO: format using (mode)
 	switch (hls->mode) {
+	case 's':
+		r_cons_printf ("%s=%s\n", k, v);
 	case '*':
 #define HINTCMD(x,y) if(hint->x) \
-r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->from)
+r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->addr)
 		HINTCMD (arch, "aha %s");
 		HINTCMD (bits, "ahb %d");
 		HINTCMD (size, "ahl %d");
@@ -47,17 +53,17 @@ r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->from)
 		if (hint->bits) r_cons_printf (",\"bits\":%d", hint->bits);
 		if (hint->size) r_cons_printf (",\"size\":%d", hint->size);
 		if (hint->opcode) r_cons_printf (",\"opcode\":\"%s\"", hint->opcode);
-		if (hint->analstr) r_cons_printf (",\"analstr\":\"%s\"", hint->analstr);
+		if (hint->esil) r_cons_printf (",\"esil\":\"%s\"", hint->esil);
 		if (hint->ptr) r_cons_printf (",\"ptr\":\"0x%"PFMT64x"x\"", hint->ptr);
 		r_cons_printf ("}");
 		break;
 	default:
-		r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->from, hint->to);
+		r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->addr, hint->addr+hint->size);
 		if (hint->arch) r_cons_printf (" arch='%s'", hint->arch);
 		if (hint->bits) r_cons_printf (" bits=%d", hint->bits);
 		if (hint->size) r_cons_printf (" length=%d", hint->size);
 		if (hint->opcode) r_cons_printf (" opcode='%s'", hint->opcode);
-		if (hint->analstr) r_cons_printf (" analstr='%s'", hint->analstr);
+		if (hint->esil) r_cons_printf (" esil='%s'", hint->esil);
 		r_cons_newline ();
 	}
 	hls->count++;
@@ -65,20 +71,13 @@ r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->from)
 }
 
 R_API void r_core_anal_hint_list (RAnal *a, int mode) {
-	int count = 0;
-	RAnalHint *hint;
-	RListIter *iter;
-	if (mode == 'j') r_cons_printf ("[");
-	// TODO: support ranged hints!
 	HintListState hls = {};
 	hls.mode = mode;
 	hls.count = 0;
+	hls.a = a;
+	if (mode == 'j') r_cons_strcat ("[");
 	sdb_foreach (a->sdb_hints, cb, &hls);
-#if 0
-	r_list_foreach (a->hints, iter, hint) {
-	}
-#endif
-	if (mode == 'j') r_cons_printf ("]\n");
+	if (mode == 'j') r_cons_strcat ("]\n");
 }
 
 static char *r_core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
