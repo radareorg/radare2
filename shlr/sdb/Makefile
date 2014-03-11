@@ -117,6 +117,7 @@ ifneq (${HAVE_VALA},)
 	cd ${VALADIR}/types && ${MAKE} symstall PFX=${PFX}
 endif
 
+
 # windows compiler prefix
 WCP=i386-mingw32
 

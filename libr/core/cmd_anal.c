@@ -1047,7 +1047,7 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 				if (i==2)
 					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 				r_anal_hint_set_arch (core->anal, core->offset,
-					size, r_str_word_get0 (ptr, 0));
+					r_str_word_get0 (ptr, 0));
 				free (ptr);
 			} else eprintf("Missing argument\n");
 			break;
@@ -1060,8 +1060,7 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 				if (i==2)
 					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));
 				bits = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-				r_anal_hint_set_bits (core->anal, core->offset,
-					size, bits);
+				r_anal_hint_set_bits (core->anal, core->offset, bits);
 				free (ptr);
 			} else eprintf("Missing argument\n");
 			break;
@@ -1074,21 +1073,17 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 				r_num_math (core->num, input+2));
 			break;
 		case 's': // set size (opcode length)
-			r_anal_hint_set_length (core->anal, core->offset,
-				1, atoi (input+2));
+			r_anal_hint_set_size (core->anal, core->offset, atoi (input+2));
 			break;
 		case 'o': // set opcode string
-			r_anal_hint_set_opcode (core->anal, core->offset,
-				1, input+2);
+			r_anal_hint_set_opcode (core->anal, core->offset, input+2);
 			break;
 		case 'e': // set ESIL string
-			r_anal_hint_set_esil (core->anal, core->offset,
-				1, input+2);
+			r_anal_hint_set_esil (core->anal, core->offset, input+2);
 			break;
 #if TODO
 		case 'e': // set endian
-			r_anal_hint_set_opcode (core->anal, core->offset,
-				1, atoi (input+2));
+			r_anal_hint_set_opcode (core->anal, core->offset, atoi (input+2));
 			break;
 #endif
 		case 'p':
@@ -1102,9 +1097,9 @@ R_API int r_core_hint(RCore *core, ut64 addr) {
 		case '-':
 			if (input[2]) {
 				int i;
-				char *ptr = strdup (input+3);
+				char *ptr = strdup (input+2);
 				ut64 addr;
-				int size = 0;
+				int size = 1;
 				i = r_str_word_set0 (ptr);
 				if (i==2)
 					size = r_num_math (core->num, r_str_word_get0 (ptr, 1));

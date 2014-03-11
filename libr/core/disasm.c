@@ -480,6 +480,7 @@ R_API RAnalHint *r_core_hint_begin (RCore *core, RAnalHint* hint, ut64 at) {
 		if (hint->arch) {
 			if (!hint_arch) hint_arch = strdup (
 				r_config_get (core->config, "asm.arch"));
+//eprintf ("ST ARCH\n");
 			r_config_set (core->config, "asm.arch", hint->arch);
 		}
 		/* bits */
@@ -1884,6 +1885,10 @@ R_API int r_core_print_disasm_instructions (RCore *core, int len, int l) {
 			r_cons_printf ("%s\n", ds->opstr);
 			free (ds->opstr);
 			ds->opstr = NULL;
+		}
+		if (ds->hint) {
+			r_anal_hint_free (ds->hint);
+			ds->hint = NULL;
 		}
 	}
 	if (ds->oldbits) {

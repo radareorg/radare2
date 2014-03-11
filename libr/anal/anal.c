@@ -50,7 +50,6 @@ R_API RAnal *r_anal_new() {
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb = sdb_new (NULL, NULL, 0);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta");
-
 	anal->sdb_vars = sdb_new (NULL, NULL, 0);
 	anal->sdb_refs = sdb_new (NULL, NULL, 0);
 	anal->sdb_args = sdb_new (NULL, NULL, 0);
@@ -58,7 +57,7 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_locals = sdb_new (NULL, NULL, 0);
 	anal->sdb_xrefs = NULL;
 	anal->sdb_types = sdb_new (NULL, NULL, 0);
-	anal->sdb_hint = sdb_new (NULL, NULL, 0);
+	anal->sdb_hints = sdb_new (NULL, NULL, 0);
 	r_meta_init (anal);
 	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);
@@ -76,7 +75,6 @@ R_API RAnal *r_anal_new() {
 #if USE_NEW_FCN_STORE
 	anal->fcnstore = r_listrange_new ();
 #endif
-	anal->hints = r_list_new ();
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
@@ -105,7 +103,6 @@ R_API void r_anal_free(RAnal *a) {
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
 	r_list_free (a->refs);
 	r_list_free (a->types);
-	r_list_free (a->hints);
 	r_meta_fini (a);
 	r_reg_free(a->reg);
 	r_syscall_free (a->syscall);

@@ -21,46 +21,63 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 	return _op;
 }
 
+typedef struct {
+	int mode;
+	int count;
+} HintListState;
+
+static int cb(void *p, const char *a, const char *b) {
+	HintListState *hls = p;
+// TODO: format using (mode)
+	switch (hls->mode) {
+	case '*':
+#define HINTCMD(x,y) if(hint->x) \
+r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->from)
+		HINTCMD (arch, "aha %s");
+		HINTCMD (bits, "ahb %d");
+		HINTCMD (size, "ahl %d");
+		HINTCMD (opcode, "aho %s");
+		HINTCMD (opcode, "ahs %s");
+		HINTCMD (opcode, "ahp %s");
+		break;
+	case 'j':
+		r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d, 
+			hls->count>0?",":"", hint->addr, hint->addr+hint->size);
+		if (hint->arch) r_cons_printf (",\"arch\":\"%s\"", hint->arch); // XXX: arch must not contain strange chars
+		if (hint->bits) r_cons_printf (",\"bits\":%d", hint->bits);
+		if (hint->size) r_cons_printf (",\"size\":%d", hint->size);
+		if (hint->opcode) r_cons_printf (",\"opcode\":\"%s\"", hint->opcode);
+		if (hint->analstr) r_cons_printf (",\"analstr\":\"%s\"", hint->analstr);
+		if (hint->ptr) r_cons_printf (",\"ptr\":\"0x%"PFMT64x"x\"", hint->ptr);
+		r_cons_printf ("}");
+		break;
+	default:
+		r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->from, hint->to);
+		if (hint->arch) r_cons_printf (" arch='%s'", hint->arch);
+		if (hint->bits) r_cons_printf (" bits=%d", hint->bits);
+		if (hint->size) r_cons_printf (" length=%d", hint->size);
+		if (hint->opcode) r_cons_printf (" opcode='%s'", hint->opcode);
+		if (hint->analstr) r_cons_printf (" analstr='%s'", hint->analstr);
+		r_cons_newline ();
+	}
+	hls->count++;
+	return 1;
+}
+
 R_API void r_core_anal_hint_list (RAnal *a, int mode) {
 	int count = 0;
 	RAnalHint *hint;
 	RListIter *iter;
 	if (mode == 'j') r_cons_printf ("[");
 	// TODO: support ranged hints!
+	HintListState hls = {};
+	hls.mode = mode;
+	hls.count = 0;
+	sdb_foreach (a->sdb_hints, cb, &hls);
+#if 0
 	r_list_foreach (a->hints, iter, hint) {
-		switch (mode) {
-		case '*':
-#define HINTCMD(x,y) if(hint->x) \
-	r_cons_printf (y"@0x%"PFMT64x"\n", hint->x, hint->from)
-			HINTCMD (arch, "aha %s");
-			HINTCMD (bits, "ahb %d");
-			HINTCMD (size, "ahl %d");
-			HINTCMD (opcode, "aho %s");
-			HINTCMD (opcode, "ahs %s");
-			HINTCMD (opcode, "ahp %s");
-			break;
-		case 'j':
-			r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d, 
-				count>0?",":"", hint->from, hint->to);
-			if (hint->arch) r_cons_printf (",\"arch\":\"%s\"", hint->arch); // XXX: arch must not contain strange chars
-			if (hint->bits) r_cons_printf (",\"bits\":%d", hint->bits);
-			if (hint->size) r_cons_printf (",\"size\":%d", hint->size);
-			if (hint->opcode) r_cons_printf (",\"opcode\":\"%s\"", hint->opcode);
-			if (hint->analstr) r_cons_printf (",\"analstr\":\"%s\"", hint->analstr);
-			if (hint->ptr) r_cons_printf (",\"ptr\":\"0x%"PFMT64x"x\"", hint->ptr);
-			r_cons_printf ("}");
-			break;
-		default:
-			r_cons_printf (" 0x%08"PFMT64x" - 0x%08"PFMT64x, hint->from, hint->to);
-			if (hint->arch) r_cons_printf (" arch='%s'", hint->arch);
-			if (hint->bits) r_cons_printf (" bits=%d", hint->bits);
-			if (hint->size) r_cons_printf (" length=%d", hint->size);
-			if (hint->opcode) r_cons_printf (" opcode='%s'", hint->opcode);
-			if (hint->analstr) r_cons_printf (" analstr='%s'", hint->analstr);
-			r_cons_printf ("\n");
-		}
-		count++;
 	}
+#endif
 	if (mode == 'j') r_cons_printf ("]\n");
 }
 

@@ -397,6 +397,7 @@ SDB_API int sdb_sync (Sdb* s) {
 		}
 	}
 	sdb_disk_finish (s);
+	// TODO: sdb_reset memory state?
 	return 1;
 }
 

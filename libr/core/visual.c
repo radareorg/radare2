@@ -520,6 +520,7 @@ showcursor (core, R_FALSE);
 			free (p);
 			break;
 		}
+		delta = (ocursor!=-1)? R_MIN (cursor, ocursor): cursor;
 		if (core->print->col==2) {
 			strcpy (buf, "\"w ");
 			r_line_set_prompt ("insert string: ");
@@ -532,7 +533,6 @@ showcursor (core, R_FALSE);
 				int bs = R_ABS (cursor-ocursor)+1;
 				core->blocksize = bs;
 				strcpy (buf, "wow ");
-				delta = R_MIN (cursor, ocursor);
 			} else {
 				strcpy (buf, "wx ");
 			}

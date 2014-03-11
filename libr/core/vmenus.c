@@ -52,7 +52,6 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			}
 			if (fs2) {
 				r_cons_printf ("\n Selected: %s\n\n", fs2);
-
 				// Honor MAX_FORMATS here
 				switch (format) {
 				case 0: snprintf (cmd, sizeof (cmd), "px @ %s!64", fs2); core->printidx = 0; break;
@@ -273,7 +272,6 @@ R_API int r_core_visual_comments (RCore *core) {
 		r_cons_gotoxy (0, 0);
 		r_cons_clear ();
 		r_cons_strcat ("Comments:\n");
-
 		i = 0;
 		found = 0;
 		mode = 0;

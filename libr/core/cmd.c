@@ -462,6 +462,8 @@ static int cmd_kuery(void *data, const char *input) {
 		break;
 	// TODO: add command to list all namespaces // sdb_ns_foreach ?
 	case 's':
+		if (core->http_up)
+			return R_FALSE;
 		if (input[1]==' ')
 			s = sdb_ns (s, input+2);
 		if (!s) s = core->sdb;

@@ -551,7 +551,6 @@ typedef struct r_anal_t {
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_plugin_t *cur;
 	struct list_head anals; // TODO: Reimplement with RList
-	RList *hints; // XXX use better data structure here (slist?)
 	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api 
@@ -564,18 +563,18 @@ typedef struct r_anal_t {
 	Sdb *sdb_args;
 	Sdb *sdb_locals;
 	Sdb *sdb_ret;
-	Sdb *sdb_hint;
+	Sdb *sdb_hints;
+	//RList *hints; // XXX use better data structure here (slist?)
 } RAnal;
 
 typedef struct r_anal_hint_t {
-	ut64 from;
-	ut64 to;
+	ut64 addr;
 	ut64 ptr;
-	char *arch;
-	char *opcode;
-	char *analstr;
 	ut64 jump;
 	ut64 fail;
+	char *arch;
+	char *opcode;
+	char *esil;
 	int size;
 	int bits;
 } RAnalHint;
@@ -1068,18 +1067,18 @@ R_API int r_anal_fcn_xref_del (RAnal *anal, RAnalFunction *fcn, ut64 at, ut64 ad
 //R_API void r_anal_hint_list (RAnal *anal, int mode);
 R_API void r_anal_hint_del (RAnal *anal, ut64 addr, int size);
 R_API void r_anal_hint_clear (RAnal *a);
-R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from, int size);
+R_API RAnalHint *r_anal_hint_at (RAnal *a, ut64 from);
 R_API RAnalHint *r_anal_hint_add (RAnal *a, ut64 from, int size);
 R_API void r_anal_hint_free (RAnalHint *h);
 R_API RAnalHint *r_anal_hint_get(RAnal *anal, ut64 addr);
 R_API void r_anal_hint_set_jump (RAnal *a, ut64 addr, ut64 ptr);
 R_API void r_anal_hint_set_fail (RAnal *a, ut64 addr, ut64 ptr);
-R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int size, int length);
-R_API void r_anal_hint_set_bits (RAnal *a, ut64 addr, int size, int bits);
-R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, int size, const char *arch);
-R_API void r_anal_hint_set_size (RAnal *a, ut64 addr, int size, int length);
-R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, int size, const char *str);
-R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, int size, const char *str);
+R_API void r_anal_hint_set_length (RAnal *a, ut64 addr, int length);
+R_API void r_anal_hint_set_bits (RAnal *a, ut64 addr, int bits);
+R_API void r_anal_hint_set_arch (RAnal *a, ut64 addr, const char *arch);
+R_API void r_anal_hint_set_size (RAnal *a, ut64 addr, int length);
+R_API void r_anal_hint_set_opcode (RAnal *a, ut64 addr, const char *str);
+R_API void r_anal_hint_set_esil (RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_set_pointer (RAnal *a, ut64 addr, ut64 jump);
 
 R_API int r_anal_esil_eval(RAnal *anal, const char *str);
