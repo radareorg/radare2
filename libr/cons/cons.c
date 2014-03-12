@@ -144,10 +144,10 @@ R_API int r_cons_enable_mouse (const int enable) {
 	int enabled = I.mouse;
 	if ((I.mouse = enable)) {
 	//	r_cons_memcat ("\x1b[?1001s", 8);
-		r_cons_memcat ("\x1b[?1000h", 8);
+		eprintf ("\x1b[?1000h");
 	} else {
 		//r_cons_memcat ("\x1b[?1001r", 8);
-		r_cons_memcat ("\x1b[?1000l", 8);
+		eprintf ("\x1b[?1000l");
 	}
 	return enabled;
 #else
