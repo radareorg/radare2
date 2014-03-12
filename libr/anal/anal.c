@@ -52,8 +52,7 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta");
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints");
 	anal->sdb_vars = sdb_ns (anal->sdb, "vars");
-	anal->sdb_refs = sdb_ns (anal->sdb, "refs");
-	anal->sdb_xrefs = NULL; // XXX vs refs?
+	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs");
 	anal->sdb_args = sdb_ns (anal->sdb, "args");
 	anal->sdb_ret = sdb_ns (anal->sdb, "ret");
 	anal->sdb_locals = sdb_ns (anal->sdb, "locals");

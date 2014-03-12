@@ -68,6 +68,8 @@ const char *x##_version();
 #define R_LIB_VERSION(x) \
 const char *x##_version() { return ""GIT_TAP; }
 
+#define TODO(x) eprintf(__FUNCTION__"  "x)
+
 // TODO: FS or R_SYS_DIR ??
 #undef FS
 #if __WINDOWS__

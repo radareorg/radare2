@@ -8,14 +8,12 @@
 R_API void r_anal_xrefs_load(RAnal *anal, const char *prjfile) {
         char *path, *db = r_str_newf (R2_HOMEDIR"/projects/%s.d/xrefs", prjfile);
 	path = r_str_home (db);
-	//eprintf ("Open (%s)\n", path);
 	sdb_free (DB);
 	DB = sdb_new (path, "xrefs", 0);
+	sdb_ns_set (anal->sdb, "xrefs", DB);
 	sdb_array_set (DB, "types", -1, "code,data", 0);
 	free (db);
 }
-
-#define TODO(x) eprintf(__FUNCTION__"  "x)
 
 R_API void r_anal_xrefs_save(RAnal *anal, const char *prjfile) {
 	sdb_sync (anal->sdb_xrefs);
@@ -27,7 +25,6 @@ R_API RList *r_anal_xrefs_set (RAnal *anal, const char *type, ut64 from, ut64 to
 	sdb_array_add_num (DB, key, -1, to, 0);
 	snprintf (key, sizeof (key), "xref.%s.0x%"PFMT64x, type, to);
 	sdb_array_add_num (DB, key, -1, from, 0);
-	// (-1)funfor.%d=%d
 	return NULL;
 }
 
@@ -59,13 +56,9 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const c
 	return R_TRUE;
 }
 
-// (in,out)[code,data]
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr) {
 	RList *list = r_list_new ();
 	list->free = NULL; // XXX
-// XXX: not all!
-	//r_anal_xrefs_from (anal, list, "xref", "code", addr);
-	//r_anal_xrefs_from (anal, list, "xref", "data", addr);
 	r_anal_xrefs_from (anal, list, "ref", "code", addr);
 	r_anal_xrefs_from (anal, list, "ref", "data", addr);
 	if (r_list_length (list)<1) {
@@ -76,13 +69,8 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 addr) {
 }
 
 R_API void r_anal_xrefs_init (RAnal *anal) {
-	DB = NULL;
-	DB = sdb_new (NULL, "xrefs", 0); // TODO
+	sdb_reset (DB);
 	sdb_array_set (DB, "types", -1, "code,data", 0);
-#if 0
-	//...
-	r_anal_xrefs_get (anal, "code", 0);
-#endif
 }
 
 static int xrefs_list_cb_rad(RAnal *anal, const char *k, const char *v) {
