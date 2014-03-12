@@ -50,15 +50,14 @@ R_API RAnal *r_anal_new() {
 	anal->decode = R_TRUE; // slow slow if not used
 	anal->sdb = sdb_new (NULL, NULL, 0);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta");
-	anal->sdb_vars = sdb_new (NULL, NULL, 0);
-	anal->sdb_refs = sdb_new (NULL, NULL, 0);
-	anal->sdb_args = sdb_new (NULL, NULL, 0);
-	anal->sdb_ret = sdb_new (NULL, NULL, 0);
-	anal->sdb_locals = sdb_new (NULL, NULL, 0);
-	anal->sdb_xrefs = NULL;
-	anal->sdb_types = sdb_new (NULL, NULL, 0);
-	anal->sdb_hints = sdb_new (NULL, NULL, 0);
-	r_meta_init (anal);
+	anal->sdb_hints = sdb_ns (anal->sdb, "hints");
+	anal->sdb_vars = sdb_ns (anal->sdb, "vars");
+	anal->sdb_refs = sdb_ns (anal->sdb, "refs");
+	anal->sdb_xrefs = NULL; // XXX vs refs?
+	anal->sdb_args = sdb_ns (anal->sdb, "args");
+	anal->sdb_ret = sdb_ns (anal->sdb, "ret");
+	anal->sdb_locals = sdb_ns (anal->sdb, "locals");
+	anal->sdb_types = sdb_ns (anal->sdb, "types");
 	anal->printf = (PrintfCallback) printf;
 	r_anal_type_init (anal);
 	r_anal_xrefs_init (anal);
@@ -103,7 +102,6 @@ R_API void r_anal_free(RAnal *a) {
 	// r_listrange_free (anal->fcnstore); // might provoke double frees since this is used in r_anal_fcn_insert()
 	r_list_free (a->refs);
 	r_list_free (a->types);
-	r_meta_fini (a);
 	r_reg_free(a->reg);
 	r_syscall_free (a->syscall);
 	r_anal_op_free (a->queued);
@@ -111,6 +109,7 @@ R_API void r_anal_free(RAnal *a) {
 	sdb_free (a->sdb_vars);
 	sdb_free (a->sdb_refs);
 	sdb_free (a->sdb_args);
+	sdb_free (a->sdb_hints);
 	sdb_free (a->sdb_locals);
 	// r_io_free(anal->iob.io); // need r_core (but recursive problem to fix)
 	free (a);

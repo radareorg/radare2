@@ -464,8 +464,16 @@ static int cmd_kuery(void *data, const char *input) {
 	case 's':
 		if (core->http_up)
 			return R_FALSE;
-		if (input[1]==' ')
-			s = sdb_ns (s, input+2);
+		if (input[1]==' ') {
+			char *n = n, *o, *p = strdup (input+2);
+			// TODO: slash split here? or inside sdb_ns ?
+			for (o = p; n; o = n) {
+				n = strchr (o, '/'); // SDB_NS_SEPARATOR NAMESPACE
+				if (n) *n++ = 0;
+				s = sdb_ns (s, o);
+			}
+			free (p);
+		}
 		if (!s) s = core->sdb;
 		for (;;) {
 			r_line_set_prompt (p);

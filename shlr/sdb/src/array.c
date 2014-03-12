@@ -16,6 +16,7 @@ static char *sdb_array_index_nc(char *str, int idx) {
 }
 
 // TODO: nxt can be a pointer to the string, not a bool and we can get ird of array_next()
+// TODO: move to utils
 SDB_API char *sdb_array_string(char *str, char **next) {
 	char *nxt, *p = strchr (str, SDB_RS);
 	if (p) { *p = 0; nxt = p+1; } else nxt = NULL;

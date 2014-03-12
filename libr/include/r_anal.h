@@ -538,7 +538,6 @@ typedef struct r_anal_t {
 	RListRange *fcnstore;
 	RList *refs;
 	RList *vartypes;
-	RList *meta;
 	RReg *reg;
 	RSyscall *syscall;
 	struct r_anal_op_t *queued;

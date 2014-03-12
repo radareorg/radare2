@@ -1210,6 +1210,8 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut
 		piece = (F->addr-from)/step;
 		as->block[piece].functions++;
 	}
+#if 0
+TODO: sdbize
 	r_list_foreach (core->anal->meta, iter, m) {
 		if (m->from< from) continue;
 		if (m->from> to) continue;
@@ -1228,6 +1230,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *core, ut64 from, ut64 to, ut
 			break;
 		}
 	}
+#endif
 	//for (i=0, at = from; at <to; at+= step) eprintf ("%llx %d\n", at, as->block[i++].flags);
 	// iter all comments
 	// iter all symbols

@@ -23,6 +23,7 @@ static int prevopsz (RCore *core, ut64 addr) {
 	}
 	return 4;
 }
+
 static int cmd_seek(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	char *cmd, *p;
@@ -43,12 +44,14 @@ static int cmd_seek(void *data, const char *input) {
 		inputnum = inputnum? inputnum+1: input+1;
 		off = r_num_math (core->num, inputnum);
 		if (*inputnum== '-') off = -off;
+#if 0
 		if (input[0]!='/' && inputnum && isalpha (inputnum[0]) && off == 0) {
 			if (!r_flag_get (core->flags, inputnum)) {
 				eprintf ("Cannot find address for '%s'\n", inputnum);
 				return R_FALSE;
 			}
 		}
+#endif
 		if (input[0]==' ') {
 			switch (input[1]) {
 			case '-': sign=-1;
@@ -59,40 +62,58 @@ static int cmd_seek(void *data, const char *input) {
 		switch (*input) {
 		case 'C':
 			if (input[1]=='*') {
-				r_core_cmd0 (core, "C*~^CC");
+				r_core_cmd0 (core, "C*~^\"CC");
 			} else 
 			if (input[1]==' ') {
-				int n = 0;
-				RListIter *iter;
-				RAnalMetaItem *d, *item = NULL;
-				/* seek to comment */
-				r_list_foreach (core->anal->meta, iter, d) {
-					if (d->type == R_META_TYPE_COMMENT) {
-						if (strstr (d->str, input+2)) {
-							if (n==1) {
-								r_cons_printf ("0x%08"PFMT64x"  %s\n", item->from, item->str);
-								r_cons_printf ("0x%08"PFMT64x"  %s\n", d->from, d->str);
-							} else if (n>1) {
-								r_cons_printf ("0x%08"PFMT64x"  %s\n", d->from, d->str);
-							}
-							item = d;
-							n++;
+				typedef struct {
+					ut64 addr;
+					char *str;
+				} MetaCallback;
+				int count = 0;
+				MetaCallback cb = { 0, NULL };
+				ut64 addr;
+				char key[128];
+				const char *val, *comma;
+				char *list = sdb_get (core->anal->sdb_meta, "meta.C", 0);
+				char *str, *next, *cur = list;
+				if (list) {
+					for (;;) {
+						cur = sdb_array_string (cur, &next);
+						addr = sdb_atoi (cur);
+						snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
+						val = sdb_const_get (core->anal->sdb_meta, key, 0);
+						comma = strchr (val, ',');
+						if (comma) {
+							str = (char *)sdb_decode (comma+1, 0);
+							if (strstr (str, input+2)) {
+								r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, str);
+								count++;
+								cb.addr = addr;
+								free (cb.str);
+								cb.str = str;
+							} else free (str);
 						}
+						if (!next)
+							break;
+						cur = next;
 					}
 				}
-				switch (n) {
+				
+				switch (count) {
 				case 0:
 					eprintf ("No matching comments\n");
 					break;
 				case 1:
-					r_cons_printf ("0x%08"PFMT64x"  %s\n", item->from, item->str);
-					off = item->from;
+					off = cb.addr;
 					r_io_sundo_push (core->io, core->offset);
 					r_core_seek (core, off, 1);
 					r_core_block_read (core, 0);
 					break;
+				default:
+					eprintf ("Too many results\n");
+					break;
 				}
-
+				free (cb.str);
 			} else eprintf ("Usage: sC[?*] comment-grep\n"
 				"sC*        list all comments\n"
 				"sC const   seek to comment matching 'const'\n");

@@ -131,7 +131,7 @@ next_quote:
 		next = strchr (val?val:cmd, ';');
 	}
 	if (next) *next = 0;
-	arroba = strchr (cmd, '_');
+	arroba = strchr (cmd, '/');
 	if (arroba) {
 	next_arroba:
 		*arroba = 0;
@@ -141,7 +141,7 @@ next_quote:
 			return NULL;
 		}
 		cmd = arroba+1;
-		arroba = strchr (cmd, '_');
+		arroba = strchr (cmd, '/');
 		if (arroba)
 			goto next_arroba;
 	}

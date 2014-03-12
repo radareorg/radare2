@@ -257,15 +257,13 @@ R_API int r_core_visual_trackflags(RCore *core) {
 }
 
 R_API int r_core_visual_comments (RCore *core) {
-	char *str, cmd[512], *p = NULL;
+	char cmd[512], *p = NULL;
 	int mode = 0;
 	int delta = 7;
 	int i, ch, option = 0;
 	int format = 0;
 	int found = 0;
 	ut64 from = 0, size = 0;
-	RListIter *iter;
-	RAnalMetaItem *d;
 
 // XXX: mode is always 0, remove useless code
 	for (;;) {
@@ -275,28 +273,44 @@ R_API int r_core_visual_comments (RCore *core) {
 		i = 0;
 		found = 0;
 		mode = 0;
-		r_list_foreach (core->anal->meta, iter, d) {
-			str = r_str_escape (d->str);
-			if (str) {
-				if (d->type=='s') /* Ignore strings, there are in trackflags */
-					continue;
-				if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-					r_str_sanitize (str);
-					if (option==i) {
-						mode = 0;
-						found = 1;
-						from = d->from;
-						size = d->size;
-						p = str;
-						r_cons_printf ("  >  %s\n", str);
-					} else {
-						r_cons_printf ("     %s\n", str);
-						free (str);
+#undef DB
+#define DB core->anal->sdb_meta
+				ut64 addr;
+				char key[128];
+				const char *val, *comma;
+				char *list = sdb_get (DB, "meta.C", 0);
+				char *str, *next, *cur = list;
+				if (list) {
+					for (i=0; ;i++) {
+						cur = sdb_array_string (cur, &next);
+						addr = sdb_atoi (cur);
+						snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
+						val = sdb_const_get (DB, key, 0);
+						comma = strchr (val, ',');
+						if (comma) {
+							str = (char *)sdb_decode (comma+1, 0);
+							if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
+								r_str_sanitize (str);
+								if (option==i) {
+									mode = 0;
+									found = 1;
+									from = addr;
+									size = 1; // XXX: remove this thing size for comments is useless d->size;
+									free (p);
+									p = str;
+									r_cons_printf ("  >  %s\n", str);
+								} else {
+									r_cons_printf ("     %s\n", str);
+									free (str);
+								}
+							} else free (str);
+						}
+						if (!next)
+							break;
+						cur = next;
 					}
 				}
-				i++;
-			}
-		}
+		
 		if (!found) {
 			option--;
 			if (option<0) break;

@@ -484,7 +484,7 @@ R_API int r_core_visual_cmd(RCore *core, int ch) {
 					core->offset + min, range, 1);
 			}
 		} }
-showcursor (core, R_FALSE);
+		showcursor (core, R_FALSE);
 		break;
 	case 'F':
 		r_flag_unset_i (core->flags, core->offset + cursor, NULL);
