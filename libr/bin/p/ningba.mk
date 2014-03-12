@@ -7,4 +7,4 @@ ALL_TARGETS+=${TARGET_NINGBA}
 
 ${TARGET_NINGBA}: ${OBJ_NINGBA}
 	${CC} $(call libname,bin_ningba) -shared ${CFLAGS} \
-		-o ${TARGET_NINGBA} ${OBJ_NINGBA} $(LDFLAG)S
+		-o ${TARGET_NINGBA} ${OBJ_NINGBA} $(LDFLAG)
