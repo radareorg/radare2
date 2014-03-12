@@ -1,4 +1,4 @@
-/* radare - LGPL - 2013 - condret@runas-racer.com */
+/* radare - LGPL - 2014 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -30,8 +30,7 @@ static ut64 baddr(RBinFile *arch) {
 	return 0LL;
 }
 
-static RList* entries(RBinFile *arch)
-{
+static RList* entries(RBinFile *arch) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = NULL;
 
