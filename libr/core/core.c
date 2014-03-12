@@ -470,6 +470,8 @@ static void update_sdb(RCore *core) {
 	// TODO: sdb_hook should work across namespaces?
 	// HOOK!
 	sdb_ns_set (core->sdb, "anal", core->anal->sdb);
+	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
+	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
 	//sdb_ns_set (core->sdb, "syscall", core->assembler->syscall->syspair);
 }
 

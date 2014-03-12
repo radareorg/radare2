@@ -485,11 +485,14 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		break;
 	case '?':
-		eprintf ("|Usage: k [key[=value]]\n"
-			"| k foo=bar   # set value\n"
-			"| k foo       # show value\n"
-			"| k           # list keys\n"
-			"| ks [ns]     # enter the sdb query shell\n"
+		eprintf ("|Usage: k[s] [key[=value]]\n"
+			"| k foo=bar       # set value\n"
+			"| k foo           # show value\n"
+			"| k               # list keys\n"
+			"| ks [ns]         # enter the sdb query shell\n"
+			"| k anal/meta/*   # list kv from anal > meta namespaces\n"
+			"| k anal/**       # list namespaces under anal\n"
+			"| k anal/meta/meta.0x80404 # get value for meta.0x80404 key\n"
 			//"| kl ha.sdb   # load keyvalue from ha.sdb\n"
 			//"| ks ha.sdb   # save keyvalue to ha.sdb\n"
 		);
