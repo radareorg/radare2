@@ -1,4 +1,4 @@
-/* radare - GPL - 2013 - condret@runas-racer.com */
+/* radare - LGPL - 2013 - 2014 - condret@runas-racer.com */
 
 #include <r_types.h>
 #include <r_util.h>

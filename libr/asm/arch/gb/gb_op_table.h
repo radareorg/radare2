@@ -283,7 +283,7 @@ static gb_opcode gb_op[] = {
 	{"push af"		,GB_8BIT},
 	{"or 0x%02x"		,GB_8BIT+ARG_8},
 	{"rst 48"		,GB_8BIT},
-	{"ld hl, [sp + 0x%02x]"	,GB_8BIT+ARG_8},
+	{"ld hl, sp + 0x%02x"	,GB_8BIT+ARG_8},		//signed
 	{"ld sp, hl"		,GB_8BIT},
 	{"ld a, [0x%04x]"	,GB_8BIT+ARG_16},
 	{"ei"			,GB_8BIT},
