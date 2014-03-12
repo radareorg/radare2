@@ -26,6 +26,7 @@ SDB_API void sdb_global_hook(SdbHook hook, void *user) {
 SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
         struct stat st = {0};
 	Sdb* s = R_NEW (Sdb);
+	if (!s) return NULL;
 	if (name && *name) {
 		if (path && *path) {
 			int plen = strlen (path);
@@ -58,6 +59,7 @@ SDB_API Sdb* sdb_new (const char *path, const char *name, int lock) {
 	s->fdump = -1;
 	s->ndump = NULL;
 	s->ns = ls_new (); // TODO: should be NULL
+	s->ns_lock = 0;
 	if (!s->ns) goto fail;
 	s->hooks = NULL;
 	s->ht = ht_new ((SdbListFree)sdb_kv_free);

@@ -40,12 +40,12 @@ static SdbNs *sdb_ns_new (Sdb *s, const char *name, ut32 hash) {
 		memcpy (dir, s->dir, dir_len);
 		memcpy (dir+dir_len, ".", 1);
 		memcpy (dir+dir_len+1, name, name_len);
-	}
+	} else dir[0] = 0;
 	ns = malloc (sizeof (SdbNs));
 	if (!ns) return NULL;
 	ns->hash = hash;
 	ns->name = name? strdup (name): NULL;
-	ns->sdb = sdb_new (dir, name, 0);
+	ns->sdb = sdb_new (dir, ns->name, 0);
 	return ns;
 }
 
@@ -55,6 +55,8 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 	ut32 hash = sdb_hashstr (name);
 	ls_foreach (s->ns, it, ns) {
 		if (ns->hash == hash) {
+			// implicit?
+			//sdb_free (ns->sdb);
 			ns->sdb = r;
 			return 1;
 		}
@@ -72,7 +74,10 @@ SDB_API int sdb_ns_set (Sdb *s, const char *name, Sdb *r) {
 SDB_API Sdb *sdb_ns(Sdb *s, const char *name) {
 	SdbNs *ns;
 	SdbListIter *it;
-	ut32 hash = sdb_hashstr (name);
+	ut32 hash;
+	if (!name || !*name)
+		return NULL;
+	hash = sdb_hashstr (name);
 	ls_foreach (s->ns, it, ns) {
 		if (ns->hash == hash)
 			return ns->sdb;
