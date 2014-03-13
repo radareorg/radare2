@@ -97,9 +97,10 @@ static void sdb_fini(Sdb* s, int donull) {
 		sdb_unlock (sdb_lockfile (s->dir));
 	ls_free (s->ns);
 	ht_free (s->ht);
-	if (s->fd != -1)
+	if (s->fd != -1) {
 		close (s->fd);
-	s->fd = -1;
+		s->fd = -1;
+	}
 	free (s->ndump);
 	free (s->dir);
 	free (s->tmpkv.value);
@@ -250,8 +251,10 @@ SDB_API int sdb_exists (Sdb* s, const char *key) {
 
 SDB_API void sdb_reset (Sdb* s) {
 	/* disable disk cache */
-	close (s->fd);
-	s->fd = -1;
+	if (s->fd != -1) {
+		close (s->fd);
+		s->fd = -1;
+	}
 	/* empty memory hashtable */
 	ht_free (s->ht);
 	s->ht = ht_new ((SdbListFree)sdb_kv_free);
