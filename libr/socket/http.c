@@ -5,7 +5,7 @@
 
 static char *r_socket_http_answer (RSocket *s, int *code, int *rlen) {
 	const char *p;
-	int ret, olen, len, bufsz = 32768, delta = 0;
+	int ret, olen, len = 0, bufsz = 32768, delta = 0;
 	char *dn, *res, *buf = malloc (bufsz); // XXX: use r_buffer here
 
 	res = NULL;
