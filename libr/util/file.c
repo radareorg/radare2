@@ -301,6 +301,7 @@ R_API boolt r_file_rmrf(const char *file) {
         nfile[ strlen (nfile)-1 ] = '_';
         nfile[ strlen (nfile)-2 ] = '_';
         if (rename (file, nfile)) {
+            free (nfile);
 		return R_FALSE;
 	}
         eprintf ("mv %s %s\n", file, nfile);
