@@ -296,11 +296,16 @@ static int MACH0_(r_bin_mach0_init_items)(struct MACH0_(r_bin_mach0_obj_t)* bin)
 	int i, len;
 
 	bin->os = 0;
-	for (i = 0, off = sizeof (struct MACH0_(mach_header)); i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
+	for (i = 0, off = sizeof (struct MACH0_(mach_header)); \
+			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		len = r_buf_fread_at (bin->b, off, (ut8*)&lc, bin->endian?"2I":"2i", 1);
 		if (len == -1) {
 			eprintf ("Error: read (lc) at 0x%08"PFMT64x"\n", off);
 			return R_FALSE;
+		}
+		if (lc.cmdsize<1 || off+lc.cmdsize>bin->size) {
+			eprintf ("Warning: mach0_header %d = cmdsize<1.\n", i);
+			break;
 		}
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
