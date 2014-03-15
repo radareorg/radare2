@@ -1,7 +1,8 @@
 include ../config-user.mk
 include ../mk/${COMPILER}.mk
 
-CS_VER=2.1
+WGET?=wget
+CS_VER=2.1.1
 CS_TAR=https://github.com/aquynh/capstone/archive/$(CS_VER).tar.gz
 CS_URL=https://github.com/aquynh/capstone.git
 CS_UPD=20140307
@@ -144,8 +145,8 @@ capstone: capstone-$(CS_VER).tar.gz
 	tar xzvf capstone-$(CS_VER).tar.gz
 	rm -rf capstone
 	mv capstone-$(CS_VER) capstone
-	cd capstone ; for a in ../capstone-patches/* ; do patch -p1 < $$a ; done
+	#cd capstone ; for a in ../capstone-patches/* ; do patch -p1 < $$a ; done
 
 capstone-$(CS_VER).tar.gz:
-	wget -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
+	$(WGET) --no-check-certificate -O capstone-$(CS_VER).tar.gz -c $(CS_TAR)
 endif

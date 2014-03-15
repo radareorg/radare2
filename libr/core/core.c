@@ -472,7 +472,7 @@ static void update_sdb(RCore *core) {
 	sdb_ns_set (core->sdb, "anal", core->anal->sdb);
 	//sdb_ns_set (core->sdb, "flags", core->flags->sdb);
 	//sdb_ns_set (core->sdb, "bin", core->bin->sdb);
-	//sdb_ns_set (core->sdb, "syscall", core->assembler->syscall->syspair);
+	sdb_ns_set (core->sdb, "syscall", core->assembler->syscall->db);
 }
 
 R_API int r_core_init(RCore *core) {
