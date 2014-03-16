@@ -944,11 +944,24 @@ R_API RList * r_bin_java_get_method_offsets(RBinJavaObj *bin);
 R_API ut16 r_bin_java_calculate_method_access_value(const char * access_flags_str);
 R_API ut16 r_bin_java_calculate_field_access_value(const char * access_flags_str);
 R_API ut16 r_bin_java_calculate_class_access_value(const char * access_flags_str);
+
+R_API RList * retrieve_all_method_access_string_and_value();
+R_API RList * retrieve_all_field_access_string_and_value();
+R_API RList * retrieve_all_class_access_string_and_value();
+R_API char * retrieve_method_access_string(ut16 flags);
+R_API char * retrieve_field_access_string(ut16 flags);
+R_API char * retrieve_class_method_access_string(ut16 flags);
+
+
 R_API char * r_bin_java_resolve(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
 R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
 R_API char * r_bin_java_resolve_without_space(RBinJavaObj *BIN_OBJ, int idx);
 R_API char * r_bin_java_resolve_cp_idx_type(RBinJavaObj *BIN_OBJ, int idx);
 R_API char * r_bin_java_resolve_b64_encode(RBinJavaObj *BIN_OBJ, ut16 idx);
+R_API ut64 r_bin_java_resolve_cp_idx_address(RBinJavaObj *BIN_OBJ, int idx);
+R_API char * r_bin_java_resolve_cp_idx_to_string(RBinJavaObj *BIN_OBJ, int idx);
+R_API int r_bin_java_resolve_cp_idx_print_summary(RBinJavaObj *BIN_OBJ, int idx);
+
 R_API struct java_const_value_t * r_bin_java_resolve_to_const_value(RBinJavaObj *BIN_OBJ, int idx);
 R_API void r_bin_java_free_const_value(struct java_const_value_t * cp_value);
 

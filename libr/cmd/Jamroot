@@ -1,8 +1,10 @@
 OBJS = cmd.c plugin.c macro.c ;
-OBJS += p/cmd_dummy.c ;
+OBJS += p/cmd_dummy.c p/cmd_java.c ;
 
 lib r_cmd : $(OBJS) : <include>../include
     <library>../util
     <library>../lib
     <library>../cons
+    <library>../core
+    <library>../anal
 ;
