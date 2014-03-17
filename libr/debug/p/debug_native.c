@@ -2184,7 +2184,7 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 				|| (info.reserved != prev_info.reserved))
 			print = 1;
 
-		#define xwr2rwx(x) ((x&1)<<2) && (x&2) && ((x&4)>>2)
+		#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
 		if (print) {
 			snprintf (buf, sizeof (buf), "%s %02x %s/%s/%s",
 					r_str_rwx_i (xwr2rwx (prev_info.max_protection)), i,
@@ -2193,7 +2193,8 @@ static RList *darwin_dbg_maps (RDebug *dbg) {
 					prev_info.reserved ? "reserved" : "not-reserved");
 			// TODO: MAPS can have min and max protection rules
 			// :: prev_info.max_protection
-			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size, prev_info.protection, 0);
+			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size,
+				xwr2rwx (prev_info.protection), 0);
 			if (mr == NULL) {
 				eprintf ("Cannot create r_debug_map_new\n");
 				break;
