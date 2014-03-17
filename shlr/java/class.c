@@ -726,7 +726,7 @@ R_API int r_bin_java_extract_reference_name (const char * input_str, char ** ref
 	return len+2;
 }
 
-R_API void r_bin_java_print_prototypes (RBinJavaObj *bin) {
+R_API void UNUSED_FUNCTION(r_bin_java_print_prototypes) (RBinJavaObj *bin) {
 	RList * the_list = r_bin_java_get_method_definitions (bin);
 	char * str = NULL;
 	RListIter *iter;
@@ -6529,7 +6529,7 @@ R_API char * r_bin_java_print_unknown_cp_stringify(RBinJavaCPTypeObj* obj) {
 	return value;
 }
 
-static void r_bin_java_stack_frame_default_free (RBinJavaStackMapFrame *stack_frame) {
+static void UNUSED_FUNCTION(r_bin_java_stack_frame_default_free) (RBinJavaStackMapFrame *stack_frame) {
 	if(stack_frame) {
 		free (stack_frame->metas);
 		free (stack_frame);

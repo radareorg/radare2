@@ -4,7 +4,7 @@ CFLAGS=-I../../include -Wall -shared -fPIC ${LDFLAGS_LIB} ${LDFLAGS_LINKPATH}..
 # XXX
 CFLAGS+=-DLIL_ENDIAN=1
 CFLAGS+=-L../../util -lr_util -L../../reg -lr_reg -L.. -lr_core
-CFLAGS+=-L../../db -lr_db -L../../cons -lr_cons
+CFLAGS+=-L../../db -lr_db -L../../cons -lr_cons -L../../bin -lr_bin
 #CFLAGS+=-L../../anal -lr_anal -L../../core -lr_core
 LDFLAGS+=${LINK}
 

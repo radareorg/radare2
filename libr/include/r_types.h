@@ -12,6 +12,12 @@
 #undef mips
 #define mips mips
 
+#ifdef __GNUC__
+#  define UNUSED_FUNCTION(x) __attribute__((__unused__)) UNUSED_ ## x
+#else
+#  define UNUSED_FUNCTION(x) UNUSED_ ## x
+#endif
+
 #ifdef __HAIKU__
 # define __UNIX__ 1
 #endif

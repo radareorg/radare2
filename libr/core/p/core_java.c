@@ -7,8 +7,14 @@
 #include <r_cons.h>
 #include <string.h>
 
-#include "../../../shlr/java/code.h"
-#include "../../../shlr/java/class.h"
+#undef R_API
+#define R_API static
+#include "../../../shlr/java/ops.c"
+#include "../../../shlr/java/code.c"
+#include "../../../shlr/java/class.c"
+//#include "../../../shlr/java/class.h"
+#undef R_API
+#define R_API
 
 #define DO_THE_DBG 0
 #define IFDBG if (DO_THE_DBG)

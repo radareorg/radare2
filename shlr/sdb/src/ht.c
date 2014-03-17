@@ -94,7 +94,7 @@ static const struct {
  */
 SdbHashEntry* ht_search(SdbHash *ht, ut32 hash) {
 	ut32 double_hash, hash_address = hash % ht->size;
-	if (ht->entries)
+	if (ht && ht->entries)
 	do {
 		SdbHashEntry *entry = ht->table + hash_address;
 		if (entry_is_free (entry))
@@ -163,7 +163,9 @@ void ht_free(SdbHash *ht) {
 }
 
 void *ht_lookup(SdbHash *ht, ut32 hash) {
-	SdbHashEntry *entry = ht_search (ht, hash);
+	SdbHashEntry *entry;
+	if (!ht->list->head) return NULL;
+	entry = ht_search (ht, hash);
 	return entry? entry->data : NULL;
 }
 
