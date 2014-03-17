@@ -2359,6 +2359,7 @@ static int javasm_init(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv) {
 		for (i = 0; i < bin->fields_count; i++, bin->field_idx++) {
 			field = r_bin_java_read_next_field (bin, R_BUF_CUR);
 			if (obj) {
+				field->size = bin->b->cur - field->file_offset;
 				r_list_append (bin->fields_list, field);
 				IFDBG r_bin_java_print_field_summary(field);
 			}else{
@@ -2379,6 +2380,7 @@ static int javasm_init(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv) {
 	if (bin->methods_count > 0) {
 		for (i=0; i<bin->methods_count; i++, bin->method_idx++) {
 			method = r_bin_java_read_next_method (bin, R_BUF_CUR);
+			method->size = bin->b->cur - method->file_offset;
 			if (method) {
 				r_list_append (bin->methods_list, method);
 			}
@@ -2606,8 +2608,14 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		//strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD){
 			strncpy (sym->type, "FUNC", R_BIN_SIZEOF_STRINGS);
+			sym->offset = r_bin_java_get_method_code_offset (fm_type);
+			sym->rva = r_bin_java_get_method_code_offset (fm_type) + baddr;
+			sym->size = r_bin_java_get_method_code_size (fm_type);
 		} else{
 			strncpy (sym->type, "FIELD", R_BIN_SIZEOF_STRINGS);
+			sym->offset = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
+			sym->rva = fm_type->file_offset + baddr;
+			sym->size = fm_type->size;
 		}
 
 		if (r_bin_java_is_fm_type_protected (fm_type)) {
@@ -2624,10 +2632,7 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 			sym->classname = NULL;//strdup ("NONE");
 		}
 
-		sym->offset = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
-		sym->rva = fm_type->file_offset + baddr;
 		sym->ordinal = fm_type->metas->ord;
-		sym->size = r_bin_java_get_method_code_size (fm_type);
 		sym->visibility = fm_type->flags;
 		if (fm_type->flags_str){
 			strncpy (sym->visibility_str, fm_type->flags_str, R_BIN_SIZEOF_STRINGS);
@@ -2636,6 +2641,46 @@ R_API RBinSymbol* r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 	return sym;
 }
 
+R_API RBinSymbol* r_bin_java_create_new_symbol_from_method_meta(RBinJavaField *fm_type, ut64 baddr) {
+	RBinSymbol *sym = r_bin_java_allocate_symbol ();
+	if (fm_type == NULL || fm_type->field_ref_cp_obj == NULL || fm_type->field_ref_cp_obj == &R_BIN_JAVA_NULL_TYPE) {
+		free (sym);
+		sym = NULL;
+	}
+	if (sym) {
+		//ut32 new_name_len = strlen (fm_type->name) + strlen ("_meta") + 1;
+		//char *new_name = malloc (new_name_len);
+		snprintf (sym->name, R_BIN_SIZEOF_STRINGS, "mmeta_%s", fm_type->name);
+		//strncpy (sym->name, fm_type->name, R_BIN_SIZEOF_STRINGS);
+		//strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
+		strncpy (sym->type, "FUNC_META", R_BIN_SIZEOF_STRINGS);
+
+		if (r_bin_java_is_fm_type_protected (fm_type)) {
+			strncpy (sym->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+		} else if (r_bin_java_is_fm_type_private (fm_type)) {
+			strncpy (sym->bind, "LOCAL", R_BIN_SIZEOF_STRINGS);
+		} else if (r_bin_java_is_fm_type_protected (fm_type)) {
+			strncpy (sym->bind, "GLOBAL", R_BIN_SIZEOF_STRINGS);
+		}
+		strncpy (sym->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
+
+		if (fm_type->class_name) {
+			sym->classname = strdup (fm_type->class_name);
+		} else {
+			sym->classname = NULL;//strdup ("NONE");
+		}
+
+		sym->offset = fm_type->file_offset;//r_bin_java_get_method_code_offset (fm_type);
+		sym->rva = fm_type->file_offset + baddr;
+		sym->ordinal = fm_type->metas->ord;
+		sym->size = fm_type->size;
+		sym->visibility = fm_type->flags;
+		if (fm_type->flags_str){
+			strncpy (sym->visibility_str, fm_type->flags_str, R_BIN_SIZEOF_STRINGS);
+		}
+	}
+	return sym;
+}
 R_API RBinSymbol* r_bin_java_create_new_symbol_from_ref(RBinJavaCPTypeObj *obj, ut64 baddr) {
 	RBinSymbol *sym = r_bin_java_allocate_symbol ();
 	char *class_name, *name, *type_name;
@@ -2932,6 +2977,8 @@ R_API const RList* r_bin_java_get_methods_list(RBinJavaObj* bin) {
 	return NULL;
 }
 
+
+
 RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	RListIter *iter = NULL, *iter_tmp=NULL;
 	RList *symbols = r_list_new ();
@@ -2941,9 +2988,10 @@ RList* r_bin_java_get_symbols(RBinJavaObj* bin) {
 	sym = NULL;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
 		sym = r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr);
-		if(sym) {
-			r_list_append (symbols, (void *) sym);
-		}
+		if(sym) r_list_append (symbols, (void *) sym);
+
+		sym = r_bin_java_create_new_symbol_from_method_meta (fm_type, bin->loadaddr);
+		if(sym) r_list_append (symbols, (void *) sym);
 	}
 	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
 		sym = r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr);
@@ -8383,4 +8431,47 @@ R_API ConstJavaValue * r_bin_java_resolve_to_const_value(RBinJavaObj *BIN_OBJ, i
 
 	}
 	return result;
+}
+
+
+R_API char * r_bin_java_get_method_name ( RBinJavaObj *bin_obj, ut32 idx){
+	char *name = NULL;
+	if (idx < r_list_length (bin_obj->methods_list) ) {
+		RBinJavaField *fm_type = r_list_get_n (bin_obj->methods_list, idx);
+		name = strdup (fm_type->name);
+	}
+	return name;
+}
+R_API int r_bin_java_print_method_idx_summary ( RBinJavaObj *bin_obj, ut32 idx) {
+	int res = R_FALSE;
+	if (idx < r_list_length (bin_obj->methods_list) ) {
+		RBinJavaField *fm_type = r_list_get_n (bin_obj->methods_list, idx);
+		r_bin_java_print_method_summary (fm_type);
+		res = R_TRUE;
+	}
+	return res;
+}
+R_API ut32 r_bin_java_get_method_count ( RBinJavaObj *bin_obj) {
+	return r_list_length (bin_obj->methods_list);
+}
+
+R_API char * r_bin_java_get_field_name ( RBinJavaObj *bin_obj, ut32 idx){
+	char *name = NULL;
+	if (idx < r_list_length (bin_obj->fields_list) ) {
+		RBinJavaField *fm_type = r_list_get_n (bin_obj->fields_list, idx);
+		name = strdup (fm_type->name);
+	}
+	return name;
+}
+R_API int r_bin_java_print_field_idx_summary ( RBinJavaObj *bin_obj, ut32 idx) {
+	int res = R_FALSE;
+	if (idx < r_list_length (bin_obj->fields_list) ) {
+		RBinJavaField *fm_type = r_list_get_n (bin_obj->fields_list, idx);
+		r_bin_java_print_field_summary (fm_type);
+		res = R_TRUE;
+	}
+	return res;
+}
+R_API ut32 r_bin_java_get_field_count ( RBinJavaObj *bin_obj) {
+	return r_list_length (bin_obj->fields_list);
 }

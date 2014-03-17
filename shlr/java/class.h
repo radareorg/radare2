@@ -981,4 +981,12 @@ R_API int r_bin_java_is_method_protected ( RBinJavaObj *bin_obj, ut64 addr);
 R_API int r_bin_java_is_method_private ( RBinJavaObj *bin_obj, ut64 addr);
 R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(const RBinJavaField *method);
 
+R_API char * r_bin_java_get_method_name ( RBinJavaObj *bin_obj, ut32 idx);
+R_API int r_bin_java_print_method_idx_summary ( RBinJavaObj *bin_obj, ut32 idx);
+R_API ut32 r_bin_java_get_method_count ( RBinJavaObj *bin_obj);
+
+R_API char * r_bin_java_get_field_name ( RBinJavaObj *bin_obj, ut32 idx);
+R_API int r_bin_java_print_field_idx_summary ( RBinJavaObj *bin_obj, ut32 idx);
+R_API ut32 r_bin_java_get_field_count ( RBinJavaObj *bin_obj);
+
 #endif

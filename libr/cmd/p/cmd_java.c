@@ -39,6 +39,14 @@ static int r_cmd_java_get_all_access_flags_value (const char *cmd);
 static int r_cmd_java_set_acc_flags (RCore *core, ut64 addr, ut16 num_acc_flag);
 
 
+static int r_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_print_field_count (RBinJavaObj *obj);
+static int r_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_print_method_summary (RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_print_method_count (RBinJavaObj *obj);
+static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx);
+
+
 static RBinJavaObj * r_cmd_java_get_bin_obj(RAnal *anal);
 static RList * r_cmd_java_get_bin_obj_list(RAnal *anal);
 static ut64 r_cmd_java_get_input_num_value(RCore *core, const char *input_value);
@@ -53,6 +61,9 @@ static int r_cmd_java_handle_resolve_cp (RCore * core, const char * cmd);
 static int r_cmd_java_handle_calc_flags (RCore * core, const char * cmd);
 static int r_cmd_java_handle_flags_str (RCore *core, const char *cmd);
 static int r_cmd_java_handle_flags_str_at (RCore *core, const char *cmd);
+static int r_cmd_java_handle_field_info (RCore *core, const char *cmd);
+static int r_cmd_java_handle_method_info (RCore *core, const char *cmd);
+
 
 #define SET_ACC_FLAGS "set_flags"
 #define SET_ACC_FLAGS_ARGS "[<addr> <c | m | f> <num_flag_val>] | [<addr> < c | m | f> <flag value separated by space> ]"
@@ -78,17 +89,30 @@ static int r_cmd_java_handle_flags_str_at (RCore *core, const char *cmd);
 #define CALC_FLAGS_LEN 10
 #define CALC_FLAGS_ARG_CNT 2
 
+#define FLAGS_STR_AT "flags_str_at"
+#define FLAGS_STR_AT_ARGS "[<c | f | m> <addr>]"
+#define FLAGS_STR_AT_DESC "output a string value for the given access flags @ addr: c = class, f = field, m = method"
+#define FLAGS_STR_AT_LEN 11
+#define FLAGS_STR_AT_ARG_CNT 2
+
 #define FLAGS_STR "flags_str"
 #define FLAGS_STR_ARGS "[<c | f | m> <acc_flags_value>]"
 #define FLAGS_STR_DESC "output a string value for the given access flags number: c = class, f = field, m = method"
 #define FLAGS_STR_LEN 9
 #define FLAGS_STR_ARG_CNT 2
 
-#define FLAGS_STR_AT "flags_str_at"
-#define FLAGS_STR_AT_ARGS "[<c | f | m> <addr>]"
-#define FLAGS_STR_AT_DESC "output a string value for the given access flags @ addr: c = class, f = field, m = method"
-#define FLAGS_STR_AT_LEN 11
-#define FLAGS_STR_AT_ARG_CNT 2
+#define METHOD_INFO "m_info"
+#define METHOD_INFO_ARGS "[<[c | <s idx> | <n idx>>]"
+#define METHOD_INFO_DESC "output method information at index : c = count, s = dump of all meta-data, n = method"
+#define METHOD_INFO_LEN 6
+#define METHOD_INFO_ARG_CNT 2
+
+
+#define FIELD_INFO "f_info"
+#define FIELD_INFO_ARGS "[<[c | <s idx> | <n idx>>]"
+#define FIELD_INFO_DESC "output method information at index : c = count, s = dump of all meta-data, n = method"
+#define FIELD_INFO_LEN 6
+#define FIELD_INFO_ARG_CNT 2
 
 #define HELP "help"
 #define HELP_DESC "displays this message"
@@ -115,6 +139,8 @@ static RCmdJavaCmd JAVA_CMDS[] = {
 	{CALC_FLAGS, CALC_FLAGS_ARGS, CALC_FLAGS_DESC, CALC_FLAGS_ARG_CNT, CALC_FLAGS_LEN, r_cmd_java_handle_calc_flags},
 	{FLAGS_STR_AT, FLAGS_STR_AT_ARGS, FLAGS_STR_AT_DESC, FLAGS_STR_AT_ARG_CNT, FLAGS_STR_AT_LEN, r_cmd_java_handle_flags_str_at},
 	{FLAGS_STR, FLAGS_STR_ARGS, FLAGS_STR_DESC, FLAGS_STR_ARG_CNT, FLAGS_STR_LEN, r_cmd_java_handle_flags_str},
+	{METHOD_INFO, METHOD_INFO_ARGS, METHOD_INFO_DESC, METHOD_INFO_ARG_CNT, METHOD_INFO_LEN, r_cmd_java_handle_method_info},
+	{FIELD_INFO, FIELD_INFO_ARGS, FIELD_INFO_DESC, FIELD_INFO_ARG_CNT, FIELD_INFO_LEN, r_cmd_java_handle_field_info},
 };
 
 enum {
@@ -125,7 +151,9 @@ enum {
 	CALC_FLAGS_IDX = 4,
 	FLAGS_STR_AT_IDX = 5,
 	FLAGS_STR_IDX = 6,
-	END_CMDS = 7,
+	METHOD_INFO_IDX = 7,
+	FIELD_INFO_IDX = 8,
+	END_CMDS = 9,
 };
 
 static const char * r_cmd_java_consumetok (const char *str1, const char b, size_t len) {
@@ -194,6 +222,68 @@ static int r_cmd_java_handle_prototypes (RCore *core, const char *cmd) {
 	}
 	return R_FALSE;
 }
+
+
+static int r_cmd_java_handle_field_info (RCore *core, const char *cmd) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	IFDBG r_cons_printf ("Function call made: %s\n", cmd);
+	ut16 idx = -1;
+
+	if (!obj) {
+		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		return R_TRUE;
+	} else if (!cmd || !*cmd) {
+		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+		r_cmd_java_print_cmd_help (JAVA_CMDS+FIELD_INFO_IDX);
+	}
+
+	if (*(cmd) == 's' || *(cmd) == 'n') {
+		idx = r_cmd_java_get_input_num_value (core, cmd+2);
+	}
+
+	switch (*(cmd)) {
+		case 'c': return r_cmd_java_print_field_count (obj);
+		case 's': return r_cmd_java_print_field_summary (obj, idx);
+		case 'n': return r_cmd_java_print_field_name (obj, idx);
+	}
+	IFDBG r_cons_printf ("Command is (%s)\n", cmd);
+	eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+	r_cmd_java_print_cmd_help (JAVA_CMDS+FIELD_INFO_IDX);
+	return R_FALSE;
+}
+
+
+static int r_cmd_java_handle_method_info (RCore *core, const char *cmd) {
+	RAnal *anal = get_anal (core);
+	RBinJavaObj *obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
+	IFDBG r_cons_printf ("Command is (%s)\n", cmd);
+	ut16 idx = -1;
+
+	if (!obj) {
+		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		return R_TRUE;
+	} else if (!cmd || !*cmd) {
+		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+		r_cmd_java_print_cmd_help (JAVA_CMDS+METHOD_INFO_IDX);
+	}
+
+	if (*(cmd) == 's' || *(cmd) == 'n') {
+		idx = r_cmd_java_get_input_num_value (core, cmd+2);
+	}
+
+	switch (*(cmd)) {
+		case 'c': return r_cmd_java_print_method_count (obj);
+		case 's': return r_cmd_java_print_method_summary (obj, idx);
+		case 'n': return r_cmd_java_print_method_name (obj, idx);
+	}
+
+	IFDBG r_cons_printf ("Command is (%s)\n", cmd);
+	eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+	r_cmd_java_print_cmd_help (JAVA_CMDS+METHOD_INFO_IDX);
+	return R_FALSE;
+}
+
 
 static int r_cmd_java_handle_resolve_cp (RCore *core, const char *cmd) {
 	RAnal *anal = get_anal (core);
@@ -680,10 +770,10 @@ static int r_cmd_java_set_acc_flags (RCore *core, ut64 addr, ut16 num_acc_flag) 
 
 	int res = R_FALSE;
 	ut64 cur_offset = core->offset;
-	//num_acc_flag = R_BIN_JAVA_USHORT (((ut8*) &num_acc_flag), 0);
-	//res = r_core_write_at(core, addr, (const ut8 *)&num_acc_flag, 2);
-	snprintf (cmd_buf, 50, fmt, num_acc_flag, addr);
-	res = r_core_cmd0(core, cmd_buf);
+	num_acc_flag = R_BIN_JAVA_USHORT (((ut8*) &num_acc_flag), 0);
+	res = r_core_write_at(core, addr, (const ut8 *)&num_acc_flag, 2);
+	//snprintf (cmd_buf, 50, fmt, num_acc_flag, addr);
+	//res = r_core_cmd0(core, cmd_buf);
 	res = R_TRUE;
 	IFDBG r_cons_printf ("Executed cmd: %s == %d\n", cmd_buf, res);
 	/*if (cur_offset != core->offset) {
@@ -692,6 +782,61 @@ static int r_cmd_java_set_acc_flags (RCore *core, ut64 addr, ut16 num_acc_flag) 
 	}*/
 	return res;
 }
+
+
+static int r_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx) {
+	int res = r_bin_java_print_field_idx_summary (obj, idx);
+	if (res == R_FALSE) {
+		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		res = R_TRUE;
+	}
+	return res;
+}
+static int r_cmd_java_print_field_count (RBinJavaObj *obj) {
+	ut32 res = r_bin_java_get_field_count (obj);
+	r_cons_printf ("%d\n", res);
+	r_cons_flush();
+	return R_TRUE;
+}
+
+static int r_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx) {
+	char * res = r_bin_java_get_field_name (obj, idx);
+	if (res) {
+		r_cons_printf ("%s\n", res);
+	} else {
+		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+	}
+	free (res);
+	return R_TRUE;
+}
+
+static int r_cmd_java_print_method_summary (RBinJavaObj *obj, ut16 idx) {
+	int res = r_bin_java_print_method_idx_summary (obj, idx);
+	if (res == R_FALSE) {
+		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		res = R_TRUE;
+	}
+	return res;
+}
+
+static int r_cmd_java_print_method_count (RBinJavaObj *obj) {
+	ut32 res = r_bin_java_get_method_count (obj);
+	r_cons_printf ("%d\n", res);
+	r_cons_flush();
+	return R_TRUE;
+}
+
+static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx) {
+	char * res = r_bin_java_get_method_name (obj, idx);
+	if (res) {
+		r_cons_printf ("%s\n", res);
+	} else {
+		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+	}
+	free (res);
+	return R_TRUE;
+}
+
 
 // PLUGIN Definition Info
 struct r_cmd_plugin_t r_cmd_plugin_java = {
