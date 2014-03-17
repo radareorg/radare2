@@ -401,6 +401,9 @@ R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
 R_API void r_core_syscmd_ls(const char *input);
 
+/* PLUGINS */
+extern struct r_cmd_plugin_t r_core_plugin_java;
+
 #endif
 
 #ifdef __cplusplus

@@ -147,7 +147,6 @@ SUBDIRS ./config-user.mk
 	pkgcfg/r_socket.pc
 	pkgcfg/r_debug.pc
 	pkgcfg/r_reg.pc
-	pkgcfg/r_cmd.pc
 	pkgcfg/r_config.pc
 	pkgcfg/r_flags.pc
 	pkgcfg/r_syscall.pc

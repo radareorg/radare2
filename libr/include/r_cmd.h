@@ -97,10 +97,6 @@ R_API int r_cmd_plugin_init(RCmd *cmd);
 R_API int r_cmd_plugin_add(RCmd *cmd, RCmdPlugin *plugin);
 R_API int r_cmd_plugin_check(RCmd *cmd, const char *a0);
 
-/* plugins */
-extern struct r_cmd_plugin_t r_cmd_plugin_java;
-extern struct r_cmd_plugin_t r_cmd_plugin_dummy;
-
 /* r_cmd_macro */
 R_API void r_cmd_macro_init(RCmdMacro *mac);
 R_API int r_cmd_macro_add(RCmdMacro *mac, const char *name);

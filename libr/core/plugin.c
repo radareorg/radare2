@@ -1,14 +1,15 @@
-/* radare - LGPL - Copyright 2010-2012 - pancake */
+/* radare - LGPL - Copyright 2010-2014 - pancake */
 
 /* covardly copied from r_cmd */
 
 #include "../config.h"
+#include <r_core.h>
 #include <r_cmd.h>
 #include <r_list.h>
 #include <stdio.h>
 
 static struct r_cmd_plugin_t *cmd_static_plugins[] = 
-	{ R_CMD_STATIC_PLUGINS };
+	{ R_CORE_STATIC_PLUGINS };
 
 R_API int r_cmd_plugin_add(struct r_cmd_t *cmd, struct r_cmd_plugin_t *plugin) {
 	r_list_append (cmd->plist, plugin);

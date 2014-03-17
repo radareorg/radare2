@@ -1,4 +1,17 @@
 /* radare - LGPL - Copyright 2009-2014 - nibble, pancake */
+#if 0
+* Use RList
+* Support callback for null command (why?)
+* Show help of commands
+  - long commands not yet tested at all
+  - added interface to export command list into an autocompletable
+    argc, argv for dietline
+* r_cmd must provide a nesting char table indexing for commands
+  - this is already partially done
+  - this is pretty similar to r_db
+  - every module can register their own commands
+  - commands can be listed like in a tree
+#endif
 
 #include <r_core.h>
 #include <r_anal.h>

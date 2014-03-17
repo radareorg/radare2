@@ -195,7 +195,7 @@ static void r_cmd_java_print_cmd_help (RCmdJavaCmd *cmd) {
 
 static int r_cmd_java_handle_help (RCore * core, const char * input) {
 	ut32 i = 0;
-	eprintf ("\n%s %s\n", r_cmd_plugin_java.name, r_cmd_plugin_java.desc);
+	eprintf ("\n%s %s\n", r_core_plugin_java.name, r_core_plugin_java.desc);
 	eprintf ("[*] Help Format: Command Arguments\n[+]\t Description\n\n");
 	for (i = 0; i <END_CMDS; i++)
 		r_cmd_java_print_cmd_help (JAVA_CMDS+i);
@@ -766,10 +766,10 @@ static int r_cmd_java_print_method_access_flags_value( const char * flags ){
 
 static int r_cmd_java_set_acc_flags (RCore *core, ut64 addr, ut16 num_acc_flag) {
 	char cmd_buf [50];
-	const char * fmt = "wx %04x @ 0x%"PFMT64x;
+	//const char * fmt = "wx %04x @ 0x%"PFMT64x;
 
 	int res = R_FALSE;
-	ut64 cur_offset = core->offset;
+	//ut64 cur_offset = core->offset;
 	num_acc_flag = R_BIN_JAVA_USHORT (((ut8*) &num_acc_flag), 0);
 	res = r_core_write_at(core, addr, (const ut8 *)&num_acc_flag, 2);
 	//snprintf (cmd_buf, 50, fmt, num_acc_flag, addr);
@@ -839,7 +839,7 @@ static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx) {
 
 
 // PLUGIN Definition Info
-struct r_cmd_plugin_t r_cmd_plugin_java = {
+struct r_cmd_plugin_t r_core_plugin_java = {
 	.name = "java",
 	.desc = "Suite of java commands, java help for more info",
 	.call = r_cmd_java_call,
@@ -848,6 +848,6 @@ struct r_cmd_plugin_t r_cmd_plugin_java = {
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
 	.type = R_LIB_TYPE_CMD,
-	.data = &r_cmd_plugin_java
+	.data = &r_core_plugin_java
 };
 #endif
