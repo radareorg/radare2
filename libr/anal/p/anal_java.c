@@ -874,14 +874,6 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 				default: break;
 			}
 			break;
-		case 'f':
-			switch (*(input+1)) {
-				case 'm': return java_print_method_access_flags_value (input+2);
-				case 'f': return java_print_field_access_flags_value (input+2);
-				case 'c': return java_print_class_access_flags_value (input+2);
-				default: break;
-			}
-			break;
 		case 's':
 			switch (*(input+1)) {
 				case 'f': return java_print_ssa_fcn (anal, input+2);

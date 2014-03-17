@@ -1,6 +1,6 @@
 NAME=r_cmd
 OBJS=cmd.o plugin.o macro.o
-DEPS=r_util r_cons r_core r_anal
+DEPS=r_util r_cons #r_anal r_core
 
 include ../config.mk
 
