@@ -1,17 +1,19 @@
-OBJ_JAVA=core_java.o
-SHARED_JAVA+=../../shlr/java/code.o
-SHARED_JAVA+=../../shlr/java/class.o
-SHARED_JAVA+=../../shlr/java/ops.o
-SHARED2_JAVA=$(addprefix ../,${SHARED_JAVA})
-OBJ_JAVA+=${SHARED2_JAVA}
+CORE_OBJ_JAVA=core_java.o
+
+CORE_SHARED_JAVA=../../shlr/java/code.o
+CORE_SHARED_JAVA+=../../shlr/java/class.o
+CORE_SHARED_JAVA+=../../shlr/java/ops.o
+
+CORE_SHARED2_JAVA=$(addprefix ../,${CORE_SHARED_JAVA})
+#CORE_OBJ_JAVA+=${CORE_SHARED2_JAVA}
 #SHARED2_JAVA=
 
-STATIC_OBJ+=${OBJ_JAVA}
-TARGET_JAVA=core_java.${EXT_SO}
+STATIC_OBJ+=${CORE_OBJ_JAVA}
+CORE_TARGET_JAVA=core_java.${EXT_SO}
 
-ALL_TARGETS+=${TARGET_JAVA}
+ALL_TARGETS+=${CORE_TARGET_JAVA}
 
-${TARGET_JAVA}: ${OBJ_JAVA}
+${CORE_TARGET_JAVA}: ${CORE_OBJ_JAVA}
 	${CC} $(call libname,core_java) ${CFLAGS} \
 		-o core_java.${EXT_SO} \
-		${OBJ_JAVA} ${SHARED2_JAVA}
+		${CORE_OBJ_JAVA} ${CORE_SHARED2_JAVA}
