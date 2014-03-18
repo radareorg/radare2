@@ -1,8 +1,8 @@
 CORE_OBJ_JAVA=core_java.o
 
-CORE_SHARED_JAVA=../../shlr/java/code.o
-CORE_SHARED_JAVA+=../../shlr/java/class.o
-CORE_SHARED_JAVA+=../../shlr/java/ops.o
+#CORE_SHARED_JAVA=../../shlr/java/code.o
+#CORE_SHARED_JAVA+=../../shlr/java/class.o
+#CORE_SHARED_JAVA+=../../shlr/java/ops.o
 
 CORE_SHARED2_JAVA=$(addprefix ../,${CORE_SHARED_JAVA})
 CORE_OBJ_JAVA+=${CORE_SHARED2_JAVA}

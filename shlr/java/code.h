@@ -13,10 +13,10 @@ typedef struct java_op {
 
 extern struct java_op JAVA_OPS[];
 
-int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen);
-unsigned short read_short(FILE *fd);
+R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen);
+R_IPI unsigned short read_short(FILE *fd);
 
-int java_classdump(const char *file, int verbose);
+R_IPI int java_classdump(const char *file, int verbose);
 
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, char *output, int len);
 R_API int r_java_assemble(ut8 *bytes, const char *string);

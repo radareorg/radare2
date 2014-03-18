@@ -58,7 +58,7 @@ static ut64 is_pointer(RIOBind *iob, const ut8 *buf, int endian, int size) {
 	// optimization to ignore very low and very high pointers
 	// this makes disasm 5x faster, but can result in some false positives
 	if (n<0x1000) return 0; // probably wrong
-	if (n>0xffffffffffff) return 0; // probably wrong
+	if (n>0xffffffffffffLL) return 0; // probably wrong
 
 	ret = iob->read_at (iob->io, n, buf2, size);
 	if (ret != size) return 0;

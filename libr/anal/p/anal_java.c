@@ -10,9 +10,17 @@
 #include <r_anal_ex.h>
 #include <r_cons.h>
 
+#undef R_API
+#define R_API static
+#undef R_IPI
+#define R_IPI static
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/class.h"
 //#include "../../../shlr/java/ssa_java.h"
+#undef R_API
+#define R_API 
+#undef R_IPI
+#define R_IPI
 
 #define IFDBG  if(0)
 #define IFINT  if(0)

@@ -117,6 +117,10 @@ typedef void (*PrintfCallback)(const char *str, ...);
 #define CTI(x,y,z) (*((size_t*)(CTA(x,y,z))))
 #define CTS(x,y,z,t,v) {t* _=(t*)CTA(x,y,z);*_=v;}
 
+#ifdef R_IPI
+#undef R_IPI
+#endif
+
 #ifdef R_API
 #undef R_API
 #endif

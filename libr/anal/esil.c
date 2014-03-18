@@ -86,6 +86,7 @@ static int r_anal_esil (RAnalEsil *c, const char *str) {
 	return c->iterate (c, buf, tkns);
 }
 
+#if 0
 static int iterate (RAnalEsil *c, char *buf, int *tkns) {
 	char *str;
 	int i, type;
@@ -101,6 +102,7 @@ static int iterate (RAnalEsil *c, char *buf, int *tkns) {
 	}
 	return 0;
 }
+#endif
 
 #define TOKEN_IS(x,y,z) (x[i]==y && !strcmp (x[i+1]==z))
 #define TOKEN_GET(x,y) x=tkns[i]; y=buf+tkns[i+1]
@@ -195,7 +197,7 @@ eprintf (";; -> this means that we have to resolve before accessing memory %d\n"
 static int emulate (RAnalEsil *c, char *buf, int *tkns) {
 	ut64 num = 0;
 	char *op = NULL;
-	char *str;
+	char *str = NULL;
 	int i, type;
 	c->opstack = r_list_new ();
 	c->stack = r_list_new ();

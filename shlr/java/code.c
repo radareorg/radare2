@@ -31,7 +31,7 @@ typedef struct current_table_switch_t {
 } CurrentTableSwitch;
 
 static CurrentTableSwitch SWITCH_OP;
-ut64 BYTES_CONSUMED = 0;
+static ut64 BYTES_CONSUMED = 0;
 //static RBinJavaObj *BIN_OBJ = NULL;
 
 static void init_switch_op () {
@@ -74,7 +74,7 @@ static int handle_switch_op (ut64 addr, const ut8 * bytes, char *output, int out
 }
 
 
-int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
+R_IPI int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, char *output, int outlen) {
 	char *arg = NULL; //(char *) malloc (1024);
 
 	ut32 val_one = 0,
