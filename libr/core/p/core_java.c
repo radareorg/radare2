@@ -53,10 +53,11 @@ static int r_cmd_java_set_acc_flags (RCore *core, ut64 addr, ut16 num_acc_flag);
 static int r_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx);
 static int r_cmd_java_print_field_count (RBinJavaObj *obj);
 static int r_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx);
+static int r_cmd_java_print_field_num_name (RBinJavaObj *obj);
 static int r_cmd_java_print_method_summary (RBinJavaObj *obj, ut16 idx);
 static int r_cmd_java_print_method_count (RBinJavaObj *obj);
 static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx);
-
+static int r_cmd_java_print_method_num_name (RBinJavaObj *obj);
 
 static RBinJavaObj * r_cmd_java_get_bin_obj(RAnal *anal);
 static RList * r_cmd_java_get_bin_obj_list(RAnal *anal);
@@ -113,15 +114,15 @@ static int r_cmd_java_handle_method_info (RCore *core, const char *cmd);
 #define FLAGS_STR_ARG_CNT 2
 
 #define METHOD_INFO "m_info"
-#define METHOD_INFO_ARGS "[<[c | <s idx> | <n idx>>]"
-#define METHOD_INFO_DESC "output method information at index : c = count, s = dump of all meta-data, n = method"
+#define METHOD_INFO_ARGS "[<[ p | c | <s idx> | <n idx>>]"
+#define METHOD_INFO_DESC "output method information at index : c = dump methods and ord , s = dump of all meta-data, n = method"
 #define METHOD_INFO_LEN 6
 #define METHOD_INFO_ARG_CNT 2
 
 
 #define FIELD_INFO "f_info"
-#define FIELD_INFO_ARGS "[<[c | <s idx> | <n idx>>]"
-#define FIELD_INFO_DESC "output method information at index : c = count, s = dump of all meta-data, n = method"
+#define FIELD_INFO_ARGS "[<[p |c | <s idx> | <n idx>>]"
+#define FIELD_INFO_DESC "output method information at index : c = dump field and ord , s = dump of all meta-data, n = method"
 #define FIELD_INFO_LEN 6
 #define FIELD_INFO_ARG_CNT 2
 
@@ -254,7 +255,7 @@ static int r_cmd_java_handle_field_info (RCore *core, const char *cmd) {
 	}
 
 	switch (*(cmd)) {
-		case 'c': return r_cmd_java_print_field_count (obj);
+		case 'c': return r_cmd_java_print_field_num_name (obj);
 		case 's': return r_cmd_java_print_field_summary (obj, idx);
 		case 'n': return r_cmd_java_print_field_name (obj, idx);
 	}
@@ -284,7 +285,7 @@ static int r_cmd_java_handle_method_info (RCore *core, const char *cmd) {
 	}
 
 	switch (*(cmd)) {
-		case 'c': return r_cmd_java_print_method_count (obj);
+		case 'c': return r_cmd_java_print_method_num_name (obj);
 		case 's': return r_cmd_java_print_method_summary (obj, idx);
 		case 'n': return r_cmd_java_print_method_name (obj, idx);
 	}
@@ -793,8 +794,24 @@ static int r_cmd_java_set_acc_flags (RCore *core, ut64 addr, ut16 num_acc_flag) 
 	}*/
 	return res;
 }
-
-
+static int r_cmd_java_print_field_num_name (RBinJavaObj *obj) {
+	RList * the_list = r_bin_java_get_field_num_name (obj);
+	char * str;
+	RListIter *iter = NULL;
+	r_list_foreach (the_list, iter, str) {
+		r_cons_printf ("%s\n", str);
+	}
+	return R_TRUE;
+}
+static int r_cmd_java_print_method_num_name (RBinJavaObj *obj) {
+	RList * the_list = r_bin_java_get_method_num_name (obj);
+	char * str;
+	RListIter *iter = NULL;
+	r_list_foreach (the_list, iter, str) {
+		r_cons_printf ("%s\n", str);
+	}
+	return R_TRUE;
+}
 static int r_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx) {
 	int res = r_bin_java_print_field_idx_summary (obj, idx);
 	if (res == R_FALSE) {

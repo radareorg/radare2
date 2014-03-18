@@ -980,9 +980,11 @@ R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(const RBinJavaField
 R_API char * r_bin_java_get_method_name ( RBinJavaObj *bin_obj, ut32 idx);
 R_API int r_bin_java_print_method_idx_summary ( RBinJavaObj *bin_obj, ut32 idx);
 R_API ut32 r_bin_java_get_method_count ( RBinJavaObj *bin_obj);
+R_API RList * r_bin_java_get_method_num_name ( RBinJavaObj *bin_obj);
 
 R_API char * r_bin_java_get_field_name ( RBinJavaObj *bin_obj, ut32 idx);
 R_API int r_bin_java_print_field_idx_summary ( RBinJavaObj *bin_obj, ut32 idx);
 R_API ut32 r_bin_java_get_field_count ( RBinJavaObj *bin_obj);
+R_API RList * r_bin_java_get_field_num_name ( RBinJavaObj *bin_obj);
 
 #endif
