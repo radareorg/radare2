@@ -24,13 +24,6 @@
 //#define R_BIN_JAVA_DOUBLE(x,y) ((double)RBIN_JAVA_LONG(x,y))
 //#define R_BIN_JAVA_SWAPUSHORT(x) ((ut16)((x<<8)|((x>>8)&0x00FF)))
 
-// Intentionally not R_API
-#ifndef R_IPI
-#define R_IPI static
-#endif
-R_IPI void copy_type_info_to_stack_frame_list(RList *type_list, RList *sf_list);
-R_IPI void copy_type_info_to_stack_frame_list_up_to_idx(RList *type_list, RList *sf_list, ut64 idx);
-
 
 #define R_BIN_JAVA_DOUBLE(x,y) rbin_java_raw_to_double(x, y)
 

@@ -1386,6 +1386,9 @@ R_API char * r_bin_java_build_obj_key (RBinJavaObj *bin) {
 	return jvcname;
 }
 
+#ifndef R_IPI
+#define R_IPI static
+#endif
 R_IPI int sdb_iterate_build_list(void *user, const char *k, const char *v) {
 	RList *bin_objs_list = (RList *)  user;
 	size_t value = (size_t) sdb_atoi (v);
@@ -2273,7 +2276,7 @@ R_API RBinJavaClass2* r_bin_java_read_class_file2(RBinJavaObj *bin, ut64 offset)
 static int javasm_init(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv) {
 	RBinJavaField *method, *field;
 	RBinJavaInterfaceInfo *interfaces_obj;
-	RBinJavaCPTypeObj *obj;
+	RBinJavaCPTypeObj *obj = NULL;
 	int i, ord;
 	/* Initialize structs */
 	R_BIN_JAVA_GLOBAL_BIN = bin;

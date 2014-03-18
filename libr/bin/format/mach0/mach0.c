@@ -690,7 +690,7 @@ struct r_bin_mach0_reloc_t* MACH0_(r_bin_mach0_get_relocs)(struct MACH0_(r_bin_m
 	int i = 0;
 
 	if (bin->dyld_info) {
-		ut8 *opcodes, *p, *end, type, rel_type;
+		ut8 *opcodes, *p, *end, type = 0, rel_type = 0;
 		int lib_ord, seg_idx = -1, sym_ord = -1, wordsize;
 		size_t j, count, skip, bind_size, lazy_size;
 		st64 addend = 0;

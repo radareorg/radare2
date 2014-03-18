@@ -3,7 +3,7 @@ include ../../mk/${COMPILER}.mk
 SHLR?=$(shell pwd)/..
 
 #CFLAGS+=-g -ggdb -fPIC
-CFLAGS+=-fPIC -g
+CFLAGS+=-g
 CFLAGS+=-I../../libr/include
 LDFLAGS+=-L../../libr/util
 LDFLAGS+=-L../../libr/sdb

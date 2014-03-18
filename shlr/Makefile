@@ -122,7 +122,8 @@ capstone:
 	$(MAKE) -j$(MAKE_JOBS) capstone-build
 
 capstone-build: capstone
-	cd capstone && CFLAGS="-Dmips=mips" $(CFLAGS) \
+	#cd capstone && CFLAGS="-Dmips=mips" $(CFLAGS) 
+	cd capstone && $(CFLAGS) \
 		$(MAKE) -j$(MAKE_JOBS) libcapstone.a AR_EXT=a CC="$(CC)" 
 
 capstone-sync:

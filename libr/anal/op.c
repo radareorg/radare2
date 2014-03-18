@@ -310,8 +310,8 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		break;
 	case R_ANAL_OP_TYPE_MOD:
 		if (a1 == NULL || !strcmp (a0, a1))
-			snprintf (ret, sizeof (ret), "%s \%= %s", r0, a0);
-		else snprintf (ret, sizeof (ret), "%s = %s \% %s", r0, a0, a1);
+			snprintf (ret, sizeof (ret), "%s %%= %s", r0, a0);
+		else snprintf (ret, sizeof (ret), "%s = %s %% %s", r0, a0, a1);
 		break;
 	case R_ANAL_OP_TYPE_XCHG:
 		if (a1 == NULL || !strcmp (a0, a1))

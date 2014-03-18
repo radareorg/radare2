@@ -14,7 +14,8 @@ all: plugins
 
 doclean:
 	@cd d && ${MAKE} clean
-	@cd p && ${MAKE} all
+	@cd p && ${MAKE} clean
+	rm -f `find arch/| grep '\.o$$'`
 
 plugins: ${LIBSO} ${LIBAR}
 	@cd d && ${MAKE}
