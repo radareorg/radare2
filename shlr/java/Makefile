@@ -16,4 +16,4 @@ out: ${OBJS} main.o
 		-lr_util ${SHLR}/sdb/src/libsdb.a -o out 
 
 clean:
-	rm -f ${OBJS} a.out
+	rm -f ${OBJS} main.o a.out

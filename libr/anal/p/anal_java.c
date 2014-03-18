@@ -14,8 +14,8 @@
 #define R_API static
 #undef R_IPI
 #define R_IPI static
-#include "../../../shlr/java/code.h"
-#include "../../../shlr/java/class.h"
+#include "../../../shlr/java/code.c"
+#include "../../../shlr/java/class.c"
 //#include "../../../shlr/java/ssa_java.h"
 #undef R_API
 #define R_API 
