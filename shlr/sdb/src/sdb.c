@@ -334,14 +334,11 @@ SDB_API int sdb_foreach (Sdb* s, SdbForeachCallback cb, void *user) {
 			if (!cb (user, kv->key, kv->value))
 				return 0;
 		} else {
-			if (!cb (user, k, v)) {
-				free (k);
-				free (v);
-				return 0;
-			}
+			int ret = cb (user, k, v);
+			free (k);
+			free (v);
+			if (!ret) return 0;
 		}
-		free (k);
-		free (v);
 	}
 	ls_foreach (s->ht->list, iter, kv) {
 		if (!kv->value || !*kv->value)

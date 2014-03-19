@@ -119,6 +119,8 @@ static int dbdiff (const char *a, const char *b) {
 	}
 	sdb_free (A);
 	sdb_free (B);
+	free (k);
+	free (v);
 	return n;
 }
 

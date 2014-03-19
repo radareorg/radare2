@@ -123,6 +123,7 @@ next_quote:
 			*eq++ = 0;
 			if (bufset)
 				free (buf);
+			free (out);
 			return NULL;
 		}
 		next = strchr (quot, ';');
@@ -138,6 +139,7 @@ next_quote:
 		s = sdb_ns (s, cmd);
 		if (!s) {
 			eprintf ("Cant find namespace %s\n", cmd);
+			free (out);
 			return NULL;
 		}
 		cmd = arroba+1;
@@ -222,7 +224,7 @@ next_quote:
 				}
 			}
 		}
-		return buf;
+		out_concat (buf);
 	} else if (*cmd == '[') {
 		// [?] - count elements of array
 		if (cmd[1]=='?') {
