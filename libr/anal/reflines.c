@@ -208,7 +208,7 @@ R_API char* r_anal_reflines_str(void *core, ut64 addr, int opts) {
 			if (addr < ref->from && addr > ref->to) {
 				if (ch=='-' || ch=='=')
 					r_buf_append_bytes (b, (const ut8*)&ch, 1);
-				else r_buf_append_string (b, "!"); // line going up
+				else r_buf_append_string (b, "|"); // line going up
 			} else r_buf_append_bytes (b, (const ut8*)&ch, 1);
 		}
 		if (wide) {
