@@ -5,7 +5,7 @@ radiff2 \- unified binary diffing utility
 .Pp
 .Sh SYNOPSIS
 .Nm radiff2
-.Op Fl cCOdrspvh
+.Op Fl abcCOdrspvh
 .Op Fl t Ar 0-100
 .Op Fl g Ar sym
 .Ar file1
@@ -14,6 +14,10 @@ radiff2 \- unified binary diffing utility
 radiff2 implements many binary diffing algorithms for data and code.
 .Pp
 .Bl -tag -width Fl
+.It Fl a
+Specify architecture (x86, arm, ..)
+.It Fl b
+Select register size bits for given arch
 .It Fl c
 Count number of differences.
 .It Fl C

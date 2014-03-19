@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013 - pancake */
+/* radare - LGPL - Copyright 2013-2014 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -95,7 +95,7 @@ static RList* entries(RBinFile *arch) {
 
 struct r_bin_plugin_t r_bin_plugin_bios = {
 	.name = "bios",
-	.desc = "filesystem bin plugin",
+	.desc = "BIOS bin plugin",
 	.license = "LGPL",
 	.init = NULL,
 	.fini = NULL,
