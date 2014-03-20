@@ -244,27 +244,16 @@ static int cmd_yank(void *data, const char *input) {
 		r_core_yank_paste (core, n, 0);
 		break;
 	case 'x':
-		r_print_hexdump (core->print, 0LL, core->yank_buf, core->yank_len, 16, 4);
+		r_core_yank_hexdump (core, r_num_math (core->num, input+1));
 		break;
 	case 'p':
-		r_cons_memcat ((const char*)core->yank_buf, core->yank_len);
-		r_cons_newline ();
+		r_core_yank_cat (core, r_num_math (core->num, input+1));
 		break;
 	case 't':
-		{ /* hacky implementation */
-			char *arg = strdup (input+1);
-			r_core_yank_to (core, arg);
-			free (arg);
-		}
+		r_core_yank_to (core, input+1);
 		break;
 	case '\0':
-		if (core->yank_buf) {
-			r_cons_printf ("0x%08"PFMT64x" %d ",
-				core->yank_off, core->yank_len);
-			for (i=0; i<core->yank_len; i++)
-				r_cons_printf ("%02x", core->yank_buf[i]);
-			r_cons_newline ();
-		} else eprintf ("No buffer yanked already\n");
+		r_core_yank_dump (core, r_num_math (core->num, input+1));
 		break;
 	default:
 		r_cons_printf (

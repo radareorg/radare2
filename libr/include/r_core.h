@@ -100,8 +100,7 @@ typedef struct r_core_t {
 	ut8 *oobi; /* out of band input ; used for multiline or file input */
 	int ffio;
 	int oobi_len;
-	ut8 *yank_buf;
-	int yank_len;
+	RBuffer *yank_buf;
 	ut64 yank_off;
 	int tmpseek;
 	boolt vmode;
@@ -226,8 +225,14 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op);
 
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);
-R_API int r_core_yank_set (RCore *core, const char *str);
+R_API int r_core_yank_set (RCore *core, ut64 addr, const char *buf, ut32 len);  // set yank buffer bytes
+R_API int r_core_yank_set_str (RCore *core, ut64 addr, const char *buf, ut32 len); // Null terminate the bytes
 R_API int r_core_yank_to(RCore *core, const char *arg);
+R_API int r_core_yank_dump (RCore *core, ut64 pos);
+R_API int r_core_yank_hexdump (RCore *core, ut64 pos);
+R_API int r_core_yank_cat (RCore *core, ut64 pos);
+R_API int r_core_yank_hud_file (RCore *core, const char *input);
+R_API int r_core_yank_hud_path (RCore *core, const char *input, int dir);
 
 R_API int r_core_loadlibs(RCore *core);
 // FIXME: change (void *user) -> (RCore *core)

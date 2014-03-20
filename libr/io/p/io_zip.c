@@ -55,6 +55,7 @@ typedef struct r_io_zfo_t {
 	RIO * io_backref;
 } RIOZipFileObj;
 
+static int r_io_zip_realloc_buf(RIOZipFileObj *zfo, int count);
 int r_io_zip_slurp_file(RIOZipFileObj *zfo);
 //static int r_io_zip_check_file(const char *file);
 int r_io_zip_open_zip_file(RIOZipFileObj * zfo);
@@ -444,12 +445,30 @@ static int r_io_zip_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return r_buf_read_at (zfo->b, io->off, buf, count);
 }
 
+static int r_io_zip_realloc_buf(RIOZipFileObj *zfo, int count) {
+	int res = R_FALSE;
+	if (zfo->b->cur + count >= zfo->b->length) {
+		RBuffer *buffer = r_buf_new();
+		buffer->buf = malloc (zfo->b->cur + count );
+		buffer->length = zfo->b->cur + count;
+		memcpy (buffer->buf, zfo->b->buf, zfo->b->length);
+		buffer->cur = zfo->b->cur;
+		r_buf_free (zfo->b);
+		zfo->b = buffer;
+		res = R_TRUE;
+	}
+	return res;
+}
+
 static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOZipFileObj *zfo;
 	int ret = 0;
 	if (fd == NULL || fd->data == NULL || buf == NULL)
 		return -1;
 	zfo = fd->data;
+	if (zfo->b->cur + count >= zfo->b->length)
+		r_io_zip_realloc_buf (zfo, count);
+
 	if (zfo->b->length < io->off)
 		io->off = zfo->b->length;
 	zfo->modified = 1;

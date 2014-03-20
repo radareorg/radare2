@@ -54,12 +54,9 @@ static int cmd_help(void *data, const char *input) {
 	case 'y':
 		for (input++; input[0]==' '; input++);
 		if (*input) {
-			free (core->yank_buf);
-			core->yank_buf = (ut8*)strdup (input);
-			core->yank_len = strlen ((const char*)core->yank_buf);
+			r_core_yank_set_str (core, -1, input, strlen (input)+1);
 		} else {
-			r_cons_memcat ((const char *)core->yank_buf, core->yank_len);
-			r_cons_newline ();
+			r_core_yank_cat (core, r_num_math (core->num, input+1));
 		}
 		break;
 	case 'F':
@@ -302,11 +299,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%s\n", s->name);
 		} break;
 	case '_': // hud input
-		free (core->yank_buf);
-		for (input++; *input==' '; input++);
-		core->yank_buf = (ut8*)r_cons_hud_file (input);
-		core->yank_len = core->yank_buf? strlen (
-			(const char *)core->yank_buf): 0;
+		r_core_yank_hud_file (core, input+1);
 		break;
 	case 'i': // input num
 		if (!r_config_get_i (core->config, "scr.interactive")) {
@@ -321,10 +314,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_message (input+2);
 			break;
 		case 'p': {
-			char *p = r_cons_hud_path (input+2, 0);
-			core->yank_buf = (ut8*)p;
-			core->yank_len = p? strlen (p): 0;
-			core->num->value = (p != NULL);
+			core->num->value = r_core_yank_hud_path (core, input+2, 0) == R_TRUE;
 			} break;
 		case 'k':
 			r_cons_any_key ();
@@ -347,9 +337,7 @@ static int cmd_help(void *data, const char *input) {
 			eprintf ("%s: ", input);
 			fgets (foo, sizeof (foo)-1, stdin);
 			foo[strlen (foo)-1] = 0;
-			free (core->yank_buf);
-			core->yank_buf = (ut8 *)strdup (foo);
-			core->yank_len = strlen (foo);
+			r_core_yank_set_str (core, -1, foo, strlen(foo)+1);
 			core->num->value = r_num_math (core->num, foo);
 			}
 			break;

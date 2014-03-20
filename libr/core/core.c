@@ -506,8 +506,7 @@ R_API int r_core_init(RCore *core) {
 	core->cmdrepeat = R_TRUE;
 	core->reflines = NULL;
 	core->reflines2 = NULL;
-	core->yank_buf = NULL;
-	core->yank_len = 0;
+	core->yank_buf = r_buf_new();
 	core->yank_off = 0LL;
 	core->num = r_num_new (&num_callback, core);
 	//core->num->callback = &num_callback;
@@ -637,6 +636,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);
+	r_buf_free (c->yank_buf);
 	return NULL;
 }
 
