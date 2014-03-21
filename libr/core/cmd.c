@@ -231,7 +231,6 @@ static int cmd_rap(void *data, const char *input) {
 }
 
 static int cmd_yank(void *data, const char *input) {
-	int i;
 	ut64 n;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {

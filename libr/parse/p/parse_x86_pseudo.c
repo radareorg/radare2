@@ -141,6 +141,7 @@ static int assemble(RParse *p, char *data, char *str) {
 	return R_TRUE;
 }
 
+#if 0
 static inline int ishexch (char c) {
 	if (c>=0 && c<=9) return 1;
 	if (c>='a' && c<='f') return 1;
@@ -160,6 +161,7 @@ static inline int issegoff (const char *w) {
 	if (!ishexch (w[8])) return 0;
 	return 1;
 }
+#endif
 
 
 static int varsub(RParse *p, RAnalFunction *f, char *data, char *str, int len) {

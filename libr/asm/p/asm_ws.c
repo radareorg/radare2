@@ -8,7 +8,7 @@
 #include "../arch/whitespace/wsdis.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	return wsdis(op, (const char *)buf, len);
+	return wsdis (op, buf, len);
 }
 
 RAsmPlugin r_asm_plugin_ws = {
