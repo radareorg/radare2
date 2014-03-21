@@ -45,6 +45,7 @@ R_API RPrint *r_print_new() {
 	p->addrmod = 4;
 	p->flags = \
 		   R_PRINT_FLAGS_COLOR |
+		   R_PRINT_FLAGS_OFFSET |
 		   R_PRINT_FLAGS_HEADER |
 		   R_PRINT_FLAGS_ADDRMOD;
 	p->zoom = R_NEW0 (RPrintZoom);
