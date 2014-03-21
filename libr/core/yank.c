@@ -25,7 +25,7 @@ R_API int r_core_yank_set (RCore *core, ut64 addr, const ut8 *buf, ut32 len) {
 	//free (core->yank_buf);
 	if (buf && len) {
 		r_buf_set_bytes (core->yank_buf, buf, len);
-		core->yank_off = addr;
+		core->yank_buff->base = addr;
 		return R_TRUE;
 	}
 	return R_FALSE;
@@ -105,7 +105,7 @@ R_API int r_core_yank_dump (RCore *core, ut64 pos) {
 	if (pos >= core->yank_buf->length) {
 		eprintf ("Position exceeds buffer length.\n");
 	} else if (core->yank_buf->length > 0) {
-		r_cons_printf ("0x%08"PFMT64x" %d ", core->yank_off+pos,
+		r_cons_printf ("0x%08"PFMT64x" %d ", core->yank_buf->base+pos,
 			core->yank_buf->length-pos);
 
 		for (i=pos; i < core->yank_buf->length; i++)

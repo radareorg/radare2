@@ -101,7 +101,6 @@ typedef struct r_core_t {
 	int ffio;
 	int oobi_len;
 	RBuffer *yank_buf;
-	ut64 yank_off;
 	int tmpseek;
 	boolt vmode;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
